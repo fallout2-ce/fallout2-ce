@@ -3374,7 +3374,7 @@ int _combatai_msg(Object* critter, Attack* attack, int type, int delay)
     snprintf(string, AI_MESSAGE_SIZE, "%s", messageListItem.text);
 
     // TODO: Get rid of casts.
-    return animationRegisterCallback(critter, (void*)type, (AnimationCallback*)_ai_print_msg, delay);
+    return animationRegisterCallback(critter, (void*)(uintptr_t)type, (AnimationCallback*)_ai_print_msg, delay);
 }
 
 // 0x42B80C

@@ -12,7 +12,7 @@ jobs:
   build_webassembly_version:
     name: Build webassembly version
     runs-on: ubuntu-latest
-    container: emscripten/emsdk:3.1.74
+    container: emscripten/emsdk:4.0.2
     permissions: write-all
     steps:
       - name: Clone

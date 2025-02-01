@@ -389,6 +389,9 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
+# VSCode
+.vscode
+
 # CMake
 /out
 /build

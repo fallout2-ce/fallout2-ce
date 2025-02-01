@@ -268,6 +268,8 @@ static char* programGetCurrentProcedureName(Program* program)
     if (gInterpreterCurrentProgram) {
         longjmp(gInterpreterCurrentProgram->env, 1);
     }
+
+    __builtin_unreachable();
 }
 
 // 0x467290

@@ -633,15 +633,13 @@ static void elevatorWindowFree()
 // 0x43F73C
 static int elevatorGetLevelFromKeyCode(int elevator, int keyCode)
 {
-    // TODO: Check if result is really unused?
-    toupper(keyCode);
-
     for (int index = 0; index < ELEVATOR_LEVEL_MAX; index++) {
         char c = gElevatorLevelLabels[elevator][index];
         if (c == '\0') {
             break;
         }
 
+        // consider use std toupper instead of & 0xFF
         if (c == (char)(keyCode & 0xFF)) {
             return index + 1;
         }
