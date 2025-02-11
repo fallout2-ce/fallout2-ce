@@ -79,17 +79,12 @@ jobs:
         run: |
           cd os/android
           ./gradlew assembleDebug
-      
-      - name: Prepare artifacts
-        run: |
-          mkdir artifacts/
-          cp os/android/app/build/outputs/apk/debug/app-debug.apk artifacts/fallout2-ce-debug.apk
-      
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-fallout2-ce-debug.apk
-          path:  artifacts/*
+          name: fallout2-ce-debug.apk
+          path: os/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
   ios:
@@ -103,41 +98,27 @@ jobs:
       - name: Cache cmake build
         uses: actions/cache@v4
         with:
-          path: build
-          key: ios-cmake-v4
+          path: out
+          key: ios-cmake-v5
 
       - name: Configure
         run: |
-          cmake \
-            -B build \
-            -D CMAKE_TOOLCHAIN_FILE=cmake/toolchain/ios.toolchain.cmake \
-            -D ENABLE_BITCODE=0 \
-            -D PLATFORM=OS64 \
-            -G Xcode \
-            -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY='' \
-            # EOL
+          cmake --preset ios
 
       - name: Build
         run: |
-          cmake \
-            --build build \
-            --config RelWithDebInfo \
-            -j $(sysctl -n hw.physicalcpu) \
-            # EOL
+          cmake --build --preset ios-debug
 
       - name: Pack
         run: |
-          mkdir artifacts/
-          cd build
-          cpack -C RelWithDebInfo
-          cd ../
-          cp build/fallout2-ce.ipa artifacts/fallout2-ce.ipa
-      
+          cd out/build/ios
+          cpack -C Debug
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-fallout2-ce.ipa
-          path:  artifacts/*
+          name: fallout2-ce.ipa
+          path:  out/build/ios/fallout2-ce.ipa
           retention-days: 7
 
   linux:
@@ -173,43 +154,49 @@ jobs:
       - name: Cache cmake build
         uses: actions/cache@v4
         with:
-          path: build
-          key: linux-${{ matrix.arch }}-cmake-v3
+          path: out
+          key: linux-${{ matrix.arch }}-cmake-v2
 
-      - name: Configure (x86)
-        if: matrix.arch == 'x86'
+      - name: Configure
         run: |
-          cmake \
-            -B build \
-            -D CMAKE_BUILD_TYPE=RelWithDebInfo \
-            -D CMAKE_TOOLCHAIN_FILE=cmake/toolchain/Linux32.cmake \
-            # EOL
-
-      - name: Configure (x64)
-        if: matrix.arch == 'x64'
-        run: |
-          cmake \
-            -B build \
-            -D CMAKE_BUILD_TYPE=RelWithDebInfo \
-            # EOL
+          cmake --preset linux-${{ matrix.arch }}-debug
 
       - name: Build
         run: |
-          cmake \
-            --build build \
-            -j $(nproc) \
-            # EOL
-      
-      - name: Prepare artifacts
-        run: |
-          mkdir artifacts/
-          cp build/fallout2-ce artifacts/fallout2-ce-linux-${{ matrix.arch }}
-      
+          cmake --build --preset linux-${{ matrix.arch }}-debug
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-fallout2-ce-linux-${{ matrix.arch }}
-          path:  artifacts/*
+          name: fallout2-ce-linux-${{ matrix.arch }}
+          path:  out/build/linux-${{ matrix.arch }}-debug/fallout2-ce
+          retention-days: 7
+
+  linux-arm64:
+    name: Linux (arm64)
+
+    runs-on: ubuntu-22.04-arm
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          sudo apt update
+          sudo apt install libsdl2-dev zlib1g-dev
+
+      - name: Configure
+        run: cmake -B build -D CMAKE_BUILD_TYPE=Debug -D FALLOUT_VENDORED=OFF
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: fallout2-ce-linux-arm64
+          path:  build/fallout2-ce
           retention-days: 7
 
   macos:
@@ -223,38 +210,27 @@ jobs:
       - name: Cache cmake build
         uses: actions/cache@v4
         with:
-          path: build
+          path: out
           key: macos-cmake-v6
 
       - name: Configure
         run: |
-          cmake \
-            -B build \
-            -G Xcode \
-            -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY='' \
-            # EOL
+          cmake --preset macos
 
       - name: Build
         run: |
-          cmake \
-            --build build \
-            --config RelWithDebInfo \
-            -j $(sysctl -n hw.physicalcpu) \
-            # EOL
+          cmake --build --preset macos-debug
 
       - name: Pack
         run: |
-          mkdir artifacts/
-          cd build
-          cpack -C RelWithDebInfo
-          cd ../
-          cp "build/Fallout II Community Edition.dmg" "artifacts/Fallout II Community Edition.dmg"
-      
+          cd out/build/macos
+          cpack -C Debug
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-fallout2-ce-macos.dmg
-          path:  artifacts/*
+          name: fallout2-ce-macos.dmg
+          path: out/build/macos/Fallout II Community Edition.dmg
           retention-days: 7
 
   windows:
@@ -278,36 +254,24 @@ jobs:
       - name: Cache cmake build
         uses: actions/cache@v4
         with:
-          path: build
+          path: out
           key: windows-${{ matrix.arch }}-cmake-v2
 
       - name: Configure
         run: |
-          cmake \
-            -B build \
-            -G "Visual Studio 16 2019" \
-            -A ${{ matrix.generator-platform }} \
-            # EOL
+          cmake --preset windows-${{ matrix.arch }}
 
       - name: Build
         run: |
-          cmake \
-            --build build \
-            --config RelWithDebInfo \
-            # EOL
-      
-      - name: Prepare artifacts
-        run: |
-          mkdir artifacts/
-          cp build/RelWithDebInfo/fallout2-ce.exe artifacts/fallout2-ce-windows-${{ matrix.arch }}.exe
-      
+          cmake --build --preset windows-${{ matrix.arch }}-debug
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-fallout2-ce-windows-${{ matrix.arch }}
-          path:  artifacts/*
+          name: fallout2-ce-windows-${{ matrix.arch }}
+          path:  out/build/windows-${{ matrix.arch }}/Debug/fallout2-ce.exe
           retention-days: 7
-  
+
   release:
     name: Release Continuous build
     runs-on: ubuntu-latest

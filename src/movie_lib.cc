@@ -14,64 +14,38 @@
 
 namespace fallout {
 
-typedef struct STRUCT_6B3690 {
-    void* field_0;
-    unsigned int field_4;
-    int field_8;
-} STRUCT_6B3690;
+typedef struct MveMem {
+    void* ptr;
+    unsigned int size;
+    int alloced;
+} MveMem;
 
 #pragma pack(2)
-typedef struct Mve {
+typedef struct MveHeader {
     char sig[20];
-    short field_14;
-    short field_16;
-    short field_18;
-    int field_1A;
-} Mve;
+    short size;
+    short ver;
+    short id;
+    unsigned int chunk_hdr;
+} MveHeader;
 #pragma pack()
 
-typedef struct STRUCT_4F6930 {
-    int field_0;
-    MovieReadProc* readProc;
-    STRUCT_6B3690 field_8;
-    int fileHandle;
-    int field_18;
-    SDL_Surface* field_24;
-    SDL_Surface* field_28;
-    int field_2C;
-    unsigned char* field_30;
-    unsigned char* field_34;
-    unsigned char field_38;
-    unsigned char field_39;
-    unsigned char field_3A;
-    unsigned char field_3B;
-    int field_3C;
-    int field_40;
-    int field_44;
-    int field_48;
-    int field_4C;
-    int field_50;
-} STRUCT_4F6930;
-
-static void _MVE_MemInit(STRUCT_6B3690* a1, int a2, void* a3);
-static void _MVE_MemFree(STRUCT_6B3690* a1);
-static void _do_nothing_2(SDL_Surface* a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9);
+static void MVE_MemInit(MveMem* mem, unsigned int size, void* ptr);
+static void MVE_MemFree(MveMem* mem);
 static int _sub_4F4B5();
-static int _ioReset(int fileHandle);
-static void* _ioRead(int size);
-static void* _MVE_MemAlloc(STRUCT_6B3690* a1, unsigned int a2);
-static unsigned char* _ioNextRecord();
-static void _sub_4F4DD();
-static int _MVE_rmHoldMovie();
-static int _syncWait();
+static int ioReset(void* handle);
+static void* ioRead(int size);
+static void* MVE_MemAlloc(MveMem* mem, unsigned int size);
+static unsigned char* ioNextRecord();
+static int syncWait();
 static void _MVE_sndPause();
-static int _syncInit(int a1, int a2);
-static void _syncReset(int a1);
+static int syncInit(int rate, int resolution);
+static void syncReset(int quanta);
 static int _MVE_sndConfigure(int a1, int a2, int a3, int a4, int a5, int a6);
-static void _MVE_syncSync();
+static void MVE_syncSync();
 static void _MVE_sndReset();
 static void _MVE_sndSync();
-static int _syncWaitLevel(int a1);
+static int syncWaitLevel(int wait);
 static void _CallsSndBuff_Loc(unsigned char* a1, int a2);
 static int _MVE_sndAdd(unsigned char* dest, unsigned char** src_ptr, int a3, int a4, int a5);
 static void _MVE_sndResume();
@@ -81,17 +55,14 @@ static void movieUnlockSurfaces();
 static void movieSwapSurfaces();
 static void _sfShowFrame(int a1, int a2, int a3);
 static void _do_nothing_(int a1, int a2, unsigned short* a3);
-static void _SetPalette_1(int a1, int a2);
-static void _SetPalette_(int a1, int a2);
-static void _palMakeSynthPalette(int a1, int a2, int a3, int a4, int a5, int a6);
-static void _palLoadPalette(unsigned char* palette, int a2, int a3);
-static void _syncRelease();
-static void _ioRelease();
+static void palSetPalette(int start, int count);
+static void palClrPalette(int start, int count);
+static void palMakeSynthPalette(int a1, int a2, int a3, int a4, int a5, int a6);
+static void palLoadPalette(unsigned char* palette, int start, int count);
+static void syncRelease();
+static void ioRelease();
 static void _MVE_sndRelease();
 static void _nfRelease();
-static void _frLoad(STRUCT_4F6930* a1);
-static void _frSave(STRUCT_4F6930* a1);
-static void _MVE_frClose(STRUCT_4F6930* a1);
 static int _MVE_sndDecompM16(unsigned short* a1, unsigned char* a2, int a3, int a4);
 static int _MVE_sndDecompS16(unsigned short* a1, unsigned char* a2, int a3, int a4);
 static void _nfPkConfig();
@@ -142,36 +113,25 @@ static unsigned short word_51EBE0[256] = {
 };
 
 // 0x51EDE4
-static int _sync_active = 0;
+static int sync_active = 0;
 
 // 0x51EDE8
-static int _sync_late = 0;
+static int sync_late = 0;
 
 // 0x51EDEC
-static int _sync_FrameDropped = 0;
+static int sync_FrameDropped = 0;
 
 // 0x51EDF8
-static int gMovieLibVolume = 0;
-
-// 0x51EDFC
-static int gMovieLibPan = 0;
+static int mve_volume = 0;
 
 // 0x51EE08
-static MovieShowFrameProc* _sf_ShowFrame = _do_nothing_2;
+static MveShowFrameFunc* sf_ShowFrame;
 
-// 0x51EE0C
-static int dword_51EE0C = 1;
-
-// TODO: There is a default function (not yet implemented).
-//
 // 0x51EE14
-static void (*_pal_SetPalette)(unsigned char*, int, int) = nullptr;
-
-// 0x51EE18
-static int _rm_hold = 0;
+static MveSetPaletteFunc* pal_SetPalette;
 
 // 0x51EE1C
-static int _rm_active = 0;
+static int rm_active = 0;
 
 // 0x51EE20
 static bool dword_51EE20 = false;
@@ -343,22 +303,19 @@ static unsigned int _$$R0063[256] = {
 static int dword_6B3660;
 
 // 0x6B367C
-static int _sf_ScreenWidth;
-
-// 0x6B3680
-static int dword_6B3680;
+static int sf_ScreenWidth;
 
 // 0x6B3684
-static int _rm_FrameDropCount;
+static int rm_FrameDropCount;
 
 // 0x6B3688
 static int _snd_buf;
 
 // 0x6B3690
-static STRUCT_6B3690 _io_mem_buf;
+static MveMem io_mem_buf;
 
 // 0x6B369C
-static int _io_next_hdr;
+static unsigned int io_next_hdr;
 
 // 0x6B36A0
 static int dword_6B36A0;
@@ -367,79 +324,58 @@ static int dword_6B36A0;
 static unsigned int dword_6B36A4;
 
 // 0x6B36A8
-static int _rm_FrameCount;
+static int rm_FrameCount;
 
 // 0x6B36AC
-static int _sf_ScreenHeight;
-
-// 0x6B36B0
-static int dword_6B36B0;
-
-// 0x6B36B8
-static unsigned char _palette_entries1[768];
+static int sf_ScreenHeight;
 
 // 0x6B39B8
-static MallocProc* gMovieLibMallocProc;
-
-// 0x6B39BC
-static int (*_rm_ctl)();
+static MveMallocFunc* mve_malloc_func;
 
 // 0x6B39C0
-static int _rm_dx;
+static int rm_dx;
 
 // 0x6B39C4
-static int _rm_dy;
+static int rm_dy;
 
 // 0x6B39C8
 static int _gSoundTimeBase;
 
 // 0x6B39CC
-static int _io_handle;
+static void* io_handle;
 
 // 0x6B39D0
-static int _rm_len;
+static int rm_len;
 
 // 0x6B39D4
-static FreeProc* gMovieLibFreeProc;
+static MveFreeFunc* mve_free_func;
 
 // 0x6B39D8
 static int _snd_comp;
 
 // 0x6B39DC
-static unsigned char* _rm_p;
+static unsigned char* rm_p;
 
 // 0x6B39E0
 static int dword_6B39E0[60];
 
 // 0x6B3AD0
-static int _sync_wait_quanta;
-
-// 0x6B3AD4
-static int dword_6B3AD4;
+static int sync_wait_quanta;
 
 // 0x6B3AD8
-static int _rm_track_bit;
+static int rm_track_bit;
 
 // 0x6B3ADC
-static int _sync_time;
+static int sync_time;
 
 // 0x6B3AE0
-static MovieReadProc* gMovieLibReadProc;
+static MveReadFunc* mve_read_func;
 
 // 0x6B3AE4
 static int dword_6B3AE4;
 
-// 0x6B3AE8
-static int dword_6B3AE8;
-
 // 0x6B3CEC
 static int dword_6B3CEC;
-
-// 0x6B3CF0
-static int dword_6B3CF0;
-
-// 0x6B3CF4
-static int dword_6B3CF4;
 
 // 0x6B3CF8
 static int dword_6B3CF8;
@@ -450,26 +386,8 @@ static int _mveBW;
 // 0x6B3D00
 static int dword_6B3D00;
 
-// 0x6B3D04
-static int dword_6B3D04;
-
-// 0x6B3D08
-static int dword_6B3D08;
-
 // 0x6B3D0C
-static unsigned char _pal_tbl[768];
-
-// 0x6B400C
-static unsigned char byte_6B400C;
-
-// 0x6B400D
-static unsigned char byte_6B400D;
-
-// 0x6B400E
-static int dword_6B400E;
-
-// 0x6B4012
-static int dword_6B4012;
+static unsigned char pal_tbl[768];
 
 // 0x6B4016
 static unsigned char byte_6B4016;
@@ -501,125 +419,81 @@ static unsigned char* gMovieDirectDrawSurfaceBuffer1;
 // 0x6B4037
 static unsigned char* gMovieDirectDrawSurfaceBuffer2;
 
-// 0x6B403B
-static int dword_6B403B;
-
-// 0x6B403F
-static int dword_6B403F;
-
 static SDL_Surface* gMovieSdlSurface1;
 static SDL_Surface* gMovieSdlSurface2;
 static int gMveSoundBuffer = -1;
 static unsigned int gMveBufferBytes;
 
 // 0x4F4800
-void movieLibSetMemoryProcs(MallocProc* mallocProc, FreeProc* freeProc)
+void MveSetMemory(MveMallocFunc* malloc_func, MveFreeFunc* free_func)
 {
-    gMovieLibMallocProc = mallocProc;
-    gMovieLibFreeProc = freeProc;
+    mve_malloc_func = malloc_func;
+    mve_free_func = free_func;
 }
 
 // 0x4F4860
-void movieLibSetReadProc(MovieReadProc* readProc)
+void MveSetIO(MveReadFunc* read_func)
 {
-    gMovieLibReadProc = readProc;
+    mve_read_func = read_func;
 }
 
 // 0x4F4890
-static void _MVE_MemInit(STRUCT_6B3690* a1, int a2, void* a3)
+static void MVE_MemInit(MveMem* mem, unsigned int size, void* ptr)
 {
-    if (a3 == nullptr) {
+    if (ptr == nullptr) {
         return;
     }
 
-    _MVE_MemFree(a1);
+    MVE_MemFree(mem);
 
-    a1->field_0 = a3;
-    a1->field_4 = a2;
-    a1->field_8 = 0;
+    mem->ptr = ptr;
+    mem->size = size;
+    mem->alloced = 0;
 }
 
 // 0x4F48C0
-static void _MVE_MemFree(STRUCT_6B3690* a1)
+static void MVE_MemFree(MveMem* mem)
 {
-    if (a1->field_8 && gMovieLibFreeProc != nullptr) {
-        gMovieLibFreeProc(a1->field_0);
-        a1->field_8 = 0;
+    if (mem->alloced && mve_free_func != nullptr) {
+        mve_free_func(mem->ptr);
+        mem->alloced = 0;
     }
-    a1->field_4 = 0;
+    mem->size = 0;
 }
 
 // 0x4F4900
-void movieLibSetVolume(int volume)
+void MveSetVolume(int volume)
 {
-    gMovieLibVolume = volume;
+    mve_volume = volume;
 
     if (gMveSoundBuffer != -1) {
         audioEngineSoundBufferSetVolume(gMveSoundBuffer, volume);
     }
 }
 
-// 0x4F4920
-void movieLibSetPan(int pan)
-{
-    gMovieLibPan = pan;
-
-    if (gMveSoundBuffer != -1) {
-        audioEngineSoundBufferSetPan(gMveSoundBuffer, pan);
-    }
-}
-
 // 0x4F4940
-void _MVE_sfSVGA(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9)
+void MveSetScreenSize(int width, int height)
 {
-    _sf_ScreenWidth = a1;
-    _sf_ScreenHeight = a2;
-    dword_6B3AD4 = a1;
-    dword_6B36B0 = a2;
-    dword_6B3D04 = a3;
-    if (dword_51EBD8 & 4)
-        dword_6B3D04 = 2 * a3;
-    dword_6B403F = a4;
-    dword_6B3CF4 = a6;
-    dword_6B400E = a5;
-    dword_6B403B = a7;
-    dword_6B3CF0 = a6 + a5;
-    dword_6B3D08 = a8;
-    if (a7)
-        dword_6B4012 = a6 / a7;
-    else
-        dword_6B4012 = 1;
-    dword_51EE0C = 0;
-    dword_6B3680 = a9;
+    sf_ScreenWidth = width;
+    sf_ScreenHeight = height;
 }
 
 // 0x4F49F0
-void _MVE_sfCallbacks(MovieShowFrameProc* proc)
+void MveSetShowFrame(MveShowFrameFunc* show_frame_func)
 {
-    _sf_ShowFrame = proc;
-}
-
-// 0x4F4A00
-static void _do_nothing_2(SDL_Surface* a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9)
-{
+    sf_ShowFrame = show_frame_func;
 }
 
 // 0x4F4A10
-void movieLibSetPaletteEntriesProc(void (*fn)(unsigned char*, int, int))
+void MveSetPalette(MveSetPaletteFunc* set_palette_func)
 {
-    _pal_SetPalette = fn;
+    pal_SetPalette = set_palette_func;
 }
 
 // 0x4F4B50
 static int _sub_4F4B5()
 {
     return 0;
-}
-
-// 0x4F4B90
-void _MVE_rmCallbacks(int (*fn)())
-{
-    _rm_ctl = fn;
 }
 
 // 0x4F4BB0
@@ -633,75 +507,63 @@ void _sub_4F4BB(int a1)
 }
 
 // 0x4F4BD0
-void _MVE_rmFrameCounts(int* a1, int* a2)
+void MVE_rmFrameCounts(int* frame_count_ptr, int* frame_drop_count_ptr)
 {
-    *a1 = _rm_FrameCount;
-    *a2 = _rm_FrameDropCount;
+    *frame_count_ptr = rm_FrameCount;
+    *frame_drop_count_ptr = rm_FrameDropCount;
 }
 
 // 0x4F4BF0
-int _MVE_rmPrepMovie(int fileHandle, int a2, int a3, char a4)
+int MVE_rmPrepMovie(void* handle, int dx, int dy, unsigned char track)
 {
-    _sub_4F4DD();
+    rm_dx = dx;
+    rm_dy = dy;
+    rm_track_bit = 1 << track;
 
-    _rm_dx = a2;
-    _rm_dy = a3;
-    _rm_track_bit = 1 << a4;
-
-    if (_rm_track_bit == 0) {
-        _rm_track_bit = 1;
+    if (rm_track_bit == 0) {
+        rm_track_bit = 1;
     }
 
-    if (!_ioReset(fileHandle)) {
+    if (!ioReset(handle)) {
         _MVE_rmEndMovie();
         return -8;
     }
 
-    _rm_p = _ioNextRecord();
-    _rm_len = 0;
+    rm_p = ioNextRecord();
+    rm_len = 0;
 
-    if (!_rm_p) {
+    if (rm_p == NULL) {
         _MVE_rmEndMovie();
         return -2;
     }
 
-    _rm_active = 1;
-    _rm_hold = 0;
-    _rm_FrameCount = 0;
-    _rm_FrameDropCount = 0;
+    rm_active = 1;
+    rm_FrameCount = 0;
+    rm_FrameDropCount = 0;
 
     return 0;
 }
 
 // 0x4F4C90
-static int _ioReset(int stream)
+static int ioReset(void* handle)
 {
-    Mve* mve;
+    MveHeader* mve;
 
-    _io_handle = stream;
+    io_handle = handle;
 
-    mve = (Mve*)_ioRead(sizeof(Mve));
+    mve = (MveHeader*)ioRead(sizeof(MveHeader));
     if (mve == nullptr) {
         return 0;
     }
 
-    if (strncmp(mve->sig, "Interplay MVE File\x1A\x00", 20) != 0) {
+    if (strncmp(mve->sig, "Interplay MVE File\x1A\x00", 20) != 0
+        || mve->id != 4659 - mve->ver
+        || mve->ver != 256
+        || mve->size != 26) {
         return 0;
     }
 
-    if (~mve->field_16 - mve->field_18 != 0xFFFFEDCC) {
-        return 0;
-    }
-
-    if (mve->field_16 != 256) {
-        return 0;
-    }
-
-    if (mve->field_14 != 26) {
-        return 0;
-    }
-
-    _io_next_hdr = mve->field_1A;
+    io_next_hdr = mve->chunk_hdr;
 
     return 1;
 }
@@ -709,101 +571,79 @@ static int _ioReset(int stream)
 // Reads data from movie file.
 //
 // 0x4F4D00
-static void* _ioRead(int size)
+static void* ioRead(int size)
 {
     void* buf;
 
-    buf = _MVE_MemAlloc(&_io_mem_buf, size);
+    buf = MVE_MemAlloc(&io_mem_buf, size);
     if (buf == nullptr) {
         return nullptr;
     }
 
-    return gMovieLibReadProc(_io_handle, buf, size) < 1 ? nullptr : buf;
-}
-
-// 0x4F4D40
-static void* _MVE_MemAlloc(STRUCT_6B3690* a1, unsigned int a2)
-{
-    void* ptr;
-
-    if (a1->field_4 >= a2) {
-        return a1->field_0;
-    }
-
-    if (gMovieLibMallocProc == nullptr) {
+    if (mve_read_func(io_handle, buf, size) < 1) {
         return nullptr;
     }
-
-    _MVE_MemFree(a1);
-
-    ptr = gMovieLibMallocProc(a2 + 100);
-    if (ptr == nullptr) {
-        return nullptr;
-    }
-
-    _MVE_MemInit(a1, a2 + 100, ptr);
-
-    a1->field_8 = 1;
-
-    return a1->field_0;
-}
-
-// 0x4F4DA0
-static unsigned char* _ioNextRecord()
-{
-    unsigned char* buf;
-
-    buf = (unsigned char*)_ioRead((_io_next_hdr & 0xFFFF) + 4);
-    if (buf == nullptr) {
-        return nullptr;
-    }
-
-    _io_next_hdr = *(int*)(buf + (_io_next_hdr & 0xFFFF));
 
     return buf;
 }
 
-// 0x4F4DD0
-static void _sub_4F4DD()
+// 0x4F4D40
+static void* MVE_MemAlloc(MveMem* mem, unsigned int size)
 {
-    if (dword_51EE20) {
-        return;
+    void* ptr;
+
+    if (mem->size >= size) {
+        return mem->ptr;
     }
 
-    // TODO: Incomplete.
+    if (mve_malloc_func == nullptr) {
+        return nullptr;
+    }
 
-    dword_51EE20 = true;
+    MVE_MemFree(mem);
+
+    ptr = mve_malloc_func(size + 100);
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+
+    MVE_MemInit(mem, size + 100, ptr);
+
+    mem->alloced = 1;
+
+    return mem->ptr;
 }
 
-// 0x4F4E20
-static int _MVE_rmHoldMovie()
+// 0x4F4DA0
+static unsigned char* ioNextRecord()
 {
-    if (!_rm_hold) {
-        _MVE_sndPause();
-        _rm_hold = 1;
+    unsigned char* buf;
+
+    buf = (unsigned char*)ioRead((io_next_hdr & 0xFFFF) + 4);
+    if (buf == nullptr) {
+        return nullptr;
     }
-    _syncWait();
-    return 0;
+
+    io_next_hdr = *(unsigned int*)(buf + (io_next_hdr & 0xFFFF));
+
+    return buf;
 }
 
 // 0x4F4E40
-static int _syncWait()
+static int syncWait()
 {
-    int result;
+    int late;
 
-    result = 0;
-    if (_sync_active) {
-        if (((_sync_time + 1000 * compat_timeGetTime()) & 0x80000000) != 0) {
-            result = 1;
-
-            delay_ms(-(_sync_time + 1000 * compat_timeGetTime()) / 1000 - 3);
-            while (((_sync_time + 1000 * compat_timeGetTime()) & 0x80000000) != 0)
-                ;
+    late = 0;
+    if (sync_active) {
+        while ((sync_time + 1000 * compat_timeGetTime()) < 0) {
+            late = 1;
+            delay_ms(-(sync_time + 1000 * compat_timeGetTime()) / 1000 - 3);
         }
-        _sync_time += _sync_wait_quanta;
+        sync_time += sync_wait_quanta;
     }
 
-    return result;
+    return late;
 }
 
 // 0x4F4EA0
@@ -835,16 +675,11 @@ int _MVE_rmStepMovie()
     int v20;
     unsigned char* v14;
 
-    v0 = _rm_len;
-    v1 = (unsigned short*)_rm_p;
+    v0 = rm_len;
+    v1 = (unsigned short*)rm_p;
 
-    if (!_rm_active) {
+    if (!rm_active) {
         return -10;
-    }
-
-    if (_rm_hold) {
-        _MVE_sndResume();
-        _rm_hold = 0;
     }
 
 LABEL_5:
@@ -866,10 +701,10 @@ LABEL_5:
             return -1;
         case 1:
             v0 = 0;
-            v1 = (unsigned short*)_ioNextRecord();
+            v1 = (unsigned short*)ioNextRecord();
             goto LABEL_5;
         case 2:
-            if (!_syncInit(v1[0], v1[2])) {
+            if (!syncInit(v1[0], v1[2])) {
                 v6 = -3;
                 break;
             }
@@ -916,34 +751,34 @@ LABEL_5:
                 v11 >>= 1;
             }
 
-            v12 = _rm_dx;
+            v12 = rm_dx;
             if (v12 < 0) {
                 v12 = 0;
             }
 
-            if (v11 + v12 > _sf_ScreenWidth) {
+            if (v11 + v12 > sf_ScreenWidth) {
                 v6 = -6;
                 break;
             }
 
-            v13 = _rm_dy;
+            v13 = rm_dy;
             if (v13 < 0) {
                 v13 = 0;
             }
 
-            if (_mveBH + v13 > _sf_ScreenHeight) {
+            if (_mveBH + v13 > sf_ScreenHeight) {
                 v6 = -6;
                 break;
             }
 
-            if (dword_6B4027 && !dword_6B3680) {
+            if (dword_6B4027) {
                 v6 = -6;
                 break;
             }
 
             continue;
         case 7:
-            ++_rm_FrameCount;
+            ++rm_FrameCount;
 
             v18 = 0;
             if ((v5 >> 24) >= 1) {
@@ -951,34 +786,34 @@ LABEL_5:
             }
 
             v19 = v1[1];
-            if (v19 == 0 || v21 || dword_6B3680) {
-                _SetPalette_1(v1[0], v19);
+            if (v19 == 0 || v21) {
+                palSetPalette(v1[0], v19);
             } else {
-                _SetPalette_(v1[0], v19);
+                palClrPalette(v1[0], v19);
             }
 
             if (v21) {
-                _do_nothing_(_rm_dx, _rm_dy, v21);
-            } else if (!_sync_late || v1[1]) {
-                _sfShowFrame(_rm_dx, _rm_dy, v18);
+                _do_nothing_(rm_dx, rm_dy, v21);
+            } else if (!sync_late || v1[1]) {
+                _sfShowFrame(rm_dx, rm_dy, v18);
             } else {
-                _sync_FrameDropped = 1;
-                ++_rm_FrameDropCount;
+                sync_FrameDropped = 1;
+                ++rm_FrameDropCount;
             }
 
             v20 = v1[1];
-            if (v20 && !v21 && !dword_6B3680) {
-                _SetPalette_1(v1[0], v20);
+            if (v20 && !v21) {
+                palSetPalette(v1[0], v20);
             }
 
-            _rm_p = (unsigned char*)v1;
-            _rm_len = v0;
+            rm_p = (unsigned char*)v1;
+            rm_len = v0;
 
             return 0;
         case 8:
         case 9:
             // push data to audio buffers?
-            if (v1[1] & _rm_track_bit) {
+            if (v1[1] & rm_track_bit) {
                 v14 = (unsigned char*)v1 + 6;
                 if ((v5 >> 16) != 8) {
                     v14 = nullptr;
@@ -987,20 +822,15 @@ LABEL_5:
             }
             continue;
         case 10:
-            if (!dword_51EE0C) {
-                continue;
-            }
-
             // TODO: Probably never reached.
-
             continue;
         case 11:
             // some kind of palette rotation
-            _palMakeSynthPalette(v1[0], v1[1], v1[2], v1[3], v1[4], v1[5]);
+            palMakeSynthPalette(v1[0], v1[1], v1[2], v1[3], v1[4], v1[5]);
             continue;
         case 12:
             // palette
-            _palLoadPalette((unsigned char*)v1 + 4, v1[0], v1[1]);
+            palLoadPalette((unsigned char*)v1 + 4, v1[0], v1[1]);
             continue;
         case 14:
             // save current position
@@ -1097,35 +927,32 @@ LABEL_5:
 }
 
 // 0x4F54F0
-static int _syncInit(int a1, int a2)
+static int syncInit(int rate, int resolution)
 {
-    int v2;
+    int quanta;
 
-    v2 = -((a2 >> 1) + a1 * a2);
+    quanta = -(rate * resolution + resolution / 2);
 
-    if (_sync_active && _sync_wait_quanta == v2) {
-        return 1;
+    if (!sync_active || sync_wait_quanta != quanta) {
+        syncWait();
+        sync_wait_quanta = quanta;
+        syncReset(quanta);
     }
-
-    _syncWait();
-
-    _sync_wait_quanta = v2;
-
-    _syncReset(v2);
 
     return 1;
 }
 
 // 0x4F5540
-static void _syncReset(int a1)
+static void syncReset(int quanta)
 {
-    _sync_active = 1;
-    _sync_time = -1000 * compat_timeGetTime() + a1;
+    sync_active = 1;
+    sync_time = -1000 * compat_timeGetTime() + quanta;
 }
 
 // 0x4F5570
 static int _MVE_sndConfigure(int a1, int a2, int a3, int a4, int a5, int a6)
 {
+    MVE_syncSync();
     _MVE_sndReset();
 
     _snd_comp = a3;
@@ -1142,8 +969,7 @@ static int _MVE_sndConfigure(int a1, int a2, int a3, int a4, int a5, int a6)
         return 0;
     }
 
-    audioEngineSoundBufferSetVolume(gMveSoundBuffer, gMovieLibVolume);
-    audioEngineSoundBufferSetPan(gMveSoundBuffer, gMovieLibPan);
+    audioEngineSoundBufferSetVolume(gMveSoundBuffer, mve_volume);
 
     dword_6B36A4 = 0;
 
@@ -1151,11 +977,10 @@ static int _MVE_sndConfigure(int a1, int a2, int a3, int a4, int a5, int a6)
 }
 
 // 0x4F56C0
-// Looks like this function is not used
-static void _MVE_syncSync()
+static void MVE_syncSync()
 {
-    if (_sync_active) {
-        while (((_sync_time + 1000 * compat_timeGetTime()) & 0x80000000) != 0) {
+    if (sync_active) {
+        while (sync_time + 1000 * compat_timeGetTime() < 0) {
         }
     }
 }
@@ -1190,8 +1015,8 @@ static void _MVE_sndSync()
 
     v0 = false;
 
-    _sync_late = _syncWaitLevel(_sync_wait_quanta >> 2) > -_sync_wait_quanta >> 1 && !_sync_FrameDropped;
-    _sync_FrameDropped = 0;
+    sync_late = syncWaitLevel(sync_wait_quanta / 4) > -sync_wait_quanta / 2 && !sync_FrameDropped;
+    sync_FrameDropped = 0;
 
     if (gMveSoundBuffer == -1) {
         return;
@@ -1227,7 +1052,7 @@ static void _MVE_sndSync()
 
         if (!v2 || !(dwStatus & AUDIO_ENGINE_SOUND_BUFFER_STATUS_PLAYING)) {
             if (v0) {
-                _syncReset(_sync_wait_quanta + (_sync_wait_quanta >> 2));
+                syncReset(sync_wait_quanta + (sync_wait_quanta >> 2));
             }
 
             v3 = dword_6B39E0[dword_6B3660];
@@ -1314,27 +1139,27 @@ static void _MVE_sndSync()
 }
 
 // 0x4F59B0
-static int _syncWaitLevel(int a1)
+static int syncWaitLevel(int wait)
 {
-    int v2;
-    int result;
+    int deadline;
+    int diff;
 
-    if (!_sync_active) {
+    if (!sync_active) {
         return 0;
     }
 
-    v2 = _sync_time + a1;
+    deadline = sync_time + wait;
     do {
-        result = v2 + 1000 * compat_timeGetTime();
-        if (result < 0) {
-            delay_ms(-result / 1000 - 3);
+        diff = deadline + 1000 * compat_timeGetTime();
+        if (diff < 0) {
+            delay_ms(-diff / 1000 - 3);
         }
-        result = v2 + 1000 * compat_timeGetTime();
-    } while (result < 0);
+        diff = deadline + 1000 * compat_timeGetTime();
+    } while (diff < 0);
 
-    _sync_time += _sync_wait_quanta;
+    sync_time += sync_wait_quanta;
 
-    return result;
+    return diff;
 }
 
 // 0x4F5A00
@@ -1486,8 +1311,6 @@ static int _nfConfig(int a1, int a2, int a3, int a4)
         gMovieSdlSurface2 = nullptr;
     }
 
-    byte_6B400D = a1;
-    byte_6B400C = a2;
     byte_6B4016 = a3;
     _mveBW = 8 * a1;
     _mveBH = 8 * a2 * a3;
@@ -1523,11 +1346,9 @@ static int _nfConfig(int a1, int a2, int a3, int a4)
     }
 
     dword_6B4027 = a4;
-    dword_6B402B = a3 * _mveBW - 8;
 
     if (a4) {
         _mveBW *= 2;
-        dword_6B402B *= 2;
     }
 
     dword_6B3D00 = 8 * a3 * _mveBW;
@@ -1589,9 +1410,9 @@ static void _sfShowFrame(int a1, int a2, int a3)
     v3 = a1;
     if (a1 < 0) {
         if (dword_6B4027) {
-            v3 = (_sf_ScreenWidth - (v4 >> 1)) >> 1;
+            v3 = (sf_ScreenWidth - (v4 >> 1)) >> 1;
         } else {
-            v3 = (_sf_ScreenWidth - v4) >> 1;
+            v3 = (sf_ScreenWidth - v4) >> 1;
         }
     }
 
@@ -1605,9 +1426,9 @@ static void _sfShowFrame(int a1, int a2, int a3)
     } else {
         v6 = _mveBH;
         if (dword_51EBD8 & 4) {
-            v5 = (_sf_ScreenHeight - 2 * _mveBH) >> 1;
+            v5 = (sf_ScreenHeight - 2 * _mveBH) >> 1;
         } else {
-            v5 = (_sf_ScreenHeight - _mveBH) >> 1;
+            v5 = (sf_ScreenHeight - _mveBH) >> 1;
         }
     }
 
@@ -1620,9 +1441,9 @@ static void _sfShowFrame(int a1, int a2, int a3)
         // TODO: Incomplete.
         // _mve_ShowFrameField(off_6B4033, _mveBW, v6, dword_6B401B, dword_6B401F, dword_6B4017, dword_6B4023, v7, v5, a3);
     } else if (dword_51EBDC == 4) {
-        _sf_ShowFrame(gMovieSdlSurface1, _mveBW, v6, dword_6B401B, dword_6B401F, dword_6B4017, dword_6B4023, v7, v5);
+        sf_ShowFrame(gMovieSdlSurface1, _mveBW, v6, dword_6B401B, dword_6B401F, dword_6B4017, dword_6B4023, v7, v5);
     } else {
-        _sf_ShowFrame(gMovieSdlSurface1, _mveBW, v6, 0, dword_6B401F, ((4 * _mveBW / dword_51EBDC - 12) & 0xFFFFFFF0) + 12, dword_6B4023, v7, v5);
+        sf_ShowFrame(gMovieSdlSurface1, _mveBW, v6, 0, dword_6B401F, ((4 * _mveBW / dword_51EBDC - 12) & 0xFFFFFFF0) + 12, dword_6B4023, v7, v5);
     }
 }
 
@@ -1632,80 +1453,83 @@ static void _do_nothing_(int a1, int a2, unsigned short* a3)
 }
 
 // 0x4F6090
-static void _SetPalette_1(int a1, int a2)
+static void palSetPalette(int start, int count)
 {
     if (!dword_6B4027) {
-        _pal_SetPalette(_pal_tbl, a1, a2);
+        pal_SetPalette(pal_tbl, start, count);
     }
 }
 
 // 0x4F60C0
-static void _SetPalette_(int a1, int a2)
+static void palClrPalette(int start, int count)
 {
+    unsigned char palette[768];
+
     if (!dword_6B4027) {
-        _pal_SetPalette(_palette_entries1, a1, a2);
+        memset(palette, 0, sizeof(palette));
+        pal_SetPalette(palette, start, count);
     }
 }
 
 // 0x4F60F0
-static void _palMakeSynthPalette(int a1, int a2, int a3, int a4, int a5, int a6)
+static void palMakeSynthPalette(int a1, int a2, int a3, int a4, int a5, int a6)
 {
     int i;
     int j;
 
     for (i = 0; i < a2; i++) {
         for (j = 0; j < a3; j++) {
-            _pal_tbl[3 * a1 + 3 * j] = (63 * i) / (a2 - 1);
-            _pal_tbl[3 * a1 + 3 * j + 1] = 0;
-            _pal_tbl[3 * a1 + 3 * j + 2] = 5 * ((63 * j) / (a3 - 1)) / 8;
+            pal_tbl[3 * a1 + 3 * j] = (63 * i) / (a2 - 1);
+            pal_tbl[3 * a1 + 3 * j + 1] = 0;
+            pal_tbl[3 * a1 + 3 * j + 2] = 5 * ((63 * j) / (a3 - 1)) / 8;
         }
     }
 
     for (i = 0; i < a5; i++) {
         for (j = 0; j < a6; j++) {
-            _pal_tbl[3 * a4 + 3 * j] = 0;
-            _pal_tbl[3 * a4 + 3 * j + 1] = (63 * i) / (a5 - 1);
-            _pal_tbl[3 * a1 + 3 * j + 2] = 5 * ((63 * j) / (a6 - 1)) / 8;
+            pal_tbl[3 * a4 + 3 * j] = 0;
+            pal_tbl[3 * a4 + 3 * j + 1] = (63 * i) / (a5 - 1);
+            pal_tbl[3 * a1 + 3 * j + 2] = 5 * ((63 * j) / (a6 - 1)) / 8;
         }
     }
 }
 
 // 0x4F6210
-static void _palLoadPalette(unsigned char* palette, int a2, int a3)
+static void palLoadPalette(unsigned char* palette, int start, int count)
 {
-    memcpy(_pal_tbl + 3 * a2, palette, 3 * a3);
+    memcpy(&(pal_tbl[start * 3]), palette, count * 3);
 }
 
 // 0x4F6240
 void _MVE_rmEndMovie()
 {
-    if (_rm_active) {
-        _syncWait();
-        _syncRelease();
+    if (rm_active) {
+        syncWait();
+        syncRelease();
         _MVE_sndReset();
-        _rm_active = 0;
+        rm_active = 0;
     }
 }
 
 // 0x4F6270
-static void _syncRelease()
+static void syncRelease()
 {
-    _sync_active = 0;
+    sync_active = 0;
 }
 
 // 0x4F6350
-void _MVE_ReleaseMem()
+void MVE_ReleaseMem()
 {
     _MVE_rmEndMovie();
-    _ioRelease();
+    ioRelease();
     _MVE_sndRelease();
     _nfRelease();
 }
 
 // 0x4F6370
-static void _ioRelease()
+static void ioRelease()
 {
-    _MVE_MemFree(&_io_mem_buf);
+    MVE_MemFree(&io_mem_buf);
 }
 
 // 0x4F6380
@@ -1724,75 +1548,6 @@ static void _nfRelease()
     if (gMovieSdlSurface2 != nullptr) {
         SDL_FreeSurface(gMovieSdlSurface2);
         gMovieSdlSurface2 = nullptr;
-    }
-}
-
-// 0x4F6550
-static void _frLoad(STRUCT_4F6930* a1)
-{
-    gMovieLibReadProc = a1->readProc;
-    _io_mem_buf.field_0 = a1->field_8.field_0;
-    _io_mem_buf.field_4 = a1->field_8.field_4;
-    _io_mem_buf.field_8 = a1->field_8.field_8;
-    _io_handle = a1->fileHandle;
-    _io_next_hdr = a1->field_18;
-    gMovieSdlSurface1 = a1->field_24;
-    gMovieSdlSurface2 = a1->field_28;
-    dword_6B3AE8 = a1->field_2C;
-    gMovieDirectDrawSurfaceBuffer1 = a1->field_30;
-    gMovieDirectDrawSurfaceBuffer2 = a1->field_34;
-    byte_6B400D = a1->field_38;
-    byte_6B400C = a1->field_39;
-    byte_6B4016 = a1->field_3A;
-    dword_6B4027 = a1->field_3C;
-    _mveBW = a1->field_40;
-    _mveBH = a1->field_44;
-    dword_6B402B = a1->field_48;
-    dword_6B3D00 = a1->field_4C;
-    dword_6B3CEC = a1->field_50;
-}
-
-// 0x4F6610
-static void _frSave(STRUCT_4F6930* a1)
-{
-    STRUCT_6B3690* ptr;
-
-    ptr = &(a1->field_8);
-    a1->readProc = gMovieLibReadProc;
-    ptr->field_0 = _io_mem_buf.field_0;
-    ptr->field_4 = _io_mem_buf.field_4;
-    ptr->field_8 = _io_mem_buf.field_8;
-    a1->fileHandle = _io_handle;
-    a1->field_18 = _io_next_hdr;
-    a1->field_24 = gMovieSdlSurface1;
-    a1->field_28 = gMovieSdlSurface2;
-    a1->field_2C = dword_6B3AE8;
-    a1->field_30 = gMovieDirectDrawSurfaceBuffer1;
-    a1->field_34 = gMovieDirectDrawSurfaceBuffer2;
-    a1->field_38 = byte_6B400D;
-    a1->field_39 = byte_6B400C;
-    a1->field_3A = byte_6B4016;
-    a1->field_3C = dword_6B4027;
-    a1->field_40 = _mveBW;
-    a1->field_44 = _mveBH;
-    a1->field_48 = dword_6B402B;
-    a1->field_4C = dword_6B3D00;
-    a1->field_50 = dword_6B3CEC;
-}
-
-// 0x4F6930
-static void _MVE_frClose(STRUCT_4F6930* a1)
-{
-    STRUCT_4F6930 v1;
-
-    _frSave(&v1);
-    _frLoad(a1);
-    _ioRelease();
-    _nfRelease();
-    _frLoad(&v1);
-
-    if (gMovieLibFreeProc != nullptr) {
-        gMovieLibFreeProc(a1);
     }
 }
 
