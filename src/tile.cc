@@ -722,83 +722,71 @@ int tileToScreenXY(int tile, int* screenX, int* screenY, int elevation)
 // validating hex grid bounds. The resulting invalid tile number serves as an
 // origin for calculations using prepared offsets table during objects
 // rendering.
-//
+// Note: does not take "elevation" into account might need to be corrected.
 // 0x4B1754
 int tileFromScreenXY(int screenX, int screenY, int elevation, bool ignoreBounds)
 {
-    int v2;
-    int v3;
-    int v4;
-    int v5;
-    int v6;
-    int v7;
-    int v8;
-    int v9;
-    int v10;
-    int v11;
-    int v12;
+    int x, y;
 
-    v2 = screenY - _tile_offy;
-    if (v2 >= 0) {
-        v3 = v2 / 12;
+    int yTileOff = screenY - _tile_offy;
+    if (yTileOff >= 0) {
+        y = yTileOff / 12;
     } else {
-        v3 = (v2 + 1) / 12 - 1;
+        y = (yTileOff + 1) / 12 - 1;
     }
 
-    v4 = screenX - _tile_offx - 16 * v3;
-    v5 = v2 - 12 * v3;
+    int xTileOff = screenX - _tile_offx - 16 * y;
+    int yOffset = yTileOff - (y * 12);
 
-    if (v4 >= 0) {
-        v6 = v4 / 64;
+    if (xTileOff >= 0) {
+        x = xTileOff / 64;
     } else {
-        v6 = (v4 + 1) / 64 - 1;
+        x = (xTileOff + 1) / 64 - 1;
     }
 
-    v7 = v6 + v3;
-    v8 = v4 - (v6 * 64);
-    v9 = 2 * v6;
+    int xOffset = xTileOff - (x * 64);
 
-    if (v8 >= 32) {
-        v8 -= 32;
-        v9++;
+    int tY = x + y;
+    int tX = 2 * x;
+
+    if (xOffset >= 32) {
+        xOffset -= 32;
+        tX++;
     }
 
-    v10 = _tile_y + v7;
-    v11 = _tile_x + v9;
+    int xTile = _tile_x + tX;
+    int yTile = _tile_y + tY;
 
-    switch (_tile_mask[32 * v5 + v8]) {
+    switch (_tile_mask[(32 * yOffset) + xOffset]) {
+    case 1:
+        yTile--;
+        break;
     case 2:
-        v11++;
-        if (v11 & 1) {
-            v10--;
+        xTile++;
+        if (xTile & 1) {
+            yTile--;
         }
         break;
-    case 1:
-        v10--;
-        break;
     case 3:
-        v11--;
-        if (!(v11 & 1)) {
-            v10++;
+        xTile--;
+        if (!(xTile & 1)) {
+            yTile++;
         }
         break;
     case 4:
-        v10++;
+        yTile++;
         break;
     default:
         break;
     }
 
-    v12 = gHexGridWidth - 1 - v11;
-    if (v12 >= 0 && v12 < gHexGridWidth && v10 >= 0 && v10 < gHexGridHeight) {
-        return gHexGridWidth * v10 + v12;
+    int xPos = gHexGridWidth - 1 - xTile;
+    if (ignoreBounds
+        || (xPos >= 0 && xPos < gHexGridWidth && yTile >= 0 && yTile < gHexGridHeight)) {
+        return (gHexGridWidth * yTile) + xPos;
+    } else {
+        return -1;
     }
-
-    if (ignoreBounds) {
-        return gHexGridWidth * v10 + v12;
-    }
-
-    return -1;
 }
 
 // tile_distance
