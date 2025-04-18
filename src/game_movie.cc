@@ -23,9 +23,6 @@
 
 namespace fallout {
 
-#define GAME_MOVIE_WINDOW_WIDTH 640
-#define GAME_MOVIE_WINDOW_HEIGHT 480
-
 static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath);
 
 // 0x50352A
@@ -170,18 +167,29 @@ int gameMoviePlay(int movie, int flags)
         gGameMovieFaded = true;
     }
 
-    int gameMovieWindowX = (screenGetWidth() - GAME_MOVIE_WINDOW_WIDTH) / 2;
-    int gameMovieWindowY = (screenGetHeight() - GAME_MOVIE_WINDOW_HEIGHT) / 2;
-    int win = windowCreate(gameMovieWindowX,
-        gameMovieWindowY,
-        GAME_MOVIE_WINDOW_WIDTH,
-        GAME_MOVIE_WINDOW_HEIGHT,
+    // Create a full-screen movie window using current screen resolution
+    // Changed this to fix subtitles with stretched movies in movie.cc
+    int screenWidth = screenGetWidth();
+    int screenHeight = screenGetHeight();
+
+    int movieWindowX = 0;
+    int movieWindowY = 0;
+    int movieWindowWidth = screenWidth;
+    int movieWindowHeight = screenHeight;
+
+    int win = windowCreate(
+        movieWindowX,
+        movieWindowY,
+        movieWindowWidth,
+        movieWindowHeight,
         0,
         WINDOW_MODAL);
+
     if (win == -1) {
         gGameMovieIsPlaying = false;
         return -1;
     }
+
 
     if ((flags & GAME_MOVIE_STOP_MUSIC) != 0) {
         backgroundSoundDelete();
