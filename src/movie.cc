@@ -628,16 +628,28 @@ static void movieRenderSubtitles()
         return;
     }
 
-    int v1 = fontGetLineHeight();
-    int v2 = (480 - _lastMovieH - _lastMovieY - v1) / 2 + _lastMovieH + _lastMovieY;
-
-    if (_subtitleH + v2 > _windowGetYres()) {
-        _subtitleH = _windowGetYres() - v2;
-    }
-
     int frame;
     int dropped;
     MVE_rmFrameCounts(&frame, &dropped);
+
+    // Height of subtitle text
+    int lineHeight = fontGetLineHeight();
+
+    // Total subtitle box height
+    int subtitleHeight = _subtitleH;
+
+    // Figure out Y position: place subtitle box centered in space below the video
+    int subtitleY = _lastMovieY + _lastMovieH + ((screenGetHeight() - (_lastMovieY + _lastMovieH)) - subtitleHeight) / 2;
+
+    // If the subtitle box would go off-screen, nudge it up
+    if (subtitleY + subtitleHeight > screenGetHeight()) {
+        subtitleY = screenGetHeight() - subtitleHeight;
+    }
+
+    // Don't allow subtitles to overlap the video itself
+    if (subtitleY < _lastMovieY + _lastMovieH) {
+        subtitleY = _lastMovieY + _lastMovieH;
+    }
 
     while (gMovieSubtitleHead != nullptr) {
         if (frame < gMovieSubtitleHead->num) {
@@ -646,34 +658,47 @@ static void movieRenderSubtitles()
 
         MovieSubtitleListNode* next = gMovieSubtitleHead->next;
 
-        windowFill(gMovieWindow, 0, v2, _subtitleW, _subtitleH, 0);
+        // Clear the subtitle region before drawing
+        windowFill(gMovieWindow, 0, subtitleY, _subtitleW, subtitleHeight, 0);
 
-        int oldFont;
+        int previousFont;
         if (gMovieSubtitlesFont != -1) {
-            oldFont = fontGetCurrent();
+            previousFont = fontGetCurrent();
             fontSetCurrent(gMovieSubtitlesFont);
         }
 
         int colorIndex = (gMovieSubtitlesColorR << 10) | (gMovieSubtitlesColorG << 5) | gMovieSubtitlesColorB;
-        _windowWrapLine(gMovieWindow, gMovieSubtitleHead->text, _subtitleW, _subtitleH, 0, v2, _colorTable[colorIndex] | 0x2000000, TEXT_ALIGNMENT_CENTER);
 
-        Rect rect;
-        rect.right = _subtitleW;
-        rect.top = v2;
-        rect.bottom = v2 + _subtitleH;
-        rect.left = 0;
-        windowRefreshRect(gMovieWindow, &rect);
+        // Render subtitle text, centered within the subtitle box
+        _windowWrapLine(
+            gMovieWindow,
+            gMovieSubtitleHead->text,
+            _subtitleW,
+            subtitleHeight,
+            0,
+            subtitleY,
+            _colorTable[colorIndex] | 0x2000000,
+            TEXT_ALIGNMENT_CENTER);
 
-        internal_free_safe(gMovieSubtitleHead->text, __FILE__, __LINE__); // "..\\int\\MOVIE.C", 1108
-        internal_free_safe(gMovieSubtitleHead, __FILE__, __LINE__); // "..\\int\\MOVIE.C", 1109
+        // Refresh the window region to make subtitle visible
+        Rect subtitleRect;
+        subtitleRect.left = 0;
+        subtitleRect.top = subtitleY;
+        subtitleRect.right = _subtitleW;
+        subtitleRect.bottom = subtitleY + subtitleHeight;
+        windowRefreshRect(gMovieWindow, &subtitleRect);
 
+        // Clean up used subtitle
+        internal_free_safe(gMovieSubtitleHead->text, __FILE__, __LINE__);
+        internal_free_safe(gMovieSubtitleHead, __FILE__, __LINE__);
         gMovieSubtitleHead = next;
 
         if (gMovieSubtitlesFont != -1) {
-            fontSetCurrent(oldFont);
+            fontSetCurrent(previousFont);
         }
     }
 }
+
 
 // 0x487710
 static int _movieStart(int win, char* filePath)
