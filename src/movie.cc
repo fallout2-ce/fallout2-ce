@@ -224,22 +224,22 @@ static void movieDirectImpl(
     int sizeMode = movieGetSizeFlag(); // Gets scaling mode (original, aspect, fullscreen) from f2_res.ini
     bool subtitlesEnabled = settings.preferences.subtitles;
 
-    // Adds bottom margin if subtitles are enabled and playing in fullscreen mode
-    float subtitleMarginRatio =
-        (_movieHasSubtitles && sizeMode == MOVIE_SIZE_FULLSCREEN && subtitlesEnabled)
-            ? 0.15f : 0.0f;
+    // Figure out if we should reserve vertical margin for subtitles
+    float subtitleMarginRatio = (_movieHasSubtitles && subtitlesEnabled) ? 0.15f : 0.0f;
 
     // Adjust final size based on scaling mode
     if (sizeMode == MOVIE_SIZE_ASPECT) {
-        // Keep aspect ratio
-        float scale = fminf((float)windowWidth / srcWidth, (float)windowHeight / srcHeight);
+        // Reserve margin for subtitles even in aspect mode (margin may be zero)
+        float availableHeight = (float)windowHeight * (1.0f - subtitleMarginRatio);
+        float scale = fminf((float)windowWidth / srcWidth, availableHeight / srcHeight);
         finalWidth = (int)(srcWidth * scale);
         finalHeight = (int)(srcHeight * scale);
     } else if (sizeMode == MOVIE_SIZE_FULLSCREEN) {
-        // Fullscreen, with optional vertical margin for subtitles
+        // Fullscreen with margin for subtitles (margin may be zero)
         finalWidth = windowWidth;
         finalHeight = (int)(windowHeight * (1.0f - subtitleMarginRatio));
     }
+
 
     // buffer for rescaled image
     unsigned char* scaledFrame = (unsigned char*)internal_malloc_safe(finalWidth * finalHeight, __FILE__, __LINE__);
