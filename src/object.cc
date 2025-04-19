@@ -23,6 +23,7 @@
 #include "proto_instance.h"
 #include "scripts.h"
 #include "settings.h"
+#include "sfall_config.h"
 #include "svga.h"
 #include "text_object.h"
 #include "tile.h"
@@ -2062,6 +2063,21 @@ bool _obj_portal_is_walk_thru(Object* obj)
     Proto* proto;
     if (protoGetProto(obj->pid, &proto) == -1) {
         return false;
+    }
+
+    int autoOpenDoors = 0;
+    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_AUTO_OPEN_DOORS, &autoOpenDoors);
+
+    if (autoOpenDoors) {
+        if (!isInCombat()) {
+            if (proto->scenery.type == 0) // Door
+            {
+                // Unlocked
+                if (proto->scenery.data.door.openFlags == 0) {
+                    return true;
+                }
+            }
+        }
     }
 
     return (proto->scenery.data.generic.field_0 & 0x04) != 0;
