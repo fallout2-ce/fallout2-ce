@@ -395,8 +395,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
                 ENDGAME_ENDING_WINDOW_HEIGHT,
                 width,
                 croppedFrame,
-                ENDGAME_ENDING_WINDOW_WIDTH
-            );
+                ENDGAME_ENDING_WINDOW_WIDTH);
 
             if (size == 2 || size == 1) {
                 // Stretch/crop based on screen size settings.
@@ -427,8 +426,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
                         stretchedBuffer,
                         scaledWidth + 1,
                         scaledHeight + 1,
-                        scaledWidth
-                    );
+                        scaledWidth);
 
                     // Center the cropped part.
                     int cropX = (scaledWidth - ENDGAME_ENDING_WINDOW_WIDTH) / 2;
@@ -440,8 +438,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
                         ENDGAME_ENDING_WINDOW_HEIGHT,
                         scaledWidth,
                         gEndgameEndingSlideshowWindowBuffer,
-                        ENDGAME_ENDING_WINDOW_WIDTH
-                    );
+                        ENDGAME_ENDING_WINDOW_WIDTH);
 
                     if (subtitlesLoaded) {
                         endgameEndingRefreshSubtitles();
@@ -454,8 +451,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
                         ENDGAME_ENDING_WINDOW_HEIGHT,
                         ENDGAME_ENDING_WINDOW_WIDTH,
                         stretchedBuffer + cropY * scaledWidth + cropX,
-                        scaledWidth
-                    );
+                        scaledWidth);
 
                     int destX = (screenWidth - scaledWidth) / 2;
                     int destY = (screenHeight - scaledHeight) / 2;
@@ -469,8 +465,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
                         scaledWidth,
                         scaledHeight,
                         destX,
-                        destY
-                    );
+                        destY);
 
                     internal_free(stretchedBuffer);
                 }
@@ -547,7 +542,6 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
     }
 }
 
-
 // 0x440004
 static void endgameEndingRenderStaticScene(int backgroundFid, const char* narratorFileName)
 {
@@ -611,8 +605,7 @@ static void endgameEndingRenderStaticScene(int backgroundFid, const char* narrat
                     stretchedBackground,
                     finalWidth + 1,
                     finalHeight + 1,
-                    finalWidth
-                );
+                    finalWidth);
 
                 _scr_blit(stretchedBackground, finalWidth, finalHeight, 0, 0, finalWidth, finalHeight, offsetX, offsetY);
                 paletteFadeTo(_cmap);
@@ -621,7 +614,7 @@ static void endgameEndingRenderStaticScene(int backgroundFid, const char* narrat
         } else {
             // Blit background without scaling.
             _scr_blit(backgroundData, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, 0, 0,
-                      ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, offsetX, offsetY);
+                ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, offsetX, offsetY);
             paletteFadeTo(_cmap);
         }
 
@@ -657,8 +650,7 @@ static void endgameEndingRenderStaticScene(int backgroundFid, const char* narrat
                         stretchedBackground,
                         finalWidth + 1,
                         finalHeight + 1,
-                        finalWidth
-                    );
+                        finalWidth);
 
                     int cropX = (finalWidth - ENDGAME_ENDING_WINDOW_WIDTH) / 2;
                     int cropY = (finalHeight - ENDGAME_ENDING_WINDOW_HEIGHT) / 2;
@@ -669,8 +661,7 @@ static void endgameEndingRenderStaticScene(int backgroundFid, const char* narrat
                         ENDGAME_ENDING_WINDOW_HEIGHT,
                         finalWidth,
                         gEndgameEndingSlideshowWindowBuffer,
-                        ENDGAME_ENDING_WINDOW_WIDTH
-                    );
+                        ENDGAME_ENDING_WINDOW_WIDTH);
 
                     internal_free(stretchedBackground);
 
@@ -685,8 +676,7 @@ static void endgameEndingRenderStaticScene(int backgroundFid, const char* narrat
                         ENDGAME_ENDING_WINDOW_WIDTH,
                         ENDGAME_ENDING_WINDOW_HEIGHT,
                         offsetX + cropX,
-                        offsetY + cropY
-                    );
+                        offsetY + cropY);
                 }
             } else {
                 // Redraw background for subtitles without scaling.
