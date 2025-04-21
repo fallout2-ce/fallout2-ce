@@ -167,7 +167,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int a4
     // SFALL: Allow to skip splash screen
     int skipOpeningMovies = 0;
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_SKIP_OPENING_MOVIES_KEY, &skipOpeningMovies);
-    
+
     // load preferences before Splash screen to get proper brightness
     if (_init_options_menu() != 0) {
         debugPrint("Failed on init_options_menu\n");
@@ -1579,7 +1579,7 @@ static void showSplash()
             for (int i = 0; i < scaledHeight; i++) {
                 scaled[i * scaledWidth + (scaledWidth - 1)] = scaled[i * scaledWidth + (scaledWidth - 2)];
             }
-            
+
             // Fix bottom row (copy last good pixel).
             for (int i = 0; i < scaledWidth; i++) {
                 scaled[(scaledHeight - 1) * scaledWidth + i] = scaled[(scaledHeight - 2) * scaledWidth + i];
@@ -1605,7 +1605,6 @@ static void showSplash()
     // Save index for next splash image
     settings.system.splash = splashIndex + 1;
 }
-
 
 int gameShowDeathDialog(const char* message)
 {
