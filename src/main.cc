@@ -23,6 +23,7 @@
 #include "mainmenu.h"
 #include "map.h"
 #include "mouse.h"
+#include "movie.h"
 #include "object.h"
 #include "palette.h"
 #include "platform_compat.h"
@@ -40,25 +41,24 @@
 #include "window_manager_private.h"
 #include "word_wrap.h"
 #include "worldmap.h"
-#include "movie.h"
-
 
 namespace fallout {
 
 #define DEATH_WINDOW_WIDTH 640
 #define DEATH_WINDOW_HEIGHT 480
 
-static bool falloutInit(int argc, char** argv);
+static bool falloutInit(int argc, char **argv);
 static int main_reset_system();
 static void main_exit_system();
-static int _main_load_new(char* fname);
+static int _main_load_new(char *fname);
 static int main_loadgame_new();
 static void main_unload_new();
 static void mainLoop();
 static void showDeath();
 static void _main_death_voiceover_callback();
-static int _mainDeathGrabTextFile(const char* fileName, char* dest);
-static int _mainDeathWordWrap(char* text, int width, short* beginnings, short* count);
+static int _mainDeathGrabTextFile(const char *fileName, char *dest);
+static int _mainDeathWordWrap(char *text, int width, short *beginnings,
+                              short *count);
 
 // 0x5194C8
 static char _mainMap[] = "artemple.map";
@@ -73,8 +73,7 @@ static bool _main_show_death_scene = false;
 static bool _main_death_voiceover_done;
 
 // 0x48099C
-int falloutMain(int argc, char** argv)
-{
+int falloutMain(int argc, char **argv) {
     if (!autorunMutexCreate()) {
         return 1;
     }
@@ -82,13 +81,14 @@ int falloutMain(int argc, char** argv)
     if (!falloutInit(argc, argv)) {
         return 1;
     }
-    
+
     // added for movie stretching
     readMovieSettings();
 
     // SFALL: Allow to skip intro movies
     int skipOpeningMovies;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_SKIP_OPENING_MOVIES_KEY, &skipOpeningMovies);
+    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY,
+                 SFALL_CONFIG_SKIP_OPENING_MOVIES_KEY, &skipOpeningMovies);
     if (skipOpeningMovies < 1) {
         gameMoviePlay(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
         gameMoviePlay(MOVIE_INTRO, 0);
@@ -120,14 +120,17 @@ int falloutMain(int argc, char** argv)
                     randomSeedPrerandom(-1);
 
                     // SFALL: Override starting map.
-                    char* mapName = nullptr;
-                    if (configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_STARTING_MAP_KEY, &mapName)) {
+                    char *mapName = nullptr;
+                    if (configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY,
+                                        SFALL_CONFIG_STARTING_MAP_KEY,
+                                        &mapName)) {
                         if (*mapName == '\0') {
                             mapName = nullptr;
                         }
                     }
 
-                    char* mapNameCopy = compat_strdup(mapName != nullptr ? mapName : _mainMap);
+                    char *mapNameCopy =
+                        compat_strdup(mapName != nullptr ? mapName : _mainMap);
                     _main_load_new(mapNameCopy);
                     free(mapNameCopy);
 
@@ -154,7 +157,9 @@ int falloutMain(int argc, char** argv)
                 break;
             case MAIN_MENU_LOAD_GAME:
                 if (1) {
-                    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+                    int win = windowCreate(0, 0, screenGetWidth(),
+                                           screenGetHeight(), _colorTable[0],
+                                           WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
                     mainMenuWindowHide(true);
                     mainMenuWindowFree();
 
@@ -233,8 +238,7 @@ int falloutMain(int argc, char** argv)
 }
 
 // 0x480CC0
-static bool falloutInit(int argc, char** argv)
-{
+static bool falloutInit(int argc, char **argv) {
     if (gameInitWithOptions("FALLOUT II", false, 0, 0, argc, argv) == -1) {
         return false;
     }
@@ -245,8 +249,7 @@ static bool falloutInit(int argc, char** argv)
 // NOTE: Inlined.
 //
 // 0x480D0C
-static int main_reset_system()
-{
+static int main_reset_system() {
     gameReset();
 
     return 1;
@@ -255,23 +258,22 @@ static int main_reset_system()
 // NOTE: Inlined.
 //
 // 0x480D18
-static void main_exit_system()
-{
+static void main_exit_system() {
     backgroundSoundDelete();
 
     gameExit();
 }
 
 // 0x480D4C
-static int _main_load_new(char* mapFileName)
-{
+static int _main_load_new(char *mapFileName) {
     _game_user_wants_to_quit = 0;
     _main_show_death_scene = 0;
     gDude->flags &= ~OBJECT_FLAT;
     objectShow(gDude, nullptr);
     mouseHideCursor();
 
-    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(),
+                           _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     windowRefresh(win);
 
     colorPaletteLoad("color.pal");
@@ -291,8 +293,7 @@ static int _main_load_new(char* mapFileName)
 // NOTE: Inlined.
 //
 // 0x480DF8
-static int main_loadgame_new()
-{
+static int main_loadgame_new() {
     _game_user_wants_to_quit = 0;
     _main_show_death_scene = 0;
 
@@ -310,15 +311,13 @@ static int main_loadgame_new()
 }
 
 // 0x480E34
-static void main_unload_new()
-{
+static void main_unload_new() {
     objectHide(gDude, nullptr);
     _map_exit();
 }
 
 // 0x480E48
-static void mainLoop()
-{
+static void mainLoop() {
     bool cursorWasHidden = cursorIsHidden();
     if (cursorWasHidden) {
         mouseShowCursor();
@@ -346,7 +345,8 @@ static void mainLoop()
             _main_game_paused = 0;
         }
 
-        if ((gDude->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
+        if ((gDude->data.critter.combat.results &
+             (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
             endgameSetupDeathEnding(ENDGAME_DEATH_ENDING_REASON_DEATH);
             _main_show_death_scene = 1;
             _game_user_wants_to_quit = 2;
@@ -379,7 +379,8 @@ static void showDeath() {
     Config config;
     if (configInit(&config)) {
         if (configRead(&config, "f2_res.ini", false)) {
-            configGetInt(&config, "STATIC_SCREENS", "DEATH_SCRN_SIZE", &deathScreenStretchMode);
+            configGetInt(&config, "STATIC_SCREENS", "DEATH_SCRN_SIZE",
+                         &deathScreenStretchMode);
         }
         configFree(&config);
     }
@@ -396,16 +397,17 @@ static void showDeath() {
     }
 
     // Get pointer to the death screen pixel data.
-    unsigned char* deathData = deathFrmImage.getData();
+    unsigned char *deathData = deathFrmImage.getData();
     int deathScreenWidth = DEATH_WINDOW_WIDTH;
     int deathScreenHeight = DEATH_WINDOW_HEIGHT;
 
-    unsigned char* finalBuffer = deathData;
+    unsigned char *finalBuffer = deathData;
     int finalWidth = deathScreenWidth;
     int finalHeight = deathScreenHeight;
 
     // Handle optional stretching if needed.
-    if (deathScreenStretchMode != 0 || screenWidth < deathScreenWidth || screenHeight < deathScreenHeight) {
+    if (deathScreenStretchMode != 0 || screenWidth < deathScreenWidth ||
+        screenHeight < deathScreenHeight) {
         int scaledWidth;
         int scaledHeight;
 
@@ -415,29 +417,42 @@ static void showDeath() {
             scaledHeight = screenHeight;
         } else {
             // Scale while maintaining aspect ratio for setting 1.
-            if (screenHeight * deathScreenWidth >= screenWidth * deathScreenHeight) {
+            if (screenHeight * deathScreenWidth >=
+                screenWidth * deathScreenHeight) {
                 scaledWidth = screenWidth;
-                scaledHeight = (screenWidth * deathScreenHeight + (deathScreenWidth)) / deathScreenWidth;
+                scaledHeight =
+                    (screenWidth * deathScreenHeight + (deathScreenWidth)) /
+                    deathScreenWidth;
             } else {
-                scaledWidth = (screenHeight * deathScreenWidth + (deathScreenHeight)) / deathScreenHeight;
+                scaledWidth =
+                    (screenHeight * deathScreenWidth + (deathScreenHeight)) /
+                    deathScreenHeight;
                 scaledHeight = screenHeight;
             }
         }
 
         // Allocate memory for the scaled image.
-        unsigned char* scaled = reinterpret_cast<unsigned char*>(SDL_malloc((scaledWidth + 1) * (scaledHeight + 1)));
+        unsigned char *scaled = reinterpret_cast<unsigned char *>(
+            SDL_malloc((scaledWidth + 1) * (scaledHeight + 1)));
         if (scaled != nullptr) {
             // Perform stretching.
-            blitBufferToBufferStretch(deathData, deathScreenWidth, deathScreenHeight, deathScreenWidth, scaled, scaledWidth, scaledHeight, scaledWidth);
-            
-            // Fix rightmost edge artifacts by copying the last good pixel horizontally.
+            blitBufferToBufferStretch(deathData, deathScreenWidth,
+                                      deathScreenHeight, deathScreenWidth,
+                                      scaled, scaledWidth, scaledHeight,
+                                      scaledWidth);
+
+            // Fix rightmost edge artifacts by copying the last good pixel
+            // horizontally.
             for (int y = 0; y < scaledHeight; y++) {
-                scaled[y * scaledWidth + (scaledWidth - 1)] = scaled[y * scaledWidth + (scaledWidth - 2)];
+                scaled[y * scaledWidth + (scaledWidth - 1)] =
+                    scaled[y * scaledWidth + (scaledWidth - 2)];
             }
 
-            // Fix bottom row artifacts by copying the last good pixel vertically.
+            // Fix bottom row artifacts by copying the last good pixel
+            // vertically.
             for (int x = 0; x < scaledWidth; x++) {
-                scaled[(scaledHeight - 1) * scaledWidth + x] = scaled[(scaledHeight - 2) * scaledWidth + x];
+                scaled[(scaledHeight - 1) * scaledWidth + x] =
+                    scaled[(scaledHeight - 2) * scaledWidth + x];
             }
 
             finalBuffer = scaled;
@@ -449,11 +464,12 @@ static void showDeath() {
     // Center the death window on screen.
     int windowX = (screenWidth - finalWidth) / 2;
     int windowY = (screenHeight - finalHeight) / 2;
-    int win = windowCreate(windowX, windowY, finalWidth, finalHeight, 0, WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(windowX, windowY, finalWidth, finalHeight, 0,
+                           WINDOW_MOVE_ON_TOP);
 
     if (win != -1) {
         do {
-            unsigned char* windowBuffer = windowGetBuffer(win);
+            unsigned char *windowBuffer = windowGetBuffer(win);
             if (windowBuffer == nullptr) {
                 break;
             }
@@ -469,11 +485,12 @@ static void showDeath() {
             inputEventQueueReset();
 
             // Draw death image to window.
-            blitBufferToBuffer(finalBuffer, finalWidth, finalHeight, finalWidth, windowBuffer, finalWidth);
+            blitBufferToBuffer(finalBuffer, finalWidth, finalHeight, finalWidth,
+                               windowBuffer, finalWidth);
             deathFrmImage.unlock();
 
             // Get death ending filename.
-            const char* deathFileName = endgameDeathEndingGetFileName();
+            const char *deathFileName = endgameDeathEndingGetFileName();
 
             // If subtitles are enabled, load and display them.
             if (settings.preferences.subtitles) {
@@ -485,13 +502,15 @@ static void showDeath() {
                     short lineCount;
 
                     // Set subtitle box width based on final screen width.
-                    int subtitleWidth = (finalWidth >= 640) ? 560 : finalWidth - 80;
+                    int subtitleWidth =
+                        (finalWidth >= 640) ? 560 : finalWidth - 80;
                     if (subtitleWidth < 100) {
                         subtitleWidth = finalWidth - 20;
                     }
 
                     // Word wrap subtitle text.
-                    if (_mainDeathWordWrap(text, subtitleWidth, lineStartOffsets, &lineCount) == 0) {
+                    if (_mainDeathWordWrap(text, subtitleWidth,
+                                           lineStartOffsets, &lineCount) == 0) {
                         int lineHeight = fontGetLineHeight();
                         int subtitleHeight = lineHeight * lineCount + 2;
 
@@ -499,13 +518,18 @@ static void showDeath() {
                         int subtitleX = (finalWidth - subtitleWidth) / 2;
                         int subtitleY = finalHeight - subtitleHeight - 8;
 
-                        unsigned char* subtitleBuffer = windowBuffer + finalWidth * subtitleY + subtitleX;
+                        unsigned char *subtitleBuffer =
+                            windowBuffer + finalWidth * subtitleY + subtitleX;
 
-                        bufferFill(subtitleBuffer - finalWidth * 1, subtitleWidth, subtitleHeight, finalWidth, 0);
+                        bufferFill(subtitleBuffer - finalWidth * 1,
+                                   subtitleWidth, subtitleHeight, finalWidth,
+                                   0);
 
                         // Draw each subtitle line.
                         for (int i = 0; i < lineCount; i++) {
-                            fontDrawText(subtitleBuffer, text + lineStartOffsets[i], subtitleWidth, finalWidth, _colorTable[32767]);
+                            fontDrawText(
+                                subtitleBuffer, text + lineStartOffsets[i],
+                                subtitleWidth, finalWidth, _colorTable[32767]);
                             subtitleBuffer += finalWidth * lineHeight;
                         }
                     }
@@ -539,7 +563,8 @@ static void showDeath() {
                 keyCode = inputGetInput();
                 renderPresent();
                 sharedFpsLimiter.throttle();
-            } while (keyCode == -1 && !_main_death_voiceover_done && getTicksSince(startTime) < delay);
+            } while (keyCode == -1 && !_main_death_voiceover_done &&
+                     getTicksSince(startTime) < delay);
 
             // Clean up voiceover.
             speechSetEndCallback(nullptr);
@@ -576,25 +601,24 @@ static void showDeath() {
 }
 
 // 0x4814A8
-static void _main_death_voiceover_callback()
-{
+static void _main_death_voiceover_callback() {
     _main_death_voiceover_done = true;
 }
 
 // Read endgame subtitle.
 //
 // 0x4814B4
-static int _mainDeathGrabTextFile(const char* fileName, char* dest)
-{
-    const char* p = strrchr(fileName, '\\');
+static int _mainDeathGrabTextFile(const char *fileName, char *dest) {
+    const char *p = strrchr(fileName, '\\');
     if (p == nullptr) {
         return -1;
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "text\\%s\\cuts\\%s%s", settings.system.language.c_str(), p + 1, ".TXT");
+    snprintf(path, sizeof(path), "text\\%s\\cuts\\%s%s",
+             settings.system.language.c_str(), p + 1, ".TXT");
 
-    File* stream = fileOpen(path, "rt");
+    File *stream = fileOpen(path, "rt");
     if (stream == nullptr) {
         return -1;
     }
@@ -620,10 +644,10 @@ static int _mainDeathGrabTextFile(const char* fileName, char* dest)
 }
 
 // 0x481598
-static int _mainDeathWordWrap(char* text, int width, short* beginnings, short* count)
-{
+static int _mainDeathWordWrap(char *text, int width, short *beginnings,
+                              short *count) {
     while (true) {
-        char* sep = strchr(text, ':');
+        char *sep = strchr(text, ':');
         if (sep == nullptr) {
             break;
         }
@@ -643,7 +667,7 @@ static int _mainDeathWordWrap(char* text, int width, short* beginnings, short* c
     *count -= 1;
 
     for (int index = 1; index < *count; index++) {
-        char* p = text + beginnings[index];
+        char *p = text + beginnings[index];
         while (p >= text && *p != ' ') {
             p--;
             beginnings[index]--;
