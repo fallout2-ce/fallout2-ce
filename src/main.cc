@@ -359,7 +359,8 @@ static void mainLoop()
 }
 
 // 0x48118C
-static void showDeath() {
+static void showDeath()
+{
     artCacheFlush();
     colorCycleDisable();
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
@@ -424,7 +425,7 @@ static void showDeath() {
         if (scaled != nullptr) {
             // Perform stretching.
             blitBufferToBufferStretch(deathData, deathScreenWidth, deathScreenHeight, deathScreenWidth, scaled, scaledWidth, scaledHeight, scaledWidth);
-            
+
             // Fix rightmost edge artifacts by copying the last good pixel horizontally.
             for (int y = 0; y < scaledHeight; y++) {
                 scaled[y * scaledWidth + (scaledWidth - 1)] = scaled[y * scaledWidth + (scaledWidth - 2)];
