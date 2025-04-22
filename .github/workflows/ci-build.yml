@@ -32,21 +32,38 @@ jobs:
         run: cppcheck --std=c++17 src/
 
   code-format:
-    name: Code format check
+    name: Code format check and apply
 
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write  # Allows the workflow to push changes back to the repository
+
     steps:
-      - name: Clone
+      - name: Clone the repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0  # Ensures the full history is fetched for pushing
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
 
       - name: Show clang-format version
+        run: clang-format --version
+
+      - name: Find and format files
         run: |
-          clang-format --version
+          find src -type f -name "*.cc" -o -name "*.h" | xargs clang-format -i
 
-      - name: clang-format
-        run: find src -type f -name \*.cc -o -name \*.h | xargs clang-format --dry-run --Werror
-
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Apply clang-format to submitted files" || echo "No changes to commit"
+          git push
+        
   android:
     name: Android
 
