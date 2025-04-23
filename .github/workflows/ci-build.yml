@@ -60,9 +60,10 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B format-fix || git checkout -b format-fix
           git add .
           git commit -m "Apply clang-format to submitted files" || echo "No changes to commit"
-          git push
+          git push origin format-fix
         
   android:
     name: Android
