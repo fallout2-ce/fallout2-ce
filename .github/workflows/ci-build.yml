@@ -61,7 +61,7 @@ jobs:
           git add .
           if ! git diff --cached --quiet; then
             git commit -m "Apply clang-format to submitted files"
-            git push origin HEAD
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
           else
             echo "No formatting changes to commit."
           fi
