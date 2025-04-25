@@ -70,6 +70,9 @@ jobs:
             git add .
             git commit -m "Apply clang-format to submitted files"
             git push origin HEAD:${{ github.head_ref }}
+            echo "Changes pushed. Exiting early to avoid workflow stuck."
+            exit 0
+
           else
             echo "No formatting changes to commit."
           fi
