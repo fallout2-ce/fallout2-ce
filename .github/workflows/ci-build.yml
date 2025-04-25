@@ -45,7 +45,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0  # Ensures full history and correct branch checkout
-          ref: ${{ github.ref }} # Uses the original branch:
+          ref: ${{ github.head_ref }} # Uses the original branch:
 
       - name: Show clang-format version
         run: |
