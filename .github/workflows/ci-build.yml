@@ -32,25 +32,57 @@ jobs:
         run: cppcheck --std=c++17 src/
 
   code-format:
-    name: Code format check
+    name: Code format check and apply
 
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Allows the workflow to push changes back to the repository
 
     steps:
       - name: Clone
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0  # Ensures full history and correct branch checkout
+          ref: ${{ github.ref }} # Uses the original branch:
 
       - name: Show clang-format version
         run: |
           clang-format --version
 
-      - name: clang-format
-        run: find src -type f -name \*.cc -o -name \*.h | xargs clang-format --dry-run --Werror
+      - name: Find and format files
+        run: find src -type f \( -name \*.cc -o -name \*.h \) | xargs clang-format -i
+
+      - name: Commit and push changes (if any)
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+                echo "This is a PR from forked repository. Open a PR from branch using this repository or fix the formatting manually."
+                exit 1
+              fi
+            fi
+
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "Apply clang-format to submitted files"
+            git push origin HEAD:${{ github.head_ref }}
+            echo "Changes pushed. Exiting early to avoid workflow stuck."
+            exit 0
+
+          else
+            echo "No formatting changes to commit."
+          fi
 
   android:
     name: Android
 
     runs-on: ubuntu-latest
+
+    needs: code-format
 
     steps:
       - name: Clone
@@ -100,6 +132,8 @@ jobs:
 
     runs-on: macos-14
 
+    needs: code-format
+
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -134,6 +168,8 @@ jobs:
     name: Linux (${{ matrix.arch }})
 
     runs-on: ubuntu-22.04
+
+    needs: code-format
 
     strategy:
       fail-fast: false
@@ -189,6 +225,8 @@ jobs:
 
     runs-on: ubuntu-22.04-arm
 
+    needs: code-format
+
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -229,6 +267,8 @@ jobs:
 
     runs-on: ubuntu-22.04-arm
 
+    needs: code-format
+
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -259,6 +299,8 @@ jobs:
     name: macOS
 
     runs-on: macos-14
+
+    needs: code-format
 
     steps:
       - name: Clone
@@ -294,6 +336,8 @@ jobs:
     name: Windows (${{ matrix.arch }})
 
     runs-on: windows-2019
+
+    needs: code-format
 
     strategy:
       fail-fast: false
@@ -333,6 +377,58 @@ jobs:
           path:  out/build/windows-${{ matrix.arch }}/RelWithDebInfo/fallout2-ce-${{ matrix.arch }}.exe
           retention-days: 7
 
+  build_webassembly_version:
+    name: Build webassembly version
+    runs-on: ubuntu-latest
+    container: emscripten/emsdk:4.0.4
+    needs: code-format
+    permissions: write-all
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Build fallout2 wasm module
+        run: |
+          git config --global --add safe.directory "*"
+          mkdir -p build
+          cd build
+          emcmake cmake ../ -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain/Emscripten.cmake -DCMAKE_BUILD_TYPE=Release && emmake make VERBOSE=1 -j 4
+          cd ..
+
+      - name: Add node
+        if: github.ref == 'refs/heads/main'
+        uses: actions/setup-node@v2
+        with:
+          node-version: '22'
+
+      - name: Checkout web interface
+        if: github.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          repository: ololoken/fallout2-ce-ems
+          ref: 46ac3be3da9d01ef204779073b1c1254fa037021
+          path: fallout2-ce-ems
+
+      - name: Build web interface
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd fallout2-ce-ems
+          npm install
+          cp ../build/fallout2-ce.js src/assets/fallout2ce
+          cp ../build/fallout2-ce.wasm src/assets/fallout2ce
+          sed -i 's/\/fallout2-ce-ems/\/fallout2-ce/' vite.config.ts
+          npm run build
+
+      - name: Install rsync (required for the next step)
+        run: |
+          apt-get update && apt-get install -y rsync
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          branch: gh-pages
+          folder: fallout2-ce-ems/dist
 
   release:
     name: Release Continuous build
