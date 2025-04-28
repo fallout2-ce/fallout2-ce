@@ -5641,7 +5641,8 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
         if (keyCode == KEY_RETURN) {
             if (value >= min && value <= max) {
                 if (inventoryWindowType != INVENTORY_WINDOW_TYPE_SET_TIMER || value % 10 == 0) {
-                    soundPlayFile("ib1p1xx1");
+                    // caused double click sound
+                    // soundPlayFile("ib1p1xx1");
                     break;
                 }
             }
