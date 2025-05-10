@@ -181,6 +181,9 @@ int statsSave(File* stream)
 // 0x4AEF48
 int critterGetStat(Object* critter, int stat)
 {
+    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+        return 0;
+    }
     int value;
     if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
         value = critterGetBaseStatWithTraitModifier(critter, stat);
