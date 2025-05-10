@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.18)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
@@ -305,12 +305,14 @@ if(WIN32)
         _CRT_NONSTDC_NO_WARNINGS
         NOMINMAX
         WIN32_LEAN_AND_MEAN
+        _STATIC_CPPLIB
     )
 endif()
 
 if(WIN32)
     target_link_libraries(${EXECUTABLE_NAME}
         winmm
+        libcpmt
     )
 endif()
 
