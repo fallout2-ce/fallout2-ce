@@ -172,9 +172,9 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int a4
         showSplash();
     }
 
-    #if (defined(__EMSCRIPTEN__) && !defined(NDEBUG))
-      // This is a web build with debug mode so print to the console
-    #else
+#if (defined(__EMSCRIPTEN__) && !defined(NDEBUG))
+    // This is a web build with debug mode so print to the console
+#else
     // CE: Handle debug mode (exactly as seen in `mapper2.exe`).
     const char* debugMode = settings.debug.mode.c_str();
     if (compat_stricmp(debugMode, "environment") == 0) {
@@ -188,7 +188,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int a4
     } else if (compat_stricmp(debugMode, "gnw") == 0) {
         _debug_register_func(_win_debug);
     }
-    #endif
+#endif
 
     interfaceFontsInit();
     fontManagerAdd(&gModernFontManager);
