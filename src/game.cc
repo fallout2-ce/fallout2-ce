@@ -173,7 +173,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int a4
     }
 
 #if (defined(__EMSCRIPTEN__) && !defined(NDEBUG))
-    // This is a web build with debug mode so print to the console
+    debugPrint("This is a web build with debug mode so print to the console\n");
 #else
     // CE: Handle debug mode (exactly as seen in `mapper2.exe`).
     const char* debugMode = settings.debug.mode.c_str();
