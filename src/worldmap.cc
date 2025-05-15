@@ -5227,8 +5227,9 @@ static int wmInterfaceRefresh()
             CitySizeDescription* citySizeDescription = &(wmSphereData[cityInfo->size]);
             int cityX = cityInfo->x - wmWorldOffsetX;
             int cityY = cityInfo->y - wmWorldOffsetY;
-            if (cityX >= 0 && cityX <= 472 - citySizeDescription->frmImage.getWidth()
-                && cityY >= 0 && cityY <= 465 - citySizeDescription->frmImage.getHeight()) {
+            // Modified check to draw circle if any part of it is visible on screen
+            if (cityX + citySizeDescription->frmImage.getWidth() > 0 && cityX < 472
+                && cityY + citySizeDescription->frmImage.getHeight() > 0 && cityY < 465) {
                 wmInterfaceDrawCircleOverlay(cityInfo, citySizeDescription, wmBkWinBuf, cityX, cityY);
             }
         }
@@ -5401,7 +5402,7 @@ static int wmInterfaceDrawCircleOverlay(CityInfo* city, CitySizeDescription* cit
 
     // CE: Slightly increase whitespace between cirle and city name.
     int nameY = y + citySizeDescription->frmImage.getHeight() + 3;
-    int maxY = 464 - fontGetLineHeight();
+    int maxY = 464;
     if (nameY < maxY) {
         MessageListItem messageListItem;
         char name[40];
