@@ -4254,7 +4254,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             break;
         }
 
-        if (keyCode == KEY_UPPERCASE_A) {
+        if (keyCode == KEY_UPPERCASE_A || keyCode == KEY_LOWERCASE_A) {
             if (!_gIsSteal) {
                 int maxCarryWeight = critterGetStat(looter, STAT_CARRY_WEIGHT);
                 int currentWeight = objectGetInventoryWeight(looter);
@@ -4725,7 +4725,7 @@ static int _barter_attempt_transaction(Object* dude, Object* offerTable, Object*
 
 static int _barter_get_quantity_moved_items(Object* item, int maxQuantity, bool fromPlayer, bool fromInventory, bool immediate)
 {
-    if (maxQuantity <= 1 || immediate) {
+    if (maxQuantity <= 1) {
         return maxQuantity;
     }
 
@@ -4739,8 +4739,16 @@ static int _barter_get_quantity_moved_items(Object* item, int maxQuantity, bool 
 
         if ((balance < 0 && fromInventory) || (balance > 0 && !fromInventory)) {
             suggestedValue = std::min(std::abs(balance), maxQuantity);
+            if (immediate) {
+                return suggestedValue;
+            }
         }
     }
+
+    if (immediate) {
+        return maxQuantity;
+    }
+
     return inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, maxQuantity, suggestedValue);
 }
 
@@ -5612,7 +5620,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
             }
             break;
 
-        } else if (keyCode == 5000 || keyCode == 'a') {
+        } else if (keyCode == 5000 || keyCode == KEY_LOWERCASE_A) {
             isTyping = false;
             value = max;
             _draw_amount(value, inventoryWindowType);
