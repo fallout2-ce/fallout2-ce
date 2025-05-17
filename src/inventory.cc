@@ -5611,7 +5611,8 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
                 soundPlayFile("iisxxxx1");
             }
             break;
-        } else if (keyCode == 5000) {
+
+        } else if (keyCode == 5000 || keyCode == 'a') {
             isTyping = false;
             value = max;
             _draw_amount(value, inventoryWindowType);
