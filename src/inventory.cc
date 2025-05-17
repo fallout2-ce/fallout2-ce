@@ -269,7 +269,7 @@ static void inventoryWindowOpenContextMenu(int eventCode, int inventoryWindowTyp
 static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting);
 static int _barter_compute_value(Object* dude, Object* npc);
 static int _barter_attempt_transaction(Object* dude, Object* offerTable, Object* npc, Object* barterTable);
-static int _barter_get_quantity_moved_items(Object* item, int maxQuantity, bool fromPlayer, bool fromInventory);
+static int _barter_get_quantity_moved_items(Object* item, int maxQuantity, bool fromPlayer, bool fromInventory, bool immediate);
 static void _barter_move_inventory(Object* item, int quantity, int slotIndex, int indexOffset, Object* npc, Object* sourceTable, bool fromDude);
 static void _barter_move_from_table_inventory(Object* item, int quantity, int slotIndex, Object* npc, Object* sourceTable, bool fromDude);
 static void inventoryWindowRenderInnerInventories(int win, Object* leftTable, Object* rightTable, int draggedSlotIndex);
@@ -4508,6 +4508,7 @@ int inventoryOpenStealing(Object* thief, Object* target)
 }
 
 // 0x474708
+// note: this is looting and stealing, not the inventory screen
 static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting)
 {
     bool needRefresh = true;
@@ -4565,11 +4566,9 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
 
     if (isPlanting) {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_LOOT_RIGHT_SCROLLER_X, INVENTORY_LOOT_RIGHT_SCROLLER_Y, INVENTORY_LOOT_RIGHT_SCROLLER_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_LOOT_RIGHT_SCROLLER_Y)) {
-            int quantityToMove;
-            if (quantity > 1) {
+            int quantityToMove = quantity;
+            if (quantity > 1 && !immediate) {
                 quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
-            } else {
-                quantityToMove = 1;
             }
 
             if (quantityToMove != -1) {
@@ -4594,11 +4593,9 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
         }
     } else {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_LOOT_LEFT_SCROLLER_X, INVENTORY_LOOT_LEFT_SCROLLER_Y, INVENTORY_LOOT_LEFT_SCROLLER_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_LOOT_LEFT_SCROLLER_Y)) {
-            int quantityToMove;
-            if (quantity > 1) {
+            int quantityToMove = quantity;
+            if (quantity > 1 && !immediate) {
                 quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
-            } else {
-                quantityToMove = 1;
             }
 
             if (quantityToMove != -1) {
@@ -4726,9 +4723,9 @@ static int _barter_attempt_transaction(Object* dude, Object* offerTable, Object*
     return 0;
 }
 
-static int _barter_get_quantity_moved_items(Object* item, int maxQuantity, bool fromPlayer, bool fromInventory)
+static int _barter_get_quantity_moved_items(Object* item, int maxQuantity, bool fromPlayer, bool fromInventory, bool immediate)
 {
-    if (maxQuantity <= 1) {
+    if (maxQuantity <= 1 || immediate) {
         return maxQuantity;
     }
 
@@ -4819,7 +4816,7 @@ static void _barter_move_inventory(Object* item, int quantity, int slotIndex, in
 
     if (fromDude) {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_X, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_Y)) {
-            int quantityToMove = _barter_get_quantity_moved_items(item, quantity, true, true);
+            int quantityToMove =  _barter_get_quantity_moved_items(item, quantity, true, true, immediate);
             if (quantityToMove != -1) {
                 if (itemMoveForce(_inven_dude, sourceTable, item, quantityToMove) == -1) {
                     // There is no space left for that item.
@@ -4832,7 +4829,7 @@ static void _barter_move_inventory(Object* item, int quantity, int slotIndex, in
         }
     } else {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_TRADE_INNER_RIGHT_SCROLLER_TRACKING_X, INVENTORY_TRADE_INNER_RIGHT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_INNER_RIGHT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_RIGHT_SCROLLER_TRACKING_Y)) {
-            int quantityToMove = _barter_get_quantity_moved_items(item, quantity, false, true);
+            int quantityToMove = _barter_get_quantity_moved_items(item, quantity, false, true, immediate);
             if (quantityToMove != -1) {
                 if (itemMoveForce(npc, sourceTable, item, quantityToMove) == -1) {
                     // You cannot pick that up. You are at your maximum weight capacity.
@@ -4885,7 +4882,7 @@ static void _barter_move_from_table_inventory(Object* item, int quantity, int sl
 
     if (fromDude) {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_X, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_Y)) {
-            int quantityToMove = _barter_get_quantity_moved_items(item, quantity, true, false);
+            int quantityToMove = _barter_get_quantity_moved_items(item, quantity, true, false, immediate);
             if (quantityToMove != -1) {
                 if (itemMoveForce(sourceTable, _inven_dude, item, quantityToMove) == -1) {
                     // There is no space left for that item.
@@ -4898,7 +4895,7 @@ static void _barter_move_from_table_inventory(Object* item, int quantity, int sl
         }
     } else {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_TRADE_RIGHT_SCROLLER_TRACKING_X, INVENTORY_TRADE_RIGHT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_RIGHT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_RIGHT_SCROLLER_TRACKING_Y)) {
-            int quantityToMove = _barter_get_quantity_moved_items(item, quantity, false, false);
+            int quantityToMove = _barter_get_quantity_moved_items(item, quantity, false, false, immediate);
             if (quantityToMove != -1) {
                 if (itemMoveForce(sourceTable, npc, item, quantityToMove) == -1) {
                     // You cannot pick that up. You are at your maximum weight capacity.
