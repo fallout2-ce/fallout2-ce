@@ -137,12 +137,9 @@ In time this stuff will receive in-game interface, right now you have to do it m
 
 *Note*: use of the IFACE_BAR settings requires the f2_res.dat file, which contains graphical assets. Various versions are available, but one compatible with the above f2_res.ini be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/mainmenu/files/f2_res.dat)
 
-The third configuration file is `ddraw.ini` (part of Sfall). There are dozens of options that adjust or override engine behaviour and gameplay mechanics. This file is intended for modders and advanced users. Currently only a small subset of these settings are actually implemented.  For high res configs, the following is recommended:
-```[Main]
-HiResMode=1
-```
-For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/mainmenu/files/ddraw.ini)
+The third configuration file is `ddraw.ini` (part of Sfall). There are dozens of options that adjust or override engine behaviour and gameplay mechanics. This file is intended for modders and advanced users.
 
+For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/main/files/ddraw.ini)
 
 ## Contributing
 

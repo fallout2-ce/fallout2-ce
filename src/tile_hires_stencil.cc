@@ -63,7 +63,7 @@ static_assert(screen_view_width % (2 * square_width) == 0);
 // which is covered by squares but theoretically could be seen in the original game
 static_assert(screen_view_height % (2 * square_height) == 20);
 
-static bool gIsTileHiresStencilEnabled = false;
+static bool gIsTileHiresStencilEnabled = true;
 
 static void clean_cache()
 {
