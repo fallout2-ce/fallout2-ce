@@ -143,6 +143,16 @@ HiResMode=1
 ```
 For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/mainmenu/files/ddraw.ini)
 
+## Quality of life benefits over vanilla Fallout
+
+* High resolution support
+* Increased pathfinding nodes 5x for more accurate pathfinding
+* Ctrl-click to quickly move items when bartering, looting, or stealing
+* _a_ to select "all" when selecting item quantity
+* _a_ to `Take All` when looting
+* When bartering, caps default to the right amount to balance the trade (if possible)
+* Music continues playing between maps (requires config)
+* Auto open doors (requires config)
 
 ## Contributing
 
