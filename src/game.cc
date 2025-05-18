@@ -1,4 +1,5 @@
 #include "game.h"
+#include "platform/git_version.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -52,6 +53,7 @@
 #include "settings.h"
 #include "sfall_arrays.h"
 #include "sfall_config.h"
+#include "sfall_ext.h"
 #include "sfall_global_scripts.h"
 #include "sfall_global_vars.h"
 #include "sfall_ini.h"
@@ -88,7 +90,8 @@ static void showSplash();
 static char _aGame_0[] = "game\\";
 
 // 0x5020B8
-static char _aDec11199816543[] = VERSION_BUILD_TIME;
+static char _aBuildDate[] = _BUILD_DATE;
+static char _aBuildHash[] = _BUILD_HASH;
 
 // 0x5186B4
 static bool gGameUiDisabled = false;
@@ -345,6 +348,13 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int a4
     }
 
     debugPrint(">scr_disable\t");
+
+        if (_init_options_menu() != 0) {
+        debugPrint("Failed on init_options_menu\n");
+        return -1;
+    }
+
+    debugPrint(">init_options_menu\n");
 
     if (endgameDeathEndingInit() != 0) {
         debugPrint("Failed on endgameDeathEndingInit");
@@ -927,7 +937,8 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
             char version[VERSION_MAX];
             versionGetVersion(version, sizeof(version));
             displayMonitorAddMessage(version);
-            displayMonitorAddMessage(_aDec11199816543);
+            displayMonitorAddMessage(_aBuildHash);
+            displayMonitorAddMessage(_aBuildDate);
         }
         break;
     case KEY_ARROW_LEFT:
@@ -1446,6 +1457,8 @@ static int gameDbInit()
             dbOpen(filename, 0, nullptr, 1);
         }
     }
+
+    sfallLoadMods();
 
     if (compat_access("f2_res.dat", 0) == 0) {
         dbOpen("f2_res.dat", 0, nullptr, 1);
