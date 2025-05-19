@@ -534,7 +534,7 @@ static int wmTileGrabArt(int tileIdx);
 static int wmInterfaceRefresh();
 static void wmInterfaceRefreshDate(bool shouldRefreshWindow);
 static int wmMatchWorldPosToArea(int x, int y, int* areaIdxPtr);
-static int wmInterfaceDrawCircleOverlay(CityInfo* cityInfo, CitySizeDescription* citySizeInfo, unsigned char* buffer, int x, int y);
+static int wmInterfaceDrawCircleOverlay(CityInfo* cityInfo, CitySizeDescription* citySizeInfo, unsigned char* buffer, int x, int y, int destPitch);
 static void wmInterfaceDrawSubTileRectFogged(unsigned char* dest, int width, int height, int pitch);
 static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, int x, int y, int a6);
 static int wmDrawCursorStopped();
@@ -5221,18 +5221,50 @@ static int wmInterfaceRefresh()
     }
 
     // Render cities.
-    for (int index = 0; index < wmMaxAreaNum; index++) {
-        CityInfo* cityInfo = &(wmAreaInfoList[index]);
-        if (cityInfo->state != CITY_STATE_UNKNOWN) {
-            CitySizeDescription* citySizeDescription = &(wmSphereData[cityInfo->size]);
-            int cityX = cityInfo->x - wmWorldOffsetX;
-            int cityY = cityInfo->y - wmWorldOffsetY;
-            // Modified check to draw circle if any part of it is visible on screen
-            if (cityX + citySizeDescription->frmImage.getWidth() > 0 && cityX < 472
-                && cityY + citySizeDescription->frmImage.getHeight() > 0 && cityY < 465) {
-                wmInterfaceDrawCircleOverlay(cityInfo, citySizeDescription, wmBkWinBuf, cityX, cityY);
+    constexpr int PADDING = 100;
+
+    int viewportWidth = 472;
+    int viewportHeight = 465;
+
+    int bufferWidth = viewportWidth + PADDING * 2;
+    int bufferHeight = viewportHeight + PADDING * 2;
+
+    unsigned char* paddedBuf = (unsigned char*)malloc(bufferWidth * bufferHeight);
+    if (paddedBuf != nullptr) {
+        // Copy current wmBkWinBuf into center of paddedBuf
+        memset(paddedBuf, 0, bufferWidth * bufferHeight); // Clear padding
+
+        for (int y = 0; y < viewportHeight; y++) {
+            memcpy(
+                paddedBuf + bufferWidth * (y + PADDING) + PADDING,
+                wmBkWinBuf + y * WM_WINDOW_WIDTH,
+                viewportWidth);
+        }
+
+        // Draw cities onto padded buffer
+        for (int index = 0; index < wmMaxAreaNum; index++) {
+            CityInfo* cityInfo = &wmAreaInfoList[index];
+            if (cityInfo->state != CITY_STATE_UNKNOWN) {
+                CitySizeDescription* citySizeDescription = &wmSphereData[cityInfo->size];
+                int cityX = cityInfo->x - wmWorldOffsetX + PADDING;
+                int cityY = cityInfo->y - wmWorldOffsetY + PADDING;
+
+                if (cityX >= 0 && cityX <= bufferWidth - citySizeDescription->frmImage.getWidth() &&
+                        cityY >= 0 && cityY <= bufferHeight - citySizeDescription->frmImage.getHeight()) {
+                        wmInterfaceDrawCircleOverlay(cityInfo, citySizeDescription, paddedBuf, cityX, cityY, bufferWidth);
+                }
             }
         }
+
+        // Copy center portion back to wmBkWinBuf
+        for (int y = 0; y < viewportHeight; y++) {
+            memcpy(
+                wmBkWinBuf + y * WM_WINDOW_WIDTH,
+                paddedBuf + bufferWidth * (y + PADDING) + PADDING,
+                viewportWidth);
+        }
+
+        free(paddedBuf);
     }
 
     // Hide unknown subtiles, dim unvisited.
@@ -5385,39 +5417,46 @@ static int wmMatchWorldPosToArea(int x, int y, int* areaIdxPtr)
     return 0;
 }
 
+// Function augmented to add destPitch to align city icons properly
 // 0x4C3FA8
-static int wmInterfaceDrawCircleOverlay(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y)
+static int wmInterfaceDrawCircleOverlay(
+    CityInfo* city,
+    CitySizeDescription* citySizeDescription,
+    unsigned char* dest,
+    int x,
+    int y,
+    int destPitch)
 {
-    _dark_translucent_trans_buf_to_buf(citySizeDescription->frmImage.getData(),
+    _dark_translucent_trans_buf_to_buf(
+        citySizeDescription->frmImage.getData(),
         citySizeDescription->frmImage.getWidth(),
         citySizeDescription->frmImage.getHeight(),
         citySizeDescription->frmImage.getWidth(),
         dest,
         x,
         y,
-        WM_WINDOW_WIDTH,
+        destPitch,
         0x10000,
         circleBlendTable,
         _commonGrayTable);
 
-    // CE: Slightly increase whitespace between cirle and city name.
     int nameY = y + citySizeDescription->frmImage.getHeight() + 3;
-    int maxY = 464;
+    int maxY = (464) + 200 - fontGetLineHeight(); // 200 for the PADDING
     if (nameY < maxY) {
         MessageListItem messageListItem;
         char name[40];
         if (wmAreaIsKnown(city->areaId)) {
-            // NOTE: Uninline.
             wmGetAreaName(city, name);
         } else {
             strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), 40);
         }
 
         int width = fontGetStringWidth(name);
-        fontDrawText(dest + WM_WINDOW_WIDTH * nameY + x + citySizeDescription->frmImage.getWidth() / 2 - width / 2,
+        fontDrawText(
+            dest + destPitch * nameY + x + citySizeDescription->frmImage.getWidth() / 2 - width / 2,
             name,
             width,
-            WM_WINDOW_WIDTH,
+            destPitch,
             _colorTable[992] | FONT_SHADOW);
     }
 
