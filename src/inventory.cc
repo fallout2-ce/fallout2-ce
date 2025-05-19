@@ -1009,11 +1009,32 @@ static bool _setup_inventory(int inventoryWindowType)
     int fid;
     int btn;
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0, 0);
+    fid = buildFid(OBJ_TYPE_INTERFACE, 299, 0, 0, 0);
     _inventoryFrmImages[0].lock(fid);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0, 0);
+    fid = buildFid(OBJ_TYPE_INTERFACE, 300, 0, 0, 0);
     _inventoryFrmImages[1].lock(fid);
+
+    // Base button dimensions
+    int buttonBaseWidth = 26;
+    int buttonBaseHeight = 26;
+    
+    int buttonWidth = 21;
+    int buttonHeight = 21;
+    
+    unsigned char* scaledNormal = reinterpret_cast<unsigned char*>(SDL_malloc(21 * 21));
+    unsigned char* scaledPressed = reinterpret_cast<unsigned char*>(SDL_malloc(21 * 21));
+    if (!scaledNormal || !scaledPressed) {
+        return -1;
+    }
+    
+    // Stretch the button images
+    blitBufferToBufferStretchAndFixEdges(
+        _inventoryFrmImages[0].getData(), buttonBaseWidth, buttonBaseHeight, buttonBaseWidth,
+        scaledNormal, buttonWidth, buttonHeight, buttonWidth);
+    blitBufferToBufferStretchAndFixEdges(
+        _inventoryFrmImages[1].getData(), buttonBaseWidth, buttonBaseHeight, buttonBaseWidth,
+        scaledPressed, buttonWidth, buttonHeight, buttonWidth);
 
     if (_inventoryFrmImages[0].isLocked() && _inventoryFrmImages[1].isLocked()) {
         btn = -1;
@@ -1021,32 +1042,32 @@ static bool _setup_inventory(int inventoryWindowType)
         case INVENTORY_WINDOW_TYPE_NORMAL:
             // Done button
             btn = buttonCreate(gInventoryWindow,
-                437,
-                329,
-                15,
-                16,
+                434,
+                325,
+                21,
+                21,
                 -1,
                 -1,
                 -1,
                 KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
+                scaledNormal,
+                scaledPressed,
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
         case INVENTORY_WINDOW_TYPE_USE_ITEM_ON:
             // Cancel button
             btn = buttonCreate(gInventoryWindow,
-                233,
-                328,
-                15,
-                16,
+                473,
+                327,
+                21,
+                21,
                 -1,
                 -1,
                 -1,
                 KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
+                scaledNormal,
+                scaledPressed,
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
