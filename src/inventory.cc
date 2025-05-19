@@ -1058,8 +1058,8 @@ static bool _setup_inventory(int inventoryWindowType)
         case INVENTORY_WINDOW_TYPE_USE_ITEM_ON:
             // Cancel button
             btn = buttonCreate(gInventoryWindow,
-                473,
-                327,
+                230,
+                325,
                 21,
                 21,
                 -1,
@@ -1074,16 +1074,16 @@ static bool _setup_inventory(int inventoryWindowType)
         case INVENTORY_WINDOW_TYPE_LOOT:
             // Done button
             btn = buttonCreate(gInventoryWindow,
-                476,
-                331,
-                15,
-                16,
+                473,
+                327,
+                21,
+                21,
                 -1,
                 -1,
                 -1,
                 KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
+                scaledNormal,
+                scaledPressed,
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
