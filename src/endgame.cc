@@ -91,7 +91,7 @@ static int originalHeight = ENDGAME_ENDING_WINDOW_HEIGHT;
 static int scaledWidth = ENDGAME_ENDING_WINDOW_WIDTH;
 static int scaledHeight = ENDGAME_ENDING_WINDOW_HEIGHT;
 
-// The number of lines in current subtitles file.
+// The number of lines in current subtitles file
 //
 // It's used as a length for two arrays:
 // - [gEndgameEndingSubtitles]
