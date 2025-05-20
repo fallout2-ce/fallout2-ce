@@ -23,6 +23,7 @@
 #include "mainmenu.h"
 #include "map.h"
 #include "mouse.h"
+#include "movie.h"
 #include "object.h"
 #include "palette.h"
 #include "platform_compat.h"
@@ -49,8 +50,8 @@ namespace fallout {
 static bool falloutInit(int argc, char** argv);
 static int main_reset_system();
 static void main_exit_system();
-static int _main_load_new(char* fname);
-static int main_loadgame_new();
+static int _main_newgame(char* fname);
+static int main_loadgame();
 static void main_unload_new();
 static void mainLoop();
 static void showDeath();
@@ -80,6 +81,9 @@ int falloutMain(int argc, char** argv)
     if (!falloutInit(argc, argv)) {
         return 1;
     }
+
+    // added for movie stretching
+    readMovieSettings();
 
     // SFALL: Allow to skip intro movies
     int skipOpeningMovies;
@@ -123,7 +127,7 @@ int falloutMain(int argc, char** argv)
                     }
 
                     char* mapNameCopy = compat_strdup(mapName != nullptr ? mapName : _mainMap);
-                    _main_load_new(mapNameCopy);
+                    _main_newgame(mapNameCopy);
                     free(mapNameCopy);
 
                     // SFALL: AfterNewGameStartHook.
@@ -148,41 +152,50 @@ int falloutMain(int argc, char** argv)
 
                 break;
             case MAIN_MENU_LOAD_GAME:
+                mainMenuWindowHide(true);
+                mainMenuWindowFree();
                 if (1) {
                     int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-                    mainMenuWindowHide(true);
-                    mainMenuWindowFree();
 
-                    // NOTE: Uninline.
-                    main_loadgame_new();
+                    main_loadgame(); // NOTE: Uninline.
 
-                    colorPaletteLoad("color.pal");
-                    paletteFadeTo(_cmap);
                     int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+
                     if (loadGameRc == -1) {
                         debugPrint("\n ** Error running LoadGame()! **\n");
                     } else if (loadGameRc != 0) {
+                        // Handle successful load (non-zero return)
+                        // fade to white on entering loaded game
+                        paletteFadeTo(gPaletteWhite);
+
                         windowDestroy(win);
+
+                        // fade in from white on entering loaded game
+                        colorPaletteLoad("color.pal");
+                        paletteFadeTo(_cmap);
                         win = -1;
+
                         mainLoop();
+
+                        // fade to white when leaving game
+                        paletteFadeTo(gPaletteWhite);
                     }
-                    paletteFadeTo(gPaletteWhite);
+
+                    // Cleanup (runs whether loadGameRc was 0, -1, or non-zero)
                     if (win != -1) {
                         windowDestroy(win);
                     }
 
-                    // NOTE: Uninline.
-                    main_unload_new();
+                    main_unload_new(); // Called exactly once
+                    main_reset_system(); // Called exactly once
 
-                    // NOTE: Uninline.
-                    main_reset_system();
-
+                    // Show death scene if flagged
                     if (_main_show_death_scene != 0) {
                         showDeath();
                         _main_show_death_scene = 0;
                     }
-                    mainMenuWindowInit();
                 }
+                mainMenuWindowInit();
                 break;
             case MAIN_MENU_TIMEOUT:
                 debugPrint("Main menu timed-out\n");
@@ -258,7 +271,7 @@ static void main_exit_system()
 }
 
 // 0x480D4C
-static int _main_load_new(char* mapFileName)
+static int _main_newgame(char* mapFileName)
 {
     _game_user_wants_to_quit = 0;
     _main_show_death_scene = 0;
@@ -286,7 +299,7 @@ static int _main_load_new(char* mapFileName)
 // NOTE: Inlined.
 //
 // 0x480DF8
-static int main_loadgame_new()
+static int main_loadgame()
 {
     _game_user_wants_to_quit = 0;
     _main_show_death_scene = 0;
@@ -365,19 +378,78 @@ static void showDeath()
     colorCycleDisable();
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
 
-    bool oldCursorIsHidden = cursorIsHidden();
-    if (oldCursorIsHidden) {
+    bool wasCursorHidden = cursorIsHidden();
+    if (wasCursorHidden) {
         mouseShowCursor();
     }
 
-    int deathWindowX = (screenGetWidth() - DEATH_WINDOW_WIDTH) / 2;
-    int deathWindowY = (screenGetHeight() - DEATH_WINDOW_HEIGHT) / 2;
-    int win = windowCreate(deathWindowX,
-        deathWindowY,
-        DEATH_WINDOW_WIDTH,
-        DEATH_WINDOW_HEIGHT,
-        0,
-        WINDOW_MOVE_ON_TOP);
+    // Read stretching setting from f2_res.ini
+    int deathScreenStretchMode = 0;
+    int stretchGameMode = 0;
+    Config config;
+    if (configInit(&config)) {
+        if (configRead(&config, "f2_res.ini", false)) {
+            configGetInt(&config, "STATIC_SCREENS", "DEATH_SCRN_SIZE", &deathScreenStretchMode);
+
+            if (configGetInt(&config, "STATIC_SCREENS", "STRETCH_GAME", &stretchGameMode)) {
+                deathScreenStretchMode = stretchGameMode; // always override if key exists
+            }
+        }
+        configFree(&config);
+    }
+
+    // Get current screen dimensions.
+    int screenWidth = screenGetWidth();
+    int screenHeight = screenGetHeight();
+
+    // Load the DEATH image.
+    FrmImage deathFrmImage;
+    int deathFid = buildFid(OBJ_TYPE_INTERFACE, 309, 0, 0, 0);
+    if (!deathFrmImage.lock(deathFid)) {
+        return;
+    }
+
+    // Get pointer to the death screen pixel data.
+    unsigned char* deathData = deathFrmImage.getData();
+    int deathScreenWidth = DEATH_WINDOW_WIDTH;
+    int deathScreenHeight = DEATH_WINDOW_HEIGHT;
+
+    unsigned char* finalBuffer = deathData;
+    int finalWidth = deathScreenWidth;
+    int finalHeight = deathScreenHeight;
+
+    // Handle optional stretching if needed.
+    if (deathScreenStretchMode != 0 || screenWidth < deathScreenWidth || screenHeight < deathScreenHeight) {
+        int scaledWidth;
+        int scaledHeight;
+
+        calculateScaledSize(
+            deathScreenWidth,
+            deathScreenHeight,
+            screenWidth,
+            screenHeight,
+            deathScreenStretchMode,
+            scaledWidth,
+            scaledHeight
+        );
+
+        // Allocate memory for the scaled image.
+        unsigned char* scaled = reinterpret_cast<unsigned char*>(SDL_malloc((scaledWidth + 1) * (scaledHeight + 1)));
+        if (scaled != nullptr) {
+            // Perform stretching.
+            blitBufferToBufferStretchAndFixEdges(deathData, deathScreenWidth, deathScreenHeight, deathScreenWidth, scaled, scaledWidth, scaledHeight, scaledWidth, 1);
+
+            finalBuffer = scaled;
+            finalWidth = scaledWidth;
+            finalHeight = scaledHeight;
+        }
+    }
+
+    // Center the death window on screen.
+    int windowX = (screenWidth - finalWidth) / 2;
+    int windowY = (screenHeight - finalHeight) / 2;
+    int win = windowCreate(windowX, windowY, finalWidth, finalHeight, 0, WINDOW_MOVE_ON_TOP);
+
     if (win != -1) {
         do {
             unsigned char* windowBuffer = windowGetBuffer(win);
@@ -385,18 +457,9 @@ static void showDeath()
                 break;
             }
 
-            // DEATH.FRM
-            FrmImage backgroundFrmImage;
-            int fid = buildFid(OBJ_TYPE_INTERFACE, 309, 0, 0, 0);
-            if (!backgroundFrmImage.lock(fid)) {
-                break;
-            }
-
             while (mouseGetEvent() != 0) {
                 sharedFpsLimiter.mark();
-
                 inputGetInput();
-
                 renderPresent();
                 sharedFpsLimiter.throttle();
             }
@@ -404,25 +467,45 @@ static void showDeath()
             keyboardReset();
             inputEventQueueReset();
 
-            blitBufferToBuffer(backgroundFrmImage.getData(), 640, 480, 640, windowBuffer, 640);
-            backgroundFrmImage.unlock();
+            // Draw death image to window.
+            blitBufferToBuffer(finalBuffer, finalWidth, finalHeight, finalWidth, windowBuffer, finalWidth);
+            deathFrmImage.unlock();
 
+            // Get death ending filename.
             const char* deathFileName = endgameDeathEndingGetFileName();
 
+            // If subtitles are enabled, load and display them.
             if (settings.preferences.subtitles) {
                 char text[512];
                 if (_mainDeathGrabTextFile(deathFileName, text) == 0) {
                     debugPrint("\n((ShowDeath)): %s\n", text);
 
-                    short beginnings[WORD_WRAP_MAX_COUNT];
-                    short count;
-                    if (_mainDeathWordWrap(text, 560, beginnings, &count) == 0) {
-                        unsigned char* p = windowBuffer + 640 * (480 - fontGetLineHeight() * count - 8);
-                        bufferFill(p - 602, 564, fontGetLineHeight() * count + 2, 640, 0);
-                        p += 40;
-                        for (int index = 0; index < count; index++) {
-                            fontDrawText(p, text + beginnings[index], 560, 640, _colorTable[32767]);
-                            p += 640 * fontGetLineHeight();
+                    short lineStartOffsets[WORD_WRAP_MAX_COUNT];
+                    short lineCount;
+
+                    // Set subtitle box width based on final screen width.
+                    int subtitleWidth = (finalWidth >= 640) ? 560 : finalWidth - 80;
+                    if (subtitleWidth < 100) {
+                        subtitleWidth = finalWidth - 20;
+                    }
+
+                    // Word wrap subtitle text.
+                    if (_mainDeathWordWrap(text, subtitleWidth, lineStartOffsets, &lineCount) == 0) {
+                        int lineHeight = fontGetLineHeight();
+                        int subtitleHeight = lineHeight * lineCount + 2;
+
+                        // Center subtitles near bottom of screen.
+                        int subtitleX = (finalWidth - subtitleWidth) / 2;
+                        int subtitleY = finalHeight - subtitleHeight - 8;
+
+                        unsigned char* subtitleBuffer = windowBuffer + finalWidth * subtitleY + subtitleX;
+
+                        bufferFill(subtitleBuffer - finalWidth * 1, subtitleWidth, subtitleHeight, finalWidth, 0);
+
+                        // Draw each subtitle line.
+                        for (int i = 0; i < lineCount; i++) {
+                            fontDrawText(subtitleBuffer, text + lineStartOffsets[i], subtitleWidth, finalWidth, _colorTable[32767]);
+                            subtitleBuffer += finalWidth * lineHeight;
                         }
                     }
                 }
@@ -438,57 +521,56 @@ static void showDeath()
 
             unsigned int delay;
             if (speechLoad(deathFileName, 10, 14, 15) == -1) {
+                // If voiceover missing, fallback to a short delay.
                 delay = 3000;
             } else {
                 delay = UINT_MAX;
             }
 
             _gsound_speech_play_preloaded();
-
-            // SFALL: Fix the playback of the speech sound file for the death
-            // screen.
             inputBlockForTocks(100);
 
-            unsigned int time = getTicks();
+            // Wait for user input, voiceover completion, or timeout.
+            unsigned int startTime = getTicks();
             int keyCode;
             do {
                 sharedFpsLimiter.mark();
-
                 keyCode = inputGetInput();
-
                 renderPresent();
                 sharedFpsLimiter.throttle();
-            } while (keyCode == -1 && !_main_death_voiceover_done && getTicksSince(time) < delay);
+            } while (keyCode == -1 && !_main_death_voiceover_done && getTicksSince(startTime) < delay);
 
+            // Clean up voiceover.
             speechSetEndCallback(nullptr);
-
             speechDelete();
 
             while (mouseGetEvent() != 0) {
                 sharedFpsLimiter.mark();
-
                 inputGetInput();
-
                 renderPresent();
                 sharedFpsLimiter.throttle();
             }
 
             if (keyCode == -1) {
+                // Pause briefly if no input was received.
                 inputPauseForTocks(500);
             }
 
+            // Fade out screen to black.
             paletteFadeTo(gPaletteBlack);
             colorPaletteLoad("color.pal");
+
         } while (0);
+
+        // Destroy death window.
         windowDestroy(win);
     }
 
-    if (oldCursorIsHidden) {
+    if (wasCursorHidden) {
         mouseHideCursor();
     }
 
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
-
     colorCycleEnable();
 }
 
