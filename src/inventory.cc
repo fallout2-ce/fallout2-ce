@@ -553,6 +553,15 @@ static int inventoryMessageListFree()
     return 0;
 }
 
+// Helper function to flip the button buffer horizontally
+void flipBufferHorizontally(unsigned char* src, int width, int height, int pitch) {
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width / 2; x++) {
+            std::swap(src[y * pitch + x], src[y * pitch + (width - 1 - x)]);
+        }
+    }
+}
+
 // 0x46E7B0
 void inventoryOpen()
 {
@@ -1028,13 +1037,33 @@ static bool _setup_inventory(int inventoryWindowType)
         return -1;
     }
     
-    // Stretch the button images
+    // Create flipped copies (to align highlights to top right light source)
+    unsigned char* flippedNormal = reinterpret_cast<unsigned char*>(SDL_malloc(buttonBaseWidth * buttonBaseHeight));
+    unsigned char* flippedPressed = reinterpret_cast<unsigned char*>(SDL_malloc(buttonBaseWidth * buttonBaseHeight));
+
+    if (!flippedNormal || !flippedPressed) {
+        return -1;
+    }
+
+    // Copy and flip the original images
+    memcpy(flippedNormal, _inventoryFrmImages[0].getData(), buttonBaseWidth * buttonBaseHeight);
+    memcpy(flippedPressed, _inventoryFrmImages[1].getData(), buttonBaseWidth * buttonBaseHeight);
+
+    // Flip them with the helper
+    flipBufferHorizontally(flippedNormal, buttonBaseWidth, buttonBaseHeight, buttonBaseWidth);
+    flipBufferHorizontally(flippedPressed, buttonBaseWidth, buttonBaseHeight, buttonBaseWidth);
+
+    // Use the flipped buffers as source and scale them
     blitBufferToBufferStretchAndFixEdges(
-        _inventoryFrmImages[0].getData(), buttonBaseWidth, buttonBaseHeight, buttonBaseWidth,
+        flippedNormal, buttonBaseWidth, buttonBaseHeight, buttonBaseWidth,
         scaledNormal, buttonWidth, buttonHeight, buttonWidth);
     blitBufferToBufferStretchAndFixEdges(
-        _inventoryFrmImages[1].getData(), buttonBaseWidth, buttonBaseHeight, buttonBaseWidth,
+        flippedPressed, buttonBaseWidth, buttonBaseHeight, buttonBaseWidth,
         scaledPressed, buttonWidth, buttonHeight, buttonWidth);
+
+    // Free the temp buffers
+    SDL_free(flippedNormal);
+    SDL_free(flippedPressed);
 
     if (_inventoryFrmImages[0].isLocked() && _inventoryFrmImages[1].isLocked()) {
         btn = -1;
