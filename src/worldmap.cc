@@ -5241,7 +5241,7 @@ static int wmInterfaceRefresh()
                 viewportWidth);
         }
 
-        // Draw cities onto padded buffer
+        // Draw cities onto a padded buffer
         for (int index = 0; index < wmMaxAreaNum; index++) {
             CityInfo* cityInfo = &wmAreaInfoList[index];
             if (cityInfo->state != CITY_STATE_UNKNOWN) {
