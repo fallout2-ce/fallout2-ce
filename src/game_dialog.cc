@@ -244,7 +244,7 @@ static Rect _backgrndRects[8] = {
     { 126, 40, 136, 188 },
     { 504, 40, 514, 188 },
 };
-
+ 
 // 0x5187C8
 static int _talk_need_to_center = 1;
 
