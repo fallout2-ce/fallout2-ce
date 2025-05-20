@@ -528,6 +528,8 @@ static void showDeath()
             }
 
             _gsound_speech_play_preloaded();
+            // SFALL: Fix the playback of the speech sound file for the death
+            // screen.
             inputBlockForTocks(100);
 
             // Wait for user input, voiceover completion, or timeout.
