@@ -6,24 +6,18 @@
 namespace fallout {
 
 typedef enum MovieFlags {
-    MOVIE_FLAG_0x01 = 0x01,
-    MOVIE_FLAG_0x02 = 0x02,
-    MOVIE_FLAG_0x04 = 0x04,
-    MOVIE_FLAG_0x08 = 0x08,
+    MOVIE_FLAG_ENABLE_SUBTITLES    = 0x08, // triggers subtitle loading
 } MovieFlags;
 
 typedef enum MovieExtendedFlags {
-    MOVIE_EXTENDED_FLAG_0x01 = 0x01,
-    MOVIE_EXTENDED_FLAG_0x02 = 0x02,
-    MOVIE_EXTENDED_FLAG_0x04 = 0x04,
-    MOVIE_EXTENDED_FLAG_0x08 = 0x08,
-    MOVIE_EXTENDED_FLAG_0x10 = 0x10,
+    MOVIE_EXTENDED_FLAG_PLAYING              = 0x01, // marks that a movie is currently playing (?)
+    MOVIE_EXTENDED_FLAG_SUBTITLES_LOADED     = 0x02, // internal state: subtitles were loaded
+    MOVIE_EXTENDED_FLAG_SUBTITLES_ENABLED    = 0x10, // external request: subtitles should be loaded
 } MovieExtendedFlags;
 
 typedef char* MovieBuildSubtitleFilePathProc(char* movieFilePath);
 typedef void MovieSetPaletteEntriesProc(unsigned char* palette, int start, int end);
 typedef void MovieSetPaletteProc(int frame);
-typedef int(MovieBlitFunc)(int win, unsigned char* data, int width, int height, int pitch);
 
 void movieInit();
 void movieExit();
@@ -37,6 +31,9 @@ void movieSetBuildSubtitleFilePathProc(MovieBuildSubtitleFilePathProc* proc);
 void movieSetVolume(int volume);
 void _movieUpdate();
 int _moviePlaying();
+
+void readMovieSettings();
+int movieGetSizeFlag();
 
 } // namespace fallout
 
