@@ -4390,12 +4390,12 @@ static void wmInterfaceScrollTabsStart(int delta)
     // in the disabled state.
     if (delta >= 0) {
         if (wmGenData.tabsOffsetY < wmGenData.tabsBackgroundFrmImage.getHeight() - 230) {
-            wmGenData.oldTabsOffsetY = std::min(wmGenData.tabsOffsetY + 7 * delta, wmGenData.tabsBackgroundFrmImage.getHeight() - 230);
+            wmGenData.oldTabsOffsetY = std::min(wmGenData.tabsOffsetY + delta, wmGenData.tabsBackgroundFrmImage.getHeight() - 230);
             wmGenData.tabsScrollingDelta = delta;
         }
     } else {
         if (wmGenData.tabsOffsetY > 0) {
-            wmGenData.oldTabsOffsetY = std::max(wmGenData.tabsOffsetY + 7 * delta, 0);
+            wmGenData.oldTabsOffsetY = std::max(wmGenData.tabsOffsetY + delta, 0);
             wmGenData.tabsScrollingDelta = delta;
         }
     }
