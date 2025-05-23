@@ -689,7 +689,7 @@ static int pipboyWindowInit(int intent)
 
     int y = 340;
     int eventCode = 500;
-    int yOffsets[] = {27, 27, 29, 25, 27};  // handles slighlty misaligned buttons on background
+    int yOffsets[] = { 27, 27, 29, 25, 27 }; // handles slighlty misaligned buttons on background
     for (int index = 0; index < 5; index += 1) {
         if (index != 1) {
             int btn = buttonCreate(gPipboyWindow,

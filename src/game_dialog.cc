@@ -4142,7 +4142,7 @@ int _gdCustomSelect(int a1)
     if (btn2 != -1) {
         buttonSetCallbacks(btn2, _gsound_red_butt_press, _gsound_red_butt_release);
     }
-    
+
     fontSetCurrent(103);
 
     MessageListItem messageListItem;
