@@ -687,7 +687,7 @@ static int pipboyWindowInit(int intent)
         buttonSetCallbacks(alarmButton, _gsound_med_butt_press, _gsound_med_butt_release);
     }
 
-    int y = 341;
+    int y = 340;
     int eventCode = 500;
     int yOffsets[] = {27, 27, 29, 25, 27};  // handles slighlty misaligned buttons on background
     for (int index = 0; index < 5; index += 1) {
