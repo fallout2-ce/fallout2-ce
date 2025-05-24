@@ -553,6 +553,15 @@ static int inventoryMessageListFree()
     return 0;
 }
 
+// Helper function to flip the button buffer horizontally
+void flipBufferHorizontally(unsigned char* src, int width, int height, int pitch) {
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width / 2; x++) {
+            std::swap(src[y * pitch + x], src[y * pitch + (width - 1 - x)]);
+        }
+    }
+}
+
 // 0x46E7B0
 void inventoryOpen()
 {
@@ -1009,11 +1018,56 @@ static bool _setup_inventory(int inventoryWindowType)
     int fid;
     int btn;
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0, 0);
+    fid = buildFid(OBJ_TYPE_INTERFACE, 299, 0, 0, 0);
     _inventoryFrmImages[0].lock(fid);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0, 0);
+    fid = buildFid(OBJ_TYPE_INTERFACE, 300, 0, 0, 0);
     _inventoryFrmImages[1].lock(fid);
+
+    // Inventory, Use On, and Loot screens have incorrect buttons
+    // Game currently doesn't have the correct button resource
+    // We are going to scale and flip the menu buttons as a temporary solution
+    
+    // Base button dimensions
+    int buttonBaseWidth = 26;
+    int buttonBaseHeight = 26;
+    
+    int buttonWidth = 21;
+    int buttonHeight = 21;
+    
+    unsigned char* scaledNormal = reinterpret_cast<unsigned char*>(SDL_malloc(21 * 21));
+    unsigned char* scaledPressed = reinterpret_cast<unsigned char*>(SDL_malloc(21 * 21));
+    if (!scaledNormal || !scaledPressed) {
+        return -1;
+    }
+    
+    // Create flipped copies (to align highlights to top right light source)
+    unsigned char* flippedNormal = reinterpret_cast<unsigned char*>(SDL_malloc(buttonBaseWidth * buttonBaseHeight));
+    unsigned char* flippedPressed = reinterpret_cast<unsigned char*>(SDL_malloc(buttonBaseWidth * buttonBaseHeight));
+
+    if (!flippedNormal || !flippedPressed) {
+        return -1;
+    }
+
+    // Copy and flip the original images
+    memcpy(flippedNormal, _inventoryFrmImages[0].getData(), buttonBaseWidth * buttonBaseHeight);
+    memcpy(flippedPressed, _inventoryFrmImages[1].getData(), buttonBaseWidth * buttonBaseHeight);
+
+    // Flip them with the helper
+    flipBufferHorizontally(flippedNormal, buttonBaseWidth, buttonBaseHeight, buttonBaseWidth);
+    flipBufferHorizontally(flippedPressed, buttonBaseWidth, buttonBaseHeight, buttonBaseWidth);
+
+    // Use the flipped buffers as source and scale them
+    blitBufferToBufferStretchAndFixEdges(
+        flippedNormal, buttonBaseWidth, buttonBaseHeight, buttonBaseWidth,
+        scaledNormal, buttonWidth, buttonHeight, buttonWidth);
+    blitBufferToBufferStretchAndFixEdges(
+        flippedPressed, buttonBaseWidth, buttonBaseHeight, buttonBaseWidth,
+        scaledPressed, buttonWidth, buttonHeight, buttonWidth);
+
+    // Free the temp buffers
+    SDL_free(flippedNormal);
+    SDL_free(flippedPressed);
 
     if (_inventoryFrmImages[0].isLocked() && _inventoryFrmImages[1].isLocked()) {
         btn = -1;
@@ -1021,48 +1075,48 @@ static bool _setup_inventory(int inventoryWindowType)
         case INVENTORY_WINDOW_TYPE_NORMAL:
             // Done button
             btn = buttonCreate(gInventoryWindow,
-                437,
-                329,
-                15,
-                16,
+                434,
+                325,
+                21,
+                21,
                 -1,
                 -1,
                 -1,
                 KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
+                scaledNormal, // scaled and flipped button
+                scaledPressed, // scaled and flipped button
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
         case INVENTORY_WINDOW_TYPE_USE_ITEM_ON:
             // Cancel button
             btn = buttonCreate(gInventoryWindow,
-                233,
-                328,
-                15,
-                16,
+                230,
+                325,
+                21,
+                21,
                 -1,
                 -1,
                 -1,
                 KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
+                scaledNormal, // scaled and flipped button
+                scaledPressed, // scaled and flipped button
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
         case INVENTORY_WINDOW_TYPE_LOOT:
             // Done button
             btn = buttonCreate(gInventoryWindow,
-                476,
-                331,
-                15,
-                16,
+                473,
+                327,
+                21,
+                21,
                 -1,
                 -1,
                 -1,
                 KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
+                scaledNormal, // scaled and flipped button
+                scaledPressed, // scaled and flipped button
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
