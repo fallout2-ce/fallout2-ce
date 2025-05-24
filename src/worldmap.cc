@@ -730,6 +730,13 @@ static const int wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
     439,
 };
 
+#define MAX_TRAIL_LENGTH 1000
+
+typedef struct {
+    int x;
+    int y;
+} TrailDot;
+
 // 0x51DE94
 static int* wmLabelList = nullptr;
 
@@ -5494,13 +5501,16 @@ static int wmDrawCursorStopped()
     int width;
     int height;
 
-    if (wmGenData.walkDestinationX >= 1 || wmGenData.walkDestinationY >= 1) {
+    bool isWalkingNow = (wmGenData.walkDestinationX != 0 || wmGenData.walkDestinationY != 0);
 
+    if (isWalkingNow) {
+        // moving cursor
         if (wmGenData.encounterIconIsVisible) {
             src = wmGenData.encounterCursorFrmImages[wmGenData.encounterCursorId].getData();
             width = wmGenData.encounterCursorFrmImages[wmGenData.encounterCursorId].getWidth();
             height = wmGenData.encounterCursorFrmImages[wmGenData.encounterCursorId].getHeight();
         } else {
+            // current location (+)
             src = wmGenData.locationMarkerFrmImage.getData();
             width = wmGenData.locationMarkerFrmImage.getWidth();
             height = wmGenData.locationMarkerFrmImage.getHeight();
@@ -5534,6 +5544,76 @@ static int wmDrawCursorStopped()
         if (wmGenData.worldPosX >= wmWorldOffsetX && wmGenData.worldPosX < wmWorldOffsetX + WM_VIEW_WIDTH
             && wmGenData.worldPosY >= wmWorldOffsetY && wmGenData.worldPosY < wmWorldOffsetY + WM_VIEW_HEIGHT) {
             blitBufferToBufferTrans(src, width, height, width, wmBkWinBuf + WM_WINDOW_WIDTH * (WM_VIEW_Y - wmWorldOffsetY + wmGenData.worldPosY - height / 2) + WM_VIEW_X - wmWorldOffsetX + wmGenData.worldPosX - width / 2, WM_WINDOW_WIDTH);
+        }
+    }
+
+    // Dotted Trail logic
+
+    static bool wasWalking = false;
+    static uint32_t lastTrailDropTick = 0;
+    const int baseCooldown = 25;    // base time between potential dot drops
+    static int trailDotCount = 0;
+    static TrailDot trailDots[MAX_TRAIL_LENGTH];
+    static int patternCounter = 0;
+
+    // Clear the trail when player stops - needs to be done when reloading map too
+    if (wasWalking && !isWalkingNow) {
+        trailDotCount = 0;
+    }
+    wasWalking = isWalkingNow;
+
+    if (isWalkingNow) {
+        uint32_t now = getTicks();
+        if (now - lastTrailDropTick >= baseCooldown) {
+            lastTrailDropTick = now;
+            patternCounter++;
+
+            // Figure out current terrain difficulty
+            wmPartyFindCurSubTile();
+            int difficulty = 1;
+            if (wmGenData.currentSubtile) {
+                Terrain* t = &wmTerrainTypeList[wmGenData.currentSubtile->terrain];
+                difficulty = t->difficulty;
+                if (difficulty < 1) difficulty = 1;
+            }
+
+            // Decide whether to drop on this step, based on terrain (difficulty)
+            bool shouldDrop;
+            if (difficulty >= 4) {
+                shouldDrop = (patternCounter % 4) != 0;  // Drop 3 out of every 4 steps --- used?
+            } else if (difficulty == 3) {
+                shouldDrop = (patternCounter % 3) != 0;  // Drop 2 out of every 3
+            } else if (difficulty == 2) {
+                shouldDrop = (patternCounter % 2) == 0;  // Drop every other step
+            } else {
+                shouldDrop = (patternCounter % 3) == 0;  // Drop only once every 3 steps
+            }
+
+            if (shouldDrop) {
+                int cx = wmGenData.worldPosX;
+                int cy = wmGenData.worldPosY;
+                if (trailDotCount < MAX_TRAIL_LENGTH) {
+                    trailDots[trailDotCount++] = { cx, cy };
+                } else {
+                    // shift left, add more dots
+                    memmove(trailDots, trailDots + 1, sizeof(TrailDot) * (MAX_TRAIL_LENGTH - 1));
+                    trailDots[MAX_TRAIL_LENGTH - 1] = { cx, cy };
+                }
+            }
+        }
+    }
+
+    // Render the trail dots
+    for (int i = 0; i < trailDotCount; i++) {
+        int x = trailDots[i].x;
+        int y = trailDots[i].y;
+        if (x >= wmWorldOffsetX && x < wmWorldOffsetX + WM_VIEW_WIDTH
+         && y >= wmWorldOffsetY && y < wmWorldOffsetY + WM_VIEW_HEIGHT)
+        {
+            unsigned char* dst = wmBkWinBuf
+                + WM_WINDOW_WIDTH * (WM_VIEW_Y - wmWorldOffsetY + y)
+                + (WM_VIEW_X - wmWorldOffsetX + x);
+            *dst = 136;  // bright-red palette index? - not matching perfectly, what palette is being used?
         }
     }
 
