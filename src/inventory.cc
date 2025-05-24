@@ -1024,6 +1024,10 @@ static bool _setup_inventory(int inventoryWindowType)
     fid = buildFid(OBJ_TYPE_INTERFACE, 300, 0, 0, 0);
     _inventoryFrmImages[1].lock(fid);
 
+    // Inventory, Use On, and Loot screens have incorrect buttons
+    // Game currently doesn't have the correct button resource
+    // We are going to scale and flip the menu buttons as a temporary solution
+    
     // Base button dimensions
     int buttonBaseWidth = 26;
     int buttonBaseHeight = 26;
@@ -1079,8 +1083,8 @@ static bool _setup_inventory(int inventoryWindowType)
                 -1,
                 -1,
                 KEY_ESCAPE,
-                scaledNormal,
-                scaledPressed,
+                scaledNormal, // scaled and flipped button
+                scaledPressed, // scaled and flipped button
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
@@ -1095,8 +1099,8 @@ static bool _setup_inventory(int inventoryWindowType)
                 -1,
                 -1,
                 KEY_ESCAPE,
-                scaledNormal,
-                scaledPressed,
+                scaledNormal, // scaled and flipped button
+                scaledPressed, // scaled and flipped button
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
@@ -1111,8 +1115,8 @@ static bool _setup_inventory(int inventoryWindowType)
                 -1,
                 -1,
                 KEY_ESCAPE,
-                scaledNormal,
-                scaledPressed,
+                scaledNormal, // scaled and flipped button
+                scaledPressed, // scaled and flipped button
                 nullptr,
                 BUTTON_FLAG_TRANSPARENT);
             break;
