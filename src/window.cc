@@ -624,8 +624,9 @@ void _doRightButtonRelease(int btn, int keyCode)
     sub_4B704C(btn, MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_UP);
 }
 
+// Note: this used to have a third buffer parameter, but it was never used
 // 0x4B7118
-void _setButtonGFX(int width, int height, unsigned char* normal, unsigned char* pressed, unsigned char* a5)
+void _setButtonGFX(int width, int height, unsigned char* normal, unsigned char* pressed)
 {
     if (normal != nullptr) {
         bufferFill(normal, width, height, width, _colorTable[0]);
@@ -647,21 +648,6 @@ void _setButtonGFX(int width, int height, unsigned char* normal, unsigned char* 
         bufferFill(pressed + width + 1, width - 2, height - 2, width, intensityColorTable[_colorTable[32767]][89]);
         bufferDrawLine(pressed, width, 1, 1, width - 2, 1, _colorTable[32767] + 44);
         bufferDrawLine(pressed, width, 1, 1, 1, height - 2, _colorTable[32767] + 44);
-    }
-
-    if (a5 != nullptr) {
-        bufferFill(a5, width, height, width, _colorTable[0]);
-        bufferFill(a5 + width + 1, width - 2, height - 2, width, intensityColorTable[_colorTable[32767]][89]);
-        bufferDrawLine(a5, width, 1, 1, width - 2, 1, _colorTable[32767]);
-        bufferDrawLine(a5, width, 2, 2, width - 3, 2, _colorTable[32767]);
-        bufferDrawLine(a5, width, 1, height - 2, width - 2, height - 2, intensityColorTable[_colorTable[32767]][44]);
-        bufferDrawLine(a5, width, 2, height - 3, width - 3, height - 3, intensityColorTable[_colorTable[32767]][44]);
-        bufferDrawLine(a5, width, width - 2, 1, width - 3, 2, intensityColorTable[_colorTable[32767]][89]);
-        bufferDrawLine(a5, width, 1, 2, 1, height - 3, _colorTable[32767]);
-        bufferDrawLine(a5, width, 2, 3, 2, height - 4, _colorTable[32767]);
-        bufferDrawLine(a5, width, width - 2, 2, width - 2, height - 3, intensityColorTable[_colorTable[32767]][44]);
-        bufferDrawLine(a5, width, width - 3, 3, width - 3, height - 4, intensityColorTable[_colorTable[32767]][44]);
-        bufferDrawLine(a5, width, 1, height - 2, 2, height - 3, intensityColorTable[_colorTable[32767]][89]);
     }
 }
 
@@ -1669,7 +1655,7 @@ bool _windowAddButton(const char* buttonName, int x, int y, int width, int heigh
         memset(normal, 0, width * height);
         memset(pressed, 0, width * height);
     } else {
-        _setButtonGFX(width, height, normal, pressed, nullptr);
+        _setButtonGFX(width, height, normal, pressed);
     }
 
     managedButton->btn = buttonCreate(
@@ -2319,9 +2305,9 @@ bool _windowPlayMovie(char* filePath)
 }
 
 // 0x4BB280
-bool _windowPlayMovieRect(char* filePath, int a2, int a3, int a4, int a5)
+bool _windowPlayMovieRect(char* filePath, int x, int y, int w, int h)
 {
-    if (_movieRunRect(gManagedWindows[gCurrentManagedWindowIndex].window, filePath, a2, a3, a4, a5) != 0) {
+    if (_movieRunRect(gManagedWindows[gCurrentManagedWindowIndex].window, filePath, x, y, w, h) != 0) {
         return false;
     }
 

@@ -298,7 +298,7 @@ unsigned char* directDrawGetPalette()
 }
 
 // 0x4CB850
-void _GNW95_ShowRect(unsigned char* src, int srcPitch, int a3, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY)
+void _GNW95_ShowRect(unsigned char* src, int srcPitch, int _, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY)
 {
     blitBufferToBuffer(src + srcPitch * srcY + srcX, srcWidth, srcHeight, srcPitch, (unsigned char*)gSdlSurface->pixels + gSdlSurface->pitch * destY + destX, gSdlSurface->pitch);
 

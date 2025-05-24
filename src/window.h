@@ -8,7 +8,7 @@
 
 namespace fallout {
 
-typedef void (*WINDOWDRAWINGPROC)(unsigned char* src, int src_pitch, int a3, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
+typedef void (*WINDOWDRAWINGPROC)(unsigned char* src, int src_pitch, int _, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
 typedef void WindowDrawingProc2(unsigned char* buf, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, unsigned char a10);
 typedef bool(WindowInputHandler)(int key);
 typedef void(WindowDeleteCallback)(int windowIndex, const char* windowName);
@@ -43,8 +43,8 @@ int windowGetTextFlags();
 int windowSetTextFlags(int a1);
 unsigned char windowGetTextColor();
 unsigned char windowGetHighlightColor();
-int windowSetTextColor(float a1, float a2, float a3);
-int windowSetHighlightColor(float a1, float a2, float a3);
+int windowSetTextColor(float r, float g, float b);
+int windowSetHighlightColor(float r, float g, float b);
 bool _checkRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
 bool _windowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
 bool _windowRefreshRegions();
@@ -62,7 +62,7 @@ void _doButtonRelease(int btn, int keyCode);
 void _doRightButtonPress(int btn, int keyCode);
 void sub_4B704C(int btn, int mouseEvent);
 void _doRightButtonRelease(int btn, int keyCode);
-void _setButtonGFX(int width, int height, unsigned char* normal, unsigned char* pressed, unsigned char* a5);
+void _setButtonGFX(int width, int height, unsigned char* normal);
 bool _windowHide();
 bool _windowShow();
 int _windowWidth();
@@ -122,7 +122,7 @@ void _updateWindows();
 int _windowMoviePlaying();
 bool _windowSetMovieFlags(int flags);
 bool _windowPlayMovie(char* filePath);
-bool _windowPlayMovieRect(char* filePath, int a2, int a3, int a4, int a5);
+bool _windowPlayMovieRect(char* filePath, int x, int y, int w, int h);
 void _windowStopMovie();
 void _drawScaled(unsigned char* dest, int destWidth, int destHeight, int destPitch, unsigned char* src, int srcWidth, int srcHeight, int srcPitch);
 void _drawScaledBuf(unsigned char* dest, int destWidth, int destHeight, unsigned char* src, int srcWidth, int srcHeight);
