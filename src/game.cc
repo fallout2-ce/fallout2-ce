@@ -349,7 +349,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int a4
 
     debugPrint(">scr_disable\t");
 
-        if (_init_options_menu() != 0) {
+    if (_init_options_menu() != 0) {
         debugPrint("Failed on init_options_menu\n");
         return -1;
     }
