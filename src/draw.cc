@@ -7,6 +7,8 @@
 #include "color.h"
 #include "svga.h"
 
+#define FULLSCREEN_STRETCH 2
+
 namespace fallout {
 
 // 0x4D2FC0
@@ -374,12 +376,12 @@ void blitBufferToBufferStretchAndFixEdges(
 
 void calculateScaledSize(int srcWidth, int srcHeight, int targetWidth, int targetHeight, int mode, int& outWidth, int& outHeight)
 {
-    if (mode == 2) {
+    if (mode == FULLSCREEN_STRETCH) {
         // Fullscreen stretch
         outWidth = targetWidth;
         outHeight = targetHeight;
-    } else {
-        // Maintain aspect ratio
+    } else { // Aspect ration stretch
+        // Maintain aspect ratio stretch
         if (targetHeight * srcWidth >= targetWidth * srcHeight) {
             outWidth = targetWidth;
             outHeight = (targetWidth * srcHeight) / srcWidth;
