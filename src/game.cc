@@ -1201,7 +1201,7 @@ static void gameFreeGlobalVars()
 // 0x443F74
 static void showHelp()
 {
-    ScopedGameMode gm(GameMode::kHelp); // Switch to Help game mode.
+    ScopedGameMode gm(GameMode::kHelp);
 
     bool isoWasEnabled = isoDisable();
     gameMouseObjectsHide();
@@ -1264,7 +1264,7 @@ static void showHelp()
             scaledHeight);
 
         // Allocate memory for the scaled image.
-        unsigned char* scaled = reinterpret_cast<unsigned char*>(internal_malloc((scaledWidth + 1) * (scaledHeight + 1)));
+        unsigned char* scaled = reinterpret_cast<unsigned char*>(internal_malloc((scaledWidth) * (scaledHeight)));
         if (scaled != nullptr) {
             // Stretch and fix the original help image into the new buffer.
             blitBufferToBufferStretchAndFixEdges(
