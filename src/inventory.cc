@@ -2312,7 +2312,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         rect.top = INVENTORY_SLOT_HEIGHT * itemIndex + INVENTORY_SCROLLER_Y;
         break;
     }
-        
+
     // fix for disappearing/not disappearing inventory items
     if (itemIndex == -1 || _pud->items[_pud->length - (itemIndex + indexOffset + 1)].quantity <= 1) { // slots
         unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
