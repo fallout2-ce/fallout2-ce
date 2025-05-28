@@ -1367,6 +1367,10 @@ static int gameDbInit()
         return -1;
     }
 
+    if (compat_access("fallout2ce.dat", 0) == 0) { // Fallout2-CE dat file - Load before any patches, but after masters
+        dbOpen("fallout2ce.dat", 0, nullptr, 1);
+    }
+
     // SFALL: custom patch file name.
     char* path_file_name_template = nullptr;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PATCH_FILE, &path_file_name_template);
