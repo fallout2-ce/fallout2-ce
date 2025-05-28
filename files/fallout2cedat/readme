@@ -1,1 +1,19 @@
-This is a test for the fallout2ce.dat file
+fallout2ce.dat
+
+File Fix List:
+
+BARTER.frm: fixes to buttons, smaller ones baked in, alignment fixed
+TRADE.frm: fixes to buttons, smaller ones baked in, alignment fixed
+DI_DOWN1.frm,DI_DOWN2.frm,DI_UP1.frm and DI_UP2.frm: fixed large buttons for Trade and Barter screens
+DI_TALK.frm and DI_TALKP.frm: fixed left side 'money' screen. Big change, so may need to be removed.
+EDTREDT.frm: Character editor with baked in buttons removed
+PIP.frm: Glare on top right corner of screen removed
+LSGAME.frm: Glare on top right corner of screen removed
+INVDNIN.frm,INVUPIN.frm,INVUPDS.frm,INVDNDS.frm,INVUPOUT.frm, and INVDNOUT.frm: button fixes for Inventory, Loot, Use On, Trade and Barter screens
+WMTABS.frm: baked in buttons removed, shadow retained
+HR_IFACE_800.frm: improved Fallout1/2 combo version (Sonora) Iface at 800pix *should be removed*
+IFACE.frm: improved Fallout1/2 combo version (Sonora) of Iface at 640 *should be removed*
+PIPUP.frm: added missing right side button shadow
+OPTIDN.frm, OPTIUP.frm, INVBUTUP.frm, and INVBUTDN.frm: improved buttons to work with IFACE.frm and HR_IFACE_800.frm *should be removed*
+INVBOX, USE.frm, LOOT.frm: Improved versions cut paste, shadow, edge errors removed.
+HR_IFACELFT1.FRM etc: files for Iface sidebar
