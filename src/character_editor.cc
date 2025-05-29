@@ -883,17 +883,16 @@ int characterEditorShow(bool isCreationMode)
         int keyCode = inputGetInput();
 
         // check for mouse wheel over the "folder" area (perks/karma/kills)
-        if (keyCode == -1 && (mouseGetEvent() & MOUSE_EVENT_WHEEL) != 0 && !gCharacterEditorIsCreationMode &&
-            mouseHitTestInWindow(gCharacterEditorWindow, 34, 364, 314, 364 + 9 * (fontGetLineHeight() + 1))) {
-                int wheelX, wheelY;
-                mouseGetWheel(&wheelX, &wheelY);
-                if (wheelY > 0) { // Scroll up
-                    characterEditorFolderViewScroll(-1);
-                } else if (wheelY < 0) { // Scroll down
-                    characterEditorFolderViewScroll(1);
-                }
-                characterEditorDrawCard();
-                windowRefresh(gCharacterEditorWindow);
+        if (keyCode == -1 && (mouseGetEvent() & MOUSE_EVENT_WHEEL) != 0 && !gCharacterEditorIsCreationMode && mouseHitTestInWindow(gCharacterEditorWindow, 34, 364, 314, 364 + 9 * (fontGetLineHeight() + 1))) {
+            int wheelX, wheelY;
+            mouseGetWheel(&wheelX, &wheelY);
+            if (wheelY > 0) { // Scroll up
+                characterEditorFolderViewScroll(-1);
+            } else if (wheelY < 0) { // Scroll down
+                characterEditorFolderViewScroll(1);
+            }
+            characterEditorDrawCard();
+            windowRefresh(gCharacterEditorWindow);
         } else {
             convertMouseWheelToArrowKey(&keyCode);
         }
