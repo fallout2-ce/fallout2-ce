@@ -789,6 +789,62 @@ struct CustomKarmaFolderDescription {
 static std::vector<CustomKarmaFolderDescription> gCustomKarmaFolderDescriptions;
 static std::vector<TownReputationEntry> gCustomTownReputationEntries;
 
+/* Explaining characterEditorSelectedItem
+
+0-6: Primary Stats (SPECIAL)
+
+  - 0-6 = The seven primary stats (Strength, Perception, Endurance, Charisma, Intelligence, Agility, Luck)
+  - Used for highlighting which SPECIAL stat is selected
+
+  7-9: Level/Experience Area
+
+  - 7 = Level display
+  - 8 = Experience points display
+  - 9 = Experience needed for next level
+
+  10-42: Folder Content Area (Perks/Karma/Kills)
+
+  - 10-42 = Items within the currently selected folder tab (perks, karma, or kills)
+  - 10 = First visible item in the folder
+  - The actual content depends on which folder is active (characterEditorWindowSelectedFolder)
+  - This is the range where mouse wheel scrolling is active
+  - When scrolling, items shift but the selection stays within this range
+
+  43-50: Status Conditions
+
+  - 43 = Hit Points (EDITOR_HIT_POINTS)
+  - 44 = Poisoned status (EDITOR_POISONED)
+  - 45 = Radiated status (EDITOR_RADIATED)
+  - 46 = Eye damage (EDITOR_EYE_DAMAGE)
+  - 47 = Crippled right arm (EDITOR_CRIPPLED_RIGHT_ARM)
+  - 48 = Crippled left arm (EDITOR_CRIPPLED_LEFT_ARM)
+  - 49 = Crippled right leg (EDITOR_CRIPPLED_RIGHT_LEG)
+  - 50 = Crippled left leg (EDITOR_CRIPPLED_LEFT_LEG)
+
+  51-60: Derived Stats
+
+  - 51-60 = The 10 derived stats (EDITOR_FIRST_DERIVED_STAT + EDITOR_DERIVED_STAT_*)
+  - Armor Class, Action Points, Carry Weight, Melee Damage, etc.
+
+  61-78: Skills
+
+  - 61-78 = The 18 skills (EDITOR_FIRST_SKILL to EDITOR_FIRST_SKILL + SKILL_COUNT)
+  - Small Guns, Big Guns, Energy Weapons, Unarmed, etc.
+  - characterEditorSelectedItem - 61 gives the actual skill index
+
+  79-81: Skill Controls
+
+  - 79 = Tag Skill button (EDITOR_TAG_SKILL)
+  - 80 = Skills header/button (EDITOR_SKILLS)
+  - 81 = Optional Traits button (EDITOR_OPTIONAL_TRAITS)
+
+  82-97: Optional Traits
+
+  - 82-97 = The 16 trait slots (EDITOR_FIRST_TRAIT to EDITOR_FIRST_TRAIT + TRAIT_COUNT)
+  - Fast Metabolism, Bruiser, Small Frame, etc.
+  - Can be arranged in 2 columns (left: 82-89, right: 90-97)
+*/
+
 // 0x431DF8
 int characterEditorShow(bool isCreationMode)
 {
@@ -826,7 +882,21 @@ int characterEditorShow(bool isCreationMode)
         _frame_time = getTicks();
         int keyCode = inputGetInput();
 
-        convertMouseWheelToArrowKey(&keyCode);
+        // check for mouse wheel over the "folder" area (perks/karma/kills)
+        if (keyCode == -1 && (mouseGetEvent() & MOUSE_EVENT_WHEEL) != 0 && !gCharacterEditorIsCreationMode &&
+            mouseHitTestInWindow(gCharacterEditorWindow, 34, 364, 314, 364 + 9 * (fontGetLineHeight() + 1))) {
+                int wheelX, wheelY;
+                mouseGetWheel(&wheelX, &wheelY);
+                if (wheelY > 0) { // Scroll up
+                    characterEditorFolderViewScroll(-1);
+                } else if (wheelY < 0) { // Scroll down
+                    characterEditorFolderViewScroll(1);
+                }
+                characterEditorDrawCard();
+                windowRefresh(gCharacterEditorWindow);
+        } else {
+            convertMouseWheelToArrowKey(&keyCode);
+        }
 
         bool done = false;
         if (keyCode == 500) {
