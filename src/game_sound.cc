@@ -594,7 +594,7 @@ int backgroundSoundGetDuration()
     return soundGetDuration(gBackgroundSound);
 }
 
-/* 
+/*
     [fileName] is base file name, without path and extension.
 
     a2
@@ -827,7 +827,8 @@ void backgroundSoundResume()
 }
 
 // TODO: could be made more precise by querying the sound, checking volume, &c.
-bool backgoundSoundIsPlaying() {
+bool backgoundSoundIsPlaying()
+{
     return gBackgroundSound != nullptr;
 }
 
