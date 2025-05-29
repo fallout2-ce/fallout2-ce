@@ -153,7 +153,7 @@ typedef void(VideoSystemExitProc)();
 extern bool gWindowSystemInitialized;
 extern int _GNW_wcolor[6];
 
-int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int a3);
+int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int flags);
 void windowManagerExit(void);
 int windowCreate(int x, int y, int width, int height, int color, int flags);
 void windowDestroy(int win);
