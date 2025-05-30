@@ -2314,7 +2314,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
     }
 
     bool pickUpFromSlot = itemIndex == -1; // true if item was picked up from armor or weapon slots
-    if (pickUpFromSlot || _pud->items[indexOffset + itemIndex].quantity <= 1) { 
+    if (pickUpFromSlot || _pud->items[indexOffset + itemIndex].quantity <= 1) {
         // erase background unless item is part of a 2+ quantity stack
         unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
         int width, height;
@@ -2326,7 +2326,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
                 height = INVENTORY_SLOT_HEIGHT;
                 width = INVENTORY_SLOT_WIDTH;
             }
-        } else { 
+        } else {
             // seems to wipe both hand slots at once, but I don't know how to trigger this in game
             height = INVENTORY_LARGE_SLOT_HEIGHT;
             width = 180;
@@ -2389,7 +2389,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
                 *itemSlot = item;
             } else if (itemSlot == &gInventoryArmor) {
                 _adjust_ac(_stack[0], item, nullptr);
-            } else if (gInventoryRightHandItem == gInventoryLeftHandItem) { 
+            } else if (gInventoryRightHandItem == gInventoryLeftHandItem) {
                 gInventoryLeftHandItem = nullptr;
                 gInventoryRightHandItem = nullptr;
             }
@@ -2405,7 +2405,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             _switch_hand(item, &gInventoryRightHandItem, itemSlot, buttonCode);
         }
 
-    // drop in left hand slot
+        // drop in left hand slot
     } else if (mouseHitTestInWindow(gInventoryWindow, INVENTORY_LEFT_HAND_SLOT_X, INVENTORY_LEFT_HAND_SLOT_Y, INVENTORY_LEFT_HAND_SLOT_MAX_X, INVENTORY_LEFT_HAND_SLOT_MAX_Y)) {
         if (gInventoryLeftHandItem != nullptr && itemGetType(gInventoryLeftHandItem) == ITEM_TYPE_CONTAINER && gInventoryLeftHandItem != item) {
             _drop_into_container(gInventoryLeftHandItem, item, itemIndex, itemSlot, count);
@@ -2413,7 +2413,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             _switch_hand(item, &gInventoryLeftHandItem, itemSlot, buttonCode);
         }
 
-    // drop in right hand slot
+        // drop in right hand slot
     } else if (mouseHitTestInWindow(gInventoryWindow, INVENTORY_RIGHT_HAND_SLOT_X, INVENTORY_RIGHT_HAND_SLOT_Y, INVENTORY_RIGHT_HAND_SLOT_MAX_X, INVENTORY_RIGHT_HAND_SLOT_MAX_Y)) {
         if (gInventoryRightHandItem != nullptr && itemGetType(gInventoryRightHandItem) == ITEM_TYPE_CONTAINER && gInventoryRightHandItem != item) {
             _drop_into_container(gInventoryRightHandItem, item, itemIndex, itemSlot, count);
@@ -2458,8 +2458,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             // So we drop item into it.
             _drop_into_container(_stack[_curr_stack - 1], item, itemIndex, itemSlot, count);
         }
-    } 
-    
+    }
 
     _adjust_fid();
     inventoryRenderSummary();
