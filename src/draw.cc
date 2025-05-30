@@ -380,7 +380,7 @@ void calculateScaledSize(int srcWidth, int srcHeight, int targetWidth, int targe
         // Fullscreen stretch
         outWidth = targetWidth;
         outHeight = targetHeight;
-    } else { // Aspect ration stretch
+    } else {
         // Maintain aspect ratio stretch
         if (targetHeight * srcWidth >= targetWidth * srcHeight) {
             outWidth = targetWidth;
