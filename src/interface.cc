@@ -2489,7 +2489,7 @@ static void customInterfaceBarInit()
             snprintf(path, sizeof(path), "art\\intrface\\HR_IFACE_%d.FRM", gInterfaceBarWidth);
 
             gCustomInterfaceBarBackground = artLoad(path);
-        } else{
+        } else {
             debugPrint("\nINTRFACE: Custom interface bar width (%d) is greater than screen width (%d). Using default interface bar.\n", gInterfaceBarWidth, screenGetWidth());
         }
     }
