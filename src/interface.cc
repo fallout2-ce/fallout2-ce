@@ -2483,12 +2483,15 @@ bool indicatorBarHide()
 static void customInterfaceBarInit()
 {
     gInterfaceBarContentOffset = gInterfaceBarWidth - 640;
+    if (gInterfaceBarContentOffset > 0) {
+        if (screenGetWidth() > 640 && gInterfaceBarWidth <= screenGetWidth()) {
+            char path[COMPAT_MAX_PATH];
+            snprintf(path, sizeof(path), "art\\intrface\\HR_IFACE_%d.FRM", gInterfaceBarWidth);
 
-    if (gInterfaceBarContentOffset > 0 && screenGetWidth() > 640) {
-        char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "art\\intrface\\HR_IFACE_%d.FRM", gInterfaceBarWidth);
-
-        gCustomInterfaceBarBackground = artLoad(path);
+            gCustomInterfaceBarBackground = artLoad(path);
+        } else {
+            debugPrint("\nINTRFACE: Custom interface bar width (%d) is greater than screen width (%d). Using default interface bar.\n", gInterfaceBarWidth, screenGetWidth());
+        }
     }
 
     if (gCustomInterfaceBarBackground != nullptr) {

@@ -123,7 +123,7 @@ MessageList gMiscMessageList;
 static void** gGameGlobalPointers = nullptr;
 
 // 0x442580
-int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int a4, int argc, char** argv)
+int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int flags, int argc, char** argv)
 {
     char path[COMPAT_MAX_PATH];
 
@@ -150,7 +150,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int a4
     messageListRepositoryInit();
 
     programWindowSetTitle(windowTitle);
-    _initWindow(1, a4);
+    _initWindow(1, flags);
     paletteInit();
 
     const char* language = settings.system.language.c_str();
