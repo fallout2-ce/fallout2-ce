@@ -291,7 +291,7 @@ static FrmImage _yellowLightFrmImage;
 static FrmImage _redLightFrmImage;
 
 int gInterfaceBarContentOffset = 0;
-int gInterfaceBarWidth = -1;
+int gInterfaceBarWidth = 800; // will fall back to 640 if screen width is too narrow or asset is absent
 bool gInterfaceBarIsCustom = false;
 static Art* gCustomInterfaceBarBackground = nullptr;
 
