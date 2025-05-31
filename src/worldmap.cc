@@ -5412,46 +5412,61 @@ static int wmMatchWorldPosToArea(int x, int y, int* areaIdxPtr)
 // CE: Safe city overlay drawing with proper bounds checking
 static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y)
 {
+    // Get city name to calculate proper overlay dimensions
+    MessageListItem messageListItem;
+    char name[40];
+    if (wmAreaIsKnown(city->areaId)) {
+        wmGetAreaName(city, name);
+    } else {
+        strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), 40);
+    }
+
     // Calculate overlay dimensions including city name
-    int overlayWidth = citySizeDescription->frmImage.getWidth();
-    int overlayHeight = citySizeDescription->frmImage.getHeight() + 3 + fontGetLineHeight(); // circle + spacing + text height
-    
+    int circleWidth = citySizeDescription->frmImage.getWidth();
+    int circleHeight = citySizeDescription->frmImage.getHeight();
+    int textWidth = fontGetStringWidth(name);
+    int overlayWidth = std::max(circleWidth, textWidth);
+    int overlayHeight = circleHeight + 3 + fontGetLineHeight(); // circle + spacing + text height
+
     // Check if overlay intersects with viewport
     int viewportLeft = WM_VIEW_X;
     int viewportTop = WM_VIEW_Y;
     int viewportRight = WM_VIEW_X + WM_VIEW_WIDTH;
     int viewportBottom = WM_VIEW_Y + WM_VIEW_HEIGHT;
-    
+
     if (x + overlayWidth < viewportLeft || x >= viewportRight ||
         y + overlayHeight < viewportTop || y >= viewportBottom) {
         return 0; // Completely outside viewport
     }
-    
+
     // Copy background from main buffer to offscreen buffer first
     int offscreenX = (WM_OVERLAY_BUFFER_SIZE - overlayWidth) / 2;
     int offscreenY = (WM_OVERLAY_BUFFER_SIZE - overlayHeight) / 2;
-    
-    // Clear buffer first
+
+    // Calculate centered positions for circle and text within the overlay
+    int circleOffscreenX = offscreenX + (overlayWidth - circleWidth) / 2;
+    int circleOffscreenY = offscreenY;
+    int textOffscreenX = offscreenX + (overlayWidth - textWidth) / 2;
+
     memset(wmOverlayOffscreenBuf, 0, WM_OVERLAY_BUFFER_SIZE * WM_OVERLAY_BUFFER_SIZE);
-    
+
     // Copy background tiles to offscreen buffer with strict bounds checking
     int srcX = std::max(0, x);
     int srcY = std::max(0, y);
     int srcEndX = std::min(x + overlayWidth, WM_WINDOW_WIDTH);
     int srcEndY = std::min(y + overlayHeight, WM_WINDOW_HEIGHT);
-    
-    // Calculate actual copy dimensions and offsets
+
     int actualCopyWidth = srcEndX - srcX;
     int actualCopyHeight = srcEndY - srcY;
     int destOffsetX = offscreenX + (srcX - x);
     int destOffsetY = offscreenY + (srcY - y);
-    
+
     // Ensure destination stays within offscreen buffer bounds
-    if (destOffsetX >= 0 && destOffsetY >= 0 && 
+    if (destOffsetX >= 0 && destOffsetY >= 0 &&
         destOffsetX + actualCopyWidth <= WM_OVERLAY_BUFFER_SIZE &&
         destOffsetY + actualCopyHeight <= WM_OVERLAY_BUFFER_SIZE &&
         actualCopyWidth > 0 && actualCopyHeight > 0) {
-        
+
         blitBufferToBuffer(dest + srcY * WM_WINDOW_WIDTH + srcX,
             actualCopyWidth,
             actualCopyHeight,
@@ -5459,49 +5474,35 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
             wmOverlayOffscreenBuf + destOffsetY * WM_OVERLAY_BUFFER_SIZE + destOffsetX,
             WM_OVERLAY_BUFFER_SIZE);
     }
-    
-    // Draw circle to offscreen buffer with bounds checking
-    if (offscreenX >= 0 && offscreenY >= 0 &&
-        offscreenX + citySizeDescription->frmImage.getWidth() <= WM_OVERLAY_BUFFER_SIZE &&
-        offscreenY + citySizeDescription->frmImage.getHeight() <= WM_OVERLAY_BUFFER_SIZE) {
-        
+
+    if (circleOffscreenX >= 0 && circleOffscreenY >= 0 &&
+        circleOffscreenX + circleWidth <= WM_OVERLAY_BUFFER_SIZE &&
+        circleOffscreenY + circleHeight <= WM_OVERLAY_BUFFER_SIZE) {
+
         _dark_translucent_trans_buf_to_buf(citySizeDescription->frmImage.getData(),
-            citySizeDescription->frmImage.getWidth(),
-            citySizeDescription->frmImage.getHeight(),
-            citySizeDescription->frmImage.getWidth(),
+            circleWidth,
+            circleHeight,
+            circleWidth,
             wmOverlayOffscreenBuf,
-            offscreenX,
-            offscreenY,
+            circleOffscreenX,
+            circleOffscreenY,
             WM_OVERLAY_BUFFER_SIZE,
             0x10000,
             circleBlendTable,
             _commonGrayTable);
     }
-    
+
     // Draw city name to offscreen buffer
-    int nameY = offscreenY + citySizeDescription->frmImage.getHeight() + 3;
-    if (nameY < WM_OVERLAY_BUFFER_SIZE - fontGetLineHeight()) {
-        MessageListItem messageListItem;
-        char name[40];
-        if (wmAreaIsKnown(city->areaId)) {
-            wmGetAreaName(city, name);
-        } else {
-            strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), 40);
-        }
-        
-        int width = fontGetStringWidth(name);
-        int nameX = offscreenX + citySizeDescription->frmImage.getWidth() / 2 - width / 2;
-        // Additional bounds checking for text drawing
-        if (nameX >= 0 && nameX + width <= WM_OVERLAY_BUFFER_SIZE && 
-            nameY >= 0 && nameY + fontGetLineHeight() <= WM_OVERLAY_BUFFER_SIZE) {
-            fontDrawText(wmOverlayOffscreenBuf + WM_OVERLAY_BUFFER_SIZE * nameY + nameX,
-                name,
-                width,
-                WM_OVERLAY_BUFFER_SIZE,
-                _colorTable[992] | FONT_SHADOW);
-        }
+    int nameY = circleOffscreenY + circleHeight + 3;
+    if (nameY >= 0 && nameY + fontGetLineHeight() <= WM_OVERLAY_BUFFER_SIZE &&
+        textOffscreenX >= 0 && textOffscreenX + textWidth <= WM_OVERLAY_BUFFER_SIZE) {
+        fontDrawText(wmOverlayOffscreenBuf + WM_OVERLAY_BUFFER_SIZE * nameY + textOffscreenX,
+            name,
+            textWidth,
+            WM_OVERLAY_BUFFER_SIZE,
+            _colorTable[992] | FONT_SHADOW);
     }
-    
+
     // Calculate intersection rectangle
     int finalSrcX = std::max(0, viewportLeft - x) + offscreenX;
     int finalSrcY = std::max(0, viewportTop - y) + offscreenY;
@@ -5509,7 +5510,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
     int dstY = std::max(y, viewportTop);
     int finalCopyWidth = std::min(x + overlayWidth, viewportRight) - dstX;
     int finalCopyHeight = std::min(y + overlayHeight, viewportBottom) - dstY;
-    
+
     // Copy visible portion from offscreen buffer to destination with strict bounds checking
     if (finalCopyWidth > 0 && finalCopyHeight > 0 &&
         finalSrcX >= 0 && finalSrcY >= 0 &&
@@ -5518,7 +5519,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
         dstX >= 0 && dstY >= 0 &&
         dstX + finalCopyWidth <= WM_WINDOW_WIDTH &&
         dstY + finalCopyHeight <= WM_WINDOW_HEIGHT) {
-        
+
         blitBufferToBuffer(wmOverlayOffscreenBuf + finalSrcY * WM_OVERLAY_BUFFER_SIZE + finalSrcX,
             finalCopyWidth,
             finalCopyHeight,
@@ -5526,7 +5527,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
             dest + dstY * WM_WINDOW_WIDTH + dstX,
             WM_WINDOW_WIDTH);
     }
-    
+
     return 0;
 }
 
