@@ -125,7 +125,7 @@ IFACE_BAR_SIDES_ORI=0
 ;This will increase the width of the interface bar expanding the area used to display text.
 ;if IFACE_BAR_WIDTH=640 - Interface bar will remain at it's original width.
 ;if IFACE_BAR_WIDTH=800 - Interface bar will use 800pix wide asset from f2_res.dat.
-IFACE_BAR_WIDTH=640
+;IFACE_BAR_WIDTH=640
 ```
 
 Recommendations:
