@@ -13,6 +13,7 @@
 #include "interface.h"
 #include "inventory.h"
 #include "object.h"
+#include "platform_compat.h"
 #include "sfall_ini.h"
 #include "text_font.h"
 #include "tile.h"
@@ -54,7 +55,7 @@ static void mf_string_find(Program* program, int args);
 static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
 
-// ref. https://github.com/sfall-team/sfall/blob/master/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
+// ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 constexpr MetaruleInfo kMetarules[] = {
     // {"add_extra_msg_file",        mf_add_extra_msg_file,        1, 2, -1, {ARG_STRING, ARG_INT}},
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
@@ -427,7 +428,7 @@ void mf_string_compare(Program* program, int args)
     bool result = false;
     if (args < 3) {
         // default case-insensitive comparison
-        result = strcasecmp(str1, str2) == 0;
+        result = compat_stricmp(str1, str2) == 0;
     } else {
         // Fallout specific case-insensitive comparison
         result = FalloutStringCompare(str1, str2, codePage);
