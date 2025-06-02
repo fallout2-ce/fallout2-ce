@@ -1198,9 +1198,9 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8230, op_free_array);
     interpreterRegisterOpcode(0x8231, op_len_array);
     interpreterRegisterOpcode(0x8232, op_resize_array);
-    interpreterRegisterOpcode(0x8233, op_temp_array); 
-    interpreterRegisterOpcode(0x8234, op_fix_array); 
-    interpreterRegisterOpcode(0x8235, op_string_split); 
+    interpreterRegisterOpcode(0x8233, op_temp_array);
+    interpreterRegisterOpcode(0x8234, op_fix_array);
+    interpreterRegisterOpcode(0x8235, op_string_split);
     interpreterRegisterOpcode(0x8236, op_list_as_array);
     interpreterRegisterOpcode(0x8237, op_parse_int);
     interpreterRegisterOpcode(0x8238, op_atof);
@@ -1208,7 +1208,7 @@ void sfallOpcodesInit()
     // missing: modified_ini, get_sfall_args, set_sfall_arg, bunch of aimed shot, skillpoint, combat funcs
     interpreterRegisterOpcode(0x824B, op_tile_under_cursor);
     // missing: get_barter_mod, set_inven_ap_cost
-    interpreterRegisterOpcode(0x824E, op_substr); 
+    interpreterRegisterOpcode(0x824E, op_substr);
     interpreterRegisterOpcode(0x824F, op_get_string_length);
     interpreterRegisterOpcode(0x8250, op_sprintf);
     interpreterRegisterOpcode(0x8251, op_charcode);
@@ -1220,18 +1220,18 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8261, op_explosions_metarule);
     // missing: register_hook_proc
     // missing: log
-    interpreterRegisterOpcode(0x8263, op_power); 
+    interpreterRegisterOpcode(0x8263, op_power);
     // missing: ceil
-    interpreterRegisterOpcode(0x8267, op_round); 
+    interpreterRegisterOpcode(0x8267, op_round);
     // 3 reserved opcodes
-    interpreterRegisterOpcode(0x826B, op_get_message); 
+    interpreterRegisterOpcode(0x826B, op_get_message);
     // missing: sneak_success, tile_light
-    interpreterRegisterOpcode(0x826E, op_make_straight_path); 
-    interpreterRegisterOpcode(0x826F, op_obj_blocking_at); 
+    interpreterRegisterOpcode(0x826E, op_make_straight_path);
+    interpreterRegisterOpcode(0x826F, op_obj_blocking_at);
     // missing: tile_get_objects
-    interpreterRegisterOpcode(0x8271, op_party_member_list); 
+    interpreterRegisterOpcode(0x8271, op_party_member_list);
     // missing: path_find, create_spatial
-    interpreterRegisterOpcode(0x8274, op_art_exists); 
+    interpreterRegisterOpcode(0x8274, op_art_exists);
     // missing: is_carrying_obj
     interpreterRegisterOpcode(0x8276, op_sfall_func0);
     interpreterRegisterOpcode(0x8277, op_sfall_func1);
