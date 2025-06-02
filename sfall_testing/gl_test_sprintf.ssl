@@ -67,9 +67,13 @@ procedure start begin
     call assertEquals("string_tolower", string_tolower("miXeD CaSe"), "mixed case");
     call assertEquals("string_toupper", string_toupper("miXeD CaSe"), "MIXED CASE");
 
-    call assertEquals("string_find", string_find("Hello World", "World"), 6);
-    call assertEquals("string_find", string_find("Hello World", "Zebra"), -1);
+    call assertEquals("string_find ok", string_find("Hello World", "World"), 6);
+    call assertEquals("string_find missing", string_find("Hello World", "Zebra"), -1);
     call assertEquals("string_find_from", string_find_from("Hello World", "o", 6), 7);
+
+    call assertEquals("string_compare ok", string_compare("Hello World", "HeLlO WoRld"), 1);
+    call assertEquals("string_compare neq", string_compare("Hello World", "HeLlO WoRld!"), 0);
+    call assertEquals("string_compare_locale", string_compare_locale("Hello World", "HeLlO WoRld", 866), 1); // TODO: would be nice to compare cyrillic
 
     call report_test_results("sprintf");
 end

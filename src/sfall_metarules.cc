@@ -49,6 +49,7 @@ static void mf_set_ini_setting(Program* program, int args);
 static void mf_set_outline(Program* program, int args);
 static void mf_show_window(Program* program, int args);
 static void mf_tile_refresh_display(Program* program, int args);
+static void mf_string_compare(Program* program, int args);
 static void mf_string_find(Program* program, int args);
 static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
@@ -148,7 +149,7 @@ constexpr MetaruleInfo kMetarules[] = {
 	{ "show_window", mf_show_window, 0, 1 },
 	// {"signal_close_game",         mf_signal_close_game,         0, 0},
 	// {"spatial_radius",            mf_spatial_radius,            1, 1,  0, {ARG_OBJECT}},
-	// {"string_compare",            mf_string_compare,            2, 3,  0, {ARG_STRING, ARG_STRING, ARG_INT}},
+	{"string_compare",            mf_string_compare,            2, 3}, // {ARG_STRING, ARG_STRING, ARG_INT}},
 	{"string_find",               mf_string_find,               2, 3}, // {ARG_STRING, ARG_STRING, ARG_INT}},
     { "string_format", mf_string_format, 2, 8 },
 	{"string_to_case", mf_string_to_case, 2, 2 }, // {ARG_STRING, ARG_INT}}
@@ -344,6 +345,96 @@ void mf_tile_refresh_display(Program* program, int args)
 {
     tileWindowRefresh();
     programStackPushInteger(program, -1);
+}
+
+// compares strings case-insensitive with specifics for Fallout
+// from sfall: https://github.com/sfall-team/sfall/blob/71ecec3d405bd5e945f157954618b169e60068fe/sfall/Modules/Scripting/Handlers/Utils.cpp#L34
+static bool FalloutStringCompare(const char* str1, const char* str2, long codePage) {
+	while (true) {
+		unsigned char c1 = *str1;
+		unsigned char c2 = *str2;
+
+		if (c1 == 0 && c2 == 0) return true;  // end - strings are equal
+		if (c1 == 0 || c2 == 0) return false; // strings are not equal
+		str1++;
+		str2++;
+		if (c1 == c2) continue;
+
+		if (codePage == 866) {
+			// replace Russian 'x' with English (Fallout specific)
+			if (c1 == 229) c1 -= 229 - 'x';
+			if (c2 == 229) c2 -= 229 - 'x';
+		}
+
+		// 0 - 127 (standard ASCII)
+		// upper to lower case
+		if (c1 >= 'A' && c1 <= 'Z') c1 |= 32;
+		if (c2 >= 'A' && c2 <= 'Z') c2 |= 32;
+		if (c1 == c2) continue;
+		if (c1 < 128 || c2 < 128) return false;
+
+		// 128 - 255 (international/extended)
+		switch (codePage) {
+		case 866:
+			if (c1 != 149 && c2 != 149) { // code used for the 'bullet' character in Fallout font (the Russian letter 'X' uses Latin letter)
+				// upper to lower case
+				if (c1 >= 128 && c1 <= 159) {
+					c1 |= 32;
+				} else if (c1 >= 224 && c1 <= 239) {
+					c1 -= 48; // shift lower range
+				} else if (c1 == 240) {
+					c1++;
+				}
+				if (c2 >= 128 && c2 <= 159) {
+					c2 |= 32;
+				} else if (c2 >= 224 && c2 <= 239) {
+					c2 -= 48; // shift lower range
+				} else if (c2 == 240) {
+					c2++;
+				}
+			}
+			break;
+		case 1251:
+			// upper to lower case
+			if (c1 >= 0xC0 && c1 <= 0xDF) c1 |= 32;
+			if (c2 >= 0xC0 && c2 <= 0xDF) c2 |= 32;
+			if (c1 == 0xA8) c1 += 16;
+			if (c2 == 0xA8) c2 += 16;
+			break;
+		case 1250:
+		case 1252:
+			if (c1 != 0xD7 && c1 != 0xF7 && c2 != 0xD7 && c2 != 0xF7) {
+				if (c1 >= 0xC0 && c1 <= 0xDE) c1 |= 32;
+				if (c2 >= 0xC0 && c2 <= 0xDE) c2 |= 32;
+			}
+			break;
+		}
+		if (c1 != c2) return false; // strings are not equal
+	}
+}
+
+void mf_string_compare(Program* program, int args) {
+    // compare str1 to str3 case insensitively
+    // if args == 3, use FalloutStringCompare
+    const char* str1 = programStackPopString(program);
+    const char* str2 = programStackPopString(program);
+    int codePage = 0;
+    if (args == 3) {
+        codePage = programStackPopInteger(program);
+    }
+    bool result = false;
+    if (args < 3) {
+        // default case-insensitive comparison
+        result = strcasecmp(str1, str2) == 0;
+    } else {
+        // Fallout specific case-insensitive comparison
+        result = FalloutStringCompare(str1, str2, codePage);
+    }
+    if (result) {
+        programStackPushInteger(program, 1); // strings are equal
+    } else {
+        programStackPushInteger(program, 0); // strings are not equal
+    }
 }
 
 void mf_string_find(Program* program, int args)
