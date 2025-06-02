@@ -67,5 +67,9 @@ procedure start begin
     call assertEquals("string_tolower", string_tolower("miXeD CaSe"), "mixed case");
     call assertEquals("string_toupper", string_toupper("miXeD CaSe"), "MIXED CASE");
 
+    call assertEquals("string_find", string_find("Hello World", "World"), 6);
+    call assertEquals("string_find", string_find("Hello World", "Zebra"), -1);
+    call assertEquals("string_find_from", string_find_from("Hello World", "o", 6), 7);
+
     call report_test_results("sprintf");
 end

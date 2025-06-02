@@ -49,6 +49,7 @@ static void mf_set_ini_setting(Program* program, int args);
 static void mf_set_outline(Program* program, int args);
 static void mf_show_window(Program* program, int args);
 static void mf_tile_refresh_display(Program* program, int args);
+static void mf_string_find(Program* program, int args);
 static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
 
@@ -89,7 +90,7 @@ constexpr MetaruleInfo kMetarules[] = {
 	// {"get_sfall_arg_at",          mf_get_sfall_arg_at,          1, 1,  0, {ARG_INT}},
 	// {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
 	// {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
-	// {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}},
+	// {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
 	// {"get_terrain_name",          mf_get_terrain_name,          0, 2, -1, {ARG_INT, ARG_INT}},
     { "get_text_width", mf_get_text_width, 1, 1 },
     // {"get_window_attribute",      mf_get_window_attribute,      1, 2, -1, {ARG_INT, ARG_INT}},
@@ -148,7 +149,7 @@ constexpr MetaruleInfo kMetarules[] = {
 	// {"signal_close_game",         mf_signal_close_game,         0, 0},
 	// {"spatial_radius",            mf_spatial_radius,            1, 1,  0, {ARG_OBJECT}},
 	// {"string_compare",            mf_string_compare,            2, 3,  0, {ARG_STRING, ARG_STRING, ARG_INT}},
-	// {"string_find",               mf_string_find,               2, 3, -1, {ARG_STRING, ARG_STRING, ARG_INT}},
+	{"string_find",               mf_string_find,               2, 3}, // {ARG_STRING, ARG_STRING, ARG_INT}},
     { "string_format", mf_string_format, 2, 8 },
 	{"string_to_case", mf_string_to_case, 2, 2 }, // {ARG_STRING, ARG_INT}}
 	// {"tile_by_position",          mf_tile_by_position,          2, 2, -1, {ARG_INT, ARG_INT}},
@@ -343,6 +344,30 @@ void mf_tile_refresh_display(Program* program, int args)
 {
     tileWindowRefresh();
     programStackPushInteger(program, -1);
+}
+
+void mf_string_find(Program* program, int args)
+{
+    const char* str = programStackPopString(program);
+    const char* substr = programStackPopString(program);
+    int startPos = 0;
+
+    if (args == 3) {
+        startPos = programStackPopInteger(program);
+    }
+
+    if (startPos < 0 || startPos >= strlen(str)) {
+        debugPrint("string_find: invalid start position %d", startPos);
+        programStackPushInteger(program, -1);
+        return;
+    }
+
+    const char* found = strstr(str + startPos, substr);
+    if (found) {
+        programStackPushInteger(program, found - str);
+    } else {
+        programStackPushInteger(program, -1);
+    }
 }
 
 void mf_string_to_case(Program* program, int args) 
