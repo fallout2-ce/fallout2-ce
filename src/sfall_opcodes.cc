@@ -1098,6 +1098,16 @@ static void op_sprintf(Program* program)
     sprintf_lite(program, 2, "op_sprintf");
 }
 
+static void op_charcode(Program* program)
+{
+    const char* str = programStackPopString(program);
+    if (str != nullptr && str[0] != '\0') {
+        programStackPushInteger(program, static_cast<int>(str[0]));
+    } else {
+        programStackPushInteger(program, 0);
+    }
+}
+
 void sfallOpcodesInit()
 {
     // ref. https://github.com/sfall-team/sfall/blob/71ecec3d405bd5e945f157954618b169e60068fe/artifacts/scripting/sfall%20opcode%20list.txt#L145
@@ -1201,7 +1211,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x824E, op_substr); 
     interpreterRegisterOpcode(0x824F, op_get_string_length);
     interpreterRegisterOpcode(0x8250, op_sprintf);
-    // missing: ord, <reserved>
+    interpreterRegisterOpcode(0x8251, op_charcode);
     interpreterRegisterOpcode(0x8253, op_type_of);
     // missing: save_array, load_array
     interpreterRegisterOpcode(0x8256, op_get_array_key);

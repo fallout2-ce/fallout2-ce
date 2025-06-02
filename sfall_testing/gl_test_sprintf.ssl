@@ -75,5 +75,8 @@ procedure start begin
     call assertEquals("string_compare neq", string_compare("Hello World", "HeLlO WoRld!"), 0);
     call assertEquals("string_compare_locale", string_compare_locale("Hello World", "HeLlO WoRld", 866), 1); // TODO: would be nice to compare cyrillic
 
+    call assertEquals("charcode", charcode("A"), 65);
+    call assertEquals("charcode empty", charcode(""), 0);
+
     call report_test_results("sprintf");
 end
