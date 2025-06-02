@@ -1100,7 +1100,9 @@ static void op_sprintf(Program* program)
 
 void sfallOpcodesInit()
 {
+    // ref. https://github.com/sfall-team/sfall/blob/71ecec3d405bd5e945f157954618b169e60068fe/artifacts/scripting/sfall%20opcode%20list.txt#L145
     interpreterRegisterOpcode(0x8156, op_read_byte);
+    // missing: read_short, read_int, read_string
     interpreterRegisterOpcode(0x815A, op_set_pc_base_stat);
     interpreterRegisterOpcode(0x815B, op_set_pc_bonus_stat);
     interpreterRegisterOpcode(0x815C, op_get_pc_base_stat);
@@ -1112,74 +1114,115 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8162, op_tap_key);
     interpreterRegisterOpcode(0x8163, op_get_year);
     interpreterRegisterOpcode(0x8164, op_game_loaded);
+    // missing: graphics_funcs_available, load_shader, free_shader, activate_shader, deactivate_shader
     interpreterRegisterOpcode(0x816A, op_set_global_script_repeat);
+    // missing: input_funcs_available
     interpreterRegisterOpcode(0x816C, op_key_pressed);
+    // missing: set_shader_int, set_shader_float, set_shader_vector
     interpreterRegisterOpcode(0x8170, op_in_world_map);
     interpreterRegisterOpcode(0x8171, op_force_encounter);
     interpreterRegisterOpcode(0x8172, op_set_world_map_pos);
+    // missing: many set_perk, kill_counter, critter_ap, dm/df_model functions
     interpreterRegisterOpcode(0x8193, op_get_current_hand);
+    // missing: toggle_active_hand, 6 knockback functions
     interpreterRegisterOpcode(0x819B, op_set_global_script_type);
     interpreterRegisterOpcode(0x819D, op_set_sfall_global);
     interpreterRegisterOpcode(0x819E, op_get_sfall_global_int);
+    // missing: get_sfall_global_float, skill_max, eax, npc_level, viewport, mod
     interpreterRegisterOpcode(0x81AC, op_get_ini_setting);
+    // missing: get_shader_version, get_shader_mode
     interpreterRegisterOpcode(0x81AF, op_get_game_mode);
     interpreterRegisterOpcode(0x81B3, op_get_uptime);
+    // missing: set_stat_max, set_stat_min
     interpreterRegisterOpcode(0x81B6, op_set_car_current_town);
+    // missing: set_pc/npc_stat_max/min, many fake_perk, fake_trait functions
+    // missing: set_critter/base_hit_chance_mod
+    // missing: write_byte/short/int
+    // missing: call_offset_v/r0-4
+    // missing: show/hide_iface_tag, is_face_tag_active
     interpreterRegisterOpcode(0x81DF, op_get_bodypart_hit_modifier);
     interpreterRegisterOpcode(0x81E0, op_set_bodypart_hit_modifier);
+    // missing: set/get/reset_critical_table
+    // missing: get_sfall_arg, set_sfall_return
+    // missing: set/get_unspend_ap_bonus/ebonus
+    // missing: init_hook
     interpreterRegisterOpcode(0x81EB, op_get_ini_string);
     interpreterRegisterOpcode(0x81EC, op_sqrt);
     interpreterRegisterOpcode(0x81ED, op_abs);
+    // missing: sin, cos, tan, atan
+    // missing: set_palette
+    // missing: remove_script, set_script
     interpreterRegisterOpcode(0x81F5, op_get_script);
+    // missing: nb_create_char, fs_*
     interpreterRegisterOpcode(0x8204, op_get_proto_data);
     interpreterRegisterOpcode(0x8205, op_set_proto_data);
     interpreterRegisterOpcode(0x8206, op_set_self);
+    // missing: register_hook, more fs_*
     interpreterRegisterOpcode(0x820D, op_list_begin);
     interpreterRegisterOpcode(0x820E, op_list_next);
     interpreterRegisterOpcode(0x820F, op_list_end);
     interpreterRegisterOpcode(0x8210, op_get_version_major);
     interpreterRegisterOpcode(0x8211, op_get_version_minor);
     interpreterRegisterOpcode(0x8212, op_get_version_patch);
+    // missing: hero_select_win, set_hero_race, set_hero_style, set_critter_burst_disable
     interpreterRegisterOpcode(0x8217, op_get_weapon_ammo_pid);
     interpreterRegisterOpcode(0x8218, op_set_weapon_ammo_pid);
     interpreterRegisterOpcode(0x8219, op_get_weapon_ammo_count);
     interpreterRegisterOpcode(0x821A, op_set_weapon_ammo_count);
+    // missing: write_string
     interpreterRegisterOpcode(0x821C, op_get_mouse_x);
     interpreterRegisterOpcode(0x821D, op_get_mouse_y);
     interpreterRegisterOpcode(0x821E, op_get_mouse_buttons);
+    // missing: get_window_under_mouse
     interpreterRegisterOpcode(0x8220, op_get_screen_width);
     interpreterRegisterOpcode(0x8221, op_get_screen_height);
+    // missing: stop_game, resume_game
     interpreterRegisterOpcode(0x8224, op_create_message_window);
+    // missing: remove_trait, get_light_level, refresh_pc_art
     interpreterRegisterOpcode(0x8228, op_get_attack_type);
     interpreterRegisterOpcode(0x8229, op_force_encounter_with_flags);
+    // missing: set_map_time_multi, play_sfall_sound, stop_sfall_sound
     interpreterRegisterOpcode(0x822D, op_create_array);
     interpreterRegisterOpcode(0x822E, op_set_array);
     interpreterRegisterOpcode(0x822F, op_get_array);
     interpreterRegisterOpcode(0x8230, op_free_array);
     interpreterRegisterOpcode(0x8231, op_len_array);
     interpreterRegisterOpcode(0x8232, op_resize_array);
-    interpreterRegisterOpcode(0x8233, op_temp_array);
-    interpreterRegisterOpcode(0x8234, op_fix_array);
-    interpreterRegisterOpcode(0x8235, op_string_split);
+    interpreterRegisterOpcode(0x8233, op_temp_array); 
+    interpreterRegisterOpcode(0x8234, op_fix_array); 
+    interpreterRegisterOpcode(0x8235, op_string_split); 
     interpreterRegisterOpcode(0x8236, op_list_as_array);
     interpreterRegisterOpcode(0x8237, op_parse_int);
     interpreterRegisterOpcode(0x8238, op_atof);
     interpreterRegisterOpcode(0x8239, op_scan_array);
+    // missing: modified_ini, get_sfall_args, set_sfall_arg, bunch of aimed shot, skillpoint, combat funcs
     interpreterRegisterOpcode(0x824B, op_tile_under_cursor);
-    interpreterRegisterOpcode(0x824E, op_substr);
+    // missing: get_barter_mod, set_inven_ap_cost
+    interpreterRegisterOpcode(0x824E, op_substr); 
     interpreterRegisterOpcode(0x824F, op_get_string_length);
     interpreterRegisterOpcode(0x8250, op_sprintf);
+    // missing: ord, <reserved>
     interpreterRegisterOpcode(0x8253, op_type_of);
+    // missing: save_array, load_array
     interpreterRegisterOpcode(0x8256, op_get_array_key);
     interpreterRegisterOpcode(0x8257, op_stack_array);
+    // missing: <reserved>x2, reg_anim_*
     interpreterRegisterOpcode(0x8261, op_explosions_metarule);
-    interpreterRegisterOpcode(0x8263, op_power);
-    interpreterRegisterOpcode(0x8267, op_round);
-    interpreterRegisterOpcode(0x826B, op_get_message);
-    interpreterRegisterOpcode(0x826E, op_make_straight_path);
-    interpreterRegisterOpcode(0x826F, op_obj_blocking_at);
-    interpreterRegisterOpcode(0x8271, op_party_member_list);
-    interpreterRegisterOpcode(0x8274, op_art_exists);
+    // missing: register_hook_proc
+    // missing: log
+    interpreterRegisterOpcode(0x8263, op_power); 
+    // missing: ceil
+    interpreterRegisterOpcode(0x8267, op_round); 
+    // 3 reserved opcodes
+    interpreterRegisterOpcode(0x826B, op_get_message); 
+    // missing: sneak_success, tile_light
+    interpreterRegisterOpcode(0x826E, op_make_straight_path); 
+    interpreterRegisterOpcode(0x826F, op_obj_blocking_at); 
+    // missing: tile_get_objects
+    interpreterRegisterOpcode(0x8271, op_party_member_list); 
+    // missing: path_find, create_spatial
+    interpreterRegisterOpcode(0x8274, op_art_exists); 
+    // missing: is_carrying_obj
     interpreterRegisterOpcode(0x8276, op_sfall_func0);
     interpreterRegisterOpcode(0x8277, op_sfall_func1);
     interpreterRegisterOpcode(0x8278, op_sfall_func2);
@@ -1187,6 +1230,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x827A, op_sfall_func4);
     interpreterRegisterOpcode(0x827B, op_sfall_func5);
     interpreterRegisterOpcode(0x827C, op_sfall_func6);
+    // missing: register_hook_proc2, reg_anim_callback
     interpreterRegisterOpcode(0x8280, op_sfall_func7);
     interpreterRegisterOpcode(0x8281, op_sfall_func8);
     interpreterRegisterOpcode(0x827F, op_div);

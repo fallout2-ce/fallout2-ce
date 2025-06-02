@@ -64,5 +64,8 @@ procedure start begin
             REPEAT_1024,
             REPEAT_1024)), 5119);
 
+    call assertEquals("string_tolower", string_tolower("miXeD CaSe"), "mixed case");
+    call assertEquals("string_toupper", string_toupper("miXeD CaSe"), "MIXED CASE");
+
     call report_test_results("sprintf");
 end
