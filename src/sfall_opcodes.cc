@@ -1,6 +1,7 @@
 #include "sfall_opcodes.h"
 
 #include <string.h>
+#include <math.h>
 
 #include "animation.h"
 #include "art.h"
@@ -326,6 +327,72 @@ static void op_abs(Program* program)
     } else {
         programStackPushFloat(program, abs(programValue.asFloat()));
     }
+}
+
+// sin
+static void op_sin(Program* program)
+{
+    ProgramValue programValue = programStackPopValue(program);
+    programStackPushFloat(program, sinf(programValue.asFloat()));
+}
+
+// cos
+static void op_cos(Program* program)
+{
+    ProgramValue programValue = programStackPopValue(program);
+    programStackPushFloat(program, cosf(programValue.asFloat()));
+}
+
+// tan
+static void op_tan(Program* program)
+{
+    ProgramValue programValue = programStackPopValue(program);
+    programStackPushFloat(program, tanf(programValue.asFloat()));
+}
+
+// arctan
+static void op_arctan(Program* program)
+{
+    ProgramValue xValue = programStackPopValue(program);
+    ProgramValue yValue = programStackPopValue(program);
+    programStackPushFloat(program, atan2f(yValue.asFloat(), xValue.asFloat()));
+}
+
+// pow (^)
+static void op_power(Program* program)
+{
+    ProgramValue expValue = programStackPopValue(program);
+    ProgramValue baseValue = programStackPopValue(program);
+
+    // CE: Implementation is slightly different, check.
+    float result = powf(baseValue.asFloat(), expValue.asFloat());
+
+    if (baseValue.isInt() && expValue.isInt()) {
+        programStackPushInteger(program, static_cast<int>(result));
+    } else {
+        programStackPushFloat(program, result);
+    }
+}
+
+// log
+static void op_log(Program* program)
+{
+    ProgramValue programValue = programStackPopValue(program);
+    programStackPushFloat(program, logf(programValue.asFloat()));
+}
+
+// ceil
+static void op_ceil(Program* program)
+{
+    ProgramValue programValue = programStackPopValue(program);
+    programStackPushInteger(program, static_cast<int>(ceilf(programValue.asFloat())));
+}
+
+// exp
+static void op_exponent(Program* program)
+{
+    ProgramValue programValue = programStackPopValue(program);
+    programStackPushFloat(program, expf(programValue.asFloat()));
 }
 
 // get_script
@@ -774,22 +841,6 @@ static void op_explosions_metarule(Program* program)
     }
 }
 
-// pow (^)
-static void op_power(Program* program)
-{
-    ProgramValue expValue = programStackPopValue(program);
-    ProgramValue baseValue = programStackPopValue(program);
-
-    // CE: Implementation is slightly different, check.
-    float result = powf(baseValue.asFloat(), expValue.asFloat());
-
-    if (baseValue.isInt() && expValue.isInt()) {
-        programStackPushInteger(program, static_cast<int>(result));
-    } else {
-        programStackPushFloat(program, result);
-    }
-}
-
 // message_str_game
 static void op_get_message(Program* program)
 {
@@ -1138,7 +1189,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x819B, op_set_global_script_type);
     interpreterRegisterOpcode(0x819D, op_set_sfall_global);
     interpreterRegisterOpcode(0x819E, op_get_sfall_global_int);
-    // missing: get_sfall_global_float, skill_max, eax, npc_level, viewport, mod
+    // missing: get_sfall_global_float, skill_max, eax (deprecated), npc_level, viewport, mod
     interpreterRegisterOpcode(0x81AC, op_get_ini_setting);
     // missing: get_shader_version, get_shader_mode
     interpreterRegisterOpcode(0x81AF, op_get_game_mode);
@@ -1159,7 +1210,10 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x81EB, op_get_ini_string);
     interpreterRegisterOpcode(0x81EC, op_sqrt);
     interpreterRegisterOpcode(0x81ED, op_abs);
-    // missing: sin, cos, tan, atan
+    interpreterRegisterOpcode(0x81EE, op_sin);
+    interpreterRegisterOpcode(0x81EF, op_cos);
+    interpreterRegisterOpcode(0x81F0, op_tan);
+    interpreterRegisterOpcode(0x81F1, op_arctan);
     // missing: set_palette
     // missing: remove_script, set_script
     interpreterRegisterOpcode(0x81F5, op_get_script);
@@ -1219,9 +1273,10 @@ void sfallOpcodesInit()
     // missing: <reserved>x2, reg_anim_*
     interpreterRegisterOpcode(0x8261, op_explosions_metarule);
     // missing: register_hook_proc
-    // missing: log
     interpreterRegisterOpcode(0x8263, op_power);
-    // missing: ceil
+    interpreterRegisterOpcode(0x8264, op_log);
+    interpreterRegisterOpcode(0x8265, op_exponent);
+    interpreterRegisterOpcode(0x8266, op_ceil);
     interpreterRegisterOpcode(0x8267, op_round);
     // 3 reserved opcodes
     interpreterRegisterOpcode(0x826B, op_get_message);

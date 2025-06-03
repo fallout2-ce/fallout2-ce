@@ -4,6 +4,7 @@
 #include <memory>
 #include <string.h>
 #include <string>
+#include <math.h>
 
 #include "combat.h"
 #include "debug.h"
@@ -54,6 +55,7 @@ static void mf_string_compare(Program* program, int args);
 static void mf_string_find(Program* program, int args);
 static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
+static void mf_floor2(Program* program, int args);
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 constexpr MetaruleInfo kMetarules[] = {
@@ -74,7 +76,7 @@ constexpr MetaruleInfo kMetarules[] = {
     // {"draw_image",                mf_draw_image,                1, 5, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"draw_image_scaled",         mf_draw_image_scaled,         1, 6, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"exec_map_update_scripts",   mf_exec_map_update_scripts,   0, 0},
-    // {"floor2",                    mf_floor2,                    1, 1,  0, {ARG_NUMBER}},
+    { "floor2", mf_floor2, 1, 1 },
     // {"get_can_rest_on_map",       mf_get_rest_on_map,           2, 2, -1, {ARG_INT, ARG_INT}},
     // {"get_combat_free_move",      mf_get_combat_free_move,      0, 0},
     // {"get_current_inven_size",    mf_get_current_inven_size,    1, 1,  0, {ARG_OBJECT}},
@@ -482,6 +484,12 @@ void mf_string_to_case(Program* program, int args)
 void mf_string_format(Program* program, int args)
 {
     sprintf_lite(program, args, "string_format");
+}
+
+void mf_floor2(Program* program, int args)
+{
+    ProgramValue programValue = programStackPopValue(program);
+    programStackPushInteger(program, static_cast<int>(floor(programValue.asFloat())));
 }
 
 void sprintf_lite(Program* program, int args, const char* infoOpcodeName)
