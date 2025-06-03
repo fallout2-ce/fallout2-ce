@@ -3183,15 +3183,6 @@ int programStackPopInteger(Program* program)
     return programValue.integerValue;
 }
 
-float programStackPopFloat(Program* program)
-{
-    ProgramValue programValue = programStackPopValue(program);
-    if (programValue.opcode != VALUE_TYPE_INT) {
-        programFatalError("float expected, got %x", programValue.opcode);
-    }
-    return programValue.floatValue;
-}
-
 char* programStackPopString(Program* program)
 {
     ProgramValue programValue = programStackPopValue(program);

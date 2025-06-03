@@ -230,7 +230,6 @@ void programStackPushPointer(Program* program, void* value);
 
 ProgramValue programStackPopValue(Program* program);
 int programStackPopInteger(Program* program);
-float programStackPopFloat(Program* program);
 char* programStackPopString(Program* program);
 void* programStackPopPointer(Program* program);
 

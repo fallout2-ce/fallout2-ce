@@ -993,13 +993,8 @@ static void op_type_of(Program* program)
 // round
 static void op_round(Program* program)
 {
-    float floatValue = programStackPopFloat(program);
-    int integerValue = static_cast<int>(floatValue);
-    float mod = floatValue - static_cast<float>(integerValue);
-    if (abs(mod) >= 0.5) {
-        integerValue += mod > 0.0 ? 1 : -1;
-    }
-    programStackPushInteger(program, integerValue);
+    float floatValue = programStackPopValue(program).asFloat();
+    programStackPushInteger(program, lroundf(floatValue));
 }
 
 enum BlockType {

@@ -29,7 +29,7 @@ procedure assertNotEquals(variable desc, variable a, variable b) begin
    end
 end
 
-procedure assertFloat(variable desc, variable a, variable b, variable tolerance) begin
+procedure assertFloat(variable desc, variable a, variable b, variable tolerance = 0.001) begin
    test_suite_assertions++;
 
    variable diff := abs(a - b);
