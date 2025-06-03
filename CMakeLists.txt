@@ -314,7 +314,7 @@ endif()
 if(WIN32)
     target_link_libraries(${EXECUTABLE_NAME}
         winmm
-        libcpmt
+       #  libcpmt # Disabled, was causing issues on VS2019 builing from UI
     )
 endif()
 
