@@ -1,10 +1,10 @@
 #include "sfall_metarules.h"
 
 #include <algorithm>
+#include <math.h>
 #include <memory>
 #include <string.h>
 #include <string>
-#include <math.h>
 
 #include "combat.h"
 #include "debug.h"

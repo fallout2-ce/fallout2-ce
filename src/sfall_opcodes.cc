@@ -1,7 +1,7 @@
 #include "sfall_opcodes.h"
 
-#include <string.h>
 #include <math.h>
+#include <string.h>
 
 #include "animation.h"
 #include "art.h"
