@@ -368,6 +368,7 @@ static void op_power(Program* program)
     float result = powf(baseValue.asFloat(), expValue.asFloat());
 
     if (baseValue.isInt() && expValue.isInt()) {
+        // Note: this will truncate the result if power is negative.  Keeping it to match sfall.
         programStackPushInteger(program, static_cast<int>(result));
     } else {
         programStackPushFloat(program, result);
