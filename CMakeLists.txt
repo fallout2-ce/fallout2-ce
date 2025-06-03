@@ -325,6 +325,10 @@ if(WIN32)
     )
 endif()
 
+if (MSVC AND CMAKE_GENERATOR_TOOLSET STREQUAL "v141_xp")
+  add_definitions(-DTOOLSET_V141_XP)
+endif()
+
 if(APPLE)
     if(IOS)
         set(RESOURCES

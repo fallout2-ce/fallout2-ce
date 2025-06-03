@@ -22,6 +22,11 @@
 #elif _WIN32_WINNT != 0x0501
 #error "_WIN32_WINNT must be exactly 0x0501 for Windows XP compatibility in 32-bit builds."
 #endif
+
+#ifndef TOOLSET_V141_XP
+#error "TOOLSET_V141_XP is not used."
+#endif
+
 #endif
 
 namespace fallout {
