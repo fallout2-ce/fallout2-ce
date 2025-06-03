@@ -24,8 +24,10 @@ option(FALLOUT_VENDORED "Use vendored third-party libraries" ON)
 
 if(ANDROID)
     add_library(${EXECUTABLE_NAME} SHARED)
+elseif(APPLE)
+    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE)
 else()
-    add_executable(${EXECUTABLE_NAME} WIN32 MACOSX_BUNDLE)
+    add_executable(${EXECUTABLE_NAME})
 endif()
 
 # Git Info
