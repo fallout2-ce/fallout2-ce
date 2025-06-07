@@ -30,8 +30,8 @@ static char* _defaultFilename_(char* s);
 static int _outputStr(char* a1);
 static int _checkWait(Program* program);
 static char* programGetCurrentProcedureName(Program* s);
-static opcode_t stackReadInt16(unsigned char* data, int pos);
-static int stackReadInt32(unsigned char* data, int pos);
+opcode_t stackReadInt16(unsigned char* data, int pos);
+int stackReadInt32(unsigned char* data, int pos);
 static void stackWriteInt16(int value, unsigned char* data, int pos);
 static void stackWriteInt32(int value, unsigned char* data, int pos);
 static void stackPushInt16(unsigned char* data, int* pointer, int value);
@@ -155,7 +155,7 @@ static int (*_outputFunc)(char*) = _outputStr;
 static int _cpuBurstSize = 10;
 
 // 0x59E230
-static OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
+OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
 
 // 0x59E78C
 static Program* gInterpreterCurrentProgram;
@@ -276,7 +276,7 @@ static char* programGetCurrentProcedureName(Program* program)
 }
 
 // 0x467290
-static opcode_t stackReadInt16(unsigned char* data, int pos)
+opcode_t stackReadInt16(unsigned char* data, int pos)
 {
     // TODO: The return result is probably short.
     opcode_t value = 0;
@@ -286,7 +286,7 @@ static opcode_t stackReadInt16(unsigned char* data, int pos)
 }
 
 // 0x4672A4
-static int stackReadInt32(unsigned char* data, int pos)
+int stackReadInt32(unsigned char* data, int pos)
 {
     int value = 0;
     value |= data[pos++] << 24;

@@ -10,6 +10,7 @@
 #include "interface.h"
 #include "memory.h"
 #include "mouse.h"
+#include "scan_unimplemented.h"
 #include "win32.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
@@ -138,6 +139,22 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
             configGetInt(&resolutionConfig, "IFACE", "IFACE_BAR_WIDTH", &gInterfaceBarWidth);
             configGetInt(&resolutionConfig, "IFACE", "IFACE_BAR_SIDE_ART", &gInterfaceSidePanelsImageId);
             configGetBool(&resolutionConfig, "IFACE", "IFACE_BAR_SIDES_ORI", &gInterfaceSidePanelsExtendFromScreenEdge);
+
+            {
+                ConfigMap f2_res_defaults;
+                f2_res_defaults["MAIN"]["SCR_WIDTH"] = "640";
+                f2_res_defaults["MAIN"]["SCR_HEIGHT"] = "480";
+                f2_res_defaults["MAIN"]["WINDOWED"] = "0";
+                f2_res_defaults["MAIN"]["SCALE_2X"] = "0";
+                f2_res_defaults["IFACE"]["IFACE_BAR_MODE"] = "0";
+                f2_res_defaults["IFACE"]["IFACE_BAR_WIDTH"] = "0";
+                f2_res_defaults["IFACE"]["IFACE_BAR_SIDE_ART"] = "0";
+                f2_res_defaults["IFACE"]["IFACE_BAR_SIDES_ORI"] = "0";
+                f2_res_defaults["STATIC_SCREENS"]["SPLASH_SCRN_SIZE"] = "0";
+
+                auto configChecker = ConfigChecker(f2_res_defaults, "f2_res.ini");
+                configChecker.check(resolutionConfig);
+            }
         }
         configFree(&resolutionConfig);
     }

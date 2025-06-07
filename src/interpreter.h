@@ -241,6 +241,10 @@ ProgramValue programReturnStackPopValue(Program* program);
 int programReturnStackPopInteger(Program* program);
 void* programReturnStackPopPointer(Program* program);
 
+opcode_t stackReadInt16(unsigned char* data, int pos);
+int stackReadInt32(unsigned char* data, int pos);
+
+extern OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
 } // namespace fallout
 
 #endif /* INTERPRETER_H */

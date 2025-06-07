@@ -23,16 +23,6 @@
 
 namespace fallout {
 
-typedef void(MetaruleHandler)(Program* program, int args);
-
-// Simplified cousin of `SfallMetarule` from Sfall.
-typedef struct MetaruleInfo {
-    const char* name;
-    MetaruleHandler* handler;
-    int minArgs;
-    int maxArgs;
-} MetaruleInfo;
-
 static void mf_car_gas_amount(Program* program, int args);
 static void mf_combat_data(Program* program, int args);
 static void mf_critter_inven_obj2(Program* program, int args);
@@ -58,7 +48,7 @@ static void mf_string_format(Program* program, int args);
 static void mf_floor2(Program* program, int args);
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
-constexpr MetaruleInfo kMetarules[] = {
+const MetaruleInfo kMetarules[] = {
     // {"add_extra_msg_file",        mf_add_extra_msg_file,        1, 2, -1, {ARG_STRING, ARG_INT}},
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
@@ -162,6 +152,7 @@ constexpr MetaruleInfo kMetarules[] = {
     // {"unwield_slot",              mf_unwield_slot,              2, 2, -1, {ARG_OBJECT, ARG_INT}},
     // {"win_fill_color",            mf_win_fill_color,            0, 5, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
 };
+const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
 constexpr int kMetarulesMax = sizeof(kMetarules) / sizeof(kMetarules[0]);
 

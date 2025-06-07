@@ -1,9 +1,9 @@
 #include "sfall_config.h"
 
+#include "platform_compat.h"
+#include "scan_unimplemented.h"
 #include <stdio.h>
 #include <string.h>
-
-#include "platform_compat.h"
 
 namespace fallout {
 
@@ -70,6 +70,8 @@ bool sfallConfigInit(int argc, char** argv)
     configSetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_AUTO_OPEN_DOORS, 0);
     configSetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAPLESS_MUSIC, 0);
 
+    auto configChecker = ConfigChecker(gSfallConfig, "ddraw.ini");
+
     char path[COMPAT_MAX_PATH];
     char* executable = argv[0];
     char* ch = strrchr(executable, '\\');
@@ -84,6 +86,8 @@ bool sfallConfigInit(int argc, char** argv)
     configRead(&gSfallConfig, path, false);
 
     configParseCommandLineArguments(&gSfallConfig, argc, argv);
+
+    configChecker.check(gSfallConfig);
 
     gSfallConfigInitialized = true;
 
