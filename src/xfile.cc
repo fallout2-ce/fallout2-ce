@@ -532,7 +532,9 @@ bool xbaseOpen(const char* path)
 
     char workingDirectory[COMPAT_MAX_PATH];
     if (getcwd(workingDirectory, COMPAT_MAX_PATH) == nullptr) {
-        // FIXME: Leaking xbase and path.
+        // FIXME: Leaking xbase and path. Fixed?
+        free(xbase->path);
+        free(xbase);
         return false;
     }
 
@@ -543,17 +545,12 @@ bool xbaseOpen(const char* path)
         return true;
     }
 
-    if (xbaseMakeDirectory(path) != 0) {
-        // FIXME: Leaking xbase and path.
-        return false;
-    }
-
     chdir(workingDirectory);
 
     xbase->next = gXbaseHead;
     gXbaseHead = xbase;
 
-    return true;
+    return false; // return false to trigger messages on game load
 }
 
 // 0x4DFB3C
