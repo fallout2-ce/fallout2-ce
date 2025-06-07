@@ -1,7 +1,8 @@
 #include "sfall_ini.h"
 
 #include <algorithm>
-#include <cstring>
+#include <cstdio> // for snprintf
+#include <cstring> // for strncpy, strlen
 
 #include "config.h"
 #include "platform_compat.h"
@@ -192,6 +193,42 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
     configFree(&config);
 
     return saved;
+}
+
+bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out) {
+    if (ini_file_name == nullptr || config_out == nullptr) {
+        return false;
+    }
+
+    char path[COMPAT_MAX_PATH];
+    bool loaded = false;
+
+    if (basePath[0] != '\0' && !is_system_file_name(ini_file_name)) {
+        snprintf(path, sizeof(path), "%s\\%s", basePath, ini_file_name);
+        loaded = configRead(config_out, path, false);
+    }
+
+    if (!loaded) {
+        strncpy(path, ini_file_name, sizeof(path) - 1);
+        path[sizeof(path) - 1] = '\0';
+        loaded = configRead(config_out, path, false);
+    }
+
+    return loaded;
+}
+
+const ConfigSection* sfall_find_section_in_config(const Config* config, const char* section_name) {
+    if (config == nullptr || section_name == nullptr) {
+        return nullptr;
+    }
+
+    int sectionIndex = dictionaryGetIndexByKey(config, section_name);
+    if (sectionIndex == -1) {
+        return nullptr;
+    }
+
+    DictionaryEntry* sectionEntry = &(config->entries[sectionIndex]);
+    return static_cast<const ConfigSection*>(sectionEntry->value);
 }
 
 } // namespace fallout

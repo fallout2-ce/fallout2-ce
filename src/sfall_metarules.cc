@@ -15,8 +15,10 @@
 #include "inventory.h"
 #include "object.h"
 #include "platform_compat.h"
+#include "sfall_arrays.h" // For CreateTempArray, SetArray
 #include "sfall_ini.h"
 #include "text_font.h"
+#include "config.h" // For Config, configInit, configFree
 #include "tile.h"
 #include "window.h"
 #include "worldmap.h"
@@ -39,6 +41,7 @@ static void mf_critter_inven_obj2(Program* program, int args);
 static void mf_dialog_obj(Program* program, int args);
 static void mf_get_cursor_mode(Program* program, int args);
 static void mf_get_flags(Program* program, int args);
+static void mf_get_ini_section(Program* program, int args);
 static void mf_get_object_data(Program* program, int args);
 static void mf_get_text_width(Program* program, int args);
 static void mf_intface_redraw(Program* program, int args);
@@ -56,6 +59,73 @@ static void mf_string_find(Program* program, int args);
 static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
 static void mf_floor2(Program* program, int args);
+
+static void mf_get_ini_section(Program* program, int args) {
+    // Arguments: file_path (string), section_name (string)
+    // Expected args count is 2, this will be checked by the metarule dispatcher.
+
+    const char* sectionName = programStackPopString(program);
+    const char* filePath = programStackPopString(program);
+
+    // Create a temporary associative array. This will be our return value.
+    // CreateTempArray takes (len, flags). For associative, len is -1. flags 0 is typical.
+    ArrayId arrayId = CreateTempArray(-1, 0);
+
+    if (filePath == nullptr || sectionName == nullptr) {
+        // If inputs are invalid, push the empty array ID and return.
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    Config iniConfig;
+    if (!configInit(&iniConfig)) {
+        // Failed to initialize config structure. Push empty array and return.
+        debugPrint("mf_get_ini_section: Failed to initialize Config structure.");
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    // Load the INI file into our Config structure.
+    if (sfall_load_named_ini_file(filePath, &iniConfig)) {
+        // Find the specified section within the loaded INI.
+        const ConfigSection* section = sfall_find_section_in_config(&iniConfig, sectionName);
+
+        if (section != nullptr) {
+            // Section found, iterate through its key-value pairs.
+            // A ConfigSection is a Dictionary. Iterate its entries.
+            for (int i = 0; i < section->entriesLength; ++i) {
+                DictionaryEntry* entry = &(section->entries[i]);
+                const char* key = entry->key;
+                // The value in ConfigSection's dictionary is char**
+                // Dereference once to get char*
+                const char* value = *(static_cast<char**>(entry->value));
+
+                if (key != nullptr && value != nullptr) {
+                    // sfall arrays require ProgramValue for keys and values.
+                    // Create ProgramValue for key (string)
+                    ProgramValue keyPv;
+                    keyPv.opcode = VALUE_TYPE_STRING;
+                    keyPv.integerValue = programPushString(program, key);
+
+                    // Create ProgramValue for value (string)
+                    ProgramValue valuePv;
+                    valuePv.opcode = VALUE_TYPE_STRING;
+                    valuePv.integerValue = programPushString(program, value);
+
+                    // Add to the sfall array. allowUnset = false for typical SetArray usage.
+                    SetArray(arrayId, keyPv, valuePv, false, program);
+                }
+            }
+        }
+        // If section is nullptr, we do nothing, an empty array will be returned.
+    }
+    // If sfall_load_named_ini_file failed, we also do nothing, an empty array will be returned.
+
+    configFree(&iniConfig); // Clean up the Config structure.
+
+    // Push the ID of the created (and possibly populated) array onto the stack.
+    programStackPushInteger(program, arrayId);
+}
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 constexpr MetaruleInfo kMetarules[] = {
@@ -83,7 +153,7 @@ constexpr MetaruleInfo kMetarules[] = {
     { "get_cursor_mode", mf_get_cursor_mode, 0, 0 },
     { "get_flags", mf_get_flags, 1, 1 },
     // {"get_ini_config",            mf_get_ini_config,            2, 2,  0, {ARG_STRING, ARG_INT}},
-    // {"get_ini_section",           mf_get_ini_section,           2, 2, -1, {ARG_STRING, ARG_STRING}},
+    { "get_ini_section", mf_get_ini_section, 2, 2 },
     // {"get_ini_sections",          mf_get_ini_sections,          1, 1, -1, {ARG_STRING}},
     // {"get_inven_ap_cost",         mf_get_inven_ap_cost,         0, 0},
     // {"get_map_enter_position",    mf_get_map_enter_position,    0, 0},
