@@ -30,8 +30,8 @@
             ],
             "generator": "Visual Studio 16 2019",
             "architecture": "Win32",
+            "toolset": "v141_xp",
             "cacheVariables": {
-                "CMAKE_GENERATOR_TOOLSET": "v141_xp",
                 "CMAKE_C_FLAGS": "/D_WIN32_WINNT=0x0501",
                 "CMAKE_CXX_FLAGS": "/D_WIN32_WINNT=0x0501 /D_STATIC_CPPLIB",
                 "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>"
@@ -61,7 +61,8 @@
             },
             "cacheVariables": {
                 "FALLOUT_VENDORED": "OFF"
-            }
+            },
+            "generator": "Unix Makefiles"
         },
         {
             "name": "linux-x86-base",
