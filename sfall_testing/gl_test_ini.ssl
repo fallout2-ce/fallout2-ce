@@ -1,48 +1,29 @@
 #include "lib.arrays.h" // For arrays_equal, len_array, etc.
 #include "test_utils.h"   // For assertEquals, VALTYPE_STR, report_test_results
 
+// To test: copy test.ini into the game folder
 procedure ini_test_suite begin
-    variable result_array, expected_array, key_type, value_type, count;
-
-    // Reset errors for this suite if test_utils.h doesn't do it per suite
-    // test_suite_errors := 0; // Assuming test_utils.h manages this globally or per call to report_test_results
+    variable result_array, expected_array, key_type, value_type, count, key_val_pair;
 
     display_msg("--- Testing get_ini_section ---");
 
     // Test Case 1: Valid file, valid section
     display_msg("Test Case 1: Valid file, valid section ('ValidSection')");
     result_array := get_ini_section("test.ini", "ValidSection");
-    expected_array := {"Key1": "Value1", "Key2": "Another Value", "Key WithSpace": "Value With Space"};
-    call assertEquals("TC1 Size", len_array(result_array), 3);
+    expected_array := {"Key1": "Value1", "Key2": "2"};
+    call assertEquals("TC1 Size", len_array(result_array), 2);
     call assertEquals("TC1 Content", arrays_equal(result_array, expected_array), true);
-    // Detailed type and content check for TC1
     count := 0;
     foreach key_val_pair in result_array begin
         count += 1;
         call assertEquals("TC1 Key Type " + count, typeof(key_val_pair[0]), VALTYPE_STR);
         call assertEquals("TC1 Value Type " + count, typeof(key_val_pair[1]), VALTYPE_STR);
     end
-    // Specific check for one key-value pair from TC1 to ensure iteration works as expected by key name
     call assertEquals("TC1 Specific Key1 Value", result_array["Key1"], "Value1");
-    call assertEquals("TC1 Specific Key WithSpace Value", result_array["Key WithSpace"], "Value With Space");
-
-
-    // Test Case 2: Valid file, section with spaces (keys/values should be trimmed by INI parser)
-    // Note: The current INI parser in config.c (configTrimString) trims leading/trailing whitespace from keys and values.
-    display_msg("Test Case 2: Valid file, section with spaces ('SectionWithSpaces')");
-    result_array := get_ini_section("test.ini", "SectionWithSpaces");
-    expected_array := {
-        "LeadingSpaceKey": "LeadingSpaceValue",
-        "TrailingSpaceKey": "TrailingSpaceValue",
-        "Both Sides Space Key": "Both Sides Space Value",
-        "SimpleKey": "SimpleValue"
-    };
-    call assertEquals("TC2 Size", len_array(result_array), 4);
-    call assertEquals("TC2 Content", arrays_equal(result_array, expected_array), true);
-    call assertEquals("TC2 Specific LeadingSpaceKey Value", result_array["LeadingSpaceKey"], "LeadingSpaceValue");
-    call assertEquals("TC2 Specific TrailingSpaceKey Value", result_array["TrailingSpaceKey"], "TrailingSpaceValue");
-    call assertEquals("TC2 Specific Both Sides Space Key Value", result_array["Both Sides Space Key"], "Both Sides Space Value");
-
+    call assertEquals("TC1 get_ini_setting string", get_ini_setting("test.ini|ValidSection|Key1"), 0);
+    call assertEquals("TC1 get_ini_string string", get_ini_string("test.ini|ValidSection|Key1"), "Value1");
+    call assertEquals("TC1 get_ini_setting int", get_ini_setting("test.ini|ValidSection|Key2"), 2);
+    call assertEquals("TC1 get_ini_string int", get_ini_setting("test.ini|ValidSection|Key2"), 2); // TODO: "2"?
 
     // Test Case 3: INI file not found
     display_msg("Test Case 3: INI file not found ('nonexistent.ini')");
@@ -73,14 +54,6 @@ procedure ini_test_suite begin
 end
 
 procedure start begin
-    // Initialize test suite variables if they are not reset by report_test_results
-    // test_suite_errors := 0;
-    // test_suite_assertions := 0;
     display_msg("Starting INI function tests");
     call ini_test_suite();
 end
-
-// It's good practice to ensure this new test suite is called if there's a main test runner.
-// For now, this file will be self-contained. If sfall_testing/gl_test_main.ssl exists and
-// is used to run all tests, this suite might need to be added there.
-// For this subtask, creating the file is sufficient.

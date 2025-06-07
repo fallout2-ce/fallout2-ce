@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include "dictionary.h"
+#include "config.h"
 
 namespace fallout {
 
@@ -31,7 +32,7 @@ bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out);
 // Finds a section within a loaded Config object.
 // Returns a pointer to the ConfigSection if found, otherwise nullptr.
 // The ConfigSection pointer is valid as long as the parent Config object is valid and unmodified.
-const ConfigSection* sfall_find_section_in_config(const Config* config, const char* section_name);
+const ConfigSection* sfall_find_section_in_config(Config* config, const char* section_name);
 
 } // namespace fallout
 

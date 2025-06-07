@@ -217,7 +217,7 @@ bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out) {
     return loaded;
 }
 
-const ConfigSection* sfall_find_section_in_config(const Config* config, const char* section_name) {
+const ConfigSection* sfall_find_section_in_config(Config* config, const char* section_name) {
     if (config == nullptr || section_name == nullptr) {
         return nullptr;
     }
