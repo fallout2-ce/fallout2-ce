@@ -110,6 +110,7 @@ static void mf_get_ini_section(Program* program, int args) {
 }
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
+// Note: metarules should pop arguments off the stack in natural order
 constexpr MetaruleInfo kMetarules[] = {
     // {"add_extra_msg_file",        mf_add_extra_msg_file,        1, 2, -1, {ARG_STRING, ARG_INT}},
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
@@ -121,7 +122,7 @@ constexpr MetaruleInfo kMetarules[] = {
     { "car_gas_amount", mf_car_gas_amount, 0, 0 },
     { "combat_data", mf_combat_data, 0, 0 },
     // {"create_win",                mf_create_win,                5, 6, -1, {ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
-    { "critter_inven_obj2", mf_critter_inven_obj2, 2, 2 },
+    { "critter_inven_obj2", mf_critter_inven_obj2, 2, 2 }, // XXX: likely parameter order mismatch
     // {"dialog_message",            mf_dialog_message,            1, 1, -1, {ARG_STRING}},
     { "dialog_obj", mf_dialog_obj, 0, 0 },
     // {"display_stats",             mf_display_stats,             0, 0}, // refresh
@@ -141,7 +142,7 @@ constexpr MetaruleInfo kMetarules[] = {
     // {"get_map_enter_position",    mf_get_map_enter_position,    0, 0},
     // {"get_metarule_table",        mf_get_metarule_table,        0, 0},
     // {"get_object_ai_data",        mf_get_object_ai_data,        2, 2, -1, {ARG_OBJECT, ARG_INT}},
-    { "get_object_data", mf_get_object_data, 2, 2 },
+    { "get_object_data", mf_get_object_data, 2, 2 }, // XXX: likely parameter order mismatch
     // {"get_outline",               mf_get_outline,               1, 1,  0, {ARG_OBJECT}},
     // {"get_sfall_arg_at",          mf_get_sfall_arg_at,          1, 1,  0, {ARG_INT}},
     // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
@@ -189,7 +190,7 @@ constexpr MetaruleInfo kMetarules[] = {
     { "set_ini_setting", mf_set_ini_setting, 2, 2 },
     // {"set_map_enter_position",    mf_set_map_enter_position,    3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     // {"set_object_data",           mf_set_object_data,           3, 3, -1, {ARG_OBJECT, ARG_INT, ARG_INT}},
-    { "set_outline", mf_set_outline, 2, 2 },
+    { "set_outline", mf_set_outline, 2, 2 }, // XXX: likely parameter order mismatch
     // {"set_quest_failure_value",   mf_set_quest_failure_value,   2, 2, -1, {ARG_INT, ARG_INT}},
     // {"set_rest_heal_time",        mf_set_rest_heal_time,        1, 1, -1, {ARG_INT}},
     // {"set_worldmap_heal_time",    mf_set_worldmap_heal_time,    1, 1, -1, {ARG_INT}},
@@ -352,8 +353,8 @@ void mf_set_flags(Program* program, int args)
 
 void mf_set_ini_setting(Program* program, int args)
 {
-    ProgramValue value = programStackPopValue(program);
     const char* triplet = programStackPopString(program);
+    ProgramValue value = programStackPopValue(program);
 
     if (value.isString()) {
         const char* stringValue = programGetString(program, value.opcode, value.integerValue);
