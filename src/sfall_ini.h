@@ -1,10 +1,10 @@
 #ifndef FALLOUT_SFALL_INI_H_
 #define FALLOUT_SFALL_INI_H_
 
-#include <cstddef>
-#include "dictionary.h"
 #include "config.h"
+#include "dictionary.h"
 #include "interpreter.h"
+#include <cstddef>
 
 namespace fallout {
 

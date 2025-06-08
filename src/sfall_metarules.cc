@@ -7,6 +7,7 @@
 #include <string>
 
 #include "combat.h"
+#include "config.h" // For Config, configInit, configFree
 #include "debug.h"
 #include "game.h"
 #include "game_dialog.h"
@@ -18,7 +19,6 @@
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
 #include "sfall_ini.h"
 #include "text_font.h"
-#include "config.h" // For Config, configInit, configFree
 #include "tile.h"
 #include "window.h"
 #include "worldmap.h"
@@ -86,7 +86,7 @@ constexpr MetaruleInfo kMetarules[] = {
     { "get_flags", mf_get_flags, 1, 1 },
     // {"get_ini_config",            mf_get_ini_config,            2, 2,  0, {ARG_STRING, ARG_INT}},
     { "get_ini_section", mf_get_ini_section, 2, 2 },
-    { "get_ini_sections",          mf_get_ini_sections,          1, 1 }, 
+    { "get_ini_sections", mf_get_ini_sections, 1, 1 },
     // {"get_inven_ap_cost",         mf_get_inven_ap_cost,         0, 0},
     // {"get_map_enter_position",    mf_get_map_enter_position,    0, 0},
     // {"get_metarule_table",        mf_get_metarule_table,        0, 0},

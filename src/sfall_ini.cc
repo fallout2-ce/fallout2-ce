@@ -4,11 +4,11 @@
 #include <cstdio> // for snprintf
 #include <cstring> // for strncpy, strlen
 
-#include "sfall_arrays.h"
 #include "config.h"
 #include "debug.h"
 #include "interpreter.h"
 #include "platform_compat.h"
+#include "sfall_arrays.h"
 
 namespace fallout {
 
@@ -198,7 +198,8 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
     return saved;
 }
 
-bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out) {
+bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out)
+{
     if (ini_file_name == nullptr || config_out == nullptr) {
         return false;
     }
@@ -220,7 +221,8 @@ bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out) {
     return loaded;
 }
 
-const ConfigSection* sfall_find_section_in_config(Config* config, const char* section_name) {
+const ConfigSection* sfall_find_section_in_config(Config* config, const char* section_name)
+{
     if (config == nullptr || section_name == nullptr) {
         return nullptr;
     }
@@ -258,13 +260,13 @@ void mf_set_ini_setting(Program* program, int args)
     programStackPushInteger(program, -1);
 }
 
-
-void mf_get_ini_section(Program* program, int args) {
+void mf_get_ini_section(Program* program, int args)
+{
     // Arguments: file_path (string), section_name (string)
 
     const char* filePath = programStackPopString(program);
     const char* sectionName = programStackPopString(program);
-    
+
     ArrayId arrayId = CreateTempArray(-1, 0);
 
     if (filePath == nullptr || sectionName == nullptr) {
