@@ -87,17 +87,15 @@ static void mf_get_ini_section(Program* program, int args) {
             for (int i = 0; i < section->entriesLength; ++i) {
                 DictionaryEntry* entry = &(section->entries[i]);
                 const char* key = entry->key;
-                // The value in ConfigSection's dictionary is char**
-                // Dereference once to get char*
                 const char* value = *(static_cast<char**>(entry->value));
 
                 if (key != nullptr && value != nullptr) {
                     ProgramValue keyPv;
-                    keyPv.opcode = VALUE_TYPE_STRING;
+                    keyPv.opcode = VALUE_TYPE_DYNAMIC_STRING;
                     keyPv.integerValue = programPushString(program, key);
 
                     ProgramValue valuePv;
-                    valuePv.opcode = VALUE_TYPE_STRING;
+                    valuePv.opcode = VALUE_TYPE_DYNAMIC_STRING;
                     valuePv.integerValue = programPushString(program, value);
 
                     SetArray(arrayId, keyPv, valuePv, false, program);
@@ -106,7 +104,7 @@ static void mf_get_ini_section(Program* program, int args) {
         }
     }
 
-    configFree(&iniConfig); // Clean up the Config structure.
+    configFree(&iniConfig);
 
     programStackPushInteger(program, arrayId);
 }
