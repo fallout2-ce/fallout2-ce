@@ -1155,6 +1155,7 @@ static void op_charcode(Program* program)
     }
 }
 
+// Note: opcodes should pop arguments off the stack in reverse order
 void sfallOpcodesInit()
 {
     // ref. https://github.com/sfall-team/sfall/blob/71ecec3d405bd5e945f157954618b169e60068fe/artifacts/scripting/sfall%20opcode%20list.txt#L145

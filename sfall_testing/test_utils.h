@@ -7,6 +7,17 @@ variable test_suite_errors := 0;
 variable test_suite_verbose := false;
 variable test_suite_assertions := 0;
 
+procedure assertTrue(variable desc, variable a) begin
+   test_suite_assertions++;
+
+   if (not a) then begin
+      display_msg("Assertion failed \""+desc+"\": is not true");
+      test_suite_errors ++;
+   end else if (test_suite_verbose) then begin
+      display_msg("Assert \""+desc+"\" ok");
+   end
+end
+
 procedure assertEquals(variable desc, variable a, variable b) begin
    test_suite_assertions++;
 

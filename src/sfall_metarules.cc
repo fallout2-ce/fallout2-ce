@@ -41,7 +41,6 @@ static void mf_critter_inven_obj2(Program* program, int args);
 static void mf_dialog_obj(Program* program, int args);
 static void mf_get_cursor_mode(Program* program, int args);
 static void mf_get_flags(Program* program, int args);
-static void mf_get_ini_section(Program* program, int args);
 static void mf_get_object_data(Program* program, int args);
 static void mf_get_text_width(Program* program, int args);
 static void mf_intface_redraw(Program* program, int args);
@@ -50,7 +49,6 @@ static void mf_metarule_exist(Program* program, int args);
 static void mf_outlined_object(Program* program, int args);
 static void mf_set_cursor_mode(Program* program, int args);
 static void mf_set_flags(Program* program, int args);
-static void mf_set_ini_setting(Program* program, int args);
 static void mf_set_outline(Program* program, int args);
 static void mf_show_window(Program* program, int args);
 static void mf_tile_refresh_display(Program* program, int args);
@@ -59,55 +57,6 @@ static void mf_string_find(Program* program, int args);
 static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
 static void mf_floor2(Program* program, int args);
-
-static void mf_get_ini_section(Program* program, int args) {
-    // Arguments: file_path (string), section_name (string)
-
-    const char* filePath = programStackPopString(program);
-    const char* sectionName = programStackPopString(program);
-    
-    ArrayId arrayId = CreateTempArray(-1, 0);
-
-    if (filePath == nullptr || sectionName == nullptr) {
-        programStackPushInteger(program, arrayId);
-        return;
-    }
-
-    Config iniConfig;
-    if (!configInit(&iniConfig)) {
-        debugPrint("mf_get_ini_section: Failed to initialize Config structure.");
-        programStackPushInteger(program, arrayId);
-        return;
-    }
-
-    if (sfall_load_named_ini_file(filePath, &iniConfig)) {
-        const ConfigSection* section = sfall_find_section_in_config(&iniConfig, sectionName);
-
-        if (section != nullptr) {
-            for (int i = 0; i < section->entriesLength; ++i) {
-                DictionaryEntry* entry = &(section->entries[i]);
-                const char* key = entry->key;
-                const char* value = *(static_cast<char**>(entry->value));
-
-                if (key != nullptr && value != nullptr) {
-                    ProgramValue keyPv;
-                    keyPv.opcode = VALUE_TYPE_DYNAMIC_STRING;
-                    keyPv.integerValue = programPushString(program, key);
-
-                    ProgramValue valuePv;
-                    valuePv.opcode = VALUE_TYPE_DYNAMIC_STRING;
-                    valuePv.integerValue = programPushString(program, value);
-
-                    SetArray(arrayId, keyPv, valuePv, false, program);
-                }
-            }
-        }
-    }
-
-    configFree(&iniConfig);
-
-    programStackPushInteger(program, arrayId);
-}
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 // Note: metarules should pop arguments off the stack in natural order
@@ -137,7 +86,7 @@ constexpr MetaruleInfo kMetarules[] = {
     { "get_flags", mf_get_flags, 1, 1 },
     // {"get_ini_config",            mf_get_ini_config,            2, 2,  0, {ARG_STRING, ARG_INT}},
     { "get_ini_section", mf_get_ini_section, 2, 2 },
-    // {"get_ini_sections",          mf_get_ini_sections,          1, 1, -1, {ARG_STRING}},
+    { "get_ini_sections",          mf_get_ini_sections,          1, 1 }, 
     // {"get_inven_ap_cost",         mf_get_inven_ap_cost,         0, 0},
     // {"get_map_enter_position",    mf_get_map_enter_position,    0, 0},
     // {"get_metarule_table",        mf_get_metarule_table,        0, 0},
@@ -347,30 +296,6 @@ void mf_set_flags(Program* program, int args)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     object->flags = flags;
-
-    programStackPushInteger(program, -1);
-}
-
-void mf_set_ini_setting(Program* program, int args)
-{
-    const char* triplet = programStackPopString(program);
-    ProgramValue value = programStackPopValue(program);
-
-    if (value.isString()) {
-        const char* stringValue = programGetString(program, value.opcode, value.integerValue);
-        if (!sfall_ini_set_string(triplet, stringValue)) {
-            debugPrint("set_ini_setting: unable to write '%s' to '%s'",
-                stringValue,
-                triplet);
-        }
-    } else {
-        int integerValue = value.asInt();
-        if (!sfall_ini_set_int(triplet, integerValue)) {
-            debugPrint("set_ini_setting: unable to write '%d' to '%s'",
-                integerValue,
-                triplet);
-        }
-    }
 
     programStackPushInteger(program, -1);
 }

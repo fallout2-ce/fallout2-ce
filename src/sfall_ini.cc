@@ -4,7 +4,10 @@
 #include <cstdio> // for snprintf
 #include <cstring> // for strncpy, strlen
 
+#include "sfall_arrays.h"
 #include "config.h"
+#include "debug.h"
+#include "interpreter.h"
 #include "platform_compat.h"
 
 namespace fallout {
@@ -229,6 +232,130 @@ const ConfigSection* sfall_find_section_in_config(Config* config, const char* se
 
     DictionaryEntry* sectionEntry = &(config->entries[sectionIndex]);
     return static_cast<const ConfigSection*>(sectionEntry->value);
+}
+
+void mf_set_ini_setting(Program* program, int args)
+{
+    const char* triplet = programStackPopString(program);
+    ProgramValue value = programStackPopValue(program);
+
+    if (value.isString()) {
+        const char* stringValue = programGetString(program, value.opcode, value.integerValue);
+        if (!sfall_ini_set_string(triplet, stringValue)) {
+            debugPrint("set_ini_setting: unable to write '%s' to '%s'",
+                stringValue,
+                triplet);
+        }
+    } else {
+        int integerValue = value.asInt();
+        if (!sfall_ini_set_int(triplet, integerValue)) {
+            debugPrint("set_ini_setting: unable to write '%d' to '%s'",
+                integerValue,
+                triplet);
+        }
+    }
+
+    programStackPushInteger(program, -1);
+}
+
+
+void mf_get_ini_section(Program* program, int args) {
+    // Arguments: file_path (string), section_name (string)
+
+    const char* filePath = programStackPopString(program);
+    const char* sectionName = programStackPopString(program);
+    
+    ArrayId arrayId = CreateTempArray(-1, 0);
+
+    if (filePath == nullptr || sectionName == nullptr) {
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    Config iniConfig;
+    if (!configInit(&iniConfig)) {
+        debugPrint("mf_get_ini_section: Failed to initialize Config structure.");
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    if (sfall_load_named_ini_file(filePath, &iniConfig)) {
+        const ConfigSection* section = sfall_find_section_in_config(&iniConfig, sectionName);
+
+        if (section != nullptr) {
+            for (int i = 0; i < section->entriesLength; ++i) {
+                DictionaryEntry* entry = &(section->entries[i]);
+                const char* key = entry->key;
+                const char* value = *(static_cast<char**>(entry->value));
+
+                if (key != nullptr && value != nullptr) {
+                    ProgramValue keyPv;
+                    keyPv.opcode = VALUE_TYPE_DYNAMIC_STRING;
+                    keyPv.integerValue = programPushString(program, key);
+
+                    ProgramValue valuePv;
+                    valuePv.opcode = VALUE_TYPE_DYNAMIC_STRING;
+                    valuePv.integerValue = programPushString(program, value);
+
+                    SetArray(arrayId, keyPv, valuePv, false, program);
+                }
+            }
+        }
+    }
+
+    configFree(&iniConfig);
+
+    programStackPushInteger(program, arrayId);
+}
+
+void mf_get_ini_sections(Program* program, int args)
+{
+    // Arguments: file_path (string)
+    const char* filePath = programStackPopString(program);
+    ArrayId arrayId = -1;
+
+    if (filePath == nullptr) {
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    Config iniConfig;
+    if (!configInit(&iniConfig)) {
+        debugPrint("mf_get_ini_sections: Failed to initialize Config structure.");
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    // note: seems to load sections in random order
+    if (sfall_load_named_ini_file(filePath, &iniConfig)) {
+        if (iniConfig.entriesLength > 0) {
+            arrayId = CreateTempArray(iniConfig.entriesLength, 0);
+            for (int i = 0; i < iniConfig.entriesLength; ++i) {
+                DictionaryEntry* entry = &(iniConfig.entries[i]);
+                const char* sectionName = entry->key;
+
+                if (sectionName != nullptr) {
+                    ProgramValue keyPv;
+                    keyPv.opcode = VALUE_TYPE_INT;
+                    keyPv.integerValue = i;
+
+                    ProgramValue valuePv;
+                    valuePv.opcode = VALUE_TYPE_DYNAMIC_STRING;
+                    valuePv.integerValue = programPushString(program, sectionName);
+
+                    SetArray(arrayId, keyPv, valuePv, false, program);
+                }
+            }
+        }
+    }
+
+    configFree(&iniConfig);
+
+    if (arrayId == -1) {
+        arrayId = CreateTempArray(0, 0);
+    }
+
+    programStackPushInteger(program, arrayId);
 }
 
 } // namespace fallout

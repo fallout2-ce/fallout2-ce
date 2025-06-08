@@ -4,6 +4,7 @@
 #include <cstddef>
 #include "dictionary.h"
 #include "config.h"
+#include "interpreter.h"
 
 namespace fallout {
 
@@ -33,6 +34,11 @@ bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out);
 // Returns a pointer to the ConfigSection if found, otherwise nullptr.
 // The ConfigSection pointer is valid as long as the parent Config object is valid and unmodified.
 const ConfigSection* sfall_find_section_in_config(Config* config, const char* section_name);
+
+// metarule and opcode implementations
+void mf_set_ini_setting(Program* program, int args);
+void mf_get_ini_section(Program* program, int args);
+void mf_get_ini_sections(Program* program, int args);
 
 } // namespace fallout
 

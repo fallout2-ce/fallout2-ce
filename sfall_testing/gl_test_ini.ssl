@@ -56,6 +56,11 @@ procedure ini_test_suite begin
     set_ini_setting("test_set.ini|ValidSection|Key3", 2);
     call assertEquals("TC6 set_ini_setting int", get_ini_setting("test_set.ini|ValidSection|Key3"), 2);
 
+    // get_init_sections
+    result_array := get_ini_sections("test.ini");
+    call assertEquals("TC7 get_ini_sections size", len_array(result_array), 3);
+    call assertTrue("TC7 get_ini_sections", scan_array(result_array, "TestMisc") >= 0);
+
     call report_test_results("ini");
 end
 
