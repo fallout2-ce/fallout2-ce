@@ -207,6 +207,22 @@ static void op_set_world_map_pos(Program* program)
     wmSetPartyWorldPos(x, y);
 }
 
+// get_world_map_x_pos
+static void op_get_world_map_x_pos(Program* program)
+{
+    int x;
+    wmGetPartyWorldPos(&x, nullptr);
+    programStackPushInteger(program, x);
+}
+
+// get_world_map_y_pos
+static void op_get_world_map_y_pos(Program* program)
+{
+    int y;
+    wmGetPartyWorldPos(nullptr, &y);
+    programStackPushInteger(program, y);
+}
+
 // active_hand
 static void op_active_hand(Program* program)
 {
@@ -1269,7 +1285,9 @@ void sfallOpcodesInit()
     // 0x8172 - void set_world_map_pos(int x, int y)
     interpreterRegisterOpcode(0x8172, op_set_world_map_pos);
     // 0x8173 - int get_world_map_x_pos()
+    interpreterRegisterOpcode(0x8173, op_get_world_map_x_pos);
     // 0x8174 - int get_world_map_y_pos()
+    interpreterRegisterOpcode(0x8174, op_get_world_map_y_pos);
 
     // 0x8175 - void set_dm_model(string name)
     // 0x8176 - void set_df_model(string name)
