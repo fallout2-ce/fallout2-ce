@@ -2,6 +2,9 @@
 #define WORLD_MAP_H
 
 #include "db.h"
+#include <vector>
+#include <string>
+#include <unordered_map>
 
 namespace fallout {
 
@@ -237,6 +240,10 @@ typedef enum Map {
 
 extern unsigned char* circleBlendTable;
 
+// Static global variables
+static std::vector<std::pair<long, std::string>> wmTerrainTypeNames;
+static std::unordered_map<long, std::string> wmAreaHotSpotTitle;
+
 int wmWorldMap_init();
 void wmWorldMap_exit();
 int wmWorldMap_reset();
@@ -286,6 +293,13 @@ int wmTeleportToArea(int areaIdx);
 void wmSetPartyWorldPos(int x, int y);
 void wmCarSetCurrentArea(int area);
 void wmForceEncounter(int map, unsigned int flags);
+
+// New function declarations
+void wmSetTerrainTypeName(long x, long y, const char* name);
+const char* wmGetTerrainTypeName(long x, long y);
+const char* wmGetCurrentTerrainName();
+void wmSetCustomAreaTitle(long areaID, const char* title);
+const char* wmGetCustomAreaTitle(long areaID);
 
 } // namespace fallout
 

@@ -57,6 +57,82 @@ static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
 static void mf_floor2(Program* program, int args);
 
+// New metarule function implementations
+static void mf_set_terrain_name(Program* program, int args) {
+    // Args from script: x, y, name
+    const char* name = programStackPopString(program);
+    long y = programStackPopInteger(program);
+    long x = programStackPopInteger(program);
+
+    if (x < 0 || y < 0) {
+        programFatalError("set_terrain_name() - invalid x/y coordinates for the sub-tile. x=%ld, y=%ld", x, y);
+        return; // programFatalError should halt, but return for safety
+    }
+    if (name == nullptr) {
+        // Though programStackPopString might handle nulls, an explicit check after can be useful
+        // Depending on how programStackPopString handles empty/null strings from script.
+        // Assuming it can return nullptr if script provides a way to pass null.
+        programFatalError("set_terrain_name() - name cannot be null.");
+        return;
+    }
+
+    wmSetTerrainTypeName(x, y, name);
+    // No return value pushed to stack for void function
+}
+
+static void mf_get_terrain_name(Program* program, int args) {
+    const char* name = nullptr;
+    if (args == 0) {
+        name = wmGetCurrentTerrainName();
+        if (name == nullptr) {
+            programStackPushString(program, "Error");
+        } else {
+            programStackPushString(program, name);
+        }
+    } else if (args == 2) {
+        // Args from script: x, y
+        long y = programStackPopInteger(program);
+        long x = programStackPopInteger(program);
+
+        if (x < 0 || y < 0) {
+            programFatalError("get_terrain_name() - invalid x/y coordinates for the sub-tile. x=%ld, y=%ld", x, y);
+            programStackPushString(program, "Error"); // Push "Error" as per requirement
+            return;
+        }
+        name = wmGetTerrainTypeName(x, y);
+        if (name == nullptr) {
+            programStackPushString(program, "Error");
+        } else {
+            programStackPushString(program, name);
+        }
+    } else {
+        // This case should ideally be caught by MetaruleInfo min/max args check in sfall_metarule dispatcher
+        programFatalError("get_terrain_name: invalid number of arguments. Expected 0 or 2, got %d", args);
+        programStackPushString(program, "Error"); // Push "Error" as per requirement
+    }
+}
+
+static void mf_set_town_title(Program* program, int args) {
+    // Args from script: areaID, title
+    const char* title = programStackPopString(program);
+    long areaID = programStackPopInteger(program);
+
+    if (areaID < 0) {
+        programFatalError("set_town_title: invalid area ID. areaID=%ld", areaID);
+        return; // programFatalError should halt
+    }
+    // Allowing null title to be passed to wmSetCustomAreaTitle to potentially clear the title.
+    // If null title itself is an error for this metarule, add:
+    // if (title == nullptr) {
+    //     programFatalError("set_town_title: title cannot be null for areaID=%ld.", areaID);
+    //     return;
+    // }
+
+    wmSetCustomAreaTitle(areaID, title);
+    // No return value pushed to stack for void function
+}
+
+
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 constexpr MetaruleInfo kMetarules[] = {
     // {"add_extra_msg_file",        mf_add_extra_msg_file,        1, 2, -1, {ARG_STRING, ARG_INT}},
@@ -95,7 +171,7 @@ constexpr MetaruleInfo kMetarules[] = {
     // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
-    // {"get_terrain_name",          mf_get_terrain_name,          0, 2, -1, {ARG_INT, ARG_INT}},
+    { "get_terrain_name", mf_get_terrain_name, 0, 2 },
     { "get_text_width", mf_get_text_width, 1, 1 },
     // {"get_window_attribute",      mf_get_window_attribute,      1, 2, -1, {ARG_INT, ARG_INT}},
     // {"has_fake_perk_npc",         mf_has_fake_perk_npc,         2, 2,  0, {ARG_OBJECT, ARG_STRING}},
@@ -144,8 +220,8 @@ constexpr MetaruleInfo kMetarules[] = {
     // {"set_rest_mode",             mf_set_rest_mode,             1, 1, -1, {ARG_INT}},
     // {"set_scr_name",              mf_set_scr_name,              0, 1, -1, {ARG_STRING}},
     // {"set_selectable_perk_npc",   mf_set_selectable_perk_npc,   5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
-    // {"set_terrain_name",          mf_set_terrain_name,          3, 3, -1, {ARG_INT, ARG_INT, ARG_STRING}},
-    // {"set_town_title",            mf_set_town_title,            2, 2, -1, {ARG_INT, ARG_STRING}},
+    { "set_terrain_name", mf_set_terrain_name, 3, 3 },
+    { "set_town_title", mf_set_town_title, 2, 2 },
     // {"set_unique_id",             mf_set_unique_id,             1, 2, -1, {ARG_OBJECT, ARG_INT}},
     // {"set_unjam_locks_time",      mf_set_unjam_locks_time,      1, 1, -1, {ARG_INT}},
     // {"set_window_flag",           mf_set_window_flag,           3, 3, -1, {ARG_INTSTR, ARG_INT, ARG_INT}},

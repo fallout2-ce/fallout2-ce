@@ -1,0 +1,79 @@
+#include "test_utils.h"
+
+procedure start;
+
+variable x, y, areaID;
+variable name, title;
+
+procedure start begin
+    // Tests for set_terrain_name and get_terrain_name
+    // Valid coordinates
+    x := 10;
+    y := 20;
+    name := "MyCustomTerrain";
+    sfall_func3("set_terrain_name", x, y, name);
+    debug_assert_string_equal(sfall_func2("get_terrain_name", x, y), name, "get_terrain_name valid coords");
+
+    // Test with different valid coordinates and name
+    x := 0;
+    y := 0;
+    name := "AnotherTerrain";
+    sfall_func3("set_terrain_name", x, y, name);
+    debug_assert_string_equal(sfall_func2("get_terrain_name", x, y), name, "get_terrain_name valid coords 2");
+
+    // Test overwriting a terrain name
+    name := "OverwrittenTerrain";
+    sfall_func3("set_terrain_name", x, y, name);
+    debug_assert_string_equal(sfall_func2("get_terrain_name", x, y), name, "get_terrain_name overwrite");
+
+    // Test get_terrain_name for coordinates not set - should rely on fallback in C++
+    // This requires knowing what the C++ fallback returns or being able to mock it.
+    // For now, we'll just check it doesn't crash and returns something.
+    // A more robust test would involve setting up the game state for a known default terrain.
+    debug_print("Terrain at (1000,1000): " + sfall_func2("get_terrain_name", 1000, 1000));
+
+
+    // Test get_terrain_name without arguments (current player position)
+    // This also relies on game state. We'll check it returns something.
+    debug_print("Current terrain name: " + sfall_func0("get_terrain_name"));
+
+
+    // Tests for set_town_title
+    // Valid area ID
+    areaID := 1; // Assuming Arroyo is Area 1 from city.txt
+    title := "Arroyo Title";
+    sfall_func2("set_town_title", areaID, title);
+    // There's no direct sfall_func to get_town_title for assertion here.
+    // This would typically be verified by observing game behavior (hovering over town).
+    // For now, we ensure it doesn't crash.
+    debug_print("Set town title for Area " + areaID + " to: " + title);
+
+    // Test clearing a town title
+    title := ""; // Or pass a null equivalent if the C++ side handles it
+    sfall_func2("set_town_title", areaID, title);
+    debug_print("Cleared town title for Area " + areaID);
+
+    // Test with another area ID
+    areaID := 2; // Assuming The Den
+    title := "The Den's Custom Title";
+    sfall_func2("set_town_title", areaID, title);
+    debug_print("Set town title for Area " + areaID + " to: " + title);
+
+
+    // Invalid coordinate tests for set_terrain_name (should trigger fatal error in C++)
+    // These cannot be directly asserted in SSL if they cause a fatal error.
+    // The C++ side should handle this. If it returned an error code, we could check that.
+    // sfall_func3("set_terrain_name", -1, 0, "InvalidX");
+    // sfall_func3("set_terrain_name", 0, -1, "InvalidY");
+
+    // Invalid coordinate tests for get_terrain_name (should return "Error" from C++)
+    debug_assert_string_equal(sfall_func2("get_terrain_name", -1, 0), "Error", "get_terrain_name invalid X");
+    debug_assert_string_equal(sfall_func2("get_terrain_name", 0, -1), "Error", "get_terrain_name invalid Y");
+
+
+    // Invalid area ID for set_town_title (should trigger fatal error in C++)
+    // sfall_func2("set_town_title", -1, "InvalidArea");
+
+
+    debug_print("Worldmap tests completed.");
+end

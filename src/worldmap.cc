@@ -817,6 +817,10 @@ static int wmMaxEncBaseTypes;
 // 0x67303C
 static int wmMaxEncounterInfoTables;
 
+// Definitions for new static global variables
+static std::vector<std::pair<long, std::string>> wmTerrainTypeNames;
+static std::unordered_map<long, std::string> wmAreaHotSpotTitle;
+
 static bool gTownMapHotkeysFix;
 static double gGameTimeIncRemainder = 0.0;
 static FrmImage _backgroundFrmImage;
@@ -1058,6 +1062,10 @@ int wmWorldMap_reset()
 
     wmWorldMapLoadTempData();
     wmMarkAllSubTiles(0);
+
+    // Clear new global variables
+    wmTerrainTypeNames.clear();
+    wmAreaHotSpotTitle.clear();
 
     return wmGenDataReset();
 }
@@ -6670,6 +6678,89 @@ void wmForceEncounter(int map, unsigned int flags)
     } else {
         wmForceEncounterFlags &= ~(1 << 31);
     }
+}
+
+// Implementation of new functions
+
+void wmSetTerrainTypeName(long x, long y, const char* name) {
+    // x and y are subtile indices
+    long subTileID = x + y * (wmNumHorizontalTiles * SUBTILE_GRID_WIDTH);
+    wmTerrainTypeNames.push_back({subTileID, name});
+}
+
+const char* wmGetTerrainTypeName(long x, long y) {
+    // x and y are subtile indices
+    long subTileID = x + y * (wmNumHorizontalTiles * SUBTILE_GRID_WIDTH);
+
+    for (auto it = wmTerrainTypeNames.crbegin(); it != wmTerrainTypeNames.crend(); ++it) {
+        if (it->first == subTileID) {
+            return it->second.c_str();
+        }
+    }
+
+    // Fallback to default terrain name
+    SubtileInfo* subtile = nullptr;
+    // Convert subtile indices (x, y) to world coordinates for wmFindCurSubTileFromPos
+    int worldX = x * WM_SUBTILE_SIZE;
+    int worldY = y * WM_SUBTILE_SIZE;
+
+    // Need to find the correct tile first to pass to wmFindCurSubTileFromPos,
+    // or rather, wmFindCurSubTileFromPos might be enough if its x and y are world coordinates.
+    // wmFindCurSubTileFromPos expects world coordinates.
+    if (wmFindCurSubTileFromPos(worldX, worldY, &subtile) == 0 && subtile != nullptr) {
+        int terrainId = subtile->terrain;
+        // Ensure gWorldmapMessageListItem is properly handled or declare a local one if needed for getmsg
+        MessageListItem item; // Using a local item for safety if gWorldmapMessageListItem has shared state concerns
+        return getmsg(&wmMsgFile, &item, 1000 + terrainId)->text;
+    }
+    return "Unknown Terrain"; // Absolute fallback
+}
+
+const char* wmGetCurrentTerrainName() {
+    long subTileX = wmGenData.worldPosX / WM_SUBTILE_SIZE;
+    long subTileY = wmGenData.worldPosY / WM_SUBTILE_SIZE;
+    long subTileID = subTileX + subTileY * (wmNumHorizontalTiles * SUBTILE_GRID_WIDTH);
+
+    for (auto it = wmTerrainTypeNames.crbegin(); it != wmTerrainTypeNames.crend(); ++it) {
+        if (it->first == subTileID) {
+            return it->second.c_str();
+        }
+    }
+
+    // Fallback to default current terrain name
+    int terrainId = -1;
+    if (wmGenData.currentSubtile != nullptr) {
+        terrainId = wmGenData.currentSubtile->terrain;
+    } else {
+        SubtileInfo* currentSubtilePtr = nullptr;
+        if (wmFindCurSubTileFromPos(wmGenData.worldPosX, wmGenData.worldPosY, &currentSubtilePtr) == 0 && currentSubtilePtr != nullptr) {
+            wmGenData.currentSubtile = currentSubtilePtr; // Cache it
+            terrainId = currentSubtilePtr->terrain;
+        }
+    }
+
+    if (terrainId != -1) {
+        MessageListItem item; // Using a local item
+        return getmsg(&wmMsgFile, &item, 1000 + terrainId)->text;
+    }
+    return "Unknown Current Terrain"; // Absolute fallback
+}
+
+void wmSetCustomAreaTitle(long areaID, const char* title) {
+    if (title != nullptr) {
+        wmAreaHotSpotTitle[areaID] = title;
+    } else {
+        // Option: remove the entry if title is null, or store empty string
+        wmAreaHotSpotTitle.erase(areaID);
+    }
+}
+
+const char* wmGetCustomAreaTitle(long areaID) {
+    auto it = wmAreaHotSpotTitle.find(areaID);
+    if (it != wmAreaHotSpotTitle.end()) {
+        return it->second.c_str();
+    }
+    return nullptr; // Or an empty string
 }
 
 } // namespace fallout
