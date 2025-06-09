@@ -745,7 +745,7 @@ static void op_substr(Program* program)
 
     char buf[5120] = { 0 };
 
-    int len = strlen(str);
+    int len = static_cast<int>(strlen(str));
 
     if (startPos < 0) {
         startPos += len; // start from end
@@ -977,7 +977,7 @@ static void op_party_member_list(Program* program)
 {
     auto includeHidden = programStackPopInteger(program);
     auto objects = get_all_party_members_objects(includeHidden);
-    auto arrayId = CreateTempArray(objects.size(), SFALL_ARRAYFLAG_RESERVED);
+    auto arrayId = CreateTempArray(static_cast<int>(objects.size()), SFALL_ARRAYFLAG_RESERVED);
     for (int i = 0; i < LenArray(arrayId); i++) {
         SetArray(arrayId, ProgramValue { i }, ProgramValue { objects[i] }, false, program);
     }
@@ -1001,7 +1001,7 @@ static void op_type_of(Program* program)
 static void op_round(Program* program)
 {
     float floatValue = programStackPopValue(program).asFloat();
-    programStackPushInteger(program, lroundf(floatValue));
+    programStackPushInteger(program, static_cast<int>(lroundf(floatValue)));
 }
 
 enum BlockType {
