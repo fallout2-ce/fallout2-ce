@@ -39,6 +39,8 @@ const ConfigSection* sfall_find_section_in_config(Config* config, const char* se
 void mf_set_ini_setting(Program* program, int args);
 void mf_get_ini_section(Program* program, int args);
 void mf_get_ini_sections(Program* program, int args);
+void op_get_ini_setting(Program* program);
+void op_get_ini_string(Program* program);
 
 } // namespace fallout
 

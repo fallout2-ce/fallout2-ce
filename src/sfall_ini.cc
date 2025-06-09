@@ -291,15 +291,7 @@ void mf_get_ini_section(Program* program, int args)
                 const char* value = *(static_cast<char**>(entry->value));
 
                 if (key != nullptr && value != nullptr) {
-                    ProgramValue keyPv;
-                    keyPv.opcode = VALUE_TYPE_DYNAMIC_STRING;
-                    keyPv.integerValue = programPushString(program, key);
-
-                    ProgramValue valuePv;
-                    valuePv.opcode = VALUE_TYPE_DYNAMIC_STRING;
-                    valuePv.integerValue = programPushString(program, value);
-
-                    SetArray(arrayId, keyPv, valuePv, false, program);
+                    SetArray(arrayId, programMakeString(program, key), programMakeString(program, value), false, program);
                 }
             }
         }
@@ -337,15 +329,7 @@ void mf_get_ini_sections(Program* program, int args)
                 const char* sectionName = entry->key;
 
                 if (sectionName != nullptr) {
-                    ProgramValue keyPv;
-                    keyPv.opcode = VALUE_TYPE_INT;
-                    keyPv.integerValue = i;
-
-                    ProgramValue valuePv;
-                    valuePv.opcode = VALUE_TYPE_DYNAMIC_STRING;
-                    valuePv.integerValue = programPushString(program, sectionName);
-
-                    SetArray(arrayId, keyPv, valuePv, false, program);
+                    SetArray(arrayId, programMakeInt(program, i), programMakeString(program, sectionName), false, program);
                 }
             }
         }
@@ -358,6 +342,32 @@ void mf_get_ini_sections(Program* program, int args)
     }
 
     programStackPushInteger(program, arrayId);
+}
+
+// get_ini_setting
+void op_get_ini_setting(Program* program)
+{
+    const char* string = programStackPopString(program);
+
+    int value;
+    if (sfall_ini_get_int(string, &value)) {
+        programStackPushInteger(program, value);
+    } else {
+        programStackPushInteger(program, -1);
+    }
+}
+
+// get_ini_string
+void op_get_ini_string(Program* program)
+{
+    const char* string = programStackPopString(program);
+
+    char value[256];
+    if (sfall_ini_get_string(string, value, sizeof(value))) {
+        programStackPushString(program, value);
+    } else {
+        programStackPushInteger(program, -1);
+    }
 }
 
 } // namespace fallout

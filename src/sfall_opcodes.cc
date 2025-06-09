@@ -250,19 +250,6 @@ static void op_get_sfall_global_int(Program* program)
     programStackPushInteger(program, value);
 }
 
-// get_ini_setting
-static void op_get_ini_setting(Program* program)
-{
-    const char* string = programStackPopString(program);
-
-    int value;
-    if (sfall_ini_get_int(string, &value)) {
-        programStackPushInteger(program, value);
-    } else {
-        programStackPushInteger(program, -1);
-    }
-}
-
 // get_game_mode
 static void op_get_game_mode(Program* program)
 {
@@ -295,19 +282,6 @@ static void op_set_bodypart_hit_modifier(Program* program)
     int penalty = programStackPopInteger(program);
     int hit_location = programStackPopInteger(program);
     combat_set_hit_location_penalty(hit_location, penalty);
-}
-
-// get_ini_string
-static void op_get_ini_string(Program* program)
-{
-    const char* string = programStackPopString(program);
-
-    char value[256];
-    if (sfall_ini_get_string(string, value, sizeof(value))) {
-        programStackPushString(program, value);
-    } else {
-        programStackPushInteger(program, -1);
-    }
 }
 
 // sqrt

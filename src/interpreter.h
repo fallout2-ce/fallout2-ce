@@ -241,6 +241,10 @@ ProgramValue programReturnStackPopValue(Program* program);
 int programReturnStackPopInteger(Program* program);
 void* programReturnStackPopPointer(Program* program);
 
+// CE
+ProgramValue programMakeString(Program* program, const char *str);
+ProgramValue programMakeInt(Program* program, int val);
+
 } // namespace fallout
 
 #endif /* INTERPRETER_H */
