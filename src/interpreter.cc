@@ -3347,14 +3347,16 @@ int ProgramValue::asInt() const
 }
 
 // CE
-ProgramValue programMakeString(Program* program, const char *str) {
+ProgramValue programMakeString(Program* program, const char* str)
+{
     ProgramValue valuePv;
     valuePv.opcode = VALUE_TYPE_DYNAMIC_STRING;
     valuePv.integerValue = programPushString(program, str);
     return valuePv;
 }
 
-ProgramValue programMakeInt(Program* program, int val) {
+ProgramValue programMakeInt(Program* program, int val)
+{
     ProgramValue valuePv;
     valuePv.opcode = VALUE_TYPE_INT;
     valuePv.integerValue = val;
