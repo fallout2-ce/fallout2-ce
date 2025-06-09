@@ -16,6 +16,19 @@
 #include "platform/ios/paths.h"
 #endif
 
+#if defined(_WIN32) && !defined(_WIN64)
+#ifndef _WIN32_WINNT
+#error "_WIN32_WINNT is not defined. It must be set to 0x0501 for Windows XP compatibility."
+#elif _WIN32_WINNT != 0x0501
+#error "_WIN32_WINNT must be exactly 0x0501 for Windows XP compatibility in 32-bit builds."
+#endif
+
+#ifndef TOOLSET_V141_XP
+#error "TOOLSET_V141_XP is not used."
+#endif
+
+#endif
+
 namespace fallout {
 
 // 0x51E444

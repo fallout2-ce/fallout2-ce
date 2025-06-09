@@ -24,8 +24,10 @@ option(FALLOUT_VENDORED "Use vendored third-party libraries" ON)
 
 if(ANDROID)
     add_library(${EXECUTABLE_NAME} SHARED)
+elseif(APPLE)
+    add_executable(${EXECUTABLE_NAME} MACOSX_BUNDLE)
 else()
-    add_executable(${EXECUTABLE_NAME} WIN32 MACOSX_BUNDLE)
+    add_executable(${EXECUTABLE_NAME})
 endif()
 
 # Git Info
@@ -312,7 +314,7 @@ endif()
 if(WIN32)
     target_link_libraries(${EXECUTABLE_NAME}
         winmm
-        libcpmt
+       #  libcpmt # Disabled, was causing issues on VS2019 builing from UI
     )
 endif()
 
@@ -321,6 +323,10 @@ if(WIN32)
         "os/windows/fallout2-ce.ico"
         "os/windows/fallout2-ce.rc"
     )
+endif()
+
+if (MSVC AND CMAKE_GENERATOR_TOOLSET STREQUAL "v141_xp")
+  add_definitions(-DTOOLSET_V141_XP)
 endif()
 
 if(APPLE)
