@@ -72,6 +72,38 @@ static bool is_system_file_name(const char* fileName)
     return false;
 }
 
+// Loads an INI file specified by 'ini_file_name' (e.g., "myconfig.ini" or "ddraw.ini")
+// into the provided 'config_out' object.
+// The 'config_out' object must be initialized by the caller (using configInit).
+// The caller is also responsible for freeing 'config_out' (using configFree).
+// Returns true if the file was successfully found and read, false otherwise.
+static bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out)
+{
+    if (ini_file_name == nullptr || config_out == nullptr) {
+        return false;
+    }
+
+    char path[COMPAT_MAX_PATH];
+    bool loaded = false;
+
+    if (basePath[0] != '\0' && !is_system_file_name(ini_file_name)) {
+        // Attempt to load requested file in base directory.
+        snprintf(path, sizeof(path), "%s\\%s", basePath, ini_file_name);
+        loaded = configRead(config_out, path, false);
+    }
+
+    if (!loaded) {
+        // There was no base path set, requested file is a system config, or
+        // non-system config file was not found the base path - attempt to load
+        // from current working directory.
+        strncpy(path, ini_file_name, sizeof(path) - 1);
+        path[sizeof(path) - 1] = '\0';
+        loaded = configRead(config_out, path, false);
+    }
+
+    return loaded;
+}
+
 void sfall_ini_set_base_path(const char* path)
 {
     if (path != nullptr) {
@@ -115,22 +147,7 @@ bool sfall_ini_get_string(const char* triplet, char* value, size_t size)
         return false;
     }
 
-    char path[COMPAT_MAX_PATH];
-    bool loaded = false;
-
-    if (basePath[0] != '\0' && !is_system_file_name(fileName)) {
-        // Attempt to load requested file in base directory.
-        snprintf(path, sizeof(path), "%s\\%s", basePath, fileName);
-        loaded = configRead(&config, path, false);
-    }
-
-    if (!loaded) {
-        // There was no base path set, requested file is a system config, or
-        // non-system config file was not found the base path - attempt to load
-        // from current working directory.
-        strcpy(path, fileName);
-        loaded = configRead(&config, path, false);
-    }
+    bool loaded = sfall_load_named_ini_file(fileName, &config);
 
     // NOTE: Sfall's `GetIniSetting` returns error code (-1) only when it cannot
     // parse triplet. Otherwise the default for string settings is empty string.
@@ -198,30 +215,7 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
     return saved;
 }
 
-bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out)
-{
-    if (ini_file_name == nullptr || config_out == nullptr) {
-        return false;
-    }
-
-    char path[COMPAT_MAX_PATH];
-    bool loaded = false;
-
-    if (basePath[0] != '\0' && !is_system_file_name(ini_file_name)) {
-        snprintf(path, sizeof(path), "%s\\%s", basePath, ini_file_name);
-        loaded = configRead(config_out, path, false);
-    }
-
-    if (!loaded) {
-        strncpy(path, ini_file_name, sizeof(path) - 1);
-        path[sizeof(path) - 1] = '\0';
-        loaded = configRead(config_out, path, false);
-    }
-
-    return loaded;
-}
-
-const ConfigSection* sfall_find_section_in_config(Config* config, const char* section_name)
+static const ConfigSection* sfall_find_section_in_config(Config* config, const char* section_name)
 {
     if (config == nullptr || section_name == nullptr) {
         return nullptr;
@@ -236,6 +230,7 @@ const ConfigSection* sfall_find_section_in_config(Config* config, const char* se
     return static_cast<const ConfigSection*>(sectionEntry->value);
 }
 
+// set_ini_setting
 void mf_set_ini_setting(Program* program, int args)
 {
     const char* triplet = programStackPopString(program);
@@ -260,6 +255,7 @@ void mf_set_ini_setting(Program* program, int args)
     programStackPushInteger(program, -1);
 }
 
+// get_ini_section
 void mf_get_ini_section(Program* program, int args)
 {
     // Arguments: file_path (string), section_name (string)
@@ -302,6 +298,7 @@ void mf_get_ini_section(Program* program, int args)
     programStackPushInteger(program, arrayId);
 }
 
+// get_ini_sections
 void mf_get_ini_sections(Program* program, int args)
 {
     // Arguments: file_path (string)

@@ -23,18 +23,6 @@ bool sfall_ini_set_int(const char* triplet, int value);
 /// Writes string key identified by "fileName|section|key" triplet.
 bool sfall_ini_set_string(const char* triplet, const char* value);
 
-// Loads an INI file specified by 'ini_file_name' (e.g., "myconfig.ini" or "ddraw.ini")
-// into the provided 'config_out' object.
-// The 'config_out' object must be initialized by the caller (using configInit).
-// The caller is also responsible for freeing 'config_out' (using configFree).
-// Returns true if the file was successfully found and read, false otherwise.
-bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out);
-
-// Finds a section within a loaded Config object.
-// Returns a pointer to the ConfigSection if found, otherwise nullptr.
-// The ConfigSection pointer is valid as long as the parent Config object is valid and unmodified.
-const ConfigSection* sfall_find_section_in_config(Config* config, const char* section_name);
-
 // metarule and opcode implementations
 void mf_set_ini_setting(Program* program, int args);
 void mf_get_ini_section(Program* program, int args);
