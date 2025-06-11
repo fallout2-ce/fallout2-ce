@@ -207,6 +207,22 @@ static void op_set_world_map_pos(Program* program)
     wmSetPartyWorldPos(x, y);
 }
 
+// get_world_map_x_pos
+static void op_get_world_map_x_pos(Program* program)
+{
+    int x;
+    wmGetPartyWorldPos(&x, nullptr);
+    programStackPushInteger(program, x);
+}
+
+// get_world_map_y_pos
+static void op_get_world_map_y_pos(Program* program)
+{
+    int y;
+    wmGetPartyWorldPos(nullptr, &y);
+    programStackPushInteger(program, y);
+}
+
 // active_hand
 static void op_active_hand(Program* program)
 {
@@ -1193,7 +1209,7 @@ void sfallOpcodesInit()
     // 0x81b9 - void set_npc_stat_max(int stat, int value)
     // 0x81ba - void set_npc_stat_min(int stat, int value)
 
-    // 0x816b - int  input_funcs_available()
+    // 0x816b - int  input_funcs_available() // deprecated; do not implement
     // 0x816c - int  key_pressed(int dxScancode)
     interpreterRegisterOpcode(0x816C, op_key_pressed);
     // 0x8162 - void tap_key(int dxScancode)
@@ -1244,7 +1260,9 @@ void sfallOpcodesInit()
     // 0x8172 - void set_world_map_pos(int x, int y)
     interpreterRegisterOpcode(0x8172, op_set_world_map_pos);
     // 0x8173 - int get_world_map_x_pos()
+    interpreterRegisterOpcode(0x8173, op_get_world_map_x_pos);
     // 0x8174 - int get_world_map_y_pos()
+    interpreterRegisterOpcode(0x8174, op_get_world_map_y_pos);
 
     // 0x8175 - void set_dm_model(string name)
     // 0x8176 - void set_df_model(string name)
@@ -1437,7 +1455,7 @@ void sfallOpcodesInit()
     // 0x81f5 - int get_script(object)
     interpreterRegisterOpcode(0x81F5, op_get_script);
 
-    // 0x81f6 - int nb_create_char()
+    // 0x81f6 - int nb_create_char() // deprecated; do not implement
 
     // 0x81f7 - int   fs_create(string path, int size)
     // 0x81f8 - int   fs_copy(string path, string source)
@@ -1537,7 +1555,7 @@ void sfallOpcodesInit()
 
     // 0x823a - int get_tile_fid(int tileData)
 
-    // 0x823b - int modified_ini()
+    // 0x823b - int modified_ini() // deprecated: do not implement
 
     // 0x823e - void force_aimed_shots(int pid)
     // 0x823f - void disable_aimed_shots(int pid)
