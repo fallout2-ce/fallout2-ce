@@ -197,6 +197,8 @@ typedef struct Program {
 typedef unsigned int(InterpretTimerFunc)();
 typedef void OpcodeHandler(Program* program);
 
+extern OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
+
 extern int _TimeOut;
 
 char* _interpretMangleName(char* s);
