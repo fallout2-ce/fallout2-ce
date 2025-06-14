@@ -459,7 +459,7 @@ typedef struct WmGenData {
     int oldFont;
 } WmGenData;
 
-// CE/SFALL: control world map time via script 
+// CE/SFALL: control world map time via script
 float gScriptWorldMapMulti = 1.0f;
 void wmSetScriptWorldMapMulti(float value)
 {
