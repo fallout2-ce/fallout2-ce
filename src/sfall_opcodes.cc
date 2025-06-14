@@ -223,6 +223,13 @@ static void op_get_world_map_y_pos(Program* program)
     programStackPushInteger(program, y);
 }
 
+// set_map_time_multi
+void op_set_map_time_multi(Program* program)
+{
+    ProgramValue value = programStackPopValue(program);
+    wmSetScriptWorldMapMulti(value.asFloat());
+}
+
 // active_hand
 static void op_active_hand(Program* program)
 {
@@ -1256,6 +1263,7 @@ void sfallOpcodesInit()
     // 0x8229 - void force_encounter_with_flags(int map, int flags)
     interpreterRegisterOpcode(0x8229, op_force_encounter_with_flags);
     // 0x822a - void set_map_time_multi(float multi)
+    interpreterRegisterOpcode(0x822A, op_set_map_time_multi);
 
     // 0x8172 - void set_world_map_pos(int x, int y)
     interpreterRegisterOpcode(0x8172, op_set_world_map_pos);
