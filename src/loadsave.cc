@@ -2694,6 +2694,8 @@ static int _PrepLoad(File* stream)
 // 0x47F4C8
 static int _EndLoad(File* stream)
 {
+    resizeContent(screenGetWidth(), screenGetHeight(), true);
+    
     wmMapMusicStart();
     dudeSetName(_LSData[_slot_cursor].characterName);
     interfaceBarRefresh();

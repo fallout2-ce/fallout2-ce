@@ -11,6 +11,9 @@ namespace fallout {
 extern Rect _scr_size;
 extern void (*_scr_blit)(unsigned char* src, int src_pitch, int a3, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
 extern void (*_zero_mem)();
+void resizeContent(int width, int height);
+void resizeContent(int width, int height, bool preserveAspect);
+void restoreUserAspectPreference(void);
 
 extern SDL_Window* gSdlWindow;
 extern SDL_Surface* gSdlSurface;

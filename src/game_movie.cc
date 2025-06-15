@@ -169,6 +169,9 @@ int gameMoviePlay(int movie, int flags)
         paletteFadeTo(gPaletteBlack);
         gGameMovieFaded = true;
     }
+    
+    restoreUserAspectPreference();
+    resizeContent(640,480);
 
     int gameMovieWindowX = (screenGetWidth() - GAME_MOVIE_WINDOW_WIDTH) / 2;
     int gameMovieWindowY = (screenGetHeight() - GAME_MOVIE_WINDOW_HEIGHT) / 2;
@@ -287,6 +290,7 @@ int gameMoviePlay(int movie, int flags)
         float b = (float)(Color2RGB(oldTextColor) & 0x1F) * flt_50352A;
         windowSetTextColor(r, g, b);
     }
+    resizeContent(screenGetWidth(), screenGetHeight(), true);
 
     windowDestroy(win);
 

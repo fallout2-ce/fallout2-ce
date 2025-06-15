@@ -85,6 +85,7 @@ int falloutMain(int argc, char** argv)
     int skipOpeningMovies;
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_SKIP_OPENING_MOVIES_KEY, &skipOpeningMovies);
     if (skipOpeningMovies < 1) {
+        resizeContent(640, 480);
         gameMoviePlay(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
         gameMoviePlay(MOVIE_INTRO, 0);
         gameMoviePlay(MOVIE_CREDITS, 0);
@@ -364,6 +365,9 @@ static void showDeath()
     artCacheFlush();
     colorCycleDisable();
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
+    
+    restoreUserAspectPreference();
+    resizeContent(640, 480);
 
     bool oldCursorIsHidden = cursorIsHidden();
     if (oldCursorIsHidden) {
@@ -490,6 +494,9 @@ static void showDeath()
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
     colorCycleEnable();
+    
+    resizeContent(800, 500);
+
 }
 
 // 0x4814A8

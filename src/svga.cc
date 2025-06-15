@@ -20,6 +20,14 @@ namespace fallout {
 static bool createRenderer(int width, int height);
 static void destroyRenderer();
 
+bool gStretchEnabled = false;
+static bool gPreserveAspect = true; // used internally for stretching
+static bool gUserAspectPreference = true; // store user preference for restore
+bool gHighQuality = true; // maybe false by default
+
+static int gContentWidth = 800;
+static int gContentHeight = 500;
+
 // screen rect
 Rect _scr_size;
 
@@ -99,6 +107,11 @@ void _zero_vid_mem()
     }
 }
 
+void restoreUserAspectPreference()
+{
+    gPreserveAspect = gUserAspectPreference;
+}
+
 // 0x4CAE1C
 int _GNW95_init_mode_ex(int width, int height, int bpp)
 {
@@ -121,6 +134,21 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
             bool windowed;
             if (configGetBool(&resolutionConfig, "MAIN", "WINDOWED", &windowed)) {
                 fullscreen = !windowed;
+            }
+
+            bool stretch;
+            if (configGetBool(&resolutionConfig, "MAIN", "STRETCH", &stretch)) {
+                gStretchEnabled = stretch;
+            }
+
+            bool aspect;
+            if (configGetBool(&resolutionConfig, "MAIN", "ASPECT", &aspect)) {
+                gPreserveAspect = aspect;
+            }
+
+            bool quality;
+            if (configGetBool(&resolutionConfig, "MAIN", "QUALITY", &quality)) {
+                gHighQuality = quality;
             }
 
             int scaleValue;
@@ -204,13 +232,17 @@ int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
         Uint32 windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI;
 
         if (fullscreen) {
-            windowFlags |= SDL_WINDOW_FULLSCREEN;
+            windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
         }
 
         gSdlWindow = SDL_CreateWindow(gProgramWindowTitle, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width * scale, height * scale, windowFlags);
         if (gSdlWindow == nullptr) {
             return -1;
         }
+        int actualWidth = 0, actualHeight = 0;
+        SDL_GetWindowSize(gSdlWindow, &actualWidth, &actualHeight);
+
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, gHighQuality ? "1" : "0");
 
         if (!createRenderer(width, height)) {
             destroyRenderer();
@@ -387,10 +419,6 @@ static bool createRenderer(int width, int height)
         return false;
     }
 
-    if (SDL_RenderSetLogicalSize(gSdlRenderer, width, height) != 0) {
-        return false;
-    }
-
     gSdlTexture = SDL_CreateTexture(gSdlRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, width, height);
     if (gSdlTexture == nullptr) {
         return false;
@@ -433,11 +461,99 @@ void handleWindowSizeChanged()
     createRenderer(screenGetWidth(), screenGetHeight());
 }
 
+void resizeContent(int width, int height)
+{
+    gContentWidth = width;
+    gContentHeight = height;
+    renderPresent();
+}
+
+void resizeContent(int width, int height, bool preserveAspect)
+{
+    gContentWidth = width;
+    gContentHeight = height;
+    gPreserveAspect = preserveAspect;
+    renderPresent();
+}
+
 void renderPresent()
 {
-    SDL_UpdateTexture(gSdlTexture, nullptr, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
+    // Get physical pixel size of the window (DPI-aware)
+    int renderW, renderH;
+    SDL_GetRendererOutputSize(gSdlRenderer, &renderW, &renderH);
+
+    // Get logical window size
+    int windowW, windowH;
+    SDL_GetWindowSize(gSdlWindow, &windowW, &windowH);
+
+    float scaleX = (float)renderW / windowW;
+    float scaleY = (float)renderH / windowH;
+
+    // Get logical rendering size fallback
+    int logicalW, logicalH;
+    SDL_RenderGetLogicalSize(gSdlRenderer, &logicalW, &logicalH);
+    if (logicalW == 0) logicalW = gContentWidth;
+    if (logicalH == 0) logicalH = gContentHeight;
+
+    SDL_Rect srcRect, destRect;
+
+    if (gStretchEnabled) {
+        
+        int contentOffsetX = (gSdlTextureSurface->w - gContentWidth) / 2;
+        int contentOffsetY = (gSdlTextureSurface->h - gContentHeight) / 2;
+
+        srcRect = {
+            contentOffsetX,
+            contentOffsetY,
+            gContentWidth,
+            gContentHeight
+        };
+
+        if (gPreserveAspect) {
+            float contentAspect = (float)gContentWidth / gContentHeight;
+            float windowAspect = (float)renderW / renderH;
+
+            if (windowAspect > contentAspect) {
+                destRect.h = renderH;
+                destRect.w = (int)(renderH * contentAspect);
+                destRect.x = (renderW - destRect.w) / 2;
+                destRect.y = 0;
+            } else {
+                destRect.w = renderW;
+                destRect.h = (int)(renderW / contentAspect);
+                destRect.x = 0;
+                destRect.y = (renderH - destRect.h) / 2;
+            }
+        } else {
+            // Stretch to fill entire window (without aspect ratio preserved)
+            destRect = { 0, 0, renderW, renderH };
+        }
+
+        SDL_UpdateTexture(gSdlTexture, &srcRect,
+            (uint8_t*)gSdlTextureSurface->pixels + contentOffsetY * gSdlTextureSurface->pitch + contentOffsetX * 4,
+            gSdlTextureSurface->pitch);
+
+    } else {
+        // Stretching disabled — display original size scaled for DPI, centered
+
+        srcRect = { 0, 0, gSdlTextureSurface->w, gSdlTextureSurface->h };
+
+        destRect = {
+            (renderW - (int)(gSdlTextureSurface->w * scaleX)) / 2,
+            (renderH - (int)(gSdlTextureSurface->h * scaleY)) / 2,
+            (int)(gSdlTextureSurface->w * scaleX),
+            (int)(gSdlTextureSurface->h * scaleY)
+        };
+
+        SDL_UpdateTexture(gSdlTexture, nullptr,
+            gSdlTextureSurface->pixels,
+            gSdlTextureSurface->pitch);
+    }
+
+    SDL_SetRenderDrawColor(gSdlRenderer, 0, 0, 255, 255);
     SDL_RenderClear(gSdlRenderer);
-    SDL_RenderCopy(gSdlRenderer, gSdlTexture, nullptr, nullptr);
+
+    SDL_RenderCopy(gSdlRenderer, gSdlTexture, &srcRect, &destRect);
     SDL_RenderPresent(gSdlRenderer);
 }
 

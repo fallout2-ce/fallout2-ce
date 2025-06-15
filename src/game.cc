@@ -177,6 +177,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     debugPrint(">init_options_menu\n");
 
     if (!gIsMapper && skipOpeningMovies < 2) {
+        resizeContent(640,480);
         showSplash();
     }
 
@@ -1195,6 +1196,9 @@ static void gameFreeGlobalVars()
 static void showHelp()
 {
     ScopedGameMode gm(GameMode::kHelp);
+    
+    restoreUserAspectPreference();
+    resizeContent(640,480);
 
     bool isoWasEnabled = isoDisable();
     gameMouseObjectsHide();
@@ -1268,6 +1272,8 @@ static void showHelp()
     if (isoWasEnabled) {
         isoEnable();
     }
+    resizeContent(screenGetWidth(),screenGetHeight(), true);
+    
 }
 
 // 0x4440B8
