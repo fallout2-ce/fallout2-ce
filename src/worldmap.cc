@@ -535,6 +535,7 @@ static int wmInterfaceRefresh();
 static void wmInterfaceRefreshDate(bool shouldRefreshWindow);
 static int wmMatchWorldPosToArea(int x, int y, int* areaIdxPtr);
 static int wmInterfaceDrawCircleOverlay(CityInfo* cityInfo, CitySizeDescription* citySizeInfo, unsigned char* buffer, int x, int y);
+static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y);
 static void wmInterfaceDrawSubTileRectFogged(unsigned char* dest, int width, int height, int pitch);
 static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, int x, int y, int a6);
 static int wmDrawCursorStopped();
@@ -676,6 +677,10 @@ static int wmBkWin = -1;
 
 // 0x51DE24
 static unsigned char* wmBkWinBuf = nullptr;
+
+// CE: Offscreen buffer for safe city overlay rendering
+static unsigned char* wmOverlayOffscreenBuf = nullptr;
+#define WM_OVERLAY_BUFFER_SIZE (200)
 
 // 0x51DE2C
 static int wmWorldOffsetX = 0;
@@ -3133,7 +3138,7 @@ static int wmWorldMapFunc(int a1)
         }
 
         if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0 && (mouseEvent & MOUSE_EVENT_LEFT_BUTTON_REPEAT) == 0) {
-            if (mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, 472, 465)) {
+            if (mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, WM_VIEW_WIDTH + WM_VIEW_X, WM_VIEW_HEIGHT + WM_VIEW_Y)) {
                 if (!wmGenData.isWalking && !wmGenData.mousePressed && abs(wmGenData.worldPosX - worldX) < 5 && abs(wmGenData.worldPosY - worldY) < 5) {
                     wmGenData.mousePressed = true;
                     wmInterfaceRefresh();
@@ -3185,7 +3190,7 @@ static int wmWorldMapFunc(int a1)
                     }
                 }
             } else {
-                if (mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, 472, 465)) {
+                if (mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, WM_VIEW_WIDTH + WM_VIEW_X, WM_VIEW_HEIGHT + WM_VIEW_Y)) {
                     wmPartyInitWalking(worldX, worldY);
                 }
 
@@ -3267,7 +3272,7 @@ static int wmWorldMapFunc(int a1)
             int wheelY;
             mouseGetWheel(&wheelX, &wheelY);
 
-            if (mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, 472, 465)) {
+            if (mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, WM_VIEW_WIDTH + WM_VIEW_X, WM_VIEW_HEIGHT + WM_VIEW_Y)) {
                 wmInterfaceScrollPixel(20, 20, wheelX, -wheelY, nullptr, true);
             } else if (mouseHitTestInWindow(wmBkWin, 501, 135, 501 + 119, 135 + 178)) {
                 if (wheelY != 0) {
@@ -4509,6 +4514,12 @@ static int wmInterfaceInit()
         return -1;
     }
 
+    // CE: Allocate offscreen buffer for safe city overlay rendering
+    wmOverlayOffscreenBuf = (unsigned char*)internal_malloc(WM_OVERLAY_BUFFER_SIZE * WM_OVERLAY_BUFFER_SIZE);
+    if (wmOverlayOffscreenBuf == nullptr) {
+        return -1;
+    }
+
     blitBufferToBuffer(_backgroundFrmImage.getData(),
         _backgroundFrmImage.getWidth(),
         _backgroundFrmImage.getHeight(),
@@ -4835,6 +4846,12 @@ static int wmInterfaceExit()
 
     // NOTE: Uninline.
     wmFreeTabsLabelList(&wmLabelList, &wmLabelCount);
+
+    // CE: Free offscreen buffer for safe city overlay rendering
+    if (wmOverlayOffscreenBuf != nullptr) {
+        internal_free(wmOverlayOffscreenBuf);
+        wmOverlayOffscreenBuf = nullptr;
+    }
 
     wmInterfaceWasInitialized = 0;
 
@@ -5237,10 +5254,8 @@ static int wmInterfaceRefresh()
             CitySizeDescription* citySizeDescription = &(wmSphereData[cityInfo->size]);
             int cityX = cityInfo->x - wmWorldOffsetX;
             int cityY = cityInfo->y - wmWorldOffsetY;
-            if (cityX >= 0 && cityX <= 472 - citySizeDescription->frmImage.getWidth()
-                && cityY >= 0 && cityY <= 465 - citySizeDescription->frmImage.getHeight()) {
-                wmInterfaceDrawCircleOverlay(cityInfo, citySizeDescription, wmBkWinBuf, cityX, cityY);
-            }
+            // CE: Use safe overlay drawing with proper bounds checking instead of hardcoded limits
+            wmInterfaceDrawCircleOverlaySafe(cityInfo, citySizeDescription, wmBkWinBuf, cityX, cityY);
         }
     }
 
@@ -5394,6 +5409,115 @@ static int wmMatchWorldPosToArea(int x, int y, int* areaIdxPtr)
     return 0;
 }
 
+// CE: Safe city overlay drawing with proper bounds checking
+static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y)
+{
+    // Get city name to calculate proper overlay dimensions
+    MessageListItem messageListItem;
+    char name[40];
+    if (wmAreaIsKnown(city->areaId)) {
+        wmGetAreaName(city, name);
+    } else {
+        strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), 40);
+    }
+
+    // Calculate overlay dimensions including city name
+    int circleWidth = citySizeDescription->frmImage.getWidth();
+    int circleHeight = citySizeDescription->frmImage.getHeight();
+    int textWidth = fontGetStringWidth(name);
+    int overlayWidth = std::max(circleWidth, textWidth);
+    int overlayHeight = circleHeight + 3 + fontGetLineHeight(); // circle + spacing + text height
+
+    // Check if overlay intersects with viewport
+    int viewportLeft = WM_VIEW_X;
+    int viewportTop = WM_VIEW_Y;
+    int viewportRight = WM_VIEW_X + WM_VIEW_WIDTH;
+    int viewportBottom = WM_VIEW_Y + WM_VIEW_HEIGHT;
+
+    if (x + overlayWidth < viewportLeft || x >= viewportRight || y + overlayHeight < viewportTop || y >= viewportBottom) {
+        return 0; // Completely outside viewport
+    }
+
+    // Copy background from main buffer to offscreen buffer first
+    int offscreenX = (WM_OVERLAY_BUFFER_SIZE - overlayWidth) / 2;
+    int offscreenY = (WM_OVERLAY_BUFFER_SIZE - overlayHeight) / 2;
+
+    // Calculate centered positions for circle and text within the overlay
+    int circleOffscreenX = offscreenX + (overlayWidth - circleWidth) / 2;
+    int circleOffscreenY = offscreenY;
+    int textOffscreenX = offscreenX + (overlayWidth - textWidth) / 2;
+
+    memset(wmOverlayOffscreenBuf, 0, WM_OVERLAY_BUFFER_SIZE * WM_OVERLAY_BUFFER_SIZE);
+
+    // Copy background tiles to offscreen buffer with strict bounds checking
+    int srcX = std::max(0, x);
+    int srcY = std::max(0, y);
+    int srcEndX = std::min(x + overlayWidth, WM_WINDOW_WIDTH);
+    int srcEndY = std::min(y + overlayHeight, WM_WINDOW_HEIGHT);
+
+    int actualCopyWidth = srcEndX - srcX;
+    int actualCopyHeight = srcEndY - srcY;
+    int destOffsetX = offscreenX + (srcX - x);
+    int destOffsetY = offscreenY + (srcY - y);
+
+    // Ensure destination stays within offscreen buffer bounds
+    if (destOffsetX >= 0 && destOffsetY >= 0 && destOffsetX + actualCopyWidth <= WM_OVERLAY_BUFFER_SIZE && destOffsetY + actualCopyHeight <= WM_OVERLAY_BUFFER_SIZE && actualCopyWidth > 0 && actualCopyHeight > 0) {
+
+        blitBufferToBuffer(dest + srcY * WM_WINDOW_WIDTH + srcX,
+            actualCopyWidth,
+            actualCopyHeight,
+            WM_WINDOW_WIDTH,
+            wmOverlayOffscreenBuf + destOffsetY * WM_OVERLAY_BUFFER_SIZE + destOffsetX,
+            WM_OVERLAY_BUFFER_SIZE);
+    }
+
+    if (circleOffscreenX >= 0 && circleOffscreenY >= 0 && circleOffscreenX + circleWidth <= WM_OVERLAY_BUFFER_SIZE && circleOffscreenY + circleHeight <= WM_OVERLAY_BUFFER_SIZE) {
+
+        _dark_translucent_trans_buf_to_buf(citySizeDescription->frmImage.getData(),
+            circleWidth,
+            circleHeight,
+            circleWidth,
+            wmOverlayOffscreenBuf,
+            circleOffscreenX,
+            circleOffscreenY,
+            WM_OVERLAY_BUFFER_SIZE,
+            0x10000,
+            circleBlendTable,
+            _commonGrayTable);
+    }
+
+    // Draw city name to offscreen buffer
+    int nameY = circleOffscreenY + circleHeight + 3;
+    if (nameY >= 0 && nameY + fontGetLineHeight() <= WM_OVERLAY_BUFFER_SIZE && textOffscreenX >= 0 && textOffscreenX + textWidth <= WM_OVERLAY_BUFFER_SIZE) {
+        fontDrawText(wmOverlayOffscreenBuf + WM_OVERLAY_BUFFER_SIZE * nameY + textOffscreenX,
+            name,
+            textWidth,
+            WM_OVERLAY_BUFFER_SIZE,
+            _colorTable[992] | FONT_SHADOW);
+    }
+
+    // Calculate intersection rectangle
+    int finalSrcX = std::max(0, viewportLeft - x) + offscreenX;
+    int finalSrcY = std::max(0, viewportTop - y) + offscreenY;
+    int dstX = std::max(x, viewportLeft);
+    int dstY = std::max(y, viewportTop);
+    int finalCopyWidth = std::min(x + overlayWidth, viewportRight) - dstX;
+    int finalCopyHeight = std::min(y + overlayHeight, viewportBottom) - dstY;
+
+    // Copy visible portion from offscreen buffer to destination with strict bounds checking
+    if (finalCopyWidth > 0 && finalCopyHeight > 0 && finalSrcX >= 0 && finalSrcY >= 0 && finalSrcX + finalCopyWidth <= WM_OVERLAY_BUFFER_SIZE && finalSrcY + finalCopyHeight <= WM_OVERLAY_BUFFER_SIZE && dstX >= 0 && dstY >= 0 && dstX + finalCopyWidth <= WM_WINDOW_WIDTH && dstY + finalCopyHeight <= WM_WINDOW_HEIGHT) {
+
+        blitBufferToBuffer(wmOverlayOffscreenBuf + finalSrcY * WM_OVERLAY_BUFFER_SIZE + finalSrcX,
+            finalCopyWidth,
+            finalCopyHeight,
+            WM_OVERLAY_BUFFER_SIZE,
+            dest + dstY * WM_WINDOW_WIDTH + dstX,
+            WM_WINDOW_WIDTH);
+    }
+
+    return 0;
+}
+
 // 0x4C3FA8
 static int wmInterfaceDrawCircleOverlay(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y)
 {
@@ -5468,8 +5592,8 @@ static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, i
         destY = WM_VIEW_Y;
     }
 
-    if (height + y > 464) {
-        height -= height + y - 464;
+    if (height + y > WM_VIEW_Y + WM_VIEW_HEIGHT) {
+        height -= height + y - (WM_VIEW_Y + WM_VIEW_HEIGHT);
     }
 
     int width = WM_SUBTILE_SIZE * a6;
@@ -5478,8 +5602,8 @@ static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, i
         width -= WM_VIEW_X - x;
     }
 
-    if (width + x > 472) {
-        width -= width + x - 472;
+    if (width + x > WM_VIEW_X + WM_VIEW_WIDTH) {
+        width -= width + x - (WM_VIEW_X + WM_VIEW_WIDTH);
     }
 
     if (width > 0 && height > 0) {
