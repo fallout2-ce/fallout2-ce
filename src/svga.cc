@@ -163,10 +163,10 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     }*/
     
     // new settings from fallout2.cfg
-    width = settings.system.game_width;
-    height = settings.system.game_height;
-    fullscreen = settings.system.fullscreen;
-    int scaleValue = settings.system.scale2x;
+    width = settings.graphics.game_width;
+    height = settings.graphics.game_height;
+    fullscreen = settings.graphics.fullscreen;
+    int scaleValue = settings.graphics.scale2x;
     
     scale = scaleValue + 1; // 0 = 1x, 1 = 2x
     // Only allow scaling if resulting game resolution is >= 640x480
@@ -183,9 +183,9 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_IFACE_BAR_SIDES_ORI, &gInterfaceSidePanelsExtendFromScreenEdge);
     
     // setting for stretching - later
-    //settings.system.stretch_enabled;
-    //settings.system.preserve_aspect;
-    //settings.system.high_quality;
+    //settings.graphics.stretch_enabled;
+    //settings.graphics.preserve_aspect;
+    //settings.graphics.high_quality;
 
     if (_GNW95_init_window(width, height, fullscreen, scale) == -1) {
         return -1;

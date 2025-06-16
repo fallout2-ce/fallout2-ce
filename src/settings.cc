@@ -59,14 +59,6 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, settings.system.hashing);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_WIDTH, settings.system.game_width);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_HEIGHT, settings.system.game_height);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FULLSCREEN, settings.system.fullscreen);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCALE_2X, settings.system.scale2x);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_SIZE, settings.system.splash_size);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.system.stretch_enabled);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.system.preserve_aspect);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HIGH_QUALITY, settings.system.high_quality);
 
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
@@ -110,6 +102,15 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
+    
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_WIDTH, settings.graphics.game_width);
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_HEIGHT, settings.graphics.game_height);
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_FULLSCREEN, settings.graphics.fullscreen);
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_SCALE_2X, settings.graphics.scale2x);
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_SPLASH_SIZE, settings.graphics.splash_size);
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.graphics.stretch_enabled);
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.graphics.preserve_aspect);
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_HIGH_QUALITY, settings.graphics.high_quality);
 
     settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
     settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);
@@ -143,14 +144,6 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, settings.system.hashing);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_WIDTH, settings.system.game_width);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_HEIGHT, settings.system.game_height);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FULLSCREEN, settings.system.fullscreen);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCALE_2X, settings.system.scale2x);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_SIZE, settings.system.splash_size);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.system.stretch_enabled);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.system.preserve_aspect);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HIGH_QUALITY, settings.system.high_quality);
     
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
@@ -194,6 +187,15 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
+    
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_WIDTH, settings.graphics.game_width);
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_HEIGHT, settings.graphics.game_height);
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_FULLSCREEN, settings.graphics.fullscreen);
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_SCALE_2X, settings.graphics.scale2x);
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_SPLASH_SIZE, settings.graphics.splash_size);
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.graphics.stretch_enabled);
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.graphics.preserve_aspect);
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_HIGH_QUALITY, settings.graphics.high_quality);
 
     settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
     settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);

@@ -1470,7 +1470,7 @@ static void showSplash()
         }
     }
 
-    int size = settings.system.splash_size;
+    int size = settings.graphics.splash_size;
 
     int screenWidth = screenGetWidth();
     int screenHeight = screenGetHeight();
