@@ -62,6 +62,8 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_WIDTH, settings.system.game_width);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_HEIGHT, settings.system.game_height);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FULLSCREEN, settings.system.fullscreen);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCALE_2X, settings.system.scale2x);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_SIZE, settings.system.splash_size);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.system.stretch_enabled);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.system.preserve_aspect);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HIGH_QUALITY, settings.system.high_quality);
@@ -144,6 +146,8 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_WIDTH, settings.system.game_width);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_HEIGHT, settings.system.game_height);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FULLSCREEN, settings.system.fullscreen);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCALE_2X, settings.system.scale2x);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_SIZE, settings.system.splash_size);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.system.stretch_enabled);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.system.preserve_aspect);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HIGH_QUALITY, settings.system.high_quality);

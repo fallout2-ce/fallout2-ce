@@ -18,8 +18,10 @@ struct SystemSettings {
     std::string language = ENGLISH;
     int game_width = 640;
     int game_height = 480;
+    int scale2x = 0;
+    int splash_size = 0;
     bool fullscreen = true;
-    bool stretch_enabled = false;
+    bool stretch_enabled = true;
     bool preserve_aspect = true;
     bool high_quality = false;
     int scroll_lock = 0;

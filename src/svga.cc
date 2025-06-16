@@ -11,6 +11,8 @@
 #include "memory.h"
 #include "mouse.h"
 #include "scan_unimplemented.h"
+#include "settings.h"
+#include "sfall_config.h"
 #include "win32.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
@@ -105,7 +107,8 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     bool fullscreen = true;
     int scale = 1;
 
-    Config resolutionConfig;
+    // f2_res ini to be removed - what of the scanning?
+    /*Config resolutionConfig;
     if (configInit(&resolutionConfig)) {
         if (configRead(&resolutionConfig, "f2_res.ini", false)) {
             int screenWidth;
@@ -157,7 +160,32 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
             }
         }
         configFree(&resolutionConfig);
+    }*/
+    
+    // new settings from fallout2.cfg
+    width = settings.system.game_width;
+    height = settings.system.game_height;
+    fullscreen = settings.system.fullscreen;
+    int scaleValue = settings.system.scale2x;
+    
+    scale = scaleValue + 1; // 0 = 1x, 1 = 2x
+    // Only allow scaling if resulting game resolution is >= 640x480
+    if ((width / scale) < 640 || (height / scale) < 480) {
+        scale = 1;
+    } else {
+        width /= scale;
+        height /= scale;
     }
+
+    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_IFACE_BAR_MODE, &gInterfaceBarMode);
+    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_IFACE_BAR_WIDTH, &gInterfaceBarWidth);
+    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_IFACE_BAR_SIDE_ART, &gInterfaceSidePanelsImageId);
+    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_IFACE_BAR_SIDES_ORI, &gInterfaceSidePanelsExtendFromScreenEdge);
+    
+    // setting for stretching - later
+    //settings.system.stretch_enabled;
+    //settings.system.preserve_aspect;
+    //settings.system.high_quality;
 
     if (_GNW95_init_window(width, height, fullscreen, scale) == -1) {
         return -1;

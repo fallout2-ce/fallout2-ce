@@ -33,6 +33,8 @@ namespace fallout {
 #define GAME_CONFIG_GAME_WIDTH "game_width"
 #define GAME_CONFIG_GAME_HEIGHT "game_height"
 #define GAME_CONFIG_FULLSCREEN "fullscreen"
+#define GAME_CONFIG_SCALE_2X "scale2x"
+#define GAME_CONFIG_SPLASH_SIZE "splash_size"
 #define GAME_CONFIG_STRETCH_ENABLED "stretch_enabled"
 #define GAME_CONFIG_PRESERVE_ASPECT "preserve_aspect"
 #define GAME_CONFIG_HIGH_QUALITY "high_quality"
