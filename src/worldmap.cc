@@ -5410,111 +5410,166 @@ static int wmMatchWorldPosToArea(int x, int y, int* areaIdxPtr)
 }
 
 // CE: Safe city overlay drawing with proper bounds checking
-static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y)
+static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int xArg, int yArg)
 {
-    // Get city name to calculate proper overlay dimensions
     MessageListItem messageListItem;
-    char name[40];
+    char name[CITY_NAME_SIZE];
     if (wmAreaIsKnown(city->areaId)) {
         wmGetAreaName(city, name);
     } else {
-        strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), 40);
+        strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), CITY_NAME_SIZE -1);
+        name[CITY_NAME_SIZE -1] = '\0';
     }
 
-    // Calculate overlay dimensions including city name
+    // Basic dimensions
     int circleWidth = citySizeDescription->frmImage.getWidth();
     int circleHeight = citySizeDescription->frmImage.getHeight();
     int textWidth = fontGetStringWidth(name);
-    int overlayWidth = std::max(circleWidth, textWidth);
-    int overlayHeight = circleHeight + 3 + fontGetLineHeight(); // circle + spacing + text height
+    int textHeight = fontGetLineHeight();
+    const int spacing = 3;
 
-    // Check if overlay intersects with viewport
+    // 1. Relative Ideal Positions (Origin at 0,0 for circle's top-left)
+    int xTextRel = (circleWidth - textWidth) / 2;
+    int yTextRel = circleHeight + spacing;
+
+    // 2. Content Bounding Box (Relative to circle's 0,0 origin)
+    int contentMinXRel = std::min(0, xTextRel);
+    int contentMaxXRel = std::max(circleWidth, xTextRel + textWidth);
+    
+    int contentActualWidth = contentMaxXRel - contentMinXRel;
+    int contentActualHeight = circleHeight + spacing + textHeight;
+
+    // Viewport boundaries
     int viewportLeft = WM_VIEW_X;
     int viewportTop = WM_VIEW_Y;
     int viewportRight = WM_VIEW_X + WM_VIEW_WIDTH;
     int viewportBottom = WM_VIEW_Y + WM_VIEW_HEIGHT;
 
-    if (x + overlayWidth < viewportLeft || x >= viewportRight || y + overlayHeight < viewportTop || y >= viewportBottom) {
+    // Overall screen position for the content bounding box's top-left
+    int screenContentBoxX = xArg + contentMinXRel;
+    int screenContentBoxY = yArg; // yArg is for circle's top
+
+    // Check if the entire content box is outside the viewport
+    if (screenContentBoxX + contentActualWidth < viewportLeft || 
+        screenContentBoxX >= viewportRight ||
+        screenContentBoxY + contentActualHeight < viewportTop || 
+        screenContentBoxY >= viewportBottom) {
         return 0; // Completely outside viewport
     }
 
-    // Copy background from main buffer to offscreen buffer first
-    int offscreenX = (WM_OVERLAY_BUFFER_SIZE - overlayWidth) / 2;
-    int offscreenY = (WM_OVERLAY_BUFFER_SIZE - overlayHeight) / 2;
+    // 3. Positioning Content Bounding Box within wmOverlayOffscreenBuf
+    // This is the top-left of where our combined content will sit in the offscreen buffer.
+    int bufferContentStartX = (WM_OVERLAY_BUFFER_SIZE - contentActualWidth) / 2;
+    int bufferContentStartY = (WM_OVERLAY_BUFFER_SIZE - contentActualHeight) / 2;
 
-    // Calculate centered positions for circle and text within the overlay
-    int circleOffscreenX = offscreenX + (overlayWidth - circleWidth) / 2;
-    int circleOffscreenY = offscreenY;
-    int textOffscreenX = offscreenX + (overlayWidth - textWidth) / 2;
-
+    // Clear/prepare the offscreen buffer
     memset(wmOverlayOffscreenBuf, 0, WM_OVERLAY_BUFFER_SIZE * WM_OVERLAY_BUFFER_SIZE);
 
-    // Copy background tiles to offscreen buffer with strict bounds checking
-    int srcX = std::max(0, x);
-    int srcY = std::max(0, y);
-    int srcEndX = std::min(x + overlayWidth, WM_WINDOW_WIDTH);
-    int srcEndY = std::min(y + overlayHeight, WM_WINDOW_HEIGHT);
+    // Copy background from main screen buffer to offscreen buffer
+    // Determine the part of the screen that corresponds to our offscreen content area
+    int bgCopySrcXOnScreen = screenContentBoxX;
+    int bgCopySrcYOnScreen = screenContentBoxY;
+    
+    int bgCopyClippedSrcX = std::max(bgCopySrcXOnScreen, viewportLeft);
+    int bgCopyClippedSrcY = std::max(bgCopySrcYOnScreen, viewportTop);
 
-    int actualCopyWidth = srcEndX - srcX;
-    int actualCopyHeight = srcEndY - srcY;
-    int destOffsetX = offscreenX + (srcX - x);
-    int destOffsetY = offscreenY + (srcY - y);
+    int bgCopyClippedEndX = std::min(bgCopySrcXOnScreen + contentActualWidth, viewportRight);
+    int bgCopyClippedEndY = std::min(bgCopySrcYOnScreen + contentActualHeight, viewportBottom);
 
-    // Ensure destination stays within offscreen buffer bounds
-    if (destOffsetX >= 0 && destOffsetY >= 0 && destOffsetX + actualCopyWidth <= WM_OVERLAY_BUFFER_SIZE && destOffsetY + actualCopyHeight <= WM_OVERLAY_BUFFER_SIZE && actualCopyWidth > 0 && actualCopyHeight > 0) {
+    int bgFinalCopyWidth = bgCopyClippedEndX - bgCopyClippedSrcX;
+    int bgFinalCopyHeight = bgCopyClippedEndY - bgCopyClippedSrcY;
 
-        blitBufferToBuffer(dest + srcY * WM_WINDOW_WIDTH + srcX,
-            actualCopyWidth,
-            actualCopyHeight,
-            WM_WINDOW_WIDTH,
-            wmOverlayOffscreenBuf + destOffsetY * WM_OVERLAY_BUFFER_SIZE + destOffsetX,
-            WM_OVERLAY_BUFFER_SIZE);
+    if (bgFinalCopyWidth > 0 && bgFinalCopyHeight > 0) {
+        // Offset into the offscreen buffer where this background piece should go
+        int bgDstXInBuffer = bufferContentStartX + (bgCopyClippedSrcX - bgCopySrcXOnScreen);
+        int bgDstYInBuffer = bufferContentStartY + (bgCopyClippedSrcY - bgCopySrcYOnScreen);
+
+        if (bgDstXInBuffer >=0 && bgDstYInBuffer >=0 &&
+            bgDstXInBuffer + bgFinalCopyWidth <= WM_OVERLAY_BUFFER_SIZE &&
+            bgDstYInBuffer + bgFinalCopyHeight <= WM_OVERLAY_BUFFER_SIZE) {
+            
+            blitBufferToBuffer(
+                dest + bgCopyClippedSrcY * WM_WINDOW_WIDTH + bgCopyClippedSrcX, // Source from main screen
+                bgFinalCopyWidth,
+                bgFinalCopyHeight,
+                WM_WINDOW_WIDTH,
+                wmOverlayOffscreenBuf + bgDstYInBuffer * WM_OVERLAY_BUFFER_SIZE + bgDstXInBuffer, // Dest in offscreen
+                WM_OVERLAY_BUFFER_SIZE
+            );
+        }
     }
+    
+    // 4. Absolute Drawing Coordinates within wmOverlayOffscreenBuf
+    // (relative to top-left of wmOverlayOffscreenBuf)
+    int circleDrawAbsX = bufferContentStartX - contentMinXRel;
+    int circleDrawAbsY = bufferContentStartY; // since content_min_y_rel is 0
+    
+    int textDrawAbsX = bufferContentStartX - contentMinXRel + xTextRel;
+    int textDrawAbsY = bufferContentStartY + yTextRel;
 
-    if (circleOffscreenX >= 0 && circleOffscreenY >= 0 && circleOffscreenX + circleWidth <= WM_OVERLAY_BUFFER_SIZE && circleOffscreenY + circleHeight <= WM_OVERLAY_BUFFER_SIZE) {
-
-        _dark_translucent_trans_buf_to_buf(citySizeDescription->frmImage.getData(),
-            circleWidth,
-            circleHeight,
-            circleWidth,
+    // Draw circle onto offscreen buffer
+    if (circleDrawAbsX >= 0 && circleDrawAbsY >= 0 && 
+        circleDrawAbsX + circleWidth <= WM_OVERLAY_BUFFER_SIZE && 
+        circleDrawAbsY + circleHeight <= WM_OVERLAY_BUFFER_SIZE) {
+        _dark_translucent_trans_buf_to_buf(
+            citySizeDescription->frmImage.getData(),
+            circleWidth, circleHeight, circleWidth,
             wmOverlayOffscreenBuf,
-            circleOffscreenX,
-            circleOffscreenY,
+            circleDrawAbsX, circleDrawAbsY,
             WM_OVERLAY_BUFFER_SIZE,
-            0x10000,
-            circleBlendTable,
-            _commonGrayTable);
+            0x10000, circleBlendTable, _commonGrayTable
+        );
     }
 
-    // Draw city name to offscreen buffer
-    int nameY = circleOffscreenY + circleHeight + 3;
-    if (nameY >= 0 && nameY + fontGetLineHeight() <= WM_OVERLAY_BUFFER_SIZE && textOffscreenX >= 0 && textOffscreenX + textWidth <= WM_OVERLAY_BUFFER_SIZE) {
-        fontDrawText(wmOverlayOffscreenBuf + WM_OVERLAY_BUFFER_SIZE * nameY + textOffscreenX,
-            name,
-            textWidth,
-            WM_OVERLAY_BUFFER_SIZE,
-            _colorTable[992] | FONT_SHADOW);
+    // Draw text onto offscreen buffer
+    if (textDrawAbsX >= 0 && textDrawAbsY >= 0 &&
+        textDrawAbsX + textWidth <= WM_OVERLAY_BUFFER_SIZE &&
+        textDrawAbsY + textHeight <= WM_OVERLAY_BUFFER_SIZE) {
+        fontDrawText(
+            wmOverlayOffscreenBuf + textDrawAbsY * WM_OVERLAY_BUFFER_SIZE + textDrawAbsX,
+            name, textWidth, WM_OVERLAY_BUFFER_SIZE,
+            _colorTable[992] | FONT_SHADOW
+        );
     }
 
-    // Calculate intersection rectangle
-    int finalSrcX = std::max(0, viewportLeft - x) + offscreenX;
-    int finalSrcY = std::max(0, viewportTop - y) + offscreenY;
-    int dstX = std::max(x, viewportLeft);
-    int dstY = std::max(y, viewportTop);
-    int finalCopyWidth = std::min(x + overlayWidth, viewportRight) - dstX;
-    int finalCopyHeight = std::min(y + overlayHeight, viewportBottom) - dstY;
+    // 5. Final Blit to Screen (dest buffer)
+    // Source from offscreen buffer (top-left of our centered content)
+    int finalBlitSrcXOffscreen = bufferContentStartX;
+    int finalBlitSrcYOffscreen = bufferContentStartY;
 
-    // Copy visible portion from offscreen buffer to destination with strict bounds checking
-    if (finalCopyWidth > 0 && finalCopyHeight > 0 && finalSrcX >= 0 && finalSrcY >= 0 && finalSrcX + finalCopyWidth <= WM_OVERLAY_BUFFER_SIZE && finalSrcY + finalCopyHeight <= WM_OVERLAY_BUFFER_SIZE && dstX >= 0 && dstY >= 0 && dstX + finalCopyWidth <= WM_WINDOW_WIDTH && dstY + finalCopyHeight <= WM_WINDOW_HEIGHT) {
+    // Destination on screen (top-left of where content box should appear)
+    int finalBlitDstXScreen = screenContentBoxX;
+    int finalBlitDstYScreen = screenContentBoxY;
+    
+    // Clip the source region for blitting based on what's visible in the viewport
+    // relative to the screen_content_box origin.
+    int clippedFinalSrcXOffscreen = finalBlitSrcXOffscreen + std::max(0, viewportLeft - finalBlitDstXScreen);
+    int clippedFinalSrcYOffscreen = finalBlitSrcYOffscreen + std::max(0, viewportTop - finalBlitDstYScreen);
 
-        blitBufferToBuffer(wmOverlayOffscreenBuf + finalSrcY * WM_OVERLAY_BUFFER_SIZE + finalSrcX,
-            finalCopyWidth,
-            finalCopyHeight,
+    // Clipped destination on screen
+    int clippedFinalDstXScreen = std::max(finalBlitDstXScreen, viewportLeft);
+    int clippedFinalDstYScreen = std::max(finalBlitDstYScreen, viewportTop);
+    
+    // Calculate width and height of the actual region to blit
+    int blitWidth = std::min(finalBlitDstXScreen + contentActualWidth, viewportRight) - clippedFinalDstXScreen;
+    int blitHeight = std::min(finalBlitDstYScreen + contentActualHeight, viewportBottom) - clippedFinalDstYScreen;
+
+    if (blitWidth > 0 && blitHeight > 0 &&
+        clippedFinalSrcXOffscreen >= 0 && clippedFinalSrcYOffscreen >=0 &&
+        clippedFinalSrcXOffscreen + blitWidth <= WM_OVERLAY_BUFFER_SIZE &&
+        clippedFinalSrcYOffscreen + blitHeight <= WM_OVERLAY_BUFFER_SIZE &&
+        clippedFinalDstXScreen >=0 && clippedFinalDstYScreen >=0 &&
+        clippedFinalDstXScreen + blitWidth <= WM_WINDOW_WIDTH &&
+        clippedFinalDstYScreen + blitHeight <= WM_WINDOW_HEIGHT
+        ) {
+        blitBufferToBuffer(
+            wmOverlayOffscreenBuf + clippedFinalSrcYOffscreen * WM_OVERLAY_BUFFER_SIZE + clippedFinalSrcXOffscreen,
+            blitWidth, blitHeight,
             WM_OVERLAY_BUFFER_SIZE,
-            dest + dstY * WM_WINDOW_WIDTH + dstX,
-            WM_WINDOW_WIDTH);
+            dest + clippedFinalDstYScreen * WM_WINDOW_WIDTH + clippedFinalDstXScreen,
+            WM_WINDOW_WIDTH
+        );
     }
-
     return 0;
 }
 
