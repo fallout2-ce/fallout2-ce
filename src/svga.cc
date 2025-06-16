@@ -116,7 +116,6 @@ void restoreUserAspectPreference()
 int _GNW95_init_mode_ex(int width, int height, int bpp)
 {
     bool fullscreen = true;
-    int scale = 1;
 
     Config resolutionConfig;
     if (configInit(&resolutionConfig)) {
@@ -144,23 +143,12 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
             bool aspect;
             if (configGetBool(&resolutionConfig, "MAIN", "ASPECT", &aspect)) {
                 gPreserveAspect = aspect;
+                gUserAspectPreference = aspect; // back up the user preference for restoring after using game screen
             }
 
             bool quality;
             if (configGetBool(&resolutionConfig, "MAIN", "QUALITY", &quality)) {
                 gHighQuality = quality;
-            }
-
-            int scaleValue;
-            if (configGetInt(&resolutionConfig, "MAIN", "SCALE_2X", &scaleValue)) {
-                scale = scaleValue + 1; // 0 = 1x, 1 = 2x
-                // Only allow scaling if resulting game resolution is >= 640x480
-                if ((width / scale) < 640 || (height / scale) < 480) {
-                    scale = 1;
-                } else {
-                    width /= scale;
-                    height /= scale;
-                }
             }
 
             configGetBool(&resolutionConfig, "IFACE", "IFACE_BAR_MODE", &gInterfaceBarMode);
@@ -173,7 +161,6 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
                 f2_res_defaults["MAIN"]["SCR_WIDTH"] = "640";
                 f2_res_defaults["MAIN"]["SCR_HEIGHT"] = "480";
                 f2_res_defaults["MAIN"]["WINDOWED"] = "0";
-                f2_res_defaults["MAIN"]["SCALE_2X"] = "0";
                 f2_res_defaults["IFACE"]["IFACE_BAR_MODE"] = "0";
                 f2_res_defaults["IFACE"]["IFACE_BAR_WIDTH"] = "0";
                 f2_res_defaults["IFACE"]["IFACE_BAR_SIDE_ART"] = "0";
@@ -187,7 +174,7 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
         configFree(&resolutionConfig);
     }
 
-    if (_GNW95_init_window(width, height, fullscreen, scale) == -1) {
+    if (_GNW95_init_window(width, height, fullscreen) == -1) {
         return -1;
     }
 
@@ -224,7 +211,7 @@ int _init_vesa_mode(int width, int height)
 }
 
 // 0x4CAEDC
-int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
+int _GNW95_init_window(int width, int height, bool fullscreen)
 {
     if (gSdlWindow == nullptr) {
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
@@ -235,7 +222,7 @@ int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
             windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
         }
 
-        gSdlWindow = SDL_CreateWindow(gProgramWindowTitle, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width * scale, height * scale, windowFlags);
+        gSdlWindow = SDL_CreateWindow(gProgramWindowTitle, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, windowFlags);
         if (gSdlWindow == nullptr) {
             return -1;
         }
