@@ -399,3 +399,14 @@ FodyWeavers.xsd
 # versioning header
 src/platform/git_version.h
 CMakeUserPresets.json
+/_deps
+/CMakeFiles
+/Fallout II Community Edition.app
+/Fallout II Community Edition800500.app
+/good deps
+/third_party
+cmake_install.cmake
+CMakeCache.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+Makefile

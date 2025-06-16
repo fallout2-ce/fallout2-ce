@@ -13,7 +13,15 @@ struct SystemSettings {
     std::string master_patches_path = "data";
     std::string critter_dat_path = "critter.dat";
     std::string critter_patches_path = "data";
+    std::string falloutce_dat_path = "falloutce.dat";
+    std::string falloutce_patches_path = "data";
     std::string language = ENGLISH;
+    int game_width = 640;
+    int game_height = 480;
+    bool fullscreen = true;
+    bool stretch_enabled = false;
+    bool preserve_aspect = true;
+    bool high_quality = false;
     int scroll_lock = 0;
     bool interrupt_walk = true;
     int art_cache_size = 8;

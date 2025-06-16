@@ -48,6 +48,8 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY, settings.system.master_patches_path);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY, settings.system.critter_dat_path);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY, settings.system.critter_patches_path);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FALLOUTCE_DAT_KEY, settings.system.falloutce_dat_path);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FALLOUTCE_PATCHES_KEY, settings.system.falloutce_patches_path);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_LANGUAGE_KEY, settings.system.language);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCROLL_LOCK_KEY, settings.system.scroll_lock);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_INTERRUPT_WALK_KEY, settings.system.interrupt_walk);
@@ -57,6 +59,12 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, settings.system.hashing);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_WIDTH, settings.system.game_width);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_HEIGHT, settings.system.game_height);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FULLSCREEN, settings.system.fullscreen);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.system.stretch_enabled);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.system.preserve_aspect);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HIGH_QUALITY, settings.system.high_quality);
 
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
@@ -122,6 +130,8 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY, settings.system.master_patches_path);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY, settings.system.critter_dat_path);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY, settings.system.critter_patches_path);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FALLOUTCE_DAT_KEY, settings.system.falloutce_dat_path);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FALLOUTCE_PATCHES_KEY, settings.system.falloutce_patches_path);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_LANGUAGE_KEY, settings.system.language);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCROLL_LOCK_KEY, settings.system.scroll_lock);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_INTERRUPT_WALK_KEY, settings.system.interrupt_walk);
@@ -131,7 +141,13 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, settings.system.hashing);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
-
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_WIDTH, settings.system.game_width);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_GAME_HEIGHT, settings.system.game_height);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FULLSCREEN, settings.system.fullscreen);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.system.stretch_enabled);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.system.preserve_aspect);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HIGH_QUALITY, settings.system.high_quality);
+    
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_VIOLENCE_LEVEL_KEY, settings.preferences.violence_level);
