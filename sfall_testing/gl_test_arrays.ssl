@@ -1,30 +1,8 @@
 #include "lib.arrays.h"
-
+#include "test_utils.h"
 // #include "define_lite.h"
 
 
-variable test_suite_errors := 0;
-variable test_suite_verbose := true;
-
-#ifndef assertEquals
-procedure assertEquals(variable desc, variable a, variable b) begin
-   if (a != b or typeof(a) != typeof(b)) then begin
-      display_msg("Assertion failed \""+desc+"\": "+a+" != "+b);
-      test_suite_errors ++;
-   end else if (test_suite_verbose) then begin
-      display_msg("Assert \""+desc+"\" ok");
-   end
-end
-
-procedure assertNotEquals(variable desc, variable a, variable b) begin
-   if (a == b) then begin
-      display_msg("Assertion failed \""+desc+"\": "+a+" == "+b);
-      test_suite_errors ++;
-   end else if (test_suite_verbose) then begin
-      display_msg("Assert \""+desc+"\" ok");
-   end
-end
-#endif
 
 #define ARRAY_MAX_STRING	   (255)
 #define ARRAY_MAX_SIZE		 (100000)
@@ -187,6 +165,8 @@ procedure array_test_suite begin
    */
 
    display_msg("All tests finished with "+test_suite_errors+" errors.");
+
+   call report_test_results("arrays");
 end
 
 
@@ -195,7 +175,7 @@ end
 
 
 
-procedure map_enter_p_proc begin
+procedure start begin
    display_msg("Starting tests");
    call array_test_suite();
 end

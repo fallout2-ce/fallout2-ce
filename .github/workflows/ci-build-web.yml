@@ -89,6 +89,7 @@ jobs:
           folder: fallout2-ce-ems/dist
           target-folder: ${{ steps.set-path.outputs.DEST_DIR }}
           clean: false
+          single-commit: true
 
       - name: Comment preview URL on PR
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository

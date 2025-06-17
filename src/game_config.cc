@@ -7,6 +7,7 @@
 #include "db.h"
 #include "main.h"
 #include "platform_compat.h"
+#include "scan_unimplemented.h"
 
 #if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
@@ -179,9 +180,11 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         }
     }
 
+    auto configChecker = ConfigChecker(gGameConfig, gGameConfigFilePath);
     // Read contents of `fallout2.cfg` into config. The values from the file
     // will override the defaults above.
     configRead(&gGameConfig, gGameConfigFilePath, false);
+    configChecker.check(gGameConfig);
 
     // Add key-values from command line, which overrides both defaults and
     // whatever was loaded from `fallout2.cfg`.

@@ -110,7 +110,7 @@ static void* _GNW_texture;
 static ButtonGroup gButtonGroups[BUTTON_GROUP_LIST_CAPACITY];
 
 // 0x4D5C30
-int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int a3)
+int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int flags)
 {
 #ifdef _WIN32
     CloseHandle(GNW95_mutex);
@@ -163,7 +163,7 @@ int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitP
         return WINDOW_MANAGER_ERR_8;
     }
 
-    if (a3 & 1) {
+    if (flags & 1) {
         _screen_buffer = (unsigned char*)internal_malloc((_scr_size.bottom - _scr_size.top + 1) * (_scr_size.right - _scr_size.left + 1));
         if (_screen_buffer == nullptr) {
             if (gVideoSystemExitProc != nullptr) {
@@ -205,7 +205,7 @@ int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitP
 
     _GNW_debug_init();
 
-    if (inputInit(a3) == -1) {
+    if (inputInit(flags) == -1) {
         return WINDOW_MANAGER_ERR_INITIALIZING_INPUT;
     }
 
@@ -251,7 +251,7 @@ int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitP
     _GNW_texture = nullptr;
     _bk_color = 0;
     _GNW_wcolor[0] = 10570;
-    _window_flags = a3;
+    _window_flags = flags;
     _GNW_wcolor[2] = 8456;
     _GNW_wcolor[1] = 15855;
 

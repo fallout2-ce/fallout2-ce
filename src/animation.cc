@@ -3046,6 +3046,10 @@ void _dude_fidget()
         return;
     }
 
+    if (GameMode::getCurrentGameMode() == GameMode::kWorldmap) {
+        return;
+    }
+
     if (isInCombat()) {
         return;
     }
