@@ -100,6 +100,7 @@ struct GraphicSettings {
     bool stretch_enabled = true;
     bool preserve_aspect = true;
     bool high_quality = false;
+    bool highres_stencil = true;
 };
 
 struct Settings {

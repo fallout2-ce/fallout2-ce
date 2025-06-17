@@ -39,6 +39,7 @@ namespace fallout {
 #define GAME_CONFIG_STRETCH_ENABLED "stretch_enabled"
 #define GAME_CONFIG_PRESERVE_ASPECT "preserve_aspect"
 #define GAME_CONFIG_HIGH_QUALITY "high_quality"
+#define GAME_CONFIG_ENABLE_HIRES_STENCIL "highres_stencil"
 #define GAME_CONFIG_TIMES_RUN_KEY "times_run"
 #define GAME_CONFIG_GAME_DIFFICULTY_KEY "game_difficulty"
 #define GAME_CONFIG_RUNNING_BURNING_GUY_KEY "running_burning_guy"

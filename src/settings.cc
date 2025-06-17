@@ -111,6 +111,7 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.graphics.stretch_enabled);
     settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.graphics.preserve_aspect);
     settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_HIGH_QUALITY, settings.graphics.high_quality);
+    settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_ENABLE_HIRES_STENCIL, settings.graphics.highres_stencil);
 
     settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
     settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);
@@ -196,6 +197,7 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_STRETCH_ENABLED, settings.graphics.stretch_enabled);
     settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_PRESERVE_ASPECT, settings.graphics.preserve_aspect);
     settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_HIGH_QUALITY, settings.graphics.high_quality);
+    settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_ENABLE_HIRES_STENCIL, settings.graphics.highres_stencil);
 
     settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
     settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);

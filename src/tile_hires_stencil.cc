@@ -2,7 +2,7 @@
 #include "debug.h"
 #include "draw.h"
 #include "geometry.h"
-#include "sfall_config.h"
+#include "settings.h"
 #include "stdio.h"
 #include "tile.h"
 #include <string.h>
@@ -405,11 +405,11 @@ void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth,
 
 void tile_hires_stencil_init()
 {
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MAIN_KEY, SFALL_CONFIG_ENABLE_HIRES_STENCIL, &gIsTileHiresStencilEnabled);
+    gIsTileHiresStencilEnabled = settings.graphics.highres_stencil;
     if (!gIsTileHiresStencilEnabled) {
         return;
     }
-
+    
     debugPrint("tile_hires_stencil_init\n");
     clean_cache();
     tile_hires_stencil_on_center_tile_or_elevation_change();
