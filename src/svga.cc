@@ -107,62 +107,6 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     bool fullscreen = true;
     int scale = 1;
 
-    // f2_res ini to be removed - what of the scanning?
-    /*Config resolutionConfig;
-    if (configInit(&resolutionConfig)) {
-        if (configRead(&resolutionConfig, "f2_res.ini", false)) {
-            int screenWidth;
-            if (configGetInt(&resolutionConfig, "MAIN", "SCR_WIDTH", &screenWidth)) {
-                width = screenWidth;
-            }
-
-            int screenHeight;
-            if (configGetInt(&resolutionConfig, "MAIN", "SCR_HEIGHT", &screenHeight)) {
-                height = screenHeight;
-            }
-
-            bool windowed;
-            if (configGetBool(&resolutionConfig, "MAIN", "WINDOWED", &windowed)) {
-                fullscreen = !windowed;
-            }
-
-            int scaleValue;
-            if (configGetInt(&resolutionConfig, "MAIN", "SCALE_2X", &scaleValue)) {
-                scale = scaleValue + 1; // 0 = 1x, 1 = 2x
-                // Only allow scaling if resulting game resolution is >= 640x480
-                if ((width / scale) < 640 || (height / scale) < 480) {
-                    scale = 1;
-                } else {
-                    width /= scale;
-                    height /= scale;
-                }
-            }
-
-            configGetBool(&resolutionConfig, "IFACE", "IFACE_BAR_MODE", &gInterfaceBarMode);
-            configGetInt(&resolutionConfig, "IFACE", "IFACE_BAR_WIDTH", &gInterfaceBarWidth);
-            configGetInt(&resolutionConfig, "IFACE", "IFACE_BAR_SIDE_ART", &gInterfaceSidePanelsImageId);
-            configGetBool(&resolutionConfig, "IFACE", "IFACE_BAR_SIDES_ORI", &gInterfaceSidePanelsExtendFromScreenEdge);
-
-            {
-                ConfigMap f2_res_defaults;
-                f2_res_defaults["MAIN"]["SCR_WIDTH"] = "640";
-                f2_res_defaults["MAIN"]["SCR_HEIGHT"] = "480";
-                f2_res_defaults["MAIN"]["WINDOWED"] = "0";
-                f2_res_defaults["MAIN"]["SCALE_2X"] = "0";
-                f2_res_defaults["IFACE"]["IFACE_BAR_MODE"] = "0";
-                f2_res_defaults["IFACE"]["IFACE_BAR_WIDTH"] = "0";
-                f2_res_defaults["IFACE"]["IFACE_BAR_SIDE_ART"] = "0";
-                f2_res_defaults["IFACE"]["IFACE_BAR_SIDES_ORI"] = "0";
-                f2_res_defaults["STATIC_SCREENS"]["SPLASH_SCRN_SIZE"] = "0";
-
-                auto configChecker = ConfigChecker(f2_res_defaults, "f2_res.ini");
-                configChecker.check(resolutionConfig);
-            }
-        }
-        configFree(&resolutionConfig);
-    }*/
-
-    // new settings from fallout2.cfg
     width = settings.graphics.game_width;
     height = settings.graphics.game_height;
     fullscreen = settings.graphics.fullscreen;
@@ -181,11 +125,6 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_IFACE_BAR_WIDTH, &gInterfaceBarWidth);
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_IFACE_BAR_SIDE_ART, &gInterfaceSidePanelsImageId);
     configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_IFACE_BAR_SIDES_ORI, &gInterfaceSidePanelsExtendFromScreenEdge);
-
-    // setting for stretching - later
-    // settings.graphics.stretch_enabled;
-    // settings.graphics.preserve_aspect;
-    // settings.graphics.high_quality;
 
     if (_GNW95_init_window(width, height, fullscreen, scale) == -1) {
         return -1;
