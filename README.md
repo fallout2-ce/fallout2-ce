@@ -118,7 +118,7 @@ The second configuration file is `ddraw.ini` (part of Sfall). There are dozens o
 
 For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/main/files/ddraw.ini)
 
-Further, Fallout2-CE supports the following additional settings:
+Further, Fallout2-CE supports the following additional settings in ddraw.ini:
 
 ```
 [Misc]
