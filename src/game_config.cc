@@ -115,7 +115,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     configSetInt(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, 0);
     configSetInt(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, 0);
     configSetInt(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, 0);
-    
+
     configSetInt(&gGameConfig, GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_WIDTH, 640);
     configSetInt(&gGameConfig, GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_HEIGHT, 480);
     configSetInt(&gGameConfig, GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_SCALE_2X, 0);

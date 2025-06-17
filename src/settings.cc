@@ -102,7 +102,7 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
-    
+
     settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_WIDTH, settings.graphics.game_width);
     settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_HEIGHT, settings.graphics.game_height);
     settingsRead(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_FULLSCREEN, settings.graphics.fullscreen);
@@ -145,7 +145,7 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, settings.system.hashing);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
-    
+
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_VIOLENCE_LEVEL_KEY, settings.preferences.violence_level);
@@ -188,7 +188,7 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
-    
+
     settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_WIDTH, settings.graphics.game_width);
     settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_GAME_HEIGHT, settings.graphics.game_height);
     settingsWrite(GAME_CONFIG_GRAPHICS_KEY, GAME_CONFIG_FULLSCREEN, settings.graphics.fullscreen);

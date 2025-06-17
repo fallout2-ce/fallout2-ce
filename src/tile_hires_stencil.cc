@@ -409,7 +409,7 @@ void tile_hires_stencil_init()
     if (!gIsTileHiresStencilEnabled) {
         return;
     }
-    
+
     debugPrint("tile_hires_stencil_init\n");
     clean_cache();
     tile_hires_stencil_on_center_tile_or_elevation_change();
