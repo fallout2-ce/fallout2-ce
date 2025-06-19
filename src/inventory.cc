@@ -2331,7 +2331,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
     }
 
     bool pickUpFromSlot = itemIndex == -1; // true if item was picked up from armor or weapon slots
-    if (pickUpFromSlot || _pud->items[indexOffset + itemIndex].quantity <= 1) {
+    if (pickUpFromSlot || _pud->items[_pud->length - (itemIndex + indexOffset + 1)].quantity <= 1) {
         // erase background unless item is part of a 2+ quantity stack
         unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
         int width, height;
