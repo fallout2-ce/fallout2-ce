@@ -302,6 +302,62 @@ void windowManagerExit(void)
     }
 }
 
+static void applyWindowTransparency(Window* window)
+{
+    int x = window->rect.left;
+    int y = window->rect.top;
+    int width = window->width;
+    int height = window->height;
+    unsigned char* winBuf = window->buffer;
+
+    if (!winBuf) return;
+
+    // Temporarily hide the window to capture background correctly
+    window->flags |= WINDOW_HIDDEN;
+
+    static struct {
+        int x, y, width, height;
+        unsigned char* buffer;
+    } context;
+
+    unsigned char* bg = (unsigned char*)internal_malloc(width * height);
+    if (!bg) return;
+
+    context = {x, y, width, height, bg};
+
+    static auto blitter = [](unsigned char* src, int srcPitch, int,
+                             int srcX, int srcY, int blitWidth, int blitHeight,
+                             int destX, int destY) {
+        int bufferX = destX - context.x;
+        int bufferY = destY - context.y;
+
+        if (bufferX >= 0 && bufferY >= 0 &&
+            bufferX + blitWidth <= context.width &&
+            bufferY + blitHeight <= context.height) {
+            for (int row = 0; row < blitHeight; row++) {
+                memcpy(
+                    context.buffer + (bufferY + row) * context.width + bufferX,
+                    src + (srcY + row) * srcPitch + srcX,
+                    blitWidth);
+            }
+        }
+    };
+
+    WINDOWDRAWINGPROC oldBlitter = _scr_blit;
+    _scr_blit = blitter;
+
+    Rect rect = {x, y, x + width - 1, y + height - 1};
+    windowRefreshAll(&rect);
+
+    _scr_blit = oldBlitter;
+
+    window->flags &= ~WINDOW_HIDDEN;
+
+    // Copy captured image into the window’s buffer
+    memcpy(winBuf, bg, width * height);
+    internal_free(bg);
+}
+
 // win_add
 // 0x4D6238
 int windowCreate(int x, int y, int width, int height, int color, int flags)
@@ -400,6 +456,11 @@ int windowCreate(int x, int y, int width, int height, int color, int flags)
             gWindows[v25] = window;
             gWindowIndexes[id] = v25;
         }
+    }
+    
+    // apply new window transparency
+    if ((flags & WINDOW_TRANSPARENT) != 0) {
+        applyWindowTransparency(window);
     }
 
     return id;
