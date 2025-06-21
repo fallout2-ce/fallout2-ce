@@ -873,7 +873,7 @@ int tileGetRotationTo(int tile1, int tile2)
     int dx = x2 - x1;
 
     if (dx != 0) {
-        int raw = (int)trunc(atan2((double)-dy, (double)dx) * 180.0 * 0.3183098862851122); // radians -> degress; 0.3183 is 1/pi
+        int raw = (int)trunc(atan2((double)-dy, (double)dx) * 180.0 / M_PI); // radians -> degrees
         int angle = 360 - (raw + 180) - 90;
         if (angle < 0) {
             angle += 360;
