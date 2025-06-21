@@ -459,6 +459,13 @@ typedef struct WmGenData {
     int oldFont;
 } WmGenData;
 
+// CE/SFALL: control world map time via script
+float gScriptWorldMapMulti = 1.0f;
+void wmSetScriptWorldMapMulti(float value)
+{
+    gScriptWorldMapMulti = value;
+}
+
 static void wmSetFlags(int* flagsPtr, int flag, int value);
 static int wmGenDataInit();
 static int wmGenDataReset();
@@ -4205,9 +4212,9 @@ static bool wmGameTimeIncrement(int ticksToAdd)
 
     // SFALL: Fix Pathfinder perk.
     int pathfinderRank = perkGetRank(gDude, PERK_PATHFINDER);
-    double bonus = static_cast<double>(ticksToAdd) * static_cast<double>(pathfinderRank) * 0.25 + gGameTimeIncRemainder;
-    gGameTimeIncRemainder = modf(bonus, &bonus);
-    ticksToAdd -= static_cast<int>(bonus);
+    double newTicks = static_cast<double>(ticksToAdd) * (1.0 - static_cast<double>(pathfinderRank) * 0.25) * gScriptWorldMapMulti + gGameTimeIncRemainder;
+    gGameTimeIncRemainder = modf(newTicks, &newTicks);
+    ticksToAdd = static_cast<int>(newTicks);
 
     while (ticksToAdd != 0) {
         unsigned int gameTime = gameTimeGetTime();
