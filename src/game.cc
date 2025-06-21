@@ -1474,17 +1474,7 @@ static void showSplash()
         }
     }
 
-    int size = 0;
-
-    // TODO: Move to settings.
-    Config config;
-    if (configInit(&config)) {
-        if (configRead(&config, "f2_res.ini", false)) {
-            configGetInt(&config, "STATIC_SCREENS", "SPLASH_SCRN_SIZE", &size);
-        }
-
-        configFree(&config);
-    }
+    int size = settings.graphics.splash_size;
 
     int screenWidth = screenGetWidth();
     int screenHeight = screenGetHeight();

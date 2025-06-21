@@ -96,16 +96,32 @@ The main configuration file is `fallout2.cfg`. There are several important setti
 
 The `sound` folder (with `music` folder inside) might be located either in `data` folder, or be in the Fallout folder. Update `music_path1` setting to match your hierarchy, usually it's `data/sound/music/` or `sound/music/`. Make sure it matches your path exactly (so it might be `SOUND/MUSIC/` if you've installed Fallout from CD). Music files themselves (with `ACM` extension) should be all uppercased, regardless of `sound` and `music` folders.
 
-The second configuration file is `f2_res.ini`. Use it to change game window size, enable/disable fullscreen mode and configure IFACE settings (the control bar at the bottom of the game screen).
+Additionally, the [graphics] section provides options for fine tuning the appearence of the game. The included settings are:
 
-```ini
-[MAIN]
-SCR_WIDTH=1280
-SCR_HEIGHT=720
-WINDOWED=1 ; 0 = fullscreen
-SCALE_2X=1 ; 0 = original scale, 1 = 2x - requires increasing the minimum resolution from 640x480 to 1280x960.
+```
+[graphics]
+fullscreen=0 ; 1 = fullscreeen, 0 = windowed
+game_height=480 ; main play area height
+game_width=640 ; main play area width
+scale2x=0 ; 0 = original scale, 1 = 2x - requires increasing the minimum resolution from 640x480 to 1280x960.
+splash_size=0 ; 0 = normal, 1 = aspect stretch, 2 = fullscreen stretch
+```
 
-[IFACE]
+Recommendations:
+- **Desktops**: Use any size you see fit.
+- **Tablets**: Set these values to logical resolution of your device, for example iPad Pro 11 is 1668x2388 (pixels), but it's logical resolution is 834x1194 (points).
+- **Mobile phones**: Set height to 480, calculate width according to your device screen (aspect) ratio, for example Samsung S21 is 20:9 device, so the width should be 480 * 20 / 9 = 1067.
+
+In time this graphcs settings will receive an in-game interface. For the time being it must be configured manually.
+
+The second configuration file is `ddraw.ini` (part of Sfall). There are dozens of options that adjust or override engine behaviour and gameplay mechanics. This file is intended for modders and advanced users.
+
+For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/main/files/ddraw.ini)
+
+Further, Fallout2-CE supports the following additional settings in ddraw.ini:
+
+```
+[Misc]
 ; if IFACE_BAR_MODE=0 - the bottom of the map view window sits at the top of the IFACE Bar.
 ; if IFACE_BAR_MODE=1 - the bottom of the map view window extends to the base of the screen and is overlapped by the IFACE Bar.
 IFACE_BAR_MODE=0
@@ -128,22 +144,11 @@ IFACE_BAR_SIDES_ORI=0
 ;IFACE_BAR_WIDTH=640
 ```
 
-Recommendations:
-- **Desktops**: Use any size you see fit.
-- **Tablets**: Set these values to logical resolution of your device, for example iPad Pro 11 is 1668x2388 (pixels), but it's logical resolution is 834x1194 (points).
-- **Mobile phones**: Set height to 480, calculate width according to your device screen (aspect) ratio, for example Samsung S21 is 20:9 device, so the width should be 480 * 20 / 9 = 1067.
-
-In time this stuff will receive in-game interface, right now you have to do it manually. For a sample f2_res.ini configuration file, containing all currently working settings use this link: [f2_res.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/mainmenu/files/f2_res.ini)
-
-*Note*: use of the IFACE_BAR settings requires the f2_res.dat file, which contains graphical assets. Various versions are available, but one compatible with the above f2_res.ini be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/mainmenu/files/f2_res.dat)
-
-The third configuration file is `ddraw.ini` (part of Sfall). There are dozens of options that adjust or override engine behaviour and gameplay mechanics. This file is intended for modders and advanced users.
-
-For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/main/files/ddraw.ini)
+*Note*: use of the IFACE_BAR settings requires the f2_res.dat file, which contains graphical assets. Various versions are available, but one compatible with the above settings be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/mainmenu/files/f2_res.dat)
 
 ## Quality of life benefits over vanilla Fallout
 
-* High resolution support
+* Large game area support (through HiResMode=1 in ddraw.ini and game_height=480 and game_width=640 settings in fallout2.cfg)
 * Increased pathfinding nodes 5x for more accurate pathfinding
 * Ctrl-click to quickly move items when bartering, looting, or stealing
 * _a_ to select "all" when selecting item quantity
