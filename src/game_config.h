@@ -23,6 +23,7 @@ namespace fallout {
 #define GAME_CONFIG_FALLOUTCE_DAT_KEY "falloutce_dat"
 #define GAME_CONFIG_FALLOUTCE_PATCHES_KEY "falloutce_patches"
 #define GAME_CONFIG_LANGUAGE_KEY "language"
+#define GAME_CONFIG_MASTER_OVERRIDE_KEY "master_override"
 #define GAME_CONFIG_SCROLL_LOCK_KEY "scroll_lock"
 #define GAME_CONFIG_INTERRUPT_WALK_KEY "interrupt_walk"
 #define GAME_CONFIG_ART_CACHE_SIZE_KEY "art_cache_size"

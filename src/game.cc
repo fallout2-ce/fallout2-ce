@@ -1330,12 +1330,35 @@ static int gameDbInit()
 {
     const char* main_file_name;
     const char* patch_file_name;
-    int patch_index;
     char filename[COMPAT_MAX_PATH];
+    int patch_index;
+    bool is_original = false;
 
-    main_file_name = nullptr;
-    patch_file_name = nullptr;
+    // Check if master.dat is the original version (multiple versions?)
+    const char* master_path = settings.system.master_dat_path.c_str();
+    if (*master_path != '\0') {
+        FILE* f = fopen(master_path, "rb");
+        if (f) {
+            fseek(f, 0, SEEK_END);
+            is_original = (ftell(f) == 333177805);
+            fclose(f);
+        }
+    }
 
+    // Load falloutce.dat BEFORE master if not original & master_override not true
+    if ((is_original || settings.system.master_override) && !settings.system.falloutce_dat_path.empty()) {
+        main_file_name = settings.system.falloutce_dat_path.c_str();
+        patch_file_name = settings.system.falloutce_patches_path.c_str();
+        if (*patch_file_name == '\0') patch_file_name = nullptr;
+        
+        int falloutce_db_handle = dbOpen(main_file_name, 0, patch_file_name, 1);
+        /*if (falloutce_db_handle == -1) {
+            showMesageBox("Could not find the falloutce datafile. Please make sure the falloutce.dat file is in the folder that you are running FALLOUT from.");
+            return -1;
+        }*/
+    }
+
+    // Load master.dat
     main_file_name = settings.system.master_dat_path.c_str();
     if (*main_file_name == '\0') {
         main_file_name = nullptr;
@@ -1348,10 +1371,24 @@ static int gameDbInit()
 
     int master_db_handle = dbOpen(main_file_name, 0, patch_file_name, 1);
     if (master_db_handle == -1) {
-        showMesageBox("Could not find the master datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
+        showMesageBox("Could not find the master datafile. Please make sure the master.dat file is in the folder that you are running FALLOUT from.");
         return -1;
     }
 
+    // Load falloutce.dat AFTER master if original
+    if (is_original && !settings.system.falloutce_dat_path.empty() || settings.system.master_override) {
+        main_file_name = settings.system.falloutce_dat_path.c_str();
+        patch_file_name = settings.system.falloutce_patches_path.c_str();
+        if (*patch_file_name == '\0') patch_file_name = nullptr;
+        
+        int falloutce_db_handle = dbOpen(main_file_name, 0, patch_file_name, 1);
+        /*if (falloutce_db_handle == -1) {
+            showMesageBox("Could not find the falloutce datafile. Please make sure the falloutce.dat file is in the folder that you are running FALLOUT from.");
+            return -1;
+        }*/
+    }
+
+    // Load critter.dat
     main_file_name = settings.system.critter_dat_path.c_str();
     if (*main_file_name == '\0') {
         main_file_name = nullptr;
@@ -1364,12 +1401,8 @@ static int gameDbInit()
 
     int critter_db_handle = dbOpen(main_file_name, 0, patch_file_name, 1);
     if (critter_db_handle == -1) {
-        showMesageBox("Could not find the critter datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
+        showMesageBox("Could not find the critter datafile. Please make sure the critter.dat file is in the folder that you are running FALLOUT from.");
         return -1;
-    }
-
-    if (compat_access("fallout2ce.dat", 0) == 0) { // Fallout2-CE dat file - Load before any patches, but after masters
-        dbOpen("fallout2ce.dat", 0, nullptr, 1);
     }
 
     // SFALL: custom patch file name.
@@ -1389,9 +1422,10 @@ static int gameDbInit()
 
     sfallLoadMods();
 
-    if (compat_access("f2_res.dat", 0) == 0) {
+    // drop support for f2_res to reduce confusion? Keeping it will confuse users, and all graphics will be moved into falloutce.dat
+    /*if (compat_access("f2_res.dat", 0) == 0) {
         dbOpen("f2_res.dat", 0, nullptr, 1);
-    }
+    }*/
 
     return 0;
 }

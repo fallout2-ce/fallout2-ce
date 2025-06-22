@@ -51,6 +51,7 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FALLOUTCE_DAT_KEY, settings.system.falloutce_dat_path);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FALLOUTCE_PATCHES_KEY, settings.system.falloutce_patches_path);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_LANGUAGE_KEY, settings.system.language);
+    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_OVERRIDE_KEY, settings.system.master_override);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCROLL_LOCK_KEY, settings.system.scroll_lock);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_INTERRUPT_WALK_KEY, settings.system.interrupt_walk);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_ART_CACHE_SIZE_KEY, settings.system.art_cache_size);
@@ -137,6 +138,7 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FALLOUTCE_DAT_KEY, settings.system.falloutce_dat_path);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FALLOUTCE_PATCHES_KEY, settings.system.falloutce_patches_path);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_LANGUAGE_KEY, settings.system.language);
+    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_OVERRIDE_KEY, settings.system.master_override);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCROLL_LOCK_KEY, settings.system.scroll_lock);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_INTERRUPT_WALK_KEY, settings.system.interrupt_walk);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_ART_CACHE_SIZE_KEY, settings.system.art_cache_size);

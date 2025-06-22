@@ -16,6 +16,7 @@ struct SystemSettings {
     std::string falloutce_dat_path = "falloutce.dat";
     std::string falloutce_patches_path = "data";
     std::string language = ENGLISH;
+    bool master_override;
     int scroll_lock = 0;
     bool interrupt_walk = true;
     int art_cache_size = 8;
