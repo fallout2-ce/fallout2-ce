@@ -1159,7 +1159,8 @@ static void op_charcode(Program* program)
     }
 }
 
-static void op_show_iface_tag(fallout::Program* program) {
+static void op_show_iface_tag(fallout::Program* program)
+{
     int tag = fallout::programStackPopInteger(program);
 
     switch (tag) {
@@ -1173,7 +1174,8 @@ static void op_show_iface_tag(fallout::Program* program) {
     }
 }
 
-static void op_hide_iface_tag(fallout::Program* program) {
+static void op_hide_iface_tag(fallout::Program* program)
+{
     int tag = fallout::programStackPopInteger(program);
 
     switch (tag) {
@@ -1187,24 +1189,25 @@ static void op_hide_iface_tag(fallout::Program* program) {
     }
 }
 
-static void op_is_iface_tag_active(fallout::Program* program) {
+static void op_is_iface_tag_active(fallout::Program* program)
+{
     int tag = fallout::programStackPopInteger(program);
     bool isActive = false;
 
     switch (tag) {
-        case DudeState::DUDE_STATE_SNEAKING:
-        case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
-        case DudeState::DUDE_STATE_ADDICTED:
-            isActive = fallout::dudeHasState(tag);
-            break;
-        case 1: // POISONED
-            isActive = critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD;
-            break;
-        case 2: // RADIATED
-            isActive = critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
-            break;
-        default:
-            debugPrint("op_is_iface_tag_active: custom tag %d is not handled", tag);
+    case DudeState::DUDE_STATE_SNEAKING:
+    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
+    case DudeState::DUDE_STATE_ADDICTED:
+        isActive = fallout::dudeHasState(tag);
+        break;
+    case 1: // POISONED
+        isActive = critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD;
+        break;
+    case 2: // RADIATED
+        isActive = critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
+        break;
+    default:
+        debugPrint("op_is_iface_tag_active: custom tag %d is not handled", tag);
     }
 
     fallout::programStackPushInteger(program, isActive ? 1 : 0);
