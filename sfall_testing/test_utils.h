@@ -18,6 +18,17 @@ procedure assertTrue(variable desc, variable a) begin
    end
 end
 
+procedure assertFalse(variable desc, variable a) begin
+   test_suite_assertions++;
+
+   if (a) then begin
+      display_msg("Assertion failed \""+desc+"\": is not false");
+      test_suite_errors ++;
+   end else if (test_suite_verbose) then begin
+      display_msg("Assert \""+desc+"\" ok");
+   end
+end
+
 procedure assertEquals(variable desc, variable a, variable b) begin
    test_suite_assertions++;
 
