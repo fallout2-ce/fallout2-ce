@@ -169,7 +169,7 @@ void windowRefresh(int win);
 void windowRefreshRect(int win, const Rect* rect);
 void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* a3);
 void windowRefreshAll(Rect* rect);
-void _win_get_mouse_buf(unsigned char* a1);
+void _win_get_mouse_buf(unsigned char* dest);
 Window* windowGetWindow(int win);
 unsigned char* windowGetBuffer(int win);
 int windowGetAtPoint(int x, int y);
