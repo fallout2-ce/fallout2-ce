@@ -1,0 +1,189 @@
+#include "constants.h"
+#include "headers/define_extra.h" // For sfall functions if not in constants
+
+procedure start;
+procedure description_proc; // For visual checks during game
+
+variable new_tag1_id = -1;
+variable new_tag2_id = -1;
+variable max_tags_test_id = -1;
+
+procedure start begin
+    // Test Predefined Tags
+    debug_msg("Testing Predefined Interface Tags...");
+
+    // SNEAK (0)
+    debug_msg("Activating SNEAK (0)...");
+    show_iface_tag(0);
+    if (is_iface_tag_active(0)) then
+        debug_msg("SNEAK is active. (Visual check needed)");
+    else
+        debug_msg("ERROR: SNEAK failed to activate or is_iface_tag_active(0) failed.");
+    hide_iface_tag(0);
+    if (not is_iface_tag_active(0)) then
+        debug_msg("SNEAK is inactive.");
+    else
+        debug_msg("ERROR: SNEAK failed to deactivate or is_iface_tag_active(0) failed after hide.");
+
+    // POISONED (1) - Test requires making the player poisoned by other means to truly verify show/hide effect on game state
+    // For now, just test is_iface_tag_active if it reflects direct calls or underlying state.
+    // The opcodes show_iface_tag/hide_iface_tag are not meant to directly poison/cure the player for tags 1 and 2.
+    // They are for custom tags or the specific PC flags (0,3,4). is_iface_tag_active *should* work for 1 and 2.
+    debug_msg("Checking POISONED (1) (depends on game state): " + is_iface_tag_active(1));
+    // Similar for RADIATED (2)
+    debug_msg("Checking RADIATED (2) (depends on game state): " + is_iface_tag_active(2));
+
+
+    // LEVEL (3)
+    debug_msg("Activating LEVEL (3)...");
+    show_iface_tag(3);
+    if (is_iface_tag_active(3)) then
+        debug_msg("LEVEL is active. (Visual check needed)");
+    else
+        debug_msg("ERROR: LEVEL failed to activate or is_iface_tag_active(3) failed.");
+    hide_iface_tag(3);
+    if (not is_iface_tag_active(3)) then
+        debug_msg("LEVEL is inactive.");
+    else
+        debug_msg("ERROR: LEVEL failed to deactivate or is_iface_tag_active(3) failed after hide.");
+
+    // ADDICT (4)
+    debug_msg("Activating ADDICT (4)...");
+    show_iface_tag(4);
+    if (is_iface_tag_active(4)) then
+        debug_msg("ADDICT is active. (Visual check needed)");
+    else
+        debug_msg("ERROR: ADDICT failed to activate or is_iface_tag_active(4) failed.");
+    hide_iface_tag(4);
+    if (not is_iface_tag_active(4)) then
+        debug_msg("ADDICT is inactive.");
+    else
+        debug_msg("ERROR: ADDICT failed to deactivate or is_iface_tag_active(4) failed after hide.");
+
+    debug_msg("Predefined tag tests complete.");
+    debug_msg("---");
+
+    // Test Custom Tags
+    debug_msg("Testing Custom Interface Tags...");
+
+    // Add first custom tag
+    new_tag1_id = add_iface_tag;
+    if (new_tag1_id != -1) then
+        debug_msg("Added custom tag 1 with ID: " + new_tag1_id + " (expected 5 if first)");
+    else
+        debug_msg("ERROR: Failed to add custom tag 1.");
+        return; // Stop if first add fails
+
+    // Show it
+    show_iface_tag(new_tag1_id);
+    if (is_iface_tag_active(new_tag1_id)) then
+        debug_msg("Custom tag 1 is active. (Visual check: should show 'NEW' in green)");
+    else
+        debug_msg("ERROR: Custom tag 1 failed to activate or is_iface_tag_active failed.");
+
+    // Set its text and color
+    set_iface_tag_text(new_tag1_id, "HELLO TAG1", 2); // Color 2 (White from issue description's reference)
+    debug_msg("Set text for custom tag 1 to 'HELLO TAG1' (color white). (Visual check needed)");
+    // Verify text length truncation (19 chars)
+    set_iface_tag_text(new_tag1_id, "ThisIsAVeryLongTextStringIndeed", 3); // Color 3 (Yellow)
+    debug_msg("Set text for custom tag 1 to 'ThisIsAVeryLongTextStringIndeed' (color yellow) - should be truncated. (Visual check needed)");
+
+
+    // Add second custom tag
+    new_tag2_id = add_iface_tag;
+    if (new_tag2_id != -1) then
+        debug_msg("Added custom tag 2 with ID: " + new_tag2_id + " (expected 6 if second)");
+    else
+        debug_msg("ERROR: Failed to add custom tag 2.");
+        // Continue to test tag1 hide
+
+    if (new_tag2_id != -1) then
+        show_iface_tag(new_tag2_id);
+        set_iface_tag_text(new_tag2_id, "AWESOME", 6); // Color 6 (GoodColor/Green)
+        debug_msg("Custom tag 2 ('AWESOME', green) should be active. (Visual check needed)");
+    end
+
+    // Hide first custom tag
+    hide_iface_tag(new_tag1_id);
+    if (not is_iface_tag_active(new_tag1_id)) then
+        debug_msg("Custom tag 1 is now inactive.");
+    else
+        debug_msg("ERROR: Custom tag 1 failed to deactivate.");
+
+    if (new_tag2_id != -1 and is_iface_tag_active(new_tag2_id)) then
+        debug_msg("Custom tag 2 should still be active. (Visual check needed)");
+    else if (new_tag2_id != -1) then
+        debug_msg("ERROR: Custom tag 2 became inactive or failed check.");
+    end
+
+    // Test max tags
+    debug_msg("Attempting to add maximum custom tags (up to 126)...");
+    variable i;
+    variable current_tags = 2; // Assuming new_tag1_id and new_tag2_id were successful (IDs 5 and 6)
+    if (new_tag1_id == -1) then current_tags = 0;
+    if (new_tag1_id != -1 and new_tag2_id == -1) then current_tags = 1;
+
+
+    for (i = current_tags; i < 126; i++) begin
+        max_tags_test_id = add_iface_tag;
+        if (max_tags_test_id == -1) then begin
+            debug_msg("ERROR: Failed to add tag at iteration " + i + ". Max tags might be less than 126 or error in add_iface_tag.");
+            break;
+        end
+        // Minimal show/set_text to ensure they are processed
+        show_iface_tag(max_tags_test_id);
+        set_iface_tag_text(max_tags_test_id, "Tag " + max_tags_test_id, 0); // Default color
+    end
+    if (i == 126) then
+        debug_msg("Successfully added up to 126 custom tags (IDs 5 through 130). Last ID: " + max_tags_test_id);
+    else
+        debug_msg("Stopped adding tags at count " + i + ". Last successful ID: " + max_tags_test_id);
+    end
+
+    // Test adding one more tag (should fail if 126 was the limit)
+    max_tags_test_id = add_iface_tag;
+    if (max_tags_test_id == -1) then
+        debug_msg("Correctly failed to add tag beyond limit (127th attempt).");
+    else
+        debug_msg("ERROR: Added tag beyond 126 limit! ID: " + max_tags_test_id);
+    end
+
+    // Test invalid IDs
+    debug_msg("Testing invalid tag IDs...");
+    show_iface_tag(-1); // Invalid
+    show_iface_tag(1000); // Likely invalid (beyond max added)
+    hide_iface_tag(-2);
+    hide_iface_tag(1001);
+    debug_msg("is_iface_tag_active(-3): " + is_iface_tag_active(-3));
+    debug_msg("is_iface_tag_active(1002): " + is_iface_tag_active(1002));
+    set_iface_tag_text(-4, "INVALID", 0);
+    set_iface_tag_text(1003, "INVALID", 0);
+    debug_msg("Invalid ID tests complete (check console for debug prints from C++).");
+
+    debug_msg("---");
+    debug_msg("Interface Tag testing complete. Check console and game screen.");
+    debug_msg("Will keep some tags active for 10 seconds for visual check then clear...");
+
+    // Keep some tags visible for a moment if run in game
+    // This part is for easier visual checking if you load a game with this script.
+    // For automated testing, the debug_msg output is key.
+    if (game_loaded) then begin
+        if (new_tag1_id != -1) then hide_iface_tag(new_tag1_id); // ensure it's hidden from previous test
+        if (new_tag2_id != -1) then show_iface_tag(new_tag2_id); // ensure tag2 is visible
+        set_iface_tag_text(new_tag2_id, "Testing Done!", 4); // Peanut butter color
+        game_time_advance(game_ticks(10)); // Wait 10 seconds
+        if (new_tag2_id != -1) then hide_iface_tag(new_tag2_id);
+        debug_msg("Visual check period ended.");
+    end
+end
+
+// This can be used with `debug_map_scripts` or similar to run on map enter
+// procedure map_enter_p_proc begin call start; end
+// procedure map_update_p_proc begin call start; end // If you want it to run repeatedly (not recommended for this test script)
+
+// For `description_proc` usage with `debug(F5)`:
+// Create a global script that calls `start` from `description_proc`
+// Example:
+// procedure description_proc begin
+//    if (game_loaded) then call start;
+// end

@@ -56,11 +56,13 @@ static void mf_string_find(Program* program, int args);
 static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
 static void mf_floor2(Program* program, int args);
+static void mf_add_iface_tag(Program* program, int args);
+static void mf_set_iface_tag_text(Program* program, int args);
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 constexpr MetaruleInfo kMetarules[] = {
     // {"add_extra_msg_file",        mf_add_extra_msg_file,        1, 2, -1, {ARG_STRING, ARG_INT}},
-    // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
+    { "add_iface_tag",             mf_add_iface_tag,             0, 0},
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
     // {"art_cache_clear",           mf_art_cache_flush,           0, 0},
@@ -133,7 +135,7 @@ constexpr MetaruleInfo kMetarules[] = {
     // {"set_fake_perk_npc",         mf_set_fake_perk_npc,         5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     // {"set_fake_trait_npc",        mf_set_fake_trait_npc,        5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     { "set_flags", mf_set_flags, 2, 2 },
-    // {"set_iface_tag_text",        mf_set_iface_tag_text,        3, 3, -1, {ARG_INT, ARG_STRING, ARG_INT}},
+    { "set_iface_tag_text",        mf_set_iface_tag_text,        3, 3 },
     { "set_ini_setting", mf_set_ini_setting, 2, 2 },
     // {"set_map_enter_position",    mf_set_map_enter_position,    3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     // {"set_object_data",           mf_set_object_data,           3, 3, -1, {ARG_OBJECT, ARG_INT, ARG_INT}},
@@ -490,6 +492,30 @@ void mf_floor2(Program* program, int args)
 {
     ProgramValue programValue = programStackPopValue(program);
     programStackPushInteger(program, static_cast<int>(floor(programValue.asFloat())));
+}
+
+static void mf_add_iface_tag(Program* program, int args) {
+    // No arguments are expected from the script for this function.
+    // Ensure args == 0 if strict argument checking is desired.
+    // The metarule registration already specifies minArgs=0 and maxArgs=0.
+    int result = fallout::interfaceAddCustomTag();
+    fallout::programStackPushInteger(program, result);
+}
+
+static void mf_set_iface_tag_text(Program* program, int args) {
+    // Expected arguments: color (int), text (string), tag_id (int)
+    // Arguments are popped in reverse order of how they are pushed by the script.
+    // So, if script calls: set_iface_tag_text(tag_id, "my text", 5)
+    // Stack will have: 5 (color), "my text", tag_id
+
+    int color = fallout::programStackPopInteger(program);
+    const char* text = fallout::programStackPopString(program);
+    int tag_id = fallout::programStackPopInteger(program);
+
+    fallout::interfaceSetCustomTagText(tag_id, text, color);
+
+    // Following the pattern of other void metarules like mf_set_flags, push -1.
+    fallout::programStackPushInteger(program, -1);
 }
 
 void sprintf_lite(Program* program, int args, const char* infoOpcodeName)

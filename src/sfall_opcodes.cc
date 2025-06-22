@@ -1629,6 +1629,172 @@ void sfallOpcodesInit()
 
     // 0x827d - void register_hook_proc_spec(int hook, procedure proc)
     // 0x827e - void reg_anim_callback(procedure proc)
+
+    // 0x81dc - void show_iface_tag(int tag)
+    interpreterRegisterOpcode(0x81DC, op_show_iface_tag);
+    // 0x81dd - void hide_iface_tag(int tag)
+    interpreterRegisterOpcode(0x81DD, op_hide_iface_tag);
+    // 0x81de - int  is_iface_tag_active(int tag)
+    interpreterRegisterOpcode(0x81DE, op_is_iface_tag_active);
+}
+
+static void op_show_iface_tag(fallout::Program* program) {
+    int tag = fallout::programStackPopInteger(program);
+
+    // Tag values based on issue:
+    // 0: SNEAK
+    // 3: LEVEL
+    // 4: ADDICT
+    // 5 to (4 + BoxBarCount) or last custom box: Custom tags
+
+    if (tag == 0) { // SNEAK
+        if (fallout::gDude) {
+            // Assuming critterAddState adds the state if not present.
+            // If it's a toggle or has other behavior, this might need adjustment.
+            fallout::critterAddState(fallout::gDude, fallout::DUDE_STATE_SNEAKING);
+            // indicatorBarRefresh is called by interfaceShowCustomTag for custom tags,
+            // and should also be called after changing states for predefined tags.
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag == 3) { // LEVEL
+        if (fallout::gDude) {
+            fallout::critterAddState(fallout::gDude, fallout::DUDE_STATE_LEVEL_UP_AVAILABLE);
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag == 4) { // ADDICT
+        if (fallout::gDude) {
+            fallout::critterAddState(fallout::gDude, fallout::DUDE_STATE_ADDICTED);
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag >= 5) {
+        // Custom tags start from ID 0 in gCustomIndicatorBoxes.
+        // The script tag ID is 5 + internal_id. So internal_id = tag - 5.
+        fallout::interfaceShowCustomTag(tag - 5); // This already calls indicatorBarRefresh
+    } else {
+        // Log error for unhandled/invalid tags like 1, 2, or negative values.
+        // Note: Negative values for tags are not explicitly handled by current logic
+        // but would fall into this else block.
+        fallout::debugPrint("op_show_iface_tag: Unhandled or invalid tag ID %d", tag);
+    }
+    // No return value for this opcode.
+}
+
+static void op_hide_iface_tag(fallout::Program* program) {
+    int tag = fallout::programStackPopInteger(program);
+
+    // Tag values:
+    // 0: SNEAK
+    // 3: LEVEL
+    // 4: ADDICT
+    // 5+: Custom tags
+
+    if (tag == 0) { // SNEAK
+        if (fallout::gDude) {
+            // Assuming critterClearState removes the state.
+            fallout::critterClearState(fallout::gDude, fallout::DUDE_STATE_SNEAKING);
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag == 3) { // LEVEL
+        if (fallout::gDude) {
+            fallout::critterClearState(fallout::gDude, fallout::DUDE_STATE_LEVEL_UP_AVAILABLE);
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag == 4) { // ADDICT
+        if (fallout::gDude) {
+            fallout::critterClearState(fallout::gDude, fallout::DUDE_STATE_ADDICTED);
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag >= 5) {
+        // Custom tags start from ID 0 in gCustomIndicatorBoxes.
+        // The script tag ID is 5 + internal_id. So internal_id = tag - 5.
+        fallout::interfaceHideCustomTag(tag - 5); // This already calls indicatorBarRefresh
+    } else {
+        // Log error for unhandled/invalid tags like 1, 2, or negative values.
+        fallout::debugPrint("op_hide_iface_tag: Unhandled or invalid tag ID %d", tag);
+    }
+    // No return value for this opcode.
+}
+
+static void op_hide_iface_tag(fallout::Program* program) {
+    int tag = fallout::programStackPopInteger(program);
+
+    // Tag values:
+    // 0: SNEAK
+    // 3: LEVEL
+    // 4: ADDICT
+    // 5+: Custom tags
+
+    if (tag == 0) { // SNEAK
+        if (fallout::gDude) {
+            // Assuming critterClearState removes the state.
+            fallout::critterClearState(fallout::gDude, fallout::DUDE_STATE_SNEAKING);
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag == 3) { // LEVEL
+        if (fallout::gDude) {
+            fallout::critterClearState(fallout::gDude, fallout::DUDE_STATE_LEVEL_UP_AVAILABLE);
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag == 4) { // ADDICT
+        if (fallout::gDude) {
+            fallout::critterClearState(fallout::gDude, fallout::DUDE_STATE_ADDICTED);
+            fallout::indicatorBarRefresh();
+        }
+    } else if (tag >= 5) {
+        // Custom tags start from ID 0 in gCustomIndicatorBoxes.
+        // The script tag ID is 5 + internal_id. So internal_id = tag - 5.
+        fallout::interfaceHideCustomTag(tag - 5); // This already calls indicatorBarRefresh
+    } else {
+        // Log error for unhandled/invalid tags like 1, 2, or negative values.
+        fallout::debugPrint("op_hide_iface_tag: Unhandled or invalid tag ID %d", tag);
+    }
+    // No return value for this opcode.
+}
+
+static void op_is_iface_tag_active(fallout::Program* program) {
+    int tag = fallout::programStackPopInteger(program);
+    bool isActive = false;
+
+    // Tag values based on issue:
+    // 0: SNEAK
+    // 1: POISONED
+    // 2: RADIATED
+    // 3: LEVEL
+    // 4: ADDICT
+    // 5+: Custom tags
+
+    if (fallout::gDude) { // Ensure gDude is valid for checks
+        switch (tag) {
+            case 0: // SNEAK
+                isActive = fallout::dudeHasState(fallout::gDude, fallout::DUDE_STATE_SNEAKING);
+                break;
+            case 1: // POISONED
+                isActive = critterGetPoison(fallout::gDude) > fallout::POISON_INDICATOR_THRESHOLD;
+                break;
+            case 2: // RADIATED
+                isActive = critterGetRadiation(fallout::gDude) > fallout::RADATION_INDICATOR_THRESHOLD;
+                break;
+            case 3: // LEVEL
+                isActive = fallout::dudeHasState(fallout::gDude, fallout::DUDE_STATE_LEVEL_UP_AVAILABLE);
+                break;
+            case 4: // ADDICT
+                isActive = fallout::dudeHasState(fallout::gDude, fallout::DUDE_STATE_ADDICTED);
+                break;
+            default:
+                if (tag >= 5) {
+                    isActive = fallout::interfaceIsCustomTagActive(tag - 5); // Adjust tag ID
+                } else {
+                    fallout::debugPrint("op_is_iface_tag_active: Unhandled or invalid tag ID %d", tag);
+                    // isActive remains false for unhandled tags
+                }
+                break;
+        }
+    } else {
+        fallout::debugPrint("op_is_iface_tag_active: gDude is null, cannot check tag status for tag ID %d.", tag);
+        // isActive remains false if gDude is null
+    }
+
+    fallout::programStackPushInteger(program, isActive ? 1 : 0);
 }
 
 void sfallOpcodesExit()

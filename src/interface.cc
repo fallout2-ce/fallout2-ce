@@ -258,6 +258,9 @@ static unsigned char* gInterfaceWindowBuffer;
 // 0x59D40C
 static unsigned char gInterfaceActionPointsBarBackground[90 * 5];
 
+CustomIndicatorBox gCustomIndicatorBoxes[MAX_CUSTOM_INDICATOR_BOXES];
+static int gActiveCustomTagsCount = 0;
+
 // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default)
 bool gInterfaceBarMode = false;
 
@@ -581,6 +584,13 @@ int interfaceInit()
     // SFALL
     sidePanelsInit();
 
+    for (int i = 0; i < MAX_CUSTOM_INDICATOR_BOXES; ++i) {
+        gCustomIndicatorBoxes[i].isActive = false;
+        gCustomIndicatorBoxes[i].text[0] = '\0';
+        gCustomIndicatorBoxes[i].color = 0;
+    }
+    gActiveCustomTagsCount = 0;
+
     gInterfaceBarEnabled = true;
     gInterfaceBarInitialized = false;
     gInterfaceBarHidden = true;
@@ -697,6 +707,10 @@ void interfaceFree()
     customInterfaceBarExit();
 
     interfaceBarFree();
+    // TODO: Consider if a dedicated function to free custom tag resources is needed.
+    // For now, gCustomIndicatorBoxes is a global static array, so no dynamic memory to free.
+    // Resetting active tags count.
+    gActiveCustomTagsCount = 0;
 }
 
 // 0x45E860
@@ -2362,6 +2376,64 @@ int indicatorBarRefresh()
             windowRefresh(gIndicatorBarWindow);
         }
 
+        // START Custom Tag Handling in indicatorBarRefresh
+        int customTagStartSlot = count; // Where to start adding custom tags in gIndicatorSlots
+        for (int i = 0; i < gActiveCustomTagsCount && customTagStartSlot < INDICATOR_SLOTS_COUNT; ++i) {
+            if (gCustomIndicatorBoxes[i].isActive) {
+                 // Using a convention: custom tag IDs are INDICATOR_COUNT + i
+                gIndicatorSlots[customTagStartSlot++] = INDICATOR_COUNT + i;
+            }
+        }
+        count = customTagStartSlot; // Update total count of displayed indicators
+
+        if (count > 1 && (gIndicatorSlots[0] < INDICATOR_COUNT || (count > 0 && gIndicatorSlots[0] >= INDICATOR_COUNT && gIndicatorSlots[1] < INDICATOR_COUNT))) { // Only sort if there are standard indicators or a mix
+            // qsort might behave unexpectedly if all elements are custom tags due to how IDs are structured.
+            // Custom tags are already ordered by their addition.
+            // We only need to sort the standard part, or if custom tags are mixed in a way that needs sorting relative to standard ones.
+            // For simplicity, if there are any standard tags, sort the whole array up to the original count.
+            // Custom tags will be appended after this sorted list of standard tags.
+            // This logic might need refinement if standard and custom tags need to interleave based on some criteria.
+            // For now, custom tags are appended after standard ones.
+            int standardIndicatorsCount = 0;
+            for(int i=0; i < count; ++i) {
+                if(gIndicatorSlots[i] < INDICATOR_COUNT) standardIndicatorsCount++;
+            }
+            if(standardIndicatorsCount > 1) {
+                 qsort(gIndicatorSlots, standardIndicatorsCount, sizeof(*gIndicatorSlots), indicatorBoxCompareByPosition);
+            }
+            // After sorting standard indicators, append custom ones.
+            // This re-iterates the custom tag addition logic, but ensures they come after sorted standard tags.
+            customTagStartSlot = standardIndicatorsCount;
+            for (int i = 0; i < gActiveCustomTagsCount && customTagStartSlot < INDICATOR_SLOTS_COUNT; ++i) {
+                if (gCustomIndicatorBoxes[i].isActive) {
+                    gIndicatorSlots[customTagStartSlot++] = INDICATOR_COUNT + i;
+                }
+            }
+            count = customTagStartSlot;
+        }
+
+
+        if (gIndicatorBarWindow != -1 && count == 0) { // If no indicators (standard or custom), destroy window.
+             windowDestroy(gIndicatorBarWindow);
+             gIndicatorBarWindow = -1;
+        } else if (count > 0) {
+            if (gIndicatorBarWindow == -1) { // Create window if it doesn't exist and there are indicators
+                Rect interfaceBarWindowRect;
+                windowGetRect(gInterfaceBarWindow, &interfaceBarWindowRect);
+                gIndicatorBarWindow = windowCreate(interfaceBarWindowRect.left,
+                    screenGetHeight() - INTERFACE_BAR_HEIGHT - INDICATOR_BOX_HEIGHT,
+                    (INDICATOR_BOX_WIDTH - INDICATOR_BOX_CONNECTOR_WIDTH) * count, // Adjust width based on actual count
+                    INDICATOR_BOX_HEIGHT,
+                    _colorTable[0],
+                    0);
+            } else { // If window exists, adjust its width if necessary
+                 windowResize(gIndicatorBarWindow, (INDICATOR_BOX_WIDTH - INDICATOR_BOX_CONNECTOR_WIDTH) * count, INDICATOR_BOX_HEIGHT);
+            }
+            indicatorBarRender(count); // Render all (standard + custom)
+            windowRefresh(gIndicatorBarWindow);
+        }
+        // END Custom Tag Handling in indicatorBarRefresh
+
         return count;
     }
 
@@ -2421,17 +2493,62 @@ static void indicatorBarRender(int count)
     int connectorWidthCompensation = INDICATOR_BOX_CONNECTOR_WIDTH;
 
     for (int index = 0; index < count; index++) {
-        int indicator = gIndicatorSlots[index];
-        IndicatorDescription* indicatorDescription = &(gIndicatorDescriptions[indicator]);
+        int indicatorId = gIndicatorSlots[index];
 
-        blitBufferToBufferTrans(indicatorDescription->data + connectorWidthCompensation,
-            INDICATOR_BOX_WIDTH - connectorWidthCompensation,
-            INDICATOR_BOX_HEIGHT,
-            INDICATOR_BOX_WIDTH,
-            windowBuffer + x, windowWidth);
+        if (indicatorId >= INDICATOR_COUNT) { // This is a custom tag
+            int customTagIndex = indicatorId - INDICATOR_COUNT;
+            if (customTagIndex < gActiveCustomTagsCount && gCustomIndicatorBoxes[customTagIndex].isActive) {
+                CustomIndicatorBox* customBox = &gCustomIndicatorBoxes[customTagIndex];
+
+                // Prepare a temporary IndicatorDescription-like structure or directly use customBox properties
+                // For simplicity, let's assume a generic background for custom tags for now
+                // and render text directly. A more advanced approach might involve
+                // creating a temporary prerendered box similar to standard indicators.
+
+                // Fallback generic box (e.g. using SNEAK's background, but ideally a new generic one)
+                // This is a placeholder. Proper handling would involve a generic custom box graphic.
+                unsigned char* boxArt = gIndicatorDescriptions[INDICATOR_SNEAK].data; // Placeholder
+
+                // Create a temporary buffer for this custom tag's rendering
+                unsigned char tempBoxData[INDICATOR_BOX_WIDTH * INDICATOR_BOX_HEIGHT];
+                memcpy(tempBoxData, boxArt, INDICATOR_BOX_WIDTH * INDICATOR_BOX_HEIGHT);
+
+                // Render custom text onto this temporary buffer
+                // Need to set font and color appropriately
+                int oldFont = fontGetCurrent();
+                fontSetCurrent(101); // Assuming same font as standard indicators
+
+                // Calculate text position (centering)
+                int textY = (INDICATOR_BOX_HEIGHT - fontGetLineHeight()) / 2; // Adjusted for actual box height
+                int textX = (INDICATOR_BOX_WIDTH - fontGetStringWidth(customBox->text)) / 2;
+
+                // Ensure textX is not negative if text is too long (it should be truncated already, but as a safeguard)
+                if (textX < 0) textX = 0;
+
+                fontDrawText(tempBoxData + INDICATOR_BOX_WIDTH * textY + textX,
+                             customBox->text,
+                             INDICATOR_BOX_WIDTH, // Max width for text area
+                             INDICATOR_BOX_WIDTH, // Stride
+                             customBox->color);   // Use color from custom tag
+
+                fontSetCurrent(oldFont); // Restore original font
+
+                blitBufferToBufferTrans(tempBoxData + connectorWidthCompensation,
+                                        INDICATOR_BOX_WIDTH - connectorWidthCompensation,
+                                        INDICATOR_BOX_HEIGHT,
+                                        INDICATOR_BOX_WIDTH, // Source buffer stride
+                                        windowBuffer + x, windowWidth);
+            }
+        } else { // This is a standard indicator
+            IndicatorDescription* indicatorDescription = &(gIndicatorDescriptions[indicatorId]);
+            blitBufferToBufferTrans(indicatorDescription->data + connectorWidthCompensation,
+                                    INDICATOR_BOX_WIDTH - connectorWidthCompensation,
+                                    INDICATOR_BOX_HEIGHT,
+                                    INDICATOR_BOX_WIDTH,
+                                    windowBuffer + x, windowWidth);
+        }
 
         connectorWidthCompensation = 0;
-
         unconnectedIndicatorsWidth += INDICATOR_BOX_WIDTH;
         x = unconnectedIndicatorsWidth - INDICATOR_BOX_CONNECTOR_WIDTH * connections;
         connections++;
@@ -2651,6 +2768,56 @@ bool interface_get_current_attack_mode(int* hit_mode)
     }
 
     return true;
+}
+
+int interfaceAddCustomTag() {
+    if (gActiveCustomTagsCount >= MAX_CUSTOM_INDICATOR_BOXES) {
+        return -1; // No slot available
+    }
+    // Find the first non-active slot conceptually, but since we use gActiveCustomTagsCount,
+    // we just append to the current list of active ones.
+    // The actual "slot" in gCustomIndicatorBoxes is gActiveCustomTagsCount.
+    int tagId = gActiveCustomTagsCount;
+
+    gCustomIndicatorBoxes[tagId].isActive = true; // Mark as active conceptually
+    // Default text/color can be set here if desired, e.g.:
+    strncpy(gCustomIndicatorBoxes[tagId].text, "NEW", 19);
+    gCustomIndicatorBoxes[tagId].text[19] = '\0';
+    gCustomIndicatorBoxes[tagId].color = _colorTable[992]; // Default to green, like SNEAK
+
+    gActiveCustomTagsCount++;
+    // Note: indicatorBarRefresh() is not called here;
+    // it's typically called after a batch of changes or by show/hide.
+    return tagId;
+}
+
+void interfaceShowCustomTag(int tagId) {
+    if (tagId < 0 || tagId >= gActiveCustomTagsCount) return;
+    gCustomIndicatorBoxes[tagId].isActive = true;
+    indicatorBarRefresh();
+}
+
+void interfaceHideCustomTag(int tagId) {
+    if (tagId < 0 || tagId >= gActiveCustomTagsCount) return;
+    gCustomIndicatorBoxes[tagId].isActive = false;
+    indicatorBarRefresh();
+}
+
+bool interfaceIsCustomTagActive(int tagId) {
+    if (tagId < 0 || tagId >= gActiveCustomTagsCount) return false;
+    return gCustomIndicatorBoxes[tagId].isActive;
+}
+
+void interfaceSetCustomTagText(int tagId, const char* text, int color) {
+    if (tagId < 0 || tagId >= gActiveCustomTagsCount) return;
+
+    strncpy(gCustomIndicatorBoxes[tagId].text, text, 19);
+    gCustomIndicatorBoxes[tagId].text[19] = '\0'; // Ensure null termination
+    gCustomIndicatorBoxes[tagId].color = color;
+
+    if (gCustomIndicatorBoxes[tagId].isActive) {
+        indicatorBarRefresh();
+    }
 }
 
 } // namespace fallout

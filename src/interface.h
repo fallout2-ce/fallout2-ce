@@ -12,6 +12,22 @@ namespace fallout {
 #define INTERFACE_BAR_WIDTH 640
 #define INTERFACE_BAR_HEIGHT 100
 
+// Minimum radiation amount to display RADIATED indicator.
+#define RADATION_INDICATOR_THRESHOLD 65
+// Minimum poison amount to display POISONED indicator.
+#define POISON_INDICATOR_THRESHOLD 0
+
+#define MAX_CUSTOM_INDICATOR_BOXES 126
+
+typedef struct CustomIndicatorBox {
+    char text[20]; // 19 chars + null terminator
+    int color; // Could be an enum or int mapped to color values
+    bool isActive;
+    // Potentially add a specific ID if needed, though array index might suffice
+} CustomIndicatorBox;
+
+extern CustomIndicatorBox gCustomIndicatorBoxes[MAX_CUSTOM_INDICATOR_BOXES];
+
 typedef enum InterfaceItemAction {
     INTERFACE_ITEM_ACTION_DEFAULT = -1,
     INTERFACE_ITEM_ACTION_USE,
@@ -62,6 +78,12 @@ int indicatorBarRefresh();
 bool indicatorBarShow();
 bool indicatorBarHide();
 bool interface_get_current_attack_mode(int* hit_mode);
+
+int interfaceAddCustomTag();
+void interfaceShowCustomTag(int tagId);
+void interfaceHideCustomTag(int tagId);
+bool interfaceIsCustomTagActive(int tagId);
+void interfaceSetCustomTagText(int tagId, const char* text, int color);
 
 unsigned char* customInterfaceBarGetBackgroundImageData();
 
