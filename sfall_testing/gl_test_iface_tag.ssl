@@ -3,7 +3,7 @@
 
 procedure start begin
     display_msg("Testing iface_tag functions...");
-    // assumes no iface tags active in the save game, otherwise will wipe that state
+    // assumes no iface tags active in the save game
 
     // SNEAK
     show_iface_tag(0);
@@ -22,6 +22,12 @@ procedure start begin
     call assertTrue("show_iface_tag(ADDICTED)", is_iface_tag_active(4));
     hide_iface_tag(4);
     call assertFalse("hide_iface_tag(ADDICTED)", is_iface_tag_active(4));
+
+    // POISONED
+    call assertFalse("hide_iface_tag(POISONED)", is_iface_tag_active(1));
+
+    // RADIATED
+    call assertFalse("hide_iface_tag(RADIATED)", is_iface_tag_active(2));
 
     call report_test_results("iface_tag");
 end

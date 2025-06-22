@@ -1197,6 +1197,12 @@ static void op_is_iface_tag_active(fallout::Program* program) {
         case DudeState::DUDE_STATE_ADDICTED:
             isActive = fallout::dudeHasState(tag);
             break;
+        case 1: // POISONED
+            isActive = critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD;
+            break;
+        case 2: // RADIATED
+            isActive = critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
+            break;
         default:
             debugPrint("op_is_iface_tag_active: custom tag %d is not handled", tag);
     }
