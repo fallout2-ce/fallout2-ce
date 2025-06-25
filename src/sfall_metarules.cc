@@ -13,6 +13,7 @@
 #include "game_dialog.h"
 #include "game_mouse.h"
 #include "interface.h"
+#include "interpreter.h"
 #include "inventory.h"
 #include "object.h"
 #include "platform_compat.h"
@@ -36,6 +37,7 @@ static void mf_get_text_width(Program* program, int args);
 static void mf_intface_redraw(Program* program, int args);
 static void mf_loot_obj(Program* program, int args);
 static void mf_metarule_exist(Program* program, int args);
+static void mf_opcode_exists(Program* program, int args);
 static void mf_outlined_object(Program* program, int args);
 static void mf_set_cursor_mode(Program* program, int args);
 static void mf_set_flags(Program* program, int args);
@@ -153,6 +155,7 @@ const MetaruleInfo kMetarules[] = {
     // {"unjam_lock",                mf_unjam_lock,                1, 1, -1, {ARG_OBJECT}},
     // {"unwield_slot",              mf_unwield_slot,              2, 2, -1, {ARG_OBJECT, ARG_INT}},
     // {"win_fill_color",            mf_win_fill_color,            0, 5, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
+    { "opcode_exists", mf_opcode_exists, 1, 1 },
 };
 const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
@@ -267,6 +270,19 @@ void mf_metarule_exist(Program* program, int args)
     }
 
     programStackPushInteger(program, 0);
+}
+
+void mf_opcode_exists(Program* program, int args)
+{
+    int opcode = programStackPopInteger(program);
+    int opcodeIndex = opcode & 0x3FFF;
+    if (opcodeIndex < 0 || opcodeIndex >= OPCODE_MAX_COUNT) {
+        programStackPushInteger(program, 0);
+        return;
+    }
+    auto opcodeHandler = gInterpreterOpcodeHandlers[opcodeIndex];
+    int opcodeExists = opcodeHandler != nullptr ? 1 : 0;
+    programStackPushInteger(program, opcodeExists);
 }
 
 void mf_outlined_object(Program* program, int args)
