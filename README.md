@@ -44,7 +44,7 @@ $ sudo apt install libsdl2-2.0-0
 
 - Alternatively you can use Fallout 2 from Macplay/The Omni Group as a base - you need to extract game assets from the original bundle. Mount CD/DMG, right click `Fallout 2` -> `Show Package Contents`, navigate to `Contents/Resources`. Copy `GameData` folder somewhere, for example `/Applications/Fallout2`.
 
-- Or if you're a Terminal user and have Homebrew installed you can extract the needed files from the GoG installer:
+- Or if you're a Terminal user and have Homebrew installed you can extract the needed files from the GoG installer.  **Note**: You must use "Offline backup game installer", not the main game installer.
 
 ```console
 $ brew install innoextract
