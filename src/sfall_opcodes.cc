@@ -7,6 +7,7 @@
 #include "art.h"
 #include "color.h"
 #include "combat.h"
+#include "critter.h"
 #include "dbox.h"
 #include "debug.h"
 #include "game.h"
@@ -1158,6 +1159,60 @@ static void op_charcode(Program* program)
     }
 }
 
+static void op_show_iface_tag(fallout::Program* program)
+{
+    int tag = fallout::programStackPopInteger(program);
+
+    switch (tag) {
+    case DudeState::DUDE_STATE_SNEAKING:
+    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
+    case DudeState::DUDE_STATE_ADDICTED:
+        dudeEnableState(tag);
+        break;
+    default:
+        debugPrint("op_show_iface_tag: custom tag %d is not handled", tag);
+    }
+}
+
+static void op_hide_iface_tag(fallout::Program* program)
+{
+    int tag = fallout::programStackPopInteger(program);
+
+    switch (tag) {
+    case DudeState::DUDE_STATE_SNEAKING:
+    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
+    case DudeState::DUDE_STATE_ADDICTED:
+        dudeDisableState(tag);
+        break;
+    default:
+        debugPrint("op_hide_iface_tag: custom tag %d is not handled", tag);
+    }
+}
+
+static void op_is_iface_tag_active(fallout::Program* program)
+{
+    int tag = fallout::programStackPopInteger(program);
+    bool isActive = false;
+
+    switch (tag) {
+    case DudeState::DUDE_STATE_SNEAKING:
+    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
+    case DudeState::DUDE_STATE_ADDICTED:
+        isActive = fallout::dudeHasState(tag);
+        break;
+    case 1: // POISONED
+        isActive = critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD;
+        break;
+    case 2: // RADIATED
+        isActive = critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
+        break;
+    default:
+        debugPrint("op_is_iface_tag_active: custom tag %d is not handled", tag);
+    }
+
+    fallout::programStackPushInteger(program, isActive ? 1 : 0);
+}
+
 // Note: opcodes should pop arguments off the stack in reverse order
 void sfallOpcodesInit()
 {
@@ -1408,8 +1463,11 @@ void sfallOpcodesInit()
     // 0x81ce - void set_hp_per_level_mod(int mod)
 
     // 0x81dc - void show_iface_tag(int tag)
+    interpreterRegisterOpcode(0x81DC, op_show_iface_tag);
     // 0x81dd - void hide_iface_tag(int tag)
+    interpreterRegisterOpcode(0x81DD, op_hide_iface_tag);
     // 0x81de - int  is_iface_tag_active(int tag)
+    interpreterRegisterOpcode(0x81DE, op_is_iface_tag_active);
 
     // 0x81df - int  get_bodypart_hit_modifier(int bodypart)
     interpreterRegisterOpcode(0x81DF, op_get_bodypart_hit_modifier);

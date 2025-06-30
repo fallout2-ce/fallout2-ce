@@ -44,12 +44,6 @@ namespace fallout {
 // When displaying series of boxes they appear to be plugged into a chain.
 #define INDICATOR_BOX_CONNECTOR_WIDTH 3
 
-// Minimum radiation amount to display RADIATED indicator.
-#define RADATION_INDICATOR_THRESHOLD 65
-
-// Minimum poison amount to display POISONED indicator.
-#define POISON_INDICATOR_THRESHOLD 0
-
 // The maximum number of indicator boxes the indicator bar can display.
 //
 // For unknown reason this number is 6, even though there are only 5 different
