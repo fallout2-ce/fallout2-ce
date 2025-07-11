@@ -44,7 +44,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: fallout2-ce/fallout2-ce-ems
-          ref: 8dc61ba6e8e62116f4810ffe89d0cece00f508d7
           path: fallout2-ce-ems
 
       - name: Set deployment path
