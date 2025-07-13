@@ -1699,6 +1699,7 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
             arrowFrmDest += gGameMouseActionPickFrmWidth * shiftY;
         }
     } else {
+        // mirrored cursor for far-right side of screen
         artUnlock(arrowFrmHandle);
 
         arrowFid = buildFid(OBJ_TYPE_INTERFACE, 285, 0, 0, 0);
@@ -1793,16 +1794,16 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
 
     int v60 = y + menuItemsLength * menuItemHeight - 1;
     int v24 = v60 - height + 2;
-    unsigned char* v22 = gGameMouseActionMenuFrmData;
-    unsigned char* v58 = v22;
+    unsigned char* arrowFrmDest = gGameMouseActionMenuFrmData;
+    unsigned char* v58 = arrowFrmDest;
 
     unsigned char* arrowData;
     if (x + arrowWidth + menuItemWidth - 1 < width) {
         arrowData = artGetFrameData(arrowFrm, 0, 0);
-        v58 = v22 + arrowWidth;
+        v58 = arrowFrmDest + arrowWidth;
         if (height <= v60) {
             _gmouse_3d_menu_frame_hot_y += v24;
-            v22 += gGameMouseActionMenuFrmWidth * v24;
+            arrowFrmDest += gGameMouseActionMenuFrmWidth * v24;
             gGameMouseActionMenuFrm->yOffsets[0] -= v24;
         }
     } else {
@@ -1810,17 +1811,18 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
         fid = buildFid(OBJ_TYPE_INTERFACE, 285, 0, 0, 0);
         arrowFrm = artLock(fid, &arrowFrmHandle);
         arrowData = artGetFrameData(arrowFrm, 0, 0);
+        arrowFrmDest += menuItemWidth;
         gGameMouseActionMenuFrm->xOffsets[0] = -gGameMouseActionMenuFrm->xOffsets[0];
         _gmouse_3d_menu_frame_hot_x += menuItemWidth + arrowWidth;
         if (v60 >= height) {
             _gmouse_3d_menu_frame_hot_y += v24;
             gGameMouseActionMenuFrm->yOffsets[0] -= v24;
-            v22 += gGameMouseActionMenuFrmWidth * v24;
+            arrowFrmDest += gGameMouseActionMenuFrmWidth * v24;
         }
     }
 
     memset(gGameMouseActionMenuFrmData, 0, gGameMouseActionMenuFrmDataSize);
-    blitBufferToBuffer(arrowData, arrowWidth, arrowHeight, arrowWidth, v22, gGameMouseActionPickFrmWidth);
+    blitBufferToBuffer(arrowData, arrowWidth, arrowHeight, arrowWidth, arrowFrmDest, gGameMouseActionPickFrmWidth);
 
     unsigned char* v38 = v58;
     for (int index = 0; index < menuItemsLength; index++) {
