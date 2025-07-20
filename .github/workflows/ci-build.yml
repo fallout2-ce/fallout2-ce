@@ -333,11 +333,13 @@ jobs:
         run: |
           choco install visualstudio2019buildtools -y --package-parameters="'--add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.v141.x86.x64 --add Microsoft.VisualStudio.Component.VC.v141.xp --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.10240 --add Microsoft.VisualStudio.ComponentGroup.NativeDesktop.WinXP --add Microsoft.VisualStudio.Component.WinXP'"
 
-      - name: Cache cmake build
+      - name: Cache cmake deps
         uses: actions/cache@v4
         with:
-          path: out
-          key: windows-${{ matrix.arch }}-cmake-v100
+          key: windows-${{ matrix.arch }}-cmake-v1-${{ hashFiles('CMakeLists.txt') }}
+          path: |
+            out/build/windows-${{ matrix.arch }}/_deps
+            out/build/windows-${{ matrix.arch }}/CMakeFiles/CMakeDirectoryInformation.cmake
 
       - name: Configure
         shell: cmd
