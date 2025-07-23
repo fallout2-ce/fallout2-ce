@@ -2,7 +2,7 @@
 #include "debug.h"
 #include "draw.h"
 #include "geometry.h"
-#include "sfall_config.h"
+#include "settings.h"
 #include "stdio.h"
 #include "tile.h"
 #include <string.h>
@@ -405,7 +405,7 @@ void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth,
 
 void tile_hires_stencil_init()
 {
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MAIN_KEY, SFALL_CONFIG_ENABLE_HIRES_STENCIL, &gIsTileHiresStencilEnabled);
+    gIsTileHiresStencilEnabled = settings.graphics.highres_stencil;
     if (!gIsTileHiresStencilEnabled) {
         return;
     }
