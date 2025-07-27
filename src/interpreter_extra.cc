@@ -2035,7 +2035,7 @@ static void opMetarule3(Program* program)
                 frmId,
                 FID_ANIM_TYPE(obj->fid),
                 (obj->fid & 0xF000) >> 12,
-                (obj->fid & 0x70000000) >> 28);
+                FID_ROTATION(obj->fid));
 
             Rect updatedRect;
             objectSetFid(obj, fid, &updatedRect);
@@ -3393,7 +3393,7 @@ static void opAnim(Program* program)
         if (frame == 0) {
             animationRegisterAnimate(obj, anim, 0);
             if (anim >= ANIM_FALL_BACK && anim <= ANIM_FALL_FRONT_BLOOD) {
-                int fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, anim + 28, (obj->fid & 0xF000) >> 12, (obj->fid & 0x70000000) >> 28);
+                int fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, anim + 28, (obj->fid & 0xF000) >> 12, FID_ROTATION(obj->fid));
                 animationRegisterSetFid(obj, fid, -1);
             }
 
@@ -3401,6 +3401,7 @@ static void opAnim(Program* program)
                 combatData->results &= DAM_KNOCKED_DOWN;
             }
         } else {
+            // XXX: >> 24 seems like a bug here, it shoudl be >> 28 I believe
             int fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, anim, (obj->fid & 0xF000) >> 12, (obj->fid & 0x70000000) >> 24);
             animationRegisterAnimateReversed(obj, anim, 0);
 

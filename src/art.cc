@@ -619,7 +619,7 @@ char* artBuildFilePath(int fid)
 
     v2 = fid;
 
-    v10 = (fid & 0x70000000) >> 28;
+    v10 = FID_ROTATION(fid);
 
     v1 = artAliasFid(fid);
     if (v1 != -1) {

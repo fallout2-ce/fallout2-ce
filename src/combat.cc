@@ -2620,7 +2620,7 @@ static void _combat_begin(Object* attacker)
                 100,
                 FID_ANIM_TYPE(v1->fid),
                 (v1->fid & 0xF000) >> 12,
-                (v1->fid & 0x70000000) >> 28);
+                FID_ROTATION(v1->fid));
 
             reg_anim_clear(v1);
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
@@ -2788,7 +2788,7 @@ static void _combat_over()
                 99,
                 FID_ANIM_TYPE(critter->fid),
                 (critter->fid & 0xF000) >> 12,
-                (critter->fid & 0x70000000) >> 28);
+                FID_ROTATION(critter->fid));
             reg_anim_clear(critter);
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
             animationRegisterAnimate(critter, ANIM_UP_STAIRS_RIGHT, -1);
@@ -3490,7 +3490,7 @@ void attackInit(Attack* attack, Object* attacker, Object* defender, int hitMode,
 int _combat_attack(Object* attacker, Object* defender, int hitMode, int hitLocation)
 {
     if (attacker != gDude && hitMode == HIT_MODE_PUNCH && randomBetween(1, 4) == 1) {
-        int fid = buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_KICK_LEG, (attacker->fid & 0xF000) >> 12, (attacker->fid & 0x70000000) >> 28);
+        int fid = buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_KICK_LEG, (attacker->fid & 0xF000) >> 12, FID_ROTATION(attacker->fid));
         if (artExists(fid)) {
             hitMode = HIT_MODE_KICK;
         }
