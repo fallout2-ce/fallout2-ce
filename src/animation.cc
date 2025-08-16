@@ -1713,16 +1713,18 @@ static bool canUseDoor(Object* critter, Object* door)
 }
 
 // 0x415EE8
-int _make_path(Object* object, int from, int to, unsigned char* rotations, int a5)
+int _make_path(Object* object, int from, int to, unsigned char* rotations, int requireEmptyDest)
 {
-    return pathfinderFindPath(object, from, to, rotations, a5, _obj_blocking_at);
+    return pathfinderFindPath(object, from, to, rotations, requireEmptyDest, _obj_blocking_at);
 }
 
 // TODO: move pathfinding into another unit
+// If requireEmptyDest == 1, will not return a path if the destination tile is blocked (according to `callback`).
+// Returns path length, or 0 if no path is available.
 // 0x415EFC
-int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotations, int a5, PathBuilderCallback* callback)
+int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotations, int requireEmptyDest, PathBuilderCallback* callback)
 {
-    if (a5) {
+    if (requireEmptyDest) {
         if (callback(object, to, object->elevation) != nullptr) {
             return 0;
         }
