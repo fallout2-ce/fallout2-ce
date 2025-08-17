@@ -426,43 +426,43 @@ void _windowAddInputFunc(WindowInputHandler* handler)
 }
 
 // 0x4B6CE8
-void _doRegionRightFunc(Region* region, int a2)
+void _doRegionRightFunc(Region* region, int mouseEvent)
 {
     int v1 = gManagedWindows[gCurrentManagedWindowIndex].field_38;
     if (region->rightMouseEventCallback != nullptr) {
-        region->rightMouseEventCallback(region, region->rightMouseEventCallbackUserData, a2);
+        region->rightMouseEventCallback(region, region->rightMouseEventCallbackUserData, mouseEvent);
         if (v1 != gManagedWindows[gCurrentManagedWindowIndex].field_38) {
             return;
         }
     }
 
-    if (a2 < 4) {
-        if (region->program != nullptr && region->rightProcs[a2] != 0) {
-            _executeProc(region->program, region->rightProcs[a2]);
+    if (mouseEvent < 4) {
+        if (region->program != nullptr && region->rightProcs[mouseEvent] != 0) {
+            _executeProc(region->program, region->rightProcs[mouseEvent]);
         }
     }
 }
 
 // 0x4B6D68
-void _doRegionFunc(Region* region, int a2)
+void _doRegionFunc(Region* region, int mouseEvent)
 {
     int v1 = gManagedWindows[gCurrentManagedWindowIndex].field_38;
     if (region->mouseEventCallback != nullptr) {
-        region->mouseEventCallback(region, region->mouseEventCallbackUserData, a2);
+        region->mouseEventCallback(region, region->mouseEventCallbackUserData, mouseEvent);
         if (v1 != gManagedWindows[gCurrentManagedWindowIndex].field_38) {
             return;
         }
     }
 
-    if (a2 < 4) {
-        if (region->program != nullptr && region->rightProcs[a2] != 0) {
-            _executeProc(region->program, region->rightProcs[a2]);
+    if (mouseEvent < 4) {
+        if (region->program != nullptr && region->rightProcs[mouseEvent] != 0) {
+            _executeProc(region->program, region->rightProcs[mouseEvent]);
         }
     }
 }
 
 // 0x4B6DE8
-bool _windowActivateRegion(const char* regionName, int a2)
+bool _windowActivateRegion(const char* regionName, int mouseEvent)
 {
     if (gCurrentManagedWindowIndex == -1) {
         return false;
@@ -470,11 +470,11 @@ bool _windowActivateRegion(const char* regionName, int a2)
 
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
 
-    if (a2 <= 4) {
+    if (mouseEvent <= 4) {
         for (int index = 0; index < managedWindow->regionsLength; index++) {
             Region* region = managedWindow->regions[index];
             if (compat_stricmp(regionGetName(region), regionName) == 0) {
-                _doRegionFunc(region, a2);
+                _doRegionFunc(region, mouseEvent);
                 return true;
             }
         }
@@ -482,7 +482,7 @@ bool _windowActivateRegion(const char* regionName, int a2)
         for (int index = 0; index < managedWindow->regionsLength; index++) {
             Region* region = managedWindow->regions[index];
             if (compat_stricmp(regionGetName(region), regionName) == 0) {
-                _doRegionRightFunc(region, a2 - 5);
+                _doRegionRightFunc(region, mouseEvent - 5);
                 return true;
             }
         }

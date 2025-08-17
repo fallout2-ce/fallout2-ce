@@ -731,7 +731,7 @@ int pcAddExperience(int xp, int* xpGained)
 }
 
 // 0x4AFAB8
-int pcAddExperienceWithOptions(int xp, bool a2, int* xpGained)
+int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
 {
     int oldXp = gPcStatValues[PC_STAT_EXPERIENCE];
 
@@ -788,7 +788,7 @@ int pcAddExperienceWithOptions(int xp, bool a2, int* xpGained)
             interfaceGetItemActions(&leftItemAction, &rightItemAction);
             interfaceUpdateItems(false, leftItemAction, rightItemAction);
 
-            if (a2) {
+            if (doParty) {
                 _partyMemberIncLevels();
             }
         }
