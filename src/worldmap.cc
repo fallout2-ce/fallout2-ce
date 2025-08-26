@@ -3744,7 +3744,7 @@ int wmSetupRandomEncounter()
                 if (prevCritter != nullptr) {
                     if (prevCritter != critter) {
                         if (encounterTableEntry->subEntiesLength != 1) {
-                            if (encounterTableEntry->subEntiesLength == 2 && !isInCombat()) {
+                            if (encounterTableEntry->subEntiesLength == 2 && !isInCombat() && critter != nullptr) {
                                 prevCritter->data.critter.combat.whoHitMe = critter;
                                 critter->data.critter.combat.whoHitMe = prevCritter;
 
