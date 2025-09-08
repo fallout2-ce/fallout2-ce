@@ -681,20 +681,23 @@ void mouseSetSensitivity(double value)
         gMouseSensitivity = value;
     }
 
+    gMouseSensitivityDpiHorizontal = 1.0;
+    gMouseSensitivityDpiVertical = 1.0;
     if (gSdlWindow) {
         int displayIndex = SDL_GetWindowDisplayIndex(gSdlWindow);
         float ddpi, hdpi, vdpi;
-        SDL_GetDisplayDPI(displayIndex, &ddpi, &hdpi, &vdpi);
-        hdpi /= 96.0f; // 96 is standard DPI
-        vdpi /= 96.0f; // 96 is standard DPI
-        gMouseSensitivityDpiHorizontal = 1 / hdpi;
-        gMouseSensitivityDpiVertical = 1 / vdpi;
-        debugPrint("Mouse DPI scaling: horizontal = %.2f, vertical = %.2f", hdpi, vdpi);
-        debugPrint("Mouse DPI sensitivity: horizontal = %.2f, vertical = %.2f", gMouseSensitivityDpiHorizontal, gMouseSensitivityDpiVertical);
+        if (SDL_GetDisplayDPI(displayIndex, &ddpi, &hdpi, &vdpi) == 0) {
+            hdpi /= 96.0f; // 96 is standard DPI
+            vdpi /= 96.0f; // 96 is standard DPI
+            gMouseSensitivityDpiHorizontal = 1 / hdpi;
+            gMouseSensitivityDpiVertical = 1 / vdpi;
+            debugPrint("Mouse DPI scaling: horizontal = %.2f, vertical = %.2f", hdpi, vdpi);
+            debugPrint("Mouse DPI sensitivity: horizontal = %.2f, vertical = %.2f", gMouseSensitivityDpiHorizontal, gMouseSensitivityDpiVertical);
+        } else {
+            debugPrint("Mouse DPI sensitivity is not available, SDL_GetDisplayDPI failed");
+        }
     } else {
         debugPrint("Mouse DPI sensitivity is not available, SDL window is null");
-        gMouseSensitivityDpiHorizontal = 1.0;
-        gMouseSensitivityDpiVertical = 1.0;
     }
 }
 
