@@ -6,6 +6,7 @@
 #include <SDL.h>
 
 #include "config.h"
+#include "debug.h"
 #include "draw.h"
 #include "interface.h"
 #include "memory.h"
@@ -185,6 +186,14 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     _scr_blit = _GNW95_ShowRect;
     _zero_mem = _GNW95_zero_vid_mem;
     _mouse_blit = _GNW95_ShowRect;
+
+    if (scale != 1) {
+        gMouseSensitivityScale2Xoption = 1.0 / scale;
+        debugPrint("Mouse sensitivity adjusted according to scale into %f\n", gMouseSensitivityScale2Xoption);
+    } else {
+        gMouseSensitivityScale2Xoption = 1.0;
+        debugPrint("Mouse sensitivity not adjusted for 2X scale\n");
+    }
 
     return 0;
 }

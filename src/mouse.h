@@ -54,6 +54,7 @@ void mouseGetWheel(int* x, int* y);
 void convertMouseWheelToArrowKey(int* keyCodePtr);
 int mouse_get_last_buttons();
 
+extern double gMouseSensitivityScale2Xoption;
 } // namespace fallout
 
 #endif /* FALLOUT_MOUSE_H_ */

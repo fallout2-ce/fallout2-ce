@@ -56,6 +56,7 @@ static double gMouseSensitivity = 1.0;
 
 static double gMouseSensitivityDpiHorizontal = 1.0;
 static double gMouseSensitivityDpiVertical = 1.0;
+double gMouseSensitivityScale2Xoption = 1.0;
 
 // 0x51E2AC
 static int last_buttons = 0;
@@ -458,8 +459,8 @@ void _mouse_info()
     }
 
     // Adjust for mouse senstivity.
-    x = (int)(x * gMouseSensitivity * gMouseSensitivityDpiHorizontal);
-    y = (int)(y * gMouseSensitivity * gMouseSensitivityDpiVertical);
+    x = (int)(x * gMouseSensitivity * gMouseSensitivityDpiHorizontal * gMouseSensitivityScale2Xoption);
+    y = (int)(y * gMouseSensitivity * gMouseSensitivityDpiVertical * gMouseSensitivityScale2Xoption);
 
     _mouse_simulate_input(x, y, buttons);
 
