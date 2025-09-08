@@ -1,6 +1,7 @@
 #include "mouse.h"
 
 #include "color.h"
+#include "debug.h"
 #include "dinput.h"
 #include "input.h"
 #include "kb.h"
@@ -52,6 +53,9 @@ static unsigned char* _mouse_fptr = nullptr;
 
 // 0x51E2A0
 static double gMouseSensitivity = 1.0;
+
+static double gMouseSensitivityDpiHorizontal = 1.0;
+static double gMouseSensitivityDpiVertical = 1.0;
 
 // 0x51E2AC
 static int last_buttons = 0;
@@ -454,8 +458,8 @@ void _mouse_info()
     }
 
     // Adjust for mouse senstivity.
-    x = (int)(x * gMouseSensitivity);
-    y = (int)(y * gMouseSensitivity);
+    x = (int)(x * gMouseSensitivity * gMouseSensitivityDpiHorizontal);
+    y = (int)(y * gMouseSensitivity * gMouseSensitivityDpiVertical);
 
     _mouse_simulate_input(x, y, buttons);
 
@@ -675,6 +679,22 @@ void mouseSetSensitivity(double value)
 {
     if (value >= 1.0 && value <= 2.5) {
         gMouseSensitivity = value;
+    }
+
+    if (gSdlWindow) {
+        int displayIndex = SDL_GetWindowDisplayIndex(gSdlWindow);
+        float ddpi, hdpi, vdpi;
+        SDL_GetDisplayDPI(displayIndex, &ddpi, &hdpi, &vdpi);
+        hdpi /= 96.0f; // 96 is standard DPI
+        vdpi /= 96.0f; // 96 is standard DPI
+        gMouseSensitivityDpiHorizontal = 1 / hdpi;
+        gMouseSensitivityDpiVertical = 1 / vdpi;
+        debugPrint("Mouse DPI scaling: horizontal = %.2f, vertical = %.2f", hdpi, vdpi);
+        debugPrint("Mouse DPI sensitivity: horizontal = %.2f, vertical = %.2f", gMouseSensitivityDpiHorizontal, gMouseSensitivityDpiVertical);
+    } else {
+        debugPrint("Mouse DPI sensitivity is not available, SDL window is null");
+        gMouseSensitivityDpiHorizontal = 1.0;
+        gMouseSensitivityDpiVertical = 1.0;
     }
 }
 
