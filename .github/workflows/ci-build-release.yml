@@ -250,7 +250,7 @@ jobs:
         run: |
           ls -laR .
           cd out/build/macos
-          cpack -C Release
+          # cpack -C Release # There is already .dmg in the folder
 
       - name: Upload
         uses: actions/upload-artifact@v4
