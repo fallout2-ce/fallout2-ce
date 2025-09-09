@@ -87,6 +87,7 @@ jobs:
 
       - name: Pack
         run: |
+          ls -laR
           cd out/build/ios
           cpack -C Release
 
