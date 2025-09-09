@@ -247,7 +247,7 @@ jobs:
       - name: Pack
         run: |
           cd out/build/macos
-          cpack -C Debug
+          cpack -C Release
 
       - name: Upload
         uses: actions/upload-artifact@v4
