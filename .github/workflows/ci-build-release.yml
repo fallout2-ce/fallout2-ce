@@ -379,5 +379,5 @@ jobs:
           files: artifacts/*
           tag_name: continious
           draft: false
-          prerelease: true
+          prerelease: false
           name: Fallout2-CE Continuous Build
