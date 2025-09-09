@@ -54,7 +54,7 @@ jobs:
       - name: Change apk file name
         run: |
           ls -laR .
-          mv os/android/app/build/outputs/apk/release/app-release-unsigned.apk os/android/app/build/outputs/apk/release/fallout2-ce.apk
+          mv os/android/app/build/outputs/apk/release/app-release.apk os/android/app/build/outputs/apk/release/fallout2-ce.apk
 
       - name: Upload
         uses: actions/upload-artifact@v4
