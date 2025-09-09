@@ -366,7 +366,7 @@ jobs:
 
 
   release:
-    name: Release Continuous build
+    name: Debug Release Continuous build
     runs-on: ubuntu-latest
     needs: [android, ios, linux, linux-armhf, linux-arm64, macos, windows]
     permissions: write-all
