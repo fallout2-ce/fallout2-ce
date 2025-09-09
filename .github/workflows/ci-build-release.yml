@@ -53,6 +53,7 @@ jobs:
 
       - name: Change apk file name
         run: |
+          ls -laR .
           mv os/android/app/build/outputs/apk/release/app-release.apk os/android/app/build/outputs/apk/release/fallout2-ce.apk
 
       - name: Upload
@@ -87,7 +88,7 @@ jobs:
 
       - name: Pack
         run: |
-          ls -laR
+          ls -laR .
           cd out/build/ios
           cpack -C Release
 
