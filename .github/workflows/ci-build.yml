@@ -106,13 +106,13 @@ jobs:
 
       - name: Change apk file name
         run: |
-          mv os/android/app/build/outputs/apk/debug/app-debug.apk os/android/app/build/outputs/apk/debug/fallout2-ce.apk
+          mv os/android/app/build/outputs/apk/debug/app-debug.apk os/android/app/build/outputs/apk/debug/fallout2-ce-debug.apk
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: fallout2-ce-debug.apk
-          path: os/android/app/build/outputs/apk/debug/fallout2-ce.apk
+          path: os/android/app/build/outputs/apk/debug/fallout2-ce-debug.apk
           retention-days: 7
 
   ios:
@@ -142,12 +142,13 @@ jobs:
         run: |
           cd out/build/ios
           cpack -C Debug
+          mv fallout2-ce.ipa fallout2-ce-debug.ipa
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: fallout2-ce-debug.ipa
-          path:  out/build/ios/fallout2-ce.ipa
+          path:  out/build/ios/fallout2-ce-debug.ipa
           retention-days: 7
 
   linux:
@@ -235,13 +236,13 @@ jobs:
 
       - name: Change executable file name
         run: |
-          mv build/fallout2-ce build/fallout2-ce-linux-armhf
+          mv build/fallout2-ce build/fallout2-ce-linux-armhf-debug
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-linux-armhf
-          path:  build/fallout2-ce-linux-armhf
+          name: fallout2-ce-linux-armhf-debug
+          path:  build/fallout2-ce-linux-armhf-debug
           retention-days: 7
 
   linux-arm64:
