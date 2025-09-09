@@ -339,7 +339,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: windows-${{ matrix.arch }}-cmake-v101
+          key: windows-${{ matrix.arch }}-cmake-v102
 
       - name: Configure
         shell: cmd
