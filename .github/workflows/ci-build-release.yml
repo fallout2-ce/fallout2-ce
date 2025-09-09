@@ -86,11 +86,11 @@ jobs:
         run: |
           cmake --build --preset ios-release
 
-      - name: Pack
+      - name: Pack      
         run: |
           ls -laR .
           cd out/build/ios
-          cpack -C Release
+          # cpack -C Release  # No need, we already have .ipa
 
       - name: Upload
         uses: actions/upload-artifact@v4
@@ -248,6 +248,7 @@ jobs:
 
       - name: Pack
         run: |
+          ls -laR .
           cd out/build/macos
           cpack -C Release
 
