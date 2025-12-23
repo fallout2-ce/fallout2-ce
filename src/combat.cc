@@ -3845,14 +3845,14 @@ static int attackCompute(Attack* attack)
     }
 
     int attackType = weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode);
-    int ammoQuantity = 1;
+    int roundsHitMainTarget = 1;
     int damageMultiplier = 2;
-    int v26 = 1;
+    int roundsSpent = 1;
 
     int roll;
 
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
-        roll = _compute_spray(attack, accuracy, &ammoQuantity, &v26, anim);
+        roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsSpent, anim);
     } else {
         int chance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
         roll = randomRoll(accuracy, chance - hit_location_penalty[attack->defenderHitLocation], nullptr);
@@ -3890,7 +3890,7 @@ static int attackCompute(Attack* attack)
     }
 
     if (attackType == ATTACK_TYPE_RANGED) {
-        attack->ammoQuantity = v26;
+        attack->ammoQuantity = roundsSpent;
 
         if (roll == ROLL_SUCCESS && attack->attacker == gDude) {
             if (perkGetRank(gDude, PERK_SNIPER) != 0) {
@@ -3928,7 +3928,7 @@ static int attackCompute(Attack* attack)
     case ROLL_SUCCESS:
         attack->attackerFlags |= DAM_HIT;
         attackComputeEnhancedKnockout(attack);
-        attackComputeDamage(attack, ammoQuantity, damageMultiplier);
+        attackComputeDamage(attack, roundsHitMainTarget, damageMultiplier);
         break;
     case ROLL_FAILURE:
         if (attackType == ATTACK_TYPE_RANGED || attackType == ATTACK_TYPE_THROW) {
