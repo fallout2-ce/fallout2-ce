@@ -126,6 +126,17 @@ IFACE_BAR_SIDES_ORI=0
 ;if IFACE_BAR_WIDTH=640 - Interface bar will remain at it's original width.
 ;if IFACE_BAR_WIDTH=800 - Interface bar will use 800pix wide asset from f2_res.dat.
 ;IFACE_BAR_WIDTH=640
+
+[STATIC_SCREENS]
+;if SPLASH_SCRN_SIZE=0 - Splash screen shows at original size if it fits, otherwise scales down while preserving aspect ratio.
+;if SPLASH_SCRN_SIZE=1 - Splash screen scales to fit the screen while preserving aspect ratio.
+;if SPLASH_SCRN_SIZE=2 - Splash screen stretches to fill the entire screen.
+SPLASH_SCRN_SIZE=0
+
+[MAPS]
+;if IGNORE_MAP_EDGES=0 - Hi-Res map scroll edges are enabled.
+;if IGNORE_MAP_EDGES=1 - Hi-Res map scroll edges are ignored.
+IGNORE_MAP_EDGES=0
 ```
 
 Recommendations:

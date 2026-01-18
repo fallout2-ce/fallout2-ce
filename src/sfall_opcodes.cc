@@ -982,7 +982,7 @@ static void op_party_member_list(Program* program)
     programStackPushInteger(program, arrayId);
 }
 
-// type_of
+// typeof
 static void op_type_of(Program* program)
 {
     auto value = programStackPopValue(program);
@@ -1106,13 +1106,13 @@ static void op_sfall_func6(Program* program)
     sfall_metarule(program, 6);
 }
 
-// sfall_func6
+// sfall_func7
 static void op_sfall_func7(Program* program)
 {
     sfall_metarule(program, 7);
 }
 
-// sfall_func6
+// sfall_func8
 static void op_sfall_func8(Program* program)
 {
     sfall_metarule(program, 8);

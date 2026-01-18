@@ -18,6 +18,7 @@ extern int gHexGridSize;
 extern int gCenterTile;
 
 extern bool gTileBorderInitialized;
+extern bool gTileIgnoreMapEdges;
 extern int gTileBorderMinX;
 extern int gTileBorderMinY;
 extern int gTileBorderMaxX;
@@ -49,6 +50,7 @@ bool tileScrollBlockingIsEnabled();
 void tileScrollLimitingEnable();
 void tileScrollLimitingDisable();
 bool tileScrollLimitingIsEnabled();
+bool tileIgnoreMapEdges();
 int squareTileToScreenXY(int squareTile, int* coordX, int* coordY, int elevation);
 int squareTileToRoofScreenXY(int squareTile, int* screenX, int* screenY, int elevation);
 int squareTileFromScreenXY(int screenX, int screenY, int elevation);
