@@ -2736,6 +2736,8 @@ void inventoryOpenUseItemOn(Object* targetObj)
                             } else {
                                 _action_use_an_item_on_object(gDude, targetObj, inventoryItem->item);
                             }
+                            // fix for click through bug
+                            gBlockMouseUpEvent = true;
                             keyCode = KEY_ESCAPE;
                         } else {
                             keyCode = -1;
