@@ -47,13 +47,13 @@ static int _item_move_func(Object* source, Object* target, Object* item, int qua
 static bool _item_identical(Object* item1, Object* item2);
 static int stealthBoyTurnOn(Object* object);
 static int stealthBoyTurnOff(Object* critter, Object* item);
-static int _insert_drug_effect(Object* critter_obj, Object* item_obj, int a3, int* stats, int* mods);
-static void _perform_drug_effect(Object* critter_obj, int* stats, int* mods, bool is_immediate);
+static int _insert_drug_effect(Object* critter, Object* item, int duration, int* stats, int* mods);
+static void _perform_drug_effect(Object* critter, int* stats, int* mods, bool isImmediate);
 static bool _drug_effect_allowed(Object* critter, int pid);
-static int _insert_withdrawal(Object* obj, int a2, int a3, int a4, int a5);
-static int _item_wd_clear_all(Object* a1, void* data);
-static void performWithdrawalStart(Object* obj, int perk, int a3);
-static void performWithdrawalEnd(Object* obj, int a2);
+static int _insert_withdrawal(Object* obj, int active, int duration, int perk, int pid);
+static int _item_wd_clear_all(Object* obj, void* data);
+static void performWithdrawalStart(Object* obj, int perk, int pid);
+static void performWithdrawalEnd(Object* obj, int perk);
 static int drugGetAddictionGvarByPid(int drugPid);
 static void dudeSetAddiction(int drugPid);
 static void dudeClearAddiction(int drugPid);
@@ -319,7 +319,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
     return itemAdd(owner, itemToAdd, quantity);
 }
 
-// item_add
+// item_add_force
 // 0x4772B8
 int itemAdd(Object* owner, Object* itemToAdd, int quantity)
 {
@@ -634,7 +634,7 @@ int itemDropAll(Object* critter, int tile)
 
     if (hasEquippedItems) {
         Rect updatedRect;
-        int fid = buildFid(OBJ_TYPE_CRITTER, frmId, FID_ANIM_TYPE(critter->fid), 0, (critter->fid & 0x70000000) >> 28);
+        int fid = buildFid(OBJ_TYPE_CRITTER, frmId, FID_ANIM_TYPE(critter->fid), 0, FID_ROTATION(critter->fid));
         objectSetFid(critter, fid, &updatedRect);
         if (FID_ANIM_TYPE(critter->fid) == ANIM_STAND) {
             tileWindowRefreshRect(&updatedRect, gElevation);
@@ -675,26 +675,24 @@ static bool _item_identical(Object* item1, Object* item2)
         return false;
     }
 
-    int v1;
+    int item2Quantity;
     if (proto->item.type == ITEM_TYPE_AMMO || item1->pid == PROTO_ID_MONEY) {
-        v1 = item2->data.item.ammo.quantity;
+        item2Quantity = item2->data.item.ammo.quantity;
         item2->data.item.ammo.quantity = item1->data.item.ammo.quantity;
     }
 
-    // NOTE: Probably inlined memcmp, but I'm not sure why it only checks 32
-    // bytes.
-    int i;
-    for (i = 0; i < 8; i++) {
-        if (item1->field_2C_array[i] != item2->field_2C_array[i]) {
-            break;
-        }
-    }
+    // CE: Original code is different. It compares exactly 32 bytes one by one
+    // in the loop starting with `data` (which means it also checks `Inventory`
+    // object). Objects with inventories are filtered a moment earlier, so it
+    // should be safe to check only the item-specific data.
+    bool same = item1->data.flags == item2->data.flags
+        && memcmp(&(item1->data.item), &(item2->data.item), sizeof(ItemObjectData)) == 0;
 
     if (proto->item.type == ITEM_TYPE_AMMO || item1->pid == PROTO_ID_MONEY) {
-        item2->data.item.ammo.quantity = v1;
+        item2->data.item.ammo.quantity = item2Quantity;
     }
 
-    return i == 8;
+    return same;
 }
 
 // 0x477AE4
@@ -1061,7 +1059,7 @@ int itemGetQuantity(Object* obj, Object* item)
     return quantity;
 }
 
-// Returns true if [a1] posesses an item with 0x2000 flag.
+// Returns true if [obj] posesses an item with 0x2000 flag.
 //
 // 0x4780E4
 int itemIsQueued(Object* obj)
@@ -1426,6 +1424,10 @@ void ammoSetQuantity(Object* ammoOrWeapon, int quantity)
         quantity = capacity;
     }
 
+    if (quantity < 0) {
+        quantity = 0;
+    }
+
     Proto* proto;
     protoGetProto(ammoOrWeapon->pid, &proto);
 
@@ -1552,6 +1554,9 @@ bool weaponCanBeReloadedWith(Object* weapon, Object* ammo)
 }
 
 // 0x478918
+// weaponReload adds ammo to the weapon and removes it from the given ammo stack
+// return -1 if ammo is incompatible with weapon; otherwise returns the number of
+// rounds left in the ammo stack
 int weaponReload(Object* weapon, Object* ammo)
 {
     if (!weaponCanBeReloadedWith(weapon, ammo)) {
@@ -1570,26 +1575,26 @@ int weaponReload(Object* weapon, Object* ammo)
     }
 
     // NOTE: Uninline.
-    int v10 = ammoGetQuantity(ammo);
+    int quantity = ammoGetQuantity(ammo);
 
-    int v11 = v10;
+    int left = quantity;
     if (ammoQuantity < ammoCapacity) {
-        int v12;
-        if (ammoQuantity + v10 > ammoCapacity) {
-            v11 = v10 - (ammoCapacity - ammoQuantity);
-            v12 = ammoCapacity;
+        int newQuantity;
+        if (ammoQuantity + quantity > ammoCapacity) {
+            left = quantity - (ammoCapacity - ammoQuantity);
+            newQuantity = ammoCapacity;
         } else {
-            v11 = 0;
-            v12 = ammoQuantity + v10;
+            left = 0;
+            newQuantity = ammoQuantity + quantity;
         }
 
         weapon->data.item.weapon.ammoTypePid = ammo->pid;
 
-        ammoSetQuantity(ammo, v11);
-        ammoSetQuantity(weapon, v12);
+        ammoSetQuantity(ammo, left);
+        ammoSetQuantity(weapon, newQuantity);
     }
 
-    return v11;
+    return left;
 }
 
 // 0x478A1C
@@ -2593,8 +2598,11 @@ int ammoGetDamageDivisor(Object* armor)
     return proto->item.data.ammo.damageDivisor;
 }
 
+// Adds Drug event to event queue.
+// [duration] is in minutes
+//
 // 0x479B44
-static int _insert_drug_effect(Object* critter, Object* item, int a3, int* stats, int* mods)
+static int _insert_drug_effect(Object* critter, Object* item, int duration, int* stats, int* mods)
 {
     int index;
     for (index = 0; index < 3; index++) {
@@ -2619,7 +2627,7 @@ static int _insert_drug_effect(Object* critter, Object* item, int a3, int* stats
         drugEffectEvent->modifiers[index] = mods[index];
     }
 
-    int delay = 600 * a3;
+    int delay = 600 * duration;
     if (critter == gDude) {
         if (traitIsSelected(TRAIT_CHEM_RESISTANT)) {
             delay /= 2;
@@ -2637,25 +2645,23 @@ static int _insert_drug_effect(Object* critter, Object* item, int a3, int* stats
 // 0x479C20
 static void _perform_drug_effect(Object* critter, int* stats, int* mods, bool isImmediate)
 {
-    int v10;
-    int v11;
-    int v12;
     MessageListItem messageListItem;
     const char* name;
     const char* text;
-    char v24[92]; // TODO: Size is probably wrong.
-    char str[92]; // TODO: Size is probably wrong.
+    char msgBuf[92]; // TODO: Size is probably wrong.
 
     bool statsChanged = false;
 
-    int v5 = 0;
-    bool v32 = false;
+    int startIndex = 0;
+    bool firstStatIsMinimum = false;
     if (stats[0] == -2) {
-        v5 = 1;
-        v32 = true;
+        startIndex = 1;
+        firstStatIsMinimum = true;
     }
 
-    for (int index = v5; index < 3; index++) {
+    for (int index = startIndex; index < 3; index++) {
+        int oldStatBonus;
+        int statBonus;
         int stat = stats[index];
         if (stat == -1) {
             continue;
@@ -2665,32 +2671,31 @@ static void _perform_drug_effect(Object* critter, int* stats, int* mods, bool is
             critter->data.critter.combat.maneuver &= ~CRITTER_MANUEVER_FLEEING;
         }
 
-        v10 = critterGetBonusStat(critter, stat);
+        oldStatBonus = critterGetBonusStat(critter, stat);
 
-        int before;
-        if (critter == gDude) {
-            before = critterGetStat(gDude, stat);
-        }
+        int before = (critter == gDude)
+            ? critterGetStat(gDude, stat)
+            : 0;
 
-        if (v32) {
-            v11 = randomBetween(mods[index - 1], mods[index]) + v10;
-            v32 = false;
+        if (firstStatIsMinimum) {
+            statBonus = randomBetween(mods[index - 1], mods[index]) + oldStatBonus;
+            firstStatIsMinimum = false;
         } else {
-            v11 = mods[index] + v10;
+            statBonus = mods[index] + oldStatBonus;
         }
 
         if (stat == STAT_CURRENT_HIT_POINTS) {
-            v12 = critterGetBaseStatWithTraitModifier(critter, STAT_CURRENT_HIT_POINTS);
-            if (v11 + v12 <= 0 && critter != gDude) {
+            int currentHp = critterGetBaseStatWithTraitModifier(critter, STAT_CURRENT_HIT_POINTS);
+            if (statBonus + currentHp <= 0 && critter != gDude) {
                 name = critterGetName(critter);
                 // %s succumbs to the adverse effects of chems.
                 text = getmsg(&gItemsMessageList, &messageListItem, 600);
-                snprintf(v24, sizeof(v24), text, name);
-                _combatKillCritterOutsideCombat(critter, v24);
+                snprintf(msgBuf, sizeof(msgBuf), text, name);
+                _combatKillCritterOutsideCombat(critter, msgBuf);
             }
         }
 
-        critterSetBonusStat(critter, stat, v11);
+        critterSetBonusStat(critter, stat, statBonus);
 
         if (critter == gDude) {
             if (stat == STAT_CURRENT_HIT_POINTS) {
@@ -2704,8 +2709,8 @@ static void _perform_drug_effect(Object* critter, int* stats, int* mods, bool is
                 messageListItem.num = after < before ? 2 : 1;
                 if (messageListGetItem(&gItemsMessageList, &messageListItem)) {
                     char* statName = statGetName(stat);
-                    snprintf(str, sizeof(str), messageListItem.text, after < before ? before - after : after - before, statName);
-                    displayMonitorAddMessage(str);
+                    snprintf(msgBuf, sizeof(msgBuf), messageListItem.text, after < before ? before - after : after - before, statName);
+                    displayMonitorAddMessage(msgBuf);
                     statsChanged = true;
                 }
             }
@@ -2725,14 +2730,14 @@ static void _perform_drug_effect(Object* critter, int* stats, int* mods, bool is
             // You suffer a fatal heart attack from chem overdose.
             messageListItem.num = 4;
             if (messageListGetItem(&gItemsMessageList, &messageListItem)) {
-                strcpy(v24, messageListItem.text);
+                strcpy(msgBuf, messageListItem.text);
                 // TODO: Why message is ignored?
             }
         } else {
             name = critterGetName(critter);
             // %s succumbs to the adverse effects of chems.
             text = getmsg(&gItemsMessageList, &messageListItem, 600);
-            snprintf(v24, sizeof(v24), text, name);
+            snprintf(msgBuf, sizeof(msgBuf), text, name);
             // TODO: Why message is ignored?
         }
     }
@@ -2916,14 +2921,14 @@ int drugEffectEventWrite(File* stream, void* data)
 }
 
 // 0x47A290
-static int _insert_withdrawal(Object* obj, int a2, int duration, int perk, int pid)
+static int _insert_withdrawal(Object* obj, int active, int duration, int perk, int pid)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)internal_malloc(sizeof(*withdrawalEvent));
     if (withdrawalEvent == nullptr) {
         return -1;
     }
 
-    withdrawalEvent->field_0 = a2;
+    withdrawalEvent->active = active;
     withdrawalEvent->pid = pid;
     withdrawalEvent->perk = perk;
 
@@ -2944,7 +2949,7 @@ int _item_wd_clear(Object* obj, void* data)
         return 0;
     }
 
-    if (!withdrawalEvent->field_0) {
+    if (!withdrawalEvent->active) {
         performWithdrawalEnd(obj, withdrawalEvent->perk);
     }
 
@@ -2952,11 +2957,11 @@ int _item_wd_clear(Object* obj, void* data)
 }
 
 // 0x47A324
-static int _item_wd_clear_all(Object* a1, void* data)
+static int _item_wd_clear_all(Object* obj, void* data)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)data;
 
-    if (a1 != _wd_obj) {
+    if (obj != _wd_obj) {
         return 0;
     }
 
@@ -2964,11 +2969,12 @@ static int _item_wd_clear_all(Object* a1, void* data)
         return 0;
     }
 
-    if (!withdrawalEvent->field_0) {
+    if (!withdrawalEvent->active) {
         performWithdrawalEnd(_wd_obj, withdrawalEvent->perk);
     }
 
-    _insert_withdrawal(a1, 1, _wd_onset, withdrawalEvent->perk, withdrawalEvent->pid);
+    // schedule start of withdrawal
+    _insert_withdrawal(obj, 1, _wd_onset, withdrawalEvent->perk, withdrawalEvent->pid);
 
     _wd_obj = nullptr;
 
@@ -2980,7 +2986,7 @@ int withdrawalEventProcess(Object* obj, void* data)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)data;
 
-    if (withdrawalEvent->field_0) {
+    if (withdrawalEvent->active) {
         performWithdrawalStart(obj, withdrawalEvent->perk, withdrawalEvent->pid);
     } else {
         if (withdrawalEvent->perk == PERK_JET_ADDICTION) {
@@ -3011,7 +3017,7 @@ int withdrawalEventRead(File* stream, void** dataPtr)
         return -1;
     }
 
-    if (fileReadInt32(stream, &(withdrawalEvent->field_0)) == -1) goto err;
+    if (fileReadInt32(stream, &(withdrawalEvent->active)) == -1) goto err;
     if (fileReadInt32(stream, &(withdrawalEvent->pid)) == -1) goto err;
     if (fileReadInt32(stream, &(withdrawalEvent->perk)) == -1) goto err;
 
@@ -3029,7 +3035,7 @@ int withdrawalEventWrite(File* stream, void* data)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)data;
 
-    if (fileWriteInt32(stream, withdrawalEvent->field_0) == -1) return -1;
+    if (fileWriteInt32(stream, withdrawalEvent->active) == -1) return -1;
     if (fileWriteInt32(stream, withdrawalEvent->pid) == -1) return -1;
     if (fileWriteInt32(stream, withdrawalEvent->perk) == -1) return -1;
 
@@ -3066,6 +3072,7 @@ static void performWithdrawalStart(Object* obj, int perk, int pid)
         }
     }
 
+    // schedule end of withdrawal
     _insert_withdrawal(obj, 0, duration, perk, pid);
 }
 

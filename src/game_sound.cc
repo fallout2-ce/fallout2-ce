@@ -21,6 +21,7 @@
 #include "queue.h"
 #include "random.h"
 #include "settings.h"
+#include "sfall_config.h"
 #include "sound_effects_cache.h"
 #include "stat.h"
 #include "svga.h"
@@ -68,6 +69,7 @@ static bool gSoundEffectsEnabled = false;
 static int _gsound_active_effect_counter;
 
 // 0x518E50
+// background music
 static Sound* gBackgroundSound = nullptr;
 
 // 0x518E54
@@ -107,10 +109,10 @@ static int _background_loop_requested = -1;
 static char* _sound_sfx_path = _aSoundSfx;
 
 // 0x518E78
-static char* _sound_music_path1 = _aSoundMusic_0;
+static char* _sound_music_path1 = nullptr;
 
 // 0x518E7C
-static char* _sound_music_path2 = _aSoundMusic_0;
+static char* _sound_music_path2 = nullptr;
 
 // 0x518E80
 static char* _sound_speech_path = _aSoundSpeech_0;
@@ -391,6 +393,9 @@ int gameSoundExit()
     audioFileExit();
     audioExit();
 
+    internal_free(_sound_music_path1);
+    internal_free(_sound_music_path2);
+
     gGameSoundInitialized = false;
 
     return 0;
@@ -589,9 +594,32 @@ int backgroundSoundGetDuration()
     return soundGetDuration(gBackgroundSound);
 }
 
-// [fileName] is base file name, without path and extension.
-//
-// 0x45067C
+/*
+    [fileName] is base file name, without path and extension.
+
+    a2
+        10 = don't auto play sound after load (unused?)
+        11 = set read limit before soundLoad, !11 = set after soundLoad
+        12 = usually used when value is not 11
+    a3 relates to sound type
+        13 = MEMORY
+        14 = STREAMING
+    a4 relates to sound flags
+        15 = fire and forget
+        16 = looping
+
+    examples:
+        backgroundSoundLoad("akiss", 12, 14, 15) (endgame)
+        backgroundSoundLoad("10labone", 11, 14, 16); (endgame)
+        backgroundSoundLoad(fileName, a2, 14, 16); (map music) // 11 = main menu music, 12 = map/world map music
+        backgroundSoundLoad("wind2", 12, 13, 16); (map load sound)
+
+        these use the last settings for a3/a4 that were passed to backgroundSoundLoad
+        backgroundSoundRestart(11); (end of of script)
+        backgroundSoundRestart(12); (game init, volume change)
+
+    0x45067C
+*/
 int backgroundSoundLoad(const char* fileName, int a2, int a3, int a4)
 {
     int rc;
@@ -599,7 +627,9 @@ int backgroundSoundLoad(const char* fileName, int a2, int a3, int a4)
     _background_storage_requested = a3;
     _background_loop_requested = a4;
 
-    strcpy(gBackgroundSoundFileName, fileName);
+    if (gBackgroundSoundFileName != fileName) {
+        strcpy(gBackgroundSoundFileName, fileName);
+    }
 
     if (!gGameSoundInitialized) {
         return -1;
@@ -742,9 +772,17 @@ int backgroundSoundLoad(const char* fileName, int a2, int a3, int a4)
 }
 
 // 0x450A08
-int _gsound_background_play_level_music(const char* a1, int a2)
+int _gsound_background_play_level_music(const char* fileName, int a2)
 {
-    return backgroundSoundLoad(a1, a2, 14, 16);
+    int gaplessMusic = 0;
+    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAPLESS_MUSIC, &gaplessMusic);
+    if (backgoundSoundIsPlaying() && gaplessMusic) {
+        if (!strcmp(fileName, gBackgroundSoundFileName)) {
+            return 0;
+        }
+    }
+
+    return backgroundSoundLoad(fileName, a2, 14, 16);
 }
 
 // 0x450AB4
@@ -788,6 +826,12 @@ void backgroundSoundResume()
     if (gBackgroundSound != nullptr) {
         soundResume(gBackgroundSound);
     }
+}
+
+// TODO: could be made more precise by querying the sound, checking volume, &c.
+bool backgoundSoundIsPlaying()
+{
+    return gBackgroundSound != nullptr;
 }
 
 // NOTE: Inlined.
@@ -1676,6 +1720,8 @@ void soundEffectCallback(void* userData, int a2)
 }
 
 // 0x451ADC
+// a2 relates to sound type
+// a3 relates to sound flags
 int _gsound_background_allocate(Sound** soundPtr, int a2, int a3)
 {
     int soundFlags = SOUND_FLAG_0x02 | SOUND_16BIT;
@@ -1957,12 +2003,15 @@ int _gsound_get_music_path(char** out_value, const char* key)
     char* copy;
     char* value;
 
-    configGetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, key, out_value);
+    if (!configGetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, key, &value)) {
+        *out_value = internal_strdup(_aSoundMusic_0);
+        return 0;
+    }
 
-    value = *out_value;
     len = strlen(value);
 
     if (value[len - 1] == '\\' || value[len - 1] == '/') {
+        *out_value = internal_strdup(value);
         return 0;
     }
 
@@ -1978,7 +2027,9 @@ int _gsound_get_music_path(char** out_value, const char* key)
     copy[len] = '\\';
     copy[len + 1] = '\0';
 
-    if (configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, key, copy) != 1) {
+    if (!configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, key, copy)) {
+        internal_free(copy);
+
         if (gGameSoundDebugEnabled) {
             debugPrint("config_set_string failed in gsound_music_path.\n");
         }
@@ -1986,16 +2037,20 @@ int _gsound_get_music_path(char** out_value, const char* key)
         return -1;
     }
 
-    if (configGetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, key, out_value)) {
+    if (!configGetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, key, &value)) {
         internal_free(copy);
-        return 0;
+
+        if (gGameSoundDebugEnabled) {
+            debugPrint("config_get_string failed in gsound_music_path.\n");
+        }
+
+        return -1;
     }
 
-    if (gGameSoundDebugEnabled) {
-        debugPrint("config_get_string failed in gsound_music_path.\n");
-    }
+    internal_free(copy);
 
-    return -1;
+    *out_value = internal_strdup(value);
+    return 0;
 }
 
 // 0x452378

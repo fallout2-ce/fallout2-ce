@@ -1,5 +1,6 @@
 #include "art.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,8 +32,8 @@ typedef struct HeadDescription {
 } HeadDescription;
 
 static int artReadList(const char* path, char** out_arr, int* out_count);
-static int artCacheGetFileSizeImpl(int a1, int* out_size);
-static int artCacheReadDataImpl(int a1, int* a2, unsigned char* data);
+static int artCacheGetFileSizeImpl(int fid, int* out_size);
+static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data);
 static void artCacheFreeImpl(void* ptr);
 static int artReadFrameData(unsigned char* data, File* stream, int count, int* paddingPtr);
 static int artReadHeader(Art* art, File* stream);
@@ -525,7 +526,7 @@ int artCopyFileName(int objectType, int id, char* dest)
 {
     ArtListDescription* ptr;
 
-    if (objectType < OBJ_TYPE_ITEM && objectType >= OBJ_TYPE_COUNT) {
+    if (objectType < OBJ_TYPE_ITEM || objectType >= OBJ_TYPE_COUNT) {
         return -1;
     }
 
@@ -619,7 +620,7 @@ char* artBuildFilePath(int fid)
 
     v2 = fid;
 
-    v10 = (fid & 0x70000000) >> 28;
+    v10 = FID_ROTATION(fid);
 
     v1 = artAliasFid(fid);
     if (v1 != -1) {
@@ -633,11 +634,11 @@ char* artBuildFilePath(int fid)
     v5 = (v2 & 0xF000) >> 12;
     type = FID_TYPE(v2);
 
-    if (v3 >= gArtListDescriptions[type].fileNamesLength) {
+    if (type < OBJ_TYPE_ITEM || type >= OBJ_TYPE_COUNT) {
         return nullptr;
     }
 
-    if (type < OBJ_TYPE_ITEM || type >= OBJ_TYPE_COUNT) {
+    if (v3 >= gArtListDescriptions[type].fileNamesLength) {
         return nullptr;
     }
 
@@ -702,7 +703,12 @@ static int artReadList(const char* path, char** artListPtr, int* artListSizePtr)
         artList[12] = '\0';
 
         artList += 13;
+
+        count--;
     }
+
+    // Sanity check. There was a bug with uncompressed database file seek
+    assert(count == 0);
 
     fileClose(stream);
 
@@ -1006,45 +1012,35 @@ static void artCacheFreeImpl(void* ptr)
     internal_free(ptr);
 }
 
-// 0x419C88
-int buildFid(int objectType, int frmId, int animType, int a3, int rotation)
+/* FID Structure:
+    3 bits for rotation
+    4 bits for object type
+    8 bits for animation type
+    4 bits for weapon code
+    12 bits for frame ID
+*/
+static int buildFidInternal(unsigned short frmId, unsigned char weaponCode, unsigned char animType, unsigned char objectType, unsigned char rotation)
 {
-    int v7, v8, v9, v10;
+    return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponCode << 12) & 0xF000) | (frmId & 0xFFF);
+}
 
-    v10 = rotation;
-
-    if (objectType != OBJ_TYPE_CRITTER) {
-        goto zero;
+// 0x419C88
+int buildFid(int objectType, int frmId, int animType, int weaponCode, int rotation)
+{
+    // Always use rotation 0 (NE) for non-critters, for certain critter animations.
+    // For other critter animations, check if art for the given rotation exists, if not try rotation 1 (E) and if that also doesn't exist, then default to 0 (NE).
+    if (objectType != OBJ_TYPE_CRITTER
+        || animType == ANIM_FIRE_DANCE
+        || animType < ANIM_FALL_BACK
+        || animType > ANIM_FALL_FRONT_BLOOD) {
+        rotation = ROTATION_NE;
+    } else if (!artExists(buildFidInternal(frmId, weaponCode, animType, OBJ_TYPE_CRITTER, rotation))) {
+        rotation = rotation != ROTATION_E
+                && artExists(buildFidInternal(frmId, weaponCode, animType, OBJ_TYPE_CRITTER, ROTATION_E))
+            ? ROTATION_E
+            : ROTATION_NE;
     }
-
-    if (animType == ANIM_FIRE_DANCE || animType < ANIM_FALL_BACK || animType > ANIM_FALL_FRONT_BLOOD) {
-        goto zero;
-    }
-
-    v7 = ((a3 << 12) & 0xF000) | ((animType << 16) & 0xFF0000) | 0x1000000;
-    v8 = ((rotation << 28) & 0x70000000) | v7;
-    v9 = frmId & 0xFFF;
-
-    if (artExists(v9 | v8) != 0) {
-        goto out;
-    }
-
-    if (objectType == rotation) {
-        goto zero;
-    }
-
-    v10 = objectType;
-    if (artExists(v9 | v7 | 0x10000000) != 0) {
-        goto out;
-    }
-
-zero:
-
-    v10 = 0;
-
-out:
-
-    return ((v10 << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((a3 << 12) & 0xF000) | (frmId & 0xFFF);
+    return buildFidInternal(frmId, weaponCode, animType, objectType, rotation);
 }
 
 // 0x419D60

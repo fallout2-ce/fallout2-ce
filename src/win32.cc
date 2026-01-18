@@ -12,38 +12,34 @@
 #include "svga.h"
 #include "window_manager.h"
 
+#include "scan_unimplemented.h"
+
 #if __APPLE__ && TARGET_OS_IOS
 #include "platform/ios/paths.h"
 #endif
 
 namespace fallout {
 
-#ifdef _WIN32
 // 0x51E444
 bool gProgramIsActive = false;
 
-// GNW95MUTEX
-HANDLE _GNW95_mutex = nullptr;
+#ifdef _WIN32
+HANDLE GNW95_mutex = nullptr;
+#endif
 
-// 0x4DE700
 int main(int argc, char* argv[])
 {
-    _GNW95_mutex = CreateMutexA(0, TRUE, "GNW95MUTEX");
-    if (GetLastError() == ERROR_SUCCESS) {
-        SDL_ShowCursor(SDL_DISABLE);
+    scanUnimplementdParseCommandLineArguments(argc, argv);
 
-        gProgramIsActive = true;
-        falloutMain(argc, argv);
+    int rc;
 
-        CloseHandle(_GNW95_mutex);
+#if _WIN32
+    GNW95_mutex = CreateMutexA(0, TRUE, "GNW95MUTEX");
+    if (GetLastError() != ERROR_SUCCESS) {
+        return 0;
     }
-    return 0;
-}
-#else
-bool gProgramIsActive = false;
+#endif
 
-int main(int argc, char* argv[])
-{
 #if __APPLE__ && TARGET_OS_IOS
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
@@ -62,11 +58,23 @@ int main(int argc, char* argv[])
     chdir(SDL_AndroidGetExternalStoragePath());
 #endif
 
+    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+        return EXIT_FAILURE;
+    }
+
+    atexit(SDL_Quit);
+
     SDL_ShowCursor(SDL_DISABLE);
+
     gProgramIsActive = true;
-    return falloutMain(argc, argv);
-}
+    rc = falloutMain(argc, argv);
+
+#if _WIN32
+    CloseHandle(GNW95_mutex);
 #endif
+
+    return rc;
+}
 
 } // namespace fallout
 

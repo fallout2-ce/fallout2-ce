@@ -1,6 +1,7 @@
 #include "input.h"
 
 #include <SDL.h>
+#include <lodepng.h>
 
 #include "audio_engine.h"
 #include "color.h"
@@ -13,7 +14,6 @@
 #include "svga.h"
 #include "text_font.h"
 #include "touch.h"
-#include "vcr.h"
 #include "win32.h"
 
 namespace fallout {
@@ -40,19 +40,9 @@ typedef struct TickerListNode {
 } TickerListNode;
 
 static int dequeueInputEvent();
-static void pauseGame();
-static int pauseHandlerDefaultImpl();
 static void screenshotBlitter(unsigned char* src, int src_pitch, int a3, int x, int y, int width, int height, int dest_x, int dest_y);
 static void buildNormalizedQwertyKeys();
 static void _GNW95_process_key(KeyboardData* data);
-
-static void idleImpl();
-
-// 0x51E234
-static IdleFunc* _idle_func = nullptr;
-
-// 0x51E238
-static FocusFunc* _focus_func = nullptr;
 
 // 0x51E23C
 static int gKeyboardKeyRepeatRate = 80;
@@ -82,17 +72,11 @@ static int _input_mx;
 // 0x6AC754
 static int _input_my;
 
-// 0x6AC75C
-static bool gPaused;
-
 // 0x6AC760
 static int gScreenshotKeyCode;
 
 // 0x6AC764
 static int _using_msec_timer;
-
-// 0x6AC768
-static int gPauseKeyCode;
 
 // 0x6AC76C
 static ScreenshotHandler* gScreenshotHandler;
@@ -102,9 +86,6 @@ static int gInputEventQueueReadIndex;
 
 // 0x6AC774
 static unsigned char* gScreenshotBuffer;
-
-// 0x6AC778
-static PauseHandler* gPauseHandler;
 
 // 0x6AC77C
 static int gInputEventQueueWriteIndex;
@@ -146,16 +127,9 @@ int inputInit(int a1)
     _input_mx = -1;
     _input_my = -1;
     gRunLoopDisabled = 0;
-    gPaused = false;
-    gPauseKeyCode = KEY_ALT_P;
-    gPauseHandler = pauseHandlerDefaultImpl;
     gScreenshotHandler = screenshotHandlerDefaultImpl;
     gTickerListHead = nullptr;
     gScreenshotKeyCode = KEY_ALT_C;
-
-    // SFALL: Set idle function.
-    // CE: Prevents frying CPU when window is not focused.
-    inputSetIdleFunc(idleImpl);
 
     return 0;
 }
@@ -214,9 +188,7 @@ void _process_bk()
 
     tickersExecute();
 
-    if (vcrUpdate() != 3) {
-        _mouse_info();
-    }
+    _mouse_info();
 
     v1 = _win_check_all_buttons();
     if (v1 != -1) {
@@ -235,11 +207,6 @@ void _process_bk()
 void enqueueInputEvent(int a1)
 {
     if (a1 == -1) {
-        return;
-    }
-
-    if (a1 == gPauseKeyCode) {
-        pauseGame();
         return;
     }
 
@@ -300,15 +267,13 @@ void inputEventQueueReset()
 {
     gInputEventQueueReadIndex = -1;
     gInputEventQueueWriteIndex = 0;
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) { } // Clear all input events
 }
 
 // 0x4C8D1C
 void tickersExecute()
 {
-    if (gPaused) {
-        return;
-    }
-
     if (gRunLoopDisabled) {
         return;
     }
@@ -378,74 +343,6 @@ void tickersDisable()
     gRunLoopDisabled = true;
 }
 
-// 0x4C8DFC
-static void pauseGame()
-{
-    if (!gPaused) {
-        gPaused = true;
-
-        int win = gPauseHandler();
-
-        while (inputGetInput() != KEY_ESCAPE) {
-        }
-
-        gPaused = false;
-        windowDestroy(win);
-    }
-}
-
-// 0x4C8E38
-static int pauseHandlerDefaultImpl()
-{
-    int windowWidth = fontGetStringWidth("Paused") + 32;
-    int windowHeight = 3 * fontGetLineHeight() + 16;
-
-    int win = windowCreate((rectGetWidth(&_scr_size) - windowWidth) / 2,
-        (rectGetHeight(&_scr_size) - windowHeight) / 2,
-        windowWidth,
-        windowHeight,
-        256,
-        WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-    if (win == -1) {
-        return -1;
-    }
-
-    windowDrawBorder(win);
-
-    unsigned char* windowBuffer = windowGetBuffer(win);
-    fontDrawText(windowBuffer + 8 * windowWidth + 16,
-        "Paused",
-        windowWidth,
-        windowWidth,
-        _colorTable[31744]);
-
-    _win_register_text_button(win,
-        (windowWidth - fontGetStringWidth("Done") - 16) / 2,
-        windowHeight - 8 - fontGetLineHeight() - 6,
-        -1,
-        -1,
-        -1,
-        KEY_ESCAPE,
-        "Done",
-        0);
-
-    windowRefresh(win);
-
-    return win;
-}
-
-// 0x4C8F34
-void pauseHandlerConfigure(int keyCode, PauseHandler* handler)
-{
-    gPauseKeyCode = keyCode;
-
-    if (handler == nullptr) {
-        handler = pauseHandlerDefaultImpl;
-    }
-
-    gPauseHandler = handler;
-}
-
 // 0x4C8F4C
 void takeScreenshot()
 {
@@ -456,20 +353,20 @@ void takeScreenshot()
         return;
     }
 
-    WINDOWDRAWINGPROC v0 = _scr_blit;
+    WINDOWDRAWINGPROC old_src = _scr_blit;
     _scr_blit = screenshotBlitter;
 
-    WINDOWDRAWINGPROC v2 = _mouse_blit;
+    WINDOWDRAWINGPROC old_mouse = _mouse_blit;
     _mouse_blit = screenshotBlitter;
 
-    WindowDrawingProc2* v1 = _mouse_blit_trans;
+    WindowDrawingProc2* old_mouse_trans = _mouse_blit_trans;
     _mouse_blit_trans = nullptr;
 
     windowRefreshAll(&_scr_size);
 
-    _mouse_blit_trans = v1;
-    _mouse_blit = v2;
-    _scr_blit = v0;
+    _mouse_blit_trans = old_mouse_trans;
+    _mouse_blit = old_mouse;
+    _scr_blit = old_src;
 
     unsigned char* palette = _getSystemPalette();
     gScreenshotHandler(width, height, gScreenshotBuffer, palette);
@@ -477,7 +374,7 @@ void takeScreenshot()
 }
 
 // 0x4C8FF0
-static void screenshotBlitter(unsigned char* src, int srcPitch, int a3, int srcX, int srcY, int width, int height, int destX, int destY)
+static void screenshotBlitter(unsigned char* src, int srcPitch, int _, int srcX, int srcY, int width, int height, int destX, int destY)
 {
     int destWidth = _scr_size.right - _scr_size.left + 1;
     blitBufferToBuffer(src + srcPitch * srcY + srcX, width, height, srcPitch, gScreenshotBuffer + destWidth * destY + destX, destWidth);
@@ -602,6 +499,50 @@ int screenshotHandlerDefaultImpl(int width, int height, unsigned char* data, uns
     return 0;
 }
 
+int screenshotHandlerPngImpl(int width, int height, unsigned char* data, unsigned char* palette)
+{
+    char fileName[16];
+    FILE* stream;
+    int fileIndex;
+
+    for (fileIndex = 0; fileIndex < 100000; fileIndex++) {
+        snprintf(fileName, sizeof(fileName), "scr%.5d.png", fileIndex);
+
+        stream = compat_fopen(fileName, "rb");
+        if (stream == nullptr) {
+            break;
+        }
+
+        fclose(stream);
+    }
+
+    if (fileIndex == 100000) {
+        return -1;
+    }
+
+    stream = compat_fopen(fileName, "wb");
+    if (stream == nullptr) {
+        return -1;
+    }
+    fclose(stream);
+
+    int imgLen = width * height;
+    std::vector<unsigned char> image(imgLen * 3);
+
+    for (size_t i = 0; i < imgLen; i++) {
+        image[i * 3] = palette[data[i] * 3] << 2;
+        image[i * 3 + 1] = palette[data[i] * 3 + 1] << 2;
+        image[i * 3 + 2] = palette[data[i] * 3 + 2] << 2;
+    }
+
+    unsigned error = lodepng::encode(fileName, image, width, height, LCT_RGB, 8);
+    if (error) {
+        return -1;
+    }
+
+    return 0;
+}
+
 // 0x4C9358
 void screenshotHandlerConfigure(int keyCode, ScreenshotHandler* handler)
 {
@@ -668,70 +609,6 @@ unsigned int getTicksBetween(unsigned int end, unsigned int start)
 unsigned int _get_bk_time()
 {
     return gTickerLastTimestamp;
-}
-
-// NOTE: Unused.
-//
-// 0x4C9418
-void inputSetKeyboardKeyRepeatRate(int value)
-{
-    gKeyboardKeyRepeatRate = value;
-}
-
-// NOTE: Unused.
-//
-// 0x4C9420
-int inputGetKeyboardKeyRepeatRate()
-{
-    return gKeyboardKeyRepeatRate;
-}
-
-// NOTE: Unused.
-//
-// 0x4C9428
-void inputSetKeyboardKeyRepeatDelay(int value)
-{
-    gKeyboardKeyRepeatDelay = value;
-}
-
-// NOTE: Unused.
-//
-// 0x4C9430
-int inputGetKeyboardKeyRepeatDelay()
-{
-    return gKeyboardKeyRepeatDelay;
-}
-
-// NOTE: Unused.
-//
-// 0x4C9438
-void inputSetFocusFunc(FocusFunc* func)
-{
-    _focus_func = func;
-}
-
-// NOTE: Unused.
-//
-// 0x4C9440
-FocusFunc* inputGetFocusFunc()
-{
-    return _focus_func;
-}
-
-// NOTE: Unused.
-//
-// 0x4C9448
-void inputSetIdleFunc(IdleFunc* func)
-{
-    _idle_func = func;
-}
-
-// NOTE: Unused.
-//
-// 0x4C9450
-IdleFunc* inputGetIdleFunc()
-{
-    return _idle_func;
 }
 
 // 0x4C9490
@@ -1171,52 +1048,30 @@ static void _GNW95_process_key(KeyboardData* data)
 
     data->key = gNormalizedQwertyKeys[data->key];
 
-    if (gVcrState == VCR_STATE_PLAYING) {
-        if ((gVcrTerminateFlags & VCR_TERMINATE_ON_KEY_PRESS) != 0) {
-            gVcrPlaybackCompletionReason = VCR_PLAYBACK_COMPLETION_REASON_TERMINATED;
-            vcrStop();
-        }
+    RepeatInfo* ptr = &(_GNW95_key_time_stamps[scanCode]);
+    if (data->down == 1) {
+        ptr->tick = getTicks();
+        ptr->repeatCount = 0;
     } else {
-        RepeatInfo* ptr = &(_GNW95_key_time_stamps[scanCode]);
-        if (data->down == 1) {
-            ptr->tick = getTicks();
-            ptr->repeatCount = 0;
-        } else {
-            ptr->tick = -1;
-        }
-
-        // Ignore keys which were remapped to -1.
-        if (data->key == -1) {
-            return;
-        }
-
-        _kb_simulate_key(data);
+        ptr->tick = -1;
     }
+
+    // Ignore keys which were remapped to -1.
+    if (data->key == -1) {
+        return;
+    }
+
+    _kb_simulate_key(data);
 }
 
 // 0x4C9EEC
 void _GNW95_lost_focus()
 {
-    if (_focus_func != nullptr) {
-        _focus_func(false);
-    }
-
     while (!gProgramIsActive) {
         _GNW95_process_message();
 
-        if (_idle_func != nullptr) {
-            _idle_func();
-        }
+        SDL_Delay(125);
     }
-
-    if (_focus_func != nullptr) {
-        _focus_func(true);
-    }
-}
-
-static void idleImpl()
-{
-    SDL_Delay(125);
 }
 
 void beginTextInput()
