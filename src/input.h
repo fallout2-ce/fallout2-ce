@@ -7,6 +7,9 @@ typedef void(TickerProc)();
 
 typedef int(ScreenshotHandler)(int width, int height, unsigned char* buffer, unsigned char* palette);
 
+// global for blocking mouse event in inventoryOpenUseItemOn inventory screen
+extern bool gBlockMouseUpEvent;
+
 int inputInit(int a1);
 void inputExit();
 int inputGetInput();
