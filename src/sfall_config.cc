@@ -7,8 +7,6 @@
 
 namespace fallout {
 
-#define SFALL_CONFIG_FILE_NAME "ddraw.ini"
-
 bool gSfallConfigInitialized = false;
 Config gSfallConfig;
 
@@ -88,7 +86,7 @@ bool sfallConfigInit(int argc, char** argv)
         strcpy(path, SFALL_CONFIG_FILE_NAME);
     }
 
-    auto configChecker = ConfigChecker(gSfallConfig, "ddraw.ini");
+    auto configChecker = ConfigChecker(gSfallConfig, SFALL_CONFIG_FILE_NAME);
 
     configRead(&gSfallConfig, path, false);
 

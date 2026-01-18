@@ -120,6 +120,8 @@ int _game_user_wants_to_quit = 0;
 // 0x58E940
 MessageList gMiscMessageList;
 
+int gSplashScreenScaling = 0;
+
 // CE: Sonora folks like to store objects in global variables.
 static void** gGameGlobalPointers = nullptr;
 
@@ -1492,17 +1494,7 @@ static void showSplash()
         }
     }
 
-    int size = 0;
-
-    // TODO: Move to settings.
-    Config config;
-    if (configInit(&config)) {
-        if (configRead(&config, "f2_res.ini", false)) {
-            configGetInt(&config, "STATIC_SCREENS", "SPLASH_SCRN_SIZE", &size);
-        }
-
-        configFree(&config);
-    }
+    int size = gSplashScreenScaling;
 
     int screenWidth = screenGetWidth();
     int screenHeight = screenGetHeight();
