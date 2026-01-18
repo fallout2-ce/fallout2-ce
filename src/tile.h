@@ -18,6 +18,7 @@ extern int gHexGridSize;
 extern int gCenterTile;
 
 extern bool gTileBorderInitialized;
+extern bool gTileIgnoreMapEdges;
 extern int gTileBorderMinX;
 extern int gTileBorderMinY;
 extern int gTileBorderMaxX;
