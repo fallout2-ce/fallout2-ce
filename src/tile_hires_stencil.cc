@@ -7,6 +7,7 @@
 #include "tile.h"
 #include <string.h>
 #include <vector>
+#include "window_manager.h"
 
 // #define DO_DEBUG_CHECKS 1
 
@@ -214,6 +215,12 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         return;
     };
 
+    if (gTileIgnoreMapEdges) {
+        showMesageBox("Tile hires stencil is disabled because map edges are ignored.");
+        gIsTileHiresStencilEnabled = false;
+        return;
+    }
+
     if (visited_tiles[gElevation][gCenterTile]) {
         debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change tile was visited gElevation=%i gCenterTile=%i so doing nothing\n",
             gElevation, gCenterTile);
@@ -252,17 +259,15 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
             if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
                 continue;
             }
-            if (!gTileIgnoreMapEdges) {
-                if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
-                    continue;
-                }
+            if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
+                continue;
+            }
 
-                // TODO: Maybe create new function in tile.cc and use it here
-                int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
-                int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
-                if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
-                    continue;
-                }
+            // TODO: Maybe create new function in tile.cc and use it here
+            int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
+            int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
+            if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
+                continue;
             }
         }
 
