@@ -5,9 +5,9 @@
 #include "sfall_config.h"
 #include "stdio.h"
 #include "tile.h"
+#include "window_manager.h"
 #include <string.h>
 #include <vector>
-#include "window_manager.h"
 
 // #define DO_DEBUG_CHECKS 1
 
