@@ -668,7 +668,7 @@ static void opDoCheck(Program* program)
     programStackPushInteger(program, roll);
 }
 
-// success
+// is_success
 // 0x4549A8
 static void opSuccess(Program* program)
 {
@@ -690,7 +690,7 @@ static void opSuccess(Program* program)
     programStackPushInteger(program, result);
 }
 
-// critical
+// is_critical
 // 0x454A44
 static void opCritical(Program* program)
 {
@@ -3079,6 +3079,7 @@ static void opSetObjectLightLevel(Program* program)
     tileWindowRefreshRect(&rect, object->elevation);
 }
 
+// world_map
 // 0x459170
 static void opWorldmap(Program* program)
 {

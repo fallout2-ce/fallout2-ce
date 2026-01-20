@@ -252,16 +252,17 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
             if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
                 continue;
             }
-            if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
-                continue;
-            }
+            if (!gTileIgnoreMapEdges) {
+                if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
+                    continue;
+                }
 
-            // TODO: Maybe create new function in tile.cc and use it here
-            int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
-            int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
-            if (
-                tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
-                continue;
+                // TODO: Maybe create new function in tile.cc and use it here
+                int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
+                int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
+                if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
+                    continue;
+                }
             }
         }
 
