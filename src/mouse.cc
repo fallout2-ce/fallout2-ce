@@ -388,10 +388,19 @@ void _mouse_info()
 
         switch (gesture.type) {
         case kTap:
-            if (gesture.numberOfTouches == 1) {
-                _mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
-            } else if (gesture.numberOfTouches == 2) {
-                _mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+            if (screenIsFullscreen()) {
+                if (gesture.numberOfTouches == 1) {
+                    _mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
+                } else if (gesture.numberOfTouches == 2) {
+                    _mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+                }
+            }
+            else {
+                if (gesture.numberOfTouches == 1) {
+                    _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_LEFT_BUTTON_DOWN);
+                } else if (gesture.numberOfTouches == 2) {
+                    _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+                }
             }
             break;
         case kLongPress:
@@ -399,6 +408,10 @@ void _mouse_info()
             if (gesture.state == kBegan) {
                 prevx = gesture.x;
                 prevy = gesture.y;
+            }
+            if (!screenIsFullscreen()) {
+                prevx = 0;
+                prevy = 0;
             }
 
             if (gesture.type == kLongPress) {
@@ -548,9 +561,14 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
         mouseRect.top = gMouseCursorY;
         mouseRect.right = gMouseCursorWidth + gMouseCursorX - 1;
         mouseRect.bottom = gMouseCursorHeight + gMouseCursorY - 1;
-
-        gMouseCursorX += delta_x;
-        gMouseCursorY += delta_y;
+        if (screenIsFullscreen()) {
+            gMouseCursorX += delta_x;
+            gMouseCursorY += delta_y;
+        }
+        else {
+            gMouseCursorX = delta_x;
+            gMouseCursorY = delta_y;
+        }
         _mouse_clip();
 
         windowRefreshAll(&mouseRect);
@@ -654,8 +672,14 @@ void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons)
     }
 
     _raw_buttons = 0;
-    _raw_x += mouseData.x;
-    _raw_y += mouseData.y;
+    if (screenIsFullscreen()) {
+        _raw_x += mouseData.x;
+        _raw_y += mouseData.y;
+    }
+    else {
+        _raw_x = mouseData.x;
+        _raw_y = mouseData.y;
+    }
 
     if (mouseData.buttons[0] != 0) {
         _raw_buttons |= MOUSE_EVENT_LEFT_BUTTON_DOWN;
