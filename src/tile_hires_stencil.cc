@@ -215,12 +215,6 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         return;
     };
 
-    if (gTileIgnoreMapEdges) {
-        showMesageBox("Tile hires stencil is disabled because map edges are ignored.");
-        gIsTileHiresStencilEnabled = false;
-        return;
-    }
-
     if (visited_tiles[gElevation][gCenterTile]) {
         debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change tile was visited gElevation=%i gCenterTile=%i so doing nothing\n",
             gElevation, gCenterTile);
@@ -413,6 +407,12 @@ void tile_hires_stencil_init()
 {
     configGetBool(&gSfallConfig, SFALL_CONFIG_MAIN_KEY, SFALL_CONFIG_ENABLE_HIRES_STENCIL, &gIsTileHiresStencilEnabled);
     if (!gIsTileHiresStencilEnabled) {
+        return;
+    }
+
+    if (gTileIgnoreMapEdges) {
+        showMesageBox("Tile hires stencil is disabled because map edges are ignored.");
+        gIsTileHiresStencilEnabled = false;
         return;
     }
 
