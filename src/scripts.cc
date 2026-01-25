@@ -1338,6 +1338,12 @@ int scriptExecProc(int sid, int proc)
 
     _executeProcedure(program, v9);
 
+    // Check if script still exists after procedure execution.
+    // The script may have been destroyed during execution (e.g., via destroy_object).
+    if (scriptGetScript(sid, &script) == -1) {
+        return 0;
+    }
+
     script->source = nullptr;
 
     return 0;
