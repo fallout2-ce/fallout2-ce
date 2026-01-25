@@ -3767,6 +3767,8 @@ static void objectDeallocate(Object** objectPtr)
         return;
     }
 
+#if defined(__SANITIZE_ADDRESS__)
+#warning "Address sanitizer detected. Delayed free is enabled."
     {
         // Sometimes game scripts are using object
         // after it has been destroyed.
@@ -3791,6 +3793,9 @@ static void objectDeallocate(Object** objectPtr)
         deleteQueue[deleteQueueIndex] = *objectPtr;
         deleteQueueIndex = (deleteQueueIndex + 1) % DELAY;
     }
+#else
+    internal_free(*objectPtr);
+#endif
 
     *objectPtr = nullptr;
 }

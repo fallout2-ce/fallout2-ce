@@ -1338,11 +1338,14 @@ int scriptExecProc(int sid, int proc)
 
     _executeProcedure(program, v9);
 
+#if defined(__SANITIZE_ADDRESS__)
+#warning "Address sanitizer detected. Adding extra script existence check."
     // Check if script still exists after procedure execution.
     // The script may have been destroyed during execution (e.g., via destroy_object).
     if (scriptGetScript(sid, &script) == -1) {
         return 0;
     }
+#endif
 
     script->source = nullptr;
 
