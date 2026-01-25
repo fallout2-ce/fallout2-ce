@@ -7,10 +7,12 @@
 
 #include "config.h"
 #include "draw.h"
+#include "game.h"
 #include "interface.h"
 #include "memory.h"
 #include "mouse.h"
 #include "scan_unimplemented.h"
+#include "tile.h"
 #include "win32.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
@@ -140,6 +142,10 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
             configGetInt(&resolutionConfig, "IFACE", "IFACE_BAR_SIDE_ART", &gInterfaceSidePanelsImageId);
             configGetBool(&resolutionConfig, "IFACE", "IFACE_BAR_SIDES_ORI", &gInterfaceSidePanelsExtendFromScreenEdge);
 
+            configGetBool(&resolutionConfig, "MAPS", "IGNORE_MAP_EDGES", &gTileIgnoreMapEdges);
+
+            configGetInt(&resolutionConfig, "STATIC_SCREENS", "SPLASH_SCRN_SIZE", &gSplashScreenScaling);
+
             {
                 ConfigMap f2_res_defaults;
                 f2_res_defaults["MAIN"]["SCR_WIDTH"] = "640";
@@ -151,6 +157,7 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
                 f2_res_defaults["IFACE"]["IFACE_BAR_SIDE_ART"] = "0";
                 f2_res_defaults["IFACE"]["IFACE_BAR_SIDES_ORI"] = "0";
                 f2_res_defaults["STATIC_SCREENS"]["SPLASH_SCRN_SIZE"] = "0";
+                f2_res_defaults["MAPS"]["IGNORE_MAP_EDGES"] = "0";
 
                 auto configChecker = ConfigChecker(f2_res_defaults, "f2_res.ini");
                 configChecker.check(resolutionConfig);

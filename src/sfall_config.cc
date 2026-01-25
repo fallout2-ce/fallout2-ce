@@ -7,8 +7,6 @@
 
 namespace fallout {
 
-#define SFALL_CONFIG_FILE_NAME "ddraw.ini"
-
 bool gSfallConfigInitialized = false;
 Config gSfallConfig;
 
@@ -61,6 +59,7 @@ bool sfallConfigInit(int argc, char** argv)
     configSetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_VERSION_STRING, "");
     configSetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CONFIG_FILE, "");
     configSetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PATCH_FILE, "");
+    configSetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CITIES_LIMIT_FIX, true);
 
     configSetString(&gSfallConfig, SFALL_CONFIG_SCRIPTS_KEY, SFALL_CONFIG_INI_CONFIG_FOLDER, "");
     configSetString(&gSfallConfig, SFALL_CONFIG_SCRIPTS_KEY, SFALL_CONFIG_GLOBAL_SCRIPT_PATHS, "");
@@ -87,7 +86,7 @@ bool sfallConfigInit(int argc, char** argv)
         strcpy(path, SFALL_CONFIG_FILE_NAME);
     }
 
-    auto configChecker = ConfigChecker(gSfallConfig, "ddraw.ini");
+    auto configChecker = ConfigChecker(gSfallConfig, SFALL_CONFIG_FILE_NAME);
 
     configRead(&gSfallConfig, path, false);
 

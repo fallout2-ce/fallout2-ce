@@ -1424,6 +1424,10 @@ void ammoSetQuantity(Object* ammoOrWeapon, int quantity)
         quantity = capacity;
     }
 
+    if (quantity < 0) {
+        quantity = 0;
+    }
+
     Proto* proto;
     protoGetProto(ammoOrWeapon->pid, &proto);
 
