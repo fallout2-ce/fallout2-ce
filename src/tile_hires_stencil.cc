@@ -411,7 +411,11 @@ void tile_hires_stencil_init()
     }
 
     if (gTileIgnoreMapEdges) {
-        showMesageBox("Tile hires stencil is disabled because map edges are ignored.");
+        static bool isMessageShown = false;
+        if (!isMessageShown) {
+            showMesageBox("Tile hires stencil is disabled because map edges are ignored.");
+            isMessageShown = true;
+        }
         gIsTileHiresStencilEnabled = false;
         return;
     }
