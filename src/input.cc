@@ -99,6 +99,9 @@ static TickerListNode* gTickerListHead;
 // 0x6AC788
 static unsigned int gTickerLastTimestamp;
 
+// global for inventoryOpenUseItemOn inventory to prevent click through bug
+bool gBlockMouseUpEvent = false;
+
 // 0x4C8A70
 int inputInit(int a1)
 {

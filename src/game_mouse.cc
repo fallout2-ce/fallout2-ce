@@ -917,6 +917,12 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         return;
     }
 
+    // Check if we should block mouse button up events for inventoryOpenUseItemOn inventory window
+    if (gBlockMouseUpEvent && (mouseState & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
+        gBlockMouseUpEvent = false;
+        return;
+    }
+
     if ((mouseState & MOUSE_EVENT_RIGHT_BUTTON_DOWN) != 0) {
         if ((mouseState & MOUSE_EVENT_RIGHT_BUTTON_REPEAT) == 0 && (gGameMouseHexCursor->flags & OBJECT_HIDDEN) == 0) {
             gameMouseCycleMode();
