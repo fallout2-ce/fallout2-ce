@@ -40,7 +40,13 @@ jobs:
           git config --global --add safe.directory "*"
           mkdir -p build
           cd build
-          emcmake cmake ../ -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain/Emscripten.cmake -DCMAKE_BUILD_TYPE=Release && emmake make VERBOSE=1 -j 4
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            export BUILD_TYPE=Debug
+          else
+            export BUILD_TYPE=Release
+          fi
+          emcmake cmake ../ -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain/Emscripten.cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+          emmake make VERBOSE=1 -j 4
           cd ..
 
       - name: Add node
