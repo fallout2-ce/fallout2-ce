@@ -387,6 +387,12 @@ int screenGetVisibleHeight()
     return screenGetHeight() - windowBottomMargin;
 }
 
+bool screenIsFullscreen()
+{
+    Uint32 flags = SDL_GetWindowFlags(gSdlWindow);
+    return (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) != 0;
+}
+
 static bool createRenderer(int width, int height)
 {
     gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
