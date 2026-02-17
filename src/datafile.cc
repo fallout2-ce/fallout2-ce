@@ -42,7 +42,7 @@ void datafileSetLoader(DatafileLoader* loader)
 }
 
 // 0x42EE84
-void sub_42EE84(unsigned char* data, unsigned char* palette, int width, int height)
+void datafileRemapPixelsRgb8(unsigned char* data, unsigned char* palette, int width, int height)
 {
     unsigned char indexedPalette[256];
 
@@ -65,7 +65,7 @@ void sub_42EE84(unsigned char* data, unsigned char* palette, int width, int heig
 // NOTE: Unused.
 //
 // 0x42EEF8
-void sub_42EEF8(unsigned char* data, unsigned char* palette, int width, int height)
+void datafileRemapPixelsRgb6(unsigned char* data, unsigned char* palette, int width, int height)
 {
     unsigned char indexedPalette[256];
 
@@ -106,23 +106,23 @@ unsigned char* datafileReadRaw(char* path, int* widthPtr, int* heightPtr)
 // 0x42EFCC
 unsigned char* datafileRead(char* path, int* widthPtr, int* heightPtr)
 {
-    unsigned char* v1 = datafileReadRaw(path, widthPtr, heightPtr);
-    if (v1 != nullptr) {
-        sub_42EE84(v1, gDatafilePalette, *widthPtr, *heightPtr);
+    unsigned char* imageData = datafileReadRaw(path, widthPtr, heightPtr);
+    if (imageData != nullptr) {
+        datafileRemapPixelsRgb8(imageData, gDatafilePalette, *widthPtr, *heightPtr);
     }
-    return v1;
+    return imageData;
 }
 
 // NOTE: Unused
 //
 // 0x42EFF4
-unsigned char* sub_42EFF4(char* path)
+unsigned char* datafileLoadPalette(char* path)
 {
     int width;
     int height;
-    unsigned char* v3 = datafileReadRaw(path, &width, &height);
-    if (v3 != nullptr) {
-        internal_free_safe(v3, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 148
+    unsigned char* imageData = datafileReadRaw(path, &width, &height);
+    if (imageData != nullptr) {
+        internal_free_safe(imageData, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 148
         return gDatafilePalette;
     }
 
@@ -132,36 +132,36 @@ unsigned char* sub_42EFF4(char* path)
 // NOTE: Unused.
 //
 // 0x42F024
-void sub_42F024(unsigned char* data, int* widthPtr, int* heightPtr)
+void datafilePackUntilZero(unsigned char* data, int* widthPtr, int* heightPtr)
 {
     int width = *widthPtr;
     int height = *heightPtr;
-    unsigned char* temp = (unsigned char*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 157
+    unsigned char* compactDataWritePtr = (unsigned char*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 157
 
     // NOTE: Original code does not initialize `x`.
     int y = 0;
     int x = 0;
-    unsigned char* src1 = data;
+    unsigned char* rowStart = data;
 
     for (y = 0; y < height; y++) {
-        if (*src1 == 0) {
+        if (*rowStart == 0) {
             break;
         }
 
-        unsigned char* src2 = src1;
+        unsigned char* currentPixel = rowStart;
         for (x = 0; x < width; x++) {
-            if (*src2 == 0) {
+            if (*currentPixel == 0) {
                 break;
             }
 
-            *temp++ = *src2++;
+            *compactDataWritePtr++ = *currentPixel++;
         }
 
-        src1 += width;
+        rowStart += width;
     }
 
-    memcpy(data, temp, x * y);
-    internal_free_safe(temp, __FILE__, __LINE__); // // "..\\int\\DATAFILE.C", 171
+    memcpy(data, compactDataWritePtr, x * y);
+    internal_free_safe(compactDataWritePtr, __FILE__, __LINE__); // // "..\\int\\DATAFILE.C", 171
 }
 
 // 0x42F0E4
