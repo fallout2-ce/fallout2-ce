@@ -28,7 +28,7 @@
             "inherits": [
                 "windows-base"
             ],
-            "generator": "Visual Studio 16 2019",
+            "generator": "Visual Studio 17 2022",
             "architecture": "Win32",
             "cacheVariables": {
                 "CMAKE_GENERATOR_TOOLSET": "v141_xp",
@@ -42,7 +42,7 @@
             "inherits": [
                 "windows-base"
             ],
-            "generator": "Visual Studio 16 2019",
+            "generator": "Visual Studio 17 2022",
             "architecture": "x64",
             "cacheVariables": {
                 "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>"
