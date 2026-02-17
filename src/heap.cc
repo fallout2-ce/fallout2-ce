@@ -75,9 +75,9 @@ static void heapInternalsFree();
 static bool heapHandleListInit(Heap* heap);
 static bool heapPrintStats(Heap* heap, char* dest, size_t size);
 static bool heapFindFreeHandle(Heap* heap, int* handleIndexPtr);
-static bool heapFindFreeBlock(Heap* heap, int size, void** blockPtr, int a4);
-static int heapBlockCompareBySize(const void* a1, const void* a2);
-static int heapMoveableExtentsCompareBySize(const void* a1, const void* a2);
+static bool heapFindFreeBlock(Heap* heap, int size, void** blockPtr, int disallowSystemAllocation);
+static int heapBlockCompareBySize(const void* leftPtr, const void* rightPtr);
+static int heapMoveableExtentsCompareBySize(const void* leftPtr, const void* rightPtr);
 static bool heapBuildMoveableExtentsList(Heap* heap, int* moveableExtentsLengthPtr, int* maxBlocksLengthPtr);
 static bool heapBuildFreeBlocksList(Heap* heap);
 static bool heapBuildMoveableBlocksList(int extentIndex);
@@ -201,7 +201,7 @@ static void heapInternalsFree()
 }
 
 // 0x452974
-bool heapInit(Heap* heap, int a2)
+bool heapInit(Heap* heap, int initialSize)
 {
     if (heap == nullptr) {
         return false;
@@ -216,7 +216,7 @@ bool heapInit(Heap* heap, int a2)
     memset(heap, 0, sizeof(*heap));
 
     if (heapHandleListInit(heap)) {
-        int size = (a2 >> 10) + a2;
+        int size = (initialSize >> 10) + initialSize;
         heap->data = (unsigned char*)internal_malloc(size);
         if (heap->data != nullptr) {
             heap->size = size;
@@ -300,7 +300,7 @@ static bool heapHandleListInit(Heap* heap)
 }
 
 // 0x452AD0
-bool heapBlockAllocate(Heap* heap, int* handleIndexPtr, int size, int a4)
+bool heapBlockAllocate(Heap* heap, int* handleIndexPtr, int size, int disallowSystemAllocation)
 {
     HeapBlockHeader* blockHeader;
     int state;
@@ -313,12 +313,12 @@ bool heapBlockAllocate(Heap* heap, int* handleIndexPtr, int size, int a4)
         goto err;
     }
 
-    if (a4 != 0 && a4 != 1) {
-        a4 = 0;
+    if (disallowSystemAllocation != 0 && disallowSystemAllocation != 1) {
+        disallowSystemAllocation = 0;
     }
 
     void* block;
-    if (!heapFindFreeBlock(heap, size, &block, a4)) {
+    if (!heapFindFreeBlock(heap, size, &block, disallowSystemAllocation)) {
         goto err;
     }
 
@@ -671,7 +671,7 @@ static bool heapFindFreeHandle(Heap* heap, int* handleIndexPtr)
 
 // heap_find_free_block
 // 0x453588
-static bool heapFindFreeBlock(Heap* heap, int size, void** blockPtr, int a4)
+static bool heapFindFreeBlock(Heap* heap, int size, void** blockPtr, int disallowSystemAllocation)
 {
     unsigned char* biggestFreeBlock;
     HeapBlockHeader* biggestFreeBlockHeader;
@@ -918,7 +918,7 @@ system:
             debugPrint("\n%s\n", stats);
         }
 
-        if (a4 == 0) {
+        if (!disallowSystemAllocation) {
             debugPrint("Allocating block from system memory...\n");
             unsigned char* block = (unsigned char*)internal_malloc(size + HEAP_BLOCK_OVERHEAD_SIZE);
             if (block == nullptr) {
@@ -974,11 +974,11 @@ static bool heapBuildMoveableBlocksList(int extentIndex)
 }
 
 // 0x453E74
-static int heapMoveableExtentsCompareBySize(const void* a1, const void* a2)
+static int heapMoveableExtentsCompareBySize(const void* leftPtr, const void* rightPtr)
 {
-    HeapMoveableExtent* v1 = (HeapMoveableExtent*)a1;
-    HeapMoveableExtent* v2 = (HeapMoveableExtent*)a2;
-    return v1->size - v2->size;
+    HeapMoveableExtent* left = (HeapMoveableExtent*)leftPtr;
+    HeapMoveableExtent* right = (HeapMoveableExtent*)rightPtr;
+    return left->size - right->size;
 }
 
 // 0x453BC4
@@ -1043,10 +1043,10 @@ static bool heapBuildFreeBlocksList(Heap* heap)
 }
 
 // 0x453CC4
-static int heapBlockCompareBySize(const void* a1, const void* a2)
+static int heapBlockCompareBySize(const void* leftPtr, const void* rightPtr)
 {
-    HeapBlockHeader* header1 = *(HeapBlockHeader**)a1;
-    HeapBlockHeader* header2 = *(HeapBlockHeader**)a2;
+    HeapBlockHeader* header1 = *(HeapBlockHeader**)leftPtr;
+    HeapBlockHeader* header2 = *(HeapBlockHeader**)rightPtr;
     return header1->size - header2->size;
 }
 

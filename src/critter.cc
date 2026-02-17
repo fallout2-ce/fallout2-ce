@@ -1309,9 +1309,9 @@ int _critter_set_who_hit_me(Object* critter, Object* hitMe)
 // 0x42E564
 bool _critter_can_obj_dude_rest()
 {
-    bool v1 = false;
+    bool mapDisallowsRest = false;
     if (!wmMapCanRestHere(gElevation)) {
-        v1 = true;
+        mapDisallowsRest = true;
     }
 
     bool result = true;
@@ -1331,7 +1331,7 @@ bool _critter_can_obj_dude_rest()
         }
 
         if (critter->data.critter.combat.whoHitMe != gDude) {
-            if (!v1 || critter->data.critter.combat.team == gDude->data.critter.combat.team) {
+            if (!mapDisallowsRest || critter->data.critter.combat.team == gDude->data.critter.combat.team) {
                 continue;
             }
         }
