@@ -45,6 +45,7 @@ int screenGetHeight();
 int screenGetVisibleHeight();
 void handleWindowSizeChanged();
 void renderPresent();
+bool screenIsFullscreen();
 
 } // namespace fallout
 
