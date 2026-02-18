@@ -148,7 +148,7 @@ long audioSeek(int handle, long offset, int origin)
 {
     int pos;
     unsigned char* buf;
-    int v10;
+    int remainingBytesToSkip;
 
     Audio* audioFile = &(gAudioList[handle - 1]);
 
@@ -189,14 +189,14 @@ long audioSeek(int handle, long offset, int origin)
             }
         } else {
             buf = (unsigned char*)internal_malloc_safe(1024, __FILE__, __LINE__); // "..\int\audio.c", 321
-            v10 = audioFile->position - pos;
-            while (v10 > 1024) {
-                v10 -= 1024;
+            remainingBytesToSkip = audioFile->position - pos;
+            while (remainingBytesToSkip > 1024) {
+                remainingBytesToSkip -= 1024;
                 audioRead(handle, buf, 1024);
             }
 
-            if (v10 != 0) {
-                audioRead(handle, buf, v10);
+            if (remainingBytesToSkip != 0) {
+                audioRead(handle, buf, remainingBytesToSkip);
             }
 
             // TODO: Probably leaks memory.
