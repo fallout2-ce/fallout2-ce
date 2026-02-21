@@ -257,7 +257,7 @@ void mf_intface_redraw(Program* program, int args)
 void mf_loot_obj(Program* program, int args)
 {
     if (GameMode::isInGameMode(GameMode::kInventory)) {
-        programStackPushPointer(program, inven_get_current_target_obj());
+        programStackPushPointer(program, inventoryGetTargetObject());
     } else {
         programStackPushPointer(program, nullptr);
     }

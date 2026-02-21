@@ -694,7 +694,7 @@ void gameMouseRefresh()
                                     primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_TALK;
                                 }
                             } else {
-                                if (_critter_flag_check(pointedObject->pid, CRITTER_NO_STEAL)) {
+                                if (critterFlagCkeck(pointedObject->pid, CRITTER_NO_STEAL)) {
                                     primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
                                 } else {
                                     primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
@@ -727,7 +727,7 @@ void gameMouseRefresh()
 
                     if (pointedObject != gGameMousePointedObject) {
                         gGameMousePointedObject = pointedObject;
-                        _obj_look_at(gDude, gGameMousePointedObject);
+                        objectLookAt(gDude, gGameMousePointedObject);
                     }
                 }
             } else if (gGameMouseMode == GAME_MOUSE_MODE_CROSSHAIR) {
@@ -743,8 +743,8 @@ void gameMouseRefresh()
                     bool pointedObjectIsCritter = FID_TYPE(pointedObject->fid) == OBJ_TYPE_CRITTER;
 
                     if (settings.preferences.combat_looks) {
-                        if (_obj_examine(gDude, pointedObject) == -1) {
-                            _obj_look_at(gDude, pointedObject);
+                        if (objectExamine(gDude, pointedObject) == -1) {
+                            objectLookAt(gDude, pointedObject);
                         }
                     }
 
@@ -973,8 +973,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     } else {
                         if (_obj_action_can_talk_to(targetObj)) {
                             if (isInCombat()) {
-                                if (_obj_examine(gDude, targetObj) == -1) {
-                                    _obj_look_at(gDude, targetObj);
+                                if (objectExamine(gDude, targetObj) == -1) {
+                                    objectLookAt(gDude, targetObj);
                                 }
                             } else {
                                 actionTalk(gDude, targetObj);
@@ -988,14 +988,14 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     if (_obj_action_can_use(targetObj)) {
                         _action_use_an_object(gDude, targetObj);
                     } else {
-                        if (_obj_examine(gDude, targetObj) == -1) {
-                            _obj_look_at(gDude, targetObj);
+                        if (objectExamine(gDude, targetObj) == -1) {
+                            objectLookAt(gDude, targetObj);
                         }
                     }
                     break;
                 case OBJ_TYPE_WALL:
-                    if (_obj_examine(gDude, targetObj) == -1) {
-                        _obj_look_at(gDude, targetObj);
+                    if (objectExamine(gDude, targetObj) == -1) {
+                        objectLookAt(gDude, targetObj);
                     }
                     break;
                 }
@@ -1094,7 +1094,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                             actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_TALK;
                         }
                     } else {
-                        if (!_critter_flag_check(targetObj->pid, CRITTER_NO_STEAL)) {
+                        if (!critterFlagCkeck(targetObj->pid, CRITTER_NO_STEAL)) {
                             actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                         }
                     }
@@ -1186,8 +1186,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         inventoryOpenUseItemOn(targetObj);
                         break;
                     case GAME_MOUSE_ACTION_MENU_ITEM_LOOK:
-                        if (_obj_examine(gDude, targetObj) == -1) {
-                            _obj_look_at(gDude, targetObj);
+                        if (objectExamine(gDude, targetObj) == -1) {
+                            objectLookAt(gDude, targetObj);
                         }
                         break;
                     case GAME_MOUSE_ACTION_MENU_ITEM_ROTATE:

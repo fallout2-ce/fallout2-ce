@@ -5,25 +5,25 @@
 
 namespace fallout {
 
-int _obj_sid(Object* object, int* sidPtr);
-int _obj_new_sid(Object* object, int* sidPtr);
-int _obj_new_sid_inst(Object* obj, int a2, int a3);
-int _obj_look_at(Object* a1, Object* a2);
-int _obj_look_at_func(Object* a1, Object* a2, void (*a3)(char* string));
-int _obj_examine(Object* a1, Object* a2);
-int _obj_examine_func(Object* critter, Object* target, void (*fn)(char* string));
-int _obj_pickup(Object* critter, Object* item);
-int _obj_drop(Object* a1, Object* a2);
-int _obj_destroy(Object* obj);
-int _protinst_use_item(Object* a1, Object* a2);
-int _obj_use_item(Object* a1, Object* a2);
-int _protinst_use_item_on(Object* critter, Object* targetObj, Object* item);
-int _obj_use_item_on(Object* user, Object* targetObj, Object* item);
-int _check_scenery_ap_cost(Object* obj, Object* a2);
-int _obj_use(Object* user, Object* targetObj);
-int _obj_use_door(Object* user, Object* doorObj, bool animateOnly = false);
-int _obj_use_container(Object* critter, Object* item);
-int _obj_use_skill_on(Object* a1, Object* a2, int skill);
+int objectGetSid(Object* object, int* sidPtr);
+int objectSetScriptFromProto(Object* object, int* sidPtr);
+int objectSetScript(Object* obj, int a2, int a3);
+int objectLookAt(Object* critter, Object* target);
+int objectLookAtFunc(Object* critter, Object* target, void (*fn)(char* string));
+int objectExamine(Object* critter, Object* target);
+int objectExamineFunc(Object* critter, Object* target, void (*fn)(char* string));
+int objectPickup(Object* critter, Object* item);
+int objectDrop(Object* invenObj, Object* itemObj);
+int objectDestroy(Object* obj);
+int objectUseItemInternal(Object* a1, Object* a2);
+int objectUseItem(Object* userObj, Object* item);
+int objectUseItemOnInternal(Object* critter, Object* targetObj, Object* item);
+int objectUseItemOn(Object* user, Object* targetObj, Object* item);
+int checkSceneryUseActionPointCost(Object* obj, Object* a2);
+int objectUse(Object* user, Object* targetObj);
+int objectUseDoor(Object* user, Object* doorObj, bool animateOnly = false);
+int objectUseContainer(Object* critter, Object* item);
+int objectUseSkillOn(Object* a1, Object* a2, int skill);
 bool objectIsLocked(Object* obj);
 int objectLock(Object* obj);
 int objectUnlock(Object* obj);
@@ -33,8 +33,8 @@ int objectClose(Object* obj);
 int objectJamLock(Object* obj);
 int objectUnjamLock(Object* obj);
 int objectUnjamAll();
-int _obj_attempt_placement(Object* obj, int tile, int elevation, int radius);
-int _objPMAttemptPlacement(Object* obj, int tile, int elevation);
+int objectAttemptPlacement(Object* obj, int tile, int elevation, int radius);
+int objectAttemptPlacementPartyMember(Object* obj, int tile, int elevation);
 
 } // namespace fallout
 

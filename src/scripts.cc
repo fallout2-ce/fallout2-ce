@@ -422,9 +422,9 @@ int gameTimeEventProcess(Object* obj, void* data)
         _scriptsCheckGameEvents(&movie_index, -1);
     }
 
-    stopProcess = _critter_check_rads(gDude);
+    stopProcess = critterCheckRadiationEvent(gDude);
 
-    _queue_clear_type(4, nullptr);
+    queueClearByEventType(4, nullptr);
 
     gameTimeScheduleUpdateEvent();
 
@@ -509,7 +509,7 @@ int mapUpdateEventProcess(Object* obj, void* data)
 {
     scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_UPDATE);
 
-    _queue_clear_type(EVENT_TYPE_MAP_UPDATE_EVENT, nullptr);
+    queueClearByEventType(EVENT_TYPE_MAP_UPDATE_EVENT, nullptr);
 
     if (gMapHeader.name[0] == '\0') {
         return 0;
@@ -938,7 +938,7 @@ int scriptsHandleRequests()
                 if (elevation == gElevation) {
                     reg_anim_clear(gDude);
                     objectSetRotation(gDude, ROTATION_SE, nullptr);
-                    _obj_attempt_placement(gDude, tile, elevation, 0);
+                    objectAttemptPlacement(gDude, tile, elevation, 0);
                 } else {
                     Object* elevatorDoors = objectFindFirstAtElevation(gDude->elevation);
                     while (elevatorDoors != nullptr) {
@@ -953,7 +953,7 @@ int scriptsHandleRequests()
 
                     reg_anim_clear(gDude);
                     objectSetRotation(gDude, ROTATION_SE, nullptr);
-                    _obj_attempt_placement(gDude, tile, elevation, 0);
+                    objectAttemptPlacement(gDude, tile, elevation, 0);
 
                     if (elevatorDoors != nullptr) {
                         objectSetFrame(elevatorDoors, 0, nullptr);
@@ -1046,7 +1046,7 @@ int _scripts_check_state_in_combat()
                 if (elevation == gElevation) {
                     reg_anim_clear(gDude);
                     objectSetRotation(gDude, ROTATION_SE, nullptr);
-                    _obj_attempt_placement(gDude, tile, elevation, 0);
+                    objectAttemptPlacement(gDude, tile, elevation, 0);
                 } else {
                     Object* elevatorDoors = objectFindFirstAtElevation(gDude->elevation);
                     while (elevatorDoors != nullptr) {
@@ -1061,7 +1061,7 @@ int _scripts_check_state_in_combat()
 
                     reg_anim_clear(gDude);
                     objectSetRotation(gDude, ROTATION_SE, nullptr);
-                    _obj_attempt_placement(gDude, tile, elevation, 0);
+                    objectAttemptPlacement(gDude, tile, elevation, 0);
 
                     if (elevatorDoors != nullptr) {
                         objectSetFrame(elevatorDoors, 0, nullptr);
@@ -1477,7 +1477,7 @@ int scriptsSetDudeScript()
 
     proto->critter.sid = 0x4000000;
 
-    _obj_new_sid(gDude, &(gDude->sid));
+    objectSetScriptFromProto(gDude, &(gDude->sid));
 
     Script* script;
     if (scriptGetScript(gDude->sid, &script) == -1) {
@@ -2370,7 +2370,7 @@ int scriptRemove(int sid)
 // 0x4A63E0
 int _scr_remove_all()
 {
-    _queue_clear_type(EVENT_TYPE_SCRIPT, nullptr);
+    queueClearByEventType(EVENT_TYPE_SCRIPT, nullptr);
     _scr_message_free();
 
     for (int scriptType = 0; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
@@ -2414,7 +2414,7 @@ int _scr_remove_all()
 // 0x4A64A8
 int _scr_remove_all_force()
 {
-    _queue_clear_type(EVENT_TYPE_SCRIPT, nullptr);
+    queueClearByEventType(EVENT_TYPE_SCRIPT, nullptr);
     _scr_message_free();
 
     for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
@@ -2805,7 +2805,7 @@ int scriptGetLocalVar(int sid, int variable, ProgramValue& value)
 
     if (script->localVarsCount > 0) {
         if (script->localVarsOffset == -1) {
-            script->localVarsOffset = _map_malloc_local_var(script->localVarsCount);
+            script->localVarsOffset = mapAllocLocalVars(script->localVarsCount);
         }
 
         if (mapGetLocalVar(script->localVarsOffset + variable, value) == -1) {
@@ -2836,7 +2836,7 @@ int scriptSetLocalVar(int sid, int variable, ProgramValue& value)
     }
 
     if (script->localVarsOffset == -1) {
-        script->localVarsOffset = _map_malloc_local_var(script->localVarsCount);
+        script->localVarsOffset = mapAllocLocalVars(script->localVarsCount);
     }
 
     mapSetLocalVar(script->localVarsOffset + variable, value);

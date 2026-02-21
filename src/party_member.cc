@@ -702,7 +702,7 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
     script->flags |= (SCRIPT_FLAG_0x08 | SCRIPT_FLAG_0x10);
 
     if (a1->vars != nullptr) {
-        script->localVarsOffset = _map_malloc_local_var(script->localVarsCount);
+        script->localVarsOffset = mapAllocLocalVars(script->localVarsCount);
         memcpy(gMapLocalVars + script->localVarsOffset, a1->vars, sizeof(int) * script->localVarsCount);
     }
 
@@ -812,7 +812,7 @@ int _partyMemberSyncPosition()
             }
 
             int tile = tileGetTileInDirection(gDude->tile, rotation, distance / 2);
-            _objPMAttemptPlacement(partyMemberObj, tile, gDude->elevation);
+            objectAttemptPlacementPartyMember(partyMemberObj, tile, gDude->elevation);
 
             distance++;
             n++;
@@ -1097,7 +1097,7 @@ static int _partyMemberItemRecover(PartyMemberListItem* a1)
     a1->script = nullptr;
 
     if (a1->vars != nullptr) {
-        script->localVarsOffset = _map_malloc_local_var(script->localVarsCount);
+        script->localVarsOffset = mapAllocLocalVars(script->localVarsCount);
         memcpy(gMapLocalVars + script->localVarsOffset, a1->vars, sizeof(int) * script->localVarsCount);
     }
 
@@ -1581,10 +1581,10 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
     }
 
     Object* item2 = critterGetItem2(critter);
-    _invenUnwieldFunc(critter, 1, 0);
+    inventoryUnequipFunc(critter, 1, 0);
 
     Object* armor = critterGetArmor(critter);
-    _adjust_ac(critter, armor, nullptr);
+    adjustCritterStatsOnArmorChange(critter, armor, nullptr);
     itemRemove(critter, armor, 1);
 
     int maxHp = critterGetStat(critter, STAT_MAXIMUM_HIT_POINTS);
@@ -1606,13 +1606,13 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
 
     if (armor != nullptr) {
         itemAdd(critter, armor, 1);
-        _inven_wield(critter, armor, 0);
+        inventoryEquip(critter, armor, 0);
     }
 
     if (item2 != nullptr) {
         // SFALL: Fix for party member's equipped weapon being placed in the
         // incorrect item slot after leveling up.
-        _invenWieldFunc(critter, item2, HAND_RIGHT, false);
+        inventoryEquipFunc(critter, item2, HAND_RIGHT, false);
     }
 
     return 0;

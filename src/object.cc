@@ -973,7 +973,7 @@ int objectCreateWithFidPid(Object** objectPtr, int fid, int pid)
         objectListNode->obj->flags |= OBJECT_NO_HIGHLIGHT;
     }
 
-    _obj_new_sid(objectListNode->obj, &(objectListNode->obj->sid));
+    objectSetScriptFromProto(objectListNode->obj, &(objectListNode->obj->sid));
 
     return 0;
 }
@@ -1026,7 +1026,7 @@ int _obj_copy(Object** a1, Object* a2)
 
     if (objectListNode->obj->sid != -1) {
         objectListNode->obj->sid = -1;
-        _obj_new_sid(objectListNode->obj, &(objectListNode->obj->sid));
+        objectSetScriptFromProto(objectListNode->obj, &(objectListNode->obj->sid));
     }
 
     if (objectSetRotation(objectListNode->obj, a2->rotation, nullptr) == -1) {
@@ -3715,7 +3715,7 @@ int _obj_load_dude(File* stream)
         debugPrint("\nError: obj_load_dude: Can't destroy temp object!\n");
     }
 
-    _inven_reset_dude();
+    inventoryResetDude();
 
     int tile;
     if (fileReadInt32(stream, &tile) == -1) {
