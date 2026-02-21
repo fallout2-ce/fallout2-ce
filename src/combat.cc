@@ -4094,7 +4094,7 @@ void _compute_explosion_on_extras(Attack* attack, bool isFromAttacker, bool isGr
 static int attackComputeCriticalHit(Attack* attack)
 {
     Object* defender = attack->defender;
-    if (defender != nullptr && critterFlagCkeck(defender->pid, CRITTER_INVULNERABLE)) {
+    if (defender != nullptr && critterFlagCheck(defender->pid, CRITTER_INVULNERABLE)) {
         return 2;
     }
 
@@ -4168,7 +4168,7 @@ static int _attackFindInvalidFlags(Object* critter, Object* item)
 {
     int flags = 0;
 
-    if (critter != nullptr && PID_TYPE(critter->pid) == OBJ_TYPE_CRITTER && critterFlagCkeck(critter->pid, CRITTER_NO_DROP)) {
+    if (critter != nullptr && PID_TYPE(critter->pid) == OBJ_TYPE_CRITTER && critterFlagCheck(critter->pid, CRITTER_NO_DROP)) {
         flags |= DAM_DROP;
     }
 
@@ -4184,7 +4184,7 @@ static int attackComputeCriticalFailure(Attack* attack)
 {
     attack->attackerFlags &= ~DAM_HIT;
 
-    if (attack->attacker != nullptr && critterFlagCkeck(attack->attacker->pid, CRITTER_INVULNERABLE)) {
+    if (attack->attacker != nullptr && critterFlagCheck(attack->attacker->pid, CRITTER_INVULNERABLE)) {
         return 0;
     }
 
@@ -4639,7 +4639,7 @@ static void attackComputeDamage(Attack* attack, int ammoQuantity, int bonusDamag
         && (critter->flags & OBJECT_MULTIHEX) == 0
         && (damageType == DAMAGE_TYPE_EXPLOSION || attack->weapon == nullptr || weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode) == ATTACK_TYPE_MELEE)
         && PID_TYPE(critter->pid) == OBJ_TYPE_CRITTER
-        && !critterFlagCkeck(critter->pid, CRITTER_NO_KNOCKBACK)) {
+        && !critterFlagCheck(critter->pid, CRITTER_NO_KNOCKBACK)) {
         bool shouldKnockback = true;
         bool hasStonewall = false;
         if (critter == gDude) {
@@ -4770,7 +4770,7 @@ void _apply_damage(Attack* attack, bool animated)
 // 0x424EE8
 static void _check_for_death(Object* object, int damage, int* flags)
 {
-    if (object == nullptr || !critterFlagCkeck(object->pid, CRITTER_INVULNERABLE)) {
+    if (object == nullptr || !critterFlagCheck(object->pid, CRITTER_INVULNERABLE)) {
         if (object == nullptr || PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
             if (damage > 0) {
                 if (critterGetHitPoints(object) - damage <= 0) {
@@ -4792,7 +4792,7 @@ static void _set_new_results(Object* critter, int flags)
         return;
     }
 
-    if (critterFlagCkeck(critter->pid, CRITTER_INVULNERABLE)) {
+    if (critterFlagCheck(critter->pid, CRITTER_INVULNERABLE)) {
         return;
     }
 
@@ -4833,7 +4833,7 @@ static void _damage_object(Object* a1, int damage, bool animated, int a4, Object
         return;
     }
 
-    if (critterFlagCkeck(a1->pid, CRITTER_INVULNERABLE)) {
+    if (critterFlagCheck(a1->pid, CRITTER_INVULNERABLE)) {
         return;
     }
 

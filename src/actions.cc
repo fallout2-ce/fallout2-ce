@@ -103,7 +103,7 @@ static int hideProjectile(void* _, void* projectile);
 // 0x410468
 int actionKnockdown(Object* obj, int* anim, int maxDistance, int rotation, int delay)
 {
-    if (critterFlagCkeck(obj->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
         return -1;
     }
 
@@ -208,7 +208,7 @@ int _pick_death(Object* attacker, Object* defender, Object* weapon, int damage, 
 
     int violenceLevel = settings.preferences.violence_level;
 
-    if (critterFlagCkeck(defender->pid, CRITTER_SPECIAL_DEATH)) {
+    if (critterFlagCheck(defender->pid, CRITTER_SPECIAL_DEATH)) {
         return _check_death(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_NORMAL, hitFromFront);
     }
 
@@ -297,7 +297,7 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
     int fid;
     const char* sfx_name;
 
-    if (critterFlagCkeck(defender->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(defender->pid, CRITTER_NO_KNOCKBACK)) {
         knockbackDistance = 0;
     }
 
@@ -488,7 +488,7 @@ int _show_death(Object* obj, int anim)
         }
     }
 
-    if (!critterFlagCkeck(obj->pid, CRITTER_FLAT)) {
+    if (!critterFlagCheck(obj->pid, CRITTER_FLAT)) {
         obj->flags |= OBJECT_NO_BLOCK;
         if (_obj_toggle_flat(obj, &tempRect) == 0) {
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
@@ -499,7 +499,7 @@ int _show_death(Object* obj, int anim)
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
     }
 
-    if (anim >= 30 && anim <= 31 && !critterFlagCkeck(obj->pid, CRITTER_SPECIAL_DEATH) && !critterFlagCkeck(obj->pid, CRITTER_NO_DROP)) {
+    if (anim >= 30 && anim <= 31 && !critterFlagCheck(obj->pid, CRITTER_SPECIAL_DEATH) && !critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
         itemDropAll(obj, obj->tile);
     }
 
@@ -1263,7 +1263,7 @@ int _action_loot_container(Object* critter, Object* container)
     }
 
     // SFALL: Fix for trying to loot corpses with the "NoSteal" flag.
-    if (critterFlagCkeck(container->pid, CRITTER_NO_STEAL)) {
+    if (critterFlagCheck(container->pid, CRITTER_NO_STEAL)) {
         return -1;
     }
 
@@ -1972,7 +1972,7 @@ int _report_dmg(Attack* attack, Object* _)
 // 0x413660
 int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, int damageType)
 {
-    if (!critterFlagCkeck(obj->pid, CRITTER_NO_KNOCKBACK)) {
+    if (!critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
         knockbackDistancePtr = nullptr;
     }
 

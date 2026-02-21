@@ -4080,7 +4080,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     ScopedGameMode gm(GameMode::kLoot);
 
     if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER) {
-        if (critterFlagCkeck(target->pid, CRITTER_NO_STEAL)) {
+        if (critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
             // You can't find anything to take from that.
             messageListItem.num = 50;
             if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {

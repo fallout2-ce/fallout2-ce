@@ -880,7 +880,7 @@ void critterKill(Object* critter, int anim, bool refreshRect)
         rectUnion(&updatedRect, &tempRect, &updatedRect);
     }
 
-    if (!critterFlagCkeck(critter->pid, CRITTER_FLAT)) {
+    if (!critterFlagCheck(critter->pid, CRITTER_FLAT)) {
         critter->flags |= OBJECT_NO_BLOCK;
         _obj_toggle_flat(critter, &tempRect);
     }
@@ -1384,7 +1384,7 @@ bool critterIsFleeing(Object* critter)
 // Checks proto critter flag.
 //
 // 0x42E6AC
-bool critterFlagCkeck(int pid, int flag)
+bool critterFlagCheck(int pid, int flag)
 {
     if (pid == -1) {
         return false;

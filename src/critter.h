@@ -69,7 +69,7 @@ bool critterCanDudeRest();
 int critterGetMovementPointCostAdjustedForCrippledLegs(Object* critter, int distance);
 bool critterIsEncumbered(Object* critter);
 bool critterIsFleeing(Object* critter);
-bool critterFlagCkeck(int pid, int flag);
+bool critterFlagCheck(int pid, int flag);
 void critterFlagSet(int pid, int flag);
 void critterFlagUnset(int pid, int flag);
 
