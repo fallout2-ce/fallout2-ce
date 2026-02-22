@@ -394,8 +394,7 @@ void _mouse_info()
                 } else if (gesture.numberOfTouches == 2) {
                     _mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
                 }
-            }
-            else {
+            } else {
                 if (gesture.numberOfTouches == 1) {
                     _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_LEFT_BUTTON_DOWN);
                 } else if (gesture.numberOfTouches == 2) {
@@ -564,8 +563,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
         if (screenIsFullscreen()) {
             gMouseCursorX += delta_x;
             gMouseCursorY += delta_y;
-        }
-        else {
+        } else {
             gMouseCursorX = delta_x;
             gMouseCursorY = delta_y;
         }
@@ -675,8 +673,7 @@ void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons)
     if (screenIsFullscreen()) {
         _raw_x += mouseData.x;
         _raw_y += mouseData.y;
-    }
-    else {
+    } else {
         _raw_x = mouseData.x;
         _raw_y = mouseData.y;
     }

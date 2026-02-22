@@ -93,11 +93,11 @@ typedef enum Metarule3 {
     METARULE3_ART_SET_BASE_FID_NUM = 107,
     METARULE3_TILE_SET_CENTER = 108,
     // chem use preference
-    METARULE3_109 = 109,
+    METARULE3_CHEM_USE_LEVEL = 109,
     // probably true if car is out of fuel
-    METARULE3_110 = 110,
+    METARULE3_CAR_OUT_OF_FUEL = 110,
     // probably returns city index
-    METARULE3_111 = 111,
+    METARULE3_MAP_GET_LOAD_AREA = 111,
 } Metarule3;
 
 typedef enum CritterTrait {
@@ -448,7 +448,7 @@ static int _correctFidForRemovedItem(Object* critter, Object* item, int flags)
             newFid = buildFid(FID_TYPE(fid), _art_vault_guy_num, FID_ANIM_TYPE(fid), weaponCode, FID_ROTATION(fid));
         }
 
-        _adjust_ac(critter, item, nullptr);
+        adjustCritterStatsOnArmorChange(critter, item, nullptr);
     }
 
     if (newFid != -1) {
@@ -1617,7 +1617,7 @@ static void opDrop(Program* program)
         return;
     }
 
-    _obj_drop(script->target, object);
+    objectDrop(script->target, object);
 }
 
 // add_obj_to_inven
@@ -1726,7 +1726,7 @@ static void opWieldItem(Program* program)
         }
     }
 
-    if (_inven_wield(critter, item, hand) == -1) {
+    if (inventoryEquip(critter, item, hand) == -1) {
         scriptPredefinedError(program, "wield_obj_critter", SCRIPT_ERROR_FOLLOWS);
         debugPrint(" inven_wield failed!  ERROR ERROR ERROR!");
         return;
@@ -1734,7 +1734,7 @@ static void opWieldItem(Program* program)
 
     if (critter == gDude) {
         if (shouldAdjustArmorClass) {
-            _adjust_ac(critter, oldArmor, newArmor);
+            adjustCritterStatsOnArmorChange(critter, oldArmor, newArmor);
 
             // SFALL
             interfaceRenderArmorClass(false);
@@ -1774,7 +1774,7 @@ static void opUseObject(Program* program)
     if (PID_TYPE(self->pid) == OBJ_TYPE_CRITTER) {
         _action_use_an_object(script->target, object);
     } else {
-        _obj_use(self, object);
+        objectUse(self, object);
     }
 }
 
@@ -1980,7 +1980,7 @@ static void opMetarule3(Program* program)
     case METARULE3_CLR_FIXED_TIMED_EVENTS:
         if (1) {
             _scrSetQueueTestVals(static_cast<Object*>(param1.pointerValue), param2.integerValue);
-            _queue_clear_type(EVENT_TYPE_SCRIPT, _scrQueueRemoveFixed);
+            queueClearByEventType(EVENT_TYPE_SCRIPT, _scrQueueRemoveFixed);
         }
         break;
     case METARULE3_MARK_SUBTILE:
@@ -2045,14 +2045,14 @@ static void opMetarule3(Program* program)
     case METARULE3_TILE_SET_CENTER:
         result.integerValue = tileSetCenter(param1.integerValue, TILE_SET_CENTER_REFRESH_WINDOW);
         break;
-    case METARULE3_109:
+    case METARULE3_CHEM_USE_LEVEL:
         result.integerValue = aiGetChemUse(static_cast<Object*>(param1.pointerValue));
         break;
-    case METARULE3_110:
+    case METARULE3_CAR_OUT_OF_FUEL:
         result.integerValue = wmCarIsOutOfGas() ? 1 : 0;
         break;
-    case METARULE3_111:
-        result.integerValue = _map_target_load_area();
+    case METARULE3_MAP_GET_LOAD_AREA:
+        result.integerValue = mapGetLoadedAreaId();
         break;
     }
 
@@ -2826,7 +2826,7 @@ static void opCritterAttemptPlacement(Program* program)
 
     objectSetLocation(critter, 0, elevation, nullptr);
 
-    int rc = _obj_attempt_placement(critter, tile, elevation, 1);
+    int rc = objectAttemptPlacement(critter, tile, elevation, 1);
     programStackPushInteger(program, rc);
 }
 
@@ -3099,7 +3099,7 @@ static void _op_inven_cmds(Program* program)
     if (obj != nullptr) {
         switch (cmd) {
         case 13:
-            item = _inven_index_ptr(obj, index);
+            item = inventoryItemByIndex(obj, index);
             break;
         }
     } else {
@@ -3265,7 +3265,7 @@ static void opMetarule(Program* program)
                 }
             }
 
-            result = _invenUnwieldFunc(object, hand, 0);
+            result = inventoryUnequipFunc(object, hand, 0);
 
             if (object == gDude) {
                 bool animated = !gameUiIsDisabled();
@@ -4060,7 +4060,7 @@ static void _op_inven_unwield(Program* program)
         v1 = 0;
     }
 
-    _inven_unwield(obj, v1);
+    inventoryUnequip(obj, v1);
 }
 
 // obj_is_locked
@@ -4565,7 +4565,7 @@ static void opUseObjectOnObject(Program* program)
     if (PID_TYPE(self->pid) == OBJ_TYPE_CRITTER) {
         _action_use_an_item_on_object(self, target, item);
     } else {
-        _obj_use_item_on(self, target, item);
+        objectUseItemOn(self, target, item);
     }
 }
 
@@ -4620,7 +4620,7 @@ static void opMoveObjectInventoryToObject(Program* program)
 
     if (object1 == gDude) {
         if (oldArmor != nullptr) {
-            _adjust_ac(gDude, oldArmor, nullptr);
+            adjustCritterStatsOnArmorChange(gDude, oldArmor, nullptr);
         }
 
         _proto_dude_update_gender();

@@ -3719,11 +3719,11 @@ void partyMemberControlWindowHandleEvents()
             }
 
             if (keyCode == KEY_LOWERCASE_W) {
-                _inven_unwield(gGameDialogSpeaker, 1);
+                inventoryUnequip(gGameDialogSpeaker, 1);
 
                 Object* weapon = _ai_search_inven_weap(gGameDialogSpeaker, 0, nullptr);
                 if (weapon != nullptr) {
-                    _inven_wield(gGameDialogSpeaker, weapon, HAND_RIGHT);
+                    inventoryEquip(gGameDialogSpeaker, weapon, HAND_RIGHT);
                     aiAttemptWeaponReload(gGameDialogSpeaker, 0);
 
                     int num = _gdPickAIUpdateMsg(gGameDialogSpeaker);
@@ -3752,7 +3752,7 @@ void partyMemberControlWindowHandleEvents()
                 if (gGameDialogSpeaker->pid != 0x10000A1) {
                     Object* armor = _ai_search_inven_armor(gGameDialogSpeaker);
                     if (armor != nullptr) {
-                        _inven_wield(gGameDialogSpeaker, armor, 0);
+                        inventoryEquip(gGameDialogSpeaker, armor, 0);
                     }
                 }
 

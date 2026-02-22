@@ -1303,7 +1303,7 @@ void _intface_use_item()
         if (isInCombat()) {
             int actionPointsRequired = itemGetActionPointCost(gDude, ptr->secondaryHitMode, false);
             if (actionPointsRequired <= gDude->data.critter.combat.ap) {
-                _obj_use_item(gDude, ptr->item);
+                objectUseItem(gDude, ptr->item);
                 interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
                 if (actionPointsRequired > gDude->data.critter.combat.ap) {
                     gDude->data.critter.combat.ap = 0;
@@ -1314,7 +1314,7 @@ void _intface_use_item()
                 interfaceRenderActionPoints(gDude->data.critter.combat.ap, _combat_free_move);
             }
         } else {
-            _obj_use_item(gDude, ptr->item);
+            objectUseItem(gDude, ptr->item);
             interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
         }
     }

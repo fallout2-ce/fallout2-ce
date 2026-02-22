@@ -36,8 +36,8 @@ typedef struct EventTypeDescription {
 
 static int flareEventProcess(Object* obj, void* data);
 static int explosionEventProcess(Object* obj, void* data);
-static int _queue_explode_exit(Object* obj, void* data);
-static int _queue_do_explosion_(Object* obj, bool animate);
+static int explosionExit(Object* obj, void* data);
+static int explosionProcess(Object* obj, bool animate);
 static int explosionFailureEventProcess(Object* obj, void* data);
 
 // Last queue list node found during [queueFindFirstEvent] and
@@ -51,18 +51,18 @@ static QueueListNode* gQueueListHead;
 
 // 0x51C540
 static EventTypeDescription gEventTypeDescriptions[EVENT_TYPE_COUNT] = {
-    { drugEffectEventProcess, internal_free, drugEffectEventRead, drugEffectEventWrite, true, _item_d_clear },
-    { knockoutEventProcess, nullptr, nullptr, nullptr, true, _critter_wake_clear },
-    { withdrawalEventProcess, internal_free, withdrawalEventRead, withdrawalEventWrite, true, _item_wd_clear },
+    { drugEffectEventProcess, internal_free, drugEffectEventRead, drugEffectEventWrite, true, drugItemClear },
+    { knockoutEventProcess, nullptr, nullptr, nullptr, true, knockoutClear },
+    { withdrawalEventProcess, internal_free, withdrawalEventRead, withdrawalEventWrite, true, withdrawalClear },
     { scriptEventProcess, internal_free, scriptEventRead, scriptEventWrite, true, nullptr },
     { gameTimeEventProcess, nullptr, nullptr, nullptr, true, nullptr },
     { poisonEventProcess, nullptr, nullptr, nullptr, false, nullptr },
     { radiationEventProcess, internal_free, radiationEventRead, radiationEventWrite, false, nullptr },
     { flareEventProcess, nullptr, nullptr, nullptr, true, flareEventProcess },
-    { explosionEventProcess, nullptr, nullptr, nullptr, true, _queue_explode_exit },
-    { miscItemTrickleEventProcess, nullptr, nullptr, nullptr, true, _item_m_turn_off_from_queue },
-    { sneakEventProcess, nullptr, nullptr, nullptr, true, _critter_sneak_clear },
-    { explosionFailureEventProcess, nullptr, nullptr, nullptr, true, _queue_explode_exit },
+    { explosionEventProcess, nullptr, nullptr, nullptr, true, explosionExit },
+    { miscItemTrickleEventProcess, nullptr, nullptr, nullptr, true, miscItemTurnOffFromQueue },
+    { sneakEventProcess, nullptr, nullptr, nullptr, true, critterDisableSneak },
+    { explosionFailureEventProcess, nullptr, nullptr, nullptr, true, explosionExit },
     { mapUpdateEventProcess, nullptr, nullptr, nullptr, true, nullptr },
     { ambientSoundEffectEventProcess, internal_free, nullptr, nullptr, true, nullptr },
 };
@@ -126,7 +126,7 @@ int queueLoad(File* stream)
         } else {
             obj = objectFindFirst();
             while (obj != nullptr) {
-                obj = _inven_find_id(obj, objectId);
+                obj = inventoryFindById(obj, objectId);
                 if (obj != nullptr) {
                     break;
                 }
@@ -389,7 +389,7 @@ void queueClear()
 }
 
 // 0x4A2790
-void _queue_clear_type(int eventType, QueueEventHandler* fn)
+void queueClearByEventType(int eventType, QueueEventHandler* fn)
 {
     QueueListNode** ptr = &gQueueListHead;
     QueueListNode* curr = *ptr;
@@ -437,24 +437,24 @@ unsigned int queueGetNextEventTime()
 // 0x4A281C
 static int flareEventProcess(Object* obj, void* data)
 {
-    _obj_destroy(obj);
+    objectDestroy(obj);
     return 1;
 }
 
 // 0x4A2828
 static int explosionEventProcess(Object* obj, void* data)
 {
-    return _queue_do_explosion_(obj, true);
+    return explosionProcess(obj, true);
 }
 
 // 0x4A2830
-static int _queue_explode_exit(Object* obj, void* data)
+static int explosionExit(Object* obj, void* data)
 {
-    return _queue_do_explosion_(obj, false);
+    return explosionProcess(obj, false);
 }
 
 // 0x4A2834
-static int _queue_do_explosion_(Object* explosive, bool animate)
+static int explosionProcess(Object* explosive, bool animate)
 {
     int tile;
     int elevation;
@@ -486,7 +486,7 @@ static int _queue_do_explosion_(Object* explosive, bool animate)
     if (actionExplode(tile, elevation, minDamage, maxDamage, gDude, animate) == -2) {
         queueAddEvent(50, explosive, nullptr, EVENT_TYPE_EXPLOSION);
     } else {
-        _obj_destroy(explosive);
+        objectDestroy(explosive);
     }
 
     return 1;
@@ -503,7 +503,7 @@ static int explosionFailureEventProcess(Object* obj, void* data)
         displayMonitorAddMessage(msg.text);
     }
 
-    return _queue_do_explosion_(obj, true);
+    return explosionProcess(obj, true);
 }
 
 // 0x4A2920
@@ -512,7 +512,7 @@ void _queue_leaving_map()
     for (int eventType = 0; eventType < EVENT_TYPE_COUNT; eventType++) {
         EventTypeDescription* eventTypeDescription = &(gEventTypeDescriptions[eventType]);
         if (eventTypeDescription->field_10) {
-            _queue_clear_type(eventType, eventTypeDescription->field_14);
+            queueClearByEventType(eventType, eventTypeDescription->field_14);
         }
     }
 }

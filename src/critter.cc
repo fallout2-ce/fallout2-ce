@@ -154,7 +154,7 @@ static int gKillsByType[KILL_TYPE_COUNT];
 // Something with radiation.
 //
 // 0x56D7CC
-static int _old_rad_level;
+static int oldRadLevel;
 
 // scrname_init
 // 0x42CF50
@@ -347,7 +347,7 @@ int critterAdjustPoison(Object* critter, int amount)
     if (newPoison > 0) {
         critter->data.critter.poison = newPoison;
 
-        _queue_clear_type(EVENT_TYPE_POISON, nullptr);
+        queueClearByEventType(EVENT_TYPE_POISON, nullptr);
         queueAddEvent(10 * (505 - 5 * newPoison), gDude, nullptr, EVENT_TYPE_POISON);
 
         // You have been poisoned!
@@ -484,7 +484,8 @@ int critterAdjustRadiation(Object* obj, int amount)
 }
 
 // 0x42D4F4
-int _critter_check_rads(Object* obj)
+// note: original ASM always returned 0
+int critterCheckRadiationEvent(Object* obj)
 {
     if (obj != gDude) {
         return 0;
@@ -496,9 +497,9 @@ int _critter_check_rads(Object* obj)
         return 0;
     }
 
-    _old_rad_level = 0;
+    oldRadLevel = 0;
 
-    _queue_clear_type(EVENT_TYPE_RADIATION, _get_rad_damage_level);
+    queueClearByEventType(EVENT_TYPE_RADIATION, _get_rad_damage_level);
 
     // NOTE: Uninline
     int radiation = critterGetRadiation(obj);
@@ -521,7 +522,7 @@ int _critter_check_rads(Object* obj)
         radiationLevel++;
     }
 
-    if (radiationLevel > _old_rad_level) {
+    if (radiationLevel > oldRadLevel) {
         // Create timer event for applying radiation damage.
         RadiationEvent* radiationEvent = (RadiationEvent*)internal_malloc(sizeof(*radiationEvent));
         if (radiationEvent == nullptr) {
@@ -543,18 +544,18 @@ static int _get_rad_damage_level(Object* obj, void* data)
 {
     RadiationEvent* radiationEvent = (RadiationEvent*)data;
 
-    _old_rad_level = radiationEvent->radiationLevel;
+    oldRadLevel = radiationEvent->radiationLevel;
 
     return 0;
 }
 
 // 0x42D624
-int _clear_rad_damage(Object* obj, void* data)
+int radiationClearDamage(Object* obj, void* data)
 {
     RadiationEvent* radiationEvent = (RadiationEvent*)data;
 
     if (radiationEvent->isHealing) {
-        _process_rads(obj, radiationEvent->radiationLevel, true);
+        radiationProcess(obj, radiationEvent->radiationLevel, true);
     }
 
     return 1;
@@ -563,7 +564,7 @@ int _clear_rad_damage(Object* obj, void* data)
 // Applies radiation.
 //
 // 0x42D63C
-void _process_rads(Object* obj, int radiationLevel, bool isHealing)
+void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
 {
     MessageListItem messageListItem;
 
@@ -631,14 +632,14 @@ int radiationEventProcess(Object* obj, void* data)
         // Schedule healing stats event in 7 days.
         RadiationEvent* newRadiationEvent = (RadiationEvent*)internal_malloc(sizeof(*newRadiationEvent));
         if (newRadiationEvent != nullptr) {
-            _queue_clear_type(EVENT_TYPE_RADIATION, _clear_rad_damage);
+            queueClearByEventType(EVENT_TYPE_RADIATION, radiationClearDamage);
             newRadiationEvent->radiationLevel = radiationEvent->radiationLevel;
             newRadiationEvent->isHealing = 1;
             queueAddEvent(GAME_TIME_TICKS_PER_DAY * 7, obj, newRadiationEvent, EVENT_TYPE_RADIATION);
         }
     }
 
-    _process_rads(obj, radiationEvent->radiationLevel, radiationEvent->isHealing);
+    radiationProcess(obj, radiationEvent->radiationLevel, radiationEvent->isHealing);
 
     return 1;
 }
@@ -792,8 +793,9 @@ char* killTypeGetDescription(int killType)
     }
 }
 
-// 0x42D9F4 _critter_heal_hours heals critters based on the number of elapsed hours
-int _critter_heal_hours(Object* critter, int hours)
+// 0x42D9F4
+// heals critters based on the number of elapsed hours
+int critterHealByHours(Object* critter, int hours)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
         return -1;
@@ -828,7 +830,7 @@ void critterKill(Object* critter, int anim, bool refreshRect)
     // NOTE: Original code uses goto to jump out from nested conditions below.
     bool shouldChangeFid = false;
     int fid;
-    if (_critter_is_prone(critter)) {
+    if (critterIsProne(critter)) {
         int current = FID_ANIM_TYPE(critter->fid);
         if (current == ANIM_FALL_BACK || current == ANIM_FALL_FRONT) {
             bool back = false;
@@ -879,7 +881,7 @@ void critterKill(Object* critter, int anim, bool refreshRect)
         rectUnion(&updatedRect, &tempRect, &updatedRect);
     }
 
-    if (!_critter_flag_check(critter->pid, CRITTER_FLAT)) {
+    if (!critterFlagCheck(critter->pid, CRITTER_FLAT)) {
         critter->flags |= OBJECT_NO_BLOCK;
         _obj_toggle_flat(critter, &tempRect);
     }
@@ -900,7 +902,7 @@ void critterKill(Object* critter, int anim, bool refreshRect)
     }
 
     _critterClearObj = critter;
-    _queue_clear_type(EVENT_TYPE_DRUG, _critterClearObjDrugs);
+    queueClearByEventType(EVENT_TYPE_DRUG, _critterClearObjDrugs);
 
     itemDestroyAllHidden(critter);
 
@@ -983,7 +985,7 @@ bool critterIsCrippled(Object* critter)
 }
 
 // 0x42DD80
-bool _critter_is_prone(Object* critter)
+bool critterIsProne(Object* critter)
 {
     if (critter == nullptr) {
         return false;
@@ -1224,7 +1226,7 @@ int sneakEventProcess(Object* obj, void* data)
 }
 
 // 0x42E3E4
-int _critter_sneak_clear(Object* obj, void* data)
+int critterDisableSneak(Object* obj, void* data)
 {
     dudeDisableState(DUDE_STATE_SNEAKING);
     return 1;
@@ -1263,7 +1265,7 @@ int knockoutEventProcess(Object* obj, void* data)
 }
 
 // 0x42E460
-int _critter_wake_clear(Object* obj, void* data)
+int knockoutClear(Object* obj, void* data)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
         return 0;
@@ -1284,7 +1286,7 @@ int _critter_wake_clear(Object* obj, void* data)
 // 0x42E4C0
 // note: this is sometimes called with (attacker, defender) and sometimes with (defender, attacker).
 // `hitMe` may be nullptr
-int _critter_set_who_hit_me(Object* critter, Object* hitMe)
+int critterSetWhoHitMe(Object* critter, Object* hitMe)
 {
     if (critter == nullptr) {
         return -1;
@@ -1307,7 +1309,7 @@ int _critter_set_who_hit_me(Object* critter, Object* hitMe)
 }
 
 // 0x42E564
-bool _critter_can_obj_dude_rest()
+bool critterCanDudeRest()
 {
     bool mapDisallowsRest = false;
     if (!wmMapCanRestHere(gElevation)) {
@@ -1383,7 +1385,7 @@ bool critterIsFleeing(Object* critter)
 // Checks proto critter flag.
 //
 // 0x42E6AC
-bool _critter_flag_check(int pid, int flag)
+bool critterFlagCheck(int pid, int flag)
 {
     if (pid == -1) {
         return false;
@@ -1399,7 +1401,7 @@ bool _critter_flag_check(int pid, int flag)
 }
 
 // 0x42E6F0
-void critter_flag_set(int pid, int flag)
+void critterFlagSet(int pid, int flag)
 {
     Proto* proto;
 
@@ -1417,7 +1419,7 @@ void critter_flag_set(int pid, int flag)
 }
 
 // 0x42E71C
-void critter_flag_unset(int pid, int flag)
+void critterFlagUnset(int pid, int flag)
 {
     Proto* proto;
 

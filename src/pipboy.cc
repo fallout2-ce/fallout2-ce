@@ -716,7 +716,7 @@ static int pipboyWindowInit(int intent)
     }
 
     if (intent == PIPBOY_OPEN_INTENT_REST) {
-        if (!_critter_can_obj_dude_rest()) {
+        if (!critterCanDudeRest()) {
             blitBufferToBufferTrans(
                 _pipboyFrmImages[PIPBOY_FRM_LOGO].getData(),
                 _pipboyFrmImages[PIPBOY_FRM_LOGO].getWidth(),
@@ -1776,7 +1776,7 @@ static int _PrintAMelevList(int selectedMap)
         gPipboyCurrentLine = 2;
     }
 
-    const char* name = _map_get_description_idx_(_amcty_indx);
+    const char* name = mapDescriptionById(_amcty_indx);
     pipboyDrawText(name, PIPBOY_TEXT_ALIGNMENT_CENTER, _colorTable[992]);
 
     if (gPipboyLinesCount >= 4) {
@@ -1831,7 +1831,7 @@ static int _PrintAMList(int selectedLocation)
             int locationExistsIndex = 0;
             if (count != 0) {
                 for (int index = 0; index < count; index++) {
-                    if (_is_map_idx_same(map, _sortlist[index].field_4)) {
+                    if (mapAreSameArea(map, _sortlist[index].field_4)) {
                         break;
                     }
                     locationExistsIndex++;
@@ -2011,7 +2011,7 @@ static int pipboyRenderVideoArchive(int a1)
 static void pipboyHandleAlarmClock(int eventCode)
 {
     if (eventCode == 1024) {
-        if (_critter_can_obj_dude_rest()) {
+        if (critterCanDudeRest()) {
             pipboyWindowDestroyButtons();
             pipboyWindowRenderRestOptions(0);
             pipboyWindowCreateButtons(5, gPipboyRestOptionsCount, false);

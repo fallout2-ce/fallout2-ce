@@ -3881,13 +3881,13 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
                     object->sid = -1;
                 }
 
-                _obj_new_sid_inst(object, SCRIPT_TYPE_CRITTER, encounterEntry->scriptIdx - 1);
+                objectSetScript(object, SCRIPT_TYPE_CRITTER, encounterEntry->scriptIdx - 1);
             }
 
             if (encounter->position != ENCOUNTER_FORMATION_TYPE_SURROUNDING) {
                 objectSetLocation(object, tile, gElevation, nullptr);
             } else {
-                _obj_attempt_placement(object, tile, 0, 0);
+                objectAttemptPlacement(object, tile, 0, 0);
             }
 
             int direction = tileGetRotationTo(tile, gDude->tile);
@@ -3925,7 +3925,7 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
                 _obj_disconnect(item, nullptr);
 
                 if (encounterItem->isEquipped) {
-                    if (_inven_wield(object, item, HAND_RIGHT) == -1) {
+                    if (inventoryEquip(object, item, HAND_RIGHT) == -1) {
                         debugPrint("\nERROR: wmSetupCritterObjs: Inven Wield Failed: %d on %s: Critter Fid: %d", item->pid, critterGetName(object), object->fid);
                     }
                 }

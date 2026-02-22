@@ -103,7 +103,7 @@ static int hideProjectile(void* _, void* projectile);
 // 0x410468
 int actionKnockdown(Object* obj, int* anim, int maxDistance, int rotation, int delay)
 {
-    if (_critter_flag_check(obj->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
         return -1;
     }
 
@@ -208,7 +208,7 @@ int _pick_death(Object* attacker, Object* defender, Object* weapon, int damage, 
 
     int violenceLevel = settings.preferences.violence_level;
 
-    if (_critter_flag_check(defender->pid, CRITTER_SPECIAL_DEATH)) {
+    if (critterFlagCheck(defender->pid, CRITTER_SPECIAL_DEATH)) {
         return _check_death(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_NORMAL, hitFromFront);
     }
 
@@ -285,7 +285,7 @@ int _check_death(Object* obj, int anim, int minViolenceLevel, bool hitFromFront)
 // 0x4108C8
 int _internal_destroy(Object* _, Object* toDestroy)
 {
-    return _obj_destroy(toDestroy);
+    return objectDestroy(toDestroy);
 }
 
 // TODO: Check very carefully, lots of conditions and jumps.
@@ -297,12 +297,12 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
     int fid;
     const char* sfx_name;
 
-    if (_critter_flag_check(defender->pid, CRITTER_NO_KNOCKBACK)) {
+    if (critterFlagCheck(defender->pid, CRITTER_NO_KNOCKBACK)) {
         knockbackDistance = 0;
     }
 
     anim = FID_ANIM_TYPE(defender->fid);
-    if (!_critter_is_prone(defender)) {
+    if (!critterIsProne(defender)) {
         if ((flags & DAM_DEAD) != 0) {
             fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0);
             if (fid == attacker->fid) {
@@ -447,7 +447,7 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
 
     if (weapon != nullptr) {
         if ((flags & DAM_EXPLODE) != 0) {
-            animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)_obj_drop, -1);
+            animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)objectDrop, -1);
             fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0);
             animationRegisterSetFid(weapon, fid, 0);
             animationRegisterAnimateAndHide(weapon, ANIM_STAND, 0);
@@ -459,7 +459,7 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
         } else if ((flags & DAM_DESTROY) != 0) {
             animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)_internal_destroy, -1);
         } else if ((flags & DAM_DROP) != 0) {
-            animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)_obj_drop, -1);
+            animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)objectDrop, -1);
         }
     }
 
@@ -488,7 +488,7 @@ int _show_death(Object* obj, int anim)
         }
     }
 
-    if (!_critter_flag_check(obj->pid, CRITTER_FLAT)) {
+    if (!critterFlagCheck(obj->pid, CRITTER_FLAT)) {
         obj->flags |= OBJECT_NO_BLOCK;
         if (_obj_toggle_flat(obj, &tempRect) == 0) {
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
@@ -499,7 +499,7 @@ int _show_death(Object* obj, int anim)
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
     }
 
-    if (anim >= 30 && anim <= 31 && !_critter_flag_check(obj->pid, CRITTER_SPECIAL_DEATH) && !_critter_flag_check(obj->pid, CRITTER_NO_DROP)) {
+    if (anim >= 30 && anim <= 31 && !critterFlagCheck(obj->pid, CRITTER_SPECIAL_DEATH) && !critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
         itemDropAll(obj, obj->tile);
     }
 
@@ -1040,7 +1040,7 @@ int _action_climb_ladder(Object* critter, Object* ladder)
 
     animationRegisterCallbackForced(critter, ladder, (AnimationCallback*)_is_next_to, -1);
     animationRegisterRotateToTile(critter, ladder->tile);
-    animationRegisterCallbackForced(critter, ladder, (AnimationCallback*)_check_scenery_ap_cost, -1);
+    animationRegisterCallbackForced(critter, ladder, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
 
     int weaponAnimationCode = (critter->fid & 0xF000) >> 12;
     if (weaponAnimationCode != 0) {
@@ -1052,7 +1052,7 @@ int _action_climb_ladder(Object* critter, Object* ladder)
     const char* climbingSfx = sfxBuildCharName(critter, ANIM_CLIMB_LADDER, CHARACTER_SOUND_EFFECT_UNUSED);
     animationRegisterPlaySoundEffect(critter, climbingSfx, -1);
     animationRegisterAnimate(critter, ANIM_CLIMB_LADDER, 0);
-    animationRegisterCallback(critter, ladder, (AnimationCallback*)_obj_use, -1);
+    animationRegisterCallback(critter, ladder, (AnimationCallback*)objectUse, -1);
 
     if (weaponAnimationCode != 0) {
         animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
@@ -1108,7 +1108,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
         animationRegisterCallbackForced(user, targetObj, (AnimationCallback*)_is_next_to, -1);
 
         if (item == nullptr) {
-            animationRegisterCallback(user, targetObj, (AnimationCallback*)_check_scenery_ap_cost, -1);
+            animationRegisterCallback(user, targetObj, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
         }
 
         int weaponAnimCode = (user->fid & 0xF000) >> 12;
@@ -1120,7 +1120,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
 
         int anim;
         int objectType = FID_TYPE(targetObj->fid);
-        if (objectType == OBJ_TYPE_CRITTER && _critter_is_prone(targetObj)) {
+        if (objectType == OBJ_TYPE_CRITTER && critterIsProne(targetObj)) {
             anim = ANIM_MAGIC_HANDS_GROUND;
         } else if (objectType == OBJ_TYPE_SCENERY && (proto->scenery.extendedFlags & 0x01) != 0) {
             anim = ANIM_MAGIC_HANDS_GROUND;
@@ -1134,9 +1134,9 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
 
         if (item != nullptr) {
             // TODO: Get rid of cast.
-            animationRegisterCallback3(user, targetObj, item, (AnimationCallback3*)_obj_use_item_on, -1);
+            animationRegisterCallback3(user, targetObj, item, (AnimationCallback3*)objectUseItemOn, -1);
         } else {
-            animationRegisterCallback(user, targetObj, (AnimationCallback*)_obj_use, -1);
+            animationRegisterCallback(user, targetObj, (AnimationCallback*)objectUse, -1);
         }
 
         if (weaponAnimCode != 0) {
@@ -1182,7 +1182,7 @@ int actionPickUp(Object* critter, Object* item)
     }
 
     animationRegisterCallbackForced(critter, item, (AnimationCallback*)_is_next_to, -1);
-    animationRegisterCallback(critter, item, (AnimationCallback*)_check_scenery_ap_cost, -1);
+    animationRegisterCallback(critter, item, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
 
     Proto* itemProto;
     protoGetProto(item->pid, &itemProto);
@@ -1207,7 +1207,7 @@ int actionPickUp(Object* critter, Object* item)
             animationRegisterPlaySoundEffect(item, sfx, actionFrame);
         }
 
-        animationRegisterCallback(critter, item, (AnimationCallback*)_obj_pickup, actionFrame);
+        animationRegisterCallback(critter, item, (AnimationCallback*)objectPickup, actionFrame);
     } else {
         int weaponAnimationCode = (critter->fid & 0xF000) >> 12;
         if (weaponAnimationCode != 0) {
@@ -1235,7 +1235,7 @@ int actionPickUp(Object* critter, Object* item)
         }
 
         if (item->frame != 1) {
-            animationRegisterCallback(critter, item, (AnimationCallback*)_obj_use_container, actionFrame);
+            animationRegisterCallback(critter, item, (AnimationCallback*)objectUseContainer, actionFrame);
         }
 
         if (weaponAnimationCode != 0) {
@@ -1263,7 +1263,7 @@ int _action_loot_container(Object* critter, Object* container)
     }
 
     // SFALL: Fix for trying to loot corpses with the "NoSteal" flag.
-    if (_critter_flag_check(container->pid, CRITTER_NO_STEAL)) {
+    if (critterFlagCheck(container->pid, CRITTER_NO_STEAL)) {
         return -1;
     }
 
@@ -1288,7 +1288,7 @@ int _action_loot_container(Object* critter, Object* container)
     }
 
     animationRegisterCallbackForced(critter, container, (AnimationCallback*)_is_next_to, -1);
-    animationRegisterCallback(critter, container, (AnimationCallback*)_check_scenery_ap_cost, -1);
+    animationRegisterCallback(critter, container, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
     animationRegisterCallback(critter, container, (AnimationCallback*)scriptsRequestLooting, -1);
     return reg_anim_end();
 }
@@ -1494,7 +1494,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
 
     animationRegisterCallbackForced(performer, target, (AnimationCallback*)_is_next_to, -1);
 
-    int anim = (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && _critter_is_prone(target)) ? ANIM_MAGIC_HANDS_GROUND : ANIM_MAGIC_HANDS_MIDDLE;
+    int anim = (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && critterIsProne(target)) ? ANIM_MAGIC_HANDS_GROUND : ANIM_MAGIC_HANDS_MIDDLE;
     int fid = buildFid(OBJ_TYPE_CRITTER, performer->fid & 0xFFF, anim, 0, performer->rotation + 1);
 
     CacheEntry* artHandle;
@@ -1506,7 +1506,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
 
     animationRegisterAnimate(performer, anim, -1);
     // TODO: Get rid of casts.
-    animationRegisterCallback3(performer, target, (void*)(uintptr_t)skill, (AnimationCallback3*)_obj_use_skill_on, -1);
+    animationRegisterCallback3(performer, target, (void*)(uintptr_t)skill, (AnimationCallback3*)objectUseSkillOn, -1);
     return reg_anim_end();
 }
 
@@ -1753,7 +1753,7 @@ int _report_explosion(Attack* attack, Object* sourceObj)
                     xp += critterGetExp(attack->defender);
                 }
             } else {
-                _critter_set_who_hit_me(attack->defender, sourceObj);
+                critterSetWhoHitMe(attack->defender, sourceObj);
                 anyDefender = attack->defender;
             }
         }
@@ -1766,7 +1766,7 @@ int _report_explosion(Attack* attack, Object* sourceObj)
                         xp += critterGetExp(critter);
                     }
                 } else {
-                    _critter_set_who_hit_me(critter, sourceObj);
+                    critterSetWhoHitMe(critter, sourceObj);
 
                     if (anyDefender == nullptr) {
                         anyDefender = critter;
@@ -1972,7 +1972,7 @@ int _report_dmg(Attack* attack, Object* _)
 // 0x413660
 int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, int damageType)
 {
-    if (!_critter_flag_check(obj->pid, CRITTER_NO_KNOCKBACK)) {
+    if (!critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
         knockbackDistancePtr = nullptr;
     }
 
@@ -2046,7 +2046,7 @@ int actionPush(Object* obj, Object* target)
     }
 
     int sid;
-    if (_obj_sid(target, &sid) == 0) {
+    if (objectGetSid(target, &sid) == 0) {
         scriptSetObjects(sid, obj, target);
         scriptExecProc(sid, SCRIPT_PROC_PUSH);
 

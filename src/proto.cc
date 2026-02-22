@@ -915,7 +915,7 @@ int _proto_dude_init(const char* path)
     proto->critter.data.damageType = 0;
 
     _proto_dude_update_gender();
-    _inven_reset_dude();
+    inventoryResetDude();
 
     if ((gDude->flags & OBJECT_FLAT) != 0) {
         _obj_toggle_flat(gDude, nullptr);

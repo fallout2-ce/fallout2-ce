@@ -558,7 +558,7 @@ int itemDestroyAllHidden(Object* owner)
         // NOTE: Uninline.
         if (itemIsHidden(inventoryItem->item)) {
             itemRemove(owner, inventoryItem->item, 1);
-            _obj_destroy(inventoryItem->item);
+            objectDestroy(inventoryItem->item);
         } else {
             index++;
         }
@@ -584,7 +584,7 @@ int itemDropAll(Object* critter, int tile)
 
             if (_obj_connect(item, tile, critter->elevation, nullptr) != 0) {
                 if (itemAdd(critter, item, 1) != 0) {
-                    _obj_destroy(item);
+                    objectDestroy(item);
                 }
                 return -1;
             }
@@ -601,7 +601,7 @@ int itemDropAll(Object* critter, int tile)
                     }
 
                     frmId = proto->fid & 0xFFF;
-                    _adjust_ac(critter, item, nullptr);
+                    adjustCritterStatsOnArmorChange(critter, item, nullptr);
                 }
             }
 
@@ -624,7 +624,7 @@ int itemDropAll(Object* critter, int tile)
 
                 if (_obj_connect(item, tile, critter->elevation, nullptr) != 0) {
                     if (itemAdd(critter, item, 1) != 0) {
-                        _obj_destroy(item);
+                        objectDestroy(item);
                     }
                     return -1;
                 }
@@ -1113,7 +1113,7 @@ Object* itemReplace(Object* owner, Object* itemToReplace, int flags)
 
                 item->flags &= ~flags;
                 if (itemAdd(owner, item, 1) != 0) {
-                    _obj_destroy(item);
+                    objectDestroy(item);
                 }
             }
         }
@@ -1451,7 +1451,7 @@ int weaponAttemptReload(Object* critter, Object* weapon)
     if (weapon->pid != PROTO_ID_SOLAR_SCORCHER) {
         int inventoryItemIndex = -1;
         for (;;) {
-            Object* ammo = _inven_find_type(critter, ITEM_TYPE_AMMO, &inventoryItemIndex);
+            Object* ammo = inventoryFindByType(critter, ITEM_TYPE_AMMO, &inventoryItemIndex);
             if (ammo == nullptr) {
                 break;
             }
@@ -1460,7 +1460,7 @@ int weaponAttemptReload(Object* critter, Object* weapon)
                 if (weaponCanBeReloadedWith(weapon, ammo) != 0) {
                     int rc = weaponReload(weapon, ammo);
                     if (rc == 0) {
-                        _obj_destroy(ammo);
+                        objectDestroy(ammo);
                     }
 
                     if (rc == -1) {
@@ -1474,7 +1474,7 @@ int weaponAttemptReload(Object* critter, Object* weapon)
 
         inventoryItemIndex = -1;
         for (;;) {
-            Object* ammo = _inven_find_type(critter, ITEM_TYPE_AMMO, &inventoryItemIndex);
+            Object* ammo = inventoryFindByType(critter, ITEM_TYPE_AMMO, &inventoryItemIndex);
             if (ammo == nullptr) {
                 break;
             }
@@ -1482,7 +1482,7 @@ int weaponAttemptReload(Object* critter, Object* weapon)
             if (weaponCanBeReloadedWith(weapon, ammo) != 0) {
                 int rc = weaponReload(weapon, ammo);
                 if (rc == 0) {
-                    _obj_destroy(ammo);
+                    objectDestroy(ammo);
                 }
 
                 if (rc == -1) {
@@ -1637,7 +1637,7 @@ int weaponGetRange(Object* critter, int hitMode)
         return range;
     }
 
-    if (_critter_flag_check(critter->pid, CRITTER_LONG_LIMBS)) {
+    if (critterFlagCheck(critter->pid, CRITTER_LONG_LIMBS)) {
         return 2;
     }
 
@@ -1951,11 +1951,9 @@ int weaponGetSecondaryActionPointCost(Object* weapon)
 }
 
 // 0x4790AC
-int _item_w_compute_ammo_cost(Object* obj, int* inout_a2)
+int weaponComputeAmmoCost(const Object* obj, int* ammoQty)
 {
-    int pid;
-
-    if (inout_a2 == nullptr) {
+    if (ammoQty == nullptr) {
         return -1;
     }
 
@@ -1963,9 +1961,8 @@ int _item_w_compute_ammo_cost(Object* obj, int* inout_a2)
         return 0;
     }
 
-    pid = obj->pid;
-    if (pid == PROTO_ID_SUPER_CATTLE_PROD || pid == PROTO_ID_MEGA_POWER_FIST) {
-        *inout_a2 *= 2;
+    if (const int pid = obj->pid; pid == PROTO_ID_SUPER_CATTLE_PROD || pid == PROTO_ID_MEGA_POWER_FIST) {
+        *ammoQty *= 2;
     }
 
     return 0;
@@ -2238,7 +2235,7 @@ int miscItemGetPowerTypePid(Object* miscItem)
 }
 
 // 0x47947C
-bool miscItemIsConsumable(Object* miscItem)
+bool miscItemUsesCharges(Object* miscItem)
 {
     if (miscItem == nullptr) {
         return false;
@@ -2251,7 +2248,7 @@ bool miscItemIsConsumable(Object* miscItem)
 }
 
 // 0x4794A4
-int _item_m_use_charged_item(Object* critter, Object* miscItem)
+int miscItemUseCharged(Object* critter, Object* miscItem)
 {
     int pid = miscItem->pid;
     if (pid == PROTO_ID_STEALTH_BOY_I
@@ -2340,7 +2337,7 @@ bool miscItemIsOn(Object* obj)
         return false;
     }
 
-    if (!miscItemIsConsumable(obj)) {
+    if (!miscItemUsesCharges(obj)) {
         return false;
     }
 
@@ -2455,7 +2452,7 @@ int miscItemTurnOff(Object* item)
 }
 
 // 0x479954
-int _item_m_turn_off_from_queue(Object* obj, void* data)
+int miscItemTurnOffFromQueue(Object* obj, void* data)
 {
     miscItemTurnOff(obj);
     return 1;
@@ -2780,7 +2777,7 @@ static bool _drug_effect_allowed(Object* critter, int pid)
 }
 
 // 0x479F60
-int _item_d_take_drug(Object* critter, Object* item)
+int drugItemTakeDrug(Object* critter, Object* item)
 {
     if (critterIsDead(critter)) {
         return -1;
@@ -2811,7 +2808,7 @@ int _item_d_take_drug(Object* critter, Object* item)
     _wd_gvar = drugGetAddictionGvarByPid(item->pid);
     _wd_onset = proto->item.data.drug.withdrawalOnset;
 
-    _queue_clear_type(EVENT_TYPE_WITHDRAWAL, _item_wd_clear_all);
+    queueClearByEventType(EVENT_TYPE_WITHDRAWAL, _item_wd_clear_all);
 
     if (_drug_effect_allowed(critter, item->pid)) {
         _perform_drug_effect(critter, proto->item.data.drug.stat, proto->item.data.drug.amount, true);
@@ -2856,7 +2853,7 @@ int _item_d_take_drug(Object* critter, Object* item)
 }
 
 // 0x47A178
-int _item_d_clear(Object* obj, void* data)
+int drugItemClear(Object* obj, void* data)
 {
     if (objectIsPartyMember(obj)) {
         return 0;
@@ -2941,7 +2938,7 @@ static int _insert_withdrawal(Object* obj, int active, int duration, int perk, i
 }
 
 // 0x47A2FC
-int _item_wd_clear(Object* obj, void* data)
+int withdrawalClear(Object* obj, void* data)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)data;
 

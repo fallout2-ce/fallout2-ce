@@ -284,7 +284,7 @@ void isoExit()
 }
 
 // 0x481FB4
-void _map_init()
+void mapInit()
 {
     if (compat_stricmp(settings.system.executable.c_str(), "mapper") == 0) {
         _map_scroll_refresh = isoWindowRefreshRectMapper;
@@ -310,7 +310,7 @@ void _map_init()
 }
 
 // 0x482084
-void _map_exit()
+void mapExit()
 {
     windowHide(gIsoWindow);
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
@@ -478,10 +478,10 @@ int mapGetLocalVar(int var, ProgramValue& value)
 // Make a room to store more local variables.
 //
 // 0x4822E0
-int _map_malloc_local_var(int a1)
+int mapAllocLocalVars(const int numNewVars)
 {
     int oldMapLocalVarsLength = gMapLocalVarsLength;
-    gMapLocalVarsLength += a1;
+    gMapLocalVarsLength += numNewVars;
 
     int* vars = (int*)internal_realloc(gMapLocalVars, sizeof(*vars) * gMapLocalVarsLength);
     if (vars == nullptr) {
@@ -489,7 +489,7 @@ int _map_malloc_local_var(int a1)
     }
 
     gMapLocalVars = vars;
-    memset((unsigned char*)vars + sizeof(*vars) * oldMapLocalVarsLength, 0, sizeof(*vars) * a1);
+    memset((unsigned char*)vars + sizeof(*vars) * oldMapLocalVarsLength, 0, sizeof(*vars) * numNewVars);
 
     gMapLocalPointers.resize(gMapLocalVarsLength);
 
@@ -522,37 +522,38 @@ char* mapGetName(int map, int elevation)
 // TODO: Check, probably returns true if map1 and map2 represents the same city.
 //
 // 0x482528
-bool _is_map_idx_same(int map1, int map2)
+bool mapAreSameArea(int map1, int map2)
 {
     if (map1 < 0 || map1 >= wmMapMaxCount()) {
-        return 0;
+        return false;
     }
 
     if (map2 < 0 || map2 >= wmMapMaxCount()) {
-        return 0;
+        return false;
     }
 
     if (!wmMapIdxIsSaveable(map1)) {
-        return 0;
+        return false;
     }
 
     if (!wmMapIdxIsSaveable(map2)) {
-        return 0;
+        return false;
     }
 
     int city1;
     if (wmMatchAreaContainingMapIdx(map1, &city1) == -1) {
-        return 0;
+        return false;
     }
 
     int city2;
     if (wmMatchAreaContainingMapIdx(map2, &city2) == -1) {
-        return 0;
+        return false;
     }
 
     return city1 == city2;
 }
 
+// TODO: probably can be replaced with mapAreSameArea
 // 0x4825CC
 int _get_map_idx_same(int map1, int map2)
 {
@@ -587,7 +588,7 @@ char* mapGetCityName(int map)
 }
 
 // 0x48268C
-char* _map_get_description_idx_(int map)
+char* mapDescriptionById(int map)
 {
     int city;
     if (wmMatchAreaContainingMapIdx(map, &city) == 0) {
@@ -1125,8 +1126,8 @@ static int _map_age_dead_critters()
             && !objectIsPartyMember(obj)
             && !critterIsDead(obj)) {
             obj->data.critter.combat.maneuver &= ~CRITTER_MANUEVER_FLEEING;
-            if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !_critter_flag_check(obj->pid, CRITTER_NO_HEAL)) {
-                _critter_heal_hours(obj, hoursSinceLastVisit);
+            if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(obj->pid, CRITTER_NO_HEAL)) {
+                critterHealByHours(obj, hoursSinceLastVisit);
             }
         }
         obj = objectFindNext();
@@ -1150,7 +1151,7 @@ static int _map_age_dead_critters()
         int type = PID_TYPE(obj->pid);
         if (type == OBJ_TYPE_CRITTER) {
             if (obj != gDude && critterIsDead(obj)) {
-                if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !_critter_flag_check(obj->pid, CRITTER_NO_HEAL)) {
+                if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(obj->pid, CRITTER_NO_HEAL)) {
                     objects[count++] = obj;
 
                     if (count >= capacity) {
@@ -1181,7 +1182,7 @@ static int _map_age_dead_critters()
     for (int index = 0; index < count; index++) {
         Object* obj = objects[index];
         if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
-            if (!_critter_flag_check(obj->pid, CRITTER_NO_DROP)) {
+            if (!critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
                 itemDropAll(obj, obj->tile);
             }
 
@@ -1219,7 +1220,7 @@ static int _map_age_dead_critters()
 }
 
 // 0x48358C
-int _map_target_load_area()
+int mapGetLoadedAreaId()
 {
     int city = -1;
     if (wmMatchAreaContainingMapIdx(gMapHeader.index, &city) == -1) {

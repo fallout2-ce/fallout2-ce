@@ -2144,7 +2144,7 @@ int _gsound_sfx_q_start()
 // 0x452634
 int ambientSoundEffectEventProcess(Object* a1, void* data)
 {
-    _queue_clear_type(EVENT_TYPE_GSOUND_SFX_EVENT, nullptr);
+    queueClearByEventType(EVENT_TYPE_GSOUND_SFX_EVENT, nullptr);
 
     AmbientSoundEffectEvent* soundEffectEvent = (AmbientSoundEffectEvent*)data;
     int ambientSoundEffectIndex = -1;

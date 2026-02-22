@@ -279,7 +279,7 @@ static int _main_load_new(char* mapFileName)
 
     colorPaletteLoad("color.pal");
     paletteFadeTo(_cmap);
-    _map_init();
+    mapInit();
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
     mouseShowCursor();
     mapLoadByName(mapFileName);
@@ -304,7 +304,7 @@ static int main_loadgame_new()
     objectShow(gDude, nullptr);
     mouseHideCursor();
 
-    _map_init();
+    mapInit();
 
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
     mouseShowCursor();
@@ -316,7 +316,7 @@ static int main_loadgame_new()
 static void main_unload_new()
 {
     objectHide(gDude, nullptr);
-    _map_exit();
+    mapExit();
 }
 
 // 0x480E48
