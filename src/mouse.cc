@@ -185,18 +185,16 @@ static void mousePrepareDefaultCursor()
 }
 
 // 0x4CA0AC
-int mouseSetFrame(unsigned char* a1, int width, int height, int pitch, int a5, int a6, char a7)
+int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int hotX, int hotY, char transparentColor)
 {
     Rect rect;
-    unsigned char* v9;
-    int v11, v12;
-    int v7, v8;
+    unsigned char* cursorFrame;
+    int hotXDelta;
+    int hotYDelta;
 
-    v7 = a5;
-    v8 = a6;
-    v9 = a1;
+    cursorFrame = frame;
 
-    if (a1 == nullptr) {
+    if (frame == nullptr) {
         // NOTE: Original code looks tail recursion optimization.
         return mouseSetFrame(gMouseDefaultCursor, MOUSE_DEFAULT_CURSOR_WIDTH, MOUSE_DEFAULT_CURSOR_HEIGHT, MOUSE_DEFAULT_CURSOR_WIDTH, 1, 1, _colorTable[0]);
     }
@@ -227,23 +225,23 @@ int mouseSetFrame(unsigned char* a1, int width, int height, int pitch, int a5, i
     gMouseCursorWidth = width;
     gMouseCursorHeight = height;
     gMouseCursorPitch = pitch;
-    _mouse_shape = v9;
-    _mouse_trans = a7;
+    _mouse_shape = cursorFrame;
+    _mouse_trans = transparentColor;
 
     if (_mouse_fptr) {
         tickersRemove(_mouse_anim);
         _mouse_fptr = nullptr;
     }
 
-    v11 = _mouse_hotx - v7;
-    _mouse_hotx = v7;
+    hotXDelta = _mouse_hotx - hotX;
+    _mouse_hotx = hotX;
 
-    gMouseCursorX += v11;
+    gMouseCursorX += hotXDelta;
 
-    v12 = _mouse_hoty - v8;
-    _mouse_hoty = v8;
+    hotYDelta = _mouse_hoty - hotY;
+    _mouse_hoty = hotY;
 
-    gMouseCursorY += v12;
+    gMouseCursorY += hotYDelta;
 
     _mouse_clip();
 
@@ -283,69 +281,68 @@ static void _mouse_anim()
 // 0x4CA34C
 void mouseShowCursor()
 {
-    int i;
-    unsigned char* v2;
-    int v7, v8;
-    int v9, v10;
-    int v4;
-    unsigned char v6;
-    int v3;
+    unsigned char* cursorData;
+    int clipX;
+    int clipWidth;
+    int clipY;
+    int clipHeight;
+    int cursorDataIndex;
 
-    v2 = gMouseCursorData;
+    cursorData = gMouseCursorData;
     if (gMouseInitialized) {
         if (!_mouse_blit_trans || !gCursorIsHidden) {
             _win_get_mouse_buf(gMouseCursorData);
-            v2 = gMouseCursorData;
-            v3 = 0;
+            cursorData = gMouseCursorData;
+            cursorDataIndex = 0;
 
-            for (i = 0; i < gMouseCursorHeight; i++) {
-                for (v4 = 0; v4 < gMouseCursorWidth; v4++) {
-                    v6 = _mouse_shape[i * gMouseCursorPitch + v4];
-                    if (v6 != _mouse_trans) {
-                        v2[v3] = v6;
+            for (int y = 0; y < gMouseCursorHeight; y++) {
+                for (int x = 0; x < gMouseCursorWidth; x++) {
+                    unsigned char pixel = _mouse_shape[y * gMouseCursorPitch + x];
+                    if (pixel != _mouse_trans) {
+                        cursorData[cursorDataIndex] = pixel;
                     }
-                    v3++;
+                    cursorDataIndex++;
                 }
             }
         }
 
         if (gMouseCursorX >= _scr_size.left) {
             if (gMouseCursorWidth + gMouseCursorX - 1 <= _scr_size.right) {
-                v8 = gMouseCursorWidth;
-                v7 = 0;
+                clipWidth = gMouseCursorWidth;
+                clipX = 0;
             } else {
-                v7 = 0;
-                v8 = _scr_size.right - gMouseCursorX + 1;
+                clipX = 0;
+                clipWidth = _scr_size.right - gMouseCursorX + 1;
             }
         } else {
-            v7 = _scr_size.left - gMouseCursorX;
-            v8 = gMouseCursorWidth - (_scr_size.left - gMouseCursorX);
+            clipX = _scr_size.left - gMouseCursorX;
+            clipWidth = gMouseCursorWidth - (_scr_size.left - gMouseCursorX);
         }
 
         if (gMouseCursorY >= _scr_size.top) {
             if (gMouseCursorHeight + gMouseCursorY - 1 <= _scr_size.bottom) {
-                v9 = 0;
-                v10 = gMouseCursorHeight;
+                clipY = 0;
+                clipHeight = gMouseCursorHeight;
             } else {
-                v9 = 0;
-                v10 = _scr_size.bottom - gMouseCursorY + 1;
+                clipY = 0;
+                clipHeight = _scr_size.bottom - gMouseCursorY + 1;
             }
         } else {
-            v9 = _scr_size.top - gMouseCursorY;
-            v10 = gMouseCursorHeight - (_scr_size.top - gMouseCursorY);
+            clipY = _scr_size.top - gMouseCursorY;
+            clipHeight = gMouseCursorHeight - (_scr_size.top - gMouseCursorY);
         }
 
-        gMouseCursorData = v2;
+        gMouseCursorData = cursorData;
         if (_mouse_blit_trans && gCursorIsHidden) {
-            _mouse_blit_trans(_mouse_shape, gMouseCursorPitch, gMouseCursorHeight, v7, v9, v8, v10, v7 + gMouseCursorX, v9 + gMouseCursorY, _mouse_trans);
+            _mouse_blit_trans(_mouse_shape, gMouseCursorPitch, gMouseCursorHeight, clipX, clipY, clipWidth, clipHeight, clipX + gMouseCursorX, clipY + gMouseCursorY, _mouse_trans);
         } else {
-            _mouse_blit(gMouseCursorData, gMouseCursorWidth, gMouseCursorHeight, v7, v9, v8, v10, v7 + gMouseCursorX, v9 + gMouseCursorY);
+            _mouse_blit(gMouseCursorData, gMouseCursorWidth, gMouseCursorHeight, clipX, clipY, clipWidth, clipHeight, clipX + gMouseCursorX, clipY + gMouseCursorY);
         }
 
-        v2 = gMouseCursorData;
+        cursorData = gMouseCursorData;
         gCursorIsHidden = false;
     }
-    gMouseCursorData = v2;
+    gMouseCursorData = cursorData;
 }
 
 // 0x4CA534

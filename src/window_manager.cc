@@ -163,7 +163,7 @@ int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitP
         return WINDOW_MANAGER_ERR_8;
     }
 
-    if (flags & 1) { // TODO: name this flag
+    if (flags & WINDOW_MANAGER_INIT_FLAG_BUFFERED) {
         _screen_buffer = (unsigned char*)internal_malloc((_scr_size.bottom - _scr_size.top + 1) * (_scr_size.right - _scr_size.left + 1));
         if (_screen_buffer == nullptr) {
             if (gVideoSystemExitProc != nullptr) {
@@ -206,7 +206,7 @@ int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitP
 
     _GNW_debug_init();
 
-    if (inputInit(flags) == -1) {
+    if (inputInit() == -1) {
         return WINDOW_MANAGER_ERR_INITIALIZING_INPUT;
     }
 

@@ -11,7 +11,7 @@ typedef XFile File;
 typedef void FileReadProgressHandler();
 typedef char* StrdupProc(const char* string);
 
-int dbOpen(const char* filePath1, int a2, const char* filePath2, int a4);
+int dbOpen(const char* filePath1, int unused1, const char* filePath2, int unused2);
 int db_total();
 void dbExit();
 int dbGetFileSize(const char* filePath, int* sizePtr);
@@ -58,8 +58,8 @@ int fileWriteUInt16List(File* stream, unsigned short* arr, int count);
 int fileWriteInt32List(File* stream, int* arr, int count);
 int _db_fwriteLongCount(File* stream, int* arr, int count);
 int fileWriteUInt32List(File* stream, unsigned int* arr, int count);
-int fileNameListInit(const char* pattern, char*** fileNames, int a3, int a4);
-void fileNameListFree(char*** fileNames, int a2);
+int fileNameListInit(const char* pattern, char*** fileNames, int unused1, int unused2);
+void fileNameListFree(char*** fileNames, int unused);
 int fileGetSize(File* stream);
 void fileSetReadProgressHandler(FileReadProgressHandler* handler, int size);
 

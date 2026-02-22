@@ -31,6 +31,11 @@ typedef enum WindowManagerErr {
     WINDOW_MANAGER_ERR_INITIALIZING_INPUT = 11,
 } WindowManagerErr;
 
+typedef enum WindowManagerInitFlags {
+    WINDOW_MANAGER_INIT_FLAG_NONE = 0x0,
+    WINDOW_MANAGER_INIT_FLAG_BUFFERED = 0x1,
+} WindowManagerInitFlags;
+
 typedef enum WindowFlags {
     // Use system window flags which are set during game startup and does not
     // change afterwards.

@@ -525,7 +525,7 @@ int mapper_edit_init(int argc, char** argv)
 {
     int index;
 
-    if (gameInitWithOptions("FALLOUT Mapper", true, 2, 0, argc, argv) == -1) {
+    if (gameInitWithOptions("FALLOUT Mapper", true, 2, WINDOW_MANAGER_INIT_FLAG_NONE, argc, argv) == -1) {
         return -1;
     }
 

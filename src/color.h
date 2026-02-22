@@ -24,11 +24,11 @@ void colorPaletteFadeBetween(unsigned char* oldPalette, unsigned char* newPalett
 void colorPaletteSetTransitionCallback(ColorTransitionCallback* callback);
 void _setSystemPalette(unsigned char* palette);
 unsigned char* _getSystemPalette();
-void _setSystemPaletteEntries(unsigned char* a1, int a2, int a3);
+void _setSystemPaletteEntries(unsigned char* palette, int start, int end);
 bool colorPaletteLoad(const char* path);
 char* _colorError();
 unsigned char* _getColorBlendTable(int ch);
-void _freeColorBlendTable(int a1);
+void _freeColorBlendTable(int color);
 void colorSetBrightness(double value);
 bool _initColors();
 void _colorsClose();

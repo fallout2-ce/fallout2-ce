@@ -48,8 +48,11 @@ static FileList* gFileListHead;
 // used, so it's impossible to figure out their meaning.
 //
 // 0x4C5D30
-int dbOpen(const char* filePath1, int a2, const char* filePath2, int a4)
+int dbOpen(const char* filePath1, int unused1, const char* filePath2, int unused2)
 {
+    (void)unused1;
+    (void)unused2;
+
     if (filePath1 != nullptr) {
         if (!xbaseOpen(filePath1)) {
             return -1;
@@ -599,8 +602,11 @@ int fileWriteUInt32List(File* stream, unsigned int* arr, int count)
 }
 
 // 0x4C6628
-int fileNameListInit(const char* pattern, char*** fileNameListPtr, int a3, int a4)
+int fileNameListInit(const char* pattern, char*** fileNameListPtr, int unused1, int unused2)
 {
+    (void)unused1;
+    (void)unused2;
+
     FileList* fileList = (FileList*)malloc(sizeof(*fileList));
     if (fileList == nullptr) {
         return 0;
@@ -669,8 +675,10 @@ int fileNameListInit(const char* pattern, char*** fileNameListPtr, int a3, int a
 }
 
 // 0x4C6868
-void fileNameListFree(char*** fileNameListPtr, int a2)
+void fileNameListFree(char*** fileNameListPtr, int unused)
 {
+    (void)unused;
+
     if (gFileListHead == nullptr) {
         return;
     }
