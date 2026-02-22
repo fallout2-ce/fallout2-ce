@@ -772,14 +772,14 @@ bool _deleteWindow(const char* windowName)
 }
 
 // 0x4B7AC4
-int resizeWindow(const char* windowName, int x, int y, int width, int height)
+int windowResize(const char* windowName, int x, int y, int width, int height)
 {
     // TODO: Incomplete.
     return -1;
 }
 
 // 0x4B7E7C
-int scaleWindow(const char* windowName, int x, int y, int width, int height)
+int windowScale(const char* windowName, int x, int y, int width, int height)
 {
     // TODO: Incomplete.
     return -1;

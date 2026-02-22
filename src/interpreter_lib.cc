@@ -784,7 +784,7 @@ void opResizeWin(Program* program)
     width = (width * windowGetXres() + 639) / 640;
     height = (height * windowGetYres() + 479) / 480;
 
-    if (resizeWindow(windowName, x, y, width, height) == -1) {
+    if (windowResize(windowName, x, y, width, height) == -1) {
         programFatalError("Couldn't resize window.");
     }
 }
@@ -804,7 +804,7 @@ void opScaleWin(Program* program)
     width = (width * windowGetXres() + 639) / 640;
     height = (height * windowGetYres() + 479) / 480;
 
-    if (scaleWindow(windowName, x, y, width, height) == -1) {
+    if (windowScale(windowName, x, y, width, height) == -1) {
         programFatalError("Couldn't scale window.");
     }
 }
