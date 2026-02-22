@@ -14,7 +14,7 @@ void _showRegion(int a1)
 }
 
 // 0x4B5C24
-int _update_widgets()
+int windowUpdateWidgets()
 {
     for (int index = 0; index < 32; index++) {
         if (_updateRegions[index]) {
@@ -26,7 +26,7 @@ int _update_widgets()
 }
 
 // 0x4B5998
-void sub_4B5998(int win)
+void windowDeleteWidgets(int win)
 {
     // TODO: Incomplete.
 }

@@ -11,8 +11,8 @@ namespace fallout {
 // cache list.
 //
 // See:
-// - [sub_4A2108]
-// - [sub_4A2040]
+// - [protoPtr]
+// - [protoRemoveSomeList]
 #define PROTO_LIST_MAX_ENTRIES 512
 
 #define WEAPON_TWO_HAND 0x00000200

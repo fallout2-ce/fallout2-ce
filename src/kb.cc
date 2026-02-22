@@ -177,19 +177,19 @@ void keyboardSetLayout(int keyboardLayout)
         keyboardBuildQwertyConfiguration();
         break;
     // case KEYBOARD_LAYOUT_FRENCH:
-    //    _kb_scan_to_ascii = sub_4CC5BC;
+    //    _kb_scan_to_ascii = kbNextAsciiFrench;
     //    _kb_map_ascii_French();
     //    break;
     // case KEYBOARD_LAYOUT_GERMAN:
-    //    _kb_scan_to_ascii = sub_4CC94C;
+    //    _kb_scan_to_ascii = kbNextAsciiGerman;
     //    _kb_map_ascii_German();
     //    break;
     // case KEYBOARD_LAYOUT_ITALIAN:
-    //    _kb_scan_to_ascii = sub_4CCE14;
+    //    _kb_scan_to_ascii = kbNextAsciiItalian;
     //    _kb_map_ascii_Italian();
     //    break;
     // case KEYBOARD_LAYOUT_SPANISH:
-    //    _kb_scan_to_ascii = sub_4CD0E0;
+    //    _kb_scan_to_ascii = kbNextAsciiSpanish;
     //    _kb_map_ascii_Spanish();
     //    break;
     default:
