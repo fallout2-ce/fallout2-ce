@@ -728,7 +728,7 @@ bool _deleteWindow(const char* windowName)
     }
 
     ManagedWindow* managedWindow = &(gManagedWindows[index]);
-    winDeleteWidgets(managedWindow->window);
+    windowDeleteWidgets(managedWindow->window);
     windowDestroy(managedWindow->window);
     managedWindow->window = -1;
     managedWindow->name[0] = '\0';
@@ -2275,7 +2275,7 @@ void _updateWindows()
     _movieUpdate();
     mouseManagerUpdate();
     _checkAllRegions();
-    _update_widgets();
+    windowUpdateWidgets();
 }
 
 // 0x4BB234
