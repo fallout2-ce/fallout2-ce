@@ -3,8 +3,8 @@
 
 namespace fallout {
 
-int _update_widgets();
-void sub_4B5998(int win);
+int windowUpdateWidgets();
+void windowDeleteWidgets(int win);
 
 } // namespace fallout
 

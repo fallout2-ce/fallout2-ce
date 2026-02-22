@@ -323,7 +323,7 @@ void _printLine(int win, char** strings, int strings_num, int a4, int a5, int a6
 
     for (i = 0; i < strings_num; i++) {
         v11 = a7 + i * fontGetLineHeight();
-        _windowPrintBuf(win, strings[i], strlen(strings[i]), a4, a5 + a7, a6, v11, a8, a9);
+        windowPrintBuf(win, strings[i], strlen(strings[i]), a4, a5 + a7, a6, v11, a8, a9);
     }
 }
 
@@ -333,9 +333,9 @@ void _printStr(int win, char* a2, int a3, int a4, int a5, int a6, int a7, int a8
     char** strings;
     int strings_num;
 
-    strings = _windowWordWrap(a2, a3, 0, &strings_num);
+    strings = windowWordWrap(a2, a3, 0, &strings_num);
     _printLine(win, strings, strings_num, a3, a4, a5, a6, a7, a8);
-    _windowFreeWordList(strings, strings_num);
+    windowFreeWordList(strings, strings_num);
 }
 
 // 0x430104
@@ -517,14 +517,14 @@ int _dialogOptionProc(const char* a1, int a2)
 }
 
 // 0x430FD4
-int sub_430FD4(const char* a1, const char* a2, int timeout)
+int dialogMessage(const char* a1, const char* a2, int timeout)
 {
     // TODO: Incomplete.
     return -1;
 }
 
 // 0x431088
-int sub_431088(int a1)
+int dialogGo(int a1)
 {
     // TODO: Incomplete.
     return -1;
