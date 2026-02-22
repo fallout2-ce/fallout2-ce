@@ -793,7 +793,8 @@ char* killTypeGetDescription(int killType)
     }
 }
 
-// 0x42D9F4 _critter_heal_hours heals critters based on the number of elapsed hours
+// 0x42D9F4
+// heals critters based on the number of elapsed hours
 int critterHealByHours(Object* critter, int hours)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
