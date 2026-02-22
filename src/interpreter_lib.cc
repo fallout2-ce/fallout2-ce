@@ -175,7 +175,7 @@ void opFillWin3x3(Program* program)
         programFatalError("cannot load 3x3 file '%s'", mangledFileName);
     }
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     int winHeight = windowHeight();
     int winWidth = windowWidth();
@@ -210,7 +210,7 @@ static void opFormat(Program* program)
 // 0x461A5C
 static void opPrint(Program* program)
 {
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     ProgramValue value = programStackPopValue(program);
     char string[80];
@@ -344,7 +344,7 @@ void opTokenize(Program* program)
 // 0x461F1C
 static void opPrintRect(Program* program)
 {
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     int v1 = programStackPopInteger(program);
     if (v1 > 2) {
@@ -376,7 +376,7 @@ static void opPrintRect(Program* program)
 void opSelect(Program* program)
 {
     const char* windowName = programStackPopString(program);
-    int win = _pushWindow(windowName);
+    int win = windowPush(windowName);
     if (win == -1) {
         programFatalError("Error selecing window %s\n", windowName);
     }
@@ -392,7 +392,7 @@ void opDisplay(Program* program)
 {
     char* fileName = programStackPopString(program);
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     char* mangledFileName = _interpretMangleName(fileName);
     _displayFile(mangledFileName);
@@ -404,7 +404,7 @@ void opDisplayRaw(Program* program)
 {
     char* fileName = programStackPopString(program);
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     char* mangledFileName = _interpretMangleName(fileName);
     _displayFileRaw(mangledFileName);
@@ -593,7 +593,7 @@ void opPlayMovie(Program* program)
         strcat(gIntLibPlayMovieFileName, ".mve");
     }
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     program->flags |= PROGRAM_IS_WAITING;
     program->checkWaitFunc = intLibCheckMovie;
@@ -620,7 +620,7 @@ void opPlayMovieRect(Program* program)
         strcat(gIntLibPlayMovieRectFileName, ".mve");
     }
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     program->checkWaitFunc = intLibCheckMovie;
     program->flags |= PROGRAM_IS_WAITING;
@@ -657,7 +657,7 @@ static void opDeleteRegion(Program* program)
         programFatalError("Invalid type given to deleteregion");
     }
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     const char* regionName = value.integerValue != -1 ? programGetString(program, value.opcode, value.integerValue) : nullptr;
     windowDeleteRegion(regionName);
@@ -693,7 +693,7 @@ void opAddRegion(Program* program)
         programFatalError("addregion call without enough points!");
     }
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     windowStartRegion(args / 2);
 
@@ -728,7 +728,7 @@ static void opAddRegionProc(Program* program)
     int v4 = programStackPopInteger(program);
     const char* regionName = programStackPopString(program);
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     if (!windowAddRegionProc(regionName, program, v4, v3, v2, v1)) {
         programFatalError("Error setting procedures to region %s\n", regionName);
@@ -742,7 +742,7 @@ static void opAddRegionRightProc(Program* program)
     int v1 = programStackPopInteger(program);
     int v2 = programStackPopInteger(program);
     const char* regionName = programStackPopString(program);
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     if (!windowAddRegionRightProc(regionName, program, v2, v1)) {
         programFatalError("ErrorError setting right button procedures to region %s\n", regionName);
@@ -764,7 +764,7 @@ void opCreateWin(Program* program)
     width = (width * windowGetXres() + 639) / 640;
     height = (height * windowGetYres() + 479) / 480;
 
-    if (_createWindow(windowName, x, y, width, height, _colorTable[0], 0) == -1) {
+    if (windowCreateManaged(windowName, x, y, width, height, _colorTable[0], 0) == -1) {
         programFatalError("Couldn't create window.");
     }
 }
@@ -815,7 +815,7 @@ void opDeleteWin(Program* program)
 {
     char* windowName = programStackPopString(program);
 
-    if (!_deleteWindow(windowName)) {
+    if (!windowDelete(windowName)) {
         programFatalError("Error deleting window %s\n", windowName);
     }
 
@@ -1053,7 +1053,7 @@ void opGotoXY(Program* program)
     int y = programStackPopInteger(program);
     int x = programStackPopInteger(program);
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     windowGotoXY(x, y);
 }
@@ -1094,7 +1094,7 @@ void opAddButton(Program* program)
     int x = programStackPopInteger(program);
     char* buttonName = programStackPopString(program);
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     height = (height * windowGetYres() + 479) / 480;
     width = (width * windowGetXres() + 639) / 640;
@@ -1132,7 +1132,7 @@ void opAddButtonGfx(Program* program)
         char* normalFileName = _interpretMangleName(programGetString(program, v2.opcode, v2.integerValue));
         char* hoverFileName = _interpretMangleName(programGetString(program, v1.opcode, v1.integerValue));
 
-        _selectWindowID(program->windowId);
+        windowSelectId(program->windowId);
 
         if (!windowAddButtonGfx(buttonName, pressedFileName, normalFileName, hoverFileName)) {
             programFatalError("Error setting graphics to button %s\n", buttonName);
@@ -1151,7 +1151,7 @@ static void opAddButtonProc(Program* program)
     int v3 = programStackPopInteger(program);
     int v4 = programStackPopInteger(program);
     const char* buttonName = programStackPopString(program);
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     if (!windowAddButtonProc(buttonName, program, v4, v3, v2, v1)) {
         programFatalError("Error setting procedures to button %s\n", buttonName);
@@ -1165,7 +1165,7 @@ static void opAddButtonRightProc(Program* program)
     int v1 = programStackPopInteger(program);
     int v2 = programStackPopInteger(program);
     const char* regionName = programStackPopString(program);
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     if (!windowAddRegionRightProc(regionName, program, v2, v1)) {
         programFatalError("Error setting right button procedures to button %s\n", regionName);
@@ -1176,7 +1176,7 @@ static void opAddButtonRightProc(Program* program)
 // 0x4643D4
 static void opShowWin(Program* program)
 {
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
     windowDraw();
 }
 
@@ -1198,7 +1198,7 @@ static void opDeleteButton(Program* program)
         programFatalError("Invalid type given to delete button");
     }
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     if ((value.opcode & 0xF7FF) == VALUE_TYPE_INT) {
         if (windowDeleteButton(nullptr)) {
@@ -1252,7 +1252,7 @@ void opFillWin(Program* program)
         }
     }
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     windowFill(r.floatValue, g.floatValue, b.floatValue);
 }
@@ -1299,7 +1299,7 @@ void opFillRect(Program* program)
         }
     }
 
-    _selectWindowID(program->windowId);
+    windowSelectId(program->windowId);
 
     windowFillRect(x, y, width, height, r.floatValue, g.floatValue, b.floatValue);
 }

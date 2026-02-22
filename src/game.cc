@@ -156,7 +156,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     messageListRepositoryInit();
 
     programWindowSetTitle(windowTitle);
-    _initWindow(1, flags);
+    windowInit(1, flags);
     paletteInit();
 
     // SFALL: Execute all code that should be executed ON game init

@@ -22,6 +22,26 @@
 #include "widget.h"
 #include "window_manager.h"
 
+// Managed window API layer.
+//
+// This module builds a higher-level named window system on top of the
+// low-level `window_manager` primitives (`window_manager.cc`), which operate on
+// raw integer window ids and drawing/input primitives.
+//
+// Key responsibilities here:
+// - Maintain a fixed pool of `ManagedWindow` entries keyed by window name.
+// - Track current managed-window context plus push/pop selection stack for
+//   interpreter-driven UI scripts.
+// - Provide higher-level helpers for formatted text output, regions, managed
+//   buttons, and movie integration.
+//
+// Naming conventions:
+// - `windowCreateManaged(const char* name, ...)` creates/looks up a managed
+//   named window entry and internally calls low-level
+//   `windowCreate(int x, int y, ...)` from `window_manager`.
+// - Most `window*` functions in this file operate on the current managed-window
+//   context (`gCurrentManagedWindowIndex`), not directly on raw window ids.
+
 namespace fallout {
 
 #define MANAGED_WINDOW_COUNT (16)
@@ -709,7 +729,7 @@ bool windowDraw()
 }
 
 // 0x4B78A4
-bool _deleteWindow(const char* windowName)
+bool windowDelete(const char* windowName)
 {
     int index;
     for (index = 0; index < MANAGED_WINDOW_COUNT; index++) {
@@ -786,7 +806,7 @@ int windowScale(const char* windowName, int x, int y, int width, int height)
 }
 
 // 0x4B7F3C
-int _createWindow(const char* windowName, int x, int y, int width, int height, int a6, int flags)
+int windowCreateManaged(const char* windowName, int x, int y, int width, int height, int a6, int flags)
 {
     int windowIndex = -1;
 
@@ -798,7 +818,7 @@ int _createWindow(const char* windowName, int x, int y, int width, int height, i
             break;
         } else {
             if (compat_stricmp(managedWindow->name, windowName) == 0) {
-                _deleteWindow(windowName);
+                windowDelete(windowName);
                 windowIndex = index;
                 break;
             }
@@ -868,7 +888,7 @@ bool windowGotoXY(int x, int y)
 }
 
 // 0x4B81C4
-bool _selectWindowID(int index)
+bool windowSelectId(int index)
 {
     if (index < 0 || index >= MANAGED_WINDOW_COUNT) {
         return false;
@@ -889,7 +909,7 @@ bool _selectWindowID(int index)
 }
 
 // 0x4B821C
-int _selectWindow(const char* windowName)
+int windowSelect(const char* windowName)
 {
     if (gCurrentManagedWindowIndex != -1) {
         ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
@@ -908,7 +928,7 @@ int _selectWindow(const char* windowName)
         }
     }
 
-    if (_selectWindowID(index)) {
+    if (windowSelectId(index)) {
         return index;
     }
 
@@ -927,7 +947,7 @@ unsigned char* windowGetBuffer()
 }
 
 // 0x4B8330
-int _pushWindow(const char* windowName)
+int windowPush(const char* windowName)
 {
     if (_winTOS >= MANAGED_WINDOW_COUNT) {
         return -1;
@@ -935,7 +955,7 @@ int _pushWindow(const char* windowName)
 
     int oldCurrentWindowIndex = gCurrentManagedWindowIndex;
 
-    int windowIndex = _selectWindow(windowName);
+    int windowIndex = windowSelect(windowName);
     if (windowIndex == -1) {
         return -1;
     }
@@ -965,7 +985,7 @@ int _popWindow()
     ManagedWindow* managedWindow = &(gManagedWindows[windowIndex]);
     _winTOS--;
 
-    return _selectWindow(managedWindow->name);
+    return windowSelect(managedWindow->name);
 }
 
 // 0x4B8414
@@ -1335,7 +1355,7 @@ void _removeProgramReferences_3(Program* program)
 }
 
 // 0x4B9190
-void _initWindow(int resolution, int flags)
+void windowInit(int resolution, int flags)
 {
     char err[COMPAT_MAX_PATH];
     int rc;
@@ -1444,7 +1464,7 @@ void windowClose()
     for (int index = 0; index < MANAGED_WINDOW_COUNT; index++) {
         ManagedWindow* managedWindow = &(gManagedWindows[index]);
         if (managedWindow->window != -1) {
-            _deleteWindow(managedWindow->name);
+            windowDelete(managedWindow->name);
         }
     }
 
@@ -2270,7 +2290,7 @@ bool windowDeleteRegion(const char* regionName)
 }
 
 // 0x4BB220
-void _updateWindows()
+void windowUpdateAll()
 {
     _movieUpdate();
     mouseManagerUpdate();
