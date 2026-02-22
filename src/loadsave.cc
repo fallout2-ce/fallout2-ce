@@ -3046,11 +3046,11 @@ int MapDirErase(const char* relativePath, const char* extension)
 }
 
 // 0x4800C8
-int _MapDirEraseFile_(const char* a1, const char* a2)
+int _MapDirEraseFile_(const char* relativePath, const char* fileName)
 {
     char path[COMPAT_MAX_PATH];
 
-    snprintf(path, sizeof(path), "%s\\%s%s", _patches, a1, a2);
+    snprintf(path, sizeof(path), "%s\\%s%s", _patches, relativePath, fileName);
     if (compat_remove(path) != 0) {
         return -1;
     }

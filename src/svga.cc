@@ -26,7 +26,7 @@ static void destroyRenderer();
 Rect _scr_size;
 
 // 0x6ACA18
-void (*_scr_blit)(unsigned char* src, int src_pitch, int a3, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y) = _GNW95_ShowRect;
+void (*_scr_blit)(unsigned char* src, int src_pitch, int unused, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y) = _GNW95_ShowRect;
 
 // 0x6ACA1C
 void (*_zero_mem)() = nullptr;
@@ -331,8 +331,10 @@ unsigned char* directDrawGetPalette()
 }
 
 // 0x4CB850
-void _GNW95_ShowRect(unsigned char* src, int srcPitch, int _, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY)
+void _GNW95_ShowRect(unsigned char* src, int srcPitch, int unused, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY)
 {
+    (void)unused;
+
     blitBufferToBuffer(src + srcPitch * srcY + srcX, srcWidth, srcHeight, srcPitch, (unsigned char*)gSdlSurface->pixels + gSdlSurface->pitch * destY + destX, gSdlSurface->pitch);
 
     SDL_Rect srcRect;

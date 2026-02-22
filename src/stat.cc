@@ -668,11 +668,11 @@ int pcGetExperienceForLevel(int level)
         return -1;
     }
 
-    int v1 = level / 2;
+    int halfLevel = level / 2;
     if ((level & 1) != 0) {
-        return 1000 * v1 * level;
+        return 1000 * halfLevel * level;
     } else {
-        return 1000 * v1 * (level - 1);
+        return 1000 * halfLevel * (level - 1);
     }
 }
 

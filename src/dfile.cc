@@ -38,7 +38,7 @@ namespace fallout {
 #define DFILE_HAS_COMPRESSED_UNGETC (0x10)
 
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
-static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* a4);
+static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* optionalDFile);
 static int dfileReadCharInternal(DFile* stream);
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size);
 static void dfileUngetCompressed(DFile* stream, int ch);
@@ -636,7 +636,7 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
 }
 
 // 0x4E5D9C
-static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* mode, DFile* dfile)
+static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* mode, DFile* optionalDFile)
 {
     DBaseEntry* entry = (DBaseEntry*)bsearch(filePath, dbase->entries, dbase->entriesLength, sizeof(*dbase->entries), dbaseFindEntryByFilePath);
     if (entry == nullptr) {
@@ -647,41 +647,41 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* 
         goto err;
     }
 
-    if (dfile == nullptr) {
-        dfile = (DFile*)malloc(sizeof(*dfile));
-        if (dfile == nullptr) {
+    if (optionalDFile == nullptr) {
+        optionalDFile = (DFile*)malloc(sizeof(*optionalDFile));
+        if (optionalDFile == nullptr) {
             return nullptr;
         }
 
-        memset(dfile, 0, sizeof(*dfile));
-        dfile->dbase = dbase;
-        dfile->next = dbase->dfileHead;
-        dbase->dfileHead = dfile;
+        memset(optionalDFile, 0, sizeof(*optionalDFile));
+        optionalDFile->dbase = dbase;
+        optionalDFile->next = dbase->dfileHead;
+        dbase->dfileHead = optionalDFile;
     } else {
-        if (dbase != dfile->dbase) {
+        if (dbase != optionalDFile->dbase) {
             goto err;
         }
 
-        if (dfile->stream != nullptr) {
-            fclose(dfile->stream);
-            dfile->stream = nullptr;
+        if (optionalDFile->stream != nullptr) {
+            fclose(optionalDFile->stream);
+            optionalDFile->stream = nullptr;
         }
 
-        dfile->compressedBytesRead = 0;
-        dfile->position = 0;
-        dfile->flags = 0;
+        optionalDFile->compressedBytesRead = 0;
+        optionalDFile->position = 0;
+        optionalDFile->flags = 0;
     }
 
-    dfile->entry = entry;
+    optionalDFile->entry = entry;
 
     // Open stream to .DAT file.
-    dfile->stream = compat_fopen(dbase->path, "rb");
-    if (dfile->stream == nullptr) {
+    optionalDFile->stream = compat_fopen(dbase->path, "rb");
+    if (optionalDFile->stream == nullptr) {
         goto err;
     }
 
     // Relocate stream to the beginning of data for specified entry.
-    if (fseek(dfile->stream, dbase->dataOffset + entry->dataOffset, SEEK_SET) != 0) {
+    if (fseek(optionalDFile->stream, dbase->dataOffset + entry->dataOffset, SEEK_SET) != 0) {
         goto err;
     }
 
@@ -690,52 +690,52 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* 
         // buffer. This step is not needed when previous instance of dfile is
         // passed via parameter, which might already have stream and
         // buffer allocated.
-        if (dfile->decompressionStream == nullptr) {
-            dfile->decompressionStream = (z_streamp)malloc(sizeof(*dfile->decompressionStream));
-            if (dfile->decompressionStream == nullptr) {
+        if (optionalDFile->decompressionStream == nullptr) {
+            optionalDFile->decompressionStream = (z_streamp)malloc(sizeof(*optionalDFile->decompressionStream));
+            if (optionalDFile->decompressionStream == nullptr) {
                 goto err;
             }
 
-            dfile->decompressionBuffer = (unsigned char*)malloc(DFILE_DECOMPRESSION_BUFFER_SIZE);
-            if (dfile->decompressionBuffer == nullptr) {
+            optionalDFile->decompressionBuffer = (unsigned char*)malloc(DFILE_DECOMPRESSION_BUFFER_SIZE);
+            if (optionalDFile->decompressionBuffer == nullptr) {
                 goto err;
             }
         }
 
-        dfile->decompressionStream->zalloc = Z_NULL;
-        dfile->decompressionStream->zfree = Z_NULL;
-        dfile->decompressionStream->opaque = Z_NULL;
-        dfile->decompressionStream->next_in = dfile->decompressionBuffer;
-        dfile->decompressionStream->avail_in = 0;
+        optionalDFile->decompressionStream->zalloc = Z_NULL;
+        optionalDFile->decompressionStream->zfree = Z_NULL;
+        optionalDFile->decompressionStream->opaque = Z_NULL;
+        optionalDFile->decompressionStream->next_in = optionalDFile->decompressionBuffer;
+        optionalDFile->decompressionStream->avail_in = 0;
 
-        if (inflateInit(dfile->decompressionStream) != Z_OK) {
+        if (inflateInit(optionalDFile->decompressionStream) != Z_OK) {
             goto err;
         }
     } else {
         // Entry is not compressed, there is no need to keep decompression
         // stream and decompression buffer (in case [dfile] was passed via
         // parameter).
-        if (dfile->decompressionStream != nullptr) {
-            free(dfile->decompressionStream);
-            dfile->decompressionStream = nullptr;
+        if (optionalDFile->decompressionStream != nullptr) {
+            free(optionalDFile->decompressionStream);
+            optionalDFile->decompressionStream = nullptr;
         }
 
-        if (dfile->decompressionBuffer != nullptr) {
-            free(dfile->decompressionBuffer);
-            dfile->decompressionBuffer = nullptr;
+        if (optionalDFile->decompressionBuffer != nullptr) {
+            free(optionalDFile->decompressionBuffer);
+            optionalDFile->decompressionBuffer = nullptr;
         }
     }
 
     if (mode[1] == 't') {
-        dfile->flags |= DFILE_TEXT;
+        optionalDFile->flags |= DFILE_TEXT;
     }
 
-    return dfile;
+    return optionalDFile;
 
 err:
 
-    if (dfile != nullptr) {
-        dfileClose(dfile);
+    if (optionalDFile != nullptr) {
+        dfileClose(optionalDFile);
     }
 
     return nullptr;

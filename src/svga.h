@@ -9,7 +9,7 @@
 namespace fallout {
 
 extern Rect _scr_size;
-extern void (*_scr_blit)(unsigned char* src, int src_pitch, int a3, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
+extern void (*_scr_blit)(unsigned char* src, int src_pitch, int unused, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
 extern void (*_zero_mem)();
 
 extern SDL_Window* gSdlWindow;
@@ -37,7 +37,7 @@ void directDrawFree();
 void directDrawSetPaletteInRange(unsigned char* palette, int start, int count);
 void directDrawSetPalette(unsigned char* palette);
 unsigned char* directDrawGetPalette();
-void _GNW95_ShowRect(unsigned char* src, int src_pitch, int a3, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
+void _GNW95_ShowRect(unsigned char* src, int src_pitch, int unused, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
 void _GNW95_zero_vid_mem();
 
 int screenGetWidth();
