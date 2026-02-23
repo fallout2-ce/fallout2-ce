@@ -290,7 +290,7 @@ static int gTileWindowWidth;
 int gCenterTile;
 
 // 0x4B0C40
-int tileInit(TileData** a1, int squareGridWidth, int squareGridHeight, int hexGridWidth, int hexGridHeight, unsigned char* buf, int windowWidth, int windowHeight, int windowPitch, TileWindowRefreshProc* windowRefreshProc)
+int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, int hexGridWidth, int hexGridHeight, unsigned char* buf, int windowWidth, int windowHeight, int windowPitch, TileWindowRefreshProc* windowRefreshProc)
 {
     int v11;
     int v12;
@@ -304,7 +304,7 @@ int tileInit(TileData** a1, int squareGridWidth, int squareGridHeight, int hexGr
     int v25;
 
     gSquareGridWidth = squareGridWidth;
-    gTileSquares = a1;
+    gTileSquares = squareGrid;
     gHexGridHeight = hexGridHeight;
     gSquareGridHeight = squareGridHeight;
     gHexGridWidth = hexGridWidth;

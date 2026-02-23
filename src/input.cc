@@ -75,9 +75,6 @@ static int _input_my;
 // 0x6AC760
 static int gScreenshotKeyCode;
 
-// 0x6AC764
-static int _using_msec_timer;
-
 // 0x6AC76C
 static ScreenshotHandler* gScreenshotHandler;
 
@@ -103,7 +100,7 @@ static unsigned int gTickerLastTimestamp;
 bool gBlockMouseUpEvent = false;
 
 // 0x4C8A70
-int inputInit(int a1)
+int inputInit()
 {
     if (!directInputInit()) {
         return -1;
@@ -124,7 +121,6 @@ int inputInit(int a1)
     buildNormalizedQwertyKeys();
     _GNW95_clear_time_stamps();
 
-    _using_msec_timer = a1;
     gInputEventQueueWriteIndex = 0;
     gInputEventQueueReadIndex = -1;
     _input_mx = -1;
@@ -207,13 +203,13 @@ void _process_bk()
 }
 
 // 0x4C8C04
-void enqueueInputEvent(int a1)
+void enqueueInputEvent(int logicalKey)
 {
-    if (a1 == -1) {
+    if (logicalKey == -1) {
         return;
     }
 
-    if (a1 == gScreenshotKeyCode) {
+    if (logicalKey == gScreenshotKeyCode) {
         takeScreenshot();
         return;
     }
@@ -223,7 +219,7 @@ void enqueueInputEvent(int a1)
     }
 
     InputEvent* inputEvent = &(gInputEventQueue[gInputEventQueueWriteIndex]);
-    inputEvent->logicalKey = a1;
+    inputEvent->logicalKey = logicalKey;
 
     mouseGetPosition(&(inputEvent->mouseX), &(inputEvent->mouseY));
 

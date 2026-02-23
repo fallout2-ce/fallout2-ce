@@ -148,7 +148,7 @@ static int gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
 };
 
 // 0x41CF20
-int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, int titleColor, const char* a8, int bodyColor, int flags)
+int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, int titleColor, const char* secondaryButtonText, int bodyColor, int flags)
 {
     MessageList messageList;
     MessageListItem messageListItem;
@@ -157,8 +157,8 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     bool initializedButtons = false;
 
     bool hasTwoButtons = false;
-    if (a8 != nullptr) {
-        // TODO: a8 seems to be a way to customize "NO", but is unused.
+    if (secondaryButtonText != nullptr) {
+        // TODO: secondaryButtonText seems to be a way to customize "NO", but is unused.
         hasTwoButtons = true;
     }
 
@@ -311,7 +311,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     if (hasTwoButtons && dialogType == DIALOG_TYPE_LARGE) {
         if (initializedButtons) {
             if ((flags & DIALOG_BOX_YES_NO) != 0) {
-                a8 = getmsg(&messageList, &messageListItem, 102); // 102 - NO
+                secondaryButtonText = getmsg(&messageList, &messageListItem, 102); // 102 - NO
             }
 
             fontSetCurrent(103);
@@ -324,7 +324,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 backgroundFrmImage.getWidth());
 
             fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + _doneX[dialogType] + doneBoxFrmImage.getWidth() + 59,
-                a8,
+                secondaryButtonText,
                 backgroundFrmImage.getWidth(),
                 backgroundFrmImage.getWidth(),
                 _colorTable[18979]);
@@ -392,7 +392,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             fontSetCurrent(103);
 
             fontDrawText(windowBuf + backgroundFrmImage.getWidth() * (_doneY[dialogType] + 3) + _doneX[dialogType] + 35,
-                a8, backgroundFrmImage.getWidth(), backgroundFrmImage.getWidth(), _colorTable[18979]);
+                secondaryButtonText, backgroundFrmImage.getWidth(), backgroundFrmImage.getWidth(), _colorTable[18979]);
 
             int btn = buttonCreate(win,
                 _doneX[dialogType] + 13,

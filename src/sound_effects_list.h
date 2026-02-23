@@ -8,7 +8,7 @@ namespace fallout {
 #define SFXL_ERR_TAG_INVALID (2)
 
 bool soundEffectsListIsValidTag(int tag);
-int soundEffectsListInit(const char* soundEffectsPath, int a2, int debugLevel);
+int soundEffectsListInit(const char* soundEffectsPath, int compression, int debugLevel);
 void soundEffectsListExit();
 int soundEffectsListGetTag(char* name, int* tagPtr);
 int soundEffectsListGetFilePath(int tag, char** pathPtr);

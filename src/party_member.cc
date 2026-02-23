@@ -825,10 +825,10 @@ int _partyMemberSyncPosition()
 // Heals party members according to their healing rate.
 //
 // 0x494EB8
-int _partyMemberRestingHeal(int a1)
+int _partyMemberRestingHeal(int hours)
 {
-    int v1 = a1 / 3;
-    if (v1 == 0) {
+    int healingTicks = hours / 3;
+    if (healingTicks == 0) {
         return 0;
     }
 
@@ -836,7 +836,7 @@ int _partyMemberRestingHeal(int a1)
         PartyMemberListItem* partyMember = &(gPartyMembers[index]);
         if (PID_TYPE(partyMember->object->pid) == OBJ_TYPE_CRITTER) {
             int healingRate = critterGetStat(partyMember->object, STAT_HEALING_RATE);
-            critterAdjustHitPoints(partyMember->object, v1 * healingRate);
+            critterAdjustHitPoints(partyMember->object, healingTicks * healingRate);
         }
     }
 

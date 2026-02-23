@@ -12,7 +12,7 @@ typedef enum DialogBoxOptions {
     DIALOG_BOX_NO_BUTTONS = 0x20, // sfall: CLEAN
 } DialogBoxOptions;
 
-int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, int titleColor, const char* a8, int bodyColor, int flags);
+int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, int titleColor, const char* secondaryButtonText, int bodyColor, int flags);
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags);
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags);
 

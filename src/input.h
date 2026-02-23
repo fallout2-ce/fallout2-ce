@@ -10,12 +10,12 @@ typedef int(ScreenshotHandler)(int width, int height, unsigned char* buffer, uns
 // global for blocking mouse event in inventoryOpenUseItemOn inventory screen
 extern bool gBlockMouseUpEvent;
 
-int inputInit(int a1);
+int inputInit();
 void inputExit();
 int inputGetInput();
 void get_input_position(int* x, int* y);
 void _process_bk();
-void enqueueInputEvent(int a1);
+void enqueueInputEvent(int logicalKey);
 void inputEventQueueReset();
 void tickersExecute();
 void tickersAdd(TickerProc* fn);
@@ -29,8 +29,8 @@ void screenshotHandlerConfigure(int keyCode, ScreenshotHandler* handler);
 unsigned int getTicks();
 void inputPauseForTocks(unsigned int ms);
 void inputBlockForTocks(unsigned int ms);
-unsigned int getTicksSince(unsigned int a1);
-unsigned int getTicksBetween(unsigned int a1, unsigned int a2);
+unsigned int getTicksSince(unsigned int start);
+unsigned int getTicksBetween(unsigned int end, unsigned int start);
 unsigned int _get_bk_time();
 int _GNW95_input_init();
 void _GNW95_process_message();

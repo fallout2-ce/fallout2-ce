@@ -38,7 +38,7 @@ namespace fallout {
 #define DFILE_HAS_COMPRESSED_UNGETC (0x10)
 
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
-static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* a4);
+static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* dfile);
 static int dfileReadCharInternal(DFile* stream);
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size);
 static void dfileUngetCompressed(DFile* stream, int ch);
