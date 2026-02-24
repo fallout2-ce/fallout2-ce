@@ -175,11 +175,11 @@ void opFillWin3x3(Program* program)
         programFatalError("cannot load 3x3 file '%s'", mangledFileName);
     }
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    int winHeight = windowHeight();
-    int winWidth = windowWidth();
-    unsigned char* windowBuffer = windowGetBuffer();
+    int winHeight = scriptWindowHeight();
+    int winWidth = scriptWindowWidth();
+    unsigned char* windowBuffer = scriptWindowGetBuffer();
     _fillBuf3x3(imageData,
         imageWidth,
         imageHeight,
@@ -201,7 +201,7 @@ static void opFormat(Program* program)
     int x = programStackPopInteger(program);
     char* string = programStackPopString(program);
 
-    if (!windowFormatMessage(string, x, y, width, height, textAlignment)) {
+    if (!scriptWindowFormatMessage(string, x, y, width, height, textAlignment)) {
         programFatalError("Error formatting message\n");
     }
 }
@@ -210,7 +210,7 @@ static void opFormat(Program* program)
 // 0x461A5C
 static void opPrint(Program* program)
 {
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
     ProgramValue value = programStackPopValue(program);
     char string[80];
@@ -218,7 +218,7 @@ static void opPrint(Program* program)
     // SFALL: Fix broken Print() script function.
     // CE: Original code uses `interpretOutput` to handle printing. However
     // this function looks invalid or broken itself. Check `opSelect` - it sets
-    // `outputFunc` to `windowOutput`, but `outputFunc` is never called. I'm not
+    // `outputFunc` to `scriptWindowOutput`, but `outputFunc` is never called. I'm not
     // sure if this fix can be moved into `interpretOutput` because it is also
     // used in procedure setup functions.
     //
@@ -226,15 +226,15 @@ static void opPrint(Program* program)
     // are still passed to `interpretOutput`.
     switch (value.opcode & VALUE_TYPE_MASK) {
     case VALUE_TYPE_STRING:
-        windowOutput(programGetString(program, value.opcode, value.integerValue));
+        scriptWindowOutput(programGetString(program, value.opcode, value.integerValue));
         break;
     case VALUE_TYPE_FLOAT:
         snprintf(string, sizeof(string), "%.5f", value.floatValue);
-        windowOutput(string);
+        scriptWindowOutput(string);
         break;
     case VALUE_TYPE_INT:
         snprintf(string, sizeof(string), "%d", value.integerValue);
-        windowOutput(string);
+        scriptWindowOutput(string);
         break;
     }
 }
@@ -344,7 +344,7 @@ void opTokenize(Program* program)
 // 0x461F1C
 static void opPrintRect(Program* program)
 {
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
     int v1 = programStackPopInteger(program);
     if (v1 > 2) {
@@ -367,7 +367,7 @@ static void opPrintRect(Program* program)
         break;
     }
 
-    if (!windowPrintRect(string, v2, v1)) {
+    if (!scriptWindowPrintRect(string, v2, v1)) {
         programFatalError("Error in printrect");
     }
 }
@@ -376,14 +376,14 @@ static void opPrintRect(Program* program)
 void opSelect(Program* program)
 {
     const char* windowName = programStackPopString(program);
-    int win = windowPush(windowName);
+    int win = scriptWindowPush(windowName);
     if (win == -1) {
         programFatalError("Error selecing window %s\n", windowName);
     }
 
     program->windowId = win;
 
-    _interpretOutputFunc(windowOutput);
+    _interpretOutputFunc(scriptWindowOutput);
 }
 
 // display
@@ -392,7 +392,7 @@ void opDisplay(Program* program)
 {
     char* fileName = programStackPopString(program);
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
     char* mangledFileName = _interpretMangleName(fileName);
     _displayFile(mangledFileName);
@@ -404,7 +404,7 @@ void opDisplayRaw(Program* program)
 {
     char* fileName = programStackPopString(program);
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
     char* mangledFileName = _interpretMangleName(fileName);
     _displayFileRaw(mangledFileName);
@@ -567,7 +567,7 @@ int intLibCheckMovie(Program* program)
         return 1;
     }
 
-    return windowMoviePlaying();
+    return scriptWindowMoviePlaying();
 }
 
 // movieflags
@@ -576,7 +576,7 @@ static void opSetMovieFlags(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    if (!windowSetMovieFlags(data)) {
+    if (!scriptWindowSetMovieFlags(data)) {
         programFatalError("Error setting movie flags\n");
     }
 }
@@ -593,13 +593,13 @@ void opPlayMovie(Program* program)
         strcat(gIntLibPlayMovieFileName, ".mve");
     }
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
     program->flags |= PROGRAM_IS_WAITING;
     program->checkWaitFunc = intLibCheckMovie;
 
     char* mangledFileName = _interpretMangleName(gIntLibPlayMovieFileName);
-    if (!windowPlayMovie(mangledFileName)) {
+    if (!scriptWindowPlayMovie(mangledFileName)) {
         programFatalError("Error playing movie");
     }
 }
@@ -620,13 +620,13 @@ void opPlayMovieRect(Program* program)
         strcat(gIntLibPlayMovieRectFileName, ".mve");
     }
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
     program->checkWaitFunc = intLibCheckMovie;
     program->flags |= PROGRAM_IS_WAITING;
 
     char* mangledFileName = _interpretMangleName(gIntLibPlayMovieRectFileName);
-    if (!windowPlayMovieRect(mangledFileName, x, y, width, height)) {
+    if (!scriptWindowPlayMovieRect(mangledFileName, x, y, width, height)) {
         programFatalError("Error playing movie");
     }
 }
@@ -635,7 +635,7 @@ void opPlayMovieRect(Program* program)
 // 0x46287C
 static void opStopMovie(Program* program)
 {
-    windowStopMovie();
+    scriptWindowStopMovie();
     program->flags |= PROGRAM_FLAG_0x40;
 }
 
@@ -657,10 +657,10 @@ static void opDeleteRegion(Program* program)
         programFatalError("Invalid type given to deleteregion");
     }
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
     const char* regionName = value.integerValue != -1 ? programGetString(program, value.opcode, value.integerValue) : nullptr;
-    windowDeleteRegion(regionName);
+    scriptWindowDeleteRegion(regionName);
 }
 
 // activateregion
@@ -670,7 +670,7 @@ void opActivateRegion(Program* program)
     int v1 = programStackPopInteger(program);
     char* regionName = programStackPopString(program);
 
-    windowActivateRegion(regionName, v1);
+    scriptWindowActivateRegion(regionName, v1);
 }
 
 // checkregion
@@ -679,7 +679,7 @@ static void opCheckRegion(Program* program)
 {
     const char* regionName = programStackPopString(program);
 
-    bool regionExists = windowCheckRegionExists(regionName);
+    bool regionExists = scriptWindowCheckRegionExists(regionName);
     programStackPushInteger(program, regionExists);
 }
 
@@ -693,28 +693,28 @@ void opAddRegion(Program* program)
         programFatalError("addregion call without enough points!");
     }
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    windowStartRegion(args / 2);
+    scriptWindowStartRegion(args / 2);
 
     while (args >= 2) {
         int y = programStackPopInteger(program);
         int x = programStackPopInteger(program);
 
-        y = (y * windowGetYres() + 479) / 480;
-        x = (x * windowGetXres() + 639) / 640;
+        y = (y * scriptWindowGetYres() + 479) / 480;
+        x = (x * scriptWindowGetXres() + 639) / 640;
         args -= 2;
 
-        windowAddRegionPoint(x, y, true);
+        scriptWindowAddRegionPoint(x, y, true);
     }
 
     if (args == 0) {
         programFatalError("Unnamed regions not allowed\n");
-        windowEndRegion();
+        scriptWindowEndRegion();
     } else {
         const char* regionName = programStackPopString(program);
-        windowAddRegionName(regionName);
-        windowEndRegion();
+        scriptWindowAddRegionName(regionName);
+        scriptWindowEndRegion();
     }
 }
 
@@ -728,9 +728,9 @@ static void opAddRegionProc(Program* program)
     int v4 = programStackPopInteger(program);
     const char* regionName = programStackPopString(program);
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    if (!windowAddRegionProc(regionName, program, v4, v3, v2, v1)) {
+    if (!scriptWindowAddRegionProc(regionName, program, v4, v3, v2, v1)) {
         programFatalError("Error setting procedures to region %s\n", regionName);
     }
 }
@@ -742,9 +742,9 @@ static void opAddRegionRightProc(Program* program)
     int v1 = programStackPopInteger(program);
     int v2 = programStackPopInteger(program);
     const char* regionName = programStackPopString(program);
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    if (!windowAddRegionRightProc(regionName, program, v2, v1)) {
+    if (!scriptWindowAddRegionRightProc(regionName, program, v2, v1)) {
         programFatalError("ErrorError setting right button procedures to region %s\n", regionName);
     }
 }
@@ -759,12 +759,12 @@ void opCreateWin(Program* program)
     int x = programStackPopInteger(program);
     char* windowName = programStackPopString(program);
 
-    x = (x * windowGetXres() + 639) / 640;
-    y = (y * windowGetYres() + 479) / 480;
-    width = (width * windowGetXres() + 639) / 640;
-    height = (height * windowGetYres() + 479) / 480;
+    x = (x * scriptWindowGetXres() + 639) / 640;
+    y = (y * scriptWindowGetYres() + 479) / 480;
+    width = (width * scriptWindowGetXres() + 639) / 640;
+    height = (height * scriptWindowGetYres() + 479) / 480;
 
-    if (windowCreateManaged(windowName, x, y, width, height, _colorTable[0], 0) == -1) {
+    if (scriptWindowCreate(windowName, x, y, width, height, _colorTable[0], 0) == -1) {
         programFatalError("Couldn't create window.");
     }
 }
@@ -779,12 +779,12 @@ void opResizeWin(Program* program)
     int x = programStackPopInteger(program);
     char* windowName = programStackPopString(program);
 
-    x = (x * windowGetXres() + 639) / 640;
-    y = (y * windowGetYres() + 479) / 480;
-    width = (width * windowGetXres() + 639) / 640;
-    height = (height * windowGetYres() + 479) / 480;
+    x = (x * scriptWindowGetXres() + 639) / 640;
+    y = (y * scriptWindowGetYres() + 479) / 480;
+    width = (width * scriptWindowGetXres() + 639) / 640;
+    height = (height * scriptWindowGetYres() + 479) / 480;
 
-    if (windowResize(windowName, x, y, width, height) == -1) {
+    if (scriptWindowResize(windowName, x, y, width, height) == -1) {
         programFatalError("Couldn't resize window.");
     }
 }
@@ -799,12 +799,12 @@ void opScaleWin(Program* program)
     int x = programStackPopInteger(program);
     char* windowName = programStackPopString(program);
 
-    x = (x * windowGetXres() + 639) / 640;
-    y = (y * windowGetYres() + 479) / 480;
-    width = (width * windowGetXres() + 639) / 640;
-    height = (height * windowGetYres() + 479) / 480;
+    x = (x * scriptWindowGetXres() + 639) / 640;
+    y = (y * scriptWindowGetYres() + 479) / 480;
+    width = (width * scriptWindowGetXres() + 639) / 640;
+    height = (height * scriptWindowGetYres() + 479) / 480;
 
-    if (windowScale(windowName, x, y, width, height) == -1) {
+    if (scriptWindowScale(windowName, x, y, width, height) == -1) {
         programFatalError("Couldn't scale window.");
     }
 }
@@ -815,7 +815,7 @@ void opDeleteWin(Program* program)
 {
     char* windowName = programStackPopString(program);
 
-    if (!windowDelete(windowName)) {
+    if (!scriptWindowDelete(windowName)) {
         programFatalError("Error deleting window %s\n", windowName);
     }
 
@@ -1053,9 +1053,9 @@ void opGotoXY(Program* program)
     int y = programStackPopInteger(program);
     int x = programStackPopInteger(program);
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    windowGotoXY(x, y);
+    scriptWindowGotoXY(x, y);
 }
 
 // addbuttonflag
@@ -1064,7 +1064,7 @@ static void opAddButtonFlag(Program* program)
 {
     int flag = programStackPopInteger(program);
     const char* buttonName = programStackPopString(program);
-    if (!windowSetButtonFlag(buttonName, flag)) {
+    if (!scriptWindowSetButtonFlag(buttonName, flag)) {
         // NOTE: Original code calls programGetString one more time with the
         // same params.
         programFatalError("Error setting flag on button %s", buttonName);
@@ -1077,7 +1077,7 @@ static void opAddRegionFlag(Program* program)
 {
     int flag = programStackPopInteger(program);
     const char* regionName = programStackPopString(program);
-    if (!windowSetRegionFlag(regionName, flag)) {
+    if (!scriptWindowSetRegionFlag(regionName, flag)) {
         // NOTE: Original code calls programGetString one more time with the
         // same params.
         programFatalError("Error setting flag on region %s", regionName);
@@ -1094,14 +1094,14 @@ void opAddButton(Program* program)
     int x = programStackPopInteger(program);
     char* buttonName = programStackPopString(program);
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    height = (height * windowGetYres() + 479) / 480;
-    width = (width * windowGetXres() + 639) / 640;
-    y = (y * windowGetYres() + 479) / 480;
-    x = (x * windowGetXres() + 639) / 640;
+    height = (height * scriptWindowGetYres() + 479) / 480;
+    width = (width * scriptWindowGetXres() + 639) / 640;
+    y = (y * scriptWindowGetYres() + 479) / 480;
+    x = (x * scriptWindowGetXres() + 639) / 640;
 
-    windowAddButton(buttonName, x, y, width, height, 0);
+    scriptWindowAddButton(buttonName, x, y, width, height, 0);
 }
 
 // addbuttontext
@@ -1111,7 +1111,7 @@ void opAddButtonText(Program* program)
     const char* text = programStackPopString(program);
     const char* buttonName = programStackPopString(program);
 
-    if (!windowAddButtonText(buttonName, text)) {
+    if (!scriptWindowAddButtonText(buttonName, text)) {
         programFatalError("Error setting text to button %s\n", buttonName);
     }
 }
@@ -1132,9 +1132,9 @@ void opAddButtonGfx(Program* program)
         char* normalFileName = _interpretMangleName(programGetString(program, v2.opcode, v2.integerValue));
         char* hoverFileName = _interpretMangleName(programGetString(program, v1.opcode, v1.integerValue));
 
-        windowSelectId(program->windowId);
+        scriptWindowSelectId(program->windowId);
 
-        if (!windowAddButtonGfx(buttonName, pressedFileName, normalFileName, hoverFileName)) {
+        if (!scriptWindowAddButtonGfx(buttonName, pressedFileName, normalFileName, hoverFileName)) {
             programFatalError("Error setting graphics to button %s\n", buttonName);
         }
     } else {
@@ -1151,9 +1151,9 @@ static void opAddButtonProc(Program* program)
     int v3 = programStackPopInteger(program);
     int v4 = programStackPopInteger(program);
     const char* buttonName = programStackPopString(program);
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    if (!windowAddButtonProc(buttonName, program, v4, v3, v2, v1)) {
+    if (!scriptWindowAddButtonProc(buttonName, program, v4, v3, v2, v1)) {
         programFatalError("Error setting procedures to button %s\n", buttonName);
     }
 }
@@ -1165,9 +1165,9 @@ static void opAddButtonRightProc(Program* program)
     int v1 = programStackPopInteger(program);
     int v2 = programStackPopInteger(program);
     const char* regionName = programStackPopString(program);
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    if (!windowAddRegionRightProc(regionName, program, v2, v1)) {
+    if (!scriptWindowAddRegionRightProc(regionName, program, v2, v1)) {
         programFatalError("Error setting right button procedures to button %s\n", regionName);
     }
 }
@@ -1176,8 +1176,8 @@ static void opAddButtonRightProc(Program* program)
 // 0x4643D4
 static void opShowWin(Program* program)
 {
-    windowSelectId(program->windowId);
-    windowDraw();
+    scriptWindowSelectId(program->windowId);
+    scriptWindowDraw();
 }
 
 // deletebutton
@@ -1198,15 +1198,15 @@ static void opDeleteButton(Program* program)
         programFatalError("Invalid type given to delete button");
     }
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
     if ((value.opcode & 0xF7FF) == VALUE_TYPE_INT) {
-        if (windowDeleteButton(nullptr)) {
+        if (scriptWindowDeleteButton(nullptr)) {
             return;
         }
     } else {
         const char* buttonName = programGetString(program, value.opcode, value.integerValue);
-        if (windowDeleteButton(buttonName)) {
+        if (scriptWindowDeleteButton(buttonName)) {
             return;
         }
     }
@@ -1252,9 +1252,9 @@ void opFillWin(Program* program)
         }
     }
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    windowFill(r.floatValue, g.floatValue, b.floatValue);
+    scriptWindowFill(r.floatValue, g.floatValue, b.floatValue);
 }
 
 // fillrect
@@ -1299,9 +1299,9 @@ void opFillRect(Program* program)
         }
     }
 
-    windowSelectId(program->windowId);
+    scriptWindowSelectId(program->windowId);
 
-    windowFillRect(x, y, width, height, r.floatValue, g.floatValue, b.floatValue);
+    scriptWindowFillRect(x, y, width, height, r.floatValue, g.floatValue, b.floatValue);
 }
 
 // hidemouse
@@ -1349,7 +1349,7 @@ void opDisplayGfx(Program* program)
     char* fileName = programStackPopString(program);
 
     char* mangledFileName = _interpretMangleName(fileName);
-    windowDisplay(mangledFileName, x, y, width, height);
+    scriptWindowDisplay(mangledFileName, x, y, width, height);
 }
 
 // loadpalettetable
@@ -1441,7 +1441,7 @@ void opRefreshMouse(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    if (!windowRefreshRegions()) {
+    if (!scriptWindowRefreshRegions()) {
         _executeProc(program, data);
     }
 }
@@ -1452,7 +1452,7 @@ static void opSetFont(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    if (!windowSetFont(data)) {
+    if (!scriptWindowSetFont(data)) {
         programFatalError("Error setting font");
     }
 }
@@ -1463,7 +1463,7 @@ static void opSetTextFlags(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    if (!windowSetTextFlags(data)) {
+    if (!scriptWindowSetTextFlags(data)) {
         programFatalError("Error setting text flags");
     }
 }
@@ -1491,7 +1491,7 @@ static void opSetTextColor(Program* program)
     float g = value[1].floatValue;
     float b = value[0].floatValue;
 
-    if (!windowSetTextColor(r, g, b)) {
+    if (!scriptWindowSetTextColor(r, g, b)) {
         programFatalError("Error setting text color");
     }
 }
@@ -1575,7 +1575,7 @@ static void opSetHighlightColor(Program* program)
     float g = value[1].floatValue;
     float b = value[0].floatValue;
 
-    if (!windowSetHighlightColor(r, g, b)) {
+    if (!scriptWindowSetHighlightColor(r, g, b)) {
         programFatalError("Error setting text highlight color");
     }
 }
@@ -2195,7 +2195,7 @@ static bool intLibDoInput(int key)
 // 0x466A70
 void intLibInit()
 {
-    windowAddInputFunc(intLibDoInput);
+    scriptWindowAddInputFunc(intLibDoInput);
 
     interpreterRegisterOpcode(0x806A, opFillWin3x3);
     interpreterRegisterOpcode(0x808C, opDeleteButton);

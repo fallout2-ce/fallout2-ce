@@ -51,7 +51,7 @@ bool sfall_gl_scr_init()
         compat_splitpath(curr, drive, dir, nullptr, nullptr);
 
         char** files;
-        int filesLength = fileNameListInit(curr, &files, 0, 0);
+        int filesLength = fileNameListInit(curr, &files);
         if (filesLength != 0) {
             for (int index = 0; index < filesLength; index++) {
                 char path[COMPAT_MAX_PATH];

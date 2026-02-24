@@ -323,10 +323,10 @@ void mf_set_outline(Program* program, int args)
 void mf_show_window(Program* program, int args)
 {
     if (args == 0) {
-        windowShow();
+        scriptWindowShow();
     } else if (args == 1) {
         const char* windowName = programStackPopString(program);
-        if (!windowShowNamed(windowName)) {
+        if (!scriptWindowShowNamed(windowName)) {
             debugPrint("show_window: window '%s' is not found", windowName);
         }
     }

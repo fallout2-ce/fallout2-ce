@@ -218,11 +218,11 @@ int gameMoviePlay(int movie, int flags)
 
         colorPaletteLoad(subtitlesPaletteFilePath);
 
-        oldTextColor = windowGetTextColor();
-        windowSetTextColor(1.0, 1.0, 1.0);
+        oldTextColor = scriptWindowGetTextColor();
+        scriptWindowSetTextColor(1.0, 1.0, 1.0);
 
         oldFont = fontGetCurrent();
-        windowSetFont(101);
+        scriptWindowSetFont(101);
     }
 
     bool cursorWasHidden = cursorIsHidden();
@@ -280,12 +280,12 @@ int gameMoviePlay(int movie, int flags)
     if (subtitlesEnabled) {
         colorPaletteLoad("color.pal");
 
-        windowSetFont(oldFont);
+        scriptWindowSetFont(oldFont);
 
         float r = (float)((Color2RGB(oldTextColor) & 0x7C00) >> 10) * flt_50352A;
         float g = (float)((Color2RGB(oldTextColor) & 0x3E0) >> 5) * flt_50352A;
         float b = (float)(Color2RGB(oldTextColor) & 0x1F) * flt_50352A;
-        windowSetTextColor(r, g, b);
+        scriptWindowSetTextColor(r, g, b);
     }
 
     windowDestroy(win);

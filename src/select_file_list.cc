@@ -19,7 +19,7 @@ int _compare(const void* a, const void* b)
 char** _getFileList(const char* pattern, int* fileNameListLengthPtr)
 {
     char** fileNameList;
-    int fileNameListLength = fileNameListInit(pattern, &fileNameList, 0, 0);
+    int fileNameListLength = fileNameListInit(pattern, &fileNameList);
     *fileNameListLengthPtr = fileNameListLength;
     if (fileNameListLength == 0) {
         return nullptr;

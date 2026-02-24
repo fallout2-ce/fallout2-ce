@@ -136,7 +136,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     compat_resolve_path(alternativeMusicPath);
 
     char** acms;
-    int acmsLength = fileNameListInit(alternativeMusicPath, &acms, 0, 0);
+    int acmsLength = fileNameListInit(alternativeMusicPath, &acms);
     if (acmsLength != -1) {
         if (acmsLength > 0) {
             configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, "data\\sound\\music\\");

@@ -2746,7 +2746,7 @@ static int _GameMap2Slot(File* stream)
     snprintf(_str0, sizeof(_str0), "%s\\*.%s", "MAPS", "SAV");
 
     char** fileNameList;
-    int fileNameListLength = fileNameListInit(_str0, &fileNameList, 0, 0);
+    int fileNameListLength = fileNameListInit(_str0, &fileNameList);
     if (fileNameListLength == -1) {
         return -1;
     }
@@ -3035,7 +3035,7 @@ int MapDirErase(const char* relativePath, const char* extension)
     snprintf(path, sizeof(path), "%s*.%s", relativePath, extension);
 
     char** fileList;
-    int fileListLength = fileNameListInit(path, &fileList, 0, 0);
+    int fileListLength = fileNameListInit(path, &fileList);
     while (--fileListLength >= 0) {
         snprintf(path, sizeof(path), "%s\\%s%s", _patches, relativePath, fileList[fileListLength]);
         compat_remove(path);
@@ -3082,7 +3082,7 @@ static int _SaveBackup()
     snprintf(_str0, sizeof(_str0), "%s*.%s", _gmpath, "SAV");
 
     char** fileList;
-    int fileListLength = fileNameListInit(_str0, &fileList, 0, 0);
+    int fileListLength = fileNameListInit(_str0, &fileList);
     if (fileListLength == -1) {
         return -1;
     }
@@ -3151,7 +3151,7 @@ static int _RestoreSave()
     snprintf(_str0, sizeof(_str0), "%s*.%s", _gmpath, "BAK");
 
     char** fileList;
-    int fileListLength = fileNameListInit(_str0, &fileList, 0, 0);
+    int fileListLength = fileNameListInit(_str0, &fileList);
     if (fileListLength == -1) {
         return -1;
     }
@@ -3233,7 +3233,7 @@ static int _EraseSave()
     snprintf(_str0, sizeof(_str0), "%s*.%s", _gmpath, "SAV");
 
     char** fileList;
-    int fileListLength = fileNameListInit(_str0, &fileList, 0, 0);
+    int fileListLength = fileNameListInit(_str0, &fileList);
     if (fileListLength == -1) {
         return -1;
     }
