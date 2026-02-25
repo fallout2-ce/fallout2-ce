@@ -543,11 +543,11 @@ int _getInput()
 // 0x4B6F60
 void _doButtonOn(int btn, int keyCode)
 {
-    sub_4B6F68(btn, MANAGED_BUTTON_MOUSE_EVENT_ENTER);
+    scriptWindowDispatchButtonMouseEvent(btn, MANAGED_BUTTON_MOUSE_EVENT_ENTER);
 }
 
 // 0x4B6F68
-void sub_4B6F68(int btn, int mouseEvent)
+void scriptWindowDispatchButtonMouseEvent(int btn, int mouseEvent)
 {
     int win = _win_last_button_winID();
     if (win == -1) {
@@ -580,19 +580,19 @@ void sub_4B6F68(int btn, int mouseEvent)
 // 0x4B7028
 void _doButtonOff(int btn, int keyCode)
 {
-    sub_4B6F68(btn, MANAGED_BUTTON_MOUSE_EVENT_EXIT);
+    scriptWindowDispatchButtonMouseEvent(btn, MANAGED_BUTTON_MOUSE_EVENT_EXIT);
 }
 
 // 0x4B7034
 void _doButtonPress(int btn, int keyCode)
 {
-    sub_4B6F68(btn, MANAGED_BUTTON_MOUSE_EVENT_BUTTON_DOWN);
+    scriptWindowDispatchButtonMouseEvent(btn, MANAGED_BUTTON_MOUSE_EVENT_BUTTON_DOWN);
 }
 
 // 0x4B703C
 void _doButtonRelease(int btn, int keyCode)
 {
-    sub_4B6F68(btn, MANAGED_BUTTON_MOUSE_EVENT_BUTTON_UP);
+    scriptWindowDispatchButtonMouseEvent(btn, MANAGED_BUTTON_MOUSE_EVENT_BUTTON_UP);
 }
 
 // NOTE: Unused.
@@ -600,13 +600,13 @@ void _doButtonRelease(int btn, int keyCode)
 // 0x4B7048
 void _doRightButtonPress(int btn, int keyCode)
 {
-    sub_4B704C(btn, MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_DOWN);
+    scriptWindowDispatchButtonRightMouseEvent(btn, MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_DOWN);
 }
 
 // NOTE: Unused.
 //
 // 0x4B704C
-void sub_4B704C(int btn, int mouseEvent)
+void scriptWindowDispatchButtonRightMouseEvent(int btn, int mouseEvent)
 {
     int win = _win_last_button_winID();
     if (win == -1) {
@@ -641,7 +641,7 @@ void sub_4B704C(int btn, int mouseEvent)
 // 0x4B710C
 void _doRightButtonRelease(int btn, int keyCode)
 {
-    sub_4B704C(btn, MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_UP);
+    scriptWindowDispatchButtonRightMouseEvent(btn, MANAGED_BUTTON_RIGHT_MOUSE_EVENT_BUTTON_UP);
 }
 
 // Note: this used to have a third buffer parameter, but it was never used
