@@ -222,7 +222,7 @@ int gameMoviePlay(int movie, int flags)
         scriptWindowSetTextColor(1.0, 1.0, 1.0);
 
         oldFont = fontGetCurrent();
-        scriptWindowSetFont(101);
+        windowSetFont(101);
     }
 
     bool cursorWasHidden = cursorIsHidden();
@@ -280,7 +280,7 @@ int gameMoviePlay(int movie, int flags)
     if (subtitlesEnabled) {
         colorPaletteLoad("color.pal");
 
-        scriptWindowSetFont(oldFont);
+        windowSetFont(oldFont);
 
         float r = (float)((Color2RGB(oldTextColor) & 0x7C00) >> 10) * flt_50352A;
         float g = (float)((Color2RGB(oldTextColor) & 0x3E0) >> 5) * flt_50352A;

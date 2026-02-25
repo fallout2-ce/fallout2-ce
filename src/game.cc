@@ -497,7 +497,7 @@ void gameExit()
     interfaceFontsExit();
     scriptWindowClose();
     messageListRepositoryExit();
-    dbClose();
+    dbCloseAll();
     settingsExit(true);
     sfallConfigExit();
 }

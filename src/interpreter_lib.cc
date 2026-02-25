@@ -701,8 +701,8 @@ void opAddRegion(Program* program)
         int y = programStackPopInteger(program);
         int x = programStackPopInteger(program);
 
-        y = (y * scriptWindowGetYres() + 479) / 480;
-        x = (x * scriptWindowGetXres() + 639) / 640;
+        y = (y * windowGetYres() + 479) / 480;
+        x = (x * windowGetXres() + 639) / 640;
         args -= 2;
 
         scriptWindowAddRegionPoint(x, y, true);
@@ -759,10 +759,10 @@ void opCreateWin(Program* program)
     int x = programStackPopInteger(program);
     char* windowName = programStackPopString(program);
 
-    x = (x * scriptWindowGetXres() + 639) / 640;
-    y = (y * scriptWindowGetYres() + 479) / 480;
-    width = (width * scriptWindowGetXres() + 639) / 640;
-    height = (height * scriptWindowGetYres() + 479) / 480;
+    x = (x * windowGetXres() + 639) / 640;
+    y = (y * windowGetYres() + 479) / 480;
+    width = (width * windowGetXres() + 639) / 640;
+    height = (height * windowGetYres() + 479) / 480;
 
     if (scriptWindowCreate(windowName, x, y, width, height, _colorTable[0], 0) == -1) {
         programFatalError("Couldn't create window.");
@@ -779,10 +779,10 @@ void opResizeWin(Program* program)
     int x = programStackPopInteger(program);
     char* windowName = programStackPopString(program);
 
-    x = (x * scriptWindowGetXres() + 639) / 640;
-    y = (y * scriptWindowGetYres() + 479) / 480;
-    width = (width * scriptWindowGetXres() + 639) / 640;
-    height = (height * scriptWindowGetYres() + 479) / 480;
+    x = (x * windowGetXres() + 639) / 640;
+    y = (y * windowGetYres() + 479) / 480;
+    width = (width * windowGetXres() + 639) / 640;
+    height = (height * windowGetYres() + 479) / 480;
 
     if (scriptWindowResize(windowName, x, y, width, height) == -1) {
         programFatalError("Couldn't resize window.");
@@ -799,10 +799,10 @@ void opScaleWin(Program* program)
     int x = programStackPopInteger(program);
     char* windowName = programStackPopString(program);
 
-    x = (x * scriptWindowGetXres() + 639) / 640;
-    y = (y * scriptWindowGetYres() + 479) / 480;
-    width = (width * scriptWindowGetXres() + 639) / 640;
-    height = (height * scriptWindowGetYres() + 479) / 480;
+    x = (x * windowGetXres() + 639) / 640;
+    y = (y * windowGetYres() + 479) / 480;
+    width = (width * windowGetXres() + 639) / 640;
+    height = (height * windowGetYres() + 479) / 480;
 
     if (scriptWindowScale(windowName, x, y, width, height) == -1) {
         programFatalError("Couldn't scale window.");
@@ -1096,10 +1096,10 @@ void opAddButton(Program* program)
 
     scriptWindowSelectId(program->windowId);
 
-    height = (height * scriptWindowGetYres() + 479) / 480;
-    width = (width * scriptWindowGetXres() + 639) / 640;
-    y = (y * scriptWindowGetYres() + 479) / 480;
-    x = (x * scriptWindowGetXres() + 639) / 640;
+    height = (height * windowGetYres() + 479) / 480;
+    width = (width * windowGetXres() + 639) / 640;
+    y = (y * windowGetYres() + 479) / 480;
+    x = (x * windowGetXres() + 639) / 640;
 
     scriptWindowAddButton(buttonName, x, y, width, height, 0);
 }
@@ -1452,7 +1452,7 @@ static void opSetFont(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    if (!scriptWindowSetFont(data)) {
+    if (!windowSetFont(data)) {
         programFatalError("Error setting font");
     }
 }

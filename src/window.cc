@@ -220,13 +220,13 @@ static int _currentHighlightColorG;
 static int _currentHighlightColorB;
 
 // 0x4B6120
-int scriptWindowGetFont()
+int windowGetFont()
 {
     return gWidgetFont;
 }
 
 // 0x4B6128
-int scriptWindowSetFont(int font)
+int windowSetFont(int font)
 {
     gWidgetFont = font;
     fontSetCurrent(font);
@@ -989,7 +989,7 @@ int _popWindow()
 }
 
 // 0x4B8414
-void scriptWindowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, int flags, int textAlignment)
+void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, int flags, int textAlignment)
 {
     if (y + fontGetLineHeight() > maxY) {
         return;
@@ -1058,7 +1058,7 @@ void scriptWindowPrintBuf(int win, char* string, int stringLength, int width, in
 }
 
 // 0x4B8638
-char** scriptWindowWordWrap(char* string, int maxLength, int indent, int* substringListLengthPtr)
+char** windowWordWrap(char* string, int maxLength, int indent, int* substringListLengthPtr)
 {
     if (string == nullptr) {
         *substringListLengthPtr = 0;
@@ -1131,7 +1131,7 @@ char** scriptWindowWordWrap(char* string, int maxLength, int indent, int* substr
 }
 
 // 0x4B880C
-void scriptWindowFreeWordList(char** substringList, int substringListLength)
+void windowFreeWordList(char** substringList, int substringListLength)
 {
     if (substringList == nullptr) {
         return;
@@ -1147,29 +1147,29 @@ void scriptWindowFreeWordList(char** substringList, int substringListLength)
 // Renders multiline string in the specified bounding box.
 //
 // 0x4B8854
-void scriptWindowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment, int spacing)
+void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment, int spacing)
 {
     if (string == nullptr) {
         return;
     }
 
     int substringListLength;
-    char** substringList = scriptWindowWordWrap(string, width, 0, &substringListLength);
+    char** substringList = windowWordWrap(string, width, 0, &substringListLength);
 
     for (int index = 0; index < substringListLength; index++) {
         int v1 = y + index * (spacing + fontGetLineHeight());
-        scriptWindowPrintBuf(win, substringList[index], strlen(substringList[index]), width, height + y, x, v1, flags, textAlignment);
+        windowPrintBuf(win, substringList[index], strlen(substringList[index]), width, height + y, x, v1, flags, textAlignment);
     }
 
-    scriptWindowFreeWordList(substringList, substringListLength);
+    windowFreeWordList(substringList, substringListLength);
 }
 
 // Renders multiline string in the specified bounding box.
 //
 // 0x4B88FC
-void scriptWindowWrapLine(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment)
+void windowWrapLine(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment)
 {
-    scriptWindowWrapLineWithSpacing(win, string, width, height, x, y, flags, textAlignment, 0);
+    windowWrapLineWithSpacing(win, string, width, height, x, y, flags, textAlignment, 0);
 }
 
 // 0x4B8920
@@ -1185,7 +1185,7 @@ bool scriptWindowPrintRect(char* string, int a2, int textAlignment)
     int x = managedWindow->field_44;
     int y = managedWindow->field_48;
     int flags = scriptWindowGetTextColor() | 0x2000000;
-    scriptWindowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
+    windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
 
     return true;
 }
@@ -1195,7 +1195,7 @@ bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height
 {
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
     int flags = scriptWindowGetTextColor() | 0x2000000;
-    scriptWindowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
+    windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
 
     return true;
 }
@@ -1310,13 +1310,13 @@ bool scriptWindowDisplayBuf(unsigned char* src, int srcWidth, int srcHeight, int
 }
 
 // 0x4B9048
-int scriptWindowGetXres()
+int windowGetXres()
 {
     return _xres;
 }
 
 // 0x4B9050
-int scriptWindowGetYres()
+int windowGetYres()
 {
     return _yres;
 }
@@ -1473,7 +1473,7 @@ void scriptWindowClose()
     }
 
     mouseManagerExit();
-    dbClose();
+    dbCloseAll();
     windowManagerExit();
 }
 

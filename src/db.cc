@@ -66,7 +66,7 @@ int db_total()
 }
 
 // 0x4C5D60
-void dbClose()
+void dbCloseAll()
 {
     xbaseReopenAll(nullptr);
 }

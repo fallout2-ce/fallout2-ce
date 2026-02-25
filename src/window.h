@@ -36,14 +36,14 @@ typedef enum ManagedButtonRightMouseEvent {
     MANAGED_BUTTON_RIGHT_MOUSE_EVENT_COUNT,
 } ManagedButtonRightMouseEvent;
 
-int scriptWindowGetFont();
-int scriptWindowSetFont(int font);
+int windowGetFont();
+int windowSetFont(int font);
 void scriptWindowResetTextAttributes();
 int scriptWindowGetTextFlags();
 int scriptWindowSetTextFlags(int flags);
 unsigned char scriptWindowGetTextColor();
-unsigned char scriptWindowGetHighlightColor();
 int scriptWindowSetTextColor(float r, float g, float b);
+unsigned char scriptWindowGetHighlightColor();
 int scriptWindowSetHighlightColor(float r, float g, float b);
 bool _checkRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
 bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
@@ -79,11 +79,13 @@ int scriptWindowSelect(const char* windowName);
 unsigned char* scriptWindowGetBuffer();
 int scriptWindowPush(const char* windowName);
 int _popWindow();
-void scriptWindowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, int flags, int textAlignment);
-char** scriptWindowWordWrap(char* string, int maxLength, int indent, int* substringListLengthPtr);
-void scriptWindowFreeWordList(char** substringList, int substringListLength);
-void scriptWindowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment, int spacing);
-void scriptWindowWrapLine(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment);
+
+void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, int flags, int textAlignment);
+char** windowWordWrap(char* string, int maxLength, int indent, int* substringListLengthPtr);
+void windowFreeWordList(char** substringList, int substringListLength);
+void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment, int spacing);
+void windowWrapLine(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment);
+
 bool scriptWindowPrintRect(char* string, int a2, int textAlignment);
 bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height, int textAlignment);
 bool scriptWindowPrint(char* string, int width, int x, int y, int color);
@@ -92,8 +94,8 @@ void _displayFile(char* fileName);
 void _displayFileRaw(char* fileName);
 bool scriptWindowDisplay(char* fileName, int x, int y, int width, int height);
 bool scriptWindowDisplayBuf(unsigned char* src, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight);
-int scriptWindowGetXres();
-int scriptWindowGetYres();
+int windowGetXres();
+int windowGetYres();
 void _removeProgramReferences_3(Program* program);
 void scriptWindowInit(int resolution, int flags);
 void scriptWindowClose();

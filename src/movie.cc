@@ -640,8 +640,8 @@ static void movieRenderSubtitles()
     int v1 = fontGetLineHeight();
     int v2 = (480 - _lastMovieH - _lastMovieY - v1) / 2 + _lastMovieH + _lastMovieY;
 
-    if (_subtitleH + v2 > scriptWindowGetYres()) {
-        _subtitleH = scriptWindowGetYres() - v2;
+    if (_subtitleH + v2 > windowGetYres()) {
+        _subtitleH = windowGetYres() - v2;
     }
 
     int frame;
@@ -664,7 +664,7 @@ static void movieRenderSubtitles()
         }
 
         int colorIndex = (gMovieSubtitlesColorR << 10) | (gMovieSubtitlesColorG << 5) | gMovieSubtitlesColorB;
-        scriptWindowWrapLine(gMovieWindow, gMovieSubtitleHead->text, _subtitleW, _subtitleH, 0, v2, _colorTable[colorIndex] | 0x2000000, TEXT_ALIGNMENT_CENTER);
+        windowWrapLine(gMovieWindow, gMovieSubtitleHead->text, _subtitleW, _subtitleH, 0, v2, _colorTable[colorIndex] | 0x2000000, TEXT_ALIGNMENT_CENTER);
 
         Rect rect;
         rect.right = _subtitleW;

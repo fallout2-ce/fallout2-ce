@@ -211,7 +211,7 @@ void _replyAddOption(const char* a1, const char* a2, int a3)
         v18->field_C[v17].string = nullptr;
     }
 
-    v18->field_C[v17].field_18 = scriptWindowGetFont();
+    v18->field_C[v17].field_18 = windowGetFont();
     v18->field_C[v17].field_1A = word_56DB60;
     v18->field_C[v17].field_14 = a3;
 }
@@ -238,7 +238,7 @@ void _replyAddOptionProc(const char* a1, int a2, int a3)
 
     v5->field_C[v13].proc = a2;
 
-    v5->field_C[v13].field_18 = scriptWindowGetFont();
+    v5->field_C[v13].field_18 = windowGetFont();
     v5->field_C[v13].field_1A = word_56DB60;
     v5->field_C[v13].field_14 = a3;
 }
@@ -323,7 +323,7 @@ void _printLine(int win, char** strings, int strings_num, int a4, int a5, int a6
 
     for (i = 0; i < strings_num; i++) {
         v11 = a7 + i * fontGetLineHeight();
-        scriptWindowPrintBuf(win, strings[i], strlen(strings[i]), a4, a5 + a7, a6, v11, a8, a9);
+        windowPrintBuf(win, strings[i], strlen(strings[i]), a4, a5 + a7, a6, v11, a8, a9);
     }
 }
 
@@ -333,9 +333,9 @@ void _printStr(int win, char* a2, int a3, int a4, int a5, int a6, int a7, int a8
     char** strings;
     int strings_num;
 
-    strings = scriptWindowWordWrap(a2, a3, 0, &strings_num);
+    strings = windowWordWrap(a2, a3, 0, &strings_num);
     _printLine(win, strings, strings_num, a3, a4, a5, a6, a7, a8);
-    scriptWindowFreeWordList(strings, strings_num);
+    windowFreeWordList(strings, strings_num);
 }
 
 // 0x430104
@@ -390,8 +390,8 @@ void _drawStr(int win, char* str, int font, int width, int height, int left, int
     int old_font;
     Rect rect;
 
-    old_font = scriptWindowGetFont();
-    scriptWindowSetFont(font);
+    old_font = windowGetFont();
+    windowSetFont(font);
 
     _printStr(win, str, width, height, left, top, a8, a9, a10);
 
@@ -400,7 +400,7 @@ void _drawStr(int win, char* str, int font, int width, int height, int left, int
     rect.right = width + left;
     rect.bottom = height + top;
     windowRefreshRect(win, &rect);
-    scriptWindowSetFont(old_font);
+    windowSetFont(old_font);
 }
 
 // 0x430D40

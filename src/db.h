@@ -13,7 +13,7 @@ typedef char* StrdupProc(const char* string);
 
 int dbOpen(const char* filePath1, const char* filePath2);
 int db_total();
-void dbClose();
+void dbCloseAll();
 int dbGetFileSize(const char* filePath, int* sizePtr);
 int dbGetFileContents(const char* filePath, void* ptr);
 int fileClose(File* stream);
