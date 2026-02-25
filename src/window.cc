@@ -77,15 +77,15 @@ typedef struct ManagedWindow {
     Region** regions;
     int currentRegionIndex;
     int regionsLength;
-    int field_38;
+    int regionsVersion;
     ManagedButton* buttons;
     int buttonsLength;
-    int field_44;
-    int field_48;
-    int field_4C;
-    int field_50;
-    float field_54;
-    float field_58;
+    int cursorX;
+    int cursorY;
+    int field_4C; // probably a color, but unused
+    int field_50; // probably flags, but unused
+    float scaleX;
+    float scaleY;
 } ManagedWindow;
 
 typedef int (*INITVIDEOFN)();
@@ -303,7 +303,7 @@ bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseE
     bool rc = _checkRegion(windowIndex, mouseX, mouseY, mouseEvent);
 
     ManagedWindow* managedWindow = &(gManagedWindows[windowIndex]);
-    int v1 = managedWindow->field_38;
+    int prevVersion = managedWindow->regionsVersion;
 
     for (int index = 0; index < managedWindow->regionsLength; index++) {
         Region* region = managedWindow->regions[index];
@@ -314,21 +314,21 @@ bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseE
 
                 if (region->mouseEventCallback != nullptr) {
                     region->mouseEventCallback(region, region->mouseEventCallbackUserData, 2);
-                    if (v1 != managedWindow->field_38) {
+                    if (prevVersion != managedWindow->regionsVersion) {
                         return true;
                     }
                 }
 
                 if (region->rightMouseEventCallback != nullptr) {
                     region->rightMouseEventCallback(region, region->rightMouseEventCallbackUserData, 2);
-                    if (v1 != managedWindow->field_38) {
+                    if (prevVersion != managedWindow->regionsVersion) {
                         return true;
                     }
                 }
 
                 if (region->program != nullptr && region->procs[2] != 0) {
                     _executeProc(region->program, region->procs[2]);
-                    if (v1 != managedWindow->field_38) {
+                    if (prevVersion != managedWindow->regionsVersion) {
                         return true;
                     }
                 }
@@ -383,7 +383,7 @@ bool _checkAllRegions()
         if (managedWindow->window != -1 && managedWindow->window == win) {
             if (_lastWin != -1 && _lastWin != windowIndex && gManagedWindows[_lastWin].window != -1) {
                 ManagedWindow* managedWindow = &(gManagedWindows[_lastWin]);
-                int v1 = managedWindow->field_38;
+                int prevVersion = managedWindow->regionsVersion;
 
                 for (int regionIndex = 0; regionIndex < managedWindow->regionsLength; regionIndex++) {
                     Region* region = managedWindow->regions[regionIndex];
@@ -391,21 +391,21 @@ bool _checkAllRegions()
                         region->rightProcs[3] = 0;
                         if (region->mouseEventCallback != nullptr) {
                             region->mouseEventCallback(region, region->mouseEventCallbackUserData, 3);
-                            if (v1 != managedWindow->field_38) {
+                            if (prevVersion != managedWindow->regionsVersion) {
                                 return true;
                             }
                         }
 
                         if (region->rightMouseEventCallback != nullptr) {
                             region->rightMouseEventCallback(region, region->rightMouseEventCallbackUserData, 3);
-                            if (v1 != managedWindow->field_38) {
+                            if (prevVersion != managedWindow->regionsVersion) {
                                 return true;
                             }
                         }
 
                         if (region->program != nullptr && region->procs[3] != 0) {
                             _executeProc(region->program, region->procs[3]);
-                            if (v1 != managedWindow->field_38) {
+                            if (prevVersion != managedWindow->regionsVersion) {
                                 return 1;
                             }
                         }
@@ -448,10 +448,10 @@ void scriptWindowAddInputFunc(WindowInputHandler* handler)
 // 0x4B6CE8
 void _doRegionRightFunc(Region* region, int mouseEvent)
 {
-    int v1 = gManagedWindows[gCurrentManagedWindowIndex].field_38;
+    int prevVersion = gManagedWindows[gCurrentManagedWindowIndex].regionsVersion;
     if (region->rightMouseEventCallback != nullptr) {
         region->rightMouseEventCallback(region, region->rightMouseEventCallbackUserData, mouseEvent);
-        if (v1 != gManagedWindows[gCurrentManagedWindowIndex].field_38) {
+        if (prevVersion != gManagedWindows[gCurrentManagedWindowIndex].regionsVersion) {
             return;
         }
     }
@@ -466,10 +466,10 @@ void _doRegionRightFunc(Region* region, int mouseEvent)
 // 0x4B6D68
 void _doRegionFunc(Region* region, int mouseEvent)
 {
-    int v1 = gManagedWindows[gCurrentManagedWindowIndex].field_38;
+    int prevVersion = gManagedWindows[gCurrentManagedWindowIndex].regionsVersion;
     if (region->mouseEventCallback != nullptr) {
         region->mouseEventCallback(region, region->mouseEventCallbackUserData, mouseEvent);
-        if (v1 != gManagedWindows[gCurrentManagedWindowIndex].field_38) {
+        if (prevVersion != gManagedWindows[gCurrentManagedWindowIndex].regionsVersion) {
             return;
         }
     }
@@ -831,9 +831,9 @@ int scriptWindowCreate(const char* windowName, int x, int y, int width, int heig
 
     ManagedWindow* managedWindow = &(gManagedWindows[windowIndex]);
     strncpy(managedWindow->name, windowName, 32);
-    managedWindow->field_54 = 1.0;
-    managedWindow->field_58 = 1.0;
-    managedWindow->field_38 = 0;
+    managedWindow->scaleX = 1.0;
+    managedWindow->scaleY = 1.0;
+    managedWindow->regionsVersion = 0;
     managedWindow->regions = nullptr;
     managedWindow->regionsLength = 0;
     managedWindow->width = width;
@@ -847,8 +847,8 @@ int scriptWindowCreate(const char* windowName, int x, int y, int width, int heig
     }
 
     managedWindow->window = windowCreate(x, y, width, height, a6, flags);
-    managedWindow->field_48 = 0;
-    managedWindow->field_44 = 0;
+    managedWindow->cursorY = 0;
+    managedWindow->cursorX = 0;
     managedWindow->field_4C = a6;
     managedWindow->field_50 = flags;
 
@@ -864,8 +864,8 @@ int scriptWindowOutput(char* string)
 
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
 
-    int x = (int)(managedWindow->field_44 * managedWindow->field_54);
-    int y = (int)(managedWindow->field_48 * managedWindow->field_58);
+    int x = (int)(managedWindow->cursorX * managedWindow->scaleX);
+    int y = (int)(managedWindow->cursorY * managedWindow->scaleY);
     // NOTE: Uses `add` at 0x4B810E, not bitwise `or`.
     int flags = scriptWindowGetTextColor() + scriptWindowGetTextFlags();
     windowDrawText(managedWindow->window, string, 0, x, y, flags);
@@ -881,8 +881,8 @@ bool scriptWindowGotoXY(int x, int y)
     }
 
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
-    managedWindow->field_44 = (int)(x * managedWindow->field_54);
-    managedWindow->field_48 = (int)(y * managedWindow->field_58);
+    managedWindow->cursorX = (int)(x * managedWindow->scaleX);
+    managedWindow->cursorY = (int)(y * managedWindow->scaleY);
 
     return true;
 }
@@ -1173,17 +1173,17 @@ void windowWrapLine(int win, char* string, int width, int height, int x, int y, 
 }
 
 // 0x4B8920
-bool scriptWindowPrintRect(char* string, int a2, int textAlignment)
+bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment)
 {
     if (gCurrentManagedWindowIndex == -1) {
         return false;
     }
 
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
-    int width = (int)(a2 * managedWindow->field_54);
+    int width = (int)(wrapWidth * managedWindow->scaleX);
     int height = windowGetHeight(managedWindow->window);
-    int x = managedWindow->field_44;
-    int y = managedWindow->field_48;
+    int x = managedWindow->cursorX;
+    int y = managedWindow->cursorY;
     int flags = scriptWindowGetTextColor() | 0x2000000;
     windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
 
@@ -1204,8 +1204,8 @@ bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height
 bool scriptWindowPrint(char* string, int width, int x, int y, int color)
 {
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
-    x = (int)(x * managedWindow->field_54);
-    y = (int)(y * managedWindow->field_58);
+    x = (int)(x * managedWindow->scaleX);
+    y = (int)(y * managedWindow->scaleY);
 
     windowDrawText(managedWindow->window, string, width, x, y, color);
 
@@ -1645,10 +1645,10 @@ bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int 
         managedWindow->buttonsLength += 1;
     }
 
-    x = (int)(x * managedWindow->field_54);
-    y = (int)(y * managedWindow->field_58);
-    width = (int)(width * managedWindow->field_54);
-    height = (int)(height * managedWindow->field_58);
+    x = (int)(x * managedWindow->scaleX);
+    y = (int)(y * managedWindow->scaleY);
+    width = (int)(width * managedWindow->scaleX);
+    height = (int)(height * managedWindow->scaleY);
 
     ManagedButton* managedButton = &(managedWindow->buttons[index]);
     strncpy(managedButton->name, buttonName, 31);
@@ -2024,10 +2024,10 @@ bool scriptWindowFillRect(int x, int y, int width, int height, float r, float g,
 {
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
 
-    x = (int)(x * managedWindow->field_54);
-    y = (int)(y * managedWindow->field_58);
-    width = (int)(width * managedWindow->field_54);
-    height = (int)(height * managedWindow->field_58);
+    x = (int)(x * managedWindow->scaleX);
+    y = (int)(y * managedWindow->scaleY);
+    width = (int)(width * managedWindow->scaleX);
+    height = (int)(height * managedWindow->scaleY);
 
     int colorIndex = ((int)(r * 31.0) << 10) | ((int)(g * 31.0) << 5) | (int)(b * 31.0);
 
@@ -2134,8 +2134,8 @@ bool scriptWindowAddRegionPoint(int x, int y, bool a3)
     }
 
     if (a3) {
-        x = (int)(x * managedWindow->field_54);
-        y = (int)(y * managedWindow->field_58);
+        x = (int)(x * managedWindow->scaleX);
+        y = (int)(y * managedWindow->scaleY);
     }
 
     regionAddPoint(region, x, y);
@@ -2262,7 +2262,7 @@ bool scriptWindowDeleteRegion(const char* regionName)
                 if (compat_stricmp(regionGetName(region), regionName) == 0) {
                     regionDelete(region);
                     managedWindow->regions[index] = nullptr;
-                    managedWindow->field_38++;
+                    managedWindow->regionsVersion++;
                     return true;
                 }
             }
@@ -2270,7 +2270,7 @@ bool scriptWindowDeleteRegion(const char* regionName)
         return false;
     }
 
-    managedWindow->field_38++;
+    managedWindow->regionsVersion++;
 
     if (managedWindow->regions != nullptr) {
         for (int index = 0; index < managedWindow->regionsLength; index++) {

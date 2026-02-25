@@ -86,7 +86,7 @@ void windowFreeWordList(char** substringList, int substringListLength);
 void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment, int spacing);
 void windowWrapLine(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment);
 
-bool scriptWindowPrintRect(char* string, int a2, int textAlignment);
+bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment);
 bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height, int textAlignment);
 bool scriptWindowPrint(char* string, int width, int x, int y, int color);
 void _displayInWindow(unsigned char* data, int width, int height, int pitch);
