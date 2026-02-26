@@ -1482,7 +1482,7 @@ void scriptWindowClose()
 // 0x4B9548
 bool scriptWindowDeleteButton(const char* buttonName)
 {
-    if (gCurrentManagedWindowIndex != -1) {
+    if (gCurrentManagedWindowIndex == -1) {
         return false;
     }
 
@@ -1578,7 +1578,7 @@ bool scriptWindowDeleteButton(const char* buttonName)
 // 0x4B9928
 bool scriptWindowSetButtonFlag(const char* buttonName, int value)
 {
-    if (gCurrentManagedWindowIndex != -1) {
+    if (gCurrentManagedWindowIndex == -1) {
         return false;
     }
 
@@ -1795,7 +1795,7 @@ bool scriptWindowAddButtonProc(const char* buttonName, Program* program, int mou
 // 0x4BA1B4
 bool scriptWindowAddButtonRightProc(const char* buttonName, Program* program, int rightMouseDownProc, int rightMouseUpProc)
 {
-    if (gCurrentManagedWindowIndex != -1) {
+    if (gCurrentManagedWindowIndex == -1) {
         return false;
     }
 
@@ -1822,7 +1822,7 @@ bool scriptWindowAddButtonRightProc(const char* buttonName, Program* program, in
 // 0x4BA238
 bool scriptWindowAddButtonCfunc(const char* buttonName, ManagedButtonMouseEventCallback* callback, void* userData)
 {
-    if (gCurrentManagedWindowIndex != -1) {
+    if (gCurrentManagedWindowIndex == -1) {
         return false;
     }
 
@@ -1848,7 +1848,7 @@ bool scriptWindowAddButtonCfunc(const char* buttonName, ManagedButtonMouseEventC
 // 0x4BA2B4
 bool scriptWindowAddButtonRightCfunc(const char* buttonName, ManagedButtonMouseEventCallback* callback, void* userData)
 {
-    if (gCurrentManagedWindowIndex != -1) {
+    if (gCurrentManagedWindowIndex == -1) {
         return false;
     }
 
