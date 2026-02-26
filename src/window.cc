@@ -1739,6 +1739,7 @@ bool scriptWindowAddButtonGfx(const char* buttonName, char* pressedFileName, cha
             }
 
             if (hoverFileName != nullptr) {
+                // TODO: this almost certainly should be hoverFileName
                 unsigned char* hover = datafileRead(normalFileName, &width, &height);
                 if (hover != nullptr) {
                     if (managedButton->hover == nullptr) {

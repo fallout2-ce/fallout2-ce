@@ -378,7 +378,7 @@ void opSelect(Program* program)
     const char* windowName = programStackPopString(program);
     int win = scriptWindowPush(windowName);
     if (win == -1) {
-        programFatalError("Error selecing window %s\n", windowName);
+        programFatalError("Error selecting window %s\n", windowName);
     }
 
     program->windowId = win;
@@ -745,7 +745,7 @@ static void opAddRegionRightProc(Program* program)
     scriptWindowSelectId(program->windowId);
 
     if (!scriptWindowAddRegionRightProc(regionName, program, v2, v1)) {
-        programFatalError("ErrorError setting right button procedures to region %s\n", regionName);
+        programFatalError("Error setting right button procedures to region %s\n", regionName);
     }
 }
 
