@@ -1521,7 +1521,7 @@ bool scriptWindowDeleteButton(const char* buttonName)
             }
 
             if (managedButton->field_50 != nullptr) {
-                internal_free_safe(managedButton->normal, __FILE__, __LINE__); // "..\int\WINDOW.C", 1652
+                internal_free_safe(managedButton->field_50, __FILE__, __LINE__); // "..\int\WINDOW.C", 1652
                 managedButton->field_50 = nullptr;
             }
         }
