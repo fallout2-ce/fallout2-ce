@@ -156,7 +156,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     messageListRepositoryInit();
 
     programWindowSetTitle(windowTitle);
-    windowInit(1, flags);
+    scriptWindowInit(1, flags);
     paletteInit();
 
     // SFALL: Execute all code that should be executed ON game init
@@ -495,9 +495,9 @@ void gameExit()
     partyMembersExit();
     endgameDeathEndingExit();
     interfaceFontsExit();
-    windowClose();
+    scriptWindowClose();
     messageListRepositoryExit();
-    dbExit();
+    dbCloseAll();
     settingsExit(true);
     sfallConfigExit();
 }
@@ -1370,7 +1370,7 @@ static int gameDbInit()
         patch_file_name = nullptr;
     }
 
-    int master_db_handle = dbOpen(main_file_name, 0, patch_file_name, 1);
+    int master_db_handle = dbOpen(main_file_name, patch_file_name);
     if (master_db_handle == -1) {
         showMesageBox("Could not find the master datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
         return -1;
@@ -1386,7 +1386,7 @@ static int gameDbInit()
         patch_file_name = nullptr;
     }
 
-    int critter_db_handle = dbOpen(main_file_name, 0, patch_file_name, 1);
+    int critter_db_handle = dbOpen(main_file_name, patch_file_name);
     if (critter_db_handle == -1) {
         showMesageBox("Could not find the critter datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
         return -1;
@@ -1403,14 +1403,14 @@ static int gameDbInit()
         snprintf(filename, sizeof(filename), path_file_name_template, patch_index);
 
         if (compat_access(filename, 0) == 0) {
-            dbOpen(filename, 0, nullptr, 1);
+            dbOpen(filename, nullptr);
         }
     }
 
     sfallLoadMods();
 
     if (compat_access("f2_res.dat", 0) == 0) {
-        dbOpen("f2_res.dat", 0, nullptr, 1);
+        dbOpen("f2_res.dat", nullptr);
     }
 
     return 0;

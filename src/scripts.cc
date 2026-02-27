@@ -690,7 +690,7 @@ static void _doBkProcesses()
         }
     }
 
-    windowUpdateAll();
+    scriptWindowUpdateAll();
 
     if (gScriptsEnabled && _script_engine_run_critters) {
         // SFALL: Fix to prevent the execution of critter_p_proc and game events

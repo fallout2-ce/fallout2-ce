@@ -31,7 +31,7 @@ void sfallLoadMods()
         File* stream = fileOpen(loadOrderFilepath, "wt");
         if (stream != nullptr) {
             char** fileList;
-            int fileListLength = fileNameListInit("mods\\*.dat", &fileList, 0, 0);
+            int fileListLength = fileNameListInit("mods\\*.dat", &fileList);
 
             for (int index = 0; index < fileListLength; index++) {
                 fileWriteString(fileList[index], stream);
@@ -71,7 +71,7 @@ void sfallLoadMods()
 
             if (compat_access(normalizedModPath, 0) == 0) {
                 debugPrint("Loading mod %s\n", normalizedModPath);
-                dbOpen(normalizedModPath, 0, nullptr, 1);
+                dbOpen(normalizedModPath, nullptr);
             } else {
                 debugPrint("Skipping invalid mod entry %s in %s\n", normalizedModPath, loadOrderFilepath);
             }

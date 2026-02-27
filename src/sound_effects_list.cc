@@ -333,7 +333,7 @@ static int soundEffectsListPopulateFileNames()
     strcat(pattern, extension);
 
     char** fileNameList;
-    gSoundEffectsListEntriesLength = fileNameListInit(pattern, &fileNameList, 0, 0);
+    gSoundEffectsListEntriesLength = fileNameListInit(pattern, &fileNameList);
     internal_free(pattern);
 
     if (gSoundEffectsListEntriesLength > 10000) {
