@@ -1164,12 +1164,12 @@ static void opAddButtonRightProc(Program* program)
 {
     int v1 = programStackPopInteger(program);
     int v2 = programStackPopInteger(program);
-    const char* regionName = programStackPopString(program);
+    const char* buttonName = programStackPopString(program);
     scriptWindowSelectId(program->windowId);
 
-    if (!scriptWindowAddButtonRightProc(regionName, program, v2, v1)) {
-        programFatalError("Error setting right button procedures to button %s\n", regionName);
-    }
+    if (!scriptWindowAddButtonRightProc(buttonName, program, v2, v1)) {
+        programFatalError("Error setting right button procedures to button %s\n", buttonName);
+        }
 }
 
 // showwin
