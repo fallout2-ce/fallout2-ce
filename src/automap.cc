@@ -550,7 +550,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
             }
         }
 
-        int v10 = -2 * (object->tile % 200) - 10 + AUTOMAP_WINDOW_WIDTH * (2 * (object->tile / 200) + 9) - 60;
+        int pixelOffset = -2 * (object->tile % 200) - 10 + AUTOMAP_WINDOW_WIDTH * (2 * (object->tile / 200) + 9) - 60;
         if ((flags & AUTOMAP_IN_GAME) == 0) {
             switch (objectType) {
             case OBJ_TYPE_ITEM:
@@ -574,28 +574,28 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         }
 
         if (objectColor != _colorTable[0]) {
-            unsigned char* v12 = windowBuffer + v10;
+            unsigned char* pixel = windowBuffer + pixelOffset;
             if ((flags & AUTOMAP_IN_GAME) != 0) {
-                if (*v12 != _colorTable[992] || objectColor != _colorTable[480]) {
-                    v12[0] = objectColor;
-                    v12[1] = objectColor;
+                if (*pixel != _colorTable[992] || objectColor != _colorTable[480]) {
+                    pixel[0] = objectColor;
+                    pixel[1] = objectColor;
                 }
 
                 if (object == gDude) {
-                    v12[-1] = objectColor;
-                    v12[-AUTOMAP_WINDOW_WIDTH] = objectColor;
-                    v12[AUTOMAP_WINDOW_WIDTH] = objectColor;
+                    pixel[-1] = objectColor;
+                    pixel[-AUTOMAP_WINDOW_WIDTH] = objectColor;
+                    pixel[AUTOMAP_WINDOW_WIDTH] = objectColor;
                 }
             } else {
-                v12[0] = objectColor;
-                v12[1] = objectColor;
-                v12[AUTOMAP_WINDOW_WIDTH] = objectColor;
-                v12[AUTOMAP_WINDOW_WIDTH + 1] = objectColor;
+                pixel[0] = objectColor;
+                pixel[1] = objectColor;
+                pixel[AUTOMAP_WINDOW_WIDTH] = objectColor;
+                pixel[AUTOMAP_WINDOW_WIDTH + 1] = objectColor;
 
-                v12[AUTOMAP_WINDOW_WIDTH - 1] = objectColor;
-                v12[AUTOMAP_WINDOW_WIDTH + 2] = objectColor;
-                v12[AUTOMAP_WINDOW_WIDTH * 2] = objectColor;
-                v12[AUTOMAP_WINDOW_WIDTH * 2 + 1] = objectColor;
+                pixel[AUTOMAP_WINDOW_WIDTH - 1] = objectColor;
+                pixel[AUTOMAP_WINDOW_WIDTH + 2] = objectColor;
+                pixel[AUTOMAP_WINDOW_WIDTH * 2] = objectColor;
+                pixel[AUTOMAP_WINDOW_WIDTH * 2 + 1] = objectColor;
             }
         }
     }
@@ -639,8 +639,8 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
         return -1;
     }
 
-    int v1 = 0;
-    unsigned char v2 = 0;
+    int bitsRemaining = 0; // Number of 2-bit tile entries left in `byte`.
+    unsigned char byte = 0;
     unsigned char* ptr = gAutomapEntry.data;
 
     // FIXME: This loop is implemented incorrectly. Automap requires 400x400 px,
@@ -650,13 +650,13 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
     // crash.
     for (int y = 0; y < HEX_GRID_HEIGHT; y++) {
         for (int x = 0; x < HEX_GRID_WIDTH; x++) {
-            v1 -= 1;
-            if (v1 <= 0) {
-                v1 = 4;
-                v2 = *ptr++;
+            bitsRemaining -= 1;
+            if (bitsRemaining <= 0) {
+                bitsRemaining = 4;
+                byte = *ptr++;
             }
 
-            switch ((v2 & 0xC0) >> 6) {
+            switch ((byte & 0xC0) >> 6) {
             case 1:
                 *windowBuffer++ = wallColor;
                 *windowBuffer++ = wallColor;
@@ -670,7 +670,7 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
                 break;
             }
 
-            v2 <<= 2;
+            byte <<= 2;
         }
 
         windowBuffer += 640 + 240;

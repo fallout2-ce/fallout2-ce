@@ -1239,11 +1239,11 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
         return -1;
     }
 
-    int v2 = fontGetMonospacedCharacterWidth() * max_chars_wcursor;
+    int inputWidth = fontGetMonospacedCharacterWidth() * max_chars_wcursor;
 
     int width = fontGetStringWidth(title);
-    if (width < v2) {
-        width = v2;
+    if (width < inputWidth) {
+        width = inputWidth;
     }
 
     width += 16;
@@ -1252,9 +1252,9 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
     }
 
     int height = 5 * fontGetLineHeight() + 16;
-    int v3 = (width - v2) / 2;
-    int v4 = fontGetLineHeight();
-    int v5 = fontGetLineHeight() + 2;
+    int inputX = (width - inputWidth) / 2;
+    int inputY = fontGetLineHeight();
+    int inputHeight = fontGetLineHeight() + 2;
 
     int win = windowCreate(x, y, width, height, 0x100, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
@@ -1262,15 +1262,15 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
     }
 
     windowDrawBorder(win);
-    windowFill(win, v3, v4 + 14, v2, v5, 0x100 | 1);
+    windowFill(win, inputX, inputY + 14, inputWidth, inputHeight, 0x100 | 1);
     windowDrawText(win, title, width - 16, 8, 8, 0x100 | 5);
 
     bufferDrawRectShadowed(windowGetBuffer(win),
         width,
-        v3 - 2,
-        v4 + 12,
-        v3 + v2 + 1,
-        v4 + 14 + v5 - 1,
+        inputX - 2,
+        inputY + 12,
+        inputX + inputWidth + 1,
+        inputY + 14 + inputHeight - 1,
         _colorTable[_GNW_wcolor[2]],
         _colorTable[_GNW_wcolor[1]]);
 
@@ -1301,7 +1301,7 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
 
     int rc;
     while (1) {
-        rc = get_num_i(win, value, max_chars_wcursor, clear, min < 0, v3, v4 + 14);
+        rc = get_num_i(win, value, max_chars_wcursor, clear, min < 0, inputX, inputY + 14);
         if (*value >= min && *value <= max) {
             break;
         }

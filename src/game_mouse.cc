@@ -41,6 +41,10 @@ typedef enum ScrollableDirections {
     SCROLLABLE_S = 0x08,
 } ScrollableDirections;
 
+static constexpr int REFRESH_BOUNCING_CURSOR = 0x01;
+static constexpr int REFRESH_HEX_CURSOR = 0x02;
+static constexpr int REFRESH_BOTH_CURSORS = REFRESH_BOUNCING_CURSOR | REFRESH_HEX_CURSOR;
+
 // 0x518BF8
 static bool gGameMouseInitialized = false;
 
@@ -308,7 +312,7 @@ static Object* gGameMousePointedObject;
 static int _gmouse_get_click_to_scroll();
 static void _gmouse_3d_enable_modes();
 static int gameMouseSetBouncingCursorFid(int fid);
-static Object* gameMouseGetObjectUnderCursor(int objectType, bool a2, int elevation);
+static Object* gameMouseGetObjectUnderCursor(int objectType, bool includeDude, int elevation);
 static int gameMouseRenderAccuracy(const char* string, int color);
 static int gameMouseRenderActionPoints(const char* string, int color);
 static int gameMouseObjectsInit();
@@ -451,7 +455,7 @@ int _gmouse_get_click_to_scroll()
 // 0x44B54C
 int _gmouse_is_scrolling()
 {
-    int v1 = 0;
+    int isScrolling = 0;
 
     if (_gmouse_scrolling_enabled) {
         int x;
@@ -475,15 +479,15 @@ int _gmouse_is_scrolling()
             case MOUSE_CURSOR_SCROLL_S_INVALID:
             case MOUSE_CURSOR_SCROLL_SW_INVALID:
             case MOUSE_CURSOR_SCROLL_W_INVALID:
-                v1 = 1;
+                isScrolling = 1;
                 break;
             default:
-                return v1;
+                return isScrolling;
             }
         }
     }
 
-    return v1;
+    return isScrolling;
 }
 
 // 0x44B684
@@ -1061,7 +1065,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
             || gGameMouseMode == GAME_MOUSE_MODE_USE_TRAPS
             || gGameMouseMode == GAME_MOUSE_MODE_USE_SCIENCE
             || gGameMouseMode == GAME_MOUSE_MODE_USE_REPAIR) {
-            Object* object = gameMouseGetObjectUnderCursor(-1, 1, gElevation);
+            Object* object = gameMouseGetObjectUnderCursor(-1, true, gElevation);
             if (object == nullptr || actionUseSkill(gDude, object, gGameMouseModeSkills[gGameMouseMode - FIRST_GAME_MOUSE_MODE_SKILL]) != -1) {
                 gameMouseSetCursor(MOUSE_CURSOR_NONE);
                 gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
@@ -1480,12 +1484,12 @@ int gameMouseSetBouncingCursorFid(int fid)
         return objectSetFid(gGameMouseBouncingCursor, fid, nullptr);
     }
 
-    int v1 = 0;
+    int refreshFlags = 0;
 
     Rect oldRect;
     if (gGameMouseBouncingCursor->fid != -1) {
         objectGetRect(gGameMouseBouncingCursor, &oldRect);
-        v1 |= 1;
+        refreshFlags |= REFRESH_BOUNCING_CURSOR;
     }
 
     int rc = -1;
@@ -1493,15 +1497,15 @@ int gameMouseSetBouncingCursorFid(int fid)
     Rect rect;
     if (objectSetFid(gGameMouseBouncingCursor, fid, &rect) == 0) {
         rc = 0;
-        v1 |= 2;
+        refreshFlags |= REFRESH_HEX_CURSOR;
     }
 
     if ((gGameMouseHexCursor->flags & OBJECT_HIDDEN) == 0) {
-        if (v1 == 1) {
+        if (refreshFlags == REFRESH_BOUNCING_CURSOR) {
             tileWindowRefreshRect(&oldRect, gElevation);
-        } else if (v1 == 2) {
+        } else if (refreshFlags == REFRESH_HEX_CURSOR) {
             tileWindowRefreshRect(&rect, gElevation);
-        } else if (v1 == 3) {
+        } else if (refreshFlags == REFRESH_BOTH_CURSORS) {
             rectUnion(&oldRect, &rect, &oldRect);
             tileWindowRefreshRect(&oldRect, gElevation);
         }
@@ -1524,49 +1528,49 @@ void gameMouseObjectsShow()
         return;
     }
 
-    int v2 = 0;
+    int refreshFlags = 0;
 
     Rect rect1;
     if (objectShow(gGameMouseBouncingCursor, &rect1) == 0) {
-        v2 |= 1;
+        refreshFlags |= REFRESH_BOUNCING_CURSOR;
     }
 
     Rect rect2;
     if (objectShow(gGameMouseHexCursor, &rect2) == 0) {
-        v2 |= 2;
+        refreshFlags |= REFRESH_HEX_CURSOR;
     }
 
     Rect tmp;
     if (gGameMouseMode != GAME_MOUSE_MODE_MOVE) {
         if (objectDisableOutline(gGameMouseHexCursor, &tmp) == 0) {
-            if ((v2 & 2) != 0) {
+            if ((refreshFlags & REFRESH_HEX_CURSOR) != 0) {
                 rectUnion(&rect2, &tmp, &rect2);
             } else {
                 memcpy(&rect2, &tmp, sizeof(rect2));
-                v2 |= 2;
+                refreshFlags |= REFRESH_HEX_CURSOR;
             }
         }
     }
 
     if (gameMouseUpdateHexCursorFid(&tmp) == 0) {
-        if ((v2 & 2) != 0) {
+        if ((refreshFlags & REFRESH_HEX_CURSOR) != 0) {
             rectUnion(&rect2, &tmp, &rect2);
         } else {
             memcpy(&rect2, &tmp, sizeof(rect2));
-            v2 |= 2;
+            refreshFlags |= REFRESH_HEX_CURSOR;
         }
     }
 
-    if (v2 != 0) {
+    if (refreshFlags != 0) {
         Rect* rect;
-        switch (v2) {
-        case 1:
+        switch (refreshFlags) {
+        case REFRESH_BOUNCING_CURSOR:
             rect = &rect1;
             break;
-        case 2:
+        case REFRESH_HEX_CURSOR:
             rect = &rect2;
             break;
-        case 3:
+        case REFRESH_BOTH_CURSORS:
             rectUnion(&rect1, &rect2, &rect1);
             rect = &rect1;
             break;
@@ -1588,23 +1592,23 @@ void gameMouseObjectsHide()
         return;
     }
 
-    int v1 = 0;
+    int refreshFlags = 0;
 
     Rect rect1;
     if (objectHide(gGameMouseBouncingCursor, &rect1) == 0) {
-        v1 |= 1;
+        refreshFlags |= REFRESH_BOUNCING_CURSOR;
     }
 
     Rect rect2;
     if (objectHide(gGameMouseHexCursor, &rect2) == 0) {
-        v1 |= 2;
+        refreshFlags |= REFRESH_HEX_CURSOR;
     }
 
-    if (v1 == 1) {
+    if (refreshFlags == REFRESH_BOUNCING_CURSOR) {
         tileWindowRefreshRect(&rect1, gElevation);
-    } else if (v1 == 2) {
+    } else if (refreshFlags == REFRESH_HEX_CURSOR) {
         tileWindowRefreshRect(&rect2, gElevation);
-    } else if (v1 == 3) {
+    } else if (refreshFlags == REFRESH_BOTH_CURSORS) {
         rectUnion(&rect1, &rect2, &rect1);
         tileWindowRefreshRect(&rect1, gElevation);
     }
@@ -1617,29 +1621,29 @@ bool gameMouseObjectsIsVisible()
 }
 
 // 0x44CEC4
-Object* gameMouseGetObjectUnderCursor(int objectType, bool a2, int elevation)
+Object* gameMouseGetObjectUnderCursor(int objectType, bool includeDude, int elevation)
 {
     int mouseX;
     int mouseY;
     mouseGetPosition(&mouseX, &mouseY);
 
-    bool v13 = false;
+    bool intersectsRoof = false;
     if (objectType == -1) {
         if (_square_roof_intersect(mouseX, mouseY, elevation)) {
             if (_obj_intersects_with(gEgg, mouseX, mouseY) == 0) {
-                v13 = true;
+                intersectsRoof = true;
             }
         }
     }
 
-    Object* v4 = nullptr;
-    if (!v13) {
+    Object* found = nullptr;
+    if (!intersectsRoof) {
         ObjectWithFlags* entries;
         int count = _obj_create_intersect_list(mouseX, mouseY, elevation, objectType, &entries);
         for (int index = count - 1; index >= 0; index--) {
             ObjectWithFlags* ptr = &(entries[index]);
-            if (a2 || gDude != ptr->object) {
-                v4 = ptr->object;
+            if (includeDude || gDude != ptr->object) {
+                found = ptr->object;
                 if ((ptr->flags & 0x01) != 0) {
                     if ((ptr->flags & 0x04) == 0) {
                         if (FID_TYPE(ptr->object->fid) != OBJ_TYPE_CRITTER || (ptr->object->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) == 0) {
@@ -1654,7 +1658,7 @@ Object* gameMouseGetObjectUnderCursor(int objectType, bool a2, int elevation)
             _obj_delete_intersect_list(&entries);
         }
     }
-    return v4;
+    return found;
 }
 
 // 0x44CFA0

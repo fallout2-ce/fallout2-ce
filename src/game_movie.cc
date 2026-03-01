@@ -89,12 +89,12 @@ static char gGameMovieSubtitlesFilePath[COMPAT_MAX_PATH];
 // 0x44E5C0
 int gameMoviesInit()
 {
-    int v1 = 0;
+    int volume = 0;
     if (backgroundSoundIsEnabled()) {
-        v1 = backgroundSoundGetVolume();
+        volume = backgroundSoundGetVolume();
     }
 
-    movieSetVolume(v1);
+    movieSetVolume(volume);
 
     movieSetBuildSubtitleFilePathProc(gameMovieBuildSubtitlesFilePath);
 
@@ -192,19 +192,19 @@ int gameMoviePlay(int movie, int flags)
     windowRefresh(win);
 
     bool subtitlesEnabled = settings.preferences.subtitles;
-    int v1 = 4;
+    int movieFlags = 4;
     if (subtitlesEnabled) {
         char* subtitlesFilePath = gameMovieBuildSubtitlesFilePath(movieFilePath);
 
         int subtitlesFileSize;
         if (dbGetFileSize(subtitlesFilePath, &subtitlesFileSize) == 0) {
-            v1 = 12;
+            movieFlags = 12;
         } else {
             subtitlesEnabled = false;
         }
     }
 
-    movieSetFlags(v1);
+    movieSetFlags(movieFlags);
 
     int oldTextColor;
     int oldFont;
@@ -243,7 +243,7 @@ int gameMoviePlay(int movie, int flags)
     _zero_vid_mem();
     _movieRun(win, movieFilePath);
 
-    int v11 = 0;
+    int pressed = 0;
     int buttons;
     do {
         if (!_moviePlaying() || _game_user_wants_to_quit || inputGetInput() != -1) {
@@ -259,8 +259,10 @@ int gameMoviePlay(int movie, int flags)
         int y;
         _mouse_get_raw_state(&x, &y, &buttons);
 
-        v11 |= buttons;
-    } while (((v11 & 1) == 0 && (v11 & 2) == 0) || (buttons & 1) != 0 || (buttons & 2) != 0);
+        pressed |= buttons;
+        // Exit on mouse only after a click cycle: observe left/right down at
+        // least once, then wait until both are released.
+    } while (((pressed & 1) == 0 && (pressed & 2) == 0) || (buttons & 1) != 0 || (buttons & 2) != 0);
 
     _movieStop();
     _moviefx_stop();

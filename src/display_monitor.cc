@@ -257,7 +257,7 @@ void displayMonitorAddMessage(char* str)
     }
 
     // TODO: Refactor these two loops.
-    char* v1 = nullptr;
+    char* splitPos = nullptr;
     while (true) {
         while (fontGetStringWidth(str) < DISPLAY_MONITOR_WIDTH - _max_disp - knobWidth) {
             char* temp = gDisplayMonitorLines[_disp_start];
@@ -274,16 +274,16 @@ void displayMonitorAddMessage(char* str)
             gDisplayMonitorLines[_disp_start][DISPLAY_MONITOR_LINE_LENGTH - 1] = '\0';
             _disp_start = (_disp_start + 1) % gDisplayMonitorLinesCapacity;
 
-            if (v1 == nullptr) {
+            if (splitPos == nullptr) {
                 fontSetCurrent(oldFont);
                 _disp_curr = _disp_start;
                 displayMonitorRefresh();
                 return;
             }
 
-            str = v1 + 1;
-            *v1 = ' ';
-            v1 = nullptr;
+            str = splitPos + 1;
+            *splitPos = ' ';
+            splitPos = nullptr;
         }
 
         char* space = strrchr(str, ' ');
@@ -291,11 +291,11 @@ void displayMonitorAddMessage(char* str)
             break;
         }
 
-        if (v1 != nullptr) {
-            *v1 = ' ';
+        if (splitPos != nullptr) {
+            *splitPos = ' ';
         }
 
-        v1 = space;
+        splitPos = space;
         if (space != nullptr) {
             *space = '\0';
         }
