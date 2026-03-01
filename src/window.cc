@@ -1193,6 +1193,10 @@ bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment)
 // 0x4B89B0
 bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height, int textAlignment)
 {
+    if (gCurrentManagedWindowIndex == -1) {
+        return false;
+    }
+
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
     int flags = scriptWindowGetTextColor() | 0x2000000;
     windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
@@ -1483,7 +1487,8 @@ void scriptWindowClose()
 bool scriptWindowDeleteButton(const char* buttonName)
 {
     if (gCurrentManagedWindowIndex == -1) {
-        return false;
+        // note: returns true unlike other functions, since deletion is a no-op
+        return true;
     }
 
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
@@ -1517,7 +1522,7 @@ bool scriptWindowDeleteButton(const char* buttonName)
             }
 
             if (managedButton->field_50 != nullptr) {
-                internal_free_safe(managedButton->normal, __FILE__, __LINE__); // "..\int\WINDOW.C", 1652
+                internal_free_safe(managedButton->field_50, __FILE__, __LINE__); // "..\int\WINDOW.C", 1652
                 managedButton->field_50 = nullptr;
             }
         }
