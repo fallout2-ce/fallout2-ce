@@ -2,13 +2,11 @@
 
 namespace fallout {
 
-static void _showRegion(int a1);
-
 // 0x66E6A0
 static int _updateRegions[32];
 
 // 0x4B5A64
-void _showRegion(int a1)
+static void _showRegion(int region)
 {
     // TODO: Incomplete.
 }

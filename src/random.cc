@@ -21,10 +21,11 @@ static unsigned int randomGetSeed();
 static void randomValidatePrerandom();
 
 // 0x50D4BA
-static const double dbl_50D4BA = 36.42;
+// Chi-square critical value at alpha=0.05 with 24 degrees of freedom.
+static const double kChiSquared95Threshold = 36.42;
 
 // 0x50D4C2
-static const double dbl_50D4C2 = 4000;
+static const double kExpectedBucketHits = 4000;
 
 // 0x51C694
 static int _iy = 0;
@@ -152,23 +153,23 @@ int randomBetween(int min, int max)
 // 0x4A30FC
 static int getRandom(int max)
 {
-    int v1 = 16807 * (_idum % 127773) - 2836 * (_idum / 127773);
+    int seed = 16807 * (_idum % 127773) - 2836 * (_idum / 127773);
 
-    if (v1 < 0) {
-        v1 += 0x7FFFFFFF;
+    if (seed < 0) {
+        seed += 0x7FFFFFFF;
     }
 
-    if (v1 < 0) {
-        v1 += 0x7FFFFFFF;
+    if (seed < 0) {
+        seed += 0x7FFFFFFF;
     }
 
-    int v2 = _iy & 0x1F;
-    int v3 = _iv[v2];
-    _iv[v2] = v1;
-    _iy = v3;
-    _idum = v1;
+    int idx = _iy & 0x1F;
+    int value = _iv[idx];
+    _iv[idx] = seed;
+    _iy = value;
+    _idum = seed;
 
-    return v3 % max;
+    return value % max;
 }
 
 // 0x4A31A0
@@ -238,16 +239,16 @@ static void randomValidatePrerandom()
         results[value - 1]++;
     }
 
-    double v1 = 0.0;
+    double chiSquared = 0.0;
 
     for (int index = 0; index < 25; index++) {
-        double v2 = ((double)results[index] - dbl_50D4C2) * ((double)results[index] - dbl_50D4C2) / dbl_50D4C2;
-        v1 += v2;
+        double contrib = ((double)results[index] - kExpectedBucketHits) * ((double)results[index] - kExpectedBucketHits) / kExpectedBucketHits;
+        chiSquared += contrib;
     }
 
-    debugPrint("Chi squared is %f, P = %f at 0.05\n", v1, dbl_50D4C2);
+    debugPrint("Chi squared is %f, P = %f at 0.05\n", chiSquared, kExpectedBucketHits);
 
-    if (v1 < dbl_50D4BA) {
+    if (chiSquared < kChiSquared95Threshold) {
         debugPrint("Sequence is random, 95%% confidence.\n");
     } else {
         debugPrint("Warning! Sequence is not random, 95%% confidence.\n");
