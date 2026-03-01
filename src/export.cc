@@ -39,7 +39,7 @@ static ExternalVariable gExternalVariables[1013];
 // NOTE: Inlined.
 //
 // 0x440F10
-unsigned int _hashName(const char* identifier)
+static unsigned int _hashName(const char* identifier)
 {
     unsigned int h = 0;
     const char* p = identifier;
@@ -54,7 +54,7 @@ unsigned int _hashName(const char* identifier)
 }
 
 // 0x440F58
-ExternalProcedure* externalProcedureFind(const char* identifier)
+static ExternalProcedure* externalProcedureFind(const char* identifier)
 {
     // NOTE: Uninline.
     unsigned int idx = _hashName(identifier);
@@ -85,7 +85,7 @@ ExternalProcedure* externalProcedureFind(const char* identifier)
 }
 
 // 0x441018
-ExternalProcedure* externalProcedureAdd(const char* identifier)
+static ExternalProcedure* externalProcedureAdd(const char* identifier)
 {
     // NOTE: Uninline.
     unsigned int idx = _hashName(identifier);
@@ -112,7 +112,7 @@ ExternalProcedure* externalProcedureAdd(const char* identifier)
 }
 
 // 0x4410AC
-ExternalVariable* externalVariableFind(const char* identifier)
+static ExternalVariable* externalVariableFind(const char* identifier)
 {
     // NOTE: Uninline.
     unsigned int idx = _hashName(identifier);
@@ -144,7 +144,7 @@ ExternalVariable* externalVariableFind(const char* identifier)
 }
 
 // 0x44118C
-ExternalVariable* externalVariableAdd(const char* identifier)
+static ExternalVariable* externalVariableAdd(const char* identifier)
 {
     // NOTE: Uninline.
     unsigned int idx = _hashName(identifier);
@@ -248,7 +248,7 @@ int externalVariableCreate(Program* program, const char* identifier)
 }
 
 // 0x4414FC
-void _removeProgramReferences(Program* program)
+static void _removeProgramReferences(Program* program)
 {
     for (int index = 0; index < 1013; index++) {
         ExternalProcedure* externalProcedure = &(gExternalProcedures[index]);
