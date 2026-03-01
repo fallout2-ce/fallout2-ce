@@ -1169,7 +1169,7 @@ static void opAddButtonRightProc(Program* program)
 
     if (!scriptWindowAddButtonRightProc(buttonName, program, v2, v1)) {
         programFatalError("Error setting right button procedures to button %s\n", buttonName);
-        }
+    }
 }
 
 // showwin
