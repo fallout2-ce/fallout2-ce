@@ -1167,8 +1167,7 @@ static void opAddButtonRightProc(Program* program)
     const char* regionName = programStackPopString(program);
     scriptWindowSelectId(program->windowId);
 
-    // XXX: probably should be scriptWindowAddButtonRightProc
-    if (!scriptWindowAddRegionRightProc(regionName, program, v2, v1)) {
+    if (!scriptWindowAddButtonRightProc(regionName, program, v2, v1)) {
         programFatalError("Error setting right button procedures to button %s\n", regionName);
     }
 }

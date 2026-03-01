@@ -1487,6 +1487,7 @@ void scriptWindowClose()
 bool scriptWindowDeleteButton(const char* buttonName)
 {
     if (gCurrentManagedWindowIndex == -1) {
+        // note: returns true unlike other functions, since deletion is a no-op
         return true;
     }
 
