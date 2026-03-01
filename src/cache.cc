@@ -575,26 +575,26 @@ static bool cacheSetCapacity(Cache* cache, int newCapacity)
 // 0x420A74
 static int cacheEntriesCompareByUsage(const void* a1, const void* a2)
 {
-    CacheEntry* v1 = *(CacheEntry**)a1;
-    CacheEntry* v2 = *(CacheEntry**)a2;
+    CacheEntry* lhs = *(CacheEntry**)a1;
+    CacheEntry* rhs = *(CacheEntry**)a2;
 
-    if (v1->referenceCount != 0 && v2->referenceCount == 0) {
+    if (lhs->referenceCount != 0 && rhs->referenceCount == 0) {
         return 1;
     }
 
-    if (v2->referenceCount != 0 && v1->referenceCount == 0) {
+    if (rhs->referenceCount != 0 && lhs->referenceCount == 0) {
         return -1;
     }
 
-    if (v1->hits < v2->hits) {
+    if (lhs->hits < rhs->hits) {
         return -1;
-    } else if (v1->hits > v2->hits) {
+    } else if (lhs->hits > rhs->hits) {
         return 1;
     }
 
-    if (v1->mru < v2->mru) {
+    if (lhs->mru < rhs->mru) {
         return -1;
-    } else if (v1->mru > v2->mru) {
+    } else if (lhs->mru > rhs->mru) {
         return 1;
     }
 
@@ -604,12 +604,12 @@ static int cacheEntriesCompareByUsage(const void* a1, const void* a2)
 // 0x420AE8
 static int cacheEntriesCompareByMostRecentHit(const void* a1, const void* a2)
 {
-    CacheEntry* v1 = *(CacheEntry**)a1;
-    CacheEntry* v2 = *(CacheEntry**)a2;
+    CacheEntry* lhs = *(CacheEntry**)a1;
+    CacheEntry* rhs = *(CacheEntry**)a2;
 
-    if (v1->mru < v2->mru) {
+    if (lhs->mru < rhs->mru) {
         return 1;
-    } else if (v1->mru > v2->mru) {
+    } else if (lhs->mru > rhs->mru) {
         return -1;
     } else {
         return 0;
