@@ -45,7 +45,7 @@ typedef struct SkillDescription {
     int stat2;
     int baseValueMult;
     int experience;
-    int gainXpFromCriticalFailure;
+    int gainXpFromSkillPenalty;
 } SkillDescription;
 
 static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int criticalChanceModifier);
@@ -520,7 +520,7 @@ static void _show_skill_use_messages(Object* obj, int skill, Object* target, int
         return;
     }
 
-    if (skillDescription->gainXpFromCriticalFailure && criticalChanceModifier < 0) {
+    if (skillDescription->gainXpFromSkillPenalty && criticalChanceModifier < 0) {
         baseExperience += abs(criticalChanceModifier);
     }
 
