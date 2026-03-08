@@ -5,8 +5,8 @@
 
 namespace fallout {
 
-typedef int(DictionaryReadProc)(FILE* stream, void* buffer, unsigned int size, int a4);
-typedef int(DictionaryWriteProc)(FILE* stream, void* buffer, unsigned int size, int a4);
+typedef int(DictionaryReadProc)(FILE* stream, void* buffer, unsigned int size, int userData);
+typedef int(DictionaryWriteProc)(FILE* stream, void* buffer, unsigned int size, int userData);
 
 // NOTE: Last unnamed fields are likely seek, tell, and filelength.
 typedef struct DictionaryIO {
@@ -57,10 +57,10 @@ int dictionaryRemoveValue(Dictionary* dictionary, const char* key);
 int dictionaryCopy(Dictionary* dest, Dictionary* src);
 int dictionaryReadInt(FILE* stream, int* valuePtr);
 int dictionaryReadHeader(FILE* stream, Dictionary* dictionary);
-int dictionaryLoad(FILE* stream, Dictionary* dictionary, int a3);
+int dictionaryLoad(FILE* stream, Dictionary* dictionary, int userData);
 int dictionaryWriteInt(FILE* stream, int value);
 int dictionaryWriteHeader(FILE* stream, Dictionary* dictionary);
-int dictionaryWrite(FILE* stream, Dictionary* dictionary, int a3);
+int dictionaryWrite(FILE* stream, Dictionary* dictionary, int userData);
 
 } // namespace fallout
 

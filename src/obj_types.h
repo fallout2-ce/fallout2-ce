@@ -211,7 +211,7 @@ typedef struct CritterCombatData {
 } CritterCombatData;
 
 typedef struct CritterObjectData {
-    int field_0; // obj_pud.reaction_to_pc
+    int reaction; // obj_pud.reaction_to_pc (unused)
     CritterCombatData combat; // obj_pud.combat_data
     int hp; // obj_pud.curr_hp
     int radiation; // obj_pud.curr_rad

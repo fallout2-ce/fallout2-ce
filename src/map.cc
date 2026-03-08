@@ -68,7 +68,7 @@ static int mapLocalVariablesLoad(File* stream);
 static void _map_place_dude_and_mouse();
 static void square_init();
 static void _square_reset();
-static int _square_load(File* stream, int a2);
+static int _square_load(File* stream, int flags);
 static int mapHeaderWrite(MapHeader* ptr, File* stream);
 static int mapHeaderRead(MapHeader* ptr, File* stream);
 
@@ -1094,14 +1094,14 @@ int mapLoadSaved(char* fileName)
     if (!wmMapIsSaveable()) {
         debugPrint("\nDestroying RANDOM encounter map.");
 
-        char v15[16];
-        strcpy(v15, gMapHeader.name);
+        char mapName[16];
+        strcpy(mapName, gMapHeader.name);
 
-        _strmfe(gMapHeader.name, v15, "SAV");
+        _strmfe(gMapHeader.name, mapName, "SAV");
 
         _MapDirEraseFile_("MAPS\\", gMapHeader.name);
 
-        strcpy(gMapHeader.name, v15);
+        strcpy(gMapHeader.name, mapName);
     }
 
     return rc;
@@ -1448,7 +1448,7 @@ static int _map_save_file(File* stream)
 }
 
 // 0x483C98
-int _map_save_in_game(bool a1)
+int _map_save_in_game(bool isLeavingMap)
 {
     if (gMapHeader.name[0] == '\0') {
         return 0;
@@ -1457,7 +1457,7 @@ int _map_save_in_game(bool a1)
     animationStop();
     _partyMemberSaveProtos();
 
-    if (a1) {
+    if (isLeavingMap) {
         _queue_leaving_map();
         _partyMemberPrepLoad();
         _partyMemberPrepItemSaveAll();
@@ -1477,7 +1477,7 @@ int _map_save_in_game(bool a1)
 
     char name[16];
 
-    if (a1 && !wmMapIsSaveable()) {
+    if (isLeavingMap && !wmMapIsSaveable()) {
         debugPrint("\nNot saving RANDOM encounter map.");
 
         strcpy(name, gMapHeader.name);
@@ -1497,7 +1497,7 @@ int _map_save_in_game(bool a1)
 
         automapSaveCurrent();
 
-        if (a1) {
+        if (isLeavingMap) {
             gMapHeader.name[0] = '\0';
             _obj_remove_all();
             _proto_remove_all();
@@ -1715,12 +1715,12 @@ static void _square_reset()
                 *p = (((buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
-                int v3 = (fid & 0xF000) >> 12;
-                int v4 = (buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0) & 0xFFF) | v3;
+                int tileFlags = (fid & 0xF000) >> 12;
+                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0) & 0xFFF) | tileFlags;
 
                 fid &= ~0xFFFF;
 
-                *p = v4 | ((fid >> 16) << 16);
+                *p = updatedLowerTile | ((fid >> 16) << 16);
 
                 p++;
             }
@@ -1731,10 +1731,10 @@ static void _square_reset()
 // 0x48431C
 static int _square_load(File* stream, int flags)
 {
-    int v6;
-    int v7;
-    int v8;
-    int v9;
+    int upperTileWord;
+    int upperTileFlags;
+    int upperTileArtId;
+    int lowerTileWord;
 
     _square_reset();
 
@@ -1746,16 +1746,16 @@ static int _square_load(File* stream, int flags)
             }
 
             for (int tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-                v6 = arr[tile];
-                v6 &= ~(0xFFFF);
-                v6 >>= 16;
+                upperTileWord = arr[tile];
+                upperTileWord &= ~(0xFFFF);
+                upperTileWord >>= 16;
 
-                v7 = (v6 & 0xF000) >> 12;
-                v7 &= ~(0x01);
+                upperTileFlags = (upperTileWord & 0xF000) >> 12;
+                upperTileFlags &= ~(0x01);
 
-                v8 = v6 & 0xFFF;
-                v9 = arr[tile] & 0xFFFF;
-                arr[tile] = ((v8 | (v7 << 12)) << 16) | v9;
+                upperTileArtId = upperTileWord & 0xFFF;
+                lowerTileWord = arr[tile] & 0xFFFF;
+                arr[tile] = ((upperTileArtId | (upperTileFlags << 12)) << 16) | lowerTileWord;
             }
         }
     }

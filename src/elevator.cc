@@ -383,10 +383,10 @@ int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tileP
 
     debugPrint("\n the start elev level %d\n", *elevationPtr);
 
-    int v18 = (_elevatorFrmImages[ELEVATOR_FRM_GAUGE].getWidth() * _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getHeight()) / 13;
-    float v42 = 12.0f / (float)(gElevatorLevels[elevator] - 1);
+    int gaugeSliceSize = (_elevatorFrmImages[ELEVATOR_FRM_GAUGE].getWidth() * _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getHeight()) / 13;
+    float gaugeUnitsPerLevel = 12.0f / (float)(gElevatorLevels[elevator] - 1);
     blitBufferToBuffer(
-        _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getData() + v18 * (int)((float)(*elevationPtr) * v42),
+        _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getData() + gaugeSliceSize * (int)((float)(*elevationPtr) * gaugeUnitsPerLevel),
         _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getWidth(),
         _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getHeight() / 13,
         _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getWidth(),
@@ -424,12 +424,12 @@ int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tileP
         keyCode -= 500;
 
         if (*elevationPtr != keyCode) {
-            float v43 = (float)(gElevatorLevels[elevator] - 1) / 12.0f;
+            float levelStep = (float)(gElevatorLevels[elevator] - 1) / 12.0f;
 
-            unsigned int delay = (unsigned int)(v43 * 276.92307);
+            unsigned int delay = (unsigned int)(levelStep * 276.92307);
 
             if (keyCode < *elevationPtr) {
-                v43 = -v43;
+                levelStep = -levelStep;
             }
 
             int numberOfLevelsTravelled = keyCode - *elevationPtr;
@@ -439,15 +439,15 @@ int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tileP
 
             soundPlayFile(gElevatorSoundEffects[gElevatorLevels[elevator] - 2][numberOfLevelsTravelled]);
 
-            float v41 = (float)keyCode * v42;
-            float v44 = (float)(*elevationPtr) * v42;
+            float targetGaugePosition = (float)keyCode * gaugeUnitsPerLevel;
+            float currentGaugePosition = (float)(*elevationPtr) * gaugeUnitsPerLevel;
             do {
                 sharedFpsLimiter.mark();
 
                 unsigned int tick = getTicks();
-                v44 += v43;
+                currentGaugePosition += levelStep;
                 blitBufferToBuffer(
-                    _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getData() + v18 * (int)v44,
+                    _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getData() + gaugeSliceSize * (int)currentGaugePosition,
                     _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getWidth(),
                     _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getHeight() / 13,
                     _elevatorFrmImages[ELEVATOR_FRM_GAUGE].getWidth(),
@@ -460,7 +460,7 @@ int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tileP
 
                 renderPresent();
                 sharedFpsLimiter.throttle();
-            } while ((v43 <= 0.0 || v44 < v41) && (v43 > 0.0 || v44 > v41));
+            } while ((levelStep <= 0.0 || currentGaugePosition < targetGaugePosition) && (levelStep > 0.0 || currentGaugePosition > targetGaugePosition));
 
             inputPauseForTocks(200);
         }

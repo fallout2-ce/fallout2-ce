@@ -40,7 +40,7 @@ static int _blitAlpha(int win, unsigned char* data, int width, int height, int p
 static int _movieScaleWindow(int win, unsigned char* data, int width, int height, int pitch);
 static int _blitNormal(int win, unsigned char* data, int width, int height, int pitch);
 static void movieSetPaletteEntriesImpl(unsigned char* palette, int start, int end);
-static void _cleanupMovie(int a1);
+static void _cleanupMovie(bool shouldEndMovie);
 static void _cleanupLast();
 static File* movieOpen(char* filePath);
 static void movieLoadSubtitles(char* filePath);
@@ -207,8 +207,8 @@ static bool movieReadImpl(void* handle, void* buf, int count)
 // 0x486654
 static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height, int src_x, int src_y, int dst_width, int dst_height, int dst_x, int dst_y)
 {
-    int v14;
-    int v15;
+    int movieWindowWidth;
+    int movieWindowSpan;
 
     SDL_Rect srcRect;
     srcRect.x = src_x;
@@ -216,15 +216,15 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
     srcRect.w = src_width;
     srcRect.h = src_height;
 
-    v14 = gMovieWindowRect.right - gMovieWindowRect.left;
-    v15 = gMovieWindowRect.right - gMovieWindowRect.left + 1;
+    movieWindowWidth = gMovieWindowRect.right - gMovieWindowRect.left;
+    movieWindowSpan = movieWindowWidth + 1;
 
     SDL_Rect destRect;
 
     if (_movieScaleFlag) {
         if ((gMovieFlags & MOVIE_EXTENDED_FLAG_0x08) != 0) {
             destRect.y = (gMovieWindowRect.bottom - gMovieWindowRect.top + 1 - dst_height) / 2;
-            destRect.x = (v15 - 4 * src_width / 3) / 2;
+            destRect.x = (movieWindowSpan - 4 * src_width / 3) / 2;
         } else {
             destRect.y = _movieY + gMovieWindowRect.top;
             destRect.x = gMovieWindowRect.left + _movieX;
@@ -235,7 +235,7 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
     } else {
         if ((gMovieFlags & MOVIE_EXTENDED_FLAG_0x08) != 0) {
             destRect.y = (gMovieWindowRect.bottom - gMovieWindowRect.top + 1 - dst_height) / 2;
-            destRect.x = (v15 - dst_width) / 2;
+            destRect.x = (movieWindowSpan - dst_width) / 2;
         } else {
             destRect.y = _movieY + gMovieWindowRect.top;
             destRect.x = gMovieWindowRect.left + _movieX;
@@ -298,10 +298,10 @@ int _movieScaleSubRect(int win, unsigned char* data, int width, int height, int 
         return 0;
     }
 
-    int v1 = width / 3;
+    int tripletCount = width / 3;
     for (int y = 0; y < height; y++) {
         int x;
-        for (x = 0; x < v1; x++) {
+        for (x = 0; x < tripletCount; x++) {
             unsigned int value = data[0];
             value |= data[1] << 8;
             value |= data[2] << 16;
@@ -404,7 +404,7 @@ void movieInit()
 }
 
 // 0x486E98
-static void _cleanupMovie(int a1)
+static void _cleanupMovie(bool shouldEndMovie)
 {
     if (!_running) {
         return;
@@ -426,7 +426,7 @@ static void _cleanupMovie(int a1)
         MVE_lastBuffer = nullptr;
     }
 
-    if (a1) {
+    if (shouldEndMovie) {
         MVE_rmEndMovie();
     }
 
@@ -637,11 +637,11 @@ static void movieRenderSubtitles()
         return;
     }
 
-    int v1 = fontGetLineHeight();
-    int v2 = (480 - _lastMovieH - _lastMovieY - v1) / 2 + _lastMovieH + _lastMovieY;
+    int lineHeight = fontGetLineHeight();
+    int subtitleY = (480 - _lastMovieH - _lastMovieY - lineHeight) / 2 + _lastMovieH + _lastMovieY;
 
-    if (_subtitleH + v2 > windowGetYres()) {
-        _subtitleH = windowGetYres() - v2;
+    if (_subtitleH + subtitleY > windowGetYres()) {
+        _subtitleH = windowGetYres() - subtitleY;
     }
 
     int frame;
@@ -655,7 +655,7 @@ static void movieRenderSubtitles()
 
         MovieSubtitleListNode* next = gMovieSubtitleHead->next;
 
-        windowFill(gMovieWindow, 0, v2, _subtitleW, _subtitleH, 0);
+        windowFill(gMovieWindow, 0, subtitleY, _subtitleW, _subtitleH, 0);
 
         int oldFont;
         if (gMovieSubtitlesFont != -1) {
@@ -664,12 +664,12 @@ static void movieRenderSubtitles()
         }
 
         int colorIndex = (gMovieSubtitlesColorR << 10) | (gMovieSubtitlesColorG << 5) | gMovieSubtitlesColorB;
-        windowWrapLine(gMovieWindow, gMovieSubtitleHead->text, _subtitleW, _subtitleH, 0, v2, _colorTable[colorIndex] | 0x2000000, TEXT_ALIGNMENT_CENTER);
+        windowWrapLine(gMovieWindow, gMovieSubtitleHead->text, _subtitleW, _subtitleH, 0, subtitleY, _colorTable[colorIndex] | 0x2000000, TEXT_ALIGNMENT_CENTER);
 
         Rect rect;
         rect.right = _subtitleW;
-        rect.top = v2;
-        rect.bottom = v2 + _subtitleH;
+        rect.top = subtitleY;
+        rect.bottom = subtitleY + _subtitleH;
         rect.left = 0;
         windowRefreshRect(gMovieWindow, &rect);
 
@@ -806,12 +806,12 @@ static int _stepMovie()
         fileRead(_alphaBuf, 1, size, _alphaHandle);
     }
 
-    int v1 = _MVE_rmStepMovie();
-    if (v1 != -1) {
+    int stepResult = _MVE_rmStepMovie();
+    if (stepResult != -1) {
         movieRenderSubtitles();
     }
 
-    return v1;
+    return stepResult;
 }
 
 // 0x487BC8

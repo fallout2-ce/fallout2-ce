@@ -42,7 +42,7 @@ typedef enum OptionsWindowFrm {
 
 static int optionsWindowInit();
 static int optionsWindowFree();
-static void _ShadeScreen(bool a1);
+static void _ShadeScreen(bool preserveWorldState);
 
 // 0x48FC0C
 static const int gPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
@@ -328,10 +328,11 @@ static int optionsWindowFree()
 }
 
 // 0x4902B0
-int showPause(bool a1)
+// preserveWorldState is always false
+int showPause(bool preserveWorldState)
 {
     bool gameMouseWasVisible;
-    if (!a1) {
+    if (!preserveWorldState) {
         gOptionsWindowIsoWasEnabled = isoDisable();
         colorCycleDisable();
 
@@ -342,7 +343,7 @@ int showPause(bool a1)
     }
 
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
-    _ShadeScreen(a1);
+    _ShadeScreen(preserveWorldState);
 
     FrmImage frmImages[PAUSE_WINDOW_FRM_COUNT];
     for (int index = 0; index < PAUSE_WINDOW_FRM_COUNT; index++) {
@@ -368,7 +369,7 @@ int showPause(bool a1)
     int pauseWindowX = (screenGetWidth() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth()) / 2;
     int pauseWindowY = (screenGetHeight() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight()) / 2;
 
-    if (a1) {
+    if (preserveWorldState) {
         pauseWindowX -= 65;
         pauseWindowY -= 24;
     } else {
@@ -471,14 +472,14 @@ int showPause(bool a1)
         sharedFpsLimiter.throttle();
     }
 
-    if (!a1) {
+    if (!preserveWorldState) {
         tileWindowRefresh();
     }
 
     windowDestroy(window);
     messageListFree(&gPreferencesMessageList);
 
-    if (!a1) {
+    if (!preserveWorldState) {
         if (gameMouseWasVisible) {
             gameMouseObjectsShow();
         }
@@ -498,9 +499,9 @@ int showPause(bool a1)
 }
 
 // 0x490748
-static void _ShadeScreen(bool a1)
+static void _ShadeScreen(bool preserveWorldState)
 {
-    if (a1) {
+    if (preserveWorldState) {
         mouseHideCursor();
     } else {
         mouseHideCursor();
