@@ -48,7 +48,7 @@ typedef struct SkillDescription {
     int gainXpFromSkillPenalty;
 } SkillDescription;
 
-static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int criticalChanceModifier);
+static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int skillBonus);
 static int skillGetFreeUsageSlot(int skill);
 static int skill_use_slot_clear();
 
@@ -503,7 +503,7 @@ int skillGetFrmId(int skill)
 }
 
 // 0x4AAC2C
-static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int criticalChanceModifier)
+static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int skillBonus)
 {
     if (obj != gDude) {
         return;
@@ -520,8 +520,8 @@ static void _show_skill_use_messages(Object* obj, int skill, Object* target, int
         return;
     }
 
-    if (skillDescription->gainXpFromSkillPenalty && criticalChanceModifier < 0) {
-        baseExperience += abs(criticalChanceModifier);
+    if (skillDescription->gainXpFromSkillPenalty && skillBonus < 0) {
+        baseExperience += abs(skillBonus);
     }
 
     int xpToAdd = successCount * baseExperience;
@@ -543,7 +543,7 @@ static void _show_skill_use_messages(Object* obj, int skill, Object* target, int
 
 // skill_use
 // 0x4AAD08
-int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
+int skillUse(Object* obj, Object* target, int skill, int skillBonus)
 {
     MessageListItem messageListItem;
     char text[60];
@@ -564,7 +564,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
         }
     }
 
-    int criticalChance = critterGetStat(obj, STAT_CRITICAL_CHANCE) + criticalChanceModifier;
+    int criticalChance = critterGetStat(obj, STAT_CRITICAL_CHANCE) + skillBonus;
 
     int damageHealingAttempts = 1;
     int successCount = 0;
@@ -745,7 +745,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
 
                         snprintf(text, sizeof(text), prefix.text, messageListItem.text);
                         displayMonitorAddMessage(text);
-                        _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+                        _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
 
                         giveExp = false;
                     }
@@ -789,7 +789,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                 }
 
                 successCount = 1;
-                _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+                _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
                 scriptsExecMapUpdateProc();
                 paletteFadeTo(_cmap);
 
@@ -931,7 +931,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                     snprintf(text, sizeof(text), prefix.text, messageListItem.text);
                     displayMonitorAddMessage(text);
 
-                    _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+                    _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
                     giveExp = false;
                 }
             }
@@ -968,7 +968,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                 }
 
                 successCount = 1;
-                _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+                _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
                 scriptsExecMapUpdateProc();
                 paletteFadeTo(_cmap);
 
@@ -1017,7 +1017,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
     }
 
     if (giveExp) {
-        _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+        _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
     }
 
     if (skill == SKILL_FIRST_AID || skill == SKILL_DOCTOR) {

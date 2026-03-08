@@ -1243,32 +1243,32 @@ static int _protinst_default_use_item(Object* user, Object* targetObj, Object* i
 int objectUseItemOnInternal(Object* critter, Object* targetObj, Object* item)
 {
     int messageId = -1;
-    int criticalChanceModifier = 0;
+    int skillBonus = 0;
     int skill = -1;
 
     switch (item->pid) {
     case PROTO_ID_DOCTORS_BAG:
         // The supplies in the Doctor's Bag run out.
         messageId = 900;
-        criticalChanceModifier = 20;
+        skillBonus = 20;
         skill = SKILL_DOCTOR;
         break;
     case PROTO_ID_FIRST_AID_KIT:
         // The supplies in the First Aid Kit run out.
         messageId = 901;
-        criticalChanceModifier = 20;
+        skillBonus = 20;
         skill = SKILL_FIRST_AID;
         break;
     case PROTO_ID_PARAMEDICS_BAG:
         // The supplies in the Paramedic's Bag run out.
         messageId = 910;
-        criticalChanceModifier = 40;
+        skillBonus = 40;
         skill = SKILL_DOCTOR;
         break;
     case PROTO_ID_FIELD_MEDIC_FIRST_AID_KIT:
         // The supplies in the Field Medic First Aid Kit run out.
         messageId = 911;
-        criticalChanceModifier = 40;
+        skillBonus = 40;
         skill = SKILL_FIRST_AID;
         break;
     }
@@ -1333,7 +1333,7 @@ int objectUseItemOnInternal(Object* critter, Object* targetObj, Object* item)
         return -1;
     }
 
-    if (skillUse(critter, targetObj, skill, criticalChanceModifier) != 0) {
+    if (skillUse(critter, targetObj, skill, skillBonus) != 0) {
         return 0;
     }
 
