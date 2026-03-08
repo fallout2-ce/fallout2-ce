@@ -329,7 +329,7 @@ typedef struct ItemProto {
     int weight; // weight
     int cost; // cost
     int inventoryFid; // inv_fid
-    unsigned char field_80;
+    unsigned char soundId;
 } ItemProto;
 
 typedef struct CritterProtoData {
@@ -365,8 +365,8 @@ typedef struct {
 } SceneryProtoDoorData;
 
 typedef struct {
-    int field_0; // d.lower_tile
-    int field_4; // d.upper_tile
+    int destinationBuiltTile; // d.lower_tile
+    int destinationMap; // d.upper_tile
 } SceneryProtoStairsData;
 
 typedef struct {
@@ -375,11 +375,11 @@ typedef struct {
 } SceneryProtoElevatorData;
 
 typedef struct {
-    int field_0;
+    int destinationMap; // destination map
 } SceneryProtoLadderData;
 
 typedef struct {
-    int field_0;
+    int genericFlags;
 } SceneryProtoGenericData;
 
 typedef struct SceneryProtoData {
@@ -403,9 +403,9 @@ typedef struct SceneryProto {
     int sid; // sid
     int type; // type
     SceneryProtoData data;
-    int field_2C; // material
+    int material; // material
     int field_30; //
-    unsigned char field_34;
+    unsigned char soundId;
 } SceneryProto;
 
 typedef struct WallProto {

@@ -2080,7 +2080,7 @@ bool _obj_portal_is_walk_thru(Object* obj)
         }
     }
 
-    return (proto->scenery.data.generic.field_0 & 0x04) != 0;
+    return (proto->scenery.data.generic.genericFlags & 0x04) != 0;
 }
 
 // 0x48B2E8

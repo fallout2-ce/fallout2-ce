@@ -1451,7 +1451,7 @@ char* sfxBuildWeaponName(int effectType, Object* weapon, int hitMode, Object* ta
             break;
         case OBJ_TYPE_SCENERY:
             protoGetProto(target->pid, &proto);
-            material = proto->scenery.field_2C;
+            material = proto->scenery.material;
             break;
         case OBJ_TYPE_WALL:
             protoGetProto(target->pid, &proto);
@@ -1508,7 +1508,7 @@ char* sfxBuildOpenName(Object* object, int action)
         char scenerySoundId;
         Proto* proto;
         if (protoGetProto(object->pid, &proto) != -1) {
-            scenerySoundId = proto->scenery.field_34;
+            scenerySoundId = proto->scenery.soundId;
         } else {
             scenerySoundId = 'A';
         }
@@ -1516,7 +1516,7 @@ char* sfxBuildOpenName(Object* object, int action)
     } else {
         Proto* proto;
         protoGetProto(object->pid, &proto);
-        snprintf(_sfx_file_name, sizeof(_sfx_file_name), "I%cCNTNR%c", _snd_lookup_scenery_action[action], proto->item.field_80);
+        snprintf(_sfx_file_name, sizeof(_sfx_file_name), "I%cCNTNR%c", _snd_lookup_scenery_action[action], proto->item.soundId);
     }
     compat_strupr(_sfx_file_name);
     return _sfx_file_name;
