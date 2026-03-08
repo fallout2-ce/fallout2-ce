@@ -619,45 +619,45 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
 {
     Rect updatedRect;
     int fid;
-    int v11 = 0;
+    int appearanceUpdateType = 0;
     if (critterGetItem2(critter) == item) {
         if (critter != gDude || interfaceGetCurrentHand()) {
             fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
             objectSetFid(critter, fid, &updatedRect);
-            v11 = 2;
+            appearanceUpdateType = 2;
         } else {
-            v11 = 1;
+            appearanceUpdateType = 1;
         }
     } else if (critterGetItem1(critter) == item) {
         if (critter == gDude && !interfaceGetCurrentHand()) {
             fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
             objectSetFid(critter, fid, &updatedRect);
-            v11 = 2;
+            appearanceUpdateType = 2;
         } else {
-            v11 = 1;
+            appearanceUpdateType = 1;
         }
     } else if (critterGetArmor(critter) == item) {
         if (critter == gDude) {
-            int v5 = 1;
+            int defaultFid = 1;
 
             Proto* proto;
             if (protoGetProto(0x1000000, &proto) != -1) {
-                v5 = proto->fid;
+                defaultFid = proto->fid;
             }
 
-            fid = buildFid(OBJ_TYPE_CRITTER, v5, FID_ANIM_TYPE(critter->fid), (critter->fid & 0xF000) >> 12, critter->rotation);
+            fid = buildFid(OBJ_TYPE_CRITTER, defaultFid, FID_ANIM_TYPE(critter->fid), (critter->fid & 0xF000) >> 12, critter->rotation);
             objectSetFid(critter, fid, &updatedRect);
-            v11 = 3;
+            appearanceUpdateType = 3;
         }
     }
 
     int rc = itemRemove(critter, item, 1);
 
-    if (v11 >= 2) {
+    if (appearanceUpdateType >= 2) {
         tileWindowRefreshRect(&updatedRect, critter->elevation);
     }
 
-    if (v11 <= 2 && critter == gDude) {
+    if (appearanceUpdateType <= 2 && critter == gDude) {
         interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
     }
 
@@ -1119,12 +1119,12 @@ int objectUseItem(Object* userObj, Object* item)
         if (root != nullptr) {
             int flags = item->flags & OBJECT_IN_ANY_HAND;
             itemRemove(root, item, 1);
-            Object* v8 = itemReplace(root, item, flags);
+            Object* replacementItem = itemReplace(root, item, flags);
             if (root == gDude) {
                 int leftItemAction;
                 int rightItemAction;
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
-                if (v8 == nullptr) {
+                if (replacementItem == nullptr) {
                     if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
                     } else if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
@@ -1398,8 +1398,10 @@ int objectUseItemOn(Object* user, Object* targetObj, Object* item)
 }
 
 // 0x49C6BC
-int checkSceneryUseActionPointCost(Object* obj, Object* a2)
+int checkSceneryUseActionPointCost(Object* obj, Object* _)
 {
+    (void)_; // unused
+
     if (!isInCombat()) {
         return 0;
     }
@@ -2249,27 +2251,27 @@ int objectAttemptPlacementPartyMember(Object* obj, int tile, int elevation)
         return -1;
     }
 
-    int v9 = tile;
-    int v7 = 0;
+    int destinationTile = tile;
+    int rotation = 0;
     if (!wmEvalTileNumForPlacement(tile)) {
-        v9 = gDude->tile;
-        for (int v4 = 1; v4 <= 100; v4++) {
+        destinationTile = gDude->tile;
+        for (int step = 1; step <= 100; step++) {
             // TODO: Check.
-            v7++;
-            v9 = tileGetTileInDirection(v9, v7 % ROTATION_COUNT, 1);
-            if (wmEvalTileNumForPlacement(v9) != 0) {
+            rotation++;
+            destinationTile = tileGetTileInDirection(destinationTile, rotation % ROTATION_COUNT, 1);
+            if (wmEvalTileNumForPlacement(destinationTile) != 0) {
                 break;
             }
 
-            if (tileDistanceBetween(gDude->tile, v9) > 8) {
-                v9 = tile;
+            if (tileDistanceBetween(gDude->tile, destinationTile) > 8) {
+                destinationTile = tile;
                 break;
             }
         }
     }
 
     objectShow(obj, nullptr);
-    objectSetLocation(obj, v9, elevation, nullptr);
+    objectSetLocation(obj, destinationTile, elevation, nullptr);
 
     return 0;
 }
