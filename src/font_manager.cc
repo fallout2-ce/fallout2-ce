@@ -324,14 +324,14 @@ static int interfaceFontGetMonospacedCharacterWidthImpl()
         return 0;
     }
 
-    int v1;
+    int spacing;
     if (gCurrentInterfaceFontDescriptor->wordSpacing <= gCurrentInterfaceFontDescriptor->field_8) {
-        v1 = gCurrentInterfaceFontDescriptor->lineSpacing;
+        spacing = gCurrentInterfaceFontDescriptor->lineSpacing;
     } else {
-        v1 = gCurrentInterfaceFontDescriptor->letterSpacing;
+        spacing = gCurrentInterfaceFontDescriptor->letterSpacing;
     }
 
-    return v1 + gCurrentInterfaceFontDescriptor->maxHeight;
+    return spacing + gCurrentInterfaceFontDescriptor->maxHeight;
 }
 
 // 0x4422B4

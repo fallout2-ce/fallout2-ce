@@ -20,7 +20,7 @@ typedef struct Nevs {
     int type;
     int hits;
     bool busy;
-    void (*field_38)();
+    void (*callbackProc)(); // unused
 } Nevs;
 
 static Nevs* _nevs_alloc();
@@ -138,18 +138,18 @@ int _nevs_addevent(const char* name, Program* program, int proc, int type)
     nevs->program = program;
     nevs->proc = proc;
     nevs->type = type;
-    nevs->field_38 = nullptr;
+    nevs->callbackProc = nullptr;
 
     return 0;
 }
 
 // nevs_clearevent
 // 0x48859C
-int _nevs_clearevent(const char* a1)
+int _nevs_clearevent(const char* name)
 {
-    debugPrint("nevs_clearevent( '%s');\n", a1);
+    debugPrint("nevs_clearevent( '%s');\n", name);
 
-    Nevs* nevs = _nevs_find(a1);
+    Nevs* nevs = _nevs_find(name);
     if (nevs != nullptr) {
         // NOTE: Uninline.
         _nevs_reset(nevs);
@@ -173,7 +173,7 @@ int _nevs_signal(const char* name)
     debugPrint("nep: %p,  used = %u, prog = %p, proc = %d", nevs, nevs->used, nevs->program, nevs->proc);
 
     if (nevs->used
-        && ((nevs->program != nullptr && nevs->proc != 0) || nevs->field_38 != nullptr)
+        && ((nevs->program != nullptr && nevs->proc != 0) || nevs->callbackProc != nullptr)
         && !nevs->busy) {
         nevs->hits++;
         gNevsHits++;
@@ -198,7 +198,7 @@ void _nevs_update()
     for (int index = 0; index < NEVS_COUNT; index++) {
         Nevs* nevs = &(gNevs[index]);
         if (nevs->used
-            && ((nevs->program != nullptr && nevs->proc != 0) || nevs->field_38 != nullptr)
+            && ((nevs->program != nullptr && nevs->proc != 0) || nevs->callbackProc != nullptr)
             && !nevs->busy) {
             if (nevs->hits > 0) {
                 nevs->busy = true;
@@ -206,10 +206,10 @@ void _nevs_update()
                 nevs->hits -= 1;
                 gNevsHits += nevs->hits;
 
-                if (nevs->field_38 == nullptr) {
+                if (nevs->callbackProc == nullptr) {
                     _executeProc(nevs->program, nevs->proc);
                 } else {
-                    nevs->field_38();
+                    nevs->callbackProc();
                 }
 
                 nevs->busy = false;

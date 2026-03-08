@@ -360,7 +360,7 @@ int dictionaryReadHeader(FILE* stream, Dictionary* dictionary)
 // NOTE: Unused.
 //
 // 0x4DA158
-int dictionaryLoad(FILE* stream, Dictionary* dictionary, int a3)
+int dictionaryLoad(FILE* stream, Dictionary* dictionary, int userData)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
         return -1;
@@ -429,7 +429,7 @@ int dictionaryLoad(FILE* stream, Dictionary* dictionary, int a3)
             }
 
             if (dictionary->io.readProc != nullptr) {
-                if (dictionary->io.readProc(stream, entry->value, dictionary->valueSize, a3) != 0) {
+                if (dictionary->io.readProc(stream, entry->value, dictionary->valueSize, userData) != 0) {
                     return -1;
                 }
             } else {
@@ -473,7 +473,7 @@ int dictionaryWriteHeader(FILE* stream, Dictionary* dictionary)
 // NOTE: Unused.
 //
 // 0x4DA3A4
-int dictionaryWrite(FILE* stream, Dictionary* dictionary, int a3)
+int dictionaryWrite(FILE* stream, Dictionary* dictionary, int userData)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
         return -1;
@@ -496,7 +496,7 @@ int dictionaryWrite(FILE* stream, Dictionary* dictionary, int a3)
 
         if (dictionary->io.writeProc != nullptr) {
             if (dictionary->valueSize != 0) {
-                if (dictionary->io.writeProc(stream, entry->value, dictionary->valueSize, a3) != 0) {
+                if (dictionary->io.writeProc(stream, entry->value, dictionary->valueSize, userData) != 0) {
                     return -1;
                 }
             }
