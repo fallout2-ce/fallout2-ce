@@ -564,7 +564,7 @@ int skillUse(Object* obj, Object* target, int skill, int skillBonus)
         }
     }
 
-    int criticalChance = critterGetStat(obj, STAT_CRITICAL_CHANCE) + skillBonus;
+    int skillOrCritSuccessBonus = critterGetStat(obj, STAT_CRITICAL_CHANCE) + skillBonus;
 
     int damageHealingAttempts = 1;
     int successCount = 0;
@@ -603,7 +603,7 @@ int skillUse(Object* obj, Object* target, int skill, int skillBonus)
             if (critterGetBodyType(target) == BODY_TYPE_ROBOTIC) {
                 roll = ROLL_FAILURE;
             } else {
-                roll = skillRoll(obj, skill, criticalChance, &hpToHeal);
+                roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
             }
 
             if (roll == ROLL_SUCCESS || roll == ROLL_CRITICAL_SUCCESS) {
@@ -707,7 +707,7 @@ int skillUse(Object* obj, Object* target, int skill, int skillBonus)
                     if ((target->data.critter.combat.results & flags[index]) != 0) {
                         damageHealingAttempts++;
 
-                        int roll = skillRoll(obj, skill, criticalChance, &hpToHeal);
+                        int roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
 
                         // 530: damaged eye
                         // 531: crippled left arm
@@ -757,7 +757,7 @@ int skillUse(Object* obj, Object* target, int skill, int skillBonus)
                 roll = ROLL_FAILURE;
             } else {
                 int skillValue = skillGetValue(obj, skill);
-                roll = randomRoll(skillValue, criticalChance, &hpToHeal);
+                roll = randomRoll(skillValue, skillOrCritSuccessBonus, &hpToHeal);
             }
 
             if (roll == ROLL_SUCCESS || roll == ROLL_CRITICAL_SUCCESS) {
@@ -893,7 +893,7 @@ int skillUse(Object* obj, Object* target, int skill, int skillBonus)
                 if ((target->data.critter.combat.results & flags[index]) != 0) {
                     damageHealingAttempts++;
 
-                    int roll = skillRoll(obj, skill, criticalChance, &hpToHeal);
+                    int roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
 
                     // 530: damaged eye
                     // 531: crippled left arm
@@ -937,7 +937,7 @@ int skillUse(Object* obj, Object* target, int skill, int skillBonus)
             }
 
             int skillValue = skillGetValue(obj, skill);
-            int roll = randomRoll(skillValue, criticalChance, &hpToHeal);
+            int roll = randomRoll(skillValue, skillOrCritSuccessBonus, &hpToHeal);
 
             if (roll == ROLL_SUCCESS || roll == ROLL_CRITICAL_SUCCESS) {
                 hpToHeal = randomBetween(minimumHpToHeal + 4, maximumHpToHeal + 10);
