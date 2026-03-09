@@ -30,8 +30,8 @@ typedef struct EventTypeDescription {
     QueueEventDataFreeProc* freeProc;
     QueueEventDataReadProc* readProc;
     QueueEventDataWriteProc* writeProc;
-    bool field_10;
-    QueueEventHandler* field_14;
+    bool clearOnMapExit; // unused
+    QueueEventHandler* mapExitHandlerProc; // unused
 } EventTypeDescription;
 
 static int flareEventProcess(Object* obj, void* data);
@@ -511,8 +511,8 @@ void _queue_leaving_map()
 {
     for (int eventType = 0; eventType < EVENT_TYPE_COUNT; eventType++) {
         EventTypeDescription* eventTypeDescription = &(gEventTypeDescriptions[eventType]);
-        if (eventTypeDescription->field_10) {
-            queueClearByEventType(eventType, eventTypeDescription->field_14);
+        if (eventTypeDescription->clearOnMapExit) {
+            queueClearByEventType(eventType, eventTypeDescription->mapExitHandlerProc);
         }
     }
 }

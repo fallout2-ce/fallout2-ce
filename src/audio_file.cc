@@ -148,26 +148,26 @@ long audioFileSeek(int handle, long offset, int origin)
 {
     void* buf;
     int remaining;
-    int a4;
+    int targetPosition;
 
     AudioFile* audioFile = &(gAudioFileList[handle - 1]);
 
     switch (origin) {
     case SEEK_SET:
-        a4 = offset;
+        targetPosition = offset;
         break;
     case SEEK_CUR:
-        a4 = audioFile->fileSize + offset;
+        targetPosition = audioFile->fileSize + offset;
         break;
     case SEEK_END:
-        a4 = audioFile->position + offset;
+        targetPosition = audioFile->position + offset;
         break;
     default:
         assert(false && "Should be unreachable");
     }
 
     if ((audioFile->flags & AUDIO_FILE_COMPRESSED) != 0) {
-        if (a4 <= audioFile->position) {
+        if (targetPosition <= audioFile->position) {
             soundDecoderFree(audioFile->soundDecoder);
 
             fseek(audioFile->stream, 0, 0);
@@ -176,20 +176,20 @@ long audioFileSeek(int handle, long offset, int origin)
             audioFile->fileSize *= 2;
             audioFile->position = 0;
 
-            if (a4) {
+            if (targetPosition != 0) {
                 buf = internal_malloc_safe(4096, __FILE__, __LINE__); // "..\int\audiof.c", 364
-                while (a4 > 4096) {
+                while (targetPosition > 4096) {
                     audioFileRead(handle, buf, 4096);
-                    a4 -= 4096;
+                    targetPosition -= 4096;
                 }
-                if (a4 != 0) {
-                    audioFileRead(handle, buf, a4);
+                if (targetPosition != 0) {
+                    audioFileRead(handle, buf, targetPosition);
                 }
                 internal_free_safe(buf, __FILE__, __LINE__); // "..\int\audiof.c", 370
             }
         } else {
             buf = internal_malloc_safe(0x400, __FILE__, __LINE__); // "..\int\audiof.c", 316
-            remaining = audioFile->position - a4;
+            remaining = audioFile->position - targetPosition;
             while (remaining > 1024) {
                 audioFileRead(handle, buf, 1024);
                 remaining -= 1024;

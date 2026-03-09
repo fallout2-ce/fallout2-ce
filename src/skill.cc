@@ -45,10 +45,10 @@ typedef struct SkillDescription {
     int stat2;
     int baseValueMult;
     int experience;
-    int field_28;
+    int gainXpFromSkillPenalty;
 } SkillDescription;
 
-static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int criticalChanceModifier);
+static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int skillBonus);
 static int skillGetFreeUsageSlot(int skill);
 static int skill_use_slot_clear();
 
@@ -503,7 +503,7 @@ int skillGetFrmId(int skill)
 }
 
 // 0x4AAC2C
-static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int criticalChanceModifier)
+static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int skillBonus)
 {
     if (obj != gDude) {
         return;
@@ -520,8 +520,8 @@ static void _show_skill_use_messages(Object* obj, int skill, Object* target, int
         return;
     }
 
-    if (skillDescription->field_28 && criticalChanceModifier < 0) {
-        baseExperience += abs(criticalChanceModifier);
+    if (skillDescription->gainXpFromSkillPenalty && skillBonus < 0) {
+        baseExperience += abs(skillBonus);
     }
 
     int xpToAdd = successCount * baseExperience;
@@ -543,7 +543,7 @@ static void _show_skill_use_messages(Object* obj, int skill, Object* target, int
 
 // skill_use
 // 0x4AAD08
-int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
+int skillUse(Object* obj, Object* target, int skill, int skillBonus)
 {
     MessageListItem messageListItem;
     char text[60];
@@ -564,7 +564,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
         }
     }
 
-    int criticalChance = critterGetStat(obj, STAT_CRITICAL_CHANCE) + criticalChanceModifier;
+    int skillOrCritSuccessBonus = critterGetStat(obj, STAT_CRITICAL_CHANCE) + skillBonus;
 
     int damageHealingAttempts = 1;
     int successCount = 0;
@@ -603,7 +603,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
             if (critterGetBodyType(target) == BODY_TYPE_ROBOTIC) {
                 roll = ROLL_FAILURE;
             } else {
-                roll = skillRoll(obj, skill, criticalChance, &hpToHeal);
+                roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
             }
 
             if (roll == ROLL_SUCCESS || roll == ROLL_CRITICAL_SUCCESS) {
@@ -707,7 +707,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                     if ((target->data.critter.combat.results & flags[index]) != 0) {
                         damageHealingAttempts++;
 
-                        int roll = skillRoll(obj, skill, criticalChance, &hpToHeal);
+                        int roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
 
                         // 530: damaged eye
                         // 531: crippled left arm
@@ -745,7 +745,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
 
                         snprintf(text, sizeof(text), prefix.text, messageListItem.text);
                         displayMonitorAddMessage(text);
-                        _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+                        _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
 
                         giveExp = false;
                     }
@@ -757,7 +757,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                 roll = ROLL_FAILURE;
             } else {
                 int skillValue = skillGetValue(obj, skill);
-                roll = randomRoll(skillValue, criticalChance, &hpToHeal);
+                roll = randomRoll(skillValue, skillOrCritSuccessBonus, &hpToHeal);
             }
 
             if (roll == ROLL_SUCCESS || roll == ROLL_CRITICAL_SUCCESS) {
@@ -789,7 +789,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                 }
 
                 successCount = 1;
-                _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+                _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
                 scriptsExecMapUpdateProc();
                 paletteFadeTo(_cmap);
 
@@ -893,7 +893,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                 if ((target->data.critter.combat.results & flags[index]) != 0) {
                     damageHealingAttempts++;
 
-                    int roll = skillRoll(obj, skill, criticalChance, &hpToHeal);
+                    int roll = skillRoll(obj, skill, skillOrCritSuccessBonus, &hpToHeal);
 
                     // 530: damaged eye
                     // 531: crippled left arm
@@ -931,13 +931,13 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                     snprintf(text, sizeof(text), prefix.text, messageListItem.text);
                     displayMonitorAddMessage(text);
 
-                    _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+                    _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
                     giveExp = false;
                 }
             }
 
             int skillValue = skillGetValue(obj, skill);
-            int roll = randomRoll(skillValue, criticalChance, &hpToHeal);
+            int roll = randomRoll(skillValue, skillOrCritSuccessBonus, &hpToHeal);
 
             if (roll == ROLL_SUCCESS || roll == ROLL_CRITICAL_SUCCESS) {
                 hpToHeal = randomBetween(minimumHpToHeal + 4, maximumHpToHeal + 10);
@@ -968,7 +968,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
                 }
 
                 successCount = 1;
-                _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+                _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
                 scriptsExecMapUpdateProc();
                 paletteFadeTo(_cmap);
 
@@ -1017,7 +1017,7 @@ int skillUse(Object* obj, Object* target, int skill, int criticalChanceModifier)
     }
 
     if (giveExp) {
-        _show_skill_use_messages(obj, skill, target, successCount, criticalChanceModifier);
+        _show_skill_use_messages(obj, skill, target, successCount, skillBonus);
     }
 
     if (skill == SKILL_FIRST_AID || skill == SKILL_DOCTOR) {

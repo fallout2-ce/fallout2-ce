@@ -5,8 +5,8 @@
 
 namespace fallout {
 
-typedef int(DictionaryReadProc)(FILE* stream, void* buffer, unsigned int size, int a4);
-typedef int(DictionaryWriteProc)(FILE* stream, void* buffer, unsigned int size, int a4);
+typedef int(DictionaryReadProc)(FILE* stream, void* buffer, unsigned int size, int a3);
+typedef int(DictionaryWriteProc)(FILE* stream, void* buffer, unsigned int size, int a3);
 
 // NOTE: Last unnamed fields are likely seek, tell, and filelength.
 typedef struct DictionaryIO {
