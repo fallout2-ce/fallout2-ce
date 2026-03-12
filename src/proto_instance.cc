@@ -621,7 +621,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
     int fid;
     int appearanceUpdateType = 0;
     if (critterGetItem2(critter) == item) {
-        if (critter != gDude || interfaceGetCurrentHand()) {
+        if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
             fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
             objectSetFid(critter, fid, &updatedRect);
             appearanceUpdateType = 2;
@@ -629,7 +629,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
             appearanceUpdateType = 1;
         }
     } else if (critterGetItem1(critter) == item) {
-        if (critter == gDude && !interfaceGetCurrentHand()) {
+        if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
             fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
             objectSetFid(critter, fid, &updatedRect);
             appearanceUpdateType = 2;

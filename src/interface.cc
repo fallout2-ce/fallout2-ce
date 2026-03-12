@@ -51,6 +51,9 @@ namespace fallout {
 // 6 boxes 130px each.
 #define INDICATOR_SLOTS_COUNT (6)
 
+#define INTERFACE_ITEM_ACTION_BUTTON_WIDTH 188
+#define INTERFACE_ITEM_ACTION_BUTTON_HEIGHT 67
+
 // The values of it's members are offsets to beginning of numbers in
 // numbers.frm.
 typedef enum InterfaceNumbersColor {
@@ -110,6 +113,8 @@ static int endCombatButtonInit();
 static int endCombatButtonFree();
 static void interfaceUpdateAmmoBar(int x, int ratio);
 static int _intface_item_reload();
+static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor);
+static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delay, Rect* numbersRect, bool refreshMouse);
 static void interfaceRenderCounter(int x, int y, int previousValue, int value, int offset, int delay);
 static int intface_fatal_error(int rc);
 static int indicatorBarInit();
@@ -235,10 +240,10 @@ static InterfaceItemState gInterfaceItemStates[HAND_COUNT];
 static bool gIndicatorBarIsVisible;
 
 // 0x597154
-static unsigned char _itemButtonDown[188 * 67];
+static unsigned char _itemButtonDown[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERFACE_ITEM_ACTION_BUTTON_HEIGHT];
 
 // 0x59A2B4
-static unsigned char _itemButtonUp[188 * 67];
+static unsigned char _itemButtonUp[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERFACE_ITEM_ACTION_BUTTON_HEIGHT];
 
 // 0x59D3F4
 static unsigned char* gInterfaceWindowBuffer;
@@ -497,7 +502,7 @@ int interfaceInit()
     memcpy(_itemButtonUp, _itemButtonNormalFrmImage.getData(), sizeof(_itemButtonUp));
     memcpy(_itemButtonDown, _itemButtonPressedFrmImage.getData(), sizeof(_itemButtonDown));
 
-    gSingleAttackButton = buttonCreate(gInterfaceBarWindow, 267 + gInterfaceBarContentOffset, 26, 188, 67, -1, -1, -1, -20, _itemButtonUp, _itemButtonDown, nullptr, BUTTON_FLAG_TRANSPARENT);
+    gSingleAttackButton = buttonCreate(gInterfaceBarWindow, 267 + gInterfaceBarContentOffset, 26, INTERFACE_ITEM_ACTION_BUTTON_WIDTH, INTERFACE_ITEM_ACTION_BUTTON_HEIGHT, -1, -1, -1, -20, _itemButtonUp, _itemButtonDown, nullptr, BUTTON_FLAG_TRANSPARENT);
     if (gSingleAttackButton == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -890,47 +895,47 @@ void interfaceRenderHitPoints(bool animate)
         color = INTERFACE_NUMBERS_COLOR_WHITE;
     }
 
-    int v1[4];
-    int v2[3];
+    int transitionPoints[4];
+    int transitionColors[3];
     int count = 1;
 
-    v1[0] = gInterfaceLastRenderedHitPoints;
-    v2[0] = gInterfaceLastRenderedHitPointsColor;
+    transitionPoints[0] = gInterfaceLastRenderedHitPoints;
+    transitionColors[0] = gInterfaceLastRenderedHitPointsColor;
 
     if (gInterfaceLastRenderedHitPointsColor != color) {
         if (hp >= gInterfaceLastRenderedHitPoints) {
             if (gInterfaceLastRenderedHitPoints < red && hp >= red) {
-                v1[count] = red;
-                v2[count] = INTERFACE_NUMBERS_COLOR_YELLOW;
+                transitionPoints[count] = red;
+                transitionColors[count] = INTERFACE_NUMBERS_COLOR_YELLOW;
                 count += 1;
             }
 
             if (gInterfaceLastRenderedHitPoints < yellow && hp >= yellow) {
-                v1[count] = yellow;
-                v2[count] = INTERFACE_NUMBERS_COLOR_WHITE;
+                transitionPoints[count] = yellow;
+                transitionColors[count] = INTERFACE_NUMBERS_COLOR_WHITE;
                 count += 1;
             }
         } else {
             if (gInterfaceLastRenderedHitPoints >= yellow && hp < yellow) {
-                v1[count] = yellow;
-                v2[count] = INTERFACE_NUMBERS_COLOR_YELLOW;
+                transitionPoints[count] = yellow;
+                transitionColors[count] = INTERFACE_NUMBERS_COLOR_YELLOW;
                 count += 1;
             }
 
             if (gInterfaceLastRenderedHitPoints >= red && hp < red) {
-                v1[count] = red;
-                v2[count] = INTERFACE_NUMBERS_COLOR_RED;
+                transitionPoints[count] = red;
+                transitionColors[count] = INTERFACE_NUMBERS_COLOR_RED;
                 count += 1;
             }
         }
     }
 
-    v1[count] = hp;
+    transitionPoints[count] = hp;
 
     if (animate) {
         int delay = 250 / (abs(gInterfaceLastRenderedHitPoints - hp) + 1);
         for (int index = 0; index < count; index++) {
-            interfaceRenderCounter(473 + gInterfaceBarContentOffset, 40, v1[index], v1[index + 1], v2[index], delay);
+            interfaceRenderCounter(473 + gInterfaceBarContentOffset, 40, transitionPoints[index], transitionPoints[index + 1], transitionColors[index], delay);
         }
     } else {
         interfaceRenderCounter(473 + gInterfaceBarContentOffset, 40, gInterfaceLastRenderedHitPoints, hp, color, 0);
@@ -1548,6 +1553,9 @@ static int interfaceBarRefreshMainAction()
 
     InterfaceItemState* itemState = &(gInterfaceItemStates[gInterfaceCurrentHand]);
     int actionPoints = -1;
+    const int overlayPaddingX = 7;
+    const int overlayTopY = 7;
+    const int overlayBottomY = INTERFACE_ITEM_ACTION_BUTTON_HEIGHT - overlayPaddingX;
 
     if (itemState->isDisabled == 0) {
         memcpy(_itemButtonUp, _itemButtonNormalFrmImage.getData(), sizeof(_itemButtonUp));
@@ -1571,8 +1579,7 @@ static int interfaceBarRefreshMainAction()
                     int width = useTextFrmImage.getWidth();
                     int height = useTextFrmImage.getHeight();
                     unsigned char* data = useTextFrmImage.getData();
-                    blitBufferToBufferTrans(data, width, height, width, _itemButtonUp + 188 * 7 + 181 - width, 188);
-                    _dark_trans_buf_to_buf(data, width, height, width, _itemButtonDown, 181 - width + 1, 5, 188, 59641);
+                    interfaceDrawActionButtonOverlay(data, width, height, width, INTERFACE_ITEM_ACTION_BUTTON_WIDTH - overlayPaddingX - width, overlayTopY, 59641);
                 }
 
                 actionPoints = itemGetActionPointCost(gDude, itemState->primaryHitMode, false);
@@ -1609,15 +1616,7 @@ static int interfaceBarRefreshMainAction()
                     int width = bullseyeFrmImage.getWidth();
                     int height = bullseyeFrmImage.getHeight();
                     unsigned char* data = bullseyeFrmImage.getData();
-                    blitBufferToBufferTrans(data, width, height, width, _itemButtonUp + 188 * (60 - height) + (181 - width), 188);
-
-                    int v9 = 60 - height - 2;
-                    if (v9 < 0) {
-                        v9 = 0;
-                        height -= 2;
-                    }
-
-                    _dark_trans_buf_to_buf(data, width, height, width, _itemButtonDown, 181 - width + 1, v9, 188, 59641);
+                    interfaceDrawActionButtonOverlay(data, width, height, width, INTERFACE_ITEM_ACTION_BUTTON_WIDTH - overlayPaddingX - width, overlayBottomY - height, 59641);
                 }
             }
 
@@ -1704,8 +1703,7 @@ static int interfaceBarRefreshMainAction()
                     int width = primaryFrmImage.getWidth();
                     int height = primaryFrmImage.getHeight();
                     unsigned char* data = primaryFrmImage.getData();
-                    blitBufferToBufferTrans(data, width, height, width, _itemButtonUp + 188 * 7 + 181 - width, 188);
-                    _dark_trans_buf_to_buf(data, width, height, width, _itemButtonDown, 181 - width + 1, 5, 188, 59641);
+                    interfaceDrawActionButtonOverlay(data, width, height, width, INTERFACE_ITEM_ACTION_BUTTON_WIDTH - overlayPaddingX - width, overlayTopY, 59641);
                 }
             }
         }
@@ -1721,17 +1719,9 @@ static int interfaceBarRefreshMainAction()
             int height = apFrmImage.getHeight();
             unsigned char* data = apFrmImage.getData();
 
-            blitBufferToBufferTrans(data, width, height, width, _itemButtonUp + 188 * (60 - height) + 7, 188);
+            interfaceDrawActionButtonOverlay(data, width, height, width, overlayPaddingX, overlayBottomY - height, 59641);
 
-            int v29 = 60 - height - 2;
-            if (v29 < 0) {
-                v29 = 0;
-                height -= 2;
-            }
-
-            _dark_trans_buf_to_buf(data, width, height, width, _itemButtonDown, 7 + 1, v29, 188, 59641);
-
-            int offset = width + 7;
+            int offset = width + overlayPaddingX;
 
             FrmImage apNumbersFrmImage;
             // movement point numbers - ten numbers 0 to 9, each 10 pixels wide.
@@ -1741,14 +1731,7 @@ static int interfaceBarRefreshMainAction()
                 int height = apNumbersFrmImage.getHeight();
                 unsigned char* data = apNumbersFrmImage.getData();
 
-                blitBufferToBufferTrans(data + actionPoints * 10, 10, height, width, _itemButtonUp + 188 * (60 - height) + 7 + offset, 188);
-
-                int v40 = 60 - height - 2;
-                if (v40 < 0) {
-                    v40 = 0;
-                    height -= 2;
-                }
-                _dark_trans_buf_to_buf(data + actionPoints * 10, 10, height, width, _itemButtonDown, offset + 7 + 1, v40, 188, 59641);
+                interfaceDrawActionButtonOverlay(data + actionPoints * 10, 10, height, width, overlayPaddingX + offset, overlayBottomY - height, 59641);
             }
         }
     } else {
@@ -1763,17 +1746,9 @@ static int interfaceBarRefreshMainAction()
             int height = itemFrmImage.getHeight();
             unsigned char* data = itemFrmImage.getData();
 
-            int v46 = (188 - width) / 2;
-            int v47 = (67 - height) / 2 - 2;
-
-            blitBufferToBufferTrans(data, width, height, width, _itemButtonUp + 188 * ((67 - height) / 2) + v46, 188);
-
-            if (v47 < 0) {
-                v47 = 0;
-                height -= 2;
-            }
-
-            _dark_trans_buf_to_buf(data, width, height, width, _itemButtonDown, v46 + 1, v47, 188, 63571);
+            int itemIconX = (INTERFACE_ITEM_ACTION_BUTTON_WIDTH - width) / 2;
+            int itemIconY = (INTERFACE_ITEM_ACTION_BUTTON_HEIGHT - height) / 2;
+            interfaceDrawActionButtonOverlay(data, width, height, width, itemIconX, itemIconY, 63571);
         }
     }
 
@@ -1790,6 +1765,24 @@ static int interfaceBarRefreshMainAction()
     }
 
     return 0;
+}
+
+// helper for interfaceBarRefreshMainAction to draw action button overlays (action text, AP cost, item icon)
+static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor)
+{
+    blitBufferToBufferTrans(data, width, height, pitch, _itemButtonUp + INTERFACE_ITEM_ACTION_BUTTON_WIDTH * upY + upX, INTERFACE_ITEM_ACTION_BUTTON_WIDTH);
+
+    // everything on the action button is 2px higher and darkened when pressed
+    int downY = upY - 2;
+    int downHeight = height;
+    if (downY < 0) {
+        downY = 0;
+        downHeight -= 2;
+    }
+
+    if (downHeight > 0) {
+        _dark_trans_buf_to_buf(data, width, downHeight, pitch, _itemButtonDown, upX + 1, downY, INTERFACE_ITEM_ACTION_BUTTON_WIDTH, darkenColor);
+    }
 }
 
 // 0x460658
@@ -2017,15 +2010,15 @@ static int _intface_item_reload()
         return -1;
     }
 
-    bool v0 = false;
+    bool wasReloaded = false;
     while (weaponAttemptReload(gDude, gInterfaceItemStates[gInterfaceCurrentHand].item) != -1) {
-        v0 = true;
+        wasReloaded = true;
     }
 
     interfaceCycleItemAction();
     interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
 
-    if (!v0) {
+    if (!wasReloaded) {
         return -1;
     }
 
@@ -2035,7 +2028,22 @@ static int _intface_item_reload()
     return 0;
 }
 
-// Renders hit points.
+// internal helper for interfaceRenderCounter
+static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delay, Rect* numbersRect, bool refreshMouse)
+{
+    blitBufferToBuffer(src, 9, 17, 360, dest, gInterfaceBarWidth);
+
+    if (refreshMouse) {
+        _mouse_info();
+        gameMouseRefresh();
+    }
+
+    renderPresent();
+    inputBlockForTocks(delay);
+    windowRefreshRect(gInterfaceBarWindow, numbersRect);
+}
+
+// Renders animated counters (AP and HP in the interface bar)
 //
 // [delay] is an animation delay.
 // [previousValue] is only meaningful for animation.
@@ -2087,66 +2095,38 @@ static void interfaceRenderCounter(int x, int y, int previousValue, int value, i
         windowRefreshRect(gInterfaceBarWindow, &numbersRect);
         if (delay != 0) {
             int change = value - previousValue >= 0 ? 1 : -1;
-            int v14 = previousValue >= 0 ? 1 : -1;
-            int v49 = change * v14;
+            int previousValueSign = previousValue >= 0 ? 1 : -1;
+            int animationStep = change * previousValueSign;
             while (previousValue != value) {
                 if ((hundreds | tens | ones) == 0) {
-                    v49 = 1;
+                    animationStep = 1;
                 }
 
-                blitBufferToBuffer(upSrc, 9, 17, 360, onesDest, gInterfaceBarWidth);
-                _mouse_info();
-                gameMouseRefresh();
-                renderPresent();
-                inputBlockForTocks(delay);
-                windowRefreshRect(gInterfaceBarWindow, &numbersRect);
+                interfaceRenderCounterAnimationStep(upSrc, onesDest, delay, &numbersRect, true);
 
-                ones += v49;
+                ones += animationStep;
 
                 if (ones > 9 || ones < 0) {
-                    blitBufferToBuffer(upSrc, 9, 17, 360, tensDest, gInterfaceBarWidth);
-                    _mouse_info();
-                    gameMouseRefresh();
-                    renderPresent();
-                    inputBlockForTocks(delay);
-                    windowRefreshRect(gInterfaceBarWindow, &numbersRect);
+                    interfaceRenderCounterAnimationStep(upSrc, tensDest, delay, &numbersRect, true);
 
-                    tens += v49;
-                    ones -= 10 * v49;
+                    tens += animationStep;
+                    ones -= 10 * animationStep;
                     if (tens == 10 || tens == -1) {
-                        blitBufferToBuffer(upSrc, 9, 17, 360, hundredsDest, gInterfaceBarWidth);
-                        _mouse_info();
-                        gameMouseRefresh();
-                        renderPresent();
-                        inputBlockForTocks(delay);
-                        windowRefreshRect(gInterfaceBarWindow, &numbersRect);
+                        interfaceRenderCounterAnimationStep(upSrc, hundredsDest, delay, &numbersRect, true);
 
-                        hundreds += v49;
-                        tens -= 10 * v49;
+                        hundreds += animationStep;
+                        tens -= 10 * animationStep;
                         if (hundreds == 10 || hundreds == -1) {
-                            hundreds -= 10 * v49;
+                            hundreds -= 10 * animationStep;
                         }
 
-                        blitBufferToBuffer(downSrc, 9, 17, 360, hundredsDest, gInterfaceBarWidth);
-                        _mouse_info();
-                        gameMouseRefresh();
-                        renderPresent();
-                        inputBlockForTocks(delay);
-                        windowRefreshRect(gInterfaceBarWindow, &numbersRect);
+                        interfaceRenderCounterAnimationStep(downSrc, hundredsDest, delay, &numbersRect, true);
                     }
 
-                    blitBufferToBuffer(downSrc, 9, 17, 360, tensDest, gInterfaceBarWidth);
-                    renderPresent();
-                    inputBlockForTocks(delay);
-                    windowRefreshRect(gInterfaceBarWindow, &numbersRect);
+                    interfaceRenderCounterAnimationStep(downSrc, tensDest, delay, &numbersRect, false);
                 }
 
-                blitBufferToBuffer(downSrc, 9, 17, 360, onesDest, gInterfaceBarWidth);
-                _mouse_info();
-                gameMouseRefresh();
-                renderPresent();
-                inputBlockForTocks(delay);
-                windowRefreshRect(gInterfaceBarWindow, &numbersRect);
+                interfaceRenderCounterAnimationStep(downSrc, onesDest, delay, &numbersRect, true);
 
                 previousValue += change;
 

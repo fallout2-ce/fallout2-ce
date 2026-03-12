@@ -230,7 +230,7 @@ static void opGetGameTime(Program* program);
 static void opGetGameTimeInSeconds(Program* program);
 static void opGetObjectElevation(Program* program);
 static void opKillCritter(Program* program);
-static int _correctDeath(Object* critter, int anim, bool a3);
+static int _correctDeath(Object* critter, int anim, bool forceBack);
 static void opKillCritterType(Program* program);
 static void opCritterDamage(Program* program);
 static void opAddTimerEvent(Program* program);
@@ -3122,7 +3122,7 @@ static void opFloatMessage(Program* program)
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     int color = _colorTable[32747];
-    int a5 = _colorTable[0];
+    int backgroundColor = _colorTable[0];
     int font = 101;
 
     if (obj == nullptr) {
@@ -3151,7 +3151,7 @@ static void opFloatMessage(Program* program)
     switch (floatingMessageType) {
     case FLOATING_MESSAGE_TYPE_WARNING:
         color = _colorTable[31744];
-        a5 = _colorTable[0];
+        backgroundColor = _colorTable[0];
         font = 103;
         tileSetCenter(gDude->tile, TILE_SET_CENTER_REFRESH_WINDOW);
         break;
@@ -3191,7 +3191,7 @@ static void opFloatMessage(Program* program)
     }
 
     Rect rect;
-    if (textObjectAdd(obj, string, font, color, a5, &rect) != -1) {
+    if (textObjectAdd(obj, string, font, color, backgroundColor, &rect) != -1) {
         tileWindowRefreshRect(&rect, obj->elevation);
     }
 }
@@ -4051,16 +4051,16 @@ static void opGetRunningBurningGuy(Program* program)
 static void _op_inven_unwield(Program* program)
 {
     Object* obj;
-    int v1;
+    int hand;
 
     obj = scriptGetSelf(program);
-    v1 = 1;
+    hand = HAND_RIGHT;
 
-    if (obj == gDude && !interfaceGetCurrentHand()) {
-        v1 = 0;
+    if (obj == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
+        hand = HAND_LEFT;
     }
 
-    inventoryUnequip(obj, v1);
+    inventoryUnequip(obj, hand);
 }
 
 // obj_is_locked
