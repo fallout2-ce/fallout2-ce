@@ -653,14 +653,14 @@ void inventoryOpen()
                 _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_NORMAL);
             }
         } else if (keyCode == KEY_PAGE_DOWN) {
-            int v12 = gInventorySlotsCount + _stack_offset[_curr_stack];
-            int v13 = v12 + gInventorySlotsCount;
-            _stack_offset[_curr_stack] = v12;
-            int v14 = _pud->length;
-            if (v13 >= _pud->length) {
-                int v15 = v14 - gInventorySlotsCount;
-                _stack_offset[_curr_stack] = v14 - gInventorySlotsCount;
-                if (v15 < 0) {
+            int nextPageOffset = gInventorySlotsCount + _stack_offset[_curr_stack];
+            int nextPageEnd = nextPageOffset + gInventorySlotsCount;
+            _stack_offset[_curr_stack] = nextPageOffset;
+            int inventoryLength = _pud->length;
+            if (nextPageEnd >= _pud->length) {
+                int lastPageOffset = inventoryLength - gInventorySlotsCount;
+                _stack_offset[_curr_stack] = inventoryLength - gInventorySlotsCount;
+                if (lastPageOffset < 0) {
                     _stack_offset[_curr_stack] = 0;
                 }
             }
@@ -1962,17 +1962,17 @@ static void _display_inventory_info(Object* item, int quantity, unsigned char* d
         draw = true;
     } else {
         if (quantity > 1) {
-            int v9 = quantity;
+            int displayedQuantity = quantity;
             if (isDragged) {
-                v9 -= 1;
+                displayedQuantity -= 1;
             }
 
             if (quantity > 1) {
-                if (v9 > 99999) {
-                    v9 = 99999;
+                if (displayedQuantity > 99999) {
+                    displayedQuantity = 99999;
                 }
 
-                snprintf(formattedText, sizeof(formattedText), "x%d", v9);
+                snprintf(formattedText, sizeof(formattedText), "x%d", displayedQuantity);
                 draw = true;
             }
         }
@@ -2239,12 +2239,12 @@ static void inventoryItemSlotOnMouseEnter(int btn, int keyCode)
         if (_inven_from_button(keyCode, &item, nullptr, nullptr) != 0) {
             gameMouseRenderPrimaryAction(x, y, 3, gInventoryWindowMaxX, gInventoryWindowMaxY);
 
-            int v5 = 0;
-            int v6 = 0;
-            _gmouse_3d_pick_frame_hot(&v5, &v6);
+            int cursorHotspotX = 0;
+            int cursorHotspotY = 0;
+            _gmouse_3d_pick_frame_hot(&cursorHotspotX, &cursorHotspotY);
 
             InventoryCursorData* cursorData = &(gInventoryCursorData[INVENTORY_WINDOW_CURSOR_PICK]);
-            mouseSetFrame(cursorData->frmData, cursorData->width, cursorData->height, cursorData->width, v5, v6, 0);
+            mouseSetFrame(cursorData->frmData, cursorData->width, cursorData->height, cursorData->width, cursorHotspotX, cursorHotspotY, 0);
 
             if (item != _last_target) {
                 objectLookAtFunc(_stack[0], item, gInventoryPrintItemDescriptionHandler);
@@ -2594,22 +2594,22 @@ static void _adjust_fid()
     if (FID_TYPE(_inven_dude->fid) == OBJ_TYPE_CRITTER) {
         Proto* proto;
 
-        int v0 = _art_vault_guy_num;
+        int inventoryFid = _art_vault_guy_num;
 
         if (protoGetProto(_inven_pid, &proto) == -1) {
-            v0 = proto->fid & 0xFFF;
+            inventoryFid = proto->fid & 0xFFF;
         }
 
         if (gInventoryArmor != nullptr) {
             protoGetProto(gInventoryArmor->pid, &proto);
             if (critterGetStat(_inven_dude, STAT_GENDER) == GENDER_FEMALE) {
-                v0 = proto->item.data.armor.femaleFid;
+                inventoryFid = proto->item.data.armor.femaleFid;
             } else {
-                v0 = proto->item.data.armor.maleFid;
+                inventoryFid = proto->item.data.armor.maleFid;
             }
 
-            if (v0 == -1) {
-                v0 = _art_vault_guy_num;
+            if (inventoryFid == -1) {
+                inventoryFid = _art_vault_guy_num;
             }
         }
 
@@ -2630,7 +2630,7 @@ static void _adjust_fid()
             }
         }
 
-        fid = buildFid(OBJ_TYPE_CRITTER, v0, 0, animationCode, 0);
+        fid = buildFid(OBJ_TYPE_CRITTER, inventoryFid, 0, animationCode, 0);
     } else {
         fid = _inven_dude->fid;
     }
@@ -3329,20 +3329,20 @@ int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animat
             return -1;
         }
 
-        Object* v17;
-        if (handIndex) {
-            v17 = critterGetItem2(critter);
+        Object* equippedItem;
+        if (handIndex == HAND_RIGHT) {
+            equippedItem = critterGetItem2(critter);
             item->flags |= OBJECT_IN_RIGHT_HAND;
         } else {
-            v17 = critterGetItem1(critter);
+            equippedItem = critterGetItem1(critter);
             item->flags |= OBJECT_IN_LEFT_HAND;
         }
 
         Rect rect;
-        if (v17 != nullptr) {
-            v17->flags &= ~OBJECT_IN_ANY_HAND;
+        if (equippedItem != nullptr) {
+            equippedItem->flags &= ~OBJECT_IN_ANY_HAND;
 
-            if (v17->pid == PROTO_ID_LIT_FLARE) {
+            if (equippedItem->pid == PROTO_ID_LIT_FLARE) {
                 int lightIntensity;
                 int lightDistance;
                 if (critter == gDude) {
@@ -5439,9 +5439,9 @@ static void _container_exit(int keyCode, int inventoryWindowType)
     } else if (keyCode == 2501) {
         if (_target_curr_stack > 0) {
             _target_curr_stack -= 1;
-            Object* v5 = _target_stack[_target_curr_stack];
-            _target_pud = &(v5->data.inventory);
-            _display_body(v5->fid, inventoryWindowType);
+            Object* target = _target_stack[_target_curr_stack];
+            _target_pud = &(target->data.inventory);
+            _display_body(target->fid, inventoryWindowType);
             _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, inventoryWindowType);
             windowRefresh(gInventoryWindow);
         }
