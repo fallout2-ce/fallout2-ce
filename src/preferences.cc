@@ -357,6 +357,11 @@ static void preferencesRefreshBrightnessSlider()
     windowRefresh(gPreferencesWindow);
 }
 
+static bool preferencesWindowIsOpen()
+{
+    return gPreferencesWindow != -1;
+}
+
 // 0x6639AC
 static int gPreferencesCombatMessages1;
 
@@ -919,7 +924,9 @@ err:
 // Note: this can be called from many different contexts, not just the preferences window.
 void brightnessIncrease()
 {
-    gPreferencesBrightness1 = settings.preferences.brightness;
+    if (!preferencesWindowIsOpen()) {
+        gPreferencesBrightness1 = settings.preferences.brightness;
+    }
 
     if (gPreferencesBrightness1 < kBrightnessMax) {
         gPreferencesBrightness1 += kBrightnessStep;
@@ -934,17 +941,21 @@ void brightnessIncrease()
 
         colorSetBrightness(gPreferencesBrightness1);
         preferencesRefreshBrightnessSlider();
-
-        settings.preferences.brightness = gPreferencesBrightness1;
-
-        settingsSave();
+        if (preferencesWindowIsOpen()) {
+            _changed = true;
+        } else {
+            settings.preferences.brightness = gPreferencesBrightness1;
+            settingsSave();
+        }
     }
 }
 
 // 0x4929C8
 void brightnessDecrease()
 {
-    gPreferencesBrightness1 = settings.preferences.brightness;
+    if (!preferencesWindowIsOpen()) {
+        gPreferencesBrightness1 = settings.preferences.brightness;
+    }
 
     if (gPreferencesBrightness1 > 1.0) {
         gPreferencesBrightness1 += kBrightnessStepNegative;
@@ -959,10 +970,12 @@ void brightnessDecrease()
 
         colorSetBrightness(gPreferencesBrightness1);
         preferencesRefreshBrightnessSlider();
-
-        settings.preferences.brightness = gPreferencesBrightness1;
-
-        settingsSave();
+        if (preferencesWindowIsOpen()) {
+            _changed = true;
+        } else {
+            settings.preferences.brightness = gPreferencesBrightness1;
+            settingsSave();
+        }
     }
 }
 
