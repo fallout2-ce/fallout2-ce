@@ -334,6 +334,10 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         endgameEndingVoiceOverInit(narratorFileName);
 
         // TODO: Unclear math.
+        //
+        // NOTE: This arithmetic is intentionally preserved from original logic.
+        // If `width == 640` then `panDistance` becomes 0 and divisions below can
+        // hit divide-by-zero
         int panDistance = width - 640;
         int fadeDistance = panDistance / 4;
         unsigned int frameDelay = 16 * panDistance / panDistance;
@@ -342,6 +346,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         if (gEndgameEndingVoiceOverSpeechLoaded) {
             unsigned int speechDurationMs = 1000 * speechGetDuration();
             if (speechDurationMs > baseAnimationTicks / 2) {
+                // NOTE: Same divide-by-zero risk as above when `panDistance == 0`.
                 frameDelay = (speechDurationMs + frameDelay * (panDistance / 2)) / panDistance;
             }
         }
