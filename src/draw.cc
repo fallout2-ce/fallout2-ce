@@ -51,79 +51,79 @@ void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y
         } else {
             dx = x2 - x1;
 
-            int v23;
-            int v22;
+            int rowStep;
+            int middlePointOffset;
             int midX = x1 + (x2 - x1) / 2;
             if (y1 <= y2) {
                 dy = y2 - y1;
-                v23 = pitch;
-                v22 = midX + ((y2 - y1) / 2 + y1) * pitch;
+                rowStep = pitch;
+                middlePointOffset = midX + ((y2 - y1) / 2 + y1) * pitch;
             } else {
                 dy = y1 - y2;
-                v23 = -pitch;
-                v22 = midX + (y1 - (y1 - y2) / 2) * pitch;
+                rowStep = -pitch;
+                middlePointOffset = midX + (y1 - (y1 - y2) / 2) * pitch;
             }
 
-            p3 = buf + v22;
+            p3 = buf + middlePointOffset;
             p4 = p3;
 
             if (dx <= dy) {
-                int v28 = dx - (dy / 2);
-                int v29 = dy / 4;
+                int midpointError = dx - (dy / 2);
+                int remainingSteps = dy / 4;
                 while (true) {
                     *p1 = color;
                     *p2 = color;
                     *p3 = color;
                     *p4 = color;
 
-                    if (v29 == 0) {
+                    if (remainingSteps == 0) {
                         break;
                     }
 
-                    if (v28 >= 0) {
+                    if (midpointError >= 0) {
                         p3++;
                         p2--;
                         p4--;
                         p1++;
-                        v28 -= dy;
+                        midpointError -= dy;
                     }
 
-                    p3 += v23;
-                    p2 -= v23;
-                    p4 -= v23;
-                    p1 += v23;
-                    v28 += dx;
+                    p3 += rowStep;
+                    p2 -= rowStep;
+                    p4 -= rowStep;
+                    p1 += rowStep;
+                    midpointError += dx;
 
-                    v29--;
+                    remainingSteps--;
                 }
             } else {
-                int v26 = dy - (dx / 2);
-                int v27 = dx / 4;
+                int midpointError = dy - (dx / 2);
+                int remainingSteps = dx / 4;
                 while (true) {
                     *p1 = color;
                     *p2 = color;
                     *p3 = color;
                     *p4 = color;
 
-                    if (v27 == 0) {
+                    if (remainingSteps == 0) {
                         break;
                     }
 
-                    if (v26 >= 0) {
-                        p3 += v23;
-                        p2 -= v23;
-                        p4 -= v23;
-                        p1 += v23;
-                        v26 -= dx;
+                    if (midpointError >= 0) {
+                        p3 += rowStep;
+                        p2 -= rowStep;
+                        p4 -= rowStep;
+                        p1 += rowStep;
+                        midpointError -= dx;
                     }
 
                     p3++;
                     p2--;
                     p4--;
                     p1++;
-                    v26 += dy;
+                    midpointError += dy;
 
-                    v27--;
+                    remainingSteps--;
                 }
             }
         }
@@ -217,19 +217,29 @@ void blitBufferToBufferTrans(unsigned char* src, int width, int height, int srcP
 }
 
 // 0x4D387C
-void bufferFill(unsigned char* buf, int width, int height, int pitch, int a5)
+void bufferFill(unsigned char* buf, int width, int height, int pitch, int value)
 {
     int y;
 
     for (y = 0; y < height; y++) {
-        memset(buf, a5, width);
+        memset(buf, value, width);
         buf += pitch;
     }
 }
 
 // 0x4D38E0
-void _buf_texture(unsigned char* buf, int width, int height, int pitch, void* a5, int a6, int a7)
+void _buf_texture(unsigned char* buf, int width, int height, int pitch, void* texture, int xOffset, int yOffset)
 {
+    // Intended to tile GNW window texture data when window color is 256.
+    // In current CE code paths this is effectively dormant because
+    // `_GNW_texture` is never populated and callers fall back to flat fills.
+    (void)buf;
+    (void)width;
+    (void)height;
+    (void)pitch;
+    (void)texture;
+    (void)xOffset;
+    (void)yOffset;
     // TODO: Incomplete.
 }
 
@@ -255,10 +265,10 @@ void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, int c
     int step = pitch - width;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            int v1 = *buf & 0xFF;
-            if (v1 == color1) {
+            int currentColor = *buf & 0xFF;
+            if (currentColor == color1) {
                 *buf = color2 & 0xFF;
-            } else if (v1 == color2) {
+            } else if (currentColor == color2) {
                 *buf = color1 & 0xFF;
             }
             buf++;

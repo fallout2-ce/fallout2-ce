@@ -108,7 +108,7 @@ typedef struct PreferenceDescription {
 static void _SetSystemPrefs();
 static void _SaveSettings();
 static void _RestoreSettings();
-static void preferencesSetDefaults(bool a1);
+static void preferencesSetDefaults(bool updateUi);
 static void _JustUpdate_();
 static void _UpdateThing(int index);
 int _SavePrefs(bool save);
@@ -149,7 +149,7 @@ static const int _row3Ytab[RANGE_PREF_COUNT] = {
 
 // x offsets for primary preferences from the knob position
 // 0x48FBF6
-static const short word_48FBF6[PRIMARY_OPTION_VALUE_COUNT] = {
+static const short kPrimaryOptionLabelXOffsetByValue[PRIMARY_OPTION_VALUE_COUNT] = {
     2,
     25,
     46,
@@ -158,7 +158,7 @@ static const short word_48FBF6[PRIMARY_OPTION_VALUE_COUNT] = {
 
 // y offsets for primary preference option values from the knob position
 // 0x48FBFE
-static const short word_48FBFE[PRIMARY_OPTION_VALUE_COUNT] = {
+static const short kPrimaryOptionLabelYOffsetByValue[PRIMARY_OPTION_VALUE_COUNT] = {
     10,
     -4,
     10,
@@ -194,25 +194,22 @@ static const int dword_48FC1C[PRIMARY_PREF_COUNT] = {
 };
 
 // 0x50C168
-static const double dbl_50C168 = 1.17999267578125;
+static const double kBrightnessMax = 1.17999267578125;
 
 // 0x50C170
-static const double dbl_50C170 = 0.01124954223632812;
+static const double kBrightnessStep = 0.01124954223632812;
 
 // 0x50C178
-static const double dbl_50C178 = -0.01124954223632812;
-
-// 0x50C180
-static const double dbl_50C180 = 1.17999267578125;
+static const double kBrightnessStepNegative = -0.01124954223632812;
 
 // 0x50C2D0
-static const double dbl_50C2D0 = -1.0;
+static const double kTextLineDelayBaseOffset = -1.0;
 
 // 0x50C2D8
-static const double dbl_50C2D8 = 0.2;
+static const double kTextLineDelayScale = 0.2;
 
 // 0x50C2E0
-static const double dbl_50C2E0 = 2.0;
+static const double kTextLineDelayRange = 2.0;
 
 // 0x5197CC
 static const int gPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
@@ -485,7 +482,7 @@ static void _RestoreSettings()
 }
 
 // 0x492F60
-static void preferencesSetDefaults(bool a1)
+static void preferencesSetDefaults(bool updateUi)
 {
     gPreferencesCombatDifficulty1 = COMBAT_DIFFICULTY_NORMAL;
     gPreferencesViolenceLevel1 = VIOLENCE_LEVEL_MAXIMUM_BLOOD;
@@ -508,7 +505,7 @@ static void preferencesSetDefaults(bool a1)
     gPreferencesSoundEffectsVolume1 = 22281;
     gPreferencesSpeechVolume1 = 22281;
 
-    if (a1) {
+    if (updateUi) {
         for (int index = 0; index < PREF_COUNT; index++) {
             _UpdateThing(index);
         }
@@ -580,7 +577,7 @@ static void _UpdateThing(int index)
             char copy[100]; // TODO: Size is probably wrong.
             strcpy(copy, text);
 
-            int x = meta->knobX + word_48FBF6[valueIndex];
+            int x = meta->knobX + kPrimaryOptionLabelXOffsetByValue[valueIndex];
             int len = fontGetStringWidth(copy);
             switch (valueIndex) {
             case 0:
@@ -602,7 +599,7 @@ static void _UpdateThing(int index)
                 p++;
             }
 
-            int y = meta->knobY + word_48FBFE[valueIndex];
+            int y = meta->knobY + kPrimaryOptionLabelYOffsetByValue[valueIndex];
             const char* s;
             if (*p != '\0') {
                 *p = '\0';
@@ -792,9 +789,9 @@ int _SavePrefs(bool save)
     settings.preferences.combat_speed = gPreferencesCombatSpeed1;
     settings.preferences.text_base_delay = gPreferencesTextBaseDelay1;
 
-    double textLineDelay = (gPreferencesTextBaseDelay1 + dbl_50C2D0) * dbl_50C2D8 * dbl_50C2E0;
+    double textLineDelay = (gPreferencesTextBaseDelay1 + kTextLineDelayBaseOffset) * kTextLineDelayScale * kTextLineDelayRange;
     if (textLineDelay >= 0.0) {
-        if (textLineDelay > dbl_50C2E0) {
+        if (textLineDelay > kTextLineDelayRange) {
             textLineDelay = 2.0;
         }
 
@@ -911,12 +908,12 @@ void brightnessIncrease()
 {
     gPreferencesBrightness1 = settings.preferences.brightness;
 
-    if (gPreferencesBrightness1 < dbl_50C168) {
-        gPreferencesBrightness1 += dbl_50C170;
+    if (gPreferencesBrightness1 < kBrightnessMax) {
+        gPreferencesBrightness1 += kBrightnessStep;
 
         if (gPreferencesBrightness1 >= 1.0) {
-            if (gPreferencesBrightness1 > dbl_50C168) {
-                gPreferencesBrightness1 = dbl_50C168;
+            if (gPreferencesBrightness1 > kBrightnessMax) {
+                gPreferencesBrightness1 = kBrightnessMax;
             }
         } else {
             gPreferencesBrightness1 = 1.0;
@@ -936,11 +933,11 @@ void brightnessDecrease()
     gPreferencesBrightness1 = settings.preferences.brightness;
 
     if (gPreferencesBrightness1 > 1.0) {
-        gPreferencesBrightness1 += dbl_50C178;
+        gPreferencesBrightness1 += kBrightnessStepNegative;
 
         if (gPreferencesBrightness1 >= 1.0) {
-            if (gPreferencesBrightness1 > dbl_50C180) {
-                gPreferencesBrightness1 = dbl_50C180;
+            if (gPreferencesBrightness1 > kBrightnessMax) {
+                gPreferencesBrightness1 = kBrightnessMax;
             }
         } else {
             gPreferencesBrightness1 = 1.0;
@@ -1300,19 +1297,19 @@ static void _DoThing(int eventCode)
         int value = *valuePtr;
         bool valueChanged = false;
 
-        int v1 = meta->knobX + 23;
-        int v2 = meta->knobY + 21;
+        int knobCenterX = meta->knobX + 23;
+        int knobCenterY = meta->knobY + 21;
 
-        if (sqrt(pow((double)x - (double)v1, 2) + pow((double)y - (double)v2, 2)) > 16.0) {
+        if (sqrt(pow((double)x - (double)knobCenterX, 2) + pow((double)y - (double)knobCenterY, 2)) > 16.0) {
             if (y > meta->knobY) {
-                int v14 = meta->knobY + word_48FBFE[0];
-                if (y >= v14 && y <= v14 + fontGetLineHeight()) {
+                int topOptionY = meta->knobY + kPrimaryOptionLabelYOffsetByValue[0];
+                if (y >= topOptionY && y <= topOptionY + fontGetLineHeight()) {
                     if (x >= meta->minX && x <= meta->knobX) {
                         *valuePtr = 0;
                         meta->direction = 0;
                         valueChanged = true;
                     } else {
-                        if (meta->valuesCount >= 3 && x >= meta->knobX + word_48FBF6[2] && x <= meta->maxX) {
+                        if (meta->valuesCount >= 3 && x >= meta->knobX + kPrimaryOptionLabelXOffsetByValue[2] && x <= meta->maxX) {
                             *valuePtr = 2;
                             meta->direction = 0;
                             valueChanged = true;
@@ -1332,8 +1329,8 @@ static void _DoThing(int eventCode)
             }
 
             if (meta->valuesCount == 4) {
-                int v19 = meta->knobY + word_48FBFE[3];
-                if (y >= v19 && y <= v19 + 2 * fontGetLineHeight() && x >= meta->knobX + word_48FBF6[3] && x <= meta->maxX) {
+                int bottomOptionY = meta->knobY + kPrimaryOptionLabelYOffsetByValue[3];
+                if (y >= bottomOptionY && y <= bottomOptionY + 2 * fontGetLineHeight() && x >= meta->knobX + kPrimaryOptionLabelXOffsetByValue[3] && x <= meta->maxX) {
                     *valuePtr = 3;
                     meta->direction = 1;
                     valueChanged = true;
@@ -1371,15 +1368,14 @@ static void _DoThing(int eventCode)
     } else if (preferenceIndex >= FIRST_SECONDARY_PREF && preferenceIndex <= LAST_SECONDARY_PREF) {
         PreferenceDescription* meta = &(gPreferenceDescriptions[preferenceIndex]);
         int* valuePtr = meta->valuePtr;
-        int value = *valuePtr;
         bool valueChanged = false;
 
-        int v1 = meta->knobX + 11;
-        int v2 = meta->knobY + 12;
+        int knobCenterX = meta->knobX + 11;
+        int knobCenterY = meta->knobY + 12;
 
-        if (sqrt(pow((double)x - (double)v1, 2) + pow((double)y - (double)v2, 2)) > 10.0) {
-            int v23 = meta->knobY - 5;
-            if (y >= v23 && y <= v23 + fontGetLineHeight() + 2) {
+        if (sqrt(pow((double)x - (double)knobCenterX, 2) + pow((double)y - (double)knobCenterY, 2)) > 10.0) {
+            int labelY = meta->knobY - 5;
+            if (y >= labelY && y <= labelY + fontGetLineHeight() + 2) {
                 if (x >= meta->minX && x <= meta->knobX) {
                     *valuePtr = preferenceIndex == PREF_COMBAT_MESSAGES ? 1 : 0;
                     valueChanged = true;
@@ -1424,10 +1420,9 @@ static void _DoThing(int eventCode)
             break;
         }
 
-        int knobX = (int)(219.0 / (meta->maxValue - meta->minValue));
-        int v31 = (int)((value - meta->minValue) * (219.0 / (meta->maxValue - meta->minValue)) + 384.0);
+        int knobTrackX = (int)((value - meta->minValue) * (219.0 / (meta->maxValue - meta->minValue)) + 384.0);
         blitBufferToBuffer(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_BACKGROUND].getData() + PREFERENCES_WINDOW_WIDTH * meta->knobY + 384, 240, 12, PREFERENCES_WINDOW_WIDTH, gPreferencesWindowBuffer + PREFERENCES_WINDOW_WIDTH * meta->knobY + 384, PREFERENCES_WINDOW_WIDTH);
-        blitBufferToBufferTrans(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_KNOB_ON].getData(), 21, 12, 21, gPreferencesWindowBuffer + PREFERENCES_WINDOW_WIDTH * meta->knobY + v31, PREFERENCES_WINDOW_WIDTH);
+        blitBufferToBufferTrans(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_KNOB_ON].getData(), 21, 12, 21, gPreferencesWindowBuffer + PREFERENCES_WINDOW_WIDTH * meta->knobY + knobTrackX, PREFERENCES_WINDOW_WIDTH);
 
         windowRefresh(gPreferencesWindow);
 
@@ -1451,23 +1446,23 @@ static void _DoThing(int eventCode)
                 return;
             }
 
-            if (v31 + 14 > x) {
-                if (v31 + 6 > x) {
-                    v31 = x - 6;
-                    if (v31 < 384) {
-                        v31 = 384;
+            if (knobTrackX + 14 > x) {
+                if (knobTrackX + 6 > x) {
+                    knobTrackX = x - 6;
+                    if (knobTrackX < 384) {
+                        knobTrackX = 384;
                     }
                 }
             } else {
-                v31 = x - 6;
-                if (v31 > 603) {
-                    v31 = 603;
+                knobTrackX = x - 6;
+                if (knobTrackX > 603) {
+                    knobTrackX = 603;
                 }
             }
 
-            double newValue = ((double)v31 - 384.0) / (219.0 / (meta->maxValue - meta->minValue)) + meta->minValue;
+            double newValue = ((double)knobTrackX - 384.0) / (219.0 / (meta->maxValue - meta->minValue)) + meta->minValue;
 
-            int v52 = 0;
+            bool redrawLabels = false;
 
             switch (preferenceIndex) {
             case PREF_COMBAT_SPEED:
@@ -1479,17 +1474,17 @@ static void _DoThing(int eventCode)
             case PREF_MASTER_VOLUME:
                 *meta->valuePtr = (int)newValue;
                 gameSoundSetMasterVolume(gPreferencesMasterVolume1);
-                v52 = 1;
+                redrawLabels = true;
                 break;
             case PREF_MUSIC_VOLUME:
                 *meta->valuePtr = (int)newValue;
                 backgroundSoundSetVolume(gPreferencesMusicVolume1);
-                v52 = 1;
+                redrawLabels = true;
                 break;
             case PREF_SFX_VOLUME:
                 *meta->valuePtr = (int)newValue;
                 soundEffectsSetVolume(gPreferencesSoundEffectsVolume1);
-                v52 = 1;
+                redrawLabels = true;
                 if (sfxVolumeExample == 0) {
                     soundPlayFile("butin1");
                     sfxVolumeExample = 7;
@@ -1500,7 +1495,7 @@ static void _DoThing(int eventCode)
             case PREF_SPEECH_VOLUME:
                 *meta->valuePtr = (int)newValue;
                 speechSetVolume(gPreferencesSpeechVolume1);
-                v52 = 1;
+                redrawLabels = true;
                 if (speechVolumeExample == 0) {
                     speechLoad("narrator\\options", 12, 13, 15);
                     speechVolumeExample = 40;
@@ -1517,7 +1512,7 @@ static void _DoThing(int eventCode)
                 break;
             }
 
-            if (v52) {
+            if (redrawLabels) {
                 int off = PREFERENCES_WINDOW_WIDTH * (meta->knobY - 12) + 384;
                 blitBufferToBuffer(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_BACKGROUND].getData() + off, 240, 24, PREFERENCES_WINDOW_WIDTH, gPreferencesWindowBuffer + off, PREFERENCES_WINDOW_WIDTH);
 
@@ -1571,7 +1566,7 @@ static void _DoThing(int eventCode)
                 blitBufferToBuffer(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_BACKGROUND].getData() + off, 240, 12, PREFERENCES_WINDOW_WIDTH, gPreferencesWindowBuffer + off, PREFERENCES_WINDOW_WIDTH);
             }
 
-            blitBufferToBufferTrans(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_KNOB_ON].getData(), 21, 12, 21, gPreferencesWindowBuffer + PREFERENCES_WINDOW_WIDTH * meta->knobY + v31, PREFERENCES_WINDOW_WIDTH);
+            blitBufferToBufferTrans(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_KNOB_ON].getData(), 21, 12, 21, gPreferencesWindowBuffer + PREFERENCES_WINDOW_WIDTH * meta->knobY + knobTrackX, PREFERENCES_WINDOW_WIDTH);
             windowRefresh(gPreferencesWindow);
 
             delay_ms(35 - (getTicks() - tick));
