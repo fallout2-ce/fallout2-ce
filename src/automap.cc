@@ -373,7 +373,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
         frmImages[AUTOMAP_FRM_SWITCH_UP].getData(),
         frmImages[AUTOMAP_FRM_SWITCH_DOWN].getData(),
         nullptr,
-        BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_0x01);
+        BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_CHECKABLE);
     if (switchBtn != -1) {
         buttonSetCallbacks(switchBtn, _gsound_toggle_butt_press_, _gsound_toggle_butt_press_);
     }

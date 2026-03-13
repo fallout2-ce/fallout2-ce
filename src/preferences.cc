@@ -1106,7 +1106,7 @@ static int preferencesWindowInit()
         _preferencesFrmImages[PREFERENCES_WINDOW_FRM_CHECKBOX_OFF].getData(),
         _preferencesFrmImages[PREFERENCES_WINDOW_FRM_CHECKBOX_ON].getData(),
         nullptr,
-        BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_0x01 | BUTTON_FLAG_0x02);
+        BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_CHECKABLE | BUTTON_FLAG_CHECK_ON_DOWN);
     if (_plyrspdbid != -1) {
         _win_set_button_rest_state(_plyrspdbid, gPreferencesPlayerSpeedup1, 0);
     }

@@ -853,7 +853,7 @@ int mapper_edit_init(int argc, char** argv)
         roof_up,
         roof_down,
         NULL,
-        BUTTON_FLAG_0x01);
+        BUTTON_FLAG_CHECKABLE);
 
     if (tileRoofIsVisible()) {
         tile_toggle_roof(false);
@@ -884,7 +884,7 @@ int mapper_edit_init(int argc, char** argv)
         hex_up,
         hex_down,
         NULL,
-        BUTTON_FLAG_0x01);
+        BUTTON_FLAG_CHECKABLE);
 
     // OBJ
     blitBufferToBuffer(lbm_buf + 434 * (rectGetWidth(&_scr_size)) + 125,
@@ -911,7 +911,7 @@ int mapper_edit_init(int argc, char** argv)
         obj_up,
         obj_down,
         NULL,
-        BUTTON_FLAG_0x01);
+        BUTTON_FLAG_CHECKABLE);
 
     // CRIT
     blitBufferToBuffer(lbm_buf + 449 * (rectGetWidth(&_scr_size)) + 125,
@@ -938,7 +938,7 @@ int mapper_edit_init(int argc, char** argv)
         crit_up,
         crit_down,
         NULL,
-        BUTTON_FLAG_0x01);
+        BUTTON_FLAG_CHECKABLE);
 
     // SCEN
     blitBufferToBuffer(lbm_buf + 434 * (rectGetWidth(&_scr_size)) + 194,
@@ -965,7 +965,7 @@ int mapper_edit_init(int argc, char** argv)
         scen_up,
         scen_down,
         NULL,
-        BUTTON_FLAG_0x01);
+        BUTTON_FLAG_CHECKABLE);
 
     // WALL
     blitBufferToBuffer(lbm_buf + 434 * (rectGetWidth(&_scr_size)) + 194,
@@ -992,7 +992,7 @@ int mapper_edit_init(int argc, char** argv)
         wall_up,
         wall_down,
         NULL,
-        BUTTON_FLAG_0x01);
+        BUTTON_FLAG_CHECKABLE);
 
     // MISC
     blitBufferToBuffer(lbm_buf + 464 * (rectGetWidth(&_scr_size)) + 194,
@@ -1019,7 +1019,7 @@ int mapper_edit_init(int argc, char** argv)
         misc_up,
         misc_down,
         NULL,
-        BUTTON_FLAG_0x01);
+        BUTTON_FLAG_CHECKABLE);
 
     // HEIGHT INC
     blitBufferToBuffer(lbm_buf + 431 * rectGetWidth(&_scr_size) + 251,
