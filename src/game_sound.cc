@@ -100,10 +100,10 @@ static char _snd_lookup_scenery_action[SCENERY_SOUND_EFFECT_COUNT] = {
 };
 
 // 0x518E6C
-static int _background_storage_requested = -1;
+static GameSoundStorageType _background_storage_requested = GSOUND_STORAGE_INVALID;
 
 // 0x518E70
-static int _background_loop_requested = -1;
+static GameSoundLoopingMode _background_loop_requested = GSOUND_LOOPING_INVALID;
 
 // 0x518E74
 static char* _sound_sfx_path = _aSoundSfx;
@@ -514,7 +514,7 @@ void backgroundSoundEnable()
         if (!gMusicEnabled) {
             movieSetVolume((int)(gMusicVolume * 0.94));
             gMusicEnabled = true;
-            backgroundSoundRestart(12);
+            backgroundSoundRestart(GSOUND_LIMIT_AFTER);
         }
     }
 }
@@ -802,10 +802,10 @@ void backgroundSoundDelete()
 }
 
 // 0x450B0C
-void backgroundSoundRestart(int value)
+void backgroundSoundRestart(GameSoundReadLimitMode readLimitMode)
 {
     if (gBackgroundSoundFileName[0] != '\0') {
-        if (backgroundSoundLoad(gBackgroundSoundFileName, static_cast<GameSoundReadLimitMode>(value), static_cast<GameSoundStorageType>(_background_storage_requested), static_cast<GameSoundLoopingMode>(_background_loop_requested)) != 0) {
+        if (backgroundSoundLoad(gBackgroundSoundFileName, readLimitMode, _background_storage_requested, _background_loop_requested) != 0) {
             if (gGameSoundDebugEnabled)
                 debugPrint(" background restart failed ");
         }

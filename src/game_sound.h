@@ -39,11 +39,13 @@ typedef enum GameSoundReadLimitMode {
 } GameSoundReadLimitMode;
 
 typedef enum GameSoundStorageType {
+    GSOUND_STORAGE_INVALID = -1,
     GSOUND_MEMORY = 13,
     GSOUND_STREAM = 14,
 } GameSoundStorageType;
 
 typedef enum GameSoundLoopingMode {
+    GSOUND_LOOPING_INVALID = -1,
     GSOUND_NO_LOOP = 15,
     GSOUND_LOOP = 16,
 } GameSoundLoopingMode;
@@ -66,7 +68,7 @@ void backgroundSoundSetEndCallback(SoundEndCallback* callback);
 int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode);
 void backgroundSoundDelete();
-void backgroundSoundRestart(int value);
+void backgroundSoundRestart(GameSoundReadLimitMode readLimitMode);
 void backgroundSoundPause();
 void backgroundSoundResume();
 bool backgoundSoundIsPlaying();
