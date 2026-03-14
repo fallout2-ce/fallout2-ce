@@ -2596,7 +2596,7 @@ static void _adjust_fid()
 
         int inventoryFid = _art_vault_guy_num;
 
-        if (protoGetProto(_inven_pid, &proto) == -1) {
+        if (protoGetProto(_inven_pid, &proto) != -1) {
             inventoryFid = proto->fid & 0xFFF;
         }
 
