@@ -55,9 +55,21 @@ typedef enum WindowFlags {
 } WindowFlags;
 
 typedef enum ButtonFlags {
-    BUTTON_FLAG_0x01 = 0x01,
-    BUTTON_FLAG_0x02 = 0x02,
-    BUTTON_FLAG_0x04 = 0x04,
+    // Button keeps a persistent checked state and uses the pressed image while checked.
+    //
+    // Seen in-game on toggles like the automap hi/low switch. Combining this
+    // with `BUTTON_FLAG_CHECK_ON_DOWN` makes the visual/logical toggle happen
+    // on mouse-down, as used by the preferences checkbox. Combining it with
+    // `BUTTON_FLAG_NO_TOGGLE_OFF` and `BUTTON_FLAG_RADIO` yields radio-button
+    // behavior like the character editor sex selector and party disposition
+    // controls.
+    BUTTON_FLAG_CHECKABLE = 0x01,
+
+    // Checkable button toggles on mouse-down instead of mouse-up.
+    BUTTON_FLAG_CHECK_ON_DOWN = 0x02,
+
+    // Checked button cannot be unchecked by clicking itself again.
+    BUTTON_FLAG_NO_TOGGLE_OFF = 0x04,
     BUTTON_FLAG_DISABLED = 0x08,
 
     /// Specifies that the button is a drag handle for parent window.
@@ -163,7 +175,7 @@ void windowManagerExit(void);
 int windowCreate(int x, int y, int width, int height, int color, int flags);
 void windowDestroy(int win);
 void windowDrawBorder(int win);
-void windowDrawText(int win, const char* str, int a3, int x, int y, int a6);
+void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int flags);
 void _win_text(int win, char** fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags);
 void windowDrawLine(int win, int left, int top, int right, int bottom, int color);
 void windowDrawRect(int win, int left, int top, int right, int bottom, int color);
@@ -172,7 +184,7 @@ void windowShow(int win);
 void windowHide(int win);
 void windowRefresh(int win);
 void windowRefreshRect(int win, const Rect* rect);
-void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* a3);
+void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest);
 void windowRefreshAll(Rect* rect);
 void _win_get_mouse_buf(unsigned char* dest);
 Window* windowGetWindow(int win);

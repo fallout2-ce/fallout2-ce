@@ -3627,7 +3627,7 @@ static void characterEditorEditGender()
         _editorFrmImages[EDITOR_GRAPHIC_MALE_OFF].getData(),
         _editorFrmImages[EDITOR_GRAPHIC_MALE_ON].getData(),
         nullptr,
-        BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_0x04 | BUTTON_FLAG_0x02 | BUTTON_FLAG_0x01);
+        BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_NO_TOGGLE_OFF | BUTTON_FLAG_CHECK_ON_DOWN | BUTTON_FLAG_CHECKABLE);
     if (btns[0] != -1) {
         buttonSetCallbacks(doneBtn, _gsound_red_butt_press, nullptr);
     }
@@ -3644,7 +3644,7 @@ static void characterEditorEditGender()
         _editorFrmImages[EDITOR_GRAPHIC_FEMALE_OFF].getData(),
         _editorFrmImages[EDITOR_GRAPHIC_FEMALE_ON].getData(),
         nullptr,
-        BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_0x04 | BUTTON_FLAG_0x02 | BUTTON_FLAG_0x01);
+        BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_NO_TOGGLE_OFF | BUTTON_FLAG_CHECK_ON_DOWN | BUTTON_FLAG_CHECKABLE);
     if (btns[1] != -1) {
         _win_group_radio_buttons(2, btns);
         buttonSetCallbacks(doneBtn, _gsound_red_butt_press, nullptr);

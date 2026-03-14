@@ -3474,7 +3474,7 @@ int partyMemberControlWindowInit()
             upButtonFrmData,
             downButtonFrmData,
             nullptr,
-            BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_0x04 | BUTTON_FLAG_0x01);
+            BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_NO_TOGGLE_OFF | BUTTON_FLAG_CHECKABLE);
         if (_gdialog_buttons[v21] == -1) {
             partyMemberControlWindowFree();
             return -1;
