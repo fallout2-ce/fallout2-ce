@@ -111,6 +111,7 @@ static void _RestoreSettings();
 static void preferencesSetDefaults(bool updateUi);
 static void _JustUpdate_();
 static void _UpdateThing(int index);
+static void preferencesRefreshBrightnessSlider();
 int _SavePrefs(bool save);
 static int preferencesWindowInit();
 static int preferencesWindowFree();
@@ -253,7 +254,7 @@ static double gPreferencesMouseSensitivity2;
 static unsigned char* gPreferencesWindowBuffer;
 
 // 0x663904
-static int gPreferencesWindow;
+static int gPreferencesWindow = -1;
 
 // 0x663924
 static int gPreferencesGameDifficulty2;
@@ -344,6 +345,22 @@ static int gPreferencesItemHighlight1;
 
 // 0x6639A8
 static bool _changed;
+
+static void preferencesRefreshBrightnessSlider()
+{
+    // this can be called when the preferences window is not open
+    if (gPreferencesWindow == -1 || gPreferencesWindowBuffer == nullptr) {
+        return;
+    }
+
+    _UpdateThing(PREF_BRIGHTNESS);
+    windowRefresh(gPreferencesWindow);
+}
+
+static bool preferencesWindowIsOpen()
+{
+    return gPreferencesWindow != -1;
+}
 
 // 0x6639AC
 static int gPreferencesCombatMessages1;
@@ -904,9 +921,12 @@ err:
 }
 
 // 0x4928E4
+// Note: this can be called from many different contexts, not just the preferences window.
 void brightnessIncrease()
 {
-    gPreferencesBrightness1 = settings.preferences.brightness;
+    if (!preferencesWindowIsOpen()) {
+        gPreferencesBrightness1 = settings.preferences.brightness;
+    }
 
     if (gPreferencesBrightness1 < kBrightnessMax) {
         gPreferencesBrightness1 += kBrightnessStep;
@@ -920,17 +940,22 @@ void brightnessIncrease()
         }
 
         colorSetBrightness(gPreferencesBrightness1);
-
-        settings.preferences.brightness = gPreferencesBrightness1;
-
-        settingsSave();
+        preferencesRefreshBrightnessSlider();
+        if (preferencesWindowIsOpen()) {
+            _changed = true;
+        } else {
+            settings.preferences.brightness = gPreferencesBrightness1;
+            settingsSave();
+        }
     }
 }
 
 // 0x4929C8
 void brightnessDecrease()
 {
-    gPreferencesBrightness1 = settings.preferences.brightness;
+    if (!preferencesWindowIsOpen()) {
+        gPreferencesBrightness1 = settings.preferences.brightness;
+    }
 
     if (gPreferencesBrightness1 > 1.0) {
         gPreferencesBrightness1 += kBrightnessStepNegative;
@@ -944,10 +969,13 @@ void brightnessDecrease()
         }
 
         colorSetBrightness(gPreferencesBrightness1);
-
-        settings.preferences.brightness = gPreferencesBrightness1;
-
-        settingsSave();
+        preferencesRefreshBrightnessSlider();
+        if (preferencesWindowIsOpen()) {
+            _changed = true;
+        } else {
+            settings.preferences.brightness = gPreferencesBrightness1;
+            settingsSave();
+        }
     }
 }
 
@@ -1184,6 +1212,8 @@ static int preferencesWindowFree()
     }
 
     windowDestroy(gPreferencesWindow);
+    gPreferencesWindow = -1;
+    gPreferencesWindowBuffer = nullptr;
 
     for (int index = 0; index < PREFERENCES_WINDOW_FRM_COUNT; index++) {
         _preferencesFrmImages[index].unlock();
