@@ -16,33 +16,33 @@ static char _aNull[] = "<null>";
 // 0x4A2B50
 void _regionSetBound(Region* region)
 {
-    int v1 = INT_MAX;
-    int v2 = INT_MIN;
-    int v3 = INT_MAX;
-    int v4 = INT_MIN;
-    int v5 = 0;
-    int v6 = 0;
-    int v7 = 0;
+    int minX = INT_MAX;
+    int maxX = INT_MIN;
+    int minY = INT_MAX;
+    int maxY = INT_MIN;
+    int pointCount = 0;
+    int sumX = 0;
+    int sumY = 0;
 
     for (int index = 0; index < region->pointsLength; index++) {
         Point* point = &(region->points[index]);
-        if (v1 >= point->x) v1 = point->x;
-        if (v3 >= point->y) v3 = point->y;
-        if (v2 <= point->x) v2 = point->x;
-        if (v4 <= point->y) v4 = point->y;
-        v6 += point->x;
-        v7 += point->y;
-        v5++;
+        if (minX >= point->x) minX = point->x;
+        if (minY >= point->y) minY = point->y;
+        if (maxX <= point->x) maxX = point->x;
+        if (maxY <= point->y) maxY = point->y;
+        sumX += point->x;
+        sumY += point->y;
+        pointCount++;
     }
 
-    region->field_28 = v3;
-    region->field_2C = v2;
-    region->field_30 = v4;
-    region->field_24 = v1;
+    region->minY = minY;
+    region->maxX = maxX;
+    region->maxY = maxY;
+    region->minX = minX;
 
-    if (v5 != 0) {
-        region->field_34 = v6 / v5;
-        region->field_38 = v7 / v5;
+    if (pointCount != 0) {
+        region->centroidX = sumX / pointCount;
+        region->centroidY = sumY / pointCount;
     }
 }
 
@@ -53,69 +53,69 @@ bool regionContainsPoint(Region* region, int x, int y)
         return false;
     }
 
-    if (x < region->field_24 || x > region->field_2C || y < region->field_28 || y > region->field_30) {
+    if (x < region->minX || x > region->maxX || y < region->minY || y > region->maxY) {
         return false;
     }
 
-    int v1;
+    int previousQuadrant;
 
     Point* prev = &(region->points[0]);
     if (x >= prev->x) {
         if (y >= prev->y) {
-            v1 = 2;
+            previousQuadrant = 2;
         } else {
-            v1 = 1;
+            previousQuadrant = 1;
         }
     } else {
         if (y >= prev->y) {
-            v1 = 3;
+            previousQuadrant = 3;
         } else {
-            v1 = 0;
+            previousQuadrant = 0;
         }
     }
 
-    int v4 = 0;
+    int winding = 0;
     for (int index = 0; index < region->pointsLength; index++) {
-        int v2;
+        int quadrant;
 
         Point* point = &(region->points[index + 1]);
         if (x >= point->x) {
             if (y >= point->y) {
-                v2 = 2;
+                quadrant = 2;
             } else {
-                v2 = 1;
+                quadrant = 1;
             }
         } else {
             if (y >= point->y) {
-                v2 = 3;
+                quadrant = 3;
             } else {
-                v2 = 0;
+                quadrant = 0;
             }
         }
 
-        int v3 = v2 - v1;
-        switch (v3) {
+        int quadrantDelta = quadrant - previousQuadrant;
+        switch (quadrantDelta) {
         case -3:
-            v3 = 1;
+            quadrantDelta = 1;
             break;
         case -2:
         case 2:
             if ((double)x < ((double)point->x - (double)(prev->x - point->x) / (double)(prev->y - point->y) * (double)(point->y - y))) {
-                v3 = -v3;
+                quadrantDelta = -quadrantDelta;
             }
             break;
         case 3:
-            v3 = -1;
+            quadrantDelta = -1;
             break;
         }
 
         prev = point;
-        v1 = v2;
+        previousQuadrant = quadrant;
 
-        v4 += v3;
+        winding += quadrantDelta;
     }
 
-    if (v4 == 4 || v4 == -4) {
+    if (winding == 4 || winding == -4) {
         return true;
     }
 
@@ -137,9 +137,9 @@ Region* regionCreate(int initialCapacity)
     }
 
     region->name[0] = '\0';
-    region->field_74 = 0;
-    region->field_28 = INT_MIN;
-    region->field_30 = INT_MAX;
+    region->flags = 0;
+    region->minY = INT_MIN;
+    region->maxY = INT_MAX;
     region->procs[3] = 0;
     region->rightProcs[1] = 0;
     region->rightProcs[3] = 0;
@@ -152,8 +152,8 @@ Region* regionCreate(int initialCapacity)
     region->mouseEventCallbackUserData = nullptr;
     region->rightMouseEventCallbackUserData = nullptr;
     region->pointsLength = 0;
-    region->field_24 = region->field_28;
-    region->field_2C = region->field_30;
+    region->minX = INT_MIN;
+    region->maxX = INT_MAX;
     region->procs[2] = 0;
     region->procs[1] = 0;
     region->procs[0] = 0;
@@ -266,7 +266,7 @@ void regionSetUserData(Region* region, void* data)
 // 0x4A2FD0
 void regionAddFlag(Region* region, int value)
 {
-    region->field_74 |= value;
+    region->flags |= value;
 }
 
 } // namespace fallout
