@@ -827,7 +827,7 @@ static int mapLoad(File* stream)
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAPLESS_MUSIC, &gaplessMusic);
     if (backgoundSoundIsPlaying() && !gaplessMusic) {
         // playing the loading sound might interrupt continuous music playback
-        backgroundSoundLoad("wind2", SOUND_LIMIT_AFTER, SOUND_STORE, SOUND_LOOP);
+        backgroundSoundLoad("wind2", GSOUND_LIMIT_AFTER, GSOUND_MEMORY, GSOUND_LOOP);
     }
     isoDisable();
     _partyMemberPrepLoad();

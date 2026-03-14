@@ -172,7 +172,7 @@ static bool gameSoundIsCompressed(char* filePath);
 static void speechCallback(void* userData, int event);
 static void backgroundSoundCallback(void* userData, int event);
 static void soundEffectCallback(void* userData, int event);
-static int _gsound_background_allocate(Sound** outSound, SoundStorageType storageType, SoundLoopingMode loopingMode);
+static int _gsound_background_allocate(Sound** outSound, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 static int gameSoundFindBackgroundSoundPathWithCopy(char* dest, const char* src);
 static int gameSoundFindBackgroundSoundPath(char* dest, const char* src);
 static int gameSoundFindSpeechSoundPath(char* dest, const char* src);
@@ -598,29 +598,29 @@ int backgroundSoundGetDuration()
     [fileName] is base file name, without path and extension.
 
     readLimitMode
-        SOUND_LOAD_NO_PLAY = don't auto play sound after loading
-        SOUND_LIMIT_BEFORE = set read limit before soundLoad, autoplay
-        SOUND_LIMIT_AFTER = set read limit after soundLoad, autoplay
+        GSOUND_LOAD_NO_PLAY = don't auto play sound after loading
+        GSOUND_LIMIT_BEFORE = set read limit before soundLoad, autoplay
+        GSOUND_LIMIT_AFTER = set read limit after soundLoad, autoplay
     storageType
-        SOUND_STORE
-        SOUND_STREAM
+        GSOUND_MEMORY = load entire sound into memory before playing
+        GSOUND_STREAM = stream sound from disk while playing
     loopingMode
-        SOUND_NO_LOOP
-        SOUND_LOOP
+        GSOUND_NO_LOOP
+        GSOUND_LOOP
 
     examples:
-        backgroundSoundLoad("akiss", SOUND_LIMIT_AFTER, SOUND_STREAM, SOUND_NO_LOOP) (endgame)
-        backgroundSoundLoad("10labone", SOUND_LIMIT_BEFORE, SOUND_STREAM, SOUND_LOOP); (endgame)
-        backgroundSoundLoad(fileName, readLimitMode, SOUND_STREAM, SOUND_LOOP); (map music)
-        backgroundSoundLoad("wind2", SOUND_LIMIT_AFTER, SOUND_STORE, SOUND_LOOP); (map load sound)
+        backgroundSoundLoad("akiss", GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP) (endgame)
+        backgroundSoundLoad("10labone", GSOUND_LIMIT_BEFORE, GSOUND_STREAM, GSOUND_LOOP); (endgame)
+        backgroundSoundLoad(fileName, readLimitMode, GSOUND_STREAM, GSOUND_LOOP); (map music)
+        backgroundSoundLoad("wind2", GSOUND_LIMIT_AFTER, GSOUND_MEMORY, GSOUND_LOOP); (map load sound)
 
         these use the last storage/loop settings passed to backgroundSoundLoad
-        backgroundSoundRestart(SOUND_LIMIT_BEFORE); (end of of script)
-        backgroundSoundRestart(SOUND_LIMIT_AFTER); (game init, volume change)
+        backgroundSoundRestart(GSOUND_LIMIT_BEFORE); (end of of script)
+        backgroundSoundRestart(GSOUND_LIMIT_AFTER); (game init, volume change)
 
     0x45067C
 */
-int backgroundSoundLoad(const char* fileName, SoundReadLimitMode readLimitMode, SoundStorageType storageType, SoundLoopingMode loopingMode)
+int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode)
 {
     int rc;
 
@@ -680,9 +680,9 @@ int backgroundSoundLoad(const char* fileName, SoundReadLimitMode readLimitMode, 
     }
 
     char path[COMPAT_MAX_PATH + 1];
-    if (storageType == SOUND_STORE) {
+    if (storageType == GSOUND_MEMORY) {
         rc = gameSoundFindBackgroundSoundPath(path, fileName);
-    } else if (storageType == SOUND_STREAM) {
+    } else if (storageType == GSOUND_STREAM) {
         rc = gameSoundFindBackgroundSoundPathWithCopy(path, fileName);
     }
 
@@ -697,7 +697,7 @@ int backgroundSoundLoad(const char* fileName, SoundReadLimitMode readLimitMode, 
         return -1;
     }
 
-    if (loopingMode == SOUND_LOOP) {
+    if (loopingMode == GSOUND_LOOP) {
         rc = soundSetLooping(gBackgroundSound, 0xFFFF);
         if (rc != SOUND_NO_ERROR) {
             if (gGameSoundDebugEnabled) {
@@ -718,7 +718,7 @@ int backgroundSoundLoad(const char* fileName, SoundReadLimitMode readLimitMode, 
         }
     }
 
-    if (readLimitMode == SOUND_LIMIT_BEFORE) {
+    if (readLimitMode == GSOUND_LIMIT_BEFORE) {
         rc = soundSetReadLimit(gBackgroundSound, 0x40000);
         if (rc != SOUND_NO_ERROR) {
             if (gGameSoundDebugEnabled) {
@@ -739,7 +739,7 @@ int backgroundSoundLoad(const char* fileName, SoundReadLimitMode readLimitMode, 
         return -1;
     }
 
-    if (readLimitMode != SOUND_LIMIT_BEFORE) {
+    if (readLimitMode != GSOUND_LIMIT_BEFORE) {
         rc = soundSetReadLimit(gBackgroundSound, 0x40000);
         if (rc != 0) {
             if (gGameSoundDebugEnabled) {
@@ -748,7 +748,7 @@ int backgroundSoundLoad(const char* fileName, SoundReadLimitMode readLimitMode, 
         }
     }
 
-    if (readLimitMode == SOUND_LOAD_NO_PLAY) {
+    if (readLimitMode == GSOUND_LOAD_NO_PLAY) {
         return 0;
     }
 
@@ -772,7 +772,7 @@ int backgroundSoundLoad(const char* fileName, SoundReadLimitMode readLimitMode, 
 }
 
 // 0x450A08
-int _gsound_background_play_level_music(const char* fileName, SoundReadLimitMode readLimitMode)
+int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode)
 {
     int gaplessMusic = 0;
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAPLESS_MUSIC, &gaplessMusic);
@@ -782,7 +782,7 @@ int _gsound_background_play_level_music(const char* fileName, SoundReadLimitMode
         }
     }
 
-    return backgroundSoundLoad(fileName, readLimitMode, SOUND_STREAM, SOUND_LOOP);
+    return backgroundSoundLoad(fileName, readLimitMode, GSOUND_STREAM, GSOUND_LOOP);
 }
 
 // 0x450AB4
@@ -805,7 +805,7 @@ void backgroundSoundDelete()
 void backgroundSoundRestart(int value)
 {
     if (gBackgroundSoundFileName[0] != '\0') {
-        if (backgroundSoundLoad(gBackgroundSoundFileName, static_cast<SoundReadLimitMode>(value), static_cast<SoundStorageType>(_background_storage_requested), static_cast<SoundLoopingMode>(_background_loop_requested)) != 0) {
+        if (backgroundSoundLoad(gBackgroundSoundFileName, static_cast<GameSoundReadLimitMode>(value), static_cast<GameSoundStorageType>(_background_storage_requested), static_cast<GameSoundLoopingMode>(_background_loop_requested)) != 0) {
             if (gGameSoundDebugEnabled)
                 debugPrint(" background restart failed ");
         }
@@ -915,7 +915,7 @@ int speechGetDuration()
 }
 
 // 0x450CA0
-int speechLoad(const char* fileName, SoundReadLimitMode readLimitMode, SoundStorageType storageType, SoundLoopingMode loopingMode)
+int speechLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode)
 {
     char path[COMPAT_MAX_PATH + 1];
 
@@ -960,7 +960,7 @@ int speechLoad(const char* fileName, SoundReadLimitMode readLimitMode, SoundStor
         return -1;
     }
 
-    if (loopingMode == SOUND_LOOP) {
+    if (loopingMode == GSOUND_LOOP) {
         if (soundSetLooping(gSpeechSound, 0xFFFF)) {
             if (gGameSoundDebugEnabled) {
                 debugPrint("failed because looping could not be set.\n");
@@ -977,7 +977,7 @@ int speechLoad(const char* fileName, SoundReadLimitMode readLimitMode, SoundStor
         }
     }
 
-    if (readLimitMode == SOUND_LIMIT_BEFORE) {
+    if (readLimitMode == GSOUND_LIMIT_BEFORE) {
         if (soundSetReadLimit(gSpeechSound, 0x40000)) {
             if (gGameSoundDebugEnabled) {
                 debugPrint("unable to set read limit ");
@@ -994,7 +994,7 @@ int speechLoad(const char* fileName, SoundReadLimitMode readLimitMode, SoundStor
         return -1;
     }
 
-    if (readLimitMode != SOUND_LIMIT_BEFORE) {
+    if (readLimitMode != GSOUND_LIMIT_BEFORE) {
         if (soundSetReadLimit(gSpeechSound, 0x40000)) {
             if (gGameSoundDebugEnabled) {
                 debugPrint("unable to set read limit ");
@@ -1002,7 +1002,7 @@ int speechLoad(const char* fileName, SoundReadLimitMode readLimitMode, SoundStor
         }
     }
 
-    if (readLimitMode == SOUND_LOAD_NO_PLAY) {
+    if (readLimitMode == GSOUND_LOAD_NO_PLAY) {
         return 0;
     }
 
@@ -1722,19 +1722,19 @@ void soundEffectCallback(void* userData, int event)
 // 0x451ADC
 // storageType relates to sound type
 // loopingMode relates to sound flags
-int _gsound_background_allocate(Sound** soundPtr, SoundStorageType storageType, SoundLoopingMode loopingMode)
+int _gsound_background_allocate(Sound** soundPtr, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode)
 {
     int soundFlags = SOUND_FLAG_0x02 | SOUND_16BIT;
     int type = 0;
-    if (storageType == SOUND_STORE) {
+    if (storageType == GSOUND_MEMORY) {
         type |= SOUND_TYPE_MEMORY;
-    } else if (storageType == SOUND_STREAM) {
+    } else if (storageType == GSOUND_STREAM) {
         type |= SOUND_TYPE_STREAMING;
     }
 
-    if (loopingMode == SOUND_NO_LOOP) {
+    if (loopingMode == GSOUND_NO_LOOP) {
         type |= SOUND_TYPE_FIRE_AND_FORGET;
-    } else if (loopingMode == SOUND_LOOP) {
+    } else if (loopingMode == GSOUND_LOOP) {
         soundFlags |= SOUND_LOOPING;
     }
 

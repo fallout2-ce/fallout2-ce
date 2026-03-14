@@ -4495,7 +4495,7 @@ static int wmInterfaceInit()
     _map_save_in_game(true);
 
     const char* backgroundSoundFileName = wmGenData.isInCar ? "20car" : "23world";
-    _gsound_background_play_level_music(backgroundSoundFileName, SOUND_LIMIT_AFTER);
+    _gsound_background_play_level_music(backgroundSoundFileName, GSOUND_LIMIT_AFTER);
 
     // CE: Hide entire interface, not just indicator bar, and disable tile
     // engine.
@@ -6763,7 +6763,7 @@ int wmMapMusicStart()
             break;
         }
 
-        if (_gsound_background_play_level_music(map->music, SOUND_LIMIT_AFTER) == -1) {
+        if (_gsound_background_play_level_music(map->music, GSOUND_LIMIT_AFTER) == -1) {
             break;
         }
 

@@ -32,21 +32,21 @@ typedef enum CharacterSoundEffect {
     CHARACTER_SOUND_EFFECT_CONTACT,
 } CharacterSoundEffect;
 
-typedef enum SoundReadLimitMode {
-    SOUND_LOAD_NO_PLAY = 10,
-    SOUND_LIMIT_BEFORE = 11,
-    SOUND_LIMIT_AFTER = 12,
-} SoundReadLimitMode;
+typedef enum GameSoundReadLimitMode {
+    GSOUND_LOAD_NO_PLAY = 10,
+    GSOUND_LIMIT_BEFORE = 11,
+    GSOUND_LIMIT_AFTER = 12,
+} GameSoundReadLimitMode;
 
-typedef enum SoundStorageType {
-    SOUND_STORE = 13,
-    SOUND_STREAM = 14,
-} SoundStorageType;
+typedef enum GameSoundStorageType {
+    GSOUND_MEMORY = 13,
+    GSOUND_STREAM = 14,
+} GameSoundStorageType;
 
-typedef enum SoundLoopingMode {
-    SOUND_NO_LOOP = 15,
-    SOUND_LOOP = 16,
-} SoundLoopingMode;
+typedef enum GameSoundLoopingMode {
+    GSOUND_NO_LOOP = 15,
+    GSOUND_LOOP = 16,
+} GameSoundLoopingMode;
 
 typedef void(SoundEndCallback)();
 
@@ -63,8 +63,8 @@ void backgroundSoundSetVolume(int value);
 int backgroundSoundGetVolume();
 int _gsound_background_volume_get_set(int volume);
 void backgroundSoundSetEndCallback(SoundEndCallback* callback);
-int backgroundSoundLoad(const char* fileName, SoundReadLimitMode readLimitMode, SoundStorageType storageType, SoundLoopingMode loopingMode);
-int _gsound_background_play_level_music(const char* fileName, SoundReadLimitMode readLimitMode);
+int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
+int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode);
 void backgroundSoundDelete();
 void backgroundSoundRestart(int value);
 void backgroundSoundPause();
@@ -75,7 +75,7 @@ void speechSetVolume(int value);
 int speechGetVolume();
 void speechSetEndCallback(SoundEndCallback* callback);
 int speechGetDuration();
-int speechLoad(const char* fileName, SoundReadLimitMode readLimitMode, SoundStorageType storageType, SoundLoopingMode loopingMode);
+int speechLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 int _gsound_speech_play_preloaded();
 void speechDelete();
 int _gsound_play_sfx_file_volume(const char* name, int volume);
