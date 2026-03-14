@@ -113,7 +113,7 @@ static void opSayScrollUp(Program* program);
 static void opSayScrollDown(Program* program);
 static void opSaySetSpacing(Program* program);
 static void opSayRestart(Program* program);
-static void intLibSoundCallback(void* userData, int a2);
+static void intLibSoundCallback(void* userData, int event);
 static int intLibSoundDelete(int value);
 static int intLibSoundPlay(char* fileName, int mode);
 static int intLibSoundPause(int value);
@@ -1833,9 +1833,9 @@ static void opSayRestart(Program* program)
 }
 
 // 0x466064
-static void intLibSoundCallback(void* userData, int a2)
+static void intLibSoundCallback(void* userData, int event)
 {
-    if (a2 == 1) {
+    if (event == SOUND_CALLBACK_EVENT_DONE) {
         Sound** sound = (Sound**)userData;
         *sound = nullptr;
     }
