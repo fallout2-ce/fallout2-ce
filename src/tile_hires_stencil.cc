@@ -25,6 +25,14 @@ namespace fallout {
 /** This holds hex tiles which can be center tile */
 static bool visited_tiles[ELEVATION_COUNT][HEX_GRID_SIZE];
 
+struct StencilScreenLimits {
+    int minX;
+    int maxX;
+    int minY;
+    int maxY;
+};
+static struct StencilScreenLimits screen_xy_limits[ELEVATION_COUNT];
+
 static constexpr int pixels_per_horizontal_move = 32;
 static constexpr int pixels_per_vertical_move = 24;
 
@@ -69,11 +77,13 @@ static bool gIsTileHiresStencilEnabled = true;
 static void clean_cache()
 {
     memset(visited_tiles, 0, sizeof(visited_tiles));
+    memset(screen_xy_limits, 0, sizeof(screen_xy_limits));
     memset(visible_squares, 0, sizeof(visible_squares));
 }
 static void clean_cache_for_elevation(int elevation)
 {
     memset(visited_tiles[elevation], 0, sizeof(visited_tiles[elevation]));
+    memset(&screen_xy_limits[elevation], 0, sizeof(screen_xy_limits[elevation]));
     memset(visible_squares[elevation], 0, sizeof(visible_squares[elevation]));
 }
 
@@ -205,6 +215,36 @@ static void mark_screen_tiles_around_as_visible(int center_tile, const Point& sc
     }
 }
 
+void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Point& screen_diff, int elevation)
+{
+    auto& limits = screen_xy_limits[elevation];
+    auto candidateMinX = tileScreenX - screen_view_width / 2 - screen_diff.x;
+    auto candidateMaxX = tileScreenX + screen_view_width / 2 - screen_diff.x;
+    auto candidateMinY = tileScreenY - screen_view_height / 2 - screen_diff.y;
+    auto candidateMaxY = tileScreenY + screen_view_height / 2 - screen_diff.y;
+
+    if (limits.maxX == 0 && limits.maxY == 0) {
+        limits.minX = candidateMinX;
+        limits.maxX = candidateMaxX;
+        limits.minY = candidateMinY;
+        limits.maxY = candidateMaxY;
+        return;
+    }
+
+    if (candidateMinX < limits.minX) {
+        limits.minX = candidateMinX;
+    }
+    if (candidateMaxX > limits.maxX) {
+        limits.maxX = candidateMaxX;
+    }
+    if (candidateMinY < limits.minY) {
+        limits.minY = candidateMinY;
+    }
+    if (candidateMaxY > limits.maxY) {
+        limits.maxY = candidateMaxY;
+    }
+}
+
 void tile_hires_stencil_on_center_tile_or_elevation_change()
 {
     if (!gIsTileHiresStencilEnabled) {
@@ -273,6 +313,8 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         int tileScreenX;
         int tileScreenY;
         tileToScreenXY(tileInfo.tile, &tileScreenX, &tileScreenY, gElevation);
+
+        update_screen_xy_limits(tileScreenX, tileScreenY, screen_diff, gElevation);
 
         // tile size is 32 x 18
         //
@@ -403,6 +445,173 @@ void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth,
     }
 }
 
+/**
+ * Even when we can scroll to the tile according to scrollblocker tiles,
+ * we also want to disallow scrolling on big resolutions if there is nothing to show there
+ */
+bool tile_hires_stencil_allows_scrolling_to_tile(int newCenterTile, int currentCenterTile, int elevation, int windowWidth, int windowHeight)
+{
+    if (!gIsTileHiresStencilEnabled) {
+        return true;
+    }
+
+    if (!gTileBorderInitialized) {
+        return true;
+    };
+
+    auto& limits = screen_xy_limits[elevation];
+    if (limits.maxX == 0 && limits.maxY == 0) {
+        // Not initialized yet, so we can scroll to any tile
+        return true;
+    }
+
+    int currentTileScreenX;
+    int currentTileScreenY;
+    tileToScreenXY(currentCenterTile, &currentTileScreenX, &currentTileScreenY, elevation);
+
+    int newTileScreenX;
+    int newTileScreenY;
+    tileToScreenXY(newCenterTile, &newTileScreenX, &newTileScreenY, elevation);
+
+    auto xDiff = newTileScreenX - currentTileScreenX;
+    auto yDiff = newTileScreenY - currentTileScreenY;
+
+    auto screen_diff = get_screen_diff();
+
+    auto newScreenMinX = newTileScreenX - windowWidth / 2 - screen_diff.x;
+    auto newScreenMaxX = newTileScreenX + windowWidth / 2 - screen_diff.x;
+    auto newScreenMinY = newTileScreenY - windowHeight / 2 - screen_diff.y;
+    auto newScreenMaxY = newTileScreenY + windowHeight / 2 - screen_diff.y;
+
+    if (xDiff < 0) { // Moving left
+        if (newScreenMinX >= limits.minX) {
+            // Scrolling left when there is still something to show is always allowed
+            //    [------------------------]   <- possible visible area border (limits.maxX and limits.minX)
+            //      (         x         )   <- hi-res screen with center tile (newScreenMinX, newScreenMaxX)
+        } else if (newScreenMaxX <= limits.maxX) {
+            // Disallow if map is bigger than screen
+            //    [------------------------]   <- possible visible area border (limits.maxX and limits.minX)
+            //   (         x         )   <- this clearly disallow
+            return false;
+        } else {
+            // Now we have two cases: when moving left will make map to be more in the center or not
+            //         [-----------]   <- possible visible area border (limits.maxX and limits.minX)
+            //        (         x         )   <- allow this, it will move map to the center
+            //  (         x         )   <- disallow this, it will move map from the center
+            auto leftDiff = limits.minX - newScreenMinX;
+            auto rightDiff = newScreenMaxX - limits.maxX;
+            if (leftDiff > rightDiff) {
+                return false;
+            }
+        }
+    }
+
+    if (xDiff > 0) {
+        if (newScreenMaxX <= limits.maxX) {
+            // Allow
+        } else if (newScreenMinX > limits.minX) {
+            return false;
+        } else {
+            auto leftDiff = limits.minX - newScreenMinX;
+            auto rightDiff = newScreenMaxX - limits.maxX;
+            if (leftDiff < rightDiff) {
+                return false;
+            }
+        }
+    }
+
+    if (yDiff < 0) { // Moving up
+        if (newScreenMinY >= limits.minY) {
+            // Scrolling up when there is still something to show is always allowed
+        } else if (newScreenMaxY <= limits.maxY) {
+            // Disallow if map is taller than screen
+            return false;
+        } else {
+            // Allow only if moving up makes the visible area more centered vertically
+            auto topDiff = limits.minY - newScreenMinY;
+            auto bottomDiff = newScreenMaxY - limits.maxY;
+            if (topDiff > bottomDiff) {
+                return false;
+            }
+        }
+    }
+
+    if (yDiff > 0) { // Moving down
+        if (newScreenMaxY <= limits.maxY) {
+            // Allow
+        } else if (newScreenMinY > limits.minY) {
+            return false;
+        } else {
+            auto topDiff = limits.minY - newScreenMinY;
+            auto bottomDiff = newScreenMaxY - limits.maxY;
+            if (topDiff < bottomDiff) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+
+Scrolling in Fallout 2 is controlled by special scrollblocker tiles.
+
+The game has state variable "gCenterTile" which defines current window scroll position.
+When player scrolls, game checks if there is a scrollblocker tile in the direction of scroll
+ and if there is, it does not change gCenterTile and does not scroll.
+
+So maps place scrollblocker tiles not exactly on the edge but on the half of default screen size (640x480).
+
+
+Example (x = current gCenterTile; + = scrollblocker tile on map):
+┌───────────────────┐───────────────────┐
+│                   │                   │ <- this is the border of possible visible area
+│                   │                   │     (usually also border of the map)
+│        +++++++++++++++++++++++++      │
+│        +x         │            +      │
+│        +          │            +  <-------- Scrollblocker tile are inside
+│        +          │            +      │
+│        +          │            +      │
+└──640x480─window───┘            +      │
+│        +                       +      │
+│        +                       +      │
+│        +                       +      │
+│        +                       +      │
+│        +                       +      │
+│        +++++++++++++++++++++++++      │
+│                                       │
+│                                       │
+└───────────────────────────────────────┘
+<-------> this distance is half of default screen width, i.e. 640/2=320 pixels
+
+
+But not every map is rectangular.
+So on every map or elevation change we do a search for all possible accessible
+center tile values starting from the current one, and for each such possible
+center tile we mark all 640x480 area around as visible. The rest gets covered by a black overlay.
+
+┌──────────────────┐
+│                  │
+│                  │
+│    ++++++++++    │
+│    +        +    │
+│    +        +    │
+│    +        +    └─────────────────────────────┐
+│    +        +                                  │
+│    +        +     ┌───────────┐                │
+│    +        ++++++│+++++++++++│++++++++++++    │
+│    +   ┌──────────│──┐        │   ┌────────────┐
+│    +   │          │  │  x     │   │       +    │
+│    +   │          │  │        │   │       +    │
+│    +   │      x   │  │        │   │      x+    │
+│    ++++│++++++++++└───────────┘+++│++++++++    │
+│        │             │            │            │
+│        └─────────────┘            │            │
+└───────────────────────────────────└────────────┘
+
+
+ */
 void tile_hires_stencil_init()
 {
     configGetBool(&gSfallConfig, SFALL_CONFIG_MAIN_KEY, SFALL_CONFIG_ENABLE_HIRES_STENCIL, &gIsTileHiresStencilEnabled);
