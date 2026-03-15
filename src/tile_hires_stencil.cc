@@ -215,7 +215,7 @@ static void mark_screen_tiles_around_as_visible(int center_tile, const Point& sc
     }
 }
 
-void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Point& screen_diff, int elevation)
+static void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Point& screen_diff, int elevation)
 {
     auto& limits = screen_xy_limits[elevation];
     auto candidateMinX = tileScreenX - screen_view_width / 2 - screen_diff.x;
