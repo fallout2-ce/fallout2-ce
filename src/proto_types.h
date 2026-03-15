@@ -221,12 +221,12 @@ typedef enum ProtoFlags {
 } ProtoFlags;
 
 typedef enum ItemProtoExtendedFlags {
-    // NOTE: `extendedFlags` packs non-boolean item data into the low
+    // NOTE: `extendedFlags` packs non-boolean weapon data into the low
     // nibbles (`0x0F` and `0xF0`) for attack mode metadata.
 
     PROTO_EXT_FLAG_BIG_GUN = 0x0100,
     PROTO_EXT_FLAG_IS_TWO_HANDED = 0x0200,
-    PROTO_EXT_FLAG_0x0001 = 0x0001,
+    PROTO_EXT_FLAG_0x0001 = 0x0001, // Used with scenery.  Might mean "interact on ground"
     PROTO_EXT_FLAG_CAN_USE = 0x0800,
     PROTO_EXT_FLAG_CAN_USE_ON = 0x1000,
     PROTO_EXT_FLAG_0x2000 = 0x2000,
