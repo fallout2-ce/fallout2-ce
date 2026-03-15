@@ -224,9 +224,10 @@ typedef enum ItemProtoExtendedFlags {
 
     PROTO_EXT_FLAG_BIG_GUN = 0x0100,
     PROTO_EXT_FLAG_IS_TWO_HANDED = 0x0200,
+    // PROTO_EXT_FLAG_ENERGY = 0x0400, // Sfall
     PROTO_EXT_FLAG_CAN_USE = 0x0800,
     PROTO_EXT_FLAG_CAN_USE_ON = 0x1000,
-    PROTO_EXT_FLAG_0x2000 = 0x2000,
+    PROTO_EXT_FLAG_LOOK = 0x2000, // never checked, AFAICT
     PROTO_EXT_FLAG_CAN_TALK_TO = 0x4000,
     PROTO_EXT_FLAG_CAN_PICK_UP = 0x8000,
 
@@ -239,12 +240,11 @@ typedef enum ItemProtoExtendedFlags {
     // Scenery using this flag plays the ground-level magic hands animation.
     PROTO_EXT_FLAG_MAGIC_HANDS_GROUND = 0x0001,
 
-    // These high bits appear to control wall/scenery orientation classes used
-    // by translucency/visibility code and the mapper's wall-light labels.
-    PROTO_EXT_FLAG_0x10000000 = 0x10000000,
-    PROTO_EXT_FLAG_0x20000000 = 0x20000000,
-    PROTO_EXT_FLAG_0x40000000 = 0x40000000,
-    PROTO_EXT_FLAG_0x80000000 = 0x80000000,
+    // Wall/scenery corner orientation flags, used for lighting and visibility checks
+    PROTO_EXT_FLAG_NORTH_CORNER = 0x10000000,
+    PROTO_EXT_FLAG_SOUTH_CORNER = 0x20000000,
+    PROTO_EXT_FLAG_EAST_CORNER = 0x40000000,
+    PROTO_EXT_FLAG_WEST_CORNER = 0x80000000,
 } ItemProtoExtendedFlags;
 
 typedef struct {

@@ -382,7 +382,7 @@ int proto_item_init(Proto* proto, int pid)
     proto->item.lightDistance = 0;
     proto->item.lightIntensity = 0;
     proto->item.flags = PROTO_FLAG_FLAT | PROTO_FLAG_LIGHT_THRU | PROTO_FLAG_SHOOT_THRU;
-    proto->item.extendedFlags = PROTO_EXT_FLAG_0x2000 | PROTO_EXT_FLAG_CAN_PICK_UP;
+    proto->item.extendedFlags = PROTO_EXT_FLAG_LOOK | PROTO_EXT_FLAG_CAN_PICK_UP;
     proto->item.sid = -1;
     proto->item.type = ITEM_TYPE_MISC;
     proto_item_subdata_init(proto, proto->item.type);
@@ -494,7 +494,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.lightDistance = 0;
     proto->critter.lightIntensity = 0;
     proto->critter.flags = PROTO_FLAG_LIGHT_THRU;
-    proto->critter.extendedFlags = PROTO_EXT_FLAG_0x2000 | PROTO_EXT_FLAG_CAN_TALK_TO;
+    proto->critter.extendedFlags = PROTO_EXT_FLAG_LOOK | PROTO_EXT_FLAG_CAN_TALK_TO;
     proto->critter.sid = -1;
     proto->critter.data.flags = 0;
     proto->critter.data.bodyType = 0;
@@ -949,7 +949,7 @@ int proto_scenery_init(Proto* proto, int pid)
     proto->scenery.lightDistance = 0;
     proto->scenery.lightIntensity = 0;
     proto->scenery.flags = 0;
-    proto->scenery.extendedFlags = PROTO_EXT_FLAG_0x2000;
+    proto->scenery.extendedFlags = PROTO_EXT_FLAG_LOOK;
     proto->scenery.sid = -1;
     proto->scenery.type = SCENERY_TYPE_GENERIC;
     proto_scenery_subdata_init(proto, proto->scenery.type);
@@ -1004,7 +1004,7 @@ int proto_wall_init(Proto* proto, int pid)
     proto->wall.lightDistance = 0;
     proto->wall.lightIntensity = 0;
     proto->wall.flags = 0;
-    proto->wall.extendedFlags = PROTO_EXT_FLAG_0x2000;
+    proto->wall.extendedFlags = PROTO_EXT_FLAG_LOOK;
     proto->wall.sid = -1;
     proto->wall.material = 1;
 
@@ -1023,7 +1023,7 @@ int proto_tile_init(Proto* proto, int pid)
         proto->tile.fid = buildFid(OBJ_TYPE_TILE, 0, 0, 0, 0);
     }
     proto->tile.flags = 0;
-    proto->tile.extendedFlags = PROTO_EXT_FLAG_0x2000;
+    proto->tile.extendedFlags = PROTO_EXT_FLAG_LOOK;
     proto->tile.sid = -1;
     proto->tile.material = 1;
 
