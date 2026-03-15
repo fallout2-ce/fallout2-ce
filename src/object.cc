@@ -2978,13 +2978,13 @@ int _obj_intersects_with(Object* object, int x, int y)
 
                                 bool v20;
                                 int extendedFlags = proto->scenery.extendedFlags;
-                                if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (extendedFlags & PROTO_EXT_FLAG_0x80000000) != 0) {
+                                if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (extendedFlags & PROTO_EXT_FLAG_WEST_CORNER) != 0) {
                                     v20 = tileIsInFrontOf(object->tile, gDude->tile);
-                                } else if ((extendedFlags & PROTO_EXT_FLAG_0x10000000) != 0) {
+                                } else if ((extendedFlags & PROTO_EXT_FLAG_NORTH_CORNER) != 0) {
                                     // NOTE: Original code uses bitwise or, but given the fact that these functions return
                                     // bools, logical or is more suitable.
                                     v20 = tileIsInFrontOf(object->tile, gDude->tile) || tileIsToRightOf(gDude->tile, object->tile);
-                                } else if ((extendedFlags & PROTO_EXT_FLAG_0x20000000) != 0) {
+                                } else if ((extendedFlags & PROTO_EXT_FLAG_SOUTH_CORNER) != 0) {
                                     v20 = tileIsInFrontOf(object->tile, gDude->tile) && tileIsToRightOf(gDude->tile, object->tile);
                                 } else {
                                     v20 = tileIsToRightOf(gDude->tile, object->tile);
@@ -4583,18 +4583,18 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
                                         if ((objectListNode->obj->flags & OBJECT_FLAT) == 0) {
                                             Proto* proto;
                                             protoGetProto(objectListNode->obj->pid, &proto);
-                                            if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (proto->wall.extendedFlags & PROTO_EXT_FLAG_0x40000000) != 0) {
+                                            if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (proto->wall.extendedFlags & PROTO_EXT_FLAG_EAST_CORNER) != 0) {
                                                 if (rotation != ROTATION_W
                                                     && rotation != ROTATION_NW
                                                     && (rotation != ROTATION_NE || index >= 8)
                                                     && (rotation != ROTATION_SW || index <= 15)) {
                                                     v12 = false;
                                                 }
-                                            } else if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_0x10000000) != 0) {
+                                            } else if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_NORTH_CORNER) != 0) {
                                                 if (rotation != ROTATION_NE && rotation != ROTATION_NW) {
                                                     v12 = false;
                                                 }
-                                            } else if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_0x20000000) != 0) {
+                                            } else if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_SOUTH_CORNER) != 0) {
                                                 if (rotation != ROTATION_NE
                                                     && rotation != ROTATION_E
                                                     && rotation != ROTATION_W
@@ -4983,7 +4983,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 
             bool v17;
             int extendedFlags = proto->critter.extendedFlags;
-            if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (extendedFlags & PROTO_EXT_FLAG_0x80000000) != 0) {
+            if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (extendedFlags & PROTO_EXT_FLAG_WEST_CORNER) != 0) {
                 // TODO: Verify this visibility branch against the original logic.
                 v17 = tileIsInFrontOf(object->tile, gDude->tile);
                 if (!v17
@@ -4993,11 +4993,11 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
                 } else {
                     v17 = false;
                 }
-            } else if ((extendedFlags & PROTO_EXT_FLAG_0x10000000) != 0) {
+            } else if ((extendedFlags & PROTO_EXT_FLAG_NORTH_CORNER) != 0) {
                 // NOTE: Original code used bitwise OR here; logical OR is clearer.
                 v17 = tileIsInFrontOf(object->tile, gDude->tile)
                     || tileIsToRightOf(gDude->tile, object->tile);
-            } else if ((extendedFlags & PROTO_EXT_FLAG_0x20000000) != 0) {
+            } else if ((extendedFlags & PROTO_EXT_FLAG_SOUTH_CORNER) != 0) {
                 v17 = tileIsInFrontOf(object->tile, gDude->tile)
                     && tileIsToRightOf(gDude->tile, object->tile);
             } else {

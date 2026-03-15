@@ -392,19 +392,19 @@ const char* proto_wall_light_str(int flags)
         return wall_light_strs[1];
     }
 
-    if ((flags & PROTO_EXT_FLAG_0x10000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_NORTH_CORNER) != 0) {
         return wall_light_strs[2];
     }
 
-    if ((flags & PROTO_EXT_FLAG_0x20000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_SOUTH_CORNER) != 0) {
         return wall_light_strs[3];
     }
 
-    if ((flags & PROTO_EXT_FLAG_0x40000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_EAST_CORNER) != 0) {
         return wall_light_strs[4];
     }
 
-    if ((flags & PROTO_EXT_FLAG_0x80000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_WEST_CORNER) != 0) {
         return wall_light_strs[5];
     }
 
