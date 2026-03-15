@@ -240,7 +240,7 @@ typedef enum ItemProtoExtendedFlags {
     // Scenery using this flag plays the ground-level magic hands animation.
     PROTO_EXT_FLAG_MAGIC_HANDS_GROUND = 0x0001,
 
-    // scenery flags, for lighting and visibility checks
+    // Wall/scenery corner orientation flags, used for lighting and visibility checks
     PROTO_EXT_FLAG_NORTH_CORNER = 0x10000000,
     PROTO_EXT_FLAG_SOUTH_CORNER = 0x20000000,
     PROTO_EXT_FLAG_EAST_CORNER = 0x40000000,
