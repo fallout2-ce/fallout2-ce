@@ -95,7 +95,7 @@ static Point get_screen_diff()
         for (int t = 0; t < HEX_GRID_SIZE; t++) {
             int x;
             int y;
-            tileToScreenXY(t, &x, &y, gElevation);
+            tileToScreenXY(t, &x, &y);
             if (x < minX) {
                 minX = x;
                 minTileX = t;
@@ -125,8 +125,8 @@ static Point get_screen_diff()
     int offsetX;
     int tmp;
     int offsetY;
-    tileToScreenXY(hex_tile_with_lowest_x, &offsetX, &tmp, gElevation);
-    tileToScreenXY(hex_tile_with_lowest_y, &tmp, &offsetY, gElevation);
+    tileToScreenXY(hex_tile_with_lowest_x, &offsetX, &tmp);
+    tileToScreenXY(hex_tile_with_lowest_y, &tmp, &offsetY);
 
     Point out;
     out.x = offsetX;
@@ -148,7 +148,7 @@ static void mark_screen_tiles_around_as_visible(int center_tile, const Point& sc
 {
     int centerTileScreenX;
     int centerTileScreenY;
-    tileToScreenXY(center_tile, &centerTileScreenX, &centerTileScreenY, gElevation);
+    tileToScreenXY(center_tile, &centerTileScreenX, &centerTileScreenY);
 
     int centerTileGlobalX = centerTileScreenX - screen_diff.x;
     int centerTileGlobalY = centerTileScreenY - screen_diff.y;
@@ -272,7 +272,7 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
 
         int tileScreenX;
         int tileScreenY;
-        tileToScreenXY(tileInfo.tile, &tileScreenX, &tileScreenY, gElevation);
+        tileToScreenXY(tileInfo.tile, &tileScreenX, &tileScreenY);
 
         // tile size is 32 x 18
         //
