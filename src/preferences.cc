@@ -1527,7 +1527,7 @@ static void _DoThing(int eventCode)
                 speechSetVolume(gPreferencesSpeechVolume1);
                 redrawLabels = true;
                 if (speechVolumeExample == 0) {
-                    speechLoad("narrator\\options", 12, 13, 15);
+                    speechLoad("narrator\\options", GSOUND_LIMIT_AFTER, GSOUND_MEMORY, GSOUND_NO_LOOP);
                     speechVolumeExample = 40;
                 } else {
                     speechVolumeExample--;

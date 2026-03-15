@@ -542,72 +542,72 @@ int artCopyFileName(int objectType, int id, char* dest)
 }
 
 // 0x419314
-int _art_get_code(int animation, int weaponType, char* a3, char* a4)
+int _art_get_code(int animation, int weaponType, char* weaponCodePtr, char* animationCodePtr)
 {
     if (weaponType < 0 || weaponType >= WEAPON_ANIMATION_COUNT) {
         return -1;
     }
 
     if (animation >= ANIM_TAKE_OUT && animation <= ANIM_FIRE_CONTINUOUS) {
-        *a4 = 'c' + (animation - ANIM_TAKE_OUT);
+        *animationCodePtr = 'c' + (animation - ANIM_TAKE_OUT);
         if (weaponType == WEAPON_ANIMATION_NONE) {
             return -1;
         }
 
-        *a3 = 'd' + (weaponType - 1);
+        *weaponCodePtr = 'd' + (weaponType - 1);
         return 0;
     } else if (animation == ANIM_PRONE_TO_STANDING) {
-        *a4 = 'h';
-        *a3 = 'c';
+        *animationCodePtr = 'h';
+        *weaponCodePtr = 'c';
         return 0;
     } else if (animation == ANIM_BACK_TO_STANDING) {
-        *a4 = 'j';
-        *a3 = 'c';
+        *animationCodePtr = 'j';
+        *weaponCodePtr = 'c';
         return 0;
     } else if (animation == ANIM_CALLED_SHOT_PIC) {
-        *a4 = 'a';
-        *a3 = 'n';
+        *animationCodePtr = 'a';
+        *weaponCodePtr = 'n';
         return 0;
     } else if (animation >= FIRST_SF_DEATH_ANIM) {
-        *a4 = 'a' + (animation - FIRST_SF_DEATH_ANIM);
-        *a3 = 'r';
+        *animationCodePtr = 'a' + (animation - FIRST_SF_DEATH_ANIM);
+        *weaponCodePtr = 'r';
         return 0;
     } else if (animation >= FIRST_KNOCKDOWN_AND_DEATH_ANIM) {
-        *a4 = 'a' + (animation - FIRST_KNOCKDOWN_AND_DEATH_ANIM);
-        *a3 = 'b';
+        *animationCodePtr = 'a' + (animation - FIRST_KNOCKDOWN_AND_DEATH_ANIM);
+        *weaponCodePtr = 'b';
         return 0;
     } else if (animation == ANIM_THROW_ANIM) {
         if (weaponType == WEAPON_ANIMATION_KNIFE) {
             // knife
-            *a3 = 'd';
-            *a4 = 'm';
+            *weaponCodePtr = 'd';
+            *animationCodePtr = 'm';
         } else if (weaponType == WEAPON_ANIMATION_SPEAR) {
             // spear
-            *a3 = 'g';
-            *a4 = 'm';
+            *weaponCodePtr = 'g';
+            *animationCodePtr = 'm';
         } else {
             // other -> probably rock or grenade
-            *a3 = 'a';
-            *a4 = 's';
+            *weaponCodePtr = 'a';
+            *animationCodePtr = 's';
         }
         return 0;
     } else if (animation == ANIM_DODGE_ANIM) {
         if (weaponType <= 0) {
-            *a3 = 'a';
-            *a4 = 'n';
+            *weaponCodePtr = 'a';
+            *animationCodePtr = 'n';
         } else {
-            *a3 = 'd' + (weaponType - 1);
-            *a4 = 'e';
+            *weaponCodePtr = 'd' + (weaponType - 1);
+            *animationCodePtr = 'e';
         }
         return 0;
     }
 
-    *a4 = 'a' + animation;
+    *animationCodePtr = 'a' + animation;
     if (animation <= ANIM_WALK && weaponType > 0) {
-        *a3 = 'd' + (weaponType - 1);
+        *weaponCodePtr = 'd' + (weaponType - 1);
         return 0;
     }
-    *a3 = 'a';
+    *weaponCodePtr = 'a';
 
     return 0;
 }
@@ -615,53 +615,51 @@ int _art_get_code(int animation, int weaponType, char* a3, char* a4)
 // 0x419428
 char* artBuildFilePath(int fid)
 {
-    int v1, v2, v3, v4, v5, type, v8, v10;
-    char v9, v11, v12;
+    int baseFid = fid;
+    int rotation = FID_ROTATION(fid);
 
-    v2 = fid;
-
-    v10 = FID_ROTATION(fid);
-
-    v1 = artAliasFid(fid);
-    if (v1 != -1) {
-        v2 = v1;
+    int aliasFid = artAliasFid(fid);
+    if (aliasFid != -1) {
+        baseFid = aliasFid;
     }
 
     *_art_name = '\0';
 
-    v3 = v2 & 0xFFF;
-    v4 = FID_ANIM_TYPE(v2);
-    v5 = (v2 & 0xF000) >> 12;
-    type = FID_TYPE(v2);
+    int frmId = baseFid & 0xFFF;
+    int animType = FID_ANIM_TYPE(baseFid);
+    int weaponCode = (baseFid & 0xF000) >> 12;
+    int objectType = FID_TYPE(baseFid);
 
-    if (type < OBJ_TYPE_ITEM || type >= OBJ_TYPE_COUNT) {
+    if (objectType < OBJ_TYPE_ITEM || objectType >= OBJ_TYPE_COUNT) {
         return nullptr;
     }
 
-    if (v3 >= gArtListDescriptions[type].fileNamesLength) {
+    if (frmId >= gArtListDescriptions[objectType].fileNamesLength) {
         return nullptr;
     }
 
-    v8 = v3 * 13;
+    int fileNameOffset = frmId * 13;
 
-    if (type == 1) {
-        if (_art_get_code(v4, v5, &v11, &v12) == -1) {
+    if (objectType == OBJ_TYPE_CRITTER) {
+        char critterWeaponCode;
+        char critterAnimationCode;
+        if (_art_get_code(animType, weaponCode, &critterWeaponCode, &critterAnimationCode) == -1) {
             return nullptr;
         }
-        if (v10) {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.fr%c", _cd_path_base, "art\\", gArtListDescriptions[1].name, gArtListDescriptions[1].fileNames + v8, v11, v12, v10 + 47);
+        if (rotation != 0) {
+            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.fr%c", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode, rotation + 47);
         } else {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[1].name, gArtListDescriptions[1].fileNames + v8, v11, v12);
+            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode);
         }
-    } else if (type == 8) {
-        v9 = _head2[v4];
-        if (v9 == 'f') {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c%d.frm", _cd_path_base, "art\\", gArtListDescriptions[8].name, gArtListDescriptions[8].fileNames + v8, _head1[v4], 102, v5);
+    } else if (objectType == OBJ_TYPE_HEAD) {
+        char headSuffix = _head2[animType];
+        if (headSuffix == 'f') {
+            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c%d.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_HEAD].name, gArtListDescriptions[OBJ_TYPE_HEAD].fileNames + fileNameOffset, _head1[animType], 102, weaponCode);
         } else {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[8].name, gArtListDescriptions[8].fileNames + v8, _head1[v4], v9);
+            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_HEAD].name, gArtListDescriptions[OBJ_TYPE_HEAD].fileNames + fileNameOffset, _head1[animType], headSuffix);
         }
     } else {
-        snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[type].name, gArtListDescriptions[type].fileNames + v8);
+        snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objectType].name, gArtListDescriptions[objectType].fileNames + fileNameOffset);
     }
 
     return _art_name;

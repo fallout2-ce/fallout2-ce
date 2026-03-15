@@ -84,7 +84,12 @@ typedef enum SoundFlags {
     SOUND_FLAG_0x200 = 0x200,
 } SoundFlags;
 
-typedef void SoundCallback(void* userData, int a2);
+typedef enum SoundCallbackEvent {
+    SOUND_CALLBACK_EVENT_DONE = 0x0001,
+    SOUND_CALLBACK_EVENT_LOOP = 0x0400,
+} SoundCallbackEvent;
+
+typedef void SoundCallback(void* userData, int event);
 typedef void SoundDeleteCallback(void* userData);
 
 typedef struct Sound {

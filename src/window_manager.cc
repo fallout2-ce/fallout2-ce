@@ -2010,6 +2010,7 @@ int _GNW_check_buttons(Window* window, int* keyCodePtr)
                 _button_draw(button, window, button->normalImage, true, nullptr, true);
             }
         } else if ((window->flags & WINDOW_DRAGGABLE_BY_BACKGROUND) != 0) {
+            // Note: unused
             dragWindowId |= mouseEvent << 8;
             if ((mouseEvent & MOUSE_EVENT_ANY_BUTTON_DOWN) != 0
                 && (mouseEvent & MOUSE_EVENT_ANY_BUTTON_REPEAT) == 0) {

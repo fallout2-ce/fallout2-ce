@@ -308,8 +308,8 @@ bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseE
     for (int index = 0; index < managedWindow->regionsLength; index++) {
         Region* region = managedWindow->regions[index];
         if (region != nullptr) {
-            if (region->field_6C != 0) {
-                region->field_6C = 0;
+            if (region->mouseInside != 0) {
+                region->mouseInside = 0;
                 rc = true;
 
                 if (region->mouseEventCallback != nullptr) {

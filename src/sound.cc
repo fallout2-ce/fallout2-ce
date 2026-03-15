@@ -375,7 +375,7 @@ void _refreshSoundBuffers(Sound* sound)
                         if (sound->loops == -1) {
                             sound->io.seek(sound->io.fd, sound->field_54, SEEK_SET);
                             if (sound->callback != nullptr) {
-                                sound->callback(sound->callbackUserData, 0x0400);
+                                sound->callback(sound->callbackUserData, SOUND_CALLBACK_EVENT_LOOP);
                             }
                         } else {
                             if (sound->loops <= 0) {
@@ -391,7 +391,7 @@ void _refreshSoundBuffers(Sound* sound)
                             sound->io.seek(sound->io.fd, sound->field_54, SEEK_SET);
 
                             if (sound->callback != nullptr) {
-                                sound->callback(sound->callbackUserData, 0x400);
+                                sound->callback(sound->callbackUserData, SOUND_CALLBACK_EVENT_LOOP);
                             }
                         }
 
@@ -866,7 +866,7 @@ int soundContinue(Sound* sound)
         }
     } else if ((sound->statusFlags & SOUND_STATUS_IS_PAUSED) == 0) {
         if (sound->callback != nullptr) {
-            sound->callback(sound->callbackUserData, 1);
+            sound->callback(sound->callbackUserData, SOUND_CALLBACK_EVENT_DONE);
             sound->callback = nullptr;
         }
 
@@ -1288,7 +1288,7 @@ void soundDeleteInternal(Sound* sound)
         }
 
         if (sound->callback != nullptr) {
-            sound->callback(sound->callbackUserData, 1);
+            sound->callback(sound->callbackUserData, SOUND_CALLBACK_EVENT_DONE);
         }
 
         audioEngineSoundBufferRelease(sound->soundBuffer);

@@ -95,7 +95,7 @@ int falloutMain(int argc, char** argv)
         bool done = false;
         while (!done) {
             keyboardReset();
-            _gsound_background_play_level_music("07desert", 11);
+            _gsound_background_play_level_music("07desert", GSOUND_LIMIT_BEFORE);
             mainMenuWindowUnhide(1);
 
             mouseShowCursor();
@@ -445,7 +445,7 @@ static void showDeath()
             speechSetEndCallback(_main_death_voiceover_callback);
 
             unsigned int delay;
-            if (speechLoad(deathFileName, 10, 14, 15) == -1) {
+            if (speechLoad(deathFileName, GSOUND_LOAD_NO_PLAY, GSOUND_STREAM, GSOUND_NO_LOOP) == -1) {
                 delay = 3000;
             } else {
                 delay = UINT_MAX;
