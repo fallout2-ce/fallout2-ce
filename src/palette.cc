@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "game_sound.h"
 #include "input.h"
+#include "sfall_config.h"
 #include "svga.h"
 
 namespace fallout {
@@ -45,10 +46,14 @@ void paletteInit()
     // frame rate throttling.
     unsigned int actualFadeDuration = getTicksSince(tick);
 
-    // Calculate fade steps needed to perform fading in about 700 ms.
-    gPaletteFadeSteps = 60 * 700 / actualFadeDuration;
+    int fadeMultiplier;
+    configGetInt(&gSfallConfig, SFALL_CONFIG_GRAPHICS_KEY, SFALL_CONFIG_FADE_MULTIPLIER, &fadeMultiplier, 100);
+    if (fadeMultiplier < 1) fadeMultiplier = 1;
 
-    debugPrint("\nFade time is %u\nFade steps are %d\n", actualFadeDuration, gPaletteFadeSteps);
+    // Calculate fade steps needed to perform fading in about 700 ms.
+    gPaletteFadeSteps = 60 * 7 * fadeMultiplier / actualFadeDuration;
+
+    debugPrint("\nFade multiplier: %d, Fade time: %u, Fade steps: %d\n", fadeMultiplier, actualFadeDuration, gPaletteFadeSteps);
 }
 
 // NOTE: Collapsed.
