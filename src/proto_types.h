@@ -15,8 +15,6 @@ namespace fallout {
 // - [protoRemoveSomeList]
 #define PROTO_LIST_MAX_ENTRIES 512
 
-#define WEAPON_TWO_HAND 0x00000200
-
 enum {
     GENDER_MALE,
     GENDER_FEMALE,
@@ -226,7 +224,6 @@ typedef enum ItemProtoExtendedFlags {
 
     PROTO_EXT_FLAG_BIG_GUN = 0x0100,
     PROTO_EXT_FLAG_IS_TWO_HANDED = 0x0200,
-    PROTO_EXT_FLAG_0x0001 = 0x0001, // Used with scenery.  Might mean "interact on ground"
     PROTO_EXT_FLAG_CAN_USE = 0x0800,
     PROTO_EXT_FLAG_CAN_USE_ON = 0x1000,
     PROTO_EXT_FLAG_0x2000 = 0x2000,
@@ -238,6 +235,9 @@ typedef enum ItemProtoExtendedFlags {
     // with this flag on do count toward total weight and cannot be dropped.
     // Also used with scenery.
     PROTO_EXT_FLAG_HIDDEN = 0x08000000,
+
+    // Scenery using this flag plays the ground-level magic hands animation.
+    PROTO_EXT_FLAG_MAGIC_HANDS_GROUND = 0x0001,
 
     // These high bits appear to control wall/scenery orientation classes used
     // by translucency/visibility code and the mapper's wall-light labels.

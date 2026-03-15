@@ -4984,7 +4984,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
             bool v17;
             int extendedFlags = proto->critter.extendedFlags;
             if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (extendedFlags & PROTO_EXT_FLAG_0x80000000) != 0) {
-                // TODO: Probably wrong.
+                // TODO: Verify this visibility branch against the original logic.
                 v17 = tileIsInFrontOf(object->tile, gDude->tile);
                 if (!v17
                     || !tileIsToRightOf(object->tile, gDude->tile)
@@ -4994,7 +4994,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
                     v17 = false;
                 }
             } else if ((extendedFlags & PROTO_EXT_FLAG_0x10000000) != 0) {
-                // NOTE: Uses bitwise OR, so both functions are evaluated.
+                // NOTE: Original code used bitwise OR here; logical OR is clearer.
                 v17 = tileIsInFrontOf(object->tile, gDude->tile)
                     || tileIsToRightOf(gDude->tile, object->tile);
             } else if ((extendedFlags & PROTO_EXT_FLAG_0x20000000) != 0) {

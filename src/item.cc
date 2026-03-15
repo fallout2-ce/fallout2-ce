@@ -1319,7 +1319,7 @@ int weaponIsTwoHanded(Object* weapon)
 
     protoGetProto(weapon->pid, &proto);
 
-    return (proto->item.extendedFlags & WEAPON_TWO_HAND) != 0;
+    return (proto->item.extendedFlags & PROTO_EXT_FLAG_IS_TWO_HANDED) != 0;
 }
 
 // 0x4785DC

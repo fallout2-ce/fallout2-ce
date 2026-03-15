@@ -371,11 +371,11 @@ char* protoGetDescription(int pid)
 // 0x49EB2C
 int proto_item_init(Proto* proto, int pid)
 {
-    int frmId = pid & 0xFFFFFF;
+    int protoNum = pid & 0xFFFFFF;
 
     proto->item.pid = -1;
-    proto->item.messageId = 100 * frmId;
-    proto->item.fid = buildFid(OBJ_TYPE_ITEM, frmId - 1, 0, 0, 0);
+    proto->item.messageId = 100 * protoNum;
+    proto->item.fid = buildFid(OBJ_TYPE_ITEM, protoNum - 1, 0, 0, 0);
     if (!artExists(proto->item.fid)) {
         proto->item.fid = buildFid(OBJ_TYPE_ITEM, 0, 0, 0, 0);
     }
