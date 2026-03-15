@@ -10,6 +10,7 @@ namespace fallout {
 #define SFALL_CONFIG_MAIN_KEY "Main"
 #define SFALL_CONFIG_MISC_KEY "Misc"
 #define SFALL_CONFIG_SCRIPTS_KEY "Scripts"
+#define SFALL_CONFIG_GRAPHICS_KEY "Graphics"
 
 #define SFALL_CONFIG_DUDE_NATIVE_LOOK_JUMPSUIT_MALE_KEY "MaleDefaultModel"
 #define SFALL_CONFIG_DUDE_NATIVE_LOOK_JUMPSUIT_FEMALE_KEY "FemaleDefaultModel"
@@ -86,6 +87,7 @@ namespace fallout {
 #define SFALL_CONFIG_WORLDMAP_TRAIL_MARKERS "WorldMapTravelMarkers"
 #define SFALL_CONFIG_SCREENSHOTS_FORMAT "ScreenshotsFormat" // note: this is F2CE feature - APAMk2
 #define SFALL_CONFIG_DISABLE_HORRIGAN "DisableHorrigan"
+#define SFALL_CONFIG_FADE_MULTIPLIER "FadeMultiplier"
 
 #define SFALL_CONFIG_BURST_MOD_DEFAULT_CENTER_MULTIPLIER 1
 #define SFALL_CONFIG_BURST_MOD_DEFAULT_CENTER_DIVISOR 3
