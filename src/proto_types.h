@@ -221,6 +221,9 @@ typedef enum ProtoFlags {
 } ProtoFlags;
 
 typedef enum ItemProtoExtendedFlags {
+    // NOTE: `extendedFlags` packs non-boolean item data into the low
+    // nibbles (`0x0F` and `0xF0`) for attack mode metadata.
+
     PROTO_EXT_FLAG_BIG_GUN = 0x0100,
     PROTO_EXT_FLAG_IS_TWO_HANDED = 0x0200,
     PROTO_EXT_FLAG_0x0001 = 0x0001,
@@ -230,20 +233,18 @@ typedef enum ItemProtoExtendedFlags {
     PROTO_EXT_FLAG_CAN_TALK_TO = 0x4000,
     PROTO_EXT_FLAG_CAN_PICK_UP = 0x8000,
 
-    // NOTE: `extendedFlags` also packs non-boolean item data into the low
-    // nibbles (`0x0F` and `0xF0`) for attack mode metadata.
-    //
+    // This flag is used on weapons to indicate that's an natural (integral)
+    // part of it's owner, for example Claw, or Robot's Rocket Launcher. Items
+    // with this flag on do count toward total weight and cannot be dropped.
+    // Also used with scenery.
+    PROTO_EXT_FLAG_HIDDEN = 0x08000000,
+
     // These high bits appear to control wall/scenery orientation classes used
     // by translucency/visibility code and the mapper's wall-light labels.
-    PROTO_EXT_FLAG_HIDDEN = 0x08000000,
     PROTO_EXT_FLAG_0x10000000 = 0x10000000,
     PROTO_EXT_FLAG_0x20000000 = 0x20000000,
     PROTO_EXT_FLAG_0x40000000 = 0x40000000,
     PROTO_EXT_FLAG_0x80000000 = 0x80000000,
-
-    // This flag is used on weapons to indicate that's an natural (integral)
-    // part of it's owner, for example Claw, or Robot's Rocket Launcher. Items
-    // with this flag on do count toward total weight and cannot be dropped.
 } ItemProtoExtendedFlags;
 
 typedef struct {
