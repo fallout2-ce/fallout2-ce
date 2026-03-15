@@ -3767,7 +3767,35 @@ static void objectDeallocate(Object** objectPtr)
         return;
     }
 
+#if defined(__SANITIZE_ADDRESS__)
+#warning "Address sanitizer detected. Delayed free is enabled."
+    {
+        // Sometimes game scripts are using object
+        // after it has been destroyed.
+        //
+        // Usually it does not bring any issues, but it
+        // causes crashes when address sanitizer is enabled.
+        //
+        // To mitigate this issue, a simple delayed free queue is implemented.
+        //
+        // If the game still access this memory then let's at least ensure
+        // that this memory is not reallocated for something else right away.
+        //
+        // Delay value of 10 objects has been chosen arbitrarily.
+        // Is seems that value of 3 was not sufficient to avoid all use-after-free issues.
+        //
+        constexpr int DELAY = 10;
+        static Object* deleteQueue[DELAY] = { nullptr };
+        static int deleteQueueIndex = 0;
+        if (deleteQueue[deleteQueueIndex] != nullptr) {
+            internal_free(deleteQueue[deleteQueueIndex]);
+        }
+        deleteQueue[deleteQueueIndex] = *objectPtr;
+        deleteQueueIndex = (deleteQueueIndex + 1) % DELAY;
+    }
+#else
     internal_free(*objectPtr);
+#endif
 
     *objectPtr = nullptr;
 }
