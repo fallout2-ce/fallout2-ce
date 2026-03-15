@@ -1122,7 +1122,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
         int objectType = FID_TYPE(targetObj->fid);
         if (objectType == OBJ_TYPE_CRITTER && critterIsProne(targetObj)) {
             anim = ANIM_MAGIC_HANDS_GROUND;
-        } else if (objectType == OBJ_TYPE_SCENERY && (proto->scenery.extendedFlags & 0x01) != 0) {
+        } else if (objectType == OBJ_TYPE_SCENERY && (proto->scenery.extendedFlags & PROTO_EXT_FLAG_0x0001) != 0) {
             anim = ANIM_MAGIC_HANDS_GROUND;
         } else {
             anim = ANIM_MAGIC_HANDS_MIDDLE;
