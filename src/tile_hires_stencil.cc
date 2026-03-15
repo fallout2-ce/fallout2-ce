@@ -589,7 +589,8 @@ Example (x = current gCenterTile; + = scrollblocker tile on map):
 But not every map is rectangular.
 So on every map or elevation change we do a search for all possible accessible
 center tile values starting from the current one, and for each such possible
-center tile we mark all 640x480 area around as visible. The rest gets covered by a black overlay.
+center tile we mark the 640x380 tile viewport area around as visible (within the
+overall 640x480 screen). The rest gets covered by a black overlay.
 
 ┌──────────────────┐
 │                  │
