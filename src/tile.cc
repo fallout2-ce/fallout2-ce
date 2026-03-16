@@ -468,8 +468,8 @@ static void tileSetBorder(int windowWidth, int windowHeight, int hexGridWidth, i
     // with 640x480 in mind, so using windowWidth and windowHeight is
     // meaningless for calculating borders. For now keep borders for original
     // resolution.
-    int v1 = tileFromScreenXY(-320, -240, 0);
-    int v2 = tileFromScreenXY(-320, ORIGINAL_ISO_WINDOW_HEIGHT + 240, 0);
+    int v1 = tileFromScreenXY(-320, -240);
+    int v2 = tileFromScreenXY(-320, ORIGINAL_ISO_WINDOW_HEIGHT + 240);
 
     gTileBorderMinX = abs(hexGridWidth - 1 - v2 % hexGridWidth - _tile_x) + 6;
     gTileBorderMinY = abs(_tile_y - v1 / hexGridWidth) + 7;
@@ -724,9 +724,8 @@ int tileToScreenXY(int tile, int* screenX, int* screenY)
 // validating hex grid bounds. The resulting invalid tile number serves as an
 // origin for calculations using prepared offsets table during objects
 // rendering.
-// Note: does not take "elevation" into account might need to be corrected.
 // 0x4B1754
-int tileFromScreenXY(int screenX, int screenY, int elevation, bool ignoreBounds)
+int tileFromScreenXY(int screenX, int screenY, bool ignoreBounds)
 {
     int x, y;
 
@@ -937,7 +936,7 @@ int _tile_num_beyond(int from, int to, int distance)
     if (v27 > v26) {
         int middle = v26 - v27 / 2;
         while (true) {
-            int tile = tileFromScreenXY(tileX, tileY, 0);
+            int tile = tileFromScreenXY(tileX, tileY);
             if (tile != v28) {
                 v6 += 1;
                 if (v6 == distance || tileIsEdge(tile)) {
@@ -958,7 +957,7 @@ int _tile_num_beyond(int from, int to, int distance)
     } else {
         int middle = v27 - v26 / 2;
         while (true) {
-            int tile = tileFromScreenXY(tileX, tileY, 0);
+            int tile = tileFromScreenXY(tileX, tileY);
             if (tile != v28) {
                 v6 += 1;
                 if (v6 == distance || tileIsEdge(tile)) {
@@ -1478,7 +1477,7 @@ void _grid_render(Rect* rect, int elevation)
 
     for (int y = rect->top - 12; y < rect->bottom + 12; y += 6) {
         for (int x = rect->left - 32; x < rect->right + 32; x += 16) {
-            int tile = tileFromScreenXY(x, y, elevation);
+            int tile = tileFromScreenXY(x, y);
             _draw_grid(tile, elevation, rect);
         }
     }
@@ -1615,7 +1614,7 @@ static void tileRenderFloor(int fid, int x, int y, Rect* rect)
 
     if (v77 <= 0 || v76 <= 0) goto out;
 
-    tile = tileFromScreenXY(savedX, savedY + 13, gElevation);
+    tile = tileFromScreenXY(savedX, savedY + 13);
     if (tile != -1) {
         int parity = tile & 1;
         int ambientIntensity = lightGetAmbientIntensity();
@@ -1824,7 +1823,7 @@ static int _tile_make_line(int from, int to, int* tiles, int tilesCapacity)
     if (v28 <= v27) {
         int middleX = v28 - v27 / 2;
         while (true) {
-            int tile = tileFromScreenXY(tileX, tileY, gElevation);
+            int tile = tileFromScreenXY(tileX, tileY);
             tiles[count] = tile;
 
             if (tile == to) {
@@ -1854,7 +1853,7 @@ static int _tile_make_line(int from, int to, int* tiles, int tilesCapacity)
     } else {
         int middleY = v27 - v28 / 2;
         while (true) {
-            int tile = tileFromScreenXY(tileX, tileY, gElevation);
+            int tile = tileFromScreenXY(tileX, tileY);
             tiles[count] = tile;
 
             if (tile == to) {

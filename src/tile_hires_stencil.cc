@@ -301,22 +301,22 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         tiles_to_visit.push_back({ tileFromScreenXY(
                                        tileScreenX - pixels_per_horizontal_move + tile_center_offset_x,
                                        tileScreenY + tile_center_offset_y,
-                                       gElevation, true),
+                                       true),
             MarkOnlyPart::LEFT });
         tiles_to_visit.push_back({ tileFromScreenXY(
                                        tileScreenX + pixels_per_horizontal_move + tile_center_offset_x,
                                        tileScreenY + tile_center_offset_y,
-                                       gElevation, true),
+                                       true),
             MarkOnlyPart::RIGHT });
         tiles_to_visit.push_back({ tileFromScreenXY(
                                        tileScreenX + tile_center_offset_x,
                                        tileScreenY - pixels_per_vertical_move + tile_center_offset_y,
-                                       gElevation, true),
+                                       true),
             MarkOnlyPart::UP });
         tiles_to_visit.push_back({ tileFromScreenXY(
                                        tileScreenX + tile_center_offset_x,
                                        tileScreenY + pixels_per_vertical_move + tile_center_offset_y,
-                                       gElevation, true),
+                                       true),
             MarkOnlyPart::DOWN });
     }
 

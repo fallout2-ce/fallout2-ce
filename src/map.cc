@@ -630,7 +630,7 @@ int mapScroll(int dx, int dy)
     centerScreenX += screenDx + 16;
     centerScreenY += screenDy + 8;
 
-    int newCenterTile = tileFromScreenXY(centerScreenX, centerScreenY, gElevation);
+    int newCenterTile = tileFromScreenXY(centerScreenX, centerScreenY);
     if (newCenterTile == -1) {
         return -1;
     }

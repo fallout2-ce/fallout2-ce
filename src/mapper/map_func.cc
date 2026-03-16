@@ -44,7 +44,7 @@ void place_entrance_hex()
         if (_mouse_click_in(0, 0, _scr_size.right - _scr_size.left, _scr_size.bottom - _scr_size.top - 100)) {
             mouseGetPosition(&x, &y);
 
-            tile = tileFromScreenXY(x, y, gElevation);
+            tile = tileFromScreenXY(x, y);
             if (tile != -1) {
                 if (tileSetCenter(tile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
                     mapSetEnteringLocation(tile, gElevation, rotation);

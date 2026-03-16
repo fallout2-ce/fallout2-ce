@@ -2021,7 +2021,7 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
     if (ddx <= ddy) {
         int middle = ddx - ddy / 2;
         while (true) {
-            tile = tileFromScreenXY(tileX, tileY, obj->elevation);
+            tile = tileFromScreenXY(tileX, tileY);
 
             v22 += 1;
             if (v22 == a6) {
@@ -2074,7 +2074,7 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
     } else {
         int middle = ddy - ddx / 2;
         while (true) {
-            tile = tileFromScreenXY(tileX, tileY, obj->elevation);
+            tile = tileFromScreenXY(tileX, tileY);
 
             v22 += 1;
             if (v22 == a6) {
@@ -2250,7 +2250,7 @@ int _make_stair_path(Object* object, int from, int fromElevation, int to, int to
     if (ddx > ddy) {
         int middle = ddy - ddx / 2;
         while (true) {
-            tile = tileFromScreenXY(tileX, tileY, elevation);
+            tile = tileFromScreenXY(tileX, tileY);
 
             iteration += 1;
             if (iteration == 16) {
@@ -2297,7 +2297,7 @@ int _make_stair_path(Object* object, int from, int fromElevation, int to, int to
     } else {
         int middle = ddx - ddy / 2;
         while (true) {
-            tile = tileFromScreenXY(tileX, tileY, elevation);
+            tile = tileFromScreenXY(tileX, tileY);
 
             iteration += 1;
             if (iteration == 16) {
@@ -2962,7 +2962,7 @@ int _check_move(int* actionPointsPtr)
     int y;
     mouseGetPosition(&x, &y);
 
-    int tile = tileFromScreenXY(x, y, gElevation);
+    int tile = tileFromScreenXY(x, y);
     if (tile == -1) {
         return -1;
     }
