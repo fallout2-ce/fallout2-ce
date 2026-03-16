@@ -33,6 +33,7 @@
 #include "proto.h"
 #include "random.h"
 #include "scripts.h"
+#include "settings.h"
 #include "sfall_config.h"
 #include "skill.h"
 #include "stat.h"
@@ -2949,6 +2950,8 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowF
     unsigned char* dest = windowBuf;
     Rect rect;
 
+    const int delayMs = std::max(static_cast<int>(33.0 / settings.preferences.ui_anim_speed), 1);
+
     if (scrollUp) {
         rect.left = 0;
         rect.right = GAME_DIALOG_WINDOW_WIDTH - 1;
@@ -2979,7 +2982,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowF
             height += stripHeight;
             dest -= stripHeight * (GAME_DIALOG_WINDOW_WIDTH);
 
-            delay_ms(33);
+            delay_ms(delayMs);
 
             renderPresent();
             sharedFpsLimiter.throttle();
@@ -3017,7 +3020,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowF
 
             rect.top += stripHeight;
 
-            delay_ms(33);
+            delay_ms(delayMs);
 
             renderPresent();
             sharedFpsLimiter.throttle();
