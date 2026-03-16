@@ -245,6 +245,64 @@ static void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Poin
     }
 }
 
+struct TileNeighrbors {
+    int left;
+    int right;
+    int up;
+    int down;
+};
+
+static struct TileNeighrbors get_tile_neighbors(int tileScreenX, int tileScreenY)
+{
+    // tile size is 32 x 18
+    //
+    //  / \      ^
+    // |   |     | 18
+    //  \ /      v
+    //
+    // <-32->
+    //
+    // Scrolling left-right changes x by 32
+    // But scrolling top-bottom changes y by 24
+    //
+    //
+    //        / \
+    //       |   |         <----- tiles on vertical change, 24 px
+    //      / \ / \            |
+    //     |   |   |   <------ | ----- tiles on horizontal change, 32 px
+    //      \ / \ /            |
+    //       |   |         <--/
+    //        \ /
+    //
+
+    constexpr int tile_center_offset_x = 16;
+    constexpr int tile_center_offset_y = 8;
+
+    struct TileNeighrbors r;
+
+    r.left = tileFromScreenXY(
+        tileScreenX - pixels_per_horizontal_move + tile_center_offset_x,
+        tileScreenY + tile_center_offset_y,
+        true);
+
+    r.right = tileFromScreenXY(
+        tileScreenX + pixels_per_horizontal_move + tile_center_offset_x,
+        tileScreenY + tile_center_offset_y,
+        true);
+
+    r.up = tileFromScreenXY(
+        tileScreenX + tile_center_offset_x,
+        tileScreenY - pixels_per_vertical_move + tile_center_offset_y,
+        true);
+
+    r.down = tileFromScreenXY(
+        tileScreenX + tile_center_offset_x,
+        tileScreenY + pixels_per_vertical_move + tile_center_offset_y,
+        true);
+
+    return r;
+}
+
 void tile_hires_stencil_on_center_tile_or_elevation_change()
 {
     if (!gIsTileHiresStencilEnabled) {
@@ -310,49 +368,15 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
 
         update_screen_xy_limits(tileScreenX, tileScreenY, screen_diff, gElevation);
 
-        // tile size is 32 x 18
-        //
-        //  / \      ^
-        // |   |     | 18
-        //  \ /      v
-        //
-        // <-32->
-        //
-        // Scrolling left-right changes x by 32
-        // But scrolling top-bottom changes y by 24
-        //
-        //
-        //        / \
-        //       |   |         <----- tiles on vertical change, 24 px
-        //      / \ / \            |
-        //     |   |   |   <------ | ----- tiles on horizontal change, 32 px
-        //      \ / \ /            |
-        //       |   |         <--/
-        //        \ /
-        //
+        auto neighbors = get_tile_neighbors(tileScreenX, tileScreenY);
 
-        constexpr int tile_center_offset_x = 16;
-        constexpr int tile_center_offset_y = 8;
-
-        tiles_to_visit.push_back({ tileFromScreenXY(
-                                       tileScreenX - pixels_per_horizontal_move + tile_center_offset_x,
-                                       tileScreenY + tile_center_offset_y,
-                                       true),
+        tiles_to_visit.push_back({ neighbors.left,
             MarkOnlyPart::LEFT });
-        tiles_to_visit.push_back({ tileFromScreenXY(
-                                       tileScreenX + pixels_per_horizontal_move + tile_center_offset_x,
-                                       tileScreenY + tile_center_offset_y,
-                                       true),
+        tiles_to_visit.push_back({ neighbors.right,
             MarkOnlyPart::RIGHT });
-        tiles_to_visit.push_back({ tileFromScreenXY(
-                                       tileScreenX + tile_center_offset_x,
-                                       tileScreenY - pixels_per_vertical_move + tile_center_offset_y,
-                                       true),
+        tiles_to_visit.push_back({ neighbors.up,
             MarkOnlyPart::UP });
-        tiles_to_visit.push_back({ tileFromScreenXY(
-                                       tileScreenX + tile_center_offset_x,
-                                       tileScreenY + pixels_per_vertical_move + tile_center_offset_y,
-                                       true),
+        tiles_to_visit.push_back({ neighbors.down,
             MarkOnlyPart::DOWN });
     }
 }
