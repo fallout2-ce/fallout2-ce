@@ -337,14 +337,16 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         auto tileInfo = tiles_to_visit.back();
         tiles_to_visit.pop_back();
 
+        // Ensure tile index is within valid bounds before any array access.
+        if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
+            continue;
+        }
+
         if (visited_tiles[gElevation][tileInfo.tile]) {
             continue;
         }
 
         if (tileInfo.tile != gCenterTile) [[unlikely]] {
-            if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
-                continue;
-            }
             if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
                 continue;
             }
