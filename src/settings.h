@@ -44,6 +44,10 @@ struct PreferencesSettings {
     double brightness = 1.0;
     double mouse_sensitivity = 1.0;
     bool running_burning_guy = true;
+
+    // TODO: add to setting window
+    // Speed of various UI transition animations. 1.0 represents vanilla speeds.
+    double ui_anim_speed = 1.0;
 };
 
 struct SoundSettings {

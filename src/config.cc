@@ -13,7 +13,7 @@
 
 namespace fallout {
 
-#define CONFIG_FILE_MAX_LINE_LENGTH (256)
+#define CONFIG_FILE_MAX_LINE_LENGTH (1024)
 
 // The initial number of sections (or key-value) pairs in the config.
 #define CONFIG_INITIAL_CAPACITY (10)
