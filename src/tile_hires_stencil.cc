@@ -245,14 +245,14 @@ static void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Poin
     }
 }
 
-struct TileNeighrbors {
+struct TileNeighbors {
     int left;
     int right;
     int up;
     int down;
 };
 
-static struct TileNeighrbors get_tile_neighbors(int tileScreenX, int tileScreenY)
+static struct TileNeighbors get_tile_neighbors(int tileScreenX, int tileScreenY)
 {
     // tile size is 32 x 18
     //
@@ -278,7 +278,7 @@ static struct TileNeighrbors get_tile_neighbors(int tileScreenX, int tileScreenY
     constexpr int tile_center_offset_x = 16;
     constexpr int tile_center_offset_y = 8;
 
-    struct TileNeighrbors r;
+    struct TileNeighbors r;
 
     r.left = tileFromScreenXY(
         tileScreenX - pixels_per_horizontal_move + tile_center_offset_x,
