@@ -609,20 +609,20 @@ int tile_hires_stencil_get_tweaked_center_tile(int initialCenterTile, int elevat
         auto neighbors = get_tile_scroll_neighbors(candidateTileScreenX, candidateTileScreenY);
 
         auto canScrollLeft = tile_hires_stencil_allows_scrolling_to_tile(
-                                 neighbors.left, candidateTile, gElevation, windowWidth, windowHeight)
-            && _obj_scroll_blocking_at(neighbors.left, gElevation) != 0;
+                                 neighbors.left, candidateTile, elevation, windowWidth, windowHeight)
+            && _obj_scroll_blocking_at(neighbors.left, elevation) != 0;
 
         auto canScrollRight = tile_hires_stencil_allows_scrolling_to_tile(
-                                  neighbors.right, candidateTile, gElevation, windowWidth, windowHeight)
-            && _obj_scroll_blocking_at(neighbors.right, gElevation) != 0;
+                                  neighbors.right, candidateTile, elevation, windowWidth, windowHeight)
+            && _obj_scroll_blocking_at(neighbors.right, elevation) != 0;
 
         auto canScrollUp = tile_hires_stencil_allows_scrolling_to_tile(
-                               neighbors.up, candidateTile, gElevation, windowWidth, windowHeight)
-            && _obj_scroll_blocking_at(neighbors.up, gElevation) != 0;
+                               neighbors.up, candidateTile, elevation, windowWidth, windowHeight)
+            && _obj_scroll_blocking_at(neighbors.up, elevation) != 0;
 
         auto canScrollDown = tile_hires_stencil_allows_scrolling_to_tile(
-                                 neighbors.down, candidateTile, gElevation, windowWidth, windowHeight)
-            && _obj_scroll_blocking_at(neighbors.down, gElevation) != 0;
+                                 neighbors.down, candidateTile, elevation, windowWidth, windowHeight)
+            && _obj_scroll_blocking_at(neighbors.down, elevation) != 0;
 
         if (leftIsOutOfLimits && canScrollRight) {
             candidateTile = neighbors.right;
