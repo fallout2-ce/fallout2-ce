@@ -982,7 +982,7 @@ static int mapLoad(File* stream)
         Script* script;
         scriptGetScript(gMapSid, &script);
         script->index = gMapHeader.scriptIndex - 1;
-        script->flags |= SCRIPT_FLAG_0x08;
+        script->flags |= SCRIPT_FLAG_NO_SAVE;
         object->id = scriptsNewObjectId();
         script->ownerId = object->id;
         script->owner = object;
