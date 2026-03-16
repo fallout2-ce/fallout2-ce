@@ -30,6 +30,7 @@ struct StencilScreenLimits {
     int maxX;
     int minY;
     int maxY;
+    bool initialized;
 };
 static struct StencilScreenLimits screen_xy_limits[ELEVATION_COUNT];
 
@@ -223,11 +224,12 @@ static void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Poin
     auto candidateMinY = tileScreenY - screen_view_height / 2 - screen_diff.y;
     auto candidateMaxY = tileScreenY + screen_view_height / 2 - screen_diff.y;
 
-    if (limits.maxX == 0 && limits.maxY == 0) {
+    if (!limits.initialized) {
         limits.minX = candidateMinX;
         limits.maxX = candidateMaxX;
         limits.minY = candidateMinY;
         limits.maxY = candidateMaxY;
+        limits.initialized = true;
         return;
     }
 
@@ -478,8 +480,7 @@ bool tile_hires_stencil_allows_scrolling_to_tile(int newCenterTile, int currentC
     };
 
     auto& limits = screen_xy_limits[elevation];
-    if (limits.maxX == 0 && limits.maxY == 0) {
-        // Not initialized yet, so we can scroll to any tile
+    if (!limits.initialized) {
         return true;
     }
 
