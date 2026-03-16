@@ -286,6 +286,7 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/sfall_metarules.h"
     "src/sfall_opcodes.cc"
     "src/sfall_opcodes.h"
+    "src/sfall_script_hooks.cc"
     "src/sfall_arrays.cc"
     "src/sfall_arrays.h"
     "src/sfall_callbacks.cc"
