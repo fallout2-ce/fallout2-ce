@@ -278,7 +278,7 @@ static Rect _backgrndRects[8] = {
 };
 
 // 0x5187C8
-static int _talk_need_to_center = 1;
+static bool _talk_need_to_center = true;
 
 // 0x5187CC
 static bool _can_start_new_fidget = false;
@@ -585,6 +585,7 @@ static FrmImage _littleRedButtonPressedFrmImage;
 
 static int _gdialogReset();
 static void gameDialogEndLips();
+static void gameDialogRestoreCenterTile();
 static int gdHide();
 static int gdUnhide();
 static int gameDialogAddMessageOption(int messageListId, int messageId, int reaction);
@@ -696,6 +697,17 @@ int gameDialogReset()
 int gameDialogExit()
 {
     return _gdialogReset();
+}
+
+static void gameDialogRestoreCenterTile()
+{
+    if (gGameDialogOldDudeTile != gDude->tile) {
+        gGameDialogOldCenterTile = gDude->tile;
+    }
+
+    if (_gdDialogWentOff) {
+        _tile_scroll_to(gGameDialogOldCenterTile, 2);
+    }
 }
 
 // 0x444D2C
@@ -823,14 +835,7 @@ void gameDialogEnter(Object* speaker, int mode)
     _gdialog_state = GAME_DIALOG_INACTIVE;
     _dialogue_state = GAME_DIALOG_MODE_NONE;
 
-    int tile = gDude->tile;
-    if (gGameDialogOldDudeTile != tile) {
-        gGameDialogOldCenterTile = tile;
-    }
-
-    if (_gdDialogWentOff) {
-        _tile_scroll_to(gGameDialogOldCenterTile, 2);
-    }
+    gameDialogRestoreCenterTile();
 
     isoEnable();
     scriptsExecMapUpdateProc();
@@ -849,13 +854,7 @@ void _gdialogSystemEnter()
     gameDialogEnter(gGameDialogSpeaker, 0);
     soundContinueAll();
 
-    if (gGameDialogOldDudeTile != gDude->tile) {
-        gGameDialogOldCenterTile = gDude->tile;
-    }
-
-    if (_gdDialogWentOff) {
-        _tile_scroll_to(gGameDialogOldCenterTile, 2);
-    }
+    gameDialogRestoreCenterTile();
 
     gameRequestState(GAME_STATE_2);
 
@@ -948,7 +947,7 @@ int _gdialogInitFromScript(int headFid, int reaction)
         _tile_scroll_to(gGameDialogSpeaker->tile, 2);
     }
 
-    _talk_need_to_center = 1;
+    _talk_need_to_center = true;
 
     // CE: Fix Barter button.
     gameDialogRedButtonsInit();
@@ -993,10 +992,7 @@ int _gdialogExitFromScript()
     tickersRemove(gameDialogTicker);
 
     if (PID_TYPE(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
-        if (gGameDialogOldDudeTile != gDude->tile) {
-            gGameDialogOldCenterTile = gDude->tile;
-        }
-        _tile_scroll_to(gGameDialogOldCenterTile, 2);
+        gameDialogRestoreCenterTile();
     }
 
     GameMode::exitGameMode(GameMode::kDialog);
@@ -4663,8 +4659,8 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
             debugPrint("\tError getting head data in display...\n");
         }
     } else {
-        if (_talk_need_to_center == 1) {
-            _talk_need_to_center = 0;
+        if (_talk_need_to_center) {
+            _talk_need_to_center = false;
             tileWindowRefresh();
         }
 
