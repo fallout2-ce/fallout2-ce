@@ -247,14 +247,14 @@ static void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Poin
     }
 }
 
-struct TileNeighbors {
+struct TileScrollNeighbors {
     int left;
     int right;
     int up;
     int down;
 };
 
-static struct TileNeighbors get_tile_neighbors(int tileScreenX, int tileScreenY)
+static struct TileScrollNeighbors get_tile_scroll_neighbors(int tileScreenX, int tileScreenY)
 {
     // tile size is 32 x 18
     //
@@ -280,7 +280,7 @@ static struct TileNeighbors get_tile_neighbors(int tileScreenX, int tileScreenY)
     constexpr int tile_center_offset_x = 16;
     constexpr int tile_center_offset_y = 8;
 
-    struct TileNeighbors r;
+    struct TileScrollNeighbors r;
 
     r.left = tileFromScreenXY(
         tileScreenX - pixels_per_horizontal_move + tile_center_offset_x,
@@ -372,7 +372,7 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
 
         update_screen_xy_limits(tileScreenX, tileScreenY, screen_diff, gElevation);
 
-        auto neighbors = get_tile_neighbors(tileScreenX, tileScreenY);
+        auto neighbors = get_tile_scroll_neighbors(tileScreenX, tileScreenY);
 
         tiles_to_visit.push_back({ neighbors.left,
             MarkOnlyPart::LEFT });
