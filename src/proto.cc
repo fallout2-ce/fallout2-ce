@@ -261,7 +261,7 @@ bool _proto_action_can_use(int pid)
         return false;
     }
 
-    if ((proto->item.extendedFlags & 0x0800) != 0) {
+    if ((proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_USE) != 0) {
         return true;
     }
 
@@ -280,7 +280,7 @@ bool _proto_action_can_use_on(int pid)
         return false;
     }
 
-    if ((proto->item.extendedFlags & 0x1000) != 0) {
+    if ((proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_USE_ON) != 0) {
         return true;
     }
 
@@ -303,7 +303,7 @@ bool _proto_action_can_talk_to(int pid)
         return true;
     }
 
-    if (proto->critter.extendedFlags & 0x4000) {
+    if (proto->critter.extendedFlags & PROTO_EXT_FLAG_CAN_TALK_TO) {
         return true;
     }
 
@@ -325,7 +325,7 @@ int _proto_action_can_pickup(int pid)
     }
 
     if (proto->item.type == ITEM_TYPE_CONTAINER) {
-        return (proto->item.extendedFlags & 0x8000) != 0;
+        return (proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_PICK_UP) != 0;
     }
 
     return true;
@@ -334,7 +334,7 @@ int _proto_action_can_pickup(int pid)
 // 0x49EAA4
 char* protoGetMessage(int pid, int message)
 {
-    char* v1 = _proto_none_str;
+    char* messageText = _proto_none_str;
 
     Proto* proto;
     if (protoGetProto(pid, &proto) != -1) {
@@ -344,12 +344,12 @@ char* protoGetMessage(int pid, int message)
             MessageListItem messageListItem;
             messageListItem.num = proto->messageId + message;
             if (messageListGetItem(messageList, &messageListItem)) {
-                v1 = messageListItem.text;
+                messageText = messageListItem.text;
             }
         }
     }
 
-    return v1;
+    return messageText;
 }
 
 // 0x49EAFC
@@ -369,20 +369,20 @@ char* protoGetDescription(int pid)
 }
 
 // 0x49EB2C
-int proto_item_init(Proto* proto, int a2)
+int proto_item_init(Proto* proto, int pid)
 {
-    int v1 = a2 & 0xFFFFFF;
+    int protoNum = pid & 0xFFFFFF;
 
     proto->item.pid = -1;
-    proto->item.messageId = 100 * v1;
-    proto->item.fid = buildFid(OBJ_TYPE_ITEM, v1 - 1, 0, 0, 0);
+    proto->item.messageId = 100 * protoNum;
+    proto->item.fid = buildFid(OBJ_TYPE_ITEM, protoNum - 1, 0, 0, 0);
     if (!artExists(proto->item.fid)) {
         proto->item.fid = buildFid(OBJ_TYPE_ITEM, 0, 0, 0, 0);
     }
     proto->item.lightDistance = 0;
     proto->item.lightIntensity = 0;
-    proto->item.flags = 0xA0000008;
-    proto->item.extendedFlags = 0xA000;
+    proto->item.flags = PROTO_FLAG_FLAT | PROTO_FLAG_LIGHT_THRU | PROTO_FLAG_SHOOT_THRU;
+    proto->item.extendedFlags = PROTO_EXT_FLAG_LOOK | PROTO_EXT_FLAG_CAN_PICK_UP;
     proto->item.sid = -1;
     proto->item.type = ITEM_TYPE_MISC;
     proto_item_subdata_init(proto, proto->item.type);
@@ -417,7 +417,7 @@ int proto_item_subdata_init(Proto* proto, int type)
     case ITEM_TYPE_CONTAINER:
         proto->item.data.container.openFlags = 0;
         proto->item.data.container.maxSize = 250;
-        proto->item.extendedFlags |= 0x800;
+        proto->item.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case ITEM_TYPE_DRUG:
         proto->item.data.drug.stat[0] = STAT_STRENGTH;
@@ -437,7 +437,7 @@ int proto_item_subdata_init(Proto* proto, int type)
         proto->item.data.drug.addictionChance = 0;
         proto->item.data.drug.withdrawalEffect = 0;
         proto->item.data.drug.withdrawalOnset = 0;
-        proto->item.extendedFlags |= 0x1000;
+        proto->item.extendedFlags |= PROTO_EXT_FLAG_CAN_USE_ON;
         break;
     case ITEM_TYPE_WEAPON:
         proto->item.data.weapon.animationCode = 0;
@@ -472,7 +472,7 @@ int proto_item_subdata_init(Proto* proto, int type)
         break;
     case ITEM_TYPE_KEY:
         proto->item.data.key.keyCode = -1;
-        proto->item.extendedFlags |= 0x1000;
+        proto->item.extendedFlags |= PROTO_EXT_FLAG_CAN_USE_ON;
         break;
     }
 
@@ -493,8 +493,8 @@ int proto_critter_init(Proto* proto, int pid)
     proto->fid = buildFid(OBJ_TYPE_CRITTER, num - 1, 0, 0, 0);
     proto->critter.lightDistance = 0;
     proto->critter.lightIntensity = 0;
-    proto->critter.flags = 0x20000000;
-    proto->critter.extendedFlags = 0x6000;
+    proto->critter.flags = PROTO_FLAG_LIGHT_THRU;
+    proto->critter.extendedFlags = PROTO_EXT_FLAG_LOOK | PROTO_EXT_FLAG_CAN_TALK_TO;
     proto->critter.sid = -1;
     proto->critter.data.flags = 0;
     proto->critter.data.bodyType = 0;
@@ -866,12 +866,12 @@ int _proto_dude_update_gender()
     _art_vault_guy_num = frmId;
 
     if (critterGetArmor(gDude) == nullptr) {
-        int v1 = 0;
+        int weaponAnimationCode = 0;
         if (critterGetItem2(gDude) != nullptr || critterGetItem1(gDude) != nullptr) {
-            v1 = (gDude->fid & 0xF000) >> 12;
+            weaponAnimationCode = (gDude->fid & 0xF000) >> 12;
         }
 
-        int fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, v1, 0);
+        int fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, weaponAnimationCode, 0);
         objectSetFid(gDude, fid, nullptr);
     }
 
@@ -949,7 +949,7 @@ int proto_scenery_init(Proto* proto, int pid)
     proto->scenery.lightDistance = 0;
     proto->scenery.lightIntensity = 0;
     proto->scenery.flags = 0;
-    proto->scenery.extendedFlags = 0x2000;
+    proto->scenery.extendedFlags = PROTO_EXT_FLAG_LOOK;
     proto->scenery.sid = -1;
     proto->scenery.type = SCENERY_TYPE_GENERIC;
     proto_scenery_subdata_init(proto, proto->scenery.type);
@@ -965,25 +965,25 @@ int proto_scenery_subdata_init(Proto* proto, int type)
     switch (type) {
     case SCENERY_TYPE_DOOR:
         proto->scenery.data.door.openFlags = 0;
-        proto->scenery.extendedFlags |= 0x800;
+        proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case SCENERY_TYPE_STAIRS:
         proto->scenery.data.stairs.destinationBuiltTile = -1;
         proto->scenery.data.stairs.destinationMap = -1;
-        proto->scenery.extendedFlags |= 0x800;
+        proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case SCENERY_TYPE_ELEVATOR:
         proto->scenery.data.elevator.type = -1;
         proto->scenery.data.elevator.level = -1;
-        proto->scenery.extendedFlags |= 0x800;
+        proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case SCENERY_TYPE_LADDER_UP:
         proto->scenery.data.ladder.destinationMap = -1;
-        proto->scenery.extendedFlags |= 0x800;
+        proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case SCENERY_TYPE_LADDER_DOWN:
         proto->scenery.data.ladder.destinationMap = -1;
-        proto->scenery.extendedFlags |= 0x800;
+        proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     }
 
@@ -1004,7 +1004,7 @@ int proto_wall_init(Proto* proto, int pid)
     proto->wall.lightDistance = 0;
     proto->wall.lightIntensity = 0;
     proto->wall.flags = 0;
-    proto->wall.extendedFlags = 0x2000;
+    proto->wall.extendedFlags = PROTO_EXT_FLAG_LOOK;
     proto->wall.sid = -1;
     proto->wall.material = 1;
 
@@ -1023,7 +1023,7 @@ int proto_tile_init(Proto* proto, int pid)
         proto->tile.fid = buildFid(OBJ_TYPE_TILE, 0, 0, 0, 0);
     }
     proto->tile.flags = 0;
-    proto->tile.extendedFlags = 0x2000;
+    proto->tile.extendedFlags = PROTO_EXT_FLAG_LOOK;
     proto->tile.sid = -1;
     proto->tile.material = 1;
 

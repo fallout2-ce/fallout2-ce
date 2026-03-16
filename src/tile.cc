@@ -547,11 +547,11 @@ int tileSetCenter(int tile, int flags)
         if (gTileScrollLimitingEnabled) {
             int tileScreenX;
             int tileScreenY;
-            tileToScreenXY(tile, &tileScreenX, &tileScreenY, gElevation);
+            tileToScreenXY(tile, &tileScreenX, &tileScreenY);
 
             int dudeScreenX;
             int dudeScreenY;
-            tileToScreenXY(gDude->tile, &dudeScreenX, &dudeScreenY, gElevation);
+            tileToScreenXY(gDude->tile, &dudeScreenX, &dudeScreenY);
 
             int dx = abs(dudeScreenX - tileScreenX);
             int dy = abs(dudeScreenY - tileScreenY);
@@ -687,7 +687,7 @@ int tileRoofIsVisible()
 }
 
 // 0x4B1674
-int tileToScreenXY(int tile, int* screenX, int* screenY, int elevation)
+int tileToScreenXY(int tile, int* screenX, int* screenY)
 {
     int v3;
     int v4;
@@ -818,10 +818,10 @@ int tileDistanceBetween(int tile1, int tile2)
 bool tileIsInFrontOf(int tile1, int tile2)
 {
     int x1, y1;
-    tileToScreenXY(tile1, &x1, &y1, 0);
+    tileToScreenXY(tile1, &x1, &y1);
 
     int x2, y2;
-    tileToScreenXY(tile2, &x2, &y2, 0);
+    tileToScreenXY(tile2, &x2, &y2);
 
     int dx = x2 - x1;
     int dy = y2 - y1;
@@ -833,10 +833,10 @@ bool tileIsInFrontOf(int tile1, int tile2)
 bool tileIsToRightOf(int tile1, int tile2)
 {
     int x1, y1;
-    tileToScreenXY(tile1, &x1, &y1, 0);
+    tileToScreenXY(tile1, &x1, &y1);
 
     int x2, y2;
-    tileToScreenXY(tile2, &x2, &y2, 0);
+    tileToScreenXY(tile2, &x2, &y2);
 
     int dx = x2 - x1;
     int dy = y2 - y1;
@@ -870,10 +870,10 @@ int tileGetTileInDirection(int tile, int rotation, int distance)
 int tileGetRotationTo(int tile1, int tile2)
 {
     int x1, y1;
-    tileToScreenXY(tile1, &x1, &y1, 0);
+    tileToScreenXY(tile1, &x1, &y1);
 
     int x2, y2;
-    tileToScreenXY(tile2, &x2, &y2, 0);
+    tileToScreenXY(tile2, &x2, &y2);
 
     int dy = y2 - y1;
     int dx = x2 - x1;
@@ -904,12 +904,12 @@ int _tile_num_beyond(int from, int to, int distance)
     }
 
     int fromX, fromY;
-    tileToScreenXY(from, &fromX, &fromY, 0);
+    tileToScreenXY(from, &fromX, &fromY);
     fromX += 16;
     fromY += 8;
 
     int toX, toY;
-    tileToScreenXY(to, &toX, &toY, 0);
+    tileToScreenXY(to, &toX, &toY);
     toX += 16;
     toY += 8;
 
@@ -1301,7 +1301,7 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
 
             int eggScreenX;
             int eggScreenY;
-            tileToScreenXY(gEgg->tile, &eggScreenX, &eggScreenY, gEgg->elevation);
+            tileToScreenXY(gEgg->tile, &eggScreenX, &eggScreenY);
 
             eggScreenX += 16;
             eggScreenY += 8;
@@ -1497,7 +1497,7 @@ static void _draw_grid(int tile, int elevation, Rect* rect)
 
     int x;
     int y;
-    tileToScreenXY(tile, &x, &y, elevation);
+    tileToScreenXY(tile, &x, &y);
 
     Rect r;
     r.left = x;
@@ -1789,13 +1789,13 @@ static int _tile_make_line(int from, int to, int* tiles, int tilesCapacity)
 
     int fromX;
     int fromY;
-    tileToScreenXY(from, &fromX, &fromY, gElevation);
+    tileToScreenXY(from, &fromX, &fromY);
     fromX += 16;
     fromY += 8;
 
     int toX;
     int toY;
-    tileToScreenXY(to, &toX, &toY, gElevation);
+    tileToScreenXY(to, &toX, &toY);
     toX += 16;
     toY += 8;
 

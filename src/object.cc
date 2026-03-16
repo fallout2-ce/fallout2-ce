@@ -929,47 +929,47 @@ int objectCreateWithFidPid(Object** objectPtr, int fid, int pid)
 
     objectSetLight(objectListNode->obj, proto->lightDistance, proto->lightIntensity, nullptr);
 
-    if ((proto->flags & 0x08) != 0) {
+    if ((proto->flags & PROTO_FLAG_FLAT) != 0) {
         _obj_toggle_flat(objectListNode->obj, nullptr);
     }
 
-    if ((proto->flags & 0x10) != 0) {
+    if ((proto->flags & PROTO_FLAG_NO_BLOCK) != 0) {
         objectListNode->obj->flags |= OBJECT_NO_BLOCK;
     }
 
-    if ((proto->flags & 0x800) != 0) {
+    if ((proto->flags & PROTO_FLAG_MULTIHEX) != 0) {
         objectListNode->obj->flags |= OBJECT_MULTIHEX;
     }
 
-    if ((proto->flags & 0x8000) != 0) {
+    if ((proto->flags & PROTO_FLAG_TRANS_NONE) != 0) {
         objectListNode->obj->flags |= OBJECT_TRANS_NONE;
     } else {
-        if ((proto->flags & 0x10000) != 0) {
+        if ((proto->flags & PROTO_FLAG_TRANS_WALL) != 0) {
             objectListNode->obj->flags |= OBJECT_TRANS_WALL;
-        } else if ((proto->flags & 0x20000) != 0) {
+        } else if ((proto->flags & PROTO_FLAG_TRANS_GLASS) != 0) {
             objectListNode->obj->flags |= OBJECT_TRANS_GLASS;
-        } else if ((proto->flags & 0x40000) != 0) {
+        } else if ((proto->flags & PROTO_FLAG_TRANS_STEAM) != 0) {
             objectListNode->obj->flags |= OBJECT_TRANS_STEAM;
-        } else if ((proto->flags & 0x80000) != 0) {
+        } else if ((proto->flags & PROTO_FLAG_TRANS_ENERGY) != 0) {
             objectListNode->obj->flags |= OBJECT_TRANS_ENERGY;
-        } else if ((proto->flags & 0x4000) != 0) {
+        } else if ((proto->flags & PROTO_FLAG_TRANS_RED) != 0) {
             objectListNode->obj->flags |= OBJECT_TRANS_RED;
         }
     }
 
-    if ((proto->flags & 0x20000000) != 0) {
+    if ((proto->flags & PROTO_FLAG_LIGHT_THRU) != 0) {
         objectListNode->obj->flags |= OBJECT_LIGHT_THRU;
     }
 
-    if ((proto->flags & 0x80000000) != 0) {
+    if ((proto->flags & PROTO_FLAG_SHOOT_THRU) != 0) {
         objectListNode->obj->flags |= OBJECT_SHOOT_THRU;
     }
 
-    if ((proto->flags & 0x10000000) != 0) {
+    if ((proto->flags & PROTO_FLAG_WALL_TRANS_END) != 0) {
         objectListNode->obj->flags |= OBJECT_WALL_TRANS_END;
     }
 
-    if ((proto->flags & 0x1000) != 0) {
+    if ((proto->flags & PROTO_FLAG_NO_HIGHLIGHT) != 0) {
         objectListNode->obj->flags |= OBJECT_NO_HIGHLIGHT;
     }
 
@@ -2350,7 +2350,7 @@ void objectGetRect(Object* obj, Rect* rect)
     } else {
         int tileScreenY;
         int tileScreenX;
-        if (tileToScreenXY(obj->tile, &tileScreenX, &tileScreenY, obj->elevation) == 0) {
+        if (tileToScreenXY(obj->tile, &tileScreenX, &tileScreenY) == 0) {
             tileScreenX += 16;
             tileScreenY += 8;
 
@@ -2942,7 +2942,7 @@ int _obj_intersects_with(Object* object, int x, int y)
             } else {
                 int tileScreenX;
                 int tileScreenY;
-                tileToScreenXY(object->tile, &tileScreenX, &tileScreenY, object->elevation);
+                tileToScreenXY(object->tile, &tileScreenX, &tileScreenY);
                 tileScreenX += 16;
                 tileScreenY += 8;
 
@@ -2978,13 +2978,13 @@ int _obj_intersects_with(Object* object, int x, int y)
 
                                 bool v20;
                                 int extendedFlags = proto->scenery.extendedFlags;
-                                if ((extendedFlags & 0x8000000) != 0 || (extendedFlags & 0x80000000) != 0) {
+                                if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (extendedFlags & PROTO_EXT_FLAG_WEST_CORNER) != 0) {
                                     v20 = tileIsInFrontOf(object->tile, gDude->tile);
-                                } else if ((extendedFlags & 0x10000000) != 0) {
+                                } else if ((extendedFlags & PROTO_EXT_FLAG_NORTH_CORNER) != 0) {
                                     // NOTE: Original code uses bitwise or, but given the fact that these functions return
                                     // bools, logical or is more suitable.
                                     v20 = tileIsInFrontOf(object->tile, gDude->tile) || tileIsToRightOf(gDude->tile, object->tile);
-                                } else if ((extendedFlags & 0x20000000) != 0) {
+                                } else if ((extendedFlags & PROTO_EXT_FLAG_SOUTH_CORNER) != 0) {
                                     v20 = tileIsInFrontOf(object->tile, gDude->tile) && tileIsToRightOf(gDude->tile, object->tile);
                                 } else {
                                     v20 = tileIsToRightOf(gDude->tile, object->tile);
@@ -3280,7 +3280,7 @@ static int _obj_offset_table_init()
             int* offsets = _offsetTable[gCenterTile & 1];
             int originTileX;
             int originTileY;
-            tileToScreenXY(originTile, &originTileX, &originTileY, 0);
+            tileToScreenXY(originTile, &originTileX, &originTileY);
 
             int parityShift = 16;
             originTileX += 16;
@@ -4583,18 +4583,18 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
                                         if ((objectListNode->obj->flags & OBJECT_FLAT) == 0) {
                                             Proto* proto;
                                             protoGetProto(objectListNode->obj->pid, &proto);
-                                            if ((proto->wall.extendedFlags & 0x8000000) != 0 || (proto->wall.extendedFlags & 0x40000000) != 0) {
+                                            if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (proto->wall.extendedFlags & PROTO_EXT_FLAG_EAST_CORNER) != 0) {
                                                 if (rotation != ROTATION_W
                                                     && rotation != ROTATION_NW
                                                     && (rotation != ROTATION_NE || index >= 8)
                                                     && (rotation != ROTATION_SW || index <= 15)) {
                                                     v12 = false;
                                                 }
-                                            } else if ((proto->wall.extendedFlags & 0x10000000) != 0) {
+                                            } else if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_NORTH_CORNER) != 0) {
                                                 if (rotation != ROTATION_NE && rotation != ROTATION_NW) {
                                                     v12 = false;
                                                 }
-                                            } else if ((proto->wall.extendedFlags & 0x20000000) != 0) {
+                                            } else if ((proto->wall.extendedFlags & PROTO_EXT_FLAG_SOUTH_CORNER) != 0) {
                                                 if (rotation != ROTATION_NE
                                                     && rotation != ROTATION_E
                                                     && rotation != ROTATION_W
@@ -4641,7 +4641,7 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
 
         int x;
         int y;
-        tileToScreenXY(obj->tile, &x, &y, obj->elevation);
+        tileToScreenXY(obj->tile, &x, &y);
         x += 16;
         y += 8;
 
@@ -4687,7 +4687,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
     } else {
         int x;
         int y;
-        tileToScreenXY(object->tile, &x, &y, object->elevation);
+        tileToScreenXY(object->tile, &x, &y);
         x += 16;
         y += 8;
 
@@ -4933,7 +4933,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
     } else {
         int objectScreenX;
         int objectScreenY;
-        tileToScreenXY(object->tile, &objectScreenX, &objectScreenY, object->elevation);
+        tileToScreenXY(object->tile, &objectScreenX, &objectScreenY);
         objectScreenX += 16;
         objectScreenY += 8;
 
@@ -4983,8 +4983,8 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 
             bool v17;
             int extendedFlags = proto->critter.extendedFlags;
-            if ((extendedFlags & 0x8000000) != 0 || (extendedFlags & 0x80000000) != 0) {
-                // TODO: Probably wrong.
+            if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 || (extendedFlags & PROTO_EXT_FLAG_WEST_CORNER) != 0) {
+                // TODO: Verify this visibility branch against the original logic.
                 v17 = tileIsInFrontOf(object->tile, gDude->tile);
                 if (!v17
                     || !tileIsToRightOf(object->tile, gDude->tile)
@@ -4993,11 +4993,11 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
                 } else {
                     v17 = false;
                 }
-            } else if ((extendedFlags & 0x10000000) != 0) {
-                // NOTE: Uses bitwise OR, so both functions are evaluated.
+            } else if ((extendedFlags & PROTO_EXT_FLAG_NORTH_CORNER) != 0) {
+                // NOTE: Original code used bitwise OR here; logical OR is clearer.
                 v17 = tileIsInFrontOf(object->tile, gDude->tile)
                     || tileIsToRightOf(gDude->tile, object->tile);
-            } else if ((extendedFlags & 0x20000000) != 0) {
+            } else if ((extendedFlags & PROTO_EXT_FLAG_SOUTH_CORNER) != 0) {
                 v17 = tileIsInFrontOf(object->tile, gDude->tile)
                     && tileIsToRightOf(gDude->tile, object->tile);
             } else {
@@ -5022,7 +5022,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 
                 int eggScreenX;
                 int eggScreenY;
-                tileToScreenXY(gEgg->tile, &eggScreenX, &eggScreenY, gEgg->elevation);
+                tileToScreenXY(gEgg->tile, &eggScreenX, &eggScreenY);
                 eggScreenX += 16;
                 eggScreenY += 8;
 

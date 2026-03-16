@@ -199,7 +199,7 @@ int proto_choose_container_flags(Proto* proto)
 
             windowRefresh(win);
         } else if (input == '2') {
-            proto->item.extendedFlags ^= 0x8000;
+            proto->item.extendedFlags ^= PROTO_EXT_FLAG_CAN_PICK_UP;
 
             if (_proto_action_can_pickup(proto->pid)) {
                 windowDrawText(win,
@@ -388,23 +388,23 @@ int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, 
 // 0x495438
 const char* proto_wall_light_str(int flags)
 {
-    if ((flags & 0x8000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_HIDDEN) != 0) {
         return wall_light_strs[1];
     }
 
-    if ((flags & 0x10000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_NORTH_CORNER) != 0) {
         return wall_light_strs[2];
     }
 
-    if ((flags & 0x20000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_SOUTH_CORNER) != 0) {
         return wall_light_strs[3];
     }
 
-    if ((flags & 0x40000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_EAST_CORNER) != 0) {
         return wall_light_strs[4];
     }
 
-    if ((flags & 0x80000000) != 0) {
+    if ((flags & PROTO_EXT_FLAG_WEST_CORNER) != 0) {
         return wall_light_strs[5];
     }
 
