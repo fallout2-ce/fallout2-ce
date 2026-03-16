@@ -626,7 +626,7 @@ int mapScroll(int dx, int dy)
 
     int centerScreenX;
     int centerScreenY;
-    tileToScreenXY(gCenterTile, &centerScreenX, &centerScreenY, gElevation);
+    tileToScreenXY(gCenterTile, &centerScreenX, &centerScreenY);
     centerScreenX += screenDx + 16;
     centerScreenY += screenDy + 8;
 

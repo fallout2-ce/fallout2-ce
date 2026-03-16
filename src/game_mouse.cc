@@ -2245,7 +2245,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
 
                 bool v1 = false;
                 Rect rect1;
-                if (tileToScreenXY(tile, &screenX, &screenY, 0) == 0) {
+                if (tileToScreenXY(tile, &screenX, &screenY) == 0) {
                     if (_obj_move(gGameMouseBouncingCursor, screenX + 16, screenY + 15, 0, &rect1) == 0) {
                         v1 = true;
                     }

@@ -1755,7 +1755,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
 
     int toScreenX;
     int toScreenY;
-    tileToScreenXY(to, &toScreenX, &toScreenY, object->elevation);
+    tileToScreenXY(to, &toScreenX, &toScreenY);
 
     int closedPathNodeListLength = 0;
     int openPathNodeListLength = 1;
@@ -1840,7 +1840,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
 
             int newX;
             int newY;
-            tileToScreenXY(tile, &newX, &newY, object->elevation);
+            tileToScreenXY(tile, &newX, &newY);
 
             v27->estimate = _idist(newX, newY, toScreenX, toScreenY);
             v27->cost = temp.cost + 50;
@@ -1940,11 +1940,11 @@ static int _tile_idistance(int tile1, int tile2)
 {
     int x1;
     int y1;
-    tileToScreenXY(tile1, &x1, &y1, gElevation);
+    tileToScreenXY(tile1, &x1, &y1);
 
     int x2;
     int y2;
-    tileToScreenXY(tile2, &x2, &y2, gElevation);
+    tileToScreenXY(tile2, &x2, &y2);
 
     return _idist(x1, y1, x2, y2);
 }
@@ -1977,13 +1977,13 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
 
     int fromX;
     int fromY;
-    tileToScreenXY(from, &fromX, &fromY, obj->elevation);
+    tileToScreenXY(from, &fromX, &fromY);
     fromX += 16;
     fromY += 8;
 
     int toX;
     int toY;
-    tileToScreenXY(to, &toX, &toY, obj->elevation);
+    tileToScreenXY(to, &toX, &toY);
     toX += 16;
     toY += 8;
 
@@ -2034,7 +2034,7 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
                     pathNode->tile = tile;
                     pathNode->elevation = obj->elevation;
 
-                    tileToScreenXY(tile, &fromX, &fromY, obj->elevation);
+                    tileToScreenXY(tile, &fromX, &fromY);
                     pathNode->x = tileX - fromX - 16;
                     pathNode->y = tileY - fromY - 8;
                 }
@@ -2087,7 +2087,7 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
                     pathNode->tile = tile;
                     pathNode->elevation = obj->elevation;
 
-                    tileToScreenXY(tile, &fromX, &fromY, obj->elevation);
+                    tileToScreenXY(tile, &fromX, &fromY);
                     pathNode->x = tileX - fromX - 16;
                     pathNode->y = tileY - fromY - 8;
                 }
@@ -2136,7 +2136,7 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
             pathNode->tile = tile;
             pathNode->elevation = obj->elevation;
 
-            tileToScreenXY(tile, &fromX, &fromY, obj->elevation);
+            tileToScreenXY(tile, &fromX, &fromY);
             pathNode->x = tileX - fromX - 16;
             pathNode->y = tileY - fromY - 8;
         }
@@ -2201,13 +2201,13 @@ int _make_stair_path(Object* object, int from, int fromElevation, int to, int to
 
     int fromX;
     int fromY;
-    tileToScreenXY(from, &fromX, &fromY, fromElevation);
+    tileToScreenXY(from, &fromX, &fromY);
     fromX += 16;
     fromY += 8;
 
     int toX;
     int toY;
-    tileToScreenXY(to, &toX, &toY, toElevation);
+    tileToScreenXY(to, &toX, &toY);
     toX += 16;
     toY += 8;
 
@@ -2263,7 +2263,7 @@ int _make_stair_path(Object* object, int from, int fromElevation, int to, int to
                     pathNode->tile = tile;
                     pathNode->elevation = elevation;
 
-                    tileToScreenXY(tile, &fromX, &fromY, elevation);
+                    tileToScreenXY(tile, &fromX, &fromY);
                     pathNode->x = tileX - fromX - 16;
                     pathNode->y = tileY - fromY - 8;
                 }
@@ -2310,7 +2310,7 @@ int _make_stair_path(Object* object, int from, int fromElevation, int to, int to
                     pathNode->tile = tile;
                     pathNode->elevation = elevation;
 
-                    tileToScreenXY(tile, &fromX, &fromY, elevation);
+                    tileToScreenXY(tile, &fromX, &fromY);
                     pathNode->x = tileX - fromX - 16;
                     pathNode->y = tileY - fromY - 8;
                 }
@@ -2353,7 +2353,7 @@ int _make_stair_path(Object* object, int from, int fromElevation, int to, int to
             pathNode->tile = tile;
             pathNode->elevation = elevation;
 
-            tileToScreenXY(tile, &fromX, &fromY, elevation);
+            tileToScreenXY(tile, &fromX, &fromY);
             pathNode->x = tileX - fromX - 16;
             pathNode->y = tileY - fromY - 8;
         }
@@ -3293,7 +3293,7 @@ static int _check_gravity(int tile, int elevation)
     for (; elevation > 0; elevation--) {
         int x;
         int y;
-        tileToScreenXY(tile, &x, &y, elevation);
+        tileToScreenXY(tile, &x, &y);
 
         int squareTile = squareTileFromScreenXY(x + 2, y + 8, elevation);
         int fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[squareTile] & 0xFFF, 0, 0, 0);

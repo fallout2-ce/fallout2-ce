@@ -2350,7 +2350,7 @@ void objectGetRect(Object* obj, Rect* rect)
     } else {
         int tileScreenY;
         int tileScreenX;
-        if (tileToScreenXY(obj->tile, &tileScreenX, &tileScreenY, obj->elevation) == 0) {
+        if (tileToScreenXY(obj->tile, &tileScreenX, &tileScreenY) == 0) {
             tileScreenX += 16;
             tileScreenY += 8;
 
@@ -2942,7 +2942,7 @@ int _obj_intersects_with(Object* object, int x, int y)
             } else {
                 int tileScreenX;
                 int tileScreenY;
-                tileToScreenXY(object->tile, &tileScreenX, &tileScreenY, object->elevation);
+                tileToScreenXY(object->tile, &tileScreenX, &tileScreenY);
                 tileScreenX += 16;
                 tileScreenY += 8;
 
@@ -3280,7 +3280,7 @@ static int _obj_offset_table_init()
             int* offsets = _offsetTable[gCenterTile & 1];
             int originTileX;
             int originTileY;
-            tileToScreenXY(originTile, &originTileX, &originTileY, 0);
+            tileToScreenXY(originTile, &originTileX, &originTileY);
 
             int parityShift = 16;
             originTileX += 16;
@@ -4641,7 +4641,7 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
 
         int x;
         int y;
-        tileToScreenXY(obj->tile, &x, &y, obj->elevation);
+        tileToScreenXY(obj->tile, &x, &y);
         x += 16;
         y += 8;
 
@@ -4687,7 +4687,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
     } else {
         int x;
         int y;
-        tileToScreenXY(object->tile, &x, &y, object->elevation);
+        tileToScreenXY(object->tile, &x, &y);
         x += 16;
         y += 8;
 
@@ -4933,7 +4933,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
     } else {
         int objectScreenX;
         int objectScreenY;
-        tileToScreenXY(object->tile, &objectScreenX, &objectScreenY, object->elevation);
+        tileToScreenXY(object->tile, &objectScreenX, &objectScreenY);
         objectScreenX += 16;
         objectScreenY += 8;
 
@@ -5022,7 +5022,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 
                 int eggScreenX;
                 int eggScreenY;
-                tileToScreenXY(gEgg->tile, &eggScreenX, &eggScreenY, gEgg->elevation);
+                tileToScreenXY(gEgg->tile, &eggScreenX, &eggScreenY);
                 eggScreenX += 16;
                 eggScreenY += 8;
 
