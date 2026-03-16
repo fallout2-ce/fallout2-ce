@@ -13,6 +13,7 @@ void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth,
 
 bool tile_hires_stencil_allows_scrolling_to_tile(int newCenterTile, int currentCenterTile, int elevation, int windowWidth, int windowHeight);
 
+int tile_hires_stencil_get_tweaked_center_tile(int currentCenterTile, int elevation, int windowWidth, int windowHeight);
 } // namespace fallout
 
 #endif

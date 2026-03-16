@@ -571,6 +571,73 @@ bool tile_hires_stencil_allows_scrolling_to_tile(int newCenterTile, int currentC
     return true;
 }
 
+int tile_hires_stencil_get_tweaked_center_tile(int currentCenterTile, int elevation, int windowWidth, int windowHeight)
+{
+    if (!gIsTileHiresStencilEnabled || !gTileBorderInitialized) {
+        return currentCenterTile;
+    }
+
+    auto& limits = screen_xy_limits[elevation];
+    if (limits.maxX == 0 && limits.maxY == 0) {
+        return currentCenterTile;
+    }
+
+    auto candidateTile = currentCenterTile;
+
+    int loopBreaker = 1000; // Just in case, to avoid infinite loop
+
+    for (; loopBreaker > 0; loopBreaker--) {
+        int candidateTileScreenX;
+        int candidateTileScreenY;
+        tileToScreenXY(candidateTile, &candidateTileScreenX, &candidateTileScreenY);
+
+        auto screen_diff = get_screen_diff();
+        auto candidateScreenMinX = candidateTileScreenX - windowWidth / 2 - screen_diff.x;
+        auto candidateScreenMaxX = candidateTileScreenX + windowWidth / 2 - screen_diff.x;
+        auto candidateScreenMinY = candidateTileScreenY - windowHeight / 2 - screen_diff.y;
+        auto candidateScreenMaxY = candidateTileScreenY + windowHeight / 2 - screen_diff.y;
+
+        auto leftIsOutOfLimits = candidateScreenMinX < limits.minX;
+        auto rightIsOutOfLimits = candidateScreenMaxX > limits.maxX;
+        auto upIsOutOfLimits = candidateScreenMinY < limits.minY;
+        auto downIsOutOfLimits = candidateScreenMaxY > limits.maxY;
+
+        auto neighbors = get_tile_neighbors(candidateTileScreenX, candidateTileScreenY);
+
+        auto canScrollLeft = tile_hires_stencil_allows_scrolling_to_tile(
+                                 neighbors.left, currentCenterTile, gElevation, windowWidth, windowHeight)
+            && _obj_scroll_blocking_at(neighbors.left, gElevation) != 0;
+
+        auto canScrollRight = tile_hires_stencil_allows_scrolling_to_tile(
+                                  neighbors.right, currentCenterTile, gElevation, windowWidth, windowHeight)
+            && _obj_scroll_blocking_at(neighbors.right, gElevation) != 0;
+
+        auto canScrollUp = tile_hires_stencil_allows_scrolling_to_tile(
+                               neighbors.up, currentCenterTile, gElevation, windowWidth, windowHeight)
+            && _obj_scroll_blocking_at(neighbors.up, gElevation) != 0;
+
+        auto canScrollDown = tile_hires_stencil_allows_scrolling_to_tile(
+                                 neighbors.down, currentCenterTile, gElevation, windowWidth, windowHeight)
+            && _obj_scroll_blocking_at(neighbors.down, gElevation) != 0;
+
+        if (leftIsOutOfLimits && canScrollRight) {
+            candidateTile = neighbors.right;
+        } else if (rightIsOutOfLimits && canScrollLeft) {
+            candidateTile = neighbors.left;
+        } else if (upIsOutOfLimits && canScrollDown) {
+            candidateTile = neighbors.down;
+        } else if (downIsOutOfLimits && canScrollUp) {
+            candidateTile = neighbors.up;
+        } else {
+            return candidateTile;
+        }
+    };
+
+    debugPrint("Warning! tile_hires_stencil_get_tweaked_center_tile: loop breaker reached, something went wrong\n");
+
+    return -1;
+}
+
 /**
 
 Scrolling in Fallout 2 is controlled by special scrollblocker tiles.

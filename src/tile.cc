@@ -613,6 +613,13 @@ int tileSetCenter(int tile, int flags)
         tileWindowRefresh();
     }
 
+    if (flags & TILE_SET_CENTER_FLAG_ALLOW_HIRES_TWEAK) {
+        auto tweaked_center_tile = tile_hires_stencil_get_tweaked_center_tile(gCenterTile, gElevation, gTileWindowWidth, gTileWindowHeight);
+        if (tileIsValid(tweaked_center_tile) && tweaked_center_tile != gCenterTile) {
+            tileSetCenter(tweaked_center_tile, flags & ~TILE_SET_CENTER_FLAG_ALLOW_HIRES_TWEAK);
+        }
+    }
+
     return 0;
 }
 
