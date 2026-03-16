@@ -36,7 +36,7 @@ int tileSetCenter(int tile, int flags);
 void tile_toggle_roof(bool refresh);
 int tileRoofIsVisible();
 int tileToScreenXY(int tile, int* x, int* y);
-int tileFromScreenXY(int x, int y, int elevation, bool ignoreBounds = false);
+int tileFromScreenXY(int x, int y, bool ignoreBounds = false);
 int tileDistanceBetween(int tile1, int tile2);
 bool tileIsInFrontOf(int tile1, int tile2);
 bool tileIsToRightOf(int tile1, int tile2);
