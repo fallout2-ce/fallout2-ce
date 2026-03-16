@@ -574,18 +574,18 @@ bool tile_hires_stencil_allows_scrolling_to_tile(int newCenterTile, int currentC
 /**
  * In case of hi-res we automatically scroll a little bit until we get overlay hidden
  */
-int tile_hires_stencil_get_tweaked_center_tile(int currentCenterTile, int elevation, int windowWidth, int windowHeight)
+int tile_hires_stencil_get_tweaked_center_tile(int initialCenterTile, int elevation, int windowWidth, int windowHeight)
 {
     if (!gIsTileHiresStencilEnabled || !gTileBorderInitialized) {
-        return currentCenterTile;
+        return initialCenterTile;
     }
 
     auto& limits = screen_xy_limits[elevation];
     if (limits.maxX == 0 && limits.maxY == 0) {
-        return currentCenterTile;
+        return initialCenterTile;
     }
 
-    auto candidateTile = currentCenterTile;
+    auto candidateTile = initialCenterTile;
 
     int loopBreaker = 1000; // Just in case, to avoid infinite loop
 
@@ -608,19 +608,19 @@ int tile_hires_stencil_get_tweaked_center_tile(int currentCenterTile, int elevat
         auto neighbors = get_tile_neighbors(candidateTileScreenX, candidateTileScreenY);
 
         auto canScrollLeft = tile_hires_stencil_allows_scrolling_to_tile(
-                                 neighbors.left, currentCenterTile, gElevation, windowWidth, windowHeight)
+                                 neighbors.left, candidateTile, gElevation, windowWidth, windowHeight)
             && _obj_scroll_blocking_at(neighbors.left, gElevation) != 0;
 
         auto canScrollRight = tile_hires_stencil_allows_scrolling_to_tile(
-                                  neighbors.right, currentCenterTile, gElevation, windowWidth, windowHeight)
+                                  neighbors.right, candidateTile, gElevation, windowWidth, windowHeight)
             && _obj_scroll_blocking_at(neighbors.right, gElevation) != 0;
 
         auto canScrollUp = tile_hires_stencil_allows_scrolling_to_tile(
-                               neighbors.up, currentCenterTile, gElevation, windowWidth, windowHeight)
+                               neighbors.up, candidateTile, gElevation, windowWidth, windowHeight)
             && _obj_scroll_blocking_at(neighbors.up, gElevation) != 0;
 
         auto canScrollDown = tile_hires_stencil_allows_scrolling_to_tile(
-                                 neighbors.down, currentCenterTile, gElevation, windowWidth, windowHeight)
+                                 neighbors.down, candidateTile, gElevation, windowWidth, windowHeight)
             && _obj_scroll_blocking_at(neighbors.down, gElevation) != 0;
 
         if (leftIsOutOfLimits && canScrollRight) {
