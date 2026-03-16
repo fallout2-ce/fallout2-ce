@@ -256,14 +256,8 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
     };
 
     if (visited_tiles[gElevation][gCenterTile]) {
-        debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change tile was visited gElevation=%i gCenterTile=%i so doing nothing\n",
-            gElevation, gCenterTile);
-
         return;
     };
-
-    debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change non-visited tile gElevation=%i gCenterTile=%i\n",
-        gElevation, gCenterTile);
 
     clean_cache_for_elevation(gElevation);
 
@@ -361,8 +355,6 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
                                        gElevation, true),
             MarkOnlyPart::DOWN });
     }
-
-    debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change visited_tiles_count=%i\n", visited_tiles_count);
 }
 
 void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth, int windowHeight)
