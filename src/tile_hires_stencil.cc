@@ -571,6 +571,9 @@ bool tile_hires_stencil_allows_scrolling_to_tile(int newCenterTile, int currentC
     return true;
 }
 
+/**
+ * In case of hi-res we automatically scroll a little bit until we get overlay hidden
+ */
 int tile_hires_stencil_get_tweaked_center_tile(int currentCenterTile, int elevation, int windowWidth, int windowHeight)
 {
     if (!gIsTileHiresStencilEnabled || !gTileBorderInitialized) {
