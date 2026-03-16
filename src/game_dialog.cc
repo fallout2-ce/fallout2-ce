@@ -644,7 +644,7 @@ static void partyMemberCustomizationWindowFree();
 static void partyMemberCustomizationWindowHandleEvents();
 static void partyMemberCustomizationWindowUpdate();
 static void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selectedIndex);
-static int _gdCustomSelect(int messageId);
+static int _gdCustomSelect(int option);
 static void _gdCustomUpdateSetting(int option, int value);
 static void gameDialogBarterButtonUpMouseUp(int btn, int keyCode);
 static int _gdialog_window_create();
@@ -4132,7 +4132,7 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
 }
 
 // 0x449FC0
-int _gdCustomSelect(int messageId)
+int _gdCustomSelect(int option)
 {
     int oldFont = fontGetCurrent();
 
@@ -4185,7 +4185,7 @@ int _gdCustomSelect(int messageId)
     MessageListItem messageListItem;
     const char* msg;
 
-    msg = getmsg(&gCustomMessageList, &messageListItem, messageId);
+    msg = getmsg(&gCustomMessageList, &messageListItem, option);
     fontDrawText(windowBuffer + backgroundFrmWidth * 15 + 40, msg, backgroundFrmWidth, backgroundFrmWidth, _colorTable[18979]);
 
     msg = getmsg(&gCustomMessageList, &messageListItem, 10);
@@ -4194,8 +4194,8 @@ int _gdCustomSelect(int messageId)
     msg = getmsg(&gCustomMessageList, &messageListItem, 11);
     fontDrawText(windowBuffer + backgroundFrmWidth * 162 + 193, msg, backgroundFrmWidth, backgroundFrmWidth, _colorTable[18979]);
 
-    int value = _custom_current_selected[messageId];
-    _gdCustomSelectRedraw(windowBuffer, backgroundFrmWidth, messageId, value);
+    int value = _custom_current_selected[option];
+    _gdCustomSelectRedraw(windowBuffer, backgroundFrmWidth, option, value);
     windowRefresh(win);
 
     int minX = selectWindowX + 42;
@@ -4219,9 +4219,9 @@ int _gdCustomSelect(int messageId)
             }
 
             if (keyCode == KEY_RETURN || keyCode == 500) {
-                PartyMemberOptionSetting* ptr = &(_custom_settings[messageId][value]);
-                _custom_current_selected[messageId] = value;
-                _gdCustomUpdateSetting(messageId, ptr->value);
+                PartyMemberOptionSetting* ptr = &(_custom_settings[option][value]);
+                _custom_current_selected[option] = value;
+                _gdCustomUpdateSetting(option, ptr->value);
                 if (keyCode != 500) {
                     soundPlayFile("ib1p1xx1");
                 }
@@ -4243,15 +4243,15 @@ int _gdCustomSelect(int messageId)
                             unsigned int timestamp = getTicks();
                             if (newValue == value) {
                                 if (getTicksBetween(timestamp, lastSelectionTimestamp) < 250) {
-                                    _custom_current_selected[messageId] = newValue;
-                                    _gdCustomUpdateSetting(messageId, newValue);
+                                    _custom_current_selected[option] = newValue;
+                                    _gdCustomUpdateSetting(option, newValue);
                                     done = true;
                                 }
                             } else {
-                                PartyMemberOptionSetting* ptr = &(_custom_settings[messageId][newValue]);
+                                PartyMemberOptionSetting* ptr = &(_custom_settings[option][newValue]);
                                 if (ptr->messageId != -1) {
                                     bool enabled = false;
-                                    switch (messageId) {
+                                    switch (option) {
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
                                         enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, ptr->value);
                                         break;
@@ -4274,7 +4274,7 @@ int _gdCustomSelect(int messageId)
 
                                     if (enabled) {
                                         value = newValue;
-                                        _gdCustomSelectRedraw(windowBuffer, backgroundFrmWidth, messageId, newValue);
+                                        _gdCustomSelectRedraw(windowBuffer, backgroundFrmWidth, option, newValue);
                                         windowRefresh(win);
                                     }
                                 }
