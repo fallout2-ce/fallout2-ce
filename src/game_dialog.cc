@@ -1,10 +1,9 @@
 #include "game_dialog.h"
 
+#include <algorithm>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <algorithm>
 
 #include "actions.h"
 #include "animation.h"

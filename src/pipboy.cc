@@ -1,5 +1,6 @@
 #include "pipboy.h"
 
+#include <algorithm>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
