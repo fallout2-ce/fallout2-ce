@@ -323,7 +323,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     _obj_light_table_init();
     _obj_blend_table_init();
 
-    _centerToUpperLeft = tileFromScreenXY(gObjectsUpdateAreaPixelBounds.left, gObjectsUpdateAreaPixelBounds.top, 0) - gCenterTile;
+    _centerToUpperLeft = tileFromScreenXY(gObjectsUpdateAreaPixelBounds.left, gObjectsUpdateAreaPixelBounds.top) - gCenterTile;
     gObjectsWindowWidth = width;
     gObjectsWindowHeight = height;
     gObjectsWindowBuffer = buf;
@@ -775,7 +775,7 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
     int minY = updatedRect.top - 240;
     int maxX = updatedRect.right + 320;
     int maxY = updatedRect.bottom + 240;
-    int upperLeftTile = tileFromScreenXY(minX, minY, elevation, true);
+    int upperLeftTile = tileFromScreenXY(minX, minY, true);
     int updateAreaHexWidth = (maxX - minX + 1) / 32;
     int updateAreaHexHeight = (maxY - minY + 1) / 12;
     int parity = gCenterTile & 1;
@@ -3011,7 +3011,7 @@ int _obj_intersects_with(Object* object, int x, int y)
 // 0x48C5C4
 int _obj_create_intersect_list(int x, int y, int elevation, int objectType, ObjectWithFlags** entriesPtr)
 {
-    int upperLeftTile = tileFromScreenXY(x - 320, y - 240, elevation, true);
+    int upperLeftTile = tileFromScreenXY(x - 320, y - 240, true);
     *entriesPtr = nullptr;
 
     if (gObjectsUpdateAreaHexSize <= 0) {
@@ -3275,7 +3275,7 @@ static int _obj_offset_table_init()
     }
 
     for (int parity = 0; parity < 2; parity++) {
-        int originTile = tileFromScreenXY(gObjectsUpdateAreaPixelBounds.left, gObjectsUpdateAreaPixelBounds.top, 0);
+        int originTile = tileFromScreenXY(gObjectsUpdateAreaPixelBounds.left, gObjectsUpdateAreaPixelBounds.top);
         if (originTile != -1) {
             int* offsets = _offsetTable[gCenterTile & 1];
             int originTileX;
@@ -3292,7 +3292,7 @@ static int _obj_offset_table_init()
             int tileX = originTileX;
             for (int y = 0; y < gObjectsUpdateAreaHexHeight; y++) {
                 for (int x = 0; x < gObjectsUpdateAreaHexWidth; x++) {
-                    int tile = tileFromScreenXY(tileX, originTileY, 0);
+                    int tile = tileFromScreenXY(tileX, originTileY);
                     if (tile == -1) {
                         goto err;
                     }
