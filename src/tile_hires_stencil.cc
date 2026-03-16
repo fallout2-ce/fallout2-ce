@@ -30,6 +30,7 @@ struct StencilScreenLimits {
     int maxX;
     int minY;
     int maxY;
+    bool initialized;
 };
 static struct StencilScreenLimits screen_xy_limits[ELEVATION_COUNT];
 
@@ -223,11 +224,12 @@ static void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Poin
     auto candidateMinY = tileScreenY - screen_view_height / 2 - screen_diff.y;
     auto candidateMaxY = tileScreenY + screen_view_height / 2 - screen_diff.y;
 
-    if (limits.maxX == 0 && limits.maxY == 0) {
+    if (!limits.initialized) {
         limits.minX = candidateMinX;
         limits.maxX = candidateMaxX;
         limits.minY = candidateMinY;
         limits.maxY = candidateMaxY;
+        limits.initialized = true;
         return;
     }
 
@@ -245,14 +247,14 @@ static void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Poin
     }
 }
 
-struct TileNeighbors {
+struct TileScrollNeighbors {
     int left;
     int right;
     int up;
     int down;
 };
 
-static struct TileNeighbors get_tile_neighbors(int tileScreenX, int tileScreenY)
+static struct TileScrollNeighbors get_tile_scroll_neighbors(int tileScreenX, int tileScreenY)
 {
     // tile size is 32 x 18
     //
@@ -278,7 +280,7 @@ static struct TileNeighbors get_tile_neighbors(int tileScreenX, int tileScreenY)
     constexpr int tile_center_offset_x = 16;
     constexpr int tile_center_offset_y = 8;
 
-    struct TileNeighbors r;
+    struct TileScrollNeighbors r;
 
     r.left = tileFromScreenXY(
         tileScreenX - pixels_per_horizontal_move + tile_center_offset_x,
@@ -370,7 +372,7 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
 
         update_screen_xy_limits(tileScreenX, tileScreenY, screen_diff, gElevation);
 
-        auto neighbors = get_tile_neighbors(tileScreenX, tileScreenY);
+        auto neighbors = get_tile_scroll_neighbors(tileScreenX, tileScreenY);
 
         tiles_to_visit.push_back({ neighbors.left,
             MarkOnlyPart::LEFT });
@@ -478,8 +480,7 @@ bool tile_hires_stencil_allows_scrolling_to_tile(int newCenterTile, int currentC
     };
 
     auto& limits = screen_xy_limits[elevation];
-    if (limits.maxX == 0 && limits.maxY == 0) {
-        // Not initialized yet, so we can scroll to any tile
+    if (!limits.initialized) {
         return true;
     }
 
@@ -605,7 +606,7 @@ int tile_hires_stencil_get_tweaked_center_tile(int initialCenterTile, int elevat
         auto upIsOutOfLimits = candidateScreenMinY < limits.minY;
         auto downIsOutOfLimits = candidateScreenMaxY > limits.maxY;
 
-        auto neighbors = get_tile_neighbors(candidateTileScreenX, candidateTileScreenY);
+        auto neighbors = get_tile_scroll_neighbors(candidateTileScreenX, candidateTileScreenY);
 
         auto canScrollLeft = tile_hires_stencil_allows_scrolling_to_tile(
                                  neighbors.left, candidateTile, gElevation, windowWidth, windowHeight)
