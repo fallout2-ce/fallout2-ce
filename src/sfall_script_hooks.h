@@ -4,6 +4,8 @@
 #include "interpreter.h"
 #include "scripts.h"
 
+#include <memory>
+
 namespace fallout {
 
 // Some hooks are implemented in sfall but aren't worth porting over:
@@ -149,6 +151,46 @@ typedef enum {
     HOOK_COUNT,
 } HookType;
 
+constexpr size_t MAX_HOOK_ARGS = 16;
+constexpr size_t MAX_HOOK_RETS = 8;
+
+class ScriptHookCall {
+    class Scope {
+    public:
+        ScriptHookCall* get() const { return _call; }
+
+    private:
+        Scope(HookType hookType);
+        ~Scope();
+
+        ScriptHookCall* _call;
+    };
+public:
+    ScriptHookCall(HookType hookType);
+    ~ScriptHookCall() = default;
+
+    ScriptHookCall* addArg(ProgramValue value);
+    ScriptHookCall* setArgAt(int idx, ProgramValue value);
+    void addReturn(ProgramValue value);
+    void setReturnAt(int idx, ProgramValue value);
+
+    void call();
+
+    ProgramValue getArgAt(int idx) const;
+    ProgramValue getReturnAt(int idx) const;
+
+private:
+
+    static std::vector<std::unique_ptr<ScriptHookCall>> _callStack;
+
+    HookType _hookType;
+    ProgramValue _args[MAX_HOOK_ARGS] = {};
+    int _numArgs = 0;
+    ProgramValue _retVals[MAX_HOOK_RETS] = {};
+    int _numRetVals = 0;
+};
+
+void scriptHookRegister(const Program* program, HookType hookType, int procedureIndex);
 
 bool script_hooks_init();
 void script_hooks_reset();
@@ -156,4 +198,4 @@ void script_hooks_exit();
 
 } // namespace fallout
 
-#endif /* FALLOUT_SFALL_GLOBAL_SCRIPTS_H_ */
+#endif /* FALLOUT_SFALL_SCRIPT_HOOKS_H_ */
