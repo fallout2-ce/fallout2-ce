@@ -1879,8 +1879,8 @@ int scriptSaveAll(File* stream)
             for (int index = 0; index < scriptExtent->length; index++) {
                 Script* script = &(scriptExtent->scripts[index]);
 
+                lastScriptExtent = scriptList->tail;
                 if ((script->flags & SCRIPT_FLAG_NO_SAVE) != 0) {
-                    lastScriptExtent = scriptList->tail;
                     scriptCount--;
 
                     int backwardsIndex = lastScriptExtent->length - 1;
