@@ -8,11 +8,12 @@
 
 namespace fallout {
 
-#define SCRIPT_FLAG_0x01 (0x01)
-#define SCRIPT_FLAG_0x02 (0x02)
-#define SCRIPT_FLAG_0x04 (0x04)
-#define SCRIPT_FLAG_0x08 (0x08)
-#define SCRIPT_FLAG_0x10 (0x10)
+// Script has been loaded.
+#define SCRIPT_FLAG_LOADED (0x01)
+#define SCRIPT_FLAG_NO_SPATIAL (0x02)
+#define SCRIPT_FLAG_EXECUTED (0x04)
+#define SCRIPT_FLAG_NO_SAVE (0x08)
+#define SCRIPT_FLAG_NO_REMOVE (0x10)
 
 // 60 * 60 * 10
 #define GAME_TIME_TICKS_PER_HOUR 36000
