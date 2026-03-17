@@ -107,7 +107,7 @@ void sfall_gl_scr_exec_start_proc()
 
             state->globalScripts.push_back(std::move(scr));
 
-            _interpret(program, -1);
+            programInterpret(program, -1);
         }
     }
 
@@ -130,7 +130,7 @@ void sfall_gl_scr_exec_map_update_scripts(int action)
     for (auto& scr : state->globalScripts) {
         if (scr.mode == 0 || scr.mode == 3) {
             if (scr.procs[action] != -1) {
-                _executeProcedure(scr.program, scr.procs[action]);
+                programExecuteProcedure(scr.program, scr.procs[action]);
             }
         }
     }
@@ -142,7 +142,7 @@ static void sfall_gl_scr_process_simple(int mode1, int mode2)
         if (scr.repeat != 0 && (scr.mode == mode1 || scr.mode == mode2)) {
             scr.count++;
             if (scr.count >= scr.repeat) {
-                _executeProcedure(scr.program, scr.procs[SCRIPT_PROC_START]);
+                programExecuteProcedure(scr.program, scr.procs[SCRIPT_PROC_START]);
                 scr.count = 0;
             }
         }
@@ -213,7 +213,7 @@ bool sfall_gl_scr_is_loaded(Program* program)
 void sfall_gl_scr_update(int burstSize)
 {
     for (auto& scr : state->globalScripts) {
-        _interpret(scr.program, burstSize);
+        programInterpret(scr.program, burstSize);
     }
 }
 

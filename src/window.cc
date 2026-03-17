@@ -327,7 +327,7 @@ bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseE
                 }
 
                 if (region->program != nullptr && region->procs[2] != 0) {
-                    _executeProc(region->program, region->procs[2]);
+                    programExecuteProcedureAsync(region->program, region->procs[2]);
                     if (prevVersion != managedWindow->regionsVersion) {
                         return true;
                     }
@@ -404,7 +404,7 @@ bool _checkAllRegions()
                         }
 
                         if (region->program != nullptr && region->procs[3] != 0) {
-                            _executeProc(region->program, region->procs[3]);
+                            programExecuteProcedureAsync(region->program, region->procs[3]);
                             if (prevVersion != managedWindow->regionsVersion) {
                                 return 1;
                             }
@@ -458,7 +458,7 @@ void _doRegionRightFunc(Region* region, int mouseEvent)
 
     if (mouseEvent < 4) {
         if (region->program != nullptr && region->rightProcs[mouseEvent] != 0) {
-            _executeProc(region->program, region->rightProcs[mouseEvent]);
+            programExecuteProcedureAsync(region->program, region->rightProcs[mouseEvent]);
         }
     }
 }
@@ -476,7 +476,7 @@ void _doRegionFunc(Region* region, int mouseEvent)
 
     if (mouseEvent < 4) {
         if (region->program != nullptr && region->rightProcs[mouseEvent] != 0) {
-            _executeProc(region->program, region->rightProcs[mouseEvent]);
+            programExecuteProcedureAsync(region->program, region->rightProcs[mouseEvent]);
         }
     }
 }
@@ -564,7 +564,7 @@ void scriptWindowDispatchButtonMouseEvent(int btn, int mouseEvent)
                         _win_set_button_rest_state(managedButton->btn, 0, 0);
                     } else {
                         if (managedButton->program != nullptr && managedButton->procs[mouseEvent] != 0) {
-                            _executeProc(managedButton->program, managedButton->procs[mouseEvent]);
+                            programExecuteProcedureAsync(managedButton->program, managedButton->procs[mouseEvent]);
                         }
 
                         if (managedButton->mouseEventCallback != nullptr) {
@@ -623,7 +623,7 @@ void scriptWindowDispatchButtonRightMouseEvent(int btn, int mouseEvent)
                         _win_set_button_rest_state(managedButton->btn, 0, 0);
                     } else {
                         if (managedButton->program != nullptr && managedButton->rightProcs[mouseEvent] != 0) {
-                            _executeProc(managedButton->program, managedButton->rightProcs[mouseEvent]);
+                            programExecuteProcedureAsync(managedButton->program, managedButton->rightProcs[mouseEvent]);
                         }
 
                         if (managedButton->rightMouseEventCallback != nullptr) {
