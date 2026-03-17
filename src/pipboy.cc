@@ -1,5 +1,6 @@
 #include "pipboy.h"
 
+#include <algorithm>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -2218,6 +2219,8 @@ static bool pipboyRest(int hours, int minutes, int duration)
         double v1 = (double)hoursInMinutes + (double)minutes;
         double v2 = v1 * (1.0 / 1440.0) * 3.5 + 0.25;
         double v3 = (double)minutes / v1 * v2;
+
+        const unsigned int uiDelayMs = std::max(static_cast<int>(50.0 / settings.preferences.ui_anim_speed), 5);
         if (minutes != 0) {
             unsigned int gameTime = gameTimeGetTime();
 
@@ -2258,7 +2261,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
                     pipboyDrawDate();
                     windowRefresh(gPipboyWindow);
 
-                    delay_ms(50 - (getTicks() - start));
+                    delay_ms(uiDelayMs - (getTicks() - start));
                 }
 
                 renderPresent();
@@ -2328,7 +2331,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
                     pipboyDrawHitPoints();
                     windowRefresh(gPipboyWindow);
 
-                    delay_ms(50 - (getTicks() - start));
+                    delay_ms(uiDelayMs - (getTicks() - start));
                 }
 
                 renderPresent();

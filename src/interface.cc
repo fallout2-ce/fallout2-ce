@@ -29,6 +29,7 @@
 #include "proto.h"
 #include "proto_instance.h"
 #include "proto_types.h"
+#include "settings.h"
 #include "skill.h"
 #include "stat.h"
 #include "svga.h"
@@ -114,7 +115,7 @@ static int endCombatButtonFree();
 static void interfaceUpdateAmmoBar(int x, int ratio);
 static int _intface_item_reload();
 static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor);
-static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delay, Rect* numbersRect, bool refreshMouse);
+static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse);
 static void interfaceRenderCounter(int x, int y, int previousValue, int value, int offset, int delay);
 static int intface_fatal_error(int rc);
 static int indicatorBarInit();
@@ -871,6 +872,11 @@ void interfaceBarRefresh()
     indicatorBarRefresh();
 }
 
+static int counterAnimationBaseDelayMs()
+{
+    return std::max(static_cast<int>(250.0 / settings.preferences.ui_anim_speed), 25);
+}
+
 // Render hit points.
 //
 // 0x45EBD8
@@ -933,7 +939,7 @@ void interfaceRenderHitPoints(bool animate)
     transitionPoints[count] = hp;
 
     if (animate) {
-        int delay = 250 / (abs(gInterfaceLastRenderedHitPoints - hp) + 1);
+        int delay = counterAnimationBaseDelayMs() / (abs(gInterfaceLastRenderedHitPoints - hp) + 1);
         for (int index = 0; index < count; index++) {
             interfaceRenderCounter(473 + gInterfaceBarContentOffset, 40, transitionPoints[index], transitionPoints[index + 1], transitionColors[index], delay);
         }
@@ -954,7 +960,7 @@ void interfaceRenderArmorClass(bool animate)
 
     int delay = 0;
     if (animate) {
-        delay = 250 / (abs(gInterfaceLastRenderedArmorClass - armorClass) + 1);
+        delay = counterAnimationBaseDelayMs() / (abs(gInterfaceLastRenderedArmorClass - armorClass) + 1);
     }
 
     interfaceRenderCounter(473 + gInterfaceBarContentOffset, 75, gInterfaceLastRenderedArmorClass, armorClass, 0, delay);
@@ -1375,6 +1381,11 @@ int _intface_update_ammo_lights()
     return 0;
 }
 
+static int interfaceBarBaseDelayMs()
+{
+    return std::max(static_cast<int>(1000.0 / settings.preferences.ui_anim_speed), 100);
+}
+
 // 0x45F96C
 void interfaceBarEndButtonsShow(bool animated)
 {
@@ -1397,7 +1408,7 @@ void interfaceBarEndButtonsShow(bool animated)
     soundPlayFile("iciboxx1");
 
     if (animated) {
-        unsigned int delay = 1000 / artGetFramesPerSecond(art);
+        unsigned int delay = interfaceBarBaseDelayMs() / artGetFramesPerSecond(art);
         int time = 0;
         int frame = 0;
         while (frame < frameCount) {
@@ -1455,7 +1466,7 @@ void interfaceBarEndButtonsHide(bool animated)
     soundPlayFile("icibcxx1");
 
     if (animated) {
-        unsigned int delay = 1000 / artGetFramesPerSecond(art);
+        unsigned int delay = interfaceBarBaseDelayMs() / artGetFramesPerSecond(art);
         unsigned int time = 0;
         int frame = artGetFrameCount(art);
 
@@ -2029,7 +2040,7 @@ static int _intface_item_reload()
 }
 
 // internal helper for interfaceRenderCounter
-static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delay, Rect* numbersRect, bool refreshMouse)
+static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse)
 {
     blitBufferToBuffer(src, 9, 17, 360, dest, gInterfaceBarWidth);
 
@@ -2039,7 +2050,7 @@ static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned cha
     }
 
     renderPresent();
-    inputBlockForTocks(delay);
+    inputBlockForTocks(delayMs);
     windowRefreshRect(gInterfaceBarWindow, numbersRect);
 }
 

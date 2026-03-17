@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "game_sound.h"
 #include "input.h"
+#include "settings.h"
 #include "svga.h"
 
 namespace fallout {
@@ -37,7 +38,8 @@ void paletteInit()
         colorPaletteSetTransitionCallback(soundContinueAll);
     }
 
-    colorPaletteFadeBetween(gPalette, gPalette, 60);
+    constexpr int referenceFadeSteps = 60;
+    colorPaletteFadeBetween(gPalette, gPalette, referenceFadeSteps);
 
     colorPaletteSetTransitionCallback(nullptr);
 
@@ -45,10 +47,13 @@ void paletteInit()
     // frame rate throttling.
     unsigned int actualFadeDuration = getTicksSince(tick);
 
-    // Calculate fade steps needed to perform fading in about 700 ms.
-    gPaletteFadeSteps = 60 * 700 / actualFadeDuration;
+    constexpr int vanillaFadeDurationMs = 700;
+    const unsigned int fadeDurationMs = static_cast<int>(vanillaFadeDurationMs / settings.preferences.ui_anim_speed);
 
-    debugPrint("\nFade time is %u\nFade steps are %d\n", actualFadeDuration, gPaletteFadeSteps);
+    // Calculate fade steps needed to perform fading in about 700 ms.
+    gPaletteFadeSteps = static_cast<int>(referenceFadeSteps * fadeDurationMs / actualFadeDuration);
+
+    debugPrint("\nReference fade time: %ums, Target fade time: %dms, Fade steps: %d\n", actualFadeDuration, fadeDurationMs, gPaletteFadeSteps);
 }
 
 // NOTE: Collapsed.

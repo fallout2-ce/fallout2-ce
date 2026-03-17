@@ -82,6 +82,7 @@ namespace fallout {
 #define GAME_CONFIG_DEFAULT_F8_AS_GAME_KEY "default_f8_as_game"
 #define GAME_CONFIG_SORT_SCRIPT_LIST_KEY "sort_script_list"
 #define GAME_CONFIG_PLAYER_SPEEDUP_KEY "player_speedup"
+#define GAME_CONFIG_UI_ANIM_SPEED_KEY "ui_anim_speed"
 
 #define ENGLISH "english"
 #define FRENCH "french"

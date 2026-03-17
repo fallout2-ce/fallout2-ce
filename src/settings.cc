@@ -1,5 +1,7 @@
 #include "settings.h"
 
+#include <algorithm>
+
 namespace fallout {
 
 static void settingsFromConfig();
@@ -76,6 +78,9 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_BRIGHTNESS_KEY, settings.preferences.brightness);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_MOUSE_SENSITIVITY_KEY, settings.preferences.mouse_sensitivity);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_BURNING_GUY_KEY, settings.preferences.running_burning_guy);
+    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_UI_ANIM_SPEED_KEY, settings.preferences.ui_anim_speed);
+    // TODO: value can be clamped in preferences._JustUpdate_ once it is implemented there
+    settings.preferences.ui_anim_speed = std::clamp(settings.preferences.ui_anim_speed, 0.1, 100.0);
 
     settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_INITIALIZE_KEY, settings.sound.initialize);
     settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEBUG_KEY, settings.sound.debug);
@@ -150,6 +155,7 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_BRIGHTNESS_KEY, settings.preferences.brightness);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_MOUSE_SENSITIVITY_KEY, settings.preferences.mouse_sensitivity);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_BURNING_GUY_KEY, settings.preferences.running_burning_guy);
+    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_UI_ANIM_SPEED_KEY, settings.preferences.ui_anim_speed);
 
     settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_INITIALIZE_KEY, settings.sound.initialize);
     settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEBUG_KEY, settings.sound.debug);

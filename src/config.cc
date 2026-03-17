@@ -13,7 +13,7 @@
 
 namespace fallout {
 
-#define CONFIG_FILE_MAX_LINE_LENGTH (256)
+#define CONFIG_FILE_MAX_LINE_LENGTH (1024)
 
 // The initial number of sections (or key-value) pairs in the config.
 #define CONFIG_INITIAL_CAPACITY (10)
@@ -143,6 +143,17 @@ bool configGetString(Config* config, const char* sectionKey, const char* key, ch
     return true;
 }
 
+bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr, const char* defaultValue)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
+        return false;
+    }
+    if (!configGetString(config, sectionKey, key, valuePtr) || (*valuePtr)[0] == '\0') {
+        *valuePtr = const_cast<char*>(defaultValue);
+    }
+    return true;
+}
+
 // 0x42BF90
 bool configSetString(Config* config, const char* sectionKey, const char* key, const char* value)
 {
@@ -214,6 +225,17 @@ bool configGetInt(Config* config, const char* sectionKey, const char* key, int* 
 
     *valuePtr = l;
 
+    return true;
+}
+
+bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, const int defaultValue, unsigned char base)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
+        return false;
+    }
+    if (!configGetInt(config, sectionKey, key, valuePtr, base)) {
+        *valuePtr = defaultValue;
+    }
     return true;
 }
 
