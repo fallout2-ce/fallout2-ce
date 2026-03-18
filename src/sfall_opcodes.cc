@@ -1250,6 +1250,14 @@ static void op_register_hook_proc(Program* program)
         return;
     }
 
+    // Note: in sfall, register_hook_proc by default adds the next hook to the beginning of the hook order.
+    // Meaning the last script to be registered will be executed first.
+    // There was a special opcode `register_hook_proc_spec` that adds to the end of hook order instead.
+    // In CE we assume that this order shouldn't matter, and giving script a choice like that doesn't solve anything, since several scripts from different mods can use either opcode.
+
+    // Global script order is entirely based off script file name sorting and when user installs scripts from different mods, there's no way to ensure a "proper" order,
+    // without some kind of script-dependency system, which we don't have.
+    // So let's just simply use the direct order.
     if (!scriptHooksRegister(program, static_cast<HookType>(hookId), procedureIndex)) {
         programPrintError("%s(%d, %d): failed", opcodeName, hookId, procedureIndex);
     }
@@ -1573,10 +1581,19 @@ void sfallOpcodesInit()
     // 0x81e3 - void reset_critical_table(int crittertype, int bodypart, int level, int valuetype)
 
     // 0x81e4 - int   get_sfall_arg()
+    interpreterRegisterOpcode(0x81e4, op_get_sfall_arg);
+
+    // TODO:
     // 0x823c - array get_sfall_args()
+    //interpreterRegisterOpcode(0x823c, op_get_sfall_args);
+
     // 0x823d - void  set_sfall_arg(int argnum, int value)
+    interpreterRegisterOpcode(0x823d, op_set_sfall_arg);
+
     // 0x81e5 - void  set_sfall_return(any value)
-    // 0x81ea - int   init_hook()
+    interpreterRegisterOpcode(0x81e5, op_set_sfall_return);
+
+    // 0x81ea - int   init_hook()  -> OBSOLETE
 
     // 0x81e6 - void set_unspent_ap_bonus(int multiplier)
     // 0x81e7 - int  get_unspent_ap_bonus()
@@ -1783,6 +1800,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8281, op_sfall_func8);
 
     // 0x827d - void register_hook_proc_spec(int hook, procedure proc)
+    interpreterRegisterOpcode(0x827d, op_register_hook_proc);
     // 0x827e - void reg_anim_callback(procedure proc)
 }
 

@@ -59,6 +59,7 @@
 #include "sfall_global_vars.h"
 #include "sfall_ini.h"
 #include "sfall_lists.h"
+#include "sfall_script_hooks.h"
 #include "skill.h"
 #include "skilldex.h"
 #include "stat.h"
@@ -119,6 +120,8 @@ int _game_user_wants_to_quit = 0;
 //
 // 0x58E940
 MessageList gMiscMessageList;
+
+bool gGameLoaded = false;
 
 int gSplashScreenScaling = 0;
 
@@ -451,6 +454,7 @@ void gameReset()
     sfallArraysReset();
     sfall_gl_scr_reset();
     sfallOnGameReset();
+    gGameLoaded = false;
 }
 
 // 0x442C34

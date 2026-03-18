@@ -135,6 +135,7 @@ int falloutMain(int argc, char** argv)
                     // SFALL: Call "after loading" event
                     sfallOnAfterNewGame();
                     sfallOnAfterGameStarted();
+                    gGameLoaded = true;
 
                     mainLoop();
                     paletteFadeTo(gPaletteWhite);

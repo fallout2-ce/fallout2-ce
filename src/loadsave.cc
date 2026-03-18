@@ -2014,6 +2014,7 @@ static int lsgLoadGameInSlot(int slot)
     sfall_gl_scr_exec_start_proc();
     // SFALL: Call "after start" event
     sfallOnAfterGameStarted();
+    gGameLoaded = true;
 
     return 0;
 }

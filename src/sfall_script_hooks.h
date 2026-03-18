@@ -167,8 +167,8 @@ public:
     ScriptHookCall(HookType hookType, int maxReturnValues);
     ~ScriptHookCall() = default;
 
-    ScriptHookCall* addArg(ProgramValue value);
-    ScriptHookCall* setArgAt(int idx, ProgramValue value);
+    ScriptHookCall& addArg(ProgramValue value);
+    ScriptHookCall& setArgAt(int idx, ProgramValue value);
     void addReturnValue(ProgramValue value);
     void setReturnValueAt(int idx, ProgramValue value);
 

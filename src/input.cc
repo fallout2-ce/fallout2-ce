@@ -11,6 +11,7 @@
 #include "kb.h"
 #include "memory.h"
 #include "mouse.h"
+#include "sfall_kb_helpers.h"
 #include "svga.h"
 #include "text_font.h"
 #include "touch.h"
@@ -977,6 +978,11 @@ void _GNW95_process_message()
             if (!keyboardIsDisabled()) {
                 keyboardData.key = e.key.keysym.scancode;
                 keyboardData.down = (e.key.state & SDL_PRESSED) != 0;
+
+                int keyOverride = sfall_kb_handle_key_pressed(keyboardData.key, keyboardData.down);
+                if (keyOverride != SDL_SCANCODE_UNKNOWN) {
+                    keyboardData.key = keyOverride;
+                }
                 _GNW95_process_key(&keyboardData);
             }
             break;

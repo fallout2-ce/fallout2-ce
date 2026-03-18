@@ -2,8 +2,17 @@
 
 #include <SDL.h>
 
+#include "game.h"
+#include "sfall_script_hooks.h"
+
+#include <unordered_map>
+
+namespace fallout {
+
+constexpr size_t DIK_MAP_COUNT = 256;
+
 /// Maps DirectInput DIK constants to SDL scancodes.
-static constexpr SDL_Scancode kDiks[256] = {
+static constexpr SDL_Scancode kDiks[DIK_MAP_COUNT] = {
     SDL_SCANCODE_UNKNOWN,
     SDL_SCANCODE_ESCAPE, // DIK_ESCAPE
     SDL_SCANCODE_1, // DIK_1
@@ -262,6 +271,8 @@ static constexpr SDL_Scancode kDiks[256] = {
     SDL_SCANCODE_UNKNOWN,
 };
 
+std::unordered_map<SDL_Scancode, int> kScanCodeToDik;
+
 /// Translates Sfall key code (DIK or VK constant) to SDL scancode.
 static SDL_Scancode get_scancode_from_key(int key)
 {
@@ -295,3 +306,37 @@ void sfall_kb_press_key(int key)
     event.type = SDL_KEYUP;
     SDL_PushEvent(&event);
 }
+
+int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
+{
+    if (!gGameLoaded) return SDL_SCANCODE_UNKNOWN;
+
+    if (kScanCodeToDik.empty()) {
+        for (int dik = 1; dik < DIK_MAP_COUNT; dik++) {
+            kScanCodeToDik[kDiks[dik]] = dik;
+        }
+    }
+
+    auto scanCode = static_cast<SDL_Scancode>(sdlScanCode);
+    auto dikIt = kScanCodeToDik.find(scanCode);
+    if (dikIt == kScanCodeToDik.end()) {
+        return SDL_SCANCODE_UNKNOWN;
+    }
+    int dik = dikIt->second;
+    ScriptHookCall hookCall(HOOK_KEYPRESS, 1);
+    hookCall
+        .addArg(pressed ? 1 : 0)
+        .addArg(dik)
+        .addArg(0) // TODO: sfall uses VK_ codes here; not sure any mod actually used it. If so, maybe it is better to use Key values from kb.h?
+        .call();
+
+    if (hookCall.numReturnValues() <= 0) {
+        return SDL_SCANCODE_UNKNOWN;
+    }
+
+    int overrideDxCode = hookCall.getReturnValueAt(0).asInt();
+    return get_scancode_from_key(overrideDxCode);
+}
+
+} // namespace fallout
+

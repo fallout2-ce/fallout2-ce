@@ -1,0 +1,28 @@
+#include "../sfall/sfall.h"
+
+procedure test_with_args(variable arg1) begin
+    display_msg("test_w_arg" + arg1);
+end
+
+procedure test_wo_args begin
+    display_msg("test_wo_args");
+end
+
+procedure keypress_handler begin
+    display_msg("keypress "+get_sfall_arg+" dx: "+get_sfall_arg+", vk: " + get_sfall_arg);
+end
+
+procedure start begin
+    //call test_with_args(777);
+    display_msg("start hook test");
+
+    if (not game_loaded) then return;
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+end
+
+
+procedure map_enter_p_proc begin
+    display_msg("Map Enter hook test");
+end
+

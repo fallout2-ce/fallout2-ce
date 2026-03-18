@@ -35,18 +35,18 @@ ScriptHookCall::ScriptHookCall(HookType hookType, int maxReturnValues) : _hookTy
     assert(hookType >= 0 && hookType < HOOK_COUNT && maxReturnValues >= 0 && maxReturnValues <= HOOKS_MAX_RETURN_VALUES);
 }
 
-ScriptHookCall* ScriptHookCall::addArg(ProgramValue value)
+ScriptHookCall& ScriptHookCall::addArg(ProgramValue value)
 {
     assert(_numArgs < HOOKS_MAX_ARGUMENTS - 1);
     _args[_numArgs++] = value;
-    return this;
+    return *this;
 }
 
-ScriptHookCall* ScriptHookCall::setArgAt(int idx, ProgramValue value)
+ScriptHookCall& ScriptHookCall::setArgAt(int idx, ProgramValue value)
 {
     assert(idx >= 0 && idx < _numArgs);
     _args[idx] = value;
-    return this;
+    return *this;
 }
 
 void ScriptHookCall::addReturnValue(ProgramValue value)
@@ -136,48 +136,12 @@ bool scriptHooksInit()
 
 void scriptHooksReset()
 {
-    // TODO
+    scriptHooksClear();
 }
 
 void scriptHooksExit()
 {
-    // TODO
+    scriptHooksClear();
 }
-
-/*
-void sfall_gl_scr_exec_start_proc()
-{
-    for (auto& path : state->paths) {
-        Program* program = programCreateByPath(path.c_str());
-        if (program != nullptr) {
-            GlobalScript scr;
-            scr.program = program;
-
-            for (int action = 0; action < SCRIPT_PROC_COUNT; action++) {
-                scr.procs[action] = programFindProcedure(program, gScriptProcNames[action]);
-            }
-
-            state->globalScripts.push_back(std::move(scr));
-
-            _interpret(program, -1);
-        }
-    }
-
-    tickersAdd(sfall_gl_scr_process_input);
-}
-
-static void sfall_gl_scr_process_simple(int mode1, int mode2)
-{
-    for (auto& scr : state->globalScripts) {
-        if (scr.repeat != 0 && (scr.mode == mode1 || scr.mode == mode2)) {
-            scr.count++;
-            if (scr.count >= scr.repeat) {
-                _executeProcedure(scr.program, scr.procs[SCRIPT_PROC_START]);
-                scr.count = 0;
-            }
-        }
-    }
-}
-*/
 
 } // namespace fallout
