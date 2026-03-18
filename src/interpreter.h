@@ -196,6 +196,8 @@ typedef struct Program {
     bool exited;
     ProgramStack* stackValues;
     ProgramStack* returnStackValues;
+
+    int procedureCount() const;
 } Program;
 
 typedef unsigned int(InterpretTimerFunc)();
@@ -209,7 +211,8 @@ char* _interpretMangleName(char* s);
 void _interpretOutputFunc(int (*func)(char*));
 int _interpretOutput(const char* format, ...);
 [[noreturn]] void programFatalError(const char* str, ...);
-void _interpretDecStringRef(Program* program, opcode_t a2, int a3);
+void programPrintError(const char* format, ...);
+void interpreterStringRefCountDecrease(Program* program, opcode_t a2, int a3);
 void programFree(Program* program);
 Program* programCreateByPath(const char* path);
 char* programGetString(Program* program, opcode_t opcode, int offset);
@@ -230,7 +233,7 @@ void _updatePrograms();
 void programListFree();
 void interpreterRegisterOpcode(int opcode, OpcodeHandler* handler);
 
-void programStackPushValue(Program* program, ProgramValue& programValue);
+void programStackPushValue(Program* program, const ProgramValue& programValue);
 void programStackPushInteger(Program* program, int value);
 void programStackPushFloat(Program* program, float value);
 void programStackPushString(Program* program, const char* const string);

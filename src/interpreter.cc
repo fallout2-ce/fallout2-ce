@@ -38,7 +38,7 @@ static void stackPushInt16(unsigned char* data, int* pointer, int value);
 static void stackPushInt32(unsigned char* data, int* pointer, int value);
 static int stackPopInt32(unsigned char* data, int* pointer);
 static opcode_t stackPopInt16(unsigned char* data, int* pointer);
-static void _interpretIncStringRef(Program* program, opcode_t opcode, int value);
+static void interpreterStringRefCountIncrease(Program* program, opcode_t opcode, int value);
 static void programReturnStackPushInt16(Program* program, int value);
 static opcode_t programReturnStackPopInt16(Program* program);
 static int programReturnStackPopInt32(Program* program);
@@ -227,7 +227,7 @@ int _interpretOutput(const char* format, ...)
 // 0x467160
 static char* programGetCurrentProcedureName(Program* program)
 {
-    int procedureCount = stackReadInt32(program->procedures, 0);
+    int procedureCount = program->procedureCount();
     unsigned char* ptr = program->procedures + 4;
 
     int procedureOffset = stackReadInt32(ptr, offsetof(Procedure, bodyOffset));
@@ -246,16 +246,10 @@ static char* programGetCurrentProcedureName(Program* program)
     return _aCouldnTFindPro;
 }
 
-// 0x4671F0
-[[noreturn]] void programFatalError(const char* format, ...)
+static void programPrintError(const char* format, va_list args)
 {
     char string[260];
-
-    va_list argptr;
-    va_start(argptr, format);
-    vsnprintf(string, sizeof(string), format, argptr);
-    va_end(argptr);
-
+    vsnprintf(string, sizeof(string), format, args);
     debugPrint("\nError during execution: %s\n", string);
 
     if (gInterpreterCurrentProgram == nullptr) {
@@ -264,6 +258,15 @@ static char* programGetCurrentProcedureName(Program* program)
         char* procedureName = programGetCurrentProcedureName(gInterpreterCurrentProgram);
         debugPrint("Current script: %s, procedure %s", gInterpreterCurrentProgram->name, procedureName);
     }
+}
+
+// 0x4671F0
+[[noreturn]] void programFatalError(const char* format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+    programPrintError(format, argptr);
+    va_end(argptr);
 
     if (gInterpreterCurrentProgram) {
         longjmp(gInterpreterCurrentProgram->env, 1);
@@ -273,6 +276,14 @@ static char* programGetCurrentProcedureName(Program* program)
 #else
     __builtin_unreachable();
 #endif
+}
+
+void programPrintError(const char* format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+    programPrintError(format, argptr);
+    va_end(argptr);
 }
 
 // 0x467290
@@ -375,7 +386,7 @@ static opcode_t stackPopInt16(unsigned char* data, int* pointer)
 // NOTE: Inlined.
 //
 // 0x467424
-static void _interpretIncStringRef(Program* program, opcode_t opcode, int value)
+static void interpreterStringRefCountIncrease(Program* program, opcode_t opcode, int value)
 {
     if (opcode == VALUE_TYPE_DYNAMIC_STRING) {
         *(short*)(program->dynamicStrings + 4 + value - 2) += 1;
@@ -383,7 +394,7 @@ static void _interpretIncStringRef(Program* program, opcode_t opcode, int value)
 }
 
 // 0x467440
-void _interpretDecStringRef(Program* program, opcode_t opcode, int value)
+void interpreterStringRefCountDecrease(Program* program, opcode_t opcode, int value)
 {
     if (opcode == VALUE_TYPE_DYNAMIC_STRING) {
         char* string = (char*)(program->dynamicStrings + 4 + value);
@@ -788,7 +799,7 @@ static void opCancel(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    if (data >= stackReadInt32(program->procedures, 0)) {
+    if (data >= program->procedureCount()) {
         programFatalError("Invalid procedure offset given to cancel");
     }
 
@@ -801,7 +812,7 @@ static void opCancel(Program* program)
 // 0x468330
 static void opCancelAll(Program* program)
 {
-    int procedureCount = stackReadInt32(program->procedures, 0);
+    int procedureCount = program->procedureCount();
 
     for (int index = 0; index < procedureCount; index++) {
         // TODO: Original code uses different approach, check.
@@ -845,14 +856,14 @@ static void opStore(Program* program)
     ProgramValue oldValue = program->stackValues->at(pos);
 
     if (oldValue.opcode == VALUE_TYPE_DYNAMIC_STRING) {
-        _interpretDecStringRef(program, oldValue.opcode, oldValue.integerValue);
+        interpreterStringRefCountDecrease(program, oldValue.opcode, oldValue.integerValue);
     }
 
     program->stackValues->at(pos) = value;
 
     if (value.opcode == VALUE_TYPE_DYNAMIC_STRING) {
         // NOTE: Uninline.
-        _interpretIncStringRef(program, VALUE_TYPE_DYNAMIC_STRING, value.integerValue);
+        interpreterStringRefCountIncrease(program, VALUE_TYPE_DYNAMIC_STRING, value.integerValue);
     }
 }
 
@@ -2227,14 +2238,14 @@ static void opStoreGlobalVariable(Program* program)
 
     ProgramValue oldValue = program->stackValues->at(program->basePointer + addr);
     if (oldValue.opcode == VALUE_TYPE_DYNAMIC_STRING) {
-        _interpretDecStringRef(program, oldValue.opcode, oldValue.integerValue);
+        interpreterStringRefCountDecrease(program, oldValue.opcode, oldValue.integerValue);
     }
 
     program->stackValues->at(program->basePointer + addr) = value;
 
     if (value.opcode == VALUE_TYPE_DYNAMIC_STRING) {
         // NOTE: Uninline.
-        _interpretIncStringRef(program, VALUE_TYPE_DYNAMIC_STRING, value.integerValue);
+        interpreterStringRefCountIncrease(program, VALUE_TYPE_DYNAMIC_STRING, value.integerValue);
     }
 }
 
@@ -2497,7 +2508,7 @@ static void opCheckProcedureArgumentCount(Program* program)
 static void opLookupStringProc(Program* program)
 {
     const char* procedureNameToLookup = programStackPopString(program);
-    int procedureCount = stackReadInt32(program->procedures, 0);
+    int procedureCount = program->procedureCount();
 
     // Skip procedure count (4 bytes) and main procedure, which cannot be
     // looked up.
@@ -2837,7 +2848,7 @@ void programExecuteProcedureAsync(Program* program, int procedureIndex)
 // 0x46DCD0
 int programFindProcedure(Program* program, const char* name)
 {
-    int procedureCount = stackReadInt32(program->procedures, 0);
+    int procedureCount = program->procedureCount();
 
     unsigned char* ptr = program->procedures + 4;
     for (int index = 0; index < procedureCount; index++) {
@@ -3112,7 +3123,7 @@ static void interpreterPrintStats()
     }
 }
 
-void programStackPushValue(Program* program, ProgramValue& programValue)
+void programStackPushValue(Program* program, const ProgramValue& programValue)
 {
     if (program->stackValues->size() > 0x1000) {
         programFatalError("programStackPushValue: Stack overflow.");
@@ -3122,7 +3133,7 @@ void programStackPushValue(Program* program, ProgramValue& programValue)
 
     if (programValue.opcode == VALUE_TYPE_DYNAMIC_STRING) {
         // NOTE: Uninline.
-        _interpretIncStringRef(program, VALUE_TYPE_DYNAMIC_STRING, programValue.integerValue);
+        interpreterStringRefCountIncrease(program, VALUE_TYPE_DYNAMIC_STRING, programValue.integerValue);
     }
 }
 
@@ -3168,7 +3179,7 @@ ProgramValue programStackPopValue(Program* program)
     program->stackValues->pop_back();
 
     if (programValue.opcode == VALUE_TYPE_DYNAMIC_STRING) {
-        _interpretDecStringRef(program, programValue.opcode, programValue.integerValue);
+        interpreterStringRefCountDecrease(program, programValue.opcode, programValue.integerValue);
     }
 
     return programValue;
@@ -3219,7 +3230,7 @@ void programReturnStackPushValue(Program* program, ProgramValue& programValue)
 
     if (programValue.opcode == VALUE_TYPE_DYNAMIC_STRING) {
         // NOTE: Uninline.
-        _interpretIncStringRef(program, VALUE_TYPE_DYNAMIC_STRING, programValue.integerValue);
+        interpreterStringRefCountIncrease(program, VALUE_TYPE_DYNAMIC_STRING, programValue.integerValue);
     }
 }
 
@@ -3249,7 +3260,7 @@ ProgramValue programReturnStackPopValue(Program* program)
     program->returnStackValues->pop_back();
 
     if (programValue.opcode == VALUE_TYPE_DYNAMIC_STRING) {
-        _interpretDecStringRef(program, programValue.opcode, programValue.integerValue);
+        interpreterStringRefCountDecrease(program, programValue.opcode, programValue.integerValue);
     }
 
     return programValue;
@@ -3361,6 +3372,11 @@ ProgramValue programMakeInt(Program* program, int val)
     valuePv.opcode = VALUE_TYPE_INT;
     valuePv.integerValue = val;
     return valuePv;
+}
+
+int Program::procedureCount() const
+{
+    return stackReadInt32(procedures, 0);
 }
 
 } // namespace fallout
