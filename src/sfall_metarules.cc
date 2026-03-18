@@ -47,6 +47,7 @@ static void mf_intface_redraw(Program* program, int args);
 static void mf_loot_obj(Program* program, int args);
 static void mf_message_box(Program* program, int args);
 static void mf_metarule_exist(Program* program, int args);
+static void mf_obj_under_cursor(Program* program, int args);
 static void mf_opcode_exists(Program* program, int args);
 static void mf_outlined_object(Program* program, int args);
 static void mf_set_cursor_mode(Program* program, int args);
@@ -132,7 +133,7 @@ const MetaruleInfo kMetarules[] = {
     { "metarule_exist", mf_metarule_exist, 1, 1 },
     // {"npc_engine_level_up",       mf_npc_engine_level_up,       1, 1},
     // {"obj_is_openable",           mf_obj_is_openable,           1, 1,  0, {ARG_OBJECT}},
-    // {"obj_under_cursor",          mf_obj_under_cursor,          2, 2,  0, {ARG_INT, ARG_INT}},
+    {"obj_under_cursor",          mf_obj_under_cursor,          2, 2,  0, {ARG_INT, ARG_INT}},
     // {"objects_in_radius",         mf_objects_in_radius,         3, 4,  0, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "outlined_object", mf_outlined_object, 0, 0 },
     // {"real_dude_obj",             mf_real_dude_obj,             0, 0},
@@ -318,6 +319,15 @@ void mf_opcode_exists(Program* program, int args)
     auto opcodeHandler = gInterpreterOpcodeHandlers[opcodeIndex];
     int opcodeExists = opcodeHandler != nullptr ? 1 : 0;
     programStackPushInteger(program, opcodeExists);
+}
+
+void mf_obj_under_cursor(Program* program, int args) {
+    int onlyCritter = programStackPopInteger(program);
+    int includeDude = programStackPopInteger(program);
+
+    Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : -1, includeDude, gElevation);
+
+    programStackPushValue(program, object);
 }
 
 void mf_outlined_object(Program* program, int args)

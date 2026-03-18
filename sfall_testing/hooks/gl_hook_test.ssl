@@ -1,4 +1,6 @@
 #include "../sfall/sfall.h"
+#include "../sfall/dik.h"
+#include "../sfall/define_lite.h"
 
 procedure test_with_args(variable arg1) begin
     display_msg("test_w_arg" + arg1);
@@ -9,7 +11,24 @@ procedure test_wo_args begin
 end
 
 procedure keypress_handler begin
-    display_msg("keypress "+get_sfall_arg+" dx: "+get_sfall_arg+", vk: " + get_sfall_arg);
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    display_msg(string_format("keypress %d dx: %d", pressed, key));
+
+    if (not pressed) then return;
+
+    if (key == DIK_F2) then begin
+        display_msg(string_format("tile %d, elev %d, map %d", tile_under_cursor, elevation(dude_obj), cur_map_index));
+    end if (key == DIK_F3) then begin
+        if (key_pressed(DIK_LCONTROL)) then begin
+            variable cr := obj_under_cursor(true, false);
+            if (cr) then
+                critter_dmg(cr, 1000, DMG_BYPASS_ARMOR);
+        end else
+            move_to(dude_obj, tile_under_cursor, elevation(dude_obj));
+    end
 end
 
 procedure start begin
