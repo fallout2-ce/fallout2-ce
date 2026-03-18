@@ -10,6 +10,20 @@ procedure test_wo_args begin
     display_msg("test_wo_args");
 end
 
+procedure tohit_handler begin
+    variable
+        attacker := get_sfall_arg_at(1),
+        target := get_sfall_arg_at(2),
+        chanceRaw := get_sfall_arg_at(7);
+
+    display_msg(string_format("tohit %s -> %s (%d)", obj_name(attacker), obj_name(target), chanceRaw));
+    if (attacker == dude_obj) then
+        set_sfall_return(100);
+    else if (target == dude_obj) then
+        set_sfall_return(0);
+
+end
+
 procedure keypress_handler begin
     variable
         pressed := get_sfall_arg_at(0),
@@ -38,6 +52,7 @@ procedure start begin
     if (not game_loaded) then return;
 
     register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_TOHIT, tohit_handler);
 end
 
 
