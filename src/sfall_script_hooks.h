@@ -151,50 +151,58 @@ typedef enum {
     HOOK_COUNT,
 } HookType;
 
-constexpr size_t MAX_HOOK_ARGS = 16;
-constexpr size_t MAX_HOOK_RETS = 8;
+constexpr size_t HOOKS_MAX_ARGUMENTS = 16;
+constexpr size_t HOOKS_MAX_RETURN_VALUES = 8;
 
+/**
+ * Allows to delegate some logic to scripts:
+ * - Each hook type has different number of arguments and return values
+ * - Set up arguments, invoke `call()` and read return values
+ * - Return values can be used to alter normal engine behavior if scripts request it
+ */
 class ScriptHookCall {
-    class Scope {
-    public:
-        ScriptHookCall* get() const { return _call; }
-
-    private:
-        Scope(HookType hookType);
-        ~Scope();
-
-        ScriptHookCall* _call;
-    };
 public:
-    ScriptHookCall(HookType hookType);
+    static ScriptHookCall* current();
+
+    ScriptHookCall(HookType hookType, int maxReturnValues);
     ~ScriptHookCall() = default;
 
     ScriptHookCall* addArg(ProgramValue value);
     ScriptHookCall* setArgAt(int idx, ProgramValue value);
-    void addReturn(ProgramValue value);
-    void setReturnAt(int idx, ProgramValue value);
+    void addReturnValue(ProgramValue value);
+    void setReturnValueAt(int idx, ProgramValue value);
 
     void call();
 
+    ProgramValue getNextArgFromScript();
+
+    int numArgs() const { return _numArgs; }
+    int maxReturnValues() const { return _maxRetVals; }
+    int numReturnValues() const { return _numRetVals; }
+
     ProgramValue getArgAt(int idx) const;
-    ProgramValue getReturnAt(int idx) const;
+    ProgramValue getReturnValueAt(int idx) const;
 
 private:
 
-    static std::vector<std::unique_ptr<ScriptHookCall>> _callStack;
+    static std::vector<ScriptHookCall*> _callStack;
 
     HookType _hookType;
-    ProgramValue _args[MAX_HOOK_ARGS] = {};
+    int _maxRetVals = 0;
+
+    ProgramValue _args[HOOKS_MAX_ARGUMENTS] = {};
     int _numArgs = 0;
-    ProgramValue _retVals[MAX_HOOK_RETS] = {};
+    ProgramValue _retVals[HOOKS_MAX_RETURN_VALUES] = {};
     int _numRetVals = 0;
+
+    int _scriptNextArg = 0;
 };
 
-void scriptHookRegister(const Program* program, HookType hookType, int procedureIndex);
+bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 
-bool script_hooks_init();
-void script_hooks_reset();
-void script_hooks_exit();
+bool scriptHooksInit();
+void scriptHooksReset();
+void scriptHooksExit();
 
 } // namespace fallout
 

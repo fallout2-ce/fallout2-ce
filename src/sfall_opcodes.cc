@@ -29,6 +29,7 @@
 #include "sfall_kb_helpers.h"
 #include "sfall_lists.h"
 #include "sfall_metarules.h"
+#include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
@@ -1213,6 +1214,99 @@ static void op_is_iface_tag_active(fallout::Program* program)
     fallout::programStackPushInteger(program, isActive ? 1 : 0);
 }
 
+// TODO: move opcodes into several files
+// TODO: reduce code duplication by introducing something like OpcodeContext in sfall
+
+static void op_register_hook(Program* program)
+{
+    constexpr char opcodeName[] = "register_hook";
+
+    int hookId = programStackPopInteger(program);
+    if (hookId < 0 || hookId >= HOOK_COUNT) {
+        programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
+        return;
+    }
+    int startProcIndex = programFindProcedure(program, gScriptProcNames[SCRIPT_PROC_START]);
+    if (startProcIndex == -1) {
+        programPrintError("%s: 'start' procedure not found", opcodeName);
+    }
+    if (!scriptHooksRegister(program, static_cast<HookType>(hookId), startProcIndex)) {
+        programPrintError("%s(%d, %d): failed", opcodeName, hookId, startProcIndex);
+    }
+}
+
+static void op_register_hook_proc(Program* program)
+{
+    constexpr char opcodeName[] = "register_hook_proc";
+
+    int procedureIndex = programStackPopInteger(program);
+    int hookId = programStackPopInteger(program);
+    if (hookId < 0 || hookId >= HOOK_COUNT) {
+        programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
+        return;
+    }
+    if (procedureIndex < 0 || procedureIndex > program->procedureCount()) {
+        programPrintError("%s: procedure index %d is out of range [0; %d]", opcodeName, procedureIndex, program->procedureCount());
+        return;
+    }
+
+    if (!scriptHooksRegister(program, static_cast<HookType>(hookId), procedureIndex)) {
+        programPrintError("%s(%d, %d): failed", opcodeName, hookId, procedureIndex);
+    }
+}
+
+ScriptHookCall* hookOpcodeGetCurrentCall(const char* opcodeName)
+{
+    const auto hookCall = ScriptHookCall::current();
+    if (hookCall == nullptr) {
+        programPrintError("%s: called outside of a script hook", opcodeName);
+    }
+    return hookCall;
+}
+
+static void op_get_sfall_arg(Program* program)
+{
+    constexpr char opcodeName[] = "get_sfall_arg";
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    programStackPushValue(program, hookCall != nullptr
+        ? hookCall->getNextArgFromScript()
+        : ProgramValue(0));
+}
+
+static void op_set_sfall_arg(Program* program)
+{
+    constexpr char opcodeName[] = "set_sfall_arg";
+
+    const ProgramValue value = programStackPopValue(program);
+    const int argNum = programStackPopInteger(program);
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    if (hookCall == nullptr) return;
+
+    if (argNum < 0 || argNum >= hookCall->numArgs()) {
+        programPrintError("%s: argNum %d out of range [0, %d]", opcodeName, argNum, hookCall->numArgs() - 1);
+        return;
+    }
+    hookCall->setArgAt(argNum, value);
+}
+
+static void op_set_sfall_return(Program* program)
+{
+    constexpr char opcodeName[] = "set_sfall_return";
+
+    const ProgramValue value = programStackPopValue(program);
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    if (hookCall == nullptr) return;
+
+    if (hookCall->numReturnValues() >= hookCall->maxReturnValues()) {
+        programPrintError("%s: trying to add next return value while only %d is expected", opcodeName, hookCall->maxReturnValues());
+        return;
+    }
+    hookCall->addReturnValue(value);
+}
+
 // Note: opcodes should pop arguments off the stack in reverse order
 void sfallOpcodesInit()
 {
@@ -1550,6 +1644,7 @@ void sfallOpcodesInit()
     // 0x8206 - void set_self(object)
     interpreterRegisterOpcode(0x8206, op_set_self);
     // 0x8207 - void register_hook(int hook)
+    interpreterRegisterOpcode(0x8207, op_register_hook);
 
     // 0x820d - int   list_begin(int type)
     interpreterRegisterOpcode(0x820D, op_list_begin);
@@ -1649,6 +1744,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8261, op_explosions_metarule);
 
     // 0x8262 - void register_hook_proc(int hook, procedure proc)
+    interpreterRegisterOpcode(0x8262, op_register_hook_proc);
 
     // 0x826b - string message_str_game(int fileId, int messageId)
     interpreterRegisterOpcode(0x826B, op_get_message);

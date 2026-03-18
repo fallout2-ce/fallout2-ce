@@ -388,6 +388,11 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
         return -1;
     }
 
+    if (!scriptHooksInit()) {
+        debugPrint("Failed on scriptHooksInit");
+        return -1;
+    }
+
     char* customConfigBasePath;
     configGetString(&gSfallConfig, SFALL_CONFIG_SCRIPTS_KEY, SFALL_CONFIG_INI_CONFIG_FOLDER, &customConfigBasePath);
     sfall_ini_set_base_path(customConfigBasePath);
@@ -442,6 +447,7 @@ void gameReset()
     sfall_gl_vars_reset();
     sfallListsReset();
     messageListRepositoryReset();
+    scriptHooksReset();
     sfallArraysReset();
     sfall_gl_scr_reset();
     sfallOnGameReset();
@@ -453,6 +459,7 @@ void gameExit()
     debugPrint("\nGame Exit\n");
 
     // SFALL
+    scriptHooksExit();
     sfall_gl_scr_exit();
     sfallArraysExit();
     sfallListsExit();

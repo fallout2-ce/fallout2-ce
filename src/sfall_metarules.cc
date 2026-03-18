@@ -22,11 +22,15 @@
 #include "platform_compat.h"
 #include "scripts.h"
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
+#include "sfall_opcodes.h"
+#include "sfall_script_hooks.h"
 #include "sfall_ini.h"
 #include "text_font.h"
 #include "tile.h"
 #include "window.h"
 #include "worldmap.h"
+
+#include <assert.h>
 
 namespace fallout {
 
@@ -37,6 +41,7 @@ static void mf_dialog_obj(Program* program, int args);
 static void mf_get_cursor_mode(Program* program, int args);
 static void mf_get_flags(Program* program, int args);
 static void mf_get_object_data(Program* program, int args);
+static void mf_get_sfall_arg_at(Program* program, int args);
 static void mf_get_text_width(Program* program, int args);
 static void mf_intface_redraw(Program* program, int args);
 static void mf_loot_obj(Program* program, int args);
@@ -55,8 +60,19 @@ static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
 static void mf_floor2(Program* program, int args);
 
+static int currentMetaruleIndex;
+
+static const MetaruleInfo* currentMetarule()
+{
+    assert(currentMetaruleIndex >= 0 && currentMetaruleIndex < kMetarulesCount);
+    return &kMetarules[currentMetaruleIndex];
+}
+
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 // Note: metarules should pop arguments off the stack in natural order
+
+// TODO: argument validation, standard error return value
+// TODO: reduce code complexity using something like MetaruleContext in sfall
 const MetaruleInfo kMetarules[] = {
     // {"add_extra_msg_file",        mf_add_extra_msg_file,        1, 2, -1, {ARG_STRING, ARG_INT}},
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
@@ -90,7 +106,7 @@ const MetaruleInfo kMetarules[] = {
     // {"get_object_ai_data",        mf_get_object_ai_data,        2, 2, -1, {ARG_OBJECT, ARG_INT}},
     { "get_object_data", mf_get_object_data, 2, 2 }, // XXX: likely parameter order mismatch
     // {"get_outline",               mf_get_outline,               1, 1,  0, {ARG_OBJECT}},
-    // {"get_sfall_arg_at",          mf_get_sfall_arg_at,          1, 1,  0, {ARG_INT}},
+    {"get_sfall_arg_at",          mf_get_sfall_arg_at,          1, 1,  0, {ARG_INT}},
     // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
@@ -221,6 +237,20 @@ void mf_get_flags(Program* program, int args)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
     programStackPushInteger(program, object->flags);
+}
+
+void mf_get_sfall_arg_at(Program* program, int args)
+{
+    const int argNum = programStackPopInteger(program);
+
+    const auto hookCall = hookOpcodeGetCurrentCall(currentMetarule()->name);
+    if (hookCall == nullptr) return;
+
+    if (argNum < 0 || argNum >= hookCall->numArgs()) {
+        programPrintError("%s: argNum %d out of range [0, %d]", currentMetarule()->name, argNum, hookCall->numArgs() - 1);
+        return;
+    }
+    programStackPushValue(program, hookCall->getArgAt(argNum));
 }
 
 void mf_get_object_data(Program* program, int args)
