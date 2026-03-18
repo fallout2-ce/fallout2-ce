@@ -11,6 +11,6 @@ void sfall_kb_press_key(int key);
 
 int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed);
 
-}
+} // namespace fallout
 
 #endif /* FALLOUT_SFALL_KB_HELPERS_H_ */

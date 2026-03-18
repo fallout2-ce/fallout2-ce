@@ -339,4 +339,3 @@ int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
 }
 
 } // namespace fallout
-

@@ -22,9 +22,9 @@
 #include "platform_compat.h"
 #include "scripts.h"
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
+#include "sfall_ini.h"
 #include "sfall_opcodes.h"
 #include "sfall_script_hooks.h"
-#include "sfall_ini.h"
 #include "text_font.h"
 #include "tile.h"
 #include "window.h"
@@ -107,7 +107,7 @@ const MetaruleInfo kMetarules[] = {
     // {"get_object_ai_data",        mf_get_object_ai_data,        2, 2, -1, {ARG_OBJECT, ARG_INT}},
     { "get_object_data", mf_get_object_data, 2, 2 }, // XXX: likely parameter order mismatch
     // {"get_outline",               mf_get_outline,               1, 1,  0, {ARG_OBJECT}},
-    {"get_sfall_arg_at",          mf_get_sfall_arg_at,          1, 1,  0, {ARG_INT}},
+    { "get_sfall_arg_at", mf_get_sfall_arg_at, 1, 1, 0, { ARG_INT } },
     // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
@@ -133,7 +133,7 @@ const MetaruleInfo kMetarules[] = {
     { "metarule_exist", mf_metarule_exist, 1, 1 },
     // {"npc_engine_level_up",       mf_npc_engine_level_up,       1, 1},
     // {"obj_is_openable",           mf_obj_is_openable,           1, 1,  0, {ARG_OBJECT}},
-    {"obj_under_cursor",          mf_obj_under_cursor,          2, 2,  0, {ARG_INT, ARG_INT}},
+    { "obj_under_cursor", mf_obj_under_cursor, 2, 2, 0, { ARG_INT, ARG_INT } },
     // {"objects_in_radius",         mf_objects_in_radius,         3, 4,  0, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "outlined_object", mf_outlined_object, 0, 0 },
     // {"real_dude_obj",             mf_real_dude_obj,             0, 0},
@@ -321,7 +321,8 @@ void mf_opcode_exists(Program* program, int args)
     programStackPushInteger(program, opcodeExists);
 }
 
-void mf_obj_under_cursor(Program* program, int args) {
+void mf_obj_under_cursor(Program* program, int args)
+{
     int onlyCritter = programStackPopInteger(program);
     int includeDude = programStackPopInteger(program);
 

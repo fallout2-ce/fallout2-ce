@@ -23,7 +23,7 @@ typedef enum {
     // AP cost of attacks.
     HOOK_CALCAPCOST = 2,
 
-//    HOOK_DEATHANIM1 = 3,
+    //    HOOK_DEATHANIM1 = 3,
 
     // Death animation selection.
     HOOK_DEATHANIM2 = 4,
@@ -34,7 +34,7 @@ typedef enum {
     // Critter death.
     HOOK_ONDEATH = 6,
 
-//    HOOK_FINDTARGET = 7,
+    //    HOOK_FINDTARGET = 7,
 
     // Using object on another object, before normal script proc.
     HOOK_USEOBJON = 8,
@@ -48,11 +48,11 @@ typedef enum {
     // Movement AP cost calculation. For AI triggers for every hex they move.
     HOOK_MOVECOST = 11,
 
-// obsolete:
-//    HOOK_HEXMOVEBLOCKING = 12,
-//    HOOK_HEXAIBLOCKING = 13,
-//    HOOK_HEXSHOOTBLOCKING = 14,
-//    HOOK_HEXSIGHTBLOCKING = 15,
+    // obsolete:
+    //    HOOK_HEXMOVEBLOCKING = 12,
+    //    HOOK_HEXAIBLOCKING = 13,
+    //    HOOK_HEXSHOOTBLOCKING = 14,
+    //    HOOK_HEXSIGHTBLOCKING = 15,
 
     // Weapon min/max damage calculation.
     HOOK_ITEMDAMAGE = 16,
@@ -102,7 +102,7 @@ typedef enum {
     // Game mode is changed. Used in many mods.
     HOOK_GAMEMODECHANGE = 31,
 
-//    HOOK_USEANIMOBJ = 32,
+    //    HOOK_USEANIMOBJ = 32,
 
     // Explosive timer is set. Allows to override the time.
     HOOK_EXPLOSIVETIMER = 33,
@@ -114,9 +114,9 @@ typedef enum {
     // TODO: maybe combine with USESKILL?
     HOOK_USESKILLON = 35,
 
-//    HOOK_ONEXPLOSION = 36,
-//    HOOK_SUBCOMBATDAMAGE = 37,
-//    HOOK_SETLIGHTING = 38,
+    //    HOOK_ONEXPLOSION = 36,
+    //    HOOK_SUBCOMBATDAMAGE = 37,
+    //    HOOK_SETLIGHTING = 38,
 
     // A continuous sneak check.
     HOOK_SNEAK = 39,
@@ -126,13 +126,13 @@ typedef enum {
     HOOK_STDPROCEDURE = 40,
     HOOK_STDPROCEDURE_END = 41,
 
-//    HOOK_TARGETOBJECT = 42,
+    //    HOOK_TARGETOBJECT = 42,
 
     // Random encounter occurs. Override map or cancel the encounter.
     HOOK_ENCOUNTER = 43,
 
-//    HOOK_ADJUSTPOISON = 44,
-//    HOOK_ADJUSTRADS = 45,
+    //    HOOK_ADJUSTPOISON = 44,
+    //    HOOK_ADJUSTRADS = 45,
 
     // Any random roll. Has various uses for advanced scripts.
     HOOK_ROLLCHECK = 46,
@@ -184,7 +184,6 @@ public:
     ProgramValue getReturnValueAt(int idx) const;
 
 private:
-
     static std::vector<ScriptHookCall*> _callStack;
 
     HookType _hookType;

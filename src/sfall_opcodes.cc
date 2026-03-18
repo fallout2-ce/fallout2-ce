@@ -1277,9 +1277,7 @@ static void op_get_sfall_arg(Program* program)
     constexpr char opcodeName[] = "get_sfall_arg";
 
     const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
-    programStackPushValue(program, hookCall != nullptr
-        ? hookCall->getNextArgFromScript()
-        : ProgramValue(0));
+    programStackPushValue(program, hookCall != nullptr ? hookCall->getNextArgFromScript() : ProgramValue(0));
 }
 
 static void op_set_sfall_arg(Program* program)
@@ -1585,7 +1583,7 @@ void sfallOpcodesInit()
 
     // TODO:
     // 0x823c - array get_sfall_args()
-    //interpreterRegisterOpcode(0x823c, op_get_sfall_args);
+    // interpreterRegisterOpcode(0x823c, op_get_sfall_args);
 
     // 0x823d - void  set_sfall_arg(int argnum, int value)
     interpreterRegisterOpcode(0x823d, op_set_sfall_arg);

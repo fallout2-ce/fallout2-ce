@@ -30,7 +30,9 @@ ScriptHookCall* ScriptHookCall::current()
     return !_callStack.empty() ? _callStack.back() : nullptr;
 }
 
-ScriptHookCall::ScriptHookCall(HookType hookType, int maxReturnValues) : _hookType(hookType), _maxRetVals(maxReturnValues)
+ScriptHookCall::ScriptHookCall(HookType hookType, int maxReturnValues)
+    : _hookType(hookType)
+    , _maxRetVals(maxReturnValues)
 {
     assert(hookType >= 0 && hookType < HOOK_COUNT && maxReturnValues >= 0 && maxReturnValues <= HOOKS_MAX_RETURN_VALUES);
 }
@@ -93,7 +95,7 @@ void ScriptHookCall::call()
 ProgramValue ScriptHookCall::getNextArgFromScript()
 {
     if (_scriptNextArg >= _numArgs) {
-        return {0};
+        return { 0 };
     }
     return _args[_scriptNextArg++];
 }
@@ -118,7 +120,7 @@ bool scriptHooksRegister(Program* program, const HookType hookType, const int pr
         return false; // unregister fail
     }
 
-    scriptHooks[hookType].emplace_back(ScriptHook{program, procedureIndex});
+    scriptHooks[hookType].emplace_back(ScriptHook { program, procedureIndex });
     return true; // register success
 }
 
