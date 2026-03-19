@@ -1280,6 +1280,21 @@ static void op_get_sfall_arg(Program* program)
     programStackPushValue(program, hookCall != nullptr ? hookCall->getNextArgFromScript() : ProgramValue(0));
 }
 
+static void op_get_sfall_args(Program* program)
+{
+    constexpr char opcodeName[] = "get_sfall_args";
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    ArrayId result = 0;
+    if (hookCall != nullptr) {
+        result = CreateTempArray(hookCall->numArgs(), 0);
+        for (int i = 0; i < hookCall->numArgs(); ++i) {
+            SetArray(result, i, hookCall->getArgAt(i), false, program);
+        }
+    }
+    programStackPushInteger(program, static_cast<int>(result));
+}
+
 static void op_set_sfall_arg(Program* program)
 {
     constexpr char opcodeName[] = "set_sfall_arg";
@@ -1581,9 +1596,8 @@ void sfallOpcodesInit()
     // 0x81e4 - int   get_sfall_arg()
     interpreterRegisterOpcode(0x81e4, op_get_sfall_arg);
 
-    // TODO:
     // 0x823c - array get_sfall_args()
-    // interpreterRegisterOpcode(0x823c, op_get_sfall_args);
+    interpreterRegisterOpcode(0x823c, op_get_sfall_args);
 
     // 0x823d - void  set_sfall_arg(int argnum, int value)
     interpreterRegisterOpcode(0x823d, op_set_sfall_arg);

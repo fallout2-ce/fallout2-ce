@@ -34,12 +34,12 @@ procedure useobj_handler begin
 end
 
 procedure useobjon_handler begin
-    variable
-        target := get_sfall_arg,
-        user := get_sfall_arg,
-        item := get_sfall_arg;
+    variable args := get_sfall_args,
+        target := args[0],
+        user := args[1],
+        item := args[2];
 
-    display_msg(string_format("useobjon %s (%s) -> %s", obj_name(user), obj_name(item), obj_name(target)));
+    display_msg(string_format("useobjon %s (%s) -> %s [len: %d]", obj_name(user), obj_name(item), obj_name(target), len_array(args)));
     set_sfall_return(0);
 end
 
