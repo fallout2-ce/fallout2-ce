@@ -89,6 +89,35 @@ typedef enum GameDialogReaction {
     GAME_DIALOG_REACTION_BAD = 51,
 } GameDialogReaction;
 
+// `dialogMode` tracks the active dialog screen, while
+// `dialogSwitchMode` carries pending and in-progress transitions between
+// these screens. The flow is: talk -> barter or party control ->
+// party customization -> control -> talk, with `dialogSwitchMode` used to
+// request and finalize those transitions on the ticker/main-loop boundary.
+typedef enum GameDialogMode {
+    GAME_DIALOG_MODE_NONE = 0,
+
+    // possible values for dialogMode
+    GAME_DIALOG_MODE_TALK = 1,
+    GAME_DIALOG_MODE_BARTER = 4,
+    GAME_DIALOG_MODE_PARTY_CONTROL = 10,
+    GAME_DIALOG_MODE_PARTY_CUSTOMIZATION = 13,
+
+    // possible values for dialogSwitchMode (in addition to TALK)
+    GAME_DIALOG_MODE_SWITCH_TO_BARTER = 2,
+    GAME_DIALOG_MODE_BARTER_ACTIVE = 3,
+    GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL = 8,
+    GAME_DIALOG_MODE_PARTY_CONTROL_ACTIVE = 9,
+    GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION = 11,
+    GAME_DIALOG_MODE_PARTY_CUSTOMIZATION_ACTIVE = 12,
+} GameDialogMode;
+
+typedef enum GameDialogStatus {
+    GAME_DIALOG_NONE = -1,
+    GAME_DIALOG_INACTIVE = 0,
+    GAME_DIALOG_ACTIVE = 1,
+} GameDialogStatus;
+
 typedef struct GameDialogReviewEntry {
     int replyMessageListId;
     int replyMessageId;
@@ -125,10 +154,10 @@ typedef struct GameDialogButtonData {
     int value;
 } GameDialogButtonData;
 
-typedef struct STRUCT_5189E4 {
+typedef struct PartyMemberOptionSetting {
     int messageId;
     int value;
-} STRUCT_5189E4;
+} PartyMemberOptionSetting;
 
 typedef enum PartyMemberCustomizationOption {
     PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE,
@@ -196,13 +225,16 @@ static Art* _lipsFp = nullptr;
 static bool gGameDialogLipSyncStarted = false;
 
 // 0x518714
-static int _dialogue_state = 0;
+// what dialog mode is active (talk/barter/party control/party customization)
+static GameDialogMode dialogMode = GAME_DIALOG_MODE_NONE;
 
 // 0x518718
-static int _dialogue_switch_mode = 0;
+// what dialog mode are we switching to
+static GameDialogMode dialogSwitchMode = GAME_DIALOG_MODE_NONE;
 
 // 0x51871C
-static int _gdialog_state = -1;
+// whether the dialog system is active or not
+static GameDialogStatus _gdialog_state = GAME_DIALOG_NONE;
 
 // 0x518720
 static bool _gdDialogWentOff = false;
@@ -248,7 +280,7 @@ static Rect _backgrndRects[8] = {
 };
 
 // 0x5187C8
-static int _talk_need_to_center = 1;
+static bool _talk_need_to_center = true;
 
 // 0x5187CC
 static bool _can_start_new_fidget = false;
@@ -393,7 +425,7 @@ static GameDialogButtonData gGameDialogDispositionButtonsData[5] = {
 };
 
 // 0x5189E4
-static STRUCT_5189E4 _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT][6] = {
+static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT][6] = {
     {
         { 100, AREA_ATTACK_MODE_ALWAYS }, // Always!
         { 101, AREA_ATTACK_MODE_SOMETIMES }, // Sometimes, don't worry about hitting me
@@ -514,7 +546,7 @@ static int gDialogReplyMessageListId;
 static int gDialogReplyMessageId;
 
 // 0x58F4E0
-static int dword_58F4E0;
+static int gDialogReplyTextOffset;
 
 // NOTE: The is something odd about this variable. There are 2700 bytes, which
 // is 3 x 900, but anywhere in the app only 900 characters is used. The length
@@ -555,10 +587,11 @@ static FrmImage _littleRedButtonPressedFrmImage;
 
 static int _gdialogReset();
 static void gameDialogEndLips();
+static void gameDialogRestoreCenterTile();
 static int gdHide();
 static int gdUnhide();
-static int gameDialogAddMessageOption(int a1, int a2, int a3);
-static int gameDialogAddTextOption(int a1, const char* a2, int a3);
+static int gameDialogAddMessageOption(int messageListId, int messageId, int reaction);
+static int gameDialogAddTextOption(int messageListId, const char* text, int reaction);
 static int gameDialogReviewWindowInit(int* win);
 static int gameDialogReviewWindowFree(int* win);
 static int gameDialogShowReview();
@@ -574,19 +607,19 @@ static void _gdProcessCleanup();
 static int _gdProcessExit();
 static void gameDialogRenderCaps();
 static int _gdProcess();
-static int _gdProcessChoice(int a1);
-static void gameDialogOptionOnMouseEnter(int a1);
-static void gameDialogOptionOnMouseExit(int a1);
+static int _gdProcessChoice(int optionIndex);
+static void gameDialogOptionOnMouseEnter(int optionIndex);
+static void gameDialogOptionOnMouseExit(int optionIndex);
 static void gameDialogRenderReply();
 static void _gdProcessUpdate();
 static int _gdCreateHeadWindow();
 static void _gdDestroyHeadWindow();
 static void _gdSetupFidget(int headFid, int reaction);
 static void gameDialogWaitForFidgetToComplete();
-static void _gdPlayTransition(int a1);
-static void _reply_arrow_up(int btn, int a2);
-static void _reply_arrow_down(int btn, int a2);
-static void _reply_arrow_restore(int btn, int a2);
+static void _gdPlayTransition(int animation);
+static void _reply_arrow_up(int btn, int keyCode);
+static void _reply_arrow_down(int btn, int keyCode);
+static void _reply_arrow_restore(int btn, int keyCode);
 static void _demo_copy_title(int win);
 static void _demo_copy_options(int win);
 static void _gDialogRefreshOptionsRect(int win, Rect* drawRect);
@@ -595,16 +628,16 @@ static void gameDialogTicker();
 // If scrolling up - only uses subWindowFrmData to gradually fill the window (must be pre-filled with bg window contents).
 // If scroliing down - uses both subWindowFrmData and bgWindowFrmData to fill parts of window buffer.
 static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* subWindowFrmData, unsigned char* windowBuf, unsigned char* bgWindowFrmData, int windowHeight, bool instantScrollUp = false);
-static int _text_num_lines(const char* a1, int a2);
-static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, char* string, int* a4, int height, int pitch, int color);
-static int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* a4, int height, int pitch, int color, int a7);
+static int _text_num_lines(const char* text, int maxWidth);
+static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, char* string, int* textOffset, int height, int pitch, int color);
+static int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* textOffset, int height, int pitch, int color, int draw);
 static int _gdialog_barter_create_win();
 static void _gdialog_barter_destroy_win();
 static void _gdialog_barter_cleanup_tables();
 static int partyMemberControlWindowInit();
 static void partyMemberControlWindowFree();
 static void partyMemberControlWindowUpdate();
-static void gameDialogCombatControlButtonOnMouseUp(int a1, int a2);
+static void gameDialogCombatControlButtonOnMouseUp(int btn, int keyCode);
 static int _gdPickAIUpdateMsg(Object* obj);
 static int _gdCanBarter();
 static void partyMemberControlWindowHandleEvents();
@@ -613,15 +646,15 @@ static void partyMemberCustomizationWindowFree();
 static void partyMemberCustomizationWindowHandleEvents();
 static void partyMemberCustomizationWindowUpdate();
 static void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selectedIndex);
-static int _gdCustomSelect(int a1);
+static int _gdCustomSelect(int option);
 static void _gdCustomUpdateSetting(int option, int value);
-static void gameDialogBarterButtonUpMouseUp(int btn, int a2);
+static void gameDialogBarterButtonUpMouseUp(int btn, int keyCode);
 static int _gdialog_window_create();
 static void _gdialog_window_destroy();
 static int talk_to_create_background_window();
 static int gameDialogWindowRenderBackground();
 static int _talkToRefreshDialogWindowRect(Rect* rect);
-static void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int x, int y, int destPitch, unsigned char* a9, unsigned char* a10);
+static void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int x, int y, int destPitch, unsigned char* blendTable, unsigned char* unusedGrayTable);
 static void gameDialogRenderTalkingHead(Art* art, int frame);
 static void gameDialogHighlightsInit();
 static void gameDialogHighlightsExit();
@@ -668,6 +701,17 @@ int gameDialogExit()
     return _gdialogReset();
 }
 
+static void gameDialogRestoreCenterTile()
+{
+    if (gGameDialogOldDudeTile != gDude->tile) {
+        gGameDialogOldCenterTile = gDude->tile;
+    }
+
+    if (_gdDialogWentOff) {
+        _tile_scroll_to(gGameDialogOldCenterTile, 2);
+    }
+}
+
 // 0x444D2C
 bool _gdialogActive()
 {
@@ -676,7 +720,7 @@ bool _gdialogActive()
 
 // gdialogEnter
 // 0x444D3C
-void gameDialogEnter(Object* speaker, int a2)
+void gameDialogEnter(Object* speaker, int mode)
 {
     if (speaker == nullptr) {
         debugPrint("\nError: gdialogEnter: target was NULL!");
@@ -701,8 +745,9 @@ void gameDialogEnter(Object* speaker, int a2)
             // You can't see there.
             messageListItem.num = 660;
             if (messageListGetItem(&gProtoMessageList, &messageListItem)) {
-                if (a2) {
+                if (mode) { // never true
                     displayMonitorAddMessage(messageListItem.text);
+                    debugPrint("Cannot see there ");
                 } else {
                     debugPrint(messageListItem.text);
                 }
@@ -716,8 +761,9 @@ void gameDialogEnter(Object* speaker, int a2)
             // Too far away.
             messageListItem.num = 661;
             if (messageListGetItem(&gProtoMessageList, &messageListItem)) {
-                if (a2) {
+                if (mode) { // never true
                     displayMonitorAddMessage(messageListItem.text);
+                    debugPrint("Too far ");
                 } else {
                     debugPrint(messageListItem.text);
                 }
@@ -758,7 +804,7 @@ void gameDialogEnter(Object* speaker, int a2)
         return;
     }
 
-    if (script->scriptOverrides || _dialogue_state != 4) {
+    if (script->scriptOverrides || dialogMode != GAME_DIALOG_MODE_BARTER) {
         _dialogue_just_started = 0;
         isoEnable();
         scriptsExecMapUpdateProc();
@@ -768,37 +814,30 @@ void gameDialogEnter(Object* speaker, int a2)
 
     gameDialogEndLips();
 
-    if (_gdialog_state == 1) {
+    if (_gdialog_state == GAME_DIALOG_ACTIVE) {
         // TODO: Not sure about these conditions.
-        if (_dialogue_switch_mode == 2) {
+        if (dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_BARTER) {
             _gdialog_window_destroy();
-        } else if (_dialogue_switch_mode == 8) {
+        } else if (dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL) {
             _gdialog_window_destroy();
-        } else if (_dialogue_switch_mode == 11) {
+        } else if (dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION) {
             _gdialog_window_destroy();
         } else {
-            if (_dialogue_switch_mode == _gdialog_state) {
+            if (dialogSwitchMode == GAME_DIALOG_MODE_TALK) {
                 _gdialog_barter_destroy_win();
-            } else if (_dialogue_state == _gdialog_state) {
+            } else if (dialogMode == GAME_DIALOG_MODE_TALK) {
                 _gdialog_window_destroy();
-            } else if (_dialogue_state == a2) {
+            } else if (dialogMode == mode) {
                 _gdialog_barter_destroy_win();
             }
         }
         _gdialogExitFromScript();
     }
 
-    _gdialog_state = 0;
-    _dialogue_state = 0;
+    _gdialog_state = GAME_DIALOG_INACTIVE;
+    dialogMode = GAME_DIALOG_MODE_NONE;
 
-    int tile = gDude->tile;
-    if (gGameDialogOldDudeTile != tile) {
-        gGameDialogOldCenterTile = tile;
-    }
-
-    if (_gdDialogWentOff) {
-        _tile_scroll_to(gGameDialogOldCenterTile, 2);
-    }
+    gameDialogRestoreCenterTile();
 
     isoEnable();
     scriptsExecMapUpdateProc();
@@ -817,13 +856,7 @@ void _gdialogSystemEnter()
     gameDialogEnter(gGameDialogSpeaker, 0);
     soundContinueAll();
 
-    if (gGameDialogOldDudeTile != gDude->tile) {
-        gGameDialogOldCenterTile = gDude->tile;
-    }
-
-    if (_gdDialogWentOff) {
-        _tile_scroll_to(gGameDialogOldCenterTile, 2);
-    }
+    gameDialogRestoreCenterTile();
 
     gameRequestState(GAME_STATE_2);
 
@@ -883,11 +916,11 @@ int gameDialogDisable()
 // 0x44510C
 int _gdialogInitFromScript(int headFid, int reaction)
 {
-    if (_dialogue_state == 1) {
+    if (dialogMode == GAME_DIALOG_MODE_TALK) {
         return -1;
     }
 
-    if (_gdialog_state == 1) {
+    if (_gdialog_state == GAME_DIALOG_ACTIVE) {
         return 0;
     }
 
@@ -916,7 +949,7 @@ int _gdialogInitFromScript(int headFid, int reaction)
         _tile_scroll_to(gGameDialogSpeaker->tile, 2);
     }
 
-    _talk_need_to_center = 1;
+    _talk_need_to_center = true;
 
     // CE: Fix Barter button.
     gameDialogRedButtonsInit();
@@ -925,7 +958,7 @@ int _gdialogInitFromScript(int headFid, int reaction)
     _gdCreateHeadWindow();
     tickersAdd(gameDialogTicker);
     _gdSetupFidget(headFid, reaction);
-    _gdialog_state = 1;
+    _gdialog_state = GAME_DIALOG_ACTIVE;
     _gmouse_disable_scrolling();
 
     if (headFid == -1) {
@@ -946,11 +979,13 @@ int _gdialogInitFromScript(int headFid, int reaction)
 // 0x445298
 int _gdialogExitFromScript()
 {
-    if (_dialogue_switch_mode == 2 || _dialogue_switch_mode == 8 || _dialogue_switch_mode == 11) {
+    if (dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_BARTER
+        || dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL
+        || dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION) {
         return -1;
     }
 
-    if (_gdialog_state == 0) {
+    if (_gdialog_state == GAME_DIALOG_INACTIVE) {
         return 0;
     }
 
@@ -959,10 +994,7 @@ int _gdialogExitFromScript()
     tickersRemove(gameDialogTicker);
 
     if (PID_TYPE(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
-        if (gGameDialogOldDudeTile != gDude->tile) {
-            gGameDialogOldCenterTile = gDude->tile;
-        }
-        _tile_scroll_to(gGameDialogOldCenterTile, 2);
+        gameDialogRestoreCenterTile();
     }
 
     GameMode::exitGameMode(GameMode::kDialog);
@@ -994,8 +1026,8 @@ int _gdialogExitFromScript()
     // NOTE: Uninline.
     gameDialogHighlightsExit();
 
-    _gdialog_state = 0;
-    _dialogue_state = 0;
+    _gdialog_state = GAME_DIALOG_INACTIVE;
+    dialogMode = GAME_DIALOG_MODE_NONE;
 
     colorCycleEnable();
 
@@ -1033,10 +1065,10 @@ int _gdialogExitFromScript()
 }
 
 // 0x445438
-void gameDialogSetBackground(int a1)
+void gameDialogSetBackground(int background)
 {
-    if (a1 != -1) {
-        gGameDialogBackground = a1;
+    if (background != -1) {
+        gGameDialogBackground = background;
     }
 }
 
@@ -1059,13 +1091,13 @@ void gameDialogRenderSupplementaryMessage(char* msg)
     unsigned char* windowBuffer = windowGetBuffer(gGameDialogReplyWindow);
     int lineHeight = fontGetLineHeight();
 
-    int a4 = 0;
+    int textOffset = 0;
 
     // NOTE: Uninline.
     text_to_rect_wrapped(windowBuffer,
         &_replyRect,
         msg,
-        &a4,
+        &textOffset,
         lineHeight,
         379,
         _colorTable[992] | 0x2000000);
@@ -1146,7 +1178,7 @@ int gameDialogSetMessageReply(Program* program, int messageListId, int messageId
     gDialogReplyProgram = program;
     gDialogReplyMessageListId = messageListId;
     gDialogReplyMessageId = messageId;
-    dword_58F4E0 = 0;
+    gDialogReplyTextOffset = 0;
     gDialogReplyText[0] = '\0';
     gGameDialogOptionEntriesLength = 0;
 
@@ -1159,7 +1191,7 @@ int gameDialogSetTextReply(Program* program, int messageListId, const char* text
     gameDialogAddReviewText(text);
 
     gDialogReplyProgram = program;
-    dword_58F4E0 = 0;
+    gDialogReplyTextOffset = 0;
     gDialogReplyMessageListId = -4;
     gDialogReplyMessageId = -4;
 
@@ -1200,7 +1232,7 @@ int _gdialogGo()
 // 0x445764
 void _gdialogUpdatePartyStatus()
 {
-    if (_dialogue_state != 1) {
+    if (dialogMode != GAME_DIALOG_MODE_TALK) {
         return;
     }
 
@@ -1473,8 +1505,8 @@ int gameDialogShowReview()
     }
 
     // probably current top line or something like this, which is used to scroll
-    int v1 = 0;
-    gameDialogReviewWindowUpdate(win, v1);
+    int reviewStartIndex = 0;
+    gameDialogReviewWindowUpdate(win, reviewStartIndex);
 
     while (true) {
         sharedFpsLimiter.mark();
@@ -1490,18 +1522,18 @@ int gameDialogShowReview()
 
         // likely scrolling
         if (keyCode == 328) {
-            v1 -= 1;
-            if (v1 >= 0) {
-                gameDialogReviewWindowUpdate(win, v1);
+            reviewStartIndex -= 1;
+            if (reviewStartIndex >= 0) {
+                gameDialogReviewWindowUpdate(win, reviewStartIndex);
             } else {
-                v1 = 0;
+                reviewStartIndex = 0;
             }
         } else if (keyCode == 336) {
-            v1 += 1;
-            if (v1 <= gGameDialogReviewEntriesLength - 1) {
-                gameDialogReviewWindowUpdate(win, v1);
+            reviewStartIndex += 1;
+            if (reviewStartIndex <= gGameDialogReviewEntriesLength - 1) {
+                gameDialogReviewWindowUpdate(win, reviewStartIndex);
             } else {
-                v1 = gGameDialogReviewEntriesLength - 1;
+                reviewStartIndex = gGameDialogReviewEntriesLength - 1;
             }
         }
 
@@ -1531,7 +1563,7 @@ void gameDialogReviewWindowUpdate(int win, int origin)
     entriesRect.right = 422;
     entriesRect.bottom = 418;
 
-    int v20 = fontGetLineHeight() + 2;
+    int entrySpacing = fontGetLineHeight() + 2;
     unsigned char* windowBuffer = windowGetBuffer(win);
     if (windowBuffer == nullptr) {
         debugPrint("\nError: gdialog: review: can't find buffer!");
@@ -1554,7 +1586,7 @@ void gameDialogReviewWindowUpdate(int win, int origin)
         char name[60];
         snprintf(name, sizeof(name), "%s:", objectGetName(gGameDialogSpeaker));
         windowDrawText(win, name, 180, 88, y, _colorTable[992] | 0x2000000);
-        entriesRect.top += v20;
+        entriesRect.top += entrySpacing;
 
         char* replyText;
         if (dialogReviewEntry->replyMessageListId <= -3) {
@@ -1587,7 +1619,7 @@ void gameDialogReviewWindowUpdate(int win, int origin)
         if (dialogReviewEntry->optionMessageListId != -3) {
             snprintf(name, sizeof(name), "%s:", objectGetName(gDude));
             windowDrawText(win, name, 180, 88, y, _colorTable[21140] | 0x2000000);
-            entriesRect.top += v20;
+            entriesRect.top += entrySpacing;
 
             char* optionText;
             if (dialogReviewEntry->optionMessageListId <= -3) {
@@ -1873,9 +1905,9 @@ int _gdProcess()
 
     _gdProcessUpdate();
 
-    int v18 = 0;
-    if (dword_58F4E0 != 0) {
-        v18 = 1;
+    bool autoAdvance = false;
+    if (gDialogReplyTextOffset != 0) {
+        autoAdvance = true;
         _gdReplyTooBig = 1;
     }
 
@@ -1904,30 +1936,30 @@ int _gdProcess()
                 gameMouseSetCursor(MOUSE_CURSOR_ARROW);
             }
         } else {
-            if (_dialogue_switch_mode == 3) {
-                _dialogue_state = 4;
+            if (dialogSwitchMode == GAME_DIALOG_MODE_BARTER_ACTIVE) {
+                dialogMode = GAME_DIALOG_MODE_BARTER;
 
                 GameMode::exitGameMode(GameMode::kSpecial);
 
                 inventoryOpenTrade(gGameDialogWindow, gGameDialogSpeaker, _peon_table_obj, _barterer_table_obj, gGameDialogBarterModifier);
                 _gdialog_barter_cleanup_tables();
 
-                int v5 = _dialogue_state;
+                GameDialogMode dialogueState = dialogMode;
                 _gdialog_barter_destroy_win();
-                _dialogue_state = v5;
+                dialogMode = dialogueState;
 
-                if (v5 == 4) {
-                    _dialogue_switch_mode = 1;
-                    _dialogue_state = 1;
+                if (dialogueState == GAME_DIALOG_MODE_BARTER) {
+                    dialogSwitchMode = GAME_DIALOG_MODE_TALK;
+                    dialogMode = GAME_DIALOG_MODE_TALK;
                 }
                 continue;
-            } else if (_dialogue_switch_mode == 9) {
-                _dialogue_state = 10;
+            } else if (dialogSwitchMode == GAME_DIALOG_MODE_PARTY_CONTROL_ACTIVE) {
+                dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
                 partyMemberControlWindowHandleEvents();
                 partyMemberControlWindowFree();
                 continue;
-            } else if (_dialogue_switch_mode == 12) {
-                _dialogue_state = 13;
+            } else if (dialogSwitchMode == GAME_DIALOG_MODE_PARTY_CUSTOMIZATION_ACTIVE) {
+                dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
                 partyMemberCustomizationWindowHandleEvents();
                 partyMemberCustomizationWindowFree();
                 continue;
@@ -1939,16 +1971,16 @@ int _gdProcess()
         }
 
         if (_gdReplyTooBig) {
-            unsigned int v6 = _get_bk_time();
-            if (v18) {
-                if (getTicksBetween(v6, tick) >= 10000 || keyCode == KEY_SPACE) {
+            unsigned int now = _get_bk_time();
+            if (autoAdvance) {
+                if (getTicksBetween(now, tick) >= 10000 || keyCode == KEY_SPACE) {
                     pageCount++;
                     pageIndex++;
-                    pageOffsets[pageCount] = dword_58F4E0;
+                    pageOffsets[pageCount] = gDialogReplyTextOffset;
                     gameDialogRenderReply();
-                    tick = v6;
-                    if (!dword_58F4E0) {
-                        v18 = 0;
+                    tick = now;
+                    if (!gDialogReplyTextOffset) {
+                        autoAdvance = false;
                     }
                 }
             }
@@ -1956,23 +1988,23 @@ int _gdProcess()
             if (keyCode == KEY_ARROW_UP) {
                 if (pageIndex > 0) {
                     pageIndex--;
-                    dword_58F4E0 = pageOffsets[pageIndex];
-                    v18 = 0;
+                    gDialogReplyTextOffset = pageOffsets[pageIndex];
+                    autoAdvance = false;
                     gameDialogRenderReply();
                 }
             } else if (keyCode == KEY_ARROW_DOWN) {
                 if (pageIndex < pageCount) {
                     pageIndex++;
-                    dword_58F4E0 = pageOffsets[pageIndex];
-                    v18 = 0;
+                    gDialogReplyTextOffset = pageOffsets[pageIndex];
+                    autoAdvance = false;
                     gameDialogRenderReply();
                 } else {
-                    if (dword_58F4E0 != 0) {
-                        tick = v6;
+                    if (gDialogReplyTextOffset != 0) {
+                        tick = now;
                         pageIndex++;
                         pageCount++;
-                        pageOffsets[pageCount] = dword_58F4E0;
-                        v18 = 0;
+                        pageOffsets[pageCount] = gDialogReplyTextOffset;
+                        autoAdvance = false;
                         gameDialogRenderReply();
                     }
                 }
@@ -1990,24 +2022,24 @@ int _gdProcess()
                     continue;
                 }
 
-                int v11 = keyCode - 49;
-                if (v11 < gGameDialogOptionEntriesLength) {
+                int optionIndex = keyCode - 49;
+                if (optionIndex < gGameDialogOptionEntriesLength) {
                     pageCount = 0;
                     pageIndex = 0;
                     pageOffsets[0] = 0;
                     _gdReplyTooBig = 0;
 
-                    if (_gdProcessChoice(v11) == -1) {
+                    if (_gdProcessChoice(optionIndex) == -1) {
                         break;
                     }
 
                     tick = getTicks();
 
-                    if (dword_58F4E0) {
-                        v18 = 1;
+                    if (gDialogReplyTextOffset) {
+                        autoAdvance = true;
                         _gdReplyTooBig = 1;
                     } else {
-                        v18 = 0;
+                        autoAdvance = false;
                     }
                 }
             }
@@ -2029,9 +2061,9 @@ int _gdProcess()
 }
 
 // 0x4468DC
-int _gdProcessChoice(int a1)
+int _gdProcessChoice(int optionIndex)
 {
-    // FIXME: There is a buffer underread bug when `a1` is -1 (pressing 0 on the
+    // FIXME: There is a buffer underread bug when `optionIndex` is -1 (pressing 0 on the
     // keyboard, see `_gdProcess`). When it happens the game looks into unused
     // continuation of `gDialogReplyText` (within 0x58F868-0x58FF70 range) which
     // is initialized to 0 according to C spec. I was not able to replicate the
@@ -2044,7 +2076,7 @@ int _gdProcessChoice(int a1)
     mouseHideCursor();
     _gdProcessCleanup();
 
-    GameDialogOptionEntry* dialogOptionEntry = a1 != -1 ? &(gDialogOptionEntries[a1]) : &dummy;
+    GameDialogOptionEntry* dialogOptionEntry = optionIndex != -1 ? &(gDialogOptionEntries[optionIndex]) : &dummy;
     if (dialogOptionEntry->messageListId == -4) {
         gameDialogSetReviewOptionText(dialogOptionEntry->text);
     } else {
@@ -2055,21 +2087,21 @@ int _gdProcessChoice(int a1)
 
     gameDialogEndLips();
 
-    int v1 = GAME_DIALOG_REACTION_NEUTRAL;
+    int reaction = GAME_DIALOG_REACTION_NEUTRAL;
     switch (dialogOptionEntry->reaction) {
     case GAME_DIALOG_REACTION_GOOD:
-        v1 = -1;
+        reaction = -1;
         break;
     case GAME_DIALOG_REACTION_NEUTRAL:
-        v1 = 0;
+        reaction = 0;
         break;
     case GAME_DIALOG_REACTION_BAD:
-        v1 = 1;
+        reaction = 1;
         break;
     default:
         // See 0x446907 in ecx but this branch should be unreachable. Due to the
         // bug described above, this code is reachable.
-        v1 = GAME_DIALOG_REACTION_NEUTRAL;
+        reaction = GAME_DIALOG_REACTION_NEUTRAL;
         debugPrint("\nError: dialog: Empathy Perk: invalid reaction!");
         break;
     }
@@ -2079,8 +2111,8 @@ int _gdProcessChoice(int a1)
     windowRefresh(gGameDialogReplyWindow);
     windowRefresh(gGameDialogOptionsWindow);
 
-    gameDialogOptionOnMouseEnter(a1);
-    _talk_to_critter_reacts(v1);
+    gameDialogOptionOnMouseEnter(optionIndex);
+    _talk_to_critter_reacts(reaction);
 
     gGameDialogOptionEntriesLength = 0;
 
@@ -2220,7 +2252,7 @@ void gameDialogRenderReply()
     text_to_rect_wrapped(windowGetBuffer(gGameDialogReplyWindow),
         &_replyRect,
         gDialogReplyText,
-        &dword_58F4E0,
+        &gDialogReplyTextOffset,
         fontGetLineHeight(),
         379,
         _colorTable[992] | 0x2000000);
@@ -2264,7 +2296,7 @@ void _gdProcessUpdate()
 
     MessageListItem messageListItem;
 
-    int v21 = 0;
+    bool skippedOnce = false;
 
     for (int index = 0; index < gGameDialogOptionEntriesLength; index++) {
         GameDialogOptionEntry* dialogOptionEntry = &(gDialogOptionEntries[index]);
@@ -2371,8 +2403,9 @@ void _gdProcessUpdate()
                 debugPrint("\nError: Can't create button!");
             }
         } else {
-            if (!v21) {
-                v21 = 1;
+            // TODO: seems odd that we would suppress the error the first time
+            if (!skippedOnce) {
+                skippedOnce = true;
             } else {
                 debugPrint("Error: couldn't make button because it went below the window.\n");
             }
@@ -2387,7 +2420,7 @@ void _gdProcessUpdate()
 // 0x44715C
 int _gdCreateHeadWindow()
 {
-    _dialogue_state = 1;
+    dialogMode = GAME_DIALOG_MODE_TALK;
 
     int windowWidth = GAME_DIALOG_WINDOW_WIDTH;
 
@@ -2434,9 +2467,9 @@ void _gdDestroyHeadWindow()
         gGameDialogDisplayBuffer = nullptr;
     }
 
-    if (_dialogue_state == 1) {
+    if (dialogMode == GAME_DIALOG_MODE_TALK) {
         _gdialog_window_destroy();
-    } else if (_dialogue_state == 4) {
+    } else if (dialogMode == GAME_DIALOG_MODE_BARTER) {
         _gdialog_barter_destroy_win();
     }
 
@@ -2804,19 +2837,19 @@ void _gDialogRefreshOptionsRect(int win, Rect* drawRect)
 // 0x447A58
 void gameDialogTicker()
 {
-    switch (_dialogue_switch_mode) {
-    case 2:
+    switch (dialogSwitchMode) {
+    case GAME_DIALOG_MODE_SWITCH_TO_BARTER:
         _loop_cnt = -1;
-        _dialogue_switch_mode = 3;
+        dialogSwitchMode = GAME_DIALOG_MODE_BARTER_ACTIVE;
 
         GameMode::enterGameMode(GameMode::kSpecial);
 
         _gdialog_window_destroy();
         _gdialog_barter_create_win();
         break;
-    case 1:
+    case GAME_DIALOG_MODE_TALK:
         _loop_cnt = -1;
-        _dialogue_switch_mode = 0;
+        dialogSwitchMode = GAME_DIALOG_MODE_NONE;
         _gdialog_barter_destroy_win();
         _gdialog_window_create();
 
@@ -2830,17 +2863,19 @@ void gameDialogTicker()
         }
 
         break;
-    case 8:
+    case GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL:
         _loop_cnt = -1;
-        _dialogue_switch_mode = 9;
+        dialogSwitchMode = GAME_DIALOG_MODE_PARTY_CONTROL_ACTIVE;
         _gdialog_window_destroy();
         partyMemberControlWindowInit();
         break;
-    case 11:
+    case GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION:
         _loop_cnt = -1;
-        _dialogue_switch_mode = 12;
+        dialogSwitchMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION_ACTIVE;
         _gdialog_window_destroy();
         partyMemberCustomizationWindowInit();
+        break;
+    default:
         break;
     }
 
@@ -2893,19 +2928,19 @@ void gameDialogTicker()
 // the game.
 //
 // 0x447CA0
-void _talk_to_critter_reacts(int a1)
+void _talk_to_critter_reacts(int reaction)
 {
-    int v1 = a1 + 1;
+    int reactionIndex = reaction + 1;
 
     debugPrint("Dialogue Reaction: ");
-    if (v1 < 3) {
-        debugPrint("%s\n", _react_strs[v1]);
+    if (reactionIndex < 3) {
+        debugPrint("%s\n", _react_strs[reactionIndex]);
     }
 
-    int v3 = a1 + 50;
+    int reactionCode = reaction + 50;
     _dialogue_seconds_since_last_input = 0;
 
-    switch (v3) {
+    switch (reactionCode) {
     case GAME_DIALOG_REACTION_GOOD:
         switch (gGameDialogFidgetReaction) {
         case FIDGET_GOOD:
@@ -3030,34 +3065,34 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowF
 }
 
 // 0x447F64
-int _text_num_lines(const char* a1, int a2)
+int _text_num_lines(const char* text, int maxWidth)
 {
-    int width = fontGetStringWidth(a1);
+    int width = fontGetStringWidth(text);
 
-    int v1 = 0;
+    int lineCount = 0;
     while (width > 0) {
-        width -= a2;
-        v1++;
+        width -= maxWidth;
+        lineCount++;
     }
 
-    return v1;
+    return lineCount;
 }
 
 // NOTE: Inlined.
 //
 // 0x447F80
-static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, char* string, int* a4, int height, int pitch, int color)
+static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, char* string, int* textOffset, int height, int pitch, int color)
 {
-    return gameDialogDrawText(buffer, rect, string, a4, height, pitch, color, 1);
+    return gameDialogDrawText(buffer, rect, string, textOffset, height, pitch, color, 1);
 }
 
 // display_msg
 // 0x447FA0
-int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* a4, int height, int pitch, int color, int a7)
+int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* textOffset, int height, int pitch, int color, int draw)
 {
     char* start;
-    if (a4 != nullptr) {
-        start = string + *a4;
+    if (textOffset != nullptr) {
+        start = string + *textOffset;
     } else {
         start = string;
     }
@@ -3101,14 +3136,14 @@ int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* a4,
                     return rect->top;
                 }
 
-                if (a7 != 1 || start == string) {
+                if (draw != 1 || start == string) {
                     fontDrawText(buffer + pitch * rect->top + 10, start, maxWidth, pitch, color);
                 } else {
                     fontDrawText(buffer + pitch * rect->top, start, maxWidth, pitch, color);
                 }
 
-                if (a4 != nullptr) {
-                    *a4 += static_cast<int>(strlen(start)) + 1;
+                if (textOffset != nullptr) {
+                    *textOffset += static_cast<int>(strlen(start)) + 1;
                 }
 
                 rect->top += height;
@@ -3121,7 +3156,7 @@ int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* a4,
             break;
         }
 
-        if (a7 != 0) {
+        if (draw != 0) {
             if (rect->bottom - fontGetLineHeight() < rect->top) {
                 if (end != nullptr && *end == '\0') {
                     *end = ' ';
@@ -3130,7 +3165,7 @@ int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* a4,
             }
 
             unsigned char* dest;
-            if (a7 != 1 || start == string) {
+            if (draw != 1 || start == string) {
                 dest = buffer + 10;
             } else {
                 dest = buffer;
@@ -3138,8 +3173,8 @@ int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* a4,
             fontDrawText(dest + pitch * rect->top, start, maxWidth, pitch, color);
         }
 
-        if (a4 != nullptr && end != nullptr) {
-            *a4 += static_cast<int>(strlen(start)) + 1;
+        if (textOffset != nullptr && end != nullptr) {
+            *textOffset += static_cast<int>(strlen(start)) + 1;
         }
 
         rect->top += height;
@@ -3155,8 +3190,8 @@ int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* a4,
         }
     }
 
-    if (a4 != nullptr) {
-        *a4 = 0;
+    if (textOffset != nullptr) {
+        *textOffset = 0;
     }
 
     return rect->top;
@@ -3178,8 +3213,8 @@ int gameDialogBarter(int modifier)
 
     gGameDialogBarterModifier = modifier;
     gameDialogBarterButtonUpMouseUp(-1, -1);
-    _dialogue_state = 4;
-    _dialogue_switch_mode = 2;
+    dialogMode = GAME_DIALOG_MODE_BARTER;
+    dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
 
     return 0;
 }
@@ -3191,14 +3226,14 @@ void _barter_end_to_talk_to()
     _dialogClose();
     _updatePrograms();
     scriptWindowUpdateAll();
-    _dialogue_state = 1;
-    _dialogue_switch_mode = 1;
+    dialogMode = GAME_DIALOG_MODE_TALK;
+    dialogSwitchMode = GAME_DIALOG_MODE_TALK;
 }
 
 // 0x448290
 int _gdialog_barter_create_win()
 {
-    _dialogue_state = 4;
+    dialogMode = GAME_DIALOG_MODE_BARTER;
 
     int frmId;
     if (gGameDialogSpeakerIsPartyMember) {
@@ -3429,7 +3464,7 @@ int partyMemberControlWindowInit()
 
     _control_buttons_start = 4;
 
-    int v21 = 3;
+    int dispositionButtonIndex = 3;
 
     for (int index = 0; index < 5; index++) {
         GameDialogButtonData* buttonData = &(gGameDialogDispositionButtonsData[index]);
@@ -3464,9 +3499,9 @@ int partyMemberControlWindowInit()
 
         unsigned char* disabledButtonFrmData = artGetFrameData(disabledButtonFrm, 0, 0);
 
-        v21++;
+        dispositionButtonIndex++;
 
-        _gdialog_buttons[v21] = buttonCreate(gGameDialogWindow,
+        _gdialog_buttons[dispositionButtonIndex] = buttonCreate(gGameDialogWindow,
             buttonData->x,
             buttonData->y,
             width,
@@ -3479,16 +3514,16 @@ int partyMemberControlWindowInit()
             downButtonFrmData,
             nullptr,
             BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_NO_TOGGLE_OFF | BUTTON_FLAG_CHECKABLE);
-        if (_gdialog_buttons[v21] == -1) {
+        if (_gdialog_buttons[dispositionButtonIndex] == -1) {
             partyMemberControlWindowFree();
             return -1;
         }
 
-        _win_register_button_disable(_gdialog_buttons[v21], disabledButtonFrmData, disabledButtonFrmData, disabledButtonFrmData);
-        buttonSetCallbacks(_gdialog_buttons[v21], _gsound_med_butt_press, _gsound_med_butt_release);
+        _win_register_button_disable(_gdialog_buttons[dispositionButtonIndex], disabledButtonFrmData, disabledButtonFrmData, disabledButtonFrmData);
+        buttonSetCallbacks(_gdialog_buttons[dispositionButtonIndex], _gsound_med_butt_press, _gsound_med_butt_release);
 
         if (!partyMemberSupportsDisposition(gGameDialogSpeaker, buttonData->value)) {
-            buttonDisable(_gdialog_buttons[v21]);
+            buttonDisable(_gdialog_buttons[dispositionButtonIndex]);
         }
     }
 
@@ -3499,7 +3534,7 @@ int partyMemberControlWindowInit()
 
     partyMemberControlWindowUpdate();
 
-    _dialogue_state = 10;
+    dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
 
     windowRefresh(gGameDialogWindow);
 
@@ -3646,8 +3681,8 @@ void partyMemberControlWindowUpdate()
 // 0x44928C
 void gameDialogCombatControlButtonOnMouseUp(int btn, int keyCode)
 {
-    _dialogue_switch_mode = 8;
-    _dialogue_state = 10;
+    dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL;
+    dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
 
     // NOTE: Uninline.
     gdHide();
@@ -3739,8 +3774,8 @@ void partyMemberControlWindowHandleEvents()
                 aiSetDisposition(gGameDialogSpeaker, 4);
             } else if (keyCode == 2099) {
                 aiSetDisposition(gGameDialogSpeaker, 0);
-                _dialogue_state = 13;
-                _dialogue_switch_mode = 11;
+                dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
+                dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION;
                 done = true;
             } else if (keyCode == 2102) {
                 aiSetDisposition(gGameDialogSpeaker, 2);
@@ -3749,8 +3784,8 @@ void partyMemberControlWindowHandleEvents()
             } else if (keyCode == 2111) {
                 aiSetDisposition(gGameDialogSpeaker, 1);
             } else if (keyCode == KEY_ESCAPE) {
-                _dialogue_switch_mode = 1;
-                _dialogue_state = 1;
+                dialogSwitchMode = GAME_DIALOG_MODE_TALK;
+                dialogMode = GAME_DIALOG_MODE_TALK;
                 return;
             } else if (keyCode == KEY_LOWERCASE_A) {
                 if (gGameDialogSpeaker->pid != 0x10000A1) {
@@ -3766,8 +3801,8 @@ void partyMemberControlWindowHandleEvents()
                 partyMemberControlWindowUpdate();
             } else if (keyCode == KEY_LOWERCASE_D) {
                 if (_gdCanBarter()) {
-                    _dialogue_switch_mode = 2;
-                    _dialogue_state = 4;
+                    dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
+                    dialogMode = GAME_DIALOG_MODE_BARTER;
                     return;
                 }
             } else if (keyCode == -2) {
@@ -3777,8 +3812,8 @@ void partyMemberControlWindowHandleEvents()
                 if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
                     if (mouseHitTestInWindow(gGameDialogWindow, 438, 156, 438 + 109, 156 + 28)) {
                         aiSetDisposition(gGameDialogSpeaker, 0);
-                        _dialogue_state = 13;
-                        _dialogue_switch_mode = 11;
+                        dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
+                        dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION;
                         done = true;
                     }
                 }
@@ -3904,7 +3939,7 @@ int partyMemberCustomizationWindowInit()
     _custom_current_selected[PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO] = aiGetAttackWho(gGameDialogSpeaker);
     _custom_current_selected[PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE] = aiGetChemUse(gGameDialogSpeaker);
 
-    _dialogue_state = 13;
+    dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
 
     partyMemberCustomizationWindowUpdate();
 
@@ -3977,8 +4012,8 @@ void partyMemberCustomizationWindowHandleEvents()
                 partyMemberCustomizationWindowUpdate();
             } else if (keyCode == KEY_RETURN || keyCode == KEY_ESCAPE) {
                 done = true;
-                _dialogue_switch_mode = 8;
-                _dialogue_state = 10;
+                dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL;
+                dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
             }
         }
 
@@ -4057,7 +4092,7 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
     fontSetCurrent(101);
 
     for (int index = 0; index < 6; index++) {
-        STRUCT_5189E4* ptr = &(_custom_settings[type][index]);
+        PartyMemberOptionSetting* ptr = &(_custom_settings[type][index]);
         if (ptr->messageId != -1) {
             bool enabled = false;
             switch (type) {
@@ -4099,7 +4134,7 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
 }
 
 // 0x449FC0
-int _gdCustomSelect(int a1)
+int _gdCustomSelect(int option)
 {
     int oldFont = fontGetCurrent();
 
@@ -4152,7 +4187,7 @@ int _gdCustomSelect(int a1)
     MessageListItem messageListItem;
     const char* msg;
 
-    msg = getmsg(&gCustomMessageList, &messageListItem, a1);
+    msg = getmsg(&gCustomMessageList, &messageListItem, option);
     fontDrawText(windowBuffer + backgroundFrmWidth * 15 + 40, msg, backgroundFrmWidth, backgroundFrmWidth, _colorTable[18979]);
 
     msg = getmsg(&gCustomMessageList, &messageListItem, 10);
@@ -4161,8 +4196,8 @@ int _gdCustomSelect(int a1)
     msg = getmsg(&gCustomMessageList, &messageListItem, 11);
     fontDrawText(windowBuffer + backgroundFrmWidth * 162 + 193, msg, backgroundFrmWidth, backgroundFrmWidth, _colorTable[18979]);
 
-    int value = _custom_current_selected[a1];
-    _gdCustomSelectRedraw(windowBuffer, backgroundFrmWidth, a1, value);
+    int value = _custom_current_selected[option];
+    _gdCustomSelectRedraw(windowBuffer, backgroundFrmWidth, option, value);
     windowRefresh(win);
 
     int minX = selectWindowX + 42;
@@ -4171,7 +4206,7 @@ int _gdCustomSelect(int a1)
     int maxY = selectWindowY + backgroundFrmHeight - 42;
 
     bool done = false;
-    unsigned int v53 = 0;
+    unsigned int lastSelectionTimestamp = 0;
     while (!done) {
         sharedFpsLimiter.mark();
 
@@ -4186,9 +4221,9 @@ int _gdCustomSelect(int a1)
             }
 
             if (keyCode == KEY_RETURN || keyCode == 500) {
-                STRUCT_5189E4* ptr = &(_custom_settings[a1][value]);
-                _custom_current_selected[a1] = value;
-                _gdCustomUpdateSetting(a1, ptr->value);
+                PartyMemberOptionSetting* ptr = &(_custom_settings[option][value]);
+                _custom_current_selected[option] = value;
+                _gdCustomUpdateSetting(option, ptr->value);
                 if (keyCode != 500) {
                     soundPlayFile("ib1p1xx1");
                 }
@@ -4209,16 +4244,16 @@ int _gdCustomSelect(int a1)
                         if (newValue < 6) {
                             unsigned int timestamp = getTicks();
                             if (newValue == value) {
-                                if (getTicksBetween(timestamp, v53) < 250) {
-                                    _custom_current_selected[a1] = newValue;
-                                    _gdCustomUpdateSetting(a1, newValue);
+                                if (getTicksBetween(timestamp, lastSelectionTimestamp) < 250) {
+                                    _custom_current_selected[option] = newValue;
+                                    _gdCustomUpdateSetting(option, newValue);
                                     done = true;
                                 }
                             } else {
-                                STRUCT_5189E4* ptr = &(_custom_settings[a1][newValue]);
+                                PartyMemberOptionSetting* ptr = &(_custom_settings[option][newValue]);
                                 if (ptr->messageId != -1) {
                                     bool enabled = false;
-                                    switch (a1) {
+                                    switch (option) {
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
                                         enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, ptr->value);
                                         break;
@@ -4241,12 +4276,12 @@ int _gdCustomSelect(int a1)
 
                                     if (enabled) {
                                         value = newValue;
-                                        _gdCustomSelectRedraw(windowBuffer, backgroundFrmWidth, a1, newValue);
+                                        _gdCustomSelectRedraw(windowBuffer, backgroundFrmWidth, option, newValue);
                                         windowRefresh(win);
                                     }
                                 }
                             }
-                            v53 = timestamp;
+                            lastSelectionTimestamp = timestamp;
                         }
                     }
                 }
@@ -4308,8 +4343,8 @@ void gameDialogBarterButtonUpMouseUp(int btn, int keyCode)
             }
         }
 
-        _dialogue_switch_mode = 2;
-        _dialogue_state = 4;
+        dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
+        dialogMode = GAME_DIALOG_MODE_BARTER;
 
         // NOTE: Uninline.
         gdHide();
@@ -4543,8 +4578,10 @@ int _talkToRefreshDialogWindowRect(Rect* rect)
 }
 
 // 0x44AC68
-void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, unsigned char* a9, unsigned char* a10)
+void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, unsigned char* blendTable, unsigned char* unusedGrayTable)
 {
+    (void)unusedGrayTable;
+
     int srcStep = srcPitch - srcWidth;
     int destStep = destPitch - srcWidth;
 
@@ -4552,13 +4589,13 @@ void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, 
 
     for (int y = 0; y < srcHeight; y++) {
         for (int x = 0; x < srcWidth; x++) {
-            unsigned char v1 = *src++;
-            if (v1 != 0) {
-                v1 = (256 - v1) >> 4;
+            unsigned char alpha = *src++;
+            if (alpha != 0) {
+                alpha = (256 - alpha) >> 4;
             }
 
-            unsigned char v15 = *dest;
-            *dest++ = a9[256 * v1 + v15];
+            unsigned char destColor = *dest;
+            *dest++ = blendTable[256 * alpha + destColor];
         }
         src += srcStep;
         dest += destStep;
@@ -4594,22 +4631,23 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
         int height = artGetHeight(headFrm, frame, 0);
         unsigned char* data = artGetFrameData(headFrm, frame, 0);
 
-        int a3;
-        int v8;
-        artGetRotationOffsets(headFrm, 0, &a3, &v8);
+        int rotationOffsetX;
+        int rotationOffsetY;
+        artGetRotationOffsets(headFrm, 0, &rotationOffsetX, &rotationOffsetY);
 
-        int a4;
-        int a5;
-        artGetFrameOffsets(headFrm, frame, 0, &a4, &a5);
+        int frameOffsetX;
+        int frameOffsetY;
+        artGetFrameOffsets(headFrm, frame, 0, &frameOffsetX, &frameOffsetY);
+        (void)frameOffsetY;
 
-        _totalHotx += a4;
-        a3 += _totalHotx;
+        _totalHotx += frameOffsetX;
+        rotationOffsetX += _totalHotx;
 
         if (data != nullptr) {
             int destWidth = GAME_DIALOG_WINDOW_WIDTH;
-            int destOffset = destWidth * (200 - height) + a3 + (388 - width) / 2;
-            if (destOffset + width * v8 > 0) {
-                destOffset += width * v8;
+            int destOffset = destWidth * (200 - height) + rotationOffsetX + (388 - width) / 2;
+            if (destOffset + width * rotationOffsetY > 0) {
+                destOffset += width * rotationOffsetY;
             }
 
             blitBufferToBufferTrans(
@@ -4623,8 +4661,8 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
             debugPrint("\tError getting head data in display...\n");
         }
     } else {
-        if (_talk_need_to_center == 1) {
-            _talk_need_to_center = 0;
+        if (_talk_need_to_center) {
+            _talk_need_to_center = false;
             tileWindowRefresh();
         }
 
@@ -4646,11 +4684,11 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
             GAME_DIALOG_WINDOW_WIDTH);
     }
 
-    Rect v27;
-    v27.left = 126;
-    v27.top = 14;
-    v27.right = 514;
-    v27.bottom = 214;
+    Rect headRect;
+    headRect.left = 126;
+    headRect.top = 14;
+    headRect.right = 514;
+    headRect.bottom = 214;
 
     unsigned char* dest = windowGetBuffer(gGameDialogBackgroundWindow);
 
@@ -4688,7 +4726,7 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
             GAME_DIALOG_WINDOW_WIDTH);
     }
 
-    windowRefreshRect(gGameDialogBackgroundWindow, &v27);
+    windowRefreshRect(gGameDialogBackgroundWindow, &headRect);
 }
 
 // 0x44B080
