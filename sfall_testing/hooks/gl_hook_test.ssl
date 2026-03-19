@@ -24,6 +24,25 @@ procedure tohit_handler begin
 
 end
 
+procedure useobj_handler begin
+    variable
+        user := get_sfall_arg,
+        item := get_sfall_arg;
+
+    display_msg(string_format("useobj %s (%s)", obj_name(user), obj_name(item)));
+    set_sfall_return(2);
+end
+
+procedure useobjon_handler begin
+    variable
+        target := get_sfall_arg,
+        user := get_sfall_arg,
+        item := get_sfall_arg;
+
+    display_msg(string_format("useobjon %s (%s) -> %s", obj_name(user), obj_name(item), obj_name(target)));
+    set_sfall_return(0);
+end
+
 procedure keypress_handler begin
     variable
         pressed := get_sfall_arg_at(0),
@@ -51,8 +70,14 @@ procedure start begin
 
     if (not game_loaded) then return;
 
+    add_obj_to_inven(dude_obj, create_object_sid(40, 0, 0, -1));
+    add_obj_to_inven(dude_obj, create_object_sid(76, 0, 0, -1));
+    add_obj_to_inven(dude_obj, create_object_sid(85, 0, 0, -1));
+
     register_hook_proc(HOOK_KEYPRESS, keypress_handler);
     register_hook_proc(HOOK_TOHIT, tohit_handler);
+    register_hook_proc(HOOK_USEOBJ, useobj_handler);
+    register_hook_proc(HOOK_USEOBJON, useobjon_handler);
 end
 
 

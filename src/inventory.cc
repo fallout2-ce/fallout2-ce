@@ -3999,14 +3999,14 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 itemRemove(owner, item, 1);
             }
 
-            int useResult;
+            UseItemResultCode useResult;
             if (_obj_action_can_use(item)) {
                 useResult = objectUseItemInternal(_stack[0], item);
             } else {
                 useResult = objectUseItemOnInternal(_stack[0], _stack[0], item);
             }
 
-            if (useResult == 1) {
+            if (useResult == USE_ITEM_RESULT_REMOVE) {
                 if (itemSlot != nullptr) {
                     *itemSlot = nullptr;
                 }

@@ -3,6 +3,7 @@
 
 #include "db.h"
 #include "obj_types.h"
+#include "proto_instance.h"
 
 namespace fallout {
 
@@ -105,7 +106,7 @@ int miscItemSetCharges(Object* miscItem, int charges);
 int miscItemGetPowerType(Object* miscItem);
 int miscItemGetPowerTypePid(Object* miscItem);
 bool miscItemUsesCharges(Object* obj);
-int miscItemUseCharged(Object* critter, Object* item);
+UseItemResultCode miscItemUseCharged(Object* critter, Object* item);
 int miscItemConsumeCharge(Object* miscItem);
 int miscItemTrickleEventProcess(Object* item_obj, void* data);
 bool miscItemIsOn(Object* obj);
@@ -118,7 +119,7 @@ int ammoGetArmorClassModifier(Object* armor);
 int ammoGetDamageResistanceModifier(Object* armor);
 int ammoGetDamageMultiplier(Object* armor);
 int ammoGetDamageDivisor(Object* armor);
-int drugItemTakeDrug(Object* critter_obj, Object* item_obj);
+UseItemResultCode drugItemTakeDrug(Object* critter_obj, Object* item_obj);
 int drugItemClear(Object* obj, void* data);
 int drugEffectEventProcess(Object* obj, void* data);
 int drugEffectEventRead(File* stream, void** dataPtr);

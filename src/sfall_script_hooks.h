@@ -36,7 +36,8 @@ typedef enum {
 
     //    HOOK_FINDTARGET = 7,
 
-    // Using object on another object, before normal script proc.
+    // Using item on critter or scenery, before normal script proc.
+    // TODO: rename to USEITEMON
     HOOK_USEOBJON = 8,
 
     // Removing object from inventory.
@@ -60,7 +61,8 @@ typedef enum {
     // Weapon ammo cost per attack (or per round for bursts).
     HOOK_AMMOCOST = 17,
 
-    // Using objects.
+    // Using items from inventory or main interface.
+    // TODO: rename to USEITEM
     HOOK_USEOBJ = 18,
 
     // Keypress/release. Originally implemented in DirectInput layer, not in the game code. Used e.g. in Party Orders addon.
@@ -167,6 +169,11 @@ public:
     ScriptHookCall(HookType hookType, int maxReturnValues);
     ~ScriptHookCall() = default;
 
+    ScriptHookCall(const ScriptHookCall& other) = delete;
+    ScriptHookCall(ScriptHookCall&& other) = delete;
+    ScriptHookCall& operator=(const ScriptHookCall& other) = delete;
+    ScriptHookCall& operator=(ScriptHookCall&& other) = delete;
+
     ScriptHookCall& addArg(ProgramValue value);
     ScriptHookCall& setArgAt(int idx, ProgramValue value);
     void addReturnValue(ProgramValue value);
@@ -176,9 +183,9 @@ public:
 
     ProgramValue getNextArgFromScript();
 
-    int numArgs() const { return _numArgs; }
-    int maxReturnValues() const { return _maxRetVals; }
-    int numReturnValues() const { return _numRetVals; }
+    int numArgs() const;
+    int maxReturnValues() const;
+    int numReturnValues() const;
 
     ProgramValue getArgAt(int idx) const;
     ProgramValue getReturnValueAt(int idx) const;
@@ -202,6 +209,11 @@ bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex
 bool scriptHooksInit();
 void scriptHooksReset();
 void scriptHooksExit();
+
+
+int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
+int scriptHooks_UseObj(Object* user, Object* objUsed);
+int scriptHooks_UseObjOn(Object* user, Object* target, Object* objUsed);
 
 } // namespace fallout
 

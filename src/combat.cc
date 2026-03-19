@@ -4501,21 +4501,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, in
         debugPrint("Whoa! Bad skill value in determine_to_hit!\n");
     }
 
-    ScriptHookCall hook(HOOK_TOHIT, 1);
-    hook
-        .addArg(toHit)
-        .addArg(attacker)
-        .addArg(defender)
-        .addArg(hitLocation)
-        .addArg(tile)
-        .addArg(hitMode)
-        .addArg(useDistance)
-        .addArg(toHitUncapped)
-        .call();
-
-    if (hook.numReturnValues() > 0) {
-        toHit = hook.getReturnValueAt(0).asInt();
-    }
+    toHit = scriptHooks_ToHit(attacker, defender, tile, hitMode, hitLocation, toHit, toHitUncapped, useDistance);
     return toHit;
 }
 
