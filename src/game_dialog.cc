@@ -87,21 +87,21 @@ typedef enum GameDialogReaction {
     GAME_DIALOG_REACTION_BAD = 51,
 } GameDialogReaction;
 
-// `_dialogue_state` tracks the active dialog screen, while
-// `_dialogue_switch_mode` carries pending and in-progress transitions between
+// `dialogMode` tracks the active dialog screen, while
+// `dialogSwitchMode` carries pending and in-progress transitions between
 // these screens. The flow is: talk -> barter or party control ->
-// party customization -> control -> talk, with `_dialogue_switch_mode` used to
+// party customization -> control -> talk, with `dialogSwitchMode` used to
 // request and finalize those transitions on the ticker/main-loop boundary.
 typedef enum GameDialogMode {
     GAME_DIALOG_MODE_NONE = 0,
 
-    // possible values for _dialogue_state
+    // possible values for dialogMode
     GAME_DIALOG_MODE_TALK = 1,
     GAME_DIALOG_MODE_BARTER = 4,
     GAME_DIALOG_MODE_PARTY_CONTROL = 10,
     GAME_DIALOG_MODE_PARTY_CUSTOMIZATION = 13,
 
-    // possible values for _dialogue_switch_mode (in addition to TALK)
+    // possible values for dialogSwitchMode (in addition to TALK)
     GAME_DIALOG_MODE_SWITCH_TO_BARTER = 2,
     GAME_DIALOG_MODE_BARTER_ACTIVE = 3,
     GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL = 8,
@@ -224,11 +224,11 @@ static bool gGameDialogLipSyncStarted = false;
 
 // 0x518714
 // what dialog mode is active (talk/barter/party control/party customization)
-static GameDialogMode _dialogue_state = GAME_DIALOG_MODE_NONE;
+static GameDialogMode dialogMode = GAME_DIALOG_MODE_NONE;
 
 // 0x518718
 // what dialog mode are we switching to
-static GameDialogMode _dialogue_switch_mode = GAME_DIALOG_MODE_NONE;
+static GameDialogMode dialogSwitchMode = GAME_DIALOG_MODE_NONE;
 
 // 0x51871C
 // whether the dialog system is active or not
@@ -802,7 +802,7 @@ void gameDialogEnter(Object* speaker, int mode)
         return;
     }
 
-    if (script->scriptOverrides || _dialogue_state != GAME_DIALOG_MODE_BARTER) {
+    if (script->scriptOverrides || dialogMode != GAME_DIALOG_MODE_BARTER) {
         _dialogue_just_started = 0;
         isoEnable();
         scriptsExecMapUpdateProc();
@@ -814,18 +814,18 @@ void gameDialogEnter(Object* speaker, int mode)
 
     if (_gdialog_state == GAME_DIALOG_ACTIVE) {
         // TODO: Not sure about these conditions.
-        if (_dialogue_switch_mode == GAME_DIALOG_MODE_SWITCH_TO_BARTER) {
+        if (dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_BARTER) {
             _gdialog_window_destroy();
-        } else if (_dialogue_switch_mode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL) {
+        } else if (dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL) {
             _gdialog_window_destroy();
-        } else if (_dialogue_switch_mode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION) {
+        } else if (dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION) {
             _gdialog_window_destroy();
         } else {
-            if (_dialogue_switch_mode == GAME_DIALOG_MODE_TALK) {
+            if (dialogSwitchMode == GAME_DIALOG_MODE_TALK) {
                 _gdialog_barter_destroy_win();
-            } else if (_dialogue_state == GAME_DIALOG_MODE_TALK) {
+            } else if (dialogMode == GAME_DIALOG_MODE_TALK) {
                 _gdialog_window_destroy();
-            } else if (_dialogue_state == mode) {
+            } else if (dialogMode == mode) {
                 _gdialog_barter_destroy_win();
             }
         }
@@ -833,7 +833,7 @@ void gameDialogEnter(Object* speaker, int mode)
     }
 
     _gdialog_state = GAME_DIALOG_INACTIVE;
-    _dialogue_state = GAME_DIALOG_MODE_NONE;
+    dialogMode = GAME_DIALOG_MODE_NONE;
 
     gameDialogRestoreCenterTile();
 
@@ -914,7 +914,7 @@ int gameDialogDisable()
 // 0x44510C
 int _gdialogInitFromScript(int headFid, int reaction)
 {
-    if (_dialogue_state == GAME_DIALOG_MODE_TALK) {
+    if (dialogMode == GAME_DIALOG_MODE_TALK) {
         return -1;
     }
 
@@ -977,9 +977,9 @@ int _gdialogInitFromScript(int headFid, int reaction)
 // 0x445298
 int _gdialogExitFromScript()
 {
-    if (_dialogue_switch_mode == GAME_DIALOG_MODE_SWITCH_TO_BARTER
-        || _dialogue_switch_mode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL
-        || _dialogue_switch_mode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION) {
+    if (dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_BARTER
+        || dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL
+        || dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION) {
         return -1;
     }
 
@@ -1025,7 +1025,7 @@ int _gdialogExitFromScript()
     gameDialogHighlightsExit();
 
     _gdialog_state = GAME_DIALOG_INACTIVE;
-    _dialogue_state = GAME_DIALOG_MODE_NONE;
+    dialogMode = GAME_DIALOG_MODE_NONE;
 
     colorCycleEnable();
 
@@ -1230,7 +1230,7 @@ int _gdialogGo()
 // 0x445764
 void _gdialogUpdatePartyStatus()
 {
-    if (_dialogue_state != GAME_DIALOG_MODE_TALK) {
+    if (dialogMode != GAME_DIALOG_MODE_TALK) {
         return;
     }
 
@@ -1934,30 +1934,30 @@ int _gdProcess()
                 gameMouseSetCursor(MOUSE_CURSOR_ARROW);
             }
         } else {
-            if (_dialogue_switch_mode == GAME_DIALOG_MODE_BARTER_ACTIVE) {
-                _dialogue_state = GAME_DIALOG_MODE_BARTER;
+            if (dialogSwitchMode == GAME_DIALOG_MODE_BARTER_ACTIVE) {
+                dialogMode = GAME_DIALOG_MODE_BARTER;
 
                 GameMode::exitGameMode(GameMode::kSpecial);
 
                 inventoryOpenTrade(gGameDialogWindow, gGameDialogSpeaker, _peon_table_obj, _barterer_table_obj, gGameDialogBarterModifier);
                 _gdialog_barter_cleanup_tables();
 
-                GameDialogMode dialogueState = _dialogue_state;
+                GameDialogMode dialogueState = dialogMode;
                 _gdialog_barter_destroy_win();
-                _dialogue_state = dialogueState;
+                dialogMode = dialogueState;
 
                 if (dialogueState == GAME_DIALOG_MODE_BARTER) {
-                    _dialogue_switch_mode = GAME_DIALOG_MODE_TALK;
-                    _dialogue_state = GAME_DIALOG_MODE_TALK;
+                    dialogSwitchMode = GAME_DIALOG_MODE_TALK;
+                    dialogMode = GAME_DIALOG_MODE_TALK;
                 }
                 continue;
-            } else if (_dialogue_switch_mode == GAME_DIALOG_MODE_PARTY_CONTROL_ACTIVE) {
-                _dialogue_state = GAME_DIALOG_MODE_PARTY_CONTROL;
+            } else if (dialogSwitchMode == GAME_DIALOG_MODE_PARTY_CONTROL_ACTIVE) {
+                dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
                 partyMemberControlWindowHandleEvents();
                 partyMemberControlWindowFree();
                 continue;
-            } else if (_dialogue_switch_mode == GAME_DIALOG_MODE_PARTY_CUSTOMIZATION_ACTIVE) {
-                _dialogue_state = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
+            } else if (dialogSwitchMode == GAME_DIALOG_MODE_PARTY_CUSTOMIZATION_ACTIVE) {
+                dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
                 partyMemberCustomizationWindowHandleEvents();
                 partyMemberCustomizationWindowFree();
                 continue;
@@ -2418,7 +2418,7 @@ void _gdProcessUpdate()
 // 0x44715C
 int _gdCreateHeadWindow()
 {
-    _dialogue_state = GAME_DIALOG_MODE_TALK;
+    dialogMode = GAME_DIALOG_MODE_TALK;
 
     int windowWidth = GAME_DIALOG_WINDOW_WIDTH;
 
@@ -2465,9 +2465,9 @@ void _gdDestroyHeadWindow()
         gGameDialogDisplayBuffer = nullptr;
     }
 
-    if (_dialogue_state == GAME_DIALOG_MODE_TALK) {
+    if (dialogMode == GAME_DIALOG_MODE_TALK) {
         _gdialog_window_destroy();
-    } else if (_dialogue_state == GAME_DIALOG_MODE_BARTER) {
+    } else if (dialogMode == GAME_DIALOG_MODE_BARTER) {
         _gdialog_barter_destroy_win();
     }
 
@@ -2835,10 +2835,10 @@ void _gDialogRefreshOptionsRect(int win, Rect* drawRect)
 // 0x447A58
 void gameDialogTicker()
 {
-    switch (_dialogue_switch_mode) {
+    switch (dialogSwitchMode) {
     case GAME_DIALOG_MODE_SWITCH_TO_BARTER:
         _loop_cnt = -1;
-        _dialogue_switch_mode = GAME_DIALOG_MODE_BARTER_ACTIVE;
+        dialogSwitchMode = GAME_DIALOG_MODE_BARTER_ACTIVE;
 
         GameMode::enterGameMode(GameMode::kSpecial);
 
@@ -2847,7 +2847,7 @@ void gameDialogTicker()
         break;
     case GAME_DIALOG_MODE_TALK:
         _loop_cnt = -1;
-        _dialogue_switch_mode = GAME_DIALOG_MODE_NONE;
+        dialogSwitchMode = GAME_DIALOG_MODE_NONE;
         _gdialog_barter_destroy_win();
         _gdialog_window_create();
 
@@ -2863,19 +2863,17 @@ void gameDialogTicker()
         break;
     case GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL:
         _loop_cnt = -1;
-        _dialogue_switch_mode = GAME_DIALOG_MODE_PARTY_CONTROL_ACTIVE;
+        dialogSwitchMode = GAME_DIALOG_MODE_PARTY_CONTROL_ACTIVE;
         _gdialog_window_destroy();
         partyMemberControlWindowInit();
         break;
     case GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION:
         _loop_cnt = -1;
-        _dialogue_switch_mode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION_ACTIVE;
+        dialogSwitchMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION_ACTIVE;
         _gdialog_window_destroy();
         partyMemberCustomizationWindowInit();
         break;
     default:
-        // NOTE: Should be unreachable, but needed for enum completeness.
-        debugPrint("\nError: gameDialogTicker: Invalid dialogue switch mode: %d.", _dialogue_switch_mode);
         break;
     }
 
@@ -3211,8 +3209,8 @@ int gameDialogBarter(int modifier)
 
     gGameDialogBarterModifier = modifier;
     gameDialogBarterButtonUpMouseUp(-1, -1);
-    _dialogue_state = GAME_DIALOG_MODE_BARTER;
-    _dialogue_switch_mode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
+    dialogMode = GAME_DIALOG_MODE_BARTER;
+    dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
 
     return 0;
 }
@@ -3224,14 +3222,14 @@ void _barter_end_to_talk_to()
     _dialogClose();
     _updatePrograms();
     scriptWindowUpdateAll();
-    _dialogue_state = GAME_DIALOG_MODE_TALK;
-    _dialogue_switch_mode = GAME_DIALOG_MODE_TALK;
+    dialogMode = GAME_DIALOG_MODE_TALK;
+    dialogSwitchMode = GAME_DIALOG_MODE_TALK;
 }
 
 // 0x448290
 int _gdialog_barter_create_win()
 {
-    _dialogue_state = GAME_DIALOG_MODE_BARTER;
+    dialogMode = GAME_DIALOG_MODE_BARTER;
 
     int frmId;
     if (gGameDialogSpeakerIsPartyMember) {
@@ -3532,7 +3530,7 @@ int partyMemberControlWindowInit()
 
     partyMemberControlWindowUpdate();
 
-    _dialogue_state = GAME_DIALOG_MODE_PARTY_CONTROL;
+    dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
 
     windowRefresh(gGameDialogWindow);
 
@@ -3679,8 +3677,8 @@ void partyMemberControlWindowUpdate()
 // 0x44928C
 void gameDialogCombatControlButtonOnMouseUp(int btn, int keyCode)
 {
-    _dialogue_switch_mode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL;
-    _dialogue_state = GAME_DIALOG_MODE_PARTY_CONTROL;
+    dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL;
+    dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
 
     // NOTE: Uninline.
     gdHide();
@@ -3772,8 +3770,8 @@ void partyMemberControlWindowHandleEvents()
                 aiSetDisposition(gGameDialogSpeaker, 4);
             } else if (keyCode == 2099) {
                 aiSetDisposition(gGameDialogSpeaker, 0);
-                _dialogue_state = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
-                _dialogue_switch_mode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION;
+                dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
+                dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION;
                 done = true;
             } else if (keyCode == 2102) {
                 aiSetDisposition(gGameDialogSpeaker, 2);
@@ -3782,8 +3780,8 @@ void partyMemberControlWindowHandleEvents()
             } else if (keyCode == 2111) {
                 aiSetDisposition(gGameDialogSpeaker, 1);
             } else if (keyCode == KEY_ESCAPE) {
-                _dialogue_switch_mode = GAME_DIALOG_MODE_TALK;
-                _dialogue_state = GAME_DIALOG_MODE_TALK;
+                dialogSwitchMode = GAME_DIALOG_MODE_TALK;
+                dialogMode = GAME_DIALOG_MODE_TALK;
                 return;
             } else if (keyCode == KEY_LOWERCASE_A) {
                 if (gGameDialogSpeaker->pid != 0x10000A1) {
@@ -3799,8 +3797,8 @@ void partyMemberControlWindowHandleEvents()
                 partyMemberControlWindowUpdate();
             } else if (keyCode == KEY_LOWERCASE_D) {
                 if (_gdCanBarter()) {
-                    _dialogue_switch_mode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
-                    _dialogue_state = GAME_DIALOG_MODE_BARTER;
+                    dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
+                    dialogMode = GAME_DIALOG_MODE_BARTER;
                     return;
                 }
             } else if (keyCode == -2) {
@@ -3810,8 +3808,8 @@ void partyMemberControlWindowHandleEvents()
                 if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
                     if (mouseHitTestInWindow(gGameDialogWindow, 438, 156, 438 + 109, 156 + 28)) {
                         aiSetDisposition(gGameDialogSpeaker, 0);
-                        _dialogue_state = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
-                        _dialogue_switch_mode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION;
+                        dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
+                        dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION;
                         done = true;
                     }
                 }
@@ -3937,7 +3935,7 @@ int partyMemberCustomizationWindowInit()
     _custom_current_selected[PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO] = aiGetAttackWho(gGameDialogSpeaker);
     _custom_current_selected[PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE] = aiGetChemUse(gGameDialogSpeaker);
 
-    _dialogue_state = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
+    dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
 
     partyMemberCustomizationWindowUpdate();
 
@@ -4010,8 +4008,8 @@ void partyMemberCustomizationWindowHandleEvents()
                 partyMemberCustomizationWindowUpdate();
             } else if (keyCode == KEY_RETURN || keyCode == KEY_ESCAPE) {
                 done = true;
-                _dialogue_switch_mode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL;
-                _dialogue_state = GAME_DIALOG_MODE_PARTY_CONTROL;
+                dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CONTROL;
+                dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
             }
         }
 
@@ -4341,8 +4339,8 @@ void gameDialogBarterButtonUpMouseUp(int btn, int keyCode)
             }
         }
 
-        _dialogue_switch_mode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
-        _dialogue_state = GAME_DIALOG_MODE_BARTER;
+        dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_BARTER;
+        dialogMode = GAME_DIALOG_MODE_BARTER;
 
         // NOTE: Uninline.
         gdHide();
