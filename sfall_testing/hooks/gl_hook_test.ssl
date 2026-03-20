@@ -1,6 +1,11 @@
 #include "../sfall/sfall.h"
 #include "../sfall/dik.h"
 #include "../sfall/define_lite.h"
+#include "../test_utils.h"
+
+variable last_game_mode;
+variable gamemodechange_assertions_enabled := false;
+variable gamemodechange_reported := false;
 
 procedure test_with_args(variable arg1) begin
     display_msg("test_w_arg" + arg1);
@@ -64,6 +69,31 @@ procedure keypress_handler begin
     end
 end
 
+procedure gamemodechange_handler begin
+    variable
+        event_type := get_sfall_arg_at(0),
+        previous_mode := get_sfall_arg_at(1),
+        current_mode := get_game_mode;
+
+    display_msg(string_format("gamemodechange event=%d prev=%d cur=%d", event_type, previous_mode, current_mode));
+
+    if (not gamemodechange_assertions_enabled) then begin
+        last_game_mode := current_mode;
+        return;
+    end
+
+    call assertTrue("gamemodechange event_type is 0 or 1", event_type == 0 or event_type == 1);
+    call assertEquals("gamemodechange previous mode", previous_mode, last_game_mode);
+    if (event_type == 0) then
+        call assertNotEquals("gamemodechange mode changed", current_mode, previous_mode);
+    else if (not gamemodechange_reported) then begin
+        gamemodechange_reported := true;
+        call report_test_results("hook_gamemodechange");
+    end
+
+    last_game_mode := current_mode;
+end
+
 procedure start begin
     //call test_with_args(777);
     display_msg("start hook test");
@@ -74,14 +104,17 @@ procedure start begin
     add_obj_to_inven(dude_obj, create_object_sid(76, 0, 0, -1));
     add_obj_to_inven(dude_obj, create_object_sid(85, 0, 0, -1));
 
+    last_game_mode := get_game_mode;
+    gamemodechange_assertions_enabled := true;
+
     register_hook_proc(HOOK_KEYPRESS, keypress_handler);
     register_hook_proc(HOOK_TOHIT, tohit_handler);
     register_hook_proc(HOOK_USEOBJ, useobj_handler);
     register_hook_proc(HOOK_USEOBJON, useobjon_handler);
+    register_hook_proc(HOOK_GAMEMODECHANGE, gamemodechange_handler);
 end
 
 
 procedure map_enter_p_proc begin
     display_msg("Map Enter hook test");
 end
-
