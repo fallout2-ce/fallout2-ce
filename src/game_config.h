@@ -70,7 +70,6 @@ namespace fallout {
 #define GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY "output_map_data_info"
 #define GAME_CONFIG_DEBUG_WINDOW_WIDTH_KEY "window_width"
 #define GAME_CONFIG_DEBUG_WINDOW_HEIGHT_KEY "window_height"
-#define GAME_CONFIG_EXECUTABLE_KEY "executable"
 #define GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY "override_librarian"
 #define GAME_CONFIG_LIBRARIAN_KEY "librarian"
 #define GAME_CONFIG_USE_ART_NOT_PROTOS_KEY "use_art_not_protos"

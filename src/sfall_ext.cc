@@ -72,8 +72,11 @@ void sfallLoadMods()
 
             if (compat_access(normalizedModPath, 0) == 0) {
                 debugPrint("Loading mod %s\n", normalizedModPath);
-                dbOpen(normalizedModPath, nullptr);
-                numMods++;
+                if (dbOpen(normalizedModPath, nullptr) != -1) {
+                    numMods++;
+                } else {
+                    debugPrint("Error opening mod %s\n", normalizedModPath);
+                }
             } else {
                 debugPrint("Skipping invalid mod entry %s in %s\n", normalizedModPath, loadOrderFilepath);
             }

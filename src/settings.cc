@@ -8,8 +8,10 @@ static void settingsFromConfig();
 static void settingsToConfig();
 static void settingsRead(const char* section, const char* key, std::string& value);
 static void settingsRead(const char* section, const char* key, int& value);
+static void settingsRead(const char* section, const char* key, int& value, int minValue, int maxValue);
 static void settingsRead(const char* section, const char* key, bool& value);
 static void settingsRead(const char* section, const char* key, double& value);
+static void settingsRead(const char* section, const char* key, double& value, double minValue, double maxValue);
 static void settingsWrite(const char* section, const char* key, const std::string& value);
 static void settingsWrite(const char* section, const char* key, int value);
 static void settingsWrite(const char* section, const char* key, bool value);
@@ -78,9 +80,7 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_BRIGHTNESS_KEY, settings.preferences.brightness);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_MOUSE_SENSITIVITY_KEY, settings.preferences.mouse_sensitivity);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_BURNING_GUY_KEY, settings.preferences.running_burning_guy);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_UI_ANIM_SPEED_KEY, settings.preferences.ui_anim_speed);
-    // TODO: value can be clamped in preferences._JustUpdate_ once it is implemented there
-    settings.preferences.ui_anim_speed = std::clamp(settings.preferences.ui_anim_speed, 0.1, 100.0);
+    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_UI_ANIM_SPEED_KEY, settings.preferences.ui_anim_speed, 0.1, 100.0);
 
     settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_INITIALIZE_KEY, settings.sound.initialize);
     settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEBUG_KEY, settings.sound.debug);
@@ -105,8 +105,8 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_WIDTH_KEY, settings.debug.debug_window_width);
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_HEIGHT_KEY, settings.debug.debug_window_height);
+    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_WIDTH_KEY, settings.debug.debug_window_width, 200, 1920);
+    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_HEIGHT_KEY, settings.debug.debug_window_height, 100, 1080);
 
     settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
     settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);
@@ -215,6 +215,12 @@ static void settingsRead(const char* section, const char* key, int& value)
     }
 }
 
+void settingsRead(const char* section, const char* key, int& value, int minValue, int maxValue)
+{
+    settingsRead(section, key, value);
+    value = std::clamp(value, minValue, maxValue);
+}
+
 static void settingsRead(const char* section, const char* key, bool& value)
 {
     bool v;
@@ -229,6 +235,12 @@ static void settingsRead(const char* section, const char* key, double& value)
     if (configGetDouble(&gGameConfig, section, key, &v)) {
         value = v;
     }
+}
+
+void settingsRead(const char* section, const char* key, double& value, double minValue, double maxValue)
+{
+    settingsRead(section, key, value);
+    value = std::clamp(value, minValue, maxValue);
 }
 
 static void settingsWrite(const char* section, const char* key, const std::string& value)

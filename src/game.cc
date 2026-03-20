@@ -128,7 +128,7 @@ int gSplashScreenScaling = 0;
 // CE: Sonora folks like to store objects in global variables.
 static void** gGameGlobalPointers = nullptr;
 
-void debugModeInit()
+static void debugModeInit()
 {
     // CE: Handle debug mode (exactly as seen in `mapper2.exe`).
     const char* debugMode = settings.debug.mode.c_str();
