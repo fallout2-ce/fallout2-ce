@@ -2,6 +2,7 @@
 
 #include "display_monitor.h"
 #include "sfall_config.h"
+#include "sfall_script_hooks.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -53,9 +54,9 @@ void sfallOnAfterNewGame()
     return;
 }
 
-void sfallOnGameModeChange()
+void sfallOnGameModeChange(int exit, int previousGameMode)
 {
-    return;
+    scriptHooks_GameModeChange(exit, previousGameMode);
 }
 
 void sfallOnBeforeGameClose()

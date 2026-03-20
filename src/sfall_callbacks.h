@@ -11,7 +11,7 @@ void sfallOnGameReset();
 void sfallOnBeforeGameStart();
 void sfallOnAfterGameStarted();
 void sfallOnAfterNewGame();
-void sfallOnGameModeChange();
+void sfallOnGameModeChange(int exit, int previousGameMode);
 void sfallOnBeforeGameClose();
 void sfallOnCombatStart();
 void sfallOnCombatEnd();

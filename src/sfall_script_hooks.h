@@ -219,6 +219,7 @@ bool scriptHooksInit();
 void scriptHooksReset();
 void scriptHooksExit();
 
+void scriptHooks_GameModeChange(int exit, int previousGameMode);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 int scriptHooks_UseObj(Object* user, Object* objUsed);
 int scriptHooks_UseObjOn(Object* user, Object* target, Object* objUsed);

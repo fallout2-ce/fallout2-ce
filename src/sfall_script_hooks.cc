@@ -156,6 +156,18 @@ void scriptHooksExit()
 }
 
 /*
+Runs once every time when the game mode was changed, like opening/closing the inventory, character screen, pipboy, etc.
+
+int arg0 - event type: 1 - when the player exits the game, 0 - otherwise
+int arg1 - the previous game mode
+*/
+void scriptHooks_GameModeChange(int exit, int previousGameMode)
+{
+    ScriptHookCall hook(HOOK_GAMEMODECHANGE, 0);
+    hook.addArg(exit).addArg(previousGameMode).call();
+}
+
+/*
 Runs when Fallout is calculating the chances of an attack striking a target.
 Runs after the hit chance is fully calculated normally, including applying the 95% cap.
 
