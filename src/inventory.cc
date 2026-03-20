@@ -3572,8 +3572,7 @@ static void inventoryRenderItemDescription(const char* string)
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
     windowBuffer += INVENTORY_WINDOW_WIDTH * INVENTORY_SUMMARY_Y + INVENTORY_SUMMARY_X;
 
-    std::vector<char> mutableString(strlen(string) + 1);
-    memcpy(mutableString.data(), string, mutableString.size());
+    std::string mutableString(string);
 
     char* c = mutableString.data();
     while (c != nullptr && *c != '\0') {

@@ -3091,8 +3091,7 @@ static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* s
 // 0x447FA0
 int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw)
 {
-    std::vector<char> mutableString(strlen(string) + 1);
-    memcpy(mutableString.data(), string, mutableString.size());
+    std::string mutableString(string);
     char* mutableText = mutableString.data();
 
     char* start;
