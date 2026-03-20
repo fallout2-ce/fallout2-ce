@@ -258,6 +258,8 @@ void mf_get_sfall_arg_at(Program* program, int args)
 
 void mf_get_object_data(Program* program, int args)
 {
+    // TODO: only allow to modify a set of whitelisted object types
+    // TODO: map offsets to fields to avoid potential alignment, 64bit issues!
     size_t offset = static_cast<size_t>(programStackPopInteger(program));
     void* ptr = programStackPopPointer(program);
 

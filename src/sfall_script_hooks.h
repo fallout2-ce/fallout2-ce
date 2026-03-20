@@ -221,8 +221,9 @@ void scriptHooksExit();
 
 void scriptHooks_GameModeChange(int exit, int previousGameMode);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
-int scriptHooks_UseObj(Object* user, Object* objUsed);
-int scriptHooks_UseObjOn(Object* user, Object* target, Object* objUsed);
+int scriptHooks_UseItem(Object* user, Object* objUsed);
+int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
+void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 
 } // namespace fallout
 
