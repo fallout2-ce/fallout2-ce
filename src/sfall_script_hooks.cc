@@ -302,7 +302,7 @@ void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult)
         .addArg(numRounds)
         .addArg(attack->defenderKnockback)
         .addArg(attack->hitMode)
-        .addArg(reinterpret_cast<int>(attack)); // this is how sfall did it.. TODO: make sure get/set_object_data handler is safe!
+        .addArg(attack); // this is how sfall did it.. TODO: make sure get/set_object_data handler is safe!
 
     hook.call();
 
