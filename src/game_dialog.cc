@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 
 #include "actions.h"
 #include "animation.h"
@@ -629,8 +630,8 @@ static void gameDialogTicker();
 // If scroliing down - uses both subWindowFrmData and bgWindowFrmData to fill parts of window buffer.
 static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* subWindowFrmData, unsigned char* windowBuf, unsigned char* bgWindowFrmData, int windowHeight, bool instantScrollUp = false);
 static int _text_num_lines(const char* text, int maxWidth);
-static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, char* string, int* textOffset, int height, int pitch, int color);
-static int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* textOffset, int height, int pitch, int color, int draw);
+static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color);
+static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw);
 static int _gdialog_barter_create_win();
 static void _gdialog_barter_destroy_win();
 static void _gdialog_barter_cleanup_tables();
@@ -1075,7 +1076,7 @@ void gameDialogSetBackground(int background)
 // Renders supplementary message in reply area of the dialog.
 //
 // 0x445448
-void gameDialogRenderSupplementaryMessage(char* msg)
+void gameDialogRenderSupplementaryMessage(const char* msg)
 {
     if (_gd_replyWin == -1) {
         debugPrint("\nError: Reply window doesn't exist!");
@@ -3081,20 +3082,24 @@ int _text_num_lines(const char* text, int maxWidth)
 // NOTE: Inlined.
 //
 // 0x447F80
-static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, char* string, int* textOffset, int height, int pitch, int color)
+static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color)
 {
     return gameDialogDrawText(buffer, rect, string, textOffset, height, pitch, color, 1);
 }
 
 // display_msg
 // 0x447FA0
-int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* textOffset, int height, int pitch, int color, int draw)
+int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw)
 {
+    std::vector<char> mutableString(strlen(string) + 1);
+    memcpy(mutableString.data(), string, mutableString.size());
+    char* mutableText = mutableString.data();
+
     char* start;
     if (textOffset != nullptr) {
-        start = string + *textOffset;
+        start = mutableText + *textOffset;
     } else {
-        start = string;
+        start = mutableText;
     }
 
     int maxWidth = rect->right - rect->left;
@@ -3136,7 +3141,7 @@ int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* tex
                     return rect->top;
                 }
 
-                if (draw != 1 || start == string) {
+                if (draw != 1 || start == mutableText) {
                     fontDrawText(buffer + pitch * rect->top + 10, start, maxWidth, pitch, color);
                 } else {
                     fontDrawText(buffer + pitch * rect->top, start, maxWidth, pitch, color);
@@ -3165,7 +3170,7 @@ int gameDialogDrawText(unsigned char* buffer, Rect* rect, char* string, int* tex
             }
 
             unsigned char* dest;
-            if (draw != 1 || start == string) {
+            if (draw != 1 || start == mutableText) {
                 dest = buffer + 10;
             } else {
                 dest = buffer;

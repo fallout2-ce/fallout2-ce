@@ -44,7 +44,6 @@ void sfallOnAfterGameStarted()
 
     if (isDisableHorrigan) {
         gDidMeetFrankHorrigan = true;
-        displayMonitorAddMessage(SFALL_CONFIG_DISABLE_HORRIGAN);
     }
 }
 

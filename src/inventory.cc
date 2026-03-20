@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <vector>
 
 #include "actions.h"
 #include "animation.h"
@@ -263,7 +264,7 @@ static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourc
 static void _adjust_fid();
 static void inventoryRenderSummary();
 static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSlot, Object** outOwner);
-static void inventoryRenderItemDescription(char* string);
+static void inventoryRenderItemDescription(const char* string);
 static void inventoryExamineItem(Object* critter, Object* item);
 static void inventoryWindowOpenContextMenu(int eventCode, int inventoryWindowType);
 static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting);
@@ -3561,12 +3562,9 @@ static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSl
 
 // Displays item description.
 //
-// The [string] is mutated in the process replacing spaces back and forth
-// for word wrapping purposes.
-//
 // inven_display_msg
 // 0x472D24
-static void inventoryRenderItemDescription(char* string)
+static void inventoryRenderItemDescription(const char* string)
 {
     int oldFont = fontGetCurrent();
     fontSetCurrent(101);
@@ -3574,7 +3572,10 @@ static void inventoryRenderItemDescription(char* string)
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
     windowBuffer += INVENTORY_WINDOW_WIDTH * INVENTORY_SUMMARY_Y + INVENTORY_SUMMARY_X;
 
-    char* c = string;
+    std::vector<char> mutableString(strlen(string) + 1);
+    memcpy(mutableString.data(), string, mutableString.size());
+
+    char* c = mutableString.data();
     while (c != nullptr && *c != '\0') {
         _inven_display_msg_line += 1;
         if (_inven_display_msg_line > 17) {

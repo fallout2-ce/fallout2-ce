@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <fstream>
+#include <vector>
 
 #include "art.h"
 #include "color.h"
@@ -229,9 +230,9 @@ void displayMonitorExit()
 }
 
 // 0x43186C
-void displayMonitorAddMessage(char* str)
+void displayMonitorAddMessage(const char* str)
 {
-    if (!gDisplayMonitorInitialized) {
+    if (!gDisplayMonitorInitialized || str == nullptr) {
         return;
     }
 
@@ -256,10 +257,14 @@ void displayMonitorAddMessage(char* str)
         }
     }
 
+    std::vector<char> mutableMessage(strlen(str) + 1);
+    memcpy(mutableMessage.data(), str, mutableMessage.size());
+    char* mutableStr = mutableMessage.data();
+
     // TODO: Refactor these two loops.
     char* splitPos = nullptr;
     while (true) {
-        while (fontGetStringWidth(str) < DISPLAY_MONITOR_WIDTH - _max_disp - knobWidth) {
+        while (fontGetStringWidth(mutableStr) < DISPLAY_MONITOR_WIDTH - _max_disp - knobWidth) {
             char* temp = gDisplayMonitorLines[_disp_start];
             int length;
             if (knob != '\0') {
@@ -270,7 +275,7 @@ void displayMonitorAddMessage(char* str)
             } else {
                 length = DISPLAY_MONITOR_LINE_LENGTH - 1;
             }
-            strncpy(temp, str, length);
+            strncpy(temp, mutableStr, length);
             gDisplayMonitorLines[_disp_start][DISPLAY_MONITOR_LINE_LENGTH - 1] = '\0';
             _disp_start = (_disp_start + 1) % gDisplayMonitorLinesCapacity;
 
@@ -281,12 +286,12 @@ void displayMonitorAddMessage(char* str)
                 return;
             }
 
-            str = splitPos + 1;
+            mutableStr = splitPos + 1;
             *splitPos = ' ';
             splitPos = nullptr;
         }
 
-        char* space = strrchr(str, ' ');
+        char* space = strrchr(mutableStr, ' ');
         if (space == nullptr) {
             break;
         }
@@ -311,7 +316,7 @@ void displayMonitorAddMessage(char* str)
     } else {
         length = DISPLAY_MONITOR_LINE_LENGTH - 1;
     }
-    strncpy(temp, str, length);
+    strncpy(temp, mutableStr, length);
 
     gDisplayMonitorLines[_disp_start][DISPLAY_MONITOR_LINE_LENGTH - 1] = '\0';
     _disp_start = (_disp_start + 1) % gDisplayMonitorLinesCapacity;
