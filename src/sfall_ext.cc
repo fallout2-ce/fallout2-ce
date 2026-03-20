@@ -45,6 +45,7 @@ void sfallLoadMods()
     // Add mods from load order file.
     File* stream = fileOpen(loadOrderFilepath, "r");
     if (stream != nullptr) {
+        int numMods = 0;
         char mod[COMPAT_MAX_PATH];
         while (fileReadString(mod, COMPAT_MAX_PATH, stream)) {
             std::string modPath { mod };
@@ -72,11 +73,13 @@ void sfallLoadMods()
             if (compat_access(normalizedModPath, 0) == 0) {
                 debugPrint("Loading mod %s\n", normalizedModPath);
                 dbOpen(normalizedModPath, nullptr);
+                numMods++;
             } else {
                 debugPrint("Skipping invalid mod entry %s in %s\n", normalizedModPath, loadOrderFilepath);
             }
         }
         fileClose(stream);
+        debugPrint("Loaded %d mods from %s\n", numMods, loadOrderFilepath);
     } else {
         debugPrint("Error opening %s for read\n", loadOrderFilepath);
     }

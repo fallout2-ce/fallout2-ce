@@ -11,6 +11,7 @@
 #include "kb.h"
 #include "memory.h"
 #include "mouse.h"
+#include "settings.h"
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
@@ -820,8 +821,10 @@ int _win_debug(char* string)
 
     int lineHeight = fontGetLineHeight();
 
+    int winWidth = settings.debug.debug_window_width;
+    int winHeight = settings.debug.debug_window_height;
     if (_wd == -1) {
-        _wd = windowCreate(80, 80, 300, 192, 256, WINDOW_MOVE_ON_TOP);
+        _wd = windowCreate(80, 80, winWidth, winHeight, 256, WINDOW_MOVE_ON_TOP);
         if (_wd == -1) {
             return -1;
         }
@@ -831,32 +834,32 @@ int _win_debug(char* string)
         Window* window = windowGetWindow(_wd);
         unsigned char* windowBuffer = window->buffer;
 
-        windowFill(_wd, 8, 8, 284, lineHeight, 0x100 | 1);
+        windowFill(_wd, 8, 8, winWidth - 16, lineHeight, 0x100 | 1);
 
         windowDrawText(_wd,
             "Debug",
             0,
-            (300 - fontGetStringWidth("Debug")) / 2,
+            (winWidth - fontGetStringWidth("Debug")) / 2,
             8,
             0x2000000 | 0x100 | 4);
 
         bufferDrawRectShadowed(windowBuffer,
-            300,
+            winWidth,
             8,
             8,
-            291,
+            winWidth - 9,
             lineHeight + 8,
             _colorTable[_GNW_wcolor[2]],
             _colorTable[_GNW_wcolor[1]]);
 
-        windowFill(_wd, 9, 26, 282, 135, 0x100 | 1);
+        windowFill(_wd, 9, 26, winWidth - 18, winHeight - 57, 0x100 | 1);
 
         bufferDrawRectShadowed(windowBuffer,
-            300,
+            winWidth,
             8,
             25,
-            291,
-            lineHeight + 145,
+            winWidth - 9,
+            lineHeight + winHeight - 47,
             _colorTable[_GNW_wcolor[2]],
             _colorTable[_GNW_wcolor[1]]);
 
@@ -864,8 +867,8 @@ int _win_debug(char* string)
         _curry = 26;
 
         int btn = _win_register_text_button(_wd,
-            (300 - fontGetStringWidth("Close")) / 2,
-            192 - 8 - lineHeight - 6,
+            (winWidth - fontGetStringWidth("Close")) / 2,
+            winHeight - 8 - lineHeight - 6,
             -1,
             -1,
             -1,
@@ -877,7 +880,7 @@ int _win_debug(char* string)
         buttonCreate(_wd,
             8,
             8,
-            284,
+            winWidth - 16,
             lineHeight,
             -1,
             -1,
@@ -895,22 +898,22 @@ int _win_debug(char* string)
     char* pch = string;
     while (*pch != '\0') {
         int characterWidth = fontGetCharacterWidth(*pch);
-        if (*pch == '\n' || _currx + characterWidth > 291) {
+        if (*pch == '\n' || _currx + characterWidth > winWidth - 9) {
             _currx = 9;
             _curry += lineHeight;
         }
 
-        while (160 - _curry < lineHeight) {
+        while (winHeight - 32 - _curry < lineHeight) {
             Window* window = windowGetWindow(_wd);
             unsigned char* windowBuffer = window->buffer;
-            blitBufferToBuffer(windowBuffer + lineHeight * 300 + 300 * 26 + 9,
-                282,
-                134 - lineHeight - 1,
-                300,
-                windowBuffer + 300 * 26 + 9,
-                300);
+            blitBufferToBuffer(windowBuffer + lineHeight * winWidth + winWidth * 26 + 9,
+                winWidth - 18,
+                winHeight - 58 - lineHeight - 1,
+                winWidth,
+                windowBuffer + winWidth * 26 + 9,
+                winWidth);
             _curry -= lineHeight;
-            windowFill(_wd, 9, _curry, 282, lineHeight, 0x100 | 1);
+            windowFill(_wd, 9, _curry, winWidth - 18, lineHeight, 0x100 | 1);
         }
 
         if (*pch != '\n') {

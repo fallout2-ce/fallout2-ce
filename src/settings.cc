@@ -10,10 +10,10 @@ static void settingsRead(const char* section, const char* key, std::string& valu
 static void settingsRead(const char* section, const char* key, int& value);
 static void settingsRead(const char* section, const char* key, bool& value);
 static void settingsRead(const char* section, const char* key, double& value);
-static void settingsWrite(const char* section, const char* key, std::string& value);
-static void settingsWrite(const char* section, const char* key, int& value);
-static void settingsWrite(const char* section, const char* key, bool& value);
-static void settingsWrite(const char* section, const char* key, double& value);
+static void settingsWrite(const char* section, const char* key, const std::string& value);
+static void settingsWrite(const char* section, const char* key, int value);
+static void settingsWrite(const char* section, const char* key, bool value);
+static void settingsWrite(const char* section, const char* key, double value);
 
 Settings settings;
 
@@ -105,6 +105,8 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
     settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
+    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_WIDTH_KEY, settings.debug.debug_window_width);
+    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_HEIGHT_KEY, settings.debug.debug_window_height);
 
     settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
     settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);
@@ -180,6 +182,8 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
     settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
+    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_WIDTH_KEY, settings.debug.debug_window_width);
+    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_HEIGHT_KEY, settings.debug.debug_window_height);
 
     settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
     settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);
@@ -227,22 +231,22 @@ static void settingsRead(const char* section, const char* key, double& value)
     }
 }
 
-static void settingsWrite(const char* section, const char* key, std::string& value)
+static void settingsWrite(const char* section, const char* key, const std::string& value)
 {
     configSetString(&gGameConfig, section, key, value.c_str());
 }
 
-static void settingsWrite(const char* section, const char* key, int& value)
+static void settingsWrite(const char* section, const char* key, int value)
 {
     configSetInt(&gGameConfig, section, key, value);
 }
 
-static void settingsWrite(const char* section, const char* key, bool& value)
+static void settingsWrite(const char* section, const char* key, bool value)
 {
     configSetBool(&gGameConfig, section, key, value);
 }
 
-static void settingsWrite(const char* section, const char* key, double& value)
+static void settingsWrite(const char* section, const char* key, double value)
 {
     configSetDouble(&gGameConfig, section, key, value);
 }
