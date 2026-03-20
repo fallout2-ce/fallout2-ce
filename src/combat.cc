@@ -39,6 +39,7 @@
 #include "sfall_callbacks.h"
 #include "sfall_config.h"
 #include "sfall_global_scripts.h"
+#include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
 #include "svga.h"
@@ -4491,6 +4492,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, in
         }
     }
 
+    int toHitUncapped = toHit;
     if (toHit > 95) {
         toHit = 95;
     }
@@ -4499,6 +4501,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, in
         debugPrint("Whoa! Bad skill value in determine_to_hit!\n");
     }
 
+    toHit = scriptHooks_ToHit(attacker, defender, tile, hitMode, hitLocation, toHit, toHitUncapped, useDistance);
     return toHit;
 }
 

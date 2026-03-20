@@ -243,7 +243,7 @@ static void opPrint(Program* program)
 // 0x461B10
 void opSelectFileList(Program* program)
 {
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     char* pattern = programStackPopString(program);
     char* title = programStackPopString(program);
@@ -270,7 +270,7 @@ void opSelectFileList(Program* program)
         programStackPushInteger(program, 0);
     }
 
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }
 
 // tokenize
@@ -525,7 +525,7 @@ void opFadeIn(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     _setSystemPalette(gIntLibFadePalette);
 
@@ -534,7 +534,7 @@ void opFadeIn(Program* program)
 
     gIntLibIsPaletteFaded = true;
 
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }
 
 // fadeout
@@ -543,7 +543,7 @@ void opFadeOut(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     bool cursorWasHidden = cursorIsHidden();
     mouseHideCursor();
@@ -557,7 +557,7 @@ void opFadeOut(Program* program)
 
     gIntLibIsPaletteFaded = false;
 
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }
 
 // 0x462570
@@ -636,7 +636,7 @@ void opPlayMovieRect(Program* program)
 static void opStopMovie(Program* program)
 {
     scriptWindowStopMovie();
-    program->flags |= PROGRAM_FLAG_0x40;
+    program->flags |= PROGRAM_FLAG_FINISHED;
 }
 
 // deleteregion
@@ -828,9 +828,9 @@ static void opSayStart(Program* program)
 {
     gIntLibSayStartingPosition = 0;
 
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
     int rc = _dialogStart(program);
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 
     if (rc != 0) {
         programFatalError("Error starting dialog.");
@@ -843,9 +843,9 @@ static void opSayStartPos(Program* program)
 {
     gIntLibSayStartingPosition = programStackPopInteger(program);
 
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
     int rc = _dialogStart(program);
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 
     if (rc != 0) {
         programFatalError("Error starting dialog.");
@@ -888,7 +888,7 @@ static void opSayGoToReply(Program* program)
 // 0x463584
 void opSayReply(Program* program)
 {
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     ProgramValue v3 = programStackPopValue(program);
     ProgramValue v2 = programStackPopValue(program);
@@ -903,25 +903,25 @@ void opSayReply(Program* program)
     if ((v3.opcode & VALUE_TYPE_MASK) == VALUE_TYPE_STRING) {
         const char* v2 = programGetString(program, v3.opcode, v3.integerValue);
         if (_dialogOption(v1, v2) != 0) {
-            program->flags &= ~PROGRAM_FLAG_0x20;
+            program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
             programFatalError("Error setting option.");
         }
     } else if ((v3.opcode & VALUE_TYPE_MASK) == VALUE_TYPE_INT) {
         if (_dialogOptionProc(v1, v3.integerValue) != 0) {
-            program->flags &= ~PROGRAM_FLAG_0x20;
+            program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
             programFatalError("Error setting option.");
         }
     } else {
         programFatalError("Invalid arg 2 to sayOption");
     }
 
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }
 
 // sayoption
 void opSayOption(Program* program)
 {
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     ProgramValue v3 = programStackPopValue(program);
     ProgramValue v4 = programStackPopValue(program);
@@ -941,26 +941,26 @@ void opSayOption(Program* program)
     }
 
     if (_dialogReply(v1, v2) != 0) {
-        program->flags &= ~PROGRAM_FLAG_0x20;
+        program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
         programFatalError("Error setting option.");
     }
 
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }
 
 // 0x46378C
 int intLibCheckDialog(Program* program)
 {
-    program->flags |= PROGRAM_FLAG_0x40;
+    program->flags |= PROGRAM_FLAG_FINISHED;
     return _dialogGetDialogDepth() != -1;
 }
 
 // 0x4637A4
 void opSayEnd(Program* program)
 {
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
     int rc = dialogGo(gIntLibSayStartingPosition);
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 
     if (rc == -2) {
         program->checkWaitFunc = intLibCheckDialog;
@@ -1019,7 +1019,7 @@ static void opSayMessageTimeout(Program* program)
 // 0x463890
 void opSayMessage(Program* program)
 {
-    program->flags |= PROGRAM_FLAG_0x20;
+    program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     ProgramValue v3 = programStackPopValue(program);
     ProgramValue v4 = programStackPopValue(program);
@@ -1039,11 +1039,11 @@ void opSayMessage(Program* program)
     }
 
     if (dialogMessage(v1, v2, _TimeOut) != 0) {
-        program->flags &= ~PROGRAM_FLAG_0x20;
+        program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
         programFatalError("Error setting option.");
     }
 
-    program->flags &= ~PROGRAM_FLAG_0x20;
+    program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }
 
 // gotoxy
@@ -1442,7 +1442,7 @@ void opRefreshMouse(Program* program)
     int data = programStackPopInteger(program);
 
     if (!scriptWindowRefreshRegions()) {
-        _executeProc(program, data);
+        programExecuteProcedureAsync(program, data);
     }
 }
 
@@ -2175,7 +2175,7 @@ static bool intLibDoInput(int key)
 
     if (gIntLibGenericKeyHandlerProgram != nullptr) {
         if (gIntLibGenericKeyHandlerProc != 0) {
-            _executeProc(gIntLibGenericKeyHandlerProgram, gIntLibGenericKeyHandlerProc);
+            programExecuteProcedureAsync(gIntLibGenericKeyHandlerProgram, gIntLibGenericKeyHandlerProc);
         }
         return true;
     }
@@ -2186,7 +2186,7 @@ static bool intLibDoInput(int key)
     }
 
     if (entry->proc != 0) {
-        _executeProc(entry->program, entry->proc);
+        programExecuteProcedureAsync(entry->program, entry->proc);
     }
 
     return true;

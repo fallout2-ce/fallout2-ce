@@ -23,10 +23,14 @@
 #include "scripts.h"
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
 #include "sfall_ini.h"
+#include "sfall_opcodes.h"
+#include "sfall_script_hooks.h"
 #include "text_font.h"
 #include "tile.h"
 #include "window.h"
 #include "worldmap.h"
+
+#include <assert.h>
 
 namespace fallout {
 
@@ -37,11 +41,13 @@ static void mf_dialog_obj(Program* program, int args);
 static void mf_get_cursor_mode(Program* program, int args);
 static void mf_get_flags(Program* program, int args);
 static void mf_get_object_data(Program* program, int args);
+static void mf_get_sfall_arg_at(Program* program, int args);
 static void mf_get_text_width(Program* program, int args);
 static void mf_intface_redraw(Program* program, int args);
 static void mf_loot_obj(Program* program, int args);
 static void mf_message_box(Program* program, int args);
 static void mf_metarule_exist(Program* program, int args);
+static void mf_obj_under_cursor(Program* program, int args);
 static void mf_opcode_exists(Program* program, int args);
 static void mf_outlined_object(Program* program, int args);
 static void mf_set_cursor_mode(Program* program, int args);
@@ -55,8 +61,19 @@ static void mf_string_to_case(Program* program, int args);
 static void mf_string_format(Program* program, int args);
 static void mf_floor2(Program* program, int args);
 
+static int currentMetaruleIndex;
+
+static const MetaruleInfo* currentMetarule()
+{
+    assert(currentMetaruleIndex >= 0 && currentMetaruleIndex < kMetarulesCount);
+    return &kMetarules[currentMetaruleIndex];
+}
+
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 // Note: metarules should pop arguments off the stack in natural order
+
+// TODO: argument validation, standard error return value
+// TODO: reduce code complexity using something like MetaruleContext in sfall
 const MetaruleInfo kMetarules[] = {
     // {"add_extra_msg_file",        mf_add_extra_msg_file,        1, 2, -1, {ARG_STRING, ARG_INT}},
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
@@ -90,7 +107,7 @@ const MetaruleInfo kMetarules[] = {
     // {"get_object_ai_data",        mf_get_object_ai_data,        2, 2, -1, {ARG_OBJECT, ARG_INT}},
     { "get_object_data", mf_get_object_data, 2, 2 }, // XXX: likely parameter order mismatch
     // {"get_outline",               mf_get_outline,               1, 1,  0, {ARG_OBJECT}},
-    // {"get_sfall_arg_at",          mf_get_sfall_arg_at,          1, 1,  0, {ARG_INT}},
+    { "get_sfall_arg_at", mf_get_sfall_arg_at, 1, 1, 0, { ARG_INT } },
     // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
@@ -116,7 +133,7 @@ const MetaruleInfo kMetarules[] = {
     { "metarule_exist", mf_metarule_exist, 1, 1 },
     // {"npc_engine_level_up",       mf_npc_engine_level_up,       1, 1},
     // {"obj_is_openable",           mf_obj_is_openable,           1, 1,  0, {ARG_OBJECT}},
-    // {"obj_under_cursor",          mf_obj_under_cursor,          2, 2,  0, {ARG_INT, ARG_INT}},
+    { "obj_under_cursor", mf_obj_under_cursor, 2, 2, 0, { ARG_INT, ARG_INT } },
     // {"objects_in_radius",         mf_objects_in_radius,         3, 4,  0, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "outlined_object", mf_outlined_object, 0, 0 },
     // {"real_dude_obj",             mf_real_dude_obj,             0, 0},
@@ -223,6 +240,22 @@ void mf_get_flags(Program* program, int args)
     programStackPushInteger(program, object->flags);
 }
 
+void mf_get_sfall_arg_at(Program* program, int args)
+{
+    const int argNum = programStackPopInteger(program);
+
+    ProgramValue result(0);
+    const auto hookCall = hookOpcodeGetCurrentCall(currentMetarule()->name);
+    if (hookCall != nullptr) {
+        if (argNum >= 0 && argNum < hookCall->numArgs()) {
+            result = hookCall->getArgAt(argNum);
+        } else {
+            programPrintError("%s: argNum %d out of range [0, %d]", currentMetarule()->name, argNum, hookCall->numArgs() - 1);
+        }
+    }
+    programStackPushValue(program, result);
+}
+
 void mf_get_object_data(Program* program, int args)
 {
     size_t offset = static_cast<size_t>(programStackPopInteger(program));
@@ -288,6 +321,16 @@ void mf_opcode_exists(Program* program, int args)
     auto opcodeHandler = gInterpreterOpcodeHandlers[opcodeIndex];
     int opcodeExists = opcodeHandler != nullptr ? 1 : 0;
     programStackPushInteger(program, opcodeExists);
+}
+
+void mf_obj_under_cursor(Program* program, int args)
+{
+    int onlyCritter = programStackPopInteger(program);
+    int includeDude = programStackPopInteger(program);
+
+    Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : -1, includeDude, gElevation);
+
+    programStackPushValue(program, object);
 }
 
 void mf_outlined_object(Program* program, int args)
@@ -653,23 +696,24 @@ void sfall_metarule(Program* program, int args)
         programStackPushValue(program, values[index]);
     }
 
-    int metaruleIndex = -1;
+    currentMetaruleIndex = -1;
     for (int index = 0; index < kMetarulesMax; index++) {
         if (strcmp(kMetarules[index].name, metarule) == 0) {
-            metaruleIndex = index;
+            currentMetaruleIndex = index;
             break;
         }
     }
 
-    if (metaruleIndex == -1) {
+    if (currentMetaruleIndex == -1) {
         programFatalError("op_sfall_func: '%s' is not implemented", metarule);
     }
 
-    if (args < kMetarules[metaruleIndex].minArgs || args > kMetarules[metaruleIndex].maxArgs) {
+    const auto& metaruleInfo = kMetarules[currentMetaruleIndex];
+    if (args < metaruleInfo.minArgs || args > metaruleInfo.maxArgs) {
         programFatalError("op_sfall_func: '%s': invalid number of args", metarule);
     }
 
-    kMetarules[metaruleIndex].handler(program, args);
+    metaruleInfo.handler(program, args);
 }
 
 } // namespace fallout

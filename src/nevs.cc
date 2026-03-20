@@ -207,7 +207,7 @@ void _nevs_update()
                 gNevsHits += nevs->hits;
 
                 if (nevs->callbackProc == nullptr) {
-                    _executeProc(nevs->program, nevs->proc);
+                    programExecuteProcedureAsync(nevs->program, nevs->proc);
                 } else {
                     nevs->callbackProc();
                 }

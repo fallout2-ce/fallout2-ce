@@ -59,6 +59,7 @@
 #include "sfall_global_vars.h"
 #include "sfall_ini.h"
 #include "sfall_lists.h"
+#include "sfall_script_hooks.h"
 #include "skill.h"
 #include "skilldex.h"
 #include "stat.h"
@@ -119,6 +120,8 @@ int _game_user_wants_to_quit = 0;
 //
 // 0x58E940
 MessageList gMiscMessageList;
+
+bool gGameLoaded = false;
 
 int gSplashScreenScaling = 0;
 
@@ -388,6 +391,11 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
         return -1;
     }
 
+    if (!scriptHooksInit()) {
+        debugPrint("Failed on scriptHooksInit");
+        return -1;
+    }
+
     char* customConfigBasePath;
     configGetString(&gSfallConfig, SFALL_CONFIG_SCRIPTS_KEY, SFALL_CONFIG_INI_CONFIG_FOLDER, &customConfigBasePath);
     sfall_ini_set_base_path(customConfigBasePath);
@@ -442,9 +450,11 @@ void gameReset()
     sfall_gl_vars_reset();
     sfallListsReset();
     messageListRepositoryReset();
+    scriptHooksReset();
     sfallArraysReset();
     sfall_gl_scr_reset();
     sfallOnGameReset();
+    gGameLoaded = false;
 }
 
 // 0x442C34
@@ -453,6 +463,7 @@ void gameExit()
     debugPrint("\nGame Exit\n");
 
     // SFALL
+    scriptHooksExit();
     sfall_gl_scr_exit();
     sfallArraysExit();
     sfallListsExit();

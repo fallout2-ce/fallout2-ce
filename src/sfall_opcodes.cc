@@ -29,6 +29,7 @@
 #include "sfall_kb_helpers.h"
 #include "sfall_lists.h"
 #include "sfall_metarules.h"
+#include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
@@ -1213,6 +1214,121 @@ static void op_is_iface_tag_active(fallout::Program* program)
     fallout::programStackPushInteger(program, isActive ? 1 : 0);
 }
 
+// TODO: move opcodes into several files
+// TODO: reduce code duplication by introducing something like OpcodeContext in sfall
+
+static void op_register_hook(Program* program)
+{
+    constexpr char opcodeName[] = "register_hook";
+
+    int hookId = programStackPopInteger(program);
+    if (hookId < 0 || hookId >= HOOK_COUNT) {
+        programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
+        return;
+    }
+    int startProcIndex = programFindProcedure(program, gScriptProcNames[SCRIPT_PROC_START]);
+    if (startProcIndex == -1) {
+        programPrintError("%s: 'start' procedure not found", opcodeName);
+        return;
+    }
+    if (!scriptHooksRegister(program, static_cast<HookType>(hookId), startProcIndex)) {
+        programPrintError("%s(%d, %d): failed", opcodeName, hookId, startProcIndex);
+    }
+}
+
+static void op_register_hook_proc(Program* program)
+{
+    constexpr char opcodeName[] = "register_hook_proc";
+
+    int procedureIndex = programStackPopInteger(program);
+    int hookId = programStackPopInteger(program);
+    if (hookId < 0 || hookId >= HOOK_COUNT) {
+        programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
+        return;
+    }
+    if (procedureIndex < 0 || procedureIndex >= program->procedureCount()) {
+        programPrintError("%s: procedure index %d is out of range [0; %d]", opcodeName, procedureIndex, program->procedureCount());
+        return;
+    }
+
+    // Note: in sfall, register_hook_proc by default adds the next hook to the beginning of the hook order.
+    // Meaning the last script to be registered will be executed first.
+    // There was a special opcode `register_hook_proc_spec` that adds to the end of hook order instead.
+    // In CE we assume that this order shouldn't matter, and giving script a choice like that doesn't solve anything, since several scripts from different mods can use either opcode.
+
+    // Global script order is entirely based off script file name sorting and when user installs scripts from different mods, there's no way to ensure a "proper" order,
+    // without some kind of script-dependency system, which we don't have.
+    // So let's just simply use the direct order.
+    if (!scriptHooksRegister(program, static_cast<HookType>(hookId), procedureIndex)) {
+        programPrintError("%s(%d, %d): failed", opcodeName, hookId, procedureIndex);
+    }
+}
+
+ScriptHookCall* hookOpcodeGetCurrentCall(const char* opcodeName)
+{
+    const auto hookCall = ScriptHookCall::current();
+    if (hookCall == nullptr) {
+        programPrintError("%s: called outside of a script hook", opcodeName);
+    }
+    return hookCall;
+}
+
+static void op_get_sfall_arg(Program* program)
+{
+    constexpr char opcodeName[] = "get_sfall_arg";
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    programStackPushValue(program, hookCall != nullptr ? hookCall->getNextArgFromScript() : ProgramValue(0));
+}
+
+static void op_get_sfall_args(Program* program)
+{
+    constexpr char opcodeName[] = "get_sfall_args";
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    ArrayId result = 0;
+    if (hookCall != nullptr) {
+        result = CreateTempArray(hookCall->numArgs(), 0);
+        for (int i = 0; i < hookCall->numArgs(); ++i) {
+            SetArray(result, i, hookCall->getArgAt(i), false, program);
+        }
+    }
+    programStackPushInteger(program, static_cast<int>(result));
+}
+
+static void op_set_sfall_arg(Program* program)
+{
+    constexpr char opcodeName[] = "set_sfall_arg";
+
+    const ProgramValue value = programStackPopValue(program);
+    const int argNum = programStackPopInteger(program);
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    if (hookCall == nullptr) return;
+
+    if (argNum < 0 || argNum >= hookCall->numArgs()) {
+        programPrintError("%s: argNum %d out of range [0, %d]", opcodeName, argNum, hookCall->numArgs() - 1);
+        return;
+    }
+    hookCall->setArgAt(argNum, value);
+}
+
+static void op_set_sfall_return(Program* program)
+{
+    constexpr char opcodeName[] = "set_sfall_return";
+
+    const ProgramValue value = programStackPopValue(program);
+
+    const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
+    if (hookCall == nullptr) return;
+
+    if (hookCall->numScriptReturnValues() >= hookCall->maxReturnValues()) {
+        programPrintError("%s: trying to add next return value while only %d is expected", opcodeName, hookCall->maxReturnValues());
+        return;
+    }
+    hookCall->addReturnValueFromScript(value);
+}
+
 // Note: opcodes should pop arguments off the stack in reverse order
 void sfallOpcodesInit()
 {
@@ -1479,10 +1595,18 @@ void sfallOpcodesInit()
     // 0x81e3 - void reset_critical_table(int crittertype, int bodypart, int level, int valuetype)
 
     // 0x81e4 - int   get_sfall_arg()
+    interpreterRegisterOpcode(0x81e4, op_get_sfall_arg);
+
     // 0x823c - array get_sfall_args()
+    interpreterRegisterOpcode(0x823c, op_get_sfall_args);
+
     // 0x823d - void  set_sfall_arg(int argnum, int value)
+    interpreterRegisterOpcode(0x823d, op_set_sfall_arg);
+
     // 0x81e5 - void  set_sfall_return(any value)
-    // 0x81ea - int   init_hook()
+    interpreterRegisterOpcode(0x81e5, op_set_sfall_return);
+
+    // 0x81ea - int   init_hook()  -> OBSOLETE
 
     // 0x81e6 - void set_unspent_ap_bonus(int multiplier)
     // 0x81e7 - int  get_unspent_ap_bonus()
@@ -1550,6 +1674,7 @@ void sfallOpcodesInit()
     // 0x8206 - void set_self(object)
     interpreterRegisterOpcode(0x8206, op_set_self);
     // 0x8207 - void register_hook(int hook)
+    interpreterRegisterOpcode(0x8207, op_register_hook);
 
     // 0x820d - int   list_begin(int type)
     interpreterRegisterOpcode(0x820D, op_list_begin);
@@ -1649,6 +1774,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8261, op_explosions_metarule);
 
     // 0x8262 - void register_hook_proc(int hook, procedure proc)
+    interpreterRegisterOpcode(0x8262, op_register_hook_proc);
 
     // 0x826b - string message_str_game(int fileId, int messageId)
     interpreterRegisterOpcode(0x826B, op_get_message);
@@ -1687,6 +1813,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8281, op_sfall_func8);
 
     // 0x827d - void register_hook_proc_spec(int hook, procedure proc)
+    interpreterRegisterOpcode(0x827d, op_register_hook_proc);
     // 0x827e - void reg_anim_callback(procedure proc)
 }
 

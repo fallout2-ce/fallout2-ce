@@ -1,0 +1,87 @@
+#include "../sfall/sfall.h"
+#include "../sfall/dik.h"
+#include "../sfall/define_lite.h"
+
+procedure test_with_args(variable arg1) begin
+    display_msg("test_w_arg" + arg1);
+end
+
+procedure test_wo_args begin
+    display_msg("test_wo_args");
+end
+
+procedure tohit_handler begin
+    variable
+        attacker := get_sfall_arg_at(1),
+        target := get_sfall_arg_at(2),
+        chanceRaw := get_sfall_arg_at(7);
+
+    display_msg(string_format("tohit %s -> %s (%d)", obj_name(attacker), obj_name(target), chanceRaw));
+    if (attacker == dude_obj) then
+        set_sfall_return(100);
+    else if (target == dude_obj) then
+        set_sfall_return(0);
+
+end
+
+procedure useobj_handler begin
+    variable
+        user := get_sfall_arg,
+        item := get_sfall_arg;
+
+    display_msg(string_format("useobj %s (%s)", obj_name(user), obj_name(item)));
+    set_sfall_return(2);
+end
+
+procedure useobjon_handler begin
+    variable args := get_sfall_args,
+        target := args[0],
+        user := args[1],
+        item := args[2];
+
+    display_msg(string_format("useobjon %s (%s) -> %s [len: %d]", obj_name(user), obj_name(item), obj_name(target), len_array(args)));
+    set_sfall_return(0);
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    display_msg(string_format("keypress %d dx: %d", pressed, key));
+
+    if (not pressed) then return;
+
+    if (key == DIK_F2) then begin
+        display_msg(string_format("tile %d, elev %d, map %d", tile_under_cursor, elevation(dude_obj), cur_map_index));
+    end if (key == DIK_F3) then begin
+        if (key_pressed(DIK_LCONTROL)) then begin
+            variable cr := obj_under_cursor(true, false);
+            if (cr) then
+                critter_dmg(cr, 1000, DMG_BYPASS_ARMOR);
+        end else
+            move_to(dude_obj, tile_under_cursor, elevation(dude_obj));
+    end
+end
+
+procedure start begin
+    //call test_with_args(777);
+    display_msg("start hook test");
+
+    if (not game_loaded) then return;
+
+    add_obj_to_inven(dude_obj, create_object_sid(40, 0, 0, -1));
+    add_obj_to_inven(dude_obj, create_object_sid(76, 0, 0, -1));
+    add_obj_to_inven(dude_obj, create_object_sid(85, 0, 0, -1));
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_TOHIT, tohit_handler);
+    register_hook_proc(HOOK_USEOBJ, useobj_handler);
+    register_hook_proc(HOOK_USEOBJON, useobjon_handler);
+end
+
+
+procedure map_enter_p_proc begin
+    display_msg("Map Enter hook test");
+end
+

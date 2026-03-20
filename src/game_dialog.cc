@@ -2118,7 +2118,7 @@ int _gdProcessChoice(int optionIndex)
 
     if (_gdReenterLevel < 2) {
         if (dialogOptionEntry->proc != 0) {
-            _executeProcedure(gDialogReplyProgram, dialogOptionEntry->proc);
+            programExecuteProcedure(gDialogReplyProgram, dialogOptionEntry->proc);
         }
     }
 
