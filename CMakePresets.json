@@ -24,17 +24,6 @@
             }
         },
         {
-            "name": "windows-x86-xp",
-            "inherits": ["windows-base"],
-            "generator": "Visual Studio 17 2022",
-            "architecture": "Win32",
-            "cacheVariables": {
-                "CMAKE_GENERATOR_TOOLSET": "v141_xp",
-                "CMAKE_C_FLAGS": "/D_WIN32_WINNT=0x0501",
-                "CMAKE_CXX_FLAGS": "/D_WIN32_WINNT=0x0501"
-            }
-        },
-        {
             "name": "windows-x86",
             "inherits": [
                 "windows-base"
@@ -42,11 +31,9 @@
             "generator": "Visual Studio 17 2022",
             "architecture": "Win32",
             "cacheVariables": {
-                "CMAKE_GENERATOR_TOOLSET": "v143",
-                "CMAKE_C_FLAGS": "/D_WIN32_WINNT=0x0601",
-                "CMAKE_CXX_FLAGS": "/D_WIN32_WINNT=0x0601",
-                "CMAKE_CXX_FLAGS_DEBUG": "/Zi /Od /Oy- /RTC1",
-                "CMAKE_C_FLAGS_DEBUG": "/Zi /Od /Oy- /RTC1",
+                "CMAKE_GENERATOR_TOOLSET": "v141_xp",
+                "CMAKE_C_FLAGS": "/D_WIN32_WINNT=0x0501",
+                "CMAKE_CXX_FLAGS": "/D_WIN32_WINNT=0x0501 /D_STATIC_CPPLIB",
                 "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>"
             }
         },
