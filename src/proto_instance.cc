@@ -1019,7 +1019,7 @@ UseItemResultCode objectUseItemInternal(Object* critter, Object* item)
     UseItemResultCode rc;
     MessageListItem messageListItem;
 
-    int hookResult = scriptHooks_UseObj(critter, item);
+    int hookResult = scriptHooks_UseItem(critter, item);
     if (hookResult != -1) {
         return static_cast<UseItemResultCode>(hookResult);
     }
@@ -1248,7 +1248,7 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
 // returns 0 on success, -1 on error, 1 to remove item
 UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Object* item)
 {
-    int hookResult = scriptHooks_UseObjOn(critter, targetObj, item);
+    int hookResult = scriptHooks_UseItemOn(critter, targetObj, item);
     if (hookResult != -1) {
         return static_cast<UseItemResultCode>(hookResult);
     }

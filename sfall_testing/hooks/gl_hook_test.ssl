@@ -3,6 +3,8 @@
 #include "../sfall/define_lite.h"
 #include "../test_utils.h"
 
+#include "../sfall/lib.arrays.h"
+
 variable last_game_mode;
 variable gamemodechange_assertions_enabled := false;
 variable gamemodechange_reported := false;
@@ -94,6 +96,18 @@ procedure gamemodechange_handler begin
     last_game_mode := current_mode;
 end
 
+procedure combatdamage_handler begin
+    variable args := get_sfall_args;
+    
+    display_msg(sprintf("combatdamage %s", debug_array_str(args)));
+
+    set_sfall_return(10); // target dmg
+    set_sfall_return(5);
+    set_sfall_return(0);
+    set_sfall_return(DAM_HIT); // attacker flag
+    set_sfall_return(10); // knockback
+end
+
 procedure start begin
     //call test_with_args(777);
     display_msg("start hook test");
@@ -112,6 +126,7 @@ procedure start begin
     register_hook_proc(HOOK_USEOBJ, useobj_handler);
     register_hook_proc(HOOK_USEOBJON, useobjon_handler);
     register_hook_proc(HOOK_GAMEMODECHANGE, gamemodechange_handler);
+    register_hook_proc(HOOK_COMBATDAMAGE, combatdamage_handler);
 end
 
 

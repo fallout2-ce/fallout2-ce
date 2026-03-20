@@ -1,6 +1,7 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
+#include "combat_defs.h"
 #include "object.h"
 #include <setjmp.h>
 
@@ -150,6 +151,8 @@ public:
     ProgramValue();
     ProgramValue(int value);
     ProgramValue(Object* value);
+    // TODO: better approach for supporting different object types?
+    ProgramValue(Attack* value);
 
     opcode_t opcode;
     union {

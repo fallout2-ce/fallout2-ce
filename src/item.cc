@@ -2782,7 +2782,7 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
 {
     // This matches original HOOK_USEOBJON implementation from sfall.
     // This was needed because normally objectUseItemOnInternal won't get called for drugs.
-    int hookResult = scriptHooks_UseObjOn(critter, critter, item);
+    int hookResult = scriptHooks_UseItemOn(critter, critter, item);
     if (hookResult != -1) {
         return static_cast<UseItemResultCode>(hookResult);
     }

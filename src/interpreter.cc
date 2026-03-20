@@ -3333,12 +3333,17 @@ ProgramValue::ProgramValue(int value)
 {
     opcode = VALUE_TYPE_INT;
     integerValue = value;
-};
+}
 ProgramValue::ProgramValue(Object* value)
 {
     opcode = VALUE_TYPE_PTR;
     pointerValue = value;
-};
+}
+ProgramValue::ProgramValue(Attack* value)
+{
+    opcode = VALUE_TYPE_PTR;
+    pointerValue = value;
+}
 
 bool ProgramValue::isPointer() const
 {
