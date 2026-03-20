@@ -47,7 +47,7 @@ void place_entrance_hex()
             tile = tileFromScreenXY(x, y);
             if (tile != -1) {
                 if (tileSetCenter(tile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
-                    mapSetEnteringLocation(tile, gElevation, rotation);
+                    mapSetEnteringLocation(gElevation, tile, rotation);
                 } else {
                     win_timed_msg("ERROR: Entrance out of range!", _colorTable[31744]);
                 }
