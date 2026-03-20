@@ -509,3 +509,16 @@ if(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 endif()
+
+if(DEFINED COPY_TO_PATH AND NOT "${COPY_TO_PATH}" STREQUAL "")
+    add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:${EXECUTABLE_NAME}>"
+            "${COPY_TO_PATH}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_PDB_FILE:${EXECUTABLE_NAME}>"
+            "${COPY_TO_PATH}/"
+        COMMAND ${CMAKE_COMMAND} -E echo "Copied executable and PDB to ${COPY_TO_PATH}"
+    )
+    message(STATUS "Will copy executable and PDB to: ${COPY_TO_PATH}")
+endif()
