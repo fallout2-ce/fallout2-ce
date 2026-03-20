@@ -244,14 +244,16 @@ void mf_get_sfall_arg_at(Program* program, int args)
 {
     const int argNum = programStackPopInteger(program);
 
+    ProgramValue result(0);
     const auto hookCall = hookOpcodeGetCurrentCall(currentMetarule()->name);
-    if (hookCall == nullptr) return;
-
-    if (argNum < 0 || argNum >= hookCall->numArgs()) {
-        programPrintError("%s: argNum %d out of range [0, %d]", currentMetarule()->name, argNum, hookCall->numArgs() - 1);
-        return;
+    if (hookCall != nullptr) {
+        if (argNum >= 0 && argNum < hookCall->numArgs()) {
+            result = hookCall->getArgAt(argNum);
+        } else {
+            programPrintError("%s: argNum %d out of range [0, %d]", currentMetarule()->name, argNum, hookCall->numArgs() - 1);
+        }
     }
-    programStackPushValue(program, hookCall->getArgAt(argNum));
+    programStackPushValue(program, result);
 }
 
 void mf_get_object_data(Program* program, int args)
@@ -694,23 +696,24 @@ void sfall_metarule(Program* program, int args)
         programStackPushValue(program, values[index]);
     }
 
-    int metaruleIndex = -1;
+    currentMetaruleIndex = -1;
     for (int index = 0; index < kMetarulesMax; index++) {
         if (strcmp(kMetarules[index].name, metarule) == 0) {
-            metaruleIndex = index;
+            currentMetaruleIndex = index;
             break;
         }
     }
 
-    if (metaruleIndex == -1) {
+    if (currentMetaruleIndex == -1) {
         programFatalError("op_sfall_func: '%s' is not implemented", metarule);
     }
 
-    if (args < kMetarules[metaruleIndex].minArgs || args > kMetarules[metaruleIndex].maxArgs) {
+    const auto& metaruleInfo = kMetarules[currentMetaruleIndex];
+    if (args < metaruleInfo.minArgs || args > metaruleInfo.maxArgs) {
         programFatalError("op_sfall_func: '%s': invalid number of args", metarule);
     }
 
-    kMetarules[metaruleIndex].handler(program, args);
+    metaruleInfo.handler(program, args);
 }
 
 } // namespace fallout

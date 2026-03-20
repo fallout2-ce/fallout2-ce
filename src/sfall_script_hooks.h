@@ -174,18 +174,26 @@ public:
     ScriptHookCall& operator=(const ScriptHookCall& other) = delete;
     ScriptHookCall& operator=(ScriptHookCall&& other) = delete;
 
+    // Adds an argument (should be called from engine code).
     ScriptHookCall& addArg(ProgramValue value);
+    // Sets an argument value at given index.
     ScriptHookCall& setArgAt(int idx, ProgramValue value);
-    void addReturnValue(ProgramValue value);
-    void setReturnValueAt(int idx, ProgramValue value);
+    // Adds return value from script.
+    // numReturnValues will only increase if current script called this more times than the last one.
+    void addReturnValueFromScript(ProgramValue value);
 
     void call();
 
     ProgramValue getNextArgFromScript();
 
+    // Number of arguments supplied from the engine.
     int numArgs() const;
+    // Maximum expected number of return values by the engine.
     int maxReturnValues() const;
+    // Number of actually supplied values from all scripts.
     int numReturnValues() const;
+    // Number of supplied values from the last script.
+    int numScriptReturnValues() const;
 
     ProgramValue getArgAt(int idx) const;
     ProgramValue getReturnValueAt(int idx) const;
@@ -201,7 +209,8 @@ private:
     ProgramValue _retVals[HOOKS_MAX_RETURN_VALUES] = {};
     int _numRetVals = 0;
 
-    int _scriptNextArg = 0;
+    int _scriptArgs = 0;
+    int _scriptRetVals = 0;
 };
 
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);

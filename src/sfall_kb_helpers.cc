@@ -279,8 +279,29 @@ static SDL_Scancode get_scancode_from_key(int key)
     return kDiks[key & 0xFF];
 }
 
+/// Translates SDL scancode into DIK key constant, used by sfall.
+static int get_key_from_scancode(SDL_Scancode scanCode)
+{
+    if (kScanCodeToDik.empty()) {
+        for (int dik = DIK_MAP_COUNT - 1; dik >= 1; --dik) {
+            if (kDiks[dik] == SDL_SCANCODE_UNKNOWN) continue;
+
+            kScanCodeToDik[kDiks[dik]] = dik;
+        }
+    }
+    auto dikIt = kScanCodeToDik.find(scanCode);
+    if (dikIt == kScanCodeToDik.end()) {
+        return SDL_SCANCODE_UNKNOWN;
+    }
+    return dikIt->second;
+}
+
 bool sfall_kb_is_key_pressed(int key)
 {
+    // todo: sfall uses this condition to check for VK key instead of DIK:
+    /* if ((key & 0x80000000) > 0) { // special flag to check by VK code directly
+        return GetAsyncKeyState(key & 0xFFFF) & 0x8000;
+    }*/
     SDL_Scancode scancode = get_scancode_from_key(key);
     if (scancode == SDL_SCANCODE_UNKNOWN) {
         return false;
@@ -311,22 +332,10 @@ int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
 {
     if (!gGameLoaded) return SDL_SCANCODE_UNKNOWN;
 
-    if (kScanCodeToDik.empty()) {
-        for (int dik = 1; dik < DIK_MAP_COUNT; dik++) {
-            kScanCodeToDik[kDiks[dik]] = dik;
-        }
-    }
-
-    auto scanCode = static_cast<SDL_Scancode>(sdlScanCode);
-    auto dikIt = kScanCodeToDik.find(scanCode);
-    if (dikIt == kScanCodeToDik.end()) {
-        return SDL_SCANCODE_UNKNOWN;
-    }
-    int dik = dikIt->second;
     ScriptHookCall hookCall(HOOK_KEYPRESS, 1);
     hookCall
         .addArg(pressed ? 1 : 0)
-        .addArg(dik)
+        .addArg(get_key_from_scancode(static_cast<SDL_Scancode>(sdlScanCode)))
         .addArg(0) // TODO: sfall uses VK_ codes here; not sure any mod actually used it. If so, maybe it is better to use Key values from kb.h?
         .call();
 

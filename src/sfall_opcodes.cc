@@ -1229,6 +1229,7 @@ static void op_register_hook(Program* program)
     int startProcIndex = programFindProcedure(program, gScriptProcNames[SCRIPT_PROC_START]);
     if (startProcIndex == -1) {
         programPrintError("%s: 'start' procedure not found", opcodeName);
+        return;
     }
     if (!scriptHooksRegister(program, static_cast<HookType>(hookId), startProcIndex)) {
         programPrintError("%s(%d, %d): failed", opcodeName, hookId, startProcIndex);
@@ -1245,7 +1246,7 @@ static void op_register_hook_proc(Program* program)
         programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
         return;
     }
-    if (procedureIndex < 0 || procedureIndex > program->procedureCount()) {
+    if (procedureIndex < 0 || procedureIndex >= program->procedureCount()) {
         programPrintError("%s: procedure index %d is out of range [0; %d]", opcodeName, procedureIndex, program->procedureCount());
         return;
     }
@@ -1321,11 +1322,11 @@ static void op_set_sfall_return(Program* program)
     const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
     if (hookCall == nullptr) return;
 
-    if (hookCall->numReturnValues() >= hookCall->maxReturnValues()) {
+    if (hookCall->numScriptReturnValues() >= hookCall->maxReturnValues()) {
         programPrintError("%s: trying to add next return value while only %d is expected", opcodeName, hookCall->maxReturnValues());
         return;
     }
-    hookCall->addReturnValue(value);
+    hookCall->addReturnValueFromScript(value);
 }
 
 // Note: opcodes should pop arguments off the stack in reverse order

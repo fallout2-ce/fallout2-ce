@@ -39,7 +39,7 @@ ScriptHookCall::ScriptHookCall(HookType hookType, int maxReturnValues)
 
 ScriptHookCall& ScriptHookCall::addArg(ProgramValue value)
 {
-    assert(_numArgs < HOOKS_MAX_ARGUMENTS - 1);
+    assert(_numArgs < HOOKS_MAX_ARGUMENTS);
     _args[_numArgs++] = value;
     return *this;
 }
@@ -51,16 +51,14 @@ ScriptHookCall& ScriptHookCall::setArgAt(int idx, ProgramValue value)
     return *this;
 }
 
-void ScriptHookCall::addReturnValue(ProgramValue value)
+void ScriptHookCall::addReturnValueFromScript(ProgramValue value)
 {
-    assert(_numRetVals < HOOKS_MAX_RETURN_VALUES - 1);
-    _retVals[_numRetVals++] = value;
-}
+    assert(_scriptRetVals < HOOKS_MAX_RETURN_VALUES);
+    _retVals[_scriptRetVals++] = value;
 
-void ScriptHookCall::setReturnValueAt(int idx, ProgramValue value)
-{
-    assert(idx >= 0 && idx < _numRetVals);
-    _retVals[idx] = value;
+    if (_scriptRetVals > _numRetVals) {
+        _numRetVals = _scriptRetVals;
+    }
 }
 
 ProgramValue ScriptHookCall::getArgAt(int idx) const
@@ -78,6 +76,7 @@ ProgramValue ScriptHookCall::getReturnValueAt(int idx) const
 int ScriptHookCall::numArgs() const { return _numArgs; }
 int ScriptHookCall::maxReturnValues() const { return _maxRetVals; }
 int ScriptHookCall::numReturnValues() const { return _numRetVals; }
+int ScriptHookCall::numScriptReturnValues() const { return _scriptRetVals; }
 
 void ScriptHookCall::call()
 {
@@ -88,7 +87,11 @@ void ScriptHookCall::call()
     _callStack.push_back(this);
 
     const auto& hooksOfType = scriptHooks[_hookType];
-    for (const auto& hook : hooksOfType) {
+    // Iterate in reverse order. In case current hook is unregistered inside the call, we can just continue iteration.
+    for (int i = hooksOfType.size() - 1; i >= 0; --i) {
+        const auto& hook = hooksOfType[i];
+        _scriptArgs = 0;
+        _scriptRetVals = 0;
         programExecuteProcedure(hook.program, hook.procedureIndex);
     }
 
@@ -98,22 +101,23 @@ void ScriptHookCall::call()
 
 ProgramValue ScriptHookCall::getNextArgFromScript()
 {
-    if (_scriptNextArg >= _numArgs) {
+    if (_scriptArgs >= _numArgs) {
         return { 0 };
     }
-    return _args[_scriptNextArg++];
+    return _args[_scriptArgs++];
 }
 
 bool scriptHooksRegister(Program* program, const HookType hookType, const int procedureIndex)
 {
     assert(program != nullptr && hookType >= 0 && hookType < HOOK_COUNT && procedureIndex >= 0 && procedureIndex < program->procedureCount());
 
+    auto& hooksByType = scriptHooks[hookType];
     const bool isUnregisterRequest = procedureIndex == 0;
     // Check for existing registration.
-    for (auto it = scriptHooks[hookType].begin(); it != scriptHooks[hookType].end(); ++it) {
+    for (auto it = hooksByType.begin(); it != hooksByType.end(); ++it) {
         if (it->program == program) {
             if (isUnregisterRequest) {
-                scriptHooks[hookType].erase(it);
+                hooksByType.erase(it);
                 return true; // unregister success
             }
             // Skip: no more than 1 procedure in a script for a given hook type.
@@ -124,7 +128,8 @@ bool scriptHooksRegister(Program* program, const HookType hookType, const int pr
         return false; // unregister fail
     }
 
-    scriptHooks[hookType].emplace_back(ScriptHook { program, procedureIndex });
+    // Put new hooks to beginning, because we want to iterate them in reverse.
+    hooksByType.emplace(hooksByType.begin(), ScriptHook { program, procedureIndex });
     return true; // register success
 }
 
@@ -180,7 +185,10 @@ int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode,
 
     hook.call();
 
-    return hook.numReturnValues() > 0 ? hook.getReturnValueAt(0).asInt() : hitChance;
+    if (hook.numReturnValues() <= 0) return hitChance;
+
+    hitChance = hook.getReturnValueAt(0).asInt();
+    return std::clamp(hitChance, -99, 999);
 }
 
 /*
