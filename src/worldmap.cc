@@ -3454,7 +3454,10 @@ static int wmRndEncounterOccurred()
         return 0;
     }
 
-    wmRndEncounterPick();
+    // CE: No encounter candidate.
+    if (wmRndEncounterPick() == -1) {
+        return 0;
+    }
 
     EncounterTable* encounterTable = &(wmEncounterTableList[wmGenData.encounterTableId]);
     EncounterTableEntry* encounterTableEntry = &(encounterTable->entries[wmGenData.encounterEntryId]);
@@ -3620,6 +3623,11 @@ static int wmRndEncounterPick()
             candidates[candidatesLength++] = index;
             totalChance += encounterTableEntry->chance;
         }
+    }
+
+    // CE: Fix crash/getting stuck on an empty map when the encounter table has no available entries.
+    if (candidatesLength <= 0) {
+        return -1;
     }
 
     int effectiveLuck = critterGetStat(gDude, STAT_LUCK) - 5;
