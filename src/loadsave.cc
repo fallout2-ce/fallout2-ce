@@ -2310,6 +2310,7 @@ static void _ShowSlotList(int windowType)
 
         {
             MessageListItem messageListItemBack = { 201, 0, nullptr, nullptr };
+            // TODO: localize "BACK" and "MORE"
             char backText[] = "BACK";
             if (!messageListGetItem(&gPipboyMessageList, &messageListItemBack)) {
                 debugPrint("Error: Couldn't find LoadSave Message!");
