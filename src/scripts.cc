@@ -612,13 +612,13 @@ Object* scriptGetSelf(Program* program)
     spatialScript->owner = object;
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        Script* spatialScript = scriptGetFirstSpatialScript(elevation);
-        while (spatialScript != nullptr) {
-            if (spatialScript == script) {
+        Script* spatialIter = scriptGetFirstSpatialScript(elevation);
+        while (spatialIter != nullptr) {
+            if (spatialIter == script) {
                 objectSetLocation(object, builtTileGetTile(script->sp.built_tile), elevation, nullptr);
                 return object;
             }
-            spatialScript = scriptGetNextSpatialScript();
+            spatialIter = scriptGetNextSpatialScript();
         }
     }
 
@@ -864,7 +864,13 @@ err:
 int scriptEventProcess(Object* obj, void* data)
 {
     ScriptEvent* scriptEvent = (ScriptEvent*)data;
-    scriptSetFixedParam(scriptEvent->sid, scriptEvent->fixedParam);
+
+    Script* script;
+    if (scriptGetScript(scriptEvent->sid, &script) == -1) {
+        return 0;
+    }
+
+    script->fixedParam = scriptEvent->fixedParam;
 
     scriptExecProc(scriptEvent->sid, SCRIPT_PROC_TIMED);
 
@@ -2022,10 +2028,9 @@ int scriptLoadAll(File* stream)
                     prevExtent->next = extent;
                 }
 
+                scriptList->tail = extent;
                 prevExtent = extent;
             }
-
-            scriptList->tail = prevExtent;
         } else {
             scriptList->head = nullptr;
             scriptList->tail = nullptr;
