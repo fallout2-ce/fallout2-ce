@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <string>
-#include <vector>
 
 #include "actions.h"
 #include "animation.h"
@@ -3570,6 +3569,11 @@ static void inventoryRenderItemDescription(const char* string)
     int oldFont = fontGetCurrent();
     fontSetCurrent(101);
 
+    if (string == nullptr) {
+        fontSetCurrent(oldFont);
+        return;
+    }
+
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
     windowBuffer += INVENTORY_WINDOW_WIDTH * INVENTORY_SUMMARY_Y + INVENTORY_SUMMARY_X;
 
@@ -3580,7 +3584,7 @@ static void inventoryRenderItemDescription(const char* string)
         _inven_display_msg_line += 1;
         if (_inven_display_msg_line > 17) {
             debugPrint("\nError: inven_display_msg: out of bounds!");
-            return;
+            goto end;
         }
 
         char* space = nullptr;
@@ -3596,7 +3600,7 @@ static void inventoryRenderItemDescription(const char* string)
                 // drawing routine will silently truncate it after reaching
                 // desired length.
                 fontDrawText(windowBuffer + INVENTORY_WINDOW_WIDTH * _inven_display_msg_line * fontGetLineHeight(), c, 152, INVENTORY_WINDOW_WIDTH, _colorTable[992]);
-                return;
+                goto end;
             }
 
             char* nextSpace = space + 1;
@@ -3633,7 +3637,7 @@ static void inventoryRenderItemDescription(const char* string)
 
         if (fontGetStringWidth(c) > 152) {
             debugPrint("\nError: inven_display_msg: word too long!");
-            return;
+            goto end;
         }
 
         fontDrawText(windowBuffer + INVENTORY_WINDOW_WIDTH * _inven_display_msg_line * fontGetLineHeight(), c, 152, INVENTORY_WINDOW_WIDTH, _colorTable[992]);
@@ -3648,6 +3652,7 @@ static void inventoryRenderItemDescription(const char* string)
         }
     }
 
+end:
     fontSetCurrent(oldFont);
 }
 

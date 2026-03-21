@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
-#include <vector>
 
 #include "actions.h"
 #include "animation.h"
@@ -3092,6 +3091,13 @@ static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* s
 // 0x447FA0
 int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw)
 {
+    if (string == nullptr) {
+        if (textOffset != nullptr) {
+            *textOffset = 0;
+        }
+        return rect->top;
+    }
+
     std::string mutableString(string);
     char* mutableText = mutableString.data();
 
