@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include <fstream>
-#include <vector>
+#include <string>
 
 #include "art.h"
 #include "color.h"
@@ -257,8 +257,7 @@ void displayMonitorAddMessage(const char* str)
         }
     }
 
-    std::vector<char> mutableMessage(strlen(str) + 1);
-    memcpy(mutableMessage.data(), str, mutableMessage.size());
+    std::string mutableMessage(str);
     char* mutableStr = mutableMessage.data();
 
     // TODO: Refactor these two loops.
