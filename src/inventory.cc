@@ -532,6 +532,44 @@ void inventoryResetDude()
     _inven_pid = 0x1000000;
 }
 
+int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, int activeHand, int anim, int rotation)
+{
+    if (FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
+        return critter->fid;
+    }
+
+    Proto* proto;
+
+    int inventoryFid = _art_vault_guy_num;
+    if (protoGetProto(basePid, &proto) != -1) {
+        inventoryFid = proto->fid & 0xFFF;
+    }
+
+    if (armor != nullptr) {
+        protoGetProto(armor->pid, &proto);
+        if (critterGetStat(critter, STAT_GENDER) == GENDER_FEMALE) {
+            inventoryFid = proto->item.data.armor.femaleFid;
+        } else {
+            inventoryFid = proto->item.data.armor.maleFid;
+        }
+
+        if (inventoryFid == -1) {
+            inventoryFid = _art_vault_guy_num;
+        }
+    }
+
+    int animationCode = 0;
+    Object* itemInHand = activeHand == HAND_RIGHT ? rightHandItem : leftHandItem;
+    if (itemInHand != nullptr) {
+        protoGetProto(itemInHand->pid, &proto);
+        if (proto->item.type == ITEM_TYPE_WEAPON) {
+            animationCode = proto->item.data.weapon.animationCode;
+        }
+    }
+
+    return buildFid(OBJ_TYPE_CRITTER, inventoryFid, anim, animationCode, rotation);
+}
+
 // inventory_msg_init
 // 0x46E73C
 static int inventoryMessageListInit()
@@ -2591,52 +2629,14 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 // 0x4716E8
 static void _adjust_fid()
 {
-    int fid;
-    if (FID_TYPE(_inven_dude->fid) == OBJ_TYPE_CRITTER) {
-        Proto* proto;
-
-        int inventoryFid = _art_vault_guy_num;
-
-        if (protoGetProto(_inven_pid, &proto) != -1) {
-            inventoryFid = proto->fid & 0xFFF;
-        }
-
-        if (gInventoryArmor != nullptr) {
-            protoGetProto(gInventoryArmor->pid, &proto);
-            if (critterGetStat(_inven_dude, STAT_GENDER) == GENDER_FEMALE) {
-                inventoryFid = proto->item.data.armor.femaleFid;
-            } else {
-                inventoryFid = proto->item.data.armor.maleFid;
-            }
-
-            if (inventoryFid == -1) {
-                inventoryFid = _art_vault_guy_num;
-            }
-        }
-
-        int animationCode = 0;
-        if (interfaceGetCurrentHand() == HAND_RIGHT) {
-            if (gInventoryRightHandItem != nullptr) {
-                protoGetProto(gInventoryRightHandItem->pid, &proto);
-                if (proto->item.type == ITEM_TYPE_WEAPON) {
-                    animationCode = proto->item.data.weapon.animationCode;
-                }
-            }
-        } else {
-            if (gInventoryLeftHandItem != nullptr) {
-                protoGetProto(gInventoryLeftHandItem->pid, &proto);
-                if (proto->item.type == ITEM_TYPE_WEAPON) {
-                    animationCode = proto->item.data.weapon.animationCode;
-                }
-            }
-        }
-
-        fid = buildFid(OBJ_TYPE_CRITTER, inventoryFid, 0, animationCode, 0);
-    } else {
-        fid = _inven_dude->fid;
-    }
-
-    gInventoryWindowDudeFid = fid;
+    gInventoryWindowDudeFid = inventoryComputeCritterFid(_inven_dude,
+        _inven_pid,
+        gInventoryRightHandItem,
+        gInventoryLeftHandItem,
+        gInventoryArmor,
+        interfaceGetCurrentHand(),
+        0,
+        0);
 }
 
 // 0x4717E4

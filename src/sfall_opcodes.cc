@@ -14,6 +14,7 @@
 #include "input.h"
 #include "interface.h"
 #include "interpreter.h"
+#include "inventory.h"
 #include "item.h"
 #include "memory.h"
 #include "message.h"
@@ -640,6 +641,34 @@ static void op_get_screen_width(Program* program)
 static void op_get_screen_height(Program* program)
 {
     programStackPushInteger(program, screenGetHeight());
+}
+
+// note: might need to be updated when Hero Appearance is implemented
+static void op_refresh_pc_art(Program* program)
+{
+    if (gDude == nullptr) {
+        return;
+    }
+
+    int anim = FID_ANIM_TYPE(gDude->fid);
+    int rotation = FID_ROTATION(gDude->fid);
+
+    _proto_dude_update_gender();
+
+    int fid = inventoryComputeCritterFid(gDude,
+        gDude->pid,
+        critterGetItem2(gDude),
+        critterGetItem1(gDude),
+        critterGetArmor(gDude),
+        interfaceGetCurrentHand(),
+        anim,
+        rotation);
+
+    Rect rect;
+    objectSetFid(gDude, fid, &rect);
+    tileWindowRefreshRect(&rect, gDude->elevation);
+
+    interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
 }
 
 // create_message_window
@@ -1720,6 +1749,7 @@ void sfallOpcodesInit()
     // 0x8226 - int get_light_level()
 
     // 0x8227 - void refresh_pc_art()
+    interpreterRegisterOpcode(0x8227, op_refresh_pc_art);
 
     // 0x8228 - int get_attack_type()
     interpreterRegisterOpcode(0x8228, op_get_attack_type);

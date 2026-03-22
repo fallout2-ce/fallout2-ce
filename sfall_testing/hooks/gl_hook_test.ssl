@@ -1,9 +1,9 @@
-#include "../sfall/sfall.h"
-#include "../sfall/dik.h"
-#include "../sfall/define_lite.h"
-#include "../test_utils.h"
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+#include "test_utils.h"
 
-#include "../sfall/lib.arrays.h"
+#include "lib.arrays.h"
 
 variable last_game_mode;
 variable gamemodechange_assertions_enabled := false;
