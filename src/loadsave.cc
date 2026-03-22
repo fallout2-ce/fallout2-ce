@@ -2311,9 +2311,11 @@ static void _ShowSlotList(int windowType)
 
         {
             MessageListItem messageListItemBack = { 201, 0, nullptr, nullptr };
+            // TODO: localize "BACK" and "MORE"
+            char backText[] = "BACK";
             if (!messageListGetItem(&gPipboyMessageList, &messageListItemBack)) {
                 debugPrint("Error: Couldn't find LoadSave Message!");
-                messageListItemBack.text = "BACK";
+                messageListItemBack.text = backText;
             }
             fontDrawText(
                 gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * (y + 0) + 95,
@@ -2324,9 +2326,10 @@ static void _ShowSlotList(int windowType)
         }
         {
             MessageListItem messageListItemMore = { 200, 0, nullptr, nullptr };
+            char moreText[] = "MORE";
             if (!messageListGetItem(&gPipboyMessageList, &messageListItemMore)) {
                 debugPrint("Error: Couldn't find LoadSave Message!");
-                messageListItemMore.text = "MORE";
+                messageListItemMore.text = moreText;
             }
             fontDrawText(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * (y + 0) + 210,
                 messageListItemMore.text,

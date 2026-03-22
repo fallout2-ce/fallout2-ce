@@ -177,7 +177,7 @@ int objectLookAt(Object* critter, Object* target)
 }
 
 // 0x49AC4C
-int objectLookAtFunc(Object* critter, Object* target, void (*fn)(char* string))
+int objectLookAtFunc(Object* critter, Object* target, void (*fn)(const char* string))
 {
     if (critterIsDead(critter)) {
         return -1;
@@ -241,7 +241,7 @@ int objectExamine(Object* critter, Object* target)
 // [fn] can be called up to three times when [target] is an ammo.
 //
 // 0x49AD88
-int objectExamineFunc(Object* critter, Object* target, void (*fn)(char* string))
+int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* string))
 {
     if (critterIsDead(critter)) {
         return -1;

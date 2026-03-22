@@ -23,7 +23,7 @@ int gameDialogDisable();
 int _gdialogInitFromScript(int headFid, int reaction);
 int _gdialogExitFromScript();
 void gameDialogSetBackground(int background);
-void gameDialogRenderSupplementaryMessage(char* msg);
+void gameDialogRenderSupplementaryMessage(const char* msg);
 int _gdialogStart();
 int _gdialogSayMessage();
 int gameDialogAddMessageOptionWithProcIdentifier(int messageListId, int messageId, const char* procName, int reaction);

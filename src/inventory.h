@@ -13,7 +13,7 @@ typedef enum Hand {
     HAND_COUNT,
 } Hand;
 
-typedef void InventoryPrintItemDescriptionHandler(char* string);
+typedef void InventoryPrintItemDescriptionHandler(const char* string);
 
 void inventoryResetDude();
 void inventoryOpen();

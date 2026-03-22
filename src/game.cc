@@ -128,6 +128,23 @@ int gSplashScreenScaling = 0;
 // CE: Sonora folks like to store objects in global variables.
 static void** gGameGlobalPointers = nullptr;
 
+static void debugModeInit()
+{
+    // CE: Handle debug mode (exactly as seen in `mapper2.exe`).
+    const char* debugMode = settings.debug.mode.c_str();
+    if (compat_stricmp(debugMode, "environment") == 0) {
+        _debug_register_env();
+    } else if (compat_stricmp(debugMode, "screen") == 0) {
+        _debug_register_screen();
+    } else if (compat_stricmp(debugMode, "log") == 0) {
+        _debug_register_log("debug.log", "wt");
+    } else if (compat_stricmp(debugMode, "mono") == 0) {
+        _debug_register_mono();
+    } else if (compat_stricmp(debugMode, "gnw") == 0) {
+        _debug_register_func(_win_debug);
+    }
+}
+
 // 0x442580
 int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int flags, int argc, char** argv)
 {
@@ -145,6 +162,8 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     sfallOnBeforeGameInit();
 
     settingsInit(isMapper, argc, argv);
+
+    debugModeInit();
 
     gIsMapper = isMapper;
 
@@ -190,20 +209,6 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     if (!gIsMapper && skipOpeningMovies < 2) {
         showSplash();
-    }
-
-    // CE: Handle debug mode (exactly as seen in `mapper2.exe`).
-    const char* debugMode = settings.debug.mode.c_str();
-    if (compat_stricmp(debugMode, "environment") == 0) {
-        _debug_register_env();
-    } else if (compat_stricmp(debugMode, "screen") == 0) {
-        _debug_register_screen();
-    } else if (compat_stricmp(debugMode, "log") == 0) {
-        _debug_register_log("debug.log", "wt");
-    } else if (compat_stricmp(debugMode, "mono") == 0) {
-        _debug_register_mono();
-    } else if (compat_stricmp(debugMode, "gnw") == 0) {
-        _debug_register_func(_win_debug);
     }
 
     interfaceFontsInit();
