@@ -532,6 +532,7 @@ void inventoryResetDude()
     _inven_pid = 0x1000000;
 }
 
+// TODO(CE): move to more generic location
 int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, int activeHand, int anim, int rotation)
 {
     if (FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
