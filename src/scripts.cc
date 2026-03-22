@@ -86,6 +86,7 @@ static int scriptWrite(Script* scr, File* stream);
 static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream);
 static int scriptRead(Script* scr, File* stream);
 static int scriptListExtentRead(ScriptListExtent* scriptExtent, File* stream);
+static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent);
 static int scriptGetNewId(int scriptType);
 static int scriptsRemoveLocalVars(Script* script);
 static int scriptsGetMessageList(int messageListId, MessageList** outMessageList);
@@ -1979,6 +1980,18 @@ static int scriptListExtentRead(ScriptListExtent* scriptExtent, File* stream)
     return 0;
 }
 
+static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent)
+{
+    for (int scriptIndex = 0; scriptIndex < scriptExtent->length; scriptIndex++) {
+        Script* script = &(scriptExtent->scripts[scriptIndex]);
+        script->owner = nullptr;
+        script->source = nullptr;
+        script->target = nullptr;
+        script->program = nullptr;
+        script->flags &= ~SCRIPT_FLAG_LOADED;
+    }
+}
+
 // 0x4A5C50
 int scriptLoadAll(File* stream)
 {
@@ -1997,11 +2010,23 @@ int scriptLoadAll(File* stream)
                 scriptList->length++;
             }
 
-            scriptList->head = nullptr;
-            scriptList->tail = nullptr;
+            ScriptListExtent* extent = (ScriptListExtent*)internal_malloc(sizeof(*extent));
+            scriptList->head = extent;
+            scriptList->tail = extent;
+            if (extent == nullptr) {
+                return -1;
+            }
 
-            ScriptListExtent* prevExtent = nullptr;
-            for (int extentIndex = 0; extentIndex < scriptList->length; extentIndex++) {
+            if (scriptListExtentRead(extent, stream) != 0) {
+                return -1;
+            }
+
+            scriptListExtentClearRuntimeState(extent);
+
+            extent->next = nullptr;
+
+            ScriptListExtent* prevExtent = extent;
+            for (int extentIndex = 1; extentIndex < scriptList->length; extentIndex++) {
                 ScriptListExtent* extent = (ScriptListExtent*)internal_malloc(sizeof(*extent));
                 if (extent == nullptr) {
                     return -1;
@@ -2011,26 +2036,14 @@ int scriptLoadAll(File* stream)
                     return -1;
                 }
 
-                for (int scriptIndex = 0; scriptIndex < extent->length; scriptIndex++) {
-                    Script* script = &(extent->scripts[scriptIndex]);
-                    script->owner = nullptr;
-                    script->source = nullptr;
-                    script->target = nullptr;
-                    script->program = nullptr;
-                    script->flags &= ~SCRIPT_FLAG_LOADED;
-                }
+                scriptListExtentClearRuntimeState(extent);
 
+                prevExtent->next = extent;
                 extent->next = nullptr;
-
-                if (prevExtent == nullptr) {
-                    scriptList->head = extent;
-                } else {
-                    prevExtent->next = extent;
-                }
-
-                scriptList->tail = extent;
                 prevExtent = extent;
             }
+
+            scriptList->tail = prevExtent;
         } else {
             scriptList->head = nullptr;
             scriptList->tail = nullptr;
