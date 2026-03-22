@@ -51,19 +51,33 @@ static QueueListNode* gQueueListHead;
 
 // 0x51C540
 static EventTypeDescription gEventTypeDescriptions[EVENT_TYPE_COUNT] = {
+    // EVENT_TYPE_DRUG
     { drugEffectEventProcess, internal_free, drugEffectEventRead, drugEffectEventWrite, true, drugItemClear },
+    // EVENT_TYPE_KNOCKOUT
     { knockoutEventProcess, nullptr, nullptr, nullptr, true, knockoutClear },
+    // EVENT_TYPE_WITHDRAWAL
     { withdrawalEventProcess, internal_free, withdrawalEventRead, withdrawalEventWrite, true, withdrawalClear },
+    // EVENT_TYPE_SCRIPT
     { scriptEventProcess, internal_free, scriptEventRead, scriptEventWrite, true, nullptr },
+    // EVENT_TYPE_GAME_TIME
     { gameTimeEventProcess, nullptr, nullptr, nullptr, true, nullptr },
+    // EVENT_TYPE_POISON
     { poisonEventProcess, nullptr, nullptr, nullptr, false, nullptr },
+    // EVENT_TYPE_RADIATION
     { radiationEventProcess, internal_free, radiationEventRead, radiationEventWrite, false, nullptr },
+    // EVENT_TYPE_FLARE
     { flareEventProcess, nullptr, nullptr, nullptr, true, flareEventProcess },
+    // EVENT_TYPE_EXPLOSION
     { explosionEventProcess, nullptr, nullptr, nullptr, true, explosionExit },
+    // EVENT_TYPE_ITEM_TRICKLE
     { miscItemTrickleEventProcess, nullptr, nullptr, nullptr, true, miscItemTurnOffFromQueue },
+    // EVENT_TYPE_SNEAK
     { sneakEventProcess, nullptr, nullptr, nullptr, true, critterDisableSneak },
+    // EVENT_TYPE_EXPLOSION_FAILURE
     { explosionFailureEventProcess, nullptr, nullptr, nullptr, true, explosionExit },
+    // EVENT_TYPE_MAP_UPDATE_EVENT
     { mapUpdateEventProcess, nullptr, nullptr, nullptr, true, nullptr },
+    // EVENT_TYPE_GSOUND_SFX_EVENT
     { ambientSoundEffectEventProcess, internal_free, nullptr, nullptr, true, nullptr },
 };
 

@@ -3089,7 +3089,7 @@ static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* s
 
 // display_msg
 // 0x447FA0
-int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw)
+static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw)
 {
     if (string == nullptr) {
         if (textOffset != nullptr) {
