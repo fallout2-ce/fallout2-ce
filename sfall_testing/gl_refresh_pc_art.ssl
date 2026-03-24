@@ -1,0 +1,56 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+#include "define_extra.h"
+#include "test_utils.h"
+
+variable refresh_pc_art_test_done := false;
+
+procedure run_refresh_pc_art_test begin
+    variable old_gender := get_critter_stat(dude_obj, STAT_gender);
+    variable new_gender := 1 - old_gender;
+    variable dude_pid := obj_pid(dude_obj);
+    variable old_proto_fid := get_proto_data(dude_pid, PROTO_FID);
+
+    set_pc_base_stat(STAT_gender, new_gender);
+    call assertEquals("gender changes immediately", get_critter_stat(dude_obj, STAT_gender), new_gender);
+    call assertEquals("proto fid unchanged before refresh", get_proto_data(dude_pid, PROTO_FID), old_proto_fid);
+
+    refresh_pc_art;
+
+    variable refreshed_proto_fid := get_proto_data(dude_pid, PROTO_FID);
+    call assertNotEquals("refresh_pc_art updates dude proto fid", refreshed_proto_fid, old_proto_fid);
+
+    if (not critter_inven_obj(dude_obj, INVEN_TYPE_WORN)) then begin
+        call assertEquals("refresh_pc_art updates unarmored dude art", obj_art_fid(dude_obj) bwand 0xFFF, refreshed_proto_fid bwand 0xFFF);
+    end
+
+    set_pc_base_stat(STAT_gender, old_gender);
+    refresh_pc_art;
+    call assertEquals("refresh_pc_art restores original proto fid", get_proto_data(dude_pid, PROTO_FID), old_proto_fid);
+
+    refresh_pc_art_test_done := true;
+    call report_test_results("hook_refresh_pc_art");
+end
+
+procedure keypress_handler begin
+    variable pressed := get_sfall_arg_at(0);
+    variable key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_X) then return;
+
+    if (refresh_pc_art_test_done) then begin
+        display_msg("refresh_pc_art test already ran");
+        return;
+    end
+
+    call run_refresh_pc_art_test;
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("refresh_pc_art test ready: press X");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+end
