@@ -539,7 +539,7 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
         return critter->fid;
     }
 
-    Proto* proto;
+    Proto* proto = nullptr;
 
     int inventoryFid = _art_vault_guy_num;
     if (protoGetProto(basePid, &proto) != -1) {
@@ -547,23 +547,25 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
     }
 
     if (armor != nullptr) {
-        protoGetProto(armor->pid, &proto);
-        if (critterGetStat(critter, STAT_GENDER) == GENDER_FEMALE) {
-            inventoryFid = proto->item.data.armor.femaleFid;
-        } else {
-            inventoryFid = proto->item.data.armor.maleFid;
-        }
+        if (protoGetProto(armor->pid, &proto) != -1 && proto != nullptr) {
+            if (critterGetStat(critter, STAT_GENDER) == GENDER_FEMALE) {
+                inventoryFid = proto->item.data.armor.femaleFid;
+            } else {
+                inventoryFid = proto->item.data.armor.maleFid;
+            }
 
-        if (inventoryFid == -1) {
-            inventoryFid = _art_vault_guy_num;
+            if (inventoryFid == -1) {
+                inventoryFid = _art_vault_guy_num;
+            }
         }
     }
 
     int animationCode = 0;
     Object* itemInHand = activeHand == HAND_RIGHT ? rightHandItem : leftHandItem;
     if (itemInHand != nullptr) {
-        protoGetProto(itemInHand->pid, &proto);
-        if (proto->item.type == ITEM_TYPE_WEAPON) {
+        if (protoGetProto(itemInHand->pid, &proto) != -1
+            && proto != nullptr
+            && proto->item.type == ITEM_TYPE_WEAPON) {
             animationCode = proto->item.data.weapon.animationCode;
         }
     }

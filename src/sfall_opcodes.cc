@@ -667,8 +667,6 @@ static void op_refresh_pc_art(Program* program)
     Rect rect;
     objectSetFid(gDude, fid, &rect);
     tileWindowRefreshRect(&rect, gDude->elevation);
-
-    interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
 }
 
 // create_message_window
