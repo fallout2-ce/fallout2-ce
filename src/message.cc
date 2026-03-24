@@ -749,13 +749,13 @@ int messageListRepositoryAddExtra(const char* path)
 {
     std::string normalizedPath = messageListRepositoryNormalizePath(path);
 
-    if (_messageListRepositoryState->nextTemporaryMessageListId > kLastTemporaryMessageListId) {
-        return -3;
-    }
-
     auto it = _messageListRepositoryState->scriptAddedPathToMessageListIds.find(normalizedPath);
     if (it != _messageListRepositoryState->scriptAddedPathToMessageListIds.end()) {
         return it->second;
+    }
+
+    if (_messageListRepositoryState->nextTemporaryMessageListId > kLastTemporaryMessageListId) {
+        return -3;
     }
 
     MessageList* messageList = messageListRepositoryLoad(path);
