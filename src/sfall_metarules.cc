@@ -316,17 +316,17 @@ void mf_metarule_exist(Program* program, int args)
 
 void mf_add_extra_msg_file(Program* program, int args)
 {
-    int messageListId = args == 2 ? programStackPopInteger(program) : 0;
+    if (args == 2) {
+        programFatalError("op_sfall_func: '%s': explicit fileNumber is not supported in Fallout 2 CE", currentMetarule()->name);
+    }
+
     const char* fileName = programStackPopString(program);
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s\\%s", "game", fileName);
 
-    int result = messageListRepositoryAddExtra(messageListId, path);
+    int result = messageListRepositoryAddExtra(path);
     switch (result) {
-    case -1:
-        programPrintError("%s() - cannot add message file with the specified number.", currentMetarule()->name);
-        break;
     case -2:
         programPrintError("%s() - error loading message file.", currentMetarule()->name);
         break;

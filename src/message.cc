@@ -745,22 +745,12 @@ void messageListRepositorySetProtoMessageList(int protoMessageList, MessageList*
     _messageListRepositoryState->protoMessageLists[protoMessageList] = messageList;
 }
 
-int messageListRepositoryAddExtra(int messageListId, const char* path)
+int messageListRepositoryAddExtra(const char* path)
 {
     std::string normalizedPath = messageListRepositoryNormalizePath(path);
 
-    if (messageListId != 0) {
-        if (messageListId < kFirstPersistentMessageListId || messageListId > kLastPersistentMessageListId) {
-            return -1;
-        }
-
-        if (_messageListRepositoryState->persistentMessageLists.find(messageListId) != _messageListRepositoryState->persistentMessageLists.end()) {
-            return 0;
-        }
-    } else {
-        if (_messageListRepositoryState->nextTemporaryMessageListId > kLastTemporaryMessageListId) {
-            return -3;
-        }
+    if (_messageListRepositoryState->nextTemporaryMessageListId > kLastTemporaryMessageListId) {
+        return -3;
     }
 
     auto it = _messageListRepositoryState->scriptAddedPathToMessageListIds.find(normalizedPath);
@@ -773,12 +763,8 @@ int messageListRepositoryAddExtra(int messageListId, const char* path)
         return -2;
     }
 
-    if (messageListId == 0) {
-        messageListId = _messageListRepositoryState->nextTemporaryMessageListId++;
-        _messageListRepositoryState->temporaryMessageLists[messageListId] = messageList;
-    } else {
-        _messageListRepositoryState->persistentMessageLists[messageListId] = messageList;
-    }
+    int messageListId = _messageListRepositoryState->nextTemporaryMessageListId++;
+    _messageListRepositoryState->temporaryMessageLists[messageListId] = messageList;
 
     _messageListRepositoryState->scriptAddedPathToMessageListIds[normalizedPath] = messageListId;
 

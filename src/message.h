@@ -89,7 +89,7 @@ void messageListRepositoryReset();
 void messageListRepositoryExit();
 void messageListRepositorySetStandardMessageList(int messageListId, MessageList* messageList);
 void messageListRepositorySetProtoMessageList(int messageListId, MessageList* messageList);
-int messageListRepositoryAddExtra(int messageListId, const char* path);
+int messageListRepositoryAddExtra(const char* path);
 char* messageListRepositoryGetMsg(int messageListId, int messageId);
 
 } // namespace fallout
