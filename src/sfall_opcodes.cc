@@ -650,6 +650,9 @@ static void op_refresh_pc_art(Program* program)
         return;
     }
 
+    Rect rect;
+    objectGetRect(gDude, &rect);
+
     int anim = FID_ANIM_TYPE(gDude->fid);
     int rotation = FID_ROTATION(gDude->fid);
 
@@ -664,8 +667,12 @@ static void op_refresh_pc_art(Program* program)
         anim,
         rotation);
 
-    Rect rect;
-    objectSetFid(gDude, fid, &rect);
+    // CE: When changing gender, the refreshed rect can be smaller than the original one,
+    // which can leave a momentary ghost.  We union with old rect to avoid that.
+    Rect newRect;
+    objectSetFid(gDude, fid, nullptr);
+    objectGetRect(gDude, &newRect);
+    rectUnion(&rect, &newRect, &rect);
     tileWindowRefreshRect(&rect, gDude->elevation);
 }
 
