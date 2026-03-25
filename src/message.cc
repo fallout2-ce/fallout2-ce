@@ -38,7 +38,7 @@ struct MessageListRepositoryState {
     std::array<MessageList*, PROTO_MESSAGE_LIST_COUNT> protoMessageLists;
     std::unordered_map<int, MessageList*> persistentMessageLists;
     std::unordered_map<int, MessageList*> temporaryMessageLists;
-    std::unordered_map<std::string, int> scriptAddedPathToMessageListIds;
+    std::unordered_map<std::string, int> tempMessageListPaths;
     int nextTemporaryMessageListId = kFirstTemporaryMessageListId;
 };
 
@@ -713,7 +713,7 @@ void messageListRepositoryReset()
         delete pair.second;
     }
     _messageListRepositoryState->temporaryMessageLists.clear();
-    _messageListRepositoryState->scriptAddedPathToMessageListIds.clear();
+    _messageListRepositoryState->tempMessageListPaths.clear();
     _messageListRepositoryState->nextTemporaryMessageListId = kFirstTemporaryMessageListId;
 }
 
@@ -749,8 +749,8 @@ int messageListRepositoryAddExtra(const char* path)
 {
     std::string normalizedPath = messageListRepositoryNormalizePath(path);
 
-    auto it = _messageListRepositoryState->scriptAddedPathToMessageListIds.find(normalizedPath);
-    if (it != _messageListRepositoryState->scriptAddedPathToMessageListIds.end()) {
+    auto it = _messageListRepositoryState->tempMessageListPaths.find(normalizedPath);
+    if (it != _messageListRepositoryState->tempMessageListPaths.end()) {
         return it->second;
     }
 
@@ -766,7 +766,7 @@ int messageListRepositoryAddExtra(const char* path)
     int messageListId = _messageListRepositoryState->nextTemporaryMessageListId++;
     _messageListRepositoryState->temporaryMessageLists[messageListId] = messageList;
 
-    _messageListRepositoryState->scriptAddedPathToMessageListIds[normalizedPath] = messageListId;
+    _messageListRepositoryState->tempMessageListPaths[normalizedPath] = messageListId;
 
     return messageListId;
 }
