@@ -357,11 +357,6 @@ static void preferencesRefreshBrightnessSlider()
     windowRefresh(gPreferencesWindow);
 }
 
-static bool preferencesWindowIsOpen()
-{
-    return gPreferencesWindow != -1;
-}
-
 // 0x6639AC
 static int gPreferencesCombatMessages1;
 
@@ -924,7 +919,7 @@ err:
 // Note: this can be called from many different contexts, not just the preferences window.
 void brightnessIncrease()
 {
-    if (!preferencesWindowIsOpen()) {
+    if ((GameMode::getCurrentGameMode() & GameMode::kPreferences) == 0) {
         gPreferencesBrightness1 = settings.preferences.brightness;
     }
 
@@ -940,8 +935,8 @@ void brightnessIncrease()
         }
 
         colorSetBrightness(gPreferencesBrightness1);
-        preferencesRefreshBrightnessSlider();
-        if (preferencesWindowIsOpen()) {
+        if ((GameMode::getCurrentGameMode() & GameMode::kPreferences) != 0) {
+            preferencesRefreshBrightnessSlider();
             _changed = true;
         } else {
             settings.preferences.brightness = gPreferencesBrightness1;
@@ -953,7 +948,7 @@ void brightnessIncrease()
 // 0x4929C8
 void brightnessDecrease()
 {
-    if (!preferencesWindowIsOpen()) {
+    if ((GameMode::getCurrentGameMode() & GameMode::kPreferences) == 0) {
         gPreferencesBrightness1 = settings.preferences.brightness;
     }
 
@@ -969,8 +964,8 @@ void brightnessDecrease()
         }
 
         colorSetBrightness(gPreferencesBrightness1);
-        preferencesRefreshBrightnessSlider();
-        if (preferencesWindowIsOpen()) {
+        if ((GameMode::getCurrentGameMode() & GameMode::kPreferences) != 0) {
+            preferencesRefreshBrightnessSlider();
             _changed = true;
         } else {
             settings.preferences.brightness = gPreferencesBrightness1;
