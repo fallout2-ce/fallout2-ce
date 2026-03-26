@@ -104,6 +104,8 @@ static const std::string sfall_metarules[] = {
     "string_find",
     "string_format",
     "string_to_case",
+    "tile_by_position",
+    "tile_refresh_display",
     "unjam_lock",
     "unwield_slot",
     "win_fill_color",
