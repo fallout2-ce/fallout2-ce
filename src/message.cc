@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <array>
+#include <string>
 #include <unordered_map>
 
 #include "debug.h"

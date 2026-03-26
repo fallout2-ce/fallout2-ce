@@ -120,25 +120,24 @@ void sfall_ini_set_base_path(const char* path)
     }
 }
 
-bool sfall_ini_get_int(const char* triplet, int* value)
-{
-    char string[20];
-    if (!sfall_ini_get_string(triplet, string, sizeof(string))) {
-        return false;
-    }
-
-    *value = atol(string);
-
-    return true;
-}
-
-bool sfall_ini_get_string(const char* triplet, char* value, size_t size)
+// Returns `false` on triplet parse or config initialization error.
+// Returns `true` otherwise, copies the setting value into `value` (or empty
+// string if the setting is missing), and optionally reports whether the key was
+// found via `found`.
+static bool sfall_ini_get_string_internal(const char* triplet, char* value, size_t size, bool* found)
 {
     char fileName[kFileNameMaxSize];
     char section[kSectionMaxSize];
-
     const char* key = parse_ini_triplet(triplet, fileName, section);
     if (key == nullptr) {
+        return false;
+    }
+
+    if (found != nullptr) {
+        *found = false;
+    }
+
+    if (size == 0) {
         return false;
     }
 
@@ -158,12 +157,40 @@ bool sfall_ini_get_string(const char* triplet, char* value, size_t size)
         if (configGetString(&config, section, key, &stringValue)) {
             strncpy(value, stringValue, size - 1);
             value[size - 1] = '\0';
+            if (found != nullptr) {
+                *found = true;
+            }
         }
     }
 
     configFree(&config);
 
     return true;
+}
+
+// false: on error
+// true: on key found
+// If the key exists but is the empty string, returns true and value to 0
+bool sfall_ini_get_int(const char* triplet, int* value)
+{
+    char string[20];
+    bool found;
+    if (!sfall_ini_get_string_internal(triplet, string, sizeof(string), &found)) {
+        return false;
+    }
+
+    if (!found) {
+        return false;
+    }
+
+    *value = atol(string);
+
+    return true;
+}
+
+bool sfall_ini_get_string(const char* triplet, char* value, size_t size)
+{
+    return sfall_ini_get_string_internal(triplet, value, size, nullptr);
 }
 
 bool sfall_ini_set_int(const char* triplet, int value)
