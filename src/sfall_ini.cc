@@ -120,8 +120,10 @@ void sfall_ini_set_base_path(const char* path)
     }
 }
 
-// If returns true, points `value` to the string value of the setting, or empty.
-// `found`, if not null, indicates whether the setting exists
+// Returns `false` on triplet parse or config initialization error.
+// Returns `true` otherwise, copies the setting value into `value` (or empty
+// string if the setting is missing), and optionally reports whether the key was
+// found via `found`.
 static bool sfall_ini_get_string_internal(const char* triplet, char* value, size_t size, bool* found)
 {
     char fileName[kFileNameMaxSize];
@@ -133,6 +135,10 @@ static bool sfall_ini_get_string_internal(const char* triplet, char* value, size
 
     if (found != nullptr) {
         *found = false;
+    }
+
+    if (size == 0) {
+        return false;
     }
 
     Config config;
