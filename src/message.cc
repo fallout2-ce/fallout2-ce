@@ -1,5 +1,6 @@
 #include "message.h"
 
+#include <algorithm>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +38,7 @@ struct MessageListRepositoryState {
     std::array<MessageList*, PROTO_MESSAGE_LIST_COUNT> protoMessageLists;
     std::unordered_map<int, MessageList*> persistentMessageLists;
     std::unordered_map<int, MessageList*> temporaryMessageLists;
+    std::unordered_map<std::string, int> tempMessageListPaths;
     int nextTemporaryMessageListId = kFirstTemporaryMessageListId;
 };
 
@@ -46,6 +48,15 @@ static bool _message_parse_number(int* out_num, const char* str);
 static int _message_load_field(File* file, char* str);
 
 static MessageList* messageListRepositoryLoad(const char* path);
+
+static std::string messageListRepositoryNormalizePath(const char* path)
+{
+    std::string normalizedPath(path != nullptr ? path : "");
+    std::transform(normalizedPath.begin(), normalizedPath.end(), normalizedPath.begin(), [](unsigned char ch) {
+        return static_cast<char>(tolower(ch));
+    });
+    return normalizedPath;
+}
 
 // 0x50B79C
 static char _Error_1[] = "Error";
@@ -702,6 +713,7 @@ void messageListRepositoryReset()
         delete pair.second;
     }
     _messageListRepositoryState->temporaryMessageLists.clear();
+    _messageListRepositoryState->tempMessageListPaths.clear();
     _messageListRepositoryState->nextTemporaryMessageListId = kFirstTemporaryMessageListId;
 }
 
@@ -733,28 +745,17 @@ void messageListRepositorySetProtoMessageList(int protoMessageList, MessageList*
     _messageListRepositoryState->protoMessageLists[protoMessageList] = messageList;
 }
 
-int messageListRepositoryAddExtra(int messageListId, const char* path)
+int messageListRepositoryAddExtra(const char* path)
 {
-    if (messageListId != 0) {
-        // CE: Probably there is a bug in Sfall, when |messageListId| is
-        // non-zero, it is enforced to be within persistent id range. That is
-        // the scripting engine is allowed to add persistent message lists.
-        // Everything added/changed by scripting engine should be temporary by
-        // design.
-        if (messageListId < kFirstPersistentMessageListId || messageListId > kLastPersistentMessageListId) {
-            return -1;
-        }
+    std::string normalizedPath = messageListRepositoryNormalizePath(path);
 
-        // CE: Sfall stores both persistent and temporary message lists in
-        // one map, however since we've passed check above, we should only
-        // check in persistent message lists.
-        if (_messageListRepositoryState->persistentMessageLists.find(messageListId) != _messageListRepositoryState->persistentMessageLists.end()) {
-            return 0;
-        }
-    } else {
-        if (_messageListRepositoryState->nextTemporaryMessageListId > kLastTemporaryMessageListId) {
-            return -3;
-        }
+    auto it = _messageListRepositoryState->tempMessageListPaths.find(normalizedPath);
+    if (it != _messageListRepositoryState->tempMessageListPaths.end()) {
+        return it->second;
+    }
+
+    if (_messageListRepositoryState->nextTemporaryMessageListId > kLastTemporaryMessageListId) {
+        return -3;
     }
 
     MessageList* messageList = messageListRepositoryLoad(path);
@@ -762,11 +763,10 @@ int messageListRepositoryAddExtra(int messageListId, const char* path)
         return -2;
     }
 
-    if (messageListId == 0) {
-        messageListId = _messageListRepositoryState->nextTemporaryMessageListId++;
-    }
-
+    int messageListId = _messageListRepositoryState->nextTemporaryMessageListId++;
     _messageListRepositoryState->temporaryMessageLists[messageListId] = messageList;
+
+    _messageListRepositoryState->tempMessageListPaths[normalizedPath] = messageListId;
 
     return messageListId;
 }

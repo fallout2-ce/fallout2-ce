@@ -18,6 +18,7 @@
 #include "interpreter.h"
 #include "inventory.h"
 #include "memory.h"
+#include "message.h"
 #include "object.h"
 #include "platform_compat.h"
 #include "scripts.h"
@@ -46,6 +47,7 @@ static void mf_get_text_width(Program* program, int args);
 static void mf_intface_redraw(Program* program, int args);
 static void mf_loot_obj(Program* program, int args);
 static void mf_message_box(Program* program, int args);
+static void mf_add_extra_msg_file(Program* program, int args);
 static void mf_metarule_exist(Program* program, int args);
 static void mf_obj_under_cursor(Program* program, int args);
 static void mf_opcode_exists(Program* program, int args);
@@ -75,7 +77,7 @@ static const MetaruleInfo* currentMetarule()
 // TODO: argument validation, standard error return value
 // TODO: reduce code complexity using something like MetaruleContext in sfall
 const MetaruleInfo kMetarules[] = {
-    // {"add_extra_msg_file",        mf_add_extra_msg_file,        1, 2, -1, {ARG_STRING, ARG_INT}},
+    { "add_extra_msg_file", mf_add_extra_msg_file, 1, 2, -1, { ARG_STRING, ARG_INT } },
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
@@ -310,6 +312,30 @@ void mf_metarule_exist(Program* program, int args)
     }
 
     programStackPushInteger(program, 0);
+}
+
+void mf_add_extra_msg_file(Program* program, int args)
+{
+    if (args == 2) {
+        programFatalError("op_sfall_func: '%s': explicit fileNumber is not supported in Fallout 2 CE", currentMetarule()->name);
+    }
+
+    const char* fileName = programStackPopString(program);
+
+    char path[COMPAT_MAX_PATH];
+    snprintf(path, sizeof(path), "%s\\%s", "game", fileName);
+
+    int result = messageListRepositoryAddExtra(path);
+    switch (result) {
+    case -2:
+        programPrintError("%s() - error loading message file.", currentMetarule()->name);
+        break;
+    case -3:
+        programPrintError("%s() - the limit of adding message files has been exceeded.", currentMetarule()->name);
+        break;
+    }
+
+    programStackPushInteger(program, result);
 }
 
 void mf_opcode_exists(Program* program, int args)
