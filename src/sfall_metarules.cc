@@ -56,6 +56,7 @@ static void mf_set_cursor_mode(Program* program, int args);
 static void mf_set_flags(Program* program, int args);
 static void mf_set_outline(Program* program, int args);
 static void mf_show_window(Program* program, int args);
+static void mf_tile_by_position(Program* program, int args);
 static void mf_tile_refresh_display(Program* program, int args);
 static void mf_string_compare(Program* program, int args);
 static void mf_string_find(Program* program, int args);
@@ -174,7 +175,7 @@ const MetaruleInfo kMetarules[] = {
     { "string_find", mf_string_find, 2, 3 }, // {ARG_STRING, ARG_STRING, ARG_INT}},
     { "string_format", mf_string_format, 2, 8 },
     { "string_to_case", mf_string_to_case, 2, 2 }, // {ARG_STRING, ARG_INT}}
-    // {"tile_by_position",          mf_tile_by_position,          2, 2, -1, {ARG_INT, ARG_INT}},
+    { "tile_by_position", mf_tile_by_position, 2, 2, -1, { ARG_INT, ARG_INT } },
     { "tile_refresh_display", mf_tile_refresh_display, 0, 0 },
     // {"unjam_lock",                mf_unjam_lock,                1, 1, -1, {ARG_OBJECT}},
     // {"unwield_slot",              mf_unwield_slot,              2, 2, -1, {ARG_OBJECT, ARG_INT}},
@@ -409,6 +410,13 @@ void mf_tile_refresh_display(Program* program, int args)
 {
     tileWindowRefresh();
     programStackPushInteger(program, -1);
+}
+
+void mf_tile_by_position(Program* program, int args)
+{
+    int x = programStackPopInteger(program);
+    int y = programStackPopInteger(program);
+    programStackPushInteger(program, tileFromScreenXY(x, y));
 }
 
 // compares strings case-insensitive with specifics for Fallout

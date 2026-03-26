@@ -16,6 +16,8 @@
 #include "interpreter.h"
 #include "inventory.h"
 #include "item.h"
+#include "light.h"
+#include "map.h"
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"
@@ -53,6 +55,7 @@ typedef enum ExplosionMetarule {
 static constexpr int kVersionMajor = 4;
 static constexpr int kVersionMinor = 3;
 static constexpr int kVersionPatch = 4;
+static constexpr int kSfallPathBufferSize = 3200; // matches rotation path size in animation.cc
 
 // read_byte
 static void op_read_byte(Program* program)
@@ -769,6 +772,42 @@ static void op_tile_under_cursor(Program* program)
     programStackPushInteger(program, tile);
 }
 
+// get_tile_fid
+static void op_get_tile_fid(Program* program)
+{
+    int tileData = programStackPopInteger(program);
+    int tile = tileData & 0xFFFFFF;
+    int elevation = (tileData >> 24) & 0x0F;
+    int mode = tileData >> 28;
+
+    if (!hexGridTileIsValid(tile) || elevation < 0 || elevation >= ELEVATION_COUNT) {
+        debugPrint("%s: op_get_tile_fid invalid tile data: tile=%d elevation=%d", program->name, tile, elevation);
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    int squareTile = squareTileFromTile(tile);
+    if (!squareGridTileIsValid(squareTile)) {
+        debugPrint("%s: op_get_tile_fid failed to map tile=%d to square index", program->name, tile);
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    int squareData = _square[elevation]->field_0[squareTile];
+
+    switch (mode) {
+    case 1:
+        programStackPushInteger(program, (squareData >> 16) & 0x3FFF);
+        break;
+    case 2:
+        programStackPushInteger(program, squareData);
+        break;
+    default:
+        programStackPushInteger(program, squareData & 0x3FFF);
+        break;
+    }
+}
+
 // substr
 static void op_substr(Program* program)
 {
@@ -1090,6 +1129,70 @@ static void op_obj_blocking_at(Program* program)
         }
     }
     programStackPushPointer(program, obstacle);
+}
+
+// tile_light
+static void op_tile_light(Program* program)
+{
+    int tile = programStackPopInteger(program);
+    int elevation = programStackPopInteger(program);
+    programStackPushInteger(program, lightGetTileIntensity(elevation, tile));
+}
+
+// tile_get_objs
+static void op_tile_get_objects(Program* program)
+{
+    int elevation = programStackPopInteger(program);
+    int tile = programStackPopInteger(program);
+
+    if (!hexGridTileIsValid(tile) || elevation < 0 || elevation >= ELEVATION_COUNT) {
+        programStackPushInteger(program, CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED));
+        return;
+    }
+
+    ArrayId arrayId = CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED);
+    for (Object* object = objectFindFirstAtLocation(elevation, tile); object != nullptr; object = objectFindNextAtLocation()) {
+        int index = LenArray(arrayId);
+        ResizeArray(arrayId, index + 1);
+        SetArray(arrayId, ProgramValue(index), ProgramValue(object), false, program);
+    }
+
+    programStackPushInteger(program, arrayId);
+}
+
+// path_find_to
+static void op_make_path(Program* program)
+{
+    int type = programStackPopInteger(program);
+    int dest = programStackPopInteger(program);
+    Object* object = static_cast<Object*>(programStackPopPointer(program));
+    ArrayId arrayId = CreateTempArray(0, 0);
+
+    if (object == nullptr) {
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    if (!hexGridTileIsValid(dest) || object->elevation < 0 || object->elevation >= ELEVATION_COUNT) {
+        programStackPushInteger(program, arrayId);
+        return;
+    }
+
+    // sfall only requires an empty destination tile when the source object is a critter.
+    int requireEmptyDest = PID_TYPE(object->pid) == OBJ_TYPE_CRITTER;
+
+    // XXX: pathfinderFindPath does not accept a destination buffer length. Use the
+    // same capacity as the engine's AnimationSad::rotations storage so this
+    // wrapper is not the limiting factor.
+    // Sfall uses 800
+    unsigned char rotations[kSfallPathBufferSize];
+    int pathLength = pathfinderFindPath(object, object->tile, dest, rotations, requireEmptyDest, get_blocking_func(type));
+    ResizeArray(arrayId, pathLength);
+    for (int index = 0; index < pathLength; index++) {
+        SetArray(arrayId, ProgramValue(index), ProgramValue(static_cast<int>(rotations[index])), false, program);
+    }
+
+    programStackPushInteger(program, arrayId);
 }
 
 // art_exists
@@ -1780,6 +1883,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8253, op_type_of);
 
     // 0x823a - int get_tile_fid(int tileData)
+    interpreterRegisterOpcode(0x823A, op_get_tile_fid);
 
     // 0x823b - int modified_ini() // deprecated: do not implement
 
@@ -1815,14 +1919,17 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x826B, op_get_message);
     // 0x826c - int sneak_success()
     // 0x826d - int tile_light(int elevation, int tileNum)
+    interpreterRegisterOpcode(0x826D, op_tile_light);
     // 0x826e - object obj_blocking_line(object objFrom, int tileTo, int blockingType)
     interpreterRegisterOpcode(0x826E, op_make_straight_path);
     // 0x826f - object obj_blocking_tile(int tileNum, int elevation, int blockingType)
     interpreterRegisterOpcode(0x826F, op_obj_blocking_at);
     // 0x8270 - array tile_get_objs(int tileNum, int elevation)
+    interpreterRegisterOpcode(0x8270, op_tile_get_objects);
     // 0x8271 - array party_member_list(int includeHidden)
     interpreterRegisterOpcode(0x8271, op_party_member_list);
     // 0x8272 - array path_find_to(object objFrom, int tileTo, int blockingType)
+    interpreterRegisterOpcode(0x8272, op_make_path);
     // 0x8273 - object create_spatial(int scriptID, int tile, int elevation, int radius)
     // 0x8274 - int art_exists(int artFID)
     interpreterRegisterOpcode(0x8274, op_art_exists);
