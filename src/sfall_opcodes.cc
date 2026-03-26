@@ -1144,13 +1144,13 @@ static void op_tile_get_objects(Program* program)
 {
     int elevation = programStackPopInteger(program);
     int tile = programStackPopInteger(program);
+    ArrayId arrayId = CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED);
 
     if (!hexGridTileIsValid(tile) || elevation < 0 || elevation >= ELEVATION_COUNT) {
-        programStackPushInteger(program, CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED));
+        programStackPushInteger(program, arrayId);
         return;
     }
 
-    ArrayId arrayId = CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED);
     for (Object* object = objectFindFirstAtLocation(elevation, tile); object != nullptr; object = objectFindNextAtLocation()) {
         int index = LenArray(arrayId);
         ResizeArray(arrayId, index + 1);
@@ -1168,12 +1168,7 @@ static void op_make_path(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
     ArrayId arrayId = CreateTempArray(0, 0);
 
-    if (object == nullptr) {
-        programStackPushInteger(program, arrayId);
-        return;
-    }
-
-    if (!hexGridTileIsValid(dest) || object->elevation < 0 || object->elevation >= ELEVATION_COUNT) {
+    if (object == nullptr || !hexGridTileIsValid(dest) || object->elevation < 0 || object->elevation >= ELEVATION_COUNT) {
         programStackPushInteger(program, arrayId);
         return;
     }
