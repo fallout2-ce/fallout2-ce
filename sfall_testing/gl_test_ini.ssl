@@ -9,9 +9,10 @@ procedure ini_test_suite begin
 
     // Test Case 1: Valid file, valid section
     result_array := get_ini_section("test.ini", "ValidSection");
-    expected_array := {"Key1": "Value1", "Key2": "2"};
-    call assertEquals("TC1 Size", len_array(result_array), 2);
-    call assertEquals("TC1 Content", arrays_equal(result_array, expected_array), true);
+    call assertEquals("TC1 Size", len_array(result_array), 3);
+    call assertEquals("TC1 Key1", result_array["Key1"], "Value1");
+    call assertEquals("TC1 Key2", result_array["Key2"], "2");
+    call assertEquals("TC1 EmptyValue", result_array["EmptyValue"], "");
     count := 0;
     foreach key_val_pair in result_array begin
         count += 1;
@@ -25,19 +26,22 @@ procedure ini_test_suite begin
     call assertEquals("TC2 get_ini_string string", get_ini_string("test.ini|ValidSection|Key1"), "Value1");
     call assertEquals("TC2 get_ini_setting int", get_ini_setting("test.ini|ValidSection|Key2"), 2);
     call assertEquals("TC2 get_ini_string int", get_ini_string("test.ini|ValidSection|Key2"), "2");
+    call assertEquals("TC2 get_ini_setting empty int", get_ini_setting("test.ini|ValidSection|EmptyValue"), 0);
+    call assertEquals("TC2 get_ini_string empty string", get_ini_string("test.ini|ValidSection|EmptyValue"), "");
 
     // INI file not found
     result_array := get_ini_section("nonexistent.ini", "AnySection");
     call assertEquals("TC3 Size", len_array(result_array), 0);
     call assertEquals("TC3 Is Map", array_key(result_array, -1), 1); // Should still be an associative array
-    call assertEquals("TC3 get_ini_setting", get_ini_setting("notexist.ini|ValidSection|Key2"), 0);
+    call assertEquals("TC3 get_ini_setting missing file", get_ini_setting("notexist.ini|ValidSection|Key2"), -1);
+    call assertEquals("TC3 get_ini_setting missing key", get_ini_setting("test.ini|ValidSection|MissingKey"), -1);
     call assertEquals("TC3 get_ini_string", get_ini_string("notexist.ini|ValidSection|Key2"), "");
 
     // Valid file, section not found
     result_array := get_ini_section("test.ini", "NonExistentSection");
     call assertEquals("TC4 Size", len_array(result_array), 0);
     call assertEquals("TC4 Is Map", array_key(result_array, -1), 1);
-    call assertEquals("TC4 get_ini_setting", get_ini_setting("test.ini|NonExistentSection|Key2"), 0);
+    call assertEquals("TC4 get_ini_setting", get_ini_setting("test.ini|NonExistentSection|Key2"), -1);
     call assertEquals("TC4 get_ini_string", get_ini_string("test.ini|NonExistentSection|Key2"), "");
 
 
@@ -45,7 +49,7 @@ procedure ini_test_suite begin
     result_array := get_ini_section("test.ini", "EmptySection");
     call assertEquals("TC5 Size", len_array(result_array), 0);
     call assertEquals("TC5 Is Map", array_key(result_array, -1), 1);
-    call assertEquals("TC5 get_ini_setting", get_ini_setting("test.ini|EmptySection|Key2"), 0);
+    call assertEquals("TC5 get_ini_setting", get_ini_setting("test.ini|EmptySection|Key2"), -1);
     call assertEquals("TC5 get_ini_string", get_ini_string("test.ini|EmptySection|Key2"), "");
 
     // set ini setting

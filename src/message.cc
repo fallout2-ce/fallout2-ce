@@ -8,6 +8,7 @@
 
 #include <array>
 #include <unordered_map>
+#include <string>
 
 #include "debug.h"
 #include "memory.h"
