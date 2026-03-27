@@ -39,7 +39,7 @@ int inventoryUnequip(Object* critter, int hand);
 int inventoryUnequipFunc(Object* critter, int hand, bool animate);
 int inventoryOpenLooting(Object* looter, Object* target);
 int inventoryOpenStealing(Object* thief, Object* target);
-void inventoryOpenTrade(int win, Object* barterer, Object* playerTable, Object* bartererTable, int barterMod);
+void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bartererTable, int barterMod);
 int inventorySetTimer(Object* item);
 Object* inventoryGetTargetObject();
 

@@ -320,4 +320,53 @@ void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult)
     }
 }
 
+/**
+Runs whenever the value of goods being purchased is calculated.
+
+NOTE: the hook is executed twice when entering the barter screen or after transaction: the first time is for the player and the second time is for NPC.
+
+    Critter arg0 - the critter doing the bartering (either dude_obj or inven_dude)
+    Critter arg1 - the critter being bartered with
+    int     arg2 - the default value of the goods
+    Critter arg3 - table of requested goods (being bought from NPC)
+    int     arg4 - the number of actual caps in the barter stack (as opposed to goods)
+    int     arg5 - the value of all goods being traded before skill modifications
+    Critter arg6 - table of offered goods (being sold to NPC)
+    int     arg7 - the total cost of the goods offered by the player
+    int     arg8 - 1 if the "offers" button was pressed (not for a party member), 0 otherwise
+    int     arg9 - 1 if trading with a party member, 0 otherwise
+
+    int     ret0 - the modified value of all of the goods (pass -1 if you just want to modify offered goods)
+    int     ret1 - the modified value of all offered goods
+*/
+void scriptHooks_BarterPrice(BarterPriceContext& ctx)
+{
+    ScriptHookCall hook(HOOK_BARTERPRICE, 2);
+    hook
+        .addArg(ctx.barterer)
+        .addArg(ctx.npc)
+        .addArg(ctx.value)
+        .addArg(ctx.requestedTable)
+        .addArg(ctx.caps)
+        .addArg(ctx.rawValue)
+        .addArg(ctx.offerTable)
+        .addArg(ctx.offerValue)
+        .addArg(ctx.offerButton)
+        .addArg(ctx.partyMember);
+
+    hook.call();
+
+    int* fields[] = {
+        &ctx.value,
+        &ctx.offerValue
+    };
+
+    const int numRets = hook.numReturnValues();
+    for (int i = 0; i < numRets; i++) {
+        const int valueFromScript = hook.getReturnValueAt(i).asInt();
+        if (valueFromScript < 0) continue;
+        *fields[i] = valueFromScript;
+    }
+}
+
 } // namespace fallout
