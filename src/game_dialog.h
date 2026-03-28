@@ -37,7 +37,7 @@ void _gdialogUpdatePartyStatus();
 void _talk_to_critter_reacts(int reaction);
 void gameDialogSetBarterModifier(int modifier);
 int gameDialogBarter(int modifier);
-void _barter_end_to_talk_to();
+void gameDialogEndBarter();
 
 } // namespace fallout
 

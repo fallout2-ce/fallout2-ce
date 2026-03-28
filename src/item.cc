@@ -861,7 +861,7 @@ int itemGetCost(Object* obj)
 
 // Returns cost of object's items.
 //
-// 0x477DAC
+// 0x477DAC item_total_cost
 int objectGetCost(Object* obj)
 {
     if (obj == nullptr) {

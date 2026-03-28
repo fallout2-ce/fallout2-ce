@@ -249,16 +249,24 @@ static int _gdReenterLevel = 0;
 // 0x51872C
 static bool _gdReplyTooBig = false;
 
-// 0x518730
-static Object* _peon_table_obj = nullptr;
+// A hidden object (PID -1) created during barter to serve as a container for player items offered to the NPC.
+//
+// 0x518730 peon_table_obj
+static Object* gGameDialogPlayerTableObj = nullptr;
 
-// 0x518734
-static Object* _barterer_table_obj = nullptr;
+// A hidden object (PID -1) created during barter to serve as a container for NPC items requested by player.
+//
+// 0x518734 barterer_table_obj
+static Object* gGameDialogBartererTableObj = nullptr;
 
-// 0x518738
+// A hidden object (PID -1) created during barter.
+// TODO: find use or remove it
+// 0x518738 barterer_temp_obj
 static Object* _barterer_temp_obj = nullptr;
 
-// 0x51873C
+// A barter price modifier set by gdialog_set_barter_mod, in percents.
+//
+// 0x51873C gdBarterMod
 static int gGameDialogBarterModifier = 0;
 
 // dialogueBackWindow
@@ -607,7 +615,7 @@ static int _gdProcessInit();
 static void _gdProcessCleanup();
 static int _gdProcessExit();
 static void gameDialogRenderCaps();
-static int _gdProcess();
+static int gameDialogProcessUI();
 static int _gdProcessChoice(int optionIndex);
 static void gameDialogOptionOnMouseEnter(int optionIndex);
 static void gameDialogOptionOnMouseExit(int optionIndex);
@@ -632,9 +640,9 @@ static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* 
 static int _text_num_lines(const char* text, int maxWidth);
 static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color);
 static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw);
-static int _gdialog_barter_create_win();
-static void _gdialog_barter_destroy_win();
-static void _gdialog_barter_cleanup_tables();
+static int gameDialogCreateBarterWindow();
+static void gameDialogDestroyBarterWindow();
+static void gameDialogBarterCleanupTables();
 static int partyMemberControlWindowInit();
 static void partyMemberControlWindowFree();
 static void partyMemberControlWindowUpdate();
@@ -825,11 +833,11 @@ void gameDialogEnter(Object* speaker, int mode)
             _gdialog_window_destroy();
         } else {
             if (dialogSwitchMode == GAME_DIALOG_MODE_TALK) {
-                _gdialog_barter_destroy_win();
+                gameDialogDestroyBarterWindow();
             } else if (dialogMode == GAME_DIALOG_MODE_TALK) {
                 _gdialog_window_destroy();
             } else if (dialogMode == mode) {
-                _gdialog_barter_destroy_win();
+                gameDialogDestroyBarterWindow();
             }
         }
         _gdialogExitFromScript();
@@ -1222,7 +1230,7 @@ int _gdialogGo()
     }
 
     if (rc != -1) {
-        rc = _gdProcess();
+        rc = gameDialogProcessUI();
     }
 
     gGameDialogOptionEntriesLength = 0;
@@ -1893,8 +1901,8 @@ void gameDialogRenderCaps()
     fontSetCurrent(oldFont);
 }
 
-// 0x4465C0
-int _gdProcess()
+// 0x4465C0 gdProcess
+int gameDialogProcessUI()
 {
     if (_gdReenterLevel == 0) {
         if (_gdProcessInit() == -1) {
@@ -1942,11 +1950,11 @@ int _gdProcess()
 
                 GameMode::exitGameMode(GameMode::kSpecial);
 
-                barterProcessUI(gGameDialogWindow, gGameDialogSpeaker, _peon_table_obj, _barterer_table_obj, gGameDialogBarterModifier);
-                _gdialog_barter_cleanup_tables();
+                barterProcessUI(gGameDialogWindow, gGameDialogSpeaker, gGameDialogPlayerTableObj, gGameDialogBartererTableObj, gGameDialogBarterModifier);
+                gameDialogBarterCleanupTables();
 
                 GameDialogMode dialogueState = dialogMode;
-                _gdialog_barter_destroy_win();
+                gameDialogDestroyBarterWindow();
                 dialogMode = dialogueState;
 
                 if (dialogueState == GAME_DIALOG_MODE_BARTER) {
@@ -2471,7 +2479,7 @@ void _gdDestroyHeadWindow()
     if (dialogMode == GAME_DIALOG_MODE_TALK) {
         _gdialog_window_destroy();
     } else if (dialogMode == GAME_DIALOG_MODE_BARTER) {
-        _gdialog_barter_destroy_win();
+        gameDialogDestroyBarterWindow();
     }
 
     if (gGameDialogBackgroundWindow != -1) {
@@ -2846,12 +2854,12 @@ void gameDialogTicker()
         GameMode::enterGameMode(GameMode::kSpecial);
 
         _gdialog_window_destroy();
-        _gdialog_barter_create_win();
+        gameDialogCreateBarterWindow();
         break;
     case GAME_DIALOG_MODE_TALK:
         _loop_cnt = -1;
         dialogSwitchMode = GAME_DIALOG_MODE_NONE;
-        _gdialog_barter_destroy_win();
+        gameDialogDestroyBarterWindow();
         _gdialog_window_create();
 
         // NOTE: Uninline.
@@ -3230,8 +3238,8 @@ int gameDialogBarter(int modifier)
     return 0;
 }
 
-// 0x448268
-void _barter_end_to_talk_to()
+// 0x448268 barter_end_to_talk_to
+void gameDialogEndBarter()
 {
     _dialogQuit();
     _dialogClose();
@@ -3241,8 +3249,8 @@ void _barter_end_to_talk_to()
     dialogSwitchMode = GAME_DIALOG_MODE_TALK;
 }
 
-// 0x448290
-int _gdialog_barter_create_win()
+// 0x448290 gdialog_barter_create_win
+int gameDialogCreateBarterWindow()
 {
     dialogMode = GAME_DIALOG_MODE_BARTER;
 
@@ -3300,11 +3308,11 @@ int _gdialog_barter_create_win()
         if (_gdialog_buttons[1] != -1) {
             buttonSetCallbacks(_gdialog_buttons[1], _gsound_med_butt_press, _gsound_med_butt_release);
 
-            if (objectCreateWithFidPid(&_peon_table_obj, -1, -1) != -1) {
-                _peon_table_obj->flags |= OBJECT_HIDDEN;
+            if (objectCreateWithFidPid(&gGameDialogPlayerTableObj, -1, -1) != -1) {
+                gGameDialogPlayerTableObj->flags |= OBJECT_HIDDEN;
 
-                if (objectCreateWithFidPid(&_barterer_table_obj, -1, -1) != -1) {
-                    _barterer_table_obj->flags |= OBJECT_HIDDEN;
+                if (objectCreateWithFidPid(&gGameDialogBartererTableObj, -1, -1) != -1) {
+                    gGameDialogBartererTableObj->flags |= OBJECT_HIDDEN;
 
                     if (objectCreateWithFidPid(&_barterer_temp_obj, gGameDialogSpeaker->fid, -1) != -1) {
                         _barterer_temp_obj->flags |= OBJECT_HIDDEN | OBJECT_NO_SAVE;
@@ -3312,10 +3320,10 @@ int _gdialog_barter_create_win()
                         return 0;
                     }
 
-                    objectDestroy(_barterer_table_obj, nullptr);
+                    objectDestroy(gGameDialogBartererTableObj, nullptr);
                 }
 
-                objectDestroy(_peon_table_obj, nullptr);
+                objectDestroy(gGameDialogPlayerTableObj, nullptr);
             }
 
             buttonDestroy(_gdialog_buttons[1]);
@@ -3332,16 +3340,16 @@ int _gdialog_barter_create_win()
     return -1;
 }
 
-// 0x44854C
-void _gdialog_barter_destroy_win()
+// 0x44854C gdialog_barter_destroy_win
+void gameDialogDestroyBarterWindow()
 {
     if (gGameDialogWindow == -1) {
         return;
     }
 
     objectDestroy(_barterer_temp_obj, nullptr);
-    objectDestroy(_barterer_table_obj, nullptr);
-    objectDestroy(_peon_table_obj, nullptr);
+    objectDestroy(gGameDialogBartererTableObj, nullptr);
+    objectDestroy(gGameDialogPlayerTableObj, nullptr);
 
     for (int index = 0; index < 9; index++) {
         buttonDestroy(_gdialog_buttons[index]);
@@ -3373,26 +3381,26 @@ void _gdialog_barter_destroy_win()
     aiAttemptWeaponReload(gGameDialogSpeaker, 0);
 }
 
-// 0x448660
-void _gdialog_barter_cleanup_tables()
+// 0x448660 gdialog_barter_cleanup_tables
+void gameDialogBarterCleanupTables()
 {
     Inventory* inventory;
     int length;
 
-    inventory = &(_peon_table_obj->data.inventory);
+    inventory = &(gGameDialogPlayerTableObj->data.inventory);
     length = inventory->length;
     for (int index = 0; index < length; index++) {
         Object* item = inventory->items->item;
-        int quantity = itemGetQuantity(_peon_table_obj, item);
-        itemMoveForce(_peon_table_obj, gDude, item, quantity);
+        int quantity = itemGetQuantity(gGameDialogPlayerTableObj, item);
+        itemMoveForce(gGameDialogPlayerTableObj, gDude, item, quantity);
     }
 
-    inventory = &(_barterer_table_obj->data.inventory);
+    inventory = &(gGameDialogBartererTableObj->data.inventory);
     length = inventory->length;
     for (int index = 0; index < length; index++) {
         Object* item = inventory->items->item;
-        int quantity = itemGetQuantity(_barterer_table_obj, item);
-        itemMoveForce(_barterer_table_obj, gGameDialogSpeaker, item, quantity);
+        int quantity = itemGetQuantity(gGameDialogBartererTableObj, item);
+        itemMoveForce(gGameDialogBartererTableObj, gGameDialogSpeaker, item, quantity);
     }
 
     if (_barterer_temp_obj != nullptr) {
