@@ -9,7 +9,7 @@
 namespace fallout {
 
 // strParseInt
-// 0x4AFD10
+// 0x4AFD10 strParseValue_
 int strParseInt(char** stringPtr, int* valuePtr)
 {
     char *str, *remaining_str;
@@ -52,7 +52,7 @@ int strParseInt(char** stringPtr, int* valuePtr)
 }
 
 // strParseStrFromList
-// 0x4AFE08
+// 0x4AFE08 strParseStrFromList_
 int strParseStrFromList(char** stringPtr, int* valuePtr, const char** stringList, int stringListLength)
 {
     int i;
@@ -108,7 +108,7 @@ int strParseStrFromList(char** stringPtr, int* valuePtr, const char** stringList
 }
 
 // strParseStrFromFunc
-// 0x4AFEDC
+// 0x4AFEDC strParseStrFromFunc_
 int strParseStrFromFunc(char** stringPtr, int* valuePtr, StringParserCallback* callback)
 {
     char *str, *remaining_str;
@@ -157,7 +157,7 @@ int strParseStrFromFunc(char** stringPtr, int* valuePtr, StringParserCallback* c
     return 0;
 }
 
-// 0x4AFF7C
+// 0x4AFF7C strParseStrSepVal_
 int strParseIntWithKey(char** stringPtr, const char* key, int* valuePtr, const char* delimeter)
 {
     char* str;
@@ -214,7 +214,7 @@ int strParseIntWithKey(char** stringPtr, const char* key, int* valuePtr, const c
     return result;
 }
 
-// 0x4B005C
+// 0x4B005C strParseStrAndSepVal_
 int strParseKeyValue(char** stringPtr, char* key, int* valuePtr, const char* delimiter)
 {
     char* str;

@@ -345,7 +345,7 @@ static FrmImage _loadsaveFrmImages[LOAD_SAVE_FRM_COUNT];
 static int quickSaveSlots = 0;
 static bool autoQuickSaveSlots = false;
 
-// 0x47B7E4
+// 0x47B7E4 InitLoadSave_
 void _InitLoadSave()
 {
     _quick_done = false;
@@ -362,7 +362,7 @@ void _InitLoadSave()
     }
 }
 
-// 0x47B85C
+// 0x47B85C ResetLoadSave_
 void _ResetLoadSave()
 {
     MapDirErase("MAPS\\", "SAV");
@@ -371,7 +371,7 @@ void _ResetLoadSave()
 }
 
 // SaveGame
-// 0x47B88C
+// 0x47B88C SaveGame_
 int lsgSaveGame(int mode)
 {
     ScopedGameMode gm(GameMode::kSaveGame);
@@ -955,7 +955,7 @@ int lsgSaveGame(int mode)
     return rc;
 }
 
-// 0x47C5B4
+// 0x47C5B4 QuickSnapShot_
 static int _QuickSnapShot()
 {
     _snapshot = (unsigned char*)internal_malloc(LS_PREVIEW_SIZE);
@@ -996,7 +996,7 @@ static int _QuickSnapShot()
 }
 
 // LoadGame
-// 0x47C640
+// 0x47C640 LoadGame_
 int lsgLoadGame(int mode)
 {
     ScopedGameMode gm(GameMode::kLoadGame);
@@ -1488,7 +1488,7 @@ int lsgLoadGame(int mode)
     return rc;
 }
 
-// 0x47D2E4
+// 0x47D2E4 LSGameStart_
 static int lsgWindowInit(int windowType)
 {
     gLoadSaveWindowOldFont = fontGetCurrent();
@@ -1715,7 +1715,7 @@ static int lsgWindowInit(int windowType)
     return 0;
 }
 
-// 0x47D824
+// 0x47D824 LSGameEnd_
 static int lsgWindowFree(int windowType)
 {
     windowDestroy(gLoadSaveWindow);
@@ -1749,7 +1749,7 @@ EM_ASYNC_JS(void, do_save_idbfs_loadsave, (), {
 // clang-format on
 #endif
 
-// 0x47D88C
+// 0x47D88C SaveSlot_
 static int lsgPerformSaveGame()
 {
     _ls_error_code = 0;
@@ -1915,13 +1915,13 @@ static int lsgPerformSaveGame()
     return 0;
 }
 
-// 0x47DC60
+// 0x47DC60 isLoadingGame_
 bool _isLoadingGame()
 {
     return _loadingGame;
 }
 
-// 0x47DC68
+// 0x47DC68 LoadSlot_
 static int lsgLoadGameInSlot(int slot)
 {
     _loadingGame = true;
@@ -2019,7 +2019,7 @@ static int lsgLoadGameInSlot(int slot)
     return 0;
 }
 
-// 0x47DF10
+// 0x47DF10 SaveHeader_
 static int lsgSaveHeaderInSlot(int slot)
 {
     _ls_error_code = 4;
@@ -2130,7 +2130,7 @@ static int lsgSaveHeaderInSlot(int slot)
     return 0;
 }
 
-// 0x47E2E4
+// 0x47E2E4 LoadHeader_
 static int lsgLoadHeaderInSlot(int slot)
 {
     _ls_error_code = 3;
@@ -2222,7 +2222,7 @@ static int lsgLoadHeaderInSlot(int slot)
     return 0;
 }
 
-// 0x47E5D0
+// 0x47E5D0 GetSlotList_
 static int _GetSlotList()
 {
     int index = 0;
@@ -2258,7 +2258,7 @@ static int _GetSlotList()
     return index;
 }
 
-// 0x47E6D8
+// 0x47E6D8 ShowSlotList_
 
 static void _ShowSlotList(int windowType)
 {
@@ -2340,7 +2340,7 @@ static void _ShowSlotList(int windowType)
     }
 }
 
-// 0x47E8E0
+// 0x47E8E0 DrawInfoBox_
 static void _DrawInfoBox(int slot)
 {
     blitBufferToBuffer(_loadsaveFrmImages[LOAD_SAVE_FRM_BACKGROUND].getData() + LS_WINDOW_WIDTH * 253 + 396, 164, 60, LS_WINDOW_WIDTH, gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 253 + 396, 640);
@@ -2423,7 +2423,7 @@ static void _DrawInfoBox(int slot)
     fontDrawText(dest, text, LS_WINDOW_WIDTH, LS_WINDOW_WIDTH, color);
 }
 
-// 0x47EC48
+// 0x47EC48 LoadTumbSlot_
 static int _LoadTumbSlot(int slot)
 {
     if (_LSstatus[_slot_cursor] != SLOT_STATE_EMPTY
@@ -2456,7 +2456,7 @@ static int _LoadTumbSlot(int slot)
     return 0;
 }
 
-// 0x47ED5C
+// 0x47ED5C GetComment_
 static int _GetComment(int slot)
 {
     // Maintain original position in original resolution, otherwise center it.
@@ -2579,7 +2579,7 @@ static int _GetComment(int slot)
     return rc;
 }
 
-// 0x47F084
+// 0x47F084 get_input_str2_
 static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, int textColor, int backgroundColor, int flags)
 {
     int cursorWidth = fontGetStringWidth("_") - 4;
@@ -2685,13 +2685,13 @@ static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* de
     return rc;
 }
 
-// 0x47F48C
+// 0x47F48C DummyFunc_
 static int _DummyFunc(File* stream)
 {
     return 0;
 }
 
-// 0x47F490
+// 0x47F490 PrepLoad_
 static int _PrepLoad(File* stream)
 {
     gameReset();
@@ -2701,7 +2701,7 @@ static int _PrepLoad(File* stream)
     return 0;
 }
 
-// 0x47F4C8
+// 0x47F4C8 EndLoad_
 static int _EndLoad(File* stream)
 {
     wmMapMusicStart();
@@ -2715,7 +2715,7 @@ static int _EndLoad(File* stream)
     return 0;
 }
 
-// 0x47F510
+// 0x47F510 GameMap2Slot_
 static int _GameMap2Slot(File* stream)
 {
     if (_partyMemberPrepSave() == -1) {
@@ -2828,7 +2828,7 @@ static int _GameMap2Slot(File* stream)
 }
 
 // SlotMap2Game
-// 0x47F990
+// 0x47F990 SlotMap2Game_
 static int _SlotMap2Game(File* stream)
 {
     debugPrint("LOADSAVE: in SlotMap2Game\n");
@@ -2924,7 +2924,7 @@ static int _SlotMap2Game(File* stream)
     return 0;
 }
 
-// 0x47FE14
+// 0x47FE14 mygets_
 static int _mygets(char* dest, File* stream)
 {
     int index = 14;
@@ -2951,7 +2951,7 @@ static int _mygets(char* dest, File* stream)
     return 0;
 }
 
-// 0x47FE58
+// 0x47FE58 copy_file_
 static int _copy_file(const char* existingFileName, const char* newFileName)
 {
     File* stream1;
@@ -3024,7 +3024,7 @@ out:
 }
 
 // InitLoadSave
-// 0x48000C
+// 0x48000C KillOldMaps_
 void lsgInit()
 {
     char path[COMPAT_MAX_PATH];
@@ -3032,7 +3032,7 @@ void lsgInit()
     MapDirErase(path, "SAV");
 }
 
-// 0x480040
+// 0x480040 MapDirErase_
 int MapDirErase(const char* relativePath, const char* extension)
 {
     char path[COMPAT_MAX_PATH];
@@ -3062,7 +3062,7 @@ int _MapDirEraseFile_(const char* relativePath, const char* fileName)
     return 0;
 }
 
-// 0x480104
+// 0x480104 SaveBackup_
 static int _SaveBackup()
 {
     debugPrint("\nLOADSAVE: Backing up save slot files..\n");
@@ -3133,7 +3133,7 @@ static int _SaveBackup()
     return 0;
 }
 
-// 0x4803D8
+// 0x4803D8 RestoreSave_
 static int _RestoreSave()
 {
     debugPrint("\nLOADSAVE: Restoring save file backup...\n");
@@ -3203,7 +3203,7 @@ static int _RestoreSave()
     return 0;
 }
 
-// 0x480710
+// 0x480710 LoadObjDudeCid_
 static int _LoadObjDudeCid(File* stream)
 {
     int value;
@@ -3217,13 +3217,13 @@ static int _LoadObjDudeCid(File* stream)
     return 0;
 }
 
-// 0x480734
+// 0x480734 SaveObjDudeCid_
 static int _SaveObjDudeCid(File* stream)
 {
     return fileWriteInt32(stream, gDude->cid);
 }
 
-// 0x480754
+// 0x480754 EraseSave_
 static int _EraseSave()
 {
     debugPrint("\nLOADSAVE: Erasing save(bad) slot...\n");

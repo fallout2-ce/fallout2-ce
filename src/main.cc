@@ -71,7 +71,7 @@ static bool _main_show_death_scene = false;
 // 0x614838
 static bool _main_death_voiceover_done;
 
-// 0x48099C
+// 0x48099C gnw_main_
 int falloutMain(int argc, char** argv)
 {
     if (!autorunMutexCreate()) {
@@ -235,7 +235,7 @@ int falloutMain(int argc, char** argv)
     return 0;
 }
 
-// 0x480CC0
+// 0x480CC0 main_init_system_
 static bool falloutInit(int argc, char** argv)
 {
     // set flag to 1 to initialize _screen_buffer for WINDOW_TRANSPARENT
@@ -248,7 +248,7 @@ static bool falloutInit(int argc, char** argv)
 
 // NOTE: Inlined.
 //
-// 0x480D0C
+// 0x480D0C main_reset_system_
 static int main_reset_system()
 {
     gameReset();
@@ -258,7 +258,7 @@ static int main_reset_system()
 
 // NOTE: Inlined.
 //
-// 0x480D18
+// 0x480D18 main_exit_system_
 static void main_exit_system()
 {
     backgroundSoundDelete();
@@ -266,7 +266,7 @@ static void main_exit_system()
     gameExit();
 }
 
-// 0x480D4C
+// 0x480D4C main_load_new_
 static int _main_load_new(char* mapFileName)
 {
     _game_user_wants_to_quit = 0;
@@ -294,7 +294,7 @@ static int _main_load_new(char* mapFileName)
 
 // NOTE: Inlined.
 //
-// 0x480DF8
+// 0x480DF8 main_loadgame_new_
 static int main_loadgame_new()
 {
     _game_user_wants_to_quit = 0;
@@ -313,14 +313,14 @@ static int main_loadgame_new()
     return 0;
 }
 
-// 0x480E34
+// 0x480E34 main_unload_new_
 static void main_unload_new()
 {
     objectHide(gDude, nullptr);
     mapExit();
 }
 
-// 0x480E48
+// 0x480E48 main_game_loop_
 static void mainLoop()
 {
     bool cursorWasHidden = cursorIsHidden();
@@ -367,7 +367,7 @@ static void mainLoop()
     }
 }
 
-// 0x48118C
+// 0x48118C main_death_scene_
 static void showDeath()
 {
     artCacheFlush();
@@ -501,7 +501,7 @@ static void showDeath()
     colorCycleEnable();
 }
 
-// 0x4814A8
+// 0x4814A8 main_death_voiceover_callback_
 static void _main_death_voiceover_callback()
 {
     _main_death_voiceover_done = true;
@@ -509,7 +509,7 @@ static void _main_death_voiceover_callback()
 
 // Read endgame subtitle.
 //
-// 0x4814B4
+// 0x4814B4 mainDeathGrabTextFile_
 static int _mainDeathGrabTextFile(const char* fileName, char* dest)
 {
     const char* p = strrchr(fileName, '\\');
@@ -545,7 +545,7 @@ static int _mainDeathGrabTextFile(const char* fileName, char* dest)
     return 0;
 }
 
-// 0x481598
+// 0x481598 mainDeathWordWrap_
 static int _mainDeathWordWrap(char* text, int width, short* beginnings, short* count)
 {
     while (true) {

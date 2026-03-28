@@ -58,14 +58,14 @@ static int gSoundEffectsListEntriesLength = 0;
 static int _sfxl_compression;
 
 // sfxl_tag_is_legal
-// 0x4A98E0
+// 0x4A98E0 sfxl_tag_is_legal_
 bool soundEffectsListIsValidTag(int tag)
 {
     return soundEffectsListTagToIndex(tag, nullptr) == SFXL_OK;
 }
 
 // sfxl_init
-// 0x4A98F4
+// 0x4A98F4 sfxl_init_
 int soundEffectsListInit(const char* soundEffectsPath, int compression, int debugLevel)
 {
     char path[COMPAT_MAX_PATH];
@@ -169,7 +169,7 @@ int soundEffectsListInit(const char* soundEffectsPath, int compression, int debu
     return SFXL_OK;
 }
 
-// 0x4A9C04
+// 0x4A9C04 sfxl_exit_
 void soundEffectsListExit()
 {
     if (gSoundEffectsListInitialized) {
@@ -180,7 +180,7 @@ void soundEffectsListExit()
 }
 
 // sfxl_name_to_tag
-// 0x4A9C28
+// 0x4A9C28 sfxl_name_to_tag_
 int soundEffectsListGetTag(char* name, int* tagPtr)
 {
     if (compat_strnicmp(gSoundEffectsListPath, name, gSoundEffectsListPathLength) != 0) {
@@ -206,7 +206,7 @@ int soundEffectsListGetTag(char* name, int* tagPtr)
 }
 
 // sfxl_name
-// 0x4A9CD8
+// 0x4A9CD8 sfxl_name_
 int soundEffectsListGetFilePath(int tag, char** pathPtr)
 {
     int index;
@@ -230,7 +230,7 @@ int soundEffectsListGetFilePath(int tag, char** pathPtr)
     return SFXL_OK;
 }
 
-// 0x4A9D90
+// 0x4A9D90 sfxl_size_full_
 int soundEffectsListGetDataSize(int tag, int* sizePtr)
 {
     int index;
@@ -245,7 +245,7 @@ int soundEffectsListGetDataSize(int tag, int* sizePtr)
     return SFXL_OK;
 }
 
-// 0x4A9DBC
+// 0x4A9DBC sfxl_size_cached_
 int soundEffectsListGetFileSize(int tag, int* sizePtr)
 {
     int index;
@@ -261,7 +261,7 @@ int soundEffectsListGetFileSize(int tag, int* sizePtr)
 }
 
 // sfxl_tag_to_index
-// 0x4A9DE8
+// 0x4A9DE8 sfxl_index_
 static int soundEffectsListTagToIndex(int tag, int* indexPtr)
 {
     if (tag <= 0) {
@@ -284,7 +284,7 @@ static int soundEffectsListTagToIndex(int tag, int* indexPtr)
     return SFXL_OK;
 }
 
-// 0x4A9E44
+// 0x4A9E44 sfxl_destroy_
 static void soundEffectsListClear()
 {
     if (gSoundEffectsListEntriesLength < 0) {
@@ -309,7 +309,7 @@ static void soundEffectsListClear()
 }
 
 // sfxl_get_names
-// 0x4A9EA0
+// 0x4A9EA0 sfxl_get_names_
 static int soundEffectsListPopulateFileNames()
 {
     const char* extension;
@@ -366,7 +366,7 @@ static int soundEffectsListPopulateFileNames()
 }
 
 // sfxl_copy_names
-// 0x4AA000
+// 0x4AA000 sfxl_copy_names_
 static int soundEffectsListCopyFileNames(char** fileNameList)
 {
     for (int index = 0; index < gSoundEffectsListEntriesLength; index++) {
@@ -381,7 +381,7 @@ static int soundEffectsListCopyFileNames(char** fileNameList)
     return SFXL_OK;
 }
 
-// 0x4AA050
+// 0x4AA050 sfxl_get_sizes_
 static int soundEffectsListPopulateFileSizes()
 {
 
@@ -445,7 +445,7 @@ static int soundEffectsListPopulateFileSizes()
 
 // NOTE: Inlined.
 //
-// 0x4AA200
+// 0x4AA200 sfxl_sort_by_name_
 static int soundEffectsListSort()
 {
     if (gSoundEffectsListEntriesLength != 1) {
@@ -454,7 +454,7 @@ static int soundEffectsListSort()
     return 0;
 }
 
-// 0x4AA228
+// 0x4AA228 sfxl_compare_by_name_
 static int soundEffectsListCompareByName(const void* a, const void* b)
 {
     SoundEffectsListEntry* lhs = (SoundEffectsListEntry*)a;

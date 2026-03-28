@@ -43,31 +43,31 @@ unsigned char* gMouseManagerCurrentStaticData;
 // 0x638E0C
 int gMouseManagerCurrentCacheEntryIndex;
 
-// 0x485250
+// 0x485250 defaultNameMangler_
 char* mouseManagerNameManglerDefaultImpl(char* name)
 {
     return name;
 }
 
-// 0x485254
+// 0x485254 defaultRateCallback_
 int mouseManagerRateProviderDefaultImpl()
 {
     return 1000;
 }
 
-// 0x48525C
+// 0x48525C defaultTimeCallback_
 int mouseManagerTimeProviderDefaultImpl()
 {
     return getTicks();
 }
 
-// 0x485288
+// 0x485288 mousemgrSetNameMangler_
 void mouseManagerSetNameMangler(MouseManagerNameMangler* func)
 {
     gMouseManagerNameMangler = func;
 }
 
-// 0x4852B8
+// 0x4852B8 freeCacheEntry_
 void mouseManagerFreeCacheEntry(MouseManagerCacheEntry* entry)
 {
     switch (entry->type) {
@@ -103,7 +103,7 @@ void mouseManagerFreeCacheEntry(MouseManagerCacheEntry* entry)
     entry->fileName[0] = '\0';
 }
 
-// 0x4853F8
+// 0x4853F8 cacheInsert_
 int mouseManagerInsertCacheEntry(void** data, int type, unsigned char* palette, const char* fileName)
 {
     int foundIndex = -1;
@@ -158,7 +158,7 @@ int mouseManagerInsertCacheEntry(void** data, int type, unsigned char* palette, 
 
 // NOTE: Inlined.
 //
-// 0x4853D4
+// 0x4853D4 cacheFlush_
 void mouseManagerFlushCache()
 {
     for (int index = 0; index < MOUSE_MGR_CACHE_CAPACITY; index++) {
@@ -166,7 +166,7 @@ void mouseManagerFlushCache()
     }
 }
 
-// 0x48554C
+// 0x48554C cacheFind_
 MouseManagerCacheEntry* mouseManagerFindCacheEntry(const char* fileName, unsigned char** palettePtr, int* a3, int* a4, int* widthPtr, int* heightPtr, int* typePtr)
 {
     for (int index = 0; index < MOUSE_MGR_CACHE_CAPACITY; index++) {
@@ -199,13 +199,13 @@ MouseManagerCacheEntry* mouseManagerFindCacheEntry(const char* fileName, unsigne
     return nullptr;
 }
 
-// 0x48568C
+// 0x48568C initMousemgr_
 void mouseManagerInit()
 {
     mouseSetSensitivity(1.0);
 }
 
-// 0x48569C
+// 0x48569C mousemgrClose_
 void mouseManagerExit()
 {
     mouseSetFrame(nullptr, 0, 0, 0, 0, 0, 0);
@@ -222,7 +222,7 @@ void mouseManagerExit()
     gMouseManagerCurrentAnimatedData = nullptr;
 }
 
-// 0x485704
+// 0x485704 mousemgrUpdate_
 void mouseManagerUpdate()
 {
     if (!gMouseManagerIsAnimating) {
@@ -264,7 +264,7 @@ void mouseManagerUpdate()
     }
 }
 
-// 0x485868
+// 0x485868 mouseSetFrame_
 int mouseManagerSetFrame(char* fileName, int a2)
 {
     char* mangledFileName = gMouseManagerNameMangler(fileName);
@@ -427,7 +427,7 @@ int mouseManagerSetFrame(char* fileName, int a2)
     return true;
 }
 
-// 0x485E58
+// 0x485E58 mouseSetMouseShape_
 bool mouseManagerSetMouseShape(char* fileName, int a2, int a3)
 {
     unsigned char* palette;
@@ -480,7 +480,7 @@ bool mouseManagerSetMouseShape(char* fileName, int a2, int a3)
     return true;
 }
 
-// 0x486010
+// 0x486010 mouseSetMousePointer_
 bool mouseManagerSetMousePointer(char* fileName)
 {
     unsigned char* palette;
@@ -572,7 +572,7 @@ bool mouseManagerSetMousePointer(char* fileName)
     return rc;
 }
 
-// 0x4862AC
+// 0x4862AC mousemgrResetMouse_
 void mouseManagerResetMouse()
 {
     MouseManagerCacheEntry* entry = &(gMouseManagerCache[gMouseManagerCurrentCacheEntryIndex]);
@@ -632,13 +632,13 @@ void mouseManagerResetMouse()
     }
 }
 
-// 0x4865C4
+// 0x4865C4 mouseHide_
 void mouseManagerHideMouse()
 {
     mouseHideCursor();
 }
 
-// 0x4865CC
+// 0x4865CC mouseShow_
 void mouseManagerShowMouse()
 {
     mouseShowCursor();

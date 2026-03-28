@@ -98,7 +98,7 @@ static char* gStatValueDescriptions[PRIMARY_STAT_RANGE];
 // 0x6681AC
 static int gPcStatValues[PC_STAT_COUNT];
 
-// 0x4AED70
+// 0x4AED70 stat_init_
 int statsInit()
 {
     MessageListItem messageListItem;
@@ -136,7 +136,7 @@ int statsInit()
     return 0;
 }
 
-// 0x4AEEC0
+// 0x4AEEC0 stat_reset_
 int statsReset()
 {
     // NOTE: Uninline.
@@ -145,7 +145,7 @@ int statsReset()
     return 0;
 }
 
-// 0x4AEEE4
+// 0x4AEEE4 stat_exit_
 int statsExit()
 {
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_STAT, nullptr);
@@ -154,7 +154,7 @@ int statsExit()
     return 0;
 }
 
-// 0x4AEEF4
+// 0x4AEEF4 stat_load_
 int statsLoad(File* stream)
 {
     for (int index = 0; index < PC_STAT_COUNT; index++) {
@@ -166,7 +166,7 @@ int statsLoad(File* stream)
     return 0;
 }
 
-// 0x4AEF20
+// 0x4AEF20 stat_save_
 int statsSave(File* stream)
 {
     for (int index = 0; index < PC_STAT_COUNT; index++) {
@@ -178,7 +178,7 @@ int statsSave(File* stream)
     return 0;
 }
 
-// 0x4AEF48
+// 0x4AEF48 stat_level_
 int critterGetStat(Object* critter, int stat)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
@@ -392,7 +392,7 @@ int critterGetStat(Object* critter, int stat)
 
 // Returns base stat value (accounting for traits if critter is dude).
 //
-// 0x4AF3E0
+// 0x4AF3E0 stat_get_base_
 int critterGetBaseStatWithTraitModifier(Object* critter, int stat)
 {
     int value = critterGetBaseStat(critter, stat);
@@ -404,7 +404,7 @@ int critterGetBaseStatWithTraitModifier(Object* critter, int stat)
     return value;
 }
 
-// 0x4AF408
+// 0x4AF408 stat_get_base_direct_
 int critterGetBaseStat(Object* critter, int stat)
 {
     Proto* proto;
@@ -426,7 +426,7 @@ int critterGetBaseStat(Object* critter, int stat)
     return 0;
 }
 
-// 0x4AF474
+// 0x4AF474 stat_get_bonus_
 int critterGetBonusStat(Object* critter, int stat)
 {
     if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
@@ -438,7 +438,7 @@ int critterGetBonusStat(Object* critter, int stat)
     return 0;
 }
 
-// 0x4AF4BC
+// 0x4AF4BC stat_set_base_
 int critterSetBaseStat(Object* critter, int stat, int value)
 {
     Proto* proto;
@@ -488,7 +488,7 @@ int critterSetBaseStat(Object* critter, int stat, int value)
     return 0;
 }
 
-// 0x4AF5D4
+// 0x4AF5D4 inc_stat_
 int critterIncBaseStat(Object* critter, int stat)
 {
     int value = critterGetBaseStat(critter, stat);
@@ -500,7 +500,7 @@ int critterIncBaseStat(Object* critter, int stat)
     return critterSetBaseStat(critter, stat, value + 1);
 }
 
-// 0x4AF608
+// 0x4AF608 dec_stat_
 int critterDecBaseStat(Object* critter, int stat)
 {
     int value = critterGetBaseStat(critter, stat);
@@ -512,7 +512,7 @@ int critterDecBaseStat(Object* critter, int stat)
     return critterSetBaseStat(critter, stat, value - 1);
 }
 
-// 0x4AF63C
+// 0x4AF63C stat_set_bonus_
 int critterSetBonusStat(Object* critter, int stat, int value)
 {
     if (!statIsValid(stat)) {
@@ -544,7 +544,7 @@ int critterSetBonusStat(Object* critter, int stat, int value)
     return -1;
 }
 
-// 0x4AF6CC
+// 0x4AF6CC stat_set_defaults_
 void protoCritterDataResetStats(CritterProtoData* data)
 {
     for (int stat = 0; stat < SAVEABLE_STAT_COUNT; stat++) {
@@ -553,7 +553,7 @@ void protoCritterDataResetStats(CritterProtoData* data)
     }
 }
 
-// 0x4AF6FC
+// 0x4AF6FC stat_recalc_derived_
 void critterUpdateDerivedStats(Object* critter)
 {
     int strength = critterGetStat(critter, STAT_STRENGTH);
@@ -580,19 +580,19 @@ void critterUpdateDerivedStats(Object* critter)
     data->baseStats[STAT_POISON_RESISTANCE] = 5 * endurance;
 }
 
-// 0x4AF854
+// 0x4AF854 stat_name_
 char* statGetName(int stat)
 {
     return statIsValid(stat) ? gStatDescriptions[stat].name : nullptr;
 }
 
-// 0x4AF898
+// 0x4AF898 stat_description_
 char* statGetDescription(int stat)
 {
     return statIsValid(stat) ? gStatDescriptions[stat].description : nullptr;
 }
 
-// 0x4AF8DC
+// 0x4AF8DC stat_level_description_
 char* statGetValueDescription(int value)
 {
     if (value < PRIMARY_STAT_MIN) {
@@ -604,13 +604,13 @@ char* statGetValueDescription(int value)
     return gStatValueDescriptions[value - PRIMARY_STAT_MIN];
 }
 
-// 0x4AF8FC
+// 0x4AF8FC stat_pc_get_
 int pcGetStat(int pcStat)
 {
     return pcStatIsValid(pcStat) ? gPcStatValues[pcStat] : 0;
 }
 
-// 0x4AF910
+// 0x4AF910 stat_pc_set_
 int pcSetStat(int pcStat, int value)
 {
     int result;
@@ -643,7 +643,7 @@ int pcSetStat(int pcStat, int value)
 
 // Reset stats.
 //
-// 0x4AF980
+// 0x4AF980 stat_pc_set_defaults_
 void pcStatsReset()
 {
     for (int pcStat = 0; pcStat < PC_STAT_COUNT; pcStat++) {
@@ -653,7 +653,7 @@ void pcStatsReset()
 
 // Returns experience to reach next level.
 //
-// 0x4AF9A0
+// 0x4AF9A0 stat_pc_min_exp_
 int pcGetExperienceForNextLevel()
 {
     return pcGetExperienceForLevel(gPcStatValues[PC_STAT_LEVEL] + 1);
@@ -661,7 +661,7 @@ int pcGetExperienceForNextLevel()
 
 // Returns exp to reach given level.
 //
-// 0x4AF9A8
+// 0x4AF9A8 statPcMinExpForLevel_
 int pcGetExperienceForLevel(int level)
 {
     if (level >= PC_LEVEL_MAX) {
@@ -676,19 +676,19 @@ int pcGetExperienceForLevel(int level)
     }
 }
 
-// 0x4AF9F4
+// 0x4AF9F4 stat_pc_name_
 char* pcStatGetName(int pcStat)
 {
     return pcStat >= 0 && pcStat < PC_STAT_COUNT ? gPcStatDescriptions[pcStat].name : nullptr;
 }
 
-// 0x4AFA14
+// 0x4AFA14 stat_pc_description_
 char* pcStatGetDescription(int pcStat)
 {
     return pcStat >= 0 && pcStat < PC_STAT_COUNT ? gPcStatDescriptions[pcStat].description : nullptr;
 }
 
-// 0x4AFA34
+// 0x4AFA34 stat_picture_
 int statGetFrmId(int stat)
 {
     return statIsValid(stat) ? gStatDescriptions[stat].frmId : 0;
@@ -707,7 +707,7 @@ int statGetFrmId(int stat)
 // zero) when roll succeeds, or negative when roll fails. Set [howMuch] to
 // `NULL` if you're not interested in this value.
 //
-// 0x4AFA78
+// 0x4AFA78 stat_result_
 int statRoll(Object* critter, int stat, int modifier, int* howMuch)
 {
     int value = critterGetStat(critter, stat) + modifier;
@@ -724,13 +724,13 @@ int statRoll(Object* critter, int stat, int modifier, int* howMuch)
     return ROLL_FAILURE;
 }
 
-// 0x4AFAA8
+// 0x4AFAA8 stat_pc_add_experience_
 int pcAddExperience(int xp, int* xpGained)
 {
     return pcAddExperienceWithOptions(xp, true, xpGained);
 }
 
-// 0x4AFAB8
+// 0x4AFAB8 statPCAddExperienceCheckPMs_
 int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
 {
     int oldXp = gPcStatValues[PC_STAT_EXPERIENCE];
@@ -801,7 +801,7 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
     return 0;
 }
 
-// 0x4AFC38
+// 0x4AFC38 statPcResetExperience_
 int pcSetExperience(int xp)
 {
     int oldLevel = gPcStatValues[PC_STAT_LEVEL];

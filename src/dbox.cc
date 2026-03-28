@@ -147,7 +147,7 @@ static int gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
     200, // uparwon.frm - character editor
 };
 
-// 0x41CF20
+// 0x41CF20 dialog_out_
 int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, int titleColor, const char* secondaryButtonText, int bodyColor, int flags)
 {
     MessageList messageList;
@@ -565,7 +565,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     return rc;
 }
 
-// 0x41DE90
+// 0x41DE90 file_dialog_
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
     int oldFont = fontGetCurrent();
@@ -930,7 +930,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     return rc;
 }
 
-// 0x41EA78
+// 0x41EA78 save_file_dialog_
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
     int oldFont = fontGetCurrent();
@@ -1402,7 +1402,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     return rc;
 }
 
-// 0x41FBDC
+// 0x41FBDC PrntFlist_
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch)
 {
     int lineHeight = fontGetLineHeight();

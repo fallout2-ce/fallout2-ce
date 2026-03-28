@@ -40,49 +40,49 @@ SDL_Surface* gSdlTextureSurface = nullptr;
 // TODO: Remove once migration to update-render cycle is completed.
 FpsLimiter sharedFpsLimiter;
 
-// 0x4CAD08
+// 0x4CAD08 init_mode_320_200_
 int _init_mode_320_200()
 {
     return _GNW95_init_mode_ex(320, 200, 8);
 }
 
-// 0x4CAD40
+// 0x4CAD40 init_mode_320_400_
 int _init_mode_320_400()
 {
     return _GNW95_init_mode_ex(320, 400, 8);
 }
 
-// 0x4CAD5C
+// 0x4CAD5C init_mode_640_480_16_
 int _init_mode_640_480_16()
 {
     return -1;
 }
 
-// 0x4CAD64
+// 0x4CAD64 init_mode_640_480_
 int _init_mode_640_480()
 {
     return _init_vesa_mode(640, 480);
 }
 
-// 0x4CAD94
+// 0x4CAD94 init_mode_640_400_
 int _init_mode_640_400()
 {
     return _init_vesa_mode(640, 400);
 }
 
-// 0x4CADA8
+// 0x4CADA8 init_mode_800_600_
 int _init_mode_800_600()
 {
     return _init_vesa_mode(800, 600);
 }
 
-// 0x4CADBC
+// 0x4CADBC init_mode_1024_768_
 int _init_mode_1024_768()
 {
     return _init_vesa_mode(1024, 768);
 }
 
-// 0x4CADD0
+// 0x4CADD0 init_mode_1280_1024_
 int _init_mode_1280_1024()
 {
     return _init_vesa_mode(1280, 1024);
@@ -93,7 +93,7 @@ void _get_start_mode_()
 {
 }
 
-// 0x4CADFC
+// 0x4CADFC zero_vid_mem_
 void _zero_vid_mem()
 {
     if (_zero_mem) {
@@ -101,7 +101,7 @@ void _zero_vid_mem()
     }
 }
 
-// 0x4CAE1C
+// 0x4CAE1C GNW95_init_mode_ex_
 int _GNW95_init_mode_ex(int width, int height, int bpp)
 {
     bool fullscreen = true;
@@ -196,13 +196,13 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     return 0;
 }
 
-// 0x4CAECC
+// 0x4CAECC init_vesa_mode_
 int _init_vesa_mode(int width, int height)
 {
     return _GNW95_init_mode_ex(width, height, 8);
 }
 
-// 0x4CAEDC
+// 0x4CAEDC GNW95_init_window_
 int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
 {
     if (gSdlWindow == nullptr) {
@@ -232,7 +232,7 @@ int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
     return 0;
 }
 
-// 0x4CAF9C
+// 0x4CAF9C GNW95_init_DirectDraw_
 int directDrawInit(int width, int height, int bpp)
 {
     if (gSdlSurface != nullptr) {
@@ -263,7 +263,7 @@ int directDrawInit(int width, int height, int bpp)
     return 0;
 }
 
-// 0x4CB1B0
+// 0x4CB1B0 GNW95_reset_mode_
 void directDrawFree()
 {
     if (gSdlSurface != nullptr) {
@@ -272,7 +272,7 @@ void directDrawFree()
     }
 }
 
-// 0x4CB310
+// 0x4CB310 GNW95_SetPaletteEntries_
 void directDrawSetPaletteInRange(unsigned char* palette, int start, int count)
 {
     if (gSdlSurface != nullptr && gSdlSurface->format->palette != nullptr) {
@@ -292,7 +292,7 @@ void directDrawSetPaletteInRange(unsigned char* palette, int start, int count)
     }
 }
 
-// 0x4CB568
+// 0x4CB568 GNW95_SetPalette_
 void directDrawSetPalette(unsigned char* palette)
 {
     if (gSdlSurface != nullptr && gSdlSurface->format->palette != nullptr) {
@@ -310,7 +310,7 @@ void directDrawSetPalette(unsigned char* palette)
     }
 }
 
-// 0x4CB68C
+// 0x4CB68C GNW95_GetPalette_
 unsigned char* directDrawGetPalette()
 {
     // 0x6ACA24
@@ -330,7 +330,7 @@ unsigned char* directDrawGetPalette()
     return palette;
 }
 
-// 0x4CB850
+// 0x4CB850 GNW95_ShowRect_
 void _GNW95_ShowRect(unsigned char* src, int srcPitch, int unused, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY)
 {
     (void)unused;
@@ -351,7 +351,7 @@ void _GNW95_ShowRect(unsigned char* src, int srcPitch, int unused, int srcX, int
 
 // Clears drawing surface.
 //
-// 0x4CBBC8
+// 0x4CBBC8 GNW95_zero_vid_mem_
 void _GNW95_zero_vid_mem()
 {
     if (!gProgramIsActive) {

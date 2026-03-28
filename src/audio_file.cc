@@ -39,7 +39,7 @@ static AudioFile* gAudioFileList;
 // 0x56CB14
 static int gAudioFileListLength;
 
-// 0x41A850
+// 0x41A850 defaultCompressionFunc__2
 static bool defaultCompressionFunc(char* filePath)
 {
     char* pch = strrchr(filePath, '.');
@@ -50,13 +50,13 @@ static bool defaultCompressionFunc(char* filePath)
     return false;
 }
 
-// 0x41A870
+// 0x41A870 decodeRead_2
 static int audioFileSoundDecoderReadHandler(void* data, void* buffer, unsigned int size)
 {
     return fread(buffer, 1, size, reinterpret_cast<FILE*>(data));
 }
 
-// 0x41A88C
+// 0x41A88C audiofOpen_
 int audioFileOpen(const char* fname, int* sampleRate)
 {
     char path[COMPAT_MAX_PATH];
@@ -109,7 +109,7 @@ int audioFileOpen(const char* fname, int* sampleRate)
     return index + 1;
 }
 
-// 0x41AAA0
+// 0x41AAA0 audiofCloseFile_
 int audioFileClose(int handle)
 {
     AudioFile* audioFile = &(gAudioFileList[handle - 1]);
@@ -125,7 +125,7 @@ int audioFileClose(int handle)
     return 0;
 }
 
-// 0x41AB08
+// 0x41AB08 audiofRead_
 int audioFileRead(int handle, void* buffer, unsigned int size)
 {
 
@@ -143,7 +143,7 @@ int audioFileRead(int handle, void* buffer, unsigned int size)
     return bytesRead;
 }
 
-// 0x41AB74
+// 0x41AB74 audiofSeek_
 long audioFileSeek(int handle, long offset, int origin)
 {
     void* buf;
@@ -205,14 +205,14 @@ long audioFileSeek(int handle, long offset, int origin)
     return fseek(audioFile->stream, offset, origin);
 }
 
-// 0x41AD20
+// 0x41AD20 audiofFileSize_
 long audioFileGetSize(int handle)
 {
     AudioFile* audioFile = &(gAudioFileList[handle - 1]);
     return audioFile->fileSize;
 }
 
-// 0x41AD3C
+// 0x41AD3C audiofTell_
 long audioFileTell(int handle)
 {
     AudioFile* audioFile = &(gAudioFileList[handle - 1]);
@@ -220,14 +220,14 @@ long audioFileTell(int handle)
 }
 
 // AudiofWrite
-// 0x41AD58
+// 0x41AD58 audiofWrite_
 int audioFileWrite(int handle, const void* buffer, unsigned int size)
 {
     debugPrint("AudiofWrite shouldn't be ever called\n");
     return 0;
 }
 
-// 0x41AD68
+// 0x41AD68 initAudiof_
 int audioFileInit(AudioFileQueryCompressedFunc* func)
 {
     queryCompressedFunc = func;
@@ -237,7 +237,7 @@ int audioFileInit(AudioFileQueryCompressedFunc* func)
     return soundSetDefaultFileIO(audioFileOpen, audioFileClose, audioFileRead, audioFileWrite, audioFileSeek, audioFileTell, audioFileGetSize);
 }
 
-// 0x41ADAC
+// 0x41ADAC audiofClose_
 void audioFileExit()
 {
     if (gAudioFileList != nullptr) {

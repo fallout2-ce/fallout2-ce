@@ -128,7 +128,7 @@ static int* _anon_alias;
 // 0x56CAF0
 static int* gArtCritterFidShoudRunData;
 
-// 0x418840
+// 0x418840 art_init_
 int artInit()
 {
     char path[COMPAT_MAX_PATH];
@@ -327,7 +327,7 @@ void artReset()
 {
 }
 
-// 0x418EBC
+// 0x418EBC art_exit_
 void artExit()
 {
     cacheFree(&gArtCache);
@@ -346,19 +346,19 @@ void artExit()
     internal_free(gHeadDescriptions);
 }
 
-// 0x418F1C
+// 0x418F1C art_dir_
 char* artGetObjectTypeName(int objectType)
 {
     return objectType >= OBJ_TYPE_ITEM && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].name : nullptr;
 }
 
-// 0x418F34
+// 0x418F34 art_get_disable_
 int artIsObjectTypeHidden(int objectType)
 {
     return objectType >= OBJ_TYPE_ITEM && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].flags & 1 : 0;
 }
 
-// 0x418F7C
+// 0x418F7C art_head_fidgets_
 int artGetFidgetCount(int headFid)
 {
     if (FID_TYPE(headFid) != OBJ_TYPE_HEAD) {
@@ -385,7 +385,7 @@ int artGetFidgetCount(int headFid)
     return 0;
 }
 
-// 0x418FFC
+// 0x418FFC scale_art_
 void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
 {
     // NOTE: Original code is different. For unknown reason it directly calls
@@ -447,7 +447,7 @@ int art_list_str(int fid, char* name)
     return -1;
 }
 
-// 0x419160
+// 0x419160 art_ptr_lock_
 Art* artLock(int fid, CacheEntry** handlePtr)
 {
     if (handlePtr == nullptr) {
@@ -459,7 +459,7 @@ Art* artLock(int fid, CacheEntry** handlePtr)
     return art;
 }
 
-// 0x419188
+// 0x419188 art_ptr_lock_data_
 unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** handlePtr)
 {
     Art* art;
@@ -481,7 +481,7 @@ unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** 
     return nullptr;
 }
 
-// 0x4191CC
+// 0x4191CC art_lock_
 unsigned char* artLockFrameDataReturningSize(int fid, CacheEntry** handlePtr, int* widthPtr, int* heightPtr)
 {
     *handlePtr = nullptr;
@@ -509,19 +509,19 @@ unsigned char* artLockFrameDataReturningSize(int fid, CacheEntry** handlePtr, in
     return artGetFrameData(art, 0, 0);
 }
 
-// 0x419260
+// 0x419260 art_ptr_unlock_
 int artUnlock(CacheEntry* handle)
 {
     return cacheUnlock(&gArtCache, handle);
 }
 
-// 0x41927C
+// 0x41927C art_flush_
 int artCacheFlush()
 {
     return cacheFlush(&gArtCache);
 }
 
-// 0x4192B0
+// 0x4192B0 art_get_base_name_
 int artCopyFileName(int objectType, int id, char* dest)
 {
     ArtListDescription* ptr;
@@ -541,7 +541,7 @@ int artCopyFileName(int objectType, int id, char* dest)
     return 0;
 }
 
-// 0x419314
+// 0x419314 art_get_code_
 int _art_get_code(int animation, int weaponType, char* weaponCodePtr, char* animationCodePtr)
 {
     if (weaponType < 0 || weaponType >= WEAPON_ANIMATION_COUNT) {
@@ -612,7 +612,7 @@ int _art_get_code(int animation, int weaponType, char* weaponCodePtr, char* anim
     return 0;
 }
 
-// 0x419428
+// 0x419428 art_get_name_
 char* artBuildFilePath(int fid)
 {
     int baseFid = fid;
@@ -666,7 +666,7 @@ char* artBuildFilePath(int fid)
 }
 
 // art_read_lst
-// 0x419664
+// 0x419664 art_read_lst_
 static int artReadList(const char* path, char** artListPtr, int* artListSizePtr)
 {
     File* stream = fileOpen(path, "rt");
@@ -713,7 +713,7 @@ static int artReadList(const char* path, char** artListPtr, int* artListSizePtr)
     return 0;
 }
 
-// 0x419760
+// 0x419760 art_frame_fps_
 int artGetFramesPerSecond(Art* art)
 {
     if (art == nullptr) {
@@ -723,19 +723,19 @@ int artGetFramesPerSecond(Art* art)
     return art->framesPerSecond == 0 ? 10 : art->framesPerSecond;
 }
 
-// 0x419778
+// 0x419778 art_frame_action_frame_
 int artGetActionFrame(Art* art)
 {
     return art == nullptr ? -1 : art->actionFrame;
 }
 
-// 0x41978C
+// 0x41978C art_frame_max_frame_
 int artGetFrameCount(Art* art)
 {
     return art == nullptr ? -1 : art->frameCount;
 }
 
-// 0x4197A0
+// 0x4197A0 art_frame_width_
 int artGetWidth(Art* art, int frame, int direction)
 {
     ArtFrame* frm;
@@ -748,7 +748,7 @@ int artGetWidth(Art* art, int frame, int direction)
     return frm->width;
 }
 
-// 0x4197B8
+// 0x4197B8 art_frame_length_
 int artGetHeight(Art* art, int frame, int direction)
 {
     ArtFrame* frm;
@@ -761,7 +761,7 @@ int artGetHeight(Art* art, int frame, int direction)
     return frm->height;
 }
 
-// 0x4197D4
+// 0x4197D4 art_frame_width_length_
 int artGetSize(Art* art, int frame, int direction, int* widthPtr, int* heightPtr)
 {
     ArtFrame* frm;
@@ -790,7 +790,7 @@ int artGetSize(Art* art, int frame, int direction, int* widthPtr, int* heightPtr
     return 0;
 }
 
-// 0x419820
+// 0x419820 art_frame_hot_
 int artGetFrameOffsets(Art* art, int frame, int direction, int* xPtr, int* yPtr)
 {
     ArtFrame* frm;
@@ -806,7 +806,7 @@ int artGetFrameOffsets(Art* art, int frame, int direction, int* xPtr, int* yPtr)
     return 0;
 }
 
-// 0x41984C
+// 0x41984C art_frame_offset_
 int artGetRotationOffsets(Art* art, int rotation, int* xPtr, int* yPtr)
 {
     if (art == nullptr) {
@@ -819,7 +819,7 @@ int artGetRotationOffsets(Art* art, int rotation, int* xPtr, int* yPtr)
     return 0;
 }
 
-// 0x419870
+// 0x419870 art_frame_data_
 unsigned char* artGetFrameData(Art* art, int frame, int direction)
 {
     ArtFrame* frm;
@@ -832,7 +832,7 @@ unsigned char* artGetFrameData(Art* art, int frame, int direction)
     return (unsigned char*)frm + sizeof(*frm);
 }
 
-// 0x419880
+// 0x419880 frame_ptr_
 ArtFrame* artGetFrame(Art* art, int frame, int rotation)
 {
     if (rotation < 0 || rotation >= 6) {
@@ -854,7 +854,7 @@ ArtFrame* artGetFrame(Art* art, int frame, int rotation)
     return frm;
 }
 
-// 0x4198C8
+// 0x4198C8 art_exists_
 bool artExists(int fid)
 {
     bool result = false;
@@ -872,7 +872,7 @@ bool artExists(int fid)
 
 // NOTE: Exactly the same implementation as `artExists`.
 //
-// 0x419930
+// 0x419930 art_fid_valid_
 bool _art_fid_valid(int fid)
 {
     bool result = false;
@@ -888,13 +888,13 @@ bool _art_fid_valid(int fid)
     return result;
 }
 
-// 0x419998
+// 0x419998 art_alias_num_
 int _art_alias_num(int index)
 {
     return _anon_alias[index];
 }
 
-// 0x4199AC
+// 0x4199AC artCritterFidShouldRun_
 int artCritterFidShouldRun(int fid)
 {
     if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
@@ -904,7 +904,7 @@ int artCritterFidShouldRun(int fid)
     return 0;
 }
 
-// 0x4199D4
+// 0x4199D4 art_alias_fid_
 int artAliasFid(int fid)
 {
     int type = FID_TYPE(fid);
@@ -928,7 +928,7 @@ int artAliasFid(int fid)
     return -1;
 }
 
-// 0x419A78
+// 0x419A78 art_data_size_
 static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
 {
     int result = -1;
@@ -967,7 +967,7 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
     return result;
 }
 
-// 0x419B78
+// 0x419B78 art_data_load_
 static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
 {
     int result = -1;
@@ -1004,7 +1004,7 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
     return result;
 }
 
-// 0x419C80
+// 0x419C80 art_data_free_
 static void artCacheFreeImpl(void* ptr)
 {
     internal_free(ptr);
@@ -1022,7 +1022,7 @@ static int buildFidInternal(unsigned short frmId, unsigned char weaponCode, unsi
     return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponCode << 12) & 0xF000) | (frmId & 0xFFF);
 }
 
-// 0x419C88
+// 0x419C88 art_id_
 int buildFid(int objectType, int frmId, int animType, int weaponCode, int rotation)
 {
     // Always use rotation 0 (NE) for non-critters, for certain critter animations.
@@ -1041,7 +1041,7 @@ int buildFid(int objectType, int frmId, int animType, int weaponCode, int rotati
     return buildFidInternal(frmId, weaponCode, animType, objectType, rotation);
 }
 
-// 0x419D60
+// 0x419D60 art_readSubFrameData_
 static int artReadFrameData(unsigned char* data, File* stream, int count, int* paddingPtr)
 {
     unsigned char* ptr = data;
@@ -1066,7 +1066,7 @@ static int artReadFrameData(unsigned char* data, File* stream, int count, int* p
     return 0;
 }
 
-// 0x419E1C
+// 0x419E1C art_readFrameData_
 static int artReadHeader(Art* art, File* stream)
 {
     if (fileReadInt32(stream, &(art->field_0)) == -1) return -1;
@@ -1091,7 +1091,7 @@ static int artReadHeader(Art* art, File* stream)
 // buffer). This function is useful to load custom `frm` files since `Art` now
 // needs more memory then it's on-disk size (due to memory padding).
 //
-// 0x419EC0
+// 0x419EC0 load_frame_
 Art* artLoad(const char* path)
 {
     File* stream = fileOpen(path, "rb");
@@ -1120,7 +1120,7 @@ Art* artLoad(const char* path)
     return reinterpret_cast<Art*>(data);
 }
 
-// 0x419FC0
+// 0x419FC0 load_frame_into_
 int artRead(const char* path, unsigned char* data)
 {
     File* stream = fileOpen(path, "rb");
@@ -1156,7 +1156,7 @@ int artRead(const char* path, unsigned char* data)
 
 // NOTE: Unused.
 //
-// 0x41A070
+// 0x41A070 art_writeSubFrameData_
 int artWriteFrameData(unsigned char* data, File* stream, int count)
 {
     unsigned char* ptr = data;
@@ -1179,7 +1179,7 @@ int artWriteFrameData(unsigned char* data, File* stream, int count)
 
 // NOTE: Unused.
 //
-// 0x41A138
+// 0x41A138 art_writeFrameData_
 int artWriteHeader(Art* art, File* stream)
 {
     if (fileWriteInt32(stream, art->field_0) == -1) return -1;
@@ -1196,7 +1196,7 @@ int artWriteHeader(Art* art, File* stream)
 
 // NOTE: Unused.
 //
-// 0x41A1E8
+// 0x41A1E8 save_frame_
 int artWrite(const char* path, unsigned char* data)
 {
     if (data == nullptr) {

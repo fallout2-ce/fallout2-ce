@@ -9,7 +9,7 @@ static void* gameMemoryMalloc(size_t size);
 static void* gameMemoryRealloc(void* ptr, size_t newSize);
 static void gameMemoryFree(void* ptr);
 
-// 0x44B250
+// 0x44B250 gmemory_init_
 int gameMemoryInit()
 {
     memoryManagerSetProcs(gameMemoryMalloc, gameMemoryRealloc, gameMemoryFree);
@@ -17,19 +17,19 @@ int gameMemoryInit()
     return 0;
 }
 
-// 0x44B294
+// 0x44B294 gmalloc_
 static void* gameMemoryMalloc(size_t size)
 {
     return internal_malloc(size);
 }
 
-// 0x44B29C
+// 0x44B29C grealloc_
 static void* gameMemoryRealloc(void* ptr, size_t newSize)
 {
     return internal_realloc(ptr, newSize);
 }
 
-// 0x44B2A4
+// 0x44B2A4 gfree_
 static void gameMemoryFree(void* ptr)
 {
     internal_free(ptr);

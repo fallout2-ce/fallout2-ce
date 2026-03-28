@@ -100,7 +100,7 @@ static unsigned int gTickerLastTimestamp;
 // global for inventoryOpenUseItemOn inventory to prevent click through bug
 bool gBlockMouseUpEvent = false;
 
-// 0x4C8A70
+// 0x4C8A70 GNW_input_init_
 int inputInit()
 {
     if (!directInputInit()) {
@@ -134,7 +134,7 @@ int inputInit()
     return 0;
 }
 
-// 0x4C8B40
+// 0x4C8B40 GNW_input_exit_
 void inputExit()
 {
     _GNW95_input_init();
@@ -150,7 +150,7 @@ void inputExit()
     }
 }
 
-// 0x4C8B78
+// 0x4C8B78 get_input_
 int inputGetInput()
 {
     int v3;
@@ -174,14 +174,14 @@ int inputGetInput()
     return -1;
 }
 
-// 0x4C8BC8
+// 0x4C8BC8 get_input_position_
 void get_input_position(int* x, int* y)
 {
     *x = _input_mx;
     *y = _input_my;
 }
 
-// 0x4C8BDC
+// 0x4C8BDC process_bk_
 void _process_bk()
 {
     int v1;
@@ -236,7 +236,7 @@ void enqueueInputEvent(int logicalKey)
     }
 }
 
-// 0x4C8C9C
+// 0x4C8C9C get_input_buffer_
 static int dequeueInputEvent()
 {
     if (gInputEventQueueReadIndex == -1) {
@@ -262,7 +262,7 @@ static int dequeueInputEvent()
     return eventCode;
 }
 
-// 0x4C8D04
+// 0x4C8D04 flush_input_buffer_
 void inputEventQueueReset()
 {
     gInputEventQueueReadIndex = -1;
@@ -271,7 +271,7 @@ void inputEventQueueReset()
     while (SDL_PollEvent(&e)) { } // Clear all input events
 }
 
-// 0x4C8D1C
+// 0x4C8D1C GNW_do_bk_process_
 void tickersExecute()
 {
     if (gRunLoopDisabled) {
@@ -297,7 +297,7 @@ void tickersExecute()
     }
 }
 
-// 0x4C8D74
+// 0x4C8D74 add_bk_process_
 void tickersAdd(TickerProc* proc)
 {
     TickerListNode* curr = gTickerListHead;
@@ -318,7 +318,7 @@ void tickersAdd(TickerProc* proc)
     gTickerListHead = curr;
 }
 
-// 0x4C8DC4
+// 0x4C8DC4 remove_bk_process_
 void tickersRemove(TickerProc* proc)
 {
     TickerListNode* curr = gTickerListHead;
@@ -331,19 +331,19 @@ void tickersRemove(TickerProc* proc)
     }
 }
 
-// 0x4C8DE4
+// 0x4C8DE4 enable_bk_
 void tickersEnable()
 {
     gRunLoopDisabled = false;
 }
 
-// 0x4C8DF0
+// 0x4C8DF0 disable_bk_
 void tickersDisable()
 {
     gRunLoopDisabled = true;
 }
 
-// 0x4C8F4C
+// 0x4C8F4C dump_screen_
 void takeScreenshot()
 {
     int width = _scr_size.right - _scr_size.left + 1;
@@ -373,14 +373,14 @@ void takeScreenshot()
     internal_free(gScreenshotBuffer);
 }
 
-// 0x4C8FF0
+// 0x4C8FF0 buf_blit_
 static void screenshotBlitter(unsigned char* src, int srcPitch, int _, int srcX, int srcY, int width, int height, int destX, int destY)
 {
     int destWidth = _scr_size.right - _scr_size.left + 1;
     blitBufferToBuffer(src + srcPitch * srcY + srcX, width, height, srcPitch, gScreenshotBuffer + destWidth * destY + destX, destWidth);
 }
 
-// 0x4C9048
+// 0x4C9048 default_screendump_
 int screenshotHandlerDefaultImpl(int width, int height, unsigned char* data, unsigned char* palette)
 {
     char fileName[16];
@@ -543,7 +543,7 @@ int screenshotHandlerPngImpl(int width, int height, unsigned char* data, unsigne
     return 0;
 }
 
-// 0x4C9358
+// 0x4C9358 register_screendump_
 void screenshotHandlerConfigure(int keyCode, ScreenshotHandler* handler)
 {
     gScreenshotKeyCode = keyCode;
@@ -555,13 +555,13 @@ void screenshotHandlerConfigure(int keyCode, ScreenshotHandler* handler)
     gScreenshotHandler = handler;
 }
 
-// 0x4C9370
+// 0x4C9370 get_time_
 unsigned int getTicks()
 {
     return SDL_GetTicks();
 }
 
-// 0x4C937C
+// 0x4C937C pause_for_tocks_
 void inputPauseForTocks(unsigned int delay)
 {
     // NOTE: Uninline.
@@ -580,13 +580,13 @@ void inputPauseForTocks(unsigned int delay)
     }
 }
 
-// 0x4C93B8
+// 0x4C93B8 block_for_tocks_
 void inputBlockForTocks(unsigned int ms)
 {
     delay_ms(ms);
 }
 
-// 0x4C93E0
+// 0x4C93E0 elapsed_time_
 unsigned int getTicksSince(unsigned int start)
 {
     unsigned int end = SDL_GetTicks();
@@ -595,7 +595,7 @@ unsigned int getTicksSince(unsigned int start)
     return getTicksBetween(end, start);
 }
 
-// 0x4C9400
+// 0x4C9400 elapsed_tocks_
 unsigned int getTicksBetween(unsigned int end, unsigned int start)
 {
     if (start > end) {
@@ -605,13 +605,13 @@ unsigned int getTicksBetween(unsigned int end, unsigned int start)
     }
 }
 
-// 0x4C9410
+// 0x4C9410 get_bk_time_
 unsigned int _get_bk_time()
 {
     return gTickerLastTimestamp;
 }
 
-// 0x4C9490
+// 0x4C9490 GNW95_build_key_map_
 static void buildNormalizedQwertyKeys()
 {
     int* keys = gNormalizedQwertyKeys;
@@ -941,13 +941,13 @@ static void buildNormalizedQwertyKeys()
     keys[SDL_SCANCODE_APPLICATION] = -1;
 }
 
-// 0x4C9C20
+// 0x4C9C20 GNW95_input_init_
 int _GNW95_input_init()
 {
     return 0;
 }
 
-// 0x4C9CF0
+// 0x4C9CF0 GNW95_process_message_
 void _GNW95_process_message()
 {
     // We need to process event loop even if program is not active or keyboard
@@ -1035,7 +1035,7 @@ void _GNW95_process_message()
     }
 }
 
-// 0x4C9DF0
+// 0x4C9DF0 GNW95_clear_time_stamps_
 void _GNW95_clear_time_stamps()
 {
     for (int index = 0; index < SDL_NUM_SCANCODES; index++) {
@@ -1044,7 +1044,7 @@ void _GNW95_clear_time_stamps()
     }
 }
 
-// 0x4C9E14
+// 0x4C9E14 GNW95_process_key_
 static void _GNW95_process_key(KeyboardData* data)
 {
     // Use originally pressed scancode, not qwerty-remapped one, for tracking
@@ -1069,7 +1069,7 @@ static void _GNW95_process_key(KeyboardData* data)
     _kb_simulate_key(data);
 }
 
-// 0x4C9EEC
+// 0x4C9EEC GNW95_lost_focus_
 void _GNW95_lost_focus()
 {
     while (!gProgramIsActive) {

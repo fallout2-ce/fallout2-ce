@@ -175,7 +175,7 @@ static std::vector<void*> gMapGlobalPointers;
 static std::vector<void*> gMapLocalPointers;
 
 // iso_init
-// 0x481CA0
+// 0x481CA0 iso_init_
 int isoInit()
 {
     tileScrollLimitingDisable();
@@ -246,7 +246,7 @@ int isoInit()
     return 0;
 }
 
-// 0x481ED4
+// 0x481ED4 iso_reset_
 void isoReset()
 {
     // NOTE: Uninline.
@@ -265,7 +265,7 @@ void isoReset()
     mapSetEnteringLocation(-1, -1, -1);
 }
 
-// 0x481F48
+// 0x481F48 iso_exit_
 void isoExit()
 {
     interfaceFree();
@@ -283,7 +283,7 @@ void isoExit()
     mapLocalVariablesFree();
 }
 
-// 0x481FB4
+// 0x481FB4 map_init_
 void mapInit()
 {
     if (compat_stricmp(settings.system.executable.c_str(), "mapper") == 0) {
@@ -309,7 +309,7 @@ void mapInit()
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_MAP, &gMapMessageList);
 }
 
-// 0x482084
+// 0x482084 map_exit_
 void mapExit()
 {
     windowHide(gIsoWindow);
@@ -322,7 +322,7 @@ void mapExit()
     }
 }
 
-// 0x4820C0
+// 0x4820C0 map_enable_bk_processes_
 void isoEnable()
 {
     if (!gIsoEnabled) {
@@ -337,7 +337,7 @@ void isoEnable()
     }
 }
 
-// 0x482104
+// 0x482104 map_disable_bk_processes_
 bool isoDisable()
 {
     if (!gIsoEnabled) {
@@ -355,14 +355,14 @@ bool isoDisable()
     return true;
 }
 
-// 0x482148
+// 0x482148 map_bk_processes_are_disabled_
 bool isoIsDisabled()
 {
     return gIsoEnabled == false;
 }
 
 // map_set_elevation
-// 0x482158
+// 0x482158 map_set_elevation_
 int mapSetElevation(int elevation)
 {
     if (!elevationIsValid(elevation)) {
@@ -399,7 +399,7 @@ int mapSetElevation(int elevation)
     return 0;
 }
 
-// 0x482220
+// 0x482220 map_set_global_var_
 int mapSetGlobalVar(int var, ProgramValue& value)
 {
     if (var < 0 || var >= gMapGlobalVarsLength) {
@@ -418,7 +418,7 @@ int mapSetGlobalVar(int var, ProgramValue& value)
     return 0;
 }
 
-// 0x482250
+// 0x482250 map_get_global_var_
 int mapGetGlobalVar(int var, ProgramValue& value)
 {
     if (var < 0 || var >= gMapGlobalVarsLength) {
@@ -437,7 +437,7 @@ int mapGetGlobalVar(int var, ProgramValue& value)
     return 0;
 }
 
-// 0x482280
+// 0x482280 map_set_local_var_
 int mapSetLocalVar(int var, ProgramValue& value)
 {
     if (var < 0 || var >= gMapLocalVarsLength) {
@@ -456,7 +456,7 @@ int mapSetLocalVar(int var, ProgramValue& value)
     return 0;
 }
 
-// 0x4822B0
+// 0x4822B0 map_get_local_var_
 int mapGetLocalVar(int var, ProgramValue& value)
 {
     if (var < 0 || var >= gMapLocalVarsLength) {
@@ -477,7 +477,7 @@ int mapGetLocalVar(int var, ProgramValue& value)
 
 // Make a room to store more local variables.
 //
-// 0x4822E0
+// 0x4822E0 map_malloc_local_var_
 int mapAllocLocalVars(const int numNewVars)
 {
     int oldMapLocalVarsLength = gMapLocalVarsLength;
@@ -496,7 +496,7 @@ int mapAllocLocalVars(const int numNewVars)
     return oldMapLocalVarsLength;
 }
 
-// 0x48234C
+// 0x48234C map_set_entrance_hex_
 void mapSetStart(int tile, int elevation, int rotation)
 {
     gMapHeader.enteringTile = tile;
@@ -504,7 +504,7 @@ void mapSetStart(int tile, int elevation, int rotation)
     gMapHeader.enteringRotation = rotation;
 }
 
-// 0x4824CC
+// 0x4824CC map_get_elev_idx_
 char* mapGetName(int map, int elevation)
 {
     if (map < 0 || map >= wmMapMaxCount()) {
@@ -521,7 +521,7 @@ char* mapGetName(int map, int elevation)
 
 // TODO: Check, probably returns true if map1 and map2 represents the same city.
 //
-// 0x482528
+// 0x482528 is_map_idx_same_
 bool mapAreSameArea(int map1, int map2)
 {
     if (map1 < 0 || map1 >= wmMapMaxCount()) {
@@ -554,7 +554,7 @@ bool mapAreSameArea(int map1, int map2)
 }
 
 // TODO: probably can be replaced with mapAreSameArea
-// 0x4825CC
+// 0x4825CC get_map_idx_same_
 int _get_map_idx_same(int map1, int map2)
 {
     int city1 = -1;
@@ -574,7 +574,7 @@ int _get_map_idx_same(int map1, int map2)
     return city1;
 }
 
-// 0x48261C
+// 0x48261C map_get_short_name_
 char* mapGetCityName(int map)
 {
     int city;
@@ -600,13 +600,13 @@ char* mapDescriptionById(int map)
     return _scratchStr;
 }
 
-// 0x4826B8
+// 0x4826B8 map_get_index_number_
 int mapGetCurrentMap()
 {
     return gMapHeader.index;
 }
 
-// 0x4826C0
+// 0x4826C0 map_scroll_
 int mapScroll(int dx, int dy)
 {
     if (getTicksSince(gIsoWindowScrollTimestamp) < 33) {
@@ -708,7 +708,7 @@ int mapScroll(int dx, int dy)
     return 0;
 }
 
-// 0x482900
+// 0x482900 map_file_path_
 static char* mapBuildPath(char* name)
 {
     // 0x631E78
@@ -722,7 +722,7 @@ static char* mapBuildPath(char* name)
     return name;
 }
 
-// 0x482924
+// 0x482924 mapSetEntranceInfo_
 int mapSetEnteringLocation(int elevation, int tile_num, int orientation)
 {
     gEnteringElevation = elevation;
@@ -731,7 +731,7 @@ int mapSetEnteringLocation(int elevation, int tile_num, int orientation)
     return 0;
 }
 
-// 0x482938
+// 0x482938 map_new_map_
 void mapNewMap()
 {
     mapSetElevation(0);
@@ -757,7 +757,7 @@ void mapNewMap()
     tileWindowRefresh();
 }
 
-// 0x482A68
+// 0x482A68 map_load_
 int mapLoadByName(char* fileName)
 {
     int rc;
@@ -800,7 +800,7 @@ int mapLoadByName(char* fileName)
     return rc;
 }
 
-// 0x482B34
+// 0x482B34 map_load_idx_
 int mapLoadById(int map)
 {
     scriptSetFixedParam(gMapSid, map);
@@ -819,7 +819,7 @@ int mapLoadById(int map)
     return rc;
 }
 
-// 0x482B74
+// 0x482B74 map_load_file_
 static int mapLoad(File* stream)
 {
     _map_save_in_game(true);
@@ -1070,7 +1070,7 @@ err:
     return rc;
 }
 
-// 0x483188
+// 0x483188 map_load_in_game_
 int mapLoadSaved(char* fileName)
 {
     debugPrint("\nMAP: Loading SAVED map.");
@@ -1107,7 +1107,7 @@ int mapLoadSaved(char* fileName)
     return rc;
 }
 
-// 0x48328C
+// 0x48328C map_age_dead_critters_
 static int _map_age_dead_critters()
 {
     if (!wmMapDeadBodiesAge()) {
@@ -1219,7 +1219,7 @@ static int _map_age_dead_critters()
     return rc;
 }
 
-// 0x48358C
+// 0x48358C map_target_load_area_
 int mapGetLoadedAreaId()
 {
     int city = -1;
@@ -1229,7 +1229,7 @@ int mapGetLoadedAreaId()
     return city;
 }
 
-// 0x4835B4
+// 0x4835B4 map_leave_map_
 int mapSetTransition(MapTransition* transition)
 {
     if (transition == nullptr) {
@@ -1249,7 +1249,7 @@ int mapSetTransition(MapTransition* transition)
     return 0;
 }
 
-// 0x4835F8
+// 0x4835F8 map_check_state_
 int mapHandleTransition()
 {
     if (gMapTransition.map == 0) {
@@ -1310,7 +1310,7 @@ int mapHandleTransition()
     return 0;
 }
 
-// 0x483784
+// 0x483784 map_fix_critter_combat_data_
 static void _map_fix_critter_combat_data()
 {
     for (Object* object = objectFindFirst(); object != nullptr; object = objectFindNext()) {
@@ -1329,7 +1329,7 @@ static void _map_fix_critter_combat_data()
 }
 
 // map_save
-// 0x483850
+// 0x483850 map_save_
 static int _map_save()
 {
     char temp[80];
@@ -1364,7 +1364,7 @@ static int _map_save()
     return rc;
 }
 
-// 0x483980
+// 0x483980 map_save_file_
 static int _map_save_file(File* stream)
 {
     if (stream == nullptr) {
@@ -1447,7 +1447,7 @@ static int _map_save_file(File* stream)
     return 0;
 }
 
-// 0x483C98
+// 0x483C98 map_save_in_game_
 int _map_save_in_game(bool isLeavingMap)
 {
     if (gMapHeader.name[0] == '\0') {
@@ -1509,7 +1509,7 @@ int _map_save_in_game(bool isLeavingMap)
     return 0;
 }
 
-// 0x483E28
+// 0x483E28 map_setup_paths_
 static void mapMakeMapsDirectory()
 {
     char path[COMPAT_MAX_PATH];
@@ -1521,13 +1521,13 @@ static void mapMakeMapsDirectory()
     compat_mkdir(path);
 }
 
-// 0x483ED0
+// 0x483ED0 map_display_draw_
 static void isoWindowRefreshRect(Rect* rect)
 {
     windowRefreshRect(gIsoWindow, rect);
 }
 
-// 0x483EE4
+// 0x483EE4 map_scroll_refresh_game_
 static void isoWindowRefreshRectGame(Rect* rect)
 {
     Rect rectToUpdate;
@@ -1551,7 +1551,7 @@ static void isoWindowRefreshRectGame(Rect* rect)
     tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
 }
 
-// 0x483F44
+// 0x483F44 map_scroll_refresh_mapper_
 static void isoWindowRefreshRectMapper(Rect* rect)
 {
     Rect rectToUpdate;
@@ -1576,7 +1576,7 @@ static void isoWindowRefreshRectMapper(Rect* rect)
 
 // NOTE: Inlined.
 //
-// 0x483FE4
+// 0x483FE4 map_allocate_global_vars_
 static int mapGlobalVariablesInit(int count)
 {
     mapGlobalVariablesFree();
@@ -1595,7 +1595,7 @@ static int mapGlobalVariablesInit(int count)
     return 0;
 }
 
-// 0x484038
+// 0x484038 map_free_global_vars_
 static void mapGlobalVariablesFree()
 {
     if (gMapGlobalVars != nullptr) {
@@ -1609,7 +1609,7 @@ static void mapGlobalVariablesFree()
 
 // NOTE: Inlined.
 //
-// 0x48405C
+// 0x48405C map_load_global_vars_
 static int mapGlobalVariablesLoad(File* stream)
 {
     if (fileReadInt32List(stream, gMapGlobalVars, gMapGlobalVarsLength) != 0) {
@@ -1621,7 +1621,7 @@ static int mapGlobalVariablesLoad(File* stream)
 
 // NOTE: Inlined.
 //
-// 0x484080
+// 0x484080 map_allocate_local_vars_
 static int mapLocalVariablesInit(int count)
 {
     mapLocalVariablesFree();
@@ -1640,7 +1640,7 @@ static int mapLocalVariablesInit(int count)
     return 0;
 }
 
-// 0x4840D4
+// 0x4840D4 map_free_local_vars_
 static void mapLocalVariablesFree()
 {
     if (gMapLocalVars != nullptr) {
@@ -1654,7 +1654,7 @@ static void mapLocalVariablesFree()
 
 // NOTE: Inlined.
 //
-// 0x4840F8
+// 0x4840F8 map_load_local_vars_
 static int mapLocalVariablesLoad(File* stream)
 {
     if (fileReadInt32List(stream, gMapLocalVars, gMapLocalVarsLength) != 0) {
@@ -1664,7 +1664,7 @@ static int mapLocalVariablesLoad(File* stream)
     return 0;
 }
 
-// 0x48411C
+// 0x48411C map_place_dude_and_mouse_
 static void _map_place_dude_and_mouse()
 {
     _obj_clear_seen();
@@ -1693,7 +1693,7 @@ static void _map_place_dude_and_mouse()
 
 // NOTE: Inlined.
 //
-// 0x4841F0
+// 0x4841F0 square_init_
 static void square_init()
 {
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
@@ -1701,7 +1701,7 @@ static void square_init()
     }
 }
 
-// 0x484210
+// 0x484210 square_reset_
 static void _square_reset()
 {
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
@@ -1728,7 +1728,7 @@ static void _square_reset()
     }
 }
 
-// 0x48431C
+// 0x48431C square_load_
 static int _square_load(File* stream, int flags)
 {
     int upperTileWord;
@@ -1763,7 +1763,7 @@ static int _square_load(File* stream, int flags)
     return 0;
 }
 
-// 0x4843B8
+// 0x4843B8 map_write_MapData_
 static int mapHeaderWrite(MapHeader* ptr, File* stream)
 {
     if (fileWriteInt32(stream, ptr->version) == -1) return -1;
@@ -1783,7 +1783,7 @@ static int mapHeaderWrite(MapHeader* ptr, File* stream)
     return 0;
 }
 
-// 0x4844B4
+// 0x4844B4 map_read_MapData_
 static int mapHeaderRead(MapHeader* ptr, File* stream)
 {
     if (fileReadInt32(stream, &(ptr->version)) == -1) return -1;

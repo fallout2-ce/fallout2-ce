@@ -88,13 +88,13 @@ static int _currx;
 // 0x6B23D0
 char gProgramWindowTitle[256];
 
-// 0x4DA6C0
+// 0x4DA6C0 win_list_select_
 int _win_list_select(const char* title, char** fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, int color)
 {
     return _win_list_select_at(title, fileList, fileListLength, callback, x, y, color, 0);
 }
 
-// 0x4DA70C
+// 0x4DA70C win_list_select_at_
 int _win_list_select_at(const char* title, char** items, int itemsLength, ListSelectionHandler* callback, int x, int y, int color, int start)
 {
     if (!gWindowSystemInitialized) {
@@ -548,7 +548,7 @@ int _win_list_select_at(const char* title, char** items, int itemsLength, ListSe
     return absoluteSelectedItemIndex;
 }
 
-// 0x4DB478
+// 0x4DB478 win_get_str_
 int _win_get_str(char* dest, int length, const char* title, int x, int y)
 {
     if (!gWindowSystemInitialized) {
@@ -627,7 +627,7 @@ int _win_get_str(char* dest, int length, const char* title, int x, int y)
     return rc;
 }
 
-// 0x4DB920
+// 0x4DB920 win_yes_no_
 int win_yes_no(const char* question, int x, int y, int color)
 {
     if (!gWindowSystemInitialized) {
@@ -708,7 +708,7 @@ int win_yes_no(const char* question, int x, int y, int color)
     return rc;
 }
 
-// 0x4DBA98
+// 0x4DBA98 win_msg_
 int _win_msg(const char* string, int x, int y, int color)
 {
     if (!gWindowSystemInitialized) {
@@ -767,7 +767,7 @@ int _win_msg(const char* string, int x, int y, int color)
     return 0;
 }
 
-// 0x4DBBC4
+// 0x4DBBC4 win_pull_down_
 int _win_pull_down(char** items, int itemsLength, int x, int y, int color)
 {
     if (!gWindowSystemInitialized) {
@@ -783,7 +783,7 @@ int _win_pull_down(char** items, int itemsLength, int x, int y, int color)
     return process_pull_down(win, &rect, items, itemsLength, color, _colorTable[_GNW_wcolor[0]], nullptr, -1);
 }
 
-// 0x4DBC34
+// 0x4DBC34 create_pull_down_
 int _create_pull_down(char** stringList, int stringListLength, int x, int y, int foregroundColor, int backgroundColor, Rect* rect)
 {
     int windowHeight = stringListLength * fontGetLineHeight() + 16;
@@ -806,7 +806,7 @@ int _create_pull_down(char** stringList, int stringListLength, int x, int y, int
     return win;
 }
 
-// 0x4DC30C
+// 0x4DC30C win_debug_
 int _win_debug(char* string)
 {
     if (!gWindowSystemInitialized) {
@@ -933,14 +933,14 @@ int _win_debug(char* string)
     return 0;
 }
 
-// 0x4DC65C
+// 0x4DC65C win_debug_delete_
 void _win_debug_delete(int btn, int keyCode)
 {
     windowDestroy(_wd);
     _wd = -1;
 }
 
-// 0x4DC674
+// 0x4DC674 win_register_menu_bar_
 int _win_register_menu_bar(int win, int x, int y, int width, int height, int foregroundColor, int backgroundColor)
 {
     Window* window = windowGetWindow(win);
@@ -987,7 +987,7 @@ int _win_register_menu_bar(int win, int x, int y, int width, int height, int for
     return 0;
 }
 
-// 0x4DC768
+// 0x4DC768 win_register_menu_pulldown_
 int _win_register_menu_pulldown(int win, int x, char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor)
 {
     Window* window = windowGetWindow(win);
@@ -1046,7 +1046,7 @@ int _win_register_menu_pulldown(int win, int x, char* title, int keyCode, int it
     return 0;
 }
 
-// 0x4DC8D0
+// 0x4DC8D0 win_delete_menu_bar_
 void _win_delete_menu_bar(int win)
 {
     Window* window = windowGetWindow(win);
@@ -1074,7 +1074,7 @@ void _win_delete_menu_bar(int win)
     window->menuBar = nullptr;
 }
 
-// 0x4DC9F0
+// 0x4DC9F0 find_first_letter_
 int _find_first_letter(int ch, char** stringList, int stringListLength)
 {
     if (ch >= 'A' && ch <= 'Z') {
@@ -1091,7 +1091,7 @@ int _find_first_letter(int ch, char** stringList, int stringListLength)
     return -1;
 }
 
-// 0x4DCA30
+// 0x4DCA30 win_width_needed_
 int _win_width_needed(char** fileNameList, int fileNameListLength)
 {
     int maxWidth = 0;
@@ -1106,7 +1106,7 @@ int _win_width_needed(char** fileNameList, int fileNameListLength)
     return maxWidth;
 }
 
-// 0x4DCA5C
+// 0x4DCA5C win_input_str_
 int _win_input_str(int win, char* dest, int maxLength, int x, int y, int textColor, int backgroundColor)
 {
     Window* window = windowGetWindow(win);
@@ -1219,7 +1219,7 @@ int _win_input_str(int win, char* dest, int maxLength, int x, int y, int textCol
     return 0;
 }
 
-// 0x4DCD68
+// 0x4DCD68 win_get_num_i_
 int win_get_num_i(int* value, int min, int max, bool clear, const char* title, int x, int y)
 {
     if (!gWindowSystemInitialized) {
@@ -1322,7 +1322,7 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
     return rc;
 }
 
-// 0x4DBD04
+// 0x4DBD04 process_pull_down_
 int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int foregroundColor, int backgroundColor, MenuBar* menuBar, int pulldownIndex)
 {
     if (menuBar != nullptr) {
@@ -1544,7 +1544,7 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int fo
     return rc;
 }
 
-// 0x4DC930
+// 0x4DC930 GNW_process_menu_
 int _GNW_process_menu(MenuBar* menuBar, int pulldownIndex)
 {
     if (_curr_menu != nullptr) {
@@ -1588,7 +1588,7 @@ int _GNW_process_menu(MenuBar* menuBar, int pulldownIndex)
 
 // Calculates max length of string needed to represent `value` or `value2`.
 //
-// 0x4DD03C
+// 0x4DD03C calc_max_field_chars_wcursor_
 size_t _calc_max_field_chars_wcursor(int value1, int value2)
 {
     char* str = (char*)internal_malloc(17);
@@ -1607,7 +1607,7 @@ size_t _calc_max_field_chars_wcursor(int value1, int value2)
     return std::max(len1, len2) + 1;
 }
 
-// 0x4DD0AC
+// 0x4DD0AC get_num_i_
 int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow_negative, int x, int y)
 {
     bool first_press = false;
@@ -1717,7 +1717,7 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
     return 0;
 }
 
-// 0x4DD3EC
+// 0x4DD3EC GNW_intr_init_
 void _GNW_intr_init()
 {
     int spacing;
@@ -1748,7 +1748,7 @@ void _GNW_intr_init()
     }
 }
 
-// 0x4DD4A4
+// 0x4DD4A4 GNW_intr_exit_
 void _GNW_intr_exit()
 {
     tickersRemove(tm_watch_msgs);
@@ -1757,7 +1757,7 @@ void _GNW_intr_exit()
     }
 }
 
-// 0x4DD4C8
+// 0x4DD4C8 win_timed_msg_
 int win_timed_msg(const char* msg, int color)
 {
     if (!gWindowSystemInitialized) {
@@ -1822,7 +1822,7 @@ int win_timed_msg(const char* msg, int color)
     return 0;
 }
 
-// 0x4DD66C
+// 0x4DD66C tm_watch_msgs_
 void tm_watch_msgs()
 {
     if (tm_watch_active) {
@@ -1840,7 +1840,7 @@ void tm_watch_msgs()
     tm_watch_active = false;
 }
 
-// 0x4DD6C0
+// 0x4DD6C0 tm_kill_msg_
 void tm_kill_msg()
 {
     if (tm_kill != -1) {
@@ -1860,7 +1860,7 @@ void tm_kill_msg()
     }
 }
 
-// 0x4DD744
+// 0x4DD744 tm_kill_out_of_order_
 void tm_kill_out_of_order(int queue_index)
 {
     int copy_from;
@@ -1901,7 +1901,7 @@ void tm_kill_out_of_order(int queue_index)
     }
 }
 
-// 0x4DD82C
+// 0x4DD82C tm_click_response_
 void tm_click_response(int btn, int keyCode)
 {
     int win;
@@ -1927,7 +1927,7 @@ void tm_click_response(int btn, int keyCode)
     tm_kill_out_of_order(queue_index);
 }
 
-// 0x4DD870
+// 0x4DD870 tm_index_active_
 bool tm_index_active(int queue_index)
 {
     if (tm_kill == tm_add) {

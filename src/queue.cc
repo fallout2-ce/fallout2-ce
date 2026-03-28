@@ -81,20 +81,20 @@ static EventTypeDescription gEventTypeDescriptions[EVENT_TYPE_COUNT] = {
     { ambientSoundEffectEventProcess, internal_free, nullptr, nullptr, true, nullptr },
 };
 
-// 0x4A2320
+// 0x4A2320 queue_init_
 void queueInit()
 {
     gQueueListHead = nullptr;
 }
 
-// 0x4A2330
+// 0x4A2330 queue_reset_
 int queueExit()
 {
     queueClear();
     return 0;
 }
 
-// 0x4A2338
+// 0x4A2338 queue_load_
 int queueLoad(File* stream)
 {
     int count;
@@ -201,7 +201,7 @@ int queueLoad(File* stream)
     return rc;
 }
 
-// 0x4A24E0
+// 0x4A24E0 queue_save_
 int queueSave(File* stream)
 {
     QueueListNode* queueListNode;
@@ -248,7 +248,7 @@ int queueSave(File* stream)
     return 0;
 }
 
-// 0x4A258C
+// 0x4A258C queue_add_
 int queueAddEvent(int delay, Object* obj, void* data, int eventType)
 {
     QueueListNode* newQueueListNode = (QueueListNode*)internal_malloc(sizeof(QueueListNode));
@@ -281,7 +281,7 @@ int queueAddEvent(int delay, Object* obj, void* data, int eventType)
     return 0;
 }
 
-// 0x4A25F4
+// 0x4A25F4 queue_remove_
 int queueRemoveEvents(Object* owner)
 {
     QueueListNode* queueListNode = gQueueListHead;
@@ -309,7 +309,7 @@ int queueRemoveEvents(Object* owner)
     return 0;
 }
 
-// 0x4A264C
+// 0x4A264C queue_remove_this_
 int queueRemoveEventsByType(Object* owner, int eventType)
 {
     QueueListNode* queueListNode = gQueueListHead;
@@ -339,7 +339,7 @@ int queueRemoveEventsByType(Object* owner, int eventType)
 
 // Returns true if there is at least one event of given type scheduled.
 //
-// 0x4A26A8
+// 0x4A26A8 queue_find_
 bool queueHasEvent(Object* owner, int eventType)
 {
     QueueListNode* queueListEvent = gQueueListHead;
@@ -354,7 +354,7 @@ bool queueHasEvent(Object* owner, int eventType)
     return false;
 }
 
-// 0x4A26D0
+// 0x4A26D0 queue_process_
 int queueProcessEvents()
 {
     unsigned int time = gameTimeGetTime();
@@ -382,7 +382,7 @@ int queueProcessEvents()
     return stopProcess;
 }
 
-// 0x4A2748
+// 0x4A2748 queue_clear_
 void queueClear()
 {
     QueueListNode* queueListNode = gQueueListHead;
@@ -402,7 +402,7 @@ void queueClear()
     gQueueListHead = nullptr;
 }
 
-// 0x4A2790
+// 0x4A2790 queue_clear_type_
 void queueClearByEventType(int eventType, QueueEventHandler* fn)
 {
     QueueListNode** ptr = &gQueueListHead;
@@ -438,7 +438,7 @@ void queueClearByEventType(int eventType, QueueEventHandler* fn)
     }
 }
 
-// 0x4A2808
+// 0x4A2808 queue_next_time_
 unsigned int queueGetNextEventTime()
 {
     if (gQueueListHead == nullptr) {
@@ -448,20 +448,20 @@ unsigned int queueGetNextEventTime()
     return gQueueListHead->time;
 }
 
-// 0x4A281C
+// 0x4A281C queue_destroy_
 static int flareEventProcess(Object* obj, void* data)
 {
     objectDestroy(obj);
     return 1;
 }
 
-// 0x4A2828
+// 0x4A2828 queue_explode_
 static int explosionEventProcess(Object* obj, void* data)
 {
     return explosionProcess(obj, true);
 }
 
-// 0x4A2830
+// 0x4A2830 queue_explode_exit_
 static int explosionExit(Object* obj, void* data)
 {
     return explosionProcess(obj, false);
@@ -506,7 +506,7 @@ static int explosionProcess(Object* explosive, bool animate)
     return 1;
 }
 
-// 0x4A28E4
+// 0x4A28E4 queue_premature_
 static int explosionFailureEventProcess(Object* obj, void* data)
 {
     MessageListItem msg;
@@ -520,7 +520,7 @@ static int explosionFailureEventProcess(Object* obj, void* data)
     return explosionProcess(obj, true);
 }
 
-// 0x4A2920
+// 0x4A2920 queue_leaving_map_
 void _queue_leaving_map()
 {
     for (int eventType = 0; eventType < EVENT_TYPE_COUNT; eventType++) {
@@ -531,13 +531,13 @@ void _queue_leaving_map()
     }
 }
 
-// 0x4A294C
+// 0x4A294C queue_is_empty_
 bool queueIsEmpty()
 {
     return gQueueListHead == nullptr;
 }
 
-// 0x4A295C
+// 0x4A295C queue_find_first_
 void* queueFindFirstEvent(Object* owner, int eventType)
 {
     QueueListNode* queueListNode = gQueueListHead;
@@ -553,7 +553,7 @@ void* queueFindFirstEvent(Object* owner, int eventType)
     return nullptr;
 }
 
-// 0x4A2994
+// 0x4A2994 queue_find_next_
 void* queueFindNextEvent(Object* owner, int eventType)
 {
     if (gLastFoundQueueListNode != nullptr) {

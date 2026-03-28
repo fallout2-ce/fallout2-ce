@@ -94,7 +94,7 @@ static unsigned int last_cycle_medium;
 // 0x56D7DC
 static unsigned int last_cycle_very_fast;
 
-// 0x42E780
+// 0x42E780 cycle_init_
 void colorCycleInit()
 {
     if (gColorCycleInitialized) {
@@ -133,7 +133,7 @@ void colorCycleInit()
     cycleSetSpeedFactor(settings.system.cycle_speed_factor);
 }
 
-// 0x42E8CC
+// 0x42E8CC cycle_reset_
 void colorCycleReset()
 {
     if (gColorCycleInitialized) {
@@ -146,7 +146,7 @@ void colorCycleReset()
     }
 }
 
-// 0x42E90C
+// 0x42E90C cycle_exit_
 void colorCycleFree()
 {
     if (gColorCycleInitialized) {
@@ -156,32 +156,32 @@ void colorCycleFree()
     }
 }
 
-// 0x42E930
+// 0x42E930 cycle_disable_
 void colorCycleDisable()
 {
     gColorCycleEnabled = false;
 }
 
-// 0x42E93C
+// 0x42E93C cycle_enable_
 void colorCycleEnable()
 {
     gColorCycleEnabled = true;
 }
 
-// 0x42E948
+// 0x42E948 cycle_is_enabled_
 bool colorCycleEnabled()
 {
     return gColorCycleEnabled;
 }
 
-// 0x42E950
+// 0x42E950 change_cycle_speed_
 void cycleSetSpeedFactor(int value)
 {
     gColorCycleSpeedFactor = value;
     settings.system.cycle_speed_factor = value;
 }
 
-// 0x42E97C
+// 0x42E97C cycle_colors_
 void colorCycleTicker()
 {
     // 0x518494

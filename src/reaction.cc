@@ -4,7 +4,7 @@
 
 namespace fallout {
 
-// 0x4A29D0
+// 0x4A29D0 reaction_set_
 int reactionSetValue(Object* critter, int value)
 {
     ProgramValue programValue;
@@ -14,7 +14,7 @@ int reactionSetValue(Object* critter, int value)
     return 0;
 }
 
-// 0x4A29E8
+// 0x4A29E8 reaction_to_level_
 int reactionTranslateValue(int value)
 {
     if (value > 10) {
@@ -38,7 +38,7 @@ int _reaction_influence_()
     return 0;
 }
 
-// 0x4A2B28
+// 0x4A2B28 reaction_get_
 int reactionGetValue(Object* critter)
 {
     ProgramValue programValue;

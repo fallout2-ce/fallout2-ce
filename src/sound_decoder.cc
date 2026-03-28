@@ -98,7 +98,7 @@ static unsigned char* _AudioDecoder_scale0;
 // 0x6ADB04
 static unsigned char* _AudioDecoder_scale_tbl;
 
-// 0x4D3BB0
+// 0x4D3BB0 bytes_init_
 static bool soundDecoderPrepare(SoundDecoder* soundDecoder, SoundDecoderReadProc* readProc, void* data)
 {
     soundDecoder->readProc = readProc;
@@ -115,7 +115,7 @@ static bool soundDecoderPrepare(SoundDecoder* soundDecoder, SoundDecoderReadProc
     return true;
 }
 
-// 0x4D3BE0
+// 0x4D3BE0 ByteReaderFill_
 static unsigned char soundDecoderReadNextChunk(SoundDecoder* soundDecoder)
 {
     soundDecoder->remainingInSize = soundDecoder->readProc(soundDecoder->data, soundDecoder->bufferIn, soundDecoder->bufferInSize);
@@ -129,7 +129,7 @@ static unsigned char soundDecoderReadNextChunk(SoundDecoder* soundDecoder)
     return *soundDecoder->nextIn++;
 }
 
-// 0x4D3C78
+// 0x4D3C78 init_pack_tables_
 static void init_pack_tables()
 {
     // 0x51E32C
@@ -805,7 +805,7 @@ static bool ReadBands(SoundDecoder* soundDecoder)
     return true;
 }
 
-// 0x4D4ADC
+// 0x4D4ADC untransform_subband0_
 static void untransform_subband0(unsigned char* a1, unsigned char* a2, int a3, int a4)
 {
     short* p;
@@ -903,7 +903,7 @@ static void untransform_subband0(unsigned char* a1, unsigned char* a2, int a3, i
     }
 }
 
-// 0x4D4D1C
+// 0x4D4D1C untransform_subband_
 static void untransform_subband(unsigned char* a1, unsigned char* a2, int a3, int a4)
 {
     int v13;
@@ -994,7 +994,7 @@ static void untransform_subband(unsigned char* a1, unsigned char* a2, int a3, in
     }
 }
 
-// 0x4D4E80
+// 0x4D4E80 untransform_all_
 static void untransform_all(SoundDecoder* soundDecoder)
 {
     int v8;
@@ -1047,7 +1047,7 @@ static void untransform_all(SoundDecoder* soundDecoder)
 
 // NOTE: Inlined.
 //
-// 0x4D4F58
+// 0x4D4F58 AudioDecoder_fill_
 static bool soundDecoderFill(SoundDecoder* soundDecoder)
 {
     // CE: Implementation is slightly different. `ReadBands` now handles new
@@ -1071,7 +1071,7 @@ static bool soundDecoderFill(SoundDecoder* soundDecoder)
     return true;
 }
 
-// 0x4D4FA0
+// 0x4D4FA0 AudioDecoder_Read_
 size_t soundDecoderDecode(SoundDecoder* soundDecoder, void* buffer, size_t size)
 {
     unsigned char* dest;
@@ -1110,7 +1110,7 @@ size_t soundDecoderDecode(SoundDecoder* soundDecoder, void* buffer, size_t size)
     return bytesRead;
 }
 
-// 0x4D5048
+// 0x4D5048 AudioDecoder_Close_
 void soundDecoderFree(SoundDecoder* soundDecoder)
 {
     if (soundDecoder->bufferIn != nullptr) {
@@ -1137,7 +1137,7 @@ void soundDecoderFree(SoundDecoder* soundDecoder)
     }
 }
 
-// 0x4D50A8
+// 0x4D50A8 Create_AudioDecoder_
 SoundDecoder* soundDecoderInit(SoundDecoderReadProc* readProc, void* data, int* channelsPtr, int* sampleRatePtr, int* sampleCountPtr)
 {
     int v14;

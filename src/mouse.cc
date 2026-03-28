@@ -122,7 +122,7 @@ static char _mouse_trans;
 static int gMouseWheelX = 0;
 static int gMouseWheelY = 0;
 
-// 0x4C9F40
+// 0x4C9F40 GNW_mouse_init_
 int mouseInit()
 {
     gMouseInitialized = false;
@@ -150,7 +150,7 @@ int mouseInit()
     return 0;
 }
 
-// 0x4C9FD8
+// 0x4C9FD8 GNW_mouse_exit_
 void mouseFree()
 {
     mouseDeviceUnacquire();
@@ -166,7 +166,7 @@ void mouseFree()
     }
 }
 
-// 0x4CA01C
+// 0x4CA01C mouse_colorize_
 static void mousePrepareDefaultCursor()
 {
     for (int index = 0; index < 64; index++) {
@@ -184,7 +184,7 @@ static void mousePrepareDefaultCursor()
     }
 }
 
-// 0x4CA0AC
+// 0x4CA0AC mouse_set_shape_
 int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int hotX, int hotY, char transparentColor)
 {
     Rect rect;
@@ -257,7 +257,7 @@ int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int ho
 
 // NOTE: Looks like this code is not reachable.
 //
-// 0x4CA2D0
+// 0x4CA2D0 mouse_anim_
 static void _mouse_anim()
 {
     // 0x51E2A8
@@ -278,7 +278,7 @@ static void _mouse_anim()
     }
 }
 
-// 0x4CA34C
+// 0x4CA34C mouse_show_
 void mouseShowCursor()
 {
     unsigned char* cursorData;
@@ -345,7 +345,7 @@ void mouseShowCursor()
     gMouseCursorData = cursorData;
 }
 
-// 0x4CA534
+// 0x4CA534 mouse_hide_
 void mouseHideCursor()
 {
     Rect rect;
@@ -363,7 +363,7 @@ void mouseHideCursor()
     }
 }
 
-// 0x4CA59C
+// 0x4CA59C mouse_info_
 void _mouse_info()
 {
     if (!gMouseInitialized) {
@@ -478,7 +478,7 @@ void _mouse_info()
     }
 }
 
-// 0x4CA698
+// 0x4CA698 mouse_simulate_input_
 void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
 {
     // 0x6AC7E4
@@ -575,7 +575,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
     }
 }
 
-// 0x4CA8C8
+// 0x4CA8C8 mouse_in_
 bool _mouse_in(int left, int top, int right, int bottom)
 {
     if (!gMouseInitialized) {
@@ -588,7 +588,7 @@ bool _mouse_in(int left, int top, int right, int bottom)
         && bottom >= gMouseCursorY;
 }
 
-// 0x4CA934
+// 0x4CA934 mouse_click_in_
 bool _mouse_click_in(int left, int top, int right, int bottom)
 {
     if (!gMouseInitialized) {
@@ -601,7 +601,7 @@ bool _mouse_click_in(int left, int top, int right, int bottom)
         && _mouse_hoty + gMouseCursorY <= bottom;
 }
 
-// 0x4CA9A0
+// 0x4CA9A0 mouse_get_rect_
 void mouseGetRect(Rect* rect)
 {
     rect->left = gMouseCursorX;
@@ -610,14 +610,14 @@ void mouseGetRect(Rect* rect)
     rect->bottom = gMouseCursorHeight + gMouseCursorY - 1;
 }
 
-// 0x4CA9DC
+// 0x4CA9DC mouse_get_position_
 void mouseGetPosition(int* xPtr, int* yPtr)
 {
     *xPtr = _mouse_hotx + gMouseCursorX;
     *yPtr = _mouse_hoty + gMouseCursorY;
 }
 
-// 0x4CAA04
+// 0x4CAA04 mouse_set_position_
 void _mouse_set_position(int x, int y)
 {
     gMouseCursorX = x - _mouse_hotx;
@@ -627,7 +627,7 @@ void _mouse_set_position(int x, int y)
     _mouse_clip();
 }
 
-// 0x4CAA38
+// 0x4CAA38 mouse_clip_
 static void _mouse_clip()
 {
     if (_mouse_hotx + gMouseCursorX < _scr_size.left) {
@@ -643,19 +643,19 @@ static void _mouse_clip()
     }
 }
 
-// 0x4CAAA0
+// 0x4CAAA0 mouse_get_buttons_
 int mouseGetEvent()
 {
     return gMouseEvent;
 }
 
-// 0x4CAAA8
+// 0x4CAAA8 mouse_hidden_
 bool cursorIsHidden()
 {
     return gCursorIsHidden;
 }
 
-// 0x4CAB5C
+// 0x4CAB5C mouse_get_raw_state_
 void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons)
 {
     MouseData mouseData;
@@ -688,7 +688,7 @@ void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons)
     *out_buttons = _raw_buttons;
 }
 
-// 0x4CAC3C
+// 0x4CAC3C mouse_set_sensitivity_
 void mouseSetSensitivity(double value)
 {
     if (value >= MOUSE_SENSITIVITY_MIN && value <= MOUSE_SENSITIVITY_MAX) {

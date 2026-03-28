@@ -207,7 +207,7 @@ static int gEndgameEndingSlideshowWindow;
 
 static int gEndgameEndingOverlay;
 
-// 0x43F788
+// 0x43F788 endgame_slideshow_
 void endgamePlaySlideshow()
 {
     if (endgameEndingSlideshowWindowInit() == -1) {
@@ -230,7 +230,7 @@ void endgamePlaySlideshow()
     endgameEndingSlideshowWindowFree();
 }
 
-// 0x43F810
+// 0x43F810 endgame_movie_
 void endgamePlayMovie()
 {
     backgroundSoundDelete();
@@ -257,7 +257,7 @@ void endgamePlayMovie()
     endgameEndingHandleContinuePlaying();
 }
 
-// 0x43F8C4
+// 0x43F8C4 gameOverConfim_
 static int endgameEndingHandleContinuePlaying()
 {
     bool isoWasEnabled = isoDisable();
@@ -310,7 +310,7 @@ static int endgameEndingHandleContinuePlaying()
     return rc;
 }
 
-// 0x43FBDC
+// 0x43FBDC endgame_pan_desert_
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
     int fid = buildFid(OBJ_TYPE_INTERFACE, 327, 0, 0, 0);
@@ -449,7 +449,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
     }
 }
 
-// 0x440004
+// 0x440004 endgame_display_image_
 static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName)
 {
     CacheEntry* backgroundHandle;
@@ -543,7 +543,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
     artUnlock(backgroundHandle);
 }
 
-// 0x43F99C
+// 0x43F99C endgame_init_
 static int endgameEndingSlideshowWindowInit()
 {
     if (endgameEndingInit() != 0) {
@@ -624,7 +624,7 @@ static int endgameEndingSlideshowWindowInit()
     return 0;
 }
 
-// 0x43FB28
+// 0x43FB28 endgame_exit_
 static void endgameEndingSlideshowWindowFree()
 {
     if (gEndgameEndingSubtitlesEnabled) {
@@ -662,7 +662,7 @@ static void endgameEndingSlideshowWindowFree()
     }
 }
 
-// 0x4401A0
+// 0x4401A0 endgame_load_voiceover_
 static void endgameEndingVoiceOverInit(const char* fileBaseName)
 {
     char path[COMPAT_MAX_PATH];
@@ -710,7 +710,7 @@ static void endgameEndingVoiceOverInit(const char* fileBaseName)
 
 // NOTE: This function was inlined at every call site.
 //
-// 0x440324
+// 0x440324 endgame_play_voiceover_
 static void endgameEndingVoiceOverReset()
 {
     gEndgameEndingSubtitlesEnded = false;
@@ -727,7 +727,7 @@ static void endgameEndingVoiceOverReset()
 
 // NOTE: This function was inlined at every call site.
 //
-// 0x44035C
+// 0x44035C endgame_stop_voiceover_
 static void endgameEndingVoiceOverFree()
 {
     speechDelete();
@@ -736,7 +736,7 @@ static void endgameEndingVoiceOverFree()
     gEndgameEndingVoiceOverSubtitlesLoaded = false;
 }
 
-// 0x440378
+// 0x440378 endgame_load_palette_
 static void endgameEndingLoadPalette(int type, int id)
 {
     char fileName[13];
@@ -757,7 +757,7 @@ static void endgameEndingLoadPalette(int type, int id)
     }
 }
 
-// 0x4403F0
+// 0x4403F0 endgame_voiceover_callback_
 static void _endgame_voiceover_callback()
 {
     gEndgameEndingSpeechEnded = true;
@@ -765,7 +765,7 @@ static void _endgame_voiceover_callback()
 
 // Loads subtitles file.
 //
-// 0x4403FC
+// 0x4403FC endgame_load_subtitles_
 static int endgameEndingSubtitlesLoad(const char* filePath)
 {
     endgameEndingSubtitlesFree();
@@ -806,7 +806,7 @@ static int endgameEndingSubtitlesLoad(const char* filePath)
 
 // Refreshes subtitles.
 //
-// 0x4404EC
+// 0x4404EC endgame_show_subtitles_
 static void endgameEndingRefreshSubtitles()
 {
     if (gEndgameEndingSubtitlesLength <= gEndgameEndingSubtitlesCurrentLine) {
@@ -857,7 +857,7 @@ static void endgameEndingRefreshSubtitles()
     }
 }
 
-// 0x4406CC
+// 0x4406CC endgame_clear_subtitles_
 static void endgameEndingSubtitlesFree()
 {
     for (int index = 0; index < gEndgameEndingSubtitlesLength; index++) {
@@ -872,13 +872,13 @@ static void endgameEndingSubtitlesFree()
     gEndgameEndingSubtitlesLength = 0;
 }
 
-// 0x440728
+// 0x440728 endgame_movie_callback_
 static void _endgame_movie_callback()
 {
     _endgame_maybe_done = 1;
 }
 
-// 0x440734
+// 0x440734 endgame_movie_bk_process_
 static void _endgame_movie_bk_process()
 {
     if (_endgame_maybe_done) {
@@ -888,7 +888,7 @@ static void _endgame_movie_bk_process()
     }
 }
 
-// 0x440770
+// 0x440770 endgame_load_slide_info_
 static int endgameEndingInit()
 {
     File* stream;
@@ -985,7 +985,7 @@ err:
 
 // NOTE: There are no references to this function. It was inlined.
 //
-// 0x44095C
+// 0x44095C endgame_unload_slide_info_
 static void endgameEndingFree()
 {
     if (gEndgameEndings != nullptr) {
@@ -997,7 +997,7 @@ static void endgameEndingFree()
 }
 
 // endgameDeathEndingInit
-// 0x440984
+// 0x440984 endgameDeathEndingInit_
 int endgameDeathEndingInit()
 {
     File* stream;
@@ -1105,7 +1105,7 @@ err:
     return -1;
 }
 
-// 0x440BA8
+// 0x440BA8 endgameDeathEndingExit_
 int endgameDeathEndingExit()
 {
     if (gEndgameDeathEndings != nullptr) {
@@ -1119,7 +1119,7 @@ int endgameDeathEndingExit()
 }
 
 // endgameSetupDeathEnding
-// 0x440BD0
+// 0x440BD0 endgameSetupDeathEnding_
 void endgameSetupDeathEnding(int reason)
 {
     if (!gEndgameDeathEndingsLength) {
@@ -1177,7 +1177,7 @@ void endgameSetupDeathEnding(int reason)
 // Upon return [percentage] is set as a sum of all valid endings' percentages.
 // Always returns 0.
 //
-// 0x440CF4
+// 0x440CF4 endgameSetupInit_
 static int endgameDeathEndingValidate(int* percentage)
 {
     *percentage = 0;
@@ -1221,7 +1221,7 @@ static int endgameDeathEndingValidate(int* percentage)
 //
 // This path does not include extension.
 //
-// 0x440D8C
+// 0x440D8C endgameGetDeathEndingFileName_
 char* endgameDeathEndingGetFileName()
 {
     if (gEndgameDeathEndingsLength == 0) {

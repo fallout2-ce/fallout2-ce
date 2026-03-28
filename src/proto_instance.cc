@@ -61,7 +61,7 @@ static bool objectIsJammed(Object* obj);
 //  0x49A990
 static MessageListItem stru_49A990;
 
-// 0x49A9A0
+// 0x49A9A0 obj_sid_
 int objectGetSid(Object* object, int* sidPtr)
 {
     *sidPtr = object->sid;
@@ -72,7 +72,7 @@ int objectGetSid(Object* object, int* sidPtr)
     return 0;
 }
 
-// 0x49A9B4
+// 0x49A9B4 obj_new_sid_
 int objectSetScriptFromProto(Object* object, int* sidPtr)
 {
     *sidPtr = -1;
@@ -131,7 +131,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
     return 0;
 }
 
-// 0x49AAC0
+// 0x49AAC0 obj_new_sid_inst_
 int objectSetScript(Object* obj, int scriptType, int scriptIndex)
 {
     if (scriptIndex == -1) {
@@ -170,13 +170,13 @@ int objectSetScript(Object* obj, int scriptType, int scriptIndex)
     return 0;
 }
 
-// 0x49AC3C
+// 0x49AC3C obj_look_at_
 int objectLookAt(Object* critter, Object* target)
 {
     return objectLookAtFunc(critter, target, displayMonitorAddMessage);
 }
 
-// 0x49AC4C
+// 0x49AC4C obj_look_at_func_
 int objectLookAtFunc(Object* critter, Object* target, void (*fn)(const char* string))
 {
     if (critterIsDead(critter)) {
@@ -228,7 +228,7 @@ int objectLookAtFunc(Object* critter, Object* target, void (*fn)(const char* str
     return -1;
 }
 
-// 0x49AD78
+// 0x49AD78 obj_examine_
 int objectExamine(Object* critter, Object* target)
 {
     return objectExamineFunc(critter, target, displayMonitorAddMessage);
@@ -240,7 +240,7 @@ int objectExamine(Object* critter, Object* target)
 // [critter] is a critter who's performing an action. Can be NULL.
 // [fn] can be called up to three times when [target] is an ammo.
 //
-// 0x49AD88
+// 0x49AD88 obj_examine_func_
 int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* string))
 {
     if (critterIsDead(critter)) {
@@ -565,7 +565,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
     return 0;
 }
 
-// 0x49B650
+// 0x49B650 obj_pickup_
 int objectPickup(Object* critter, Object* item)
 {
     bool overriden = false;
@@ -615,7 +615,7 @@ int objectPickup(Object* critter, Object* item)
     return 0;
 }
 
-// 0x49B73C
+// 0x49B73C obj_remove_from_inven_
 static int _obj_remove_from_inven(Object* critter, Object* item)
 {
     Rect updatedRect;
@@ -665,7 +665,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
     return rc;
 }
 
-// 0x49B8B0
+// 0x49B8B0 obj_drop_
 int objectDrop(Object* invenObj, Object* itemObj)
 {
     if (itemObj == nullptr) {
@@ -719,7 +719,7 @@ int objectDrop(Object* invenObj, Object* itemObj)
     return 0;
 }
 
-// 0x49B9A0
+// 0x49B9A0 obj_destroy_
 int objectDestroy(Object* obj)
 {
     if (obj == nullptr) {
@@ -748,7 +748,7 @@ int objectDestroy(Object* obj)
 
 // Read a book.
 //
-// 0x49B9F0
+// 0x49B9F0 obj_use_book_
 static UseItemResultCode _obj_use_book(Object* book)
 {
     MessageListItem messageListItem;
@@ -809,7 +809,7 @@ static UseItemResultCode _obj_use_book(Object* book)
 
 // Light a flare.
 //
-// 0x49BBA8
+// 0x49BBA8 obj_use_flare_
 static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
 {
     MessageListItem messageListItem;
@@ -844,7 +844,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
     return USE_ITEM_RESULT_OK;
 }
 
-// 0x49BC60
+// 0x49BC60 obj_use_radio_
 static UseItemResultCode _obj_use_radio(Object* item)
 {
     Script* scr;
@@ -863,7 +863,7 @@ static UseItemResultCode _obj_use_radio(Object* item)
     return USE_ITEM_RESULT_OK;
 }
 
-// 0x49BCB4
+// 0x49BCB4 obj_use_explosive_
 static UseItemResultCode _obj_use_explosive(Object* explosive)
 {
     MessageListItem messageListItem;
@@ -927,7 +927,7 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
 // Returns -1 when car cannot be recharged with given item.
 // Returns 1 when car is recharged.
 //
-// 0x49BDE8
+// 0x49BDE8 obj_use_power_on_car_
 static UseItemResultCode _obj_use_power_on_car(Object* item)
 {
     MessageListItem messageListItem;
@@ -980,7 +980,7 @@ static UseItemResultCode _obj_use_power_on_car(Object* item)
     return rc;
 }
 
-// 0x49BE88
+// 0x49BE88 obj_use_misc_item_
 static UseItemResultCode _obj_use_misc_item(Object* item)
 {
     if (item == nullptr) {
@@ -1012,7 +1012,7 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
     return USE_ITEM_RESULT_ERROR;
 }
 
-// 0x49BF38
+// 0x49BF38 protinst_use_item_
 // returns 0 on success, -1 on error, 1 to remove item, 2 to drop explosive
 UseItemResultCode objectUseItemInternal(Object* critter, Object* item)
 {
@@ -1075,7 +1075,7 @@ UseItemResultCode objectUseItemInternal(Object* critter, Object* item)
     return rc;
 }
 
-// 0x49BFE8
+// 0x49BFE8 protinstTestDroppedExplosive_
 static int _protinstTestDroppedExplosive(Object* explosiveItem)
 {
     // SFALL
@@ -1115,7 +1115,7 @@ static int _protinstTestDroppedExplosive(Object* explosiveItem)
     return 0;
 }
 
-// 0x49C124
+// 0x49C124 obj_use_item_
 UseItemResultCode objectUseItem(Object* userObj, Object* item)
 {
     UseItemResultCode rc = objectUseItemInternal(userObj, item);
@@ -1160,7 +1160,7 @@ UseItemResultCode objectUseItem(Object* userObj, Object* item)
     return rc;
 }
 
-// 0x49C240
+// 0x49C240 protinst_default_use_item_
 static UseItemResultCode _protinst_default_use_item(Object* user, Object* targetObj, Object* item)
 {
     char formattedText[90];
@@ -1244,7 +1244,7 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
     return USE_ITEM_RESULT_ERROR;
 }
 
-// 0x49C3CC
+// 0x49C3CC protinst_use_item_on_
 // returns 0 on success, -1 on error, 1 to remove item
 UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Object* item)
 {
@@ -1364,7 +1364,7 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
     return USE_ITEM_RESULT_REMOVE;
 }
 
-// 0x49C5FC
+// 0x49C5FC obj_use_item_on_
 UseItemResultCode objectUseItemOn(Object* user, Object* targetObj, Object* item)
 {
     UseItemResultCode rc = objectUseItemOnInternal(user, targetObj, item);
@@ -1409,7 +1409,7 @@ UseItemResultCode objectUseItemOn(Object* user, Object* targetObj, Object* item)
     return rc;
 }
 
-// 0x49C6BC
+// 0x49C6BC check_scenery_ap_cost_
 int checkSceneryUseActionPointCost(Object* obj, Object* _)
 {
     (void)_; // unused
@@ -1442,7 +1442,7 @@ int checkSceneryUseActionPointCost(Object* obj, Object* _)
     return -1;
 }
 
-// 0x49C740
+// 0x49C740 obj_use_
 int objectUse(Object* user, Object* targetObj)
 {
     int type = FID_TYPE(targetObj->fid);
@@ -1518,7 +1518,7 @@ int objectUse(Object* user, Object* targetObj)
     return 0;
 }
 
-// 0x49C900
+// 0x49C900 obj_use_ladder_top_
 static int useLadderDown(Object* user, Object* ladder)
 {
     int builtTile = ladder->data.scenery.ladder.destinationBuiltTile;
@@ -1552,7 +1552,7 @@ static int useLadderDown(Object* user, Object* ladder)
     return 0;
 }
 
-// 0x49C9A4
+// 0x49C9A4 obj_use_ladder_bottom_
 static int useLadderUp(Object* user, Object* ladder)
 {
     int builtTile = ladder->data.scenery.ladder.destinationBuiltTile;
@@ -1586,7 +1586,7 @@ static int useLadderUp(Object* user, Object* ladder)
     return 0;
 }
 
-// 0x49CA48
+// 0x49CA48 obj_use_stairs_
 static int useStairs(Object* user, Object* stairs)
 {
     int builtTile = stairs->data.scenery.stairs.destinationBuiltTile;
@@ -1620,21 +1620,21 @@ static int useStairs(Object* user, Object* stairs)
     return 0;
 }
 
-// 0x49CAF4
+// 0x49CAF4 set_door_state_open_
 static int _set_door_state_open(Object* door, Object* obj2)
 {
     door->data.scenery.door.openFlags |= 0x01;
     return 0;
 }
 
-// 0x49CB04
+// 0x49CB04 set_door_state_closed_
 static int _set_door_state_closed(Object* door, Object* obj2)
 {
     door->data.scenery.door.openFlags &= ~0x01;
     return 0;
 }
 
-// 0x49CB14
+// 0x49CB14 check_door_state_
 static int _check_door_state(Object* door, Object* obj2)
 {
     if ((door->data.scenery.door.openFlags & 0x01) == 0) {
@@ -1718,7 +1718,7 @@ static int _check_door_state(Object* door, Object* obj2)
     }
 }
 
-// 0x49CCB8
+// 0x49CCB8 obj_use_door_
 int objectUseDoor(Object* user, Object* door, bool animateOnly)
 {
     if (objectIsLocked(door)) {
@@ -1797,7 +1797,7 @@ int objectUseDoor(Object* user, Object* door, bool animateOnly)
     return 0;
 }
 
-// 0x49CE7C
+// 0x49CE7C obj_use_container_
 int objectUseContainer(Object* critter, Object* item)
 {
     if (FID_TYPE(item->fid) != OBJ_TYPE_ITEM) {
@@ -1880,7 +1880,7 @@ int objectUseContainer(Object* critter, Object* item)
     return 0;
 }
 
-// 0x49D078
+// 0x49D078 obj_use_skill_on_
 int objectUseSkillOn(Object* source, Object* target, int skill)
 {
     if (objectIsJammed(target)) {
@@ -1920,7 +1920,7 @@ int objectUseSkillOn(Object* source, Object* target, int skill)
     return 0;
 }
 
-// 0x49D140
+// 0x49D140 obj_is_a_portal_
 static bool _obj_is_portal(Object* obj)
 {
     if (obj == nullptr) {
@@ -1935,7 +1935,7 @@ static bool _obj_is_portal(Object* obj)
     return proto->scenery.type == SCENERY_TYPE_DOOR;
 }
 
-// 0x49D178
+// 0x49D178 obj_is_lockable_
 static bool _obj_is_lockable(Object* obj)
 {
     Proto* proto;
@@ -1964,7 +1964,7 @@ static bool _obj_is_lockable(Object* obj)
     return false;
 }
 
-// 0x49D1C8
+// 0x49D1C8 obj_is_locked_
 bool objectIsLocked(Object* obj)
 {
     if (obj == nullptr) {
@@ -1982,7 +1982,7 @@ bool objectIsLocked(Object* obj)
     return false;
 }
 
-// 0x49D20C
+// 0x49D20C obj_lock_
 int objectLock(Object* object)
 {
     if (object == nullptr) {
@@ -2003,7 +2003,7 @@ int objectLock(Object* object)
     return 0;
 }
 
-// 0x49D250
+// 0x49D250 obj_unlock_
 int objectUnlock(Object* object)
 {
     if (object == nullptr) {
@@ -2022,7 +2022,7 @@ int objectUnlock(Object* object)
     return -1;
 }
 
-// 0x49D294
+// 0x49D294 obj_is_openable_
 static bool _obj_is_openable(Object* obj)
 {
     Proto* proto;
@@ -2051,13 +2051,13 @@ static bool _obj_is_openable(Object* obj)
     return false;
 }
 
-// 0x49D2E4
+// 0x49D2E4 obj_is_open_
 int objectIsOpen(Object* object)
 {
     return object->frame != 0;
 }
 
-// 0x49D2F4
+// 0x49D2F4 obj_toggle_open_
 static int objectOpenClose(Object* obj)
 {
     if (obj == nullptr) {
@@ -2098,7 +2098,7 @@ static int objectOpenClose(Object* obj)
     return 0;
 }
 
-// 0x49D3D8
+// 0x49D3D8 obj_open_
 int objectOpen(Object* obj)
 {
     if (obj->frame == 0) {
@@ -2108,7 +2108,7 @@ int objectOpen(Object* obj)
     return 0;
 }
 
-// 0x49D3F4
+// 0x49D3F4 obj_close_
 int objectClose(Object* obj)
 {
     if (obj->frame != 0) {
@@ -2118,7 +2118,7 @@ int objectClose(Object* obj)
     return 0;
 }
 
-// 0x49D410
+// 0x49D410 obj_lock_is_jammed_
 static bool objectIsJammed(Object* obj)
 {
     if (!_obj_is_lockable(obj)) {
@@ -2139,7 +2139,7 @@ static bool objectIsJammed(Object* obj)
 }
 
 // jam_lock
-// 0x49D448
+// 0x49D448 obj_jam_lock_
 int objectJamLock(Object* obj)
 {
     if (!_obj_is_lockable(obj)) {
@@ -2159,7 +2159,7 @@ int objectJamLock(Object* obj)
     return 0;
 }
 
-// 0x49D480
+// 0x49D480 obj_unjam_lock_
 int objectUnjamLock(Object* obj)
 {
     if (!_obj_is_lockable(obj)) {
@@ -2179,7 +2179,7 @@ int objectUnjamLock(Object* obj)
     return 0;
 }
 
-// 0x49D4B8
+// 0x49D4B8 obj_unjam_all_locks_
 int objectUnjamAll()
 {
     Object* obj = objectFindFirst();
@@ -2192,7 +2192,7 @@ int objectUnjamAll()
 }
 
 // critter_attempt_placement
-// 0x49D4D4
+// 0x49D4D4 obj_attempt_placement_
 int objectAttemptPlacement(Object* obj, int tile, int elevation, int radius)
 {
     constexpr int maxDist = 7;
@@ -2252,7 +2252,7 @@ int objectAttemptPlacement(Object* obj, int tile, int elevation, int radius)
     return 0;
 }
 
-// 0x49D628
+// 0x49D628 objPMAttemptPlacement_
 int objectAttemptPlacementPartyMember(Object* obj, int tile, int elevation)
 {
     if (obj == nullptr) {

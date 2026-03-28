@@ -83,7 +83,7 @@ static FrmImage _mainMenuBackgroundFrmImage;
 static FrmImage _mainMenuButtonNormalFrmImage;
 static FrmImage _mainMenuButtonPressedFrmImage;
 
-// 0x481650
+// 0x481650 main_menu_create_
 int mainMenuWindowInit()
 {
     int fid;
@@ -236,7 +236,7 @@ int mainMenuWindowInit()
     return 0;
 }
 
-// 0x481968
+// 0x481968 main_menu_destroy_
 void mainMenuWindowFree()
 {
     if (!gMainMenuWindowInitialized) {
@@ -260,7 +260,7 @@ void mainMenuWindowFree()
     gMainMenuWindowInitialized = false;
 }
 
-// 0x481A00
+// 0x481A00 main_menu_hide_
 void mainMenuWindowHide(bool animate)
 {
     if (!gMainMenuWindowInitialized) {
@@ -284,7 +284,7 @@ void mainMenuWindowHide(bool animate)
     gMainMenuWindowHidden = true;
 }
 
-// 0x481A48
+// 0x481A48 main_menu_show_
 void mainMenuWindowUnhide(bool animate)
 {
     if (!gMainMenuWindowInitialized) {
@@ -306,13 +306,13 @@ void mainMenuWindowUnhide(bool animate)
     gMainMenuWindowHidden = false;
 }
 
-// 0x481AA8
+// 0x481AA8 main_menu_is_enabled_
 int _main_menu_is_enabled()
 {
     return 1;
 }
 
-// 0x481AEC
+// 0x481AEC main_menu_loop_
 int mainMenuWindowHandleEvents()
 {
     _in_main_menu = true;
@@ -394,7 +394,7 @@ int mainMenuWindowHandleEvents()
 
 // NOTE: Inlined.
 //
-// 0x481C88
+// 0x481C88 main_menu_fatal_error_
 static int main_menu_fatal_error()
 {
     mainMenuWindowFree();
@@ -404,7 +404,7 @@ static int main_menu_fatal_error()
 
 // NOTE: Inlined.
 //
-// 0x481C94
+// 0x481C94 main_menu_play_sound_
 static void main_menu_play_sound(const char* fileName)
 {
     soundPlayFile(fileName);

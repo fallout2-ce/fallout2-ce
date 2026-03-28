@@ -15,7 +15,7 @@ namespace fallout {
 
 static void fileCopy(const char* existingFilePath, const char* newFilePath);
 
-// 0x452740
+// 0x452740 gzRealUncompressCopyReal_file_
 int fileCopyDecompressed(const char* existingFilePath, const char* newFilePath)
 {
     FILE* stream = compat_fopen(existingFilePath, "rb");
@@ -62,7 +62,7 @@ int fileCopyDecompressed(const char* existingFilePath, const char* newFilePath)
     return 0;
 }
 
-// 0x452804
+// 0x452804 gzcompress_file_
 int fileCopyCompressed(const char* existingFilePath, const char* newFilePath)
 {
     FILE* inStream = compat_fopen(existingFilePath, "rb");

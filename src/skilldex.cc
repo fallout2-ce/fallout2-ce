@@ -106,7 +106,7 @@ static int gSkilldexWindowOldFont;
 static FrmImage _skilldexFrmImages[SKILLDEX_FRM_COUNT];
 
 // skilldex_select
-// 0x4ABFD0
+// 0x4ABFD0 skilldex_select_
 int skilldexOpen()
 {
     ScopedGameMode gm(GameMode::kSkilldex);
@@ -147,7 +147,7 @@ int skilldexOpen()
     return rc;
 }
 
-// 0x4AC054
+// 0x4AC054 skilldex_start_
 static int skilldexWindowInit()
 {
     gSkilldexWindowOldFont = fontGetCurrent();
@@ -390,7 +390,7 @@ static int skilldexWindowInit()
     return 0;
 }
 
-// 0x4AC67C
+// 0x4AC67C skilldex_end_
 static void skilldexWindowFree()
 {
     windowDestroy(gSkilldexWindow);

@@ -34,7 +34,7 @@ static int cacheEntriesCompareByMostRecentHit(const void* a1, const void* a2);
 static int _lock_sound_ticker = 0;
 
 // cache_init
-// 0x41FCC0
+// 0x41FCC0 cache_init_
 bool cacheInit(Cache* cache, CacheSizeProc* sizeProc, CacheReadProc* readProc, CacheFreeProc* freeProc, int maxSize)
 {
     if (!heapInit(&(cache->heap), maxSize)) {
@@ -61,7 +61,7 @@ bool cacheInit(Cache* cache, CacheSizeProc* sizeProc, CacheReadProc* readProc, C
 }
 
 // cache_exit
-// 0x41FD50
+// 0x41FD50 cache_exit_
 bool cacheFree(Cache* cache)
 {
     if (cache == nullptr) {
@@ -90,7 +90,7 @@ bool cacheFree(Cache* cache)
     return true;
 }
 
-// 0x41FDE8
+// 0x41FDE8 cache_lock_
 bool cacheLock(Cache* cache, int key, void** data, CacheEntry** cacheEntryPtr)
 {
     if (cache == nullptr || data == nullptr || cacheEntryPtr == nullptr) {
@@ -145,7 +145,7 @@ bool cacheLock(Cache* cache, int key, void** data, CacheEntry** cacheEntryPtr)
     return true;
 }
 
-// 0x4200B8
+// 0x4200B8 cache_unlock_
 bool cacheUnlock(Cache* cache, CacheEntry* cacheEntry)
 {
     if (cache == nullptr || cacheEntry == nullptr) {
@@ -166,7 +166,7 @@ bool cacheUnlock(Cache* cache, CacheEntry* cacheEntry)
 }
 
 // cache_flush
-// 0x42012C
+// 0x42012C cache_flush_
 bool cacheFlush(Cache* cache)
 {
     if (cache == nullptr) {
@@ -193,7 +193,7 @@ bool cacheFlush(Cache* cache)
     return true;
 }
 
-// 0x42019C
+// 0x42019C cache_stats_
 bool cachePrintStats(Cache* cache, char* dest, size_t size)
 {
     if (cache == nullptr || dest == nullptr) {
@@ -207,7 +207,7 @@ bool cachePrintStats(Cache* cache, char* dest, size_t size)
 
 // Fetches entry for the specified key into the cache.
 //
-// 0x4203AC
+// 0x4203AC cache_add_
 static bool cacheFetchEntryForKey(Cache* cache, int key, int* indexPtr)
 {
     CacheEntry* cacheEntry = (CacheEntry*)internal_malloc(sizeof(*cacheEntry));
@@ -307,7 +307,7 @@ static bool cacheFetchEntryForKey(Cache* cache, int key, int* indexPtr)
     return false;
 }
 
-// 0x4205E8
+// 0x4205E8 cache_insert_
 static bool cacheInsertEntryAtIndex(Cache* cache, CacheEntry* cacheEntry, int index)
 {
     // Ensure cache have enough space for new entry.
@@ -332,7 +332,7 @@ static bool cacheInsertEntryAtIndex(Cache* cache, CacheEntry* cacheEntry, int in
 // Returns 2 if entry already exists in cache, or 3 if entry does not exist. In
 // this case indexPtr represents insertion point.
 //
-// 0x420654
+// 0x420654 cache_find_
 static int cacheFindIndexForKey(Cache* cache, int key, int* indexPtr)
 {
     int length = cache->entriesLength;
@@ -371,7 +371,7 @@ static int cacheFindIndexForKey(Cache* cache, int key, int* indexPtr)
     return 3;
 }
 
-// 0x420708
+// 0x420708 cache_init_item_
 static bool cacheEntryInit(CacheEntry* cacheEntry)
 {
     cacheEntry->key = 0;
@@ -386,7 +386,7 @@ static bool cacheEntryInit(CacheEntry* cacheEntry)
 
 // NOTE: Inlined.
 //
-// 0x420740
+// 0x420740 cache_destroy_item_
 static bool cacheEntryFree(Cache* cache, CacheEntry* cacheEntry)
 {
     if (cacheEntry->data != nullptr) {
@@ -398,7 +398,7 @@ static bool cacheEntryFree(Cache* cache, CacheEntry* cacheEntry)
     return true;
 }
 
-// 0x420764
+// 0x420764 cache_unlock_all_
 static bool cacheClean(Cache* cache)
 {
     Heap* heap = &(cache->heap);
@@ -417,7 +417,7 @@ static bool cacheClean(Cache* cache)
     return true;
 }
 
-// 0x4207D4
+// 0x4207D4 cache_reset_counter_
 static bool cacheResetStatistics(Cache* cache)
 {
     if (cache == nullptr) {
@@ -447,7 +447,7 @@ static bool cacheResetStatistics(Cache* cache)
 
 // Prepare cache for storing new entry with the specified size.
 //
-// 0x42084C
+// 0x42084C cache_make_room_
 static bool cacheEnsureSize(Cache* cache, int size)
 {
     if (size > cache->maxSize) {
@@ -523,7 +523,7 @@ static bool cacheEnsureSize(Cache* cache, int size)
     return false;
 }
 
-// 0x42099C
+// 0x42099C cache_purge_
 static bool cacheSweep(Cache* cache)
 {
     for (int index = 0; index < cache->entriesLength; index++) {
@@ -554,7 +554,7 @@ static bool cacheSweep(Cache* cache)
     return true;
 }
 
-// 0x420A40
+// 0x420A40 cache_resize_array_
 static bool cacheSetCapacity(Cache* cache, int newCapacity)
 {
     if (newCapacity < cache->entriesLength) {
@@ -572,7 +572,7 @@ static bool cacheSetCapacity(Cache* cache, int newCapacity)
     return true;
 }
 
-// 0x420A74
+// 0x420A74 cache_compare_make_room_
 static int cacheEntriesCompareByUsage(const void* a1, const void* a2)
 {
     CacheEntry* lhs = *(CacheEntry**)a1;
@@ -601,7 +601,7 @@ static int cacheEntriesCompareByUsage(const void* a1, const void* a2)
     return 0;
 }
 
-// 0x420AE8
+// 0x420AE8 cache_compare_reset_counter_
 static int cacheEntriesCompareByMostRecentHit(const void* a1, const void* a2)
 {
     CacheEntry* lhs = *(CacheEntry**)a1;

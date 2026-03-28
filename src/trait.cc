@@ -54,7 +54,7 @@ static TraitDescription gTraitDescriptions[TRAIT_COUNT] = {
     { nullptr, nullptr, 70 },
 };
 
-// 0x4B39F0
+// 0x4B39F0 trait_init_
 int traitsInit()
 {
     if (!messageListInit(&gTraitsMessageList)) {
@@ -90,7 +90,7 @@ int traitsInit()
     return true;
 }
 
-// 0x4B3ADC
+// 0x4B3ADC trait_reset_
 void traitsReset()
 {
     for (int index = 0; index < TRAITS_MAX_SELECTED_COUNT; index++) {
@@ -98,7 +98,7 @@ void traitsReset()
     }
 }
 
-// 0x4B3AF8
+// 0x4B3AF8 trait_exit_
 void traitsExit()
 {
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_TRAIT, nullptr);
@@ -107,7 +107,7 @@ void traitsExit()
 
 // Loads trait system state from save game.
 //
-// 0x4B3B08
+// 0x4B3B08 trait_load_
 int traitsLoad(File* stream)
 {
     return fileReadInt32List(stream, gSelectedTraits, TRAITS_MAX_SELECTED_COUNT);
@@ -115,7 +115,7 @@ int traitsLoad(File* stream)
 
 // Saves trait system state to save game.
 //
-// 0x4B3B28
+// 0x4B3B28 trait_save_
 int traitsSave(File* stream)
 {
     return fileWriteInt32List(stream, gSelectedTraits, TRAITS_MAX_SELECTED_COUNT);
@@ -123,7 +123,7 @@ int traitsSave(File* stream)
 
 // Sets selected traits.
 //
-// 0x4B3B48
+// 0x4B3B48 trait_set_
 void traitsSetSelected(int trait1, int trait2)
 {
     gSelectedTraits[0] = trait1;
@@ -132,7 +132,7 @@ void traitsSetSelected(int trait1, int trait2)
 
 // Returns selected traits.
 //
-// 0x4B3B54
+// 0x4B3B54 trait_get_
 void traitsGetSelected(int* trait1, int* trait2)
 {
     *trait1 = gSelectedTraits[0];
@@ -142,7 +142,7 @@ void traitsGetSelected(int* trait1, int* trait2)
 // Returns a name of the specified trait, or `NULL` if the specified trait is
 // out of range.
 //
-// 0x4B3B68
+// 0x4B3B68 trait_name_
 char* traitGetName(int trait)
 {
     return trait >= 0 && trait < TRAIT_COUNT ? gTraitDescriptions[trait].name : nullptr;
@@ -151,7 +151,7 @@ char* traitGetName(int trait)
 // Returns a description of the specified trait, or `NULL` if the specified
 // trait is out of range.
 //
-// 0x4B3B88
+// 0x4B3B88 trait_description_
 char* traitGetDescription(int trait)
 {
     return trait >= 0 && trait < TRAIT_COUNT ? gTraitDescriptions[trait].description : nullptr;
@@ -160,7 +160,7 @@ char* traitGetDescription(int trait)
 // Return an art ID of the specified trait, or `0` if the specified trait is
 // out of range.
 //
-// 0x4B3BA8
+// 0x4B3BA8 trait_pic_
 int traitGetFrmId(int trait)
 {
     return trait >= 0 && trait < TRAIT_COUNT ? gTraitDescriptions[trait].frmId : 0;
@@ -168,7 +168,7 @@ int traitGetFrmId(int trait)
 
 // Returns `true` if the specified trait is selected.
 //
-// 0x4B3BC8
+// 0x4B3BC8 trait_level_
 bool traitIsSelected(int trait)
 {
     return gSelectedTraits[0] == trait || gSelectedTraits[1] == trait;
@@ -176,7 +176,7 @@ bool traitIsSelected(int trait)
 
 // Returns stat modifier depending on selected traits.
 //
-// 0x4B3C7C
+// 0x4B3C7C trait_adjust_stat_
 int traitGetStatModifier(int stat)
 {
     int modifier = 0;
@@ -280,7 +280,7 @@ int traitGetStatModifier(int stat)
 
 // Returns skill modifier depending on selected traits.
 //
-// 0x4B40FC
+// 0x4B40FC trait_adjust_skill_
 int traitGetSkillModifier(int skill)
 {
     int modifier = 0;
