@@ -1147,14 +1147,15 @@ static void op_tile_get_objects(Program* program)
     ArrayId arrayId = CreateTempArray(0, SFALL_ARRAYFLAG_RESERVED);
 
     if (!hexGridTileIsValid(tile) || elevation < 0 || elevation >= ELEVATION_COUNT) {
+        debugPrint("%s: op_tile_get_objects invalid tile data: tile=%d elevation=%d", program->name, tile, elevation);
         programStackPushInteger(program, arrayId);
         return;
     }
 
+    int index = 0;
     for (Object* object = objectFindFirstAtLocation(elevation, tile); object != nullptr; object = objectFindNextAtLocation()) {
-        int index = LenArray(arrayId);
         ResizeArray(arrayId, index + 1);
-        SetArray(arrayId, ProgramValue(index), ProgramValue(object), false, program);
+        SetArray(arrayId, ProgramValue(index++), ProgramValue(object), false, program);
     }
 
     programStackPushInteger(program, arrayId);
@@ -1168,7 +1169,12 @@ static void op_make_path(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
     ArrayId arrayId = CreateTempArray(0, 0);
 
-    if (object == nullptr || !hexGridTileIsValid(dest) || object->elevation < 0 || object->elevation >= ELEVATION_COUNT) {
+    if (object == nullptr
+        || !hexGridTileIsValid(dest)
+        || object->elevation < 0
+        || object->elevation >= ELEVATION_COUNT
+        || !hexGridTileIsValid(object->tile)) {
+        debugPrint("%s: op_make_path invalid input: object=%p dest=%d elevation=%d", program->name, object, dest, object != nullptr ? object->elevation : -1);
         programStackPushInteger(program, arrayId);
         return;
     }
@@ -1178,8 +1184,7 @@ static void op_make_path(Program* program)
 
     // XXX: pathfinderFindPath does not accept a destination buffer length. Use the
     // same capacity as the engine's AnimationSad::rotations storage so this
-    // wrapper is not the limiting factor.
-    // Sfall uses 800
+    // wrapper is not the limiting factor.  Sfall uses 800 here
     unsigned char rotations[kSfallPathBufferSize];
     int pathLength = pathfinderFindPath(object, object->tile, dest, rotations, requireEmptyDest, get_blocking_func(type));
     ResizeArray(arrayId, pathLength);
