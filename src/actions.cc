@@ -29,6 +29,7 @@
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_config.h"
+#include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
 #include "text_object.h"
@@ -76,20 +77,20 @@ static const int gMaximumBloodDeathAnimations[DAMAGE_TYPE_COUNT] = {
 // Note: some of these are callbacks that always take two Object*, but may not use them.
 // Ignored parameters are marked with underscores.
 static int actionKnockdown(Object* obj, int* anim, int maxDistance, int rotation, int delay);
-static int _action_blood(Object* obj, int anim, int delay);
-static int _pick_death(Object* attacker, Object* defender, Object* weapon, int damage, int attackerAnimation, bool hitFromFront);
-static int _check_death(Object* obj, int anim, int minViolenceLevel, bool hitFromFront);
+static int actionBlood(Object* obj, int anim, int delay);
+static int pickDeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int attackerAnimation, bool hitFromFront);
+static int checkDeathAnim(Object* obj, int anim, int minViolenceLevel, bool hitFromFront);
 static int _internal_destroy(Object* _, Object* toDestroy);
-static void _show_damage_to_object(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, int knockbackRotation, int attackerAnimation, Object* attacker, int delay);
+static void showDamageToObject(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, int knockbackRotation, int attackerAnimation, Object* attacker, int delay);
 static int _show_death(Object* obj, int anim);
-static int _show_damage_extras(Attack* attack);
-static void _show_damage(Attack* attack, int attackerAnimation, int delay);
+static int showDamageToExtras(Attack* attack);
+static void showDamage(Attack* attack, int attackerAnimation, int delay);
 static int _action_melee(Attack* attack, int anim);
 static int _action_ranged(Attack* attack, int anim);
 static int _is_next_to(Object* obj1, Object* obj2);
 static int _action_climb_ladder(Object* critter, Object* ladder);
 static int _action_use_skill_in_combat_error(Object* critter);
-static int _pick_fall(Object* obj, int anim);
+static int pickFallAnim(Object* obj, int anim);
 static int _report_explosion(Attack* attack, Object* sourceObj);
 static int _finished_explosion(Object*, Object*);
 static int _compute_explosion_damage(int min, int max, Object* defender, int* knockbackDistancePtr);
@@ -155,8 +156,10 @@ int actionKnockdown(Object* obj, int* anim, int maxDistance, int rotation, int d
     return tile;
 }
 
-// 0x410568
-int _action_blood(Object* obj, int anim, int delay)
+// Plays bleeding animation (after critter has fallen with ANIM_FALL_BACK or ANIM_FALL_FRONT).
+//
+// 0x410568 action_blood
+int actionBlood(Object* obj, int anim, int delay)
 {
     if (settings.preferences.violence_level == VIOLENCE_LEVEL_NONE) {
         return anim;
@@ -181,9 +184,19 @@ int _action_blood(Object* obj, int anim, int delay)
     return bloodyAnim;
 }
 
-// 0x41060C
-int _pick_death(Object* attacker, Object* defender, Object* weapon, int damage, int attackerAnimation, bool hitFromFront)
+// 0x41060C pick_death
+int pickDeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int attackerAnimation, bool hitFromFront)
 {
+    if (attacker->fid == buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0)) { // roktxpd.frm
+        return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
+    }
+    if (attacker->pid == PROTO_ID_0x20001EB) { // Forcefield North/South
+        return checkDeathAnim(defender, ANIM_ELECTRIFIED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
+    }
+    if (attacker->fid == FID_0x20001F5) { // ffield03.frm
+        return checkDeathAnim(defender, attackerAnimation, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
+    }
+
     int normalViolenceLevelDamageThreshold = 15;
     int maximumBloodViolenceLevelDamageThreshold = 45;
 
@@ -209,7 +222,7 @@ int _pick_death(Object* attacker, Object* defender, Object* weapon, int damage, 
     int violenceLevel = settings.preferences.violence_level;
 
     if (critterFlagCheck(defender->pid, CRITTER_SPECIAL_DEATH)) {
-        return _check_death(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_NORMAL, hitFromFront);
+        return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_NORMAL, hitFromFront);
     }
 
     bool hasBloodyMess = false;
@@ -241,7 +254,7 @@ int _pick_death(Object* attacker, Object* defender, Object* weapon, int damage, 
             if (violenceLevel > VIOLENCE_LEVEL_MINIMAL && (hasBloodyMess || normalViolenceLevelDamageThreshold <= damage)) {
                 if (violenceLevel > VIOLENCE_LEVEL_NORMAL && (hasBloodyMess || maximumBloodViolenceLevelDamageThreshold <= damage)) {
                     deathAnim = gMaximumBloodDeathAnimations[damageType];
-                    if (_check_death(defender, deathAnim, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront) != deathAnim) {
+                    if (checkDeathAnim(defender, deathAnim, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront) != deathAnim) {
                         deathAnim = gNormalDeathAnimations[damageType];
                     }
                 } else {
@@ -255,11 +268,14 @@ int _pick_death(Object* attacker, Object* defender, Object* weapon, int damage, 
         deathAnim = ANIM_FALL_FRONT;
     }
 
-    return _check_death(defender, deathAnim, VIOLENCE_LEVEL_NONE, hitFromFront);
+    return checkDeathAnim(defender, deathAnim, VIOLENCE_LEVEL_NONE, hitFromFront);
 }
 
-// 0x410814
-int _check_death(Object* obj, int anim, int minViolenceLevel, bool hitFromFront)
+// Returns anim if art for it exists and selected violence_level >= minViolenceLevel.
+// Otherwise, returns neutral fall animation (front or back, based on hitFromFront).
+//
+// 0x410814 check_death
+int checkDeathAnim(Object* obj, int anim, int minViolenceLevel, bool hitFromFront)
 {
     int fid;
 
@@ -290,8 +306,8 @@ int _internal_destroy(Object* _, Object* toDestroy)
 
 // TODO: Check very carefully, lots of conditions and jumps.
 //
-// 0x4108D0
-void _show_damage_to_object(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, int knockbackRotation, int attackerAnimation, Object* attacker, int delay)
+// 0x4108D0 show_damage_to_object
+void showDamageToObject(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, int knockbackRotation, int attackerAnimation, Object* attacker, int delay)
 {
     int anim;
     int fid;
@@ -304,30 +320,21 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
     anim = FID_ANIM_TYPE(defender->fid);
     if (!critterIsProne(defender)) {
         if ((flags & DAM_DEAD) != 0) {
-            fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0);
-            if (fid == attacker->fid) {
-                anim = _check_death(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
-            } else if (attacker->pid == PROTO_ID_0x20001EB) {
-                anim = _check_death(defender, ANIM_ELECTRIFIED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
-            } else if (attacker->fid == FID_0x20001F5) {
-                anim = _check_death(defender, attackerAnimation, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
-            } else {
-                anim = _pick_death(attacker, defender, weapon, damage, attackerAnimation, hitFromFront);
-            }
+            anim = pickDeathAnim(attacker, defender, weapon, damage, attackerAnimation, hitFromFront);
 
             if (anim != ANIM_FIRE_DANCE) {
                 if (knockbackDistance != 0 && (anim == ANIM_FALL_FRONT || anim == ANIM_FALL_BACK)) {
                     actionKnockdown(defender, &anim, knockbackDistance, knockbackRotation, delay);
-                    anim = _action_blood(defender, anim, -1);
+                    anim = actionBlood(defender, anim, -1);
                 } else {
                     sfx_name = sfxBuildCharName(defender, anim, CHARACTER_SOUND_EFFECT_DIE);
                     animationRegisterPlaySoundEffect(defender, sfx_name, delay);
 
-                    anim = _pick_fall(defender, anim);
+                    anim = pickFallAnim(defender, anim);
                     animationRegisterAnimate(defender, anim, 0);
 
                     if (anim == ANIM_FALL_FRONT || anim == ANIM_FALL_BACK) {
-                        anim = _action_blood(defender, anim, -1);
+                        anim = actionBlood(defender, anim, -1);
                     }
                 }
             } else {
@@ -406,7 +413,7 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
                 if (knockbackDistance != 0) {
                     actionKnockdown(defender, &anim, knockbackDistance, knockbackRotation, 0);
                 } else {
-                    anim = _pick_fall(defender, anim);
+                    anim = pickFallAnim(defender, anim);
                     animationRegisterAnimate(defender, anim, 0);
                 }
             } else if ((flags & DAM_ON_FIRE) != 0 && artExists(buildFid(OBJ_TYPE_CRITTER, defender->fid & 0xFFF, ANIM_FIRE_DANCE, (defender->fid & 0xF000) >> 12, defender->rotation + 1))) {
@@ -439,7 +446,7 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
         }
     } else {
         if ((flags & DAM_DEAD) != 0 && (defender->data.critter.combat.results & DAM_DEAD) == 0) {
-            anim = _action_blood(defender, anim, delay);
+            anim = actionBlood(defender, anim, delay);
         } else {
             return;
         }
@@ -508,8 +515,10 @@ int _show_death(Object* obj, int anim)
     return 0;
 }
 
-// 0x410FEC
-int _show_damage_extras(Attack* attack)
+// Animates damage to extras in a given attack (secondary targets).
+//
+// 0x410FEC _show_damage_extras
+int showDamageToExtras(Attack* attack)
 {
     for (int index = 0; index < attack->extrasLength; index++) {
         Object* obj = attack->extras[index];
@@ -520,7 +529,7 @@ int _show_damage_extras(Attack* attack)
             _register_priority(1);
             int attackerAnimation = critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
             int knockbackRotation = tileGetRotationTo(attack->attacker->tile, obj->tile);
-            _show_damage_to_object(obj, attack->extrasDamage[index], attack->extrasFlags[index], attack->weapon, hitFromFront, attack->extrasKnockback[index], knockbackRotation, attackerAnimation, attack->attacker, 0);
+            showDamageToObject(obj, attack->extrasDamage[index], attack->extrasFlags[index], attack->weapon, hitFromFront, attack->extrasKnockback[index], knockbackRotation, attackerAnimation, attack->attacker, 0);
             reg_anim_end();
         }
     }
@@ -528,8 +537,16 @@ int _show_damage_extras(Attack* attack)
     return 0;
 }
 
-// 0x4110AC
-void _show_damage(Attack* attack, int attackerAnimation, int delay)
+// Shows animation to attacker, in case of critical failure, backwash, etc.
+void showDamageToAttacker(Attack* attack, int attackerAnimation)
+{
+    showDamageToObject(attack->attacker, attack->attackerDamage, attack->attackerFlags, attack->weapon, true, 0, 0, attackerAnimation, attack->attacker, -1);
+}
+
+// Animates damage to defender (or attacker, in some cases) as a result of a given attack.
+//
+// 0x4110AC show_damage
+void showDamage(Attack* attack, int attackerAnimation, int delay)
 {
     for (int index = 0; index < attack->extrasLength; index++) {
         Object* object = attack->extras[index];
@@ -540,33 +557,26 @@ void _show_damage(Attack* attack, int attackerAnimation, int delay)
     }
 
     if ((attack->attackerFlags & DAM_HIT) == 0) {
-        if ((attack->attackerFlags & DAM_CRITICAL) != 0) {
-            _show_damage_to_object(attack->attacker, attack->attackerDamage, attack->attackerFlags, attack->weapon, 1, 0, 0, attackerAnimation, attack->attacker, -1);
-        } else if ((attack->attackerFlags & DAM_BACKWASH) != 0) {
-            _show_damage_to_object(attack->attacker, attack->attackerDamage, attack->attackerFlags, attack->weapon, 1, 0, 0, attackerAnimation, attack->attacker, -1);
+        if ((attack->attackerFlags & DAM_CRITICAL) != 0 || (attack->attackerFlags & DAM_BACKWASH) != 0) {
+            showDamageToAttacker(attack, attackerAnimation);
         }
     } else {
         if (attack->defender != nullptr) {
             // NOTE: Uninline.
-            bool hitFromFront = _is_hit_from_front(attack->defender, attack->attacker);
+            bool hitFromFront = _is_hit_from_front(attack->attacker, attack->defender);
 
             if (FID_TYPE(attack->defender->fid) == OBJ_TYPE_CRITTER) {
-                if (attack->attacker->fid == FID_0x20001F5) {
-                    int knockbackRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
-                    _show_damage_to_object(attack->defender, attack->defenderDamage, attack->defenderFlags, attack->weapon, hitFromFront, attack->defenderKnockback, knockbackRotation, attackerAnimation, attack->attacker, delay);
-                } else {
-                    int weaponAnimation = critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
-                    int knockbackRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
-                    _show_damage_to_object(attack->defender, attack->defenderDamage, attack->defenderFlags, attack->weapon, hitFromFront, attack->defenderKnockback, knockbackRotation, weaponAnimation, attack->attacker, delay);
-                }
-            } else {
-                tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
-                critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
+                int knockbackRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
+                int attackerAnimForShow = attack->attacker->fid == FID_0x20001F5
+                    ? attackerAnimation
+                    : critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
+
+                showDamageToObject(attack->defender, attack->defenderDamage, attack->defenderFlags, attack->weapon, hitFromFront, attack->defenderKnockback, knockbackRotation, attackerAnimForShow, attack->attacker, delay);
             }
         }
 
         if ((attack->attackerFlags & DAM_DUD) != 0) {
-            _show_damage_to_object(attack->attacker, attack->attackerDamage, attack->attackerFlags, attack->weapon, 1, 0, 0, attackerAnimation, attack->attacker, -1);
+            showDamageToAttacker(attack, attackerAnimation);
         }
     }
 }
@@ -643,7 +653,7 @@ int _action_melee(Attack* attack, int anim)
 
         animationRegisterAnimate(attack->attacker, anim, 0);
         animationRegisterPlaySoundEffect(attack->attacker, sfx_name_temp, delay);
-        _show_damage(attack, anim, 0);
+        showDamage(attack, anim, 0);
     } else {
         if (attack->defender->data.critter.combat.results & 0x03) {
             animationRegisterPlaySoundEffect(attack->attacker, sfx_name_temp, -1);
@@ -685,7 +695,7 @@ int _action_melee(Attack* attack, int anim)
         return -1;
     }
 
-    _show_damage_extras(attack);
+    showDamageToExtras(attack);
 
     return 0;
 }
@@ -914,7 +924,7 @@ int _action_ranged(Attack* attack, int anim)
         }
     }
 
-    _show_damage(attack, anim, delay);
+    showDamage(attack, anim, delay);
 
     if ((attack->attackerFlags & DAM_HIT) == 0) {
         _combatai_msg(attack->defender, attack, AI_MESSAGE_TYPE_MISS, -1);
@@ -981,7 +991,7 @@ int _action_ranged(Attack* attack, int anim)
         return -1;
     }
 
-    _show_damage_extras(attack);
+    showDamageToExtras(attack);
 
     return 0;
 }
@@ -1511,7 +1521,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
 }
 
 // 0x412BC4
-bool _is_hit_from_front(Object* attacker, Object* defender)
+bool _is_hit_from_front(const Object* attacker, const Object* defender)
 {
     int diff = attacker->rotation - defender->rotation;
     if (diff < 0) {
@@ -1534,9 +1544,10 @@ bool _can_see(Object* source, Object* target)
     return diff == 0 || diff == 1 || diff == 5;
 }
 
-// looks like it tries to change fall animation depending on object's current rotation
-// 0x412C1C
-int _pick_fall(Object* obj, int anim)
+// Tries to change between ANIM_FALL_FRONT and ANIM_FALL_BACK based on available free space in front or behind and presense of art frames.
+//
+// 0x412C1C pick_fall
+int pickFallAnim(Object* obj, int anim)
 {
     int i;
     int rotation;
@@ -1666,7 +1677,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
         animationRegisterPlaySoundEffect(explosion, "whn1xxx1", 0);
         animationRegisterUnsetFlag(explosion, OBJECT_HIDDEN, 0);
         animationRegisterAnimateAndHide(explosion, ANIM_STAND, 0);
-        _show_damage(attack, 0, 1);
+        showDamage(attack, 0, 1);
 
         for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
             animationRegisterUnsetFlag(adjacentExplosions[rotation], OBJECT_HIDDEN, 0);
@@ -1697,7 +1708,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
             return -1;
         }
 
-        _show_damage_extras(attack);
+        showDamageToExtras(attack);
     } else {
         if (critter != nullptr) {
             if ((attack->defenderFlags & DAM_DEAD) != 0) {
@@ -1932,7 +1943,7 @@ void actionDamage(int tile, int elevation, int minDamage, int maxDamage, int dam
     if (animated) {
         reg_anim_begin(ANIMATION_REQUEST_RESERVED);
         animationRegisterPlaySoundEffect(attacker, "whc1xxx1", 0);
-        _show_damage(attack, gMaximumBloodDeathAnimations[damageType], 0);
+        showDamage(attack, gMaximumBloodDeathAnimations[damageType], 0);
         animationRegisterCallbackForced(attack, nullptr, (AnimationCallback*)_report_dmg, 0);
         animationRegisterHideObjectForced(attacker);
 
