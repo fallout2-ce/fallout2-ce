@@ -200,6 +200,36 @@ int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode,
 }
 
 /*
+Runs after Fallout has calculated the death animation. Lets you set your own custom frame id, so more powerful than `HOOK_DEATHANIM1`, but performs no validation.\
+When using `critter_dmg` function, this script will also run. In that case weapon pid will be -1 and attacker will point to an object with `obj_art_fid == 0x20001F5`.
+
+Does not run for critters in the knockdown/out state.
+
+int     arg0 - The pid of the weapon performing the attack. (May be -1 if the attack is unarmed)
+Critter arg1 - The attacker
+Critter arg2 - The target
+int     arg3 - The amount of damage
+int     arg4 - The death anim id calculated by Fallout
+
+int     ret0 - The death anim id to override with
+*/
+void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim)
+{
+    ScriptHookCall hook(HOOK_DEATHANIM2, 1,
+        { weapon != nullptr ? weapon->pid : -1,
+            attacker,
+            defender,
+            damage,
+            *anim });
+
+    hook.call();
+
+    if (hook.numReturnValues() > 0) {
+        *anim = hook.getReturnValueAt(0).asInt();
+    }
+}
+
+/*
 Runs when:
 - a critter uses an object from inventory which have “Use” action flag set or it’s an active flare or dynamite.
 - player uses an object from main interface

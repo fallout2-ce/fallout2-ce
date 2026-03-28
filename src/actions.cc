@@ -321,6 +321,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
     if (!critterIsProne(defender)) {
         if ((flags & DAM_DEAD) != 0) {
             anim = pickDeathAnim(attacker, defender, weapon, damage, attackerAnimation, hitFromFront);
+            scriptHooks_DeathAnim(attacker, defender, weapon, damage, &anim);
 
             if (anim != ANIM_FIRE_DANCE) {
                 if (knockbackDistance != 0 && (anim == ANIM_FALL_FRONT || anim == ANIM_FALL_BACK)) {
