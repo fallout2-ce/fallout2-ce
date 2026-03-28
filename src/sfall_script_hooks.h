@@ -166,7 +166,7 @@ class ScriptHookCall {
 public:
     static ScriptHookCall* current();
 
-    ScriptHookCall(HookType hookType, int maxReturnValues);
+    ScriptHookCall(HookType hookType, int maxReturnValues, std::initializer_list<ProgramValue> args);
     ~ScriptHookCall() = default;
 
     ScriptHookCall(const ScriptHookCall& other) = delete;
@@ -174,10 +174,8 @@ public:
     ScriptHookCall& operator=(const ScriptHookCall& other) = delete;
     ScriptHookCall& operator=(ScriptHookCall&& other) = delete;
 
-    // Adds an argument (should be called from engine code).
-    ScriptHookCall& addArg(ProgramValue value);
     // Sets an argument value at given index.
-    ScriptHookCall& setArgAt(int idx, ProgramValue value);
+    void setArgAt(int idx, ProgramValue value);
     // Adds return value from script.
     // numReturnValues will only increase if current script called this more times than the last one.
     void addReturnValueFromScript(ProgramValue value);
