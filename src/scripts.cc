@@ -78,6 +78,7 @@ static int scriptsClearPendingRequests();
 static int scriptLocateProcs(Script* scr);
 static int scriptsLoadScriptsList();
 static int scriptsFreeScriptsList();
+
 static int scriptsGetFileName(int scriptIndex, char* name, size_t size);
 static int _scr_header_load();
 static void scriptsCloseNearbyElevatorDoors();
@@ -573,7 +574,6 @@ int scriptGetSid(Program* program)
 
     return -1;
 }
-
 // 0x4A39AC
 Object* scriptGetSelf(Program* program)
 {

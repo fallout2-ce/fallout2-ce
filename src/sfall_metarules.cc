@@ -22,6 +22,7 @@
 #include "object.h"
 #include "platform_compat.h"
 #include "scripts.h"
+#include "sfall_animation.h"
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
 #include "sfall_ini.h"
 #include "sfall_opcodes.h"
@@ -82,7 +83,7 @@ const MetaruleInfo kMetarules[] = {
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
-    // {"art_cache_clear",           mf_art_cache_flush,           0, 0},
+    { "art_cache_clear", mf_art_cache_flush, 0, 0 },
     // {"art_frame_data",            mf_art_frame_data,            1, 3,  0, {ARG_INTSTR, ARG_INT, ARG_INT}},
     // {"attack_is_aimed",           mf_attack_is_aimed,           0, 0},
     { "car_gas_amount", mf_car_gas_amount, 0, 0 },
@@ -140,7 +141,7 @@ const MetaruleInfo kMetarules[] = {
     // {"objects_in_radius",         mf_objects_in_radius,         3, 4,  0, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "outlined_object", mf_outlined_object, 0, 0 },
     // {"real_dude_obj",             mf_real_dude_obj,             0, 0},
-    // {"reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, {ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT}},
+    { "reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, { ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT } },
     // {"remove_timer_event",        mf_remove_timer_event,        0, 1, -1, {ARG_INT}},
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"set_can_rest_on_map",       mf_set_rest_on_map,           3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},

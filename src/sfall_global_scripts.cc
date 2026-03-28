@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "animation.h"
 #include "db.h"
 #include "input.h"
 #include "platform_compat.h"
@@ -147,6 +148,8 @@ static void sfall_gl_scr_process_simple(int mode1, int mode2)
             }
         }
     }
+
+    animationResetCombatCheck();
 }
 
 void sfall_gl_scr_process_main()

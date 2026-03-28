@@ -289,6 +289,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/sfall_script_hooks.cc"
     "src/sfall_arrays.cc"
     "src/sfall_arrays.h"
+    "src/sfall_animation.cc"
+    "src/sfall_animation.h"
     "src/sfall_callbacks.cc"
     "src/sfall_callbacks.h"
     "src/touch.cc"

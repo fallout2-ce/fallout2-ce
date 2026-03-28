@@ -226,6 +226,24 @@ typedef struct AnimationSequence {
     AnimationDescription animations[ANIMATION_DESCRIPTION_LIST_CAPACITY];
 } AnimationSequence;
 
+// sfall: "in combat" check for animations is overridable
+static bool gRegAnimCombatCheck = true;
+
+bool animationCheckCombatMode()
+{
+    return gRegAnimCombatCheck && isInCombat();
+}
+
+void animationSetCombatCheck(bool enable)
+{
+    gRegAnimCombatCheck = enable;
+}
+
+void animationResetCombatCheck()
+{
+    gRegAnimCombatCheck = true;
+}
+
 typedef struct PathNode {
     int tile;
     int from;
@@ -937,6 +955,7 @@ int animationRegisterAnimateAndHide(Object* owner, int anim, int delay)
 }
 
 // 0x414C50
+// TODO: original function likely handled both tiles and object
 int animationRegisterRotateToTile(Object* owner, int tile)
 {
     if (_check_registry(owner) == -1) {
@@ -1206,7 +1225,7 @@ int animationRegisterTakeOutWeapon(Object* owner, int weaponAnimationCode, int d
     AnimationDescription* animationDescription = &(animationSequence->animations[gAnimationDescriptionCurrentIndex]);
     animationDescription->kind = ANIM_KIND_TAKE_OUT_WEAPON;
     animationDescription->anim = ANIM_TAKE_OUT;
-    animationDescription->delay = 0;
+    animationDescription->delay = 0; // TODO: should use `delay`?
     animationDescription->owner = owner;
     animationDescription->weaponAnimationCode = weaponAnimationCode;
 
