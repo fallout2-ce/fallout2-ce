@@ -1,0 +1,78 @@
+#include "sfall.h"
+#include "test_utils.h"
+
+variable blocker_obj := 0;
+
+procedure cleanup begin
+    if (blocker_obj) then begin
+        destroy_object(blocker_obj);
+        blocker_obj := 0;
+    end
+end
+
+procedure start begin
+    variable elev := elevation(dude_obj);
+    variable dude_tile := tile_num(dude_obj);
+    variable dir;
+    variable step_tile := -1;
+    variable step_dir := -1;
+    variable block_tile := -1;
+    variable path;
+    variable objs;
+    variable ground_fid;
+    variable roof_fid;
+
+    display_msg("Testing tile/path functions...");
+    call cleanup();
+
+    for (dir := 0; dir < 6; dir += 1) begin
+        variable candidate := tile_num_in_direction(dude_tile, dir, 1);
+        if (candidate != dude_tile and obj_blocking_tile(candidate, elev, BLOCKING_TYPE_BLOCK) == 0) then begin
+            if (step_tile == -1) then begin
+                step_tile := candidate;
+                step_dir := dir;
+            end
+
+            if (block_tile == -1 and candidate != step_tile) then begin
+                block_tile := candidate;
+            end
+        end
+    end
+
+    call assertNotEquals("found reachable neighboring tile", step_tile, -1);
+    if (step_tile != -1) then begin
+        path := path_find_to(dude_obj, step_tile, BLOCKING_TYPE_BLOCK);
+        call assertEquals("one-step path length", len_array(path), 1);
+        if (len_array(path) == 1) then
+            call assertEquals("one-step path direction", get_array(path, 0), step_dir);
+    end
+
+    if (block_tile != -1) then begin
+        blocker_obj := create_object_sid(obj_pid(dude_obj), block_tile, elev, -1);
+        call assertNotEquals("spawned blocking critter", blocker_obj, 0);
+        if (blocker_obj) then begin
+            path := path_find_to(dude_obj, tile_num(blocker_obj), BLOCKING_TYPE_BLOCK);
+            call assertEquals("occupied destination returns empty path", len_array(path), 0);
+        end
+    end else begin
+        display_msg("Skipping occupied-destination path check: no free adjacent tile for blocker.");
+    end
+
+    objs := tile_get_objs(dude_tile, elev);
+    call assertTrue("tile_get_objs contains dude", scan_array(objs, dude_obj) != -1);
+
+    ground_fid := get_tile_ground_fid(dude_tile, elev);
+    roof_fid := get_tile_roof_fid(dude_tile, elev);
+    call assertTrue("ground fid is non-negative", ground_fid >= 0);
+    call assertTrue("roof fid is non-negative", roof_fid >= 0);
+    call assertEquals("ground helper matches ext", ground_fid, get_tile_fid_ext(dude_tile, elev, 0));
+    call assertEquals("roof helper matches ext", roof_fid, get_tile_fid_ext(dude_tile, elev, 1));
+
+    call assertTrue("tile_light returns non-negative intensity", tile_light(elev, dude_tile) >= 0);
+    call assertEquals("tile_by_position metarule exists", metarule_exist("tile_by_position"), 1);
+    call assertEquals("tile_by_position matches tile_under_cursor", tile_by_position(get_mouse_x, get_mouse_y), tile_under_cursor);
+
+    tile_refresh_display;
+    call cleanup();
+    call report_test_results("tile_path");
+end

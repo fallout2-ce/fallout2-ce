@@ -790,6 +790,20 @@ int tileFromScreenXY(int screenX, int screenY, bool ignoreBounds)
     }
 }
 
+int squareTileFromTile(int tile)
+{
+    if (!tileIsValid(tile)) {
+        return -1;
+    }
+
+    int tileCol = gHexGridWidth - 1 - tile % gHexGridWidth;
+    int tileRow = tile / gHexGridWidth;
+    int squareCol = tileCol / 2;
+    int squareRow = tileRow / 2;
+
+    return (gSquareGridWidth - 1 - squareCol) + gSquareGridWidth * squareRow;
+}
+
 // tile_distance
 // 0x4B185C
 int tileDistanceBetween(int tile1, int tile2)

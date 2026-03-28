@@ -7,7 +7,7 @@ namespace fallout {
 
 #define SFALL_ARRAYFLAG_ASSOC (1) // is map
 #define SFALL_ARRAYFLAG_CONSTVAL (2) // don't update value of key if the key exists in map
-#define SFALL_ARRAYFLAG_RESERVED (4)
+#define SFALL_ARRAYFLAG_RESERVED (4) // has no significance in sfall or CE
 
 using ArrayId = unsigned int;
 
