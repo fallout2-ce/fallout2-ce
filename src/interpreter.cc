@@ -196,7 +196,7 @@ char* _interpretMangleName(char* s)
     return interpreterFilenameMangler(s);
 }
 
-// 0x4670C0 (unused)
+// 0x4670C0 outputStr_ (unused)
 static int outputString(const char*)
 {
     return 1;
