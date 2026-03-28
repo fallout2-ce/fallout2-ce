@@ -162,7 +162,7 @@ static char gIntLibPlayMovieFileName[100];
 static char gIntLibPlayMovieRectFileName[100];
 
 // fillwin3x3
-// 0x461780
+// 0x461780 op_fillwin3x3_
 void opFillWin3x3(Program* program)
 {
     char* fileName = programStackPopString(program);
@@ -191,7 +191,7 @@ void opFillWin3x3(Program* program)
 }
 
 // format
-// 0x461850
+// 0x461850 op_format_
 static void opFormat(Program* program)
 {
     int textAlignment = programStackPopInteger(program);
@@ -207,7 +207,7 @@ static void opFormat(Program* program)
 }
 
 // print
-// 0x461A5C
+// 0x461A5C op_print_
 static void opPrint(Program* program)
 {
     scriptWindowSelectId(program->windowId);
@@ -240,7 +240,7 @@ static void opPrint(Program* program)
 }
 
 // selectfilelist
-// 0x461B10
+// 0x461B10 op_selectfilelist_
 void opSelectFileList(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -274,7 +274,7 @@ void opSelectFileList(Program* program)
 }
 
 // tokenize
-// 0x461CA0
+// 0x461CA0 op_tokenize_
 void opTokenize(Program* program)
 {
     int ch = programStackPopInteger(program);
@@ -341,7 +341,7 @@ void opTokenize(Program* program)
 }
 
 // printrect
-// 0x461F1C
+// 0x461F1C op_printrect_
 static void opPrintRect(Program* program)
 {
     scriptWindowSelectId(program->windowId);
@@ -372,7 +372,7 @@ static void opPrintRect(Program* program)
     }
 }
 
-// 0x46209C
+// 0x46209C op_selectwin_
 void opSelect(Program* program)
 {
     const char* windowName = programStackPopString(program);
@@ -387,7 +387,7 @@ void opSelect(Program* program)
 }
 
 // display
-// 0x46213C
+// 0x46213C op_display_
 void opDisplay(Program* program)
 {
     char* fileName = programStackPopString(program);
@@ -399,7 +399,7 @@ void opDisplay(Program* program)
 }
 
 // displayraw
-// 0x4621B4
+// 0x4621B4 op_displayraw_
 void opDisplayRaw(Program* program)
 {
     char* fileName = programStackPopString(program);
@@ -410,7 +410,7 @@ void opDisplayRaw(Program* program)
     _displayFileRaw(mangledFileName);
 }
 
-// 0x46222C
+// 0x46222C interpretFadePaletteBK_
 static void _interpretFadePaletteBK(unsigned char* oldPalette, unsigned char* newPalette, int a3, float duration, int shouldProcessBk)
 {
     unsigned int time;
@@ -457,7 +457,7 @@ static void _interpretFadePaletteBK(unsigned char* oldPalette, unsigned char* ne
 
 // NOTE: Unused.
 //
-// 0x462330
+// 0x462330 interpretFadePalette_
 static void interpretFadePalette(unsigned char* oldPalette, unsigned char* newPalette, int a3, float duration)
 {
     _interpretFadePaletteBK(oldPalette, newPalette, a3, duration, 1);
@@ -471,7 +471,7 @@ static int intlibGetFadeIn()
 
 // NOTE: Inlined.
 //
-// 0x462348
+// 0x462348 interpretFadeOut_
 static void interpretFadeOut(float duration)
 {
     int cursorWasHidden;
@@ -488,7 +488,7 @@ static void interpretFadeOut(float duration)
 
 // NOTE: Inlined.
 //
-// 0x462380
+// 0x462380 interpretFadeIn_
 static void interpretFadeIn(float duration)
 {
     _interpretFadePaletteBK(gIntLibFadePalette, _cmap, 64, duration, 1);
@@ -496,7 +496,7 @@ static void interpretFadeIn(float duration)
 
 // NOTE: Unused.
 //
-// 0x4623A4
+// 0x4623A4 interpretFadeOutNoBK_
 static void interpretFadeOutNoBK(float duration)
 {
     int cursorWasHidden;
@@ -513,14 +513,14 @@ static void interpretFadeOutNoBK(float duration)
 
 // NOTE: Unused.
 //
-// 0x4623DC
+// 0x4623DC interpretFadeInNoBK_
 static void interpretFadeInNoBK(float duration)
 {
     _interpretFadePaletteBK(gIntLibFadePalette, _cmap, 64, duration, 0);
 }
 
 // fadein
-// 0x462400
+// 0x462400 op_fadein_
 void opFadeIn(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -538,7 +538,7 @@ void opFadeIn(Program* program)
 }
 
 // fadeout
-// 0x4624B4
+// 0x4624B4 op_fadeout_
 void opFadeOut(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -560,7 +560,7 @@ void opFadeOut(Program* program)
     program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }
 
-// 0x462570
+// 0x462570 checkMovie_
 int intLibCheckMovie(Program* program)
 {
     if (_dialogGetDialogDepth() > 0) {
@@ -571,7 +571,7 @@ int intLibCheckMovie(Program* program)
 }
 
 // movieflags
-// 0x462584
+// 0x462584 op_movieflags_
 static void opSetMovieFlags(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -582,7 +582,7 @@ static void opSetMovieFlags(Program* program)
 }
 
 // playmovie
-// 0x4625D0
+// 0x4625D0 op_playmovie_
 void opPlayMovie(Program* program)
 {
     char* movieFileName = programStackPopString(program);
@@ -605,7 +605,7 @@ void opPlayMovie(Program* program)
 }
 
 // playmovierect
-// 0x4626C4
+// 0x4626C4 op_playmovierect_
 void opPlayMovieRect(Program* program)
 {
     int height = programStackPopInteger(program);
@@ -632,7 +632,7 @@ void opPlayMovieRect(Program* program)
 }
 
 // stopmovie
-// 0x46287C
+// 0x46287C op_stopmovie_
 static void opStopMovie(Program* program)
 {
     scriptWindowStopMovie();
@@ -640,7 +640,7 @@ static void opStopMovie(Program* program)
 }
 
 // deleteregion
-// 0x462890
+// 0x462890 op_deleteregion_
 static void opDeleteRegion(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
@@ -664,7 +664,7 @@ static void opDeleteRegion(Program* program)
 }
 
 // activateregion
-// 0x462924
+// 0x462924 op_activateregion_
 void opActivateRegion(Program* program)
 {
     int v1 = programStackPopInteger(program);
@@ -674,7 +674,7 @@ void opActivateRegion(Program* program)
 }
 
 // checkregion
-// 0x4629A0
+// 0x4629A0 op_checkregion_
 static void opCheckRegion(Program* program)
 {
     const char* regionName = programStackPopString(program);
@@ -684,7 +684,7 @@ static void opCheckRegion(Program* program)
 }
 
 // addregion
-// 0x462A1C
+// 0x462A1C op_addregion_
 void opAddRegion(Program* program)
 {
     int args = programStackPopInteger(program);
@@ -719,7 +719,7 @@ void opAddRegion(Program* program)
 }
 
 // addregionproc
-// 0x462C10
+// 0x462C10 op_addregionproc_
 static void opAddRegionProc(Program* program)
 {
     int v1 = programStackPopInteger(program);
@@ -736,7 +736,7 @@ static void opAddRegionProc(Program* program)
 }
 
 // addregionrightproc
-// 0x462DDC
+// 0x462DDC op_addregionrightproc_
 static void opAddRegionRightProc(Program* program)
 {
     int v1 = programStackPopInteger(program);
@@ -750,7 +750,7 @@ static void opAddRegionRightProc(Program* program)
 }
 
 // createwin
-// 0x462F08
+// 0x462F08 op_createwin_
 void opCreateWin(Program* program)
 {
     int height = programStackPopInteger(program);
@@ -770,7 +770,7 @@ void opCreateWin(Program* program)
 }
 
 // resizewin
-// 0x46308C
+// 0x46308C op_resizewin_
 void opResizeWin(Program* program)
 {
     int height = programStackPopInteger(program);
@@ -790,7 +790,7 @@ void opResizeWin(Program* program)
 }
 
 // scalewin
-// 0x463204
+// 0x463204 op_scalewin_
 void opScaleWin(Program* program)
 {
     int height = programStackPopInteger(program);
@@ -810,7 +810,7 @@ void opScaleWin(Program* program)
 }
 
 // deletewin
-// 0x46337C
+// 0x46337C op_deletewin_
 void opDeleteWin(Program* program)
 {
     char* windowName = programStackPopString(program);
@@ -823,7 +823,7 @@ void opDeleteWin(Program* program)
 }
 
 // saystart
-// 0x4633E4
+// 0x4633E4 op_saystart_
 static void opSayStart(Program* program)
 {
     gIntLibSayStartingPosition = 0;
@@ -838,7 +838,7 @@ static void opSayStart(Program* program)
 }
 
 // saystartpos
-// 0x463430
+// 0x463430 op_saystartpos_
 static void opSayStartPos(Program* program)
 {
     gIntLibSayStartingPosition = programStackPopInteger(program);
@@ -853,7 +853,7 @@ static void opSayStartPos(Program* program)
 }
 
 // sayreplytitle
-// 0x46349C
+// 0x46349C op_sayreplytitle_
 static void opSayReplyTitle(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
@@ -869,7 +869,7 @@ static void opSayReplyTitle(Program* program)
 }
 
 // saygotoreply
-// 0x463510
+// 0x463510 op_saygotoreply_
 static void opSayGoToReply(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
@@ -885,7 +885,7 @@ static void opSayGoToReply(Program* program)
 }
 
 // sayreply
-// 0x463584
+// 0x463584 op_sayoption_
 void opSayReply(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -948,14 +948,14 @@ void opSayOption(Program* program)
     program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }
 
-// 0x46378C
+// 0x46378C checkDialog_
 int intLibCheckDialog(Program* program)
 {
     program->flags |= PROGRAM_FLAG_FINISHED;
     return _dialogGetDialogDepth() != -1;
 }
 
-// 0x4637A4
+// 0x4637A4 op_sayend_
 void opSayEnd(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -969,7 +969,7 @@ void opSayEnd(Program* program)
 }
 
 // saygetlastpos
-// 0x4637EC
+// 0x4637EC op_saygetlastpos_
 static void opSayGetLastPos(Program* program)
 {
     int value = _dialogGetExitPoint();
@@ -977,7 +977,7 @@ static void opSayGetLastPos(Program* program)
 }
 
 // sayquit
-// 0x463810
+// 0x463810 op_sayquit_
 static void opSayQuit(Program* program)
 {
     if (_dialogQuit() != 0) {
@@ -987,7 +987,7 @@ static void opSayQuit(Program* program)
 
 // NOTE: Unused.
 //
-// 0x463828
+// 0x463828 getTimeOut_
 static int getTimeOut()
 {
     return _TimeOut;
@@ -995,14 +995,14 @@ static int getTimeOut()
 
 // NOTE: Unused.
 //
-// 0x463830
+// 0x463830 setTimeOut_
 static void setTimeOut(int value)
 {
     _TimeOut = value;
 }
 
 // saymessagetimeout
-// 0x463838
+// 0x463838 op_saymessagetimeout_
 static void opSayMessageTimeout(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
@@ -1016,7 +1016,7 @@ static void opSayMessageTimeout(Program* program)
 }
 
 // saymessage
-// 0x463890
+// 0x463890 op_saymessage_
 void opSayMessage(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -1047,7 +1047,7 @@ void opSayMessage(Program* program)
 }
 
 // gotoxy
-// 0x463980
+// 0x463980 op_gotoxy_
 void opGotoXY(Program* program)
 {
     int y = programStackPopInteger(program);
@@ -1059,7 +1059,7 @@ void opGotoXY(Program* program)
 }
 
 // addbuttonflag
-// 0x463A38
+// 0x463A38 op_addbuttonflag_
 static void opAddButtonFlag(Program* program)
 {
     int flag = programStackPopInteger(program);
@@ -1072,7 +1072,7 @@ static void opAddButtonFlag(Program* program)
 }
 
 // addregionflag
-// 0x463B10
+// 0x463B10 op_addregionflag_
 static void opAddRegionFlag(Program* program)
 {
     int flag = programStackPopInteger(program);
@@ -1085,7 +1085,7 @@ static void opAddRegionFlag(Program* program)
 }
 
 // addbutton
-// 0x463BE8
+// 0x463BE8 op_addbutton_
 void opAddButton(Program* program)
 {
     int height = programStackPopInteger(program);
@@ -1105,7 +1105,7 @@ void opAddButton(Program* program)
 }
 
 // addbuttontext
-// 0x463DF4
+// 0x463DF4 op_addbuttontext_
 void opAddButtonText(Program* program)
 {
     const char* text = programStackPopString(program);
@@ -1117,7 +1117,7 @@ void opAddButtonText(Program* program)
 }
 
 // addbuttongfx
-// 0x463EEC
+// 0x463EEC op_addbuttongfx_
 void opAddButtonGfx(Program* program)
 {
     ProgramValue v1 = programStackPopValue(program);
@@ -1143,7 +1143,7 @@ void opAddButtonGfx(Program* program)
 }
 
 // addbuttonproc
-// 0x4640DC
+// 0x4640DC op_addbuttonproc_
 static void opAddButtonProc(Program* program)
 {
     int v1 = programStackPopInteger(program);
@@ -1159,7 +1159,7 @@ static void opAddButtonProc(Program* program)
 }
 
 // addbuttonrightproc
-// 0x4642A8
+// 0x4642A8 op_addbuttonrightproc_
 static void opAddButtonRightProc(Program* program)
 {
     int v1 = programStackPopInteger(program);
@@ -1173,7 +1173,7 @@ static void opAddButtonRightProc(Program* program)
 }
 
 // showwin
-// 0x4643D4
+// 0x4643D4 op_showwin_
 static void opShowWin(Program* program)
 {
     scriptWindowSelectId(program->windowId);
@@ -1181,7 +1181,7 @@ static void opShowWin(Program* program)
 }
 
 // deletebutton
-// 0x4643E4
+// 0x4643E4 op_deletebutton_
 static void opDeleteButton(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
@@ -1215,7 +1215,7 @@ static void opDeleteButton(Program* program)
 }
 
 // fillwin
-// 0x46449C
+// 0x46449C op_fillwin_
 void opFillWin(Program* program)
 {
     ProgramValue b = programStackPopValue(program);
@@ -1258,7 +1258,7 @@ void opFillWin(Program* program)
 }
 
 // fillrect
-// 0x4645FC
+// 0x4645FC op_fillrect_
 void opFillRect(Program* program)
 {
     ProgramValue b = programStackPopValue(program);
@@ -1305,21 +1305,21 @@ void opFillRect(Program* program)
 }
 
 // hidemouse
-// 0x46489C
+// 0x46489C op_hidemouse_
 static void opHideMouse(Program* program)
 {
     mouseHideCursor();
 }
 
 // showmouse
-// 0x4648A4
+// 0x4648A4 op_showmouse_
 static void opShowMouse(Program* program)
 {
     mouseShowCursor();
 }
 
 // mouseshape
-// 0x4648AC
+// 0x4648AC op_mouseshape_
 void opMouseShape(Program* program)
 {
     int v1 = programStackPopInteger(program);
@@ -1332,14 +1332,14 @@ void opMouseShape(Program* program)
 }
 
 // setglobalmousefunc
-// 0x4649C4
+// 0x4649C4 op_setglobalmousefunc_
 static void opSetGlobalMouseFunc(Program* Program)
 {
     programFatalError("setglobalmousefunc not defined");
 }
 
 // displaygfx
-// 0x4649D4
+// 0x4649D4 op_displaygfx_
 void opDisplayGfx(Program* program)
 {
     int height = programStackPopInteger(program);
@@ -1353,7 +1353,7 @@ void opDisplayGfx(Program* program)
 }
 
 // loadpalettetable
-// 0x464ADC
+// 0x464ADC op_loadpalettetable_
 static void opLoadPaletteTable(Program* program)
 {
     char* path = programStackPopString(program);
@@ -1363,7 +1363,7 @@ static void opLoadPaletteTable(Program* program)
 }
 
 // addnamedevent
-// 0x464B54
+// 0x464B54 op_addNamedEvent_
 static void opAddNamedEvent(Program* program)
 {
     int proc = programStackPopInteger(program);
@@ -1372,7 +1372,7 @@ static void opAddNamedEvent(Program* program)
 }
 
 // addnamedhandler
-// 0x464BE8
+// 0x464BE8 op_addNamedHandler_
 static void opAddNamedHandler(Program* program)
 {
     int proc = programStackPopInteger(program);
@@ -1381,7 +1381,7 @@ static void opAddNamedHandler(Program* program)
 }
 
 // clearnamed
-// 0x464C80
+// 0x464C80 op_clearNamed_
 static void opClearNamed(Program* program)
 {
     char* string = programStackPopString(program);
@@ -1389,7 +1389,7 @@ static void opClearNamed(Program* program)
 }
 
 // signalnamed
-// 0x464CE4
+// 0x464CE4 op_signalNamed_
 static void opSignalNamed(Program* program)
 {
     char* str = programStackPopString(program);
@@ -1397,7 +1397,7 @@ static void opSignalNamed(Program* program)
 }
 
 // addkey
-// 0x464D48
+// 0x464D48 op_addkey_
 static void opAddKey(Program* program)
 {
     int proc = programStackPopInteger(program);
@@ -1417,7 +1417,7 @@ static void opAddKey(Program* program)
 }
 
 // deletekey
-// 0x464E24
+// 0x464E24 op_deletekey_
 static void opDeleteKey(Program* program)
 {
     int key = programStackPopInteger(program);
@@ -1436,7 +1436,7 @@ static void opDeleteKey(Program* program)
 }
 
 // refreshmouse
-// 0x464EB0
+// 0x464EB0 op_refreshmouse_
 void opRefreshMouse(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -1447,7 +1447,7 @@ void opRefreshMouse(Program* program)
 }
 
 // setfont
-// 0x464F18
+// 0x464F18 op_setfont_
 static void opSetFont(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -1458,7 +1458,7 @@ static void opSetFont(Program* program)
 }
 
 // setflags
-// 0x464F84
+// 0x464F84 op_settextflags_
 static void opSetTextFlags(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -1469,7 +1469,7 @@ static void opSetTextFlags(Program* program)
 }
 
 // settextcolor
-// 0x464FF0
+// 0x464FF0 op_settextcolor_
 static void opSetTextColor(Program* program)
 {
     ProgramValue value[3];
@@ -1497,7 +1497,7 @@ static void opSetTextColor(Program* program)
 }
 
 // sayoptioncolor
-// 0x465140
+// 0x465140 op_sayoptioncolor_
 static void opSayOptionColor(Program* program)
 {
     ProgramValue value[3];
@@ -1525,7 +1525,7 @@ static void opSayOptionColor(Program* program)
 }
 
 // sayreplycolor
-// 0x465290
+// 0x465290 op_sayreplycolor_
 static void opSayReplyColor(Program* program)
 {
     ProgramValue value[3];
@@ -1553,7 +1553,7 @@ static void opSayReplyColor(Program* program)
 }
 
 // sethighlightcolor
-// 0x4653E0
+// 0x4653E0 op_sethighlightcolor_
 static void opSetHighlightColor(Program* program)
 {
     ProgramValue value[3];
@@ -1581,7 +1581,7 @@ static void opSetHighlightColor(Program* program)
 }
 
 // sayreplywindow
-// 0x465530
+// 0x465530 op_sayreplywindow_
 void opSayReplyWindow(Program* program)
 {
     ProgramValue v2 = programStackPopValue(program);
@@ -1607,7 +1607,7 @@ void opSayReplyWindow(Program* program)
 }
 
 // sayreplyflags
-// 0x465688
+// 0x465688 op_sayreplyflags_
 static void opSayReplyFlags(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -1618,7 +1618,7 @@ static void opSayReplyFlags(Program* program)
 }
 
 // sayoptionflags
-// 0x4656F4
+// 0x4656F4 op_sayoptionflags_
 static void opSayOptionFlags(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -1629,7 +1629,7 @@ static void opSayOptionFlags(Program* program)
 }
 
 // sayoptionwindow
-// 0x465760
+// 0x465760 op_sayoptionwindow_
 void opSayOptionWindow(Program* program)
 {
     ProgramValue v2 = programStackPopValue(program);
@@ -1655,7 +1655,7 @@ void opSayOptionWindow(Program* program)
 }
 
 // sayborder
-// 0x4658B8
+// 0x4658B8 op_sayborder_
 static void opSayBorder(Program* program)
 {
     int y = programStackPopInteger(program);
@@ -1667,7 +1667,7 @@ static void opSayBorder(Program* program)
 }
 
 // sayscrollup
-// 0x465978
+// 0x465978 op_sayscrollup_
 void opSayScrollUp(Program* program)
 {
     ProgramValue v6 = programStackPopValue(program);
@@ -1739,7 +1739,7 @@ void opSayScrollUp(Program* program)
 }
 
 // sayscrolldown
-// 0x465CAC
+// 0x465CAC op_sayscrolldown_
 void opSayScrollDown(Program* program)
 {
     ProgramValue v6 = programStackPopValue(program);
@@ -1813,7 +1813,7 @@ void opSayScrollDown(Program* program)
 }
 
 // saysetspacing
-// 0x465FE0
+// 0x465FE0 op_saysetspacing_
 static void opSaySetSpacing(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -1824,7 +1824,7 @@ static void opSaySetSpacing(Program* program)
 }
 
 // sayrestart
-// 0x46604C
+// 0x46604C op_sayrestart_
 static void opSayRestart(Program* program)
 {
     if (_dialogRestart() != 0) {
@@ -1832,7 +1832,7 @@ static void opSayRestart(Program* program)
     }
 }
 
-// 0x466064
+// 0x466064 soundCallbackInterpret_
 static void intLibSoundCallback(void* userData, int event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
@@ -1841,7 +1841,7 @@ static void intLibSoundCallback(void* userData, int event)
     }
 }
 
-// 0x466070
+// 0x466070 soundDeleteInterpret_
 static int intLibSoundDelete(int value)
 {
     if (value == -1) {
@@ -1869,7 +1869,7 @@ static int intLibSoundDelete(int value)
     return 1;
 }
 
-// 0x466110
+// 0x466110 soundStartInterpret_
 static int intLibSoundPlay(char* fileName, int mode)
 {
     int type = SOUND_TYPE_MEMORY;
@@ -1988,7 +1988,7 @@ err:
     return -1;
 }
 
-// 0x46655C
+// 0x46655C soundPauseInterpret_
 static int intLibSoundPause(int value)
 {
     if (value == -1) {
@@ -2014,7 +2014,7 @@ static int intLibSoundPause(int value)
     return rc == SOUND_NO_ERROR;
 }
 
-// 0x4665C8
+// 0x4665C8 soundRewindInterpret_
 static int intLibSoundRewind(int value)
 {
     if (value == -1) {
@@ -2040,7 +2040,7 @@ static int intLibSoundRewind(int value)
     return soundPlay(sound) == SOUND_NO_ERROR;
 }
 
-// 0x46662C
+// 0x46662C soundUnpauseInterpret_
 static int intLibSoundResume(int value)
 {
     if (value == -1) {
@@ -2067,7 +2067,7 @@ static int intLibSoundResume(int value)
 }
 
 // soundplay
-// 0x466698
+// 0x466698 op_soundplay_
 static void opSoundPlay(Program* program)
 {
     int flags = programStackPopInteger(program);
@@ -2080,7 +2080,7 @@ static void opSoundPlay(Program* program)
 }
 
 // soundpause
-// 0x466768
+// 0x466768 op_soundpause_
 static void opSoundPause(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -2088,7 +2088,7 @@ static void opSoundPause(Program* program)
 }
 
 // soundresume
-// 0x4667C0
+// 0x4667C0 op_soundresume_
 static void opSoundResume(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -2096,7 +2096,7 @@ static void opSoundResume(Program* program)
 }
 
 // soundstop
-// 0x466818
+// 0x466818 op_soundstop_
 static void opSoundStop(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -2104,7 +2104,7 @@ static void opSoundStop(Program* program)
 }
 
 // soundrewind
-// 0x466870
+// 0x466870 op_soundrewind_
 static void opSoundRewind(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -2112,7 +2112,7 @@ static void opSoundRewind(Program* program)
 }
 
 // sounddelete
-// 0x4668C8
+// 0x4668C8 op_sounddelete_
 static void opSoundDelete(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -2120,7 +2120,7 @@ static void opSoundDelete(Program* program)
 }
 
 // SetOneOptPause
-// 0x466920
+// 0x466920 op_setoneoptpause_
 static void opSetOneOptPause(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -2138,14 +2138,14 @@ static void opSetOneOptPause(Program* program)
     _dialogToggleMediaFlag(8);
 }
 
-// 0x466994
+// 0x466994 updateIntLib_
 void intLibUpdate()
 {
     _nevs_update();
     intExtraUpdate();
 }
 
-// 0x4669A0
+// 0x4669A0 intlibClose_
 void intLibExit()
 {
     _dialogClose();
@@ -2166,7 +2166,7 @@ void intLibExit()
     }
 }
 
-// 0x466A04
+// 0x466A04 intLibDoInput_
 static bool intLibDoInput(int key)
 {
     if (key < 0 || key >= INT_LIB_KEY_HANDLERS_CAPACITY) {
@@ -2192,7 +2192,7 @@ static bool intLibDoInput(int key)
     return true;
 }
 
-// 0x466A70
+// 0x466A70 initIntlib_
 void intLibInit()
 {
     scriptWindowAddInputFunc(intLibDoInput);
@@ -2286,7 +2286,7 @@ void intLibInit()
     dialogInit();
 }
 
-// 0x466F6C
+// 0x466F6C interpretRegisterProgramDeleteCallback_
 void intLibRegisterProgramDeleteCallback(IntLibProgramDeleteCallback* callback)
 {
     int index;
@@ -2308,7 +2308,7 @@ void intLibRegisterProgramDeleteCallback(IntLibProgramDeleteCallback* callback)
     gIntLibProgramDeleteCallbacks[index] = callback;
 }
 
-// 0x467040
+// 0x467040 removeProgramReferences_1
 void intLibRemoveProgramReferences(Program* program)
 {
     for (int index = 0; index < INT_LIB_KEY_HANDLERS_CAPACITY; index++) {

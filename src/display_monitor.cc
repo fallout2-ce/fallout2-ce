@@ -98,7 +98,7 @@ static unsigned int gDisplayMonitorLastBeepTimestamp;
 static std::ofstream gConsoleFileStream;
 static int gConsoleFilePrintCount = 0;
 
-// 0x431610
+// 0x431610 display_init_
 int displayMonitorInit()
 {
     if (!gDisplayMonitorInitialized) {
@@ -205,7 +205,7 @@ int displayMonitorInit()
     return 0;
 }
 
-// 0x431800
+// 0x431800 display_reset_
 int displayMonitorReset()
 {
     // NOTE: Uninline.
@@ -217,7 +217,7 @@ int displayMonitorReset()
     return 0;
 }
 
-// 0x43184C
+// 0x43184C display_exit_
 void displayMonitorExit()
 {
     if (gDisplayMonitorInitialized) {
@@ -229,7 +229,7 @@ void displayMonitorExit()
     }
 }
 
-// 0x43186C
+// 0x43186C display_print_
 void displayMonitorAddMessage(const char* str)
 {
     if (!gDisplayMonitorInitialized || str == nullptr) {
@@ -327,7 +327,7 @@ void displayMonitorAddMessage(const char* str)
 
 // NOTE: Inlined.
 //
-// 0x431A2C
+// 0x431A2C display_clear_
 static void display_clear()
 {
     int index;
@@ -343,7 +343,7 @@ static void display_clear()
     }
 }
 
-// 0x431A78
+// 0x431A78 display_redraw_
 static void displayMonitorRefresh()
 {
     if (!gDisplayMonitorInitialized) {
@@ -382,7 +382,7 @@ static void displayMonitorRefresh()
     fontSetCurrent(oldFont);
 }
 
-// 0x431B70
+// 0x431B70 display_scroll_up_
 static void displayMonitorScrollUpOnMouseDown(int btn, int keyCode)
 {
     if ((gDisplayMonitorLinesCapacity + _disp_curr - 1) % gDisplayMonitorLinesCapacity != _disp_start) {
@@ -391,7 +391,7 @@ static void displayMonitorScrollUpOnMouseDown(int btn, int keyCode)
     }
 }
 
-// 0x431B9C
+// 0x431B9C display_scroll_down_
 static void displayMonitorScrollDownOnMouseDown(int btn, int keyCode)
 {
     if (_disp_curr != _disp_start) {
@@ -400,25 +400,25 @@ static void displayMonitorScrollDownOnMouseDown(int btn, int keyCode)
     }
 }
 
-// 0x431BC8
+// 0x431BC8 display_arrow_up_
 static void displayMonitorScrollUpOnMouseEnter(int btn, int keyCode)
 {
     gameMouseSetCursor(MOUSE_CURSOR_SMALL_ARROW_UP);
 }
 
-// 0x431BD4
+// 0x431BD4 display_arrow_down_
 static void displayMonitorScrollDownOnMouseEnter(int btn, int keyCode)
 {
     gameMouseSetCursor(MOUSE_CURSOR_SMALL_ARROW_DOWN);
 }
 
-// 0x431BE0
+// 0x431BE0 display_arrow_restore_
 static void displayMonitorOnMouseExit(int btn, int keyCode)
 {
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 }
 
-// 0x431BEC
+// 0x431BEC display_disable_
 void displayMonitorDisable()
 {
     if (gDisplayMonitorEnabled) {
@@ -428,7 +428,7 @@ void displayMonitorDisable()
     }
 }
 
-// 0x431C14
+// 0x431C14 display_enable_
 void displayMonitorEnable()
 {
     if (!gDisplayMonitorEnabled) {

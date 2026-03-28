@@ -45,7 +45,7 @@ static void dfileUngetCompressed(DFile* stream, int ch);
 
 // Reads .DAT file contents.
 //
-// 0x4E4F58
+// 0x4E4F58 dbase_open_
 DBase* dbaseOpen(const char* filePath)
 {
     assert(filePath); // "filename", "dfile.c", 74
@@ -164,7 +164,7 @@ err:
 // Closes [dbase], all open file handles, frees all associated resources,
 // including the [dbase] itself.
 //
-// 0x4E5270
+// 0x4E5270 dbase_close_
 bool dbaseClose(DBase* dbase)
 {
     assert(dbase); // "dbase", "dfile.c", 173
@@ -198,7 +198,7 @@ bool dbaseClose(DBase* dbase)
     return true;
 }
 
-// 0x4E5308
+// 0x4E5308 dbase_findfirst_
 bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* pattern)
 {
     for (int index = 0; index < dbase->entriesLength; index++) {
@@ -214,7 +214,7 @@ bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* 
     return false;
 }
 
-// 0x4E53A0
+// 0x4E53A0 dbase_findnext_
 bool dbaseFindNextEntry(DBase* dbase, DFileFindData* findFileData)
 {
     for (int index = findFileData->index + 1; index < dbase->entriesLength; index++) {
@@ -229,7 +229,7 @@ bool dbaseFindNextEntry(DBase* dbase, DFileFindData* findFileData)
     return false;
 }
 
-// 0x4E541C
+// 0x4E541C dbase_findclose_
 bool dbaseFindClose(DBase* dbase, DFileFindData* findFileData)
 {
     return true;
@@ -237,7 +237,7 @@ bool dbaseFindClose(DBase* dbase, DFileFindData* findFileData)
 
 // [filelength].
 //
-// 0x4E5424
+// 0x4E5424 dfile_filelength_
 long dfileGetSize(DFile* stream)
 {
     return stream->entry->uncompressedSize;
@@ -245,7 +245,7 @@ long dfileGetSize(DFile* stream)
 
 // [fclose].
 //
-// 0x4E542C
+// 0x4E542C dfile_fclose_
 int dfileClose(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 253
@@ -302,7 +302,7 @@ int dfileClose(DFile* stream)
 
 // [fopen].
 //
-// 0x4E5504
+// 0x4E5504 dfile_fopen_
 DFile* dfileOpen(DBase* dbase, const char* filePath, const char* mode)
 {
     assert(dbase); // dfile.c, 295
@@ -314,7 +314,7 @@ DFile* dfileOpen(DBase* dbase, const char* filePath, const char* mode)
 
 // [vfprintf].
 //
-// 0x4E56C0
+// 0x4E56C0 dfile_vfprintf_
 int dfilePrintFormattedArgs(DFile* stream, const char* format, va_list args)
 {
     assert(stream); // "stream", "dfile.c", 368
@@ -328,7 +328,7 @@ int dfilePrintFormattedArgs(DFile* stream, const char* format, va_list args)
 // This function reports \r\n sequence as one character \n, even though it
 // consumes two characters from the underlying stream.
 //
-// 0x4E5700
+// 0x4E5700 dfile_fgetc_
 int dfileReadChar(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 384
@@ -355,7 +355,7 @@ int dfileReadChar(DFile* stream)
 // Both Windows (\r\n) and Unix (\n) line endings are recognized. Windows
 // line ending is reported as \n.
 //
-// 0x4E5764
+// 0x4E5764 dfile_fgets_
 char* dfileReadString(char* string, int size, DFile* stream)
 {
     assert(string); // "s", "dfile.c", 407
@@ -401,7 +401,7 @@ char* dfileReadString(char* string, int size, DFile* stream)
 
 // [fputc].
 //
-// 0x4E5830
+// 0x4E5830 dfile_fputc_
 int dfileWriteChar(int ch, DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 437
@@ -411,7 +411,7 @@ int dfileWriteChar(int ch, DFile* stream)
 
 // [fputs].
 //
-// 0x4E5854
+// 0x4E5854 dfile_fputs_
 int dfileWriteString(const char* string, DFile* stream)
 {
     assert(string); // "s", "dfile.c", 448
@@ -422,7 +422,7 @@ int dfileWriteString(const char* string, DFile* stream)
 
 // [fread].
 //
-// 0x4E58FC
+// 0x4E58FC dfile_fread_
 size_t dfileRead(void* ptr, size_t size, size_t count, DFile* stream)
 {
     assert(ptr); // "ptr", "dfile.c", 499
@@ -473,7 +473,7 @@ size_t dfileRead(void* ptr, size_t size, size_t count, DFile* stream)
 
 // [fwrite].
 //
-// 0x4E59F8
+// 0x4E59F8 dfile_fwrite_
 size_t dfileWrite(const void* ptr, size_t size, size_t count, DFile* stream)
 {
     assert(ptr); // "ptr", "dfile.c", 538
@@ -484,7 +484,7 @@ size_t dfileWrite(const void* ptr, size_t size, size_t count, DFile* stream)
 
 // [fseek].
 //
-// 0x4E5A74
+// 0x4E5A74 dfile_fseek_
 int dfileSeek(DFile* stream, long offset, int origin)
 {
     assert(stream); // "stream", "dfile.c", 569
@@ -593,7 +593,7 @@ int dfileSeek(DFile* stream, long offset, int origin)
 
 // [ftell].
 //
-// 0x4E5C88
+// 0x4E5C88 dfile_ftell_
 long dfileTell(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 654
@@ -603,7 +603,7 @@ long dfileTell(DFile* stream)
 
 // [rewind].
 //
-// 0x4E5CB0
+// 0x4E5CB0 dfile_rewind_
 void dfileRewind(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 664
@@ -615,7 +615,7 @@ void dfileRewind(DFile* stream)
 
 // [feof].
 //
-// 0x4E5D10
+// 0x4E5D10 dfile_feof_
 int dfileEof(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 685
@@ -626,7 +626,7 @@ int dfileEof(DFile* stream)
 // The [bsearch] comparison callback, which is used to find [DBaseEntry] for
 // specified [filePath].
 //
-// 0x4E5D70
+// 0x4E5D70 dinfo_bsearch_compare_
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
 {
     const char* filePath = (const char*)file;
@@ -635,7 +635,7 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
     return compat_stricmp(filePath, entry->path);
 }
 
-// 0x4E5D9C
+// 0x4E5D9C dfile_fopen_helper_
 static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* mode, DFile* dfile)
 {
     DBaseEntry* entry = (DBaseEntry*)bsearch(filePath, dbase->entries, dbase->entriesLength, sizeof(*dbase->entries), dbaseFindEntryByFilePath);
@@ -741,7 +741,7 @@ err:
     return nullptr;
 }
 
-// 0x4E5F9C
+// 0x4E5F9C dfile_fgetc_helper_
 static int dfileReadCharInternal(DFile* stream)
 {
     if (stream->entry->compressed == 1) {
@@ -797,7 +797,7 @@ static int dfileReadCharInternal(DFile* stream)
     return ch;
 }
 
-// 0x4E6078
+// 0x4E6078 dfile_read_comp_bytes_
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size)
 {
     if ((stream->flags & DFILE_HAS_COMPRESSED_UNGETC) != 0) {
@@ -852,7 +852,7 @@ static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size)
 
 // NOTE: Inlined.
 //
-// 0x4E613C
+// 0x4E613C dfile_zungetc_
 static void dfileUngetCompressed(DFile* stream, int ch)
 {
     stream->compressedUngotten = ch;

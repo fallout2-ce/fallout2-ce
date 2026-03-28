@@ -65,7 +65,7 @@ static int _speechStartTime = 0;
 // 0x613CA0
 static char _lips_subdir_name[14];
 
-// 0x47AAC0
+// 0x47AAC0 lips_fix_string_
 static char* lips_fix_string(const char* fileName, size_t length)
 {
     // 0x613CAE
@@ -76,7 +76,7 @@ static char* lips_fix_string(const char* fileName, size_t length)
     return tmp_str;
 }
 
-// 0x47AAD8
+// 0x47AAD8 lips_bkg_proc_
 void lipsTicker()
 {
     int v0;
@@ -145,7 +145,7 @@ void lipsTicker()
     soundContinueAll();
 }
 
-// 0x47AC2C
+// 0x47AC2C lips_play_speech_
 int lipsStart()
 {
     gLipsData.flags |= LIPS_FLAG_0x02;
@@ -185,7 +185,7 @@ int lipsStart()
     return 0;
 }
 
-// 0x47AD98
+// 0x47AD98 lips_read_lipsynch_info_
 static int lipsReadV1(LipsData* lipsData, File* stream)
 {
     int sound;
@@ -231,7 +231,7 @@ static int lipsReadV1(LipsData* lipsData, File* stream)
 }
 
 // lips_load_file
-// 0x47AFAC
+// 0x47AFAC lips_load_file_
 int lipsLoad(const char* audioFileName, const char* headFileName)
 {
     char* sep;
@@ -397,7 +397,7 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
 }
 
 // lips_make_speech
-// 0x47B5D0
+// 0x47B5D0 lips_make_speech_
 static int _lips_make_speech()
 {
     if (gLipsData.field_14 != nullptr) {
@@ -439,7 +439,7 @@ static int _lips_make_speech()
     return 0;
 }
 
-// 0x47B730
+// 0x47B730 lips_free_speech_
 int lipsFree()
 {
     if (gLipsData.field_14 != nullptr) {

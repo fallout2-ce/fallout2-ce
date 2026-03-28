@@ -284,13 +284,13 @@ static int gMovieTimerArtimer4;
 
 // Returns game time in ticks (1/10 second).
 //
-// 0x4A3330
+// 0x4A3330 game_time_
 unsigned int gameTimeGetTime()
 {
     return gGameTime;
 }
 
-// 0x4A3338
+// 0x4A3338 game_time_date_
 void gameTimeGetDate(int* monthPtr, int* dayPtr, int* yearPtr)
 {
     int year = (gGameTime / GAME_TIME_TICKS_PER_DAY + gStartDay) / 365 + gStartYear;
@@ -333,7 +333,7 @@ void gameTimeGetDate(int* monthPtr, int* dayPtr, int* yearPtr)
 // - 11:59 P.M. -> 2359
 //
 // game_time_hour
-// 0x4A33C8
+// 0x4A33C8 game_time_hour_
 int gameTimeGetHour()
 {
     return 100 * ((gGameTime / 600) / 60 % 24) + (gGameTime / 600) % 60;
@@ -341,7 +341,7 @@ int gameTimeGetHour()
 
 // Returns time string (h:mm)
 //
-// 0x4A3420
+// 0x4A3420 game_time_hour_str_
 char* gameTimeGetTimeString()
 {
     // 0x66772C
@@ -353,7 +353,7 @@ char* gameTimeGetTimeString()
 
 // TODO: Make unsigned.
 //
-// 0x4A347C
+// 0x4A347C set_game_time_
 void gameTimeSetTime(unsigned int time)
 {
     if (time == 0) {
@@ -363,7 +363,7 @@ void gameTimeSetTime(unsigned int time)
     gGameTime = time;
 }
 
-// 0x4A34CC
+// 0x4A34CC inc_game_time_
 void gameTimeAddTicks(int ticks)
 {
     gGameTime += ticks;
@@ -382,14 +382,14 @@ void gameTimeAddTicks(int ticks)
     }
 }
 
-// 0x4A3518
+// 0x4A3518 inc_game_time_in_seconds_
 void gameTimeAddSeconds(int seconds)
 {
     // NOTE: Uninline.
     gameTimeAddTicks(seconds * 10);
 }
 
-// 0x4A3570
+// 0x4A3570 gtime_q_add_
 int gameTimeScheduleUpdateEvent()
 {
     // ticks until midnight
@@ -407,7 +407,7 @@ int gameTimeScheduleUpdateEvent()
     return 0;
 }
 
-// 0x4A3620
+// 0x4A3620 gtime_q_process_
 int gameTimeEventProcess(Object* obj, void* data)
 {
     int movie_index;
@@ -440,7 +440,7 @@ int gameTimeEventProcess(Object* obj, void* data)
     return stopProcess;
 }
 
-// 0x4A3690
+// 0x4A3690 scriptsCheckGameEvents_
 int _scriptsCheckGameEvents(int* moviePtr, int window)
 {
     int movie = -1;
@@ -509,7 +509,7 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
     return 0;
 }
 
-// 0x4A382C
+// 0x4A382C scr_map_q_process_
 int mapUpdateEventProcess(Object* obj, void* data)
 {
     scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_UPDATE);
@@ -528,7 +528,7 @@ int mapUpdateEventProcess(Object* obj, void* data)
 }
 
 // new_obj_id
-// 0x4A386C
+// 0x4A386C new_obj_id_
 int scriptsNewObjectId()
 {
     Object* ptr;
@@ -555,7 +555,7 @@ int scriptsNewObjectId()
     return gObjectIdCounter;
 }
 
-// 0x4A390C
+// 0x4A390C scr_find_sid_from_program_
 int scriptGetSid(Program* program)
 {
     for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
@@ -574,7 +574,7 @@ int scriptGetSid(Program* program)
     return -1;
 }
 
-// 0x4A39AC
+// 0x4A39AC scr_find_obj_from_program_
 Object* scriptGetSelf(Program* program)
 {
     int sid = scriptGetSid(program);
@@ -626,7 +626,7 @@ Object* scriptGetSelf(Program* program)
     return object;
 }
 
-// 0x4A3B0C
+// 0x4A3B0C scr_set_objs_
 int scriptSetObjects(int sid, Object* source, Object* target)
 {
     Script* script;
@@ -640,7 +640,7 @@ int scriptSetObjects(int sid, Object* source, Object* target)
     return 0;
 }
 
-// 0x4A3B34
+// 0x4A3B34 scr_set_ext_param_
 void scriptSetFixedParam(int sid, int value)
 {
     Script* script;
@@ -649,7 +649,7 @@ void scriptSetFixedParam(int sid, int value)
     }
 }
 
-// 0x4A3B54
+// 0x4A3B54 scr_set_action_num_
 int scriptSetActionBeingUsed(int sid, int value)
 {
     Script* scr;
@@ -663,7 +663,7 @@ int scriptSetActionBeingUsed(int sid, int value)
     return 0;
 }
 
-// 0x4A3B74
+// 0x4A3B74 loadProgram_
 static Program* scriptsCreateProgramByName(const char* name)
 {
     char path[COMPAT_MAX_PATH];
@@ -676,7 +676,7 @@ static Program* scriptsCreateProgramByName(const char* name)
     return programCreateByPath(path);
 }
 
-// 0x4A3C2C
+// 0x4A3C2C doBkProcesses_
 static void _doBkProcesses()
 {
     if (!gBackgroundProcessTimeInitialized) {
@@ -707,7 +707,7 @@ static void _doBkProcesses()
     }
 }
 
-// 0x4A3CA0
+// 0x4A3CA0 script_chk_critters_
 static void _script_chk_critters()
 {
     if (!_gdialogActive() && !isInCombat()) {
@@ -750,7 +750,7 @@ static void _script_chk_critters()
 
 // TODO: Check.
 //
-// 0x4A3D84
+// 0x4A3D84 script_chk_timed_events_
 static void _script_chk_timed_events()
 {
     int currentTime = _get_bk_time();
@@ -788,21 +788,21 @@ static void _script_chk_timed_events()
     }
 }
 
-// 0x4A3E30
+// 0x4A3E30 scrSetQueueTestVals_
 void _scrSetQueueTestVals(Object* obj, int value)
 {
     _scrQueueTestObj = obj;
     _scrQueueTestValue = value;
 }
 
-// 0x4A3E3C
+// 0x4A3E3C scrQueueRemoveFixed_
 int _scrQueueRemoveFixed(Object* obj, void* data)
 {
     ScriptEvent* scriptEvent = (ScriptEvent*)data;
     return obj == _scrQueueTestObj && scriptEvent->fixedParam == _scrQueueTestValue;
 }
 
-// 0x4A3E60
+// 0x4A3E60 script_q_add_
 int scriptAddTimerEvent(int sid, int delay, int param)
 {
     ScriptEvent* scriptEvent = (ScriptEvent*)internal_malloc(sizeof(*scriptEvent));
@@ -827,7 +827,7 @@ int scriptAddTimerEvent(int sid, int delay, int param)
     return 0;
 }
 
-// 0x4A3EDC
+// 0x4A3EDC script_q_save_
 int scriptEventWrite(File* stream, void* data)
 {
     ScriptEvent* scriptEvent = (ScriptEvent*)data;
@@ -838,7 +838,7 @@ int scriptEventWrite(File* stream, void* data)
     return 0;
 }
 
-// 0x4A3F04
+// 0x4A3F04 script_q_load_
 int scriptEventRead(File* stream, void** dataPtr)
 {
     ScriptEvent* scriptEvent = (ScriptEvent*)internal_malloc(sizeof(*scriptEvent));
@@ -861,7 +861,7 @@ err:
     return -1;
 }
 
-// 0x4A3F4C
+// 0x4A3F4C script_q_process_
 int scriptEventProcess(Object* obj, void* data)
 {
     ScriptEvent* scriptEvent = (ScriptEvent*)data;
@@ -878,7 +878,7 @@ int scriptEventProcess(Object* obj, void* data)
     return 0;
 }
 
-// 0x4A3F80
+// 0x4A3F80 scripts_clear_state_
 static int scriptsClearPendingRequests()
 {
     gScriptsRequests = 0;
@@ -887,7 +887,7 @@ static int scriptsClearPendingRequests()
 
 // NOTE: Inlined.
 //
-// 0x4A3F90
+// 0x4A3F90 scripts_clear_combat_requests_
 int _scripts_clear_combat_requests(Script* script)
 {
     if ((gScriptsRequests & SCRIPT_REQUEST_COMBAT) != 0 && gScriptsRequestedCSD.attacker == script->owner) {
@@ -962,7 +962,7 @@ static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
     return 0;
 }
 
-// 0x4A3FB4
+// 0x4A3FB4 scripts_check_state_
 int scriptsHandleRequests()
 {
     if (gScriptsRequests == 0) {
@@ -1031,7 +1031,7 @@ int scriptsHandleRequests()
     return 0;
 }
 
-// 0x4A43A0
+// 0x4A43A0 scripts_check_state_in_combat_
 int _scripts_check_state_in_combat()
 {
     if ((gScriptsRequests & SCRIPT_REQUEST_ELEVATOR) != 0) {
@@ -1049,7 +1049,7 @@ int _scripts_check_state_in_combat()
     return 0;
 }
 
-// 0x4A457C
+// 0x4A457C scripts_request_combat_
 int scriptsRequestCombat(CombatStartData* combat)
 {
     if ((gScriptsRequests & SCRIPT_REQUEST_0x0400) != 0) {
@@ -1069,7 +1069,7 @@ int scriptsRequestCombat(CombatStartData* combat)
 
 // Likely related to random encounter, ala scriptsRequestRandomEncounter RELEASE
 //
-// 0x4A45D4
+// 0x4A45D4 scripts_request_combat_locked_
 void _scripts_request_combat_locked(CombatStartData* combat)
 {
     if (combat != nullptr) {
@@ -1081,7 +1081,7 @@ void _scripts_request_combat_locked(CombatStartData* combat)
     gScriptsRequests |= (SCRIPT_REQUEST_0x0400 | SCRIPT_REQUEST_COMBAT);
 }
 
-// 0x4A461C
+// 0x4A461C scripts_request_townmap_
 void scripts_request_townmap()
 {
     if (isInCombat()) {
@@ -1092,7 +1092,7 @@ void scripts_request_townmap()
 }
 
 // request_world_map()
-// 0x4A4644
+// 0x4A4644 scripts_request_worldmap_
 void scriptsRequestWorldMap()
 {
     if (isInCombat()) {
@@ -1103,7 +1103,7 @@ void scriptsRequestWorldMap()
 }
 
 // scripts_request_elevator
-// 0x4A466C
+// 0x4A466C scripts_request_elevator_
 int scriptsRequestElevator(Object* obj, int elevatorType)
 {
     int elevatorLevel = gElevation;
@@ -1159,7 +1159,7 @@ int scriptsRequestElevator(Object* obj, int elevatorType)
     return 0;
 }
 
-// 0x4A4730
+// 0x4A4730 scripts_request_explosion_
 int scriptsRequestExplosion(int tile, int elevation, int minDamage, int maxDamage)
 {
     gScriptsRequests |= SCRIPT_REQUEST_EXPLOSION;
@@ -1170,20 +1170,20 @@ int scriptsRequestExplosion(int tile, int elevation, int minDamage, int maxDamag
     return 0;
 }
 
-// 0x4A4754
+// 0x4A4754 scripts_request_dialog_
 void scriptsRequestDialog(Object* obj)
 {
     gScriptsRequestedDialogWith = obj;
     gScriptsRequests |= SCRIPT_REQUEST_DIALOG;
 }
 
-// 0x4A4770
+// 0x4A4770 scripts_request_endgame_slideshow_
 void scriptsRequestEndgame()
 {
     gScriptsRequests |= SCRIPT_REQUEST_ENDGAME;
 }
 
-// 0x4A477C
+// 0x4A477C scripts_request_loot_container_
 int scriptsRequestLooting(Object* looter, Object* container)
 {
     gScriptsRequestedLootingBy = looter;
@@ -1192,7 +1192,7 @@ int scriptsRequestLooting(Object* looter, Object* container)
     return 0;
 }
 
-// 0x4A479C
+// 0x4A479C scripts_request_steal_container_
 int scriptsRequestStealing(Object* thief, Object* target)
 {
     gScriptsRequestedStealingBy = thief;
@@ -1209,7 +1209,7 @@ void _script_make_path(char* path)
 }
 
 // exec_script_proc
-// 0x4A4810
+// 0x4A4810 exec_script_proc_
 int scriptExecProc(int sid, int proc)
 {
     assert(proc >= 0 && proc < SCRIPT_PROC_COUNT);
@@ -1297,7 +1297,7 @@ int scriptExecProc(int sid, int proc)
 
 // Locate built-in procs for given script.
 //
-// 0x4A49D0
+// 0x4A49D0 scr_build_lookup_table_
 static int scriptLocateProcs(Script* script)
 {
     for (int proc = 0; proc < SCRIPT_PROC_COUNT; proc++) {
@@ -1311,7 +1311,7 @@ static int scriptLocateProcs(Script* script)
     return 0;
 }
 
-// 0x4A4A08
+// 0x4A4A08 scriptHasProc_
 bool scriptHasProc(int sid, int proc)
 {
     Script* scr;
@@ -1323,7 +1323,7 @@ bool scriptHasProc(int sid, int proc)
     return scr->procs[proc] != SCRIPT_PROC_NO_PROC;
 }
 
-// 0x4A4D50
+// 0x4A4D50 scrInitListInfo_
 static int scriptsLoadScriptsList()
 {
     char path[COMPAT_MAX_PATH];
@@ -1375,7 +1375,7 @@ static int scriptsLoadScriptsList()
 
 // NOTE: Inlined.
 //
-// 0x4A4EFC
+// 0x4A4EFC scrExitListInfo_
 static int scriptsFreeScriptsList()
 {
     if (gScriptsListEntries != nullptr) {
@@ -1388,7 +1388,7 @@ static int scriptsFreeScriptsList()
     return 0;
 }
 
-// 0x4A4F28
+// 0x4A4F28 scr_find_str_run_info_
 int _scr_find_str_run_info(int scriptIndex, int* /*unused*/, int sid)
 {
     Script* script;
@@ -1409,7 +1409,7 @@ static int scriptsGetFileName(int scriptIndex, char* name, size_t size)
 }
 
 // scr_set_dude_script
-// 0x4A4F90
+// 0x4A4F90 scr_set_dude_script_
 int scriptsSetDudeScript()
 {
     if (scriptsClearDudeScript() == -1) {
@@ -1443,7 +1443,7 @@ int scriptsSetDudeScript()
 }
 
 // scr_clear_dude_script
-// 0x4A5044
+// 0x4A5044 scr_clear_dude_script_
 int scriptsClearDudeScript()
 {
     if (gDude == nullptr) {
@@ -1466,7 +1466,7 @@ int scriptsClearDudeScript()
 }
 
 // scr_init
-// 0x4A50A8
+// 0x4A50A8 scr_init_
 int scriptsInit()
 {
     if (!messageListInit(&gScrMessageList)) {
@@ -1509,7 +1509,7 @@ int scriptsInit()
     return 0;
 }
 
-// 0x4A5120
+// 0x4A5120 scr_reset_
 int _scr_reset()
 {
     _scr_remove_all();
@@ -1522,7 +1522,7 @@ int _scr_reset()
     return 0;
 }
 
-// 0x4A5138
+// 0x4A5138 scr_game_init_
 int _scr_game_init()
 {
     int i;
@@ -1566,7 +1566,7 @@ int _scr_game_init()
     return 0;
 }
 
-// 0x4A5240
+// 0x4A5240 scr_game_reset_
 int scriptsReset()
 {
     debugPrint("\nScripts: [Game Reset]");
@@ -1577,7 +1577,7 @@ int scriptsReset()
     return scriptsSetDudeScript();
 }
 
-// 0x4A5274
+// 0x4A5274 scr_exit_
 int scriptsExit()
 {
     gScriptsEnabled = false;
@@ -1604,7 +1604,7 @@ int scriptsExit()
 }
 
 // scr_message_free
-// 0x4A52F4
+// 0x4A52F4 scr_message_free_
 int _scr_message_free()
 {
     for (int index = 0; index < SCRIPT_DIALOG_MESSAGE_LIST_CAPACITY; index++) {
@@ -1625,7 +1625,7 @@ int _scr_message_free()
     return 0;
 }
 
-// 0x4A535C
+// 0x4A535C scr_game_exit_
 int _scr_game_exit()
 {
     gGameModeEnabled = 0;
@@ -1648,7 +1648,7 @@ int _scr_game_exit()
 }
 
 // scr_enable
-// 0x4A53A8
+// 0x4A53A8 scr_enable_
 int scriptsEnable()
 {
     if (!gGameModeEnabled) {
@@ -1661,32 +1661,32 @@ int scriptsEnable()
 }
 
 // scr_disable
-// 0x4A53D0
+// 0x4A53D0 scr_disable_
 int scriptsDisable()
 {
     gScriptsEnabled = false;
     return 0;
 }
 
-// 0x4A53E0
+// 0x4A53E0 scr_enable_critters_
 void _scr_enable_critters()
 {
     gCritterProcessingEnabled = 1;
 }
 
-// 0x4A53F0
+// 0x4A53F0 scr_disable_critters_
 void _scr_disable_critters()
 {
     gCritterProcessingEnabled = 0;
 }
 
-// 0x4A5400
+// 0x4A5400 scr_game_save_
 int scriptsSaveGameGlobalVars(File* stream)
 {
     return fileWriteInt32List(stream, gGameGlobalVars, gGameGlobalVarsLength);
 }
 
-// 0x4A5424
+// 0x4A5424 scr_game_load_
 int scriptsLoadGameGlobalVars(File* stream)
 {
     return fileReadInt32List(stream, gGameGlobalVars, gGameGlobalVarsLength);
@@ -1697,7 +1697,7 @@ int scriptsLoadGameGlobalVars(File* stream)
 // read with [scriptsLoadGameGlobalVars], the second set is simply thrown away
 // using this function.
 //
-// 0x4A5448
+// 0x4A5448 scr_game_load2_
 int scriptsSkipGameGlobalVars(File* stream)
 {
     int* vars = (int*)internal_malloc(sizeof(*vars) * gGameGlobalVarsLength);
@@ -1715,7 +1715,7 @@ int scriptsSkipGameGlobalVars(File* stream)
     return 0;
 }
 
-// 0x4A5490
+// 0x4A5490 scr_header_load_
 static int _scr_header_load()
 {
     _num_script_indexes = 0;
@@ -1755,7 +1755,7 @@ static int _scr_header_load()
     return 0;
 }
 
-// 0x4A5590
+// 0x4A5590 scr_write_ScriptSubNode_
 static int scriptWrite(Script* scr, File* stream)
 {
     if (fileWriteInt32(stream, scr->sid) == -1) return -1;
@@ -1790,7 +1790,7 @@ static int scriptWrite(Script* scr, File* stream)
     return 0;
 }
 
-// 0x4A5704
+// 0x4A5704 scr_write_ScriptNode_
 static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream)
 {
     for (int index = 0; index < SCRIPT_LIST_EXTENT_SIZE; index++) {
@@ -1812,7 +1812,7 @@ static int scriptListExtentWrite(ScriptListExtent* scriptExtent, File* stream)
     return 0;
 }
 
-// 0x4A5768
+// 0x4A5768 scr_save_
 int scriptSaveAll(File* stream)
 {
     for (int scriptType = 0; scriptType < SCRIPT_TYPE_COUNT; scriptType++) {
@@ -1907,7 +1907,7 @@ int scriptSaveAll(File* stream)
     return 0;
 }
 
-// 0x4A5A1C
+// 0x4A5A1C scr_read_ScriptSubNode_
 static int scriptRead(Script* scr, File* stream)
 {
     int prg;
@@ -1958,7 +1958,7 @@ static int scriptRead(Script* scr, File* stream)
     return 0;
 }
 
-// 0x4A5BE8
+// 0x4A5BE8 scr_read_ScriptNode_
 static int scriptListExtentRead(ScriptListExtent* scriptExtent, File* stream)
 {
     for (int index = 0; index < SCRIPT_LIST_EXTENT_SIZE; index++) {
@@ -1992,7 +1992,7 @@ static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent)
     }
 }
 
-// 0x4A5C50
+// 0x4A5C50 scr_load_
 int scriptLoadAll(File* stream)
 {
     for (int index = 0; index < SCRIPT_TYPE_COUNT; index++) {
@@ -2055,7 +2055,7 @@ int scriptLoadAll(File* stream)
 }
 
 // scr_ptr
-// 0x4A5E34
+// 0x4A5E34 scr_ptr_
 int scriptGetScript(int sid, Script** scriptPtr)
 {
     *scriptPtr = nullptr;
@@ -2086,7 +2086,7 @@ int scriptGetScript(int sid, Script** scriptPtr)
     return -1;
 }
 
-// 0x4A5ED8
+// 0x4A5ED8 scr_new_id_
 static int scriptGetNewId(int scriptType)
 {
     int scriptId = gScriptLists[scriptType].nextScriptId++;
@@ -2103,7 +2103,7 @@ static int scriptGetNewId(int scriptType)
     return scriptId;
 }
 
-// 0x4A5F28
+// 0x4A5F28 scr_new_
 int scriptAdd(int* sidPtr, int scriptType)
 {
     ScriptList* scriptList = &(gScriptLists[scriptType]);
@@ -2176,7 +2176,7 @@ int scriptAdd(int* sidPtr, int scriptType)
 }
 
 // scr_remove_local_vars
-// 0x4A60D4
+// 0x4A60D4 scr_remove_local_vars_
 static int scriptsRemoveLocalVars(Script* script)
 {
     if (script == nullptr) {
@@ -2219,7 +2219,7 @@ static int scriptsRemoveLocalVars(Script* script)
 }
 
 // scr_remove
-// 0x4A61D4
+// 0x4A61D4 scr_remove_
 int scriptRemove(int sid)
 {
     if (sid == -1) {
@@ -2316,7 +2316,7 @@ int scriptRemove(int sid)
     return 0;
 }
 
-// 0x4A63E0
+// 0x4A63E0 scr_remove_all_
 int _scr_remove_all()
 {
     queueClearByEventType(EVENT_TYPE_SCRIPT, nullptr);
@@ -2360,7 +2360,7 @@ int _scr_remove_all()
     return 0;
 }
 
-// 0x4A64A8
+// 0x4A64A8 scr_remove_all_force_
 int _scr_remove_all_force()
 {
     queueClearByEventType(EVENT_TYPE_SCRIPT, nullptr);
@@ -2390,7 +2390,7 @@ int _scr_remove_all_force()
     return 0;
 }
 
-// 0x4A6524
+// 0x4A6524 scr_find_first_at_
 Script* scriptGetFirstSpatialScript(int elevation)
 {
     gScriptsEnumerationElevation = elevation;
@@ -2409,7 +2409,7 @@ Script* scriptGetFirstSpatialScript(int elevation)
     return script;
 }
 
-// 0x4A6564
+// 0x4A6564 scr_find_next_at_
 Script* scriptGetNextSpatialScript()
 {
     ScriptListExtent* scriptListExtent = gScriptsEnumerationScriptListExtent;
@@ -2452,19 +2452,19 @@ Script* scriptGetNextSpatialScript()
     return script;
 }
 
-// 0x4A65F0
+// 0x4A65F0 scr_spatials_enable_
 void _scr_spatials_enable()
 {
     gSpatialsEnabled = true;
 }
 
-// 0x4A6600
+// 0x4A6600 scr_spatials_disable_
 void _scr_spatials_disable()
 {
     gSpatialsEnabled = false;
 }
 
-// 0x4A6610
+// 0x4A6610 scr_chk_spatials_in_
 bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 {
     if (object == gGameMouseBouncingCursor) {
@@ -2518,7 +2518,7 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 }
 
 // scr_load_all_scripts
-// 0x4A677C
+// 0x4A677C scr_load_all_scripts_
 int scriptsExecStartProc()
 {
     for (int scriptListIndex = 0; scriptListIndex < SCRIPT_TYPE_COUNT; scriptListIndex++) {
@@ -2536,13 +2536,13 @@ int scriptsExecStartProc()
     return 0;
 }
 
-// 0x4A67DC
+// 0x4A67DC scr_exec_map_enter_scripts_
 void scriptsExecMapEnterProc()
 {
     scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_ENTER);
 }
 
-// 0x4A67E4
+// 0x4A67E4 scr_exec_map_update_scripts_
 void scriptsExecMapUpdateProc()
 {
     scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_UPDATE);
@@ -2615,13 +2615,13 @@ void scriptsExecMapUpdateScripts(int proc)
     gSpatialsEnabled = true;
 }
 
-// 0x4A69A0
+// 0x4A69A0 scr_exec_map_exit_scripts_
 void scriptsExecMapExitProc()
 {
     scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_EXIT);
 }
 
-// 0x4A6B64
+// 0x4A6B64 scr_get_dialog_msg_file_
 static int scriptsGetMessageList(int messageListId, MessageList** messageListPtr)
 {
     if (messageListId == -1) {
@@ -2663,14 +2663,14 @@ static int scriptsGetMessageList(int messageListId, MessageList** messageListPtr
     return 0;
 }
 
-// 0x4A6C50
+// 0x4A6C50 scr_get_msg_str_
 char* _scr_get_msg_str(int messageListId, int messageId)
 {
     return _scr_get_msg_str_speech(messageListId, messageId, 0);
 }
 
 // message_str
-// 0x4A6C5C
+// 0x4A6C5C scr_get_msg_str_speech_
 char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartSpeech)
 {
     if (messageListId == 0 && messageId == 0) {
@@ -2720,7 +2720,7 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
     return messageListItem.text;
 }
 
-// 0x4A6D64
+// 0x4A6D64 scr_get_local_var_
 int scriptGetLocalVar(int sid, int variable, ProgramValue& value)
 {
     if (SID_TYPE(sid) == SCRIPT_TYPE_SYSTEM) {
@@ -2763,7 +2763,7 @@ int scriptGetLocalVar(int sid, int variable, ProgramValue& value)
     return 0;
 }
 
-// 0x4A6E58
+// 0x4A6E58 scr_set_local_var_
 int scriptSetLocalVar(int sid, int variable, ProgramValue& value)
 {
     Script* script;
@@ -2792,7 +2792,7 @@ int scriptSetLocalVar(int sid, int variable, ProgramValue& value)
 // Performs combat script and returns true if default action has been overriden
 // by script.
 //
-// 0x4A6EFC
+// 0x4A6EFC scr_end_combat_
 bool _scr_end_combat()
 {
     if (gMapSid == 0 || gMapSid == -1) {
@@ -2820,7 +2820,7 @@ bool _scr_end_combat()
     return success;
 }
 
-// 0x4A6F70
+// 0x4A6F70 scr_explode_scenery_
 int _scr_explode_scenery(Object* explosionSource, int tile, int radius, int elevation)
 {
     int scriptExtentsCount = gScriptLists[SCRIPT_TYPE_SPATIAL].length + gScriptLists[SCRIPT_TYPE_ITEM].length;

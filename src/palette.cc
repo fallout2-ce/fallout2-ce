@@ -26,7 +26,7 @@ unsigned char gPaletteBlack[256 * 3];
 // 0x6642D0
 static int gPaletteFadeSteps;
 
-// 0x493A00
+// 0x493A00 palette_init_
 void paletteInit()
 {
     memset(gPaletteBlack, 0, 256 * 3);
@@ -75,7 +75,7 @@ void paletteExit()
     _palette_reset_();
 }
 
-// 0x493AD4
+// 0x493AD4 palette_fade_to_
 void paletteFadeTo(unsigned char* palette)
 {
     bool colorCycleWasEnabled = colorCycleEnabled();
@@ -95,14 +95,14 @@ void paletteFadeTo(unsigned char* palette)
     }
 }
 
-// 0x493B48
+// 0x493B48 palette_set_to_
 void paletteSetEntries(unsigned char* palette)
 {
     memcpy(gPalette, palette, sizeof(gPalette));
     _setSystemPalette(palette);
 }
 
-// 0x493B78
+// 0x493B78 palette_set_entries_
 void paletteSetEntriesInRange(unsigned char* palette, int start, int end)
 {
     memcpy(gPalette + 3 * start, palette, 3 * (end - start + 1));

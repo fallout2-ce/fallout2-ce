@@ -104,7 +104,7 @@ static FontManager gFontManagers[FONT_MANAGER_MAX];
 // 0x6ADD88
 static TextFontDescriptor* gCurrentTextFontDescriptor;
 
-// 0x4D555C
+// 0x4D555C GNW_text_init_
 int textFontsInit()
 {
     int currentFont = -1;
@@ -135,7 +135,7 @@ int textFontsInit()
     return 0;
 }
 
-// 0x4D55CC
+// 0x4D55CC GNW_text_exit_
 void textFontsExit()
 {
     for (int index = 0; index < TEXT_FONT_MAX; index++) {
@@ -147,7 +147,7 @@ void textFontsExit()
     }
 }
 
-// 0x4D55FC
+// 0x4D55FC load_font_
 int textFontLoad(int font)
 {
     int rc = -1;
@@ -235,7 +235,7 @@ out:
     return rc;
 }
 
-// 0x4D5780
+// 0x4D5780 text_add_manager_
 int fontManagerAdd(FontManager* fontManager)
 {
     if (fontManager == nullptr) {
@@ -260,7 +260,7 @@ int fontManagerAdd(FontManager* fontManager)
     return 0;
 }
 
-// 0x4D58AC
+// 0x4D58AC GNW_text_font_
 static void textFontSetCurrentImpl(int font)
 {
     if (font >= TEXT_FONT_MAX) {
@@ -275,13 +275,13 @@ static void textFontSetCurrentImpl(int font)
     gCurrentTextFontDescriptor = textFontDescriptor;
 }
 
-// 0x4D58D4
+// 0x4D58D4 text_curr_
 int fontGetCurrent()
 {
     return gCurrentFont;
 }
 
-// 0x4D58DC
+// 0x4D58DC text_font_
 void fontSetCurrent(int font)
 {
     FontManager* fontManager;
@@ -302,7 +302,7 @@ void fontSetCurrent(int font)
     }
 }
 
-// 0x4D595C
+// 0x4D595C text_font_exists_
 static bool fontManagerFind(int font, FontManager** fontManagerPtr)
 {
     for (int index = 0; index < gFontManagersCount; index++) {
@@ -316,7 +316,7 @@ static bool fontManagerFind(int font, FontManager** fontManagerPtr)
     return false;
 }
 
-// 0x4D59B0
+// 0x4D59B0 GNW_text_to_buf_
 static void textFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, int color)
 {
     if ((color & FONT_SHADOW) != 0) {
@@ -381,13 +381,13 @@ static void textFontDrawImpl(unsigned char* buf, const char* string, int length,
     }
 }
 
-// 0x4D5B54
+// 0x4D5B54 GNW_text_height_
 static int textFontGetLineHeightImpl()
 {
     return gCurrentTextFontDescriptor->lineHeight;
 }
 
-// 0x4D5B60
+// 0x4D5B60 GNW_text_width_
 static int textFontGeStringWidthImpl(const char* string)
 {
     int width = 0;
@@ -403,31 +403,31 @@ static int textFontGeStringWidthImpl(const char* string)
     return width;
 }
 
-// 0x4D5BA4
+// 0x4D5BA4 GNW_text_char_width_
 static int textFontGetCharacterWidthImpl(int ch)
 {
     return gCurrentTextFontDescriptor->glyphs[ch & 0xFF].width;
 }
 
-// 0x4D5BB8
+// 0x4D5BB8 GNW_text_mono_width_
 static int textFontGetMonospacedStringWidthImpl(const char* string)
 {
     return fontGetMonospacedCharacterWidth() * strlen(string);
 }
 
-// 0x4D5BD8
+// 0x4D5BD8 GNW_text_spacing_
 static int textFontGetLetterSpacingImpl()
 {
     return gCurrentTextFontDescriptor->letterSpacing;
 }
 
-// 0x4D5BE4
+// 0x4D5BE4 GNW_text_size_
 static int textFontGetBufferSizeImpl(const char* string)
 {
     return fontGetStringWidth(string) * fontGetLineHeight();
 }
 
-// 0x4D5BF8
+// 0x4D5BF8 GNW_text_max_
 static int textFontGetMonospacedCharacterWidthImpl()
 {
     int width = 0;

@@ -28,7 +28,7 @@ static bool configTrimString(char* string);
 // 0x518224
 static char gConfigLastSectionKey[CONFIG_FILE_MAX_LINE_LENGTH] = "unknown";
 
-// 0x42BD90
+// 0x42BD90 config_init_
 bool configInit(Config* config)
 {
     if (config == nullptr) {
@@ -42,7 +42,7 @@ bool configInit(Config* config)
     return true;
 }
 
-// 0x42BDBC
+// 0x42BDBC config_exit_
 void configFree(Config* config)
 {
     if (config == nullptr) {
@@ -75,7 +75,7 @@ void configFree(Config* config)
 // NOTE: This function trims whitespace in key-value pair, but not in section.
 // I don't know if this is intentional or it's bug.
 //
-// 0x42BE38
+// 0x42BE38 config_cmd_line_parse_
 bool configParseCommandLineArguments(Config* config, int argc, char** argv)
 {
     if (config == nullptr) {
@@ -117,7 +117,7 @@ bool configParseCommandLineArguments(Config* config, int argc, char** argv)
     return true;
 }
 
-// 0x42BF48
+// 0x42BF48 config_get_string_
 bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr)
 {
     if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
@@ -154,7 +154,7 @@ bool configGetString(Config* config, const char* sectionKey, const char* key, ch
     return true;
 }
 
-// 0x42BF90
+// 0x42BF90 config_set_string_
 bool configSetString(Config* config, const char* sectionKey, const char* key, const char* value)
 {
     if (config == nullptr || sectionKey == nullptr || key == nullptr || value == nullptr) {
@@ -196,7 +196,7 @@ bool configSetString(Config* config, const char* sectionKey, const char* key, co
     return true;
 }
 
-// 0x42C05C
+// 0x42C05C config_get_value_
 bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, unsigned char base /* = 0 */)
 {
     if (valuePtr == nullptr) {
@@ -239,7 +239,7 @@ bool configGetInt(Config* config, const char* sectionKey, const char* key, int* 
     return true;
 }
 
-// 0x42C090
+// 0x42C090 config_get_values_
 bool configGetIntList(Config* config, const char* sectionKey, const char* key, int* arr, int count)
 {
     if (arr == nullptr || count < 2) {
@@ -280,7 +280,7 @@ bool configGetIntList(Config* config, const char* sectionKey, const char* key, i
     return count == 0;
 }
 
-// 0x42C160
+// 0x42C160 config_set_value_
 bool configSetInt(Config* config, const char* sectionKey, const char* key, int value)
 {
     char stringValue[20];
@@ -291,7 +291,7 @@ bool configSetInt(Config* config, const char* sectionKey, const char* key, int v
 
 // Reads .INI file into config.
 //
-// 0x42C280
+// 0x42C280 config_load_
 bool configRead(Config* config, const char* filePath, bool isDb)
 {
     if (config == nullptr || filePath == nullptr) {
@@ -331,7 +331,7 @@ bool configRead(Config* config, const char* filePath, bool isDb)
 
 // Writes config into .INI file.
 //
-// 0x42C324
+// 0x42C324 config_save_
 bool configWrite(Config* config, const char* filePath, bool isDb)
 {
     if (config == nullptr || filePath == nullptr) {
@@ -396,7 +396,7 @@ bool configWrite(Config* config, const char* filePath, bool isDb)
 // Returns `true` when a section was parsed or key-value pair was parsed and
 // added to the config, or `false` otherwise.
 //
-// 0x42C4BC
+// 0x42C4BC config_parse_line_
 static bool configParseLine(Config* config, char* string)
 {
     char* pch;
@@ -450,7 +450,7 @@ static bool configParseLine(Config* config, char* string)
 //
 // Both key and value are trimmed.
 //
-// 0x42C594
+// 0x42C594 config_split_line_
 static bool configParseKeyValue(char* string, char* key, char* value)
 {
     if (string == nullptr || key == nullptr || value == nullptr) {
@@ -481,7 +481,7 @@ static bool configParseKeyValue(char* string, char* key, char* value)
 // Return `true` if section exists or it was successfully added, or `false`
 // otherwise.
 //
-// 0x42C638
+// 0x42C638 config_add_section_
 static bool configEnsureSectionExists(Config* config, const char* sectionKey)
 {
     if (config == nullptr || sectionKey == nullptr) {
@@ -507,7 +507,7 @@ static bool configEnsureSectionExists(Config* config, const char* sectionKey)
 
 // Removes leading and trailing whitespace from the specified string.
 //
-// 0x42C698
+// 0x42C698 config_strip_white_space_
 static bool configTrimString(char* string)
 {
     if (string == nullptr) {
@@ -544,7 +544,7 @@ static bool configTrimString(char* string)
     return true;
 }
 
-// 0x42C718
+// 0x42C718 config_get_double_
 bool configGetDouble(Config* config, const char* sectionKey, const char* key, double* valuePtr)
 {
     if (valuePtr == nullptr) {
@@ -561,7 +561,7 @@ bool configGetDouble(Config* config, const char* sectionKey, const char* key, do
     return true;
 }
 
-// 0x42C74C
+// 0x42C74C config_set_double_
 bool configSetDouble(Config* config, const char* sectionKey, const char* key, double value)
 {
     char stringValue[32];

@@ -184,7 +184,7 @@ static Sound* _gsound_get_sound_ready_for_effect();
 static bool _gsound_file_exists_f(const char* fname);
 static int _gsound_setup_paths();
 
-// 0x44FC70
+// 0x44FC70 gsound_init_
 int gameSoundInit()
 {
     if (gGameSoundInitialized) {
@@ -338,7 +338,7 @@ int gameSoundInit()
     return 0;
 }
 
-// 0x450164
+// 0x450164 gsound_reset_
 void gameSoundReset()
 {
     if (!gGameSoundInitialized) {
@@ -374,7 +374,7 @@ void gameSoundReset()
     return;
 }
 
-// 0x450244
+// 0x450244 gsound_exit_
 int gameSoundExit()
 {
     if (!gGameSoundInitialized) {
@@ -403,7 +403,7 @@ int gameSoundExit()
 
 // NOTE: Inlined.
 //
-// 0x4502BC
+// 0x4502BC gsound_sfx_enable_
 void soundEffectsEnable()
 {
     if (gGameSoundInitialized) {
@@ -413,7 +413,7 @@ void soundEffectsEnable()
 
 // NOTE: Inlined.
 //
-// 0x4502D0
+// 0x4502D0 gsound_sfx_disable_
 void soundEffectsDisable()
 {
     if (gGameSoundInitialized) {
@@ -421,13 +421,13 @@ void soundEffectsDisable()
     }
 }
 
-// 0x4502E4
+// 0x4502E4 gsound_sfx_is_enabled_
 int soundEffectsIsEnabled()
 {
     return gSoundEffectsEnabled;
 }
 
-// 0x4502EC
+// 0x4502EC gsound_set_master_volume_
 int gameSoundSetMasterVolume(int volume)
 {
     if (!gGameSoundInitialized) {
@@ -464,13 +464,13 @@ int gameSoundSetMasterVolume(int volume)
     return 0;
 }
 
-// 0x450410
+// 0x450410 gsound_get_master_volume_
 int gameSoundGetMasterVolume()
 {
     return gMasterVolume;
 }
 
-// 0x450418
+// 0x450418 gsound_set_sfx_volume_
 int soundEffectsSetVolume(int volume)
 {
     if (!gGameSoundInitialized || volume < VOLUME_MIN || volume > VOLUME_MAX) {
@@ -485,7 +485,7 @@ int soundEffectsSetVolume(int volume)
     return 0;
 }
 
-// 0x450454
+// 0x450454 gsound_get_sfx_volume_
 int soundEffectsGetVolume()
 {
     return gSoundEffectsVolume;
@@ -493,7 +493,7 @@ int soundEffectsGetVolume()
 
 // NOTE: Inlined.
 //
-// 0x45045C
+// 0x45045C gsound_background_disable_
 void backgroundSoundDisable()
 {
     if (gGameSoundInitialized) {
@@ -507,7 +507,7 @@ void backgroundSoundDisable()
 
 // NOTE: Inlined.
 //
-// 0x450488
+// 0x450488 gsound_background_enable_
 void backgroundSoundEnable()
 {
     if (gGameSoundInitialized) {
@@ -519,13 +519,13 @@ void backgroundSoundEnable()
     }
 }
 
-// 0x4504D4
+// 0x4504D4 gsound_background_is_enabled_
 int backgroundSoundIsEnabled()
 {
     return gMusicEnabled;
 }
 
-// 0x4504DC
+// 0x4504DC gsound_background_volume_set_
 void backgroundSoundSetVolume(int volume)
 {
     if (!gGameSoundInitialized) {
@@ -566,7 +566,7 @@ void backgroundSoundSetVolume(int volume)
     }
 }
 
-// 0x450618
+// 0x450618 gsound_background_volume_get_
 int backgroundSoundGetVolume()
 {
     return gMusicVolume;
@@ -580,7 +580,7 @@ int _gsound_background_volume_get_set(int volume)
     return oldMusicVolume;
 }
 
-// 0x450650
+// 0x450650 gsound_background_callback_set_
 void backgroundSoundSetEndCallback(SoundEndCallback* callback)
 {
     gBackgroundSoundEndCallback = callback;
@@ -588,7 +588,7 @@ void backgroundSoundSetEndCallback(SoundEndCallback* callback)
 
 // NOTE: There are no references to this function.
 //
-// 0x450670
+// 0x450670 gsound_background_length_get_
 int backgroundSoundGetDuration()
 {
     return soundGetDuration(gBackgroundSound);
@@ -771,7 +771,7 @@ int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMo
     return 0;
 }
 
-// 0x450A08
+// 0x450A08 gsound_background_play_level_music_
 int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode)
 {
     int gaplessMusic = 0;
@@ -785,7 +785,7 @@ int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimit
     return backgroundSoundLoad(fileName, readLimitMode, GSOUND_STREAM, GSOUND_LOOP);
 }
 
-// 0x450AB4
+// 0x450AB4 gsound_background_stop_
 void backgroundSoundDelete()
 {
     if (gGameSoundInitialized && gMusicEnabled && gBackgroundSound) {
@@ -801,7 +801,7 @@ void backgroundSoundDelete()
     }
 }
 
-// 0x450B0C
+// 0x450B0C gsound_background_restart_last_
 void backgroundSoundRestart(GameSoundReadLimitMode readLimitMode)
 {
     if (gBackgroundSoundFileName[0] != '\0') {
@@ -812,7 +812,7 @@ void backgroundSoundRestart(GameSoundReadLimitMode readLimitMode)
     }
 }
 
-// 0x450B50
+// 0x450B50 gsound_background_pause_
 void backgroundSoundPause()
 {
     if (gBackgroundSound != nullptr) {
@@ -820,7 +820,7 @@ void backgroundSoundPause()
     }
 }
 
-// 0x450B64
+// 0x450B64 gsound_background_unpause_
 void backgroundSoundResume()
 {
     if (gBackgroundSound != nullptr) {
@@ -836,7 +836,7 @@ bool backgoundSoundIsPlaying()
 
 // NOTE: Inlined.
 //
-// 0x450B78
+// 0x450B78 gsound_speech_disable_
 void speechDisable()
 {
     if (gGameSoundInitialized) {
@@ -849,7 +849,7 @@ void speechDisable()
 
 // NOTE: Inlined.
 //
-// 0x450BC0
+// 0x450BC0 gsound_speech_enable_
 void speechEnable()
 {
     if (gGameSoundInitialized) {
@@ -859,13 +859,13 @@ void speechEnable()
     }
 }
 
-// 0x450BE0
+// 0x450BE0 gsound_speech_is_enabled_
 int speechIsEnabled()
 {
     return gSpeechEnabled;
 }
 
-// 0x450BE8
+// 0x450BE8 gsound_speech_volume_set_
 void speechSetVolume(int volume)
 {
     if (!gGameSoundInitialized) {
@@ -888,13 +888,13 @@ void speechSetVolume(int volume)
     }
 }
 
-// 0x450C5C
+// 0x450C5C gsound_speech_volume_get_
 int speechGetVolume()
 {
     return gSpeechVolume;
 }
 
-// 0x450C64
+// 0x450C64 gsound_speech_volume_get_set_
 int _gsound_speech_volume_get_set(int volume)
 {
     int oldVolume = gSpeechVolume;
@@ -902,19 +902,19 @@ int _gsound_speech_volume_get_set(int volume)
     return oldVolume;
 }
 
-// 0x450C74
+// 0x450C74 gsound_speech_callback_set_
 void speechSetEndCallback(SoundEndCallback* callback)
 {
     gSpeechEndCallback = callback;
 }
 
-// 0x450C94
+// 0x450C94 gsound_speech_length_get_
 int speechGetDuration()
 {
     return soundGetDuration(gSpeechSound);
 }
 
-// 0x450CA0
+// 0x450CA0 gsound_speech_play_
 int speechLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode)
 {
     char path[COMPAT_MAX_PATH + 1];
@@ -1022,7 +1022,7 @@ int speechLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameS
     return 0;
 }
 
-// 0x450F8C
+// 0x450F8C gsound_speech_play_preloaded_
 int _gsound_speech_play_preloaded()
 {
     if (!gGameSoundInitialized) {
@@ -1059,7 +1059,7 @@ int _gsound_speech_play_preloaded()
     return 0;
 }
 
-// 0x451024
+// 0x451024 gsound_speech_stop_
 void speechDelete()
 {
     if (gGameSoundInitialized && gSpeechEnabled) {
@@ -1070,7 +1070,7 @@ void speechDelete()
     }
 }
 
-// 0x451054
+// 0x451054 gsound_speech_pause_
 void speechPause()
 {
     if (gSpeechSound != nullptr) {
@@ -1078,7 +1078,7 @@ void speechPause()
     }
 }
 
-// 0x451068
+// 0x451068 gsound_speech_unpause_
 void speechResume()
 {
     if (gSpeechSound != nullptr) {
@@ -1086,7 +1086,7 @@ void speechResume()
     }
 }
 
-// 0x45108C
+// 0x45108C gsound_play_sfx_file_volume_
 int _gsound_play_sfx_file_volume(const char* a1, int a2)
 {
     Sound* v1;
@@ -1109,7 +1109,7 @@ int _gsound_play_sfx_file_volume(const char* a1, int a2)
     return 0;
 }
 
-// 0x4510DC
+// 0x4510DC gsound_load_sound_
 Sound* soundEffectLoad(const char* name, Object* object)
 {
     if (!gGameSoundInitialized) {
@@ -1226,7 +1226,7 @@ Sound* soundEffectLoad(const char* name, Object* object)
     return nullptr;
 }
 
-// 0x45145C
+// 0x45145C gsound_load_sound_volume_
 Sound* soundEffectLoadWithVolume(const char* name, Object* object, int volume)
 {
     Sound* sound = soundEffectLoad(name, object);
@@ -1238,7 +1238,7 @@ Sound* soundEffectLoadWithVolume(const char* name, Object* object, int volume)
     return sound;
 }
 
-// 0x45148C
+// 0x45148C gsound_delete_sfx_
 void soundEffectDelete(Sound* sound)
 {
     if (!gGameSoundInitialized) {
@@ -1266,7 +1266,7 @@ void soundEffectDelete(Sound* sound)
     --_gsound_active_effect_counter;
 }
 
-// 0x4514F0
+// 0x4514F0 gsnd_anim_sound_
 int _gsnd_anim_sound(Sound* sound, void* a2)
 {
     if (!gGameSoundInitialized) {
@@ -1286,7 +1286,7 @@ int _gsnd_anim_sound(Sound* sound, void* a2)
     return 0;
 }
 
-// 0x451510
+// 0x451510 gsound_play_sound_
 int soundEffectPlay(Sound* sound)
 {
     if (!gGameSoundInitialized) {
@@ -1309,7 +1309,7 @@ int soundEffectPlay(Sound* sound)
 // Probably returns volume dependending on the distance between the specified
 // object and dude.
 //
-// 0x451534
+// 0x451534 gsound_compute_relative_volume_
 int _gsound_compute_relative_volume(Object* obj)
 {
     int type;
@@ -1355,7 +1355,7 @@ int _gsound_compute_relative_volume(Object* obj)
 }
 
 // sfx_build_char_name
-// 0x451604
+// 0x451604 gsnd_build_character_sfx_name_
 char* sfxBuildCharName(Object* a1, int anim, int extra)
 {
     char v7[13];
@@ -1393,7 +1393,7 @@ char* sfxBuildCharName(Object* a1, int anim, int extra)
 }
 
 // sfx_build_ambient_name
-// 0x4516F0
+// 0x4516F0 gsnd_build_ambient_sfx_name_
 char* gameSoundBuildAmbientSoundEffectName(const char* a1)
 {
     snprintf(_sfx_file_name, sizeof(_sfx_file_name), "A%6s%1d", a1, 1);
@@ -1402,7 +1402,7 @@ char* gameSoundBuildAmbientSoundEffectName(const char* a1)
 }
 
 // sfx_build_interface_name
-// 0x451718
+// 0x451718 gsnd_build_interface_sfx_name_
 char* gameSoundBuildInterfaceName(const char* a1)
 {
     snprintf(_sfx_file_name, sizeof(_sfx_file_name), "N%6s%1d", a1, 1);
@@ -1411,7 +1411,7 @@ char* gameSoundBuildInterfaceName(const char* a1)
 }
 
 // sfx_build_weapon_name
-// 0x451760
+// 0x451760 gsnd_build_weapon_sfx_name_
 char* sfxBuildWeaponName(int effectType, Object* weapon, int hitMode, Object* target)
 {
     int soundVariant;
@@ -1488,7 +1488,7 @@ char* sfxBuildWeaponName(int effectType, Object* weapon, int hitMode, Object* ta
 }
 
 // sfx_build_scenery_name
-// 0x451898
+// 0x451898 gsnd_build_scenery_sfx_name_
 char* sfxBuildSceneryName(int actionType, int action, const char* name)
 {
     char actionTypeCode = actionType == SOUND_EFFECT_ACTION_TYPE_PASSIVE ? 'P' : 'A';
@@ -1522,13 +1522,13 @@ char* sfxBuildOpenName(Object* object, int action)
     return _sfx_file_name;
 }
 
-// 0x451970
+// 0x451970 gsound_red_butt_press_
 void _gsound_red_butt_press(int btn, int keyCode)
 {
     soundPlayFile("ib1p1xx1");
 }
 
-// 0x451978
+// 0x451978 gsound_red_butt_release_
 void _gsound_red_butt_release(int btn, int keyCode)
 {
     soundPlayFile("ib1lu1x1");
@@ -1540,31 +1540,31 @@ void _gsound_toggle_butt_press_(int btn, int keyCode)
     soundPlayFile("toggle");
 }
 
-// 0x451988
+// 0x451988 gsound_med_butt_press_
 void _gsound_med_butt_press(int btn, int keyCode)
 {
     soundPlayFile("ib2p1xx1");
 }
 
-// 0x451990
+// 0x451990 gsound_med_butt_release_
 void _gsound_med_butt_release(int btn, int keyCode)
 {
     soundPlayFile("ib2lu1x1");
 }
 
-// 0x451998
+// 0x451998 gsound_lrg_butt_press_
 void _gsound_lrg_butt_press(int btn, int keyCode)
 {
     soundPlayFile("ib3p1xx1");
 }
 
-// 0x4519A0
+// 0x4519A0 gsound_lrg_butt_release_
 void _gsound_lrg_butt_release(int btn, int keyCode)
 {
     soundPlayFile("ib3lu1x1");
 }
 
-// 0x4519A8
+// 0x4519A8 gsound_play_sfx_file_
 int soundPlayFile(const char* name)
 {
     if (!gGameSoundInitialized) {
@@ -1585,13 +1585,13 @@ int soundPlayFile(const char* name)
     return 0;
 }
 
-// 0x451A00
+// 0x451A00 gsound_bkg_proc_
 void _gsound_bkg_proc()
 {
     soundContinueAll();
 }
 
-// 0x451A08
+// 0x451A08 gsound_open_
 int gameSoundFileOpen(const char* fname, int* sampleRate)
 {
     File* stream = fileOpen(fname, "rb");
@@ -1637,7 +1637,7 @@ int gameSoundFileClose(int fileHandle)
     return fileClose((File*)intToPtr(fileHandle, true));
 }
 
-// 0x451A30
+// 0x451A30 gsound_read_
 int gameSoundFileRead(int fileHandle, void* buffer, unsigned int size)
 {
     if (fileHandle == -1) {
@@ -1647,7 +1647,7 @@ int gameSoundFileRead(int fileHandle, void* buffer, unsigned int size)
     return fileRead(buffer, 1, size, (File*)intToPtr(fileHandle));
 }
 
-// 0x451A4C
+// 0x451A4C gsound_seek_
 long gameSoundFileSeek(int fileHandle, long offset, int origin)
 {
     if (fileHandle == -1) {
@@ -1661,7 +1661,7 @@ long gameSoundFileSeek(int fileHandle, long offset, int origin)
     return fileTell((File*)intToPtr(fileHandle));
 }
 
-// 0x451A70
+// 0x451A70 gsound_tell_
 long gameSoundFileTell(int handle)
 {
     if (handle == -1) {
@@ -1671,7 +1671,7 @@ long gameSoundFileTell(int handle)
     return fileTell((File*)intToPtr(handle));
 }
 
-// 0x451A7C
+// 0x451A7C gsound_filesize_
 long gameSoundFileGetSize(int handle)
 {
     if (handle == -1) {
@@ -1681,13 +1681,13 @@ long gameSoundFileGetSize(int handle)
     return fileGetSize((File*)intToPtr(handle));
 }
 
-// 0x451A88
+// 0x451A88 gsound_compressed_query_
 bool gameSoundIsCompressed(char* filePath)
 {
     return true;
 }
 
-// 0x451A90
+// 0x451A90 gsound_internal_speech_callback_
 void speechCallback(void* userData, int event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
@@ -1699,7 +1699,7 @@ void speechCallback(void* userData, int event)
     }
 }
 
-// 0x451AB0
+// 0x451AB0 gsound_internal_background_callback_
 void backgroundSoundCallback(void* userData, int event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
@@ -1711,7 +1711,7 @@ void backgroundSoundCallback(void* userData, int event)
     }
 }
 
-// 0x451AD0
+// 0x451AD0 gsound_internal_effect_callback_
 void soundEffectCallback(void* userData, int event)
 {
     if (event == SOUND_CALLBACK_EVENT_DONE) {
@@ -1719,7 +1719,7 @@ void soundEffectCallback(void* userData, int event)
     }
 }
 
-// 0x451ADC
+// 0x451ADC gsound_background_allocate_
 // storageType relates to sound type
 // loopingMode relates to sound flags
 int _gsound_background_allocate(Sound** soundPtr, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode)
@@ -1749,7 +1749,7 @@ int _gsound_background_allocate(Sound** soundPtr, GameSoundStorageType storageTy
 }
 
 // gsound_background_find_with_copy
-// 0x451B30
+// 0x451B30 gsound_background_find_with_copy_
 int gameSoundFindBackgroundSoundPathWithCopy(char* dest, const char* src)
 {
     size_t len = strlen(src) + strlen(".ACM");
@@ -1848,7 +1848,7 @@ int gameSoundFindBackgroundSoundPathWithCopy(char* dest, const char* src)
     return 0;
 }
 
-// 0x451E2C
+// 0x451E2C gsound_background_find_dont_copy_
 int gameSoundFindBackgroundSoundPath(char* dest, const char* src)
 {
     char path[COMPAT_MAX_PATH];
@@ -1892,7 +1892,7 @@ int gameSoundFindBackgroundSoundPath(char* dest, const char* src)
     return -1;
 }
 
-// 0x451F94
+// 0x451F94 gsound_speech_find_dont_copy_
 int gameSoundFindSpeechSoundPath(char* dest, const char* src)
 {
     char path[COMPAT_MAX_PATH];
@@ -1930,7 +1930,7 @@ int gameSoundFindSpeechSoundPath(char* dest, const char* src)
 }
 
 // delete old music file
-// 0x452088
+// 0x452088 gsound_background_remove_last_copy_
 void gameSoundDeleteOldMusicFile()
 {
     if (_background_fname_copied[0] != '\0') {
@@ -1946,7 +1946,7 @@ void gameSoundDeleteOldMusicFile()
     }
 }
 
-// 0x4520EC
+// 0x4520EC gsound_background_start_
 int backgroundSoundPlay()
 {
     int result;
@@ -1974,7 +1974,7 @@ int backgroundSoundPlay()
     return result;
 }
 
-// 0x45219C
+// 0x45219C gsound_speech_start_
 int speechPlay()
 {
     if (gGameSoundDebugEnabled) {
@@ -1996,7 +1996,7 @@ int speechPlay()
 
 // TODO: Refactor to use Settings.
 //
-// 0x452208
+// 0x452208 gsound_get_music_path_
 int _gsound_get_music_path(char** out_value, const char* key)
 {
     size_t len;
@@ -2053,7 +2053,7 @@ int _gsound_get_music_path(char** out_value, const char* key)
     return 0;
 }
 
-// 0x452378
+// 0x452378 gsound_get_sound_ready_for_effect_
 Sound* _gsound_get_sound_ready_for_effect()
 {
     int rc;
@@ -2113,7 +2113,7 @@ Sound* _gsound_get_sound_ready_for_effect()
 
 // Check file for existence.
 //
-// 0x4524E0
+// 0x4524E0 gsound_file_exists_f_
 bool _gsound_file_exists_f(const char* fname)
 {
     FILE* f = compat_fopen(fname, "rb");
@@ -2127,7 +2127,7 @@ bool _gsound_file_exists_f(const char* fname)
 }
 
 // gsound_setup_paths
-// 0x452518
+// 0x452518 gsound_setup_paths_
 int _gsound_setup_paths()
 {
     // TODO: Incomplete.
@@ -2135,13 +2135,13 @@ int _gsound_setup_paths()
     return 0;
 }
 
-// 0x452628
+// 0x452628 gsound_sfx_q_start_
 int _gsound_sfx_q_start()
 {
     return ambientSoundEffectEventProcess(nullptr, nullptr);
 }
 
-// 0x452634
+// 0x452634 gsound_sfx_q_process_
 int ambientSoundEffectEventProcess(Object* a1, void* data)
 {
     queueClearByEventType(EVENT_TYPE_GSOUND_SFX_EVENT, nullptr);

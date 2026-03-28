@@ -346,7 +346,7 @@ static int _cai_match_str_to_list(const char* str, const char** list, int count,
     return 0;
 }
 
-// 0x426FE0
+// 0x426FE0 cai_init_cap_
 static void aiPacketInit(AiPacket* ai)
 {
     ai->name = nullptr;
@@ -366,7 +366,7 @@ static void aiPacketInit(AiPacket* ai)
 }
 
 // ai_init
-// 0x42703C
+// 0x42703C combat_ai_init_
 int aiInit()
 {
     int index;
@@ -529,12 +529,12 @@ err:
     return -1;
 }
 
-// 0x4279F8
+// 0x4279F8 combat_ai_reset_
 void aiReset()
 {
 }
 
-// 0x4279FC
+// 0x4279FC combat_ai_exit_
 int aiExit()
 {
     for (int index = 0; index < gAiPacketsLength; index++) {
@@ -569,7 +569,7 @@ int aiExit()
     return 0;
 }
 
-// 0x427AD8
+// 0x427AD8 combat_ai_load_
 int aiLoad(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
@@ -590,7 +590,7 @@ int aiLoad(File* stream)
     return 0;
 }
 
-// 0x427B50
+// 0x427B50 combat_ai_save_
 int aiSave(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
@@ -611,7 +611,7 @@ int aiSave(File* stream)
     return 0;
 }
 
-// 0x427BC8
+// 0x427BC8 cai_cap_load_
 static int aiPacketRead(File* stream, AiPacket* ai)
 {
     if (fileReadInt32(stream, &(ai->packet_num)) == -1) return -1;
@@ -655,7 +655,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
     return 0;
 }
 
-// 0x427E1C
+// 0x427E1C cai_cap_save_
 static int aiPacketWrite(File* stream, AiPacket* ai)
 {
     if (fileWriteInt32(stream, ai->packet_num) == -1) return -1;
@@ -701,13 +701,13 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
     return 0;
 }
 
-// 0x428058
+// 0x428058 combat_ai_num_
 int combat_ai_num()
 {
     return gAiPacketsLength;
 }
 
-// 0x428060
+// 0x428060 combat_ai_name_
 char* combat_ai_name(int packet_num)
 {
     int index;
@@ -727,7 +727,7 @@ char* combat_ai_name(int packet_num)
 
 // Get ai from object
 //
-// 0x4280B4
+// 0x4280B4 ai_cap_
 static AiPacket* aiGetPacket(Object* obj)
 {
     // NOTE: Uninline.
@@ -737,7 +737,7 @@ static AiPacket* aiGetPacket(Object* obj)
 
 // get ai packet by num
 //
-// 0x42811C
+// 0x42811C ai_cap_from_packet_
 static AiPacket* aiGetPacketByNum(int aiPacketId)
 {
     for (int index = 0; index < gAiPacketsLength; index++) {
@@ -752,14 +752,14 @@ static AiPacket* aiGetPacketByNum(int aiPacketId)
     return gAiPackets;
 }
 
-// 0x428184
+// 0x428184 ai_get_burst_value_
 int aiGetAreaAttackMode(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->area_attack_mode;
 }
 
-// 0x428190
+// 0x428190 ai_get_run_away_value_
 int aiGetRunAwayMode(Object* obj)
 {
     int runAwayMode = -1;
@@ -779,35 +779,35 @@ int aiGetRunAwayMode(Object* obj)
     return runAwayMode;
 }
 
-// 0x4281FC
+// 0x4281FC ai_get_weapon_pref_value_
 int aiGetBestWeapon(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->best_weapon;
 }
 
-// 0x428208
+// 0x428208 ai_get_distance_pref_value_
 int aiGetDistance(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->distance;
 }
 
-// 0x428214
+// 0x428214 ai_get_attack_who_value_
 int aiGetAttackWho(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->attack_who;
 }
 
-// 0x428220
+// 0x428220 ai_get_chem_use_value_
 int aiGetChemUse(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->chem_use;
 }
 
-// 0x42822C
+// 0x42822C ai_set_burst_value_
 int aiSetAreaAttackMode(Object* critter, int areaAttackMode)
 {
     if (areaAttackMode >= AREA_ATTACK_MODE_COUNT) {
@@ -819,7 +819,7 @@ int aiSetAreaAttackMode(Object* critter, int areaAttackMode)
     return 0;
 }
 
-// 0x428248
+// 0x428248 ai_set_run_away_value_
 int aiSetRunAwayMode(Object* obj, int runAwayMode)
 {
     if (runAwayMode >= 6) {
@@ -840,7 +840,7 @@ int aiSetRunAwayMode(Object* obj, int runAwayMode)
     return 0;
 }
 
-// 0x4282D0
+// 0x4282D0 ai_set_weapon_pref_value_
 int aiSetBestWeapon(Object* critter, int bestWeapon)
 {
     if (bestWeapon >= BEST_WEAPON_COUNT) {
@@ -852,7 +852,7 @@ int aiSetBestWeapon(Object* critter, int bestWeapon)
     return 0;
 }
 
-// 0x4282EC
+// 0x4282EC ai_set_distance_pref_value_
 int aiSetDistance(Object* critter, int distance)
 {
     if (distance >= DISTANCE_COUNT) {
@@ -864,7 +864,7 @@ int aiSetDistance(Object* critter, int distance)
     return 0;
 }
 
-// 0x428308
+// 0x428308 ai_set_attack_who_value_
 int aiSetAttackWho(Object* critter, int attackWho)
 {
     if (attackWho >= ATTACK_WHO_COUNT) {
@@ -876,7 +876,7 @@ int aiSetAttackWho(Object* critter, int attackWho)
     return 0;
 }
 
-// 0x428324
+// 0x428324 ai_set_chem_use_value_
 int aiSetChemUse(Object* critter, int chemUse)
 {
     if (chemUse >= CHEM_USE_COUNT) {
@@ -888,7 +888,7 @@ int aiSetChemUse(Object* critter, int chemUse)
     return 0;
 }
 
-// 0x428340
+// 0x428340 ai_get_disposition_
 int aiGetDisposition(Object* obj)
 {
     if (obj == nullptr) {
@@ -899,7 +899,7 @@ int aiGetDisposition(Object* obj)
     return ai->disposition;
 }
 
-// 0x428354
+// 0x428354 ai_set_disposition_
 int aiSetDisposition(Object* obj, int disposition)
 {
     if (obj == nullptr) {
@@ -916,7 +916,7 @@ int aiSetDisposition(Object* obj, int disposition)
     return 0;
 }
 
-// 0x428398
+// 0x428398 ai_magic_hands_
 static int _ai_magic_hands(Object* critter, Object* item, int num)
 {
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
@@ -951,7 +951,7 @@ static int _ai_magic_hands(Object* critter, Object* item, int num)
 }
 
 // ai using drugs
-// 0x428480
+// 0x428480 ai_check_drugs_
 static int _ai_check_drugs(Object* critter)
 {
     if (critterGetBodyType(critter) != BODY_TYPE_BIPED) {
@@ -1169,7 +1169,7 @@ static int _ai_check_drugs(Object* critter)
     return 0;
 }
 
-// 0x428868
+// 0x428868 ai_run_away_
 static void _ai_run_away(Object* a1, Object* a2)
 {
     if (a2 == nullptr) {
@@ -1217,7 +1217,7 @@ static void _ai_run_away(Object* a1, Object* a2)
     }
 }
 
-// 0x42899C
+// 0x42899C ai_move_away_
 static int _ai_move_away(Object* a1, Object* a2, int a3)
 {
     if (aiGetPacket(a1)->distance == DISTANCE_STAY) {
@@ -1263,7 +1263,7 @@ static int _ai_move_away(Object* a1, Object* a2, int a3)
     return 0;
 }
 
-// 0x428AC4
+// 0x428AC4 ai_find_friend_
 static bool _ai_find_friend(Object* a1, int a2, int a3)
 {
     Object* v1 = _ai_find_nearest_team(a1, a1, 1);
@@ -1286,7 +1286,7 @@ static bool _ai_find_friend(Object* a1, int a2, int a3)
 
 // Compare objects by distance to origin.
 //
-// 0x428B1C
+// 0x428B1C compare_nearer_
 static int _compare_nearer(const void* a1, const void* a2)
 {
     Object* object1 = *(Object**)a1;
@@ -1314,7 +1314,7 @@ static int _compare_nearer(const void* a1, const void* a2)
 
 // NOTE: Inlined.
 //
-// 0x428B74
+// 0x428B74 ai_sort_list_distance_
 static void _ai_sort_list_distance(Object** critterList, int length, Object* origin)
 {
     _combat_obj = origin;
@@ -1323,7 +1323,7 @@ static void _ai_sort_list_distance(Object** critterList, int length, Object* ori
 
 // qsort compare function - melee then ranged.
 //
-// 0x428B8C
+// 0x428B8C compare_strength_
 static int _compare_strength(const void* a1, const void* a2)
 {
     Object* object1 = *(Object**)a1;
@@ -1351,7 +1351,7 @@ static int _compare_strength(const void* a1, const void* a2)
 
 // NOTE: Inlined.
 //
-// 0x428BD0
+// 0x428BD0 ai_sort_list_strength_
 static void _ai_sort_list_strength(Object** critterList, int length)
 {
     qsort(critterList, length, sizeof(*critterList), _compare_strength);
@@ -1359,7 +1359,7 @@ static void _ai_sort_list_strength(Object** critterList, int length)
 
 // qsort compare unction - ranged then melee
 //
-// 0x428BE4
+// 0x428BE4 compare_weakness_
 static int _compare_weakness(const void* a1, const void* a2)
 {
     Object* object1 = *(Object**)a1;
@@ -1387,13 +1387,13 @@ static int _compare_weakness(const void* a1, const void* a2)
 
 // NOTE: Inlined.
 //
-// 0x428C28
+// 0x428C28 ai_sort_list_weakness_
 static void _ai_sort_list_weakness(Object** critterList, int length)
 {
     qsort(critterList, length, sizeof(*critterList), _compare_weakness);
 }
 
-// 0x428C3C
+// 0x428C3C ai_find_nearest_team_
 static Object* _ai_find_nearest_team(Object* a1, Object* a2, int flags)
 {
     if (a2 == nullptr) {
@@ -1422,7 +1422,7 @@ static Object* _ai_find_nearest_team(Object* a1, Object* a2, int flags)
     return nullptr;
 }
 
-// 0x428CF4
+// 0x428CF4 ai_find_nearest_team_in_combat_
 static Object* _ai_find_nearest_team_in_combat(Object* a1, Object* a2, int flags)
 {
     if (a2 == nullptr) {
@@ -1453,7 +1453,7 @@ static Object* _ai_find_nearest_team_in_combat(Object* a1, Object* a2, int flags
     return nullptr;
 }
 
-// 0x428DB0
+// 0x428DB0 ai_find_attackers_
 static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHitFriendPtr, Object** whoHitByFriendPtr)
 {
     if (whoHitMePtr != nullptr) {
@@ -1525,7 +1525,7 @@ static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHi
 }
 
 // ai_danger_source
-// 0x428F4C
+// 0x428F4C ai_danger_source_
 static Object* _ai_danger_source(Object* a1)
 {
     if (a1 == nullptr) {
@@ -1704,7 +1704,7 @@ static Object* _ai_danger_source(Object* a1)
     return nullptr;
 }
 
-// 0x4291C4
+// 0x4291C4 caiSetupTeamCombat_
 int _caiSetupTeamCombat(Object* attackerTeam, Object* defenderTeam)
 {
     Object* obj = objectFindFirstAtElevation(attackerTeam->elevation);
@@ -1754,14 +1754,14 @@ int _caiTeamCombatInit(Object** crittersList, int crittersListLength)
     return 0;
 }
 
-// 0x4292C0
+// 0x4292C0 caiTeamCombatExit_
 void _caiTeamCombatExit()
 {
     _targetTeamObj = nullptr;
     _attackerTeamObj = nullptr;
 }
 
-// 0x4292D4
+// 0x4292D4 ai_have_ammo_
 static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
 {
     if (ammoPtr != nullptr) {
@@ -1799,7 +1799,7 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
     return false;
 }
 
-// 0x42938C
+// 0x42938C caiHasWeapPrefType_
 static bool _caiHasWeapPrefType(AiPacket* ai, int attackType)
 {
     int bestWeapon = ai->best_weapon + 1;
@@ -1813,7 +1813,7 @@ static bool _caiHasWeapPrefType(AiPacket* ai, int attackType)
     return false;
 }
 
-// 0x4293BC
+// 0x4293BC ai_best_weapon_
 static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon2, Object* defender)
 {
     if (attacker == nullptr) {
@@ -1968,7 +1968,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
     return order1 > order2 ? weapon2 : weapon1;
 }
 
-// 0x4298EC
+// 0x4298EC ai_can_use_weapon_
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode)
 {
     int damageFlags = critter->data.critter.combat.results;
@@ -1998,7 +1998,7 @@ static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode)
     return _caiHasWeapPrefType(ai, attackType) != 0;
 }
 
-// 0x4299A0
+// 0x4299A0 ai_search_inven_weap_
 Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, Object* defender)
 {
     int bodyType = critterGetBodyType(critter);
@@ -2047,7 +2047,7 @@ Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, O
 
 // Finds new best armor (other than what's already equipped) based on the armor score.
 //
-// 0x429A6C
+// 0x429A6C ai_search_inven_armor_
 Object* _ai_search_inven_armor(Object* critter)
 {
     if (!objectIsPartyMember(critter)) {
@@ -2101,7 +2101,7 @@ Object* _ai_search_inven_armor(Object* critter)
 // or it's a humanoid being with intelligence at least 3,
 // and the iteam is a something healing.
 //
-// 0x429B44
+// 0x429B44 ai_can_use_drug_
 static bool aiCanUseItem(Object* critter, Object* item)
 {
     if (critter == nullptr) {
@@ -2174,7 +2174,7 @@ static bool aiCanUseItem(Object* critter, Object* item)
 
 // Find best item type to use?
 //
-// 0x429C18
+// 0x429C18 ai_search_environ_
 static Object* _ai_search_environ(Object* critter, int itemType)
 {
     if (critterGetBodyType(critter) != BODY_TYPE_BIPED) {
@@ -2233,7 +2233,7 @@ static Object* _ai_search_environ(Object* critter, int itemType)
     return foundItem;
 }
 
-// 0x429D60
+// 0x429D60 ai_retrieve_object_
 static Object* _ai_retrieve_object(Object* critter, Object* item)
 {
     if (actionPickUp(critter, item) != 0) {
@@ -2258,7 +2258,7 @@ static Object* _ai_retrieve_object(Object* critter, Object* item)
     return retrievedItem;
 }
 
-// 0x429DB4
+// 0x429DB4 ai_pick_hit_mode_
 static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender)
 {
     if (weapon == nullptr) {
@@ -2350,7 +2350,7 @@ static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender)
     return HIT_MODE_RIGHT_WEAPON_PRIMARY;
 }
 
-// 0x429FC8
+// 0x429FC8 ai_move_steps_closer_
 static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoints, bool taunt)
 {
     if (actionPoints <= 0) {
@@ -2446,13 +2446,13 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
 
 // NOTE: Inlined.
 //
-// 0x42A1C0
+// 0x42A1C0 ai_move_closer_
 static int _ai_move_closer(Object* a1, Object* a2, bool taunt)
 {
     return _ai_move_steps_closer(a1, a2, a1->data.critter.combat.ap, taunt);
 }
 
-// 0x42A1D4
+// 0x42A1D4 cai_retargetTileFromFriendlyFire_
 static int _cai_retargetTileFromFriendlyFire(Object* source, Object* target, int* tilePtr)
 {
     if (source == nullptr) {
@@ -2537,7 +2537,7 @@ static int _cai_retargetTileFromFriendlyFire(Object* source, Object* target, int
     return 0;
 }
 
-// 0x42A410
+// 0x42A410 cai_retargetTileFromFriendlyFireSubFunc_
 static int _cai_retargetTileFromFriendlyFireSubFunc(AiRetargetData* aiRetargetData, int tile)
 {
     if (aiRetargetData->sourceIntelligence <= 0) {
@@ -2563,7 +2563,7 @@ static int _cai_retargetTileFromFriendlyFireSubFunc(AiRetargetData* aiRetargetDa
     return 0;
 }
 
-// 0x42A518
+// 0x42A518 cai_attackWouldIntersect_
 static bool _cai_attackWouldIntersect(Object* attacker, Object* defender, Object* attackerFriend, int tile, int* distance)
 {
     int hitMode = HIT_MODE_RIGHT_WEAPON_PRIMARY;
@@ -2592,7 +2592,7 @@ static bool _cai_attackWouldIntersect(Object* attacker, Object* defender, Object
     return true;
 }
 
-// 0x42A5B8
+// 0x42A5B8 ai_switch_weapons_
 static int _ai_switch_weapons(Object* attacker, int* hitMode, Object** weapon, Object* defender)
 {
     *weapon = nullptr;
@@ -2630,7 +2630,7 @@ static int _ai_switch_weapons(Object* attacker, int* hitMode, Object** weapon, O
     return -1;
 }
 
-// 0x42A670
+// 0x42A670 ai_called_shot_
 static int _ai_called_shot(Object* attacker, Object* defender, int hitMode)
 {
     int hitLocation = HIT_LOCATION_TORSO;
@@ -2666,7 +2666,7 @@ static int _ai_called_shot(Object* attacker, Object* defender, int hitMode)
     return hitLocation;
 }
 
-// 0x42A748
+// 0x42A748 ai_attack_
 static int _ai_attack(Object* attacker, Object* defender, int hitMode)
 {
     if (attacker->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) {
@@ -2688,7 +2688,7 @@ static int _ai_attack(Object* attacker, Object* defender, int hitMode)
     return 0;
 }
 
-// 0x42A7D8
+// 0x42A7D8 ai_try_attack_
 static int _ai_try_attack(Object* attacker, Object* defender)
 {
     critterSetWhoHitMe(attacker, defender);
@@ -2907,7 +2907,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
 
 // Something with using flare
 //
-// 0x42AE90
+// 0x42AE90 cAIPrepWeaponItem_
 int _cAIPrepWeaponItem(Object* critter, Object* item)
 {
     if (item != nullptr && critterGetStat(critter, STAT_INTELLIGENCE) >= 3 && item->pid == PROTO_ID_FLARE && lightGetAmbientIntensity() < LIGHT_INTENSITY_MAX * 0.85) {
@@ -2916,7 +2916,7 @@ int _cAIPrepWeaponItem(Object* critter, Object* item)
     return 0;
 }
 
-// 0x42AECC
+// 0x42AECC cai_attempt_w_reload_
 void aiAttemptWeaponReload(Object* critter, int animate)
 {
     Object* weapon = critterGetItem2(critter);
@@ -2955,7 +2955,7 @@ void aiAttemptWeaponReload(Object* critter, int animate)
     }
 }
 
-// 0x42AF78
+// 0x42AF78 combat_ai_begin_
 void _combat_ai_begin(int a1, void* a2)
 {
     _curr_crit_num = a1;
@@ -2970,7 +2970,7 @@ void _combat_ai_begin(int a1, void* a2)
     }
 }
 
-// 0x42AFBC
+// 0x42AFBC combat_ai_over_
 void _combat_ai_over()
 {
     if (_curr_crit_num) {
@@ -2980,7 +2980,7 @@ void _combat_ai_over()
     _curr_crit_num = 0;
 }
 
-// 0x42AFDC
+// 0x42AFDC cai_perform_distance_prefs_
 int _cai_perform_distance_prefs(Object* a1, Object* a2)
 {
     if (a1->data.critter.combat.ap <= 0) {
@@ -3046,7 +3046,7 @@ int _cai_perform_distance_prefs(Object* a1, Object* a2)
     return 0;
 }
 
-// 0x42B100
+// 0x42B100 cai_get_min_hp_
 static int _cai_get_min_hp(AiPacket* ai)
 {
     if (ai == nullptr) {
@@ -3063,7 +3063,7 @@ static int _cai_get_min_hp(AiPacket* ai)
     return 0;
 }
 
-// 0x42B130
+// 0x42B130 combat_ai_
 void _combat_ai(Object* a1, Object* a2)
 {
     // 0x51820C
@@ -3175,7 +3175,7 @@ void _combat_ai(Object* a1, Object* a2)
     }
 }
 
-// 0x42B3FC
+// 0x42B3FC combatai_want_to_join_
 bool _combatai_want_to_join(Object* a1)
 {
     _process_bk();
@@ -3221,7 +3221,7 @@ bool _combatai_want_to_join(Object* a1)
     return true;
 }
 
-// 0x42B4A8
+// 0x42B4A8 combatai_want_to_stop_
 bool _combatai_want_to_stop(Object* a1)
 {
     _process_bk();
@@ -3242,7 +3242,7 @@ bool _combatai_want_to_stop(Object* a1)
     return enemy == nullptr || !isWithinPerception(a1, enemy);
 }
 
-// 0x42B504
+// 0x42B504 combatai_switch_team_
 int critterSetTeam(Object* obj, int team)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
@@ -3290,7 +3290,7 @@ int critterSetTeam(Object* obj, int team)
     return 0;
 }
 
-// 0x42B5D4
+// 0x42B5D4 combat_ai_set_ai_packet_
 int critterSetAiPacket(Object* object, int aiPacket)
 {
     if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
@@ -3312,7 +3312,7 @@ int critterSetAiPacket(Object* object, int aiPacket)
 }
 
 // combatai_msg
-// 0x42B634
+// 0x42B634 combatai_msg_
 int _combatai_msg(Object* critter, Attack* attack, int type, int delay)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
@@ -3391,7 +3391,7 @@ int _combatai_msg(Object* critter, Attack* attack, int type, int delay)
     return animationRegisterCallback(critter, (void*)(uintptr_t)type, (AnimationCallback*)_ai_print_msg, delay);
 }
 
-// 0x42B80C
+// 0x42B80C ai_print_msg_
 static int _ai_print_msg(Object* critter, int type)
 {
     if (textObjectsGetCount() > 0) {
@@ -3421,7 +3421,7 @@ static int _ai_print_msg(Object* critter, int type)
 
 // Returns random critter for attacking as a result of critical weapon failure.
 //
-// 0x42B868
+// 0x42B868 combat_ai_random_target_
 Object* _combat_ai_random_target(Attack* attack)
 {
     // Looks like this function does nothing because it's result is not used. I
@@ -3459,7 +3459,7 @@ Object* _combat_ai_random_target(Attack* attack)
     return critter;
 }
 
-// 0x42B90C
+// 0x42B90C combatai_rating_
 static int _combatai_rating(Object* obj)
 {
     int melee_damage;
@@ -3494,7 +3494,7 @@ static int _combatai_rating(Object* obj)
     return melee_damage + critterGetStat(obj, STAT_ARMOR_CLASS);
 }
 
-// 0x42B9D4
+// 0x42B9D4 combatai_check_retaliation_
 void _combatai_check_retaliation(Object* a1, Object* a2)
 {
     Object* whoHitMe = a1->data.critter.combat.whoHitMe;
@@ -3509,7 +3509,7 @@ void _combatai_check_retaliation(Object* a1, Object* a2)
     }
 }
 
-// 0x42BA04
+// 0x42BA04 is_within_perception_
 bool isWithinPerception(Object* critter, Object* target)
 {
     if (target == nullptr) {
@@ -3568,7 +3568,7 @@ bool isWithinPerception(Object* critter, Object* target)
 
 // Load combatai.msg and apply language filter.
 //
-// 0x42BB34
+// 0x42BB34 combatai_load_messages_
 static int aiMessageListInit()
 {
     if (!messageListInit(&gCombatAiMessageList)) {
@@ -3593,7 +3593,7 @@ static int aiMessageListInit()
 
 // NOTE: Inlined.
 //
-// 0x42BBD8
+// 0x42BBD8 combatai_unload_messages_
 static int aiMessageListFree()
 {
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_COMBAT_AI, nullptr);
@@ -3604,7 +3604,7 @@ static int aiMessageListFree()
     return 0;
 }
 
-// 0x42BBF0
+// 0x42BBF0 combatai_refresh_messages_
 void aiMessageListReloadIfNeeded()
 {
     int languageFilter = static_cast<int>(settings.preferences.language_filter);
@@ -3623,7 +3623,7 @@ void aiMessageListReloadIfNeeded()
     }
 }
 
-// 0x42BC60
+// 0x42BC60 combatai_notify_onlookers_
 void _combatai_notify_onlookers(Object* a1)
 {
     for (int index = 0; index < _curr_crit_num; index++) {
@@ -3642,7 +3642,7 @@ void _combatai_notify_onlookers(Object* a1)
     }
 }
 
-// 0x42BCD4
+// 0x42BCD4 combatai_notify_friends_
 void _combatai_notify_friends(Object* a1)
 {
     int team = a1->data.critter.combat.team;
@@ -3657,7 +3657,7 @@ void _combatai_notify_friends(Object* a1)
     }
 }
 
-// 0x42BD28
+// 0x42BD28 combatai_delete_critter_
 void _combatai_delete_critter(Object* obj)
 {
     // TODO: Check entire function.

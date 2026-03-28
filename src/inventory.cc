@@ -525,7 +525,7 @@ static int _barter_back_win;
 static FrmImage _inventoryFrmImages[INVENTORY_FRM_COUNT];
 static FrmImage _moveFrmImages[8];
 
-// 0x46E724
+// 0x46E724 inven_reset_dude_
 void inventoryResetDude()
 {
     _inven_dude = gDude;
@@ -574,7 +574,7 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
 }
 
 // inventory_msg_init
-// 0x46E73C
+// 0x46E73C inventry_msg_load_
 static int inventoryMessageListInit()
 {
     char path[COMPAT_MAX_PATH];
@@ -590,14 +590,14 @@ static int inventoryMessageListInit()
 }
 
 // inventory_msg_free
-// 0x46E7A0
+// 0x46E7A0 inventry_msg_unload_
 static int inventoryMessageListFree()
 {
     messageListFree(&gInventoryMessageList);
     return 0;
 }
 
-// 0x46E7B0
+// 0x46E7B0 handle_inventory_
 void inventoryOpen()
 {
     if (isInCombat()) {
@@ -776,7 +776,7 @@ void inventoryOpen()
     }
 }
 
-// 0x46EC90
+// 0x46EC90 setup_inventory_
 static bool _setup_inventory(int inventoryWindowType)
 {
     _dropped_explosive = 0;
@@ -1568,7 +1568,7 @@ static bool _setup_inventory(int inventoryWindowType)
     return isoWasEnabled;
 }
 
-// 0x46FBD8
+// 0x46FBD8 exit_inventory_
 static void _exit_inventory(bool shouldEnableIso)
 {
     _inven_dude = _stack[0];
@@ -1650,7 +1650,7 @@ static void _exit_inventory(bool shouldEnableIso)
     }
 }
 
-// 0x46FDF4
+// 0x46FDF4 display_inventory_
 static void _display_inventory(int stackOffset, int dragSlotIndex, int inventoryWindowType)
 {
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
@@ -1854,7 +1854,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
 // [stackOffset] is an index of the first visible item in the scrolling view.
 // [dragSlotIndex] is an index of item being dragged (it decreases displayed number of items in inner functions).
 //
-// 0x47036C
+// 0x47036C display_target_inventory_
 static void _display_target_inventory(int stackOffset, int dragSlotIndex, Inventory* inventory, int inventoryWindowType)
 {
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
@@ -1978,7 +1978,7 @@ static void _display_target_inventory(int stackOffset, int dragSlotIndex, Invent
 
 // Renders inventory item quantity.
 //
-// 0x4705A0
+// 0x4705A0 display_inventory_info_
 static void _display_inventory_info(Object* item, int quantity, unsigned char* dest, int pitch, bool isDragged)
 {
     int oldFont = fontGetCurrent();
@@ -2027,7 +2027,7 @@ static void _display_inventory_info(Object* item, int quantity, unsigned char* d
     fontSetCurrent(oldFont);
 }
 
-// 0x470650
+// 0x470650 display_body_
 static void _display_body(int fid, int inventoryWindowType)
 {
     if (getTicksSince(gInventoryWindowDudeRotationTimestamp) < INVENTORY_NORMAL_WINDOW_PC_ROTATION_DELAY) {
@@ -2183,7 +2183,7 @@ static void _display_body(int fid, int inventoryWindowType)
     gInventoryWindowDudeRotationTimestamp = getTicks();
 }
 
-// 0x470A2C
+// 0x470A2C inven_init_
 static int inventoryCommonInit()
 {
     if (inventoryMessageListInit() == -1) {
@@ -2239,7 +2239,7 @@ static int inventoryCommonInit()
 
 // NOTE: Inlined.
 //
-// 0x470B8C
+// 0x470B8C inven_exit_
 static void inventoryCommonFree()
 {
     for (int index = 0; index < INVENTORY_WINDOW_CURSOR_COUNT; index++) {
@@ -2256,7 +2256,7 @@ static void inventoryCommonFree()
     _inven_is_initialized = 0;
 }
 
-// 0x470BCC
+// 0x470BCC inven_set_mouse_
 static void inventorySetCursor(int cursor)
 {
     gInventoryCursor = cursor;
@@ -2269,7 +2269,7 @@ static void inventorySetCursor(int cursor)
     }
 }
 
-// 0x470C2C
+// 0x470C2C inven_hover_on_
 static void inventoryItemSlotOnMouseEnter(int btn, int keyCode)
 {
     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
@@ -2302,7 +2302,7 @@ static void inventoryItemSlotOnMouseEnter(int btn, int keyCode)
     _im_value = keyCode;
 }
 
-// 0x470D1C
+// 0x470D1C inven_hover_off_
 static void inventoryItemSlotOnMouseExit(int btn, int keyCode)
 {
     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
@@ -2313,7 +2313,7 @@ static void inventoryItemSlotOnMouseExit(int btn, int keyCode)
     _im_value = -1;
 }
 
-// 0x470D5C
+// 0x470D5C inven_update_lighting_
 static void _inven_update_lighting(Object* activeItem)
 {
     if (gDude == _inven_dude) {
@@ -2330,7 +2330,7 @@ static void _inven_update_lighting(Object* activeItem)
     }
 }
 
-// 0x470DB8
+// 0x470DB8 inven_pickup_
 static void _inven_pickup(int buttonCode, int indexOffset)
 {
     Object* item;
@@ -2537,7 +2537,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
     }
 }
 
-// 0x4714E0
+// 0x4714E0 switch_hand_
 static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourceSlot, int itemIndex)
 {
     if (*targetSlot != nullptr) {
@@ -2591,7 +2591,7 @@ static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourc
 // adds appropriate bonuses and effects granted by [newArmor]. Both [oldArmor]
 // and [newArmor] can be NULL.
 //
-// 0x4715F8
+// 0x4715F8 adjust_ac_
 void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* newArmor)
 {
     int armorClassBonus = critterGetBonusStat(critter, STAT_ARMOR_CLASS);
@@ -2629,7 +2629,7 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
     }
 }
 
-// 0x4716E8
+// 0x4716E8 adjust_fid_
 static void _adjust_fid()
 {
     gInventoryWindowDudeFid = inventoryComputeCritterFid(_inven_dude,
@@ -2642,7 +2642,7 @@ static void _adjust_fid()
         0);
 }
 
-// 0x4717E4
+// 0x4717E4 use_inventory_on_
 void inventoryOpenUseItemOn(Object* targetObj)
 {
     ScopedGameMode gm(GameMode::kUseOn);
@@ -2782,7 +2782,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
     inventoryCommonFree();
 }
 
-// 0x471B70
+// 0x471B70 inven_right_hand_
 Object* critterGetItem2(Object* critter)
 {
     int i;
@@ -2804,7 +2804,7 @@ Object* critterGetItem2(Object* critter)
     return nullptr;
 }
 
-// 0x471BBC
+// 0x471BBC inven_left_hand_
 Object* critterGetItem1(Object* critter)
 {
     int i;
@@ -2826,7 +2826,7 @@ Object* critterGetItem1(Object* critter)
     return nullptr;
 }
 
-// 0x471C08
+// 0x471C08 inven_worn_
 Object* critterGetArmor(Object* critter)
 {
     int i;
@@ -2848,7 +2848,7 @@ Object* critterGetArmor(Object* critter)
     return nullptr;
 }
 
-// 0x471CA0
+// 0x471CA0 inven_pid_is_carried_ptr_
 Object* objectGetCarriedObjectByPid(Object* obj, int pid)
 {
     Inventory* inventory = &(obj->data.inventory);
@@ -2868,7 +2868,7 @@ Object* objectGetCarriedObjectByPid(Object* obj, int pid)
     return nullptr;
 }
 
-// 0x471CDC
+// 0x471CDC inven_pid_quantity_carried_
 int objectGetCarriedQuantityByPid(Object* object, int pid)
 {
     int quantity = 0;
@@ -2889,7 +2889,7 @@ int objectGetCarriedQuantityByPid(Object* object, int pid)
 // Renders character's summary of SPECIAL stats, equipped armor bonuses,
 // and weapon's damage/range.
 //
-// 0x471D5C
+// 0x471D5C display_stats_
 static void inventoryRenderSummary()
 {
     int summaryStats[7];
@@ -3201,7 +3201,7 @@ static void inventoryRenderSummary()
 // The [index] is used to control where to continue the search from, -1 - from
 // the beginning.
 //
-// 0x472698
+// 0x472698 inven_find_type_
 Object* inventoryFindByType(Object* obj, int itemType, int* indexPtr)
 {
     int dummy = -1;
@@ -3231,7 +3231,7 @@ Object* inventoryFindByType(Object* obj, int itemType, int* indexPtr)
 
 // Searches for an item with a given id inside given obj's inventory.
 //
-// 0x4726EC
+// 0x4726EC inven_find_id_
 Object* inventoryFindById(Object* obj, int id)
 {
     if (obj->id == id) {
@@ -3259,7 +3259,7 @@ Object* inventoryFindById(Object* obj, int id)
 
 // Returns inventory item at a given index.
 //
-// 0x472740
+// 0x472740 inven_index_ptr_
 Object* inventoryItemByIndex(Object* obj, int index)
 {
     Inventory* inventory;
@@ -3274,13 +3274,13 @@ Object* inventoryItemByIndex(Object* obj, int index)
 }
 
 // inven_wield
-// 0x472758
+// 0x472758 inven_wield_
 int inventoryEquip(Object* critter, Object* item, int hand)
 {
     return inventoryEquipFunc(critter, item, hand, true);
 }
 
-// 0x472768
+// 0x472768 invenWieldFunc_
 int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animate)
 {
     if (animate) {
@@ -3422,13 +3422,13 @@ int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animat
 }
 
 // inven_unwield
-// 0x472A54
+// 0x472A54 inven_unwield_
 int inventoryUnequip(Object* critter_obj, int hand)
 {
     return inventoryUnequipFunc(critter_obj, hand, true);
 }
 
-// 0x472A64
+// 0x472A64 invenUnwieldFunc_
 int inventoryUnequipFunc(Object* critter, int hand, bool animate)
 {
     int activeHand;
@@ -3473,7 +3473,7 @@ int inventoryUnequipFunc(Object* critter, int hand, bool animate)
     return 0;
 }
 
-// 0x472B54
+// 0x472B54 inven_from_button_
 static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSlot, Object** outOwner)
 {
     Object** itemSlot;
@@ -3566,7 +3566,7 @@ static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSl
 // Displays item description.
 //
 // inven_display_msg
-// 0x472D24
+// 0x472D24 inven_display_msg_
 static void inventoryRenderItemDescription(const char* string)
 {
     int oldFont = fontGetCurrent();
@@ -3661,7 +3661,7 @@ end:
 
 // Examines inventory item.
 //
-// 0x472EB8
+// 0x472EB8 inven_obj_examine_func_
 static void inventoryExamineItem(Object* critter, Object* item)
 {
     int oldFont = fontGetCurrent();
@@ -3728,7 +3728,7 @@ static void inventoryExamineItem(Object* critter, Object* item)
     fontSetCurrent(oldFont);
 }
 
-// 0x47304C
+// 0x47304C inven_action_cursor_
 static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 {
     Object* item;
@@ -4073,7 +4073,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     _adjust_fid();
 }
 
-// 0x473904
+// 0x473904 loot_container_
 int inventoryOpenLooting(Object* looter, Object* target)
 {
     int arrowFrmIds[INVENTORY_ARROW_FRM_COUNT];
@@ -4524,7 +4524,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     return 0;
 }
 
-// 0x4746A0
+// 0x4746A0 inven_steal_container_
 int inventoryOpenStealing(Object* thief, Object* target)
 {
     if (thief == target) {
@@ -4544,7 +4544,7 @@ int inventoryOpenStealing(Object* thief, Object* target)
     return rc;
 }
 
-// 0x474708
+// 0x474708 move_inventory_
 // note: this is looting and stealing, not the inventory screen
 static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting)
 {
@@ -4668,7 +4668,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
     return result;
 }
 
-// 0x474B2C
+// 0x474B2C barter_compute_value_
 static int _barter_compute_value(Object* dude, Object* npc)
 {
     if (gGameDialogSpeakerIsPartyMember) {
@@ -4701,7 +4701,7 @@ static int _barter_compute_value(Object* dude, Object* npc)
     return rounded;
 }
 
-// 0x474C50
+// 0x474C50 barter_attempt_transaction_
 static int _barter_attempt_transaction(Object* dude, Object* offerTable, Object* npc, Object* barterTable)
 {
     MessageListItem messageListItem;
@@ -4824,7 +4824,7 @@ static void _drag_item_loop(Object* item, bool immediate)
     }
 }
 
-// 0x474DAC
+// 0x474DAC barter_move_inventory_
 static void _barter_move_inventory(Object* item, int quantity, int slotIndex, int indexOffset, Object* npc, Object* sourceTable, bool fromDude)
 {
     Rect rect;
@@ -4890,7 +4890,7 @@ static void _barter_move_inventory(Object* item, int quantity, int slotIndex, in
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
 }
 
-// 0x475070
+// 0x475070 barter_move_from_table_inventory_
 static void _barter_move_from_table_inventory(Object* item, int quantity, int slotIndex, Object* npc, Object* sourceTable, bool fromDude)
 {
     Rect rect;
@@ -4956,7 +4956,7 @@ static void _barter_move_from_table_inventory(Object* item, int quantity, int sl
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
 }
 
-// 0x475334
+// 0x475334 display_table_inventories_
 static void inventoryWindowRenderInnerInventories(int win, Object* leftTable, Object* rightTable, int draggedSlotIndex)
 {
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
@@ -5054,7 +5054,7 @@ static bool _ctrl_pressed()
     return keyboardState[SDL_SCANCODE_LCTRL] || keyboardState[SDL_SCANCODE_RCTRL];
 }
 
-// 0x4757F0
+// 0x4757F0 barter_inventory_
 void inventoryOpenTrade(int win, Object* barterer, Object* playerTable, Object* bartererTable, int barterMod)
 {
     ScopedGameMode gm(GameMode::kBarter);
@@ -5391,7 +5391,7 @@ void inventoryOpenTrade(int win, Object* barterer, Object* playerTable, Object* 
     inventoryCommonFree();
 }
 
-// 0x47620C
+// 0x47620C container_enter_
 static void _container_enter(int keyCode, int inventoryWindowType)
 {
     if (keyCode >= 2000) {
@@ -5433,7 +5433,7 @@ static void _container_enter(int keyCode, int inventoryWindowType)
     }
 }
 
-// 0x476394
+// 0x476394 container_exit_
 static void _container_exit(int keyCode, int inventoryWindowType)
 {
     if (keyCode == 2500) {
@@ -5458,7 +5458,7 @@ static void _container_exit(int keyCode, int inventoryWindowType)
 }
 
 // Drop item inside a container item (bag, backpack, etc.).
-// 0x476464
+// 0x476464 drop_into_container_
 static int _drop_into_container(Object* container, Object* item, int sourceIndex, Object** itemSlot, int quantity)
 {
     int quantityToMove;
@@ -5498,7 +5498,7 @@ static int _drop_into_container(Object* container, Object* item, int sourceIndex
     return rc;
 }
 
-// 0x47650C
+// 0x47650C drop_ammo_into_weapon_
 static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
 {
     if (itemGetType(weapon) != ITEM_TYPE_WEAPON) {
@@ -5563,7 +5563,7 @@ static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoIte
     return 0;
 }
 
-// 0x47664C
+// 0x47664C draw_amount_
 static void _draw_amount(int value, int inventoryWindowType)
 {
     // BIGNUM.frm
@@ -5613,7 +5613,7 @@ static void _draw_amount(int value, int inventoryWindowType)
     windowRefreshRect(_mt_wid, &rect);
 }
 
-// 0x47688C
+// 0x47688C do_move_timer_
 static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int max, int defaultValue)
 {
     ScopedGameMode gm(GameMode::kCounter);
@@ -5778,7 +5778,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
 // Creates move items/set timer interface.
 //
-// 0x476AB8
+// 0x476AB8 setup_move_timer_win_
 static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 {
     const int oldFont = fontGetCurrent();
@@ -5992,7 +5992,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
     return 0;
 }
 
-// 0x477030
+// 0x477030 exit_move_timer_win_
 static int inventoryQuantityWindowFree(int inventoryWindowType)
 {
     int count = inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS ? 8 : 6;
@@ -6006,7 +6006,7 @@ static int inventoryQuantityWindowFree(int inventoryWindowType)
     return 0;
 }
 
-// 0x477074
+// 0x477074 inven_set_timer_
 int inventorySetTimer(Object* item)
 {
     bool isInitialized = _inven_is_initialized;

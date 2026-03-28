@@ -145,7 +145,7 @@ static void debugModeInit()
     }
 }
 
-// 0x442580
+// 0x442580 game_init_
 int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int flags, int argc, char** argv)
 {
     char path[COMPAT_MAX_PATH];
@@ -413,7 +413,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     return 0;
 }
 
-// 0x442B84
+// 0x442B84 game_reset_
 void gameReset()
 {
     tileDisable();
@@ -462,7 +462,7 @@ void gameReset()
     gGameLoaded = false;
 }
 
-// 0x442C34
+// 0x442C34 game_exit_
 void gameExit()
 {
     debugPrint("\nGame Exit\n");
@@ -520,7 +520,7 @@ void gameExit()
     sfallConfigExit();
 }
 
-// 0x442D44
+// 0x442D44 game_handle_input_
 int gameHandleKey(int eventCode, bool isInCombatMode)
 {
     // NOTE: Uninline.
@@ -985,7 +985,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
 }
 
 // game_ui_disable
-// 0x443BFC
+// 0x443BFC game_ui_disable_
 // pass allowScrolling = 1 to allow scrolling
 void gameUiDisable(int allowScrolling)
 {
@@ -999,7 +999,7 @@ void gameUiDisable(int allowScrolling)
 }
 
 // game_ui_enable
-// 0x443C30
+// 0x443C30 game_ui_enable_
 void gameUiEnable()
 {
     if (gGameUiDisabled) {
@@ -1013,13 +1013,13 @@ void gameUiEnable()
 }
 
 // game_ui_is_disabled
-// 0x443C60
+// 0x443C60 game_ui_is_disabled_
 bool gameUiIsDisabled()
 {
     return gGameUiDisabled;
 }
 
-// 0x443C68
+// 0x443C68 game_get_global_var_
 int gameGetGlobalVar(int var)
 {
     if (var < 0 || var >= gGameGlobalVarsLength) {
@@ -1030,7 +1030,7 @@ int gameGetGlobalVar(int var)
     return gGameGlobalVars[var];
 }
 
-// 0x443C98
+// 0x443C98 game_set_global_var_
 int gameSetGlobalVar(int var, int value)
 {
     if (var < 0 || var >= gGameGlobalVarsLength) {
@@ -1062,7 +1062,7 @@ int gameSetGlobalVar(int var, int value)
 }
 
 // game_load_info
-// 0x443CC8
+// 0x443CC8 game_load_info_
 static int gameLoadGlobalVars()
 {
     if (globalVarsRead("data\\vault13.gam", "GAME_GLOBAL_VARS:", &gGameGlobalVarsLength, &gGameGlobalVars) != 0) {
@@ -1079,7 +1079,7 @@ static int gameLoadGlobalVars()
     return 0;
 }
 
-// 0x443CE8
+// 0x443CE8 game_load_info_vars_
 int globalVarsRead(const char* path, const char* section, int* variablesListLengthPtr, int** variablesListPtr)
 {
     inventoryResetDude();
@@ -1138,13 +1138,13 @@ int globalVarsRead(const char* path, const char* section, int* variablesListLeng
     return 0;
 }
 
-// 0x443E2C
+// 0x443E2C game_state_
 int gameGetState()
 {
     return gGameState;
 }
 
-// 0x443E34
+// 0x443E34 game_state_request_
 int gameRequestState(int newGameState)
 {
     switch (newGameState) {
@@ -1167,7 +1167,7 @@ int gameRequestState(int newGameState)
     return 0;
 }
 
-// 0x443E90
+// 0x443E90 game_state_update_
 void gameUpdateState()
 {
     switch (gGameState) {
@@ -1183,7 +1183,7 @@ void gameUpdateState()
     }
 }
 
-// 0x443EF0
+// 0x443EF0 game_screendump_
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette)
 {
     MessageListItem messageListItem;
@@ -1218,7 +1218,7 @@ static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsi
 
 // NOTE: Inlined.
 //
-// 0x443F50
+// 0x443F50 game_unload_info_
 static void gameFreeGlobalVars()
 {
     gGameGlobalVarsLength = 0;
@@ -1233,7 +1233,7 @@ static void gameFreeGlobalVars()
     }
 }
 
-// 0x443F74
+// 0x443F74 game_help_
 static void showHelp()
 {
     ScopedGameMode gm(GameMode::kHelp);
@@ -1312,7 +1312,7 @@ static void showHelp()
     }
 }
 
-// 0x4440B8
+// 0x4440B8 game_quit_with_confirm_
 int showQuitConfirmationDialog()
 {
     bool isoWasEnabled = isoDisable();
@@ -1367,7 +1367,7 @@ int showQuitConfirmationDialog()
     return rc;
 }
 
-// 0x44418C
+// 0x44418C game_init_databases_
 static int gameDbInit()
 {
     const char* main_file_name;
@@ -1434,7 +1434,7 @@ static int gameDbInit()
     return 0;
 }
 
-// 0x444384
+// 0x444384 game_splash_screen_
 static void showSplash()
 {
     int splash = settings.system.splash;

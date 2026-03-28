@@ -118,7 +118,7 @@ static int gTaggedSkills[NUM_TAGGED_SKILLS];
 // 0x668080
 static MessageList gSkillsMessageList;
 
-// 0x4AA318
+// 0x4AA318 skill_init_
 int skillsInit()
 {
     if (!messageListInit(&gSkillsMessageList)) {
@@ -163,7 +163,7 @@ int skillsInit()
     return 0;
 }
 
-// 0x4AA448
+// 0x4AA448 skill_reset_
 void skillsReset()
 {
     for (int index = 0; index < NUM_TAGGED_SKILLS; index++) {
@@ -174,26 +174,26 @@ void skillsReset()
     skill_use_slot_clear();
 }
 
-// 0x4AA478
+// 0x4AA478 skill_exit_
 void skillsExit()
 {
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SKILL, nullptr);
     messageListFree(&gSkillsMessageList);
 }
 
-// 0x4AA488
+// 0x4AA488 skill_load_
 int skillsLoad(File* stream)
 {
     return fileReadInt32List(stream, gTaggedSkills, NUM_TAGGED_SKILLS);
 }
 
-// 0x4AA4A8
+// 0x4AA4A8 skill_save_
 int skillsSave(File* stream)
 {
     return fileWriteInt32List(stream, gTaggedSkills, NUM_TAGGED_SKILLS);
 }
 
-// 0x4AA4C8
+// 0x4AA4C8 skill_set_defaults_
 void protoCritterDataResetSkills(CritterProtoData* data)
 {
     for (int skill = 0; skill < SKILL_COUNT; skill++) {
@@ -201,7 +201,7 @@ void protoCritterDataResetSkills(CritterProtoData* data)
     }
 }
 
-// 0x4AA4E4
+// 0x4AA4E4 skill_set_tags_
 void skillsSetTagged(int* skills, int count)
 {
     for (int index = 0; index < count; index++) {
@@ -209,7 +209,7 @@ void skillsSetTagged(int* skills, int count)
     }
 }
 
-// 0x4AA508
+// 0x4AA508 skill_get_tags_
 void skillsGetTagged(int* skills, int count)
 {
     for (int index = 0; index < count; index++) {
@@ -217,7 +217,7 @@ void skillsGetTagged(int* skills, int count)
     }
 }
 
-// 0x4AA52C
+// 0x4AA52C skill_is_tagged_
 bool skillIsTagged(int skill)
 {
     return skill == gTaggedSkills[0]
@@ -226,7 +226,7 @@ bool skillIsTagged(int skill)
         || skill == gTaggedSkills[3];
 }
 
-// 0x4AA558
+// 0x4AA558 skill_level_
 int skillGetValue(Object* critter, int skill)
 {
     if (!skillIsValid(skill)) {
@@ -268,13 +268,13 @@ int skillGetValue(Object* critter, int skill)
     return value;
 }
 
-// 0x4AA654
+// 0x4AA654 skill_base_
 int skillGetDefaultValue(int skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].defaultValue : -5;
 }
 
-// 0x4AA680
+// 0x4AA680 skill_points_
 int skillGetBaseValue(Object* obj, int skill)
 {
     if (!skillIsValid(skill)) {
@@ -287,7 +287,7 @@ int skillGetBaseValue(Object* obj, int skill)
     return proto->critter.data.skills[skill];
 }
 
-// 0x4AA6BC
+// 0x4AA6BC skill_inc_point_
 int skillAdd(Object* obj, int skill)
 {
     if (obj != gDude) {
@@ -326,7 +326,7 @@ int skillAdd(Object* obj, int skill)
     return rc;
 }
 
-// 0x4AA7F8
+// 0x4AA7F8 skill_inc_point_force_
 int skillAddForce(Object* obj, int skill)
 {
     if (obj != gDude) {
@@ -351,7 +351,7 @@ int skillAddForce(Object* obj, int skill)
 
 // Returns the cost of raising skill value in skill points.
 //
-// 0x4AA87C
+// 0x4AA87C skillLevelCost_
 int skillsGetCost(int skillValue)
 {
     if (skillValue >= 201) {
@@ -372,7 +372,7 @@ int skillsGetCost(int skillValue)
 // Decrements specified skill value by one, returning appropriate amount as
 // unspent skill points.
 //
-// 0x4AA8C4
+// 0x4AA8C4 skill_dec_point_
 int skillSub(Object* critter, int skill)
 {
     if (critter != gDude) {
@@ -424,7 +424,7 @@ int skillSub(Object* critter, int skill)
 
 // Decrements specified skill value by one.
 //
-// 0x4AAA34
+// 0x4AAA34 skill_dec_point_force_
 int skillSubForce(Object* obj, int skill)
 {
     Proto* proto;
@@ -448,7 +448,7 @@ int skillSubForce(Object* obj, int skill)
     return 0;
 }
 
-// 0x4AAAA4
+// 0x4AAAA4 skill_result_
 int skillRoll(Object* critter, int skill, int modifier, int* howMuch)
 {
     if (!skillIsValid(skill)) {
@@ -478,31 +478,31 @@ int skillRoll(Object* critter, int skill, int modifier, int* howMuch)
     return randomRoll(skillValue + modifier, criticalChance, howMuch);
 }
 
-// 0x4AAB9C
+// 0x4AAB9C skill_name_
 char* skillGetName(int skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].name : nullptr;
 }
 
-// 0x4AABC0
+// 0x4AABC0 skill_description_
 char* skillGetDescription(int skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].description : nullptr;
 }
 
-// 0x4AABE4
+// 0x4AABE4 skill_attribute_
 char* skillGetAttributes(int skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].attributes : nullptr;
 }
 
-// 0x4AAC08
+// 0x4AAC08 skill_pic_
 int skillGetFrmId(int skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].frmId : 0;
 }
 
-// 0x4AAC2C
+// 0x4AAC2C show_skill_use_messages_
 static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int skillBonus)
 {
     if (obj != gDude) {
@@ -542,7 +542,7 @@ static void _show_skill_use_messages(Object* obj, int skill, Object* target, int
 }
 
 // skill_use
-// 0x4AAD08
+// 0x4AAD08 skill_use_
 int skillUse(Object* obj, Object* target, int skill, int skillBonus)
 {
     MessageListItem messageListItem;
@@ -1027,7 +1027,7 @@ int skillUse(Object* obj, Object* target, int skill, int skillBonus)
     return 0;
 }
 
-// 0x4ABBE4
+// 0x4ABBE4 skill_check_stealing_
 int skillsPerformStealing(Object* thief, Object* target, Object* item, bool isPlanting)
 {
     int howMuch;
@@ -1109,7 +1109,7 @@ int skillsPerformStealing(Object* thief, Object* target, Object* item, bool isPl
     }
 }
 
-// 0x4ABDEC
+// 0x4ABDEC skill_game_difficulty_
 int skillGetGameDifficultyModifier(int skill)
 {
     switch (skill) {
@@ -1140,7 +1140,7 @@ int skillGetGameDifficultyModifier(int skill)
     return 0;
 }
 
-// 0x4ABE44
+// 0x4ABE44 skill_use_slot_available_
 static int skillGetFreeUsageSlot(int skill)
 {
     for (int slot = 0; slot < SKILLS_MAX_USES_PER_DAY; slot++) {
@@ -1158,7 +1158,7 @@ static int skillGetFreeUsageSlot(int skill)
     return SKILLS_MAX_USES_PER_DAY - 1;
 }
 
-// 0x4ABEB8
+// 0x4ABEB8 skill_use_slot_add_
 int skillUpdateLastUse(int skill)
 {
     int slot = skillGetFreeUsageSlot(skill);
@@ -1179,26 +1179,26 @@ int skillUpdateLastUse(int skill)
 
 // NOTE: Inlined.
 //
-// 0x4ABF24
+// 0x4ABF24 skill_use_slot_clear_
 int skill_use_slot_clear()
 {
     memset(_timesSkillUsed, 0, sizeof(_timesSkillUsed));
     return 0;
 }
 
-// 0x4ABF3C
+// 0x4ABF3C skill_use_slot_save_
 int skillsUsageSave(File* stream)
 {
     return fileWriteInt32List(stream, (int*)_timesSkillUsed, SKILL_COUNT * SKILLS_MAX_USES_PER_DAY);
 }
 
-// 0x4ABF5C
+// 0x4ABF5C skill_use_slot_load_
 int skillsUsageLoad(File* stream)
 {
     return fileReadInt32List(stream, (int*)_timesSkillUsed, SKILL_COUNT * SKILLS_MAX_USES_PER_DAY);
 }
 
-// 0x4ABF7C
+// 0x4ABF7C skillGetPartyMemberString_
 char* skillsGetGenericResponse(Object* critter, bool isDude)
 {
     int baseMessageId;

@@ -301,7 +301,7 @@ static int gInterfaceSidePanelsLeadingWindow = -1;
 static int gInterfaceSidePanelsTrailingWindow = -1;
 
 // intface_init
-// 0x45D880
+// 0x45D880 intface_init_
 int interfaceInit()
 {
     int fid;
@@ -588,7 +588,7 @@ int interfaceInit()
     return 0;
 }
 
-// 0x45E3D0
+// 0x45E3D0 intface_reset_
 void interfaceReset()
 {
     interfaceBarEnable();
@@ -605,7 +605,7 @@ void interfaceReset()
     gInterfaceCurrentHand = 0;
 }
 
-// 0x45E440
+// 0x45E440 intface_exit_
 void interfaceFree()
 {
     if (gInterfaceBarWindow != -1) {
@@ -699,7 +699,7 @@ void interfaceFree()
     interfaceBarFree();
 }
 
-// 0x45E860
+// 0x45E860 intface_load_
 int interfaceLoad(File* stream)
 {
     if (gInterfaceBarWindow == -1) {
@@ -757,7 +757,7 @@ int interfaceLoad(File* stream)
     return 0;
 }
 
-// 0x45E988
+// 0x45E988 intface_save_
 int interfaceSave(File* stream)
 {
     if (gInterfaceBarWindow == -1) {
@@ -774,7 +774,7 @@ int interfaceSave(File* stream)
 
 // NOTE: Inlined.
 //
-// 0x45E9E0
+// 0x45E9E0 intface_hide_
 void interfaceBarHide()
 {
     if (gInterfaceBarWindow != -1) {
@@ -790,7 +790,7 @@ void interfaceBarHide()
     indicatorBarRefresh();
 }
 
-// 0x45EA10
+// 0x45EA10 intface_show_
 void interfaceBarShow()
 {
     if (gInterfaceBarWindow != -1) {
@@ -810,7 +810,7 @@ void interfaceBarShow()
     indicatorBarRefresh();
 }
 
-// 0x45EA64
+// 0x45EA64 intface_enable_
 void interfaceBarEnable()
 {
     if (!gInterfaceBarEnabled) {
@@ -833,7 +833,7 @@ void interfaceBarEnable()
     }
 }
 
-// 0x45EAFC
+// 0x45EAFC intface_disable_
 void interfaceBarDisable()
 {
     if (gInterfaceBarEnabled) {
@@ -853,13 +853,13 @@ void interfaceBarDisable()
     }
 }
 
-// 0x45EB90
+// 0x45EB90 intface_is_enabled_
 bool interfaceBarEnabled()
 {
     return gInterfaceBarEnabled;
 }
 
-// 0x45EB98
+// 0x45EB98 intface_redraw_
 void interfaceBarRefresh()
 {
     if (gInterfaceBarWindow != -1) {
@@ -879,7 +879,7 @@ static int counterAnimationBaseDelayMs()
 
 // Render hit points.
 //
-// 0x45EBD8
+// 0x45EBD8 intface_update_hit_points_
 void interfaceRenderHitPoints(bool animate)
 {
     if (gInterfaceBarWindow == -1) {
@@ -953,7 +953,7 @@ void interfaceRenderHitPoints(bool animate)
 
 // Render armor class.
 //
-// 0x45EDA8
+// 0x45EDA8 intface_update_ac_
 void interfaceRenderArmorClass(bool animate)
 {
     int armorClass = critterGetStat(gDude, STAT_ARMOR_CLASS);
@@ -968,7 +968,7 @@ void interfaceRenderArmorClass(bool animate)
     gInterfaceLastRenderedArmorClass = armorClass;
 }
 
-// 0x45EE0C
+// 0x45EE0C intface_update_move_points_
 void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
 {
     unsigned char* frmData;
@@ -1017,7 +1017,7 @@ void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
     }
 }
 
-// 0x45EF6C
+// 0x45EF6C intface_get_attack_
 int interfaceGetCurrentHitMode(int* hitMode, bool* aiming)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1044,7 +1044,7 @@ int interfaceGetCurrentHitMode(int* hitMode, bool* aiming)
     return -1;
 }
 
-// 0x45EFEC
+// 0x45EFEC intface_update_items_
 int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
 {
     if (isoIsDisabled()) {
@@ -1174,7 +1174,7 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
     return 0;
 }
 
-// 0x45F404
+// 0x45F404 intface_toggle_items_
 int interfaceBarSwapHands(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1205,7 +1205,7 @@ int interfaceBarSwapHands(bool animated)
     return 0;
 }
 
-// 0x45F4B4
+// 0x45F4B4 intface_get_item_states_
 int interfaceGetItemActions(int* leftItemAction, int* rightItemAction)
 {
     *leftItemAction = gInterfaceItemStates[HAND_LEFT].action;
@@ -1213,7 +1213,7 @@ int interfaceGetItemActions(int* leftItemAction, int* rightItemAction)
     return 0;
 }
 
-// 0x45F4E0
+// 0x45F4E0 intface_toggle_item_state_
 int interfaceCycleItemAction()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1270,7 +1270,7 @@ int interfaceCycleItemAction()
     return 0;
 }
 
-// 0x45F5EC
+// 0x45F5EC intface_use_item_
 void _intface_use_item()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1331,13 +1331,13 @@ void _intface_use_item()
     }
 }
 
-// 0x45F7FC
+// 0x45F7FC intface_is_item_right_hand_
 int interfaceGetCurrentHand()
 {
     return gInterfaceCurrentHand;
 }
 
-// 0x45F804
+// 0x45F804 intface_get_current_item_
 int interfaceGetActiveItem(Object** itemPtr)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1349,7 +1349,7 @@ int interfaceGetActiveItem(Object** itemPtr)
     return 0;
 }
 
-// 0x45F838
+// 0x45F838 intface_update_ammo_lights_
 int _intface_update_ammo_lights()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1386,7 +1386,7 @@ static int interfaceBarBaseDelayMs()
     return std::max(static_cast<int>(1000.0 / settings.preferences.ui_anim_speed), 100);
 }
 
-// 0x45F96C
+// 0x45F96C intface_end_window_open_
 void interfaceBarEndButtonsShow(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1443,7 +1443,7 @@ void interfaceBarEndButtonsShow(bool animated)
     interfaceBarEndButtonsRenderRedLights();
 }
 
-// 0x45FAC0
+// 0x45FAC0 intface_end_window_close_
 void interfaceBarEndButtonsHide(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1500,7 +1500,7 @@ void interfaceBarEndButtonsHide(bool animated)
     gInterfaceBarEndButtonsIsVisible = false;
 }
 
-// 0x45FC04
+// 0x45FC04 intface_end_buttons_enable_
 void interfaceBarEndButtonsRenderGreenLights()
 {
     if (gInterfaceBarEndButtonsIsVisible) {
@@ -1520,7 +1520,7 @@ void interfaceBarEndButtonsRenderGreenLights()
     }
 }
 
-// 0x45FC98
+// 0x45FC98 intface_end_buttons_disable_
 void interfaceBarEndButtonsRenderRedLights()
 {
     if (gInterfaceBarEndButtonsIsVisible) {
@@ -1542,7 +1542,7 @@ void interfaceBarEndButtonsRenderRedLights()
 
 // NOTE: Inlined.
 //
-// 0x45FD2C
+// 0x45FD2C intface_init_items_
 static int intface_init_items()
 {
     // FIXME: For unknown reason these values initialized with -1. It's never
@@ -1553,7 +1553,7 @@ static int intface_init_items()
     return 0;
 }
 
-// 0x45FD88
+// 0x45FD88 intface_redraw_items_
 static int interfaceBarRefreshMainAction()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1796,21 +1796,21 @@ static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int
     }
 }
 
-// 0x460658
+// 0x460658 intface_redraw_items_callback_
 static int _intface_redraw_items_callback(Object* _, Object* __)
 {
     interfaceBarRefreshMainAction();
     return 0;
 }
 
-// 0x460660
+// 0x460660 intface_change_fid_callback_
 static int _intface_change_fid_callback(Object* _, Object* __)
 {
     gInterfaceBarSwapHandsInProgress = false;
     return 0;
 }
 
-// 0x46066C
+// 0x46066C intface_change_fid_animate_
 static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeaponAnimationCode, int weaponAnimationCode)
 {
     gInterfaceBarSwapHandsInProgress = true;
@@ -1876,7 +1876,7 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeapo
     }
 }
 
-// 0x4607E0
+// 0x4607E0 intface_create_end_turn_button_
 static int endTurnButtonInit()
 {
     int fid;
@@ -1910,7 +1910,7 @@ static int endTurnButtonInit()
     return 0;
 }
 
-// 0x4608C4
+// 0x4608C4 intface_destroy_end_turn_button_
 static int endTurnButtonFree()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1928,7 +1928,7 @@ static int endTurnButtonFree()
     return 0;
 }
 
-// 0x460940
+// 0x460940 intface_create_end_combat_button_
 static int endCombatButtonInit()
 {
     int fid;
@@ -1962,7 +1962,7 @@ static int endCombatButtonInit()
     return 0;
 }
 
-// 0x460A24
+// 0x460A24 intface_destroy_end_combat_button_
 static int endCombatButtonFree()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1980,7 +1980,7 @@ static int endCombatButtonFree()
     return 0;
 }
 
-// 0x460AA0
+// 0x460AA0 intface_draw_ammo_lights_
 static void interfaceUpdateAmmoBar(int x, int ratio)
 {
     if ((ratio & 1) != 0) {
@@ -2014,7 +2014,7 @@ static void interfaceUpdateAmmoBar(int x, int ratio)
     }
 }
 
-// 0x460B20
+// 0x460B20 intface_item_reload_
 static int _intface_item_reload()
 {
     if (gInterfaceBarWindow == -1) {
@@ -2060,7 +2060,7 @@ static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned cha
 // [previousValue] is only meaningful for animation.
 // [offset] = 0 - grey, 120 - yellow, 240 - red.
 //
-// 0x460BA0
+// 0x460BA0 intface_rotate_numbers_
 static void interfaceRenderCounter(int x, int y, int previousValue, int value, int offset, int delay)
 {
     if (value > 999) {
@@ -2158,7 +2158,7 @@ static void interfaceRenderCounter(int x, int y, int previousValue, int value, i
 
 // NOTE: Inlined.
 //
-// 0x461128
+// 0x461128 intface_fatal_error_
 static int intface_fatal_error(int rc)
 {
     interfaceFree();
@@ -2166,7 +2166,7 @@ static int intface_fatal_error(int rc)
     return rc;
 }
 
-// 0x461134
+// 0x461134 construct_box_bar_win_
 static int indicatorBarInit()
 {
     int oldFont = fontGetCurrent();
@@ -2252,7 +2252,7 @@ static int indicatorBarInit()
     return 0;
 }
 
-// 0x461454
+// 0x461454 deconstruct_box_bar_win_
 static void interfaceBarFree()
 {
     if (gIndicatorBarWindow != -1) {
@@ -2271,7 +2271,7 @@ static void interfaceBarFree()
 
 // NOTE: This function is not referenced in the original code.
 //
-// 0x4614A0
+// 0x4614A0 reset_box_bar_win_
 static void indicatorBarReset()
 {
     if (gIndicatorBarWindow != -1) {
@@ -2284,7 +2284,7 @@ static void indicatorBarReset()
 
 // Updates indicator bar.
 //
-// 0x4614CC
+// 0x4614CC refresh_box_bar_win_
 int indicatorBarRefresh()
 {
     if (gInterfaceBarWindow != -1 && gIndicatorBarIsVisible && !gInterfaceBarHidden) {
@@ -2358,7 +2358,7 @@ int indicatorBarRefresh()
     return 0;
 }
 
-// 0x461624
+// 0x461624 bbox_comp_
 static int indicatorBoxCompareByPosition(const void* a, const void* b)
 {
     int indicatorBox1 = *(int*)a;
@@ -2375,7 +2375,7 @@ static int indicatorBoxCompareByPosition(const void* a, const void* b)
 
 // Renders indicator boxes into the indicator bar window.
 //
-// 0x461648
+// 0x461648 draw_bboxes_
 static void indicatorBarRender(int count)
 {
     if (gIndicatorBarWindow == -1) {
@@ -2428,7 +2428,7 @@ static void indicatorBarRender(int count)
 // Returns `true` if indicator was added, or `false` if there is no available
 // space in the indicator bar.
 //
-// 0x4616F0
+// 0x4616F0 add_bar_box_
 static bool indicatorBarAdd(int indicator)
 {
     for (int index = 0; index < INDICATOR_SLOTS_COUNT; index++) {
@@ -2443,7 +2443,7 @@ static bool indicatorBarAdd(int indicator)
     return false;
 }
 
-// 0x461740
+// 0x461740 enable_box_bar_win_
 bool indicatorBarShow()
 {
     bool oldIsVisible = gIndicatorBarIsVisible;
@@ -2454,7 +2454,7 @@ bool indicatorBarShow()
     return oldIsVisible;
 }
 
-// 0x461760
+// 0x461760 disable_box_bar_win_
 bool indicatorBarHide()
 {
     bool oldIsVisible = gIndicatorBarIsVisible;
@@ -2609,7 +2609,7 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
 // differs from `interfaceGetCurrentHitMode` (can return one of `reload` hit
 // modes, the default is `punch`).
 //
-// 0x45EF6C
+// 0x45EF6C intface_get_attack_
 bool interface_get_current_attack_mode(int* hit_mode)
 {
     if (gInterfaceBarWindow == -1) {

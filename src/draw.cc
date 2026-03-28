@@ -7,7 +7,7 @@
 
 namespace fallout {
 
-// 0x4D2FC0
+// 0x4D2FC0 draw_line_
 void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y2, int color)
 {
     int temp;
@@ -130,7 +130,7 @@ void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y
     }
 }
 
-// 0x4D31A4
+// 0x4D31A4 draw_box_
 void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int color)
 {
     bufferDrawLine(buf, pitch, left, top, right, top, color);
@@ -139,7 +139,7 @@ void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right,
     bufferDrawLine(buf, pitch, right, top, right, bottom, color);
 }
 
-// 0x4D322C
+// 0x4D322C draw_shaded_box_
 void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int ltColor, int rbColor)
 {
     bufferDrawLine(buf, pitch, left, top, right, top, ltColor);
@@ -148,7 +148,7 @@ void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, in
     bufferDrawLine(buf, pitch, right, top, right, bottom, rbColor);
 }
 
-// 0x4D33F0
+// 0x4D33F0 cscale_
 void blitBufferToBufferStretch(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
 {
     int stepX = (destWidth << 16) / srcWidth;
@@ -175,7 +175,7 @@ void blitBufferToBufferStretch(unsigned char* src, int srcWidth, int srcHeight, 
     }
 }
 
-// 0x4D3560
+// 0x4D3560 trans_cscale_
 void blitBufferToBufferStretchTrans(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
 {
     int stepX = (destWidth << 16) / srcWidth;
@@ -204,19 +204,19 @@ void blitBufferToBufferStretchTrans(unsigned char* src, int srcWidth, int srcHei
     }
 }
 
-// 0x4D36D4
+// 0x4D36D4 buf_to_buf_
 void blitBufferToBuffer(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
 {
     srcCopy(dest, destPitch, src, srcPitch, width, height);
 }
 
-// 0x4D3704
+// 0x4D3704 trans_buf_to_buf_
 void blitBufferToBufferTrans(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
 {
     transSrcCopy(dest, destPitch, src, srcPitch, width, height);
 }
 
-// 0x4D387C
+// 0x4D387C buf_fill_
 void bufferFill(unsigned char* buf, int width, int height, int pitch, int value)
 {
     int y;
@@ -227,7 +227,7 @@ void bufferFill(unsigned char* buf, int width, int height, int pitch, int value)
     }
 }
 
-// 0x4D38E0
+// 0x4D38E0 buf_texture_
 void _buf_texture(unsigned char* buf, int width, int height, int pitch, void* texture, int xOffset, int yOffset)
 {
     // Intended to tile GNW window texture data when window color is 256.
@@ -243,7 +243,7 @@ void _buf_texture(unsigned char* buf, int width, int height, int pitch, void* te
     // TODO: Incomplete.
 }
 
-// 0x4D3A48
+// 0x4D3A48 lighten_buf_
 void _lighten_buf(unsigned char* buf, int width, int height, int pitch)
 {
     int skip = pitch - width;
@@ -259,7 +259,7 @@ void _lighten_buf(unsigned char* buf, int width, int height, int pitch)
 
 // Swaps two colors in the buffer.
 //
-// 0x4D3A8C
+// 0x4D3A8C swap_color_buf_
 void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, int color1, int color2)
 {
     int step = pitch - width;
@@ -277,7 +277,7 @@ void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, int c
     }
 }
 
-// 0x4D3AE0
+// 0x4D3AE0 buf_outline_
 void bufferOutline(unsigned char* buf, int width, int height, int pitch, int color)
 {
     unsigned char* ptr = buf + pitch;
@@ -320,7 +320,7 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, int col
     }
 }
 
-// 0x4E0DB0
+// 0x4E0DB0 srcCopy_
 void srcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitch, int width, int height)
 {
     for (int y = 0; y < height; y++) {
@@ -330,7 +330,7 @@ void srcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitc
     }
 }
 
-// 0x4E0ED5
+// 0x4E0ED5 transSrcCopy_
 void transSrcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitch, int width, int height)
 {
     int destSkip = destPitch - width;

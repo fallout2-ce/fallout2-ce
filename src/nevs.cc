@@ -35,7 +35,7 @@ static Nevs* gNevs;
 static int gNevsHits;
 
 // nevs_alloc
-// 0x488340
+// 0x488340 nevs_alloc_
 static Nevs* _nevs_alloc()
 {
     if (gNevs == nullptr) {
@@ -57,14 +57,14 @@ static Nevs* _nevs_alloc()
 
 // NOTE: Inlined.
 //
-// 0x488394
+// 0x488394 nevs_free_
 static void _nevs_reset(Nevs* nevs)
 {
     nevs->used = false;
     memset(nevs, 0, sizeof(*nevs));
 }
 
-// 0x4883AC
+// 0x4883AC nevs_close_
 void _nevs_close()
 {
     if (gNevs != nullptr) {
@@ -73,7 +73,7 @@ void _nevs_close()
     }
 }
 
-// 0x4883D4
+// 0x4883D4 nevs_removeprogramreferences_
 static void _nevs_removeprogramreferences(Program* program)
 {
     if (gNevs != nullptr) {
@@ -88,7 +88,7 @@ static void _nevs_removeprogramreferences(Program* program)
 }
 
 // nevs_initonce
-// 0x488418
+// 0x488418 nevs_initonce_
 void _nevs_initonce()
 {
     intLibRegisterProgramDeleteCallback(_nevs_removeprogramreferences);
@@ -103,7 +103,7 @@ void _nevs_initonce()
 }
 
 // nevs_find
-// 0x48846C
+// 0x48846C nevs_find_
 static Nevs* _nevs_find(const char* name)
 {
     if (gNevs == nullptr) {
@@ -121,7 +121,7 @@ static Nevs* _nevs_find(const char* name)
     return nullptr;
 }
 
-// 0x4884C8
+// 0x4884C8 nevs_addevent_
 int _nevs_addevent(const char* name, Program* program, int proc, int type)
 {
     Nevs* nevs = _nevs_find(name);
@@ -144,7 +144,7 @@ int _nevs_addevent(const char* name, Program* program, int proc, int type)
 }
 
 // nevs_clearevent
-// 0x48859C
+// 0x48859C nevs_clearevent_
 int _nevs_clearevent(const char* name)
 {
     debugPrint("nevs_clearevent( '%s');\n", name);
@@ -160,7 +160,7 @@ int _nevs_clearevent(const char* name)
 }
 
 // nevs_signal
-// 0x48862C
+// 0x48862C nevs_signal_
 int _nevs_signal(const char* name)
 {
     debugPrint("nevs_signal( '%s');\n", name);
@@ -184,7 +184,7 @@ int _nevs_signal(const char* name)
 }
 
 // nevs_update
-// 0x4886AC
+// 0x4886AC nevs_update_
 void _nevs_update()
 {
     if (gNevsHits == 0) {

@@ -335,7 +335,7 @@ static FrmImage _elevatorPanelFrmImage;
 
 // Presents elevator dialog for player to pick a desired level.
 //
-// 0x43EF5C
+// 0x43EF5C elevator_select_
 int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tilePtr)
 {
     if (elevator < 0 || elevator >= ELEVATORS_MAX) {
@@ -479,7 +479,7 @@ int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tileP
     return 0;
 }
 
-// 0x43F324
+// 0x43F324 elevator_start_
 static int elevatorWindowInit(int elevator)
 {
     gElevatorWindowIsoWasEnabled = isoDisable();
@@ -607,7 +607,7 @@ static int elevatorWindowInit(int elevator)
     return 0;
 }
 
-// 0x43F6D0
+// 0x43F6D0 elevator_end_
 static void elevatorWindowFree()
 {
     windowDestroy(gElevatorWindow);
@@ -630,7 +630,7 @@ static void elevatorWindowFree()
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 }
 
-// 0x43F73C
+// 0x43F73C Check4Keys_
 static int elevatorGetLevelFromKeyCode(int elevator, int keyCode)
 {
     for (int index = 0; index < ELEVATOR_LEVEL_MAX; index++) {

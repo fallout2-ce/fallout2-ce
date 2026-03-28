@@ -489,7 +489,7 @@ static void renderNavigationButtons(int _view_page, int totalPages, bool isSubPa
     }
 }
 
-// 0x497004
+// 0x497004 pipboy_
 int pipboyOpen(int intent)
 {
     if (!wmMapPipboyActive() && !pipboy_available_at_game_start) {
@@ -601,7 +601,7 @@ void pipboyMessageListFree()
     messageListInit(&gPipboyMessageList);
 }
 
-// 0x497228
+// 0x497228 StartPipboy_
 static int pipboyWindowInit(int intent)
 {
     gPipboyWindowIsoWasEnabled = isoDisable();
@@ -811,7 +811,7 @@ static int pipboyWindowInit(int intent)
     return intent;
 }
 
-// 0x497828
+// 0x497828 EndPipboy_
 static void pipboyWindowFree()
 {
     if (settings.debug.show_script_messages) {
@@ -882,7 +882,7 @@ void pipboyReset()
     _pip_init_();
 }
 
-// 0x49791C
+// 0x49791C pip_num_
 static void pipboyDrawNumber(int value, int digits, int x, int y)
 {
     int offset = PIPBOY_WINDOW_WIDTH * y + x + 9 * (digits - 1);
@@ -894,7 +894,7 @@ static void pipboyDrawNumber(int value, int digits, int x, int y)
     }
 }
 
-// 0x4979B4
+// 0x4979B4 pip_date_
 static void pipboyDrawDate()
 {
     int day;
@@ -909,7 +909,7 @@ static void pipboyDrawDate()
     pipboyDrawNumber(year, 4, PIPBOY_WINDOW_YEAR_X, PIPBOY_WINDOW_YEAR_Y);
 }
 
-// 0x497A40
+// 0x497A40 pip_print_
 static void pipboyDrawText(const char* text, int flags, int color)
 {
     if ((flags & PIPBOY_TEXT_STYLE_UNDERLINE) != 0) {
@@ -991,7 +991,7 @@ void handlePipboyPageNavigation(
 
 // NOTE: Collapsed.
 //
-// 0x497BD4
+// 0x497BD4 save_pipboy_
 static int _save_pipboy(File* stream)
 {
     return 0;
@@ -1009,7 +1009,7 @@ int pipboyLoad(File* stream)
     return _save_pipboy(stream);
 }
 
-// 0x497BD8
+// 0x497BD8 PipStatus_
 static void pipboyWindowHandleStatus(int userInput)
 {
     if (userInput == 1024) {
@@ -1354,7 +1354,7 @@ static void pipboyWindowQuestList(int selectedLocationIndex)
     pipboyWindowCreateButtons(0, 0, true);
 }
 
-// 0x498734
+// 0x498734 ListStatLines_
 static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
 {
     if (gPipboyLinesCount >= 0) {
@@ -1426,7 +1426,7 @@ static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
     renderNavigationButtons(_view_page_quest, totalPages, false);
 }
 
-// 0x4988A0
+// 0x4988A0 ShowHoloDisk_
 static void pipboyRenderHolodiskText()
 {
     blitBufferToBuffer(_pipboyFrmImages[PIPBOY_FRM_BACKGROUND].getData() + PIPBOY_WINDOW_WIDTH * PIPBOY_WINDOW_CONTENT_VIEW_Y + PIPBOY_WINDOW_CONTENT_VIEW_X,
@@ -1526,7 +1526,7 @@ static void pipboyRenderHolodiskText()
     windowRefresh(gPipboyWindow);
 }
 
-// 0x498C40
+// 0x498C40 ListHoloDiskTitles_
 static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
 {
     if (gPipboyLinesCount >= 2) {
@@ -1578,7 +1578,7 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
     return displayedHolodisks;
 }
 
-// 0x498D34
+// 0x498D34 qscmp_
 static int _qscmp(const void* a1,
     const void* a2)
 {
@@ -1588,7 +1588,7 @@ static int _qscmp(const void* a1,
     return strcmp(v1->name, v2->name);
 }
 
-// 0x498D40
+// 0x498D40 PipAutomaps_
 static void pipboyWindowHandleAutomaps(int userInput)
 {
     if (userInput == 1024) { // 1024 'resets' the page (kindof)
@@ -1684,7 +1684,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
     }
 }
 
-// 0x498F30
+// 0x498F30 PrintAMelevList_
 static int _PrintAMelevList(int selectedMap)
 {
     AutomapHeader* automapHeader;
@@ -1807,7 +1807,7 @@ static int _PrintAMelevList(int selectedMap)
     return elevationsListSize;
 }
 
-// 0x499150
+// 0x499150 PrintAMList_
 static int _PrintAMList(int selectedLocation)
 {
     AutomapHeader* automapHeader;
@@ -1912,7 +1912,7 @@ static int _PrintAMList(int selectedLocation)
     return endIdx - startIdx; // Return the number of entries on the current page
 }
 
-// 0x49932C
+// 0x49932C PipArchives_
 static void pipboyHandleVideoArchive(int a1)
 {
     if (a1 == 1024) {
@@ -1947,7 +1947,7 @@ static void pipboyHandleVideoArchive(int a1)
     }
 }
 
-// 0x4993DC
+// 0x4993DC ListArchive_
 static int pipboyRenderVideoArchive(int a1)
 {
     const char* text;
@@ -2008,7 +2008,7 @@ static int pipboyRenderVideoArchive(int a1)
     return v5;
 }
 
-// 0x499518
+// 0x499518 PipAlarm_
 static void pipboyHandleAlarmClock(int eventCode)
 {
     if (eventCode == 1024) {
@@ -2082,7 +2082,7 @@ static void pipboyHandleAlarmClock(int eventCode)
     }
 }
 
-// 0x4996B4
+// 0x4996B4 DrawAlarmText_
 static void pipboyWindowRenderRestOptions(int a1)
 {
     const char* text;
@@ -2125,7 +2125,7 @@ static void pipboyWindowRenderRestOptions(int a1)
     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
 }
 
-// 0x4997B8
+// 0x4997B8 DrawAlrmHitPnts_
 static void pipboyDrawHitPoints()
 {
     int max_hp;
@@ -2149,7 +2149,7 @@ static void pipboyDrawHitPoints()
     fontDrawText(gPipboyWindowBuffer + 66 * PIPBOY_WINDOW_WIDTH + 254 + (350 - len) / 2, msg, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_WIDTH, _colorTable[992]);
 }
 
-// 0x4998C0
+// 0x4998C0 AddHotLines_
 static void pipboyWindowCreateButtons(int start, int count, bool a3)
 {
     fontSetCurrent(101);
@@ -2178,7 +2178,7 @@ static void pipboyWindowCreateButtons(int start, int count, bool a3)
     }
 }
 
-// 0x4999C0
+// 0x4999C0 NixHotLines_
 static void pipboyWindowDestroyButtons()
 {
     if (gPipboyWindowButtonCount != 0) {
@@ -2207,7 +2207,7 @@ static void pipboyWindowDestroyButtons()
     _hot_back_line = 0;
 }
 
-// 0x499A24
+// 0x499A24 TimedRest_
 static bool pipboyRest(int hours, int minutes, int duration)
 {
     gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
@@ -2418,7 +2418,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
     return rc;
 }
 
-// 0x499FCC
+// 0x499FCC Check4Health_
 static bool _Check4Health(int minutes)
 {
     _rest_time += minutes;
@@ -2473,7 +2473,7 @@ static void _ClacTime(int* hours, int* minutes, int wakeUpHour)
     }
 }
 
-// 0x49A0C8
+// 0x49A0C8 ScreenSaver_
 static int pipboyRenderScreensaver()
 {
     PipboyBomb bombs[PIPBOY_BOMB_COUNT];
@@ -2646,7 +2646,7 @@ static int pipboyRenderScreensaver()
     return 0;
 }
 
-// 0x49A5D4
+// 0x49A5D4 quest_init_
 static int questInit()
 {
     if (gQuestDescriptions != nullptr) {
@@ -2745,7 +2745,7 @@ err:
     return -1;
 }
 
-// 0x49A7E4
+// 0x49A7E4 quest_exit_
 static void questFree()
 {
     if (gQuestDescriptions != nullptr) {
@@ -2758,7 +2758,7 @@ static void questFree()
     messageListFree(&gQuestsMessageList);
 }
 
-// 0x49A818
+// 0x49A818 quest_qsort_compare_
 static int questDescriptionCompare(const void* a1, const void* a2)
 {
     QuestDescription* v1 = (QuestDescription*)a1;
@@ -2766,7 +2766,7 @@ static int questDescriptionCompare(const void* a1, const void* a2)
     return v1->location - v2->location;
 }
 
-// 0x49A824
+// 0x49A824 holodisks_init_
 static int holodiskInit()
 {
     if (gHolodiskDescriptions != nullptr) {
@@ -2839,7 +2839,7 @@ err:
     return -1;
 }
 
-// 0x49A968
+// 0x49A968 holodisks_exit_
 static void holodiskFree()
 {
     if (gHolodiskDescriptions != nullptr) {

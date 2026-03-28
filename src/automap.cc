@@ -252,7 +252,7 @@ static AutomapHeader gAutomapHeader;
 static AutomapEntry gAutomapEntry;
 
 // automap_init
-// 0x41B7F4
+// 0x41B7F4 automap_init_
 int automapInit()
 {
     gAutomapFlags = 0;
@@ -260,7 +260,7 @@ int automapInit()
     return 0;
 }
 
-// 0x41B808
+// 0x41B808 automap_reset_
 int automapReset()
 {
     gAutomapFlags = 0;
@@ -268,7 +268,7 @@ int automapReset()
     return 0;
 }
 
-// 0x41B81C
+// 0x41B81C automap_exit_
 void automapExit()
 {
     char path[COMPAT_MAX_PATH];
@@ -276,25 +276,25 @@ void automapExit()
     compat_remove(path);
 }
 
-// 0x41B87C
+// 0x41B87C automap_load_
 int automapLoad(File* stream)
 {
     return fileReadInt32(stream, &gAutomapFlags);
 }
 
-// 0x41B898
+// 0x41B898 automap_save_
 int automapSave(File* stream)
 {
     return fileWriteInt32(stream, gAutomapFlags);
 }
 
-// 0x41B8B4
+// 0x41B8B4 automapDisplayMap_
 int _automapDisplayMap(int map)
 {
     return _displayMapList[map];
 }
 
-// 0x41B8BC
+// 0x41B8BC automap_
 void automapShow(bool isInGame, bool isUsingScanner)
 {
     ScopedGameMode gm(GameMode::kAutomap);
@@ -499,7 +499,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
 
 // Renders automap in Map window.
 //
-// 0x41BD1C
+// 0x41BD1C draw_top_down_map_
 static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, int flags)
 {
     int color;
@@ -620,7 +620,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
 
 // Renders automap in Pipboy window.
 //
-// 0x41C004
+// 0x41C004 draw_top_down_map_pipboy_
 int automapRenderInPipboyWindow(int window, int map, int elevation)
 {
     unsigned char* windowBuffer = windowGetBuffer(window) + 640 * AUTOMAP_PIPBOY_VIEW_Y + AUTOMAP_PIPBOY_VIEW_X;
@@ -682,7 +682,7 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
 }
 
 // automap_pip_save
-// 0x41C0F0
+// 0x41C0F0 automap_pip_save_
 int automapSaveCurrent()
 {
     int map = mapGetCurrentMap();
@@ -896,7 +896,7 @@ int automapSaveCurrent()
 
 // Saves automap entry into stream.
 //
-// 0x41C844
+// 0x41C844 WriteAM_Entry_
 static int automapSaveEntry(File* stream)
 {
     unsigned char* buffer;
@@ -928,7 +928,7 @@ err:
     return -1;
 }
 
-// 0x41C8CC
+// 0x41C8CC AM_ReadEntry_
 static int automapLoadEntry(int map, int elevation)
 {
     gAutomapEntry.compressedData = nullptr;
@@ -1015,7 +1015,7 @@ out:
 
 // Saves automap.db header.
 //
-// 0x41CAD8
+// 0x41CAD8 WriteAM_Header_
 static int automapSaveHeader(File* stream)
 {
     fileRewind(stream);
@@ -1045,7 +1045,7 @@ err:
 
 // Loads automap.db header.
 //
-// 0x41CB50
+// 0x41CB50 AM_ReadMainHeader_
 static int automapLoadHeader(File* stream)
 {
 
@@ -1068,7 +1068,7 @@ static int automapLoadHeader(File* stream)
     return 0;
 }
 
-// 0x41CBA4
+// 0x41CBA4 decode_map_data_
 static void _decode_map_data(int elevation)
 {
     memset(gAutomapEntry.data, 0, SQUARE_GRID_SIZE);
@@ -1101,7 +1101,7 @@ static void _decode_map_data(int elevation)
     }
 }
 
-// 0x41CC98
+// 0x41CC98 am_pip_init_
 static int automapCreate()
 {
     gAutomapHeader.version = 1;
@@ -1128,7 +1128,7 @@ static int automapCreate()
 
 // Copy data from stream1 to stream2.
 //
-// 0x41CD6C
+// 0x41CD6C copy_file_data_
 static int _copy_file_data(File* stream1, File* stream2, int length)
 {
     void* buffer = internal_malloc(0xFFFF);
@@ -1160,7 +1160,7 @@ static int _copy_file_data(File* stream1, File* stream2, int length)
     return 0;
 }
 
-// 0x41CE74
+// 0x41CE74 ReadAMList_
 int automapGetHeader(AutomapHeader** automapHeaderPtr)
 {
     char path[COMPAT_MAX_PATH];

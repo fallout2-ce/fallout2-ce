@@ -52,7 +52,7 @@ unsigned char HighRGB(unsigned char color)
     return std::max(std::max(r, g), b);
 }
 
-// 0x44ED98
+// 0x44ED98 load_lbm_to_buf_
 int load_lbm_to_buf(const char* path, unsigned char* buffer, int a3, int a4, int a5, int a6, int a7)
 {
     // TODO: Incomplete.
@@ -60,7 +60,7 @@ int load_lbm_to_buf(const char* path, unsigned char* buffer, int a3, int a4, int
     return -1;
 }
 
-// 0x44F250
+// 0x44F250 CompLZS_
 int graphCompress(unsigned char* a1, unsigned char* a2, int a3)
 {
     _dad_2 = nullptr;
@@ -233,7 +233,7 @@ int graphCompress(unsigned char* a1, unsigned char* a2, int a3)
     return v4;
 }
 
-// 0x44F5F0
+// 0x44F5F0 InitTree_
 static void _InitTree()
 {
     for (int index = 4097; index < 4353; index++) {
@@ -245,7 +245,7 @@ static void _InitTree()
     }
 }
 
-// 0x44F63C
+// 0x44F63C InsertNode_
 static void _InsertNode(int a1)
 {
     _lson[a1] = 4096;
@@ -311,7 +311,7 @@ static void _InsertNode(int a1)
     _dad_2[v21] = 4096;
 }
 
-// 0x44F7EC
+// 0x44F7EC DeleteNode_
 static void _DeleteNode(int a1)
 {
     if (_dad_2[a1] != 4096) {
@@ -351,7 +351,7 @@ static void _DeleteNode(int a1)
     }
 }
 
-// 0x44F92C
+// 0x44F92C DecodeLZS_
 int graphDecompress(unsigned char* src, unsigned char* dest, int length)
 {
     _text_buf = (unsigned char*)internal_malloc(sizeof(*_text_buf) * 4122);
@@ -410,7 +410,7 @@ int graphDecompress(unsigned char* src, unsigned char* dest, int length)
     return 0;
 }
 
-// 0x44FA78
+// 0x44FA78 InitGreyTable_
 void grayscalePaletteUpdate(int a1, int a2)
 {
     if (a1 >= 0 && a2 <= 255) {
@@ -428,7 +428,7 @@ void grayscalePaletteUpdate(int a1, int a2)
     }
 }
 
-// 0x44FC40
+// 0x44FC40 grey_buf_
 void grayscalePaletteApply(unsigned char* buffer, int width, int height, int pitch)
 {
     unsigned char* ptr = buffer;

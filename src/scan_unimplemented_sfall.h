@@ -235,14 +235,14 @@ static struct SfallOpcodeInfo opcodeInfoArray[] = {
     { 0x24f, "strlen" },
     { 0x250, "sprintf" },
     { 0x251, "charcode" },
-    // 0x252 // RESERVE
+    // 0x25
     { 0x253, "typeof" },
     { 0x254, "save_array" },
     { 0x255, "load_array" },
     { 0x256, "array_key" },
     { 0x257, "arrayexpr" },
-    // 0x258 // RESERVED for array
-    // 0x259 // RESERVED for array
+    // 0x25
+    // 0x25
     { 0x25a, "reg_anim_destroy" },
     { 0x25b, "reg_anim_animate_and_hide" },
     { 0x25c, "reg_anim_combat_check" },
@@ -257,9 +257,9 @@ static struct SfallOpcodeInfo opcodeInfoArray[] = {
     { 0x265, "exponent" },
     { 0x266, "ceil" },
     { 0x267, "round" },
-    // 0x268 RESERVE
-    // 0x269 RESERVE
-    // 0x26a RESERVE
+    // 0x26
+    // 0x26
+    // 0x26
     { 0x26b, "message_str_game" },
     { 0x26c, "sneak_success" },
     { 0x26d, "tile_light" },

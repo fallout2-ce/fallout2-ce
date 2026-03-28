@@ -417,7 +417,7 @@ int preferencesInit()
     return 0;
 }
 
-// 0x492AA8
+// 0x492AA8 SetSystemPrefs_
 static void _SetSystemPrefs()
 {
     preferencesSetDefaults(false);
@@ -446,7 +446,7 @@ static void _SetSystemPrefs()
     _JustUpdate_();
 }
 
-// 0x493054
+// 0x493054 SaveSettings_
 static void _SaveSettings()
 {
     gPreferencesGameDifficulty2 = gPreferencesGameDifficulty1;
@@ -471,7 +471,7 @@ static void _SaveSettings()
     gPreferencesSpeechVolume2 = gPreferencesSpeechVolume1;
 }
 
-// 0x493128
+// 0x493128 RestoreSettings_
 static void _RestoreSettings()
 {
     gPreferencesGameDifficulty1 = gPreferencesGameDifficulty2;
@@ -498,7 +498,7 @@ static void _RestoreSettings()
     _JustUpdate_();
 }
 
-// 0x492F60
+// 0x492F60 SetDefaults_
 static void preferencesSetDefaults(bool updateUi)
 {
     gPreferencesCombatDifficulty1 = COMBAT_DIFFICULTY_NORMAL;
@@ -573,7 +573,7 @@ static void _JustUpdate_()
     colorSetBrightness(gPreferencesBrightness1);
 }
 
-// 0x491A68
+// 0x491A68 UpdateThing_
 static void _UpdateThing(int index)
 {
     fontSetCurrent(101);
@@ -789,7 +789,7 @@ static void _UpdateThing(int index)
     // return true;
 }
 
-// 0x492CB0
+// 0x492CB0 SavePrefs_
 int _SavePrefs(bool save)
 {
     settings.preferences.game_difficulty = gPreferencesGameDifficulty1;
@@ -920,7 +920,7 @@ err:
     return -1;
 }
 
-// 0x4928E4
+// 0x4928E4 IncGamma_
 // Note: this can be called from many different contexts, not just the preferences window.
 void brightnessIncrease()
 {
@@ -950,7 +950,7 @@ void brightnessIncrease()
     }
 }
 
-// 0x4929C8
+// 0x4929C8 DecGamma_
 void brightnessDecrease()
 {
     if (!preferencesWindowIsOpen()) {
@@ -979,7 +979,7 @@ void brightnessDecrease()
     }
 }
 
-// 0x4908A0
+// 0x4908A0 PrefStart_
 static int preferencesWindowInit()
 {
     int i;
@@ -1202,7 +1202,7 @@ static int preferencesWindowInit()
     return 0;
 }
 
-// 0x492870
+// 0x492870 PrefEnd_
 static int preferencesWindowFree()
 {
     if (_changed) {
@@ -1227,7 +1227,7 @@ static int preferencesWindowFree()
     return 0;
 }
 
-// 0x490798
+// 0x490798 do_prefscreen_
 int doPreferences(bool animated)
 {
     ScopedGameMode gm(GameMode::kPreferences);
@@ -1310,7 +1310,7 @@ int doPreferences(bool animated)
     return rc;
 }
 
-// 0x490E8C
+// 0x490E8C DoThing_
 static void _DoThing(int eventCode)
 {
     int x;

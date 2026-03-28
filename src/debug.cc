@@ -33,13 +33,13 @@ static int _cury = 0;
 // 0x51DF04
 static DebugPrintProc* gDebugPrintProc = nullptr;
 
-// 0x4C6CD0
+// 0x4C6CD0 GNW_debug_init_
 void _GNW_debug_init()
 {
     atexit(_debug_exit);
 }
 
-// 0x4C6CDC
+// 0x4C6CDC debug_register_mono_
 void _debug_register_mono()
 {
     if (gDebugPrintProc != _debug_mono) {
@@ -53,7 +53,7 @@ void _debug_register_mono()
     }
 }
 
-// 0x4C6D18
+// 0x4C6D18 debug_register_log_
 void _debug_register_log(const char* fileName, const char* mode)
 {
     if ((mode[0] == 'w' || mode[0] == 'a') && mode[1] == 't') {
@@ -66,7 +66,7 @@ void _debug_register_log(const char* fileName, const char* mode)
     }
 }
 
-// 0x4C6D5C
+// 0x4C6D5C debug_register_screen_
 void _debug_register_screen()
 {
     if (gDebugPrintProc != _debug_screen) {
@@ -79,7 +79,7 @@ void _debug_register_screen()
     }
 }
 
-// 0x4C6D90
+// 0x4C6D90 debug_register_env_
 void _debug_register_env()
 {
     const char* type = getenv("DEBUGACTIVE");
@@ -111,7 +111,7 @@ void _debug_register_env()
     internal_free(copy);
 }
 
-// 0x4C6F18
+// 0x4C6F18 debug_register_func_
 void _debug_register_func(DebugPrintProc* proc)
 {
     if (gDebugPrintProc != proc) {
@@ -124,7 +124,7 @@ void _debug_register_func(DebugPrintProc* proc)
     }
 }
 
-// 0x4C6F48
+// 0x4C6F48 debug_printf_
 int debugPrint(const char* format, ...)
 {
     va_list args;
@@ -149,7 +149,7 @@ int debugPrint(const char* format, ...)
     return rc;
 }
 
-// 0x4C6F94
+// 0x4C6F94 debug_puts_
 static int _debug_puts(char* string)
 {
     if (gDebugPrintProc != nullptr) {
@@ -159,7 +159,7 @@ static int _debug_puts(char* string)
     return -1;
 }
 
-// 0x4C6FAC
+// 0x4C6FAC debug_clear_
 static void _debug_clear()
 {
     char* buffer;
@@ -186,7 +186,7 @@ static void _debug_clear()
     }
 }
 
-// 0x4C7004
+// 0x4C7004 debug_mono_
 static int _debug_mono(char* string)
 {
     if (gDebugPrintProc == _debug_mono) {
@@ -198,7 +198,7 @@ static int _debug_mono(char* string)
     return 0;
 }
 
-// 0x4C7028
+// 0x4C7028 debug_log_
 static int _debug_log(char* string)
 {
     if (gDebugPrintProc == _debug_log) {
@@ -218,7 +218,7 @@ static int _debug_log(char* string)
     return 0;
 }
 
-// 0x4C7068
+// 0x4C7068 debug_screen_
 static int _debug_screen(char* string)
 {
     if (gDebugPrintProc == _debug_screen) {
@@ -228,7 +228,7 @@ static int _debug_screen(char* string)
     return 0;
 }
 
-// 0x4C709C
+// 0x4C709C debug_putc_
 static void _debug_putc(int ch)
 {
     char* buffer;
@@ -275,7 +275,7 @@ static void _debug_putc(int ch)
     }
 }
 
-// 0x4C71AC
+// 0x4C71AC debug_scroll_
 static void _debug_scroll()
 {
     char* buffer;
@@ -297,7 +297,7 @@ static void _debug_scroll()
     }
 }
 
-// 0x4C71E8
+// 0x4C71E8 debug_exit_
 void _debug_exit(void)
 {
     if (_fd != nullptr) {

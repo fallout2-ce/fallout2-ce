@@ -70,7 +70,7 @@ static SoundEffect* gSoundEffects = nullptr;
 static int _sfxc_files_open = 0;
 
 // sfxc_init
-// 0x4A8FC0
+// 0x4A8FC0 sfxc_init_
 int soundEffectsCacheInit(int cacheSize, const char* effectsPath)
 {
     gSoundEffectsCacheDebugLevel = settings.sound.debug_sfxc;
@@ -120,7 +120,7 @@ int soundEffectsCacheInit(int cacheSize, const char* effectsPath)
     return 0;
 }
 
-// 0x4A90FC
+// 0x4A90FC sfxc_exit_
 void soundEffectsCacheExit()
 {
     if (gSoundEffectsCacheInitialized) {
@@ -138,13 +138,13 @@ void soundEffectsCacheExit()
     }
 }
 
-// 0x4A9140
+// 0x4A9140 sfxc_is_initialized_
 int soundEffectsCacheInitialized()
 {
     return gSoundEffectsCacheInitialized;
 }
 
-// 0x4A9148
+// 0x4A9148 sfxc_flush_
 void soundEffectsCacheFlush()
 {
     if (gSoundEffectsCacheInitialized) {
@@ -153,7 +153,7 @@ void soundEffectsCacheFlush()
 }
 
 // sfxc_cached_open
-// 0x4A915C
+// 0x4A915C sfxc_cached_open_
 int soundEffectsCacheFileOpen(const char* fname, int* sampleRate)
 {
     if (_sfxc_files_open >= SOUND_EFFECTS_MAX_COUNT) {
@@ -190,7 +190,7 @@ int soundEffectsCacheFileOpen(const char* fname, int* sampleRate)
 }
 
 // sfxc_cached_close
-// 0x4A9220
+// 0x4A9220 sfxc_cached_close_
 int soundEffectsCacheFileClose(int handle)
 {
     if (!soundEffectsIsValidHandle(handle)) {
@@ -213,7 +213,7 @@ int soundEffectsCacheFileClose(int handle)
     return 0;
 }
 
-// 0x4A9274
+// 0x4A9274 sfxc_cached_read_
 int soundEffectsCacheFileRead(int handle, void* buf, unsigned int size)
 {
     if (!soundEffectsIsValidHandle(handle)) {
@@ -255,13 +255,13 @@ int soundEffectsCacheFileRead(int handle, void* buf, unsigned int size)
     return bytesToRead;
 }
 
-// 0x4A9350
+// 0x4A9350 sfxc_cached_write_
 int soundEffectsCacheFileWrite(int handle, const void* buf, unsigned int size)
 {
     return -1;
 }
 
-// 0x4A9358
+// 0x4A9358 sfxc_cached_seek_
 long soundEffectsCacheFileSeek(int handle, long offset, int origin)
 {
     if (!soundEffectsIsValidHandle(handle)) {
@@ -306,7 +306,7 @@ long soundEffectsCacheFileSeek(int handle, long offset, int origin)
     return offset;
 }
 
-// 0x4A93F4
+// 0x4A93F4 sfxc_cached_tell_
 long soundEffectsCacheFileTell(int handle)
 {
     if (!soundEffectsIsValidHandle(handle)) {
@@ -317,7 +317,7 @@ long soundEffectsCacheFileTell(int handle)
     return soundEffect->position;
 }
 
-// 0x4A9418
+// 0x4A9418 sfxc_cached_file_size_
 long soundEffectsCacheFileLength(int handle)
 {
     if (!soundEffectsIsValidHandle(handle)) {
@@ -329,7 +329,7 @@ long soundEffectsCacheFileLength(int handle)
 }
 
 // sfxc_cached_file_size
-// 0x4A9434
+// 0x4A9434 sfxc_effect_size_
 static int soundEffectsCacheGetFileSizeImpl(int tag, int* sizePtr)
 {
     int size;
@@ -342,7 +342,7 @@ static int soundEffectsCacheGetFileSizeImpl(int tag, int* sizePtr)
     return 0;
 }
 
-// 0x4A945C
+// 0x4A945C sfxc_effect_load_
 static int soundEffectsCacheReadDataImpl(int tag, int* sizePtr, unsigned char* data)
 {
     if (!soundEffectsListIsValidTag(tag)) {
@@ -367,13 +367,13 @@ static int soundEffectsCacheReadDataImpl(int tag, int* sizePtr, unsigned char* d
     return 0;
 }
 
-// 0x4A94CC
+// 0x4A94CC sfxc_effect_free_
 static void soundEffectsCacheFreeImpl(void* ptr)
 {
     internal_free(ptr);
 }
 
-// 0x4A94D4
+// 0x4A94D4 sfxc_handle_list_create_
 static int soundEffectsCacheCreateHandles()
 {
     gSoundEffects = (SoundEffect*)internal_malloc(sizeof(*gSoundEffects) * SOUND_EFFECTS_MAX_COUNT);
@@ -391,7 +391,7 @@ static int soundEffectsCacheCreateHandles()
     return 0;
 }
 
-// 0x4A9518
+// 0x4A9518 sfxc_handle_list_destroy_
 static void soundEffectsCacheFreeHandles()
 {
     if (_sfxc_files_open) {
@@ -406,7 +406,7 @@ static void soundEffectsCacheFreeHandles()
     internal_free(gSoundEffects);
 }
 
-// 0x4A9550
+// 0x4A9550 sfxc_handle_create_
 static int soundEffectsCreate(int* handlePtr, int tag, void* data, CacheEntry* cacheHandle)
 {
     if (_sfxc_files_open >= SOUND_EFFECTS_MAX_COUNT) {
@@ -443,7 +443,7 @@ static int soundEffectsCreate(int* handlePtr, int tag, void* data, CacheEntry* c
     return 0;
 }
 
-// 0x4A961C
+// 0x4A961C sfxc_handle_is_legal_
 static bool soundEffectsIsValidHandle(int handle)
 {
     if (handle >= SOUND_EFFECTS_MAX_COUNT) {
@@ -463,7 +463,7 @@ static bool soundEffectsIsValidHandle(int handle)
     return soundEffectsListIsValidTag(soundEffect->tag);
 }
 
-// 0x4A967C
+// 0x4A967C sfxc_decode_
 static int soundEffectsCacheFileReadCompressed(int handle, void* buf, unsigned int size)
 {
     if (!soundEffectsIsValidHandle(handle)) {
@@ -504,7 +504,7 @@ static int soundEffectsCacheFileReadCompressed(int handle, void* buf, unsigned i
     return 0;
 }
 
-// 0x4A9774
+// 0x4A9774 sfxc_ad_reader_
 static int soundEffectsCacheSoundDecoderReadHandler(void* data, void* buf, unsigned int size)
 {
     if (size == 0) {
