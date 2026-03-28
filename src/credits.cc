@@ -44,7 +44,7 @@ static int gCreditsWindowNameFont;
 // 0x56D750
 static int gCreditsWindowTitleColor;
 
-// 0x42C860
+// 0x42C860 credits_
 void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
 {
     int oldFont = fontGetCurrent();
@@ -253,7 +253,7 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
     fontSetCurrent(oldFont);
 }
 
-// 0x42CE6C
+// 0x42CE6C credits_get_next_line_
 static bool creditsFileParseNextLine(char* dest, int* font, int* color)
 {
     char string[256];

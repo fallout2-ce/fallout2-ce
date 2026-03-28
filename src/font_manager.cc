@@ -75,7 +75,7 @@ static int gCurrentInterfaceFont;
 // 0x58E93C
 static InterfaceFontDescriptor* gCurrentInterfaceFontDescriptor;
 
-// 0x441C80
+// 0x441C80 FMInit_
 int interfaceFontsInit()
 {
     int currentFont = -1;
@@ -104,7 +104,7 @@ int interfaceFontsInit()
     return 0;
 }
 
-// 0x441CEC
+// 0x441CEC FMExit_
 void interfaceFontsExit()
 {
     for (int font = 0; font < INTERFACE_FONT_MAX; font++) {
@@ -114,7 +114,7 @@ void interfaceFontsExit()
     }
 }
 
-// 0x441D20
+// 0x441D20 FMLoadFont_
 static int interfaceFontLoad(int font_index)
 {
     InterfaceFontDescriptor* fontDescriptor = &(gInterfaceFontDescriptors[font_index]);
@@ -219,7 +219,7 @@ static int interfaceFontLoad(int font_index)
     return 0;
 }
 
-// 0x442120
+// 0x442120 FMtext_font_
 static void interfaceFontSetCurrentImpl(int font)
 {
     if (!gInterfaceFontsInitialized) {
@@ -234,7 +234,7 @@ static void interfaceFontSetCurrentImpl(int font)
     }
 }
 
-// 0x442168
+// 0x442168 FMtext_height_
 static int interfaceFontGetLineHeightImpl()
 {
     if (!gInterfaceFontsInitialized) {
@@ -244,7 +244,7 @@ static int interfaceFontGetLineHeightImpl()
     return gCurrentInterfaceFontDescriptor->lineSpacing + gCurrentInterfaceFontDescriptor->maxHeight;
 }
 
-// 0x442188
+// 0x442188 FMtext_width_
 static int interfaceFontGetStringWidthImpl(const char* string)
 {
     if (!gInterfaceFontsInitialized) {
@@ -269,7 +269,7 @@ static int interfaceFontGetStringWidthImpl(const char* string)
     return stringWidth;
 }
 
-// 0x4421DC
+// 0x4421DC FMtext_char_width_
 static int interfaceFontGetCharacterWidthImpl(int ch)
 {
     int width;
@@ -287,7 +287,7 @@ static int interfaceFontGetCharacterWidthImpl(int ch)
     return width;
 }
 
-// 0x442210
+// 0x442210 FMtext_mono_width_
 static int interfaceFontGetMonospacedStringWidthImpl(const char* str)
 {
     if (!gInterfaceFontsInitialized) {
@@ -297,7 +297,7 @@ static int interfaceFontGetMonospacedStringWidthImpl(const char* str)
     return interfaceFontGetMonospacedCharacterWidthImpl() * strlen(str);
 }
 
-// 0x442240
+// 0x442240 FMtext_spacing_
 static int interfaceFontGetLetterSpacingImpl()
 {
     if (!gInterfaceFontsInitialized) {
@@ -307,7 +307,7 @@ static int interfaceFontGetLetterSpacingImpl()
     return gCurrentInterfaceFontDescriptor->letterSpacing;
 }
 
-// 0x442258
+// 0x442258 FMtext_size_
 static int interfaceFontGetBufferSizeImpl(const char* str)
 {
     if (!gInterfaceFontsInitialized) {
@@ -317,7 +317,7 @@ static int interfaceFontGetBufferSizeImpl(const char* str)
     return interfaceFontGetStringWidthImpl(str) * interfaceFontGetLineHeightImpl();
 }
 
-// 0x442278
+// 0x442278 FMtext_max_
 static int interfaceFontGetMonospacedCharacterWidthImpl()
 {
     if (!gInterfaceFontsInitialized) {
@@ -334,7 +334,7 @@ static int interfaceFontGetMonospacedCharacterWidthImpl()
     return spacing + gCurrentInterfaceFontDescriptor->maxHeight;
 }
 
-// 0x4422B4
+// 0x4422B4 FMtext_to_buf_
 static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, int color)
 {
     if (!gInterfaceFontsInitialized) {
@@ -411,7 +411,7 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
 
 // NOTE: Inlined.
 //
-// 0x442520
+// 0x442520 Swap4_
 static void interfaceFontByteSwapUInt32(unsigned int* value)
 {
     unsigned int swapped = *value;
@@ -430,7 +430,7 @@ static void interfaceFontByteSwapInt32(int* value)
     interfaceFontByteSwapUInt32((unsigned int*)value);
 }
 
-// 0x442568
+// 0x442568 Swap2_
 static void interfaceFontByteSwapUInt16(unsigned short* value)
 {
     unsigned short swapped = *value;

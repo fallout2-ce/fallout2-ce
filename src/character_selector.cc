@@ -145,7 +145,7 @@ static FrmImage _previousButtonPressedFrmImage;
 
 static std::vector<PremadeCharacterDescription> gCustomPremadeCharacterDescriptions;
 
-// 0x4A71D0
+// 0x4A71D0 select_character_
 int characterSelectorOpen()
 {
 #if __APPLE__ && TARGET_OS_IOS
@@ -260,7 +260,7 @@ int characterSelectorOpen()
     return rc;
 }
 
-// 0x4A7468
+// 0x4A7468 select_init_
 static bool characterSelectorWindowInit()
 {
     if (gCharacterSelectorWindow != -1) {
@@ -497,7 +497,7 @@ static bool characterSelectorWindowInit()
     return true;
 }
 
-// 0x4A7AD4
+// 0x4A7AD4 select_exit_
 static void characterSelectorWindowFree()
 {
     if (gCharacterSelectorWindow == -1) {
@@ -561,7 +561,7 @@ static void characterSelectorWindowFree()
     gCharacterSelectorWindow = -1;
 }
 
-// 0x4A7D58
+// 0x4A7D58 select_update_display_
 static bool characterSelectorWindowRefresh()
 {
     char path[COMPAT_MAX_PATH];
@@ -592,7 +592,7 @@ static bool characterSelectorWindowRefresh()
     return success;
 }
 
-// 0x4A7E08
+// 0x4A7E08 select_display_portrait_
 static bool characterSelectorWindowRenderFace()
 {
     bool success = false;
@@ -613,7 +613,7 @@ static bool characterSelectorWindowRenderFace()
     return success;
 }
 
-// 0x4A7EA8
+// 0x4A7EA8 select_display_stats_
 static bool characterSelectorWindowRenderStats()
 {
     char* str;
@@ -865,7 +865,7 @@ static bool characterSelectorWindowRenderStats()
     return true;
 }
 
-// 0x4A8AE4
+// 0x4A8AE4 select_display_bio_
 static bool characterSelectorWindowRenderBio()
 {
     int oldFont = fontGetCurrent();
@@ -896,7 +896,7 @@ static bool characterSelectorWindowRenderBio()
 
 // NOTE: Inlined.
 //
-// 0x4A8BD0
+// 0x4A8BD0 select_fatal_error_
 static bool characterSelectorWindowFatalError(bool result)
 {
     characterSelectorWindowFree();

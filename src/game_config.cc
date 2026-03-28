@@ -54,7 +54,7 @@ char gGameConfigFilePath[COMPAT_MAX_PATH];
 // Finally, this function merges key-value pairs from [argv] if any, see
 // [configParseCommandLineArguments] for expected format.
 //
-// 0x444570
+// 0x444570 gconfig_init_
 bool gameConfigInit(bool isMapper, int argc, char** argv)
 {
     if (gGameConfigInitialized) {
@@ -148,7 +148,7 @@ EM_ASYNC_JS(void, do_save_idbfs_gameconfig, (), {
 
 // Saves game config into `fallout2.cfg`.
 //
-// 0x444C14
+// 0x444C14 gconfig_save_
 bool gameConfigSave()
 {
     if (!gGameConfigInitialized) {
@@ -168,7 +168,7 @@ bool gameConfigSave()
 
 // Frees game config, optionally saving it.
 //
-// 0x444C3C
+// 0x444C3C gconfig_exit_
 bool gameConfigExit(bool shouldSave)
 {
     if (!gGameConfigInitialized) {

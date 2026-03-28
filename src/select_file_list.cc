@@ -7,7 +7,7 @@
 
 namespace fallout {
 
-// 0x4AA250
+// 0x4AA250 compare_
 int _compare(const void* a, const void* b)
 {
     const char* c1 = *(const char**)a;
@@ -15,7 +15,7 @@ int _compare(const void* a, const void* b)
     return strcmp(c1, c2);
 }
 
-// 0x4AA2A4
+// 0x4AA2A4 getFileList_
 char** _getFileList(const char* pattern, int* fileNameListLengthPtr)
 {
     char** fileNameList;
@@ -30,7 +30,7 @@ char** _getFileList(const char* pattern, int* fileNameListLengthPtr)
     return fileNameList;
 }
 
-// 0x4AA2DC
+// 0x4AA2DC freeFileList_
 void _freeFileList(char** fileList)
 {
     fileNameListFree(&fileList, 0);

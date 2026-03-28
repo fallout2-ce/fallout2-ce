@@ -43,7 +43,7 @@ static FileList* gFileListHead;
 // underlying xbase implementation. Result of opening [filePath2] is ignored.
 // Returns 0 on success.
 //
-// 0x4C5D30
+// 0x4C5D30 db_init_
 int dbOpen(const char* filePath1, const char* filePath2)
 {
     if (filePath1 != nullptr) {
@@ -59,13 +59,13 @@ int dbOpen(const char* filePath1, const char* filePath2)
     return 0;
 }
 
-// 0x4C5D58
+// 0x4C5D58 db_total_
 int db_total()
 {
     return 1;
 }
 
-// 0x4C5D60
+// 0x4C5D60 db_exit_
 void dbCloseAll()
 {
     xbaseReopenAll(nullptr);
@@ -73,7 +73,7 @@ void dbCloseAll()
 
 // TODO: sizePtr should be long*.
 //
-// 0x4C5D68
+// 0x4C5D68 db_dir_entry_
 int dbGetFileSize(const char* filePath, int* sizePtr)
 {
     assert(filePath); // "filename", "db.c", 108
@@ -91,7 +91,7 @@ int dbGetFileSize(const char* filePath, int* sizePtr)
     return 0;
 }
 
-// 0x4C5DD4
+// 0x4C5DD4 db_read_to_buf_
 int dbGetFileContents(const char* filePath, void* ptr)
 {
     assert(filePath); // "filename", "db.c", 141
@@ -132,19 +132,19 @@ int dbGetFileContents(const char* filePath, void* ptr)
     return 0;
 }
 
-// 0x4C5EB4
+// 0x4C5EB4 db_fclose_
 int fileClose(File* stream)
 {
     return xfileClose(stream);
 }
 
-// 0x4C5EC8
+// 0x4C5EC8 db_fopen_
 File* fileOpen(const char* filename, const char* mode)
 {
     return xfileOpen(filename, mode);
 }
 
-// 0x4C5ED0
+// 0x4C5ED0 db_fprintf_
 int filePrintFormatted(File* stream, const char* format, ...)
 {
     assert(format); // "format", "db.c", 224
@@ -159,7 +159,7 @@ int filePrintFormatted(File* stream, const char* format, ...)
     return rc;
 }
 
-// 0x4C5F24
+// 0x4C5F24 db_fgetc_
 int fileReadChar(File* stream)
 {
     if (gFileReadProgressHandler != nullptr) {
@@ -177,7 +177,7 @@ int fileReadChar(File* stream)
     return xfileReadChar(stream);
 }
 
-// 0x4C5F70
+// 0x4C5F70 db_fgets_
 char* fileReadString(char* string, size_t size, File* stream)
 {
     if (gFileReadProgressHandler != nullptr) {
@@ -197,13 +197,13 @@ char* fileReadString(char* string, size_t size, File* stream)
     return xfileReadString(string, size, stream);
 }
 
-// 0x4C5FEC
+// 0x4C5FEC db_fputs_
 int fileWriteString(const char* string, File* stream)
 {
     return xfileWriteString(string, stream);
 }
 
-// 0x4C5FFC
+// 0x4C5FFC db_fread_
 size_t fileRead(void* ptr, size_t size, size_t count, File* stream)
 {
     if (gFileReadProgressHandler != nullptr) {
@@ -237,31 +237,31 @@ size_t fileRead(void* ptr, size_t size, size_t count, File* stream)
     return xfileRead(ptr, size, count, stream);
 }
 
-// 0x4C60B8
+// 0x4C60B8 db_fwrite_
 size_t fileWrite(const void* buf, size_t size, size_t count, File* stream)
 {
     return xfileWrite(buf, size, count, stream);
 }
 
-// 0x4C60C0
+// 0x4C60C0 db_fseek_
 int fileSeek(File* stream, long offset, int origin)
 {
     return xfileSeek(stream, offset, origin);
 }
 
-// 0x4C60C8
+// 0x4C60C8 db_ftell_
 long fileTell(File* stream)
 {
     return xfileTell(stream);
 }
 
-// 0x4C60D0
+// 0x4C60D0 db_rewind_
 void fileRewind(File* stream)
 {
     xfileRewind(stream);
 }
 
-// 0x4C60D8
+// 0x4C60D8 db_feof_
 int fileEof(File* stream)
 {
     return xfileEof(stream);
@@ -269,7 +269,7 @@ int fileEof(File* stream)
 
 // NOTE: Not sure about signness.
 //
-// 0x4C60E0
+// 0x4C60E0 db_freadByte_
 int fileReadUInt8(File* stream, unsigned char* valuePtr)
 {
     int value = fileReadChar(stream);
@@ -284,7 +284,7 @@ int fileReadUInt8(File* stream, unsigned char* valuePtr)
 
 // NOTE: Not sure about signness.
 //
-// 0x4C60F4
+// 0x4C60F4 db_freadShort_
 int fileReadInt16(File* stream, short* valuePtr)
 {
     unsigned char high;
@@ -313,7 +313,7 @@ int fileReadUInt16(File* stream, unsigned short* valuePtr)
     return fileReadInt16(stream, (short*)valuePtr);
 }
 
-// 0x4C614C
+// 0x4C614C db_freadInt_
 int fileReadInt32(File* stream, int* valuePtr)
 {
     int value;
@@ -361,13 +361,13 @@ int fileReadBool(File* stream, bool* valuePtr)
 
 // NOTE: Not sure about signness.
 //
-// 0x4C61AC
+// 0x4C61AC db_fwriteByte_
 int fileWriteUInt8(File* stream, unsigned char value)
 {
     return xfileWriteChar(value, stream);
 };
 
-// 0x4C61C8
+// 0x4C61C8 db_fwriteShort_
 int fileWriteInt16(File* stream, short value)
 {
     // NOTE: Uninline.
@@ -391,7 +391,7 @@ int fileWriteUInt16(File* stream, unsigned short value)
 
 // NOTE: Not sure about signness and int vs. long.
 //
-// 0x4C6214
+// 0x4C6214 db_fwriteInt_
 int fileWriteInt32(File* stream, int value)
 {
     // NOTE: Uninline.
@@ -401,7 +401,7 @@ int fileWriteInt32(File* stream, int value)
 // NOTE: Can either be signed vs. unsigned variant of [fileWriteInt32],
 // or int vs. long.
 //
-// 0x4C6244
+// 0x4C6244 db_fwriteLong_
 int _db_fwriteLong(File* stream, int value)
 {
     if (fileWriteInt16(stream, (value >> 16) & 0xFFFF) == -1) {
@@ -421,7 +421,7 @@ int fileWriteUInt32(File* stream, unsigned int value)
     return _db_fwriteLong(stream, (int)value);
 }
 
-// 0x4C62C4
+// 0x4C62C4 db_fwriteFloat_
 int fileWriteFloat(File* stream, float value)
 {
     // NOTE: Uninline.
@@ -433,7 +433,7 @@ int fileWriteBool(File* stream, bool value)
     return _db_fwriteLong(stream, value ? 1 : 0);
 }
 
-// 0x4C62FC
+// 0x4C62FC db_freadByteCount_
 int fileReadUInt8List(File* stream, unsigned char* arr, int count)
 {
     for (int index = 0; index < count; index++) {
@@ -458,7 +458,7 @@ int fileReadFixedLengthString(File* stream, char* string, int length)
     return fileReadUInt8List(stream, (unsigned char*)string, length);
 }
 
-// 0x4C6330
+// 0x4C6330 db_freadShortCount_
 int fileReadInt16List(File* stream, short* arr, int count)
 {
     for (int index = 0; index < count; index++) {
@@ -482,7 +482,7 @@ int fileReadUInt16List(File* stream, unsigned short* arr, int count)
 
 // NOTE: Not sure about signed/unsigned int/long.
 //
-// 0x4C63BC
+// 0x4C63BC db_freadIntCount_
 int fileReadInt32List(File* stream, int* arr, int count)
 {
     if (count == 0) {
@@ -513,7 +513,7 @@ int fileReadUInt32List(File* stream, unsigned int* arr, int count)
     return fileReadInt32List(stream, (int*)arr, count);
 }
 
-// 0x4C6464
+// 0x4C6464 db_fwriteByteCount_
 int fileWriteUInt8List(File* stream, unsigned char* arr, int count)
 {
     for (int index = 0; index < count; index++) {
@@ -532,7 +532,7 @@ int fileWriteFixedLengthString(File* stream, char* string, int length)
     return fileWriteUInt8List(stream, (unsigned char*)string, length);
 }
 
-// 0x4C6490
+// 0x4C6490 db_fwriteShortCount_
 int fileWriteInt16List(File* stream, short* arr, int count)
 {
     for (int index = 0; index < count; index++) {
@@ -553,7 +553,7 @@ int fileWriteUInt16List(File* stream, unsigned short* arr, int count)
 
 // NOTE: Can be either signed/unsigned + int/long variant.
 //
-// 0x4C64F8
+// 0x4C64F8 db_fwriteIntCount_
 int fileWriteInt32List(File* stream, int* arr, int count)
 {
     for (int index = 0; index < count; index++) {
@@ -568,7 +568,7 @@ int fileWriteInt32List(File* stream, int* arr, int count)
 
 // NOTE: Not sure about signed/unsigned int/long.
 //
-// 0x4C6550
+// 0x4C6550 db_fwriteLongCount_
 int _db_fwriteLongCount(File* stream, int* arr, int count)
 {
     for (int index = 0; index < count; index++) {
@@ -594,7 +594,7 @@ int fileWriteUInt32List(File* stream, unsigned int* arr, int count)
     return fileWriteInt32List(stream, (int*)arr, count);
 }
 
-// 0x4C6628
+// 0x4C6628 db_get_file_list_
 int fileNameListInit(const char* pattern, char*** fileNameListPtr)
 {
     FileList* fileList = (FileList*)malloc(sizeof(*fileList));
@@ -664,7 +664,7 @@ int fileNameListInit(const char* pattern, char*** fileNameListPtr)
     return length;
 }
 
-// 0x4C6868
+// 0x4C6868 db_free_file_list_
 void fileNameListFree(char*** fileNameListPtr, int unused)
 {
     (void)unused;
@@ -696,13 +696,13 @@ void fileNameListFree(char*** fileNameListPtr, int unused)
 
 // TODO: Return type should be long.
 //
-// 0x4C68BC
+// 0x4C68BC db_filelength_
 int fileGetSize(File* stream)
 {
     return xfileGetSize(stream);
 }
 
-// 0x4C68C4
+// 0x4C68C4 db_register_callback_
 void fileSetReadProgressHandler(FileReadProgressHandler* handler, int size)
 {
     if (handler != nullptr && size != 0) {
@@ -714,7 +714,7 @@ void fileSetReadProgressHandler(FileReadProgressHandler* handler, int size)
     }
 }
 
-// 0x4C68E8
+// 0x4C68E8 db_list_compare_
 int _db_list_compare(const void* p1, const void* p2)
 {
     return compat_stricmp(*(const char**)p1, *(const char**)p2);

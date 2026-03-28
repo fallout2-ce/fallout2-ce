@@ -86,7 +86,7 @@ static unsigned char gGameMoviesSeen[MOVIE_COUNT];
 static char gGameMovieSubtitlesFilePath[COMPAT_MAX_PATH];
 
 // gmovie_init
-// 0x44E5C0
+// 0x44E5C0 gmovie_init_
 int gameMoviesInit()
 {
     int volume = 0;
@@ -106,7 +106,7 @@ int gameMoviesInit()
     return 0;
 }
 
-// 0x44E60C
+// 0x44E60C gmovie_reset_
 void gameMoviesReset()
 {
     memset(gGameMoviesSeen, 0, sizeof(gGameMoviesSeen));
@@ -115,7 +115,7 @@ void gameMoviesReset()
     gGameMovieFaded = false;
 }
 
-// 0x44E638
+// 0x44E638 gmovie_load_
 int gameMoviesLoad(File* stream)
 {
     if (fileRead(gGameMoviesSeen, sizeof(*gGameMoviesSeen), MOVIE_COUNT, stream) != MOVIE_COUNT) {
@@ -125,7 +125,7 @@ int gameMoviesLoad(File* stream)
     return 0;
 }
 
-// 0x44E664
+// 0x44E664 gmovie_save_
 int gameMoviesSave(File* stream)
 {
     if (fileWrite(gGameMoviesSeen, sizeof(*gGameMoviesSeen), MOVIE_COUNT, stream) != MOVIE_COUNT) {
@@ -136,7 +136,7 @@ int gameMoviesSave(File* stream)
 }
 
 // gmovie_play
-// 0x44E690
+// 0x44E690 gmovie_play_
 int gameMoviePlay(int movie, int flags)
 {
     gGameMovieIsPlaying = true;
@@ -313,7 +313,7 @@ int gameMoviePlay(int movie, int flags)
     return 0;
 }
 
-// 0x44EAE4
+// 0x44EAE4 gmPaletteFinish_
 void gameMovieFadeOut()
 {
     if (gGameMovieFaded) {
@@ -322,19 +322,19 @@ void gameMovieFadeOut()
     }
 }
 
-// 0x44EB04
+// 0x44EB04 gmovie_has_been_played_
 bool gameMovieIsSeen(int movie)
 {
     return gGameMoviesSeen[movie] == 1;
 }
 
-// 0x44EB14
+// 0x44EB14 gmovieIsPlaying_
 bool gameMovieIsPlaying()
 {
     return gGameMovieIsPlaying;
 }
 
-// 0x44EB1C
+// 0x44EB1C gmovie_subtitle_func_
 static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath)
 {
     char* path = movieFilePath;

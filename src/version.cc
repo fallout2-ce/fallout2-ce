@@ -5,7 +5,7 @@
 
 namespace fallout {
 
-// 0x4B4580
+// 0x4B4580 getverstr_
 void versionGetVersion(char* dest, size_t size)
 {
     // SFALL: custom version string.

@@ -57,7 +57,7 @@ static size_t gMemoryBlocksCurrentSize = 0;
 // 0x51DEE8
 static size_t gMemoryBlocksMaximumSize = 0;
 
-// 0x4C5A80
+// 0x4C5A80 mem_strdup_
 char* internal_strdup(const char* string)
 {
     char* copy = nullptr;
@@ -68,13 +68,13 @@ char* internal_strdup(const char* string)
     return copy;
 }
 
-// 0x4C5AD0
+// 0x4C5AD0 mem_malloc_
 void* internal_malloc(size_t size)
 {
     return gMallocProc(size);
 }
 
-// 0x4C5AD8
+// 0x4C5AD8 my_malloc_
 static void* memoryBlockMallocImpl(size_t size)
 {
     void* ptr = nullptr;
@@ -103,13 +103,13 @@ static void* memoryBlockMallocImpl(size_t size)
     return ptr;
 }
 
-// 0x4C5B50
+// 0x4C5B50 mem_realloc_
 void* internal_realloc(void* ptr, size_t size)
 {
     return gReallocProc(ptr, size);
 }
 
-// 0x4C5B58
+// 0x4C5B58 my_realloc_
 static void* memoryBlockReallocImpl(void* ptr, size_t size)
 {
     if (ptr != nullptr) {
@@ -154,13 +154,13 @@ static void* memoryBlockReallocImpl(void* ptr, size_t size)
     return ptr;
 }
 
-// 0x4C5C24
+// 0x4C5C24 mem_free_
 void internal_free(void* ptr)
 {
     gFreeProc(ptr);
 }
 
-// 0x4C5C2C
+// 0x4C5C2C my_free_
 static void memoryBlockFreeImpl(void* ptr)
 {
     if (ptr != nullptr) {
@@ -176,7 +176,7 @@ static void memoryBlockFreeImpl(void* ptr)
     }
 }
 
-// 0x4C5C5C
+// 0x4C5C5C mem_check_
 void mem_check()
 {
     if (gMallocProc == memoryBlockMallocImpl) {
@@ -187,7 +187,7 @@ void mem_check()
 
 // NOTE: Inlined.
 //
-// 0x4C5CC4
+// 0x4C5CC4 mem_prep_block_
 static void* mem_prep_block(void* block, size_t size)
 {
     MemoryBlockHeader* header;
@@ -207,7 +207,7 @@ static void* mem_prep_block(void* block, size_t size)
 //
 // [block] is a pointer to the the memory block itself, not it's data.
 //
-// 0x4C5CE4
+// 0x4C5CE4 mem_check_block_
 static void memoryBlockValidate(void* block)
 {
     MemoryBlockHeader* header = (MemoryBlockHeader*)block;

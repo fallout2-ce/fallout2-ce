@@ -85,7 +85,7 @@ static bool gOptionsWindowIsoWasEnabled;
 
 static FrmImage _optionsFrmImages[OPTIONS_WINDOW_FRM_COUNT];
 
-// 0x48FC50
+// 0x48FC50 do_optionsFunc_
 int showOptions()
 {
     ScopedGameMode gm(GameMode::kOptions);
@@ -168,7 +168,7 @@ int showOptions()
     return rc;
 }
 
-// 0x48FE14
+// 0x48FE14 OptnStart_
 static int optionsWindowInit()
 {
     gOptionsWindowOldFont = fontGetCurrent();
@@ -299,7 +299,7 @@ static int optionsWindowInit()
     return 0;
 }
 
-// 0x490244
+// 0x490244 OptnEnd_
 static int optionsWindowFree()
 {
     windowDestroy(gOptionsWindow);
@@ -327,7 +327,7 @@ static int optionsWindowFree()
     return 0;
 }
 
-// 0x4902B0
+// 0x4902B0 PauseWindow_
 // preserveWorldState is always false
 int showPause(bool preserveWorldState)
 {
@@ -498,7 +498,7 @@ int showPause(bool preserveWorldState)
     return 0;
 }
 
-// 0x490748
+// 0x490748 ShadeScreen_
 static void _ShadeScreen(bool preserveWorldState)
 {
     if (preserveWorldState) {
@@ -519,7 +519,7 @@ static void _ShadeScreen(bool preserveWorldState)
 }
 
 // init_options_menu
-// 0x4928B8
+// 0x4928B8 init_options_menu_
 int _init_options_menu()
 {
     preferencesInit();

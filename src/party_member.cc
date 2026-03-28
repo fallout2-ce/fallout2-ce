@@ -119,7 +119,7 @@ static PartyMemberLevelUpInfo* _partyMemberLevelUpInfoList = nullptr;
 static int _curID = 20000;
 
 // partyMember_init
-// 0x493BC0
+// 0x493BC0 partyMember_init_
 int partyMembersInit()
 {
     Config config;
@@ -271,7 +271,7 @@ err:
     return -1;
 }
 
-// 0x4940E4
+// 0x4940E4 partyMember_reset_
 void partyMembersReset()
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
@@ -281,7 +281,7 @@ void partyMembersReset()
     }
 }
 
-// 0x494134
+// 0x494134 partyMember_exit_
 void partyMembersExit()
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
@@ -313,7 +313,7 @@ void partyMembersExit()
     }
 }
 
-// 0x4941F0
+// 0x4941F0 partyMemberGetAIOptions_
 static int partyMemberGetDescription(Object* object, PartyMemberDescription** partyMemberDescriptionPtr)
 {
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
@@ -326,7 +326,7 @@ static int partyMemberGetDescription(Object* object, PartyMemberDescription** pa
     return -1;
 }
 
-// 0x49425C
+// 0x49425C partyMemberAISlotInit_
 static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescription)
 {
     for (int index = 0; index < AREA_ATTACK_MODE_COUNT; index++) {
@@ -371,7 +371,7 @@ static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescri
 }
 
 // partyMemberAdd
-// 0x494378
+// 0x494378 partyMemberAdd_
 int partyMemberAdd(Object* object)
 {
     if (gPartyMembersLength >= gPartyMemberDescriptionsLength + 20) {
@@ -422,7 +422,7 @@ int partyMemberAdd(Object* object)
 }
 
 // partyMemberRemove
-// 0x4944DC
+// 0x4944DC partyMemberRemove_
 int partyMemberRemove(Object* object)
 {
     if (gPartyMembersLength == 0) {
@@ -474,7 +474,7 @@ int partyMemberRemove(Object* object)
     return 0;
 }
 
-// 0x49460C
+// 0x49460C partyMemberPrepSave_
 int _partyMemberPrepSave()
 {
     _partyStatePrepped = 1;
@@ -495,7 +495,7 @@ int _partyMemberPrepSave()
     return 0;
 }
 
-// 0x49466C
+// 0x49466C partyMemberUnPrepSave_
 int _partyMemberUnPrepSave()
 {
     for (int index = 0; index < gPartyMembersLength; index++) {
@@ -516,7 +516,7 @@ int _partyMemberUnPrepSave()
     return 0;
 }
 
-// 0x4946CC
+// 0x4946CC partyMemberSave_
 int partyMembersSave(File* stream)
 {
     if (fileWriteInt32(stream, gPartyMembersLength) == -1) return -1;
@@ -537,7 +537,7 @@ int partyMembersSave(File* stream)
     return 0;
 }
 
-// 0x4947AC
+// 0x4947AC partyMemberPrepLoad_
 int _partyMemberPrepLoad()
 {
     if (_partyStatePrepped) {
@@ -557,7 +557,7 @@ int _partyMemberPrepLoad()
 }
 
 // partyMemberPrepLoadInstance
-// 0x49480C
+// 0x49480C partyMemberPrepLoadInstance_
 static int _partyMemberPrepLoadInstance(PartyMemberListItem* a1)
 {
     Object* obj = a1->object;
@@ -625,7 +625,7 @@ static int _partyMemberPrepLoadInstance(PartyMemberListItem* a1)
 }
 
 // partyMemberRecoverLoad
-// 0x4949C4
+// 0x4949C4 partyMemberRecoverLoad_
 int _partyMemberRecoverLoad()
 {
     if (_partyStatePrepped != 1) {
@@ -663,7 +663,7 @@ int _partyMemberRecoverLoad()
 }
 
 // partyMemberRecoverLoadInstance
-// 0x494A88
+// 0x494A88 partyMemberRecoverLoadInstance_
 static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
 {
     if (a1->script == nullptr) {
@@ -709,7 +709,7 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
     return 0;
 }
 
-// 0x494BBC
+// 0x494BBC partyMemberLoad_
 int partyMembersLoad(File* stream)
 {
     int* partyMemberObjectIds = (int*)internal_malloc(sizeof(*partyMemberObjectIds) * (gPartyMemberDescriptionsLength + 20));
@@ -773,7 +773,7 @@ int partyMembersLoad(File* stream)
     return 0;
 }
 
-// 0x494D7C
+// 0x494D7C partyMemberClear_
 void _partyMemberClear()
 {
     if (_partyStatePrepped) {
@@ -792,7 +792,7 @@ void _partyMemberClear()
     _partyStatePrepped = 0;
 }
 
-// 0x494DD0
+// 0x494DD0 partyMemberSyncPosition_
 int _partyMemberSyncPosition()
 {
     int clockwiseRotation = (gDude->rotation + 2) % ROTATION_COUNT;
@@ -824,7 +824,7 @@ int _partyMemberSyncPosition()
 
 // Heals party members according to their healing rate.
 //
-// 0x494EB8
+// 0x494EB8 partyMemberRestingHeal_
 int _partyMemberRestingHeal(int hours)
 {
     int healingTicks = hours / 3;
@@ -843,7 +843,7 @@ int _partyMemberRestingHeal(int hours)
     return 1;
 }
 
-// 0x494F24
+// 0x494F24 partyMemberFindObjFromPid_
 Object* partyMemberFindByPid(int pid)
 {
     for (int index = 0; index < gPartyMembersLength; index++) {
@@ -856,7 +856,7 @@ Object* partyMemberFindByPid(int pid)
     return nullptr;
 }
 
-// 0x494F64
+// 0x494F64 isPotentialPartyMember_
 bool _isPotentialPartyMember(Object* object)
 {
     for (int index = 0; index < gPartyMembersLength; index++) {
@@ -871,7 +871,7 @@ bool _isPotentialPartyMember(Object* object)
 
 // Returns `true` if specified object is a party member.
 //
-// 0x494FC4
+// 0x494FC4 isPartyMember_
 bool objectIsPartyMember(Object* object)
 {
     if (object == nullptr) {
@@ -896,7 +896,7 @@ bool objectIsPartyMember(Object* object)
 
 // Returns number of active critters in the party.
 //
-// 0x495010
+// 0x495010 getPartyMemberCount_
 int _getPartyMemberCount()
 {
     int count = gPartyMembersLength;
@@ -912,7 +912,7 @@ int _getPartyMemberCount()
     return count;
 }
 
-// 0x495070
+// 0x495070 partyMemberNewObjID_
 static int _partyMemberNewObjID()
 {
     Object* object;
@@ -954,7 +954,7 @@ static int _partyMemberNewObjID()
     return _curID;
 }
 
-// 0x4950F4
+// 0x4950F4 partyMemberNewObjIDRecurseFind_
 static int _partyMemberNewObjIDRecurseFind(Object* obj, int objectId)
 {
     Inventory* inventory = &(obj->data.inventory);
@@ -972,7 +972,7 @@ static int _partyMemberNewObjIDRecurseFind(Object* obj, int objectId)
     return 0;
 }
 
-// 0x495140
+// 0x495140 partyMemberPrepItemSaveAll_
 int _partyMemberPrepItemSaveAll()
 {
     for (int partyMemberIndex = 0; partyMemberIndex < gPartyMembersLength; partyMemberIndex++) {
@@ -1010,7 +1010,7 @@ static int _partyMemberPrepItemSave(Object* object)
     return 0;
 }
 
-// 0x495234
+// 0x495234 partyMemberItemSave_
 static int _partyMemberItemSave(Object* object)
 {
     if (object->sid != -1) {
@@ -1068,7 +1068,7 @@ static int _partyMemberItemSave(Object* object)
 }
 
 // partyMemberItemRecover
-// 0x495388
+// 0x495388 partyMemberItemRecover_
 static int _partyMemberItemRecover(PartyMemberListItem* a1)
 {
     int sid = -1;
@@ -1104,7 +1104,7 @@ static int _partyMemberItemRecover(PartyMemberListItem* a1)
     return 0;
 }
 
-// 0x4954C4
+// 0x4954C4 partyMemberClearItemList_
 static int _partyMemberClearItemList()
 {
     while (_itemSaveListHead != nullptr) {
@@ -1129,7 +1129,7 @@ static int _partyMemberClearItemList()
 
 // Returns best skill of the specified party member.
 //
-// 0x495520
+// 0x495520 partyMemberSkill_
 int partyMemberGetBestSkill(Object* object)
 {
     int bestSkill = SKILL_SMALL_GUNS;
@@ -1156,7 +1156,7 @@ int partyMemberGetBestSkill(Object* object)
 
 // Returns party member with highest skill level.
 //
-// 0x495560
+// 0x495560 partyMemberWithHighestSkill_
 Object* partyMemberGetBestInSkill(int skill)
 {
     int bestValue = 0;
@@ -1178,7 +1178,7 @@ Object* partyMemberGetBestInSkill(int skill)
 
 // Returns highest skill level in party.
 //
-// 0x4955C8
+// 0x4955C8 partyMemberHighestSkillLevel_
 int partyGetBestSkillValue(int skill)
 {
     int bestValue = 0;
@@ -1196,7 +1196,7 @@ int partyGetBestSkillValue(int skill)
     return bestValue;
 }
 
-// 0x495620
+// 0x495620 partyFixMultipleMembers_
 static int partyFixMultipleMembers()
 {
     debugPrint("\n\n\n[Party Members]:");
@@ -1277,7 +1277,7 @@ static int partyFixMultipleMembers()
     return 0;
 }
 
-// 0x495870
+// 0x495870 partyMemberSaveProtos_
 void _partyMemberSaveProtos()
 {
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
@@ -1288,7 +1288,7 @@ void _partyMemberSaveProtos()
     }
 }
 
-// 0x4958B0
+// 0x4958B0 partyMemberHasAIDisposition_
 bool partyMemberSupportsDisposition(Object* critter, int disposition)
 {
     if (critter == nullptr) {
@@ -1311,7 +1311,7 @@ bool partyMemberSupportsDisposition(Object* critter, int disposition)
     return partyMemberDescription->disposition[disposition + 1];
 }
 
-// 0x495920
+// 0x495920 partyMemberHasAIBurstValue_
 bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode)
 {
     if (object == nullptr) {
@@ -1334,7 +1334,7 @@ bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode)
     return partyMemberDescription->areaAttackMode[areaAttackMode];
 }
 
-// 0x495980
+// 0x495980 partyMemberHasAIRunAwayValue_
 bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
 {
     if (object == nullptr) {
@@ -1357,7 +1357,7 @@ bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
     return partyMemberDescription->runAwayMode[runAwayMode + 1];
 }
 
-// 0x4959E0
+// 0x4959E0 partyMemberHasAIWeaponPrefValue_
 bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
 {
     if (object == nullptr) {
@@ -1380,7 +1380,7 @@ bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
     return partyMemberDescription->bestWeapon[bestWeapon];
 }
 
-// 0x495A40
+// 0x495A40 partyMemberHasAIDistancePrefValue_
 bool partyMemberSupportsDistance(Object* object, int distanceMode)
 {
     if (object == nullptr) {
@@ -1403,7 +1403,7 @@ bool partyMemberSupportsDistance(Object* object, int distanceMode)
     return partyMemberDescription->distanceMode[distanceMode];
 }
 
-// 0x495AA0
+// 0x495AA0 partyMemberHasAIAttackWhoValue_
 bool partyMemberSupportsAttackWho(Object* object, int attackWho)
 {
     if (object == nullptr) {
@@ -1426,7 +1426,7 @@ bool partyMemberSupportsAttackWho(Object* object, int attackWho)
     return partyMemberDescription->attackWho[attackWho];
 }
 
-// 0x495B00
+// 0x495B00 partyMemberHasAIChemUseValue_
 bool partyMemberSupportsChemUse(Object* object, int chemUse)
 {
     if (object == nullptr) {
@@ -1450,7 +1450,7 @@ bool partyMemberSupportsChemUse(Object* object, int chemUse)
 }
 
 // partyMemberIncLevels
-// 0x495B60
+// 0x495B60 partyMemberIncLevels_
 int _partyMemberIncLevels()
 {
     int i;
@@ -1559,7 +1559,7 @@ int _partyMemberIncLevels()
     return 0;
 }
 
-// 0x495EA8
+// 0x495EA8 partyMemberCopyLevelInfo_
 static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
 {
     if (critter == nullptr) {
@@ -1626,7 +1626,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
 // (they cannot be healed by resting) and dude (he/she has it's own "Rest
 // until healed" option).
 //
-// 0x496058
+// 0x496058 partyMemberNeedsHealing_
 bool partyIsAnyoneCanBeHealedByRest()
 {
     for (int index = 1; index < gPartyMembersLength; index++) {
@@ -1651,7 +1651,7 @@ bool partyIsAnyoneCanBeHealedByRest()
 // Returns maximum amount of damage of any party member that can be healed thru
 // the rest.
 //
-// 0x4960DC
+// 0x4960DC partyMemberMaxHealingNeeded_
 int partyGetMaxWoundToHealByRest()
 {
     int maxWound = 0;

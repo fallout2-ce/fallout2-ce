@@ -86,7 +86,7 @@ static char _bad_copy[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
 
 static MessageListRepositoryState* _messageListRepositoryState;
 
-// 0x484770
+// 0x484770 init_message_
 int badwordsInit()
 {
     File* stream = fileOpen("data\\badwords.txt", "rt");
@@ -154,7 +154,7 @@ int badwordsInit()
     return 0;
 }
 
-// 0x4848F0
+// 0x4848F0 exit_message_
 void badwordsExit()
 {
     for (int index = 0; index < gBadwordsCount; index++) {
@@ -170,7 +170,7 @@ void badwordsExit()
 }
 
 // message_init
-// 0x48494C
+// 0x48494C message_init_
 bool messageListInit(MessageList* messageList)
 {
     if (messageList != nullptr) {
@@ -180,7 +180,7 @@ bool messageListInit(MessageList* messageList)
     return true;
 }
 
-// 0x484964
+// 0x484964 message_exit_
 bool messageListFree(MessageList* messageList)
 {
     int i;
@@ -213,7 +213,7 @@ bool messageListFree(MessageList* messageList)
 }
 
 // message_load
-// 0x484AA4
+// 0x484AA4 message_load_
 bool messageListLoad(MessageList* messageList, const char* path)
 {
     char localized_path[COMPAT_MAX_PATH];
@@ -297,7 +297,7 @@ err:
     return success;
 }
 
-// 0x484C30
+// 0x484C30 message_search_
 bool messageListGetItem(MessageList* msg, MessageListItem* entry)
 {
     int index;
@@ -329,7 +329,7 @@ bool messageListGetItem(MessageList* msg, MessageListItem* entry)
 
 // Builds language-aware path in "text" subfolder.
 //
-// 0x484CB8
+// 0x484CB8 message_make_path_
 bool _message_make_path(char* dest, size_t size, const char* path)
 {
     if (dest == nullptr) {
@@ -345,7 +345,7 @@ bool _message_make_path(char* dest, size_t size, const char* path)
     return true;
 }
 
-// 0x484D10
+// 0x484D10 message_find_
 static bool _message_find(MessageList* msg, int num, int* out_index)
 {
     int r, l, mid;
@@ -383,7 +383,7 @@ static bool _message_find(MessageList* msg, int num, int* out_index)
     return false;
 }
 
-// 0x484D68
+// 0x484D68 message_add_
 static bool _message_add(MessageList* msg, MessageListItem* new_entry)
 {
     int index;
@@ -444,7 +444,7 @@ static bool _message_add(MessageList* msg, MessageListItem* new_entry)
     return true;
 }
 
-// 0x484F60
+// 0x484F60 message_parse_number_
 static bool _message_parse_number(int* out_num, const char* str)
 {
     const char* ch;
@@ -482,7 +482,7 @@ static bool _message_parse_number(int* out_num, const char* str)
 // 3 - unterminated field
 // 4 - limit exceeded (> `MESSAGE_LIST_ITEM_FIELD_MAX_SIZE`)
 //
-// 0x484FB4
+// 0x484FB4 message_load_field_
 static int _message_load_field(File* file, char* str)
 {
     int ch;
@@ -533,7 +533,7 @@ static int _message_load_field(File* file, char* str)
     return 0;
 }
 
-// 0x48504C
+// 0x48504C getmsg_
 char* getmsg(MessageList* msg, MessageListItem* entry, int num)
 {
     entry->num = num;
@@ -546,7 +546,7 @@ char* getmsg(MessageList* msg, MessageListItem* entry, int num)
     return entry->text;
 }
 
-// 0x485078
+// 0x485078 message_filter_
 bool messageListFilterBadwords(MessageList* messageList)
 {
     if (messageList == nullptr) {

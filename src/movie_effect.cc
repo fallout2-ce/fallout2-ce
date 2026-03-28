@@ -49,7 +49,7 @@ static unsigned char _source_palette[768];
 // 0x6391C4
 static bool _inside_fade;
 
-// 0x487CC0
+// 0x487CC0 moviefx_init_
 int movieEffectsInit()
 {
     if (gMovieEffectsInitialized) {
@@ -63,7 +63,7 @@ int movieEffectsInit()
     return 0;
 }
 
-// 0x487CF4
+// 0x487CF4 moviefx_reset_
 void movieEffectsReset()
 {
     if (!gMovieEffectsInitialized) {
@@ -79,7 +79,7 @@ void movieEffectsReset()
     memset(_source_palette, 0, sizeof(_source_palette));
 }
 
-// 0x487D30
+// 0x487D30 moviefx_exit_
 void movieEffectsExit()
 {
     if (!gMovieEffectsInitialized) {
@@ -95,7 +95,7 @@ void movieEffectsExit()
     memset(_source_palette, 0, sizeof(_source_palette));
 }
 
-// 0x487D7C
+// 0x487D7C moviefx_start_
 int movieEffectsLoad(const char* filePath)
 {
     if (!gMovieEffectsInitialized) {
@@ -224,7 +224,7 @@ out:
     return rc;
 }
 
-// 0x4880F0
+// 0x4880F0 moviefx_stop_
 void _moviefx_stop()
 {
     if (!gMovieEffectsInitialized) {
@@ -240,7 +240,7 @@ void _moviefx_stop()
     memset(_source_palette, 0, sizeof(_source_palette));
 }
 
-// 0x488144
+// 0x488144 moviefx_callback_func_
 static void _moviefx_callback_func(int frame)
 {
     MovieEffect* movieEffect = gMovieEffectHead;
@@ -275,7 +275,7 @@ static void _moviefx_callback_func(int frame)
     _inside_fade = movieEffect != nullptr;
 }
 
-// 0x4882AC
+// 0x4882AC moviefx_palette_func_
 static void _moviefx_palette_func(unsigned char* palette, int start, int end)
 {
     memcpy(_source_palette + 3 * start, palette, 3 * (end - start + 1));
@@ -285,7 +285,7 @@ static void _moviefx_palette_func(unsigned char* palette, int start, int end)
     }
 }
 
-// 0x488310
+// 0x488310 moviefx_remove_all_
 static void movieEffectsClear()
 {
     MovieEffect* movieEffect = gMovieEffectHead;

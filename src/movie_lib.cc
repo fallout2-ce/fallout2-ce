@@ -410,20 +410,20 @@ static unsigned char* nf_buf_prv;
 static int gMveSoundBuffer = -1;
 static unsigned int gMveBufferBytes;
 
-// 0x4F4800
+// 0x4F4800 MVE_memCallbacks_
 void MveSetMemory(MveMallocFunc* malloc_func, MveFreeFunc* free_func)
 {
     mve_malloc_func = malloc_func;
     mve_free_func = free_func;
 }
 
-// 0x4F4860
+// 0x4F4860 MVE_ioCallbacks_
 void MveSetIO(MveReadFunc* read_func)
 {
     mve_read_func = read_func;
 }
 
-// 0x4F4890
+// 0x4F4890 MVE_MemInit_
 static void MVE_MemInit(MveMem* mem, unsigned int size, void* ptr)
 {
     if (ptr == nullptr) {
@@ -437,7 +437,7 @@ static void MVE_MemInit(MveMem* mem, unsigned int size, void* ptr)
     mem->alloced = 0;
 }
 
-// 0x4F48C0
+// 0x4F48C0 MVE_MemFree_
 static void MVE_MemFree(MveMem* mem)
 {
     if (mem->alloced && mve_free_func != nullptr) {
@@ -447,7 +447,7 @@ static void MVE_MemFree(MveMem* mem)
     mem->size = 0;
 }
 
-// 0x4F4900
+// 0x4F4900 sub_4F4900
 void MveSetVolume(int volume)
 {
     mve_volume = volume;
@@ -457,39 +457,39 @@ void MveSetVolume(int volume)
     }
 }
 
-// 0x4F4940
+// 0x4F4940 MVE_sfSVGA_
 void MveSetScreenSize(int width, int height)
 {
     sf_ScreenWidth = width;
     sf_ScreenHeight = height;
 }
 
-// 0x4F49F0
+// 0x4F49F0 MVE_sfCallbacks_
 void MveSetShowFrame(MveShowFrameFunc* show_frame_func)
 {
     sf_ShowFrame = show_frame_func;
 }
 
-// 0x4F4A10
+// 0x4F4A10 MVE_palCallbacks_
 void MveSetPalette(MveSetPaletteFunc* set_palette_func)
 {
     pal_SetPalette = set_palette_func;
 }
 
-// 0x4F4B50
+// 0x4F4B50 sub_4F4B50
 static int _sub_4F4B5()
 {
     return 0;
 }
 
-// 0x4F4BD0
+// 0x4F4BD0 MVE_rmFrameCounts_
 void MVE_rmFrameCounts(int* frame_count_ptr, int* frame_drop_count_ptr)
 {
     *frame_count_ptr = rm_FrameCount;
     *frame_drop_count_ptr = rm_FrameDropCount;
 }
 
-// 0x4F4BF0
+// 0x4F4BF0 MVE_rmPrepMovie_
 int MVE_rmPrepMovie(void* handle, int dx, int dy, unsigned char track)
 {
     rm_dx = dx;
@@ -520,7 +520,7 @@ int MVE_rmPrepMovie(void* handle, int dx, int dy, unsigned char track)
     return 0;
 }
 
-// 0x4F4C90
+// 0x4F4C90 ioReset_
 static int ioReset(void* handle)
 {
     MveHeader* mve;
@@ -546,7 +546,7 @@ static int ioReset(void* handle)
 
 // Reads data from movie file.
 //
-// 0x4F4D00
+// 0x4F4D00 ioRead_
 static void* ioRead(int size)
 {
     void* buf;
@@ -563,7 +563,7 @@ static void* ioRead(int size)
     return buf;
 }
 
-// 0x4F4D40
+// 0x4F4D40 MVE_MemAlloc_
 static void* MVE_MemAlloc(MveMem* mem, unsigned int size)
 {
     void* ptr;
@@ -590,7 +590,7 @@ static void* MVE_MemAlloc(MveMem* mem, unsigned int size)
     return mem->ptr;
 }
 
-// 0x4F4DA0
+// 0x4F4DA0 ioNextRecord_
 static unsigned char* ioNextRecord()
 {
     unsigned char* buf;
@@ -605,7 +605,7 @@ static unsigned char* ioNextRecord()
     return buf;
 }
 
-// 0x4F4E40
+// 0x4F4E40 syncWait_
 static int syncWait()
 {
     int late;
@@ -622,7 +622,7 @@ static int syncWait()
     return late;
 }
 
-// 0x4F4EA0
+// 0x4F4EA0 MVE_sndPause_
 static void _MVE_sndPause()
 {
     if (gMveSoundBuffer != -1) {
@@ -630,7 +630,7 @@ static void _MVE_sndPause()
     }
 }
 
-// 0x4F4EC0
+// 0x4F4EC0 MVE_rmStepMovie_
 int _MVE_rmStepMovie()
 {
     int v0;
@@ -814,7 +814,7 @@ LABEL_5:
     return v6;
 }
 
-// 0x4F54F0
+// 0x4F54F0 syncInit_
 static int syncInit(int rate, int resolution)
 {
     int quanta;
@@ -830,14 +830,14 @@ static int syncInit(int rate, int resolution)
     return 1;
 }
 
-// 0x4F5540
+// 0x4F5540 syncReset_
 static void syncReset(int quanta)
 {
     sync_active = 1;
     sync_time = -1000 * compat_timeGetTime() + quanta;
 }
 
-// 0x4F5570
+// 0x4F5570 MVE_sndConfigure_
 static int _MVE_sndConfigure(int a1, int a2, int a3, int a4, int a5, int a6)
 {
     MVE_syncSync();
@@ -864,7 +864,7 @@ static int _MVE_sndConfigure(int a1, int a2, int a3, int a4, int a5, int a6)
     return 1;
 }
 
-// 0x4F56C0
+// 0x4F56C0 MVE_syncSync_
 static void MVE_syncSync()
 {
     if (sync_active) {
@@ -873,7 +873,7 @@ static void MVE_syncSync()
     }
 }
 
-// 0x4F56F0
+// 0x4F56F0 MVE_sndReset_
 static void _MVE_sndReset()
 {
     if (gMveSoundBuffer != -1) {
@@ -883,7 +883,7 @@ static void _MVE_sndReset()
     }
 }
 
-// 0x4F5720
+// 0x4F5720 MVE_sndSync_
 static void _MVE_sndSync()
 {
     unsigned int dwCurrentPlayCursor;
@@ -1026,7 +1026,7 @@ static void _MVE_sndSync()
     }
 }
 
-// 0x4F59B0
+// 0x4F59B0 syncWaitLevel_
 static int syncWaitLevel(int wait)
 {
     int deadline;
@@ -1050,7 +1050,7 @@ static int syncWaitLevel(int wait)
     return diff;
 }
 
-// 0x4F5A00
+// 0x4F5A00 CallsSndBuff_Lock
 static void _CallsSndBuff_Loc(unsigned char* a1, int a2)
 {
     int v2;
@@ -1116,7 +1116,7 @@ static void _CallsSndBuff_Loc(unsigned char* a1, int a2)
     }
 }
 
-// 0x4F5B70
+// 0x4F5B70 MVE_sndAdd_
 static int _MVE_sndAdd(unsigned char* dest, unsigned char** src_ptr, int a3, int a4, int a5)
 {
     unsigned char* src;
@@ -1181,12 +1181,12 @@ static int _MVE_sndAdd(unsigned char* dest, unsigned char** src_ptr, int a3, int
     return result;
 }
 
-// 0x4F5CA0
+// 0x4F5CA0 MVE_sndResume_
 static void _MVE_sndResume()
 {
 }
 
-// 0x4F5CB0
+// 0x4F5CB0 nfConfig_
 static int nfConfig(int width, int height, int a3, int is_16_bpp)
 {
     byte_6B4016 = a3;
@@ -1211,7 +1211,7 @@ static int nfConfig(int width, int height, int a3, int is_16_bpp)
     return 1;
 }
 
-// 0x4F5F20
+// 0x4F5F20 sub_4F5F20
 static void movieSwapSurfaces()
 {
     unsigned char* tmp = nf_buf_prv;
@@ -1219,7 +1219,7 @@ static void movieSwapSurfaces()
     nf_buf_cur = tmp;
 }
 
-// 0x4F5F40
+// 0x4F5F40 sfShowFrame_
 static void sfShowFrame(int dst_x, int dst_y, int a3)
 {
     dst_x = (sf_ScreenWidth - nf_width) / 2;
@@ -1230,18 +1230,18 @@ static void sfShowFrame(int dst_x, int dst_y, int a3)
     }
 }
 
-// 0x4F6080
+// 0x4F6080 do_nothing_3
 static void _do_nothing_(int a1, int a2, unsigned short* a3)
 {
 }
 
-// 0x4F6090
+// 0x4F6090 SetPalette_1
 static void palSetPalette(int start, int count)
 {
     pal_SetPalette(pal_tbl, start, count);
 }
 
-// 0x4F60C0
+// 0x4F60C0 SetPalette_2
 static void palClrPalette(int start, int count)
 {
     unsigned char palette[768];
@@ -1250,7 +1250,7 @@ static void palClrPalette(int start, int count)
     pal_SetPalette(palette, start, count);
 }
 
-// 0x4F60F0
+// 0x4F60F0 palMakeSynthPalette_
 static void palMakeSynthPalette(int a1, int a2, int a3, int a4, int a5, int a6)
 {
     int i;
@@ -1273,13 +1273,13 @@ static void palMakeSynthPalette(int a1, int a2, int a3, int a4, int a5, int a6)
     }
 }
 
-// 0x4F6210
+// 0x4F6210 palLoadPalette_
 static void palLoadPalette(unsigned char* palette, int start, int count)
 {
     memcpy(&(pal_tbl[start * 3]), palette, count * 3);
 }
 
-// 0x4F6240
+// 0x4F6240 MVE_rmEndMovie_
 void MVE_rmEndMovie()
 {
     if (rm_active) {
@@ -1290,13 +1290,13 @@ void MVE_rmEndMovie()
     }
 }
 
-// 0x4F6270
+// 0x4F6270 syncRelease_
 static void syncRelease()
 {
     sync_active = 0;
 }
 
-// 0x4F6350
+// 0x4F6350 MVE_ReleaseMem_
 void MVE_ReleaseMem()
 {
     MVE_rmEndMovie();
@@ -1305,18 +1305,18 @@ void MVE_ReleaseMem()
     nfRelease();
 }
 
-// 0x4F6370
+// 0x4F6370 ioRelease_
 static void ioRelease()
 {
     MVE_MemFree(&io_mem_buf);
 }
 
-// 0x4F6380
+// 0x4F6380 MVE_sndRelease_
 static void _MVE_sndRelease()
 {
 }
 
-// 0x4F6390
+// 0x4F6390 nfRelease_
 static void nfRelease()
 {
     MVE_MemFree(&nf_mem_cur);
@@ -1326,7 +1326,7 @@ static void nfRelease()
     nf_buf_prv = nullptr;
 }
 
-// 0x4F697C
+// 0x4F697C MVE_sndDecompM16_
 static int _MVE_sndDecompM16(unsigned short* a1, unsigned char* a2, int a3, int a4)
 {
     int i;
@@ -1345,7 +1345,7 @@ static int _MVE_sndDecompM16(unsigned short* a1, unsigned char* a2, int a3, int 
     return result;
 }
 
-// 0x4F69AD
+// 0x4F69AD MVE_sndDecompS16_
 static int _MVE_sndDecompS16(unsigned short* a1, unsigned char* a2, int a3, int a4)
 {
     int i;
@@ -1370,7 +1370,7 @@ static int _MVE_sndDecompS16(unsigned short* a1, unsigned char* a2, int a3, int 
     return (v5 << 16) | v4;
 }
 
-// 0x4F731D
+// 0x4F731D nfPkConfig_
 static void _nfPkConfig()
 {
     int* ptr;
@@ -1400,7 +1400,7 @@ static void _nfPkConfig()
     } while (v5);
 }
 
-// 0x4F7359
+// 0x4F7359 nfPkDecomp_
 static void _nfPkDecomp(unsigned char* a1, unsigned char* a2, int a3, int a4, int a5, int a6)
 {
     int v49;

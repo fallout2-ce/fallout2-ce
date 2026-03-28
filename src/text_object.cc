@@ -69,7 +69,7 @@ static bool gTextObjectsEnabled;
 // 0x668220
 static bool gTextObjectsInitialized;
 
-// 0x4B0130
+// 0x4B0130 text_object_init_
 int textObjectsInit(unsigned char* windowBuffer, int width, int height)
 {
     if (gTextObjectsInitialized) {
@@ -92,7 +92,7 @@ int textObjectsInit(unsigned char* windowBuffer, int width, int height)
     return 0;
 }
 
-// 0x4B021C
+// 0x4B021C text_object_reset_
 int textObjectsReset()
 {
     if (!gTextObjectsInitialized) {
@@ -110,7 +110,7 @@ int textObjectsReset()
     return 0;
 }
 
-// 0x4B0280
+// 0x4B0280 text_object_exit_
 void textObjectsFree()
 {
     if (gTextObjectsInitialized) {
@@ -120,19 +120,19 @@ void textObjectsFree()
     }
 }
 
-// 0x4B02A4
+// 0x4B02A4 text_object_disable_
 void textObjectsDisable()
 {
     gTextObjectsEnabled = false;
 }
 
-// 0x4B02B0
+// 0x4B02B0 text_object_enable_
 void textObjectsEnable()
 {
     gTextObjectsEnabled = true;
 }
 
-// 0x4B02C4
+// 0x4B02C4 text_object_set_base_delay_
 void textObjectsSetBaseDelay(double value)
 {
     if (value < 1.0) {
@@ -142,7 +142,7 @@ void textObjectsSetBaseDelay(double value)
     gTextObjectsBaseDelay = (int)(value * 1000.0);
 }
 
-// 0x4B031C
+// 0x4B031C text_object_set_line_delay_
 void textObjectsSetLineDelay(double value)
 {
     if (value < 0.0) {
@@ -153,7 +153,7 @@ void textObjectsSetLineDelay(double value)
 }
 
 // text_object_create
-// 0x4B036C
+// 0x4B036C text_object_create_
 int textObjectAdd(Object* object, char* string, int font, int color, int outlineColor, Rect* rect)
 {
     if (!gTextObjectsInitialized) {
@@ -287,7 +287,7 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
     return 0;
 }
 
-// 0x4B06E8
+// 0x4B06E8 text_object_render_
 void textObjectsRenderInRect(Rect* rect)
 {
     if (!gTextObjectsInitialized) {
@@ -316,13 +316,13 @@ void textObjectsRenderInRect(Rect* rect)
     }
 }
 
-// 0x4B07F0
+// 0x4B07F0 text_object_count_
 int textObjectsGetCount()
 {
     return gTextObjectsCount;
 }
 
-// 0x4B07F8
+// 0x4B07F8 text_object_bk_
 static void textObjectsTicker()
 {
     if (!gTextObjectsEnabled) {
@@ -371,7 +371,7 @@ static void textObjectsTicker()
 
 // Finds best position for placing text object.
 //
-// 0x4B0954
+// 0x4B0954 text_object_get_offset_
 static void textObjectFindPlacement(TextObject* textObject)
 {
     int tileScreenX;
@@ -457,7 +457,7 @@ static void textObjectFindPlacement(TextObject* textObject)
 
 // Marks text objects attached to [object] for removal.
 //
-// 0x4B0C00
+// 0x4B0C00 text_object_remove_
 void textObjectsRemoveByOwner(Object* object)
 {
     for (int index = 0; index < gTextObjectsCount; index++) {

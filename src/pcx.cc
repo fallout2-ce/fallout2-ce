@@ -14,7 +14,7 @@ unsigned char gPcxLastValue = 0;
 // use high level reading functions, which can read right into struct. Instead
 // they read everything into temporary variables. There are no error checks.
 //
-// 0x4961D4
+// 0x4961D4 readPcxHeader_
 void pcxReadHeader(PcxHeader* pcxHeader, File* stream)
 {
     pcxHeader->identifier = fileReadChar(stream);
@@ -74,7 +74,7 @@ void pcxReadHeader(PcxHeader* pcxHeader, File* stream)
     }
 }
 
-// 0x49636C
+// 0x49636C pcxDecodeScanline_
 int pcxReadLine(unsigned char* data, int size, File* stream)
 {
     unsigned char runLength = gPcxLastRunLength;
@@ -114,7 +114,7 @@ int pcxReadLine(unsigned char* data, int size, File* stream)
     return uncompressedSize;
 }
 
-// 0x49641C
+// 0x49641C readPcxVgaPalette_
 int pcxReadPalette(PcxHeader* pcxHeader, unsigned char* palette, File* stream)
 {
     if (pcxHeader->version != 5) {
@@ -138,7 +138,7 @@ int pcxReadPalette(PcxHeader* pcxHeader, unsigned char* palette, File* stream)
     return 1;
 }
 
-// 0x496494
+// 0x496494 loadPCX_
 unsigned char* pcxRead(const char* path, int* widthPtr, int* heightPtr, unsigned char* palette)
 {
     File* stream = fileOpen(path, "rb");

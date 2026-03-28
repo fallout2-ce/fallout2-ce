@@ -20,7 +20,7 @@ DatafileNameMangler* gDatafileNameMangler = datafileDefaultNameManglerImpl;
 // 0x56D7E0
 uint8_t gDatafilePalette[DATA_FILE_PALETTE_MAX];
 
-// 0x42EE70
+// 0x42EE70 defaultMangleName_
 char* datafileDefaultNameManglerImpl(char* path)
 {
     return path;
@@ -28,7 +28,7 @@ char* datafileDefaultNameManglerImpl(char* path)
 
 // NOTE: Unused.
 //
-// 0x42EE74
+// 0x42EE74 datafileSetFilenameFunc_
 void datafileSetNameMangler(DatafileNameMangler* mangler)
 {
     gDatafileNameMangler = mangler;
@@ -36,13 +36,13 @@ void datafileSetNameMangler(DatafileNameMangler* mangler)
 
 // NOTE: Unused.
 //
-// 0x42EE7C
+// 0x42EE7C setBitmapLoadFunc_
 void datafileSetLoader(DatafileLoader* loader)
 {
     gDatafileLoader = loader;
 }
 
-// 0x42EE84
+// 0x42EE84 datafileConvertData_
 void datafileRemapPixelsRgb8(uint8_t* data, uint8_t* palette, int width, int height)
 {
     uint8_t indexedPalette[INDEXED_PALETTE_MAX];
@@ -65,7 +65,7 @@ void datafileRemapPixelsRgb8(uint8_t* data, uint8_t* palette, int width, int hei
 
 // NOTE: Unused.
 //
-// 0x42EEF8
+// 0x42EEF8 datafileConvertDataVGA_
 void datafileRemapPixelsRgb6(uint8_t* data, uint8_t* palette, int width, int height)
 {
     uint8_t indexedPalette[INDEXED_PALETTE_MAX];
@@ -86,7 +86,7 @@ void datafileRemapPixelsRgb6(uint8_t* data, uint8_t* palette, int width, int hei
     }
 }
 
-// 0x42EF60
+// 0x42EF60 loadRawDataFile_
 uint8_t* datafileReadRaw(char* path, int* widthPtr, int* heightPtr)
 {
     char* mangledPath = gDatafileNameMangler(path);
@@ -104,7 +104,7 @@ uint8_t* datafileReadRaw(char* path, int* widthPtr, int* heightPtr)
     return nullptr;
 }
 
-// 0x42EFCC
+// 0x42EFCC loadDataFile_
 uint8_t* datafileRead(char* path, int* widthPtr, int* heightPtr)
 {
     uint8_t* imageData = datafileReadRaw(path, widthPtr, heightPtr);
@@ -116,7 +116,7 @@ uint8_t* datafileRead(char* path, int* widthPtr, int* heightPtr)
 
 // NOTE: Unused
 //
-// 0x42EFF4
+// 0x42EFF4 load256Palette_
 uint8_t* datafileLoadPalette(char* path)
 {
     int width;
@@ -132,7 +132,7 @@ uint8_t* datafileLoadPalette(char* path)
 
 // NOTE: Unused.
 //
-// 0x42F024
+// 0x42F024 trimBuffer_
 void datafilePackUntilZero(uint8_t* data, int* widthPtr, int* heightPtr)
 {
     int width = *widthPtr;
@@ -165,7 +165,7 @@ void datafilePackUntilZero(uint8_t* data, int* widthPtr, int* heightPtr)
     internal_free_safe(compactDataWritePtr, __FILE__, __LINE__); // // "..\\int\\DATAFILE.C", 171
 }
 
-// 0x42F0E4
+// 0x42F0E4 datafileGetPalette_
 uint8_t* datafileGetPalette()
 {
     return gDatafilePalette;
@@ -173,7 +173,7 @@ uint8_t* datafileGetPalette()
 
 // NOTE: Unused.
 //
-// 0x42F0EC
+// 0x42F0EC datafileLoadBlock_
 uint8_t* datafileLoad(char* path, int* sizePtr)
 {
     const char* mangledPath = gDatafileNameMangler(path);
