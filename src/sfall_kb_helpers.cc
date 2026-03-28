@@ -333,10 +333,9 @@ int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
     if (!gGameLoaded) return SDL_SCANCODE_UNKNOWN;
 
     ScriptHookCall hook(HOOK_KEYPRESS, 1, {
-        pressed ? 1 : 0,
-        get_key_from_scancode(static_cast<SDL_Scancode>(sdlScanCode)),
-        0 // TODO: sfall uses VK_ codes here; not sure any mod actually used it. If so, maybe it is better to use Key values from kb.h?
-    });
+                                              pressed ? 1 : 0, get_key_from_scancode(static_cast<SDL_Scancode>(sdlScanCode)),
+                                              0 // TODO: sfall uses VK_ codes here; not sure any mod actually used it. If so, maybe it is better to use Key values from kb.h?
+                                          });
     hook.call();
 
     if (hook.numReturnValues() <= 0) {

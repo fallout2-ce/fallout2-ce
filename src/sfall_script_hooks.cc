@@ -161,7 +161,7 @@ int arg1 - the previous game mode
 */
 void scriptHooks_GameModeChange(int exit, int previousGameMode)
 {
-    ScriptHookCall(HOOK_GAMEMODECHANGE, 0, {exit, previousGameMode}).call();
+    ScriptHookCall(HOOK_GAMEMODECHANGE, 0, { exit, previousGameMode }).call();
 }
 
 /*
@@ -181,16 +181,7 @@ int     ret0 - The new hit chance. The value is limited to the range of -99 to 9
 */
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance)
 {
-    ScriptHookCall hook(HOOK_TOHIT, 1, {
-        hitChance,
-        attacker,
-        defender,
-        hitLocation,
-        tile,
-        hitMode,
-        useDistance,
-        hitChanceUncapped
-    });
+    ScriptHookCall hook(HOOK_TOHIT, 1, { hitChance, attacker, defender, hitLocation, tile, hitMode, useDistance, hitChanceUncapped });
 
     hook.call();
 
@@ -217,7 +208,7 @@ int     ret0 - overrides hard-coded handler and selects what should happen with 
 // TODO: there's an inconsistency with the use of rc = 2. It drops items when used from the main interface, but not from inventory context menu. This matches sfall, but should probably be improved.
 int scriptHooks_UseItem(Object* user, Object* objUsed)
 {
-    ScriptHookCall hook(HOOK_USEOBJ, 1, {user, objUsed});
+    ScriptHookCall hook(HOOK_USEOBJ, 1, { user, objUsed });
     hook.call();
 
     if (hook.numReturnValues() <= 0)
@@ -244,7 +235,7 @@ int     ret0 - overrides hard-coded handler and selects what should happen with 
 */
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed)
 {
-    ScriptHookCall hook(HOOK_USEOBJON, 1, {target, user, objUsed});
+    ScriptHookCall hook(HOOK_USEOBJON, 1, { target, user, objUsed });
     hook.call();
 
     if (hook.numReturnValues() <= 0)
@@ -284,20 +275,9 @@ int     ret4 - The amount of knockback to the target
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult)
 {
     ScriptHookCall hook(HOOK_COMBATDAMAGE, 5, {
-        attack->defender,
-        attack->attacker,
-        attack->defenderDamage,
-        attack->attackerDamage,
-        attack->defenderFlags,
-        attack->attackerFlags,
-        attack->weapon,
-        attack->defenderHitLocation,
-        baseDmgMult,
-        numRounds,
-        attack->defenderKnockback,
-        attack->hitMode,
-        attack  // this is how sfall did it.. TODO: make sure get/set_object_data handler is safe!
-    });
+                                                  attack->defender, attack->attacker, attack->defenderDamage, attack->attackerDamage, attack->defenderFlags, attack->attackerFlags, attack->weapon, attack->defenderHitLocation, baseDmgMult, numRounds, attack->defenderKnockback, attack->hitMode,
+                                                  attack // this is how sfall did it.. TODO: make sure get/set_object_data handler is safe!
+                                              });
 
     hook.call();
 
@@ -336,18 +316,7 @@ NOTE: the hook is executed twice when entering the barter screen or after transa
 */
 void scriptHooks_BarterPrice(BarterPriceContext& ctx)
 {
-    ScriptHookCall hook(HOOK_BARTERPRICE, 2, {
-        ctx.dude,
-        ctx.npc,
-        ctx.value,
-        ctx.requestTable,
-        ctx.caps,
-        ctx.rawValue,
-        ctx.offerTable,
-        ctx.offerValue,
-        ctx.offerButton,
-        ctx.partyMember
-    });
+    ScriptHookCall hook(HOOK_BARTERPRICE, 2, { ctx.dude, ctx.npc, ctx.value, ctx.requestTable, ctx.caps, ctx.rawValue, ctx.offerTable, ctx.offerValue, ctx.offerButton, ctx.partyMember });
 
     hook.call();
 
