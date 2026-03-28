@@ -348,11 +348,6 @@ static bool _changed;
 
 static void preferencesRefreshBrightnessSlider()
 {
-    // this can be called when the preferences window is not open
-    if (gPreferencesWindow == -1 || gPreferencesWindowBuffer == nullptr) {
-        return;
-    }
-
     _UpdateThing(PREF_BRIGHTNESS);
     windowRefresh(gPreferencesWindow);
 }
@@ -934,11 +929,11 @@ void brightnessIncrease()
             gPreferencesBrightness1 = 1.0;
         }
 
-        colorSetBrightness(gPreferencesBrightness1);
         if ((GameMode::getCurrentGameMode() & GameMode::kPreferences) != 0) {
             preferencesRefreshBrightnessSlider();
             _changed = true;
         } else {
+            colorSetBrightness(gPreferencesBrightness1);
             settings.preferences.brightness = gPreferencesBrightness1;
             settingsSave();
         }
@@ -963,11 +958,11 @@ void brightnessDecrease()
             gPreferencesBrightness1 = 1.0;
         }
 
-        colorSetBrightness(gPreferencesBrightness1);
         if ((GameMode::getCurrentGameMode() & GameMode::kPreferences) != 0) {
             preferencesRefreshBrightnessSlider();
             _changed = true;
         } else {
+            colorSetBrightness(gPreferencesBrightness1);
             settings.preferences.brightness = gPreferencesBrightness1;
             settingsSave();
         }
