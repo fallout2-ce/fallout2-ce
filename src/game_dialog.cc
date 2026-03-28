@@ -1942,7 +1942,7 @@ int _gdProcess()
 
                 GameMode::exitGameMode(GameMode::kSpecial);
 
-                inventoryOpenTrade(gGameDialogWindow, gGameDialogSpeaker, _peon_table_obj, _barterer_table_obj, gGameDialogBarterModifier);
+                barterProcessUI(gGameDialogWindow, gGameDialogSpeaker, _peon_table_obj, _barterer_table_obj, gGameDialogBarterModifier);
                 _gdialog_barter_cleanup_tables();
 
                 GameDialogMode dialogueState = dialogMode;

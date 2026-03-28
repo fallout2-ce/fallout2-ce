@@ -213,6 +213,19 @@ private:
     int _scriptRetVals = 0;
 };
 
+struct BarterPriceContext {
+    Object* dude;
+    Object* npc;
+    Object* requestTable;
+    Object* offerTable;
+    int value;
+    int offerValue;
+    int rawValue;
+    int caps;
+    bool offerButton;
+    bool partyMember;
+};
+
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 
 bool scriptHooksInit();
@@ -224,6 +237,7 @@ int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode,
 int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
+void scriptHooks_BarterPrice(BarterPriceContext& ctx);
 
 } // namespace fallout
 
