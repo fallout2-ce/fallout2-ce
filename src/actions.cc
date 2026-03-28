@@ -338,7 +338,7 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
 
                     // SFALL
                     if (explosionEmitsLight()) {
-                        // 0xFFFF0002
+                        // 0xFFFF0002:
                         // - distance: 2
                         // - intensity: 65535
                         //
@@ -351,7 +351,7 @@ void _show_damage_to_object(Object* defender, int damage, int flags, Object* wea
 
                     // SFALL
                     if (explosionEmitsLight()) {
-                        // 0x00010000
+                        // 0x00010000:
                         // - distance: 0
                         // - intensity: 1
                         //

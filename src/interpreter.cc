@@ -187,7 +187,7 @@ char* _interpretMangleName(char* s)
     return _filenameFunc(s);
 }
 
-// 0x4670C
+// 0x4670C0 outputStr_
 static int _outputStr(char* s)
 {
     return 1;

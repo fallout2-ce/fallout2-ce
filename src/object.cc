@@ -2312,7 +2312,7 @@ Object* objectFindNextAtLocation()
     return nullptr;
 }
 
-// 0x0
+// 0x48B66C obj_bound_
 void objectGetRect(Object* obj, Rect* rect)
 {
     if (obj == nullptr) {

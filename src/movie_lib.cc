@@ -1211,7 +1211,7 @@ static int nfConfig(int width, int height, int a3, int is_16_bpp)
     return 1;
 }
 
-// 0x4F5F20 sub_4F5F20
+// 0x4F5F20 swap_nf_mve_buf
 static void movieSwapSurfaces()
 {
     unsigned char* tmp = nf_buf_prv;

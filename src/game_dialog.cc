@@ -1865,7 +1865,7 @@ int _gdProcessExit()
     return 0;
 }
 
-// 0x446504 gdUpdateMula_
+// 0x446504 gdUpdateDudeCaps_
 void gameDialogRenderCaps()
 {
     Rect rect;
