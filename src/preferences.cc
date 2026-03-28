@@ -348,18 +348,8 @@ static bool _changed;
 
 static void preferencesRefreshBrightnessSlider()
 {
-    // this can be called when the preferences window is not open
-    if (gPreferencesWindow == -1 || gPreferencesWindowBuffer == nullptr) {
-        return;
-    }
-
     _UpdateThing(PREF_BRIGHTNESS);
     windowRefresh(gPreferencesWindow);
-}
-
-static bool preferencesWindowIsOpen()
-{
-    return gPreferencesWindow != -1;
 }
 
 // 0x6639AC
@@ -924,7 +914,7 @@ err:
 // Note: this can be called from many different contexts, not just the preferences window.
 void brightnessIncrease()
 {
-    if (!preferencesWindowIsOpen()) {
+    if (!GameMode::isInGameMode(GameMode::kPreferences)) {
         gPreferencesBrightness1 = settings.preferences.brightness;
     }
 
@@ -939,11 +929,11 @@ void brightnessIncrease()
             gPreferencesBrightness1 = 1.0;
         }
 
-        colorSetBrightness(gPreferencesBrightness1);
-        preferencesRefreshBrightnessSlider();
-        if (preferencesWindowIsOpen()) {
+        if (GameMode::isInGameMode(GameMode::kPreferences)) {
+            preferencesRefreshBrightnessSlider();
             _changed = true;
         } else {
+            colorSetBrightness(gPreferencesBrightness1);
             settings.preferences.brightness = gPreferencesBrightness1;
             settingsSave();
         }
@@ -953,7 +943,7 @@ void brightnessIncrease()
 // 0x4929C8
 void brightnessDecrease()
 {
-    if (!preferencesWindowIsOpen()) {
+    if (!GameMode::isInGameMode(GameMode::kPreferences)) {
         gPreferencesBrightness1 = settings.preferences.brightness;
     }
 
@@ -968,11 +958,11 @@ void brightnessDecrease()
             gPreferencesBrightness1 = 1.0;
         }
 
-        colorSetBrightness(gPreferencesBrightness1);
-        preferencesRefreshBrightnessSlider();
-        if (preferencesWindowIsOpen()) {
+        if (GameMode::isInGameMode(GameMode::kPreferences)) {
+            preferencesRefreshBrightnessSlider();
             _changed = true;
         } else {
+            colorSetBrightness(gPreferencesBrightness1);
             settings.preferences.brightness = gPreferencesBrightness1;
             settingsSave();
         }
