@@ -269,7 +269,7 @@ static void inventoryRenderItemDescription(const char* string);
 static void inventoryExamineItem(Object* critter, Object* item);
 static void inventoryWindowOpenContextMenu(int eventCode, int inventoryWindowType);
 static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting);
-static int barterComputeValue(Object* barterer, Object* npc, Object* offerTable, int& outOfferValue, bool offerButton = false);
+static int barterComputeValue(Object* dude, Object* npc, Object* offerTable, int& outOfferValue, bool offerButton = false);
 static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* npc, Object* barterTable);
 static int barterGetMovedQuantity(Object* item, int maxQuantity, bool fromPlayer, bool fromInventory, bool immediate);
 static void barterMoveToTable(Object* item, int quantity, int slotIndex, int indexOffset, Object* npc, Object* sourceTable, bool fromDude);
@@ -4674,12 +4674,12 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
 // Calculates value of NPC (request) and player (offer) tables.
 // When trading with a party member, returns weight instead.
 // 0x474B2C barter_compute_value
-static int barterComputeValue(Object* barterer, Object* npc, Object* offerTable, int& outOfferValue, bool offerButton)
+static int barterComputeValue(Object* dude, Object* npc, Object* offerTable, int& outOfferValue, bool offerButton)
 {
     const int rawValue = objectGetCost(_btable);
     int caps = itemGetTotalCaps(_btable);
 
-    BarterPriceContext ctx { barterer, npc, _btable, offerTable, 0, 0, rawValue, caps, offerButton, gGameDialogSpeakerIsPartyMember };
+    BarterPriceContext ctx { dude, npc, _btable, _ptable, 0, 0, rawValue, caps, offerButton, gGameDialogSpeakerIsPartyMember };
 
     if (gGameDialogSpeakerIsPartyMember) {
         // Hook is invoked but return values are not used. This matches sfall behavior.
@@ -4690,7 +4690,7 @@ static int barterComputeValue(Object* barterer, Object* npc, Object* offerTable,
 
     int valueMinusCaps = rawValue - caps;
     double perkBonus = 0.0;
-    if (barterer == gDude) {
+    if (dude == gDude) {
         if (perkHasRank(gDude, PERK_MASTER_TRADER)) {
             perkBonus = 25.0;
         }
@@ -4708,7 +4708,7 @@ static int barterComputeValue(Object* barterer, Object* npc, Object* offerTable,
     }
 
     ctx.value = static_cast<int>(barterModMult * balancedCost + caps);
-    ctx.offerValue = objectGetCost(offerTable);
+    ctx.offerValue = objectGetCost(_ptable);
     scriptHooks_BarterPrice(ctx);
 
     outOfferValue = ctx.offerValue;
@@ -5172,6 +5172,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
         } else if (keyCode == KEY_LOWERCASE_M) {
             // M == attempt offer
             if (playerTable->data.inventory.length != 0 || _btable->data.inventory.length != 0) {
+                // TODO: inven_dude can potentially be a container (bag) which was opened during trade, but code inside barterAttemptTransaction assumes it's a critter; maybe remove this arg and access gDude always?
                 if (barterAttemptTransaction(_inven_dude, playerTable, barterer, bartererTable) == 0) {
                     _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_TRADE);
                     _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_TRADE);

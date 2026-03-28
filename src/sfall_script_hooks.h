@@ -214,9 +214,9 @@ private:
 };
 
 struct BarterPriceContext {
-    Object* barterer;
+    Object* dude;
     Object* npc;
-    Object* requestedTable;
+    Object* requestTable;
     Object* offerTable;
     int value;
     int offerValue;
