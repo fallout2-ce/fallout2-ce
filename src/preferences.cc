@@ -914,7 +914,7 @@ err:
 // Note: this can be called from many different contexts, not just the preferences window.
 void brightnessIncrease()
 {
-    if (GameMode::isInGameMode(GameMode::kPreferences)) {
+    if (!GameMode::isInGameMode(GameMode::kPreferences)) {
         gPreferencesBrightness1 = settings.preferences.brightness;
     }
 
