@@ -4711,7 +4711,7 @@ static std::pair<int, int> barterComputeTablesValue(Object* dude, Object* npc, b
     ctx.value = static_cast<int>(barterModMult * balancedCost + caps);
     scriptHooks_BarterPrice(&ctx);
 
-    return {ctx.value, ctx.offerValue};
+    return { ctx.value, ctx.offerValue };
 }
 
 // Calculates weight of NPC (request) and player (offer) tables. Used when bartering with party members.
@@ -4727,7 +4727,7 @@ static std::pair<int, int> barterComputeTablesWeight(Object* dude, Object* npc)
     // Hook is invoked but return values are not used. This matches sfall behavior.
     scriptHooks_BarterPrice(&ctx);
 
-    return {objectGetInventoryWeight(gBartererTableObj), objectGetInventoryWeight(gPlayerTableObj)};
+    return { objectGetInventoryWeight(gBartererTableObj), objectGetInventoryWeight(gPlayerTableObj) };
 }
 
 // 0x474C50 barter_attempt_transaction
