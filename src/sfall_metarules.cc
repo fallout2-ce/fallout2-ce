@@ -204,7 +204,7 @@ void mf_critter_inven_obj2(Program* program, int args)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     int slot = programStackPopInteger(program);
-    
+
     switch (slot) {
     case 0:
         programStackPushPointer(program, critterGetArmor(obj));
