@@ -124,6 +124,19 @@ procedure barterprice_handler begin
     set_sfall_return((offerValue - offerCaps) / 2 + offerCaps);
 end
 
+#define ANIM_fall_back               (20)
+#define ANIM_fall_front              (21)
+#define ANIM_fire_dance              (33)
+
+procedure deathanim_handler begin
+    variable
+        args := get_sfall_args;
+    
+    display_msg(sprintf("deathanim %s", debug_array_str(args)));
+
+    set_sfall_return(ANIM_fire_dance);
+end
+
 procedure start begin
     //call test_with_args(777);
     display_msg("start hook test");
@@ -144,6 +157,7 @@ procedure start begin
     register_hook_proc(HOOK_GAMEMODECHANGE, gamemodechange_handler);
     register_hook_proc(HOOK_COMBATDAMAGE, combatdamage_handler);
     register_hook_proc(HOOK_BARTERPRICE, barterprice_handler);
+    register_hook_proc(HOOK_DEATHANIM2, deathanim_handler);
 end
 
 

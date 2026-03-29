@@ -15,7 +15,7 @@ int actionPickUp(Object* critter, Object* item);
 int _action_loot_container(Object* critter, Object* container);
 int _action_skill_use(int skill);
 int actionUseSkill(Object* user, Object* target, int skill);
-bool _is_hit_from_front(Object* attacker, Object* defender);
+bool _is_hit_from_front(const Object* attacker, const Object* defender);
 bool _can_see(Object* source, Object* target);
 bool _action_explode_running();
 int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object* sourceObj, bool animate);
