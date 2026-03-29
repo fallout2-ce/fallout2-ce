@@ -93,6 +93,10 @@ namespace fallout {
 #define WM_TOWN_WORLD_SWITCH_X (519)
 #define WM_TOWN_WORLD_SWITCH_Y (439)
 
+#define WM_TOWN_LIST_VISIBLE_SLOT_COUNT (7)
+#define WM_TOWN_LIST_SLOT_HEIGHT (27)
+#define WM_TOWN_LIST_VIEWPORT_HEIGHT (230)
+
 #define WM_TILE_WIDTH (350)
 #define WM_TILE_HEIGHT (300)
 
@@ -556,6 +560,7 @@ static int wmRefreshTabs();
 static int wmMakeTabsLabelList(int** quickDestinationsPtr, int* quickDestinationsLengthPtr);
 static int wmTabsCompareNames(const void* a1, const void* a2);
 static int wmFreeTabsLabelList(int** quickDestinationsListPtr, int* quickDestinationsLengthPtr);
+static int wmGetTabsScrollMaxOffsetY();
 static void wmRefreshInterfaceDial(bool shouldRefreshWindow);
 static void wmInterfaceDialSyncTime(bool shouldRefreshWindow);
 static int wmAreaFindFirstValidMap(int* mapIdxPtr);
@@ -818,7 +823,7 @@ static int wmRndOriginalCenterTile;
 static Config* pConfigCfg;
 
 // 0x672FD8
-static int wmTownMapSubButtonIds[7];
+static int wmTownMapSubButtonIds[WM_TOWN_LIST_VISIBLE_SLOT_COUNT];
 
 // 0x672FF4
 static Encounter* wmEncBaseTypeList;
@@ -839,6 +844,7 @@ static int wmMaxEncounterInfoTables;
 
 static bool gTownMapHotkeysFix;
 static bool gCitiesLimitFix;
+static int gWorldMapSlots;
 static double gGameTimeIncRemainder = 0.0;
 static FrmImage _backgroundFrmImage;
 static FrmImage _townFrmImage;
@@ -868,6 +874,11 @@ int wmWorldMap_init()
     // SFALL
     gCitiesLimitFix = true;
     configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CITIES_LIMIT_FIX, &gCitiesLimitFix);
+    gWorldMapSlots = 0;
+    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_WORLDMAP_SLOTS, &gWorldMapSlots);
+    if (gWorldMapSlots != 0) {
+        gWorldMapSlots = std::clamp(gWorldMapSlots, WM_TOWN_LIST_VISIBLE_SLOT_COUNT, 127);
+    }
 
     char path[COMPAT_MAX_PATH];
 
@@ -4429,11 +4440,13 @@ static void wmPartyWalkingStep()
 // 0x4C219C
 static void wmInterfaceScrollTabsStart(int delta)
 {
+    int tabsScrollMaxOffsetY = wmGetTabsScrollMaxOffsetY();
+
     // SFALL: Fix world map cities list scrolling bug that might leave buttons
     // in the disabled state.
     if (delta >= 0) {
-        if (wmGenData.tabsOffsetY < wmGenData.tabsBackgroundFrmImage.getHeight() - 230) {
-            wmGenData.oldTabsOffsetY = std::min(wmGenData.tabsOffsetY + delta, wmGenData.tabsBackgroundFrmImage.getHeight() - 230);
+        if (wmGenData.tabsOffsetY < tabsScrollMaxOffsetY) {
+            wmGenData.oldTabsOffsetY = std::min(wmGenData.tabsOffsetY + delta, tabsScrollMaxOffsetY);
             wmGenData.tabsScrollingDelta = delta;
         }
     } else {
@@ -4447,7 +4460,7 @@ static void wmInterfaceScrollTabsStart(int delta)
         return;
     }
 
-    for (int index = 0; index < 7; index++) {
+    for (int index = 0; index < WM_TOWN_LIST_VISIBLE_SLOT_COUNT; index++) {
         buttonDisable(wmTownMapSubButtonIds[index]);
     }
 
@@ -4459,9 +4472,19 @@ static void wmInterfaceScrollTabsStop()
 {
     wmGenData.tabsScrollingDelta = 0;
 
-    for (int index = 0; index < 7; index++) {
+    for (int index = 0; index < WM_TOWN_LIST_VISIBLE_SLOT_COUNT; index++) {
         buttonEnable(wmTownMapSubButtonIds[index]);
     }
+}
+
+static int wmGetTabsScrollMaxOffsetY()
+{
+    int tabsScrollMaxOffsetY = std::max(0, wmGenData.tabsBackgroundFrmImage.getHeight() - WM_TOWN_LIST_VIEWPORT_HEIGHT);
+    if (gWorldMapSlots != 0) {
+        tabsScrollMaxOffsetY = std::min(tabsScrollMaxOffsetY, (gWorldMapSlots - WM_TOWN_LIST_VISIBLE_SLOT_COUNT) * WM_TOWN_LIST_SLOT_HEIGHT);
+    }
+
+    return tabsScrollMaxOffsetY;
 }
 
 // NOTE: Inlined.
@@ -4671,10 +4694,10 @@ static int wmInterfaceInit()
         buttonSetCallbacks(switchBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
-    for (int index = 0; index < 7; index++) {
+    for (int index = 0; index < WM_TOWN_LIST_VISIBLE_SLOT_COUNT; index++) {
         wmTownMapSubButtonIds[index] = buttonCreate(wmBkWin,
             508,
-            138 + 27 * index,
+            138 + WM_TOWN_LIST_SLOT_HEIGHT * index,
             wmGenData.redButtonNormalFrmImage.getWidth(),
             wmGenData.redButtonNormalFrmImage.getHeight(),
             -1,
@@ -6516,20 +6539,20 @@ static void wmInterfaceRefreshCarFuel()
 // 0x4C52B0
 static int wmRefreshTabs()
 {
-    unsigned char* v30;
-    unsigned char* v0;
-    int v31;
+    unsigned char* firstTabBottomDest;
+    unsigned char* firstTabDest;
+    int firstVisibleLabelIndex;
     CityInfo* city;
-    int v10;
-    unsigned char* v11;
-    unsigned char* v12;
-    int v32;
-    unsigned char* v13;
+    int firstTabVisibleHeight;
+    unsigned char* firstTabSrc;
+    unsigned char* firstTabClampedDest;
+    int lastFullyVisibleLabelIndex;
+    unsigned char* nextTabDest;
     FrmImage labelFrm;
 
     // CE: Skip first empty tab (original code does this in the
     // `wmInterfaceInit`).
-    unsigned char* src = wmGenData.tabsBackgroundFrmImage.getData() + wmGenData.tabsBackgroundFrmImage.getWidth() * 27;
+    unsigned char* src = wmGenData.tabsBackgroundFrmImage.getData() + wmGenData.tabsBackgroundFrmImage.getWidth() * WM_TOWN_LIST_SLOT_HEIGHT;
     blitBufferToBufferTrans(src + wmGenData.tabsBackgroundFrmImage.getWidth() * wmGenData.tabsOffsetY + 9,
         119,
         178,
@@ -6537,42 +6560,43 @@ static int wmRefreshTabs()
         wmBkWinBuf + WM_WINDOW_WIDTH * 135 + 501,
         WM_WINDOW_WIDTH);
 
-    v30 = wmBkWinBuf + WM_WINDOW_WIDTH * 138 + 530;
-    v0 = wmBkWinBuf + WM_WINDOW_WIDTH * 138 + 530 - WM_WINDOW_WIDTH * (wmGenData.tabsOffsetY % 27);
-    v31 = wmGenData.tabsOffsetY / 27;
+    int tabsOffsetWithinSlot = wmGenData.tabsOffsetY % WM_TOWN_LIST_SLOT_HEIGHT;
+    firstTabBottomDest = wmBkWinBuf + WM_WINDOW_WIDTH * 138 + 530;
+    firstTabDest = firstTabBottomDest - WM_WINDOW_WIDTH * tabsOffsetWithinSlot;
+    firstVisibleLabelIndex = wmGenData.tabsOffsetY / WM_TOWN_LIST_SLOT_HEIGHT;
 
-    if (v31 < wmLabelCount) {
-        city = &(wmAreaInfoList[wmLabelList[v31]]);
+    if (firstVisibleLabelIndex < wmLabelCount) {
+        city = &(wmAreaInfoList[wmLabelList[firstVisibleLabelIndex]]);
         if (city->labelFid != -1) {
             if (!labelFrm.lock(city->labelFid)) {
                 return -1;
             }
 
-            v10 = labelFrm.getHeight() - wmGenData.tabsOffsetY % 27;
-            v11 = labelFrm.getData() + labelFrm.getWidth() * (wmGenData.tabsOffsetY % 27);
+            firstTabVisibleHeight = labelFrm.getHeight() - tabsOffsetWithinSlot;
+            firstTabSrc = labelFrm.getData() + labelFrm.getWidth() * tabsOffsetWithinSlot;
 
-            v12 = v0;
-            if (v0 < v30 - WM_WINDOW_WIDTH) {
-                v12 = v30 - WM_WINDOW_WIDTH;
+            firstTabClampedDest = firstTabDest;
+            if (firstTabDest < firstTabBottomDest - WM_WINDOW_WIDTH) {
+                firstTabClampedDest = firstTabBottomDest - WM_WINDOW_WIDTH;
             }
 
-            blitBufferToBuffer(v11,
+            blitBufferToBuffer(firstTabSrc,
                 labelFrm.getWidth(),
-                v10,
+                firstTabVisibleHeight,
                 labelFrm.getWidth(),
-                v12,
+                firstTabClampedDest,
                 WM_WINDOW_WIDTH);
 
             labelFrm.unlock();
         }
     }
 
-    v13 = v0 + WM_WINDOW_WIDTH * 27;
-    v32 = v31 + 6;
+    nextTabDest = firstTabDest + WM_WINDOW_WIDTH * WM_TOWN_LIST_SLOT_HEIGHT;
+    lastFullyVisibleLabelIndex = firstVisibleLabelIndex + (WM_TOWN_LIST_VISIBLE_SLOT_COUNT - 1);
 
-    for (int v14 = v31 + 1; v14 < v32; v14++) {
-        if (v14 < wmLabelCount) {
-            city = &(wmAreaInfoList[wmLabelList[v14]]);
+    for (int labelIndex = firstVisibleLabelIndex + 1; labelIndex < lastFullyVisibleLabelIndex; labelIndex++) {
+        if (labelIndex < wmLabelCount) {
+            city = &(wmAreaInfoList[wmLabelList[labelIndex]]);
             if (city->labelFid != -1) {
                 if (!labelFrm.lock(city->labelFid)) {
                     return -1;
@@ -6582,17 +6606,17 @@ static int wmRefreshTabs()
                     labelFrm.getWidth(),
                     labelFrm.getHeight(),
                     labelFrm.getWidth(),
-                    v13,
+                    nextTabDest,
                     WM_WINDOW_WIDTH);
 
                 labelFrm.unlock();
             }
         }
-        v13 += WM_WINDOW_WIDTH * 27;
+        nextTabDest += WM_WINDOW_WIDTH * WM_TOWN_LIST_SLOT_HEIGHT;
     }
 
-    if (v31 + 6 < wmLabelCount) {
-        city = &(wmAreaInfoList[wmLabelList[v31 + 6]]);
+    if (lastFullyVisibleLabelIndex < wmLabelCount) {
+        city = &(wmAreaInfoList[wmLabelList[lastFullyVisibleLabelIndex]]);
         if (city->labelFid != -1) {
             if (!labelFrm.lock(city->labelFid)) {
                 return -1;
@@ -6602,7 +6626,7 @@ static int wmRefreshTabs()
                 labelFrm.getWidth(),
                 labelFrm.getHeight() - 5,
                 labelFrm.getWidth(),
-                v13,
+                nextTabDest,
                 WM_WINDOW_WIDTH);
 
             labelFrm.unlock();
