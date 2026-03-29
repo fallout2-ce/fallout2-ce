@@ -88,34 +88,34 @@ const MetaruleInfo kMetarules[] = {
     { "car_gas_amount", mf_car_gas_amount, 0, 0 },
     { "combat_data", mf_combat_data, 0, 0 },
     // {"create_win",                mf_create_win,                5, 6, -1, {ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
-    { "critter_inven_obj2", mf_critter_inven_obj2, 2, 2 }, // XXX: likely parameter order mismatch
+    { "critter_inven_obj2", mf_critter_inven_obj2, 2, 2, 0, { ARG_OBJECT, ARG_INT } },
     // {"dialog_message",            mf_dialog_message,            1, 1, -1, {ARG_STRING}},
     { "dialog_obj", mf_dialog_obj, 0, 0 },
     // {"display_stats",             mf_display_stats,             0, 0}, // refresh
     // {"draw_image",                mf_draw_image,                1, 5, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"draw_image_scaled",         mf_draw_image_scaled,         1, 6, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"exec_map_update_scripts",   mf_exec_map_update_scripts,   0, 0},
-    { "floor2", mf_floor2, 1, 1 },
+    { "floor2", mf_floor2, 1, 1, 0, { ARG_NUMBER } },
     // {"get_can_rest_on_map",       mf_get_rest_on_map,           2, 2, -1, {ARG_INT, ARG_INT}},
     // {"get_combat_free_move",      mf_get_combat_free_move,      0, 0},
     // {"get_current_inven_size",    mf_get_current_inven_size,    1, 1,  0, {ARG_OBJECT}},
     { "get_cursor_mode", mf_get_cursor_mode, 0, 0 },
-    { "get_flags", mf_get_flags, 1, 1 },
+    { "get_flags", mf_get_flags, 1, 1, 0, { ARG_OBJECT } },
     // {"get_ini_config",            mf_get_ini_config,            2, 2,  0, {ARG_STRING, ARG_INT}},
-    { "get_ini_section", mf_get_ini_section, 2, 2 },
-    { "get_ini_sections", mf_get_ini_sections, 1, 1 },
+    { "get_ini_section", mf_get_ini_section, 2, 2, -1, { ARG_STRING, ARG_STRING } },
+    { "get_ini_sections", mf_get_ini_sections, 1, 1, -1, { ARG_STRING } },
     // {"get_inven_ap_cost",         mf_get_inven_ap_cost,         0, 0},
     // {"get_map_enter_position",    mf_get_map_enter_position,    0, 0},
     // {"get_metarule_table",        mf_get_metarule_table,        0, 0},
     // {"get_object_ai_data",        mf_get_object_ai_data,        2, 2, -1, {ARG_OBJECT, ARG_INT}},
-    { "get_object_data", mf_get_object_data, 2, 2 }, // XXX: likely parameter order mismatch
+    { "get_object_data", mf_get_object_data, 2, 2, 0, { ARG_OBJECT, ARG_INT } },
     // {"get_outline",               mf_get_outline,               1, 1,  0, {ARG_OBJECT}},
     { "get_sfall_arg_at", mf_get_sfall_arg_at, 1, 1, 0, { ARG_INT } },
     // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
     // {"get_terrain_name",          mf_get_terrain_name,          0, 2, -1, {ARG_INT, ARG_INT}},
-    { "get_text_width", mf_get_text_width, 1, 1 },
+    { "get_text_width", mf_get_text_width, 1, 1, 0, { ARG_STRING } },
     // {"get_window_attribute",      mf_get_window_attribute,      1, 2, -1, {ARG_INT, ARG_INT}},
     // {"has_fake_perk_npc",         mf_has_fake_perk_npc,         2, 2,  0, {ARG_OBJECT, ARG_STRING}},
     // {"has_fake_trait_npc",        mf_has_fake_trait_npc,        2, 2,  0, {ARG_OBJECT, ARG_STRING}},
@@ -132,7 +132,7 @@ const MetaruleInfo kMetarules[] = {
     // {"item_weight",               mf_item_weight,               1, 1,  0, {ARG_OBJECT}},
     // {"lock_is_jammed",            mf_lock_is_jammed,            1, 1,  0, {ARG_OBJECT}},
     { "loot_obj", mf_loot_obj, 0, 0 },
-    { "message_box", mf_message_box, 1, 4 }, // {ARG_STRING, ARG_INT, ARG_INT, ARG_INT}},
+    { "message_box", mf_message_box, 1, 4, -1, { ARG_STRING, ARG_INT, ARG_INT, ARG_INT } },
     { "metarule_exist", mf_metarule_exist, 1, 1 },
     // {"npc_engine_level_up",       mf_npc_engine_level_up,       1, 1},
     // {"obj_is_openable",           mf_obj_is_openable,           1, 1,  0, {ARG_OBJECT}},
@@ -146,17 +146,17 @@ const MetaruleInfo kMetarules[] = {
     // {"set_can_rest_on_map",       mf_set_rest_on_map,           3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     // {"set_car_intface_art",       mf_set_car_intface_art,       1, 1, -1, {ARG_INT}},
     // {"set_combat_free_move",      mf_set_combat_free_move,      1, 1, -1, {ARG_INT}},
-    { "set_cursor_mode", mf_set_cursor_mode, 1, 1 },
+    { "set_cursor_mode", mf_set_cursor_mode, 1, 1, -1, { ARG_INT } },
     // {"set_drugs_data",            mf_set_drugs_data,            3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     // {"set_dude_obj",              mf_set_dude_obj,              1, 1, -1, {ARG_INT}},
     // {"set_fake_perk_npc",         mf_set_fake_perk_npc,         5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     // {"set_fake_trait_npc",        mf_set_fake_trait_npc,        5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
-    { "set_flags", mf_set_flags, 2, 2 },
+    { "set_flags", mf_set_flags, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"set_iface_tag_text",        mf_set_iface_tag_text,        3, 3, -1, {ARG_INT, ARG_STRING, ARG_INT}},
-    { "set_ini_setting", mf_set_ini_setting, 2, 2 },
+    { "set_ini_setting", mf_set_ini_setting, 2, 2, -1, { ARG_STRING, ARG_INTSTR } },
     // {"set_map_enter_position",    mf_set_map_enter_position,    3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     // {"set_object_data",           mf_set_object_data,           3, 3, -1, {ARG_OBJECT, ARG_INT, ARG_INT}},
-    { "set_outline", mf_set_outline, 2, 2 },
+    { "set_outline", mf_set_outline, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"set_quest_failure_value",   mf_set_quest_failure_value,   2, 2, -1, {ARG_INT, ARG_INT}},
     // {"set_rest_heal_time",        mf_set_rest_heal_time,        1, 1, -1, {ARG_INT}},
     // {"set_worldmap_heal_time",    mf_set_worldmap_heal_time,    1, 1, -1, {ARG_INT}},
@@ -168,13 +168,13 @@ const MetaruleInfo kMetarules[] = {
     // {"set_unique_id",             mf_set_unique_id,             1, 2, -1, {ARG_OBJECT, ARG_INT}},
     // {"set_unjam_locks_time",      mf_set_unjam_locks_time,      1, 1, -1, {ARG_INT}},
     // {"set_window_flag",           mf_set_window_flag,           3, 3, -1, {ARG_INTSTR, ARG_INT, ARG_INT}},
-    { "show_window", mf_show_window, 0, 1 },
+    { "show_window", mf_show_window, 0, 1, -1, { ARG_STRING } },
     // {"signal_close_game",         mf_signal_close_game,         0, 0},
     // {"spatial_radius",            mf_spatial_radius,            1, 1,  0, {ARG_OBJECT}},
-    { "string_compare", mf_string_compare, 2, 3 }, // {ARG_STRING, ARG_STRING, ARG_INT}},
-    { "string_find", mf_string_find, 2, 3 }, // {ARG_STRING, ARG_STRING, ARG_INT}},
-    { "string_format", mf_string_format, 2, 8 },
-    { "string_to_case", mf_string_to_case, 2, 2 }, // {ARG_STRING, ARG_INT}}
+    { "string_compare", mf_string_compare, 2, 3, 0, { ARG_STRING, ARG_STRING, ARG_INT } },
+    { "string_find", mf_string_find, 2, 3, -1, { ARG_STRING, ARG_STRING, ARG_INT } },
+    { "string_format", mf_string_format, 2, 8, 0, { ARG_STRING, ARG_ANY, ARG_ANY, ARG_ANY, ARG_ANY, ARG_ANY, ARG_ANY, ARG_ANY } },
+    { "string_to_case", mf_string_to_case, 2, 2, -1, { ARG_STRING, ARG_INT } },
     { "tile_by_position", mf_tile_by_position, 2, 2, -1, { ARG_INT, ARG_INT } },
     { "tile_refresh_display", mf_tile_refresh_display, 0, 0 },
     // {"unjam_lock",                mf_unjam_lock,                1, 1, -1, {ARG_OBJECT}},
@@ -202,9 +202,9 @@ void mf_combat_data(Program* program, int args)
 
 void mf_critter_inven_obj2(Program* program, int args)
 {
-    int slot = programStackPopInteger(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
-
+    int slot = programStackPopInteger(program);
+    
     switch (slot) {
     case 0:
         programStackPushPointer(program, critterGetArmor(obj));
@@ -263,8 +263,8 @@ void mf_get_object_data(Program* program, int args)
 {
     // TODO: only allow to modify a set of whitelisted object types
     // TODO: map offsets to fields to avoid potential alignment, 64bit issues!
-    size_t offset = static_cast<size_t>(programStackPopInteger(program));
     void* ptr = programStackPopPointer(program);
+    size_t offset = static_cast<size_t>(programStackPopInteger(program));
 
     if (offset % 4 != 0) {
         programFatalError("mf_get_object_data: bad offset %d", offset);
