@@ -291,7 +291,8 @@ int checkDeathAnim(Object* obj, int anim, int minViolenceLevel, bool hitFromFron
     }
 
     fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, ANIM_FALL_FRONT, (obj->fid & 0xF000) >> 12, obj->rotation + 1);
-    if (artExists(fid)) {
+    // CE: fixed vanilla logic that returned ANIM_FALL_BACK if artExists for ANIM_FALL_FRONT returned true.
+    if (!artExists(fid)) {
         return ANIM_FALL_BACK;
     }
 
@@ -539,7 +540,7 @@ int showDamageToExtras(Attack* attack)
 }
 
 // Shows animation to attacker, in case of critical failure, backwash, etc.
-void showDamageToAttacker(Attack* attack, int attackerAnimation)
+static void showDamageToAttacker(Attack* attack, int attackerAnimation)
 {
     showDamageToObject(attack->attacker, attack->attackerDamage, attack->attackerFlags, attack->weapon, true, 0, 0, attackerAnimation, attack->attacker, -1);
 }
@@ -1545,7 +1546,7 @@ bool _can_see(Object* source, Object* target)
     return diff == 0 || diff == 1 || diff == 5;
 }
 
-// Tries to change between ANIM_FALL_FRONT and ANIM_FALL_BACK based on available free space in front or behind and presense of art frames.
+// Tries to change between ANIM_FALL_FRONT and ANIM_FALL_BACK based on available free space in front or behind and presence of art frames.
 //
 // 0x412C1C pick_fall
 int pickFallAnim(Object* obj, int anim)

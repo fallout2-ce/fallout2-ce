@@ -200,12 +200,12 @@ int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode,
 }
 
 /*
-Runs after Fallout has calculated the death animation. Lets you set your own custom frame id, so more powerful than `HOOK_DEATHANIM1`, but performs no validation.\
+Runs after Fallout has calculated the death animation. Lets you set your own death animation id. Performs no validation, so `art_exists` checks are advised.
 When using `critter_dmg` function, this script will also run. In that case weapon pid will be -1 and attacker will point to an object with `obj_art_fid == 0x20001F5`.
 
 Does not run for critters in the knockdown/out state.
 
-int     arg0 - The pid of the weapon performing the attack. (May be -1 if the attack is unarmed)
+int     arg0 - The pid of the weapon performing the attack. (-1 if the attack is unarmed)
 Critter arg1 - The attacker
 Critter arg2 - The target
 int     arg3 - The amount of damage
