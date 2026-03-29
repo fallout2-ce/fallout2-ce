@@ -61,6 +61,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         return false;
     }
 
+    // TODO: consolidate settings setup in one place; not sure if this is needed when we have settings field initializers
     // Initialize defaults.
     configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_EXECUTABLE_KEY, "game");
     configSetString(&gGameConfig, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY, "master.dat");

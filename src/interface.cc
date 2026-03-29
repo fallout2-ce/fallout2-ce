@@ -258,9 +258,6 @@ static unsigned char* gInterfaceWindowBuffer;
 // 0x59D40C
 static unsigned char gInterfaceActionPointsBarBackground[90 * 5];
 
-// Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default)
-bool gInterfaceBarMode = false;
-
 static FrmImage _inventoryButtonNormalFrmImage;
 static FrmImage _inventoryButtonPressedFrmImage;
 static FrmImage _optionsButtonNormalFrmImage;
@@ -2507,7 +2504,7 @@ unsigned char* customInterfaceBarGetBackgroundImageData()
 
 static void sidePanelsInit()
 {
-    if (gInterfaceBarMode) {
+    if (settings.ui.iface_bar_mode) {
         return;
     }
 
@@ -2585,11 +2582,11 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
 
     int width = std::min(imageWidth, windowWidth);
 
-    if (!gInterfaceSidePanelsExtendFromScreenEdge && isLeading) {
+    if (!settings.ui.iface_bar_sides_ori && isLeading) {
         imageData += imageWidth - width;
     }
 
-    if (gInterfaceSidePanelsExtendFromScreenEdge && !isLeading) {
+    if (settings.ui.iface_bar_sides_ori && !isLeading) {
         imageData += imageWidth - width;
     }
 

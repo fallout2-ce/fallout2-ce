@@ -62,6 +62,19 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
 
+    // TODO: clamp min/max resolution
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCREEN_WIDTH_KEY, settings.screen.width);
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCREEN_HEIGHT_KEY, settings.screen.height);
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed);
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, settings.screen.scale);
+
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_MODE_KEY, settings.ui.iface_bar_mode);
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width);
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art);
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori);
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size);
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges);
+
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_VIOLENCE_LEVEL_KEY, settings.preferences.violence_level);
@@ -138,6 +151,18 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, settings.system.hashing);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
+
+    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCREEN_WIDTH_KEY, settings.screen.width);
+    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCREEN_HEIGHT_KEY, settings.screen.height);
+    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed);
+    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, settings.screen.scale);
+
+    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_MODE_KEY, settings.ui.iface_bar_mode);
+    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width);
+    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art);
+    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori);
+    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size);
+    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges);
 
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);

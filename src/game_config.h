@@ -9,6 +9,8 @@ namespace fallout {
 #define MAPPER_CONFIG_FILE_NAME "mapper2.cfg"
 
 #define GAME_CONFIG_SYSTEM_KEY "system"
+#define GAME_CONFIG_SCREEN_KEY "screen"
+#define GAME_CONFIG_UI_KEY "ui"
 #define GAME_CONFIG_PREFERENCES_KEY "preferences"
 #define GAME_CONFIG_SOUND_KEY "sound"
 #define GAME_CONFIG_MAPPER_KEY "mapper"
@@ -84,6 +86,17 @@ namespace fallout {
 #define GAME_CONFIG_SORT_SCRIPT_LIST_KEY "sort_script_list"
 #define GAME_CONFIG_PLAYER_SPEEDUP_KEY "player_speedup"
 #define GAME_CONFIG_UI_ANIM_SPEED_KEY "ui_anim_speed"
+
+#define GAME_CONFIG_SCREEN_WIDTH_KEY "scr_width"
+#define GAME_CONFIG_SCREEN_HEIGHT_KEY "scr_height"
+#define GAME_CONFIG_WINDOWED_KEY "windowed"
+#define GAME_CONFIG_SCALE_KEY "scale"
+#define GAME_CONFIG_IFACE_BAR_MODE_KEY "iface_bar_mode"
+#define GAME_CONFIG_IFACE_BAR_WIDTH_KEY "iface_bar_width"
+#define GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY "iface_bar_side_art"
+#define GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY "iface_bar_sides_ori"
+#define GAME_CONFIG_IGNORE_MAP_EDGES_KEY "ignore_map_edges"
+#define GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY "splash_screen_size"
 
 #define ENGLISH "english"
 #define FRENCH "french"

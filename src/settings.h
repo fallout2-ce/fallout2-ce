@@ -25,6 +25,33 @@ struct SystemSettings {
     int times_run = 0;
 };
 
+struct ScreenSettings {
+    int width = 640;
+    int height = 480;
+    bool windowed = false;
+    int scale = 1;
+};
+
+struct UISettings {
+    // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
+    bool iface_bar_mode = false;
+
+    // This will increase the width of the interface bar expanding the area used to display text.
+    int iface_bar_width = 640;
+
+    // 0 - Black, No Iface-bar side art used.
+    // 1 - Metal look Iface-bar side art used.
+    // 2 - Leather look Iface-bar side art used.
+    int iface_bar_side_art = 0;
+
+    // Iface-bar side graphics extend from the Screen edges to the Iface-Bar if true (otherwise from bar to edges).
+    bool iface_bar_sides_ori = false;
+
+    int splash_screen_size = 0;
+
+    bool ignore_map_edges = false;
+};
+
 struct PreferencesSettings {
     int game_difficulty = GAME_DIFFICULTY_NORMAL;
     int combat_difficulty = COMBAT_DIFFICULTY_NORMAL;
@@ -97,6 +124,8 @@ struct MapperSettings {
 
 struct Settings {
     SystemSettings system;
+    ScreenSettings screen;
+    UISettings ui;
     PreferencesSettings preferences;
     SoundSettings sound;
     DebugSettings debug;
