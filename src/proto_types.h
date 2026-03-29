@@ -195,12 +195,14 @@ enum {
 #define PROTO_ID_0x2000099 0x2000099
 #define PROTO_ID_0x20001A5 0x20001A5
 #define PROTO_ID_0x20001D6 0x20001D6
-#define PROTO_ID_0x20001EB 0x20001EB
-#define FID_0x20001F5 0x20001F5
+#define PROTO_ID_FORCE_FIELD_NS 0x20001EB
 #define FIRST_EXIT_GRID_PID 0x5000010
 #define LAST_EXIT_GRID_PID 0x5000017
 #define FIRST_RADIOACTIVE_GOO_PID 0x20003D9
 #define LAST_RADIOACTIVE_GOO_PID 0x20003DC
+
+// FID of one of the Force Field sceneries. Used as a marker for special hidden "attacker" object created by `critter_dmg` opcode handler.
+#define FRAME_ID_FORCE_FIELD_NS 0x20001F5
 
 typedef enum ProtoFlags {
     PROTO_FLAG_FLAT = 0x08,

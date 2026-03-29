@@ -190,10 +190,10 @@ int pickDeathAnim(Object* attacker, Object* defender, Object* weapon, int damage
     if (attacker->fid == buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0)) { // roktxpd.frm
         return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
-    if (attacker->pid == PROTO_ID_0x20001EB) { // Forcefield North/South
+    if (attacker->pid == PROTO_ID_FORCE_FIELD_NS) { // Forcefield North/South
         return checkDeathAnim(defender, ANIM_ELECTRIFIED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
-    if (attacker->fid == FID_0x20001F5) { // ffield03.frm
+    if (attacker->fid == FRAME_ID_FORCE_FIELD_NS) { // ffield03.frm
         return checkDeathAnim(defender, attackerAnimation, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
 
@@ -569,7 +569,7 @@ void showDamage(Attack* attack, int attackerAnimation, int delay)
 
             if (FID_TYPE(attack->defender->fid) == OBJ_TYPE_CRITTER) {
                 int knockbackRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
-                int attackerAnimForShow = attack->attacker->fid == FID_0x20001F5
+                int attackerAnimForShow = attack->attacker->fid == FRAME_ID_FORCE_FIELD_NS
                     ? attackerAnimation
                     : critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
 
@@ -1910,7 +1910,7 @@ void actionDamage(int tile, int elevation, int minDamage, int maxDamage, int dam
     }
 
     Object* attacker;
-    if (objectCreateWithFidPid(&attacker, FID_0x20001F5, -1) == -1) {
+    if (objectCreateWithFidPid(&attacker, FRAME_ID_FORCE_FIELD_NS, -1) == -1) {
         internal_free(attack);
         return;
     }
