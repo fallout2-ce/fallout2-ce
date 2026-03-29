@@ -44,7 +44,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Interface / Windows and images | art_frame_data<br>interface_art_draw<br>interface_print<br>draw_image<br>draw_image_scaled<br>get_window_under_mouse<br>create_win<br>get_window_attribute<br>message_box<br>set_window_flag<br>win_fill_color<br>interface_overlay<br>dialog_message<br>get_text_width<br>hide_window<br>show_window | implemented: only message_box, get_text_width, show_window | - |
 | Interface / Outline | outlined_object<br>get_outline<br>set_outline | implemented: all except get_outline | - |
 | Interface / Main interface | intface_is_hidden<br>intface_redraw<br>intface_hide<br>intface_show<br>set_quest_failure_value | implemented: only intface_redraw | `intface_redraw` only supports the zero-argument form; the optional-argument path is explicitly unimplemented. |
-| Interface / Inventory | display_stats<br>inventory_redraw<br>critter_inven_obj2<br>get_current_inven_size<br>item_weight | implemented: only critter_inven_obj2 | `critter_inven_obj2` is present, but CE source marks it as a likely parameter-order mismatch. |
+| Interface / Inventory | display_stats<br>inventory_redraw<br>critter_inven_obj2<br>get_current_inven_size<br>item_weight | implemented: only critter_inven_obj2 | - |
 | Interface / Cursor | get_cursor_mode<br>set_cursor_mode | ✅ | - |
 | Locks | lock_is_jammed<br>unjam_lock<br>set_unjam_locks_time | not implemented | - |
 | INI settings | modified_ini<br>get_ini_setting<br>get_ini_string<br>get_ini_section<br>get_ini_sections<br>get_ini_config<br>get_ini_config_db<br>set_ini_setting | implemented: all except modified_ini, get_ini_config, get_ini_config_db | `modified_ini` is intentionally omitted as deprecated. |
