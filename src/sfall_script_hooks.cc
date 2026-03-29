@@ -34,7 +34,7 @@ ScriptHookCall::ScriptHookCall(HookType hookType, int maxReturnValues, std::init
     : _hookType(hookType)
     , _maxRetVals(maxReturnValues)
 {
-    assert(hookType >= 0 && hookType < HOOK_COUNT && maxReturnValues >= 0 && maxReturnValues <= HOOKS_MAX_RETURN_VALUES && args.size() < HOOKS_MAX_ARGUMENTS);
+    assert(hookType >= 0 && hookType < HOOK_COUNT && maxReturnValues >= 0 && maxReturnValues <= HOOKS_MAX_RETURN_VALUES && args.size() <= HOOKS_MAX_ARGUMENTS);
     for (auto arg : args) {
         _args[_numArgs++] = arg;
     }
@@ -336,6 +336,8 @@ NOTE: the hook is executed twice when entering the barter screen or after transa
 */
 void scriptHooks_BarterPrice(BarterPriceContext* ctx)
 {
+    assert(ctx != nullptr);
+
     ScriptHookCall hook(HOOK_BARTERPRICE, 2,
         { ctx->dude,
             ctx->npc,

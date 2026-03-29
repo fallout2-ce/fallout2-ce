@@ -4,6 +4,7 @@
 #include "interpreter.h"
 #include "scripts.h"
 
+#include <initializer_list>
 #include <memory>
 
 namespace fallout {
