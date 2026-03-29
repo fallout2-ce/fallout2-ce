@@ -57,7 +57,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Hook | ID | Compatibility | Notes |
 | --- | --- | --- | --- |
 | ToHit | `HOOK_TOHIT` | ✅ | - |
-| AfterHitRoll | `HOOK_AFTERHITROLL` | 🚫 | - |
+| AfterHitRoll | `HOOK_AFTERHITROLL` | 🚫 | Et tu |
 | CalcAPCost | `HOOK_CALCAPCOST` | 🚫 | - |
 | DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | (maybe) |
 | DeathAnim2 | `HOOK_DEATHANIM2` | 🚫 | - |
@@ -70,32 +70,32 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | BarterPrice | `HOOK_BARTERPRICE` | ✅ | - |
 | MoveCost | `HOOK_MOVECOST` | 🚫 | - |
 | ItemDamage | `HOOK_ITEMDAMAGE` | 🚫 | - |
-| AmmoCost | `HOOK_AMMOCOST` | 🚫 | - |
+| AmmoCost | `HOOK_AMMOCOST` | 🚫 | Et tu |
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE notes that sfall used VK codes there. |
 | MouseClick | `HOOK_MOUSECLICK` | 🚫 | - |
 | UseSkill | `HOOK_USESKILL` | 🚫 | - |
-| Steal | `HOOK_STEAL` | 🚫 | - |
-| WithinPerception | `HOOK_WITHINPERCEPTION` | 🚫 | - |
-| InventoryMove | `HOOK_INVENTORYMOVE` | 🚫 | - |
+| Steal | `HOOK_STEAL` | 🚫 | Et tu |
+| WithinPerception | `HOOK_WITHINPERCEPTION` | 🚫 | Et tu |
+| InventoryMove | `HOOK_INVENTORYMOVE` | 🚫 | Et tu |
 | InvenWield | `HOOK_INVENWIELD` | 🚫 | - |
 | AdjustFID | `HOOK_ADJUSTFID` | 🚫 | - |
 | CombatTurn | `HOOK_COMBATTURN` | 🚫 | - |
-| StdProcedure | `HOOK_STDPROCEDURE` | 🚫 | - |
+| StdProcedure | `HOOK_STDPROCEDURE` | 🚫 | Et tu |
 | StdProcedureEnd | `HOOK_STDPROCEDURE_END` | 🚫 | - |
 | CarTravel | `HOOK_CARTRAVEL` | 🚫 | - |
 | SetGlobalVar | `HOOK_SETGLOBALVAR` | 🚫 | - |
-| RestTimer | `HOOK_RESTTIMER` | 🚫 | - |
+| RestTimer | `HOOK_RESTTIMER` | 🚫 | Et tu |
 | GameModeChange | `HOOK_GAMEMODECHANGE` | ✅ | - |
-| UseAnimObj | `HOOK_USEANIMOBJ` | 🚫 | (maybe) |
+| UseAnimObj | `HOOK_USEANIMOBJ` | 🚫 | Et tu; (maybe) |
 | ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | 🚫 | - |
-| DescriptionObj | `HOOK_DESCRIPTIONOBJ` | 🚫 | - |
-| UseSkillOn | `HOOK_USESKILLON` | 🚫 | - |
+| DescriptionObj | `HOOK_DESCRIPTIONOBJ` | 🚫 | Et tu |
+| UseSkillOn | `HOOK_USESKILLON` | 🚫 | Et tu |
 | OnExplosion | `HOOK_ONEXPLOSION` | 🚫 | (maybe) |
 | SubCombatDamage | `HOOK_SUBCOMBATDAMAGE` | 🚫 | (maybe) |
-| SetLighting | `HOOK_SETLIGHTING` | 🚫 | (maybe) |
+| SetLighting | `HOOK_SETLIGHTING` | 🚫 | Et tu; (maybe) |
 | Sneak | `HOOK_SNEAK` | 🚫 | - |
 | TargetObject | `HOOK_TARGETOBJECT` | 🚫 | (maybe) |
-| Encounter | `HOOK_ENCOUNTER` | 🚫 | - |
+| Encounter | `HOOK_ENCOUNTER` | 🚫 | Et tu |
 | AdjustPoison | `HOOK_ADJUSTPOISON` | 🚫 | (maybe) |
 | AdjustRads | `HOOK_ADJUSTRADS` | 🚫 | (maybe) |
 | RollCheck | `HOOK_ROLLCHECK` | 🚫 | - |
