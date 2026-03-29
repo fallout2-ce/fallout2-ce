@@ -1736,7 +1736,7 @@ void sfallOpcodesInit()
     // 0x81e5 - void  set_sfall_return(any value)
     interpreterRegisterOpcode(0x81e5, op_set_sfall_return);
 
-    // 0x81ea - int   init_hook()  -> OBSOLETE
+    // 0x81ea - int   init_hook()  -> OBSOLETE, do not implement
 
     // 0x81e6 - void set_unspent_ap_bonus(int multiplier)
     // 0x81e7 - int  get_unspent_ap_bonus()
@@ -1956,6 +1956,7 @@ void sfallOpcodesInit()
 
     // 0x827d - void register_hook_proc_spec(int hook, procedure proc)
     interpreterRegisterOpcode(0x827d, op_register_hook_proc);
+    // 0x827e - void reg_anim_callback(procedure proc)
 }
 
 void sfallOpcodesExit()

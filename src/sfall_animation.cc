@@ -1,5 +1,6 @@
 #include "sfall_animation.h"
 
+#include <algorithm>
 #include <stdint.h>
 
 #include "animation.h"
@@ -49,11 +50,7 @@ void op_reg_anim_light(Program* program)
         int radius = light & 0xFFFF;
         int intensity = (light >> 16) & 0xFFFF;
 
-        if (radius < 0) {
-            radius = 0;
-        } else if (radius > 8) {
-            radius = 8;
-        }
+        radius = std::clamp(radius, 0, 8);
 
         if (intensity != 0) {
             animationRegisterSetLightIntensity(object, radius, intensity, delay);
