@@ -30,25 +30,20 @@ ScriptHookCall* ScriptHookCall::current()
     return !_callStack.empty() ? _callStack.back() : nullptr;
 }
 
-ScriptHookCall::ScriptHookCall(HookType hookType, int maxReturnValues)
+ScriptHookCall::ScriptHookCall(HookType hookType, int maxReturnValues, std::initializer_list<ProgramValue> args)
     : _hookType(hookType)
     , _maxRetVals(maxReturnValues)
 {
-    assert(hookType >= 0 && hookType < HOOK_COUNT && maxReturnValues >= 0 && maxReturnValues <= HOOKS_MAX_RETURN_VALUES);
+    assert(hookType >= 0 && hookType < HOOK_COUNT && maxReturnValues >= 0 && maxReturnValues <= HOOKS_MAX_RETURN_VALUES && args.size() <= HOOKS_MAX_ARGUMENTS);
+    for (auto arg : args) {
+        _args[_numArgs++] = arg;
+    }
 }
 
-ScriptHookCall& ScriptHookCall::addArg(ProgramValue value)
-{
-    assert(_numArgs < HOOKS_MAX_ARGUMENTS);
-    _args[_numArgs++] = value;
-    return *this;
-}
-
-ScriptHookCall& ScriptHookCall::setArgAt(int idx, ProgramValue value)
+void ScriptHookCall::setArgAt(int idx, ProgramValue value)
 {
     assert(idx >= 0 && idx < _numArgs);
     _args[idx] = value;
-    return *this;
 }
 
 void ScriptHookCall::addReturnValueFromScript(ProgramValue value)
@@ -166,8 +161,7 @@ int arg1 - the previous game mode
 */
 void scriptHooks_GameModeChange(int exit, int previousGameMode)
 {
-    ScriptHookCall hook(HOOK_GAMEMODECHANGE, 0);
-    hook.addArg(exit).addArg(previousGameMode).call();
+    ScriptHookCall(HOOK_GAMEMODECHANGE, 0, { exit, previousGameMode }).call();
 }
 
 /*
@@ -187,16 +181,15 @@ int     ret0 - The new hit chance. The value is limited to the range of -99 to 9
 */
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance)
 {
-    ScriptHookCall hook(HOOK_TOHIT, 1);
-    hook
-        .addArg(hitChance)
-        .addArg(attacker)
-        .addArg(defender)
-        .addArg(hitLocation)
-        .addArg(tile)
-        .addArg(hitMode)
-        .addArg(useDistance)
-        .addArg(hitChanceUncapped);
+    ScriptHookCall hook(HOOK_TOHIT, 1,
+        { hitChance,
+            attacker,
+            defender,
+            hitLocation,
+            tile,
+            hitMode,
+            useDistance,
+            hitChanceUncapped });
 
     hook.call();
 
@@ -223,8 +216,7 @@ int     ret0 - overrides hard-coded handler and selects what should happen with 
 // TODO: there's an inconsistency with the use of rc = 2. It drops items when used from the main interface, but not from inventory context menu. This matches sfall, but should probably be improved.
 int scriptHooks_UseItem(Object* user, Object* objUsed)
 {
-    ScriptHookCall hook(HOOK_USEOBJ, 1);
-    hook.addArg(user).addArg(objUsed);
+    ScriptHookCall hook(HOOK_USEOBJ, 1, { user, objUsed });
     hook.call();
 
     if (hook.numReturnValues() <= 0)
@@ -251,8 +243,7 @@ int     ret0 - overrides hard-coded handler and selects what should happen with 
 */
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed)
 {
-    ScriptHookCall hook(HOOK_USEOBJON, 1);
-    hook.addArg(target).addArg(user).addArg(objUsed);
+    ScriptHookCall hook(HOOK_USEOBJON, 1, { target, user, objUsed });
     hook.call();
 
     if (hook.numReturnValues() <= 0)
@@ -291,21 +282,22 @@ int     ret4 - The amount of knockback to the target
 */
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult)
 {
-    ScriptHookCall hook(HOOK_COMBATDAMAGE, 5);
-    hook
-        .addArg(attack->defender)
-        .addArg(attack->attacker)
-        .addArg(attack->defenderDamage)
-        .addArg(attack->attackerDamage)
-        .addArg(attack->defenderFlags)
-        .addArg(attack->attackerFlags)
-        .addArg(attack->weapon)
-        .addArg(attack->defenderHitLocation)
-        .addArg(baseDmgMult)
-        .addArg(numRounds)
-        .addArg(attack->defenderKnockback)
-        .addArg(attack->hitMode)
-        .addArg(attack); // this is how sfall did it.. TODO: make sure get/set_object_data handler is safe!
+    ScriptHookCall hook(HOOK_COMBATDAMAGE, 5,
+        {
+            attack->defender,
+            attack->attacker,
+            attack->defenderDamage,
+            attack->attackerDamage,
+            attack->defenderFlags,
+            attack->attackerFlags,
+            attack->weapon,
+            attack->defenderHitLocation,
+            baseDmgMult,
+            numRounds,
+            attack->defenderKnockback,
+            attack->hitMode,
+            attack // this is how sfall did it.. TODO: make sure get/set_object_data handler is safe!
+        });
 
     hook.call();
 
@@ -342,26 +334,27 @@ NOTE: the hook is executed twice when entering the barter screen or after transa
     int     ret0 - the modified value of all of the goods (pass -1 if you just want to modify offered goods)
     int     ret1 - the modified value of all offered goods
 */
-void scriptHooks_BarterPrice(BarterPriceContext& ctx)
+void scriptHooks_BarterPrice(BarterPriceContext* ctx)
 {
-    ScriptHookCall hook(HOOK_BARTERPRICE, 2);
-    hook
-        .addArg(ctx.dude)
-        .addArg(ctx.npc)
-        .addArg(ctx.value)
-        .addArg(ctx.requestTable)
-        .addArg(ctx.caps)
-        .addArg(ctx.rawValue)
-        .addArg(ctx.offerTable)
-        .addArg(ctx.offerValue)
-        .addArg(ctx.offerButton)
-        .addArg(ctx.partyMember);
+    assert(ctx != nullptr);
+
+    ScriptHookCall hook(HOOK_BARTERPRICE, 2,
+        { ctx->dude,
+            ctx->npc,
+            ctx->value,
+            ctx->requestTable,
+            ctx->caps,
+            ctx->rawValue,
+            ctx->offerTable,
+            ctx->offerValue,
+            ctx->offerButton,
+            ctx->partyMember });
 
     hook.call();
 
     int* fields[] = {
-        &ctx.value,
-        &ctx.offerValue
+        &ctx->value,
+        &ctx->offerValue
     };
 
     const int numRets = hook.numReturnValues();

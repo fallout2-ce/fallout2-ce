@@ -4,6 +4,7 @@
 #include "interpreter.h"
 #include "scripts.h"
 
+#include <initializer_list>
 #include <memory>
 
 namespace fallout {
@@ -166,7 +167,7 @@ class ScriptHookCall {
 public:
     static ScriptHookCall* current();
 
-    ScriptHookCall(HookType hookType, int maxReturnValues);
+    ScriptHookCall(HookType hookType, int maxReturnValues, std::initializer_list<ProgramValue> args);
     ~ScriptHookCall() = default;
 
     ScriptHookCall(const ScriptHookCall& other) = delete;
@@ -174,10 +175,8 @@ public:
     ScriptHookCall& operator=(const ScriptHookCall& other) = delete;
     ScriptHookCall& operator=(ScriptHookCall&& other) = delete;
 
-    // Adds an argument (should be called from engine code).
-    ScriptHookCall& addArg(ProgramValue value);
     // Sets an argument value at given index.
-    ScriptHookCall& setArgAt(int idx, ProgramValue value);
+    void setArgAt(int idx, ProgramValue value);
     // Adds return value from script.
     // numReturnValues will only increase if current script called this more times than the last one.
     void addReturnValueFromScript(ProgramValue value);
@@ -237,7 +236,7 @@ int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode,
 int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
-void scriptHooks_BarterPrice(BarterPriceContext& ctx);
+void scriptHooks_BarterPrice(BarterPriceContext* ctx);
 
 } // namespace fallout
 

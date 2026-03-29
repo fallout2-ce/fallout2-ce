@@ -979,9 +979,11 @@ void _GNW95_process_message()
                 keyboardData.key = e.key.keysym.scancode;
                 keyboardData.down = (e.key.state & SDL_PRESSED) != 0;
 
-                int keyOverride = sfall_kb_handle_key_pressed(keyboardData.key, keyboardData.down);
-                if (keyOverride != SDL_SCANCODE_UNKNOWN) {
-                    keyboardData.key = keyOverride;
+                if (!e.key.repeat) {
+                    int keyOverride = sfall_kb_handle_key_pressed(keyboardData.key, keyboardData.down);
+                    if (keyOverride != SDL_SCANCODE_UNKNOWN) {
+                        keyboardData.key = keyOverride;
+                    }
                 }
                 _GNW95_process_key(&keyboardData);
             }
