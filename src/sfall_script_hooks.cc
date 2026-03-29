@@ -334,25 +334,25 @@ NOTE: the hook is executed twice when entering the barter screen or after transa
     int     ret0 - the modified value of all of the goods (pass -1 if you just want to modify offered goods)
     int     ret1 - the modified value of all offered goods
 */
-void scriptHooks_BarterPrice(BarterPriceContext& ctx)
+void scriptHooks_BarterPrice(BarterPriceContext* ctx)
 {
     ScriptHookCall hook(HOOK_BARTERPRICE, 2,
-        { ctx.dude,
-            ctx.npc,
-            ctx.value,
-            ctx.requestTable,
-            ctx.caps,
-            ctx.rawValue,
-            ctx.offerTable,
-            ctx.offerValue,
-            ctx.offerButton,
-            ctx.partyMember });
+        { ctx->dude,
+            ctx->npc,
+            ctx->value,
+            ctx->requestTable,
+            ctx->caps,
+            ctx->rawValue,
+            ctx->offerTable,
+            ctx->offerValue,
+            ctx->offerButton,
+            ctx->partyMember });
 
     hook.call();
 
     int* fields[] = {
-        &ctx.value,
-        &ctx.offerValue
+        &ctx->value,
+        &ctx->offerValue
     };
 
     const int numRets = hook.numReturnValues();

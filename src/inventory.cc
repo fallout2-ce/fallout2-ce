@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
 
 #include "actions.h"
 #include "animation.h"
@@ -269,8 +270,8 @@ static void inventoryRenderItemDescription(const char* string);
 static void inventoryExamineItem(Object* critter, Object* item);
 static void inventoryWindowOpenContextMenu(int eventCode, int inventoryWindowType);
 static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting);
-static void barterComputeTablesValue(Object* dude, Object* npc, int& outRequestValue, int& outOfferValue, bool offerButton = false);
-static void barterComputeTablesWeight(Object* dude, Object* npc, int& outRequestWeight, int& outOfferWeight);
+static std::pair<int, int> barterComputeTablesValue(Object* dude, Object* npc, bool offerButton = false);
+static std::pair<int, int> barterComputeTablesWeight(Object* dude, Object* npc);
 static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* npc, Object* barterTable);
 static int barterGetMovedQuantity(Object* item, int maxQuantity, bool fromPlayer, bool fromInventory, bool immediate);
 static void barterMoveToTable(Object* item, int quantity, int slotIndex, int indexOffset, Object* npc, Object* sourceTable, bool fromDude);
@@ -4678,15 +4679,15 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
 // Calculates value of NPC/barterer (request) and player (offer) tables.
 //
 // 0x474B2C barter_compute_value
-static void barterComputeTablesValue(Object* dude, Object* npc, int& outRequestValue, int& outOfferValue, bool offerButton)
+static std::pair<int, int> barterComputeTablesValue(Object* dude, Object* npc, bool offerButton)
 {
     assert(!gGameDialogSpeakerIsPartyMember);
 
     const int rawValue = objectGetCost(gBartererTableObj);
     const int caps = itemGetTotalCaps(gBartererTableObj);
-    outOfferValue = objectGetCost(gPlayerTableObj);
+    const int offerValue = objectGetCost(gPlayerTableObj);
 
-    BarterPriceContext ctx { dude, npc, gBartererTableObj, gPlayerTableObj, 0, outOfferValue, rawValue, caps, offerButton, false };
+    BarterPriceContext ctx { dude, npc, gBartererTableObj, gPlayerTableObj, 0, offerValue, rawValue, caps, offerButton, false };
 
     const int valueMinusCaps = rawValue - caps;
     double perkBonus = 0.0;
@@ -4708,14 +4709,13 @@ static void barterComputeTablesValue(Object* dude, Object* npc, int& outRequestV
     }
 
     ctx.value = static_cast<int>(barterModMult * balancedCost + caps);
-    scriptHooks_BarterPrice(ctx);
+    scriptHooks_BarterPrice(&ctx);
 
-    outRequestValue = ctx.value;
-    outOfferValue = ctx.offerValue;
+    return {ctx.value, ctx.offerValue};
 }
 
 // Calculates weight of NPC (request) and player (offer) tables. Used when bartering with party members.
-static void barterComputeTablesWeight(Object* dude, Object* npc, int& outRequestWeight, int& outOfferWeight)
+static std::pair<int, int> barterComputeTablesWeight(Object* dude, Object* npc)
 {
     assert(gGameDialogSpeakerIsPartyMember);
     const int rawValue = objectGetCost(gBartererTableObj);
@@ -4725,10 +4725,9 @@ static void barterComputeTablesWeight(Object* dude, Object* npc, int& outRequest
     BarterPriceContext ctx { dude, npc, gBartererTableObj, gPlayerTableObj, 0, offerValue, rawValue, caps, false, true };
 
     // Hook is invoked but return values are not used. This matches sfall behavior.
-    scriptHooks_BarterPrice(ctx);
+    scriptHooks_BarterPrice(&ctx);
 
-    outRequestWeight = objectGetInventoryWeight(gBartererTableObj);
-    outOfferWeight = objectGetInventoryWeight(gPlayerTableObj);
+    return {objectGetInventoryWeight(gBartererTableObj), objectGetInventoryWeight(gPlayerTableObj)};
 }
 
 // 0x474C50 barter_attempt_transaction
@@ -4769,8 +4768,7 @@ static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* np
         }
 
         if (!badOffer) {
-            int offerValue, requestValue;
-            barterComputeTablesValue(dude, npc, requestValue, offerValue, true);
+            auto [requestValue, offerValue] = barterComputeTablesValue(dude, npc, true);
             if (requestValue > offerValue) {
                 badOffer = true;
             }
@@ -4800,8 +4798,7 @@ static int barterGetMovedQuantity(Object* item, int maxQuantity, bool fromPlayer
     int suggestedValue = 1;
     if (item->pid == PROTO_ID_MONEY && !gGameDialogSpeakerIsPartyMember) {
         // Calculate change money automatically
-        int totalCostNpc, totalCostPlayer;
-        barterComputeTablesValue(gDude, _target_stack[0], totalCostNpc, totalCostPlayer);
+        auto [totalCostNpc, totalCostPlayer] = barterComputeTablesValue(gDude, _target_stack[0]);
         // Actor's balance: negative - the actor must add money to balance the tables and vice versa
         int balance = fromPlayer ? totalCostPlayer - totalCostNpc : totalCostNpc - totalCostPlayer;
 
@@ -4998,12 +4995,10 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
     char formattedText[80];
     int rectHeight = fontGetLineHeight() + INVENTORY_SLOT_HEIGHT * gInventorySlotsCount;
 
-    int requestValue, offerValue;
-    if (gGameDialogSpeakerIsPartyMember) {
-        barterComputeTablesWeight(gDude, _target_stack[0], requestValue, offerValue);
-    } else {
-        barterComputeTablesValue(gDude, _target_stack[0], requestValue, offerValue);
-    }
+    auto [requestValue, offerValue] = gGameDialogSpeakerIsPartyMember
+        ? barterComputeTablesWeight(gDude, _target_stack[0])
+        : barterComputeTablesValue(gDude, _target_stack[0]);
+
     if (leftTable != nullptr) {
         unsigned char* src = windowGetBuffer(win);
         blitBufferToBuffer(src + INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH * INVENTORY_TRADE_INNER_LEFT_SCROLLER_Y + INVENTORY_TRADE_INNER_LEFT_SCROLLER_X_PAD + INVENTORY_TRADE_WINDOW_OFFSET, INVENTORY_SLOT_WIDTH, rectHeight + 1, INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH, windowBuffer + INVENTORY_TRADE_WINDOW_WIDTH * INVENTORY_TRADE_INNER_LEFT_SCROLLER_Y + INVENTORY_TRADE_INNER_LEFT_SCROLLER_X_PAD, INVENTORY_TRADE_WINDOW_WIDTH);
