@@ -932,7 +932,7 @@ static int mapLoad(File* stream)
     }
 
     error = "Error setting tile center";
-    if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) != 0) {
+    if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS | TILE_SET_CENTER_FLAG_ALLOW_HIRES_TWEAK) != 0) {
         goto err;
     }
 
@@ -1293,7 +1293,7 @@ int mapHandleTransition()
                 objectSetRotation(gDude, gMapTransition.rotation, nullptr);
             }
 
-            if (tileSetCenter(gDude->tile, TILE_SET_CENTER_REFRESH_WINDOW) == -1) {
+            if (tileSetCenter(gDude->tile, TILE_SET_CENTER_REFRESH_WINDOW | TILE_SET_CENTER_FLAG_ALLOW_HIRES_TWEAK) == -1) {
                 debugPrint("\nError: map: attempt to center out-of-bounds!");
             }
 

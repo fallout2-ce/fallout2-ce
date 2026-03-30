@@ -568,6 +568,10 @@ int tileSetCenter(int tile, int flags)
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
                 return -1;
             }
+
+            if (!tile_hires_stencil_allows_scrolling_to_tile(tile, gCenterTile, gElevation, gTileWindowWidth, gTileWindowHeight)) {
+                return -1;
+            }
         }
     }
 
@@ -603,6 +607,13 @@ int tileSetCenter(int tile, int flags)
     gCenterTile = tile;
 
     tile_hires_stencil_on_center_tile_or_elevation_change();
+
+    if (flags & TILE_SET_CENTER_FLAG_ALLOW_HIRES_TWEAK) {
+        auto tweaked_center_tile = tile_hires_stencil_get_tweaked_center_tile(gCenterTile, gElevation, gTileWindowWidth, gTileWindowHeight);
+        if (tileIsValid(tweaked_center_tile) && tweaked_center_tile != gCenterTile) {
+            return tileSetCenter(tweaked_center_tile, flags & ~TILE_SET_CENTER_FLAG_ALLOW_HIRES_TWEAK);
+        }
+    }
 
     if ((flags & TILE_SET_CENTER_REFRESH_WINDOW) != 0) {
         // NOTE: Uninline.
