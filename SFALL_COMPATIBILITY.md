@@ -27,9 +27,9 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Utility / Math | log, exponent, round, sqrt, abs, sin, cos, tan, arctan, ceil, ^, floor2, div | ✅ | - |
 | Keyboard and mouse | key_pressed<br>tap_key<br>get_mouse_x/y<br>get_mouse_buttons | ✅ | - |
 | Lists | list_begin<br>list_next<br>list_end<br>list_as_array<br>party_member_list | ✅ | - |
-| Explosions | metarule2_explosions<br>set_attack_explosion_pattern<br>set_attack_explosion_art<br>set_attack_explosion_radius<br>set_attack_is_explosion_fire<br>set_explosion_radius<br>set_dynamite_damage<br>set_plastic_damage<br>get_explosion_damage<br>set_explosion_max_targets<br>item_make_explosive | ✅  except item_make_explosive | - |
-| Animations | reg_anim_combat_check<br>reg_anim_destroy<br>reg_anim_animate_and_hide<br>reg_anim_light<br>reg_anim_change_fid<br>reg_anim_take_out<br>reg_anim_turn_towards<br>reg_anim_callback<br>reg_anim_animate_and_move | not implemented | - |
-| Art and appearance | art_exists<br>refresh_pc_art<br>art_cache_clear<br>set_hero_race<br>set_hero_style | implemented: only art_exists, refresh_pc_art | - |
+| Explosions | metarule2_explosions<br>set_attack_explosion_pattern<br>set_attack_explosion_art<br>set_attack_explosion_radius<br>set_attack_is_explosion_fire<br>set_explosion_radius<br>set_dynamite_damage<br>set_plastic_damage<br>get_explosion_damage<br>set_explosion_max_targets<br>item_make_explosive | ✅ except item_make_explosive | - |
+| Animations | reg_anim_combat_check<br>reg_anim_destroy<br>reg_anim_animate_and_hide<br>reg_anim_light<br>reg_anim_change_fid<br>reg_anim_take_out<br>reg_anim_turn_towards<br>reg_anim_callback<br>reg_anim_animate_and_move | ✅ except reg_anim_callback | - |
+| Art and appearance | art_exists<br>refresh_pc_art<br>art_cache_clear<br>set_hero_race<br>set_hero_style | implemented: art_exists, refresh_pc_art, art_cache_clear | - |
 | Tiles and paths | get_tile_fid<br>tile_under_cursor<br>tile_light<br>tile_get_objs<br>tile_refresh_display<br>obj_blocking_tile<br>tile_by_position<br>get_tile_ground_fid<br>get_tile_roof_fid<br>obj_blocking_line<br>path_find_to<br>objects_in_radius | ✅ except objects_in_radius | - |
 | Utility | sprintf<br>typeof<br>atoi<br>atof | ✅ | - |
 | Utility / Strings | string_split<br>substr<br>strlen<br>charcode<br>get_string_pointer<br>string_find<br>string_find_from<br>string_format<br>string_format_array<br>string_replace<br>string_to_case<br>string_compare | ✅ except get_string_pointer | `get_string_pointer` is deprecated and intentionally omitted. |
@@ -59,9 +59,9 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | ToHit | `HOOK_TOHIT` | ✅ | - |
 | AfterHitRoll | `HOOK_AFTERHITROLL` | 🚫 | Et tu |
 | CalcAPCost | `HOOK_CALCAPCOST` | 🚫 | - |
-| DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | (maybe) |
-| DeathAnim2 | `HOOK_DEATHANIM2` | 🚫 | - |
-| CombatDamage | `HOOK_COMBATDAMAGE` | ✅ | CE passes the raw `Attack*` as the final mixed argument, matching sfall's shape; this inherits the current `get_object_data`/`set_object_data` caveats. |
+| DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | Use DEATHANIM2 instead |
+| DeathAnim2 | `HOOK_DEATHANIM2` | ✅ | - |
+| CombatDamage | `HOOK_COMBATDAMAGE` | ✅ | CE passes the raw `Attack*` as the final mixed argument, matching sfall's shape. |
 | OnDeath | `HOOK_ONDEATH` | 🚫 | - |
 | FindTarget | `HOOK_FINDTARGET` | 🚫 | (maybe) |
 | UseObjOn | `HOOK_USEOBJON` | ✅ | - |

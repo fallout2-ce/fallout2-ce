@@ -25,6 +25,7 @@
 #include "party_member.h"
 #include "proto.h"
 #include "scripts.h"
+#include "sfall_animation.h"
 #include "sfall_arrays.h"
 #include "sfall_global_scripts.h"
 #include "sfall_global_vars.h"
@@ -56,6 +57,12 @@ static constexpr int kVersionMajor = 4;
 static constexpr int kVersionMinor = 3;
 static constexpr int kVersionPatch = 4;
 static constexpr int kSfallPathBufferSize = 3200; // matches rotation path size in animation.cc
+
+static void op_art_exists(Program* program)
+{
+    int fid = programStackPopInteger(program);
+    programStackPushInteger(program, artExists(fid));
+}
 
 // read_byte
 static void op_read_byte(Program* program)
@@ -1194,14 +1201,6 @@ static void op_make_path(Program* program)
 
     programStackPushInteger(program, arrayId);
 }
-
-// art_exists
-static void op_art_exists(Program* program)
-{
-    int fid = programStackPopInteger(program);
-    programStackPushInteger(program, artExists(fid));
-}
-
 // sfall_func0
 static void op_sfall_func0(Program* program)
 {
@@ -1743,7 +1742,7 @@ void sfallOpcodesInit()
     // 0x81e5 - void  set_sfall_return(any value)
     interpreterRegisterOpcode(0x81e5, op_set_sfall_return);
 
-    // 0x81ea - int   init_hook()  -> OBSOLETE
+    // 0x81ea - int   init_hook()  -> OBSOLETE, do not implement
 
     // 0x81e6 - void set_unspent_ap_bonus(int multiplier)
     // 0x81e7 - int  get_unspent_ap_bonus()
@@ -1901,13 +1900,20 @@ void sfallOpcodesInit()
     // 0x824c - int gdialog_get_barter_mod()
     // 0x824d - void set_inven_ap_cost(int cost)
 
-    // 0x825c - void reg_anim_combat_check(int enable)
     // 0x825a - void reg_anim_destroy(object object)
+    interpreterRegisterOpcode(0x825A, op_reg_anim_destroy);
     // 0x825b - void reg_anim_animate_and_hide(object object, int animID, int delay)
+    interpreterRegisterOpcode(0x825B, op_reg_anim_animate_and_hide);
+    // 0x825c - void reg_anim_combat_check(int enable)
+    interpreterRegisterOpcode(0x825C, op_reg_anim_combat_check);
     // 0x825d - void reg_anim_light(object object, int radius, int delay)
+    interpreterRegisterOpcode(0x825D, op_reg_anim_light);
     // 0x825e - void reg_anim_change_fid(object object, int FID, int delay)
+    interpreterRegisterOpcode(0x825E, op_reg_anim_change_fid);
     // 0x825f - void reg_anim_take_out(object object, int holdFrameID, int delay)
+    interpreterRegisterOpcode(0x825F, op_reg_anim_take_out);
     // 0x8260 - void reg_anim_turn_towards(object object, int tile/targetObj, int delay)
+    interpreterRegisterOpcode(0x8260, op_reg_anim_turn_towards);
 
     // 0x8261 - int metarule2_explosions(object object)
     interpreterRegisterOpcode(0x8261, op_explosions_metarule);

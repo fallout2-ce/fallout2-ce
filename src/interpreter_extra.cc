@@ -1351,7 +1351,7 @@ static void opAnimateStand(Program* program)
         object = scriptGetSelf(program);
     }
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         reg_anim_begin(ANIMATION_REQUEST_UNRESERVED);
         animationRegisterAnimate(object, ANIM_STAND, 0);
         reg_anim_end();
@@ -1375,7 +1375,7 @@ static void opAnimateStandReverse(Program* program)
         object = scriptGetSelf(program);
     }
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         reg_anim_begin(ANIMATION_REQUEST_UNRESERVED);
         animationRegisterAnimateReversed(object, ANIM_STAND, 0);
         reg_anim_end();
@@ -3458,7 +3458,7 @@ static void opRegAnimFunc(Program* program)
     ProgramValue param = programStackPopValue(program);
     int cmd = programStackPopInteger(program);
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         switch (cmd) {
         case OP_REG_ANIM_FUNC_BEGIN:
             reg_anim_begin(param.integerValue);
@@ -3481,7 +3481,7 @@ static void opRegAnimAnimate(Program* program)
     int anim = programStackPopInteger(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         if (anim != 20 || object == nullptr || object->pid != 0x100002F || (settings.preferences.violence_level >= 2)) {
             if (object != nullptr) {
                 animationRegisterAnimate(object, anim, delay);
@@ -3500,7 +3500,7 @@ static void opRegAnimAnimateReverse(Program* program)
     int anim = programStackPopInteger(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         if (object != nullptr) {
             animationRegisterAnimateReversed(object, anim, delay);
         } else {
@@ -3517,7 +3517,7 @@ static void opRegAnimObjectMoveToObject(Program* program)
     Object* dest = static_cast<Object*>(programStackPopPointer(program));
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         if (object != nullptr) {
             animationRegisterMoveToObject(object, dest, -1, delay);
         } else {
@@ -3534,7 +3534,7 @@ static void opRegAnimObjectRunToObject(Program* program)
     Object* dest = static_cast<Object*>(programStackPopPointer(program));
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         if (object != nullptr) {
             animationRegisterRunToObject(object, dest, -1, delay);
         } else {
@@ -3551,7 +3551,7 @@ static void opRegAnimObjectMoveToTile(Program* program)
     int tile = programStackPopInteger(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         if (object != nullptr) {
             animationRegisterMoveToTile(object, tile, object->elevation, -1, delay);
         } else {
@@ -3568,7 +3568,7 @@ static void opRegAnimObjectRunToTile(Program* program)
     int tile = programStackPopInteger(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         if (object != nullptr) {
             animationRegisterRunToTile(object, tile, object->elevation, -1, delay);
         } else {
@@ -3974,7 +3974,7 @@ static void opRegAnimAnimateForever(Program* program)
     int anim = programStackPopInteger(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    if (!isInCombat()) {
+    if (!animationCheckCombatMode()) {
         if (obj != nullptr) {
             animationRegisterAnimateForever(obj, anim, -1);
         } else {

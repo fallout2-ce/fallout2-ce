@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "animation.h"
 #include "db.h"
 #include "input.h"
 #include "platform_compat.h"
@@ -147,6 +148,12 @@ static void sfall_gl_scr_process_simple(int mode1, int mode2)
             }
         }
     }
+
+    // reg_anim_combat_check flips the global gRegAnimCombatCheck flag in
+    // animation.cc. Resetting it only once after the whole loop means one
+    // global script can disable the combat check and leak that setting into
+    // later global scripts executed in the same tick. Might be better to save/restore.
+    animationResetCombatCheck();
 }
 
 void sfall_gl_scr_process_main()
