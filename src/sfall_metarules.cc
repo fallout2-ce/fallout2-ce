@@ -385,8 +385,8 @@ void mf_set_cursor_mode(Program* program, int args)
 
 void mf_set_flags(Program* program, int args)
 {
-    int flags = programStackPopInteger(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
+    int flags = programStackPopInteger(program);
 
     object->flags = flags;
 
@@ -395,8 +395,8 @@ void mf_set_flags(Program* program, int args)
 
 void mf_set_outline(Program* program, int args)
 {
-    int outline = programStackPopInteger(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
+    int outline = programStackPopInteger(program);
     object->outline = outline;
     programStackPushInteger(program, -1);
 }
@@ -683,6 +683,10 @@ void mf_message_box(Program* program, int args)
 
     const char* string = programStackPopString(program);
     if (string == nullptr || string[0] == '\0') {
+        for (int index = 1; index < args; index++) {
+            (void)programStackPopInteger(program);
+        }
+        programStackPushInteger(program, -1);
         return;
     }
 
