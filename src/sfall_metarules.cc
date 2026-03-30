@@ -674,6 +674,9 @@ void mf_message_box(Program* program, int args)
 
     const char* string = programStackPopString(program);
     if (string == nullptr || string[0] == '\0') {
+        for (int index = 1; index < args; index++) {
+            (void)programStackPopInteger(program);
+        }
         programStackPushInteger(program, -1);
         return;
     }
