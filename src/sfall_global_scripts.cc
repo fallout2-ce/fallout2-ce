@@ -48,13 +48,12 @@ bool sfall_gl_scr_init()
             *end = '\0';
         }
 
-        char normalizedPattern[COMPAT_MAX_PATH];
-        strcpy(normalizedPattern, curr);
-        compat_windows_path_to_native(normalizedPattern);
+        std::string normalizedPattern(curr);
+        compat_windows_path_to_native(normalizedPattern.data());
 
         char drive[COMPAT_MAX_DRIVE];
         char dir[COMPAT_MAX_DIR];
-        compat_splitpath(normalizedPattern, drive, dir, nullptr, nullptr);
+        compat_splitpath(normalizedPattern.c_str(), drive, dir, nullptr, nullptr);
 
         char** files;
         int filesLength = fileNameListInit(curr, &files);
@@ -63,9 +62,7 @@ bool sfall_gl_scr_init()
             for (int index = 0; index < filesLength; index++) {
                 char path[COMPAT_MAX_PATH];
                 compat_makepath(path, drive, dir, files[index], nullptr);
-
-                state->paths.push_back(std::string { path });
-                debugPrint("GlobalScriptPaths resolved path %s\n", path);
+                state->paths.emplace_back(path);
             }
 
             fileNameListFree(&files, 0);
@@ -107,7 +104,6 @@ void sfall_gl_scr_exec_start_proc()
     int loadedScripts = 0;
 
     for (auto& path : state->paths) {
-        debugPrint("Loading global script %s\n", path.c_str());
         Program* program = programCreateByPath(path.c_str());
         if (program != nullptr) {
             GlobalScript scr;

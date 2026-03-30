@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <string>
 
 #include <fpattern/fpattern.h>
 
@@ -42,9 +43,8 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* 
 static int dfileReadCharInternal(DFile* stream);
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size);
 static void dfileUngetCompressed(DFile* stream, int ch);
-static void dfileNormalizePathForLookup(char* path);
-static void dfileNormalizePathForMatch(char* path);
-static bool dfilePathsEqual(const char* path1, const char* path2);
+static std::string dfileNormalizedPathForLookup(const char* path);
+static std::string dfileNormalizedPathForMatch(const char* path);
 static bool dfilePathMatchesPattern(const char* pattern, const char* path);
 
 // Reads .DAT file contents.
@@ -205,15 +205,13 @@ bool dbaseClose(DBase* dbase)
 // 0x4E5308
 bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* pattern)
 {
-    char normalizedPattern[COMPAT_MAX_PATH];
-    strcpy(normalizedPattern, pattern);
-    dfileNormalizePathForMatch(normalizedPattern);
+    std::string normalizedPattern = dfileNormalizedPathForMatch(pattern);
 
     for (int index = 0; index < dbase->entriesLength; index++) {
         DBaseEntry* entry = &(dbase->entries[index]);
-        if (dfilePathMatchesPattern(normalizedPattern, entry->path)) {
+        if (dfilePathMatchesPattern(normalizedPattern.c_str(), entry->path)) {
             strcpy(findFileData->fileName, entry->path);
-            strcpy(findFileData->pattern, normalizedPattern);
+            strcpy(findFileData->pattern, normalizedPattern.c_str());
             findFileData->index = index;
             return true;
         }
@@ -646,21 +644,9 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
 // 0x4E5D9C
 static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* mode, DFile* dfile)
 {
-    char normalizedFilePath[COMPAT_MAX_PATH];
-    strcpy(normalizedFilePath, filePath);
-    dfileNormalizePathForLookup(normalizedFilePath);
+    std::string normalizedFilePath = dfileNormalizedPathForLookup(filePath);
 
-    DBaseEntry* entry = (DBaseEntry*)bsearch(normalizedFilePath, dbase->entries, dbase->entriesLength, sizeof(*dbase->entries), dbaseFindEntryByFilePath);
-    if (entry == nullptr) {
-        for (int index = 0; index < dbase->entriesLength; index++) {
-            DBaseEntry* candidate = &(dbase->entries[index]);
-            if (dfilePathsEqual(normalizedFilePath, candidate->path)) {
-                entry = candidate;
-                break;
-            }
-        }
-    }
-
+    DBaseEntry* entry = (DBaseEntry*)bsearch(normalizedFilePath.c_str(), dbase->entries, dbase->entriesLength, sizeof(*dbase->entries), dbaseFindEntryByFilePath);
     if (entry == nullptr) {
         goto err;
     }
@@ -882,48 +868,35 @@ static void dfileUngetCompressed(DFile* stream, int ch)
     stream->position--;
 }
 
-static void dfileNormalizePathForLookup(char* path)
+static std::string dfileNormalizedPathForLookup(const char* path)
 {
-    for (char* pch = path; *pch != '\0'; pch++) {
-        if (*pch == '/') {
-            *pch = '\\';
+    std::string normalizedPath(path);
+    // Direct archive opens compare against .DAT entry keys, which are stored
+    // with Windows separators, so keep lookup keys in that form for bsearch.
+    for (char& ch : normalizedPath) {
+        if (ch == '/') {
+            ch = '\\';
         }
     }
 
-    compat_strlwr(path);
+    compat_strlwr(normalizedPath.data());
+    return normalizedPath;
 }
 
-static void dfileNormalizePathForMatch(char* path)
+static std::string dfileNormalizedPathForMatch(const char* path)
 {
-    for (char* pch = path; *pch != '\0'; pch++) {
-        if (*pch == '\\') {
-            *pch = '/';
-        }
-    }
-
-    compat_strlwr(path);
-}
-
-static bool dfilePathsEqual(const char* path1, const char* path2)
-{
-    char normalizedPath1[COMPAT_MAX_PATH];
-    char normalizedPath2[COMPAT_MAX_PATH];
-
-    strcpy(normalizedPath1, path1);
-    strcpy(normalizedPath2, path2);
-    dfileNormalizePathForLookup(normalizedPath1);
-    dfileNormalizePathForLookup(normalizedPath2);
-
-    return strcmp(normalizedPath1, normalizedPath2) == 0;
+    std::string normalizedPath(path);
+    // Wildcard matching uses platform-specific fpattern semantics, so
+    // normalize to native separators before comparing against archive entries.
+    compat_windows_path_to_native(normalizedPath.data());
+    compat_strlwr(normalizedPath.data());
+    return normalizedPath;
 }
 
 static bool dfilePathMatchesPattern(const char* pattern, const char* path)
 {
-    char normalizedPath[COMPAT_MAX_PATH];
-    strcpy(normalizedPath, path);
-    dfileNormalizePathForMatch(normalizedPath);
-
-    return fpattern_match(pattern, normalizedPath);
+    std::string normalizedPath = dfileNormalizedPathForMatch(path);
+    return fpattern_match(pattern, normalizedPath.c_str());
 }
 
 } // namespace fallout
