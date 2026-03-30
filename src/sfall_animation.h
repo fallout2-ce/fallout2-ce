@@ -5,8 +5,6 @@
 
 namespace fallout {
 
-void mf_art_cache_flush(Program* program, int args);
-void op_art_exists(Program* program);
 void op_reg_anim_combat_check(Program* program);
 void op_reg_anim_destroy(Program* program);
 void op_reg_anim_animate_and_hide(Program* program);

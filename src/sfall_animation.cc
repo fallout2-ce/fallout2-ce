@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "animation.h"
-#include "art.h"
 #include "interpreter.h"
 
 namespace fallout {
@@ -115,18 +114,6 @@ void mf_reg_anim_animate_and_move(Program* program, int args)
     }
 
     programStackPushInteger(program, 0);
-}
-
-void op_art_exists(Program* program)
-{
-    int fid = programStackPopInteger(program);
-    programStackPushInteger(program, artExists(fid));
-}
-
-void mf_art_cache_flush(Program* program, int args)
-{
-    artCacheFlush();
-    programStackPushInteger(program, 0); // TODO: remove when metarule system handles this
 }
 
 } // namespace fallout

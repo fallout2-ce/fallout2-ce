@@ -6,6 +6,7 @@
 #include <string.h>
 #include <string>
 
+#include "art.h"
 #include "color.h"
 #include "combat.h"
 #include "config.h" // For Config, configInit, configFree
@@ -49,6 +50,7 @@ static void mf_intface_redraw(Program* program, int args);
 static void mf_loot_obj(Program* program, int args);
 static void mf_message_box(Program* program, int args);
 static void mf_add_extra_msg_file(Program* program, int args);
+static void mf_art_cache_flush(Program* program, int args);
 static void mf_metarule_exist(Program* program, int args);
 static void mf_obj_under_cursor(Program* program, int args);
 static void mf_opcode_exists(Program* program, int args);
@@ -186,6 +188,12 @@ const MetaruleInfo kMetarules[] = {
 const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
 constexpr int kMetarulesMax = sizeof(kMetarules) / sizeof(kMetarules[0]);
+
+void mf_art_cache_flush(Program* program, int args)
+{
+    artCacheFlush();
+    programStackPushInteger(program, 0); // TODO: remove when metarule system handles this
+}
 
 void mf_car_gas_amount(Program* program, int args)
 {

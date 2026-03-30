@@ -58,6 +58,12 @@ static constexpr int kVersionMinor = 3;
 static constexpr int kVersionPatch = 4;
 static constexpr int kSfallPathBufferSize = 3200; // matches rotation path size in animation.cc
 
+static void op_art_exists(Program* program)
+{
+    int fid = programStackPopInteger(program);
+    programStackPushInteger(program, artExists(fid));
+}
+
 // read_byte
 static void op_read_byte(Program* program)
 {
