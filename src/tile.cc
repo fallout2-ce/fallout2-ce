@@ -568,6 +568,10 @@ int tileSetCenter(int tile, int flags)
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
                 return -1;
             }
+
+            if (!tile_hires_stencil_allows_scrolling_to_tile(tile, gCenterTile, gElevation, gTileWindowWidth, gTileWindowHeight)) {
+                return -1;
+            }
         }
     }
 

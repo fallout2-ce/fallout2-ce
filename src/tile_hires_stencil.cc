@@ -25,6 +25,15 @@ namespace fallout {
 /** This holds hex tiles which can be center tile */
 static bool visited_tiles[ELEVATION_COUNT][HEX_GRID_SIZE];
 
+struct StencilScreenLimits {
+    int minX;
+    int maxX;
+    int minY;
+    int maxY;
+    bool initialized;
+};
+static struct StencilScreenLimits screen_xy_limits[ELEVATION_COUNT];
+
 static constexpr int pixels_per_horizontal_move = 32;
 static constexpr int pixels_per_vertical_move = 24;
 
@@ -69,11 +78,13 @@ static bool gIsTileHiresStencilEnabled = true;
 static void clean_cache()
 {
     memset(visited_tiles, 0, sizeof(visited_tiles));
+    memset(screen_xy_limits, 0, sizeof(screen_xy_limits));
     memset(visible_squares, 0, sizeof(visible_squares));
 }
 static void clean_cache_for_elevation(int elevation)
 {
     memset(visited_tiles[elevation], 0, sizeof(visited_tiles[elevation]));
+    memset(&screen_xy_limits[elevation], 0, sizeof(screen_xy_limits[elevation]));
     memset(visible_squares[elevation], 0, sizeof(visible_squares[elevation]));
 }
 
@@ -205,6 +216,95 @@ static void mark_screen_tiles_around_as_visible(int center_tile, const Point& sc
     }
 }
 
+static void update_screen_xy_limits(int tileScreenX, int tileScreenY, const Point& screen_diff, int elevation)
+{
+    auto& limits = screen_xy_limits[elevation];
+    auto candidateMinX = tileScreenX - screen_view_width / 2 - screen_diff.x;
+    auto candidateMaxX = tileScreenX + screen_view_width / 2 - screen_diff.x;
+    auto candidateMinY = tileScreenY - screen_view_height / 2 - screen_diff.y;
+    auto candidateMaxY = tileScreenY + screen_view_height / 2 - screen_diff.y;
+
+    if (!limits.initialized) {
+        limits.minX = candidateMinX;
+        limits.maxX = candidateMaxX;
+        limits.minY = candidateMinY;
+        limits.maxY = candidateMaxY;
+        limits.initialized = true;
+        return;
+    }
+
+    if (candidateMinX < limits.minX) {
+        limits.minX = candidateMinX;
+    }
+    if (candidateMaxX > limits.maxX) {
+        limits.maxX = candidateMaxX;
+    }
+    if (candidateMinY < limits.minY) {
+        limits.minY = candidateMinY;
+    }
+    if (candidateMaxY > limits.maxY) {
+        limits.maxY = candidateMaxY;
+    }
+}
+
+struct TileScrollNeighbors {
+    int left;
+    int right;
+    int up;
+    int down;
+};
+
+static struct TileScrollNeighbors get_tile_scroll_neighbors(int tileScreenX, int tileScreenY)
+{
+    // tile size is 32 x 18
+    //
+    //  / \      ^
+    // |   |     | 18
+    //  \ /      v
+    //
+    // <-32->
+    //
+    // Scrolling left-right changes x by 32
+    // But scrolling top-bottom changes y by 24
+    //
+    //
+    //        / \
+    //       |   |         <----- tiles on vertical change, 24 px
+    //      / \ / \            |
+    //     |   |   |   <------ | ----- tiles on horizontal change, 32 px
+    //      \ / \ /            |
+    //       |   |         <--/
+    //        \ /
+    //
+
+    constexpr int tile_center_offset_x = 16;
+    constexpr int tile_center_offset_y = 8;
+
+    struct TileScrollNeighbors r;
+
+    r.left = tileFromScreenXY(
+        tileScreenX - pixels_per_horizontal_move + tile_center_offset_x,
+        tileScreenY + tile_center_offset_y,
+        true);
+
+    r.right = tileFromScreenXY(
+        tileScreenX + pixels_per_horizontal_move + tile_center_offset_x,
+        tileScreenY + tile_center_offset_y,
+        true);
+
+    r.up = tileFromScreenXY(
+        tileScreenX + tile_center_offset_x,
+        tileScreenY - pixels_per_vertical_move + tile_center_offset_y,
+        true);
+
+    r.down = tileFromScreenXY(
+        tileScreenX + tile_center_offset_x,
+        tileScreenY + pixels_per_vertical_move + tile_center_offset_y,
+        true);
+
+    return r;
+}
+
 void tile_hires_stencil_on_center_tile_or_elevation_change()
 {
     if (!gIsTileHiresStencilEnabled) {
@@ -216,14 +316,8 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
     };
 
     if (visited_tiles[gElevation][gCenterTile]) {
-        debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change tile was visited gElevation=%i gCenterTile=%i so doing nothing\n",
-            gElevation, gCenterTile);
-
         return;
     };
-
-    debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change non-visited tile gElevation=%i gCenterTile=%i\n",
-        gElevation, gCenterTile);
 
     clean_cache_for_elevation(gElevation);
 
@@ -245,14 +339,16 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         auto tileInfo = tiles_to_visit.back();
         tiles_to_visit.pop_back();
 
+        // Ensure tile index is within valid bounds before any array access.
+        if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
+            continue;
+        }
+
         if (visited_tiles[gElevation][tileInfo.tile]) {
             continue;
         }
 
         if (tileInfo.tile != gCenterTile) [[unlikely]] {
-            if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
-                continue;
-            }
             if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
                 continue;
             }
@@ -274,53 +370,19 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         int tileScreenY;
         tileToScreenXY(tileInfo.tile, &tileScreenX, &tileScreenY);
 
-        // tile size is 32 x 18
-        //
-        //  / \      ^
-        // |   |     | 18
-        //  \ /      v
-        //
-        // <-32->
-        //
-        // Scrolling left-right changes x by 32
-        // But scrolling top-bottom changes y by 24
-        //
-        //
-        //        / \
-        //       |   |         <----- tiles on vertical change, 24 px
-        //      / \ / \            |
-        //     |   |   |   <------ | ----- tiles on horizontal change, 32 px
-        //      \ / \ /            |
-        //       |   |         <--/
-        //        \ /
-        //
+        update_screen_xy_limits(tileScreenX, tileScreenY, screen_diff, gElevation);
 
-        constexpr int tile_center_offset_x = 16;
-        constexpr int tile_center_offset_y = 8;
+        auto neighbors = get_tile_scroll_neighbors(tileScreenX, tileScreenY);
 
-        tiles_to_visit.push_back({ tileFromScreenXY(
-                                       tileScreenX - pixels_per_horizontal_move + tile_center_offset_x,
-                                       tileScreenY + tile_center_offset_y,
-                                       true),
+        tiles_to_visit.push_back({ neighbors.left,
             MarkOnlyPart::LEFT });
-        tiles_to_visit.push_back({ tileFromScreenXY(
-                                       tileScreenX + pixels_per_horizontal_move + tile_center_offset_x,
-                                       tileScreenY + tile_center_offset_y,
-                                       true),
+        tiles_to_visit.push_back({ neighbors.right,
             MarkOnlyPart::RIGHT });
-        tiles_to_visit.push_back({ tileFromScreenXY(
-                                       tileScreenX + tile_center_offset_x,
-                                       tileScreenY - pixels_per_vertical_move + tile_center_offset_y,
-                                       true),
+        tiles_to_visit.push_back({ neighbors.up,
             MarkOnlyPart::UP });
-        tiles_to_visit.push_back({ tileFromScreenXY(
-                                       tileScreenX + tile_center_offset_x,
-                                       tileScreenY + pixels_per_vertical_move + tile_center_offset_y,
-                                       true),
+        tiles_to_visit.push_back({ neighbors.down,
             MarkOnlyPart::DOWN });
     }
-
-    debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change visited_tiles_count=%i\n", visited_tiles_count);
 }
 
 void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth, int windowHeight)
@@ -403,6 +465,173 @@ void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth,
     }
 }
 
+/**
+ * Even when we can scroll to the tile according to scrollblocker tiles,
+ * we also want to disallow scrolling on big resolutions if there is nothing to show there
+ */
+bool tile_hires_stencil_allows_scrolling_to_tile(int newCenterTile, int currentCenterTile, int elevation, int windowWidth, int windowHeight)
+{
+    if (!gIsTileHiresStencilEnabled) {
+        return true;
+    }
+
+    if (!gTileBorderInitialized) {
+        return true;
+    };
+
+    auto& limits = screen_xy_limits[elevation];
+    if (!limits.initialized) {
+        return true;
+    }
+
+    int currentTileScreenX;
+    int currentTileScreenY;
+    tileToScreenXY(currentCenterTile, &currentTileScreenX, &currentTileScreenY);
+
+    int newTileScreenX;
+    int newTileScreenY;
+    tileToScreenXY(newCenterTile, &newTileScreenX, &newTileScreenY);
+
+    auto xDiff = newTileScreenX - currentTileScreenX;
+    auto yDiff = newTileScreenY - currentTileScreenY;
+
+    auto screen_diff = get_screen_diff();
+
+    auto newScreenMinX = newTileScreenX - windowWidth / 2 - screen_diff.x;
+    auto newScreenMaxX = newTileScreenX + windowWidth / 2 - screen_diff.x;
+    auto newScreenMinY = newTileScreenY - windowHeight / 2 - screen_diff.y;
+    auto newScreenMaxY = newTileScreenY + windowHeight / 2 - screen_diff.y;
+
+    if (xDiff < 0) { // Moving left
+        if (newScreenMinX >= limits.minX) {
+            // Scrolling left when there is still something to show is always allowed
+            //    [------------------------]   <- possible visible area border (limits.maxX and limits.minX)
+            //      (         x         )   <- hi-res screen with center tile (newScreenMinX, newScreenMaxX)
+        } else if (newScreenMaxX <= limits.maxX) {
+            // Disallow if map is bigger than screen
+            //    [------------------------]   <- possible visible area border (limits.maxX and limits.minX)
+            //   (         x         )   <- this clearly disallow
+            return false;
+        } else {
+            // Now we have two cases: when moving left will make map to be more in the center or not
+            //         [-----------]   <- possible visible area border (limits.maxX and limits.minX)
+            //        (         x         )   <- allow this, it will move map to the center
+            //  (         x         )   <- disallow this, it will move map from the center
+            auto leftDiff = limits.minX - newScreenMinX;
+            auto rightDiff = newScreenMaxX - limits.maxX;
+            if (leftDiff > rightDiff) {
+                return false;
+            }
+        }
+    }
+
+    if (xDiff > 0) {
+        if (newScreenMaxX <= limits.maxX) {
+            // Allow
+        } else if (newScreenMinX > limits.minX) {
+            return false;
+        } else {
+            auto leftDiff = limits.minX - newScreenMinX;
+            auto rightDiff = newScreenMaxX - limits.maxX;
+            if (leftDiff < rightDiff) {
+                return false;
+            }
+        }
+    }
+
+    if (yDiff < 0) { // Moving up
+        if (newScreenMinY >= limits.minY) {
+            // Scrolling up when there is still something to show is always allowed
+        } else if (newScreenMaxY <= limits.maxY) {
+            // Disallow if map is taller than screen
+            return false;
+        } else {
+            // Allow only if moving up makes the visible area more centered vertically
+            auto topDiff = limits.minY - newScreenMinY;
+            auto bottomDiff = newScreenMaxY - limits.maxY;
+            if (topDiff > bottomDiff) {
+                return false;
+            }
+        }
+    }
+
+    if (yDiff > 0) { // Moving down
+        if (newScreenMaxY <= limits.maxY) {
+            // Allow
+        } else if (newScreenMinY > limits.minY) {
+            return false;
+        } else {
+            auto topDiff = limits.minY - newScreenMinY;
+            auto bottomDiff = newScreenMaxY - limits.maxY;
+            if (topDiff < bottomDiff) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+
+Scrolling in Fallout 2 is controlled by special scrollblocker tiles.
+
+The game has state variable "gCenterTile" which defines current window scroll position.
+When player scrolls, game checks if there is a scrollblocker tile in the direction of scroll
+ and if there is, it does not change gCenterTile and does not scroll.
+
+So maps place scrollblocker tiles not exactly on the edge but on the half of default screen size (640x480).
+
+
+Example (x = current gCenterTile; + = scrollblocker tile on map):
+┌───────────────────┐───────────────────┐
+│                   │                   │ <- this is the border of possible visible area
+│                   │                   │     (usually also border of the map)
+│        +++++++++++++++++++++++++      │
+│        +x         │            +      │
+│        +          │            +  <-------- Scrollblocker tile are inside
+│        +          │            +      │
+│        +          │            +      │
+└──640x480─window───┘            +      │
+│        +                       +      │
+│        +                       +      │
+│        +                       +      │
+│        +                       +      │
+│        +                       +      │
+│        +++++++++++++++++++++++++      │
+│                                       │
+│                                       │
+└─────1920x1080─window──────────────────┘
+<-------> this distance is half of default screen width, i.e. 640/2=320 pixels
+
+
+But not every map is rectangular.
+So on every map or elevation change we do a search for all possible accessible
+center tile values starting from the current one, and for each such possible
+center tile we mark the 640x380 tile viewport area around as visible (within the
+overall 640x480 screen). The rest gets covered by a black overlay.
+
+┌──────────────────┐
+│                  │
+│                  │
+│    ++++++++++    │
+│    +        +    │
+│    +        +    │
+│    +        +    └─────────────────────────────┐
+│    +        +                                  │
+│    +        +     ┌───────────┐                │
+│    +        ++++++│+++++++++++│++++++++++++    │
+│    +   ┌──────────│──┐        │   ┌────────────┐
+│    +   │          │  │  x     │   │       +    │
+│    +   │          │  │        │   │       +    │
+│    +   │      x   │  │        │   │      x+    │
+│    ++++│++++++++++└───────────┘+++│++++++++    │
+│        │             │            │            │
+│        └─────────────┘            │            │
+└───────────────────────────────────└────────────┘
+
+
+ */
 void tile_hires_stencil_init()
 {
     configGetBool(&gSfallConfig, SFALL_CONFIG_MAIN_KEY, SFALL_CONFIG_ENABLE_HIRES_STENCIL, &gIsTileHiresStencilEnabled);
