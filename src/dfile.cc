@@ -42,6 +42,10 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* 
 static int dfileReadCharInternal(DFile* stream);
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size);
 static void dfileUngetCompressed(DFile* stream, int ch);
+static void dfileNormalizePathForLookup(char* path);
+static void dfileNormalizePathForMatch(char* path);
+static bool dfilePathsEqual(const char* path1, const char* path2);
+static bool dfilePathMatchesPattern(const char* pattern, const char* path);
 
 // Reads .DAT file contents.
 //
@@ -201,11 +205,15 @@ bool dbaseClose(DBase* dbase)
 // 0x4E5308
 bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* pattern)
 {
+    char normalizedPattern[COMPAT_MAX_PATH];
+    strcpy(normalizedPattern, pattern);
+    dfileNormalizePathForMatch(normalizedPattern);
+
     for (int index = 0; index < dbase->entriesLength; index++) {
         DBaseEntry* entry = &(dbase->entries[index]);
-        if (fpattern_match(pattern, entry->path)) {
+        if (dfilePathMatchesPattern(normalizedPattern, entry->path)) {
             strcpy(findFileData->fileName, entry->path);
-            strcpy(findFileData->pattern, pattern);
+            strcpy(findFileData->pattern, normalizedPattern);
             findFileData->index = index;
             return true;
         }
@@ -219,7 +227,7 @@ bool dbaseFindNextEntry(DBase* dbase, DFileFindData* findFileData)
 {
     for (int index = findFileData->index + 1; index < dbase->entriesLength; index++) {
         DBaseEntry* entry = &(dbase->entries[index]);
-        if (fpattern_match(findFileData->pattern, entry->path)) {
+        if (dfilePathMatchesPattern(findFileData->pattern, entry->path)) {
             strcpy(findFileData->fileName, entry->path);
             findFileData->index = index;
             return true;
@@ -638,7 +646,21 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
 // 0x4E5D9C
 static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* mode, DFile* dfile)
 {
-    DBaseEntry* entry = (DBaseEntry*)bsearch(filePath, dbase->entries, dbase->entriesLength, sizeof(*dbase->entries), dbaseFindEntryByFilePath);
+    char normalizedFilePath[COMPAT_MAX_PATH];
+    strcpy(normalizedFilePath, filePath);
+    dfileNormalizePathForLookup(normalizedFilePath);
+
+    DBaseEntry* entry = (DBaseEntry*)bsearch(normalizedFilePath, dbase->entries, dbase->entriesLength, sizeof(*dbase->entries), dbaseFindEntryByFilePath);
+    if (entry == nullptr) {
+        for (int index = 0; index < dbase->entriesLength; index++) {
+            DBaseEntry* candidate = &(dbase->entries[index]);
+            if (dfilePathsEqual(normalizedFilePath, candidate->path)) {
+                entry = candidate;
+                break;
+            }
+        }
+    }
+
     if (entry == nullptr) {
         goto err;
     }
@@ -858,6 +880,50 @@ static void dfileUngetCompressed(DFile* stream, int ch)
     stream->compressedUngotten = ch;
     stream->flags |= DFILE_HAS_COMPRESSED_UNGETC;
     stream->position--;
+}
+
+static void dfileNormalizePathForLookup(char* path)
+{
+    for (char* pch = path; *pch != '\0'; pch++) {
+        if (*pch == '/') {
+            *pch = '\\';
+        }
+    }
+
+    compat_strlwr(path);
+}
+
+static void dfileNormalizePathForMatch(char* path)
+{
+    for (char* pch = path; *pch != '\0'; pch++) {
+        if (*pch == '\\') {
+            *pch = '/';
+        }
+    }
+
+    compat_strlwr(path);
+}
+
+static bool dfilePathsEqual(const char* path1, const char* path2)
+{
+    char normalizedPath1[COMPAT_MAX_PATH];
+    char normalizedPath2[COMPAT_MAX_PATH];
+
+    strcpy(normalizedPath1, path1);
+    strcpy(normalizedPath2, path2);
+    dfileNormalizePathForLookup(normalizedPath1);
+    dfileNormalizePathForLookup(normalizedPath2);
+
+    return strcmp(normalizedPath1, normalizedPath2) == 0;
+}
+
+static bool dfilePathMatchesPattern(const char* pattern, const char* path)
+{
+    char normalizedPath[COMPAT_MAX_PATH];
+    strcpy(normalizedPath, path);
+    dfileNormalizePathForMatch(normalizedPath);
+
+    return fpattern_match(pattern, normalizedPath);
 }
 
 } // namespace fallout

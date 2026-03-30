@@ -7,6 +7,7 @@
 
 #include "animation.h"
 #include "db.h"
+#include "debug.h"
 #include "input.h"
 #include "platform_compat.h"
 #include "scripts.h"
@@ -47,18 +48,24 @@ bool sfall_gl_scr_init()
             *end = '\0';
         }
 
+        char normalizedPattern[COMPAT_MAX_PATH];
+        strcpy(normalizedPattern, curr);
+        compat_windows_path_to_native(normalizedPattern);
+
         char drive[COMPAT_MAX_DRIVE];
         char dir[COMPAT_MAX_DIR];
-        compat_splitpath(curr, drive, dir, nullptr, nullptr);
+        compat_splitpath(normalizedPattern, drive, dir, nullptr, nullptr);
 
         char** files;
         int filesLength = fileNameListInit(curr, &files);
+        debugPrint("GlobalScriptPaths mask %s matched %d script(s)\n", curr, filesLength);
         if (filesLength != 0) {
             for (int index = 0; index < filesLength; index++) {
                 char path[COMPAT_MAX_PATH];
                 compat_makepath(path, drive, dir, files[index], nullptr);
 
                 state->paths.push_back(std::string { path });
+                debugPrint("GlobalScriptPaths resolved path %s\n", path);
             }
 
             fileNameListFree(&files, 0);
@@ -73,6 +80,7 @@ bool sfall_gl_scr_init()
     }
 
     std::sort(state->paths.begin(), state->paths.end());
+    debugPrint("GlobalScriptPaths resolved %d script path(s)\n", static_cast<int>(state->paths.size()));
 
     return true;
 }
@@ -96,7 +104,10 @@ void sfall_gl_scr_exit()
 
 void sfall_gl_scr_exec_start_proc()
 {
+    int loadedScripts = 0;
+
     for (auto& path : state->paths) {
+        debugPrint("Loading global script %s\n", path.c_str());
         Program* program = programCreateByPath(path.c_str());
         if (program != nullptr) {
             GlobalScript scr;
@@ -107,10 +118,13 @@ void sfall_gl_scr_exec_start_proc()
             }
 
             state->globalScripts.push_back(std::move(scr));
+            loadedScripts++;
 
             programInterpret(program, -1);
         }
     }
+
+    debugPrint("Loaded %d global script(s)\n", loadedScripts);
 
     tickersAdd(sfall_gl_scr_process_input);
 }
