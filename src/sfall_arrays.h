@@ -9,7 +9,7 @@ namespace fallout {
 #define SFALL_ARRAYFLAG_CONSTVAL (2) // don't update value of key if the key exists in map
 #define SFALL_ARRAYFLAG_RESERVED (4) // has no significance in sfall or CE
 #define SFALL_ARRAYFLAG_EXPR_PUSH (32) // is created as part of array sub-expression
-#define SFALL_ARRAYFLAG_EXPR_POP  (64) // is used to indicate end of array sub-expression, not used in actual array
+#define SFALL_ARRAYFLAG_EXPR_POP (64) // is used to indicate end of array sub-expression, not used in actual array
 
 using ArrayId = unsigned int;
 

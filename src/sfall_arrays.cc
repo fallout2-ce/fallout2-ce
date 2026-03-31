@@ -639,8 +639,8 @@ void ResizeArray(ArrayId arrayId, int newLen)
 void SetArrayFromExpression(const ProgramValue& key, const ProgramValue& val, Program* program)
 {
     ArrayId arrayId = !_state->arrayExpressionStack.empty()
-                ? _state->arrayExpressionStack.back()
-                : _state->expressionArrayId;
+        ? _state->arrayExpressionStack.back()
+        : _state->expressionArrayId;
 
     auto arr = get_array_by_id(arrayId);
     if (arr == nullptr) {
@@ -659,7 +659,8 @@ void SetArrayFromExpression(const ProgramValue& key, const ProgramValue& val, Pr
     SetArray(arrayId, key, val, false, program);
 }
 
-void PopExpressionArray() {
+void PopExpressionArray()
+{
     auto& expressionStack = _state->arrayExpressionStack;
     if (expressionStack.empty()) return;
 
