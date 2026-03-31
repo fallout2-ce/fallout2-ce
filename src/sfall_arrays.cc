@@ -481,7 +481,7 @@ struct SfallArraysState {
     int nextArrayId = kInitialArrayId;
 
     // special array ID for array expressions, contains the ID number of the currently created array
-    ArrayId expressionArrayId;
+    ArrayId expressionArrayId = 0;
     // special stack for array expressions, contains ID numbers of the currently created arrays
     std::vector<ArrayId> arrayExpressionStack;
 };
