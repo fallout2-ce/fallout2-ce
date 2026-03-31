@@ -476,7 +476,14 @@ private:
 struct SfallArraysState {
     std::unordered_map<ArrayId, std::unique_ptr<SFallArray>> arrays;
     std::unordered_set<ArrayId> temporaryArrayIds;
+
+    // auto-incremented ID
     int nextArrayId = kInitialArrayId;
+
+    // special array ID for array expressions, contains the ID number of the currently created array
+    ArrayId expressionArrayId = 0;
+    // special stack for array expressions, contains ID numbers of the currently created arrays
+    std::vector<ArrayId> arrayExpressionStack;
 };
 
 static SfallArraysState* _state = nullptr;
@@ -524,6 +531,21 @@ ArrayId CreateArray(int len, unsigned int flags)
     } else {
         _state->arrays.emplace(std::make_pair(arrayId, std::make_unique<SFallArrayList>(len, flags)));
     }
+
+    if ((flags & SFALL_ARRAYFLAG_EXPR_PUSH) != 0) {
+        // When creating array for sub-expression, make sure to add array for base expression to stack
+        // This is messy, but required to support older scripts:
+        // - We must always assign expressionArrayId for one-layer expressions from older scripts to work like they did before
+        // - We can't directly push first arrayID into stack b/c no way to distinguish between start of an expression and normal temp_array call
+        // - Compiler will only add this flag for temp_array call generated from a sub-expression
+        // - So only on this second call we know we are in expression and expressionArrayId definitely contains arrayId of the first layer
+        auto& expressionStack = _state->arrayExpressionStack;
+        if (expressionStack.empty() && _state->expressionArrayId != 0) {
+            expressionStack.push_back(_state->expressionArrayId);
+        }
+        expressionStack.push_back(arrayId);
+    }
+    _state->expressionArrayId = arrayId;
 
     return arrayId;
 }
@@ -614,28 +636,41 @@ void ResizeArray(ArrayId arrayId, int newLen)
     arr->ResizeArray(newLen);
 }
 
-int StackArray(const ProgramValue& key, const ProgramValue& val, Program* program)
+void SetArrayFromExpression(const ProgramValue& key, const ProgramValue& val, Program* program)
 {
-    // CE: Sfall uses eponymous global variable which is always the id of the
-    // last created array.
-    ArrayId stackArrayId = _state->nextArrayId - 1;
+    ArrayId arrayId = !_state->arrayExpressionStack.empty()
+        ? _state->arrayExpressionStack.back()
+        : _state->expressionArrayId;
 
-    auto arr = get_array_by_id(stackArrayId);
+    auto arr = get_array_by_id(arrayId);
     if (arr == nullptr) {
-        return 0;
+        return;
     }
 
     auto size = arr->size();
     if (size >= ARRAY_MAX_SIZE) {
-        return 0;
+        return;
     }
 
     if (key.asInt() >= size) {
         arr->ResizeArray(size + 1);
     }
 
-    SetArray(stackArrayId, key, val, false, program);
-    return 0;
+    SetArray(arrayId, key, val, false, program);
+}
+
+void PopExpressionArray()
+{
+    auto& expressionStack = _state->arrayExpressionStack;
+    if (expressionStack.empty()) return;
+
+    expressionStack.pop_back();
+
+    // Reversing the hack from CreateArray
+    if (expressionStack.size() == 1) {
+        _state->expressionArrayId = expressionStack.back();
+        expressionStack.pop_back();
+    }
 }
 
 ProgramValue ScanArray(ArrayId arrayId, const ProgramValue& val, Program* program)

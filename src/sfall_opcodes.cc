@@ -957,6 +957,14 @@ static void op_temp_array(Program* program)
 {
     auto flags = programStackPopInteger(program);
     auto len = programStackPopInteger(program);
+
+    // Special case for array sub-expressions.
+    if ((flags & SFALL_ARRAYFLAG_EXPR_POP) != 0) {
+        PopExpressionArray();
+        programStackPushInteger(program, 0);
+        return;
+    }
+
     auto arrayId = CreateTempArray(len, flags);
     programStackPushInteger(program, arrayId);
 }
@@ -986,13 +994,15 @@ static void op_set_array(Program* program)
     SetArray(arrayId, key, value, true, program);
 }
 
+// This special opcode is used to implement array expressions.
+// It should always push 0 on the stack.
 // arrayexpr
-static void op_stack_array(Program* program)
+static void op_arrayexpr(Program* program)
 {
     auto value = programStackPopValue(program);
     auto key = programStackPopValue(program);
-    auto returnValue = StackArray(key, value, program);
-    programStackPushInteger(program, returnValue);
+    SetArrayFromExpression(key, value, program);
+    programStackPushInteger(program, 0);
 }
 
 // scan_array
@@ -1654,7 +1664,7 @@ void sfallOpcodesInit()
     // 0x8256 - int   array_key(int array, int index)
     interpreterRegisterOpcode(0x8256, op_get_array_key);
     // 0x8257 - int   arrayexpr(any key, any value)
-    interpreterRegisterOpcode(0x8257, op_stack_array);
+    interpreterRegisterOpcode(0x8257, op_arrayexpr);
 
     // 0x81a0 - void set_pickpocket_max(int percentage)
     // 0x81a1 - void set_hit_chance_max(int percentage)
