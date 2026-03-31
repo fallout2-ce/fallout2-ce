@@ -1,5 +1,6 @@
 #include "platform_compat.h"
 
+#include <assert.h>
 #include <string.h>
 
 #ifdef _WIN32
@@ -300,6 +301,7 @@ int compat_rename(const char* oldFileName, const char* newFileName)
 
 void compat_path_to_native(char* path)
 {
+    assert(strlen(path) < COMPAT_MAX_PATH);
     char* pch = path;
     while (*pch != '\0') {
         if (
@@ -321,6 +323,7 @@ void compat_path_to_native(char* path)
 
 void compat_path_to_windows(char* path)
 {
+    assert(strlen(path) < COMPAT_MAX_PATH);
     char* pch = path;
     while (*pch != '\0') {
         if (*pch == '/') {

@@ -42,7 +42,7 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* 
 static int dfileReadCharInternal(DFile* stream);
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size);
 static void dfileUngetCompressed(DFile* stream, int ch);
-static void dfileNormalizedPathToWindows(const char* path, char* normalizedPath, size_t size);
+static bool dfilePathMatchesPattern(const char* pattern, const char* path);
 
 // Reads .DAT file contents.
 //
@@ -202,11 +202,14 @@ bool dbaseClose(DBase* dbase)
 // 0x4E5308
 bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* pattern)
 {
-    dfileNormalizedPathToWindows(pattern, findFileData->pattern, sizeof(findFileData->pattern));
+    // fpattern-matching requires native-separators
+    assert(pattern != nullptr && strlen(pattern) < COMPAT_MAX_PATH); // "pattern", "dfile.c", 229
+    strcpy(findFileData->pattern, pattern);
+    compat_path_to_native(findFileData->pattern);
 
     for (int index = 0; index < dbase->entriesLength; index++) {
         DBaseEntry* entry = &(dbase->entries[index]);
-        if (fpattern_match(findFileData->pattern, entry->path)) {
+        if (dfilePathMatchesPattern(findFileData->pattern, entry->path)) {
             strcpy(findFileData->fileName, entry->path);
             findFileData->index = index;
             return true;
@@ -221,7 +224,7 @@ bool dbaseFindNextEntry(DBase* dbase, DFileFindData* findFileData)
 {
     for (int index = findFileData->index + 1; index < dbase->entriesLength; index++) {
         DBaseEntry* entry = &(dbase->entries[index]);
-        if (fpattern_match(findFileData->pattern, entry->path)) {
+        if (dfilePathMatchesPattern(findFileData->pattern, entry->path)) {
             strcpy(findFileData->fileName, entry->path);
             findFileData->index = index;
             return true;
@@ -640,10 +643,14 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
 // 0x4E5D9C
 static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* mode, DFile* dfile)
 {
-    char normalizedFilePath[COMPAT_MAX_PATH];
-    DBaseEntry* entry;
-    dfileNormalizedPathToWindows(filePath, normalizedFilePath, sizeof(normalizedFilePath));
+    assert(filePath != nullptr);
 
+    // .dat files contain windows path separators
+    char normalizedFilePath[COMPAT_MAX_PATH];
+    strcpy(normalizedFilePath, filePath);
+    compat_path_to_windows(normalizedFilePath);
+
+    DBaseEntry* entry;
     entry = (DBaseEntry*)bsearch(normalizedFilePath, dbase->entries, dbase->entriesLength, sizeof(*dbase->entries), dbaseFindEntryByFilePath);
     if (entry == nullptr) {
         goto err;
@@ -866,20 +873,13 @@ static void dfileUngetCompressed(DFile* stream, int ch)
     stream->position--;
 }
 
-static void dfileNormalizedPathToWindows(const char* path, char* normalizedPath, size_t size)
+// pattern must be normalized to native paths, since thats' what fpattern requires
+static bool dfilePathMatchesPattern(const char* pattern, const char* path)
 {
-    assert(path != nullptr);
-    assert(normalizedPath != nullptr);
-    assert(size > 0);
-
-    size_t pathLength = strlen(path);
-    assert(pathLength < size);
-
+    char normalizedPath[COMPAT_MAX_PATH];
     strcpy(normalizedPath, path);
-
-    // .DAT entries are stored with Windows separators, so normalize incoming
-    // paths and wildcard patterns to that representation once.
-    compat_path_to_windows(normalizedPath);
+    compat_path_to_native(normalizedPath);
+    return fpattern_match(pattern, normalizedPath);
 }
 
 } // namespace fallout
