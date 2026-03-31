@@ -26,8 +26,8 @@ struct SystemSettings {
 };
 
 struct ScreenSettings {
-    int width = 640;
-    int height = 480;
+    int resolution_x = 640;
+    int resolution_y = 480;
     bool windowed = false;
     int scale = 1;
 };

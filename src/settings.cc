@@ -63,8 +63,8 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
 
     // TODO: clamp min/max resolution
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCREEN_WIDTH_KEY, settings.screen.width);
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCREEN_HEIGHT_KEY, settings.screen.height);
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x);
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y);
     settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed);
     settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, settings.screen.scale);
 
@@ -152,8 +152,8 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
 
-    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCREEN_WIDTH_KEY, settings.screen.width);
-    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCREEN_HEIGHT_KEY, settings.screen.height);
+    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x);
+    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y);
     settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed);
     settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, settings.screen.scale);
 

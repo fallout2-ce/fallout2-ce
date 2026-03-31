@@ -87,8 +87,8 @@ namespace fallout {
 #define GAME_CONFIG_PLAYER_SPEEDUP_KEY "player_speedup"
 #define GAME_CONFIG_UI_ANIM_SPEED_KEY "ui_anim_speed"
 
-#define GAME_CONFIG_SCREEN_WIDTH_KEY "scr_width"
-#define GAME_CONFIG_SCREEN_HEIGHT_KEY "scr_height"
+#define GAME_CONFIG_RESOLUTION_X_KEY "resolution_x"
+#define GAME_CONFIG_RESOLUTION_Y_KEY "resolution_y"
 #define GAME_CONFIG_WINDOWED_KEY "windowed"
 #define GAME_CONFIG_SCALE_KEY "scale"
 #define GAME_CONFIG_IFACE_BAR_MODE_KEY "iface_bar_mode"

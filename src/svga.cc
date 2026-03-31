@@ -105,8 +105,8 @@ void _zero_vid_mem()
 // 0x4CAE1C
 int _GNW95_init_mode_ex(int width, int height, int bpp)
 {
-    width = settings.screen.width;
-    height = settings.screen.height;
+    width = settings.screen.resolution_x;
+    height = settings.screen.resolution_y;
     int scale = settings.screen.scale;
 
     // Only allow scaling if resulting game resolution is >= 640x480
