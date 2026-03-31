@@ -203,8 +203,8 @@ bool dbaseClose(DBase* dbase)
 bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* pattern)
 {
     // fpattern-matching requires native-separators
-    assert(pattern != nullptr && strlen(pattern) < COMPAT_MAX_PATH); // "pattern", "dfile.c", 229
-    strcpy(findFileData->pattern, pattern);
+    assert(pattern != nullptr);
+    compat_strlcpy(findFileData->pattern, pattern, sizeof(findFileData->pattern));
     compat_path_to_native(findFileData->pattern);
 
     for (int index = 0; index < dbase->entriesLength; index++) {
@@ -647,7 +647,7 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* 
 
     // .dat files contain windows path separators
     char normalizedFilePath[COMPAT_MAX_PATH];
-    strcpy(normalizedFilePath, filePath);
+    compat_strlcpy(normalizedFilePath, filePath, sizeof(normalizedFilePath));
     compat_path_to_windows(normalizedFilePath);
 
     DBaseEntry* entry;
@@ -873,11 +873,11 @@ static void dfileUngetCompressed(DFile* stream, int ch)
     stream->position--;
 }
 
-// pattern must be normalized to native paths, since thats' what fpattern requires
+// pattern must be normalized to native paths, since that's what fpattern requires
 static bool dfilePathMatchesPattern(const char* pattern, const char* path)
 {
     char normalizedPath[COMPAT_MAX_PATH];
-    strcpy(normalizedPath, path);
+    compat_strlcpy(normalizedPath, path, sizeof(normalizedPath));
     compat_path_to_native(normalizedPath);
     return fpattern_match(pattern, normalizedPath);
 }

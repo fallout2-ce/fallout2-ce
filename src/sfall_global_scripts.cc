@@ -51,8 +51,7 @@ bool sfall_gl_scr_init()
         }
 
         char normalizedPattern[COMPAT_MAX_PATH];
-        assert(strlen(curr) < sizeof(normalizedPattern));
-        strcpy(normalizedPattern, curr);
+        compat_strlcpy(normalizedPattern, curr, sizeof(normalizedPattern));
         compat_path_to_native(normalizedPattern);
 
         char drive[COMPAT_MAX_DRIVE];

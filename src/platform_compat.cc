@@ -39,6 +39,23 @@ int compat_strnicmp(const char* string1, const char* string2, size_t size)
     return SDL_strncasecmp(string1, string2, size);
 }
 
+size_t compat_strlcpy(char* dest, const char* src, size_t size)
+{
+    size_t srcLength = strlen(src);
+
+    if (size != 0) {
+        size_t copyLength = srcLength;
+        if (copyLength >= size) {
+            copyLength = size - 1;
+        }
+
+        memcpy(dest, src, copyLength);
+        dest[copyLength] = '\0';
+    }
+
+    return srcLength;
+}
+
 char* compat_strupr(char* string)
 {
     return SDL_strupr(string);
@@ -301,7 +318,6 @@ int compat_rename(const char* oldFileName, const char* newFileName)
 
 void compat_path_to_native(char* path)
 {
-    assert(strlen(path) < COMPAT_MAX_PATH);
     char* pch = path;
     while (*pch != '\0') {
         if (
@@ -323,7 +339,6 @@ void compat_path_to_native(char* path)
 
 void compat_path_to_windows(char* path)
 {
-    assert(strlen(path) < COMPAT_MAX_PATH);
     char* pch = path;
     while (*pch != '\0') {
         if (*pch == '/') {

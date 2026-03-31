@@ -24,6 +24,7 @@ namespace fallout {
 
 int compat_stricmp(const char* string1, const char* string2);
 int compat_strnicmp(const char* string1, const char* string2, size_t size);
+size_t compat_strlcpy(char* dest, const char* src, size_t size);
 char* compat_strupr(char* string);
 char* compat_strlwr(char* string);
 char* compat_itoa(int value, char* buffer, int radix);
