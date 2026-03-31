@@ -233,7 +233,7 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         MarkOnlyPart part;
     };
 
-    std::vector<struct TileToVisit> tiles_to_visit { };
+    std::vector<struct TileToVisit> tiles_to_visit {};
     tiles_to_visit.reserve(7000);
 
     tiles_to_visit.push_back({ gCenterTile, MarkOnlyPart::FULL });
