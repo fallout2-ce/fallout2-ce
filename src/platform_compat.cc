@@ -205,7 +205,7 @@ int compat_mkdir(const char* path)
 {
     char nativePath[COMPAT_MAX_PATH];
     strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
+    compat_path_to_native(nativePath);
     compat_resolve_path(nativePath);
 
 #ifdef _WIN32
@@ -230,7 +230,7 @@ FILE* compat_fopen(const char* path, const char* mode)
 {
     char nativePath[COMPAT_MAX_PATH];
     strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
+    compat_path_to_native(nativePath);
     compat_resolve_path(nativePath);
     return fopen(nativePath, mode);
 }
@@ -239,7 +239,7 @@ gzFile compat_gzopen(const char* path, const char* mode)
 {
     char nativePath[COMPAT_MAX_PATH];
     strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
+    compat_path_to_native(nativePath);
     compat_resolve_path(nativePath);
     return gzopen(nativePath, mode);
 }
@@ -278,7 +278,7 @@ int compat_remove(const char* path)
 {
     char nativePath[COMPAT_MAX_PATH];
     strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
+    compat_path_to_native(nativePath);
     compat_resolve_path(nativePath);
     return remove(nativePath);
 }
@@ -287,28 +287,47 @@ int compat_rename(const char* oldFileName, const char* newFileName)
 {
     char nativeOldFileName[COMPAT_MAX_PATH];
     strcpy(nativeOldFileName, oldFileName);
-    compat_windows_path_to_native(nativeOldFileName);
+    compat_path_to_native(nativeOldFileName);
     compat_resolve_path(nativeOldFileName);
 
     char nativeNewFileName[COMPAT_MAX_PATH];
     strcpy(nativeNewFileName, newFileName);
-    compat_windows_path_to_native(nativeNewFileName);
+    compat_path_to_native(nativeNewFileName);
     compat_resolve_path(nativeNewFileName);
 
     return rename(nativeOldFileName, nativeNewFileName);
 }
 
-void compat_windows_path_to_native(char* path)
+void compat_path_to_native(char* path)
 {
-#ifndef _WIN32
     char* pch = path;
     while (*pch != '\0') {
-        if (*pch == '\\') {
+        if (
+#ifdef _WIN32
+            *pch == '/'
+#else
+            *pch == '\\'
+#endif
+        ) {
+#ifdef _WIN32
+            *pch = '\\';
+#else
             *pch = '/';
+#endif
         }
         pch++;
     }
-#endif
+}
+
+void compat_path_to_windows(char* path)
+{
+    char* pch = path;
+    while (*pch != '\0') {
+        if (*pch == '/') {
+            *pch = '\\';
+        }
+        pch++;
+    }
 }
 
 void compat_resolve_path(char* path)
@@ -369,7 +388,7 @@ int compat_access(const char* path, int mode)
 {
     char nativePath[COMPAT_MAX_PATH];
     strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
+    compat_path_to_native(nativePath);
     compat_resolve_path(nativePath);
     return access(nativePath, mode);
 }

@@ -563,7 +563,7 @@ static bool xlistEnumerate(const char* pattern, XListEnumerationHandler* handler
 
     char nativePattern[COMPAT_MAX_PATH];
     strcpy(nativePattern, pattern);
-    compat_windows_path_to_native(nativePattern);
+    compat_path_to_native(nativePattern);
 
     char drive[COMPAT_MAX_DRIVE];
     char dir[COMPAT_MAX_DIR];
@@ -615,7 +615,7 @@ static bool xlistEnumerate(const char* pattern, XListEnumerationHandler* handler
         } else {
             char path[COMPAT_MAX_PATH];
             snprintf(path, sizeof(path), "%s\\%s", xbase->path, pattern);
-            compat_windows_path_to_native(path);
+            compat_path_to_native(path);
 
             if (fileFindFirst(path, &directoryFileFindData)) {
                 do {

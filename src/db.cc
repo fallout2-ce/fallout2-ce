@@ -641,7 +641,7 @@ int fileNameListInit(const char* pattern, char*** fileNameListPtr)
             char dir[COMPAT_MAX_DIR];
             char fileName[COMPAT_MAX_FNAME];
             char extension[COMPAT_MAX_EXT];
-            compat_windows_path_to_native(name);
+            compat_path_to_native(name);
             compat_splitpath(name, nullptr, dir, fileName, extension);
 
             if (!isWildcard || *dir == '\0' || (strchr(dir, '\\') == nullptr && strchr(dir, '/') == nullptr)) {

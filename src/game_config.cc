@@ -132,7 +132,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     // CE: Detect alternative default music directory.
     char alternativeMusicPath[COMPAT_MAX_PATH];
     strcpy(alternativeMusicPath, "data\\sound\\music\\*.acm");
-    compat_windows_path_to_native(alternativeMusicPath);
+    compat_path_to_native(alternativeMusicPath);
     compat_resolve_path(alternativeMusicPath);
 
     char** acms;
@@ -260,7 +260,7 @@ static void gameConfigResolvePath(const char* section, const char* key)
 {
     char* path;
     configGetString(&gGameConfig, section, key, &path);
-    compat_windows_path_to_native(path);
+    compat_path_to_native(path);
     compat_resolve_path(path);
 }
 

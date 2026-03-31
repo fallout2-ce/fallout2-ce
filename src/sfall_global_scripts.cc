@@ -1,8 +1,9 @@
 #include "sfall_global_scripts.h"
 
+#include <assert.h>
+
 #include <algorithm>
 #include <cstring>
-#include <string>
 #include <vector>
 
 #include "animation.h"
@@ -48,15 +49,17 @@ bool sfall_gl_scr_init()
             *end = '\0';
         }
 
-        std::string normalizedPattern(curr);
-        compat_windows_path_to_native(normalizedPattern.data());
+        char normalizedPattern[COMPAT_MAX_PATH];
+        assert(strlen(curr) < sizeof(normalizedPattern));
+        strcpy(normalizedPattern, curr);
+        compat_path_to_native(normalizedPattern);
 
         char drive[COMPAT_MAX_DRIVE];
         char dir[COMPAT_MAX_DIR];
-        compat_splitpath(normalizedPattern.c_str(), drive, dir, nullptr, nullptr);
+        compat_splitpath(normalizedPattern, drive, dir, nullptr, nullptr);
 
-        char** files;
-        int filesLength = fileNameListInit(curr, &files);
+        char** files = nullptr;
+        int filesLength = fileNameListInit(normalizedPattern, &files);
         debugPrint("GlobalScriptPaths mask %s matched %d script(s)\n", curr, filesLength);
         if (filesLength != 0) {
             for (int index = 0; index < filesLength; index++) {
@@ -64,9 +67,9 @@ bool sfall_gl_scr_init()
                 compat_makepath(path, drive, dir, files[index], nullptr);
                 state->paths.emplace_back(path);
             }
-
-            fileNameListFree(&files, 0);
         }
+
+        fileNameListFree(&files, 0);
 
         if (end != nullptr) {
             *end = ',';
