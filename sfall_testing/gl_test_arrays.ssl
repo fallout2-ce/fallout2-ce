@@ -164,6 +164,11 @@ procedure array_test_suite begin
    call assertEquals("saved arrays 3", len_array(list_saved_arrays), len_array(arr2) - 1);
    */
 
+   display_msg("Testing nested expressions...");
+   arr := [["one", "two"], {"three": "four"}];
+   call assertEquals("nested 1", arr[0][1], "two");
+   call assertEquals("nested 2", arr[1].three, "four");
+
    display_msg("All tests finished with "+test_suite_errors+" errors.");
 
    call report_test_results("arrays");
