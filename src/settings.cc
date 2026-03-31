@@ -62,17 +62,16 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
     settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
 
-    // TODO: clamp min/max resolution
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x);
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y);
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x, 640, 7680);
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y, 480, 4320);
     settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed);
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, settings.screen.scale);
+    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, settings.screen.scale, 1, 4);
 
     settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_MODE_KEY, settings.ui.iface_bar_mode);
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width);
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art);
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width, 640, 4320);
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art, 0, 999);
     settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori);
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size);
+    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, 0, 2);
     settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges);
 
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);

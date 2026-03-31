@@ -37,12 +37,12 @@ struct UISettings {
     bool iface_bar_mode = false;
 
     // This will increase the width of the interface bar expanding the area used to display text.
-    int iface_bar_width = 640;
+    int iface_bar_width = 800;
 
     // 0 - Black, No Iface-bar side art used.
     // 1 - Metal look Iface-bar side art used.
     // 2 - Leather look Iface-bar side art used.
-    int iface_bar_side_art = 0;
+    int iface_bar_side_art = 2;
 
     // Iface-bar side graphics extend from the Screen edges to the Iface-Bar if true (otherwise from bar to edges).
     bool iface_bar_sides_ori = false;

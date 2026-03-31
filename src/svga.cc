@@ -117,11 +117,6 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
         height /= scale;
     }
 
-    // TODO: move UI init to a more appropriate location
-    gInterfaceBarWidth = settings.ui.iface_bar_width;
-    gInterfaceSidePanelsImageId = settings.ui.iface_bar_side_art;
-    gTileIgnoreMapEdges = settings.ui.ignore_map_edges;
-
     if (_GNW95_init_window(width, height, !settings.screen.windowed, scale) == -1) {
         return -1;
     }
