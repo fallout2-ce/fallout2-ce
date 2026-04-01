@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-#include <fpattern_windows/fpattern_windows.h>
+#include "fpattern_windows.h"
 
 #include "platform_compat.h"
 
