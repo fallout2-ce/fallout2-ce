@@ -30,22 +30,10 @@ compile.exe -q -p -l -O2 -d -s -n -I<sfall_headers_id> <script_name.ssl>
 
 - Install [VSCode Extension](https://marketplace.visualstudio.com/items?itemName=BGforge.bgforge-mls)
 
-
-
 ## Run test script
 
-1. Move compiled `.int` file into game folder as `data/scripts/gl_<script_name>.int`
+1. Move compiled `.int` file into game folder as `scripts/gl_<script_name>.int`
 
-2. Change `ddraw.ini` and add this section:
-```ini
-[Scripts]
-GlobalScriptPaths=data/scripts/gl*.int
-```
-
-(or add new path using comma as separator)
-
-Note that on non-Windows it have to be `/` as folder separator
-
-3. Run game, check that game displays message about tests
+2. Run game, check that game displays message about tests
 
 

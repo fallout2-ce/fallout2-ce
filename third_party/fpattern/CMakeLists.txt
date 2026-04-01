@@ -10,7 +10,7 @@ add_library(fpattern::fpattern ALIAS fpattern-static)
 
 if(NOT WIN32)
     target_compile_definitions(fpattern-static PRIVATE
-        "-Dunix"
+        unix=1
     )
 endif()
 
