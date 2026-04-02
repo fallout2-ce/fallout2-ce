@@ -3266,11 +3266,11 @@ static int wmWorldMapFunc(int a1)
             // NOTE: Uninline.
             wmInterfaceScroll(1, 0, nullptr);
         } else if (keyCode == KEY_CTRL_ARROW_UP) {
-            wmInterfaceScrollTabsStart(-27);
+            wmInterfaceScrollTabsStart(-WM_TOWN_LIST_SLOT_HEIGHT);
         } else if (keyCode == KEY_CTRL_ARROW_DOWN) {
-            wmInterfaceScrollTabsStart(27);
-        } else if (keyCode >= KEY_CTRL_F1 && keyCode <= KEY_CTRL_F7) {
-            int quickDestinationIndex = wmGenData.tabsOffsetY / 27 + (keyCode - KEY_CTRL_F1);
+            wmInterfaceScrollTabsStart(WM_TOWN_LIST_SLOT_HEIGHT);
+        } else if (keyCode >= KEY_CTRL_F1 && keyCode < KEY_CTRL_F1 + WM_TOWN_LIST_VISIBLE_SLOT_COUNT) {
+            int quickDestinationIndex = wmGenData.tabsOffsetY / WM_TOWN_LIST_SLOT_HEIGHT + (keyCode - KEY_CTRL_F1);
             if (quickDestinationIndex < wmLabelCount) {
                 int areaIdx = wmLabelList[quickDestinationIndex];
                 CityInfo* city = &(wmAreaInfoList[areaIdx]);
@@ -3300,7 +3300,7 @@ static int wmWorldMapFunc(int a1)
                 wmInterfaceScrollPixel(20, 20, wheelX, -wheelY, nullptr, true);
             } else if (mouseHitTestInWindow(wmBkWin, 501, 135, 501 + 119, 135 + 178)) {
                 if (wheelY != 0) {
-                    wmInterfaceScrollTabsStart(wheelY > 0 ? 27 : -27);
+                    wmInterfaceScrollTabsStart(wheelY > 0 ? WM_TOWN_LIST_SLOT_HEIGHT : -WM_TOWN_LIST_SLOT_HEIGHT);
                 }
             }
         }
@@ -6082,8 +6082,8 @@ static int wmTownMapFunc(int* mapIdxPtr)
                 break;
             }
 
-            if (keyCode >= KEY_CTRL_F1 && keyCode <= KEY_CTRL_F7) {
-                int quickDestinationIndex = wmGenData.tabsOffsetY / 27 + keyCode - KEY_CTRL_F1;
+            if (keyCode >= KEY_CTRL_F1 && keyCode < KEY_CTRL_F1 + WM_TOWN_LIST_VISIBLE_SLOT_COUNT) {
+                int quickDestinationIndex = wmGenData.tabsOffsetY / WM_TOWN_LIST_SLOT_HEIGHT + keyCode - KEY_CTRL_F1;
                 if (quickDestinationIndex < wmLabelCount) {
                     int areaIdx = wmLabelList[quickDestinationIndex];
                     CityInfo* city = &(wmAreaInfoList[areaIdx]);
@@ -6106,9 +6106,9 @@ static int wmTownMapFunc(int* mapIdxPtr)
                 }
             } else {
                 if (keyCode == KEY_CTRL_ARROW_UP) {
-                    wmInterfaceScrollTabsStart(-27);
+                    wmInterfaceScrollTabsStart(-WM_TOWN_LIST_SLOT_HEIGHT);
                 } else if (keyCode == KEY_CTRL_ARROW_DOWN) {
-                    wmInterfaceScrollTabsStart(27);
+                    wmInterfaceScrollTabsStart(WM_TOWN_LIST_SLOT_HEIGHT);
                 } else if (keyCode == 2069) {
                     if (wmTownMapRefresh() == -1) {
                         return -1;
