@@ -373,8 +373,8 @@ if(APPLE)
     endif()
 
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.alexbatalov.fallout2-ce")
-    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "1.3.0")
-    set(MACOSX_BUNDLE_BUNDLE_VERSION "1.3.0")
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "1.4.0")
+    set(MACOSX_BUNDLE_BUNDLE_VERSION "1.4.0")
 endif()
 
 if((NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten"))
