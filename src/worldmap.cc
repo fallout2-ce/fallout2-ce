@@ -71,6 +71,11 @@ namespace fallout {
 #define WM_WINDOW_DIAL_X (532)
 #define WM_WINDOW_DIAL_Y (48)
 
+#define WM_TOWN_LIST_X (501)
+#define WM_TOWN_LIST_Y (135)
+#define WM_TOWN_LIST_WIDTH (119)
+#define WM_TOWN_LIST_HEIGHT (178)
+
 #define WM_TOWN_LIST_SCROLL_UP_X (480)
 #define WM_TOWN_LIST_SCROLL_UP_Y (137)
 
@@ -95,7 +100,6 @@ namespace fallout {
 
 #define WM_TOWN_LIST_VISIBLE_SLOT_COUNT (7)
 #define WM_TOWN_LIST_SLOT_HEIGHT (27)
-#define WM_TOWN_LIST_VIEWPORT_HEIGHT (230)
 
 #define WM_TILE_WIDTH (350)
 #define WM_TILE_HEIGHT (300)
@@ -3298,7 +3302,11 @@ static int wmWorldMapFunc(int a1)
 
             if (mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, WM_VIEW_WIDTH + WM_VIEW_X, WM_VIEW_HEIGHT + WM_VIEW_Y)) {
                 wmInterfaceScrollPixel(20, 20, wheelX, -wheelY, nullptr, true);
-            } else if (mouseHitTestInWindow(wmBkWin, 501, 135, 501 + 119, 135 + 178)) {
+            } else if (mouseHitTestInWindow(wmBkWin,
+                           WM_TOWN_LIST_X,
+                           WM_TOWN_LIST_Y,
+                           WM_TOWN_LIST_X + WM_TOWN_LIST_WIDTH,
+                           WM_TOWN_LIST_Y + WM_TOWN_LIST_HEIGHT)) {
                 if (wheelY != 0) {
                     wmInterfaceScrollTabsStart(wheelY > 0 ? WM_TOWN_LIST_SLOT_HEIGHT : -WM_TOWN_LIST_SLOT_HEIGHT);
                 }
@@ -4433,7 +4441,8 @@ static void wmPartyWalkingStep()
 // 0x4C219C
 static void wmInterfaceScrollTabsStart(int delta)
 {
-    int tabsScrollMaxOffsetY = std::max(0, wmGenData.tabsBackgroundFrmImage.getHeight() - WM_TOWN_LIST_VIEWPORT_HEIGHT);
+    int tabsScrollMaxOffsetY = std::max(0,
+        wmGenData.tabsBackgroundFrmImage.getHeight() - (WM_TOWN_LIST_HEIGHT + 52));
 
     // SFALL: Fix world map cities list scrolling bug that might leave buttons
     // in the disabled state.
@@ -6529,7 +6538,7 @@ static int wmRefreshTabs()
     int firstTabVisibleHeight;
     unsigned char* firstTabSrc;
     unsigned char* firstTabClampedDest;
-    int lastFullyVisibleLabelIndex;
+    int lastLabelIndexToDraw;
     unsigned char* nextTabDest;
     FrmImage labelFrm;
 
@@ -6537,10 +6546,10 @@ static int wmRefreshTabs()
     // `wmInterfaceInit`).
     unsigned char* src = wmGenData.tabsBackgroundFrmImage.getData() + wmGenData.tabsBackgroundFrmImage.getWidth() * WM_TOWN_LIST_SLOT_HEIGHT;
     blitBufferToBufferTrans(src + wmGenData.tabsBackgroundFrmImage.getWidth() * wmGenData.tabsOffsetY + 9,
-        119,
-        178,
+        WM_TOWN_LIST_WIDTH,
+        WM_TOWN_LIST_HEIGHT,
         wmGenData.tabsBackgroundFrmImage.getWidth(),
-        wmBkWinBuf + WM_WINDOW_WIDTH * 135 + 501,
+        wmBkWinBuf + WM_WINDOW_WIDTH * WM_TOWN_LIST_Y + WM_TOWN_LIST_X,
         WM_WINDOW_WIDTH);
 
     int tabsOffsetWithinSlot = wmGenData.tabsOffsetY % WM_TOWN_LIST_SLOT_HEIGHT;
@@ -6575,9 +6584,9 @@ static int wmRefreshTabs()
     }
 
     nextTabDest = firstTabDest + WM_WINDOW_WIDTH * WM_TOWN_LIST_SLOT_HEIGHT;
-    lastFullyVisibleLabelIndex = firstVisibleLabelIndex + (WM_TOWN_LIST_VISIBLE_SLOT_COUNT - 1);
+    lastLabelIndexToDraw = firstVisibleLabelIndex + (WM_TOWN_LIST_VISIBLE_SLOT_COUNT - 1);
 
-    for (int labelIndex = firstVisibleLabelIndex + 1; labelIndex < lastFullyVisibleLabelIndex; labelIndex++) {
+    for (int labelIndex = firstVisibleLabelIndex + 1; labelIndex < lastLabelIndexToDraw; labelIndex++) {
         if (labelIndex < wmLabelCount) {
             city = &(wmAreaInfoList[wmLabelList[labelIndex]]);
             if (city->labelFid != -1) {
@@ -6598,8 +6607,8 @@ static int wmRefreshTabs()
         nextTabDest += WM_WINDOW_WIDTH * WM_TOWN_LIST_SLOT_HEIGHT;
     }
 
-    if (lastFullyVisibleLabelIndex < wmLabelCount) {
-        city = &(wmAreaInfoList[wmLabelList[lastFullyVisibleLabelIndex]]);
+    if (lastLabelIndexToDraw < wmLabelCount) {
+        city = &(wmAreaInfoList[wmLabelList[lastLabelIndexToDraw]]);
         if (city->labelFid != -1) {
             if (!labelFrm.lock(city->labelFid)) {
                 return -1;
@@ -6617,10 +6626,10 @@ static int wmRefreshTabs()
     }
 
     blitBufferToBufferTrans(wmGenData.tabsBorderFrmImage.getData(),
-        119,
-        178,
-        119,
-        wmBkWinBuf + WM_WINDOW_WIDTH * 135 + 501,
+        WM_TOWN_LIST_WIDTH,
+        WM_TOWN_LIST_HEIGHT,
+        WM_TOWN_LIST_WIDTH,
+        wmBkWinBuf + WM_WINDOW_WIDTH * WM_TOWN_LIST_Y + WM_TOWN_LIST_X,
         WM_WINDOW_WIDTH);
 
     return 0;
