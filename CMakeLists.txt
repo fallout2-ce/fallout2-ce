@@ -434,6 +434,7 @@ endif()
 
 add_subdirectory("third_party/fpattern")
 target_link_libraries(${EXECUTABLE_NAME} fpattern::fpattern)
+target_link_libraries(${EXECUTABLE_NAME} fpattern_windows::fpattern_windows)
 
 target_link_libraries(${EXECUTABLE_NAME} ${ZLIB_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})

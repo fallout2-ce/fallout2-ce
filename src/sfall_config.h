@@ -71,7 +71,6 @@ namespace fallout {
 #define SFALL_CONFIG_EXTRA_MESSAGE_LISTS_KEY "ExtraGameMsgFileList"
 #define SFALL_CONFIG_NUMBERS_IS_DIALOG_KEY "NumbersInDialogue"
 #define SFALL_CONFIG_INI_CONFIG_FOLDER "IniConfigFolder"
-#define SFALL_CONFIG_GLOBAL_SCRIPT_PATHS "GlobalScriptPaths"
 #define SFALL_CONFIG_AUTO_QUICK_SAVE "AutoQuickSave"
 #define SFALL_CONFIG_VERSION_STRING "VersionString"
 #define SFALL_CONFIG_CONFIG_FILE "ConfigFile"

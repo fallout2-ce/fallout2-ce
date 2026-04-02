@@ -37,39 +37,19 @@ bool sfall_gl_scr_init()
         return false;
     }
 
-    char* paths;
-    configGetString(&gSfallConfig, SFALL_CONFIG_SCRIPTS_KEY, SFALL_CONFIG_GLOBAL_SCRIPT_PATHS, &paths);
-
-    char* curr = paths;
-    while (curr != nullptr && *curr != '\0') {
-        char* end = strchr(curr, ',');
-        if (end != nullptr) {
-            *end = '\0';
+    // CE: always use "scripts\gl*.int" as global script path
+    const char* scriptPath = "scripts\\gl*.int";
+    const char* dir = "scripts";
+    char** files;
+    int filesLength = fileNameListInit(scriptPath, &files);
+    if (filesLength != 0) {
+        for (int index = 0; index < filesLength; index++) {
+            char path[COMPAT_MAX_PATH];
+            snprintf(path, sizeof(path), "%s\\%s", dir, files[index]);
+            state->paths.push_back(std::string { path });
         }
 
-        char drive[COMPAT_MAX_DRIVE];
-        char dir[COMPAT_MAX_DIR];
-        compat_splitpath(curr, drive, dir, nullptr, nullptr);
-
-        char** files;
-        int filesLength = fileNameListInit(curr, &files);
-        if (filesLength != 0) {
-            for (int index = 0; index < filesLength; index++) {
-                char path[COMPAT_MAX_PATH];
-                compat_makepath(path, drive, dir, files[index], nullptr);
-
-                state->paths.push_back(std::string { path });
-            }
-
-            fileNameListFree(&files, 0);
-        }
-
-        if (end != nullptr) {
-            *end = ',';
-            curr = end + 1;
-        } else {
-            curr = nullptr;
-        }
+        fileNameListFree(&files, 0);
     }
 
     std::sort(state->paths.begin(), state->paths.end());
