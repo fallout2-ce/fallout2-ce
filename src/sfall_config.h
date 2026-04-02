@@ -82,7 +82,6 @@ namespace fallout {
 #define SFALL_CONFIG_USE_WALK_DISTANCE "UseWalkDistance"
 #define SFALL_CONFIG_AUTO_OPEN_DOORS "AutoOpenDoors"
 #define SFALL_CONFIG_GAPLESS_MUSIC "GaplessMusic" // note: this isn't an sfall config
-#define SFALL_CONFIG_WORLDMAP_SLOTS "WorldMapSlots"
 #define SFALL_CONFIG_WORLDMAP_TRAIL_MARKERS "WorldMapTravelMarkers"
 #define SFALL_CONFIG_SCREENSHOTS_FORMAT "ScreenshotsFormat" // note: this is F2CE feature - APAMk2
 #define SFALL_CONFIG_DISABLE_HORRIGAN "DisableHorrigan"

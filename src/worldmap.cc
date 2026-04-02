@@ -560,7 +560,6 @@ static int wmRefreshTabs();
 static int wmMakeTabsLabelList(int** quickDestinationsPtr, int* quickDestinationsLengthPtr);
 static int wmTabsCompareNames(const void* a1, const void* a2);
 static int wmFreeTabsLabelList(int** quickDestinationsListPtr, int* quickDestinationsLengthPtr);
-static int wmGetTabsScrollMaxOffsetY();
 static void wmRefreshInterfaceDial(bool shouldRefreshWindow);
 static void wmInterfaceDialSyncTime(bool shouldRefreshWindow);
 static int wmAreaFindFirstValidMap(int* mapIdxPtr);
@@ -844,7 +843,6 @@ static int wmMaxEncounterInfoTables;
 
 static bool gTownMapHotkeysFix;
 static bool gCitiesLimitFix;
-static int gWorldMapSlots;
 static double gGameTimeIncRemainder = 0.0;
 static FrmImage _backgroundFrmImage;
 static FrmImage _townFrmImage;
@@ -874,11 +872,6 @@ int wmWorldMap_init()
     // SFALL
     gCitiesLimitFix = true;
     configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CITIES_LIMIT_FIX, &gCitiesLimitFix);
-    gWorldMapSlots = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_WORLDMAP_SLOTS, &gWorldMapSlots);
-    if (gWorldMapSlots != 0) {
-        gWorldMapSlots = std::clamp(gWorldMapSlots, WM_TOWN_LIST_VISIBLE_SLOT_COUNT, 127);
-    }
 
     char path[COMPAT_MAX_PATH];
 
@@ -4440,7 +4433,7 @@ static void wmPartyWalkingStep()
 // 0x4C219C
 static void wmInterfaceScrollTabsStart(int delta)
 {
-    int tabsScrollMaxOffsetY = wmGetTabsScrollMaxOffsetY();
+    int tabsScrollMaxOffsetY = std::max(0, wmGenData.tabsBackgroundFrmImage.getHeight() - WM_TOWN_LIST_VIEWPORT_HEIGHT);
 
     // SFALL: Fix world map cities list scrolling bug that might leave buttons
     // in the disabled state.
@@ -4475,16 +4468,6 @@ static void wmInterfaceScrollTabsStop()
     for (int index = 0; index < WM_TOWN_LIST_VISIBLE_SLOT_COUNT; index++) {
         buttonEnable(wmTownMapSubButtonIds[index]);
     }
-}
-
-static int wmGetTabsScrollMaxOffsetY()
-{
-    int tabsScrollMaxOffsetY = std::max(0, wmGenData.tabsBackgroundFrmImage.getHeight() - WM_TOWN_LIST_VIEWPORT_HEIGHT);
-    if (gWorldMapSlots != 0) {
-        tabsScrollMaxOffsetY = std::min(tabsScrollMaxOffsetY, (gWorldMapSlots - WM_TOWN_LIST_VISIBLE_SLOT_COUNT) * WM_TOWN_LIST_SLOT_HEIGHT);
-    }
-
-    return tabsScrollMaxOffsetY;
 }
 
 // NOTE: Inlined.
