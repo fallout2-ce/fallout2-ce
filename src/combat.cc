@@ -2937,6 +2937,7 @@ static bool _combat_add_noncoms()
 
             if (combatTurnHooked(obj, false) == -1) {
                 _list_com = 0;
+                _list_noncom = _list_total;
                 return true;
             }
         }
@@ -3356,6 +3357,7 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
 static int combatTurnHooked(Object* obj, bool reloadedDuringCombat)
 {
     if (scriptHooks_CombatTurnStart(obj, reloadedDuringCombat)) {
+        _combat_turn_obj = obj;
         combatTurnHookResult = 0;
         return combatTurnHookResult;
     }
@@ -3363,6 +3365,7 @@ static int combatTurnHooked(Object* obj, bool reloadedDuringCombat)
     combatTurnHookResult = _combat_turn(obj, reloadedDuringCombat);
 
     if (_combat_end_due_to_load != 0 && combatTurnHookResult == -1) {
+        // don't call end combat hook on the "synthetic" player turn after reloading during combat
         return combatTurnHookResult;
     }
 
