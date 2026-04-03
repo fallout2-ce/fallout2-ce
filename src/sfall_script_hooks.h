@@ -154,6 +154,18 @@ typedef enum {
     HOOK_COUNT,
 } HookType;
 
+typedef enum {
+    HOOK_INVENTORYMOVE_MAIN_BACKPACK = 0,
+    HOOK_INVENTORYMOVE_LEFT_HAND = 1,
+    HOOK_INVENTORYMOVE_RIGHT_HAND = 2,
+    HOOK_INVENTORYMOVE_ARMOR_SLOT = 3,
+    HOOK_INVENTORYMOVE_WEAPON_RELOAD = 4,
+    HOOK_INVENTORYMOVE_CONTAINER = 5,
+    HOOK_INVENTORYMOVE_GROUND = 6,
+    HOOK_INVENTORYMOVE_PICKUP = 7,
+    HOOK_INVENTORYMOVE_CHARACTER_PORTRAIT = 8,
+} HookInventoryMoveType;
+
 constexpr size_t HOOKS_MAX_ARGUMENTS = 16;
 constexpr size_t HOOKS_MAX_RETURN_VALUES = 8;
 
@@ -232,6 +244,7 @@ void scriptHooksReset();
 void scriptHooksExit();
 
 void scriptHooks_GameModeChange(int exit, int previousGameMode);
+bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* itemReplace);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
 int scriptHooks_UseItem(Object* user, Object* objUsed);

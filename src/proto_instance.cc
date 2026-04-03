@@ -570,6 +570,10 @@ int objectPickup(Object* critter, Object* item)
 {
     bool overriden = false;
 
+    if (critter == gDude && !scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_PICKUP, item, nullptr)) {
+        return 0;
+    }
+
     if (item->sid != -1) {
         scriptSetObjects(item->sid, critter, item);
         scriptExecProc(item->sid, SCRIPT_PROC_PICKUP);

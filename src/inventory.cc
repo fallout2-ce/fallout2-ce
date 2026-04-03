@@ -2448,6 +2448,10 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         }
 
         if (immediate || pickUpFromSlot) {
+            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_MAIN_BACKPACK, item, nullptr)) {
+                goto inventory_move_done;
+            }
+
             // TODO: Holy shit, needs refactoring.
             *itemSlot = nullptr;
             if (itemAdd(_inven_dude, item, 1)) {
@@ -2489,6 +2493,10 @@ static void _inven_pickup(int buttonCode, int indexOffset)
     } else if ((immediate && itemGetType(item) == ITEM_TYPE_ARMOR) || mouseHitTestInWindow(gInventoryWindow, INVENTORY_ARMOR_SLOT_X, INVENTORY_ARMOR_SLOT_Y, INVENTORY_ARMOR_SLOT_MAX_X, INVENTORY_ARMOR_SLOT_MAX_Y)) {
         if (itemGetType(item) == ITEM_TYPE_ARMOR) {
             Object* currentArmor = gInventoryArmor;
+            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_ARMOR_SLOT, item, currentArmor)) {
+                goto inventory_move_done;
+            }
+
             int itemAddResult = 0;
             if (itemIndex != -1) {
                 itemRemove(_inven_dude, item, 1);
@@ -2518,13 +2526,19 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             }
         }
     } else if (mouseHitTestInWindow(gInventoryWindow, INVENTORY_PC_BODY_VIEW_X, INVENTORY_PC_BODY_VIEW_Y, INVENTORY_PC_BODY_VIEW_MAX_X, INVENTORY_PC_BODY_VIEW_MAX_Y)) {
-        if (_curr_stack != 0) {
+        if (_curr_stack == 0) {
+            // Call the hook when dropping item on the PC portrait when not in a container.  Return value is irrelevant.
+            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_CHARACTER_PORTRAIT, item, nullptr)) {
+                goto inventory_move_done;
+            }
+        } else {
             // If we are looking inside nested inventory (such as backpack item), we see this item in the PC Body View instead of the player.
             // So we drop item into it.
             _drop_into_container(_stack[_curr_stack - 1], item, itemIndex, itemSlot, count);
         }
     }
 
+inventory_move_done:
     _adjust_fid();
     inventoryRenderSummary();
     _display_inventory(indexOffset, -1, INVENTORY_WINDOW_TYPE_NORMAL);
@@ -2546,6 +2560,13 @@ static void _inven_pickup(int buttonCode, int indexOffset)
 // 0x4714E0
 static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourceSlot, int itemIndex)
 {
+    HookInventoryMoveType targetSlotType = targetSlot == &gInventoryLeftHandItem
+        ? HOOK_INVENTORYMOVE_LEFT_HAND
+        : HOOK_INVENTORYMOVE_RIGHT_HAND;
+    if (!scriptHooks_InventoryMove(targetSlotType, sourceItem, *targetSlot)) {
+        return;
+    }
+
     if (*targetSlot != nullptr) {
         if (itemGetType(*targetSlot) == ITEM_TYPE_WEAPON && itemGetType(sourceItem) == ITEM_TYPE_AMMO) {
             return;
@@ -3933,8 +3954,14 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     int actionMenuItem = actionMenuItems[menuItemIndex];
     switch (actionMenuItem) {
-    case GAME_MOUSE_ACTION_MENU_ITEM_DROP:
+    case GAME_MOUSE_ACTION_MENU_ITEM_DROP: {
+        bool inventoryMoveAlreadyChecked = false;
         if (itemSlot != nullptr) {
+            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                break;
+            }
+
+            inventoryMoveAlreadyChecked = true;
             if (itemSlot == &gInventoryArmor) {
                 adjustCritterStatsOnArmorChange(_stack[0], item, nullptr);
             }
@@ -3952,14 +3979,20 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
             if (quantity > 0) {
                 if (quantity == 1) {
-                    itemSetMoney(item, 1);
-                    objectDrop(owner, item);
+                    if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                        itemSetMoney(item, 1);
+                        objectDrop(owner, item);
+                    }
                 } else {
                     if (itemRemove(owner, item, quantity - 1) == 0) {
                         Object* item2;
                         if (_inven_from_button(keyCode, &item2, &itemSlot, &owner) != 0) {
-                            itemSetMoney(item2, quantity);
-                            objectDrop(owner, item2);
+                            if (scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item2, nullptr)) {
+                                itemSetMoney(item2, quantity);
+                                objectDrop(owner, item2);
+                            } else {
+                                itemAdd(owner, item, quantity - 1);
+                            }
                         } else {
                             itemAdd(owner, item, quantity - 1);
                         }
@@ -3967,22 +4000,29 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 }
             }
         } else if (explosiveIsActiveExplosive(item->pid)) {
-            _dropped_explosive = 1;
-            objectDrop(owner, item);
+            if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                _dropped_explosive = 1;
+                objectDrop(owner, item);
+            }
         } else {
             if (quantity > 1) {
                 quantity = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
 
                 for (int index = 0; index < quantity; index++) {
                     if (_inven_from_button(keyCode, &item, &itemSlot, &owner) != 0) {
-                        objectDrop(owner, item);
+                        if (scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                            objectDrop(owner, item);
+                        }
                     }
                 }
             } else {
-                objectDrop(owner, item);
+                if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                    objectDrop(owner, item);
+                }
             }
         }
         break;
+    }
     case GAME_MOUSE_ACTION_MENU_ITEM_LOOK:
         if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL) {
             objectExamineFunc(_stack[0], item, gInventoryPrintItemDescriptionHandler);
@@ -5487,6 +5527,10 @@ static void _container_exit(int keyCode, int inventoryWindowType)
 // 0x476464
 static int _drop_into_container(Object* container, Object* item, int sourceIndex, Object** itemSlot, int quantity)
 {
+    if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_CONTAINER, item, container)) {
+        return -1;
+    }
+
     int quantityToMove;
     if (quantity > 1) {
         quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
@@ -5536,6 +5580,10 @@ static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoIte
     }
 
     if (!weaponCanBeReloadedWith(weapon, ammo)) {
+        return -1;
+    }
+
+    if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_WEAPON_RELOAD, ammo, weapon)) {
         return -1;
     }
 

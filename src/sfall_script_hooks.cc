@@ -165,6 +165,36 @@ void scriptHooks_GameModeChange(int exit, int previousGameMode)
 }
 
 /*
+Runs before moving items between inventory slots in dude interface. You can override the action.
+
+int     arg0 - Target slot:
+               0 - main backpack
+               1 - left hand
+               2 - right hand
+               3 - armor slot
+               4 - weapon, when reloading it by dropping ammo
+               5 - container, like bag/backpack
+               6 - dropping on the ground
+               7 - picking up item
+               8 - dropping item on the character portrait
+Item    arg1 - Item being moved
+Item    arg2 - Item being replaced, weapon being reloaded, or container being filled (can be 0)
+
+int     ret0 - Override setting (-1 - use engine handler, any other value - prevent relocation)
+*/
+bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* itemReplace)
+{
+    ScriptHookCall hook(HOOK_INVENTORYMOVE, 1, { actionType, item, itemReplace });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return true;
+    }
+
+    return hook.getReturnValueAt(0).asInt() == -1;
+}
+
+/*
 Runs when Fallout is calculating the chances of an attack striking a target.
 Runs after the hit chance is fully calculated normally, including applying the 95% cap.
 
