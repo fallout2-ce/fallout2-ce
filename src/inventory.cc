@@ -247,6 +247,12 @@ typedef enum InventoryMoveResult {
     INVENTORY_MOVE_RESULT_SUCCESS,
 } InventoryMoveResult;
 
+typedef enum InventoryAmmoMoveResult {
+    INVENTORY_AMMO_MOVE_RESULT_FAILED,
+    INVENTORY_AMMO_MOVE_RESULT_BLOCKED,
+    INVENTORY_AMMO_MOVE_RESULT_SUCCESS,
+} InventoryAmmoMoveResult;
+
 static int inventoryMessageListInit();
 static int inventoryMessageListFree();
 static bool _setup_inventory(int inventoryWindowType);
@@ -280,7 +286,7 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
 static void _container_enter(int keyCode, int inventoryWindowType);
 static void _container_exit(int keyCode, int inventoryWindowType);
 static int _drop_into_container(Object* container, Object* item, int sourceIndex, Object** itemSlot, int quantity);
-static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode);
+static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode);
 static void _draw_amount(int value, int inventoryWindowType);
 static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int maximum, int defaultValue = 1);
 static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item);
@@ -2440,7 +2446,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
                         itemIndex = 0;
                     }
                 } else {
-                    if (_drop_ammo_into_weapon(targetItem, item, itemSlot, count, buttonCode) == 0) {
+                    if (_drop_ammo_into_weapon(targetItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS) {
                         itemIndex = 0;
                     }
                 }
@@ -2478,7 +2484,9 @@ static void _inven_pickup(int buttonCode, int indexOffset)
     } else if (mouseHitTestInWindow(gInventoryWindow, INVENTORY_LEFT_HAND_SLOT_X, INVENTORY_LEFT_HAND_SLOT_Y, INVENTORY_LEFT_HAND_SLOT_MAX_X, INVENTORY_LEFT_HAND_SLOT_MAX_Y)) {
         if (gInventoryLeftHandItem != nullptr && itemGetType(gInventoryLeftHandItem) == ITEM_TYPE_CONTAINER && gInventoryLeftHandItem != item) {
             _drop_into_container(gInventoryLeftHandItem, item, itemIndex, itemSlot, count);
-        } else if (gInventoryLeftHandItem == nullptr || _drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode)) {
+        } else if (gInventoryLeftHandItem == nullptr) {
+            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, buttonCode);
+        } else if (_drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
             _switch_hand(item, &gInventoryLeftHandItem, itemSlot, buttonCode);
         }
 
@@ -2486,7 +2494,9 @@ static void _inven_pickup(int buttonCode, int indexOffset)
     } else if (mouseHitTestInWindow(gInventoryWindow, INVENTORY_RIGHT_HAND_SLOT_X, INVENTORY_RIGHT_HAND_SLOT_Y, INVENTORY_RIGHT_HAND_SLOT_MAX_X, INVENTORY_RIGHT_HAND_SLOT_MAX_Y)) {
         if (gInventoryRightHandItem != nullptr && itemGetType(gInventoryRightHandItem) == ITEM_TYPE_CONTAINER && gInventoryRightHandItem != item) {
             _drop_into_container(gInventoryRightHandItem, item, itemIndex, itemSlot, count);
-        } else if (gInventoryRightHandItem == nullptr || _drop_ammo_into_weapon(gInventoryRightHandItem, item, itemSlot, count, buttonCode)) {
+        } else if (gInventoryRightHandItem == nullptr) {
+            _switch_hand(item, &gInventoryRightHandItem, itemSlot, itemIndex);
+        } else if (_drop_ammo_into_weapon(gInventoryRightHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
             _switch_hand(item, &gInventoryRightHandItem, itemSlot, itemIndex);
         }
 
@@ -5569,22 +5579,22 @@ static int _drop_into_container(Object* container, Object* item, int sourceIndex
 }
 
 // 0x47650C
-static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
+static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
 {
     if (itemGetType(weapon) != ITEM_TYPE_WEAPON) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     if (itemGetType(ammo) != ITEM_TYPE_AMMO) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     if (!weaponCanBeReloadedWith(weapon, ammo)) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_WEAPON_RELOAD, ammo, weapon)) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_BLOCKED;
     }
 
     int quantityToMove;
@@ -5595,7 +5605,7 @@ static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoIte
     }
 
     if (quantityToMove == -1) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     Object* sourceItem = ammo;
@@ -5628,13 +5638,13 @@ static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoIte
     }
 
     if (!isReloaded) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_READY, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
     soundPlayFile(sfx);
 
-    return 0;
+    return INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
 }
 
 // 0x47664C

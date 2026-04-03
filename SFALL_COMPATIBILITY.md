@@ -61,7 +61,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | CalcAPCost | `HOOK_CALCAPCOST` | 🚫 | - |
 | DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | Use DEATHANIM2 instead |
 | DeathAnim2 | `HOOK_DEATHANIM2` | ✅ | - |
-| CombatDamage | `HOOK_COMBATDAMAGE` | ✅ | CE passes the raw `Attack*` as the final mixed argument, matching sfall's shape. |
+| CombatDamage | `HOOK_COMBATDAMAGE` | ✅ | - |
 | OnDeath | `HOOK_ONDEATH` | 🚫 | - |
 | FindTarget | `HOOK_FINDTARGET` | 🚫 | (maybe) |
 | UseObjOn | `HOOK_USEOBJON` | ✅ | - |
@@ -71,12 +71,12 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | MoveCost | `HOOK_MOVECOST` | 🚫 | - |
 | ItemDamage | `HOOK_ITEMDAMAGE` | 🚫 | - |
 | AmmoCost | `HOOK_AMMOCOST` | 🚫 | Et tu |
-| KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE notes that sfall used VK codes there. |
+| KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | 🚫 | - |
 | UseSkill | `HOOK_USESKILL` | 🚫 | - |
 | Steal | `HOOK_STEAL` | 🚫 | Et tu |
 | WithinPerception | `HOOK_WITHINPERCEPTION` | 🚫 | Et tu |
-| InventoryMove | `HOOK_INVENTORYMOVE` | 🚫 | Et tu |
+| InventoryMove | `HOOK_INVENTORYMOVE` | ✅ | - |
 | InvenWield | `HOOK_INVENWIELD` | 🚫 | - |
 | AdjustFID | `HOOK_ADJUSTFID` | 🚫 | - |
 | CombatTurn | `HOOK_COMBATTURN` | 🚫 | - |
