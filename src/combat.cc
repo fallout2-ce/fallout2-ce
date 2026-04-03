@@ -100,14 +100,15 @@ static void _combat_begin(Object* attacker);
 static void _combat_begin_extra(Object* attacker);
 static void _combat_update_critters_in_los(bool a1);
 static void _combat_over();
-static void _combat_add_noncoms();
+static bool _combat_add_noncoms();
 static int _compare_faster(const void* critter1Ptr, const void* critter2Ptr);
 static void _combat_sequence_init(Object* attacker, Object* defender);
 static void _combat_sequence();
 static void combatAttemptEnd();
 static int _combat_input();
 static void _combat_set_move_all();
-static int _combat_turn(Object* a1, bool a2);
+static int combatTurnHooked(Object* obj, bool reloadedDuringCombat);
+static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
 static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim);
@@ -155,6 +156,8 @@ static int _combat_turn_running = 0;
 
 // 0x510940
 int _combatNumTurns = 0;
+
+static int combatTurnHookResult = 0;
 
 // 0x510944
 unsigned int gCombatState = COMBAT_STATE_0x02;
@@ -1998,6 +2001,7 @@ int combatInit()
 
     _combat_turn_running = 0;
     _combatNumTurns = 0;
+    combatTurnHookResult = 0;
     _combat_list = nullptr;
     _aiInfoList = nullptr;
     _list_com = 0;
@@ -2046,6 +2050,7 @@ void combatReset()
 
     _combat_turn_running = 0;
     _combatNumTurns = 0;
+    combatTurnHookResult = 0;
     _combat_list = nullptr;
     _aiInfoList = nullptr;
     _list_com = 0;
@@ -2901,7 +2906,7 @@ void _combat_give_exps(int exp_points)
 }
 
 // 0x4222A8
-static void _combat_add_noncoms()
+static bool _combat_add_noncoms()
 {
     _combatai_notify_friends(gDude);
 
@@ -2930,9 +2935,14 @@ static void _combat_add_noncoms()
 
             obj->data.critter.combat.ap = actionPoints;
 
-            _combat_turn(obj, false);
+            if (combatTurnHooked(obj, false) == -1) {
+                _list_com = 0;
+                return true;
+            }
         }
     }
+
+    return false;
 }
 
 // Compares critters by sequence.
@@ -3027,7 +3037,9 @@ static void _combat_sequence_init(Object* attacker, Object* defender)
 // 0x422580
 static void _combat_sequence()
 {
-    _combat_add_noncoms();
+    if (_combat_add_noncoms()) {
+        return;
+    }
 
     int count = _list_com;
 
@@ -3227,7 +3239,7 @@ static void _combat_set_move_all()
 }
 
 // 0x42299C
-static int _combat_turn(Object* obj, bool a2)
+static int _combat_turn(Object* obj, bool reloadedDuringCombat)
 {
     _combat_turn_obj = obj;
 
@@ -3263,7 +3275,7 @@ static int _combat_turn(Object* obj, bool a2)
         }
 
         if (!scriptOverrides) {
-            if (!a2 && critterIsProne(obj)) {
+            if (!reloadedDuringCombat && critterIsProne(obj)) {
                 _combat_standup(obj);
             }
 
@@ -3275,7 +3287,7 @@ static int _combat_turn(Object* obj, bool a2)
                     _combat_attack_this(_gcsd->defender);
                 }
 
-                if (!a2) {
+                if (!reloadedDuringCombat) {
                     gCombatState |= 0x02;
                 }
 
@@ -3341,6 +3353,23 @@ static int _combat_turn(Object* obj, bool a2)
     return -1;
 }
 
+static int combatTurnHooked(Object* obj, bool reloadedDuringCombat)
+{
+    if (scriptHooks_CombatTurnStart(obj, reloadedDuringCombat)) {
+        combatTurnHookResult = 0;
+        return combatTurnHookResult;
+    }
+
+    combatTurnHookResult = _combat_turn(obj, reloadedDuringCombat);
+
+    if (_combat_end_due_to_load != 0 && combatTurnHookResult == -1) {
+        return combatTurnHookResult;
+    }
+
+    combatTurnHookResult = scriptHooks_CombatTurnEnd(obj, combatTurnHookResult, reloadedDuringCombat);
+    return combatTurnHookResult;
+}
+
 // 0x422C60
 static bool _combat_should_end()
 {
@@ -3396,7 +3425,7 @@ void _combat(CombatStartData* csd)
 
         // If we loaded a save in combat, we need to force dude turn and then continue with the next combatant.
         if (wasInCombat) {
-            if (_combat_turn(gDude, true) == -1) {
+            if (combatTurnHooked(gDude, true) == -1) {
                 curIndex = -1;
             } else {
                 int index;
@@ -3431,7 +3460,7 @@ void _combat(CombatStartData* csd)
             _combat_set_move_all();
 
             for (; curIndex < _list_com; curIndex++) {
-                if (_combat_turn(_combat_list[curIndex], false) == -1) {
+                if (combatTurnHooked(_combat_list[curIndex], false) == -1) {
                     break;
                 }
 
@@ -3458,6 +3487,9 @@ void _combat(CombatStartData* csd)
             _gmouse_disable_scrolling();
             interfaceBarEndButtonsHide(true);
             _gmouse_enable_scrolling();
+            if (combatTurnHookResult >= 0) {
+                scriptHooks_CombatTurnCombatEnd(_combat_turn_obj);
+            }
             _combat_over();
             scriptsExecMapUpdateProc();
         }
