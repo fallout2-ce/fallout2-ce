@@ -2936,6 +2936,8 @@ static bool _combat_add_noncoms()
             obj->data.critter.combat.ap = actionPoints;
 
             if (combatTurnHooked(obj, false) == -1) {
+                // Sfall only zeros _list_com.  CE defensively resets both to maintain the
+                // non-combat invariant _list_com + _list_noncom == _list_total.
                 _list_com = 0;
                 _list_noncom = _list_total;
                 return true;
@@ -3369,7 +3371,16 @@ static int combatTurnHooked(Object* obj, bool reloadedDuringCombat)
         return combatTurnHookResult;
     }
 
-    combatTurnHookResult = scriptHooks_CombatTurnEnd(obj, combatTurnHookResult, reloadedDuringCombat);
+    if (scriptHooks_CombatTurnEnd(obj, combatTurnHookResult, reloadedDuringCombat)) {
+        // Matches sfall: if the end-of-turn HOOK_COMBATTURN callback forces
+        // combat termination, other hook scripts do not get a follow-up
+        // arg0 == -1 notification. The only end-of-turn callback they saw was
+        // the original engine result in `combatTurnHookResult`. If we want
+        // cleaner semantics later, a possible follow-up is to emit an
+        // additional HOOK_COMBATTURN call with arg0 == -1 here, but that would
+        // be a deliberate compatibility deviation from sfall.
+        combatTurnHookResult = -1;
+    }
     return combatTurnHookResult;
 }
 

@@ -246,7 +246,7 @@ void scriptHooksExit();
 void scriptHooks_GameModeChange(int exit, int previousGameMode);
 bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
-int scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);
+bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);
 void scriptHooks_CombatTurnCombatEnd(Object* critter);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);

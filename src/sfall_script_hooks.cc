@@ -177,6 +177,7 @@ int     arg2 - 1 at the start/end of the player's turn after loading a game save
 
 int     ret0 - pass 1 at the start of turn to skip the turn, pass -1 at the end of turn to force end of combat
 */
+// returns true if turn should be skipped
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat)
 {
     ScriptHookCall hook(HOOK_COMBATTURN, 1, { 1, critter, reloadedDuringCombat ? 1 : 0 });
@@ -185,16 +186,13 @@ bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat)
     return hook.numReturnValues() > 0 && hook.getReturnValueAt(0).asInt() == 1;
 }
 
-int scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat)
+// returns true if combat should end immediately
+bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat)
 {
     ScriptHookCall hook(HOOK_COMBATTURN, 1, { turnResult, critter, reloadedDuringCombat ? 1 : 0 });
     hook.call();
 
-    if (hook.numReturnValues() > 0 && hook.getReturnValueAt(0).asInt() == -1) {
-        return -1;
-    }
-
-    return turnResult;
+    return hook.numReturnValues() > 0 && hook.getReturnValueAt(0).asInt() == -1;
 }
 
 void scriptHooks_CombatTurnCombatEnd(Object* critter)
