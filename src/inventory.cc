@@ -2453,7 +2453,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             }
         }
 
-        if (immediate || pickUpFromSlot) {
+        if (immediate || itemIndex == -1) {
             if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_MAIN_BACKPACK, item, nullptr)) {
                 goto inventory_move_done;
             }
@@ -2475,9 +2475,9 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         // default to first empty hand, or left hand if both are full
         bool left = gInventoryLeftHandItem == nullptr || gInventoryRightHandItem != nullptr;
         if (left) {
-            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, buttonCode);
+            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, itemIndex);
         } else {
-            _switch_hand(item, &gInventoryRightHandItem, itemSlot, buttonCode);
+            _switch_hand(item, &gInventoryRightHandItem, itemSlot, itemIndex);
         }
 
         // drop in left hand slot
@@ -2485,9 +2485,9 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         if (gInventoryLeftHandItem != nullptr && itemGetType(gInventoryLeftHandItem) == ITEM_TYPE_CONTAINER && gInventoryLeftHandItem != item) {
             _drop_into_container(gInventoryLeftHandItem, item, itemIndex, itemSlot, count);
         } else if (gInventoryLeftHandItem == nullptr) {
-            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, buttonCode);
+            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, itemIndex);
         } else if (_drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
-            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, buttonCode);
+            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, itemIndex);
         }
 
         // drop in right hand slot
@@ -2570,6 +2570,12 @@ inventory_move_done:
 // 0x4714E0
 static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourceSlot, int itemIndex)
 {
+    if (*targetSlot != nullptr) {
+        if (itemGetType(*targetSlot) == ITEM_TYPE_WEAPON && itemGetType(sourceItem) == ITEM_TYPE_AMMO) {
+            return;
+        }
+    }
+
     HookInventoryMoveType targetSlotType = targetSlot == &gInventoryLeftHandItem
         ? HOOK_INVENTORYMOVE_LEFT_HAND
         : HOOK_INVENTORYMOVE_RIGHT_HAND;
@@ -2578,10 +2584,6 @@ static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourc
     }
 
     if (*targetSlot != nullptr) {
-        if (itemGetType(*targetSlot) == ITEM_TYPE_WEAPON && itemGetType(sourceItem) == ITEM_TYPE_AMMO) {
-            return;
-        }
-
         if (sourceSlot != nullptr && (sourceSlot != &gInventoryArmor || itemGetType(*targetSlot) == ITEM_TYPE_ARMOR)) {
             if (sourceSlot == &gInventoryArmor) {
                 adjustCritterStatsOnArmorChange(_stack[0], gInventoryArmor, *targetSlot);

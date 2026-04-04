@@ -244,7 +244,7 @@ void scriptHooksReset();
 void scriptHooksExit();
 
 void scriptHooks_GameModeChange(int exit, int previousGameMode);
-bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* itemReplace);
+bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
 int scriptHooks_UseItem(Object* user, Object* objUsed);
