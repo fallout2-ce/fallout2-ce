@@ -1,4 +1,6 @@
 #include "game_config.h"
+#include "debug.h"
+#include "game_config_migration.h"
 #include "sfall_config.h"
 
 #include <stdio.h>
@@ -185,6 +187,10 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     // Read contents of `fallout2.cfg` into config. The values from the file
     // will override the defaults above.
     configRead(&gGameConfig, gGameConfigFilePath, false);
+    if (!isMapper && gameConfigMigrateFromF2Res(gGameConfigFilePath, &gGameConfig)) {
+        debugPrint("Migrated settings from f2_res.ini to %s.\n", gGameConfigFilePath);
+        configWrite(&gGameConfig, gGameConfigFilePath, false);
+    }
     configChecker.check(gGameConfig);
 
     // Add key-values from command line, which overrides both defaults and
