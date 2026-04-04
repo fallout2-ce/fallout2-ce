@@ -9,6 +9,7 @@
 #include "interpreter.h"
 #include "platform_compat.h"
 #include "sfall_arrays.h"
+#include "sfall_metarules.h"
 
 namespace fallout {
 
@@ -258,13 +259,13 @@ static const ConfigSection* sfall_find_section_in_config(Config* config, const c
 }
 
 // set_ini_setting
-void mf_set_ini_setting(Program* program, int args)
+void mf_set_ini_setting(MetaruleContext& ctx)
 {
-    const char* triplet = programStackPopString(program);
-    ProgramValue value = programStackPopValue(program);
+    const char* triplet = ctx.stringArg(0);
+    ProgramValue value = ctx.arg(1);
 
     if (value.isString()) {
-        const char* stringValue = programGetString(program, value.opcode, value.integerValue);
+        const char* stringValue = programGetString(ctx.program(), value.opcode, value.integerValue);
         if (!sfall_ini_set_string(triplet, stringValue)) {
             debugPrint("set_ini_setting: unable to write '%s' to '%s'",
                 stringValue,
@@ -278,29 +279,27 @@ void mf_set_ini_setting(Program* program, int args)
                 triplet);
         }
     }
-
-    programStackPushInteger(program, -1);
 }
 
 // get_ini_section
-void mf_get_ini_section(Program* program, int args)
+void mf_get_ini_section(MetaruleContext& ctx)
 {
     // Arguments: file_path (string), section_name (string)
 
-    const char* filePath = programStackPopString(program);
-    const char* sectionName = programStackPopString(program);
+    const char* filePath = ctx.stringArg(0);
+    const char* sectionName = ctx.stringArg(1);
 
     ArrayId arrayId = CreateTempArray(-1, 0);
 
     if (filePath == nullptr || sectionName == nullptr) {
-        programStackPushInteger(program, arrayId);
+        ctx.setReturn(static_cast<int>(arrayId));
         return;
     }
 
     Config iniConfig;
     if (!configInit(&iniConfig)) {
         debugPrint("mf_get_ini_section: Failed to initialize Config structure.");
-        programStackPushInteger(program, arrayId);
+        ctx.setReturn(static_cast<int>(arrayId));
         return;
     }
 
@@ -314,7 +313,7 @@ void mf_get_ini_section(Program* program, int args)
                 const char* value = *(static_cast<char**>(entry->value));
 
                 if (key != nullptr && value != nullptr) {
-                    SetArray(arrayId, programMakeString(program, key), programMakeString(program, value), false, program);
+                    SetArray(arrayId, programMakeString(ctx.program(), key), programMakeString(ctx.program(), value), false, ctx.program());
                 }
             }
         }
@@ -322,25 +321,25 @@ void mf_get_ini_section(Program* program, int args)
 
     configFree(&iniConfig);
 
-    programStackPushInteger(program, arrayId);
+    ctx.setReturn(static_cast<int>(arrayId));
 }
 
 // get_ini_sections
-void mf_get_ini_sections(Program* program, int args)
+void mf_get_ini_sections(MetaruleContext& ctx)
 {
     // Arguments: file_path (string)
-    const char* filePath = programStackPopString(program);
+    const char* filePath = ctx.stringArg(0);
     ArrayId arrayId = -1;
 
     if (filePath == nullptr) {
-        programStackPushInteger(program, arrayId);
+        ctx.setReturn(static_cast<int>(arrayId));
         return;
     }
 
     Config iniConfig;
     if (!configInit(&iniConfig)) {
         debugPrint("mf_get_ini_sections: Failed to initialize Config structure.");
-        programStackPushInteger(program, arrayId);
+        ctx.setReturn(static_cast<int>(arrayId));
         return;
     }
 
@@ -353,7 +352,7 @@ void mf_get_ini_sections(Program* program, int args)
                 const char* sectionName = entry->key;
 
                 if (sectionName != nullptr) {
-                    SetArray(arrayId, programMakeInt(program, i), programMakeString(program, sectionName), false, program);
+                    SetArray(arrayId, programMakeInt(ctx.program(), i), programMakeString(ctx.program(), sectionName), false, ctx.program());
                 }
             }
         }
@@ -365,7 +364,7 @@ void mf_get_ini_sections(Program* program, int args)
         arrayId = CreateTempArray(0, 0);
     }
 
-    programStackPushInteger(program, arrayId);
+    ctx.setReturn(static_cast<int>(arrayId));
 }
 
 // get_ini_setting

@@ -5,6 +5,7 @@
 
 #include "animation.h"
 #include "interpreter.h"
+#include "sfall_metarules.h"
 
 namespace fallout {
 
@@ -102,18 +103,16 @@ void op_reg_anim_turn_towards(Program* program)
     }
 }
 
-void mf_reg_anim_animate_and_move(Program* program, int args)
+void mf_reg_anim_animate_and_move(MetaruleContext& ctx)
 {
-    Object* object = static_cast<Object*>(programStackPopPointer(program));
-    int tile = programStackPopInteger(program);
-    int anim = programStackPopInteger(program);
-    int delay = programStackPopInteger(program);
+    Object* object = static_cast<Object*>(ctx.pointerArg(0));
+    int tile = ctx.intArg(1);
+    int anim = ctx.intArg(2);
+    int delay = ctx.intArg(3);
 
     if (object != nullptr && !animationCheckCombatMode()) {
         animationRegisterMoveToTileStraight(object, tile, object->elevation, anim, delay);
     }
-
-    programStackPushInteger(program, 0);
 }
 
 } // namespace fallout
