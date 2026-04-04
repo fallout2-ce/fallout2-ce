@@ -1,5 +1,6 @@
 #include "opcode_context.h"
 
+#include <cstdio>
 #include <cstdarg>
 
 #include "sfall_metarules.h"
@@ -62,16 +63,6 @@ const ProgramValue& OpcodeContext::arg(int index) const
     return _args[index];
 }
 
-int OpcodeContext::intArg(int index) const
-{
-    return arg(index).asInt();
-}
-
-float OpcodeContext::floatArg(int index) const
-{
-    return arg(index).asFloat();
-}
-
 const char* OpcodeContext::stringArg(int index) const
 {
     const ProgramValue& value = arg(index);
@@ -100,6 +91,11 @@ void OpcodeContext::setReturn(const ProgramValue& value)
 {
     _returnValue = value;
     _hasReturnValue = true;
+}
+
+void OpcodeContext::setReturn(std::nullptr_t)
+{
+    setReturn(static_cast<void*>(nullptr));
 }
 
 void OpcodeContext::setReturn(int value)
@@ -171,18 +167,12 @@ bool OpcodeContext::validateArguments() const
             }
             break;
         case ARG_OBJECT:
-            if (value.isPointer()) {
-                if (value.pointerValue == nullptr) {
-                    printError("%s() - argument #%d is null.", name(), index + 1);
-                    return false;
-                }
-            } else if (value.isInt()) {
-                if (value.integerValue == 0) {
-                    printError("%s() - argument #%d is null.", name(), index + 1);
-                    return false;
-                }
-            } else {
+            if (!value.isPointer()) {
                 printError("%s() - argument #%d is not an object.", name(), index + 1);
+                return false;
+            }
+            if (value.pointerValue == nullptr) {
+                printError("%s() - argument #%d is null.", name(), index + 1);
                 return false;
             }
             break;

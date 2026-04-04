@@ -4,6 +4,7 @@
 #include <array>
 
 #include "interpreter.h"
+#include "script_call_defs.h"
 
 namespace fallout {
 
@@ -22,12 +23,11 @@ public:
     int numArgs() const;
 
     const ProgramValue& arg(int index) const;
-    int intArg(int index) const;
-    float floatArg(int index) const;
     const char* stringArg(int index) const;
     void* pointerArg(int index) const;
 
     void setReturn(const ProgramValue& value);
+    void setReturn(std::nullptr_t);
     void setReturn(int value);
     void setReturn(float value);
     void setReturn(const char* value);
@@ -43,7 +43,7 @@ private:
     Program* _program;
     const MetaruleInfo* _metaruleInfo;
     int _numArgs;
-    std::array<ProgramValue, 8> _args;
+    std::array<ProgramValue, SCRIPT_CALL_MAX_ARGS> _args;
     ProgramValue _returnValue;
     bool _hasReturnValue;
 };

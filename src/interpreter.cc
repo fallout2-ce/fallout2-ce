@@ -3362,6 +3362,20 @@ int ProgramValue::asInt() const
     }
 }
 
+Object* ProgramValue::asObject() const
+{
+    if (opcode == VALUE_TYPE_INT && integerValue == 0) {
+        return nullptr;
+    }
+
+    if (!isPointer()) {
+        programPrintError("ProgramValue::asObject: object expected, got %x", opcode);
+        return nullptr;
+    }
+
+    return static_cast<Object*>(pointerValue);
+}
+
 // CE
 ProgramValue programMakeString(Program* program, const char* str)
 {

@@ -105,10 +105,10 @@ void op_reg_anim_turn_towards(Program* program)
 
 void mf_reg_anim_animate_and_move(OpcodeContext& ctx)
 {
-    Object* object = static_cast<Object*>(ctx.pointerArg(0));
-    int tile = ctx.intArg(1);
-    int anim = ctx.intArg(2);
-    int delay = ctx.intArg(3);
+    Object* object = ctx.arg(0).asObject();
+    int tile = ctx.arg(1).asInt();
+    int anim = ctx.arg(2).asInt();
+    int delay = ctx.arg(3).asInt();
 
     if (object != nullptr && !animationCheckCombatMode()) {
         animationRegisterMoveToTileStraight(object, tile, object->elevation, anim, delay);

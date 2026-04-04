@@ -1,7 +1,7 @@
 #ifndef FALLOUT_SFALL_METARULES_H_
 #define FALLOUT_SFALL_METARULES_H_
 
-#include <cstddef>
+#include "script_call_defs.h"
 
 namespace fallout {
 
@@ -13,13 +13,13 @@ typedef void(MetaruleHandler)(OpcodeContext& ctx);
 enum OpcodeArgumentType {
     ARG_ANY = 0, // no validation (default)
     ARG_INT, // integer only
-    ARG_OBJECT, // integer that is not 0
+    ARG_OBJECT, // non-null pointer/object
     ARG_STRING, // string only
     ARG_INTSTR, // integer OR string
     ARG_NUMBER, // float OR integer
 };
 
-constexpr size_t METARULE_MAX_ARGS = 8;
+constexpr std::size_t METARULE_MAX_ARGS = SCRIPT_CALL_MAX_ARGS;
 
 struct MetaruleInfo {
     const char* name;

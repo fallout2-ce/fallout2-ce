@@ -154,6 +154,7 @@ public:
     // TODO: better approach for supporting different object types?
     ProgramValue(Attack* value);
 
+    // TODO: Rename to reflect that this is a ProgramValue type tag, not an interpreter opcode.
     opcode_t opcode;
     union {
         int integerValue;
@@ -168,6 +169,7 @@ public:
     float asFloat() const;
     bool isPointer() const;
     int asInt() const;
+    Object* asObject() const;
 };
 
 typedef std::vector<ProgramValue> ProgramStack;

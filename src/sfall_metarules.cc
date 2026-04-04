@@ -202,8 +202,8 @@ void mf_combat_data(OpcodeContext& ctx)
 
 void mf_critter_inven_obj2(OpcodeContext& ctx)
 {
-    Object* obj = static_cast<Object*>(ctx.pointerArg(0));
-    int slot = ctx.intArg(1);
+    Object* obj = ctx.arg(0).asObject();
+    int slot = ctx.arg(1).asInt();
 
     switch (slot) {
     case 0:
@@ -239,13 +239,13 @@ void mf_get_cursor_mode(OpcodeContext& ctx)
 
 void mf_get_flags(OpcodeContext& ctx)
 {
-    Object* object = static_cast<Object*>(ctx.pointerArg(0));
+    Object* object = ctx.arg(0).asObject();
     ctx.setReturn(object->flags);
 }
 
 void mf_get_sfall_arg_at(OpcodeContext& ctx)
 {
-    const int argNum = ctx.intArg(0);
+    const int argNum = ctx.arg(0).asInt();
 
     ProgramValue result(0);
     const auto hookCall = hookOpcodeGetCurrentCall(ctx.name());
@@ -264,7 +264,7 @@ void mf_get_object_data(OpcodeContext& ctx)
     // TODO: only allow to modify a set of whitelisted object types
     // TODO: map offsets to fields to avoid potential alignment, 64bit issues!
     void* ptr = ctx.pointerArg(0);
-    size_t offset = static_cast<size_t>(ctx.intArg(1));
+    size_t offset = static_cast<size_t>(ctx.arg(1).asInt());
 
     if (offset % 4 != 0) {
         programFatalError("mf_get_object_data: bad offset %d", offset);
@@ -338,7 +338,7 @@ void mf_add_extra_msg_file(OpcodeContext& ctx)
 
 void mf_opcode_exists(OpcodeContext& ctx)
 {
-    int opcode = ctx.intArg(0);
+    int opcode = ctx.arg(0).asInt();
     int opcodeIndex = opcode & 0x3FFF;
     if (opcodeIndex < 0 || opcodeIndex >= OPCODE_MAX_COUNT) {
         ctx.setReturn(0);
@@ -351,8 +351,8 @@ void mf_opcode_exists(OpcodeContext& ctx)
 
 void mf_obj_under_cursor(OpcodeContext& ctx)
 {
-    int includeDude = ctx.intArg(0);
-    int onlyCritter = ctx.intArg(1);
+    int includeDude = ctx.arg(0).asInt();
+    int onlyCritter = ctx.arg(1).asInt();
 
     Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : -1, includeDude, gElevation);
 
@@ -366,22 +366,22 @@ void mf_outlined_object(OpcodeContext& ctx)
 
 void mf_set_cursor_mode(OpcodeContext& ctx)
 {
-    int mode = ctx.intArg(0);
+    int mode = ctx.arg(0).asInt();
     gameMouseSetMode(mode);
 }
 
 void mf_set_flags(OpcodeContext& ctx)
 {
-    Object* object = static_cast<Object*>(ctx.pointerArg(0));
-    int flags = ctx.intArg(1);
+    Object* object = ctx.arg(0).asObject();
+    int flags = ctx.arg(1).asInt();
 
     object->flags = flags;
 }
 
 void mf_set_outline(OpcodeContext& ctx)
 {
-    Object* object = static_cast<Object*>(ctx.pointerArg(0));
-    int outline = ctx.intArg(1);
+    Object* object = ctx.arg(0).asObject();
+    int outline = ctx.arg(1).asInt();
     object->outline = outline;
 }
 
@@ -404,8 +404,8 @@ void mf_tile_refresh_display(OpcodeContext& ctx)
 
 void mf_tile_by_position(OpcodeContext& ctx)
 {
-    int x = ctx.intArg(0);
-    int y = ctx.intArg(1);
+    int x = ctx.arg(0).asInt();
+    int y = ctx.arg(1).asInt();
     ctx.setReturn(tileFromScreenXY(x, y));
 }
 
@@ -484,7 +484,7 @@ void mf_string_compare(OpcodeContext& ctx)
     const char* str2 = ctx.stringArg(1);
     int codePage = 0;
     if (ctx.numArgs() == 3) {
-        codePage = ctx.intArg(2);
+        codePage = ctx.arg(2).asInt();
     }
     bool result = false;
     if (ctx.numArgs() < 3) {
@@ -508,7 +508,7 @@ void mf_string_find(OpcodeContext& ctx)
     int startPos = 0;
 
     if (ctx.numArgs() == 3) {
-        startPos = ctx.intArg(2);
+        startPos = ctx.arg(2).asInt();
     }
 
     if (startPos < 0 || startPos >= strlen(str)) {
@@ -529,7 +529,7 @@ void mf_string_to_case(OpcodeContext& ctx)
 {
     auto buf = ctx.stringArg(0);
     std::string s(buf);
-    auto caseType = ctx.intArg(1);
+    auto caseType = ctx.arg(1).asInt();
     if (caseType == 1) {
         std::transform(s.begin(), s.end(), s.begin(), ::toupper);
     } else if (caseType == 0) {
@@ -771,7 +771,7 @@ void mf_message_box(OpcodeContext& ctx)
 
     int flags = DIALOG_BOX_LARGE | DIALOG_BOX_YES_NO;
     if (ctx.numArgs() > 1) {
-        int flagParam = ctx.intArg(1);
+        int flagParam = ctx.arg(1).asInt();
         if (flagParam != -1) {
             flags = flagParam;
         }
@@ -781,10 +781,10 @@ void mf_message_box(OpcodeContext& ctx)
     // Default: yellow (145) = _colorTable[32328]
     int color1 = _colorTable[32328], color2 = _colorTable[32328];
     if (ctx.numArgs() > 2) {
-        color1 = ctx.intArg(2);
+        color1 = ctx.arg(2).asInt();
     }
     if (ctx.numArgs() > 3) {
-        color2 = ctx.intArg(3);
+        color2 = ctx.arg(3).asInt();
     }
 
     dialogShowCount++;
