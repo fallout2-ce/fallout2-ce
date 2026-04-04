@@ -3273,7 +3273,7 @@ static int wmWorldMapFunc(int a1)
             wmInterfaceScrollTabsStart(-WM_TOWN_LIST_SLOT_HEIGHT);
         } else if (keyCode == KEY_CTRL_ARROW_DOWN) {
             wmInterfaceScrollTabsStart(WM_TOWN_LIST_SLOT_HEIGHT);
-        } else if (keyCode >= KEY_CTRL_F1 && keyCode < KEY_CTRL_F1 + WM_TOWN_LIST_VISIBLE_SLOT_COUNT) {
+        } else if (keyCode >= KEY_CTRL_F1 && keyCode <= KEY_CTRL_F7) {
             int quickDestinationIndex = wmGenData.tabsOffsetY / WM_TOWN_LIST_SLOT_HEIGHT + (keyCode - KEY_CTRL_F1);
             if (quickDestinationIndex < wmLabelCount) {
                 int areaIdx = wmLabelList[quickDestinationIndex];
@@ -6091,7 +6091,7 @@ static int wmTownMapFunc(int* mapIdxPtr)
                 break;
             }
 
-            if (keyCode >= KEY_CTRL_F1 && keyCode < KEY_CTRL_F1 + WM_TOWN_LIST_VISIBLE_SLOT_COUNT) {
+            if (keyCode >= KEY_CTRL_F1 && keyCode <= KEY_CTRL_F7) {
                 int quickDestinationIndex = wmGenData.tabsOffsetY / WM_TOWN_LIST_SLOT_HEIGHT + keyCode - KEY_CTRL_F1;
                 if (quickDestinationIndex < wmLabelCount) {
                     int areaIdx = wmLabelList[quickDestinationIndex];
