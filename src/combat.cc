@@ -2906,6 +2906,7 @@ void _combat_give_exps(int exp_points)
 }
 
 // 0x4222A8
+// Returns true if hook signals that combat should end immediately.
 static bool _combat_add_noncoms()
 {
     _combatai_notify_friends(gDude);
