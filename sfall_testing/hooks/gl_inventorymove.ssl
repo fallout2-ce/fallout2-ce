@@ -1,0 +1,57 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+
+variable inventorymove_blocking := false;
+
+procedure inventorymove_handler begin
+    variable
+        args := get_sfall_args,
+        action := args[0],
+        item := args[1],
+        arg2 := args[2],
+        action_name := "unknown";
+
+    if (action == 0) then action_name := "main_backpack";
+    else if (action == 1) then action_name := "left_hand";
+    else if (action == 2) then action_name := "right_hand";
+    else if (action == 3) then action_name := "armor_slot";
+    else if (action == 4) then action_name := "weapon_reload";
+    else if (action == 5) then action_name := "container";
+    else if (action == 6) then action_name := "ground";
+    else if (action == 7) then action_name := "pickup";
+    else if (action == 8) then action_name := "character_portrait";
+
+    display_msg(string_format2("inventorymove %s args=%s", action_name, debug_array_str(args)));
+    if (item) then
+        display_msg(string_format2("inventorymove item=%s pid=%d", obj_name(item), obj_pid(item)));
+    if (arg2) then
+        display_msg(string_format2("inventorymove arg2=%s pid=%d", obj_name(arg2), obj_pid(arg2)));
+    display_msg(string_format1("inventorymove blocking=%d", inventorymove_blocking));
+
+    if (inventorymove_blocking) then begin
+        display_msg("inventorymove blocked");
+        set_sfall_return(0);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_X) then return;
+
+    inventorymove_blocking := not inventorymove_blocking;
+    display_msg(string_format1("inventorymove blocking %d", inventorymove_blocking));
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("inventorymove manual test ready: press X to toggle blocking");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_INVENTORYMOVE, inventorymove_handler);
+end

@@ -247,6 +247,12 @@ typedef enum InventoryMoveResult {
     INVENTORY_MOVE_RESULT_SUCCESS,
 } InventoryMoveResult;
 
+typedef enum InventoryAmmoMoveResult {
+    INVENTORY_AMMO_MOVE_RESULT_FAILED = -1,
+    INVENTORY_AMMO_MOVE_RESULT_SUCCESS = 0,
+    INVENTORY_AMMO_MOVE_RESULT_BLOCKED = 1,
+} InventoryAmmoMoveResult;
+
 static int inventoryMessageListInit();
 static int inventoryMessageListFree();
 static bool _setup_inventory(int inventoryWindowType);
@@ -280,7 +286,7 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
 static void _container_enter(int keyCode, int inventoryWindowType);
 static void _container_exit(int keyCode, int inventoryWindowType);
 static int _drop_into_container(Object* container, Object* item, int sourceIndex, Object** itemSlot, int quantity);
-static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode);
+static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode);
 static void _draw_amount(int value, int inventoryWindowType);
 static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int maximum, int defaultValue = 1);
 static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item);
@@ -2440,14 +2446,18 @@ static void _inven_pickup(int buttonCode, int indexOffset)
                         itemIndex = 0;
                     }
                 } else {
-                    if (_drop_ammo_into_weapon(targetItem, item, itemSlot, count, buttonCode) == 0) {
+                    if (_drop_ammo_into_weapon(targetItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_SUCCESS) {
                         itemIndex = 0;
                     }
                 }
             }
         }
 
-        if (immediate || pickUpFromSlot) {
+        if (immediate || itemIndex == -1) {
+            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_MAIN_BACKPACK, item, nullptr)) {
+                goto inventory_move_done;
+            }
+
             // TODO: Holy shit, needs refactoring.
             *itemSlot = nullptr;
             if (itemAdd(_inven_dude, item, 1)) {
@@ -2465,30 +2475,38 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         // default to first empty hand, or left hand if both are full
         bool left = gInventoryLeftHandItem == nullptr || gInventoryRightHandItem != nullptr;
         if (left) {
-            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, buttonCode);
+            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, itemIndex);
         } else {
-            _switch_hand(item, &gInventoryRightHandItem, itemSlot, buttonCode);
+            _switch_hand(item, &gInventoryRightHandItem, itemSlot, itemIndex);
         }
 
         // drop in left hand slot
     } else if (mouseHitTestInWindow(gInventoryWindow, INVENTORY_LEFT_HAND_SLOT_X, INVENTORY_LEFT_HAND_SLOT_Y, INVENTORY_LEFT_HAND_SLOT_MAX_X, INVENTORY_LEFT_HAND_SLOT_MAX_Y)) {
         if (gInventoryLeftHandItem != nullptr && itemGetType(gInventoryLeftHandItem) == ITEM_TYPE_CONTAINER && gInventoryLeftHandItem != item) {
             _drop_into_container(gInventoryLeftHandItem, item, itemIndex, itemSlot, count);
-        } else if (gInventoryLeftHandItem == nullptr || _drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode)) {
-            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, buttonCode);
+        } else if (gInventoryLeftHandItem == nullptr) {
+            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, itemIndex);
+        } else if (_drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
+            _switch_hand(item, &gInventoryLeftHandItem, itemSlot, itemIndex);
         }
 
         // drop in right hand slot
     } else if (mouseHitTestInWindow(gInventoryWindow, INVENTORY_RIGHT_HAND_SLOT_X, INVENTORY_RIGHT_HAND_SLOT_Y, INVENTORY_RIGHT_HAND_SLOT_MAX_X, INVENTORY_RIGHT_HAND_SLOT_MAX_Y)) {
         if (gInventoryRightHandItem != nullptr && itemGetType(gInventoryRightHandItem) == ITEM_TYPE_CONTAINER && gInventoryRightHandItem != item) {
             _drop_into_container(gInventoryRightHandItem, item, itemIndex, itemSlot, count);
-        } else if (gInventoryRightHandItem == nullptr || _drop_ammo_into_weapon(gInventoryRightHandItem, item, itemSlot, count, buttonCode)) {
+        } else if (gInventoryRightHandItem == nullptr) {
+            _switch_hand(item, &gInventoryRightHandItem, itemSlot, itemIndex);
+        } else if (_drop_ammo_into_weapon(gInventoryRightHandItem, item, itemSlot, count, buttonCode) == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
             _switch_hand(item, &gInventoryRightHandItem, itemSlot, itemIndex);
         }
 
     } else if ((immediate && itemGetType(item) == ITEM_TYPE_ARMOR) || mouseHitTestInWindow(gInventoryWindow, INVENTORY_ARMOR_SLOT_X, INVENTORY_ARMOR_SLOT_Y, INVENTORY_ARMOR_SLOT_MAX_X, INVENTORY_ARMOR_SLOT_MAX_Y)) {
         if (itemGetType(item) == ITEM_TYPE_ARMOR) {
             Object* currentArmor = gInventoryArmor;
+            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_ARMOR_SLOT, item, currentArmor)) {
+                goto inventory_move_done;
+            }
+
             int itemAddResult = 0;
             if (itemIndex != -1) {
                 itemRemove(_inven_dude, item, 1);
@@ -2518,13 +2536,19 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             }
         }
     } else if (mouseHitTestInWindow(gInventoryWindow, INVENTORY_PC_BODY_VIEW_X, INVENTORY_PC_BODY_VIEW_Y, INVENTORY_PC_BODY_VIEW_MAX_X, INVENTORY_PC_BODY_VIEW_MAX_Y)) {
-        if (_curr_stack != 0) {
+        if (_curr_stack == 0) {
+            // Call the hook when dropping item on the PC portrait when not in a container.  Return value is irrelevant.
+            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_CHARACTER_PORTRAIT, item, nullptr)) {
+                goto inventory_move_done;
+            }
+        } else {
             // If we are looking inside nested inventory (such as backpack item), we see this item in the PC Body View instead of the player.
             // So we drop item into it.
             _drop_into_container(_stack[_curr_stack - 1], item, itemIndex, itemSlot, count);
         }
     }
 
+inventory_move_done:
     _adjust_fid();
     inventoryRenderSummary();
     _display_inventory(indexOffset, -1, INVENTORY_WINDOW_TYPE_NORMAL);
@@ -2550,7 +2574,16 @@ static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourc
         if (itemGetType(*targetSlot) == ITEM_TYPE_WEAPON && itemGetType(sourceItem) == ITEM_TYPE_AMMO) {
             return;
         }
+    }
 
+    HookInventoryMoveType targetSlotType = targetSlot == &gInventoryLeftHandItem
+        ? HOOK_INVENTORYMOVE_LEFT_HAND
+        : HOOK_INVENTORYMOVE_RIGHT_HAND;
+    if (!scriptHooks_InventoryMove(targetSlotType, sourceItem, *targetSlot)) {
+        return;
+    }
+
+    if (*targetSlot != nullptr) {
         if (sourceSlot != nullptr && (sourceSlot != &gInventoryArmor || itemGetType(*targetSlot) == ITEM_TYPE_ARMOR)) {
             if (sourceSlot == &gInventoryArmor) {
                 adjustCritterStatsOnArmorChange(_stack[0], gInventoryArmor, *targetSlot);
@@ -3933,8 +3966,14 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     int actionMenuItem = actionMenuItems[menuItemIndex];
     switch (actionMenuItem) {
-    case GAME_MOUSE_ACTION_MENU_ITEM_DROP:
+    case GAME_MOUSE_ACTION_MENU_ITEM_DROP: {
+        bool inventoryMoveAlreadyChecked = false;
         if (itemSlot != nullptr) {
+            if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                break;
+            }
+
+            inventoryMoveAlreadyChecked = true;
             if (itemSlot == &gInventoryArmor) {
                 adjustCritterStatsOnArmorChange(_stack[0], item, nullptr);
             }
@@ -3952,14 +3991,20 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
             if (quantity > 0) {
                 if (quantity == 1) {
-                    itemSetMoney(item, 1);
-                    objectDrop(owner, item);
+                    if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                        itemSetMoney(item, 1);
+                        objectDrop(owner, item);
+                    }
                 } else {
                     if (itemRemove(owner, item, quantity - 1) == 0) {
                         Object* item2;
                         if (_inven_from_button(keyCode, &item2, &itemSlot, &owner) != 0) {
-                            itemSetMoney(item2, quantity);
-                            objectDrop(owner, item2);
+                            if (scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item2, nullptr)) {
+                                itemSetMoney(item2, quantity);
+                                objectDrop(owner, item2);
+                            } else {
+                                itemAdd(owner, item, quantity - 1);
+                            }
                         } else {
                             itemAdd(owner, item, quantity - 1);
                         }
@@ -3967,22 +4012,29 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 }
             }
         } else if (explosiveIsActiveExplosive(item->pid)) {
-            _dropped_explosive = 1;
-            objectDrop(owner, item);
+            if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                _dropped_explosive = 1;
+                objectDrop(owner, item);
+            }
         } else {
             if (quantity > 1) {
                 quantity = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
 
                 for (int index = 0; index < quantity; index++) {
                     if (_inven_from_button(keyCode, &item, &itemSlot, &owner) != 0) {
-                        objectDrop(owner, item);
+                        if (scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                            objectDrop(owner, item);
+                        }
                     }
                 }
             } else {
-                objectDrop(owner, item);
+                if (inventoryMoveAlreadyChecked || scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item, nullptr)) {
+                    objectDrop(owner, item);
+                }
             }
         }
         break;
+    }
     case GAME_MOUSE_ACTION_MENU_ITEM_LOOK:
         if (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL) {
             objectExamineFunc(_stack[0], item, gInventoryPrintItemDescriptionHandler);
@@ -5487,6 +5539,10 @@ static void _container_exit(int keyCode, int inventoryWindowType)
 // 0x476464
 static int _drop_into_container(Object* container, Object* item, int sourceIndex, Object** itemSlot, int quantity)
 {
+    if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_CONTAINER, item, container)) {
+        return -1;
+    }
+
     int quantityToMove;
     if (quantity > 1) {
         quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
@@ -5525,18 +5581,22 @@ static int _drop_into_container(Object* container, Object* item, int sourceIndex
 }
 
 // 0x47650C
-static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
+static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
 {
     if (itemGetType(weapon) != ITEM_TYPE_WEAPON) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     if (itemGetType(ammo) != ITEM_TYPE_AMMO) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     if (!weaponCanBeReloadedWith(weapon, ammo)) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
+    }
+
+    if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_WEAPON_RELOAD, ammo, weapon)) {
+        return INVENTORY_AMMO_MOVE_RESULT_BLOCKED;
     }
 
     int quantityToMove;
@@ -5547,7 +5607,7 @@ static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoIte
     }
 
     if (quantityToMove == -1) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     Object* sourceItem = ammo;
@@ -5580,13 +5640,13 @@ static int _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoIte
     }
 
     if (!isReloaded) {
-        return -1;
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_READY, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, nullptr);
     soundPlayFile(sfx);
 
-    return 0;
+    return INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
 }
 
 // 0x47664C
