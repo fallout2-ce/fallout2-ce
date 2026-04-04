@@ -182,9 +182,9 @@ Item    arg2 - Item being replaced, weapon being reloaded, or container being fi
 
 int     ret0 - Override setting (-1 - use engine handler, any other value - prevent relocation)
 */
-bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* itemReplace)
+bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem)
 {
-    ScriptHookCall hook(HOOK_INVENTORYMOVE, 1, { actionType, item, itemReplace });
+    ScriptHookCall hook(HOOK_INVENTORYMOVE, 1, { actionType, item, targetItem });
     hook.call();
 
     if (hook.numReturnValues() <= 0) {

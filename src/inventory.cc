@@ -248,9 +248,9 @@ typedef enum InventoryMoveResult {
 } InventoryMoveResult;
 
 typedef enum InventoryAmmoMoveResult {
-    INVENTORY_AMMO_MOVE_RESULT_FAILED,
-    INVENTORY_AMMO_MOVE_RESULT_BLOCKED,
-    INVENTORY_AMMO_MOVE_RESULT_SUCCESS,
+    INVENTORY_AMMO_MOVE_RESULT_FAILED = -1,
+    INVENTORY_AMMO_MOVE_RESULT_SUCCESS = 0,
+    INVENTORY_AMMO_MOVE_RESULT_BLOCKED = 1,
 } InventoryAmmoMoveResult;
 
 static int inventoryMessageListInit();
