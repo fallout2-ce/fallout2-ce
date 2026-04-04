@@ -1,7 +1,6 @@
 #include "sfall_metarules.h"
 
 #include <algorithm>
-#include <cstdarg>
 #include <math.h>
 #include <memory>
 #include <string.h>
@@ -21,6 +20,7 @@
 #include "inventory.h"
 #include "memory.h"
 #include "message.h"
+#include "opcode_context.h"
 #include "object.h"
 #include "platform_compat.h"
 #include "scripts.h"
@@ -38,243 +38,40 @@
 
 namespace fallout {
 
-static void mf_car_gas_amount(MetaruleContext& ctx);
-static void mf_combat_data(MetaruleContext& ctx);
-static void mf_critter_inven_obj2(MetaruleContext& ctx);
-static void mf_dialog_obj(MetaruleContext& ctx);
-static void mf_get_cursor_mode(MetaruleContext& ctx);
-static void mf_get_flags(MetaruleContext& ctx);
-static void mf_get_object_data(MetaruleContext& ctx);
-static void mf_get_sfall_arg_at(MetaruleContext& ctx);
-static void mf_get_text_width(MetaruleContext& ctx);
-static void mf_intface_redraw(MetaruleContext& ctx);
-static void mf_loot_obj(MetaruleContext& ctx);
-static void mf_message_box(MetaruleContext& ctx);
-static void mf_add_extra_msg_file(MetaruleContext& ctx);
-static void mf_art_cache_flush(MetaruleContext& ctx);
-static void mf_metarule_exist(MetaruleContext& ctx);
-static void mf_obj_under_cursor(MetaruleContext& ctx);
-static void mf_opcode_exists(MetaruleContext& ctx);
-static void mf_outlined_object(MetaruleContext& ctx);
-static void mf_set_cursor_mode(MetaruleContext& ctx);
-static void mf_set_flags(MetaruleContext& ctx);
-static void mf_set_outline(MetaruleContext& ctx);
-static void mf_show_window(MetaruleContext& ctx);
-static void mf_tile_by_position(MetaruleContext& ctx);
-static void mf_tile_refresh_display(MetaruleContext& ctx);
-static void mf_string_compare(MetaruleContext& ctx);
-static void mf_string_find(MetaruleContext& ctx);
-static void mf_string_to_case(MetaruleContext& ctx);
-static void mf_string_format(MetaruleContext& ctx);
-static void mf_floor2(MetaruleContext& ctx);
-
-MetaruleContext::MetaruleContext(Program* program, const MetaruleInfo* metaruleInfo, int numArgs)
-    : _program(program)
-    , _metaruleInfo(metaruleInfo)
-    , _numArgs(numArgs)
-    , _returnValue(0)
-    , _hasReturnValue(false)
-{
-    assert(numArgs >= 0 && numArgs <= static_cast<int>(METARULE_MAX_ARGS));
-
-    for (int index = _numArgs - 1; index >= 0; index--) {
-        _args[index] = programStackPopValue(_program);
-    }
-}
-
-MetaruleContext::MetaruleContext(Program* program, const MetaruleInfo* metaruleInfo, int numArgs, const ProgramValue* args)
-    : _program(program)
-    , _metaruleInfo(metaruleInfo)
-    , _numArgs(numArgs)
-    , _returnValue(0)
-    , _hasReturnValue(false)
-{
-    assert(numArgs >= 0 && numArgs <= static_cast<int>(METARULE_MAX_ARGS));
-
-    for (int index = 0; index < _numArgs; index++) {
-        _args[index] = args[_numArgs - index - 1];
-    }
-}
-
-Program* MetaruleContext::program() const
-{
-    return _program;
-}
-
-const MetaruleInfo* MetaruleContext::metaruleInfo() const
-{
-    return _metaruleInfo;
-}
-
-const char* MetaruleContext::name() const
-{
-    return _metaruleInfo->name;
-}
-
-int MetaruleContext::numArgs() const
-{
-    return _numArgs;
-}
-
-const ProgramValue& MetaruleContext::arg(int index) const
-{
-    assert(index >= 0 && index < _numArgs);
-    return _args[index];
-}
-
-int MetaruleContext::intArg(int index) const
-{
-    return arg(index).asInt();
-}
-
-float MetaruleContext::floatArg(int index) const
-{
-    return arg(index).asFloat();
-}
-
-const char* MetaruleContext::stringArg(int index) const
-{
-    const ProgramValue& value = arg(index);
-    if (!value.isString()) {
-        programFatalError("MetaruleContext::stringArg: string expected, got %x", value.opcode);
-    }
-
-    return programGetString(_program, value.opcode, value.integerValue);
-}
-
-void* MetaruleContext::pointerArg(int index) const
-{
-    const ProgramValue& value = arg(index);
-    if (value.opcode == VALUE_TYPE_INT && value.integerValue == 0) {
-        return nullptr;
-    }
-
-    if (!value.isPointer()) {
-        programFatalError("MetaruleContext::pointerArg: pointer expected, got %x", value.opcode);
-    }
-
-    return value.pointerValue;
-}
-
-void MetaruleContext::setReturn(const ProgramValue& value)
-{
-    _returnValue = value;
-    _hasReturnValue = true;
-}
-
-void MetaruleContext::setReturn(int value)
-{
-    setReturn(ProgramValue(value));
-}
-
-void MetaruleContext::setReturn(float value)
-{
-    ProgramValue programValue;
-    programValue.opcode = VALUE_TYPE_FLOAT;
-    programValue.floatValue = value;
-    setReturn(programValue);
-}
-
-void MetaruleContext::setReturn(const char* value)
-{
-    ProgramValue programValue;
-    programValue.opcode = VALUE_TYPE_DYNAMIC_STRING;
-    programValue.integerValue = programPushString(_program, value);
-    setReturn(programValue);
-}
-
-void MetaruleContext::setReturn(void* value)
-{
-    ProgramValue programValue;
-    programValue.opcode = VALUE_TYPE_PTR;
-    programValue.pointerValue = value;
-    setReturn(programValue);
-}
-
-void MetaruleContext::setReturn(Object* value)
-{
-    setReturn(static_cast<void*>(value));
-}
-
-void MetaruleContext::setReturn(Attack* value)
-{
-    setReturn(static_cast<void*>(value));
-}
-
-void MetaruleContext::pushReturnValue() const
-{
-    programStackPushValue(_program, _hasReturnValue ? _returnValue : ProgramValue(0));
-}
-
-void MetaruleContext::printError(const char* format, ...) const
-{
-    va_list args;
-    va_start(args, format);
-    char message[1024];
-    vsnprintf(message, sizeof(message), format, args);
-    va_end(args);
-
-    programPrintError("%s", message);
-}
-
-bool MetaruleContext::validateArguments() const
-{
-    for (int index = 0; index < _numArgs; index++) {
-        const ProgramValue& value = arg(index);
-        switch (_metaruleInfo->argumentTypes[index]) {
-        case ARG_ANY:
-            continue;
-        case ARG_INT:
-            if (!value.isInt()) {
-                printError("%s() - argument #%d is not an integer.", name(), index + 1);
-                return false;
-            }
-            break;
-        case ARG_OBJECT:
-            if (value.isPointer()) {
-                if (value.pointerValue == nullptr) {
-                    printError("%s() - argument #%d is null.", name(), index + 1);
-                    return false;
-                }
-            } else if (value.isInt()) {
-                if (value.integerValue == 0) {
-                    printError("%s() - argument #%d is null.", name(), index + 1);
-                    return false;
-                }
-            } else {
-                printError("%s() - argument #%d is not an object.", name(), index + 1);
-                return false;
-            }
-            break;
-        case ARG_STRING:
-            if (!value.isString()) {
-                printError("%s() - argument #%d is not a string.", name(), index + 1);
-                return false;
-            }
-            break;
-        case ARG_INTSTR:
-            if (!value.isInt() && !value.isString()) {
-                printError("%s() - argument #%d is not an integer or a string.", name(), index + 1);
-                return false;
-            }
-            break;
-        case ARG_NUMBER:
-            if (!value.isInt() && !value.isFloat()) {
-                printError("%s() - argument #%d is not a number.", name(), index + 1);
-                return false;
-            }
-            break;
-        }
-    }
-
-    return true;
-}
+static void mf_car_gas_amount(OpcodeContext& ctx);
+static void mf_combat_data(OpcodeContext& ctx);
+static void mf_critter_inven_obj2(OpcodeContext& ctx);
+static void mf_dialog_obj(OpcodeContext& ctx);
+static void mf_get_cursor_mode(OpcodeContext& ctx);
+static void mf_get_flags(OpcodeContext& ctx);
+static void mf_get_object_data(OpcodeContext& ctx);
+static void mf_get_sfall_arg_at(OpcodeContext& ctx);
+static void mf_get_text_width(OpcodeContext& ctx);
+static void mf_intface_redraw(OpcodeContext& ctx);
+static void mf_loot_obj(OpcodeContext& ctx);
+static void mf_message_box(OpcodeContext& ctx);
+static void mf_add_extra_msg_file(OpcodeContext& ctx);
+static void mf_art_cache_flush(OpcodeContext& ctx);
+static void mf_metarule_exist(OpcodeContext& ctx);
+static void mf_obj_under_cursor(OpcodeContext& ctx);
+static void mf_opcode_exists(OpcodeContext& ctx);
+static void mf_outlined_object(OpcodeContext& ctx);
+static void mf_set_cursor_mode(OpcodeContext& ctx);
+static void mf_set_flags(OpcodeContext& ctx);
+static void mf_set_outline(OpcodeContext& ctx);
+static void mf_show_window(OpcodeContext& ctx);
+static void mf_tile_by_position(OpcodeContext& ctx);
+static void mf_tile_refresh_display(OpcodeContext& ctx);
+static void mf_string_compare(OpcodeContext& ctx);
+static void mf_string_find(OpcodeContext& ctx);
+static void mf_string_to_case(OpcodeContext& ctx);
+static void mf_string_format(OpcodeContext& ctx);
+static void mf_floor2(OpcodeContext& ctx);
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
 // Note: metarules should pop arguments off the stack in natural order
 
-// TODO: argument validation, standard error return value
-// TODO: reduce code complexity using something like MetaruleContext in sfall
+// TODO: reduce duplication further once this context is shared with opcode handlers too.
 const MetaruleInfo kMetarules[] = {
     { "add_extra_msg_file", mf_add_extra_msg_file, 1, 2, -1, { ARG_STRING, ARG_INT } },
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
@@ -384,17 +181,17 @@ const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
 constexpr int kMetarulesMax = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
-void mf_art_cache_flush(MetaruleContext& ctx)
+void mf_art_cache_flush(OpcodeContext& ctx)
 {
     artCacheFlush();
 }
 
-void mf_car_gas_amount(MetaruleContext& ctx)
+void mf_car_gas_amount(OpcodeContext& ctx)
 {
     ctx.setReturn(wmCarGasAmount());
 }
 
-void mf_combat_data(MetaruleContext& ctx)
+void mf_combat_data(OpcodeContext& ctx)
 {
     if (isInCombat()) {
         ctx.setReturn(combat_get_data());
@@ -403,7 +200,7 @@ void mf_combat_data(MetaruleContext& ctx)
     }
 }
 
-void mf_critter_inven_obj2(MetaruleContext& ctx)
+void mf_critter_inven_obj2(OpcodeContext& ctx)
 {
     Object* obj = static_cast<Object*>(ctx.pointerArg(0));
     int slot = ctx.intArg(1);
@@ -426,7 +223,7 @@ void mf_critter_inven_obj2(MetaruleContext& ctx)
     }
 }
 
-void mf_dialog_obj(MetaruleContext& ctx)
+void mf_dialog_obj(OpcodeContext& ctx)
 {
     if (GameMode::isInGameMode(GameMode::kDialog)) {
         ctx.setReturn(gGameDialogSpeaker);
@@ -435,18 +232,18 @@ void mf_dialog_obj(MetaruleContext& ctx)
     }
 }
 
-void mf_get_cursor_mode(MetaruleContext& ctx)
+void mf_get_cursor_mode(OpcodeContext& ctx)
 {
     ctx.setReturn(gameMouseGetMode());
 }
 
-void mf_get_flags(MetaruleContext& ctx)
+void mf_get_flags(OpcodeContext& ctx)
 {
     Object* object = static_cast<Object*>(ctx.pointerArg(0));
     ctx.setReturn(object->flags);
 }
 
-void mf_get_sfall_arg_at(MetaruleContext& ctx)
+void mf_get_sfall_arg_at(OpcodeContext& ctx)
 {
     const int argNum = ctx.intArg(0);
 
@@ -462,7 +259,7 @@ void mf_get_sfall_arg_at(MetaruleContext& ctx)
     ctx.setReturn(result);
 }
 
-void mf_get_object_data(MetaruleContext& ctx)
+void mf_get_object_data(OpcodeContext& ctx)
 {
     // TODO: only allow to modify a set of whitelisted object types
     // TODO: map offsets to fields to avoid potential alignment, 64bit issues!
@@ -477,12 +274,12 @@ void mf_get_object_data(MetaruleContext& ctx)
     ctx.setReturn(value);
 }
 
-void mf_get_text_width(MetaruleContext& ctx)
+void mf_get_text_width(OpcodeContext& ctx)
 {
     ctx.setReturn(fontGetStringWidth(ctx.stringArg(0)));
 }
 
-void mf_intface_redraw(MetaruleContext& ctx)
+void mf_intface_redraw(OpcodeContext& ctx)
 {
     if (ctx.numArgs() == 0) {
         interfaceBarRefresh();
@@ -492,7 +289,7 @@ void mf_intface_redraw(MetaruleContext& ctx)
     }
 }
 
-void mf_loot_obj(MetaruleContext& ctx)
+void mf_loot_obj(OpcodeContext& ctx)
 {
     if (GameMode::isInGameMode(GameMode::kInventory)) {
         ctx.setReturn(inventoryGetTargetObject());
@@ -501,7 +298,7 @@ void mf_loot_obj(MetaruleContext& ctx)
     }
 }
 
-void mf_metarule_exist(MetaruleContext& ctx)
+void mf_metarule_exist(OpcodeContext& ctx)
 {
     const char* metarule = ctx.stringArg(0);
 
@@ -515,7 +312,7 @@ void mf_metarule_exist(MetaruleContext& ctx)
     ctx.setReturn(0);
 }
 
-void mf_add_extra_msg_file(MetaruleContext& ctx)
+void mf_add_extra_msg_file(OpcodeContext& ctx)
 {
     if (ctx.numArgs() == 2) {
         programFatalError("op_sfall_func: '%s': explicit fileNumber is not supported in Fallout 2 CE", ctx.name());
@@ -539,7 +336,7 @@ void mf_add_extra_msg_file(MetaruleContext& ctx)
     ctx.setReturn(result);
 }
 
-void mf_opcode_exists(MetaruleContext& ctx)
+void mf_opcode_exists(OpcodeContext& ctx)
 {
     int opcode = ctx.intArg(0);
     int opcodeIndex = opcode & 0x3FFF;
@@ -552,7 +349,7 @@ void mf_opcode_exists(MetaruleContext& ctx)
     ctx.setReturn(opcodeExists);
 }
 
-void mf_obj_under_cursor(MetaruleContext& ctx)
+void mf_obj_under_cursor(OpcodeContext& ctx)
 {
     int includeDude = ctx.intArg(0);
     int onlyCritter = ctx.intArg(1);
@@ -562,18 +359,18 @@ void mf_obj_under_cursor(MetaruleContext& ctx)
     ctx.setReturn(object);
 }
 
-void mf_outlined_object(MetaruleContext& ctx)
+void mf_outlined_object(OpcodeContext& ctx)
 {
     ctx.setReturn(gmouse_get_outlined_object());
 }
 
-void mf_set_cursor_mode(MetaruleContext& ctx)
+void mf_set_cursor_mode(OpcodeContext& ctx)
 {
     int mode = ctx.intArg(0);
     gameMouseSetMode(mode);
 }
 
-void mf_set_flags(MetaruleContext& ctx)
+void mf_set_flags(OpcodeContext& ctx)
 {
     Object* object = static_cast<Object*>(ctx.pointerArg(0));
     int flags = ctx.intArg(1);
@@ -581,14 +378,14 @@ void mf_set_flags(MetaruleContext& ctx)
     object->flags = flags;
 }
 
-void mf_set_outline(MetaruleContext& ctx)
+void mf_set_outline(OpcodeContext& ctx)
 {
     Object* object = static_cast<Object*>(ctx.pointerArg(0));
     int outline = ctx.intArg(1);
     object->outline = outline;
 }
 
-void mf_show_window(MetaruleContext& ctx)
+void mf_show_window(OpcodeContext& ctx)
 {
     if (ctx.numArgs() == 0) {
         scriptWindowShow();
@@ -600,12 +397,12 @@ void mf_show_window(MetaruleContext& ctx)
     }
 }
 
-void mf_tile_refresh_display(MetaruleContext& ctx)
+void mf_tile_refresh_display(OpcodeContext& ctx)
 {
     tileWindowRefresh();
 }
 
-void mf_tile_by_position(MetaruleContext& ctx)
+void mf_tile_by_position(OpcodeContext& ctx)
 {
     int x = ctx.intArg(0);
     int y = ctx.intArg(1);
@@ -679,7 +476,7 @@ static bool FalloutStringCompare(const char* str1, const char* str2, long codePa
     }
 }
 
-void mf_string_compare(MetaruleContext& ctx)
+void mf_string_compare(OpcodeContext& ctx)
 {
     // compare str1 to str3 case insensitively
     // if args == 3, use FalloutStringCompare
@@ -704,7 +501,7 @@ void mf_string_compare(MetaruleContext& ctx)
     }
 }
 
-void mf_string_find(MetaruleContext& ctx)
+void mf_string_find(OpcodeContext& ctx)
 {
     const char* str = ctx.stringArg(0);
     const char* substr = ctx.stringArg(1);
@@ -728,7 +525,7 @@ void mf_string_find(MetaruleContext& ctx)
     }
 }
 
-void mf_string_to_case(MetaruleContext& ctx)
+void mf_string_to_case(OpcodeContext& ctx)
 {
     auto buf = ctx.stringArg(0);
     std::string s(buf);
@@ -743,7 +540,7 @@ void mf_string_to_case(MetaruleContext& ctx)
     ctx.setReturn(s.c_str());
 }
 
-void mf_string_format(MetaruleContext& ctx)
+void mf_string_format(OpcodeContext& ctx)
 {
     ProgramValue formatArgs[7];
     for (int index = 1; index < ctx.numArgs(); index++) {
@@ -838,7 +635,7 @@ void mf_string_format(MetaruleContext& ctx)
     ctx.setReturn(out);
 }
 
-void mf_floor2(MetaruleContext& ctx)
+void mf_floor2(OpcodeContext& ctx)
 {
     ctx.setReturn(static_cast<int>(floor(ctx.arg(0).asFloat())));
 }
@@ -950,7 +747,7 @@ void sprintf_lite(Program* program, int args, const char* infoOpcodeName)
 }
 
 // message_box
-void mf_message_box(MetaruleContext& ctx)
+void mf_message_box(OpcodeContext& ctx)
 {
     static int dialogShowCount = 0;
 
@@ -1042,7 +839,7 @@ void sfall_metarule(Program* program, int args)
         return;
     }
 
-    MetaruleContext ctx(program, metaruleInfo, args, values);
+    OpcodeContext ctx(program, metaruleInfo, args, values);
     if (!ctx.validateArguments()) {
         ctx.setReturn(metaruleInfo->errorReturn);
         ctx.pushReturnValue();

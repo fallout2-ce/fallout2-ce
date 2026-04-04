@@ -172,6 +172,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/obj_types.h"
     "src/object.cc"
     "src/object.h"
+    "src/opcode_context.cc"
+    "src/opcode_context.h"
     "src/options.cc"
     "src/options.h"
     "src/palette.cc"

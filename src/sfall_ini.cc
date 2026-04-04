@@ -7,9 +7,9 @@
 #include "config.h"
 #include "debug.h"
 #include "interpreter.h"
+#include "opcode_context.h"
 #include "platform_compat.h"
 #include "sfall_arrays.h"
-#include "sfall_metarules.h"
 
 namespace fallout {
 
@@ -259,7 +259,7 @@ static const ConfigSection* sfall_find_section_in_config(Config* config, const c
 }
 
 // set_ini_setting
-void mf_set_ini_setting(MetaruleContext& ctx)
+void mf_set_ini_setting(OpcodeContext& ctx)
 {
     const char* triplet = ctx.stringArg(0);
     ProgramValue value = ctx.arg(1);
@@ -282,7 +282,7 @@ void mf_set_ini_setting(MetaruleContext& ctx)
 }
 
 // get_ini_section
-void mf_get_ini_section(MetaruleContext& ctx)
+void mf_get_ini_section(OpcodeContext& ctx)
 {
     // Arguments: file_path (string), section_name (string)
 
@@ -325,7 +325,7 @@ void mf_get_ini_section(MetaruleContext& ctx)
 }
 
 // get_ini_sections
-void mf_get_ini_sections(MetaruleContext& ctx)
+void mf_get_ini_sections(OpcodeContext& ctx)
 {
     // Arguments: file_path (string)
     const char* filePath = ctx.stringArg(0);

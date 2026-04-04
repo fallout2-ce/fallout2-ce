@@ -5,7 +5,7 @@
 
 #include "animation.h"
 #include "interpreter.h"
-#include "sfall_metarules.h"
+#include "opcode_context.h"
 
 namespace fallout {
 
@@ -103,7 +103,7 @@ void op_reg_anim_turn_towards(Program* program)
     }
 }
 
-void mf_reg_anim_animate_and_move(MetaruleContext& ctx)
+void mf_reg_anim_animate_and_move(OpcodeContext& ctx)
 {
     Object* object = static_cast<Object*>(ctx.pointerArg(0));
     int tile = ctx.intArg(1);
