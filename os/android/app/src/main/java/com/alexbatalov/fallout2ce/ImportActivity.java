@@ -2,10 +2,12 @@ package com.alexbatalov.fallout2ce;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.documentfile.provider.DocumentFile;
 
@@ -17,18 +19,18 @@ public class ImportActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-        startActivityForResult(intent, IMPORT_REQUEST_CODE);
+        launchImportPicker();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent resultData) {
         if (requestCode == IMPORT_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK) {
-                final Uri treeUri = resultData.getData();
+                final Uri treeUri = resultData != null ? resultData.getData() : null;
                 if (treeUri != null) {
+                    grantImportPermissions(treeUri, resultData);
                     final DocumentFile treeDocument = DocumentFile.fromTreeUri(this, treeUri);
-                    if (treeDocument != null) {
+                    if (treeDocument != null && treeDocument.isDirectory()) {
                         copyFiles(treeDocument);
                         return;
                     }
@@ -42,18 +44,57 @@ public class ImportActivity extends Activity {
     }
 
     private void copyFiles(DocumentFile treeDocument) {
-        ProgressDialog dialog = createProgressDialog();
+        final ProgressDialog dialog = createProgressDialog();
         dialog.show();
 
         new Thread(() -> {
-            ContentResolver contentResolver = getContentResolver();
-            File externalFilesDir = getExternalFilesDir(null);
-            FileUtils.copyRecursively(contentResolver, treeDocument, externalFilesDir);
+            final ContentResolver contentResolver = getContentResolver();
+            final File externalFilesDir = getExternalFilesDir(null);
+            final boolean success = externalFilesDir != null
+                && FileUtils.copyRecursively(contentResolver, treeDocument, externalFilesDir);
 
-            startMainActivity();
-            dialog.dismiss();
-            finish();
+            runOnUiThread(() -> {
+                dialog.dismiss();
+
+                if (success) {
+                    startMainActivity();
+                } else {
+                    Toast.makeText(this, R.string.import_failed, Toast.LENGTH_LONG).show();
+                }
+
+                finish();
+            });
         }).start();
+    }
+
+    private void launchImportPicker() {
+        final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+            | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+            | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+
+        try {
+            startActivityForResult(intent, IMPORT_REQUEST_CODE);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, R.string.import_picker_unavailable, Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    private void grantImportPermissions(Uri treeUri, Intent resultData) {
+        int flags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        if (resultData != null) {
+            flags = resultData.getFlags()
+                & (Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        }
+
+        try {
+            getContentResolver().takePersistableUriPermission(treeUri, flags);
+        } catch (SecurityException ignored) {
+            // Some providers do not offer persistable grants. One-shot access is enough for import.
+        }
     }
 
     private void startMainActivity() {

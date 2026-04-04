@@ -2,4 +2,6 @@
     <string name="app_name">Fallout 2</string>
     <string name="loading_dialog_title">PLEASE STAND BY</string>
     <string name="loading_dialog_message">Copying files…</string>
+    <string name="import_failed">Failed to import game files. Please pick a valid Fallout 2 folder and try again.</string>
+    <string name="import_picker_unavailable">No compatible folder picker is available on this device.</string>
 </resources>
