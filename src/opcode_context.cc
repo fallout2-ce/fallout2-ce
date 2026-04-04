@@ -1,7 +1,7 @@
 #include "opcode_context.h"
 
-#include <cstdio>
 #include <cstdarg>
+#include <cstdio>
 
 #include "sfall_metarules.h"
 
