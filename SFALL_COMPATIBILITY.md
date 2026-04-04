@@ -79,7 +79,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | InventoryMove | `HOOK_INVENTORYMOVE` | ✅ | - |
 | InvenWield | `HOOK_INVENWIELD` | 🚫 | - |
 | AdjustFID | `HOOK_ADJUSTFID` | 🚫 | - |
-| CombatTurn | `HOOK_COMBATTURN` | 🚫 | - |
+| CombatTurn | `HOOK_COMBATTURN` | ✅ | - |
 | StdProcedure | `HOOK_STDPROCEDURE` | 🚫 | Et tu |
 | StdProcedureEnd | `HOOK_STDPROCEDURE_END` | 🚫 | - |
 | CarTravel | `HOOK_CARTRAVEL` | 🚫 | - |

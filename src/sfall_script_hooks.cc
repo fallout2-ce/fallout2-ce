@@ -165,6 +165,42 @@ void scriptHooks_GameModeChange(int exit, int previousGameMode)
 }
 
 /*
+Runs before and after each turn in combat (for both PC and NPC).
+
+int     arg0 - event type:
+               1 - start of turn
+               0 - normal end of turn
+              -1 - combat ends abruptly (by script or by pressing Enter during PC turn)
+              -2 - combat ends normally (hook always runs at the end of combat)
+Critter arg1 - critter doing the turn
+int     arg2 - 1 at the start/end of the player's turn after loading a game saved in combat mode, 0 otherwise
+
+int     ret0 - pass 1 at the start of turn to skip the turn, pass -1 at the end of turn to force end of combat
+*/
+// returns true if turn should be skipped
+bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat)
+{
+    ScriptHookCall hook(HOOK_COMBATTURN, 1, { 1, critter, reloadedDuringCombat ? 1 : 0 });
+    hook.call();
+
+    return hook.numReturnValues() > 0 && hook.getReturnValueAt(0).asInt() == 1;
+}
+
+// returns true if combat should end immediately
+bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat)
+{
+    ScriptHookCall hook(HOOK_COMBATTURN, 1, { turnResult, critter, reloadedDuringCombat ? 1 : 0 });
+    hook.call();
+
+    return hook.numReturnValues() > 0 && hook.getReturnValueAt(0).asInt() == -1;
+}
+
+void scriptHooks_CombatTurnCombatEnd(Object* critter)
+{
+    ScriptHookCall(HOOK_COMBATTURN, 0, { -2, critter, 0 }).call();
+}
+
+/*
 Runs before moving items between inventory slots in dude interface. You can override the action.
 
 int     arg0 - Target slot:
