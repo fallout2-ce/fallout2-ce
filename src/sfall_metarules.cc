@@ -350,8 +350,8 @@ void mf_opcode_exists(OpcodeContext& ctx)
 
 void mf_obj_under_cursor(OpcodeContext& ctx)
 {
-    int includeDude = ctx.arg(0).asInt();
-    int onlyCritter = ctx.arg(1).asInt();
+    int onlyCritter = ctx.arg(0).asInt();
+    int includeDude = ctx.arg(1).asInt();
 
     Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : -1, includeDude, gElevation);
 
