@@ -65,7 +65,7 @@ static void mf_tile_refresh_display(OpcodeContext& ctx);
 static void mf_string_compare(OpcodeContext& ctx);
 static void mf_string_find(OpcodeContext& ctx);
 static void mf_string_to_case(OpcodeContext& ctx);
-static void mf_string_format(OpcodeContext& ctx);
+void mf_string_format(OpcodeContext& ctx);
 static void mf_floor2(OpcodeContext& ctx);
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
@@ -636,113 +636,6 @@ void mf_string_format(OpcodeContext& ctx)
 void mf_floor2(OpcodeContext& ctx)
 {
     ctx.setReturn(static_cast<int>(floor(ctx.arg(0).asFloat())));
-}
-
-// TODO: combine string_format with sprintf
-void sprintf_lite(Program* program, int args, const char* infoOpcodeName)
-{
-    auto format = programStackPopString(program); // Pop the format string
-
-    ProgramValue formatArgs[7]; // 8 arguments total, 1 for format string
-
-    for (int index = 0; index < args - 1; index++) {
-        formatArgs[index] = programStackPopValue(program);
-    }
-
-    int fmtLen = static_cast<int>(strlen(format));
-    if (fmtLen == 0) {
-        programStackPushString(program, "");
-        return;
-    }
-    if (fmtLen > 1024) {
-        debugPrint("%s(): format string exceeds maximum length of 1024 characters.", infoOpcodeName);
-        programStackPushString(program, "Error");
-        return;
-    }
-    int newFmtLen = fmtLen;
-
-    for (int i = 0; i < fmtLen; i++) {
-        if (format[i] == '%') newFmtLen++; // will possibly be escaped, need space for that
-    }
-
-    // parse format to make it safe
-    auto newFmt = std::make_unique<char[]>(newFmtLen + 1);
-
-    bool conversion = false;
-    int j = 0;
-    int valIdx = 0;
-
-    char out[5120 + 1] = { 0 };
-    int bufCount = sizeof(out) - 1;
-    char* outBuf = out;
-
-    int numArgs = args; // From 2 to 8
-
-    for (int i = 0; i < fmtLen; i++) {
-        char c = format[i];
-        if (!conversion) {
-            // Start conversion.
-            if (c == '%') conversion = true;
-        } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '%') {
-            int partLen;
-            if (c == '%') {
-                // escaped % sign, just copy newFmt up to (and including) the leading % sign
-                newFmt[j] = '\0';
-                // strncpy_s(outBuf, bufCount, newFmt, j);
-                strncpy(outBuf, newFmt.get(), std::min(j, bufCount - 1));
-                partLen = j;
-            } else {
-                // ignore size prefixes
-                if (c == 'h' || c == 'l' || c == 'j' || c == 'z' || c == 't' || c == 'w' || c == 'L' || c == 'I') continue;
-                // Type specifier, perform conversion.
-                if (++valIdx == numArgs) {
-                    debugPrint("%s() - format string contains more conversions than passed arguments (%d): %s",
-                        infoOpcodeName, numArgs - 1, format);
-                }
-                const auto& arg = formatArgs[std::min(valIdx - 1, numArgs - 2)];
-
-                // ctx.arg(valIdx < numArgs ? valIdx : numArgs - 1);
-                if (c == 'S' || c == 'Z') {
-                    c = 's'; // don't allow wide strings
-                }
-                if ((c == 's' && !arg.isString()) || // don't allow treating non-string values as string pointers
-                    c == 'n') // don't allow "n" specifier
-                {
-                    c = 'd';
-                }
-                newFmt[j++] = c;
-                newFmt[j] = '\0';
-                partLen = arg.isFloat()
-                    ? snprintf(outBuf, bufCount, newFmt.get(), arg.floatValue)
-                    : arg.isInt()    ? snprintf(outBuf, bufCount, newFmt.get(), arg.integerValue)
-                    : arg.isString() ? snprintf(outBuf, bufCount, newFmt.get(),
-                                           programGetString(program, arg.opcode, arg.integerValue))
-                                     : snprintf(outBuf, bufCount, newFmt.get(), "<UNSUPPORTED TYPE>");
-            }
-            outBuf += partLen;
-            bufCount -= partLen;
-            conversion = false;
-            j = 0;
-            if (bufCount <= 0) {
-                break;
-            }
-            continue;
-        }
-        newFmt[j++] = c;
-    }
-    // Copy the remainder of the string.
-    if (bufCount > 0) {
-        newFmt[j] = '\0';
-        // strcpy_s(outBuf, bufCount, newFmt);
-        if (strlen(newFmt.get()) < bufCount) {
-            strcpy(outBuf, newFmt.get());
-        } else {
-            strncpy(outBuf, newFmt.get(), bufCount - 1);
-            outBuf[bufCount - 1] = '\0'; // Ensure null-termination
-        }
-    }
-
-    programStackPushString(program, out);
 }
 
 // message_box

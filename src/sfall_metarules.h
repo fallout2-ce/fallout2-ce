@@ -32,8 +32,7 @@ extern const std::size_t kMetarulesCount;
 class Program;
 
 void sfall_metarule(Program* program, int args);
-
-void sprintf_lite(Program* program, int args, const char* infoOpcodeName);
+void mf_string_format(OpcodeContext& ctx);
 
 } // namespace fallout
 

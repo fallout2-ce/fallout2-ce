@@ -1287,11 +1287,27 @@ static void op_div(Program* program)
 
 static void op_sprintf(Program* program)
 {
-    auto arg1 = programStackPopValue(program);
-    auto arg2 = programStackPopString(program);
-    programStackPushValue(program, arg1);
-    programStackPushString(program, arg2);
-    sprintf_lite(program, 2, "op_sprintf");
+    static constexpr MetaruleInfo kSprintfStringFormatScaffold = {
+        "string_format",
+        mf_string_format,
+        2,
+        2,
+        0,
+        { ARG_STRING, ARG_ANY },
+    };
+
+    ProgramValue args[2];
+    args[0] = programStackPopValue(program);
+    args[1] = programStackPopValue(program);
+
+    OpcodeContext ctx(program, &kSprintfStringFormatScaffold, 2, args);
+    if (!ctx.validateArguments()) {
+        ctx.pushReturnValue();
+        return;
+    }
+
+    mf_string_format(ctx);
+    ctx.pushReturnValue();
 }
 
 static void op_charcode(Program* program)
