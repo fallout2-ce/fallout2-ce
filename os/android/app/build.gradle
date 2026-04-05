@@ -92,7 +92,7 @@ android {
 
     defaultConfig {
         applicationId 'com.alexbatalov.fallout2ce'
-        minSdk 21
+        minSdk 24
         targetSdk 32
         versionCode 4
         versionName '1.3.0'
