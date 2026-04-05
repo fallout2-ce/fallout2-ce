@@ -14,7 +14,6 @@ struct MetaruleInfo;
 // intentionally named to make later opcode adoption smaller.
 class OpcodeContext {
 public:
-    OpcodeContext(Program* program, const MetaruleInfo* metaruleInfo, int numArgs);
     OpcodeContext(Program* program, const MetaruleInfo* metaruleInfo, int numArgs, const ProgramValue* args);
 
     Program* program() const;

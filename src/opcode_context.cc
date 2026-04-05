@@ -9,20 +9,6 @@
 
 namespace fallout {
 
-OpcodeContext::OpcodeContext(Program* program, const MetaruleInfo* metaruleInfo, int numArgs)
-    : _program(program)
-    , _metaruleInfo(metaruleInfo)
-    , _numArgs(numArgs)
-    , _returnValue(0)
-    , _hasReturnValue(false)
-{
-    assert(numArgs >= 0 && numArgs <= static_cast<int>(METARULE_MAX_ARGS));
-
-    for (int index = _numArgs - 1; index >= 0; index--) {
-        _args[index] = programStackPopValue(_program);
-    }
-}
-
 OpcodeContext::OpcodeContext(Program* program, const MetaruleInfo* metaruleInfo, int numArgs, const ProgramValue* args)
     : _program(program)
     , _metaruleInfo(metaruleInfo)
@@ -155,6 +141,15 @@ void OpcodeContext::printError(const char* format, ...) const
 
 bool OpcodeContext::validateArguments() const
 {
+    if (_numArgs < _metaruleInfo->minArgs || _numArgs > _metaruleInfo->maxArgs) {
+        printError("%s() - invalid number of arguments (%d), must be from %d to %d.",
+            name(),
+            _numArgs,
+            _metaruleInfo->minArgs,
+            _metaruleInfo->maxArgs);
+        return false;
+    }
+
     for (int index = 0; index < _numArgs; index++) {
         const ProgramValue& value = arg(index);
         switch (_metaruleInfo->argumentTypes[index]) {

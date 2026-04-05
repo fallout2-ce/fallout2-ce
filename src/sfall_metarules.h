@@ -1,11 +1,10 @@
 #ifndef FALLOUT_SFALL_METARULES_H_
 #define FALLOUT_SFALL_METARULES_H_
 
+#include "opcode_context.h"
 #include "script_call_defs.h"
 
 namespace fallout {
-
-class OpcodeContext;
 
 typedef void(MetaruleHandler)(OpcodeContext& ctx);
 

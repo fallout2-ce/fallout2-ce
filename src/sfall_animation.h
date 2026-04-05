@@ -2,10 +2,9 @@
 #define FALLOUT_SFALL_ANIMATION_H_
 
 #include "interpreter.h"
+#include "opcode_context.h"
 
 namespace fallout {
-
-class OpcodeContext;
 
 void op_reg_anim_combat_check(Program* program);
 void op_reg_anim_destroy(Program* program);

@@ -69,7 +69,6 @@ static void mf_string_format(OpcodeContext& ctx);
 static void mf_floor2(OpcodeContext& ctx);
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
-// Note: metarules should pop arguments off the stack in natural order
 
 // TODO: reduce duplication further once this context is shared with opcode handlers too.
 const MetaruleInfo kMetarules[] = {
@@ -640,15 +639,16 @@ void mf_floor2(OpcodeContext& ctx)
     ctx.setReturn(static_cast<int>(floor(ctx.arg(0).asFloat())));
 }
 
+// TODO: combine string_format with sprintf
 void sprintf_lite(Program* program, int args, const char* infoOpcodeName)
 {
+    auto format = programStackPopString(program); // Pop the format string
+
     ProgramValue formatArgs[7]; // 8 arguments total, 1 for format string
 
     for (int index = 0; index < args - 1; index++) {
         formatArgs[index] = programStackPopValue(program);
     }
-
-    auto format = programStackPopString(program); // Pop the format string
 
     int fmtLen = static_cast<int>(strlen(format));
     if (fmtLen == 0) {
@@ -800,7 +800,8 @@ void mf_message_box(OpcodeContext& ctx)
 
 void sfall_metarule(Program* program, int args)
 {
-    static ProgramValue values[8];
+    // TODO: make OpcodeContext handle the stack.  This will be easier once it is used for all opcodes.
+    static ProgramValue values[SCRIPT_CALL_MAX_ARGS];
 
     for (int index = 0; index < args; index++) {
         values[index] = programStackPopValue(program);
@@ -826,16 +827,6 @@ void sfall_metarule(Program* program, int args)
     if (metaruleInfo == nullptr) {
         programPrintError("op_sfall_func(\"%s\", ...) - metarule function is unknown.", metarule);
         programStackPushInteger(program, 0);
-        return;
-    }
-
-    if (args < metaruleInfo->minArgs || args > metaruleInfo->maxArgs) {
-        programPrintError("op_sfall_func(\"%s\", ...) - invalid number of arguments (%d), must be from %d to %d.",
-            metarule,
-            args,
-            metaruleInfo->minArgs,
-            metaruleInfo->maxArgs);
-        programStackPushInteger(program, metaruleInfo->errorReturn);
         return;
     }
 

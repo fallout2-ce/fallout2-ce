@@ -4,11 +4,10 @@
 #include "config.h"
 #include "dictionary.h"
 #include "interpreter.h"
+#include "opcode_context.h"
 #include <cstddef>
 
 namespace fallout {
-
-class OpcodeContext;
 
 /// Sets base directory to lookup .ini files.
 void sfall_ini_set_base_path(const char* path);
