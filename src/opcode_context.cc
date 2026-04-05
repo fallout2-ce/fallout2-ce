@@ -55,7 +55,7 @@ const char* OpcodeContext::stringArg(int index) const
     const ProgramValue& value = arg(index);
     assert(value.isString());
 
-    return programGetString(_program, value.opcode, value.integerValue);
+    return value.asString(_program);
 }
 
 void OpcodeContext::setReturn(const ProgramValue& value)

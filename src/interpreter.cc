@@ -3376,6 +3376,15 @@ Object* ProgramValue::asObject() const
     return static_cast<Object*>(pointerValue);
 }
 
+const char* ProgramValue::asString(Program* program) const
+{
+    if (!isString()) {
+        return "";
+    }
+
+    return programGetString(program, opcode, integerValue);
+}
+
 // CE
 ProgramValue programMakeString(Program* program, const char* str)
 {

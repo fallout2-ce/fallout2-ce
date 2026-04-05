@@ -605,8 +605,7 @@ void mf_string_format(OpcodeContext& ctx)
                 partLen = arg.isFloat()
                     ? snprintf(outBuf, bufCount, newFmt.get(), arg.floatValue)
                     : arg.isInt()    ? snprintf(outBuf, bufCount, newFmt.get(), arg.integerValue)
-                    : arg.isString() ? snprintf(outBuf, bufCount, newFmt.get(),
-                                           programGetString(ctx.program(), arg.opcode, arg.integerValue))
+                    : arg.isString() ? snprintf(outBuf, bufCount, newFmt.get(), arg.asString(ctx.program()))
                                      : snprintf(outBuf, bufCount, newFmt.get(), "<UNSUPPORTED TYPE>");
             }
             outBuf += partLen;

@@ -265,7 +265,7 @@ void mf_set_ini_setting(OpcodeContext& ctx)
     ProgramValue value = ctx.arg(1);
 
     if (value.isString()) {
-        const char* stringValue = programGetString(ctx.program(), value.opcode, value.integerValue);
+        const char* stringValue = value.asString(ctx.program());
         if (!sfall_ini_set_string(triplet, stringValue)) {
             debugPrint("set_ini_setting: unable to write '%s' to '%s'",
                 stringValue,
