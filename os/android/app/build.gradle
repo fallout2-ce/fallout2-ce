@@ -2,6 +2,66 @@ plugins {
     id 'com.android.application'
 }
 
+def sdlJavaBindingsDir = file('src/main/java/org/libsdl/app')
+
+def findFetchedSdlJavaBindingsDir = { String variantName ->
+    File cxxVariantDir = file(".cxx/${variantName.capitalize()}")
+    if (!cxxVariantDir.exists()) {
+        throw new GradleException("SDL sync check failed: missing ${cxxVariantDir}. Run externalNativeBuild${variantName.capitalize()} first.")
+    }
+
+    File match = fileTree(cxxVariantDir).matching {
+        include '**/_deps/sdl2-src/android-project/app/src/main/java/org/libsdl/app/SDLActivity.java'
+    }.files.sort { a, b -> a.path <=> b.path }.find()
+
+    if (match == null) {
+        throw new GradleException("SDL sync check failed: could not locate fetched SDL Java bindings under ${cxxVariantDir}.")
+    }
+
+    return match.parentFile
+}
+
+def assertSdlJavaBindingsMatch = { String variantName ->
+    File fetchedDir = findFetchedSdlJavaBindingsDir(variantName)
+
+    Set<String> committedNames = sdlJavaBindingsDir.listFiles()
+        .findAll { it.isFile() && it.name.endsWith('.java') }
+        .collect { it.name }
+        .toSet()
+    Set<String> fetchedNames = fetchedDir.listFiles()
+        .findAll { it.isFile() && it.name.endsWith('.java') }
+        .collect { it.name }
+        .toSet()
+
+    Set<String> missingFromCommitted = fetchedNames - committedNames
+    Set<String> extraInCommitted = committedNames - fetchedNames
+
+    if (!missingFromCommitted.isEmpty() || !extraInCommitted.isEmpty()) {
+        throw new GradleException(
+            "SDL Android Java bindings are out of sync with native SDL for ${variantName}.\n" +
+            "Fetched SDL dir: ${fetchedDir}\n" +
+            "Missing from committed bindings: ${missingFromCommitted.sort()}\n" +
+            "Extra committed bindings: ${extraInCommitted.sort()}\n" +
+            "Sync os/android/app/src/main/java/org/libsdl/app from the fetched SDL android-project sources."
+        )
+    }
+
+    List<String> changedFiles = committedNames.findAll { fileName ->
+        File committedFile = new File(sdlJavaBindingsDir, fileName)
+        File fetchedFile = new File(fetchedDir, fileName)
+        committedFile.getText('UTF-8') != fetchedFile.getText('UTF-8')
+    }.sort()
+
+    if (!changedFiles.isEmpty()) {
+        throw new GradleException(
+            "SDL Android Java bindings are out of sync with native SDL for ${variantName}.\n" +
+            "Fetched SDL dir: ${fetchedDir}\n" +
+            "Changed files: ${changedFiles}\n" +
+            "Sync os/android/app/src/main/java/org/libsdl/app from the fetched SDL android-project sources."
+        )
+    }
+}
+
 android {
     compileSdk 32
 
@@ -78,8 +138,20 @@ android {
     }
 
     applicationVariants.all { variant ->
+        String variantCap = variant.name.capitalize()
+        String syncCheckTaskName = "checkSdlJavaBindingsSync${variantCap}"
+
+        tasks.register(syncCheckTaskName) {
+            dependsOn("externalNativeBuild${variantCap}")
+            doLast {
+                assertSdlJavaBindingsMatch(variant.name)
+            }
+        }
+
         tasks["merge${variant.name.capitalize()}Assets"]
             .dependsOn("externalNativeBuild${variant.name.capitalize()}")
+        tasks["compile${variant.name.capitalize()}JavaWithJavac"]
+            .dependsOn(syncCheckTaskName)
     }
 
     if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
