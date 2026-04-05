@@ -41,7 +41,6 @@ private:
     int _numArgs;
     std::array<ProgramValue, METARULE_MAX_ARGS> _args;
     ProgramValue _returnValue;
-    bool _hasReturnValue;
 };
 
 } // namespace fallout

@@ -14,7 +14,6 @@ OpcodeContext::OpcodeContext(Program* program, const MetaruleInfo* metaruleInfo,
     , _metaruleInfo(metaruleInfo)
     , _numArgs(numArgs)
     , _returnValue(0)
-    , _hasReturnValue(false)
 {
     assert(numArgs >= 0 && numArgs <= static_cast<int>(METARULE_MAX_ARGS));
 
@@ -61,7 +60,6 @@ const char* OpcodeContext::stringArg(int index) const
 void OpcodeContext::setReturn(const ProgramValue& value)
 {
     _returnValue = value;
-    _hasReturnValue = true;
 }
 
 void OpcodeContext::setReturn(std::nullptr_t)
@@ -84,7 +82,9 @@ void OpcodeContext::setReturn(const char* value)
 
 void OpcodeContext::pushReturnValue() const
 {
-    programStackPushValue(_program, _hasReturnValue ? _returnValue : ProgramValue(0));
+    // sfall_funcX calls are expression-style; handlers that do not call
+    // setReturn() implicitly return 0.
+    programStackPushValue(_program, _returnValue);
 }
 
 void OpcodeContext::printError(const char* format, ...) const
