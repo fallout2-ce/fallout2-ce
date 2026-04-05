@@ -152,6 +152,9 @@ class ProgramValue {
 public:
     ProgramValue();
     ProgramValue(int value);
+    ProgramValue(unsigned int value);
+    ProgramValue(float value);
+    ProgramValue(void* value);
     ProgramValue(Object* value);
     // TODO: better approach for supporting different object types?
     ProgramValue(Attack* value);

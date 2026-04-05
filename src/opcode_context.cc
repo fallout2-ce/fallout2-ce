@@ -66,25 +66,12 @@ void OpcodeContext::setReturn(const ProgramValue& value)
 
 void OpcodeContext::setReturn(std::nullptr_t)
 {
-    setReturn(static_cast<void*>(nullptr));
+    setReturn(ProgramValue(static_cast<void*>(nullptr)));
 }
 
 void OpcodeContext::setReturn(int value)
 {
     setReturn(ProgramValue(value));
-}
-
-void OpcodeContext::setReturn(ArrayId value)
-{
-    setReturn(ProgramValue(static_cast<int>(value)));
-}
-
-void OpcodeContext::setReturn(float value)
-{
-    ProgramValue programValue;
-    programValue.opcode = VALUE_TYPE_FLOAT;
-    programValue.floatValue = value;
-    setReturn(programValue);
 }
 
 void OpcodeContext::setReturn(const char* value)
@@ -93,24 +80,6 @@ void OpcodeContext::setReturn(const char* value)
     programValue.opcode = VALUE_TYPE_DYNAMIC_STRING;
     programValue.integerValue = programPushString(_program, value);
     setReturn(programValue);
-}
-
-void OpcodeContext::setReturn(void* value)
-{
-    ProgramValue programValue;
-    programValue.opcode = VALUE_TYPE_PTR;
-    programValue.pointerValue = value;
-    setReturn(programValue);
-}
-
-void OpcodeContext::setReturn(Object* value)
-{
-    setReturn(static_cast<void*>(value));
-}
-
-void OpcodeContext::setReturn(Attack* value)
-{
-    setReturn(static_cast<void*>(value));
 }
 
 void OpcodeContext::pushReturnValue() const

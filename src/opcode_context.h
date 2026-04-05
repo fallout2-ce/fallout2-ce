@@ -29,12 +29,7 @@ public:
     void setReturn(const ProgramValue& value);
     void setReturn(std::nullptr_t);
     void setReturn(int value);
-    void setReturn(ArrayId value);
-    void setReturn(float value);
     void setReturn(const char* value);
-    void setReturn(void* value);
-    void setReturn(Object* value);
-    void setReturn(Attack* value);
 
     void pushReturnValue() const;
     void printError(const char* format, ...) const;

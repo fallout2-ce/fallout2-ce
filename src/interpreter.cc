@@ -3334,6 +3334,21 @@ ProgramValue::ProgramValue(int value)
     opcode = VALUE_TYPE_INT;
     integerValue = value;
 }
+ProgramValue::ProgramValue(unsigned int value)
+{
+    opcode = VALUE_TYPE_INT;
+    integerValue = static_cast<int>(value);
+}
+ProgramValue::ProgramValue(float value)
+{
+    opcode = VALUE_TYPE_FLOAT;
+    floatValue = value;
+}
+ProgramValue::ProgramValue(void* value)
+{
+    opcode = VALUE_TYPE_PTR;
+    pointerValue = value;
+}
 ProgramValue::ProgramValue(Object* value)
 {
     opcode = VALUE_TYPE_PTR;
