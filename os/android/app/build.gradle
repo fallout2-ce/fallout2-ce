@@ -5,30 +5,55 @@ plugins {
 def sdlJavaBindingsDir = file('src/main/java/org/libsdl/app')
 
 def findFetchedSdlJavaBindingsDir = { String variantName ->
-    File cxxVariantDir = file(".cxx/${variantName.capitalize()}")
-    if (!cxxVariantDir.exists()) {
-        throw new GradleException("SDL sync check failed: missing ${cxxVariantDir}. Run externalNativeBuild${variantName.capitalize()} first.")
+    String variantCap = variantName.capitalize()
+    File intermediatesVariantDir = file("build/intermediates/cxx/${variantCap}")
+    if (!intermediatesVariantDir.isDirectory()) {
+        throw new GradleException("SDL sync check failed: missing active CXX intermediates under ${intermediatesVariantDir}. Run externalNativeBuild${variantCap} first.")
     }
 
-    File match = fileTree(cxxVariantDir).matching {
-        include '**/_deps/sdl2-src/android-project/app/src/main/java/org/libsdl/app/SDLActivity.java'
-    }.files.sort { a, b -> a.path <=> b.path }.find()
-
-    if (match == null) {
-        throw new GradleException("SDL sync check failed: could not locate fetched SDL Java bindings under ${cxxVariantDir}.")
+    File[] activeHashDirs = intermediatesVariantDir.listFiles()
+    if (activeHashDirs == null) {
+        throw new GradleException("SDL sync check failed: could not list active CXX intermediates under ${intermediatesVariantDir}.")
     }
 
-    return match.parentFile
+    activeHashDirs = activeHashDirs.findAll { it.isDirectory() }.sort { a, b -> a.name <=> b.name }
+    if (activeHashDirs.size() != 1) {
+        throw new GradleException(
+            "SDL sync check failed: expected exactly one active CXX hash directory under ${intermediatesVariantDir}, found ${activeHashDirs*.name}."
+        )
+    }
+
+    File fetchedDir = file(".cxx/${variantCap}/${activeHashDirs[0].name}/arm64-v8a/_deps/sdl2-src/android-project/app/src/main/java/org/libsdl/app")
+
+    if (!fetchedDir.isDirectory()) {
+        throw new GradleException("SDL sync check failed: could not locate fetched SDL Java bindings under ${fetchedDir}.")
+    }
+
+    return fetchedDir
 }
 
 def assertSdlJavaBindingsMatch = { String variantName ->
     File fetchedDir = findFetchedSdlJavaBindingsDir(variantName)
 
-    Set<String> committedNames = sdlJavaBindingsDir.listFiles()
+    if (!sdlJavaBindingsDir.isDirectory()) {
+        throw new GradleException("SDL sync check failed: committed SDL Java bindings directory is missing or unreadable: ${sdlJavaBindingsDir}.")
+    }
+
+    File[] committedFiles = sdlJavaBindingsDir.listFiles()
+    if (committedFiles == null) {
+        throw new GradleException("SDL sync check failed: could not list committed SDL Java bindings directory: ${sdlJavaBindingsDir}.")
+    }
+
+    File[] fetchedFiles = fetchedDir.listFiles()
+    if (fetchedFiles == null) {
+        throw new GradleException("SDL sync check failed: could not list fetched SDL Java bindings directory: ${fetchedDir}.")
+    }
+
+    Set<String> committedNames = committedFiles
         .findAll { it.isFile() && it.name.endsWith('.java') }
         .collect { it.name }
         .toSet()
-    Set<String> fetchedNames = fetchedDir.listFiles()
+    Set<String> fetchedNames = fetchedFiles
         .findAll { it.isFile() && it.name.endsWith('.java') }
         .collect { it.name }
         .toSet()
@@ -141,17 +166,17 @@ android {
         String variantCap = variant.name.capitalize()
         String syncCheckTaskName = "checkSdlJavaBindingsSync${variantCap}"
 
-        tasks.register(syncCheckTaskName) {
-            dependsOn("externalNativeBuild${variantCap}")
-            doLast {
-                assertSdlJavaBindingsMatch(variant.name)
+        if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
+            tasks.register(syncCheckTaskName) {
+                dependsOn("externalNativeBuild${variantCap}")
+                doLast {
+                    assertSdlJavaBindingsMatch(variant.name)
+                }
             }
-        }
 
-        tasks["merge${variant.name.capitalize()}Assets"]
-            .dependsOn("externalNativeBuild${variant.name.capitalize()}")
-        tasks["compile${variant.name.capitalize()}JavaWithJavac"]
-            .dependsOn(syncCheckTaskName)
+            tasks["merge${variantCap}Assets"]
+                .dependsOn(syncCheckTaskName)
+        }
     }
 
     if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
