@@ -2,7 +2,6 @@
 #define FALLOUT_SFALL_METARULES_H_
 
 #include "opcode_context.h"
-#include "script_call_defs.h"
 
 namespace fallout {
 
@@ -17,8 +16,6 @@ enum OpcodeArgumentType {
     ARG_INTSTR, // integer OR string
     ARG_NUMBER, // float OR integer
 };
-
-constexpr std::size_t METARULE_MAX_ARGS = SCRIPT_CALL_MAX_ARGS;
 
 struct MetaruleInfo {
     const char* name;

@@ -292,14 +292,14 @@ void mf_get_ini_section(OpcodeContext& ctx)
     ArrayId arrayId = CreateTempArray(-1, 0);
 
     if (filePath == nullptr || sectionName == nullptr) {
-        ctx.setReturn(static_cast<int>(arrayId));
+        ctx.setReturn(arrayId);
         return;
     }
 
     Config iniConfig;
     if (!configInit(&iniConfig)) {
         debugPrint("mf_get_ini_section: Failed to initialize Config structure.");
-        ctx.setReturn(static_cast<int>(arrayId));
+        ctx.setReturn(arrayId);
         return;
     }
 
@@ -321,7 +321,7 @@ void mf_get_ini_section(OpcodeContext& ctx)
 
     configFree(&iniConfig);
 
-    ctx.setReturn(static_cast<int>(arrayId));
+    ctx.setReturn(arrayId);
 }
 
 // get_ini_sections
@@ -332,14 +332,14 @@ void mf_get_ini_sections(OpcodeContext& ctx)
     ArrayId arrayId = -1;
 
     if (filePath == nullptr) {
-        ctx.setReturn(static_cast<int>(arrayId));
+        ctx.setReturn(arrayId);
         return;
     }
 
     Config iniConfig;
     if (!configInit(&iniConfig)) {
         debugPrint("mf_get_ini_sections: Failed to initialize Config structure.");
-        ctx.setReturn(static_cast<int>(arrayId));
+        ctx.setReturn(arrayId);
         return;
     }
 
@@ -364,7 +364,7 @@ void mf_get_ini_sections(OpcodeContext& ctx)
         arrayId = CreateTempArray(0, 0);
     }
 
-    ctx.setReturn(static_cast<int>(arrayId));
+    ctx.setReturn(arrayId);
 }
 
 // get_ini_setting

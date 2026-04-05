@@ -195,7 +195,7 @@ void mf_combat_data(OpcodeContext& ctx)
     if (isInCombat()) {
         ctx.setReturn(combat_get_data());
     } else {
-        ctx.setReturn(static_cast<void*>(nullptr));
+        ctx.setReturn(nullptr);
     }
 }
 
@@ -293,7 +293,7 @@ void mf_loot_obj(OpcodeContext& ctx)
     if (GameMode::isInGameMode(GameMode::kInventory)) {
         ctx.setReturn(inventoryGetTargetObject());
     } else {
-        ctx.setReturn(static_cast<void*>(nullptr));
+        ctx.setReturn(nullptr);
     }
 }
 
@@ -801,7 +801,7 @@ void mf_message_box(OpcodeContext& ctx)
 void sfall_metarule(Program* program, int args)
 {
     // TODO: make OpcodeContext handle the stack.  This will be easier once it is used for all opcodes.
-    static ProgramValue values[SCRIPT_CALL_MAX_ARGS];
+    static ProgramValue values[METARULE_MAX_ARGS];
 
     for (int index = 0; index < args; index++) {
         values[index] = programStackPopValue(program);

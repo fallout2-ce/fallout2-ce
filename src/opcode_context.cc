@@ -49,6 +49,7 @@ const ProgramValue& OpcodeContext::arg(int index) const
     return _args[index];
 }
 
+// TODO: when we have a better way of shlepping strings around, use arg(i).asString() instead
 const char* OpcodeContext::stringArg(int index) const
 {
     const ProgramValue& value = arg(index);
@@ -87,6 +88,11 @@ void OpcodeContext::setReturn(std::nullptr_t)
 void OpcodeContext::setReturn(int value)
 {
     setReturn(ProgramValue(value));
+}
+
+void OpcodeContext::setReturn(ArrayId value)
+{
+    setReturn(ProgramValue(static_cast<int>(value)));
 }
 
 void OpcodeContext::setReturn(float value)
