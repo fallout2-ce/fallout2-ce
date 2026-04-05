@@ -25,7 +25,6 @@ public:
 
     const ProgramValue& arg(int index) const;
     const char* stringArg(int index) const;
-    void* pointerArg(int index) const;
 
     void setReturn(const ProgramValue& value);
     void setReturn(std::nullptr_t);

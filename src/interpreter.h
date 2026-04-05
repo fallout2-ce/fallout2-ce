@@ -154,7 +154,6 @@ public:
     // TODO: better approach for supporting different object types?
     ProgramValue(Attack* value);
 
-    // TODO: Rename to reflect that this is a ProgramValue type tag, not an interpreter opcode.
     opcode_t opcode;
     union {
         int integerValue;

@@ -53,25 +53,9 @@ const ProgramValue& OpcodeContext::arg(int index) const
 const char* OpcodeContext::stringArg(int index) const
 {
     const ProgramValue& value = arg(index);
-    if (!value.isString()) {
-        programFatalError("OpcodeContext::stringArg: string expected, got %x", value.opcode);
-    }
+    assert(value.isString());
 
     return programGetString(_program, value.opcode, value.integerValue);
-}
-
-void* OpcodeContext::pointerArg(int index) const
-{
-    const ProgramValue& value = arg(index);
-    if (value.opcode == VALUE_TYPE_INT && value.integerValue == 0) {
-        return nullptr;
-    }
-
-    if (!value.isPointer()) {
-        programFatalError("OpcodeContext::pointerArg: pointer expected, got %x", value.opcode);
-    }
-
-    return value.pointerValue;
 }
 
 void OpcodeContext::setReturn(const ProgramValue& value)

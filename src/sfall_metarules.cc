@@ -262,7 +262,7 @@ void mf_get_object_data(OpcodeContext& ctx)
 {
     // TODO: only allow to modify a set of whitelisted object types
     // TODO: map offsets to fields to avoid potential alignment, 64bit issues!
-    void* ptr = ctx.pointerArg(0);
+    Object* ptr = ctx.arg(0).asObject();
     size_t offset = static_cast<size_t>(ctx.arg(1).asInt());
 
     if (offset % 4 != 0) {
