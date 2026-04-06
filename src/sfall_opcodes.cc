@@ -1302,6 +1302,7 @@ static void op_sprintf(Program* program)
 
     OpcodeContext ctx(program, &kSprintfStringFormatScaffold, 2, args);
     if (!ctx.validateArguments()) {
+        ctx.setReturn("");
         ctx.pushReturnValue();
         return;
     }

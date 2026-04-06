@@ -227,7 +227,7 @@ void mf_dialog_obj(OpcodeContext& ctx)
     if (GameMode::isInGameMode(GameMode::kDialog)) {
         ctx.setReturn(gGameDialogSpeaker);
     } else {
-        ctx.setReturn(static_cast<void*>(nullptr));
+        ctx.setReturn(nullptr);
     }
 }
 

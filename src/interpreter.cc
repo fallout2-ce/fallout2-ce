@@ -3344,11 +3344,6 @@ ProgramValue::ProgramValue(float value)
     opcode = VALUE_TYPE_FLOAT;
     floatValue = value;
 }
-ProgramValue::ProgramValue(void* value)
-{
-    opcode = VALUE_TYPE_PTR;
-    pointerValue = value;
-}
 ProgramValue::ProgramValue(Object* value)
 {
     opcode = VALUE_TYPE_PTR;
@@ -3394,6 +3389,7 @@ Object* ProgramValue::asObject() const
 const char* ProgramValue::asString(Program* program) const
 {
     if (!isString()) {
+        programPrintError("ProgramValue::asString: string expected, got %x", opcode);
         return "";
     }
 

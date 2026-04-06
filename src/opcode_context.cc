@@ -64,7 +64,7 @@ void OpcodeContext::setReturn(const ProgramValue& value)
 
 void OpcodeContext::setReturn(std::nullptr_t)
 {
-    setReturn(ProgramValue(static_cast<void*>(nullptr)));
+    setReturn(ProgramValue(0));
 }
 
 void OpcodeContext::setReturn(int value)
