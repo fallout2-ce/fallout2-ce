@@ -131,7 +131,8 @@ void sfall_lists_fill(int type, std::vector<Object*>& objects)
             Object* obj = objectFindFirst();
             while (obj != nullptr) {
                 int objectType = PID_TYPE(obj->pid);
-                if (objectType < kObjectTypeToListTypeSize
+                if (objectType >= 0
+                    && objectType < kObjectTypeToListTypeSize
                     && kObjectTypeToListType[objectType] == type) {
                     objects.push_back(obj);
                 }
