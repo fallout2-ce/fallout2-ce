@@ -1,6 +1,6 @@
 #include "lib.arrays.h"
 #include "test_utils.h"
-// #include "define_lite.h"
+#include "define_lite.h"
 
 
 
@@ -9,6 +9,7 @@
 
 procedure array_test_suite begin
    variable arr, i, arr2, map, k, v, s;
+   variable critter, critter_count;
    test_suite_errors := 0;
 
    display_msg("Testing arrays_equal functions...");
@@ -169,6 +170,18 @@ procedure array_test_suite begin
    call assertEquals("nested 1", arr[0][1], "two");
    arr := [["one", "two"], {"three": ["four", -1]}];
    call assertEquals("nested 2", arr[1].three[0], "four");
+
+   display_msg("Testing LIST_CRITTERS validity...");
+   critter_count := 0;
+   foreach critter in list_as_array(LIST_CRITTERS) begin
+      critter_count += 1;
+      if (not critter) then begin
+         call assertTrue("LIST_CRITTERS entry is not null", false);
+      end else begin
+         call assertNotEquals("LIST_CRITTERS entry pid is valid", obj_pid(critter), -1);
+      end
+   end
+   call assertTrue("LIST_CRITTERS returns at least one entry", critter_count > 0);
 
    display_msg("All tests finished with "+test_suite_errors+" errors.");
 
