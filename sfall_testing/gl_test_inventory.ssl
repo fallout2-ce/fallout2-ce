@@ -1,0 +1,38 @@
+#include "define_lite.h"
+#include "sfall.h"
+#include "test_utils.h"
+
+#define TEST_ITEM_PID 40
+
+procedure start begin
+    variable item_a;
+    variable item_b;
+    variable item_c;
+    variable pid_total;
+
+    display_msg("Testing inventory functions...");
+
+    item_a := create_object_sid(TEST_ITEM_PID, 0, 0, -1);
+    item_b := create_object_sid(TEST_ITEM_PID, 0, 0, -1);
+    item_c := create_object_sid(TEST_ITEM_PID, 0, 0, -1);
+
+    add_obj_to_inven(dude_obj, item_a);
+    call assertEquals("single carried object count", obj_is_carrying_obj(dude_obj, item_a), 1);
+    add_obj_to_inven(dude_obj, item_b);
+
+    call assertEquals("merged stack no longer matches original object pointer", obj_is_carrying_obj(dude_obj, item_a), 0);
+    call assertEquals("merged stack matches replacement object pointer", obj_is_carrying_obj(dude_obj, item_b), 2);
+
+    pid_total := obj_is_carrying_obj_pid(dude_obj, TEST_ITEM_PID);
+    call assertTrue("pid total covers both stacks", pid_total >= 2);
+    call assertEquals("pid total matches merged carried stack quantity", pid_total, obj_is_carrying_obj(dude_obj, item_b));
+
+    call assertEquals("object not in inventory returns zero", obj_is_carrying_obj(dude_obj, item_c), 0);
+    call assertEquals("null inventory object returns zero", obj_is_carrying_obj(0, item_a), 0);
+    call assertEquals("null item object returns zero", obj_is_carrying_obj(dude_obj, 0), 0);
+
+    rm_obj_from_inven(dude_obj, item_a);
+    rm_obj_from_inven(dude_obj, item_b);
+
+    call report_test_results("inventory");
+end
