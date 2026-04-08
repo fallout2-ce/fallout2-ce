@@ -31,8 +31,8 @@ procedure start begin
     call assertEquals("null inventory object returns zero", obj_is_carrying_obj(0, item_a), 0);
     call assertEquals("null item object returns zero", obj_is_carrying_obj(dude_obj, 0), 0);
 
-    rm_obj_from_inven(dude_obj, item_a);
-    rm_obj_from_inven(dude_obj, item_b);
+    call assertEquals("remove merged stack quantity", rm_mult_objs_from_inven(dude_obj, item_b, 2), 2);
+    destroy_object(item_c);
 
     call report_test_results("inventory");
 end
