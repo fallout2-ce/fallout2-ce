@@ -176,6 +176,7 @@ static unsigned int _defaultTimerFunc()
     return getTicks();
 }
 
+// Returns interpreter time in milliseconds.  This is effectively just ticks, since interpreterTimerTick == 1000
 static unsigned int getInterpreterTime()
 {
     return 1000 * interpreterTimerFunc() / interpreterTimerTick;
@@ -666,7 +667,7 @@ int programPushString(Program* program, const char* const string)
 
     newBlock = program->dynamicStrings + *(int*)(program->dynamicStrings) + 4;
     if ((*(short*)newBlock & 0xFFFF) != 0x8000) {
-        programFatalError("Internal consistancy error, string table mangled");
+        programFatalError("Internal consistency error, string table mangled");
     }
 
     *(int*)(program->dynamicStrings) += bufferLength + 4;
