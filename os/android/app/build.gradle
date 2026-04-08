@@ -2,12 +2,97 @@ plugins {
     id 'com.android.application'
 }
 
+def sdlJavaBindingsDir = file('src/main/java/org/libsdl/app')
+
+def findFetchedSdlJavaBindingsDir = { String variantName ->
+    String variantCap = variantName.capitalize()
+    File intermediatesVariantDir = file("build/intermediates/cxx/${variantCap}")
+    if (!intermediatesVariantDir.isDirectory()) {
+        throw new GradleException("SDL sync check failed: missing active CXX intermediates under ${intermediatesVariantDir}. Run externalNativeBuild${variantCap} first.")
+    }
+
+    File[] activeHashDirs = intermediatesVariantDir.listFiles()
+    if (activeHashDirs == null) {
+        throw new GradleException("SDL sync check failed: could not list active CXX intermediates under ${intermediatesVariantDir}.")
+    }
+
+    activeHashDirs = activeHashDirs.findAll { it.isDirectory() }.sort { a, b -> a.name <=> b.name }
+    if (activeHashDirs.size() != 1) {
+        throw new GradleException(
+            "SDL sync check failed: expected exactly one active CXX hash directory under ${intermediatesVariantDir}, found ${activeHashDirs*.name}."
+        )
+    }
+
+    File fetchedDir = file(".cxx/${variantCap}/${activeHashDirs[0].name}/arm64-v8a/_deps/sdl2-src/android-project/app/src/main/java/org/libsdl/app")
+
+    if (!fetchedDir.isDirectory()) {
+        throw new GradleException("SDL sync check failed: could not locate fetched SDL Java bindings under ${fetchedDir}.")
+    }
+
+    return fetchedDir
+}
+
+def assertSdlJavaBindingsMatch = { String variantName ->
+    File fetchedDir = findFetchedSdlJavaBindingsDir(variantName)
+
+    if (!sdlJavaBindingsDir.isDirectory()) {
+        throw new GradleException("SDL sync check failed: committed SDL Java bindings directory is missing or unreadable: ${sdlJavaBindingsDir}.")
+    }
+
+    File[] committedFiles = sdlJavaBindingsDir.listFiles()
+    if (committedFiles == null) {
+        throw new GradleException("SDL sync check failed: could not list committed SDL Java bindings directory: ${sdlJavaBindingsDir}.")
+    }
+
+    File[] fetchedFiles = fetchedDir.listFiles()
+    if (fetchedFiles == null) {
+        throw new GradleException("SDL sync check failed: could not list fetched SDL Java bindings directory: ${fetchedDir}.")
+    }
+
+    Set<String> committedNames = committedFiles
+        .findAll { it.isFile() && it.name.endsWith('.java') }
+        .collect { it.name }
+        .toSet()
+    Set<String> fetchedNames = fetchedFiles
+        .findAll { it.isFile() && it.name.endsWith('.java') }
+        .collect { it.name }
+        .toSet()
+
+    Set<String> missingFromCommitted = fetchedNames - committedNames
+    Set<String> extraInCommitted = committedNames - fetchedNames
+
+    if (!missingFromCommitted.isEmpty() || !extraInCommitted.isEmpty()) {
+        throw new GradleException(
+            "SDL Android Java bindings are out of sync with native SDL for ${variantName}.\n" +
+            "Fetched SDL dir: ${fetchedDir}\n" +
+            "Missing from committed bindings: ${missingFromCommitted.sort()}\n" +
+            "Extra committed bindings: ${extraInCommitted.sort()}\n" +
+            "Sync os/android/app/src/main/java/org/libsdl/app from the fetched SDL android-project sources."
+        )
+    }
+
+    List<String> changedFiles = committedNames.findAll { fileName ->
+        File committedFile = new File(sdlJavaBindingsDir, fileName)
+        File fetchedFile = new File(fetchedDir, fileName)
+        committedFile.getText('UTF-8') != fetchedFile.getText('UTF-8')
+    }.sort()
+
+    if (!changedFiles.isEmpty()) {
+        throw new GradleException(
+            "SDL Android Java bindings are out of sync with native SDL for ${variantName}.\n" +
+            "Fetched SDL dir: ${fetchedDir}\n" +
+            "Changed files: ${changedFiles}\n" +
+            "Sync os/android/app/src/main/java/org/libsdl/app from the fetched SDL android-project sources."
+        )
+    }
+}
+
 android {
     compileSdk 32
 
     defaultConfig {
         applicationId 'com.alexbatalov.fallout2ce'
-        minSdk 21
+        minSdk 24
         targetSdk 32
         versionCode 4
         versionName '1.3.0'
@@ -78,8 +163,20 @@ android {
     }
 
     applicationVariants.all { variant ->
-        tasks["merge${variant.name.capitalize()}Assets"]
-            .dependsOn("externalNativeBuild${variant.name.capitalize()}")
+        String variantCap = variant.name.capitalize()
+        String syncCheckTaskName = "checkSdlJavaBindingsSync${variantCap}"
+
+        if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
+            tasks.register(syncCheckTaskName) {
+                dependsOn("externalNativeBuild${variantCap}")
+                doLast {
+                    assertSdlJavaBindingsMatch(variant.name)
+                }
+            }
+
+            tasks["merge${variantCap}Assets"]
+                .dependsOn(syncCheckTaskName)
+        }
     }
 
     if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
