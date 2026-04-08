@@ -76,6 +76,7 @@ static void op_obj_is_carrying_obj(Program* program)
             InventoryItem* inventoryItem = &(inventory->items[index]);
             if (inventoryItem->item == itemObj) {
                 if (inventoryItem->quantity <= 0) {
+                    // Sfall: fix "silly" inventory quantities.
                     inventoryItem->quantity = 1;
                 }
                 count = inventoryItem->quantity;
