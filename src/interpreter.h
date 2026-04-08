@@ -215,7 +215,7 @@ void _interpretOutputFunc(int (*func)(char*));
 int _interpretOutput(const char* format, ...);
 [[noreturn]] void programFatalError(const char* str, ...);
 void programPrintError(const char* format, ...);
-void interpreterStringRefCountDecrease(Program* program, opcode_t a2, int a3);
+void interpreterStringRefCountDecrease(Program* program, opcode_t opcode, int value);
 void programFree(Program* program);
 Program* programCreateByPath(const char* path);
 char* programGetString(Program* program, opcode_t opcode, int offset);
@@ -257,8 +257,6 @@ void* programReturnStackPopPointer(Program* program);
 
 opcode_t stackReadInt16(unsigned char* data, int pos);
 int stackReadInt32(unsigned char* data, int pos);
-
-extern OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
 
 ProgramValue programMakeString(Program* program, const char* str);
 ProgramValue programMakeInt(Program* program, int val);
