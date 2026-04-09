@@ -104,7 +104,7 @@ typedef enum ProcedureFlags {
 typedef enum ProgramFlags {
     PROGRAM_FLAG_EXITED = 0x01,
     PROGRAM_FLAG_RUNNING = 0x02,
-    PROGRAM_FLAG_0x04 = 0x04,
+    PROGRAM_FLAG_FATAL_ERROR = 0x04,
     PROGRAM_FLAG_STOPPED = 0x08,
 
     // Program is in waiting state with `checkWaitFunc` set.

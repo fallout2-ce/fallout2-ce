@@ -2657,8 +2657,9 @@ void programInterpret(Program* program, int numInstructions)
     gInterpreterCurrentProgram = program;
 
     if (setjmp(program->env)) {
+        // longjmp from programFatalError()
         gInterpreterCurrentProgram = oldCurrentProgram;
-        program->flags |= PROGRAM_FLAG_EXITED | PROGRAM_FLAG_0x04;
+        program->flags |= PROGRAM_FLAG_EXITED | PROGRAM_FLAG_FATAL_ERROR;
         return;
     }
 
@@ -2667,7 +2668,7 @@ void programInterpret(Program* program, int numInstructions)
     }
 
     while ((program->flags & PROGRAM_FLAG_CRITICAL_SECTION) != 0 || --numInstructions != -1) {
-        if ((program->flags & (PROGRAM_FLAG_EXITED | PROGRAM_FLAG_0x04 | PROGRAM_FLAG_STOPPED | PROGRAM_FLAG_CHILD_CALL | PROGRAM_FLAG_FINISHED | PROGRAM_FLAG_CHILD_SPAWN)) != 0) {
+        if ((program->flags & (PROGRAM_FLAG_EXITED | PROGRAM_FLAG_FATAL_ERROR | PROGRAM_FLAG_STOPPED | PROGRAM_FLAG_CHILD_CALL | PROGRAM_FLAG_FINISHED | PROGRAM_FLAG_CHILD_SPAWN)) != 0) {
             break;
         }
 
@@ -2949,7 +2950,7 @@ static void doEvents()
                 programListNode->program->instructionPointer = stackReadInt32(procedurePtr, offsetof(Procedure, conditionOffset));
                 programInterpret(programListNode->program, -1);
 
-                if ((programListNode->program->flags & PROGRAM_FLAG_0x04) == 0) {
+                if ((programListNode->program->flags & PROGRAM_FLAG_FATAL_ERROR) == 0) {
                     data = programStackPopInteger(programListNode->program);
 
                     programListNode->program->flags = oldProgramFlags;
