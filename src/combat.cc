@@ -2762,7 +2762,7 @@ void _combat_update_critter_outline_for_los(Object* critter, bool a2)
 // 0x421EFC
 static void _combat_over()
 {
-    if (_game_user_wants_to_quit == 0) {
+    if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
         for (int index = 0; index < _list_com; index++) {
             Object* critter = _combat_list[index];
             if (critter != gDude) {
@@ -2820,7 +2820,7 @@ static void _combat_over()
 
     interfaceRenderActionPoints(0, 0);
 
-    if (_game_user_wants_to_quit == 0) {
+    if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
         _combat_give_exps(_combat_exps);
     }
 
@@ -3167,7 +3167,7 @@ static int _combat_input()
             break;
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -3205,8 +3205,8 @@ static int _combat_input()
     }
 
     int v4 = _game_user_wants_to_quit;
-    if (_game_user_wants_to_quit == 1) {
-        _game_user_wants_to_quit = 0;
+    if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_END_COMBAT) {
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     }
 
     if ((gCombatState & COMBAT_STATE_0x08) != 0) {
@@ -3214,7 +3214,7 @@ static int _combat_input()
         return -1;
     }
 
-    if (_game_user_wants_to_quit != 0 || v4 != 0 || _combat_end_due_to_load != 0) {
+    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE || v4 != GAME_QUIT_REQUEST_NONE || _combat_end_due_to_load != 0) {
         return -1;
     }
 
@@ -3273,7 +3273,7 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
                 scriptOverrides = scr->scriptOverrides;
             }
 
-            if (_game_user_wants_to_quit == 1) {
+            if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_END_COMBAT) {
                 return -1;
             }
         }
@@ -3511,8 +3511,8 @@ void _combat(CombatStartData* csd)
 
         _combat_end_due_to_load = 0;
 
-        if (_game_user_wants_to_quit == 1) {
-            _game_user_wants_to_quit = 0;
+        if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_END_COMBAT) {
+            _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
         }
     }
 }
@@ -5669,7 +5669,7 @@ static int calledShotSelectHitLocation(Object* critter, int* hitLocation, int hi
             break;
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 

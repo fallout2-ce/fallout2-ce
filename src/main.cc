@@ -269,7 +269,7 @@ static void main_exit_system()
 // 0x480D4C
 static int _main_load_new(char* mapFileName)
 {
-    _game_user_wants_to_quit = 0;
+    _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     _main_show_death_scene = 0;
     gDude->flags &= ~OBJECT_FLAT;
     objectShow(gDude, nullptr);
@@ -297,7 +297,7 @@ static int _main_load_new(char* mapFileName)
 // 0x480DF8
 static int main_loadgame_new()
 {
-    _game_user_wants_to_quit = 0;
+    _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     _main_show_death_scene = 0;
 
     gDude->flags &= ~OBJECT_FLAT;
@@ -332,7 +332,7 @@ static void mainLoop()
 
     scriptsEnable();
 
-    while (_game_user_wants_to_quit == 0) {
+    while (_game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
         sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
@@ -353,7 +353,7 @@ static void mainLoop()
         if ((gDude->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
             endgameSetupDeathEnding(ENDGAME_DEATH_ENDING_REASON_DEATH);
             _main_show_death_scene = 1;
-            _game_user_wants_to_quit = 2;
+            _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
         }
 
         renderPresent();

@@ -912,7 +912,7 @@ void critterKill(Object* critter, int anim, bool refreshRect)
 
     if (critter == gDude) {
         endgameSetupDeathEnding(ENDGAME_DEATH_ENDING_REASON_DEATH);
-        _game_user_wants_to_quit = 2;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
     }
 }
 

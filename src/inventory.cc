@@ -669,7 +669,7 @@ void inventoryOpen()
             break;
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -2696,7 +2696,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
     for (;;) {
         sharedFpsLimiter.mark();
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -4328,7 +4328,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     for (;;) {
         sharedFpsLimiter.mark();
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -4342,7 +4342,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             showQuitConfirmationDialog();
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -5212,7 +5212,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     for (;;) {
         sharedFpsLimiter.mark();
 
-        if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
+        if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -5221,7 +5221,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
             showQuitConfirmationDialog();
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 

@@ -103,7 +103,7 @@ int showOptions()
 
         int keyCode = inputGetInput();
 
-        if (keyCode == KEY_ESCAPE || keyCode == 504 || _game_user_wants_to_quit != 0) {
+        if (keyCode == KEY_ESCAPE || keyCode == 504 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 0;
         } else {
             switch (keyCode) {
@@ -463,7 +463,7 @@ int showPause(bool preserveWorldState)
                 done = true;
             }
 
-            if (_game_user_wants_to_quit != 0) {
+            if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 done = true;
             }
         }

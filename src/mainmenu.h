@@ -22,6 +22,7 @@ void mainMenuWindowHide(bool animate);
 void mainMenuWindowUnhide(bool animate);
 int _main_menu_is_enabled();
 int mainMenuWindowHandleEvents();
+void mainMenuRequestExit();
 
 } // namespace fallout
 

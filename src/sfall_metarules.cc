@@ -20,6 +20,7 @@
 #include "inventory.h"
 #include "memory.h"
 #include "message.h"
+#include "mainmenu.h"
 #include "object.h"
 #include "opcode_context.h"
 #include "platform_compat.h"
@@ -60,6 +61,7 @@ static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
 static void mf_show_window(OpcodeContext& ctx);
+static void mf_signal_close_game(OpcodeContext& ctx);
 static void mf_tile_by_position(OpcodeContext& ctx);
 static void mf_tile_refresh_display(OpcodeContext& ctx);
 static void mf_string_compare(OpcodeContext& ctx);
@@ -163,7 +165,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_unjam_locks_time",      mf_set_unjam_locks_time,      1, 1, -1, {ARG_INT}},
     // {"set_window_flag",           mf_set_window_flag,           3, 3, -1, {ARG_INTSTR, ARG_INT, ARG_INT}},
     { "show_window", mf_show_window, 0, 1, -1, { ARG_STRING } },
-    // {"signal_close_game",         mf_signal_close_game,         0, 0},
+    { "signal_close_game", mf_signal_close_game, 0, 0 },
     // {"spatial_radius",            mf_spatial_radius,            1, 1,  0, {ARG_OBJECT}},
     { "string_compare", mf_string_compare, 2, 3, 0, { ARG_STRING, ARG_STRING, ARG_INT } },
     { "string_find", mf_string_find, 2, 3, -1, { ARG_STRING, ARG_STRING, ARG_INT } },
@@ -473,6 +475,12 @@ static bool FalloutStringCompare(const char* str1, const char* str2, long codePa
         }
         if (c1 != c2) return false; // strings are not equal
     }
+}
+
+void mf_signal_close_game(OpcodeContext&)
+{
+    mainMenuRequestExit();
+    _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
 }
 
 void mf_string_compare(OpcodeContext& ctx)

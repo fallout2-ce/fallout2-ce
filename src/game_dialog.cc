@@ -1525,7 +1525,7 @@ int gameDialogShowReview()
             showQuitConfirmationDialog();
         }
 
-        if (_game_user_wants_to_quit != 0 || keyCode == KEY_ESCAPE) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE || keyCode == KEY_ESCAPE) {
             break;
         }
 
@@ -1936,7 +1936,7 @@ int gameDialogProcessUI()
             showQuitConfirmationDialog();
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -3772,7 +3772,7 @@ void partyMemberControlWindowHandleEvents()
                 showQuitConfirmationDialog();
             }
 
-            if (_game_user_wants_to_quit != 0) {
+            if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 break;
             }
 
@@ -4022,7 +4022,7 @@ void partyMemberCustomizationWindowHandleEvents()
                 showQuitConfirmationDialog();
             }
 
-            if (_game_user_wants_to_quit != 0) {
+            if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 break;
             }
 
@@ -4235,7 +4235,7 @@ int _gdCustomSelect(int option)
                 showQuitConfirmationDialog();
             }
 
-            if (_game_user_wants_to_quit != 0) {
+            if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 break;
             }
 

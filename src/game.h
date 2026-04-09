@@ -16,6 +16,13 @@ typedef enum GameState {
     GAME_STATE_5,
 } GameState;
 
+typedef enum GameQuitRequest {
+    GAME_QUIT_REQUEST_NONE = 0,
+    GAME_QUIT_REQUEST_END_COMBAT = 1,
+    GAME_QUIT_REQUEST_MAIN_MENU = 2,
+    GAME_QUIT_REQUEST_EXIT = 3,
+} GameQuitRequest;
+
 extern int* gGameGlobalVars;
 extern int gGameGlobalVarsLength;
 extern const char* asc_5186C8;
