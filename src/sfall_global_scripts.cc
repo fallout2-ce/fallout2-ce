@@ -110,7 +110,7 @@ void sfall_gl_scr_remove_all()
     state->globalScripts.clear();
 }
 
-// Execute proc if it is found and not "busy".  
+// Execute proc if it is found and not "busy".
 static void sfall_gl_scr_execute_proc_if_ready(Program* program, int proc)
 {
     // matches check in scriptExecProc()
