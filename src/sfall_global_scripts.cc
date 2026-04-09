@@ -14,6 +14,10 @@
 
 namespace fallout {
 
+static constexpr int kGlobalScriptBusyFlags = PROGRAM_FLAG_FATAL_ERROR
+    | PROGRAM_FLAG_CHILD_CALL
+    | PROGRAM_FLAG_CHILD_SPAWN;
+
 struct GlobalScript {
     Program* program = nullptr;
     int procs[SCRIPT_PROC_COUNT] = { 0 };
@@ -106,13 +110,20 @@ void sfall_gl_scr_remove_all()
     state->globalScripts.clear();
 }
 
+// Execute proc if it is found and not "busy".  
+static void sfall_gl_scr_execute_proc_if_ready(Program* program, int proc)
+{
+    // matches check in scriptExecProc()
+    if (proc != -1 && (program->flags & kGlobalScriptBusyFlags) == 0) {
+        programExecuteProcedure(program, proc);
+    }
+}
+
 void sfall_gl_scr_exec_map_update_scripts(int action)
 {
     for (auto& scr : state->globalScripts) {
         if (scr.mode == 0 || scr.mode == 3) {
-            if (scr.procs[action] != -1) {
-                programExecuteProcedure(scr.program, scr.procs[action]);
-            }
+            sfall_gl_scr_execute_proc_if_ready(scr.program, scr.procs[action]);
         }
     }
 }
@@ -123,7 +134,7 @@ static void sfall_gl_scr_process_simple(int mode1, int mode2)
         if (scr.repeat != 0 && (scr.mode == mode1 || scr.mode == mode2)) {
             scr.count++;
             if (scr.count >= scr.repeat) {
-                programExecuteProcedure(scr.program, scr.procs[SCRIPT_PROC_START]);
+                sfall_gl_scr_execute_proc_if_ready(scr.program, scr.procs[SCRIPT_PROC_START]);
                 scr.count = 0;
             }
         }
