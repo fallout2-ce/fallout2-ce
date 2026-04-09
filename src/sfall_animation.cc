@@ -110,7 +110,7 @@ void mf_reg_anim_animate_and_move(OpcodeContext& ctx)
     int anim = ctx.arg(2).asInt();
     int delay = ctx.arg(3).asInt();
 
-    if (object != nullptr && !animationCheckCombatMode()) {
+    if (!animationCheckCombatMode()) {
         animationRegisterMoveToTileStraight(object, tile, object->elevation, anim, delay);
     }
 }

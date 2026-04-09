@@ -121,6 +121,10 @@ bool OpcodeContext::validateArguments() const
             }
             break;
         case ARG_OBJECT:
+            if (value.isInt() && value.integerValue == 0) {
+                printError("%s() - argument #%d is null.", name(), index + 1);
+                return false;
+            }
             if (!value.isPointer()) {
                 printError("%s() - argument #%d is not an object.", name(), index + 1);
                 return false;
