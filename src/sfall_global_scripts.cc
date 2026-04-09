@@ -110,13 +110,16 @@ void sfall_gl_scr_remove_all()
     state->globalScripts.clear();
 }
 
-// Execute proc if it is found and not "busy".
-static void sfall_gl_scr_execute_proc_if_ready(Program* program, int proc)
+// Execute proc if it is found and not "busy".  Returns true if proc was executed
+static bool sfall_gl_scr_execute_proc_if_ready(Program* program, int proc)
 {
     // matches check in scriptExecProc()
     if (proc != -1 && (program->flags & kGlobalScriptBusyFlags) == 0) {
         programExecuteProcedure(program, proc);
+        return true;
     }
+
+    return false;
 }
 
 void sfall_gl_scr_exec_map_update_scripts(int action)
@@ -134,8 +137,11 @@ static void sfall_gl_scr_process_simple(int mode1, int mode2)
         if (scr.repeat != 0 && (scr.mode == mode1 || scr.mode == mode2)) {
             scr.count++;
             if (scr.count >= scr.repeat) {
-                sfall_gl_scr_execute_proc_if_ready(scr.program, scr.procs[SCRIPT_PROC_START]);
-                scr.count = 0;
+                if (sfall_gl_scr_execute_proc_if_ready(scr.program, scr.procs[SCRIPT_PROC_START])) {
+                    scr.count = 0;
+                } else {
+                    scr.count = scr.repeat;
+                }
             }
         }
     }
