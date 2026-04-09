@@ -114,7 +114,7 @@ int gGameGlobalVarsLength = 0;
 const char* asc_5186C8 = _aGame_0;
 
 // 0x5186CC
-int _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
+GameQuitRequest _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
 
 // misc.msg
 //
@@ -1581,7 +1581,7 @@ int gameShowDeathDialog(const char* message)
     int oldCursor = gameMouseGetCursor();
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
-    int oldUserWantsToQuit = _game_user_wants_to_quit;
+    GameQuitRequest oldUserWantsToQuit = _game_user_wants_to_quit;
     _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
 
     int rc = showDialogBox(message, nullptr, 0, 169, 117, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
