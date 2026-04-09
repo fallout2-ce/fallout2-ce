@@ -76,10 +76,14 @@ static void op_obj_is_carrying_obj(Program* program)
             InventoryItem* inventoryItem = &(inventory->items[index]);
             if (inventoryItem->item == itemObj) {
                 if (inventoryItem->quantity <= 0) {
-                    // Sfall: fix "silly" inventory quantities.
-                    inventoryItem->quantity = 1;
+                    debugPrint("%s: obj_is_carrying_obj found non-positive inventory quantity for item %p in owner %p",
+                        program->name,
+                        itemObj,
+                        invenObj);
+                    count = 1;
+                } else {
+                    count = inventoryItem->quantity;
                 }
-                count = inventoryItem->quantity;
                 break;
             }
         }
