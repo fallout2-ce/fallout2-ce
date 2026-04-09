@@ -104,6 +104,7 @@ static int _winTOS = -1;
 // 051DCB8
 static int gCurrentManagedWindowIndex = -1;
 
+// TODO: this is probably not needed: FO always used mode 1
 // 0x51DCBC
 static INITVIDEOFN _gfx_init[12] = {
     _init_mode_320_200,
@@ -1358,8 +1359,8 @@ void _removeProgramReferences_3(Program* program)
     }
 }
 
-// 0x4B9190
-void scriptWindowInit(int resolution, int flags)
+// 0x4B9190 initWindow
+void windowInit(int resolution, int flags)
 {
     char err[COMPAT_MAX_PATH];
     int rc;
@@ -1460,8 +1461,8 @@ void scriptWindowInit(int resolution, int flags)
     }
 }
 
-// 0x4B947C
-void scriptWindowClose()
+// 0x4B947C windowClose
+void windowClose()
 {
     // TODO: Incomplete, but required for graceful exit.
 

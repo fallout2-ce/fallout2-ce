@@ -887,7 +887,7 @@ bool gameMouseClickOnInterfaceBar()
     int interfaceBarWindowRectLeft = 0;
     int interfaceBarWindowRectRight = _scr_size.right;
 
-    if (gInterfaceBarMode) {
+    if (settings.ui.iface_bar_mode) {
         interfaceBarWindowRectLeft = interfaceBarWindowRect.left;
         interfaceBarWindowRectRight = interfaceBarWindowRect.right;
     }
