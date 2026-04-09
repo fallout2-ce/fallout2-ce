@@ -5,6 +5,7 @@
 
 #include "animation.h"
 #include "interpreter.h"
+#include "opcode_context.h"
 
 namespace fallout {
 
@@ -102,18 +103,16 @@ void op_reg_anim_turn_towards(Program* program)
     }
 }
 
-void mf_reg_anim_animate_and_move(Program* program, int args)
+void mf_reg_anim_animate_and_move(OpcodeContext& ctx)
 {
-    Object* object = static_cast<Object*>(programStackPopPointer(program));
-    int tile = programStackPopInteger(program);
-    int anim = programStackPopInteger(program);
-    int delay = programStackPopInteger(program);
+    Object* object = ctx.arg(0).asObject();
+    int tile = ctx.arg(1).asInt();
+    int anim = ctx.arg(2).asInt();
+    int delay = ctx.arg(3).asInt();
 
-    if (object != nullptr && !animationCheckCombatMode()) {
+    if (!animationCheckCombatMode()) {
         animationRegisterMoveToTileStraight(object, tile, object->elevation, anim, delay);
     }
-
-    programStackPushInteger(program, 0);
 }
 
 } // namespace fallout

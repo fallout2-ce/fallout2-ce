@@ -4,6 +4,7 @@
 #include "config.h"
 #include "dictionary.h"
 #include "interpreter.h"
+#include "opcode_context.h"
 #include <cstddef>
 
 namespace fallout {
@@ -24,9 +25,9 @@ bool sfall_ini_set_int(const char* triplet, int value);
 bool sfall_ini_set_string(const char* triplet, const char* value);
 
 // metarule and opcode implementations
-void mf_set_ini_setting(Program* program, int args);
-void mf_get_ini_section(Program* program, int args);
-void mf_get_ini_sections(Program* program, int args);
+void mf_set_ini_setting(OpcodeContext& ctx);
+void mf_get_ini_section(OpcodeContext& ctx);
+void mf_get_ini_sections(OpcodeContext& ctx);
 void op_get_ini_setting(Program* program);
 void op_get_ini_string(Program* program);
 

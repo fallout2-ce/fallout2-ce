@@ -3339,6 +3339,16 @@ ProgramValue::ProgramValue(int value)
     opcode = VALUE_TYPE_INT;
     integerValue = value;
 }
+ProgramValue::ProgramValue(unsigned int value)
+{
+    opcode = VALUE_TYPE_INT;
+    integerValue = static_cast<int>(value);
+}
+ProgramValue::ProgramValue(float value)
+{
+    opcode = VALUE_TYPE_FLOAT;
+    floatValue = value;
+}
 ProgramValue::ProgramValue(Object* value)
 {
     opcode = VALUE_TYPE_PTR;
@@ -3365,6 +3375,30 @@ int ProgramValue::asInt() const
     default:
         return 0;
     }
+}
+
+Object* ProgramValue::asObject() const
+{
+    if (opcode == VALUE_TYPE_INT && integerValue == 0) {
+        return nullptr;
+    }
+
+    if (!isPointer()) {
+        programPrintError("ProgramValue::asObject: object expected, got %x", opcode);
+        return nullptr;
+    }
+
+    return static_cast<Object*>(pointerValue);
+}
+
+const char* ProgramValue::asString(Program* program) const
+{
+    if (!isString()) {
+        programPrintError("ProgramValue::asString: string expected, got %x", opcode);
+        return "";
+    }
+
+    return programGetString(program, opcode, integerValue);
 }
 
 // CE

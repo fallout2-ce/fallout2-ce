@@ -21,6 +21,7 @@
 #include "memory.h"
 #include "message.h"
 #include "object.h"
+#include "opcode_context.h"
 #include "platform_compat.h"
 #include "scripts.h"
 #include "sfall_animation.h"
@@ -37,49 +38,39 @@
 
 namespace fallout {
 
-static void mf_car_gas_amount(Program* program, int args);
-static void mf_combat_data(Program* program, int args);
-static void mf_critter_inven_obj2(Program* program, int args);
-static void mf_dialog_obj(Program* program, int args);
-static void mf_get_cursor_mode(Program* program, int args);
-static void mf_get_flags(Program* program, int args);
-static void mf_get_object_data(Program* program, int args);
-static void mf_get_sfall_arg_at(Program* program, int args);
-static void mf_get_text_width(Program* program, int args);
-static void mf_intface_redraw(Program* program, int args);
-static void mf_loot_obj(Program* program, int args);
-static void mf_message_box(Program* program, int args);
-static void mf_add_extra_msg_file(Program* program, int args);
-static void mf_art_cache_flush(Program* program, int args);
-static void mf_metarule_exist(Program* program, int args);
-static void mf_obj_under_cursor(Program* program, int args);
-static void mf_opcode_exists(Program* program, int args);
-static void mf_outlined_object(Program* program, int args);
-static void mf_set_cursor_mode(Program* program, int args);
-static void mf_set_flags(Program* program, int args);
-static void mf_set_outline(Program* program, int args);
-static void mf_show_window(Program* program, int args);
-static void mf_tile_by_position(Program* program, int args);
-static void mf_tile_refresh_display(Program* program, int args);
-static void mf_string_compare(Program* program, int args);
-static void mf_string_find(Program* program, int args);
-static void mf_string_to_case(Program* program, int args);
-static void mf_string_format(Program* program, int args);
-static void mf_floor2(Program* program, int args);
-
-static int currentMetaruleIndex;
-
-static const MetaruleInfo* currentMetarule()
-{
-    assert(currentMetaruleIndex >= 0 && currentMetaruleIndex < kMetarulesCount);
-    return &kMetarules[currentMetaruleIndex];
-}
+static void mf_car_gas_amount(OpcodeContext& ctx);
+static void mf_combat_data(OpcodeContext& ctx);
+static void mf_critter_inven_obj2(OpcodeContext& ctx);
+static void mf_dialog_obj(OpcodeContext& ctx);
+static void mf_get_cursor_mode(OpcodeContext& ctx);
+static void mf_get_flags(OpcodeContext& ctx);
+static void mf_get_object_data(OpcodeContext& ctx);
+static void mf_get_sfall_arg_at(OpcodeContext& ctx);
+static void mf_get_text_width(OpcodeContext& ctx);
+static void mf_intface_redraw(OpcodeContext& ctx);
+static void mf_loot_obj(OpcodeContext& ctx);
+static void mf_message_box(OpcodeContext& ctx);
+static void mf_add_extra_msg_file(OpcodeContext& ctx);
+static void mf_art_cache_flush(OpcodeContext& ctx);
+static void mf_metarule_exist(OpcodeContext& ctx);
+static void mf_obj_under_cursor(OpcodeContext& ctx);
+static void mf_opcode_exists(OpcodeContext& ctx);
+static void mf_outlined_object(OpcodeContext& ctx);
+static void mf_set_cursor_mode(OpcodeContext& ctx);
+static void mf_set_flags(OpcodeContext& ctx);
+static void mf_set_outline(OpcodeContext& ctx);
+static void mf_show_window(OpcodeContext& ctx);
+static void mf_tile_by_position(OpcodeContext& ctx);
+static void mf_tile_refresh_display(OpcodeContext& ctx);
+static void mf_string_compare(OpcodeContext& ctx);
+static void mf_string_find(OpcodeContext& ctx);
+static void mf_string_to_case(OpcodeContext& ctx);
+void mf_string_format(OpcodeContext& ctx);
+static void mf_floor2(OpcodeContext& ctx);
 
 // ref. https://github.com/sfall-team/sfall/blob/42556141127895c27476cd5242a73739cbb0fade/sfall/Modules/Scripting/Handlers/Metarule.cpp#L72
-// Note: metarules should pop arguments off the stack in natural order
 
-// TODO: argument validation, standard error return value
-// TODO: reduce code complexity using something like MetaruleContext in sfall
+// TODO: reduce duplication further once this context is shared with opcode handlers too.
 const MetaruleInfo kMetarules[] = {
     { "add_extra_msg_file", mf_add_extra_msg_file, 1, 2, -1, { ARG_STRING, ARG_INT } },
     // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
@@ -189,148 +180,144 @@ const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
 constexpr int kMetarulesMax = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
-void mf_art_cache_flush(Program* program, int args)
+void mf_art_cache_flush(OpcodeContext& ctx)
 {
     artCacheFlush();
-    programStackPushInteger(program, 0); // TODO: remove when metarule system handles this
 }
 
-void mf_car_gas_amount(Program* program, int args)
+void mf_car_gas_amount(OpcodeContext& ctx)
 {
-    programStackPushInteger(program, wmCarGasAmount());
+    ctx.setReturn(wmCarGasAmount());
 }
 
-void mf_combat_data(Program* program, int args)
+void mf_combat_data(OpcodeContext& ctx)
 {
     if (isInCombat()) {
-        programStackPushPointer(program, combat_get_data());
+        ctx.setReturn(combat_get_data());
     } else {
-        programStackPushPointer(program, nullptr);
+        ctx.setReturn(nullptr);
     }
 }
 
-void mf_critter_inven_obj2(Program* program, int args)
+void mf_critter_inven_obj2(OpcodeContext& ctx)
 {
-    Object* obj = static_cast<Object*>(programStackPopPointer(program));
-    int slot = programStackPopInteger(program);
+    Object* obj = ctx.arg(0).asObject();
+    int slot = ctx.arg(1).asInt();
 
     switch (slot) {
     case 0:
-        programStackPushPointer(program, critterGetArmor(obj));
+        ctx.setReturn(critterGetArmor(obj));
         break;
     case 1:
-        programStackPushPointer(program, critterGetItem2(obj));
+        ctx.setReturn(critterGetItem2(obj));
         break;
     case 2:
-        programStackPushPointer(program, critterGetItem1(obj));
+        ctx.setReturn(critterGetItem1(obj));
         break;
     case -2:
-        programStackPushInteger(program, obj->data.inventory.length);
+        ctx.setReturn(obj->data.inventory.length);
         break;
     default:
         programFatalError("mf_critter_inven_obj2: invalid type");
     }
 }
 
-void mf_dialog_obj(Program* program, int args)
+void mf_dialog_obj(OpcodeContext& ctx)
 {
     if (GameMode::isInGameMode(GameMode::kDialog)) {
-        programStackPushPointer(program, gGameDialogSpeaker);
+        ctx.setReturn(gGameDialogSpeaker);
     } else {
-        programStackPushPointer(program, nullptr);
+        ctx.setReturn(nullptr);
     }
 }
 
-void mf_get_cursor_mode(Program* program, int args)
+void mf_get_cursor_mode(OpcodeContext& ctx)
 {
-    programStackPushInteger(program, gameMouseGetMode());
+    ctx.setReturn(gameMouseGetMode());
 }
 
-void mf_get_flags(Program* program, int args)
+void mf_get_flags(OpcodeContext& ctx)
 {
-    Object* object = static_cast<Object*>(programStackPopPointer(program));
-    programStackPushInteger(program, object->flags);
+    Object* object = ctx.arg(0).asObject();
+    ctx.setReturn(object->flags);
 }
 
-void mf_get_sfall_arg_at(Program* program, int args)
+void mf_get_sfall_arg_at(OpcodeContext& ctx)
 {
-    const int argNum = programStackPopInteger(program);
+    const int argNum = ctx.arg(0).asInt();
 
     ProgramValue result(0);
-    const auto hookCall = hookOpcodeGetCurrentCall(currentMetarule()->name);
+    const auto hookCall = hookOpcodeGetCurrentCall(ctx.name());
     if (hookCall != nullptr) {
         if (argNum >= 0 && argNum < hookCall->numArgs()) {
             result = hookCall->getArgAt(argNum);
         } else {
-            programPrintError("%s: argNum %d out of range [0, %d]", currentMetarule()->name, argNum, hookCall->numArgs() - 1);
+            ctx.printError("%s: argNum %d out of range [0, %d]", ctx.name(), argNum, hookCall->numArgs() - 1);
         }
     }
-    programStackPushValue(program, result);
+    ctx.setReturn(result);
 }
 
-void mf_get_object_data(Program* program, int args)
+void mf_get_object_data(OpcodeContext& ctx)
 {
     // TODO: only allow to modify a set of whitelisted object types
     // TODO: map offsets to fields to avoid potential alignment, 64bit issues!
-    void* ptr = programStackPopPointer(program);
-    size_t offset = static_cast<size_t>(programStackPopInteger(program));
+    Object* ptr = ctx.arg(0).asObject();
+    size_t offset = static_cast<size_t>(ctx.arg(1).asInt());
 
     if (offset % 4 != 0) {
         programFatalError("mf_get_object_data: bad offset %d", offset);
     }
 
     int value = *reinterpret_cast<int*>(reinterpret_cast<unsigned char*>(ptr) + offset);
-    programStackPushInteger(program, value);
+    ctx.setReturn(value);
 }
 
-void mf_get_text_width(Program* program, int args)
+void mf_get_text_width(OpcodeContext& ctx)
 {
-    const char* string = programStackPopString(program);
-    programStackPushInteger(program, fontGetStringWidth(string));
+    ctx.setReturn(fontGetStringWidth(ctx.stringArg(0)));
 }
 
-void mf_intface_redraw(Program* program, int args)
+void mf_intface_redraw(OpcodeContext& ctx)
 {
-    if (args == 0) {
+    if (ctx.numArgs() == 0) {
         interfaceBarRefresh();
     } else {
         // TODO: Incomplete.
         programFatalError("mf_intface_redraw: not implemented");
     }
-
-    programStackPushInteger(program, -1);
 }
 
-void mf_loot_obj(Program* program, int args)
+void mf_loot_obj(OpcodeContext& ctx)
 {
     if (GameMode::isInGameMode(GameMode::kInventory)) {
-        programStackPushPointer(program, inventoryGetTargetObject());
+        ctx.setReturn(inventoryGetTargetObject());
     } else {
-        programStackPushPointer(program, nullptr);
+        ctx.setReturn(nullptr);
     }
 }
 
-void mf_metarule_exist(Program* program, int args)
+void mf_metarule_exist(OpcodeContext& ctx)
 {
-    const char* metarule = programStackPopString(program);
+    const char* metarule = ctx.stringArg(0);
 
     for (int index = 0; index < kMetarulesMax; index++) {
         if (strcmp(kMetarules[index].name, metarule) == 0) {
-            programStackPushInteger(program, 1);
+            ctx.setReturn(1);
             return;
         }
     }
 
-    programStackPushInteger(program, 0);
+    ctx.setReturn(0);
 }
 
-void mf_add_extra_msg_file(Program* program, int args)
+void mf_add_extra_msg_file(OpcodeContext& ctx)
 {
-    if (args == 2) {
-        programFatalError("op_sfall_func: '%s': explicit fileNumber is not supported in Fallout 2 CE", currentMetarule()->name);
+    if (ctx.numArgs() == 2) {
+        programFatalError("op_sfall_func: '%s': explicit fileNumber is not supported in Fallout 2 CE", ctx.name());
     }
 
-    const char* fileName = programStackPopString(program);
+    const char* fileName = ctx.stringArg(0);
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s\\%s", "game", fileName);
@@ -338,94 +325,87 @@ void mf_add_extra_msg_file(Program* program, int args)
     int result = messageListRepositoryAddExtra(path);
     switch (result) {
     case -2:
-        programPrintError("%s() - error loading message file.", currentMetarule()->name);
+        ctx.printError("%s() - error loading message file.", ctx.name());
         break;
     case -3:
-        programPrintError("%s() - the limit of adding message files has been exceeded.", currentMetarule()->name);
+        ctx.printError("%s() - the limit of adding message files has been exceeded.", ctx.name());
         break;
     }
 
-    programStackPushInteger(program, result);
+    ctx.setReturn(result);
 }
 
-void mf_opcode_exists(Program* program, int args)
+void mf_opcode_exists(OpcodeContext& ctx)
 {
-    int opcode = programStackPopInteger(program);
+    int opcode = ctx.arg(0).asInt();
     int opcodeIndex = opcode & 0x3FFF;
     if (opcodeIndex < 0 || opcodeIndex >= OPCODE_MAX_COUNT) {
-        programStackPushInteger(program, 0);
+        ctx.setReturn(0);
         return;
     }
     auto opcodeHandler = gInterpreterOpcodeHandlers[opcodeIndex];
     int opcodeExists = opcodeHandler != nullptr ? 1 : 0;
-    programStackPushInteger(program, opcodeExists);
+    ctx.setReturn(opcodeExists);
 }
 
-void mf_obj_under_cursor(Program* program, int args)
+void mf_obj_under_cursor(OpcodeContext& ctx)
 {
-    int onlyCritter = programStackPopInteger(program);
-    int includeDude = programStackPopInteger(program);
+    int onlyCritter = ctx.arg(0).asInt();
+    int includeDude = ctx.arg(1).asInt();
 
     Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : -1, includeDude, gElevation);
 
-    programStackPushValue(program, object);
+    ctx.setReturn(object);
 }
 
-void mf_outlined_object(Program* program, int args)
+void mf_outlined_object(OpcodeContext& ctx)
 {
-    programStackPushPointer(program, gmouse_get_outlined_object());
+    ctx.setReturn(gmouse_get_outlined_object());
 }
 
-void mf_set_cursor_mode(Program* program, int args)
+void mf_set_cursor_mode(OpcodeContext& ctx)
 {
-    int mode = programStackPopInteger(program);
+    int mode = ctx.arg(0).asInt();
     gameMouseSetMode(mode);
-    programStackPushInteger(program, -1);
 }
 
-void mf_set_flags(Program* program, int args)
+void mf_set_flags(OpcodeContext& ctx)
 {
-    Object* object = static_cast<Object*>(programStackPopPointer(program));
-    int flags = programStackPopInteger(program);
+    Object* object = ctx.arg(0).asObject();
+    int flags = ctx.arg(1).asInt();
 
     object->flags = flags;
-
-    programStackPushInteger(program, -1);
 }
 
-void mf_set_outline(Program* program, int args)
+void mf_set_outline(OpcodeContext& ctx)
 {
-    Object* object = static_cast<Object*>(programStackPopPointer(program));
-    int outline = programStackPopInteger(program);
+    Object* object = ctx.arg(0).asObject();
+    int outline = ctx.arg(1).asInt();
     object->outline = outline;
-    programStackPushInteger(program, -1);
 }
 
-void mf_show_window(Program* program, int args)
+void mf_show_window(OpcodeContext& ctx)
 {
-    if (args == 0) {
+    if (ctx.numArgs() == 0) {
         scriptWindowShow();
-    } else if (args == 1) {
-        const char* windowName = programStackPopString(program);
+    } else if (ctx.numArgs() == 1) {
+        const char* windowName = ctx.stringArg(0);
         if (!scriptWindowShowNamed(windowName)) {
             debugPrint("show_window: window '%s' is not found", windowName);
         }
     }
-
-    programStackPushInteger(program, -1);
 }
 
-void mf_tile_refresh_display(Program* program, int args)
+void mf_tile_refresh_display(OpcodeContext& ctx)
 {
     tileWindowRefresh();
-    programStackPushInteger(program, -1);
 }
 
-void mf_tile_by_position(Program* program, int args)
+void mf_tile_by_position(OpcodeContext& ctx)
 {
-    int x = programStackPopInteger(program);
-    int y = programStackPopInteger(program);
-    programStackPushInteger(program, tileFromScreenXY(x, y));
+    int x = ctx.arg(0).asInt();
+    int y = ctx.arg(1).asInt();
+    ctx.setReturn(tileFromScreenXY(x, y));
 }
 
 // compares strings case-insensitive with specifics for Fallout
@@ -495,18 +475,18 @@ static bool FalloutStringCompare(const char* str1, const char* str2, long codePa
     }
 }
 
-void mf_string_compare(Program* program, int args)
+void mf_string_compare(OpcodeContext& ctx)
 {
     // compare str1 to str3 case insensitively
     // if args == 3, use FalloutStringCompare
-    const char* str1 = programStackPopString(program);
-    const char* str2 = programStackPopString(program);
+    const char* str1 = ctx.stringArg(0);
+    const char* str2 = ctx.stringArg(1);
     int codePage = 0;
-    if (args == 3) {
-        codePage = programStackPopInteger(program);
+    if (ctx.numArgs() == 3) {
+        codePage = ctx.arg(2).asInt();
     }
     bool result = false;
-    if (args < 3) {
+    if (ctx.numArgs() < 3) {
         // default case-insensitive comparison
         result = compat_stricmp(str1, str2) == 0;
     } else {
@@ -514,41 +494,41 @@ void mf_string_compare(Program* program, int args)
         result = FalloutStringCompare(str1, str2, codePage);
     }
     if (result) {
-        programStackPushInteger(program, 1); // strings are equal
+        ctx.setReturn(1); // strings are equal
     } else {
-        programStackPushInteger(program, 0); // strings are not equal
+        ctx.setReturn(0); // strings are not equal
     }
 }
 
-void mf_string_find(Program* program, int args)
+void mf_string_find(OpcodeContext& ctx)
 {
-    const char* str = programStackPopString(program);
-    const char* substr = programStackPopString(program);
+    const char* str = ctx.stringArg(0);
+    const char* substr = ctx.stringArg(1);
     int startPos = 0;
 
-    if (args == 3) {
-        startPos = programStackPopInteger(program);
+    if (ctx.numArgs() == 3) {
+        startPos = ctx.arg(2).asInt();
     }
 
     if (startPos < 0 || startPos >= strlen(str)) {
         debugPrint("string_find: invalid start position %d", startPos);
-        programStackPushInteger(program, -1);
+        ctx.setReturn(-1);
         return;
     }
 
     const char* found = strstr(str + startPos, substr);
     if (found) {
-        programStackPushInteger(program, static_cast<int>(found - str));
+        ctx.setReturn(static_cast<int>(found - str));
     } else {
-        programStackPushInteger(program, -1);
+        ctx.setReturn(-1);
     }
 }
 
-void mf_string_to_case(Program* program, int args)
+void mf_string_to_case(OpcodeContext& ctx)
 {
-    auto buf = programStackPopString(program);
+    auto buf = ctx.stringArg(0);
     std::string s(buf);
-    auto caseType = programStackPopInteger(program);
+    auto caseType = ctx.arg(1).asInt();
     if (caseType == 1) {
         std::transform(s.begin(), s.end(), s.begin(), ::toupper);
     } else if (caseType == 0) {
@@ -556,47 +536,34 @@ void mf_string_to_case(Program* program, int args)
     } else {
         debugPrint("string_to_case: invalid case type %d", caseType);
     }
-    programStackPushString(program, s.c_str());
+    ctx.setReturn(s.c_str());
 }
 
-void mf_string_format(Program* program, int args)
+void mf_string_format(OpcodeContext& ctx)
 {
-    sprintf_lite(program, args, "string_format");
-}
-
-void mf_floor2(Program* program, int args)
-{
-    ProgramValue programValue = programStackPopValue(program);
-    programStackPushInteger(program, static_cast<int>(floor(programValue.asFloat())));
-}
-
-void sprintf_lite(Program* program, int args, const char* infoOpcodeName)
-{
-    auto format = programStackPopString(program); // Pop the format string
-
-    ProgramValue formatArgs[7]; // 8 arguments total, 1 for format string
-
-    for (int index = 0; index < args - 1; index++) {
-        formatArgs[index] = programStackPopValue(program);
+    ProgramValue formatArgs[7];
+    for (int index = 1; index < ctx.numArgs(); index++) {
+        formatArgs[index - 1] = ctx.arg(index);
     }
 
+    const char* format = ctx.stringArg(0);
+    int args = ctx.numArgs();
     int fmtLen = static_cast<int>(strlen(format));
     if (fmtLen == 0) {
-        programStackPushString(program, "");
+        ctx.setReturn("");
         return;
     }
     if (fmtLen > 1024) {
-        debugPrint("%s(): format string exceeds maximum length of 1024 characters.", infoOpcodeName);
-        programStackPushString(program, "Error");
+        debugPrint("%s(): format string exceeds maximum length of 1024 characters.", "string_format");
+        ctx.setReturn("Error");
         return;
     }
     int newFmtLen = fmtLen;
 
     for (int i = 0; i < fmtLen; i++) {
-        if (format[i] == '%') newFmtLen++; // will possibly be escaped, need space for that
+        if (format[i] == '%') newFmtLen++;
     }
 
-    // parse format to make it safe
     auto newFmt = std::make_unique<char[]>(newFmtLen + 1);
 
     bool conversion = false;
@@ -607,38 +574,30 @@ void sprintf_lite(Program* program, int args, const char* infoOpcodeName)
     int bufCount = sizeof(out) - 1;
     char* outBuf = out;
 
-    int numArgs = args; // From 2 to 8
+    int numArgs = args;
 
     for (int i = 0; i < fmtLen; i++) {
         char c = format[i];
         if (!conversion) {
-            // Start conversion.
             if (c == '%') conversion = true;
         } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '%') {
             int partLen;
             if (c == '%') {
-                // escaped % sign, just copy newFmt up to (and including) the leading % sign
                 newFmt[j] = '\0';
-                // strncpy_s(outBuf, bufCount, newFmt, j);
                 strncpy(outBuf, newFmt.get(), std::min(j, bufCount - 1));
                 partLen = j;
             } else {
-                // ignore size prefixes
                 if (c == 'h' || c == 'l' || c == 'j' || c == 'z' || c == 't' || c == 'w' || c == 'L' || c == 'I') continue;
-                // Type specifier, perform conversion.
                 if (++valIdx == numArgs) {
                     debugPrint("%s() - format string contains more conversions than passed arguments (%d): %s",
-                        infoOpcodeName, numArgs - 1, format);
+                        "string_format", numArgs - 1, format);
                 }
                 const auto& arg = formatArgs[std::min(valIdx - 1, numArgs - 2)];
 
-                // ctx.arg(valIdx < numArgs ? valIdx : numArgs - 1);
                 if (c == 'S' || c == 'Z') {
-                    c = 's'; // don't allow wide strings
+                    c = 's';
                 }
-                if ((c == 's' && !arg.isString()) || // don't allow treating non-string values as string pointers
-                    c == 'n') // don't allow "n" specifier
-                {
+                if ((c == 's' && !arg.isString()) || c == 'n') {
                     c = 'd';
                 }
                 newFmt[j++] = c;
@@ -646,8 +605,7 @@ void sprintf_lite(Program* program, int args, const char* infoOpcodeName)
                 partLen = arg.isFloat()
                     ? snprintf(outBuf, bufCount, newFmt.get(), arg.floatValue)
                     : arg.isInt()    ? snprintf(outBuf, bufCount, newFmt.get(), arg.integerValue)
-                    : arg.isString() ? snprintf(outBuf, bufCount, newFmt.get(),
-                                           programGetString(program, arg.opcode, arg.integerValue))
+                    : arg.isString() ? snprintf(outBuf, bufCount, newFmt.get(), arg.asString(ctx.program()))
                                      : snprintf(outBuf, bufCount, newFmt.get(), "<UNSUPPORTED TYPE>");
             }
             outBuf += partLen;
@@ -661,32 +619,33 @@ void sprintf_lite(Program* program, int args, const char* infoOpcodeName)
         }
         newFmt[j++] = c;
     }
-    // Copy the remainder of the string.
+
     if (bufCount > 0) {
         newFmt[j] = '\0';
-        // strcpy_s(outBuf, bufCount, newFmt);
         if (strlen(newFmt.get()) < bufCount) {
             strcpy(outBuf, newFmt.get());
         } else {
             strncpy(outBuf, newFmt.get(), bufCount - 1);
-            outBuf[bufCount - 1] = '\0'; // Ensure null-termination
+            outBuf[bufCount - 1] = '\0';
         }
     }
 
-    programStackPushString(program, out);
+    ctx.setReturn(out);
+}
+
+void mf_floor2(OpcodeContext& ctx)
+{
+    ctx.setReturn(static_cast<int>(floor(ctx.arg(0).asFloat())));
 }
 
 // message_box
-void mf_message_box(Program* program, int args)
+void mf_message_box(OpcodeContext& ctx)
 {
     static int dialogShowCount = 0;
 
-    const char* string = programStackPopString(program);
+    const char* string = ctx.stringArg(0);
     if (string == nullptr || string[0] == '\0') {
-        for (int index = 1; index < args; index++) {
-            (void)programStackPopInteger(program);
-        }
-        programStackPushInteger(program, -1);
+        ctx.setReturn(-1);
         return;
     }
 
@@ -703,8 +662,8 @@ void mf_message_box(Program* program, int args)
     }
 
     int flags = DIALOG_BOX_LARGE | DIALOG_BOX_YES_NO;
-    if (args > 1) {
-        int flagParam = programStackPopInteger(program);
+    if (ctx.numArgs() > 1) {
+        int flagParam = ctx.arg(1).asInt();
         if (flagParam != -1) {
             flags = flagParam;
         }
@@ -713,11 +672,11 @@ void mf_message_box(Program* program, int args)
     // note: most of the CE code uses colorTable indices, but this metarule expects palette values.
     // Default: yellow (145) = _colorTable[32328]
     int color1 = _colorTable[32328], color2 = _colorTable[32328];
-    if (args > 2) {
-        color1 = programStackPopInteger(program);
+    if (ctx.numArgs() > 2) {
+        color1 = ctx.arg(2).asInt();
     }
-    if (args > 3) {
-        color2 = programStackPopInteger(program);
+    if (ctx.numArgs() > 3) {
+        color2 = ctx.arg(3).asInt();
     }
 
     dialogShowCount++;
@@ -727,42 +686,51 @@ void mf_message_box(Program* program, int args)
         scriptsEnable();
     }
 
-    programStackPushInteger(program, rc);
+    ctx.setReturn(rc);
     internal_free(copy);
 }
 
 void sfall_metarule(Program* program, int args)
 {
-    static ProgramValue values[8];
+    // TODO: make OpcodeContext handle the stack.  This will be easier once it is used for all opcodes.
+    static ProgramValue values[METARULE_MAX_ARGS];
 
     for (int index = 0; index < args; index++) {
         values[index] = programStackPopValue(program);
     }
 
-    const char* metarule = programStackPopString(program);
-
-    for (int index = 0; index < args; index++) {
-        programStackPushValue(program, values[index]);
+    ProgramValue metaruleName = programStackPopValue(program);
+    if (!metaruleName.isString()) {
+        programPrintError("op_sfall_func(name, ...) - name must be string.");
+        programStackPushInteger(program, 0);
+        return;
     }
 
-    currentMetaruleIndex = -1;
+    const char* metarule = programGetString(program, metaruleName.opcode, metaruleName.integerValue);
+
+    const MetaruleInfo* metaruleInfo = nullptr;
     for (int index = 0; index < kMetarulesMax; index++) {
         if (strcmp(kMetarules[index].name, metarule) == 0) {
-            currentMetaruleIndex = index;
+            metaruleInfo = &kMetarules[index];
             break;
         }
     }
 
-    if (currentMetaruleIndex == -1) {
-        programFatalError("op_sfall_func: '%s' is not implemented", metarule);
+    if (metaruleInfo == nullptr) {
+        programPrintError("op_sfall_func(\"%s\", ...) - metarule function is unknown.", metarule);
+        programStackPushInteger(program, 0);
+        return;
     }
 
-    const auto& metaruleInfo = kMetarules[currentMetaruleIndex];
-    if (args < metaruleInfo.minArgs || args > metaruleInfo.maxArgs) {
-        programFatalError("op_sfall_func: '%s': invalid number of args", metarule);
+    OpcodeContext ctx(program, metaruleInfo, args, values);
+    if (!ctx.validateArguments()) {
+        ctx.setReturn(metaruleInfo->errorReturn);
+        ctx.pushReturnValue();
+        return;
     }
 
-    metaruleInfo.handler(program, args);
+    metaruleInfo->handler(ctx);
+    ctx.pushReturnValue();
 }
 
 } // namespace fallout

@@ -146,10 +146,14 @@ typedef struct Procedure {
     int argCount;
 } Procedure;
 
+struct Program;
+
 class ProgramValue {
 public:
     ProgramValue();
     ProgramValue(int value);
+    ProgramValue(unsigned int value);
+    ProgramValue(float value);
     ProgramValue(Object* value);
     // TODO: better approach for supporting different object types?
     ProgramValue(Attack* value);
@@ -168,16 +172,16 @@ public:
     float asFloat() const;
     bool isPointer() const;
     int asInt() const;
+    Object* asObject() const;
+    const char* asString(Program* program) const;
 };
 
 typedef std::vector<ProgramValue> ProgramStack;
-
-typedef struct Program Program;
 typedef int(InterpretCheckWaitFunc)(Program* program);
 
 // It's size in original code is 144 (0x8C) bytes due to the different
 // size of `jmp_buf`.
-typedef struct Program {
+struct Program {
     char* name;
     unsigned char* data;
     struct Program* parent;
@@ -201,7 +205,7 @@ typedef struct Program {
     ProgramStack* returnStackValues;
 
     int procedureCount() const;
-} Program;
+};
 
 typedef unsigned int(InterpretTimerFunc)();
 typedef void OpcodeHandler(Program* program);

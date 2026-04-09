@@ -2,6 +2,7 @@
 #define FALLOUT_SFALL_ANIMATION_H_
 
 #include "interpreter.h"
+#include "opcode_context.h"
 
 namespace fallout {
 
@@ -12,7 +13,7 @@ void op_reg_anim_light(Program* program);
 void op_reg_anim_change_fid(Program* program);
 void op_reg_anim_take_out(Program* program);
 void op_reg_anim_turn_towards(Program* program);
-void mf_reg_anim_animate_and_move(Program* program, int args);
+void mf_reg_anim_animate_and_move(OpcodeContext& ctx);
 
 } // namespace fallout
 
