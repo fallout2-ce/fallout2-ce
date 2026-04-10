@@ -1569,7 +1569,7 @@ static void opPickup(Program* program)
     int sid = scriptGetSid(program);
 
     Script* script;
-    if (scriptGetScript(sid, &script) == 1) {
+    if (scriptGetScript(sid, &script) == -1) {
         scriptPredefinedError(program, "pickup_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
         return;
     }
