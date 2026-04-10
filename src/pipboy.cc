@@ -540,7 +540,7 @@ int pipboyOpen(int intent)
         }
 
         // SFALL: Close with 'Z'.
-        if (keyCode == 503 || keyCode == KEY_ESCAPE || keyCode == KEY_RETURN || keyCode == KEY_UPPERCASE_P || keyCode == KEY_LOWERCASE_P || keyCode == KEY_UPPERCASE_Z || keyCode == KEY_LOWERCASE_Z || _game_user_wants_to_quit != 0) {
+        if (keyCode == 503 || keyCode == KEY_ESCAPE || keyCode == KEY_RETURN || keyCode == KEY_UPPERCASE_P || keyCode == KEY_LOWERCASE_P || keyCode == KEY_UPPERCASE_Z || keyCode == KEY_LOWERCASE_Z || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         }
 
@@ -2246,14 +2246,14 @@ static bool pipboyRest(int hours, int minutes, int duration)
                         break;
                     }
 
-                    if (_game_user_wants_to_quit != 0) {
+                    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                         rc = true;
                     }
                 }
 
                 if (!rc) {
                     gameTimeSetTime(v6);
-                    if (inputGetInput() == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
+                    if (inputGetInput() == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                         rc = true;
                     }
 
@@ -2296,7 +2296,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
 
                 unsigned int start = getTicks();
 
-                if (inputGetInput() == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
+                if (inputGetInput() == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                     rc = true;
                 }
 
@@ -2312,7 +2312,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
                         break;
                     }
 
-                    if (_game_user_wants_to_quit != 0) {
+                    if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                         rc = true;
                     }
                 }

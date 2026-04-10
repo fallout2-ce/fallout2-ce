@@ -919,7 +919,7 @@ int characterEditorShow(bool isCreationMode)
         } else if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
             showQuitConfirmationDialog();
             windowRefresh(gCharacterEditorWindow);
-        } else if (keyCode == 502 || keyCode == KEY_ESCAPE || keyCode == KEY_UPPERCASE_C || keyCode == KEY_LOWERCASE_C || _game_user_wants_to_quit != 0) {
+        } else if (keyCode == 502 || keyCode == KEY_ESCAPE || keyCode == KEY_UPPERCASE_C || keyCode == KEY_LOWERCASE_C || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             windowRefresh(gCharacterEditorWindow);
             rc = 1;
         } else if (gCharacterEditorIsCreationMode && (keyCode == 517 || keyCode == KEY_UPPERCASE_N || keyCode == KEY_LOWERCASE_N)) {
@@ -1950,7 +1950,7 @@ static int _get_input_str(int win, int cancelKeyCode, char* text, int maxLength,
         } else if (keyCode == KEY_RETURN) {
             soundPlayFile("ib1p1xx1");
             rc = 0;
-        } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
+        } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = -1;
         } else {
             if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && nameLength >= 1) {
@@ -3435,7 +3435,7 @@ static int characterEditorEditAge()
 
             windowDestroy(win);
             return 0;
-        } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
+        } else if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             break;
         } else if (keyCode == 501) {
             age = critterGetStat(gDude, STAT_AGE);
@@ -3535,7 +3535,7 @@ static int characterEditorEditAge()
                 }
 
                 keyCode = inputGetInput();
-                if (keyCode == 503 || keyCode == 504 || _game_user_wants_to_quit != 0) {
+                if (keyCode == 503 || keyCode == 504 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                     break;
                 }
 
@@ -3667,7 +3667,7 @@ static void characterEditorEditGender()
             break;
         }
 
-        if (eventCode == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
+        if (eventCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             critterSetBaseStat(gDude, STAT_GENDER, savedGender);
             characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
             characterEditorDrawDerivedStats();
@@ -3891,7 +3891,7 @@ static int characterEditorShowOptions()
 
             int keyCode = inputGetInput();
 
-            if (_game_user_wants_to_quit != 0) {
+            if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 rc = 2;
             } else if (keyCode == 504) {
                 rc = 2;
@@ -6016,7 +6016,7 @@ static int perkDialogHandleInput(int count, void (*refreshProc)())
             }
             gPerkDialogPreviousCurrentLine = gPerkDialogCurrentLine;
             refreshProc();
-        } else if (keyCode == 502 || keyCode == KEY_ESCAPE || _game_user_wants_to_quit != 0) {
+        } else if (keyCode == 502 || keyCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 2;
         } else {
             switch (keyCode) {

@@ -1489,7 +1489,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
             mapSetElevation(elevation);
             tileSetCenter(tile, TILE_SET_CENTER_REFRESH_WINDOW | TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
             if (isInCombat()) {
-                _game_user_wants_to_quit = 1;
+                _game_user_wants_to_quit = GAME_QUIT_REQUEST_END_COMBAT;
             }
         }
     } else {

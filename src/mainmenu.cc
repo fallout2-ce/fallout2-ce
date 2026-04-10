@@ -50,6 +50,8 @@ static bool _in_main_menu = false;
 // 0x519508
 static bool gMainMenuWindowInitialized = false;
 
+static bool gMainMenuExitRequested = false;
+
 // 0x51950C
 static unsigned int gMainMenuScreensaverDelay = 120000;
 
@@ -326,6 +328,11 @@ int mainMenuWindowHandleEvents()
 
     int rc = -1;
     while (rc == -1) {
+        if (gMainMenuExitRequested) {
+            gMainMenuExitRequested = false;
+            _game_user_wants_to_quit = GAME_QUIT_REQUEST_EXIT;
+        }
+
         sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
@@ -365,14 +372,14 @@ int mainMenuWindowHandleEvents()
             }
         }
 
-        if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit == 3) {
+        if (keyCode == KEY_ESCAPE || _game_user_wants_to_quit == GAME_QUIT_REQUEST_EXIT) {
             rc = MAIN_MENU_EXIT;
 
             // NOTE: Uninline.
             main_menu_play_sound("nmselec1");
             break;
-        } else if (_game_user_wants_to_quit == 2) {
-            _game_user_wants_to_quit = 0;
+        } else if (_game_user_wants_to_quit == GAME_QUIT_REQUEST_MAIN_MENU) {
+            _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
         } else {
             if (getTicksSince(tick) >= gMainMenuScreensaverDelay) {
                 rc = MAIN_MENU_TIMEOUT;
@@ -390,6 +397,11 @@ int mainMenuWindowHandleEvents()
     _in_main_menu = false;
 
     return rc;
+}
+
+void mainMenuRequestExit()
+{
+    gMainMenuExitRequested = true;
 }
 
 // NOTE: Inlined.

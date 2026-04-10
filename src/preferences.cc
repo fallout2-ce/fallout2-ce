@@ -1274,7 +1274,7 @@ int doPreferences(bool animated)
             preferencesSetDefaults(true);
             break;
         default:
-            if (eventCode == KEY_ESCAPE || eventCode == 528 || _game_user_wants_to_quit != 0) {
+            if (eventCode == KEY_ESCAPE || eventCode == 528 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 _RestoreSettings();
                 rc = 0;
             } else if (eventCode >= 505 && eventCode <= 524) {

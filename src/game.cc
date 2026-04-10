@@ -114,7 +114,7 @@ int gGameGlobalVarsLength = 0;
 const char* asc_5186C8 = _aGame_0;
 
 // 0x5186CC
-int _game_user_wants_to_quit = 0;
+GameQuitRequest _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
 
 // misc.msg
 //
@@ -445,7 +445,7 @@ void gameReset()
     _ResetLoadSave();
     gameDialogReset();
     combatReset();
-    _game_user_wants_to_quit = 0;
+    _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     automapReset();
     _init_options_menu();
 
@@ -1274,7 +1274,7 @@ static void showHelp()
                 windowShow(overlay);
                 windowShow(win);
 
-                while (inputGetInput() == -1 && _game_user_wants_to_quit == 0) {
+                while (inputGetInput() == -1 && _game_user_wants_to_quit == GAME_QUIT_REQUEST_NONE) {
                     sharedFpsLimiter.mark();
                     renderPresent();
                     sharedFpsLimiter.throttle();
@@ -1342,7 +1342,7 @@ int showQuitConfirmationDialog()
     if (messageListGetItem(&gMiscMessageList, &messageListItem)) {
         rc = showDialogBox(messageListItem.text, nullptr, 0, 169, 117, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_YES_NO);
         if (rc != 0) {
-            _game_user_wants_to_quit = 2;
+            _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
         }
     } else {
         rc = -1;
@@ -1579,8 +1579,8 @@ int gameShowDeathDialog(const char* message)
     int oldCursor = gameMouseGetCursor();
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
-    int oldUserWantsToQuit = _game_user_wants_to_quit;
-    _game_user_wants_to_quit = 0;
+    GameQuitRequest oldUserWantsToQuit = _game_user_wants_to_quit;
+    _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
 
     int rc = showDialogBox(message, nullptr, 0, 169, 117, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
 

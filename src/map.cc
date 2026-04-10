@@ -1243,7 +1243,7 @@ int mapSetTransition(MapTransition* transition)
     }
 
     if (isInCombat()) {
-        _game_user_wants_to_quit = 1;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_END_COMBAT;
     }
 
     return 0;

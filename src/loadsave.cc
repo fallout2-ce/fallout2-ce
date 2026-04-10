@@ -528,7 +528,7 @@ int lsgSaveGame(int mode)
 
         convertMouseWheelToArrowKey(&keyCode);
 
-        if (keyCode == KEY_ESCAPE || keyCode == 501 || _game_user_wants_to_quit != 0) {
+        if (keyCode == KEY_ESCAPE || keyCode == 501 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 0;
         } else {
             switch (keyCode) {
@@ -659,7 +659,7 @@ int lsgSaveGame(int mode)
             case KEY_F10:
                 showQuitConfirmationDialog();
 
-                if (_game_user_wants_to_quit != 0) {
+                if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                     rc = 0;
                 }
                 break;
@@ -1057,7 +1057,7 @@ int lsgLoadGame(int mode)
 
         messageListFree(&gLoadSaveMessageList);
         mapNewMap();
-        _game_user_wants_to_quit = 2;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
 
         return -1;
     }
@@ -1141,7 +1141,7 @@ int lsgLoadGame(int mode)
 
         convertMouseWheelToArrowKey(&keyCode);
 
-        if (keyCode == KEY_ESCAPE || keyCode == 501 || _game_user_wants_to_quit != 0) {
+        if (keyCode == KEY_ESCAPE || keyCode == 501 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 0;
         } else {
             switch (keyCode) {
@@ -1281,7 +1281,7 @@ int lsgLoadGame(int mode)
             case KEY_CTRL_X:
             case KEY_F10:
                 showQuitConfirmationDialog();
-                if (_game_user_wants_to_quit != 0) {
+                if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                     rc = 0;
                 }
                 break;
@@ -1462,7 +1462,7 @@ int lsgLoadGame(int mode)
                     strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
                     showDialogBox(_str0, body, 1, 169, 116, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
                     mapNewMap();
-                    _game_user_wants_to_quit = 2;
+                    _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
                     rc = -1;
                 }
                 break;

@@ -3208,7 +3208,7 @@ static void opMetarule(Program* program)
     switch (rule) {
     case METARULE_SIGNAL_END_GAME:
         result = 0;
-        _game_user_wants_to_quit = 2;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
         break;
     case METARULE_FIRST_RUN:
         result = (gMapHeader.flags & MAP_SAVED) == 0;
@@ -4775,7 +4775,7 @@ static void opCritterSetFleeState(Program* program)
 static void opTerminateCombat(Program* program)
 {
     if (isInCombat()) {
-        _game_user_wants_to_quit = 1;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_END_COMBAT;
         Object* self = scriptGetSelf(program);
         if (self != nullptr) {
             if (PID_TYPE(self->pid) == OBJ_TYPE_CRITTER) {

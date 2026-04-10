@@ -373,7 +373,7 @@ void gameTimeAddTicks(int ticks)
     unsigned int year = gGameTime / GAME_TIME_TICKS_PER_YEAR;
     if (year >= 13) {
         endgameSetupDeathEnding(ENDGAME_DEATH_ENDING_REASON_TIMEOUT);
-        _game_user_wants_to_quit = 2;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
     }
 
     // FIXME: This condition will never be true.
@@ -497,7 +497,7 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
     }
 
     if (endgame) {
-        _game_user_wants_to_quit = 2;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
     } else {
         tileWindowRefresh();
     }
@@ -1085,7 +1085,7 @@ void _scripts_request_combat_locked(CombatStartData* combat)
 void scripts_request_townmap()
 {
     if (isInCombat()) {
-        _game_user_wants_to_quit = 1;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_END_COMBAT;
     }
 
     gScriptsRequests |= SCRIPT_REQUEST_TOWN_MAP;
@@ -1096,7 +1096,7 @@ void scripts_request_townmap()
 void scriptsRequestWorldMap()
 {
     if (isInCombat()) {
-        _game_user_wants_to_quit = 1;
+        _game_user_wants_to_quit = GAME_QUIT_REQUEST_END_COMBAT;
     }
 
     gScriptsRequests |= SCRIPT_REQUEST_WORLD_MAP;

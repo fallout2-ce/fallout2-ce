@@ -547,7 +547,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
             }
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 1;
         }
 
@@ -890,7 +890,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
                 delay_ms(delay - (getTicks() - scrollTick));
 
-                if (_game_user_wants_to_quit != 0) {
+                if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                     rc = 1;
                     break;
                 }
@@ -1338,7 +1338,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 unsigned int delay = (scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
                 delay_ms(delay - (getTicks() - scrollTick));
 
-                if (_game_user_wants_to_quit != 0) {
+                if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                     rc = 1;
                     break;
                 }
@@ -1372,7 +1372,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             delay_ms(1000 / 24 - (getTicks() - tick));
         }
 
-        if (_game_user_wants_to_quit != 0) {
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 1;
         }
 
