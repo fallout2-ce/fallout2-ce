@@ -258,9 +258,6 @@ static unsigned char* gInterfaceWindowBuffer;
 // 0x59D40C
 static unsigned char gInterfaceActionPointsBarBackground[90 * 5];
 
-// Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default)
-bool gInterfaceBarMode = false;
-
 static FrmImage _inventoryButtonNormalFrmImage;
 static FrmImage _inventoryButtonPressedFrmImage;
 static FrmImage _optionsButtonNormalFrmImage;
@@ -295,7 +292,6 @@ int gInterfaceBarWidth = 800; // will fall back to 640 if screen width is too na
 bool gInterfaceBarIsCustom = false;
 static Art* gCustomInterfaceBarBackground = nullptr;
 
-int gInterfaceSidePanelsImageId = 2;
 bool gInterfaceSidePanelsExtendFromScreenEdge = false;
 static int gInterfaceSidePanelsLeadingWindow = -1;
 static int gInterfaceSidePanelsTrailingWindow = -1;
@@ -2467,6 +2463,7 @@ bool indicatorBarHide()
 
 static void customInterfaceBarInit()
 {
+    gInterfaceBarWidth = settings.ui.iface_bar_width;
     gInterfaceBarContentOffset = gInterfaceBarWidth - 640;
     if (gInterfaceBarContentOffset > 0) {
         if (screenGetWidth() > 640 && gInterfaceBarWidth <= screenGetWidth()) {
@@ -2507,11 +2504,12 @@ unsigned char* customInterfaceBarGetBackgroundImageData()
 
 static void sidePanelsInit()
 {
-    if (gInterfaceBarMode) {
+    if (settings.ui.iface_bar_mode) {
         return;
     }
 
-    if (gInterfaceSidePanelsImageId == 0) {
+    int sideArtId = settings.ui.iface_bar_side_art;
+    if (sideArtId <= 0) {
         return;
     }
 
@@ -2526,10 +2524,10 @@ static void sidePanelsInit()
     gInterfaceSidePanelsTrailingWindow = windowCreate(windowRect.right + 1, windowRect.top, screenGetWidth() - windowRect.right - 1, windowRect.bottom - windowRect.top + 1, 0, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "art\\intrface\\HR_IFACELFT%d.frm", gInterfaceSidePanelsImageId);
+    snprintf(path, sizeof(path), "art\\intrface\\HR_IFACELFT%d.frm", sideArtId);
     sidePanelsDraw(path, gInterfaceSidePanelsLeadingWindow, true);
 
-    snprintf(path, sizeof(path), "art\\intrface\\HR_IFACERHT%d.frm", gInterfaceSidePanelsImageId);
+    snprintf(path, sizeof(path), "art\\intrface\\HR_IFACERHT%d.frm", sideArtId);
     sidePanelsDraw(path, gInterfaceSidePanelsTrailingWindow, false);
 }
 
@@ -2585,11 +2583,11 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
 
     int width = std::min(imageWidth, windowWidth);
 
-    if (!gInterfaceSidePanelsExtendFromScreenEdge && isLeading) {
+    if (!settings.ui.iface_bar_sides_ori && isLeading) {
         imageData += imageWidth - width;
     }
 
-    if (gInterfaceSidePanelsExtendFromScreenEdge && !isLeading) {
+    if (settings.ui.iface_bar_sides_ori && !isLeading) {
         imageData += imageWidth - width;
     }
 

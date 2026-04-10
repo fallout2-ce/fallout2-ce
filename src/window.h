@@ -97,8 +97,8 @@ bool scriptWindowDisplayBuf(unsigned char* src, int srcWidth, int srcHeight, int
 int windowGetXres();
 int windowGetYres();
 void _removeProgramReferences_3(Program* program);
-void scriptWindowInit(int resolution, int flags);
-void scriptWindowClose();
+void windowInit(int resolution, int flags);
+void windowClose();
 bool scriptWindowDeleteButton(const char* buttonName);
 bool scriptWindowSetButtonFlag(const char* buttonName, int value);
 bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int height, int flags);

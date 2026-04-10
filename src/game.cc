@@ -123,8 +123,6 @@ MessageList gMiscMessageList;
 
 bool gGameLoaded = false;
 
-int gSplashScreenScaling = 0;
-
 // CE: Sonora folks like to store objects in global variables.
 static void** gGameGlobalPointers = nullptr;
 
@@ -178,7 +176,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     messageListRepositoryInit();
 
     programWindowSetTitle(windowTitle);
-    scriptWindowInit(1, flags);
+    windowInit(1, flags);
     paletteInit();
 
     // SFALL: Execute all code that should be executed ON game init
@@ -513,7 +511,7 @@ void gameExit()
     partyMembersExit();
     endgameDeathEndingExit();
     interfaceFontsExit();
-    scriptWindowClose();
+    windowClose();
     messageListRepositoryExit();
     dbCloseAll();
     settingsExit(true);
@@ -1512,7 +1510,7 @@ static void showSplash()
         }
     }
 
-    int size = gSplashScreenScaling;
+    int size = settings.ui.splash_screen_size;
 
     int screenWidth = screenGetWidth();
     int screenHeight = screenGetHeight();

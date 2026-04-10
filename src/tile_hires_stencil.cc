@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "draw.h"
 #include "geometry.h"
+#include "settings.h"
 #include "sfall_config.h"
 #include "stdio.h"
 #include "tile.h"
@@ -410,7 +411,7 @@ void tile_hires_stencil_init()
         return;
     }
 
-    if (gTileIgnoreMapEdges) {
+    if (settings.ui.ignore_map_edges) {
         static bool isMessageShown = false;
         if (!isMessageShown) {
             showMesageBox("Tile hires stencil is disabled because map edges are ignored.");
