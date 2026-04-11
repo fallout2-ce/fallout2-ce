@@ -289,9 +289,7 @@ static int perkDialogOptionCompare(const void* a1, const void* a2);
 static int perkDialogDrawCard(int frmId, const char* name, const char* rank, char* description);
 static void _pop_perks();
 static int characterEditorGetLevelsPerPerk();
-static bool characterEditorShouldGrantPerkAtLevel(int level);
 static void characterEditorGrantPerkAtLevel(int level);
-static PerkCarryOverMode characterEditorGetPerkCarryOverMode();
 static int _is_supper_bonus();
 static int characterEditorFolderViewInit();
 static void characterEditorFolderViewScroll(int direction);
@@ -5701,7 +5699,7 @@ void characterEditorHandleLevelUp(int level)
 int characterEditorGetPerkSelectionLevel()
 {
     int currentLevel = pcGetStat(PC_STAT_LEVEL);
-    if (characterEditorGetPerkCarryOverMode() != PERK_CARRY_OVER_MODE_ON) {
+    if (settings.gameplay.perk_carryover != PERK_CARRY_OVER_MODE_ON) {
         return currentLevel;
     }
 
@@ -5764,15 +5762,10 @@ static int characterEditorGetLevelsPerPerk()
     return progression;
 }
 
-static PerkCarryOverMode characterEditorGetPerkCarryOverMode()
+static void characterEditorGrantPerkAtLevel(int level)
 {
-    return static_cast<PerkCarryOverMode>(settings.gameplay.perk_carryover);
-}
-
-static bool characterEditorShouldGrantPerkAtLevel(int level)
-{
-    if (level <= 0) {
-        return false;
+    if (level <= 0 || level % characterEditorGetLevelsPerPerk() != 0) {
+        return;
     }
 
     int selectedPerksCount = 0;
@@ -5780,21 +5773,12 @@ static bool characterEditorShouldGrantPerkAtLevel(int level)
         if (perkGetRank(gDude, perk) != 0) {
             selectedPerksCount += 1;
             if (selectedPerksCount >= kMaxSelectablePerks) {
-                return false;
+                return;
             }
         }
     }
 
-    return level % characterEditorGetLevelsPerPerk() == 0;
-}
-
-static void characterEditorGrantPerkAtLevel(int level)
-{
-    if (!characterEditorShouldGrantPerkAtLevel(level)) {
-        return;
-    }
-
-    switch (characterEditorGetPerkCarryOverMode()) {
+    switch (settings.gameplay.perk_carryover) {
     case PERK_CARRY_OVER_MODE_OFF:
         characterEditorSetPerkOwed(1);
         break;

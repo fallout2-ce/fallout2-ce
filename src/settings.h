@@ -54,7 +54,7 @@ struct UISettings {
 };
 
 struct GameplaySettings {
-    int perk_carryover = PERK_CARRY_OVER_MODE_ON;
+    PerkCarryOverMode perk_carryover = PERK_CARRY_OVER_MODE_ON;
 };
 
 struct PreferencesSettings {

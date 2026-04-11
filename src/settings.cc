@@ -74,7 +74,9 @@ static void settingsFromConfig()
     settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, 0, 2);
     settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges);
 
-    settingsRead(GAME_CONFIG_GAMEPLAY_KEY, GAME_CONFIG_PERK_CARRYOVER_KEY, settings.gameplay.perk_carryover, 0, 2);
+    int perkCarryOver = settings.gameplay.perk_carryover;
+    settingsRead(GAME_CONFIG_GAMEPLAY_KEY, GAME_CONFIG_PERK_CARRYOVER_KEY, perkCarryOver, 0, 2);
+    settings.gameplay.perk_carryover = static_cast<PerkCarryOverMode>(perkCarryOver);
 
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
@@ -165,7 +167,7 @@ static void settingsToConfig()
     settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size);
     settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges);
 
-    settingsWrite(GAME_CONFIG_GAMEPLAY_KEY, GAME_CONFIG_PERK_CARRYOVER_KEY, settings.gameplay.perk_carryover);
+    settingsWrite(GAME_CONFIG_GAMEPLAY_KEY, GAME_CONFIG_PERK_CARRYOVER_KEY, static_cast<int>(settings.gameplay.perk_carryover));
 
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
     settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
