@@ -1,0 +1,15 @@
+[main]
+RadiationEffectCount=8
+RadiationLevelCount=6
+RadiationEffectPrimaryStatCount=6
+RadiationThresholds=99,199,399,599,999
+RadiationEnduranceModifiers=2,0,-2,-4,-6,-8
+RadiationEffectStats=0,1,2,3,4,5,6,7
+
+[RadiationEffectPenalties]
+Level0=0,0,0,0,0,0,0,0
+Level1=-1,0,0,0,0,0,0,0
+Level2=-1,0,0,0,0,-1,0,-3
+Level3=-2,0,-1,0,0,-2,-5,-5
+Level4=-4,-3,-3,-3,-1,-5,-15,-10
+Level5=-6,-5,-5,-5,-3,-6,-20,-10

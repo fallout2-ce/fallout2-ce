@@ -14,6 +14,7 @@ typedef enum DudeState {
 } DudeState;
 
 int critterInit();
+int critterInitRadiationEffectPenalties();
 void critterReset();
 void critterExit();
 int critterLoad(File* stream);

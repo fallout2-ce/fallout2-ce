@@ -1,3 +1,4 @@
+#include "config.h"
 #include "critter.h"
 
 #include <stdio.h>
@@ -37,37 +38,25 @@ namespace fallout {
 #define DUDE_NAME_MAX_LENGTH (32)
 
 // The number of effects caused by radiation.
-//
-// A radiation effect is an identifier and does not have it's own name. It's
-// stat is specified in [gRadiationEffectStats], and it's amount is specified
-// in [gRadiationEffectPenalties] for every [RadiationLevel].
-#define RADIATION_EFFECT_COUNT 8
+static int gRadiationEffectCount = 8;
 
-// Radiation levels.
-//
-// The names of levels are taken from Fallout 3, comments from Fallout 2.
-typedef enum RadiationLevel {
-    // Very nauseous.
-    RADIATION_LEVEL_NONE,
+// The number of radiation levels.
+static int gRadiationLevelCount = 6;
 
-    // Slightly fatigued.
-    RADIATION_LEVEL_MINOR,
+// Radiation thresholds.
+static int* gRadiationThresholds = nullptr;
 
-    // Vomiting does not stop.
-    RADIATION_LEVEL_ADVANCED,
+// Modifiers to endurance for performing radiation damage check.
+static int* gRadiationEnduranceModifiers = nullptr;
 
-    // Hair is falling out.
-    RADIATION_LEVEL_CRITICAL,
+// List of stats affected by radiation.
+static int* gRadiationEffectStats = nullptr;
 
-    // Skin is falling off.
-    RADIATION_LEVEL_DEADLY,
+// List of stat modifiers caused by radiation at different radiation levels.
+static int** gRadiationEffectPenalties = nullptr;
 
-    // Intense agony.
-    RADIATION_LEVEL_FATAL,
-
-    // The number of radiation levels.
-    RADIATION_LEVEL_COUNT,
-} RadiationLevel;
+// Denotes how many primary stats at the top of [gRadiationEffectStats] array.
+static int gRadiationEffectPrimaryStatCount = 6;
 
 static int _get_rad_damage_level(Object* obj, void* data);
 static int critter_kill_count_clear();
@@ -81,58 +70,6 @@ static char byte_501494[] = "";
 
 // 0x51833C
 static char* _name_critter = _aCorpse;
-
-// Modifiers to endurance for performing radiation damage check.
-//
-// 0x518340
-static const int gRadiationEnduranceModifiers[RADIATION_LEVEL_COUNT] = {
-    2,
-    0,
-    -2,
-    -4,
-    -6,
-    -8,
-};
-
-// List of stats affected by radiation.
-//
-// The values of this list specify stats that can be affected by radiation.
-// The amount of penalty to every stat (identified by index) is stored
-// separately in [gRadiationEffectPenalties] per radiation level.
-//
-// The order of stats is important - primary stats must be at the top. See
-// [RADIATION_EFFECT_PRIMARY_STAT_COUNT] for more info.
-//
-// 0x518358
-static const int gRadiationEffectStats[RADIATION_EFFECT_COUNT] = {
-    STAT_STRENGTH,
-    STAT_PERCEPTION,
-    STAT_ENDURANCE,
-    STAT_CHARISMA,
-    STAT_INTELLIGENCE,
-    STAT_AGILITY,
-    STAT_CURRENT_HIT_POINTS,
-    STAT_HEALING_RATE,
-};
-
-// Denotes how many primary stats at the top of [gRadiationEffectStats] array.
-// These stats are used to determine if critter is alive after applying
-// radiation effects.
-#define RADIATION_EFFECT_PRIMARY_STAT_COUNT 6
-
-// List of stat modifiers caused by radiation at different radiation levels.
-//
-// 0x518378
-static const int gRadiationEffectPenalties[RADIATION_LEVEL_COUNT][RADIATION_EFFECT_COUNT] = {
-    // clang-format off
-    {   0,   0,   0,   0,   0,   0,   0,   0 },
-    {  -1,   0,   0,   0,   0,   0,   0,   0 },
-    {  -1,   0,   0,   0,   0,  -1,   0,  -3 },
-    {  -2,   0,  -1,   0,   0,  -2,  -5,  -5 },
-    {  -4,  -3,  -3,  -3,  -1,  -5, -15, -10 },
-    {  -6,  -5,  -5,  -5,  -3,  -6, -20, -10 },
-    // clang-format on
-};
 
 // 0x518438
 static Object* _critterClearObj = nullptr;
@@ -160,6 +97,10 @@ static int oldRadLevel;
 // 0x42CF50
 int critterInit()
 {
+    if (critterInitRadiationEffectPenalties() == -1) {
+        return -1;
+    }
+
     dudeResetName();
 
     // NOTE: Uninline;
@@ -180,6 +121,46 @@ int critterInit()
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SCRNAME, &gCritterMessageList);
 
+    return 0;
+}
+
+// 0x42CF50
+int critterInitRadiationEffectPenalties()
+{
+    Config config;
+    if (!configInit(&config)) {
+        return -1;
+    }
+
+    if (!configRead(&config, "data/radiation.txt", false)) {
+        debugPrint("\nError: Could not load radiation.txt");
+        return -1;
+    }
+
+    if (!configGetInt(&config, "main", "RadiationEffectCount", &gRadiationEffectCount)) gRadiationEffectCount = 8;
+    if (!configGetInt(&config, "main", "RadiationLevelCount", &gRadiationLevelCount)) gRadiationLevelCount = 6;
+    if (!configGetInt(&config, "main", "RadiationEffectPrimaryStatCount", &gRadiationEffectPrimaryStatCount)) gRadiationEffectPrimaryStatCount = 6;
+
+    gRadiationThresholds = (int*)malloc(gRadiationLevelCount * sizeof(int));
+    gRadiationEnduranceModifiers = (int*)malloc(gRadiationLevelCount * sizeof(int));
+    gRadiationEffectStats = (int*)malloc(gRadiationEffectCount * sizeof(int));
+    gRadiationEffectPenalties = (int**)malloc(gRadiationLevelCount * sizeof(int*));
+    for (int i = 0; i < gRadiationLevelCount; ++i) {
+        gRadiationEffectPenalties[i] = (int*)malloc(gRadiationEffectCount * sizeof(int));
+    }
+
+    // Load arrays...
+    configGetIntList(&config, "main", "RadiationThresholds", gRadiationThresholds, gRadiationLevelCount);
+    configGetIntList(&config, "main", "RadiationEnduranceModifiers", gRadiationEnduranceModifiers, gRadiationLevelCount);
+    configGetIntList(&config, "main", "RadiationEffectStats", gRadiationEffectStats, gRadiationEffectCount);
+
+    for (int i = 0; i < gRadiationLevelCount; ++i) {
+        char key[20];
+        snprintf(key, sizeof(key), "Level%d", i);
+        configGetIntList(&config, "RadiationEffectPenalties", key, gRadiationEffectPenalties[i], gRadiationEffectCount);
+    }
+
+    configFree(&config);
     return 0;
 }
 
@@ -505,18 +486,11 @@ int critterCheckRadiationEvent(Object* obj)
     int radiation = critterGetRadiation(obj);
 
     int radiationLevel;
-    if (radiation > 999)
-        radiationLevel = RADIATION_LEVEL_FATAL;
-    else if (radiation > 599)
-        radiationLevel = RADIATION_LEVEL_DEADLY;
-    else if (radiation > 399)
-        radiationLevel = RADIATION_LEVEL_CRITICAL;
-    else if (radiation > 199)
-        radiationLevel = RADIATION_LEVEL_ADVANCED;
-    else if (radiation > 99)
-        radiationLevel = RADIATION_LEVEL_MINOR;
-    else
-        radiationLevel = RADIATION_LEVEL_NONE;
+    for (radiationLevel = gRadiationLevelCount - 1; radiationLevel >= 0; --radiationLevel) {
+        if (radiation > gRadiationThresholds[radiationLevel]) {
+            break;
+        }
+    }
 
     if (statRoll(obj, STAT_ENDURANCE, gRadiationEnduranceModifiers[radiationLevel], nullptr) <= ROLL_FAILURE) {
         radiationLevel++;
@@ -568,7 +542,7 @@ void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
 {
     MessageListItem messageListItem;
 
-    if (radiationLevel == RADIATION_LEVEL_NONE) {
+    if (radiationLevel == 0) {
         return;
     }
 
@@ -577,6 +551,7 @@ void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
 
     if (obj == gDude) {
         // Radiation level message, higher is worse.
+        // Assuming original behavior that message indices follow the level order.
         messageListItem.num = 1000 + radiationLevelIndex;
 
         // SFALL: Fix radiation message when removing radiation effects.
@@ -590,7 +565,7 @@ void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
         }
     }
 
-    for (int effect = 0; effect < RADIATION_EFFECT_COUNT; effect++) {
+    for (int effect = 0; effect < gRadiationEffectCount; effect++) {
         int value = critterGetBonusStat(obj, gRadiationEffectStats[effect]);
         value += modifier * gRadiationEffectPenalties[radiationLevelIndex][effect];
         critterSetBonusStat(obj, gRadiationEffectStats[effect], value);
@@ -601,7 +576,7 @@ void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
         if ((obj->data.critter.combat.results & DAM_DEAD) == 0) {
             // Loop thru effects affecting primary stats. If any of the primary stat
             // dropped below minimal value, kill it.
-            for (int effect = 0; effect < RADIATION_EFFECT_PRIMARY_STAT_COUNT; effect++) {
+            for (int effect = 0; effect < gRadiationEffectPrimaryStatCount; effect++) {
                 int base = critterGetBaseStatWithTraitModifier(obj, gRadiationEffectStats[effect]);
                 int bonus = critterGetBonusStat(obj, gRadiationEffectStats[effect]);
                 if (base + bonus < PRIMARY_STAT_MIN) {
