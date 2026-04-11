@@ -102,17 +102,17 @@ The following settings can be configured in `fallout2.cfg` under the `[screen]` 
 
 ```ini
 [screen]
-resolution_x=1280
-resolution_y=720
+resolution_x=1600 ; actual game window size (screen resolution), in pixels
+resolution_y=1080
 windowed=1 ; 0 = fullscreen
-scale=2 ; 1 = original scale, 2 = 2x scale, etc.
+scale=2 ; 1 = original scale, 2 = 2x scale, etc. (e.g. at scale 2 and screen resolution 1920x1080, in-game resolution will be 960x540, thus every pixel is twice as wide and tall)
 
 [ui]
 iface_bar_mode=0 ; 0 = interface bar below game window, 1 = interface bar overlaps game window
 iface_bar_width=800 ; Width of interface bar (640 = original, 800 = extended)
 iface_bar_side_art=2 ; Interface bar side art style (0=black, 1=metal grey, 2=leather, 3-8=alternative styles)
 iface_bar_sides_ori=0 ; Side graphics orientation (0=extend from bar to edges, 1=extend from edges to bar)
-splash_screen_size=0 ; Splash screen scaling (0=original size, 1=fit preserving aspect, 2=stretch to fill)
+splash_screen_size=1 ; Splash screen scaling (0=original size, 1=fit preserving aspect, 2=stretch to fill)
 ignore_map_edges=0 ; Hi-res map scroll edges (0=enabled, 1=ignored)
 ```
 
