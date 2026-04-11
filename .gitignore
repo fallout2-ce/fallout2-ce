@@ -399,3 +399,7 @@ FodyWeavers.xsd
 # versioning header
 src/platform/git_version.h
 CMakeUserPresets.json
+
+# Local configs for AI agents
+.aider*
+.gemini
