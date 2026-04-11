@@ -39,6 +39,7 @@
 #include "proto.h"
 #include "scripts.h"
 #include "skill.h"
+#include "settings.h"
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
@@ -153,6 +154,11 @@ enum Editor : int {
     EDITOR_LAST_TRAIT = EDITOR_FIRST_TRAIT + TRAIT_COUNT - 1,
     EDITOR_BUTTONS_COUNT = EDITOR_FIRST_TRAIT + TRAIT_COUNT,
 };
+
+static constexpr int kMaxPerkOwed = 250;
+// nb. this is number of perks, not total perk ranks. This only prevents level ups from granting more perks.
+static constexpr int kMaxSelectablePerks = 37;
+static constexpr int kPrimaryStatDescriptionWidth = 100;
 
 inline Editor operator++(Editor& e, int)
 {
@@ -306,6 +312,10 @@ static int perkDialogDrawTraits(int a1);
 static int perkDialogOptionCompare(const void* a1, const void* a2);
 static int perkDialogDrawCard(int frmId, const char* name, const char* rank, char* description);
 static void _pop_perks();
+static int characterEditorGetLevelsPerPerk();
+static bool characterEditorShouldGrantPerkAtLevel(int level);
+static void characterEditorGrantPerkAtLevel(int level);
+static PerkCarryOverMode characterEditorGetPerkCarryOverMode();
 static int _is_supper_bonus();
 static int characterEditorFolderViewInit();
 static void characterEditorFolderViewScroll(int direction);
@@ -795,7 +805,7 @@ static int gCharacterEditorTaggedSkillCount;
 static Skill gCharacterEditorTempTaggedSkills[NUM_TAGGED_SKILLS];
 
 // 0x570A28 free_perk_back
-static char gCharacterEditorHasFreePerkBackup;
+static unsigned char gCharacterEditorHasFreePerkBackup;
 
 // 0x570A29 free_perk
 static unsigned char gCharacterEditorHasFreePerk;
@@ -2517,7 +2527,7 @@ static void characterEditorDrawPrimaryStat(Stat stat, bool animate, int previous
 
         characterEditorDrawBigNumber(58, gCharacterEditorPrimaryStatY[stat], flags, value, previousValue, gCharacterEditorWindow);
 
-        blitBufferToBuffer(_editorBackgroundFrmImage.getData() + off, 40, fontGetLineHeight(), 640, gCharacterEditorWindowBuffer + off, 640);
+        blitBufferToBuffer(_editorBackgroundFrmImage.getData() + off, kPrimaryStatDescriptionWidth, fontGetLineHeight(), 640, gCharacterEditorWindowBuffer + off, 640);
 
         messageListItemId = critterGetStat(gDude, stat) + 199;
         if (messageListItemId > 210) {
@@ -2529,7 +2539,7 @@ static void characterEditorDrawPrimaryStat(Stat stat, bool animate, int previous
     } else {
         value = critterGetStat(gDude, stat);
         characterEditorDrawBigNumber(58, gCharacterEditorPrimaryStatY[stat], 0, value, 0, gCharacterEditorWindow);
-        blitBufferToBuffer(_editorBackgroundFrmImage.getData() + off, 40, fontGetLineHeight(), 640, gCharacterEditorWindowBuffer + off, 640);
+        blitBufferToBuffer(_editorBackgroundFrmImage.getData() + off, kPrimaryStatDescriptionWidth, fontGetLineHeight(), 640, gCharacterEditorWindowBuffer + off, 640);
 
         value = critterGetStat(gDude, stat);
         if (value > 10) {
@@ -5725,11 +5735,131 @@ int characterEditorLoad(File* stream)
     return 0;
 }
 
+int characterEditorGetPerkOwed()
+{
+    return gCharacterEditorHasFreePerk;
+}
+
+void characterEditorSetPerkOwed(int value)
+{
+    unsigned int maskedValue = static_cast<unsigned int>(value) & 0xFF;
+    if (maskedValue <= kMaxPerkOwed) {
+        gCharacterEditorHasFreePerk = maskedValue;
+    }
+}
+
+// External interface: called when level up occurs
+void characterEditorHandleLevelUp(int level)
+{
+    characterEditorGrantPerkAtLevel(level);
+}
+
+// compute the character level that the next perk selection should use
+int characterEditorGetPerkSelectionLevel()
+{
+    int currentLevel = pcGetStat(PC_STAT_LEVEL);
+    if (characterEditorGetPerkCarryOverMode() != PERK_CARRY_OVER_MODE_ON) {
+        return currentLevel;
+    }
+
+    int owed = characterEditorGetPerkOwed();
+    if (owed <= 1) {
+        // If a single perk is owed, use the current level. This prevents odd effects in
+        // saves where perks have been skipped and is a general safe fallback.
+        return currentLevel;
+    }
+
+    int levelsPerPerk = characterEditorGetLevelsPerPerk();
+
+    // This therefore uses the number of perk thresholds strictly before the
+    // current level, then compares that against the total perk ranks already
+    // spent. In the common non-scripted case:
+    // - level 6 with 0 spent perks yields one deferred threshold (level 3)
+    // - after spending one perk, there is no older backlog left, so the next
+    //   owed perk uses level 6 requirements
+    // - level 9 with 2 spent perks has no older backlog, so owed perks are
+    //   immediately spendable at level 9
+    int previousThresholdsReached = (currentLevel - 1) / levelsPerPerk;
+    int spentPerks = 0;
+    for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
+        spentPerks += perkGetRank(gDude, perk);
+    }
+
+    // This is a heuristic for the 99.9% case where perk ranks come from normal
+    // perk picks. If enough perk ranks have already been spent to cover all
+    // earlier thresholds, there is no deferred backlog to force in order.
+    if (spentPerks >= previousThresholdsReached) {
+        return currentLevel;
+    }
+
+    // The next deferred pick corresponds to the earliest previously missed
+    // threshold after the already-spent perk ranks.
+    int thresholdIndex = spentPerks + 1;
+    int selectionLevel = std::max(3, thresholdIndex * levelsPerPerk);
+    if (selectionLevel <= 0 || selectionLevel > currentLevel) {
+        return currentLevel;
+    }
+
+    return selectionLevel;
+}
+
 // 0x43C20C editor_reset
 void characterEditorReset()
 {
     gCharacterEditorRemainingCharacterPoints = 5;
     gCharacterEditorLastLevel = 1;
+    characterEditorSetPerkOwed(0);
+}
+
+static int characterEditorGetLevelsPerPerk()
+{
+    int progression = 3;
+    if (traitIsSelected(TRAIT_SKILLED)) {
+        progression += 1;
+    }
+
+    return progression;
+}
+
+static PerkCarryOverMode characterEditorGetPerkCarryOverMode()
+{
+    return static_cast<PerkCarryOverMode>(settings.gameplay.perk_carryover);
+}
+
+static bool characterEditorShouldGrantPerkAtLevel(int level)
+{
+    if (level <= 0) {
+        return false;
+    }
+
+    int selectedPerksCount = 0;
+    for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
+        if (perkGetRank(gDude, perk) != 0) {
+            selectedPerksCount += 1;
+            if (selectedPerksCount >= kMaxSelectablePerks) {
+                return false;
+            }
+        }
+    }
+
+    return level % characterEditorGetLevelsPerPerk() == 0;
+}
+
+static void characterEditorGrantPerkAtLevel(int level)
+{
+    if (!characterEditorShouldGrantPerkAtLevel(level)) {
+        return;
+    }
+
+    switch (characterEditorGetPerkCarryOverMode()) {
+    case PERK_CARRY_OVER_MODE_OFF:
+        characterEditorSetPerkOwed(1);
+        break;
+    case PERK_CARRY_OVER_MODE_ON:
+    case PERK_CARRY_OVER_MODE_SFALL:
+        characterEditorSetPerkOwed(characterEditorGetPerkOwed() + 1);
+        break;
+    }
 }
 
 int characterEditorGetWindow()
@@ -5779,31 +5909,10 @@ static int characterEditorUpdateLevel()
             }
 
             pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, sp);
-
-            int selectedPerksCount = 0;
-            for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
-                if (perkGetRank(gDude, perk) != 0) {
-                    selectedPerksCount += 1;
-                    if (selectedPerksCount >= 37) {
-                        break;
-                    }
-                }
-            }
-
-            if (selectedPerksCount < 37) {
-                int progression = 3;
-                if (traitIsSelected(TRAIT_SKILLED)) {
-                    progression += 1;
-                }
-
-                if (nextLevel % progression == 0) {
-                    gCharacterEditorHasFreePerk = 1;
-                }
-            }
         }
     }
 
-    if (gCharacterEditorHasFreePerk != 0) {
+    while (characterEditorGetPerkOwed() != 0) {
         characterEditorWindowSelectedFolder = EDITOR_FOLDER_PERKS;
         characterEditorDrawFolders();
         windowRefresh(gCharacterEditorWindow);
@@ -5812,11 +5921,15 @@ static int characterEditorUpdateLevel()
         if (rc == -1) {
             debugPrint("\n *** Error running perks dialog! ***\n");
             return -1;
-        } else if (rc == 0) {
+        }
+
+        if (rc == 0) {
             characterEditorDrawFolders();
-        } else if (rc == 1) {
+            break;
+        }
+
+        if (rc == 1) {
             characterEditorDrawFolders();
-            gCharacterEditorHasFreePerk = 0;
         }
     }
 
@@ -5865,6 +5978,10 @@ static int perkDialogShow()
     gPerkDialogCardFrmId = -1;
     gPerkDialogCardTitle[0] = '\0';
     gPerkDialogCardDrawn = false;
+    int previousPerkRanks[PERK_COUNT];
+    for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
+        previousPerkRanks[perk] = perkGetRank(gDude, perk);
+    }
 
     int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 86);
     if (!_perkDialogBackgroundFrmImage.lock(backgroundFid)) {
@@ -5990,6 +6107,12 @@ static int perkDialogShow()
     fontDrawText(gPerkDialogWindowBuffer + PERK_WINDOW_WIDTH * 186 + 171, msg, PERK_WINDOW_WIDTH, PERK_WINDOW_WIDTH, COLOR_DARK_YELLOW);
 
     int count = perkDialogDrawPerks();
+    if (count == 0) {
+        debugPrint("\n*** No perks available for current owed slot! ***\n");
+        _perkDialogBackgroundFrmImage.unlock();
+        windowDestroy(gPerkDialogWindow);
+        return 0;
+    }
 
     // NOTE: Original code is slightly different, but does the same thing.
     Perk perk = static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
@@ -6011,7 +6134,8 @@ static int perkDialogShow()
     int rc = perkDialogHandleInput(count, perkDialogRefreshPerks);
 
     if (rc == 1) {
-        if (perkAdd(gDude, static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value)) == -1) {
+        int selectionLevel = characterEditorGetPerkSelectionLevel();
+        if (perkAddAtLevel(gDude, static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value), selectionLevel) == -1) {
             debugPrint("\n*** Unable to add perk! ***\n");
             rc = 2;
         }
@@ -6020,19 +6144,20 @@ static int perkDialogShow()
     rc &= 1;
 
     if (rc != 0) {
-        if (perkGetRank(gDude, PERK_TAG) != 0 && gCharacterEditorPerksBackup[PERK_TAG] == 0) {
+        characterEditorSetPerkOwed(characterEditorGetPerkOwed() - 1);
+        if (perkGetRank(gDude, PERK_TAG) != 0 && previousPerkRanks[PERK_TAG] == 0) {
             if (!perkDialogHandleTagPerk()) {
                 perkRemove(gDude, PERK_TAG);
             }
-        } else if (perkGetRank(gDude, PERK_MUTATE) != 0 && gCharacterEditorPerksBackup[PERK_MUTATE] == 0) {
+        } else if (perkGetRank(gDude, PERK_MUTATE) != 0 && previousPerkRanks[PERK_MUTATE] == 0) {
             if (!perkDialogHandleMutatePerk()) {
                 perkRemove(gDude, PERK_MUTATE);
             }
-        } else if (perkGetRank(gDude, PERK_LIFEGIVER) != gCharacterEditorPerksBackup[PERK_LIFEGIVER]) {
+        } else if (perkGetRank(gDude, PERK_LIFEGIVER) != previousPerkRanks[PERK_LIFEGIVER]) {
             int maxHp = critterGetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS);
             critterSetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS, maxHp + 4);
             critterAdjustHitPoints(gDude, 4);
-        } else if (perkGetRank(gDude, PERK_EDUCATED) != gCharacterEditorPerksBackup[PERK_EDUCATED]) {
+        } else if (perkGetRank(gDude, PERK_EDUCATED) != previousPerkRanks[PERK_EDUCATED]) {
             int sp = pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS);
             pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, sp + 2);
         }
@@ -6346,7 +6471,7 @@ static int perkDialogDrawPerks()
     fontSetCurrent(101);
 
     Perk perks[PERK_COUNT];
-    int count = perkGetAvailablePerks(gDude, perks);
+    int count = perkGetAvailablePerks(gDude, characterEditorGetPerkSelectionLevel(), perks);
     if (count == 0) {
         return 0;
     }

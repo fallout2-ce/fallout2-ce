@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "character_editor.h"
 #include "game_config.h"
 #include "svga.h"
 
@@ -112,6 +113,10 @@ struct UISettings {
 };
 
 // These are settings handled by preferences UI and saved in save games.
+struct GameplaySettings {
+    PerkCarryOverMode perk_carryover = PERK_CARRY_OVER_MODE_ON;
+};
+
 struct PreferencesSettings {
     int game_difficulty = GAME_DIFFICULTY_NORMAL;
     int combat_difficulty = COMBAT_DIFFICULTY_NORMAL;
@@ -192,6 +197,7 @@ struct Settings {
     SystemSettings system;
     ScreenSettings screen;
     UISettings ui;
+    GameplaySettings gameplay;
     PreferencesSettings preferences;
     SoundSettings sound;
     DebugSettings debug;
