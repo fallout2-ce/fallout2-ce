@@ -84,7 +84,7 @@ $ mv app /Applications/Fallout2
 
 ### Browser
 
-> **NOTE**: WebAssebly build with emscripten
+> **NOTE**: WebAssembly build with emscripten
 ```
 docker run --rm -v $(pwd):/src emscripten/emsdk:3.1.74 sh -c 'git config --global --add safe.directory "*" && mkdir -p build && cd build && emcmake cmake ../ -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain/Emscripten.cmake && emmake make'
 ```
@@ -96,59 +96,35 @@ The main configuration file is `fallout2.cfg`. There are several important setti
 
 The `sound` folder (with `music` folder inside) might be located either in `data` folder, or be in the Fallout folder. Update `music_path1` setting to match your hierarchy, usually it's `data/sound/music/` or `sound/music/`. Make sure it matches your path exactly (so it might be `SOUND/MUSIC/` if you've installed Fallout from CD). Music files themselves (with `ACM` extension) should be all uppercased, regardless of `sound` and `music` folders.
 
-The second configuration file is `f2_res.ini`. Use it to change game window size, enable/disable fullscreen mode and configure IFACE settings (the control bar at the bottom of the game screen).
+Additional settings for screen resolution, UI customization, and map options are now integrated into the main `fallout2.cfg` file (previously part of `f2_res.ini` from Mash's HRP). When Fallout 2 CE starts, if it detects an existing `f2_res.ini` file, it automatically migrates these settings into `fallout2.cfg`. After migration, `fallout2.cfg` becomes the single source of truth for this configuration.
+
+The following settings can be configured in `fallout2.cfg` under the `[screen]` and `[ui]` sections:
 
 ```ini
-[MAIN]
-SCR_WIDTH=1280
-SCR_HEIGHT=720
-WINDOWED=1 ; 0 = fullscreen
-SCALE_2X=1 ; 0 = original scale, 1 = 2x - requires increasing the minimum resolution from 640x480 to 1280x960.
+[screen]
+resolution_x=1600 ; actual game window size (screen resolution), in pixels
+resolution_y=1080
+windowed=1 ; 0 = fullscreen
+scale=2 ; 1 = original scale, 2 = 2x scale, etc. (e.g. at scale 2 and screen resolution 1920x1080, in-game resolution will be 960x540, thus every pixel is twice as wide and tall)
 
-[IFACE]
-; if IFACE_BAR_MODE=0 - the bottom of the map view window sits at the top of the IFACE Bar.
-; if IFACE_BAR_MODE=1 - the bottom of the map view window extends to the base of the screen and is overlapped by the IFACE Bar.
-IFACE_BAR_MODE=0
-
-;if IFACE_BAR_SIDE_ART=0 - Black, No Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=1 - Metal (grey) look Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=2 - Leather look Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=3-6 - Alternative Metal look Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=7 - Alternative Leather look Iface-bar side art used.
-;if IFACE_BAR_SIDE_ART=8 - Metal (brown) look Iface-bar side art used.
-IFACE_BAR_SIDE_ART=2
-
-;if IFACE_BAR_SIDES_ORI=0 - Iface-bar side graphics extend from the Iface-Bar to the Screen edges.
-;if IFACE_BAR_SIDES_ORI=1 - Iface-bar side graphics extend from the Screen edges to the Iface-Bar.
-IFACE_BAR_SIDES_ORI=0
-
-;This will increase the width of the interface bar expanding the area used to display text.
-;if IFACE_BAR_WIDTH=640 - Interface bar will remain at it's original width.
-;if IFACE_BAR_WIDTH=800 - Interface bar will use 800pix wide asset from f2_res.dat.
-;IFACE_BAR_WIDTH=640
-
-[STATIC_SCREENS]
-;if SPLASH_SCRN_SIZE=0 - Splash screen shows at original size if it fits, otherwise scales down while preserving aspect ratio.
-;if SPLASH_SCRN_SIZE=1 - Splash screen scales to fit the screen while preserving aspect ratio.
-;if SPLASH_SCRN_SIZE=2 - Splash screen stretches to fill the entire screen.
-SPLASH_SCRN_SIZE=0
-
-[MAPS]
-;if IGNORE_MAP_EDGES=0 - Hi-Res map scroll edges are enabled.
-;if IGNORE_MAP_EDGES=1 - Hi-Res map scroll edges are ignored.
-IGNORE_MAP_EDGES=0
+[ui]
+iface_bar_mode=0 ; 0 = interface bar below game window, 1 = interface bar overlaps game window
+iface_bar_width=800 ; Width of interface bar (640 = original, 800 = extended)
+iface_bar_side_art=2 ; Interface bar side art style (0=black, 1=metal grey, 2=leather, 3-8=alternative styles)
+iface_bar_sides_ori=0 ; Side graphics orientation (0=extend from bar to edges, 1=extend from edges to bar)
+splash_screen_size=1 ; Splash screen scaling (0=original size, 1=fit preserving aspect, 2=stretch to fill)
+ignore_map_edges=0 ; Hi-res map scroll edges (0=enabled, 1=ignored)
 ```
 
-Recommendations:
+**Recommendations:**
 - **Desktops**: Use any size you see fit.
 - **Tablets**: Set these values to logical resolution of your device, for example iPad Pro 11 is 1668x2388 (pixels), but it's logical resolution is 834x1194 (points).
 - **Mobile phones**: Set height to 480, calculate width according to your device screen (aspect) ratio, for example Samsung S21 is 20:9 device, so the width should be 480 * 20 / 9 = 1067.
 
-In time this stuff will receive in-game interface, right now you have to do it manually. For a sample f2_res.ini configuration file, containing all currently working settings use this link: [f2_res.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/mainmenu/files/f2_res.ini)
+In time this stuff will receive in-game interface, right now you have to do it manually. To see all currently working fallout2.cfg settings, just run the game once and quit. It will be automatically updated with defaults for every supported setting.
+*Note*: Use of the IFACE_BAR settings requires the `f2_res.dat` file, which contains graphical assets. Various versions are available, but one compatible with the above settings can be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/main/files/f2_res.dat)
 
-*Note*: use of the IFACE_BAR settings requires the f2_res.dat file, which contains graphical assets. Various versions are available, but one compatible with the above f2_res.ini be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/mainmenu/files/f2_res.dat)
-
-The third configuration file is `ddraw.ini` (part of Sfall). There are dozens of options that adjust or override engine behaviour and gameplay mechanics. This file is intended for modders and advanced users.
+The second configuration file is `ddraw.ini` (part of Sfall). There are dozens of options that adjust or override engine behaviour and gameplay mechanics. This file is intended for modders and advanced users.
 
 For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/main/files/ddraw.ini)
 
