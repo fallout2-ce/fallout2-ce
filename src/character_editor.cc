@@ -5796,6 +5796,13 @@ static int characterEditorUpdateLevel()
 {
     int level = pcGetStat(PC_STAT_LEVEL);
     if (level != gCharacterEditorLastLevel && level <= PC_LEVEL_MAX) {
+        // Runtime level-up now grants perks immediately. However, older saves
+        // may still have last_level behind the real level with no owed perks
+        // recorded, because perk grants used to be deferred until the next
+        // character screen visit. Replay perk grants only for that legacy
+        // catch-up case.
+        bool shouldReplayPerkGrants = characterEditorGetPerkOwed() == 0;
+
         for (int nextLevel = gCharacterEditorLastLevel + 1; nextLevel <= level; nextLevel++) {
             int sp = pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS);
             sp += 5;
@@ -5813,6 +5820,10 @@ static int characterEditorUpdateLevel()
             }
 
             pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, sp);
+
+            if (shouldReplayPerkGrants) {
+                characterEditorGrantPerkAtLevel(nextLevel);
+            }
         }
     }
 
@@ -6012,10 +6023,10 @@ static int perkDialogShow()
 
     int count = perkDialogDrawPerks();
     if (count == 0) {
-        debugPrint("\n*** No perks available for current owed slot! ***\n");
+        debugPrint("*** No perks available for current owed slot! ***");
         _perkDialogBackgroundFrmImage.unlock();
         windowDestroy(gPerkDialogWindow);
-        return 0;
+        return -1;
     }
 
     // NOTE: Original code is slightly different, but does the same thing.
