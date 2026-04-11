@@ -5,6 +5,7 @@
 
 #include "animation.h"
 #include "art.h"
+#include "character_editor.h"
 #include "color.h"
 #include "combat.h"
 #include "critter.h"
@@ -217,6 +218,17 @@ static void op_set_global_script_repeat(Program* program)
 {
     int frames = programStackPopInteger(program);
     sfall_gl_scr_set_repeat(program, frames);
+}
+
+static void op_get_perk_owed(Program* program)
+{
+    programStackPushInteger(program, characterEditorGetPerkOwed());
+}
+
+static void op_set_perk_owed(Program* program)
+{
+    int value = programStackPopInteger(program);
+    characterEditorSetPerkOwed(value);
 }
 
 // key_pressed
@@ -1663,7 +1675,9 @@ void sfallOpcodesInit()
     // 0x818d - void mod_kill_counter(int critterType, int amount)
 
     // 0x818e - int get_perk_owed()
+    interpreterRegisterOpcode(0x818E, op_get_perk_owed);
     // 0x818f - void set_perk_owed(int value)
+    interpreterRegisterOpcode(0x818F, op_set_perk_owed);
     // 0x8190 - int get_perk_available(int perk)
 
     // 0x8191 - int get_critter_current_ap(object critter)

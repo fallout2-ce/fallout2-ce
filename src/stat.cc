@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "art.h"
+#include "character_editor.h"
 #include "combat.h"
 #include "critter.h"
 #include "display_monitor.h"
@@ -755,6 +756,8 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
         }
 
         if (pcSetStat(PC_STAT_LEVEL, gPcStatValues[PC_STAT_LEVEL] + 1) == 0) {
+            characterEditorHandleLevelUp(gPcStatValues[PC_STAT_LEVEL]);
+
             int maxHpBefore = critterGetStat(gDude, STAT_MAXIMUM_HIT_POINTS);
 
             // You have gone up a level.
@@ -815,6 +818,13 @@ int pcSetExperience(int xp)
     int newLevel = level - 1;
 
     pcSetStat(PC_STAT_LEVEL, newLevel);
+
+    if (newLevel > oldLevel) {
+        for (int levelToGrant = oldLevel + 1; levelToGrant <= newLevel; levelToGrant++) {
+            characterEditorHandleLevelUp(levelToGrant);
+        }
+    }
+
     dudeDisableState(DUDE_STATE_LEVEL_UP_AVAILABLE);
 
     // NOTE: Uninline.
