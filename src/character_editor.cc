@@ -806,7 +806,7 @@ static Skill gCharacterEditorTempTaggedSkills[NUM_TAGGED_SKILLS];
 static unsigned char gCharacterEditorHasFreePerkBackup;
 
 // 0x570A29 free_perk
-static unsigned char gCharacterEditorHasFreePerk;
+static unsigned char gCharacterEditorHasFreePerk; // count of owed perks
 
 // 0x570A2A first_skill_list
 static unsigned char gCharacterEditorIsSkillsFirstDraw;
@@ -5918,13 +5918,9 @@ static int characterEditorUpdateLevel()
             return -1;
         }
 
-        if (rc == 0) {
-            characterEditorDrawFolders();
+        characterEditorDrawFolders();
+        if (rc == 0) { // skipped perk selection
             break;
-        }
-
-        if (rc == 1) {
-            characterEditorDrawFolders();
         }
     }
 
