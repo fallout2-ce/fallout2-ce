@@ -38,7 +38,9 @@ int main(int argc, char* argv[])
     if (GetLastError() != ERROR_SUCCESS) {
         return 0;
     }
+#ifdef SDL_HINT_WINDOWS_DPI_AWARENESS
     SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
+#endif
 #endif
 
 #if __APPLE__ && TARGET_OS_IOS
