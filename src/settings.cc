@@ -29,13 +29,13 @@ struct SettingDescriptor {
 
 static std::vector<SettingDescriptor> settingsRegistry;
 
-template <typename T>
-void registerSetting(const char* section, const char* key, T& variable, const std::function<void(T&)>& postProcess = nullptr)
+template <typename T, typename P = std::nullptr_t>
+void registerSetting(const char* section, const char* key, T& variable, const P& postProcess = nullptr)
 {
     settingsRegistry.push_back(
         { [&, section, key, postProcess]() {
             settingsRead(section, key, variable);
-            if (postProcess) {
+            if constexpr (!std::is_same_v<P, std::nullptr_t>) {
                 postProcess(variable);
             }
         },
@@ -99,36 +99,29 @@ static void settingsWrite(const char* section, const char* key, double value)
 struct SettingEntry {
     std::function<void(const char*)> registerFunc;
 
-    SettingEntry(const char* key, std::string& variable, const std::function<void(std::string&)>& postProcess = nullptr)
-        : registerFunc([key, &variable, postProcess](const char* section) { registerSetting(section, key, variable, postProcess); })
+    template <typename T>
+    SettingEntry(const char* key, T& variable)
+        : registerFunc([key, &variable](const char* section) { registerSetting(section, key, variable); })
     {
     }
 
-    SettingEntry(const char* key, int& variable, const std::function<void(int&)>& postProcess = nullptr)
-        : registerFunc([key, &variable, postProcess](const char* section) { registerSetting(section, key, variable, postProcess); })
-    {
-    }
-
-    SettingEntry(const char* key, bool& variable, const std::function<void(bool&)>& postProcess = nullptr)
-        : registerFunc([key, &variable, postProcess](const char* section) { registerSetting(section, key, variable, postProcess); })
-    {
-    }
-
-    SettingEntry(const char* key, double& variable, const std::function<void(double&)>& postProcess = nullptr)
+    template <typename T, typename P>
+    SettingEntry(const char* key, T& variable, const P& postProcess)
         : registerFunc([key, &variable, postProcess](const char* section) { registerSetting(section, key, variable, postProcess); })
     {
     }
 };
 
+static void addSection(const char* section, const std::initializer_list<SettingEntry> entries)
+{
+    for (const auto& entry : entries) {
+        entry.registerFunc(section);
+    }
+}
+
 void initSettingsRegistry(bool isMapper)
 {
     if (!settingsRegistry.empty()) return;
-
-    auto addSection = [](const char* section, std::initializer_list<SettingEntry> entries) {
-        for (const auto& entry : entries) {
-            entry.registerFunc(section);
-        }
-    };
 
     addSection(GAME_CONFIG_SYSTEM_KEY,
         {
@@ -168,6 +161,7 @@ void initSettingsRegistry(bool isMapper)
 
     addSection("preferences",
         {
+            // Clamping for most of these values is handled in preferences.cc
             { "game_difficulty", settings.preferences.game_difficulty },
             { "combat_difficulty", settings.preferences.combat_difficulty },
             { "violence_level", settings.preferences.violence_level },
