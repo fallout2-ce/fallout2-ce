@@ -48,7 +48,7 @@ void paletteInit()
     unsigned int actualFadeDuration = getTicksSince(tick);
 
     constexpr int vanillaFadeDurationMs = 700;
-    const unsigned int fadeDurationMs = static_cast<int>(vanillaFadeDurationMs / settings.preferences.ui_anim_speed);
+    const unsigned int fadeDurationMs = static_cast<int>(vanillaFadeDurationMs / settings.ui.ui_anim_speed);
 
     // Calculate fade steps needed to perform fading in about 700 ms.
     gPaletteFadeSteps = static_cast<int>(referenceFadeSteps * fadeDurationMs / actualFadeDuration);

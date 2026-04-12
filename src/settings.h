@@ -50,8 +50,13 @@ struct UISettings {
     int splash_screen_size = 0;
 
     bool ignore_map_edges = false;
+
+    // TODO: add to setting window
+    // Speed of various UI transition animations. 1.0 represents vanilla speeds.
+    double ui_anim_speed = 1.0;
 };
 
+// These are settings handled by preferences UI and saved in save games.
 struct PreferencesSettings {
     int game_difficulty = GAME_DIFFICULTY_NORMAL;
     int combat_difficulty = COMBAT_DIFFICULTY_NORMAL;
@@ -71,10 +76,6 @@ struct PreferencesSettings {
     double brightness = 1.0;
     double mouse_sensitivity = 1.0;
     bool running_burning_guy = true;
-
-    // TODO: add to setting window
-    // Speed of various UI transition animations. 1.0 represents vanilla speeds.
-    double ui_anim_speed = 1.0;
 };
 
 struct SoundSettings {
