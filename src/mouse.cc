@@ -580,7 +580,6 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
             _raw_y = delta_y;
         }
     }
-
 }
 
 // 0x4CA8C8
