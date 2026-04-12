@@ -7,6 +7,8 @@ namespace fallout {
 static int gMouseWheelDeltaX = 0;
 static int gMouseWheelDeltaY = 0;
 
+static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y);
+
 // 0x4E0400
 bool directInputInit()
 {
@@ -57,6 +59,9 @@ bool mouseDeviceGetData(MouseData* mouseState)
     Uint32 buttons = screenIsFullscreen()
         ? SDL_GetRelativeMouseState(&(mouseState->x), &(mouseState->y))
         : SDL_GetMouseState(&(mouseState->x), &(mouseState->y));
+    if (!screenIsFullscreen()) {
+        mouseDeviceMapWindowToLogicalPosition(&(mouseState->x), &(mouseState->y));
+    }
     mouseState->buttons[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
     mouseState->buttons[1] = (buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
     mouseState->wheelX = gMouseWheelDeltaX;
@@ -126,6 +131,23 @@ void handleMouseEvent(SDL_Event* event)
         gMouseWheelDeltaX += event->wheel.x;
         gMouseWheelDeltaY += event->wheel.y;
     }
+}
+
+static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y)
+{
+    if (gSdlWindow == nullptr) {
+        return;
+    }
+
+    int windowWidth;
+    int windowHeight;
+    SDL_GetWindowSize(gSdlWindow, &windowWidth, &windowHeight);
+    if (windowWidth <= 0 || windowHeight <= 0) {
+        return;
+    }
+
+    *x = *x * screenGetWidth() / windowWidth;
+    *y = *y * screenGetHeight() / windowHeight;
 }
 
 } // namespace fallout

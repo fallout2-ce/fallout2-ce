@@ -462,9 +462,12 @@ void _mouse_info()
         y = 0;
     }
 
-    // Adjust for mouse senstivity.
-    x = (int)(x * gMouseSensitivity);
-    y = (int)(y * gMouseSensitivity);
+    // Mouse sensitivity only applies to relative movement. In windowed mode
+    // SDL provides absolute coordinates that should not be scaled.
+    if (screenIsFullscreen()) {
+        x = (int)(x * gMouseSensitivity);
+        y = (int)(y * gMouseSensitivity);
+    }
 
     _mouse_simulate_input(x, y, buttons);
 
@@ -561,8 +564,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
             gMouseCursorX += delta_x;
             gMouseCursorY += delta_y;
         } else {
-            gMouseCursorX = delta_x;
-            gMouseCursorY = delta_y;
+            _mouse_set_position(delta_x, delta_y);
         }
         _mouse_clip();
 
@@ -570,9 +572,15 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
 
         mouseShowCursor();
 
-        _raw_x = gMouseCursorX;
-        _raw_y = gMouseCursorY;
+        if (screenIsFullscreen()) {
+            _raw_x = gMouseCursorX;
+            _raw_y = gMouseCursorY;
+        } else {
+            _raw_x = delta_x;
+            _raw_y = delta_y;
+        }
     }
+
 }
 
 // 0x4CA8C8
