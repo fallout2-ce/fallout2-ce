@@ -6,12 +6,19 @@ namespace fallout {
 
 static int gMouseWheelDeltaX = 0;
 static int gMouseWheelDeltaY = 0;
+static int gMouseWindowMappingWindowWidth = 0;
+static int gMouseWindowMappingWindowHeight = 0;
+static int gMouseWindowMappingLogicalWidth = 0;
+static int gMouseWindowMappingLogicalHeight = 0;
 
 static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y);
+static void mouseDeviceRefreshWindowMapping();
 
 // 0x4E0400
 bool directInputInit()
 {
+    mouseDeviceRefreshWindowMapping();
+
     if (!mouseDeviceInit()) {
         goto err;
     }
@@ -101,6 +108,8 @@ bool keyboardDeviceGetData(KeyboardData* keyboardData)
 // 0x4E070C
 bool mouseDeviceInit()
 {
+    mouseDeviceRefreshWindowMapping();
+
     return screenIsFullscreen()
         ? SDL_SetRelativeMouseMode(SDL_TRUE) == 0
         : true;
@@ -135,19 +144,25 @@ void handleMouseEvent(SDL_Event* event)
 
 static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y)
 {
-    if (gSdlWindow == nullptr) {
+    if (gMouseWindowMappingWindowWidth <= 0 || gMouseWindowMappingWindowHeight <= 0) {
         return;
     }
 
-    int windowWidth;
-    int windowHeight;
-    SDL_GetWindowSize(gSdlWindow, &windowWidth, &windowHeight);
-    if (windowWidth <= 0 || windowHeight <= 0) {
-        return;
-    }
+    *x = *x * gMouseWindowMappingLogicalWidth / gMouseWindowMappingWindowWidth;
+    *y = *y * gMouseWindowMappingLogicalHeight / gMouseWindowMappingWindowHeight;
+}
 
-    *x = *x * screenGetWidth() / windowWidth;
-    *y = *y * screenGetHeight() / windowHeight;
+static void mouseDeviceRefreshWindowMapping()
+{
+    gMouseWindowMappingLogicalWidth = screenGetWidth();
+    gMouseWindowMappingLogicalHeight = screenGetHeight();
+
+    if (gSdlWindow != nullptr) {
+        SDL_GetWindowSize(gSdlWindow, &gMouseWindowMappingWindowWidth, &gMouseWindowMappingWindowHeight);
+    } else {
+        gMouseWindowMappingWindowWidth = 0;
+        gMouseWindowMappingWindowHeight = 0;
+    }
 }
 
 } // namespace fallout
