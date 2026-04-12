@@ -11,6 +11,7 @@ namespace fallout {
 #define GAME_CONFIG_SYSTEM_KEY "system"
 #define GAME_CONFIG_SCREEN_KEY "screen"
 #define GAME_CONFIG_UI_KEY "ui"
+#define GAME_CONFIG_GAMEPLAY_KEY "gameplay"
 #define GAME_CONFIG_PREFERENCES_KEY "preferences"
 #define GAME_CONFIG_SOUND_KEY "sound"
 #define GAME_CONFIG_MAPPER_KEY "mapper"
@@ -86,6 +87,7 @@ namespace fallout {
 #define GAME_CONFIG_SORT_SCRIPT_LIST_KEY "sort_script_list"
 #define GAME_CONFIG_PLAYER_SPEEDUP_KEY "player_speedup"
 #define GAME_CONFIG_UI_ANIM_SPEED_KEY "ui_anim_speed"
+#define GAME_CONFIG_PERK_CARRYOVER_KEY "perk_carryover"
 
 #define GAME_CONFIG_RESOLUTION_X_KEY "resolution_x"
 #define GAME_CONFIG_RESOLUTION_Y_KEY "resolution_y"

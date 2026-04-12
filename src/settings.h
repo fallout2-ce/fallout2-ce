@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "character_editor.h"
 #include "game_config.h"
 
 namespace fallout {
@@ -50,6 +51,10 @@ struct UISettings {
     int splash_screen_size = 0;
 
     bool ignore_map_edges = false;
+};
+
+struct GameplaySettings {
+    PerkCarryOverMode perk_carryover = PERK_CARRY_OVER_MODE_ON;
 };
 
 struct PreferencesSettings {
@@ -126,6 +131,7 @@ struct Settings {
     SystemSettings system;
     ScreenSettings screen;
     UISettings ui;
+    GameplaySettings gameplay;
     PreferencesSettings preferences;
     SoundSettings sound;
     DebugSettings debug;

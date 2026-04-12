@@ -135,6 +135,8 @@ static struct SfallOpcodeInfo opcodeInfoArray[] = {
     { 0x189, "set_perk_name" },
     { 0x18a, "set_perk_desc" },
     { 0x18b, "set_pipboy_available" },
+    { 0x18e, "get_perk_owed" },
+    { 0x18f, "set_perk_owed" },
     { 0x190, "get_perk_available" },
     { 0x192, "set_critter_current_ap" },
     { 0x195, "set_weapon_knockback" },
