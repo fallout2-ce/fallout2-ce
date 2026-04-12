@@ -22,6 +22,7 @@ bool directInputInit();
 void directInputFree();
 bool mouseDeviceUsesRelativeMode();
 bool mouseDeviceInitMode();
+void mouseDeviceRefreshWindowMapping();
 bool mouseDeviceAcquire();
 bool mouseDeviceUnacquire();
 bool mouseDeviceGetData(MouseData* mouseData);

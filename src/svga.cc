@@ -6,6 +6,7 @@
 #include <SDL.h>
 
 #include "config.h"
+#include "dinput.h"
 #include "draw.h"
 #include "game.h"
 #include "interface.h"
@@ -397,6 +398,7 @@ void handleWindowSizeChanged()
 {
     destroyRenderer();
     createRenderer(screenGetWidth(), screenGetHeight());
+    mouseDeviceRefreshWindowMapping();
 }
 
 void renderPresent()

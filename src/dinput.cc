@@ -13,7 +13,6 @@ static int mouseWindowMappingLogicalHeight = 0;
 static bool mouseRelativeMode = false;
 
 static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y);
-static void mouseDeviceRefreshWindowMapping();
 
 // 0x4E0400
 bool directInputInit()
@@ -51,16 +50,21 @@ bool mouseDeviceInitMode()
 {
     // "Relative mode" means cursor position is owned by the application, and we move based on mouse deltas
     // "Absolute mode" means cursor position is controlled by the OS, and we read it directly.
-    // Mouse sensitity settings can only apply in relative mode.
+    // Mouse sensitivity settings can only apply in relative mode.
 
     // TODO: add setting for mouse capture (relative mode) in windowed, differentiated from the web version.
-    mouseRelativeMode = screenIsFullscreen();
+    bool wantsRelativeMode = screenIsFullscreen();
 
-    if (mouseRelativeMode) {
+    if (wantsRelativeMode) {
+        mouseRelativeMode = true;
         return SDL_SetRelativeMouseMode(SDL_TRUE) == 0;
     }
 
-    SDL_SetRelativeMouseMode(SDL_FALSE);
+    if (SDL_SetRelativeMouseMode(SDL_FALSE) != 0) {
+        return false;
+    }
+
+    mouseRelativeMode = false;
     mouseDeviceRefreshWindowMapping();
     return true;
 }
@@ -173,10 +177,11 @@ static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y)
     *y = *y * mouseWindowMappingLogicalHeight / mouseWindowMappingWindowHeight;
 }
 
-static void mouseDeviceRefreshWindowMapping()
+void mouseDeviceRefreshWindowMapping()
 {
     // When mouse is in "absolute mode" and scaling is > 1, we need to transform screen coordinates to game coordinates.
-    // Cache the window sizes so we have them available in mouseDeviceMapWindowToLogicalPosition
+    // Cache the window sizes so we have them available in mouseDeviceMapWindowToLogicalPosition.
+    // Note: if we add letterboxing or other more complex scaling, we'll have to account for it here.
     mouseWindowMappingLogicalWidth = screenGetWidth();
     mouseWindowMappingLogicalHeight = screenGetHeight();
 
