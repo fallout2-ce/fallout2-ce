@@ -20,6 +20,9 @@ namespace fallout {
 
 static void gameConfigResolvePath(const char* section, const char* key);
 
+constexpr char kDefaultGameConfigFileName[] = "fallout2.cfg";
+constexpr char kMapperConfigFileName[] = "mapper2.cfg";
+
 // A flag indicating if [gGameConfig] was initialized.
 //
 // 0x5186D0
@@ -77,8 +80,8 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     if (acmsLength != -1) {
         if (acmsLength > 0) {
             // TODO: apply these to settings directly instead of config
-            configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, "data\\sound\\music\\");
-            configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, "data\\sound\\music\\");
+            configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, R"(data\sound\music\)");
+            configSetString(&gGameConfig, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, R"(data\sound\music\)");
         }
         fileNameListFree(&acms, 0);
     }
@@ -91,7 +94,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     const char* configFileName = customConfigFileName != nullptr && *customConfigFileName != '\0'
         ? customConfigFileName
-        : DEFAULT_GAME_CONFIG_FILE_NAME;
+        : kDefaultGameConfigFileName;
 
     // Make `fallout2.cfg` file path.
     char* executable = argv[0];
@@ -103,7 +106,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
                 sizeof(gGameConfigFilePath),
                 "%s\\%s",
                 executable,
-                MAPPER_CONFIG_FILE_NAME);
+                kMapperConfigFileName);
         } else {
             snprintf(gGameConfigFilePath,
                 sizeof(gGameConfigFilePath),
@@ -114,7 +117,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         *ch = '\\';
     } else {
         if (isMapper) {
-            strcpy(gGameConfigFilePath, MAPPER_CONFIG_FILE_NAME);
+            strcpy(gGameConfigFilePath, kMapperConfigFileName);
         } else {
             strcpy(gGameConfigFilePath, configFileName);
         }
