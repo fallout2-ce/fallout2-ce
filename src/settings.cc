@@ -70,16 +70,35 @@ static void settingsWrite(const char* section, const char* key, double value)
     configSetDouble(&gGameConfig, section, key, value);
 }
 
-template <typename T, typename P = std::nullptr_t>
-void registerSetting(const char* section, const char* key, T& variable, const P& postProcess = nullptr)
+static void normalizePath(std::string& value)
+{
+    char* path = value.data();
+    compat_windows_path_to_native(path);
+    compat_resolve_path(path);
+}
+
+template <typename T>
+static std::function<void(T&)> clamp(T min, T max)
+{
+    return [min, max](T& value) { value = std::clamp(value, min, max); };
+}
+
+template <typename T>
+void registerSetting(const char* section, const char* key, T& variable)
+{
+    settingsRegistry.push_back(
+        { [&, section, key]() { settingsRead(section, key, variable); },
+            [&, section, key]() { settingsWrite(section, key, variable); } });
+}
+
+template <typename T, typename P>
+void registerSetting(const char* section, const char* key, T& variable, P postProcess)
 {
     settingsRegistry.push_back(
         { [&, section, key, postProcess]() {
-             settingsRead(section, key, variable);
-             if constexpr (!std::is_same_v<P, std::nullptr_t>) {
-                 postProcess(variable);
-             }
-         },
+            settingsRead(section, key, variable);
+            postProcess(variable);
+        },
             [&, section, key]() { settingsWrite(section, key, variable); } });
 }
 
@@ -93,7 +112,7 @@ struct SettingEntry {
     }
 
     template <typename T, typename P>
-    SettingEntry(const char* key, T& variable, const P& postProcess)
+    SettingEntry(const char* key, T& variable, P postProcess)
         : registerFunc([key, &variable, postProcess](const char* section) { registerSetting(section, key, variable, postProcess); })
     {
     }
@@ -104,19 +123,6 @@ static void addSection(const char* section, const std::initializer_list<SettingE
     for (const auto& entry : entries) {
         entry.registerFunc(section);
     }
-}
-
-static void normalizePath(std::string& value)
-{
-    char* path = value.data();
-    compat_windows_path_to_native(path);
-    compat_resolve_path(path);
-}
-
-template <typename T>
-static std::function<void(T&)> clamp(T min, T max)
-{
-    return [min, max](T& value) { value = std::clamp(value, min, max); };
 }
 
 void initSettingsRegistry(bool isMapper)
