@@ -385,7 +385,7 @@ void _mouse_info()
 
         switch (gesture.type) {
         case kTap:
-            if (screenIsFullscreen()) {
+            if (mouseDeviceUsesRelativeMode()) {
                 if (gesture.numberOfTouches == 1) {
                     _mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
                 } else if (gesture.numberOfTouches == 2) {
@@ -405,7 +405,7 @@ void _mouse_info()
                 prevx = gesture.x;
                 prevy = gesture.y;
             }
-            if (!screenIsFullscreen()) {
+            if (!mouseDeviceUsesRelativeMode()) {
                 prevx = 0;
                 prevy = 0;
             }
@@ -464,7 +464,7 @@ void _mouse_info()
 
     // Mouse sensitivity only applies to relative movement. In windowed mode
     // SDL provides absolute coordinates that should not be scaled.
-    if (screenIsFullscreen()) {
+    if (mouseDeviceUsesRelativeMode()) {
         x = (int)(x * gMouseSensitivity);
         y = (int)(y * gMouseSensitivity);
     }
@@ -560,7 +560,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
         mouseRect.top = gMouseCursorY;
         mouseRect.right = gMouseCursorWidth + gMouseCursorX - 1;
         mouseRect.bottom = gMouseCursorHeight + gMouseCursorY - 1;
-        if (screenIsFullscreen()) {
+        if (mouseDeviceUsesRelativeMode()) {
             gMouseCursorX += delta_x;
             gMouseCursorY += delta_y;
         } else {
@@ -572,7 +572,7 @@ void _mouse_simulate_input(int delta_x, int delta_y, int buttons)
 
         mouseShowCursor();
 
-        if (screenIsFullscreen()) {
+        if (mouseDeviceUsesRelativeMode()) {
             _raw_x = gMouseCursorX;
             _raw_y = gMouseCursorY;
         } else {
@@ -675,7 +675,7 @@ void _mouse_get_raw_state(int* out_x, int* out_y, int* out_buttons)
     }
 
     _raw_buttons = 0;
-    if (screenIsFullscreen()) {
+    if (mouseDeviceUsesRelativeMode()) {
         _raw_x += mouseData.x;
         _raw_y += mouseData.y;
     } else {

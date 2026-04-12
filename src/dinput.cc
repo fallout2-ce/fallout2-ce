@@ -6,10 +6,11 @@ namespace fallout {
 
 static int gMouseWheelDeltaX = 0;
 static int gMouseWheelDeltaY = 0;
-static int gMouseWindowMappingWindowWidth = 0;
-static int gMouseWindowMappingWindowHeight = 0;
-static int gMouseWindowMappingLogicalWidth = 0;
-static int gMouseWindowMappingLogicalHeight = 0;
+static int mouseWindowMappingWindowWidth = 0;
+static int mouseWindowMappingWindowHeight = 0;
+static int mouseWindowMappingLogicalWidth = 0;
+static int mouseWindowMappingLogicalHeight = 0;
+static bool mouseRelativeMode = false;
 
 static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y);
 static void mouseDeviceRefreshWindowMapping();
@@ -41,6 +42,29 @@ void directInputFree()
 {
 }
 
+bool mouseDeviceUsesRelativeMode()
+{
+    return mouseRelativeMode;
+}
+
+bool mouseDeviceInitMode()
+{
+    // "Relative mode" means cursor position is owned by the application, and we move based on mouse deltas
+    // "Absolute mode" means cursor position is controlled by the OS, and we read it directly.
+    // Mouse sensitity settings can only apply in relative mode.
+
+    // TODO: add setting for mouse capture (relative mode) in windowed, differentiated from the web version.
+    mouseRelativeMode = screenIsFullscreen();
+
+    if (mouseRelativeMode) {
+        return SDL_SetRelativeMouseMode(SDL_TRUE) == 0;
+    }
+
+    SDL_SetRelativeMouseMode(SDL_FALSE);
+    mouseDeviceRefreshWindowMapping();
+    return true;
+}
+
 // 0x4E04E8
 bool mouseDeviceAcquire()
 {
@@ -63,10 +87,10 @@ bool mouseDeviceGetData(MouseData* mouseState)
     // TODO: Move mouse events processing into `GNW95_process_message` and
     // update mouse position manually.
     SDL_PumpEvents();
-    Uint32 buttons = screenIsFullscreen()
+    Uint32 buttons = mouseDeviceUsesRelativeMode()
         ? SDL_GetRelativeMouseState(&(mouseState->x), &(mouseState->y))
         : SDL_GetMouseState(&(mouseState->x), &(mouseState->y));
-    if (!screenIsFullscreen()) {
+    if (!mouseDeviceUsesRelativeMode()) {
         mouseDeviceMapWindowToLogicalPosition(&(mouseState->x), &(mouseState->y));
     }
     mouseState->buttons[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
@@ -109,10 +133,7 @@ bool keyboardDeviceGetData(KeyboardData* keyboardData)
 bool mouseDeviceInit()
 {
     mouseDeviceRefreshWindowMapping();
-
-    return screenIsFullscreen()
-        ? SDL_SetRelativeMouseMode(SDL_TRUE) == 0
-        : true;
+    return mouseDeviceInitMode();
 }
 
 // 0x4E078C
@@ -144,24 +165,26 @@ void handleMouseEvent(SDL_Event* event)
 
 static void mouseDeviceMapWindowToLogicalPosition(int* x, int* y)
 {
-    if (gMouseWindowMappingWindowWidth <= 0 || gMouseWindowMappingWindowHeight <= 0) {
+    if (mouseWindowMappingWindowWidth <= 0 || mouseWindowMappingWindowHeight <= 0) {
         return;
     }
 
-    *x = *x * gMouseWindowMappingLogicalWidth / gMouseWindowMappingWindowWidth;
-    *y = *y * gMouseWindowMappingLogicalHeight / gMouseWindowMappingWindowHeight;
+    *x = *x * mouseWindowMappingLogicalWidth / mouseWindowMappingWindowWidth;
+    *y = *y * mouseWindowMappingLogicalHeight / mouseWindowMappingWindowHeight;
 }
 
 static void mouseDeviceRefreshWindowMapping()
 {
-    gMouseWindowMappingLogicalWidth = screenGetWidth();
-    gMouseWindowMappingLogicalHeight = screenGetHeight();
+    // When mouse is in "absolute mode" and scaling is > 1, we need to transform screen coordinates to game coordinates.
+    // Cache the window sizes so we have them available in mouseDeviceMapWindowToLogicalPosition
+    mouseWindowMappingLogicalWidth = screenGetWidth();
+    mouseWindowMappingLogicalHeight = screenGetHeight();
 
     if (gSdlWindow != nullptr) {
-        SDL_GetWindowSize(gSdlWindow, &gMouseWindowMappingWindowWidth, &gMouseWindowMappingWindowHeight);
+        SDL_GetWindowSize(gSdlWindow, &mouseWindowMappingWindowWidth, &mouseWindowMappingWindowHeight);
     } else {
-        gMouseWindowMappingWindowWidth = 0;
-        gMouseWindowMappingWindowHeight = 0;
+        mouseWindowMappingWindowWidth = 0;
+        mouseWindowMappingWindowHeight = 0;
     }
 }
 

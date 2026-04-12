@@ -20,6 +20,8 @@ typedef struct KeyboardData {
 
 bool directInputInit();
 void directInputFree();
+bool mouseDeviceUsesRelativeMode();
+bool mouseDeviceInitMode();
 bool mouseDeviceAcquire();
 bool mouseDeviceUnacquire();
 bool mouseDeviceGetData(MouseData* mouseData);
