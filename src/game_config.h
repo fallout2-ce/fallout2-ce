@@ -5,8 +5,6 @@
 
 namespace fallout {
 
-#define DEFAULT_GAME_CONFIG_FILE_NAME "fallout2.cfg"
-#define MAPPER_CONFIG_FILE_NAME "mapper2.cfg"
 
 #define GAME_CONFIG_SYSTEM_KEY "system"
 #define GAME_CONFIG_SCREEN_KEY "screen"
@@ -44,7 +42,7 @@ namespace fallout {
 #define GAME_CONFIG_RUNNING_KEY "running"
 #define GAME_CONFIG_SUBTITLES_KEY "subtitles"
 #define GAME_CONFIG_COMBAT_SPEED_KEY "combat_speed"
-#define GAME_CONFIG_PLAYER_SPEED_KEY "player_speed"
+#define GAME_CONFIG_PLAYER_SPEEDUP_KEY "player_speedup"
 #define GAME_CONFIG_TEXT_BASE_DELAY_KEY "text_base_delay"
 #define GAME_CONFIG_TEXT_LINE_DELAY_KEY "text_line_delay"
 #define GAME_CONFIG_BRIGHTNESS_KEY "brightness"
@@ -84,8 +82,6 @@ namespace fallout {
 #define GAME_CONFIG_RUN_MAPPER_AS_GAME_KEY "run_mapper_as_game"
 #define GAME_CONFIG_DEFAULT_F8_AS_GAME_KEY "default_f8_as_game"
 #define GAME_CONFIG_SORT_SCRIPT_LIST_KEY "sort_script_list"
-#define GAME_CONFIG_PLAYER_SPEEDUP_KEY "player_speedup"
-#define GAME_CONFIG_UI_ANIM_SPEED_KEY "ui_anim_speed"
 
 #define GAME_CONFIG_RESOLUTION_X_KEY "resolution_x"
 #define GAME_CONFIG_RESOLUTION_Y_KEY "resolution_y"
