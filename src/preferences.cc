@@ -99,7 +99,6 @@ typedef struct PreferenceDescription {
     short maxX;
     short labelIds[PRIMARY_OPTION_VALUE_COUNT];
     int btn;
-    char name[32];
     double minValue;
     double maxValue;
     int* valuePtr;
@@ -372,25 +371,25 @@ static int gPreferencesCombatLooks1;
 
 // 0x5197F8
 static PreferenceDescription gPreferenceDescriptions[PREF_COUNT] = {
-    { 3, 0, 76, 71, 0, 0, { 203, 204, 205, 0 }, 0, GAME_CONFIG_GAME_DIFFICULTY_KEY, 0, 0, &gPreferencesGameDifficulty1 },
-    { 3, 0, 76, 149, 0, 0, { 206, 204, 208, 0 }, 0, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, 0, 0, &gPreferencesCombatDifficulty1 },
-    { 4, 0, 76, 226, 0, 0, { 214, 215, 204, 216 }, 0, GAME_CONFIG_VIOLENCE_LEVEL_KEY, 0, 0, &gPreferencesViolenceLevel1 },
-    { 3, 0, 76, 309, 0, 0, { 202, 201, 213, 0 }, 0, GAME_CONFIG_TARGET_HIGHLIGHT_KEY, 0, 0, &gPreferencesTargetHighlight1 },
-    { 2, 0, 76, 387, 0, 0, { 202, 201, 0, 0 }, 0, GAME_CONFIG_COMBAT_LOOKS_KEY, 0, 0, &gPreferencesCombatLooks1 },
-    { 2, 0, 299, 74, 0, 0, { 211, 212, 0, 0 }, 0, GAME_CONFIG_COMBAT_MESSAGES_KEY, 0, 0, &gPreferencesCombatMessages1 },
-    { 2, 0, 299, 141, 0, 0, { 202, 201, 0, 0 }, 0, GAME_CONFIG_COMBAT_TAUNTS_KEY, 0, 0, &gPreferencesCombatTaunts1 },
-    { 2, 0, 299, 207, 0, 0, { 202, 201, 0, 0 }, 0, GAME_CONFIG_LANGUAGE_FILTER_KEY, 0, 0, &gPreferencesLanguageFilter1 },
-    { 2, 0, 299, 271, 0, 0, { 209, 219, 0, 0 }, 0, GAME_CONFIG_RUNNING_KEY, 0, 0, &gPreferencesRunning1 },
-    { 2, 0, 299, 338, 0, 0, { 202, 201, 0, 0 }, 0, GAME_CONFIG_SUBTITLES_KEY, 0, 0, &gPreferencesSubtitles1 },
-    { 2, 0, 299, 404, 0, 0, { 202, 201, 0, 0 }, 0, GAME_CONFIG_ITEM_HIGHLIGHT_KEY, 0, 0, &gPreferencesItemHighlight1 },
-    { 2, 0, 374, 50, 0, 0, { 207, 210, 0, 0 }, 0, GAME_CONFIG_COMBAT_SPEED_KEY, 0.0, 50.0, &gPreferencesCombatSpeed1 },
-    { 3, 0, 374, 125, 0, 0, { 217, 209, 218, 0 }, 0, GAME_CONFIG_TEXT_BASE_DELAY_KEY, 1.0, 6.0, nullptr },
-    { 4, 0, 374, 196, 0, 0, { 202, 221, 209, 222 }, 0, GAME_CONFIG_MASTER_VOLUME_KEY, 0, 32767.0, &gPreferencesMasterVolume1 },
-    { 4, 0, 374, 247, 0, 0, { 202, 221, 209, 222 }, 0, GAME_CONFIG_MUSIC_VOLUME_KEY, 0, 32767.0, &gPreferencesMusicVolume1 },
-    { 4, 0, 374, 298, 0, 0, { 202, 221, 209, 222 }, 0, GAME_CONFIG_SNDFX_VOLUME_KEY, 0, 32767.0, &gPreferencesSoundEffectsVolume1 },
-    { 4, 0, 374, 349, 0, 0, { 202, 221, 209, 222 }, 0, GAME_CONFIG_SPEECH_VOLUME_KEY, 0, 32767.0, &gPreferencesSpeechVolume1 },
-    { 2, 0, 374, 400, 0, 0, { 207, 223, 0, 0 }, 0, GAME_CONFIG_BRIGHTNESS_KEY, 1.0, 1.17999267578125, nullptr },
-    { 2, 0, 374, 451, 0, 0, { 207, 218, 0, 0 }, 0, GAME_CONFIG_MOUSE_SENSITIVITY_KEY, MOUSE_SENSITIVITY_MIN, MOUSE_SENSITIVITY_MAX, nullptr },
+    { 3, 0, 76, 71, 0, 0, { 203, 204, 205, 0 }, 0, 0, 0, &gPreferencesGameDifficulty1 },
+    { 3, 0, 76, 149, 0, 0, { 206, 204, 208, 0 }, 0, 0, 0, &gPreferencesCombatDifficulty1 },
+    { 4, 0, 76, 226, 0, 0, { 214, 215, 204, 216 }, 0, 0, 0, &gPreferencesViolenceLevel1 },
+    { 3, 0, 76, 309, 0, 0, { 202, 201, 213, 0 }, 0, 0, 0, &gPreferencesTargetHighlight1 },
+    { 2, 0, 76, 387, 0, 0, { 202, 201, 0, 0 }, 0, 0, 0, &gPreferencesCombatLooks1 },
+    { 2, 0, 299, 74, 0, 0, { 211, 212, 0, 0 }, 0, 0, 0, &gPreferencesCombatMessages1 },
+    { 2, 0, 299, 141, 0, 0, { 202, 201, 0, 0 }, 0, 0, 0, &gPreferencesCombatTaunts1 },
+    { 2, 0, 299, 207, 0, 0, { 202, 201, 0, 0 }, 0, 0, 0, &gPreferencesLanguageFilter1 },
+    { 2, 0, 299, 271, 0, 0, { 209, 219, 0, 0 }, 0, 0, 0, &gPreferencesRunning1 },
+    { 2, 0, 299, 338, 0, 0, { 202, 201, 0, 0 }, 0, 0, 0, &gPreferencesSubtitles1 },
+    { 2, 0, 299, 404, 0, 0, { 202, 201, 0, 0 }, 0, 0, 0, &gPreferencesItemHighlight1 },
+    { 2, 0, 374, 50, 0, 0, { 207, 210, 0, 0 }, 0, 0.0, 50.0, &gPreferencesCombatSpeed1 },
+    { 3, 0, 374, 125, 0, 0, { 217, 209, 218, 0 }, 0, 1.0, 6.0, nullptr },
+    { 4, 0, 374, 196, 0, 0, { 202, 221, 209, 222 }, 0, 0, 32767.0, &gPreferencesMasterVolume1 },
+    { 4, 0, 374, 247, 0, 0, { 202, 221, 209, 222 }, 0, 0, 32767.0, &gPreferencesMusicVolume1 },
+    { 4, 0, 374, 298, 0, 0, { 202, 221, 209, 222 }, 0, 0, 32767.0, &gPreferencesSoundEffectsVolume1 },
+    { 4, 0, 374, 349, 0, 0, { 202, 221, 209, 222 }, 0, 0, 32767.0, &gPreferencesSpeechVolume1 },
+    { 2, 0, 374, 400, 0, 0, { 207, 223, 0, 0 }, 0, 1.0, 1.17999267578125, nullptr },
+    { 2, 0, 374, 451, 0, 0, { 207, 218, 0, 0 }, 0, MOUSE_SENSITIVITY_MIN, MOUSE_SENSITIVITY_MAX, nullptr },
 };
 
 static FrmImage _preferencesFrmImages[PREFERENCES_WINDOW_FRM_COUNT];

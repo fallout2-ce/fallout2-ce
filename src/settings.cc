@@ -141,13 +141,13 @@ void initSettingsRegistry()
         }
     };
 
-    addSection("system",
+    addSection(GAME_CONFIG_SYSTEM_KEY,
         {
             { "executable", settings.system.executable },
-            { "master_dat", settings.system.master_dat_path },
-            { "master_patches", settings.system.master_patches_path },
-            { "critter_dat", settings.system.critter_dat_path },
-            { "critter_patches", settings.system.critter_patches_path },
+            { GAME_CONFIG_MASTER_DAT_KEY, settings.system.master_dat_path },
+            { GAME_CONFIG_MASTER_PATCHES_KEY, settings.system.master_patches_path },
+            { GAME_CONFIG_CRITTER_DAT_KEY, settings.system.critter_dat_path },
+            { GAME_CONFIG_CRITTER_PATCHES_KEY, settings.system.critter_patches_path },
             { "language", settings.system.language },
             { "scroll_lock", settings.system.scroll_lock },
             { "interrupt_walk", settings.system.interrupt_walk },
@@ -159,22 +159,22 @@ void initSettingsRegistry()
             { "free_space", settings.system.free_space },
         });
 
-    addSection("screen",
+    addSection(GAME_CONFIG_SCREEN_KEY,
         {
-            { "resolution_x", settings.screen.resolution_x, 640, 7680 },
-            { "resolution_y", settings.screen.resolution_y, 480, 4320 },
-            { "windowed", settings.screen.windowed },
-            { "scale", settings.screen.scale, 1, 4 },
+            { GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x, 640, 7680 },
+            { GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y, 480, 4320 },
+            { GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed },
+            { GAME_CONFIG_SCALE_KEY, settings.screen.scale, 1, 4 },
         });
 
-    addSection("ui",
+    addSection(GAME_CONFIG_UI_KEY,
         {
-            { "iface_bar_mode", settings.ui.iface_bar_mode },
-            { "iface_bar_width", settings.ui.iface_bar_width, 640, 4320 },
-            { "iface_bar_side_art", settings.ui.iface_bar_side_art, 0, 999 },
-            { "iface_bar_sides_ori", settings.ui.iface_bar_sides_ori },
-            { "splash_screen_size", settings.ui.splash_screen_size, 0, 2 },
-            { "ignore_map_edges", settings.ui.ignore_map_edges },
+            { GAME_CONFIG_IFACE_BAR_MODE_KEY, settings.ui.iface_bar_mode },
+            { GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width, 640, 4320 },
+            { GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art, 0, 999 },
+            { GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori },
+            { GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, 0, 2 },
+            { GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges },
         });
 
     addSection("preferences",
@@ -200,7 +200,7 @@ void initSettingsRegistry()
             { "ui_anim_speed", settings.preferences.ui_anim_speed, 0.1, 100.0 },
         });
 
-    addSection("sound",
+    addSection(GAME_CONFIG_SOUND_KEY,
         {
             { "initialize", settings.sound.initialize },
             { "debug", settings.sound.debug },
@@ -251,11 +251,11 @@ void initSettingsRegistry()
 
 bool settingsInit(bool isMapper, int argc, char** argv)
 {
+    initSettingsRegistry();
     if (!gameConfigInit(isMapper, argc, argv)) {
         return false;
     }
 
-    initSettingsRegistry();
     for (const auto& descriptor : settingsRegistry) {
         descriptor.read();
     }
@@ -263,7 +263,7 @@ bool settingsInit(bool isMapper, int argc, char** argv)
     return true;
 }
 
-void settingsApplyDefaultsToConfig()
+void settingsWriteToConfig()
 {
     for (const auto& descriptor : settingsRegistry) {
         descriptor.write();
@@ -272,7 +272,7 @@ void settingsApplyDefaultsToConfig()
 
 bool settingsSave()
 {
-    settingsApplyDefaultsToConfig();
+    settingsWriteToConfig();
     return gameConfigSave();
 }
 

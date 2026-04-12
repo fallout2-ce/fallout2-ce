@@ -67,11 +67,9 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         return false;
     }
 
-    initSettingsRegistry();
-
     // CE: Detect alternative default music directory.
     char alternativeMusicPath[COMPAT_MAX_PATH];
-    strcpy(alternativeMusicPath, "data\\sound\\music\\*.acm");
+    strcpy(alternativeMusicPath, R"(data\sound\music\*.acm)");
     compat_windows_path_to_native(alternativeMusicPath);
     compat_resolve_path(alternativeMusicPath);
 
@@ -86,7 +84,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         fileNameListFree(&acms, 0);
     }
     
-    settingsApplyDefaultsToConfig();
+    settingsWriteToConfig();
 
     // SFALL: Custom config file name.
     char* customConfigFileName = nullptr;
@@ -138,21 +136,13 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     configParseCommandLineArguments(&gGameConfig, argc, argv);
 
     // CE: Normalize and resolve asset bundle paths.
-    static const struct {
-        const char* section;
-        const char* key;
-    } pathsToResolve[] = {
-        {GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY},
-        {GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY},
-        {GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY},
-        {GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY},
-        {GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY},
-        {GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY},
-    };
-
-    for (const auto& path : pathsToResolve) {
-        gameConfigResolvePath(path.section, path.key);
-    }
+    // TODO: move this path normalization to settings.cc
+    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY);
 
     gGameConfigInitialized = true;
 

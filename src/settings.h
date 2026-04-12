@@ -136,7 +136,7 @@ extern Settings settings;
 
 bool settingsInit(bool isMapper, int argc, char** argv);
 bool settingsSave();
-void settingsApplyDefaultsToConfig();
+void settingsWriteToConfig();
 void initSettingsRegistry();
 bool settingsExit(bool shouldSave);
 
