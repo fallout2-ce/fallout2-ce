@@ -96,9 +96,9 @@ void registerSetting(const char* section, const char* key, T& variable, P postPr
 {
     settingsRegistry.push_back(
         { [&, section, key, postProcess]() {
-            settingsRead(section, key, variable);
-            postProcess(variable);
-        },
+             settingsRead(section, key, variable);
+             postProcess(variable);
+         },
             [&, section, key]() { settingsWrite(section, key, variable); } });
 }
 
