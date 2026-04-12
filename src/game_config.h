@@ -5,7 +5,6 @@
 
 namespace fallout {
 
-
 #define GAME_CONFIG_SYSTEM_KEY "system"
 #define GAME_CONFIG_SCREEN_KEY "screen"
 #define GAME_CONFIG_UI_KEY "ui"

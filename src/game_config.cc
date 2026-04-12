@@ -1,7 +1,7 @@
-#include "settings.h"
 #include "game_config.h"
 #include "debug.h"
 #include "game_config_migration.h"
+#include "settings.h"
 #include "sfall_config.h"
 
 #include <stdio.h>
@@ -81,7 +81,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         }
         fileNameListFree(&acms, 0);
     }
-    
+
     settingsWriteToConfig();
 
     // SFALL: Custom config file name.

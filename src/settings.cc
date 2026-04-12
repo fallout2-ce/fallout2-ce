@@ -34,11 +34,11 @@ void registerSetting(const char* section, const char* key, T& variable, const P&
 {
     settingsRegistry.push_back(
         { [&, section, key, postProcess]() {
-            settingsRead(section, key, variable);
-            if constexpr (!std::is_same_v<P, std::nullptr_t>) {
-                postProcess(variable);
-            }
-        },
+             settingsRead(section, key, variable);
+             if constexpr (!std::is_same_v<P, std::nullptr_t>) {
+                 postProcess(variable);
+             }
+         },
             [&, section, key]() { settingsWrite(section, key, variable); } });
 }
 
