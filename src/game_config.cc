@@ -18,8 +18,6 @@
 
 namespace fallout {
 
-static void gameConfigResolvePath(const char* section, const char* key);
-
 constexpr char kDefaultGameConfigFileName[] = "fallout2.cfg";
 constexpr char kMapperConfigFileName[] = "mapper2.cfg";
 
@@ -135,15 +133,6 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     // whatever was loaded from `fallout2.cfg`.
     configParseCommandLineArguments(&gGameConfig, argc, argv);
 
-    // CE: Normalize and resolve asset bundle paths.
-    // TODO: move this path normalization to settings.cc
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY);
-    gameConfigResolvePath(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY);
-
     gGameConfigInitialized = true;
 
     return true;
@@ -199,14 +188,6 @@ bool gameConfigExit(bool shouldSave)
     gGameConfigInitialized = false;
 
     return result;
-}
-
-static void gameConfigResolvePath(const char* section, const char* key)
-{
-    char* path;
-    configGetString(&gGameConfig, section, key, &path);
-    compat_windows_path_to_native(path);
-    compat_resolve_path(path);
 }
 
 } // namespace fallout
