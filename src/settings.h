@@ -50,8 +50,13 @@ struct UISettings {
     int splash_screen_size = 0;
 
     bool ignore_map_edges = false;
+
+    // TODO: add to setting window
+    // Speed of various UI transition animations. 1.0 represents vanilla speeds.
+    double anim_speed = 1.0;
 };
 
+// These are settings handled by preferences UI and saved in save games.
 struct PreferencesSettings {
     int game_difficulty = GAME_DIFFICULTY_NORMAL;
     int combat_difficulty = COMBAT_DIFFICULTY_NORMAL;
@@ -71,20 +76,12 @@ struct PreferencesSettings {
     double brightness = 1.0;
     double mouse_sensitivity = 1.0;
     bool running_burning_guy = true;
-
-    // TODO: add to setting window
-    // Speed of various UI transition animations. 1.0 represents vanilla speeds.
-    double ui_anim_speed = 1.0;
 };
 
 struct SoundSettings {
     bool initialize = true;
     bool debug = false;
     bool debug_sfxc = true;
-    int device = -1;
-    int port = -1;
-    int irq = -1;
-    int dma = -1;
     bool sounds = true;
     bool music = true;
     bool speech = true;
@@ -136,6 +133,7 @@ extern Settings settings;
 
 bool settingsInit(bool isMapper, int argc, char** argv);
 bool settingsSave();
+void settingsWriteToConfig();
 bool settingsExit(bool shouldSave);
 
 } // namespace fallout

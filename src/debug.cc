@@ -33,6 +33,22 @@ static int _cury = 0;
 // 0x51DF04
 static DebugPrintProc* gDebugPrintProc = nullptr;
 
+void debugModeInit(const char* debugMode)
+{
+    // CE: Handle debug mode (exactly as seen in `mapper2.exe`).
+    if (compat_stricmp(debugMode, "environment") == 0) {
+        _debug_register_env();
+    } else if (compat_stricmp(debugMode, "screen") == 0) {
+        _debug_register_screen();
+    } else if (compat_stricmp(debugMode, "log") == 0) {
+        _debug_register_log("debug.log", "wt");
+    } else if (compat_stricmp(debugMode, "mono") == 0) {
+        _debug_register_mono();
+    } else if (compat_stricmp(debugMode, "gnw") == 0) {
+        _debug_register_func(_win_debug);
+    }
+}
+
 // 0x4C6CD0
 void _GNW_debug_init()
 {

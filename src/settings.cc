@@ -1,227 +1,24 @@
 #include "settings.h"
 
+#include "debug.h"
+#include "game_config.h"
+#include "platform_compat.h"
+
 #include <algorithm>
+#include <functional>
+#include <string>
+#include <vector>
 
 namespace fallout {
 
-static void settingsFromConfig();
-static void settingsToConfig();
-static void settingsRead(const char* section, const char* key, std::string& value);
-static void settingsRead(const char* section, const char* key, int& value);
-static void settingsRead(const char* section, const char* key, int& value, int minValue, int maxValue);
-static void settingsRead(const char* section, const char* key, bool& value);
-static void settingsRead(const char* section, const char* key, double& value);
-static void settingsRead(const char* section, const char* key, double& value, double minValue, double maxValue);
-static void settingsWrite(const char* section, const char* key, const std::string& value);
-static void settingsWrite(const char* section, const char* key, int value);
-static void settingsWrite(const char* section, const char* key, bool value);
-static void settingsWrite(const char* section, const char* key, double value);
+struct SettingDescriptor {
+    std::function<void()> read;
+    std::function<void()> write;
+};
+
+static std::vector<SettingDescriptor> settingsRegistry;
 
 Settings settings;
-
-bool settingsInit(bool isMapper, int argc, char** argv)
-{
-    if (!gameConfigInit(isMapper, argc, argv)) {
-        return false;
-    }
-
-    settingsFromConfig();
-
-    return true;
-}
-
-bool settingsSave()
-{
-    settingsToConfig();
-    return gameConfigSave();
-}
-
-bool settingsExit(bool shouldSave)
-{
-    if (shouldSave) {
-        settingsToConfig();
-    }
-
-    return gameConfigExit(shouldSave);
-}
-
-static void settingsFromConfig()
-{
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_EXECUTABLE_KEY, settings.system.executable);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY, settings.system.master_dat_path);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY, settings.system.master_patches_path);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY, settings.system.critter_dat_path);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY, settings.system.critter_patches_path);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_LANGUAGE_KEY, settings.system.language);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCROLL_LOCK_KEY, settings.system.scroll_lock);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_INTERRUPT_WALK_KEY, settings.system.interrupt_walk);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_ART_CACHE_SIZE_KEY, settings.system.art_cache_size);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_COLOR_CYCLING_KEY, settings.system.color_cycling);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CYCLE_SPEED_FACTOR_KEY, settings.system.cycle_speed_factor);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, settings.system.hashing);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
-    settingsRead(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
-
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x, 640, 7680);
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y, 480, 4320);
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed);
-    settingsRead(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, settings.screen.scale, 1, 4);
-
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_MODE_KEY, settings.ui.iface_bar_mode);
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width, 640, 4320);
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art, 0, 999);
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori);
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, 0, 2);
-    settingsRead(GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges);
-
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_VIOLENCE_LEVEL_KEY, settings.preferences.violence_level);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TARGET_HIGHLIGHT_KEY, settings.preferences.target_highlight);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_ITEM_HIGHLIGHT_KEY, settings.preferences.item_highlight);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_LOOKS_KEY, settings.preferences.combat_looks);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_MESSAGES_KEY, settings.preferences.combat_messages);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_TAUNTS_KEY, settings.preferences.combat_taunts);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, settings.preferences.language_filter);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_KEY, settings.preferences.running);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_SUBTITLES_KEY, settings.preferences.subtitles);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_SPEED_KEY, settings.preferences.combat_speed);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_PLAYER_SPEED_KEY, settings.preferences.player_speedup);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TEXT_BASE_DELAY_KEY, settings.preferences.text_base_delay);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TEXT_LINE_DELAY_KEY, settings.preferences.text_line_delay);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_BRIGHTNESS_KEY, settings.preferences.brightness);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_MOUSE_SENSITIVITY_KEY, settings.preferences.mouse_sensitivity);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_BURNING_GUY_KEY, settings.preferences.running_burning_guy);
-    settingsRead(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_UI_ANIM_SPEED_KEY, settings.preferences.ui_anim_speed, 0.1, 100.0);
-
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_INITIALIZE_KEY, settings.sound.initialize);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEBUG_KEY, settings.sound.debug);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEBUG_SFXC_KEY, settings.sound.debug_sfxc);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEVICE_KEY, settings.sound.device);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_PORT_KEY, settings.sound.port);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_IRQ_KEY, settings.sound.irq);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DMA_KEY, settings.sound.dma);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SOUNDS_KEY, settings.sound.sounds);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_KEY, settings.sound.music);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_KEY, settings.sound.speech);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MASTER_VOLUME_KEY, settings.sound.master_volume);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_VOLUME_KEY, settings.sound.music_volume);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SNDFX_VOLUME_KEY, settings.sound.sndfx_volume);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_VOLUME_KEY, settings.sound.speech_volume);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_CACHE_SIZE_KEY, settings.sound.cache_size);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, settings.sound.music_path1);
-    settingsRead(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, settings.sound.music_path2);
-
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_MODE_KEY, settings.debug.mode);
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_TILE_NUM_KEY, settings.debug.show_tile_num);
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_WIDTH_KEY, settings.debug.debug_window_width, 200, 1920);
-    settingsRead(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_HEIGHT_KEY, settings.debug.debug_window_height, 100, 1080);
-
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_USE_ART_NOT_PROTOS_KEY, settings.mapper.user_art_not_protos);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_REBUILD_PROTOS_KEY, settings.mapper.rebuild_protos);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_FIX_MAP_OBJECTS_KEY, settings.mapper.fix_map_objects);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_FIX_MAP_INVENTORY_KEY, settings.mapper.fix_map_inventory);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_IGNORE_REBUILD_ERRORS_KEY, settings.mapper.rebuild_protos);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SHOW_PID_NUMBERS_KEY, settings.mapper.show_pid_numbers);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SAVE_TEXT_MAPS_KEY, settings.mapper.save_text_maps);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_RUN_MAPPER_AS_GAME_KEY, settings.mapper.run_mapper_as_game);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_DEFAULT_F8_AS_GAME_KEY, settings.mapper.default_f8_as_game);
-    settingsRead(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SORT_SCRIPT_LIST_KEY, settings.mapper.sort_script_list);
-}
-
-static void settingsToConfig()
-{
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_EXECUTABLE_KEY, settings.system.executable);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY, settings.system.master_dat_path);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY, settings.system.master_patches_path);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY, settings.system.critter_dat_path);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY, settings.system.critter_patches_path);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_LANGUAGE_KEY, settings.system.language);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SCROLL_LOCK_KEY, settings.system.scroll_lock);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_INTERRUPT_WALK_KEY, settings.system.interrupt_walk);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_ART_CACHE_SIZE_KEY, settings.system.art_cache_size);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_COLOR_CYCLING_KEY, settings.system.color_cycling);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CYCLE_SPEED_FACTOR_KEY, settings.system.cycle_speed_factor);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_HASHING_KEY, settings.system.hashing);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, settings.system.splash);
-    settingsWrite(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_FREE_SPACE_KEY, settings.system.free_space);
-
-    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x);
-    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y);
-    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed);
-    settingsWrite(GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, settings.screen.scale);
-
-    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_MODE_KEY, settings.ui.iface_bar_mode);
-    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width);
-    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art);
-    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori);
-    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size);
-    settingsWrite(GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges);
-
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_GAME_DIFFICULTY_KEY, settings.preferences.game_difficulty);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_DIFFICULTY_KEY, settings.preferences.combat_difficulty);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_VIOLENCE_LEVEL_KEY, settings.preferences.violence_level);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TARGET_HIGHLIGHT_KEY, settings.preferences.target_highlight);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_ITEM_HIGHLIGHT_KEY, settings.preferences.item_highlight);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_LOOKS_KEY, settings.preferences.combat_looks);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_MESSAGES_KEY, settings.preferences.combat_messages);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_TAUNTS_KEY, settings.preferences.combat_taunts);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, settings.preferences.language_filter);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_KEY, settings.preferences.running);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_SUBTITLES_KEY, settings.preferences.subtitles);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_SPEED_KEY, settings.preferences.combat_speed);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_PLAYER_SPEED_KEY, settings.preferences.player_speedup);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TEXT_BASE_DELAY_KEY, settings.preferences.text_base_delay);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TEXT_LINE_DELAY_KEY, settings.preferences.text_line_delay);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_BRIGHTNESS_KEY, settings.preferences.brightness);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_MOUSE_SENSITIVITY_KEY, settings.preferences.mouse_sensitivity);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_BURNING_GUY_KEY, settings.preferences.running_burning_guy);
-    settingsWrite(GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_UI_ANIM_SPEED_KEY, settings.preferences.ui_anim_speed);
-
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_INITIALIZE_KEY, settings.sound.initialize);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEBUG_KEY, settings.sound.debug);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEBUG_SFXC_KEY, settings.sound.debug_sfxc);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DEVICE_KEY, settings.sound.device);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_PORT_KEY, settings.sound.port);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_IRQ_KEY, settings.sound.irq);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_DMA_KEY, settings.sound.dma);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SOUNDS_KEY, settings.sound.sounds);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_KEY, settings.sound.music);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_KEY, settings.sound.speech);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MASTER_VOLUME_KEY, settings.sound.master_volume);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_VOLUME_KEY, settings.sound.music_volume);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SNDFX_VOLUME_KEY, settings.sound.sndfx_volume);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_VOLUME_KEY, settings.sound.speech_volume);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_CACHE_SIZE_KEY, settings.sound.cache_size);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, settings.sound.music_path1);
-    settingsWrite(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, settings.sound.music_path2);
-
-    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_MODE_KEY, settings.debug.mode);
-    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_TILE_NUM_KEY, settings.debug.show_tile_num);
-    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, settings.debug.show_script_messages);
-    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_LOAD_INFO_KEY, settings.debug.show_load_info);
-    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_OUTPUT_MAP_DATA_INFO_KEY, settings.debug.output_map_data_info);
-    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_WIDTH_KEY, settings.debug.debug_window_width);
-    settingsWrite(GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_DEBUG_WINDOW_HEIGHT_KEY, settings.debug.debug_window_height);
-
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_OVERRIDE_LIBRARIAN_KEY, settings.mapper.override_librarian);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_LIBRARIAN_KEY, settings.mapper.librarian);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_USE_ART_NOT_PROTOS_KEY, settings.mapper.user_art_not_protos);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_REBUILD_PROTOS_KEY, settings.mapper.rebuild_protos);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_FIX_MAP_OBJECTS_KEY, settings.mapper.fix_map_objects);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_FIX_MAP_INVENTORY_KEY, settings.mapper.fix_map_inventory);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_IGNORE_REBUILD_ERRORS_KEY, settings.mapper.rebuild_protos);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SHOW_PID_NUMBERS_KEY, settings.mapper.show_pid_numbers);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SAVE_TEXT_MAPS_KEY, settings.mapper.save_text_maps);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_RUN_MAPPER_AS_GAME_KEY, settings.mapper.run_mapper_as_game);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_DEFAULT_F8_AS_GAME_KEY, settings.mapper.default_f8_as_game);
-    settingsWrite(GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_SORT_SCRIPT_LIST_KEY, settings.mapper.sort_script_list);
-}
 
 static void settingsRead(const char* section, const char* key, std::string& value)
 {
@@ -239,12 +36,6 @@ static void settingsRead(const char* section, const char* key, int& value)
     }
 }
 
-void settingsRead(const char* section, const char* key, int& value, int minValue, int maxValue)
-{
-    settingsRead(section, key, value);
-    value = std::clamp(value, minValue, maxValue);
-}
-
 static void settingsRead(const char* section, const char* key, bool& value)
 {
     bool v;
@@ -259,12 +50,6 @@ static void settingsRead(const char* section, const char* key, double& value)
     if (configGetDouble(&gGameConfig, section, key, &v)) {
         value = v;
     }
-}
-
-void settingsRead(const char* section, const char* key, double& value, double minValue, double maxValue)
-{
-    settingsRead(section, key, value);
-    value = std::clamp(value, minValue, maxValue);
 }
 
 static void settingsWrite(const char* section, const char* key, const std::string& value)
@@ -285,6 +70,214 @@ static void settingsWrite(const char* section, const char* key, bool value)
 static void settingsWrite(const char* section, const char* key, double value)
 {
     configSetDouble(&gGameConfig, section, key, value);
+}
+
+static void normalizePath(std::string& value, const char* section, const char* key)
+{
+    char* path = value.data();
+    compat_windows_path_to_native(path);
+    compat_resolve_path(path);
+}
+
+template <typename T>
+static std::function<void(T&, const char*, const char*)> clamp(T min, T max)
+{
+    return [min, max](T& value, const char* section, const char* key) {
+        const T origValue = value;
+        value = std::clamp(value, min, max);
+        if (value != origValue) {
+            debugPrint("config value %s.%s was clamped.\n", section, key);
+        }
+    };
+}
+
+template <typename T>
+void registerSetting(const char* section, const char* key, T& variable)
+{
+    settingsRegistry.push_back(
+        { [&, section, key]() { settingsRead(section, key, variable); },
+            [&, section, key]() { settingsWrite(section, key, variable); } });
+}
+
+template <typename T, typename P>
+void registerSetting(const char* section, const char* key, T& variable, P postProcess)
+{
+    settingsRegistry.push_back(
+        { [&, section, key, postProcess]() {
+             settingsRead(section, key, variable);
+             postProcess(variable, section, key);
+         },
+            [&, section, key]() { settingsWrite(section, key, variable); } });
+}
+
+struct SettingEntry {
+    std::function<void(const char*)> registerFunc;
+
+    template <typename T>
+    SettingEntry(const char* key, T& variable)
+        : registerFunc([key, &variable](const char* section) { registerSetting(section, key, variable); })
+    {
+    }
+
+    template <typename T, typename P>
+    SettingEntry(const char* key, T& variable, P postProcess)
+        : registerFunc([key, &variable, postProcess](const char* section) { registerSetting(section, key, variable, postProcess); })
+    {
+    }
+};
+
+static void addSection(const char* section, const std::initializer_list<SettingEntry> entries)
+{
+    for (const auto& entry : entries) {
+        entry.registerFunc(section);
+    }
+}
+
+void initSettingsRegistry(bool isMapper)
+{
+    if (!settingsRegistry.empty()) return;
+
+    addSection(GAME_CONFIG_SYSTEM_KEY,
+        {
+            { "executable", settings.system.executable },
+            { GAME_CONFIG_MASTER_DAT_KEY, settings.system.master_dat_path, normalizePath },
+            { GAME_CONFIG_MASTER_PATCHES_KEY, settings.system.master_patches_path, normalizePath },
+            { GAME_CONFIG_CRITTER_DAT_KEY, settings.system.critter_dat_path, normalizePath },
+            { GAME_CONFIG_CRITTER_PATCHES_KEY, settings.system.critter_patches_path, normalizePath },
+            { "language", settings.system.language },
+            { "scroll_lock", settings.system.scroll_lock },
+            { "interrupt_walk", settings.system.interrupt_walk },
+            { "art_cache_size", settings.system.art_cache_size },
+            { "color_cycling", settings.system.color_cycling },
+            { "cycle_speed_factor", settings.system.cycle_speed_factor },
+            { "hashing", settings.system.hashing },
+            { "splash", settings.system.splash },
+            { "free_space", settings.system.free_space },
+        });
+
+    addSection(GAME_CONFIG_SCREEN_KEY,
+        {
+            { GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x, clamp(640, 7680) },
+            { GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y, clamp(480, 4320) },
+            { GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed },
+            { GAME_CONFIG_SCALE_KEY, settings.screen.scale, clamp(1, 4) },
+        });
+
+    addSection(GAME_CONFIG_UI_KEY,
+        {
+            { GAME_CONFIG_IFACE_BAR_MODE_KEY, settings.ui.iface_bar_mode },
+            { GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width, clamp(640, 4320) },
+            { GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art, clamp(0, 999) },
+            { GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori },
+            { GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, clamp(0, 2) },
+            { GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges },
+            { "ui_anim_speed", settings.ui.anim_speed, clamp(0.1, 100.0) },
+        });
+
+    addSection("preferences",
+        {
+            // Clamping for most of these values is handled in preferences.cc
+            { "game_difficulty", settings.preferences.game_difficulty },
+            { "combat_difficulty", settings.preferences.combat_difficulty },
+            { "violence_level", settings.preferences.violence_level },
+            { "target_highlight", settings.preferences.target_highlight },
+            { "item_highlight", settings.preferences.item_highlight },
+            { "combat_looks", settings.preferences.combat_looks },
+            { "combat_messages", settings.preferences.combat_messages },
+            { "combat_taunts", settings.preferences.combat_taunts },
+            { "language_filter", settings.preferences.language_filter },
+            { "running", settings.preferences.running },
+            { "subtitles", settings.preferences.subtitles },
+            { "combat_speed", settings.preferences.combat_speed },
+            { "player_speedup", settings.preferences.player_speedup },
+            { "text_base_delay", settings.preferences.text_base_delay },
+            { "text_line_delay", settings.preferences.text_line_delay },
+            { "brightness", settings.preferences.brightness },
+            { "mouse_sensitivity", settings.preferences.mouse_sensitivity },
+            { "running_burning_guy", settings.preferences.running_burning_guy },
+        });
+
+    addSection(GAME_CONFIG_SOUND_KEY,
+        {
+            { "initialize", settings.sound.initialize },
+            { "debug", settings.sound.debug },
+            { "debug_sfxc", settings.sound.debug_sfxc },
+            { "sounds", settings.sound.sounds },
+            { "music", settings.sound.music },
+            { "speech", settings.sound.speech },
+            { "master_volume", settings.sound.master_volume },
+            { "music_volume", settings.sound.music_volume },
+            { "sndfx_volume", settings.sound.sndfx_volume },
+            { "speech_volume", settings.sound.speech_volume },
+            { "cache_size", settings.sound.cache_size },
+            { GAME_CONFIG_MUSIC_PATH1_KEY, settings.sound.music_path1, normalizePath },
+            { GAME_CONFIG_MUSIC_PATH2_KEY, settings.sound.music_path2, normalizePath },
+        });
+
+    addSection(GAME_CONFIG_DEBUG_KEY,
+        {
+            { GAME_CONFIG_MODE_KEY, settings.debug.mode },
+            { "show_tile_num", settings.debug.show_tile_num },
+            { "show_script_messages", settings.debug.show_script_messages },
+            { "show_load_info", settings.debug.show_load_info },
+            { "output_map_data_info", settings.debug.output_map_data_info },
+            { "window_width", settings.debug.debug_window_width, clamp(200, 1920) },
+            { "window_height", settings.debug.debug_window_height, clamp(100, 1080) },
+        });
+
+    if (isMapper) {
+        addSection("mapper",
+            {
+                { "override_librarian", settings.mapper.override_librarian },
+                { "librarian", settings.mapper.librarian },
+                { "use_art_not_protos", settings.mapper.user_art_not_protos },
+                { "rebuild_protos", settings.mapper.rebuild_protos },
+                { "fix_map_objects", settings.mapper.fix_map_objects },
+                { "fix_map_inventory", settings.mapper.fix_map_inventory },
+                { "ignore_rebuild_errors", settings.mapper.ignore_rebuild_errors },
+                { "show_pid_numbers", settings.mapper.show_pid_numbers },
+                { "save_text_maps", settings.mapper.save_text_maps },
+                { "run_mapper_as_game", settings.mapper.run_mapper_as_game },
+                { "default_f8_as_game", settings.mapper.default_f8_as_game },
+                { "sort_script_list", settings.mapper.sort_script_list },
+            });
+    }
+}
+
+bool settingsInit(bool isMapper, int argc, char** argv)
+{
+    initSettingsRegistry(isMapper);
+    if (!gameConfigInit(isMapper, argc, argv)) {
+        return false;
+    }
+
+    for (const auto& descriptor : settingsRegistry) {
+        descriptor.read();
+    }
+
+    return true;
+}
+
+void settingsWriteToConfig()
+{
+    for (const auto& descriptor : settingsRegistry) {
+        descriptor.write();
+    }
+}
+
+bool settingsSave()
+{
+    settingsWriteToConfig();
+    return gameConfigSave();
+}
+
+bool settingsExit(bool shouldSave)
+{
+    if (shouldSave) {
+        settingsWriteToConfig();
+    }
+
+    return gameConfigExit(shouldSave);
 }
 
 } // namespace fallout

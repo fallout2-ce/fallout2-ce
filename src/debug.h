@@ -5,6 +5,7 @@ namespace fallout {
 
 typedef int(DebugPrintProc)(char* string);
 
+void debugModeInit(const char* debugMode);
 void _GNW_debug_init();
 void _debug_register_mono();
 void _debug_register_log(const char* fileName, const char* mode);
