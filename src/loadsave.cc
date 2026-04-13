@@ -37,6 +37,7 @@
 #include "mouse.h"
 #include "object.h"
 #include "party_member.h"
+#include "palette.h"
 #include "perk.h"
 #include "pipboy.h"
 #include "platform_compat.h"
@@ -1127,6 +1128,10 @@ int lsgLoadGame(int mode)
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
     renderPresent();
+    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
+        colorPaletteLoad("color.pal");
+        paletteFadeTo(_cmap);
+    }
     _dbleclkcntr = 24;
 
     int rc = -1;
@@ -1471,6 +1476,10 @@ int lsgLoadGame(int mode)
 
         renderPresent();
         sharedFpsLimiter.throttle();
+    }
+
+    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0) {
+        paletteFadeTo(gPaletteBlack);
     }
 
     lsgWindowFree(mode == LOAD_SAVE_MODE_FROM_MAIN_MENU
