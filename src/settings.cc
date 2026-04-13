@@ -163,7 +163,7 @@ void initSettingsRegistry(bool isMapper)
             { GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori },
             { GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, clamp(0, 2) },
             { GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges },
-            { "ui_anim_speed", settings.ui.ui_anim_speed, clamp(0.1, 100.0) },
+            { "ui_anim_speed", settings.ui.anim_speed, clamp(0.1, 100.0) },
         });
 
     addSection("preferences",
@@ -270,7 +270,7 @@ bool settingsSave()
 bool settingsExit(bool shouldSave)
 {
     if (shouldSave) {
-        settingsSave();
+        settingsWriteToConfig();
     }
 
     return gameConfigExit(shouldSave);

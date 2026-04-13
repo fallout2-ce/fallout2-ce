@@ -65,6 +65,9 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         return false;
     }
 
+    // Writes default values to config.
+    settingsWriteToConfig();
+
     // CE: Detect alternative default music directory.
     char alternativeMusicPath[COMPAT_MAX_PATH];
     strcpy(alternativeMusicPath, R"(data\sound\music\*.acm)");
@@ -81,8 +84,6 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         }
         fileNameListFree(&acms, 0);
     }
-
-    settingsWriteToConfig();
 
     // SFALL: Custom config file name.
     char* customConfigFileName = nullptr;

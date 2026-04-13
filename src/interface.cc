@@ -870,7 +870,7 @@ void interfaceBarRefresh()
 
 static int counterAnimationBaseDelayMs()
 {
-    return std::max(static_cast<int>(250.0 / settings.ui.ui_anim_speed), 25);
+    return std::max(static_cast<int>(250.0 / settings.ui.anim_speed), 25);
 }
 
 // Render hit points.
@@ -1379,7 +1379,7 @@ int _intface_update_ammo_lights()
 
 static int interfaceBarBaseDelayMs()
 {
-    return std::max(static_cast<int>(1000.0 / settings.ui.ui_anim_speed), 100);
+    return std::max(static_cast<int>(1000.0 / settings.ui.anim_speed), 100);
 }
 
 // 0x45F96C

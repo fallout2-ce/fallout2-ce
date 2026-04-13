@@ -53,7 +53,7 @@ struct UISettings {
 
     // TODO: add to setting window
     // Speed of various UI transition animations. 1.0 represents vanilla speeds.
-    double ui_anim_speed = 1.0;
+    double anim_speed = 1.0;
 };
 
 // These are settings handled by preferences UI and saved in save games.
@@ -138,7 +138,6 @@ extern Settings settings;
 bool settingsInit(bool isMapper, int argc, char** argv);
 bool settingsSave();
 void settingsWriteToConfig();
-void initSettingsRegistry();
 bool settingsExit(bool shouldSave);
 
 } // namespace fallout

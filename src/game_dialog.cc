@@ -2995,7 +2995,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowF
     unsigned char* dest = windowBuf;
     Rect rect;
 
-    const int delayMs = std::max(static_cast<int>(33.0 / settings.ui.ui_anim_speed), 1);
+    const int delayMs = std::max(static_cast<int>(33.0 / settings.ui.anim_speed), 1);
 
     if (scrollUp) {
         rect.left = 0;
