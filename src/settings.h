@@ -82,10 +82,6 @@ struct SoundSettings {
     bool initialize = true;
     bool debug = false;
     bool debug_sfxc = true;
-    int device = -1;
-    int port = -1;
-    int irq = -1;
-    int dma = -1;
     bool sounds = true;
     bool music = true;
     bool speech = true;

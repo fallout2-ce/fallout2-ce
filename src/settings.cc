@@ -1,4 +1,6 @@
 #include "settings.h"
+
+#include "debug.h"
 #include "game_config.h"
 #include "platform_compat.h"
 
@@ -70,7 +72,7 @@ static void settingsWrite(const char* section, const char* key, double value)
     configSetDouble(&gGameConfig, section, key, value);
 }
 
-static void normalizePath(std::string& value)
+static void normalizePath(std::string& value, const char* section, const char* key)
 {
     char* path = value.data();
     compat_windows_path_to_native(path);
@@ -78,9 +80,15 @@ static void normalizePath(std::string& value)
 }
 
 template <typename T>
-static std::function<void(T&)> clamp(T min, T max)
+static std::function<void(T&, const char*, const char*)> clamp(T min, T max)
 {
-    return [min, max](T& value) { value = std::clamp(value, min, max); };
+    return [min, max](T& value, const char* section, const char* key) {
+        const T origValue = value;
+        value = std::clamp(value, min, max);
+        if (value != origValue) {
+            debugPrint("config value %s.%s was clamped.\n", section, key);
+        }
+    };
 }
 
 template <typename T>
@@ -97,7 +105,7 @@ void registerSetting(const char* section, const char* key, T& variable, P postPr
     settingsRegistry.push_back(
         { [&, section, key, postProcess]() {
              settingsRead(section, key, variable);
-             postProcess(variable);
+             postProcess(variable, section, key);
          },
             [&, section, key]() { settingsWrite(section, key, variable); } });
 }
@@ -194,10 +202,6 @@ void initSettingsRegistry(bool isMapper)
             { "initialize", settings.sound.initialize },
             { "debug", settings.sound.debug },
             { "debug_sfxc", settings.sound.debug_sfxc },
-            { "device", settings.sound.device },
-            { "port", settings.sound.port },
-            { "irq", settings.sound.irq },
-            { "dma", settings.sound.dma },
             { "sounds", settings.sound.sounds },
             { "music", settings.sound.music },
             { "speech", settings.sound.speech },
@@ -210,9 +214,9 @@ void initSettingsRegistry(bool isMapper)
             { GAME_CONFIG_MUSIC_PATH2_KEY, settings.sound.music_path2, normalizePath },
         });
 
-    addSection("debug",
+    addSection(GAME_CONFIG_DEBUG_KEY,
         {
-            { "mode", settings.debug.mode },
+            { GAME_CONFIG_MODE_KEY, settings.debug.mode },
             { "show_tile_num", settings.debug.show_tile_num },
             { "show_script_messages", settings.debug.show_script_messages },
             { "show_load_info", settings.debug.show_load_info },

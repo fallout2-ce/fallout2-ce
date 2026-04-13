@@ -5,6 +5,7 @@
 
 namespace fallout {
 
+#define GAME_CONFIG_DEBUG_KEY "debug"
 #define GAME_CONFIG_SYSTEM_KEY "system"
 #define GAME_CONFIG_SCREEN_KEY "screen"
 #define GAME_CONFIG_UI_KEY "ui"
@@ -17,6 +18,7 @@ namespace fallout {
 #define GAME_CONFIG_MUSIC_PATH1_KEY "music_path1"
 #define GAME_CONFIG_MUSIC_PATH2_KEY "music_path2"
 
+#define GAME_CONFIG_MODE_KEY "mode"
 #define GAME_CONFIG_RESOLUTION_X_KEY "resolution_x"
 #define GAME_CONFIG_RESOLUTION_Y_KEY "resolution_y"
 #define GAME_CONFIG_WINDOWED_KEY "windowed"
