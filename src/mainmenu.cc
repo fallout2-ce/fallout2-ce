@@ -297,6 +297,11 @@ void mainMenuWindowUnhide(bool animate)
         return;
     }
 
+    if (animate) {
+        paletteSetEntries(gPaletteBlack);
+        windowRefreshAll(&_scr_size);
+    }
+
     windowShow(gMainMenuWindow);
     touch_set_touchscreen_mode(true);
 

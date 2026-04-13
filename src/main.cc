@@ -96,7 +96,7 @@ int falloutMain(int argc, char** argv)
         while (!done) {
             keyboardReset();
             _gsound_background_play_level_music("07desert", GSOUND_LIMIT_BEFORE);
-            mainMenuWindowUnhide(1);
+            mainMenuWindowUnhide(true);
 
             mouseShowCursor();
             int mainMenuRc = mainMenuWindowHandleEvents();
