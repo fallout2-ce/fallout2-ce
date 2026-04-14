@@ -77,7 +77,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | MouseClick | `HOOK_MOUSECLICK` | 🚫 | - |
 | UseSkill | `HOOK_USESKILL` | 🚫 | - |
 | Steal | `HOOK_STEAL` | 🚫 | Et tu |
-| WithinPerception | `HOOK_WITHINPERCEPTION` | 🚫 | Et tu |
+| WithinPerception | `HOOK_WITHINPERCEPTION` | ✅ | - |
 | InventoryMove | `HOOK_INVENTORYMOVE` | ✅ | - |
 | InvenWield | `HOOK_INVENWIELD` | 🚫 | - |
 | AdjustFID | `HOOK_ADJUSTFID` | 🚫 | - |

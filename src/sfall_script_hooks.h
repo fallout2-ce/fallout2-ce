@@ -166,6 +166,19 @@ typedef enum {
     HOOK_INVENTORYMOVE_CHARACTER_PORTRAIT = 8,
 } HookInventoryMoveType;
 
+typedef enum {
+    PERCEPTION_OTHER = 0,
+    PERCEPTION_SEE = 1,
+    PERCEPTION_HEAR = 2,
+    PERCEPTION_AI_TARGET = 3,
+} PerceptionType;
+
+typedef enum {
+    PERCEPTION_OUT_OF_RANGE = 0,
+    PERCEPTION_IN_RANGE = 1,
+    PERCEPTION_FORCE = 2,
+} PerceptionResult;
+
 constexpr size_t HOOKS_MAX_ARGUMENTS = 16;
 constexpr size_t HOOKS_MAX_RETURN_VALUES = 8;
 
@@ -248,6 +261,7 @@ bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, O
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
 bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);
 void scriptHooks_CombatTurnCombatEnd(Object* critter);
+PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, PerceptionType type, PerceptionResult result);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
 int scriptHooks_UseItem(Object* user, Object* objUsed);

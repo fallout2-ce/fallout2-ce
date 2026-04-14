@@ -201,6 +201,35 @@ void scriptHooks_CombatTurnCombatEnd(Object* critter)
 }
 
 /*
+Runs when a critter checks if another object is within perception range.
+
+Critter arg0 - The watcher
+Obj     arg1 - The target object
+int     arg2 - The original engine result
+int     arg3 - Call type:
+               1 - obj_can_see_obj
+               2 - obj_can_hear_obj
+               3 - AI target selection
+               0 - other engine checks
+
+int     ret0 - Override the engine result:
+               0 - not within perception
+               1 - within perception
+               2 - force detection for obj_can_see_obj
+*/
+PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, PerceptionType type, PerceptionResult result)
+{
+    ScriptHookCall hook(HOOK_WITHINPERCEPTION, 1, { watcher, target, result, type });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return result;
+    }
+
+    return static_cast<PerceptionResult>(hook.getReturnValueAt(0).asInt());
+}
+
+/*
 Runs before moving items between inventory slots in dude interface. You can override the action.
 
 int     arg0 - Target slot:
