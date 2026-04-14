@@ -5,6 +5,7 @@
 #include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
+#include "sfall_script_hooks.h"
 
 namespace fallout {
 
@@ -64,7 +65,10 @@ int critterSetAiPacket(Object* object, int aiPacket);
 int _combatai_msg(Object* critter, Attack* attack, int type, int delay);
 Object* _combat_ai_random_target(Attack* attack);
 void _combatai_check_retaliation(Object* a1, Object* a2);
-bool isWithinPerception(Object* a1, Object* a2);
+// Use this when the caller needs hook-specific context or must distinguish
+// PERCEPTION_FORCE from the normal in-range/out-of-range result.
+PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, PerceptionType type = PERCEPTION_OTHER);
+bool isWithinPerception(Object* watcher, Object* target);
 void aiMessageListReloadIfNeeded();
 void _combatai_notify_onlookers(Object* a1);
 void _combatai_notify_friends(Object* a1);

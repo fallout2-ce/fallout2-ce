@@ -29,6 +29,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
+#include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
 #include "svga.h"
@@ -1692,7 +1693,7 @@ static Object* _ai_danger_source(Object* a1)
 
     for (int index = 0; index < 4; index++) {
         Object* candidate = targets[index];
-        if (candidate != nullptr && isWithinPerception(a1, candidate)) {
+        if (candidate != nullptr && isWithinPerceptionDetailed(a1, candidate, PERCEPTION_AI_TARGET) != PERCEPTION_OUT_OF_RANGE) {
             if (pathfinderFindPath(a1, a1->tile, candidate->tile, nullptr, 0, _obj_blocking_at) != 0
                 || _combat_check_bad_shot(a1, candidate, HIT_MODE_RIGHT_WEAPON_PRIMARY, false) == COMBAT_BAD_SHOT_OK) {
                 return candidate;
@@ -3510,10 +3511,10 @@ void _combatai_check_retaliation(Object* a1, Object* a2)
 }
 
 // 0x42BA04
-bool isWithinPerception(Object* critter, Object* target)
+PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, PerceptionType type)
 {
     if (target == nullptr) {
-        return false;
+        return PERCEPTION_OUT_OF_RANGE;
     }
 
     int distance = objectGetDistanceBetween(target, critter);
@@ -3537,7 +3538,7 @@ bool isWithinPerception(Object* critter, Object* target)
         }
 
         if (distance <= maxDistance) {
-            return true;
+            return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
         }
     }
 
@@ -3560,10 +3561,15 @@ bool isWithinPerception(Object* critter, Object* target)
     }
 
     if (distance <= maxDistance) {
-        return true;
+        return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
     }
 
-    return false;
+    return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_OUT_OF_RANGE);
+}
+
+bool isWithinPerception(Object* watcher, Object* target)
+{
+    return isWithinPerceptionDetailed(watcher, target) != PERCEPTION_OUT_OF_RANGE;
 }
 
 // Load combatai.msg and apply language filter.
