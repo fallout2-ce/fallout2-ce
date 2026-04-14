@@ -1093,6 +1093,10 @@ int lsgLoadGame(int mode)
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         windowRefresh(gLoadSaveWindow);
         renderPresent();
+        if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
+            colorPaletteLoad("color.pal");
+            paletteFadeTo(_cmap);
+        }
         soundPlayFile("iisxxxx1");
         strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 106));
         strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
