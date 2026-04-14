@@ -329,6 +329,8 @@ bool configReadEx(Config* config, const char* filePath, int flags)
 
     if (flags & CONFIG_IS_DB) {
         File* stream = fileOpen(filePath, "rb");
+
+        // CE: Return `false` if file does not exists in database.
         if (stream == nullptr) {
             return false;
         }
@@ -339,6 +341,8 @@ bool configReadEx(Config* config, const char* filePath, int flags)
         fileClose(stream);
     } else {
         FILE* stream = compat_fopen(filePath, "rt");
+
+        // CE: Return `false` if file does not exists on the file system.
         if (stream == nullptr) {
             return false;
         }
@@ -579,6 +583,17 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
 
 // Parses a line from .INI file into config.
 //
+// A line either contains a "[section]" section key or "key=value" pair. In the
+// first case section key is not added to config immediately, instead it is
+// stored in [gConfigLastSectionKey] for later usage. This prevents empty
+// sections in the config.
+//
+// In case of key-value pair it pretty straight forward - it adds key-value
+// pair into previously read section key stored in [gConfigLastSectionKey].
+//
+// Returns `true` when a section was parsed or key-value pair was parsed and
+// added to the config, or `false` otherwise.
+//
 // 0x42C4BC
 static bool configParseLine(Config* config, char* string)
 {
@@ -593,6 +608,17 @@ static bool configParseLine(Config* config, char* string)
     if (pch != nullptr) {
         *pch = '\0';
     }
+
+    // CE: Original implementation treats any line with brackets as section key.
+    // The problem can be seen when loading Olympus settings (ddraw.ini), which
+    // contains the following line:
+    //
+    //  ```ini
+    //  VersionString=Olympus 2207 [Complete].
+    //  ```
+    //
+    // It thinks that [Complete] is a start of new section, and puts remaining
+    // keys there.
 
     // Skip leading whitespace.
     while (isspace(static_cast<unsigned char>(*string))) {
@@ -621,7 +647,10 @@ static bool configParseLine(Config* config, char* string)
     return configSetString(config, gConfigLastSectionKey, key, value);
 }
 
-// Splits "key=value" pair.
+// Splits "key=value" pair from [string] and copy appropriate parts into [key]
+// and [value] respectively.
+//
+// Both key and value are trimmed.
 //
 // 0x42C594
 static bool configParseKeyValue(char* string, char* key, char* value)
@@ -651,6 +680,9 @@ static bool configParseKeyValue(char* string, char* key, char* value)
 
 // Ensures the config has a section with specified key.
 //
+// Return `true` if section exists or it was successfully added, or `false`
+// otherwise.
+//
 // 0x42C638
 static bool configEnsureSectionExists(Config* config, const char* sectionKey)
 {
@@ -659,6 +691,7 @@ static bool configEnsureSectionExists(Config* config, const char* sectionKey)
     }
 
     if (dictionaryGetIndexByKey(config, sectionKey) != -1) {
+        // Section already exists, no need to do anything.
         return true;
     }
 
@@ -674,7 +707,7 @@ static bool configEnsureSectionExists(Config* config, const char* sectionKey)
     return true;
 }
 
-// Removes leading and trailing whitespace.
+// Removes leading and trailing whitespace from the specified string.
 //
 // 0x42C698
 static bool configTrimString(char* string)
@@ -688,20 +721,26 @@ static bool configTrimString(char* string)
         return true;
     }
 
+    // Starting from the end of the string, loop while it's a whitespace and
+    // decrement string length.
     char* pch = string + length - 1;
     while (length != 0 && isspace(static_cast<unsigned char>(*pch))) {
         length--;
         pch--;
     }
 
+    // pch now points to the last non-whitespace character.
     pch[1] = '\0';
 
+    // Starting from the beginning of the string loop while it's a whitespace
+    // and decrement string length.
     pch = string;
     while (isspace(static_cast<unsigned char>(*pch))) {
         pch++;
         length--;
     }
 
+    // pch now points for to the first non-whitespace character.
     memmove(string, pch, length + 1);
 
     return true;
