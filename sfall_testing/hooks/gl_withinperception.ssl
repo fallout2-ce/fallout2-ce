@@ -17,6 +17,7 @@ procedure withinperception_type_name(variable hook_type) begin
     if (hook_type == 0) then return "engine";
     if (hook_type == 1) then return "see";
     if (hook_type == 2) then return "hear";
+    if (hook_type == 3) then return "ai_target";
     return "unknown";
 end
 
@@ -66,7 +67,7 @@ procedure withinperception_handler begin
     target_name := obj_name_safe(target);
 
     if (watcher == dude_obj) then begin
-        display_msg(string_format("withinperception %s %s -> %s [res=%s]",
+        display_msg(string_format("withinperception %s %s -> %s [res=%d]",
             withinperception_type_name(hook_type),
             watcher_name,
             target_name, original_result));
