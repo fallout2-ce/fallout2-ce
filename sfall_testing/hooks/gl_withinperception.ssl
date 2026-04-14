@@ -1,0 +1,103 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+
+variable withinperception_override := -1;
+
+procedure withinperception_override_name(variable value) begin
+    if (value == -1) then return "engine";
+    if (value == 0) then return "block";
+    if (value == 1) then return "allow";
+    if (value == 2) then return "force_detect";
+    return "unknown";
+end
+
+procedure withinperception_type_name(variable hook_type) begin
+    if (hook_type == 0) then return "engine";
+    if (hook_type == 1) then return "see";
+    if (hook_type == 2) then return "hear";
+    return "unknown";
+end
+
+procedure cycle_override begin
+    if (withinperception_override == -1) then withinperception_override := 0;
+    else if (withinperception_override == 0) then withinperception_override := 1;
+    else if (withinperception_override == 1) then withinperception_override := 2;
+    else withinperception_override := -1;
+
+    display_msg(string_format1("withinperception override=%s", withinperception_override_name(withinperception_override)));
+end
+
+procedure print_target_checks begin
+    variable
+        target := obj_under_cursor(true, false),
+        canSee,
+        canHear,
+        target_name := "<null>";
+
+    if (target) then target_name := obj_name(target);
+
+    display_msg(string_format2("withinperception target=%s pid=%d", target_name, target and obj_pid(target)));
+
+    if (target == 0) then begin
+        display_msg("withinperception no target under cursor");
+        return;
+    end
+
+    canSee := obj_can_see_obj(dude_obj, target);
+    canHear := obj_can_hear_obj(dude_obj, target);
+
+    display_msg(string_format2("withinperception see=%d hear=%d", canSee, canHear));
+end
+
+procedure withinperception_handler begin
+    variable
+        args := get_sfall_args,
+        watcher := args[0],
+        target := args[1],
+        original_result := args[2],
+        hook_type := args[3],
+        watcher_name := "<null>",
+        target_name := "<null>",
+        override_result := withinperception_override;
+
+    if (watcher) then watcher_name := obj_name(watcher);
+    if (target) then target_name := obj_name(target);
+
+    if (watcher == dude_obj) then begin
+        display_msg(string_format("withinperception %s %s -> %s [res=%s]",
+            withinperception_type_name(hook_type),
+            watcher_name,
+            target_name, original_result));
+    end
+
+    if (override_result == -1) then return;
+
+    if (hook_type != 1 and override_result == 2) then override_result := 1;
+
+    set_sfall_return(override_result);
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_J) then begin
+        call print_target_checks;
+    end else if (key == DIK_K) then begin
+        call cycle_override;
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("withinperception manual test ready: J checks target under cursor, K cycles override");
+    display_msg("withinperception override order: engine -> block -> allow -> force_detect");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_WITHINPERCEPTION, withinperception_handler);
+end
