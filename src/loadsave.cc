@@ -36,6 +36,7 @@
 #include "message.h"
 #include "mouse.h"
 #include "object.h"
+#include "palette.h"
 #include "party_member.h"
 #include "perk.h"
 #include "pipboy.h"
@@ -1092,6 +1093,10 @@ int lsgLoadGame(int mode)
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         windowRefresh(gLoadSaveWindow);
         renderPresent();
+        if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
+            colorPaletteLoad("color.pal");
+            paletteFadeTo(_cmap);
+        }
         soundPlayFile("iisxxxx1");
         strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 106));
         strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
@@ -1127,6 +1132,10 @@ int lsgLoadGame(int mode)
     _DrawInfoBox(_slot_cursor);
     windowRefresh(gLoadSaveWindow);
     renderPresent();
+    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
+        colorPaletteLoad("color.pal");
+        paletteFadeTo(_cmap);
+    }
     _dbleclkcntr = 24;
 
     int rc = -1;
@@ -1471,6 +1480,10 @@ int lsgLoadGame(int mode)
 
         renderPresent();
         sharedFpsLimiter.throttle();
+    }
+
+    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0) {
+        paletteFadeTo(gPaletteBlack);
     }
 
     lsgWindowFree(mode == LOAD_SAVE_MODE_FROM_MAIN_MENU

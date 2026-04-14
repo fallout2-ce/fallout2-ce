@@ -89,6 +89,10 @@ int falloutMain(int argc, char** argv)
         gameMoviePlay(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
         gameMoviePlay(MOVIE_INTRO, 0);
         gameMoviePlay(MOVIE_CREDITS, 0);
+    } else {
+        // If the splash is shown but opening movies are skipped, fade it out
+        // before the main menu starts its normal fade-in.
+        paletteFadeTo(gPaletteBlack);
     }
 
     if (mainMenuWindowInit() == 0) {
@@ -96,7 +100,7 @@ int falloutMain(int argc, char** argv)
         while (!done) {
             keyboardReset();
             _gsound_background_play_level_music("07desert", GSOUND_LIMIT_BEFORE);
-            mainMenuWindowUnhide(1);
+            mainMenuWindowUnhide(true);
 
             mouseShowCursor();
             int mainMenuRc = mainMenuWindowHandleEvents();
@@ -164,8 +168,6 @@ int falloutMain(int argc, char** argv)
                     // NOTE: Uninline.
                     main_loadgame_new();
 
-                    colorPaletteLoad("color.pal");
-                    paletteFadeTo(_cmap);
                     int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
                     if (loadGameRc == -1) {
                         debugPrint("\n ** Error running LoadGame()! **\n");
@@ -173,8 +175,8 @@ int falloutMain(int argc, char** argv)
                         windowDestroy(win);
                         win = -1;
                         mainLoop();
+                        paletteFadeTo(gPaletteWhite);
                     }
-                    paletteFadeTo(gPaletteWhite);
                     if (win != -1) {
                         windowDestroy(win);
                     }
