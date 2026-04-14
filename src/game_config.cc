@@ -123,7 +123,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     auto configChecker = ConfigChecker(gGameConfig, gGameConfigFilePath);
     // Read contents of `fallout2.cfg` into config. The values from the file
     // will override the defaults above.
-    configRead(&gGameConfig, gGameConfigFilePath, false);
+    configReadEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER);
 
     // Init debug mode ASAP to catch early debug messages.
     char* debugMode;
@@ -134,7 +134,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     if (!isMapper && gameConfigMigrateFromF2Res(gGameConfigFilePath, &gGameConfig)) {
         debugPrint("Migrated settings from f2_res.ini.\n");
-        configWrite(&gGameConfig, gGameConfigFilePath, false);
+        configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER);
     }
     configChecker.check(gGameConfig);
 
@@ -164,7 +164,7 @@ bool gameConfigSave()
         return false;
     }
 
-    if (!configWrite(&gGameConfig, gGameConfigFilePath, false)) {
+    if (!configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER)) {
         return false;
     }
 
@@ -187,7 +187,7 @@ bool gameConfigExit(bool shouldSave)
     bool result = true;
 
     if (shouldSave) {
-        if (!configWrite(&gGameConfig, gGameConfigFilePath, false)) {
+        if (!configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER)) {
             result = false;
         }
     }
