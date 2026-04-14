@@ -226,7 +226,15 @@ PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, P
         return result;
     }
 
-    return static_cast<PerceptionResult>(hook.getReturnValueAt(0).asInt());
+    int overrideResult = hook.getReturnValueAt(0).asInt();
+    switch (overrideResult) {
+    case PERCEPTION_OUT_OF_RANGE:
+    case PERCEPTION_IN_RANGE:
+    case PERCEPTION_FORCE:
+        return static_cast<PerceptionResult>(overrideResult);
+    default:
+        return result;
+    }
 }
 
 /*

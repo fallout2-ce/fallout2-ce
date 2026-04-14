@@ -1,6 +1,7 @@
 #include "sfall.h"
 #include "dik.h"
 #include "lib.arrays.h"
+#include "lib.obj.h"
 
 variable withinperception_override := -1;
 
@@ -33,9 +34,9 @@ procedure print_target_checks begin
         target := obj_under_cursor(true, false),
         canSee,
         canHear,
-        target_name := "<null>";
+        target_name := "(null)";
 
-    if (target) then target_name := obj_name(target);
+    target_name := obj_name_safe(target);
 
     display_msg(string_format2("withinperception target=%s pid=%d", target_name, target and obj_pid(target)));
 
@@ -57,12 +58,12 @@ procedure withinperception_handler begin
         target := args[1],
         original_result := args[2],
         hook_type := args[3],
-        watcher_name := "<null>",
-        target_name := "<null>",
+        watcher_name := "(null)",
+        target_name := "(null)",
         override_result := withinperception_override;
 
-    if (watcher) then watcher_name := obj_name(watcher);
-    if (target) then target_name := obj_name(target);
+    watcher_name := obj_name_safe(watcher);
+    target_name := obj_name_safe(target);
 
     if (watcher == dude_obj) then begin
         display_msg(string_format("withinperception %s %s -> %s [res=%s]",

@@ -1693,7 +1693,7 @@ static Object* _ai_danger_source(Object* a1)
 
     for (int index = 0; index < 4; index++) {
         Object* candidate = targets[index];
-        if (candidate != nullptr && isWithinPerception(a1, candidate, PERCEPTION_AI_TARGET) != PERCEPTION_OUT_OF_RANGE) {
+        if (candidate != nullptr && isWithinPerceptionDetailed(a1, candidate, PERCEPTION_AI_TARGET) != PERCEPTION_OUT_OF_RANGE) {
             if (pathfinderFindPath(a1, a1->tile, candidate->tile, nullptr, 0, _obj_blocking_at) != 0
                 || _combat_check_bad_shot(a1, candidate, HIT_MODE_RIGHT_WEAPON_PRIMARY, false) == COMBAT_BAD_SHOT_OK) {
                 return candidate;
@@ -3240,7 +3240,7 @@ bool _combatai_want_to_stop(Object* a1)
     }
 
     Object* enemy = _ai_danger_source(a1);
-    return enemy == nullptr || isWithinPerception(a1, enemy) == PERCEPTION_OUT_OF_RANGE;
+    return enemy == nullptr || !isWithinPerception(a1, enemy);
 }
 
 // 0x42B504
@@ -3511,7 +3511,7 @@ void _combatai_check_retaliation(Object* a1, Object* a2)
 }
 
 // 0x42BA04
-PerceptionResult isWithinPerception(Object* critter, Object* target, PerceptionType hookType)
+PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, PerceptionType type)
 {
     if (target == nullptr) {
         return PERCEPTION_OUT_OF_RANGE;
@@ -3538,7 +3538,7 @@ PerceptionResult isWithinPerception(Object* critter, Object* target, PerceptionT
         }
 
         if (distance <= maxDistance) {
-            return scriptHooks_WithinPerception(critter, target, hookType, PERCEPTION_IN_RANGE);
+            return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
         }
     }
 
@@ -3561,10 +3561,15 @@ PerceptionResult isWithinPerception(Object* critter, Object* target, PerceptionT
     }
 
     if (distance <= maxDistance) {
-        return scriptHooks_WithinPerception(critter, target, hookType, PERCEPTION_IN_RANGE);
+        return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
     }
 
-    return scriptHooks_WithinPerception(critter, target, hookType, PERCEPTION_OUT_OF_RANGE);
+    return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_OUT_OF_RANGE);
+}
+
+bool isWithinPerception(Object* watcher, Object* target)
+{
+    return isWithinPerceptionDetailed(watcher, target) != PERCEPTION_OUT_OF_RANGE;
 }
 
 // Load combatai.msg and apply language filter.
@@ -3630,10 +3635,10 @@ void _combatai_notify_onlookers(Object* a1)
     for (int index = 0; index < _curr_crit_num; index++) {
         Object* obj = _curr_crit_list[index];
         if ((obj->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == 0) {
-            if (isWithinPerception(obj, a1) != PERCEPTION_OUT_OF_RANGE) {
+            if (isWithinPerception(obj, a1)) {
                 obj->data.critter.combat.maneuver |= CRITTER_MANEUVER_ENGAGING;
                 if ((a1->data.critter.combat.results & DAM_DEAD) != 0) {
-                    if (isWithinPerception(obj, a1->data.critter.combat.whoHitMe) == PERCEPTION_OUT_OF_RANGE) {
+                    if (!isWithinPerception(obj, a1->data.critter.combat.whoHitMe)) {
                         debugPrint("\nSomebody Died and I don't know why!  Run!!!");
                         aiInfoSetFriendlyDead(obj, a1);
                     }
@@ -3651,7 +3656,7 @@ void _combatai_notify_friends(Object* a1)
     for (int index = 0; index < _curr_crit_num; index++) {
         Object* obj = _curr_crit_list[index];
         if ((obj->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == 0 && team == obj->data.critter.combat.team) {
-            if (isWithinPerception(obj, a1) != PERCEPTION_OUT_OF_RANGE) {
+            if (isWithinPerception(obj, a1)) {
                 obj->data.critter.combat.maneuver |= CRITTER_MANEUVER_ENGAGING;
             }
         }

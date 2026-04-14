@@ -1792,7 +1792,7 @@ static void opObjectCanSeeObject(Program* program)
         // CE: These checks are on par with |opObjectCanHearObject|.
         if (object2->elevation == object1->elevation) {
             if (object2->tile != -1 && object1->tile != -1) {
-                PerceptionResult perceptionResult = isWithinPerception(object1, object2, PERCEPTION_SEE);
+                PerceptionResult perceptionResult = isWithinPerceptionDetailed(object1, object2, PERCEPTION_SEE);
                 if (perceptionResult == PERCEPTION_FORCE) {
                     canSee = true;
                 } else if (perceptionResult == PERCEPTION_IN_RANGE) {
@@ -2633,7 +2633,7 @@ static void opObjectCanHearObject(Program* program)
     if (object2 != nullptr && object1 != nullptr) {
         if (object2->elevation == object1->elevation) {
             if (object2->tile != -1 && object1->tile != -1) {
-                if (isWithinPerception(object1, object2, PERCEPTION_HEAR) != PERCEPTION_OUT_OF_RANGE) {
+                if (isWithinPerceptionDetailed(object1, object2, PERCEPTION_HEAR) != PERCEPTION_OUT_OF_RANGE) {
                     canHear = true;
                 }
             }
