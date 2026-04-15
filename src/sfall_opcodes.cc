@@ -679,6 +679,12 @@ static void op_get_screen_height(Program* program)
     programStackPushInteger(program, screenGetHeight());
 }
 
+// get_light_level
+static void op_get_light_level(Program* program)
+{
+    programStackPushInteger(program, lightGetAmbientIntensity());
+}
+
 // note: might need to be updated when Hero Appearance is implemented
 static void op_refresh_pc_art(Program* program)
 {
@@ -1907,6 +1913,7 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8224, op_create_message_window);
 
     // 0x8226 - int get_light_level()
+    interpreterRegisterOpcode(0x8226, op_get_light_level);
 
     // 0x8227 - void refresh_pc_art()
     interpreterRegisterOpcode(0x8227, op_refresh_pc_art);
