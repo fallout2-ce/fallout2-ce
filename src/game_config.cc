@@ -134,7 +134,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     if (!isMapper && gameConfigMigrateFromF2Res(gGameConfigFilePath, &gGameConfig)) {
         debugPrint("Migrated settings from f2_res.ini.\n");
-        configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER);
+        configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL);
     }
     configChecker.check(gGameConfig);
 
@@ -164,7 +164,7 @@ bool gameConfigSave()
         return false;
     }
 
-    if (!configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER)) {
+    if (!configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL)) {
         return false;
     }
 
@@ -187,7 +187,7 @@ bool gameConfigExit(bool shouldSave)
     bool result = true;
 
     if (shouldSave) {
-        if (!configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER)) {
+        if (!configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL)) {
             result = false;
         }
     }

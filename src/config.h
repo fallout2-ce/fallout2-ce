@@ -10,6 +10,8 @@ enum ConfigFlags {
     CONFIG_IS_DB = (1 << 0),
     CONFIG_RETAIN_COMMENTS = (1 << 1),
     CONFIG_RETAIN_ORDER = (1 << 2),
+    CONFIG_RETAIN_UNKNOWN = (1 << 3),
+    CONFIG_RETAIN_ALL = CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER | CONFIG_RETAIN_UNKNOWN,
 };
 
 // A representation of .INI file.

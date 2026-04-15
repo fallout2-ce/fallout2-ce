@@ -365,7 +365,7 @@ bool configWriteEx(Config* config, const char* filePath, int flags)
         return configWriteDb(config, filePath);
     }
 
-    if (flags & (CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER)) {
+    if (flags & (CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER | CONFIG_RETAIN_UNKNOWN)) {
         return configWriteSideBySide(config, filePath, flags);
     }
 
@@ -427,6 +427,8 @@ static void configWriteSection(FILE* stream, const char* sectionName, ConfigSect
 
 static bool configWriteSideBySide(Config* config, const char* filePath, int flags)
 {
+    bool retainUnknown = (flags & CONFIG_RETAIN_UNKNOWN) != 0;
+
     FILE* original = compat_fopen(filePath, "rt");
     if (original == nullptr) {
         if (errno == ENOENT) {
@@ -439,7 +441,7 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
 
     char tempPath[COMPAT_MAX_PATH];
     int tempPathLength = snprintf(tempPath, sizeof(tempPath), "%s.tmp", filePath);
-    if (tempPathLength < 0 || tempPathLength >= sizeof(tempPath)) {
+    if (tempPathLength < 0 || tempPathLength >= (int)sizeof(tempPath)) {
         fclose(original);
         return false;
     }
@@ -455,6 +457,8 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
 
     char currentSectionName[CONFIG_FILE_MAX_LINE_LENGTH] = "";
     ConfigSection* currentSection = nullptr;
+    // Treat pre-section preamble as "known" so its comments are preserved.
+    bool currentSectionKnown = true;
 
     char line[CONFIG_FILE_MAX_LINE_LENGTH];
     while (compat_fgets(line, sizeof(line), original) != nullptr) {
@@ -466,8 +470,11 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
             trimmed++;
         }
 
-        // Buffer comments and empty lines.
+        // Buffer comments and empty lines; drop them if inside a suppressed section.
         if (*trimmed == '\0' || *trimmed == ';' || *trimmed == '#') {
+            if (!currentSectionKnown && !retainUnknown) {
+                continue;
+            }
             if ((flags & CONFIG_RETAIN_COMMENTS) || (*trimmed == '\0')) {
                 pendingLines.emplace_back(line);
             }
@@ -479,40 +486,44 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
             if (currentSection != nullptr) {
                 configWriteSection(output, nullptr, currentSection, &handledKeys);
                 handledKeys.clear();
+                currentSection = nullptr;
             }
 
-            // Flush comments/empty lines that preceded this header.
-            for (const std::string& l : pendingLines) {
-                fprintf(output, "%s", l.c_str());
-            }
-            pendingLines.clear();
+            // Parse the section name before deciding whether to write.
+            currentSectionKnown = false;
+            currentSectionName[0] = '\0';
 
             char* end = strchr(trimmed, ']');
             if (end != nullptr) {
                 *end = '\0';
                 strcpy(currentSectionName, trimmed + 1);
+                configTrimString(currentSectionName);
                 *end = ']';
 
                 int sectionIndex = dictionaryGetIndexByKey(config, currentSectionName);
                 if (sectionIndex != -1) {
                     currentSection = (ConfigSection*)config->entries[sectionIndex].value;
                     handledSections.insert(currentSectionName);
-                } else {
-                    currentSection = nullptr;
+                    currentSectionKnown = true;
                 }
             }
-            fprintf(output, "%s", line);
+
+            if (currentSectionKnown || retainUnknown) {
+                // Flush buffered comments/empty lines that preceded this header.
+                for (const std::string& l : pendingLines) {
+                    fprintf(output, "%s", l.c_str());
+                }
+                pendingLines.clear();
+                fprintf(output, "%s", line);
+            } else {
+                // Suppress unknown section entirely, discard buffered lines.
+                pendingLines.clear();
+            }
             continue;
         }
 
         char* equals = strchr(trimmed, '=');
         if (equals != nullptr) {
-            // Flush lines that were between previous key and this one.
-            for (const std::string& l : pendingLines) {
-                fprintf(output, "%s", l.c_str());
-            }
-            pendingLines.clear();
-
             *equals = '\0';
             char key[CONFIG_FILE_MAX_LINE_LENGTH];
             strcpy(key, trimmed);
@@ -525,6 +536,12 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
             }
 
             if (value != nullptr) {
+                // Flush lines that were between previous key and this one.
+                for (const std::string& l : pendingLines) {
+                    fprintf(output, "%s", l.c_str());
+                }
+                pendingLines.clear();
+
                 const char* k = key;
                 char* comment = nullptr;
 
@@ -538,12 +555,21 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
 
                 fprintf(output, "%s=%s%s%s", k, value, comment ? " " : "", comment ? comment : "\n");
                 handledKeys.insert(key);
+            } else if (retainUnknown) {
+                // Key not in config - write verbatim from original file.
+                for (const std::string& l : pendingLines) {
+                    fprintf(output, "%s", l.c_str());
+                }
+                pendingLines.clear();
+                fprintf(output, "%s", line);
             }
+            // else: drop key; keep pending lines buffered so they attach to the
+            // next surviving key rather than becoming orphaned.
             continue;
         }
 
-        // Unknown line, preserve it in buffer if we're retaining comments/structure.
-        if (flags & CONFIG_RETAIN_COMMENTS) {
+        // Unknown line structure - buffer if retaining comments/structure.
+        if ((currentSectionKnown || retainUnknown) && (flags & CONFIG_RETAIN_COMMENTS)) {
             pendingLines.emplace_back(line);
         }
     }
@@ -559,10 +585,15 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
     }
     pendingLines.clear();
 
-    // Write completely new sections.
+    // Write completely new sections, separated from existing content.
+    bool firstNewSection = true;
     for (int i = 0; i < config->entriesLength; i++) {
         DictionaryEntry* sectionEntry = &(config->entries[i]);
         if (handledSections.find(sectionEntry->key) == handledSections.end()) {
+            if (firstNewSection) {
+                fprintf(output, "\n");
+                firstNewSection = false;
+            }
             configWriteSection(output, sectionEntry->key, (ConfigSection*)sectionEntry->value, nullptr);
             fprintf(output, "\n");
         }
