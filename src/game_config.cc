@@ -123,7 +123,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     auto configChecker = ConfigChecker(gGameConfig, gGameConfigFilePath);
     // Read contents of `fallout2.cfg` into config. The values from the file
     // will override the defaults above.
-    configReadEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER);
+    configRead(&gGameConfig, gGameConfigFilePath, false);
 
     // Init debug mode ASAP to catch early debug messages.
     char* debugMode;

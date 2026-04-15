@@ -312,22 +312,13 @@ bool configSetInt(Config* config, const char* sectionKey, const char* key, int v
 // 0x42C280
 bool configRead(Config* config, const char* filePath, bool isDb)
 {
-    return configReadEx(config, filePath, isDb ? CONFIG_IS_DB : CONFIG_DEFAULT);
-}
-
-bool configReadEx(Config* config, const char* filePath, int flags)
-{
     if (config == nullptr || filePath == nullptr) {
         return false;
     }
 
-    // NOTE: RETAIN_COMMENTS and RETAIN_ORDER flags are not used during reading
-    // because comments and order are only preserved during the write phase
-    // using a side-by-side processing strategy.
-
     char string[CONFIG_FILE_MAX_LINE_LENGTH];
 
-    if (flags & CONFIG_IS_DB) {
+    if (isDb) {
         File* stream = fileOpen(filePath, "rb");
 
         // CE: Return `false` if file does not exists in database.
