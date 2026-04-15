@@ -576,8 +576,26 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
     fclose(output);
     fclose(original);
 
-    compat_remove(filePath);
-    compat_rename(tempPath, filePath);
+    std::string backupPath = std::string(filePath) + ".bak";
+
+    if (compat_remove(backupPath.c_str()) != 0 && errno != ENOENT) {
+        compat_remove(tempPath);
+        return false;
+    }
+
+    if (compat_rename(filePath, backupPath.c_str()) != 0) {
+        compat_remove(tempPath);
+        return false;
+    }
+
+    if (compat_rename(tempPath, filePath) != 0) {
+        compat_rename(backupPath.c_str(), filePath);
+        return false;
+    }
+
+    if (compat_remove(backupPath.c_str()) != 0 && errno != ENOENT) {
+        return false;
+    }
     return true;
 }
 
