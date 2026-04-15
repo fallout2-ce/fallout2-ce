@@ -447,7 +447,11 @@ static bool configWriteSideBySide(Config* config, const char* filePath, int flag
     }
 
     char tempPath[COMPAT_MAX_PATH];
-    snprintf(tempPath, sizeof(tempPath), "%s.tmp", filePath);
+    int tempPathLength = snprintf(tempPath, sizeof(tempPath), "%s.tmp", filePath);
+    if (tempPathLength < 0 || tempPathLength >= sizeof(tempPath)) {
+        fclose(original);
+        return false;
+    }
     FILE* output = compat_fopen(tempPath, "wt");
     if (output == nullptr) {
         fclose(original);
