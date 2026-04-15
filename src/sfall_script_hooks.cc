@@ -238,6 +238,32 @@ PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, P
 }
 
 /*
+Runs whenever Fallout calculates the AP cost of using an active item in hand
+(or unarmed attack). Doesn't run for moving.
+
+Critter arg0 - The critter performing the action
+int     arg1 - Attack Type (see ATKTYPE_* constants)
+int     arg2 - Is aimed attack (1 or 0)
+int     arg3 - The default AP cost
+Item    arg4 - The weapon for which the cost is calculated. If it is 0, the
+               pointer to the weapon can still be obtained by checking item
+               slot based on attack type and then calling critter_inven_obj
+
+int     ret0 - The new AP cost
+*/
+int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int actionPoints, Object* weapon)
+{
+    ScriptHookCall hook(HOOK_CALCAPCOST, 1, { critter, hitMode, aiming ? 1 : 0, actionPoints, weapon });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return actionPoints;
+    }
+
+    return hook.getReturnValueAt(0).asInt();
+}
+
+/*
 Runs before moving items between inventory slots in dude interface. You can override the action.
 
 int     arg0 - Target slot:

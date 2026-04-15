@@ -732,6 +732,9 @@ int interfaceLoad(File* stream)
 
     gInterfaceCurrentHand = interfaceCurrentHand;
 
+    // Reset cached hand state so load consistently reselects default actions
+    // from the actual equipped items instead of reusing stale pre-load state.
+    interfaceResetItemStates();
     interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
 
     if (interfaceBarEndButtonsIsVisible != gInterfaceBarEndButtonsIsVisible) {
@@ -1547,6 +1550,11 @@ static int intface_init_items()
     gInterfaceItemStates[HAND_RIGHT].item = (Object*)-1;
 
     return 0;
+}
+
+void interfaceResetItemStates()
+{
+    intface_init_items();
 }
 
 // 0x45FD88

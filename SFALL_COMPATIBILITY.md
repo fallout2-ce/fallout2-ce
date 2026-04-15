@@ -60,7 +60,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | --- | --- | --- | --- |
 | ToHit | `HOOK_TOHIT` | ✅ | - |
 | AfterHitRoll | `HOOK_AFTERHITROLL` | 🚫 | Et tu |
-| CalcAPCost | `HOOK_CALCAPCOST` | 🚫 | - |
+| CalcAPCost | `HOOK_CALCAPCOST` | ✅ | AP cost is displayed correctly on first load, unlike Sfall. |
 | DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | Use DEATHANIM2 instead |
 | DeathAnim2 | `HOOK_DEATHANIM2` | ✅ | - |
 | CombatDamage | `HOOK_COMBATDAMAGE` | ✅ | - |

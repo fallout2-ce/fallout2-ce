@@ -1,6 +1,7 @@
 #include "sfall_callbacks.h"
 
 #include "display_monitor.h"
+#include "interface.h"
 #include "sfall_config.h"
 #include "sfall_script_hooks.h"
 #include "worldmap.h"
@@ -45,6 +46,15 @@ void sfallOnAfterGameStarted()
 
     if (isDisableHorrigan) {
         gDidMeetFrankHorrigan = true;
+    }
+
+    // Refresh item art after load, which calls the CALCAPCOST hook if present to
+    // display the correct AP cost.
+    if (gInterfaceBarWindow != -1) {
+        int leftItemAction;
+        int rightItemAction;
+        interfaceGetItemActions(&leftItemAction, &rightItemAction);
+        interfaceUpdateItems(false, leftItemAction, rightItemAction);
     }
 }
 
