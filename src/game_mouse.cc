@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#if __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 #include <algorithm>
 
 #include "actions.h"
@@ -1420,11 +1424,14 @@ void gameMouseSetMode(int mode)
         break;
     }
 
-    if (mode == GAME_MOUSE_MODE_MOVE) {
-        touch_set_touchscreen_mode(true);
-    } else {
-        touch_set_touchscreen_mode(false);
-    }
+    // On iPad, keep the gameplay cursor in trackpad mode so tapping the
+    // screen doesn't teleport the cursor mid-combat. UI screens (inventory,
+    // skilldex, elevator, menus) still enable touchscreen mode explicitly.
+#if __APPLE__ && TARGET_OS_IOS
+    touch_set_touchscreen_mode(false);
+#else
+    touch_set_touchscreen_mode(mode == GAME_MOUSE_MODE_MOVE);
+#endif
 }
 
 // 0x44CB6C

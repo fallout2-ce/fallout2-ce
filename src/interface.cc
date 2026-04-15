@@ -1,5 +1,7 @@
 #include "interface.h"
 
+#include "platform/ios/quick_toolbar.h"
+
 #include <algorithm>
 #include <stdio.h>
 #include <string.h>
@@ -611,6 +613,8 @@ int interfaceInit()
     gInterfaceBarInitialized = false;
     gInterfaceBarHidden = true;
 
+    quickToolbarInit();
+
     return 0;
 }
 
@@ -634,6 +638,8 @@ void interfaceReset()
 // 0x45E440
 void interfaceFree()
 {
+    quickToolbarFree();
+
     if (gInterfaceBarWindow != -1) {
         // SFALL
         sidePanelsExit();
@@ -813,6 +819,8 @@ void interfaceBarHide()
         }
     }
 
+    quickToolbarHide();
+
     // SFALL
     sidePanelsHide();
 
@@ -832,6 +840,8 @@ void interfaceBarShow()
             gInterfaceBarHidden = false;
         }
     }
+
+    quickToolbarShow();
 
     // SFALL
     sidePanelsShow();

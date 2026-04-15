@@ -694,49 +694,11 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
         if (interfaceBarEnabled()) {
             soundPlayFile("ib1p1xx1");
 
-            int mode = -1;
-
             // NOTE: There is an `inc` for this value to build jump table which
             // is not needed.
             int rc = skilldexOpen();
 
-            // Remap Skilldex result code to action.
-            switch (rc) {
-            case SKILLDEX_RC_ERROR:
-                debugPrint("\n ** Error calling skilldex_select()! ** \n");
-                break;
-            case SKILLDEX_RC_SNEAK:
-                _action_skill_use(SKILL_SNEAK);
-                break;
-            case SKILLDEX_RC_LOCKPICK:
-                mode = GAME_MOUSE_MODE_USE_LOCKPICK;
-                break;
-            case SKILLDEX_RC_STEAL:
-                mode = GAME_MOUSE_MODE_USE_STEAL;
-                break;
-            case SKILLDEX_RC_TRAPS:
-                mode = GAME_MOUSE_MODE_USE_TRAPS;
-                break;
-            case SKILLDEX_RC_FIRST_AID:
-                mode = GAME_MOUSE_MODE_USE_FIRST_AID;
-                break;
-            case SKILLDEX_RC_DOCTOR:
-                mode = GAME_MOUSE_MODE_USE_DOCTOR;
-                break;
-            case SKILLDEX_RC_SCIENCE:
-                mode = GAME_MOUSE_MODE_USE_SCIENCE;
-                break;
-            case SKILLDEX_RC_REPAIR:
-                mode = GAME_MOUSE_MODE_USE_REPAIR;
-                break;
-            default:
-                break;
-            }
-
-            if (mode != -1) {
-                gameMouseSetCursor(MOUSE_CURSOR_USE_CROSSHAIR);
-                gameMouseSetMode(mode);
-            }
+            gameHandleSkilldexResult(rc);
         }
         break;
     case KEY_UPPERCASE_Z:
@@ -1662,6 +1624,48 @@ ScopedGameMode::ScopedGameMode(int gameMode)
 ScopedGameMode::~ScopedGameMode()
 {
     GameMode::exitGameMode(gameMode);
+}
+
+void gameHandleSkilldexResult(int rc)
+{
+    int mode = -1;
+
+    switch (rc) {
+    case SKILLDEX_RC_ERROR:
+        debugPrint("\n ** Error calling skilldex_select()! ** \n");
+        break;
+    case SKILLDEX_RC_SNEAK:
+        _action_skill_use(SKILL_SNEAK);
+        break;
+    case SKILLDEX_RC_LOCKPICK:
+        mode = GAME_MOUSE_MODE_USE_LOCKPICK;
+        break;
+    case SKILLDEX_RC_STEAL:
+        mode = GAME_MOUSE_MODE_USE_STEAL;
+        break;
+    case SKILLDEX_RC_TRAPS:
+        mode = GAME_MOUSE_MODE_USE_TRAPS;
+        break;
+    case SKILLDEX_RC_FIRST_AID:
+        mode = GAME_MOUSE_MODE_USE_FIRST_AID;
+        break;
+    case SKILLDEX_RC_DOCTOR:
+        mode = GAME_MOUSE_MODE_USE_DOCTOR;
+        break;
+    case SKILLDEX_RC_SCIENCE:
+        mode = GAME_MOUSE_MODE_USE_SCIENCE;
+        break;
+    case SKILLDEX_RC_REPAIR:
+        mode = GAME_MOUSE_MODE_USE_REPAIR;
+        break;
+    default:
+        break;
+    }
+
+    if (mode != -1) {
+        gameMouseSetCursor(MOUSE_CURSOR_USE_CROSSHAIR);
+        gameMouseSetMode(mode);
+    }
 }
 
 } // namespace fallout

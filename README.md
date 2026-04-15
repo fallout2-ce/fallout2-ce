@@ -77,6 +77,18 @@ $ mv fallout2 /Applications/Fallout2
 
 - Use Finder (macOS Catalina and later) or iTunes (Windows and macOS Mojave or earlier) to copy `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder to "Fallout 2" app ([how-to](https://support.apple.com/HT210598)). Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).
 
+**Controls on iPad:**
+
+- One-finger tap → left click; hold → left button held.
+- Two-finger tap → right click (cycles cursor mode between walk and attack).
+- One-finger drag → scroll map / windows.
+- Two-finger drag → mouse wheel.
+- **Three-finger swipe down → ESC** (opens options / main menu).
+- **Four-finger long press → F6** (quicksave). Hold four fingers on the screen for about half a second.
+- **Three-finger long press → hold Shift** (highlights interactable objects — containers, doors, items — while held).
+- Taps on the HUD (interface bar / end-turn / end-combat buttons) act as direct touches so small buttons are easy to hit without aiming.
+- A Bluetooth keyboard works for everything else (numbered dialog choices, load game, etc.).
+
 ### Browser
 
 > **NOTE**: WebAssembly build with emscripten

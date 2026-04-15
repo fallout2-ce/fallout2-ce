@@ -48,6 +48,7 @@ void gameUpdateState();
 int showQuitConfirmationDialog();
 
 int gameShowDeathDialog(const char* message);
+void gameHandleSkilldexResult(int rc);
 void* gameGetGlobalPointer(int var);
 int gameSetGlobalPointer(int var, void* value);
 
