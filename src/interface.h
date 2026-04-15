@@ -46,7 +46,6 @@ void interfaceBarShow();
 void interfaceBarEnable();
 void interfaceBarDisable();
 bool interfaceBarEnabled();
-void interfaceResetItemStates();
 void interfaceBarRefresh();
 void interfaceRenderHitPoints(bool animate);
 void interfaceRenderArmorClass(bool animate);

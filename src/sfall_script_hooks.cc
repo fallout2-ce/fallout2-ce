@@ -242,7 +242,7 @@ Runs whenever Fallout calculates the AP cost of using an active item in hand
 (or unarmed attack). Doesn't run for moving.
 
 Critter arg0 - The critter performing the action
-int     arg1 - Attack Type (see ATKTYPE_* constants)
+int     arg1 - Attack Type / hitmode (see ATKTYPE_* constants)
 int     arg2 - Is aimed attack (1 or 0)
 int     arg3 - The default AP cost
 Item    arg4 - The weapon for which the cost is calculated. If it is 0, the
