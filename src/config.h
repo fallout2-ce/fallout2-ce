@@ -7,10 +7,15 @@ namespace fallout {
 
 enum ConfigFlags {
     CONFIG_DEFAULT = 0,
+    // Config will be read from DB (VFS)
     CONFIG_IS_DB = (1 << 0),
+    // Keep existing comments when overwriting file. Also retains order.
     CONFIG_RETAIN_COMMENTS = (1 << 1),
+    // Keep existing order of keys when overwriting file.
     CONFIG_RETAIN_ORDER = (1 << 2),
+    // Keep sections and keys that are not in the saved config data when overwriting. Also retains order.
     CONFIG_RETAIN_UNKNOWN = (1 << 3),
+    // Keep existing lines as much as possible when overwriting file, only add/update values.
     CONFIG_RETAIN_ALL = CONFIG_RETAIN_COMMENTS | CONFIG_RETAIN_ORDER | CONFIG_RETAIN_UNKNOWN,
 };
 
