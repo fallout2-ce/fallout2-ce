@@ -29,6 +29,7 @@ namespace fallout {
 #define GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY "iface_bar_sides_ori"
 #define GAME_CONFIG_IGNORE_MAP_EDGES_KEY "ignore_map_edges"
 #define GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY "splash_screen_size"
+#define GAME_CONFIG_QUICK_TOOLBAR_VISIBLE_KEY "quick_toolbar_visible"
 
 #define ENGLISH "english"
 #define FRENCH "french"

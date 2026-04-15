@@ -15,6 +15,11 @@ void quickToolbarShow();
 void quickToolbarHide();
 bool quickToolbarIsWindow(int windowId);
 
+// User preference toggle. When false, quickToolbarShow is a no-op and any
+// already-visible toolbar is hidden. Applied by the iOS settings bridge at
+// launch; safe to call before quickToolbarInit.
+void quickToolbarSetEnabled(bool enabled);
+
 // True when the screen point falls within the toolbar window rect. Used by the
 // touch dispatcher to route taps to the toolbar without going through the
 // mouse-simulation pipeline (which would teleport the cursor).
@@ -33,6 +38,7 @@ inline void quickToolbarHide() { }
 inline bool quickToolbarIsWindow(int) { return false; }
 inline bool quickToolbarContainsPoint(int, int) { return false; }
 inline bool quickToolbarHandleTap(int, int) { return false; }
+inline void quickToolbarSetEnabled(bool) { }
 
 #endif
 

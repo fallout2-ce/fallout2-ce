@@ -47,6 +47,7 @@ int gToolbarWindow = -1;
 int gToolbarX = 0;
 int gToolbarY = 0;
 bool gShown = false;
+bool gEnabled = true;
 
 void fillRect(unsigned char* buffer, int pitch, int x, int y, int w, int h, unsigned char color)
 {
@@ -154,11 +155,19 @@ void quickToolbarFree()
 
 void quickToolbarShow()
 {
-    if (gToolbarWindow == -1 || gShown) {
+    if (gToolbarWindow == -1 || gShown || !gEnabled) {
         return;
     }
     windowShow(gToolbarWindow);
     gShown = true;
+}
+
+void quickToolbarSetEnabled(bool enabled)
+{
+    gEnabled = enabled;
+    if (!enabled && gShown) {
+        quickToolbarHide();
+    }
 }
 
 void quickToolbarHide()

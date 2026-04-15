@@ -613,6 +613,7 @@ int interfaceInit()
     gInterfaceBarInitialized = false;
     gInterfaceBarHidden = true;
 
+    quickToolbarSetEnabled(settings.ui.quick_toolbar_visible);
     quickToolbarInit();
 
     return 0;

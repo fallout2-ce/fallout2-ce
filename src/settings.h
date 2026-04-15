@@ -55,6 +55,9 @@ struct UISettings {
 
     bool ignore_map_edges = false;
 
+    // iOS quick-actions toolbar above the interface bar. No-op on other platforms.
+    bool quick_toolbar_visible = true;
+
     // TODO: add to setting window
     // Speed of various UI transition animations. 1.0 represents vanilla speeds.
     double anim_speed = 1.0;
