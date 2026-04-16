@@ -15,7 +15,7 @@
 #include "input.h"
 #include "interface.h"
 #include "memory.h"
-#include "sfall_config.h"
+#include "settings.h"
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
@@ -440,14 +440,9 @@ void displayMonitorEnable()
 
 static void consoleFileInit()
 {
-    char* consoleFilePath;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CONSOLE_OUTPUT_FILE_KEY, &consoleFilePath);
-    if (consoleFilePath != nullptr && *consoleFilePath == '\0') {
-        consoleFilePath = nullptr;
-    }
-
-    if (consoleFilePath != nullptr) {
-        gConsoleFileStream.open(consoleFilePath);
+    const std::string& consolePath = settings.debug.console_output_path;
+    if (!consolePath.empty()) {
+        gConsoleFileStream.open(consolePath);
     }
 }
 

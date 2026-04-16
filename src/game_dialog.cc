@@ -685,8 +685,7 @@ int gameDialogInit()
     configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAME_DIALOG_FIX_KEY, &gGameDialogFix);
 
     // SFALL: Use numbers for replies (instead of default knobs).
-    gNumberOptions = false;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_NUMBERS_IS_DIALOG_KEY, &gNumberOptions);
+    gNumberOptions = settings.ui.numbers_in_dialogue;
 
     return 0;
 }

@@ -23,6 +23,7 @@ struct SystemSettings {
     int splash = 0;
     int free_space = 20480;
     int times_run = 0;
+    std::string screenshots_format = "png";
 };
 
 struct ScreenSettings {
@@ -54,6 +55,13 @@ struct UISettings {
     // TODO: add to setting window
     // Speed of various UI transition animations. 1.0 represents vanilla speeds.
     double anim_speed = 1.0;
+
+    int skip_opening_movies = 0;
+    bool display_karma_changes = false;
+    bool display_bonus_damage = false;
+    bool numbers_in_dialogue = false;
+    int auto_quick_save = 0;
+    bool enable_high_resolution_stencil = true;
 };
 
 // These are settings handled by preferences UI and saved in save games.
@@ -92,6 +100,7 @@ struct SoundSettings {
     int cache_size = 448;
     std::string music_path1 = "sound\\music\\";
     std::string music_path2 = "sound\\music\\";
+    int gapless_music = 0;
 };
 
 struct DebugSettings {
@@ -102,6 +111,12 @@ struct DebugSettings {
     bool output_map_data_info = false;
     int debug_window_width = 300;
     int debug_window_height = 192;
+    std::string console_output_path = "";
+};
+
+struct QolSettings {
+    int use_walk_distance = 5;
+    int auto_open_doors = 0;
 };
 
 struct MapperSettings {
@@ -126,6 +141,7 @@ struct Settings {
     PreferencesSettings preferences;
     SoundSettings sound;
     DebugSettings debug;
+    QolSettings qol;
     MapperSettings mapper;
 };
 

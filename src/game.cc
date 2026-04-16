@@ -175,8 +175,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     // SFALL: Allow to skip splash screen
-    int skipOpeningMovies = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_SKIP_OPENING_MOVIES_KEY, &skipOpeningMovies);
+    int skipOpeningMovies = settings.ui.skip_opening_movies;
 
     // load preferences before Splash screen to get proper brightness
     if (_init_options_menu() != 0) {
@@ -1019,8 +1018,7 @@ int gameSetGlobalVar(int var, int value)
 
     // SFALL: Display karma changes.
     if (var == GVAR_PLAYER_REPUTATION) {
-        bool shouldDisplayKarmaChanges = false;
-        configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DISPLAY_KARMA_CHANGES_KEY, &shouldDisplayKarmaChanges);
+        bool shouldDisplayKarmaChanges = settings.ui.display_karma_changes;
         if (shouldDisplayKarmaChanges) {
             int diff = value - gGameGlobalVars[var];
             if (diff != 0) {
@@ -1169,8 +1167,7 @@ static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsi
 
     ScreenshotHandler* handler = screenshotHandlerDefaultImpl;
 
-    char* formatName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_SCREENSHOTS_FORMAT, &formatName);
+    const char* formatName = settings.system.screenshots_format.c_str();
 
     if (compat_stricmp(formatName, "png") == 0) {
         handler = screenshotHandlerPngImpl;

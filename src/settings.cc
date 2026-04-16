@@ -153,6 +153,7 @@ void initSettingsRegistry(bool isMapper)
             { "hashing", settings.system.hashing },
             { "splash", settings.system.splash },
             { "free_space", settings.system.free_space },
+            { "screenshots_format", settings.system.screenshots_format },
         });
 
     addSection(GAME_CONFIG_SCREEN_KEY,
@@ -172,6 +173,12 @@ void initSettingsRegistry(bool isMapper)
             { GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, clamp(0, 2) },
             { GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges },
             { "anim_speed", settings.ui.anim_speed, clamp(0.1, 100.0) },
+            { "skip_opening_movies", settings.ui.skip_opening_movies },
+            { "display_karma_changes", settings.ui.display_karma_changes },
+            { "display_bonus_damage", settings.ui.display_bonus_damage },
+            { "numbers_in_dialogue", settings.ui.numbers_in_dialogue },
+            { "auto_quick_save", settings.ui.auto_quick_save },
+            { "enable_high_resolution_stencil", settings.ui.enable_high_resolution_stencil },
         });
 
     addSection("preferences",
@@ -212,6 +219,7 @@ void initSettingsRegistry(bool isMapper)
             { "cache_size", settings.sound.cache_size },
             { GAME_CONFIG_MUSIC_PATH1_KEY, settings.sound.music_path1, normalizePath },
             { GAME_CONFIG_MUSIC_PATH2_KEY, settings.sound.music_path2, normalizePath },
+            { "gapless_music", settings.sound.gapless_music },
         });
 
     addSection(GAME_CONFIG_DEBUG_KEY,
@@ -223,6 +231,13 @@ void initSettingsRegistry(bool isMapper)
             { "output_map_data_info", settings.debug.output_map_data_info },
             { "window_width", settings.debug.debug_window_width, clamp(200, 1920) },
             { "window_height", settings.debug.debug_window_height, clamp(100, 1080) },
+            { "console_output_path", settings.debug.console_output_path },
+        });
+
+    addSection("qol",
+        {
+            { "use_walk_distance", settings.qol.use_walk_distance },
+            { "auto_open_doors", settings.qol.auto_open_doors },
         });
 
     if (isMapper) {
