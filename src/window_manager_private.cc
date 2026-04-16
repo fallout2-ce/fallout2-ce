@@ -821,8 +821,8 @@ int _win_debug(char* string)
 
     int lineHeight = fontGetLineHeight();
 
-    int winWidth = settings.debug.debug_window_width;
-    int winHeight = settings.debug.debug_window_height;
+    int winWidth = settings.debug.window_width;
+    int winHeight = settings.debug.window_height;
     if (_wd == -1) {
         _wd = windowCreate(80, 80, winWidth, winHeight, 256, WINDOW_MOVE_ON_TOP);
         if (_wd == -1) {

@@ -109,8 +109,8 @@ struct DebugSettings {
     bool show_script_messages = false;
     bool show_load_info = false;
     bool output_map_data_info = false;
-    int debug_window_width = 300;
-    int debug_window_height = 192;
+    int window_width = 300;
+    int window_height = 192;
     std::string console_output_path = "";
 };
 
@@ -122,7 +122,7 @@ struct QolSettings {
 struct MapperSettings {
     bool override_librarian = false;
     bool librarian = false;
-    bool user_art_not_protos = false;
+    bool use_art_not_protos = false;
     bool rebuild_protos = false;
     bool fix_map_objects = false;
     bool fix_map_inventory = false;
