@@ -1025,7 +1025,8 @@ int itemGetActionPointCost(Object* obj, int hitMode, bool aiming)
     Object* item_obj = critterGetWeaponForHitMode(obj, hitMode);
 
     if (item_obj != nullptr && itemGetType(item_obj) != ITEM_TYPE_WEAPON) {
-        return 2;
+        // consider passing object here instead of null.  null matches Sfall
+        return scriptHooks_CalcApCost(obj, hitMode, aiming, 2, nullptr);
     }
 
     return weaponGetActionPointCost(obj, hitMode, aiming);
@@ -1660,14 +1661,16 @@ int weaponGetActionPointCost(Object* critter, int hitMode, bool aiming)
             Proto* proto;
             protoGetProto(weapon->pid, &proto);
             if (proto->item.data.weapon.perk == PERK_WEAPON_FAST_RELOAD) {
-                return 1;
+                actionPoints = 1;
+            } else if (weapon->pid == PROTO_ID_SOLAR_SCORCHER) {
+                actionPoints = 0;
+            } else {
+                actionPoints = 2;
             }
-
-            if (weapon->pid == PROTO_ID_SOLAR_SCORCHER) {
-                return 0;
-            }
+        } else {
+            actionPoints = 2;
         }
-        return 2;
+        return scriptHooks_CalcApCost(critter, hitMode, aiming, actionPoints, weapon);
     }
 
     // CE: The entire function is different in Sfall.
@@ -1719,7 +1722,7 @@ int weaponGetActionPointCost(Object* critter, int hitMode, bool aiming)
         actionPoints = 1;
     }
 
-    return actionPoints;
+    return scriptHooks_CalcApCost(critter, hitMode, aiming, actionPoints, weapon);
 }
 
 // 0x478D08
