@@ -312,7 +312,7 @@ void mf_item_weight(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
     if (PID_TYPE(object->pid) != OBJ_TYPE_ITEM) {
-        programPrintError("%s: item_weight expected item object", ctx.program()->name);
+        ctx.printError("%s() - expected item object.", ctx.name());
         ctx.setReturn(0);
         return;
     }
