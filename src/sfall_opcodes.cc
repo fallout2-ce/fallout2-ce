@@ -277,6 +277,38 @@ static void op_active_hand(Program* program)
     programStackPushInteger(program, interfaceGetCurrentHand());
 }
 
+static void op_get_critter_current_ap(Program* program)
+{
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    int actionPoints = 0;
+    if (critter != nullptr && FID_TYPE(critter->fid) == OBJ_TYPE_CRITTER) {
+        actionPoints = critter->data.critter.combat.ap;
+    }
+
+    programStackPushInteger(program, actionPoints);
+}
+
+static void op_set_critter_current_ap(Program* program)
+{
+    int actionPoints = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (critter == nullptr || FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
+        programPrintError("set_critter_current_ap: expected critter object");
+        return;
+    }
+
+    if (actionPoints < 0) {
+        actionPoints = 0;
+    }
+
+    critter->data.critter.combat.ap = actionPoints;
+    if (critter == gDude && isInCombat()) {
+        interfaceRenderActionPoints(actionPoints, _combat_free_move);
+    }
+}
+
 // toggle_active_hand
 static void op_toggle_active_hand(Program* program)
 {
@@ -1673,7 +1705,9 @@ void sfallOpcodesInit()
     // 0x8190 - int get_perk_available(int perk)
 
     // 0x8191 - int get_critter_current_ap(object critter)
+    interpreterRegisterOpcode(0x8191, op_get_critter_current_ap);
     // 0x8192 - void set_critter_current_ap(object critter, int ap)
+    interpreterRegisterOpcode(0x8192, op_set_critter_current_ap);
 
     // 0x8193 - int  active_hand()
     interpreterRegisterOpcode(0x8193, op_active_hand);

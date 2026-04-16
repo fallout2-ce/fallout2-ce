@@ -3345,6 +3345,11 @@ ProgramValue::ProgramValue(unsigned int value)
     opcode = VALUE_TYPE_INT;
     integerValue = static_cast<int>(value);
 }
+ProgramValue::ProgramValue(bool value)
+{
+    opcode = VALUE_TYPE_INT;
+    integerValue = static_cast<int>(value);
+}
 ProgramValue::ProgramValue(float value)
 {
     opcode = VALUE_TYPE_FLOAT;
