@@ -385,7 +385,7 @@ void mf_obj_under_cursor(OpcodeContext& ctx)
 
 void mf_obj_is_openable(OpcodeContext& ctx)
 {
-    ctx.setReturn(objectIsOpenable(ctx.arg(0).asObject()) ? 1 : 0);
+    ctx.setReturn(objectIsOpenable(ctx.arg(0).asObject()));
 }
 
 void mf_outlined_object(OpcodeContext& ctx)

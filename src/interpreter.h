@@ -153,6 +153,7 @@ public:
     ProgramValue();
     ProgramValue(int value);
     ProgramValue(unsigned int value);
+    ProgramValue(bool value);
     ProgramValue(float value);
     ProgramValue(Object* value);
     // TODO: better approach for supporting different object types?
