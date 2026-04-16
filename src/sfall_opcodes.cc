@@ -295,7 +295,7 @@ static void op_set_critter_current_ap(Program* program)
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
     if (critter == nullptr || FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
-        programPrintError("%s: set_critter_current_ap expected critter object", program->name);
+        programPrintError("set_critter_current_ap: expected critter object");
         return;
     }
 
