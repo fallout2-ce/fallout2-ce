@@ -310,7 +310,13 @@ void mf_intface_redraw(OpcodeContext& ctx)
 
 void mf_item_weight(OpcodeContext& ctx)
 {
-    ctx.setReturn(itemGetWeight(ctx.arg(0).asObject()));
+    Object* object = ctx.arg(0).asObject();
+    if (PID_TYPE(object->pid) != OBJ_TYPE_ITEM) {
+        ctx.setReturn(0);
+        return;
+    }
+
+    ctx.setReturn(itemGetWeight(object));
 }
 
 void mf_loot_obj(OpcodeContext& ctx)
