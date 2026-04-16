@@ -304,7 +304,7 @@ static void op_set_critter_current_ap(Program* program)
     }
 
     critter->data.critter.combat.ap = actionPoints;
-    if (critter == gDude) {
+    if (critter == gDude && isInCombat()) {
         interfaceRenderActionPoints(actionPoints, _combat_free_move);
     }
 }

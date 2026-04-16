@@ -402,7 +402,7 @@ void mf_set_combat_free_move(OpcodeContext& ctx)
 
     _combat_free_move = value;
 
-    if (combat_get_data()->attacker == gDude) {
+    if (isInCombat() && combat_get_data()->attacker == gDude) {
         interfaceRenderActionPoints(gDude->data.critter.combat.ap, _combat_free_move);
     }
 }
