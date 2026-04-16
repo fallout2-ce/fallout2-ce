@@ -48,8 +48,8 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Interface / Cursor | get/set_cursor_mode | ✅ | - |
 | Locks | lock_is_jammed<br>unjam_lock<br>set_unjam_locks_time | not implemented | - |
 | INI settings | get_ini_setting<br>get_ini_string<br>get_ini_section<br>get_ini_sections<br>get_ini_config<br>get_ini_config_db<br>set_ini_setting | ✅ except get_ini_config, get_ini_config_db | `modified_ini` is intentionally omitted as deprecated. |
-| Objects and scripts | set_self<br>set_dude_obj<br>real_dude_obj<br>remove_script<br>set_script<br>get_script<br>obj_is_carrying_obj<br>loot_obj<br>dialog_obj<br>obj_under_cursor<br>get_object_data<br>set_object_data<br>get_flags<br>set_flags<br>set_unique_id<br>set_scr_name<br>obj_is_openable<br>get/set_proto_data<br>get_object_ai_data | implemented: set_self, get_script, obj_is_carrying_obj, loot_obj, dialog_obj, obj_under_cursor, get_object_data, get_flags, set_flags, get_proto_data, set_proto_data | - |
-| Other / Game management | set_movie_path<br>stop_game<br>resume_game<br>mark_movie_played<br>game_loaded<br>get_game_mode<br>get_uptime<br>signal_close_game | implemented: game_loaded, get_game_mode, get_uptime, signal_close_game | - |
+| Objects and scripts | set_self<br>set_dude_obj<br>real_dude_obj<br>remove_script<br>get/set_script<br>obj_is_carrying_obj<br>loot_obj<br>dialog_obj<br>obj_under_cursor<br>get/set_object_data<br>get/set_flags<br>set_unique_id<br>set_scr_name<br>obj_is_openable<br>get/set_proto_data<br>get_object_ai_data | implemented: set_self, get_script, obj_is_carrying_obj, loot_obj, dialog_obj, obj_under_cursor, get_object_data, get_flags, set_flags, get_proto_data, set_proto_data | - |
+| Other / Game management | set_movie_path<br>stop/resume_game<br>mark_movie_played<br>game_loaded<br>get_game_mode<br>get_uptime<br>signal_close_game | implemented: game_loaded, get_game_mode, get_uptime, signal_close_game | - |
 | Gameplay tweaks | set_pickpocket_max<br>set_hit_chance_max<br>set_xp_mod<br>set_critter_hit_chance_mod<br>set_base_hit_chance_mod<br>set_hp_per_level_mod<br>get_unspent_ap_bonus<br>gdialog_get_barter_mod<br>set_unspent_ap_bonus<br>get/set_unspent_ap_perk_bonus<br>set_inven_ap_cost<br>set_base_pickpocket_mod<br>set_critter_pickpocket_mod<br>get_inven_ap_cost<br>set_drugs_data<br>get_kill_counter<br>mod_kill_counter<br>set_pipboy_available | not implemented | - |
 | NPCs | inc_npc_level<br>get_npc_level<br>npc_engine_level_up | not implemented | - |
 | Other | get_year<br>set_dm/df_model<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>hero_select_win<br>get_light_level<br>message_str_game<br>sneak_success<br>create_spatial<br>unwield_slot<br>add_g_timer_event<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br>remove_timer_event<br>spatial_radius | implemented: get_year, active_hand, toggle_active_hand, message_str_game, add_extra_msg_file, metarule_exist | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. |
@@ -60,7 +60,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | --- | --- | --- | --- |
 | ToHit | `HOOK_TOHIT` | ✅ | - |
 | AfterHitRoll | `HOOK_AFTERHITROLL` | 🚫 | Et tu |
-| CalcAPCost | `HOOK_CALCAPCOST` | ✅ | AP cost is displayed correctly on first load, unlike Sfall. |
+| CalcAPCost | `HOOK_CALCAPCOST` | ✅ | - |
 | DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | Use DEATHANIM2 instead |
 | DeathAnim2 | `HOOK_DEATHANIM2` | ✅ | - |
 | CombatDamage | `HOOK_COMBATDAMAGE` | ✅ | - |

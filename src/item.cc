@@ -1025,6 +1025,7 @@ int itemGetActionPointCost(Object* obj, int hitMode, bool aiming)
     Object* item_obj = critterGetWeaponForHitMode(obj, hitMode);
 
     if (item_obj != nullptr && itemGetType(item_obj) != ITEM_TYPE_WEAPON) {
+        // consider passing object here instead of null.  null matches Sfall
         return scriptHooks_CalcApCost(obj, hitMode, aiming, 2, nullptr);
     }
 
