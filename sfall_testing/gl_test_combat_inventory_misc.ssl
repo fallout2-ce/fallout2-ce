@@ -1,0 +1,80 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+#include "command_lite.h"
+#include "test_utils.h"
+
+#define TEST_ITEM_PID 40
+#define OP_GET_CRITTER_CURRENT_AP 0x8191
+#define OP_SET_CRITTER_CURRENT_AP 0x8192
+#define opcode_exists(opcode) sfall_func1("opcode_exists", opcode)
+
+procedure run_combat_turn_roundtrip begin
+    variable originalAp := get_critter_current_ap(dude_obj);
+    variable originalFreeMove := get_combat_free_move;
+    variable expectedAp := originalAp + 1;
+    variable expectedFreeMove := originalFreeMove + 2;
+
+    set_critter_current_ap(dude_obj, expectedAp);
+    set_combat_free_move(expectedFreeMove);
+
+    call assertEquals("set/get_critter_current_ap roundtrip", get_critter_current_ap(dude_obj), expectedAp);
+    call assertEquals("set/get_combat_free_move roundtrip", get_combat_free_move, expectedFreeMove);
+
+    set_critter_current_ap(dude_obj, originalAp);
+    set_combat_free_move(originalFreeMove);
+
+    call assertEquals("get_critter_current_ap restored", get_critter_current_ap(dude_obj), originalAp);
+    call assertEquals("get_combat_free_move restored", get_combat_free_move, originalFreeMove);
+    call report_test_results("combat_inventory_misc_combat");
+end
+
+procedure report_obj_under_cursor begin
+    variable target := obj_under_cursor(0, 1);
+
+    if (target == 0) then begin
+        display_msg("No object under cursor.");
+        return;
+    end
+
+    display_msg("Cursor object: " + obj_name(target) + ", openable=" + obj_is_openable(target));
+end
+
+procedure keypress_handler begin
+    variable pressed := get_sfall_arg_at(0);
+    variable key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_J) then begin
+        call run_combat_turn_roundtrip();
+    end else if (key == DIK_K) then begin
+        call report_obj_under_cursor();
+    end
+end
+
+procedure start begin
+    variable testItem;
+
+    if (not game_loaded) then return;
+
+    display_msg("Testing combat/inventory/object helpers...");
+
+    call assertEquals("metarule get_combat_free_move", metarule_exist("get_combat_free_move"), 1);
+    call assertEquals("metarule set_combat_free_move", metarule_exist("set_combat_free_move"), 1);
+    call assertEquals("metarule item_weight", metarule_exist("item_weight"), 1);
+    call assertEquals("metarule obj_is_openable", metarule_exist("obj_is_openable"), 1);
+    call assertEquals("opcode get_critter_current_ap", opcode_exists(OP_GET_CRITTER_CURRENT_AP), 1);
+    call assertEquals("opcode set_critter_current_ap", opcode_exists(OP_SET_CRITTER_CURRENT_AP), 1);
+
+    testItem := create_object_sid(TEST_ITEM_PID, 0, 0, -1);
+    call assertEquals("item_weight matches proto weight for test item", item_weight(testItem), obj_weight(testItem));
+    call assertEquals("non-container item is not openable", obj_is_openable(testItem), 0);
+    destroy_object(testItem);
+
+    call report_test_results("combat_inventory_misc");
+
+    display_msg("Manual test: enter combat, wait for your turn, then press J to roundtrip AP/free-move.");
+    display_msg("Manual test: point at a door or container and press K to print obj_is_openable().");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+end

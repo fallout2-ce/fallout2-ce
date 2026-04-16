@@ -52,7 +52,6 @@ static int _set_door_state_closed(Object* door, Object* obj2);
 static int _check_door_state(Object* door, Object* obj2);
 static bool _obj_is_portal(Object* obj);
 static bool _obj_is_lockable(Object* obj);
-static bool _obj_is_openable(Object* obj);
 static int objectOpenClose(Object* obj);
 static bool objectIsJammed(Object* obj);
 
@@ -2027,7 +2026,7 @@ int objectUnlock(Object* object)
 }
 
 // 0x49D294
-static bool _obj_is_openable(Object* obj)
+bool objectIsOpenable(Object* obj)
 {
     Proto* proto;
 
@@ -2068,7 +2067,7 @@ static int objectOpenClose(Object* obj)
         return -1;
     }
 
-    if (!_obj_is_openable(obj)) {
+    if (!objectIsOpenable(obj)) {
         return -1;
     }
 

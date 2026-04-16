@@ -18,12 +18,14 @@
 #include "interface.h"
 #include "interpreter.h"
 #include "inventory.h"
+#include "item.h"
 #include "mainmenu.h"
 #include "memory.h"
 #include "message.h"
 #include "object.h"
 #include "opcode_context.h"
 #include "platform_compat.h"
+#include "proto_instance.h"
 #include "scripts.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
@@ -43,6 +45,7 @@ static void mf_car_gas_amount(OpcodeContext& ctx);
 static void mf_combat_data(OpcodeContext& ctx);
 static void mf_critter_inven_obj2(OpcodeContext& ctx);
 static void mf_dialog_obj(OpcodeContext& ctx);
+static void mf_get_combat_free_move(OpcodeContext& ctx);
 static void mf_get_cursor_mode(OpcodeContext& ctx);
 static void mf_get_flags(OpcodeContext& ctx);
 static void mf_get_object_data(OpcodeContext& ctx);
@@ -50,14 +53,17 @@ static void mf_get_outline(OpcodeContext& ctx);
 static void mf_get_sfall_arg_at(OpcodeContext& ctx);
 static void mf_get_text_width(OpcodeContext& ctx);
 static void mf_intface_redraw(OpcodeContext& ctx);
+static void mf_item_weight(OpcodeContext& ctx);
 static void mf_loot_obj(OpcodeContext& ctx);
 static void mf_message_box(OpcodeContext& ctx);
 static void mf_add_extra_msg_file(OpcodeContext& ctx);
 static void mf_art_cache_flush(OpcodeContext& ctx);
 static void mf_metarule_exist(OpcodeContext& ctx);
+static void mf_obj_is_openable(OpcodeContext& ctx);
 static void mf_obj_under_cursor(OpcodeContext& ctx);
 static void mf_opcode_exists(OpcodeContext& ctx);
 static void mf_outlined_object(OpcodeContext& ctx);
+static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
@@ -94,7 +100,7 @@ const MetaruleInfo kMetarules[] = {
     // {"exec_map_update_scripts",   mf_exec_map_update_scripts,   0, 0},
     { "floor2", mf_floor2, 1, 1, 0, { ARG_NUMBER } },
     // {"get_can_rest_on_map",       mf_get_rest_on_map,           2, 2, -1, {ARG_INT, ARG_INT}},
-    // {"get_combat_free_move",      mf_get_combat_free_move,      0, 0},
+    { "get_combat_free_move", mf_get_combat_free_move, 0, 0 },
     // {"get_current_inven_size",    mf_get_current_inven_size,    1, 1,  0, {ARG_OBJECT}},
     { "get_cursor_mode", mf_get_cursor_mode, 0, 0 },
     { "get_flags", mf_get_flags, 1, 1, 0, { ARG_OBJECT } },
@@ -126,13 +132,13 @@ const MetaruleInfo kMetarules[] = {
     // {"intface_show",              mf_intface_show,              0, 0},
     // {"inventory_redraw",          mf_inventory_redraw,          0, 1, -1, {ARG_INT}},
     // {"item_make_explosive",       mf_item_make_explosive,       3, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
-    // {"item_weight",               mf_item_weight,               1, 1,  0, {ARG_OBJECT}},
+    { "item_weight", mf_item_weight, 1, 1, 0, { ARG_OBJECT } },
     // {"lock_is_jammed",            mf_lock_is_jammed,            1, 1,  0, {ARG_OBJECT}},
     { "loot_obj", mf_loot_obj, 0, 0 },
     { "message_box", mf_message_box, 1, 4, -1, { ARG_STRING, ARG_INT, ARG_INT, ARG_INT } },
     { "metarule_exist", mf_metarule_exist, 1, 1 },
     // {"npc_engine_level_up",       mf_npc_engine_level_up,       1, 1},
-    // {"obj_is_openable",           mf_obj_is_openable,           1, 1,  0, {ARG_OBJECT}},
+    { "obj_is_openable", mf_obj_is_openable, 1, 1, 0, { ARG_OBJECT } },
     { "obj_under_cursor", mf_obj_under_cursor, 2, 2, 0, { ARG_INT, ARG_INT } },
     // {"objects_in_radius",         mf_objects_in_radius,         3, 4,  0, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "outlined_object", mf_outlined_object, 0, 0 },
@@ -142,7 +148,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"set_can_rest_on_map",       mf_set_rest_on_map,           3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     // {"set_car_intface_art",       mf_set_car_intface_art,       1, 1, -1, {ARG_INT}},
-    // {"set_combat_free_move",      mf_set_combat_free_move,      1, 1, -1, {ARG_INT}},
+    { "set_combat_free_move", mf_set_combat_free_move, 1, 1, -1, { ARG_INT } },
     { "set_cursor_mode", mf_set_cursor_mode, 1, 1, -1, { ARG_INT } },
     // {"set_drugs_data",            mf_set_drugs_data,            3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     // {"set_dude_obj",              mf_set_dude_obj,              1, 1, -1, {ARG_INT}},
@@ -234,6 +240,11 @@ void mf_dialog_obj(OpcodeContext& ctx)
     }
 }
 
+void mf_get_combat_free_move(OpcodeContext& ctx)
+{
+    ctx.setReturn(_combat_free_move);
+}
+
 void mf_get_cursor_mode(OpcodeContext& ctx)
 {
     ctx.setReturn(gameMouseGetMode());
@@ -295,6 +306,11 @@ void mf_intface_redraw(OpcodeContext& ctx)
         // TODO: Incomplete.
         programFatalError("mf_intface_redraw: not implemented");
     }
+}
+
+void mf_item_weight(OpcodeContext& ctx)
+{
+    ctx.setReturn(itemGetWeight(ctx.arg(0).asObject()));
 }
 
 void mf_loot_obj(OpcodeContext& ctx)
@@ -367,9 +383,28 @@ void mf_obj_under_cursor(OpcodeContext& ctx)
     ctx.setReturn(object);
 }
 
+void mf_obj_is_openable(OpcodeContext& ctx)
+{
+    ctx.setReturn(objectIsOpenable(ctx.arg(0).asObject()) ? 1 : 0);
+}
+
 void mf_outlined_object(OpcodeContext& ctx)
 {
     ctx.setReturn(gmouse_get_outlined_object());
+}
+
+void mf_set_combat_free_move(OpcodeContext& ctx)
+{
+    int value = ctx.arg(0).asInt();
+    if (value < 0) {
+        value = 0;
+    }
+
+    _combat_free_move = value;
+
+    if (combat_get_data()->attacker == gDude) {
+        interfaceRenderActionPoints(gDude->data.critter.combat.ap, _combat_free_move);
+    }
 }
 
 void mf_set_cursor_mode(OpcodeContext& ctx)

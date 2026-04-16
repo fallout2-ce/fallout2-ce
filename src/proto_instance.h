@@ -35,6 +35,7 @@ bool objectIsLocked(Object* obj);
 int objectLock(Object* obj);
 int objectUnlock(Object* obj);
 int objectIsOpen(Object* obj);
+bool objectIsOpenable(Object* obj);
 int objectOpen(Object* obj);
 int objectClose(Object* obj);
 int objectJamLock(Object* obj);
