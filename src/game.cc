@@ -27,6 +27,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_variant.h"
 #include "input.h"
 #include "interface.h"
 #include "inventory.h"
@@ -137,6 +138,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     // Sfall config should be initialized before game config, since it can
     // override it's file name.
+    gameVariantInit(argc, argv);
     sfallConfigInit(argc, argv);
 
     // SFALL: Execute all code that should be executed BEFORE game init
@@ -1042,7 +1044,7 @@ int gameSetGlobalVar(int var, int value)
 // 0x443CC8
 static int gameLoadGlobalVars()
 {
-    if (globalVarsRead("data\\vault13.gam", "GAME_GLOBAL_VARS:", &gGameGlobalVarsLength, &gGameGlobalVars) != 0) {
+    if (globalVarsRead(gameVariantGetGlobalVarsFileName(), "GAME_GLOBAL_VARS:", &gGameGlobalVarsLength, &gGameGlobalVars) != 0) {
         return -1;
     }
 
@@ -1403,8 +1405,9 @@ static int gameDbInit()
 
     sfallLoadMods();
 
-    if (compat_access("f2_res.dat", 0) == 0) {
-        dbOpen("f2_res.dat", nullptr);
+    const char* hiResDatFileName = gameVariantGetHiResDatFileName();
+    if (hiResDatFileName != nullptr && compat_access(hiResDatFileName, 0) == 0) {
+        dbOpen(hiResDatFileName, nullptr);
     }
 
     return 0;

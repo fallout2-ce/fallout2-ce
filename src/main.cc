@@ -17,6 +17,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_variant.h"
 #include "input.h"
 #include "kb.h"
 #include "loadsave.h"
@@ -59,9 +60,6 @@ static void _main_death_voiceover_callback();
 static int _mainDeathGrabTextFile(const char* fileName, char* dest);
 static int _mainDeathWordWrap(char* text, int width, short* beginnings, short* count);
 
-// 0x5194C8
-static char _mainMap[] = "artemple.map";
-
 // 0x5194D8
 static int _main_game_paused = 0;
 
@@ -74,6 +72,8 @@ static bool _main_death_voiceover_done;
 // 0x48099C
 int falloutMain(int argc, char** argv)
 {
+    gameVariantInit(argc, argv);
+
     if (!autorunMutexCreate()) {
         return 1;
     }
@@ -87,7 +87,9 @@ int falloutMain(int argc, char** argv)
     if (skipOpeningMovies < 1) {
         gameMoviePlay(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
         gameMoviePlay(MOVIE_INTRO, 0);
-        gameMoviePlay(MOVIE_CREDITS, 0);
+        if (gameVariantShouldPlayIntroCredits()) {
+            gameMoviePlay(MOVIE_CREDITS, 0);
+        }
     } else {
         // If the splash is shown but opening movies are skipped, fade it out
         // before the main menu starts its normal fade-in.
@@ -109,13 +111,17 @@ int falloutMain(int argc, char** argv)
             case MAIN_MENU_INTRO:
                 mainMenuWindowHide(true);
                 gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_STOP_MUSIC);
-                gameMoviePlay(MOVIE_CREDITS, 0);
+                if (gameVariantShouldPlayIntroCredits()) {
+                    gameMoviePlay(MOVIE_CREDITS, 0);
+                }
                 break;
             case MAIN_MENU_NEW_GAME:
                 mainMenuWindowHide(true);
                 mainMenuWindowFree();
                 if (characterSelectorOpen() == 2) {
-                    gameMoviePlay(MOVIE_ELDER, GAME_MOVIE_STOP_MUSIC);
+                    if (gameVariantShouldPlayNewGameMovie()) {
+                        gameMoviePlay(MOVIE_ELDER, GAME_MOVIE_STOP_MUSIC);
+                    }
                     randomSeedPrerandom(-1);
 
                     // SFALL: Call "before start" event
@@ -129,7 +135,7 @@ int falloutMain(int argc, char** argv)
                         }
                     }
 
-                    char* mapNameCopy = compat_strdup(mapName != nullptr ? mapName : _mainMap);
+                    char* mapNameCopy = compat_strdup(mapName != nullptr ? mapName : gameVariantGetStartingMap());
                     _main_load_new(mapNameCopy);
                     free(mapNameCopy);
 
@@ -240,7 +246,7 @@ int falloutMain(int argc, char** argv)
 static bool falloutInit(int argc, char** argv)
 {
     // set flag to 1 to initialize _screen_buffer for WINDOW_TRANSPARENT
-    if (gameInitWithOptions("FALLOUT II", false, 0, WINDOW_MANAGER_INIT_FLAG_BUFFERED, argc, argv) == -1) {
+    if (gameInitWithOptions(gameVariantGetWindowTitle(), false, 0, WINDOW_MANAGER_INIT_FLAG_BUFFERED, argc, argv) == -1) {
         return false;
     }
 

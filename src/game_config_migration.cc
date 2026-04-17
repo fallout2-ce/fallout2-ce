@@ -11,8 +11,6 @@ namespace fallout {
 
 namespace {
 
-#define F2_RES_CONFIG_FILE_NAME "f2_res.ini"
-
     struct F2ResMigrationEntry {
         const char* legacySection;
         const char* legacyKey;
@@ -84,12 +82,12 @@ namespace {
 
 } // namespace
 
-// Migrate settings F2_RES.INI to fallout2.cfg
+// Migrate settings from hi-res config (for example f1_res.ini/f2_res.ini)
 //
-// Only happens a single time, after which fallout2.cfg is the source of truth
-bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConfig)
+// Only happens a single time, after which fallout*.cfg is the source of truth
+bool gameConfigMigrateFromHiRes(const char* gameConfigFilePath, const char* hiResConfigFileName, Config* gameConfig)
 {
-    if (gameConfigFilePath == nullptr || gameConfig == nullptr) {
+    if (gameConfigFilePath == nullptr || hiResConfigFileName == nullptr || hiResConfigFileName[0] == '\0' || gameConfig == nullptr) {
         return false;
     }
 
@@ -101,7 +99,7 @@ bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConf
     char drive[COMPAT_MAX_DRIVE];
     char dir[COMPAT_MAX_DIR];
     compat_splitpath(gameConfigFilePath, drive, dir, nullptr, nullptr);
-    compat_makepath(f2ResFilePath, drive, dir, F2_RES_CONFIG_FILE_NAME, nullptr);
+    compat_makepath(f2ResFilePath, drive, dir, hiResConfigFileName, nullptr);
 
     Config legacyConfig;
     if (!configInit(&legacyConfig)) {

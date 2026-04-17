@@ -114,6 +114,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/game_movie.h"
     "src/game_sound.cc"
     "src/game_sound.h"
+    "src/game_variant.cc"
+    "src/game_variant.h"
     "src/game_vars.h"
     "src/game.cc"
     "src/game.h"

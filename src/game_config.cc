@@ -1,6 +1,7 @@
 #include "game_config.h"
 #include "debug.h"
 #include "game_config_migration.h"
+#include "game_variant.h"
 #include "settings.h"
 #include "sfall_config.h"
 
@@ -18,7 +19,6 @@
 
 namespace fallout {
 
-constexpr char kDefaultGameConfigFileName[] = "fallout2.cfg";
 constexpr char kMapperConfigFileName[] = "mapper2.cfg";
 
 // A flag indicating if [gGameConfig] was initialized.
@@ -91,7 +91,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     const char* configFileName = customConfigFileName != nullptr && *customConfigFileName != '\0'
         ? customConfigFileName
-        : kDefaultGameConfigFileName;
+        : gameVariantGetDefaultGameConfigFileName();
 
     // Make `fallout2.cfg` file path.
     char* executable = argv[0];
@@ -132,8 +132,9 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     debugPrint("Game config loaded from %s.\n", gGameConfigFilePath);
 
-    if (!isMapper && gameConfigMigrateFromF2Res(gGameConfigFilePath, &gGameConfig)) {
-        debugPrint("Migrated settings from f2_res.ini.\n");
+    const char* hiResConfigFileName = gameVariantGetDefaultHiResConfigFileName();
+    if (!isMapper && gameConfigMigrateFromHiRes(gGameConfigFilePath, hiResConfigFileName, &gGameConfig)) {
+        debugPrint("Migrated settings from %s.\n", hiResConfigFileName);
         configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL);
     }
     configChecker.check(gGameConfig);

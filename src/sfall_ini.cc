@@ -22,6 +22,7 @@ static constexpr size_t kSectionMaxSize = 32;
 /// Special .ini file names which are accessed without adding base path.
 static constexpr const char* kSystemConfigFileNames[] = {
     "ddraw.ini",
+    "f1_res.ini",
     "f2_res.ini",
 };
 
