@@ -35,6 +35,7 @@ int gameDialogSetTextReply(Program* program, int messageListId, const char* text
 int _gdialogGo();
 void _gdialogUpdatePartyStatus();
 void _talk_to_critter_reacts(int reaction);
+int gameDialogGetBarterModifier();
 void gameDialogSetBarterModifier(int modifier);
 int gameDialogBarter(int modifier);
 void gameDialogEndBarter();

@@ -3217,6 +3217,12 @@ static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* str
 }
 
 // 0x448214
+int gameDialogGetBarterModifier()
+{
+    return gGameDialogBarterModifier;
+}
+
+// 0x448214
 void gameDialogSetBarterModifier(int modifier)
 {
     gGameDialogBarterModifier = modifier;
