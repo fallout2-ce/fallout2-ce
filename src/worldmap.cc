@@ -25,6 +25,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_variant.h"
 #include "input.h"
 #include "interface.h"
 #include "item.h"
@@ -477,6 +478,7 @@ static int wmGenDataReset();
 static int wmWorldMapSaveTempData();
 static int wmWorldMapLoadTempData();
 static int wmConfigInit();
+static int wmConfigInitFo1Fallback();
 static int wmReadEncounterType(Config* config, char* lookupName, char* sectionKey);
 static int wmParseEncounterTableIndex(EncounterTableEntry* encounterTableEntry, char* string);
 static int wmParseEncounterSubEncStr(EncounterTableEntry* encounterTableEntry, char** stringPtr);
@@ -1324,6 +1326,12 @@ static int wmConfigInit()
     }
 
     if (!configRead(&config, "data\\worldmap.txt", true)) {
+        if (gameVariantIsFallout1()) {
+            debugPrint("\nwmConfigInit: data\\worldmap.txt missing in FO1 mode, using minimal worldmap fallback.");
+            configFree(&config);
+            return wmConfigInitFo1Fallback();
+        }
+
         debugPrint("\nwmConfigInit::Error: could not load data\\worldmap.txt");
         configFree(&config);
         return -1;
@@ -1423,6 +1431,36 @@ static int wmConfigInit()
     }
 
     configFree(&config);
+
+    return 0;
+}
+
+static int wmConfigInitFo1Fallback()
+{
+    wmNumHorizontalTiles = 1;
+    wmMaxTileNum = 1;
+
+    wmTileInfoList = (TileInfo*)internal_realloc(wmTileInfoList, sizeof(*wmTileInfoList) * wmMaxTileNum);
+    if (wmTileInfoList == nullptr) {
+        return -1;
+    }
+
+    TileInfo* tile = &(wmTileInfoList[0]);
+    wmTileSlotInit(tile);
+    tile->fid = buildFid(OBJ_TYPE_INTERFACE, 0, 0, 0, 0);
+
+    for (int column = 0; column < SUBTILE_GRID_HEIGHT; column++) {
+        for (int row = 0; row < SUBTILE_GRID_WIDTH; row++) {
+            SubtileInfo* subtile = &(tile->subtiles[column][row]);
+            subtile->terrain = 0;
+            subtile->fill = SUBTILE_FILL_NONE;
+            subtile->encounterChance[DAY_PART_MORNING] = ENCOUNTER_FREQUENCY_TYPE_NONE;
+            subtile->encounterChance[DAY_PART_AFTERNOON] = ENCOUNTER_FREQUENCY_TYPE_NONE;
+            subtile->encounterChance[DAY_PART_NIGHT] = ENCOUNTER_FREQUENCY_TYPE_NONE;
+            subtile->encounterType = -1;
+            subtile->state = SUBTILE_STATE_UNKNOWN;
+        }
+    }
 
     return 0;
 }
