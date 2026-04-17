@@ -12,9 +12,18 @@ namespace fallout {
 typedef struct DBase DBase;
 typedef struct DBaseEntry DBaseEntry;
 typedef struct DFile DFile;
+typedef struct DB_DATABASE DB_DATABASE;
+typedef struct DB_FILE DB_FILE;
+
+typedef enum DBaseBackend {
+    DBASE_BACKEND_FO2,
+    DBASE_BACKEND_FO1,
+} DBaseBackend;
 
 // A representation of .DAT file.
 typedef struct DBase {
+    DBaseBackend backend;
+
     // The path of .DAT file that this structure represents.
     char* path;
 
@@ -29,6 +38,8 @@ typedef struct DBase {
 
     // The head of linked list of open file handles.
     DFile* dfileHead;
+
+    DB_DATABASE* fo1Database;
 } DBase;
 
 typedef struct DBaseEntry {
@@ -41,6 +52,7 @@ typedef struct DBaseEntry {
 
 // A handle to open entry in .DAT file.
 typedef struct DFile {
+    DBaseBackend backend;
     DBase* dbase;
     DBaseEntry* entry;
     int flags;
@@ -90,6 +102,8 @@ typedef struct DFile {
     // [DFile]s are stored in [DBase] in reverse order, so it's actually a
     // previous opened file, not next.
     DFile* next;
+
+    DB_FILE* fo1File;
 } DFile;
 
 typedef struct DFileFindData {
@@ -108,6 +122,10 @@ typedef struct DFileFindData {
     // [dbaseFindNextEntry] succeed so that subsequent calls to [dbaseFindNextEntry]
     // knows where to start search from.
     int index;
+
+    char** fo1FileNames;
+    int fo1FileNamesLength;
+    DBaseBackend backend;
 } DFileFindData;
 
 DBase* dbaseOpen(const char* filename);

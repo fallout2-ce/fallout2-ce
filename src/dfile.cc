@@ -7,8 +7,10 @@
 
 #include <algorithm>
 
-#include "fpattern_windows.h"
+#include <fpattern/fpattern.h>
 
+#include "fo1db/fo1_db.h"
+#include "game_variant.h"
 #include "platform_compat.h"
 
 namespace fallout {
@@ -38,6 +40,7 @@ namespace fallout {
 #define DFILE_HAS_COMPRESSED_UNGETC (0x10)
 
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
+static DBase* dbaseOpenFo1(const char* filePath);
 static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* dfile);
 static int dfileReadCharInternal(DFile* stream);
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size);
@@ -52,7 +55,7 @@ DBase* dbaseOpen(const char* filePath)
 
     FILE* stream = compat_fopen(filePath, "rb");
     if (stream == nullptr) {
-        return nullptr;
+        return gameVariantGet() == GameVariant::Fallout1 ? dbaseOpenFo1(filePath) : nullptr;
     }
 
     DBase* dbase = (DBase*)malloc(sizeof(*dbase));
@@ -153,12 +156,11 @@ DBase* dbaseOpen(const char* filePath)
     return dbase;
 
 err:
-
     dbaseClose(dbase);
 
     fclose(stream);
 
-    return nullptr;
+    return gameVariantGet() == GameVariant::Fallout1 ? dbaseOpenFo1(filePath) : nullptr;
 }
 
 // Closes [dbase], all open file handles, frees all associated resources,
@@ -174,6 +176,20 @@ bool dbaseClose(DBase* dbase)
         DFile* next = curr->next;
         dfileClose(curr);
         curr = next;
+    }
+
+    if (dbase->backend == DBASE_BACKEND_FO1) {
+        if (dbase->fo1Database != INVALID_DATABASE_HANDLE && dbase->fo1Database != nullptr) {
+            db_close(dbase->fo1Database);
+        }
+
+        if (dbase->path != nullptr) {
+            free(dbase->path);
+        }
+
+        memset(dbase, 0, sizeof(*dbase));
+        free(dbase);
+        return true;
     }
 
     if (dbase->entries != nullptr) {
@@ -201,10 +217,25 @@ bool dbaseClose(DBase* dbase)
 // 0x4E5308
 bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* pattern)
 {
-    // .dat files always have windows style paths
+    findFileData->backend = dbase->backend;
+
+    if (dbase->backend == DBASE_BACKEND_FO1) {
+        db_select(dbase->fo1Database);
+        findFileData->fo1FileNames = nullptr;
+        findFileData->fo1FileNamesLength = db_get_file_list(pattern, &findFileData->fo1FileNames, nullptr, 0);
+        if (findFileData->fo1FileNamesLength <= 0) {
+            return false;
+        }
+
+        strcpy(findFileData->fileName, findFileData->fo1FileNames[0]);
+        strcpy(findFileData->pattern, pattern);
+        findFileData->index = 0;
+        return true;
+    }
+
     for (int index = 0; index < dbase->entriesLength; index++) {
         DBaseEntry* entry = &(dbase->entries[index]);
-        if (fpattern_windows_match(pattern, entry->path)) {
+        if (fpattern_match(pattern, entry->path)) {
             strcpy(findFileData->fileName, entry->path);
             strcpy(findFileData->pattern, pattern);
             findFileData->index = index;
@@ -218,9 +249,20 @@ bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* 
 // 0x4E53A0
 bool dbaseFindNextEntry(DBase* dbase, DFileFindData* findFileData)
 {
+    if (dbase->backend == DBASE_BACKEND_FO1) {
+        int index = findFileData->index + 1;
+        if (index >= findFileData->fo1FileNamesLength) {
+            return false;
+        }
+
+        strcpy(findFileData->fileName, findFileData->fo1FileNames[index]);
+        findFileData->index = index;
+        return true;
+    }
+
     for (int index = findFileData->index + 1; index < dbase->entriesLength; index++) {
         DBaseEntry* entry = &(dbase->entries[index]);
-        if (fpattern_windows_match(findFileData->pattern, entry->path)) {
+        if (fpattern_match(findFileData->pattern, entry->path)) {
             strcpy(findFileData->fileName, entry->path);
             findFileData->index = index;
             return true;
@@ -233,6 +275,12 @@ bool dbaseFindNextEntry(DBase* dbase, DFileFindData* findFileData)
 // 0x4E541C
 bool dbaseFindClose(DBase* dbase, DFileFindData* findFileData)
 {
+    if (dbase->backend == DBASE_BACKEND_FO1 && findFileData->fo1FileNames != nullptr) {
+        db_free_file_list(&findFileData->fo1FileNames, nullptr);
+        findFileData->fo1FileNames = nullptr;
+        findFileData->fo1FileNamesLength = 0;
+    }
+
     return true;
 }
 
@@ -241,6 +289,11 @@ bool dbaseFindClose(DBase* dbase, DFileFindData* findFileData)
 // 0x4E5424
 long dfileGetSize(DFile* stream)
 {
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_filelength(stream->fo1File);
+    }
+
     return stream->entry->uncompressedSize;
 }
 
@@ -252,6 +305,34 @@ int dfileClose(DFile* stream)
     assert(stream); // "stream", "dfile.c", 253
 
     int rc = 0;
+
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        rc = db_fclose(stream->fo1File);
+
+        DFile* curr = stream->dbase->dfileHead;
+        DFile* prev = nullptr;
+        while (curr != nullptr) {
+            if (curr == stream) {
+                break;
+            }
+
+            prev = curr;
+            curr = curr->next;
+        }
+
+        if (curr != nullptr) {
+            if (prev == nullptr) {
+                stream->dbase->dfileHead = stream->next;
+            } else {
+                prev->next = stream->next;
+            }
+        }
+
+        memset(stream, 0, sizeof(*stream));
+        free(stream);
+        return rc;
+    }
 
     if (stream->entry->compressed == 1) {
         if (inflateEnd(stream->decompressionStream) != Z_OK) {
@@ -310,6 +391,32 @@ DFile* dfileOpen(DBase* dbase, const char* filePath, const char* mode)
     assert(filePath); // dfile.c, 296
     assert(mode); // dfile.c, 297
 
+    if (dbase->backend == DBASE_BACKEND_FO1) {
+        if (mode[0] != 'r') {
+            return nullptr;
+        }
+
+        db_select(dbase->fo1Database);
+        DB_FILE* fo1File = db_fopen(filePath, mode);
+        if (fo1File == nullptr) {
+            return nullptr;
+        }
+
+        DFile* dfile = (DFile*)malloc(sizeof(*dfile));
+        if (dfile == nullptr) {
+            db_fclose(fo1File);
+            return nullptr;
+        }
+
+        memset(dfile, 0, sizeof(*dfile));
+        dfile->backend = DBASE_BACKEND_FO1;
+        dfile->dbase = dbase;
+        dfile->fo1File = fo1File;
+        dfile->next = dbase->dfileHead;
+        dbase->dfileHead = dfile;
+        return dfile;
+    }
+
     return dfileOpenInternal(dbase, filePath, mode, nullptr);
 }
 
@@ -320,6 +427,10 @@ int dfilePrintFormattedArgs(DFile* stream, const char* format, va_list args)
 {
     assert(stream); // "stream", "dfile.c", 368
     assert(format); // "format", "dfile.c", 369
+
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        return -1;
+    }
 
     return -1;
 }
@@ -333,6 +444,11 @@ int dfilePrintFormattedArgs(DFile* stream, const char* format, va_list args)
 int dfileReadChar(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 384
+
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_fgetc(stream->fo1File);
+    }
 
     if ((stream->flags & DFILE_EOF) != 0 || (stream->flags & DFILE_ERROR) != 0) {
         return -1;
@@ -362,6 +478,11 @@ char* dfileReadString(char* string, int size, DFile* stream)
     assert(string); // "s", "dfile.c", 407
     assert(size); // "n", "dfile.c", 408
     assert(stream); // "stream", "dfile.c", 409
+
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_fgets(string, size, stream->fo1File);
+    }
 
     if ((stream->flags & DFILE_EOF) != 0 || (stream->flags & DFILE_ERROR) != 0) {
         return nullptr;
@@ -407,6 +528,11 @@ int dfileWriteChar(int ch, DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 437
 
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_fputc(ch, stream->fo1File);
+    }
+
     return -1;
 }
 
@@ -418,6 +544,11 @@ int dfileWriteString(const char* string, DFile* stream)
     assert(string); // "s", "dfile.c", 448
     assert(stream); // "stream", "dfile.c", 449
 
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_fputs(string, stream->fo1File);
+    }
+
     return -1;
 }
 
@@ -428,6 +559,11 @@ size_t dfileRead(void* ptr, size_t size, size_t count, DFile* stream)
 {
     assert(ptr); // "ptr", "dfile.c", 499
     assert(stream); // "stream", dfile.c, 500
+
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_fread(ptr, size, count, stream->fo1File);
+    }
 
     if ((stream->flags & DFILE_EOF) != 0 || (stream->flags & DFILE_ERROR) != 0) {
         return 0;
@@ -480,6 +616,11 @@ size_t dfileWrite(const void* ptr, size_t size, size_t count, DFile* stream)
     assert(ptr); // "ptr", "dfile.c", 538
     assert(stream); // "stream", "dfile.c", 539
 
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_fwrite(ptr, size, count, stream->fo1File);
+    }
+
     return count - 1;
 }
 
@@ -489,6 +630,11 @@ size_t dfileWrite(const void* ptr, size_t size, size_t count, DFile* stream)
 int dfileSeek(DFile* stream, long offset, int origin)
 {
     assert(stream); // "stream", "dfile.c", 569
+
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_fseek(stream->fo1File, offset, origin);
+    }
 
     if ((stream->flags & DFILE_ERROR) != 0) {
         return 1;
@@ -599,6 +745,11 @@ long dfileTell(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 654
 
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_ftell(stream->fo1File);
+    }
+
     return stream->position;
 }
 
@@ -608,6 +759,12 @@ long dfileTell(DFile* stream)
 void dfileRewind(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 664
+
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        db_rewind(stream->fo1File);
+        return;
+    }
 
     dfileSeek(stream, 0, SEEK_SET);
 
@@ -621,7 +778,32 @@ int dfileEof(DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 685
 
+    if (stream->backend == DBASE_BACKEND_FO1) {
+        db_select(stream->dbase->fo1Database);
+        return db_feof(stream->fo1File);
+    }
+
     return stream->flags & DFILE_EOF;
+}
+
+static DBase* dbaseOpenFo1(const char* filePath)
+{
+    DB_DATABASE* fo1Database = db_init(filePath, nullptr, nullptr, 0);
+    if (fo1Database == INVALID_DATABASE_HANDLE) {
+        return nullptr;
+    }
+
+    DBase* dbase = (DBase*)malloc(sizeof(*dbase));
+    if (dbase == nullptr) {
+        db_close(fo1Database);
+        return nullptr;
+    }
+
+    memset(dbase, 0, sizeof(*dbase));
+    dbase->backend = DBASE_BACKEND_FO1;
+    dbase->path = compat_strdup(filePath);
+    dbase->fo1Database = fo1Database;
+    return dbase;
 }
 
 // The [bsearch] comparison callback, which is used to find [DBaseEntry] for
