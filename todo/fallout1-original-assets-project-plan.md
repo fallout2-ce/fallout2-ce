@@ -34,11 +34,15 @@ Completed implementation tasks:
   - `fo1_shims/data/worldmap.txt` replaced with the full FO1in2-derived worldmap dataset (4x5 tiles, FO1 terrain/chance/table topology)
   - FO1 map-reference parsing now gracefully skips `maps=` / `map_XX=` resolution when stock FO1 map lookup entries are unavailable, avoiding noisy `WorldMap Error: Couldn't find match for Map Index!` spam during bringup
   - worldmap tile-load popup paths now also emit debug log context before showing alerts
+- FO1 map lookup shim import (FO1in2 reference)
+  - added `fo1_shims/data/maps.txt` from FO1in2 so worldmap `maps=` / `map_XX=` entries resolve through normal CE map lookup flow
+  - removed the temporary FO1 worldmap map-lookup skip path from runtime
+  - verified clean startup through `wmWorldMap_init` with no map-index lookup spam and no tile-load popup
 
 Current status after FO1 DAT integration:
 
 - FO1 run with explicit FO1 DAT paths no longer fails at master/critter archive open.
-- Bringup now advances past `wmWorldMap_init` and `endgameDeathEndingInit`, reaches main-menu background audio load (`07desert.acm`), and loads FO1 shim worldmap without map-index parse spam.
+- Bringup now advances past `wmWorldMap_init` and `endgameDeathEndingInit`, reaches main-menu background audio load (`07desert.acm`), and resolves FO1 shim worldmap/map references without map-index parse spam.
 
 ### ASan Bringup Workflow (macOS, preferred)
 
