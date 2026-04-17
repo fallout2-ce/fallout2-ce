@@ -17,11 +17,46 @@ Completed implementation tasks:
 - FO1 archive backend bringup
   - imported `src/fo1db/*` and integrated FO1 backend into `dfile`
   - commit: `f264827`
+- config policy alignment for FO1 mode
+  - FO1 now uses `fallout2.cfg` / `f2_res.ini` (no FO1-specific config filenames)
+  - commit: `cf6b3e7`
+- FO1 startup stabilization at `proto_init`
+  - added FO1 fallback perk name/description strings for missing FO2-only perk rows
+  - commit: `a323a12`
+- FO1 startup stabilization at worldmap init
+  - missing `data\\worldmap.txt` now fails gracefully with debug output instead of crashing in subtile marking
+  - commit: `34b3232`
 
 Current status after FO1 DAT integration:
 
 - FO1 run with explicit FO1 DAT paths no longer fails at master/critter archive open.
-- Bringup advances into engine init and currently fails later at `proto_init` (`Error: Finding perk names!`), which is now the next concrete blocker.
+- Bringup now advances past `proto_init` and currently fails at `wmWorldMap_init` due to missing `data\\worldmap.txt` in stock FO1 assets (expected next bridge/codepath task).
+
+### ASan Bringup Workflow (macOS, preferred)
+
+Reason:
+
+- ASan gives deterministic crash diagnostics in terminal/debug logs and avoids relying on macOS crash-reopen dialogs.
+
+Build:
+
+- `CC=clang CXX=clang++ cmake -S . -B out/build/local-asan-arm64 -G Ninja -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON -DFALLOUT_VENDORED=OFF -DCMAKE_PREFIX_PATH=/opt/homebrew -DCMAKE_OSX_ARCHITECTURES=arm64`
+- `cmake --build out/build/local-asan-arm64 -j 8`
+
+Refresh test binary in FO1 folder:
+
+- `cp ~/game/fallout2-ce/out/build/local-asan-arm64/Fallout\ II\ Community\ Edition.app/Contents/MacOS/Fallout\ II\ Community\ Edition /Users/klaas/Documents/f2stuff/Fallout1/Fallout\ II\ Community\ Edition.app/Contents/MacOS/Fallout\ II\ Community\ Edition`
+
+Run (from FO1 folder):
+
+- `cd /Users/klaas/Documents/f2stuff/Fallout1`
+- `./Fallout\ II\ Community\ Edition.app/Contents/MacOS/Fallout\ II\ Community\ Edition --game=fo1 '[system]master_dat=MASTER.DAT' '[system]master_patches=DATA' '[system]critter_dat=CRITTER.DAT' '[system]critter_patches=DATA' '[debug]mode=log'`
+
+Operational notes:
+
+- keep using `fallout2.cfg` in the game folder (current policy)
+- stop runs with `Ctrl-C` (or `kill <pid>`) to avoid stale processes and macOS reopen prompts
+- `--scan-unimplemented` currently reports FO1 DATs as non-database (FO2-format validator path), so use normal startup runs + `debug.log` for FO1 bringup checkpoints
 
 ## Objective
 
