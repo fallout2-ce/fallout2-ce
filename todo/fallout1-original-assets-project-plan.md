@@ -29,6 +29,7 @@ Completed implementation tasks:
 - FO1 worldmap shim loading from game-folder mods
   - FO1 mode now falls back to `mods\\fo1_shims\\data\\worldmap.txt` (or `fo1_shims\\data\\worldmap.txt`) when `data\\worldmap.txt` is missing
   - parser-complete shim file added at `fo1_shims/data/worldmap.txt`
+  - commit: `aa54707`
 
 Current status after FO1 DAT integration:
 
