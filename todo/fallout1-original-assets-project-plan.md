@@ -50,6 +50,10 @@ Completed implementation tasks:
   - added `fo1_shims/data/enddeath.txt` from FO1in2 to provide FO1-compatible death-ending selection data
   - verified startup now reaches `>endgameDeathEndingInit` in FO1 mode without the previous `data\\enddeath.txt is missing` fallback log
   - startup continues normally into main menu audio with `enddeath.txt` active in `mods/fo1_shims`
+- FO1 credits/quotes text shim import (FO1in2 reference)
+  - added `fo1_shims/text/english/credits.txt` and `fo1_shims/text/english/quotes.txt` from FO1in2
+  - placed under `text/english` to match localized path lookup used by `creditsOpen("credits.txt")` / `creditsOpen("quotes.txt")`
+  - verified no startup regression with the new text shims active in `mods/fo1_shims`
 
 Current status after FO1 DAT integration:
 
