@@ -110,154 +110,136 @@ void registerSetting(const char* section, const char* key, T& variable, P postPr
             [&, section, key]() { settingsWrite(section, key, variable); } });
 }
 
-struct SettingEntry {
-    std::function<void(const char*)> registerFunc;
-
-    template <typename T>
-    SettingEntry(const char* key, T& variable)
-        : registerFunc([key, &variable](const char* section) { registerSetting(section, key, variable); })
-    {
-    }
-
-    template <typename T, typename P>
-    SettingEntry(const char* key, T& variable, P postProcess)
-        : registerFunc([key, &variable, postProcess](const char* section) { registerSetting(section, key, variable, postProcess); })
-    {
-    }
-};
-
-static void addSection(const char* section, const std::initializer_list<SettingEntry> entries)
-{
-    for (const auto& entry : entries) {
-        entry.registerFunc(section);
-    }
-}
+// SECT must be defined to the settings sub-struct name, which equals the config section string.
+#define XSTR(x) #x
+#define STR(x) XSTR(x)
+#define SETTING(f) registerSetting(STR(SECT), #f, settings.SECT.f)
+#define SETTING_P(f, proc) registerSetting(STR(SECT), #f, settings.SECT.f, proc)
+#define SETTING_PATH(f) registerSetting(STR(SECT), #f, settings.SECT.f##_path, normalizePath)
 
 void initSettingsRegistry(bool isMapper)
 {
     if (!settingsRegistry.empty()) return;
 
-    addSection(GAME_CONFIG_SYSTEM_KEY,
-        {
-            { "executable", settings.system.executable },
-            { GAME_CONFIG_MASTER_DAT_KEY, settings.system.master_dat_path, normalizePath },
-            { GAME_CONFIG_MASTER_PATCHES_KEY, settings.system.master_patches_path, normalizePath },
-            { GAME_CONFIG_CRITTER_DAT_KEY, settings.system.critter_dat_path, normalizePath },
-            { GAME_CONFIG_CRITTER_PATCHES_KEY, settings.system.critter_patches_path, normalizePath },
-            { "language", settings.system.language },
-            { "scroll_lock", settings.system.scroll_lock },
-            { "interrupt_walk", settings.system.interrupt_walk },
-            { "art_cache_size", settings.system.art_cache_size },
-            { "color_cycling", settings.system.color_cycling },
-            { "cycle_speed_factor", settings.system.cycle_speed_factor },
-            { "hashing", settings.system.hashing },
-            { "splash", settings.system.splash },
-            { "free_space", settings.system.free_space },
-            { "screenshots_format", settings.system.screenshots_format },
-        });
+#define SECT system
+    SETTING(executable);
+    SETTING_PATH(master_dat);
+    SETTING_PATH(master_patches);
+    SETTING_PATH(critter_dat);
+    SETTING_PATH(critter_patches);
+    SETTING(language);
+    SETTING(scroll_lock);
+    SETTING(interrupt_walk);
+    SETTING(art_cache_size);
+    SETTING(color_cycling);
+    SETTING(cycle_speed_factor);
+    SETTING(hashing);
+    SETTING(splash);
+    SETTING(free_space);
+    SETTING(screenshots_format);
+#undef SECT
 
-    addSection(GAME_CONFIG_SCREEN_KEY,
-        {
-            { GAME_CONFIG_RESOLUTION_X_KEY, settings.screen.resolution_x, clamp(640, 7680) },
-            { GAME_CONFIG_RESOLUTION_Y_KEY, settings.screen.resolution_y, clamp(480, 4320) },
-            { GAME_CONFIG_WINDOWED_KEY, settings.screen.windowed },
-            { GAME_CONFIG_SCALE_KEY, settings.screen.scale, clamp(1, 4) },
-        });
+#define SECT screen
+    SETTING_P(resolution_x, clamp(640, 7680));
+    SETTING_P(resolution_y, clamp(480, 4320));
+    SETTING(windowed);
+    SETTING_P(scale, clamp(1, 4));
+#undef SECT
 
-    addSection(GAME_CONFIG_UI_KEY,
-        {
-            { GAME_CONFIG_IFACE_BAR_MODE_KEY, settings.ui.iface_bar_mode },
-            { GAME_CONFIG_IFACE_BAR_WIDTH_KEY, settings.ui.iface_bar_width, clamp(640, 4320) },
-            { GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY, settings.ui.iface_bar_side_art, clamp(0, 999) },
-            { GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY, settings.ui.iface_bar_sides_ori },
-            { GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, clamp(0, 2) },
-            { GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges },
-            { "anim_speed", settings.ui.anim_speed, clamp(0.1, 100.0) },
-            { "skip_opening_movies", settings.ui.skip_opening_movies, clamp(0, 2) },
-            { "display_karma_changes", settings.ui.display_karma_changes },
-            { "display_bonus_damage", settings.ui.display_bonus_damage },
-            { "numbers_in_dialogue", settings.ui.numbers_in_dialogue },
-            { "auto_quick_save", settings.ui.auto_quick_save, clamp(0, 10) },
-            { "enable_high_resolution_stencil", settings.ui.enable_high_resolution_stencil },
-        });
+#define SECT ui
+    SETTING(iface_bar_mode);
+    SETTING_P(iface_bar_width, clamp(640, 4320));
+    SETTING_P(iface_bar_side_art, clamp(0, 999));
+    SETTING(iface_bar_sides_ori);
+    SETTING_P(splash_screen_size, clamp(0, 2));
+    SETTING(ignore_map_edges);
+    SETTING_P(anim_speed, clamp(0.1, 100.0));
+    SETTING_P(skip_opening_movies, clamp(0, 2));
+    SETTING(display_karma_changes);
+    SETTING(display_bonus_damage);
+    SETTING(numbers_in_dialogue);
+    SETTING_P(auto_quick_save, clamp(0, 10));
+    SETTING(enable_high_resolution_stencil);
+#undef SECT
 
-    addSection("preferences",
-        {
-            // Clamping for most of these values is handled in preferences.cc
-            { "game_difficulty", settings.preferences.game_difficulty },
-            { "combat_difficulty", settings.preferences.combat_difficulty },
-            { "violence_level", settings.preferences.violence_level },
-            { "target_highlight", settings.preferences.target_highlight },
-            { "item_highlight", settings.preferences.item_highlight },
-            { "combat_looks", settings.preferences.combat_looks },
-            { "combat_messages", settings.preferences.combat_messages },
-            { "combat_taunts", settings.preferences.combat_taunts },
-            { "language_filter", settings.preferences.language_filter },
-            { "running", settings.preferences.running },
-            { "subtitles", settings.preferences.subtitles },
-            { "combat_speed", settings.preferences.combat_speed },
-            { "player_speedup", settings.preferences.player_speedup },
-            { "text_base_delay", settings.preferences.text_base_delay },
-            { "text_line_delay", settings.preferences.text_line_delay },
-            { "brightness", settings.preferences.brightness },
-            { "mouse_sensitivity", settings.preferences.mouse_sensitivity },
-            { "running_burning_guy", settings.preferences.running_burning_guy },
-        });
+#define SECT preferences
+    // Clamping for most of these values is handled in preferences.cc
+    SETTING(game_difficulty);
+    SETTING(combat_difficulty);
+    SETTING(violence_level);
+    SETTING(target_highlight);
+    SETTING(item_highlight);
+    SETTING(combat_looks);
+    SETTING(combat_messages);
+    SETTING(combat_taunts);
+    SETTING(language_filter);
+    SETTING(running);
+    SETTING(subtitles);
+    SETTING(combat_speed);
+    SETTING(player_speedup);
+    SETTING(text_base_delay);
+    SETTING(text_line_delay);
+    SETTING(brightness);
+    SETTING(mouse_sensitivity);
+    SETTING(running_burning_guy);
+#undef SECT
 
-    addSection(GAME_CONFIG_SOUND_KEY,
-        {
-            { "initialize", settings.sound.initialize },
-            { "debug", settings.sound.debug },
-            { "debug_sfxc", settings.sound.debug_sfxc },
-            { "sounds", settings.sound.sounds },
-            { "music", settings.sound.music },
-            { "speech", settings.sound.speech },
-            { "master_volume", settings.sound.master_volume },
-            { "music_volume", settings.sound.music_volume },
-            { "sndfx_volume", settings.sound.sndfx_volume },
-            { "speech_volume", settings.sound.speech_volume },
-            { "cache_size", settings.sound.cache_size },
-            { GAME_CONFIG_MUSIC_PATH1_KEY, settings.sound.music_path1, normalizePath },
-            { GAME_CONFIG_MUSIC_PATH2_KEY, settings.sound.music_path2, normalizePath },
-            { "gapless_music", settings.sound.gapless_music },
-        });
+#define SECT sound
+    SETTING(initialize);
+    SETTING(debug);
+    SETTING(debug_sfxc);
+    SETTING(sounds);
+    SETTING(music);
+    SETTING(speech);
+    SETTING(master_volume);
+    SETTING(music_volume);
+    SETTING(sndfx_volume);
+    SETTING(speech_volume);
+    SETTING(cache_size);
+    SETTING_P(music_path1, normalizePath);
+    SETTING_P(music_path2, normalizePath);
+    SETTING(gapless_music);
+#undef SECT
 
-    addSection(GAME_CONFIG_DEBUG_KEY,
-        {
-            { GAME_CONFIG_MODE_KEY, settings.debug.mode },
-            { "show_tile_num", settings.debug.show_tile_num },
-            { "show_script_messages", settings.debug.show_script_messages },
-            { "show_load_info", settings.debug.show_load_info },
-            { "output_map_data_info", settings.debug.output_map_data_info },
-            { "window_width", settings.debug.debug_window_width, clamp(200, 1920) },
-            { "window_height", settings.debug.debug_window_height, clamp(100, 1080) },
-            { "console_output_path", settings.debug.console_output_path },
-        });
+#define SECT debug
+    SETTING(mode);
+    SETTING(show_tile_num);
+    SETTING(show_script_messages);
+    SETTING(show_load_info);
+    SETTING(output_map_data_info);
+    SETTING_P(window_width, clamp(200, 1920));
+    SETTING_P(window_height, clamp(100, 1080));
+    SETTING(console_output_path);
+#undef SECT
 
-    addSection("qol",
-        {
-            { "use_walk_distance", settings.qol.use_walk_distance, clamp(0, 100) },
-            { "auto_open_doors", settings.qol.auto_open_doors },
-        });
+#define SECT qol
+    SETTING_P(use_walk_distance, clamp(0, 100));
+    SETTING(auto_open_doors);
+#undef SECT
 
     if (isMapper) {
-        addSection("mapper",
-            {
-                { "override_librarian", settings.mapper.override_librarian },
-                { "librarian", settings.mapper.librarian },
-                { "use_art_not_protos", settings.mapper.user_art_not_protos },
-                { "rebuild_protos", settings.mapper.rebuild_protos },
-                { "fix_map_objects", settings.mapper.fix_map_objects },
-                { "fix_map_inventory", settings.mapper.fix_map_inventory },
-                { "ignore_rebuild_errors", settings.mapper.ignore_rebuild_errors },
-                { "show_pid_numbers", settings.mapper.show_pid_numbers },
-                { "save_text_maps", settings.mapper.save_text_maps },
-                { "run_mapper_as_game", settings.mapper.run_mapper_as_game },
-                { "default_f8_as_game", settings.mapper.default_f8_as_game },
-                { "sort_script_list", settings.mapper.sort_script_list },
-            });
+#define SECT mapper
+        SETTING(override_librarian);
+        SETTING(librarian);
+        SETTING(use_art_not_protos);
+        SETTING(rebuild_protos);
+        SETTING(fix_map_objects);
+        SETTING(fix_map_inventory);
+        SETTING(ignore_rebuild_errors);
+        SETTING(show_pid_numbers);
+        SETTING(save_text_maps);
+        SETTING(run_mapper_as_game);
+        SETTING(default_f8_as_game);
+        SETTING(sort_script_list);
+#undef SECT
     }
 }
+
+#undef SETTING
+#undef SETTING_P
+#undef SETTING_PATH
+#undef STR
+#undef XSTR
 
 bool settingsInit(bool isMapper, int argc, char** argv)
 {
