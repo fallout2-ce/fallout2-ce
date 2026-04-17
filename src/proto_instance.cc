@@ -2055,7 +2055,7 @@ bool objectIsOpenable(Object* obj)
         return false;
     }
 
-    // Sfall: stricter "openable" check.  In Sfall it is implement in the obj_is_openable opcode.
+    // Sfall: stricter "openable" check.  In Sfall it is implemented in the obj_is_openable opcode.
     CacheEntry* artHandle;
     Art* art = artLock(obj->fid, &artHandle);
     if (art == nullptr) {
