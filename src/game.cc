@@ -1368,6 +1368,9 @@ static int gameDbInit()
 
     int master_db_handle = dbOpen(main_file_name, patch_file_name);
     if (master_db_handle == -1) {
+        debugPrint("Could not find the master datafile: master_dat=%s master_patches=%s\n",
+            main_file_name != nullptr ? main_file_name : "<null>",
+            patch_file_name != nullptr ? patch_file_name : "<null>");
         showMesageBox("Could not find the master datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
         return -1;
     }
@@ -1384,6 +1387,9 @@ static int gameDbInit()
 
     int critter_db_handle = dbOpen(main_file_name, patch_file_name);
     if (critter_db_handle == -1) {
+        debugPrint("Could not find the critter datafile: critter_dat=%s critter_patches=%s\n",
+            main_file_name != nullptr ? main_file_name : "<null>",
+            patch_file_name != nullptr ? patch_file_name : "<null>");
         showMesageBox("Could not find the critter datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
         return -1;
     }
