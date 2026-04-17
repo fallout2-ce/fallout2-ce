@@ -46,6 +46,10 @@ Completed implementation tasks:
   - added `fo1_shims/data/party.txt` from FO1in2 to supply FO1-compatible party member option metadata
   - verified startup path remains clean through `wmWorldMap_init` and into main menu audio with `party.txt` active in `mods/fo1_shims`
   - no new `party` init parse/load errors observed in `debug.log`
+- FO1 endgame death-table shim import (FO1in2 reference)
+  - added `fo1_shims/data/enddeath.txt` from FO1in2 to provide FO1-compatible death-ending selection data
+  - verified startup now reaches `>endgameDeathEndingInit` in FO1 mode without the previous `data\\enddeath.txt is missing` fallback log
+  - startup continues normally into main menu audio with `enddeath.txt` active in `mods/fo1_shims`
 
 Current status after FO1 DAT integration:
 

@@ -1,0 +1,61 @@
+#
+# enddeath.txt
+#
+# format of each line is:
+#
+#   gvar, value, worldAreaKnown, worldAreaNotKnown, minLevel, %, narrator file
+#
+# Where:
+#
+#   gvar is the GVAR_* number for the variable controlling the slide.
+#
+#   value is the value that the gvar must be >= to for this slide
+#     to be shown
+#
+#   worldAreaKnown is the # of a worldmap area that has to be known
+#     in order to get this one as an option
+#
+#   worldAreaNotKnown is the # of a worldmap area that has to be *not*
+#     known in order to get this one as an option
+#
+#   minLevel is the minimum player level in order to get this one as
+#     an option
+#
+#   % is the % chance of a given line to occur
+#
+#   narrator file is the base filename (no path path or extension) used
+#     for the narrator voice-over and subtitles.  Maximum of 8 characters.
+#
+
+
+#####
+# Generic Deaths
+#####
+-1, 0, -1, -1, 0, 20, NAR_3
+-1, 0, -1, -1, 0, 20, NAR_4
+-1, 0, -1, -1, 0, 20, NAR_5
+-1, 0, -1, -1, 0, 20, NAR_6
+-1, 0,  8, -1, 0, 20, NAR_8
+
+#####
+# Specific Deaths
+#####
+-1, 0, -1, 0, 200, 0, nar_dth3
+-1, 0, -1, 0, 200, 0, nar_dth4
+-1, 0, -1, 0, 200, 0, nar_dth5
+-1, 0, -1, 0, 200, 0, nar_dth6
+-1, 0, -1, 0, 200, 0, nar_dth7
+-1, 0, -1, 0, 200, 0, nar_dth8
+-1, 0, -1, 0, 200, 0, nar_dth9
+
+# Special Radiation Death
+491, 999, 3, -1, 150, 0, NAR_7
+
+#####
+# Joke Deaths
+#####
+-1, 0, -1, -1, 10, 1, nar_jdd1
+-1, 0, -1, -1, 10, 1, nar_jdd3
+-1, 0, -1, -1, 10, 1, nar_jdd4
+-1, 0, -1, -1, 10, 1, nar_jdd5
+-1, 0, -1, -1, 10, 1, nar_jdd6
