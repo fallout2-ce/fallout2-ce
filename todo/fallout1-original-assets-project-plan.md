@@ -38,6 +38,10 @@ Completed implementation tasks:
   - added `fo1_shims/data/maps.txt` from FO1in2 so worldmap `maps=` / `map_XX=` entries resolve through normal CE map lookup flow
   - removed the temporary FO1 worldmap map-lookup skip path from runtime
   - verified clean startup through `wmWorldMap_init` with no map-index lookup spam and no tile-load popup
+- FO1 city metadata shim import (FO1in2 reference)
+  - added `fo1_shims/data/city.txt` from FO1in2 so FO1 area/town/entrance metadata is loaded from the shim mod
+  - verified clean startup through `wmWorldMap_init` with FO1 `maps.txt` + `city.txt` + `worldmap.txt` active under `mods/fo1_shims`
+  - no new area/map lookup parse errors observed during startup
 
 Current status after FO1 DAT integration:
 
