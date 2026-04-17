@@ -42,6 +42,10 @@ Completed implementation tasks:
   - added `fo1_shims/data/city.txt` from FO1in2 so FO1 area/town/entrance metadata is loaded from the shim mod
   - verified clean startup through `wmWorldMap_init` with FO1 `maps.txt` + `city.txt` + `worldmap.txt` active under `mods/fo1_shims`
   - no new area/map lookup parse errors observed during startup
+- FO1 party metadata shim import (FO1in2 reference)
+  - added `fo1_shims/data/party.txt` from FO1in2 to supply FO1-compatible party member option metadata
+  - verified startup path remains clean through `wmWorldMap_init` and into main menu audio with `party.txt` active in `mods/fo1_shims`
+  - no new `party` init parse/load errors observed in `debug.log`
 
 Current status after FO1 DAT integration:
 
