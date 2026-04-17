@@ -4,6 +4,7 @@
 
 #include "debug.h"
 #include "game.h"
+#include "game_variant.h"
 #include "memory.h"
 #include "message.h"
 #include "object.h"
@@ -190,6 +191,8 @@ static int gHereAndNowBonusExperience = 0;
 //
 // 0x6642D4
 static MessageList gPerksMessageList;
+static char gFallbackPerkName[] = "Unused";
+static char gFallbackPerkDescription[] = "";
 
 // 0x4965A0
 int perksInit()
@@ -218,11 +221,15 @@ int perksInit()
         messageListItem.num = 101 + perk;
         if (messageListGetItem(&gPerksMessageList, &messageListItem)) {
             gPerkDescriptions[perk].name = messageListItem.text;
+        } else if (gameVariantIsFallout1()) {
+            gPerkDescriptions[perk].name = gFallbackPerkName;
         }
 
         messageListItem.num = 1101 + perk;
         if (messageListGetItem(&gPerksMessageList, &messageListItem)) {
             gPerkDescriptions[perk].description = messageListItem.text;
+        } else if (gameVariantIsFallout1()) {
+            gPerkDescriptions[perk].description = gFallbackPerkDescription;
         }
     }
 
