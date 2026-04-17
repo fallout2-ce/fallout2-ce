@@ -173,11 +173,11 @@ void initSettingsRegistry(bool isMapper)
             { GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY, settings.ui.splash_screen_size, clamp(0, 2) },
             { GAME_CONFIG_IGNORE_MAP_EDGES_KEY, settings.ui.ignore_map_edges },
             { "anim_speed", settings.ui.anim_speed, clamp(0.1, 100.0) },
-            { "skip_opening_movies", settings.ui.skip_opening_movies },
+            { "skip_opening_movies", settings.ui.skip_opening_movies, clamp(0, 2) },
             { "display_karma_changes", settings.ui.display_karma_changes },
             { "display_bonus_damage", settings.ui.display_bonus_damage },
             { "numbers_in_dialogue", settings.ui.numbers_in_dialogue },
-            { "auto_quick_save", settings.ui.auto_quick_save },
+            { "auto_quick_save", settings.ui.auto_quick_save, clamp(0, 10) },
             { "enable_high_resolution_stencil", settings.ui.enable_high_resolution_stencil },
         });
 
@@ -236,7 +236,7 @@ void initSettingsRegistry(bool isMapper)
 
     addSection("qol",
         {
-            { "use_walk_distance", settings.qol.use_walk_distance },
+            { "use_walk_distance", settings.qol.use_walk_distance, clamp(0, 100) },
             { "auto_open_doors", settings.qol.auto_open_doors },
         });
 

@@ -72,9 +72,7 @@ bool sfallConfigInit(int argc, char** argv)
         *ch = '\\';
     } else {
         strcpy(path, SFALL_CONFIG_FILE_NAME);
-    }
-
-    auto configChecker = ConfigChecker(gSfallConfig, SFALL_CONFIG_FILE_NAME);
+    };
 
     configRead(&gSfallConfig, path, false);
 
