@@ -18,6 +18,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_variant.h"
 #include "input.h"
 #include "map.h"
 #include "memory.h"
@@ -1013,6 +1014,10 @@ int endgameDeathEndingInit()
 
     stream = fileOpen("data\\enddeath.txt", "rt");
     if (stream == nullptr) {
+        if (gameVariantIsFallout1()) {
+            debugPrint("\nendgameDeathEndingInit: data\\enddeath.txt is missing in FO1 mode, continuing without death-ending table.");
+            return 0;
+        }
         return -1;
     }
 
