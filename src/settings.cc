@@ -113,9 +113,9 @@ void registerSetting(const char* section, const char* key, T& variable, P postPr
 // SECT must be defined to the settings sub-struct name, which equals the config section string.
 #define XSTR(x) #x
 #define STR(x) XSTR(x)
-#define SETTING(f)         registerSetting(STR(SECT), #f, settings.SECT.f)
+#define SETTING(f) registerSetting(STR(SECT), #f, settings.SECT.f)
 #define SETTING_P(f, proc) registerSetting(STR(SECT), #f, settings.SECT.f, proc)
-#define SETTING_PATH(f)    registerSetting(STR(SECT), #f, settings.SECT.f##_path, normalizePath)
+#define SETTING_PATH(f) registerSetting(STR(SECT), #f, settings.SECT.f##_path, normalizePath)
 
 void initSettingsRegistry(bool isMapper)
 {
