@@ -165,6 +165,16 @@ void scriptHooks_GameModeChange(int exit, int previousGameMode)
 }
 
 /*
+Runs immediately after a critter dies for any reason.
+
+Critter arg0 - The critter that just died
+*/
+void scriptHooks_OnDeath(Object* critter)
+{
+    ScriptHookCall(HOOK_ONDEATH, 0, { critter }).call();
+}
+
+/*
 Runs before and after each turn in combat (for both PC and NPC).
 
 int     arg0 - event type:

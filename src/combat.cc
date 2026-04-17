@@ -4938,6 +4938,7 @@ static void _damage_object(Object* a1, int damage, bool animated, int a4, Object
         }
 
         partyMemberRemove(a1);
+        scriptHooks_OnDeath(a1);
     }
 }
 
