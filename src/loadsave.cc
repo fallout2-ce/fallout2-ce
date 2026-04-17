@@ -48,7 +48,6 @@
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
-#include "sfall_config.h"
 #include "sfall_global_scripts.h"
 #include "sfall_global_vars.h"
 #include "skill.h"
@@ -357,7 +356,7 @@ void _InitLoadSave()
     MapDirErase(PROTO_DIR_NAME "\\" CRITTERS_DIR_NAME "\\", PROTO_FILE_EXT);
     MapDirErase(PROTO_DIR_NAME "\\" ITEMS_DIR_NAME "\\", PROTO_FILE_EXT);
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_AUTO_QUICK_SAVE, &quickSaveSlots);
+    quickSaveSlots = settings.ui.auto_quick_save;
     if (quickSaveSlots > 0 && quickSaveSlots <= saveLoadTotalSlots) {
         autoQuickSaveSlots = true;
     }

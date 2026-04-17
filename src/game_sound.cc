@@ -21,7 +21,6 @@
 #include "queue.h"
 #include "random.h"
 #include "settings.h"
-#include "sfall_config.h"
 #include "sound_effects_cache.h"
 #include "stat.h"
 #include "svga.h"
@@ -774,8 +773,7 @@ int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMo
 // 0x450A08
 int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode)
 {
-    int gaplessMusic = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAPLESS_MUSIC, &gaplessMusic);
+    int gaplessMusic = settings.sound.gapless_music;
     if (backgoundSoundIsPlaying() && gaplessMusic) {
         if (!strcmp(fileName, gBackgroundSoundFileName)) {
             return 0;

@@ -38,7 +38,6 @@
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
-#include "sfall_config.h"
 #include "svga.h"
 #include "text_object.h"
 #include "tile.h"
@@ -823,8 +822,7 @@ int mapLoadById(int map)
 static int mapLoad(File* stream)
 {
     _map_save_in_game(true);
-    int gaplessMusic = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAPLESS_MUSIC, &gaplessMusic);
+    int gaplessMusic = settings.sound.gapless_music;
     if (backgoundSoundIsPlaying() && !gaplessMusic) {
         // playing the loading sound might interrupt continuous music playback
         backgroundSoundLoad("wind2", GSOUND_LIMIT_AFTER, GSOUND_MEMORY, GSOUND_LOOP);

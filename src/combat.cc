@@ -6705,8 +6705,7 @@ static void damageModInit()
     gBonusHthDamageFix = true;
     configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BONUS_HTH_DAMAGE_FIX_KEY, &gBonusHthDamageFix);
 
-    gDisplayBonusDamage = false;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DISPLAY_BONUS_DAMAGE_KEY, &gDisplayBonusDamage);
+    gDisplayBonusDamage = settings.ui.display_bonus_damage;
 }
 
 bool damageModGetBonusHthDamageFix()

@@ -4,6 +4,24 @@ This document tracks Fallout 2 CE compatibility with sfall.  This is for modders
 
 For now, this covers opcodes/metarules, and hooks.  In the future, it will include other ways of modifying the engine (like ini files), and other Sfall-specific behaviour.
 
+## Settings (ddraw.ini → fallout2.cfg)
+
+Some settings previously read from `ddraw.ini` have been moved into `fallout2.cfg`. The table below maps each setting to its new location. `HiResMode` had no effect in CE and has been removed.
+
+| ddraw.ini section | ddraw.ini key | fallout2.cfg section | fallout2.cfg key |
+| --- | --- | --- | --- |
+| `Misc` | `SkipOpeningMovies` | `ui` | `skip_opening_movies` |
+| `Misc` | `DisplayKarmaChanges` | `ui` | `display_karma_changes` |
+| `Misc` | `DisplayBonusDamage` | `ui` | `display_bonus_damage` |
+| `Misc` | `NumbersInDialogue` | `ui` | `numbers_in_dialogue` |
+| `Misc` | `AutoQuickSave` | `ui` | `auto_quick_save` |
+| `Main` | `EnableHighResolutionStencil` | `ui` | `enable_high_resolution_stencil` |
+| `Misc` | `ConsoleOutputPath` | `debug` | `console_output_path` |
+| `Misc` | `GaplessMusic` | `sound` | `gapless_music` |
+| `Misc` | `ScreenshotsFormat` | `system` | `screenshots_format` |
+| `Misc` | `UseWalkDistance` | `qol` | `use_walk_distance` |
+| `Misc` | `AutoOpenDoors` | `qol` | `auto_open_doors` |
+
 ## Opcodes / Metarules
 
 See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/) for documentation on specific functions.
