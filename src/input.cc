@@ -8,10 +8,12 @@
 #include "delay.h"
 #include "dinput.h"
 #include "draw.h"
+#include "game.h"
 #include "kb.h"
 #include "memory.h"
 #include "mouse.h"
 #include "sfall_kb_helpers.h"
+#include "sfall_script_hooks.h"
 #include "svga.h"
 #include "text_font.h"
 #include "touch.h"
@@ -44,6 +46,8 @@ static int dequeueInputEvent();
 static void screenshotBlitter(unsigned char* src, int src_pitch, int a3, int x, int y, int width, int height, int dest_x, int dest_y);
 static void buildNormalizedQwertyKeys();
 static void _GNW95_process_key(KeyboardData* data);
+static int inputGetHookMouseButton(int sdlButton);
+static void inputHandleMouseClickHook(int sdlButton, bool pressed);
 
 // 0x51E23C
 static int gKeyboardKeyRepeatRate = 80;
@@ -99,6 +103,37 @@ static unsigned int gTickerLastTimestamp;
 
 // global for inventoryOpenUseItemOn inventory to prevent click through bug
 bool gBlockMouseUpEvent = false;
+
+static int inputGetHookMouseButton(int sdlButton)
+{
+    switch (sdlButton) {
+    case SDL_BUTTON_LEFT:
+        return 0;
+    case SDL_BUTTON_RIGHT:
+        return 1;
+    case SDL_BUTTON_MIDDLE:
+        return 2;
+    case SDL_BUTTON_X1:
+        return 3;
+    case SDL_BUTTON_X2:
+        return 4;
+    default:
+        if (sdlButton >= 6 && sdlButton <= 8) {
+            return sdlButton - 1;
+        }
+        return -1;
+    }
+}
+
+static void inputHandleMouseClickHook(int sdlButton, bool pressed)
+{
+    if (!gGameLoaded) return;
+
+    int hookButton = inputGetHookMouseButton(sdlButton);
+    if (hookButton == -1) return;
+
+    ScriptHookCall(HOOK_MOUSECLICK, 0, { pressed ? 1 : 0, hookButton }).call();
+}
 
 // 0x4C8A70
 int inputInit()
@@ -962,6 +997,9 @@ void _GNW95_process_message()
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP:
         case SDL_MOUSEWHEEL:
+            if (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP) {
+                inputHandleMouseClickHook(e.button.button, e.type == SDL_MOUSEBUTTONDOWN);
+            }
             handleMouseEvent(&e);
             break;
         case SDL_FINGERDOWN:
