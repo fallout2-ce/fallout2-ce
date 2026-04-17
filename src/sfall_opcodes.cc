@@ -11,6 +11,7 @@
 #include "dbox.h"
 #include "debug.h"
 #include "game.h"
+#include "game_dialog.h"
 #include "input.h"
 #include "interface.h"
 #include "interpreter.h"
@@ -841,6 +842,12 @@ static void op_tile_under_cursor(Program* program)
 
     int tile = tileFromScreenXY(x, y);
     programStackPushInteger(program, tile);
+}
+
+// gdialog_get_barter_mod
+static void op_gdialog_get_barter_mod(Program* program)
+{
+    programStackPushInteger(program, gameDialogGetBarterModifier());
 }
 
 // get_tile_fid
@@ -1992,6 +1999,7 @@ void sfallOpcodesInit()
     // 0x824b - int tile_under_cursor()
     interpreterRegisterOpcode(0x824B, op_tile_under_cursor);
     // 0x824c - int gdialog_get_barter_mod()
+    interpreterRegisterOpcode(0x824C, op_gdialog_get_barter_mod);
     // 0x824d - void set_inven_ap_cost(int cost)
 
     // 0x825a - void reg_anim_destroy(object object)

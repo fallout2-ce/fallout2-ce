@@ -4029,9 +4029,9 @@ static void opCombatIsInitialized(Program* program)
 // 0x45AFA0
 static void _op_gdialog_barter(Program* program)
 {
-    int data = programStackPopInteger(program);
+    int modifier = programStackPopInteger(program);
 
-    if (gameDialogBarter(data) == -1) {
+    if (gameDialogBarter(modifier) == -1) {
         debugPrint("\nScript Error: gdialog_barter: failed");
     }
 }
@@ -4700,9 +4700,9 @@ static void opJamLock(Program* program)
 // 0x45C7D4
 static void opGameDialogSetBarterMod(Program* program)
 {
-    int data = programStackPopInteger(program);
+    int modifier = programStackPopInteger(program);
 
-    gameDialogSetBarterModifier(data);
+    gameDialogSetBarterModifier(modifier);
 }
 
 // combat_difficulty
