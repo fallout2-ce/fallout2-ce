@@ -479,6 +479,7 @@ static int wmWorldMapSaveTempData();
 static int wmWorldMapLoadTempData();
 static int wmConfigInit();
 static int wmLoadFo1WorldmapShim(Config* config);
+static bool wmShouldSkipFo1WorldmapMapLookups();
 static int wmReadEncounterType(Config* config, char* lookupName, char* sectionKey);
 static int wmParseEncounterTableIndex(EncounterTableEntry* encounterTableEntry, char* string);
 static int wmParseEncounterSubEncStr(EncounterTableEntry* encounterTableEntry, char** stringPtr);
@@ -846,6 +847,7 @@ static int wmMaxEncBaseTypes;
 
 // 0x67303C
 static int wmMaxEncounterInfoTables;
+static bool gFo1WorldmapMapLookupSkipLogged = false;
 
 static bool gTownMapHotkeysFix;
 static bool gCitiesLimitFix;
@@ -1365,7 +1367,9 @@ static int wmConfigInit()
     }
 
     if (!configGetInt(&config, "Tile Data", "num_horizontal_tiles", &wmNumHorizontalTiles)) {
+        debugPrint("\nwmConfigInit::Error loading tile data! (missing Tile Data::num_horizontal_tiles)");
         showMesageBox("\nwmConfigInit::Error loading tile data!");
+        configFree(&config);
         return -1;
     }
 
@@ -1382,7 +1386,9 @@ static int wmConfigInit()
 
         TileInfo* worldmapTiles = (TileInfo*)internal_realloc(wmTileInfoList, sizeof(*wmTileInfoList) * wmMaxTileNum);
         if (worldmapTiles == nullptr) {
+            debugPrint("\nwmConfigInit::Error loading tiles! (allocation failed for tile index %d)", tileIndex);
             showMesageBox("\nwmConfigInit::Error loading tiles!");
+            configFree(&config);
             exit(1);
         }
 
@@ -1412,12 +1418,19 @@ static int wmConfigInit()
 
                 char* subtileProps;
                 if (!configGetString(&config, section, key, &subtileProps)) {
+                    debugPrint("\nwmConfigInit::Error loading tiles! (missing key '%s' in section '%s')", key, section);
                     showMesageBox("\nwmConfigInit::Error loading tiles!");
+                    configFree(&config);
                     exit(1);
                 }
 
                 if (wmParseSubTileInfo(tile, row, column, subtileProps) == -1) {
+                    debugPrint("\nwmConfigInit::Error loading tiles! (parse failure for key '%s' in section '%s', value='%s')",
+                        key,
+                        section,
+                        subtileProps);
                     showMesageBox("\nwmConfigInit::Error loading tiles!");
+                    configFree(&config);
                     exit(1);
                 }
             }
@@ -1479,16 +1492,18 @@ static int wmReadEncounterType(Config* config, char* lookupName, char* sectionKe
 
     char* str;
     if (configGetString(config, sectionKey, "maps", &str)) {
-        while (*str != '\0') {
-            if (encounterTable->mapsLength >= 6) {
-                break;
-            }
+        if (!wmShouldSkipFo1WorldmapMapLookups()) {
+            while (*str != '\0') {
+                if (encounterTable->mapsLength >= 6) {
+                    break;
+                }
 
-            if (strParseStrFromFunc(&str, &(encounterTable->maps[encounterTable->mapsLength]), wmParseFindMapIdxMatch) == -1) {
-                break;
-            }
+                if (strParseStrFromFunc(&str, &(encounterTable->maps[encounterTable->mapsLength]), wmParseFindMapIdxMatch) == -1) {
+                    break;
+                }
 
-            encounterTable->mapsLength++;
+                encounterTable->mapsLength++;
+            }
         }
     }
 
@@ -2006,6 +2021,10 @@ static int wmParseTerrainTypes(Config* config, char* string)
 // 0x4BE598
 static int wmParseTerrainRndMaps(Config* config, Terrain* terrain)
 {
+    if (wmShouldSkipFo1WorldmapMapLookups()) {
+        return 0;
+    }
+
     char section[40];
     snprintf(section, sizeof(section), "Random Maps: %s", terrain->lookupName);
 
@@ -2030,6 +2049,20 @@ static int wmParseTerrainRndMaps(Config* config, Terrain* terrain)
     }
 
     return 0;
+}
+
+static bool wmShouldSkipFo1WorldmapMapLookups()
+{
+    if (!gameVariantIsFallout1() || wmMaxMapNum > 0) {
+        return false;
+    }
+
+    if (!gFo1WorldmapMapLookupSkipLogged) {
+        debugPrint("\nwmConfigInit: FO1 worldmap shim map lookups are being skipped because data\\maps.txt did not provide map entries.");
+        gFo1WorldmapMapLookupSkipLogged = true;
+    }
+
+    return true;
 }
 
 // 0x4BE61C
