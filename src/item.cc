@@ -27,6 +27,7 @@
 #include "proto_instance.h"
 #include "queue.h"
 #include "random.h"
+#include "content_config.h"
 #include "sfall_config.h"
 #include "sfall_script_hooks.h"
 #include "skill.h"
@@ -71,8 +72,6 @@ static void explosionsReset();
 static void explosionsExit();
 
 static void healingItemsInit();
-static void healingItemsInitVanilla();
-static void healingItemsInitCustom();
 
 typedef struct DrugDescription {
     int drugPid;
@@ -3383,7 +3382,7 @@ bool booksGetInfo(int bookPid, int* messageIdPtr, int* skillPtr)
 static void explosionsInit()
 {
     gExplosionEmitsLight = false;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_EXPLOSION_EMITS_LIGHT_KEY, &gExplosionEmitsLight);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_EXPLOSIONS_SECTION, "emit_light", &gExplosionEmitsLight);
 
     explosionsReset();
 }
@@ -3398,21 +3397,14 @@ static void explosionsReset()
     gPlasticExplosiveMinDamage = 40;
     gPlasticExplosiveMaxDamage = 80;
 
-    if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DYNAMITE_MAX_DAMAGE_KEY, &gDynamiteMaxDamage)) {
-        gDynamiteMaxDamage = std::clamp(gDynamiteMaxDamage, 0, 9999);
-    }
-
-    if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DYNAMITE_MIN_DAMAGE_KEY, &gDynamiteMinDamage)) {
-        gDynamiteMinDamage = std::clamp(gDynamiteMinDamage, 0, gDynamiteMaxDamage);
-    }
-
-    if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PLASTIC_EXPLOSIVE_MAX_DAMAGE_KEY, &gPlasticExplosiveMaxDamage)) {
-        gPlasticExplosiveMaxDamage = std::clamp(gPlasticExplosiveMaxDamage, 0, 9999);
-    }
-
-    if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PLASTIC_EXPLOSIVE_MIN_DAMAGE_KEY, &gPlasticExplosiveMinDamage)) {
-        gPlasticExplosiveMinDamage = std::clamp(gPlasticExplosiveMinDamage, 0, gPlasticExplosiveMaxDamage);
-    }
+    configGetInt(&gContentConfig, CONTENT_CONFIG_EXPLOSIONS_SECTION, "dynamite_max", &gDynamiteMaxDamage, 50);
+    gDynamiteMaxDamage = std::clamp(gDynamiteMaxDamage, 0, 9999);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_EXPLOSIONS_SECTION, "dynamite_min", &gDynamiteMinDamage, 30);
+    gDynamiteMinDamage = std::clamp(gDynamiteMinDamage, 0, gDynamiteMaxDamage);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_EXPLOSIONS_SECTION, "plastic_explosive_max", &gPlasticExplosiveMaxDamage, 80);
+    gPlasticExplosiveMaxDamage = std::clamp(gPlasticExplosiveMaxDamage, 0, 9999);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_EXPLOSIONS_SECTION, "plastic_explosive_min", &gPlasticExplosiveMinDamage, 40);
+    gPlasticExplosiveMinDamage = std::clamp(gPlasticExplosiveMinDamage, 0, gPlasticExplosiveMaxDamage);
 
     gExplosives.clear();
 
@@ -3600,39 +3592,9 @@ void explosionSetMaxTargets(int maxTargets)
 
 static void healingItemsInit()
 {
-    healingItemsInitVanilla();
-    healingItemsInitCustom();
-}
-
-static void healingItemsInitVanilla()
-{
-    gHealingItemPids[HEALING_ITEM_STIMPACK] = PROTO_ID_STIMPACK;
-    gHealingItemPids[HEALING_ITEM_SUPER_STIMPACK] = PROTO_ID_SUPER_STIMPACK;
-    gHealingItemPids[HEALING_ITEM_HEALING_POWDER] = PROTO_ID_HEALING_POWDER;
-}
-
-static void healingItemsInitCustom()
-{
-    char* tweaksFilePath = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_TWEAKS_FILE_KEY, &tweaksFilePath);
-    if (tweaksFilePath != nullptr && *tweaksFilePath == '\0') {
-        tweaksFilePath = nullptr;
-    }
-
-    if (tweaksFilePath == nullptr) {
-        return;
-    }
-
-    Config tweaksConfig;
-    if (configInit(&tweaksConfig)) {
-        if (configRead(&tweaksConfig, tweaksFilePath, false)) {
-            configGetInt(&gSfallConfig, "Items", "STIMPAK", &(gHealingItemPids[HEALING_ITEM_STIMPACK]));
-            configGetInt(&gSfallConfig, "Items", "SUPER_STIMPAK", &(gHealingItemPids[HEALING_ITEM_SUPER_STIMPACK]));
-            configGetInt(&gSfallConfig, "Items", "HEALING_POWDER", &(gHealingItemPids[HEALING_ITEM_HEALING_POWDER]));
-        }
-
-        configFree(&tweaksConfig);
-    }
+    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "stimpak", &gHealingItemPids[HEALING_ITEM_STIMPACK], PROTO_ID_STIMPACK);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "super_stimpak", &gHealingItemPids[HEALING_ITEM_SUPER_STIMPACK], PROTO_ID_SUPER_STIMPACK);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "healing_powder", &gHealingItemPids[HEALING_ITEM_HEALING_POWDER], PROTO_ID_HEALING_POWDER);
 }
 
 bool itemIsHealing(int pid)

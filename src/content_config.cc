@@ -2,6 +2,8 @@
 
 namespace fallout {
 
+Config gContentConfig;
+
 constexpr char kConfigPath[] = R"(config\game.cfg)";
 
 bool contentConfigInit()

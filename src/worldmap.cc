@@ -40,6 +40,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
+#include "content_config.h"
 #include "sfall_config.h"
 #include "sfall_global_scripts.h"
 #include "skill.h"
@@ -907,7 +908,7 @@ int wmWorldMap_init()
     // SFALL
     gTownMapHotkeysFix = true;
     worldmapTrailMarkers = 0;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_TOWN_MAP_HOTKEYS_FIX_KEY, &gTownMapHotkeysFix);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix);
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_WORLDMAP_TRAIL_MARKERS, &worldmapTrailMarkers);
 
     // CE: City size fids should be initialized during startup. They are used

@@ -37,6 +37,7 @@
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
+#include "content_config.h"
 #include "sfall_config.h"
 #include "sfall_global_scripts.h"
 #include "sfall_script_hooks.h"
@@ -1983,10 +1984,10 @@ static const char* gCritDataMemberKeys[CRIT_DATA_MEMBER_COUNT] = {
 };
 
 static bool gBurstModEnabled = false;
-static int gBurstModCenterMultiplier = SFALL_CONFIG_BURST_MOD_DEFAULT_CENTER_MULTIPLIER;
-static int gBurstModCenterDivisor = SFALL_CONFIG_BURST_MOD_DEFAULT_CENTER_DIVISOR;
-static int gBurstModTargetMultiplier = SFALL_CONFIG_BURST_MOD_DEFAULT_TARGET_MULTIPLIER;
-static int gBurstModTargetDivisor = SFALL_CONFIG_BURST_MOD_DEFAULT_TARGET_DIVISOR;
+static int gBurstModCenterMultiplier = 1;
+static int gBurstModCenterDivisor = 3;
+static int gBurstModTargetMultiplier = 1;
+static int gBurstModTargetDivisor = 2;
 static UnarmedHitDescription gUnarmedHitDescriptions[HIT_MODE_COUNT];
 static int gDamageCalculationType;
 static bool gBonusHthDamageFix;
@@ -4239,7 +4240,7 @@ static int attackComputeCriticalFailure(Attack* attack)
     if (attack->attacker == gDude) {
         // SFALL: Remove criticals time limits.
         bool criticalsTimeLimitsRemoved = false;
-        configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_REMOVE_CRITICALS_TIME_LIMITS_KEY, &criticalsTimeLimitsRemoved);
+        configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "remove_critical_time_limits", &criticalsTimeLimitsRemoved);
 
         unsigned int gameTime = gameTimeGetTime();
         if (!criticalsTimeLimitsRemoved && gameTime / GAME_TIME_TICKS_PER_DAY < 6) {
@@ -6347,10 +6348,10 @@ void criticalsResetValue(int killType, int hitLocation, int effect, int dataMemb
 
 static void burstModInit()
 {
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_ENABLED_KEY, &gBurstModEnabled);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_enabled", &gBurstModEnabled);
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_CENTER_MULTIPLIER_KEY, &gBurstModCenterMultiplier);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_CENTER_DIVISOR_KEY, &gBurstModCenterDivisor);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_center_mult", &gBurstModCenterMultiplier, 1);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_center_div", &gBurstModCenterDivisor, 3);
     if (gBurstModCenterDivisor < 1) {
         gBurstModCenterDivisor = 1;
     }
@@ -6358,8 +6359,8 @@ static void burstModInit()
         gBurstModCenterMultiplier = gBurstModCenterDivisor;
     }
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_TARGET_MULTIPLIER_KEY, &gBurstModTargetMultiplier);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_TARGET_DIVISOR_KEY, &gBurstModTargetDivisor);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_target_mult", &gBurstModTargetMultiplier, 1);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_target_div", &gBurstModTargetDivisor, 2);
     if (gBurstModTargetDivisor < 1) {
         gBurstModTargetDivisor = 1;
     }
@@ -6700,10 +6701,10 @@ static int unarmedGetHitModeInRange(int firstHitMode, int lastHitMode, bool isSe
 static void damageModInit()
 {
     gDamageCalculationType = DAMAGE_CALCULATION_TYPE_VANILLA;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DAMAGE_MOD_FORMULA_KEY, &gDamageCalculationType);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "damage_formula", &gDamageCalculationType, DAMAGE_CALCULATION_TYPE_VANILLA);
 
     gBonusHthDamageFix = true;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BONUS_HTH_DAMAGE_FIX_KEY, &gBonusHthDamageFix);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "bonus_hth_damage_fix", &gBonusHthDamageFix);
 
     gDisplayBonusDamage = settings.ui.display_bonus_damage;
 }

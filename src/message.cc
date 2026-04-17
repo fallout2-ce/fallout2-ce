@@ -14,6 +14,7 @@
 #include "memory.h"
 #include "platform_compat.h"
 #include "proto_types.h"
+#include "content_config.h"
 #include "random.h"
 #include "settings.h"
 #include "sfall_config.h"
@@ -608,7 +609,7 @@ void messageListFilterGenderWords(MessageList* messageList, int gender)
     }
 
     bool enabled = false;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAME_DIALOG_GENDER_WORDS_KEY, &enabled);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "gender_words", &enabled);
     if (!enabled) {
         return;
     }

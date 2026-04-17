@@ -31,8 +31,8 @@
 #include "proto_instance.h"
 #include "queue.h"
 #include "scan_unimplemented.h"
+#include "content_config.h"
 #include "sfall_arrays.h"
-#include "sfall_config.h"
 #include "sfall_global_scripts.h"
 #include "stat.h"
 #include "svga.h"
@@ -1495,14 +1495,14 @@ int scriptsInit()
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SCRIPT, &gScrMessageList);
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_START_YEAR, &gStartYear);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_START_MONTH, &gStartMonth);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_START_DAY, &gStartDay);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "year", &gStartYear, 2241);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "month", &gStartMonth, 6);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "day", &gStartDay, 24);
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MOVIE_TIMER_ARTIMER1, &gMovieTimerArtimer1);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MOVIE_TIMER_ARTIMER2, &gMovieTimerArtimer2);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MOVIE_TIMER_ARTIMER3, &gMovieTimerArtimer3);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MOVIE_TIMER_ARTIMER4, &gMovieTimerArtimer4);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer1", &gMovieTimerArtimer1, 90);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer2", &gMovieTimerArtimer2, 180);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer3", &gMovieTimerArtimer3, 270);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer4", &gMovieTimerArtimer4, 360);
 
     checkScriptsOpcodes();
 

@@ -36,7 +36,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
-#include "sfall_config.h"
+#include "content_config.h"
 #include "skill.h"
 #include "stat.h"
 #include "svga.h"
@@ -682,7 +682,7 @@ int gameDialogInit()
 {
     // SFALL: Prevents from using 0 to escape from dialogue at any time.
     gGameDialogFix = true;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAME_DIALOG_FIX_KEY, &gGameDialogFix);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "fix", &gGameDialogFix);
 
     // SFALL: Use numbers for replies (instead of default knobs).
     gNumberOptions = settings.ui.numbers_in_dialogue;

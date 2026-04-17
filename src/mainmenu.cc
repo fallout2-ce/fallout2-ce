@@ -12,7 +12,7 @@
 #include "mouse.h"
 #include "palette.h"
 #include "preferences.h"
-#include "sfall_config.h"
+#include "content_config.h"
 #include "svga.h"
 #include "text_font.h"
 #include "version.h"
@@ -132,14 +132,14 @@ int mainMenuWindowInit()
     //        0x020000 - underline text (only for the version string)
     //        0x040000 - monospace font (only for the version string)
     int fontSettings = _colorTable[21091], fontSettingsSFall = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_FONT_COLOR_KEY, &fontSettingsSFall);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", &fontSettingsSFall, 0);
     if (fontSettingsSFall && !(fontSettingsSFall & 0x010000))
         fontSettings = fontSettingsSFall & 0xFF;
 
     // SFALL: Allow to move copyright text
     int offsetX = 0, offsetY = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_CREDITS_OFFSET_X_KEY, &offsetX);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_CREDITS_OFFSET_Y_KEY, &offsetY);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_x", &offsetX, 0);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_y", &offsetY, 0);
 
     // Copyright.
     msg.num = 20;
@@ -187,9 +187,8 @@ int mainMenuWindowInit()
     }
 
     // SFALL: Allow to move menu buttons
-    offsetX = offsetY = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_OFFSET_X_KEY, &offsetX);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_OFFSET_Y_KEY, &offsetY);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_x", &offsetX, 0);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", &offsetY, 0);
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
         gMainMenuButtons[index] = buttonCreate(gMainMenuWindow,
@@ -218,7 +217,7 @@ int mainMenuWindowInit()
     // SFALL: Allow to change font color of buttons
     fontSettings = _colorTable[21091];
     fontSettingsSFall = 0;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MAIN_MENU_BIG_FONT_COLOR_KEY, &fontSettingsSFall);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "big_font_color", &fontSettingsSFall, 0);
     if (fontSettingsSFall)
         fontSettings = fontSettingsSFall & 0xFF;
 

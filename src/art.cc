@@ -13,7 +13,7 @@
 #include "object.h"
 #include "proto.h"
 #include "settings.h"
-#include "sfall_config.h"
+#include "content_config.h"
 
 namespace fallout {
 
@@ -190,26 +190,26 @@ int artInit()
 
     // SFALL: Modify player model settings.
     char* jumpsuitMaleFileName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DUDE_NATIVE_LOOK_JUMPSUIT_MALE_KEY, &jumpsuitMaleFileName);
-    if (jumpsuitMaleFileName == nullptr || jumpsuitMaleFileName[0] == '\0') {
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male_default", &jumpsuitMaleFileName, "");
+    if (!jumpsuitMaleFileName || !*jumpsuitMaleFileName) {
         jumpsuitMaleFileName = gDefaultJumpsuitMaleFileName;
     }
 
     char* jumpsuitFemaleFileName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DUDE_NATIVE_LOOK_JUMPSUIT_FEMALE_KEY, &jumpsuitFemaleFileName);
-    if (jumpsuitFemaleFileName == nullptr || jumpsuitFemaleFileName[0] == '\0') {
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female_default", &jumpsuitFemaleFileName, "");
+    if (!jumpsuitFemaleFileName || !*jumpsuitFemaleFileName) {
         jumpsuitFemaleFileName = gDefaultJumpsuitFemaleFileName;
     }
 
     char* tribalMaleFileName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DUDE_NATIVE_LOOK_TRIBAL_MALE_KEY, &tribalMaleFileName);
-    if (tribalMaleFileName == nullptr || tribalMaleFileName[0] == '\0') {
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male_start", &tribalMaleFileName, "");
+    if (!tribalMaleFileName || !*tribalMaleFileName) {
         tribalMaleFileName = gDefaultTribalMaleFileName;
     }
 
     char* tribalFemaleFileName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DUDE_NATIVE_LOOK_TRIBAL_FEMALE_KEY, &tribalFemaleFileName);
-    if (tribalFemaleFileName == nullptr || tribalFemaleFileName[0] == '\0') {
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female_start", &tribalFemaleFileName, "");
+    if (!tribalFemaleFileName || !*tribalFemaleFileName) {
         tribalFemaleFileName = gDefaultTribalFemaleFileName;
     }
 

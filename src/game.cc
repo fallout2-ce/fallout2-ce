@@ -140,8 +140,6 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     // override it's file name.
     sfallConfigInit(argc, argv);
 
-    contentConfigInit();
-
     // SFALL: Execute all code that should be executed BEFORE game init
     sfallOnBeforeGameInit();
 
@@ -151,10 +149,12 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     if (gameDbInit() == -1) {
         settingsExit(false);
-        contentConfigExit();
         sfallConfigExit();
         return -1;
     }
+
+    // Content config reads from the VFS, so it must be initialized after gameDbInit.
+    contentConfigInit();
 
     // Message list repository is considered a specialized file manager, so
     // it should be initialized early in the process.

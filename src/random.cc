@@ -8,7 +8,7 @@
 #include "debug.h"
 #include "platform_compat.h"
 #include "scripts.h"
-#include "sfall_config.h"
+#include "content_config.h"
 
 namespace fallout {
 
@@ -105,7 +105,7 @@ static int randomTranslateRoll(int delta, int criticalSuccessModifier)
 
     // SFALL: Remove criticals time limits.
     bool criticalsTimeLimitsRemoved = false;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_REMOVE_CRITICALS_TIME_LIMITS_KEY, &criticalsTimeLimitsRemoved);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "remove_critical_time_limits", &criticalsTimeLimitsRemoved);
 
     int roll;
     if (delta < 0) {
