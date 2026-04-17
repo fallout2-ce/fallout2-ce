@@ -19,6 +19,9 @@
 
 namespace fallout {
 
+static void gameConfigResolvePath(const char* section, const char* key);
+static bool gameConfigIsAbsolutePath(const char* path);
+
 constexpr char kMapperConfigFileName[] = "mapper2.cfg";
 
 // A flag indicating if [gGameConfig] was initialized.
@@ -36,6 +39,7 @@ Config gGameConfig;
 //
 // 0x58E978
 char gGameConfigFilePath[COMPAT_MAX_PATH];
+static char gGameBasePath[COMPAT_MAX_PATH];
 
 // Inits main game config.
 //
@@ -61,6 +65,8 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         return false;
     }
 
+    gameVariantResolveInstallPath(argc, argv, gGameBasePath, sizeof(gGameBasePath));
+
     if (!configInit(&gGameConfig)) {
         return false;
     }
@@ -70,7 +76,11 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     // CE: Detect alternative default music directory.
     char alternativeMusicPath[COMPAT_MAX_PATH];
-    strcpy(alternativeMusicPath, R"(data\sound\music\*.acm)");
+    if (gGameBasePath[0] != '\0') {
+        snprintf(alternativeMusicPath, sizeof(alternativeMusicPath), "%s/%s", gGameBasePath, R"(data\sound\music\*.acm)");
+    } else {
+        strcpy(alternativeMusicPath, R"(data\sound\music\*.acm)");
+    }
     compat_windows_path_to_native(alternativeMusicPath);
     compat_resolve_path(alternativeMusicPath);
 
@@ -93,31 +103,16 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         ? customConfigFileName
         : gameVariantGetDefaultGameConfigFileName();
 
-    // Make `fallout2.cfg` file path.
-    char* executable = argv[0];
-    char* ch = strrchr(executable, '\\');
-    if (ch != nullptr) {
-        *ch = '\0';
-        if (isMapper) {
-            snprintf(gGameConfigFilePath,
-                sizeof(gGameConfigFilePath),
-                "%s\\%s",
-                executable,
-                kMapperConfigFileName);
-        } else {
-            snprintf(gGameConfigFilePath,
-                sizeof(gGameConfigFilePath),
-                "%s\\%s",
-                executable,
-                configFileName);
-        }
-        *ch = '\\';
+    const char* configBasename = isMapper ? kMapperConfigFileName : configFileName;
+    if (gameConfigIsAbsolutePath(configBasename) || gGameBasePath[0] == '\0') {
+        strncpy(gGameConfigFilePath, configBasename, sizeof(gGameConfigFilePath) - 1);
+        gGameConfigFilePath[sizeof(gGameConfigFilePath) - 1] = '\0';
     } else {
-        if (isMapper) {
-            strcpy(gGameConfigFilePath, kMapperConfigFileName);
-        } else {
-            strcpy(gGameConfigFilePath, configFileName);
-        }
+        snprintf(gGameConfigFilePath,
+            sizeof(gGameConfigFilePath),
+            "%s/%s",
+            gGameBasePath,
+            configBasename);
     }
 
     auto configChecker = ConfigChecker(gGameConfig, gGameConfigFilePath);
@@ -142,6 +137,13 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     // Add key-values from command line, which overrides both defaults and
     // whatever was loaded from `fallout2.cfg`.
     configParseCommandLineArguments(&gGameConfig, argc, argv);
+
+    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_DAT_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_MASTER_PATCHES_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_DAT_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_CRITTER_PATCHES_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY);
+    gameConfigResolvePath(GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY);
 
     gGameConfigInitialized = true;
 
@@ -198,6 +200,37 @@ bool gameConfigExit(bool shouldSave)
     gGameConfigInitialized = false;
 
     return result;
+}
+
+static void gameConfigResolvePath(const char* section, const char* key)
+{
+    char* path;
+    if (!configGetString(&gGameConfig, section, key, &path)) {
+        return;
+    }
+
+    if (!gameConfigIsAbsolutePath(path) && gGameBasePath[0] != '\0') {
+        char resolvedPath[COMPAT_MAX_PATH];
+        snprintf(resolvedPath, sizeof(resolvedPath), "%s/%s", gGameBasePath, path);
+        configSetString(&gGameConfig, section, key, resolvedPath);
+        configGetString(&gGameConfig, section, key, &path);
+    }
+
+    compat_windows_path_to_native(path);
+    compat_resolve_path(path);
+}
+
+static bool gameConfigIsAbsolutePath(const char* path)
+{
+    if (path == nullptr || path[0] == '\0') {
+        return false;
+    }
+
+    if (path[0] == '/' || path[0] == '\\') {
+        return true;
+    }
+
+    return strlen(path) > 1 && path[1] == ':';
 }
 
 } // namespace fallout

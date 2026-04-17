@@ -67,6 +67,46 @@ const GameVariantInfo* gameVariantInfoById(const char* id)
     return nullptr;
 }
 
+void getExecutableDirectory(int argc, char** argv, char* path, size_t size)
+{
+    path[0] = '\0';
+
+    if (argc <= 0 || argv == nullptr || argv[0] == nullptr) {
+        return;
+    }
+
+    strncpy(path, argv[0], size - 1);
+    path[size - 1] = '\0';
+
+    char* separator = strrchr(path, '\\');
+    if (separator == nullptr) {
+        separator = strrchr(path, '/');
+    }
+
+    if (separator != nullptr) {
+        *separator = '\0';
+    } else {
+        path[0] = '\0';
+    }
+}
+
+void trimMacosBundleSubpath(char* path)
+{
+    char* bundleMarker = strstr(path, ".app/Contents/MacOS");
+    if (bundleMarker == nullptr) {
+        return;
+    }
+
+    char* bundleStart = bundleMarker;
+    while (bundleStart > path && bundleStart[-1] != '/' && bundleStart[-1] != '\\') {
+        bundleStart--;
+    }
+
+    if (bundleStart > path) {
+        bundleStart[-1] = '\0';
+    }
+}
+
 } // namespace
 
 void gameVariantInit(int argc, char** argv)
@@ -89,6 +129,12 @@ void gameVariantInit(int argc, char** argv)
     }
 
     gGameVariantInitialized = true;
+}
+
+void gameVariantResolveInstallPath(int argc, char** argv, char* path, size_t size)
+{
+    getExecutableDirectory(argc, argv, path, size);
+    trimMacosBundleSubpath(path);
 }
 
 GameVariant gameVariantGet()

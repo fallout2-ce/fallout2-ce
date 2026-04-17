@@ -1,6 +1,8 @@
 #ifndef FALLOUT_GAME_VARIANT_H_
 #define FALLOUT_GAME_VARIANT_H_
 
+#include <stddef.h>
+
 namespace fallout {
 
 enum class GameVariant {
@@ -9,6 +11,7 @@ enum class GameVariant {
 };
 
 void gameVariantInit(int argc, char** argv);
+void gameVariantResolveInstallPath(int argc, char** argv, char* path, size_t size);
 GameVariant gameVariantGet();
 bool gameVariantIsFallout1();
 const char* gameVariantGetId();

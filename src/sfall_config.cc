@@ -1,5 +1,6 @@
 #include "sfall_config.h"
 
+#include "game_variant.h"
 #include "platform_compat.h"
 #include "scan_unimplemented.h"
 #include <stdio.h>
@@ -64,15 +65,13 @@ bool sfallConfigInit(int argc, char** argv)
     configSetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DISABLE_HORRIGAN, false);
 
     char path[COMPAT_MAX_PATH];
-    char* executable = argv[0];
-    char* ch = strrchr(executable, '\\');
-    if (ch != nullptr) {
-        *ch = '\0';
-        snprintf(path, sizeof(path), "%s\\%s", executable, SFALL_CONFIG_FILE_NAME);
-        *ch = '\\';
+    char basePath[COMPAT_MAX_PATH];
+    gameVariantResolveInstallPath(argc, argv, basePath, sizeof(basePath));
+    if (basePath[0] != '\0') {
+        snprintf(path, sizeof(path), "%s/%s", basePath, SFALL_CONFIG_FILE_NAME);
     } else {
         strcpy(path, SFALL_CONFIG_FILE_NAME);
-    };
+    }
 
     configRead(&gSfallConfig, path, false);
 
