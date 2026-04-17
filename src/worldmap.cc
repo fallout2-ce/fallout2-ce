@@ -478,7 +478,7 @@ static int wmGenDataReset();
 static int wmWorldMapSaveTempData();
 static int wmWorldMapLoadTempData();
 static int wmConfigInit();
-static int wmConfigInitFo1Fallback();
+static int wmLoadFo1WorldmapShim(Config* config);
 static int wmReadEncounterType(Config* config, char* lookupName, char* sectionKey);
 static int wmParseEncounterTableIndex(EncounterTableEntry* encounterTableEntry, char* string);
 static int wmParseEncounterSubEncStr(EncounterTableEntry* encounterTableEntry, char** stringPtr);
@@ -1327,14 +1327,17 @@ static int wmConfigInit()
 
     if (!configRead(&config, "data\\worldmap.txt", true)) {
         if (gameVariantIsFallout1()) {
-            debugPrint("\nwmConfigInit: data\\worldmap.txt missing in FO1 mode, using minimal worldmap fallback.");
+            debugPrint("\nwmConfigInit: data\\worldmap.txt missing in FO1 mode, trying shim asset.");
+            if (wmLoadFo1WorldmapShim(&config) != 0) {
+                debugPrint("\nwmConfigInit::Error: failed to load FO1 worldmap shim");
+                configFree(&config);
+                return -1;
+            }
+        } else {
+            debugPrint("\nwmConfigInit::Error: could not load data\\worldmap.txt");
             configFree(&config);
-            return wmConfigInitFo1Fallback();
+            return -1;
         }
-
-        debugPrint("\nwmConfigInit::Error: could not load data\\worldmap.txt");
-        configFree(&config);
-        return -1;
     }
 
     for (int index = 0; index < ENCOUNTER_FREQUENCY_TYPE_COUNT; index++) {
@@ -1435,34 +1438,22 @@ static int wmConfigInit()
     return 0;
 }
 
-static int wmConfigInitFo1Fallback()
+static int wmLoadFo1WorldmapShim(Config* config)
 {
-    wmNumHorizontalTiles = 1;
-    wmMaxTileNum = 1;
+    static const char* kFo1WorldmapShimPaths[] = {
+        "mods\\fo1_shims\\data\\worldmap.txt",
+        "fo1_shims\\data\\worldmap.txt",
+    };
 
-    wmTileInfoList = (TileInfo*)internal_realloc(wmTileInfoList, sizeof(*wmTileInfoList) * wmMaxTileNum);
-    if (wmTileInfoList == nullptr) {
-        return -1;
-    }
-
-    TileInfo* tile = &(wmTileInfoList[0]);
-    wmTileSlotInit(tile);
-    tile->fid = buildFid(OBJ_TYPE_INTERFACE, 0, 0, 0, 0);
-
-    for (int column = 0; column < SUBTILE_GRID_HEIGHT; column++) {
-        for (int row = 0; row < SUBTILE_GRID_WIDTH; row++) {
-            SubtileInfo* subtile = &(tile->subtiles[column][row]);
-            subtile->terrain = 0;
-            subtile->fill = SUBTILE_FILL_NONE;
-            subtile->encounterChance[DAY_PART_MORNING] = ENCOUNTER_FREQUENCY_TYPE_NONE;
-            subtile->encounterChance[DAY_PART_AFTERNOON] = ENCOUNTER_FREQUENCY_TYPE_NONE;
-            subtile->encounterChance[DAY_PART_NIGHT] = ENCOUNTER_FREQUENCY_TYPE_NONE;
-            subtile->encounterType = -1;
-            subtile->state = SUBTILE_STATE_UNKNOWN;
+    for (const char* shimPath : kFo1WorldmapShimPaths) {
+        if (configRead(config, shimPath, true)) {
+            debugPrint("\nwmConfigInit: loaded FO1 worldmap shim from %s", shimPath);
+            return 0;
         }
     }
 
-    return 0;
+    debugPrint("\nwmConfigInit: FO1 worldmap shim was not found under mods\\fo1_shims\\data\\worldmap.txt or fo1_shims\\data\\worldmap.txt");
+    return -1;
 }
 
 // 0x4BD9F0

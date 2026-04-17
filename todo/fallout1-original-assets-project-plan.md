@@ -26,11 +26,14 @@ Completed implementation tasks:
 - FO1 startup stabilization at worldmap init
   - missing `data\\worldmap.txt` now fails gracefully with debug output instead of crashing in subtile marking
   - commit: `34b3232`
+- FO1 worldmap shim loading from game-folder mods
+  - FO1 mode now falls back to `mods\\fo1_shims\\data\\worldmap.txt` (or `fo1_shims\\data\\worldmap.txt`) when `data\\worldmap.txt` is missing
+  - parser-complete shim file added at `fo1_shims/data/worldmap.txt`
 
 Current status after FO1 DAT integration:
 
 - FO1 run with explicit FO1 DAT paths no longer fails at master/critter archive open.
-- Bringup now advances past `proto_init` and currently fails at `wmWorldMap_init` due to missing `data\\worldmap.txt` in stock FO1 assets (expected next bridge/codepath task).
+- Bringup now advances past `wmWorldMap_init` and `endgameDeathEndingInit`, and reaches main-menu background audio load (`07desert.acm`) using the FO1 shim worldmap path.
 
 ### ASan Bringup Workflow (macOS, preferred)
 
