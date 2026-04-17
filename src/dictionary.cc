@@ -14,6 +14,11 @@ namespace fallout {
 // with a check for this value.
 #define DICTIONARY_MARKER 0xFEBAFEBA
 
+bool Dictionary::isInitialized() const
+{
+    return marker == DICTIONARY_MARKER;
+}
+
 static int dictionaryFindIndexForKey(Dictionary* dictionary, const char* key, int* index);
 
 // 0x4D9BA8
@@ -28,8 +33,6 @@ int dictionaryInit(Dictionary* dictionary, int initialCapacity, size_t valueSize
     } else {
         dictionary->io.readProc = nullptr;
         dictionary->io.writeProc = nullptr;
-        dictionary->io.field_8 = 0;
-        dictionary->io.field_C = 0;
     }
 
     int rc = 0;

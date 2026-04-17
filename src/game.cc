@@ -13,6 +13,7 @@
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "db.h"
@@ -139,6 +140,8 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     // override it's file name.
     sfallConfigInit(argc, argv);
 
+    contentConfigInit();
+
     // SFALL: Execute all code that should be executed BEFORE game init
     sfallOnBeforeGameInit();
 
@@ -148,6 +151,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     if (gameDbInit() == -1) {
         settingsExit(false);
+        contentConfigExit();
         sfallConfigExit();
         return -1;
     }
@@ -495,6 +499,7 @@ void gameExit()
     messageListRepositoryExit();
     dbCloseAll();
     settingsExit(true);
+    contentConfigExit();
     sfallConfigExit();
 }
 

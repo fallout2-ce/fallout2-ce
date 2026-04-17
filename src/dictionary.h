@@ -8,13 +8,9 @@ namespace fallout {
 typedef int(DictionaryReadProc)(FILE* stream, void* buffer, unsigned int size, int a3);
 typedef int(DictionaryWriteProc)(FILE* stream, void* buffer, unsigned int size, int a3);
 
-// NOTE: Last unnamed fields are likely seek, tell, and filelength.
 typedef struct DictionaryIO {
     DictionaryReadProc* readProc;
     DictionaryWriteProc* writeProc;
-    int field_8;
-    int field_C;
-    int field_10;
 } DictionaryIO;
 
 // A tuple containing individual key-value pair of a dictionary.
@@ -30,7 +26,7 @@ typedef struct DictionaryEntry {
 // is added to dictionary. For this reason the size of the value's type is
 // provided during dictionary initialization.
 typedef struct Dictionary {
-    int marker;
+    int marker = 0;
 
     // The number of key/value pairs in the dictionary.
     int entriesLength;
@@ -46,6 +42,8 @@ typedef struct Dictionary {
 
     // The array of key-value pairs.
     DictionaryEntry* entries;
+
+    bool isInitialized() const;
 } Dictionary;
 
 int dictionaryInit(Dictionary* dictionary, int initialCapacity, size_t valueSize, DictionaryIO* io);

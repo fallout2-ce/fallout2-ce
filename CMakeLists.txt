@@ -62,6 +62,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/combat.h"
     "src/config.cc"
     "src/config.h"
+    "src/content_config.cc"
+    "src/content_config.h"
     "src/credits.cc"
     "src/credits.h"
     "src/critter.cc"
