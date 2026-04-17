@@ -897,6 +897,14 @@ int wmWorldMap_init()
         return -1;
     }
 
+    if (wmNumHorizontalTiles <= 0 || wmMaxTileNum <= 0 || wmTileInfoList == nullptr) {
+        debugPrint("\nwmWorldMap_init::Error: invalid tile data state (num_horizontal_tiles=%d, tile_count=%d, tiles=%p)!",
+            wmNumHorizontalTiles,
+            wmMaxTileNum,
+            wmTileInfoList);
+        return -1;
+    }
+
     wmGenData.viewportMaxX = WM_TILE_WIDTH * wmNumHorizontalTiles - WM_VIEW_WIDTH;
     wmGenData.viewportMaxY = WM_TILE_HEIGHT * (wmMaxTileNum / wmNumHorizontalTiles) - WM_VIEW_HEIGHT;
     circleBlendTable = _getColorBlendTable(_colorTable[992]);
@@ -1315,90 +1323,103 @@ static int wmConfigInit()
         return -1;
     }
 
-    if (configRead(&config, "data\\worldmap.txt", true)) {
-        for (int index = 0; index < ENCOUNTER_FREQUENCY_TYPE_COUNT; index++) {
-            if (!configGetInt(&config, "data", wmFreqStrs[index], &(wmFreqValues[index]))) {
-                break;
-            }
+    if (!configRead(&config, "data\\worldmap.txt", true)) {
+        debugPrint("\nwmConfigInit::Error: could not load data\\worldmap.txt");
+        configFree(&config);
+        return -1;
+    }
+
+    for (int index = 0; index < ENCOUNTER_FREQUENCY_TYPE_COUNT; index++) {
+        if (!configGetInt(&config, "data", wmFreqStrs[index], &(wmFreqValues[index]))) {
+            break;
+        }
+    }
+
+    char* terrainTypes;
+    configGetString(&config, "data", "terrain_types", &terrainTypes);
+    wmParseTerrainTypes(&config, terrainTypes);
+
+    for (int index = 0;; index++) {
+        char section[40];
+        snprintf(section, sizeof(section), "Encounter Table %d", index);
+
+        char* lookupName;
+        if (!configGetString(&config, section, "lookup_name", &lookupName)) {
+            break;
         }
 
-        char* terrainTypes;
-        configGetString(&config, "data", "terrain_types", &terrainTypes);
-        wmParseTerrainTypes(&config, terrainTypes);
-
-        for (int index = 0;; index++) {
-            char section[40];
-            snprintf(section, sizeof(section), "Encounter Table %d", index);
-
-            char* lookupName;
-            if (!configGetString(&config, section, "lookup_name", &lookupName)) {
-                break;
-            }
-
-            if (wmReadEncounterType(&config, lookupName, section) == -1) {
-                return -1;
-            }
-        }
-
-        if (!configGetInt(&config, "Tile Data", "num_horizontal_tiles", &wmNumHorizontalTiles)) {
-            showMesageBox("\nwmConfigInit::Error loading tile data!");
+        if (wmReadEncounterType(&config, lookupName, section) == -1) {
             return -1;
         }
+    }
 
-        for (int tileIndex = 0; tileIndex < 9999; tileIndex++) {
-            char section[40];
-            snprintf(section, sizeof(section), "Tile %d", tileIndex);
+    if (!configGetInt(&config, "Tile Data", "num_horizontal_tiles", &wmNumHorizontalTiles)) {
+        showMesageBox("\nwmConfigInit::Error loading tile data!");
+        return -1;
+    }
 
-            int artIndex;
-            if (!configGetInt(&config, section, "art_idx", &artIndex)) {
-                break;
-            }
+    for (int tileIndex = 0; tileIndex < 9999; tileIndex++) {
+        char section[40];
+        snprintf(section, sizeof(section), "Tile %d", tileIndex);
 
-            wmMaxTileNum++;
+        int artIndex;
+        if (!configGetInt(&config, section, "art_idx", &artIndex)) {
+            break;
+        }
 
-            TileInfo* worldmapTiles = (TileInfo*)internal_realloc(wmTileInfoList, sizeof(*wmTileInfoList) * wmMaxTileNum);
-            if (worldmapTiles == nullptr) {
-                showMesageBox("\nwmConfigInit::Error loading tiles!");
-                exit(1);
-            }
+        wmMaxTileNum++;
 
-            wmTileInfoList = worldmapTiles;
+        TileInfo* worldmapTiles = (TileInfo*)internal_realloc(wmTileInfoList, sizeof(*wmTileInfoList) * wmMaxTileNum);
+        if (worldmapTiles == nullptr) {
+            showMesageBox("\nwmConfigInit::Error loading tiles!");
+            exit(1);
+        }
 
-            TileInfo* tile = &(worldmapTiles[wmMaxTileNum - 1]);
+        wmTileInfoList = worldmapTiles;
 
-            // NOTE: Uninline.
-            wmTileSlotInit(tile);
+        TileInfo* tile = &(worldmapTiles[wmMaxTileNum - 1]);
 
-            tile->fid = buildFid(OBJ_TYPE_INTERFACE, artIndex, 0, 0, 0);
+        // NOTE: Uninline.
+        wmTileSlotInit(tile);
 
-            int encounterDifficulty;
-            if (configGetInt(&config, section, "encounter_difficulty", &encounterDifficulty)) {
-                tile->encounterDifficultyModifier = encounterDifficulty;
-            }
+        tile->fid = buildFid(OBJ_TYPE_INTERFACE, artIndex, 0, 0, 0);
 
-            char* walkMaskName;
-            if (configGetString(&config, section, "walk_mask_name", &walkMaskName)) {
-                strncpy(tile->walkMaskName, walkMaskName, TILE_WALK_MASK_NAME_SIZE);
-            }
+        int encounterDifficulty;
+        if (configGetInt(&config, section, "encounter_difficulty", &encounterDifficulty)) {
+            tile->encounterDifficultyModifier = encounterDifficulty;
+        }
 
-            for (int column = 0; column < SUBTILE_GRID_HEIGHT; column++) {
-                for (int row = 0; row < SUBTILE_GRID_WIDTH; row++) {
-                    char key[40];
-                    snprintf(key, sizeof(key), "%d_%d", row, column);
+        char* walkMaskName;
+        if (configGetString(&config, section, "walk_mask_name", &walkMaskName)) {
+            strncpy(tile->walkMaskName, walkMaskName, TILE_WALK_MASK_NAME_SIZE);
+        }
 
-                    char* subtileProps;
-                    if (!configGetString(&config, section, key, &subtileProps)) {
-                        showMesageBox("\nwmConfigInit::Error loading tiles!");
-                        exit(1);
-                    }
+        for (int column = 0; column < SUBTILE_GRID_HEIGHT; column++) {
+            for (int row = 0; row < SUBTILE_GRID_WIDTH; row++) {
+                char key[40];
+                snprintf(key, sizeof(key), "%d_%d", row, column);
 
-                    if (wmParseSubTileInfo(tile, row, column, subtileProps) == -1) {
-                        showMesageBox("\nwmConfigInit::Error loading tiles!");
-                        exit(1);
-                    }
+                char* subtileProps;
+                if (!configGetString(&config, section, key, &subtileProps)) {
+                    showMesageBox("\nwmConfigInit::Error loading tiles!");
+                    exit(1);
+                }
+
+                if (wmParseSubTileInfo(tile, row, column, subtileProps) == -1) {
+                    showMesageBox("\nwmConfigInit::Error loading tiles!");
+                    exit(1);
                 }
             }
         }
+    }
+
+    if (wmNumHorizontalTiles <= 0 || wmMaxTileNum <= 0 || wmTileInfoList == nullptr) {
+        debugPrint("\nwmConfigInit::Error: invalid tile payload after loading data\\worldmap.txt (num_horizontal_tiles=%d, tile_count=%d, tiles=%p)",
+            wmNumHorizontalTiles,
+            wmMaxTileNum,
+            wmTileInfoList);
+        configFree(&config);
+        return -1;
     }
 
     configFree(&config);
