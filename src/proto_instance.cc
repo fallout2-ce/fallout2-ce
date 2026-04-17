@@ -2028,30 +2028,44 @@ int objectUnlock(Object* object)
 // 0x49D294
 bool objectIsOpenable(Object* obj)
 {
-    Proto* proto;
-
     if (obj == nullptr) {
         return false;
     }
 
+    Proto* proto;
     if (protoGetProto(obj->pid, &proto) == -1) {
         return false;
     }
 
+    bool couldBeOpenable = false;
     switch (PID_TYPE(obj->pid)) {
     case OBJ_TYPE_ITEM:
         if (proto->item.type == ITEM_TYPE_CONTAINER) {
-            return true;
+            couldBeOpenable = true;
         }
         break;
     case OBJ_TYPE_SCENERY:
         if (proto->scenery.type == SCENERY_TYPE_DOOR) {
-            return true;
+            couldBeOpenable = true;
         }
         break;
     }
 
-    return false;
+    if (!couldBeOpenable) {
+        return false;
+    }
+
+    // Sfall: stricter "openable" check.  In Sfall it is implement in the obj_is_openable opcode.
+    CacheEntry* artHandle;
+    Art* art = artLock(obj->fid, &artHandle);
+    if (art == nullptr) {
+        return false;
+    }
+
+    bool hasOpenAnimation = artGetFrameCount(art) > 1;
+    artUnlock(artHandle);
+
+    return hasOpenAnimation;
 }
 
 // 0x49D2E4
