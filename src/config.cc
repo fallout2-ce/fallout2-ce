@@ -833,6 +833,17 @@ bool configGetBool(Config* config, const char* sectionKey, const char* key, bool
     return true;
 }
 
+bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr, const bool defaultValue)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
+        return false;
+    }
+    if (!configGetBool(config, sectionKey, key, valuePtr)) {
+        *valuePtr = defaultValue;
+    }
+    return true;
+}
+
 // NOTE: Boolean-typed variant of [configGetInt].
 bool configSetBool(Config* config, const char* sectionKey, const char* key, bool value)
 {

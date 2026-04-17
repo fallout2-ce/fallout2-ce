@@ -123,10 +123,7 @@ int falloutMain(int argc, char** argv)
 
                     // SFALL: Override starting map.
                     char* mapName = nullptr;
-                    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "map", &mapName, "");
-                    if (*mapName == '\0') {
-                        mapName = nullptr;
-                    }
+                    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "map", &mapName, nullptr);
 
                     char* mapNameCopy = compat_strdup(mapName != nullptr ? mapName : _mainMap);
                     _main_load_new(mapNameCopy);

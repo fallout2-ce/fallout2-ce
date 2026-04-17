@@ -190,28 +190,16 @@ int artInit()
 
     // SFALL: Modify player model settings.
     char* jumpsuitMaleFileName = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male_default", &jumpsuitMaleFileName, "");
-    if (!jumpsuitMaleFileName || !*jumpsuitMaleFileName) {
-        jumpsuitMaleFileName = gDefaultJumpsuitMaleFileName;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male_default", &jumpsuitMaleFileName, gDefaultJumpsuitMaleFileName);
 
     char* jumpsuitFemaleFileName = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female_default", &jumpsuitFemaleFileName, "");
-    if (!jumpsuitFemaleFileName || !*jumpsuitFemaleFileName) {
-        jumpsuitFemaleFileName = gDefaultJumpsuitFemaleFileName;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female_default", &jumpsuitFemaleFileName, gDefaultJumpsuitFemaleFileName);
 
     char* tribalMaleFileName = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male_start", &tribalMaleFileName, "");
-    if (!tribalMaleFileName || !*tribalMaleFileName) {
-        tribalMaleFileName = gDefaultTribalMaleFileName;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male", &tribalMaleFileName, gDefaultTribalMaleFileName);
 
     char* tribalFemaleFileName = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female_start", &tribalFemaleFileName, "");
-    if (!tribalFemaleFileName || !*tribalFemaleFileName) {
-        tribalFemaleFileName = gDefaultTribalFemaleFileName;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female", &tribalFemaleFileName, gDefaultTribalFemaleFileName);
 
     char* critterFileNames = gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames;
     for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {

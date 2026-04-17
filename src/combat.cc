@@ -1991,6 +1991,7 @@ static int gBurstModTargetDivisor = 2;
 static UnarmedHitDescription gUnarmedHitDescriptions[HIT_MODE_COUNT];
 static int gDamageCalculationType;
 static bool gBonusHthDamageFix;
+static bool gRemoveCriticalTimeLimits;
 static bool gDisplayBonusDamage;
 
 // combat_init
@@ -4238,12 +4239,8 @@ static int attackComputeCriticalFailure(Attack* attack)
     }
 
     if (attack->attacker == gDude) {
-        // SFALL: Remove criticals time limits.
-        bool criticalsTimeLimitsRemoved = false;
-        configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "remove_critical_time_limits", &criticalsTimeLimitsRemoved);
-
         unsigned int gameTime = gameTimeGetTime();
-        if (!criticalsTimeLimitsRemoved && gameTime / GAME_TIME_TICKS_PER_DAY < 6) {
+        if (!gRemoveCriticalTimeLimits && gameTime / GAME_TIME_TICKS_PER_DAY < 6) {
             return 0;
         }
     }
@@ -6088,6 +6085,8 @@ int combatGetTargetHighlight()
 
 static void criticalsInit()
 {
+    configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "remove_critical_time_limits", &gRemoveCriticalTimeLimits, false);
+
     int mode = 2;
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_OVERRIDE_CRITICALS_MODE_KEY, &mode);
     if (mode < 0 || mode > 3) {
@@ -6344,6 +6343,11 @@ void criticalsResetValue(int killType, int hitLocation, int effect, int dataMemb
     } else {
         gCriticalHitTables[killType][hitLocation][effect].values[dataMember] = gBaseCriticalHitTables[killType][hitLocation][effect].values[dataMember];
     }
+}
+
+bool criticalsNoTimeLimits()
+{
+    return gRemoveCriticalTimeLimits;
 }
 
 static void burstModInit()

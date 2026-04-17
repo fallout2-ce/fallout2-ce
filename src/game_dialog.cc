@@ -682,7 +682,7 @@ int gameDialogInit()
 {
     // SFALL: Prevents from using 0 to escape from dialogue at any time.
     gGameDialogFix = true;
-    configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "fix", &gGameDialogFix);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "no_exit_hotkey", &gGameDialogFix);
 
     // SFALL: Use numbers for replies (instead of default knobs).
     gNumberOptions = settings.ui.numbers_in_dialogue;

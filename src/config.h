@@ -49,6 +49,7 @@ bool configGetDouble(Config* config, const char* sectionKey, const char* key, do
 bool configSetDouble(Config* config, const char* sectionKey, const char* key, double value);
 
 bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr);
+bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr, bool defaultValue);
 bool configSetBool(Config* config, const char* sectionKey, const char* key, bool value);
 
 } // namespace fallout
