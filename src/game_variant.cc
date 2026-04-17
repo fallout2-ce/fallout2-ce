@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "debug.h"
 #include "platform_compat.h"
 
 namespace fallout {
@@ -107,6 +108,17 @@ void trimMacosBundleSubpath(char* path)
     }
 }
 
+bool hasFo1ShimModAtPath(const char* basePath)
+{
+    if (basePath == nullptr || basePath[0] == '\0') {
+        return false;
+    }
+
+    char candidate[COMPAT_MAX_PATH];
+    snprintf(candidate, sizeof(candidate), "%s/mods/fo1_shims/data/worldmap.txt", basePath);
+    return compat_access(candidate, 0) == 0;
+}
+
 } // namespace
 
 void gameVariantInit(int argc, char** argv)
@@ -117,15 +129,35 @@ void gameVariantInit(int argc, char** argv)
 
     gGameVariantInfo = &kFallout2VariantInfo;
 
+    bool variantOverridden = false;
     for (int index = 1; index < argc; index++) {
         const char* arg = argv[index];
         if (strncmp(arg, "--game=", 7) == 0) {
             const GameVariantInfo* variantInfo = gameVariantInfoById(arg + 7);
             if (variantInfo != nullptr) {
                 gGameVariantInfo = variantInfo;
+                variantOverridden = true;
             }
             break;
         }
+    }
+
+    char executablePath[COMPAT_MAX_PATH];
+    getExecutableDirectory(argc, argv, executablePath, sizeof(executablePath));
+    trimMacosBundleSubpath(executablePath);
+
+    bool hasFo1ShimAtExecutablePath = hasFo1ShimModAtPath(executablePath);
+    bool hasFo1ShimAtCwd = compat_access("mods/fo1_shims/data/worldmap.txt", 0) == 0;
+
+    debugPrint("gameVariantInit: argv0=%s executablePath=%s fo1ShimExe=%d fo1ShimCwd=%d\n",
+        argc > 0 && argv != nullptr && argv[0] != nullptr ? argv[0] : "<null>",
+        executablePath,
+        hasFo1ShimAtExecutablePath,
+        hasFo1ShimAtCwd);
+
+    if (!variantOverridden && (hasFo1ShimAtExecutablePath || hasFo1ShimAtCwd)) {
+        gGameVariantInfo = &kFallout1VariantInfo;
+        debugPrint("Auto-detected Fallout 1 mode from mods/fo1_shims.\n");
     }
 
     gGameVariantInitialized = true;
@@ -135,6 +167,11 @@ void gameVariantResolveInstallPath(int argc, char** argv, char* path, size_t siz
 {
     getExecutableDirectory(argc, argv, path, size);
     trimMacosBundleSubpath(path);
+}
+
+void gameVariantForceFallout1()
+{
+    gGameVariantInfo = &kFallout1VariantInfo;
 }
 
 GameVariant gameVariantGet()

@@ -9,6 +9,7 @@
 
 #include <fpattern/fpattern.h>
 
+#include "debug.h"
 #include "fo1db/fo1_db.h"
 #include "game_variant.h"
 #include "platform_compat.h"
@@ -41,6 +42,7 @@ namespace fallout {
 
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
 static DBase* dbaseOpenFo1(const char* filePath);
+static bool dbaseShouldUseFo1Backend(const char* filePath);
 static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* dfile);
 static int dfileReadCharInternal(DFile* stream);
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size);
@@ -55,7 +57,12 @@ DBase* dbaseOpen(const char* filePath)
 
     FILE* stream = compat_fopen(filePath, "rb");
     if (stream == nullptr) {
-        return gameVariantGet() == GameVariant::Fallout1 ? dbaseOpenFo1(filePath) : nullptr;
+        if (dbaseShouldUseFo1Backend(filePath)) {
+            gameVariantForceFallout1();
+            return dbaseOpenFo1(filePath);
+        }
+
+        return nullptr;
     }
 
     DBase* dbase = (DBase*)malloc(sizeof(*dbase));
@@ -160,7 +167,12 @@ err:
 
     fclose(stream);
 
-    return gameVariantGet() == GameVariant::Fallout1 ? dbaseOpenFo1(filePath) : nullptr;
+    if (dbaseShouldUseFo1Backend(filePath)) {
+        gameVariantForceFallout1();
+        return dbaseOpenFo1(filePath);
+    }
+
+    return nullptr;
 }
 
 // Closes [dbase], all open file handles, frees all associated resources,
@@ -816,6 +828,22 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
     DBaseEntry* entry = (DBaseEntry*)entryName;
 
     return compat_stricmp(filePath, entry->path);
+}
+
+static bool dbaseShouldUseFo1Backend(const char* filePath)
+{
+    if (filePath == nullptr) {
+        return false;
+    }
+
+    const char* baseName = strrchr(filePath, '/');
+    if (baseName == nullptr) {
+        baseName = strrchr(filePath, '\\');
+    }
+
+    baseName = baseName != nullptr ? baseName + 1 : filePath;
+
+    return compat_stricmp(baseName, "master.dat") == 0 || compat_stricmp(baseName, "critter.dat") == 0;
 }
 
 // 0x4E5D9C

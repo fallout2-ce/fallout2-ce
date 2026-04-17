@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "debug.h"
+#include "game_variant.h"
 #include "platform_compat.h"
 #include "xfile.h"
 
@@ -37,6 +39,22 @@ static int gFileReadProgressChunkSize;
 // 0x673044
 static FileList* gFileListHead;
 
+static bool dbShouldUseFo1Fallback(const char* path)
+{
+    if (path == nullptr) {
+        return false;
+    }
+
+    const char* baseName = strrchr(path, '/');
+    if (baseName == nullptr) {
+        baseName = strrchr(path, '\\');
+    }
+
+    baseName = baseName != nullptr ? baseName + 1 : path;
+
+    return compat_stricmp(baseName, "master.dat") == 0 || compat_stricmp(baseName, "critter.dat") == 0;
+}
+
 // Opens file database.
 //
 // Returns -1 if [filePath1] was specified, but could not be opened by the
@@ -48,6 +66,17 @@ int dbOpen(const char* filePath1, const char* filePath2)
 {
     if (filePath1 != nullptr) {
         if (!xbaseOpen(filePath1)) {
+            if (dbShouldUseFo1Fallback(filePath1)) {
+                gameVariantForceFallout1();
+                debugPrint("dbOpen: retrying %s with Fallout 1 backend.\n", filePath1);
+                if (xbaseOpen(filePath1)) {
+                    if (filePath2 != nullptr) {
+                        xbaseOpen(filePath2);
+                    }
+                    return 0;
+                }
+            }
+
             return -1;
         }
     }

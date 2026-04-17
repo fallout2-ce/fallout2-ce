@@ -610,6 +610,8 @@ static bool characterSelectorWindowRenderFace()
 // 0x4A7EA8
 static bool characterSelectorWindowRenderStats()
 {
+    static char emptyString[] = "";
+
     char* str;
     char text[260];
     int length;
@@ -828,6 +830,9 @@ static bool characterSelectorWindowRenderStats()
         y += vh;
 
         str = skillGetName(skills[index]);
+        if (str == nullptr) {
+            str = emptyString;
+        }
         strcpy(text, str);
 
         length = fontGetStringWidth(text);
