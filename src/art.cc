@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "draw.h"
 #include "game.h"
+#include "game_variant.h"
 #include "memory.h"
 #include "object.h"
 #include "proto.h"
@@ -229,6 +230,13 @@ int artInit()
         }
 
         critterFileNames += 13;
+    }
+
+    // FO1 does not have a tribal look; use jumpsuit as the default player art.
+    if (gameVariantIsFallout1() && _art_vault_guy_num == 0) {
+        _art_vault_guy_num = _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_MALE];
+        _art_vault_person_nums[DUDE_NATIVE_LOOK_TRIBAL][GENDER_MALE] = _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_MALE];
+        _art_vault_person_nums[DUDE_NATIVE_LOOK_TRIBAL][GENDER_FEMALE] = _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_FEMALE];
     }
 
     for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {

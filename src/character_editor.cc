@@ -6988,7 +6988,7 @@ static int karmaInit()
 
     File* stream = fileOpen("data\\karmavar.txt", "rt");
     if (stream == nullptr) {
-        return -1;
+        return 0;
     }
 
     char string[256];
@@ -7087,7 +7087,7 @@ static int genericReputationInit()
 
     File* stream = fileOpen("data\\genrep.txt", "rt");
     if (stream == nullptr) {
-        return -1;
+        return 0;
     }
 
     char string[256];
