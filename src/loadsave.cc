@@ -2745,7 +2745,11 @@ static int _GameMap2Slot(File* stream)
         }
 
         char path[COMPAT_MAX_PATH];
-        if (_proto_list_str(pid, path) != 0) {
+        // TODO: fo1_shims/data/party.txt includes FO2 NPC pids that don't
+        // exist in FO1's critters.lst, producing empty paths. Replace with a
+        // minimal party.txt containing only real FO1 pids, then remove the
+        // path[0] guard.
+        if (_proto_list_str(pid, path) != 0 || path[0] == '\0') {
             continue;
         }
 
@@ -2815,7 +2819,6 @@ static int _GameMap2Slot(File* stream)
     _strmfe(_str0, "AUTOMAP.DB", "SAV");
     snprintf(_str1, sizeof(_str1), "%s\\%s\\%s%.2d\\%s", _patches, "SAVEGAME", "SLOT", _slot_cursor + 1, _str0);
     snprintf(_str0, sizeof(_str0), "%s\\%s\\%s", _patches, "MAPS", "AUTOMAP.DB");
-
     if (fileCopyCompressed(_str0, _str1) == -1) {
         return -1;
     }
@@ -2888,7 +2891,10 @@ static int _SlotMap2Game(File* stream)
         int pid = gPartyMemberPids[index];
         if (pid != -2) {
             char protoPath[COMPAT_MAX_PATH];
-            if (_proto_list_str(pid, protoPath) == 0) {
+            // TODO: fo1_shims party.txt has FO2 pids absent from FO1's
+            // critters.lst, yielding empty protoPath. Fix by supplying a
+            // minimal FO1-only party.txt; remove the protoPath[0] guard then.
+            if (_proto_list_str(pid, protoPath) == 0 && protoPath[0] != '\0') {
                 const char* basePath = PID_TYPE(pid) == OBJ_TYPE_CRITTER
                     ? PROTO_DIR_NAME "\\" CRITTERS_DIR_NAME
                     : PROTO_DIR_NAME "\\" ITEMS_DIR_NAME;
