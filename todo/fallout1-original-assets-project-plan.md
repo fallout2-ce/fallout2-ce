@@ -14,6 +14,10 @@
 | 6 | "Only action is looking" — root cause TBD (cursor/action menu issue in FO1 mode) | open |
 | 7 | Character creation UI: only "take" and "back" work on the selector | open |
 | 8 | `Script Error: scripts\glowgen.int` — FO2 global script not applicable in FO1 mode | open |
+| 9 | Unarmed hand/kick actions not shown in combat menu (unarmed.txt?) | skip for now |
+| 10 | Exiting first map goes to empty map instead of world map | **In progress** — art shim deployed, needs test |
+| 11 | Saving fails with "Error saving game" | **Fixed** — commit `4823bd3` |
+| 12 | Pip-Boy fails with "Error" | **Fixed** — commit `62f4dae` |
 
 ### Completed implementation tasks
 
@@ -73,6 +77,28 @@
   - commit: `d68790a`
 - FO1 combat AI: make `ai.txt` `*_end` fields optional, falling back to FO1-CE convention
   - commit: `692cef5`
+- FO1 pip-boy: treat missing `holodisk.txt` as empty data, not fatal
+  - commit: `62f4dae`
+- FO1 save game: skip party member proto copy for protos that live only in the DAT archive
+  - commit: `4823bd3`
+- FO1 worldmap: deployed art shim (fo1_shims/art/intrface/) with:
+  - FO1in2's extended INTRFACE.LST (508 entries, adds Twnmap/Wm_ city art at indices 469-492)
+  - FO1in2's custom FO1 worldmap tiles (WRLDMP00-19, WRLDSPR0-2)
+  - FO1in2's FO1 city town map images (TWNMAP00-11.FRM → indices 469-480)
+  - FO1in2's FO1 worldmap city markers (Wm_00-11.FRM → indices 481-492)
+  - FO2 worldmap UI FRMs (WMAPBOX, WMSCREEN, WMTABS, WMDIAL, etc. → extracted from FO2 master.dat)
+  - Root cause: `wmInterfaceInit()` failed at FRM 136 (WMAPBOX.FRM) because FO1's INTRFACE.LST has < 136 entries and no worldmap art
+
+## FO1in2 Findings
+
+The FO1in2 project (`../fo1in2/`) provides the reference implementation. Key observations:
+
+- FO1in2 provides a **custom INTRFACE.LST** in `mods/fo1_base/art/intrface/INTRFACE.LST` (508 entries) that extends FO2's standard list (468 entries) with FO1-specific city art at indices 469-492
+- FO1in2 provides **FO1-specific worldmap tiles** (WRLDMP*.FRM) — different art from FO2's tiles, depicting FO1's California
+- FO1in2 provides **FO1 city town maps** (TWNMAP00-11.FRM) and **worldmap city markers** (Wm_00-11.FRM)
+- FO1in2 relies on FO2 master.dat for core worldmap UI FRMs (WMAPBOX.FRM, WMSCREEN.FRM, WMTABS.FRM, etc.)
+- FO1in2's `worldmap.txt`, `city.txt`, `maps.txt`, `party.txt`, `enddeath.txt` are already in our shims
+- **Plan remains sound**: the fo1_shims directory-based mod overlay approach correctly mirrors FO1in2's asset layering
 
 Current status after FO1 DAT integration:
 
