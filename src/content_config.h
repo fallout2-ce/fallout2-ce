@@ -15,6 +15,8 @@ namespace fallout {
 #define CONTENT_CONFIG_EXPLOSIONS_SECTION "explosions"
 #define CONTENT_CONFIG_SKILLDEX_SECTION   "skilldex"
 #define CONTENT_CONFIG_WORLDMAP_SECTION   "worldmap"
+#define CONTENT_CONFIG_CHARACTERS_SECTION "characters"
+#define CONTENT_CONFIG_TEXT_SECTION       "text"
 
 extern Config gContentConfig;
 

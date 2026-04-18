@@ -26,7 +26,7 @@
 #include "preferences.h"
 #include "proto.h"
 #include "settings.h"
-#include "sfall_config.h"
+#include "content_config.h"
 #include "skill.h"
 #include "stat.h"
 #include "svga.h"
@@ -900,16 +900,10 @@ static bool characterSelectorWindowFatalError(bool result)
 void premadeCharactersInit()
 {
     char* fileNamesString;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PREMADE_CHARACTERS_FILE_NAMES_KEY, &fileNamesString);
-    if (fileNamesString != nullptr && *fileNamesString == '\0') {
-        fileNamesString = nullptr;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_CHARACTERS_SECTION, "premade_paths", &fileNamesString, nullptr);
 
     char* faceFidsString;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PREMADE_CHARACTERS_FACE_FIDS_KEY, &faceFidsString);
-    if (faceFidsString != nullptr && *faceFidsString == '\0') {
-        faceFidsString = nullptr;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_CHARACTERS_SECTION, "premade_fids", &faceFidsString, nullptr);
 
     if (fileNamesString != nullptr && faceFidsString != nullptr) {
         int fileNamesLength = 0;
