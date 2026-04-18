@@ -941,6 +941,12 @@ static int wmGenDataInit()
     wmGenData.currentAreaId = -1;
     wmGenData.worldPosX = 173;
     wmGenData.worldPosY = 122;
+    // FO1: start near Vault 13 (area 00 world_pos=823,72 in city.txt).
+    // FO2 defaults to 173,122 which lands on Military Base in the FO1 worldmap.
+    if (gameVariantIsFallout1()) {
+        wmGenData.worldPosX = 823;
+        wmGenData.worldPosY = 72;
+    }
     wmGenData.currentSubtile = nullptr;
     wmGenData.dword_672E18 = 0;
     wmGenData.isWalking = false;
@@ -1007,6 +1013,11 @@ static int wmGenDataReset()
     wmGenData.currentAreaId = -1;
     wmGenData.worldPosX = 173;
     wmGenData.worldPosY = 122;
+    // FO1: reset to Vault 13 position rather than FO2's Military Base position.
+    if (gameVariantIsFallout1()) {
+        wmGenData.worldPosX = 823;
+        wmGenData.worldPosY = 72;
+    }
     wmGenData.walkDestinationX = -1;
     wmGenData.walkDestinationY = -1;
     wmGenData.encounterMapId = -1;
@@ -2642,6 +2653,18 @@ static int wmAreaInit()
     if (!gCitiesLimitFix && wmMaxAreaNum != CITY_COUNT) {
         showMesageBox("\nwmAreaInit::Error loading Cities!");
         exit(1);
+    }
+
+    // FO1: all areas with start_state=On are known from the start.
+    // In FO2 the player discovers locations by exploring; in FO1 the
+    // Vault Dweller already knows where the major cities are.
+    if (gameVariantIsFallout1()) {
+        for (int i = 0; i < wmMaxAreaNum; i++) {
+            CityInfo* area = &wmAreaInfoList[i];
+            if (area->state == CITY_STATE_KNOWN) {
+                area->visitedState = 1;
+            }
+        }
     }
 
     return 0;
@@ -5899,13 +5922,28 @@ static bool wmCursorIsVisible()
 // NOTE: Inlined.
 //
 // 0x4C44D8
+// Strip "NN_" numeric prefix from city.txt area names like "00_Vault 13".
+static const char* wmStripAreaNamePrefix(const char* name)
+{
+    if (name[0] >= '0' && name[0] <= '9'
+        && name[1] >= '0' && name[1] <= '9'
+        && name[2] == '_') {
+        return name + 3;
+    }
+    return name;
+}
+
 static int wmGetAreaName(CityInfo* city, char* name)
 {
     MessageListItem messageListItem;
-
-    getmsg(&gMapMessageList, &messageListItem, city->areaId + 1500);
-    strncpy(name, messageListItem.text, 40);
-
+    messageListItem.num = city->areaId + 1500;
+    if (!messageListGetItem(&gMapMessageList, &messageListItem)) {
+        // FO1: map.msg lacks 1500+ area-name entries; fall back to city->name
+        // from city.txt, which uses a "NN_Name" prefix convention.
+        strncpy(name, wmStripAreaNamePrefix(city->name), 40);
+    } else {
+        strncpy(name, messageListItem.text, 40);
+    }
     return 0;
 }
 
@@ -5915,10 +5953,17 @@ static int wmGetAreaName(CityInfo* city, char* name)
 int wmGetAreaIdxName(int areaIdx, char* name)
 {
     MessageListItem messageListItem;
-
-    getmsg(&gMapMessageList, &messageListItem, 1500 + areaIdx);
-    strncpy(name, messageListItem.text, 40);
-
+    messageListItem.num = 1500 + areaIdx;
+    if (!messageListGetItem(&gMapMessageList, &messageListItem)) {
+        // FO1: same fallback as wmGetAreaName
+        if (cityIsValid(areaIdx)) {
+            strncpy(name, wmStripAreaNamePrefix(wmAreaInfoList[areaIdx].name), 40);
+        } else {
+            name[0] = '\0';
+        }
+    } else {
+        strncpy(name, messageListItem.text, 40);
+    }
     return 0;
 }
 
