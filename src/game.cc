@@ -89,6 +89,8 @@ static void showHelp();
 static int gameDbInit();
 static void showSplash();
 
+inline constexpr char kBaseModPath[] = "foce_base.dat";
+
 // 0x501C9C
 static char _aGame_0[] = "game\\";
 
@@ -1348,6 +1350,18 @@ int showQuitConfirmationDialog()
     return rc;
 }
 
+static void TryLoadBaseCEMod()
+{
+    if (compat_access(kBaseModPath, 0) == 0) {
+        debugPrint("Loading base FO:CE mod: %s\n", kBaseModPath);
+        if (dbOpen(kBaseModPath) == -1) {
+            debugPrint("Error opening base mod file/folder!\n");
+        }
+    } else {
+        debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
+    }
+}
+
 // 0x44418C
 static int gameDbInit()
 {
@@ -1402,14 +1416,17 @@ static int gameDbInit()
         snprintf(filename, sizeof(filename), path_file_name_template, patch_index);
 
         if (compat_access(filename, 0) == 0) {
-            dbOpen(filename, nullptr);
+            dbOpen(filename);
         }
     }
+
+    // Load CE base mod after vanilla patches but before all regular mods.
+    TryLoadBaseCEMod();
 
     sfallLoadMods();
 
     if (compat_access("f2_res.dat", 0) == 0) {
-        dbOpen("f2_res.dat", nullptr);
+        dbOpen("f2_res.dat");
     }
 
     return 0;

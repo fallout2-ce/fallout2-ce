@@ -11,7 +11,7 @@ typedef XFile File;
 typedef void FileReadProgressHandler();
 typedef char* StrdupProc(const char* string);
 
-int dbOpen(const char* filePath1, const char* filePath2);
+int dbOpen(const char* filePath1, const char* filePath2 = nullptr);
 int db_total();
 void dbCloseAll();
 int dbGetFileSize(const char* filePath, int* sizePtr);
