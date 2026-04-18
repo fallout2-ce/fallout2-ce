@@ -10,11 +10,11 @@
 #include <string>
 #include <unordered_map>
 
+#include "content_config.h"
 #include "debug.h"
 #include "memory.h"
 #include "platform_compat.h"
 #include "proto_types.h"
-#include "content_config.h"
 #include "random.h"
 #include "settings.h"
 

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "animation.h"
+#include "content_config.h"
 #include "debug.h"
 #include "draw.h"
 #include "game.h"
@@ -13,7 +14,6 @@
 #include "object.h"
 #include "proto.h"
 #include "settings.h"
-#include "content_config.h"
 
 namespace fallout {
 

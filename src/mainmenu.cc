@@ -4,6 +4,7 @@
 
 #include "art.h"
 #include "color.h"
+#include "content_config.h"
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
@@ -12,7 +13,6 @@
 #include "mouse.h"
 #include "palette.h"
 #include "preferences.h"
-#include "content_config.h"
 #include "svga.h"
 #include "text_font.h"
 #include "version.h"

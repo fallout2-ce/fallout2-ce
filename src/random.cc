@@ -5,10 +5,10 @@
 
 #include <random>
 
+#include "combat.h"
 #include "debug.h"
 #include "platform_compat.h"
 #include "scripts.h"
-#include "combat.h"
 
 namespace fallout {
 
