@@ -2776,9 +2776,10 @@ static int holodiskInit()
 
     gHolodisksCount = 0;
 
+    // FO1 has no holodisks; missing file is not an error.
     File* stream = fileOpen("data\\holodisk.txt", "rt");
     if (stream == nullptr) {
-        return -1;
+        return 0;
     }
 
     char str[256];
