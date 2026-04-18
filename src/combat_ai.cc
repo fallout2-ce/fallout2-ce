@@ -420,29 +420,50 @@ int aiInit()
         if (!configGetInt(&config, sectionEntry->key, "outline_color", &(ai->outline_color))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "chance", &(ai->chance))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "run_start", &(ai->run.start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "run_end", &(ai->run.end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "move_start", &(ai->move.start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "move_end", &(ai->move.end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "attack_start", &(ai->attack.start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "attack_end", &(ai->attack.end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "miss_start", &(ai->miss.start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "miss_end", &(ai->miss.end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "hit_head_start", &(ai->hit[HIT_LOCATION_HEAD].start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "hit_head_end", &(ai->hit[HIT_LOCATION_HEAD].end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "hit_left_arm_start", &(ai->hit[HIT_LOCATION_LEFT_ARM].start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "hit_left_arm_end", &(ai->hit[HIT_LOCATION_LEFT_ARM].end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "hit_right_arm_start", &(ai->hit[HIT_LOCATION_RIGHT_ARM].start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "hit_right_arm_end", &(ai->hit[HIT_LOCATION_RIGHT_ARM].end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "hit_torso_start", &(ai->hit[HIT_LOCATION_TORSO].start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "hit_torso_end", &(ai->hit[HIT_LOCATION_TORSO].end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "hit_right_leg_start", &(ai->hit[HIT_LOCATION_RIGHT_LEG].start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "hit_right_leg_end", &(ai->hit[HIT_LOCATION_RIGHT_LEG].end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "hit_left_leg_start", &(ai->hit[HIT_LOCATION_LEFT_LEG].start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "hit_left_leg_end", &(ai->hit[HIT_LOCATION_LEFT_LEG].end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "hit_eyes_start", &(ai->hit[HIT_LOCATION_EYES].start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "hit_eyes_end", &(ai->hit[HIT_LOCATION_EYES].end))) goto err;
         if (!configGetInt(&config, sectionEntry->key, "hit_groin_start", &(ai->hit[HIT_LOCATION_GROIN].start))) goto err;
-        if (!configGetInt(&config, sectionEntry->key, "hit_groin_end", &(ai->hit[HIT_LOCATION_GROIN].end))) goto err;
+
+        // *_end fields are optional: FO1's ai.txt omits them and uses each *_start as
+        // the inclusive upper bound of the preceding range (FO1-CE convention).
+        // FO2's ai.txt always supplies explicit *_end values.
+        if (!configGetInt(&config, sectionEntry->key, "run_end", &(ai->run.end)))
+            ai->run.end = ai->move.start;
+        if (!configGetInt(&config, sectionEntry->key, "move_end", &(ai->move.end)))
+            ai->move.end = ai->attack.start;
+        if (!configGetInt(&config, sectionEntry->key, "attack_end", &(ai->attack.end)))
+            ai->attack.end = ai->miss.start;
+        if (!configGetInt(&config, sectionEntry->key, "miss_end", &(ai->miss.end)))
+            ai->miss.end = ai->hit[HIT_LOCATION_HEAD].start;
+        if (!configGetInt(&config, sectionEntry->key, "hit_head_end", &(ai->hit[HIT_LOCATION_HEAD].end)))
+            ai->hit[HIT_LOCATION_HEAD].end = ai->hit[HIT_LOCATION_LEFT_ARM].start;
+        if (!configGetInt(&config, sectionEntry->key, "hit_left_arm_end", &(ai->hit[HIT_LOCATION_LEFT_ARM].end)))
+            ai->hit[HIT_LOCATION_LEFT_ARM].end = ai->hit[HIT_LOCATION_RIGHT_ARM].start;
+        if (!configGetInt(&config, sectionEntry->key, "hit_right_arm_end", &(ai->hit[HIT_LOCATION_RIGHT_ARM].end)))
+            ai->hit[HIT_LOCATION_RIGHT_ARM].end = ai->hit[HIT_LOCATION_TORSO].start;
+        if (!configGetInt(&config, sectionEntry->key, "hit_torso_end", &(ai->hit[HIT_LOCATION_TORSO].end)))
+            ai->hit[HIT_LOCATION_TORSO].end = ai->hit[HIT_LOCATION_RIGHT_LEG].start;
+        if (!configGetInt(&config, sectionEntry->key, "hit_right_leg_end", &(ai->hit[HIT_LOCATION_RIGHT_LEG].end)))
+            ai->hit[HIT_LOCATION_RIGHT_LEG].end = ai->hit[HIT_LOCATION_LEFT_LEG].start;
+        if (!configGetInt(&config, sectionEntry->key, "hit_left_leg_end", &(ai->hit[HIT_LOCATION_LEFT_LEG].end)))
+            ai->hit[HIT_LOCATION_LEFT_LEG].end = ai->hit[HIT_LOCATION_EYES].start;
+        if (!configGetInt(&config, sectionEntry->key, "hit_eyes_end", &(ai->hit[HIT_LOCATION_EYES].end)))
+            ai->hit[HIT_LOCATION_EYES].end = ai->hit[HIT_LOCATION_GROIN].start;
+        // groin: FO1 uses last_msg as the inclusive end; CE expects the value before
+        // the ++ below, so store last_msg - 1 so that ++ yields last_msg.
+        if (!configGetInt(&config, sectionEntry->key, "hit_groin_end", &(ai->hit[HIT_LOCATION_GROIN].end))) {
+            int lastMsg;
+            if (!configGetInt(&config, sectionEntry->key, "last_msg", &lastMsg)) goto err;
+            ai->hit[HIT_LOCATION_GROIN].end = lastMsg - 1;
+        }
 
         ai->hit[HIT_LOCATION_GROIN].end++;
 
