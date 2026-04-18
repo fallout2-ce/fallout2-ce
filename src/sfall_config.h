@@ -22,9 +22,6 @@ namespace fallout {
 #define SFALL_CONFIG_INI_CONFIG_FOLDER "IniConfigFolder"
 #define SFALL_CONFIG_CONFIG_FILE "ConfigFile"
 #define SFALL_CONFIG_PATCH_FILE "PatchFile"
-#define SFALL_CONFIG_CITIES_LIMIT_FIX "CitiesLimitFix"
-#define SFALL_CONFIG_WORLDMAP_TRAIL_MARKERS "WorldMapTravelMarkers"
-#define SFALL_CONFIG_DISABLE_HORRIGAN "DisableHorrigan"
 
 extern bool gSfallConfigInitialized;
 extern Config gSfallConfig;

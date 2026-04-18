@@ -7248,10 +7248,7 @@ static int customKarmaFolderGetFrmId()
 static void customTownReputationInit()
 {
     char* reputationList = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "city_reputation_list", &reputationList, "");
-    if (!*reputationList) {
-        reputationList = nullptr;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "city_reputation_list", &reputationList, nullptr);
 
     char* curr = reputationList;
     while (curr != nullptr) {

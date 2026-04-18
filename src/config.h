@@ -36,6 +36,8 @@ void configFree(Config* config);
 bool configParseCommandLineArguments(Config* config, int argc, char** argv);
 // TODO: valuePtr must be const char**
 bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr);
+// Tries to load a string value from Config into valuePtr without any conversion. If value doesn't exist, or it's an empty string, assigns defaultValue instead.
+// Pointer to an internal string is returned, no copy is performed.
 bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr, const char* defaultValue);
 bool configSetString(Config* config, const char* sectionKey, const char* key, const char* value);
 bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, unsigned char base = 0);

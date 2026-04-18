@@ -41,7 +41,6 @@
 #include "scripts.h"
 #include "settings.h"
 #include "content_config.h"
-#include "sfall_config.h"
 #include "sfall_global_scripts.h"
 #include "skill.h"
 #include "stat.h"
@@ -875,8 +874,7 @@ static void wmSetFlags(int* flagsPtr, int flag, int value)
 int wmWorldMap_init()
 {
     // SFALL
-    gCitiesLimitFix = true;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CITIES_LIMIT_FIX, &gCitiesLimitFix);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "cities_limit_fix", &gCitiesLimitFix, true);
 
     char path[COMPAT_MAX_PATH];
 
@@ -906,10 +904,8 @@ int wmWorldMap_init()
     wmWorldMapSaveTempData();
 
     // SFALL
-    gTownMapHotkeysFix = true;
-    worldmapTrailMarkers = 0;
-    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_WORLDMAP_TRAIL_MARKERS, &worldmapTrailMarkers);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix, true);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", &worldmapTrailMarkers, 0);
 
     // CE: City size fids should be initialized during startup. They are used
     // during |wmTeleportToArea| to calculate worldmap position when jumping
