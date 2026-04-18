@@ -2753,6 +2753,12 @@ static int _GameMap2Slot(File* stream)
             ? PROTO_DIR_NAME "\\" CRITTERS_DIR_NAME
             : PROTO_DIR_NAME "\\" ITEMS_DIR_NAME;
         snprintf(_str0, sizeof(_str0), "%s\\%s\\%s", _patches, critterItemPath, path);
+        // In FO1, party member protos live only in the DAT archive and are
+        // never written to the patches directory, so skip protos that don't
+        // exist on the physical filesystem (they are unmodified).
+        if (compat_access(_str0, F_OK) != 0) {
+            continue;
+        }
         snprintf(_str1, sizeof(_str1), "%s\\%s\\%s%.2d\\%s\\%s", _patches, "SAVEGAME", "SLOT", _slot_cursor + 1, critterItemPath, path);
         if (fileCopyCompressed(_str0, _str1) == -1) {
             return -1;
