@@ -598,8 +598,11 @@ int aiLoad(File* stream)
         int pid = gPartyMemberPids[index];
         if (pid != -1 && PID_TYPE(pid) == OBJ_TYPE_CRITTER) {
             Proto* proto;
+            // TODO: fo1_shims party.txt contains FO2 pids with no valid proto
+            // in FO1. Skip them rather than abort; fix by supplying a minimal
+            // FO1-only party.txt.
             if (protoGetProto(pid, &proto) == -1) {
-                return -1;
+                continue;
             }
 
             AiPacket* ai = aiGetPacketByNum(proto->critter.aiPacket);
@@ -619,8 +622,9 @@ int aiSave(File* stream)
         int pid = gPartyMemberPids[index];
         if (pid != -1 && PID_TYPE(pid) == OBJ_TYPE_CRITTER) {
             Proto* proto;
+            // TODO: same FO1 party.txt issue as aiLoad — skip invalid pids.
             if (protoGetProto(pid, &proto) == -1) {
-                return -1;
+                continue;
             }
 
             AiPacket* ai = aiGetPacketByNum(proto->critter.aiPacket);
