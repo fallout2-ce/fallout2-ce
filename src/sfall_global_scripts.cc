@@ -7,6 +7,7 @@
 
 #include "animation.h"
 #include "db.h"
+#include "game_variant.h"
 #include "input.h"
 #include "platform_compat.h"
 #include "scripts.h"
@@ -39,6 +40,10 @@ bool sfall_gl_scr_init()
     state = new (std::nothrow) GlobalScriptsState();
     if (state == nullptr) {
         return false;
+    }
+
+    if (gameVariantIsFallout1()) {
+        return true;
     }
 
     // CE: always use "scripts\gl*.int" as global script path
