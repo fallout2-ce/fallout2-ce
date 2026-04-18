@@ -35,6 +35,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
+#include "game_variant.h"
 #include "sfall_config.h"
 #include "stat.h"
 #include "svga.h"
@@ -862,6 +863,12 @@ static void _pip_init_()
     // undesired side effect. When the option is set to (2), the check is simply
     // bypassed. CE implements only the latter approach, as it does not have any
     // side effects.
+    // FO1: the Vault Dweller always has the pipboy from the start.
+    if (gameVariantIsFallout1()) {
+        pipboy_available_at_game_start = true;
+        return;
+    }
+
     int value = 0;
     if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PIPBOY_AVAILABLE_AT_GAMESTART, &value)) {
         pipboy_available_at_game_start = value == 1 || value == 2;
