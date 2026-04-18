@@ -462,15 +462,15 @@ void _mouse_info()
             bool overHud = false;
 #if __APPLE__ && TARGET_OS_IOS
             if (mouseDeviceUsesRelativeMode() && gInterfaceBarWindow != -1) {
-                Rect hudRect;
-                if (windowGetRect(gInterfaceBarWindow, &hudRect) == 0
-                    && gesture.x >= hudRect.left && gesture.x <= hudRect.right
-                    && gesture.y >= hudRect.top && gesture.y <= hudRect.bottom) {
-                    overHud = true;
+                Window* hudWindow = windowGetWindow(gInterfaceBarWindow);
+                if (hudWindow != nullptr && (hudWindow->flags & WINDOW_HIDDEN) == 0) {
+                    Rect hudRect;
+                    if (windowGetRect(gInterfaceBarWindow, &hudRect) == 0
+                        && gesture.x >= hudRect.left && gesture.x <= hudRect.right
+                        && gesture.y >= hudRect.top && gesture.y <= hudRect.bottom) {
+                        overHud = true;
 
-                    if (gesture.numberOfTouches == 1 || gesture.numberOfTouches == 2) {
-                        Window* hudWindow = windowGetWindow(gInterfaceBarWindow);
-                        if (hudWindow != nullptr) {
+                        if (gesture.numberOfTouches == 1 || gesture.numberOfTouches == 2) {
                             for (Button* button = hudWindow->buttonListHead; button != nullptr; button = button->next) {
                                 if ((button->flags & BUTTON_FLAG_DISABLED) != 0) {
                                     continue;
@@ -492,12 +492,12 @@ void _mouse_info()
                                 goto tap_done;
                             }
                         }
-                    }
 
-                    // Tap landed on belt chrome (no button under it). Consume
-                    // silently rather than teleporting the cursor to an inert
-                    // region.
-                    goto tap_done;
+                        // Tap landed on belt chrome (no button under it). Consume
+                        // silently rather than teleporting the cursor to an inert
+                        // region.
+                        goto tap_done;
+                    }
                 }
             }
 #endif

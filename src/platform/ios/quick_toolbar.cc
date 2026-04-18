@@ -4,15 +4,15 @@
 
 #include <string.h>
 
-#include "../../art.h"
-#include "../../color.h"
-#include "../../draw.h"
-#include "../../game.h"
-#include "../../interface.h"
-#include "../../skilldex.h"
-#include "../../svga.h"
-#include "../../text_font.h"
-#include "../../window_manager.h"
+#include "art.h"
+#include "color.h"
+#include "draw.h"
+#include "game.h"
+#include "interface.h"
+#include "skilldex.h"
+#include "svga.h"
+#include "text_font.h"
+#include "window_manager.h"
 
 namespace fallout {
 
