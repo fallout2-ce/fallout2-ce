@@ -1,8 +1,21 @@
 # Fallout 1 Original-Assets Runtime Plan
 
-## Progress Update (April 17, 2026)
+## Progress Update (April 17–18, 2026)
 
-Completed implementation tasks:
+### Known open problems (bringup bugs)
+
+| # | Problem | Status |
+|---|---------|--------|
+| 1 | Player sprite scrambled in FO1 mode (hmwarr not in CRITTERS.LST → critter 0 used) | **Fixed** — commit `d68790a` |
+| 2 | Character editor crash (`karmaInit`/`genericReputationInit` return -1 on missing FO2-only files) | **Fixed** — commit `d68790a` |
+| 3 | Combat AI crash: `aiInit()` fails on FO1 `ai.txt` (no `*_end` fields) → null `gAiPackets` → strlen crash in `_combatai_msg` | **Fixed** — commit `692cef5` |
+| 4 | 5× "String not found" at startup — caliber type names 14–18 absent from FO1 `proto.msg` (cosmetic) | open |
+| 5 | 2× "String not found" before `>intface_init` — interface indicator IDs 100–104 may differ in FO1 `intrface.msg` | open |
+| 6 | "Only action is looking" — root cause TBD (cursor/action menu issue in FO1 mode) | open |
+| 7 | Character creation UI: only "take" and "back" work on the selector | open |
+| 8 | `Script Error: scripts\glowgen.int` — FO2 global script not applicable in FO1 mode | open |
+
+### Completed implementation tasks
 
 - `Task 1` variant/startup scaffolding
   - central `GameVariant` module
@@ -54,6 +67,12 @@ Completed implementation tasks:
   - added `fo1_shims/text/english/credits.txt` and `fo1_shims/text/english/quotes.txt` from FO1in2
   - placed under `text/english` to match localized path lookup used by `creditsOpen("credits.txt")` / `creditsOpen("quotes.txt")`
   - verified no startup regression with the new text shims active in `mods/fo1_shims`
+- FO1 player art fix: alias TRIBAL critter slots to JUMPSUIT in `artInit()` when `hmwarr` absent
+  - commit: `d68790a`
+- FO1 character editor: treat missing `karmavar.txt`/`genrep.txt` as empty, not fatal
+  - commit: `d68790a`
+- FO1 combat AI: make `ai.txt` `*_end` fields optional, falling back to FO1-CE convention
+  - commit: `692cef5`
 
 Current status after FO1 DAT integration:
 
