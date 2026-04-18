@@ -4,9 +4,13 @@ This document tracks Fallout 2 CE compatibility with sfall.  This is for modders
 
 For now, this covers opcodes/metarules, and hooks.  In the future, it will include other ways of modifying the engine (like ini files), and other Sfall-specific behaviour.
 
-## Settings (ddraw.ini → fallout2.cfg)
+## Settings (ddraw.ini → fallout2.cfg / game.cfg)
 
-Some settings previously read from `ddraw.ini` have been moved into `fallout2.cfg`. The table below maps each setting to its new location. `HiResMode` had no effect in CE and has been removed.
+Settings previously read from `ddraw.ini` have been moved into standard CE config files.
+
+Most settings that control game behavior (premade characters, extra message files, combat tweaks, worldmap, etc.) have been moved into [`<DAT>/config/game.cfg`](files/mods/ce-base/config/game.cfg), which is a content-mod config file intended to be overridden by mods. See that file for the full list with descriptions.
+
+The following settings were moved into [`fallout2.cfg`](files/fallout2.cfg) instead:
 
 | ddraw.ini section | ddraw.ini key | fallout2.cfg section | fallout2.cfg key |
 | --- | --- | --- | --- |
