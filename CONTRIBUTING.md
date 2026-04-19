@@ -2,13 +2,62 @@
 
 This file is currently a shell to be filled in over time. For now, it only captures project-specific maintenance notes that are easy to miss.
 
+For current sfall compatibility status and the remaining work needed to close gaps, see [SFALL_COMPATIBILITY.md](SFALL_COMPATIBILITY.md).
+
+## Building
+
+The project uses CMake. By default it builds with vendored third-party libraries, so the instructions below only need the local compiler toolchain plus CMake and Ninja.
+
+### macOS
+
+- Install the Command Line Tools if needed: `xcode-select --install`
+- Install the common build dependencies: `brew install cmake ninja`
+- Configure and build:
+
+```sh
+cmake -S . -B out/build/macos -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build out/build/macos --target fallout2-ce
+```
+
+### Linux
+
+- Debian / Ubuntu:
+
+```sh
+sudo apt install build-essential cmake ninja-build
+cmake -S . -B out/build/linux-x64-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build out/build/linux-x64-debug --target fallout2-ce
+```
+
+- Fedora:
+
+```sh
+sudo dnf install gcc-c++ cmake ninja-build
+cmake -S . -B out/build/linux-x64-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build out/build/linux-x64-debug --target fallout2-ce
+```
+
+- Arch Linux:
+
+```sh
+sudo pacman -S base-devel cmake ninja
+cmake -S . -B out/build/linux-x64-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build out/build/linux-x64-debug --target fallout2-ce
+```
+
+### Windows
+
+TODO: add Visual Studio build instructions. This will likely need a Visual Studio generator or preset plus the MSVC toolchain and Windows SDK.
+
 ## `.dat` CLI Tool
 
 There is a small command-line archive tool in this repo for inspecting Fallout `.dat` files using the same reader implementation as the game.
 
-Build it with `make TARGET=fallout2-dat`.
+From the repo root, build it with your normal CMake workflow, targeting `fallout2-dat`:
 
-The executable is written to your selected `BUILD_DIR`, so the default path is `out/build/local-debug-arm64/fallout2-dat` on this macOS setup, but other platforms or custom build directories will differ.
+`cmake --build out/build/<preset-name> --target fallout2-dat`
+
+The executable is written to your selected build directory, so the exact path will vary by preset and configuration.
 
 The current tool is read-only. Available commands:
 
@@ -18,9 +67,9 @@ The current tool is read-only. Available commands:
 4. `./<BUILD_DIR>/fallout2-dat <archive.dat> cat <entry>`
 
 Use `--lower` with `extract` when you want every extracted file and directory name forced to lowercase.
-For example, from `/Applications/Fallout2Codex` you can run:
+For example:
 
-`/Users/klaas/game/fallout2-ce/out/build/local-debug-arm64/fallout2-dat master.dat extract --lower /tmp/fallout2-dat-lower data\\*`
+`./out/build/<preset-name>/fallout2-dat master.dat extract --lower /tmp/fallout2-dat-lower data\\*`
 
 ## Updating SDL
 
