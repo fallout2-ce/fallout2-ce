@@ -330,6 +330,10 @@ if(WIN32)
     )
 endif()
 
+if(MSVC)
+    target_compile_options(${EXECUTABLE_NAME} PRIVATE /EHsc)
+endif()
+
 if(WIN32)
     target_link_libraries(${EXECUTABLE_NAME}
         winmm
