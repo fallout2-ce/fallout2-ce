@@ -8,21 +8,20 @@ Config gContentConfig;
 
 constexpr char kConfigPath[] = R"(config\game.cfg)";
 
-bool contentConfigInit(const char* baseModPath)
+void contentConfigInit(const char* baseModPath)
 {
     if (gContentConfig.isInitialized()) {
-        return false;
+        return;
     }
 
     if (!configInit(&gContentConfig)) {
-        return false;
+        return;
     }
 
     if (!configRead(&gContentConfig, kConfigPath, true)) {
         // Failed to load config, try to migrate some settings from sfall.
         contentConfigTryMigrateFromSfall(baseModPath, kConfigPath);
     }
-    return true;
 }
 
 void contentConfigExit()

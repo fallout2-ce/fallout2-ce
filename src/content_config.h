@@ -20,8 +20,8 @@ namespace fallout {
 
 extern Config gContentConfig;
 
-// Initialize and content config and load it from file. Returns false if either failed.
-bool contentConfigInit(const char* baseModPath);
+// Initialize content config and try to load it from file.
+void contentConfigInit(const char* baseModPath);
 void contentConfigExit();
 
 } // namespace fallout
