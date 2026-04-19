@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "game_config.h"
 #include "platform_compat.h"
+#include "settings.h"
 #include "sfall_config.h"
 
 namespace fallout {
@@ -208,11 +209,10 @@ namespace {
 // Migrate sfall settings from ddraw.ini to game.cfg.
 //
 // Runs once when no local game.cfg exists at contentConfigFilePath.
-// Writes only the settings found in sfallConfig to a new local file,
-// and updates contentConfig in-memory so the current session uses them.
-static bool contentConfigMigrateFromSfall(Config* sfallConfig, Config* contentConfig, const char* contentConfigFilePath)
+// Writes only the settings found in sfallConfig to a new local file.
+static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* contentConfigFilePath)
 {
-    assert(sfallConfig != nullptr && contentConfig != nullptr && contentConfigFilePath != nullptr);
+    assert(sfallConfig != nullptr && contentConfigFilePath != nullptr);
 
     // Skip if a local game.cfg already exists (already migrated or user-managed).
     FILE* existing = compat_fopen(contentConfigFilePath, "rt");
@@ -234,8 +234,6 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, Config* contentCo
             char buf[32];
             snprintf(buf, sizeof(buf), "%d", value);
             configSetString(&migratedConfig, CONTENT_CONFIG_START_SECTION, targetKey, buf);
-            if (contentConfig->isInitialized())
-                configSetString(contentConfig, CONTENT_CONFIG_START_SECTION, targetKey, buf);
             migrated = true;
         }
     };
@@ -247,8 +245,6 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, Config* contentCo
         char* value;
         if (configGetString(sfallConfig, entry.sfallSection, entry.sfallKey, &value)) {
             configSetString(&migratedConfig, entry.targetSection, entry.targetKey, value);
-            if (contentConfig->isInitialized())
-                configSetString(contentConfig, entry.targetSection, entry.targetKey, value);
             migrated = true;
         }
     }
@@ -279,17 +275,22 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, Config* contentCo
     return migrated;
 }
 
-void contentConfigTryMigrateFromSfall(const char* baseModPath, const char* contentConfigPath)
+void contentConfigTryMigrateFromSfall(const char* contentConfigPath)
 {
-    FILE* baseAsDat = compat_fopen(baseModPath, "rb");
+    const auto& masterPatches = settings.system.master_patches_path;
+    if (masterPatches.empty()) {
+        debugPrint("Failed to migrate from ddraw.ini: no master_patches is set.\n");
+        return;
+    }
+    FILE* baseAsDat = compat_fopen(masterPatches.c_str(), "rb");
     if (baseAsDat != nullptr) {
-        // Base dat file already exists. This shouldn't normally happen, so don't migrate in this case.
+        // Master patches is pointing to a dat file. This shouldn't normally happen, so don't migrate in this case.
         fclose(baseAsDat);
         return;
     }
     char contentCfgPath[COMPAT_MAX_PATH];
-    snprintf(contentCfgPath, sizeof(contentCfgPath), "%s\\%s", baseModPath, contentConfigPath);
-    if (contentConfigMigrateFromSfall(&gSfallConfig, &gContentConfig, contentCfgPath)) {
+    snprintf(contentCfgPath, sizeof(contentCfgPath), "%s\\%s", masterPatches.c_str(), contentConfigPath);
+    if (contentConfigMigrateFromSfall(&gSfallConfig, contentCfgPath)) {
         debugPrint("Migrated settings from ddraw.ini to game.cfg.\n");
     }
 }

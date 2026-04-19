@@ -21,7 +21,7 @@ namespace fallout {
 extern Config gContentConfig;
 
 // Initialize content config and try to load it from file.
-void contentConfigInit(const char* baseModPath);
+void contentConfigInit();
 void contentConfigExit();
 
 } // namespace fallout
