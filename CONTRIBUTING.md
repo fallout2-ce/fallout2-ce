@@ -14,8 +14,13 @@ The current tool is read-only. Available commands:
 
 1. `./<BUILD_DIR>/fallout2-dat <archive.dat> list [pattern]`
 2. `./<BUILD_DIR>/fallout2-dat <archive.dat> info [pattern]`
-3. `./<BUILD_DIR>/fallout2-dat <archive.dat> extract <output-dir> [pattern]`
+3. `./<BUILD_DIR>/fallout2-dat <archive.dat> extract [--lower] <output-dir> [pattern]`
 4. `./<BUILD_DIR>/fallout2-dat <archive.dat> cat <entry>`
+
+Use `--lower` with `extract` when you want every extracted file and directory name forced to lowercase.
+For example, from `/Applications/Fallout2Codex` you can run:
+
+`/Users/klaas/game/fallout2-ce/out/build/local-debug-arm64/fallout2-dat master.dat extract --lower /tmp/fallout2-dat-lower data\\*`
 
 ## Updating SDL
 

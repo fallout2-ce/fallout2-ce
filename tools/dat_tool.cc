@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -22,6 +23,7 @@ struct Options {
     std::string archivePath;
     std::string command;
     std::vector<std::string> args;
+    bool lowerExtractedPaths = false;
 };
 
 std::string normalizeDatPath(std::string path)
@@ -42,6 +44,15 @@ std::string datPathToNativePath(std::string_view path)
         if (ch == '\\') {
             ch = '/';
         }
+    }
+
+    return value;
+}
+
+std::string toLowerAscii(std::string value)
+{
+    for (char& ch : value) {
+        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
     }
 
     return value;
@@ -142,7 +153,7 @@ void printUsage(std::ostream& stream)
         << "Usage:\n"
         << "  fallout2-dat <archive.dat> list [pattern]\n"
         << "  fallout2-dat <archive.dat> info [pattern]\n"
-        << "  fallout2-dat <archive.dat> extract <output-dir> [pattern]\n"
+        << "  fallout2-dat <archive.dat> extract [--lower] <output-dir> [pattern]\n"
         << "  fallout2-dat <archive.dat> cat <entry>\n"
         << "\n"
         << "Notes:\n"
@@ -161,12 +172,24 @@ bool parseOptions(int argc, char** argv, Options* options)
     options->command = argv[2];
     options->args.assign(argv + 3, argv + argc);
 
+    if (options->command == "extract") {
+        auto lowerIt = std::find(options->args.begin(), options->args.end(), "--lower");
+        if (lowerIt != options->args.end()) {
+            options->lowerExtractedPaths = true;
+            options->args.erase(lowerIt);
+        }
+    }
+
     return true;
 }
 
-bool extractEntry(DBase* dbase, const DBaseEntry& entry, const std::string& outputDir)
+bool extractEntry(DBase* dbase, const DBaseEntry& entry, const std::string& outputDir, bool lowerExtractedPaths)
 {
     std::string relativePath = datPathToNativePath(entry.path);
+    if (lowerExtractedPaths) {
+        relativePath = toLowerAscii(std::move(relativePath));
+    }
+
     if (!isSafeRelativeOutputPath(relativePath)) {
         std::cerr << "Refusing to extract invalid path: " << entry.path << "\n";
         return false;
@@ -282,7 +305,7 @@ int infoCommand(DBase* dbase, const std::vector<std::string>& args)
     return 0;
 }
 
-int extractCommand(DBase* dbase, const std::vector<std::string>& args)
+int extractCommand(DBase* dbase, const std::vector<std::string>& args, bool lowerExtractedPaths)
 {
     if (args.empty()) {
         std::cerr << "extract requires an output directory\n";
@@ -309,7 +332,7 @@ int extractCommand(DBase* dbase, const std::vector<std::string>& args)
     int extracted = 0;
     do {
         const DBaseEntry& entry = dbase->entries[findData.index];
-        if (!extractEntry(dbase, entry, outputDir)) {
+        if (!extractEntry(dbase, entry, outputDir, lowerExtractedPaths)) {
             return 1;
         }
         extracted++;
@@ -399,7 +422,7 @@ int run(const Options& options)
     } else if (options.command == "info") {
         rc = infoCommand(dbase, options.args);
     } else if (options.command == "extract") {
-        rc = extractCommand(dbase, options.args);
+        rc = extractCommand(dbase, options.args, options.lowerExtractedPaths);
     } else if (options.command == "cat") {
         rc = catCommand(dbase, options.args);
     } else {
