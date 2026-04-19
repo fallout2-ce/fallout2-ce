@@ -1283,6 +1283,16 @@ int wmWorldMap_load(File* stream)
         if (fileReadInt32(stream, &(encounterTableEntry->counter)) == -1) return -1;
     }
 
+    // If the save had no tile data (e.g. old save from a different worldmap config),
+    // reset the player position to the appropriate starting point and reveal that area.
+    if (numTiles == 0) {
+        if (gameVariantIsFallout1()) {
+            wmGenData.worldPosX = 823;
+            wmGenData.worldPosY = 72;
+        }
+        wmMarkSubTileRadiusVisited(wmGenData.worldPosX, wmGenData.worldPosY);
+    }
+
     wmInterfaceCenterOnParty();
 
     return 0;
@@ -4366,6 +4376,9 @@ static int wmGrabTileWalkMask(int tileIdx)
 
     File* stream = fileOpen(path, "rb");
     if (stream == nullptr) {
+        internal_free(tileInfo->walkMaskData);
+        tileInfo->walkMaskData = nullptr;
+        tileInfo->walkMaskName[0] = '\0';
         return -1;
     }
 

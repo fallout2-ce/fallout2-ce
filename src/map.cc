@@ -920,9 +920,7 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    if ((gMapHeader.flags & 1) == 0) {
-        _map_fix_critter_combat_data();
-    }
+    _map_fix_critter_combat_data();
 
     error = "Error setting map elevation";
     if (mapSetElevation(gEnteringElevation) != 0) {
@@ -1320,7 +1318,10 @@ static void _map_fix_critter_combat_data()
             continue;
         }
 
-        if (object->data.critter.combat.whoHitMeCid == -1) {
+        // whoHitMe is never valid across save/load; always null it — resolved from whoHitMeCid during combat
+        if (object->data.critter.combat.whoHitMe != nullptr) {
+            debugPrint("MAP: _map_fix_critter_combat_data: nulling whoHitMe for critter pid=0x%x cid=%d whoHitMeCid=%d\n",
+                object->pid, object->cid, object->data.critter.combat.whoHitMeCid);
             object->data.critter.combat.whoHitMe = nullptr;
         }
     }

@@ -11,13 +11,23 @@
 | 3 | Combat AI crash: `aiInit()` fails on FO1 `ai.txt` (no `*_end` fields) → null `gAiPackets` → strlen crash in `_combatai_msg` | **Fixed** — commit `692cef5` |
 | 4 | 5× "String not found" at startup — caliber type names 14–18 absent from FO1 `proto.msg` (cosmetic) | open |
 | 5 | 2× "String not found" before `>intface_init` — interface indicator IDs 100–104 may differ in FO1 `intrface.msg` | open |
-| 6 | "Only action is looking" — root cause TBD (cursor/action menu issue in FO1 mode) | open |
+| 6 | "Only action is looking" — root cause TBD (cursor/action menu issue in FO1 mode) | **Resolved** |
 | 7 | Character creation UI: only "take" and "back" work on the selector | open |
-| 8 | `Script Error: scripts\glowgen.int` — FO2 global script not applicable in FO1 mode | open |
+| 8 | `Script Error: scripts\glowgen.int` — FO2 global script not applicable in FO1 mode | **Fixed** — commit `64bb2af` |
 | 9 | Unarmed hand/kick actions not shown in combat menu (unarmed.txt?) | skip for now |
-| 10 | Exiting first map goes to empty map instead of world map | **In progress** — art shim deployed, needs test |
+| 10 | Exiting first map goes to empty map instead of world map | **Fixed** — worldmap works; see below |
 | 11 | Saving fails with "Error saving game" | **Fixed** — commit `4823bd3` |
 | 12 | Pip-Boy fails with "Error" | **Fixed** — commit `62f4dae` |
+| 13 | Crash at `globalVarsRead` when loading map from worldmap | **Fixed** — commit `cf56c0e` |
+| 14 | Crash at worldmap entry: `objectSaveAll` → dangling `whoHitMe` pointer | **Fixed** — `src/map.cc`: unconditionally call `_map_fix_critter_combat_data` on every map load (was gated on fresh-map flag) |
+| 15 | Script crash `programExecuteProcedure` out-of-bounds procedure index | **Fixed** — `src/scripts.cc` `scriptExecProc`: added bounds guard before `programExecuteProcedure` call |
+| 16 | Worldmap shows only top-left corner / all black | **Fixed** — (a) FRM tiles were generated with wrong 58-byte header; regenerated with correct 62-byte header + 12-byte frame header. (b) Old save had `numTiles=0`; added `wmMarkSubTileRadiusVisited` + FO1 starting position reset in `wmWorldMap_load` when `numTiles==0` |
+| 17 | Worldmap movement stops immediately after a few pixels (1 hour time advances) | **Fixed** — `src/worldmap.cc` `wmGrabTileWalkMask`: when `.msk` file open fails, was leaving `walkMaskData` pointing to uninitialized malloc; subsequent call saw non-null pointer, returned 0, and `wmWorldPosInvalid` read random bytes → random blocked positions. Fix: free + null + clear name on file-open failure |
+| 18 | Options menu cannot be opened in-game (Escape / O key does nothing) | **Fixed** — `text/english/game/options.msg` absent from FO1 data; `optionsWindowInit()` returned -1 silently. Created shim at `mods/fo1_shims/text/english/game/options.msg` with standard button labels and preference strings |
+| 19 | Character always walks, cannot run | **Not a bug** — `settings.preferences.running` defaults to `false` (walk mode); shift-click runs, or toggle "Running" in Preferences |
+| 20 | Global scripts broken — FO1 has no global script system, but CE's `sfall_gl_scr_init` still runs and may attempt to load/exec scripts that don't exist or misbehave under FO1 data | open — needs investigation; commit `64bb2af` only suppressed `glowgen.int` via `gl*` pattern skip, may not be sufficient |
+| 21 | Pip-Boy broken — shows error or crashes in FO1 mode despite earlier holodisk.txt fix; root cause unknown, likely missing FO1 message strings or broken FRM art for pipboy UI | open |
+| 22 | Shim cleanup: remove 22 unused/wrong-origin FRMs — WM_ABBEY through WM_VLTCT (20 FO2 city markers unreferenced by FO1 city.txt) + WMCARMVE + wmbkemve (FO2 vehicle art, no car in FO1) | open — data-only, no code change needed |
 
 ### Completed implementation tasks
 
@@ -81,6 +91,18 @@
   - commit: `62f4dae`
 - FO1 save game: skip party member proto copy for protos that live only in the DAT archive
   - commit: `4823bd3`
+- Skip global scripts in FO1 mode (`sfall_gl_scr_init` returns early; FO1 had no global script system, and `gl*.int` pattern was matching FO1's `glowgen.int`)
+  - commit: `64bb2af`
+- Fix operator precedence bug in `globalVarsRead` (`*variablesListPtr[N-1]` → `(*variablesListPtr)[N-1]`)
+  - FO1 GAM files use bare integers (no `name=value` format), triggering the `else` branch with N≥2 → crash
+  - commit: `cf56c0e`
+- FO1 worldmap: fully playable — player can enter, move, and encounter system works:
+  - `map.cc`: `_map_fix_critter_combat_data` now unconditional (was gated on fresh-map flag — saved maps still had dangling `whoHitMe`)
+  - `scripts.cc` `scriptExecProc`: bounds guard prevents OOB procedure index crash on FO1 scripts with fewer procedures than FO2 expects
+  - FRM tiles regenerated with correct 62-byte FRM header + 12-byte frame header (old 58+8 caused wrong dimensions)
+  - `worldmap.cc` `wmWorldMap_load`: when `numTiles==0` (fresh save), call `wmMarkSubTileRadiusVisited` at FO1 V13 position (823,72) to reveal starting area
+  - `worldmap.cc` `wmGrabTileWalkMask`: fixed uninitialized-memory bug — on `.msk` file-not-found, free allocated buffer + clear name so future calls take the "no mask = walkable" fast path
+  - `mods/fo1_shims/text/english/game/options.msg`: created shim so `optionsWindowInit()` succeeds and Preferences/Save/Load dialogs are accessible
 - FO1 worldmap: deployed art shim (fo1_shims/art/intrface/) with:
   - FO1in2's extended INTRFACE.LST (508 entries, adds Twnmap/Wm_ city art at indices 469-492)
   - FO1in2's custom FO1 worldmap tiles (WRLDMP00-19, WRLDSPR0-2)
@@ -88,6 +110,40 @@
   - FO1in2's FO1 worldmap city markers (Wm_00-11.FRM → indices 481-492)
   - FO2 worldmap UI FRMs (WMAPBOX, WMSCREEN, WMTABS, WMDIAL, etc. → extracted from FO2 master.dat)
   - Root cause: `wmInterfaceInit()` failed at FRM 136 (WMAPBOX.FRM) because FO1's INTRFACE.LST has < 136 entries and no worldmap art
+- `fo1_shims/data/party.txt` edited manually to align FO1 party member PIDs and option fields more closely with what CE save/load expects; may resolve the save-game party desync issue — **needs test**
+
+## FO2 Asset Dependency Audit
+
+### What the shims still pull from FO2
+
+The 92 FRM files in `fo1_shims/art/intrface/` break down as follows:
+
+| Category | Files | Origin |
+|----------|-------|--------|
+| FO1 worldmap tiles | WRLDMP00–19.FRM | extracted from FO1 MASTER.DAT WORLDMAP.FRM |
+| FO1 world sphere overlays | WRLDSPR0–2.FRM | FO1in2 |
+| FO1 city town maps | TWNMAP00–11.FRM | FO1in2 |
+| FO1 city markers | Wm_00–11.FRM | FO1in2 |
+| FO1/FO2 encounter hotspots | HOTSPOT1–2.FRM, days.FRM, combat.FRM | FO1in2 |
+| **FO2 worldmap UI panel** | WMAPBOX, WMSCREEN, WMTABS, WMDIAL, WMGLOBE, WMINFCE0–3, WMTBEDGE, WMAPLABS, WMAPLOC, WMAPTARG, WMAPTRG2, WMAPFGT0–1, WMRNDEN2–3 | **FO2 master.dat** |
+| **FO2 vehicle art** | WMCARMVE.FRM, wmbkemve.FRM | **FO2 master.dat** — unused in FO1 |
+| **FO2 city markers** | WM_ABBEY, WM_ARROY, WM_DEN, … (20 files) | **FO2 master.dat** — all FO2 towns, not referenced by FO1 city.txt |
+
+### Can we eliminate FO2 assets?
+
+**Vehicle art** (WMCARMVE, wmbkemve) — trivially removable; FO1 has no car.
+
+**FO2 city markers** (WM_ABBEY etc.) — not referenced by FO1's city.txt; the 20 files can be removed. FO1 city.txt uses Wm_00–11 indices (already FO1-sourced).
+
+**FO2 worldmap UI panel** (14 files) — these ARE required by `wmInterfaceInit()`, which hardcodes FO2 art indices 136–160. FO1's MASTER.DAT contains equivalent worldmap UI art but at different indices in its own shorter INTRFACE.LST. Replacing them would require either:
+  - extracting FO1's worldmap panel FRMs and verifying dimensional compatibility with CE's layout assumptions, or
+  - adding variant-aware art index selection to `wmInterfaceInit()`
+  This is the **only substantive FO2 asset dependency remaining**. FO1in2 made the same trade-off and kept FO2 panel art. For now, retaining these is pragmatic.
+
+### Short-term cleanup possible without code changes
+
+- Remove WM_ABBEY through WM_VLTCT.FRM (20 FO2-only city markers, unreferenced in FO1)
+- Remove WMCARMVE.FRM and wmbkemve.FRM (FO2 vehicle art)
 
 ## FO1in2 Findings
 

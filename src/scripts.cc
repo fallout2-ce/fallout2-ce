@@ -1288,6 +1288,13 @@ int scriptExecProc(int sid, int proc)
 
     script->action = proc;
 
+    int _procCount = program->procedureCount();
+    if (procedureIndex >= _procCount) {
+        debugPrint("scriptExecProc: sid=%d proc=%d idx=%d >= count=%d program='%s'\n",
+            script->sid, proc, procedureIndex, _procCount, program->name);
+        return -1;
+    }
+
     programExecuteProcedure(program, procedureIndex);
 
     script->source = nullptr;
