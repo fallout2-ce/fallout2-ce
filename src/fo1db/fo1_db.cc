@@ -36,9 +36,9 @@
 
 #include <fpattern/fpattern.h>
 
+#include "../platform_compat.h"
 #include "fo1_assoc.h"
 #include "fo1_lzss.h"
-#include "../platform_compat.h"
 
 namespace fallout {
 
