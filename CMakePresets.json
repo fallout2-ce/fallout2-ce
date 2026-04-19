@@ -119,9 +119,6 @@
                 "base"
             ],
             "generator": "Xcode",
-            "cacheVariables": {
-                "CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY": ""
-            },
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",

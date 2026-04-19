@@ -446,6 +446,28 @@ target_include_directories(${EXECUTABLE_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 
+add_executable(fallout2-dat
+    "tools/dat_tool.cc"
+    "src/dfile.cc"
+    "src/platform_compat.cc"
+)
+
+if(APPLE)
+    set_target_properties(fallout2-dat PROPERTIES
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+    )
+endif()
+
+target_link_libraries(fallout2-dat
+    fpattern_windows::fpattern_windows
+    ${ZLIB_LIBRARIES}
+    ${SDL2_LIBRARIES}
+)
+target_include_directories(fallout2-dat PRIVATE "src")
+target_include_directories(fallout2-dat PRIVATE ${ZLIB_INCLUDE_DIRS})
+target_include_directories(fallout2-dat PRIVATE ${SDL2_INCLUDE_DIRS})
+
 if(APPLE)
     if(IOS)
         install(TARGETS ${EXECUTABLE_NAME} DESTINATION "Payload")

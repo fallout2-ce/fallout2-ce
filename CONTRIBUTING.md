@@ -2,6 +2,26 @@
 
 This file is currently a shell to be filled in over time. For now, it only captures project-specific maintenance notes that are easy to miss.
 
+## `.dat` CLI Tool
+
+There is a small command-line archive tool in this repo for inspecting Fallout `.dat` files using the same reader implementation as the game.
+
+Build it with `make TARGET=fallout2-dat`.
+
+The executable is written to your selected `BUILD_DIR`, so the default path is `out/build/local-debug-arm64/fallout2-dat` on this macOS setup, but other platforms or custom build directories will differ.
+
+The current tool is read-only. Available commands:
+
+1. `./<BUILD_DIR>/fallout2-dat <archive.dat> list [pattern]`
+2. `./<BUILD_DIR>/fallout2-dat <archive.dat> info [pattern]`
+3. `./<BUILD_DIR>/fallout2-dat <archive.dat> extract [--lower] <output-dir> [pattern]`
+4. `./<BUILD_DIR>/fallout2-dat <archive.dat> cat <entry>`
+
+Use `--lower` with `extract` when you want every extracted file and directory name forced to lowercase.
+For example, from `/Applications/Fallout2Codex` you can run:
+
+`/Users/klaas/game/fallout2-ce/out/build/local-debug-arm64/fallout2-dat master.dat extract --lower /tmp/fallout2-dat-lower data\\*`
+
 ## Updating SDL
 
 SDL is pinned for native builds in `third_party/sdl2/CMakeLists.txt`. Right now, Android also relies on checked-in Java bindings in `os/android/app/src/main/java/org/libsdl/app`, and those bindings must match the SDL version fetched by CMake.
