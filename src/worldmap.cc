@@ -846,7 +846,6 @@ static int wmMaxEncBaseTypes;
 static int wmMaxEncounterInfoTables;
 
 static bool gTownMapHotkeysFix;
-static bool gCitiesLimitFix;
 static double gGameTimeIncRemainder = 0.0;
 static FrmImage _backgroundFrmImage;
 static FrmImage _townFrmImage;
@@ -873,9 +872,6 @@ static void wmSetFlags(int* flagsPtr, int flag, int value)
 // 0x4BC89C
 int wmWorldMap_init()
 {
-    // SFALL
-    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "cities_limit_fix", &gCitiesLimitFix, true);
-
     char path[COMPAT_MAX_PATH];
 
     if (wmGenDataInit() == -1) {
@@ -1196,9 +1192,8 @@ int wmWorldMap_load(File* stream)
     int numCities;
     if (fileReadInt32(stream, &numCities) == -1) return -1;
 
-    if (gCitiesLimitFix && numCities != wmMaxAreaNum) {
-        debugPrint("WorldMap Error: Cities limit fix is enabled, "
-                   "but the number of cities %d in the save file is different from "
+    if (numCities != wmMaxAreaNum) {
+        debugPrint("WorldMap Error: number of cities %d in the save file is different from "
                    "the number of cities %d in the worldmap.txt file.",
             numCities, wmMaxAreaNum);
     }
@@ -2575,10 +2570,11 @@ static int wmAreaInit()
 
     configFree(&cfg);
 
-    if (!gCitiesLimitFix && wmMaxAreaNum != CITY_COUNT) {
+    // SFALL: CitiesLimitFix (always on)
+    /*if (wmMaxAreaNum != CITY_COUNT) {
         showMesageBox("\nwmAreaInit::Error loading Cities!");
         exit(1);
-    }
+    }*/
 
     return 0;
 }
