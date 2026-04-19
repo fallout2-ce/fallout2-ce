@@ -65,6 +65,8 @@ int xfileEof(XFile* stream);
 long xfileGetSize(XFile* stream);
 bool xbaseReopenAll(char* paths);
 bool xbaseOpen(const char* path);
+typedef void XFileEachHandler(XFile* file, void* context);
+void xfileOpenEachReverse(const char* filePath, const char* mode, XFileEachHandler* handler, void* context);
 bool xlistInit(const char* pattern, XList* xlist);
 void xlistFree(XList* xlist);
 

@@ -331,6 +331,27 @@ bool configRead(Config* config, const char* filePath, bool isDb)
             configParseLine(config, string);
         }
         fileClose(stream);
+
+        // Build patch file path by inserting "#patch" before the extension.
+        char patchPath[COMPAT_MAX_PATH];
+        const char* dot = strrchr(filePath, '.');
+        if (dot != nullptr) {
+            snprintf(patchPath, sizeof(patchPath), "%.*s#patch%s", (int)(dot - filePath), filePath, dot);
+        } else {
+            snprintf(patchPath, sizeof(patchPath), "%s#patch", filePath);
+        }
+
+        struct PatchContext {
+            Config* config;
+            char string[CONFIG_FILE_MAX_LINE_LENGTH];
+        } patchCtx = { config };
+
+        xfileOpenEachReverse(patchPath, "rb", [](XFile* file, void* ctx) {
+            auto* pc = static_cast<PatchContext*>(ctx);
+            while (fileReadString(pc->string, sizeof(pc->string), file) != nullptr) {
+                configParseLine(pc->config, pc->string);
+            }
+        }, &patchCtx);
     } else {
         FILE* stream = compat_fopen(filePath, "rt");
 
