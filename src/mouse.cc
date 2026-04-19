@@ -461,7 +461,10 @@ void _mouse_info()
             // into a tap-through model they weren't designed for.
             bool overHud = false;
 #if __APPLE__ && TARGET_OS_IOS
-            if (mouseDeviceUsesRelativeMode() && gInterfaceBarWindow != -1) {
+            // Skip HUD interception when touchscreen mode is active — a UI
+            // screen (dialog, inventory, etc.) owns input and its windows may
+            // overlap the interface bar region. Let those taps reach the UI.
+            if (mouseDeviceUsesRelativeMode() && !touch_get_touchscreen_mode() && gInterfaceBarWindow != -1) {
                 Window* hudWindow = windowGetWindow(gInterfaceBarWindow);
                 if (hudWindow != nullptr && (hudWindow->flags & WINDOW_HIDDEN) == 0) {
                     Rect hudRect;
