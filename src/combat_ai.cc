@@ -2032,6 +2032,12 @@ Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, O
             continue;
         }
 
+        // Lets npc_armor.mod block weapons whose anim code isn't supported
+        // by the swapped-armor sprite set. Slot 1 = right hand.
+        if (!scriptHooks_CanUseWeapon(critter, weapon, 1)) {
+            continue;
+        }
+
         if (weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY) == ATTACK_TYPE_RANGED) {
             if (ammoGetQuantity(weapon) == 0) {
                 if (!aiHaveAmmo(critter, weapon, nullptr)) {
