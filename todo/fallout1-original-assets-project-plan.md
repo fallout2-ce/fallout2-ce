@@ -27,7 +27,7 @@
 | 19 | Character always walks, cannot run | **Not a bug** — `settings.preferences.running` defaults to `false` (walk mode); shift-click runs, or toggle "Running" in Preferences |
 | 20 | Global scripts broken — FO1 has no global script system, but CE's `sfall_gl_scr_init` still runs and may attempt to load/exec scripts that don't exist or misbehave under FO1 data | open — needs investigation; commit `64bb2af` only suppressed `glowgen.int` via `gl*` pattern skip, may not be sufficient |
 | 21 | Pip-Boy broken — shows error or crashes in FO1 mode despite earlier holodisk.txt fix; root cause unknown, likely missing FO1 message strings or broken FRM art for pipboy UI | open |
-| 22 | Shim cleanup: remove 22 unused/wrong-origin FRMs — WM_ABBEY through WM_VLTCT (20 FO2 city markers unreferenced by FO1 city.txt) + WMCARMVE + wmbkemve (FO2 vehicle art, no car in FO1) | open — data-only, no code change needed |
+| 22 | Shim cleanup: remove 22 unused/wrong-origin FRMs — WM_ABBEY through WM_VLTCT (20 FO2 city markers unreferenced by FO1 city.txt) + WMCARMVE + wmbkemve (FO2 vehicle art, no car in FO1) | **Done** — removed from the Fallout 1 test install's `mods/fo1_shims/art/intrface/` overlay |
 
 ### Completed implementation tasks
 
@@ -142,8 +142,8 @@ The 92 FRM files in `fo1_shims/art/intrface/` break down as follows:
 
 ### Short-term cleanup possible without code changes
 
-- Remove WM_ABBEY through WM_VLTCT.FRM (20 FO2-only city markers, unreferenced in FO1)
-- Remove WMCARMVE.FRM and wmbkemve.FRM (FO2 vehicle art)
+- Removed WM_ABBEY through WM_VLTCT.FRM (20 FO2-only city markers, unreferenced in FO1)
+- Removed WMCARMVE.FRM and wmbkemve.FRM (FO2 vehicle art)
 
 ## FO1in2 Findings
 

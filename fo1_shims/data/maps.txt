@@ -32,7 +32,7 @@
 ; It's unused now, because of HOOK_ENCOUNTER in gl_worldmap.ssl!
 [Map 000]
 lookup_name=Desert Encounter 0
-map_name=DESERT0
+map_name=DESERT1
 music=07desert
 ambient_sfx=gustwind:20, gustwin1:20, rattle:15, rattle1:15, vulture:15, vulture1:15
 saved=No
