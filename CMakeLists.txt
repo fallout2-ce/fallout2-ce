@@ -452,6 +452,13 @@ add_executable(fallout2-dat
     "src/platform_compat.cc"
 )
 
+if(APPLE)
+    set_target_properties(fallout2-dat PROPERTIES
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+    )
+endif()
+
 target_link_libraries(fallout2-dat
     fpattern_windows::fpattern_windows
     ${ZLIB_LIBRARIES}
