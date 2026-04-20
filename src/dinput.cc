@@ -60,10 +60,6 @@ bool mouseDeviceInitMode()
         return SDL_SetRelativeMouseMode(SDL_TRUE) == 0;
     }
 
-    if (SDL_SetRelativeMouseMode(SDL_FALSE) != 0) {
-        return false;
-    }
-
     mouseRelativeMode = false;
     mouseDeviceRefreshWindowMapping();
     return true;
