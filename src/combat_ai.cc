@@ -132,6 +132,7 @@ static bool aiCanUseItem(Object* obj, Object* a2);
 static Object* _ai_search_environ(Object* critter, int itemType);
 static Object* _ai_retrieve_object(Object* critter, Object* item);
 static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender);
+static bool _aiIsMeleeThreat(Object* attacker, Object* defender);
 static int _ai_move_steps_closer(Object* a1, Object* a2, int actionPoints, bool taunt);
 static int _ai_move_closer(Object* a1, Object* a2, bool taunt);
 static int _cai_retargetTileFromFriendlyFire(Object* source, Object* target, int* tilePtr);
@@ -2351,6 +2352,28 @@ static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender)
     return HIT_MODE_RIGHT_WEAPON_PRIMARY;
 }
 
+// Returns true if the defender is primarily a melee threat.
+static bool _aiIsMeleeThreat(Object* attacker, Object* defender)
+{
+    if (defender == nullptr) {
+        return false;
+    }
+
+    Object* weapon = critterGetItem2(defender);
+
+    if (weapon != nullptr && itemGetType(weapon) == ITEM_TYPE_WEAPON) {
+        int attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+        if (attackType == ATTACK_TYPE_RANGED || attackType == ATTACK_TYPE_THROW) {
+            return false;
+        }
+        if (attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) {
+            return true;
+        }
+    }
+
+    return true;
+}
+
 // 0x429FC8
 static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoints, bool taunt)
 {
@@ -2719,6 +2742,29 @@ static int _ai_try_attack(Object* attacker, Object* defender)
         }
     } else {
         _ai_switch_weapons(attacker, &hitMode, &weapon, defender);
+    }
+
+    AiPacket* ai = aiGetPacket(attacker);
+    if (weapon != nullptr && itemGetType(weapon) == ITEM_TYPE_WEAPON) {
+        int attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+        if (attackType == ATTACK_TYPE_RANGED
+            && ai->best_weapon != BEST_WEAPON_MELEE
+            && ai->best_weapon != BEST_WEAPON_MELEE_OVER_RANGED
+            && _aiIsMeleeThreat(attacker, defender)
+            && objectGetDistanceBetween(attacker, defender) <= 2) {
+            int attackCost = weaponGetActionPointCost(attacker, hitMode, false);
+            int moveCost = 2;
+            if (attacker->data.critter.combat.ap > attackCost + moveCost) {
+                if (_ai_move_away(attacker, defender, 2) == -1) {
+                }
+
+                weapon = critterGetItem2(attacker);
+                if (weapon != nullptr && itemGetType(weapon) != ITEM_TYPE_WEAPON) {
+                    weapon = nullptr;
+                }
+                hitMode = _ai_pick_hit_mode(attacker, weapon, defender);
+            }
+        }
     }
 
     unsigned char rotations[800];
