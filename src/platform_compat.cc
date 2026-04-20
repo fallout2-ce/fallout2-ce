@@ -218,24 +218,34 @@ int compat_mkdir(const char* path)
 int compat_mkdir_recursive(const char* path)
 {
     char drive[COMPAT_MAX_DRIVE];
-    char dirPart[COMPAT_MAX_DIR];
-    compat_splitpath(path, drive, dirPart, nullptr, nullptr);
+    compat_splitpath(path, drive, nullptr, nullptr, nullptr);
 
-    char dir[COMPAT_MAX_PATH];
-    compat_makepath(dir, drive, dirPart, nullptr, nullptr);
+    char pathCopy[COMPAT_MAX_PATH];
+    strcpy(pathCopy, path);
 
     // Skip drive root (e.g. "C:\\" or leading "/") to avoid mkdir("") or mkdir("C:").
-    char* sep = dir + strlen(drive);
+    char* sep = pathCopy + strlen(drive);
     if (*sep == '\\' || *sep == '/') sep++;
     for (; *sep != '\0'; sep++) {
         if (*sep == '\\' || *sep == '/') {
             char saved = *sep;
             *sep = '\0';
-            compat_mkdir(dir);
+            if (compat_mkdir(pathCopy) < 0) {
+                break;
+            }
             *sep = saved;
         }
     }
-    return compat_mkdir(dir);
+    return compat_mkdir(path);
+}
+
+bool compat_file_exists(const char* filePath)
+{
+    FILE* file = compat_fopen(filePath, "rb");
+    if (file == nullptr) return false;
+
+    fclose(file);
+    return true;
 }
 
 unsigned int compat_timeGetTime()

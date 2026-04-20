@@ -1381,6 +1381,10 @@ static int gameDbInit()
     if (*patch_file_name == '\0') {
         patch_file_name = nullptr;
     }
+    // Try to ensure that patches dir exists early. This is needed for auto-generated game.cfg later.
+    if (patch_file_name != nullptr) {
+        compat_mkdir_recursive(patch_file_name);
+    }
 
     int master_db_handle = dbOpen(main_file_name, patch_file_name);
     if (master_db_handle == -1) {

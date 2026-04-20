@@ -218,19 +218,17 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
     assert(sfallConfig != nullptr && contentConfigFilePath != nullptr);
 
     // Skip if a local game.cfg already exists (already migrated or user-managed).
-    FILE* existing = compat_fopen(contentConfigFilePath, "rt");
-    if (existing != nullptr) {
-        fclose(existing);
+    if (compat_file_exists(contentConfigFilePath)) {
         return false;
     }
 
-    // Migrate start year/month/day only when explicitly set (not the sfall -1 sentinel).
-    bool migrated = false;
     Config migratedConfig;
     if (!configInit(&migratedConfig)) {
         return false;
     }
 
+    bool migrated = false;
+    // Migrate start year/month/day only when explicitly set (not the sfall -1 sentinel).
     auto migrateStartInt = [&](const char* sfallKey, const char* targetKey, int defaultValue) {
         int value;
         if (configGetInt(sfallConfig, "Misc", sfallKey, &value) && value >= 0 && value != defaultValue) {
@@ -257,7 +255,12 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
 
     if (migrated) {
         // Ensure all directory components exist before writing.
-        compat_mkdir_recursive(contentConfigFilePath);
+        char drive[COMPAT_MAX_DRIVE];
+        char dirPart[COMPAT_MAX_DIR];
+        char pathWithoutFile[COMPAT_MAX_PATH];
+        compat_splitpath(contentConfigFilePath, drive, dirPart, nullptr, nullptr);
+        compat_makepath(pathWithoutFile, drive, dirPart, nullptr, nullptr);
+        compat_mkdir_recursive(pathWithoutFile);
 
         if (!configWrite(&migratedConfig, contentConfigFilePath, false)) {
             debugPrint("Failed to write migrated settings to %s!\n", contentConfigFilePath);
@@ -270,15 +273,17 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
 
 void contentConfigTryMigrateFromSfall(const char* contentConfigPath)
 {
+    if (!gSfallConfig.isInitialized() || gSfallConfig.entriesLength == 0) {
+        // Nothing to migrate.
+        return;
+    }
     const auto& masterPatches = settings.system.master_patches_path;
     if (masterPatches.empty()) {
         debugPrint("Failed to migrate from ddraw.ini: no master_patches is set.\n");
         return;
     }
-    FILE* baseAsDat = compat_fopen(masterPatches.c_str(), "rb");
-    if (baseAsDat != nullptr) {
-        // Master patches is pointing to a dat file. This shouldn't normally happen, so don't migrate in this case.
-        fclose(baseAsDat);
+    if (compat_file_exists(masterPatches.c_str())) {
+        // Master patches is pointing to a file instead of a folder. This shouldn't normally happen, so don't migrate in this case.
         return;
     }
     char contentCfgPath[COMPAT_MAX_PATH];
