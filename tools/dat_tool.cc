@@ -255,6 +255,11 @@ bool extractEntry(const DatArchive& archive, const DatArchiveEntry& entry, const
 int listCommand(const DatArchive& archive, const std::string& pattern)
 {
     const std::vector<const DatArchiveEntry*> matches = archive.findEntries(pattern);
+    if (matches.empty()) {
+        std::cerr << "No entries matched pattern: " << pattern << "\n";
+        return 1;
+    }
+
     for (const DatArchiveEntry* entry : matches) {
         std::cout << entry->path << "\n";
     }

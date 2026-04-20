@@ -1,9 +1,11 @@
 #include "dat_archive.h"
 
+#include <cassert>
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -15,6 +17,17 @@
 namespace fallout {
 
 namespace {
+
+constexpr int fo1NoCompressionFlags = 0;
+constexpr int fo1DefaultFlags = 0x10;
+constexpr int fo1CompressedFlagMask = 0xF0;
+constexpr int fo1StoredFlags = 0x10;
+constexpr int fo1UncompressedFlags = 0x20;
+constexpr int fo1ChunkedFlags = 0x40;
+constexpr unsigned int fo1CompressedChunkMask = 0x7FFF;
+constexpr unsigned int fo1ChunkLiteralMask = 0x8000;
+constexpr size_t fo1AssocValueBufferSize = 4096;
+constexpr size_t fo1MaxStoredLength = 100000;
 
 struct Fo1AssocHeader {
     int size = 0;
@@ -89,7 +102,7 @@ bool readFo1AssocKey(FILE* stream, std::string* key)
 
 bool skipFo1AssocValue(FILE* stream, size_t size)
 {
-    std::vector<unsigned char> buffer(4096);
+    std::vector<unsigned char> buffer(fo1AssocValueBufferSize);
     while (size > 0) {
         size_t chunkSize = std::min(size, buffer.size());
         if (fread(buffer.data(), 1, chunkSize, stream) != chunkSize) {
@@ -119,20 +132,20 @@ bool readFo1DirEntry(FILE* stream, DatArchiveEntry* entry)
         return false;
     }
 
-    if (flags == 0) {
-        flags = 16;
+    if (flags == fo1NoCompressionFlags) {
+        flags = fo1DefaultFlags;
     }
 
     entry->flags = flags;
-    entry->compressed = (flags & 0xF0) != 0x20;
+    entry->compressed = (flags & fo1CompressedFlagMask) != fo1UncompressedFlags;
     entry->uncompressedSize = length;
     entry->dataOffset = offset;
 
-    switch (flags & 0xF0) {
-    case 0x10:
+    switch (flags & fo1CompressedFlagMask) {
+    case fo1StoredFlags:
         entry->storedSize = storedLength;
         break;
-    case 0x20:
+    case fo1UncompressedFlags:
         entry->storedSize = length;
         break;
     default:
@@ -148,21 +161,40 @@ size_t safeFo1DecodeBufferSize(unsigned int compressedLength)
     return static_cast<size_t>(compressedLength) * 18 + 18;
 }
 
+bool trySafeFo1DecodeBufferSize(unsigned int compressedLength, size_t* size)
+{
+    assert(size != nullptr);
+
+    if constexpr (sizeof(size_t) < sizeof(unsigned int)) {
+        if (compressedLength > (std::numeric_limits<size_t>::max() - 18) / 18) {
+            return false;
+        }
+    }
+
+    *size = safeFo1DecodeBufferSize(compressedLength);
+    return true;
+}
+
 bool readFo1EntryData(FILE* stream, const DatArchiveEntry& entry, std::vector<unsigned char>* output)
 {
     if (fseek(stream, static_cast<long>(*entry.dataOffset), SEEK_SET) != 0) {
         return false;
     }
 
-    switch (entry.flags & 0xF0) {
-    case 0x10:
+    switch (entry.flags & fo1CompressedFlagMask) {
+    case fo1StoredFlags:
         if (!entry.storedSize.has_value()) {
             return false;
         }
 
         output->resize(static_cast<size_t>(entry.uncompressedSize));
         {
-            size_t decodeCapacity = std::max(output->size(), safeFo1DecodeBufferSize(static_cast<unsigned int>(*entry.storedSize)));
+            size_t decodeBufferSize = 0;
+            if (!trySafeFo1DecodeBufferSize(static_cast<unsigned int>(*entry.storedSize), &decodeBufferSize)) {
+                return false;
+            }
+
+            size_t decodeCapacity = std::max(output->size(), decodeBufferSize);
             std::vector<unsigned char> decodeBuffer(decodeCapacity);
             int bytesWritten = lzss_decode_to_buf(stream, decodeBuffer.data(), static_cast<unsigned int>(*entry.storedSize));
             if (bytesWritten != entry.uncompressedSize) {
@@ -173,10 +205,10 @@ bool readFo1EntryData(FILE* stream, const DatArchiveEntry& entry, std::vector<un
             output->resize(static_cast<size_t>(bytesWritten));
             return true;
         }
-    case 0x20:
+    case fo1UncompressedFlags:
         output->resize(static_cast<size_t>(entry.uncompressedSize));
         return fread(output->data(), 1, static_cast<size_t>(entry.uncompressedSize), stream) == static_cast<size_t>(entry.uncompressedSize);
-    case 0x40: {
+    case fo1ChunkedFlags: {
         output->clear();
         output->reserve(static_cast<size_t>(entry.uncompressedSize));
         while (output->size() < static_cast<size_t>(entry.uncompressedSize)) {
@@ -185,8 +217,8 @@ bool readFo1EntryData(FILE* stream, const DatArchiveEntry& entry, std::vector<un
                 return false;
             }
 
-            if ((chunkHeader & 0x8000) != 0) {
-                size_t chunkSize = static_cast<size_t>(chunkHeader & 0x7FFF);
+            if ((chunkHeader & fo1ChunkLiteralMask) != 0) {
+                size_t chunkSize = static_cast<size_t>(chunkHeader & fo1CompressedChunkMask);
                 if (output->size() + chunkSize > static_cast<size_t>(entry.uncompressedSize)) {
                     return false;
                 }
@@ -197,7 +229,12 @@ bool readFo1EntryData(FILE* stream, const DatArchiveEntry& entry, std::vector<un
                     return false;
                 }
             } else {
-                size_t decodeCapacity = std::max(static_cast<size_t>(entry.uncompressedSize - output->size()), safeFo1DecodeBufferSize(chunkHeader));
+                size_t decodeBufferSize = 0;
+                if (!trySafeFo1DecodeBufferSize(chunkHeader, &decodeBufferSize)) {
+                    return false;
+                }
+
+                size_t decodeCapacity = std::max(static_cast<size_t>(entry.uncompressedSize - output->size()), decodeBufferSize);
                 std::vector<unsigned char> decodeBuffer(decodeCapacity);
                 int bytesWritten = lzss_decode_to_buf(stream, decodeBuffer.data(), chunkHeader);
                 if (bytesWritten <= 0 || output->size() + static_cast<size_t>(bytesWritten) > static_cast<size_t>(entry.uncompressedSize)) {
@@ -393,7 +430,7 @@ public:
         std::unique_ptr<FILE, decltype(&fclose)> file(stream, &fclose);
 
         Fo1AssocHeader rootHeader;
-        if (!readFo1AssocHeader(file.get(), &rootHeader) || rootHeader.size < 0 || rootHeader.size > 100000 || rootHeader.dataSize < 0) {
+        if (!readFo1AssocHeader(file.get(), &rootHeader) || rootHeader.size < 0 || rootHeader.size > fo1MaxStoredLength || rootHeader.dataSize < 0) {
             return nullptr;
         }
 
@@ -413,7 +450,7 @@ public:
 
         for (const std::string& directory : directories) {
             Fo1AssocHeader directoryHeader;
-            if (!readFo1AssocHeader(file.get(), &directoryHeader) || directoryHeader.size < 0 || directoryHeader.size > 100000) {
+            if (!readFo1AssocHeader(file.get(), &directoryHeader) || directoryHeader.size < 0 || directoryHeader.size > fo1MaxStoredLength) {
                 return nullptr;
             }
 
@@ -428,7 +465,7 @@ public:
                     return nullptr;
                 }
 
-                if (!directory.empty()) {
+                if (!directory.empty() && directory != ".") {
                     entry.path = directory + "\\" + name;
                 } else {
                     entry.path = name;

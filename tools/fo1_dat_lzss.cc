@@ -11,12 +11,20 @@
 
 namespace fallout {
 
-static inline void lzss_fill_decode_buffer(FILE* stream);
-static inline void lzss_decode_chunk_to_buf(unsigned int type, unsigned char** dest, unsigned int* length);
-static inline void lzss_decode_chunk_to_file(unsigned int type, FILE* stream, unsigned int* length);
+static inline bool lzss_fill_decode_buffer(FILE* stream);
+static inline bool lzss_read_decode_byte(FILE* stream, unsigned char* value);
+static inline bool lzss_decode_chunk_to_buf(unsigned int type, FILE* stream, unsigned char** dest, unsigned int* length);
+
+constexpr size_t lzssDecodeBufferSize = 1024;
+constexpr unsigned int lzssRingBufferSize = 4116;
+constexpr unsigned int lzssRingBufferMask = 0xFFF;
+constexpr unsigned int lzssDecodeTriggerWindow = 16;
+constexpr unsigned int lzssMatchLengthBias = 3;
+constexpr unsigned char lzssInitialRingFill = ' ';
+constexpr int lzssInitialRingIndex = 4078;
 
 // 0x6B0860
-static unsigned char decode_buffer[1024];
+static unsigned char decode_buffer[lzssDecodeBufferSize];
 
 // 0x6B0C60
 static unsigned char* decode_buffer_position;
@@ -31,7 +39,7 @@ static int ring_buffer_index;
 static unsigned char* decode_buffer_end;
 
 // 0x6B0C70
-static unsigned char ring_buffer[4116];
+static unsigned char ring_buffer[lzssRingBufferSize];
 
 // 0x4CA260
 int lzss_decode_to_buf(FILE* in, unsigned char* dest, unsigned int length)
@@ -40,98 +48,103 @@ int lzss_decode_to_buf(FILE* in, unsigned char* dest, unsigned int length)
     unsigned char byte;
 
     curr = dest;
-    memset(ring_buffer, ' ', 4078);
-    ring_buffer_index = 4078;
+    memset(ring_buffer, lzssInitialRingFill, lzssInitialRingIndex);
+    ring_buffer_index = lzssInitialRingIndex;
     decode_buffer_end = decode_buffer;
     decode_buffer_position = decode_buffer;
     decode_bytes_left = length;
 
     while (length > 16) {
-        lzss_fill_decode_buffer(in);
+        if (!lzss_read_decode_byte(in, &byte)) {
+            return -1;
+        }
 
         length -= 1;
-        byte = *decode_buffer_position++;
-        lzss_decode_chunk_to_buf(byte & 0x01, &curr, &length);
-        lzss_decode_chunk_to_buf(byte & 0x02, &curr, &length);
-        lzss_decode_chunk_to_buf(byte & 0x04, &curr, &length);
-        lzss_decode_chunk_to_buf(byte & 0x08, &curr, &length);
-        lzss_decode_chunk_to_buf(byte & 0x10, &curr, &length);
-        lzss_decode_chunk_to_buf(byte & 0x20, &curr, &length);
-        lzss_decode_chunk_to_buf(byte & 0x40, &curr, &length);
-        lzss_decode_chunk_to_buf(byte & 0x80, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x01, in, &curr, &length)) return -1;
+        if (!lzss_decode_chunk_to_buf(byte & 0x02, in, &curr, &length)) return -1;
+        if (!lzss_decode_chunk_to_buf(byte & 0x04, in, &curr, &length)) return -1;
+        if (!lzss_decode_chunk_to_buf(byte & 0x08, in, &curr, &length)) return -1;
+        if (!lzss_decode_chunk_to_buf(byte & 0x10, in, &curr, &length)) return -1;
+        if (!lzss_decode_chunk_to_buf(byte & 0x20, in, &curr, &length)) return -1;
+        if (!lzss_decode_chunk_to_buf(byte & 0x40, in, &curr, &length)) return -1;
+        if (!lzss_decode_chunk_to_buf(byte & 0x80, in, &curr, &length)) return -1;
     }
 
     do {
         if (length == 0) break;
 
-        lzss_fill_decode_buffer(in);
+        if (!lzss_read_decode_byte(in, &byte)) {
+            return -1;
+        }
 
         length -= 1;
-        byte = *decode_buffer_position++;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x01, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x01, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x02, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x02, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x04, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x04, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x08, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x08, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x10, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x10, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x20, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x20, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x40, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x40, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x80, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x80, in, &curr, &length)) return -1;
 
         if (length == 0) break;
+
+        if (!lzss_read_decode_byte(in, &byte)) {
+            return -1;
+        }
 
         length -= 1;
-        byte = *decode_buffer_position++;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x01, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x01, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x02, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x02, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x04, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x04, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x08, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x08, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x10, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x10, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x20, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x20, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x40, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x40, in, &curr, &length)) return -1;
 
         if (length == 0) break;
-        lzss_decode_chunk_to_buf(byte & 0x80, &curr, &length);
+        if (!lzss_decode_chunk_to_buf(byte & 0x80, in, &curr, &length)) return -1;
     } while (0);
 
     return curr - dest;
 }
 
-static inline void lzss_fill_decode_buffer(FILE* stream)
+static inline bool lzss_fill_decode_buffer(FILE* stream)
 {
     size_t bytes_to_read;
     size_t bytes_read;
 
-    if (decode_bytes_left != 0 && decode_buffer_end - decode_buffer_position <= 16) {
+    if (decode_bytes_left != 0 && decode_buffer_end - decode_buffer_position <= lzssDecodeTriggerWindow) {
         if (decode_buffer_position == decode_buffer_end) {
             decode_buffer_end = decode_buffer;
         } else {
@@ -141,18 +154,42 @@ static inline void lzss_fill_decode_buffer(FILE* stream)
 
         decode_buffer_position = decode_buffer;
 
-        bytes_to_read = 1024 - (decode_buffer_end - decode_buffer);
+        bytes_to_read = lzssDecodeBufferSize - (decode_buffer_end - decode_buffer);
         if (bytes_to_read > decode_bytes_left) {
             bytes_to_read = decode_bytes_left;
         }
 
+        if (bytes_to_read == 0) {
+            return false;
+        }
+
         bytes_read = fread(decode_buffer_end, 1, bytes_to_read, stream);
+        if (bytes_read != bytes_to_read) {
+            return false;
+        }
+
         decode_buffer_end += bytes_read;
         decode_bytes_left -= bytes_read;
     }
+
+    return true;
 }
 
-static inline void lzss_decode_chunk_to_buf(unsigned int type, unsigned char** dest, unsigned int* length)
+static inline bool lzss_read_decode_byte(FILE* stream, unsigned char* value)
+{
+    if (!lzss_fill_decode_buffer(stream)) {
+        return false;
+    }
+
+    if (decode_buffer_position >= decode_buffer_end) {
+        return false;
+    }
+
+    *value = *decode_buffer_position++;
+    return true;
+}
+
+static inline bool lzss_decode_chunk_to_buf(unsigned int type, FILE* stream, unsigned char** dest, unsigned int* length)
 {
     unsigned char low;
     unsigned char high;
@@ -162,58 +199,46 @@ static inline void lzss_decode_chunk_to_buf(unsigned int type, unsigned char** d
     int index;
 
     if (type != 0) {
+        if (*length < 1) {
+            return false;
+        }
+
+        unsigned char byte;
+        if (!lzss_read_decode_byte(stream, &byte)) {
+            return false;
+        }
+
         *length -= 1;
-        *(*dest) = *decode_buffer_position++;
+        *(*dest) = byte;
         ring_buffer[ring_buffer_index] = *(*dest)++;
         ring_buffer_index += 1;
-        ring_buffer_index &= 0xFFF;
+        ring_buffer_index &= lzssRingBufferMask;
     } else {
+        if (*length < 2) {
+            return false;
+        }
+
+        unsigned char bytes[2];
+        if (!lzss_read_decode_byte(stream, &bytes[0]) || !lzss_read_decode_byte(stream, &bytes[1])) {
+            return false;
+        }
+
         *length -= 2;
-        low = *decode_buffer_position++;
-        high = *decode_buffer_position++;
+        low = bytes[0];
+        high = bytes[1];
         dict_offset = low | ((high & 0xF0) << 4);
-        chunk_length = (high & 0x0F) + 3;
+        chunk_length = (high & 0x0F) + lzssMatchLengthBias;
 
         for (index = 0; index < chunk_length; index++) {
-            dict_index = (dict_offset + index) & 0xFFF;
+            dict_index = (dict_offset + index) & lzssRingBufferMask;
             *(*dest) = ring_buffer[dict_index];
             ring_buffer[ring_buffer_index] = *(*dest)++;
             ring_buffer_index += 1;
-            ring_buffer_index &= 0xFFF;
+            ring_buffer_index &= lzssRingBufferMask;
         }
     }
-}
 
-static inline void lzss_decode_chunk_to_file(unsigned int type, FILE* stream, unsigned int* length)
-{
-    unsigned char low;
-    unsigned char high;
-    int dict_offset;
-    int dict_index;
-    int chunk_length;
-    int index;
-
-    if (type != 0) {
-        *length -= 1;
-        fputc(*decode_buffer_position, stream);
-        ring_buffer[ring_buffer_index] = *decode_buffer_position++;
-        ring_buffer_index += 1;
-        ring_buffer_index &= 0xFFF;
-    } else {
-        *length -= 2;
-        low = *decode_buffer_position++;
-        high = *decode_buffer_position++;
-        dict_offset = low | ((high & 0xF0) << 4);
-        chunk_length = (high & 0x0F) + 3;
-
-        for (index = 0; index < chunk_length; index++) {
-            dict_index = (dict_offset + index) & 0xFFF;
-            fputc(ring_buffer[dict_index], stream);
-            ring_buffer[ring_buffer_index] = ring_buffer[dict_index];
-            ring_buffer_index += 1;
-            ring_buffer_index &= 0xFFF;
-        }
-    }
+    return true;
 }
 
 } // namespace fallout
