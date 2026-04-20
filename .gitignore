@@ -400,3 +400,14 @@ FodyWeavers.xsd
 # versioning header
 src/platform/git_version.h
 CMakeUserPresets.json
+
+# Local configs for AI agents
+opencode.json
+.opencode
+.agents
+.aider*
+.gemini
+.claude
+.mcp.json
+AGENTS.md
+CLAUDE.md
