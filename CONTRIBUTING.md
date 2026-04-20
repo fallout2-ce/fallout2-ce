@@ -4,7 +4,7 @@ This file is currently a shell to be filled in over time. For now, it only captu
 
 ## `.dat` CLI Tool
 
-There is a small command-line archive tool in this repo for inspecting Fallout `.dat` files using the same reader implementation as the game.
+There is a small command-line archive tool in this repo for inspecting Fallout `.dat` files. It supports both Fallout 2 and Fallout 1 archives.
 
 Build it with `make TARGET=fallout2-dat`.
 

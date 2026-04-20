@@ -448,6 +448,8 @@ target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 
 add_executable(fallout2-dat
     "tools/dat_tool.cc"
+    "tools/dat_archive.cc"
+    "tools/fo1_dat_lzss.cc"
     "src/dfile.cc"
     "src/platform_compat.cc"
 )
