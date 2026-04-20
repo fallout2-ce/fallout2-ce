@@ -8,7 +8,7 @@ For now, this covers opcodes/metarules, and hooks.  In the future, it will inclu
 
 Settings previously read from `ddraw.ini` have been moved into standard CE config files.
 
-Most settings that control game behavior (premade characters, extra message files, combat tweaks, worldmap, etc.) have been moved into [`<DAT>/config/game.cfg`](files/foce_base.dat/config/game.cfg), which is a content-mod config file intended to be overridden by mods. See that file for the full list with descriptions.
+Most settings that control game behavior (premade characters, extra message files, combat tweaks, worldmap, etc.) have been moved into [`<DAT>/config/game.cfg`](files/ce.dat/config/game.cfg), which is a content-mod config file intended to be overridden by mods. See that file for the full list with descriptions.
 
 The following settings were moved into [`fallout2.cfg`](files/fallout2.cfg) instead:
 

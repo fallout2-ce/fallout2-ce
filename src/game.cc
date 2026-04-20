@@ -88,7 +88,7 @@ static void showHelp();
 static int gameDbInit();
 static void showSplash();
 
-inline constexpr char kBaseModPath[] = "foce_base.dat";
+inline constexpr char kBaseModPath[] = "ce.dat";
 
 // 0x501C9C
 static char _aGame_0[] = "game\\";
