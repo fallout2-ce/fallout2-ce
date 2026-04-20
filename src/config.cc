@@ -350,8 +350,7 @@ bool configRead(Config* config, const char* filePath, bool isDb)
             auto* pc = static_cast<PatchContext*>(ctx);
             while (fileReadString(pc->string, sizeof(pc->string), file) != nullptr) {
                 configParseLine(pc->config, pc->string);
-            }
-        }, &patchCtx);
+            } }, &patchCtx);
     } else {
         FILE* stream = compat_fopen(filePath, "rt");
 
