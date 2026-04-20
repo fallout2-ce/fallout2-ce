@@ -201,5 +201,19 @@
             "configurePreset": "ios",
             "configuration": "RelWithDebInfo"
         }
+    ],
+    "packagePresets":[
+        {
+          "name": "Windows-x86",
+          "configurePreset": "windows-x86",
+          "configurations": ["RelWithDebInfo"],
+          "generators": ["NSIS"]
+        },
+        {
+          "name": "Windows-x64",
+          "configurePreset": "windows-x64",
+          "configurations": ["RelWithDebInfo"],
+          "generators": ["NSIS"]
+        }
     ]
 }

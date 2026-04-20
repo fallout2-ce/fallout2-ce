@@ -446,6 +446,23 @@ target_include_directories(${EXECUTABLE_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 
+if(WIN32)
+    install(TARGETS ${EXECUTABLE_NAME} DESTINATION .)
+    install(FILES 
+        "files/ddraw.ini" 
+        "files/f2_res.dat"
+        "files/f2_res.ini"
+        "files/fallout2.cfg"
+        DESTINATION .)
+
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+    set(CPACK_PACKAGE_VERSION "1.3.0")
+
+    include(CPack)
+endif()
+
+
 if(APPLE)
     if(IOS)
         install(TARGETS ${EXECUTABLE_NAME} DESTINATION "Payload")
