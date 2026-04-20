@@ -257,20 +257,7 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
 
     if (migrated) {
         // Ensure all directory components exist before writing.
-        char dir[COMPAT_MAX_PATH];
-        char drive[COMPAT_MAX_DRIVE];
-        char dirPart[COMPAT_MAX_DIR];
-        compat_splitpath(contentConfigFilePath, drive, dirPart, nullptr, nullptr);
-        compat_makepath(dir, drive, dirPart, nullptr, nullptr);
-        for (char* sep = dir; *sep != '\0'; sep++) {
-            if (*sep == '\\' || *sep == '/') {
-                char saved = *sep;
-                *sep = '\0';
-                compat_mkdir(dir);
-                *sep = saved;
-            }
-        }
-        compat_mkdir(dir);
+        compat_mkdir_recursive(contentConfigFilePath);
 
         if (!configWrite(&migratedConfig, contentConfigFilePath, false)) {
             debugPrint("Failed to write migrated settings to %s!\n", contentConfigFilePath);

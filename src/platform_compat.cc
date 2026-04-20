@@ -215,6 +215,29 @@ int compat_mkdir(const char* path)
 #endif
 }
 
+int compat_mkdir_recursive(const char* path)
+{
+    char drive[COMPAT_MAX_DRIVE];
+    char dirPart[COMPAT_MAX_DIR];
+    compat_splitpath(path, drive, dirPart, nullptr, nullptr);
+
+    char dir[COMPAT_MAX_PATH];
+    compat_makepath(dir, drive, dirPart, nullptr, nullptr);
+
+    // Skip drive root (e.g. "C:\\" or leading "/") to avoid mkdir("") or mkdir("C:").
+    char* sep = dir + strlen(drive);
+    if (*sep == '\\' || *sep == '/') sep++;
+    for (; *sep != '\0'; sep++) {
+        if (*sep == '\\' || *sep == '/') {
+            char saved = *sep;
+            *sep = '\0';
+            compat_mkdir(dir);
+            *sep = saved;
+        }
+    }
+    return compat_mkdir(dir);
+}
+
 unsigned int compat_timeGetTime()
 {
 #ifdef _WIN32
