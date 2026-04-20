@@ -10,6 +10,7 @@
 #include "color.h"
 #include "combat.h"
 #include "config.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "dbox.h"
@@ -35,7 +36,6 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
-#include "sfall_config.h"
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
@@ -863,9 +863,8 @@ static void _pip_init_()
     // bypassed. CE implements only the latter approach, as it does not have any
     // side effects.
     int value = 0;
-    if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PIPBOY_AVAILABLE_AT_GAMESTART, &value)) {
-        pipboy_available_at_game_start = value == 1 || value == 2;
-    }
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "pipboy", &value, 0);
+    pipboy_available_at_game_start = value == 1 || value == 2;
 }
 
 // NOTE: Uncollapsed 0x497918.

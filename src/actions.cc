@@ -9,6 +9,7 @@
 #include "combat.h"
 #include "combat_ai.h"
 #include "config.h"
+#include "content_config.h"
 #include "critter.h"
 #include "debug.h"
 #include "display_monitor.h"
@@ -28,7 +29,6 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
-#include "sfall_config.h"
 #include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
@@ -1410,7 +1410,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
         // SFALL: Science on critters patch.
         if (1) {
             int targetType = SCIENCE_REPAIR_TARGET_TYPE_DEFAULT;
-            configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_SCIENCE_REPAIR_TARGET_TYPE_KEY, &targetType);
+            configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "science_on_critters", &targetType, SCIENCE_REPAIR_TARGET_TYPE_DEFAULT);
             if (targetType == SCIENCE_REPAIR_TARGET_TYPE_DUDE) {
                 if (target == gDude) {
                     break;

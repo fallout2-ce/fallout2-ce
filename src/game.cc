@@ -13,6 +13,7 @@
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "db.h"
@@ -69,7 +70,6 @@
 #include "trait.h"
 #include "version.h"
 #include "window_manager.h"
-#include "window_manager_private.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -87,6 +87,8 @@ static void gameFreeGlobalVars();
 static void showHelp();
 static int gameDbInit();
 static void showSplash();
+
+inline constexpr char kBaseModPath[] = "ce.dat";
 
 // 0x501C9C
 static char _aGame_0[] = "game\\";
@@ -151,6 +153,9 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
         sfallConfigExit();
         return -1;
     }
+
+    // Content config reads from the VFS, so it must be initialized after gameDbInit.
+    contentConfigInit();
 
     // Message list repository is considered a specialized file manager, so
     // it should be initialized early in the process.
@@ -495,6 +500,7 @@ void gameExit()
     messageListRepositoryExit();
     dbCloseAll();
     settingsExit(true);
+    contentConfigExit();
     sfallConfigExit();
 }
 
@@ -1343,6 +1349,18 @@ int showQuitConfirmationDialog()
     return rc;
 }
 
+static void TryLoadBaseCEMod()
+{
+    if (compat_access(kBaseModPath, 0) == 0) {
+        debugPrint("Loading base FO:CE mod: %s\n", kBaseModPath);
+        if (dbOpen(kBaseModPath) == -1) {
+            debugPrint("Error opening base mod file/folder!\n");
+        }
+    } else {
+        debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
+    }
+}
+
 // 0x44418C
 static int gameDbInit()
 {
@@ -1362,6 +1380,10 @@ static int gameDbInit()
     patch_file_name = settings.system.master_patches_path.c_str();
     if (*patch_file_name == '\0') {
         patch_file_name = nullptr;
+    }
+    // Try to ensure that patches dir exists early. This is needed for auto-generated game.cfg later.
+    if (patch_file_name != nullptr) {
+        compat_mkdir_recursive(patch_file_name);
     }
 
     int master_db_handle = dbOpen(main_file_name, patch_file_name);
@@ -1397,14 +1419,17 @@ static int gameDbInit()
         snprintf(filename, sizeof(filename), path_file_name_template, patch_index);
 
         if (compat_access(filename, 0) == 0) {
-            dbOpen(filename, nullptr);
+            dbOpen(filename);
         }
     }
+
+    // Load CE base mod after vanilla patches but before all regular mods.
+    TryLoadBaseCEMod();
 
     sfallLoadMods();
 
     if (compat_access("f2_res.dat", 0) == 0) {
-        dbOpen("f2_res.dat", nullptr);
+        dbOpen("f2_res.dat");
     }
 
     return 0;

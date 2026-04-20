@@ -32,6 +32,8 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
 long compat_tell(int fileHandle);
 long compat_filelength(int fd);
 int compat_mkdir(const char* path);
+int compat_mkdir_recursive(const char* path);
+bool compat_file_exists(const char* filePath);
 unsigned int compat_timeGetTime();
 FILE* compat_fopen(const char* path, const char* mode);
 gzFile compat_gzopen(const char* path, const char* mode);

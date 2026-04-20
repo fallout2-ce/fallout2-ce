@@ -36,6 +36,8 @@ void configFree(Config* config);
 bool configParseCommandLineArguments(Config* config, int argc, char** argv);
 // TODO: valuePtr must be const char**
 bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr);
+// Tries to load a string value from Config into valuePtr without any conversion. If value doesn't exist, or it's an empty string, assigns defaultValue instead.
+// No copy is performed. The returned pointer may refer either to an internal string or to defaultValue; it must be treated as read-only, and callers must ensure defaultValue remains valid for the duration of use.
 bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr, const char* defaultValue);
 bool configSetString(Config* config, const char* sectionKey, const char* key, const char* value);
 bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, unsigned char base = 0);
@@ -49,6 +51,7 @@ bool configGetDouble(Config* config, const char* sectionKey, const char* key, do
 bool configSetDouble(Config* config, const char* sectionKey, const char* key, double value);
 
 bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr);
+bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr, bool defaultValue);
 bool configSetBool(Config* config, const char* sectionKey, const char* key, bool value);
 
 } // namespace fallout
