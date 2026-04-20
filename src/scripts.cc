@@ -34,6 +34,7 @@
 #include "sfall_arrays.h"
 #include "sfall_config.h"
 #include "sfall_global_scripts.h"
+#include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
@@ -1208,8 +1209,7 @@ void _script_make_path(char* path)
     strcat(path, gScriptsBasePath);
 }
 
-// exec_script_proc
-// 0x4A4810
+// 0x4A4810 exec_script_proc
 int scriptExecProc(int sid, int proc)
 {
     assert(proc >= 0 && proc < SCRIPT_PROC_COUNT);
@@ -1276,6 +1276,7 @@ int scriptExecProc(int sid, int proc)
     // CE: Fix for the start procedure not being called correctly if the required standard script procedure is missing.
     int procedureIndex = script->procs[proc];
     if (procedureIndex == 0) {
+        // Fixme: hook receives `proc` which is wrong in this context
         procedureIndex = script->procs[SCRIPT_PROC_START];
         if (procedureIndex == 0) {
             procedureIndex = -1;
@@ -1288,9 +1289,25 @@ int scriptExecProc(int sid, int proc)
 
     script->action = proc;
 
+    Object* self = script->owner;
+    Object* source = script->source;
+    Object* target = script->target;
+    int fixedParam = script->fixedParam;
+
+    // HOOK_STDPROCEDURE
+    if (scriptHooks_StdProcedure(proc, self, source, target, fixedParam, false)) {
+        script->action = 0;
+        script->source = nullptr;
+        return -1;
+    }
+
     programExecuteProcedure(program, procedureIndex);
 
+    // HOOK_STDPROCEDURE_END
+    scriptHooks_StdProcedure(proc, self, source, target, fixedParam, true);
+
     script->source = nullptr;
+    script->action = 0;
 
     return 0;
 }
@@ -1406,6 +1423,11 @@ static int scriptsGetFileName(int scriptIndex, char* name, size_t size)
 {
     snprintf(name, size, "%s.int", gScriptsListEntries[scriptIndex].name);
     return 0;
+}
+
+bool scriptsIsValidScriptIndex(int scriptIndex)
+{
+    return scriptIndex >= 0 && scriptIndex < gScriptsListEntriesLength;
 }
 
 // scr_set_dude_script

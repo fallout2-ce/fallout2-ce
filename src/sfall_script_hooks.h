@@ -251,6 +251,7 @@ struct BarterPriceContext {
 };
 
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
+bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
 
 bool scriptHooksInit();
 void scriptHooksReset();

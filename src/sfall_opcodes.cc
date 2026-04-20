@@ -25,6 +25,7 @@
 #include "object.h"
 #include "party_member.h"
 #include "proto.h"
+#include "proto_instance.h"
 #include "scripts.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h"
@@ -477,7 +478,94 @@ static void op_exponent(Program* program)
 static void op_get_script(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
-    programStackPushInteger(program, obj->scriptIndex + 1);
+    if (obj == nullptr) {
+        programStackPushInteger(program, -1);
+        return;
+    }
+
+    if (obj->sid == -1) {
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    Script* script;
+    if (scriptGetScript(obj->sid, &script) == -1 || script->index < 0) {
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    programStackPushInteger(program, script->index + 1);
+}
+
+// remove_script
+static void op_remove_script(Program* program)
+{
+    Object* obj = static_cast<Object*>(programStackPopPointer(program));
+    if (obj == nullptr || obj->sid == -1) {
+        return;
+    }
+
+    scriptRemove(obj->sid);
+    obj->sid = -1;
+    obj->scriptIndex = -1;
+}
+
+// set_script
+static void op_set_script(Program* program)
+{
+    int scriptId = programStackPopInteger(program);
+    Object* obj = static_cast<Object*>(programStackPopPointer(program));
+
+    if (obj == nullptr) {
+        return;
+    }
+
+    unsigned int rawScriptId = static_cast<unsigned int>(scriptId);
+    // sfall encodes set_script() ids as a 1-based script index in the low
+    // 28 bits, with the upper bits reserved for flags. The top bit
+    // (0x80000000) suppresses map_enter_p_proc after start().
+    int scriptIndex = static_cast<int>(rawScriptId & ~0xF0000000u);
+    if (scriptIndex == 0) {
+        programPrintError("set_script: invalid script index number %d.", scriptIndex);
+        return;
+    }
+
+    scriptIndex--;
+    if (!scriptsIsValidScriptIndex(scriptIndex)) {
+        programPrintError("set_script: invalid script index (engine) number %d.", scriptIndex);
+        return;
+    }
+
+    if (obj->sid != -1) {
+        scriptRemove(obj->sid);
+        obj->sid = -1;
+        obj->scriptIndex = -1;
+    }
+
+    int scriptType = (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
+    if (objectSetScript(obj, scriptType, scriptIndex) == -1) {
+        obj->sid = -1;
+        obj->scriptIndex = -1;
+        return;
+    }
+
+    Script* script;
+    if (scriptGetScript(obj->sid, &script) == -1) {
+        scriptRemove(obj->sid);
+        obj->sid = -1;
+        obj->scriptIndex = -1;
+        return;
+    }
+
+    int sid = obj->sid;
+    script->owner = obj;
+    obj->scriptIndex = scriptIndex;
+
+    scriptExecProc(sid, SCRIPT_PROC_START);
+    if ((rawScriptId & 0x80000000u) == 0) {
+        // note: if map_enter_p_proc is missing, START gets executed again
+        scriptExecProc(sid, SCRIPT_PROC_MAP_ENTER);
+    }
 }
 
 // get_proto_data
@@ -1877,7 +1965,9 @@ void sfallOpcodesInit()
     // 0x81f2 - void set_palette(string path)
 
     // 0x81f3 - void remove_script(object)
+    interpreterRegisterOpcode(0x81F3, op_remove_script);
     // 0x81f4 - void set_script(object, int scriptid)
+    interpreterRegisterOpcode(0x81F4, op_set_script);
     // 0x81f5 - int get_script(object)
     interpreterRegisterOpcode(0x81F5, op_get_script);
 

@@ -130,7 +130,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
     return 0;
 }
 
-// 0x49AAC0
+// 0x49AAC0 obj_new_sid_inst
 int objectSetScript(Object* obj, int scriptType, int scriptIndex)
 {
     if (scriptIndex == -1) {
