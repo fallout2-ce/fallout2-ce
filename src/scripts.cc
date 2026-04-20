@@ -1276,6 +1276,7 @@ int scriptExecProc(int sid, int proc)
     // CE: Fix for the start procedure not being called correctly if the required standard script procedure is missing.
     int procedureIndex = script->procs[proc];
     if (procedureIndex == 0) {
+        // Fixme: hook receives `proc` which is wrong in this context
         procedureIndex = script->procs[SCRIPT_PROC_START];
         if (procedureIndex == 0) {
             procedureIndex = -1;
