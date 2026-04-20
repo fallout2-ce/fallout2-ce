@@ -210,6 +210,7 @@ int scriptSaveAll(File* stream);
 int scriptLoadAll(File* stream);
 int scriptGetScript(int sid, Script** script);
 int scriptAdd(int* sidPtr, int scriptType);
+bool scriptsIsValidScriptIndex(int scriptIndex);
 int scriptRemove(int index);
 int _scr_remove_all();
 int _scr_remove_all_force();

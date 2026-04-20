@@ -7,7 +7,7 @@
 // and add "test_script_override" to mod_order.txt. The helper must live there
 // (and not scripts/) because patch000.dat already contains a stock Test0.int and
 // scripts/ load before it.
-// Without Test0, these tests 2 will fail:
+// Without Test0, these 2 tests will fail:
 // - "set_script normal hp"
 // - "set_script no map_enter hp"
 

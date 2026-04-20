@@ -478,7 +478,12 @@ static void op_exponent(Program* program)
 static void op_get_script(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
-    if (obj == nullptr || obj->sid == -1) {
+    if (obj == nullptr) {
+        programStackPushInteger(program, -1);
+        return;
+    }
+
+    if (obj->sid == -1) {
         programStackPushInteger(program, 0);
         return;
     }
@@ -520,25 +525,35 @@ static void op_set_script(Program* program)
     // 28 bits, with the upper bits reserved for flags. The top bit
     // (0x80000000) suppresses map_enter_p_proc after start().
     int scriptIndex = static_cast<int>(rawScriptId & ~0xF0000000u);
-    if (scriptIndex == 0 || rawScriptId > 0x8FFFFFFFu) {
-        programPrintError("set_script: invalid script index number.");
+    if (scriptIndex == 0) {
+        programPrintError("set_script: invalid script index number %d.", scriptId);
         return;
     }
 
     scriptIndex--;
+    if (!scriptsIsValidScriptIndex(scriptIndex)) {
+        programPrintError("set_script: invalid script index number %d.", scriptId);
+        return;
+    }
 
     if (obj->sid != -1) {
         scriptRemove(obj->sid);
         obj->sid = -1;
+        obj->scriptIndex = -1;
     }
 
     int scriptType = (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
     if (objectSetScript(obj, scriptType, scriptIndex) == -1) {
+        obj->sid = -1;
+        obj->scriptIndex = -1;
         return;
     }
 
     Script* script;
     if (scriptGetScript(obj->sid, &script) == -1) {
+        scriptRemove(obj->sid);
+        obj->sid = -1;
+        obj->scriptIndex = -1;
         return;
     }
 
