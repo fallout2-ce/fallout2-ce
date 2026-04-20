@@ -42,7 +42,11 @@ std::string datPathToNativePath(std::string_view path)
     std::string value(path);
     for (char& ch : value) {
         if (ch == '\\') {
+#ifdef _WIN32
+            ch = '\\';
+#else
             ch = '/';
+#endif
         }
     }
 
@@ -79,7 +83,7 @@ bool isSafeRelativeOutputPath(const std::string& path)
 
     size_t start = 0;
     while (start < path.size()) {
-        size_t end = path.find('/', start);
+        size_t end = path.find_first_of("/\\", start);
         if (end == std::string::npos) {
             end = path.size();
         }
@@ -88,6 +92,12 @@ bool isSafeRelativeOutputPath(const std::string& path)
         if (component == "..") {
             return false;
         }
+
+#ifdef _WIN32
+        if (component.find(':') != std::string_view::npos) {
+            return false;
+        }
+#endif
 
         start = end + 1;
     }
@@ -101,11 +111,17 @@ std::string joinNativePath(const std::string& basePath, const std::string& relat
         return relativePath;
     }
 
+#ifdef _WIN32
+    constexpr char separator = '\\';
+#else
+    constexpr char separator = '/';
+#endif
+
     if (basePath.back() == '/' || basePath.back() == '\\') {
         return basePath + relativePath;
     }
 
-    return basePath + "/" + relativePath;
+    return basePath + separator + relativePath;
 }
 
 bool ensureDirectoriesForFile(const std::string& filePath)
@@ -270,7 +286,7 @@ int infoCommand(const DatArchive& archive, const std::vector<std::string>& args)
             << "entries: " << archive.entries().size() << "\n"
             << "uncompressed_bytes: " << uncompressedBytes << "\n";
 
-        if (std::string(archive.formatName()) == "fo2") {
+        if (std::string(archive.formatName()) == "fallout2") {
             std::cout
                 << "data_offset: " << *archive.dataOffset() << "\n"
                 << "compressed_entries: " << compressedEntries << "\n"

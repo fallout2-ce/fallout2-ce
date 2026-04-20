@@ -5,7 +5,7 @@
 
 namespace fallout {
 
-int fo1LzssDecodeToBuf(FILE* in, unsigned char* dest, unsigned int length);
+int lzss_decode_to_buf(FILE* in, unsigned char* dest, unsigned int length);
 
 } // namespace fallout
 
