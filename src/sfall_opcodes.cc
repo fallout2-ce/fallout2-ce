@@ -526,13 +526,13 @@ static void op_set_script(Program* program)
     // (0x80000000) suppresses map_enter_p_proc after start().
     int scriptIndex = static_cast<int>(rawScriptId & ~0xF0000000u);
     if (scriptIndex == 0) {
-        programPrintError("set_script: invalid script index number %d.", scriptId);
+        programPrintError("set_script: invalid script index number %d.", scriptIndex);
         return;
     }
 
     scriptIndex--;
     if (!scriptsIsValidScriptIndex(scriptIndex)) {
-        programPrintError("set_script: invalid script index number %d.", scriptId);
+        programPrintError("set_script: invalid script index (engine) number %d.", scriptIndex);
         return;
     }
 
