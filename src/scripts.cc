@@ -1209,8 +1209,7 @@ void _script_make_path(char* path)
     strcat(path, gScriptsBasePath);
 }
 
-// exec_script_proc
-// 0x4A4810
+// 0x4A4810 exec_script_proc
 int scriptExecProc(int sid, int proc)
 {
     assert(proc >= 0 && proc < SCRIPT_PROC_COUNT);

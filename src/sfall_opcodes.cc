@@ -563,6 +563,7 @@ static void op_set_script(Program* program)
 
     scriptExecProc(sid, SCRIPT_PROC_START);
     if ((rawScriptId & 0x80000000u) == 0) {
+        // note: if map_enter_p_proc is missing, START gets executed again
         scriptExecProc(sid, SCRIPT_PROC_MAP_ENTER);
     }
 }
