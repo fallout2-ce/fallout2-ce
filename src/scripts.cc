@@ -34,6 +34,7 @@
 #include "sfall_arrays.h"
 #include "sfall_config.h"
 #include "sfall_global_scripts.h"
+#include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
@@ -1288,9 +1289,25 @@ int scriptExecProc(int sid, int proc)
 
     script->action = proc;
 
+    Object* self = script->owner;
+    Object* source = script->source;
+    Object* target = script->target;
+    int fixedParam = script->fixedParam;
+
+    // HOOK_STDPROCEDURE
+    if (scriptHooks_StdProcedure(proc, self, source, target, fixedParam, false)) {
+        script->action = 0;
+        script->source = nullptr;
+        return -1;
+    }
+
     programExecuteProcedure(program, procedureIndex);
 
+    // HOOK_STDPROCEDURE_END
+    scriptHooks_StdProcedure(proc, self, source, target, fixedParam, true);
+
     script->source = nullptr;
+    script->action = 0;
 
     return 0;
 }

@@ -131,6 +131,40 @@ bool scriptHooksRegister(Program* program, const HookType hookType, const int pr
     return true; // register success
 }
 
+/*
+Runs before/after Fallout executes a standard procedure (handler) in any script
+of any object. This hook will not be executed for `start`, `critter_p_proc`,
+`timed_event_p_proc`, or `map_update_p_proc`.
+
+int     arg0 - the number of the standard script handler (see *_proc in define.h)
+Obj     arg1 - the object that owns this handler (self_obj)
+Obj     arg2 - the object that called this handler (source_obj, can be 0)
+int     arg3 - always 0 for HOOK_STDPROCEDURE, always 1 for HOOK_STDPROCEDURE_END
+Obj     arg4 - the object that is acted upon by this handler (target_obj, can be 0)
+int     arg5 - the parameter of this call (fixed_param), useful for combat_proc
+
+int     ret0 - pass -1 to cancel the execution of the handler
+*/
+bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after)
+{
+    if (procedureNumber == SCRIPT_PROC_START
+        || procedureNumber == SCRIPT_PROC_CRITTER
+        || procedureNumber == SCRIPT_PROC_TIMED
+        || procedureNumber == SCRIPT_PROC_MAP_UPDATE) {
+        return false;
+    }
+
+    ScriptHookCall hook(after ? HOOK_STDPROCEDURE_END : HOOK_STDPROCEDURE, after ? 0 : 1,
+        { procedureNumber, self, source, after ? 1 : 0, target, fixedParam });
+    hook.call();
+
+    if (after || hook.numReturnValues() <= 0) {
+        return false;
+    }
+
+    return hook.getReturnValueAt(0).asInt() == -1;
+}
+
 static void scriptHooksClear()
 {
     for (auto& hooks : scriptHooks) {
