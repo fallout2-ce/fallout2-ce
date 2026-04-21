@@ -1,4 +1,4 @@
-#include "dfile.h"
+#include "dat_archive.h"
 #include "platform_compat.h"
 
 #include <algorithm>
@@ -42,7 +42,11 @@ std::string datPathToNativePath(std::string_view path)
     std::string value(path);
     for (char& ch : value) {
         if (ch == '\\') {
+#ifdef _WIN32
+            ch = '\\';
+#else
             ch = '/';
+#endif
         }
     }
 
@@ -79,7 +83,7 @@ bool isSafeRelativeOutputPath(const std::string& path)
 
     size_t start = 0;
     while (start < path.size()) {
-        size_t end = path.find('/', start);
+        size_t end = path.find_first_of("/\\", start);
         if (end == std::string::npos) {
             end = path.size();
         }
@@ -88,6 +92,12 @@ bool isSafeRelativeOutputPath(const std::string& path)
         if (component == "..") {
             return false;
         }
+
+#ifdef _WIN32
+        if (component.find(':') != std::string_view::npos) {
+            return false;
+        }
+#endif
 
         start = end + 1;
     }
@@ -101,11 +111,17 @@ std::string joinNativePath(const std::string& basePath, const std::string& relat
         return relativePath;
     }
 
+#ifdef _WIN32
+    constexpr char separator = '\\';
+#else
+    constexpr char separator = '/';
+#endif
+
     if (basePath.back() == '/' || basePath.back() == '\\') {
         return basePath + relativePath;
     }
 
-    return basePath + "/" + relativePath;
+    return basePath + separator + relativePath;
 }
 
 bool ensureDirectoriesForFile(const std::string& filePath)
@@ -183,7 +199,7 @@ bool parseOptions(int argc, char** argv, Options* options)
     return true;
 }
 
-bool extractEntry(DBase* dbase, const DBaseEntry& entry, const std::string& outputDir, bool lowerExtractedPaths)
+bool extractEntry(const DatArchive& archive, const DatArchiveEntry& entry, const std::string& outputDir, bool lowerExtractedPaths)
 {
     std::string relativePath = datPathToNativePath(entry.path);
     if (lowerExtractedPaths) {
@@ -201,7 +217,7 @@ bool extractEntry(DBase* dbase, const DBaseEntry& entry, const std::string& outp
         return false;
     }
 
-    DFile* stream = dfileOpen(dbase, entry.path, "rb");
+    std::unique_ptr<DatArchiveStream> stream = archive.openEntry(entry.path);
     if (stream == nullptr) {
         std::cerr << "Failed to open entry: " << entry.path << "\n";
         return false;
@@ -210,102 +226,105 @@ bool extractEntry(DBase* dbase, const DBaseEntry& entry, const std::string& outp
     std::ofstream output(destination, std::ios::binary);
     if (!output.is_open()) {
         std::cerr << "Failed to create output file: " << destination << "\n";
-        dfileClose(stream);
         return false;
     }
 
     std::vector<char> buffer(64 * 1024);
-    long remaining = dfileGetSize(stream);
+    long remaining = stream->size();
     while (remaining > 0) {
         size_t chunkSize = static_cast<size_t>(std::min<long>(remaining, buffer.size()));
-        size_t bytesRead = dfileRead(buffer.data(), 1, chunkSize, stream);
+        size_t bytesRead = stream->read(buffer.data(), chunkSize);
         if (bytesRead == 0) {
             std::cerr << "Failed while reading entry: " << entry.path << "\n";
-            dfileClose(stream);
             return false;
         }
 
         output.write(buffer.data(), static_cast<std::streamsize>(bytesRead));
         if (!output) {
             std::cerr << "Failed while writing output file: " << destination << "\n";
-            dfileClose(stream);
             return false;
         }
 
         remaining -= static_cast<long>(bytesRead);
     }
 
-    if (dfileClose(stream) != 0) {
-        std::cerr << "Failed to close entry stream cleanly: " << entry.path << "\n";
-        return false;
-    }
-
     std::cout << entry.path << " -> " << destination << "\n";
     return true;
 }
 
-int listCommand(DBase* dbase, const std::string& pattern)
+int listCommand(const DatArchive& archive, const std::string& pattern)
 {
-    DFileFindData findData;
-    if (!dbaseFindFirstEntry(dbase, &findData, pattern.c_str())) {
-        return 1;
-    }
-
-    do {
-        std::cout << findData.fileName << "\n";
-    } while (dbaseFindNextEntry(dbase, &findData));
-
-    return 0;
-}
-
-int infoCommand(DBase* dbase, const std::vector<std::string>& args)
-{
-    if (args.empty()) {
-        long long compressedBytes = 0;
-        long long uncompressedBytes = 0;
-        int compressedEntries = 0;
-
-        for (int index = 0; index < dbase->entriesLength; index++) {
-            const DBaseEntry& entry = dbase->entries[index];
-            compressedBytes += entry.dataSize;
-            uncompressedBytes += entry.uncompressedSize;
-            if (entry.compressed == 1) {
-                compressedEntries++;
-            }
-        }
-
-        std::cout
-            << "archive: " << dbase->path << "\n"
-            << "entries: " << dbase->entriesLength << "\n"
-            << "data_offset: " << dbase->dataOffset << "\n"
-            << "compressed_entries: " << compressedEntries << "\n"
-            << "stored_bytes: " << compressedBytes << "\n"
-            << "uncompressed_bytes: " << uncompressedBytes << "\n";
-        return 0;
-    }
-
-    std::string pattern = normalizeDatPath(args[0]);
-    DFileFindData findData;
-    if (!dbaseFindFirstEntry(dbase, &findData, pattern.c_str())) {
+    const std::vector<const DatArchiveEntry*> matches = archive.findEntries(pattern);
+    if (matches.empty()) {
         std::cerr << "No entries matched pattern: " << pattern << "\n";
         return 1;
     }
 
-    do {
-        const DBaseEntry* entry = &dbase->entries[findData.index];
-        std::cout
-            << entry->path
-            << "\tcompressed=" << static_cast<int>(entry->compressed)
-            << "\tstored=" << entry->dataSize
-            << "\tuncompressed=" << entry->uncompressedSize
-            << "\toffset=" << entry->dataOffset
-            << "\n";
-    } while (dbaseFindNextEntry(dbase, &findData));
+    for (const DatArchiveEntry* entry : matches) {
+        std::cout << entry->path << "\n";
+    }
 
     return 0;
 }
 
-int extractCommand(DBase* dbase, const std::vector<std::string>& args, bool lowerExtractedPaths)
+int infoCommand(const DatArchive& archive, const std::vector<std::string>& args)
+{
+    if (args.empty()) {
+        long long uncompressedBytes = 0;
+        int compressedEntries = 0;
+        long long storedBytes = 0;
+
+        for (const DatArchiveEntry& entry : archive.entries()) {
+            uncompressedBytes += entry.uncompressedSize;
+            if (entry.compressed) {
+                compressedEntries++;
+            }
+
+            if (entry.storedSize.has_value()) {
+                storedBytes += *entry.storedSize;
+            }
+        }
+
+        std::cout
+            << "archive: " << archive.path() << "\n"
+            << "kind: " << archive.formatName() << "\n"
+            << "entries: " << archive.entries().size() << "\n"
+            << "uncompressed_bytes: " << uncompressedBytes << "\n";
+
+        if (std::string(archive.formatName()) == "fallout2") {
+            std::cout
+                << "data_offset: " << *archive.dataOffset() << "\n"
+                << "compressed_entries: " << compressedEntries << "\n"
+                << "stored_bytes: " << storedBytes << "\n";
+        }
+
+        return 0;
+    }
+
+    std::string pattern = normalizeDatPath(args[0]);
+    const std::vector<const DatArchiveEntry*> matches = archive.findEntries(pattern);
+    if (matches.empty()) {
+        std::cerr << "No entries matched pattern: " << pattern << "\n";
+        return 1;
+    }
+
+    for (const DatArchiveEntry* entry : matches) {
+        std::cout << entry->path << "\tkind=" << archive.formatName();
+        std::cout << "\tcompressed=" << static_cast<int>(entry->compressed);
+        if (entry->storedSize.has_value()) {
+            std::cout << "\tstored=" << *entry->storedSize;
+        }
+        std::cout << "\tuncompressed=" << entry->uncompressedSize;
+        if (entry->dataOffset.has_value()) {
+            std::cout << "\toffset=" << *entry->dataOffset;
+        }
+        std::cout << "\n";
+    }
+
+    return 0;
+}
+
+int extractCommand(const DatArchive& archive, const std::vector<std::string>& args, bool lowerExtractedPaths)
 {
     if (args.empty()) {
         std::cerr << "extract requires an output directory\n";
@@ -323,27 +342,26 @@ int extractCommand(DBase* dbase, const std::vector<std::string>& args, bool lowe
         return 1;
     }
 
-    DFileFindData findData;
-    if (!dbaseFindFirstEntry(dbase, &findData, pattern.c_str())) {
+    const std::vector<const DatArchiveEntry*> matches = archive.findEntries(pattern);
+    if (matches.empty()) {
         std::cerr << "No entries matched pattern: " << pattern << "\n";
         return 1;
     }
 
     int extracted = 0;
-    do {
-        const DBaseEntry& entry = dbase->entries[findData.index];
-        if (!extractEntry(dbase, entry, outputDir, lowerExtractedPaths)) {
+    for (const DatArchiveEntry* entry : matches) {
+        if (!extractEntry(archive, *entry, outputDir, lowerExtractedPaths)) {
             return 1;
         }
         extracted++;
-    } while (dbaseFindNextEntry(dbase, &findData));
+    }
 
     std::cout << "Extracted " << extracted << " entr";
     std::cout << (extracted == 1 ? "y" : "ies") << "\n";
     return 0;
 }
 
-int catCommand(DBase* dbase, const std::vector<std::string>& args)
+int catCommand(const DatArchive& archive, const std::vector<std::string>& args)
 {
     if (args.size() != 1) {
         std::cerr << "cat requires exactly one archive entry path\n";
@@ -351,7 +369,7 @@ int catCommand(DBase* dbase, const std::vector<std::string>& args)
     }
 
     std::string entryPath = normalizeDatPath(args[0]);
-    DFile* stream = dfileOpen(dbase, entryPath.c_str(), "rb");
+    std::unique_ptr<DatArchiveStream> stream = archive.openEntry(entryPath);
     if (stream == nullptr) {
         std::cerr << "Entry not found: " << entryPath << "\n";
         return 1;
@@ -359,25 +377,22 @@ int catCommand(DBase* dbase, const std::vector<std::string>& args)
 
 #ifdef _WIN32
     if (_setmode(_fileno(stdout), _O_BINARY) == -1) {
-        dfileClose(stream);
         std::cerr << "Failed to switch stdout to binary mode\n";
         return 1;
     }
 #endif
 
     std::vector<char> buffer(64 * 1024);
-    long remaining = dfileGetSize(stream);
+    long remaining = stream->size();
     while (remaining > 0) {
         size_t chunkSize = static_cast<size_t>(std::min<long>(remaining, buffer.size()));
-        size_t bytesRead = dfileRead(buffer.data(), 1, chunkSize, stream);
+        size_t bytesRead = stream->read(buffer.data(), chunkSize);
         if (bytesRead == 0) {
-            dfileClose(stream);
             std::cerr << "Failed while reading entry: " << entryPath << "\n";
             return 1;
         }
 
         if (bytesRead != chunkSize) {
-            dfileClose(stream);
             std::cerr << "Short read while reading entry: " << entryPath << "\n";
             return 1;
         }
@@ -386,7 +401,6 @@ int catCommand(DBase* dbase, const std::vector<std::string>& args)
 
         std::cout.write(buffer.data(), static_cast<std::streamsize>(bytesRead));
         if (!std::cout) {
-            dfileClose(stream);
             std::cerr << "Failed while writing to stdout\n";
             break;
         }
@@ -396,18 +410,13 @@ int catCommand(DBase* dbase, const std::vector<std::string>& args)
         return 1;
     }
 
-    if (dfileClose(stream) != 0) {
-        std::cerr << "Failed to close entry stream cleanly: " << entryPath << "\n";
-        return 1;
-    }
-
     return 0;
 }
 
 int run(const Options& options)
 {
-    DBase* dbase = dbaseOpen(options.archivePath.c_str());
-    if (dbase == nullptr) {
+    std::unique_ptr<DatArchive> archive = DatArchive::open(options.archivePath);
+    if (archive == nullptr) {
         std::cerr << "Failed to open archive: " << options.archivePath << "\n";
         return 1;
     }
@@ -418,20 +427,18 @@ int run(const Options& options)
         if (!options.args.empty()) {
             pattern = normalizeDatPath(options.args[0]);
         }
-        rc = listCommand(dbase, pattern);
+        rc = listCommand(*archive, pattern);
     } else if (options.command == "info") {
-        rc = infoCommand(dbase, options.args);
+        rc = infoCommand(*archive, options.args);
     } else if (options.command == "extract") {
-        rc = extractCommand(dbase, options.args, options.lowerExtractedPaths);
+        rc = extractCommand(*archive, options.args, options.lowerExtractedPaths);
     } else if (options.command == "cat") {
-        rc = catCommand(dbase, options.args);
+        rc = catCommand(*archive, options.args);
     } else {
         std::cerr << "Unknown command: " << options.command << "\n";
         printUsage(std::cerr);
         rc = 1;
     }
-
-    dbaseClose(dbase);
     return rc;
 }
 
