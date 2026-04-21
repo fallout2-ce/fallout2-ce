@@ -402,7 +402,6 @@ src/platform/git_version.h
 CMakeUserPresets.json
 
 # Local configs for AI agents
-opencode.json
 .opencode
 .agents
 .aider*
@@ -411,3 +410,5 @@ opencode.json
 .mcp.json
 AGENTS.md
 CLAUDE.md
+GEMINI.md
+opencode.json
