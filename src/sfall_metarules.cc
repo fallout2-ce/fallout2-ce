@@ -398,9 +398,9 @@ void mf_obj_is_openable(OpcodeContext& ctx)
 
 static int objectsInRadiusFirstTile(int sourceTile, int radius, int* endTile)
 {
-    int hexRadius = 200 * (radius + 1);
+    int hexRadius = HEX_GRID_WIDTH * (radius + 1);
 
-    *endTile = std::min(sourceTile + hexRadius, HEX_GRID_SIZE);
+    *endTile = std::min(sourceTile + hexRadius + 1, HEX_GRID_SIZE);
     return std::max(sourceTile - hexRadius, 0);
 }
 
