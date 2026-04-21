@@ -48,6 +48,9 @@ struct UISettings {
     // Iface-bar side graphics extend from the Screen edges to the Iface-Bar if true (otherwise from bar to edges).
     bool iface_bar_sides_ori = false;
 
+    // Extends AP bar to 16 dots instead of 10.
+    bool extend_ap_bar = false;
+
     int splash_screen_size = 0;
 
     bool ignore_map_edges = false;
