@@ -2,13 +2,15 @@
 
 Fallout 2 Community Edition is a fully working re-implementation of Fallout 2, with the same original gameplay, engine bugfixes, and some quality of life improvements, that works (mostly) hassle-free on multiple platforms.  This is a fork of the original project, which isn't getting regular updates.
 
-Popular Fallout 2 total conversion mods are partially supported. Original versions of Nevada and Sonora (that do not rely on extended features provided by Sfall) work. [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project), [Fallout Et Tu](https://github.com/rotators/Fo1in2) and [Olympus 2207](https://olympus2207.com) are not yet supported. Other mods (particularly Resurrection and Yesterday) are not tested.
+Popular Fallout 2 total conversion mods are partially supported. Original versions of Nevada and Sonora (that do not rely on extended features provided by Sfall) work. [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project) is supported (in Beta). [Fallout Et Tu](https://github.com/rotators/Fo1in2) and [Olympus 2207](https://olympus2207.com) are not yet supported. Other mods (particularly Resurrection and Yesterday) are not tested.
 
 There is also [Fallout Community Edition](https://github.com/alexbatalov/fallout1-ce) (not affiliated with this fork).
 
+For build and contributor notes, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Installation
 
-You must own the game to play. Purchase your copy on [GOG](https://www.gog.com/game/fallout_2), [Epic Games](https://store.epicgames.com/p/fallout-2) or [Steam](https://store.steampowered.com/app/38410). Download latest [release](https://github.com/fallout2-ce/fallout2-ce/releases) or build from source. 
+You must own the game to play. Purchase your copy on [GOG](https://www.gog.com/game/fallout_2), [Epic Games](https://store.epicgames.com/p/fallout-2) or [Steam](https://store.steampowered.com/app/38410). Download latest [release](https://github.com/fallout2-ce/fallout2-ce/releases) or build from source.
 
 ### Windows
 
@@ -22,17 +24,10 @@ Download and copy `fallout2-ce.exe` to your `Fallout2` folder. It serves as a dr
 
 ```console
 $ sudo apt install innoextract
-$ innoextract ~/Downloads/setup_fallout2_2.1.0.18.exe -I app
-$ mv app Fallout2
+$ innoextract ~/Downloads/setup_fallout_2_1.02_gog_v1_\(77792\).exe -d Fallout2
 ```
 
-- Download and copy `fallout2-ce` to this folder.
-
-- Install [SDL2](https://libsdl.org/download-2.0.php):
-
-```console
-$ sudo apt install libsdl2-2.0-0
-```
+- Download the Linux release archive, extract `fallout2-ce`, and copy it into this folder.
 
 - Run `./fallout2-ce`.
 
@@ -48,13 +43,13 @@ $ sudo apt install libsdl2-2.0-0
 
 ```console
 $ brew install innoextract
-$ innoextract ~/Downloads/setup_fallout2_2.1.0.18.exe -I app
-$ mv app /Applications/Fallout2
+$ innoextract ~/Downloads/setup_fallout_2_1.02_gog_v1_\(77792\).exe -d fallout2
+$ mv fallout2 /Applications/Fallout2
 ```
 
-- Download and copy `fallout2-ce.app` to this folder.
+- [Download](https://github.com/fallout2-ce/fallout2-ce/releases) and copy `Fallout II Community Edition.app` to this folder.
 
-- Run `fallout2-ce.app`.
+- Run `Fallout II Community Edition.app`.
 
 ### Android
 
@@ -141,11 +136,9 @@ For a sample ddraw.ini configuration file, containing all currently working sett
 
 ## Contributing
 
-Integrating Sfall goodies is the top priority. Quality of life updates are OK too. Please no large scale refactorings at this time as we need to reconcile changes from Reference Edition, which will make this process slow and error-prone. In any case open up an issue with your suggestion or to notify other people that something is being worked on.
+Integrating Sfall goodies is the top priority. Quality of life updates are OK too.  In any case open up an issue with your suggestion or to notify other people that something is being worked on.
 
-### Integrating Sfall
-
-There are literally hundreds if not thousands of fixes and features in sfall. I guess not all of them are needed in Community Edition, but for the sake of compatibility with big mods out there, let's integrate them all.
+For current sfall compatibility status and the remaining work needed to close gaps, see [SFALL_COMPATIBILITY.md](SFALL_COMPATIBILITY.md).
 
 ## License
 
