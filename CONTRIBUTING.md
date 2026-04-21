@@ -6,7 +6,7 @@ For current sfall compatibility status and the remaining work needed to close ga
 
 ## Building
 
-The project uses CMake. By default it builds with vendored third-party libraries, so the instructions below only need the local compiler toolchain plus CMake and Ninja.
+The project uses CMake, so building mostly comes down to picking the right preset.
 
 ### macOS
 
@@ -21,26 +21,23 @@ cmake --build out/build/macos --target fallout2-ce
 
 ### Linux
 
+Install SDL and a toolchain:
+
 - Debian / Ubuntu:
-
 ```sh
-sudo apt install build-essential cmake ninja-build
-cmake -S . -B out/build/linux-x64-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build out/build/linux-x64-debug --target fallout2-ce
+sudo apt install build-essential cmake ninja-build libsdl2-dev zlib1g-dev
 ```
-
 - Fedora:
-
 ```sh
-sudo dnf install gcc-c++ cmake ninja-build
-cmake -S . -B out/build/linux-x64-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build out/build/linux-x64-debug --target fallout2-ce
+sudo dnf install gcc-c++ cmake ninja-build SDL2-devel zlib-devel
+```
+- Arch Linux:
+```sh
+sudo pacman -S base-devel cmake ninja sdl2 zlib
 ```
 
-- Arch Linux:
-
-```sh
-sudo pacman -S base-devel cmake ninja
+Then build:
+```
 cmake -S . -B out/build/linux-x64-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build out/build/linux-x64-debug --target fallout2-ce
 ```
@@ -69,7 +66,7 @@ The current tool is read-only. Available commands:
 Use `--lower` with `extract` when you want every extracted file and directory name forced to lowercase.
 For example:
 
-`./out/build/<preset-name>/fallout2-dat master.dat extract --lower /tmp/fallout2-dat-lower data\\*`
+`fallout2-dat master.dat extract --lower /tmp/fallout2-dat-lower data\\*`
 
 ## Updating SDL
 
