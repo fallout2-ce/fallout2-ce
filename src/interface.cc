@@ -316,12 +316,12 @@ static Art* gCustomInterfaceBarBackground = nullptr;
 static int gInterfaceSidePanelsLeadingWindow = -1;
 static int gInterfaceSidePanelsTrailingWindow = -1;
 
-Buffer2D interfaceWindowBuf2D()
+static Buffer2D interfaceWindowBuf2D()
 {
     return { gInterfaceWindowBuffer, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT };
 }
 
-Buffer2D abBarBackgroundBuf2D()
+static Buffer2D apBarBackgroundBuf2D()
 {
     return { apBarBackgroundData, apBarWidth, kApBarBulbSize };
 }
@@ -1000,13 +1000,13 @@ void interfaceRenderArmorClass(bool animate)
 // 0x45EE0C
 void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
 {
-    Buffer2D bulbFrmBuf {};
+    ConstBuffer2D bulbFrmBuf {};
 
     if (gInterfaceBarWindow == -1) {
         return;
     }
 
-    blitBuffer2D(abBarBackgroundBuf2D(), interfaceWindowBuf2D(), gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset);
+    blitBuffer2D(apBarBackgroundBuf2D(), interfaceWindowBuf2D(), gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset);
 
     if (actionPointsLeft == -1) {
         bulbFrmBuf = _redLightFrmImage.getBuffer();
@@ -1034,7 +1034,7 @@ void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
 
     int numBulbs = actionPointsLeft + bonusActionPoints;
     for (int index = 0; index < numBulbs; index++) {
-        constexpr int bulbXOffset = 9;
+        constexpr int bulbXOffset = kApBarBulbSize + kApBarBulbMargin;
         auto frmBuf = index < actionPointsLeft
             ? bulbFrmBuf
             : _yellowLightFrmImage.getBuffer();
@@ -2529,16 +2529,24 @@ static void customInterfaceBarExit()
 // Inits AP bar offsets based on custom AP bar setting and blits the correct AP graphic into the window buffer. Must be called after main panel FRM art is blitted.
 static void extendedApBarInitToWindow()
 {
+    constexpr int apBarXOffsetOriginal = 316;
+    constexpr int apBarWidthOriginal = 90;
+    constexpr int apBarMaxAPOriginal = 10;
+
+    static_assert(apBarWidthOriginal <= kApBarMaxWidth);
+    static_assert(apBarMaxAPOriginal <= kApBarMaxBulbs);
+
     if (settings.ui.extend_ap_bar) {
         apBarMaxAP = kApBarMaxBulbs;
         apBarWidth = kApBarMaxWidth;
-        apBarXOffset = 289;
+        // Shift X offset left according to the extra AP bar width.
+        apBarXOffset = apBarXOffsetOriginal - (kApBarMaxWidth - apBarWidthOriginal) / 2;
     } else {
-        apBarMaxAP = 10;
-        apBarWidth = 90; // should be less than Max Width
-        apBarXOffset = 316;
+        apBarMaxAP = apBarMaxAPOriginal;
+        apBarWidth = apBarWidthOriginal;
+        apBarXOffset = apBarXOffsetOriginal;
     }
-    apBarRect = { gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset, gInterfaceBarContentOffset + apBarXOffset + apBarWidth - 1, kApBarYOffset + kApBarBulbSize };
+    apBarRect = { gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset, gInterfaceBarContentOffset + apBarXOffset + apBarWidth - 1, kApBarYOffset + kApBarBulbSize - 1 };
 
     Buffer2D ifaceBarBuf = interfaceWindowBuf2D();
 
@@ -2555,7 +2563,7 @@ static void extendedApBarInitToWindow()
     }
 
     // Blit the thin bar of pixels covering the bulbs (that change color) into static apBarBackgroundData buffer.
-    Buffer2D abBarBgBuf = abBarBackgroundBuf2D();
+    Buffer2D abBarBgBuf = apBarBackgroundBuf2D();
     blitBuffer2D(ifaceBarBuf, gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset, abBarBgBuf.width, abBarBgBuf.height, abBarBgBuf);
 }
 

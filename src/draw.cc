@@ -216,13 +216,13 @@ void blitBufferToBufferTrans(unsigned char* src, int width, int height, int srcP
     transSrcCopy(dest, destPitch, src, srcPitch, width, height);
 }
 
-void blitBuffer2D(const Buffer2D& src, const Buffer2D& dst, int dstX, int dstY)
+void blitBuffer2D(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY)
 {
     blitBuffer2D(src, 0, 0, src.width, src.height, dst, dstX, dstY);
 }
 
-void blitBuffer2D(const Buffer2D& src, int srcX, int srcY, int width, int height,
-    const Buffer2D& dst, int dstX, int dstY)
+void blitBuffer2D(ConstBuffer2D src, int srcX, int srcY, int width, int height,
+    Buffer2D dst, int dstX, int dstY)
 {
     // Clip source region to src bounds.
     if (srcX < 0) {
@@ -375,7 +375,7 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, int col
 }
 
 // 0x4E0DB0
-void srcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitch, int width, int height)
+void srcCopy(unsigned char* dest, int destPitch, const unsigned char* src, int srcPitch, int width, int height)
 {
     for (int y = 0; y < height; y++) {
         memcpy(dest, src, width);

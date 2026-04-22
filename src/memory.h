@@ -1,7 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "memory_defs.h"
+#include <type_traits>
 
 namespace fallout {
 
@@ -15,6 +15,8 @@ void mem_check();
 template <typename T>
 class InternalPtr {
 public:
+    static_assert(std::is_trivially_destructible_v<T>);
+
     InternalPtr() = default;
     explicit InternalPtr(T* ptr)
         : _ptr(ptr)

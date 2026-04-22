@@ -8,6 +8,7 @@
 #include "animation.h"
 #include "content_config.h"
 #include "debug.h"
+#include "obj_types.h"
 #include "draw.h"
 #include "game.h"
 #include "memory.h"
@@ -841,7 +842,7 @@ ArtFrame* artGetFrame(const Art* art, int frame, int rotation)
     return frm;
 }
 
-Buffer2D artGetFrameBuffer(const Art* art, int frame, int direction)
+ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, int direction)
 {
     ArtFrame* frm = artGetFrame(art, frame, direction);
     if (frm == nullptr) {

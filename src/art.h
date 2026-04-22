@@ -140,7 +140,7 @@ int artGetFrameOffsets(Art* art, int frame, int direction, int* xPtr, int* yPtr)
 int artGetRotationOffsets(Art* art, int rotation, int* out_offset_x, int* out_offset_y);
 unsigned char* artGetFrameData(Art* art, int frame, int direction);
 ArtFrame* artGetFrame(const Art* art, int frame, int direction);
-Buffer2D artGetFrameBuffer(const Art* art, int frame, int direction);
+ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, int direction);
 bool artExists(int fid);
 bool _art_fid_valid(int fid);
 int _art_alias_num(int index);
@@ -164,7 +164,7 @@ public:
     int getHeight() const { return _height; }
     unsigned char* getData() const { return _data; }
 
-    Buffer2D getBuffer() const { return { _data, _width, _height }; };
+    ConstBuffer2D getBuffer() const { return { _data, _width, _height }; };
 
 private:
     CacheEntry* _key;
