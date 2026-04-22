@@ -1529,13 +1529,18 @@ int _partyMemberIncLevels()
             continue;
         }
 
-        levelUpInfo->level++;
-        if (levelMod != 0) {
-            levelUpInfo->isEarly = 1;
+        int nextLevel = levelUpInfo->level + 1;
+        if (nextLevel >= memberDescription->level_pids_num) {
+            continue;
         }
 
-        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[levelUpInfo->level]) == -1) {
+        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[nextLevel]) == -1) {
             return -1;
+        }
+
+        levelUpInfo->level = nextLevel;
+        if (levelMod != 0) {
+            levelUpInfo->isEarly = 1;
         }
 
         name = critterGetName(obj);
@@ -1705,19 +1710,19 @@ int partyMemberIncNpcLevel(int pid)
     PartyMemberLevelUpInfo* levelUpInfo = &(_partyMemberLevelUpInfoList[memberIndex]);
     PartyMemberDescription* memberDescription = &(gPartyMemberDescriptions[memberIndex]);
 
-    if (levelUpInfo->level >= memberDescription->level_pids_num) {
+    int nextLevel = levelUpInfo->level + 1;
+    if (nextLevel >= memberDescription->level_pids_num) {
         return -1;
     }
 
-    levelUpInfo->level++;
-
     Object* obj = partyMemberFindByPid(pid);
     if (obj != nullptr) {
-        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[levelUpInfo->level]) == -1) {
+        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[nextLevel]) == -1) {
             return -1;
         }
     }
 
+    levelUpInfo->level = nextLevel;
     return 0;
 }
 
