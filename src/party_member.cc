@@ -1678,6 +1678,49 @@ int partyGetMaxWoundToHealByRest()
     return maxWound;
 }
 
+int partyMemberGetNpcLevel(int pid)
+{
+    for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
+        if (gPartyMemberPids[index] == pid) {
+            return _partyMemberLevelUpInfoList[index].level;
+        }
+    }
+    return 0;
+}
+
+int partyMemberIncNpcLevel(int pid)
+{
+    int memberIndex = -1;
+    for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
+        if (gPartyMemberPids[index] == pid) {
+            memberIndex = index;
+            break;
+        }
+    }
+
+    if (memberIndex == -1) {
+        return -1;
+    }
+
+    PartyMemberLevelUpInfo* levelUpInfo = &(_partyMemberLevelUpInfoList[memberIndex]);
+    PartyMemberDescription* memberDescription = &(gPartyMemberDescriptions[memberIndex]);
+
+    if (levelUpInfo->level >= memberDescription->level_pids_num) {
+        return -1;
+    }
+
+    levelUpInfo->level++;
+
+    Object* obj = partyMemberFindByPid(pid);
+    if (obj != nullptr) {
+        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[levelUpInfo->level]) == -1) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 std::vector<Object*> get_all_party_members_objects(bool include_hidden)
 {
     std::vector<Object*> value;
