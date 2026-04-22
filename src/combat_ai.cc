@@ -1997,7 +1997,22 @@ static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode)
 
     // HOOK_CANUSEWEAPON: let scripts (e.g. npc_armor.mod) veto weapons whose
     // anim code isn't supported by the critter's current sprite set.
-    int slot = (hitMode >= HIT_MODE_LEFT_WEAPON_PRIMARY) ? 2 : 1;
+    int slot;
+    switch (hitMode) {
+    case HIT_MODE_LEFT_WEAPON_PRIMARY:
+    case HIT_MODE_LEFT_WEAPON_SECONDARY:
+    case HIT_MODE_LEFT_WEAPON_RELOAD:
+        slot = 2;
+        break;
+    case HIT_MODE_RIGHT_WEAPON_PRIMARY:
+    case HIT_MODE_RIGHT_WEAPON_SECONDARY:
+    case HIT_MODE_RIGHT_WEAPON_RELOAD:
+        slot = 1;
+        break;
+    default:
+        slot = 1;
+        break;
+    }
     if (!scriptHooks_CanUseWeapon(critter, weapon, slot)) {
         return false;
     }
