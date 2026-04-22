@@ -39,6 +39,7 @@
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
+#include "touch.h"
 #include "window_manager.h"
 #include "word_wrap.h"
 #include "worldmap.h"
@@ -506,6 +507,8 @@ int pipboyOpen(int intent)
         return -1;
     }
 
+    touch_set_touchscreen_mode(true);
+
     mouseGetPositionInWindow(gPipboyWindow, &gPipboyPreviousMouseX, &gPipboyPreviousMouseY);
     gPipboyLastEventTimestamp = getTicks();
 
@@ -573,6 +576,8 @@ int pipboyOpen(int intent)
         renderPresent();
         sharedFpsLimiter.throttle();
     }
+
+    touch_set_touchscreen_mode(false);
 
     pipboyWindowFree();
 
