@@ -1999,7 +1999,8 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
             int itemIndex = slotIndex + stackOffset + 1;
             int row = slotIndex / gInventoryNormalLayout.columns;
             int column = slotIndex % gInventoryNormalLayout.columns;
-            int offset = pitch * (gInventoryNormalLayout.scrollerY + row * INVENTORY_SLOT_HEIGHT + INVENTORY_SLOT_PADDING)
+            int itemPaddingY = INVENTORY_SLOT_PADDING + (gInventoryNormalLayout.columns > 1 ? INVENTORY_SLOT_PADDING : 0);
+            int offset = pitch * (gInventoryNormalLayout.scrollerY + row * INVENTORY_SLOT_HEIGHT + itemPaddingY)
                 + gInventoryNormalLayout.scrollerX + column * INVENTORY_SLOT_WIDTH + INVENTORY_SLOT_PADDING;
 
             InventoryItem* inventoryItem = &(_pud->items[_pud->length - itemIndex]);
