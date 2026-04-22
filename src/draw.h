@@ -3,6 +3,22 @@
 
 namespace fallout {
 
+struct Buffer2D {
+    unsigned char* data;
+    int width;
+    int height;
+
+    explicit operator bool() const { return data != nullptr; }
+};
+
+// Copies src into dst at (dstX, dstY). Clips to dst bounds; no-op if fully outside.
+void blitBuffer2D(const Buffer2D& src, const Buffer2D& dst, int dstX = 0, int dstY = 0);
+
+// Copies a region of src (starting at srcX, srcY with given width/height) into
+// dst at (dstX, dstY). Clips to both src and dst bounds.
+void blitBuffer2D(const Buffer2D& src, int srcX, int srcY, int width, int height,
+    const Buffer2D& dst, int dstX = 0, int dstY = 0);
+
 void bufferDrawLine(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int color);
 void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int color);
 void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int ltColor, int rbColor);

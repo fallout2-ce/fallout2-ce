@@ -11,7 +11,6 @@
 #include "draw.h"
 #include "game.h"
 #include "memory.h"
-#include "object.h"
 #include "proto.h"
 #include "settings.h"
 
@@ -821,7 +820,7 @@ unsigned char* artGetFrameData(Art* art, int frame, int direction)
 }
 
 // 0x419880
-ArtFrame* artGetFrame(Art* art, int frame, int rotation)
+ArtFrame* artGetFrame(const Art* art, int frame, int rotation)
 {
     if (rotation < 0 || rotation >= 6) {
         return nullptr;
@@ -840,6 +839,15 @@ ArtFrame* artGetFrame(Art* art, int frame, int rotation)
         frm = (ArtFrame*)((unsigned char*)frm + sizeof(*frm) + frm->size + paddingForSize(frm->size));
     }
     return frm;
+}
+
+Buffer2D artGetFrameBuffer(const Art* art, int frame, int direction)
+{
+    ArtFrame* frm = artGetFrame(art, frame, direction);
+    if (frm == nullptr) {
+        return {nullptr, 0, 0};
+    }
+    return { reinterpret_cast<unsigned char*>(frm) + sizeof(*frm), frm->width, frm->height};
 }
 
 // 0x4198C8
