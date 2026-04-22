@@ -249,7 +249,7 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
             continue;
         }
 
-        if (tileInfo.tile != gCenterTile) [[unlikely]] {
+        if (tileInfo.tile != gCenterTile) {
             if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
                 continue;
             }
