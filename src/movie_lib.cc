@@ -556,7 +556,7 @@ static void* ioRead(int size)
         return nullptr;
     }
 
-    if (mve_read_func(io_handle, buf, size) < 1) {
+    if (!mve_read_func(io_handle, buf, size)) {
         return nullptr;
     }
 
