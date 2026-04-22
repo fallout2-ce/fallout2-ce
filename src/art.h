@@ -164,7 +164,7 @@ public:
     int getHeight() const { return _height; }
     unsigned char* getData() const { return _data; }
 
-    Buffer2D getBuffer() const { return {_data, _width, _height}; };
+    Buffer2D getBuffer() const { return { _data, _width, _height }; };
 
 private:
     CacheEntry* _key;

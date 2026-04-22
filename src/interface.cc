@@ -318,12 +318,12 @@ static int gInterfaceSidePanelsTrailingWindow = -1;
 
 Buffer2D interfaceWindowBuf2D()
 {
-    return {gInterfaceWindowBuffer, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT};
+    return { gInterfaceWindowBuffer, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT };
 }
 
 Buffer2D abBarBackgroundBuf2D()
 {
-    return {apBarBackgroundData, apBarWidth, kApBarBulbSize};
+    return { apBarBackgroundData, apBarWidth, kApBarBulbSize };
 }
 
 // intface_init

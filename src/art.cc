@@ -845,9 +845,9 @@ Buffer2D artGetFrameBuffer(const Art* art, int frame, int direction)
 {
     ArtFrame* frm = artGetFrame(art, frame, direction);
     if (frm == nullptr) {
-        return {nullptr, 0, 0};
+        return { nullptr, 0, 0 };
     }
-    return { reinterpret_cast<unsigned char*>(frm) + sizeof(*frm), frm->width, frm->height};
+    return { reinterpret_cast<unsigned char*>(frm) + sizeof(*frm), frm->width, frm->height };
 }
 
 // 0x4198C8

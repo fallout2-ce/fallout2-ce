@@ -16,13 +16,20 @@ template <typename T>
 class InternalPtr {
 public:
     InternalPtr() = default;
-    explicit InternalPtr(T* ptr) : _ptr(ptr) {}
+    explicit InternalPtr(T* ptr)
+        : _ptr(ptr)
+    {
+    }
     ~InternalPtr() { reset(); }
 
     InternalPtr(const InternalPtr&) = delete;
     InternalPtr& operator=(const InternalPtr&) = delete;
 
-    InternalPtr(InternalPtr&& other) noexcept : _ptr(other._ptr) { other._ptr = nullptr; }
+    InternalPtr(InternalPtr&& other) noexcept
+        : _ptr(other._ptr)
+    {
+        other._ptr = nullptr;
+    }
 
     InternalPtr& operator=(InternalPtr&& other) noexcept
     {
