@@ -1165,12 +1165,9 @@ int lsgLoadGame(int mode)
     _dbleclkcntr = 24;
 
     int rc = -1;
-    if (devAutoloadFailed) {
-        rc = 2;
-    }
 
     int doubleClickSlot = -1;
-    while (rc == -1) {
+    while (rc == -1 && !devAutoloadFailed) {
         sharedFpsLimiter.mark();
 
         unsigned int time = getTicks();
@@ -1332,7 +1329,12 @@ int lsgLoadGame(int mode)
             if (_LSstatus[_slot_cursor] != SLOT_STATE_EMPTY) {
                 rc = 1;
             } else {
-                rc = -1;
+                if (devAutoloadSlot != -1) {
+                    devAutoloadFailed = true;
+                    rc = -1;
+                } else {
+                    rc = -1;
+                }
             }
 
             selectionChanged = true;
@@ -1480,6 +1482,12 @@ int lsgLoadGame(int mode)
         if (rc == 1) {
             switch (_LSstatus[_slot_cursor]) {
             case SLOT_STATE_UNSUPPORTED_VERSION:
+                if (devAutoloadSlot != -1) {
+                    devAutoloadFailed = true;
+                    rc = -1;
+                    break;
+                }
+
                 soundPlayFile("iisxxxx1");
                 strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
                 strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
@@ -1488,6 +1496,12 @@ int lsgLoadGame(int mode)
                 rc = -1;
                 break;
             case SLOT_STATE_ERROR:
+                if (devAutoloadSlot != -1) {
+                    devAutoloadFailed = true;
+                    rc = -1;
+                    break;
+                }
+
                 soundPlayFile("iisxxxx1");
                 strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
                 strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
@@ -1496,14 +1510,19 @@ int lsgLoadGame(int mode)
                 break;
             default:
                 if (lsgLoadGameInSlot(_slot_cursor) == -1) {
-                    gameMouseSetCursor(MOUSE_CURSOR_ARROW);
-                    soundPlayFile("iisxxxx1");
-                    strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
-                    strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
-                    showDialogBox(_str0, body, 1, 169, 116, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
-                    mapNewMap();
-                    _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
-                    rc = -1;
+                    if (devAutoloadSlot != -1) {
+                        devAutoloadFailed = true;
+                        rc = -1;
+                    } else {
+                        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+                        soundPlayFile("iisxxxx1");
+                        strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
+                        strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
+                        showDialogBox(_str0, body, 1, 169, 116, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
+                        mapNewMap();
+                        _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
+                        rc = -1;
+                    }
                 }
                 break;
             }

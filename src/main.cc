@@ -74,7 +74,7 @@ static bool _main_show_death_scene = false;
 // 0x614838
 static bool _main_death_voiceover_done;
 
-static int gDevLoadGameSlot = -1;
+static int commandLineDevLoadGameSlot = -1;
 
 // 0x48099C
 int falloutMain(int argc, char** argv)
@@ -109,10 +109,10 @@ int falloutMain(int argc, char** argv)
             mainMenuWindowUnhide(true);
 
             mouseShowCursor();
-            int devLoadGameSlot = gDevLoadGameSlot;
+            int devLoadGameSlot = commandLineDevLoadGameSlot;
             int mainMenuRc;
             if (devLoadGameSlot != -1) {
-                gDevLoadGameSlot = -1;
+                commandLineDevLoadGameSlot = -1;
                 mainMenuRc = MAIN_MENU_LOAD_GAME;
             } else {
                 mainMenuRc = mainMenuWindowHandleEvents();
@@ -269,7 +269,7 @@ static void mainParseCommandLineArguments(int argc, char** argv)
         if (strncmp(argv[arg], devLoadGamePrefix, devLoadGamePrefixLength) == 0) {
             int slot;
             if (mainTryParseDevLoadGameSlot(argv[arg] + devLoadGamePrefixLength, &slot)) {
-                gDevLoadGameSlot = slot;
+                commandLineDevLoadGameSlot = slot;
             } else {
                 debugPrint("MAIN: invalid --dev-load-game value '%s'\n", argv[arg] + devLoadGamePrefixLength);
             }
