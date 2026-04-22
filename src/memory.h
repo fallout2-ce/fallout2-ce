@@ -1,6 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include <cstddef>
 #include <type_traits>
 
 namespace fallout {
