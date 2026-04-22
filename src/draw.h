@@ -12,11 +12,21 @@ struct Buffer2DBase {
     int height = 0;
 
     Buffer2DBase() = default;
-    Buffer2DBase(T* data, int width, int height) : data(data), width(width), height(height) {}
+    Buffer2DBase(T* data, int width, int height)
+        : data(data)
+        , width(width)
+        , height(height)
+    {
+    }
 
     // Implicit conversion Buffer2D -> ConstBuffer2D.
     template <typename U, typename = std::enable_if_t<std::is_same_v<const U, T>>>
-    Buffer2DBase(const Buffer2DBase<U>& other) : data(other.data), width(other.width), height(other.height) {}
+    Buffer2DBase(const Buffer2DBase<U>& other)
+        : data(other.data)
+        , width(other.width)
+        , height(other.height)
+    {
+    }
 
     explicit operator bool() const { return data != nullptr; }
 };
