@@ -1,0 +1,47 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+
+#define TEST_KEY (DIK_U)
+
+variable canuseweapon_blocking := false;
+
+procedure canuseweapon_handler begin
+    variable
+        critter := get_sfall_arg_at(0),
+        weapon := get_sfall_arg_at(1),
+        slot := get_sfall_arg_at(2),
+        slot_name := "unknown";
+
+    if (slot == 1) then slot_name := "right_hand";
+    else if (slot == 2) then slot_name := "left_hand";
+
+    display_msg(string_format("canuseweapon %s weapon=%s slot=%s",
+        obj_name(critter), obj_name(weapon), slot_name));
+
+    if (canuseweapon_blocking) then begin
+        display_msg("canuseweapon BLOCKED");
+        set_sfall_return(0);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != TEST_KEY) then return;
+
+    canuseweapon_blocking := not canuseweapon_blocking;
+    display_msg(string_format1("canuseweapon blocking=%d", canuseweapon_blocking));
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("canuseweapon manual test ready: press U to toggle blocking");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_CANUSEWEAPON, canuseweapon_handler);
+end
