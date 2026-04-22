@@ -160,6 +160,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(numbers_in_dialogue);
     SETTING_P(auto_quick_save, clamp(0, 10));
     SETTING(enable_high_resolution_stencil);
+    SETTING(extend_ap_bar);
 #undef SECT
 
 #define SECT preferences

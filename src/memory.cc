@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "debug.h"
+#include "memory_defs.h"
 
 namespace fallout {
 
