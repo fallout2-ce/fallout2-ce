@@ -569,49 +569,6 @@ void scriptHooks_BarterPrice(BarterPriceContext* ctx)
 }
 
 /*
-    HOOK_ONDEATH
-
-    Runs when a critter dies (after death animation completes).
-
-    int     arg0 - the critter that died
-*/
-void scriptHooks_OnDeath(Object* critter)
-{
-    ScriptHookCall hook(HOOK_ONDEATH, 0, { critter });
-    hook.call();
-}
-
-/*
-    HOOK_ADJUSTFID
-
-    Runs when the game calculates what FID to display for a critter in UI
-    (inventory, barter, loot). Used by npc_armor mod.
-
-    int     arg0 - the base FID being displayed (sfall passes a single arg;
-                   the script reads currFid := get_sfall_arg)
-
-    int     ret0 - override FID (or -1 to keep base)
-*/
-int scriptHooks_AdjustFid(Object* critter, int baseFid)
-{
-    // critter is unused at the script layer — sfall's HOOK_ADJUSTFID passes
-    // only the FID. The mod determines the critter via dude_obj (which sfall
-    // can rebind via set_dude_obj when controlling another party member).
-    (void)critter;
-    ScriptHookCall hook(HOOK_ADJUSTFID, 1, { baseFid });
-    hook.call();
-
-    if (hook.numReturnValues() > 0) {
-        int overrideFid = hook.getReturnValueAt(0).asInt();
-        if (overrideFid >= 0) {
-            return overrideFid;
-        }
-    }
-
-    return baseFid;
-}
-
-/*
     HOOK_INVENWIELD
 
     Runs when an item is equipped or unequipped — for any critter, including

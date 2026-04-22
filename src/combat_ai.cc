@@ -1995,6 +1995,13 @@ static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode)
         return false;
     }
 
+    // HOOK_CANUSEWEAPON: let scripts (e.g. npc_armor.mod) veto weapons whose
+    // anim code isn't supported by the critter's current sprite set.
+    int slot = (hitMode >= HIT_MODE_LEFT_WEAPON_PRIMARY) ? 2 : 1;
+    if (!scriptHooks_CanUseWeapon(critter, weapon, slot)) {
+        return false;
+    }
+
     int attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
     return _caiHasWeapPrefType(ai, attackType) != 0;
 }
@@ -2029,12 +2036,6 @@ Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, O
         }
 
         if (!_ai_can_use_weapon(critter, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
-            continue;
-        }
-
-        // Lets npc_armor.mod block weapons whose anim code isn't supported
-        // by the swapped-armor sprite set. Slot 1 = right hand.
-        if (!scriptHooks_CanUseWeapon(critter, weapon, 1)) {
             continue;
         }
 

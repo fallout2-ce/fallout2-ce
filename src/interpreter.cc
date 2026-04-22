@@ -3288,20 +3288,12 @@ bool ProgramValue::isEmpty() const
 {
     switch (opcode) {
     case VALUE_TYPE_INT:
+    case VALUE_TYPE_STRING:
         return integerValue == 0;
     case VALUE_TYPE_FLOAT:
         return floatValue == 0.0;
     case VALUE_TYPE_PTR:
         return pointerValue == nullptr;
-    case VALUE_TYPE_STRING:
-    case VALUE_TYPE_DYNAMIC_STRING:
-        // Strings are truthy whenever they have a string-table reference; sfall
-        // treats any non-empty string content as true. Without a Program* we
-        // can't resolve content here, so callers (opIf/opWhile) handle the
-        // empty-content case via programGetString. Returning false here means
-        // "has a string value" — preventing the silent always-empty bug that
-        // broke npc_armor.mod's `while (sect.PID)` loop when PID was a string.
-        return false;
     }
 
     // Should be unreachable.
