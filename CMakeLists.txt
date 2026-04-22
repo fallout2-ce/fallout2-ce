@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
 if(MSVC)
-    add_compile_options(/EHsc)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
 endif()
 
 option(FALLOUT_VENDORED "Use vendored third-party libraries" ON)
