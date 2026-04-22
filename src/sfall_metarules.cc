@@ -407,7 +407,7 @@ static int objectsInRadiusFirstTile(int sourceTile, int radius, int* endTile)
 static void mf_objects_in_radius(OpcodeContext& ctx)
 {
     int sourceTile = ctx.arg(0).asInt();
-    int radius = std::clamp(ctx.arg(1).asInt(), 1, 50);
+    int radius = std::clamp(ctx.arg(1).asInt(), 0, 50);
     int elevation = std::clamp(ctx.arg(2).asInt(), 0, ELEVATION_COUNT - 1);
     int type = ctx.numArgs() > 3 ? ctx.arg(3).asInt() : -1;
 

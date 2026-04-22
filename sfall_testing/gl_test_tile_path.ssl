@@ -61,6 +61,10 @@ procedure start begin
             call assertTrue("objects_in_radius all contains dude", scan_array(objs, dude_obj) != -1);
             call assertTrue("objects_in_radius all contains item", scan_array(objs, radius_obj) != -1);
 
+            objs := sfall_func3("objects_in_radius", dude_tile, 0, elev);
+            call assertTrue("objects_in_radius radius 0 contains dude", scan_array(objs, dude_obj) != -1);
+            call assertEquals("objects_in_radius radius 0 excludes adjacent item", scan_array(objs, radius_obj), -1);
+
             objs := objects_in_radius(dude_tile, 1, elev, OBJ_TYPE_ITEM);
             call assertTrue("objects_in_radius item filter contains item", scan_array(objs, radius_obj) != -1);
             call assertEquals("objects_in_radius item filter excludes dude", scan_array(objs, dude_obj), -1);
