@@ -370,6 +370,57 @@ void mouseHideCursor()
     }
 }
 
+#if __APPLE__ && TARGET_OS_IOS
+// Checks whether a tap lands on an interface-bar button and, if so,
+// injects the corresponding keyCode so the cursor never moves.
+// Returns true if the tap was consumed (button injected or bare chrome hit).
+static bool handleHudTapThrough(const Gesture& gesture)
+{
+    if (!mouseDeviceUsesRelativeMode() || touch_get_touchscreen_mode() || gInterfaceBarWindow == -1) {
+        return false;
+    }
+
+    Window* hudWindow = windowGetWindow(gInterfaceBarWindow);
+    if (hudWindow == nullptr || (hudWindow->flags & WINDOW_HIDDEN) != 0) {
+        return false;
+    }
+
+    Rect hudRect;
+    if (windowGetRect(gInterfaceBarWindow, &hudRect) != 0
+        || gesture.x < hudRect.left || gesture.x > hudRect.right
+        || gesture.y < hudRect.top || gesture.y > hudRect.bottom) {
+        return false;
+    }
+
+    if (gesture.numberOfTouches == 1 || gesture.numberOfTouches == 2) {
+        for (Button* button = hudWindow->buttonListHead; button != nullptr; button = button->next) {
+            if ((button->flags & BUTTON_FLAG_DISABLED) != 0) {
+                continue;
+            }
+            int left = hudWindow->rect.left + button->rect.left;
+            int top = hudWindow->rect.top + button->rect.top;
+            int right = hudWindow->rect.left + button->rect.right;
+            int bottom = hudWindow->rect.top + button->rect.bottom;
+            if (gesture.x < left || gesture.x > right || gesture.y < top || gesture.y > bottom) {
+                continue;
+            }
+            int keyCode = gesture.numberOfTouches == 1
+                ? button->leftMouseUpEventCode
+                : button->rightMouseUpEventCode;
+            if (keyCode == -1) {
+                break;
+            }
+            enqueueInputEvent(keyCode);
+            return true;
+        }
+    }
+
+    // Tap landed on belt chrome (no button under it). Consume silently
+    // rather than teleporting the cursor to an inert region.
+    return true;
+}
+#endif
+
 // 0x4CA59C
 void _mouse_info()
 {
@@ -400,7 +451,7 @@ void _mouse_info()
                 swipeStartY = gesture.y;
             } else if (gesture.state == kEnded) {
                 int dy = gesture.y - swipeStartY;
-                if (dy > screenGetHeight() / 3) {
+                if (dy > screenGetHeight() / 4) {
                     enqueueInputEvent(KEY_ESCAPE);
                 }
             }
@@ -445,67 +496,23 @@ void _mouse_info()
         case kTap: {
             // Toolbar taps bypass the mouse pipeline entirely: the handler
             // invokes the action in place, so the cursor never moves.
-            if (gesture.numberOfTouches == 1 && quickToolbarContainsPoint(gesture.x, gesture.y)) {
+            // Skip when touchscreen mode is active (dialog, inventory, etc.)
+            // so toolbar doesn't intercept taps meant for overlapping UI.
+            if (!touch_get_touchscreen_mode()
+                && gesture.numberOfTouches == 1
+                && quickToolbarContainsPoint(gesture.x, gesture.y)) {
                 if (quickToolbarHandleTap(gesture.x, gesture.y)) {
                     break;
                 }
             }
 
-            // Taps on belt buttons inject the button's keyCode directly so the
-            // cursor stays put. Walking the window's button list by rect is
-            // sufficient because every belt button is a solid sprite at its
-            // advertised rect (no transparent-mask hit-tests).
-            //
-            // iOS-only: assumes a relative-mouse-mode HUD layout that does not
-            // exist on other touch platforms (Android), so we don't flip them
-            // into a tap-through model they weren't designed for.
-            bool overHud = false;
 #if __APPLE__ && TARGET_OS_IOS
-            // Skip HUD interception when touchscreen mode is active — a UI
-            // screen (dialog, inventory, etc.) owns input and its windows may
-            // overlap the interface bar region. Let those taps reach the UI.
-            if (mouseDeviceUsesRelativeMode() && !touch_get_touchscreen_mode() && gInterfaceBarWindow != -1) {
-                Window* hudWindow = windowGetWindow(gInterfaceBarWindow);
-                if (hudWindow != nullptr && (hudWindow->flags & WINDOW_HIDDEN) == 0) {
-                    Rect hudRect;
-                    if (windowGetRect(gInterfaceBarWindow, &hudRect) == 0
-                        && gesture.x >= hudRect.left && gesture.x <= hudRect.right
-                        && gesture.y >= hudRect.top && gesture.y <= hudRect.bottom) {
-                        overHud = true;
-
-                        if (gesture.numberOfTouches == 1 || gesture.numberOfTouches == 2) {
-                            for (Button* button = hudWindow->buttonListHead; button != nullptr; button = button->next) {
-                                if ((button->flags & BUTTON_FLAG_DISABLED) != 0) {
-                                    continue;
-                                }
-                                int left = hudWindow->rect.left + button->rect.left;
-                                int top = hudWindow->rect.top + button->rect.top;
-                                int right = hudWindow->rect.left + button->rect.right;
-                                int bottom = hudWindow->rect.top + button->rect.bottom;
-                                if (gesture.x < left || gesture.x > right || gesture.y < top || gesture.y > bottom) {
-                                    continue;
-                                }
-                                int keyCode = gesture.numberOfTouches == 1
-                                    ? button->leftMouseUpEventCode
-                                    : button->rightMouseUpEventCode;
-                                if (keyCode == -1) {
-                                    break;
-                                }
-                                enqueueInputEvent(keyCode);
-                                goto tap_done;
-                            }
-                        }
-
-                        // Tap landed on belt chrome (no button under it). Consume
-                        // silently rather than teleporting the cursor to an inert
-                        // region.
-                        goto tap_done;
-                    }
-                }
+            if (handleHudTapThrough(gesture)) {
+                goto tap_done;
             }
 #endif
 
-            if (mouseDeviceUsesRelativeMode() && !overHud) {
+            if (mouseDeviceUsesRelativeMode()) {
                 if (gesture.numberOfTouches == 1) {
                     _mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
                 } else if (gesture.numberOfTouches == 2) {

@@ -141,7 +141,7 @@ namespace {
 
 void quickToolbarInit()
 {
-    if (gToolbarWindow != -1) {
+    if (gToolbarWindow != -1 || !gEnabled) {
         return;
     }
     createWindow();
@@ -155,7 +155,13 @@ void quickToolbarFree()
 
 void quickToolbarShow()
 {
-    if (gToolbarWindow == -1 || gShown || !gEnabled) {
+    if (gShown || !gEnabled) {
+        return;
+    }
+    if (gToolbarWindow == -1) {
+        createWindow();
+    }
+    if (gToolbarWindow == -1) {
         return;
     }
     windowShow(gToolbarWindow);
@@ -175,7 +181,7 @@ void quickToolbarHide()
     if (gToolbarWindow == -1 || !gShown) {
         return;
     }
-    windowHide(gToolbarWindow);
+    destroyWindow();
     gShown = false;
 }
 
