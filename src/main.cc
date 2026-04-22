@@ -1,6 +1,7 @@
 #include "main.h"
 
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "art.h"
@@ -53,6 +54,8 @@ static void main_exit_system();
 static int _main_load_new(char* fname);
 static int main_loadgame_new();
 static void main_unload_new();
+static void mainParseCommandLineArguments(int argc, char** argv);
+static bool mainTryParseDevLoadGameSlot(const char* value, int* slotPtr);
 static void mainLoop();
 static void showDeath();
 static void _main_death_voiceover_callback();
@@ -71,6 +74,8 @@ static bool _main_show_death_scene = false;
 // 0x614838
 static bool _main_death_voiceover_done;
 
+static int gDevLoadGameSlot = -1;
+
 // 0x48099C
 int falloutMain(int argc, char** argv)
 {
@@ -81,6 +86,8 @@ int falloutMain(int argc, char** argv)
     if (!falloutInit(argc, argv)) {
         return 1;
     }
+
+    mainParseCommandLineArguments(argc, argv);
 
     // SFALL: Allow to skip intro movies
     int skipOpeningMovies = settings.ui.skip_opening_movies;
@@ -102,7 +109,14 @@ int falloutMain(int argc, char** argv)
             mainMenuWindowUnhide(true);
 
             mouseShowCursor();
-            int mainMenuRc = mainMenuWindowHandleEvents();
+            int devLoadGameSlot = gDevLoadGameSlot;
+            int mainMenuRc;
+            if (devLoadGameSlot != -1) {
+                gDevLoadGameSlot = -1;
+                mainMenuRc = MAIN_MENU_LOAD_GAME;
+            } else {
+                mainMenuRc = mainMenuWindowHandleEvents();
+            }
             mouseHideCursor();
 
             switch (mainMenuRc) {
@@ -163,6 +177,9 @@ int falloutMain(int argc, char** argv)
                     // NOTE: Uninline.
                     main_loadgame_new();
 
+                    if (devLoadGameSlot != -1) {
+                        lsgDevSetLoadGameSlot(devLoadGameSlot);
+                    }
                     int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
                     if (loadGameRc == -1) {
                         debugPrint("\n ** Error running LoadGame()! **\n");
@@ -240,6 +257,48 @@ static bool falloutInit(int argc, char** argv)
         return false;
     }
 
+    return true;
+}
+
+static void mainParseCommandLineArguments(int argc, char** argv)
+{
+    const char* devLoadGamePrefix = "--dev-load-game=";
+    size_t devLoadGamePrefixLength = strlen(devLoadGamePrefix);
+
+    for (int arg = 1; arg < argc; arg += 1) {
+        if (strncmp(argv[arg], devLoadGamePrefix, devLoadGamePrefixLength) == 0) {
+            int slot;
+            if (mainTryParseDevLoadGameSlot(argv[arg] + devLoadGamePrefixLength, &slot)) {
+                gDevLoadGameSlot = slot;
+            } else {
+                debugPrint("MAIN: invalid --dev-load-game value '%s'\n", argv[arg] + devLoadGamePrefixLength);
+            }
+        }
+    }
+}
+
+static bool mainTryParseDevLoadGameSlot(const char* value, int* slotPtr)
+{
+    if (value == nullptr || slotPtr == nullptr) {
+        return false;
+    }
+
+    if (compat_strnicmp(value, "SLOT", 4) != 0) {
+        return false;
+    }
+
+    const char* slotValue = value + 4;
+    if (*slotValue == '\0') {
+        return false;
+    }
+
+    char* end = nullptr;
+    long slotNumber = strtol(slotValue, &end, 10);
+    if (end == slotValue || *end != '\0' || slotNumber < 1 || slotNumber > 100) {
+        return false;
+    }
+
+    *slotPtr = static_cast<int>(slotNumber - 1);
     return true;
 }
 

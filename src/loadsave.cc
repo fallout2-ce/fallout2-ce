@@ -204,6 +204,8 @@ static int _currentSlotPage = 0;
 // 0x5193B8
 static int _slot_cursor = 0;
 
+static int gDevLoadGameSlot = -1;
+
 // 0x5193BC
 static bool _quick_done = false;
 
@@ -1079,6 +1081,12 @@ int lsgLoadGame(int mode)
         assert(false && "Should be unreachable");
     }
 
+    int devAutoloadSlot = -1;
+    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && gDevLoadGameSlot != -1) {
+        devAutoloadSlot = gDevLoadGameSlot;
+        gDevLoadGameSlot = -1;
+    }
+
     touch_set_touchscreen_mode(windowType == LOAD_SAVE_WINDOW_TYPE_LOAD_GAME || windowType == LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU);
 
     if (lsgWindowInit(windowType) == -1) {
@@ -1103,6 +1111,25 @@ int lsgLoadGame(int mode)
         showDialogBox(_str0, body, 2, 169, 116, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
         lsgWindowFree(windowType);
         return -1;
+    }
+
+    bool devAutoloadFailed = false;
+    bool devAutoloadPending = false;
+
+    if (devAutoloadSlot != -1) {
+        if (devAutoloadSlot >= 0 && devAutoloadSlot < saveLoadTotalSlots) {
+            _slot_cursor = devAutoloadSlot;
+            _currentSlotPage = devAutoloadSlot / slotsPerPage;
+            if (_LSstatus[_slot_cursor] == SLOT_STATE_OCCUPIED) {
+                devAutoloadPending = true;
+            } else {
+                debugPrint("LOADSAVE: dev load slot %d is not occupied\n", _slot_cursor + 1);
+                devAutoloadFailed = true;
+            }
+        } else {
+            debugPrint("LOADSAVE: invalid dev load slot %d\n", devAutoloadSlot + 1);
+            devAutoloadFailed = true;
+        }
     }
 
     switch (_LSstatus[_slot_cursor]) {
@@ -1138,12 +1165,17 @@ int lsgLoadGame(int mode)
     _dbleclkcntr = 24;
 
     int rc = -1;
+    if (devAutoloadFailed) {
+        rc = 2;
+    }
+
     int doubleClickSlot = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
 
         unsigned int time = getTicks();
-        int keyCode = inputGetInput();
+        int keyCode = devAutoloadPending ? 500 : inputGetInput();
+        devAutoloadPending = false;
         bool selectionChanged = false;
         int scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
 
@@ -1497,7 +1529,12 @@ int lsgLoadGame(int mode)
         }
     }
 
-    return rc;
+    return devAutoloadFailed ? -1 : rc;
+}
+
+void lsgDevSetLoadGameSlot(int slot)
+{
+    gDevLoadGameSlot = slot;
 }
 
 // 0x47D2E4
@@ -1936,6 +1973,11 @@ bool _isLoadingGame()
 // 0x47DC68
 static int lsgLoadGameInSlot(int slot)
 {
+    if (slot < 0 || slot >= saveLoadTotalSlots) {
+        return -1;
+    }
+    assert(slot == _slot_cursor);
+
     _loadingGame = true;
 
     if (isInCombat()) {
@@ -1949,9 +1991,6 @@ static int lsgLoadGameInSlot(int slot)
 
     snprintf(_gmpath, sizeof(_gmpath), "%s\\%s%.2d\\", "SAVEGAME", "SLOT", _slot_cursor + 1);
     strcat(_gmpath, "SAVE.DAT");
-
-    LoadSaveSlotData* ptr = &(_LSData[slot]);
-    debugPrint("\nLOADSAVE: Load name: %s\n", ptr->description);
 
     _flptr = fileOpen(_gmpath, "rb");
     if (_flptr == nullptr) {
@@ -1968,6 +2007,9 @@ static int lsgLoadGameInSlot(int slot)
         _loadingGame = false;
         return -1;
     }
+
+    LoadSaveSlotData* ptr = &(_LSData[slot]);
+    debugPrint("\nLOADSAVE: Load name: %s\n", ptr->description);
 
     debugPrint("LOADSAVE: Load file header size read: %d bytes.\n", fileTell(_flptr) - pos);
 
