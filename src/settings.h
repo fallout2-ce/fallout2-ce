@@ -152,7 +152,7 @@ extern Settings settings;
 
 bool settingsInit(bool isMapper, int argc, char** argv);
 bool settingsSave();
-void settingsWriteToConfig();
+void settingsWriteToConfig(bool onlyAdd = false);
 bool settingsExit(bool shouldSave);
 
 } // namespace fallout

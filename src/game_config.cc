@@ -65,9 +65,6 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         return false;
     }
 
-    // Writes default values to config.
-    settingsWriteToConfig();
-
     // CE: Detect alternative default music directory.
     char alternativeMusicPath[COMPAT_MAX_PATH];
     strcpy(alternativeMusicPath, R"(data\sound\music\*.acm)");
@@ -141,6 +138,9 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     // Add key-values from command line, which overrides both defaults and
     // whatever was loaded from `fallout2.cfg`.
     configParseCommandLineArguments(&gGameConfig, argc, argv);
+
+    // Writes default values to config, skipping keys that were already loaded.
+    settingsWriteToConfig(true);
 
     gGameConfigInitialized = true;
 
