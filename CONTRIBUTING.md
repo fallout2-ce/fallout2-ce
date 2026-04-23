@@ -8,6 +8,11 @@ For current sfall compatibility status and the remaining work needed to close ga
 
 The project uses CMake, so building mostly comes down to picking the right preset.
 
+## Commandline arguments
+
+- `--scan-unimplemented` - do an analysis of opcodes and hooks used by loaded mods
+- `--dev-load-game=1` - load the given save game automatically (useful for LLM automation)
+
 ### macOS
 
 - Install the Command Line Tools if needed: `xcode-select --install`
