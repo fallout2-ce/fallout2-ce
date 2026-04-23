@@ -26,8 +26,8 @@ namespace {
 
     static bool gameConfigHasKey(Config* config, const char* section, const char* key);
     static bool gameConfigNeedsF2ResMigration(Config* gameConfig);
-    static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry);
-    static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig);
+    static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, Config* targetConfig, const F2ResMigrationEntry& entry);
+    static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig, Config* targetConfig);
 
     static constexpr F2ResMigrationEntry kF2ResMigrationEntries[] = {
         { "MAIN", "SCR_WIDTH", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY },
@@ -54,9 +54,9 @@ namespace {
         return !gameConfigHasKey(gameConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY);
     }
 
-    static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry)
+    static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, Config* targetConfig, const F2ResMigrationEntry& entry)
     {
-        assert(legacyConfig != nullptr && gameConfig != nullptr);
+        assert(legacyConfig != nullptr && gameConfig != nullptr && targetConfig != nullptr);
 
         if (gameConfigHasKey(gameConfig, entry.targetSection, entry.targetKey)) {
             return false;
@@ -67,12 +67,12 @@ namespace {
             return false;
         }
 
-        return configSetString(gameConfig, entry.targetSection, entry.targetKey, value);
+        return configSetString(targetConfig, entry.targetSection, entry.targetKey, value);
     }
 
-    static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig)
+    static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig, Config* targetConfig)
     {
-        assert(legacyConfig != nullptr && gameConfig != nullptr);
+        assert(legacyConfig != nullptr && gameConfig != nullptr && targetConfig != nullptr);
 
         if (gameConfigHasKey(gameConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY)) {
             return false;
@@ -83,7 +83,7 @@ namespace {
             return false;
         }
 
-        return configSetInt(gameConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, value + 1);
+        return configSetInt(targetConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, value + 1);
     }
 
 } // namespace
@@ -97,7 +97,15 @@ bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConf
         return false;
     }
 
-    if (!gameConfigNeedsF2ResMigration(gameConfig)) {
+    Config fileConfig;
+    if (!configInit(&fileConfig)) {
+        return false;
+    }
+
+    configRead(&fileConfig, gameConfigFilePath, false);
+
+    if (!gameConfigNeedsF2ResMigration(&fileConfig)) {
+        configFree(&fileConfig);
         return false;
     }
 
@@ -109,23 +117,25 @@ bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConf
 
     Config legacyConfig;
     if (!configInit(&legacyConfig)) {
+        configFree(&fileConfig);
         return false;
     }
 
     bool migrated = false;
     if (configRead(&legacyConfig, f2ResFilePath, false)) {
         for (const auto& entry : kF2ResMigrationEntries) {
-            if (gameConfigMigrateStringKey(&legacyConfig, gameConfig, entry)) {
+            if (gameConfigMigrateStringKey(&legacyConfig, &fileConfig, gameConfig, entry)) {
                 migrated = true;
             }
         }
 
-        if (gameConfigMigrateScaleKey(&legacyConfig, gameConfig)) {
+        if (gameConfigMigrateScaleKey(&legacyConfig, &fileConfig, gameConfig)) {
             migrated = true;
         }
     }
 
     configFree(&legacyConfig);
+    configFree(&fileConfig);
     return migrated;
 }
 

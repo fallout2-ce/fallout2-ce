@@ -7,6 +7,7 @@
 
 #include "animation.h"
 #include "db.h"
+#include "debug.h"
 #include "input.h"
 #include "platform_compat.h"
 #include "scripts.h"
@@ -34,6 +35,25 @@ struct GlobalScriptsState {
 
 static GlobalScriptsState* state = nullptr;
 
+static bool sfall_gl_scr_is_loadable(const char* path)
+{
+    File* stream = fileOpen(path, "rb");
+    if (stream == nullptr) {
+        debugPrint("Skipping global script %s: cannot open.\n", path);
+        return false;
+    }
+
+    int size = fileGetSize(stream);
+    fileClose(stream);
+
+    if (size <= 0) {
+        debugPrint("Skipping global script %s: empty file.\n", path);
+        return false;
+    }
+
+    return true;
+}
+
 bool sfall_gl_scr_init()
 {
     state = new (std::nothrow) GlobalScriptsState();
@@ -50,7 +70,9 @@ bool sfall_gl_scr_init()
         for (int index = 0; index < filesLength; index++) {
             char path[COMPAT_MAX_PATH];
             snprintf(path, sizeof(path), "%s\\%s", dir, files[index]);
-            state->paths.push_back(std::string { path });
+            if (sfall_gl_scr_is_loadable(path)) {
+                state->paths.push_back(std::string { path });
+            }
         }
 
         fileNameListFree(&files, 0);
