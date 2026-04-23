@@ -571,7 +571,7 @@ void scriptHooks_BarterPrice(BarterPriceContext* ctx)
 /*
     HOOK_INVENWIELD
 
-    Runs when an item is equipped or unequipped — for any critter, including
+    Fires on equip/unequip actions that reach _invenWieldFunc, including during
     NPC auto-equip via "Use Best Armor". This is the npc_armor mod's primary
     trigger for swapping an NPC's display sprite.
 
@@ -580,18 +580,24 @@ void scriptHooks_BarterPrice(BarterPriceContext* ctx)
     int     arg2 - INVEN_TYPE_WORN (0), INVEN_TYPE_RIGHT_HAND (1), or
                    INVEN_TYPE_LEFT_HAND (2)
     int     arg3 - 1 on wield, 0 on unwield
+    int     arg4 - 1 when removing an equipped item from inventory, 0 normal
 
-    int     ret0 - non-zero allows the action; 0 vetoes it
+    int     ret0 - -1 or no return = use engine handler (proceed),
+                   any other value = cancel/override
 */
-bool scriptHooks_InvenWield(Object* critter, Object* item, int slot, int isWield)
+bool scriptHooks_InvenWield(Object* critter, Object* item, int slot, int isWield, int isRemove)
 {
-    ScriptHookCall hook(HOOK_INVENWIELD, 1, { critter, item, slot, isWield });
+    ScriptHookCall hook(HOOK_INVENWIELD, 1, { critter, item, slot, isWield, isRemove });
     hook.call();
 
     if (hook.numReturnValues() <= 0) {
         return true;
     }
-    return hook.getReturnValueAt(0).asInt() != 0;
+    int ret = hook.getReturnValueAt(0).asInt();
+    if (ret == -1) {
+        return true;
+    }
+    return ret != 0;
 }
 
 /*
@@ -603,17 +609,18 @@ bool scriptHooks_InvenWield(Object* critter, Object* item, int slot, int isWield
 
     Critter arg0 - the critter being evaluated
     Item    arg1 - the candidate weapon
-    int     arg2 - hand slot (1 right, 2 left)
+    int     arg2 - hitMode (attack type enum, or -1 for player path)
+    int     arg3 - original engine result (1=can use, 0=cannot)
 
-    int     ret0 - non-zero permits use; 0 forbids it
+    int     ret0 - overrides engine result
 */
-bool scriptHooks_CanUseWeapon(Object* critter, Object* weapon, int slot)
+bool scriptHooks_CanUseWeapon(Object* critter, Object* weapon, int hitMode, bool engineResult)
 {
-    ScriptHookCall hook(HOOK_CANUSEWEAPON, 1, { critter, weapon, slot });
+    ScriptHookCall hook(HOOK_CANUSEWEAPON, 1, { critter, weapon, hitMode, (int)engineResult });
     hook.call();
 
     if (hook.numReturnValues() <= 0) {
-        return true;
+        return engineResult;
     }
     return hook.getReturnValueAt(0).asInt() != 0;
 }

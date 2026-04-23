@@ -10,17 +10,14 @@ procedure canuseweapon_handler begin
     variable
         critter := get_sfall_arg_at(0),
         weapon := get_sfall_arg_at(1),
-        slot := get_sfall_arg_at(2),
-        slot_name := "unknown";
+        hitMode := get_sfall_arg_at(2),
+        engineResult := get_sfall_arg_at(3);
 
-    if (slot == 1) then slot_name := "right_hand";
-    else if (slot == 2) then slot_name := "left_hand";
-
-    display_msg(string_format("canuseweapon %s weapon=%s slot=%s",
-        obj_name(critter), obj_name(weapon), slot_name));
+    display_msg(string_format("canuseweapon %s weapon=%s hitMode=%d engineResult=%d",
+        obj_name(critter), obj_name(weapon), hitMode, engineResult));
 
     if (canuseweapon_blocking) then begin
-        display_msg("canuseweapon BLOCKED");
+        display_msg("canuseweapon BLOCKED (overriding engine allow)");
         set_sfall_return(0);
     end
 end

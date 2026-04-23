@@ -12,6 +12,7 @@ procedure invenwield_handler begin
         item := get_sfall_arg_at(1),
         slot := get_sfall_arg_at(2),
         is_wield := get_sfall_arg_at(3),
+        is_remove := get_sfall_arg_at(4),
         slot_name := "unknown",
         action_name;
 
@@ -22,8 +23,8 @@ procedure invenwield_handler begin
     if (is_wield) then action_name := "wield";
     else action_name := "unwield";
 
-    display_msg(string_format("invenwield %s %s slot=%s critter=%s",
-        action_name, obj_name(item), slot_name, obj_name(critter)));
+    display_msg(string_format("invenwield %s %s slot=%s critter=%s isRemove=%d",
+        action_name, obj_name(item), slot_name, obj_name(critter), is_remove));
 
     if (invenwield_blocking) then begin
         display_msg("invenwield BLOCKED");
