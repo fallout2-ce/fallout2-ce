@@ -51,6 +51,9 @@ struct UISettings {
     // Extends AP bar to 16 dots instead of 10.
     bool extend_ap_bar = false;
 
+    // Expands barter/trade window vertically, adding a 4th item slot per side.
+    bool expand_barter_window = false;
+
     int splash_screen_size = 0;
 
     bool ignore_map_edges = false;

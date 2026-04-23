@@ -25,6 +25,7 @@
 #include "game_sound.h"
 #include "input.h"
 #include "interface.h"
+#include "inventory.h"
 #include "item.h"
 #include "kb.h"
 #include "lips.h"
@@ -424,6 +425,15 @@ static const char* _react_strs[3] = {
 // 0x518918
 static int _dialogue_subwin_len = 0;
 
+// Extra pixels the expanded barter frame adds below the 480-tall dialog background.
+// 48 = INVENTORY_SLOT_HEIGHT (asserted in inventory.cc).
+constexpr int kExpandedBarterExtraHeight = kExpandedBarterExtraSlots * 48;
+
+// Set to true by gameDialogCreateBarterWindow when the expanded FRM loaded
+// successfully; reset to false at the end of gameDialogDestroyBarterWindow.
+// This is the single source of truth used by Destroy and inventory setup.
+static bool gBarterWindowExpanded = false;
+
 // 0x51891C
 static GameDialogButtonData gGameDialogDispositionButtonsData[5] = {
     { 438, 37, 397, 395, 396, nullptr, nullptr, nullptr, 2098, 4 },
@@ -636,10 +646,18 @@ static void gameDialogTicker();
 // Animates scroll up or down of a given dialog sub-window.
 // If scrolling up - only uses subWindowFrmData to gradually fill the window (must be pre-filled with bg window contents).
 // If scroliing down - uses both subWindowFrmData and bgWindowFrmData to fill parts of window buffer.
-static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* subWindowFrmData, unsigned char* windowBuf, unsigned char* bgWindowFrmData, int windowHeight, bool instantScrollUp = false);
+static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* subWindowFrmData, unsigned char* windowBuf, const unsigned char* bgWindowFrmData, int windowHeight, bool instantScrollUp = false);
 static int _text_num_lines(const char* text, int maxWidth);
 static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color);
 static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw);
+struct BarterBackground {
+    ArtPtr customArt;
+    FrmImage vanillaFrm;
+    const unsigned char* data = nullptr;
+    int height = 0;
+    bool expanded = false;
+};
+static BarterBackground loadBarterBackground(bool requestExpanded);
 static int gameDialogCreateBarterWindow();
 static void gameDialogDestroyBarterWindow();
 static void gameDialogBarterCleanupTables();
@@ -2987,7 +3005,7 @@ void _talk_to_critter_reacts(int reaction)
 }
 
 // 0x447D98
-void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowFrmData, unsigned char* windowBuf, unsigned char* bgWindowFrmData, int windowHeight, bool instantScrollUp)
+void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* windowFrmData, unsigned char* windowBuf, const unsigned char* bgWindowFrmData, int windowHeight, bool instantScrollUp)
 {
     constexpr int stripHeight = 10;
     int height = windowHeight;
@@ -3015,7 +3033,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowF
             sharedFpsLimiter.mark();
 
             soundContinueAll();
-            blitBufferToBuffer(windowFrmData,
+            blitBufferToBuffer(const_cast<unsigned char*>(windowFrmData),
                 GAME_DIALOG_WINDOW_WIDTH,
                 height,
                 GAME_DIALOG_WINDOW_WIDTH,
@@ -3042,7 +3060,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowF
 
             soundContinueAll();
 
-            blitBufferToBuffer(bgWindowFrmData,
+            blitBufferToBuffer(const_cast<unsigned char*>(bgWindowFrmData),
                 GAME_DIALOG_WINDOW_WIDTH,
                 stripHeight,
                 GAME_DIALOG_WINDOW_WIDTH,
@@ -3053,7 +3071,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, unsigned char* windowF
             height -= stripHeight;
             bgWindowFrmData += stripHeight * (GAME_DIALOG_WINDOW_WIDTH);
 
-            blitBufferToBuffer(windowFrmData,
+            blitBufferToBuffer(const_cast<unsigned char*>(windowFrmData),
                 GAME_DIALOG_WINDOW_WIDTH,
                 height,
                 GAME_DIALOG_WINDOW_WIDTH,
@@ -3253,35 +3271,72 @@ void gameDialogEndBarter()
     dialogSwitchMode = GAME_DIALOG_MODE_TALK;
 }
 
+// Loads the barter/trade background FRM. When `requestExpanded` is true, tries
+// the custom expanded FRM and falls back to vanilla on failure.
+static BarterBackground loadBarterBackground(bool requestExpanded)
+{
+    BarterBackground result;
+
+    int frmId;
+    const char* expandedFrmPath;
+    if (gGameDialogSpeakerIsPartyMember) {
+        frmId = 420;
+        expandedFrmPath = "art\\intrface\\trade_e.frm";
+    } else {
+        frmId = 111;
+        expandedFrmPath = "art\\intrface\\barter_e.frm";
+    }
+
+    if (requestExpanded) {
+        result.customArt = ArtPtr { artLoad(expandedFrmPath) };
+        ConstBuffer2D buf = result.customArt ? artGetFrameBuffer(result.customArt.get(), 0, 0) : ConstBuffer2D { };
+        if (buf.data != nullptr) {
+            result.data = buf.data;
+            result.height = buf.height;
+            result.expanded = true;
+        } else {
+            result.customArt.reset();
+        }
+    }
+
+    if (!result.expanded) {
+        int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, frmId, 0, 0, 0);
+        if (result.vanillaFrm.lock(backgroundFid)) {
+            result.data = result.vanillaFrm.getData();
+            result.height = result.vanillaFrm.getHeight();
+        }
+    }
+
+    return result;
+}
+
 // 0x448290 gdialog_barter_create_win
 int gameDialogCreateBarterWindow()
 {
     dialogMode = GAME_DIALOG_MODE_BARTER;
 
-    int frmId;
-    if (gGameDialogSpeakerIsPartyMember) {
-        // trade.frm - party member barter/trade interface
-        frmId = 420;
-    } else {
-        // barter.frm - barter window
-        frmId = 111;
-    }
+    bool requestExpanded = settings.ui.expand_barter_window
+        && screenGetHeight() >= GAME_DIALOG_WINDOW_HEIGHT + kExpandedBarterExtraHeight;
 
-    FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, frmId, 0, 0, 0);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
+    BarterBackground bg = loadBarterBackground(requestExpanded);
+    gBarterWindowExpanded = bg.expanded;
+
+    if (bg.data == nullptr) {
         return -1;
     }
 
-    unsigned char* backgroundData = backgroundFrmImage.getData();
-    if (backgroundData == nullptr) {
-        return -1;
-    }
+    _dialogue_subwin_len = bg.height;
 
-    _dialogue_subwin_len = backgroundFrmImage.getHeight();
+    // Effective overlap with the 480-tall dialog background. The expanded
+    // barter frame extends kExpandedBarterExtraHeight pixels below the
+    // background, so the bg-copy and scroll operations must be clipped to
+    // what the background actually covers.
+    int bgOverlapHeight = gBarterWindowExpanded
+        ? _dialogue_subwin_len - kExpandedBarterExtraHeight
+        : _dialogue_subwin_len;
 
     int barterWindowX = (screenGetWidth() - GAME_DIALOG_WINDOW_WIDTH) / 2;
-    int barterWindowY = (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2 + GAME_DIALOG_WINDOW_HEIGHT - _dialogue_subwin_len;
+    int barterWindowY = (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2 + GAME_DIALOG_WINDOW_HEIGHT - bgOverlapHeight;
     gGameDialogWindow = windowCreate(barterWindowX,
         barterWindowY,
         GAME_DIALOG_WINDOW_WIDTH,
@@ -3292,15 +3347,12 @@ int gameDialogCreateBarterWindow()
         return -1;
     }
 
-    int width = GAME_DIALOG_WINDOW_WIDTH;
-
     unsigned char* windowBuffer = windowGetBuffer(gGameDialogWindow);
-    unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow);
-    blitBufferToBuffer(backgroundWindowBuffer + width * (480 - _dialogue_subwin_len), width, _dialogue_subwin_len, width, windowBuffer, width);
+    Buffer2D subwinBuf { windowBuffer, windowGetWidth(gGameDialogWindow), windowGetHeight(gGameDialogWindow) };
+    ConstBuffer2D bgBuf { windowGetBuffer(gGameDialogBackgroundWindow), GAME_DIALOG_WINDOW_WIDTH, GAME_DIALOG_WINDOW_HEIGHT };
+    blitBuffer2D(bgBuf, 0, GAME_DIALOG_WINDOW_HEIGHT - bgOverlapHeight, GAME_DIALOG_WINDOW_WIDTH, bgOverlapHeight, subwinBuf);
 
-    _gdialog_scroll_subwin(gGameDialogWindow, true, backgroundData, windowBuffer, nullptr, _dialogue_subwin_len);
-
-    backgroundFrmImage.unlock();
+    _gdialog_scroll_subwin(gGameDialogWindow, true, bg.data, windowBuffer, nullptr, _dialogue_subwin_len);
 
     // TRADE
     _gdialog_buttons[0] = buttonCreate(gGameDialogWindow, 40, 162, 14, 14, -1, -1, -1, KEY_LOWERCASE_M, _redButtonNormalFrmImage.getData(), _redButtonPressedFrmImage.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
@@ -3360,29 +3412,31 @@ void gameDialogDestroyBarterWindow()
         _gdialog_buttons[index] = -1;
     }
 
-    unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow);
-    backgroundWindowBuffer += (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len);
+    BarterBackground bg = loadBarterBackground(gBarterWindowExpanded);
 
-    int frmId;
-    if (gGameDialogSpeakerIsPartyMember) {
-        // trade.frm - party member barter/trade interface
-        frmId = 420;
-    } else {
-        // barter.frm - barter window
-        frmId = 111;
-    }
+    if (bg.data != nullptr) {
+        int bgOverlapHeight = gBarterWindowExpanded
+            ? _dialogue_subwin_len - kExpandedBarterExtraHeight
+            : _dialogue_subwin_len;
 
-    FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, frmId, 0, 0, 0);
-    if (backgroundFrmImage.lock(backgroundFid)) {
+        unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow)
+            + GAME_DIALOG_WINDOW_WIDTH * (GAME_DIALOG_WINDOW_HEIGHT - bgOverlapHeight);
+
         unsigned char* windowBuffer = windowGetBuffer(gGameDialogWindow);
-        _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowBuffer, backgroundWindowBuffer, _dialogue_subwin_len);
+        _gdialog_scroll_subwin(gGameDialogWindow, false, bg.data, windowBuffer, backgroundWindowBuffer, bgOverlapHeight);
     }
 
     windowDestroy(gGameDialogWindow);
     gGameDialogWindow = -1;
 
+    gBarterWindowExpanded = false;
+
     aiAttemptWeaponReload(gGameDialogSpeaker, 0);
+}
+
+bool gameDialogIsBarterWindowExpanded()
+{
+    return gBarterWindowExpanded;
 }
 
 // 0x448660 gdialog_barter_cleanup_tables

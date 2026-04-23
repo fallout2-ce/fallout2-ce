@@ -5,6 +5,9 @@
 
 namespace fallout {
 
+// Extra slots per scroller added by the expanded barter/trade window.
+constexpr int kExpandedBarterExtraSlots = 1;
+
 typedef enum Hand {
     // Item1 (Punch)
     HAND_LEFT,
