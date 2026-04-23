@@ -197,6 +197,7 @@ static const int gLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
 const int saveLoadPages = 10;
 constexpr int slotsPerPage = 10;
 const int saveLoadTotalSlots = saveLoadPages * slotsPerPage;
+constexpr int kLoadSaveActionDone = 500;
 
 // Global variable to track the current slot page
 static int _currentSlotPage = 0;
@@ -647,7 +648,7 @@ int lsgSaveGame(int mode)
 
                 _slot_cursor = clickedSlot;
                 if (clickedSlot == doubleClickSlot) {
-                    keyCode = 500;
+                    keyCode = kLoadSaveActionDone;
                     soundPlayFile("ib1p1xx1");
                 }
 
@@ -674,12 +675,12 @@ int lsgSaveGame(int mode)
                 brightnessDecrease();
                 break;
             case KEY_RETURN:
-                keyCode = 500;
+                keyCode = kLoadSaveActionDone;
                 break;
             }
         }
 
-        if (keyCode == 500) {
+        if (keyCode == kLoadSaveActionDone) {
             if (_LSstatus[_slot_cursor] == SLOT_STATE_OCCUPIED) {
                 rc = 1;
                 // Save game already exists, overwrite?
@@ -1168,7 +1169,7 @@ int lsgLoadGame(int mode)
         sharedFpsLimiter.mark();
 
         unsigned int time = getTicks();
-        int keyCode = devAutoloadPending ? 500 : inputGetInput();
+        int keyCode = devAutoloadPending ? kLoadSaveActionDone : inputGetInput();
         devAutoloadPending = false;
         bool selectionChanged = false;
         int scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
@@ -1291,7 +1292,7 @@ int lsgLoadGame(int mode)
 
                 _slot_cursor = clickedSlot;
                 if (clickedSlot == doubleClickSlot) {
-                    keyCode = 500;
+                    keyCode = kLoadSaveActionDone;
                     soundPlayFile("ib1p1xx1");
                 }
 
@@ -1309,7 +1310,7 @@ int lsgLoadGame(int mode)
                 brightnessIncrease();
                 break;
             case KEY_RETURN:
-                keyCode = 500;
+                keyCode = kLoadSaveActionDone;
                 break;
             case KEY_CTRL_Q:
             case KEY_CTRL_X:
@@ -1322,7 +1323,7 @@ int lsgLoadGame(int mode)
             }
         }
 
-        if (keyCode == 500) {
+        if (keyCode == kLoadSaveActionDone) {
             if (_LSstatus[_slot_cursor] != SLOT_STATE_EMPTY) {
                 rc = 1;
             } else {
@@ -1690,7 +1691,7 @@ static int lsgWindowInit(int windowType)
         -1,
         -1,
         -1,
-        500,
+        kLoadSaveActionDone,
         _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_NORMAL].getData(),
         _loadsaveFrmImages[LOAD_SAVE_FRM_RED_BUTTON_PRESSED].getData(),
         nullptr,
