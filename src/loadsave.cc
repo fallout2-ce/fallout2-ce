@@ -1532,6 +1532,11 @@ void lsgDevSetLoadGameSlot(int slot)
     gDevLoadGameSlot = slot;
 }
 
+int lsgGetTotalSlotCount()
+{
+    return saveLoadTotalSlots;
+}
+
 // 0x47D2E4
 static int lsgWindowInit(int windowType)
 {

@@ -285,7 +285,7 @@ static bool mainTryParseDevLoadGameSlot(const char* value, int* slotPtr)
 
     char* end = nullptr;
     long slotNumber = strtol(value, &end, 10);
-    if (end == value || *end != '\0' || slotNumber < 1 || slotNumber > 100) {
+    if (end == value || *end != '\0' || slotNumber < 1 || slotNumber > lsgGetTotalSlotCount()) {
         return false;
     }
 
