@@ -11,7 +11,7 @@ The project uses CMake, so building mostly comes down to picking the right prese
 ## Commandline arguments
 
 - `--scan-unimplemented` - do an analysis of opcodes and hooks used by loaded mods
-- `--dev-load-game=SLOT01` - load the given save game automatically (useful for LLM automation)
+- `--dev-load-game=1` - load the given save game automatically (useful for LLM automation)
 
 ### macOS
 

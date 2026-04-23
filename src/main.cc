@@ -283,18 +283,9 @@ static bool mainTryParseDevLoadGameSlot(const char* value, int* slotPtr)
         return false;
     }
 
-    if (compat_strnicmp(value, "SLOT", 4) != 0) {
-        return false;
-    }
-
-    const char* slotValue = value + 4;
-    if (*slotValue == '\0') {
-        return false;
-    }
-
     char* end = nullptr;
-    long slotNumber = strtol(slotValue, &end, 10);
-    if (end == slotValue || *end != '\0' || slotNumber < 1 || slotNumber > 100) {
+    long slotNumber = strtol(value, &end, 10);
+    if (end == value || *end != '\0' || slotNumber < 1 || slotNumber > 100) {
         return false;
     }
 

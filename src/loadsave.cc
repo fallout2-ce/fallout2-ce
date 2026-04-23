@@ -1113,7 +1113,6 @@ int lsgLoadGame(int mode)
         return -1;
     }
 
-    bool devAutoloadFailed = false;
     bool devAutoloadPending = false;
 
     if (devAutoloadSlot != -1) {
@@ -1124,11 +1123,9 @@ int lsgLoadGame(int mode)
                 devAutoloadPending = true;
             } else {
                 debugPrint("LOADSAVE: dev load slot %d is not occupied\n", _slot_cursor + 1);
-                devAutoloadFailed = true;
             }
         } else {
             debugPrint("LOADSAVE: invalid dev load slot %d\n", devAutoloadSlot + 1);
-            devAutoloadFailed = true;
         }
     }
 
@@ -1167,7 +1164,7 @@ int lsgLoadGame(int mode)
     int rc = -1;
 
     int doubleClickSlot = -1;
-    while (rc == -1 && !devAutoloadFailed) {
+    while (rc == -1) {
         sharedFpsLimiter.mark();
 
         unsigned int time = getTicks();
@@ -1329,12 +1326,7 @@ int lsgLoadGame(int mode)
             if (_LSstatus[_slot_cursor] != SLOT_STATE_EMPTY) {
                 rc = 1;
             } else {
-                if (devAutoloadSlot != -1) {
-                    devAutoloadFailed = true;
-                    rc = -1;
-                } else {
-                    rc = -1;
-                }
+                rc = -1;
             }
 
             selectionChanged = true;
@@ -1482,12 +1474,6 @@ int lsgLoadGame(int mode)
         if (rc == 1) {
             switch (_LSstatus[_slot_cursor]) {
             case SLOT_STATE_UNSUPPORTED_VERSION:
-                if (devAutoloadSlot != -1) {
-                    devAutoloadFailed = true;
-                    rc = -1;
-                    break;
-                }
-
                 soundPlayFile("iisxxxx1");
                 strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
                 strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
@@ -1496,12 +1482,6 @@ int lsgLoadGame(int mode)
                 rc = -1;
                 break;
             case SLOT_STATE_ERROR:
-                if (devAutoloadSlot != -1) {
-                    devAutoloadFailed = true;
-                    rc = -1;
-                    break;
-                }
-
                 soundPlayFile("iisxxxx1");
                 strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
                 strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 136));
@@ -1510,19 +1490,14 @@ int lsgLoadGame(int mode)
                 break;
             default:
                 if (lsgLoadGameInSlot(_slot_cursor) == -1) {
-                    if (devAutoloadSlot != -1) {
-                        devAutoloadFailed = true;
-                        rc = -1;
-                    } else {
-                        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
-                        soundPlayFile("iisxxxx1");
-                        strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
-                        strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
-                        showDialogBox(_str0, body, 1, 169, 116, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
-                        mapNewMap();
-                        _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
-                        rc = -1;
-                    }
+                    gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+                    soundPlayFile("iisxxxx1");
+                    strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 134));
+                    strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 135));
+                    showDialogBox(_str0, body, 1, 169, 116, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
+                    mapNewMap();
+                    _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
+                    rc = -1;
                 }
                 break;
             }
@@ -1548,7 +1523,7 @@ int lsgLoadGame(int mode)
         }
     }
 
-    return devAutoloadFailed ? -1 : rc;
+    return rc;
 }
 
 void lsgDevSetLoadGameSlot(int slot)
