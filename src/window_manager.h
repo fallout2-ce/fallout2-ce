@@ -100,7 +100,7 @@ typedef struct MenuBar {
     int backgroundColor;
 } MenuBar;
 
-typedef void WindowBlitProc(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch);
+typedef void WindowBlitProc(const unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch);
 
 typedef struct Button Button;
 typedef struct ButtonGroup ButtonGroup;

@@ -274,6 +274,7 @@ static int gGameDialogBarterModifier = 0;
 // 0x518740
 static int gGameDialogBackgroundWindow = -1;
 
+// Dialog sub-window: barter, party control, customization
 // 0x518744
 static int gGameDialogWindow = -1;
 
@@ -645,8 +646,8 @@ static void _gDialogRefreshOptionsRect(int win, Rect* drawRect);
 static void gameDialogTicker();
 // Animates scroll up or down of a given dialog sub-window.
 // If scrolling up - only uses subWindowFrmData to gradually fill the window (must be pre-filled with bg window contents).
-// If scroliing down - uses both subWindowFrmData and bgWindowFrmData to fill parts of window buffer.
-static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* subWindowFrmData, unsigned char* windowBuf, const unsigned char* bgWindowFrmData, int windowHeight, bool instantScrollUp = false);
+// If scroliing down - uses both subWindowFrmData and bgWindowBuf to fill parts of window buffer.
+static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* subWindowFrmData, unsigned char* windowBuf, const unsigned char* bgWindowBuf, int bgWindowHeight, bool instantScrollUp = false);
 static int _text_num_lines(const char* text, int maxWidth);
 static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color);
 static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw);
@@ -2997,9 +2998,10 @@ void _talk_to_critter_reacts(int reaction)
 }
 
 // 0x447D98
-void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* windowFrmData, unsigned char* windowBuf, const unsigned char* bgWindowFrmData, int windowHeight, bool instantScrollUp)
+void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* windowFrmData, unsigned char* windowBuf, const unsigned char* bgWindowBuf, int bgWindowHeight, bool instantScrollUp)
 {
     constexpr int stripHeight = 10;
+    int windowHeight = windowGetHeight(windowIdx);
     int height = windowHeight;
     unsigned char* dest = windowBuf;
     Rect rect;
@@ -3025,7 +3027,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
             sharedFpsLimiter.mark();
 
             soundContinueAll();
-            blitBufferToBuffer(const_cast<unsigned char*>(windowFrmData),
+            blitBufferToBuffer(windowFrmData,
                 GAME_DIALOG_WINDOW_WIDTH,
                 height,
                 GAME_DIALOG_WINDOW_WIDTH,
@@ -3047,23 +3049,35 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
         rect.left = 0;
         rect.top = 0;
 
+        int bgRowsRead = 0;
         for (int strips = windowHeight / stripHeight; strips > 0; strips--) {
             sharedFpsLimiter.mark();
 
             soundContinueAll();
 
-            blitBufferToBuffer(const_cast<unsigned char*>(bgWindowFrmData),
-                GAME_DIALOG_WINDOW_WIDTH,
-                stripHeight,
-                GAME_DIALOG_WINDOW_WIDTH,
-                dest,
-                GAME_DIALOG_WINDOW_WIDTH);
+            int bgRowsRemaining = bgWindowHeight - bgRowsRead;
+            int blitHeight = std::min(stripHeight, bgRowsRemaining);
+            if (blitHeight > 0) {
+                blitBufferToBuffer(bgWindowBuf,
+                    GAME_DIALOG_WINDOW_WIDTH,
+                    blitHeight,
+                    GAME_DIALOG_WINDOW_WIDTH,
+                    dest,
+                    GAME_DIALOG_WINDOW_WIDTH);
+                bgWindowBuf += blitHeight * GAME_DIALOG_WINDOW_WIDTH;
+            }
+            // Because bg window buffer (overlapped area) can be smaller than dialog, need to fill empty area with black color.
+            int zeroHeight = stripHeight - blitHeight;
+            if (zeroHeight > 0) {
+                memset(dest + blitHeight * GAME_DIALOG_WINDOW_WIDTH, 0,
+                    zeroHeight * GAME_DIALOG_WINDOW_WIDTH);
+            }
+            bgRowsRead += stripHeight;
 
             dest += stripHeight * (GAME_DIALOG_WINDOW_WIDTH);
             height -= stripHeight;
-            bgWindowFrmData += stripHeight * (GAME_DIALOG_WINDOW_WIDTH);
 
-            blitBufferToBuffer(const_cast<unsigned char*>(windowFrmData),
+            blitBufferToBuffer(windowFrmData,
                 GAME_DIALOG_WINDOW_WIDTH,
                 height,
                 GAME_DIALOG_WINDOW_WIDTH,
@@ -3314,9 +3328,9 @@ int gameDialogCreateBarterWindow()
     }
 
     unsigned char* windowBuffer = windowGetBuffer(gGameDialogWindow);
-    Buffer2D subwinBuf { windowBuffer, windowGetWidth(gGameDialogWindow), windowGetHeight(gGameDialogWindow) };
+    Buffer2D subWinBuf { windowBuffer, windowGetWidth(gGameDialogWindow), windowGetHeight(gGameDialogWindow) };
     ConstBuffer2D bgBuf { windowGetBuffer(gGameDialogBackgroundWindow), GAME_DIALOG_WINDOW_WIDTH, GAME_DIALOG_WINDOW_HEIGHT };
-    blitBuffer2D(bgBuf, 0, GAME_DIALOG_WINDOW_HEIGHT - bgOverlapHeight, GAME_DIALOG_WINDOW_WIDTH, bgOverlapHeight, subwinBuf);
+    blitBuffer2D(bgBuf, 0, GAME_DIALOG_WINDOW_HEIGHT - bgOverlapHeight, GAME_DIALOG_WINDOW_WIDTH, bgOverlapHeight, subWinBuf);
 
     _gdialog_scroll_subwin(gGameDialogWindow, true, _barterBackgroundFrmImage.getData(), windowBuffer, nullptr, _dialogue_subwin_len);
 
@@ -3388,6 +3402,8 @@ void gameDialogDestroyBarterWindow()
 
         unsigned char* windowBuffer = windowGetBuffer(gGameDialogWindow);
         _gdialog_scroll_subwin(gGameDialogWindow, false, _barterBackgroundFrmImage.getData(), windowBuffer, backgroundWindowBuffer, bgOverlapHeight);
+
+        _barterBackgroundFrmImage.unlock();
     }
 
     windowDestroy(gGameDialogWindow);
