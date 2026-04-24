@@ -18,6 +18,9 @@
 #include <zlib.h>
 
 #ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <fcntl.h>
 #include <io.h>
 #include <sys/stat.h>
@@ -32,12 +35,6 @@
 namespace fallout {
 
 namespace {
-
-#ifdef _WIN32
-using NativeStat = struct _stat;
-#else
-using NativeStat = struct stat;
-#endif
 
 constexpr int kMaxCreateRecursionDepth = 128;
 
@@ -343,32 +340,25 @@ std::string relativePathToDatPath(const std::string& path)
     return normalizeDatPath(path);
 }
 
-bool getFileStatus(const std::string& path, NativeStat* status)
-{
-#ifdef _WIN32
-    return _stat(path.c_str(), status) == 0;
-#else
-    return stat(path.c_str(), status) == 0;
-#endif
-}
-
 bool isDirectoryPath(const std::string& path)
 {
-    NativeStat status;
 #ifdef _WIN32
-    return getFileStatus(path, &status) && (status.st_mode & _S_IFDIR) != 0;
+    DWORD attributes = GetFileAttributesA(path.c_str());
+    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 #else
-    return getFileStatus(path, &status) && S_ISDIR(status.st_mode);
+    struct stat status;
+    return stat(path.c_str(), &status) == 0 && S_ISDIR(status.st_mode);
 #endif
 }
 
 bool isRegularFilePath(const std::string& path)
 {
-    NativeStat status;
 #ifdef _WIN32
-    return getFileStatus(path, &status) && (status.st_mode & _S_IFREG) != 0;
+    DWORD attributes = GetFileAttributesA(path.c_str());
+    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 #else
-    return getFileStatus(path, &status) && S_ISREG(status.st_mode);
+    struct stat status;
+    return stat(path.c_str(), &status) == 0 && S_ISREG(status.st_mode);
 #endif
 }
 
