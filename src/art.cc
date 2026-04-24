@@ -1418,6 +1418,9 @@ bool FrmImage::lock(const char* frmPath)
 
 bool FrmImage::lock(ObjectType objType, const char* frmRelativePath)
 {
+    if (objType < OBJ_TYPE_ITEM || objType >= OBJ_TYPE_COUNT) {
+        return false;
+    }
     snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objType].name, frmRelativePath);
     return lock(_art_name);
 }
