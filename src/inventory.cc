@@ -56,7 +56,7 @@ namespace fallout {
 #define INVENTORY_WINDOW_Y 0
 
 #define INVENTORY_TRADE_WINDOW_X 80
-#define INVENTORY_TRADE_WINDOW_Y 290
+#define INVENTORY_TRADE_WINDOW_Y 0
 #define INVENTORY_TRADE_WINDOW_WIDTH 480
 #define INVENTORY_TRADE_WINDOW_HEIGHT 180
 
@@ -837,8 +837,10 @@ static bool _setup_inventory(int inventoryWindowType)
         int tradeWindowHeight = INVENTORY_TRADE_WINDOW_HEIGHT + extraSlots * INVENTORY_SLOT_HEIGHT;
 
         // Trade inventory window is a part of game dialog, which is 640x480.
-        int tradeWindowX = (screenGetWidth() - INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH) / 2 + INVENTORY_TRADE_WINDOW_X;
-        int tradeWindowY = (screenGetHeight() - INVENTORY_TRADE_BACKGROUND_WINDOW_HEIGHT) / 2 + INVENTORY_TRADE_WINDOW_Y;
+        Rect bgWindowRect;
+        windowGetRect(gInventoryBarterBackgroundWindow, &bgWindowRect);
+        int tradeWindowX = bgWindowRect.left + INVENTORY_TRADE_WINDOW_X;
+        int tradeWindowY = bgWindowRect.top + INVENTORY_TRADE_WINDOW_Y;
         gInventoryWindow = windowCreate(tradeWindowX, tradeWindowY, INVENTORY_TRADE_WINDOW_WIDTH, tradeWindowHeight, 257, 0);
         gInventoryWindowMaxX = tradeWindowX + INVENTORY_TRADE_WINDOW_WIDTH;
         gInventoryWindowMaxY = tradeWindowY + tradeWindowHeight;
