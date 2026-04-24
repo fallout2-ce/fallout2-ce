@@ -23,11 +23,13 @@
 #endif
 #include <fcntl.h>
 #include <io.h>
+#include <share.h>
 #include <sys/stat.h>
 #include <windows.h>
 #else
 #include <dirent.h>
 #include <limits.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
@@ -570,8 +572,24 @@ bool collectCreateEntries(const std::string& inputDir, const std::string& archiv
     return true;
 }
 
-std::string createTemporaryArchivePath()
+std::string getDirectoryPath(const std::string& path)
 {
+    size_t separator = path.find_last_of("/\\");
+    if (separator == std::string::npos) {
+        return ".";
+    }
+
+    if (separator == 0) {
+        return path.substr(0, 1);
+    }
+
+    return path.substr(0, separator);
+}
+
+bool createTemporaryArchiveFile(const std::string& archivePath, std::string* temporaryArchivePath, FILE** stream)
+{
+    std::string directoryPath = getDirectoryPath(archivePath);
+
 #ifdef _WIN32
     unsigned long processId = GetCurrentProcessId();
 #else
@@ -579,19 +597,55 @@ std::string createTemporaryArchivePath()
 #endif
 
     for (int attempt = 0; attempt < 1000; attempt++) {
-        std::string path = ".fallout2-dat-create-"
-            + std::to_string(processId)
-            + "-"
-            + std::to_string(static_cast<long long>(std::time(nullptr)))
-            + "-"
-            + std::to_string(attempt)
-            + ".tmp";
-        if (!compat_file_exists(path.c_str())) {
-            return path;
+        std::string candidatePath = joinNativePath(directoryPath,
+            ".fallout2-dat-create-"
+                + std::to_string(processId)
+                + "-"
+                + std::to_string(static_cast<long long>(std::time(nullptr)))
+                + "-"
+                + std::to_string(attempt)
+                + ".tmp");
+
+#ifdef _WIN32
+        int fd;
+        errno_t err = _sopen_s(&fd,
+            candidatePath.c_str(),
+            _O_BINARY | _O_CREAT | _O_EXCL | _O_RDWR,
+            _SH_DENYRW,
+            _S_IREAD | _S_IWRITE);
+        if (err != 0) {
+            if (err == EEXIST) {
+                continue;
+            }
+            return false;
         }
+#else
+        int fd = open(candidatePath.c_str(), O_CREAT | O_EXCL | O_RDWR, 0600);
+        if (fd == -1) {
+            if (errno == EEXIST) {
+                continue;
+            }
+            return false;
+        }
+#endif
+
+        FILE* rawStream = fdopen(fd, "wb");
+        if (rawStream == nullptr) {
+#ifdef _WIN32
+            _close(fd);
+#else
+            close(fd);
+#endif
+            compat_remove(candidatePath.c_str());
+            return false;
+        }
+
+        *temporaryArchivePath = std::move(candidatePath);
+        *stream = rawStream;
+        return true;
     }
 
-    return "";
+    return false;
 }
 
 bool replaceArchiveWithTemporaryArchive(const std::string& temporaryArchivePath, const std::string& archivePath)
@@ -607,9 +661,8 @@ bool replaceArchiveWithTemporaryArchive(const std::string& temporaryArchivePath,
 #endif
 }
 
-bool writeFo2DatArchiveToPath(const std::string& outputPath, std::vector<DatCreateEntry>* entries)
+bool writeFo2DatArchiveToStream(FILE* rawOutput, const std::string& outputPath, std::vector<DatCreateEntry>* entries)
 {
-    FILE* rawOutput = compat_fopen(outputPath.c_str(), "wb");
     if (rawOutput == nullptr) {
         std::cerr << "Failed to create archive: " << outputPath << "\n";
         return false;
@@ -691,13 +744,14 @@ bool writeFo2DatArchive(const std::string& inputDir, const std::string& archiveP
         return false;
     }
 
-    std::string temporaryArchivePath = createTemporaryArchivePath();
-    if (temporaryArchivePath.empty()) {
-        std::cerr << "Failed to choose a temporary archive path in the current directory\n";
+    std::string temporaryArchivePath;
+    FILE* rawTemporaryArchive = nullptr;
+    if (!createTemporaryArchiveFile(archivePath, &temporaryArchivePath, &rawTemporaryArchive)) {
+        std::cerr << "Failed to create a temporary archive beside: " << archivePath << "\n";
         return false;
     }
 
-    if (!writeFo2DatArchiveToPath(temporaryArchivePath, &entries)) {
+    if (!writeFo2DatArchiveToStream(rawTemporaryArchive, temporaryArchivePath, &entries)) {
         compat_remove(temporaryArchivePath.c_str());
         return false;
     }
