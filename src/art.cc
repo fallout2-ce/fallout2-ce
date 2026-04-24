@@ -933,6 +933,22 @@ int artAliasFid(int fid)
     return -1;
 }
 
+static bool artGetLocalizedPath(const char* basePath, const char** outPath)
+{
+    static char localizedPath[COMPAT_MAX_PATH];
+
+    if (!gArtLanguageInitialized) {
+        return false;
+    }
+    const char* pch = strchr(basePath, '\\');
+    if (pch == nullptr) {
+        pch = basePath;
+    }
+    snprintf(localizedPath, sizeof(localizedPath), "art\\%s\\%s", gArtLanguage, pch);
+    *outPath = localizedPath;
+    return true;
+}
+
 // 0x419A78
 static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
 {
@@ -940,21 +956,11 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
 
     char* artFilePath = artBuildFilePath(fid);
     if (artFilePath != nullptr) {
-        bool loaded = false;
         File* stream = nullptr;
-
-        if (gArtLanguageInitialized) {
-            char* pch = strchr(artFilePath, '\\');
-            if (pch == nullptr) {
-                pch = artFilePath;
-            }
-
-            char localizedPath[COMPAT_MAX_PATH];
-            snprintf(localizedPath, sizeof(localizedPath), "art\\%s\\%s", gArtLanguage, pch);
-
+        const char* localizedPath;
+        if (artGetLocalizedPath(artFilePath, &localizedPath)) {
             stream = fileOpen(localizedPath, "rb");
         }
-
         if (stream == nullptr) {
             stream = fileOpen(artFilePath, "rb");
         }
@@ -980,15 +986,8 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
     char* artFileName = artBuildFilePath(fid);
     if (artFileName != nullptr) {
         bool loaded = false;
-        if (gArtLanguageInitialized) {
-            char* pch = strchr(artFileName, '\\');
-            if (pch == nullptr) {
-                pch = artFileName;
-            }
-
-            char localizedPath[COMPAT_MAX_PATH];
-            snprintf(localizedPath, sizeof(localizedPath), "art\\%s\\%s", gArtLanguage, pch);
-
+        const char* localizedPath;
+        if (artGetLocalizedPath(artFileName, &localizedPath)) {
             if (artRead(localizedPath, data) == 0) {
                 loaded = true;
             }
@@ -1123,6 +1122,16 @@ Art* artLoad(const char* path)
     }
 
     return reinterpret_cast<Art*>(data);
+}
+
+static Art* artLoadLocalized(const char* path)
+{
+    const char* localizedPath;
+    Art* result = artGetLocalizedPath(path, &localizedPath)
+        ? artLoad(localizedPath)
+        : nullptr;
+
+    return result != nullptr ? result : artLoad(path);
 }
 
 // 0x419FC0
@@ -1292,7 +1301,7 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
         return it->second;
     }
 
-    Art* art = artLoad(path);
+    Art* art = artLoadLocalized(path);
     if (!art) return nullptr;
 
     if (gNamedArtCacheMruCounter == UINT_MAX) {
