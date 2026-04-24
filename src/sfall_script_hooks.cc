@@ -373,6 +373,41 @@ int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode,
 }
 
 /*
+Runs after Fallout has decided if an attack will hit or miss.
+
+int     arg0 - If the attack will hit: 0 - critical miss, 1 - miss, 2 - hit, 3 - critical hit
+Critter arg1 - The attacker
+Critter arg2 - The target of the attack
+int     arg3 - The bodypart
+int     arg4 - The hit chance
+
+int     ret0 - Override the hit/miss
+int     ret1 - Override the targeted bodypart
+Critter ret2 - Override the target of the attack
+*/
+int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLocationPtr, int hitChance, int roll)
+{
+    assert(defenderPtr != nullptr && hitLocationPtr != nullptr);
+
+    ScriptHookCall hook(HOOK_AFTERHITROLL, 3, { roll, attacker, *defenderPtr, *hitLocationPtr, hitChance });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return roll;
+    }
+
+    roll = hook.getReturnValueAt(0).asInt();
+    if (hook.numReturnValues() > 1) {
+        *hitLocationPtr = hook.getReturnValueAt(1).asInt();
+    }
+    if (hook.numReturnValues() > 2) {
+        *defenderPtr = hook.getReturnValueAt(2).asObject();
+    }
+
+    return roll;
+}
+
+/*
 Runs after Fallout has calculated the death animation. Lets you set your own death animation id. Performs no validation, so `art_exists` checks are advised.
 When using `critter_dmg` function, this script will also run. In that case weapon pid will be -1 and attacker will point to an object with `obj_art_fid == 0x20001F5`.
 

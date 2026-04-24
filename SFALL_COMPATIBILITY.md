@@ -81,7 +81,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Hook | ID | Compatibility | Notes |
 | --- | --- | --- | --- |
 | ToHit | `HOOK_TOHIT` | ✅ | - |
-| AfterHitRoll | `HOOK_AFTERHITROLL` | 🚫 | Et tu |
+| AfterHitRoll | `HOOK_AFTERHITROLL` | ✅ | - |
 | CalcAPCost | `HOOK_CALCAPCOST` | ✅ | - |
 | DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | Use DEATHANIM2 instead |
 | DeathAnim2 | `HOOK_DEATHANIM2` | ✅ | - |

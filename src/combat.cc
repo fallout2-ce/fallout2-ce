@@ -3957,6 +3957,8 @@ static int attackCompute(Attack* attack)
         }
     }
 
+    roll = scriptHooks_AfterHitRoll(attack->attacker, &(attack->defender), &(attack->defenderHitLocation), accuracy, roll);
+
     if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
         return -1;
     }
