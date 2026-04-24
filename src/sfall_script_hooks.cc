@@ -8,6 +8,7 @@
 
 #include "db.h"
 #include "debug.h"
+#include "random.h"
 #include "scripts.h"
 
 #include <assert.h>
@@ -396,12 +397,20 @@ int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLoc
         return roll;
     }
 
-    roll = hook.getReturnValueAt(0).asInt();
-    if (hook.numReturnValues() > 1) {
-        *hitLocationPtr = hook.getReturnValueAt(1).asInt();
+    int rollOverride = hook.getReturnValueAt(0).asInt();
+    if (rollOverride >= ROLL_CRITICAL_FAILURE && rollOverride <= ROLL_CRITICAL_SUCCESS) {
+        roll = rollOverride;
+    } else {
+        debugPrint("HOOK_AFTERHITROLL: ignoring invalid roll override %d", rollOverride);
     }
-    if (hook.numReturnValues() > 2) {
-        *defenderPtr = hook.getReturnValueAt(2).asObject();
+
+    if (hook.numReturnValues() > 1) {
+        int hitLocationOverride = hook.getReturnValueAt(1).asInt();
+        if (hitLocationOverride >= 0 && hitLocationOverride < HIT_LOCATION_COUNT) {
+            *hitLocationPtr = hitLocationOverride;
+        } else {
+            debugPrint("HOOK_AFTERHITROLL: ignoring invalid hit location override %d", hitLocationOverride);
+        }
     }
 
     return roll;
