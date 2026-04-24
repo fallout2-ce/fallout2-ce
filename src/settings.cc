@@ -13,7 +13,7 @@ namespace fallout {
 
 struct SettingDescriptor {
     std::function<void()> read;
-    std::function<void()> write;
+    std::function<void(bool onlyAdd)> write;
 };
 
 static std::vector<SettingDescriptor> settingsRegistry;
@@ -26,6 +26,12 @@ static void settingsRead(const char* section, const char* key, std::string& valu
     if (configGetString(&gGameConfig, section, key, &v)) {
         value = v;
     }
+}
+
+static bool settingsKeyExists(const char* section, const char* key)
+{
+    char* v;
+    return configGetString(&gGameConfig, section, key, &v);
 }
 
 static void settingsRead(const char* section, const char* key, int& value)
@@ -91,23 +97,18 @@ static std::function<void(T&, const char*, const char*)> clamp(T min, T max)
     };
 }
 
-template <typename T>
-void registerSetting(const char* section, const char* key, T& variable)
-{
-    settingsRegistry.push_back(
-        { [&, section, key]() { settingsRead(section, key, variable); },
-            [&, section, key]() { settingsWrite(section, key, variable); } });
-}
-
-template <typename T, typename P>
-void registerSetting(const char* section, const char* key, T& variable, P postProcess)
+template <typename T, typename P = std::function<void(T&, const char*, const char*)>>
+void registerSetting(const char* section, const char* key, T& variable, P postProcess = {})
 {
     settingsRegistry.push_back(
         { [&, section, key, postProcess]() {
              settingsRead(section, key, variable);
-             postProcess(variable, section, key);
+             if (postProcess) postProcess(variable, section, key);
          },
-            [&, section, key]() { settingsWrite(section, key, variable); } });
+            [&, section, key](bool onlyAdd) {
+                if (onlyAdd && settingsKeyExists(section, key)) return;
+                settingsWrite(section, key, variable);
+            } });
 }
 
 // SECT must be defined to the settings sub-struct name, which equals the config section string.
@@ -256,10 +257,10 @@ bool settingsInit(bool isMapper, int argc, char** argv)
     return true;
 }
 
-void settingsWriteToConfig()
+void settingsWriteToConfig(bool onlyAdd)
 {
     for (const auto& descriptor : settingsRegistry) {
-        descriptor.write();
+        descriptor.write(onlyAdd);
     }
 }
 
