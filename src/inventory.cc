@@ -637,7 +637,7 @@ static bool inventoryNormalBackgroundLoad(int columns)
 static int inventoryNormalChooseColumns()
 {
     int maxColumns = settings.ui.max_inventory_columns;
-    if (maxColumns <= 1 || screenGetWidth() <= 640) {
+    if (maxColumns <= 1) {
         return 1;
     }
 
@@ -1991,7 +1991,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
         || inventoryWindowType == INVENTORY_WINDOW_TYPE_USE_ITEM_ON
         || inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
         if (gInventoryScrollUpButton != -1) {
-            if ((inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL && stackOffset < inventoryNormalGetScrollStep()) || (inventoryWindowType != INVENTORY_WINDOW_TYPE_NORMAL && stackOffset <= 0)) {
+            if (stackOffset <= 0) {
                 buttonDisable(gInventoryScrollUpButton);
             } else {
                 buttonEnable(gInventoryScrollUpButton);
@@ -2043,15 +2043,6 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
 
             int inventoryFid = itemGetInventoryFid(inventoryItem->item);
             artRender(inventoryFid, windowBuffer + offset, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, pitch);
-
-            if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-                offset = pitch * (y + INVENTORY_LOOT_LEFT_SCROLLER_Y_PAD) + INVENTORY_LOOT_LEFT_SCROLLER_X_PAD;
-            } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
-                offset = pitch * (y + INVENTORY_TRADE_LEFT_SCROLLER_Y_PAD) + INVENTORY_TRADE_LEFT_SCROLLER_X_PAD;
-            } else {
-                offset = pitch * (y + INVENTORY_SCROLLER_Y_PAD) + INVENTORY_SCROLLER_X_PAD;
-            }
-
             _display_inventory_info(inventoryItem->item, inventoryItem->quantity, windowBuffer + offset, pitch, slotIndex == dragSlotIndex);
 
             y += INVENTORY_SLOT_HEIGHT;
@@ -2644,8 +2635,8 @@ static void _inven_pickup(int buttonCode, int indexOffset)
         rect.top = INVENTORY_ARMOR_SLOT_Y;
         break;
     default:
-        // NOTE: Original code a little bit different, this code path
-        // is only for key codes below 1006.
+        // Normal inventory slot buttons use 1000-based key codes; convert
+        // the button code to a zero-based slot index for grid positioning.
         itemIndex = buttonCode - 1000;
         rect.left = gInventoryNormalLayout.scrollerX + itemIndex % gInventoryNormalLayout.columns * INVENTORY_SLOT_WIDTH;
         rect.top = INVENTORY_SLOT_HEIGHT * (itemIndex / gInventoryNormalLayout.columns) + gInventoryNormalLayout.scrollerY;
