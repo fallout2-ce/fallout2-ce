@@ -117,9 +117,6 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         }
     }
 
-    auto configChecker = ConfigChecker(gGameConfig, gGameConfigFilePath);
-    // Read contents of `fallout2.cfg` into config. The values from the file
-    // will override the defaults above.
     configRead(&gGameConfig, gGameConfigFilePath, false);
 
     // Init debug mode ASAP to catch early debug messages.
@@ -133,7 +130,6 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         debugPrint("Migrated settings from f2_res.ini.\n");
         configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL);
     }
-    configChecker.check(gGameConfig);
 
     // Add key-values from command line, which overrides both defaults and
     // whatever was loaded from `fallout2.cfg`.
