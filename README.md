@@ -77,6 +77,8 @@ $ mv fallout2 /Applications/Fallout2
 
 - Use Finder (macOS Catalina and later) or iTunes (Windows and macOS Mojave or earlier) to copy `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder to "Fallout 2" app ([how-to](https://support.apple.com/HT210598)). Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).
 
+- 
+
 **Controls on iPad:**
 
 - One-finger tap → left click; hold → left button held.
@@ -121,6 +123,7 @@ iface_bar_side_art=2 ; Interface bar side art style (0=black, 1=metal grey, 2=le
 iface_bar_sides_ori=0 ; Side graphics orientation (0=extend from bar to edges, 1=extend from edges to bar)
 splash_screen_size=1 ; Splash screen scaling (0=original size, 1=fit preserving aspect, 2=stretch to fill)
 ignore_map_edges=0 ; Hi-res map scroll edges (0=enabled, 1=ignored)
+quick_toolbar_visible=0 ; Skills quick access toolbar visibility (iOS only) (0=hidden, 1=visible)
 ```
 
 **Recommendations:**

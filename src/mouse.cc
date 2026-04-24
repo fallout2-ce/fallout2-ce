@@ -519,22 +519,11 @@ void _mouse_info()
                     _mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
                 }
             } else {
-                // Relative _mouse_simulate_input would *add* gesture.x/y to the
-                // current cursor position. Teleport explicitly first, then
-                // click in place so the button under the finger receives it.
-                if (mouseDeviceUsesRelativeMode()) {
-                    _mouse_set_position(gesture.x, gesture.y);
-                    if (gesture.numberOfTouches == 1) {
-                        _mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
-                    } else if (gesture.numberOfTouches == 2) {
-                        _mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
-                    }
-                } else {
-                    if (gesture.numberOfTouches == 1) {
-                        _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_LEFT_BUTTON_DOWN);
-                    } else if (gesture.numberOfTouches == 2) {
-                        _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_RIGHT_BUTTON_DOWN);
-                    }
+                _mouse_set_position(gesture.x, gesture.y);
+                if (gesture.numberOfTouches == 1) {
+                    _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_LEFT_BUTTON_DOWN);
+                } else if (gesture.numberOfTouches == 2) {
+                    _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_RIGHT_BUTTON_DOWN);
                 }
             }
         tap_done:
