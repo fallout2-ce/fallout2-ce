@@ -636,11 +636,14 @@ static bool inventoryNormalBackgroundLoad(int columns)
 
 static int inventoryNormalChooseColumns()
 {
-    if (screenGetWidth() <= 640) {
+    int maxColumns = settings.ui.max_inventory_columns;
+    if (maxColumns <= 1 || screenGetWidth() <= 640) {
         return 1;
     }
 
-    for (int columns = INVENTORY_MAX_COLUMNS; columns > 1; columns--) {
+    maxColumns = std::min(maxColumns, INVENTORY_MAX_COLUMNS);
+
+    for (int columns = maxColumns; columns > 1; columns--) {
         int width = INVENTORY_WINDOW_WIDTH + (columns - 1) * INVENTORY_SLOT_WIDTH;
         if (width <= screenGetWidth() && inventoryNormalBackgroundLoad(columns)) {
             return columns;
