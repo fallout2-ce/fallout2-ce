@@ -156,19 +156,7 @@ int artWrite(const char* path, unsigned char* data);
 
 using ArtPtr = InternalPtr<Art>;
 
-class NamedCacheEntry {
-public:
-    explicit NamedCacheEntry(ArtPtr art);
-
-    const Art* art() const { return _art.get(); }
-    bool valid() const { return _art.get() != nullptr; }
-
-    unsigned char* frameData(int frame, int direction, int& outWidth, int& outHeight) const;
-
-private:
-    ArtPtr _art;
-};
-
+class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 
 class FrmImage {

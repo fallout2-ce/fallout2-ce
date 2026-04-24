@@ -14,6 +14,7 @@
 #include "proto.h"
 #include "settings.h"
 
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 
@@ -39,7 +40,7 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data);
 static void artCacheFreeImpl(void* ptr);
 static int artReadFrameData(unsigned char* data, File* stream, int count, int* paddingPtr);
 static int artReadHeader(Art* art, File* stream);
-static int artGetDataSize(Art* art);
+static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 
 // 0x5002D8
@@ -131,6 +132,9 @@ static int* _anon_alias;
 static int* gArtCritterFidShoudRunData;
 
 static std::unordered_map<std::string, std::shared_ptr<NamedCacheEntry>> gNamedArtCache;
+constexpr int kNamedCacheMaxBytes = 32 * 1024 * 1024; // 32MB soft limit
+static unsigned int gNamedArtCacheMruCounter = 0;
+static int gNamedArtCacheCurrentBytes = 0;
 
 // 0x418840
 int artInit()
@@ -1228,7 +1232,7 @@ int artWrite(const char* path, unsigned char* data)
     return 0;
 }
 
-static int artGetDataSize(Art* art)
+static int artGetDataSize(const Art* art)
 {
     int dataSize = sizeof(*art) + art->dataSize;
 
@@ -1247,6 +1251,20 @@ static int paddingForSize(int size)
 {
     return (sizeof(int) - size % sizeof(int)) % sizeof(int);
 }
+
+class NamedCacheEntry {
+public:
+    explicit NamedCacheEntry(ArtPtr art);
+
+    const Art* art() const { return _art.get(); }
+
+    unsigned char* frameData(int frame, int direction, int& outWidth, int& outHeight) const;
+
+    unsigned int mru = 0;
+
+private:
+    ArtPtr _art;
+};
 
 NamedCacheEntry::NamedCacheEntry(ArtPtr art)
     : _art(std::move(art))
@@ -1270,13 +1288,52 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
 {
     auto it = gNamedArtCache.find(path);
     if (it != gNamedArtCache.end()) {
+        it->second->mru = ++gNamedArtCacheMruCounter;
         return it->second;
     }
 
     Art* art = artLoad(path);
     if (!art) return nullptr;
 
+    if (gNamedArtCacheMruCounter == UINT_MAX) {
+        // This looks complicated, but it should happen rarely and needed to preserve mru order.
+        std::vector<NamedCacheEntry*> sorted;
+        sorted.reserve(gNamedArtCache.size());
+        for (auto& [key, e] : gNamedArtCache) {
+            sorted.push_back(e.get());
+        }
+        std::sort(sorted.begin(), sorted.end(), [](auto* a, auto* b) { return a->mru < b->mru; });
+        unsigned int mru = 0;
+        for (auto* e : sorted) {
+            e->mru = mru++;
+        }
+        gNamedArtCacheMruCounter = mru;
+    }
+
     auto entry = std::make_shared<NamedCacheEntry>(ArtPtr(art));
+    entry->mru = ++gNamedArtCacheMruCounter;
+
+    gNamedArtCacheCurrentBytes += artGetDataSize(art);
+
+    // Evict LRU entries if over soft limit (post-insertion)
+    while (gNamedArtCacheCurrentBytes > kNamedCacheMaxBytes) {
+        unsigned int lowestMru = UINT_MAX;
+        auto evictIt = gNamedArtCache.end();
+        for (auto iter = gNamedArtCache.begin(); iter != gNamedArtCache.end(); ++iter) {
+            if (iter->second.use_count() == 1 && iter->second->mru < lowestMru) {
+                lowestMru = iter->second->mru;
+                evictIt = iter;
+            }
+        }
+
+        if (evictIt == gNamedArtCache.end()) {
+            break;
+        }
+
+        gNamedArtCacheCurrentBytes -= artGetDataSize(evictIt->second->art());
+        gNamedArtCache.erase(evictIt);
+    }
+
     return gNamedArtCache.emplace(path, std::move(entry)).first->second;
 }
 
@@ -1371,7 +1428,5 @@ void FrmImage::resetInternal()
     _width = 0;
     _height = 0;
 }
-}
-
 
 } // namespace fallout
