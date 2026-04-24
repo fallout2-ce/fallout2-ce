@@ -65,11 +65,6 @@ constexpr int kTradeSlotCount = 3;
 #define INVENTORY_LARGE_SLOT_WIDTH 90
 #define INVENTORY_LARGE_SLOT_HEIGHT 61
 
-#define INVENTORY_SLOT_WIDTH 64
-#define INVENTORY_SLOT_HEIGHT 48
-
-static_assert(INVENTORY_SLOT_HEIGHT == 48); // must match the hardcoded 48 in kExpandedBarterExtraHeight (game_dialog.cc)
-
 #define INVENTORY_LEFT_HAND_SLOT_X 154
 #define INVENTORY_LEFT_HAND_SLOT_Y 286
 #define INVENTORY_LEFT_HAND_SLOT_MAX_X (INVENTORY_LEFT_HAND_SLOT_X + INVENTORY_LARGE_SLOT_WIDTH)

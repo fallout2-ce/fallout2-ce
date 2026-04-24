@@ -44,6 +44,7 @@ public:
         return *this;
     }
 
+    // Frees the resource and sets the pointer to null. Shouldn't normally be used, prefer destructor instead (RAII).
     void reset()
     {
         if (_ptr != nullptr) {

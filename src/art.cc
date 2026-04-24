@@ -11,9 +11,11 @@
 #include "draw.h"
 #include "game.h"
 #include "memory.h"
-#include "obj_types.h"
 #include "proto.h"
 #include "settings.h"
+
+#include <memory>
+#include <unordered_map>
 
 namespace fallout {
 
@@ -127,6 +129,8 @@ static int* _anon_alias;
 // artCritterFidShouldRunData
 // 0x56CAF0
 static int* gArtCritterFidShoudRunData;
+
+static std::unordered_map<std::string, std::shared_ptr<NamedCacheEntry>> gNamedArtCache;
 
 // 0x418840
 int artInit()
@@ -1244,6 +1248,38 @@ static int paddingForSize(int size)
     return (sizeof(int) - size % sizeof(int)) % sizeof(int);
 }
 
+NamedCacheEntry::NamedCacheEntry(ArtPtr art)
+    : _art(std::move(art))
+{
+}
+
+unsigned char* NamedCacheEntry::frameData(int frame, int direction, int& outWidth, int& outHeight) const
+{
+    unsigned char* data = artGetFrameData(_art.get(), frame, direction);
+    if (!data) {
+        outWidth = 0;
+        outHeight = 0;
+        return nullptr;
+    }
+    outWidth = artGetWidth(_art.get(), frame, direction);
+    outHeight = artGetHeight(_art.get(), frame, direction);
+    return data;
+}
+
+std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
+{
+    auto it = gNamedArtCache.find(path);
+    if (it != gNamedArtCache.end()) {
+        return it->second;
+    }
+
+    Art* art = artLoad(path);
+    if (!art) return nullptr;
+
+    auto entry = std::make_shared<NamedCacheEntry>(ArtPtr(art));
+    return gNamedArtCache.emplace(path, std::move(entry)).first->second;
+}
+
 FrmImage::FrmImage()
 {
     _key = nullptr;
@@ -1255,6 +1291,31 @@ FrmImage::FrmImage()
 FrmImage::~FrmImage()
 {
     unlock();
+}
+
+FrmImage::FrmImage(FrmImage&& other) noexcept
+    : _namedKey(std::move(other._namedKey))
+    , _key(other._key)
+    , _data(other._data)
+    , _width(other._width)
+    , _height(other._height)
+{
+    other.resetInternal();
+}
+
+FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
+{
+    if (this != &other) {
+        unlock();
+        _namedKey = std::move(other._namedKey);
+        _key = other._key;
+        _data = other._data;
+        _width = other._width;
+        _height = other._height;
+
+        other.resetInternal();
+    }
+    return *this;
 }
 
 bool FrmImage::lock(unsigned int fid)
@@ -1271,15 +1332,46 @@ bool FrmImage::lock(unsigned int fid)
     return true;
 }
 
-void FrmImage::unlock()
+bool FrmImage::lock(const char* frmPath)
 {
     if (isLocked()) {
-        artUnlock(_key);
-        _key = nullptr;
-        _data = nullptr;
-        _width = 0;
-        _height = 0;
+        return false;
     }
+
+    _namedKey = artLockNamedFrameData(frmPath);
+    if (!_namedKey) return false;
+
+    _data = _namedKey->frameData(0, 0, _width, _height);
+    if (_data == nullptr) {
+        _namedKey = nullptr;
+        return false;
+    }
+    return true;
 }
+
+bool FrmImage::lock(ObjectType objType, const char* frmRelativePath)
+{
+    snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objType].name, frmRelativePath);
+    return lock(_art_name);
+}
+
+void FrmImage::unlock()
+{
+    if (_key != nullptr) {
+        artUnlock(_key);
+    }
+    resetInternal();
+}
+
+void FrmImage::resetInternal()
+{
+    _namedKey = nullptr;
+    _key = nullptr;
+    _data = nullptr;
+    _width = 0;
+    _height = 0;
+}
+}
+
 
 } // namespace fallout
