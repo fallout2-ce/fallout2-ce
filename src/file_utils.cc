@@ -14,6 +14,8 @@
 namespace fallout {
 
 static void fileCopy(const char* existingFilePath, const char* newFilePath);
+static bool copyGzToFile(gzFile inStream, FILE* outStream);
+static bool copyFileToGz(FILE* inStream, gzFile outStream);
 
 // 0x452740
 int fileCopyDecompressed(const char* existingFilePath, const char* newFilePath)
@@ -33,13 +35,10 @@ int fileCopyDecompressed(const char* existingFilePath, const char* newFilePath)
         FILE* outStream = compat_fopen(newFilePath, "wb");
 
         if (inStream != nullptr && outStream != nullptr) {
-            for (;;) {
-                int ch = gzgetc(inStream);
-                if (ch == -1) {
-                    break;
-                }
-
-                fputc(ch, outStream);
+            if (!copyGzToFile(inStream, outStream)) {
+                gzclose(inStream);
+                fclose(outStream);
+                return -1;
             }
 
             gzclose(inStream);
@@ -87,14 +86,10 @@ int fileCopyCompressed(const char* existingFilePath, const char* newFilePath)
             return -1;
         }
 
-        // Copy byte-by-byte.
-        for (;;) {
-            int ch = fgetc(inStream);
-            if (ch == -1) {
-                break;
-            }
-
-            gzputc(outStream, ch);
+        if (!copyFileToGz(inStream, outStream)) {
+            fclose(inStream);
+            gzclose(outStream);
+            return -1;
         }
 
         fclose(inStream);
@@ -130,13 +125,10 @@ int _gzdecompress_file(const char* existingFilePath, const char* newFilePath)
             return -1;
         }
 
-        while (1) {
-            int ch = gzgetc(gzstream);
-            if (ch == -1) {
-                break;
-            }
-
-            fputc(ch, stream);
+        if (!copyGzToFile(gzstream, stream)) {
+            gzclose(gzstream);
+            fclose(stream);
+            return -1;
         }
 
         gzclose(gzstream);
@@ -177,6 +169,58 @@ static void fileCopy(const char* existingFilePath, const char* newFilePath)
 
     if (out != nullptr) {
         fclose(out);
+    }
+}
+
+static bool copyGzToFile(gzFile inStream, FILE* outStream)
+{
+    std::vector<unsigned char> buffer(0xFFFF);
+
+    for (;;) {
+        int bytesRead = gzread(inStream, buffer.data(), buffer.size());
+        if (bytesRead < 0) {
+            return false;
+        }
+
+        if (bytesRead == 0) {
+            return true;
+        }
+
+        size_t offset = 0;
+        size_t remaining = bytesRead;
+        while (remaining > 0) {
+            size_t bytesWritten = fwrite(buffer.data() + offset, sizeof(*buffer.data()), remaining, outStream);
+            if (bytesWritten == 0) {
+                return false;
+            }
+
+            offset += bytesWritten;
+            remaining -= bytesWritten;
+        }
+    }
+}
+
+static bool copyFileToGz(FILE* inStream, gzFile outStream)
+{
+    std::vector<unsigned char> buffer(0xFFFF);
+
+    for (;;) {
+        size_t bytesRead = fread(buffer.data(), sizeof(*buffer.data()), buffer.size(), inStream);
+        if (bytesRead == 0) {
+            return feof(inStream) != 0;
+        }
+
+        size_t offset = 0;
+        size_t remaining = bytesRead;
+        while (remaining > 0) {
+            int bytesWritten = gzwrite(outStream, buffer.data() + offset, remaining);
+            if (bytesWritten <= 0) {
+                return false;
+            }
+
+            offset += bytesWritten;
+            remaining -= bytesWritten;
+        }
     }
 }
 
