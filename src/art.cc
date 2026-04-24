@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 namespace fallout {
 
@@ -1263,7 +1264,7 @@ static int paddingForSize(int size)
 
 class NamedCacheEntry {
 public:
-    explicit NamedCacheEntry(ArtPtr art);
+    explicit NamedCacheEntry(ArtPtr&& art);
 
     const Art* art() const { return _art.get(); }
 
@@ -1275,7 +1276,7 @@ private:
     ArtPtr _art;
 };
 
-NamedCacheEntry::NamedCacheEntry(ArtPtr art)
+NamedCacheEntry::NamedCacheEntry(ArtPtr&& art)
     : _art(std::move(art))
 {
 }
