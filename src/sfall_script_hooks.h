@@ -258,6 +258,7 @@ struct BarterPriceContext {
 
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
+int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, int hookType);
 
 bool scriptHooksInit();
 void scriptHooksReset();

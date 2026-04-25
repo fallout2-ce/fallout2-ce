@@ -113,7 +113,7 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
 static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim);
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsSpentPtr, int anim);
+static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int* ammoSpentPtr, int anim);
 static int attackComputeEnhancedKnockout(Attack* attack);
 static int attackCompute(Attack* attack);
 static int attackComputeCriticalHit(Attack* a1);
@@ -2332,8 +2332,9 @@ static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weap
 
     int accuracy = attackDetermineToHit(attacker, attacker->tile, defender, HIT_LOCATION_TORSO, hitMode, true);
     int roundsHitMainTarget;
-    int roundsSpent;
-    _compute_spray(&attack, accuracy, &roundsHitMainTarget, &roundsSpent, anim);
+    int roundsFired;
+    int ammoSpent;
+    _compute_spray(&attack, accuracy, &roundsHitMainTarget, &roundsFired, &ammoSpent, anim);
 
     if (attackerFriend != nullptr) {
         for (int index = 0; index < attack.extrasLength; index++) {
@@ -3755,17 +3756,33 @@ static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim)
 }
 
 // 0x423488
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsSpentPtr, int anim)
+static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int* ammoSpentPtr, int anim)
 {
     *roundsHitMainTargetPtr = 0;
 
-    int ammoQuantity = ammoGetQuantity(attack->weapon);
+    int currentAmmo = ammoGetQuantity(attack->weapon);
+    int ammoQuantity = currentAmmo;
     int burstRounds = weaponGetBurstRounds(attack->weapon);
-    if (burstRounds < ammoQuantity) {
-        ammoQuantity = burstRounds;
+    int ammoCostPerRound = scriptHooks_AmmoCost(attack->weapon, burstRounds, 1, 2);
+
+    if (ammoCostPerRound == 0) {
+        ammoQuantity = currentAmmo > 0 ? burstRounds : 0;
+        *ammoSpentPtr = 0;
+    } else {
+        int ammoSpent = burstRounds * ammoCostPerRound;
+        if (ammoSpent > ammoQuantity) {
+            ammoSpent = ammoQuantity;
+        }
+
+        ammoQuantity = ammoSpent / ammoCostPerRound;
+        if (ammoQuantity == 0 && currentAmmo > 0) {
+            ammoQuantity = 1;
+        }
+
+        *ammoSpentPtr = ammoSpent;
     }
 
-    *roundsSpentPtr = ammoQuantity;
+    *roundsFiredPtr = ammoQuantity;
 
     int criticalChance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
     int roll = randomRoll(accuracy, criticalChance, nullptr);
@@ -3897,12 +3914,13 @@ static int attackCompute(Attack* attack)
     int attackType = weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode);
     int roundsHitMainTarget = 1;
     int damageMultiplier = 2;
+    int roundsFired = 1;
     int roundsSpent = 1;
 
     int roll;
 
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
-        roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsSpent, anim);
+        roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsFired, &roundsSpent, anim);
     } else {
         int chance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
         roll = randomRoll(accuracy, chance - hit_location_penalty[attack->defenderHitLocation], nullptr);
@@ -3959,8 +3977,16 @@ static int attackCompute(Attack* attack)
 
     roll = scriptHooks_AfterHitRoll(attack->attacker, &(attack->defender), &(attack->defenderHitLocation), accuracy, roll);
 
-    if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
-        return -1;
+    if (ammoGetCapacity(attack->weapon) > 0) {
+        if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
+            attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, roundsFired, attack->ammoQuantity, 3);
+        } else {
+            if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
+                return -1;
+            }
+
+            attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, 1, attack->ammoQuantity, 0);
+        }
     }
 
     switch (roll) {
@@ -5738,7 +5764,7 @@ int _combat_check_bad_shot(Object* attacker, Object* defender, int hitMode, bool
     int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
 
     if (ammoGetCapacity(weapon) > 0) {
-        if (ammoGetQuantity(weapon) == 0) {
+        if (!weaponHasAmmoForAttack(weapon, hitMode)) {
             return COMBAT_BAD_SHOT_NO_AMMO;
         }
     }

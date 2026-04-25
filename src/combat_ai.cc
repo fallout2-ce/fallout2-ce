@@ -2033,7 +2033,7 @@ Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, O
         }
 
         if (weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY) == ATTACK_TYPE_RANGED) {
-            if (ammoGetQuantity(weapon) == 0) {
+            if (!weaponHasAmmoForAttack(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
                 if (!aiHaveAmmo(critter, weapon, nullptr)) {
                     continue;
                 }
@@ -2731,6 +2731,13 @@ static int _ai_try_attack(Object* attacker, Object* defender)
 
         int reason = _combat_check_bad_shot(attacker, defender, hitMode, false);
         if (reason == COMBAT_BAD_SHOT_NO_AMMO) {
+            if (hitMode == HIT_MODE_RIGHT_WEAPON_SECONDARY
+                && weapon != nullptr
+                && ammoGetQuantity(weapon) > 0) {
+                hitMode = HIT_MODE_RIGHT_WEAPON_PRIMARY;
+                continue;
+            }
+
             // out of ammo
             int roundsLoaded = 0;
             if (aiHaveAmmo(attacker, weapon, &ammo)) {

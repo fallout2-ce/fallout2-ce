@@ -249,6 +249,33 @@ bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int h
 }
 
 /*
+Runs when calculating ammo cost for a weapon.
+
+Item    arg0 - The weapon
+int     arg1 - Number of bullets in burst or 1 for single shots
+int     arg2 - The amount of ammo to be consumed, or ammo cost per round for hook type 2
+int     arg3 - Type of hook:
+               0 - when subtracting ammo after single shot attack
+               1 - when checking for "out of ammo" before attack
+               2 - when calculating number of burst rounds
+               3 - when subtracting ammo after burst attack
+
+int     ret0 - The new ammo amount/cost. Values below 0 are ignored.
+*/
+int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, int hookType)
+{
+    ScriptHookCall hook(HOOK_AMMOCOST, 1, { weapon, rounds, ammoCost, hookType });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return ammoCost;
+    }
+
+    int overrideAmmoCost = hook.getReturnValueAt(0).asInt();
+    return overrideAmmoCost >= 0 ? overrideAmmoCost : ammoCost;
+}
+
+/*
 Runs immediately after a critter dies for any reason.
 
 Critter arg0 - The critter that just died

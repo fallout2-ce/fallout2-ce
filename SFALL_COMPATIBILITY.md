@@ -94,7 +94,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | BarterPrice | `HOOK_BARTERPRICE` | ✅ | - |
 | MoveCost | `HOOK_MOVECOST` | 🚫 | - |
 | ItemDamage | `HOOK_ITEMDAMAGE` | 🚫 | - |
-| AmmoCost | `HOOK_AMMOCOST` | 🚫 | Et tu |
+| AmmoCost | `HOOK_AMMOCOST` | ✅ | Requires `Misc/CheckWeaponAmmoCost=1` in `ddraw.ini` if you want pre-attack ammo validation to respect per-shot/per-round overrides. |
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | ✅ | - |
 | UseSkill | `HOOK_USESKILL` | 🚫 | - |
