@@ -8,6 +8,7 @@
 
 #include "db.h"
 #include "debug.h"
+#include "random.h"
 #include "scripts.h"
 
 #include <assert.h>
@@ -370,6 +371,52 @@ int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode,
 
     hitChance = hook.getReturnValueAt(0).asInt();
     return std::clamp(hitChance, -99, 999);
+}
+
+/*
+Runs after Fallout has decided if an attack will hit or miss.
+
+int     arg0 - If the attack will hit: 0 - critical miss, 1 - miss, 2 - hit, 3 - critical hit
+Critter arg1 - The attacker
+Critter arg2 - The target of the attack
+int     arg3 - The bodypart
+int     arg4 - The hit chance
+
+int     ret0 - Override the hit/miss
+int     ret1 - Override the targeted bodypart
+Critter ret2 - Override the target of the attack
+*/
+int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLocationPtr, int hitChance, int roll)
+{
+    assert(defenderPtr != nullptr && hitLocationPtr != nullptr);
+
+    ScriptHookCall hook(HOOK_AFTERHITROLL, 3, { roll, attacker, *defenderPtr, *hitLocationPtr, hitChance });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return roll;
+    }
+
+    int rollOverride = hook.getReturnValueAt(0).asInt();
+    if (rollOverride >= ROLL_CRITICAL_FAILURE && rollOverride <= ROLL_CRITICAL_SUCCESS) {
+        roll = rollOverride;
+    } else {
+        debugPrint("HOOK_AFTERHITROLL: ignoring invalid roll override %d", rollOverride);
+    }
+
+    if (hook.numReturnValues() > 1) {
+        int hitLocationOverride = hook.getReturnValueAt(1).asInt();
+        if (hitLocationOverride >= 0 && hitLocationOverride < HIT_LOCATION_COUNT) {
+            *hitLocationPtr = hitLocationOverride;
+        } else {
+            debugPrint("HOOK_AFTERHITROLL: ignoring invalid hit location override %d", hitLocationOverride);
+        }
+    }
+    if (hook.numReturnValues() > 2) {
+        *defenderPtr = hook.getReturnValueAt(2).asObject();
+    }
+
+    return roll;
 }
 
 /*
