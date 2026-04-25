@@ -1238,6 +1238,19 @@ int _win_check_all_buttons()
     return keyCode;
 }
 
+void windowResetButtonState()
+{
+    if (!gWindowSystemInitialized) {
+        return;
+    }
+
+    for (int index = 0; index < gWindowsLength; index++) {
+        Window* window = gWindows[index];
+        window->hoveredButton = nullptr;
+        window->clickedButton = nullptr;
+    }
+}
+
 // 0x4D79DC
 Button* buttonGetButton(int btn, Window** windowPtr)
 {

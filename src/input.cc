@@ -48,6 +48,7 @@ static void buildNormalizedQwertyKeys();
 static void _GNW95_process_key(KeyboardData* data);
 static int inputGetHookMouseButton(int sdlButton);
 static void inputHandleMouseClickHook(int sdlButton, bool pressed);
+static void inputResetInternalEventQueue();
 static void inputHandleProgramActivationChange(bool isActive);
 
 // 0x51E23C
@@ -148,7 +149,9 @@ static void inputHandleProgramActivationChange(bool isActive)
     // of sync with SDL's actual app activation state. Drop queued input on
     // both transitions and reapply the desired mouse mode on return.
     keyboardReset();
-    inputEventQueueReset();
+    mouseReset();
+    windowResetButtonState();
+    inputResetInternalEventQueue();
 
     if (isActive) {
         mouseDeviceInitMode();
@@ -157,6 +160,14 @@ static void inputHandleProgramActivationChange(bool isActive)
     } else {
         audioEnginePause();
     }
+}
+
+static void inputResetInternalEventQueue()
+{
+    gInputEventQueueReadIndex = -1;
+    gInputEventQueueWriteIndex = 0;
+    _input_mx = -1;
+    _input_my = -1;
 }
 
 // 0x4C8A70
@@ -324,8 +335,7 @@ static int dequeueInputEvent()
 // 0x4C8D04
 void inputEventQueueReset()
 {
-    gInputEventQueueReadIndex = -1;
-    gInputEventQueueWriteIndex = 0;
+    inputResetInternalEventQueue();
     SDL_Event e;
     while (SDL_PollEvent(&e)) { } // Clear all input events
 }
@@ -1061,6 +1071,8 @@ void _GNW95_process_message()
                 break;
             case SDL_WINDOWEVENT_SHOWN:
             case SDL_WINDOWEVENT_RESTORED:
+                windowRefreshAll(&_scr_size);
+                break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
                 inputHandleProgramActivationChange(true);
                 break;

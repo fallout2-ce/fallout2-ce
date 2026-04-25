@@ -195,6 +195,7 @@ int windowGetHeight(int win);
 int windowGetRect(int win, Rect* rect);
 int _win_check_all_buttons();
 int _GNW_check_menu_bars(int input);
+void windowResetButtonState();
 void programWindowSetTitle(const char* title);
 bool showMesageBox(const char* str);
 int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, unsigned char* up, unsigned char* dn, unsigned char* hover, int flags);

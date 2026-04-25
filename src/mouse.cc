@@ -656,6 +656,15 @@ int mouseGetEvent()
     return gMouseEvent;
 }
 
+void mouseReset()
+{
+    gMouseEvent = 0;
+    _raw_buttons = 0;
+    last_buttons = 0;
+    gMouseWheelX = 0;
+    gMouseWheelY = 0;
+}
+
 // 0x4CAAA8
 bool cursorIsHidden()
 {
