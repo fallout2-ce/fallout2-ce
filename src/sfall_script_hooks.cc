@@ -200,6 +200,46 @@ void scriptHooks_GameModeChange(int exit, int previousGameMode)
 }
 
 /*
+Runs continuously while the player is resting (using pipboy alarm clock).
+
+int arg0 - the game time in ticks
+int arg1 - event type: 1 - when the resting ends normally, -1 - when pressing ESC to cancel the timer, 0 - otherwise
+int arg2 - the hour part of the length of resting time
+int arg3 - the minute part of the length of resting time
+
+int ret0 - pass 1 to interrupt the resting, pass 0 to continue the rest if it was interrupted by pressing ESC key
+*/
+bool scriptHooks_RestTimer(int gameTime, RestEventType eventType, int hours, int minutes)
+{
+    assert(gameTime >= 0);
+    assert(eventType == REST_EVENT_TYPE_CANCEL || eventType == REST_EVENT_TYPE_PROGRESS || eventType == REST_EVENT_TYPE_COMPLETE);
+    assert(hours >= 0);
+    assert(minutes >= 0 && minutes < 60);
+
+    ScriptHookCall hook(HOOK_RESTTIMER, 1, { gameTime, eventType, hours, minutes });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return eventType == REST_EVENT_TYPE_CANCEL;
+    }
+
+    const int overrideResult = hook.getReturnValueAt(0).asInt();
+    if (overrideResult == 1) {
+        return true;
+    }
+    if (overrideResult == 0) {
+        if (eventType == REST_EVENT_TYPE_CANCEL) {
+            return false;
+        }
+        debugPrint("HOOK_RESTTIMER: ignoring return value 0 for non-ESC event");
+        return false;
+    }
+
+    debugPrint("HOOK_RESTTIMER: ignoring invalid return value %d", overrideResult);
+    return false;
+}
+
+/*
 Runs immediately after a critter dies for any reason.
 
 Critter arg0 - The critter that just died

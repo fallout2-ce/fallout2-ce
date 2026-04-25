@@ -36,6 +36,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
+#include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
@@ -2206,6 +2207,17 @@ static void pipboyWindowDestroyButtons()
     _hot_back_line = 0;
 }
 
+static bool pipboyRestSetGameTime(unsigned int newGameTime, RestEventType eventType, int hours, int minutes, int healingMinutes)
+{
+    gameTimeSetTime(newGameTime);
+
+    if (healingMinutes > 0 && _Check4Health(healingMinutes)) {
+        _AddHealth();
+    }
+
+    return scriptHooks_RestTimer(static_cast<int>(newGameTime), eventType, hours, minutes);
+}
+
 // 0x499A24
 static bool pipboyRest(int hours, int minutes, int duration)
 {
@@ -2215,17 +2227,17 @@ static bool pipboyRest(int hours, int minutes, int duration)
 
     if (duration == 0) {
         int hoursInMinutes = hours * 60;
-        double v1 = (double)hoursInMinutes + (double)minutes;
-        double v2 = v1 * (1.0 / 1440.0) * 3.5 + 0.25;
-        double v3 = (double)minutes / v1 * v2;
+        double totalRestMinutes = (double)hoursInMinutes + (double)minutes;
+        double totalRestAnimationDuration = totalRestMinutes * (1.0 / 1440.0) * 3.5 + 0.25;
+        double minuteRestAnimationDuration = (double)minutes / totalRestMinutes * totalRestAnimationDuration;
 
         const unsigned int uiDelayMs = std::max(static_cast<int>(50.0 / settings.ui.anim_speed), 5);
         if (minutes != 0) {
             unsigned int gameTime = gameTimeGetTime();
 
-            double v4 = v3 * 20.0;
-            int v5 = 0;
-            for (int v5 = 0; v5 < (int)v4; v5++) {
+            double minuteRestIterations = minuteRestAnimationDuration * 20.0;
+            int iteration = 0;
+            for (int iteration = 0; iteration < (int)minuteRestIterations; iteration++) {
                 sharedFpsLimiter.mark();
 
                 if (rc) {
@@ -2234,10 +2246,14 @@ static bool pipboyRest(int hours, int minutes, int duration)
 
                 unsigned int start = getTicks();
 
-                unsigned int v6 = (unsigned int)((double)v5 / v4 * ((double)minutes * 600.0) + (double)gameTime);
+                unsigned int projectedGameTime = (unsigned int)((double)iteration / minuteRestIterations * ((double)minutes * 600.0) + (double)gameTime);
                 unsigned int nextEventTime = queueGetNextEventTime();
-                if (v6 >= nextEventTime) {
-                    gameTimeSetTime(nextEventTime + 1);
+                if (projectedGameTime >= nextEventTime) {
+                    if (pipboyRestSetGameTime(nextEventTime + 1, REST_EVENT_TYPE_PROGRESS, hours, minutes, 0)) {
+                        rc = true;
+                        break;
+                    }
+
                     if (queueProcessEvents()) {
                         rc = true;
                         debugPrint("PIPBOY: Returning from Queue trigger...\n");
@@ -2251,9 +2267,15 @@ static bool pipboyRest(int hours, int minutes, int duration)
                 }
 
                 if (!rc) {
-                    gameTimeSetTime(v6);
-                    if (inputGetInput() == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+                    int keyCode = inputGetInput();
+                    if (keyCode == KEY_ESCAPE) {
+                        rc = scriptHooks_RestTimer(gameTimeGetTime(), REST_EVENT_TYPE_CANCEL, hours, minutes);
+                    } else if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                         rc = true;
+                    }
+
+                    if (!rc) {
+                        rc = pipboyRestSetGameTime(projectedGameTime, REST_EVENT_TYPE_PROGRESS, hours, minutes, 0);
                     }
 
                     pipboyDrawNumber(gameTimeGetHour(), 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
@@ -2268,12 +2290,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
             }
 
             if (!rc) {
-                gameTimeSetTime(gameTime + 600 * minutes);
-
-                if (_Check4Health(minutes)) {
-                    // NOTE: Uninline.
-                    _AddHealth();
-                }
+                rc = pipboyRestSetGameTime(gameTime + 600 * minutes, REST_EVENT_TYPE_COMPLETE, hours, minutes, minutes);
             }
 
             pipboyDrawNumber(gameTimeGetHour(), 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
@@ -2284,9 +2301,9 @@ static bool pipboyRest(int hours, int minutes, int duration)
 
         if (hours != 0 && !rc) {
             unsigned int gameTime = gameTimeGetTime();
-            double v7 = (v2 - v3) * 20.0;
+            double hourRestIterations = (totalRestAnimationDuration - minuteRestAnimationDuration) * 20.0;
 
-            for (int hour = 0; hour < (int)v7; hour++) {
+            for (int hour = 0; hour < (int)hourRestIterations; hour++) {
                 sharedFpsLimiter.mark();
 
                 if (rc) {
@@ -2295,14 +2312,13 @@ static bool pipboyRest(int hours, int minutes, int duration)
 
                 unsigned int start = getTicks();
 
-                if (inputGetInput() == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-                    rc = true;
-                }
-
-                unsigned int v8 = (unsigned int)((double)hour / v7 * (hours * GAME_TIME_TICKS_PER_HOUR) + gameTime);
+                unsigned int projectedGameTime = (unsigned int)((double)hour / hourRestIterations * (hours * GAME_TIME_TICKS_PER_HOUR) + gameTime);
                 unsigned int nextEventTime = queueGetNextEventTime();
-                if (!rc && v8 >= nextEventTime) {
-                    gameTimeSetTime(nextEventTime + 1);
+                if (!rc && projectedGameTime >= nextEventTime) {
+                    if (pipboyRestSetGameTime(nextEventTime + 1, REST_EVENT_TYPE_PROGRESS, hours, minutes, 0)) {
+                        rc = true;
+                        break;
+                    }
 
                     if (queueProcessEvents()) {
                         rc = true;
@@ -2317,12 +2333,16 @@ static bool pipboyRest(int hours, int minutes, int duration)
                 }
 
                 if (!rc) {
-                    gameTimeSetTime(v8);
+                    int keyCode = inputGetInput();
+                    if (keyCode == KEY_ESCAPE) {
+                        rc = scriptHooks_RestTimer(gameTimeGetTime(), REST_EVENT_TYPE_CANCEL, hours, minutes);
+                    } else if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+                        rc = true;
+                    }
 
-                    int healthToAdd = (int)((double)hoursInMinutes / v7);
-                    if (_Check4Health(healthToAdd)) {
-                        // NOTE: Uninline.
-                        _AddHealth();
+                    int healthToAdd = (int)((double)hoursInMinutes / hourRestIterations);
+                    if (!rc) {
+                        rc = pipboyRestSetGameTime(projectedGameTime, REST_EVENT_TYPE_PROGRESS, hours, minutes, healthToAdd);
                     }
 
                     pipboyDrawNumber(gameTimeGetHour(), 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
@@ -2338,7 +2358,7 @@ static bool pipboyRest(int hours, int minutes, int duration)
             }
 
             if (!rc) {
-                gameTimeSetTime(gameTime + GAME_TIME_TICKS_PER_HOUR * hours);
+                rc = pipboyRestSetGameTime(gameTime + GAME_TIME_TICKS_PER_HOUR * hours, REST_EVENT_TYPE_COMPLETE, hours, minutes, 0);
             }
 
             pipboyDrawNumber(gameTimeGetHour(), 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
