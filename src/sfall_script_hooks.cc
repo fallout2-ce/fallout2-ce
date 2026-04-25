@@ -412,7 +412,7 @@ int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLoc
             debugPrint("HOOK_AFTERHITROLL: ignoring invalid hit location override %d", hitLocationOverride);
         }
     }
-     if (hook.numReturnValues() > 2) {
+    if (hook.numReturnValues() > 2) {
         *defenderPtr = hook.getReturnValueAt(2).asObject();
     }
 
