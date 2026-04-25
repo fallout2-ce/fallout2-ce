@@ -1,9 +1,12 @@
 #ifndef ART_H
 #define ART_H
 
+#include <memory>
+
 #include "cache.h"
 #include "draw.h"
 #include "memory.h"
+#include "obj_types.h"
 #include "proto_types.h"
 
 namespace fallout {
@@ -151,13 +154,27 @@ Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);
 int artWrite(const char* path, unsigned char* data);
 
+using ArtPtr = InternalPtr<Art>;
+
+class NamedCacheEntry;
+std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
+
 class FrmImage {
 public:
     FrmImage();
     ~FrmImage();
 
-    bool isLocked() const { return _key != nullptr; }
+    FrmImage(const FrmImage&) = delete;
+    FrmImage& operator=(const FrmImage&) = delete;
+
+    FrmImage(FrmImage&& other) noexcept;
+
+    FrmImage& operator=(FrmImage&& other) noexcept;
+
+    bool isLocked() const { return _key != nullptr || _namedKey; }
     bool lock(unsigned int fid);
+    bool lock(const char* frmPath);
+    bool lock(ObjectType objType, const char* frmRelativePath);
     void unlock();
 
     int getWidth() const { return _width; }
@@ -167,13 +184,14 @@ public:
     ConstBuffer2D getBuffer() const { return { _data, _width, _height }; };
 
 private:
+    void resetInternal();
+
+    std::shared_ptr<NamedCacheEntry> _namedKey;
     CacheEntry* _key;
     unsigned char* _data;
     int _width;
     int _height;
 };
-
-using ArtPtr = InternalPtr<Art>;
 
 } // namespace fallout
 

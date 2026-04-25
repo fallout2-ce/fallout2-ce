@@ -162,6 +162,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING_P(auto_quick_save, clamp(0, 10));
     SETTING(enable_high_resolution_stencil);
     SETTING(extend_ap_bar);
+    SETTING(expand_barter_window);
 #undef SECT
 
 #define SECT preferences
