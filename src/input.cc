@@ -304,6 +304,7 @@ void inputEventQueueReset()
     gInputEventQueueWriteIndex = 0;
     SDL_Event e;
     while (SDL_PollEvent(&e)) { } // Clear all input events
+    sfall_kb_clear_synthetic_key_events();
 }
 
 // 0x4C8D1C
@@ -1012,12 +1013,11 @@ void _GNW95_process_message()
             touch_handle_end(&(e.tfinger));
             break;
         case SDL_KEYDOWN:
-        case SDL_KEYUP:
+        case SDL_KEYUP: {
+            keyboardData.key = e.key.keysym.scancode;
+            keyboardData.down = (e.key.state & SDL_PRESSED) != 0;
+            bool syntheticSfallKey = sfall_kb_consume_synthetic_key_event(keyboardData.key, keyboardData.down);
             if (!keyboardIsDisabled()) {
-                keyboardData.key = e.key.keysym.scancode;
-                keyboardData.down = (e.key.state & SDL_PRESSED) != 0;
-                bool syntheticSfallKey = sfall_kb_consume_synthetic_key_event(keyboardData.key, keyboardData.down);
-
                 if (!e.key.repeat && !syntheticSfallKey) {
                     int keyOverride = sfall_kb_handle_key_pressed(keyboardData.key, keyboardData.down);
                     if (keyOverride != SDL_SCANCODE_UNKNOWN) {
@@ -1027,6 +1027,7 @@ void _GNW95_process_message()
                 _GNW95_process_key(&keyboardData);
             }
             break;
+        }
         case SDL_WINDOWEVENT:
             switch (e.window.event) {
             case SDL_WINDOWEVENT_EXPOSED:

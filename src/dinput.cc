@@ -1,5 +1,6 @@
 #include "dinput.h"
 
+#include "sfall_kb_helpers.h"
 #include "svga.h"
 
 namespace fallout {
@@ -124,6 +125,7 @@ bool keyboardDeviceUnacquire()
 bool keyboardDeviceReset()
 {
     SDL_FlushEvents(SDL_KEYDOWN, SDL_TEXTINPUT);
+    sfall_kb_clear_synthetic_key_events();
     return true;
 }
 

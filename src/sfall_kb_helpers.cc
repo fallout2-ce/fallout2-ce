@@ -273,8 +273,8 @@ static constexpr SDL_Scancode kDiks[DIK_MAP_COUNT] = {
     SDL_SCANCODE_UNKNOWN,
 };
 
-std::unordered_map<SDL_Scancode, int> kScanCodeToDik;
-std::deque<std::pair<SDL_Scancode, bool>> syntheticKeyEvents;
+static std::unordered_map<SDL_Scancode, int> kScanCodeToDik;
+static std::deque<std::pair<SDL_Scancode, bool>> syntheticKeyEvents;
 
 /// Translates Sfall key code (DIK or VK constant) to SDL scancode.
 static SDL_Scancode get_scancode_from_key(int key)
@@ -357,6 +357,11 @@ bool sfall_kb_consume_synthetic_key_event(int sdlScanCode, bool pressed)
 
     syntheticKeyEvents.pop_front();
     return true;
+}
+
+void sfall_kb_clear_synthetic_key_events()
+{
+    syntheticKeyEvents.clear();
 }
 
 int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
