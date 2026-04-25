@@ -598,7 +598,7 @@ bool createTemporaryArchiveFile(const std::string& archivePath, std::string* tem
 
     for (int attempt = 0; attempt < 1000; attempt++) {
         std::string candidatePath = joinNativePath(directoryPath,
-            ".fallout2-dat-create-"
+            ".ce-dat-tool-create-"
                 + std::to_string(processId)
                 + "-"
                 + std::to_string(static_cast<long long>(std::time(nullptr)))
@@ -785,11 +785,11 @@ void printUsage(std::ostream& stream)
 {
     stream
         << "Usage:\n"
-        << "  fallout2-dat create <input-dir> <archive.dat>\n"
-        << "  fallout2-dat <archive.dat> list [pattern]\n"
-        << "  fallout2-dat <archive.dat> info [pattern]\n"
-        << "  fallout2-dat <archive.dat> extract [--lower] <output-dir> [pattern]\n"
-        << "  fallout2-dat <archive.dat> cat <entry>\n"
+        << "  ce-dat-tool create <input-dir> <archive.dat>\n"
+        << "  ce-dat-tool <archive.dat> list [pattern]\n"
+        << "  ce-dat-tool <archive.dat> info [pattern]\n"
+        << "  ce-dat-tool <archive.dat> extract [--lower] <output-dir> [pattern]\n"
+        << "  ce-dat-tool <archive.dat> cat <entry>\n"
         << "\n"
         << "Notes:\n"
         << "  - Create preserves input path casing and stores Windows-style archive paths.\n"

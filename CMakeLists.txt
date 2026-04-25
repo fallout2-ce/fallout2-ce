@@ -453,7 +453,7 @@ target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 
 if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
-    add_executable(fallout2-dat
+    add_executable(ce-dat-tool
         "tools/dat_tool.cc"
         "tools/dat_archive.cc"
         "tools/fo1_dat_lzss.cc"
@@ -462,23 +462,23 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
     )
 
     if(APPLE)
-        set_target_properties(fallout2-dat PROPERTIES
+        set_target_properties(ce-dat-tool PROPERTIES
             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
             XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
         )
     endif()
 
-    target_link_libraries(fallout2-dat
+    target_link_libraries(ce-dat-tool
         fpattern_windows::fpattern_windows
         ${ZLIB_LIBRARIES}
         ${SDL2_LIBRARIES}
     )
     if(WIN32)
-        target_link_libraries(fallout2-dat winmm)
+        target_link_libraries(ce-dat-tool winmm)
     endif()
-    target_include_directories(fallout2-dat PRIVATE "src")
-    target_include_directories(fallout2-dat PRIVATE ${ZLIB_INCLUDE_DIRS})
-    target_include_directories(fallout2-dat PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(ce-dat-tool PRIVATE "src")
+    target_include_directories(ce-dat-tool PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_include_directories(ce-dat-tool PRIVATE ${SDL2_INCLUDE_DIRS})
 endif()
 
 if(APPLE)
