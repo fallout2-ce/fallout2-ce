@@ -55,23 +55,23 @@ TODO: add Visual Studio build instructions. This will likely need a Visual Studi
 
 There is a small command-line archive tool in this repo for inspecting Fallout `.dat` files. It supports both Fallout 2 and Fallout 1 archives.
 
-From the repo root, build it with your normal CMake workflow, targeting `fallout2-dat`:
+From the repo root, build it with your normal CMake workflow, targeting `ce-dat-tool`:
 
-`cmake --build out/build/<preset-name> --target fallout2-dat`
+`cmake --build out/build/<preset-name> --target ce-dat-tool`
 
 The executable is written to your selected build directory, so the exact path will vary by preset and configuration.
 
 The current tool is read-only. Available commands:
 
-1. `./<BUILD_DIR>/fallout2-dat <archive.dat> list [pattern]`
-2. `./<BUILD_DIR>/fallout2-dat <archive.dat> info [pattern]`
-3. `./<BUILD_DIR>/fallout2-dat <archive.dat> extract [--lower] <output-dir> [pattern]`
-4. `./<BUILD_DIR>/fallout2-dat <archive.dat> cat <entry>`
+1. `./<BUILD_DIR>/ce-dat-tool <archive.dat> list [pattern]`
+2. `./<BUILD_DIR>/ce-dat-tool <archive.dat> info [pattern]`
+3. `./<BUILD_DIR>/ce-dat-tool <archive.dat> extract [--lower] <output-dir> [pattern]`
+4. `./<BUILD_DIR>/ce-dat-tool <archive.dat> cat <entry>`
 
 Use `--lower` with `extract` when you want every extracted file and directory name forced to lowercase.
 For example:
 
-`fallout2-dat master.dat extract --lower /tmp/fallout2-dat-lower data\\*`
+`ce-dat-tool master.dat extract --lower /tmp/ce-dat-tool-lower data\\*`
 
 ## Updating SDL
 
