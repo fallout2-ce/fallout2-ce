@@ -3062,7 +3062,7 @@ void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* w
         rect.top = 0;
 
         int bgRowsRead = 0;
-        for (int top = 0; top < windowHeight; ) {
+        for (int top = 0; top < windowHeight;) {
             sharedFpsLimiter.mark();
 
             soundContinueAll();
