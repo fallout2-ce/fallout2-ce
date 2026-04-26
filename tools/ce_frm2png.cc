@@ -18,6 +18,15 @@
 #include <string_view>
 #include <vector>
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
+
+#include "platform_compat.h"
+
+using namespace fallout;
+
 namespace {
 
 constexpr int kRotationCount = 6;
@@ -193,8 +202,10 @@ bool ensureDirectoriesForFile(const std::string& path)
     while (start <= directory.size()) {
         const size_t end = directory.find('/', start);
         const std::string partial = directory.substr(0, end);
-        if (!partial.empty() && mkdir(partial.c_str(), 0755) != 0 && errno != EEXIST) {
-            return false;
+        if (!partial.empty()) {
+            if (compat_mkdir(partial.c_str()) != 0 && errno != EEXIST) {
+                return false;
+            }
         }
 
         if (end == std::string::npos) {

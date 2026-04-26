@@ -482,6 +482,7 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
 
     add_executable(ce-frm2png
         "tools/ce_frm2png.cc"
+        "src/platform_compat.cc"
         "third_party/lodepng/lodepng.cpp"
     )
 
@@ -492,7 +493,12 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
         )
     endif()
 
+    target_include_directories(ce-frm2png PRIVATE "src")
     target_include_directories(ce-frm2png PRIVATE "third_party/lodepng")
+    target_include_directories(ce-frm2png PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(ce-frm2png PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_link_libraries(ce-frm2png ${SDL2_LIBRARIES})
+    target_link_libraries(ce-frm2png ${ZLIB_LIBRARIES})
 endif()
 
 if(APPLE)
