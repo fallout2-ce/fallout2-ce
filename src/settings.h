@@ -68,7 +68,7 @@ struct UISettings {
     bool numbers_in_dialogue = false;
     int auto_quick_save = 0;
     bool enable_high_resolution_stencil = true;
-    int max_inventory_columns = 1;
+    int max_inventory_columns = 2;
 };
 
 // These are settings handled by preferences UI and saved in save games.
