@@ -320,10 +320,6 @@ std::optional<std::string> findPalettePath(const Options& options)
 
     candidates.push_back("color.pal");
     candidates.push_back("COLOR.PAL");
-    candidates.push_back("data/color.pal");
-    candidates.push_back("DATA/COLOR.PAL");
-    candidates.push_back("/Applications/Fallout2Codex/color.pal");
-    candidates.push_back("/Applications/Fallout2Codex/COLOR.PAL");
 
     for (const std::string& candidate : candidates) {
         if (!candidate.empty() && pathExists(candidate)) {
