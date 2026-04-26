@@ -421,7 +421,7 @@ static InventoryLootLayout inventoryLootLayout = {
     INVENTORY_LOOT_RIGHT_SCROLLER_X,
     INVENTORY_LOOT_RIGHT_SCROLLER_Y,
     INVENTORY_SLOT_WIDTH,
-    INVENTORY_ROWS * INVENTORY_SLOT_HEIGHT,
+    INVENTORY_ROWS* INVENTORY_SLOT_HEIGHT,
     INVENTORY_LOOT_LEFT_BODY_VIEW_X,
     INVENTORY_LOOT_RIGHT_BODY_VIEW_X,
     128,
@@ -730,18 +730,18 @@ static void inventoryLootApplyLayout(int columns)
     inventoryLootLayout.visibleSlots = INVENTORY_ROWS * columns;
     inventoryLootLayout.windowWidth = columns == 2 ? INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED : INVENTORY_LOOT_WINDOW_WIDTH;
     inventoryLootLayout.windowHeight = gInventoryWindowDescriptions[INVENTORY_WINDOW_TYPE_LOOT].height;
-    inventoryLootLayout.leftScrollerX = columns == 2 ? 172+8 : INVENTORY_LOOT_LEFT_SCROLLER_X;
+    inventoryLootLayout.leftScrollerX = columns == 2 ? 172 + 8 : INVENTORY_LOOT_LEFT_SCROLLER_X;
     inventoryLootLayout.leftScrollerY = INVENTORY_LOOT_LEFT_SCROLLER_Y;
-    inventoryLootLayout.rightScrollerX = columns == 2 ? 363+4 : INVENTORY_LOOT_RIGHT_SCROLLER_X;
+    inventoryLootLayout.rightScrollerX = columns == 2 ? 363 + 4 : INVENTORY_LOOT_RIGHT_SCROLLER_X;
     inventoryLootLayout.rightScrollerY = INVENTORY_LOOT_RIGHT_SCROLLER_Y;
     inventoryLootLayout.scrollerWidth = columns * INVENTORY_SLOT_WIDTH;
     inventoryLootLayout.scrollerHeight = INVENTORY_ROWS * INVENTORY_SLOT_HEIGHT;
-    inventoryLootLayout.leftBodyViewX = columns == 2 ? 37+10 : INVENTORY_LOOT_LEFT_BODY_VIEW_X;
-    inventoryLootLayout.rightBodyViewX = columns == 2 ? 557+4 : INVENTORY_LOOT_RIGHT_BODY_VIEW_X;
-    inventoryLootLayout.leftScrollButtonX = columns == 2 ? 120+8 : 128;
-    inventoryLootLayout.rightScrollButtonX = columns == 2 ? 504+11 : 379;
-    inventoryLootLayout.takeAllButtonX = columns == 2 ? 500+68 : 432;
-    inventoryLootLayout.doneButtonX = columns == 2 ? 544+68 : 476;
+    inventoryLootLayout.leftBodyViewX = columns == 2 ? 37 + 10 : INVENTORY_LOOT_LEFT_BODY_VIEW_X;
+    inventoryLootLayout.rightBodyViewX = columns == 2 ? 557 + 4 : INVENTORY_LOOT_RIGHT_BODY_VIEW_X;
+    inventoryLootLayout.leftScrollButtonX = columns == 2 ? 120 + 8 : 128;
+    inventoryLootLayout.rightScrollButtonX = columns == 2 ? 504 + 11 : 379;
+    inventoryLootLayout.takeAllButtonX = columns == 2 ? 500 + 68 : 432;
+    inventoryLootLayout.doneButtonX = columns == 2 ? 544 + 68 : 476;
     inventoryLootLayout.prevCritterButtonX = columns == 2 ? 504 : 436;
     inventoryLootLayout.nextCritterButtonX = columns == 2 ? 524 : 456;
 }
@@ -1124,10 +1124,12 @@ static bool _setup_inventory(int inventoryWindowType)
         const InventoryWindowDescription* windowDescription = &(gInventoryWindowDescriptions[inventoryWindowType]);
         int windowWidth = isNormalWindow
             ? inventoryLayout.windowWidth
-            : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowWidth : windowDescription->width;
+            : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowWidth
+                                                                : windowDescription->width;
         int windowHeight = isNormalWindow
             ? inventoryLayout.windowHeight
-            : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowHeight : windowDescription->height;
+            : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowHeight
+                                                                : windowDescription->height;
 
         // Maintain original position in original resolution, otherwise center it.
         int inventoryWindowX = screenGetWidth() != 640
@@ -1556,7 +1558,8 @@ static bool _setup_inventory(int inventoryWindowType)
             if (inventoryWindowType != INVENTORY_WINDOW_TYPE_TRADE) {
                 // Left inventory up button.
                 gInventoryScrollUpButton = buttonCreate(gInventoryWindow,
-                    isNormalWindow ? inventoryLayout.scrollButtonX : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.leftScrollButtonX : 128,
+                    isNormalWindow ? inventoryLayout.scrollButtonX : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.leftScrollButtonX
+                                                                                                                       : 128,
                     39,
                     22,
                     23,
