@@ -357,6 +357,7 @@ static int inventoryLootGetScrollerWidth();
 static int inventoryLootGetScrollerHeight();
 static int inventoryLootGetScrollerMaxX(bool targetInventory);
 static bool inventoryLootMouseHitTestScroller(bool targetInventory);
+static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int scrollStep);
 
 // 0x46E6D0
 static const int gSummaryStats[7] = {
@@ -669,7 +670,7 @@ static bool inventoryLootBackgroundLoad(int columns)
     }
 
     if (columns == 2) {
-        return inventoryLootFrmImage.lock(OBJ_TYPE_INTERFACE, "LOOT2.FRM");
+        return inventoryLootFrmImage.lock(OBJ_TYPE_INTERFACE, "LOOT2.frm");
     }
 
     return false;
@@ -850,6 +851,16 @@ static bool inventoryLootMouseHitTestScroller(bool targetInventory)
         scrollerY,
         inventoryLootGetScrollerMaxX(targetInventory),
         scrollerY + inventoryLootGetScrollerHeight());
+}
+
+static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int scrollStep)
+{
+    int maxOffset = length - visibleSlots;
+    if (maxOffset <= 0) {
+        return 0;
+    }
+
+    return (maxOffset + scrollStep - 1) / scrollStep * scrollStep;
 }
 
 // 0x46E724
@@ -1132,12 +1143,16 @@ static bool _setup_inventory(int inventoryWindowType)
                                                                 : windowDescription->height;
 
         // Maintain original position in original resolution, otherwise center it.
-        int inventoryWindowX = screenGetWidth() != 640
-            ? (screenGetWidth() - windowWidth) / 2
-            : INVENTORY_WINDOW_X;
-        int inventoryWindowY = screenGetHeight() != 480
-            ? (screenGetHeight() - windowHeight) / 2
-            : INVENTORY_WINDOW_Y;
+        bool preserveVanillaX = screenGetWidth() == 640
+            && ((isNormalWindow && windowWidth == windowDescription->width)
+                || (!isNormalWindow && inventoryWindowType != INVENTORY_WINDOW_TYPE_LOOT));
+        bool preserveVanillaY = screenGetHeight() == 480;
+        int inventoryWindowX = preserveVanillaX
+            ? INVENTORY_WINDOW_X
+            : (screenGetWidth() - windowWidth) / 2;
+        int inventoryWindowY = preserveVanillaY
+            ? INVENTORY_WINDOW_Y
+            : (screenGetHeight() - windowHeight) / 2;
         gInventoryWindow = windowCreate(inventoryWindowX,
             inventoryWindowY,
             windowWidth,
@@ -4283,8 +4298,12 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     }
 
     const InventoryWindowDescription* windowDescription = &(gInventoryWindowDescriptions[inventoryWindowType]);
-    int windowWidth = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL ? inventoryLayout.windowWidth : windowDescription->width;
-    int windowHeight = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL ? inventoryLayout.windowHeight : windowDescription->height;
+    int windowWidth = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL
+        ? inventoryLayout.windowWidth
+        : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowWidth : windowDescription->width;
+    int windowHeight = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL
+        ? inventoryLayout.windowHeight
+        : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowHeight : windowDescription->height;
 
     Rect windowRect;
     windowGetRect(gInventoryWindow, &windowRect);
@@ -4826,8 +4845,9 @@ int inventoryOpenLooting(Object* looter, Object* target)
             }
         } else if (keyCode == KEY_ARROW_DOWN) {
             if (_stack_offset[_curr_stack] + gInventorySlotsCount < _pud->length) {
-                _stack_offset[_curr_stack] += inventoryLootGetScrollStep();
-                int maxOffset = _pud->length - gInventorySlotsCount;
+                int scrollStep = inventoryLootGetScrollStep();
+                _stack_offset[_curr_stack] += scrollStep;
+                int maxOffset = inventoryComputeAlignedMaxOffset(_pud->length, gInventorySlotsCount, scrollStep);
                 if (_stack_offset[_curr_stack] > maxOffset) {
                     _stack_offset[_curr_stack] = maxOffset;
                 }
@@ -4861,8 +4881,9 @@ int inventoryOpenLooting(Object* looter, Object* target)
             }
         } else if (keyCode == KEY_CTRL_ARROW_DOWN) {
             if (_target_stack_offset[_target_curr_stack] + gInventorySlotsCount < _target_pud->length) {
-                _target_stack_offset[_target_curr_stack] += inventoryLootGetScrollStep();
-                int maxOffset = _target_pud->length - gInventorySlotsCount;
+                int scrollStep = inventoryLootGetScrollStep();
+                _target_stack_offset[_target_curr_stack] += scrollStep;
+                int maxOffset = inventoryComputeAlignedMaxOffset(_target_pud->length, gInventorySlotsCount, scrollStep);
                 if (_target_stack_offset[_target_curr_stack] > maxOffset) {
                     _target_stack_offset[_target_curr_stack] = maxOffset;
                 }
@@ -4941,8 +4962,9 @@ int inventoryOpenLooting(Object* looter, Object* target)
                         }
                     } else if (wheelY < 0) {
                         if (_stack_offset[_curr_stack] + gInventorySlotsCount < _pud->length) {
-                            _stack_offset[_curr_stack] += inventoryLootGetScrollStep();
-                            int maxOffset = _pud->length - gInventorySlotsCount;
+                            int scrollStep = inventoryLootGetScrollStep();
+                            _stack_offset[_curr_stack] += scrollStep;
+                            int maxOffset = inventoryComputeAlignedMaxOffset(_pud->length, gInventorySlotsCount, scrollStep);
                             if (_stack_offset[_curr_stack] > maxOffset) {
                                 _stack_offset[_curr_stack] = maxOffset;
                             }
@@ -4964,8 +4986,9 @@ int inventoryOpenLooting(Object* looter, Object* target)
                         }
                     } else if (wheelY < 0) {
                         if (_target_stack_offset[_target_curr_stack] + gInventorySlotsCount < _target_pud->length) {
-                            _target_stack_offset[_target_curr_stack] += inventoryLootGetScrollStep();
-                            int maxOffset = _target_pud->length - gInventorySlotsCount;
+                            int scrollStep = inventoryLootGetScrollStep();
+                            _target_stack_offset[_target_curr_stack] += scrollStep;
+                            int maxOffset = inventoryComputeAlignedMaxOffset(_target_pud->length, gInventorySlotsCount, scrollStep);
                             if (_target_stack_offset[_target_curr_stack] > maxOffset) {
                                 _target_stack_offset[_target_curr_stack] = maxOffset;
                             }
