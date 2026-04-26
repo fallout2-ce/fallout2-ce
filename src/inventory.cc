@@ -4300,10 +4300,12 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     const InventoryWindowDescription* windowDescription = &(gInventoryWindowDescriptions[inventoryWindowType]);
     int windowWidth = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL
         ? inventoryLayout.windowWidth
-        : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowWidth : windowDescription->width;
+        : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowWidth
+                                                            : windowDescription->width;
     int windowHeight = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL
         ? inventoryLayout.windowHeight
-        : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowHeight : windowDescription->height;
+        : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowHeight
+                                                            : windowDescription->height;
 
     Rect windowRect;
     windowGetRect(gInventoryWindow, &windowRect);
