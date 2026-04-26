@@ -73,6 +73,34 @@ For example:
 
 `ce-dat-tool master.dat extract --lower /tmp/ce-dat-tool-lower data\\*`
 
+## `ce-frm2png` CLI Tool
+
+There is also a small FRM conversion tool in this repo for exporting Fallout `.frm` art to `.png`.
+
+From the repo root, build it with your normal CMake workflow, targeting `ce-frm2png`:
+
+`cmake --build out/build/<preset-name> --target ce-frm2png`
+
+The executable is written to your selected build directory, so the exact path will vary by preset and configuration.
+
+Basic usage:
+
+1. `./<BUILD_DIR>/ce-frm2png <input.frm> [output.png]`
+2. `./<BUILD_DIR>/ce-frm2png <input.frm> [output.png] --palette <path-to-color.pal>`
+3. `./<BUILD_DIR>/ce-frm2png <input.frm> [output.png] --frame <index> --direction <index>`
+4. `./<BUILD_DIR>/ce-frm2png - [output.png|-] --palette <path-to-color.pal>`
+
+`-` can be used to take input from stdin (e.g. from `ce-dat-tool cat` or write to stdout).
+
+If `--palette` isn't specified, will pick up `color.pal` in the .frm's directory or cwd.
+
+Notes:
+
+- The tool expects a raw `color.pal` file. It does not read palettes directly from `master.dat`, so extract `color.pal` first if needed.
+- A typical extraction flow is: `ce-dat-tool master.dat extract --lower . 'color.pal'`
+- By default palette index `0` becomes transparent in the output PNG. Pass `--opaque` to keep it opaque.
+- The current implementation writes RGBA PNGs. It does not preserve the original Fallout palette indices as a palette-indexed PNG.
+
 ## Updating SDL
 
 SDL is pinned for native builds in `third_party/sdl2/CMakeLists.txt`. Right now, Android also relies on checked-in Java bindings in `os/android/app/src/main/java/org/libsdl/app`, and those bindings must match the SDL version fetched by CMake.

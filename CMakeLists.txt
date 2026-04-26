@@ -479,6 +479,20 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
     target_include_directories(ce-dat-tool PRIVATE "src")
     target_include_directories(ce-dat-tool PRIVATE ${ZLIB_INCLUDE_DIRS})
     target_include_directories(ce-dat-tool PRIVATE ${SDL2_INCLUDE_DIRS})
+
+    add_executable(ce-frm2png
+        "tools/ce_frm2png.cc"
+        "third_party/lodepng/lodepng.cpp"
+    )
+
+    if(APPLE)
+        set_target_properties(ce-frm2png PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        )
+    endif()
+
+    target_include_directories(ce-frm2png PRIVATE "third_party/lodepng")
 endif()
 
 if(APPLE)
