@@ -1,7 +1,7 @@
 #include "sfall_script_hooks.h"
 
-#include <climits>
 #include <algorithm>
+#include <climits>
 #include <cstring>
 #include <memory>
 #include <string>
