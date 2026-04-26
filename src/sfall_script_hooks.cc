@@ -1,5 +1,6 @@
 #include "sfall_script_hooks.h"
 
+#include <climits>
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -14,6 +15,15 @@
 #include <assert.h>
 
 namespace fallout {
+
+static int normalizeGameTimeForScript(unsigned int gameTime)
+{
+    // fallout saves ticks as uint32 but scripts expect int32.  Wrapping at INT_MAX means
+    // that scripts will at least see positive ticks betwen 7.8y and 13y of game time.
+    // There isn't an elegant solution to this; scripts should use get_year instead of relying
+    // on absolute tick count
+    return static_cast<int>(gameTime % INT_MAX);
+}
 
 struct ScriptHook {
     Program* program = nullptr;
@@ -209,14 +219,13 @@ int arg3 - the minute part of the length of resting time
 
 int ret0 - pass 1 to interrupt the resting, pass 0 to continue the rest if it was interrupted by pressing ESC key
 */
-bool scriptHooks_RestTimer(int gameTime, RestEventType eventType, int hours, int minutes)
+bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes)
 {
-    assert(gameTime >= 0);
     assert(eventType == REST_EVENT_TYPE_CANCEL || eventType == REST_EVENT_TYPE_PROGRESS || eventType == REST_EVENT_TYPE_COMPLETE);
     assert(hours >= 0);
     assert(minutes >= 0 && minutes < 60);
 
-    ScriptHookCall hook(HOOK_RESTTIMER, 1, { gameTime, eventType, hours, minutes });
+    ScriptHookCall hook(HOOK_RESTTIMER, 1, { normalizeGameTimeForScript(gameTime), eventType, hours, minutes });
     hook.call();
 
     if (hook.numReturnValues() <= 0) {

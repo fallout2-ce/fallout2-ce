@@ -2215,7 +2215,7 @@ static bool pipboyRestSetGameTime(unsigned int newGameTime, RestEventType eventT
         _AddHealth();
     }
 
-    return scriptHooks_RestTimer(static_cast<int>(newGameTime), eventType, hours, minutes);
+    return scriptHooks_RestTimer(newGameTime, eventType, hours, minutes);
 }
 
 // 0x499A24
@@ -2236,7 +2236,6 @@ static bool pipboyRest(int hours, int minutes, int duration)
             unsigned int gameTime = gameTimeGetTime();
 
             double minuteRestIterations = minuteRestAnimationDuration * 20.0;
-            int iteration = 0;
             for (int iteration = 0; iteration < (int)minuteRestIterations; iteration++) {
                 sharedFpsLimiter.mark();
 
@@ -2290,7 +2289,8 @@ static bool pipboyRest(int hours, int minutes, int duration)
             }
 
             if (!rc) {
-                rc = pipboyRestSetGameTime(gameTime + 600 * minutes, REST_EVENT_TYPE_COMPLETE, hours, minutes, minutes);
+                RestEventType eventType = hours == 0 ? REST_EVENT_TYPE_COMPLETE : REST_EVENT_TYPE_PROGRESS;
+                rc = pipboyRestSetGameTime(gameTime + 600 * minutes, eventType, hours, minutes, minutes);
             }
 
             pipboyDrawNumber(gameTimeGetHour(), 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);

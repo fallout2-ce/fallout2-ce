@@ -61,12 +61,13 @@ From the repo root, build it with your normal CMake workflow, targeting `ce-dat-
 
 The executable is written to your selected build directory, so the exact path will vary by preset and configuration.
 
-The current tool is read-only. Available commands:
+Available commands:
 
 1. `./<BUILD_DIR>/ce-dat-tool <archive.dat> list [pattern]`
-2. `./<BUILD_DIR>/ce-dat-tool <archive.dat> info [pattern]`
-3. `./<BUILD_DIR>/ce-dat-tool <archive.dat> extract [--lower] <output-dir> [pattern]`
-4. `./<BUILD_DIR>/ce-dat-tool <archive.dat> cat <entry>`
+2. `ce-dat-tool <archive.dat> info [pattern]`
+3. `ce-dat-tool <archive.dat> extract [--lower] <output-dir> [pattern]`
+4. `ce-dat-tool <archive.dat> cat <entry>`
+5. `ce-dat-tool create <input-dir> <archive.dat>`
 
 Use `--lower` with `extract` when you want every extracted file and directory name forced to lowercase.
 For example:
