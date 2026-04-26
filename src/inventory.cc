@@ -180,7 +180,6 @@ constexpr int kTradeSlotCount = 3;
 
 #define INVENTORY_NORMAL_WINDOW_PC_ROTATION_DELAY (1000U / ROTATION_COUNT)
 #define INVENTORY_FRM_COUNT 12
-#define INVENTORY_MAX_COLUMNS 4
 #define INVENTORY_ROWS 6
 
 #define INVENTORY_HAND_RIGHT_KEY 2600
@@ -381,7 +380,6 @@ static InventoryNormalLayout gInventoryNormalLayout = {
     437,
 };
 
-static Art* gInventoryNormalBackgroundArt = nullptr;
 static FrmImage gInventoryNormalBackgroundFrmImage;
 
 // 0x519058 inven_dude
@@ -594,26 +592,7 @@ static FrmImage _moveFrmImages[8];
 
 static void inventoryNormalBackgroundFree()
 {
-    if (gInventoryNormalBackgroundArt != nullptr) {
-        internal_free(gInventoryNormalBackgroundArt);
-        gInventoryNormalBackgroundArt = nullptr;
-    }
-
     gInventoryNormalBackgroundFrmImage.unlock();
-}
-
-static const char* inventoryNormalBackgroundPath(int columns)
-{
-    switch (columns) {
-    case 2:
-        return "art\\intrface\\INVBOX2.FRM";
-    case 3:
-        return "art\\intrface\\INVBOX3.FRM";
-    case 4:
-        return "art\\intrface\\INVBOX4.FRM";
-    default:
-        return nullptr;
-    }
 }
 
 static bool inventoryNormalBackgroundLoad(int columns)
@@ -625,13 +604,11 @@ static bool inventoryNormalBackgroundLoad(int columns)
         return gInventoryNormalBackgroundFrmImage.lock(backgroundFid);
     }
 
-    const char* path = inventoryNormalBackgroundPath(columns);
-    if (path == nullptr) {
-        return false;
+    if (columns == 2) {
+        return gInventoryNormalBackgroundFrmImage.lock(OBJ_TYPE_INTERFACE, "INVBOX2.FRM");
     }
 
-    gInventoryNormalBackgroundArt = artLoad(path);
-    return gInventoryNormalBackgroundArt != nullptr;
+    return false;
 }
 
 static int inventoryNormalChooseColumns()
@@ -641,13 +618,9 @@ static int inventoryNormalChooseColumns()
         return 1;
     }
 
-    maxColumns = std::min(maxColumns, INVENTORY_MAX_COLUMNS);
-
-    for (int columns = maxColumns; columns > 1; columns--) {
-        int width = INVENTORY_WINDOW_WIDTH + (columns - 1) * INVENTORY_SLOT_WIDTH;
-        if (width <= screenGetWidth() && inventoryNormalBackgroundLoad(columns)) {
-            return columns;
-        }
+    int width = INVENTORY_WINDOW_WIDTH + INVENTORY_SLOT_WIDTH;
+    if (width <= screenGetWidth() && inventoryNormalBackgroundLoad(2)) {
+        return 2;
     }
 
     return 1;
@@ -655,28 +628,16 @@ static int inventoryNormalChooseColumns()
 
 static unsigned char* inventoryNormalBackgroundGetData()
 {
-    if (gInventoryNormalBackgroundArt != nullptr) {
-        return artGetFrameData(gInventoryNormalBackgroundArt, 0, 0);
-    }
-
     return gInventoryNormalBackgroundFrmImage.getData();
 }
 
 static int inventoryNormalBackgroundGetWidth()
 {
-    if (gInventoryNormalBackgroundArt != nullptr) {
-        return artGetWidth(gInventoryNormalBackgroundArt, 0, 0);
-    }
-
     return gInventoryNormalBackgroundFrmImage.getWidth();
 }
 
 static int inventoryNormalBackgroundGetHeight()
 {
-    if (gInventoryNormalBackgroundArt != nullptr) {
-        return artGetHeight(gInventoryNormalBackgroundArt, 0, 0);
-    }
-
     return gInventoryNormalBackgroundFrmImage.getHeight();
 }
 
@@ -725,6 +686,9 @@ static void inventoryNormalClampStackOffset()
     int maxOffset = _pud->length - inventoryNormalGetVisibleSlots();
     if (maxOffset < 0) {
         maxOffset = 0;
+    } else {
+        int scrollStep = inventoryNormalGetScrollStep();
+        maxOffset = (maxOffset + scrollStep - 1) / scrollStep * scrollStep;
     }
 
     if (_stack_offset[_curr_stack] > maxOffset) {
