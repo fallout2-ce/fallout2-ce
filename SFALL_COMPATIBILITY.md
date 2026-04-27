@@ -81,7 +81,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Hook | ID | Compatibility | Notes |
 | --- | --- | --- | --- |
 | ToHit | `HOOK_TOHIT` | ✅ | - |
-| AfterHitRoll | `HOOK_AFTERHITROLL` | ✅ | Overriding `defender` leaves a lot of variables about the attack in previous state (e.g. distance, ->oops, roundsHitMainTarget) |
+| AfterHitRoll | `HOOK_AFTERHITROLL` | ✅ | Overriding `defender` leaves a lot of attack variables in previous state (e.g. distance, ->oops, roundsHitMainTarget) |
 | CalcAPCost | `HOOK_CALCAPCOST` | ✅ | - |
 | DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | Use DEATHANIM2 instead |
 | DeathAnim2 | `HOOK_DEATHANIM2` | ✅ | - |
@@ -108,7 +108,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | StdProcedureEnd | `HOOK_STDPROCEDURE_END` | ✅ | - |
 | CarTravel | `HOOK_CARTRAVEL` | 🚫 | - |
 | SetGlobalVar | `HOOK_SETGLOBALVAR` | 🚫 | - |
-| RestTimer | `HOOK_RESTTIMER` | 🚫 | Et tu |
+| RestTimer | `HOOK_RESTTIMER` | ✅ | CE is slightly more strict: only `ret0 == 1` interrupts. Ticks wrap every 7.8y; do not rely on them for absolute game time. |
 | GameModeChange | `HOOK_GAMEMODECHANGE` | ✅ | - |
 | UseAnimObj | `HOOK_USEANIMOBJ` | 🚫 | Et tu; (maybe) |
 | ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | 🚫 | - |

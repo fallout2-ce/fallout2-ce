@@ -155,6 +155,12 @@ typedef enum {
 } HookType;
 
 typedef enum {
+    REST_EVENT_TYPE_CANCEL = -1,
+    REST_EVENT_TYPE_PROGRESS = 0,
+    REST_EVENT_TYPE_COMPLETE = 1,
+} RestEventType;
+
+typedef enum {
     HOOK_INVENTORYMOVE_MAIN_BACKPACK = 0,
     HOOK_INVENTORYMOVE_LEFT_HAND = 1,
     HOOK_INVENTORYMOVE_RIGHT_HAND = 2,
@@ -258,6 +264,7 @@ void scriptHooksReset();
 void scriptHooksExit();
 
 void scriptHooks_GameModeChange(int exit, int previousGameMode);
+bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes);
 void scriptHooks_OnDeath(Object* critter);
 bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
