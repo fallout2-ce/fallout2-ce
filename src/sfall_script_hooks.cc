@@ -18,8 +18,8 @@ namespace fallout {
 
 static int normalizeGameTimeForScript(unsigned int gameTime)
 {
-    // fallout saves ticks as uint32 but scripts expect int32.  Wrapping at INT_MAX means
-    // that scripts will at least see positive ticks betwen 7.8y and 13y of game time.
+    // Fallout saves ticks as uint32 but scripts expect int32.  Wrapping at INT_MAX means
+    // that scripts will at least see positive ticks between 7.8y and 13y of game time.
     // There isn't an elegant solution to this; scripts should use get_year instead of relying
     // on absolute tick count
     return static_cast<int>(gameTime % INT_MAX);

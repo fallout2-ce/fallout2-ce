@@ -2231,7 +2231,8 @@ static bool pipboyRest(int hours, int minutes, int duration)
         double totalRestAnimationDuration = totalRestMinutes * (1.0 / 1440.0) * 3.5 + 0.25;
         double minuteRestAnimationDuration = (double)minutes / totalRestMinutes * totalRestAnimationDuration;
 
-        const unsigned int uiDelayMs = std::max(static_cast<int>(50.0 / settings.ui.anim_speed), 5);
+        // note: signed to maintain signed arithmetic in delay calculation
+        const int uiDelayMs = std::max(static_cast<int>(50.0 / settings.ui.anim_speed), 5);
         if (minutes != 0) {
             unsigned int gameTime = gameTimeGetTime();
 
@@ -2281,7 +2282,9 @@ static bool pipboyRest(int hours, int minutes, int duration)
                     pipboyDrawDate();
                     windowRefresh(gPipboyWindow);
 
-                    delay_ms(uiDelayMs - (getTicks() - start));
+                    // subtle: convert to signed to avoid underflow
+                    int elapsedMs = static_cast<int>(getTicks() - start);
+                    delay_ms(uiDelayMs - elapsedMs);
                 }
 
                 renderPresent();
@@ -2350,7 +2353,9 @@ static bool pipboyRest(int hours, int minutes, int duration)
                     pipboyDrawHitPoints();
                     windowRefresh(gPipboyWindow);
 
-                    delay_ms(uiDelayMs - (getTicks() - start));
+                    // subtle: convert to signed to avoid underflow
+                    int elapsedMs = static_cast<int>(getTicks() - start);
+                    delay_ms(uiDelayMs - elapsedMs);
                 }
 
                 renderPresent();
