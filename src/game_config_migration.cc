@@ -176,7 +176,7 @@ namespace {
         { kSfallMisc, "BonusHtHDamageFix", CONTENT_CONFIG_COMBAT_SECTION, "bonus_hth_damage_fix", "1" },
         { kSfallMisc, "RemoveCriticalTimelimits", CONTENT_CONFIG_COMBAT_SECTION, "remove_critical_time_limits", "0" },
         { kSfallMisc, "ScienceOnCritters", CONTENT_CONFIG_COMBAT_SECTION, "science_on_critters", "0" },
-        { kSfallMisc, "CheckWeaponAmmoCost", CONTENT_CONFIG_COMBAT_SECTION, "check_weapon_ammo_cost", "0" },
+        { kSfallMisc, "CheckWeaponAmmoCost", CONTENT_CONFIG_COMBAT_SECTION, "check_weapon_ammo_cost", nullptr},
         { kSfallMisc, "ComputeSprayMod", CONTENT_CONFIG_COMBAT_SECTION, "burst_enabled", "0" },
         { kSfallMisc, "ComputeSpray_CenterMult", CONTENT_CONFIG_COMBAT_SECTION, "burst_center_mult", "1" },
         { kSfallMisc, "ComputeSpray_CenterDiv", CONTENT_CONFIG_COMBAT_SECTION, "burst_center_div", "3" },

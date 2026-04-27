@@ -113,7 +113,7 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
 static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim);
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int* ammoSpentPtr, int anim);
+static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int anim);
 static int attackComputeEnhancedKnockout(Attack* attack);
 static int attackCompute(Attack* attack);
 static int attackComputeCriticalHit(Attack* a1);
@@ -2333,8 +2333,7 @@ static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weap
     int accuracy = attackDetermineToHit(attacker, attacker->tile, defender, HIT_LOCATION_TORSO, hitMode, true);
     int roundsHitMainTarget;
     int roundsFired;
-    int ammoSpent;
-    _compute_spray(&attack, accuracy, &roundsHitMainTarget, &roundsFired, &ammoSpent, anim);
+    _compute_spray(&attack, accuracy, &roundsHitMainTarget, &roundsFired, anim);
 
     if (attackerFriend != nullptr) {
         for (int index = 0; index < attack.extrasLength; index++) {
@@ -3755,34 +3754,31 @@ static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim)
     return roundsHitMainTarget;
 }
 
-// 0x423488
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int* ammoSpentPtr, int anim)
+// 0x423488 compute_spray
+static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int anim)
 {
     *roundsHitMainTargetPtr = 0;
 
     int currentAmmo = ammoGetQuantity(attack->weapon);
-    int ammoQuantity = currentAmmo;
     int burstRounds = weaponGetBurstRounds(attack->weapon);
-    int ammoCostPerRound = scriptHooks_AmmoCost(attack->weapon, burstRounds, 1, 2);
+    int ammoCostPerRound = scriptHooks_AmmoCost(attack->weapon, burstRounds, 1, AMMO_COST_HOOK_BURST_ROUNDS);
 
     if (ammoCostPerRound == 0) {
-        ammoQuantity = currentAmmo > 0 ? burstRounds : 0;
-        *ammoSpentPtr = 0;
+        *roundsFiredPtr = currentAmmo > 0 ? burstRounds : 0;
     } else {
-        int ammoSpent = burstRounds * ammoCostPerRound;
-        if (ammoSpent > ammoQuantity) {
-            ammoSpent = ammoQuantity;
+        int roundsFired = currentAmmo / ammoCostPerRound;
+        if (roundsFired > burstRounds) {
+            roundsFired = burstRounds;
         }
 
-        ammoQuantity = ammoSpent / ammoCostPerRound;
-        if (ammoQuantity == 0 && currentAmmo > 0) {
-            ammoQuantity = 1;
+        if (roundsFired == 0 && currentAmmo > 0) {
+            roundsFired = 1;
         }
 
-        *ammoSpentPtr = ammoSpent;
+        *roundsFiredPtr = roundsFired;
     }
 
-    *roundsFiredPtr = ammoQuantity;
+    int ammoQuantity = *roundsFiredPtr;
 
     int criticalChance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
     int roll = randomRoll(accuracy, criticalChance, nullptr);
@@ -3920,7 +3916,8 @@ static int attackCompute(Attack* attack)
     int roll;
 
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
-        roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsFired, &roundsSpent, anim);
+        roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsFired, anim);
+        roundsSpent = roundsFired;
     } else {
         int chance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
         roll = randomRoll(accuracy, chance - hit_location_penalty[attack->defenderHitLocation], nullptr);
@@ -3979,13 +3976,17 @@ static int attackCompute(Attack* attack)
 
     if (ammoGetCapacity(attack->weapon) > 0) {
         if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
-            attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, roundsFired, attack->ammoQuantity, 3);
+            if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
+                return -1;
+            }
+
+            attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, roundsFired, attack->ammoQuantity, AMMO_COST_HOOK_BURST_SHOT);
         } else {
             if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
                 return -1;
             }
 
-            attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, 1, attack->ammoQuantity, 0);
+            attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, 1, attack->ammoQuantity, AMMO_COST_HOOK_SINGLE_SHOT);
         }
     }
 

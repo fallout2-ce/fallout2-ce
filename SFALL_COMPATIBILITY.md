@@ -94,7 +94,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | BarterPrice | `HOOK_BARTERPRICE` | ✅ | - |
 | MoveCost | `HOOK_MOVECOST` | 🚫 | - |
 | ItemDamage | `HOOK_ITEMDAMAGE` | 🚫 | - |
-| AmmoCost | `HOOK_AMMOCOST` | ✅ | Requires `Misc/CheckWeaponAmmoCost=1` in `ddraw.ini` if you want pre-attack ammo validation to respect per-shot/per-round overrides. |
+| AmmoCost | `HOOK_AMMOCOST` | ✅ | Requires `check_weapon_ammo_cost=1` if you want pre-attack ammo validation to respect per-shot/per-round overrides. |
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | ✅ | - |
 | UseSkill | `HOOK_USESKILL` | 🚫 | - |
@@ -108,7 +108,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | StdProcedureEnd | `HOOK_STDPROCEDURE_END` | ✅ | - |
 | CarTravel | `HOOK_CARTRAVEL` | 🚫 | - |
 | SetGlobalVar | `HOOK_SETGLOBALVAR` | 🚫 | - |
-| RestTimer | `HOOK_RESTTIMER` | ✅ | CE is slightly more strict: only `ret0 == 1` interrupts. Ticks wrap every 7.8y; do not rely on them for absolute game time. |
+| RestTimer | `HOOK_RESTTIMER` | ✅ | CE is slightly more strict: only `ret0 == 1` interrupts. Ticks wrap every 6.8y; do not rely on them for absolute game time. |
 | GameModeChange | `HOOK_GAMEMODECHANGE` | ✅ | - |
 | UseAnimObj | `HOOK_USEANIMOBJ` | 🚫 | Et tu; (maybe) |
 | ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | 🚫 | - |

@@ -1953,7 +1953,7 @@ int weaponGetSecondaryActionPointCost(Object* weapon)
     return proto->item.data.weapon.actionPointCost2;
 }
 
-// 0x4790AC
+// 0x4790AC item_w_compute_ammo_cost
 int weaponComputeAmmoCost(const Object* obj, int* ammoQty)
 {
     if (ammoQty == nullptr) {
@@ -1985,6 +1985,8 @@ bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
 
     int currentAmmo = ammoGetQuantity(const_cast<Object*>(weapon));
     if (currentAmmo <= 0) {
+        // Exiting early matches here Sfall, but means that a hook can't
+        // make attacks cost zero ammo if the weapon is empty.
         return false;
     }
 
@@ -2005,7 +2007,7 @@ bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
         return false;
     }
 
-    ammoCost = scriptHooks_AmmoCost(const_cast<Object*>(weapon), rounds, ammoCost, 1);
+    ammoCost = scriptHooks_AmmoCost(const_cast<Object*>(weapon), rounds, ammoCost, AMMO_COST_HOOK_CHECK_OUT_OF_AMMO);
 
     int ammoCostPerRound = ammoCost;
     if (rounds > 1) {
