@@ -67,6 +67,46 @@ int xfileClose(XFile* stream)
     return rc;
 }
 
+// Attempts to open [filePath] from a single [xbase]. On success, fills [stream]
+// and writes the resolved path into [path]/[pathSize]. Returns true on success.
+static bool xfileOpenFromXBaseInto(XBase* xbase, const char* filePath, const char* mode, XFile* stream, char* path, size_t pathSize)
+{
+    if (xbase->isDbase) {
+        stream->dfile = dfileOpen(xbase->dbase, filePath, mode);
+        if (stream->dfile == nullptr) {
+            return false;
+        }
+        stream->type = XFILE_TYPE_DFILE;
+        snprintf(path, pathSize, "%s", filePath);
+    } else {
+        snprintf(path, pathSize, "%s\\%s", xbase->path, filePath);
+        stream->file = compat_fopen(path, mode);
+        if (stream->file == nullptr) {
+            return false;
+        }
+        stream->type = XFILE_TYPE_FILE;
+    }
+    return true;
+}
+
+// Checks if a plain file stream is gzipped and reopens it accordingly.
+// [path] must be the resolved filesystem path used to open [stream->file].
+static void xfileDetectGzip(XFile* stream, const char* path, const char* mode)
+{
+    if (stream->type != XFILE_TYPE_FILE) {
+        return;
+    }
+    int ch1 = fgetc(stream->file);
+    int ch2 = fgetc(stream->file);
+    if (ch1 == 0x1F && ch2 == 0x8B) {
+        fclose(stream->file);
+        stream->type = XFILE_TYPE_GZFILE;
+        stream->gzfile = compat_gzopen(path, mode);
+    } else {
+        rewind(stream->file);
+    }
+}
+
 // 0x4DEE2C
 XFile* xfileOpen(const char* filePath, const char* mode)
 {
@@ -101,24 +141,8 @@ XFile* xfileOpen(const char* filePath, const char* mode)
         // open [filePath] from appropriate xbase.
         XBase* curr = gXbaseHead;
         while (curr != nullptr) {
-            if (curr->isDbase) {
-                // Attempt to open dfile stream from dbase.
-                stream->dfile = dfileOpen(curr->dbase, filePath, mode);
-                if (stream->dfile != nullptr) {
-                    stream->type = XFILE_TYPE_DFILE;
-                    snprintf(path, sizeof(path), "%s", filePath);
-                    break;
-                }
-            } else {
-                // Build path relative to directory-based xbase.
-                snprintf(path, sizeof(path), "%s\\%s", curr->path, filePath);
-
-                // Attempt to open plain stream.
-                stream->file = compat_fopen(path, mode);
-                if (stream->file != nullptr) {
-                    stream->type = XFILE_TYPE_FILE;
-                    break;
-                }
+            if (xfileOpenFromXBaseInto(curr, filePath, mode, stream, path, sizeof(path))) {
+                break;
             }
             curr = curr->next;
         }
@@ -137,23 +161,8 @@ XFile* xfileOpen(const char* filePath, const char* mode)
         }
     }
 
-    if (stream->type == XFILE_TYPE_FILE) {
-        // Opened file is a plain stream, which might be gzipped. In this case
-        // first two bytes will contain magic numbers.
-        int ch1 = fgetc(stream->file);
-        int ch2 = fgetc(stream->file);
-        if (ch1 == 0x1F && ch2 == 0x8B) {
-            // File is gzipped. Close plain stream and reopen this file as
-            // gzipped stream.
-            fclose(stream->file);
-
-            stream->type = XFILE_TYPE_GZFILE;
-            stream->gzfile = compat_gzopen(path, mode);
-        } else {
-            // File is not gzipped.
-            rewind(stream->file);
-        }
-    }
+    // Opened file is a plain stream, which might be gzipped.
+    xfileDetectGzip(stream, path, mode);
 
     return stream;
 }
@@ -548,6 +557,42 @@ bool xbaseOpen(const char* path)
     free(xbase->path);
     free(xbase);
     return false; // return false to trigger messages on game load
+}
+
+static XFile* xfileOpenFromXBase(XBase* xbase, const char* filePath, const char* mode)
+{
+    XFile* stream = (XFile*)malloc(sizeof(*stream));
+    if (stream == nullptr) {
+        return nullptr;
+    }
+    memset(stream, 0, sizeof(*stream));
+
+    char path[COMPAT_MAX_PATH];
+    if (!xfileOpenFromXBaseInto(xbase, filePath, mode, stream, path, sizeof(path))) {
+        free(stream);
+        return nullptr;
+    }
+
+    xfileDetectGzip(stream, path, mode);
+    return stream;
+}
+
+static void xfileOpenEachReverseHelper(XBase* xbase, const char* filePath, const char* mode, XFileEachHandler* handler, void* context)
+{
+    if (xbase == nullptr) {
+        return;
+    }
+    xfileOpenEachReverseHelper(xbase->next, filePath, mode, handler, context);
+    XFile* file = xfileOpenFromXBase(xbase, filePath, mode);
+    if (file != nullptr) {
+        handler(file, context);
+        xfileClose(file);
+    }
+}
+
+void xfileOpenEachReverse(const char* filePath, const char* mode, XFileEachHandler* handler, void* context)
+{
+    xfileOpenEachReverseHelper(gXbaseHead, filePath, mode, handler, context);
 }
 
 // 0x4DFB3C
