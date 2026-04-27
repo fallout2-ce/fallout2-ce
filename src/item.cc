@@ -1985,7 +1985,7 @@ bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
 
     int currentAmmo = ammoGetQuantity(const_cast<Object*>(weapon));
     if (currentAmmo <= 0) {
-        // Exiting early matches here Sfall, but means that a hook can't
+        // Exiting early here matches Sfall, but means that a hook can't
         // make attacks cost zero ammo if the weapon is empty.
         return false;
     }
