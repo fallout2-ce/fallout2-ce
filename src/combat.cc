@@ -3772,6 +3772,9 @@ static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTarget
         }
 
         if (roundsFired == 0 && currentAmmo > 0) {
+            // In theory this means there's not enough ammo for a shot, but it's "too late" to stop the attack,
+            // so we fire anyway.  if check_weapon_ammo_cost=1 (default), the attack will be prevented before
+            // getting here.
             roundsFired = 1;
         }
 
@@ -3911,13 +3914,11 @@ static int attackCompute(Attack* attack)
     int roundsHitMainTarget = 1;
     int damageMultiplier = 2;
     int roundsFired = 1;
-    int roundsSpent = 1;
 
     int roll;
 
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
         roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsFired, anim);
-        roundsSpent = roundsFired;
     } else {
         int chance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
         roll = randomRoll(accuracy, chance - hit_location_penalty[attack->defenderHitLocation], nullptr);
@@ -3954,40 +3955,36 @@ static int attackCompute(Attack* attack)
         }
     }
 
-    if (attackType == ATTACK_TYPE_RANGED) {
-        attack->ammoQuantity = roundsSpent;
-
-        if (roll == ROLL_SUCCESS && attack->attacker == gDude) {
-            if (perkGetRank(gDude, PERK_SNIPER) != 0) {
-                int d10 = randomBetween(1, 10);
-                int luck = critterGetStat(gDude, STAT_LUCK);
-                if (d10 <= luck) {
-                    roll = ROLL_CRITICAL_SUCCESS;
-                }
+    if (attackType == ATTACK_TYPE_RANGED && roll == ROLL_SUCCESS && attack->attacker == gDude) {
+        if (perkGetRank(gDude, PERK_SNIPER) != 0) {
+            int d10 = randomBetween(1, 10);
+            int luck = critterGetStat(gDude, STAT_LUCK);
+            if (d10 <= luck) {
+                roll = ROLL_CRITICAL_SUCCESS;
             }
-        }
-    } else {
-        if (ammoGetCapacity(attack->weapon) > 0) {
-            attack->ammoQuantity = 1;
         }
     }
 
     roll = scriptHooks_AfterHitRoll(attack->attacker, &(attack->defender), &(attack->defenderHitLocation), accuracy, roll);
 
     if (ammoGetCapacity(attack->weapon) > 0) {
+        int rounds = 1;
+        AmmoCostHookType hookType = AMMO_COST_HOOK_SINGLE_SHOT;
+
         if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
-            if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
-                return -1;
-            }
-
-            attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, roundsFired, attack->ammoQuantity, AMMO_COST_HOOK_BURST_SHOT);
-        } else {
-            if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
-                return -1;
-            }
-
-            attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, 1, attack->ammoQuantity, AMMO_COST_HOOK_SINGLE_SHOT);
+            rounds = roundsFired;
+            hookType = AMMO_COST_HOOK_BURST_SHOT;
         }
+
+        attack->ammoQuantity = rounds;
+
+        if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
+            return -1;
+        }
+
+        attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, rounds, attack->ammoQuantity, hookType);
+    } else if (attackType == ATTACK_TYPE_RANGED) {
+        attack->ammoQuantity = roundsFired;
     }
 
     switch (roll) {

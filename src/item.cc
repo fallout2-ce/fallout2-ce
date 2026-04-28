@@ -1991,7 +1991,7 @@ bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
     }
 
     int checkWeaponAmmoCost = 0;
-    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "check_weapon_ammo_cost", &checkWeaponAmmoCost, 0);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "check_weapon_ammo_cost", &checkWeaponAmmoCost, 1);
     if (checkWeaponAmmoCost == 0) {
         return true;
     }
