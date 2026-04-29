@@ -1953,7 +1953,7 @@ int weaponGetSecondaryActionPointCost(Object* weapon)
     return proto->item.data.weapon.actionPointCost2;
 }
 
-// 0x4790AC
+// 0x4790AC item_w_compute_ammo_cost
 int weaponComputeAmmoCost(const Object* obj, int* ammoQty)
 {
     if (ammoQty == nullptr) {
@@ -1969,6 +1969,56 @@ int weaponComputeAmmoCost(const Object* obj, int* ammoQty)
     }
 
     return 0;
+}
+
+// Returns whether the weapon has enough loaded ammo to perform at least one
+// shot/bullet for the selected hit mode.
+bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
+{
+    if (weapon == nullptr) {
+        return false;
+    }
+
+    if (ammoGetCapacity(const_cast<Object*>(weapon)) <= 0) {
+        return true;
+    }
+
+    int currentAmmo = ammoGetQuantity(const_cast<Object*>(weapon));
+    if (currentAmmo <= 0) {
+        // Exiting early here matches Sfall, but means that a hook can't
+        // make attacks cost zero ammo if the weapon is empty.
+        return false;
+    }
+
+    int checkWeaponAmmoCost = 0;
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "check_weapon_ammo_cost", &checkWeaponAmmoCost, 1);
+    if (checkWeaponAmmoCost == 0) {
+        return true;
+    }
+
+    int rounds = 1;
+    int anim = weaponGetAnimationForHitMode(const_cast<Object*>(weapon), hitMode);
+    if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
+        rounds = weaponGetBurstRounds(const_cast<Object*>(weapon));
+    }
+
+    int ammoCost = rounds;
+    if (rounds == 1 && weaponComputeAmmoCost(weapon, &ammoCost) == -1) {
+        return false;
+    }
+
+    ammoCost = scriptHooks_AmmoCost(const_cast<Object*>(weapon), rounds, ammoCost, AMMO_COST_HOOK_CHECK_OUT_OF_AMMO);
+
+    int ammoCostPerRound = ammoCost;
+    if (rounds > 1) {
+        if (ammoCost == 0) {
+            ammoCostPerRound = 0;
+        } else {
+            ammoCostPerRound = (ammoCost + rounds - 1) / rounds;
+        }
+    }
+
+    return ammoCostPerRound <= currentAmmo;
 }
 
 // 0x4790E8

@@ -19,7 +19,7 @@ namespace fallout {
 static int normalizeGameTimeForScript(unsigned int gameTime)
 {
     // Fallout saves ticks as uint32 but scripts expect int32.  Wrapping at INT_MAX means
-    // that scripts will at least see positive ticks between 7.8y and 13y of game time.
+    // that scripts will at least see positive ticks between 6.8y and 13y of game time.
     // There isn't an elegant solution to this; scripts should use get_year instead of relying
     // on absolute tick count
     return static_cast<int>(gameTime % INT_MAX);
@@ -246,6 +246,33 @@ bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int h
 
     debugPrint("HOOK_RESTTIMER: ignoring invalid return value %d", overrideResult);
     return false;
+}
+
+/*
+Runs when calculating ammo cost for a weapon.
+
+Item    arg0 - The weapon
+int     arg1 - Number of bullets in burst or 1 for single shots
+int     arg2 - The amount of ammo to be consumed, or ammo cost per round for hook type 2
+int     arg3 - Type of hook:
+               AMMO_COST_HOOK_SINGLE_SHOT - when subtracting ammo after single shot attack
+               AMMO_COST_HOOK_CHECK_OUT_OF_AMMO - when checking for "out of ammo" before attack
+               AMMO_COST_HOOK_BURST_ROUNDS - when calculating number of burst rounds
+               AMMO_COST_HOOK_BURST_SHOT - when subtracting ammo after burst attack
+
+int     ret0 - The new ammo amount/cost. Values below 0 are ignored.
+*/
+int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType)
+{
+    ScriptHookCall hook(HOOK_AMMOCOST, 1, { weapon, rounds, ammoCost, hookType });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return ammoCost;
+    }
+
+    int overrideAmmoCost = hook.getReturnValueAt(0).asInt();
+    return overrideAmmoCost >= 0 ? overrideAmmoCost : ammoCost;
 }
 
 /*

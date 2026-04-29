@@ -256,8 +256,16 @@ struct BarterPriceContext {
     bool partyMember;
 };
 
+enum AmmoCostHookType {
+    AMMO_COST_HOOK_SINGLE_SHOT = 0,
+    AMMO_COST_HOOK_CHECK_OUT_OF_AMMO = 1,
+    AMMO_COST_HOOK_BURST_ROUNDS = 2,
+    AMMO_COST_HOOK_BURST_SHOT = 3,
+};
+
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
+int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
 
 bool scriptHooksInit();
 void scriptHooksReset();
