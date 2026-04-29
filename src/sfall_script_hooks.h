@@ -274,6 +274,7 @@ void scriptHooksExit();
 void scriptHooks_GameModeChange(int exit, int previousGameMode);
 bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes);
 void scriptHooks_OnDeath(Object* critter);
+int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType);
 bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
 bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);

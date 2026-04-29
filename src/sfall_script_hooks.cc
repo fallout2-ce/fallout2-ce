@@ -9,6 +9,7 @@
 
 #include "db.h"
 #include "debug.h"
+#include "queue.h"
 #include "random.h"
 #include "scripts.h"
 
@@ -246,6 +247,51 @@ bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int h
 
     debugPrint("HOOK_RESTTIMER: ignoring invalid return value %d", overrideResult);
     return false;
+}
+
+/*
+Runs after Fallout has decided how long an explosive timer should run and whether setting it was a success or failure.
+The hook can override both the queued delay and the coarse outcome. Critical success/failure collapse to success/failure,
+matching sfall's queue event rewrite semantics.
+
+int     arg0 - The explosive delay in ticks before any failure penalty is applied
+Obj     arg1 - The explosive object
+int     arg2 - The result of engine calculation: 1 - failure, 2 - success
+
+int     ret0 - The new delay in ticks (maximum 18000). Negative values use engine behavior.
+int     ret1 - The new result: 0/1 - failure, 2/3 - success. Other values use engine behavior.
+*/
+int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType)
+{
+    assert(explosive != nullptr);
+    assert(delay >= 0);
+    assert(eventType == EVENT_TYPE_EXPLOSION || eventType == EVENT_TYPE_EXPLOSION_FAILURE);
+
+    int hookResult = eventType == EVENT_TYPE_EXPLOSION_FAILURE ? ROLL_FAILURE : ROLL_SUCCESS;
+
+    ScriptHookCall hook(HOOK_EXPLOSIVETIMER, 2, { delay, explosive, hookResult });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return -1;
+    }
+
+    int overrideDelay = hook.getReturnValueAt(0).asInt();
+    if (overrideDelay < 0) {
+        return -1;
+    }
+
+    delay = std::min(overrideDelay, 18000);
+    if (hook.numReturnValues() > 1) {
+        int overrideResult = hook.getReturnValueAt(1).asInt();
+        if (overrideResult >= ROLL_CRITICAL_FAILURE && overrideResult <= ROLL_FAILURE) {
+            eventType = EVENT_TYPE_EXPLOSION_FAILURE;
+        } else if (overrideResult >= ROLL_SUCCESS && overrideResult <= ROLL_CRITICAL_SUCCESS) {
+            eventType = EVENT_TYPE_EXPLOSION;
+        }
+    }
+
+    return queueAddEvent(delay, explosive, nullptr, eventType);
 }
 
 /*
