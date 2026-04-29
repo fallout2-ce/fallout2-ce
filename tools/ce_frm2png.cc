@@ -33,6 +33,7 @@ constexpr int kRotationCount = 6;
 constexpr int kPaletteSize = 256 * 3;
 constexpr int kFrmHeaderSize = 62;
 constexpr int kFrmFrameHeaderSize = 12;
+constexpr size_t kMaxFrmPixels = 16 * 1024 * 1024;
 
 struct FrmHeader {
     int32_t version;
@@ -141,7 +142,16 @@ bool readFrmFrame(std::istream& stream, FrmFrame& frame, ByteOrder byteOrder)
         return false;
     }
 
-    frame.pixels.resize(frame.size);
+    size_t expectedSize = static_cast<size_t>(frame.width) * static_cast<size_t>(frame.height);
+    if (expectedSize != static_cast<size_t>(frame.size)) {
+        return false;
+    }
+
+    if (expectedSize > kMaxFrmPixels) {
+        return false;
+    }
+
+    frame.pixels.resize(expectedSize);
     return stream.read(reinterpret_cast<char*>(frame.pixels.data()), frame.pixels.size()).good();
 }
 
@@ -195,12 +205,12 @@ bool ensureDirectoriesForFile(const std::string& path)
     }
 
     size_t start = 0;
-    if (directory[0] == '/') {
+    if (directory[0] == '/' || directory[0] == '\\') {
         start = 1;
     }
 
     while (start <= directory.size()) {
-        const size_t end = directory.find('/', start);
+        const size_t end = directory.find_first_of("/\\", start);
         const std::string partial = directory.substr(0, end);
         if (!partial.empty()) {
             if (compat_mkdir(partial.c_str()) != 0 && errno != EEXIST) {
