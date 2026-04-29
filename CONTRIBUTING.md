@@ -92,7 +92,7 @@ Basic usage:
 
 `-` can be used to take input from stdin (e.g. from `ce-dat-tool cat` or write to stdout).
 
-If `--palette` isn't specified, will pick up `color.pal` in the .frm's directory or cwd.
+If `--palette` isn't specified, it will pick up `color.pal` in the .frm's directory or cwd.
 
 Notes:
 

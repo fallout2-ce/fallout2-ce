@@ -81,16 +81,35 @@ int16_t decodeInt16(const unsigned char* bytes, ByteOrder byteOrder)
 int32_t decodeInt32(const unsigned char* bytes, ByteOrder byteOrder)
 {
     if (byteOrder == ByteOrder::little) {
-        return static_cast<int32_t>(bytes[0]
-            | (bytes[1] << 8)
-            | (bytes[2] << 16)
-            | (bytes[3] << 24));
+        return static_cast<int32_t>(static_cast<uint32_t>(bytes[0])
+            | (static_cast<uint32_t>(bytes[1]) << 8)
+            | (static_cast<uint32_t>(bytes[2]) << 16)
+            | (static_cast<uint32_t>(bytes[3]) << 24));
     }
 
-    return static_cast<int32_t>((bytes[0] << 24)
-        | (bytes[1] << 16)
-        | (bytes[2] << 8)
-        | bytes[3]);
+    return static_cast<int32_t>((static_cast<uint32_t>(bytes[0]) << 24)
+        | (static_cast<uint32_t>(bytes[1]) << 16)
+        | (static_cast<uint32_t>(bytes[2]) << 8)
+        | static_cast<uint32_t>(bytes[3]));
+}
+
+bool isPlausibleFrmHeader(const FrmHeader& header)
+{
+    if (header.frameCount <= 0) {
+        return false;
+    }
+
+    if (header.dataSize <= 0) {
+        return false;
+    }
+
+    for (int rotation = 0; rotation < kRotationCount; rotation++) {
+        if (header.dataOffsets[rotation] < 0 || header.dataOffsets[rotation] > header.dataSize) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool readFrmHeader(std::istream& stream, FrmHeader& header, ByteOrder& byteOrder)
@@ -102,7 +121,34 @@ bool readFrmHeader(std::istream& stream, FrmHeader& header, ByteOrder& byteOrder
 
     const int32_t versionLe = decodeInt32(bytes.data(), ByteOrder::little);
     const int32_t versionBe = decodeInt32(bytes.data(), ByteOrder::big);
-    byteOrder = versionLe > 0 && versionLe < 0x10000 ? ByteOrder::little : ByteOrder::big;
+
+    FrmHeader littleHeader{};
+    littleHeader.version = versionLe;
+    littleHeader.framesPerSecond = decodeInt16(bytes.data() + 4, ByteOrder::little);
+    littleHeader.actionFrame = decodeInt16(bytes.data() + 6, ByteOrder::little);
+    littleHeader.frameCount = decodeInt16(bytes.data() + 8, ByteOrder::little);
+    for (int rotation = 0; rotation < kRotationCount; rotation++) {
+        littleHeader.xOffsets[rotation] = decodeInt16(bytes.data() + 10 + rotation * 2, ByteOrder::little);
+        littleHeader.yOffsets[rotation] = decodeInt16(bytes.data() + 22 + rotation * 2, ByteOrder::little);
+        littleHeader.dataOffsets[rotation] = decodeInt32(bytes.data() + 34 + rotation * 4, ByteOrder::little);
+    }
+    littleHeader.dataSize = decodeInt32(bytes.data() + 58, ByteOrder::little);
+
+    FrmHeader bigHeader{};
+    bigHeader.version = versionBe;
+    bigHeader.framesPerSecond = decodeInt16(bytes.data() + 4, ByteOrder::big);
+    bigHeader.actionFrame = decodeInt16(bytes.data() + 6, ByteOrder::big);
+    bigHeader.frameCount = decodeInt16(bytes.data() + 8, ByteOrder::big);
+    for (int rotation = 0; rotation < kRotationCount; rotation++) {
+        bigHeader.xOffsets[rotation] = decodeInt16(bytes.data() + 10 + rotation * 2, ByteOrder::big);
+        bigHeader.yOffsets[rotation] = decodeInt16(bytes.data() + 22 + rotation * 2, ByteOrder::big);
+        bigHeader.dataOffsets[rotation] = decodeInt32(bytes.data() + 34 + rotation * 4, ByteOrder::big);
+    }
+    bigHeader.dataSize = decodeInt32(bytes.data() + 58, ByteOrder::big);
+
+    byteOrder = isPlausibleFrmHeader(bigHeader) && !isPlausibleFrmHeader(littleHeader)
+        ? ByteOrder::big
+        : ByteOrder::little;
 
     header.version = byteOrder == ByteOrder::little ? versionLe : versionBe;
     header.framesPerSecond = decodeInt16(bytes.data() + 4, byteOrder);
@@ -204,28 +250,7 @@ bool ensureDirectoriesForFile(const std::string& path)
         return true;
     }
 
-    size_t start = 0;
-    if (directory[0] == '/' || directory[0] == '\\') {
-        start = 1;
-    }
-
-    while (start <= directory.size()) {
-        const size_t end = directory.find_first_of("/\\", start);
-        const std::string partial = directory.substr(0, end);
-        if (!partial.empty()) {
-            if (compat_mkdir(partial.c_str()) != 0 && errno != EEXIST) {
-                return false;
-            }
-        }
-
-        if (end == std::string::npos) {
-            break;
-        }
-
-        start = end + 1;
-    }
-
-    return true;
+    return compat_mkdir_recursive(directory.c_str()) == 0 || errno == EEXIST;
 }
 
 std::optional<FrmFrame> loadFrmFrame(const std::string& inputPath, int frameIndex, int direction, FrmHeader& header)
