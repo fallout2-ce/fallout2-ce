@@ -44,6 +44,7 @@
 #include "text_font.h"
 #include "text_object.h"
 #include "tile.h"
+#include "touch.h"
 #include "window_manager.h"
 
 namespace fallout {
@@ -996,6 +997,12 @@ int _gdialogInitFromScript(int headFid, int reaction)
 
     GameMode::enterGameMode(GameMode::kDialog);
 
+    // Dialog is a UI screen with buttons that need direct touch-to-click.
+    // On iPad with relative mouse mode, taps send zero-delta clicks at the
+    // cursor position instead of at the finger — unusable without touchscreen
+    // mode. Same pattern as inventory, skilldex, elevator, automap, etc.
+    touch_set_touchscreen_mode(true);
+
     return 0;
 }
 
@@ -1019,6 +1026,8 @@ int _gdialogExitFromScript()
     if (PID_TYPE(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
         gameDialogRestoreCenterTile();
     }
+
+    touch_set_touchscreen_mode(false);
 
     GameMode::exitGameMode(GameMode::kDialog);
 
@@ -1977,16 +1986,31 @@ int gameDialogProcessUI()
                     dialogSwitchMode = GAME_DIALOG_MODE_TALK;
                     dialogMode = GAME_DIALOG_MODE_TALK;
                 }
+
+                // Barter's _exit_inventory() disables touchscreen mode.
+                // Re-enable it for the dialog UI.
+                touch_set_touchscreen_mode(true);
+
                 continue;
             } else if (dialogSwitchMode == GAME_DIALOG_MODE_PARTY_CONTROL_ACTIVE) {
                 dialogMode = GAME_DIALOG_MODE_PARTY_CONTROL;
                 partyMemberControlWindowHandleEvents();
                 partyMemberControlWindowFree();
+
+                // Party control may have changed touchscreen mode.
+                // Re-enable it for the dialog UI.
+                touch_set_touchscreen_mode(true);
+
                 continue;
             } else if (dialogSwitchMode == GAME_DIALOG_MODE_PARTY_CUSTOMIZATION_ACTIVE) {
                 dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
                 partyMemberCustomizationWindowHandleEvents();
                 partyMemberCustomizationWindowFree();
+
+                // Party customization may have changed touchscreen mode.
+                // Re-enable it for the dialog UI.
+                touch_set_touchscreen_mode(true);
+
                 continue;
             }
 

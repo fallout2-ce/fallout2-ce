@@ -154,6 +154,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(iface_bar_sides_ori);
     SETTING_P(splash_screen_size, clamp(0, 2));
     SETTING(ignore_map_edges);
+    SETTING(quick_toolbar_visible);
     SETTING_P(anim_speed, clamp(0.1, 100.0));
     SETTING_P(skip_opening_movies, clamp(0, 2));
     SETTING(display_karma_changes);

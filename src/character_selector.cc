@@ -148,6 +148,9 @@ static std::vector<PremadeCharacterDescription> gCustomPremadeCharacterDescripti
 // 0x4A71D0
 int characterSelectorOpen()
 {
+#if __APPLE__ && TARGET_OS_IOS
+    touch_set_touchscreen_mode(true);
+#endif
     if (!characterSelectorWindowInit()) {
         return 0;
     }
@@ -251,6 +254,9 @@ int characterSelectorOpen()
         mouseHideCursor();
     }
 
+#if __APPLE__ && TARGET_OS_IOS
+    touch_set_touchscreen_mode(false);
+#endif
     return rc;
 }
 

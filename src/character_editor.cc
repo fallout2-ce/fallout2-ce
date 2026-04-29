@@ -42,6 +42,7 @@
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
+#include "touch.h"
 #include "trait.h"
 #include "window_manager.h"
 #include "word_wrap.h"
@@ -808,6 +809,8 @@ int characterEditorShow(bool isCreationMode)
         return -1;
     }
 
+    touch_set_touchscreen_mode(true);
+
     if (!gCharacterEditorIsCreationMode) {
         if (characterEditorUpdateLevel()) {
             critterUpdateDerivedStats(gDude);
@@ -1195,6 +1198,8 @@ int characterEditorShow(bool isCreationMode)
     }
 
     interfaceRenderHitPoints(false);
+
+    touch_set_touchscreen_mode(false);
 
     return rc;
 }

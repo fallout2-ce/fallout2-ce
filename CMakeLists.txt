@@ -315,6 +315,8 @@ if(IOS)
     target_sources(${EXECUTABLE_NAME} PUBLIC
         "src/platform/ios/paths.h"
         "src/platform/ios/paths.mm"
+        "src/platform/ios/quick_toolbar.h"
+        "src/platform/ios/quick_toolbar.cc"
     )
 endif()
 
