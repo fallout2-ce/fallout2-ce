@@ -2011,7 +2011,11 @@ bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
 
     int ammoCostPerRound = ammoCost;
     if (rounds > 1) {
-        ammoCostPerRound = ammoCost != rounds ? ammoCost / rounds : 1;
+        if (ammoCost == 0) {
+            ammoCostPerRound = 0;
+        } else {
+            ammoCostPerRound = (ammoCost + rounds - 1) / rounds;
+        }
     }
 
     return ammoCostPerRound <= currentAmmo;

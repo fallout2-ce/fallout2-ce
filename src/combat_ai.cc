@@ -2731,8 +2731,8 @@ static int _ai_try_attack(Object* attacker, Object* defender)
 
         int reason = _combat_check_bad_shot(attacker, defender, hitMode, false);
         if (reason == COMBAT_BAD_SHOT_NO_AMMO) {
-            // if we have insufficient ammo for secondary attack (e.g burst), check primary,
-            // which might consume less ammo if ammoBurstPerRound >1
+            // If the secondary attack (for example, burst fire) does not have enough ammo,
+            // try the primary attack, which may have a lower ammo cost.
             if (hitMode == HIT_MODE_RIGHT_WEAPON_SECONDARY
                 && weapon != nullptr
                 && ammoGetQuantity(weapon) > 0) {
