@@ -1091,8 +1091,7 @@ static bool _setup_inventory(int inventoryWindowType)
             blitBuffer2D(inventoryLootFrmImage.getBuffer(), destBuf);
         } else {
             FrmImage backgroundFrmImage;
-            int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0, 0);
-            if (backgroundFrmImage.lock(backgroundFid)) {
+            if (backgroundFrmImage.lock(buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0, 0))) {
                 blitBuffer2D(backgroundFrmImage.getBuffer(), destBuf);
             }
         }
@@ -3943,15 +3942,11 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
         blitBuffer2D(src, rect.left + INVENTORY_TRADE_WINDOW_OFFSET, rect.top,
             cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
-        if (inventoryFrmImage.isLocked()) {
-            blitBuffer2D(inventoryFrmImage.getBuffer(),
-                rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
-        }
+        blitBuffer2D(inventoryFrmImage.getBuffer(),
+            rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        if (inventoryLootFrmImage.isLocked()) {
-            blitBuffer2D(inventoryLootFrmImage.getBuffer(),
-                rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
-        }
+        blitBuffer2D(inventoryLootFrmImage.getBuffer(),
+            rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
     } else {
         FrmImage backgroundFrmImage;
         if (backgroundFrmImage.lock(buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0, 0))) {
