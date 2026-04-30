@@ -749,6 +749,15 @@ static void inventoryNormalClampStackOffset()
     }
 }
 
+static void inventoryLootScrollBy(int& offset, int delta, int totalItems)
+{
+    int scrollStep = inventoryLootLayout.columns;
+    offset += delta * scrollStep;
+    if (offset < 0) offset = 0;
+    int maxOffset = inventoryComputeAlignedMaxOffset(totalItems, gInventorySlotsCount, scrollStep);
+    if (offset > maxOffset) offset = maxOffset;
+}
+
 static int inventoryLootGetSlotX(bool targetInventory, int slotIndex)
 {
     int scrollerX = targetInventory ? inventoryLootLayout.rightScrollerX : inventoryLootLayout.leftScrollerX;
@@ -3927,36 +3936,27 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     buttonDestroy(btn);
 
+    Buffer2D dst { windowBuffer, windowWidth, windowHeight };
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
-        unsigned char* src = windowGetBuffer(gInventoryBarterBackgroundWindow);
-        int pitch = INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH;
-        blitBufferToBuffer(src + pitch * rect.top + rect.left + INVENTORY_TRADE_WINDOW_OFFSET,
-            cursorData->width,
-            menuButtonHeight,
-            pitch,
-            windowBuffer + windowDescription->width * rect.top + rect.left,
-            windowDescription->width);
+        ConstBuffer2D src { windowGetBuffer(gInventoryBarterBackgroundWindow),
+            INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH, INVENTORY_TRADE_BACKGROUND_WINDOW_HEIGHT };
+        blitBuffer2D(src, rect.left + INVENTORY_TRADE_WINDOW_OFFSET, rect.top,
+            cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
-        unsigned char* backgroundData = inventoryFrmImage.getData();
-        int backgroundWidth = inventoryFrmImage.getWidth();
-        if (backgroundData != nullptr) {
-            blitBufferToBuffer(backgroundData + backgroundWidth * rect.top + rect.left,
-                cursorData->width,
-                menuButtonHeight,
-                backgroundWidth,
-                windowBuffer + windowWidth * rect.top + rect.left,
-                windowWidth);
+        if (inventoryFrmImage.isLocked()) {
+            blitBuffer2D(inventoryFrmImage.getBuffer(),
+                rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
+        }
+    } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
+        if (inventoryLootFrmImage.isLocked()) {
+            blitBuffer2D(inventoryLootFrmImage.getBuffer(),
+                rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
         }
     } else {
         FrmImage backgroundFrmImage;
-        int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0, 0);
-        if (backgroundFrmImage.lock(backgroundFid)) {
-            blitBufferToBuffer(backgroundFrmImage.getData() + windowDescription->width * rect.top + rect.left,
-                cursorData->width,
-                menuButtonHeight,
-                windowDescription->width,
-                windowBuffer + windowDescription->width * rect.top + rect.left,
-                windowDescription->width);
+        if (backgroundFrmImage.lock(buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0, 0))) {
+            blitBuffer2D(backgroundFrmImage.getBuffer(),
+                rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
         }
     }
 
@@ -4352,10 +4352,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             }
         } else if (keyCode == KEY_ARROW_UP) {
             if (_stack_offset[_curr_stack] > 0) {
-                _stack_offset[_curr_stack] -= inventoryLootLayout.columns;
-                if (_stack_offset[_curr_stack] < 0) {
-                    _stack_offset[_curr_stack] = 0;
-                }
+                inventoryLootScrollBy(_stack_offset[_curr_stack], -1, _pud->length);
                 _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
             }
         } else if (keyCode == KEY_PAGE_UP) {
@@ -4377,12 +4374,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             }
         } else if (keyCode == KEY_ARROW_DOWN) {
             if (_stack_offset[_curr_stack] + gInventorySlotsCount < _pud->length) {
-                int scrollStep = inventoryLootLayout.columns;
-                _stack_offset[_curr_stack] += scrollStep;
-                int maxOffset = inventoryComputeAlignedMaxOffset(_pud->length, gInventorySlotsCount, scrollStep);
-                if (_stack_offset[_curr_stack] > maxOffset) {
-                    _stack_offset[_curr_stack] = maxOffset;
-                }
+                inventoryLootScrollBy(_stack_offset[_curr_stack], 1, _pud->length);
                 _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
             }
         } else if (keyCode == KEY_PAGE_DOWN) {
@@ -4404,21 +4396,13 @@ int inventoryOpenLooting(Object* looter, Object* target)
             }
         } else if (keyCode == KEY_CTRL_ARROW_UP) {
             if (_target_stack_offset[_target_curr_stack] > 0) {
-                _target_stack_offset[_target_curr_stack] -= inventoryLootLayout.columns;
-                if (_target_stack_offset[_target_curr_stack] < 0) {
-                    _target_stack_offset[_target_curr_stack] = 0;
-                }
+                inventoryLootScrollBy(_target_stack_offset[_target_curr_stack], -1, _target_pud->length);
                 _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
                 windowRefresh(gInventoryWindow);
             }
         } else if (keyCode == KEY_CTRL_ARROW_DOWN) {
             if (_target_stack_offset[_target_curr_stack] + gInventorySlotsCount < _target_pud->length) {
-                int scrollStep = inventoryLootLayout.columns;
-                _target_stack_offset[_target_curr_stack] += scrollStep;
-                int maxOffset = inventoryComputeAlignedMaxOffset(_target_pud->length, gInventorySlotsCount, scrollStep);
-                if (_target_stack_offset[_target_curr_stack] > maxOffset) {
-                    _target_stack_offset[_target_curr_stack] = maxOffset;
-                }
+                inventoryLootScrollBy(_target_stack_offset[_target_curr_stack], 1, _target_pud->length);
                 _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
                 windowRefresh(gInventoryWindow);
             }
@@ -4480,53 +4464,26 @@ int inventoryOpenLooting(Object* looter, Object* target)
                     }
                 }
             } else if ((mouseGetEvent() & MOUSE_EVENT_WHEEL) != 0) {
+                int wheelX;
+                int wheelY;
+                mouseGetWheel(&wheelX, &wheelY);
                 if (inventoryLootMouseHitTestScroller(false)) {
-                    int wheelX;
-                    int wheelY;
-                    mouseGetWheel(&wheelX, &wheelY);
-                    if (wheelY > 0) {
-                        if (_stack_offset[_curr_stack] > 0) {
-                            _stack_offset[_curr_stack] -= inventoryLootLayout.columns;
-                            if (_stack_offset[_curr_stack] < 0) {
-                                _stack_offset[_curr_stack] = 0;
-                            }
-                            _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
-                        }
-                    } else if (wheelY < 0) {
-                        if (_stack_offset[_curr_stack] + gInventorySlotsCount < _pud->length) {
-                            int scrollStep = inventoryLootLayout.columns;
-                            _stack_offset[_curr_stack] += scrollStep;
-                            int maxOffset = inventoryComputeAlignedMaxOffset(_pud->length, gInventorySlotsCount, scrollStep);
-                            if (_stack_offset[_curr_stack] > maxOffset) {
-                                _stack_offset[_curr_stack] = maxOffset;
-                            }
-                            _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
-                        }
+                    if (wheelY > 0 && _stack_offset[_curr_stack] > 0) {
+                        inventoryLootScrollBy(_stack_offset[_curr_stack], -1, _pud->length);
+                        _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
+                    } else if (wheelY < 0 && _stack_offset[_curr_stack] + gInventorySlotsCount < _pud->length) {
+                        inventoryLootScrollBy(_stack_offset[_curr_stack], 1, _pud->length);
+                        _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
                     }
                 } else if (inventoryLootMouseHitTestScroller(true)) {
-                    int wheelX;
-                    int wheelY;
-                    mouseGetWheel(&wheelX, &wheelY);
-                    if (wheelY > 0) {
-                        if (_target_stack_offset[_target_curr_stack] > 0) {
-                            _target_stack_offset[_target_curr_stack] -= inventoryLootLayout.columns;
-                            if (_target_stack_offset[_target_curr_stack] < 0) {
-                                _target_stack_offset[_target_curr_stack] = 0;
-                            }
-                            _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
-                            windowRefresh(gInventoryWindow);
-                        }
-                    } else if (wheelY < 0) {
-                        if (_target_stack_offset[_target_curr_stack] + gInventorySlotsCount < _target_pud->length) {
-                            int scrollStep = inventoryLootLayout.columns;
-                            _target_stack_offset[_target_curr_stack] += scrollStep;
-                            int maxOffset = inventoryComputeAlignedMaxOffset(_target_pud->length, gInventorySlotsCount, scrollStep);
-                            if (_target_stack_offset[_target_curr_stack] > maxOffset) {
-                                _target_stack_offset[_target_curr_stack] = maxOffset;
-                            }
-                            _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
-                            windowRefresh(gInventoryWindow);
-                        }
+                    if (wheelY > 0 && _target_stack_offset[_target_curr_stack] > 0) {
+                        inventoryLootScrollBy(_target_stack_offset[_target_curr_stack], -1, _target_pud->length);
+                        _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
+                        windowRefresh(gInventoryWindow);
+                    } else if (wheelY < 0 && _target_stack_offset[_target_curr_stack] + gInventorySlotsCount < _target_pud->length) {
+                        inventoryLootScrollBy(_target_stack_offset[_target_curr_stack], 1, _target_pud->length);
+                        _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
+                        windowRefresh(gInventoryWindow);
                     }
                 }
             }
