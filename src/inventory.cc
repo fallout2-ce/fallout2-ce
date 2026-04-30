@@ -632,6 +632,32 @@ static int buttonCreateAction(int win, int x, int y, int width, int height, int 
     return buttonCreate(win, x, y, width, height, -1, -1, keyCode);
 }
 
+static ConstBuffer2D inventoryGetBackgroundBuffer(int inventoryWindowType, int fallbackFrmId, FrmImage& fallbackImage, int& sourceXOffset)
+{
+    sourceXOffset = 0;
+
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
+        return inventoryFrmImage.getBuffer();
+    }
+
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
+        return inventoryLootFrmImage.getBuffer();
+    }
+
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
+        sourceXOffset = INVENTORY_TRADE_WINDOW_OFFSET;
+        return { windowGetBuffer(gInventoryBarterBackgroundWindow),
+            INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH,
+            windowGetHeight(gInventoryBarterBackgroundWindow) };
+    }
+
+    if (fallbackImage.lock(buildFid(OBJ_TYPE_INTERFACE, fallbackFrmId, 0, 0, 0))) {
+        return fallbackImage.getBuffer();
+    }
+
+    return {};
+}
+
 static void inventoryCreateSlotButtons(int baseKeyCode, int scrollerX, int scrollerY, int columns)
 {
     for (int row = 0; row < INVENTORY_ROWS; row++) {
@@ -698,24 +724,31 @@ static void inventoryNormalApplyLayout(int columns)
 
 static void inventoryLootApplyLayout(int columns)
 {
+    int extraColumns = columns - 1;
+    int scrollerShift = extraColumns * (367 - INVENTORY_LOOT_RIGHT_SCROLLER_X);
+    int leftBodyViewShift = extraColumns * (47 - INVENTORY_LOOT_LEFT_BODY_VIEW_X);
+    int rightBodyViewShift = extraColumns * (563 - INVENTORY_LOOT_RIGHT_BODY_VIEW_X);
+    int rightPaneShift = extraColumns * (612 - 476);
+    int critterButtonsShift = extraColumns * (504 - 436);
+
     inventoryLootLayout.columns = columns;
     inventoryLootLayout.visibleSlots = INVENTORY_ROWS * columns;
-    inventoryLootLayout.windowWidth = columns == 2 ? INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED : INVENTORY_LOOT_WINDOW_WIDTH;
+    inventoryLootLayout.windowWidth = INVENTORY_LOOT_WINDOW_WIDTH + extraColumns * (INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED - INVENTORY_LOOT_WINDOW_WIDTH);
     inventoryLootLayout.windowHeight = gInventoryWindowDescriptions[INVENTORY_WINDOW_TYPE_LOOT].height;
-    inventoryLootLayout.leftScrollerX = columns == 2 ? 180 : INVENTORY_LOOT_LEFT_SCROLLER_X;
+    inventoryLootLayout.leftScrollerX = INVENTORY_LOOT_LEFT_SCROLLER_X;
     inventoryLootLayout.leftScrollerY = INVENTORY_LOOT_LEFT_SCROLLER_Y;
-    inventoryLootLayout.rightScrollerX = columns == 2 ? 367 : INVENTORY_LOOT_RIGHT_SCROLLER_X;
+    inventoryLootLayout.rightScrollerX = INVENTORY_LOOT_RIGHT_SCROLLER_X + scrollerShift;
     inventoryLootLayout.rightScrollerY = INVENTORY_LOOT_RIGHT_SCROLLER_Y;
     inventoryLootLayout.scrollerWidth = columns * INVENTORY_SLOT_WIDTH;
     inventoryLootLayout.scrollerHeight = INVENTORY_ROWS * INVENTORY_SLOT_HEIGHT;
-    inventoryLootLayout.leftBodyViewX = columns == 2 ? 47 : INVENTORY_LOOT_LEFT_BODY_VIEW_X;
-    inventoryLootLayout.rightBodyViewX = columns == 2 ? 563 : INVENTORY_LOOT_RIGHT_BODY_VIEW_X;
+    inventoryLootLayout.leftBodyViewX = INVENTORY_LOOT_LEFT_BODY_VIEW_X + leftBodyViewShift;
+    inventoryLootLayout.rightBodyViewX = INVENTORY_LOOT_RIGHT_BODY_VIEW_X + rightBodyViewShift;
     inventoryLootLayout.leftScrollButtonX = 128;
-    inventoryLootLayout.rightScrollButtonX = columns == 2 ? 515 : 379;
-    inventoryLootLayout.takeAllButtonX = columns == 2 ? 568 : 432;
-    inventoryLootLayout.doneButtonX = columns == 2 ? 612 : 476;
-    inventoryLootLayout.prevCritterButtonX = columns == 2 ? 504 : 436;
-    inventoryLootLayout.nextCritterButtonX = columns == 2 ? 524 : 456;
+    inventoryLootLayout.rightScrollButtonX = 379 + rightPaneShift;
+    inventoryLootLayout.takeAllButtonX = 432 + rightPaneShift;
+    inventoryLootLayout.doneButtonX = 476 + rightPaneShift;
+    inventoryLootLayout.prevCritterButtonX = 436 + critterButtonsShift;
+    inventoryLootLayout.nextCritterButtonX = 456 + critterButtonsShift;
 }
 
 static void inventoryNormalLayoutUpdate()
@@ -1086,8 +1119,10 @@ static bool _setup_inventory(int inventoryWindowType)
         Buffer2D destBuf { windowGetBuffer(gInventoryWindow), windowWidth, windowHeight };
 
         if (isNormalWindow) {
+            assert(inventoryFrmImage.isLocked());
             blitBuffer2D(inventoryFrmImage.getBuffer(), destBuf);
         } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
+            assert(inventoryLootFrmImage.isLocked());
             blitBuffer2D(inventoryLootFrmImage.getBuffer(), destBuf);
         } else {
             FrmImage backgroundFrmImage;
@@ -2120,40 +2155,20 @@ static void _display_body(int fid, int inventoryWindowType)
                 }
             }
 
-            int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, Fid, 0, 0, 0);
-
             rect.right = rect.left + INVENTORY_BODY_VIEW_WIDTH - 1;
             rect.bottom = rect.top + INVENTORY_BODY_VIEW_HEIGHT - 1;
 
-            if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
-                unsigned char* backgroundData = inventoryFrmImage.getData();
-                int backgroundWidth = inventoryFrmImage.getWidth();
-                if (backgroundData != nullptr) {
-                    blitBufferToBuffer(backgroundData + backgroundWidth * rect.top + rect.left,
-                        INVENTORY_BODY_VIEW_WIDTH,
-                        INVENTORY_BODY_VIEW_HEIGHT,
-                        backgroundWidth,
-                        windowBuffer + windowPitch * rect.top + rect.left,
-                        windowPitch);
-                }
-            } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-                unsigned char* backgroundData = inventoryLootFrmImage.getData();
-                int backgroundWidth = inventoryLootFrmImage.getWidth();
-                if (backgroundData != nullptr) {
-                    blitBufferToBuffer(backgroundData + backgroundWidth * rect.top + rect.left,
-                        INVENTORY_BODY_VIEW_WIDTH,
-                        INVENTORY_BODY_VIEW_HEIGHT,
-                        backgroundWidth,
-                        windowBuffer + windowPitch * rect.top + rect.left,
-                        windowPitch);
-                }
-            } else if (backgroundFrmImage.lock(backgroundFid)) {
-                blitBufferToBuffer(backgroundFrmImage.getData() + backgroundFrmImage.getWidth() * rect.top + rect.left + sourceXOffset,
+            Buffer2D dst { windowBuffer, windowPitch, windowGetHeight(gInventoryWindow) };
+            ConstBuffer2D background = inventoryGetBackgroundBuffer(inventoryWindowType, Fid, backgroundFrmImage, sourceXOffset);
+            if (background) {
+                blitBuffer2D(background,
+                    rect.left + sourceXOffset,
+                    rect.top,
                     INVENTORY_BODY_VIEW_WIDTH,
                     INVENTORY_BODY_VIEW_HEIGHT,
-                    backgroundFrmImage.getWidth(),
-                    windowBuffer + windowPitch * rect.top + rect.left,
-                    windowPitch);
+                    dst,
+                    rect.left,
+                    rect.top);
             }
 
             blitBufferToBufferTrans(frameData, frameWidth, frameHeight, framePitch,
@@ -3936,23 +3951,18 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     buttonDestroy(btn);
 
     Buffer2D dst { windowBuffer, windowWidth, windowHeight };
-    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
-        ConstBuffer2D src { windowGetBuffer(gInventoryBarterBackgroundWindow),
-            INVENTORY_TRADE_BACKGROUND_WINDOW_WIDTH, INVENTORY_TRADE_BACKGROUND_WINDOW_HEIGHT };
-        blitBuffer2D(src, rect.left + INVENTORY_TRADE_WINDOW_OFFSET, rect.top,
-            cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
-    } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
-        blitBuffer2D(inventoryFrmImage.getBuffer(),
-            rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
-    } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        blitBuffer2D(inventoryLootFrmImage.getBuffer(),
-            rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
-    } else {
-        FrmImage backgroundFrmImage;
-        if (backgroundFrmImage.lock(buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0, 0))) {
-            blitBuffer2D(backgroundFrmImage.getBuffer(),
-                rect.left, rect.top, cursorData->width, menuButtonHeight, dst, rect.left, rect.top);
-        }
+    FrmImage backgroundFrmImage;
+    int sourceXOffset;
+    ConstBuffer2D background = inventoryGetBackgroundBuffer(inventoryWindowType, windowDescription->frmId, backgroundFrmImage, sourceXOffset);
+    if (background) {
+        blitBuffer2D(background,
+            rect.left + sourceXOffset,
+            rect.top,
+            cursorData->width,
+            menuButtonHeight,
+            dst,
+            rect.left,
+            rect.top);
     }
 
     _mouse_set_position(x, y);
