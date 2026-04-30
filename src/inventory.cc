@@ -343,6 +343,8 @@ static bool _ctrl_pressed();
 static void _drag_item_loop(Object* item, bool immediate);
 static void inventoryNormalLayoutUpdate();
 static bool inventoryBackgroundLoad(FrmImage& image, int col1FrmId, const char* col2Name, int columns);
+static int inventoryChooseColumns(FrmImage& image, int expandedWidth, int col1FrmId, const char* col2Name);
+static void inventoryCreateSlotButtons(int baseKeyCode, int scrollerX, int scrollerY, int columns);
 static int inventoryNormalGetVisibleSlots();
 static int inventoryNormalGetScrollStep();
 static void inventoryNormalClampStackOffset();
@@ -618,29 +620,38 @@ static bool inventoryBackgroundLoad(FrmImage& image, int col1FrmId, const char* 
     return false;
 }
 
-static int inventoryNormalChooseColumns()
+static void inventoryCreateSlotButtons(int baseKeyCode, int scrollerX, int scrollerY, int columns)
 {
-    int maxColumns = settings.ui.max_inventory_columns;
-    if (maxColumns <= 1) {
-        return 1;
+    for (int row = 0; row < INVENTORY_ROWS; row++) {
+        for (int column = 0; column < columns; column++) {
+            int keyCode = baseKeyCode + row * columns + column;
+            int btn = buttonCreate(gInventoryWindow,
+                scrollerX + column * INVENTORY_SLOT_WIDTH,
+                scrollerY + row * INVENTORY_SLOT_HEIGHT,
+                INVENTORY_SLOT_WIDTH,
+                INVENTORY_SLOT_HEIGHT,
+                keyCode,
+                -1,
+                keyCode,
+                -1,
+                nullptr,
+                nullptr,
+                nullptr,
+                0);
+            if (btn != -1) {
+                buttonSetMouseCallbacks(btn, inventoryItemSlotOnMouseEnter, inventoryItemSlotOnMouseExit, nullptr, nullptr);
+            }
+        }
     }
-
-    int width = INVENTORY_WINDOW_WIDTH + INVENTORY_SLOT_WIDTH;
-    if (width <= screenGetWidth() && inventoryBackgroundLoad(inventoryFrmImage, INVENTORY_NORMAL_BACKGROUND_FRM_ID, "INVBOX2.FRM", 2)) {
-        return 2;
-    }
-
-    return 1;
 }
 
-static int inventoryLootChooseColumns()
+static int inventoryChooseColumns(FrmImage& image, int expandedWidth, int col1FrmId, const char* col2Name)
 {
-    int maxColumns = settings.ui.max_inventory_columns;
-    if (maxColumns <= 1) {
+    if (settings.ui.max_inventory_columns <= 1) {
         return 1;
     }
 
-    if (INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED <= screenGetWidth() && inventoryBackgroundLoad(inventoryLootFrmImage, INVENTORY_LOOT_BACKGROUND_FRM_ID, "LOOT2.frm", 2)) {
+    if (expandedWidth <= screenGetWidth() && inventoryBackgroundLoad(image, col1FrmId, col2Name, 2)) {
         return 2;
     }
 
@@ -691,7 +702,7 @@ static void inventoryLootApplyLayout(int columns)
 
 static void inventoryNormalLayoutUpdate()
 {
-    int columns = inventoryNormalChooseColumns();
+    int columns = inventoryChooseColumns(inventoryFrmImage, INVENTORY_WINDOW_WIDTH + INVENTORY_SLOT_WIDTH, INVENTORY_NORMAL_BACKGROUND_FRM_ID, "INVBOX2.FRM");
     if (columns == 1) {
         inventoryBackgroundLoad(inventoryFrmImage, INVENTORY_NORMAL_BACKGROUND_FRM_ID, "INVBOX2.FRM", 1);
     }
@@ -701,7 +712,7 @@ static void inventoryNormalLayoutUpdate()
 
 static void inventoryLootLayoutUpdate()
 {
-    int columns = inventoryLootChooseColumns();
+    int columns = inventoryChooseColumns(inventoryLootFrmImage, INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED, INVENTORY_LOOT_BACKGROUND_FRM_ID, "LOOT2.frm");
     if (columns == 1) {
         inventoryBackgroundLoad(inventoryLootFrmImage, INVENTORY_LOOT_BACKGROUND_FRM_ID, "LOOT2.frm", 1);
     }
@@ -1113,51 +1124,8 @@ static bool _setup_inventory(int inventoryWindowType)
     }
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        // Create invsibile buttons representing character's inventory item
-        // slots.
-        for (int row = 0; row < INVENTORY_ROWS; row++) {
-            for (int column = 0; column < inventoryLootLayout.columns; column++) {
-                int keyCode = 1000 + row * inventoryLootLayout.columns + column;
-                int btn = buttonCreate(gInventoryWindow,
-                    inventoryLootLayout.leftScrollerX + column * INVENTORY_SLOT_WIDTH,
-                    inventoryLootLayout.leftScrollerY + row * INVENTORY_SLOT_HEIGHT,
-                    INVENTORY_SLOT_WIDTH,
-                    INVENTORY_SLOT_HEIGHT,
-                    keyCode,
-                    -1,
-                    keyCode,
-                    -1,
-                    nullptr,
-                    nullptr,
-                    nullptr,
-                    0);
-                if (btn != -1) {
-                    buttonSetMouseCallbacks(btn, inventoryItemSlotOnMouseEnter, inventoryItemSlotOnMouseExit, nullptr, nullptr);
-                }
-            }
-        }
-
-        for (int row = 0; row < INVENTORY_ROWS; row++) {
-            for (int column = 0; column < inventoryLootLayout.columns; column++) {
-                int keyCode = 2000 + row * inventoryLootLayout.columns + column;
-                int btn = buttonCreate(gInventoryWindow,
-                    inventoryLootLayout.rightScrollerX + column * INVENTORY_SLOT_WIDTH,
-                    inventoryLootLayout.rightScrollerY + row * INVENTORY_SLOT_HEIGHT,
-                    INVENTORY_SLOT_WIDTH,
-                    INVENTORY_SLOT_HEIGHT,
-                    keyCode,
-                    -1,
-                    keyCode,
-                    -1,
-                    nullptr,
-                    nullptr,
-                    nullptr,
-                    0);
-                if (btn != -1) {
-                    buttonSetMouseCallbacks(btn, inventoryItemSlotOnMouseEnter, inventoryItemSlotOnMouseExit, nullptr, nullptr);
-                }
-            }
-        }
+        inventoryCreateSlotButtons(1000, inventoryLootLayout.leftScrollerX, inventoryLootLayout.leftScrollerY, inventoryLootLayout.columns);
+        inventoryCreateSlotButtons(2000, inventoryLootLayout.rightScrollerX, inventoryLootLayout.rightScrollerY, inventoryLootLayout.columns);
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
         int y1 = INVENTORY_TRADE_SCROLLER_Y;
         int y2 = INVENTORY_TRADE_INNER_SCROLLER_Y;
@@ -1241,27 +1209,7 @@ static bool _setup_inventory(int inventoryWindowType)
             y2 += INVENTORY_SLOT_HEIGHT;
         }
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
-        for (int row = 0; row < INVENTORY_ROWS; row++) {
-            for (int column = 0; column < inventoryLayout.columns; column++) {
-                int keyCode = 1000 + row * inventoryLayout.columns + column;
-                int btn = buttonCreate(gInventoryWindow,
-                    inventoryLayout.scrollerX + column * INVENTORY_SLOT_WIDTH,
-                    inventoryLayout.scrollerY + row * INVENTORY_SLOT_HEIGHT,
-                    INVENTORY_SLOT_WIDTH,
-                    INVENTORY_SLOT_HEIGHT,
-                    keyCode,
-                    -1,
-                    keyCode,
-                    -1,
-                    nullptr,
-                    nullptr,
-                    nullptr,
-                    0);
-                if (btn != -1) {
-                    buttonSetMouseCallbacks(btn, inventoryItemSlotOnMouseEnter, inventoryItemSlotOnMouseExit, nullptr, nullptr);
-                }
-            }
-        }
+        inventoryCreateSlotButtons(1000, inventoryLayout.scrollerX, inventoryLayout.scrollerY, inventoryLayout.columns);
     } else {
         // Create invisible buttons representing item slots.
         for (int index = 0; index < gInventorySlotsCount; index++) {
