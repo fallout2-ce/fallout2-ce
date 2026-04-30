@@ -1053,19 +1053,20 @@ static bool _setup_inventory(int inventoryWindowType)
         }
 
         const InventoryWindowDescription* windowDescription = &(gInventoryWindowDescriptions[inventoryWindowType]);
-        int windowWidth = isNormalWindow
-            ? inventoryLayout.windowWidth
-            : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowWidth
-                                                                : windowDescription->width;
-        int windowHeight = isNormalWindow
-            ? inventoryLayout.windowHeight
-            : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowHeight
-                                                                : windowDescription->height;
+        int windowWidth = windowDescription->width;
+        int windowHeight = windowDescription->height;
+        if (isNormalWindow) {
+            windowWidth = inventoryLayout.windowWidth;
+            windowHeight = inventoryLayout.windowHeight;
+        } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
+            windowWidth = inventoryLootLayout.windowWidth;
+            windowHeight = inventoryLootLayout.windowHeight;
+        }
 
         // Maintain original position in original resolution, otherwise center it.
         bool preserveVanillaX = screenGetWidth() == 640
-            && ((isNormalWindow && windowWidth == windowDescription->width)
-                || (!isNormalWindow && inventoryWindowType != INVENTORY_WINDOW_TYPE_LOOT));
+            && windowWidth == windowDescription->width
+            && inventoryWindowType != INVENTORY_WINDOW_TYPE_LOOT;
         bool preserveVanillaY = screenGetHeight() == 480;
         int inventoryWindowX = preserveVanillaX
             ? INVENTORY_WINDOW_X
