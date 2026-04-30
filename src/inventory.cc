@@ -4298,6 +4298,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
 
     _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
     _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
+    gInventoryWindowDudeRotationTimestamp = 0;
     _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
 
