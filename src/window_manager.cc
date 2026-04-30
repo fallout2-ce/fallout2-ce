@@ -1157,11 +1157,11 @@ Buffer2D windowGetBuffer2D(int win)
     Window* window = windowGetWindow(win);
 
     if (!gWindowSystemInitialized) {
-        return { };
+        return {};
     }
 
     if (window == nullptr) {
-        return { };
+        return {};
     }
     return { window->buffer, window->width, window->height };
 }

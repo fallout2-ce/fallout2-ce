@@ -1359,7 +1359,7 @@ static int createDialogRedButton(int win, int x, int y, void (*mouseUp)(int, int
 {
     int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
         FrmId(OBJ_TYPE_INTERFACE, 96), FrmId(OBJ_TYPE_INTERFACE, 95),
-        { }, BUTTON_FLAG_TRANSPARENT);
+        {}, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_med_butt_press, _gsound_med_butt_release);
     if (mouseUp != nullptr) {
@@ -1382,7 +1382,7 @@ static int createLittleRedButton(int win, int x, int y, int keyCode)
 {
     int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
         FrmId(OBJ_TYPE_INTERFACE, 8), FrmId(OBJ_TYPE_INTERFACE, 9),
-        { }, BUTTON_FLAG_TRANSPARENT);
+        {}, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_red_butt_press, _gsound_red_butt_release);
     return h;

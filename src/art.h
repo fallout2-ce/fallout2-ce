@@ -162,10 +162,23 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 class FrmId {
 public:
     FrmId() = default;
-    explicit FrmId(int fid) : _fid(fid) {}
-    explicit FrmId(ObjectType objType, int frmId) : _fid(buildFid(objType, frmId, 0, 0, 0)) {}
-    explicit FrmId(ObjectType objType, const char* path) : _objectType(objType), _path(path) {}
-    explicit FrmId(const char* path) : _path(path) {}
+    explicit FrmId(int fid)
+        : _fid(fid)
+    {
+    }
+    explicit FrmId(ObjectType objType, int frmId)
+        : _fid(buildFid(objType, frmId, 0, 0, 0))
+    {
+    }
+    explicit FrmId(ObjectType objType, const char* path)
+        : _objectType(objType)
+        , _path(path)
+    {
+    }
+    explicit FrmId(const char* path)
+        : _path(path)
+    {
+    }
 
     int fid() const { return _fid; }
     int objectType() const { return _objectType; }
