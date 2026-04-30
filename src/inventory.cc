@@ -345,6 +345,8 @@ static void inventoryNormalLayoutUpdate();
 static bool inventoryBackgroundLoad(FrmImage& image, int col1FrmId, const char* col2Name, int columns);
 static int inventoryChooseColumns(FrmImage& image, int expandedWidth, int col1FrmId, const char* col2Name);
 static void inventoryCreateSlotButtons(int baseKeyCode, int scrollerX, int scrollerY, int columns);
+static int inventoryGetWindowWidth(int inventoryWindowType);
+static int inventoryGetWindowHeight(int inventoryWindowType);
 static int inventoryNormalGetVisibleSlots();
 static int inventoryNormalGetScrollStep();
 static void inventoryNormalClampStackOffset();
@@ -645,6 +647,20 @@ static void inventoryCreateSlotButtons(int baseKeyCode, int scrollerX, int scrol
     }
 }
 
+static int inventoryGetWindowWidth(int inventoryWindowType)
+{
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) return inventoryLayout.windowWidth;
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) return inventoryLootLayout.windowWidth;
+    return gInventoryWindowDescriptions[inventoryWindowType].width;
+}
+
+static int inventoryGetWindowHeight(int inventoryWindowType)
+{
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) return inventoryLayout.windowHeight;
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) return inventoryLootLayout.windowHeight;
+    return gInventoryWindowDescriptions[inventoryWindowType].height;
+}
+
 static int inventoryChooseColumns(FrmImage& image, int expandedWidth, int col1FrmId, const char* col2Name)
 {
     if (settings.ui.max_inventory_columns <= 1) {
@@ -684,18 +700,18 @@ static void inventoryLootApplyLayout(int columns)
     inventoryLootLayout.visibleSlots = INVENTORY_ROWS * columns;
     inventoryLootLayout.windowWidth = columns == 2 ? INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED : INVENTORY_LOOT_WINDOW_WIDTH;
     inventoryLootLayout.windowHeight = gInventoryWindowDescriptions[INVENTORY_WINDOW_TYPE_LOOT].height;
-    inventoryLootLayout.leftScrollerX = columns == 2 ? 172 + 8 : INVENTORY_LOOT_LEFT_SCROLLER_X;
+    inventoryLootLayout.leftScrollerX = columns == 2 ? 180 : INVENTORY_LOOT_LEFT_SCROLLER_X;
     inventoryLootLayout.leftScrollerY = INVENTORY_LOOT_LEFT_SCROLLER_Y;
-    inventoryLootLayout.rightScrollerX = columns == 2 ? 363 + 4 : INVENTORY_LOOT_RIGHT_SCROLLER_X;
+    inventoryLootLayout.rightScrollerX = columns == 2 ? 367 : INVENTORY_LOOT_RIGHT_SCROLLER_X;
     inventoryLootLayout.rightScrollerY = INVENTORY_LOOT_RIGHT_SCROLLER_Y;
     inventoryLootLayout.scrollerWidth = columns * INVENTORY_SLOT_WIDTH;
     inventoryLootLayout.scrollerHeight = INVENTORY_ROWS * INVENTORY_SLOT_HEIGHT;
-    inventoryLootLayout.leftBodyViewX = columns == 2 ? 37 + 10 : INVENTORY_LOOT_LEFT_BODY_VIEW_X;
-    inventoryLootLayout.rightBodyViewX = columns == 2 ? 557 + 4 : INVENTORY_LOOT_RIGHT_BODY_VIEW_X;
-    inventoryLootLayout.leftScrollButtonX = columns == 2 ? 120 + 8 : 128;
-    inventoryLootLayout.rightScrollButtonX = columns == 2 ? 504 + 11 : 379;
-    inventoryLootLayout.takeAllButtonX = columns == 2 ? 500 + 68 : 432;
-    inventoryLootLayout.doneButtonX = columns == 2 ? 544 + 68 : 476;
+    inventoryLootLayout.leftBodyViewX = columns == 2 ? 47 : INVENTORY_LOOT_LEFT_BODY_VIEW_X;
+    inventoryLootLayout.rightBodyViewX = columns == 2 ? 561 : INVENTORY_LOOT_RIGHT_BODY_VIEW_X;
+    inventoryLootLayout.leftScrollButtonX = 128;
+    inventoryLootLayout.rightScrollButtonX = columns == 2 ? 515 : 379;
+    inventoryLootLayout.takeAllButtonX = columns == 2 ? 568 : 432;
+    inventoryLootLayout.doneButtonX = columns == 2 ? 612 : 476;
     inventoryLootLayout.prevCritterButtonX = columns == 2 ? 504 : 436;
     inventoryLootLayout.nextCritterButtonX = columns == 2 ? 524 : 456;
 }
@@ -1053,15 +1069,8 @@ static bool _setup_inventory(int inventoryWindowType)
         }
 
         const InventoryWindowDescription* windowDescription = &(gInventoryWindowDescriptions[inventoryWindowType]);
-        int windowWidth = windowDescription->width;
-        int windowHeight = windowDescription->height;
-        if (isNormalWindow) {
-            windowWidth = inventoryLayout.windowWidth;
-            windowHeight = inventoryLayout.windowHeight;
-        } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-            windowWidth = inventoryLootLayout.windowWidth;
-            windowHeight = inventoryLootLayout.windowHeight;
-        }
+        int windowWidth = inventoryGetWindowWidth(inventoryWindowType);
+        int windowHeight = inventoryGetWindowHeight(inventoryWindowType);
 
         // Maintain original position in original resolution, otherwise center it.
         bool preserveVanillaX = screenGetWidth() == 640
@@ -1557,9 +1566,12 @@ static bool _setup_inventory(int inventoryWindowType)
         _inventoryFrmImages[7].lock(fid);
 
         if (_inventoryFrmImages[5].isLocked() && _inventoryFrmImages[6].isLocked() && _inventoryFrmImages[7].isLocked()) {
+            int scrollDownX = isNormalWindow ? inventoryLayout.scrollButtonX
+                : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.leftScrollButtonX
+                                                                    : 128;
             // Left inventory down button.
             gInventoryScrollDownButton = buttonCreate(gInventoryWindow,
-                isNormalWindow ? inventoryLayout.scrollButtonX : 128,
+                scrollDownX,
                 62,
                 22,
                 23,
@@ -4145,14 +4157,8 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     }
 
     const InventoryWindowDescription* windowDescription = &(gInventoryWindowDescriptions[inventoryWindowType]);
-    int windowWidth = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL
-        ? inventoryLayout.windowWidth
-        : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowWidth
-                                                            : windowDescription->width;
-    int windowHeight = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL
-        ? inventoryLayout.windowHeight
-        : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.windowHeight
-                                                            : windowDescription->height;
+    int windowWidth = inventoryGetWindowWidth(inventoryWindowType);
+    int windowHeight = inventoryGetWindowHeight(inventoryWindowType);
 
     Rect windowRect;
     windowGetRect(gInventoryWindow, &windowRect);
