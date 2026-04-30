@@ -1,0 +1,44 @@
+#include "sfall.h"
+#include "define_lite.h"
+#include "test_utils.h"
+
+procedure start begin
+    display_msg("Testing NPC level opcodes...");
+
+    // get_npc_level should return 0 for an unknown/invalid PID
+    variable level := get_npc_level(0);
+    call assertEquals("get_npc_level returns 0 for invalid PID", level, 0);
+
+    // Test with party members if any are present
+    variable critter;
+    variable found_party_member := false;
+    foreach critter in party_member_list(0) begin
+        if (critter == dude_obj) then continue;
+
+        variable pid := obj_pid(critter);
+        variable npc_level := get_npc_level(pid);
+        display_msg(obj_name(critter) + " (PID " + pid + ") level = " + npc_level);
+
+        // Level should be non-negative
+        call assertTrue("NPC level >= 0 for " + obj_name(critter), npc_level >= 0);
+
+        // inc_npc_level and verify it incremented
+        variable old_level := npc_level;
+        inc_npc_level(pid);
+        variable new_level := get_npc_level(pid);
+        display_msg(obj_name(critter) + " level after inc: " + new_level);
+
+        // New level should be old_level or old_level+1
+        // (old_level+1 if there was a valid next level, same if already maxed)
+        call assertTrue("NPC level incremented or maxed for " + obj_name(critter),
+            (new_level == old_level + 1) or (new_level == old_level));
+
+        found_party_member := true;
+    end
+
+    if (not found_party_member) then begin
+        display_msg("No party members found - skipping inc/get round-trip test");
+    end
+
+    call report_test_results("npc_level");
+end
