@@ -1,0 +1,54 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+
+#define TEST_KEY (DIK_I)
+
+variable invenwield_blocking := false;
+
+procedure invenwield_handler begin
+    variable
+        critter := get_sfall_arg_at(0),
+        item := get_sfall_arg_at(1),
+        slot := get_sfall_arg_at(2),
+        is_wield := get_sfall_arg_at(3),
+        is_remove := get_sfall_arg_at(4),
+        slot_name := "unknown",
+        action_name;
+
+    if (slot == 0) then slot_name := "armor";
+    else if (slot == 1) then slot_name := "right_hand";
+    else if (slot == 2) then slot_name := "left_hand";
+
+    if (is_wield) then action_name := "wield";
+    else action_name := "unwield";
+
+    display_msg(string_format("invenwield %s %s slot=%s critter=%s isRemove=%d",
+        action_name, obj_name(item), slot_name, obj_name(critter), is_remove));
+
+    if (invenwield_blocking) then begin
+        display_msg("invenwield BLOCKED");
+        set_sfall_return(0);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != TEST_KEY) then return;
+
+    invenwield_blocking := not invenwield_blocking;
+    display_msg(string_format1("invenwield blocking=%d", invenwield_blocking));
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("invenwield manual test ready: press I to toggle blocking");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_INVENWIELD, invenwield_handler);
+end

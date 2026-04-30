@@ -737,4 +737,61 @@ void scriptHooks_BarterPrice(BarterPriceContext* ctx)
     }
 }
 
+/*
+    HOOK_INVENWIELD
+
+    Fires on equip/unequip actions that reach _invenWieldFunc, including during
+    NPC auto-equip via "Use Best Armor". This is the npc_armor mod's primary
+    trigger for swapping an NPC's display sprite.
+
+    Critter arg0 - the critter wielding/unwielding
+    Item    arg1 - the item being moved
+    int     arg2 - INVEN_TYPE_WORN (0), INVEN_TYPE_RIGHT_HAND (1), or
+                   INVEN_TYPE_LEFT_HAND (2)
+    int     arg3 - 1 on wield, 0 on unwield
+    int     arg4 - 1 when removing an equipped item from inventory, 0 normal
+
+    int     ret0 - -1 or no return = use engine handler (proceed),
+                   any other value = cancel/override
+*/
+bool scriptHooks_InvenWield(Object* critter, Object* item, int slot, int isWield, int isRemove)
+{
+    ScriptHookCall hook(HOOK_INVENWIELD, 1, { critter, item, slot, isWield, isRemove });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return true;
+    }
+    int ret = hook.getReturnValueAt(0).asInt();
+    if (ret == -1) {
+        return true;
+    }
+    return ret != 0;
+}
+
+/*
+    HOOK_CANUSEWEAPON
+
+    Runs while the engine's AI is evaluating whether a critter can use a
+    weapon. The npc_armor mod uses this to block weapons whose anim code
+    isn't supported by the swapped-armor sprite set.
+
+    Critter arg0 - the critter being evaluated
+    Item    arg1 - the candidate weapon
+    int     arg2 - hitMode (attack type enum, or -1 for player path)
+    int     arg3 - original engine result (1=can use, 0=cannot)
+
+    int     ret0 - overrides engine result
+*/
+bool scriptHooks_CanUseWeapon(Object* critter, Object* weapon, int hitMode, bool engineResult)
+{
+    ScriptHookCall hook(HOOK_CANUSEWEAPON, 1, { critter, weapon, hitMode, (int)engineResult });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return engineResult;
+    }
+    return hook.getReturnValueAt(0).asInt() != 0;
+}
+
 } // namespace fallout

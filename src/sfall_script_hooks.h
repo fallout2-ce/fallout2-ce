@@ -289,6 +289,19 @@ int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
 
+// HOOK_INVENWIELD: fires when a critter wields/unwields an armor or hand item.
+// slot is INVEN_TYPE_WORN/RIGHT_HAND/LEFT_HAND. isWield is 1 on equip, 0 on
+// unequip. isRemove is 1 when an equipped item is being removed from inventory.
+// Returns true when the engine should proceed, false to cancel.
+bool scriptHooks_InvenWield(Object* critter, Object* item, int slot, int isWield, int isRemove = 0);
+
+// HOOK_CANUSEWEAPON: fires during AI weapon evaluation. The script may
+// override the engine's can-use-weapon result.
+// hitMode is the attack type (-1 for player/interface path).
+// engineResult is the original engine decision (true=can use).
+// Returns the final result (possibly overridden by script).
+bool scriptHooks_CanUseWeapon(Object* critter, Object* weapon, int hitMode, bool engineResult);
+
 } // namespace fallout
 
 #endif /* FALLOUT_SFALL_SCRIPT_HOOKS_H_ */

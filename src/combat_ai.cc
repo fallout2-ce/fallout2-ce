@@ -2028,7 +2028,8 @@ Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, O
             }
         }
 
-        if (!_ai_can_use_weapon(critter, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
+        if (!scriptHooks_CanUseWeapon(critter, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY,
+                _ai_can_use_weapon(critter, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY))) {
             continue;
         }
 
@@ -2206,7 +2207,8 @@ static Object* _ai_search_environ(Object* critter, int itemType)
         if (itemGetType(item) == itemType) {
             switch (itemType) {
             case ITEM_TYPE_WEAPON:
-                if (_ai_can_use_weapon(critter, item, HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
+                if (scriptHooks_CanUseWeapon(critter, item, HIT_MODE_RIGHT_WEAPON_PRIMARY,
+                        _ai_can_use_weapon(critter, item, HIT_MODE_RIGHT_WEAPON_PRIMARY))) {
                     foundItem = item;
                 }
                 break;
@@ -2272,7 +2274,7 @@ static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender)
 
     int attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY);
     int intelligence = critterGetStat(attacker, STAT_INTELLIGENCE);
-    if (attackType == ATTACK_TYPE_NONE || !_ai_can_use_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY)) {
+    if (attackType == ATTACK_TYPE_NONE || !scriptHooks_CanUseWeapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY, _ai_can_use_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY))) {
         return HIT_MODE_RIGHT_WEAPON_PRIMARY;
     }
 
