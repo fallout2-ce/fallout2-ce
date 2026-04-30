@@ -709,7 +709,7 @@ static void inventoryLootApplyLayout(int columns)
     inventoryLootLayout.scrollerWidth = columns * INVENTORY_SLOT_WIDTH;
     inventoryLootLayout.scrollerHeight = INVENTORY_ROWS * INVENTORY_SLOT_HEIGHT;
     inventoryLootLayout.leftBodyViewX = columns == 2 ? 47 : INVENTORY_LOOT_LEFT_BODY_VIEW_X;
-    inventoryLootLayout.rightBodyViewX = columns == 2 ? 561 : INVENTORY_LOOT_RIGHT_BODY_VIEW_X;
+    inventoryLootLayout.rightBodyViewX = columns == 2 ? 563 : INVENTORY_LOOT_RIGHT_BODY_VIEW_X;
     inventoryLootLayout.leftScrollButtonX = 128;
     inventoryLootLayout.rightScrollButtonX = columns == 2 ? 515 : 379;
     inventoryLootLayout.takeAllButtonX = columns == 2 ? 568 : 432;
