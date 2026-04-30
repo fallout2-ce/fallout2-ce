@@ -919,7 +919,9 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
                 break;
             }
 
-            queueAddEvent(delay, explosive, nullptr, eventType);
+            if (scriptHooks_ExplosiveTimer(explosive, 10 * seconds, eventType) == -1) {
+                queueAddEvent(delay, explosive, nullptr, eventType);
+            }
         }
     }
 

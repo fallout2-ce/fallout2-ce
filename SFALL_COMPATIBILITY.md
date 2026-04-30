@@ -111,7 +111,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | RestTimer | `HOOK_RESTTIMER` | ✅ | CE is slightly more strict: only `ret0 == 1` interrupts. Ticks wrap every 6.8y; do not rely on them for absolute game time. |
 | GameModeChange | `HOOK_GAMEMODECHANGE` | ✅ | - |
 | UseAnimObj | `HOOK_USEANIMOBJ` | 🚫 | Et tu; (maybe) |
-| ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | 🚫 | - |
+| ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | ✅ | - |
 | DescriptionObj | `HOOK_DESCRIPTIONOBJ` | 🚫 | Et tu |
 | UseSkillOn | `HOOK_USESKILLON` | 🚫 | Et tu |
 | OnExplosion | `HOOK_ONEXPLOSION` | 🚫 | (maybe) |
