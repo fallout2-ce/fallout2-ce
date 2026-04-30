@@ -665,7 +665,7 @@ static int inventoryGetWindowHeight(int inventoryWindowType)
 
 static int inventoryChooseColumns(FrmImage& image, int expandedWidth, int col1FrmId, const char* col2Name)
 {
-    if (settings.ui.max_inventory_columns <= 1) {
+    if (settings.ui.inventory_columns <= 1) {
         return 1;
     }
 
