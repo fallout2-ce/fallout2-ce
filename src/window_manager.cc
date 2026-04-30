@@ -1152,6 +1152,20 @@ unsigned char* windowGetBuffer(int win)
     return window->buffer;
 }
 
+Buffer2D windowGetBuffer2D(int win)
+{
+    Window* window = windowGetWindow(win);
+
+    if (!gWindowSystemInitialized) {
+        return {};
+    }
+
+    if (window == nullptr) {
+        return {};
+    }
+    return {window->buffer, window->width, window->height};
+}
+
 // 0x4D78CC
 int windowGetAtPoint(int x, int y)
 {

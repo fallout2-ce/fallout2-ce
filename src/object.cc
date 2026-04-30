@@ -5222,5 +5222,38 @@ bool isExitGridAt(int tile, int elevation)
 
     return false;
 }
+UniqueObject::UniqueObject(Object* ptr)
+    : _ptr(ptr)
+{
+}
+UniqueObject::~UniqueObject()
+{
+    if (_ptr) objectDestroy(_ptr, nullptr);
+}
+UniqueObject::UniqueObject(UniqueObject&& other) noexcept
+    : _ptr(other._ptr)
+{
+    other._ptr = nullptr;
+}
+UniqueObject& UniqueObject::operator=(UniqueObject&& other) noexcept
+{
+    if (this != &other) {
+        if (_ptr) objectDestroy(_ptr, nullptr);
+        _ptr = other._ptr;
+        other._ptr = nullptr;
+    }
+    return *this;
+}
+Object* UniqueObject::release()
+{
+    Object* p = _ptr;
+    _ptr = nullptr;
+    return p;
+}
+void UniqueObject::reset(Object* p)
+{
+    if (_ptr) objectDestroy(_ptr, nullptr);
+    _ptr = p;
+}
 
 } // namespace fallout

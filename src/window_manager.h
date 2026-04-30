@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 
+#include "draw.h"
 #include "geometry.h"
 
 namespace fallout {
@@ -189,6 +190,7 @@ void windowRefreshAll(Rect* rect);
 void _win_get_mouse_buf(unsigned char* dest);
 Window* windowGetWindow(int win);
 unsigned char* windowGetBuffer(int win);
+Buffer2D windowGetBuffer2D(int win);
 int windowGetAtPoint(int x, int y);
 int windowGetWidth(int win);
 int windowGetHeight(int win);
@@ -214,6 +216,54 @@ int buttonDisable(int btn);
 int _win_set_button_rest_state(int btn, bool checked, int flags);
 int _win_group_radio_buttons(int buttonCount, int* btns);
 int _win_button_press_and_release(int btn);
+
+// Allows to use RAII to dispose UI objects.
+template<auto DestroyFn>
+class UniqueHandle {
+    int handle = -1;
+
+public:
+    UniqueHandle() = default;
+    explicit UniqueHandle(int handle)
+        : handle(handle)
+    {
+    }
+    ~UniqueHandle()
+    {
+        if (handle != -1) DestroyFn(handle);
+    }
+    UniqueHandle(const UniqueHandle&) = delete;
+    UniqueHandle& operator=(const UniqueHandle&) = delete;
+    UniqueHandle(UniqueHandle&& other) noexcept
+        : handle(other.handle)
+    {
+        other.handle = -1;
+    }
+    UniqueHandle& operator=(UniqueHandle&& other) noexcept
+    {
+        if (this != &other) {
+            if (handle != -1) DestroyFn(handle);
+            handle = other.handle;
+            other.handle = -1;
+        }
+        return *this;
+    }
+    int get() const { return handle; }
+    int release()
+    {
+        int h = handle;
+        handle = -1;
+        return h;
+    }
+    void reset(int h = -1)
+    {
+        if (handle != -1) DestroyFn(handle);
+        handle = h;
+    }
+};
+
+using UniqueWindow = UniqueHandle<windowDestroy>;
+using UniqueButton = UniqueHandle<buttonDestroy>;
 
 } // namespace fallout
 

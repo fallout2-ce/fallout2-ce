@@ -103,6 +103,34 @@ void _obj_fix_violence_settings(int* fid);
 Object* objectTypedFindById(int id, int type);
 bool isExitGridAt(int tile, int elevation);
 
+// RAII wrapper for Object*.
+class UniqueObject {
+public:
+    UniqueObject() = default;
+    explicit UniqueObject(Object* ptr);
+    ~UniqueObject();
+    UniqueObject(const UniqueObject&) = delete;
+    UniqueObject& operator=(const UniqueObject&) = delete;
+    UniqueObject(UniqueObject&& other) noexcept;
+    UniqueObject& operator=(UniqueObject&& other) noexcept;
+    Object* get() const { return _ptr; }
+    Object* operator->() const { return _ptr; }
+    Object& operator*() const { return *_ptr; }
+    Object* release();
+    void reset(Object* p = nullptr);
+
+private:
+    Object* _ptr = nullptr;
+};
+
+inline int objectCreateWithFidPid(UniqueObject& obj, int fid, int pid)
+{
+    Object* raw;
+    int rc = objectCreateWithFidPid(&raw, fid, pid);
+    if (rc != -1) obj.reset(raw);
+    return rc;
+}
+
 } // namespace fallout
 
 #endif /* OBJECT_H */
