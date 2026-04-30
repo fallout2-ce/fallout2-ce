@@ -159,6 +159,26 @@ using ArtPtr = InternalPtr<Art>;
 class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 
+class FrmId {
+public:
+    FrmId() = default;
+    explicit FrmId(int fid) : _fid(fid) {}
+    explicit FrmId(ObjectType objType, int frmId) : _fid(buildFid(objType, frmId, 0, 0, 0)) {}
+    explicit FrmId(ObjectType objType, const char* path) : _objectType(objType), _path(path) {}
+    explicit FrmId(const char* path) : _path(path) {}
+
+    int fid() const { return _fid; }
+    int objectType() const { return _objectType; }
+    const char* filePath() const { return _path; }
+
+private:
+    int _fid = -1;
+    int _objectType = -1;
+    const char* _path = nullptr;
+};
+
+// A helper for using RAII to read single-frame FRM's.
+// lock/unlock use the art-cache instead of just loading/unloading directly.
 class FrmImage {
 public:
     FrmImage();
@@ -172,6 +192,7 @@ public:
     FrmImage& operator=(FrmImage&& other) noexcept;
 
     bool isLocked() const { return _key != nullptr || _namedKey; }
+    bool lock(const FrmId& frmId);
     bool lock(unsigned int fid);
     bool lock(const char* frmPath);
     bool lock(ObjectType objType, const char* frmRelativePath);
@@ -187,10 +208,10 @@ private:
     void resetInternal();
 
     std::shared_ptr<NamedCacheEntry> _namedKey;
-    CacheEntry* _key;
-    unsigned char* _data;
-    int _width;
-    int _height;
+    CacheEntry* _key = nullptr;
+    unsigned char* _data = nullptr;
+    int _width = 0;
+    int _height = 0;
 };
 
 } // namespace fallout

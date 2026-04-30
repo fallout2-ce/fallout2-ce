@@ -1385,6 +1385,20 @@ FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
     return *this;
 }
 
+bool FrmImage::lock(const FrmId& frmId)
+{
+    if (frmId.fid() >= 0) {
+        return lock(frmId.fid());
+    }
+    if (frmId.filePath() != nullptr) {
+        if (frmId.objectType() >= 0 && frmId.objectType() < OBJ_TYPE_COUNT) {
+            return lock(static_cast<ObjectType>(frmId.objectType()), frmId.filePath());
+        }
+        return lock(frmId.filePath());
+    }
+    return false;
+}
+
 bool FrmImage::lock(unsigned int fid)
 {
     if (isLocked()) {

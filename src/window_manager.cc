@@ -1157,13 +1157,13 @@ Buffer2D windowGetBuffer2D(int win)
     Window* window = windowGetWindow(win);
 
     if (!gWindowSystemInitialized) {
-        return {};
+        return { };
     }
 
     if (window == nullptr) {
-        return {};
+        return { };
     }
-    return {window->buffer, window->width, window->height};
+    return { window->buffer, window->width, window->height };
 }
 
 // 0x4D78CC
@@ -1401,6 +1401,62 @@ int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEve
     _button_draw(button, window, button->normalImage, false, nullptr, false);
 
     return button->id;
+}
+
+int buttonCreateWithFrm(int win, int x, int y,
+    int mouseEnterEventCode, int mouseExitEventCode,
+    int mouseDownEventCode, int mouseUpEventCode,
+    const FrmId& normal, const FrmId& pressed,
+    const FrmId& hover, int flags)
+{
+    FrmImage nFrm;
+    if (!nFrm.lock(normal)) return -1;
+    int w = nFrm.getWidth(), h = nFrm.getHeight();
+
+    FrmImage pFrm;
+    pFrm.lock(pressed);
+
+    FrmImage hFrm;
+    hFrm.lock(hover);
+
+    int btn = buttonCreate(win, x, y, w, h,
+        mouseEnterEventCode, mouseExitEventCode,
+        mouseDownEventCode, mouseUpEventCode,
+        nFrm.getData(),
+        pFrm.isLocked() ? pFrm.getData() : nullptr,
+        hFrm.isLocked() ? hFrm.getData() : nullptr,
+        flags);
+    if (btn == -1) return -1;
+
+    Button* b = buttonGetButton(btn, nullptr);
+    b->frmImages.push_back(std::move(nFrm));
+    if (pFrm.isLocked()) b->frmImages.push_back(std::move(pFrm));
+    if (hFrm.isLocked()) b->frmImages.push_back(std::move(hFrm));
+    return btn;
+}
+
+int buttonSetDisabledFrm(int btn,
+    const FrmId& disabledNormal, const FrmId& disabledPressed,
+    const FrmId& disabledHover)
+{
+    FrmImage dnFrm;
+    dnFrm.lock(disabledNormal);
+
+    FrmImage dpFrm;
+    dpFrm.lock(disabledPressed);
+
+    FrmImage dhFrm;
+    dhFrm.lock(disabledHover);
+
+    if (dnFrm.isLocked() && dpFrm.isLocked() && dhFrm.isLocked()) return -1;
+
+    if (_win_register_button_disable(btn, dnFrm.getData(), dpFrm.getData(), dhFrm.getData()) == -1) return -1;
+
+    Button* b = buttonGetButton(btn, nullptr);
+    if (dnFrm.isLocked()) b->frmImages.push_back(std::move(dnFrm));
+    if (dpFrm.isLocked()) b->frmImages.push_back(std::move(dpFrm));
+    if (dhFrm.isLocked()) b->frmImages.push_back(std::move(dhFrm));
+    return 0;
 }
 
 // 0x4D8308
@@ -1662,6 +1718,8 @@ Button* buttonCreateInternal(int win, int x, int y, int width, int height, int m
     if (button == nullptr) {
         return nullptr;
     }
+
+    new (&button->frmImages) std::vector<FrmImage>();
 
     if ((flags & BUTTON_FLAG_CHECKABLE) == 0) {
         if ((flags & BUTTON_FLAG_CHECK_ON_DOWN) != 0) {
@@ -2209,6 +2267,8 @@ void buttonFree(Button* button)
             }
         }
     }
+
+    button->frmImages.~vector();
 
     internal_free(button);
 }

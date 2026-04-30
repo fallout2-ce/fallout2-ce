@@ -2,7 +2,9 @@
 #define WINDOW_MANAGER_H
 
 #include <stddef.h>
+#include <vector>
 
+#include "art.h"
 #include "draw.h"
 #include "geometry.h"
 
@@ -155,6 +157,12 @@ typedef struct Button {
     ButtonGroup* buttonGroup;
     Button* prev;
     Button* next;
+
+    // Holds FrmImage objects purely for cleanup — their destructors
+    // unlock both CacheEntry* (fid-based) and shared_ptr<NamedCacheEntry>
+    // (path-based). Data pointers are stored separately in normalImage /
+    // pressedImage / etc.
+    std::vector<FrmImage> frmImages;
 } Button;
 
 typedef struct ButtonGroup {
@@ -200,6 +208,8 @@ int _GNW_check_menu_bars(int input);
 void programWindowSetTitle(const char* title);
 bool showMesageBox(const char* str);
 int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, unsigned char* up, unsigned char* dn, unsigned char* hover, int flags);
+int buttonCreateWithFrm(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const FrmId& normal, const FrmId& pressed, const FrmId& hover = {}, int flags = 0);
+int buttonSetDisabledFrm(int btn, const FrmId& disabledNormal, const FrmId& disabledPressed, const FrmId& disabledHover = {});
 int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const char* title, int flags);
 int _win_register_button_disable(int btn, unsigned char* up, unsigned char* down, unsigned char* hover);
 int _win_register_button_image(int btn, unsigned char* up, unsigned char* down, unsigned char* hover, bool draw);
@@ -218,7 +228,7 @@ int _win_group_radio_buttons(int buttonCount, int* btns);
 int _win_button_press_and_release(int btn);
 
 // Allows to use RAII to dispose UI objects.
-template<auto DestroyFn>
+template <auto DestroyFn>
 class UniqueHandle {
     int handle = -1;
 

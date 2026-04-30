@@ -600,14 +600,6 @@ static int gGameDialogFidgetFrmCurrentFrame;
 static FrmImage _reviewBackgroundFrmImage;
 static FrmImage _reviewFrmImages[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT];
 
-// TODO: tie FRM cache locks to Button lifecycle for easy cleanup
-static FrmImage _reviewButtonNormalFrmImage;
-static FrmImage _reviewButtonPressedFrmImage;
-static FrmImage _redButtonNormalFrmImage;
-static FrmImage _redButtonPressedFrmImage;
-static FrmImage _littleRedButtonNormalFrmImage;
-static FrmImage _littleRedButtonPressedFrmImage;
-
 static FrmImage _lowerHighlightFrmImage;
 static FrmImage _upperHighlightFrmImage;
 static FrmImage _barterBackgroundFrmImage;
@@ -687,9 +679,6 @@ static const char* expandedBarterFrmName();
 static void gameDialogRenderTalkingHead(Art* headFrm, int frame);
 static void gameDialogHighlightsInit();
 static void gameDialogHighlightsExit();
-
-static void gameDialogButtonsArtInit();
-static void gameDialogButtonsArtExit();
 
 static bool gGameDialogFix;
 static bool gNumberOptions;
@@ -978,8 +967,6 @@ int _gdialogInitFromScript(int headFid, int reaction)
     _talk_need_to_center = true;
 
     // CE: Fix Barter button.
-    gameDialogButtonsArtInit();
-
     _gdCreateHeadWindow();
     tickersAdd(gameDialogTicker);
     _gdSetupFidget(headFid, reaction);
@@ -1037,8 +1024,6 @@ int _gdialogExitFromScript()
     GameMode::exitGameMode(GameMode::kSpecial);
 
     // CE: Fix Barter button.
-    gameDialogButtonsArtExit();
-
     fontSetCurrent(_oldFont);
 
     if (gGameDialogFidgetFrm != nullptr) {
@@ -1372,9 +1357,10 @@ int gameDialogAddTextOption(int messageListId, const char* text, int reaction)
 
 static int createDialogRedButton(int win, int x, int y, void (*mouseUp)(int, int), int keyCode)
 {
-    int h = buttonCreate(win, x, y, 14, 14, -1, -1, -1, keyCode,
-        _redButtonNormalFrmImage.getData(), _redButtonPressedFrmImage.getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
-    if (h == -1) return h;
+    int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
+        FrmId(OBJ_TYPE_INTERFACE, 96), FrmId(OBJ_TYPE_INTERFACE, 95),
+        { }, BUTTON_FLAG_TRANSPARENT);
+    if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_med_butt_press, _gsound_med_butt_release);
     if (mouseUp != nullptr) {
         buttonSetMouseCallbacks(h, nullptr, nullptr, nullptr, mouseUp);
@@ -1382,18 +1368,11 @@ static int createDialogRedButton(int win, int x, int y, void (*mouseUp)(int, int
     return h;
 }
 
-static int createDialogReviewButton(int win, FrmImage& normalFrm, FrmImage& pressedFrm)
+static int createDialogReviewButton(int win)
 {
-    int upFid = buildFid(OBJ_TYPE_INTERFACE, 97, 0, 0, 0);
-    if (!normalFrm.lock(upFid)) return -1;
-
-    int downFid = buildFid(OBJ_TYPE_INTERFACE, 98, 0, 0, 0);
-    if (!pressedFrm.lock(downFid)) return -1;
-
-    int h = buttonCreate(win, 13, 154, 51, 29, -1, -1, -1, -1,
-        normalFrm.getData(), pressedFrm.getData(), nullptr, 0);
+    int h = buttonCreateWithFrm(win, 13, 154, -1, -1, -1, -1,
+        FrmId(OBJ_TYPE_INTERFACE, 97), FrmId(OBJ_TYPE_INTERFACE, 98));
     if (h == -1) return -1;
-
     buttonSetMouseCallbacks(h, nullptr, nullptr, nullptr, gameDialogReviewButtonOnMouseUp);
     buttonSetCallbacks(h, _gsound_red_butt_press, _gsound_red_butt_release);
     return h;
@@ -1401,11 +1380,9 @@ static int createDialogReviewButton(int win, FrmImage& normalFrm, FrmImage& pres
 
 static int createLittleRedButton(int win, int x, int y, int keyCode)
 {
-    int h = buttonCreate(win, x, y,
-        _littleRedButtonNormalFrmImage.getWidth(), _littleRedButtonNormalFrmImage.getHeight(),
-        -1, -1, -1, keyCode,
-        _littleRedButtonNormalFrmImage.getData(), _littleRedButtonPressedFrmImage.getData(),
-        nullptr, BUTTON_FLAG_TRANSPARENT);
+    int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
+        FrmId(OBJ_TYPE_INTERFACE, 8), FrmId(OBJ_TYPE_INTERFACE, 9),
+        { }, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_red_butt_press, _gsound_red_butt_release);
     return h;
@@ -4511,8 +4488,7 @@ int _gdialog_window_create()
     if (barterBtn == -1) return -1;
 
     // REVIEW
-    FrmImage reviewNormalFrm, reviewPressedFrm;
-    int reviewBtn = createDialogReviewButton(win, reviewNormalFrm, reviewPressedFrm);
+    int reviewBtn = createDialogReviewButton(win);
     if (reviewBtn == -1) return -1;
 
     if (gGameDialogSpeakerIsPartyMember) {
@@ -4523,8 +4499,6 @@ int _gdialog_window_create()
         _gdialog_buttons[2] = controlBtn;
     }
 
-    _reviewButtonNormalFrmImage = std::move(reviewNormalFrm);
-    _reviewButtonPressedFrmImage = std::move(reviewPressedFrm);
     _gdialog_buttons[0] = barterBtn;
     _gdialog_buttons[1] = reviewBtn;
     gGameDialogWindow = winPtr.release();
@@ -4543,9 +4517,6 @@ void _gdialog_window_destroy()
         buttonDestroy(btn);
         btn = -1;
     }
-
-    _reviewButtonNormalFrmImage.unlock();
-    _reviewButtonPressedFrmImage.unlock();
 
     int offset = (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len);
     unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow) + offset;
@@ -4844,39 +4815,6 @@ static void gameDialogHighlightsExit()
 
     _upperHighlightFrmImage.unlock();
     _lowerHighlightFrmImage.unlock();
-}
-
-static void gameDialogButtonsArtInit()
-{
-    struct {
-        int frmId;
-        FrmImage& image;
-    } buttonFrms[] = {
-        // di_rdbt2.frm - dialog red button up
-        { 96, _redButtonNormalFrmImage },
-
-        // di_rdbt1.frm - dialog red button down
-        { 95, _redButtonPressedFrmImage },
-
-        // di_rdbt2.frm - dialog red button up
-        {8, _littleRedButtonNormalFrmImage},
-
-        // di_rdbt1.frm - dialog red button down
-        {9, _littleRedButtonPressedFrmImage},
-    };
-
-    for (auto &[frmId, image] : buttonFrms) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, frmId, 0, 0, 0);
-        image.lock(fid);
-    }
-}
-
-static void gameDialogButtonsArtExit()
-{
-    _redButtonNormalFrmImage.unlock();
-    _redButtonPressedFrmImage.unlock();
-    _littleRedButtonNormalFrmImage.unlock();
-    _littleRedButtonPressedFrmImage.unlock();
 }
 
 } // namespace fallout
