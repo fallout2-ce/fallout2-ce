@@ -1301,7 +1301,7 @@ static bool _setup_inventory(int inventoryWindowType)
 
         if (_inventoryFrmImages[2].isLocked() && _inventoryFrmImages[3].isLocked() && _inventoryFrmImages[4].isLocked()) {
             if (inventoryWindowType != INVENTORY_WINDOW_TYPE_TRADE) {
-                int scrollUpX = isNormalWindow ? inventoryLayout.scrollButtonX
+                int scrollUpX = isNormalWindow                          ? inventoryLayout.scrollButtonX
                     : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.leftScrollButtonX
                                                                         : 128;
                 // Left inventory up button.
@@ -1379,7 +1379,7 @@ static bool _setup_inventory(int inventoryWindowType)
         _inventoryFrmImages[7].lock(fid);
 
         if (_inventoryFrmImages[5].isLocked() && _inventoryFrmImages[6].isLocked() && _inventoryFrmImages[7].isLocked()) {
-            int scrollDownX = isNormalWindow ? inventoryLayout.scrollButtonX
+            int scrollDownX = isNormalWindow                        ? inventoryLayout.scrollButtonX
                 : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.leftScrollButtonX
                                                                     : 128;
             // Left inventory down button.
