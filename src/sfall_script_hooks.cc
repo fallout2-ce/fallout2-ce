@@ -258,7 +258,7 @@ int     arg0 - The explosive delay in ticks before any failure penalty is applie
 Obj     arg1 - The explosive object
 int     arg2 - The result of engine calculation: 1 - failure, 2 - success
 
-int     ret0 - The new delay in ticks (maximum 18000). Negative values use engine behavior.
+int     ret0 - The new delay in ticks (maximum 18000 == 30min). Negative values use engine behavior.
 int     ret1 - The new result: 0/1 - failure, 2/3 - success. Other values use engine behavior.
 */
 int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType)
