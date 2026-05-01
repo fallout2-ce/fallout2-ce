@@ -1,11 +1,11 @@
 #include "debug.h"
 
+#include <SDL.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <SDL.h>
 
 #include "memory.h"
 #include "platform_compat.h"
