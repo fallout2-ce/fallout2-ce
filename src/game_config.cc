@@ -97,24 +97,19 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     const char* defaultConfigFileName = isMapper ? kMapperConfigFileName : kDefaultGameConfigFileName;
 
-    const char* configFileName;
-    if (customConfigFileName != nullptr && *customConfigFileName != '\0') {
-        configFileName = customConfigFileName;
-    } else {
-        configFileName = derivedConfigFileName;
-    }
+    const bool hasCustomConfigFileName = customConfigFileName != nullptr && *customConfigFileName != '\0';
+    const char* configFileName = hasCustomConfigFileName ? customConfigFileName : derivedConfigFileName;
 
     compat_makepath(gGameConfigFilePath, exeDrive, exeDir, configFileName, nullptr);
 
-    const bool usingDerivedConfig = (customConfigFileName == nullptr || *customConfigFileName == '\0')
+    const bool usingDerivedConfig = !hasCustomConfigFileName
         && compat_stricmp(derivedConfigFileName, defaultConfigFileName) != 0;
-    const bool derivedConfigMissing = usingDerivedConfig && !compat_file_exists(gGameConfigFilePath);
 
     configRead(&gGameConfig, gGameConfigFilePath, false);
 
     debugPrint("Game config loaded from %s.\n", gGameConfigFilePath);
 
-    if (derivedConfigMissing) {
+    if (usingDerivedConfig) {
         char defaultConfigFilePath[COMPAT_MAX_PATH];
         compat_makepath(defaultConfigFilePath, exeDrive, exeDir, defaultConfigFileName, nullptr);
         if (gameConfigMigrateFromDefaultConfig(defaultConfigFilePath, &gGameConfig)) {

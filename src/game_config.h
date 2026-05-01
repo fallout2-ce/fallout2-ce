@@ -10,6 +10,7 @@ namespace fallout {
 #define GAME_CONFIG_SCREEN_KEY "screen"
 #define GAME_CONFIG_UI_KEY "ui"
 #define GAME_CONFIG_SOUND_KEY "sound"
+#define GAME_CONFIG_META_KEY "meta"
 
 #define GAME_CONFIG_MASTER_DAT_KEY "master_dat"
 #define GAME_CONFIG_MASTER_PATCHES_KEY "master_patches"
