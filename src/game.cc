@@ -70,6 +70,7 @@
 #include "trait.h"
 #include "version.h"
 #include "window_manager.h"
+#include "win32.h"
 #include "worldmap.h"
 
 #if __APPLE__
@@ -88,15 +89,12 @@ namespace fallout {
 static int gameLoadGlobalVars();
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void gameFreeGlobalVars();
-static bool tryLoadBaseCEModAtPath(const char* path, bool* found);
+static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed);
 static void showHelp();
 static int gameDbInit();
 static void showSplash();
 
 inline constexpr char kBaseModPath[] = "ce.dat";
-#if __APPLE__ && TARGET_OS_OSX
-inline constexpr char kMacOsBundleBaseModPath[] = "Fallout II Community Edition.app/Contents/Resources/ce.dat";
-#endif
 
 // 0x501C9C
 static char _aGame_0[] = "game\\";
@@ -1322,25 +1320,31 @@ int showQuitConfirmationDialog()
 static void TryLoadBaseCEMod()
 {
     bool found = false;
+    bool openFailed = false;
 
-    if (tryLoadBaseCEModAtPath(kBaseModPath, &found)) {
+    if (tryLoadBaseCEModAtPath(kBaseModPath, &found, &openFailed)) {
         return;
     }
 
 #if __APPLE__ && TARGET_OS_OSX
-    if (tryLoadBaseCEModAtPath(kMacOsBundleBaseModPath, &found)) {
-        return;
+    const char* bundleResourcesPath = getMacOsBundleResourcesPath();
+    if (bundleResourcesPath != nullptr) {
+        char absolutePath[COMPAT_MAX_PATH];
+        snprintf(absolutePath, sizeof(absolutePath), "%s/ce.dat", bundleResourcesPath);
+        if (tryLoadBaseCEModAtPath(absolutePath, &found, &openFailed)) {
+            return;
+        }
     }
 #endif
 
-    if (found) {
+    if (openFailed) {
         debugPrint("Error opening base mod file/folder!\n");
     } else {
         debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
     }
 }
 
-static bool tryLoadBaseCEModAtPath(const char* path, bool* found)
+static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed)
 {
     if (compat_access(path, 0) != 0) {
         return false;
@@ -1352,7 +1356,9 @@ static bool tryLoadBaseCEModAtPath(const char* path, bool* found)
 
     debugPrint("Loading base FO:CE mod: %s\n", path);
     if (dbOpen(path) == -1) {
-        debugPrint("Error opening base mod file/folder!\n");
+        if (openFailed != nullptr) {
+            *openFailed = true;
+        }
         return false;
     }
 

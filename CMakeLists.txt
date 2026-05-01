@@ -369,6 +369,8 @@ if(APPLE)
             "os/macos/fallout2-ce.icns"
         )
 
+        target_link_libraries(${EXECUTABLE_NAME} "-framework CoreFoundation")
+
         target_sources(${EXECUTABLE_NAME} PUBLIC ${RESOURCES})
         set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
