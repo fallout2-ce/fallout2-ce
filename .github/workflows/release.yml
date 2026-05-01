@@ -5,6 +5,9 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
@@ -49,6 +52,8 @@ jobs:
 
     runs-on: ubuntu-latest
     needs: [ce-dat]
+    permissions:
+      contents: write
 
     steps:
       - name: Clone
@@ -105,6 +110,8 @@ jobs:
 
     runs-on: macos-14
     needs: [ce-dat]
+    permissions:
+      contents: write
 
     steps:
       - name: Clone
@@ -163,6 +170,8 @@ jobs:
 
     runs-on: ubuntu-20.04
     needs: [ce-dat]
+    permissions:
+      contents: write
 
     strategy:
       fail-fast: false
@@ -240,6 +249,8 @@ jobs:
     name: macOS
 
     runs-on: macos-11
+    permissions:
+      contents: write
 
     steps:
       - name: Clone
@@ -308,6 +319,8 @@ jobs:
 
     runs-on: windows-2025
     needs: [ce-dat]
+    permissions:
+      contents: write
 
     strategy:
       fail-fast: false
