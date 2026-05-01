@@ -1,8 +1,6 @@
 #include "win32.h"
 
-#include <limits.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <SDL.h>
 
@@ -25,19 +23,8 @@ namespace fallout {
 // 0x51E444
 bool gProgramIsActive = false;
 
-#if __APPLE__
-static char gMacOsBundleResourcesPath[PATH_MAX];
-#endif
-
 #ifdef _WIN32
 HANDLE GNW95_mutex = nullptr;
-#endif
-
-#if __APPLE__
-const char* getMacOsBundleResourcesPath()
-{
-    return gMacOsBundleResourcesPath[0] != '\0' ? gMacOsBundleResourcesPath : nullptr;
-}
 #endif
 
 int main(int argc, char* argv[])
@@ -63,14 +50,9 @@ int main(int argc, char* argv[])
 #endif
 
 #if __APPLE__ && TARGET_OS_OSX
-    char executablePath[PATH_MAX];
-    if (realpath(argv[0], executablePath) != nullptr) {
-        char* sep = strrchr(executablePath, '/');
-        if (sep != nullptr) {
-            *sep = '\0';
-            snprintf(gMacOsBundleResourcesPath, sizeof(gMacOsBundleResourcesPath), "%s/../Resources", executablePath);
-        }
-    }
+    char* basePath = SDL_GetBasePath();
+    chdir(basePath);
+    SDL_free(basePath);
 #endif
 
 #if __ANDROID__

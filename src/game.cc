@@ -69,7 +69,6 @@
 #include "tile.h"
 #include "trait.h"
 #include "version.h"
-#include "win32.h"
 #include "window_manager.h"
 #include "worldmap.h"
 
@@ -96,7 +95,7 @@ static void showSplash();
 
 inline constexpr char kBaseModPath[] = "ce.dat";
 #if __APPLE__ && TARGET_OS_OSX
-inline constexpr char kMacOsBundleBaseModPath[] = "../Resources/ce.dat";
+inline constexpr char kMacOsBundleBaseModPath[] = "Fallout II Community Edition.app/Contents/Resources/ce.dat";
 #endif
 
 // 0x501C9C
@@ -1330,16 +1329,6 @@ static void TryLoadBaseCEMod()
     if (tryLoadBaseCEModAtPath(kMacOsBundleBaseModPath)) {
         return;
     }
-
-    const char* bundleResourcesPath = getMacOsBundleResourcesPath();
-    if (bundleResourcesPath != nullptr) {
-        char absolutePath[COMPAT_MAX_PATH];
-
-        snprintf(absolutePath, sizeof(absolutePath), "%s/ce.dat", bundleResourcesPath);
-        if (tryLoadBaseCEModAtPath(absolutePath)) {
-            return;
-        }
-    }
 #endif
 
     debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
@@ -1354,6 +1343,7 @@ static bool tryLoadBaseCEModAtPath(const char* path)
     debugPrint("Loading base FO:CE mod: %s\n", path);
     if (dbOpen(path) == -1) {
         debugPrint("Error opening base mod file/folder!\n");
+        return false;
     }
 
     return true;
