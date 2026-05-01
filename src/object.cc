@@ -5264,5 +5264,4 @@ int objectCreateWithFidPid(UniqueObject& obj, int fid, int pid)
     return rc;
 }
 
-
 } // namespace fallout
