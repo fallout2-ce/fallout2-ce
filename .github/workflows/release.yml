@@ -220,7 +220,6 @@ jobs:
     name: macOS
 
     runs-on: macos-11
-    needs: [ce-dat]
 
     steps:
       - name: Clone
@@ -255,16 +254,6 @@ jobs:
             --config RelWithDebInfo \
             -j $(sysctl -n hw.physicalcpu) \
             # EOL
-
-      - name: Download ce.dat
-        uses: actions/download-artifact@v4
-        with:
-          name: ce-dat
-          path: out/dist
-
-      - name: Bundle ce.dat
-        run: |
-          cp out/dist/ce.dat "build/RelWithDebInfo/Fallout II Community Edition.app/Contents/MacOS/ce.dat"
 
       - name: Pack
         run: |

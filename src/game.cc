@@ -72,6 +72,10 @@
 #include "window_manager.h"
 #include "worldmap.h"
 
+#if __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 namespace fallout {
 
 #define HELP_SCREEN_WIDTH (640)
@@ -89,6 +93,9 @@ static int gameDbInit();
 static void showSplash();
 
 inline constexpr char kBaseModPath[] = "ce.dat";
+#if __APPLE__ && TARGET_OS_OSX
+inline constexpr char kMacOsBundleBaseModPath[] = "../Resources/ce.dat";
+#endif
 
 // 0x501C9C
 static char _aGame_0[] = "game\\";
@@ -1313,14 +1320,24 @@ int showQuitConfirmationDialog()
 
 static void TryLoadBaseCEMod()
 {
-    if (compat_access(kBaseModPath, 0) == 0) {
-        debugPrint("Loading base FO:CE mod: %s\n", kBaseModPath);
-        if (dbOpen(kBaseModPath) == -1) {
-            debugPrint("Error opening base mod file/folder!\n");
+    const char* baseModPaths[] = {
+        kBaseModPath,
+#if __APPLE__ && TARGET_OS_OSX
+        kMacOsBundleBaseModPath,
+#endif
+    };
+
+    for (const char* baseModPath : baseModPaths) {
+        if (compat_access(baseModPath, 0) == 0) {
+            debugPrint("Loading base FO:CE mod: %s\n", baseModPath);
+            if (dbOpen(baseModPath) == -1) {
+                debugPrint("Error opening base mod file/folder!\n");
+            }
+            return;
         }
-    } else {
-        debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
     }
+
+    debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
 }
 
 // 0x44418C
