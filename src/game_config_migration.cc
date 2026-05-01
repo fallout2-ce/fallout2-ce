@@ -88,9 +88,9 @@ namespace {
 
 } // namespace
 
-// Migrate settings F2_RES.INI to fallout2.cfg
+// Migrate settings F2_RES.INI to ce.cfg
 //
-// Only happens a single time, after which fallout2.cfg is the source of truth
+// Only happens a single time, after which game config is the source of truth
 bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConfig)
 {
     if (gameConfigFilePath == nullptr || gameConfig == nullptr) {

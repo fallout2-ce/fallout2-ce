@@ -26,7 +26,7 @@ constexpr char kMapperConfigFileName[] = "mapper2.cfg";
 // 0x5186D0
 bool gGameConfigInitialized = false;
 
-// fallout2.cfg
+// ce.cfg
 //
 // 0x58E950
 Config gGameConfig;
@@ -47,9 +47,9 @@ char gGameConfigFilePath[COMPAT_MAX_PATH];
 // additional check for [argc], so it will crash if you pass NULL, or an empty
 // array into [argv].
 //
-// The executable path from [argv] is used resolve path to `fallout2.cfg`,
+// The executable path from [argv] is used resolve path to `<executable>ce.cfg`,
 // which should be in the same folder. This function provide defaults if
-// `fallout2.cfg` is not present, or cannot be read for any reason.
+// file is not present, or cannot be read for any reason.
 //
 // Finally, this function merges key-value pairs from [argv] if any, see
 // [configParseCommandLineArguments] for expected format.
@@ -124,7 +124,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     }
 
     // Add key-values from command line, which overrides both defaults and
-    // whatever was loaded from `fallout2.cfg`.
+    // whatever was loaded from cfg.
     configParseCommandLineArguments(&gGameConfig, argc, argv);
 
     // Writes default values to config, skipping keys that were already loaded.
@@ -143,7 +143,7 @@ EM_ASYNC_JS(void, do_save_idbfs_gameconfig, (), {
 // clang-format on
 #endif
 
-// Saves game config into `fallout2.cfg`.
+// Saves game config into cfg.
 //
 // 0x444C14
 bool gameConfigSave()

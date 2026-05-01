@@ -101,13 +101,13 @@ docker run --rm -v $(pwd):/src emscripten/emsdk:3.1.74 sh -c 'git config --globa
 
 ## Configuration
 
-The main configuration file is `fallout2.cfg`. There are several important settings you might need to adjust for your installation. Depending on your Fallout distribution main game assets `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder might be either all lowercased, or all uppercased. You can either update `master_dat`, `critter_dat`, `master_patches` and `critter_patches` settings to match your file names, or rename files to match entries in your `fallout2.cfg`.
+The main configuration file is `fallout2-ce.cfg`. There are several important settings you might need to adjust for your installation. Depending on your Fallout distribution main game assets `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder might be either all lowercased, or all uppercased. You can either update `master_dat`, `critter_dat`, `master_patches` and `critter_patches` settings to match your file names, or rename files to match entries in your `fallout2-ce.cfg`.
 
 The `sound` folder (with `music` folder inside) might be located either in `data` folder, or be in the Fallout folder. Update `music_path1` setting to match your hierarchy, usually it's `data/sound/music/` or `sound/music/`. Make sure it matches your path exactly (so it might be `SOUND/MUSIC/` if you've installed Fallout from CD). Music files themselves (with `ACM` extension) should be all uppercased, regardless of `sound` and `music` folders.
 
-Additional settings for screen resolution, UI customization, and map options are now integrated into the main `fallout2.cfg` file (previously part of `f2_res.ini` from Mash's HRP). When Fallout 2 CE starts, if it detects an existing `f2_res.ini` file, it automatically migrates these settings into `fallout2.cfg`. After migration, `fallout2.cfg` becomes the single source of truth for this configuration.
+Additional settings for screen resolution, UI customization, and map options are now integrated into the main `fallout2-ce.cfg` file (previously part of `f2_res.ini` from Mash's HRP). When Fallout 2 CE starts, if it detects an existing `f2_res.ini` file, it automatically migrates these settings into main config. After that, `fallout2-ce.cfg` becomes the single source of truth for this configuration.
 
-The following settings can be configured in `fallout2.cfg` under the `[screen]` and `[ui]` sections:
+The following settings can be configured in `fallout2-ce.cfg` under the `[screen]` and `[ui]` sections:
 
 ```ini
 [screen]

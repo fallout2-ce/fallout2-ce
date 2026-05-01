@@ -10,7 +10,7 @@ Settings previously read from `ddraw.ini` have been moved into standard CE confi
 
 Most settings that control game behavior (premade characters, extra message files, combat tweaks, worldmap, etc.) have been moved into [`<DAT>/config/game.cfg`](files/ce.dat/config/game.cfg), which is a content-mod config file intended to be overridden by mods. See that file for the full list with descriptions.
 
-The following settings were moved into [`fallout2.cfg`](files/fallout2.cfg) instead:
+The following settings were moved into [`fallout2-ce.cfg`](files/ce.cfg) instead:
 
 | ddraw.ini section | ddraw.ini key | fallout2.cfg section | fallout2.cfg key |
 | --- | --- | --- | --- |
