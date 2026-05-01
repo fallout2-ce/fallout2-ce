@@ -55,11 +55,6 @@ struct FrmFrame {
     std::vector<uint8_t> pixels;
 };
 
-enum class ByteOrder {
-    little,
-    big,
-};
-
 struct Options {
     std::string inputPath;
     std::string outputPath;
@@ -69,124 +64,53 @@ struct Options {
     bool transparent = true;
 };
 
-int16_t decodeInt16(const unsigned char* bytes, ByteOrder byteOrder)
+int16_t readInt16Big(const unsigned char* bytes)
 {
-    if (byteOrder == ByteOrder::little) {
-        return static_cast<int16_t>(bytes[0] | (bytes[1] << 8));
-    }
-
     return static_cast<int16_t>((bytes[0] << 8) | bytes[1]);
 }
 
-int32_t decodeInt32(const unsigned char* bytes, ByteOrder byteOrder)
+int32_t readInt32Big(const unsigned char* bytes)
 {
-    if (byteOrder == ByteOrder::little) {
-        return static_cast<int32_t>(static_cast<uint32_t>(bytes[0])
-            | (static_cast<uint32_t>(bytes[1]) << 8)
-            | (static_cast<uint32_t>(bytes[2]) << 16)
-            | (static_cast<uint32_t>(bytes[3]) << 24));
-    }
-
     return static_cast<int32_t>((static_cast<uint32_t>(bytes[0]) << 24)
         | (static_cast<uint32_t>(bytes[1]) << 16)
         | (static_cast<uint32_t>(bytes[2]) << 8)
         | static_cast<uint32_t>(bytes[3]));
 }
 
-bool isPlausibleFrmHeader(const FrmHeader& header)
-{
-    if (header.version <= 0 || header.version > 100) {
-        return false;
-    }
-
-    if (header.frameCount <= 0) {
-        return false;
-    }
-
-    if (header.dataSize <= 0) {
-        return false;
-    }
-
-    for (int rotation = 0; rotation < kRotationCount; rotation++) {
-        if (header.dataOffsets[rotation] < 0 || header.dataOffsets[rotation] > header.dataSize) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool readFrmHeader(std::istream& stream, FrmHeader& header, ByteOrder& byteOrder)
+bool readFrmHeader(std::istream& stream, FrmHeader& header)
 {
     std::array<unsigned char, kFrmHeaderSize> bytes{};
     if (!stream.read(reinterpret_cast<char*>(bytes.data()), bytes.size())) {
         return false;
     }
 
-    const int32_t versionLe = decodeInt32(bytes.data(), ByteOrder::little);
-    const int32_t versionBe = decodeInt32(bytes.data(), ByteOrder::big);
-
-    FrmHeader littleHeader{};
-    littleHeader.version = versionLe;
-    littleHeader.framesPerSecond = decodeInt16(bytes.data() + 4, ByteOrder::little);
-    littleHeader.actionFrame = decodeInt16(bytes.data() + 6, ByteOrder::little);
-    littleHeader.frameCount = decodeInt16(bytes.data() + 8, ByteOrder::little);
-    for (int rotation = 0; rotation < kRotationCount; rotation++) {
-        littleHeader.xOffsets[rotation] = decodeInt16(bytes.data() + 10 + rotation * 2, ByteOrder::little);
-        littleHeader.yOffsets[rotation] = decodeInt16(bytes.data() + 22 + rotation * 2, ByteOrder::little);
-        littleHeader.dataOffsets[rotation] = decodeInt32(bytes.data() + 34 + rotation * 4, ByteOrder::little);
-    }
-    littleHeader.dataSize = decodeInt32(bytes.data() + 58, ByteOrder::little);
-
-    FrmHeader bigHeader{};
-    bigHeader.version = versionBe;
-    bigHeader.framesPerSecond = decodeInt16(bytes.data() + 4, ByteOrder::big);
-    bigHeader.actionFrame = decodeInt16(bytes.data() + 6, ByteOrder::big);
-    bigHeader.frameCount = decodeInt16(bytes.data() + 8, ByteOrder::big);
-    for (int rotation = 0; rotation < kRotationCount; rotation++) {
-        bigHeader.xOffsets[rotation] = decodeInt16(bytes.data() + 10 + rotation * 2, ByteOrder::big);
-        bigHeader.yOffsets[rotation] = decodeInt16(bytes.data() + 22 + rotation * 2, ByteOrder::big);
-        bigHeader.dataOffsets[rotation] = decodeInt32(bytes.data() + 34 + rotation * 4, ByteOrder::big);
-    }
-    bigHeader.dataSize = decodeInt32(bytes.data() + 58, ByteOrder::big);
-
-    byteOrder = isPlausibleFrmHeader(bigHeader) && !isPlausibleFrmHeader(littleHeader)
-        ? ByteOrder::big
-        : ByteOrder::little;
-
-    header.version = byteOrder == ByteOrder::little ? versionLe : versionBe;
-    header.framesPerSecond = decodeInt16(bytes.data() + 4, byteOrder);
-    header.actionFrame = decodeInt16(bytes.data() + 6, byteOrder);
-    header.frameCount = decodeInt16(bytes.data() + 8, byteOrder);
+    header.version = readInt32Big(bytes.data());
+    header.framesPerSecond = readInt16Big(bytes.data() + 4);
+    header.actionFrame = readInt16Big(bytes.data() + 6);
+    header.frameCount = readInt16Big(bytes.data() + 8);
 
     for (int rotation = 0; rotation < kRotationCount; rotation++) {
-        header.xOffsets[rotation] = decodeInt16(bytes.data() + 10 + rotation * 2, byteOrder);
+        header.xOffsets[rotation] = readInt16Big(bytes.data() + 10 + rotation * 2);
+        header.yOffsets[rotation] = readInt16Big(bytes.data() + 22 + rotation * 2);
+        header.dataOffsets[rotation] = readInt32Big(bytes.data() + 34 + rotation * 4);
     }
 
-    for (int rotation = 0; rotation < kRotationCount; rotation++) {
-        header.yOffsets[rotation] = decodeInt16(bytes.data() + 22 + rotation * 2, byteOrder);
-    }
-
-    for (int rotation = 0; rotation < kRotationCount; rotation++) {
-        header.dataOffsets[rotation] = decodeInt32(bytes.data() + 34 + rotation * 4, byteOrder);
-    }
-
-    header.dataSize = decodeInt32(bytes.data() + 58, byteOrder);
+    header.dataSize = readInt32Big(bytes.data() + 58);
     return true;
 }
 
-bool readFrmFrame(std::istream& stream, FrmFrame& frame, ByteOrder byteOrder)
+bool readFrmFrame(std::istream& stream, FrmFrame& frame)
 {
     std::array<unsigned char, kFrmFrameHeaderSize> bytes{};
     if (!stream.read(reinterpret_cast<char*>(bytes.data()), bytes.size())) {
         return false;
     }
 
-    frame.width = decodeInt16(bytes.data(), byteOrder);
-    frame.height = decodeInt16(bytes.data() + 2, byteOrder);
-    frame.size = decodeInt32(bytes.data() + 4, byteOrder);
-    frame.x = decodeInt16(bytes.data() + 8, byteOrder);
-    frame.y = decodeInt16(bytes.data() + 10, byteOrder);
+    frame.width = readInt16Big(bytes.data());
+    frame.height = readInt16Big(bytes.data() + 2);
+    frame.size = readInt32Big(bytes.data() + 4);
+    frame.x = readInt16Big(bytes.data() + 8);
+    frame.y = readInt16Big(bytes.data() + 10);
 
     if (frame.width < 0 || frame.height < 0 || frame.size < 0) {
         return false;
@@ -273,8 +197,7 @@ std::optional<FrmFrame> loadFrmFrame(const std::string& inputPath, int frameInde
         ownedStream = std::move(fileStream);
     }
 
-    ByteOrder byteOrder = ByteOrder::little;
-    if (!readFrmHeader(*input, header, byteOrder)) {
+    if (!readFrmHeader(*input, header)) {
         std::cerr << "Failed to read FRM header: " << inputPath << "\n";
         return std::nullopt;
     }
@@ -315,7 +238,7 @@ std::optional<FrmFrame> loadFrmFrame(const std::string& inputPath, int frameInde
 
     FrmFrame frame{};
     for (int index = 0; index <= frameIndex; index++) {
-        if (!readFrmFrame(*input, frame, byteOrder)) {
+        if (!readFrmFrame(*input, frame)) {
             std::cerr << "Failed to read frame " << index << " from " << inputPath << "\n";
             return std::nullopt;
         }
