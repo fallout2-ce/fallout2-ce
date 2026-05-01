@@ -753,9 +753,9 @@ static void inventoryLootApplyLayout(int columns)
 
 static void inventoryNormalLayoutUpdate()
 {
-    int columns = inventoryChooseColumns(inventoryFrmImage, INVENTORY_WINDOW_WIDTH + INVENTORY_SLOT_WIDTH, INVENTORY_NORMAL_BACKGROUND_FRM_ID, "INVBOX2.FRM");
+    int columns = inventoryChooseColumns(inventoryFrmImage, INVENTORY_WINDOW_WIDTH + INVENTORY_SLOT_WIDTH, INVENTORY_NORMAL_BACKGROUND_FRM_ID, "invbox2.frm");
     if (columns == 1) {
-        inventoryBackgroundLoad(inventoryFrmImage, INVENTORY_NORMAL_BACKGROUND_FRM_ID, "INVBOX2.FRM", 1);
+        inventoryBackgroundLoad(inventoryFrmImage, INVENTORY_NORMAL_BACKGROUND_FRM_ID, "invbox2.frm", 1);
     }
 
     inventoryNormalApplyLayout(columns);
@@ -763,9 +763,9 @@ static void inventoryNormalLayoutUpdate()
 
 static void inventoryLootLayoutUpdate()
 {
-    int columns = inventoryChooseColumns(inventoryLootFrmImage, INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED, INVENTORY_LOOT_BACKGROUND_FRM_ID, "LOOT2.frm");
+    int columns = inventoryChooseColumns(inventoryLootFrmImage, INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED, INVENTORY_LOOT_BACKGROUND_FRM_ID, "loot2.frm");
     if (columns == 1) {
-        inventoryBackgroundLoad(inventoryLootFrmImage, INVENTORY_LOOT_BACKGROUND_FRM_ID, "LOOT2.frm", 1);
+        inventoryBackgroundLoad(inventoryLootFrmImage, INVENTORY_LOOT_BACKGROUND_FRM_ID, "loot2.frm", 1);
     }
 
     inventoryLootApplyLayout(columns);
