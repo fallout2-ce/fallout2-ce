@@ -88,7 +88,7 @@ namespace fallout {
 static int gameLoadGlobalVars();
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void gameFreeGlobalVars();
-static bool tryLoadBaseCEModAtPath(const char* path);
+static bool tryLoadBaseCEModAtPath(const char* path, bool* found);
 static void showHelp();
 static int gameDbInit();
 static void showSplash();
@@ -1321,23 +1321,33 @@ int showQuitConfirmationDialog()
 
 static void TryLoadBaseCEMod()
 {
-    if (tryLoadBaseCEModAtPath(kBaseModPath)) {
+    bool found = false;
+
+    if (tryLoadBaseCEModAtPath(kBaseModPath, &found)) {
         return;
     }
 
 #if __APPLE__ && TARGET_OS_OSX
-    if (tryLoadBaseCEModAtPath(kMacOsBundleBaseModPath)) {
+    if (tryLoadBaseCEModAtPath(kMacOsBundleBaseModPath, &found)) {
         return;
     }
 #endif
 
-    debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
+    if (found) {
+        debugPrint("Error opening base mod file/folder!\n");
+    } else {
+        debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
+    }
 }
 
-static bool tryLoadBaseCEModAtPath(const char* path)
+static bool tryLoadBaseCEModAtPath(const char* path, bool* found)
 {
     if (compat_access(path, 0) != 0) {
         return false;
+    }
+
+    if (found != nullptr) {
+        *found = true;
     }
 
     debugPrint("Loading base FO:CE mod: %s\n", path);

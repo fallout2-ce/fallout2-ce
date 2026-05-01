@@ -15,37 +15,9 @@ defaults:
 jobs:
   ce-dat:
     name: Build ce.dat
-
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Clone
-        uses: actions/checkout@v4
-
-      - name: Dependencies
-        run: |
-          sudo apt update
-          sudo apt install libsdl2-dev zlib1g-dev
-
-      - name: Configure
-        run: |
-          cmake --preset linux-x64-release
-
-      - name: Build ce-dat-tool
-        run: |
-          cmake --build --preset linux-x64-release --target ce-dat-tool
-
-      - name: Create ce.dat
-        run: |
-          mkdir -p out/dist
-          out/build/linux-x64-release/ce-dat-tool create files/ce.dat out/dist/ce.dat
-
-      - name: Upload ce.dat artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ce-dat
-          path: out/dist/ce.dat
-          retention-days: 7
+    uses: ./.github/workflows/reusable-build-ce-dat.yml
+    with:
+      preset: linux-x64-release
 
   android:
     name: Android
