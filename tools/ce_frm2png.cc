@@ -95,6 +95,10 @@ int32_t decodeInt32(const unsigned char* bytes, ByteOrder byteOrder)
 
 bool isPlausibleFrmHeader(const FrmHeader& header)
 {
+    if (header.version <= 0 || header.version > 100) {
+        return false;
+    }
+
     if (header.frameCount <= 0) {
         return false;
     }
@@ -189,16 +193,12 @@ bool readFrmFrame(std::istream& stream, FrmFrame& frame, ByteOrder byteOrder)
     }
 
     size_t expectedSize = static_cast<size_t>(frame.width) * static_cast<size_t>(frame.height);
-    if (expectedSize != static_cast<size_t>(frame.size)) {
-        return false;
-    }
-
     if (expectedSize > kMaxFrmPixels) {
         return false;
     }
 
     frame.pixels.resize(expectedSize);
-    return stream.read(reinterpret_cast<char*>(frame.pixels.data()), frame.pixels.size()).good();
+    return stream.read(reinterpret_cast<char*>(frame.pixels.data()), expectedSize).good();
 }
 
 bool pathExists(const std::string& path)
@@ -319,12 +319,6 @@ std::optional<FrmFrame> loadFrmFrame(const std::string& inputPath, int frameInde
             std::cerr << "Failed to read frame " << index << " from " << inputPath << "\n";
             return std::nullopt;
         }
-    }
-
-    if (frame.width * frame.height != frame.size) {
-        std::cerr << "Unexpected frame size in " << inputPath << ": "
-                  << frame.width << "x" << frame.height << " != " << frame.size << "\n";
-        return std::nullopt;
     }
 
     return frame;
