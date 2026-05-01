@@ -1,20 +1,20 @@
-# Fallout 2 Community Edition
+# Fallout 2 Community Engine
 
-Fallout 2 Community Edition is a fully working re-implementation of Fallout 2, with the same original gameplay, engine bugfixes, and some quality of life improvements, that works (mostly) hassle-free on multiple platforms.  This is a fork of the original project, which isn't getting regular updates.
+Fallout 2 Community Engine is a fully working re-implementation of the Fallout 2 engine, optimized for a hassle-free experience on multiple platforms.  It provides high resolution support, quality-of-life improvements, and dozens of bug fixes.
+
+This is a fork of the original Fallout2: CE project, which is no longer getting regular updates.
 
 Popular Fallout 2 total conversion mods are partially supported. Original versions of Nevada and Sonora (that do not rely on extended features provided by Sfall) work. [Fallout 2 Restoration Project](https://github.com/BGforgeNet/Fallout2_Restoration_Project) is supported (in Beta). [Fallout Et Tu](https://github.com/rotators/Fo1in2) and [Olympus 2207](https://olympus2207.com) are not yet supported. Other mods (particularly Resurrection and Yesterday) are not tested.
 
-There is also [Fallout Community Edition](https://github.com/alexbatalov/fallout1-ce) (not affiliated with this fork).
-
-For build and contributor notes, see [CONTRIBUTING.md](CONTRIBUTING.md).
+There is also [Fallout 1 Community Edition](https://github.com/alexbatalov/fallout1-ce) (not affiliated with this fork).
 
 ## Installation
 
-You must own the game to play. Purchase your copy on [GOG](https://www.gog.com/game/fallout_2), [Epic Games](https://store.epicgames.com/p/fallout-2) or [Steam](https://store.steampowered.com/app/38410). Download latest [release](https://github.com/fallout2-ce/fallout2-ce/releases) or build from source.
+You *must* own the game to play. Purchase your copy on [GOG](https://www.gog.com/game/fallout_2), [Epic Games](https://store.epicgames.com/p/fallout-2) or [Steam](https://store.steampowered.com/app/38410). Download latest [release](https://github.com/fallout2-ce/fallout2-ce/releases) or build from source.
 
 ### Windows
 
-Download and copy `fallout2-ce.exe` to your `Fallout2` folder. It serves as a drop-in replacement for `fallout2.exe`.
+[Download](https://github.com/fallout2-ce/fallout2-ce/releases) and unzip into your `Fallout2` folder. Launch the game using `fallout2-ce.exe`.
 
 ### Linux
 
@@ -27,7 +27,7 @@ $ sudo apt install innoextract
 $ innoextract ~/Downloads/setup_fallout_2_1.02_gog_v1_\(77792\).exe -d Fallout2
 ```
 
-- Download the Linux release archive, extract `fallout2-ce`, and copy it into this folder.
+- Download the Linux release archive, extract `fallout2-ce` and `ce.dat`, and copy them into this folder.
 
 - Run `./fallout2-ce`.
 
@@ -61,9 +61,11 @@ $ mv fallout2 /Applications/Fallout2
 
 > **NOTE**: From Android standpoint release and debug builds are different apps. Both apps require their own copy of game assets and have their own savegames. This is intentional. As a gamer just stick with release version and check for updates.
 
-- Use Windows installation as a base - it contains data assets needed to play. Copy `Fallout2` folder to your device, for example to `Downloads`. You need `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder. Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).
+- Download the Android [release](https://github.com/fallout2-ce/fallout2-ce/releases), which contains an .apk file an `ce.dat`.
 
-- Download `fallout2-ce.apk` and copy it to your device. Open it with file explorer, follow instructions (install from unknown source).
+- Use Windows installation as a base - it contains data assets needed to play. Copy `Fallout2` folder to your device, for example to `Downloads`. You need `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder. Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).  Copy `ce.dat` into this folder.
+
+- Copy `fallout2-ce.apk` from the release to your device. Open it with file explorer, follow instructions (install from unknown source).
 
 - When you run the game for the first time it will immediately present file picker. Select the folder from the first step. Wait until this data is copied. A loading dialog will appear, just wait for about 30 seconds. If you're installing total conversion mod or localized version with a large number of unpacked resources in `data` folder it can take up to 20 minutes. Once copied, the game will start automatically.
 
@@ -75,9 +77,9 @@ $ mv fallout2 /Applications/Fallout2
 
 - Run the game once. You'll see error message saying "Couldn't find/load text fonts". This step is needed for iOS to expose the game via File Sharing feature.
 
-- Use Finder (macOS Catalina and later) or iTunes (Windows and macOS Mojave or earlier) to copy `master.dat`, `critter.dat`, `patch000.dat`, and `data` folder to "Fallout 2" app ([how-to](https://support.apple.com/HT210598)). Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).
+- Use Finder (macOS Catalina and later) or iTunes (Windows and macOS Mojave or earlier) to copy `master.dat`, `critter.dat`, `patch000.dat`, `ce.dat`, and `data` folder to "Fallout 2" app ([how-to](https://support.apple.com/HT210598)). Watch for file names - keep (or make) them lowercased (see [Configuration](#configuration)).
 
-- 
+-
 
 **Controls on iPad:**
 
@@ -107,7 +109,7 @@ The `sound` folder (with `music` folder inside) might be located either in `data
 
 Additional settings for screen resolution, UI customization, and map options are now integrated into the main `fallout2.cfg` file (previously part of `f2_res.ini` from Mash's HRP). When Fallout 2 CE starts, if it detects an existing `f2_res.ini` file, it automatically migrates these settings into `fallout2.cfg`. After migration, `fallout2.cfg` becomes the single source of truth for this configuration.
 
-The following settings can be configured in `fallout2.cfg` under the `[screen]` and `[ui]` sections:
+Here are some important settings in `fallout2.cfg` under the `[screen]` and `[ui]` sections.  See [the example config](https://github.com/fallout2-ce/fallout2-ce/tree/refs/heads/main/files/fallout2.cfg) for a full list of settings.
 
 ```ini
 [screen]
@@ -117,12 +119,11 @@ windowed=1 ; 0 = fullscreen
 scale=2 ; 1 = original scale, 2 = 2x scale, etc. (e.g. at scale 2 and screen resolution 1920x1080, in-game resolution will be 960x540, thus every pixel is twice as wide and tall)
 
 [ui]
-iface_bar_mode=0 ; 0 = interface bar below game window, 1 = interface bar overlaps game window
-iface_bar_width=800 ; Width of interface bar (640 = original, 800 = extended)
-iface_bar_side_art=2 ; Interface bar side art style (0=black, 1=metal grey, 2=leather, 3-8=alternative styles)
-iface_bar_sides_ori=0 ; Side graphics orientation (0=extend from bar to edges, 1=extend from edges to bar)
+;Set to 1 to expand the barter/trade window vertically, adding a 4th item slot per side (requires ce.dat)
+expand_barter_window=1
+;Maximum number of columns shown in the main inventory and loot/steal windows (valid range: 1..2)
+inventory_columns=2
 splash_screen_size=1 ; Splash screen scaling (0=original size, 1=fit preserving aspect, 2=stretch to fill)
-ignore_map_edges=0 ; Hi-res map scroll edges (0=enabled, 1=ignored)
 quick_toolbar_visible=0 ; Skills quick access toolbar visibility (iOS only) (0=hidden, 1=visible)
 ```
 
@@ -134,22 +135,23 @@ quick_toolbar_visible=0 ; Skills quick access toolbar visibility (iOS only) (0=h
 In time this stuff will receive in-game interface, right now you have to do it manually. To see all currently working fallout2.cfg settings, just run the game once and quit. It will be automatically updated with defaults for every supported setting.
 *Note*: Use of the IFACE_BAR settings requires the `f2_res.dat` file, which contains graphical assets. Various versions are available, but one compatible with the above settings can be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/main/files/f2_res.dat)
 
-The second configuration file is `ddraw.ini` (part of Sfall). There are dozens of options that adjust or override engine behaviour and gameplay mechanics. This file is intended for modders and advanced users.
-
-For a sample ddraw.ini configuration file, containing all currently working settings use this link: [ddraw.ini](https://raw.githubusercontent.com/fallout2-ce/fallout2-ce/refs/heads/main/files/ddraw.ini)
-
 ## Quality of life benefits over vanilla Fallout
 
 * High resolution support
+* Expanded 2-column inventory
+* Expanded 4-row barter screen
+* Expanded AP bar
 * Increased pathfinding nodes 5x for more accurate pathfinding
 * Ctrl-click to quickly move items when bartering, looting, or stealing
 * _a_ to select "all" when selecting item quantity
 * _a_ to `Take All` when looting
 * When bartering, caps default to the right amount to balance the trade (if possible)
-* Music continues playing between maps (requires config)
-* Auto open doors (requires config)
+* Music continues playing between maps
+* Auto open doors
 
 ## Contributing
+
+For build instructions and contributor notes, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Integrating Sfall goodies is the top priority. Quality of life updates are OK too.  In any case open up an issue with your suggestion or to notify other people that something is being worked on.
 
