@@ -69,8 +69,8 @@
 #include "tile.h"
 #include "trait.h"
 #include "version.h"
-#include "window_manager.h"
 #include "win32.h"
+#include "window_manager.h"
 #include "worldmap.h"
 
 #if __APPLE__
