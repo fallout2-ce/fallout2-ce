@@ -122,7 +122,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-android-debug.zip
+          name: fallout2-ce-android-debug
           path: out/dist/fallout2-ce-android-debug.zip
           retention-days: 7
 
@@ -206,7 +206,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-ios.zip
+          name: fallout2-ce-ios
           path: out/dist/fallout2-ce-ios.zip
           retention-days: 7
 
@@ -270,7 +270,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-linux-${{ matrix.arch }}.tar.gz
+          name: fallout2-ce-linux-${{ matrix.arch }}
           path: out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz
           retention-days: 7
 
@@ -320,7 +320,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-linux-armhf.tar.gz
+          name: fallout2-ce-linux-armhf
           path: out/dist/fallout2-ce-linux-armhf.tar.gz
           retention-days: 7
 
@@ -361,7 +361,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-linux-arm64.tar.gz
+          name: fallout2-ce-linux-arm64
           path: out/dist/fallout2-ce-linux-arm64.tar.gz
           retention-days: 7
 
@@ -396,7 +396,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-macos.dmg
+          name: fallout2-ce-macos
           path: out/build/macos/Fallout II Community Edition.dmg
           retention-days: 7
 
@@ -459,7 +459,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-windows-${{ matrix.arch }}.zip
+          name: fallout2-ce-windows-${{ matrix.arch }}
           path: out/dist/fallout2-ce-windows-${{ matrix.arch }}.zip
           retention-days: 7
 

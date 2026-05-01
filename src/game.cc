@@ -69,6 +69,7 @@
 #include "tile.h"
 #include "trait.h"
 #include "version.h"
+#include "win32.h"
 #include "window_manager.h"
 #include "worldmap.h"
 
@@ -88,6 +89,7 @@ namespace fallout {
 static int gameLoadGlobalVars();
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void gameFreeGlobalVars();
+static bool tryLoadBaseCEModAtPath(const char* path);
 static void showHelp();
 static int gameDbInit();
 static void showSplash();
@@ -1320,24 +1322,41 @@ int showQuitConfirmationDialog()
 
 static void TryLoadBaseCEMod()
 {
-    const char* baseModPaths[] = {
-        kBaseModPath,
-#if __APPLE__ && TARGET_OS_OSX
-        kMacOsBundleBaseModPath,
-#endif
-    };
+    if (tryLoadBaseCEModAtPath(kBaseModPath)) {
+        return;
+    }
 
-    for (const char* baseModPath : baseModPaths) {
-        if (compat_access(baseModPath, 0) == 0) {
-            debugPrint("Loading base FO:CE mod: %s\n", baseModPath);
-            if (dbOpen(baseModPath) == -1) {
-                debugPrint("Error opening base mod file/folder!\n");
-            }
+#if __APPLE__ && TARGET_OS_OSX
+    if (tryLoadBaseCEModAtPath(kMacOsBundleBaseModPath)) {
+        return;
+    }
+
+    const char* bundleResourcesPath = getMacOsBundleResourcesPath();
+    if (bundleResourcesPath != nullptr) {
+        char absolutePath[COMPAT_MAX_PATH];
+
+        snprintf(absolutePath, sizeof(absolutePath), "%s/ce.dat", bundleResourcesPath);
+        if (tryLoadBaseCEModAtPath(absolutePath)) {
             return;
         }
     }
+#endif
 
     debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
+}
+
+static bool tryLoadBaseCEModAtPath(const char* path)
+{
+    if (compat_access(path, 0) != 0) {
+        return false;
+    }
+
+    debugPrint("Loading base FO:CE mod: %s\n", path);
+    if (dbOpen(path) == -1) {
+        debugPrint("Error opening base mod file/folder!\n");
+    }
+
+    return true;
 }
 
 // 0x44418C
@@ -1347,7 +1366,6 @@ static int gameDbInit()
     const char* patch_file_name;
     int patch_index;
     char filename[COMPAT_MAX_PATH];
-
     main_file_name = nullptr;
     patch_file_name = nullptr;
 

@@ -14,6 +14,10 @@ extern HANDLE GNW95_mutex;
 extern bool gProgramIsActive;
 #endif
 
+#if __APPLE__
+const char* getMacOsBundleResourcesPath();
+#endif
+
 } // namespace fallout
 
 #endif /* WIN32_H */
