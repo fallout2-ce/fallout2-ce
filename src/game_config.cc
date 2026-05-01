@@ -86,45 +86,42 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     char* customConfigFileName = nullptr;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CONFIG_FILE, &customConfigFileName);
 
-    const char* configFileName = customConfigFileName != nullptr && *customConfigFileName != '\0'
-        ? customConfigFileName
-        : kDefaultGameConfigFileName;
+    // CE: Derive config file name from executable name.
+    char exeDrive[COMPAT_MAX_DRIVE];
+    char exeDir[COMPAT_MAX_DIR];
+    char exeFname[COMPAT_MAX_FNAME];
+    compat_splitpath(argv[0], exeDrive, exeDir, exeFname, nullptr);
 
-    // Make `fallout2.cfg` file path.
-    char* executable = argv[0];
-    char* ch = strrchr(executable, '\\');
-    if (ch != nullptr) {
-        *ch = '\0';
-        if (isMapper) {
-            snprintf(gGameConfigFilePath,
-                sizeof(gGameConfigFilePath),
-                "%s\\%s",
-                executable,
-                kMapperConfigFileName);
-        } else {
-            snprintf(gGameConfigFilePath,
-                sizeof(gGameConfigFilePath),
-                "%s\\%s",
-                executable,
-                configFileName);
-        }
-        *ch = '\\';
+    char derivedConfigFileName[COMPAT_MAX_FNAME + 5];
+    snprintf(derivedConfigFileName, sizeof(derivedConfigFileName), "%s.cfg", exeFname);
+
+    const char* defaultConfigFileName = isMapper ? kMapperConfigFileName : kDefaultGameConfigFileName;
+
+    const char* configFileName;
+    if (customConfigFileName != nullptr && *customConfigFileName != '\0') {
+        configFileName = customConfigFileName;
     } else {
-        if (isMapper) {
-            strcpy(gGameConfigFilePath, kMapperConfigFileName);
-        } else {
-            strcpy(gGameConfigFilePath, configFileName);
-        }
+        configFileName = derivedConfigFileName;
     }
+
+    compat_makepath(gGameConfigFilePath, exeDrive, exeDir, configFileName, nullptr);
+
+    const bool usingDerivedConfig = (customConfigFileName == nullptr || *customConfigFileName == '\0')
+        && compat_stricmp(derivedConfigFileName, defaultConfigFileName) != 0;
+    const bool derivedConfigMissing = usingDerivedConfig && !compat_file_exists(gGameConfigFilePath);
 
     configRead(&gGameConfig, gGameConfigFilePath, false);
 
-    // Init debug mode ASAP to catch early debug messages.
-    char* debugMode;
-    configGetString(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_MODE_KEY, &debugMode);
-    debugModeInit(debugMode);
-
     debugPrint("Game config loaded from %s.\n", gGameConfigFilePath);
+
+    if (derivedConfigMissing) {
+        char defaultConfigFilePath[COMPAT_MAX_PATH];
+        compat_makepath(defaultConfigFilePath, exeDrive, exeDir, defaultConfigFileName, nullptr);
+        if (gameConfigMigrateFromDefaultConfig(defaultConfigFilePath, &gGameConfig)) {
+            debugPrint("Migrated settings from %s.\n", defaultConfigFileName);
+            configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL);
+        }
+    }
 
     if (!isMapper && gameConfigMigrateFromF2Res(gGameConfigFilePath, &gGameConfig)) {
         debugPrint("Migrated settings from f2_res.ini.\n");

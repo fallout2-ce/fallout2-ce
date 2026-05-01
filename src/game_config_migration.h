@@ -6,6 +6,7 @@
 namespace fallout {
 
 bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConfig);
+bool gameConfigMigrateFromDefaultConfig(const char* defaultConfigFilePath, Config* gameConfig);
 void contentConfigTryMigrateFromSfall(const char* contentConfigPath);
 
 } // namespace fallout

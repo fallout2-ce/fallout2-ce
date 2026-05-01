@@ -129,6 +129,42 @@ bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConf
     return migrated;
 }
 
+// Copies all key-value pairs from defaultConfigFilePath into gameConfig,
+// skipping entries that already exist in gameConfig.
+//
+// Used on the first launch after an executable rename, so the new derived
+// config inherits the user's existing settings from the old default config.
+bool gameConfigMigrateFromDefaultConfig(const char* defaultConfigFilePath, Config* gameConfig)
+{
+    if (defaultConfigFilePath == nullptr || gameConfig == nullptr) {
+        return false;
+    }
+
+    Config defaultConfig;
+    if (!configInit(&defaultConfig)) {
+        return false;
+    }
+
+    bool migrated = false;
+    if (configRead(&defaultConfig, defaultConfigFilePath, false)) {
+        for (int i = 0; i < defaultConfig.entriesLength; i++) {
+            const char* section = defaultConfig.entries[i].key;
+            ConfigSection* srcSection = static_cast<ConfigSection*>(defaultConfig.entries[i].value);
+            for (int j = 0; j < srcSection->entriesLength; j++) {
+                const char* key = srcSection->entries[j].key;
+                const char* value = *static_cast<char**>(srcSection->entries[j].value);
+                if (!gameConfigHasKey(gameConfig, section, key)) {
+                    configSetString(gameConfig, section, key, value);
+                    migrated = true;
+                }
+            }
+        }
+    }
+
+    configFree(&defaultConfig);
+    return migrated;
+}
+
 namespace {
 
     constexpr char kSfallMisc[] = "Misc";
