@@ -117,8 +117,7 @@ bool readFrmFrame(std::istream& stream, FrmFrame& frame)
     }
 
     size_t expectedSize = static_cast<size_t>(frame.width) * static_cast<size_t>(frame.height);
-    // This matches fallback behavior in artReadHeader.
-    if (expectedSize != static_cast<size_t>(frame.size) && frame.size != 0) {
+    if (expectedSize != static_cast<size_t>(frame.size)) {
         return false;
     }
 
@@ -127,7 +126,7 @@ bool readFrmFrame(std::istream& stream, FrmFrame& frame)
     }
 
     frame.pixels.resize(expectedSize);
-    return stream.read(reinterpret_cast<char*>(frame.pixels.data()), expectedSize).good();
+    return stream.read(reinterpret_cast<char*>(frame.pixels.data()), frame.size).good();
 }
 
 bool pathExists(const std::string& path)
