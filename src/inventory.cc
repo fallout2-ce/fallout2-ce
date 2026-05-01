@@ -353,6 +353,7 @@ static int inventoryLootGetSlotX(bool targetInventory, int slotIndex);
 static int inventoryLootGetSlotY(int slotIndex);
 static bool inventoryLootMouseHitTestScroller(bool targetInventory);
 static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int scrollStep);
+static int inventoryGetCenteredWindowY(int windowHeight);
 
 // 0x46E6D0
 static const int gSummaryStats[7] = {
@@ -687,6 +688,11 @@ static int inventoryGetWindowHeight(int inventoryWindowType)
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) return inventoryLayout.windowHeight;
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) return inventoryLootLayout.windowHeight;
     return gInventoryWindowDescriptions[inventoryWindowType].height;
+}
+
+static int inventoryGetCenteredWindowY(int windowHeight)
+{
+    return (screenGetVisibleHeight() - windowHeight) / 2;
 }
 
 static int inventoryChooseColumns(FrmImage& image, int expandedWidth, int col1FrmId, const char* col2Name)
@@ -1106,7 +1112,7 @@ static bool _setup_inventory(int inventoryWindowType)
             : (screenGetWidth() - windowWidth) / 2;
         int inventoryWindowY = preserveVanillaY
             ? INVENTORY_WINDOW_Y
-            : (screenGetHeight() - windowHeight) / 2;
+            : inventoryGetCenteredWindowY(windowHeight);
         gInventoryWindow = windowCreate(inventoryWindowX,
             inventoryWindowY,
             windowWidth,
@@ -5856,7 +5862,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         ? (screenGetWidth() - windowDescription->width) / 2
         : windowDescription->x;
     int quantityWindowY = screenGetHeight() != 480
-        ? (screenGetHeight() - windowDescription->height) / 2
+        ? inventoryGetCenteredWindowY(windowDescription->height)
         : windowDescription->y;
     _mt_wid = windowCreate(quantityWindowX, quantityWindowY, windowDescription->width, windowDescription->height, 257, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     unsigned char* windowBuffer = windowGetBuffer(_mt_wid);
