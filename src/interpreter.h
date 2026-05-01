@@ -216,7 +216,7 @@ extern OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
 extern int _TimeOut;
 
 char* _interpretMangleName(char* s);
-void _interpretOutputFunc(int (*func)(char*));
+void _interpretOutputFunc(int (*func)(const char*));
 int _interpretOutput(const char* format, ...);
 [[noreturn]] void programFatalError(const char* str, ...);
 void programPrintError(const char* format, ...);

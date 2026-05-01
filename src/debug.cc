@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <string>
 #include <SDL.h>
 
 #include "memory.h"
@@ -15,11 +15,16 @@ namespace fallout {
 
 static int _debug_puts(char* string);
 static void _debug_clear();
-static int _debug_mono(char* string);
-static int _debug_log(char* string);
-static int _debug_screen(char* string);
+static int _debug_mono(const char* string);
+static int _debug_log(const char* string);
+static int _debug_screen(const char* string);
 static void _debug_putc(int ch);
 static void _debug_scroll();
+static void debugFlushBuffer();
+
+// Messages logged before any debug proc is registered are held here and
+// flushed when the first proc is registered.
+static std::string gDebugBuffer;
 
 // 0x51DEF8
 static FILE* _fd = nullptr;
@@ -35,6 +40,10 @@ static DebugPrintProc* gDebugPrintProc = nullptr;
 
 void debugModeInit(const char* debugMode)
 {
+    if (debugMode == nullptr) {
+        return;
+    }
+
     // CE: Handle debug mode (exactly as seen in `mapper2.exe`).
     if (compat_stricmp(debugMode, "environment") == 0) {
         _debug_register_env();
@@ -66,6 +75,7 @@ void _debug_register_mono()
 
         gDebugPrintProc = _debug_mono;
         _debug_clear();
+        debugFlushBuffer();
     }
 }
 
@@ -79,6 +89,7 @@ void _debug_register_log(const char* fileName, const char* mode)
 
         _fd = compat_fopen(fileName, mode);
         gDebugPrintProc = _debug_log;
+        debugFlushBuffer();
     }
 }
 
@@ -92,6 +103,7 @@ void _debug_register_screen()
         }
 
         gDebugPrintProc = _debug_screen;
+        debugFlushBuffer();
     }
 }
 
@@ -137,6 +149,7 @@ void _debug_register_func(DebugPrintProc* proc)
         }
 
         gDebugPrintProc = proc;
+        debugFlushBuffer();
     }
 }
 
@@ -146,23 +159,33 @@ int debugPrint(const char* format, ...)
     va_list args;
     va_start(args, format);
 
-    int rc;
-
-    if (gDebugPrintProc != nullptr) {
-        char string[260];
-        vsnprintf(string, sizeof(string), format, args);
-
-        rc = gDebugPrintProc(string);
-    } else {
-#ifndef NDEBUG
-        SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO, format, args);
-#endif
-        rc = -1;
-    }
+    char string[260];
+    vsnprintf(string, sizeof(string), format, args);
 
     va_end(args);
 
+    int rc;
+    if (gDebugPrintProc != nullptr) {
+        rc = gDebugPrintProc(string);
+    } else {
+        gDebugBuffer += string;
+        rc = -1;
+    }
+
+#ifndef NDEBUG
+    SDL_Log("%s", string);
+#endif
+
     return rc;
+}
+
+static void debugFlushBuffer()
+{
+    if (gDebugBuffer.empty() || gDebugPrintProc == nullptr) {
+        return;
+    }
+    gDebugPrintProc(gDebugBuffer.c_str());
+    gDebugBuffer.clear();
 }
 
 // 0x4C6F94
@@ -203,7 +226,7 @@ static void _debug_clear()
 }
 
 // 0x4C7004
-static int _debug_mono(char* string)
+static int _debug_mono(const char* string)
 {
     if (gDebugPrintProc == _debug_mono) {
         while (*string != '\0') {
@@ -215,7 +238,7 @@ static int _debug_mono(char* string)
 }
 
 // 0x4C7028
-static int _debug_log(char* string)
+static int _debug_log(const char* string)
 {
     if (gDebugPrintProc == _debug_log) {
         if (_fd == nullptr) {
@@ -235,7 +258,7 @@ static int _debug_log(char* string)
 }
 
 // 0x4C7068
-static int _debug_screen(char* string)
+static int _debug_screen(const char* string)
 {
     if (gDebugPrintProc == _debug_screen) {
         printf("%s", string);

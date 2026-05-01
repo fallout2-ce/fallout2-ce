@@ -857,7 +857,7 @@ int scriptWindowCreate(const char* windowName, int x, int y, int width, int heig
 }
 
 // 0x4B80A4
-int scriptWindowOutput(char* string)
+int scriptWindowOutput(const char* string)
 {
     if (gCurrentManagedWindowIndex == -1) {
         return 0;

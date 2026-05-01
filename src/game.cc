@@ -146,6 +146,8 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     settingsInit(isMapper, argc, argv);
 
+    debugModeInit(settings.debug.mode.c_str());
+
     gIsMapper = isMapper;
 
     if (gameDbInit() == -1) {
