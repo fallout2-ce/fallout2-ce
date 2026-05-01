@@ -166,23 +166,16 @@ public:
         : _fid(fid)
     {
     }
-    explicit FrmId(ObjectType objType, int frmId)
-        : _fid(buildFid(objType, frmId, 0, 0, 0))
-    {
-    }
-    explicit FrmId(ObjectType objType, const char* path)
-        : _objectType(objType)
-        , _path(path)
-    {
-    }
-    explicit FrmId(const char* path)
-        : _path(path)
-    {
-    }
+    explicit FrmId(ObjectType objType, int frmId);
+    explicit FrmId(ObjectType objType, const char* path);
+    explicit FrmId(const char* path);
 
     int fid() const { return _fid; }
-    int objectType() const { return _objectType; }
+    bool hasObjectType() const { return _objectType >= 0 && _objectType < OBJ_TYPE_COUNT; }
+    ObjectType objectType() const;
     const char* filePath() const { return _path; }
+
+    bool empty() const { return _fid == -1 && _path == nullptr; }
 
 private:
     int _fid = -1;
@@ -213,6 +206,7 @@ public:
 
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
+    // Returns FRM frame data if locked, nullptr otherwise.
     unsigned char* getData() const { return _data; }
 
     ConstBuffer2D getBuffer() const { return { _data, _width, _height }; };

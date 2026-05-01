@@ -1377,7 +1377,7 @@ bool showMesageBox(const char* text)
 }
 
 // 0x4D8260
-int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, unsigned char* up, unsigned char* dn, unsigned char* hover, int flags)
+int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, unsigned char* normal, unsigned char* pressed, unsigned char* hover, int flags)
 {
     Window* window = windowGetWindow(win);
 
@@ -1389,11 +1389,11 @@ int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEve
         return -1;
     }
 
-    if (up == nullptr && (dn != nullptr || hover != nullptr)) {
+    if (normal == nullptr && (pressed != nullptr || hover != nullptr)) {
         return -1;
     }
 
-    Button* button = buttonCreateInternal(win, x, y, width, height, mouseEnterEventCode, mouseExitEventCode, mouseDownEventCode, mouseUpEventCode, flags | BUTTON_FLAG_GRAPHIC, up, dn, hover);
+    Button* button = buttonCreateInternal(win, x, y, width, height, mouseEnterEventCode, mouseExitEventCode, mouseDownEventCode, mouseUpEventCode, flags | BUTTON_FLAG_GRAPHIC, normal, pressed, hover);
     if (button == nullptr) {
         return -1;
     }
@@ -1404,58 +1404,51 @@ int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEve
 }
 
 int buttonCreateWithFrm(int win, int x, int y,
-    int mouseEnterEventCode, int mouseExitEventCode,
-    int mouseDownEventCode, int mouseUpEventCode,
-    const FrmId& normal, const FrmId& pressed,
-    const FrmId& hover, int flags)
+    int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode,
+    const FrmId& normalId, const FrmId& pressedId, const FrmId& hoverId, int flags)
 {
-    FrmImage nFrm;
-    if (!nFrm.lock(normal)) return -1;
-    int w = nFrm.getWidth(), h = nFrm.getHeight();
+    FrmImage normalFrm;
+    if (!normalFrm.lock(normalId)) return -1;
 
-    FrmImage pFrm;
-    pFrm.lock(pressed);
+    int width = normalFrm.getWidth(), height = normalFrm.getHeight();
 
-    FrmImage hFrm;
-    hFrm.lock(hover);
+    FrmImage pressedFrm, hoverFrm;
+    pressedFrm.lock(pressedId);
+    hoverFrm.lock(hoverId);
 
-    int btn = buttonCreate(win, x, y, w, h,
+    int btnId = buttonCreate(win, x, y, width, height,
         mouseEnterEventCode, mouseExitEventCode,
         mouseDownEventCode, mouseUpEventCode,
-        nFrm.getData(),
-        pFrm.isLocked() ? pFrm.getData() : nullptr,
-        hFrm.isLocked() ? hFrm.getData() : nullptr,
+        normalFrm.getData(),
+        pressedFrm.getData(),
+        hoverFrm.getData(),
         flags);
-    if (btn == -1) return -1;
+    if (btnId == -1) return -1;
 
-    Button* b = buttonGetButton(btn, nullptr);
-    b->frmImages.push_back(std::move(nFrm));
-    if (pFrm.isLocked()) b->frmImages.push_back(std::move(pFrm));
-    if (hFrm.isLocked()) b->frmImages.push_back(std::move(hFrm));
-    return btn;
+    Button* button = buttonGetButton(btnId, nullptr);
+    button->frmImages.push_back(std::move(normalFrm));
+    if (pressedFrm.isLocked()) button->frmImages.push_back(std::move(pressedFrm));
+    if (hoverFrm.isLocked()) button->frmImages.push_back(std::move(hoverFrm));
+    return btnId;
 }
 
 int buttonSetDisabledFrm(int btn,
-    const FrmId& disabledNormal, const FrmId& disabledPressed,
-    const FrmId& disabledHover)
+    const FrmId& normalId, const FrmId& pressedId,
+    const FrmId& hoverId)
 {
-    FrmImage dnFrm;
-    dnFrm.lock(disabledNormal);
+    FrmImage normalFrm;
+    if (!normalFrm.lock(normalId)) return -1;
 
-    FrmImage dpFrm;
-    dpFrm.lock(disabledPressed);
+    FrmImage pressedFrm, hoverFrm;
+    pressedFrm.lock(pressedId);
+    hoverFrm.lock(hoverId);
 
-    FrmImage dhFrm;
-    dhFrm.lock(disabledHover);
+    if (_win_register_button_disable(btn, normalFrm.getData(), pressedFrm.getData(), hoverFrm.getData()) == -1) return -1;
 
-    if (dnFrm.isLocked() && dpFrm.isLocked() && dhFrm.isLocked()) return -1;
-
-    if (_win_register_button_disable(btn, dnFrm.getData(), dpFrm.getData(), dhFrm.getData()) == -1) return -1;
-
-    Button* b = buttonGetButton(btn, nullptr);
-    if (dnFrm.isLocked()) b->frmImages.push_back(std::move(dnFrm));
-    if (dpFrm.isLocked()) b->frmImages.push_back(std::move(dpFrm));
-    if (dhFrm.isLocked()) b->frmImages.push_back(std::move(dhFrm));
+    Button* button = buttonGetButton(btn, nullptr);
+    if (normalFrm.isLocked()) button->frmImages.push_back(std::move(normalFrm));
+    if (pressedFrm.isLocked()) button->frmImages.push_back(std::move(pressedFrm));
+    if (hoverFrm.isLocked()) button->frmImages.push_back(std::move(hoverFrm));
     return 0;
 }
 
@@ -1557,7 +1550,7 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
 }
 
 // 0x4D8674
-int _win_register_button_disable(int btn, unsigned char* up, unsigned char* down, unsigned char* hover)
+int _win_register_button_disable(int btn, unsigned char* normal, unsigned char* pressed, unsigned char* hover)
 {
     if (!gWindowSystemInitialized) {
         return -1;
@@ -1568,21 +1561,21 @@ int _win_register_button_disable(int btn, unsigned char* up, unsigned char* down
         return -1;
     }
 
-    button->disabledNormalImage = up;
-    button->disabledPressedImage = down;
+    button->disabledNormalImage = normal;
+    button->disabledPressedImage = pressed;
     button->disabledHoverImage = hover;
 
     return 0;
 }
 
 // 0x4D86A8
-int _win_register_button_image(int btn, unsigned char* up, unsigned char* down, unsigned char* hover, bool draw)
+int _win_register_button_image(int btn, unsigned char* normal, unsigned char* pressed, unsigned char* hover, bool draw)
 {
     if (!gWindowSystemInitialized) {
         return -1;
     }
 
-    if (up == nullptr && (down != nullptr || hover != nullptr)) {
+    if (normal == nullptr && (pressed != nullptr || hover != nullptr)) {
         return -1;
     }
 
@@ -1598,15 +1591,15 @@ int _win_register_button_image(int btn, unsigned char* up, unsigned char* down, 
 
     unsigned char* data = button->currentImage;
     if (data == button->normalImage) {
-        button->currentImage = up;
+        button->currentImage = normal;
     } else if (data == button->pressedImage) {
-        button->currentImage = down;
+        button->currentImage = pressed;
     } else if (data == button->hoverImage) {
         button->currentImage = hover;
     }
 
-    button->normalImage = up;
-    button->pressedImage = down;
+    button->normalImage = normal;
+    button->pressedImage = pressed;
     button->hoverImage = hover;
 
     _button_draw(button, window, button->currentImage, draw, nullptr, false);

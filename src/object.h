@@ -123,13 +123,7 @@ private:
     Object* _ptr = nullptr;
 };
 
-inline int objectCreateWithFidPid(UniqueObject& obj, int fid, int pid)
-{
-    Object* raw;
-    int rc = objectCreateWithFidPid(&raw, fid, pid);
-    if (rc != -1) obj.reset(raw);
-    return rc;
-}
+int objectCreateWithFidPid(UniqueObject& obj, int fid, int pid);
 
 } // namespace fallout
 

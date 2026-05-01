@@ -1347,6 +1347,30 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
     return gNamedArtCache.emplace(path, std::move(entry)).first->second;
 }
 
+FrmId::FrmId(ObjectType objType, int frmId)
+    : _fid(buildFid(objType, frmId, 0, 0, 0))
+{
+    assert(objType >= 0 && objType < OBJ_TYPE_COUNT);
+}
+
+FrmId::FrmId(ObjectType objType, const char* path)
+    : _objectType(objType)
+    , _path(path)
+{
+    assert(objType >= 0 && objType < OBJ_TYPE_COUNT);
+}
+
+FrmId::FrmId(const char* path)
+    : _path(path)
+{
+}
+
+ObjectType FrmId::objectType() const
+{
+    assert(hasObjectType());
+    return static_cast<ObjectType>(_objectType);
+}
+
 FrmImage::FrmImage()
 {
     _key = nullptr;
@@ -1391,10 +1415,9 @@ bool FrmImage::lock(const FrmId& frmId)
         return lock(frmId.fid());
     }
     if (frmId.filePath() != nullptr) {
-        if (frmId.objectType() >= 0 && frmId.objectType() < OBJ_TYPE_COUNT) {
-            return lock(static_cast<ObjectType>(frmId.objectType()), frmId.filePath());
-        }
-        return lock(frmId.filePath());
+        return frmId.hasObjectType()
+            ? lock(frmId.objectType(), frmId.filePath())
+            : lock(frmId.filePath());
     }
     return false;
 }
