@@ -71,6 +71,7 @@ jobs:
     name: Android
 
     runs-on: ubuntu-latest
+    needs: [ce-dat]
 
     steps:
       - name: Clone
@@ -104,15 +105,25 @@ jobs:
           cd os/android
           ./gradlew assembleDebug
 
-      - name: Change apk file name
+      - name: Download ce.dat
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-dat
+          path: out/dist
+
+      - name: Package
         run: |
-          mv os/android/app/build/outputs/apk/debug/app-debug.apk os/android/app/build/outputs/apk/debug/fallout2-ce.apk
+          mkdir -p out/dist/fallout2-ce-android-debug
+          cp os/android/app/build/outputs/apk/debug/app-debug.apk out/dist/fallout2-ce-android-debug/fallout2-ce.apk
+          cp out/dist/ce.dat out/dist/fallout2-ce-android-debug/ce.dat
+          cd out/dist
+          zip -r fallout2-ce-android-debug.zip fallout2-ce-android-debug
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce-debug.apk
-          path: os/android/app/build/outputs/apk/debug/fallout2-ce.apk
+          name: fallout2-ce-android-debug.zip
+          path: out/dist/fallout2-ce-android-debug.zip
           retention-days: 7
 
   ce-dat:
@@ -153,6 +164,7 @@ jobs:
     name: iOS
 
     runs-on: macos-14
+    needs: [ce-dat]
 
     steps:
       - name: Clone
@@ -177,11 +189,25 @@ jobs:
           cd out/build/ios
           cpack -C Debug
 
+      - name: Download ce.dat
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-dat
+          path: out/dist
+
+      - name: Package
+        run: |
+          mkdir -p out/dist/fallout2-ce-ios
+          cp out/build/ios/fallout2-ce.ipa out/dist/fallout2-ce-ios/fallout2-ce-ios.ipa
+          cp out/dist/ce.dat out/dist/fallout2-ce-ios/ce.dat
+          cd out/dist
+          zip -r fallout2-ce-ios.zip fallout2-ce-ios
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: fallout2-ce.ipa
-          path:  out/build/ios/fallout2-ce.ipa
+          name: fallout2-ce-ios.zip
+          path: out/dist/fallout2-ce-ios.zip
           retention-days: 7
 
   linux:
