@@ -9,6 +9,8 @@
 #include "platform_compat.h"
 #include "settings.h"
 
+#include <assert.h>
+
 namespace fallout {
 
 // The maximum number of text fonts.
@@ -440,6 +442,17 @@ static int textFontGetMonospacedCharacterWidthImpl()
     }
 
     return width + gCurrentTextFontDescriptor->letterSpacing;
+}
+
+void fontDrawText2D(const Buffer2D& dest, int xPos, int yPos, const char* string, int length, int color)
+{
+    assert(dest.data != nullptr && dest.width > 0 && dest.height > 0);
+    assert(xPos >= 0 && xPos < dest.width && yPos >= 0 && yPos < dest.height && length >= 0 && length < dest.width - xPos);
+
+    xPos = std::clamp(xPos, 0, dest.width - 1);
+    yPos = std::clamp(yPos, 0, dest.height - 1);
+    length = std::clamp(length, 0, dest.width - xPos);
+    fontDrawText(dest.data + dest.width * yPos + xPos, string, length, dest.width, color);
 }
 
 } // namespace fallout

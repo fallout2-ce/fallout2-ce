@@ -159,6 +159,32 @@ using ArtPtr = InternalPtr<Art>;
 class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 
+class FrmId {
+public:
+    FrmId() = default;
+    explicit FrmId(int fid)
+        : _fid(fid)
+    {
+    }
+    explicit FrmId(ObjectType objType, int frmId);
+    explicit FrmId(ObjectType objType, const char* path);
+    explicit FrmId(const char* path);
+
+    int fid() const { return _fid; }
+    bool hasObjectType() const { return _objectType >= 0 && _objectType < OBJ_TYPE_COUNT; }
+    ObjectType objectType() const;
+    const char* filePath() const { return _path; }
+
+    bool empty() const { return _fid == -1 && _path == nullptr; }
+
+private:
+    int _fid = -1;
+    int _objectType = -1;
+    const char* _path = nullptr;
+};
+
+// A helper for using RAII to read single-frame FRM's.
+// lock/unlock use the art-cache instead of just loading/unloading directly.
 class FrmImage {
 public:
     FrmImage();
@@ -172,6 +198,7 @@ public:
     FrmImage& operator=(FrmImage&& other) noexcept;
 
     bool isLocked() const { return _key != nullptr || _namedKey; }
+    bool lock(const FrmId& frmId);
     bool lock(unsigned int fid);
     bool lock(const char* frmPath);
     bool lock(ObjectType objType, const char* frmRelativePath);
@@ -179,6 +206,7 @@ public:
 
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
+    // Returns FRM frame data if locked, nullptr otherwise.
     unsigned char* getData() const { return _data; }
 
     ConstBuffer2D getBuffer() const { return { _data, _width, _height }; };
@@ -187,10 +215,10 @@ private:
     void resetInternal();
 
     std::shared_ptr<NamedCacheEntry> _namedKey;
-    CacheEntry* _key;
-    unsigned char* _data;
-    int _width;
-    int _height;
+    CacheEntry* _key = nullptr;
+    unsigned char* _data = nullptr;
+    int _width = 0;
+    int _height = 0;
 };
 
 } // namespace fallout
