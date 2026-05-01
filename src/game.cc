@@ -69,8 +69,13 @@
 #include "tile.h"
 #include "trait.h"
 #include "version.h"
+#include "win32.h"
 #include "window_manager.h"
 #include "worldmap.h"
+
+#if __APPLE__
+#include <TargetConditionals.h>
+#endif
 
 namespace fallout {
 
@@ -84,6 +89,7 @@ namespace fallout {
 static int gameLoadGlobalVars();
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void gameFreeGlobalVars();
+static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed);
 static void showHelp();
 static int gameDbInit();
 static void showSplash();
@@ -1313,14 +1319,50 @@ int showQuitConfirmationDialog()
 
 static void TryLoadBaseCEMod()
 {
-    if (compat_access(kBaseModPath, 0) == 0) {
-        debugPrint("Loading base FO:CE mod: %s\n", kBaseModPath);
-        if (dbOpen(kBaseModPath) == -1) {
-            debugPrint("Error opening base mod file/folder!\n");
+    bool found = false;
+    bool openFailed = false;
+
+    if (tryLoadBaseCEModAtPath(kBaseModPath, &found, &openFailed)) {
+        return;
+    }
+
+#if __APPLE__ && TARGET_OS_OSX
+    const char* bundleResourcesPath = getMacOsBundleResourcesPath();
+    if (bundleResourcesPath != nullptr) {
+        char absolutePath[COMPAT_MAX_PATH];
+        snprintf(absolutePath, sizeof(absolutePath), "%s/ce.dat", bundleResourcesPath);
+        if (tryLoadBaseCEModAtPath(absolutePath, &found, &openFailed)) {
+            return;
         }
+    }
+#endif
+
+    if (openFailed) {
+        debugPrint("Error opening base mod file/folder!\n");
     } else {
         debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
     }
+}
+
+static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed)
+{
+    if (compat_access(path, 0) != 0) {
+        return false;
+    }
+
+    if (found != nullptr) {
+        *found = true;
+    }
+
+    debugPrint("Loading base FO:CE mod: %s\n", path);
+    if (dbOpen(path) == -1) {
+        if (openFailed != nullptr) {
+            *openFailed = true;
+        }
+        return false;
+    }
+
+    return true;
 }
 
 // 0x44418C
@@ -1330,7 +1372,6 @@ static int gameDbInit()
     const char* patch_file_name;
     int patch_index;
     char filename[COMPAT_MAX_PATH];
-
     main_file_name = nullptr;
     patch_file_name = nullptr;
 

@@ -369,6 +369,8 @@ if(APPLE)
             "os/macos/fallout2-ce.icns"
         )
 
+        target_link_libraries(${EXECUTABLE_NAME} "-framework CoreFoundation")
+
         target_sources(${EXECUTABLE_NAME} PUBLIC ${RESOURCES})
         set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
@@ -501,6 +503,28 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
     target_include_directories(ce-frm2png PRIVATE ${ZLIB_INCLUDE_DIRS})
     target_link_libraries(ce-frm2png ${SDL2_LIBRARIES})
     target_link_libraries(ce-frm2png ${ZLIB_LIBRARIES})
+
+    if(APPLE)
+        file(GLOB_RECURSE CE_DAT_INPUTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/files/ce.dat/*")
+        set(CE_DAT_RESOURCE_PATH "${CMAKE_CURRENT_BINARY_DIR}/ce.dat")
+
+        add_custom_command(
+            OUTPUT "${CE_DAT_RESOURCE_PATH}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
+            COMMAND $<TARGET_FILE:ce-dat-tool> create "${CMAKE_SOURCE_DIR}/files/ce.dat" "${CE_DAT_RESOURCE_PATH}"
+            DEPENDS ce-dat-tool ${CE_DAT_INPUTS}
+            COMMENT "Generating ce.dat for app bundle"
+            VERBATIM
+        )
+
+        add_custom_target(ce-dat-resource DEPENDS "${CE_DAT_RESOURCE_PATH}")
+        add_dependencies(${EXECUTABLE_NAME} ce-dat-resource)
+
+        target_sources(${EXECUTABLE_NAME} PRIVATE "${CE_DAT_RESOURCE_PATH}")
+        set_source_files_properties("${CE_DAT_RESOURCE_PATH}" PROPERTIES
+            GENERATED TRUE
+            MACOSX_PACKAGE_LOCATION "Resources")
+    endif()
 endif()
 
 if(APPLE)
