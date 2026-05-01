@@ -117,6 +117,11 @@ bool readFrmFrame(std::istream& stream, FrmFrame& frame)
     }
 
     size_t expectedSize = static_cast<size_t>(frame.width) * static_cast<size_t>(frame.height);
+    // This matches fallback behavior in artReadHeader.
+    if (expectedSize != static_cast<size_t>(frame.size) && frame.size != 0) {
+        return false;
+    }
+
     if (expectedSize > kMaxFrmPixels) {
         return false;
     }
