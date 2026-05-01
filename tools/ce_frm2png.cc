@@ -126,7 +126,7 @@ bool readFrmFrame(std::istream& stream, FrmFrame& frame)
     }
 
     frame.pixels.resize(expectedSize);
-    return stream.read(reinterpret_cast<char*>(frame.pixels.data()), frame.size).good();
+    return stream.read(reinterpret_cast<char*>(frame.pixels.data()), frame.pixels.size()).good();
 }
 
 bool pathExists(const std::string& path)
