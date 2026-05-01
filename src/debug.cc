@@ -25,6 +25,7 @@ static void debugFlushBuffer();
 // Messages logged before any debug proc is registered are held here and
 // flushed when the first proc is registered.
 static std::string gDebugBuffer;
+static constexpr size_t kDebugBufferMaxSize = 64 * 1024;
 
 // 0x51DEF8
 static FILE* _fd = nullptr;
@@ -55,6 +56,10 @@ void debugModeInit(const char* debugMode)
         _debug_register_mono();
     } else if (compat_stricmp(debugMode, "gnw") == 0) {
         _debug_register_func(_win_debug);
+    }
+
+    if (gDebugPrintProc == nullptr) {
+        gDebugBuffer.clear();
     }
 }
 
@@ -160,7 +165,7 @@ int debugPrint(const char* format, ...)
     va_start(args, format);
 
     char string[260];
-    vsnprintf(string, sizeof(string), format, args);
+    int len = vsnprintf(string, sizeof(string), format, args);
 
     va_end(args);
 
@@ -168,7 +173,9 @@ int debugPrint(const char* format, ...)
     if (gDebugPrintProc != nullptr) {
         rc = gDebugPrintProc(string);
     } else {
-        gDebugBuffer += string;
+        if (len > 0 && gDebugBuffer.size() + len <= kDebugBufferMaxSize) {
+            gDebugBuffer += string;
+        }
         rc = -1;
     }
 

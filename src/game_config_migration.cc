@@ -138,9 +138,8 @@ bool gameConfigMigrateFromDefaultConfig(const char* defaultConfigFilePath, Confi
         return false;
     }
 
-    int alreadyMigrated = 0;
-    configGetInt(gameConfig, GAME_CONFIG_META_KEY, kMigratedKey, &alreadyMigrated);
-    if (alreadyMigrated != 0) {
+    bool migrated;
+    if (configGetBool(gameConfig, GAME_CONFIG_META_KEY, kMigratedKey, &migrated) && migrated) {
         return false;
     }
 
@@ -149,7 +148,7 @@ bool gameConfigMigrateFromDefaultConfig(const char* defaultConfigFilePath, Confi
         return false;
     }
 
-    bool migrated = false;
+    migrated = false;
     if (configRead(&defaultConfig, defaultConfigFilePath, false)) {
         for (int i = 0; i < defaultConfig.entriesLength; i++) {
             const char* section = defaultConfig.entries[i].key;
@@ -158,12 +157,14 @@ bool gameConfigMigrateFromDefaultConfig(const char* defaultConfigFilePath, Confi
                 const char* key = srcSection->entries[j].key;
                 const char* value = *static_cast<char**>(srcSection->entries[j].value);
                 configSetString(gameConfig, section, key, value);
+                migrated = true;
             }
         }
-        migrated = true;
     }
 
-    configSetInt(gameConfig, GAME_CONFIG_META_KEY, kMigratedKey, 1);
+    if (migrated) {
+        configSetBool(gameConfig, GAME_CONFIG_META_KEY, kMigratedKey, true);
+    }
     configFree(&defaultConfig);
     return migrated;
 }
