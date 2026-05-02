@@ -88,9 +88,9 @@ namespace {
 
 } // namespace
 
-// Migrate settings F2_RES.INI to fallout2.cfg
+// Migrate settings F2_RES.INI to ce.cfg
 //
-// Only happens a single time, after which fallout2.cfg is the source of truth
+// Only happens a single time, after which game config is the source of truth
 bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConfig)
 {
     if (gameConfigFilePath == nullptr || gameConfig == nullptr) {
@@ -126,6 +126,46 @@ bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConf
     }
 
     configFree(&legacyConfig);
+    return migrated;
+}
+
+// Imports all key-value pairs from defaultConfigFilePath into gameConfig,
+// overwriting any existing values. Runs once, gated by [meta] migrated=1.
+bool gameConfigMigrateFromDefaultConfig(const char* defaultConfigFilePath, Config* gameConfig)
+{
+    constexpr char kMigratedKey[] = "migrated";
+    if (defaultConfigFilePath == nullptr || gameConfig == nullptr) {
+        return false;
+    }
+
+    bool migrated;
+    if (configGetBool(gameConfig, GAME_CONFIG_META_KEY, kMigratedKey, &migrated) && migrated) {
+        return false;
+    }
+
+    Config defaultConfig;
+    if (!configInit(&defaultConfig)) {
+        return false;
+    }
+
+    migrated = false;
+    if (configRead(&defaultConfig, defaultConfigFilePath, false)) {
+        for (int i = 0; i < defaultConfig.entriesLength; i++) {
+            const char* section = defaultConfig.entries[i].key;
+            ConfigSection* srcSection = static_cast<ConfigSection*>(defaultConfig.entries[i].value);
+            for (int j = 0; j < srcSection->entriesLength; j++) {
+                const char* key = srcSection->entries[j].key;
+                const char* value = *static_cast<char**>(srcSection->entries[j].value);
+                configSetString(gameConfig, section, key, value);
+                migrated = true;
+            }
+        }
+    }
+
+    if (migrated) {
+        configSetBool(gameConfig, GAME_CONFIG_META_KEY, kMigratedKey, true);
+    }
+    configFree(&defaultConfig);
     return migrated;
 }
 

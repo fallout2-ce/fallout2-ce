@@ -26,7 +26,7 @@ constexpr char kMapperConfigFileName[] = "mapper2.cfg";
 // 0x5186D0
 bool gGameConfigInitialized = false;
 
-// fallout2.cfg
+// ce.cfg
 //
 // 0x58E950
 Config gGameConfig;
@@ -47,9 +47,9 @@ char gGameConfigFilePath[COMPAT_MAX_PATH];
 // additional check for [argc], so it will crash if you pass NULL, or an empty
 // array into [argv].
 //
-// The executable path from [argv] is used resolve path to `fallout2.cfg`,
+// The executable path from [argv] is used resolve path to `<executable>ce.cfg`,
 // which should be in the same folder. This function provide defaults if
-// `fallout2.cfg` is not present, or cannot be read for any reason.
+// file is not present, or cannot be read for any reason.
 //
 // Finally, this function merges key-value pairs from [argv] if any, see
 // [configParseCommandLineArguments] for expected format.
@@ -86,45 +86,37 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     char* customConfigFileName = nullptr;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CONFIG_FILE, &customConfigFileName);
 
-    const char* configFileName = customConfigFileName != nullptr && *customConfigFileName != '\0'
-        ? customConfigFileName
-        : kDefaultGameConfigFileName;
+    // CE: Derive config file name from executable name.
+    char exeDrive[COMPAT_MAX_DRIVE];
+    char exeDir[COMPAT_MAX_DIR];
+    char exeFname[COMPAT_MAX_FNAME];
+    compat_splitpath(argv[0], exeDrive, exeDir, exeFname, nullptr);
 
-    // Make `fallout2.cfg` file path.
-    char* executable = argv[0];
-    char* ch = strrchr(executable, '\\');
-    if (ch != nullptr) {
-        *ch = '\0';
-        if (isMapper) {
-            snprintf(gGameConfigFilePath,
-                sizeof(gGameConfigFilePath),
-                "%s\\%s",
-                executable,
-                kMapperConfigFileName);
-        } else {
-            snprintf(gGameConfigFilePath,
-                sizeof(gGameConfigFilePath),
-                "%s\\%s",
-                executable,
-                configFileName);
-        }
-        *ch = '\\';
-    } else {
-        if (isMapper) {
-            strcpy(gGameConfigFilePath, kMapperConfigFileName);
-        } else {
-            strcpy(gGameConfigFilePath, configFileName);
-        }
-    }
+    char derivedConfigFileName[COMPAT_MAX_FNAME + 5];
+    snprintf(derivedConfigFileName, sizeof(derivedConfigFileName), "%s.cfg", exeFname);
+
+    const char* defaultConfigFileName = isMapper ? kMapperConfigFileName : kDefaultGameConfigFileName;
+
+    const bool hasCustomConfigFileName = customConfigFileName != nullptr && *customConfigFileName != '\0';
+    const char* configFileName = hasCustomConfigFileName ? customConfigFileName : derivedConfigFileName;
+
+    compat_makepath(gGameConfigFilePath, exeDrive, exeDir, configFileName, nullptr);
+
+    const bool usingDerivedConfig = !hasCustomConfigFileName
+        && compat_stricmp(derivedConfigFileName, defaultConfigFileName) != 0;
 
     configRead(&gGameConfig, gGameConfigFilePath, false);
 
-    // Init debug mode ASAP to catch early debug messages.
-    char* debugMode;
-    configGetString(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_MODE_KEY, &debugMode);
-    debugModeInit(debugMode);
-
     debugPrint("Game config loaded from %s.\n", gGameConfigFilePath);
+
+    if (usingDerivedConfig) {
+        char defaultConfigFilePath[COMPAT_MAX_PATH];
+        compat_makepath(defaultConfigFilePath, exeDrive, exeDir, defaultConfigFileName, nullptr);
+        if (gameConfigMigrateFromDefaultConfig(defaultConfigFilePath, &gGameConfig)) {
+            debugPrint("Migrated settings from %s.\n", defaultConfigFileName);
+            configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL);
+        }
+    }
 
     if (!isMapper && gameConfigMigrateFromF2Res(gGameConfigFilePath, &gGameConfig)) {
         debugPrint("Migrated settings from f2_res.ini.\n");
@@ -132,7 +124,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
     }
 
     // Add key-values from command line, which overrides both defaults and
-    // whatever was loaded from `fallout2.cfg`.
+    // whatever was loaded from cfg.
     configParseCommandLineArguments(&gGameConfig, argc, argv);
 
     // Writes default values to config, skipping keys that were already loaded.
@@ -151,7 +143,7 @@ EM_ASYNC_JS(void, do_save_idbfs_gameconfig, (), {
 // clang-format on
 #endif
 
-// Saves game config into `fallout2.cfg`.
+// Saves game config into cfg.
 //
 // 0x444C14
 bool gameConfigSave()
