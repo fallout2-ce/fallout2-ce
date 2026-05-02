@@ -4,7 +4,7 @@
 #include "display_monitor.h"
 #include "interface.h"
 #include "sfall_script_hooks.h"
-#include "sfall_sound.h"
+#include "script_sound.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -26,13 +26,13 @@ void sfallOnAfterGameInit()
 
 void sfallOnGameExit()
 {
-    sfallSoundExit();
+    scriptSoundExit();
     return;
 }
 
 void sfallOnGameReset()
 {
-    sfallSoundReset();
+    scriptSoundReset();
     return;
 }
 
