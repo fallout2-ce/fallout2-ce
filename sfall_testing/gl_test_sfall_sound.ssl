@@ -1,0 +1,75 @@
+#include "sfall.h"
+#include "dik.h"
+
+variable loop_sound_id := 0;
+variable quiet_loop_sound_id := 0;
+variable music_sound_id := 0;
+
+procedure stop_if_active(variable sound_id, variable label) begin
+    if (sound_id != 0) then begin
+        stop_sfall_sound(sound_id);
+        display_msg(label + " stopped");
+    end else begin
+        display_msg(label + " is not active");
+    end
+end
+
+procedure keypress_handler begin
+    variable pressed := get_sfall_arg_at(0);
+    variable key := get_sfall_arg_at(1);
+    variable ignored;
+
+    if (not pressed) then return;
+
+    if (key == DIK_K) then begin
+        display_msg("play_sfall_sound mode 0 one-shot: sound\\sfx\\pistol.ACM");
+        ignored := play_sfall_sound("sound\\sfx\\pistol.ACM", 0);
+    end else if (key == DIK_N) then begin
+        if (loop_sound_id != 0) then begin
+            display_msg(string_format1("loop already active id=%d", loop_sound_id));
+            return;
+        end
+
+        loop_sound_id := play_sfall_sound("sound\\music\\20CAR.ACM", 1);
+        display_msg(string_format1("mode 1 loop id=%d", loop_sound_id));
+    end else if (key == DIK_M) then begin
+        call stop_if_active(loop_sound_id, "mode 1 loop");
+        loop_sound_id := 0;
+    end else if (key == DIK_C) then begin
+        if (quiet_loop_sound_id != 0) then begin
+            display_msg(string_format1("quiet loop already active id=%d", quiet_loop_sound_id));
+            return;
+        end
+
+        quiet_loop_sound_id := play_sfall_sound("sound\\music\\20CAR.ACM", 0x30000001);
+        display_msg(string_format1("quiet mode 1 loop id=%d", quiet_loop_sound_id));
+    end else if (key == DIK_X) then begin
+        call stop_if_active(quiet_loop_sound_id, "quiet mode 1 loop");
+        quiet_loop_sound_id := 0;
+    end else if (key == DIK_G) then begin
+        if (music_sound_id != 0) then begin
+            display_msg(string_format1("mode 2 music replacement already active id=%d", music_sound_id));
+            return;
+        end
+
+        music_sound_id := play_sfall_sound("sound\\music\\20CAR.ACM", 2);
+        display_msg(string_format1("mode 2 music replacement id=%d", music_sound_id));
+    end else if (key == DIK_H) then begin
+        call stop_if_active(music_sound_id, "mode 2 music replacement");
+        music_sound_id := 0;
+    end else if (key == DIK_V) then begin
+        display_msg("play_sfall_sound mode 3 speech-volume one-shot: sound\\sfx\\pistol.ACM");
+        ignored := play_sfall_sound("sound\\sfx\\pistol.ACM", 3);
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("sfall_sound manual test ready");
+    display_msg("One-shots use short SFX from master.dat; loops/replacement use music");
+    display_msg("K one-shot mode0, N start loop mode1, M stop loop");
+    display_msg("C start quiet loop mode1, X stop quiet loop");
+    display_msg("G start mode2 music replacement, H stop mode2 replacement, V mode3 one-shot");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+end
