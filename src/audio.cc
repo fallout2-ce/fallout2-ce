@@ -60,7 +60,7 @@ static int audioSoundDecoderReadHandler(void* data, void* buffer, unsigned int s
 // 0x41A2EC
 int audioOpen(const char* fname, int* sampleRate)
 {
-    char path[80];
+    char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s", fname);
 
     int compression;

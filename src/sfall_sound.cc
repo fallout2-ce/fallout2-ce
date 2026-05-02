@@ -1,5 +1,6 @@
 #include "sfall_sound.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include <vector>
@@ -202,6 +203,9 @@ int sfallSoundPlay(const char* path, int mode)
 
     Sound* sound = sfallSoundCreate(path, looping, volume);
     if (sound == nullptr) {
+        if (mode == SFALL_SOUND_MODE_MUSIC) {
+            backgroundSoundRestart(GSOUND_LIMIT_AFTER);
+        }
         debugPrint("sfallSoundPlay: failed to play %s\n", path);
         return 0;
     }
@@ -245,9 +249,7 @@ void sfallSoundStop(int id)
 
 void sfallSoundReset()
 {
-    sfallLoopingSounds.clear();
-    sfallLoopId = 0;
-    sfallBackgroundReplacementId = 0;
+    sfallSoundExit();
 }
 
 void sfallSoundExit()
