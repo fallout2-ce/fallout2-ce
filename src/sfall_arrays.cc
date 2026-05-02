@@ -58,6 +58,9 @@ enum class ArrayElementType {
     POINTER
 };
 
+// Special key for load_array: returns a temp array of all saved array keys.
+static constexpr char kAllArraysSpecialKey[] = "...all_arrays...";
+
 /**
  * This is mostly the same as ProgramValue but it owns strings.
  *
@@ -178,6 +181,28 @@ public:
     int getRawValue() const { return value.integerValue; }
     const char* getString() const { return value.stringValue; }
 
+    const char* getAsDebugString() const
+    {
+        static char debugStrBuf[ARRAY_MAX_STRING];
+        switch (type) {
+        case ArrayElementType::INT:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%d", value.integerValue);
+            break;
+        case ArrayElementType::FLOAT:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%.5f", value.floatValue);
+            break;
+        case ArrayElementType::POINTER:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%X", reinterpret_cast<unsigned int>(value.pointerValue));
+            break;
+        case ArrayElementType::STRING:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%s", value.stringValue);
+            break;
+        default:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "(unknown)");
+        }
+        return debugStrBuf;
+    }
+
     bool operator<(ArrayElement const& other) const
     {
         if (type != other.type) {
@@ -258,8 +283,16 @@ struct ArrayElementHash {
         size_t h = std::hash<int>()(static_cast<int>(el.getType()));
         switch (el.getType()) {
         case ArrayElementType::INT:
-        case ArrayElementType::FLOAT:
             return h ^ std::hash<int>()(el.getRawValue());
+        case ArrayElementType::FLOAT: {
+            // -0.0 + 0.0 = +0.0 per IEEE 754, canonicalizing the sign bit without a branch.
+            int bits = el.getRawValue();
+            float f;
+            memcpy(&f, &bits, sizeof(f));
+            f += 0.0f;
+            memcpy(&bits, &f, sizeof(bits));
+            return h ^ std::hash<int>()(bits);
+        }
         case ArrayElementType::POINTER:
             return h ^ std::hash<void*>()(reinterpret_cast<void*>(el.getRawValue()));
         case ArrayElementType::STRING:
@@ -648,7 +681,7 @@ ArrayId CreateTempArray(int len, unsigned int flags)
     return arrayId;
 }
 
-SFallArray* get_array_by_id(ArrayId arrayId)
+static SFallArray* get_array_by_id(ArrayId arrayId)
 {
     auto it = _state->arrays.find(arrayId);
     if (it == _state->arrays.end()) {
@@ -865,6 +898,7 @@ static SfallArrayElementType toSfallType(ArrayElementType t)
         return SfallArrayElementType::FLOAT;
     case ArrayElementType::STRING:
         return SfallArrayElementType::STR;
+    // Pointers should be saved as int, see comment in writeElement below.
     default:
         return SfallArrayElementType::INT;
     }
@@ -891,7 +925,8 @@ static bool writeElement(const ArrayElement& el, File* stream)
         if (fileWrite(&len, sizeof(len), 1, stream) != 1) return false;
         if (fileWrite(el.getString(), len, 1, stream) != 1) return false;
     } else {
-        int bits = el.getRawValue();
+        // Saving pointers is meaningless, so just save zero instead.
+        int bits = el.getType() == ArrayElementType::POINTER ? 0 : el.getRawValue();
         if (fileWrite(&bits, sizeof(bits), 1, stream) != 1) return false;
     }
     return true;
@@ -926,24 +961,34 @@ static bool readElement(ArrayElement& out, File* stream)
     return true;
 }
 
-void SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program)
+SaveArrayResult SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program)
 {
     auto& saved = _state->savedArrays;
 
     // int(0) key means "unsave" the array without destroying it
     if (key.isInt() && key.asInt() == 0) {
         eraseSavedByArrayId(arrayId);
-        return;
+        return SaveArrayResult::OK;
+    }
+    if (key.isPointer()) {
+        return SaveArrayResult::InvalidKeyType;
     }
 
-    if (get_array_by_id(arrayId) == nullptr) return;
-    FixArray(arrayId);
-
     ArrayElement keyEl { key, program };
+    // Prevent saving array using reserved key for returning all arrays list, since it can never be loaded.
+    if (keyEl.getType() == ArrayElementType::STRING
+        && strcmp(keyEl.getString(), kAllArraysSpecialKey) == 0) {
+        return SaveArrayResult::ReservedKey;
+    }
+    if (get_array_by_id(arrayId) == nullptr) {
+        return SaveArrayResult::InvalidId;
+    }
+
+    FixArray(arrayId);
 
     // Already saved under this exact key - nothing to do
     auto it = saved.find(keyEl);
-    if (it != saved.end() && it->second == arrayId) return;
+    if (it != saved.end() && it->second == arrayId) return SaveArrayResult::OK;
 
     // Remove any existing entry using this key (different array)
     if (it != saved.end()) saved.erase(it);
@@ -952,17 +997,14 @@ void SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program)
     eraseSavedByArrayId(arrayId);
 
     saved.emplace(std::move(keyEl), arrayId);
+    return SaveArrayResult::OK;
 }
-
-// Special key for load_array: returns a temp array of all saved array keys.
-static constexpr char kAllArraysSpecialKey[] = "...all_arrays...";
 
 ArrayId LoadArray(const ProgramValue& key, Program* program)
 {
     if (key.isInt() && key.asInt() == 0) return 0;
 
     ArrayElement keyEl { key, program };
-
     if (keyEl.getType() == ArrayElementType::STRING
         && strcmp(keyEl.getString(), kAllArraysSpecialKey) == 0) {
         int count = static_cast<int>(_state->savedArrays.size());
@@ -980,7 +1022,7 @@ ArrayId LoadArray(const ProgramValue& key, Program* program)
     }
 
     auto it = _state->savedArrays.find(keyEl);
-    return (it != _state->savedArrays.end()) ? it->second : 0;
+    return it != _state->savedArrays.end() ? it->second : 0;
 }
 
 constexpr unsigned int kSavedFlagsMask = SFALL_ARRAYFLAG_ASSOC | SFALL_ARRAYFLAG_CONSTVAL;
@@ -1013,10 +1055,16 @@ bool sfallArraysSave(File* stream)
         if (fileWrite(&elCount, sizeof(elCount), 1, stream) != 1) return false;
 
         bool ok = true;
+        bool hasPointers = key.getType() == ArrayElementType::POINTER;
         arr->forEachElement([&](const ArrayElement& el) {
             if (ok) ok = writeElement(el, stream);
+            hasPointers = hasPointers || el.getType() == ArrayElementType::POINTER;
         });
         if (!ok) return false;
+
+        if (hasPointers) {
+            debugPrint("LOADSAVE (SFALL): Array %s had some values of Pointer types. They will be saved as 0.\n", key.getAsDebugString());
+        }
     }
     return true;
 }
@@ -1059,7 +1107,7 @@ bool sfallArraysLoad(File* stream)
         unsigned int safeFlags = flags & kSavedFlagsMask;
         bool isAssoc = (safeFlags & SFALL_ARRAYFLAG_ASSOC) != 0;
         ArrayId id = CreateArray(isAssoc ? -1 : 0, safeFlags);
-        auto* arr = get_array_by_id(id);
+        SFallArray* arr = get_array_by_id(id);
         if (arr == nullptr) return false;
         arr->loadFlatElements(std::move(elements));
 

@@ -141,9 +141,9 @@ bool sfallLoadGameData(File* stream)
     }
 
     if (!sfallArraysLoad(stream)) {
-        // Not fatal - may be an old save written before array persistence was implemented,
-        // or the file simply ended before the arrays section.
-        debugPrint("LOADSAVE (SFALL): ** Error loading arrays **, skipping\n");
+        // Corrupted save.
+        debugPrint("LOADSAVE (SFALL): ** Error loading arrays **\n");
+        return false;
     }
 
     return true;

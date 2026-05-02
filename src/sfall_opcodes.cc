@@ -1100,7 +1100,20 @@ static void op_save_array(Program* program)
 {
     auto arrayId = static_cast<ArrayId>(programStackPopInteger(program));
     auto key = programStackPopValue(program);
-    SaveArray(key, arrayId, program);
+    auto result = SaveArray(key, arrayId, program);
+    switch (result) {
+    case SaveArrayResult::InvalidId:
+        programPrintError("save_array: array with id %d doesn't exist.", arrayId);
+        break;
+    case SaveArrayResult::ReservedKey:
+        programPrintError("save_array: trying to save array under reserved key.");
+        break;
+    case SaveArrayResult::InvalidKeyType:
+        programPrintError("save_array: invalid key type: %s.", key.typeDebugString());
+        break;
+    default:;
+        // OK
+    }
 }
 
 // load_array

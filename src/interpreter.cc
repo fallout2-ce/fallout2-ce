@@ -3407,6 +3407,23 @@ const char* ProgramValue::asString(Program* program) const
     return programGetString(program, opcode, integerValue);
 }
 
+const char* ProgramValue::typeDebugString() const
+{
+    switch (opcode) {
+    case VALUE_TYPE_INT:
+        return "INTEGER";
+    case VALUE_TYPE_FLOAT:
+        return "FLOAT";
+    case VALUE_TYPE_STRING:
+    case VALUE_TYPE_DYNAMIC_STRING:
+        return "STRING";
+    case VALUE_TYPE_PTR:
+        return "POINTER";
+    default:
+        return "(UNKNOWN)";
+    }
+}
+
 // CE
 ProgramValue programMakeString(Program* program, const char* str)
 {

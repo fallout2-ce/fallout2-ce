@@ -1885,8 +1885,11 @@ static int lsgPerformSaveGame()
 
     _flptr = fileOpen(_gmpath, "wb");
     if (_flptr != nullptr) {
-        sfallSaveGameData(_flptr);
+        bool saved = sfallSaveGameData(_flptr);
         fileClose(_flptr);
+        if (!saved) {
+            return -1;
+        }
     }
 
     snprintf(_gmpath, sizeof(_gmpath), "%s\\%s%.2d\\", "SAVEGAME", "SLOT", _slot_cursor + 1);
@@ -1982,8 +1985,11 @@ static int lsgLoadGameInSlot(int slot)
 
     _flptr = fileOpen(_gmpath, "rb");
     if (_flptr != nullptr) {
-        sfallLoadGameData(_flptr);
+        bool loaded = sfallLoadGameData(_flptr);
         fileClose(_flptr);
+        if (!loaded) {
+            return -1;
+        }
     }
 
     snprintf(_str, sizeof(_str), "%s\\", "MAPS");

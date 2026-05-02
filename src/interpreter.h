@@ -175,6 +175,7 @@ public:
     int asInt() const;
     Object* asObject() const;
     const char* asString(Program* program) const;
+    const char* typeDebugString() const;
 };
 
 typedef std::vector<ProgramValue> ProgramStack;

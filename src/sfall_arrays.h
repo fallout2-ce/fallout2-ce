@@ -16,6 +16,13 @@ namespace fallout {
 
 using ArrayId = unsigned int;
 
+enum class SaveArrayResult {
+    OK = 0,
+    InvalidId,
+    InvalidKeyType,
+    ReservedKey,
+};
+
 bool sfallArraysInit();
 void sfallArraysReset();
 void sfallArraysExit();
@@ -36,7 +43,7 @@ ArrayId ListAsArray(int type);
 
 ArrayId StringSplit(const char* str, const char* split);
 
-void SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program);
+SaveArrayResult SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program);
 ArrayId LoadArray(const ProgramValue& key, Program* program);
 bool sfallArraysSave(File* stream);
 bool sfallArraysLoad(File* stream);
