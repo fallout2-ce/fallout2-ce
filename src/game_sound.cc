@@ -20,6 +20,7 @@
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
+#include "sfall_sound.h"
 #include "settings.h"
 #include "sound_effects_cache.h"
 #include "stat.h"
@@ -148,7 +149,6 @@ static char gBackgroundSoundFileName[270];
 static void soundEffectsEnable();
 static void soundEffectsDisable();
 static int soundEffectsIsEnabled();
-static int soundEffectsGetVolume();
 static void backgroundSoundDisable();
 static void backgroundSoundEnable();
 static int backgroundSoundGetDuration();
@@ -359,6 +359,8 @@ void gameSoundReset()
     backgroundSoundDelete();
 
     _gsound_background_fade = 0;
+
+    sfallSoundExit();
 
     soundDeleteAll();
 

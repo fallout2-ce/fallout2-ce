@@ -110,7 +110,7 @@ struct SoundSettings {
     int cache_size = 448;
     std::string music_path1 = "sound\\music\\";
     std::string music_path2 = "sound\\music\\";
-    int gapless_music = 0;
+    int gapless_music = 1;
 };
 
 struct DebugSettings {

@@ -35,6 +35,7 @@
 #include "sfall_kb_helpers.h"
 #include "sfall_lists.h"
 #include "sfall_metarules.h"
+#include "sfall_sound.h"
 #include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
@@ -889,6 +890,19 @@ static void op_get_attack_type(Program* program)
     } else {
         programStackPushInteger(program, -1);
     }
+}
+
+static void op_play_sfall_sound(Program* program)
+{
+    int mode = programStackPopInteger(program);
+    const char* path = programStackPopString(program);
+    programStackPushInteger(program, sfallSoundPlay(path, mode));
+}
+
+static void op_stop_sfall_sound(Program* program)
+{
+    int soundId = programStackPopInteger(program);
+    sfallSoundStop(soundId);
 }
 
 // force_encounter_with_flags
@@ -2053,7 +2067,9 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8228, op_get_attack_type);
 
     // 0x822b - int  play_sfall_sound(string file, int mode)
+    interpreterRegisterOpcode(0x822B, op_play_sfall_sound);
     // 0x822c - void stop_sfall_sound(int soundID)
+    interpreterRegisterOpcode(0x822C, op_stop_sfall_sound);
 
     // 0x8235 - array string_split(string string, string split)
     interpreterRegisterOpcode(0x8235, op_string_split);

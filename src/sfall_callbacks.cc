@@ -3,6 +3,7 @@
 #include "content_config.h"
 #include "display_monitor.h"
 #include "interface.h"
+#include "sfall_sound.h"
 #include "sfall_script_hooks.h"
 #include "worldmap.h"
 
@@ -25,11 +26,13 @@ void sfallOnAfterGameInit()
 
 void sfallOnGameExit()
 {
+    sfallSoundExit();
     return;
 }
 
 void sfallOnGameReset()
 {
+    sfallSoundReset();
     return;
 }
 

@@ -38,6 +38,7 @@
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
+#include "sfall_sound.h"
 #include "svga.h"
 #include "text_object.h"
 #include "tile.h"
@@ -822,10 +823,11 @@ int mapLoadById(int map)
 static int mapLoad(File* stream)
 {
     _map_save_in_game(true);
-    int gaplessMusic = settings.sound.gapless_music;
-    if (backgoundSoundIsPlaying() && !gaplessMusic) {
-        // playing the loading sound might interrupt continuous music playback
-        backgroundSoundLoad("wind2", GSOUND_LIMIT_AFTER, GSOUND_MEMORY, GSOUND_LOOP);
+    int mapLoadSoundId = 0;
+    if (backgoundSoundIsPlaying()) {
+        // Use the sfall sound path so the map-loading ambience does not depend
+        // on the native background music loader.
+        mapLoadSoundId = sfallSoundPlay("sound\\music\\WIND2.ACM", SFALL_SOUND_MODE_LOOP);
     }
     isoDisable();
     _partyMemberPrepLoad();
@@ -1064,6 +1066,11 @@ err:
     gameMovieFadeOut();
 
     gMapHeader.version = 20;
+
+    if (mapLoadSoundId != 0) {
+        sfallSoundStop(mapLoadSoundId);
+        mapLoadSoundId = 0;
+    }
 
     return rc;
 }

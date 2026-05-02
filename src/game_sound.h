@@ -60,6 +60,7 @@ int gameSoundExit();
 int gameSoundSetMasterVolume(int value);
 int gameSoundGetMasterVolume();
 int soundEffectsSetVolume(int value);
+int soundEffectsGetVolume();
 int backgroundSoundIsEnabled();
 void backgroundSoundSetVolume(int value);
 int backgroundSoundGetVolume();
