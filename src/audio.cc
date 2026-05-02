@@ -141,7 +141,6 @@ static bool audioDecodeWave(File* stream, AudioFileInfo* info, unsigned char** d
         convertedDataNeedsFree = true;
     } else {
         convertedData = loadedData;
-        loadedDataNeedsFree = false;
     }
 
     if (info != nullptr) {
