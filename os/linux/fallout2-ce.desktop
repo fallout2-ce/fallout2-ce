@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Fallout CE
-Comment=Fallout 1/2 game reimplementation for the modren systems.
+Comment=Fallout 1/2 game re-implementation for the modern systems
 Exec=fallout2-ce
 Icon=fallout2-ce
 Terminal=false

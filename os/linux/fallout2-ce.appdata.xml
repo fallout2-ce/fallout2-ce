@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+	<id>fallout2-ce</id>
+	<metadata_license>mit</metadata_license>
+	<project_license>custom proprietary</project_license>
+	<name>fallout2-ce</name>
+	<summary>Fallout 1/2 game re-implementation for the modern systems</summary>
+	<description>
+		<p>Fallout 1/2 game re-implementation for the modern systems containing features from the fan made SFall</p>
+	</description>
+	<launchable type="desktop-id">fallout2-ce.desktop</launchable>
+	<url type="homepage">https://github.com/fallout2-ce/fallout2-ce</url>
+	<screenshots>
+		<screenshot type="default">
+			<image>https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/38410/ss_84fe8b4a65ca8ba733c5009cf783b29e40379fef.jpg</image>
+		</screenshot>
+	</screenshots>
+	<provides>
+		<id>fallout2-ce.desktop</id>
+	</provides>
+</component>
