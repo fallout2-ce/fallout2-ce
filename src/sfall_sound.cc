@@ -14,163 +14,163 @@ namespace fallout {
 
 namespace {
 
-enum SfallSoundFlags {
-    SFALL_SOUND_FLAG_LOOPING = 0x10000000,
-    SFALL_SOUND_FLAG_RESTORE = 0x40000000,
-};
+    enum SfallSoundFlags {
+        SFALL_SOUND_FLAG_LOOPING = 0x10000000,
+        SFALL_SOUND_FLAG_RESTORE = 0x40000000,
+    };
 
-struct SfallManagedSound {
-    int id;
-    Sound* sound;
-    bool restoreBackground;
-};
+    struct SfallManagedSound {
+        int id;
+        Sound* sound;
+        bool restoreBackground;
+    };
 
-std::vector<SfallManagedSound> sfallLoopingSounds;
-int sfallLoopId = 0;
-int sfallBackgroundReplacementId = 0;
+    std::vector<SfallManagedSound> sfallLoopingSounds;
+    int sfallLoopId = 0;
+    int sfallBackgroundReplacementId = 0;
 
-bool sfallSoundPathIsValid(const char* path)
-{
-    if (path == nullptr) {
-        return false;
-    }
-
-    size_t length = strlen(path);
-    if (length <= 3 || length >= COMPAT_MAX_PATH) {
-        return false;
-    }
-
-    for (const char* ch = path; *ch != '\0'; ch++) {
-        if (*ch == ':') {
+    bool sfallSoundPathIsValid(const char* path)
+    {
+        if (path == nullptr) {
             return false;
         }
 
-        if (*ch == '.' && ch[1] == '.') {
+        size_t length = strlen(path);
+        if (length <= 3 || length >= COMPAT_MAX_PATH) {
             return false;
         }
+
+        for (const char* ch = path; *ch != '\0'; ch++) {
+            if (*ch == ':') {
+                return false;
+            }
+
+            if (*ch == '.' && ch[1] == '.') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    return true;
-}
-
-int sfallSoundGetBaseVolume(int mode)
-{
-    switch (mode) {
-    case SFALL_SOUND_MODE_MUSIC:
-        return backgroundSoundGetVolume();
-    case SFALL_SOUND_MODE_SPEECH:
-        return speechGetVolume();
-    case SFALL_SOUND_MODE_SINGLE:
-    case SFALL_SOUND_MODE_LOOP:
-    default:
-        return soundEffectsGetVolume();
-    }
-}
-
-int sfallSoundClampVolume(int volume)
-{
-    if (volume < VOLUME_MIN) {
-        return VOLUME_MIN;
-    }
-
-    if (volume > VOLUME_MAX) {
-        return VOLUME_MAX;
-    }
-
-    return volume;
-}
-
-int sfallSoundFindLoopingSoundIndexById(int id)
-{
-    for (size_t index = 0; index < sfallLoopingSounds.size(); index++) {
-        if (sfallLoopingSounds[index].id == id) {
-            return static_cast<int>(index);
+    int sfallSoundGetBaseVolume(int mode)
+    {
+        switch (mode) {
+        case SFALL_SOUND_MODE_MUSIC:
+            return backgroundSoundGetVolume();
+        case SFALL_SOUND_MODE_SPEECH:
+            return speechGetVolume();
+        case SFALL_SOUND_MODE_SINGLE:
+        case SFALL_SOUND_MODE_LOOP:
+        default:
+            return soundEffectsGetVolume();
         }
     }
 
-    return -1;
-}
+    int sfallSoundClampVolume(int volume)
+    {
+        if (volume < VOLUME_MIN) {
+            return VOLUME_MIN;
+        }
 
-Sound* sfallSoundCreate(const char* path, bool looping, int volume)
-{
-    int soundFlags = SOUND_FLAG_0x02 | SOUND_16BIT;
-    int type = SOUND_TYPE_STREAMING;
-    if (!looping) {
-        type |= SOUND_TYPE_FIRE_AND_FORGET;
-    } else {
-        soundFlags |= SOUND_LOOPING;
+        if (volume > VOLUME_MAX) {
+            return VOLUME_MAX;
+        }
+
+        return volume;
     }
 
-    Sound* sound = soundAllocate(type, soundFlags);
-    if (sound == nullptr) {
-        return nullptr;
+    int sfallSoundFindLoopingSoundIndexById(int id)
+    {
+        for (size_t index = 0; index < sfallLoopingSounds.size(); index++) {
+            if (sfallLoopingSounds[index].id == id) {
+                return static_cast<int>(index);
+            }
+        }
+
+        return -1;
     }
 
-    int rc = soundSetFileIO(sound,
-        audioOpen,
-        audioClose,
-        audioRead,
-        audioWrite,
-        audioSeek,
-        audioTell,
-        audioGetSize);
-    if (rc != SOUND_NO_ERROR) {
-        soundDelete(sound);
-        return nullptr;
-    }
+    Sound* sfallSoundCreate(const char* path, bool looping, int volume)
+    {
+        int soundFlags = SOUND_FLAG_0x02 | SOUND_16BIT;
+        int type = SOUND_TYPE_STREAMING;
+        if (!looping) {
+            type |= SOUND_TYPE_FIRE_AND_FORGET;
+        } else {
+            soundFlags |= SOUND_LOOPING;
+        }
 
-    if (looping) {
-        rc = soundSetLooping(sound, 0xFFFF);
+        Sound* sound = soundAllocate(type, soundFlags);
+        if (sound == nullptr) {
+            return nullptr;
+        }
+
+        int rc = soundSetFileIO(sound,
+            audioOpen,
+            audioClose,
+            audioRead,
+            audioWrite,
+            audioSeek,
+            audioTell,
+            audioGetSize);
         if (rc != SOUND_NO_ERROR) {
             soundDelete(sound);
             return nullptr;
         }
-    }
 
-    char pathCopy[COMPAT_MAX_PATH];
-    snprintf(pathCopy, sizeof(pathCopy), "%s", path);
-
-    rc = soundLoad(sound, pathCopy);
-    if (rc != SOUND_NO_ERROR) {
-        soundDelete(sound);
-        return nullptr;
-    }
-
-    soundSetVolume(sound, sfallSoundClampVolume(volume));
-
-    rc = soundPlay(sound);
-    if (rc != SOUND_NO_ERROR) {
-        soundDelete(sound);
-        return nullptr;
-    }
-
-    return sound;
-}
-
-void sfallSoundStopTrackedIndex(int index, bool restoreBackground)
-{
-    Sound* sound = sfallLoopingSounds[index].sound;
-    int id = sfallLoopingSounds[index].id;
-    bool shouldRestoreBackground = restoreBackground && sfallLoopingSounds[index].restoreBackground;
-
-    sfallLoopingSounds.erase(sfallLoopingSounds.begin() + index);
-
-    if (sfallBackgroundReplacementId == id) {
-        sfallBackgroundReplacementId = 0;
-    }
-
-    if (sound != nullptr) {
-        if (soundIsPlaying(sound)) {
-            soundStop(sound);
+        if (looping) {
+            rc = soundSetLooping(sound, 0xFFFF);
+            if (rc != SOUND_NO_ERROR) {
+                soundDelete(sound);
+                return nullptr;
+            }
         }
 
-        soundDelete(sound);
+        char pathCopy[COMPAT_MAX_PATH];
+        snprintf(pathCopy, sizeof(pathCopy), "%s", path);
+
+        rc = soundLoad(sound, pathCopy);
+        if (rc != SOUND_NO_ERROR) {
+            soundDelete(sound);
+            return nullptr;
+        }
+
+        soundSetVolume(sound, sfallSoundClampVolume(volume));
+
+        rc = soundPlay(sound);
+        if (rc != SOUND_NO_ERROR) {
+            soundDelete(sound);
+            return nullptr;
+        }
+
+        return sound;
     }
 
-    if (shouldRestoreBackground) {
-        backgroundSoundRestart(GSOUND_LIMIT_AFTER);
+    void sfallSoundStopTrackedIndex(int index, bool restoreBackground)
+    {
+        Sound* sound = sfallLoopingSounds[index].sound;
+        int id = sfallLoopingSounds[index].id;
+        bool shouldRestoreBackground = restoreBackground && sfallLoopingSounds[index].restoreBackground;
+
+        sfallLoopingSounds.erase(sfallLoopingSounds.begin() + index);
+
+        if (sfallBackgroundReplacementId == id) {
+            sfallBackgroundReplacementId = 0;
+        }
+
+        if (sound != nullptr) {
+            if (soundIsPlaying(sound)) {
+                soundStop(sound);
+            }
+
+            soundDelete(sound);
+        }
+
+        if (shouldRestoreBackground) {
+            backgroundSoundRestart(GSOUND_LIMIT_AFTER);
+        }
     }
-}
 
 } // namespace
 
