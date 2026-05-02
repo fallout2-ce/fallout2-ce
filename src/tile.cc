@@ -19,6 +19,7 @@
 #include "settings.h"
 #include "svga.h"
 #include "tile_hires_stencil.h"
+#include "map_edge.h"
 
 namespace fallout {
 
@@ -540,6 +541,15 @@ int tileSetCenter(int tile, int flags)
         return -1;
     }
 
+    // When EDG data is loaded, clamp to map boundary (like sfall's GetCenterTile).
+    // This handles starting positions outside the defined boundary.
+    if (mapEdgeIsLoaded() && !settings.ui.ignore_map_edges) {
+        tile = mapEdgeClampTile(tile, gElevation);
+        if (!tileIsValid(tile)) {
+            return -1;
+        }
+    }
+
     if ((flags & TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
         if (gTileScrollLimitingEnabled) {
             int tileScreenX;
@@ -561,7 +571,9 @@ int tileSetCenter(int tile, int flags)
             }
         }
 
-        if (gTileScrollBlockingEnabled && !settings.ui.ignore_map_edges) {
+        // Scroll-blocker object check only runs when no EDG is loaded.
+        // EDG clamping above already enforces the boundary.
+        if (!mapEdgeIsLoaded() && gTileScrollBlockingEnabled && !settings.ui.ignore_map_edges) {
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
                 return -1;
             }
@@ -571,7 +583,8 @@ int tileSetCenter(int tile, int flags)
     int tile_x = gHexGridWidth - 1 - tile % gHexGridWidth;
     int tile_y = tile / gHexGridWidth;
 
-    if (gTileBorderInitialized && !settings.ui.ignore_map_edges) {
+    // Auto-computed border check only runs when no EDG is loaded.
+    if (!mapEdgeIsLoaded() && gTileBorderInitialized && !settings.ui.ignore_map_edges) {
         if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
             return -1;
         }
