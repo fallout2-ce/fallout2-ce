@@ -164,6 +164,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(enable_high_resolution_stencil);
     SETTING(extend_ap_bar);
     SETTING(expand_barter_window);
+    SETTING_P(inventory_columns, clamp(1, 2));
 #undef SECT
 
 #define SECT preferences

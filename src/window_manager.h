@@ -2,7 +2,10 @@
 #define WINDOW_MANAGER_H
 
 #include <stddef.h>
+#include <vector>
 
+#include "art.h"
+#include "draw.h"
 #include "geometry.h"
 
 namespace fallout {
@@ -154,6 +157,12 @@ typedef struct Button {
     ButtonGroup* buttonGroup;
     Button* prev;
     Button* next;
+
+    // Holds FrmImage objects purely for cleanup — their destructors
+    // unlock both CacheEntry* (fid-based) and shared_ptr<NamedCacheEntry>
+    // (path-based). Data pointers are stored separately in normalImage /
+    // pressedImage / etc.
+    std::vector<FrmImage> frmImages;
 } Button;
 
 typedef struct ButtonGroup {
@@ -189,6 +198,7 @@ void windowRefreshAll(Rect* rect);
 void _win_get_mouse_buf(unsigned char* dest);
 Window* windowGetWindow(int win);
 unsigned char* windowGetBuffer(int win);
+Buffer2D windowGetBuffer2D(int win);
 int windowGetAtPoint(int x, int y);
 int windowGetWidth(int win);
 int windowGetHeight(int win);
@@ -197,10 +207,16 @@ int _win_check_all_buttons();
 int _GNW_check_menu_bars(int input);
 void programWindowSetTitle(const char* title);
 bool showMesageBox(const char* str);
-int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, unsigned char* up, unsigned char* dn, unsigned char* hover, int flags);
+int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode = -1, int mouseExitEventCode = -1, int mouseDownEventCode = -1, int mouseUpEventCode = -1, unsigned char* normal = nullptr, unsigned char* pressed = nullptr, unsigned char* hover = nullptr, int flags = 0);
+// Same as buttonCreate, but accepts FrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
+// Only normalId is required to be non-empty.
+int buttonCreateWithFrm(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const FrmId& normalId, const FrmId& pressedId = {}, const FrmId& hoverId = {}, int flags = 0);
+// Same as _win_register_button_disable, but accepts FrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
+// Only normalId is required to be non-empty.
+int buttonSetDisabledFrm(int btn, const FrmId& normalId, const FrmId& pressedId = {}, const FrmId& hoverId = {});
 int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const char* title, int flags);
-int _win_register_button_disable(int btn, unsigned char* up, unsigned char* down, unsigned char* hover);
-int _win_register_button_image(int btn, unsigned char* up, unsigned char* down, unsigned char* hover, bool draw);
+int _win_register_button_disable(int btn, unsigned char* normal, unsigned char* pressed, unsigned char* hover);
+int _win_register_button_image(int btn, unsigned char* normal, unsigned char* pressed, unsigned char* hover, bool draw);
 int buttonSetMouseCallbacks(int btn, ButtonCallback* mouseEnterProc, ButtonCallback* mouseExitProc, ButtonCallback* mouseDownProc, ButtonCallback* mouseUpProc);
 int buttonSetRightMouseCallbacks(int btn, int rightMouseDownEventCode, int rightMouseUpEventCode, ButtonCallback* rightMouseDownProc, ButtonCallback* rightMouseUpProc);
 int buttonSetCallbacks(int btn, ButtonCallback* pressSoundFunc, ButtonCallback* releaseSoundFunc);
@@ -214,6 +230,54 @@ int buttonDisable(int btn);
 int _win_set_button_rest_state(int btn, bool checked, int flags);
 int _win_group_radio_buttons(int buttonCount, int* btns);
 int _win_button_press_and_release(int btn);
+
+// Allows to use RAII to dispose UI objects.
+template <auto DestroyFn>
+class UniqueHandle {
+    int handle = -1;
+
+public:
+    UniqueHandle() = default;
+    explicit UniqueHandle(int handle)
+        : handle(handle)
+    {
+    }
+    ~UniqueHandle()
+    {
+        if (handle != -1) DestroyFn(handle);
+    }
+    UniqueHandle(const UniqueHandle&) = delete;
+    UniqueHandle& operator=(const UniqueHandle&) = delete;
+    UniqueHandle(UniqueHandle&& other) noexcept
+        : handle(other.handle)
+    {
+        other.handle = -1;
+    }
+    UniqueHandle& operator=(UniqueHandle&& other) noexcept
+    {
+        if (this != &other) {
+            if (handle != -1) DestroyFn(handle);
+            handle = other.handle;
+            other.handle = -1;
+        }
+        return *this;
+    }
+    int get() const { return handle; }
+    int release()
+    {
+        int h = handle;
+        handle = -1;
+        return h;
+    }
+    void reset(int h = -1)
+    {
+        if (handle != -1) DestroyFn(handle);
+        handle = h;
+    }
+};
+
+using UniqueWindow = UniqueHandle<windowDestroy>;
+using UniqueButton = UniqueHandle<buttonDestroy>;
 
 } // namespace fallout
 

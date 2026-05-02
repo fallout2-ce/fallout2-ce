@@ -5,15 +5,27 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
 
 jobs:
+  ce-dat:
+    name: Build ce.dat
+    uses: ./.github/workflows/reusable-build-ce-dat.yml
+    with:
+      preset: linux-x64-release
+
   android:
     name: Android
 
     runs-on: ubuntu-latest
+    needs: [ce-dat]
+    permissions:
+      contents: write
 
     steps:
       - name: Clone
@@ -47,12 +59,21 @@ jobs:
           cd os/android
           ./gradlew assembleRelease
 
+      - name: Download ce.dat
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-dat
+          path: out/dist
+
       - name: Upload
         run: |
-          cd os/android/app/build/outputs/apk/release
-          cp app-release.apk fallout2-ce-android.apk
-          gh release upload ${{ github.event.release.tag_name }} fallout2-ce-android.apk
-          rm fallout2-ce-android.apk
+          mkdir -p out/dist/fallout2-ce-android
+          cp os/android/app/build/outputs/apk/release/app-release.apk out/dist/fallout2-ce-android/fallout2-ce-android.apk
+          cp out/dist/ce.dat out/dist/fallout2-ce-android/ce.dat
+          cd out/dist
+          zip -r fallout2-ce-android.zip fallout2-ce-android
+          gh release upload ${{ github.event.release.tag_name }} fallout2-ce-android.zip
+          rm fallout2-ce-android.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -60,6 +81,9 @@ jobs:
     name: iOS
 
     runs-on: macos-14
+    needs: [ce-dat]
+    permissions:
+      contents: write
 
     steps:
       - name: Clone
@@ -95,12 +119,21 @@ jobs:
           cd build
           cpack -C RelWithDebInfo
 
+      - name: Download ce.dat
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-dat
+          path: out/dist
+
       - name: Upload
         run: |
-          cd build
-          cp fallout2-ce.ipa fallout2-ce-ios.ipa
-          gh release upload ${{ github.event.release.tag_name }} fallout2-ce-ios.ipa
-          rm fallout2-ce-ios.ipa
+          mkdir -p out/dist/fallout2-ce-ios
+          cp build/fallout2-ce.ipa out/dist/fallout2-ce-ios/fallout2-ce-ios.ipa
+          cp out/dist/ce.dat out/dist/fallout2-ce-ios/ce.dat
+          cd out/dist
+          zip -r fallout2-ce-ios.zip fallout2-ce-ios
+          gh release upload ${{ github.event.release.tag_name }} fallout2-ce-ios.zip
+          rm fallout2-ce-ios.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -108,6 +141,9 @@ jobs:
     name: Linux (${{ matrix.arch }})
 
     runs-on: ubuntu-20.04
+    needs: [ce-dat]
+    permissions:
+      contents: write
 
     strategy:
       fail-fast: false
@@ -164,10 +200,18 @@ jobs:
             -j $(nproc) \
             # EOL
 
+      - name: Download ce.dat
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-dat
+          path: out/dist
+
       - name: Upload
         run: |
-          cd build
-          tar -czvf fallout2-ce-linux-${{ matrix.arch }}.tar.gz fallout2-ce
+          mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
+          cp build/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
+          cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
+          tar -czvf fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
           gh release upload ${{ github.event.release.tag_name }} fallout2-ce-linux-${{ matrix.arch }}.tar.gz
           rm fallout2-ce-linux-${{ matrix.arch }}.tar.gz
         env:
@@ -177,6 +221,8 @@ jobs:
     name: macOS
 
     runs-on: macos-11
+    permissions:
+      contents: write
 
     steps:
       - name: Clone
@@ -244,6 +290,9 @@ jobs:
     name: Windows (${{ matrix.arch }})
 
     runs-on: windows-2025
+    needs: [ce-dat]
+    permissions:
+      contents: write
 
     strategy:
       fail-fast: false
@@ -281,10 +330,19 @@ jobs:
           call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" ^
           && cmake --build --preset windows-${{ matrix.arch }}-release
 
+      - name: Download ce.dat
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-dat
+          path: out/dist
+
       - name: Upload
         run: |
-          cd out/build/windows-${{ matrix.arch }}/RelWithDebInfo
-          7z a fallout2-ce-windows-${{ matrix.arch }}.zip fallout2-ce.exe
+          mkdir -p out/dist/fallout2-ce-windows-${{ matrix.arch }}
+          cp out/build/windows-${{ matrix.arch }}/RelWithDebInfo/fallout2-ce.exe out/dist/fallout2-ce-windows-${{ matrix.arch }}/fallout2-ce.exe
+          cp out/dist/ce.dat out/dist/fallout2-ce-windows-${{ matrix.arch }}/ce.dat
+          cd out/dist
+          7z a fallout2-ce-windows-${{ matrix.arch }}.zip fallout2-ce-windows-${{ matrix.arch }}
           gh release upload ${{ github.event.release.tag_name }} fallout2-ce-windows-${{ matrix.arch }}.zip
           rm fallout2-ce-windows-${{ matrix.arch }}.zip
         env:
