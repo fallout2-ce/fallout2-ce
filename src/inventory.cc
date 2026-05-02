@@ -735,7 +735,6 @@ static void inventoryLootApplyLayout(int columns)
     int leftBodyViewShift = extraColumns * (47 - INVENTORY_LOOT_LEFT_BODY_VIEW_X);
     int rightBodyViewShift = extraColumns * (563 - INVENTORY_LOOT_RIGHT_BODY_VIEW_X);
     int rightPaneShift = extraColumns * (612 - 476);
-    int critterButtonsShift = extraColumns * (504 - 436);
 
     inventoryLootLayout.columns = columns;
     inventoryLootLayout.visibleSlots = INVENTORY_ROWS * columns;
@@ -753,8 +752,10 @@ static void inventoryLootApplyLayout(int columns)
     inventoryLootLayout.rightScrollButtonX = 379 + rightPaneShift;
     inventoryLootLayout.takeAllButtonX = 432 + rightPaneShift;
     inventoryLootLayout.doneButtonX = 476 + rightPaneShift;
-    inventoryLootLayout.prevCritterButtonX = 436 + critterButtonsShift;
-    inventoryLootLayout.nextCritterButtonX = 456 + critterButtonsShift;
+    // Center the two 20px-wide critter-nav arrows below the right avatar
+    int critterBtnCenterX = inventoryLootLayout.rightBodyViewX + INVENTORY_BODY_VIEW_WIDTH / 2;
+    inventoryLootLayout.prevCritterButtonX = critterBtnCenterX - 20;
+    inventoryLootLayout.nextCritterButtonX = critterBtnCenterX;
 }
 
 static void inventoryNormalLayoutUpdate()
@@ -4264,6 +4265,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
             }
 
             if (critterCount > 1) {
+                const int arrowY = INVENTORY_LOOT_RIGHT_BODY_VIEW_Y + INVENTORY_BODY_VIEW_HEIGHT + 27;
                 int fid;
                 int btn;
 
@@ -4276,7 +4278,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
 
                 if (arrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_UP].isLocked() && arrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN].isLocked()) {
                     btn = buttonCreate(gInventoryWindow,
-                        inventoryLootLayout.prevCritterButtonX, 162, 20, 18,
+                        inventoryLootLayout.prevCritterButtonX, arrowY, 20, 18,
                         -1, -1, KEY_PAGE_UP, -1,
                         arrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_UP].getData(),
                         arrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN].getData());
@@ -4294,7 +4296,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
 
                 if (arrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP].isLocked() && arrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN].isLocked()) {
                     btn = buttonCreate(gInventoryWindow,
-                        inventoryLootLayout.nextCritterButtonX, 162, 20, 18,
+                        inventoryLootLayout.nextCritterButtonX, arrowY, 20, 18,
                         -1, -1, KEY_PAGE_DOWN, -1,
                         arrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP].getData(),
                         arrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN].getData());
@@ -4308,6 +4310,60 @@ int inventoryOpenLooting(Object* looter, Object* target)
                         critterIndex = index;
                     }
                 }
+            }
+        }
+    }
+
+    // Party member navigation: left/right arrows below the left (player) avatar
+    // switch whose inventory is shown on the left pane.
+    Object* const playerObj = _inven_dude;
+    int savedDudeFid = gInventoryWindowDudeFid;
+    std::vector<Object*> partyTargets = { _inven_dude };
+    if (!_gIsSteal) {
+        for (Object* pm : get_all_party_members_objects(false)) {
+            if (pm != gDude) {
+                partyTargets.push_back(pm);
+            }
+        }
+    }
+    int partyTargetIndex = 0;
+
+    FrmImage partyArrowFrmImages[INVENTORY_ARROW_FRM_COUNT];
+    if (partyTargets.size() > 1) {
+        const int arrowY = INVENTORY_LOOT_LEFT_BODY_VIEW_Y + INVENTORY_BODY_VIEW_HEIGHT + 27;
+        const int btnCenterX = inventoryLootLayout.leftBodyViewX + INVENTORY_BODY_VIEW_WIDTH / 2;
+        int fid;
+        int btn;
+
+        fid = buildFid(OBJ_TYPE_INTERFACE, arrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_UP], 0, 0, 0);
+        partyArrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_UP].lock(fid);
+        fid = buildFid(OBJ_TYPE_INTERFACE, arrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN], 0, 0, 0);
+        partyArrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN].lock(fid);
+
+        if (partyArrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_UP].isLocked() && partyArrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN].isLocked()) {
+            btn = buttonCreate(gInventoryWindow,
+                btnCenterX - 20, arrowY, 20, 18,
+                -1, -1, KEY_ARROW_LEFT, -1,
+                partyArrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_UP].getData(),
+                partyArrowFrmImages[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN].getData());
+            if (btn != -1) {
+                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+            }
+        }
+
+        fid = buildFid(OBJ_TYPE_INTERFACE, arrowFrmIds[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP], 0, 0, 0);
+        partyArrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP].lock(fid);
+        fid = buildFid(OBJ_TYPE_INTERFACE, arrowFrmIds[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN], 0, 0, 0);
+        partyArrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN].lock(fid);
+
+        if (partyArrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP].isLocked() && partyArrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN].isLocked()) {
+            btn = buttonCreate(gInventoryWindow,
+                btnCenterX, arrowY, 20, 18,
+                -1, -1, KEY_ARROW_RIGHT, -1,
+                partyArrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP].getData(),
+                partyArrowFrmImages[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN].getData());
+            if (btn != -1) {
+                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
         }
     }
@@ -4362,10 +4418,36 @@ int inventoryOpenLooting(Object* looter, Object* target)
                     }
                 }
             }
+        } else if (keyCode == KEY_ARROW_LEFT) {
+            if (partyTargets.size() > 1) {
+                partyTargetIndex = (partyTargetIndex > 0) ? partyTargetIndex - 1 : (int)partyTargets.size() - 1;
+                Object* leftObj = partyTargets[partyTargetIndex];
+                _inven_dude = leftObj;
+                _pud = &(leftObj->data.inventory);
+                _stack[0] = leftObj;
+                _stack_offset[0] = 0;
+                gInventoryWindowDudeFid = leftObj->fid;
+                gInventoryWindowDudeRotationTimestamp = 0;
+                _display_inventory(0, -1, INVENTORY_WINDOW_TYPE_LOOT);
+                _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
+            }
         } else if (keyCode == KEY_ARROW_UP) {
             if (_stack_offset[_curr_stack] > 0) {
                 inventoryLootScrollBy(_stack_offset[_curr_stack], -1, _pud->length);
                 _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
+            }
+        } else if (keyCode == KEY_ARROW_RIGHT) {
+            if (partyTargets.size() > 1) {
+                partyTargetIndex = (partyTargetIndex < (int)partyTargets.size() - 1) ? partyTargetIndex + 1 : 0;
+                Object* leftObj = partyTargets[partyTargetIndex];
+                _inven_dude = leftObj;
+                _pud = &(leftObj->data.inventory);
+                _stack[0] = leftObj;
+                _stack_offset[0] = 0;
+                gInventoryWindowDudeFid = leftObj->fid;
+                gInventoryWindowDudeRotationTimestamp = 0;
+                _display_inventory(0, -1, INVENTORY_WINDOW_TYPE_LOOT);
+                _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
             }
         } else if (keyCode == KEY_PAGE_UP) {
             if (critterCount != 0) {
@@ -4549,6 +4631,12 @@ int inventoryOpenLooting(Object* looter, Object* target)
             displayMonitorAddMessage(formattedText);
         }
     }
+
+    // Restore player as left-side entity so _exit_inventory cleanup targets gDude.
+    _inven_dude = playerObj;
+    _pud = &(playerObj->data.inventory);
+    _stack[0] = playerObj;
+    gInventoryWindowDudeFid = savedDudeFid;
 
     _exit_inventory(isoWasEnabled);
 
