@@ -330,11 +330,30 @@ if(WIN32)
     )
 endif()
 
+if(MINGW)
+     target_compile_definitions(${EXECUTABLE_NAME} PUBLIC
+        _USE_MATH_DEFINES
+    )
+endif()
+
 if(WIN32)
     target_link_libraries(${EXECUTABLE_NAME}
         winmm
+    )
+endif()
+
+if(MSVC)
+    target_link_libraries(${EXECUTABLE_NAME} 
         debug libcpmtd
         optimized libcpmt
+    )
+endif()
+
+if(MINGW)
+    target_link_options(${EXECUTABLE_NAME} PRIVATE
+        -static
+        -static-libgcc
+        -static-libstdc++
     )
 endif()
 
@@ -452,6 +471,7 @@ target_link_libraries(${EXECUTABLE_NAME} ${ZLIB_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})
 
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
+target_link_libraries(${EXECUTABLE_NAME} ${SDL2_MAIN_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 
 if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
@@ -478,6 +498,13 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
     if(WIN32)
         target_link_libraries(ce-dat-tool winmm)
     endif()
+    if(MINGW)
+        target_link_options(ce-dat-tool PRIVATE
+            -static
+            -static-libgcc
+            -static-libstdc++
+        )
+    endif()
     target_include_directories(ce-dat-tool PRIVATE "src")
     target_include_directories(ce-dat-tool PRIVATE ${ZLIB_INCLUDE_DIRS})
     target_include_directories(ce-dat-tool PRIVATE ${SDL2_INCLUDE_DIRS})
@@ -501,6 +528,13 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
     target_include_directories(ce-frm2png PRIVATE ${ZLIB_INCLUDE_DIRS})
     target_link_libraries(ce-frm2png ${SDL2_LIBRARIES})
     target_link_libraries(ce-frm2png ${ZLIB_LIBRARIES})
+    if(MINGW)
+        target_link_options(ce-frm2png PRIVATE
+            -static
+            -static-libgcc
+            -static-libstdc++
+        )
+    endif()
 endif()
 
 if(APPLE)
