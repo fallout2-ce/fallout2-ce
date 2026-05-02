@@ -1095,6 +1095,21 @@ static void op_get_message(Program* program)
     programStackPushString(program, text);
 }
 
+// save_array
+static void op_save_array(Program* program)
+{
+    auto arrayId = static_cast<ArrayId>(programStackPopInteger(program));
+    auto key = programStackPopValue(program);
+    SaveArray(key, arrayId, program);
+}
+
+// load_array
+static void op_load_array(Program* program)
+{
+    auto key = programStackPopValue(program);
+    programStackPushInteger(program, static_cast<int>(LoadArray(key, program)));
+}
+
 // array_key
 static void op_get_array_key(Program* program)
 {
@@ -1840,7 +1855,9 @@ void sfallOpcodesInit()
     // 0x8239 - int   scan_array(int array, int/float var)
     interpreterRegisterOpcode(0x8239, op_scan_array);
     // 0x8254 - void  save_array(any key, int array)
+    interpreterRegisterOpcode(0x8254, op_save_array);
     // 0x8255 - int   load_array(any key)
+    interpreterRegisterOpcode(0x8255, op_load_array);
     // 0x8256 - int   array_key(int array, int index)
     interpreterRegisterOpcode(0x8256, op_get_array_key);
     // 0x8257 - int   arrayexpr(any key, any value)

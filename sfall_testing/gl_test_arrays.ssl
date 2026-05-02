@@ -141,8 +141,6 @@ procedure array_test_suite begin
    end
    call assertEquals("foreach 2", s, "ar2=name:John;hp:25;0:5.50000;");
 
-
-     /*
    display_msg("Testing save/load...");
    arr := [2,1];
    arr2 := {1:2};
@@ -163,7 +161,6 @@ procedure array_test_suite begin
    call assertEquals("unsave array 1", load_array(0.1), 0);
    call assertEquals("unsave array 2", len_array(arr), 2);
    call assertEquals("saved arrays 3", len_array(list_saved_arrays), len_array(arr2) - 1);
-   */
 
    display_msg("Testing nested expressions...");
    arr := [["one", "two"]];

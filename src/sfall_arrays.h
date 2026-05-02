@@ -3,6 +3,9 @@
 
 #include "interpreter.h"
 
+struct XFile;
+typedef XFile File;
+
 namespace fallout {
 
 #define SFALL_ARRAYFLAG_ASSOC (1) // is map
@@ -32,6 +35,11 @@ ProgramValue ScanArray(ArrayId arrayId, const ProgramValue& val, Program* progra
 ArrayId ListAsArray(int type);
 
 ArrayId StringSplit(const char* str, const char* split);
+
+void SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program);
+ArrayId LoadArray(const ProgramValue& key, Program* program);
+bool sfallArraysSave(File* stream);
+bool sfallArraysLoad(File* stream);
 
 } // namespace fallout
 
