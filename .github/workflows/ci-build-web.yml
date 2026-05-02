@@ -8,11 +8,16 @@ on:
       - opened
       - synchronize
 
+permissions:
+  contents: read
+
 jobs:
   build_webassembly_version:
     name: Build webassembly version
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
+      deployments: write
     steps:
       - name: start deployment
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
@@ -138,4 +143,3 @@ jobs:
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           ref: ${{ github.event.pull_request.head.sha }}
           env_url: https://${{ github.repository_owner }}.github.io/fallout2-ce/PR-${{ github.event.pull_request.number }}/
-

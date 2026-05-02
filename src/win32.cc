@@ -4,8 +4,16 @@
 
 #include <SDL.h>
 
+#if __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 #ifndef _WIN32
 #include <unistd.h>
+#endif
+
+#if __APPLE__ && TARGET_OS_OSX
+#include <CoreFoundation/CoreFoundation.h>
 #endif
 
 #include "main.h"
@@ -23,8 +31,19 @@ namespace fallout {
 // 0x51E444
 bool gProgramIsActive = false;
 
+#if __APPLE__ && TARGET_OS_OSX
+static char gMacOsBundleResourcesPath[COMPAT_MAX_PATH];
+#endif
+
 #ifdef _WIN32
 HANDLE GNW95_mutex = nullptr;
+#endif
+
+#if __APPLE__ && TARGET_OS_OSX
+const char* getMacOsBundleResourcesPath()
+{
+    return gMacOsBundleResourcesPath[0] != '\0' ? gMacOsBundleResourcesPath : nullptr;
+}
 #endif
 
 int main(int argc, char* argv[])
@@ -50,6 +69,20 @@ int main(int argc, char* argv[])
 #endif
 
 #if __APPLE__ && TARGET_OS_OSX
+    CFBundleRef mainBundle = CFBundleGetMainBundle();
+    if (mainBundle != nullptr) {
+        CFURLRef resourcesUrl = CFBundleCopyResourcesDirectoryURL(mainBundle);
+        if (resourcesUrl != nullptr) {
+            if (CFURLGetFileSystemRepresentation(resourcesUrl,
+                    true,
+                    reinterpret_cast<UInt8*>(gMacOsBundleResourcesPath),
+                    sizeof(gMacOsBundleResourcesPath))) {
+                gMacOsBundleResourcesPath[sizeof(gMacOsBundleResourcesPath) - 1] = '\0';
+            }
+            CFRelease(resourcesUrl);
+        }
+    }
+
     char* basePath = SDL_GetBasePath();
     chdir(basePath);
     SDL_free(basePath);

@@ -31,7 +31,9 @@ struct Buffer2DBase {
     explicit operator bool() const { return data != nullptr; }
 };
 
+// A helper struct for dealing with 2D pixel buffers. Does not own the buffer.
 using Buffer2D = Buffer2DBase<unsigned char>;
+// A const version of Buffer2D for read-only operations.
 using ConstBuffer2D = Buffer2DBase<const unsigned char>;
 
 // Copies src into dst at (dstX, dstY). Clips to dst bounds; no-op if fully outside.
