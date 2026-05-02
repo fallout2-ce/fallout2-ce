@@ -842,7 +842,7 @@ int gameSoundLoadSound(Sound** soundPtr, const char* path, const SoundFileIO* fi
         }
     }
 
-    char pathCopy[COMPAT_MAX_PATH];
+    char pathCopy[COMPAT_MAX_PATH + 1];
     snprintf(pathCopy, sizeof(pathCopy), "%s", path);
     if (soundLoad(sound, pathCopy) != SOUND_NO_ERROR) {
         if (gGameSoundDebugEnabled) {
