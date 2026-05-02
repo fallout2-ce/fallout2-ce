@@ -807,7 +807,7 @@ int _create_pull_down(char** stringList, int stringListLength, int x, int y, int
 }
 
 // 0x4DC30C
-int _win_debug(char* string)
+int _win_debug(const char* string)
 {
     if (!gWindowSystemInitialized) {
         return -1;
@@ -895,7 +895,7 @@ int _win_debug(char* string)
     char temp[2];
     temp[1] = '\0';
 
-    char* pch = string;
+    const char* pch = string;
     while (*pch != '\0') {
         int characterWidth = fontGetCharacterWidth(*pch);
         if (*pch == '\n' || _currx + characterWidth > winWidth - 9) {
