@@ -299,7 +299,7 @@ public:
 
     ProgramValue GetArrayKey(int index, Program* program)
     {
-        if (index < -1 || index > size()) {
+        if (index < -1 || index >= size()) {
             return ProgramValue(0);
         }
 
@@ -398,7 +398,7 @@ public:
 
     ProgramValue GetArrayKey(int index, Program* program)
     {
-        if (index < -1 || index > size()) {
+        if (index < -1 || index >= size()) {
             return ProgramValue(0);
         }
 
