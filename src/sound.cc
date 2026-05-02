@@ -16,6 +16,7 @@
 
 #include <SDL.h>
 
+#include "audio.h"
 #include "audio_engine.h"
 #include "debug.h"
 #include "platform_compat.h"
@@ -616,7 +617,18 @@ int soundLoad(Sound* sound, char* filePath)
         return gSoundLastError;
     }
 
-    sound->io.fd = sound->io.open(gSoundFileNameMangler(filePath), &(sound->rate));
+    char* mangledFilePath = gSoundFileNameMangler(filePath);
+
+    AudioFileInfo audioFileInfo;
+    if (audioProbeFile(mangledFilePath, &audioFileInfo)) {
+        sound->channels = audioFileInfo.channels;
+        sound->rate = audioFileInfo.sampleRate;
+        sound->bitsPerSample = audioFileInfo.bitsPerSample;
+        sound->type &= ~SOUND_TYPE_STREAMING;
+        sound->type |= SOUND_TYPE_MEMORY;
+    }
+
+    sound->io.fd = sound->io.open(mangledFilePath, &(sound->rate));
     if (sound->io.fd == -1) {
         gSoundLastError = SOUND_FILE_NOT_FOUND;
         return gSoundLastError;
@@ -967,7 +979,7 @@ int soundGetDuration(Sound* sound)
         return gSoundLastError;
     }
 
-    int bytesPerSec = sound->bitsPerSample / 8 * sound->rate;
+    int bytesPerSec = sound->bitsPerSample / 8 * sound->channels * sound->rate;
     int v3 = sound->fileSize;
     int v4 = v3 % bytesPerSec;
     int result = v3 / bytesPerSec;
