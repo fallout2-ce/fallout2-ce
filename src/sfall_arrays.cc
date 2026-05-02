@@ -21,7 +21,7 @@ namespace fallout {
 
 static constexpr ArrayId kInitialArrayId = 1;
 
-#define ARRAY_MAX_STRING (255) // maximum length of string to be stored as array key or value
+#define ARRAY_MAX_STRING (1024) // maximum length of string to be stored as array key or value
 #define ARRAY_MAX_SIZE (100000) // maximum number of array elements,
 
 // special actions for arrays using array_resize operator
@@ -192,7 +192,7 @@ public:
             snprintf(debugStrBuf, sizeof(debugStrBuf), "%.5f", value.floatValue);
             break;
         case ArrayElementType::POINTER:
-            snprintf(debugStrBuf, sizeof(debugStrBuf), "%X", reinterpret_cast<unsigned int>(value.pointerValue));
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%p", value.pointerValue);
             break;
         case ArrayElementType::STRING:
             snprintf(debugStrBuf, sizeof(debugStrBuf), "%s", value.stringValue);
