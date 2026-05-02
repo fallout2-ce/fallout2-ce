@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Fallout CE
+Comment=Fallout 1/2 game reimplementation for the modren systems.
+Exec=fallout2-ce
+Icon=fallout2-ce
+Terminal=false
+Categories=Game;
