@@ -929,11 +929,31 @@ void SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program)
     saved.emplace(std::move(keyEl), arrayId);
 }
 
+// Special key for load_array: returns a temp array of all saved array keys.
+static constexpr char kAllArraysSpecialKey[] = "...all_arrays...";
+
 ArrayId LoadArray(const ProgramValue& key, Program* program)
 {
     if (key.isInt() && key.asInt() == 0) return 0;
 
     ArrayElement keyEl { key, program };
+
+    if (keyEl.getType() == ArrayElementType::STRING
+        && strcmp(keyEl.getString(), kAllArraysSpecialKey) == 0) {
+        int count = static_cast<int>(_state->savedArrays.size());
+        ArrayId tmpId = CreateTempArray(count, 0);
+        auto* tmpArr = get_array_by_id(tmpId);
+        if (tmpArr != nullptr) {
+            int index = 0;
+            // std::map iterates in sorted order, matching sfall's explicit sort
+            for (const auto& [savedKey, arrayId] : _state->savedArrays) {
+                tmpArr->SetArray(ProgramValue { index }, ArrayElement(savedKey), false);
+                index++;
+            }
+        }
+        return tmpId;
+    }
+
     auto it = _state->savedArrays.find(keyEl);
     return (it != _state->savedArrays.end()) ? it->second : 0;
 }
