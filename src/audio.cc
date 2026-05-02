@@ -19,6 +19,7 @@ namespace fallout {
 typedef enum AudioFlags {
     AUDIO_IN_USE = 0x01,
     AUDIO_COMPRESSED = 0x02,
+    // CE: Decoded formats like WAV/OGG are fully loaded into memory up front.
     AUDIO_MEMORY = 0x04,
 } AudioFileFlags;
 
@@ -36,7 +37,7 @@ typedef struct Audio {
 
 typedef enum AudioOpenMode {
     AUDIO_OPEN_MODE_RAW = 0,
-    AUDIO_OPEN_MODE_COMPRESSED = 1,
+    AUDIO_OPEN_MODE_COMPRESSED = 1, // ACM
     AUDIO_OPEN_MODE_WAV = 2,
     AUDIO_OPEN_MODE_OGG = 3,
 } AudioOpenMode;
@@ -181,7 +182,7 @@ done:
 
 // AudioOpen
 // 0x41A2EC
-int audioOpen(const char* fname, int* sampleRate)
+int audioOpen(const char* fname, AudioFileInfo* info, bool* isMemoryBackedPtr)
 {
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s", fname);
@@ -225,13 +226,17 @@ int audioOpen(const char* fname, int* sampleRate)
     audioFile->stream = stream;
 
     if (openMode == AUDIO_OPEN_MODE_WAV || openMode == AUDIO_OPEN_MODE_OGG) {
-        AudioFileInfo info;
+        AudioFileInfo decodedInfo = {};
         audioFile->flags |= AUDIO_MEMORY;
         bool decoded = false;
         if (openMode == AUDIO_OPEN_MODE_WAV) {
-            decoded = audioDecodeWave(stream, &info, &(audioFile->data), &(audioFile->fileSize));
+            decoded = audioDecodeWave(stream, &decodedInfo, &(audioFile->data), &(audioFile->fileSize));
         } else {
-            decoded = oggDecoderDecode(stream, &info, &(audioFile->data), &(audioFile->fileSize));
+            AudioFileInfo audioFileInfo = {};
+            decoded = oggDecoderDecode(stream, &audioFileInfo, &(audioFile->data), &(audioFile->fileSize));
+            decodedInfo.sampleRate = audioFileInfo.sampleRate;
+            decodedInfo.channels = audioFileInfo.channels;
+            decodedInfo.bitsPerSample = audioFileInfo.bitsPerSample;
         }
 
         if (!decoded) {
@@ -243,20 +248,38 @@ int audioOpen(const char* fname, int* sampleRate)
 
         fileClose(stream);
         audioFile->stream = nullptr;
-        audioFile->sampleRate = info.sampleRate;
-        audioFile->channels = info.channels;
-        audioFile->bitsPerSample = info.bitsPerSample;
-        *sampleRate = audioFile->sampleRate;
+        audioFile->sampleRate = decodedInfo.sampleRate;
+        audioFile->channels = decodedInfo.channels;
+        audioFile->bitsPerSample = decodedInfo.bitsPerSample;
+        if (info != nullptr) {
+            *info = decodedInfo;
+        }
+        if (isMemoryBackedPtr != nullptr) {
+            *isMemoryBackedPtr = true;
+        }
     } else if (openMode == AUDIO_OPEN_MODE_COMPRESSED) {
         audioFile->flags |= AUDIO_COMPRESSED;
         audioFile->soundDecoder = soundDecoderInit(audioSoundDecoderReadHandler, audioFile->stream, &(audioFile->channels), &(audioFile->sampleRate), &(audioFile->fileSize));
         audioFile->fileSize *= 2;
         audioFile->bitsPerSample = 16;
 
-        *sampleRate = audioFile->sampleRate;
+        if (info != nullptr) {
+            info->sampleRate = audioFile->sampleRate;
+            info->channels = audioFile->channels;
+            info->bitsPerSample = audioFile->bitsPerSample;
+        }
+        if (isMemoryBackedPtr != nullptr) {
+            *isMemoryBackedPtr = false;
+        }
     } else {
         audioFile->fileSize = fileGetSize(stream);
         audioFile->bitsPerSample = 8;
+        if (info != nullptr) {
+            info->bitsPerSample = audioFile->bitsPerSample;
+        }
+        if (isMemoryBackedPtr != nullptr) {
+            *isMemoryBackedPtr = false;
+        }
     }
 
     audioFile->position = 0;
@@ -407,34 +430,6 @@ int audioWrite(int handle, const void* buf, unsigned int size)
 {
     debugPrint("AudioWrite shouldn't be ever called\n");
     return 0;
-}
-
-bool audioProbeFile(const char* fname, AudioFileInfo* info)
-{
-    if (info == nullptr) {
-        return false;
-    }
-
-    memset(info, 0, sizeof(*info));
-
-    if (!audioIsWavePath(fname) && !oggDecoderIsFilePath(fname)) {
-        return false;
-    }
-
-    File* stream = fileOpen(fname, "rb");
-    if (stream == nullptr) {
-        return false;
-    }
-
-    bool success;
-    if (audioIsWavePath(fname)) {
-        success = audioDecodeWave(stream, info, nullptr, nullptr);
-    } else {
-        success = oggDecoderDecode(stream, info, nullptr, nullptr);
-    }
-    fileClose(stream);
-
-    return success;
 }
 
 // 0x41A7D4
