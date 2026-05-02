@@ -522,6 +522,19 @@ if(APPLE)
     include(CPack)
 endif()
 
+if(LINUX)
+    install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION bin)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/os/linux/fallout2-ce.png DESTINATION .)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/os/linux/fallout2-ce.desktop DESTINATION share/applications/)
+
+    set(CPACK_GENERATOR "AppImage")
+    set(CPACK_PACKAGE_NAME ${EXECUTABLE_NAME})
+    set(CPACK_PACKAGE_VERSION "1.3.0")
+    set(CPACK_PACKAGE_ICON fallout2-ce)
+    
+    include(CPack)
+endif()
+
 # Add option to enable AddressSanitizer
 option(ENABLE_ASAN "Enable AddressSanitizer for debug builds" OFF)
 
