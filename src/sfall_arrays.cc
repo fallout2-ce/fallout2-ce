@@ -965,7 +965,7 @@ bool sfallArraysSave(File* stream)
     auto& saved = _state->savedArrays;
 
     // Remove stale entries for arrays that no longer exist
-    for (auto it = saved.begin(); it != saved.end(); ) {
+    for (auto it = saved.begin(); it != saved.end();) {
         it = (get_array_by_id(it->second) == nullptr) ? saved.erase(it) : std::next(it);
     }
 
