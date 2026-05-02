@@ -3,8 +3,8 @@
 #include "content_config.h"
 #include "display_monitor.h"
 #include "interface.h"
-#include "sfall_script_hooks.h"
 #include "script_sound.h"
+#include "sfall_script_hooks.h"
 #include "worldmap.h"
 
 namespace fallout {
