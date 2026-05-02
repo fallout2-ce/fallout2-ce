@@ -8,7 +8,6 @@
 #include <map>
 #include <memory>
 #include <random>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -253,6 +252,24 @@ private:
     } value;
 };
 
+struct ArrayElementHash {
+    size_t operator()(const ArrayElement& el) const
+    {
+        size_t h = std::hash<int>()(static_cast<int>(el.getType()));
+        switch (el.getType()) {
+        case ArrayElementType::INT:
+        case ArrayElementType::FLOAT:
+            return h ^ std::hash<int>()(el.getRawValue());
+        case ArrayElementType::POINTER:
+            return h ^ std::hash<void*>()(reinterpret_cast<void*>(el.getRawValue()));
+        case ArrayElementType::STRING:
+            return h ^ std::hash<std::string_view>()(std::string_view(el.getString()));
+        default:
+            return h;
+        }
+    }
+};
+
 class SFallArray {
 public:
     SFallArray(unsigned int flags)
@@ -412,46 +429,38 @@ public:
     ProgramValue GetArray(const ProgramValue& key, Program* program)
     {
         auto keyEl = ArrayElement { key, program };
-        auto it = std::find_if(pairs.begin(), pairs.end(), [&keyEl](const KeyValuePair& pair) -> bool {
-            return pair.key == keyEl;
-        });
-
-        if (it == pairs.end()) {
+        auto it = keyIndex.find(keyEl);
+        if (it == keyIndex.end()) {
             return ProgramValue(0);
         }
-
-        auto index = it - pairs.begin();
-        return pairs[index].value.toValue(program);
+        return pairs[it->second].value.toValue(program);
     }
 
     void SetArray(const ProgramValue& key, const ProgramValue& val, bool allowUnset, Program* program)
     {
         auto keyEl = ArrayElement { key, program };
-        auto it = std::find_if(pairs.begin(), pairs.end(), [&keyEl](const KeyValuePair& pair) -> bool {
-            return pair.key == keyEl;
-        });
+        auto idxIt = keyIndex.find(keyEl);
 
-        if (it != pairs.end() && isReadOnly()) {
-            // don't update value of key
+        if (idxIt != keyIndex.end() && isReadOnly()) {
             return;
         }
 
         if (allowUnset && !isReadOnly() && val.isInt() && val.asInt() == 0) {
             // after assigning zero to a key, no need to store it, because "get_array" returns 0 for non-existent keys: try unset
-            if (it != pairs.end()) {
-                pairs.erase(it);
+            if (idxIt != keyIndex.end()) {
+                pairs.erase(pairs.begin() + idxIt->second);
+                rebuildKeyIndex();
             }
         } else {
-            if (it == pairs.end()) {
-                // size check
+            if (idxIt == keyIndex.end()) {
                 if (size() >= ARRAY_MAX_SIZE) {
                     return;
                 }
-
+                int newIndex = static_cast<int>(pairs.size());
                 pairs.push_back(KeyValuePair { std::move(keyEl), ArrayElement { val, program } });
+                keyIndex.emplace(pairs.back().key, newIndex);
             } else {
-                auto index = it - pairs.begin();
-                pairs[index].value = ArrayElement { val, program };
+                pairs[idxIt->second].value = ArrayElement { val, program };
             }
         }
     }
@@ -469,6 +478,9 @@ public:
 
         // only allow to reduce number of elements (adding range of elements is meaningless for maps)
         if (newLen >= 0 && newLen < size()) {
+            for (int i = newLen; i < static_cast<int>(pairs.size()); ++i) {
+                keyIndex.erase(pairs[i].key);
+            }
             pairs.resize(newLen);
         } else if (newLen < 0) {
             if (newLen < (ARRAY_ACTION_SHUFFLE - 2)) return;
@@ -503,9 +515,11 @@ public:
     void loadFlatElements(std::vector<ArrayElement>&& elements) override
     {
         pairs.clear();
+        keyIndex.clear();
         for (size_t i = 0; i + 1 < elements.size(); i += 2) {
-            KeyValuePair kv { std::move(elements[i]), std::move(elements[i + 1]) };
-            pairs.push_back(std::move(kv));
+            int newIndex = static_cast<int>(pairs.size());
+            pairs.push_back(KeyValuePair { std::move(elements[i]), std::move(elements[i + 1]) });
+            keyIndex.emplace(pairs.back().key, newIndex);
         }
     }
 
@@ -532,9 +546,20 @@ private:
                 return a.key < b.key;
             });
         }
+        rebuildKeyIndex();
+    }
+
+    void rebuildKeyIndex()
+    {
+        keyIndex.clear();
+        keyIndex.reserve(pairs.size());
+        for (int i = 0; i < static_cast<int>(pairs.size()); ++i) {
+            keyIndex.emplace(pairs[i].key, i);
+        }
     }
 
     std::vector<KeyValuePair> pairs;
+    std::unordered_map<ArrayElement, int, ArrayElementHash> keyIndex;
 };
 
 struct SfallArraysState {
