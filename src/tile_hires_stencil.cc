@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "draw.h"
 #include "geometry.h"
+#include "map_edge.h"
 #include "settings.h"
 #include "stdio.h"
 #include "tile.h"
@@ -211,21 +212,43 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         return;
     }
 
-    if (!gTileBorderInitialized) {
+    // EDG-based stencil does not need the auto-computed border to be ready.
+    if (!mapEdgeIsLoaded() && !gTileBorderInitialized) {
         return;
-    };
+    }
 
     if (visited_tiles[gElevation][gCenterTile]) {
-        // debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change tile was visited gElevation=%i gCenterTile=%i so doing nothing\n",
-        //     gElevation, gCenterTile);
-
         return;
-    };
-
-    // debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change non-visited tile gElevation=%i gCenterTile=%i\n",
-    //     gElevation, gCenterTile);
+    }
 
     clean_cache_for_elevation(gElevation);
+
+    // Branch A: v2 EDG — use squareRect directly to fill visible_squares.
+    // This avoids the flood-fill and matches sfall's squareRect clipping behavior.
+    if (mapEdgeIsLoaded() && mapEdgeHasSquareRect(gElevation)) {
+        visited_tiles[gElevation][gCenterTile] = true;
+        int sqLeft, sqTop, sqRight, sqBottom;
+        mapEdgeGetSquareRect(gElevation, &sqLeft, &sqTop, &sqRight, &sqBottom);
+        auto diff = get_screen_diff();
+        for (int cx = 0; cx < square_grid_width; cx++) {
+            for (int cy = 0; cy < square_grid_height; cy++) {
+                int screenX = cx * square_width + diff.x;
+                int screenY = cy * square_height + diff.y;
+                int squareTile = squareTileFromScreenXY(screenX, screenY, gElevation);
+                if (squareTile >= 0) {
+                    int x = squareTile % SQUARE_GRID_WIDTH;
+                    int y = squareTile / SQUARE_GRID_WIDTH;
+                    if (x >= sqRight && x <= sqLeft && y >= sqTop && y <= sqBottom) {
+                        visible_squares[gElevation][cx][cy] = true;
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    // Branch B: flood-fill. Uses EDG tileRect bounds (v1 EDG) or scroll-blocker
+    // objects + auto-computed border (no EDG) as the traversal gate.
 
     struct TileToVisit {
         int tile;
@@ -253,15 +276,19 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
             if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
                 continue;
             }
-            if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
-                continue;
-            }
-
-            // TODO: Maybe create new function in tile.cc and use it here
-            int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
-            int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
-            if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
-                continue;
+            if (mapEdgeIsLoaded()) {
+                if (!mapEdgeTileInBounds(tileInfo.tile, gElevation)) {
+                    continue;
+                }
+            } else {
+                if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
+                    continue;
+                }
+                int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
+                int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
+                if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
+                    continue;
+                }
             }
         }
 

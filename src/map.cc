@@ -42,6 +42,7 @@
 #include "text_object.h"
 #include "tile.h"
 #include "tile_hires_stencil.h"
+#include "map_edge.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
 #include "worldmap.h"
@@ -1059,6 +1060,8 @@ err:
     // NOTE: Uninline.
     mapSetEnteringLocation(-1, -1, -1);
 
+    mapEdgeFree();
+    mapEdgeInit(gMapHeader.name);
     tile_hires_stencil_init();
 
     gameMovieFadeOut();
