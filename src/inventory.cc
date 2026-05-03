@@ -324,6 +324,7 @@ static void inventoryRenderSummary();
 static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSlot, Object** outOwner);
 static void inventoryRenderItemDescription(const char* string);
 static void inventoryExamineItem(Object* critter, Object* item);
+static void inventorySetLootLeftPaneCritter(Object* critter, Object* target);
 static void inventoryWindowOpenContextMenu(int eventCode, int inventoryWindowType);
 static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting);
 static std::pair<int, int> barterComputeTablesValue(Object* dude, Object* npc, bool offerButton = false);
@@ -2192,6 +2193,7 @@ static void _display_body(int fid, int inventoryWindowType)
             if (index == 0 && inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT && _stack[0] != gDude) {
                 const char* name = critterGetName(_stack[0]);
                 if (name != nullptr) {
+                    // TODO: clean up text rendering
                     int oldFont = fontGetCurrent();
                     fontSetCurrent(101);
                     int nameWidth = std::min(fontGetStringWidth(name), INVENTORY_BODY_VIEW_WIDTH);
@@ -2984,6 +2986,36 @@ static void inventoryRestoreEquippedFromGlobals(Object* critter)
     gInventoryLeftHandItem = nullptr;
     gInventoryRightHandItem = nullptr;
     gInventoryArmor = nullptr;
+}
+
+static void inventorySetLootLeftPaneCritter(Object* critter, Object* target)
+{
+    assert(critter != nullptr);
+    assert(target != nullptr);
+
+    inventoryRestoreEquippedFromGlobals(_inven_dude);
+    inventoryStripEquippedToGlobals(critter);
+    _inven_dude = critter;
+    _curr_stack = 0;
+    _pud = &(critter->data.inventory);
+    _stack[0] = critter;
+    _stack_offset[0] = 0;
+
+    int animationCode = 0;
+    Object* itemInHand = interfaceGetCurrentHand() == HAND_RIGHT ? gInventoryRightHandItem : gInventoryLeftHandItem;
+    if (itemInHand != nullptr) {
+        Proto* proto = nullptr;
+        if (protoGetProto(itemInHand->pid, &proto) != -1
+            && proto != nullptr
+            && proto->item.type == ITEM_TYPE_WEAPON) {
+            animationCode = proto->item.data.weapon.animationCode;
+        }
+    }
+
+    gInventoryWindowDudeFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, 0, animationCode, 0);
+    gInventoryWindowDudeRotationTimestamp = 0;
+    _display_inventory(0, -1, INVENTORY_WINDOW_TYPE_LOOT);
+    _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
 }
 
 // 0x471CA0
@@ -4368,7 +4400,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     Object* const playerObj = _inven_dude;
     int savedDudeFid = gInventoryWindowDudeFid;
     std::vector<Object*> partyTargets = { _inven_dude };
-    if (settings.qol.companion_loot_barter && (!_gIsSteal || objectIsPartyMember(target))) {
+    if (settings.qol.party_loot_and_barter && (!_gIsSteal || objectIsPartyMember(target))) {
         for (Object* pm : get_all_party_members_objects(false)) {
             if (pm != gDude && pm != target) {
                 partyTargets.push_back(pm);
@@ -4376,21 +4408,6 @@ int inventoryOpenLooting(Object* looter, Object* target)
         }
     }
     int partyTargetIndex = 0;
-
-    // Sets given critter as the one shown in the left pane.
-    auto setLeftPane = [&](Object* critter) {
-        inventoryRestoreEquippedFromGlobals(_inven_dude);
-        inventoryStripEquippedToGlobals(critter);
-        _inven_dude = critter;
-        _curr_stack = 0;
-        _pud = &(critter->data.inventory);
-        _stack[0] = critter;
-        _stack_offset[0] = 0;
-        gInventoryWindowDudeFid = critter->fid;
-        gInventoryWindowDudeRotationTimestamp = 0;
-        _display_inventory(0, -1, INVENTORY_WINDOW_TYPE_LOOT);
-        _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
-    };
 
     if (partyTargets.size() > 1) {
         const int btnCenterX = inventoryLootLayout.leftBodyViewX + INVENTORY_BODY_VIEW_WIDTH / 2;
@@ -4469,12 +4486,12 @@ int inventoryOpenLooting(Object* looter, Object* target)
         } else if (keyCode == KEY_ARROW_LEFT) {
             if (partyTargets.size() > 1) {
                 partyTargetIndex = (partyTargetIndex > 0) ? partyTargetIndex - 1 : (int)partyTargets.size() - 1;
-                setLeftPane(partyTargets[partyTargetIndex]);
+                inventorySetLootLeftPaneCritter(partyTargets[partyTargetIndex], target);
             }
         } else if (keyCode == KEY_ARROW_RIGHT) {
             if (partyTargets.size() > 1) {
                 partyTargetIndex = (partyTargetIndex < (int)partyTargets.size() - 1) ? partyTargetIndex + 1 : 0;
-                setLeftPane(partyTargets[partyTargetIndex]);
+                inventorySetLootLeftPaneCritter(partyTargets[partyTargetIndex], target);
             }
 
         } else if (keyCode == KEY_ARROW_UP) {
