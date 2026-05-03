@@ -550,7 +550,6 @@ if(LINUX)
     install(TARGETS ${EXECUTABLE_NAME} RUNTIME DESTINATION bin)
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/os/linux/fallout2-ce.png DESTINATION .)
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/os/linux/fallout2-ce.desktop DESTINATION share/applications/)
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/os/linux/fallout2-ce.appdata.xml DESTINATION usr/share/metainfo/)
 
     set(CPACK_GENERATOR "AppImage")
     set(CPACK_PACKAGE_NAME ${EXECUTABLE_NAME})
