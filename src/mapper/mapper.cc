@@ -496,6 +496,39 @@ bool draw_mode;
 // 0x6F73FB
 bool view_mode;
 
+// Button IDs from toolbar — must match buttonCreate calls in mapper_edit_init.
+// Left-click: 161 + max_art_buttons + index
+// Right-click: 160 + index
+constexpr int kArtButtonBase = 161;
+
+constexpr int kBtnScrollLeft = 45;
+constexpr int kBtnScrollRight = 61;
+constexpr int kBtnScrollPageLeft = 95;
+constexpr int kBtnScrollPageRight = 43;
+constexpr int kBtnElevUp = 329;
+constexpr int kBtnElevDown = 337;
+constexpr int kBtnObjType = 350;
+constexpr int kBtnCritType = 351;
+constexpr int kBtnScenType = 352;
+constexpr int kBtnWallType = 353;
+constexpr int kBtnTileType = 354;
+constexpr int kBtnMiscType = 355;
+constexpr int kBtnCopy = 99;
+constexpr int kBtnPaste = 67;
+constexpr int kBtnEdit = 101;
+constexpr int kBtnDelete = 339;
+constexpr int kBtnHeightInc = 372;
+constexpr int kBtnHeightDec = 371;
+constexpr int kBtnRoof = 'r';
+constexpr int kBtnHex = 'h';
+constexpr int kMenuHeaderFile = 289;
+constexpr int kMenuHeaderTools = 303;
+constexpr int kMenuHeaderScripts = 276;
+constexpr int kMenuHeaderLibrarian = 292;
+constexpr int kMenuBarActivation = KEY_F8;
+constexpr int kMenuBarActivationAlt = 394;
+constexpr int kArtMaxDirect = 0x4B0;
+
 // gnw_main
 // 0x485DD0
 int mapper_main(int argc, char** argv)
@@ -603,9 +636,9 @@ int mapper_edit_init(int argc, char** argv)
         return -1;
     }
 
-    max_art_buttons = (lbmBufWidth - 135) / 50; // todo: stretch panel
-
     const int screenWidth = rectGetWidth(&_scr_size);
+
+    max_art_buttons = (screenWidth - 135) / 50;
 
     menu_bar = windowCreate(0,
         0,
@@ -695,7 +728,7 @@ int mapper_edit_init(int argc, char** argv)
         23,
         -1,
         -1,
-        45,
+        kBtnScrollLeft,
         -1,
         l_up,
         l_down,
@@ -717,12 +750,12 @@ int mapper_edit_init(int argc, char** argv)
         18);
     buttonCreate(tool_win,
         _scr_size.right - 18,
-        1,
+        26,
         18,
         23,
         -1,
         -1,
-        61,
+        kBtnScrollRight,
         -1,
         r_up,
         r_down,
@@ -749,7 +782,7 @@ int mapper_edit_init(int argc, char** argv)
         23,
         -1,
         -1,
-        95,
+        kBtnScrollPageLeft,
         -1,
         shift_l_up,
         shift_l_down,
@@ -776,7 +809,7 @@ int mapper_edit_init(int argc, char** argv)
         23,
         -1,
         -1,
-        43,
+        kBtnScrollPageRight,
         -1,
         shift_r_up,
         shift_r_down,
@@ -821,7 +854,7 @@ int mapper_edit_init(int argc, char** argv)
         23,
         -1,
         -1,
-        329,
+        kBtnElevUp,
         -1,
         einc_up,
         einc_down,
@@ -848,7 +881,7 @@ int mapper_edit_init(int argc, char** argv)
         23,
         -1,
         -1,
-        337,
+        kBtnElevDown,
         -1,
         edec_up,
         edec_down,
@@ -861,7 +894,7 @@ int mapper_edit_init(int argc, char** argv)
             19,
             26,
             lbmBufWidth,
-            e_num[1],
+            e_num[index],
             19);
     }
 
@@ -882,13 +915,13 @@ int mapper_edit_init(int argc, char** argv)
         58);
 
     // ROOF
-    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 64,
+    blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 64,
         58,
         13,
         lbmBufWidth,
         roof_up,
         58);
-    blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 64,
+    blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 64,
         58,
         13,
         lbmBufWidth,
@@ -901,8 +934,8 @@ int mapper_edit_init(int argc, char** argv)
         13,
         -1,
         -1,
-        'r',
-        'r',
+        kBtnRoof,
+        kBtnRoof,
         roof_up,
         roof_down,
         nullptr,
@@ -932,15 +965,15 @@ int mapper_edit_init(int argc, char** argv)
         13,
         -1,
         -1,
-        350,
-        350,
+        kBtnHex,
+        kBtnHex,
         hex_up,
         hex_down,
         nullptr,
         BUTTON_FLAG_CHECKABLE);
 
     // OBJ
-    blitBufferToBuffer(lbm_buf + 434 * lbmBufWidth + 125,
+    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 125,
         66,
         13,
         lbmBufWidth,
@@ -959,8 +992,8 @@ int mapper_edit_init(int argc, char** argv)
         13,
         -1,
         -1,
-        350,
-        350,
+        kBtnObjType,
+        kBtnObjType,
         obj_up,
         obj_down,
         nullptr,
@@ -986,26 +1019,26 @@ int mapper_edit_init(int argc, char** argv)
         13,
         -1,
         -1,
-        351,
-        351,
+        kBtnCritType,
+        kBtnCritType,
         crit_up,
         crit_down,
         nullptr,
         BUTTON_FLAG_CHECKABLE);
 
     // SCEN
-    blitBufferToBuffer(lbm_buf + 434 * lbmBufWidth + 194,
-        53,
+    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 125,
+        66,
         13,
         lbmBufWidth,
         scen_up,
-        53);
-    blitBufferToBuffer(lbm_buf + 328 * lbmBufWidth + 194,
-        53,
+        66);
+    blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 125,
+        66,
         13,
         lbmBufWidth,
         scen_down,
-        53);
+        66);
     scen_bid = buttonCreate(tool_win,
         125,
         84,
@@ -1013,15 +1046,15 @@ int mapper_edit_init(int argc, char** argv)
         13,
         -1,
         -1,
-        352,
-        352,
+        kBtnScenType,
+        kBtnScenType,
         scen_up,
         scen_down,
         nullptr,
         BUTTON_FLAG_CHECKABLE);
 
     // WALL
-    blitBufferToBuffer(lbm_buf + 434 * lbmBufWidth + 194,
+    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 194,
         53,
         13,
         lbmBufWidth,
@@ -1040,10 +1073,37 @@ int mapper_edit_init(int argc, char** argv)
         13,
         -1,
         -1,
-        355,
-        355,
+        kBtnWallType,
+        kBtnWallType,
         wall_up,
         wall_down,
+        nullptr,
+        BUTTON_FLAG_CHECKABLE);
+
+    // TILE
+    blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 194,
+        53,
+        13,
+        lbmBufWidth,
+        tile_up,
+        53);
+    blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 194,
+        53,
+        13,
+        lbmBufWidth,
+        tile_down,
+        53);
+    tile_bid = buttonCreate(tool_win,
+        194,
+        54,
+        53,
+        13,
+        -1,
+        -1,
+        kBtnTileType,
+        kBtnTileType,
+        tile_up,
+        tile_down,
         nullptr,
         BUTTON_FLAG_CHECKABLE);
 
@@ -1067,8 +1127,8 @@ int mapper_edit_init(int argc, char** argv)
         13,
         -1,
         -1,
-        355,
-        355,
+        kBtnMiscType,
+        kBtnMiscType,
         misc_up,
         misc_down,
         nullptr,
@@ -1094,10 +1154,10 @@ int mapper_edit_init(int argc, char** argv)
         23,
         -1,
         -1,
-        371,
+        kBtnHeightInc,
         -1,
-        height_dec_up,
-        height_dec_down,
+        height_inc_up,
+        height_inc_down,
         nullptr,
         0);
 
@@ -1121,7 +1181,7 @@ int mapper_edit_init(int argc, char** argv)
         23,
         -1,
         -1,
-        371,
+        kBtnHeightDec,
         -1,
         height_dec_up,
         height_dec_down,
@@ -1132,7 +1192,7 @@ int mapper_edit_init(int argc, char** argv)
     for (index = 0; index < ROTATION_COUNT; index++) {
         int x = rotate_arrows_x_offs[index] + 285;
         int y = rotate_arrows_y_offs[index] + 25;
-        unsigned char v1 = lbm_buf[27 * (_scr_size.right + 1) + 287];
+        unsigned char bgColor = lbm_buf[27 * lbmBufWidth + 287];
         int k;
 
         blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x,
@@ -1143,23 +1203,23 @@ int mapper_edit_init(int argc, char** argv)
             10);
 
         for (k = 0; k < 100; k++) {
-            if (rotate_arrows[1][index][k] == v1) {
+            if (rotate_arrows[1][index][k] == bgColor) {
                 rotate_arrows[1][index][k] = 0;
             }
         }
 
-        blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x - 52,
-            10,
-            10,
-            lbmBufWidth,
-            rotate_arrows[0][index],
-            10);
+         blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x - 52,
+             10,
+             10,
+             lbmBufWidth,
+             rotate_arrows[0][index],
+             10);
 
-        for (k = 0; k < 100; k++) {
-            if (rotate_arrows[1][index][k] == v1) {
-                rotate_arrows[1][index][k] = 0;
-            }
-        }
+         for (k = 0; k < 100; k++) {
+             if (rotate_arrows[0][index][k] == bgColor) {
+                 rotate_arrows[0][index][k] = 0;
+             }
+         }
     }
 
     // COPY
@@ -1182,7 +1242,7 @@ int mapper_edit_init(int argc, char** argv)
         19,
         -1,
         -1,
-        99,
+        kBtnCopy,
         -1,
         copy_up,
         copy_down,
@@ -1209,7 +1269,7 @@ int mapper_edit_init(int argc, char** argv)
         19,
         -1,
         -1,
-        67,
+        kBtnPaste,
         -1,
         paste_up,
         paste_down,
@@ -1236,7 +1296,7 @@ int mapper_edit_init(int argc, char** argv)
         19,
         -1,
         -1,
-        101,
+        kBtnEdit,
         -1,
         edit_up,
         edit_down,
@@ -1263,7 +1323,7 @@ int mapper_edit_init(int argc, char** argv)
         19,
         -1,
         -1,
-        339,
+        kBtnDelete,
         -1,
         delete_up,
         delete_down,
@@ -1475,33 +1535,6 @@ bool proto_user_is_librarian()
     can_modify_protos = true;
     return true;
 }
-
-// Button IDs from toolbar — must match buttonCreate calls in mapper_edit_init.
-// Left-click: 161 + max_art_buttons + index
-// Right-click: 160 + index
-constexpr int kArtButtonBase = 161;
-
-constexpr int kBtnScrollLeft = 45;
-constexpr int kBtnScrollRight = 61;
-constexpr int kBtnScrollPageLeft = 95;
-constexpr int kBtnScrollPageRight = 43;
-constexpr int kBtnElevUp = 329;
-constexpr int kBtnElevDown = 337;
-constexpr int kBtnObjType = 350;
-constexpr int kBtnCritType = 351;
-constexpr int kBtnScenType = 352;
-constexpr int kBtnWallType = 355;
-constexpr int kBtnCopy = 99;
-constexpr int kBtnPaste = 67;
-constexpr int kBtnEdit = 101;
-constexpr int kBtnDelete = 339;
-constexpr int kMenuHeaderFile = 289;
-constexpr int kMenuHeaderTools = 303;
-constexpr int kMenuHeaderScripts = 276;
-constexpr int kMenuHeaderLibrarian = 292;
-constexpr int kMenuBarActivation = KEY_F8;
-constexpr int kMenuBarActivationAlt = 394;
-constexpr int kArtMaxDirect = 0x4B0;
 
 // 0x4877D0
 void edit_mapper()
@@ -1849,8 +1882,21 @@ void edit_mapper()
             switchToolbarType(OBJ_TYPE_SCENERY);
             break;
         case kBtnWallType:
-            // TODO: WALL and MISC share key 355 — add toggle state
             switchToolbarType(OBJ_TYPE_WALL);
+            break;
+        case kBtnTileType:
+            switchToolbarType(OBJ_TYPE_TILE);
+            break;
+        case kBtnMiscType:
+            switchToolbarType(OBJ_TYPE_MISC);
+            break;
+
+        // --- Hex/Roof overlay toggles ---
+        case kBtnHex:
+            map_scr_toggle_hexes();
+            break;
+        case kBtnRoof:
+            tile_toggle_roof(!tileRoofIsVisible());
             break;
 
         // --- Play mode toggle ---
@@ -2098,30 +2144,34 @@ void mapper_refresh_rotation()
     char string[2];
     int index;
 
+    constexpr int kRotationRectTop = 50;
+    constexpr int kRotationTextY = 71;
+    constexpr int kRotationArrowBaseY = 49;
+
     rect.left = 270;
-    rect.top = 431 - (_scr_size.bottom - 99);
+    rect.top = kRotationRectTop;
     rect.right = 317;
-    rect.bottom = rect.top + 47;
+    rect.bottom = kRotationRectTop + 47;
 
     sprintf(string, "%d", rotation);
 
     if (tool_buf != nullptr) {
         windowFill(tool_win,
             290,
-            452 - (_scr_size.bottom - 99),
+            kRotationTextY,
             10,
             12,
-            tool_buf[(452 - (_scr_size.bottom - 99)) * (_scr_size.right + 1) + 289]);
+            tool_buf[kRotationTextY * (_scr_size.right + 1) + 289]);
         windowDrawText(tool_win,
             string,
             10,
             292,
-            452 - (_scr_size.bottom - 99),
+            kRotationTextY,
             0x2010104);
 
         for (index = 0; index < 6; index++) {
             int x = rotate_arrows_x_offs[index] + 269;
-            int y = rotate_arrows_y_offs[index] + (430 - (_scr_size.bottom - 99));
+            int y = rotate_arrows_y_offs[index] + kRotationArrowBaseY;
 
             blitBufferToBufferTrans(rotate_arrows[index == rotation][index],
                 10,
