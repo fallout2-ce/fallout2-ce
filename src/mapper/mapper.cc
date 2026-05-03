@@ -7,6 +7,7 @@
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
+#include "character_editor.h"
 #include "color.h"
 #include "config.h"
 #include "db.h"
@@ -14,19 +15,24 @@
 #include "draw.h"
 #include "game.h"
 #include "game_config.h"
+#include "game_dialog.h"
 #include "game_mouse.h"
 #include "graph_lib.h"
+#include "input.h"
+#include "interface.h"
 #include "inventory.h"
 #include "kb.h"
 #include "loadsave.h"
 #include "mapper/map_func.h"
 #include "mapper/mp_proto.h"
+#include "mapper/mp_scrpt.h"
 #include "mapper/mp_targt.h"
 #include "mapper/mp_text.h"
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"
 #include "proto.h"
+#include "scripts.h"
 #include "settings.h"
 #include "svga.h"
 #include "text_font.h"
@@ -1309,9 +1315,8 @@ int mapper_edit_init(int argc, char** argv)
 // 0x48752C
 void mapper_edit_exit()
 {
-    remove(tmp_map_name);
-    remove("\\fallout\\cd\\data\\maps\\TMP$MAP#.MAP");
-    remove("\\fallout\\cd\\data\\maps\\TMP$MAP#.CFG");
+    remove(mapBuildPath("TMP$MAP#.MAP"));
+    remove(mapBuildPath("TMP$MAP#.CFG"));
 
     MapDirErase("MAPS\\", "SAV");
 
@@ -1369,6 +1374,11 @@ void bookmarkUnHide()
     if (bookmarkWin != -1) {
         windowShow(bookmarkWin);
     }
+}
+
+void bookmarkChoose()
+{
+    // TODO: open bookmark selection dialog
 }
 
 // 0x4875B4
@@ -1437,10 +1447,369 @@ bool proto_user_is_librarian()
     return true;
 }
 
+// Button IDs from toolbar — must match buttonCreate calls in mapper_edit_init.
+constexpr int kArtSlotLeftBase = 161 + 7;
+constexpr int kArtSlotRightBase = 160;
+
+constexpr int kBtnScrollLeft = 45;
+constexpr int kBtnScrollRight = 61;
+constexpr int kBtnScrollPageLeft = 95;
+constexpr int kBtnScrollPageRight = 43;
+constexpr int kBtnElevUp = 329;
+constexpr int kBtnElevDown = 337;
+constexpr int kBtnObjType = 350;
+constexpr int kBtnCritType = 351;
+constexpr int kBtnScenType = 352;
+constexpr int kBtnWallType = 355;
+constexpr int kBtnCopy = 99;
+constexpr int kBtnPaste = 67;
+constexpr int kBtnEdit = 101;
+constexpr int kBtnDelete = 339;
+constexpr int kMenuHeaderFile = 289;
+constexpr int kMenuHeaderTools = 303;
+constexpr int kMenuHeaderScripts = 276;
+constexpr int kMenuHeaderLibrarian = 292;
+constexpr int kMenuBarActivation = KEY_F8;
+constexpr int kMenuBarActivationAlt = 394;
+constexpr int kArtMaxDirect = 0x4B0;
+
 // 0x4877D0
 void edit_mapper()
 {
-    // TODO: Incomplete.
+    int currentType = OBJ_TYPE_MISC;
+    int scrollOffset = 0;
+    int selectedPid = -1;
+    int markExitGridMode = 0;
+
+    handle_new_map(&currentType, &scrollOffset);
+
+    Object* dudeToRestore = gDude;
+
+    _scr_game_exit();
+    mapper_refresh_rotation();
+    scriptsClearDudeScript();
+
+    proto_user_is_librarian();
+
+    bool playModeEnabled = settings.mapper.default_f8_as_game;
+
+    if (!settings.mapper.startup_map.empty()) {
+        char localName[16];
+        const char* src = settings.mapper.startup_map.c_str();
+        char* dst = localName;
+        while (*src) {
+            *dst++ = toupper(*src++);
+        }
+        *dst = '\0';
+
+        if (strstr(localName, ".MAP") == nullptr) {
+            strcat(localName, ".MAP");
+        }
+
+        mapLoadByName(localName);
+    }
+
+    auto switchToolbarType = [&](int newType) {
+        currentType = newType;
+        scrollOffset = toolbar_info[currentType].offset;
+        print_toolbar_name(currentType);
+        update_art(currentType, scrollOffset);
+    };
+
+    while (true) {
+        int keyCode = inputGetInput();
+
+        // ----------------------------------------------------------------
+        // In play mode: forward input to game engine, then loop.
+        // Only F8 and Escape are NOT forwarded (they toggle modes).
+        // ----------------------------------------------------------------
+        bool routeToGame = map_entered && playModeEnabled
+            && keyCode != kMenuBarActivation && keyCode != kMenuBarActivationAlt
+            && keyCode != KEY_ESCAPE;
+
+        if (routeToGame) {
+            gameHandleKey(keyCode, false);
+
+            if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+                _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
+                if (map_entered) {
+                    gDude = dudeToRestore;
+                    _scr_game_exit();
+                    remove(mapBuildPath("TMP$MAP#.MAP"));
+                    remove(mapBuildPath("TMP$MAP#.CFG"));
+                    MapDirErase("MAPS\\", "SAV");
+                    interfaceBarHide();
+                }
+            }
+
+            scriptsHandleRequests();
+            mapHandleTransition();
+            continue;
+        }
+
+        // ----------------------------------------------------------------
+        // Edit-mode input dispatcher — runs for ALL non-play-mode inputs
+        // (F8, Escape, mouse clicks, keyboard, everything).
+        // ----------------------------------------------------------------
+
+        if (gameGetState() == GAME_STATE_5) {
+            _gdialogSystemEnter();
+        }
+
+        bool mouseInMenuArea = _mouse_click_in(0, 0, _scr_size.right - _scr_size.left, 15);
+        if (!map_entered && mouseInMenuArea) {
+            windowShow(menu_bar);
+        } else if (!mouseInMenuArea) {
+            windowHide(menu_bar);
+        }
+
+        if (keyCode == -1) {
+            continue;
+        }
+
+        // Menu header delegation: if user clicked a menu header, read the
+        // pulldown selection and map it to the real handler code.
+        if (keyCode == kMenuHeaderFile) {
+            int index = inputGetInput();
+            if (index == -1) continue;
+            keyCode = menu_val_0[index];
+        } else if (keyCode == kMenuHeaderTools) {
+            int index = inputGetInput();
+            if (index == -1) continue;
+            keyCode = menu_val_1[index];
+        } else if (keyCode == kMenuHeaderScripts) {
+            int index = inputGetInput();
+            if (index == -1) continue;
+            keyCode = menu_val_2[index];
+        }
+
+        // 'e' remaps to right-scroll arrow when not in any special mode
+        if (keyCode == 'e') {
+            keyCode = kBtnScrollRight;
+        }
+
+        // Toolbar art-slot left-click: select proto from toolbar
+        if (keyCode > kArtSlotLeftBase
+            && keyCode < kArtSlotLeftBase + max_art_buttons * 2) {
+
+            if (!map_entered) {
+                if (!settings.mapper.use_art_not_protos) {
+                    int slotIndex = keyCode - kArtSlotLeftBase - max_art_buttons;
+                    update_toolname(&selectedPid, currentType, scrollOffset + slotIndex);
+                }
+            }
+            continue;
+        }
+
+        // Toolbar art-slot right-click: quick-select proto
+        if (keyCode >= kArtSlotRightBase
+            && keyCode <= kArtSlotRightBase + max_art_buttons) {
+
+            if (map_entered) continue;
+
+            if (!settings.mapper.use_art_not_protos) {
+                int slotIndex = keyCode - kArtSlotRightBase;
+                int pid = toolbar_proto(currentType, scrollOffset + slotIndex);
+                if (pid != -1) {
+                    selectedPid = pid;
+                    update_toolname(&selectedPid, currentType, slotIndex);
+                }
+            }
+            continue;
+        }
+
+        // ---- Command dispatch ----
+        switch (keyCode) {
+
+        // --- FILE menu ---
+        case KEY_ALT_N:
+            mapNewMap();
+            handle_new_map(&currentType, &scrollOffset);
+            break;
+        case KEY_ALT_O:
+            map_load_dialog();
+            handle_new_map(&currentType, &scrollOffset);
+            break;
+        case KEY_ALT_S:
+            map_save_dialog();
+            break;
+        case KEY_ALT_A:
+            map_save_as();
+            break;
+        case KEY_ALT_I:
+            map_info_dialog();
+            break;
+        case KEY_ALT_K:
+            load_all_maps_text();
+            break;
+
+        // --- TOOLS menu ---
+        case KEY_ALT_U:
+            create_spray_tool();
+            break;
+        case KEY_ALT_Y:
+            copy_spray_tile();
+            break;
+        case KEY_ALT_G:
+            mapper_shift_map();
+            break;
+        case 4186:
+            mapper_shift_map_elev();
+            break;
+        case 4188:
+            mapper_copy_map_elev();
+            break;
+        case KEY_ALT_B:
+            characterEditorShow(gDude);
+            break;
+        case KEY_ALT_E:
+            mapper_flush_cache();
+            break;
+        case KEY_ALT_D:
+            break;
+        case KEY_LOWERCASE_B:
+            break;
+        case 2165:
+            bookmarkChoose();
+            break;
+        case 3123:
+            map_toggle_block_obj_viewing();
+            break;
+        case KEY_ALT_Z:
+            break;
+        case 5677: {
+            int val;
+            if (win_get_num_i(&val, -1, 1000, false, "Map #:", 80, 80) != -1) mapInfo.map = val;
+            if (win_get_num_i(&val, -1, 20000, false, "Tile #:", 80, 80) != -1) mapInfo.tile = val;
+            if (win_get_num_i(&val, -1, 4, false, "Elevation #:", 80, 80) != -1) mapInfo.elevation = val;
+            if (win_get_num_i(&val, -1, 5, false, "Rotation #:", 80, 80) != -1) mapInfo.rotation = val;
+            break;
+        }
+        case 5678:
+            markExitGridMode = 1;
+            mapper_mark_exit_grid();
+            break;
+        case 5679:
+            mapper_mark_all_exit_grids();
+            break;
+        case 5666:
+            map_clear_elevation();
+            break;
+        case 5406:
+            break;
+        case 5405:
+            proto_build_all_texts();
+            break;
+
+        // --- SCRIPTS menu ---
+        case KEY_LOWERCASE_I:
+            scr_list_str();
+            break;
+        case 5400:
+            place_entrance_hex();
+            break;
+        case KEY_LOWERCASE_S:
+            map_scr_add_spatial();
+            break;
+        case KEY_CTRL_F8: {
+            int x, y;
+            mouseGetPosition(&x, &y);
+            int tile = tileFromScreenXY(x, y);
+            if (tile != -1) {
+                map_scr_remove_spatial(tile, gElevation);
+            }
+            break;
+        }
+        case 5410:
+            map_scr_remove_all_spatials();
+            break;
+        case KEY_GRAVE:
+            break;
+        case KEY_ALT_W:
+            map_set_script();
+            break;
+        case 5544:
+            map_show_script();
+            break;
+
+        // --- Toolbar scroll arrows ---
+        case kBtnScrollLeft:
+            if (scrollOffset > 0) {
+                scrollOffset--;
+                update_art(currentType, scrollOffset);
+            }
+            break;
+        case kBtnScrollRight: {
+            int limit = settings.mapper.use_art_not_protos ? kArtMaxDirect : proto_max_id(currentType);
+            if (scrollOffset + max_art_buttons < limit) {
+                scrollOffset++;
+                update_art(currentType, scrollOffset);
+            }
+            break;
+        }
+        case kBtnScrollPageLeft:
+            scrollOffset -= max_art_buttons;
+            if (scrollOffset < 0) scrollOffset = 0;
+            update_art(currentType, scrollOffset);
+            break;
+        case kBtnScrollPageRight: {
+            int limit = settings.mapper.use_art_not_protos ? kArtMaxDirect : proto_max_id(currentType);
+            scrollOffset += max_art_buttons;
+            if (scrollOffset + max_art_buttons > limit) {
+                scrollOffset = limit - max_art_buttons;
+                if (scrollOffset < 0) scrollOffset = 0;
+            }
+            update_art(currentType, scrollOffset);
+            break;
+        }
+
+        // --- Elevation ---
+        case kBtnElevUp:
+            if (gElevation < ELEVATION_COUNT - 1) {
+                mapSetElevation(gElevation + 1);
+            }
+            break;
+        case kBtnElevDown:
+            if (gElevation > 0) {
+                mapSetElevation(gElevation - 1);
+            }
+            break;
+
+        // --- Type toggle buttons ---
+        case kBtnObjType:
+            switchToolbarType(OBJ_TYPE_ITEM);
+            break;
+        case kBtnCritType:
+            switchToolbarType(OBJ_TYPE_CRITTER);
+            break;
+        case kBtnScenType:
+            switchToolbarType(OBJ_TYPE_SCENERY);
+            break;
+        case kBtnWallType:
+            // TODO: WALL and MISC share key 355 — add toggle state
+            switchToolbarType(OBJ_TYPE_WALL);
+            break;
+
+        // --- Quit ---
+        case KEY_ESCAPE:
+            if (markExitGridMode == 1) {
+                markExitGridMode = 0;
+                win_timed_msg("Exiting mark exit-grids!", _colorTable[31744]);
+                break;
+            }
+            if (win_yes_no("Are you sure you want to quit?", 80, 80, 0x10104)) {
+                goto exitLoop;
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
+exitLoop:
+    toolbar_info[currentType].offset = scrollOffset;
+    mapper_save_toolbar();
 }
 
 // 0x48AFFC
@@ -1694,10 +2063,7 @@ void mapper_refresh_rotation()
 // 0x48B850
 void update_art(int type, int offset)
 {
-    int use_art = 0;
-    configGetInt(&gGameConfig, "mapper", "use_art_not_protos", &use_art);
-
-    int limit = (use_art != 0) ? 0x4B0 : proto_max_id(type);
+    int limit = settings.mapper.use_art_not_protos ? kArtMaxDirect : proto_max_id(type);
 
     int screen_width = _scr_size.right - _scr_size.left + 1;
     int slot_stride = art_scale_width + 1;
@@ -1716,7 +2082,7 @@ void update_art(int type, int offset)
     p = slot_start;
     for (int i = offset; i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
         int fid;
-        if (use_art != 0) {
+        if (settings.mapper.use_art_not_protos) {
             fid = buildFid(type, i, 0, 0, 0);
         } else {
             Proto* proto;

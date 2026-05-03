@@ -25,4 +25,9 @@ int proto_build_all_texts()
     return 0;
 }
 
+void load_all_maps_text()
+{
+    // TODO: load all maps from text format
+}
+
 } // namespace fallout

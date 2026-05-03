@@ -177,4 +177,69 @@ bool map_toggle_block_obj_viewing_on()
     return block_obj_view_on;
 }
 
+// =========================================================================
+// P2 stubs — to be fully implemented from mapper2.asm
+// =========================================================================
+
+void map_load_dialog()
+{
+    // TODO: file-picker dialog for opening maps
+}
+
+void map_save_dialog()
+{
+    // TODO: confirm/save current map
+}
+
+void map_save_as()
+{
+    // TODO: save map with a new name
+}
+
+void map_info_dialog()
+{
+    // TODO: show map header info dialog
+}
+
+void create_spray_tool()
+{
+    // TODO: create spray paint pattern tool
+}
+
+void copy_spray_tile()
+{
+    // TODO: copy spray tool tile pattern
+}
+
+void map_toggle_block_obj_viewing()
+{
+    block_obj_view_on = !block_obj_view_on;
+    // TODO: re-render tiles to reflect block view toggle
+}
+
+void map_clear_elevation()
+{
+    // TODO: destroy all objects on the current elevation
+}
+
+void mapper_shift_map()
+{
+    // TODO: shift all map objects by a global offset
+}
+
+void mapper_shift_map_elev()
+{
+    // TODO: shift objects on one elevation by an offset
+}
+
+void mapper_copy_map_elev()
+{
+    // TODO: copy all objects from one elevation to another
+}
+
+void mapper_flush_cache()
+{
+    // TODO: flush all caches (art, sound, etc.)
+}
+
 } // namespace fallout

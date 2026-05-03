@@ -87,4 +87,28 @@ int map_scr_remove_all_spatials()
     return 0;
 }
 
+// =========================================================================
+// P2 stubs — to be fully implemented from mapper2.asm
+// =========================================================================
+
+void map_scr_add_spatial()
+{
+    // TODO: add a spatial script trigger at cursor position
+}
+
+void map_set_script()
+{
+    // TODO: set the map-level script
+}
+
+void map_show_script()
+{
+    // TODO: display info about the current map script
+}
+
+void scr_list_str()
+{
+    // TODO: list all scripts via debug print
+}
+
 } // namespace fallout
