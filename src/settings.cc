@@ -220,6 +220,7 @@ void initSettingsRegistry(bool isMapper)
 #define SECT qol
     SETTING_P(use_walk_distance, clamp(0, 100));
     SETTING(auto_open_doors);
+    SETTING(companion_loot_barter);
 #undef SECT
 
     if (isMapper) {
