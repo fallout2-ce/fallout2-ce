@@ -5,8 +5,10 @@
 #include <algorithm>
 
 #include "color.h"
+#include "db.h"
 #include "debug.h"
 #include "memory.h"
+#include "palette.h"
 
 namespace fallout {
 
@@ -53,10 +55,124 @@ unsigned char HighRGB(unsigned char color)
 }
 
 // 0x44ED98
-int load_lbm_to_buf(const char* path, unsigned char* buffer, int a3, int a4, int a5, int a6, int a7)
+int load_lbm_to_buf(const char* path, unsigned char* buffer, int stride, int srcX, int srcY, int loadWidth, int loadHeight)
 {
-    // TODO: Incomplete.
+    File* stream = fileOpen(path, "rb");
+    if (stream == nullptr) return -1;
 
+    unsigned char form[4];
+    unsigned int formSize;
+    unsigned char ilbm[4];
+    if (fileRead(form, 1, 4, stream) != 4
+        || memcmp(form, "FORM", 4) != 0
+        || fileReadUInt32(stream, &formSize) == -1
+        || fileRead(ilbm, 1, 4, stream) != 4
+        || memcmp(ilbm, "ILBM", 4) != 0) {
+        fileClose(stream);
+        return -1;
+    }
+
+    int imgWidth = 0;
+    int imgHeight = 0;
+    int compression = 0;
+
+    while (true) {
+        unsigned char chunkType[4];
+        unsigned int chunkSize;
+        if (fileRead(chunkType, 1, 4, stream) != 4
+            || fileReadUInt32(stream, &chunkSize) == -1) {
+            break;
+        }
+
+        int aligned = (chunkSize + 1) & ~1;
+
+        if (memcmp(chunkType, "BMHD", 4) == 0) {
+            unsigned short w, h;
+            unsigned char nPlanes, masking, comp;
+            if (fileReadUInt16(stream, &w) == -1
+                || fileReadUInt16(stream, &h) == -1) break;
+            imgWidth = w;
+            imgHeight = h;
+
+            // Skip: x, y (4 bytes)
+            fileSeek(stream, 4, SEEK_CUR);
+
+            if (fileReadUInt8(stream, &nPlanes) == -1
+                || fileReadUInt8(stream, &masking) == -1
+                || fileReadUInt8(stream, &comp) == -1) break;
+            compression = comp;
+
+            // Skip remaining BMHD fields (pad1 + transClr + xAspect + yAspect + pageW + pageH)
+            int bmhdRemaining = aligned - 20;
+            if (bmhdRemaining > 0) fileSeek(stream, bmhdRemaining, SEEK_CUR);
+
+        } else if (memcmp(chunkType, "CMAP", 4) == 0) {
+            unsigned char palette[768];
+            int cmapRead = std::min(static_cast<int>(chunkSize), 768);
+            if (static_cast<int>(fileRead(palette, 1, cmapRead, stream)) == cmapRead) {
+                paletteSetEntries(palette);
+            }
+            int cmapRemaining = aligned - cmapRead;
+            if (cmapRemaining > 0) fileSeek(stream, cmapRemaining, SEEK_CUR);
+
+        } else if (memcmp(chunkType, "BODY", 4) == 0) {
+            int totalPixels = imgWidth * imgHeight;
+
+            auto* src = static_cast<unsigned char*>(internal_malloc(chunkSize));
+            if (src == nullptr) break;
+
+            if (fileRead(src, 1, chunkSize, stream) != chunkSize) {
+                internal_free(src);
+                break;
+            }
+
+            auto* pixels = static_cast<unsigned char*>(internal_malloc(totalPixels));
+            if (pixels == nullptr) {
+                internal_free(src);
+                break;
+            }
+
+            if (compression == 1) {
+                int s = 0, d = 0;
+                while (d < totalPixels && s < static_cast<int>(chunkSize)) {
+                    auto n = static_cast<signed char>(src[s++]);
+                    if (n >= 0) {
+                        int count = std::min(n + 1, totalPixels - d);
+                        memcpy(pixels + d, src + s, count);
+                        s += count;
+                        d += count;
+                    } else {
+                        int count = std::min(-n + 1, totalPixels - d);
+                        memset(pixels + d, src[s++], count);
+                        d += count;
+                    }
+                }
+            } else {
+                int copySize = std::min(totalPixels, static_cast<int>(chunkSize));
+                memcpy(pixels, src, copySize);
+            }
+
+            internal_free(src);
+
+            int copyW = loadWidth > 0 ? loadWidth : imgWidth;
+            int copyH = loadHeight > 0 ? loadHeight + 1 : imgHeight;
+
+            for (int y = 0; y < copyH && (srcY + y) < imgHeight; y++) {
+                memcpy(buffer + y * stride,
+                       pixels + (srcY + y) * imgWidth + srcX,
+                       std::min(copyW, imgWidth - srcX));
+            }
+
+            internal_free(pixels);
+            fileClose(stream);
+            return 0;
+
+        } else {
+            if (aligned > 0) fileSeek(stream, aligned, SEEK_CUR);
+        }
+    }
+
+    fileClose(stream);
     return -1;
 }
 
