@@ -48,6 +48,7 @@
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
+#include "sfall_ext.h"
 #include "sfall_global_scripts.h"
 #include "sfall_global_vars.h"
 #include "skill.h"
@@ -1884,65 +1885,11 @@ static int lsgPerformSaveGame()
 
     _flptr = fileOpen(_gmpath, "wb");
     if (_flptr != nullptr) {
-        do {
-            if (!sfall_gl_vars_save(_flptr)) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving global vars **\n");
-                break;
-            }
-
-            // TODO: For now fill remaining sections with zeros to that Sfall
-            // can successfully read our global vars and skip the rest.
-
-            int nextObjectId = 0;
-            if (fileWrite(&nextObjectId, sizeof(nextObjectId), 1, _flptr) != 1) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving next object id **\n");
-                break;
-            }
-
-            int addedYears = 0;
-            if (fileWrite(&addedYears, sizeof(addedYears), 1, _flptr) != 1) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving added years **\n");
-                break;
-            }
-
-            int fakeTraitsCount = 0;
-            if (fileWrite(&fakeTraitsCount, sizeof(fakeTraitsCount), 1, _flptr) != 1) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving fake traits **\n");
-                break;
-            }
-
-            int fakePerksCount = 0;
-            if (fileWrite(&fakePerksCount, sizeof(fakePerksCount), 1, _flptr) != 1) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving fake perks **\n");
-                break;
-            }
-
-            int fakeSelectablePerksCount = 0;
-            if (fileWrite(&fakeSelectablePerksCount, sizeof(fakeSelectablePerksCount), 1, _flptr) != 1) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving fake selectable perks **\n");
-                break;
-            }
-
-            int arraysCountOld = 0;
-            if (fileWrite(&arraysCountOld, sizeof(arraysCountOld), 1, _flptr) != 1) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving arrays (old fmt) **\n");
-                break;
-            }
-
-            int arraysCountNew = 0;
-            if (fileWrite(&arraysCountNew, sizeof(arraysCountNew), 1, _flptr) != 1) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving arrays (new fmt) **\n");
-                break;
-            }
-
-            int drugPidsCount = 0;
-            if (fileWrite(&drugPidsCount, sizeof(drugPidsCount), 1, _flptr) != 1) {
-                debugPrint("LOADSAVE (SFALL): ** Error saving drug pids **\n");
-                break;
-            }
-        } while (0);
-
+        bool saved = sfallSaveGameData(_flptr);
         fileClose(_flptr);
+        if (!saved) {
+            return -1;
+        }
     }
 
     snprintf(_gmpath, sizeof(_gmpath), "%s\\%s%.2d\\", "SAVEGAME", "SLOT", _slot_cursor + 1);
@@ -2038,16 +1985,11 @@ static int lsgLoadGameInSlot(int slot)
 
     _flptr = fileOpen(_gmpath, "rb");
     if (_flptr != nullptr) {
-        do {
-            if (!sfall_gl_vars_load(_flptr)) {
-                debugPrint("LOADSAVE (SFALL): ** Error loading global vars **\n");
-                break;
-            }
-
-            // TODO: For now silently ignore remaining sections.
-        } while (0);
-
+        bool loaded = sfallLoadGameData(_flptr);
         fileClose(_flptr);
+        if (!loaded) {
+            return -1;
+        }
     }
 
     snprintf(_str, sizeof(_str), "%s\\", "MAPS");

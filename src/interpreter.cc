@@ -130,6 +130,8 @@ static void doEvents();
 static void programListNodeFree(ProgramListNode* programListNode);
 static void interpreterPrintStats();
 
+constexpr int kDynamicStringsMaxBlockSize = 32766;
+
 // 0x50942C
 static char interpreterMissingProcedureName[] = "<couldn't find proc>";
 
@@ -590,7 +592,7 @@ static void programMarkHeap(Program* program)
                 next_len = *(short*)next_ptr;
                 if (next_len < 0) {
                     diff = 4 - next_len;
-                    if (diff + len < 32766) {
+                    if (diff + len < kDynamicStringsMaxBlockSize) {
                         len += diff;
                         *(short*)ptr += next_len - 4;
                     } else {
@@ -625,6 +627,11 @@ int programPushString(Program* program, const char* const string)
         bufferLength++;
     }
 
+    if (bufferLength > kDynamicStringsMaxBlockSize) {
+        debugPrint("programPushString: string too long (%d bytes), truncating to %d\n", bufferLength, kDynamicStringsMaxBlockSize);
+        bufferLength = kDynamicStringsMaxBlockSize;
+    }
+
     if (program->dynamicStrings != nullptr) {
         // TODO: Needs testing, lots of pointer stuff.
         unsigned char* heap = program->dynamicStrings + 4;
@@ -648,7 +655,8 @@ int programPushString(Program* program, const char* const string)
                     }
 
                     *(short*)(heap + 2) = 0;
-                    strcpy((char*)(heap + 4), string);
+                    strncpy((char*)(heap + 4), string, bufferLength - 1);
+                    ((char*)(heap + 4))[bufferLength - 1] = '\0';
 
                     *(heap + bufferLength + 3) = '\0';
                     return (heap + 4) - (program->dynamicStrings + 4);
@@ -675,7 +683,8 @@ int programPushString(Program* program, const char* const string)
     *(short*)(newBlock) = bufferLength;
     *(short*)(newBlock + 2) = 0;
 
-    strcpy((char*)(newBlock + 4), string);
+    strncpy((char*)(newBlock + 4), string, bufferLength - 1);
+    ((char*)(newBlock + 4))[bufferLength - 1] = '\0';
 
     newTerminator = newBlock + bufferLength;
     *(newTerminator + 3) = '\0';
@@ -3405,6 +3414,23 @@ const char* ProgramValue::asString(Program* program) const
     }
 
     return programGetString(program, opcode, integerValue);
+}
+
+const char* ProgramValue::typeDebugString() const
+{
+    switch (opcode) {
+    case VALUE_TYPE_INT:
+        return "INTEGER";
+    case VALUE_TYPE_FLOAT:
+        return "FLOAT";
+    case VALUE_TYPE_STRING:
+    case VALUE_TYPE_DYNAMIC_STRING:
+        return "STRING";
+    case VALUE_TYPE_PTR:
+        return "POINTER";
+    default:
+        return "(UNKNOWN)";
+    }
 }
 
 // CE

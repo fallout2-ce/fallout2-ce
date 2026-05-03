@@ -3,6 +3,9 @@
 
 #include "interpreter.h"
 
+struct XFile;
+typedef XFile File;
+
 namespace fallout {
 
 #define SFALL_ARRAYFLAG_ASSOC (1) // is map
@@ -12,6 +15,13 @@ namespace fallout {
 #define SFALL_ARRAYFLAG_EXPR_POP (64) // is used to indicate end of array sub-expression, not used in actual array
 
 using ArrayId = unsigned int;
+
+enum class SaveArrayResult {
+    OK = 0,
+    InvalidId,
+    InvalidKeyType,
+    ReservedKey,
+};
 
 bool sfallArraysInit();
 void sfallArraysReset();
@@ -32,6 +42,11 @@ ProgramValue ScanArray(ArrayId arrayId, const ProgramValue& val, Program* progra
 ArrayId ListAsArray(int type);
 
 ArrayId StringSplit(const char* str, const char* split);
+
+SaveArrayResult SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program);
+ArrayId LoadArray(const ProgramValue& key, Program* program);
+bool sfallArraysSave(File* stream);
+bool sfallArraysLoad(File* stream);
 
 } // namespace fallout
 
