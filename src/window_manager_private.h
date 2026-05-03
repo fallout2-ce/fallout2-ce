@@ -20,7 +20,7 @@ int win_yes_no(const char* question, int x, int y, int color);
 int _win_msg(const char* string, int x, int y, int color);
 int _win_pull_down(char** items, int itemsLength, int x, int y, int color);
 int _create_pull_down(char** stringList, int stringListLength, int x, int y, int foregroundColor, int backgroundColor, Rect* rect);
-int _win_debug(char* string);
+int _win_debug(const char* string);
 void _win_debug_delete(int btn, int keyCode);
 int _win_register_menu_bar(int win, int x, int y, int width, int height, int foregroundColor, int backgroundColor);
 int _win_register_menu_pulldown(int win, int x, char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor);
