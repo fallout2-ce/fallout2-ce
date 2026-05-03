@@ -24,8 +24,9 @@ static void debugFlushBuffer();
 
 // Messages logged before any debug proc is registered are held here and
 // flushed when the first proc is registered.
-static std::string gDebugBuffer;
+static std::string debugBuffer;
 static constexpr size_t kDebugBufferMaxSize = 64 * 1024;
+static bool debugBufferDisabled = false;
 
 // 0x51DEF8
 static FILE* _fd = nullptr;
@@ -41,6 +42,8 @@ static DebugPrintProc* gDebugPrintProc = nullptr;
 
 void debugModeInit(const char* debugMode)
 {
+    debugBufferDisabled = true;
+
     if (debugMode == nullptr) {
         return;
     }
@@ -59,7 +62,7 @@ void debugModeInit(const char* debugMode)
     }
 
     if (gDebugPrintProc == nullptr) {
-        gDebugBuffer.clear();
+        debugBuffer.clear();
     }
 }
 
@@ -166,15 +169,17 @@ int debugPrint(const char* format, ...)
 
     char string[260];
     int len = vsnprintf(string, sizeof(string), format, args);
-
+    if (len < 0) {
+        string[0] = '\0';
+    }
     va_end(args);
 
     int rc;
     if (gDebugPrintProc != nullptr) {
         rc = gDebugPrintProc(string);
     } else {
-        if (len > 0 && gDebugBuffer.size() + len <= kDebugBufferMaxSize) {
-            gDebugBuffer += string;
+        if (!debugBufferDisabled && debugBuffer.size() + strlen(string) <= kDebugBufferMaxSize) {
+            debugBuffer += string;
         }
         rc = -1;
     }
@@ -188,11 +193,11 @@ int debugPrint(const char* format, ...)
 
 static void debugFlushBuffer()
 {
-    if (gDebugBuffer.empty() || gDebugPrintProc == nullptr) {
+    if (debugBuffer.empty() || gDebugPrintProc == nullptr) {
         return;
     }
-    gDebugPrintProc(gDebugBuffer.c_str());
-    gDebugBuffer.clear();
+    gDebugPrintProc(debugBuffer.c_str());
+    debugBuffer.clear();
 }
 
 // 0x4C6F94
