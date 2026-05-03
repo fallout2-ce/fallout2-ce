@@ -28,7 +28,7 @@ typedef struct ProgramListNode {
 static unsigned int _defaultTimerFunc();
 static unsigned int getInterpreterTime();
 static char* defaultFilename(char* path);
-static int outputString(char* string);
+static int outputString(const char* string);
 static int checkWait(Program* program);
 static char* programGetCurrentProcedureName(Program* program);
 opcode_t stackReadInt16(unsigned char* data, int pos);
@@ -152,7 +152,7 @@ static unsigned int interpreterTimerTick = 1000;
 static char* (*interpreterFilenameMangler)(char*) = defaultFilename;
 
 // 0x51904C
-static int (*interpreterOutputFunc)(char*) = outputString;
+static int (*interpreterOutputFunc)(const char*) = outputString;
 
 // 0x519050
 static int interpreterCpuBurstSize = 10;
@@ -197,7 +197,7 @@ char* _interpretMangleName(char* s)
 }
 
 // 0x4670C0 (unused)
-static int outputString(char* /*string*/)
+static int outputString(const char*)
 {
     return 1;
 }
@@ -209,7 +209,7 @@ static int checkWait(Program* program)
 }
 
 // 0x4670FC
-void _interpretOutputFunc(int (*func)(char*))
+void _interpretOutputFunc(int (*func)(const char*))
 {
     interpreterOutputFunc = func;
 }
