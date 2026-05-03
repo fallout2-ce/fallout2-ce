@@ -536,9 +536,9 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
 endif()
 
 if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
-    add_executable(fallout2-ce-mapper WIN32)
+    add_executable(mapper-ce WIN32)
 
-    target_sources(fallout2-ce-mapper PUBLIC
+    target_sources(mapper-ce PUBLIC
         ${FALLOUT_ENGINE_SOURCES}
         ${FALLOUT_PLATFORM_SOURCES}
         "src/mapper/map_func.cc"
@@ -555,36 +555,36 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
         "src/mapper/mp_text.h"
     )
 
-    target_compile_definitions(fallout2-ce-mapper PUBLIC FALLOUT_MAPPER)
+    target_compile_definitions(mapper-ce PUBLIC FALLOUT_MAPPER)
 
     if(WIN32)
-        target_compile_definitions(fallout2-ce-mapper PUBLIC
+        target_compile_definitions(mapper-ce PUBLIC
             _CRT_SECURE_NO_WARNINGS
             _CRT_NONSTDC_NO_WARNINGS
             NOMINMAX
             WIN32_LEAN_AND_MEAN
             _STATIC_CPPLIB
         )
-        target_link_libraries(fallout2-ce-mapper
+        target_link_libraries(mapper-ce
             winmm
             debug libcpmtd
             optimized libcpmt
         )
-        target_sources(fallout2-ce-mapper PUBLIC
+        target_sources(mapper-ce PUBLIC
             "os/windows/fallout2-ce.rc"
         )
     endif()
 
     if(APPLE)
-        target_link_libraries(fallout2-ce-mapper "-framework CoreFoundation")
+        target_link_libraries(mapper-ce "-framework CoreFoundation")
     endif()
 
-    target_include_directories(fallout2-ce-mapper PUBLIC "third_party/lodepng")
-    target_include_directories(fallout2-ce-mapper PRIVATE "src")
-    target_include_directories(fallout2-ce-mapper PRIVATE ${ZLIB_INCLUDE_DIRS})
-    target_include_directories(fallout2-ce-mapper PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(mapper-ce PUBLIC "third_party/lodepng")
+    target_include_directories(mapper-ce PRIVATE "src")
+    target_include_directories(mapper-ce PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_include_directories(mapper-ce PRIVATE ${SDL2_INCLUDE_DIRS})
 
-    target_link_libraries(fallout2-ce-mapper
+    target_link_libraries(mapper-ce
         fpattern::fpattern
         fpattern_windows::fpattern_windows
         ${ZLIB_LIBRARIES}
