@@ -4,7 +4,7 @@
 namespace fallout {
 
 unsigned char HighRGB(unsigned char color);
-int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int pitch, int srcX, int srcY, int loadWidth, int loadHeight);
+int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int xMin, int yMin, int xMax, int yMax);
 int graphCompress(unsigned char* a1, unsigned char* a2, int a3);
 int graphDecompress(unsigned char* a1, unsigned char* a2, int a3);
 void grayscalePaletteUpdate(int a1, int a2);

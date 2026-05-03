@@ -54,7 +54,9 @@ unsigned char HighRGB(unsigned char color)
 }
 
 // 0x44ED98
-int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int pitch, int srcX, int srcY, int loadWidth, int loadHeight)
+// Loads LBM image file into a dstBuffer.
+// Returns image width on success, -1 on error.
+int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int xMin, int yMin, int xMax, int yMax)
 {
     File* stream = fileOpen(path, "rb");
     if (stream == nullptr) {
@@ -63,109 +65,138 @@ int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int pitch, int s
     }
 
     unsigned char form[4];
-    unsigned int formSize;
+    unsigned int  formSize;
     unsigned char ilbm[4];
     if (fileRead(form, 1, 4, stream) != 4
         || memcmp(form, "FORM", 4) != 0
         || fileReadUInt32(stream, &formSize) == -1
-        || fileRead(ilbm, 1, 4, stream) != 4
-        /*|| memcmp(ilbm, "ILBM", 4) != 0*/) {
+        || fileRead(ilbm, 1, 4, stream) != 4) {
         debugPrint("load_lbm_to_buf(%s): incorrect LBM header\n", path);
         fileClose(stream);
         return -1;
     }
 
-    int imgWidth = 0;
-    int imgHeight = 0;
-    int compression = 0;
+    int imgWidth = 0, imgHeight = 0;
+
+    // NOTE: The original ASM's sliding-window scanner consumes the BMHD
+    // chunk size as a 4-byte skip, reads only the 2-byte width, and then
+    // lets the scanner drift through the remaining BMHD fields (height,
+    // nPlanes, masking, comp, etc.) while searching for the next tag.
+    // Height and compression are therefore never stored by the original.
+    // The BODY decoder always runs as PackBits unconditionally.
+
+    // paletteRemap[i] = system-palette index that best matches LBM colour i.
+    // Built from CMAP via colorTable.  Index 0 is populated but never used
+    // (pixel value 0 is always output as 0 — the transparent colour).
+    unsigned char paletteRemap[256] = {};
 
     while (true) {
         unsigned char chunkType[4];
-        unsigned int chunkSize;
+        unsigned int  chunkSize;
         if (fileRead(chunkType, 1, 4, stream) != 4
             || fileReadUInt32(stream, &chunkSize) == -1) {
             break;
         }
 
-        int aligned = (chunkSize + 1) & ~1;
+        unsigned int aligned = (chunkSize + 1) & ~1u;
 
         if (memcmp(chunkType, "BMHD", 4) == 0) {
+            // Original reads only w (2 bytes); h is read here to advance the
+            // file position but its value is intentionally discarded.
             unsigned short w, h;
-            unsigned char nPlanes, masking, comp;
             if (fileReadUInt16(stream, &w) == -1
                 || fileReadUInt16(stream, &h) == -1) break;
             imgWidth = w;
             imgHeight = h;
 
-            // Skip: x, y (4 bytes)
-            fileSeek(stream, 4, SEEK_CUR);
-
-            if (fileReadUInt8(stream, &nPlanes) == -1
-                || fileReadUInt8(stream, &masking) == -1
-                || fileReadUInt8(stream, &comp) == -1) break;
-            compression = comp;
-
-            // Skip remaining BMHD fields (pad1 + transClr + xAspect + yAspect + pageW + pageH)
-            int bmhdRemaining = aligned - 11;
+            // Skip every remaining BMHD field — the original never reads them.
+            unsigned int bmhdRemaining = aligned - 4; // already consumed w + h
             if (bmhdRemaining > 0) fileSeek(stream, bmhdRemaining, SEEK_CUR);
 
         } else if (memcmp(chunkType, "CMAP", 4) == 0) {
-            // Skip palette data — the game uses its own system palette
-            // loaded from "color.pal" during init.
-            if (aligned > 0) fileSeek(stream, aligned, SEEK_CUR);
+            // The game DOES use its own palette, but it reconciles the two
+            // by mapping each LBM color through colorTable (RGB555 → nearest
+            // system index), storing the result in paletteRemap[].
+            int entries = static_cast<int>(std::min(chunkSize / 3u, 256u));
+            for (int i = 0; i < entries; i++) {
+                unsigned char r, g, b;
+                if (fileReadUInt8(stream, &r) == -1
+                    || fileReadUInt8(stream, &g) == -1
+                    || fileReadUInt8(stream, &b) == -1) {
+                    fileClose(stream);
+                    return -1;
+                }
+                int rgb555 = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+                paletteRemap[i] = _colorTable[rgb555];
+            }
+            unsigned int cmapRemaining = aligned - static_cast<unsigned int>(entries * 3);
+            if (cmapRemaining > 0) fileSeek(stream, cmapRemaining, SEEK_CUR);
 
         } else if (memcmp(chunkType, "BODY", 4) == 0) {
-            int totalPixels = imgWidth * imgHeight;
+            // Decompression, palette remapping, and clipped output in a single pass with no intermediate pixel buffer.
+            // Output rules:
+            //   pixel == 0  ->  write 0 unconditionally (transparent)
+            //   pixel != 0  ->  write paletteRemap[pixel]
+            //
+            // The run-length case pre-remaps the pixel value once before the repeat loop.
 
-            auto* src = static_cast<unsigned char*>(internal_malloc(chunkSize));
-            if (src == nullptr) break;
+            unsigned char* dst = dstBuffer;
+            int col = 0; // current column - wraps at imgWidth
+            int row = 0; // current row    - increments on wrap
 
-            if (fileRead(src, 1, chunkSize, stream) != chunkSize) {
-                internal_free(src);
-                break;
-            }
+            // Advance the pixel cursor by one position.
+            auto advance = [&]() {
+                if (++col == imgWidth) {
+                    col = 0;
+                    ++row;
+                }
+            };
 
-            auto* pixels = static_cast<unsigned char*>(internal_malloc(totalPixels));
-            if (pixels == nullptr) {
-                internal_free(src);
-                break;
-            }
+            // Emit one pixel, respecting the clip rectangle.
+            // Used for literal-run pixels where the remap must occur per byte.
+            auto emit = [&](unsigned char raw) {
+                if (col >= xMin && col <= xMax && row >= yMin && row <= yMax)
+                    *dst++ = (raw == 0) ? 0 : paletteRemap[raw];
+                advance();
+            };
 
-            if (compression == 1) {
-                int s = 0, d = 0;
-                while (d < totalPixels && s < static_cast<int>(chunkSize)) {
-                    auto n = static_cast<signed char>(src[s++]);
-                    if (n >= 0) {
-                        int count = std::min(n + 1, totalPixels - d);
-                        memcpy(pixels + d, src + s, count);
-                        s += count;
-                        d += count;
+            // PackBits RLE — always, regardless of BMHD compression field.
+            bool eof = false;
+            unsigned char ctrl;
+            while (!eof && fileReadUInt8(stream, &ctrl) != -1) {
+                if (ctrl < 0x80) {
+                    // Literal run: the next (ctrl + 1) bytes are distinct pixels.
+                    int count = ctrl + 1;
+                    for (int i = 0; i < count && !eof; i++) {
+                        unsigned char px;
+                        if (fileReadUInt8(stream, &px) == -1)
+                            eof = true;
+                        else
+                            emit(px);
+                    }
+                } else {
+                    // Run: repeat the next single pixel (257 − ctrl) times.
+                    int count = 257 - static_cast<int>(ctrl);
+                    unsigned char px;
+                    if (fileReadUInt8(stream, &px) == -1) {
+                        eof = true;
                     } else {
-                        int count = std::min(-n + 1, totalPixels - d);
-                        memset(pixels + d, src[s++], count);
-                        d += count;
+                        // Remap once for the whole run (mirrors var_10 in the ASM).
+                        unsigned char mapped = (px == 0) ? 0 : paletteRemap[px];
+                        for (int i = 0; i < count; i++) {
+                            if (col >= xMin && col <= xMax && row >= yMin && row <= yMax)
+                                *dst++ = mapped;
+                            advance();
+                        }
                     }
                 }
-            } else {
-                int copySize = std::min(totalPixels, static_cast<int>(chunkSize));
-                memcpy(pixels, src, copySize);
             }
 
-            internal_free(src);
-
-            int copyW = loadWidth > 0 && loadWidth < imgWidth ? loadWidth : imgWidth;
-            int copyH = loadHeight > 0 && loadHeight < imgHeight ? loadHeight + 1 : imgHeight;
-
-            for (int y = 0; y < copyH && (srcY + y) < imgHeight; y++) {
-                memcpy(dstBuffer + y * pitch,
-                    pixels + (srcY + y) * imgWidth + srcX,
-                    std::min(copyW, imgWidth - srcX));
-            }
-
-            internal_free(pixels);
+            // Reaching the end of BODY data (normally or via EOF) is the
+            // success path.
             fileClose(stream);
             debugPrint("load_lbm_to_buf: loaded %dx%d OK\n", imgWidth, imgHeight);
-            return 0;
+            return imgWidth;
 
         } else {
             if (aligned > 0) fileSeek(stream, aligned, SEEK_CUR);

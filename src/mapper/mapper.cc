@@ -548,18 +548,15 @@ void MapperInit()
     menu_val_2[7] = 5544;
 }
 
-static bool loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
+static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
 {
     lbm_buf = (unsigned char*)internal_malloc(lbmBufWidth * lbmBufHeight);
-    int lbmRc = load_lbm_to_buf("data\\mapper2.lbm",
+    return load_lbm_to_buf("data\\mapper2.lbm",
         lbm_buf,
-        lbmBufWidth,
         0,
         0,
         lbmBufWidth - 1,
         lbmBufHeight - 1);
-
-    return lbmRc != -1;
 }
 
 // 0x485F94
@@ -585,18 +582,18 @@ int mapper_edit_init(int argc, char** argv)
 
     setup_map_dirs();
     mapper_load_toolbar(4, nullptr);
-
-    max_art_buttons = (lbmBufWidth - 135) / 50;
     art_shape = (unsigned char*)internal_malloc(art_scale_height * art_scale_width);
     if (art_shape == nullptr) {
         printf("Can't malloc memory!!\n");
         exit(1);
     }
 
-    if (!loadMapperLbm(lbmBufWidth, lbmBufHeight)) {
+    if (loadMapperLbm(lbmBufWidth, lbmBufHeight) == -1) {
         // TODO: proper cleanup?
         return -1;
     }
+
+    max_art_buttons = (lbmBufWidth - 135) / 50; // todo: stretch panel
 
     const int screenWidth = rectGetWidth(&_scr_size);
 
@@ -1901,12 +1898,12 @@ void print_toolbar_name(int object_type)
     rect.bottom = 22;
     bufferFill(tool_buf + 2 + 2 * (_scr_size.right - _scr_size.left) + 2,
         96,
-        _scr_size.right - _scr_size.left + 1,
         19,
+        _scr_size.right - _scr_size.left + 1,
         _colorTable[21140]);
 
     sprintf(name, "%s", artGetObjectTypeName(object_type));
-    name[0] = toupper(name[0]);
+    name[0] = static_cast<char>(toupper(name[0]));
     windowDrawText(tool_win, name, 0, 7, 7, _colorTable[32747] | 0x2000000);
     windowRefreshRect(tool_win, &rect);
 }
