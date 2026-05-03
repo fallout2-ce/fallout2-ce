@@ -236,6 +236,7 @@ void initSettingsRegistry(bool isMapper)
         SETTING(run_mapper_as_game);
         SETTING(default_f8_as_game);
         SETTING(sort_script_list);
+        SETTING(dev_path);
 #undef SECT
     }
 }

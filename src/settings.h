@@ -142,6 +142,7 @@ struct MapperSettings {
     bool run_mapper_as_game = false;
     bool default_f8_as_game = true;
     bool sort_script_list = false;
+    std::string dev_path = "";
 };
 
 struct Settings {

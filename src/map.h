@@ -105,6 +105,7 @@ int mapSetEnteringLocation(int elevation, int tile, int rotation);
 void mapNewMap();
 int mapLoadByName(char* fileName);
 int mapLoadById(int map_index);
+char* mapBuildPath(char* name);
 int mapLoadSaved(char* fileName);
 int mapGetLoadedAreaId();
 int mapSetTransition(MapTransition* transition);

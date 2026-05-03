@@ -1,14 +1,19 @@
 #include "mapper/mapper.h"
 
 #include <ctype.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
 #include "color.h"
+#include "config.h"
+#include "db.h"
 #include "debug.h"
 #include "draw.h"
 #include "game.h"
+#include "game_config.h"
 #include "game_mouse.h"
 #include "graph_lib.h"
 #include "inventory.h"
@@ -24,6 +29,7 @@
 #include "proto.h"
 #include "settings.h"
 #include "svga.h"
+#include "text_font.h"
 #include "tile.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
@@ -44,14 +50,15 @@ static int categoryToggleState();
 static int categoryUnhide();
 static bool proto_user_is_librarian();
 static void edit_mapper();
-static void mapper_load_toolbar(int a1, int a2);
+static void mapper_load_toolbar(int type, int* out_offset);
+static void mapper_save_toolbar();
 static void redraw_toolname();
 static void clear_toolname();
 static void update_toolname(int* pid, int type, int id);
 static void update_high_obj_name(Object* obj);
 static void mapper_destroy_highlight_obj(Object** a1, Object** a2);
 static void mapper_refresh_rotation();
-static void update_art(int a1, int a2);
+static void update_art(int type, int offset);
 static void handle_new_map(int* a1, int* a2);
 static int mapper_mark_exit_grid();
 static void mapper_mark_all_exit_grids();
@@ -205,6 +212,21 @@ int art_scale_width = 49;
 
 // 0x559888
 int art_scale_height = 48;
+
+// Toolbar scroll state — 6 types × 48 bytes, first int = scroll offset.
+// Saved to / loaded from a per-map .cfg sidecar file alongside each .MAP.
+struct ToolbarInfo {
+    int offset;
+    int padding[11]; // remaining 44 bytes TBD when edit_mapper_ is ported
+};
+static ToolbarInfo toolbar_info[6];
+
+// Currently highlighted art-slot index in the toolbar; -1 = none.
+static int tool_active = -1;
+
+// Color (palette index) used to draw the selection box around the active slot.
+// Corresponds to byte_775AF4 in mapper2.asm.
+static int toolbar_selection_color = 21;
 
 // 0x5598A0
 static bool map_entered = false;
@@ -539,7 +561,7 @@ int mapper_edit_init(int argc, char** argv)
     }
 
     setup_map_dirs();
-    mapper_load_toolbar(4, 0);
+    mapper_load_toolbar(4, nullptr);
 
     max_art_buttons = (_scr_size.right - _scr_size.left - 136) / 50;
     art_shape = (unsigned char*)internal_malloc(art_scale_height * art_scale_width);
@@ -1272,7 +1294,7 @@ int mapper_edit_init(int argc, char** argv)
     tileScrollBlockingDisable();
     tileScrollLimitingDisable();
     init_mapper_protos();
-    _map_init();
+    mapInit();
     target_init();
     mouseShowCursor();
 
@@ -1301,7 +1323,7 @@ void mapper_edit_exit()
     }
 
     target_exit();
-    _map_exit();
+    mapExit();
     bookmarkExit();
     categoryExit();
 
@@ -1422,9 +1444,48 @@ void edit_mapper()
 }
 
 // 0x48AFFC
-void mapper_load_toolbar(int a1, int a2)
+void mapper_load_toolbar(int type, int* out_offset)
 {
-    // TODO: Incomplete.
+    char name[16];
+    name[0] = '\0';
+    strncpy(name, gMapHeader.name, sizeof(name) - 1);
+    name[sizeof(name) - 1] = '\0';
+    if (name[0] == '\0') return;
+
+    char* dot = strrchr(name, '.');
+    if (dot != nullptr) *dot = '\0';
+    strcat(name, ".cfg");
+
+    File* stream = fileOpen(mapBuildPath(name), "rb");
+    if (stream != nullptr) {
+        fileRead(toolbar_info, sizeof(ToolbarInfo), 6, stream);
+        fileClose(stream);
+    }
+
+    if (out_offset != nullptr) {
+        *out_offset = toolbar_info[type].offset;
+        update_art(type, *out_offset);
+    }
+}
+
+// 0x48B09C
+void mapper_save_toolbar()
+{
+    char name[16];
+    name[0] = '\0';
+    strncpy(name, gMapHeader.name, sizeof(name) - 1);
+    name[sizeof(name) - 1] = '\0';
+    if (name[0] == '\0') return;
+
+    char* dot = strrchr(name, '.');
+    if (dot != nullptr) *dot = '\0';
+    strcat(name, ".cfg");
+
+    File* stream = fileOpen(mapBuildPath(name), "wb");
+    if (stream != nullptr) {
+        fileWrite(toolbar_info, sizeof(ToolbarInfo), 6, stream);
+        fileClose(stream);
+    }
 }
 
 // 0x48B16C
@@ -1631,9 +1692,62 @@ void mapper_refresh_rotation()
 }
 
 // 0x48B850
-void update_art(int a1, int a2)
+void update_art(int type, int offset)
 {
-    // TODO: Incomplete.
+    int use_art = 0;
+    configGetInt(&gGameConfig, "mapper", "use_art_not_protos", &use_art);
+
+    int limit = (use_art != 0) ? 0x4B0 : proto_max_id(type);
+
+    int screen_width = _scr_size.right - _scr_size.left + 1;
+    int slot_stride = art_scale_width + 1;
+
+    unsigned char* buf = windowGetBuffer(tool_win);
+    // Row 1, col 121 is where art slots begin.
+    unsigned char* slot_start = buf + screen_width + 121;
+
+    // Clear all slot backgrounds.
+    unsigned char* p = slot_start;
+    for (int i = 0; i < max_art_buttons; i++, p += slot_stride) {
+        bufferFill(p, art_scale_width, art_scale_height, screen_width, 106);
+    }
+
+    // Render thumbnails for visible slots.
+    p = slot_start;
+    for (int i = offset; i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
+        int fid;
+        if (use_art != 0) {
+            fid = buildFid(type, i, 0, 0, 0);
+        } else {
+            Proto* proto;
+            int pid = toolbar_proto(type, i);
+            if (protoGetProto(pid, &proto) == -1) continue;
+            fid = proto->fid;
+        }
+        artRender(fid, p, art_scale_width, art_scale_height, screen_width);
+    }
+
+    // Draw selection box around the active slot.
+    if (tool_active != -1) {
+        int left = 121 + slot_stride * tool_active;
+        int right = left + art_scale_width - 1;
+        unsigned char* raw_buf = windowGetBuffer(tool_win);
+        bufferDrawRect(raw_buf, screen_width, left, 1, right, art_scale_height, toolbar_selection_color);
+    }
+
+    // Refresh the art display area.
+    Rect art_rect = { 121, 1, _scr_size.right - 19, art_scale_height + 1 };
+    windowRefreshRect(tool_win, &art_rect);
+
+    // Draw the current scroll offset as a count indicator.
+    char text[32];
+    sprintf(text, "(%d)", offset);
+    windowDrawText(tool_win, text, 40, 52, 27, 260);
+
+    // Refresh the count text area.
+    int text_h = fontGetLineHeight();
+    Rect text_rect = { 52, 27, 82, 27 + text_h };
+    windowRefreshRect(tool_win, &text_rect);
 }
 
 // 0x48C524

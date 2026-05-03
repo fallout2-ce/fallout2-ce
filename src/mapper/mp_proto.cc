@@ -419,7 +419,7 @@ void proto_critter_flags_redraw(int win, int pid)
     int x = 110;
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
-        if (_critter_flag_check(pid, critFlagList[index])) {
+        if (critterFlagCheck(pid, critFlagList[index])) {
             color = _colorTable[992];
         } else {
             color = _colorTable[10570];
@@ -539,9 +539,9 @@ int proto_critter_flags_modify(int pid)
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
         if ((critFlagList[index] & flags) != 0) {
-            critter_flag_set(pid, critFlagList[index]);
+            critterFlagSet(pid, critFlagList[index]);
         } else {
-            critter_flag_unset(pid, critFlagList[index]);
+            critterFlagUnset(pid, critFlagList[index]);
         }
     }
 
@@ -602,6 +602,14 @@ int proto_pick_ai_packet(int* value)
     }
 
     internal_free(names);
+    return 0;
+}
+
+// 0x49B778
+int proto_build_all_type(int type)
+{
+    // TODO: Incomplete.
+    (void)type;
     return 0;
 }
 

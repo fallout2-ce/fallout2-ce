@@ -48,7 +48,7 @@
 
 namespace fallout {
 
-static char* mapBuildPath(char* name);
+char* mapBuildPath(char* name);
 static int mapLoad(File* stream);
 static int _map_age_dead_critters();
 static void _map_fix_critter_combat_data();
@@ -708,7 +708,7 @@ int mapScroll(int dx, int dy)
 }
 
 // 0x482900
-static char* mapBuildPath(char* name)
+char* mapBuildPath(char* name)
 {
     // 0x631E78
     static char map_path[COMPAT_MAX_PATH];

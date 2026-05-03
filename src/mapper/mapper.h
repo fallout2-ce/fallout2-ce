@@ -16,6 +16,7 @@ extern int tool_win;
 
 int mapper_main(int argc, char** argv);
 void print_toolbar_name(int object_type);
+void mapper_save_toolbar();
 int mapper_inven_unwield(Object* obj, int right_hand);
 
 } // namespace fallout
