@@ -1513,6 +1513,10 @@ void edit_mapper()
         mapLoadByName(localName);
     }
 
+    // TODO: these calls aren't in original code, figure out how it worked without them
+    _gmouse_enable();
+    interfaceBarHide();
+
     auto switchToolbarType = [&](int newType) {
         currentType = newType;
         scrollOffset = toolbar_info[currentType].offset;
@@ -1521,6 +1525,7 @@ void edit_mapper()
     };
 
     while (true) {
+        sharedFpsLimiter.mark();
         int keyCode = inputGetInput();
 
         // ----------------------------------------------------------------
@@ -1568,6 +1573,8 @@ void edit_mapper()
         }
 
         if (keyCode == -1) {
+            renderPresent();
+            sharedFpsLimiter.throttle();
             continue;
         }
 
@@ -1809,6 +1816,9 @@ void edit_mapper()
         default:
             break;
         }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
     }
 
 exitLoop:
