@@ -1,8 +1,7 @@
 #include "graph_lib.h"
 
-#include <string.h>
-
 #include <algorithm>
+#include <cstring>
 
 #include "color.h"
 #include "db.h"
@@ -55,10 +54,13 @@ unsigned char HighRGB(unsigned char color)
 }
 
 // 0x44ED98
-int load_lbm_to_buf(const char* path, unsigned char* buffer, int stride, int srcX, int srcY, int loadWidth, int loadHeight)
+int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int pitch, int srcX, int srcY, int loadWidth, int loadHeight)
 {
     File* stream = fileOpen(path, "rb");
-    if (stream == nullptr) return -1;
+    if (stream == nullptr) {
+        debugPrint("load_lbm_to_buf(%s): fileOpen failed\n", path);
+        return -1;
+    }
 
     unsigned char form[4];
     unsigned int formSize;
@@ -67,7 +69,8 @@ int load_lbm_to_buf(const char* path, unsigned char* buffer, int stride, int src
         || memcmp(form, "FORM", 4) != 0
         || fileReadUInt32(stream, &formSize) == -1
         || fileRead(ilbm, 1, 4, stream) != 4
-        || memcmp(ilbm, "ILBM", 4) != 0) {
+        /*|| memcmp(ilbm, "ILBM", 4) != 0*/) {
+        debugPrint("load_lbm_to_buf(%s): incorrect LBM header\n", path);
         fileClose(stream);
         return -1;
     }
@@ -103,17 +106,13 @@ int load_lbm_to_buf(const char* path, unsigned char* buffer, int stride, int src
             compression = comp;
 
             // Skip remaining BMHD fields (pad1 + transClr + xAspect + yAspect + pageW + pageH)
-            int bmhdRemaining = aligned - 20;
+            int bmhdRemaining = aligned - 11;
             if (bmhdRemaining > 0) fileSeek(stream, bmhdRemaining, SEEK_CUR);
 
         } else if (memcmp(chunkType, "CMAP", 4) == 0) {
-            unsigned char palette[768];
-            int cmapRead = std::min(static_cast<int>(chunkSize), 768);
-            if (static_cast<int>(fileRead(palette, 1, cmapRead, stream)) == cmapRead) {
-                paletteSetEntries(palette);
-            }
-            int cmapRemaining = aligned - cmapRead;
-            if (cmapRemaining > 0) fileSeek(stream, cmapRemaining, SEEK_CUR);
+            // Skip palette data — the game uses its own system palette
+            // loaded from "color.pal" during init.
+            if (aligned > 0) fileSeek(stream, aligned, SEEK_CUR);
 
         } else if (memcmp(chunkType, "BODY", 4) == 0) {
             int totalPixels = imgWidth * imgHeight;
@@ -154,17 +153,18 @@ int load_lbm_to_buf(const char* path, unsigned char* buffer, int stride, int src
 
             internal_free(src);
 
-            int copyW = loadWidth > 0 ? loadWidth : imgWidth;
-            int copyH = loadHeight > 0 ? loadHeight + 1 : imgHeight;
+            int copyW = loadWidth > 0 && loadWidth < imgWidth ? loadWidth : imgWidth;
+            int copyH = loadHeight > 0 && loadHeight < imgHeight ? loadHeight + 1 : imgHeight;
 
             for (int y = 0; y < copyH && (srcY + y) < imgHeight; y++) {
-                memcpy(buffer + y * stride,
-                       pixels + (srcY + y) * imgWidth + srcX,
-                       std::min(copyW, imgWidth - srcX));
+                memcpy(dstBuffer + y * pitch,
+                    pixels + (srcY + y) * imgWidth + srcX,
+                    std::min(copyW, imgWidth - srcX));
             }
 
             internal_free(pixels);
             fileClose(stream);
+            debugPrint("load_lbm_to_buf: loaded %dx%d OK\n", imgWidth, imgHeight);
             return 0;
 
         } else {
