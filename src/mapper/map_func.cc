@@ -2,12 +2,16 @@
 
 #include "actions.h"
 #include "color.h"
+#include "db.h"
+#include "debug.h"
 #include "game_mouse.h"
 #include "input.h"
 #include "map.h"
 #include "memory.h"
 #include "mouse.h"
+#include "object.h"
 #include "proto.h"
+#include "proto_instance.h"
 #include "svga.h"
 #include "tile.h"
 #include "window_manager.h"
@@ -183,22 +187,71 @@ bool map_toggle_block_obj_viewing_on()
 
 void map_load_dialog()
 {
-    // TODO: file-picker dialog for opening maps
+    char** fileList;
+    int count = fileNameListInit("maps\\*.map", &fileList);
+    if (count == -1) {
+        win_timed_msg("No maps found!", _colorTable[31744]);
+        return;
+    }
+
+    int index = _win_list_select_at("Select a map to load:", fileList, count, nullptr, 80, 80, 0x10104, 0);
+    if (index != -1) {
+        mapLoadByName(fileList[index]);
+    }
+
+    fileNameListFree(&fileList, count);
 }
 
 void map_save_dialog()
 {
-    // TODO: confirm/save current map
+    if (gMapHeader.name[0] == '\0') {
+        map_save_as();
+        return;
+    }
+
+    if (win_yes_no("Save map?", 80, 80, 0x10104)) {
+        _map_save();
+    }
 }
 
 void map_save_as()
 {
-    // TODO: save map with a new name
+    char newName[16] = { 0 };
+    int rc = _win_get_str(newName, 8, "Save file (no extension):", 80, 80);
+    if (rc == -1) return;
+
+    // Uppercase and append .MAP
+    compat_strupr(newName);
+    if (strstr(newName, ".MAP") == nullptr) {
+        strcat(newName, ".MAP");
+    }
+
+    strncpy(gMapHeader.name, newName, sizeof(gMapHeader.name) - 1);
+    gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
+
+    _map_save();
 }
 
 void map_info_dialog()
 {
-    // TODO: show map header info dialog
+    char info[256];
+    snprintf(info, sizeof(info), "Map: %s\nElevation: %d\nIndex: %d\nFlags: 0x%x\nScript: %d",
+        gMapHeader.name, gElevation, gMapHeader.index, gMapHeader.flags, gMapHeader.scriptIndex);
+    _win_msg(info, 80, 80, 0x10104);
+}
+
+void map_clear_elevation()
+{
+    Object* obj = objectFindFirstAtElevation(gElevation);
+    while (obj != nullptr) {
+        if (obj != gDude) {
+            objectDestroy(obj);
+            tileWindowRefresh();
+            obj = objectFindFirstAtElevation(gElevation);
+            continue;
+        }
+        obj = objectFindNextAtElevation();
+    }
 }
 
 void create_spray_tool()
@@ -217,24 +270,22 @@ void map_toggle_block_obj_viewing()
     // TODO: re-render tiles to reflect block view toggle
 }
 
-void map_clear_elevation()
-{
-    // TODO: destroy all objects on the current elevation
-}
-
 void mapper_shift_map()
 {
-    // TODO: shift all map objects by a global offset
+    // TODO: shift all map objects by an offset (needs tile coordinate system knowledge)
+    win_timed_msg("Shift Map not yet implemented", _colorTable[31744]);
 }
 
 void mapper_shift_map_elev()
 {
     // TODO: shift objects on one elevation by an offset
+    win_timed_msg("Shift Map Elev not yet implemented", _colorTable[31744]);
 }
 
 void mapper_copy_map_elev()
 {
-    // TODO: copy all objects from one elevation to another
+    // TODO: copy objects from current elevation to another via user prompt
+    win_timed_msg("Copy Map Elev not yet implemented", _colorTable[31744]);
 }
 
 void mapper_flush_cache()

@@ -1376,9 +1376,13 @@ void bookmarkUnHide()
     }
 }
 
-void bookmarkChoose()
+void bookmarkChoose(int type, int* outOffset)
 {
-    // TODO: open bookmark selection dialog
+    if (bookmarkWin == -1) return;
+
+    windowShow(bookmarkWin);
+    // TODO: full interactive bookmark selection from ASM
+    // For now just shows the bookmark window for visual reference.
 }
 
 // 0x4875B4
@@ -1670,7 +1674,7 @@ void edit_mapper()
         case KEY_LOWERCASE_B:
             break;
         case 2165:
-            bookmarkChoose();
+            bookmarkChoose(currentType, &scrollOffset);
             break;
         case 3123:
             map_toggle_block_obj_viewing();

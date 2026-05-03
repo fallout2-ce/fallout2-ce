@@ -23,7 +23,7 @@ int _create_pull_down(char** stringList, int stringListLength, int x, int y, int
 int _win_debug(const char* string);
 void _win_debug_delete(int btn, int keyCode);
 int _win_register_menu_bar(int win, int x, int y, int width, int height, int foregroundColor, int backgroundColor);
-int _win_register_menu_pulldown(int win, int x, char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor);
+int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor);
 void _win_delete_menu_bar(int win);
 int _find_first_letter(int ch, char** stringList, int stringListLength);
 int _win_width_needed(char** fileNameList, int fileNameListLength);

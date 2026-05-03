@@ -1,9 +1,17 @@
 #include "mapper/mp_scrpt.h"
 
 #include "art.h"
+#include "color.h"
+#include "debug.h"
+#include "map.h"
+#include "memory.h"
+#include "mouse.h"
 #include "object.h"
+#include "proto_instance.h"
 #include "scripts.h"
 #include "tile.h"
+#include "window_manager.h"
+#include "window_manager_private.h"
 
 namespace fallout {
 
@@ -93,22 +101,51 @@ int map_scr_remove_all_spatials()
 
 void map_scr_add_spatial()
 {
-    // TODO: add a spatial script trigger at cursor position
+    int x, y;
+    mouseGetPosition(&x, &y);
+    int tile = tileFromScreenXY(x, y);
+    if (tile == -1) return;
+
+    // Place spatial script marker object
+    Object* obj;
+    if (objectCreateWithFidPid(&obj, buildFid(OBJ_TYPE_INTERFACE, 3, 0, 0, 0), -1) != -1) {
+        objectSetLocation(obj, tile, gElevation, nullptr);
+    }
+    // TODO: register the spatial script itself
 }
 
 void map_set_script()
 {
-    // TODO: set the map-level script
+    char info[256];
+    snprintf(info, sizeof(info), "Map SID: %d", gMapSid);
+    _win_msg(info, 80, 80, 0x10104);
+    // TODO: full script selection dialog
 }
 
 void map_show_script()
 {
-    // TODO: display info about the current map script
+    char info[256];
+    snprintf(info, sizeof(info), "Map script SID: %d\nMap name: %s",
+        gMapSid, gMapHeader.name);
+    _win_msg(info, 80, 80, 0x10104);
 }
 
 void scr_list_str()
 {
-    // TODO: list all scripts via debug print
+    // TODO: list all scripts via debug print or dialog
+    debugPrint("\n--- Script List ---\n");
+    debugPrint("Map SID: %d\n", gMapSid);
+    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+        Script* scr = scriptGetFirstSpatialScript(elev);
+        int count = 0;
+        while (scr != nullptr) {
+            count++;
+            scr = scriptGetNextSpatialScript();
+        }
+        if (count > 0) {
+            debugPrint("Elev %d: %d spatial scripts\n", elev, count);
+        }
+    }
 }
 
 } // namespace fallout

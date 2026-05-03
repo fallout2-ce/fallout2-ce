@@ -22,6 +22,7 @@ namespace fallout {
 static constexpr int kTimedMsgs = 5;
 
 static int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow_negative, int x, int y);
+static int get_str(int win, char* buffer, int maxLength, bool clear, int x, int y);
 static void tm_watch_msgs();
 static void tm_kill_msg();
 static void tm_kill_out_of_order(int queueIndex);
@@ -988,7 +989,7 @@ int _win_register_menu_bar(int win, int x, int y, int width, int height, int for
 }
 
 // 0x4DC768
-int _win_register_menu_pulldown(int win, int x, char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor)
+int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor)
 {
     Window* window = windowGetWindow(win);
 

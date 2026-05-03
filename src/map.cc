@@ -48,12 +48,12 @@
 
 namespace fallout {
 
-char* mapBuildPath(char* name);
+const char* mapBuildPath(const char* name);
 static int mapLoad(File* stream);
 static int _map_age_dead_critters();
 static void _map_fix_critter_combat_data();
-static int _map_save();
 static int _map_save_file(File* stream);
+int _map_save();
 static void mapMakeMapsDirectory();
 static void isoWindowRefreshRect(Rect* rect);
 static void isoWindowRefreshRectGame(Rect* rect);
@@ -708,7 +708,7 @@ int mapScroll(int dx, int dy)
 }
 
 // 0x482900
-char* mapBuildPath(char* name)
+const char* mapBuildPath(const char* name)
 {
     // 0x631E78
     static char map_path[COMPAT_MAX_PATH];
@@ -1328,7 +1328,7 @@ static void _map_fix_critter_combat_data()
 
 // map_save
 // 0x483850
-static int _map_save()
+int _map_save()
 {
     char temp[80];
     temp[0] = '\0';
@@ -1341,7 +1341,7 @@ static int _map_save()
 
     int rc = -1;
     if (gMapHeader.name[0] != '\0') {
-        char* mapFileName = mapBuildPath(gMapHeader.name);
+        const char* mapFileName = mapBuildPath(gMapHeader.name);
         File* stream = fileOpen(mapFileName, "wb");
         if (stream != nullptr) {
             rc = _map_save_file(stream);
