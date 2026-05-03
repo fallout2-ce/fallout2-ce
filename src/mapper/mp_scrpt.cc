@@ -95,6 +95,55 @@ int map_scr_remove_all_spatials()
     return 0;
 }
 
+static int _scr_show_toggled = 0;
+
+// 0x4C26D0
+void map_scr_toggle_hexes()
+{
+    int markerFid = buildFid(OBJ_TYPE_INTERFACE, 3, 0, 0, 0);
+
+    // Remove all existing spatial marker objects across all elevations
+    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+        Object* obj = objectFindFirstAtElevation(elev);
+        while (obj != nullptr) {
+            if (obj->fid == markerFid) {
+                objectDestroy(obj, nullptr);
+                obj = objectFindFirstAtElevation(elev);
+                continue;
+            }
+            obj = objectFindNextAtElevation();
+        }
+    }
+
+    if (_scr_show_toggled) {
+        // Show path: iterate all scripts and create markers for spatial ones
+        for (int sid = 0; sid < 15000; sid++) {
+            Script* scr;
+            if (scriptGetScript(sid, &scr) != -1) {
+                int builtTile = scr->sp.built_tile;
+                if (builtTile != -1 && builtTile != 0) {
+                    int tile = builtTileGetTile(builtTile);
+                    int elevation = builtTileGetElevation(builtTile);
+                    if (tile != -1) {
+                        Object* obj;
+                        if (objectCreateWithFidPid(&obj, markerFid, -1) != -1) {
+                            int newFlags = obj->flags | 4;
+                            if (obj->flags != newFlags) {
+                                obj->flags = newFlags;
+                                _obj_toggle_flat(obj, nullptr);
+                            }
+                            objectSetLocation(obj, tile, elevation, nullptr);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    _scr_show_toggled = 1 - _scr_show_toggled;
+    tileWindowRefresh();
+}
+
 // =========================================================================
 // P2 stubs — to be fully implemented from mapper2.asm
 // =========================================================================

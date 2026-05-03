@@ -17,11 +17,14 @@
 #include "game_config.h"
 #include "game_dialog.h"
 #include "game_mouse.h"
+#include "game_movie.h"
+#include "game_sound.h"
 #include "graph_lib.h"
 #include "input.h"
 #include "interface.h"
 #include "inventory.h"
 #include "kb.h"
+#include "light.h"
 #include "loadsave.h"
 #include "mapper/map_func.h"
 #include "mapper/mp_proto.h"
@@ -31,6 +34,7 @@
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"
+#include "party_member.h"
 #include "proto.h"
 #include "scripts.h"
 #include "settings.h"
@@ -68,6 +72,8 @@ static void update_art(int type, int offset);
 static void handle_new_map(int* a1, int* a2);
 static int mapper_mark_exit_grid();
 static void mapper_mark_all_exit_grids();
+static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object** pHlObj1, Object* dudeToRestore);
+static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object* dudeToRestore);
 
 // TODO: Underlying menu/pulldown interface wants menu items to be non-const,
 // needs some refactoring.
@@ -233,6 +239,10 @@ static int tool_active = -1;
 // Color (palette index) used to draw the selection box around the active slot.
 // Corresponds to byte_775AF4 in mapper2.asm.
 static int toolbar_selection_color = 21;
+
+// Highlighted object on screen — used by mapper_destroy_highlight_obj.
+// Corresponds to _screen_obj in mapper2.asm.
+static Object* _screen_obj = nullptr;
 
 // 0x5598A0
 static bool map_entered = false;
@@ -1467,8 +1477,9 @@ bool proto_user_is_librarian()
 }
 
 // Button IDs from toolbar — must match buttonCreate calls in mapper_edit_init.
-constexpr int kArtSlotLeftBase = 161 + 7;
-constexpr int kArtSlotRightBase = 160;
+// Left-click: 161 + max_art_buttons + index
+// Right-click: 160 + index
+constexpr int kArtButtonBase = 161;
 
 constexpr int kBtnScrollLeft = 45;
 constexpr int kBtnScrollRight = 61;
@@ -1499,6 +1510,8 @@ void edit_mapper()
     int scrollOffset = 0;
     int selectedPid = -1;
     int markExitGridMode = 0;
+    Object* hl_obj1 = nullptr;
+    Object* hl_obj2 = nullptr;
 
     handle_new_map(&currentType, &scrollOffset);
 
@@ -1525,7 +1538,9 @@ void edit_mapper()
             strcat(localName, ".MAP");
         }
 
+        map_scr_toggle_hexes();
         mapLoadByName(localName);
+        map_scr_toggle_hexes();
     }
 
     // TODO: these calls aren't in original code, figure out how it worked without them
@@ -1557,12 +1572,8 @@ void edit_mapper()
             if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
                 if (map_entered) {
-                    gDude = dudeToRestore;
-                    _scr_game_exit();
-                    remove(mapBuildPath("TMP$MAP#.MAP"));
-                    remove(mapBuildPath("TMP$MAP#.CFG"));
-                    MapDirErase("MAPS\\", "SAV");
-                    interfaceBarHide();
+                    // Simulate F8 press to exit play mode.
+                    mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
                 }
             }
 
@@ -1615,33 +1626,37 @@ void edit_mapper()
         }
 
         // Toolbar art-slot left-click: select proto from toolbar
-        if (keyCode > kArtSlotLeftBase
-            && keyCode < kArtSlotLeftBase + max_art_buttons * 2) {
+        {
+            int leftBase = kArtButtonBase + max_art_buttons;
+            if (keyCode >= leftBase && keyCode < leftBase + max_art_buttons) {
 
-            if (!map_entered) {
-                if (!settings.mapper.use_art_not_protos) {
-                    int slotIndex = keyCode - kArtSlotLeftBase - max_art_buttons;
-                    update_toolname(&selectedPid, currentType, scrollOffset + slotIndex);
+                if (!map_entered) {
+                    if (!settings.mapper.use_art_not_protos) {
+                        int slotIndex = keyCode - leftBase;
+                        update_toolname(&selectedPid, currentType, scrollOffset + slotIndex);
+                    }
                 }
+                continue;
             }
-            continue;
         }
 
-        // Toolbar art-slot right-click: quick-select proto
-        if (keyCode >= kArtSlotRightBase
-            && keyCode <= kArtSlotRightBase + max_art_buttons) {
+        // Toolbar art-slot right-click
+        {
+            int rightBase = 160;
+            if (keyCode >= rightBase && keyCode <= rightBase + max_art_buttons) {
 
-            if (map_entered) continue;
+                if (map_entered) continue;
 
-            if (!settings.mapper.use_art_not_protos) {
-                int slotIndex = keyCode - kArtSlotRightBase;
-                int pid = toolbar_proto(currentType, scrollOffset + slotIndex);
-                if (pid != -1) {
-                    selectedPid = pid;
-                    update_toolname(&selectedPid, currentType, slotIndex);
+                if (!settings.mapper.use_art_not_protos) {
+                    int slotIndex = keyCode - rightBase;
+                    int pid = toolbar_proto(currentType, scrollOffset + slotIndex);
+                    if (pid != -1) {
+                        selectedPid = pid;
+                        update_toolname(&selectedPid, currentType, slotIndex);
+                    }
                 }
+                continue;
             }
-            continue;
         }
 
         // ---- Command dispatch ----
@@ -1653,14 +1668,36 @@ void edit_mapper()
             handle_new_map(&currentType, &scrollOffset);
             break;
         case KEY_ALT_O:
+            if (map_entered) {
+                win_timed_msg("This map has been Entered.  Can't Load.", _colorTable[31744]);
+                break;
+            }
+            mapper_destroy_highlight_obj(&_screen_obj, &hl_obj1);
+            map_toggle_block_obj_viewing();
+            map_scr_toggle_hexes();
             map_load_dialog();
+            map_scr_toggle_hexes();
             handle_new_map(&currentType, &scrollOffset);
+            map_scr_toggle_hexes();
+            map_scr_toggle_hexes();
+            interfaceBarHide();
+            mapper_load_toolbar(currentType, &scrollOffset);
             break;
         case KEY_ALT_S:
+            if (map_entered) {
+                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[31744]);
+                break;
+            }
             map_save_dialog();
+            mapper_save_toolbar();
             break;
         case KEY_ALT_A:
+            if (map_entered) {
+                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[31744]);
+                break;
+            }
             map_save_as();
+            mapper_save_toolbar();
             break;
         case KEY_ALT_I:
             map_info_dialog();
@@ -1816,6 +1853,16 @@ void edit_mapper()
             switchToolbarType(OBJ_TYPE_WALL);
             break;
 
+        // --- Play mode toggle ---
+        case kMenuBarActivation:
+        case kMenuBarActivationAlt:
+            if (map_entered) {
+                mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
+            } else {
+                mapper_enter_play_mode(&currentType, &scrollOffset, &hl_obj1, dudeToRestore);
+            }
+            break;
+
         // --- Quit ---
         case KEY_ESCAPE:
             if (markExitGridMode == 1) {
@@ -1829,6 +1876,7 @@ void edit_mapper()
             break;
 
         default:
+            gameHandleKey(keyCode, false);
             break;
         }
 
@@ -2232,8 +2280,137 @@ int mapper_mark_exit_grid()
     return 0;
 }
 
-// 0x48C704
-void mapper_mark_all_exit_grids()
+static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object** pHlObj1, Object* dudeToRestore)
+{
+    windowHide(menu_bar);
+
+    gmouse_set_mapper_mode(0);
+
+    mapper_destroy_highlight_obj(pHlObj1, nullptr);
+
+    _screen_obj = nullptr;
+
+    // TODO: bookmarkWin hide
+
+    // TODO: gameLoadGlobalVars();
+
+    windowHide(tool_win);
+
+    // TODO: save map name for restoration on exit
+
+    remove(mapBuildPath(tmp_map_name));
+    remove(mapBuildPath("TMP$MAP#.MAP"));
+    remove(mapBuildPath("TMP$MAP#.CFG"));
+    MapDirErase("MAPS\\", "SAV");
+
+    if (map_toggle_block_obj_viewing_on()) {
+        map_toggle_block_obj_viewing();
+    }
+
+    // TODO: mapSaveAs(tmp_map_name);
+
+    int centerTile = (gDude != nullptr) ? gDude->tile : 0;
+    objectSetLocation(gDude, centerTile, gElevation, nullptr);
+
+    objectSetRotation(gDude, 0, nullptr);
+
+    // TODO: objectShow(gDude);
+
+    // TODO: proto_dude_reset("premade\\blank.gcd")
+
+    // TODO: set dude FID from art_vault_guy_num
+
+    _scr_game_init();
+
+    interfaceBarShow();
+
+    map_entered = true;
+
+    gameMouseResetBouncingCursorFid();
+    gameMouseObjectsShow();
+    gameMouseSetCursor(0);
+
+    // TODO: _draw_mode = 0
+
+    lightSetAmbientIntensity(0x10000, true);
+
+    tileScrollBlockingEnable();
+    tileScrollLimitingEnable();
+
+    bool runAsGame = false;
+    configGetBool(&gGameConfig, "mapper", "run_mapper_as_game", &runAsGame);
+    if (runAsGame) {
+        // TODO: scriptExecProc(gMapSid, 0xF);
+        // TODO: _scr_load_all_scripts();
+    }
+
+    // TODO: scriptExecMapEnterScripts() / scriptExecMapUpdateScripts()
+
+    tileSetCenter(gDude->tile, 1);
+
+    // TODO: mapEnableBkProcesses()
+
+    // TODO: wmMapMusicStart()
+
+    tileWindowRefresh();
+}
+
+static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object* dudeToRestore)
+{
+    gmouse_set_mapper_mode(1);
+
+    gDude = dudeToRestore;
+
+    _scr_game_exit();
+
+    _partyMemberClear();
+
+    scriptsClearDudeScript();
+
+    // TODO: mapLoadByName(tmp_map_name);
+
+    remove(mapBuildPath(tmp_map_name));
+    remove(mapBuildPath("TMP$MAP#.MAP"));
+    remove(mapBuildPath("TMP$MAP#.CFG"));
+    MapDirErase("MAPS\\", "SAV");
+
+    // TODO: restore saved map name -> gMapHeader.name
+
+    handle_new_map(pCurrentType, pScrollOffset);
+
+    objectHide(gDude, nullptr);
+
+    map_entered = false;
+
+    map_scr_toggle_hexes();
+    map_scr_toggle_hexes();
+
+    if (tileRoofIsVisible()) {
+        tile_toggle_roof(true);
+    }
+
+    interfaceBarHide();
+
+    gameMoviesReset();
+
+    windowShow(tool_win);
+
+    lightSetAmbientIntensity(0x10000, true);
+
+    tileScrollBlockingDisable();
+    tileScrollLimitingDisable();
+
+    // TODO: gmouse click-to-scroll restore
+
+    // TODO: gmouse_3d_set_mode(0)
+
+    backgroundSoundDelete();
+
+    // TODO: bookmarkWin show
+    tileWindowRefresh();
+}
+
+static void mapper_mark_all_exit_grids()
 {
     Object* obj;
 
