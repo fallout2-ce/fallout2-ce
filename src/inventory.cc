@@ -2936,9 +2936,18 @@ CritterEquipped critterStripEquipped(Object* critter)
             equipped.armor = item;
         }
     }
-    if (equipped.leftHand != nullptr) { equipped.weight += itemGetWeight(equipped.leftHand); itemRemove(critter, equipped.leftHand, 1); }
-    if (equipped.rightHand != nullptr && equipped.rightHand != equipped.leftHand) { equipped.weight += itemGetWeight(equipped.rightHand); itemRemove(critter, equipped.rightHand, 1); }
-    if (equipped.armor != nullptr) { equipped.weight += itemGetWeight(equipped.armor); itemRemove(critter, equipped.armor, 1); }
+    if (equipped.leftHand != nullptr) {
+        equipped.weight += itemGetWeight(equipped.leftHand);
+        itemRemove(critter, equipped.leftHand, 1);
+    }
+    if (equipped.rightHand != nullptr && equipped.rightHand != equipped.leftHand) {
+        equipped.weight += itemGetWeight(equipped.rightHand);
+        itemRemove(critter, equipped.rightHand, 1);
+    }
+    if (equipped.armor != nullptr) {
+        equipped.weight += itemGetWeight(equipped.armor);
+        itemRemove(critter, equipped.armor, 1);
+    }
     return equipped;
 }
 
@@ -4456,7 +4465,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
                 }
             }
 
-        // change selected companion
+            // change selected companion
         } else if (keyCode == KEY_ARROW_LEFT) {
             if (partyTargets.size() > 1) {
                 partyTargetIndex = (partyTargetIndex > 0) ? partyTargetIndex - 1 : (int)partyTargets.size() - 1;
