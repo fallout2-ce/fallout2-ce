@@ -355,6 +355,14 @@ int artIsObjectTypeHidden(int objectType)
     return objectType >= OBJ_TYPE_ITEM && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].flags & 1 : 0;
 }
 
+// 0x409DF0
+void artToggleObjectTypeHidden(int objectType)
+{
+    if (objectType >= 0 && objectType < OBJ_TYPE_COUNT) {
+        gArtListDescriptions[objectType].flags ^= 1;
+    }
+}
+
 // 0x418F7C
 int artGetFidgetCount(int headFid)
 {

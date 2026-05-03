@@ -505,20 +505,20 @@ constexpr int kBtnScrollLeft = 45;
 constexpr int kBtnScrollRight = 61;
 constexpr int kBtnScrollPageLeft = 95;
 constexpr int kBtnScrollPageRight = 43;
-constexpr int kBtnElevUp = 329;
-constexpr int kBtnElevDown = 337;
-constexpr int kBtnObjType = 350;
-constexpr int kBtnCritType = 351;
-constexpr int kBtnScenType = 352;
-constexpr int kBtnWallType = 353;
-constexpr int kBtnTileType = 354;
-constexpr int kBtnMiscType = 355;
+constexpr int kBtnElevUp = KEY_PAGE_UP;
+constexpr int kBtnElevDown = KEY_PAGE_DOWN;
+constexpr int kBtnItemType = KEY_CTRL_F1;
+constexpr int kBtnCritType = KEY_CTRL_F2;
+constexpr int kBtnScenType = KEY_CTRL_F3;
+constexpr int kBtnWallType = KEY_CTRL_F4;
+constexpr int kBtnTileType = KEY_CTRL_F5;
+constexpr int kBtnMiscType = KEY_CTRL_F6;
 constexpr int kBtnCopy = 99;
 constexpr int kBtnPaste = 67;
 constexpr int kBtnEdit = 101;
 constexpr int kBtnDelete = 339;
-constexpr int kBtnHeightInc = 372;
-constexpr int kBtnHeightDec = 371;
+constexpr int kBtnHeightInc = KEY_CTRL_ARROW_RIGHT;
+constexpr int kBtnHeightDec = KEY_CTRL_ARROW_LEFT;
 constexpr int kBtnRoof = 'r';
 constexpr int kBtnHex = 'h';
 constexpr int kMenuHeaderFile = 289;
@@ -699,494 +699,102 @@ int mapper_edit_init(int argc, char** argv)
 
     tool_buf = windowGetBuffer(tool_win);
 
-    // TODO: simplify blitting using blitBuffer2D
-    //
-    blitBufferToBuffer(lbm_buf + 380 * lbmBufWidth,
-        lbmBufWidth,
-        100,
-        lbmBufWidth,
-        tool_buf,
-        screenWidth);
+    blitBufferToBuffer(lbm_buf + 380 * lbmBufWidth, lbmBufWidth, 100, lbmBufWidth, tool_buf, screenWidth);
 
-    //
-    blitBufferToBuffer(lbm_buf + 406 * lbmBufWidth + 101,
-        18,
-        23,
-        lbmBufWidth,
-        l_up,
-        18);
-    blitBufferToBuffer(lbm_buf + 253 * lbmBufWidth + 101,
-        18,
-        23,
-        lbmBufWidth,
-        l_down,
-        18);
-    buttonCreate(tool_win,
-        101,
-        26,
-        18,
-        23,
-        -1,
-        -1,
-        kBtnScrollLeft,
-        -1,
-        l_up,
-        l_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 406 * lbmBufWidth + 101, 18, 23, lbmBufWidth, l_up, 18);
+    blitBufferToBuffer(lbm_buf + 253 * lbmBufWidth + 101, 18, 23, lbmBufWidth, l_down, 18);
+    buttonCreate(tool_win, 101, 26, 18, 23, -1, -1, kBtnScrollLeft, -1, l_up, l_down, nullptr, 0);
 
-    //
-    blitBufferToBuffer(lbm_buf + 406 * lbmBufWidth + 622,
-        18,
-        23,
-        lbmBufWidth,
-        r_up,
-        18);
-    blitBufferToBuffer(lbm_buf + 253 * lbmBufWidth + 622,
-        18,
-        23,
-        lbmBufWidth,
-        r_down,
-        18);
-    buttonCreate(tool_win,
-        _scr_size.right - 18,
-        26,
-        18,
-        23,
-        -1,
-        -1,
-        kBtnScrollRight,
-        -1,
-        r_up,
-        r_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 406 * lbmBufWidth + 622, 18, 23, lbmBufWidth, r_up, 18);
+    blitBufferToBuffer(lbm_buf + 253 * lbmBufWidth + 622, 18, 23, lbmBufWidth, r_down, 18);
+    buttonCreate(tool_win, _scr_size.right - 18, 26, 18, 23, -1, -1, kBtnScrollRight, -1, r_up, r_down, nullptr, 0);
 
-    //
-    blitBufferToBuffer(lbm_buf + 381 * lbmBufWidth + 101,
-        18,
-        23,
-        lbmBufWidth,
-        shift_l_up,
-        18);
-    blitBufferToBuffer(lbm_buf + 228 * lbmBufWidth + 101,
-        18,
-        23,
-        lbmBufWidth,
-        shift_l_down,
-        18);
-    buttonCreate(tool_win,
-        101,
-        1,
-        18,
-        23,
-        -1,
-        -1,
-        kBtnScrollPageLeft,
-        -1,
-        shift_l_up,
-        shift_l_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 381 * lbmBufWidth + 101, 18, 23, lbmBufWidth, shift_l_up, 18);
+    blitBufferToBuffer(lbm_buf + 228 * lbmBufWidth + 101, 18, 23, lbmBufWidth, shift_l_down, 18);
+    buttonCreate(tool_win, 101, 1, 18, 23, -1, -1, kBtnScrollPageLeft, -1, shift_l_up, shift_l_down, nullptr, 0);
 
-    //
-    blitBufferToBuffer(lbm_buf + 381 * lbmBufWidth + 622,
-        18,
-        23,
-        lbmBufWidth,
-        shift_r_up,
-        18);
-    blitBufferToBuffer(lbm_buf + 228 * lbmBufWidth + 622,
-        18,
-        23,
-        lbmBufWidth,
-        shift_r_down,
-        18);
-    buttonCreate(tool_win,
-        _scr_size.right - 18,
-        1,
-        18,
-        23,
-        -1,
-        -1,
-        kBtnScrollPageRight,
-        -1,
-        shift_r_up,
-        shift_r_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 381 * lbmBufWidth + 622, 18, 23, lbmBufWidth, shift_r_up, 18);
+    blitBufferToBuffer(lbm_buf + 228 * lbmBufWidth + 622, 18, 23, lbmBufWidth, shift_r_down, 18);
+    buttonCreate(tool_win, _scr_size.right - 18, 1, 18, 23, -1, -1, kBtnScrollPageRight, -1, shift_r_up, shift_r_down, nullptr, 0);
 
-    //
     for (index = 0; index < max_art_buttons; index++) {
-        int btn = buttonCreate(tool_win,
-            index * (art_scale_width + 1) + 121,
-            1,
-            art_scale_width,
-            art_scale_height,
-            index + max_art_buttons + 161,
-            58,
-            160 + index,
-            -1,
-            nullptr,
-            nullptr,
-            nullptr,
-            0);
+        int btn = buttonCreate(tool_win, index * (art_scale_width + 1) + 121, 1, art_scale_width, art_scale_height, index + max_art_buttons + 161, 58, 160 + index, -1, nullptr, nullptr, nullptr, 0);
         buttonSetRightMouseCallbacks(btn, 160 + index, -1, nullptr, nullptr);
     }
 
     // ELEVATION INC
-    blitBufferToBuffer(lbm_buf + 431 * lbmBufWidth + 1,
-        18,
-        23,
-        lbmBufWidth,
-        einc_up,
-        18);
-    blitBufferToBuffer(lbm_buf + 325 * lbmBufWidth + 1,
-        18,
-        23,
-        lbmBufWidth,
-        einc_down,
-        18);
-    buttonCreate(tool_win,
-        1,
-        51,
-        18,
-        23,
-        -1,
-        -1,
-        kBtnElevUp,
-        -1,
-        einc_up,
-        einc_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 431 * lbmBufWidth + 1, 18, 23, lbmBufWidth, einc_up, 18);
+    blitBufferToBuffer(lbm_buf + 325 * lbmBufWidth + 1, 18, 23, lbmBufWidth, einc_down, 18);
+    buttonCreate(tool_win, 1, 51, 18, 23, -1, -1, kBtnElevUp, -1, einc_up, einc_down, nullptr, 0);
 
     // ELEVATION DEC
-    blitBufferToBuffer(lbm_buf + 456 * lbmBufWidth + 1,
-        18,
-        23,
-        lbmBufWidth,
-        edec_up,
-        18);
-    blitBufferToBuffer(lbm_buf + 350 * lbmBufWidth + 1,
-        18,
-        23,
-        lbmBufWidth,
-        edec_down,
-        18);
-    buttonCreate(tool_win,
-        1,
-        76,
-        18,
-        23,
-        -1,
-        -1,
-        kBtnElevDown,
-        -1,
-        edec_up,
-        edec_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 456 * lbmBufWidth + 1, 18, 23, lbmBufWidth, edec_up, 18);
+    blitBufferToBuffer(lbm_buf + 350 * lbmBufWidth + 1, 18, 23, lbmBufWidth, edec_down, 18);
+    buttonCreate(tool_win, 1, 76, 18, 23, -1, -1, kBtnElevDown, -1, edec_up, edec_down, nullptr, 0);
 
     // ELEVATION
     for (index = 0; index < 4; index++) {
-        blitBufferToBuffer(lbm_buf + 293 * lbmBufWidth + 19 * index,
-            19,
-            26,
-            lbmBufWidth,
-            e_num[index],
-            19);
+        blitBufferToBuffer(lbm_buf + 293 * lbmBufWidth + 19 * index, 19, 26, lbmBufWidth, e_num[index], 19);
     }
 
     view_mode = false;
 
-    //
-    blitBufferToBuffer(lbm_buf + 169 * lbmBufWidth + 64,
-        58,
-        13,
-        lbmBufWidth,
-        to_iso_up,
-        58);
-    blitBufferToBuffer(lbm_buf + 108 * lbmBufWidth + 64,
-        58,
-        13,
-        lbmBufWidth,
-        to_iso_down,
-        58);
+    blitBufferToBuffer(lbm_buf + 169 * lbmBufWidth + 64, 58, 13, lbmBufWidth, to_iso_up, 58);
+    blitBufferToBuffer(lbm_buf + 108 * lbmBufWidth + 64, 58, 13, lbmBufWidth, to_iso_down, 58);
 
     // ROOF
-    blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 64,
-        58,
-        13,
-        lbmBufWidth,
-        roof_up,
-        58);
-    blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 64,
-        58,
-        13,
-        lbmBufWidth,
-        roof_down,
-        58);
-    roof_bid = buttonCreate(tool_win,
-        64,
-        69,
-        58,
-        13,
-        -1,
-        -1,
-        kBtnRoof,
-        kBtnRoof,
-        roof_up,
-        roof_down,
-        nullptr,
-        BUTTON_FLAG_CHECKABLE);
+    blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 64, 58, 13, lbmBufWidth, roof_up, 58);
+    blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 64, 58, 13, lbmBufWidth, roof_down, 58);
+    roof_bid = buttonCreate(tool_win, 64, 69, 58, 13, -1, -1, kBtnRoof, kBtnRoof, roof_up, roof_down, nullptr, BUTTON_FLAG_CHECKABLE | BUTTON_FLAG_CHECKED);
 
     if (tileRoofIsVisible()) {
         tile_toggle_roof(false);
     }
 
     // HEX
-    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 64,
-        58,
-        13,
-        lbmBufWidth,
-        hex_up,
-        58);
-    blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 64,
-        58,
-        13,
-        lbmBufWidth,
-        hex_down,
-        58);
-    hex_bid = buttonCreate(tool_win,
-        64,
-        84,
-        58,
-        13,
-        -1,
-        -1,
-        kBtnHex,
-        kBtnHex,
-        hex_up,
-        hex_down,
-        nullptr,
-        BUTTON_FLAG_CHECKABLE);
+    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 64, 58, 13, lbmBufWidth, hex_up, 58);
+    blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 64, 58, 13, lbmBufWidth, hex_down, 58);
+    hex_bid = buttonCreate(tool_win, 64, 84, 58, 13, -1, -1, kBtnHex, kBtnHex, hex_up, hex_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
-    // OBJ
-    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 125,
-        66,
-        13,
-        lbmBufWidth,
-        obj_up,
-        66);
-    blitBufferToBuffer(lbm_buf + 328 * lbmBufWidth + 125,
-        66,
-        13,
-        lbmBufWidth,
-        obj_down,
-        66);
-    obj_bid = buttonCreate(tool_win,
-        125,
-        54,
-        66,
-        13,
-        -1,
-        -1,
-        kBtnObjType,
-        kBtnObjType,
-        obj_up,
-        obj_down,
-        nullptr,
-        BUTTON_FLAG_CHECKABLE);
+    // ITEM
+    blitBufferToBuffer(lbm_buf + 434 * lbmBufWidth + 125, 66, 13, lbmBufWidth, obj_up, 66);
+    blitBufferToBuffer(lbm_buf + 328 * lbmBufWidth + 125, 66, 13, lbmBufWidth, obj_down, 66);
+    obj_bid = buttonCreate(tool_win, 125, 54, 66, 13, -1, -1, kBtnItemType, kBtnItemType, obj_up, obj_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // CRIT
-    blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 125,
-        66,
-        13,
-        lbmBufWidth,
-        crit_up,
-        66);
-    blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 125,
-        66,
-        13,
-        lbmBufWidth,
-        crit_down,
-        66);
-    crit_bid = buttonCreate(tool_win,
-        125,
-        69,
-        66,
-        13,
-        -1,
-        -1,
-        kBtnCritType,
-        kBtnCritType,
-        crit_up,
-        crit_down,
-        nullptr,
-        BUTTON_FLAG_CHECKABLE);
+    blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 125, 66, 13, lbmBufWidth, crit_up, 66);
+    blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 125, 66, 13, lbmBufWidth, crit_down, 66);
+    crit_bid = buttonCreate(tool_win, 125, 69, 66, 13, -1, -1, kBtnCritType, kBtnCritType, crit_up, crit_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // SCEN
-    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 125,
-        66,
-        13,
-        lbmBufWidth,
-        scen_up,
-        66);
-    blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 125,
-        66,
-        13,
-        lbmBufWidth,
-        scen_down,
-        66);
-    scen_bid = buttonCreate(tool_win,
-        125,
-        84,
-        66,
-        13,
-        -1,
-        -1,
-        kBtnScenType,
-        kBtnScenType,
-        scen_up,
-        scen_down,
-        nullptr,
-        BUTTON_FLAG_CHECKABLE);
+    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 125, 66, 13, lbmBufWidth, scen_up, 66);
+    blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 125, 66, 13, lbmBufWidth, scen_down, 66);
+    scen_bid = buttonCreate(tool_win, 125, 84, 66, 13, -1, -1, kBtnScenType, kBtnScenType, scen_up, scen_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // WALL
-    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 194,
-        53,
-        13,
-        lbmBufWidth,
-        wall_up,
-        53);
-    blitBufferToBuffer(lbm_buf + 328 * lbmBufWidth + 194,
-        53,
-        13,
-        lbmBufWidth,
-        wall_down,
-        53);
-    wall_bid = buttonCreate(tool_win,
-        194,
-        54,
-        53,
-        13,
-        -1,
-        -1,
-        kBtnWallType,
-        kBtnWallType,
-        wall_up,
-        wall_down,
-        nullptr,
-        BUTTON_FLAG_CHECKABLE);
+    blitBufferToBuffer(lbm_buf + 434 * lbmBufWidth + 194, 53, 13, lbmBufWidth, wall_up, 53);
+    blitBufferToBuffer(lbm_buf + 328 * lbmBufWidth + 194, 53, 13, lbmBufWidth, wall_down, 53);
+    wall_bid = buttonCreate(tool_win, 194, 54, 53, 13, -1, -1, kBtnWallType, kBtnWallType, wall_up, wall_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // TILE
-    blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 194,
-        53,
-        13,
-        lbmBufWidth,
-        tile_up,
-        53);
-    blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 194,
-        53,
-        13,
-        lbmBufWidth,
-        tile_down,
-        53);
-    tile_bid = buttonCreate(tool_win,
-        194,
-        54,
-        53,
-        13,
-        -1,
-        -1,
-        kBtnTileType,
-        kBtnTileType,
-        tile_up,
-        tile_down,
-        nullptr,
-        BUTTON_FLAG_CHECKABLE);
+    blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 194, 53, 13, lbmBufWidth, tile_up, 53);
+    blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 194, 53, 13, lbmBufWidth, tile_down, 53);
+    tile_bid = buttonCreate(tool_win, 194, 69, 53, 13, -1, -1, kBtnTileType, kBtnTileType, tile_up, tile_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // MISC
-    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 194,
-        53,
-        13,
-        lbmBufWidth,
-        misc_up,
-        53);
-    blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 194,
-        53,
-        13,
-        lbmBufWidth,
-        misc_down,
-        53);
-    misc_bid = buttonCreate(tool_win,
-        194,
-        84,
-        53,
-        13,
-        -1,
-        -1,
-        kBtnMiscType,
-        kBtnMiscType,
-        misc_up,
-        misc_down,
-        nullptr,
-        BUTTON_FLAG_CHECKABLE);
+    blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 194, 53, 13, lbmBufWidth, misc_up, 53);
+    blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 194, 53, 13, lbmBufWidth, misc_down, 53);
+    misc_bid = buttonCreate(tool_win, 194, 84, 53, 13, -1, -1, kBtnMiscType, kBtnMiscType, misc_up, misc_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // HEIGHT INC
-    blitBufferToBuffer(lbm_buf + 431 * lbmBufWidth + 251,
-        18,
-        23,
-        lbmBufWidth,
-        height_inc_up,
-        18);
-    blitBufferToBuffer(lbm_buf + 325 * lbmBufWidth + 251,
-        18,
-        23,
-        lbmBufWidth,
-        height_inc_down,
-        18);
-    buttonCreate(tool_win,
-        251,
-        51,
-        18,
-        23,
-        -1,
-        -1,
-        kBtnHeightInc,
-        -1,
-        height_inc_up,
-        height_inc_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 431 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_inc_up, 18);
+    blitBufferToBuffer(lbm_buf + 325 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_inc_down, 18);
+    buttonCreate(tool_win, 251, 51, 18, 23, -1, -1, kBtnHeightInc, -1, height_inc_up, height_inc_down, nullptr, 0);
 
     // HEIGHT DEC
-    blitBufferToBuffer(lbm_buf + 456 * lbmBufWidth + 251,
-        18,
-        23,
-        lbmBufWidth,
-        height_dec_up,
-        18);
-    blitBufferToBuffer(lbm_buf + 350 * lbmBufWidth + 251,
-        18,
-        23,
-        lbmBufWidth,
-        height_dec_down,
-        18);
-    buttonCreate(tool_win,
-        251,
-        76,
-        18,
-        23,
-        -1,
-        -1,
-        kBtnHeightDec,
-        -1,
-        height_dec_up,
-        height_dec_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 456 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_dec_up, 18);
+    blitBufferToBuffer(lbm_buf + 350 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_dec_down, 18);
+    buttonCreate(tool_win, 251, 76, 18, 23, -1, -1, kBtnHeightDec, -1, height_dec_up, height_dec_down, nullptr, 0);
 
     // ARROWS
     for (index = 0; index < ROTATION_COUNT; index++) {
@@ -1195,12 +803,7 @@ int mapper_edit_init(int argc, char** argv)
         unsigned char bgColor = lbm_buf[27 * lbmBufWidth + 287];
         int k;
 
-        blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x,
-            10,
-            10,
-            lbmBufWidth,
-            rotate_arrows[1][index],
-            10);
+        blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x, 10, 10, lbmBufWidth, rotate_arrows[1][index], 10);
 
         for (k = 0; k < 100; k++) {
             if (rotate_arrows[1][index][k] == bgColor) {
@@ -1208,12 +811,7 @@ int mapper_edit_init(int argc, char** argv)
             }
         }
 
-         blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x - 52,
-             10,
-             10,
-             lbmBufWidth,
-             rotate_arrows[0][index],
-             10);
+         blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x - 52, 10, 10, lbmBufWidth, rotate_arrows[0][index], 10);
 
          for (k = 0; k < 100; k++) {
              if (rotate_arrows[0][index][k] == bgColor) {
@@ -1223,153 +821,35 @@ int mapper_edit_init(int argc, char** argv)
     }
 
     // COPY
-    blitBufferToBuffer(lbm_buf + 435 * lbmBufWidth + 325,
-        49,
-        19,
-        lbmBufWidth,
-        copy_up,
-        49);
-    blitBufferToBuffer(lbm_buf + 329 * lbmBufWidth + 325,
-        49,
-        19,
-        lbmBufWidth,
-        copy_down,
-        49);
-    copy_bid = buttonCreate(tool_win,
-        325,
-        55,
-        49,
-        19,
-        -1,
-        -1,
-        kBtnCopy,
-        -1,
-        copy_up,
-        copy_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 435 * lbmBufWidth + 325, 49, 19, lbmBufWidth, copy_up, 49);
+    blitBufferToBuffer(lbm_buf + 329 * lbmBufWidth + 325, 49, 19, lbmBufWidth, copy_down, 49);
+    copy_bid = buttonCreate(tool_win, 325, 55, 49, 19, -1, -1, kBtnCopy, -1, copy_up, copy_down, nullptr, 0);
 
     // PASTE
-    blitBufferToBuffer(lbm_buf + 457 * lbmBufWidth + 325,
-        49,
-        19,
-        lbmBufWidth,
-        paste_up,
-        49);
-    blitBufferToBuffer(lbm_buf + 351 * lbmBufWidth + 325,
-        49,
-        19,
-        lbmBufWidth,
-        paste_down,
-        49);
-    paste_bid = buttonCreate(tool_win,
-        325,
-        77,
-        49,
-        19,
-        -1,
-        -1,
-        kBtnPaste,
-        -1,
-        paste_up,
-        paste_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 457 * lbmBufWidth + 325, 49, 19, lbmBufWidth, paste_up, 49);
+    blitBufferToBuffer(lbm_buf + 351 * lbmBufWidth + 325, 49, 19, lbmBufWidth, paste_down, 49);
+    paste_bid = buttonCreate(tool_win, 325, 77, 49, 19, -1, -1, kBtnPaste, -1, paste_up, paste_down, nullptr, 0);
 
     // EDIT
-    blitBufferToBuffer(lbm_buf + 435 * lbmBufWidth + 378,
-        49,
-        19,
-        lbmBufWidth,
-        edit_up,
-        49);
-    blitBufferToBuffer(lbm_buf + 329 * lbmBufWidth + 378,
-        49,
-        19,
-        lbmBufWidth,
-        edit_down,
-        49);
-    edit_bid = buttonCreate(tool_win,
-        378,
-        55,
-        49,
-        19,
-        -1,
-        -1,
-        kBtnEdit,
-        -1,
-        edit_up,
-        edit_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 435 * lbmBufWidth + 378, 49, 19, lbmBufWidth, edit_up, 49);
+    blitBufferToBuffer(lbm_buf + 329 * lbmBufWidth + 378, 49, 19, lbmBufWidth, edit_down, 49);
+    edit_bid = buttonCreate(tool_win, 378, 55, 49, 19, -1, -1, kBtnEdit, -1, edit_up, edit_down, nullptr, 0);
 
     // DELETE
-    blitBufferToBuffer(lbm_buf + 457 * lbmBufWidth + 378,
-        49,
-        19,
-        lbmBufWidth,
-        delete_up,
-        49);
-    blitBufferToBuffer(lbm_buf + 351 * lbmBufWidth + 378,
-        49,
-        19,
-        lbmBufWidth,
-        delete_down,
-        49);
-    delete_bid = buttonCreate(tool_win,
-        378,
-        77,
-        49,
-        19,
-        -1,
-        -1,
-        kBtnDelete,
-        -1,
-        delete_up,
-        delete_down,
-        nullptr,
-        0);
+    blitBufferToBuffer(lbm_buf + 457 * lbmBufWidth + 378, 49, 19, lbmBufWidth, delete_up, 49);
+    blitBufferToBuffer(lbm_buf + 351 * lbmBufWidth + 378, 49, 19, lbmBufWidth, delete_down, 49);
+    delete_bid = buttonCreate(tool_win, 378, 77, 49, 19, -1, -1, kBtnDelete, -1, delete_up, delete_down, nullptr, 0);
 
     draw_mode = false;
 
-    blitBufferToBuffer(lbm_buf + 169 * lbmBufWidth + 430,
-        45,
-        43,
-        lbmBufWidth,
-        to_edit_up,
-        45);
-    blitBufferToBuffer(lbm_buf + 108 * lbmBufWidth + 430,
-        45,
-        43,
-        lbmBufWidth,
-        to_edit_down,
-        45);
+    blitBufferToBuffer(lbm_buf + 169 * lbmBufWidth + 430, 45, 43, lbmBufWidth, to_edit_up, 45);
+    blitBufferToBuffer(lbm_buf + 108 * lbmBufWidth + 430, 45, 43, lbmBufWidth, to_edit_down, 45);
 
-    blitBufferToBuffer(lbm_buf + 169 * lbmBufWidth + 327,
-        45,
-        43,
-        lbmBufWidth,
-        copy_group_up,
-        45);
-    blitBufferToBuffer(lbm_buf + 108 * lbmBufWidth + 327,
-        45,
-        43,
-        lbmBufWidth,
-        copy_group_down,
-        45);
+    blitBufferToBuffer(lbm_buf + 169 * lbmBufWidth + 327, 45, 43, lbmBufWidth, copy_group_up, 45);
+    blitBufferToBuffer(lbm_buf + 108 * lbmBufWidth + 327, 45, 43, lbmBufWidth, copy_group_down, 45);
 
-    blitBufferToBuffer(lbm_buf + 169 * lbmBufWidth + 379,
-        45,
-        43,
-        lbmBufWidth,
-        erase_up,
-        45);
-    blitBufferToBuffer(lbm_buf + 108 * lbmBufWidth + 379,
-        45,
-        43,
-        lbmBufWidth,
-        erase_down,
-        45);
+    blitBufferToBuffer(lbm_buf + 169 * lbmBufWidth + 379, 45, 43, lbmBufWidth, erase_up, 45);
+    blitBufferToBuffer(lbm_buf + 108 * lbmBufWidth + 379, 45, 43, lbmBufWidth, erase_down, 45);
 
     internal_free(lbm_buf);
     windowRefresh(tool_win);
@@ -1653,11 +1133,6 @@ void edit_mapper()
             keyCode = menu_val_2[index];
         }
 
-        // 'e' remaps to right-scroll arrow when not in any special mode
-        if (keyCode == 'e') {
-            keyCode = kBtnScrollRight;
-        }
-
         // Toolbar art-slot left-click: select proto from toolbar
         {
             int leftBase = kArtButtonBase + max_art_buttons;
@@ -1863,32 +1338,55 @@ void edit_mapper()
         case kBtnElevUp:
             if (gElevation < ELEVATION_COUNT - 1) {
                 mapSetElevation(gElevation + 1);
+                tileWindowRefresh();
             }
             break;
         case kBtnElevDown:
             if (gElevation > 0) {
                 mapSetElevation(gElevation - 1);
+                tileWindowRefresh();
             }
             break;
 
+        // --- Rotation (Height Inc/Dec keys rotate objects) ---
+        case kBtnHeightInc:
+        case kBtnHeightDec: {
+            Object* obj = map_entered ? gDude : (_screen_obj ? _screen_obj : gGameMouseBouncingCursor);
+            if (obj != nullptr) {
+                Rect rect;
+                int newRot = (keyCode == kBtnHeightInc) ? (obj->rotation + 1) % 6 : (obj->rotation + 5) % 6;
+                objectSetRotation(obj, newRot, &rect);
+                tileWindowRefreshRect(&rect, gElevation);
+                rotation = obj->rotation;
+                mapper_refresh_rotation();
+            }
+            break;
+        }
+
         // --- Type toggle buttons ---
-        case kBtnObjType:
-            switchToolbarType(OBJ_TYPE_ITEM);
+        case kBtnItemType:
+            artToggleObjectTypeHidden(OBJ_TYPE_ITEM);
+            tileWindowRefresh();
             break;
         case kBtnCritType:
-            switchToolbarType(OBJ_TYPE_CRITTER);
+            artToggleObjectTypeHidden(OBJ_TYPE_CRITTER);
+            tileWindowRefresh();
             break;
         case kBtnScenType:
-            switchToolbarType(OBJ_TYPE_SCENERY);
+            artToggleObjectTypeHidden(OBJ_TYPE_SCENERY);
+            tileWindowRefresh();
             break;
         case kBtnWallType:
-            switchToolbarType(OBJ_TYPE_WALL);
+            artToggleObjectTypeHidden(OBJ_TYPE_WALL);
+            tileWindowRefresh();
             break;
         case kBtnTileType:
-            switchToolbarType(OBJ_TYPE_TILE);
+            artToggleObjectTypeHidden(OBJ_TYPE_TILE);
+            tileWindowRefresh();
             break;
         case kBtnMiscType:
-            switchToolbarType(OBJ_TYPE_MISC);
+            artToggleObjectTypeHidden(OBJ_TYPE_MISC);
+            tileWindowRefresh();
             break;
 
         // --- Hex/Roof overlay toggles ---
@@ -1896,7 +1394,33 @@ void edit_mapper()
             map_scr_toggle_hexes();
             break;
         case kBtnRoof:
-            tile_toggle_roof(!tileRoofIsVisible());
+            tile_toggle_roof(true);
+            break;
+
+        // --- Copy / Edit / Paste / Delete ---
+        case kBtnCopy:
+            if (!map_entered) {
+                // TODO: copy_tile_() or copy_object_() depending on toolbar type
+            }
+            break;
+        case kBtnEdit:
+            if (!map_entered && draw_mode && _screen_obj != nullptr) {
+                // TODO: proto_inst_edit_(_screen_obj)
+            }
+            break;
+        case kBtnPaste:
+            if (!map_entered) {
+                // TODO: copy_tile_() or copy_object_(-1) depending on toolbar type
+            }
+            break;
+        case kBtnDelete:
+            if (!map_entered) {
+                if (_screen_obj != nullptr) {
+                    mapper_destroy_highlight_obj(&_screen_obj, nullptr);
+                } else {
+                    // TODO: erase_object_()
+                }
+            }
             break;
 
         // --- Play mode toggle ---

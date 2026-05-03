@@ -122,6 +122,7 @@ void artReset();
 void artExit();
 char* artGetObjectTypeName(int objectType);
 int artIsObjectTypeHidden(int objectType);
+void artToggleObjectTypeHidden(int objectType);
 int artGetFidgetCount(int headFid);
 void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
