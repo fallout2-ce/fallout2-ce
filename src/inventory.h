@@ -29,6 +29,15 @@ void inventoryOpenUseItemOn(Object* targetObj);
 Object* critterGetItem2(Object* critter);
 Object* critterGetItem1(Object* critter);
 Object* critterGetArmor(Object* critter);
+
+struct CritterEquipped {
+    Object* leftHand = nullptr;
+    Object* rightHand = nullptr;
+    Object* armor = nullptr;
+    int weight = 0;
+};
+CritterEquipped critterStripEquipped(Object* critter);
+void critterRestoreEquipped(Object* critter, CritterEquipped& equipped);
 Object* objectGetCarriedObjectByPid(Object* obj, int pid);
 int objectGetCarriedQuantityByPid(Object* obj, int pid);
 Object* inventoryFindByType(Object* obj, int itemType, int* indexPtr);

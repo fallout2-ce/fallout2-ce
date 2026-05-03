@@ -127,6 +127,7 @@ struct DebugSettings {
 struct QolSettings {
     int use_walk_distance = 5;
     bool auto_open_doors = false;
+    bool party_loot_and_barter = false;
 };
 
 struct MapperSettings {
