@@ -47,7 +47,7 @@ void target_override_protection()
     name = getenv("MAIL_NAME");
     if (name != NULL) {
         // NOTE: Unsafe, backing buffer is 32 byte max.
-        strcpy(proto_builder_name, strupr(name));
+        strcpy(proto_builder_name, compat_strupr(name));
     } else {
         strcpy(proto_builder_name, "UNKNOWN");
     }

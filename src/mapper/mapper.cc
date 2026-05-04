@@ -534,6 +534,7 @@ constexpr int kMenuHeaderScripts = KEY_ALT_T;
 constexpr int kMenuHeaderLibrarian = KEY_ALT_J;
 constexpr int kMenuBarActivation = KEY_F8;
 constexpr int kMenuBarActivationAlt = KEY_CTRL_F12;
+constexpr int kBtnEraseMap = KEY_F12;
 
 constexpr int kBtnMoveMapElev = 4186;
 constexpr int kBtnCopyMapElev = 4188;
@@ -1107,10 +1108,11 @@ static void elevationNumberRefresh()
     windowRefreshRect(tool_win, &numRect);
 }
 
+// This is the main mapper UI loop: handles all input and redrawing.
 // 0x4877D0
 void edit_mapper()
 {
-    int currentType = OBJ_TYPE_MISC;
+    int currentType = OBJ_TYPE_TILE;
     int scrollOffset = 0;
     int selectedPid = -1;
     int markExitGridMode = 0;
@@ -1205,13 +1207,19 @@ void edit_mapper()
             int buttons = mouseGetEvent();
 
             if (buttons & MOUSE_EVENT_LEFT_BUTTON_REPEAT) {
-                // click-and-drag to move selected object
-                // Vanilla uses gridAreaBottom = gIsoWindow_bottom - gIsoWindow_top - 100 (excludes toolbar)
                 constexpr int kToolbarReservedHeight = 100;
                 if (_mouse_click_in(0, 16,
                         windowGetWidth(gIsoWindow) - 1,
                         windowGetHeight(gIsoWindow) - 1 - kToolbarReservedHeight)) {
-                    if (_screen_obj != nullptr && tool_active == -1) {
+                    if (tool_active != -1) {
+                        if (selectedPid != -1) {
+                            if (PID_TYPE(selectedPid) == OBJ_TYPE_TILE) {
+                                placeTile(selectedPid, gGameMouseBouncingCursor->fid);
+                            } else {
+                                placeObject(selectedPid, gGameMouseBouncingCursor->fid);
+                            }
+                        }
+                    } else if (_screen_obj != nullptr) {
                         int newTile = gGameMouseBouncingCursor->tile;
                         Rect rect;
                         objectSetLocation(_screen_obj, newTile, gElevation, &rect);
@@ -1223,7 +1231,6 @@ void edit_mapper()
                     }
                 }
 
-                // Select or place object
             } else if (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) {
                 if (_mouse_click_in(0, 16,
                         windowGetWidth(gIsoWindow) - 1,
@@ -1293,9 +1300,12 @@ void edit_mapper()
                 // clear toolbar selection
                 if (tool_active != -1) {
                     tool_active = -1;
+                    selectedPid = -1;
+                    draw_mode = false;
                     toolbar_info[currentType].offset = scrollOffset;
                     mapper_destroy_highlight_obj(&hl_obj1, nullptr);
                     _screen_obj = nullptr;
+                    gameMouseResetBouncingCursorFid();
                     Rect artRect = { 121, 1, _scr_size.right - 19, art_scale_height + 1 };
                     windowRefreshRect(tool_win, &artRect);
                 }
@@ -1391,6 +1401,24 @@ void edit_mapper()
             mapNewMap();
             handle_new_map(&currentType, &scrollOffset);
             break;
+        case kBtnEraseMap:
+            if (map_entered) {
+                break;
+            }
+            if (win_yes_no("Erase this map?", 80, 80, 0x10104)) {
+                bool wasBlockOn = map_toggle_block_obj_viewing_on();
+                if (wasBlockOn) {
+                    map_toggle_block_obj_viewing();
+                }
+                mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
+                mapNewMap();
+                handle_new_map(&currentType, &scrollOffset);
+                interfaceBarHide();
+                if (wasBlockOn) {
+                    map_toggle_block_obj_viewing();
+                }
+            }
+            break;
         case kBtnOpen:
             if (map_entered) {
                 win_timed_msg("This map has been Entered.  Can't Load.", _colorTable[31744]);
@@ -1407,22 +1435,30 @@ void edit_mapper()
             interfaceBarHide();
             mapper_load_toolbar(currentType, &scrollOffset);
             break;
-        case kBtnSave:
+        case kBtnSave: {
             if (map_entered) {
                 win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[31744]);
                 break;
             }
+            bool wasBlockOn = map_toggle_block_obj_viewing_on();
+            if (wasBlockOn) map_toggle_block_obj_viewing();
             map_save_dialog();
             mapper_save_toolbar();
+            if (wasBlockOn) map_toggle_block_obj_viewing();
             break;
-        case kBtnSaveAs:
+        }
+        case kBtnSaveAs: {
             if (map_entered) {
                 win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[31744]);
                 break;
             }
+            bool wasBlockOn = map_toggle_block_obj_viewing_on();
+            if (wasBlockOn) map_toggle_block_obj_viewing();
             map_save_as();
             mapper_save_toolbar();
+            if (wasBlockOn) map_toggle_block_obj_viewing();
             break;
+        }
         case kBtnInfo:
             map_info_dialog();
             break;

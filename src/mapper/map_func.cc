@@ -428,18 +428,71 @@ int pickToolbar(int topY)
     return -1;
 }
 
+// place_object_
 void placeObject(int pid, int fid)
 {
-    // TODO: create an object at the current mouse cursor position (gGameMouseBouncingCursor->tile)
-    (void)pid;
-    (void)fid;
+    int x, y;
+    mouseGetPosition(&x, &y);
+    int tile = tileFromScreenXY(x, y);
+    if (tile == -1) {
+        return;
+    }
+
+    Object* obj;
+    if (objectCreateWithFidPid(&obj, fid, pid) == -1) {
+        return;
+    }
+
+    Rect rect;
+    objectSetLocation(obj, tile, gElevation, &rect);
+    tileWindowRefreshRect(&rect, gElevation);
 }
 
+// place_tile_
 void placeTile(int pid, int fid)
 {
-    // TODO: create a tile at the current mouse cursor position (gGameMouseBouncingCursor->tile)
-    (void)pid;
-    (void)fid;
+    int x, y;
+    mouseGetPosition(&x, &y);
+    int squareTile = squareTileFromScreenXY(x, y, gElevation);
+    if (squareTile == -1) {
+        return;
+    }
+
+    int newArt = fid & 0xFFF;
+    int* squarePtr = &_square[gElevation]->field_0[squareTile];
+    int oldValue = *squarePtr;
+
+    if (tileRoofIsVisible()) {
+        int oldRoofFid = buildFid(OBJ_TYPE_TILE, (oldValue >> 16) & 0xFFF, 0, 0, 0);
+        if (oldRoofFid == fid) {
+            return;
+        }
+
+        int oldRoofWord = oldValue >> 16;
+        int roofRotation = (oldRoofWord & 0xF000) >> 12;
+        int newRoofWord = roofRotation | newArt;
+        *squarePtr = (newRoofWord << 16) | (oldValue & 0xFFFF);
+
+        int sx, sy;
+        squareTileToRoofScreenXY(squareTile, &sx, &sy, gElevation);
+        Rect rect = { sx, sy, sx + 80, sy + 36 };
+        tileWindowRefreshRect(&rect, gElevation);
+    } else {
+        int oldFloorFid = buildFid(OBJ_TYPE_TILE, oldValue & 0xFFF, 0, 0, 0);
+        if (oldFloorFid == fid) {
+            return;
+        }
+
+        int oldFloorWord = oldValue & 0xFFFF;
+        int floorRotation = (oldFloorWord & 0xF000) >> 12;
+        int newFloorWord = floorRotation | newArt;
+        *squarePtr = (oldValue & 0xFFFF0000) | newFloorWord;
+
+        int sx, sy;
+        squareTileToScreenXY(squareTile, &sx, &sy, gElevation);
+        Rect rect = { sx, sy, sx + 80, sy + 36 };
+        tileWindowRefreshRect(&rect, gElevation);
+    }
 }
 
 void copyObject()
