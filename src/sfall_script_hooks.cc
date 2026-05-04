@@ -741,19 +741,6 @@ void scriptHooks_BarterPrice(BarterPriceContext* ctx)
 }
 
 /*
-    HOOK_ONDEATH
-
-    Runs when a critter dies (after death animation completes).
-
-    int     arg0 - the critter that died
-*/
-void scriptHooks_OnDeath(Object* critter)
-{
-    ScriptHookCall hook(HOOK_ONDEATH, 0, { critter });
-    hook.call();
-}
-
-/*
     HOOK_ADJUSTFID
 
     Runs when the game calculates what FID to display for a critter in UI
