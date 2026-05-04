@@ -1157,11 +1157,11 @@ Buffer2D windowGetBuffer2D(int win)
     Window* window = windowGetWindow(win);
 
     if (!gWindowSystemInitialized) {
-        return {};
+        return { };
     }
 
     if (window == nullptr) {
-        return {};
+        return { };
     }
     return { window->buffer, window->width, window->height };
 }
@@ -1487,7 +1487,7 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
 
     _lighten_buf(normal, buttonWidth, buttonHeight, buttonWidth);
 
-    fontDrawText(normal + buttonWidth * 3 + 8, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]]);
+    fontDrawText(normal + buttonWidth * 3 + 8, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]] | 0x10000);
     bufferDrawRectShadowed(normal,
         buttonWidth,
         2,
@@ -1506,7 +1506,7 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
         _colorTable[_GNW_wcolor[2]]);
     bufferDrawRect(normal, buttonWidth, 0, 0, buttonWidth - 1, buttonHeight - 1, _colorTable[0]);
 
-    fontDrawText(pressed + buttonWidth * 4 + 9, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]]);
+    fontDrawText(pressed + buttonWidth * 4 + 9, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]] | 0x10000);
     bufferDrawRectShadowed(pressed,
         buttonWidth,
         2,

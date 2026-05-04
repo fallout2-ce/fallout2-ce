@@ -442,7 +442,7 @@ int proto_critter_flags_modify(int pid)
         return -1;
     }
 
-    rc = win_yes_no("Can't be stolen from?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't be stolen from?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -451,7 +451,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_STEAL;
     }
 
-    rc = win_yes_no("Can't Drop items?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't Drop items?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -460,7 +460,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_DROP;
     }
 
-    rc = win_yes_no("Can't lose limbs?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't lose limbs?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -469,7 +469,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_LIMBS;
     }
 
-    rc = win_yes_no("Dead Bodies Can't Age?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Dead Bodies Can't Age?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -478,7 +478,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_AGE;
     }
 
-    rc = win_yes_no("Can't Heal by Aging?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't Heal by Aging?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -487,7 +487,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_HEAL;
     }
 
-    rc = win_yes_no("Is Invlunerable????", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Is Invlunerable????", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -496,7 +496,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_INVULNERABLE;
     }
 
-    rc = win_yes_no("Can't Flatten on Death?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't Flatten on Death?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -505,7 +505,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_FLAT;
     }
 
-    rc = win_yes_no("Has Special Death?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Has Special Death?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -514,7 +514,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_SPECIAL_DEATH;
     }
 
-    rc = win_yes_no("Has Extra Hand-To-Hand Range?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Has Extra Hand-To-Hand Range?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -523,7 +523,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_LONG_LIMBS;
     }
 
-    rc = win_yes_no("Can't be knocked back?", 340, 200, _colorTable[15855]);
+    rc = win_yes_no("Can't be knocked back?", 340, 200, _colorTable[32747] | 0x10000);
     if (rc == -1) {
         return -1;
     }
@@ -564,7 +564,7 @@ int mp_pick_kill_type()
         NULL,
         50,
         100,
-        _colorTable[15855]);
+        _colorTable[32747] | 0x10000);
 }
 
 // 0x497568
@@ -592,7 +592,7 @@ int proto_pick_ai_packet(int* value)
         NULL,
         50,
         100,
-        _colorTable[15855]);
+        _colorTable[32747] | 0x10000);
     if (rc != -1) {
         *value = rc;
     }

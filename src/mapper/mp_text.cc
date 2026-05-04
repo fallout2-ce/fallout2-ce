@@ -14,11 +14,11 @@ int proto_build_all_texts()
 {
     for (int type = OBJ_TYPE_ITEM; type <= OBJ_TYPE_MISC; type++) {
         if (inputGetInput() == KEY_ESCAPE) {
-            win_timed_msg("BUILD all Protos has been aborted!", _colorTable[31744]);
+            win_timed_msg("BUILD all Protos has been aborted!", _colorTable[32747] | 0x10000);
             return 0;
         }
         if (proto_build_all_type(type) == -1) {
-            win_timed_msg("Build Text Error: Type Failed Build!", _colorTable[31744]);
+            win_timed_msg("Build Text Error: Type Failed Build!", _colorTable[32747] | 0x10000);
             return -1;
         }
     }

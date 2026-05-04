@@ -18,6 +18,7 @@
 #include "proto.h"
 #include "proto_instance.h"
 #include "svga.h"
+#include "text_font.h"
 #include "tile.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
@@ -72,7 +73,7 @@ void place_entrance_hex()
                 if (tileSetCenter(tile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
                     mapSetEnteringLocation(gElevation, tile, rotation);
                 } else {
-                    win_timed_msg("ERROR: Entrance out of range!", _colorTable[31744]);
+                    win_timed_msg("ERROR: Entrance out of range!", _colorTable[32747] | FONT_SHADOW);
                 }
             }
         }
@@ -253,7 +254,7 @@ void map_load_dialog()
     char** fileList;
     int count = fileNameListInit("maps\\*.map", &fileList);
     if (count == -1) {
-        win_timed_msg("No maps found!", _colorTable[31744]);
+        win_timed_msg("No maps found!", _colorTable[32747] | FONT_SHADOW);
         return;
     }
 
@@ -329,19 +330,19 @@ void copy_spray_tile()
 void mapper_shift_map()
 {
     // TODO: shift all map objects by an offset (needs tile coordinate system knowledge)
-    win_timed_msg("Shift Map not yet implemented", _colorTable[31744]);
+    win_timed_msg("Shift Map not yet implemented", _colorTable[31744] | FONT_SHADOW);
 }
 
 void mapper_shift_map_elev()
 {
     // TODO: shift objects on one elevation by an offset
-    win_timed_msg("Shift Map Elev not yet implemented", _colorTable[31744]);
+    win_timed_msg("Shift Map Elev not yet implemented", _colorTable[31744] | FONT_SHADOW);
 }
 
 void mapper_copy_map_elev()
 {
     // TODO: copy objects from current elevation to another via user prompt
-    win_timed_msg("Copy Map Elev not yet implemented", _colorTable[31744]);
+    win_timed_msg("Copy Map Elev not yet implemented", _colorTable[31744] | FONT_SHADOW);
 }
 
 void mapper_flush_cache()

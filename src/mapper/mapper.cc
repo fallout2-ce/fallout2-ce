@@ -1436,7 +1436,7 @@ void edit_mapper()
             break;
         case kBtnOpen:
             if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Load.", _colorTable[31744]);
+                win_timed_msg("This map has been Entered.  Can't Load.", _colorTable[32747] | FONT_SHADOW);
                 break;
             }
             {
@@ -1460,7 +1460,7 @@ void edit_mapper()
             break;
         case kBtnSave: {
             if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[31744]);
+                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[32747] | FONT_SHADOW);
                 break;
             }
             bool wasBlockOn = map_toggle_block_obj_viewing_on();
@@ -1472,7 +1472,7 @@ void edit_mapper()
         }
         case kBtnSaveAs: {
             if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[31744]);
+                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[32747] | FONT_SHADOW);
                 break;
             }
             bool wasBlockOn = map_toggle_block_obj_viewing_on();
@@ -1565,7 +1565,7 @@ void edit_mapper()
                 break;
             }
             int screenWidth = _scr_size.right - _scr_size.left;
-            windowDrawText(tool_win, "Place Script", 0x104, screenWidth - 149, 70, _colorTable[31744]);
+            windowDrawText(tool_win, "Place Script", 0x104, screenWidth - 149, 70, _colorTable[32747] | FONT_SHADOW);
             redraw_toolname();
 
             int tile = pickHex();
@@ -1574,7 +1574,7 @@ void edit_mapper()
 
             if (tile != -1) {
                 if (map_scr_add_spatial(tile, gElevation) == -1) {
-                    win_timed_msg("Error creating spatial Script!", _colorTable[31744]);
+                    win_timed_msg("Error creating spatial Script!", _colorTable[32747] | FONT_SHADOW);
                 }
             }
             break;
@@ -1775,7 +1775,7 @@ void edit_mapper()
         case kBtnQuit:
             if (markExitGridMode == 1) {
                 markExitGridMode = 0;
-                win_timed_msg("Exiting mark exit-grids!", _colorTable[31744]);
+                win_timed_msg("Exiting mark exit-grids!", _colorTable[32747] | FONT_SHADOW);
                 break;
             }
             if (win_yes_no("Are you sure you want to quit?", 80, 80, 0x10104)) {
@@ -1823,10 +1823,10 @@ void edit_mapper()
                 Object* obj = _screen_obj;
                 if (obj->flags & OBJ_LOCKED) {
                     objectUnlock(obj);
-                    win_timed_msg("Unlocked.", _colorTable[31744]);
+                    win_timed_msg("Unlocked.", _colorTable[32747] | FONT_SHADOW);
                 } else {
                     objectLock(obj);
-                    win_timed_msg("Locked.", _colorTable[31744]);
+                    win_timed_msg("Locked.", _colorTable[32747] | FONT_SHADOW);
                 }
             }
             break;
@@ -1951,7 +1951,7 @@ void edit_mapper()
             if (!can_modify_protos) break;
             if (win_yes_no("Do you REALLY want to rebuild spray tools?", 80, 80, 0x10104)) {
                 // TODO: rebuild_spray_tools()
-                win_timed_msg("Rebuild spray tools not yet implemented.", _colorTable[31744]);
+                win_timed_msg("Rebuild spray tools not yet implemented.", _colorTable[31744] | FONT_SHADOW);
             }
             break;
 
@@ -1961,7 +1961,7 @@ void edit_mapper()
             if (!can_modify_protos) break;
             if (win_yes_no("Do you REALLY want to rebuild this list?", 80, 80, 0x10104)) {
                 // TODO: proto_remove_all + proto_build_all_type(currentType)
-                win_timed_msg("Rebuild proto list not yet implemented.", _colorTable[31744]);
+                win_timed_msg("Rebuild proto list not yet implemented.", _colorTable[31744] | FONT_SHADOW);
             }
             break;
 
@@ -1971,14 +1971,14 @@ void edit_mapper()
             if (!can_modify_protos) break;
             if (win_yes_no("Do you REALLY want to destroy the space proto list?", 80, 80, 0x10104)) {
                 // TODO: proto_remove_all + proto_build_all_texts
-                win_timed_msg("Destroy proto list not yet implemented.", _colorTable[31744]);
+                win_timed_msg("Destroy proto list not yet implemented.", _colorTable[31744] | FONT_SHADOW);
             }
             break;
 
         // --- Highlight object by proto ---
         case kBtnHighlightByProto:
             if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Highlight.", _colorTable[31744]);
+                win_timed_msg("This map has been Entered.  Can't Highlight.", _colorTable[32747] | FONT_SHADOW);
                 break;
             }
             // TODO: pick_object(currentType) → set highlight, scroll toolbar to matching proto

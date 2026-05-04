@@ -262,7 +262,7 @@ int scr_choose(int scriptType)
                 result = foundIndex | (type << 24);
             }
         } else if (selection == -1) {
-            char typedName[14] = {};
+            char typedName[14] = { };
             _win_get_str(typedName, 13, "Type in Script Name", 100, 50);
             compat_strupr(typedName);
 
@@ -366,7 +366,7 @@ static void scr_label_object(Object* obj, const char* scriptName)
         if (dot) *dot = '\0';
     }
 
-    textObjectAdd(obj, nameBuf, 101, _colorTable[31744], _colorTable[0], &rect);
+    textObjectAdd(obj, nameBuf, 101, _colorTable[32747], _colorTable[0], &rect);
     tileWindowRefreshRect(&rect, gElevation);
 }
 
