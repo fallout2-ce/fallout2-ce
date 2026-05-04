@@ -142,12 +142,12 @@ void lightResetTileIntensity()
 
 void lightDecreaseAmbient(int val)
 {
-    // TODO: decrease global ambient light by val, clamped to LIGHT_INTENSITY_MIN, see lightSetAmbientIntensity
+    lightSetAmbientIntensity(gAmbientIntensity - val, true);
 }
 
 void lightIncreaseAmbient(int val)
 {
-    // TODO: increase global ambient light by val, clamped to LIGHT_INTENSITY_MAX, see lightSetAmbientIntensity
+    lightSetAmbientIntensity(gAmbientIntensity + val, true);
 }
 
 } // namespace fallout

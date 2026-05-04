@@ -29,6 +29,7 @@
 #include "loadsave.h"
 #include "map.h"
 #include "mapper/map_func.h"
+#include "mapper/mp_instance.h"
 #include "mapper/mp_proto.h"
 #include "mapper/mp_scrpt.h"
 #include "mapper/mp_targt.h"
@@ -1990,14 +1991,10 @@ void edit_mapper()
 
         // --- Light ambient adjust ---
         case kBtnLightAmbientDec:
-            if (map_entered) {
-                lightDecreaseAmbient(0x28F);
-            }
+            lightDecreaseAmbient(0x28F);
             break;
         case kBtnLightAmbientInc:
-            if (map_entered) {
-                lightIncreaseAmbient(0x28F);
-            }
+            lightIncreaseAmbient(0x28F);
             break;
 
         default:
@@ -2332,7 +2329,7 @@ static int mapperPickObject(Object* obj, int* outOffset)
     int maxId = proto_max_id(type);
     constexpr int kScrollOffset = 10;
 
-    for (int idx = 0; idx < maxId; idx++) {
+    for (int idx = 1; idx < maxId; idx++) {
         int pid = (type << 24) | idx;
         Proto* proto;
         if (protoGetProto(pid, &proto) == -1) {
