@@ -50,9 +50,20 @@ typedef enum GameSoundLoopingMode {
     GSOUND_LOOP = 16,
 } GameSoundLoopingMode;
 
+typedef struct GameSoundLoadOptions {
+    GameSoundReadLimitMode readLimitMode;
+    GameSoundStorageType storageType;
+    GameSoundLoopingMode loopingMode;
+    int channels;
+    SoundCallback* callback;
+    void* callbackUserData;
+} GameSoundLoadOptions;
+
 typedef void(SoundEndCallback)();
 
 extern int gMusicVolume;
+extern const SoundFileIO gGameSoundAudioFileIO;
+extern const SoundFileIO gGameSoundAudioIO;
 
 int gameSoundInit();
 void gameSoundReset();
@@ -60,6 +71,7 @@ int gameSoundExit();
 int gameSoundSetMasterVolume(int value);
 int gameSoundGetMasterVolume();
 int soundEffectsSetVolume(int value);
+int soundEffectsGetVolume();
 int backgroundSoundIsEnabled();
 void backgroundSoundSetVolume(int value);
 int backgroundSoundGetVolume();
@@ -72,6 +84,7 @@ void backgroundSoundRestart(GameSoundReadLimitMode readLimitMode);
 void backgroundSoundPause();
 void backgroundSoundResume();
 bool backgoundSoundIsPlaying();
+int gameSoundLoadSound(Sound** soundPtr, const char* path, const SoundFileIO* fileIO, const GameSoundLoadOptions* options);
 int speechIsEnabled();
 void speechSetVolume(int value);
 int speechGetVolume();

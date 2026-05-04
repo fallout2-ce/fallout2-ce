@@ -26,6 +26,7 @@
 #include "party_member.h"
 #include "proto.h"
 #include "proto_instance.h"
+#include "script_sound.h"
 #include "scripts.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h"
@@ -889,6 +890,19 @@ static void op_get_attack_type(Program* program)
     } else {
         programStackPushInteger(program, -1);
     }
+}
+
+static void op_play_sfall_sound(Program* program)
+{
+    int mode = programStackPopInteger(program);
+    const char* path = programStackPopString(program);
+    programStackPushInteger(program, scriptSoundPlay(path, mode));
+}
+
+static void op_stop_sfall_sound(Program* program)
+{
+    int soundId = programStackPopInteger(program);
+    scriptSoundStop(soundId);
 }
 
 // force_encounter_with_flags
@@ -2083,7 +2097,9 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8228, op_get_attack_type);
 
     // 0x822b - int  play_sfall_sound(string file, int mode)
+    interpreterRegisterOpcode(0x822B, op_play_sfall_sound);
     // 0x822c - void stop_sfall_sound(int soundID)
+    interpreterRegisterOpcode(0x822C, op_stop_sfall_sound);
 
     // 0x8235 - array string_split(string string, string split)
     interpreterRegisterOpcode(0x8235, op_string_split);

@@ -57,7 +57,7 @@ static int audioFileSoundDecoderReadHandler(void* data, void* buffer, unsigned i
 }
 
 // 0x41A88C
-int audioFileOpen(const char* fname, int* sampleRate)
+int audioFileOpen(const char* fname, AudioFileInfo* info, bool* isMemoryBackedPtr)
 {
     char path[COMPAT_MAX_PATH];
     strcpy(path, fname);
@@ -98,10 +98,22 @@ int audioFileOpen(const char* fname, int* sampleRate)
         audioFile->flags |= AUDIO_FILE_COMPRESSED;
         audioFile->soundDecoder = soundDecoderInit(audioFileSoundDecoderReadHandler, audioFile->stream, &(audioFile->channels), &(audioFile->sampleRate), &(audioFile->fileSize));
         audioFile->fileSize *= 2;
-
-        *sampleRate = audioFile->sampleRate;
+        if (info != nullptr) {
+            info->sampleRate = audioFile->sampleRate;
+            info->channels = audioFile->channels;
+            info->bitsPerSample = 16;
+        }
+        if (isMemoryBackedPtr != nullptr) {
+            *isMemoryBackedPtr = false;
+        }
     } else {
         audioFile->fileSize = getFileSize(stream);
+        if (info != nullptr) {
+            info->bitsPerSample = 8;
+        }
+        if (isMemoryBackedPtr != nullptr) {
+            *isMemoryBackedPtr = false;
+        }
     }
 
     audioFile->position = 0;

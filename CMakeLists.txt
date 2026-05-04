@@ -25,6 +25,9 @@ if(MSVC)
 endif()
 
 option(FALLOUT_VENDORED "Use vendored third-party libraries" ON)
+option(FALLOUT_AUDIO_OGG "Enable OGG decoding with stb_vorbis when available" ON)
+
+set(FALLOUT_STB_VORBIS_DIR "" CACHE PATH "Directory containing stb_vorbis.c")
 
 if(ANDROID)
     add_library(${EXECUTABLE_NAME} SHARED)
@@ -180,6 +183,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/obj_types.h"
     "src/object.cc"
     "src/object.h"
+    "src/ogg_decoder.cc"
+    "src/ogg_decoder.h"
     "src/opcode_context.cc"
     "src/opcode_context.h"
     "src/options.cc"
@@ -297,6 +302,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/sfall_opcodes.cc"
     "src/sfall_opcodes.h"
     "src/sfall_script_hooks.cc"
+    "src/script_sound.cc"
+    "src/script_sound.h"
     "src/sfall_arrays.cc"
     "src/sfall_arrays.h"
     "src/sfall_animation.cc"
@@ -310,6 +317,33 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
 )
 
 target_include_directories(${EXECUTABLE_NAME} PUBLIC "third_party/lodepng")
+
+set(FALLOUT_HAVE_STB_VORBIS OFF)
+if(FALLOUT_AUDIO_OGG)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/stb_vorbis/stb_vorbis.c")
+        set(_fallout_stb_vorbis_dir "${CMAKE_SOURCE_DIR}/third_party/stb_vorbis")
+    else()
+        set(_fallout_stb_vorbis_dir "${FALLOUT_STB_VORBIS_DIR}")
+        if(NOT _fallout_stb_vorbis_dir)
+            find_path(_fallout_stb_vorbis_dir
+                NAMES "stb_vorbis.c"
+                DOC "Directory containing stb_vorbis.c")
+        endif()
+    endif()
+
+    if(_fallout_stb_vorbis_dir AND EXISTS "${_fallout_stb_vorbis_dir}/stb_vorbis.c")
+        set(FALLOUT_HAVE_STB_VORBIS ON)
+        target_include_directories(${EXECUTABLE_NAME} PRIVATE "${_fallout_stb_vorbis_dir}")
+    else()
+        message(STATUS "OGG support disabled: stb_vorbis.c not found")
+    endif()
+endif()
+
+if(FALLOUT_HAVE_STB_VORBIS)
+    target_compile_definitions(${EXECUTABLE_NAME} PRIVATE HAVE_STB_VORBIS=1)
+else()
+    target_compile_definitions(${EXECUTABLE_NAME} PRIVATE HAVE_STB_VORBIS=0)
+endif()
 
 if(IOS)
     target_sources(${EXECUTABLE_NAME} PUBLIC
