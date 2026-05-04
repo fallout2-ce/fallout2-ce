@@ -35,10 +35,10 @@
 #include "proto_instance.h"
 #include "queue.h"
 #include "random.h"
+#include "script_sound.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
-#include "sfall_sound.h"
 #include "svga.h"
 #include "text_object.h"
 #include "tile.h"
@@ -827,7 +827,7 @@ static int mapLoad(File* stream)
     if (backgoundSoundIsPlaying()) {
         // Use the sfall sound path so the map-loading ambience does not depend
         // on the native background music loader.
-        mapLoadSoundId = sfallSoundPlay("sound\\music\\WIND2.ACM", SFALL_SOUND_MODE_LOOP);
+        mapLoadSoundId = scriptSoundPlay("sound\\music\\WIND2.ACM", SCRIPT_SOUND_MODE_LOOP);
     }
     isoDisable();
     _partyMemberPrepLoad();
@@ -1068,7 +1068,7 @@ err:
     gMapHeader.version = 20;
 
     if (mapLoadSoundId != 0) {
-        sfallSoundStop(mapLoadSoundId);
+        scriptSoundStop(mapLoadSoundId);
         mapLoadSoundId = 0;
     }
 

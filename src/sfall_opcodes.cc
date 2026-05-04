@@ -26,6 +26,7 @@
 #include "party_member.h"
 #include "proto.h"
 #include "proto_instance.h"
+#include "script_sound.h"
 #include "scripts.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h"
@@ -36,7 +37,6 @@
 #include "sfall_lists.h"
 #include "sfall_metarules.h"
 #include "sfall_script_hooks.h"
-#include "sfall_sound.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
@@ -896,13 +896,13 @@ static void op_play_sfall_sound(Program* program)
 {
     int mode = programStackPopInteger(program);
     const char* path = programStackPopString(program);
-    programStackPushInteger(program, sfallSoundPlay(path, mode));
+    programStackPushInteger(program, scriptSoundPlay(path, mode));
 }
 
 static void op_stop_sfall_sound(Program* program)
 {
     int soundId = programStackPopInteger(program);
-    sfallSoundStop(soundId);
+    scriptSoundStop(soundId);
 }
 
 // force_encounter_with_flags

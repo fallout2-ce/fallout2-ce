@@ -60,6 +60,9 @@ procedure keypress_handler begin
     end else if (key == DIK_V) then begin
         display_msg("play_sfall_sound mode 3 speech-volume one-shot: sound\\sfx\\pistol.ACM");
         ignored := play_sfall_sound("sound\\sfx\\pistol.ACM", 3);
+    end else if (key == DIK_B) then begin
+        display_msg("play_sfall_sound mode 0 one-shot wav: smw_1-up.wav"); // needs a wav file in the game dir
+        ignored := play_sfall_sound("smw_1-up.wav", 0);
     end
 end
 
@@ -67,8 +70,8 @@ procedure start begin
     if (not game_loaded) then return;
 
     display_msg("sfall_sound manual test ready");
-    display_msg("One-shots use short SFX from master.dat; loops/replacement use music");
-    display_msg("K one-shot mode0, N start loop mode1, M stop loop");
+    display_msg("One-shots use master.dat SFX and loose-file wav; loops/replacement use music");
+    display_msg("K one-shot ACM mode0, B one-shot WAV mode0, N start loop mode1, M stop loop");
     display_msg("C start quiet loop mode1, X stop quiet loop");
     display_msg("G start mode2 music replacement, H stop mode2 replacement, V mode3 one-shot");
     register_hook_proc(HOOK_KEYPRESS, keypress_handler);
