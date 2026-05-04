@@ -200,9 +200,11 @@ bool map_toggle_block_obj_viewing_on()
     return block_obj_view_on;
 }
 
-// map_toggle_block_obj_viewing
-void map_toggle_block_obj_viewing()
+void map_toggle_block_obj_viewing(int mode)
 {
+    if (mode == 0 && !block_obj_view_on) return;
+    if (mode == 1 && block_obj_view_on) return;
+
     if (!block_obj_view_on && fidShowList[0] == 0) {
         for (int i = 0; i < 9; i++) {
             int fid = artListIndex(kBlockViewArtType[i], kBlockViewListName[i]);

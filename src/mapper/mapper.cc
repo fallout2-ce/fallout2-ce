@@ -230,11 +230,12 @@ int art_scale_width = 49;
 // 0x559888
 int art_scale_height = 48;
 
-// Toolbar scroll state — 6 types × 48 bytes, first int = scroll offset.
+// Toolbar scroll state — 6 types × 48 bytes.
 // Saved to / loaded from a per-map .cfg sidecar file alongside each .MAP.
 struct ToolbarInfo {
     int offset;
-    int padding[11]; // remaining 44 bytes TBD when edit_mapper_ is ported
+    int bookmark[10]; // digit-key bookmarks 0-9
+    int _pad;
 };
 static ToolbarInfo toolbar_info[6];
 
@@ -596,6 +597,18 @@ constexpr int kBtnPickToolbarType = KEY_LOWERCASE_T;
 constexpr int kBtnLightAmbientDec = KEY_BRACKET_LEFT;
 constexpr int kBtnLightAmbientInc = KEY_BRACKET_RIGHT;
 constexpr int kBtnQuit = KEY_ESCAPE;
+constexpr int kBtnClearScroll = 0x175;
+constexpr int kBtnLastProto = 0x14F;
+constexpr int kBtnGotoDudeElev = 0x147;
+constexpr int kBtnToggleInterruptWalk = KEY_CTRL_F11;
+constexpr int kBtnRotation0 = KEY_CTRL_F9;
+constexpr int kBtnRotation3 = KEY_CTRL_F10;
+constexpr int kBtnDestroyAllScripts = KEY_UPPERCASE_A;
+constexpr int kBtnRebuildSprayTools = 0x143;
+constexpr int kBtnRebuildProtoList = 0x144;
+constexpr int kBtnDestroyProtoList = 0x185;
+constexpr int kBtnHighlightByProto = 0x123;
+constexpr int kBtnAnimDebugStep = 0x12E;
 
 constexpr int kArtMaxDirect = 0x4B0;
 
@@ -1398,6 +1411,7 @@ void edit_mapper()
 
         // --- FILE menu ---
         case kBtnNew:
+            map_toggle_block_obj_viewing(0);
             mapNewMap();
             handle_new_map(&currentType, &scrollOffset);
             break;
@@ -1408,14 +1422,14 @@ void edit_mapper()
             if (win_yes_no("Erase this map?", 80, 80, 0x10104)) {
                 bool wasBlockOn = map_toggle_block_obj_viewing_on();
                 if (wasBlockOn) {
-                    map_toggle_block_obj_viewing();
+                    map_toggle_block_obj_viewing(0);
                 }
                 mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
                 mapNewMap();
                 handle_new_map(&currentType, &scrollOffset);
                 interfaceBarHide();
                 if (wasBlockOn) {
-                    map_toggle_block_obj_viewing();
+                    map_toggle_block_obj_viewing(1);
                 }
             }
             break;
@@ -1424,16 +1438,24 @@ void edit_mapper()
                 win_timed_msg("This map has been Entered.  Can't Load.", _colorTable[31744]);
                 break;
             }
-            mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
-            map_toggle_block_obj_viewing();
-            map_scr_toggle_hexes();
-            map_load_dialog();
-            map_scr_toggle_hexes();
-            handle_new_map(&currentType, &scrollOffset);
-            map_scr_toggle_hexes();
-            map_scr_toggle_hexes();
-            interfaceBarHide();
-            mapper_load_toolbar(currentType, &scrollOffset);
+            {
+                mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
+                bool wasBlockOn = map_toggle_block_obj_viewing_on();
+                if (wasBlockOn) {
+                    map_toggle_block_obj_viewing(0);
+                }
+                map_scr_toggle_hexes();
+                map_load_dialog();
+                map_scr_toggle_hexes();
+                handle_new_map(&currentType, &scrollOffset);
+                map_scr_toggle_hexes();
+                map_scr_toggle_hexes();
+                interfaceBarHide();
+                mapper_load_toolbar(currentType, &scrollOffset);
+                if (wasBlockOn) {
+                    map_toggle_block_obj_viewing(1);
+                }
+            }
             break;
         case kBtnSave: {
             if (map_entered) {
@@ -1441,10 +1463,10 @@ void edit_mapper()
                 break;
             }
             bool wasBlockOn = map_toggle_block_obj_viewing_on();
-            if (wasBlockOn) map_toggle_block_obj_viewing();
+            if (wasBlockOn) map_toggle_block_obj_viewing(0);
             map_save_dialog();
             mapper_save_toolbar();
-            if (wasBlockOn) map_toggle_block_obj_viewing();
+            if (wasBlockOn) map_toggle_block_obj_viewing(1);
             break;
         }
         case kBtnSaveAs: {
@@ -1453,10 +1475,10 @@ void edit_mapper()
                 break;
             }
             bool wasBlockOn = map_toggle_block_obj_viewing_on();
-            if (wasBlockOn) map_toggle_block_obj_viewing();
+            if (wasBlockOn) map_toggle_block_obj_viewing(0);
             map_save_as();
             mapper_save_toolbar();
-            if (wasBlockOn) map_toggle_block_obj_viewing();
+            if (wasBlockOn) map_toggle_block_obj_viewing(1);
             break;
         }
         case kBtnInfo:
@@ -1498,7 +1520,7 @@ void edit_mapper()
             bookmarkChoose(currentType, &scrollOffset);
             break;
         case kBtnToggleBlockObjView:
-            map_toggle_block_obj_viewing();
+            map_toggle_block_obj_viewing(-1);
             break;
         case kBtnClickToScroll:
             // TODO: toggle click-to-scroll mode
@@ -1827,6 +1849,143 @@ void edit_mapper()
                     toolbarSetObjectType(newType, currentType, scrollOffset, &hl_obj1);
                 }
             }
+            break;
+
+        // --- Bookmark select (digit keys 0-9) ---
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            if (!map_entered) {
+                scrollOffset = toolbar_info[currentType].bookmark[keyCode - '0'];
+                update_art(currentType, scrollOffset);
+            }
+            break;
+
+        // --- Clear scroll / reset to 0 ---
+        case kBtnClearScroll:
+            if (!map_entered && scrollOffset != 0) {
+                scrollOffset = 0;
+                tool_active = -1;
+                update_art(currentType, 0);
+            }
+            break;
+
+        // --- Jump to last proto ---
+        case kBtnLastProto:
+            if (!map_entered) {
+                int limit = settings.mapper.use_art_not_protos ? kArtMaxDirect : proto_max_id(currentType);
+                int lastScroll = limit - max_art_buttons;
+                if (lastScroll < 0) lastScroll = 0;
+                if (lastScroll != scrollOffset) {
+                    scrollOffset = lastScroll;
+                    tool_active = -1;
+                    update_art(currentType, scrollOffset);
+                }
+            }
+            break;
+
+        // --- Goto dude elevation ---
+        case kBtnGotoDudeElev:
+            if (gDude != nullptr) {
+                mapSetElevation(gDude->elevation);
+                tileSetCenter(gDude->tile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
+                tileWindowRefresh();
+                elevationNumberRefresh();
+            }
+            break;
+
+        // --- Toggle interrupt walk ---
+        case kBtnToggleInterruptWalk:
+            // TODO: toggle interrupt_walk config via gameConfig
+            break;
+
+        // --- Set rotation to 0 ---
+        case kBtnRotation0:
+            if (!map_entered) {
+                Object* targetObj = _screen_obj ? _screen_obj : gGameMouseBouncingCursor;
+                if (targetObj != nullptr) {
+                    rotation = 0;
+                    Rect rect;
+                    objectSetRotation(targetObj, 0, &rect);
+                    tileWindowRefreshRect(&rect, targetObj->elevation);
+                    mapper_refresh_rotation();
+                }
+            }
+            break;
+
+        // --- Set rotation to 3 ---
+        case kBtnRotation3:
+            if (!map_entered) {
+                Object* targetObj = _screen_obj ? _screen_obj : gGameMouseBouncingCursor;
+                if (targetObj != nullptr) {
+                    rotation = 3;
+                    Rect rect;
+                    objectSetRotation(targetObj, 3, &rect);
+                    tileWindowRefreshRect(&rect, targetObj->elevation);
+                    mapper_refresh_rotation();
+                }
+            }
+            break;
+
+        // --- Destroy all scripts ---
+        case kBtnDestroyAllScripts:
+            if (map_entered) break;
+            if (win_yes_no("Do you want to destroy all scripts!?", 80, 80, 0x10104)) {
+                if (win_yes_no("ARE YOU SURE?", 80, 80, 0x10104)) {
+                    // TODO: iterate objects, remove scripts, call scr_remove_all
+                }
+            }
+            break;
+
+        // --- Rebuild spray tools ---
+        case kBtnRebuildSprayTools:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            if (win_yes_no("Do you REALLY want to rebuild spray tools?", 80, 80, 0x10104)) {
+                // TODO: rebuild_spray_tools()
+                win_timed_msg("Rebuild spray tools not yet implemented.", _colorTable[31744]);
+            }
+            break;
+
+        // --- Rebuild proto list for current type ---
+        case kBtnRebuildProtoList:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            if (win_yes_no("Do you REALLY want to rebuild this list?", 80, 80, 0x10104)) {
+                // TODO: proto_remove_all + proto_build_all_type(currentType)
+                win_timed_msg("Rebuild proto list not yet implemented.", _colorTable[31744]);
+            }
+            break;
+
+        // --- Destroy space proto list and rebuild ---
+        case kBtnDestroyProtoList:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            if (win_yes_no("Do you REALLY want to destroy the space proto list?", 80, 80, 0x10104)) {
+                // TODO: proto_remove_all + proto_build_all_texts
+                win_timed_msg("Destroy proto list not yet implemented.", _colorTable[31744]);
+            }
+            break;
+
+        // --- Highlight object by proto ---
+        case kBtnHighlightByProto:
+            if (map_entered) {
+                win_timed_msg("This map has been Entered.  Can't Highlight.", _colorTable[31744]);
+                break;
+            }
+            // TODO: pick_object(currentType) → set highlight, scroll toolbar to matching proto
+            break;
+
+        // --- Anim debug step ---
+        case kBtnAnimDebugStep:
+            // TODO: anim_debug_can_do_step = 1
             break;
 
         // --- Light ambient adjust ---
@@ -2343,9 +2502,7 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
     remove(mapBuildPath("TMP$MAP#.CFG"));
     MapDirErase("MAPS\\", "SAV");
 
-    if (map_toggle_block_obj_viewing_on()) {
-        map_toggle_block_obj_viewing();
-    }
+    map_toggle_block_obj_viewing(0);
 
     // TODO: mapSaveAs(tmp_map_name);
 

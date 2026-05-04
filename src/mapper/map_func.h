@@ -21,7 +21,8 @@ void map_save_as();
 void map_info_dialog();
 void create_spray_tool();
 void copy_spray_tile();
-void map_toggle_block_obj_viewing();
+// mode = 1 - enable, 0 - disable, -1 - toggle
+void map_toggle_block_obj_viewing(int mode);
 void map_clear_elevation();
 void mapper_shift_map();
 void mapper_shift_map_elev();
