@@ -1,12 +1,14 @@
 #include "main.h"
 
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "art.h"
 #include "autorun.h"
 #include "character_selector.h"
 #include "color.h"
+#include "content_config.h"
 #include "credits.h"
 #include "cycle.h"
 #include "db.h"
@@ -32,7 +34,6 @@
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
-#include "sfall_config.h"
 #include "sfall_global_scripts.h"
 #include "svga.h"
 #include "text_font.h"
@@ -53,6 +54,8 @@ static void main_exit_system();
 static int _main_load_new(char* fname);
 static int main_loadgame_new();
 static void main_unload_new();
+static void mainParseCommandLineArguments(int argc, char** argv);
+static bool mainTryParseDevLoadGameSlot(const char* value, int* slotPtr);
 static void mainLoop();
 static void showDeath();
 static void _main_death_voiceover_callback();
@@ -71,6 +74,8 @@ static bool _main_show_death_scene = false;
 // 0x614838
 static bool _main_death_voiceover_done;
 
+static int commandLineDevLoadGameSlot = -1;
+
 // 0x48099C
 int falloutMain(int argc, char** argv)
 {
@@ -81,6 +86,8 @@ int falloutMain(int argc, char** argv)
     if (!falloutInit(argc, argv)) {
         return 1;
     }
+
+    mainParseCommandLineArguments(argc, argv);
 
     // SFALL: Allow to skip intro movies
     int skipOpeningMovies = settings.ui.skip_opening_movies;
@@ -102,7 +109,14 @@ int falloutMain(int argc, char** argv)
             mainMenuWindowUnhide(true);
 
             mouseShowCursor();
-            int mainMenuRc = mainMenuWindowHandleEvents();
+            int devLoadGameSlot = commandLineDevLoadGameSlot;
+            int mainMenuRc;
+            if (devLoadGameSlot != -1) {
+                commandLineDevLoadGameSlot = -1;
+                mainMenuRc = MAIN_MENU_LOAD_GAME;
+            } else {
+                mainMenuRc = mainMenuWindowHandleEvents();
+            }
             mouseHideCursor();
 
             switch (mainMenuRc) {
@@ -123,11 +137,7 @@ int falloutMain(int argc, char** argv)
 
                     // SFALL: Override starting map.
                     char* mapName = nullptr;
-                    if (configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_STARTING_MAP_KEY, &mapName)) {
-                        if (*mapName == '\0') {
-                            mapName = nullptr;
-                        }
-                    }
+                    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "map", &mapName, nullptr);
 
                     char* mapNameCopy = compat_strdup(mapName != nullptr ? mapName : _mainMap);
                     _main_load_new(mapNameCopy);
@@ -167,6 +177,9 @@ int falloutMain(int argc, char** argv)
                     // NOTE: Uninline.
                     main_loadgame_new();
 
+                    if (devLoadGameSlot != -1) {
+                        lsgDevSetLoadGameSlot(devLoadGameSlot);
+                    }
                     int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
                     if (loadGameRc == -1) {
                         debugPrint("\n ** Error running LoadGame()! **\n");
@@ -244,6 +257,39 @@ static bool falloutInit(int argc, char** argv)
         return false;
     }
 
+    return true;
+}
+
+static void mainParseCommandLineArguments(int argc, char** argv)
+{
+    const char* devLoadGamePrefix = "--dev-load-game=";
+    size_t devLoadGamePrefixLength = strlen(devLoadGamePrefix);
+
+    for (int arg = 1; arg < argc; arg += 1) {
+        if (strncmp(argv[arg], devLoadGamePrefix, devLoadGamePrefixLength) == 0) {
+            int slot;
+            if (mainTryParseDevLoadGameSlot(argv[arg] + devLoadGamePrefixLength, &slot)) {
+                commandLineDevLoadGameSlot = slot;
+            } else {
+                debugPrint("MAIN: invalid --dev-load-game value '%s'\n", argv[arg] + devLoadGamePrefixLength);
+            }
+        }
+    }
+}
+
+static bool mainTryParseDevLoadGameSlot(const char* value, int* slotPtr)
+{
+    if (value == nullptr || slotPtr == nullptr) {
+        return false;
+    }
+
+    char* end = nullptr;
+    long slotNumber = strtol(value, &end, 10);
+    if (end == value || *end != '\0' || slotNumber < 1 || slotNumber > lsgGetTotalSlotCount()) {
+        return false;
+    }
+
+    *slotPtr = static_cast<int>(slotNumber - 1);
     return true;
 }
 

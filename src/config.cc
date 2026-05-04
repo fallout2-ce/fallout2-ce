@@ -135,6 +135,7 @@ bool configParseCommandLineArguments(Config* config, int argc, char** argv)
     return true;
 }
 
+// TODO: use const char** for valuePtr to enforce read-only API
 // 0x42BF48
 bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr)
 {
@@ -830,6 +831,17 @@ bool configGetBool(Config* config, const char* sectionKey, const char* key, bool
 
     *valuePtr = integerValue != 0;
 
+    return true;
+}
+
+bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr, const bool defaultValue)
+{
+    if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
+        return false;
+    }
+    if (!configGetBool(config, sectionKey, key, valuePtr)) {
+        *valuePtr = defaultValue;
+    }
     return true;
 }
 

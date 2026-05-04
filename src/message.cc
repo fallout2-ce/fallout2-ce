@@ -10,13 +10,13 @@
 #include <string>
 #include <unordered_map>
 
+#include "content_config.h"
 #include "debug.h"
 #include "memory.h"
 #include "platform_compat.h"
 #include "proto_types.h"
 #include "random.h"
 #include "settings.h"
-#include "sfall_config.h"
 
 namespace fallout {
 
@@ -608,7 +608,7 @@ void messageListFilterGenderWords(MessageList* messageList, int gender)
     }
 
     bool enabled = false;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_GAME_DIALOG_GENDER_WORDS_KEY, &enabled);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "gender_words", &enabled);
     if (!enabled) {
         return;
     }
@@ -652,10 +652,7 @@ bool messageListRepositoryInit()
     }
 
     char* fileList;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_EXTRA_MESSAGE_LISTS_KEY, &fileList);
-    if (fileList != nullptr && *fileList == '\0') {
-        fileList = nullptr;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_TEXT_SECTION, "extra_msg_file_list", &fileList, nullptr);
 
     char path[COMPAT_MAX_PATH];
     int nextMessageListId = 0;

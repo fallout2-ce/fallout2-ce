@@ -1,0 +1,68 @@
+#include "sfall.h"
+#include "dik.h"
+
+variable mode := 0;
+variable hook_calls := 0;
+
+procedure resttimer_mode_name(variable value) begin
+    if (value == 0) then return "observe";
+    if (value == 1) then return "interrupt";
+    if (value == 2) then return "invalid_ret";
+    if (value == 3) then return "ignore_esc";
+    return "unknown";
+end
+
+procedure log_mode begin
+    display_msg(string_format2("resttimer mode=%d (%s)", mode, resttimer_mode_name(mode)));
+end
+
+procedure resttimer_handler begin
+    variable
+        time_ticks := get_sfall_arg_at(0),
+        event_type := get_sfall_arg_at(1),
+        rest_hours := get_sfall_arg_at(2),
+        rest_minutes := get_sfall_arg_at(3);
+
+    hook_calls += 1;
+
+    if (hook_calls <= 3 or event_type != 0) then begin
+        display_msg(string_format4("resttimer call=%d event=%d duration=%d:%02d", hook_calls, event_type, rest_hours, rest_minutes));
+        display_msg(string_format1("resttimer game_time=%d", time_ticks));
+    end
+
+    if (mode == 1 and event_type == 0) then begin
+        display_msg("resttimer interrupting normal rest");
+        set_sfall_return(1);
+    end else if (mode == 2 and event_type == 0) then begin
+        display_msg("resttimer returning invalid value 7");
+        set_sfall_return(7);
+    end else if (mode == 3 and event_type == -1) then begin
+        display_msg("resttimer ignoring ESC");
+        set_sfall_return(0);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_X) then return;
+
+    mode := mode + 1;
+    if (mode > 3) then mode := 0;
+    hook_calls := 0;
+    call log_mode;
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("resttimer manual test ready: open Pip-Boy alarm clock and rest");
+    display_msg("press X to cycle mode: observe, interrupt, invalid_ret, ignore_esc");
+    call log_mode;
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_RESTTIMER, resttimer_handler);
+end

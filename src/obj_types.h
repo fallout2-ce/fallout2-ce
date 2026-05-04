@@ -14,7 +14,7 @@ typedef enum Rotation {
     ROTATION_COUNT,
 } Rotation;
 
-enum {
+enum ObjectType {
     OBJ_TYPE_ITEM,
     OBJ_TYPE_CRITTER,
     OBJ_TYPE_SCENERY,
@@ -287,7 +287,7 @@ typedef struct Object {
     int outline; // obj_outline
     int sid; // obj_sid
     Object* owner;
-    int scriptIndex;
+    int scriptIndex; // TODO: remove
 } Object;
 
 typedef struct ObjectListNode {

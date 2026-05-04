@@ -13,6 +13,7 @@
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "db.h"
@@ -68,9 +69,13 @@
 #include "tile.h"
 #include "trait.h"
 #include "version.h"
+#include "win32.h"
 #include "window_manager.h"
-#include "window_manager_private.h"
 #include "worldmap.h"
+
+#if __APPLE__
+#include <TargetConditionals.h>
+#endif
 
 namespace fallout {
 
@@ -84,9 +89,12 @@ namespace fallout {
 static int gameLoadGlobalVars();
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void gameFreeGlobalVars();
+static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed);
 static void showHelp();
 static int gameDbInit();
 static void showSplash();
+
+inline constexpr char kBaseModPath[] = "ce.dat";
 
 // 0x501C9C
 static char _aGame_0[] = "game\\";
@@ -144,6 +152,8 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
 
     settingsInit(isMapper, argc, argv);
 
+    debugModeInit(settings.debug.mode.c_str());
+
     gIsMapper = isMapper;
 
     if (gameDbInit() == -1) {
@@ -151,6 +161,9 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
         sfallConfigExit();
         return -1;
     }
+
+    // Content config reads from the VFS, so it must be initialized after gameDbInit.
+    contentConfigInit();
 
     // Message list repository is considered a specialized file manager, so
     // it should be initialized early in the process.
@@ -495,6 +508,7 @@ void gameExit()
     messageListRepositoryExit();
     dbCloseAll();
     settingsExit(true);
+    contentConfigExit();
     sfallConfigExit();
 }
 
@@ -688,49 +702,11 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
         if (interfaceBarEnabled()) {
             soundPlayFile("ib1p1xx1");
 
-            int mode = -1;
-
             // NOTE: There is an `inc` for this value to build jump table which
             // is not needed.
             int rc = skilldexOpen();
 
-            // Remap Skilldex result code to action.
-            switch (rc) {
-            case SKILLDEX_RC_ERROR:
-                debugPrint("\n ** Error calling skilldex_select()! ** \n");
-                break;
-            case SKILLDEX_RC_SNEAK:
-                _action_skill_use(SKILL_SNEAK);
-                break;
-            case SKILLDEX_RC_LOCKPICK:
-                mode = GAME_MOUSE_MODE_USE_LOCKPICK;
-                break;
-            case SKILLDEX_RC_STEAL:
-                mode = GAME_MOUSE_MODE_USE_STEAL;
-                break;
-            case SKILLDEX_RC_TRAPS:
-                mode = GAME_MOUSE_MODE_USE_TRAPS;
-                break;
-            case SKILLDEX_RC_FIRST_AID:
-                mode = GAME_MOUSE_MODE_USE_FIRST_AID;
-                break;
-            case SKILLDEX_RC_DOCTOR:
-                mode = GAME_MOUSE_MODE_USE_DOCTOR;
-                break;
-            case SKILLDEX_RC_SCIENCE:
-                mode = GAME_MOUSE_MODE_USE_SCIENCE;
-                break;
-            case SKILLDEX_RC_REPAIR:
-                mode = GAME_MOUSE_MODE_USE_REPAIR;
-                break;
-            default:
-                break;
-            }
-
-            if (mode != -1) {
-                gameMouseSetCursor(MOUSE_CURSOR_USE_CROSSHAIR);
-                gameMouseSetMode(mode);
-            }
+            gameHandleSkilldexResult(rc);
         }
         break;
     case KEY_UPPERCASE_Z:
@@ -1343,6 +1319,54 @@ int showQuitConfirmationDialog()
     return rc;
 }
 
+static void TryLoadBaseCEMod()
+{
+    bool found = false;
+    bool openFailed = false;
+
+    if (tryLoadBaseCEModAtPath(kBaseModPath, &found, &openFailed)) {
+        return;
+    }
+
+#if __APPLE__ && TARGET_OS_OSX
+    const char* bundleResourcesPath = getMacOsBundleResourcesPath();
+    if (bundleResourcesPath != nullptr) {
+        char absolutePath[COMPAT_MAX_PATH];
+        snprintf(absolutePath, sizeof(absolutePath), "%s/ce.dat", bundleResourcesPath);
+        if (tryLoadBaseCEModAtPath(absolutePath, &found, &openFailed)) {
+            return;
+        }
+    }
+#endif
+
+    if (openFailed) {
+        debugPrint("Error opening base mod file/folder!\n");
+    } else {
+        debugPrint("Error opening base mod: no file or folder name %s found.\n", kBaseModPath);
+    }
+}
+
+static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed)
+{
+    if (compat_access(path, 0) != 0) {
+        return false;
+    }
+
+    if (found != nullptr) {
+        *found = true;
+    }
+
+    debugPrint("Loading base FO:CE mod: %s\n", path);
+    if (dbOpen(path) == -1) {
+        if (openFailed != nullptr) {
+            *openFailed = true;
+        }
+        return false;
+    }
+
+    return true;
+}
+
 // 0x44418C
 static int gameDbInit()
 {
@@ -1350,7 +1374,6 @@ static int gameDbInit()
     const char* patch_file_name;
     int patch_index;
     char filename[COMPAT_MAX_PATH];
-
     main_file_name = nullptr;
     patch_file_name = nullptr;
 
@@ -1362,6 +1385,10 @@ static int gameDbInit()
     patch_file_name = settings.system.master_patches_path.c_str();
     if (*patch_file_name == '\0') {
         patch_file_name = nullptr;
+    }
+    // Try to ensure that patches dir exists early. This is needed for auto-generated game.cfg later.
+    if (patch_file_name != nullptr) {
+        compat_mkdir_recursive(patch_file_name);
     }
 
     int master_db_handle = dbOpen(main_file_name, patch_file_name);
@@ -1397,14 +1424,17 @@ static int gameDbInit()
         snprintf(filename, sizeof(filename), path_file_name_template, patch_index);
 
         if (compat_access(filename, 0) == 0) {
-            dbOpen(filename, nullptr);
+            dbOpen(filename);
         }
     }
+
+    // Load CE base mod after vanilla patches but before all regular mods.
+    TryLoadBaseCEMod();
 
     sfallLoadMods();
 
     if (compat_access("f2_res.dat", 0) == 0) {
-        dbOpen("f2_res.dat", nullptr);
+        dbOpen("f2_res.dat");
     }
 
     return 0;
@@ -1637,6 +1667,48 @@ ScopedGameMode::ScopedGameMode(int gameMode)
 ScopedGameMode::~ScopedGameMode()
 {
     GameMode::exitGameMode(gameMode);
+}
+
+void gameHandleSkilldexResult(int rc)
+{
+    int mode = -1;
+
+    switch (rc) {
+    case SKILLDEX_RC_ERROR:
+        debugPrint("\n ** Error calling skilldex_select()! ** \n");
+        break;
+    case SKILLDEX_RC_SNEAK:
+        _action_skill_use(SKILL_SNEAK);
+        break;
+    case SKILLDEX_RC_LOCKPICK:
+        mode = GAME_MOUSE_MODE_USE_LOCKPICK;
+        break;
+    case SKILLDEX_RC_STEAL:
+        mode = GAME_MOUSE_MODE_USE_STEAL;
+        break;
+    case SKILLDEX_RC_TRAPS:
+        mode = GAME_MOUSE_MODE_USE_TRAPS;
+        break;
+    case SKILLDEX_RC_FIRST_AID:
+        mode = GAME_MOUSE_MODE_USE_FIRST_AID;
+        break;
+    case SKILLDEX_RC_DOCTOR:
+        mode = GAME_MOUSE_MODE_USE_DOCTOR;
+        break;
+    case SKILLDEX_RC_SCIENCE:
+        mode = GAME_MOUSE_MODE_USE_SCIENCE;
+        break;
+    case SKILLDEX_RC_REPAIR:
+        mode = GAME_MOUSE_MODE_USE_REPAIR;
+        break;
+    default:
+        break;
+    }
+
+    if (mode != -1) {
+        gameMouseSetCursor(MOUSE_CURSOR_USE_CROSSHAIR);
+        gameMouseSetMode(mode);
+    }
 }
 
 } // namespace fallout

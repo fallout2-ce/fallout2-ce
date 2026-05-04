@@ -65,9 +65,6 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         return false;
     }
 
-    // Writes default values to config.
-    settingsWriteToConfig();
-
     // CE: Detect alternative default music directory.
     char alternativeMusicPath[COMPAT_MAX_PATH];
     strcpy(alternativeMusicPath, R"(data\sound\music\*.acm)");
@@ -120,15 +117,7 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         }
     }
 
-    auto configChecker = ConfigChecker(gGameConfig, gGameConfigFilePath);
-    // Read contents of `fallout2.cfg` into config. The values from the file
-    // will override the defaults above.
     configRead(&gGameConfig, gGameConfigFilePath, false);
-
-    // Init debug mode ASAP to catch early debug messages.
-    char* debugMode;
-    configGetString(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_MODE_KEY, &debugMode);
-    debugModeInit(debugMode);
 
     debugPrint("Game config loaded from %s.\n", gGameConfigFilePath);
 
@@ -136,11 +125,13 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
         debugPrint("Migrated settings from f2_res.ini.\n");
         configWriteEx(&gGameConfig, gGameConfigFilePath, CONFIG_RETAIN_ALL);
     }
-    configChecker.check(gGameConfig);
 
     // Add key-values from command line, which overrides both defaults and
     // whatever was loaded from `fallout2.cfg`.
     configParseCommandLineArguments(&gGameConfig, argc, argv);
+
+    // Writes default values to config, skipping keys that were already loaded.
+    settingsWriteToConfig(true);
 
     gGameConfigInitialized = true;
 

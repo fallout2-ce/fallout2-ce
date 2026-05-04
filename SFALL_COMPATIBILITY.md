@@ -4,9 +4,13 @@ This document tracks Fallout 2 CE compatibility with sfall.  This is for modders
 
 For now, this covers opcodes/metarules, and hooks.  In the future, it will include other ways of modifying the engine (like ini files), and other Sfall-specific behaviour.
 
-## Settings (ddraw.ini → fallout2.cfg)
+## Settings (ddraw.ini → fallout2.cfg / game.cfg)
 
-Some settings previously read from `ddraw.ini` have been moved into `fallout2.cfg`. The table below maps each setting to its new location. `HiResMode` had no effect in CE and has been removed.
+Settings previously read from `ddraw.ini` have been moved into standard CE config files.
+
+Most settings that control game behavior (premade characters, extra message files, combat tweaks, worldmap, etc.) have been moved into [`<DAT>/config/game.cfg`](files/ce.dat/config/game.cfg), which is a content-mod config file intended to be overridden by mods. See that file for the full list with descriptions.
+
+The following settings were moved into [`fallout2.cfg`](files/fallout2.cfg) instead:
 
 | ddraw.ini section | ddraw.ini key | fallout2.cfg section | fallout2.cfg key |
 | --- | --- | --- | --- |
@@ -48,16 +52,16 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Explosions | set_attack_explosion_pattern<br>set_attack_explosion_art<br>set_attack_explosion_radius<br>set_attack_is_explosion_fire<br>set_explosion_radius<br>set_dynamite_damage<br>set_plastic_damage<br>get_explosion_damage<br>set_explosion_max_targets<br>item_make_explosive | ✅ except item_make_explosive | - |
 | Animations | reg_anim_combat_check<br>reg_anim_destroy<br>reg_anim_animate_and_hide<br>reg_anim_light<br>reg_anim_change_fid<br>reg_anim_take_out<br>reg_anim_turn_towards<br>reg_anim_callback<br>reg_anim_animate_and_move | ✅ except reg_anim_callback | - |
 | Art and appearance | art_exists<br>refresh_pc_art<br>art_cache_clear<br>set_hero_race<br>set_hero_style | implemented: art_exists, refresh_pc_art, art_cache_clear | - |
-| Tiles and paths | get_tile_fid<br>tile_under_cursor<br>tile_light<br>tile_get_objs<br>tile_refresh_display<br>obj_blocking_tile<br>tile_by_position<br>get_tile_ground_fid<br>get_tile_roof_fid<br>obj_blocking_line<br>path_find_to<br>objects_in_radius | ✅ except objects_in_radius | - |
+| Tiles and paths | get_tile_fid<br>tile_under_cursor<br>tile_light<br>tile_get_objs<br>tile_refresh_display<br>obj_blocking_tile<br>tile_by_position<br>get_tile_ground_fid<br>get_tile_roof_fid<br>obj_blocking_line<br>path_find_to<br>objects_in_radius | ✅ | - |
 | Utility | sprintf<br>typeof<br>atoi<br>atof | ✅ | - |
 | Utility / Strings | string_split<br>substr<br>strlen<br>charcode<br>get_string_pointer<br>string_find<br>string_find_from<br>string_format<br>string_format_array<br>string_replace<br>string_to_case<br>string_compare | ✅ | `get_string_pointer` is deprecated and intentionally omitted. |
 | Interface / Tags | show_iface_tag<br>hide_iface_tag<br>is_iface_tag_active<br>set_iface_tag_text<br>add_iface_tag | ✅ except set_iface_tag_text, add_iface_tag | CE only handles built-in interface tags here; custom tag creation/text is not supported yet. |
 | Global variables | set_sfall_global<br>get_sfall_global_int<br>get_sfall_global_float | ✅ except get_sfall_global_float | Current CE storage is int-backed; `set_sfall_global` stores integer values |
 | Hooks / Hook functions | init_hook<br>get_sfall_arg<br>get_sfall_args<br>get_sfall_arg_at<br>set_sfall_return<br>set_sfall_arg<br>register_hook<br>register_hook_proc<br>register_hook_proc_spec | ✅ | See below for implemented hooks. `init_hook` is deprecated and will not be implemented. register_hook_proc and register_hook_proc_spec both add hooks to the *end* of the hook list, instead of beginning and end, respectively. |
-| Arrays / Array functions | create_array<br>temp_array<br>fix_array<br>get/set_array<br>resize_array<br>free_array<br>scan_array<br>len_array<br>save/load_array<br>array_key<br>arrayexpr | ✅ except save_array, load_array | - |
+| Arrays / Array functions | create_array<br>temp_array<br>fix_array<br>get/set_array<br>resize_array<br>free_array<br>scan_array<br>len_array<br>save/load_array<br>array_key<br>arrayexpr | ✅ | - |
 | Perks and traits / NPC perks | set_fake_perk_npc<br>set_fake_trait_npc<br>set_selectable_perk_npc<br>has_fake_perk_npc<br>has_fake_trait_npc | not implemented | - |
 | Global scripts / Global script functions | set_global_script_repeat<br>set_global_script_type<br>available_global_script_types | ✅ except available_global_script_types | - |
-| Combat | attack_is_aimed<br>block_combat<br>force_aimed_shots<br>disable_aimed_shots<br>get_attack_type<br>get/set_bodypart_hit_modifier<br>combat_data<br>get/set/reset_critical_table<br>get_last_target<br>get_last_attacker<br>set_critter_burst_disable<br>get/set_critter_current_ap<br>set_spray_settings<br>get/set_combat_free_move | implemented: get_attack_type, get_bodypart_hit_modifier, combat_data, set_bodypart_hit_modifier, get_critter_current_ap, set_critter_current_ap, get_combat_free_move, set_combat_free_move | - |
+| Combat | attack_is_aimed<br>block_combat<br>force_aimed_shots<br>disable_aimed_shots<br>get_attack_type<br>get/set_bodypart_hit_modifier<br>combat_data<br>get/set/reset_critical_table<br>get_last_target<br>get_last_attacker<br>set_critter_burst_disable<br>get/set_critter_current_ap<br>set_spray_settings<br>get/set_combat_free_move | implemented: get_attack_type, get/set_bodypart_hit_modifier, combat_data, get/set_critter_current_ap, get/set_combat_free_move | - |
 | Car | set_car_current_town<br>car_gas_amount<br>set_car_intface_art | implemented: all except set_car_intface_art | - |
 | Interface / Windows and images | art_frame_data<br>interface_art_draw<br>interface_print<br>draw_image<br>draw_image_scaled<br>get_window_under_mouse<br>create_win<br>get_window_attribute<br>message_box<br>set_window_flag<br>win_fill_color<br>interface_overlay<br>dialog_message<br>get_text_width<br>hide_window<br>show_window<br>create_message_window | implemented: only message_box, get_text_width, show_window, create_message_window | - |
 | Interface / Outline | outlined_object<br>get_outline<br>set_outline | ✅ | - |
@@ -66,9 +70,9 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Interface / Cursor | get/set_cursor_mode | ✅ | - |
 | Locks | lock_is_jammed<br>unjam_lock<br>set_unjam_locks_time | not implemented | - |
 | INI settings | get_ini_setting<br>get_ini_string<br>get_ini_section<br>get_ini_sections<br>get_ini_config<br>get_ini_config_db<br>set_ini_setting | ✅ except get_ini_config, get_ini_config_db | `modified_ini` is intentionally omitted as deprecated. |
-| Objects and scripts | set_self<br>set_dude_obj<br>real_dude_obj<br>remove_script<br>get/set_script<br>obj_is_carrying_obj<br>loot_obj<br>dialog_obj<br>obj_under_cursor<br>get/set_object_data<br>get/set_flags<br>set_unique_id<br>set_scr_name<br>obj_is_openable<br>get/set_proto_data<br>get_object_ai_data | implemented: set_self, get_script, obj_is_carrying_obj, loot_obj, dialog_obj, obj_under_cursor, get_object_data, get_flags, set_flags, obj_is_openable, get_proto_data, set_proto_data | - |
+| Objects and scripts | set_self<br>set_dude_obj<br>real_dude_obj<br>remove_script<br>get/set_script<br>obj_is_carrying_obj<br>loot_obj<br>dialog_obj<br>obj_under_cursor<br>get/set_object_data<br>get/set_flags<br>set_unique_id<br>set_scr_name<br>obj_is_openable<br>get/set_proto_data<br>get_object_ai_data | implemented: set_self, get/set/remove_script, obj_is_carrying_obj, loot_obj, dialog_obj, obj_under_cursor, get_object_data, get_flags, set_flags, obj_is_openable, get_proto_data, set_proto_data | - |
 | Other / Game management | set_movie_path<br>stop/resume_game<br>mark_movie_played<br>game_loaded<br>get_game_mode<br>get_uptime<br>signal_close_game | implemented: game_loaded, get_game_mode, get_uptime, signal_close_game | - |
-| Gameplay tweaks | set_pickpocket_max<br>set_hit_chance_max<br>set_xp_mod<br>set_critter_hit_chance_mod<br>set_base_hit_chance_mod<br>set_hp_per_level_mod<br>get_unspent_ap_bonus<br>gdialog_get_barter_mod<br>set_unspent_ap_bonus<br>get/set_unspent_ap_perk_bonus<br>set_inven_ap_cost<br>set_base_pickpocket_mod<br>set_critter_pickpocket_mod<br>get_inven_ap_cost<br>set_drugs_data<br>get_kill_counter<br>mod_kill_counter<br>set_pipboy_available | implemented: gdialog_get_barter_mod | - |
+| Gameplay tweaks | set_pickpocket_max<br>set_hit_chance_max<br>set_xp_mod<br>set_critter_hit_chance_mod<br>set_base_hit_chance_mod<br>set_hp_per_level_mod<br>gdialog_get_barter_mod<br>get/set_unspent_ap_bonus<br>get/<br>set_base_pickpocket_mod<br>set_critter_pickpocket_mod<br>get/set_inven_ap_cost<br>set_drugs_data<br>get_kill_counter<br>mod_kill_counter<br>set_pipboy_available | implemented: gdialog_get_barter_mod | - |
 | NPCs | inc_npc_level<br>get_npc_level<br>npc_engine_level_up | not implemented | - |
 | Other | get_year<br>set_dm/df_model<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>hero_select_win<br>get_light_level<br>message_str_game<br>sneak_success<br>create_spatial<br>unwield_slot<br>add_g_timer_event<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br>remove_timer_event<br>spatial_radius | implemented: get_year, active_hand, toggle_active_hand, get_light_level, message_str_game, add_extra_msg_file, metarule_exist | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. |
 
@@ -77,12 +81,12 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Hook | ID | Compatibility | Notes |
 | --- | --- | --- | --- |
 | ToHit | `HOOK_TOHIT` | ✅ | - |
-| AfterHitRoll | `HOOK_AFTERHITROLL` | 🚫 | Et tu |
+| AfterHitRoll | `HOOK_AFTERHITROLL` | ✅ | Overriding `defender` leaves a lot of attack variables in previous state (e.g. distance, ->oops, roundsHitMainTarget) |
 | CalcAPCost | `HOOK_CALCAPCOST` | ✅ | - |
 | DeathAnim1 | `HOOK_DEATHANIM1` | 🚫 | Use DEATHANIM2 instead |
 | DeathAnim2 | `HOOK_DEATHANIM2` | ✅ | - |
 | CombatDamage | `HOOK_COMBATDAMAGE` | ✅ | - |
-| OnDeath | `HOOK_ONDEATH` | 🚫 | - |
+| OnDeath | `HOOK_ONDEATH` | ✅ | - |
 | FindTarget | `HOOK_FINDTARGET` | 🚫 | (maybe) |
 | UseObjOn | `HOOK_USEOBJON` | ✅ | - |
 | UseObj | `HOOK_USEOBJ` | ✅ | CE notes an sfall-matching inconsistency around return code `2` behavior between interface contexts. |
@@ -90,7 +94,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | BarterPrice | `HOOK_BARTERPRICE` | ✅ | - |
 | MoveCost | `HOOK_MOVECOST` | 🚫 | - |
 | ItemDamage | `HOOK_ITEMDAMAGE` | 🚫 | - |
-| AmmoCost | `HOOK_AMMOCOST` | 🚫 | Et tu |
+| AmmoCost | `HOOK_AMMOCOST` | ✅ | Requires `check_weapon_ammo_cost=1` if you want pre-attack ammo validation to respect per-shot/per-round overrides. |
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | ✅ | - |
 | UseSkill | `HOOK_USESKILL` | 🚫 | - |
@@ -100,14 +104,14 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | InvenWield | `HOOK_INVENWIELD` | ✅ | - |
 | AdjustFID | `HOOK_ADJUSTFID` | ✅ | Second hook arg currently matches the first because CE has no internal FID modifiers like Hero Appearance. |
 | CombatTurn | `HOOK_COMBATTURN` | ✅ | - |
-| StdProcedure | `HOOK_STDPROCEDURE` | 🚫 | Et tu |
-| StdProcedureEnd | `HOOK_STDPROCEDURE_END` | 🚫 | - |
+| StdProcedure | `HOOK_STDPROCEDURE` | ✅ | - |
+| StdProcedureEnd | `HOOK_STDPROCEDURE_END` | ✅ | - |
 | CarTravel | `HOOK_CARTRAVEL` | 🚫 | - |
 | SetGlobalVar | `HOOK_SETGLOBALVAR` | 🚫 | - |
-| RestTimer | `HOOK_RESTTIMER` | 🚫 | Et tu |
+| RestTimer | `HOOK_RESTTIMER` | ✅ | CE is slightly more strict: only `ret0 == 1` interrupts. Ticks wrap every 6.8y; do not rely on them for absolute game time. |
 | GameModeChange | `HOOK_GAMEMODECHANGE` | ✅ | - |
 | UseAnimObj | `HOOK_USEANIMOBJ` | 🚫 | Et tu; (maybe) |
-| ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | 🚫 | - |
+| ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | ✅ | - |
 | DescriptionObj | `HOOK_DESCRIPTIONOBJ` | 🚫 | Et tu |
 | UseSkillOn | `HOOK_USESKILLON` | 🚫 | Et tu |
 | OnExplosion | `HOOK_ONEXPLOSION` | 🚫 | (maybe) |

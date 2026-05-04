@@ -5,10 +5,10 @@
 
 #include <random>
 
+#include "combat.h"
 #include "debug.h"
 #include "platform_compat.h"
 #include "scripts.h"
-#include "sfall_config.h"
 
 namespace fallout {
 
@@ -103,15 +103,11 @@ static int randomTranslateRoll(int delta, int criticalSuccessModifier)
 {
     unsigned int gameTime = gameTimeGetTime();
 
-    // SFALL: Remove criticals time limits.
-    bool criticalsTimeLimitsRemoved = false;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_REMOVE_CRITICALS_TIME_LIMITS_KEY, &criticalsTimeLimitsRemoved);
-
     int roll;
     if (delta < 0) {
         roll = ROLL_FAILURE;
 
-        if (criticalsTimeLimitsRemoved || (gameTime / GAME_TIME_TICKS_PER_DAY) >= 1) {
+        if (criticalsNoTimeLimits() || (gameTime / GAME_TIME_TICKS_PER_DAY) >= 1) {
             // 10% to become critical failure.
             if (randomBetween(1, 100) <= -delta / 10) {
                 roll = ROLL_CRITICAL_FAILURE;
@@ -120,7 +116,7 @@ static int randomTranslateRoll(int delta, int criticalSuccessModifier)
     } else {
         roll = ROLL_SUCCESS;
 
-        if (criticalsTimeLimitsRemoved || (gameTime / GAME_TIME_TICKS_PER_DAY) >= 1) {
+        if (criticalsNoTimeLimits() || (gameTime / GAME_TIME_TICKS_PER_DAY) >= 1) {
             // 10% + modifier to become critical success.
             if (randomBetween(1, 100) <= delta / 10 + criticalSuccessModifier) {
                 roll = ROLL_CRITICAL_SUCCESS;

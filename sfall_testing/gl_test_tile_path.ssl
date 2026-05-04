@@ -1,12 +1,20 @@
 #include "sfall.h"
+#include "define_extra.h"
 #include "test_utils.h"
 
+#define TEST_ITEM_PID 40
+
 variable blocker_obj := 0;
+variable radius_obj := 0;
 
 procedure cleanup begin
     if (blocker_obj) then begin
         destroy_object(blocker_obj);
         blocker_obj := 0;
+    end
+    if (radius_obj) then begin
+        destroy_object(radius_obj);
+        radius_obj := 0;
     end
 end
 
@@ -45,6 +53,26 @@ procedure start begin
         call assertEquals("one-step path length", len_array(path), 1);
         if (len_array(path) == 1) then
             call assertEquals("one-step path direction", get_array(path, 0), step_dir);
+
+        radius_obj := create_object_sid(TEST_ITEM_PID, step_tile, elev, -1);
+        call assertNotEquals("spawned radius item", radius_obj, 0);
+        if (radius_obj) then begin
+            objs := sfall_func3("objects_in_radius", dude_tile, 1, elev);
+            call assertTrue("objects_in_radius all contains dude", scan_array(objs, dude_obj) != -1);
+            call assertTrue("objects_in_radius all contains item", scan_array(objs, radius_obj) != -1);
+
+            objs := sfall_func3("objects_in_radius", dude_tile, 0, elev);
+            call assertTrue("objects_in_radius radius 0 contains dude", scan_array(objs, dude_obj) != -1);
+            call assertEquals("objects_in_radius radius 0 excludes adjacent item", scan_array(objs, radius_obj), -1);
+
+            objs := objects_in_radius(dude_tile, 1, elev, OBJ_TYPE_ITEM);
+            call assertTrue("objects_in_radius item filter contains item", scan_array(objs, radius_obj) != -1);
+            call assertEquals("objects_in_radius item filter excludes dude", scan_array(objs, dude_obj), -1);
+
+            objs := objects_in_radius(dude_tile, 1, elev, OBJ_TYPE_CRITTER);
+            call assertTrue("objects_in_radius critter filter contains dude", scan_array(objs, dude_obj) != -1);
+            call assertEquals("objects_in_radius critter filter excludes item", scan_array(objs, radius_obj), -1);
+        end
     end
 
     if (block_tile != -1) then begin

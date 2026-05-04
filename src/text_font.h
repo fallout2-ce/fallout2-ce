@@ -1,6 +1,10 @@
 #ifndef TEXT_FONT_H
 #define TEXT_FONT_H
 
+#include "draw.h"
+
+#include <algorithm>
+
 namespace fallout {
 
 typedef void FontManagerSetCurrentFontProc(int font);
@@ -42,6 +46,8 @@ extern FontManagerGetMonospacedStringWidthProc* fontGetMonospacedStringWidth;
 extern FontManagerGetLetterSpacingProc* fontGetLetterSpacing;
 extern FontManagerGetBufferSizeProc* fontGetBufferSize;
 extern FontManagerGetMonospacedCharacterWidth* fontGetMonospacedCharacterWidth;
+
+void fontDrawText2D(const Buffer2D& dest, int xPos, int yPos, const char* string, int length, int color);
 
 int textFontsInit();
 void textFontsExit();

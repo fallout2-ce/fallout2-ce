@@ -13,7 +13,7 @@ namespace fallout {
 
 struct SettingDescriptor {
     std::function<void()> read;
-    std::function<void()> write;
+    std::function<void(bool onlyAdd)> write;
 };
 
 static std::vector<SettingDescriptor> settingsRegistry;
@@ -26,6 +26,12 @@ static void settingsRead(const char* section, const char* key, std::string& valu
     if (configGetString(&gGameConfig, section, key, &v)) {
         value = v;
     }
+}
+
+static bool settingsKeyExists(const char* section, const char* key)
+{
+    char* v;
+    return configGetString(&gGameConfig, section, key, &v);
 }
 
 static void settingsRead(const char* section, const char* key, int& value)
@@ -91,23 +97,18 @@ static std::function<void(T&, const char*, const char*)> clamp(T min, T max)
     };
 }
 
-template <typename T>
-void registerSetting(const char* section, const char* key, T& variable)
-{
-    settingsRegistry.push_back(
-        { [&, section, key]() { settingsRead(section, key, variable); },
-            [&, section, key]() { settingsWrite(section, key, variable); } });
-}
-
-template <typename T, typename P>
-void registerSetting(const char* section, const char* key, T& variable, P postProcess)
+template <typename T, typename P = std::function<void(T&, const char*, const char*)>>
+void registerSetting(const char* section, const char* key, T& variable, P postProcess = {})
 {
     settingsRegistry.push_back(
         { [&, section, key, postProcess]() {
              settingsRead(section, key, variable);
-             postProcess(variable, section, key);
+             if (postProcess) postProcess(variable, section, key);
          },
-            [&, section, key]() { settingsWrite(section, key, variable); } });
+            [&, section, key](bool onlyAdd) {
+                if (onlyAdd && settingsKeyExists(section, key)) return;
+                settingsWrite(section, key, variable);
+            } });
 }
 
 // SECT must be defined to the settings sub-struct name, which equals the config section string.
@@ -153,6 +154,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(iface_bar_sides_ori);
     SETTING_P(splash_screen_size, clamp(0, 2));
     SETTING(ignore_map_edges);
+    SETTING(quick_toolbar_visible);
     SETTING_P(anim_speed, clamp(0.1, 100.0));
     SETTING_P(skip_opening_movies, clamp(0, 2));
     SETTING(display_karma_changes);
@@ -160,6 +162,9 @@ void initSettingsRegistry(bool isMapper)
     SETTING(numbers_in_dialogue);
     SETTING_P(auto_quick_save, clamp(0, 10));
     SETTING(enable_high_resolution_stencil);
+    SETTING(extend_ap_bar);
+    SETTING(expand_barter_window);
+    SETTING_P(inventory_columns, clamp(1, 2));
 #undef SECT
 
 #define SECT preferences
@@ -215,6 +220,7 @@ void initSettingsRegistry(bool isMapper)
 #define SECT qol
     SETTING_P(use_walk_distance, clamp(0, 100));
     SETTING(auto_open_doors);
+    SETTING(party_loot_and_barter);
 #undef SECT
 
     if (isMapper) {
@@ -255,10 +261,10 @@ bool settingsInit(bool isMapper, int argc, char** argv)
     return true;
 }
 
-void settingsWriteToConfig()
+void settingsWriteToConfig(bool onlyAdd)
 {
     for (const auto& descriptor : settingsRegistry) {
-        descriptor.write();
+        descriptor.write(onlyAdd);
     }
 }
 

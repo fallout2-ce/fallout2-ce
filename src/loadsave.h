@@ -18,6 +18,8 @@ void _InitLoadSave();
 void _ResetLoadSave();
 int lsgSaveGame(int mode);
 int lsgLoadGame(int mode);
+void lsgDevSetLoadGameSlot(int slot);
+int lsgGetTotalSlotCount();
 bool _isLoadingGame();
 void lsgInit();
 int MapDirErase(const char* path, const char* extension);

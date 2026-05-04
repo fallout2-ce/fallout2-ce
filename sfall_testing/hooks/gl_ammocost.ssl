@@ -1,0 +1,78 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+#include "lib.obj.h"
+
+variable ammocost_mode := 0;
+
+procedure ammocost_mode_name begin
+    if (ammocost_mode == 1) then return "double-single";
+    if (ammocost_mode == 2) then return "burst-x2";
+    if (ammocost_mode == 3) then return "free";
+    return "engine";
+end
+
+procedure ammocost_item_name(variable item) begin
+    if (item == 0) then return "<null>";
+    return obj_name(item);
+end
+
+procedure ammocost_handler begin
+    variable
+        args := get_sfall_args,
+        weapon := args[0],
+        rounds := args[1],
+        defaultCost := args[2],
+        hookType := args[3],
+        weaponPid := 0;
+
+    if (weapon) then weaponPid := obj_pid(weapon);
+
+    display_msg(string_format6("ammocost mode=%s type=%d rounds=%d default=%d weapon=%s pid=%d",
+        ammocost_mode_name,
+        hookType,
+        rounds,
+        defaultCost,
+        ammocost_item_name(weapon),
+        weaponPid));
+
+    if (ammocost_mode == 1) then begin
+        if (hookType == 0 or hookType == 1) then
+            set_sfall_return(defaultCost + 1);
+    end
+
+    if (ammocost_mode == 2) then begin
+        if (hookType == 1 or hookType == 3) then
+            set_sfall_return(rounds * 2);
+        if (hookType == 2) then
+            set_sfall_return(2);
+    end
+
+    if (ammocost_mode == 3) then
+        set_sfall_return(0);
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_H) then return;
+
+    ammocost_mode := ammocost_mode + 1;
+    if (ammocost_mode > 3) then ammocost_mode := 0;
+
+    display_msg(string_format1("ammocost mode -> %s", ammocost_mode_name));
+    intface_redraw;
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("ammocost manual test ready: press H to cycle engine/double-single/burst-x2/free");
+    display_msg("check single-shot ammo use, burst ammo use, and pre-attack ammo validation with CheckWeaponAmmoCost");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_AMMOCOST, ammocost_handler);
+end

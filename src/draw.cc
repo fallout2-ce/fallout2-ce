@@ -149,7 +149,7 @@ void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, in
 }
 
 // 0x4D33F0
-void blitBufferToBufferStretch(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
+void blitBufferToBufferStretch(const unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
 {
     int stepX = (destWidth << 16) / srcWidth;
     int stepY = (destHeight << 16) / srcHeight;
@@ -158,7 +158,7 @@ void blitBufferToBufferStretch(unsigned char* src, int srcWidth, int srcHeight, 
         int startDestY = (srcY * stepY) >> 16;
         int endDestY = ((srcY + 1) * stepY) >> 16;
 
-        unsigned char* currSrc = src + srcPitch * srcY;
+        const unsigned char* currSrc = src + srcPitch * srcY;
         for (int srcX = 0; srcX < srcWidth; srcX += 1) {
             int startDestX = (srcX * stepX) >> 16;
             int endDestX = ((srcX + 1) * stepX) >> 16;
@@ -176,7 +176,7 @@ void blitBufferToBufferStretch(unsigned char* src, int srcWidth, int srcHeight, 
 }
 
 // 0x4D3560
-void blitBufferToBufferStretchTrans(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
+void blitBufferToBufferStretchTrans(const unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destWidth, int destHeight, int destPitch)
 {
     int stepX = (destWidth << 16) / srcWidth;
     int stepY = (destHeight << 16) / srcHeight;
@@ -185,7 +185,7 @@ void blitBufferToBufferStretchTrans(unsigned char* src, int srcWidth, int srcHei
         int startDestY = (srcY * stepY) >> 16;
         int endDestY = ((srcY + 1) * stepY) >> 16;
 
-        unsigned char* currSrc = src + srcPitch * srcY;
+        const unsigned char* currSrc = src + srcPitch * srcY;
         for (int srcX = 0; srcX < srcWidth; srcX += 1) {
             int startDestX = (srcX * stepX) >> 16;
             int endDestX = ((srcX + 1) * stepX) >> 16;
@@ -205,15 +205,69 @@ void blitBufferToBufferStretchTrans(unsigned char* src, int srcWidth, int srcHei
 }
 
 // 0x4D36D4
-void blitBufferToBuffer(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
+void blitBufferToBuffer(const unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
 {
     srcCopy(dest, destPitch, src, srcPitch, width, height);
 }
 
 // 0x4D3704
-void blitBufferToBufferTrans(unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
+void blitBufferToBufferTrans(const unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch)
 {
     transSrcCopy(dest, destPitch, src, srcPitch, width, height);
+}
+
+void blitBuffer2D(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY)
+{
+    blitBuffer2D(src, 0, 0, src.width, src.height, dst, dstX, dstY);
+}
+
+void blitBuffer2D(ConstBuffer2D src, int srcX, int srcY, int width, int height,
+    Buffer2D dst, int dstX, int dstY)
+{
+    // Clip source region to src bounds.
+    if (srcX < 0) {
+        width += srcX;
+        dstX -= srcX;
+        srcX = 0;
+    }
+    if (srcY < 0) {
+        height += srcY;
+        dstY -= srcY;
+        srcY = 0;
+    }
+    if (srcX + width > src.width) {
+        width = src.width - srcX;
+    }
+    if (srcY + height > src.height) {
+        height = src.height - srcY;
+    }
+
+    // Clip destination region to dst bounds.
+    if (dstX < 0) {
+        srcX -= dstX;
+        width += dstX;
+        dstX = 0;
+    }
+    if (dstY < 0) {
+        srcY -= dstY;
+        height += dstY;
+        dstY = 0;
+    }
+    if (dstX + width > dst.width) {
+        width = dst.width - dstX;
+    }
+    if (dstY + height > dst.height) {
+        height = dst.height - dstY;
+    }
+
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+
+    srcCopy(
+        dst.data + dstY * dst.width + dstX, dst.width,
+        src.data + srcY * src.width + srcX, src.width,
+        width, height);
 }
 
 // 0x4D387C
@@ -321,7 +375,7 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, int col
 }
 
 // 0x4E0DB0
-void srcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitch, int width, int height)
+void srcCopy(unsigned char* dest, int destPitch, const unsigned char* src, int srcPitch, int width, int height)
 {
     for (int y = 0; y < height; y++) {
         memcpy(dest, src, width);
@@ -331,7 +385,7 @@ void srcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitc
 }
 
 // 0x4E0ED5
-void transSrcCopy(unsigned char* dest, int destPitch, unsigned char* src, int srcPitch, int width, int height)
+void transSrcCopy(unsigned char* dest, int destPitch, const unsigned char* src, int srcPitch, int width, int height)
 {
     int destSkip = destPitch - width;
     int srcSkip = srcPitch - width;

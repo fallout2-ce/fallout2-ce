@@ -3,7 +3,7 @@
 
 namespace fallout {
 
-typedef int(DebugPrintProc)(char* string);
+typedef int(DebugPrintProc)(const char* string);
 
 void debugModeInit(const char* debugMode);
 void _GNW_debug_init();

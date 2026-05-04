@@ -156,6 +156,12 @@ typedef enum {
 } HookType;
 
 typedef enum {
+    REST_EVENT_TYPE_CANCEL = -1,
+    REST_EVENT_TYPE_PROGRESS = 0,
+    REST_EVENT_TYPE_COMPLETE = 1,
+} RestEventType;
+
+typedef enum {
     HOOK_INVENTORYMOVE_MAIN_BACKPACK = 0,
     HOOK_INVENTORYMOVE_LEFT_HAND = 1,
     HOOK_INVENTORYMOVE_RIGHT_HAND = 2,
@@ -251,13 +257,25 @@ struct BarterPriceContext {
     bool partyMember;
 };
 
+enum AmmoCostHookType {
+    AMMO_COST_HOOK_SINGLE_SHOT = 0,
+    AMMO_COST_HOOK_CHECK_OUT_OF_AMMO = 1,
+    AMMO_COST_HOOK_BURST_ROUNDS = 2,
+    AMMO_COST_HOOK_BURST_SHOT = 3,
+};
+
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
+bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
+int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
 
 bool scriptHooksInit();
 void scriptHooksReset();
 void scriptHooksExit();
 
 void scriptHooks_GameModeChange(int exit, int previousGameMode);
+bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes);
+void scriptHooks_OnDeath(Object* critter);
+int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType);
 bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
 bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);
@@ -265,6 +283,7 @@ void scriptHooks_CombatTurnCombatEnd(Object* critter);
 PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, PerceptionType type, PerceptionResult result);
 int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int actionPoints, Object* weapon);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
+int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLocationPtr, int hitChance, int roll);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
 int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);

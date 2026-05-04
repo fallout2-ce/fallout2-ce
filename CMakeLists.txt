@@ -20,6 +20,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
+if(MSVC)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+endif()
+
 option(FALLOUT_VENDORED "Use vendored third-party libraries" ON)
 
 if(ANDROID)
@@ -62,6 +66,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/combat.h"
     "src/config.cc"
     "src/config.h"
+    "src/content_config.cc"
+    "src/content_config.h"
     "src/credits.cc"
     "src/credits.h"
     "src/critter.cc"
@@ -309,6 +315,8 @@ if(IOS)
     target_sources(${EXECUTABLE_NAME} PUBLIC
         "src/platform/ios/paths.h"
         "src/platform/ios/paths.mm"
+        "src/platform/ios/quick_toolbar.h"
+        "src/platform/ios/quick_toolbar.cc"
     )
 endif()
 
@@ -360,6 +368,8 @@ if(APPLE)
         set(RESOURCES
             "os/macos/fallout2-ce.icns"
         )
+
+        target_link_libraries(${EXECUTABLE_NAME} "-framework CoreFoundation")
 
         target_sources(${EXECUTABLE_NAME} PUBLIC ${RESOURCES})
         set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
@@ -445,6 +455,77 @@ target_include_directories(${EXECUTABLE_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})
 
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
+
+if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
+    add_executable(ce-dat-tool
+        "tools/dat_tool.cc"
+        "tools/dat_archive.cc"
+        "tools/fo1_dat_lzss.cc"
+        "src/dfile.cc"
+        "src/platform_compat.cc"
+    )
+
+    if(APPLE)
+        set_target_properties(ce-dat-tool PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        )
+    endif()
+
+    target_link_libraries(ce-dat-tool
+        fpattern_windows::fpattern_windows
+        ${ZLIB_LIBRARIES}
+        ${SDL2_LIBRARIES}
+    )
+    if(WIN32)
+        target_link_libraries(ce-dat-tool winmm)
+    endif()
+    target_include_directories(ce-dat-tool PRIVATE "src")
+    target_include_directories(ce-dat-tool PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_include_directories(ce-dat-tool PRIVATE ${SDL2_INCLUDE_DIRS})
+
+    add_executable(ce-frm2png
+        "tools/ce_frm2png.cc"
+        "src/platform_compat.cc"
+        "third_party/lodepng/lodepng.cpp"
+    )
+
+    if(APPLE)
+        set_target_properties(ce-frm2png PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        )
+    endif()
+
+    target_include_directories(ce-frm2png PRIVATE "src")
+    target_include_directories(ce-frm2png PRIVATE "third_party/lodepng")
+    target_include_directories(ce-frm2png PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(ce-frm2png PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_link_libraries(ce-frm2png ${SDL2_LIBRARIES})
+    target_link_libraries(ce-frm2png ${ZLIB_LIBRARIES})
+
+    if(APPLE)
+        file(GLOB_RECURSE CE_DAT_INPUTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/files/ce.dat/*")
+        set(CE_DAT_RESOURCE_PATH "${CMAKE_CURRENT_BINARY_DIR}/ce.dat")
+
+        add_custom_command(
+            OUTPUT "${CE_DAT_RESOURCE_PATH}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
+            COMMAND $<TARGET_FILE:ce-dat-tool> create "${CMAKE_SOURCE_DIR}/files/ce.dat" "${CE_DAT_RESOURCE_PATH}"
+            DEPENDS ce-dat-tool ${CE_DAT_INPUTS}
+            COMMENT "Generating ce.dat for app bundle"
+            VERBATIM
+        )
+
+        add_custom_target(ce-dat-resource DEPENDS "${CE_DAT_RESOURCE_PATH}")
+        add_dependencies(${EXECUTABLE_NAME} ce-dat-resource)
+
+        target_sources(${EXECUTABLE_NAME} PRIVATE "${CE_DAT_RESOURCE_PATH}")
+        set_source_files_properties("${CE_DAT_RESOURCE_PATH}" PROPERTIES
+            GENERATED TRUE
+            MACOSX_PACKAGE_LOCATION "Resources")
+    endif()
+endif()
 
 if(APPLE)
     if(IOS)

@@ -1,6 +1,7 @@
 #include "sfall_script_hooks.h"
 
 #include <algorithm>
+#include <climits>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -11,11 +12,22 @@
 #include "game.h"
 #include "interface.h"
 #include "interpreter_extra.h"
+#include "queue.h"
+#include "random.h"
 #include "scripts.h"
 
 #include <assert.h>
 
 namespace fallout {
+
+static int normalizeGameTimeForScript(unsigned int gameTime)
+{
+    // Fallout saves ticks as uint32 but scripts expect int32.  Wrapping at INT_MAX means
+    // that scripts will at least see positive ticks between 6.8y and 13y of game time.
+    // There isn't an elegant solution to this; scripts should use get_year instead of relying
+    // on absolute tick count
+    return static_cast<int>(gameTime % INT_MAX);
+}
 
 struct ScriptHook {
     Program* program = nullptr;
@@ -134,6 +146,40 @@ bool scriptHooksRegister(Program* program, const HookType hookType, const int pr
     return true; // register success
 }
 
+/*
+Runs before/after Fallout executes a standard procedure (handler) in any script
+of any object. This hook will not be executed for `start`, `critter_p_proc`,
+`timed_event_p_proc`, or `map_update_p_proc`.
+
+int     arg0 - the number of the standard script handler (see *_proc in define.h)
+Obj     arg1 - the object that owns this handler (self_obj)
+Obj     arg2 - the object that called this handler (source_obj, can be 0)
+int     arg3 - always 0 for HOOK_STDPROCEDURE, always 1 for HOOK_STDPROCEDURE_END
+Obj     arg4 - the object that is acted upon by this handler (target_obj, can be 0)
+int     arg5 - the parameter of this call (fixed_param), useful for combat_proc
+
+int     ret0 - pass -1 to cancel the execution of the handler
+*/
+bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after)
+{
+    if (procedureNumber == SCRIPT_PROC_START
+        || procedureNumber == SCRIPT_PROC_CRITTER
+        || procedureNumber == SCRIPT_PROC_TIMED
+        || procedureNumber == SCRIPT_PROC_MAP_UPDATE) {
+        return false;
+    }
+
+    ScriptHookCall hook(after ? HOOK_STDPROCEDURE_END : HOOK_STDPROCEDURE, after ? 0 : 1,
+        { procedureNumber, self, source, after ? 1 : 0, target, fixedParam });
+    hook.call();
+
+    if (after || hook.numReturnValues() <= 0) {
+        return false;
+    }
+
+    return hook.getReturnValueAt(0).asInt() == -1;
+}
+
 static void scriptHooksClear()
 {
     for (auto& hooks : scriptHooks) {
@@ -165,6 +211,127 @@ int arg1 - the previous game mode
 void scriptHooks_GameModeChange(int exit, int previousGameMode)
 {
     ScriptHookCall(HOOK_GAMEMODECHANGE, 0, { exit, previousGameMode }).call();
+}
+
+/*
+Runs continuously while the player is resting (using pipboy alarm clock).
+
+int arg0 - the game time in ticks
+int arg1 - event type: 1 - when the resting ends normally, -1 - when pressing ESC to cancel the timer, 0 - otherwise
+int arg2 - the hour part of the length of resting time
+int arg3 - the minute part of the length of resting time
+
+int ret0 - pass 1 to interrupt the resting, pass 0 to continue the rest if it was interrupted by pressing ESC key
+*/
+bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes)
+{
+    assert(eventType == REST_EVENT_TYPE_CANCEL || eventType == REST_EVENT_TYPE_PROGRESS || eventType == REST_EVENT_TYPE_COMPLETE);
+    assert(hours >= 0);
+    assert(minutes >= 0 && minutes < 60);
+
+    ScriptHookCall hook(HOOK_RESTTIMER, 1, { normalizeGameTimeForScript(gameTime), eventType, hours, minutes });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return eventType == REST_EVENT_TYPE_CANCEL;
+    }
+
+    const int overrideResult = hook.getReturnValueAt(0).asInt();
+    if (overrideResult == 1) {
+        return true;
+    }
+    if (overrideResult == 0) {
+        if (eventType == REST_EVENT_TYPE_CANCEL) {
+            return false;
+        }
+        debugPrint("HOOK_RESTTIMER: ignoring return value 0 for non-ESC event");
+        return false;
+    }
+
+    debugPrint("HOOK_RESTTIMER: ignoring invalid return value %d", overrideResult);
+    return false;
+}
+
+/*
+Runs after Fallout has decided how long an explosive timer should run and whether setting it was a success or failure.
+The hook can override both the queued delay and the coarse outcome. Critical success/failure collapse to success/failure,
+matching sfall's queue event rewrite semantics.
+
+int     arg0 - The explosive delay in ticks before any failure penalty is applied
+Obj     arg1 - The explosive object
+int     arg2 - The result of engine calculation: 1 - failure, 2 - success
+
+int     ret0 - The new delay in ticks (maximum 18000 == 30min). Negative values use engine behavior.
+int     ret1 - The new result: 0/1 - failure, 2/3 - success. Other values use engine behavior.
+*/
+int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType)
+{
+    assert(explosive != nullptr);
+    assert(delay >= 0);
+    assert(eventType == EVENT_TYPE_EXPLOSION || eventType == EVENT_TYPE_EXPLOSION_FAILURE);
+
+    int hookResult = eventType == EVENT_TYPE_EXPLOSION_FAILURE ? ROLL_FAILURE : ROLL_SUCCESS;
+
+    ScriptHookCall hook(HOOK_EXPLOSIVETIMER, 2, { delay, explosive, hookResult });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return -1;
+    }
+
+    int overrideDelay = hook.getReturnValueAt(0).asInt();
+    if (overrideDelay < 0) {
+        return -1;
+    }
+
+    delay = std::min(overrideDelay, 18000);
+    if (hook.numReturnValues() > 1) {
+        int overrideResult = hook.getReturnValueAt(1).asInt();
+        if (overrideResult >= ROLL_CRITICAL_FAILURE && overrideResult <= ROLL_FAILURE) {
+            eventType = EVENT_TYPE_EXPLOSION_FAILURE;
+        } else if (overrideResult >= ROLL_SUCCESS && overrideResult <= ROLL_CRITICAL_SUCCESS) {
+            eventType = EVENT_TYPE_EXPLOSION;
+        }
+    }
+
+    return queueAddEvent(delay, explosive, nullptr, eventType);
+}
+
+/*
+Runs when calculating ammo cost for a weapon.
+
+Item    arg0 - The weapon
+int     arg1 - Number of bullets in burst or 1 for single shots
+int     arg2 - The amount of ammo to be consumed, or ammo cost per round for hook type 2
+int     arg3 - Type of hook:
+               AMMO_COST_HOOK_SINGLE_SHOT - when subtracting ammo after single shot attack
+               AMMO_COST_HOOK_CHECK_OUT_OF_AMMO - when checking for "out of ammo" before attack
+               AMMO_COST_HOOK_BURST_ROUNDS - when calculating number of burst rounds
+               AMMO_COST_HOOK_BURST_SHOT - when subtracting ammo after burst attack
+
+int     ret0 - The new ammo amount/cost. Values below 0 are ignored.
+*/
+int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType)
+{
+    ScriptHookCall hook(HOOK_AMMOCOST, 1, { weapon, rounds, ammoCost, hookType });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return ammoCost;
+    }
+
+    int overrideAmmoCost = hook.getReturnValueAt(0).asInt();
+    return overrideAmmoCost >= 0 ? overrideAmmoCost : ammoCost;
+}
+
+/*
+Runs immediately after a critter dies for any reason.
+
+Critter arg0 - The critter that just died
+*/
+void scriptHooks_OnDeath(Object* critter)
+{
+    ScriptHookCall(HOOK_ONDEATH, 0, { critter }).call();
 }
 
 /*
@@ -329,6 +496,52 @@ int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode,
 
     hitChance = hook.getReturnValueAt(0).asInt();
     return std::clamp(hitChance, -99, 999);
+}
+
+/*
+Runs after Fallout has decided if an attack will hit or miss.
+
+int     arg0 - If the attack will hit: 0 - critical miss, 1 - miss, 2 - hit, 3 - critical hit
+Critter arg1 - The attacker
+Critter arg2 - The target of the attack
+int     arg3 - The bodypart
+int     arg4 - The hit chance
+
+int     ret0 - Override the hit/miss
+int     ret1 - Override the targeted bodypart
+Critter ret2 - Override the target of the attack
+*/
+int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLocationPtr, int hitChance, int roll)
+{
+    assert(defenderPtr != nullptr && hitLocationPtr != nullptr);
+
+    ScriptHookCall hook(HOOK_AFTERHITROLL, 3, { roll, attacker, *defenderPtr, *hitLocationPtr, hitChance });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return roll;
+    }
+
+    int rollOverride = hook.getReturnValueAt(0).asInt();
+    if (rollOverride >= ROLL_CRITICAL_FAILURE && rollOverride <= ROLL_CRITICAL_SUCCESS) {
+        roll = rollOverride;
+    } else {
+        debugPrint("HOOK_AFTERHITROLL: ignoring invalid roll override %d", rollOverride);
+    }
+
+    if (hook.numReturnValues() > 1) {
+        int hitLocationOverride = hook.getReturnValueAt(1).asInt();
+        if (hitLocationOverride >= 0 && hitLocationOverride < HIT_LOCATION_COUNT) {
+            *hitLocationPtr = hitLocationOverride;
+        } else {
+            debugPrint("HOOK_AFTERHITROLL: ignoring invalid hit location override %d", hitLocationOverride);
+        }
+    }
+    if (hook.numReturnValues() > 2) {
+        *defenderPtr = hook.getReturnValueAt(2).asObject();
+    }
+
+    return roll;
 }
 
 /*

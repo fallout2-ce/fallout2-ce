@@ -1,12 +1,19 @@
 #include "mouse.h"
 
+#if __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 #include "color.h"
 #include "dinput.h"
 #include "input.h"
+#include "interface.h"
 #include "kb.h"
 #include "memory.h"
+#include "platform/ios/quick_toolbar.h"
 #include "svga.h"
 #include "touch.h"
+#include "window_manager.h"
 
 namespace fallout {
 
@@ -363,6 +370,57 @@ void mouseHideCursor()
     }
 }
 
+#if __APPLE__ && TARGET_OS_IOS
+// Checks whether a tap lands on an interface-bar button and, if so,
+// injects the corresponding keyCode so the cursor never moves.
+// Returns true if the tap was consumed (button injected or bare chrome hit).
+static bool handleHudTapThrough(const Gesture& gesture)
+{
+    if (!mouseDeviceUsesRelativeMode() || touch_get_touchscreen_mode() || gInterfaceBarWindow == -1) {
+        return false;
+    }
+
+    Window* hudWindow = windowGetWindow(gInterfaceBarWindow);
+    if (hudWindow == nullptr || (hudWindow->flags & WINDOW_HIDDEN) != 0) {
+        return false;
+    }
+
+    Rect hudRect;
+    if (windowGetRect(gInterfaceBarWindow, &hudRect) != 0
+        || gesture.x < hudRect.left || gesture.x > hudRect.right
+        || gesture.y < hudRect.top || gesture.y > hudRect.bottom) {
+        return false;
+    }
+
+    if (gesture.numberOfTouches == 1 || gesture.numberOfTouches == 2) {
+        for (Button* button = hudWindow->buttonListHead; button != nullptr; button = button->next) {
+            if ((button->flags & BUTTON_FLAG_DISABLED) != 0) {
+                continue;
+            }
+            int left = hudWindow->rect.left + button->rect.left;
+            int top = hudWindow->rect.top + button->rect.top;
+            int right = hudWindow->rect.left + button->rect.right;
+            int bottom = hudWindow->rect.top + button->rect.bottom;
+            if (gesture.x < left || gesture.x > right || gesture.y < top || gesture.y > bottom) {
+                continue;
+            }
+            int keyCode = gesture.numberOfTouches == 1
+                ? button->leftMouseUpEventCode
+                : button->rightMouseUpEventCode;
+            if (keyCode == -1) {
+                break;
+            }
+            enqueueInputEvent(keyCode);
+            return true;
+        }
+    }
+
+    // Tap landed on belt chrome (no button under it). Consume silently
+    // rather than teleporting the cursor to an inert region.
+    return true;
+}
+#endif
+
 // 0x4CA59C
 void _mouse_info()
 {
@@ -383,8 +441,77 @@ void _mouse_info()
         static int prevx;
         static int prevy;
 
+        // Multi-finger gestures for keyboard-less touch play:
+        //   3-finger swipe down → ESC (options menu)
+        //   3-finger long press → hold Left Shift (highlights interactables)
+        //   4-finger long press → F6  (quicksave)
+        if (gesture.type == kPan && gesture.numberOfTouches == 3) {
+            static int swipeStartY;
+            if (gesture.state == kBegan) {
+                swipeStartY = gesture.y;
+            } else if (gesture.state == kEnded) {
+                int dy = gesture.y - swipeStartY;
+                if (dy > screenGetHeight() / 4) {
+                    enqueueInputEvent(KEY_ESCAPE);
+                }
+            }
+            return;
+        }
+
+        // Four-finger long press → F6 (quicksave). Long-press is more
+        // reliable than a tap since all 4 fingers rarely land and lift
+        // within the 75ms tap window; and more reliable than a swipe
+        // since iPadOS intercepts multi-finger vertical swipes.
+        if (gesture.type == kLongPress && gesture.numberOfTouches == 4) {
+            if (gesture.state == kBegan) {
+                enqueueInputEvent(KEY_F6);
+            }
+            return;
+        }
+
+        // FO2tweaks' highlighting uses sfall's key_pressed(), which reads
+        // SDL's own SDL_GetKeyboardState. Engine-internal _kb_simulate_key
+        // bypasses that, so push real SDL_KEYDOWN/UP events instead.
+        if (gesture.type == kLongPress && gesture.numberOfTouches == 3) {
+            static bool shiftHeld = false;
+            SDL_Event ev;
+            SDL_zero(ev);
+            ev.key.keysym.scancode = SDL_SCANCODE_LSHIFT;
+            ev.key.keysym.sym = SDLK_LSHIFT;
+            if (gesture.state == kBegan && !shiftHeld) {
+                ev.type = SDL_KEYDOWN;
+                ev.key.state = SDL_PRESSED;
+                SDL_PushEvent(&ev);
+                shiftHeld = true;
+            } else if (gesture.state == kEnded && shiftHeld) {
+                ev.type = SDL_KEYUP;
+                ev.key.state = SDL_RELEASED;
+                SDL_PushEvent(&ev);
+                shiftHeld = false;
+            }
+            return;
+        }
+
         switch (gesture.type) {
-        case kTap:
+        case kTap: {
+            // Toolbar taps bypass the mouse pipeline entirely: the handler
+            // invokes the action in place, so the cursor never moves.
+            // Skip when touchscreen mode is active (dialog, inventory, etc.)
+            // so toolbar doesn't intercept taps meant for overlapping UI.
+            if (!touch_get_touchscreen_mode()
+                && gesture.numberOfTouches == 1
+                && quickToolbarContainsPoint(gesture.x, gesture.y)) {
+                if (quickToolbarHandleTap(gesture.x, gesture.y)) {
+                    break;
+                }
+            }
+
+#if __APPLE__ && TARGET_OS_IOS
+            if (handleHudTapThrough(gesture)) {
+                goto tap_done;
+            }
+#endif
+
             if (mouseDeviceUsesRelativeMode()) {
                 if (gesture.numberOfTouches == 1) {
                     _mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
@@ -392,13 +519,16 @@ void _mouse_info()
                     _mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
                 }
             } else {
+                _mouse_set_position(gesture.x, gesture.y);
                 if (gesture.numberOfTouches == 1) {
                     _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_LEFT_BUTTON_DOWN);
                 } else if (gesture.numberOfTouches == 2) {
                     _mouse_simulate_input(gesture.x, gesture.y, MOUSE_STATE_RIGHT_BUTTON_DOWN);
                 }
             }
+        tap_done:
             break;
+        }
         case kLongPress:
         case kPan:
             if (gesture.state == kBegan) {

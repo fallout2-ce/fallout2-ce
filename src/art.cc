@@ -6,14 +6,18 @@
 #include <string.h>
 
 #include "animation.h"
+#include "content_config.h"
 #include "debug.h"
 #include "draw.h"
 #include "game.h"
 #include "memory.h"
-#include "object.h"
 #include "proto.h"
 #include "settings.h"
-#include "sfall_config.h"
+
+#include <algorithm>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 namespace fallout {
 
@@ -37,7 +41,7 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data);
 static void artCacheFreeImpl(void* ptr);
 static int artReadFrameData(unsigned char* data, File* stream, int count, int* paddingPtr);
 static int artReadHeader(Art* art, File* stream);
-static int artGetDataSize(Art* art);
+static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 
 // 0x5002D8
@@ -128,6 +132,11 @@ static int* _anon_alias;
 // 0x56CAF0
 static int* gArtCritterFidShoudRunData;
 
+static std::unordered_map<std::string, std::shared_ptr<NamedCacheEntry>> gNamedArtCache;
+constexpr int kNamedCacheMaxBytes = 32 * 1024 * 1024; // 32MB soft limit
+static unsigned int gNamedArtCacheMruCounter = 0;
+static int gNamedArtCacheCurrentBytes = 0;
+
 // 0x418840
 int artInit()
 {
@@ -190,28 +199,16 @@ int artInit()
 
     // SFALL: Modify player model settings.
     char* jumpsuitMaleFileName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DUDE_NATIVE_LOOK_JUMPSUIT_MALE_KEY, &jumpsuitMaleFileName);
-    if (jumpsuitMaleFileName == nullptr || jumpsuitMaleFileName[0] == '\0') {
-        jumpsuitMaleFileName = gDefaultJumpsuitMaleFileName;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male_default", &jumpsuitMaleFileName, gDefaultJumpsuitMaleFileName);
 
     char* jumpsuitFemaleFileName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DUDE_NATIVE_LOOK_JUMPSUIT_FEMALE_KEY, &jumpsuitFemaleFileName);
-    if (jumpsuitFemaleFileName == nullptr || jumpsuitFemaleFileName[0] == '\0') {
-        jumpsuitFemaleFileName = gDefaultJumpsuitFemaleFileName;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female_default", &jumpsuitFemaleFileName, gDefaultJumpsuitFemaleFileName);
 
     char* tribalMaleFileName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DUDE_NATIVE_LOOK_TRIBAL_MALE_KEY, &tribalMaleFileName);
-    if (tribalMaleFileName == nullptr || tribalMaleFileName[0] == '\0') {
-        tribalMaleFileName = gDefaultTribalMaleFileName;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male", &tribalMaleFileName, gDefaultTribalMaleFileName);
 
     char* tribalFemaleFileName = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DUDE_NATIVE_LOOK_TRIBAL_FEMALE_KEY, &tribalFemaleFileName);
-    if (tribalFemaleFileName == nullptr || tribalFemaleFileName[0] == '\0') {
-        tribalFemaleFileName = gDefaultTribalFemaleFileName;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female", &tribalFemaleFileName, gDefaultTribalFemaleFileName);
 
     char* critterFileNames = gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames;
     for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
@@ -833,7 +830,7 @@ unsigned char* artGetFrameData(Art* art, int frame, int direction)
 }
 
 // 0x419880
-ArtFrame* artGetFrame(Art* art, int frame, int rotation)
+ArtFrame* artGetFrame(const Art* art, int frame, int rotation)
 {
     if (rotation < 0 || rotation >= 6) {
         return nullptr;
@@ -852,6 +849,15 @@ ArtFrame* artGetFrame(Art* art, int frame, int rotation)
         frm = (ArtFrame*)((unsigned char*)frm + sizeof(*frm) + frm->size + paddingForSize(frm->size));
     }
     return frm;
+}
+
+ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, int direction)
+{
+    ArtFrame* frm = artGetFrame(art, frame, direction);
+    if (frm == nullptr) {
+        return { nullptr, 0, 0 };
+    }
+    return { reinterpret_cast<unsigned char*>(frm) + sizeof(*frm), frm->width, frm->height };
 }
 
 // 0x4198C8
@@ -928,6 +934,22 @@ int artAliasFid(int fid)
     return -1;
 }
 
+static bool artGetLocalizedPath(const char* basePath, const char** outPath)
+{
+    static char localizedPath[COMPAT_MAX_PATH];
+
+    if (!gArtLanguageInitialized) {
+        return false;
+    }
+    const char* pch = strchr(basePath, '\\');
+    if (pch == nullptr) {
+        pch = basePath;
+    }
+    snprintf(localizedPath, sizeof(localizedPath), "art\\%s\\%s", gArtLanguage, pch);
+    *outPath = localizedPath;
+    return true;
+}
+
 // 0x419A78
 static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
 {
@@ -935,21 +957,11 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
 
     char* artFilePath = artBuildFilePath(fid);
     if (artFilePath != nullptr) {
-        bool loaded = false;
         File* stream = nullptr;
-
-        if (gArtLanguageInitialized) {
-            char* pch = strchr(artFilePath, '\\');
-            if (pch == nullptr) {
-                pch = artFilePath;
-            }
-
-            char localizedPath[COMPAT_MAX_PATH];
-            snprintf(localizedPath, sizeof(localizedPath), "art\\%s\\%s", gArtLanguage, pch);
-
+        const char* localizedPath;
+        if (artGetLocalizedPath(artFilePath, &localizedPath)) {
             stream = fileOpen(localizedPath, "rb");
         }
-
         if (stream == nullptr) {
             stream = fileOpen(artFilePath, "rb");
         }
@@ -975,15 +987,8 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
     char* artFileName = artBuildFilePath(fid);
     if (artFileName != nullptr) {
         bool loaded = false;
-        if (gArtLanguageInitialized) {
-            char* pch = strchr(artFileName, '\\');
-            if (pch == nullptr) {
-                pch = artFileName;
-            }
-
-            char localizedPath[COMPAT_MAX_PATH];
-            snprintf(localizedPath, sizeof(localizedPath), "art\\%s\\%s", gArtLanguage, pch);
-
+        const char* localizedPath;
+        if (artGetLocalizedPath(artFileName, &localizedPath)) {
             if (artRead(localizedPath, data) == 0) {
                 loaded = true;
             }
@@ -1120,6 +1125,16 @@ Art* artLoad(const char* path)
     return reinterpret_cast<Art*>(data);
 }
 
+static Art* artLoadLocalized(const char* path)
+{
+    const char* localizedPath;
+    Art* result = artGetLocalizedPath(path, &localizedPath)
+        ? artLoad(localizedPath)
+        : nullptr;
+
+    return result != nullptr ? result : artLoad(path);
+}
+
 // 0x419FC0
 int artRead(const char* path, unsigned char* data)
 {
@@ -1227,7 +1242,7 @@ int artWrite(const char* path, unsigned char* data)
     return 0;
 }
 
-static int artGetDataSize(Art* art)
+static int artGetDataSize(const Art* art)
 {
     int dataSize = sizeof(*art) + art->dataSize;
 
@@ -1247,6 +1262,115 @@ static int paddingForSize(int size)
     return (sizeof(int) - size % sizeof(int)) % sizeof(int);
 }
 
+class NamedCacheEntry {
+public:
+    explicit NamedCacheEntry(ArtPtr&& art);
+
+    const Art* art() const { return _art.get(); }
+
+    unsigned char* frameData(int frame, int direction, int& outWidth, int& outHeight) const;
+
+    unsigned int mru = 0;
+
+private:
+    ArtPtr _art;
+};
+
+NamedCacheEntry::NamedCacheEntry(ArtPtr&& art)
+    : _art(std::move(art))
+{
+}
+
+unsigned char* NamedCacheEntry::frameData(int frame, int direction, int& outWidth, int& outHeight) const
+{
+    unsigned char* data = artGetFrameData(_art.get(), frame, direction);
+    if (!data) {
+        outWidth = 0;
+        outHeight = 0;
+        return nullptr;
+    }
+    outWidth = artGetWidth(_art.get(), frame, direction);
+    outHeight = artGetHeight(_art.get(), frame, direction);
+    return data;
+}
+
+std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
+{
+    auto it = gNamedArtCache.find(path);
+    if (it != gNamedArtCache.end()) {
+        it->second->mru = ++gNamedArtCacheMruCounter;
+        return it->second;
+    }
+
+    Art* art = artLoadLocalized(path);
+    if (!art) return nullptr;
+
+    if (gNamedArtCacheMruCounter == UINT_MAX) {
+        // This looks complicated, but it should happen rarely and needed to preserve mru order.
+        std::vector<NamedCacheEntry*> sorted;
+        sorted.reserve(gNamedArtCache.size());
+        for (auto& [key, e] : gNamedArtCache) {
+            sorted.push_back(e.get());
+        }
+        std::sort(sorted.begin(), sorted.end(), [](auto* a, auto* b) { return a->mru < b->mru; });
+        unsigned int mru = 0;
+        for (auto* e : sorted) {
+            e->mru = mru++;
+        }
+        gNamedArtCacheMruCounter = mru;
+    }
+
+    auto entry = std::make_shared<NamedCacheEntry>(ArtPtr(art));
+    entry->mru = ++gNamedArtCacheMruCounter;
+
+    gNamedArtCacheCurrentBytes += artGetDataSize(art);
+
+    // Evict LRU entries if over soft limit (post-insertion)
+    while (gNamedArtCacheCurrentBytes > kNamedCacheMaxBytes) {
+        unsigned int lowestMru = UINT_MAX;
+        auto evictIt = gNamedArtCache.end();
+        for (auto iter = gNamedArtCache.begin(); iter != gNamedArtCache.end(); ++iter) {
+            if (iter->second.use_count() == 1 && iter->second->mru < lowestMru) {
+                lowestMru = iter->second->mru;
+                evictIt = iter;
+            }
+        }
+
+        if (evictIt == gNamedArtCache.end()) {
+            break;
+        }
+
+        gNamedArtCacheCurrentBytes -= artGetDataSize(evictIt->second->art());
+        gNamedArtCache.erase(evictIt);
+    }
+
+    return gNamedArtCache.emplace(path, std::move(entry)).first->second;
+}
+
+FrmId::FrmId(ObjectType objType, int frmId)
+    : _fid(buildFid(objType, frmId, 0, 0, 0))
+{
+    assert(objType >= 0 && objType < OBJ_TYPE_COUNT);
+}
+
+FrmId::FrmId(ObjectType objType, const char* path)
+    : _objectType(objType)
+    , _path(path)
+{
+    assert(objType >= 0 && objType < OBJ_TYPE_COUNT);
+}
+
+FrmId::FrmId(const char* path)
+    : _path(path)
+{
+}
+
+ObjectType FrmId::objectType() const
+{
+    assert(hasObjectType());
+    return static_cast<ObjectType>(_objectType);
+}
+
 FrmImage::FrmImage()
 {
     _key = nullptr;
@@ -1258,6 +1382,44 @@ FrmImage::FrmImage()
 FrmImage::~FrmImage()
 {
     unlock();
+}
+
+FrmImage::FrmImage(FrmImage&& other) noexcept
+    : _namedKey(std::move(other._namedKey))
+    , _key(other._key)
+    , _data(other._data)
+    , _width(other._width)
+    , _height(other._height)
+{
+    other.resetInternal();
+}
+
+FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
+{
+    if (this != &other) {
+        unlock();
+        _namedKey = std::move(other._namedKey);
+        _key = other._key;
+        _data = other._data;
+        _width = other._width;
+        _height = other._height;
+
+        other.resetInternal();
+    }
+    return *this;
+}
+
+bool FrmImage::lock(const FrmId& frmId)
+{
+    if (frmId.fid() >= 0) {
+        return lock(frmId.fid());
+    }
+    if (frmId.filePath() != nullptr) {
+        return frmId.hasObjectType()
+            ? lock(frmId.objectType(), frmId.filePath())
+            : lock(frmId.filePath());
+    }
+    return false;
 }
 
 bool FrmImage::lock(unsigned int fid)
@@ -1274,15 +1436,47 @@ bool FrmImage::lock(unsigned int fid)
     return true;
 }
 
-void FrmImage::unlock()
+bool FrmImage::lock(const char* frmPath)
 {
     if (isLocked()) {
-        artUnlock(_key);
-        _key = nullptr;
-        _data = nullptr;
-        _width = 0;
-        _height = 0;
+        return false;
     }
+
+    _namedKey = artLockNamedFrameData(frmPath);
+    if (!_namedKey) return false;
+
+    _data = _namedKey->frameData(0, 0, _width, _height);
+    if (_data == nullptr) {
+        _namedKey = nullptr;
+        return false;
+    }
+    return true;
+}
+
+bool FrmImage::lock(ObjectType objType, const char* frmRelativePath)
+{
+    if (objType < OBJ_TYPE_ITEM || objType >= OBJ_TYPE_COUNT) {
+        return false;
+    }
+    snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objType].name, frmRelativePath);
+    return lock(_art_name);
+}
+
+void FrmImage::unlock()
+{
+    if (_key != nullptr) {
+        artUnlock(_key);
+    }
+    resetInternal();
+}
+
+void FrmImage::resetInternal()
+{
+    _namedKey = nullptr;
+    _key = nullptr;
+    _data = nullptr;
+    _width = 0;
+    _height = 0;
 }
 
 } // namespace fallout

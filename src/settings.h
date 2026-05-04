@@ -48,9 +48,18 @@ struct UISettings {
     // Iface-bar side graphics extend from the Screen edges to the Iface-Bar if true (otherwise from bar to edges).
     bool iface_bar_sides_ori = false;
 
+    // Extends AP bar to 16 dots instead of 10.
+    bool extend_ap_bar = false;
+
+    // Expands barter/trade window vertically, adding a 4th item slot per side.
+    bool expand_barter_window = false;
+
     int splash_screen_size = 0;
 
     bool ignore_map_edges = false;
+
+    // iOS quick-actions toolbar above the interface bar. No-op on other platforms.
+    bool quick_toolbar_visible = false;
 
     // TODO: add to setting window
     // Speed of various UI transition animations. 1.0 represents vanilla speeds.
@@ -62,6 +71,7 @@ struct UISettings {
     bool numbers_in_dialogue = false;
     int auto_quick_save = 0;
     bool enable_high_resolution_stencil = true;
+    int inventory_columns = 1;
 };
 
 // These are settings handled by preferences UI and saved in save games.
@@ -117,6 +127,7 @@ struct DebugSettings {
 struct QolSettings {
     int use_walk_distance = 5;
     bool auto_open_doors = false;
+    bool party_loot_and_barter = false;
 };
 
 struct MapperSettings {
@@ -149,7 +160,7 @@ extern Settings settings;
 
 bool settingsInit(bool isMapper, int argc, char** argv);
 bool settingsSave();
-void settingsWriteToConfig();
+void settingsWriteToConfig(bool onlyAdd = false);
 bool settingsExit(bool shouldSave);
 
 } // namespace fallout

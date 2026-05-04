@@ -9,6 +9,7 @@
 #include "art.h"
 #include "color.h"
 #include "combat_ai.h"
+#include "content_config.h"
 #include "critter.h"
 #include "db.h"
 #include "debug.h"
@@ -112,7 +113,7 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
 static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim);
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsSpentPtr, int anim);
+static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int anim);
 static int attackComputeEnhancedKnockout(Attack* attack);
 static int attackCompute(Attack* attack);
 static int attackComputeCriticalHit(Attack* a1);
@@ -1983,13 +1984,14 @@ static const char* gCritDataMemberKeys[CRIT_DATA_MEMBER_COUNT] = {
 };
 
 static bool gBurstModEnabled = false;
-static int gBurstModCenterMultiplier = SFALL_CONFIG_BURST_MOD_DEFAULT_CENTER_MULTIPLIER;
-static int gBurstModCenterDivisor = SFALL_CONFIG_BURST_MOD_DEFAULT_CENTER_DIVISOR;
-static int gBurstModTargetMultiplier = SFALL_CONFIG_BURST_MOD_DEFAULT_TARGET_MULTIPLIER;
-static int gBurstModTargetDivisor = SFALL_CONFIG_BURST_MOD_DEFAULT_TARGET_DIVISOR;
+static int gBurstModCenterMultiplier = 1;
+static int gBurstModCenterDivisor = 3;
+static int gBurstModTargetMultiplier = 1;
+static int gBurstModTargetDivisor = 2;
 static UnarmedHitDescription gUnarmedHitDescriptions[HIT_MODE_COUNT];
 static int gDamageCalculationType;
 static bool gBonusHthDamageFix;
+static bool gRemoveCriticalTimeLimits;
 static bool gDisplayBonusDamage;
 
 // combat_init
@@ -2330,8 +2332,8 @@ static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weap
 
     int accuracy = attackDetermineToHit(attacker, attacker->tile, defender, HIT_LOCATION_TORSO, hitMode, true);
     int roundsHitMainTarget;
-    int roundsSpent;
-    _compute_spray(&attack, accuracy, &roundsHitMainTarget, &roundsSpent, anim);
+    int roundsFired;
+    _compute_spray(&attack, accuracy, &roundsHitMainTarget, &roundsFired, anim);
 
     if (attackerFriend != nullptr) {
         for (int index = 0; index < attack.extrasLength; index++) {
@@ -3752,18 +3754,34 @@ static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim)
     return roundsHitMainTarget;
 }
 
-// 0x423488
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsSpentPtr, int anim)
+// 0x423488 compute_spray
+static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int anim)
 {
     *roundsHitMainTargetPtr = 0;
 
-    int ammoQuantity = ammoGetQuantity(attack->weapon);
+    int currentAmmo = ammoGetQuantity(attack->weapon);
     int burstRounds = weaponGetBurstRounds(attack->weapon);
-    if (burstRounds < ammoQuantity) {
-        ammoQuantity = burstRounds;
+    int ammoCostPerRound = scriptHooks_AmmoCost(attack->weapon, burstRounds, 1, AMMO_COST_HOOK_BURST_ROUNDS);
+
+    if (ammoCostPerRound == 0) {
+        *roundsFiredPtr = currentAmmo > 0 ? burstRounds : 0;
+    } else {
+        int roundsFired = currentAmmo / ammoCostPerRound;
+        if (roundsFired > burstRounds) {
+            roundsFired = burstRounds;
+        }
+
+        if (roundsFired == 0 && currentAmmo > 0) {
+            // In theory this means there's not enough ammo for a shot, but it's "too late" to stop the attack,
+            // so we fire anyway.  if check_weapon_ammo_cost=1 (default), the attack will be prevented before
+            // getting here.
+            roundsFired = 1;
+        }
+
+        *roundsFiredPtr = roundsFired;
     }
 
-    *roundsSpentPtr = ammoQuantity;
+    int ammoQuantity = *roundsFiredPtr;
 
     int criticalChance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
     int roll = randomRoll(accuracy, criticalChance, nullptr);
@@ -3895,12 +3913,12 @@ static int attackCompute(Attack* attack)
     int attackType = weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode);
     int roundsHitMainTarget = 1;
     int damageMultiplier = 2;
-    int roundsSpent = 1;
+    int roundsFired = 1;
 
     int roll;
 
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
-        roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsSpent, anim);
+        roll = _compute_spray(attack, accuracy, &roundsHitMainTarget, &roundsFired, anim);
     } else {
         int chance = critterGetStat(attack->attacker, STAT_CRITICAL_CHANCE);
         roll = randomRoll(accuracy, chance - hit_location_penalty[attack->defenderHitLocation], nullptr);
@@ -3937,26 +3955,36 @@ static int attackCompute(Attack* attack)
         }
     }
 
-    if (attackType == ATTACK_TYPE_RANGED) {
-        attack->ammoQuantity = roundsSpent;
-
-        if (roll == ROLL_SUCCESS && attack->attacker == gDude) {
-            if (perkGetRank(gDude, PERK_SNIPER) != 0) {
-                int d10 = randomBetween(1, 10);
-                int luck = critterGetStat(gDude, STAT_LUCK);
-                if (d10 <= luck) {
-                    roll = ROLL_CRITICAL_SUCCESS;
-                }
+    if (attackType == ATTACK_TYPE_RANGED && roll == ROLL_SUCCESS && attack->attacker == gDude) {
+        if (perkGetRank(gDude, PERK_SNIPER) != 0) {
+            int d10 = randomBetween(1, 10);
+            int luck = critterGetStat(gDude, STAT_LUCK);
+            if (d10 <= luck) {
+                roll = ROLL_CRITICAL_SUCCESS;
             }
-        }
-    } else {
-        if (ammoGetCapacity(attack->weapon) > 0) {
-            attack->ammoQuantity = 1;
         }
     }
 
-    if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
-        return -1;
+    roll = scriptHooks_AfterHitRoll(attack->attacker, &(attack->defender), &(attack->defenderHitLocation), accuracy, roll);
+
+    if (ammoGetCapacity(attack->weapon) > 0) {
+        int rounds = 1;
+        AmmoCostHookType hookType = AMMO_COST_HOOK_SINGLE_SHOT;
+
+        if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
+            rounds = roundsFired;
+            hookType = AMMO_COST_HOOK_BURST_SHOT;
+        }
+
+        attack->ammoQuantity = rounds;
+
+        if (weaponComputeAmmoCost(attack->weapon, &(attack->ammoQuantity)) == -1) {
+            return -1;
+        }
+
+        attack->ammoQuantity = scriptHooks_AmmoCost(attack->weapon, rounds, attack->ammoQuantity, hookType);
+    } else if (attackType == ATTACK_TYPE_RANGED) {
+        attack->ammoQuantity = roundsFired;
     }
 
     switch (roll) {
@@ -4237,12 +4265,8 @@ static int attackComputeCriticalFailure(Attack* attack)
     }
 
     if (attack->attacker == gDude) {
-        // SFALL: Remove criticals time limits.
-        bool criticalsTimeLimitsRemoved = false;
-        configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_REMOVE_CRITICALS_TIME_LIMITS_KEY, &criticalsTimeLimitsRemoved);
-
         unsigned int gameTime = gameTimeGetTime();
-        if (!criticalsTimeLimitsRemoved && gameTime / GAME_TIME_TICKS_PER_DAY < 6) {
+        if (!gRemoveCriticalTimeLimits && gameTime / GAME_TIME_TICKS_PER_DAY < 6) {
             return 0;
         }
     }
@@ -4938,6 +4962,7 @@ static void _damage_object(Object* a1, int damage, bool animated, int a4, Object
         }
 
         partyMemberRemove(a1);
+        scriptHooks_OnDeath(a1);
     }
 }
 
@@ -5737,7 +5762,7 @@ int _combat_check_bad_shot(Object* attacker, Object* defender, int hitMode, bool
     int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
 
     if (ammoGetCapacity(weapon) > 0) {
-        if (ammoGetQuantity(weapon) == 0) {
+        if (!weaponHasAmmoForAttack(weapon, hitMode)) {
             return COMBAT_BAD_SHOT_NO_AMMO;
         }
     }
@@ -6087,6 +6112,8 @@ int combatGetTargetHighlight()
 
 static void criticalsInit()
 {
+    configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "remove_critical_time_limits", &gRemoveCriticalTimeLimits, false);
+
     int mode = 2;
     configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_OVERRIDE_CRITICALS_MODE_KEY, &mode);
     if (mode < 0 || mode > 3) {
@@ -6345,12 +6372,17 @@ void criticalsResetValue(int killType, int hitLocation, int effect, int dataMemb
     }
 }
 
+bool criticalsNoTimeLimits()
+{
+    return gRemoveCriticalTimeLimits;
+}
+
 static void burstModInit()
 {
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_ENABLED_KEY, &gBurstModEnabled);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_enabled", &gBurstModEnabled);
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_CENTER_MULTIPLIER_KEY, &gBurstModCenterMultiplier);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_CENTER_DIVISOR_KEY, &gBurstModCenterDivisor);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_center_mult", &gBurstModCenterMultiplier, 1);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_center_div", &gBurstModCenterDivisor, 3);
     if (gBurstModCenterDivisor < 1) {
         gBurstModCenterDivisor = 1;
     }
@@ -6358,8 +6390,8 @@ static void burstModInit()
         gBurstModCenterMultiplier = gBurstModCenterDivisor;
     }
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_TARGET_MULTIPLIER_KEY, &gBurstModTargetMultiplier);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BURST_MOD_TARGET_DIVISOR_KEY, &gBurstModTargetDivisor);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_target_mult", &gBurstModTargetMultiplier, 1);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "burst_target_div", &gBurstModTargetDivisor, 2);
     if (gBurstModTargetDivisor < 1) {
         gBurstModTargetDivisor = 1;
     }
@@ -6700,10 +6732,10 @@ static int unarmedGetHitModeInRange(int firstHitMode, int lastHitMode, bool isSe
 static void damageModInit()
 {
     gDamageCalculationType = DAMAGE_CALCULATION_TYPE_VANILLA;
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_DAMAGE_MOD_FORMULA_KEY, &gDamageCalculationType);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "damage_formula", &gDamageCalculationType, DAMAGE_CALCULATION_TYPE_VANILLA);
 
     gBonusHthDamageFix = true;
-    configGetBool(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BONUS_HTH_DAMAGE_FIX_KEY, &gBonusHthDamageFix);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "bonus_hth_damage_fix", &gBonusHthDamageFix);
 
     gDisplayBonusDamage = settings.ui.display_bonus_damage;
 }

@@ -1,5 +1,7 @@
 #include "interface.h"
 
+#include "platform/ios/quick_toolbar.h"
+
 #include <algorithm>
 #include <stdio.h>
 #include <string.h>
@@ -128,6 +130,8 @@ static bool indicatorBarAdd(int indicator);
 static void customInterfaceBarInit();
 static void customInterfaceBarExit();
 
+static void extendedApBarInitToWindow();
+
 static void sidePanelsInit();
 static void sidePanelsExit();
 static void sidePanelsHide();
@@ -190,9 +194,6 @@ static int gEndTurnButton = -1;
 // 0x518FBC
 static int gEndCombatButton = -1;
 
-// 0x518FD4
-static Rect gInterfaceBarActionPointsBarRect;
-
 // 0x518FE8
 static IndicatorDescription gIndicatorDescriptions[INDICATOR_COUNT] = {
     { 102, true, nullptr }, // ADDICT
@@ -249,14 +250,34 @@ static unsigned char _itemButtonUp[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERFAC
 // 0x59D3F4
 static unsigned char* gInterfaceWindowBuffer;
 
-// A slice of main interface background containing 10 shadowed action point
+// Rectangle within Interface Bar window covering the Action Points bar.
+// 0x518FD4
+static Rect apBarRect;
+
+// Width and height of AP bulbs.
+constexpr int kApBarBulbSize = 5;
+
+// Horizontal margin between AP bulbs.
+constexpr int kApBarBulbMargin = 4;
+
+constexpr int kApBarMaxBulbs = 16;
+constexpr int kApBarMaxWidth = (kApBarBulbSize + kApBarBulbMargin) * kApBarMaxBulbs;
+
+// A slice of main interface background containing up to 16 shadowed action point
 // dots. In combat mode individual colored dots are rendered on top of this
 // background.
 //
 // This buffer is initialized once and does not change throughout the game.
 //
 // 0x59D40C
-static unsigned char gInterfaceActionPointsBarBackground[90 * 5];
+static unsigned char apBarBackgroundData[kApBarMaxWidth * kApBarBulbSize];
+
+static int apBarMaxAP;
+static int apBarWidth;
+
+// AP bar offset relative to the content area of the Interface Bar window.
+static int apBarXOffset;
+constexpr int kApBarYOffset = 14;
 
 static FrmImage _inventoryButtonNormalFrmImage;
 static FrmImage _inventoryButtonPressedFrmImage;
@@ -287,14 +308,25 @@ static FrmImage _greenLightFrmImage;
 static FrmImage _yellowLightFrmImage;
 static FrmImage _redLightFrmImage;
 
+// X offset of interface bar content (used when widescreen version of iface bar is used).
+// TODO: this seems like a bad solution, maybe better to separate message box and other content into two separate windows and avoid this offset?
 int gInterfaceBarContentOffset = 0;
 int gInterfaceBarWidth = 800; // will fall back to 640 if screen width is too narrow or asset is absent
 bool gInterfaceBarIsCustom = false;
 static Art* gCustomInterfaceBarBackground = nullptr;
 
-bool gInterfaceSidePanelsExtendFromScreenEdge = false;
 static int gInterfaceSidePanelsLeadingWindow = -1;
 static int gInterfaceSidePanelsTrailingWindow = -1;
+
+static Buffer2D interfaceWindowBuf2D()
+{
+    return { gInterfaceWindowBuffer, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT };
+}
+
+static Buffer2D apBarBackgroundBuf2D()
+{
+    return { apBarBackgroundData, apBarWidth, kApBarBulbSize };
+}
 
 // intface_init
 // 0x45D880
@@ -308,7 +340,6 @@ int interfaceInit()
 
     customInterfaceBarInit();
 
-    gInterfaceBarActionPointsBarRect = { 316 + gInterfaceBarContentOffset, 14, 406 + gInterfaceBarContentOffset, 19 };
     gInterfaceBarEndButtonsRect = { 580 + gInterfaceBarContentOffset, 38, 637 + gInterfaceBarContentOffset, 96 };
     gInterfaceBarMainActionRect = { 267 + gInterfaceBarContentOffset, 26, 455 + gInterfaceBarContentOffset, 93 };
 
@@ -329,6 +360,7 @@ int interfaceInit()
         return intface_fatal_error(-1);
     }
 
+    // Blit interface bar FRM into static window buffer.
     if (gInterfaceBarIsCustom) {
         blitBufferToBuffer(customInterfaceBarGetBackgroundImageData(), gInterfaceBarWidth, INTERFACE_BAR_HEIGHT - 1, gInterfaceBarWidth, gInterfaceWindowBuffer, gInterfaceBarWidth);
     } else {
@@ -341,6 +373,8 @@ int interfaceInit()
         blitBufferToBuffer(backgroundFrmImage.getData(), gInterfaceBarWidth, INTERFACE_BAR_HEIGHT - 1, gInterfaceBarWidth, gInterfaceWindowBuffer, gInterfaceBarWidth);
         backgroundFrmImage.unlock();
     }
+
+    extendedApBarInitToWindow();
 
     fid = buildFid(OBJ_TYPE_INTERFACE, 47, 0, 0, 0);
     if (!_inventoryButtonNormalFrmImage.lock(fid)) {
@@ -560,8 +594,6 @@ int interfaceInit()
         return intface_fatal_error(-1);
     }
 
-    blitBufferToBuffer(gInterfaceWindowBuffer + gInterfaceBarWidth * 14 + 316 + gInterfaceBarContentOffset, 90, 5, gInterfaceBarWidth, gInterfaceActionPointsBarBackground, 90);
-
     if (indicatorBarInit() == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -580,6 +612,9 @@ int interfaceInit()
     gInterfaceBarEnabled = true;
     gInterfaceBarInitialized = false;
     gInterfaceBarHidden = true;
+
+    quickToolbarSetEnabled(settings.ui.quick_toolbar_visible);
+    quickToolbarInit();
 
     return 0;
 }
@@ -604,6 +639,8 @@ void interfaceReset()
 // 0x45E440
 void interfaceFree()
 {
+    quickToolbarFree();
+
     if (gInterfaceBarWindow != -1) {
         // SFALL
         sidePanelsExit();
@@ -783,6 +820,8 @@ void interfaceBarHide()
         }
     }
 
+    quickToolbarHide();
+
     // SFALL
     sidePanelsHide();
 
@@ -802,6 +841,8 @@ void interfaceBarShow()
             gInterfaceBarHidden = false;
         }
     }
+
+    quickToolbarShow();
 
     // SFALL
     sidePanelsShow();
@@ -970,49 +1011,49 @@ void interfaceRenderArmorClass(bool animate)
 // 0x45EE0C
 void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
 {
-    unsigned char* frmData;
+    ConstBuffer2D bulbFrmBuf {};
 
     if (gInterfaceBarWindow == -1) {
         return;
     }
 
-    blitBufferToBuffer(gInterfaceActionPointsBarBackground, 90, 5, 90, gInterfaceWindowBuffer + 14 * gInterfaceBarWidth + gInterfaceBarContentOffset + 316, gInterfaceBarWidth);
+    blitBuffer2D(apBarBackgroundBuf2D(), interfaceWindowBuf2D(), gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset);
 
     if (actionPointsLeft == -1) {
-        frmData = _redLightFrmImage.getData();
-        actionPointsLeft = 10;
+        bulbFrmBuf = _redLightFrmImage.getBuffer();
+        actionPointsLeft = apBarMaxAP;
         bonusActionPoints = 0;
     } else {
-        frmData = _greenLightFrmImage.getData();
+        bulbFrmBuf = _greenLightFrmImage.getBuffer();
 
         if (actionPointsLeft < 0) {
             actionPointsLeft = 0;
         }
 
-        if (actionPointsLeft > 10) {
-            actionPointsLeft = 10;
+        if (actionPointsLeft > apBarMaxAP) {
+            actionPointsLeft = apBarMaxAP;
         }
 
         if (bonusActionPoints >= 0) {
-            if (actionPointsLeft + bonusActionPoints > 10) {
-                bonusActionPoints = 10 - actionPointsLeft;
+            if (actionPointsLeft + bonusActionPoints > apBarMaxAP) {
+                bonusActionPoints = apBarMaxAP - actionPointsLeft;
             }
         } else {
             bonusActionPoints = 0;
         }
     }
 
-    int index;
-    for (index = 0; index < actionPointsLeft; index++) {
-        blitBufferToBuffer(frmData, 5, 5, 5, gInterfaceWindowBuffer + 14 * gInterfaceBarWidth + 316 + index * 9 + gInterfaceBarContentOffset, gInterfaceBarWidth);
-    }
-
-    for (; index < (actionPointsLeft + bonusActionPoints); index++) {
-        blitBufferToBuffer(_yellowLightFrmImage.getData(), 5, 5, 5, gInterfaceWindowBuffer + 14 * gInterfaceBarWidth + 316 + gInterfaceBarContentOffset + index * 9, gInterfaceBarWidth);
+    int numBulbs = actionPointsLeft + bonusActionPoints;
+    for (int index = 0; index < numBulbs; index++) {
+        constexpr int bulbXOffset = kApBarBulbSize + kApBarBulbMargin;
+        auto frmBuf = index < actionPointsLeft
+            ? bulbFrmBuf
+            : _yellowLightFrmImage.getBuffer();
+        blitBuffer2D(frmBuf, 0, 0, kApBarBulbSize, kApBarBulbSize, interfaceWindowBuf2D(), gInterfaceBarContentOffset + apBarXOffset + index * bulbXOffset, kApBarYOffset);
     }
 
     if (!gInterfaceBarInitialized) {
-        windowRefreshRect(gInterfaceBarWindow, &gInterfaceBarActionPointsBarRect);
+        windowRefreshRect(gInterfaceBarWindow, &apBarRect);
     }
 }
 
@@ -2494,6 +2535,47 @@ static void customInterfaceBarExit()
         internal_free(gCustomInterfaceBarBackground);
         gCustomInterfaceBarBackground = nullptr;
     }
+}
+
+// Inits AP bar offsets based on custom AP bar setting and blits the correct AP graphic into the window buffer. Must be called after main panel FRM art is blitted.
+static void extendedApBarInitToWindow()
+{
+    constexpr int apBarXOffsetOriginal = 316;
+    constexpr int apBarWidthOriginal = 90;
+    constexpr int apBarMaxAPOriginal = 10;
+
+    static_assert(apBarWidthOriginal <= kApBarMaxWidth);
+    static_assert(apBarMaxAPOriginal <= kApBarMaxBulbs);
+
+    if (settings.ui.extend_ap_bar) {
+        apBarMaxAP = kApBarMaxBulbs;
+        apBarWidth = kApBarMaxWidth;
+        // Shift X offset left according to the extra AP bar width.
+        apBarXOffset = apBarXOffsetOriginal - (kApBarMaxWidth - apBarWidthOriginal) / 2;
+    } else {
+        apBarMaxAP = apBarMaxAPOriginal;
+        apBarWidth = apBarWidthOriginal;
+        apBarXOffset = apBarXOffsetOriginal;
+    }
+    apBarRect = { gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset, gInterfaceBarContentOffset + apBarXOffset + apBarWidth - 1, kApBarYOffset + kApBarBulbSize - 1 };
+
+    Buffer2D ifaceBarBuf = interfaceWindowBuf2D();
+
+    // Blit extended AP bar art into static window buffer, overwriting pixels from the interface bar FRM.
+    if (settings.ui.extend_ap_bar) {
+        if (ArtPtr apBarArt { artLoad("art\\intrface\\iface_apbar_e.frm") }) {
+            if (auto apBarFrmBuf = artGetFrameBuffer(apBarArt.get(), 0, 0)) {
+                int apBarBgXOffset = apBarXOffset - 23;
+                constexpr int apBarBgYOffset = kApBarYOffset - 4;
+
+                blitBuffer2D(apBarFrmBuf, ifaceBarBuf, gInterfaceBarContentOffset + apBarBgXOffset, apBarBgYOffset);
+            }
+        }
+    }
+
+    // Blit the thin bar of pixels covering the bulbs (that change color) into static apBarBackgroundData buffer.
+    Buffer2D abBarBgBuf = apBarBackgroundBuf2D();
+    blitBuffer2D(ifaceBarBuf, gInterfaceBarContentOffset + apBarXOffset, kApBarYOffset, abBarBgBuf.width, abBarBgBuf.height, abBarBgBuf);
 }
 
 unsigned char* customInterfaceBarGetBackgroundImageData()

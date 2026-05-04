@@ -1,11 +1,12 @@
 #ifndef ART_H
 #define ART_H
 
+#include <memory>
+
 #include "cache.h"
-#include "db.h"
-#include "heap.h"
+#include "draw.h"
+#include "memory.h"
 #include "obj_types.h"
-#include "platform_compat.h"
 #include "proto_types.h"
 
 namespace fallout {
@@ -141,7 +142,8 @@ int artGetSize(Art* art, int frame, int direction, int* out_width, int* out_heig
 int artGetFrameOffsets(Art* art, int frame, int direction, int* xPtr, int* yPtr);
 int artGetRotationOffsets(Art* art, int rotation, int* out_offset_x, int* out_offset_y);
 unsigned char* artGetFrameData(Art* art, int frame, int direction);
-ArtFrame* artGetFrame(Art* art, int frame, int direction);
+ArtFrame* artGetFrame(const Art* art, int frame, int direction);
+ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, int direction);
 bool artExists(int fid);
 bool _art_fid_valid(int fid);
 int _art_alias_num(int index);
@@ -152,24 +154,71 @@ Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);
 int artWrite(const char* path, unsigned char* data);
 
+using ArtPtr = InternalPtr<Art>;
+
+class NamedCacheEntry;
+std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
+
+class FrmId {
+public:
+    FrmId() = default;
+    explicit FrmId(int fid)
+        : _fid(fid)
+    {
+    }
+    explicit FrmId(ObjectType objType, int frmId);
+    explicit FrmId(ObjectType objType, const char* path);
+    explicit FrmId(const char* path);
+
+    int fid() const { return _fid; }
+    bool hasObjectType() const { return _objectType >= 0 && _objectType < OBJ_TYPE_COUNT; }
+    ObjectType objectType() const;
+    const char* filePath() const { return _path; }
+
+    bool empty() const { return _fid == -1 && _path == nullptr; }
+
+private:
+    int _fid = -1;
+    int _objectType = -1;
+    const char* _path = nullptr;
+};
+
+// A helper for using RAII to read single-frame FRM's.
+// lock/unlock use the art-cache instead of just loading/unloading directly.
 class FrmImage {
 public:
     FrmImage();
     ~FrmImage();
 
-    bool isLocked() const { return _key != nullptr; }
+    FrmImage(const FrmImage&) = delete;
+    FrmImage& operator=(const FrmImage&) = delete;
+
+    FrmImage(FrmImage&& other) noexcept;
+
+    FrmImage& operator=(FrmImage&& other) noexcept;
+
+    bool isLocked() const { return _key != nullptr || _namedKey; }
+    bool lock(const FrmId& frmId);
     bool lock(unsigned int fid);
+    bool lock(const char* frmPath);
+    bool lock(ObjectType objType, const char* frmRelativePath);
     void unlock();
 
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
+    // Returns FRM frame data if locked, nullptr otherwise.
     unsigned char* getData() const { return _data; }
 
+    ConstBuffer2D getBuffer() const { return { _data, _width, _height }; };
+
 private:
-    CacheEntry* _key;
-    unsigned char* _data;
-    int _width;
-    int _height;
+    void resetInternal();
+
+    std::shared_ptr<NamedCacheEntry> _namedKey;
+    CacheEntry* _key = nullptr;
+    unsigned char* _data = nullptr;
+    int _width = 0;
+    int _height = 0;
 };
 
 } // namespace fallout

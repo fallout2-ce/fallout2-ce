@@ -11,6 +11,7 @@
 #include "art.h"
 #include "color.h"
 #include "combat.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "db.h"
@@ -37,11 +38,11 @@
 #include "platform_compat.h"
 #include "proto.h"
 #include "scripts.h"
-#include "sfall_config.h"
 #include "skill.h"
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
+#include "touch.h"
 #include "trait.h"
 #include "window_manager.h"
 #include "word_wrap.h"
@@ -808,6 +809,8 @@ int characterEditorShow(bool isCreationMode)
         return -1;
     }
 
+    touch_set_touchscreen_mode(true);
+
     if (!gCharacterEditorIsCreationMode) {
         if (characterEditorUpdateLevel()) {
             critterUpdateDerivedStats(gDude);
@@ -1195,6 +1198,8 @@ int characterEditorShow(bool isCreationMode)
     }
 
     interfaceRenderHitPoints(false);
+
+    touch_set_touchscreen_mode(false);
 
     return rc;
 }
@@ -7167,22 +7172,14 @@ static int genericReputationCompare(const void* a1, const void* a2)
 static void customKarmaFolderInit()
 {
     char* karmaFrms = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_KARMA_FRMS_KEY, &karmaFrms);
-    if (karmaFrms != nullptr && karmaFrms[0] == '\0') {
-        karmaFrms = nullptr;
-    }
-
-    if (karmaFrms == nullptr) {
+    configGetString(&gContentConfig, CONTENT_CONFIG_KARMA_SECTION, "frms", &karmaFrms, "");
+    if (!*karmaFrms) {
         return;
     }
 
     char* karmaPoints = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_KARMA_POINTS_KEY, &karmaPoints);
-    if (karmaPoints != nullptr && karmaPoints[0] == '\0') {
-        karmaPoints = nullptr;
-    }
-
-    if (karmaPoints == nullptr) {
+    configGetString(&gContentConfig, CONTENT_CONFIG_KARMA_SECTION, "points", &karmaPoints, "");
+    if (!*karmaPoints) {
         return;
     }
 
@@ -7256,10 +7253,7 @@ static int customKarmaFolderGetFrmId()
 static void customTownReputationInit()
 {
     char* reputationList = nullptr;
-    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_CITY_REPUTATION_LIST_KEY, &reputationList);
-    if (reputationList != nullptr && *reputationList == '\0') {
-        reputationList = nullptr;
-    }
+    configGetString(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "city_reputation_list", &reputationList, nullptr);
 
     char* curr = reputationList;
     while (curr != nullptr) {

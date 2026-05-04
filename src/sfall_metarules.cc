@@ -61,6 +61,7 @@ static void mf_art_cache_flush(OpcodeContext& ctx);
 static void mf_metarule_exist(OpcodeContext& ctx);
 static void mf_obj_is_openable(OpcodeContext& ctx);
 static void mf_obj_under_cursor(OpcodeContext& ctx);
+static void mf_objects_in_radius(OpcodeContext& ctx);
 static void mf_opcode_exists(OpcodeContext& ctx);
 static void mf_outlined_object(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
@@ -140,7 +141,7 @@ const MetaruleInfo kMetarules[] = {
     // {"npc_engine_level_up",       mf_npc_engine_level_up,       1, 1},
     { "obj_is_openable", mf_obj_is_openable, 1, 1, 0, { ARG_OBJECT } },
     { "obj_under_cursor", mf_obj_under_cursor, 2, 2, 0, { ARG_INT, ARG_INT } },
-    // {"objects_in_radius",         mf_objects_in_radius,         3, 4,  0, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
+    { "objects_in_radius", mf_objects_in_radius, 3, 4, 0, { ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "outlined_object", mf_outlined_object, 0, 0 },
     // {"real_dude_obj",             mf_real_dude_obj,             0, 0},
     { "reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, { ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT } },
@@ -393,6 +394,50 @@ void mf_obj_under_cursor(OpcodeContext& ctx)
 void mf_obj_is_openable(OpcodeContext& ctx)
 {
     ctx.setReturn(objectIsOpenable(ctx.arg(0).asObject()));
+}
+
+static int objectsInRadiusFirstTile(int sourceTile, int radius, int* endTile)
+{
+    int hexRadius = HEX_GRID_WIDTH * (radius + 1);
+
+    *endTile = std::min(sourceTile + hexRadius + 1, HEX_GRID_SIZE);
+    return std::max(sourceTile - hexRadius, 0);
+}
+
+static void mf_objects_in_radius(OpcodeContext& ctx)
+{
+    int sourceTile = ctx.arg(0).asInt();
+    int radius = std::clamp(ctx.arg(1).asInt(), 0, 50);
+    int elevation = std::clamp(ctx.arg(2).asInt(), 0, ELEVATION_COUNT - 1);
+    int type = ctx.numArgs() > 3 ? ctx.arg(3).asInt() : -1;
+
+    ArrayId arrayId = CreateTempArray(0, 0);
+
+    if (!hexGridTileIsValid(sourceTile)) {
+        ctx.setReturn(arrayId);
+        return;
+    }
+
+    int index = 0;
+    int endTile;
+    for (int tile = objectsInRadiusFirstTile(sourceTile, radius, &endTile); tile < endTile; tile++) {
+        for (Object* object = objectFindFirstAtLocation(elevation, tile); object != nullptr; object = objectFindNextAtLocation()) {
+            if (type != -1 && (object->pid == -1 || PID_TYPE(object->pid) != type)) {
+                continue;
+            }
+
+            int extraRange = (object->flags & OBJECT_MULTIHEX) != 0 ? 1 : 0;
+            if (tileDistanceBetween(sourceTile, object->tile) > radius + extraRange) {
+                continue;
+            }
+
+            ResizeArray(arrayId, index + 1);
+            SetArray(arrayId, ProgramValue(index), ProgramValue(object), false, ctx.program());
+            index++;
+        }
+    }
+
+    ctx.setReturn(arrayId);
 }
 
 void mf_outlined_object(OpcodeContext& ctx)

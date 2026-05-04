@@ -4,12 +4,16 @@
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
+#include <map>
 #include <memory>
 #include <random>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+#include "db.h"
+#include "debug.h"
 #include "interpreter.h"
 #include "sfall_lists.h"
 
@@ -17,7 +21,7 @@ namespace fallout {
 
 static constexpr ArrayId kInitialArrayId = 1;
 
-#define ARRAY_MAX_STRING (255) // maximum length of string to be stored as array key or value
+#define ARRAY_MAX_STRING (1024) // maximum length of string to be stored as array key or value
 #define ARRAY_MAX_SIZE (100000) // maximum number of array elements,
 
 // special actions for arrays using array_resize operator
@@ -54,6 +58,9 @@ enum class ArrayElementType {
     POINTER
 };
 
+// Special key for load_array: returns a temp array of all saved array keys.
+static constexpr char kAllArraysSpecialKey[] = "...all_arrays...";
+
 /**
  * This is mostly the same as ProgramValue but it owns strings.
  *
@@ -73,9 +80,27 @@ public:
     {
     }
 
-    ArrayElement(const ArrayElement& other) = delete;
+    ArrayElement(const ArrayElement& other)
+        : type(ArrayElementType::INT)
+        , value({ 0 })
+    {
+        if (other.type == ArrayElementType::STRING) {
+            setString(other.value.stringValue, strlen(other.value.stringValue));
+        } else {
+            type = other.type;
+            value = other.value;
+        }
+    }
 
-    ArrayElement& operator=(const ArrayElement& rhs) = delete;
+    ArrayElement& operator=(const ArrayElement& other)
+    {
+        if (this != &other) {
+            ArrayElement tmp(other);
+            std::swap(type, tmp.type);
+            std::swap(value, tmp.value);
+        }
+        return *this;
+    }
 
     ArrayElement(ArrayElement&& other) noexcept
         : type(ArrayElementType::INT)
@@ -152,6 +177,32 @@ public:
         return out;
     }
 
+    ArrayElementType getType() const { return type; }
+    int getRawValue() const { return value.integerValue; }
+    const char* getString() const { return value.stringValue; }
+
+    const char* getAsDebugString() const
+    {
+        static char debugStrBuf[ARRAY_MAX_STRING];
+        switch (type) {
+        case ArrayElementType::INT:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%d", value.integerValue);
+            break;
+        case ArrayElementType::FLOAT:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%.5f", value.floatValue);
+            break;
+        case ArrayElementType::POINTER:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%p", value.pointerValue);
+            break;
+        case ArrayElementType::STRING:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "%s", value.stringValue);
+            break;
+        default:
+            snprintf(debugStrBuf, sizeof(debugStrBuf), "(unknown)");
+        }
+        return debugStrBuf;
+    }
+
     bool operator<(ArrayElement const& other) const
     {
         if (type != other.type) {
@@ -226,6 +277,32 @@ private:
     } value;
 };
 
+struct ArrayElementHash {
+    size_t operator()(const ArrayElement& el) const
+    {
+        size_t h = std::hash<int>()(static_cast<int>(el.getType()));
+        switch (el.getType()) {
+        case ArrayElementType::INT:
+            return h ^ std::hash<int>()(el.getRawValue());
+        case ArrayElementType::FLOAT: {
+            // -0.0 + 0.0 = +0.0 per IEEE 754, canonicalizing the sign bit without a branch.
+            int bits = el.getRawValue();
+            float f;
+            memcpy(&f, &bits, sizeof(f));
+            f += 0.0f;
+            memcpy(&bits, &f, sizeof(bits));
+            return h ^ std::hash<int>()(bits);
+        }
+        case ArrayElementType::POINTER:
+            return h ^ std::hash<void*>()(reinterpret_cast<void*>(el.getRawValue()));
+        case ArrayElementType::STRING:
+            return h ^ std::hash<std::string_view>()(std::string_view(el.getString()));
+        default:
+            return h;
+        }
+    }
+};
+
 class SFallArray {
 public:
     SFallArray(unsigned int flags)
@@ -245,6 +322,11 @@ public:
     {
         return (flags & SFALL_ARRAYFLAG_CONSTVAL) != 0;
     }
+
+    unsigned int getFlags() const { return flags; }
+    virtual int flatElementCount() const = 0;
+    virtual void forEachElement(std::function<void(const ArrayElement&)> fn) const = 0;
+    virtual void loadFlatElements(std::vector<ArrayElement>&& elements) = 0;
 
 protected:
     unsigned int flags;
@@ -267,7 +349,7 @@ public:
 
     ProgramValue GetArrayKey(int index, Program* program)
     {
-        if (index < -1 || index > size()) {
+        if (index < -1 || index >= size()) {
             return ProgramValue(0);
         }
 
@@ -333,6 +415,19 @@ public:
         return ProgramValue(-1);
     }
 
+    int flatElementCount() const override { return static_cast<int>(values.size()); }
+
+    void forEachElement(std::function<void(const ArrayElement&)> fn) const override
+    {
+        for (const auto& v : values)
+            fn(v);
+    }
+
+    void loadFlatElements(std::vector<ArrayElement>&& elements) override
+    {
+        values = std::move(elements);
+    }
+
 private:
     std::vector<ArrayElement> values;
 };
@@ -353,7 +448,7 @@ public:
 
     ProgramValue GetArrayKey(int index, Program* program)
     {
-        if (index < -1 || index > size()) {
+        if (index < -1 || index >= size()) {
             return ProgramValue(0);
         }
 
@@ -367,46 +462,38 @@ public:
     ProgramValue GetArray(const ProgramValue& key, Program* program)
     {
         auto keyEl = ArrayElement { key, program };
-        auto it = std::find_if(pairs.begin(), pairs.end(), [&keyEl](const KeyValuePair& pair) -> bool {
-            return pair.key == keyEl;
-        });
-
-        if (it == pairs.end()) {
+        auto it = keyIndex.find(keyEl);
+        if (it == keyIndex.end()) {
             return ProgramValue(0);
         }
-
-        auto index = it - pairs.begin();
-        return pairs[index].value.toValue(program);
+        return pairs[it->second].value.toValue(program);
     }
 
     void SetArray(const ProgramValue& key, const ProgramValue& val, bool allowUnset, Program* program)
     {
         auto keyEl = ArrayElement { key, program };
-        auto it = std::find_if(pairs.begin(), pairs.end(), [&keyEl](const KeyValuePair& pair) -> bool {
-            return pair.key == keyEl;
-        });
+        auto idxIt = keyIndex.find(keyEl);
 
-        if (it != pairs.end() && isReadOnly()) {
-            // don't update value of key
+        if (idxIt != keyIndex.end() && isReadOnly()) {
             return;
         }
 
         if (allowUnset && !isReadOnly() && val.isInt() && val.asInt() == 0) {
             // after assigning zero to a key, no need to store it, because "get_array" returns 0 for non-existent keys: try unset
-            if (it != pairs.end()) {
-                pairs.erase(it);
+            if (idxIt != keyIndex.end()) {
+                pairs.erase(pairs.begin() + idxIt->second);
+                rebuildKeyIndex();
             }
         } else {
-            if (it == pairs.end()) {
-                // size check
+            if (idxIt == keyIndex.end()) {
                 if (size() >= ARRAY_MAX_SIZE) {
                     return;
                 }
-
+                int newIndex = static_cast<int>(pairs.size());
                 pairs.push_back(KeyValuePair { std::move(keyEl), ArrayElement { val, program } });
+                keyIndex.emplace(pairs.back().key, newIndex);
             } else {
-                auto index = it - pairs.begin();
-                pairs[index].value = ArrayElement { val, program };
+                pairs[idxIt->second].value = ArrayElement { val, program };
             }
         }
     }
@@ -424,6 +511,9 @@ public:
 
         // only allow to reduce number of elements (adding range of elements is meaningless for maps)
         if (newLen >= 0 && newLen < size()) {
+            for (int i = newLen; i < static_cast<int>(pairs.size()); ++i) {
+                keyIndex.erase(pairs[i].key);
+            }
             pairs.resize(newLen);
         } else if (newLen < 0) {
             if (newLen < (ARRAY_ACTION_SHUFFLE - 2)) return;
@@ -443,6 +533,27 @@ public:
         }
 
         return it->key.toValue(program);
+    }
+
+    int flatElementCount() const override { return static_cast<int>(pairs.size()) * 2; }
+
+    void forEachElement(std::function<void(const ArrayElement&)> fn) const override
+    {
+        for (const auto& p : pairs) {
+            fn(p.key);
+            fn(p.value);
+        }
+    }
+
+    void loadFlatElements(std::vector<ArrayElement>&& elements) override
+    {
+        pairs.clear();
+        keyIndex.clear();
+        for (size_t i = 0; i + 1 < elements.size(); i += 2) {
+            int newIndex = static_cast<int>(pairs.size());
+            pairs.push_back(KeyValuePair { std::move(elements[i]), std::move(elements[i + 1]) });
+            keyIndex.emplace(pairs.back().key, newIndex);
+        }
     }
 
 private:
@@ -468,14 +579,26 @@ private:
                 return a.key < b.key;
             });
         }
+        rebuildKeyIndex();
+    }
+
+    void rebuildKeyIndex()
+    {
+        keyIndex.clear();
+        keyIndex.reserve(pairs.size());
+        for (int i = 0; i < static_cast<int>(pairs.size()); ++i) {
+            keyIndex.emplace(pairs[i].key, i);
+        }
     }
 
     std::vector<KeyValuePair> pairs;
+    std::unordered_map<ArrayElement, int, ArrayElementHash> keyIndex;
 };
 
 struct SfallArraysState {
     std::unordered_map<ArrayId, std::unique_ptr<SFallArray>> arrays;
     std::unordered_set<ArrayId> temporaryArrayIds;
+    std::map<ArrayElement, ArrayId> savedArrays;
 
     // auto-incremented ID
     int nextArrayId = kInitialArrayId;
@@ -503,6 +626,7 @@ void sfallArraysReset()
     if (_state != nullptr) {
         _state->arrays.clear();
         _state->temporaryArrayIds.clear();
+        _state->savedArrays.clear();
         _state->nextArrayId = kInitialArrayId;
     }
 }
@@ -557,7 +681,7 @@ ArrayId CreateTempArray(int len, unsigned int flags)
     return arrayId;
 }
 
-SFallArray* get_array_by_id(ArrayId arrayId)
+static SFallArray* get_array_by_id(ArrayId arrayId)
 {
     auto it = _state->arrays.find(arrayId);
     if (it == _state->arrays.end()) {
@@ -607,9 +731,20 @@ void SetArray(ArrayId arrayId, const ProgramValue& key, const ProgramValue& val,
     arr->SetArray(key, val, allowUnset, program);
 }
 
+static void eraseSavedByArrayId(ArrayId arrayId)
+{
+    auto& saved = _state->savedArrays;
+    for (auto it = saved.begin(); it != saved.end(); ++it) {
+        if (it->second == arrayId) {
+            saved.erase(it);
+            return;
+        }
+    }
+}
+
 void FreeArray(ArrayId arrayId)
 {
-    // TODO: remove from saved_arrays
+    eraseSavedByArrayId(arrayId);
     _state->arrays.erase(arrayId);
 }
 
@@ -620,8 +755,8 @@ void FixArray(ArrayId arrayId)
 
 void DeleteAllTempArrays()
 {
-    for (auto it = _state->temporaryArrayIds.begin(); it != _state->temporaryArrayIds.end(); ++it) {
-        FreeArray(*it);
+    for (ArrayId id : _state->temporaryArrayIds) {
+        FreeArray(id);
     }
     _state->temporaryArrayIds.clear();
 }
@@ -747,6 +882,238 @@ ArrayId StringSplit(const char* str, const char* split)
         }
     }
     return arrayId;
+}
+
+// sfall's DataType enum values used in the binary file format.
+enum class SfallArrayElementType : int {
+    INT = 1,
+    FLOAT = 2,
+    STR = 3,
+};
+
+static SfallArrayElementType toSfallType(ArrayElementType t)
+{
+    switch (t) {
+    case ArrayElementType::FLOAT:
+        return SfallArrayElementType::FLOAT;
+    case ArrayElementType::STRING:
+        return SfallArrayElementType::STR;
+    // Pointers should be saved as int, see comment in writeElement below.
+    default:
+        return SfallArrayElementType::INT;
+    }
+}
+
+static ArrayElementType fromSfallType(int t)
+{
+    switch (static_cast<SfallArrayElementType>(t & 0xFFFF)) {
+    case SfallArrayElementType::FLOAT:
+        return ArrayElementType::FLOAT;
+    case SfallArrayElementType::STR:
+        return ArrayElementType::STRING;
+    default:
+        return ArrayElementType::INT;
+    }
+}
+
+static bool writeElement(const ArrayElement& el, File* stream)
+{
+    int savedType = static_cast<int>(toSfallType(el.getType()));
+    if (fileWrite(&savedType, sizeof(savedType), 1, stream) != 1) return false;
+    if (el.getType() == ArrayElementType::STRING) {
+        int len = static_cast<int>(strlen(el.getString()) + 1); // +1 for null terminator
+        if (fileWrite(&len, sizeof(len), 1, stream) != 1) return false;
+        if (fileWrite(el.getString(), len, 1, stream) != 1) return false;
+    } else {
+        // Saving pointers is meaningless, so just save zero instead.
+        int bits = el.getType() == ArrayElementType::POINTER ? 0 : el.getRawValue();
+        if (fileWrite(&bits, sizeof(bits), 1, stream) != 1) return false;
+    }
+    return true;
+}
+
+static bool readElement(ArrayElement& out, File* stream)
+{
+    int savedType;
+    if (fileRead(&savedType, sizeof(savedType), 1, stream) != 1) return false;
+
+    ArrayElementType type = fromSfallType(savedType);
+    if (type == ArrayElementType::STRING) {
+        int len;
+        if (fileRead(&len, sizeof(len), 1, stream) != 1) return false;
+        // Reject invalid lengths to prevent stream desync on corrupt data
+        if (len < 0 || len > ARRAY_MAX_STRING + 1) return false;
+        if (len > 0) {
+            std::vector<char> buf(len);
+            if (fileRead(buf.data(), len, 1, stream) != 1) return false;
+            out = ArrayElement { buf.data(), static_cast<size_t>(len - 1) }; // len includes null
+        } else {
+            out = ArrayElement { "", 0 };
+        }
+    } else {
+        int bits;
+        if (fileRead(&bits, sizeof(bits), 1, stream) != 1) return false;
+        ProgramValue pv;
+        pv.opcode = (type == ArrayElementType::FLOAT) ? VALUE_TYPE_FLOAT : VALUE_TYPE_INT;
+        pv.integerValue = bits;
+        out = ArrayElement { pv, nullptr };
+    }
+    return true;
+}
+
+SaveArrayResult SaveArray(const ProgramValue& key, ArrayId arrayId, Program* program)
+{
+    auto& saved = _state->savedArrays;
+
+    // int(0) key means "unsave" the array without destroying it
+    if (key.isInt() && key.asInt() == 0) {
+        eraseSavedByArrayId(arrayId);
+        return SaveArrayResult::OK;
+    }
+    if (key.isPointer()) {
+        return SaveArrayResult::InvalidKeyType;
+    }
+
+    ArrayElement keyEl { key, program };
+    // Prevent saving array using reserved key for returning all arrays list, since it can never be loaded.
+    if (keyEl.getType() == ArrayElementType::STRING
+        && strcmp(keyEl.getString(), kAllArraysSpecialKey) == 0) {
+        return SaveArrayResult::ReservedKey;
+    }
+    if (get_array_by_id(arrayId) == nullptr) {
+        return SaveArrayResult::InvalidId;
+    }
+
+    FixArray(arrayId);
+
+    // Already saved under this exact key - nothing to do
+    auto it = saved.find(keyEl);
+    if (it != saved.end() && it->second == arrayId) return SaveArrayResult::OK;
+
+    // Remove any existing entry using this key (different array)
+    if (it != saved.end()) saved.erase(it);
+
+    // Remove any existing entry for this array id (being re-keyed)
+    eraseSavedByArrayId(arrayId);
+
+    saved.emplace(std::move(keyEl), arrayId);
+    return SaveArrayResult::OK;
+}
+
+ArrayId LoadArray(const ProgramValue& key, Program* program)
+{
+    if (key.isInt() && key.asInt() == 0) return 0;
+
+    ArrayElement keyEl { key, program };
+    if (keyEl.getType() == ArrayElementType::STRING
+        && strcmp(keyEl.getString(), kAllArraysSpecialKey) == 0) {
+        int count = static_cast<int>(_state->savedArrays.size());
+        ArrayId tmpId = CreateTempArray(count, 0);
+        auto* tmpArr = get_array_by_id(tmpId);
+        if (tmpArr != nullptr) {
+            int index = 0;
+            // std::map iterates in sorted order, matching sfall's explicit sort
+            for (const auto& [savedKey, arrayId] : _state->savedArrays) {
+                tmpArr->SetArray(ProgramValue { index }, ArrayElement(savedKey), false);
+                index++;
+            }
+        }
+        return tmpId;
+    }
+
+    auto it = _state->savedArrays.find(keyEl);
+    return it != _state->savedArrays.end() ? it->second : 0;
+}
+
+constexpr unsigned int kSavedFlagsMask = SFALL_ARRAYFLAG_ASSOC | SFALL_ARRAYFLAG_CONSTVAL;
+
+bool sfallArraysSave(File* stream)
+{
+    auto& saved = _state->savedArrays;
+
+    // Remove stale entries for arrays that no longer exist
+    for (auto it = saved.begin(); it != saved.end();) {
+        it = (get_array_by_id(it->second) == nullptr) ? saved.erase(it) : std::next(it);
+    }
+
+    // First DWORD is always 0: backward-compat sentinel for sfall v3.3
+    int oldCount = 0;
+    if (fileWrite(&oldCount, sizeof(oldCount), 1, stream) != 1) return false;
+
+    int count = static_cast<int>(saved.size());
+    if (fileWrite(&count, sizeof(count), 1, stream) != 1) return false;
+
+    for (const auto& [key, arrayId] : saved) {
+        auto* arr = get_array_by_id(arrayId);
+
+        if (!writeElement(key, stream)) return false;
+
+        unsigned int flags = arr->getFlags() & kSavedFlagsMask;
+        if (fileWrite(&flags, sizeof(flags), 1, stream) != 1) return false;
+
+        int elCount = arr->flatElementCount();
+        if (fileWrite(&elCount, sizeof(elCount), 1, stream) != 1) return false;
+
+        bool ok = true;
+        bool hasPointers = key.getType() == ArrayElementType::POINTER;
+        arr->forEachElement([&](const ArrayElement& el) {
+            if (ok) ok = writeElement(el, stream);
+            hasPointers = hasPointers || el.getType() == ArrayElementType::POINTER;
+        });
+        if (!ok) return false;
+
+        if (hasPointers) {
+            debugPrint("LOADSAVE (SFALL): Array %s had some values of Pointer types. They will be saved as 0.\n", key.getAsDebugString());
+        }
+    }
+    return true;
+}
+
+bool sfallArraysLoad(File* stream)
+{
+    // First DWORD is 0 for new format (or a nonzero count for sfall v3.3 old format)
+    int oldCount;
+    if (fileRead(&oldCount, sizeof(oldCount), 1, stream) != 1) return false;
+    if (oldCount != 0) {
+        debugPrint("LOADSAVE (SFALL): arrays in old format, skipping\n");
+        return true;
+    }
+
+    int count;
+    if (fileRead(&count, sizeof(count), 1, stream) != 1) return false;
+    if (count <= 0) return true;
+    if (count > ARRAY_MAX_SIZE) return false; // sanity bound against corrupt data
+
+    for (int i = 0; i < count; i++) {
+        ArrayElement key;
+        if (!readElement(key, stream)) return false;
+
+        unsigned int flags;
+        if (fileRead(&flags, sizeof(flags), 1, stream) != 1) return false;
+
+        int elCount;
+        if (fileRead(&elCount, sizeof(elCount), 1, stream) != 1) return false;
+        if (elCount < 0 || elCount > ARRAY_MAX_SIZE * 2) return false; // sanity bound
+
+        std::vector<ArrayElement> elements;
+        elements.reserve(elCount);
+        for (int j = 0; j < elCount; j++) {
+            ArrayElement el;
+            if (!readElement(el, stream)) return false;
+            elements.push_back(std::move(el));
+        }
+
+        // Strip transient expression flags before creating the array
+        unsigned int safeFlags = flags & kSavedFlagsMask;
+        bool isAssoc = (safeFlags & SFALL_ARRAYFLAG_ASSOC) != 0;
+        ArrayId id = CreateArray(isAssoc ? -1 : 0, safeFlags);
+        SFallArray* arr = get_array_by_id(id);
+        if (arr == nullptr) return false;
+        arr->loadFlatElements(std::move(elements));
+
+        _state->savedArrays.emplace(std::move(key), id);
+    }
+    return true;
 }
 
 } // namespace fallout

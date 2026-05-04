@@ -25,6 +25,7 @@
 #include "random.h"
 #include "reaction.h"
 #include "scripts.h"
+#include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
 #include "tile.h"
@@ -825,7 +826,11 @@ void critterKill(Object* critter, int anim, bool refreshRect)
 
     int elevation = critter->elevation;
 
+    critter->data.critter.hp = 0;
+    critter->data.critter.combat.results |= DAM_DEAD;
+
     partyMemberRemove(critter);
+    scriptHooks_OnDeath(critter);
 
     // NOTE: Original code uses goto to jump out from nested conditions below.
     bool shouldChangeFid = false;
@@ -892,9 +897,6 @@ void critterKill(Object* critter, int anim, bool refreshRect)
 
     _obj_turn_off_light(critter, &tempRect);
     rectUnion(&updatedRect, &tempRect, &updatedRect);
-
-    critter->data.critter.hp = 0;
-    critter->data.critter.combat.results |= DAM_DEAD;
 
     if (critter->sid != -1) {
         scriptRemove(critter->sid);

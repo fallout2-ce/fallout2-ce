@@ -131,7 +131,7 @@ int objectSetScriptFromProto(Object* object, int* sidPtr)
     return 0;
 }
 
-// 0x49AAC0
+// 0x49AAC0 obj_new_sid_inst
 int objectSetScript(Object* obj, int scriptType, int scriptIndex)
 {
     if (scriptIndex == -1) {
@@ -938,7 +938,9 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
                 break;
             }
 
-            queueAddEvent(delay, explosive, nullptr, eventType);
+            if (scriptHooks_ExplosiveTimer(explosive, 10 * seconds, eventType) == -1) {
+                queueAddEvent(delay, explosive, nullptr, eventType);
+            }
         }
     }
 

@@ -86,6 +86,7 @@ Object* weaponUnload(Object* weapon);
 int weaponGetPrimaryActionPointCost(Object* weapon);
 int weaponGetSecondaryActionPointCost(Object* weapon);
 int weaponComputeAmmoCost(const Object* obj, int* ammoQty);
+bool weaponHasAmmoForAttack(const Object* weapon, int hitMode);
 bool weaponIsGrenade(Object* weapon);
 int weaponGetDamageRadius(Object* weapon, int hitMode);
 int weaponGetGrenadeExplosionRadius(Object* weapon);

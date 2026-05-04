@@ -11,6 +11,7 @@
 #include "art.h"
 #include "automap.h"
 #include "combat.h"
+#include "content_config.h"
 #include "critter.h"
 #include "debug.h"
 #include "dialog.h"
@@ -32,8 +33,8 @@
 #include "queue.h"
 #include "scan_unimplemented.h"
 #include "sfall_arrays.h"
-#include "sfall_config.h"
 #include "sfall_global_scripts.h"
+#include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
@@ -1208,8 +1209,7 @@ void _script_make_path(char* path)
     strcat(path, gScriptsBasePath);
 }
 
-// exec_script_proc
-// 0x4A4810
+// 0x4A4810 exec_script_proc
 int scriptExecProc(int sid, int proc)
 {
     assert(proc >= 0 && proc < SCRIPT_PROC_COUNT);
@@ -1276,6 +1276,7 @@ int scriptExecProc(int sid, int proc)
     // CE: Fix for the start procedure not being called correctly if the required standard script procedure is missing.
     int procedureIndex = script->procs[proc];
     if (procedureIndex == 0) {
+        // Fixme: hook receives `proc` which is wrong in this context
         procedureIndex = script->procs[SCRIPT_PROC_START];
         if (procedureIndex == 0) {
             procedureIndex = -1;
@@ -1288,9 +1289,25 @@ int scriptExecProc(int sid, int proc)
 
     script->action = proc;
 
+    Object* self = script->owner;
+    Object* source = script->source;
+    Object* target = script->target;
+    int fixedParam = script->fixedParam;
+
+    // HOOK_STDPROCEDURE
+    if (scriptHooks_StdProcedure(proc, self, source, target, fixedParam, false)) {
+        script->action = 0;
+        script->source = nullptr;
+        return -1;
+    }
+
     programExecuteProcedure(program, procedureIndex);
 
+    // HOOK_STDPROCEDURE_END
+    scriptHooks_StdProcedure(proc, self, source, target, fixedParam, true);
+
     script->source = nullptr;
+    script->action = 0;
 
     return 0;
 }
@@ -1408,6 +1425,11 @@ static int scriptsGetFileName(int scriptIndex, char* name, size_t size)
     return 0;
 }
 
+bool scriptsIsValidScriptIndex(int scriptIndex)
+{
+    return scriptIndex >= 0 && scriptIndex < gScriptsListEntriesLength;
+}
+
 // scr_set_dude_script
 // 0x4A4F90
 int scriptsSetDudeScript()
@@ -1495,14 +1517,14 @@ int scriptsInit()
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SCRIPT, &gScrMessageList);
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_START_YEAR, &gStartYear);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_START_MONTH, &gStartMonth);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_START_DAY, &gStartDay);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "year", &gStartYear, 2241);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "month", &gStartMonth, 6);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "day", &gStartDay, 24);
 
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MOVIE_TIMER_ARTIMER1, &gMovieTimerArtimer1);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MOVIE_TIMER_ARTIMER2, &gMovieTimerArtimer2);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MOVIE_TIMER_ARTIMER3, &gMovieTimerArtimer3);
-    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_MOVIE_TIMER_ARTIMER4, &gMovieTimerArtimer4);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer1", &gMovieTimerArtimer1, 90);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer2", &gMovieTimerArtimer2, 180);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer3", &gMovieTimerArtimer3, 270);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer4", &gMovieTimerArtimer4, 360);
 
     checkScriptsOpcodes();
 
