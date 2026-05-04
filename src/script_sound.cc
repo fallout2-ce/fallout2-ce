@@ -1,155 +1,122 @@
 #include "script_sound.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include <vector>
 
-#include "audio.h"
 #include "debug.h"
 #include "game_sound.h"
-#include "platform_compat.h"
 #include "sound.h"
 
 namespace fallout {
 
-namespace {
+enum ScriptSoundFlags {
+    SCRIPT_SOUND_FLAG_LOOPING = 0x10000000,
+    SCRIPT_SOUND_FLAG_RESTORE = 0x40000000,
+};
 
-    enum ScriptSoundFlags {
-        SCRIPT_SOUND_FLAG_LOOPING = 0x10000000,
-        SCRIPT_SOUND_FLAG_RESTORE = 0x40000000,
+struct ScriptManagedSound {
+    int id;
+    Sound* sound;
+    bool restoreBackground;
+};
+
+static std::vector<ScriptManagedSound> scriptLoopingSounds;
+static int scriptLoopId = 0;
+static int currentMusicId = 0;
+
+static int scriptSoundGetBaseVolume(int mode)
+{
+    switch (mode) {
+    case SCRIPT_SOUND_MODE_MUSIC:
+        return backgroundSoundGetVolume();
+    case SCRIPT_SOUND_MODE_SPEECH:
+        return speechGetVolume();
+    case SCRIPT_SOUND_MODE_SINGLE:
+    case SCRIPT_SOUND_MODE_LOOP:
+    default:
+        return soundEffectsGetVolume();
+    }
+}
+
+static int scriptSoundClampVolume(int volume)
+{
+    if (volume < VOLUME_MIN) {
+        return VOLUME_MIN;
+    }
+
+    if (volume > VOLUME_MAX) {
+        return VOLUME_MAX;
+    }
+
+    return volume;
+}
+
+static int scriptSoundFindLoopingSoundIndexById(int id)
+{
+    for (size_t index = 0; index < scriptLoopingSounds.size(); index++) {
+        if (scriptLoopingSounds[index].id == id) {
+            return static_cast<int>(index);
+        }
+    }
+
+    return -1;
+}
+
+static Sound* scriptSoundCreate(const char* path, bool looping, int volume)
+{
+    GameSoundLoadOptions loadOptions = {
+        GSOUND_LIMIT_AFTER,
+        GSOUND_STREAM,
+        looping ? GSOUND_LOOP : GSOUND_NO_LOOP,
+        0,
+        nullptr,
+        nullptr,
     };
 
-    struct ScriptManagedSound {
-        int id;
-        Sound* sound;
-        bool restoreBackground;
-    };
-
-    std::vector<ScriptManagedSound> scriptLoopingSounds;
-    int scriptLoopId = 0;
-    int scriptBackgroundReplacementId = 0;
-
-    bool scriptSoundPathIsValid(const char* path)
-    {
-        if (path == nullptr) {
-            return false;
-        }
-
-        size_t length = strlen(path);
-        if (length <= 3 || length >= COMPAT_MAX_PATH) {
-            return false;
-        }
-
-        for (const char* ch = path; *ch != '\0'; ch++) {
-            if (*ch == ':') {
-                return false;
-            }
-
-            if (*ch == '.' && ch[1] == '.') {
-                return false;
-            }
-        }
-
-        return true;
+    Sound* sound = nullptr;
+    if (gameSoundLoadSound(&sound, path, &gGameSoundAudioIO, &loadOptions) != 0) {
+        return nullptr;
     }
 
-    int scriptSoundGetBaseVolume(int mode)
-    {
-        switch (mode) {
-        case SCRIPT_SOUND_MODE_MUSIC:
-            return backgroundSoundGetVolume();
-        case SCRIPT_SOUND_MODE_SPEECH:
-            return speechGetVolume();
-        case SCRIPT_SOUND_MODE_SINGLE:
-        case SCRIPT_SOUND_MODE_LOOP:
-        default:
-            return soundEffectsGetVolume();
-        }
+    soundSetVolume(sound, scriptSoundClampVolume(volume));
+
+    int rc;
+    rc = soundPlay(sound);
+    if (rc != SOUND_NO_ERROR) {
+        soundDelete(sound);
+        return nullptr;
     }
 
-    int scriptSoundClampVolume(int volume)
-    {
-        if (volume < VOLUME_MIN) {
-            return VOLUME_MIN;
-        }
+    return sound;
+}
 
-        if (volume > VOLUME_MAX) {
-            return VOLUME_MAX;
-        }
+static void scriptSoundStopTrackedIndex(int index, bool restoreBackground)
+{
+    Sound* sound = scriptLoopingSounds[index].sound;
+    int id = scriptLoopingSounds[index].id;
+    bool shouldRestoreBackground = restoreBackground && scriptLoopingSounds[index].restoreBackground;
 
-        return volume;
+    scriptLoopingSounds.erase(scriptLoopingSounds.begin() + index);
+
+    if (currentMusicId == id) {
+        currentMusicId = 0;
     }
 
-    int scriptSoundFindLoopingSoundIndexById(int id)
-    {
-        for (size_t index = 0; index < scriptLoopingSounds.size(); index++) {
-            if (scriptLoopingSounds[index].id == id) {
-                return static_cast<int>(index);
-            }
+    if (sound != nullptr) {
+        if (soundIsPlaying(sound)) {
+            soundStop(sound);
         }
 
-        return -1;
+        soundDelete(sound);
     }
 
-    Sound* scriptSoundCreate(const char* path, bool looping, int volume)
-    {
-        GameSoundLoadOptions loadOptions = {
-            GSOUND_LIMIT_AFTER,
-            GSOUND_STREAM,
-            looping ? GSOUND_LOOP : GSOUND_NO_LOOP,
-            0,
-            nullptr,
-            nullptr,
-        };
-
-        Sound* sound = nullptr;
-        if (gameSoundLoadSound(&sound, path, &gGameSoundAudioIO, &loadOptions) != 0) {
-            return nullptr;
-        }
-
-        soundSetVolume(sound, scriptSoundClampVolume(volume));
-
-        int rc;
-        rc = soundPlay(sound);
-        if (rc != SOUND_NO_ERROR) {
-            soundDelete(sound);
-            return nullptr;
-        }
-
-        return sound;
+    if (shouldRestoreBackground) {
+        backgroundSoundRestart(GSOUND_LIMIT_AFTER);
     }
-
-    void scriptSoundStopTrackedIndex(int index, bool restoreBackground)
-    {
-        Sound* sound = scriptLoopingSounds[index].sound;
-        int id = scriptLoopingSounds[index].id;
-        bool shouldRestoreBackground = restoreBackground && scriptLoopingSounds[index].restoreBackground;
-
-        scriptLoopingSounds.erase(scriptLoopingSounds.begin() + index);
-
-        if (scriptBackgroundReplacementId == id) {
-            scriptBackgroundReplacementId = 0;
-        }
-
-        if (sound != nullptr) {
-            if (soundIsPlaying(sound)) {
-                soundStop(sound);
-            }
-
-            soundDelete(sound);
-        }
-
-        if (shouldRestoreBackground) {
-            backgroundSoundRestart(GSOUND_LIMIT_AFTER);
-        }
-    }
-
-} // namespace
+}
 
 int scriptSoundPlay(const char* path, int mode)
 {
-    if (mode < 0 || !scriptSoundPathIsValid(path)) {
+    if (mode < 0 || path == nullptr || path[0] == '\0') {
         return 0;
     }
 
@@ -163,8 +130,8 @@ int scriptSoundPlay(const char* path, int mode)
     int volume = scriptSoundGetBaseVolume(mode) - volumeReduction;
 
     if (mode == SCRIPT_SOUND_MODE_MUSIC) {
-        if (scriptBackgroundReplacementId != 0) {
-            int existingIndex = scriptSoundFindLoopingSoundIndexById(scriptBackgroundReplacementId);
+        if (currentMusicId != 0) {
+            int existingIndex = scriptSoundFindLoopingSoundIndexById(currentMusicId);
             if (existingIndex != -1) {
                 scriptSoundStopTrackedIndex(existingIndex, false);
             }
@@ -199,7 +166,7 @@ int scriptSoundPlay(const char* path, int mode)
     });
 
     if (mode == SCRIPT_SOUND_MODE_MUSIC) {
-        scriptBackgroundReplacementId = id;
+        currentMusicId = id;
     }
 
     return id;
@@ -231,7 +198,7 @@ void scriptSoundExit()
     }
 
     scriptLoopId = 0;
-    scriptBackgroundReplacementId = 0;
+    currentMusicId = 0;
 }
 
 } // namespace fallout
