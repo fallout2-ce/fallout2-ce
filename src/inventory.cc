@@ -3460,8 +3460,6 @@ int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animat
 {
     int itemType = itemGetType(item);
 
-    // INVEN_TYPE_* values mirror the script-side constants in interpreter_extra.cc:
-    // WORN=0, RIGHT_HAND=1, LEFT_HAND=2. The script may veto by returning 0.
     InvenSlot invenSlot = itemType == ITEM_TYPE_ARMOR
         ? InvenSlot::Armor
         : (handIndex == HAND_RIGHT ? InvenSlot::RightHand : InvenSlot::LeftHand);
@@ -3632,8 +3630,7 @@ int inventoryUnequipFunc(Object* critter, int hand, bool animate)
         item = critterGetItem1(critter);
     }
 
-    // Notify scripts before mutating the OBJECT_IN_ANY_HAND flag. INVEN_TYPE
-    // values: RIGHT_HAND=1, LEFT_HAND=2 (matches interpreter_extra.cc).
+    // Notify scripts before mutating the OBJECT_IN_ANY_HAND flag..
     if (item != nullptr) {
         InvenSlot invenSlot = hand == HAND_RIGHT ? InvenSlot::RightHand : InvenSlot::LeftHand;
         if (!scriptHooks_InvenWield(critter, item, invenSlot, 0, 0)) {

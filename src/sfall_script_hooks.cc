@@ -747,7 +747,7 @@ void scriptHooks_BarterPrice(BarterPriceContext* ctx)
     (inventory, barter).
 
     int     arg0 - the vanilla FID calculated by the engine
-    int     arg1 - the modified FID after internal CE adjustments (curently always the same as arg0))
+    int     arg1 - the modified FID after internal CE adjustments (currently always the same as arg0)
 
     int     ret0 - override FID
 */
