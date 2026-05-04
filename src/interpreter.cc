@@ -843,7 +843,7 @@ static void opIf(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
 
-    if (!value.isEmpty(program)) {
+    if (!value.isEmpty()) {
         programStackPopValue(program);
     } else {
         program->instructionPointer = programStackPopInteger(program);
@@ -855,7 +855,7 @@ static void opWhile(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
 
-    if (value.isEmpty(program)) {
+    if (value.isEmpty()) {
         program->instructionPointer = programStackPopInteger(program);
     }
 }
@@ -3293,20 +3293,17 @@ void* programReturnStackPopPointer(Program* program)
     return programValue.pointerValue;
 }
 
-bool ProgramValue::isEmpty(Program* program) const
+bool ProgramValue::isEmpty() const
 {
     switch (opcode) {
     case VALUE_TYPE_INT:
+    case VALUE_TYPE_STRING:
+    case VALUE_TYPE_DYNAMIC_STRING:
         return integerValue == 0;
     case VALUE_TYPE_FLOAT:
         return floatValue == 0.0;
     case VALUE_TYPE_PTR:
         return pointerValue == nullptr;
-    case VALUE_TYPE_STRING:
-    case VALUE_TYPE_DYNAMIC_STRING: {
-        const char* string = asString(program);
-        return string == nullptr || string[0] == '\0';
-    }
     }
 
     // Should be unreachable.
