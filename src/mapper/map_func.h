@@ -28,6 +28,7 @@ void mapper_shift_map_elev();
 void mapper_copy_map_elev();
 void mapper_flush_cache();
 int pickHex();
+int pickToolbar(int topY);
 
 } // namespace fallout
 

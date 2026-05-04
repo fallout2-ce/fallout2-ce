@@ -10,6 +10,7 @@
 #include "character_editor.h"
 #include "color.h"
 #include "config.h"
+#include "critter.h"
 #include "db.h"
 #include "debug.h"
 #include "draw.h"
@@ -37,6 +38,7 @@
 #include "object.h"
 #include "party_member.h"
 #include "proto.h"
+#include "proto_instance.h"
 #include "scripts.h"
 #include "settings.h"
 #include "svga.h"
@@ -508,32 +510,94 @@ bool view_mode;
 // Right-click: 160 + index
 constexpr int kArtButtonBase = 161;
 
-constexpr int kBtnScrollLeft = 45;
-constexpr int kBtnScrollRight = 61;
-constexpr int kBtnScrollPageLeft = 95;
-constexpr int kBtnScrollPageRight = 43;
+constexpr int kBtnScrollLeft = '-';
+constexpr int kBtnScrollRight = '=';
+constexpr int kBtnScrollPageLeft = '_';
+constexpr int kBtnScrollPageRight = '+';
 constexpr int kBtnElevUp = KEY_PAGE_UP;
 constexpr int kBtnElevDown = KEY_PAGE_DOWN;
-constexpr int kBtnItemType = KEY_CTRL_F1;
-constexpr int kBtnCritType = KEY_CTRL_F2;
-constexpr int kBtnScenType = KEY_CTRL_F3;
-constexpr int kBtnWallType = KEY_CTRL_F4;
-constexpr int kBtnTileType = KEY_CTRL_F5;
-constexpr int kBtnMiscType = KEY_CTRL_F6;
-constexpr int kBtnCopy = 99;
-constexpr int kBtnPaste = 67;
-constexpr int kBtnEdit = 101;
-constexpr int kBtnDelete = 339;
-constexpr int kBtnHeightInc = KEY_CTRL_ARROW_RIGHT;
-constexpr int kBtnHeightDec = KEY_CTRL_ARROW_LEFT;
+constexpr int kBtnHideItem = KEY_CTRL_F1;
+constexpr int kBtnHideCrit = KEY_CTRL_F2;
+constexpr int kBtnHideScen = KEY_CTRL_F3;
+constexpr int kBtnHideWall = KEY_CTRL_F4;
+constexpr int kBtnHideTile = KEY_CTRL_F5;
+constexpr int kBtnHideMisc = KEY_CTRL_F6;
+constexpr int kBtnCopy = 'c';
+constexpr int kBtnPaste = 'C';
+constexpr int kBtnEdit = 'e';
+constexpr int kBtnDelete = KEY_DELETE;
+constexpr int kBtnRotateRight = KEY_CTRL_ARROW_RIGHT;
+constexpr int kBtnRotateLeft = KEY_CTRL_ARROW_LEFT;
 constexpr int kBtnRoof = 'r';
 constexpr int kBtnHex = 'h';
-constexpr int kMenuHeaderFile = 289;
-constexpr int kMenuHeaderTools = 303;
-constexpr int kMenuHeaderScripts = 276;
-constexpr int kMenuHeaderLibrarian = 292;
+constexpr int kMenuHeaderFile = KEY_ALT_F;
+constexpr int kMenuHeaderTools = KEY_ALT_V;
+constexpr int kMenuHeaderScripts = KEY_ALT_T;
+constexpr int kMenuHeaderLibrarian = KEY_ALT_J;
 constexpr int kMenuBarActivation = KEY_F8;
-constexpr int kMenuBarActivationAlt = 394;
+constexpr int kMenuBarActivationAlt = KEY_CTRL_F12;
+
+constexpr int kBtnMoveMapElev = 4186;
+constexpr int kBtnCopyMapElev = 4188;
+constexpr int kBtnBookmark = 2165;
+constexpr int kBtnToggleBlockObjView = 3123;
+constexpr int kBtnSetExitGridData = 5677;
+constexpr int kBtnMarkExitGrids = 5678;
+constexpr int kBtnMarkAllExitGrids = 5679;
+constexpr int kBtnClearMapLevel = 5666;
+constexpr int kBtnCreateAllMapTexts = 5406;
+constexpr int kBtnRebuildAllMaps = 5405;
+constexpr int kBtnSetStartHex = 5400;
+constexpr int kBtnDeleteAllSpatialScripts = 5410;
+constexpr int kBtnShowMapScript = 5544;
+
+// FILE menu pulldown keycodes
+constexpr int kBtnNew = KEY_ALT_N;
+constexpr int kBtnOpen = KEY_ALT_O;
+constexpr int kBtnSave = KEY_ALT_S;
+constexpr int kBtnSaveAs = KEY_ALT_A;
+constexpr int kBtnInfo = KEY_ALT_I;
+constexpr int kBtnLoadAllTexts = KEY_ALT_K;
+
+// TOOLS menu pulldown keycodes
+constexpr int kBtnCreatePattern = KEY_ALT_U;
+constexpr int kBtnUsePattern = KEY_ALT_Y;
+constexpr int kBtnMoveMap = KEY_ALT_G;
+constexpr int kBtnEditDude = KEY_ALT_B;
+constexpr int kBtnFlushCache = KEY_ALT_E;
+constexpr int kBtnAnimStepping = KEY_ALT_D;
+constexpr int kBtnFixMapPids = KEY_LOWERCASE_B;
+constexpr int kBtnClickToScroll = KEY_ALT_Z;
+
+// SCRIPTS menu pulldown keycodes
+constexpr int kBtnListScripts = KEY_LOWERCASE_I;
+constexpr int kBtnPlaceSpatial = KEY_LOWERCASE_S;
+constexpr int kBtnDeleteSpatial = KEY_CTRL_F8;
+constexpr int kBtnCreateScript = KEY_GRAVE;
+constexpr int kBtnSetMapScript = KEY_ALT_W;
+
+// Toolbar type selection (F1–F6)
+constexpr int kBtnTypeItem = KEY_F1;
+constexpr int kBtnTypeCritter = KEY_F2;
+constexpr int kBtnTypeScenery = KEY_F3;
+constexpr int kBtnTypeWall = KEY_F4;
+constexpr int kBtnTypeTile = KEY_F5;
+constexpr int kBtnTypeMisc = KEY_F6;
+
+// Direct keys (not menu-bound)
+constexpr int kBtnProtoEditor = KEY_UPPERCASE_E;
+constexpr int kBtnPickProto = KEY_LOWERCASE_P;
+constexpr int kBtnLightDistDec = KEY_LOWERCASE_Z;
+constexpr int kBtnLightIntensityDec = KEY_UPPERCASE_Z;
+constexpr int kBtnUse = KEY_LOWERCASE_U;
+constexpr int kBtnKill = KEY_LOWERCASE_K;
+constexpr int kBtnLock = KEY_LOWERCASE_L;
+constexpr int kBtnProtoNewEdit = KEY_COLON;
+constexpr int kBtnPickToolbarType = KEY_LOWERCASE_T;
+constexpr int kBtnLightAmbientDec = KEY_BRACKET_LEFT;
+constexpr int kBtnLightAmbientInc = KEY_BRACKET_RIGHT;
+constexpr int kBtnQuit = KEY_ESCAPE;
+
 constexpr int kArtMaxDirect = 0x4B0;
 
 // gnw_main
@@ -557,45 +621,45 @@ int mapper_main(int argc, char** argv)
 // 0x485E00
 void MapperInit()
 {
-    menu_val_0[0] = KEY_ALT_N;
-    menu_val_0[1] = KEY_ALT_O;
-    menu_val_0[2] = KEY_ALT_S;
-    menu_val_0[3] = KEY_ALT_A;
+    menu_val_0[0] = kBtnNew;
+    menu_val_0[1] = kBtnOpen;
+    menu_val_0[2] = kBtnSave;
+    menu_val_0[3] = kBtnSaveAs;
     menu_val_0[4] = KEY_ESCAPE;
-    menu_val_0[5] = KEY_ALT_K;
-    menu_val_0[6] = KEY_ALT_I;
+    menu_val_0[5] = kBtnLoadAllTexts;
+    menu_val_0[6] = kBtnInfo;
     menu_val_0[7] = KEY_ESCAPE;
 
-    menu_val_1[0] = KEY_ALT_U;
-    menu_val_1[1] = KEY_ALT_Y;
+    menu_val_1[0] = kBtnCreatePattern;
+    menu_val_1[1] = kBtnUsePattern;
     menu_val_1[2] = KEY_ESCAPE;
-    menu_val_1[3] = KEY_ALT_G;
-    menu_val_1[4] = 4186;
-    menu_val_1[5] = 4188;
+    menu_val_1[3] = kBtnMoveMap;
+    menu_val_1[4] = kBtnMoveMapElev;
+    menu_val_1[5] = kBtnCopyMapElev;
     menu_val_1[6] = KEY_ESCAPE;
-    menu_val_1[7] = KEY_ALT_B;
-    menu_val_1[8] = KEY_ALT_E;
-    menu_val_1[9] = KEY_ALT_D;
-    menu_val_1[10] = KEY_LOWERCASE_B;
-    menu_val_1[11] = 2165;
-    menu_val_1[12] = 3123;
-    menu_val_1[13] = KEY_ALT_Z;
-    menu_val_1[14] = 5677;
-    menu_val_1[15] = 5678;
-    menu_val_1[16] = 5679;
-    menu_val_1[17] = 5666;
+    menu_val_1[7] = kBtnEditDude;
+    menu_val_1[8] = kBtnFlushCache;
+    menu_val_1[9] = kBtnAnimStepping;
+    menu_val_1[10] = kBtnFixMapPids;
+    menu_val_1[11] = kBtnBookmark;
+    menu_val_1[12] = kBtnToggleBlockObjView;
+    menu_val_1[13] = kBtnClickToScroll;
+    menu_val_1[14] = kBtnSetExitGridData;
+    menu_val_1[15] = kBtnMarkExitGrids;
+    menu_val_1[16] = kBtnMarkAllExitGrids;
+    menu_val_1[17] = kBtnClearMapLevel;
     menu_val_1[18] = KEY_ESCAPE;
-    menu_val_1[19] = 5406;
-    menu_val_1[20] = 5405;
+    menu_val_1[19] = kBtnCreateAllMapTexts;
+    menu_val_1[20] = kBtnRebuildAllMaps;
 
-    menu_val_2[0] = KEY_LOWERCASE_I;
-    menu_val_2[1] = 5400;
-    menu_val_2[2] = KEY_LOWERCASE_S;
-    menu_val_2[3] = KEY_CTRL_F8;
-    menu_val_2[4] = 5410;
-    menu_val_2[5] = KEY_GRAVE;
-    menu_val_2[6] = KEY_ALT_W;
-    menu_val_2[7] = 5544;
+    menu_val_2[0] = kBtnListScripts;
+    menu_val_2[1] = kBtnSetStartHex;
+    menu_val_2[2] = kBtnPlaceSpatial;
+    menu_val_2[3] = kBtnDeleteSpatial;
+    menu_val_2[4] = kBtnDeleteAllSpatialScripts;
+    menu_val_2[5] = kBtnCreateScript;
+    menu_val_2[6] = kBtnSetMapScript;
+    menu_val_2[7] = kBtnShowMapScript;
 }
 
 static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
@@ -765,42 +829,42 @@ int mapper_edit_init(int argc, char** argv)
     // ITEM
     blitBufferToBuffer(lbm_buf + 434 * lbmBufWidth + 125, 66, 13, lbmBufWidth, obj_up, 66);
     blitBufferToBuffer(lbm_buf + 328 * lbmBufWidth + 125, 66, 13, lbmBufWidth, obj_down, 66);
-    obj_bid = buttonCreate(tool_win, 125, 54, 66, 13, -1, -1, kBtnItemType, kBtnItemType, obj_up, obj_down, nullptr, BUTTON_FLAG_CHECKABLE);
+    obj_bid = buttonCreate(tool_win, 125, 54, 66, 13, -1, -1, kBtnHideItem, kBtnHideItem, obj_up, obj_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // CRIT
     blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 125, 66, 13, lbmBufWidth, crit_up, 66);
     blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 125, 66, 13, lbmBufWidth, crit_down, 66);
-    crit_bid = buttonCreate(tool_win, 125, 69, 66, 13, -1, -1, kBtnCritType, kBtnCritType, crit_up, crit_down, nullptr, BUTTON_FLAG_CHECKABLE);
+    crit_bid = buttonCreate(tool_win, 125, 69, 66, 13, -1, -1, kBtnHideCrit, kBtnHideCrit, crit_up, crit_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // SCEN
     blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 125, 66, 13, lbmBufWidth, scen_up, 66);
     blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 125, 66, 13, lbmBufWidth, scen_down, 66);
-    scen_bid = buttonCreate(tool_win, 125, 84, 66, 13, -1, -1, kBtnScenType, kBtnScenType, scen_up, scen_down, nullptr, BUTTON_FLAG_CHECKABLE);
+    scen_bid = buttonCreate(tool_win, 125, 84, 66, 13, -1, -1, kBtnHideScen, kBtnHideScen, scen_up, scen_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // WALL
     blitBufferToBuffer(lbm_buf + 434 * lbmBufWidth + 194, 53, 13, lbmBufWidth, wall_up, 53);
     blitBufferToBuffer(lbm_buf + 328 * lbmBufWidth + 194, 53, 13, lbmBufWidth, wall_down, 53);
-    wall_bid = buttonCreate(tool_win, 194, 54, 53, 13, -1, -1, kBtnWallType, kBtnWallType, wall_up, wall_down, nullptr, BUTTON_FLAG_CHECKABLE);
+    wall_bid = buttonCreate(tool_win, 194, 54, 53, 13, -1, -1, kBtnHideWall, kBtnHideWall, wall_up, wall_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // TILE
     blitBufferToBuffer(lbm_buf + 449 * lbmBufWidth + 194, 53, 13, lbmBufWidth, tile_up, 53);
     blitBufferToBuffer(lbm_buf + 343 * lbmBufWidth + 194, 53, 13, lbmBufWidth, tile_down, 53);
-    tile_bid = buttonCreate(tool_win, 194, 69, 53, 13, -1, -1, kBtnTileType, kBtnTileType, tile_up, tile_down, nullptr, BUTTON_FLAG_CHECKABLE);
+    tile_bid = buttonCreate(tool_win, 194, 69, 53, 13, -1, -1, kBtnHideTile, kBtnHideTile, tile_up, tile_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // MISC
     blitBufferToBuffer(lbm_buf + 464 * lbmBufWidth + 194, 53, 13, lbmBufWidth, misc_up, 53);
     blitBufferToBuffer(lbm_buf + 358 * lbmBufWidth + 194, 53, 13, lbmBufWidth, misc_down, 53);
-    misc_bid = buttonCreate(tool_win, 194, 84, 53, 13, -1, -1, kBtnMiscType, kBtnMiscType, misc_up, misc_down, nullptr, BUTTON_FLAG_CHECKABLE);
+    misc_bid = buttonCreate(tool_win, 194, 84, 53, 13, -1, -1, kBtnHideMisc, kBtnHideMisc, misc_up, misc_down, nullptr, BUTTON_FLAG_CHECKABLE);
 
     // HEIGHT INC
     blitBufferToBuffer(lbm_buf + 431 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_inc_up, 18);
     blitBufferToBuffer(lbm_buf + 325 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_inc_down, 18);
-    buttonCreate(tool_win, 251, 51, 18, 23, -1, -1, kBtnHeightInc, -1, height_inc_up, height_inc_down, nullptr, 0);
+    buttonCreate(tool_win, 251, 51, 18, 23, -1, -1, kBtnRotateRight, -1, height_inc_up, height_inc_down, nullptr, 0);
 
     // HEIGHT DEC
     blitBufferToBuffer(lbm_buf + 456 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_dec_up, 18);
     blitBufferToBuffer(lbm_buf + 350 * lbmBufWidth + 251, 18, 23, lbmBufWidth, height_dec_down, 18);
-    buttonCreate(tool_win, 251, 76, 18, 23, -1, -1, kBtnHeightDec, -1, height_dec_up, height_dec_down, nullptr, 0);
+    buttonCreate(tool_win, 251, 76, 18, 23, -1, -1, kBtnRotateLeft, -1, height_dec_up, height_dec_down, nullptr, 0);
 
     // ARROWS
     for (index = 0; index < ROTATION_COUNT; index++) {
@@ -1145,24 +1209,25 @@ void edit_mapper()
             // ASM: test di, 4 → LEFT button REPEAT (bit 2) → move selected object
             if (buttons & MOUSE_EVENT_LEFT_BUTTON_REPEAT) {
                 // ASM loc_48A42D: click-and-drag to move selected object
+                // Vanilla uses gridAreaBottom = gIsoWindow_bottom - gIsoWindow_top - 100 (excludes toolbar)
+                constexpr int kToolbarReservedHeight = 100;
                 if (_mouse_click_in(0, 16,
                         windowGetWidth(gIsoWindow) - 1,
-                        windowGetHeight(gIsoWindow) - 1)) {
+                        windowGetHeight(gIsoWindow) - 1 - kToolbarReservedHeight)) {
                     if (_screen_obj != nullptr && tool_active == -1) {
                         int newTile = gGameMouseBouncingCursor->tile;
                         Rect rect;
                         objectSetLocation(_screen_obj, newTile, gElevation, &rect);
                         tileWindowRefreshRect(&rect, gElevation);
                         if (hl_obj1 != nullptr) {
-                            objectSetLocation(hl_obj1, newTile, gElevation, nullptr);
+                            objectSetLocation(hl_obj1, newTile, gElevation, &rect);
                             tileWindowRefreshRect(&rect, gElevation);
                         }
                     }
                 }
-            }
 
-            // ASM: test di, 1 → LEFT button DOWN (bit 0) → select or place object
-            if (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) {
+                // ASM: test di, 1 → LEFT button DOWN (bit 0) → select or place object
+            } else if (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) {
                 if (_mouse_click_in(0, 16,
                         windowGetWidth(gIsoWindow) - 1,
                         windowGetHeight(gIsoWindow) - 1)) {
@@ -1271,7 +1336,7 @@ void edit_mapper()
             }
         }
 
-        // Toolbar art-slot right-click
+        // Toolbar art-slot right-click: select a proto for placement (ASM loc_487C22)
         {
             int rightBase = 160;
             if (keyCode >= rightBase && keyCode <= rightBase + max_art_buttons) {
@@ -1283,7 +1348,33 @@ void edit_mapper()
                     int pid = toolbar_proto(currentType, scrollOffset + slotIndex);
                     if (pid != -1) {
                         selectedPid = pid;
-                        update_toolname(&selectedPid, currentType, slotIndex);
+                        tool_active = slotIndex;
+                        draw_mode = true;
+                        _edit_area = 1;
+
+                        // Set mouse cursor to proto's art FID
+                        Proto* proto;
+                        if (protoGetProto(pid, &proto) != -1) {
+                            int artFid = proto->fid;
+                            if (artExists(artFid)) {
+                                gGameMouseBouncingCursor->fid = artFid;
+                                Rect mouseRect;
+                                objectSetRotation(gGameMouseBouncingCursor, rotation, &mouseRect);
+                                tileWindowRefreshRect(&mouseRect, gElevation);
+                            }
+                        }
+
+                        // Destroy any existing highlight
+                        if (hl_obj1 != nullptr) {
+                            mapper_destroy_highlight_obj(&_screen_obj, &hl_obj1);
+                            hl_obj1 = nullptr;
+                        }
+
+                        update_toolname(&selectedPid, currentType, scrollOffset + slotIndex);
+
+                        // Refresh toolbar art row
+                        Rect artRect = { 121, 1, _scr_size.right - 19, art_scale_height + 1 };
+                        windowRefreshRect(tool_win, &artRect);
                     }
                 }
                 continue;
@@ -1294,11 +1385,11 @@ void edit_mapper()
         switch (keyCode) {
 
         // --- FILE menu ---
-        case KEY_ALT_N:
+        case kBtnNew:
             mapNewMap();
             handle_new_map(&currentType, &scrollOffset);
             break;
-        case KEY_ALT_O:
+        case kBtnOpen:
             if (map_entered) {
                 win_timed_msg("This map has been Entered.  Can't Load.", _colorTable[31744]);
                 break;
@@ -1314,7 +1405,7 @@ void edit_mapper()
             interfaceBarHide();
             mapper_load_toolbar(currentType, &scrollOffset);
             break;
-        case KEY_ALT_S:
+        case kBtnSave:
             if (map_entered) {
                 win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[31744]);
                 break;
@@ -1322,7 +1413,7 @@ void edit_mapper()
             map_save_dialog();
             mapper_save_toolbar();
             break;
-        case KEY_ALT_A:
+        case kBtnSaveAs:
             if (map_entered) {
                 win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[31744]);
                 break;
@@ -1330,48 +1421,48 @@ void edit_mapper()
             map_save_as();
             mapper_save_toolbar();
             break;
-        case KEY_ALT_I:
+        case kBtnInfo:
             map_info_dialog();
             break;
-        case KEY_ALT_K:
+        case kBtnLoadAllTexts:
             load_all_maps_text();
             break;
 
         // --- TOOLS menu ---
-        case KEY_ALT_U:
+        case kBtnCreatePattern:
             create_spray_tool();
             break;
-        case KEY_ALT_Y:
+        case kBtnUsePattern:
             copy_spray_tile();
             break;
-        case KEY_ALT_G:
+        case kBtnMoveMap:
             mapper_shift_map();
             break;
-        case 4186:
+        case kBtnMoveMapElev:
             mapper_shift_map_elev();
             break;
-        case 4188:
+        case kBtnCopyMapElev:
             mapper_copy_map_elev();
             break;
-        case KEY_ALT_B:
+        case kBtnEditDude:
             characterEditorShow(gDude);
             break;
-        case KEY_ALT_E:
+        case kBtnFlushCache:
             mapper_flush_cache();
             break;
-        case KEY_ALT_D:
+        case kBtnAnimStepping:
             break;
-        case KEY_LOWERCASE_B:
+        case kBtnFixMapPids:
             break;
-        case 2165:
+        case kBtnBookmark:
             bookmarkChoose(currentType, &scrollOffset);
             break;
-        case 3123:
+        case kBtnToggleBlockObjView:
             map_toggle_block_obj_viewing();
             break;
-        case KEY_ALT_Z:
+        case kBtnClickToScroll:
             break;
-        case 5677: {
+        case kBtnSetExitGridData: {
             int val;
             if (win_get_num_i(&val, -1, 1000, false, "Map #:", 80, 80) != -1) mapInfo.map = val;
             if (win_get_num_i(&val, -1, 20000, false, "Tile #:", 80, 80) != -1) mapInfo.tile = val;
@@ -1379,30 +1470,30 @@ void edit_mapper()
             if (win_get_num_i(&val, -1, 5, false, "Rotation #:", 80, 80) != -1) mapInfo.rotation = val;
             break;
         }
-        case 5678:
+        case kBtnMarkExitGrids:
             markExitGridMode = 1;
             mapper_mark_exit_grid();
             break;
-        case 5679:
+        case kBtnMarkAllExitGrids:
             mapper_mark_all_exit_grids();
             break;
-        case 5666:
+        case kBtnClearMapLevel:
             map_clear_elevation();
             break;
-        case 5406:
+        case kBtnCreateAllMapTexts:
             break;
-        case 5405:
+        case kBtnRebuildAllMaps:
             proto_build_all_texts();
             break;
 
         // --- SCRIPTS menu ---
-        case KEY_LOWERCASE_I:
+        case kBtnListScripts:
             scr_debug_print_scripts();
             break;
-        case 5400:
+        case kBtnSetStartHex:
             place_entrance_hex();
             break;
-        case KEY_LOWERCASE_S: {
+        case kBtnPlaceSpatial: {
             if (map_entered) {
                 break;
             }
@@ -1421,7 +1512,7 @@ void edit_mapper()
             }
             break;
         }
-        case KEY_CTRL_F8: {
+        case kBtnDeleteSpatial: {
             int x, y;
             mouseGetPosition(&x, &y);
             int tile = tileFromScreenXY(x, y);
@@ -1430,15 +1521,15 @@ void edit_mapper()
             }
             break;
         }
-        case 5410:
+        case kBtnDeleteAllSpatialScripts:
             map_scr_remove_all_spatials();
             break;
-        case KEY_GRAVE:
+        case kBtnCreateScript:
             break;
-        case KEY_ALT_W:
+        case kBtnSetMapScript:
             map_set_script();
             break;
-        case 5544:
+        case kBtnShowMapScript:
             map_show_script();
             break;
 
@@ -1474,13 +1565,13 @@ void edit_mapper()
         }
 
         // --- Toolbar type switch (F1–F6) ---
-        case KEY_F1:
-        case KEY_F2:
-        case KEY_F3:
-        case KEY_F4:
-        case KEY_F5:
-        case KEY_F6: {
-            int newType = keyCode - KEY_F1;
+        case kBtnTypeItem:
+        case kBtnTypeCritter:
+        case kBtnTypeScenery:
+        case kBtnTypeWall:
+        case kBtnTypeTile:
+        case kBtnTypeMisc: {
+            int newType = keyCode - kBtnTypeItem;
             toolbarSetObjectType(newType, currentType, scrollOffset);
             break;
         }
@@ -1502,12 +1593,12 @@ void edit_mapper()
             break;
 
         // --- Rotation (Height Inc/Dec keys rotate objects) ---
-        case kBtnHeightInc:
-        case kBtnHeightDec: {
+        case kBtnRotateRight:
+        case kBtnRotateLeft: {
             Object* obj = map_entered ? gDude : (_screen_obj ? _screen_obj : gGameMouseBouncingCursor);
             if (obj != nullptr) {
                 Rect rect;
-                int newRot = (keyCode == kBtnHeightInc) ? (obj->rotation + 1) % 6 : (obj->rotation + 5) % 6;
+                int newRot = (keyCode == kBtnRotateRight) ? (obj->rotation + 1) % 6 : (obj->rotation + 5) % 6;
                 objectSetRotation(obj, newRot, &rect);
                 tileWindowRefreshRect(&rect, gElevation);
                 rotation = obj->rotation;
@@ -1517,13 +1608,13 @@ void edit_mapper()
         }
 
         // --- Type toggle buttons ---
-        case kBtnItemType:
-        case kBtnCritType:
-        case kBtnScenType:
-        case kBtnWallType:
-        case kBtnTileType:
-        case kBtnMiscType:
-            artToggleObjectTypeHidden(keyCode - kBtnItemType);
+        case kBtnHideItem:
+        case kBtnHideCrit:
+        case kBtnHideScen:
+        case kBtnHideWall:
+        case kBtnHideTile:
+        case kBtnHideMisc:
+            artToggleObjectTypeHidden(keyCode - kBtnHideItem);
             tileWindowRefresh();
             break;
 
@@ -1547,7 +1638,7 @@ void edit_mapper()
                 // TODO: proto_inst_edit_(_screen_obj)
             }
             break;
-        case KEY_UPPERCASE_E:
+        case kBtnProtoEditor:
             // Uppercase 'E' — proto editor on current toolbar selection
             if (!map_entered && !settings.mapper.use_art_not_protos && !draw_mode && tool_active != -1) {
                 int pid = toolbar_proto(currentType, scrollOffset + tool_active);
@@ -1573,7 +1664,7 @@ void edit_mapper()
             break;
 
         // --- 'p' — jump toolbar to object proto ---
-        case KEY_LOWERCASE_P:
+        case kBtnPickProto:
             if (!map_entered) {
                 if (currentType == OBJ_TYPE_TILE) {
                     int tileOffset;
@@ -1606,7 +1697,7 @@ void edit_mapper()
             break;
 
         // --- Quit ---
-        case KEY_ESCAPE:
+        case kBtnQuit:
             if (markExitGridMode == 1) {
                 markExitGridMode = 0;
                 win_timed_msg("Exiting mark exit-grids!", _colorTable[31744]);
@@ -1614,6 +1705,87 @@ void edit_mapper()
             }
             if (win_yes_no("Are you sure you want to quit?", 80, 80, 0x10104)) {
                 goto exitLoop;
+            }
+            break;
+
+        // --- 'z' / 'Z' — Light adjustment (ASM loc_489A34 / loc_489D0D) ---
+        case kBtnLightDistDec:
+            if (map_entered) {
+                int newDist = gDude->lightDistance - 1;
+                if (newDist < 0) newDist = 8;
+                Rect rect;
+                objectSetLight(gDude, newDist, gDude->lightIntensity, &rect);
+                tileWindowRefreshRect(&rect, gDude->elevation);
+            }
+            break;
+        case kBtnLightIntensityDec:
+            if (map_entered) {
+                int newIntensity = gDude->lightIntensity - 0x1999;
+                if (newIntensity < 0) newIntensity = 0x10000;
+                Rect rect;
+                objectSetLight(gDude, gDude->lightDistance, newIntensity, &rect);
+                tileWindowRefreshRect(&rect, gDude->elevation);
+            }
+            break;
+
+        // --- 'u' — Use/open object (ASM loc_4899AB) ---
+        case kBtnUse:
+            if (!map_entered && _screen_obj != nullptr) {
+                objectOpen(_screen_obj);
+            }
+            break;
+
+        // --- 'k' — Kill critter (ASM loc_489A8B) ---
+        case kBtnKill:
+            if (!map_entered && _screen_obj != nullptr && PID_TYPE(_screen_obj->pid) == OBJ_TYPE_CRITTER) {
+                critterKill(_screen_obj, 0x3F, true);
+            }
+            break;
+
+        // --- 'l' — Lock/unlock object (ASM loc_489A8B) ---
+        case kBtnLock:
+            if (!map_entered && _screen_obj != nullptr) {
+                Object* obj = _screen_obj;
+                if (obj->flags & OBJ_LOCKED) {
+                    objectUnlock(obj);
+                    win_timed_msg("Unlocked.", _colorTable[31744]);
+                } else {
+                    objectLock(obj);
+                    win_timed_msg("Locked.", _colorTable[31744]);
+                }
+            }
+            break;
+
+        // --- ':' — Edit proto from toolbar slot (ASM loc_489DC0) ---
+        case kBtnProtoNewEdit:
+            if (!map_entered && !settings.mapper.use_art_not_protos && tool_active != -1) {
+                int pid = toolbar_proto(currentType, scrollOffset + tool_active);
+                if (pid == -1) {
+                    proto_new(&pid, currentType);
+                }
+                protoEdit(pid);
+            }
+            break;
+
+        // --- 't' — Pick toolbar type (ASM loc_48A629) ---
+        case kBtnPickToolbarType:
+            if (!map_entered) {
+                int newType = pickToolbar(0);
+                if (newType != -1 && newType != currentType) {
+                    toolbarSetObjectType(newType, currentType, scrollOffset);
+                }
+            }
+            break;
+
+        // --- Light ambient adjust (ASM loc_489D0D) ---
+        case kBtnLightAmbientDec:
+            if (map_entered) {
+                lightDecreaseAmbient(0x28F);
+            }
+            break;
+        case kBtnLightAmbientInc:
+            if (map_entered) {
+                lightIncreaseAmbient(0x28F);
             }
             break;
 

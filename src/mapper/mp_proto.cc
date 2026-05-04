@@ -613,4 +613,11 @@ int proto_build_all_type(int type)
     return 0;
 }
 
+int protoEdit(int protoId)
+{
+    // TODO: implement proto editor dialog — load proto, show editor UI
+    (void)protoId;
+    return -1;
+}
+
 } // namespace fallout

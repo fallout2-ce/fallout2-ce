@@ -19,6 +19,8 @@ void lightSetTileIntensity(int elevation, int tile, int intensity);
 void lightIncreaseTileIntensity(int elevation, int tile, int intensity);
 void lightDecreaseTileIntensity(int elevation, int tile, int intensity);
 void lightResetTileIntensity();
+void lightDecreaseAmbient(int val);
+void lightIncreaseAmbient(int val);
 
 } // namespace fallout
 

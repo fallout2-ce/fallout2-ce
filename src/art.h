@@ -151,6 +151,7 @@ int _art_alias_num(int index);
 int artCritterFidShouldRun(int fid);
 int artAliasFid(int fid);
 int buildFid(int objectType, int frmId, int animType, int weaponCode, int rotation);
+int artListIndex(int objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);
 int artWrite(const char* path, unsigned char* data);

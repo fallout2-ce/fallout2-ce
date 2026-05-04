@@ -1,6 +1,7 @@
 #include "mapper/map_func.h"
 
 #include "actions.h"
+#include "art.h"
 #include "color.h"
 #include "db.h"
 #include "debug.h"
@@ -25,6 +26,20 @@ namespace fallout {
 
 // 0x5595CC
 static bool block_obj_view_on = false;
+
+static int fidShowList[9] = { 0 };
+static int blockedFidCache[9] = { 0 };
+
+constexpr int kBlockViewArtType[9] = { 2, 2, 2, 2, 3, 3, 5, 5, 2 };
+constexpr const char* kBlockViewListName[9] = {
+    "block2", "block3", "block4", "block5",
+    "block2", "block3", "scrblk", "trnblk", "blkexit"
+};
+constexpr int kBlockingProtoList[9] = {
+    0x02000043, 0x02000080, 0x0200008D, 0x02000158,
+    0x0300026D, 0x0300026E, 0x0500000C, 0x05000005,
+    0x02000031
+};
 
 // 0x4825B0
 void setup_map_dirs()
@@ -185,6 +200,48 @@ bool map_toggle_block_obj_viewing_on()
     return block_obj_view_on;
 }
 
+// map_toggle_block_obj_viewing
+void map_toggle_block_obj_viewing()
+{
+    if (!block_obj_view_on && fidShowList[0] == 0) {
+        for (int i = 0; i < 9; i++) {
+            int fid = artListIndex(kBlockViewArtType[i], kBlockViewListName[i]);
+            if (fid == -1) {
+                debugPrint("\nError: art_list_index failed in toggle_obj_view");
+            } else {
+                fidShowList[i] = buildFid(kBlockViewArtType[i], fid, 0, 0, 0);
+            }
+        }
+    }
+
+    for (Object* obj = objectFindFirstAtElevation(gElevation); obj != nullptr; obj = objectFindNextAtElevation()) {
+        if (obj == gDude || obj == gGameMouseBouncingCursor || (obj->flags & OBJECT_NO_SAVE)) continue;
+
+        for (int index = 0; index < 9; index++) {
+            if (kBlockingProtoList[index] != obj->pid) continue;
+
+            if (block_obj_view_on) {
+                if (blockedFidCache[index] != 0) {
+                    obj->fid = blockedFidCache[index];
+                }
+            } else {
+                if (blockedFidCache[index] == 0) {
+                    Proto* proto;
+                    if (protoGetProto(obj->pid, &proto) == 0) {
+                        blockedFidCache[index] = proto->fid;
+                    }
+                }
+                if (fidShowList[index] != 0) {
+                    obj->fid = fidShowList[index];
+                }
+            }
+        }
+    }
+
+    block_obj_view_on = !block_obj_view_on;
+    tileWindowRefresh();
+}
+
 // =========================================================================
 // P2 stubs — to be fully implemented from mapper2.asm
 // =========================================================================
@@ -224,7 +281,6 @@ void map_save_as()
     int rc = _win_get_str(newName, 8, "Save file (no extension):", 80, 80);
     if (rc == -1) return;
 
-    // Uppercase and append .MAP
     compat_strupr(newName);
     if (strstr(newName, ".MAP") == nullptr) {
         strcat(newName, ".MAP");
@@ -266,12 +322,6 @@ void create_spray_tool()
 void copy_spray_tile()
 {
     // TODO: copy spray tool tile pattern
-}
-
-void map_toggle_block_obj_viewing()
-{
-    block_obj_view_on = !block_obj_view_on;
-    // TODO: re-render tiles to reflect block view toggle
 }
 
 void mapper_shift_map()
@@ -368,6 +418,14 @@ int pickHex()
         renderPresent();
         sharedFpsLimiter.throttle();
     }
+}
+
+//
+int pickToolbar(int topY)
+{
+    // TODO: show toolbar type picker dialog at given Y position, return selected type index
+    (void)topY;
+    return -1;
 }
 
 } // namespace fallout

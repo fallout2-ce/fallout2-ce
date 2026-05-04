@@ -16,6 +16,7 @@
 #include "proto_instance.h"
 #include "scripts.h"
 #include "settings.h"
+#include "svga.h"
 #include "text_object.h"
 #include "tile.h"
 #include "window_manager.h"
@@ -350,8 +351,8 @@ static void scr_label_object(Object* obj, const char* scriptName)
     Rect rect;
     objectGetRect(obj, &rect);
 
-    constexpr int kScreenWidth = 640;
-    constexpr int kScreenHeight = 420;
+    const int kScreenWidth = rectGetWidth(&_scr_size);
+    const int kScreenHeight = rectGetHeight(&_scr_size);
     if (rect.left < 0 || rect.right >= kScreenWidth || rect.bottom >= kScreenHeight) {
         return;
     }
