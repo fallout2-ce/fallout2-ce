@@ -262,7 +262,7 @@ int scr_choose(int scriptType)
                 result = foundIndex | (type << 24);
             }
         } else if (selection == -1) {
-            char typedName[14] = { };
+            char typedName[14] = {};
             _win_get_str(typedName, 13, "Type in Script Name", 100, 50);
             compat_strupr(typedName);
 
