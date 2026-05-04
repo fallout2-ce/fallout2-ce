@@ -65,7 +65,7 @@ int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int xMin, int yM
     }
 
     unsigned char form[4];
-    unsigned int  formSize;
+    unsigned int formSize;
     unsigned char ilbm[4];
     if (fileRead(form, 1, 4, stream) != 4
         || memcmp(form, "FORM", 4) != 0
@@ -92,7 +92,7 @@ int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int xMin, int yM
 
     while (true) {
         unsigned char chunkType[4];
-        unsigned int  chunkSize;
+        unsigned int chunkSize;
         if (fileRead(chunkType, 1, 4, stream) != 4
             || fileReadUInt32(stream, &chunkSize) == -1) {
             break;
