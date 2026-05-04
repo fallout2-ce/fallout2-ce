@@ -1016,6 +1016,27 @@ bool proto_user_is_librarian()
     return true;
 }
 
+static void toolbar_set_obj_type(int newType, int& currentType, int& scrollOffset)
+{
+    if (newType == currentType) return;
+
+    toolbar_info[currentType].offset = scrollOffset;
+    currentType = newType;
+    scrollOffset = toolbar_info[currentType].offset;
+    print_toolbar_name(currentType);
+    tool_active = -1;
+    update_art(currentType, scrollOffset);
+    clear_toolname();
+    mapper_destroy_highlight_obj(&_screen_obj, nullptr);
+    _screen_obj = nullptr;
+}
+static void elevationNumberRefresh()
+{
+    int pitch = rectGetWidth(&_scr_size);
+    blitBufferToBuffer(e_num[gElevation], 19, 26, 19, tool_buf + 62 * pitch + 30, pitch);
+    Rect numRect = { 30, 62, 50, 88 };
+    windowRefreshRect(tool_win, &numRect);
+}
 // 0x4877D0
 void edit_mapper()
 {
@@ -1059,14 +1080,6 @@ void edit_mapper()
     // TODO: these calls aren't in original code, figure out how it worked without them
     _gmouse_enable();
     interfaceBarHide();
-
-    auto switchToolbarType = [&](int newType) {
-        currentType = newType;
-        scrollOffset = toolbar_info[currentType].offset;
-        print_toolbar_name(currentType);
-        update_art(currentType, scrollOffset);
-    };
-
     while (true) {
         sharedFpsLimiter.mark();
         int keyCode = inputGetInput();
@@ -1334,17 +1347,31 @@ void edit_mapper()
             break;
         }
 
+        // --- Toolbar type switch (F1–F6) ---
+        case KEY_F1:
+        case KEY_F2:
+        case KEY_F3:
+        case KEY_F4:
+        case KEY_F5:
+        case KEY_F6: {
+            int newType = keyCode - KEY_F1;
+            toolbar_set_obj_type(newType, currentType, scrollOffset);
+            break;
+        }
+
         // --- Elevation ---
         case kBtnElevUp:
             if (gElevation < ELEVATION_COUNT - 1) {
                 mapSetElevation(gElevation + 1);
                 tileWindowRefresh();
+                elevationNumberRefresh();
             }
             break;
         case kBtnElevDown:
             if (gElevation > 0) {
                 mapSetElevation(gElevation - 1);
                 tileWindowRefresh();
+                elevationNumberRefresh();
             }
             break;
 
@@ -1365,27 +1392,12 @@ void edit_mapper()
 
         // --- Type toggle buttons ---
         case kBtnItemType:
-            artToggleObjectTypeHidden(OBJ_TYPE_ITEM);
-            tileWindowRefresh();
-            break;
         case kBtnCritType:
-            artToggleObjectTypeHidden(OBJ_TYPE_CRITTER);
-            tileWindowRefresh();
-            break;
         case kBtnScenType:
-            artToggleObjectTypeHidden(OBJ_TYPE_SCENERY);
-            tileWindowRefresh();
-            break;
         case kBtnWallType:
-            artToggleObjectTypeHidden(OBJ_TYPE_WALL);
-            tileWindowRefresh();
-            break;
         case kBtnTileType:
-            artToggleObjectTypeHidden(OBJ_TYPE_TILE);
-            tileWindowRefresh();
-            break;
         case kBtnMiscType:
-            artToggleObjectTypeHidden(OBJ_TYPE_MISC);
+            artToggleObjectTypeHidden(keyCode - kBtnItemType);
             tileWindowRefresh();
             break;
 
@@ -1512,7 +1524,7 @@ void print_toolbar_name(int object_type)
 
     rect.left = 0;
     rect.top = 0;
-    rect.right = 0;
+    rect.right = 99;
     rect.bottom = 22;
     bufferFill(tool_buf + 2 + 2 * (_scr_size.right - _scr_size.left) + 2,
         96,
