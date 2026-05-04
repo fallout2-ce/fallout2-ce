@@ -1919,22 +1919,6 @@ static void opStartGameDialog(Program* program)
         if (protoGetProto(obj->pid, &proto) == -1) {
             return;
         }
-
-        // Use head FID from critter proto when script doesn't specify one.
-        if (headId == -1 && proto->critter.headFid != -1) {
-            headId = proto->critter.headFid & 0xFFF;
-        }
-
-        // Check [Heads] section in ddraw.ini for PID→head index mapping.
-        // This allows mods to add talking heads without modifying dialog scripts.
-        if (headId == -1) {
-            char pidKey[20];
-            snprintf(pidKey, sizeof(pidKey), "%d", obj->pid);
-            int configHeadId;
-            if (configGetInt(&gSfallConfig, SFALL_CONFIG_HEADS_KEY, pidKey, &configHeadId)) {
-                headId = configHeadId;
-            }
-        }
     }
 
     if (headId != -1) {
