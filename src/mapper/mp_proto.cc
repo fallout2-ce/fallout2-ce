@@ -620,4 +620,10 @@ int protoEdit(int protoId)
     return -1;
 }
 
+void protoInstEdit(Object* obj)
+{
+    // TODO: open proto instance editor for the given object
+    (void)obj;
+}
+
 } // namespace fallout

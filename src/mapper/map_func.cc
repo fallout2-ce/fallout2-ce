@@ -428,4 +428,33 @@ int pickToolbar(int topY)
     return -1;
 }
 
+void placeObject(int pid, int fid)
+{
+    // TODO: create an object at the current mouse cursor position (gGameMouseBouncingCursor->tile)
+    (void)pid;
+    (void)fid;
+}
+
+void placeTile(int pid, int fid)
+{
+    // TODO: create a tile at the current mouse cursor position (gGameMouseBouncingCursor->tile)
+    (void)pid;
+    (void)fid;
+}
+
+void copyObject()
+{
+    // TODO: copy the selected object (shareFpsLimiter.screen_obj) to internal clipboard
+}
+
+void copyTile()
+{
+    // TODO: copy the selected tile to internal clipboard
+}
+
+void eraseObject()
+{
+    // TODO: destroy the object under the mouse cursor (gGameMouseBouncingCursor->tile)
+}
+
 } // namespace fallout

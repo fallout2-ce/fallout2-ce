@@ -29,6 +29,11 @@ void mapper_copy_map_elev();
 void mapper_flush_cache();
 int pickHex();
 int pickToolbar(int topY);
+void placeObject(int pid, int fid);
+void placeTile(int pid, int fid);
+void copyObject();
+void copyTile();
+void eraseObject();
 
 } // namespace fallout
 
