@@ -834,7 +834,7 @@ static void opIf(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
 
-    if (!value.isEmpty()) {
+    if (!value.isEmpty(program)) {
         programStackPopValue(program);
     } else {
         program->instructionPointer = programStackPopInteger(program);
@@ -846,7 +846,7 @@ static void opWhile(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
 
-    if (value.isEmpty()) {
+    if (value.isEmpty(program)) {
         program->instructionPointer = programStackPopInteger(program);
     }
 }
@@ -3284,7 +3284,7 @@ void* programReturnStackPopPointer(Program* program)
     return programValue.pointerValue;
 }
 
-bool ProgramValue::isEmpty() const
+bool ProgramValue::isEmpty(Program* program) const
 {
     switch (opcode) {
     case VALUE_TYPE_INT:
@@ -3294,14 +3294,10 @@ bool ProgramValue::isEmpty() const
     case VALUE_TYPE_PTR:
         return pointerValue == nullptr;
     case VALUE_TYPE_STRING:
-    case VALUE_TYPE_DYNAMIC_STRING:
-        // Strings are truthy whenever they have a string-table reference; sfall
-        // treats any non-empty string content as true. Without a Program* we
-        // can't resolve content here, so callers (opIf/opWhile) handle the
-        // empty-content case via programGetString. Returning false here means
-        // "has a string value" — preventing the silent always-empty bug that
-        // broke npc_armor.mod's `while (sect.PID)` loop when PID was a string.
-        return false;
+    case VALUE_TYPE_DYNAMIC_STRING: {
+        const char* string = asString(program);
+        return string == nullptr || string[0] == '\0';
+    }
     }
 
     // Should be unreachable.

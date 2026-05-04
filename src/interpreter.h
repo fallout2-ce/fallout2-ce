@@ -166,7 +166,7 @@ public:
         void* pointerValue;
     };
 
-    bool isEmpty() const;
+    bool isEmpty(Program* program) const;
     bool isInt() const;
     bool isFloat() const;
     bool isString() const;

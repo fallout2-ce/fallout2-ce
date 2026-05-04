@@ -1,6 +1,7 @@
 #ifndef FALLOUT_SFALL_SCRIPT_HOOKS_H_
 #define FALLOUT_SFALL_SCRIPT_HOOKS_H_
 
+#include "interpreter_extra.h"
 #include "interpreter.h"
 #include "scripts.h"
 
@@ -270,15 +271,9 @@ int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
 
-// HOOK_INVENWIELD: fires when a critter wields/unwields an armor or hand item.
-// slot is INVEN_TYPE_WORN/RIGHT_HAND/LEFT_HAND. isWield is 1 on equip, 0 on
-// unequip. The script may call set_sfall_return(0) to veto the action; this
-// helper returns true when the engine should proceed, false to abort.
-bool scriptHooks_InvenWield(Object* critter, Object* item, int slot, int isWield);
-
-// HOOK_CANUSEWEAPON: fires while AI is picking a weapon. The script may
-// veto a particular weapon. Returns true if the weapon may be used.
-bool scriptHooks_CanUseWeapon(Object* critter, Object* weapon, int slot);
+int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid);
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove);
+bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, int hitMode);
 
 } // namespace fallout
 

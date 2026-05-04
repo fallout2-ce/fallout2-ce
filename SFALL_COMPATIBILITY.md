@@ -97,8 +97,8 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Steal | `HOOK_STEAL` | 🚫 | Et tu |
 | WithinPerception | `HOOK_WITHINPERCEPTION` | ✅ | - |
 | InventoryMove | `HOOK_INVENTORYMOVE` | ✅ | - |
-| InvenWield | `HOOK_INVENWIELD` | 🚫 | - |
-| AdjustFID | `HOOK_ADJUSTFID` | 🚫 | - |
+| InvenWield | `HOOK_INVENWIELD` | ✅ | - |
+| AdjustFID | `HOOK_ADJUSTFID` | ✅ | Second hook arg currently matches the first because CE has no internal FID modifiers like Hero Appearance. |
 | CombatTurn | `HOOK_COMBATTURN` | ✅ | - |
 | StdProcedure | `HOOK_STDPROCEDURE` | 🚫 | Et tu |
 | StdProcedureEnd | `HOOK_STDPROCEDURE_END` | 🚫 | - |
@@ -120,5 +120,5 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | AdjustRads | `HOOK_ADJUSTRADS` | 🚫 | (maybe) |
 | RollCheck | `HOOK_ROLLCHECK` | 🚫 | - |
 | BestWeapon | `HOOK_BESTWEAPON` | 🚫 | - |
-| CanUseWeapon | `HOOK_CANUSEWEAPON` | 🚫 | - |
+| CanUseWeapon | `HOOK_CANUSEWEAPON` | ✅ | - |
 | BuildSfxWeapon | `HOOK_BUILDSFXWEAPON` | 🚫 | - |

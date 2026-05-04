@@ -594,6 +594,15 @@ int itemDropAll(Object* critter, int tile)
         } else {
             if ((item->flags & OBJECT_EQUIPPED) != 0) {
                 hasEquippedItems = true;
+                InvenSlot invenSlot = InvenSlot::RightHand;
+
+                if ((item->flags & OBJECT_WORN) != 0) {
+                    invenSlot = InvenSlot::Armor;
+                } else if ((item->flags & OBJECT_IN_LEFT_HAND) != 0) {
+                    invenSlot = InvenSlot::LeftHand;
+                }
+
+                scriptHooks_InvenWield(critter, item, invenSlot, 0, 1);
 
                 if ((item->flags & OBJECT_WORN) != 0) {
                     Proto* proto;
@@ -969,20 +978,22 @@ bool dudeIsWeaponDisabled(Object* weapon)
         return false;
     }
 
+    bool canUse = true;
+
     int flags = gDude->data.critter.combat.results;
     if ((flags & DAM_CRIP_ARM_LEFT) != 0 && (flags & DAM_CRIP_ARM_RIGHT) != 0) {
-        return true;
+        canUse = false;
     }
 
     // NOTE: Uninline.
     bool isTwoHanded = weaponIsTwoHanded(weapon);
-    if (isTwoHanded) {
+    if (canUse && isTwoHanded) {
         if ((flags & DAM_CRIP_ARM_LEFT) != 0 || (flags & DAM_CRIP_ARM_RIGHT) != 0) {
-            return true;
+            canUse = false;
         }
     }
 
-    return false;
+    return !scriptHooks_CanUseWeapon(canUse, gDude, weapon, -1);
 }
 
 // 0x477FB0

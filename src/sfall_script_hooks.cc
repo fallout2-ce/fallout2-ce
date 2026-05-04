@@ -8,6 +8,9 @@
 
 #include "db.h"
 #include "debug.h"
+#include "game.h"
+#include "interface.h"
+#include "interpreter_extra.h"
 #include "scripts.h"
 
 #include <assert.h>
@@ -541,78 +544,86 @@ void scriptHooks_OnDeath(Object* critter)
     HOOK_ADJUSTFID
 
     Runs when the game calculates what FID to display for a critter in UI
-    (inventory, barter, loot). Used by npc_armor mod.
+    (inventory, barter).
 
-    int     arg0 - the base FID being displayed (sfall passes a single arg;
-                   the script reads currFid := get_sfall_arg)
+    int     arg0 - the vanilla FID calculated by the engine
+    int     arg1 - the modified FID after internal CE adjustments (curently always the same as arg0))
 
-    int     ret0 - override FID (or -1 to keep base)
+    int     ret0 - override FID
 */
-int scriptHooks_AdjustFid(Object* critter, int baseFid)
+int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid)
 {
-    // critter is unused at the script layer — sfall's HOOK_ADJUSTFID passes
-    // only the FID. The mod determines the critter via dude_obj (which sfall
-    // can rebind via set_dude_obj when controlling another party member).
-    (void)critter;
-    ScriptHookCall hook(HOOK_ADJUSTFID, 1, { baseFid });
+    ScriptHookCall hook(HOOK_ADJUSTFID, 1, { vanillaFid, modifiedFid });
     hook.call();
 
     if (hook.numReturnValues() > 0) {
-        int overrideFid = hook.getReturnValueAt(0).asInt();
-        if (overrideFid >= 0) {
-            return overrideFid;
-        }
+        return hook.getReturnValueAt(0).asInt();
     }
 
-    return baseFid;
+    return modifiedFid;
 }
 
 /*
     HOOK_INVENWIELD
 
-    Runs when an item is equipped or unequipped — for any critter, including
-    NPC auto-equip via "Use Best Armor". This is the npc_armor mod's primary
-    trigger for swapping an NPC's display sprite.
+    Runs before causing a critter or the player to wield/unwield an armor or a weapon (except when using the inventory by PC). An example usage would be to change critter art depending on armor being used or to dynamically customize weapon animations.
 
     Critter arg0 - the critter wielding/unwielding
     Item    arg1 - the item being moved
     int     arg2 - INVEN_TYPE_WORN (0), INVEN_TYPE_RIGHT_HAND (1), or
                    INVEN_TYPE_LEFT_HAND (2)
     int     arg3 - 1 on wield, 0 on unwield
+    int     arg4 - 1 when removing an equipped item from inventory, 0 otherwise
 
-    int     ret0 - non-zero allows the action; 0 vetoes it
+    int     ret0 - overrides hard-coded handler (-1 = use engine handler) (NOT RECOMMENDED)
 */
-bool scriptHooks_InvenWield(Object* critter, Object* item, int slot, int isWield)
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove)
 {
-    ScriptHookCall hook(HOOK_INVENWIELD, 1, { critter, item, slot, isWield });
+    if (!isWield) {
+        // Sfall: NPCs only ever expose the active (right) hand here.
+        if (slot == InvenSlot::LeftHand && critter != gDude) {
+            return true;
+        }
+
+        // Sfall: ignore player non-active hand slot.
+        if (slot != InvenSlot::Armor && critter == gDude) {
+            int activeSlot = slot == InvenSlot::RightHand ? HAND_RIGHT : HAND_LEFT;
+            if (activeSlot != interfaceGetCurrentHand()) {
+                return true;
+            }
+        }
+    }
+
+    ScriptHookCall hook(HOOK_INVENWIELD, 1, { critter, item, static_cast<int>(slot), isWield, isRemove });
     hook.call();
 
     if (hook.numReturnValues() <= 0) {
         return true;
     }
-    return hook.getReturnValueAt(0).asInt() != 0;
+
+    int result = hook.getReturnValueAt(0).asInt();
+    return result == -1;
 }
 
 /*
     HOOK_CANUSEWEAPON
 
-    Runs while the engine's AI is evaluating whether a critter can use a
-    weapon. The npc_armor mod uses this to block weapons whose anim code
-    isn't supported by the swapped-armor sprite set.
+    Runs while the AI or interface bar checks whether a weapon can be used.
 
     Critter arg0 - the critter being evaluated
     Item    arg1 - the candidate weapon
-    int     arg2 - hand slot (1 right, 2 left)
+    int     arg2 - attack type / hit mode, or -1 for dude_obj interface checks
+    int     arg3 - original engine result: 1 if weapon can be used, 0 otherwise
 
-    int     ret0 - non-zero permits use; 0 forbids it
+    int     ret0 - overrides the result of engine function
 */
-bool scriptHooks_CanUseWeapon(Object* critter, Object* weapon, int slot)
+bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, int hitMode)
 {
-    ScriptHookCall hook(HOOK_CANUSEWEAPON, 1, { critter, weapon, slot });
+    ScriptHookCall hook(HOOK_CANUSEWEAPON, 1, { critter, weapon, hitMode, result ? 1 : 0 });
     hook.call();
 
     if (hook.numReturnValues() <= 0) {
-        return true;
+        return result;
     }
     return hook.getReturnValueAt(0).asInt() != 0;
 }
