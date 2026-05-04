@@ -536,7 +536,11 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
 endif()
 
 if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
-    add_executable(mapper-ce WIN32)
+    if(WIN32)
+        add_executable(mapper-ce WIN32)
+    else()
+        add_executable(mapper-ce)
+    endif()
 
     target_sources(mapper-ce PUBLIC
         ${FALLOUT_ENGINE_SOURCES}
@@ -577,6 +581,10 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
 
     if(APPLE)
         target_link_libraries(mapper-ce "-framework CoreFoundation")
+        set_target_properties(mapper-ce PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        )
     endif()
 
     target_include_directories(mapper-ce PUBLIC "third_party/lodepng")
