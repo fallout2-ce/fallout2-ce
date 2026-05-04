@@ -207,7 +207,7 @@ static bool regModFlagsDialog(int* flags, int objectType)
         { '7', "Trans Steam", OBJECT_TRANS_STEAM, true },
         { '8', "Trans Energy", OBJECT_TRANS_ENERGY, true },
         { '9', "Trans Red", OBJECT_TRANS_RED, true },
-        { '0', "Shoot Thru", OBJECT_SHOOT_THRU, true },
+        { '0', "Shoot Thru", static_cast<int>(OBJECT_SHOOT_THRU), true },
         { '-', "Light Thru", OBJECT_LIGHT_THRU, true },
         { '_', "Wall Trans End", OBJECT_WALL_TRANS_END, false }, // wall/scenery only
         { '!', "No Highlight", OBJECT_NO_HIGHLIGHT, false }, // item only
