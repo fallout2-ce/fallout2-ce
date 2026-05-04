@@ -1399,8 +1399,8 @@ static bool _setup_inventory(int inventoryWindowType)
             }
 
             // Invisible button representing left character.
-                buttonCreateAction(gInventoryBarterBackgroundWindow,
-                    15 + kInventoryLeftBodyViewOffsetX, 25, INVENTORY_BODY_VIEW_WIDTH, INVENTORY_BODY_VIEW_HEIGHT, 2500);
+            buttonCreateAction(gInventoryBarterBackgroundWindow,
+                15 + kInventoryLeftBodyViewOffsetX, 25, INVENTORY_BODY_VIEW_WIDTH, INVENTORY_BODY_VIEW_HEIGHT, 2500);
 
             // Invisible button representing right character.
             buttonCreateAction(gInventoryBarterBackgroundWindow,
