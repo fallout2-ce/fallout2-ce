@@ -16,6 +16,7 @@
 #include "kb.h"
 #include "mapper/mp_proto.h"
 #include "mapper/mp_scrpt.h"
+#include "memory.h"
 #include "object.h"
 #include "proto.h"
 #include "proto_instance.h"
@@ -420,6 +421,72 @@ static int protoInstItemEdit(Object* obj)
     }
 }
 
+// proto_inst_add_to_inven
+static int protoInstAddToInven(int pid, int count)
+{
+    if (proto_inst_who_obj == nullptr) return -1;
+
+    Proto* proto;
+    if (protoGetProto(pid, &proto) == -1) return 0;
+
+    Object* newObj;
+    if (objectCreateWithFidPid(&newObj, proto->fid, pid) == -1) return 0;
+
+    objectSetLocation(newObj, 0, 0, nullptr);
+
+    if (itemAdd(proto_inst_who_obj, newObj, count) != 0) {
+        win_timed_msg("Error adding obj to critter!", _colorTable[32747] | FONT_SHADOW);
+        return 0;
+    }
+
+    _obj_disconnect(newObj, nullptr);
+    return 0;
+}
+
+// proto_choose_pid_inven_fid
+static int protoInstChoosePidInvenFid(Proto* proto)
+{
+    if (PID_TYPE(proto->pid) != 0) return -1;
+    if (proto->item.inventoryFid == -1) return proto->fid;
+    return proto->item.inventoryFid;
+}
+
+// protoChooseItemsForInven - let user pick item protos to add to critter inventory
+static void protoInstChooseItemsForInven(Object* obj)
+{
+    proto_inst_who_obj = obj;
+
+    constexpr int kMaxItems = 200;
+    char** names = static_cast<char**>(internal_malloc(sizeof(char*) * kMaxItems));
+    int* pids = static_cast<int*>(internal_malloc(sizeof(int) * kMaxItems));
+    int count = 0;
+
+    for (int pid = 0x00000001; count < kMaxItems; pid++) {
+        Proto* proto;
+        if (protoGetProto(pid, &proto) == -1) break;
+        if (PID_TYPE(pid) != OBJ_TYPE_ITEM) continue;
+
+        names[count] = static_cast<char*>(internal_malloc(64));
+        snprintf(names[count], 64, "%s", protoGetName(pid));
+        pids[count] = pid;
+        count++;
+    }
+
+    int selection = _win_list_select("Pick item to add", names, count, nullptr, 80, 200, _colorTable[32747] | FONT_SHADOW);
+    if (selection != -1) {
+        int quantity = 1;
+        win_get_num_i(&quantity, 1, 32000, false, "How many?", 100, 100);
+        protoInstAddToInven(pids[selection], quantity);
+    }
+
+    for (int i = 0; i < count; i++) {
+        internal_free(names[i]);
+    }
+    internal_free(names);
+    internal_free(pids);
+    proto_inst_who_obj = nullptr;
+}
+
 // proto_inst_critter_edit_
 static int protoInstCritterEdit(Object* obj)
 {
@@ -428,73 +495,100 @@ static int protoInstCritterEdit(Object* obj)
     int objProtoOff;
     int bufOff;
 
-    if (protoInstSetupEdit(&winId, obj, &objType, &objProtoOff, &bufOff, "Critter Instance Editor") == -1) {
-        return -1;
-    }
-
-    // Critter-specific buttons
-    constexpr int kBaseY = 107;
-    _win_register_text_button(winId, 10, kBaseY, -1, -1, -1, kInstKeyAddToInven, "Add to Inventory", 0);
-    _win_register_text_button(winId, 10, kBaseY + 21, -1, -1, -1, kInstKeyViewInven, "View Inventory List", 0);
-    _win_register_text_button(winId, 10, kBaseY + 42, -1, -1, -1, kInstKeyClearInven, "Clear Inventory", 0);
-
-    // AI Packet
-    constexpr int kAiY = kBaseY + 63;
-    _win_register_text_button(winId, 10, kAiY, -1, -1, -1, kInstKeyAiPacket, "AI Packet", 0);
-    const char* aiName = combat_ai_name(obj->data.critter.combat.aiPacket);
-    if (aiName == nullptr) aiName = "<Error>";
-    windowDrawText(winId, aiName, 80, 100, kAiY + 4, _colorTable[32747] | FONT_SHADOW);
-
-    // Team Num
-    constexpr int kTeamY = kAiY;
-    _win_register_text_button(winId, 240, kTeamY, -1, -1, -1, kInstKeyTeamNum, "Team Num", 0);
-    char teamStr[16];
-    snprintf(teamStr, sizeof(teamStr), "%d", obj->data.critter.combat.team);
-    windowDrawText(winId, teamStr, 80, 320, kTeamY + 4, _colorTable[32747] | FONT_SHADOW);
-
-    windowRefresh(winId);
-
-    while (true) {
-        sharedFpsLimiter.mark();
-
-        int key = inputGetInput();
-
-        if (key == KEY_ESCAPE || key == KEY_RETURN) {
-            windowDestroy(winId);
-            return 0;
+    for (;;) {
+        if (protoInstSetupEdit(&winId, obj, &objType, &objProtoOff, &bufOff, "Critter Instance Editor") == -1) {
+            return -1;
         }
 
-        if (key == kInstKeyFlags) {
-            if (regModInstFlags(obj)) windowRefresh(winId);
-        } else if (key == kInstKeyLight) {
-            if (applyLightEdit(obj)) windowRefresh(winId);
-        } else if (key == 'S' && obj->sid != -1) {
-            scriptRemove(obj->sid);
-            obj->sid = -1;
-            windowRefresh(winId);
-        } else if (key == kInstKeyNewScript) {
-            applyNewScript(obj, 4, winId, 194);
-        } else if (key == kInstKeyAiPacket) {
-            proto_pick_ai_packet(&obj->data.critter.combat.aiPacket);
-            const char* newAiName = combat_ai_name(obj->data.critter.combat.aiPacket);
-            if (newAiName == nullptr) newAiName = "<Error>";
-            windowDrawText(winId, newAiName, 80, 100, kAiY + 4, _colorTable[32747] | FONT_SHADOW);
-            windowRefresh(winId);
-        } else if (key == kInstKeyTeamNum) {
-            int team = obj->data.critter.combat.team;
-            if (win_get_num_i(&team, 0, 32000, false, "Team Num", 100, 100) != -1) {
-                obj->data.critter.combat.team = static_cast<char>(team);
-                snprintf(teamStr, sizeof(teamStr), "%d", obj->data.critter.combat.team);
-                windowDrawText(winId, teamStr, 80, 240, kTeamY + 4, _colorTable[32747] | FONT_SHADOW);
+        // Critter-specific buttons
+        constexpr int kBaseY = 107;
+        _win_register_text_button(winId, 10, kBaseY, -1, -1, -1, kInstKeyAddToInven, "Add to Inventory", 0);
+        _win_register_text_button(winId, 10, kBaseY + 21, -1, -1, -1, kInstKeyViewInven, "View Inventory List", 0);
+        _win_register_text_button(winId, 10, kBaseY + 42, -1, -1, -1, kInstKeyClearInven, "Clear Inventory", 0);
+
+        // AI Packet
+        constexpr int kAiY = kBaseY + 63;
+        _win_register_text_button(winId, 10, kAiY, -1, -1, -1, kInstKeyAiPacket, "AI Packet", 0);
+        const char* aiName = combat_ai_name(obj->data.critter.combat.aiPacket);
+        if (aiName == nullptr) aiName = "<Error>";
+        windowDrawText(winId, aiName, 80, 100, kAiY + 4, _colorTable[32747] | FONT_SHADOW);
+
+        // Team Num
+        constexpr int kTeamY = kAiY;
+        _win_register_text_button(winId, 240, kTeamY, -1, -1, -1, kInstKeyTeamNum, "Team Num", 0);
+        char teamStr[16];
+        snprintf(teamStr, sizeof(teamStr), "%d", obj->data.critter.combat.team);
+        windowDrawText(winId, teamStr, 80, 320, kTeamY + 4, _colorTable[32747] | FONT_SHADOW);
+
+        windowRefresh(winId);
+
+        bool needRedraw = false;
+        while (true) {
+            sharedFpsLimiter.mark();
+
+            if (needRedraw) {
                 windowRefresh(winId);
+                needRedraw = false;
             }
-        } else if (key == kInstKeyClearInven) {
-            _obj_inven_free(&obj->data.inventory);
-            windowRefresh(winId);
-        }
 
-        renderPresent();
-        sharedFpsLimiter.throttle();
+            int key = inputGetInput();
+
+            if (key == KEY_ESCAPE || key == KEY_RETURN) {
+                windowDestroy(winId);
+                return 0;
+            }
+
+            if (key == kInstKeyFlags) {
+                if (regModInstFlags(obj)) needRedraw = true;
+            } else if (key == kInstKeyLight) {
+                if (applyLightEdit(obj)) needRedraw = true;
+            } else if (key == 'S' && obj->sid != -1) {
+                scriptRemove(obj->sid);
+                obj->sid = -1;
+                needRedraw = true;
+            } else if (key == kInstKeyNewScript) {
+                applyNewScript(obj, 4, winId, 194);
+            } else if (key == kInstKeyAiPacket) {
+                proto_pick_ai_packet(&obj->data.critter.combat.aiPacket);
+                const char* newAiName = combat_ai_name(obj->data.critter.combat.aiPacket);
+                if (newAiName == nullptr) newAiName = "<Error>";
+                windowDrawText(winId, newAiName, 80, 100, kAiY + 4, _colorTable[32747] | FONT_SHADOW);
+                needRedraw = true;
+            } else if (key == kInstKeyTeamNum) {
+                int team = obj->data.critter.combat.team;
+                if (win_get_num_i(&team, 0, 32000, false, "Team Num", 100, 100) != -1) {
+                    obj->data.critter.combat.team = static_cast<char>(team);
+                    snprintf(teamStr, sizeof(teamStr), "%d", obj->data.critter.combat.team);
+                    windowDrawText(winId, teamStr, 80, 240, kTeamY + 4, _colorTable[32747] | FONT_SHADOW);
+                    needRedraw = true;
+                }
+            } else if (key == kInstKeyClearInven) {
+                _obj_inven_free(&obj->data.inventory);
+                needRedraw = true;
+            } else if (key == kInstKeyAddToInven) {
+                protoInstChooseItemsForInven(obj);
+                needRedraw = true;
+            } else if (key == kInstKeyViewInven) {
+                windowDestroy(winId);
+
+                inventorySetDude(obj, obj->pid);
+                inventoryOpen();
+                inventoryResetDude();
+
+                Object* rightHandItem = critterGetItem2(obj);
+                int animCode = 0;
+                if (rightHandItem != nullptr && itemGetType(rightHandItem) == ITEM_TYPE_WEAPON) {
+                    animCode = weaponGetAnimationCode(rightHandItem);
+                }
+                obj->fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, obj->frame + 1, animCode, 0);
+                tileWindowRefresh();
+
+                break;
+            }
+
+            renderPresent();
+            sharedFpsLimiter.throttle();
+        }
     }
 }
 
