@@ -79,7 +79,7 @@ static int scriptsClearPendingRequests();
 static int scriptLocateProcs(Script* scr);
 static int scriptsLoadScriptsList();
 static int scriptsFreeScriptsList();
-static int scriptsGetFileName(int scriptIndex, char* name, size_t size);
+int scriptsGetFileName(int scriptIndex, char* name, size_t size);
 static int _scr_header_load();
 static void scriptsCloseNearbyElevatorDoors();
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition);
@@ -1419,10 +1419,15 @@ int _scr_find_str_run_info(int scriptIndex, int* /*unused*/, int sid)
 }
 
 // 0x4A4F68
-static int scriptsGetFileName(int scriptIndex, char* name, size_t size)
+int scriptsGetFileName(int scriptIndex, char* name, size_t size)
 {
     snprintf(name, size, "%s.int", gScriptsListEntries[scriptIndex].name);
     return 0;
+}
+
+int scriptsGetListLength()
+{
+    return gScriptsListEntriesLength;
 }
 
 bool scriptsIsValidScriptIndex(int scriptIndex)

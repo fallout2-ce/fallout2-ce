@@ -4,9 +4,13 @@
 #include "color.h"
 #include "db.h"
 #include "debug.h"
+#include "game.h"
 #include "game_mouse.h"
+#include "graph_lib.h"
 #include "input.h"
+#include "kb.h"
 #include "map.h"
+#include "mapper/mapper.h"
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"
@@ -291,6 +295,79 @@ void mapper_copy_map_elev()
 void mapper_flush_cache()
 {
     // TODO: flush all caches (art, sound, etc.)
+}
+
+// pick_hex
+int pickHex()
+{
+    constexpr int kIsoMarginTop = 16;
+
+    int elevation = gElevation;
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int keyCode = inputGetInput();
+
+        if (keyCode == -2) {
+            int buttons = mouseGetEvent();
+            if (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) {
+                int isoRight = windowGetWidth(gIsoWindow) - 1;
+                int isoBottom = windowGetHeight(gIsoWindow) - 1;
+                if (_mouse_click_in(0, kIsoMarginTop, isoRight, isoBottom)) {
+                    int x, y;
+                    mouseGetPosition(&x, &y);
+                    int tile = tileFromScreenXY(x, y);
+                    if (tile != -1) {
+                        return tile;
+                    }
+                }
+            }
+        }
+
+        if (keyCode == KEY_CTRL_ARROW_RIGHT || keyCode == KEY_CTRL_ARROW_LEFT) {
+            rotation = (keyCode == KEY_CTRL_ARROW_RIGHT)
+                ? (rotation + 1) % ROTATION_COUNT
+                : (rotation + ROTATION_COUNT - 1) % ROTATION_COUNT;
+            Rect rect;
+            objectSetRotation(gGameMouseBouncingCursor, rotation, &rect);
+            tileWindowRefreshRect(&rect, elevation);
+        }
+
+        if (keyCode == KEY_PAGE_UP || keyCode == KEY_PAGE_DOWN) {
+            int newElevation = elevation;
+            if (keyCode == KEY_PAGE_UP) {
+                if (elevation < ELEVATION_COUNT - 1) {
+                    newElevation = elevation + 1;
+                }
+            } else {
+                if (elevation > 0) {
+                    newElevation = elevation - 1;
+                }
+            }
+            if (newElevation != elevation) {
+                elevation = newElevation;
+                mapSetElevation(elevation);
+                tileWindowRefresh();
+                // Refresh elevation number on toolbar
+                int pitch = rectGetWidth(&_scr_size);
+                blitBufferToBuffer(e_num[elevation], 19, 26, 19, tool_buf + 62 * pitch + 30, pitch);
+                Rect numRect = { 30, 62, 50, 88 };
+                windowRefreshRect(tool_win, &numRect);
+            }
+        }
+
+        if (keyCode == KEY_ESCAPE) {
+            return -1;
+        }
+
+        if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+            return -1;
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
 }
 
 } // namespace fallout

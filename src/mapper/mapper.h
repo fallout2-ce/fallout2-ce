@@ -13,6 +13,7 @@ extern int menu_val_2[8];
 extern int menu_val_1[21];
 extern unsigned char* tool_buf;
 extern int tool_win;
+extern unsigned char e_num[4][19 * 26];
 
 int mapper_main(int argc, char** argv);
 void print_toolbar_name(int object_type);

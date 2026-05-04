@@ -26,6 +26,7 @@
 #include "kb.h"
 #include "light.h"
 #include "loadsave.h"
+#include "map.h"
 #include "mapper/map_func.h"
 #include "mapper/mp_proto.h"
 #include "mapper/mp_scrpt.h"
@@ -69,6 +70,8 @@ static void update_high_obj_name(Object* obj);
 static void mapper_destroy_highlight_obj(Object** a1, Object** a2);
 static void mapper_refresh_rotation();
 static void update_art(int type, int offset);
+static int mapperPickObject(Object* obj, int* outOffset);
+static int mapperPickTile(int* outOffset);
 static void handle_new_map(int* a1, int* a2);
 static int mapper_mark_exit_grid();
 static void mapper_mark_all_exit_grids();
@@ -243,6 +246,10 @@ static int toolbar_selection_color = 21;
 // Highlighted object on screen — used by mapper_destroy_highlight_obj.
 // Corresponds to _screen_obj in mapper2.asm.
 static Object* _screen_obj = nullptr;
+
+// Tracks user context: 0 = none, 1 = toolbar, 2 = hex grid.
+// Used to distinguish toolbar button clicks from keyboard keys (e.g. 'e').
+static int _edit_area = 0;
 
 // 0x5598A0
 static bool map_entered = false;
@@ -696,7 +703,6 @@ int mapper_edit_init(int argc, char** argv)
         256,
         0);
 
-
     tool_buf = windowGetBuffer(tool_win);
 
     blitBufferToBuffer(lbm_buf + 380 * lbmBufWidth, lbmBufWidth, 100, lbmBufWidth, tool_buf, screenWidth);
@@ -811,13 +817,13 @@ int mapper_edit_init(int argc, char** argv)
             }
         }
 
-         blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x - 52, 10, 10, lbmBufWidth, rotate_arrows[0][index], 10);
+        blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x - 52, 10, 10, lbmBufWidth, rotate_arrows[0][index], 10);
 
-         for (k = 0; k < 100; k++) {
-             if (rotate_arrows[0][index][k] == bgColor) {
-                 rotate_arrows[0][index][k] = 0;
-             }
-         }
+        for (k = 0; k < 100; k++) {
+            if (rotate_arrows[0][index][k] == bgColor) {
+                rotate_arrows[0][index][k] = 0;
+            }
+        }
     }
 
     // COPY
@@ -1016,7 +1022,7 @@ bool proto_user_is_librarian()
     return true;
 }
 
-static void toolbar_set_obj_type(int newType, int& currentType, int& scrollOffset)
+static void toolbarSetObjectType(int newType, int& currentType, int& scrollOffset)
 {
     if (newType == currentType) return;
 
@@ -1030,6 +1036,7 @@ static void toolbar_set_obj_type(int newType, int& currentType, int& scrollOffse
     mapper_destroy_highlight_obj(&_screen_obj, nullptr);
     _screen_obj = nullptr;
 }
+
 static void elevationNumberRefresh()
 {
     int pitch = rectGetWidth(&_scr_size);
@@ -1037,6 +1044,7 @@ static void elevationNumberRefresh()
     Rect numRect = { 30, 62, 50, 88 };
     windowRefreshRect(tool_win, &numRect);
 }
+
 // 0x4877D0
 void edit_mapper()
 {
@@ -1130,6 +1138,107 @@ void edit_mapper()
             continue;
         }
 
+        // ---- Mouse event on hex grid (ASM loc_48A1BB) ----
+        if (keyCode == -2) {
+            int buttons = mouseGetEvent();
+
+            // ASM: test di, 4 → LEFT button REPEAT (bit 2) → move selected object
+            if (buttons & MOUSE_EVENT_LEFT_BUTTON_REPEAT) {
+                // ASM loc_48A42D: click-and-drag to move selected object
+                if (_mouse_click_in(0, 16,
+                        windowGetWidth(gIsoWindow) - 1,
+                        windowGetHeight(gIsoWindow) - 1)) {
+                    if (_screen_obj != nullptr && tool_active == -1) {
+                        int newTile = gGameMouseBouncingCursor->tile;
+                        Rect rect;
+                        objectSetLocation(_screen_obj, newTile, gElevation, &rect);
+                        tileWindowRefreshRect(&rect, gElevation);
+                        if (hl_obj1 != nullptr) {
+                            objectSetLocation(hl_obj1, newTile, gElevation, nullptr);
+                            tileWindowRefreshRect(&rect, gElevation);
+                        }
+                    }
+                }
+            }
+
+            // ASM: test di, 1 → LEFT button DOWN (bit 0) → select or place object
+            if (buttons & MOUSE_EVENT_LEFT_BUTTON_DOWN) {
+                if (_mouse_click_in(0, 16,
+                        windowGetWidth(gIsoWindow) - 1,
+                        windowGetHeight(gIsoWindow) - 1)) {
+                    _edit_area = 2;
+
+                    int tile = gGameMouseBouncingCursor->tile;
+
+                    // ASM: display tile number on toolbar
+                    char tileNumStr[32];
+                    snprintf(tileNumStr, sizeof(tileNumStr), "%d ", tile);
+                    windowDrawText(tool_win, tileNumStr, 40,
+                        _scr_size.right - _scr_size.left - 149, 90, 260);
+                    redraw_toolname();
+
+                    // ASM: ebp != -1 → toolbar item selected → place object
+                    if (tool_active != -1) {
+                        // TODO: place_object_ / place_tile_
+                    } else {
+                        // ASM: object_under_mouse_(currentType, 0, gElevation)
+                        int objTypeFilter = (currentType == OBJ_TYPE_MISC) ? -1 : currentType;
+                        Object* foundObj = gameMouseGetObjectUnderCursor(objTypeFilter, false, gElevation);
+                        _screen_obj = foundObj;
+
+                        if (foundObj != nullptr) {
+                            // ASM loc_48A579: destroy old highlight only (pass &highlight, NULL → don't touch screen_obj)
+                            if (hl_obj1 != nullptr) {
+                                mapper_destroy_highlight_obj(nullptr, &hl_obj1);
+                            }
+
+                            // ASM loc_48A35C: create new highlight
+                            update_high_obj_name(_screen_obj);
+
+                            // ASM: art_id_(6, 1, 0, 0) → buildFid(6, 1, 0, 0, 0)
+                            int hfid = buildFid(OBJ_TYPE_INTERFACE, 1, 0, 0, 0);
+                            Object* hlObj;
+                            if (objectCreateWithFidPid(&hlObj, hfid, -1) != -1) {
+                                hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
+                                _obj_toggle_flat(hlObj, nullptr);
+
+                                Rect rect;
+                                objectSetLocation(hlObj, _screen_obj->tile, gElevation, nullptr);
+                                objectGetRect(hlObj, &rect);
+                                tileWindowRefreshRect(&rect, gElevation);
+                                hl_obj1 = hlObj;
+                            }
+                            tool_active = -1;
+                        } else {
+                            // ASM loc_48A58C: empty hex
+                            if (hl_obj1 != nullptr) {
+                                // Had highlight → destroy it + clear screen_obj
+                                mapper_destroy_highlight_obj(&_screen_obj, &hl_obj1);
+                                hl_obj1 = nullptr;
+                            }
+                            tool_active = -1;
+                        }
+                    }
+                }
+            }
+
+            // ASM loc_488670: RIGHT button (bit 1) → clear toolbar selection
+            if (buttons & MOUSE_EVENT_RIGHT_BUTTON_DOWN) {
+                if (tool_active != -1) {
+                    tool_active = -1;
+                    toolbar_info[currentType].offset = scrollOffset;
+                    mapper_destroy_highlight_obj(&_screen_obj, &hl_obj1);
+                    hl_obj1 = nullptr;
+                    Rect artRect = { 121, 1, _scr_size.right - 19, art_scale_height + 1 };
+                    windowRefreshRect(tool_win, &artRect);
+                }
+            }
+
+            renderPresent();
+            sharedFpsLimiter.throttle();
+            continue;
+        }
+
         // Menu header delegation: if user clicked a menu header, read the
         // pulldown selection and map it to the real handler code.
         if (keyCode == kMenuHeaderFile) {
@@ -1151,6 +1260,7 @@ void edit_mapper()
             int leftBase = kArtButtonBase + max_art_buttons;
             if (keyCode >= leftBase && keyCode < leftBase + max_art_buttons) {
 
+                _edit_area = 1;
                 if (!map_entered) {
                     if (!settings.mapper.use_art_not_protos) {
                         int slotIndex = keyCode - leftBase;
@@ -1287,14 +1397,30 @@ void edit_mapper()
 
         // --- SCRIPTS menu ---
         case KEY_LOWERCASE_I:
-            scr_list_str();
+            scr_debug_print_scripts();
             break;
         case 5400:
             place_entrance_hex();
             break;
-        case KEY_LOWERCASE_S:
-            map_scr_add_spatial();
+        case KEY_LOWERCASE_S: {
+            if (map_entered) {
+                break;
+            }
+            int screenWidth = _scr_size.right - _scr_size.left;
+            windowDrawText(tool_win, "Place Script", 0x104, screenWidth - 149, 70, _colorTable[31744]);
+            redraw_toolname();
+
+            int tile = pickHex();
+
+            clear_toolname();
+
+            if (tile != -1) {
+                if (map_scr_add_spatial(tile, gElevation) == -1) {
+                    win_timed_msg("Error creating spatial Script!", _colorTable[31744]);
+                }
+            }
             break;
+        }
         case KEY_CTRL_F8: {
             int x, y;
             mouseGetPosition(&x, &y);
@@ -1355,7 +1481,7 @@ void edit_mapper()
         case KEY_F5:
         case KEY_F6: {
             int newType = keyCode - KEY_F1;
-            toolbar_set_obj_type(newType, currentType, scrollOffset);
+            toolbarSetObjectType(newType, currentType, scrollOffset);
             break;
         }
 
@@ -1416,8 +1542,18 @@ void edit_mapper()
             }
             break;
         case kBtnEdit:
-            if (!map_entered && draw_mode && _screen_obj != nullptr) {
+            // Lowercase 'e' — instance editor on selected hex-grid object
+            if (!map_entered && _edit_area == 2 && _screen_obj != nullptr) {
                 // TODO: proto_inst_edit_(_screen_obj)
+            }
+            break;
+        case KEY_UPPERCASE_E:
+            // Uppercase 'E' — proto editor on current toolbar selection
+            if (!map_entered && !settings.mapper.use_art_not_protos && !draw_mode && tool_active != -1) {
+                int pid = toolbar_proto(currentType, scrollOffset + tool_active);
+                if (pid != -1) {
+                    // TODO: proto_edit_(pid)
+                }
             }
             break;
         case kBtnPaste:
@@ -1428,9 +1564,33 @@ void edit_mapper()
         case kBtnDelete:
             if (!map_entered) {
                 if (_screen_obj != nullptr) {
-                    mapper_destroy_highlight_obj(&_screen_obj, nullptr);
+                    mapper_destroy_highlight_obj(&_screen_obj, &hl_obj1);
+                    hl_obj1 = nullptr;
                 } else {
                     // TODO: erase_object_()
+                }
+            }
+            break;
+
+        // --- 'p' — jump toolbar to object proto ---
+        case KEY_LOWERCASE_P:
+            if (!map_entered) {
+                if (currentType == OBJ_TYPE_TILE) {
+                    int tileOffset;
+                    if (mapperPickTile(&tileOffset) != -1) {
+                        scrollOffset = tileOffset;
+                        update_art(OBJ_TYPE_TILE, scrollOffset);
+                    }
+                } else if (_screen_obj != nullptr) {
+                    int protoOffset;
+                    if (mapperPickObject(_screen_obj, &protoOffset) != -1) {
+                        int objType = PID_TYPE(_screen_obj->pid);
+                        currentType = objType;
+                        scrollOffset = protoOffset;
+                        toolbarSetObjectType(currentType, currentType, scrollOffset);
+                        print_toolbar_name(currentType);
+                        update_art(currentType, scrollOffset);
+                    }
                 }
             }
             break;
@@ -1777,6 +1937,77 @@ void update_art(int type, int offset)
     int text_h = fontGetLineHeight();
     Rect text_rect = { 52, 27, 82, 27 + text_h };
     windowRefreshRect(tool_win, &text_rect);
+}
+
+// 0x482B1C mapper_pick_object
+static int mapperPickObject(Object* obj, int* outOffset)
+{
+    if (obj == nullptr) {
+        return -1;
+    }
+
+    int type = PID_TYPE(obj->pid);
+    int maxId = proto_max_id(type);
+    constexpr int kScrollOffset = 10;
+
+    for (int idx = 0; idx < maxId; idx++) {
+        int pid = (type << 24) | idx;
+        Proto* proto;
+        if (protoGetProto(pid, &proto) == -1) {
+            return -1;
+        }
+        if (proto->pid == obj->pid) {
+            int clampedIdx = idx;
+            if (idx > maxId - kScrollOffset) {
+                clampedIdx = maxId - kScrollOffset;
+            }
+            *outOffset = clampedIdx;
+            return 0;
+        }
+    }
+    return 0;
+}
+
+// 0x482A38 mapper_pick_tile
+static int mapperPickTile(int* outOffset)
+{
+    int x, y;
+    mouseGetPosition(&x, &y);
+    int tileNum = tileFromScreenXY(x, y);
+
+    int maxId = proto_max_id(OBJ_TYPE_TILE);
+    constexpr int kScrollOffset = 10;
+
+    if (tileNum == -1) {
+        *outOffset = 0;
+        return 0;
+    }
+
+    int packedTile = _square[gElevation]->field_0[tileNum];
+    int tileFid;
+    if (tileRoofIsVisible()) {
+        tileFid = (packedTile >> 16) & 0xFFF;
+    } else {
+        tileFid = packedTile & 0xFFF;
+    }
+    int artFid = buildFid(OBJ_TYPE_TILE, tileFid, 0, 0, 0);
+
+    for (int idx = 0; idx < maxId; idx++) {
+        int pid = (OBJ_TYPE_TILE << 24) | idx;
+        Proto* proto;
+        if (protoGetProto(pid, &proto) == -1) {
+            return 0;
+        }
+        if (proto->fid == artFid) {
+            int clampedIdx = idx;
+            if (idx > maxId - kScrollOffset) {
+                clampedIdx = maxId - kScrollOffset;
+            }
+            *outOffset = clampedIdx;
+            return 0;
+        }
+    }
+    return 0;
 }
 
 // 0x48C524
