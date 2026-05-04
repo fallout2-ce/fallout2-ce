@@ -165,7 +165,7 @@ static int scr_find_index(const char* name, int count)
         scriptsGetFileName(i, nameBuf, sizeof(nameBuf));
         char* dot = strchr(nameBuf, '.');
         if (dot != nullptr) *dot = '\0';
-        if (stricmp(nameBuf, name) == 0) {
+        if (compat_stricmp(nameBuf, name) == 0) {
             return i;
         }
     }
@@ -264,7 +264,7 @@ int scr_choose(int scriptType)
         } else if (selection == -1) {
             char typedName[14] = {};
             _win_get_str(typedName, 13, "Type in Script Name", 100, 50);
-            strupr(typedName);
+            compat_strupr(typedName);
 
             char* intStr = strstr(typedName, ".INT");
             if (intStr != nullptr) {
