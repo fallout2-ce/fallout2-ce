@@ -189,11 +189,18 @@ bool readFo1EntryData(FILE* stream, const DatArchiveEntry& entry, std::vector<un
 
         output->resize(static_cast<size_t>(entry.uncompressedSize));
         {
-            int bytesWritten = lzss_decode_to_buf(stream, output->data(), static_cast<unsigned int>(*entry.storedSize));
+            size_t decodeBufferSize = 0;
+            if (!trySafeFo1DecodeBufferSize(static_cast<unsigned int>(*entry.storedSize), &decodeBufferSize)) {
+                return false;
+            }
+
+            std::vector<unsigned char> decodeBuffer(std::max(output->size(), decodeBufferSize));
+            int bytesWritten = lzss_decode_to_buf(stream, decodeBuffer.data(), static_cast<unsigned int>(*entry.storedSize));
             if (bytesWritten != entry.uncompressedSize) {
                 return false;
             }
 
+            std::copy_n(decodeBuffer.begin(), output->size(), output->begin());
             return true;
         }
     case fo1UncompressedFlags:
@@ -411,15 +418,16 @@ class Fo1Archive final : public DatArchive {
 public:
     explicit Fo1Archive(std::string path)
         : path_(std::move(path))
+        , stream_(nullptr, &fclose)
     {
     }
 
-    ~Fo1Archive() override
-    {
-        if (stream_ != nullptr) {
-            fclose(stream_);
-        }
-    }
+    ~Fo1Archive() override = default;
+
+    Fo1Archive(const Fo1Archive&) = delete;
+    Fo1Archive& operator=(const Fo1Archive&) = delete;
+    Fo1Archive(Fo1Archive&&) = delete;
+    Fo1Archive& operator=(Fo1Archive&&) = delete;
 
     static std::unique_ptr<Fo1Archive> open(const std::string& path)
     {
@@ -507,14 +515,14 @@ public:
         }
 
         if (stream_ == nullptr) {
-            stream_ = compat_fopen(path_.c_str(), "rb");
+            stream_.reset(compat_fopen(path_.c_str(), "rb"));
             if (stream_ == nullptr) {
                 return nullptr;
             }
         }
 
         std::vector<unsigned char> buffer;
-        if (!readFo1EntryData(stream_, *entry, &buffer)) {
+        if (!readFo1EntryData(stream_.get(), *entry, &buffer)) {
             return nullptr;
         }
 
@@ -524,7 +532,7 @@ public:
 private:
     std::string path_;
     std::vector<DatArchiveEntry> entries_;
-    mutable FILE* stream_ = nullptr;
+    mutable std::unique_ptr<FILE, decltype(&fclose)> stream_;
 };
 
 } // namespace
