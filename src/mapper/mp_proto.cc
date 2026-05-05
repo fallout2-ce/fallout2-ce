@@ -6,12 +6,14 @@
 #include "color.h"
 #include "combat_ai.h"
 #include "critter.h"
+#include "game_sound.h"
 #include "input.h"
 #include "kb.h"
 #include "mapper/mp_targt.h"
 #include "memory.h"
 #include "proto.h"
 #include "svga.h"
+#include "text_font.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
 
@@ -618,6 +620,146 @@ int protoEdit(int protoId)
     // TODO: implement proto editor dialog — load proto, show editor UI
     (void)protoId;
     return -1;
+}
+
+static unsigned char itemIconsBgColor()
+{
+    return _colorTable[21];
+};
+
+// proto_choose_multi_pids_update
+static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, protoChooseFidCallback fidFunc, int pitch)
+{
+    constexpr int kGridCols = 4;
+    constexpr int kGridRows = 4;
+    constexpr int kCellPitchX = 90;
+    constexpr int kCellPitchY = 80;
+    constexpr int kArtW = 80;
+    constexpr int kArtH = 60;
+    constexpr int kGridX = 8;
+    constexpr int kGridY = 9;
+
+    unsigned char* buf = windowGetBuffer(win);
+
+    for (int row = 0; row < kGridRows; row++) {
+        for (int col = 0; col < kGridCols; col++) {
+            int idx = scrollOffset + row * kGridCols + col;
+            int pid = idx | (pidType << 24);
+            int cellX = kGridX + col * kCellPitchX + 1;
+            int cellY = kGridY + row * kCellPitchY + 1;
+
+            bufferFill(buf + cellY * pitch + cellX, kArtW, kArtH, pitch, itemIconsBgColor());
+            Proto* proto;
+            if (protoGetProto(pid, &proto) != -1) {
+                int fid = fidFunc ? fidFunc(proto) : proto->fid;
+                artRender(fid, buf + cellY * pitch + cellX, kArtW, kArtH, pitch);
+
+                const char* name = protoGetName(pid);
+                int textY = cellY + kArtH + 5;
+                bufferFill(buf + textY * pitch + cellX, kCellPitchX, fontGetLineHeight(), pitch, edit_window_color);
+                windowDrawText(win, name, 80, cellX, textY, _colorTable[32747] | FONT_SHADOW);
+            }
+        }
+    }
+
+    windowRefresh(win);
+}
+
+// proto_choose_multi_pids_func
+int protoChooseMultiPids(int pidType, protoChooseFidCallback fidFunc, protoChooseAddCallback addFunc)
+{
+    constexpr int kGridCols = 4;
+    constexpr int kGridRows = 4;
+    constexpr int kCells = kGridCols * kGridRows;
+    constexpr int kCellBorderW = 82;
+    constexpr int kCellBorderH = 62;
+    constexpr int kCellPitchX = 90;
+    constexpr int kCellPitchY = 80;
+    constexpr int kWinW = 440;
+    constexpr int kWinH = 380;
+    constexpr int kGridX = 8;
+    constexpr int kGridY = 9;
+    constexpr int kBaseKey = 160;
+
+    int win = windowCreate(60, 40, kWinW, kWinH, edit_window_color, WINDOW_MOVE_ON_TOP);
+    if (win == -1) return -1;
+
+    int pitch = windowGetWidth(win);
+
+    windowDrawBorder(win);
+
+    _win_register_text_button(win, 345, 350, -1, -1, -1, KEY_BRACKET_LEFT, "<<", 0);
+    _win_register_text_button(win, 375, 350, -1, -1, -1, KEY_BRACKET_RIGHT, ">>", 0);
+    _win_register_text_button(win, 10, 340, -1, -1, -1, KEY_BAR, "Done", 0);
+
+    unsigned char* buf = windowGetBuffer(win);
+
+    for (int row = 0; row < kGridRows; row++) {
+        for (int col = 0; col < kGridCols; col++) {
+            int cellX = kGridX + col * kCellPitchX;
+            int cellY = kGridY + row * kCellPitchY;
+            int keyCode = kBaseKey + row * kGridCols + col;
+
+            bufferDrawRect(buf, pitch, cellX, cellY, cellX + kCellBorderW - 1, cellY + kCellBorderH - 1, _colorTable[2]);
+
+            int btn = buttonCreate(win, cellX, cellY, kCellBorderW, kCellBorderH, -1, -1, -1, keyCode, nullptr, nullptr, nullptr, 0);
+            if (btn != -1) {
+                buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+            }
+        }
+    }
+
+    int scrollOffset = 1;
+    int maxOffset = proto_max_id(pidType) - kCells;
+    if (maxOffset < 1) maxOffset = 1;
+
+    protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int key = inputGetInput();
+
+        if (key == KEY_ESCAPE || key == KEY_BAR || key == KEY_RETURN) {
+            windowDestroy(win);
+            return key == KEY_ESCAPE ? -1 : 0;
+        }
+
+        if (key >= kBaseKey && key < kBaseKey + kCells) {
+            int pidIndex = scrollOffset + key - kBaseKey;
+            int pid = pidIndex | (pidType << 24);
+
+            Proto* proto;
+            if (protoGetProto(pid, &proto) == -1) continue;
+
+            char prompt[128];
+            snprintf(prompt, sizeof(prompt), "How many: %s?", protoGetName(pid));
+            int quantity = 1;
+            if (win_get_num_i(&quantity, 1, 32000, false, prompt, 100, 100) != -1) {
+                addFunc(pid, quantity);
+            }
+        } else if (key == KEY_BRACKET_RIGHT) {
+            if (scrollOffset + kCells <= maxOffset) {
+                scrollOffset += kCells;
+                protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+            }
+        } else if (key == KEY_END) {
+            scrollOffset = maxOffset;
+            protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+        } else if (key == KEY_BRACKET_LEFT) {
+            if (scrollOffset > 1) {
+                int prev = scrollOffset - kCells;
+                scrollOffset = prev < 1 ? 1 : prev;
+                protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+            }
+        } else if (key == KEY_HOME) {
+            scrollOffset = 1;
+            protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
 }
 
 // protoInstEdit implemented in mp_instance.cc

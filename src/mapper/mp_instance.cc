@@ -21,6 +21,7 @@
 #include "proto.h"
 #include "proto_instance.h"
 #include "scripts.h"
+#include "settings.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -451,8 +452,16 @@ static int protoInstChoosePidInvenFid(Proto* proto)
     return proto->item.inventoryFid;
 }
 
-// protoChooseItemsForInven - let user pick item protos to add to critter inventory
-static void protoInstChooseItemsForInven(Object* obj)
+// proto_inst_add_to_inven - grid-based proto picker (original implementation)
+static void protoInstChooseItemsForInvenGrid(Object* obj)
+{
+    proto_inst_who_obj = obj;
+    protoChooseMultiPids(OBJ_TYPE_ITEM, protoInstChoosePidInvenFid, protoInstAddToInven);
+    proto_inst_who_obj = nullptr;
+}
+
+// proto_inst_add_to_inven - list-based proto picker (simpler alternative)
+static void protoInstChooseItemsForInvenList(Object* obj)
 {
     proto_inst_who_obj = obj;
 
@@ -566,7 +575,11 @@ static int protoInstCritterEdit(Object* obj)
                 _obj_inven_free(&obj->data.inventory);
                 needRedraw = true;
             } else if (key == kInstKeyAddToInven) {
-                protoInstChooseItemsForInven(obj);
+                if (settings.mapper.use_grid_item_picker) {
+                    protoInstChooseItemsForInvenGrid(obj);
+                } else {
+                    protoInstChooseItemsForInvenList(obj);
+                }
                 needRedraw = true;
             } else if (key == kInstKeyViewInven) {
                 windowDestroy(winId);
