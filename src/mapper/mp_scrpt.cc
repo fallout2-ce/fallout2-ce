@@ -174,8 +174,8 @@ static int scr_find_index(const char* name, int count)
 
 int scr_choose(int scriptType)
 {
-    const int kDialogColor = 0x10104;
-    static char* kScriptTypeNames[] = { (char*)"SYSTEM", (char*)"SPATIAL", (char*)"TIMED", (char*)"ITEM", (char*)"CRITTER" };
+    constexpr int kDialogColor = 0x10104;
+    static const char* kScriptTypeNames[] = { "s_system", "s_spatial", "s_time", "s_item", "s_critter" };
 
     int count = scriptsGetListLength();
     if (count == 0) {

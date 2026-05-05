@@ -1300,7 +1300,7 @@ int _GNW_check_menu_bars(int input)
 }
 
 // 0x4D69DC
-void _win_text(int win, char** fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags)
+void _win_text(int win, const char* const* fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags)
 {
     Window* window = windowGetWindow(win);
 
@@ -1322,7 +1322,7 @@ void _win_text(int win, char** fileNameList, int fileNameListLength, int maxWidt
     int separatorRight = maxWidth - 1;
 
     for (int index = 0; index < fileNameListLength; index++) {
-        char* fileName = fileNameList[index];
+        const char* fileName = fileNameList[index];
         if (*fileName != '\0') {
             windowDrawText(win, fileName, maxWidth, x, y, flags);
         } else {

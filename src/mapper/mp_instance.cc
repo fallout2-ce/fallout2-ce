@@ -356,7 +356,7 @@ static int applyLightEdit(Object* obj)
     return 1;
 }
 
-static void applyNewScript(Object* obj, int scriptType, int winId, int scriptNameY)
+static void selectNewScript(Object* obj, int scriptType, int winId, int scriptNameY)
 {
     int scriptIndex = scr_choose(scriptType);
     if (scriptIndex != -1) {
@@ -411,7 +411,7 @@ static int protoInstItemEdit(Object* obj)
             obj->sid = -1;
             windowRefresh(winId);
         } else if (key == kInstKeyNewScript) {
-            applyNewScript(obj, 3, winId, 194);
+            selectNewScript(obj, SCRIPT_TYPE_ITEM, winId, 194);
         } else if (key == kInstKeyClearInven && itemGetType(obj) == ITEM_TYPE_MISC) {
             _obj_inven_free(&obj->data.inventory);
             windowRefresh(winId);
@@ -556,7 +556,7 @@ static int protoInstCritterEdit(Object* obj)
                 obj->sid = -1;
                 needRedraw = true;
             } else if (key == kInstKeyNewScript) {
-                applyNewScript(obj, 4, winId, 194);
+                selectNewScript(obj, SCRIPT_TYPE_CRITTER, winId, 194);
             } else if (key == kInstKeyAiPacket) {
                 proto_pick_ai_packet(&obj->data.critter.combat.aiPacket);
                 const char* newAiName = combat_ai_name(obj->data.critter.combat.aiPacket);
@@ -605,7 +605,7 @@ static int protoInstCritterEdit(Object* obj)
     }
 }
 
-// proto_inst_wall_edit_
+// proto_inst_wall_edit
 static int protoInstWallEdit(Object* obj)
 {
     int winId;
@@ -632,7 +632,7 @@ static int protoInstWallEdit(Object* obj)
         } else if (key == kInstKeyLight) {
             if (applyLightEdit(obj)) windowRefresh(winId);
         } else if (key == kInstKeyNewScript) {
-            applyNewScript(obj, 3, winId, 194);
+            selectNewScript(obj, SCRIPT_TYPE_ITEM, winId, 194);
         }
 
         renderPresent();
@@ -759,7 +759,7 @@ static int protoInstSceneryEdit(Object* obj)
             obj->sid = -1;
             windowRefresh(winId);
         } else if (key == kInstKeyNewScript) {
-            applyNewScript(obj, 4, winId, 194);
+            selectNewScript(obj, SCRIPT_TYPE_ITEM, winId, 194);
         } else if (key == 'd' && sceneryType != SCENERY_TYPE_GENERIC && sceneryType != SCENERY_TYPE_ELEVATOR) {
             int destTile = (obj->data.scenery.ladder.destinationBuiltTile != -1)
                 ? builtTileGetTile(obj->data.scenery.ladder.destinationBuiltTile)

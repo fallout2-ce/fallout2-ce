@@ -1,5 +1,6 @@
 #include "mapper/mapper.h"
 
+#include <algorithm>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -2336,15 +2337,11 @@ static int mapperPickObject(Object* obj, int* outOffset)
             return -1;
         }
         if (proto->pid == obj->pid) {
-            int clampedIdx = idx;
-            if (idx > maxId - kScrollOffset) {
-                clampedIdx = maxId - kScrollOffset;
-            }
-            *outOffset = clampedIdx;
+            *outOffset = std::min(idx, maxId - kScrollOffset);
             return 0;
         }
     }
-    return 0;
+    return -1;
 }
 
 // mapper_pick_tile
@@ -2375,18 +2372,14 @@ static int mapperPickTile(int* outOffset)
         int pid = (OBJ_TYPE_TILE << 24) | idx;
         Proto* proto;
         if (protoGetProto(pid, &proto) == -1) {
-            return 0;
+            return -1;
         }
         if (proto->fid == artFid) {
-            int clampedIdx = idx;
-            if (idx > maxId - kScrollOffset) {
-                clampedIdx = maxId - kScrollOffset;
-            }
-            *outOffset = clampedIdx;
+            *outOffset = std::min(idx, maxId - kScrollOffset);
             return 0;
         }
     }
-    return 0;
+    return -1;
 }
 
 // 0x48C524
