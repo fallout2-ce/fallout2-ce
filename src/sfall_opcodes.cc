@@ -2060,6 +2060,10 @@ static void op_register_hook(Program* program)
         programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
         return;
     }
+    if (!sfall_gl_scr_is_global_script(program)) {
+        programPrintError("%s: can only be called from global scripts", opcodeName);
+        return;
+    }
     int startProcIndex = programFindProcedure(program, gScriptProcNames[SCRIPT_PROC_START]);
     if (startProcIndex == -1) {
         programPrintError("%s: 'start' procedure not found", opcodeName);
@@ -2078,6 +2082,10 @@ static void op_register_hook_proc(Program* program)
     int hookId = programStackPopInteger(program);
     if (hookId < 0 || hookId >= HOOK_COUNT) {
         programPrintError("%s: invalid hook ID: %d", opcodeName, hookId);
+        return;
+    }
+    if (!sfall_gl_scr_is_global_script(program)) {
+        programPrintError("%s: can only be called from global scripts", opcodeName);
         return;
     }
     if (procedureIndex < 0 || procedureIndex >= program->procedureCount()) {
@@ -2112,7 +2120,7 @@ static void op_get_sfall_arg(Program* program)
     constexpr char opcodeName[] = "get_sfall_arg";
 
     const auto hookCall = hookOpcodeGetCurrentCall(opcodeName);
-    programStackPushValue(program, hookCall != nullptr ? hookCall->getNextArgFromScript() : ProgramValue(0));
+    programStackPushValue(program, hookCall != nullptr ? hookCall->getNextArgFromScript(program) : ProgramValue(0));
 }
 
 static void op_get_sfall_args(Program* program)
@@ -2124,7 +2132,7 @@ static void op_get_sfall_args(Program* program)
     if (hookCall != nullptr) {
         result = CreateTempArray(hookCall->numArgs(), 0);
         for (int i = 0; i < hookCall->numArgs(); ++i) {
-            SetArray(result, i, hookCall->getArgAt(i), false, program);
+            SetArray(result, i, hookCall->getArgAt(i, program), false, program);
         }
     }
     programStackPushInteger(program, static_cast<int>(result));
@@ -2144,7 +2152,7 @@ static void op_set_sfall_arg(Program* program)
         programPrintError("%s: argNum %d out of range [0, %d]", opcodeName, argNum, hookCall->numArgs() - 1);
         return;
     }
-    hookCall->setArgAt(argNum, value);
+    hookCall->setArgAt(argNum, program, value);
 }
 
 static void op_set_sfall_return(Program* program)
@@ -2160,7 +2168,7 @@ static void op_set_sfall_return(Program* program)
         programPrintError("%s: trying to add next return value while only %d is expected", opcodeName, hookCall->maxReturnValues());
         return;
     }
-    hookCall->addReturnValueFromScript(value);
+    hookCall->addReturnValueFromScript(program, value);
 }
 
 static void op_fs_copy(Program* program)

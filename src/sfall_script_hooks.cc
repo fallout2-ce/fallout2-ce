@@ -43,6 +43,66 @@ constexpr size_t MAX_HOOK_CALL_DEPTH = 8;
 
 std::vector<ScriptHookCall*> ScriptHookCall::_callStack;
 
+ScriptHookValue::ScriptHookValue(ProgramValue value)
+    : _value(value)
+{
+}
+
+ScriptHookValue ScriptHookValue::fromProgramValue(Program* program, ProgramValue value)
+{
+    ScriptHookValue hookValue(value);
+    if (value.isString()) {
+        assert(program != nullptr);
+        hookValue._isString = true;
+        hookValue._stringValue = value.asString(program);
+    }
+    return hookValue;
+}
+
+ProgramValue ScriptHookValue::toProgramValue(Program* program) const
+{
+    if (_isString) {
+        assert(program != nullptr);
+        return programMakeString(program, _stringValue.c_str());
+    }
+    return _value;
+}
+
+bool ScriptHookValue::isString() const
+{
+    return _isString;
+}
+
+bool ScriptHookValue::isInt() const
+{
+    return !_isString && _value.isInt();
+}
+
+bool ScriptHookValue::isPointer() const
+{
+    return !_isString && _value.isPointer();
+}
+
+int ScriptHookValue::asInt() const
+{
+    return _isString ? 0 : _value.asInt();
+}
+
+float ScriptHookValue::asFloat() const
+{
+    return _isString ? 0.0f : _value.asFloat();
+}
+
+Object* ScriptHookValue::asObject() const
+{
+    return _isString ? nullptr : _value.asObject();
+}
+
+const char* ScriptHookValue::asString() const
+{
+    return _isString ? _stringValue.c_str() : "";
+}
+
 ScriptHookCall* ScriptHookCall::current()
 {
     return !_callStack.empty() ? _callStack.back() : nullptr;
@@ -54,36 +114,36 @@ ScriptHookCall::ScriptHookCall(HookType hookType, int maxReturnValues, std::init
 {
     assert(hookType >= 0 && hookType < HOOK_COUNT && maxReturnValues >= 0 && maxReturnValues <= HOOKS_MAX_RETURN_VALUES && args.size() <= HOOKS_MAX_ARGUMENTS);
     for (auto arg : args) {
-        _args[_numArgs++] = arg;
+        _args[_numArgs++] = ScriptHookValue(arg);
     }
 }
 
-void ScriptHookCall::setArgAt(int idx, ProgramValue value)
+void ScriptHookCall::setArgAt(int idx, Program* program, ProgramValue value)
 {
     assert(idx >= 0 && idx < _numArgs);
-    _args[idx] = value;
+    _args[idx] = ScriptHookValue::fromProgramValue(program, value);
 }
 
-void ScriptHookCall::addReturnValueFromScript(ProgramValue value)
+void ScriptHookCall::addReturnValueFromScript(Program* program, ProgramValue value)
 {
     assert(_scriptRetVals < HOOKS_MAX_RETURN_VALUES);
     if (_scriptRetVals >= _maxRetVals)
         return;
 
-    _retVals[_scriptRetVals++] = value;
+    _retVals[_scriptRetVals++] = ScriptHookValue::fromProgramValue(program, value);
 
     if (_scriptRetVals > _numRetVals) {
         _numRetVals = _scriptRetVals;
     }
 }
 
-ProgramValue ScriptHookCall::getArgAt(int idx) const
+ProgramValue ScriptHookCall::getArgAt(int idx, Program* program) const
 {
     assert(idx >= 0 && idx < _numArgs);
-    return _args[idx];
+    return _args[idx].toProgramValue(program);
 }
 
-ProgramValue ScriptHookCall::getReturnValueAt(int idx) const
+const ScriptHookValue& ScriptHookCall::getReturnValueAt(int idx) const
 {
     assert(idx >= 0 && idx < _numRetVals);
     return _retVals[idx];
@@ -95,6 +155,16 @@ int ScriptHookCall::numReturnValues() const { return _numRetVals; }
 int ScriptHookCall::numScriptReturnValues() const { return _scriptRetVals; }
 HookType ScriptHookCall::hookType() const { return _hookType; }
 
+static bool scriptHookIsRegistered(HookType hookType, const ScriptHook& hook)
+{
+    const auto& hooksOfType = scriptHooks[hookType];
+    return std::any_of(hooksOfType.begin(), hooksOfType.end(),
+        [&hook](const ScriptHook& registeredHook) {
+            return registeredHook.program == hook.program
+                && registeredHook.procedureIndex == hook.procedureIndex;
+        });
+}
+
 void ScriptHookCall::call()
 {
     if (_callStack.size() == MAX_HOOK_CALL_DEPTH) {
@@ -103,10 +173,13 @@ void ScriptHookCall::call()
     }
     _callStack.push_back(this);
 
-    const auto& hooksOfType = scriptHooks[_hookType];
-    // Iterate in reverse order. In case current hook is unregistered inside the call, we can just continue iteration.
-    for (int i = hooksOfType.size() - 1; i >= 0; --i) {
-        const auto& hook = hooksOfType[i];
+    const auto hooksSnapshot = scriptHooks[_hookType];
+    // Iterate over a snapshot so reentrant registration changes cannot invalidate iteration.
+    for (int i = static_cast<int>(hooksSnapshot.size()) - 1; i >= 0; --i) {
+        const auto& hook = hooksSnapshot[i];
+        if (!scriptHookIsRegistered(_hookType, hook)) {
+            continue;
+        }
         _scriptArgs = 0;
         _scriptRetVals = 0;
         programExecuteProcedure(hook.program, hook.procedureIndex);
@@ -116,12 +189,12 @@ void ScriptHookCall::call()
     _callStack.pop_back();
 }
 
-ProgramValue ScriptHookCall::getNextArgFromScript()
+ProgramValue ScriptHookCall::getNextArgFromScript(Program* program)
 {
     if (_scriptArgs >= _numArgs) {
         return { 0 };
     }
-    return _args[_scriptArgs++];
+    return _args[_scriptArgs++].toProgramValue(program);
 }
 
 bool scriptHooksRegister(Program* program, const HookType hookType, const int procedureIndex)
@@ -333,6 +406,31 @@ void scriptHooks_ItemDamage(Object* weapon, Object* critter, HitMode hitMode, bo
     } else {
         *maxDamagePtr = *minDamagePtr;
     }
+}
+
+/*
+Runs when the player examines an object. Returning a string replaces the object's base description.
+
+Obj    arg0 - The examined object
+
+string ret0 - The replacement description.
+*/
+bool scriptHooks_DescriptionObject(Object* object, std::string& description)
+{
+    ScriptHookCall hook(HOOK_DESCRIPTIONOBJ, 1, { object });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return false;
+    }
+
+    const auto& value = hook.getReturnValueAt(0);
+    if (!value.isString()) {
+        return false;
+    }
+
+    description = value.asString();
+    return true;
 }
 
 /*
@@ -771,7 +869,7 @@ UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, Sk
         return result;
     }
 
-    ProgramValue userOverride = hook.getReturnValueAt(0);
+    const auto& userOverride = hook.getReturnValueAt(0);
     if (userOverride.isInt()) {
         int value = userOverride.asInt();
         if (value == -1) {
