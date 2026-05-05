@@ -9,6 +9,9 @@
 
 #include "db.h"
 #include "debug.h"
+#include "game.h"
+#include "interface.h"
+#include "interpreter_extra.h"
 #include "queue.h"
 #include "random.h"
 #include "scripts.h"
@@ -735,6 +738,94 @@ void scriptHooks_BarterPrice(BarterPriceContext* ctx)
         if (valueFromScript < 0) continue;
         *fields[i] = valueFromScript;
     }
+}
+
+/*
+    HOOK_ADJUSTFID
+
+    Runs when the game calculates what FID to display for a critter in UI
+    (inventory, barter).
+
+    int     arg0 - the vanilla FID calculated by the engine
+    int     arg1 - the modified FID after internal CE adjustments (currently always the same as arg0)
+
+    int     ret0 - override FID
+*/
+int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid)
+{
+    ScriptHookCall hook(HOOK_ADJUSTFID, 1, { vanillaFid, modifiedFid });
+    hook.call();
+
+    if (hook.numReturnValues() > 0) {
+        return hook.getReturnValueAt(0).asInt();
+    }
+
+    return modifiedFid;
+}
+
+/*
+    HOOK_INVENWIELD
+
+    Runs before causing a critter or the player to wield/unwield an armor or a weapon (except when using the inventory by PC). An example usage would be to change critter art depending on armor being used or to dynamically customize weapon animations.
+
+    Critter arg0 - the critter wielding/unwielding
+    Item    arg1 - the item being moved
+    int     arg2 - INVEN_TYPE_WORN (0), INVEN_TYPE_RIGHT_HAND (1), or
+                   INVEN_TYPE_LEFT_HAND (2)
+    int     arg3 - 1 on wield, 0 on unwield
+    int     arg4 - 1 when removing an equipped item from inventory, 0 otherwise
+
+    int     ret0 - overrides hard-coded handler (-1 = use engine handler) (NOT RECOMMENDED)
+*/
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove)
+{
+    if (!isWield) {
+        // Sfall: NPCs only ever expose the active (right) hand here.
+        if (slot == InvenSlot::LeftHand && critter != gDude) {
+            return true;
+        }
+
+        // Sfall: ignore player non-active hand slot.
+        if (slot != InvenSlot::Armor && critter == gDude) {
+            int activeSlot = slot == InvenSlot::RightHand ? HAND_RIGHT : HAND_LEFT;
+            if (activeSlot != interfaceGetCurrentHand()) {
+                return true;
+            }
+        }
+    }
+
+    ScriptHookCall hook(HOOK_INVENWIELD, 1, { critter, item, static_cast<int>(slot), isWield, isRemove });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return true;
+    }
+
+    int result = hook.getReturnValueAt(0).asInt();
+    return result == -1;
+}
+
+/*
+    HOOK_CANUSEWEAPON
+
+    Runs while the AI or interface bar checks whether a weapon can be used.
+
+    Critter arg0 - the critter being evaluated
+    Item    arg1 - the candidate weapon
+    int     arg2 - attack type / hit mode, or -1 for dude_obj interface checks
+    int     arg3 - original engine result: 1 if weapon can be used, 0 otherwise
+
+    int     ret0 - overrides the result of engine function
+*/
+bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, int hitMode)
+{
+    ScriptHookCall hook(HOOK_CANUSEWEAPON, 1, { critter, weapon, hitMode, result ? 1 : 0 });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return result;
+    }
+    return hook.getReturnValueAt(0).asInt() != 0;
 }
 
 } // namespace fallout

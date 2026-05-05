@@ -3298,6 +3298,9 @@ bool ProgramValue::isEmpty() const
     switch (opcode) {
     case VALUE_TYPE_INT:
     case VALUE_TYPE_STRING:
+    case VALUE_TYPE_DYNAMIC_STRING:
+        // XXX: this matches the engine, but for VALUE_TYPE_STRING, 0 is valid string index, so this
+        // would be wrong in that case.
         return integerValue == 0;
     case VALUE_TYPE_FLOAT:
         return floatValue == 0.0;

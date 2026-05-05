@@ -2,6 +2,7 @@
 #define FALLOUT_SFALL_SCRIPT_HOOKS_H_
 
 #include "interpreter.h"
+#include "interpreter_extra.h"
 #include "scripts.h"
 
 #include <initializer_list>
@@ -288,6 +289,10 @@ int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
+
+int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid);
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove);
+bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, int hitMode);
 
 } // namespace fallout
 

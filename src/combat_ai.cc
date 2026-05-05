@@ -1972,31 +1972,41 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
 // 0x4298EC
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode)
 {
+    bool result = true;
+
     int damageFlags = critter->data.critter.combat.results;
     if ((damageFlags & DAM_CRIP_ARM_LEFT) != 0 && (damageFlags & DAM_CRIP_ARM_RIGHT) != 0) {
-        return false;
+        result = false;
     }
 
-    if ((damageFlags & DAM_CRIP_ARM_ANY) != 0 && weaponIsTwoHanded(weapon)) {
-        return false;
+    if (result && (damageFlags & DAM_CRIP_ARM_ANY) != 0 && weaponIsTwoHanded(weapon)) {
+        result = false;
     }
 
-    int rotation = critter->rotation + 1;
-    int animationCode = weaponGetAnimationCode(weapon);
-    int weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
-    int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);
-    if (!artExists(fid)) {
-        return false;
+    if (result) {
+        int rotation = critter->rotation + 1;
+        int animationCode = weaponGetAnimationCode(weapon);
+        int weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
+        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);
+        if (!artExists(fid)) {
+            result = false;
+        }
     }
 
-    int skill = weaponGetSkillForHitMode(weapon, hitMode);
     AiPacket* ai = aiGetPacket(critter);
-    if (skillGetValue(critter, skill) < ai->min_to_hit) {
-        return false;
+    if (result) {
+        int skill = weaponGetSkillForHitMode(weapon, hitMode);
+        if (skillGetValue(critter, skill) < ai->min_to_hit) {
+            result = false;
+        }
     }
 
-    int attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
-    return _caiHasWeapPrefType(ai, attackType) != 0;
+    if (result) {
+        int attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+        result = _caiHasWeapPrefType(ai, attackType) != 0;
+    }
+
+    return scriptHooks_CanUseWeapon(result, critter, weapon, hitMode);
 }
 
 // 0x4299A0

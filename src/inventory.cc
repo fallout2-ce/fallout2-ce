@@ -26,6 +26,7 @@
 #include "game_sound.h"
 #include "input.h"
 #include "interface.h"
+#include "interpreter_extra.h"
 #include "item.h"
 #include "kb.h"
 #include "light.h"
@@ -2703,7 +2704,7 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 // 0x4716E8
 static void _adjust_fid()
 {
-    gInventoryWindowDudeFid = inventoryComputeCritterFid(_inven_dude,
+    int fid = inventoryComputeCritterFid(_inven_dude,
         _inven_pid,
         gInventoryRightHandItem,
         gInventoryLeftHandItem,
@@ -2711,6 +2712,7 @@ static void _adjust_fid()
         interfaceGetCurrentHand(),
         0,
         0);
+    gInventoryWindowDudeFid = scriptHooks_AdjustFid(fid, fid);
 }
 
 // 0x4717E4
@@ -3456,13 +3458,21 @@ int inventoryEquip(Object* critter, Object* item, int hand)
 // 0x472768
 int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animate)
 {
+    int itemType = itemGetType(item);
+
+    InvenSlot invenSlot = itemType == ITEM_TYPE_ARMOR
+        ? InvenSlot::Armor
+        : (handIndex == HAND_RIGHT ? InvenSlot::RightHand : InvenSlot::LeftHand);
+    if (!scriptHooks_InvenWield(critter, item, invenSlot, 1, 0)) {
+        return -1;
+    }
+
     if (animate) {
         if (!isoIsDisabled()) {
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
         }
     }
 
-    int itemType = itemGetType(item);
     if (itemType == ITEM_TYPE_ARMOR) {
         Object* armor = critterGetArmor(critter);
         if (armor != nullptr) {
@@ -3618,6 +3628,14 @@ int inventoryUnequipFunc(Object* critter, int hand, bool animate)
         item = critterGetItem2(critter);
     } else {
         item = critterGetItem1(critter);
+    }
+
+    // Notify scripts before mutating the OBJECT_IN_ANY_HAND flag..
+    if (item != nullptr) {
+        InvenSlot invenSlot = hand == HAND_RIGHT ? InvenSlot::RightHand : InvenSlot::LeftHand;
+        if (!scriptHooks_InvenWield(critter, item, invenSlot, 0, 0)) {
+            return -1;
+        }
     }
 
     if (item) {
