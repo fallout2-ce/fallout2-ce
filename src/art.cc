@@ -355,6 +355,14 @@ int artIsObjectTypeHidden(int objectType)
     return objectType >= OBJ_TYPE_ITEM && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].flags & 1 : 0;
 }
 
+// 0x409DF0
+void artToggleObjectTypeHidden(int objectType)
+{
+    if (objectType >= 0 && objectType < OBJ_TYPE_COUNT) {
+        gArtListDescriptions[objectType].flags ^= 1;
+    }
+}
+
 // 0x418F7C
 int artGetFidgetCount(int headFid)
 {
@@ -440,6 +448,40 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
 int art_list_str(int fid, char* name)
 {
     // TODO: Incomplete.
+
+    return -1;
+}
+
+int artListIndex(int objectType, const char* name)
+{
+    if (objectType < 0 || objectType >= OBJ_TYPE_COUNT) return -1;
+    if (gArtListDescriptions[objectType].fileNames == nullptr) return -1;
+
+    char upperName[13] = { 0 };
+    strncpy(upperName, name, 12);
+    upperName[12] = '\0';
+    compat_strupr(upperName);
+
+    int length = gArtListDescriptions[objectType].fileNamesLength;
+    const char* fileNames = gArtListDescriptions[objectType].fileNames;
+
+    for (int index = 0; index < length; index++) {
+        const char* entry = fileNames + index * 13;
+
+        char upperEntry[13];
+        strncpy(upperEntry, entry, 12);
+        upperEntry[12] = '\0';
+        compat_strupr(upperEntry);
+
+        char* p = upperEntry;
+        while (*p && ((*p >= 'A' && *p <= 'Z') || (*p >= '0' && *p <= '9') || *p == '_'))
+            p++;
+        *p = '\0';
+
+        if (strcmp(upperEntry, upperName) == 0) {
+            return index;
+        }
+    }
 
     return -1;
 }

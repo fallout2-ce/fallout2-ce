@@ -22,6 +22,7 @@ typedef enum Hand {
 typedef void InventoryPrintItemDescriptionHandler(const char* string);
 
 void inventoryResetDude();
+void inventorySetDude(Object* obj, int pid);
 void inventoryOpen();
 void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* newArmor);
 int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, int activeHand, int anim, int rotation);

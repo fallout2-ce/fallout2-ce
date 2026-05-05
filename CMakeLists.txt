@@ -38,7 +38,9 @@ endif()
 # Git Info
 include("cmake/gitver.cmake")
 
-target_sources(${EXECUTABLE_NAME} PUBLIC
+# Shared engine sources — used by both game and mapper targets.
+# Excludes main.cc/main.h (game-only entry logic).
+set(FALLOUT_ENGINE_SOURCES
     "src/actions.cc"
     "src/actions.h"
     "src/animation.cc"
@@ -154,8 +156,6 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/lips.h"
     "src/loadsave.cc"
     "src/loadsave.h"
-    "src/main.cc"
-    "src/main.h"
     "src/mainmenu.cc"
     "src/mainmenu.h"
     "src/map_defs.h"
@@ -268,7 +268,7 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/xfile.h"
 )
 
-target_sources(${EXECUTABLE_NAME} PUBLIC
+set(FALLOUT_PLATFORM_SOURCES
     "src/audio_engine.cc"
     "src/audio_engine.h"
     "src/delay.cc"
@@ -315,6 +315,14 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/scan_unimplemented.cc"
 	"third_party/lodepng/lodepng.cpp"
 )
+
+target_sources(${EXECUTABLE_NAME} PUBLIC
+    ${FALLOUT_ENGINE_SOURCES}
+    "src/main.cc"
+    "src/main.h"
+)
+
+target_sources(${EXECUTABLE_NAME} PUBLIC ${FALLOUT_PLATFORM_SOURCES})
 
 target_include_directories(${EXECUTABLE_NAME} PUBLIC "third_party/lodepng")
 
@@ -559,6 +567,73 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
             GENERATED TRUE
             MACOSX_PACKAGE_LOCATION "Resources")
     endif()
+endif()
+
+if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
+    if(WIN32)
+        add_executable(mapper-ce WIN32)
+    else()
+        add_executable(mapper-ce)
+    endif()
+
+    target_sources(mapper-ce PUBLIC
+        ${FALLOUT_ENGINE_SOURCES}
+        ${FALLOUT_PLATFORM_SOURCES}
+        "src/mapper/map_func.cc"
+        "src/mapper/map_func.h"
+        "src/mapper/mapper.cc"
+        "src/mapper/mapper.h"
+        "src/mapper/mp_instance.cc"
+        "src/mapper/mp_instance.h"
+        "src/mapper/mp_proto.cc"
+        "src/mapper/mp_proto.h"
+        "src/mapper/mp_scrpt.cc"
+        "src/mapper/mp_scrpt.h"
+        "src/mapper/mp_targt.cc"
+        "src/mapper/mp_targt.h"
+        "src/mapper/mp_text.cc"
+        "src/mapper/mp_text.h"
+    )
+
+    target_compile_definitions(mapper-ce PUBLIC FALLOUT_MAPPER)
+
+    if(WIN32)
+        target_compile_definitions(mapper-ce PUBLIC
+            _CRT_SECURE_NO_WARNINGS
+            _CRT_NONSTDC_NO_WARNINGS
+            NOMINMAX
+            WIN32_LEAN_AND_MEAN
+            _STATIC_CPPLIB
+        )
+        target_link_libraries(mapper-ce
+            winmm
+            debug libcpmtd
+            optimized libcpmt
+        )
+        target_sources(mapper-ce PUBLIC
+            "os/windows/fallout2-ce.rc"
+        )
+    endif()
+
+    if(APPLE)
+        target_link_libraries(mapper-ce "-framework CoreFoundation")
+        set_target_properties(mapper-ce PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        )
+    endif()
+
+    target_include_directories(mapper-ce PUBLIC "third_party/lodepng")
+    target_include_directories(mapper-ce PRIVATE "src")
+    target_include_directories(mapper-ce PRIVATE ${ZLIB_INCLUDE_DIRS})
+    target_include_directories(mapper-ce PRIVATE ${SDL2_INCLUDE_DIRS})
+
+    target_link_libraries(mapper-ce
+        fpattern::fpattern
+        fpattern_windows::fpattern_windows
+        ${ZLIB_LIBRARIES}
+        ${SDL2_LIBRARIES}
+    )
 endif()
 
 if(APPLE)

@@ -9,12 +9,12 @@ namespace fallout {
 
 typedef struct MenuBar MenuBar;
 
-typedef void(ListSelectionHandler)(char** items, int index);
+typedef void(ListSelectionHandler)(const char* const* items, int index);
 
 extern char gProgramWindowTitle[256];
 
-int _win_list_select(const char* title, char** fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, int color);
-int _win_list_select_at(const char* title, char** items, int itemsLength, ListSelectionHandler* callback, int x, int y, int color, int start);
+int _win_list_select(const char* title, const char* const* fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, int color);
+int _win_list_select_at(const char* title, const char* const* items, int itemsLength, ListSelectionHandler* callback, int x, int y, int color, int start);
 int _win_get_str(char* dest, int length, const char* title, int x, int y);
 int win_yes_no(const char* question, int x, int y, int color);
 int _win_msg(const char* string, int x, int y, int color);
@@ -23,10 +23,10 @@ int _create_pull_down(char** stringList, int stringListLength, int x, int y, int
 int _win_debug(const char* string);
 void _win_debug_delete(int btn, int keyCode);
 int _win_register_menu_bar(int win, int x, int y, int width, int height, int foregroundColor, int backgroundColor);
-int _win_register_menu_pulldown(int win, int x, char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor);
+int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor);
 void _win_delete_menu_bar(int win);
-int _find_first_letter(int ch, char** stringList, int stringListLength);
-int _win_width_needed(char** fileNameList, int fileNameListLength);
+int _find_first_letter(int ch, const char* const* stringList, int stringListLength);
+int _win_width_needed(const char* const* fileNameList, int fileNameListLength);
 int _win_input_str(int win, char* dest, int maxLength, int x, int y, int textColor, int backgroundColor);
 int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int foregroundColor, int backgroundColor, MenuBar* menuBar, int pulldownIndex);
 int _GNW_process_menu(MenuBar* menuBar, int pulldownIndex);

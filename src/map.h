@@ -105,11 +105,13 @@ int mapSetEnteringLocation(int elevation, int tile, int rotation);
 void mapNewMap();
 int mapLoadByName(char* fileName);
 int mapLoadById(int map_index);
+const char* mapBuildPath(const char* name);
 int mapLoadSaved(char* fileName);
 int mapGetLoadedAreaId();
 int mapSetTransition(MapTransition* transition);
 int mapHandleTransition();
 int _map_save_in_game(bool isLeavingMap);
+int _map_save();
 
 } // namespace fallout
 

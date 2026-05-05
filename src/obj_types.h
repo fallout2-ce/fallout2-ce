@@ -45,7 +45,7 @@ typedef enum OutlineType {
     OUTLINE_TYPE_32 = 32,
 } OutlineType;
 
-typedef enum ObjectFlags {
+enum ObjectFlags : unsigned int {
     OBJECT_HIDDEN = 0x01,
 
     // Specifies that the object should not be saved to the savegame file.
@@ -90,7 +90,7 @@ typedef enum ObjectFlags {
     OBJECT_EQUIPPED = OBJECT_IN_ANY_HAND | OBJECT_WORN,
     OBJECT_FLAG_0xFC000 = OBJECT_TRANS_ENERGY | OBJECT_TRANS_STEAM | OBJECT_TRANS_GLASS | OBJECT_TRANS_WALL | OBJECT_TRANS_NONE | OBJECT_TRANS_RED,
     OBJECT_OPEN_DOOR = OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_BLOCK,
-} ObjectFlags;
+};
 
 typedef enum CritterFlags {
     CRITTER_BARTER = 0x02,

@@ -845,6 +845,13 @@ void inventoryResetDude()
     _inven_pid = 0x1000000;
 }
 
+// inven_set_dude
+void inventorySetDude(Object* obj, int pid)
+{
+    _inven_dude = obj;
+    _inven_pid = pid;
+}
+
 // TODO(CE): move to more generic location
 int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, int activeHand, int anim, int rotation)
 {

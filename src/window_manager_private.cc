@@ -89,13 +89,13 @@ static int _currx;
 char gProgramWindowTitle[256];
 
 // 0x4DA6C0
-int _win_list_select(const char* title, char** fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, int color)
+int _win_list_select(const char* title, const char* const* fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, int color)
 {
     return _win_list_select_at(title, fileList, fileListLength, callback, x, y, color, 0);
 }
 
 // 0x4DA70C
-int _win_list_select_at(const char* title, char** items, int itemsLength, ListSelectionHandler* callback, int x, int y, int color, int start)
+int _win_list_select_at(const char* title, const char* const* items, int itemsLength, ListSelectionHandler* callback, int x, int y, int color, int start)
 {
     if (!gWindowSystemInitialized) {
         return -1;
@@ -988,7 +988,7 @@ int _win_register_menu_bar(int win, int x, int y, int width, int height, int for
 }
 
 // 0x4DC768
-int _win_register_menu_pulldown(int win, int x, char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor)
+int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor)
 {
     Window* window = windowGetWindow(win);
 
@@ -1075,14 +1075,14 @@ void _win_delete_menu_bar(int win)
 }
 
 // 0x4DC9F0
-int _find_first_letter(int ch, char** stringList, int stringListLength)
+int _find_first_letter(int ch, const char* const* stringList, int stringListLength)
 {
     if (ch >= 'A' && ch <= 'Z') {
         ch += ' ';
     }
 
     for (int index = 0; index < stringListLength; index++) {
-        char* string = stringList[index];
+        const char* string = stringList[index];
         if (string[0] == ch || string[0] == ch - ' ') {
             return index;
         }
@@ -1092,7 +1092,7 @@ int _find_first_letter(int ch, char** stringList, int stringListLength)
 }
 
 // 0x4DCA30
-int _win_width_needed(char** fileNameList, int fileNameListLength)
+int _win_width_needed(const char* const* fileNameList, int fileNameListLength)
 {
     int maxWidth = 0;
 

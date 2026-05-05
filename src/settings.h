@@ -121,7 +121,7 @@ struct DebugSettings {
     bool output_map_data_info = false;
     int window_width = 300;
     int window_height = 192;
-    std::string console_output_path = "";
+    std::string console_output_path;
 };
 
 struct QolSettings {
@@ -143,6 +143,12 @@ struct MapperSettings {
     bool run_mapper_as_game = false;
     bool default_f8_as_game = true;
     bool sort_script_list = false;
+    std::string map;
+    // CE: switch between vanilla grid item picker and simpler list-based one.
+    bool use_grid_item_picker = true;
+    // CE: change mapper path for saving various data.
+    // TODO: use
+    std::string dev_path = R"(\fallout\cd\)";
 };
 
 struct Settings {
