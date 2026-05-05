@@ -132,7 +132,7 @@ void map_scr_toggle_hexes()
                 int builtTile = scr->sp.built_tile;
                 if (builtTile == -1 || builtTile == 0) {
                     debugPrint("\nError: Spatial Script has invalid hex location...deleting!");
-                    return;
+                    continue;
                 }
 
                 Object* obj;

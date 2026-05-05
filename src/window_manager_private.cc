@@ -22,7 +22,6 @@ namespace fallout {
 static constexpr int kTimedMsgs = 5;
 
 static int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow_negative, int x, int y);
-static int get_str(int win, char* buffer, int maxLength, bool clear, int x, int y);
 static void tm_watch_msgs();
 static void tm_kill_msg();
 static void tm_kill_out_of_order(int queueIndex);

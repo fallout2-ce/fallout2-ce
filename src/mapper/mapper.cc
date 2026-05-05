@@ -1145,9 +1145,9 @@ void edit_mapper()
 
     bool playModeEnabled = settings.mapper.default_f8_as_game;
 
-    if (!settings.mapper.startup_map.empty()) {
+    if (!settings.mapper.map.empty()) {
         char localName[16];
-        const char* src = settings.mapper.startup_map.c_str();
+        const char* src = settings.mapper.map.c_str();
         char* dst = localName;
         while (*src) {
             *dst++ = toupper(*src++);
@@ -2531,9 +2531,7 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
     tileScrollBlockingEnable();
     tileScrollLimitingEnable();
 
-    bool runAsGame = false;
-    configGetBool(&gGameConfig, "mapper", "run_mapper_as_game", &runAsGame);
-    if (runAsGame) {
+    if (settings.mapper.run_mapper_as_game) {
         // TODO: scriptExecProc(gMapSid, 0xF);
         // TODO: _scr_load_all_scripts();
     }
