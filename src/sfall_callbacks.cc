@@ -4,6 +4,7 @@
 #include "display_monitor.h"
 #include "interface.h"
 #include "script_sound.h"
+#include "sfall_config.h"
 #include "sfall_script_hooks.h"
 #include "worldmap.h"
 
@@ -45,7 +46,14 @@ void sfallOnAfterGameStarted()
 {
     // Disable Horrigan Patch
     bool isDisableHorrigan = false;
-    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "disable_horrigan", &isDisableHorrigan);
+    int value = 0;
+    if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, "DisableHorrigan", &value)) {
+        isDisableHorrigan = value != 0;
+    } else if (!configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "disable_horrigan", &isDisableHorrigan)) {
+        int value = 0;
+        configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "disable_horrigan", &value, 0);
+        isDisableHorrigan = value != 0;
+    }
 
     if (isDisableHorrigan) {
         gDidMeetFrankHorrigan = true;

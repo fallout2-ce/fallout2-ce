@@ -34,6 +34,7 @@
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
+#include "sfall_config.h"
 #include "sfall_global_scripts.h"
 #include "svga.h"
 #include "text_font.h"
@@ -137,7 +138,9 @@ int falloutMain(int argc, char** argv)
 
                     // SFALL: Override starting map.
                     char* mapName = nullptr;
-                    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "map", &mapName, nullptr);
+                    if (!configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, "StartingMap", &mapName, nullptr) || mapName == nullptr || mapName[0] == '\0') {
+                        configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "map", &mapName, nullptr);
+                    }
 
                     char* mapNameCopy = compat_strdup(mapName != nullptr ? mapName : _mainMap);
                     _main_load_new(mapNameCopy);

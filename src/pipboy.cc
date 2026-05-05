@@ -36,6 +36,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
+#include "sfall_config.h"
 #include "sfall_script_hooks.h"
 #include "stat.h"
 #include "svga.h"
@@ -869,7 +870,9 @@ static void _pip_init_()
     // bypassed. CE implements only the latter approach, as it does not have any
     // side effects.
     int value = 0;
-    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "pipboy", &value, 0);
+    if (!configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, "PipBoyAvailableAtGameStart", &value, 0)) {
+        configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "pipboy", &value, 0);
+    }
     pipboy_available_at_game_start = value == 1 || value == 2;
 }
 

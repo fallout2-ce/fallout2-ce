@@ -1,5 +1,6 @@
 #include "version.h"
 #include "content_config.h"
+#include "sfall_config.h"
 
 #include <stdio.h>
 
@@ -10,7 +11,10 @@ void versionGetVersion(char* dest, size_t size)
 {
     // SFALL: custom version string.
     char* versionString = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "version_string", &versionString, "");
+    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, "VersionString", &versionString, "");
+    if (!*versionString) {
+        configGetString(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "version_string", &versionString, "");
+    }
     if (!*versionString) {
         versionString = nullptr;
     }

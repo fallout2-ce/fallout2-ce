@@ -41,6 +41,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
+#include "sfall_config.h"
 #include "sfall_global_scripts.h"
 #include "skill.h"
 #include "stat.h"
@@ -852,6 +853,23 @@ static FrmImage _townFrmImage;
 static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
+
+static int worldmapGetSfallIntSetting(const char* key, int defaultValue)
+{
+    int value = defaultValue;
+    configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, key, &value);
+    return value;
+}
+
+static int worldmapGetIntSetting(const char* contentKey, const char* sfallSection, const char* sfallKey, int defaultValue)
+{
+    int value = defaultValue;
+    if (configGetInt(&gSfallConfig, sfallSection, sfallKey, &value)) {
+        return value;
+    }
+    configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, contentKey, &value);
+    return value;
+}
 static int worldmapTrailMarkers;
 
 static inline bool cityIsValid(int city)
@@ -900,8 +918,8 @@ int wmWorldMap_init()
     wmWorldMapSaveTempData();
 
     // SFALL
-    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix, true);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", &worldmapTrailMarkers, 0);
+    gTownMapHotkeysFix = worldmapGetIntSetting("town_map_hotkeys_fix", SFALL_CONFIG_MISC_KEY, "TownMapHotkeysFix", 1) != 0;
+    worldmapTrailMarkers = worldmapGetIntSetting("trail_markers", "Interface", "WorldMapTravelMarkers", 0);
 
     // CE: City size fids should be initialized during startup. They are used
     // during |wmTeleportToArea| to calculate worldmap position when jumping
@@ -922,8 +940,8 @@ static int wmGenDataInit()
 {
     gDidMeetFrankHorrigan = false;
     wmGenData.currentAreaId = -1;
-    wmGenData.worldPosX = 173;
-    wmGenData.worldPosY = 122;
+    wmGenData.worldPosX = worldmapGetSfallIntSetting("StartXPos", 173);
+    wmGenData.worldPosY = worldmapGetSfallIntSetting("StartYPos", 122);
     wmGenData.currentSubtile = nullptr;
     wmGenData.dword_672E18 = 0;
     wmGenData.isWalking = false;
@@ -988,8 +1006,8 @@ static int wmGenDataReset()
     wmGenData.encounterIconIsVisible = false;
     mousePressed = false;
     wmGenData.currentAreaId = -1;
-    wmGenData.worldPosX = 173;
-    wmGenData.worldPosY = 122;
+    wmGenData.worldPosX = worldmapGetSfallIntSetting("StartXPos", 173);
+    wmGenData.worldPosY = worldmapGetSfallIntSetting("StartYPos", 122);
     wmGenData.walkDestinationX = -1;
     wmGenData.walkDestinationY = -1;
     wmGenData.encounterMapId = -1;
@@ -1079,8 +1097,8 @@ void wmWorldMap_exit()
 // 0x4BCEF8
 int wmWorldMap_reset()
 {
-    wmWorldOffsetX = 0;
-    wmWorldOffsetY = 0;
+    wmWorldOffsetX = worldmapGetSfallIntSetting("ViewXPos", 0);
+    wmWorldOffsetY = worldmapGetSfallIntSetting("ViewYPos", 0);
 
     // CE: Fix Pathfinder perk.
     gGameTimeIncRemainder = 0.0;

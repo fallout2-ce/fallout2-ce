@@ -13,6 +13,7 @@
 #include "memory.h"
 #include "proto.h"
 #include "settings.h"
+#include "sfall_config.h"
 
 #include <algorithm>
 #include <memory>
@@ -199,16 +200,32 @@ int artInit()
 
     // SFALL: Modify player model settings.
     char* jumpsuitMaleFileName = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male_default", &jumpsuitMaleFileName, gDefaultJumpsuitMaleFileName);
+    if (!configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, "MaleDefaultModel", &jumpsuitMaleFileName, nullptr)
+        || jumpsuitMaleFileName == nullptr
+        || jumpsuitMaleFileName[0] == '\0') {
+        configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male_default", &jumpsuitMaleFileName, gDefaultJumpsuitMaleFileName);
+    }
 
     char* jumpsuitFemaleFileName = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female_default", &jumpsuitFemaleFileName, gDefaultJumpsuitFemaleFileName);
+    if (!configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, "FemaleDefaultModel", &jumpsuitFemaleFileName, nullptr)
+        || jumpsuitFemaleFileName == nullptr
+        || jumpsuitFemaleFileName[0] == '\0') {
+        configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female_default", &jumpsuitFemaleFileName, gDefaultJumpsuitFemaleFileName);
+    }
 
     char* tribalMaleFileName = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male", &tribalMaleFileName, gDefaultTribalMaleFileName);
+    if (!configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, "MaleStartModel", &tribalMaleFileName, nullptr)
+        || tribalMaleFileName == nullptr
+        || tribalMaleFileName[0] == '\0') {
+        configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_male", &tribalMaleFileName, gDefaultTribalMaleFileName);
+    }
 
     char* tribalFemaleFileName = nullptr;
-    configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female", &tribalFemaleFileName, gDefaultTribalFemaleFileName);
+    if (!configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, "FemaleStartModel", &tribalFemaleFileName, nullptr)
+        || tribalFemaleFileName == nullptr
+        || tribalFemaleFileName[0] == '\0') {
+        configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female", &tribalFemaleFileName, gDefaultTribalFemaleFileName);
+    }
 
     char* critterFileNames = gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames;
     for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {

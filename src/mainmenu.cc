@@ -13,6 +13,7 @@
 #include "mouse.h"
 #include "palette.h"
 #include "preferences.h"
+#include "sfall_config.h"
 #include "svga.h"
 #include "text_font.h"
 #include "version.h"
@@ -37,6 +38,16 @@ typedef enum MainMenuButton {
 
 static int main_menu_fatal_error();
 static void main_menu_play_sound(const char* fileName);
+
+static int mainMenuGetIntSetting(const char* contentKey, const char* sfallKey, int defaultValue)
+{
+    int value = defaultValue;
+    if (configGetInt(&gSfallConfig, SFALL_CONFIG_MISC_KEY, sfallKey, &value)) {
+        return value;
+    }
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, contentKey, &value);
+    return value;
+}
 
 // 0x5194F0
 static int gMainMenuWindow = -1;
@@ -131,15 +142,14 @@ int mainMenuWindowInit()
     //        0x010000 - change the color for version string only
     //        0x020000 - underline text (only for the version string)
     //        0x040000 - monospace font (only for the version string)
-    int fontSettings = _colorTable[21091], fontSettingsSFall = 0;
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", &fontSettingsSFall, 0);
+    int fontSettings = _colorTable[21091];
+    int fontSettingsSFall = mainMenuGetIntSetting("font_color", "MainMenuFontColour", 0);
     if (fontSettingsSFall && !(fontSettingsSFall & 0x010000))
         fontSettings = fontSettingsSFall & 0xFF;
 
     // SFALL: Allow to move copyright text
-    int offsetX = 0, offsetY = 0;
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_x", &offsetX, 0);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_y", &offsetY, 0);
+    int offsetX = mainMenuGetIntSetting("credits_offset_x", "MainMenuCreditsOffsetX", 0);
+    int offsetY = mainMenuGetIntSetting("credits_offset_y", "MainMenuCreditsOffsetY", 0);
 
     // Copyright.
     msg.num = 20;
@@ -187,8 +197,8 @@ int mainMenuWindowInit()
     }
 
     // SFALL: Allow to move menu buttons
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_x", &offsetX, 0);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", &offsetY, 0);
+    offsetX = mainMenuGetIntSetting("offset_x", "MainMenuOffsetX", 0);
+    offsetY = mainMenuGetIntSetting("offset_y", "MainMenuOffsetY", 0);
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
         gMainMenuButtons[index] = buttonCreate(gMainMenuWindow,
@@ -216,8 +226,7 @@ int mainMenuWindowInit()
 
     // SFALL: Allow to change font color of buttons
     fontSettings = _colorTable[21091];
-    fontSettingsSFall = 0;
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "big_font_color", &fontSettingsSFall, 0);
+    fontSettingsSFall = mainMenuGetIntSetting("big_font_color", "MainMenuBigFontColour", 0);
     if (fontSettingsSFall)
         fontSettings = fontSettingsSFall & 0xFF;
 

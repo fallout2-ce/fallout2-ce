@@ -16,6 +16,7 @@
 #include "palette.h"
 #include "platform_compat.h"
 #include "settings.h"
+#include "sfall_config.h"
 #include "svga.h"
 #include "text_font.h"
 #include "touch.h"
@@ -32,7 +33,7 @@ static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath);
 static const float flt_50352A = 0.032258064f;
 
 // 0x518DA0
-static const char* gMovieFileNames[MOVIE_COUNT] = {
+static const char* gMovieDefaultFileNames[MOVIE_COUNT] = {
     "iplogo.mve",
     "intro.mve",
     "elder.mve",
@@ -51,6 +52,8 @@ static const char* gMovieFileNames[MOVIE_COUNT] = {
     "artimer4.mve",
     "credits.mve",
 };
+
+static char gMovieFileNames[MOVIE_COUNT][65];
 
 // 0x518DE4
 static const char* gMoviePaletteFilePaths[MOVIE_COUNT] = {
@@ -97,6 +100,19 @@ int gameMoviesInit()
     movieSetVolume(volume);
 
     movieSetBuildSubtitleFilePathProc(gameMovieBuildSubtitlesFilePath);
+
+    for (int movie = 0; movie < MOVIE_COUNT; movie++) {
+        strcpy(gMovieFileNames[movie], gMovieDefaultFileNames[movie]);
+
+        char key[16];
+        snprintf(key, sizeof(key), "Movie%d", movie + 1);
+
+        char* movieFileName = nullptr;
+        if (configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, key, &movieFileName) && movieFileName[0] != '\0') {
+            strncpy(gMovieFileNames[movie], movieFileName, sizeof(gMovieFileNames[movie]) - 1);
+            gMovieFileNames[movie][sizeof(gMovieFileNames[movie]) - 1] = '\0';
+        }
+    }
 
     memset(gGameMoviesSeen, 0, sizeof(gGameMoviesSeen));
 
