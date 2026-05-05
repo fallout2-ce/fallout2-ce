@@ -131,6 +131,9 @@ constexpr int kTradeSlotCount = 3;
 #define INVENTORY_PC_BODY_VIEW_MAX_X (INVENTORY_PC_BODY_VIEW_X + INVENTORY_BODY_VIEW_WIDTH)
 #define INVENTORY_PC_BODY_VIEW_MAX_Y (INVENTORY_PC_BODY_VIEW_Y + INVENTORY_BODY_VIEW_HEIGHT)
 
+#define INVENTORY_BARTER_LEFT_BODY_VIEW_X 18
+#define INVENTORY_BARTER_LEFT_BODY_VIEW_Y 25
+
 #define INVENTORY_LOOT_RIGHT_BODY_VIEW_X 422
 #define INVENTORY_LOOT_RIGHT_BODY_VIEW_Y 35
 
@@ -166,11 +169,6 @@ constexpr int kTradeSlotCount = 3;
 #define INVENTORY_LOOT_RIGHT_SCROLLER_Y_PAD (INVENTORY_LOOT_RIGHT_SCROLLER_Y + INVENTORY_SLOT_PADDING)
 
 #define INVENTORY_LOOT_CRITTER_TOGGLE_Y (INVENTORY_LOOT_LEFT_BODY_VIEW_Y + INVENTORY_BODY_VIEW_HEIGHT + 24)
-// Barter: PC body in background window is at (15, 25); buttons sit just below it.
-#define INVENTORY_BARTER_PC_BODY_VIEW_X 15
-#define INVENTORY_BARTER_PC_BODY_VIEW_Y 25
-#define INVENTORY_BARTER_CRITTER_TOGGLE_Y (INVENTORY_BARTER_PC_BODY_VIEW_Y + INVENTORY_BODY_VIEW_HEIGHT + 6)
-
 #define INVENTORY_TRADE_LEFT_SCROLLER_X_PAD (INVENTORY_TRADE_LEFT_SCROLLER_Y + INVENTORY_SLOT_PADDING)
 #define INVENTORY_TRADE_LEFT_SCROLLER_Y_PAD (INVENTORY_TRADE_LEFT_SCROLLER_Y + INVENTORY_SLOT_PADDING)
 
@@ -362,9 +360,7 @@ static int inventoryLootGetSlotY(int slotIndex);
 static bool inventoryLootMouseHitTestScroller(bool targetInventory);
 static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int scrollStep);
 static int inventoryGetCenteredWindowY(int windowHeight);
-static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index);
-
-constexpr int kInventoryLeftBodyViewOffsetX = 3;
+static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index, int yOffset = 0);
 
 // 0x46E6D0
 static const int gSummaryStats[7] = {
@@ -1400,7 +1396,7 @@ static bool _setup_inventory(int inventoryWindowType)
 
             // Invisible button representing left character.
             buttonCreateAction(gInventoryBarterBackgroundWindow,
-                15 + kInventoryLeftBodyViewOffsetX, 25, INVENTORY_BODY_VIEW_WIDTH, INVENTORY_BODY_VIEW_HEIGHT, 2500);
+                INVENTORY_BARTER_LEFT_BODY_VIEW_X, INVENTORY_BARTER_LEFT_BODY_VIEW_Y, INVENTORY_BODY_VIEW_WIDTH, INVENTORY_BODY_VIEW_HEIGHT, 2500);
 
             // Invisible button representing right character.
             buttonCreateAction(gInventoryBarterBackgroundWindow,
@@ -1435,7 +1431,7 @@ static bool _setup_inventory(int inventoryWindowType)
             if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
                 // Invisible button representing left character.
                 buttonCreateAction(gInventoryWindow,
-                    inventoryLootLayout.leftBodyViewX + kInventoryLeftBodyViewOffsetX, INVENTORY_LOOT_LEFT_BODY_VIEW_Y,
+                    inventoryLootLayout.leftBodyViewX, INVENTORY_LOOT_LEFT_BODY_VIEW_Y,
                     INVENTORY_BODY_VIEW_WIDTH, INVENTORY_BODY_VIEW_HEIGHT, 2500);
 
                 // Right inventory down button.
@@ -2117,8 +2113,8 @@ static void _display_body(int fid, int inventoryWindowType)
                 rect.left = 560;
                 rect.top = 25;
             } else {
-                rect.left = 15 + kInventoryLeftBodyViewOffsetX;
-                rect.top = 25;
+                rect.left = INVENTORY_BARTER_LEFT_BODY_VIEW_X;
+                rect.top = INVENTORY_BARTER_LEFT_BODY_VIEW_Y;
             }
 
             rect.right = rect.left + INVENTORY_BODY_VIEW_WIDTH - 1;
@@ -2162,7 +2158,7 @@ static void _display_body(int fid, int inventoryWindowType)
                 }
             } else {
                 if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-                    rect.left = inventoryLootLayout.leftBodyViewX + kInventoryLeftBodyViewOffsetX;
+                    rect.left = inventoryLootLayout.leftBodyViewX;
                     rect.top = INVENTORY_LOOT_LEFT_BODY_VIEW_Y;
                 } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_USE_ITEM_ON) {
                     rect.left = 176; // Use item cha window
@@ -2196,7 +2192,7 @@ static void _display_body(int fid, int inventoryWindowType)
                 windowPitch);
 
             if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-                inventoryDisplayLeftPaneCompanionName(windowBuffer, windowPitch, rect, index);
+                inventoryDisplayLeftPaneCompanionName(windowBuffer, windowPitch, rect, index, 6);
             }
 
             win = gInventoryWindow;
@@ -3745,7 +3741,7 @@ static void inventoryDrawCenteredText(unsigned char* buffer, int pitch, int widt
     fontSetCurrent(oldFont);
 }
 
-static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index)
+static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index, int yOffset)
 {
     if (index != 0 || _stack[0] == gDude) {
         return;
@@ -3756,7 +3752,7 @@ static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, i
         return;
     }
 
-    int nameY = rect.bottom - fontGetLineHeight() - 1;
+    int nameY = rect.bottom - fontGetLineHeight() - 2 + yOffset;
     inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, _colorTable[992]);
 }
 
@@ -4392,7 +4388,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
 
             if (critterCount > 1) {
                 int btn = buttonCreateWithFrm(gInventoryWindow,
-                    inventoryLootLayout.prevCritterButtonX + kInventoryLeftBodyViewOffsetX, INVENTORY_LOOT_CRITTER_TOGGLE_Y,
+                    inventoryLootLayout.prevCritterButtonX, INVENTORY_LOOT_CRITTER_TOGGLE_Y,
                     -1, -1, KEY_PAGE_UP, -1,
                     FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_UP]),
                     FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN]));
@@ -4434,7 +4430,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     int partyTargetIndex = 0;
 
     if (partyTargets.size() > 1) {
-        const int btnCenterX = inventoryLootLayout.leftBodyViewX + kInventoryLeftBodyViewOffsetX + INVENTORY_BODY_VIEW_WIDTH / 2;
+        const int btnCenterX = inventoryLootLayout.leftBodyViewX + INVENTORY_BODY_VIEW_WIDTH / 2;
 
         int btn = buttonCreateWithFrm(gInventoryWindow,
             btnCenterX - 20, INVENTORY_LOOT_CRITTER_TOGGLE_Y,
@@ -5332,29 +5328,6 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     int partyTargetIndex = 0;
 
     bool isoWasEnabled = _setup_inventory(INVENTORY_WINDOW_TYPE_TRADE);
-
-    if (partyTargets.size() > 1) {
-        const int arrowY = INVENTORY_BARTER_CRITTER_TOGGLE_Y;
-        const int btnCenterX = INVENTORY_BARTER_PC_BODY_VIEW_X + kInventoryLeftBodyViewOffsetX + INVENTORY_BODY_VIEW_WIDTH / 2;
-
-        int btn = buttonCreateWithFrm(win,
-            btnCenterX - 20, arrowY,
-            -1, -1, KEY_ARROW_LEFT, -1,
-            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_UP]),
-            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN]));
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
-
-        btn = buttonCreateWithFrm(win,
-            btnCenterX, arrowY,
-            -1, -1, KEY_ARROW_RIGHT, -1,
-            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP]),
-            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN]));
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
-    }
 
     _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_TRADE);
     _display_inventory(_stack_offset[0], -1, INVENTORY_WINDOW_TYPE_TRADE);
