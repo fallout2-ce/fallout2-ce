@@ -198,5 +198,17 @@
             "configurePreset": "ios",
             "configuration": "RelWithDebInfo"
         }
+    ],    
+    "packagePresets":[
+        {
+          "name": "linux-appimage-x86",
+          "configurePreset": "linux-x86-release",
+          "generators": ["AppImage"]
+        },
+        {
+          "name": "linux-appimage-x64",
+          "configurePreset": "linux-x64-release",
+          "generators": ["AppImage"]
+        }
     ]
 }
