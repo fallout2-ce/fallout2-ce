@@ -139,6 +139,77 @@
             "cacheVariables": {
                 "CMAKE_SYSTEM_NAME": "iOS"
             }
+        },
+                {
+            "name": "Mingw-base",
+            "hidden": true,
+            "description": "Base preset for all MinGW builds.",
+            "inherits":[
+                "base"
+            ],
+            "generator": "Ninja",
+            "toolchainFile": "${sourceDir}/cmake/toolchain/mingw.cmake",
+            "cacheVariables": {
+                "CMAKE_SYSTEM_NAME": "Windows"
+            }
+        },
+        {
+            "name": "Mingw-x86-base",
+            "hidden": true,
+            "description": "Base preset for all MinGW x86 builds.",
+            "inherits": [
+                "Mingw-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_C_FLAGS": "-m32",
+                "CMAKE_CXX_FLAGS": "-m32",
+                "CMAKE_SYSTEM_PROCESSOR": "i686"
+            }
+        },
+        {
+            "name": "Mingw-x86-debug",
+            "displayName": "MinGW x86 Debug",
+            "description": "Cross-compile a Debug Windows x86 build with MinGW-w64 and Ninja.",
+            "inherits": [
+                "Mingw-x86-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "Mingw-x86-release",
+            "displayName": "MinGW x86 Release",
+            "description": "Cross-compile a RelWithDebInfo Windows x86 build with MinGW-w64 and Ninja.",
+            "inherits": [
+                "Mingw-x86-debug"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "Mingw-x64-debug",
+            "displayName": "MinGW x64 Debug",
+            "description": "Cross-compile a Debug Windows x64 build with MinGW-w64 and Ninja.",
+            "inherits": [
+                "Mingw-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_SYSTEM_PROCESSOR": "x86_64",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "Mingw-x64-release",
+            "displayName": "MinGW x64 Release",
+            "description": "Cross-compile a RelWithDebInfo Windows x64 build with MinGW-w64 and Ninja.",
+            "inherits": [
+                "Mingw-x64-debug"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
         }
     ],
     "buildPresets": [
@@ -197,6 +268,26 @@
             "name": "ios-release",
             "configurePreset": "ios",
             "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "Mingw-x86-Debug",
+            "displayName": "MinGW x86 Debug",
+            "configurePreset": "Mingw-x86-debug"
+        },
+        {
+            "name": "Mingw-x86-Release",
+            "displayName": "MinGW x86 Release",
+            "configurePreset": "Mingw-x86-release"
+        },
+        {
+            "name": "Mingw-x64-Debug",
+            "displayName": "MinGW x64 Debug",
+            "configurePreset": "Mingw-x64-debug"
+        },
+        {
+            "name": "Mingw-x64-Release",
+            "displayName": "MinGW x64 Release",
+            "configurePreset": "Mingw-x64-release"
         }
     ]
 }
