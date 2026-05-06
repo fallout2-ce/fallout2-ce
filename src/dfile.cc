@@ -14,7 +14,7 @@
 namespace fallout {
 
 // The size of decompression buffer for reading compressed [DFile]s.
-#define DFILE_DECOMPRESSION_BUFFER_SIZE (0x400)
+#define DFILE_DECOMPRESSION_BUFFER_SIZE (0x1000)
 
 // Specifies that [DFile] has unget character.
 //

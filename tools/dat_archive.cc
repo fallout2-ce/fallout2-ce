@@ -194,15 +194,13 @@ bool readFo1EntryData(FILE* stream, const DatArchiveEntry& entry, std::vector<un
                 return false;
             }
 
-            size_t decodeCapacity = std::max(output->size(), decodeBufferSize);
-            std::vector<unsigned char> decodeBuffer(decodeCapacity);
+            std::vector<unsigned char> decodeBuffer(std::max(output->size(), decodeBufferSize));
             int bytesWritten = lzss_decode_to_buf(stream, decodeBuffer.data(), static_cast<unsigned int>(*entry.storedSize));
             if (bytesWritten != entry.uncompressedSize) {
                 return false;
             }
 
-            *output = std::move(decodeBuffer);
-            output->resize(static_cast<size_t>(bytesWritten));
+            std::copy_n(decodeBuffer.begin(), output->size(), output->begin());
             return true;
         }
     case fo1UncompressedFlags:
@@ -211,6 +209,7 @@ bool readFo1EntryData(FILE* stream, const DatArchiveEntry& entry, std::vector<un
     case fo1ChunkedFlags: {
         output->clear();
         output->reserve(static_cast<size_t>(entry.uncompressedSize));
+        std::vector<unsigned char> decodeBuffer;
         while (output->size() < static_cast<size_t>(entry.uncompressedSize)) {
             unsigned short chunkHeader;
             if (!readBe16(stream, &chunkHeader)) {
@@ -234,8 +233,10 @@ bool readFo1EntryData(FILE* stream, const DatArchiveEntry& entry, std::vector<un
                     return false;
                 }
 
-                size_t decodeCapacity = std::max(static_cast<size_t>(entry.uncompressedSize - output->size()), decodeBufferSize);
-                std::vector<unsigned char> decodeBuffer(decodeCapacity);
+                if (decodeBuffer.size() < decodeBufferSize) {
+                    decodeBuffer.resize(decodeBufferSize);
+                }
+
                 int bytesWritten = lzss_decode_to_buf(stream, decodeBuffer.data(), chunkHeader);
                 if (bytesWritten <= 0 || output->size() + static_cast<size_t>(bytesWritten) > static_cast<size_t>(entry.uncompressedSize)) {
                     return false;
@@ -417,8 +418,16 @@ class Fo1Archive final : public DatArchive {
 public:
     explicit Fo1Archive(std::string path)
         : path_(std::move(path))
+        , stream_(nullptr, &fclose)
     {
     }
+
+    ~Fo1Archive() override = default;
+
+    Fo1Archive(const Fo1Archive&) = delete;
+    Fo1Archive& operator=(const Fo1Archive&) = delete;
+    Fo1Archive(Fo1Archive&&) = delete;
+    Fo1Archive& operator=(Fo1Archive&&) = delete;
 
     static std::unique_ptr<Fo1Archive> open(const std::string& path)
     {
@@ -505,15 +514,15 @@ public:
             return nullptr;
         }
 
-        FILE* stream = compat_fopen(path_.c_str(), "rb");
-        if (stream == nullptr) {
-            return nullptr;
+        if (stream_ == nullptr) {
+            stream_.reset(compat_fopen(path_.c_str(), "rb"));
+            if (stream_ == nullptr) {
+                return nullptr;
+            }
         }
 
-        std::unique_ptr<FILE, decltype(&fclose)> file(stream, &fclose);
-
         std::vector<unsigned char> buffer;
-        if (!readFo1EntryData(file.get(), *entry, &buffer)) {
+        if (!readFo1EntryData(stream_.get(), *entry, &buffer)) {
             return nullptr;
         }
 
@@ -523,6 +532,7 @@ public:
 private:
     std::string path_;
     std::vector<DatArchiveEntry> entries_;
+    mutable std::unique_ptr<FILE, decltype(&fclose)> stream_;
 };
 
 } // namespace
