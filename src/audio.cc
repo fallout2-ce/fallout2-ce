@@ -264,7 +264,6 @@ int audioOpen(const char* fname, AudioFileInfo* info, bool* isMemoryBackedPtr)
 
         if (info != nullptr) {
             info->sampleRate = audioFile->sampleRate;
-            info->channels = audioFile->channels;
             info->bitsPerSample = audioFile->bitsPerSample;
         }
         if (isMemoryBackedPtr != nullptr) {
