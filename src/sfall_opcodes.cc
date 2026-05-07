@@ -1262,6 +1262,20 @@ static void op_resize_array(Program* program)
     ResizeArray(arrayId, newLen);
 }
 
+// get_npc_level
+static void op_get_npc_level(Program* program)
+{
+    int pid = programStackPopInteger(program);
+    programStackPushInteger(program, partyMemberGetNpcLevel(pid));
+}
+
+// inc_npc_level
+static void op_inc_npc_level(Program* program)
+{
+    int pid = programStackPopInteger(program);
+    partyMemberIncNpcLevel(pid);
+}
+
 // party_member_list
 static void op_party_member_list(Program* program)
 {
@@ -1907,8 +1921,10 @@ void sfallOpcodesInit()
     // 0x81a3 - int  eax_available()
     // 0x81a4 - void set_eax_environment(int environment)
 
-    // 0x81a5 - void inc_npc_level(int pid/string name)
-    // 0x8241 - int  get_npc_level(int pid/string name)
+    // 0x81a5 - void inc_npc_level(int pid)
+    interpreterRegisterOpcode(0x81A5, op_inc_npc_level);
+    // 0x8241 - int  get_npc_level(int pid)
+    interpreterRegisterOpcode(0x8241, op_get_npc_level);
 
     // 0x81a6 - int get_viewport_x()
     // 0x81a7 - int get_viewport_y()

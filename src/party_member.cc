@@ -1529,13 +1529,18 @@ int _partyMemberIncLevels()
             continue;
         }
 
-        levelUpInfo->level++;
-        if (levelMod != 0) {
-            levelUpInfo->isEarly = 1;
+        int nextLevel = levelUpInfo->level + 1;
+        if (nextLevel >= memberDescription->level_pids_num) {
+            continue;
         }
 
-        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[levelUpInfo->level]) == -1) {
+        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[nextLevel]) == -1) {
             return -1;
+        }
+
+        levelUpInfo->level = nextLevel;
+        if (levelMod != 0) {
+            levelUpInfo->isEarly = 1;
         }
 
         name = critterGetName(obj);
@@ -1676,6 +1681,49 @@ int partyGetMaxWoundToHealByRest()
     }
 
     return maxWound;
+}
+
+int partyMemberGetNpcLevel(int pid)
+{
+    for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
+        if (gPartyMemberPids[index] == pid) {
+            return _partyMemberLevelUpInfoList[index].level;
+        }
+    }
+    return 0;
+}
+
+int partyMemberIncNpcLevel(int pid)
+{
+    int memberIndex = -1;
+    for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
+        if (gPartyMemberPids[index] == pid) {
+            memberIndex = index;
+            break;
+        }
+    }
+
+    if (memberIndex == -1) {
+        return -1;
+    }
+
+    PartyMemberLevelUpInfo* levelUpInfo = &(_partyMemberLevelUpInfoList[memberIndex]);
+    PartyMemberDescription* memberDescription = &(gPartyMemberDescriptions[memberIndex]);
+
+    int nextLevel = levelUpInfo->level + 1;
+    if (nextLevel >= memberDescription->level_pids_num) {
+        return -1;
+    }
+
+    Object* obj = partyMemberFindByPid(pid);
+    if (obj != nullptr) {
+        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[nextLevel]) == -1) {
+            return -1;
+        }
+    }
+
+    levelUpInfo->level = nextLevel;
+    return 0;
 }
 
 std::vector<Object*> get_all_party_members_objects(bool include_hidden)
