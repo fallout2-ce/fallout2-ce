@@ -315,7 +315,7 @@ static Rect gameDialogGetBackgroundRect(int index)
 
 static int gameDialogGetBackgroundWindowY()
 {
-    // center onplay area if large enough, else center on screen
+    // center on play area if large enough, else center on screen
     int visibleHeight = screenGetVisibleHeight();
     if (visibleHeight >= GAME_DIALOG_WINDOW_HEIGHT) {
         return (visibleHeight - GAME_DIALOG_WINDOW_HEIGHT) / 2;
@@ -4619,7 +4619,7 @@ int gameDialogWindowRenderBackground()
     FrmImage backgroundFrmImage;
 
     if (gameDialogShouldUseHrArt()) {
-        if (backgroundFrmImage.lock(OBJ_TYPE_INTERFACE, "HR_ALLTLK.frm")
+        if (backgroundFrmImage.lock(OBJ_TYPE_INTERFACE, "HR_ALLTLK.FRM")
             && backgroundFrmImage.getWidth() >= GAME_DIALOG_WINDOW_WIDTH
             && backgroundFrmImage.getHeight() >= GAME_DIALOG_WINDOW_HEIGHT) {
             gameDialogUseHrArt = true;
