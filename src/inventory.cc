@@ -360,7 +360,7 @@ static int inventoryLootGetSlotY(int slotIndex);
 static bool inventoryLootMouseHitTestScroller(bool targetInventory);
 static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int scrollStep);
 static int inventoryGetCenteredWindowY(int windowHeight);
-static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index, int yOffset = 0);
+static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index);
 
 // 0x46E6D0
 static const int gSummaryStats[7] = {
@@ -2192,7 +2192,7 @@ static void _display_body(int fid, int inventoryWindowType)
                 windowPitch);
 
             if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-                inventoryDisplayLeftPaneCompanionName(windowBuffer, windowPitch, rect, index, 6);
+                inventoryDisplayLeftPaneCompanionName(windowBuffer, windowPitch, rect, index);
             }
 
             win = gInventoryWindow;
@@ -2984,7 +2984,9 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
     assert(critter != nullptr);
     assert(target != nullptr);
 
-    inventoryRestoreEquippedFromGlobals(_inven_dude);
+    // _inven_dude can point at a nested container while browsing bags, but
+    // equipped items always need to be restored onto the owning critter.
+    inventoryRestoreEquippedFromGlobals(_stack[0]);
     inventoryStripEquippedToGlobals(critter);
     _inven_dude = critter;
     _curr_stack = 0;
@@ -3741,7 +3743,7 @@ static void inventoryDrawCenteredText(unsigned char* buffer, int pitch, int widt
     fontSetCurrent(oldFont);
 }
 
-static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index, int yOffset)
+static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index)
 {
     if (index != 0 || _stack[0] == gDude) {
         return;
@@ -3752,7 +3754,11 @@ static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, i
         return;
     }
 
-    int nameY = rect.bottom - fontGetLineHeight() - 2 + yOffset;
+    int oldFont = fontGetCurrent();
+    fontSetCurrent(101);
+    int nameY = rect.bottom - fontGetLineHeight() - 2;
+    fontSetCurrent(oldFont);
+
     inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, _colorTable[992]);
 }
 
@@ -5320,7 +5326,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
     std::vector<Object*> partyTargets = { _inven_dude };
     if (settings.qol.party_loot_and_barter) {
         for (Object* pm : get_all_party_members_objects(false)) {
-            if (pm != gDude) {
+            if (pm != gDude && pm != barterer) {
                 partyTargets.push_back(pm);
             }
         }
