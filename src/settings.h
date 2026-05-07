@@ -69,6 +69,7 @@ struct UISettings {
     bool display_karma_changes = false;
     bool display_bonus_damage = false;
     bool numbers_in_dialogue = false;
+    bool enable_dialog_border = true;
     int auto_quick_save = 0;
     bool enable_high_resolution_stencil = true;
     int inventory_columns = 1;

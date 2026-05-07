@@ -279,6 +279,8 @@ static int gGameDialogBackgroundWindow = -1;
 // 0x518744
 static int gGameDialogWindow = -1;
 
+static bool gameDialogUseHrArt = false;
+
 // 0x518748
 static Rect _backgrndRects[8] = {
     { 126, 14, 152, 40 },
@@ -290,6 +292,37 @@ static Rect _backgrndRects[8] = {
     { 126, 40, 136, 188 },
     { 504, 40, 514, 188 },
 };
+
+static bool gameDialogShouldUseHrArt()
+{
+    return settings.ui.enable_dialog_border
+        && (screenGetWidth() > GAME_DIALOG_WINDOW_WIDTH || screenGetHeight() > GAME_DIALOG_WINDOW_HEIGHT);
+}
+
+static int gameDialogHrArtYOffset()
+{
+    return gameDialogUseHrArt ? 5 : 0;
+}
+
+static Rect gameDialogGetBackgroundRect(int index)
+{
+    Rect rect = _backgrndRects[index];
+    int yOffset = gameDialogHrArtYOffset();
+    rect.top += yOffset;
+    rect.bottom += yOffset;
+    return rect;
+}
+
+static int gameDialogGetBackgroundWindowY()
+{
+    // center onplay area if large enough, else center on screen
+    int visibleHeight = screenGetVisibleHeight();
+    if (visibleHeight >= GAME_DIALOG_WINDOW_HEIGHT) {
+        return (visibleHeight - GAME_DIALOG_WINDOW_HEIGHT) / 2;
+    }
+
+    return (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2;
+}
 
 // 0x5187C8
 static bool _talk_need_to_center = true;
@@ -2494,31 +2527,35 @@ int _gdCreateHeadWindow()
     int windowWidth = GAME_DIALOG_WINDOW_WIDTH;
 
     // NOTE: Uninline.
-    talk_to_create_background_window();
-    gameDialogWindowRenderBackground();
+    if (talk_to_create_background_window() == -1 || gameDialogWindowRenderBackground() == -1) {
+        _gdDestroyHeadWindow();
+        return -1;
+    }
 
-    unsigned char* buf = windowGetBuffer(gGameDialogBackgroundWindow);
+    ConstBuffer2D backgroundBuf = windowGetBuffer2D(gGameDialogBackgroundWindow);
 
     for (int index = 0; index < 8; index++) {
         soundContinueAll();
 
-        Rect* rect = &(_backgrndRects[index]);
-        int width = rect->right - rect->left;
-        int height = rect->bottom - rect->top;
+        Rect rect = gameDialogGetBackgroundRect(index);
+        int width = rect.right - rect.left;
+        int height = rect.bottom - rect.top;
         _backgrndBufs[index] = (unsigned char*)internal_malloc(width * height);
         if (_backgrndBufs[index] == nullptr) {
+            _gdDestroyHeadWindow();
             return -1;
         }
 
-        unsigned char* src = buf;
-        src += windowWidth * rect->top + rect->left;
-
-        blitBufferToBuffer(src, width, height, windowWidth, _backgrndBufs[index], width);
+        Buffer2D savedBackgroundBuf { _backgrndBufs[index], width, height };
+        blitBuffer2D(backgroundBuf, rect.left, rect.top, width, height, savedBackgroundBuf);
     }
 
-    _gdialog_window_create();
+    if (_gdialog_window_create() == -1) {
+        _gdDestroyHeadWindow();
+        return -1;
+    }
 
-    gGameDialogDisplayBuffer = windowGetBuffer(gGameDialogBackgroundWindow) + windowWidth * 14 + 126;
+    gGameDialogDisplayBuffer = windowGetBuffer(gGameDialogBackgroundWindow) + windowWidth * (14 + gameDialogHrArtYOffset()) + 126;
 
     // TODO: jnz at 0x447275 without cmp or test, not sure what that means.
     if (false) {
@@ -2547,10 +2584,12 @@ void _gdDestroyHeadWindow()
         gGameDialogBackgroundWindow = -1;
     }
 
+    gameDialogUseHrArt = false;
     gExpandedBarterEnabled = false;
 
     for (int index = 0; index < 8; index++) {
         internal_free(_backgrndBufs[index]);
+        _backgrndBufs[index] = nullptr;
     }
 }
 
@@ -4551,13 +4590,14 @@ static const char* expandedBarterFrmName()
 // 0x44AAD8
 static int talk_to_create_background_window()
 {
+    gameDialogUseHrArt = false;
+
     gExpandedBarterEnabled = settings.ui.expand_barter_window
         && screenGetHeight() >= GAME_DIALOG_WINDOW_HEIGHT + kExpandedBarterExtraHeight
         && FrmImage().lock(OBJ_TYPE_INTERFACE, expandedBarterFrmName());
 
     int backgroundWindowX = (screenGetWidth() - GAME_DIALOG_WINDOW_WIDTH) / 2;
-    int effectiveBgHeight = GAME_DIALOG_WINDOW_HEIGHT + (gExpandedBarterEnabled ? kExpandedBarterExtraHeight : 0);
-    int backgroundWindowY = (screenGetHeight() - effectiveBgHeight) / 2;
+    int backgroundWindowY = gameDialogGetBackgroundWindowY();
 
     gGameDialogBackgroundWindow = windowCreate(backgroundWindowX,
         backgroundWindowY,
@@ -4577,15 +4617,29 @@ static int talk_to_create_background_window()
 int gameDialogWindowRenderBackground()
 {
     FrmImage backgroundFrmImage;
-    // alltlk.frm - dialog screen background
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 103, 0, 0, 0);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
-        return -1;
+
+    if (gameDialogShouldUseHrArt()) {
+        if (backgroundFrmImage.lock(OBJ_TYPE_INTERFACE, "HR_ALLTLK.frm")
+            && backgroundFrmImage.getWidth() >= GAME_DIALOG_WINDOW_WIDTH
+            && backgroundFrmImage.getHeight() >= GAME_DIALOG_WINDOW_HEIGHT) {
+            gameDialogUseHrArt = true;
+        } else {
+            backgroundFrmImage.unlock();
+        }
     }
 
-    int windowWidth = GAME_DIALOG_WINDOW_WIDTH;
-    unsigned char* windowBuffer = windowGetBuffer(gGameDialogBackgroundWindow);
-    blitBufferToBuffer(backgroundFrmImage.getData(), windowWidth, 480, windowWidth, windowBuffer, windowWidth);
+    if (!backgroundFrmImage.isLocked()) {
+        // alltlk.frm - dialog screen background
+        FrmId backgroundFid(OBJ_TYPE_INTERFACE, 103);
+        if (!backgroundFrmImage.lock(backgroundFid)) {
+            return -1;
+        }
+        gameDialogUseHrArt = false;
+    }
+
+    ConstBuffer2D backgroundFrmBuf = backgroundFrmImage.getBuffer();
+    Buffer2D windowBuf = windowGetBuffer2D(gGameDialogBackgroundWindow);
+    blitBuffer2D(backgroundFrmBuf, 0, 0, GAME_DIALOG_WINDOW_WIDTH, GAME_DIALOG_WINDOW_HEIGHT, windowBuf);
 
     if (!_dialogue_just_started) {
         windowRefresh(gGameDialogBackgroundWindow);
@@ -4734,11 +4788,13 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
             GAME_DIALOG_WINDOW_WIDTH);
     }
 
+    int yOffset = gameDialogHrArtYOffset();
+
     Rect headRect;
     headRect.left = 126;
-    headRect.top = 14;
+    headRect.top = 14 + yOffset;
     headRect.right = 514;
-    headRect.bottom = 214;
+    headRect.bottom = 214 + yOffset;
 
     unsigned char* dest = windowGetBuffer(gGameDialogBackgroundWindow);
 
@@ -4748,7 +4804,7 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
         _upperHighlightFrmImage.getWidth(),
         dest,
         426,
-        15,
+        15 + yOffset,
         GAME_DIALOG_WINDOW_WIDTH,
         _light_BlendTable,
         _light_GrayTable);
@@ -4759,20 +4815,20 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
         _lowerHighlightFrmImage.getWidth(),
         dest,
         129,
-        214 - _lowerHighlightFrmImage.getHeight() - 2,
+        214 + yOffset - _lowerHighlightFrmImage.getHeight() - 2,
         GAME_DIALOG_WINDOW_WIDTH,
         _dark_BlendTable,
         _dark_GrayTable);
 
     for (int index = 0; index < 8; ++index) {
-        Rect* rect = &(_backgrndRects[index]);
-        int width = rect->right - rect->left;
+        Rect rect = gameDialogGetBackgroundRect(index);
+        int width = rect.right - rect.left;
 
         blitBufferToBufferTrans(_backgrndBufs[index],
             width,
-            rect->bottom - rect->top,
+            rect.bottom - rect.top,
             width,
-            dest + GAME_DIALOG_WINDOW_WIDTH * rect->top + rect->left,
+            dest + GAME_DIALOG_WINDOW_WIDTH * rect.top + rect.left,
             GAME_DIALOG_WINDOW_WIDTH);
     }
 
