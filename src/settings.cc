@@ -160,6 +160,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(display_karma_changes);
     SETTING(display_bonus_damage);
     SETTING(numbers_in_dialogue);
+    SETTING(enable_dialog_border);
     SETTING_P(auto_quick_save, clamp(0, 10));
     SETTING(enable_high_resolution_stencil);
     SETTING(extend_ap_bar);
