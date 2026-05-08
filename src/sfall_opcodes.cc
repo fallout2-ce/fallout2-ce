@@ -343,6 +343,12 @@ static void op_get_unspent_ap_perk_bonus(Program* program)
     programStackPushInteger(program, statGetUnspentApPerkBonus());
 }
 
+static void op_set_inven_ap_cost(Program* program)
+{
+    int cost = programStackPopInteger(program);
+    inventorySetInvenApCost(cost);
+}
+
 // toggle_active_hand
 static void op_toggle_active_hand(Program* program)
 {
@@ -2172,6 +2178,7 @@ void sfallOpcodesInit()
     // 0x824c - int gdialog_get_barter_mod()
     interpreterRegisterOpcode(0x824C, op_gdialog_get_barter_mod);
     // 0x824d - void set_inven_ap_cost(int cost)
+    interpreterRegisterOpcode(0x824D, op_set_inven_ap_cost);
 
     // 0x825a - void reg_anim_destroy(object object)
     interpreterRegisterOpcode(0x825A, op_reg_anim_destroy);

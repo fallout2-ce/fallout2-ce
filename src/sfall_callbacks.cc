@@ -3,6 +3,7 @@
 #include "content_config.h"
 #include "display_monitor.h"
 #include "interface.h"
+#include "inventory.h"
 #include "script_sound.h"
 #include "sfall_script_hooks.h"
 #include "stat.h"
@@ -33,6 +34,7 @@ void sfallOnGameExit()
 
 void sfallOnGameReset()
 {
+    inventoryResetInvenApCost();
     scriptSoundReset();
     statResetUnspentApBonuses();
     return;
