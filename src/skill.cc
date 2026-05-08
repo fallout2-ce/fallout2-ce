@@ -1047,11 +1047,11 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         *xpOverride = hookXpOverride;
     }
 
-    if (hookResult == static_cast<int>(SkillStealResult::fail)) {
-        return SkillStealResult::fail;
+    if (hookResult == static_cast<int>(SkillStealResult::Fail)) {
+        return SkillStealResult::Fail;
     }
 
-    if (hookResult == static_cast<int>(SkillStealResult::success) || hookResult == static_cast<int>(SkillStealResult::caught)) {
+    if (hookResult == static_cast<int>(SkillStealResult::Success) || hookResult == static_cast<int>(SkillStealResult::Caught)) {
         return static_cast<SkillStealResult>(hookResult);
     }
 
@@ -1111,26 +1111,22 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         // 571: You steal the %s.
         // 573: You plant the %s.
         messageListItem.num = isPlanting ? 573 : 571;
-        if (!messageListGetItem(&gSkillsMessageList, &messageListItem)) {
-            return SkillStealResult::fail;
+        if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
+            snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
+            displayMonitorAddMessage(text);
         }
 
-        snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
-        displayMonitorAddMessage(text);
-
-        return SkillStealResult::success;
+        return SkillStealResult::Success;
     } else {
         // 570: You're caught stealing the %s.
         // 572: You're caught planting the %s.
         messageListItem.num = isPlanting ? 572 : 570;
-        if (!messageListGetItem(&gSkillsMessageList, &messageListItem)) {
-            return SkillStealResult::fail;
+        if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
+            snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
+            displayMonitorAddMessage(text);
         }
 
-        snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
-        displayMonitorAddMessage(text);
-
-        return SkillStealResult::caught;
+        return SkillStealResult::Caught;
     }
 }
 

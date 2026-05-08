@@ -13,9 +13,9 @@ extern int _gStealCount;
 extern int _gStealSize;
 
 enum class SkillStealResult {
-    caught = 0,
-    success = 1,
-    fail = 2,
+    Caught = 0,
+    Success = 1,
+    Fail = 2,
 };
 
 int skillsInit();

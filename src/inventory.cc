@@ -4835,9 +4835,9 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 bool skipMove = false;
                 if (_gIsSteal && _inven_dude == gDude) {
                     SkillStealResult stealResult = skillsPerformStealing(_inven_dude, targetObj, item, quantityToMove, true, stealXpOverridePtr);
-                    if (stealResult == SkillStealResult::caught) {
+                    if (stealResult == SkillStealResult::Caught) {
                         result = INVENTORY_MOVE_RESULT_CAUGHT_STEALING;
-                    } else if (stealResult == SkillStealResult::fail) {
+                    } else if (stealResult == SkillStealResult::Fail) {
                         skipMove = true;
                     }
                 }
@@ -4866,9 +4866,9 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 bool skipMove = false;
                 if (_gIsSteal && _inven_dude == gDude) {
                     SkillStealResult stealResult = skillsPerformStealing(_inven_dude, targetObj, item, quantityToMove, false, stealXpOverridePtr);
-                    if (stealResult == SkillStealResult::caught) {
+                    if (stealResult == SkillStealResult::Caught) {
                         result = INVENTORY_MOVE_RESULT_CAUGHT_STEALING;
-                    } else if (stealResult == SkillStealResult::fail) {
+                    } else if (stealResult == SkillStealResult::Fail) {
                         skipMove = true;
                     }
                 }
