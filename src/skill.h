@@ -12,6 +12,12 @@ extern int _gIsSteal;
 extern int _gStealCount;
 extern int _gStealSize;
 
+enum class SkillStealResult {
+    caught = 0,
+    success = 1,
+    fail = 2,
+};
+
 int skillsInit();
 void skillsReset();
 void skillsExit();
@@ -35,7 +41,7 @@ char* skillGetDescription(int skill);
 char* skillGetAttributes(int skill);
 int skillGetFrmId(int skill);
 int skillUse(Object* obj, Object* target, int skill, int skillBonus);
-int skillsPerformStealing(Object* thief, Object* target, Object* item, bool isPlanting);
+SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* item, int quantity, bool isPlanting, int* xpOverride);
 int skillGetGameDifficultyModifier(int skill);
 int skillUpdateLastUse(int skill);
 int skillsUsageSave(File* stream);

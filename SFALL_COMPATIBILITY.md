@@ -98,7 +98,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | ✅ | - |
 | UseSkill | `HOOK_USESKILL` | 🚫 | - |
-| Steal | `HOOK_STEAL` | 🚫 | Et tu |
+| Steal | `HOOK_STEAL` | ✅ | - |
 | WithinPerception | `HOOK_WITHINPERCEPTION` | ✅ | - |
 | InventoryMove | `HOOK_INVENTORYMOVE` | ✅ | - |
 | InvenWield | `HOOK_INVENWIELD` | ✅ | - |
