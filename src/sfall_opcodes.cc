@@ -312,6 +312,37 @@ static void op_set_critter_current_ap(Program* program)
     }
 }
 
+static void refreshUnspentApArmorClass()
+{
+    if (isInCombat() && _combat_whose_turn() != gDude) {
+        interfaceRenderArmorClass(false);
+    }
+}
+
+static void op_set_unspent_ap_bonus(Program* program)
+{
+    int multiplier = programStackPopInteger(program);
+    statSetUnspentApBonus(multiplier);
+    refreshUnspentApArmorClass();
+}
+
+static void op_get_unspent_ap_bonus(Program* program)
+{
+    programStackPushInteger(program, statGetUnspentApBonus());
+}
+
+static void op_set_unspent_ap_perk_bonus(Program* program)
+{
+    int multiplier = programStackPopInteger(program);
+    statSetUnspentApPerkBonus(multiplier);
+    refreshUnspentApArmorClass();
+}
+
+static void op_get_unspent_ap_perk_bonus(Program* program)
+{
+    programStackPushInteger(program, statGetUnspentApPerkBonus());
+}
+
 // toggle_active_hand
 static void op_toggle_active_hand(Program* program)
 {
@@ -1977,9 +2008,13 @@ void sfallOpcodesInit()
     // 0x81ea - int   init_hook()  -> OBSOLETE, do not implement
 
     // 0x81e6 - void set_unspent_ap_bonus(int multiplier)
+    interpreterRegisterOpcode(0x81E6, op_set_unspent_ap_bonus);
     // 0x81e7 - int  get_unspent_ap_bonus()
+    interpreterRegisterOpcode(0x81E7, op_get_unspent_ap_bonus);
     // 0x81e8 - void set_unspent_ap_perk_bonus(int multiplier)
+    interpreterRegisterOpcode(0x81E8, op_set_unspent_ap_perk_bonus);
     // 0x81e9 - int  get_unspent_ap_perk_bonus()
+    interpreterRegisterOpcode(0x81E9, op_get_unspent_ap_perk_bonus);
 
     // 0x81ec - float sqrt(float)
     interpreterRegisterOpcode(0x81EC, op_sqrt);

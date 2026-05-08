@@ -5,6 +5,7 @@
 #include "interface.h"
 #include "script_sound.h"
 #include "sfall_script_hooks.h"
+#include "stat.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -33,6 +34,7 @@ void sfallOnGameExit()
 void sfallOnGameReset()
 {
     scriptSoundReset();
+    statResetUnspentApBonuses();
     return;
 }
 
