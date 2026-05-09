@@ -2,8 +2,8 @@
 #include <string.h>
 #include "color.h"
 #include "db.h"
-#include "memory_manager.h"
 #include "pcx.h"
+#include "memory_manager.h"
 #include "platform_compat.h"
 
 namespace fallout {
