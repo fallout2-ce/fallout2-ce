@@ -615,6 +615,13 @@ int proto_build_all_type(int type)
     return 0;
 }
 
+int proto_build_all_type_binary(int type)
+{
+    // TODO: rebuild binary proto list for given object type.
+    (void)type;
+    return 0;
+}
+
 int protoEdit(int protoId)
 {
     // TODO: implement proto editor dialog — load proto, show editor UI

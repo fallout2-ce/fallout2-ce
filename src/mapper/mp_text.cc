@@ -26,11 +26,12 @@ int proto_build_all_texts()
     return 0;
 }
 
-void load_all_maps_text()
+void load_all_maps_text(int mode)
 {
-    // TODO: load all maps from text format
+    // TODO: load all maps from text format. mode==0 → rebuild from text;
+    // mode==1 → generate text versions from binary maps.
+    (void)mode;
     mapperShowTimedMsg("Loading maps from text not implemented yet!");
-
 }
 
 void map_save_text()
