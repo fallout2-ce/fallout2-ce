@@ -622,6 +622,26 @@ int protoEdit(int protoId)
     return -1;
 }
 
+void rebuild_spray_tools()
+{
+    // TODO: rebuild spray tool (create/update pattern protos)
+}
+
+void rebuild_binary()
+{
+    // TODO: rebuild binary proto files from text sources
+}
+
+void art_to_protos()
+{
+    // TODO: create new proto entries for art files that have no proto yet
+}
+
+void swap_protos()
+{
+    // TODO: swap two prototype slots
+}
+
 static unsigned char itemIconsBgColor()
 {
     return _colorTable[21];

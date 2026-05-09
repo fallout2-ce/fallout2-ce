@@ -262,7 +262,7 @@ int scr_choose(int scriptType)
                 result = foundIndex | (type << 24);
             }
         } else if (selection == -1) {
-            char typedName[14] = {};
+            char typedName[14] = { };
             _win_get_str(typedName, 13, "Type in Script Name", 100, 50);
             compat_strupr(typedName);
 
@@ -330,12 +330,26 @@ int map_scr_add_spatial(int tile, int elevation)
     return 0;
 }
 
-void map_set_script()
+void map_set_script(int scriptIndex)
 {
-    char info[256];
-    snprintf(info, sizeof(info), "Map SID: %d", gMapSid);
-    _win_msg(info, 80, 80, 0x10104);
-    // TODO: full script selection dialog
+    if (scriptIndex == -1) {
+        if (gMapSid != -1) {
+            scriptRemove(gMapSid);
+            gMapSid = -1;
+        }
+        gMapHeader.scriptIndex = -1;
+    } else {
+        int idx = scriptIndex - 1;
+        if (gMapSid == -1) {
+            scriptAdd(&gMapSid, SCRIPT_TYPE_SYSTEM);
+        }
+        Script* script;
+        if (scriptGetScript(gMapSid, &script) != -1) {
+            script->index = idx;
+            gMapHeader.scriptIndex = idx;
+            _scr_find_str_run_info(idx, nullptr, gMapSid);
+        }
+    }
 }
 
 void map_show_script()

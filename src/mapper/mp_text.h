@@ -5,6 +5,7 @@ namespace fallout {
 
 int proto_build_all_texts();
 void load_all_maps_text();
+void map_save_text();
 
 } // namespace fallout
 

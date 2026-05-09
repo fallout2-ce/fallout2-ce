@@ -17,8 +17,8 @@ bool map_toggle_block_obj_viewing_on();
 
 void map_load_dialog();
 void map_save_dialog();
-void map_save_as();
-void map_info_dialog();
+int map_save_as(const char* name);
+void map_get_name(char* buf);
 void create_spray_tool();
 void copy_spray_tile();
 // mode = 1 - enable, 0 - disable, -1 - toggle

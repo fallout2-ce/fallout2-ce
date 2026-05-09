@@ -275,41 +275,29 @@ void map_load_dialog()
     fileNameListFree(&fileList, count);
 }
 
+// map_save_dialog
 void map_save_dialog()
 {
-    if (gMapHeader.name[0] == '\0') {
-        map_save_as();
-        return;
-    }
-
-    if (win_yes_no("Save map?", 80, 80, 0x10104)) {
-        _map_save();
-    }
-}
-
-void map_save_as()
-{
-    char newName[16] = { 0 };
-    int rc = _win_get_str(newName, 8, "Save file (no extension):", 80, 80);
-    if (rc == -1) return;
-
-    compat_strupr(newName);
-    if (strstr(newName, ".MAP") == nullptr) {
-        strcat(newName, ".MAP");
-    }
-
+    char newName[16] = { };
+    if (_win_get_str(newName, 8, "Save file (no extension):", 80, 80) != 0) return;
+    strcat(newName, ".map");
     strncpy(gMapHeader.name, newName, sizeof(gMapHeader.name) - 1);
     gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
-
     _map_save();
 }
 
-void map_info_dialog()
+// map_save_as
+int map_save_as(const char* name)
 {
-    char info[256];
-    snprintf(info, sizeof(info), "Map: %s\nElevation: %d\nIndex: %d\nFlags: 0x%x\nScript: %d",
-        gMapHeader.name, gElevation, gMapHeader.index, gMapHeader.flags, gMapHeader.scriptIndex);
-    _win_msg(info, 80, 80, 0x10104);
+    strncpy(gMapHeader.name, name, sizeof(gMapHeader.name) - 1);
+    gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
+    return _map_save();
+}
+
+// map_get_name
+void map_get_name(char* buf)
+{
+    strncpy(buf, gMapHeader.name, 16);
 }
 
 void map_clear_elevation()
@@ -326,14 +314,9 @@ void map_clear_elevation()
     }
 }
 
-static void showNotImplementedMsg(const char* msg)
-{
-    win_timed_msg(msg,_colorTable[31744] | FONT_SHADOW);
-}
-
 static void showNotImplementedSprayToolMsg()
 {
-    showNotImplementedMsg("Spray-tile painting not implemented in CE.");
+    mapperShowTimedMsg("Spray-tile painting not implemented in CE.");
 }
 
 // copy_spray_tile

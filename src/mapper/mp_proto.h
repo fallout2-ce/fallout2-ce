@@ -16,6 +16,10 @@ void init_mapper_protos();
 const char* proto_wall_light_str(int flags);
 int proto_pick_ai_packet(int* value);
 int proto_build_all_type(int type);
+void rebuild_spray_tools();
+void rebuild_binary();
+void art_to_protos();
+void swap_protos();
 int protoEdit(int protoId);
 int protoChooseMultiPids(int pidType, protoChooseFidCallback fidFunc, protoChooseAddCallback addFunc);
 // protoInstEdit moved to mp_instance.h

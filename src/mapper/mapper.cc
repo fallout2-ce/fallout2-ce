@@ -279,6 +279,8 @@ int menu_val_0[8];
 // 0x6EAA60
 int menu_val_2[8];
 
+int menu_val_3[7];
+
 // 0x6EAA80
 unsigned char e_num[4][19 * 26];
 
@@ -539,9 +541,9 @@ constexpr int kMenuHeaderFile = KEY_ALT_F;
 constexpr int kMenuHeaderTools = KEY_ALT_V;
 constexpr int kMenuHeaderScripts = KEY_ALT_T;
 constexpr int kMenuHeaderLibrarian = KEY_ALT_J;
-constexpr int kMenuBarActivation = KEY_F8;
-constexpr int kMenuBarActivationAlt = KEY_CTRL_F12;
-constexpr int kBtnEraseMap = KEY_F12;
+constexpr int kBtnPlayMode = KEY_F8;
+constexpr int kBtnRebuildProtoList = KEY_F10;
+constexpr int kBtnF8AsGame = KEY_CTRL_F12;
 
 constexpr int kBtnMoveMapElev = 4186;
 constexpr int kBtnCopyMapElev = 4188;
@@ -562,7 +564,8 @@ constexpr int kBtnNew = KEY_ALT_N;
 constexpr int kBtnOpen = KEY_ALT_O;
 constexpr int kBtnSave = KEY_ALT_S;
 constexpr int kBtnSaveAs = KEY_ALT_A;
-constexpr int kBtnInfo = KEY_ALT_I;
+constexpr int kBtnSaveText = KEY_ALT_P;
+constexpr int kBtnOpenFromText = KEY_ALT_I;
 constexpr int kBtnLoadAllTexts = KEY_ALT_K;
 
 // TOOLS menu pulldown keycodes
@@ -606,15 +609,20 @@ constexpr int kBtnQuit = KEY_ESCAPE;
 constexpr int kBtnClearScroll = 0x175;
 constexpr int kBtnLastProto = 0x14F;
 constexpr int kBtnGotoDudeElev = 0x147;
-constexpr int kBtnToggleInterruptWalk = KEY_CTRL_F11;
+constexpr int kBtnToggleInterruptWalk = KEY_ALT_R;
 constexpr int kBtnRotation0 = KEY_CTRL_F9;
 constexpr int kBtnRotation3 = KEY_CTRL_F10;
 constexpr int kBtnDestroyAllScripts = KEY_UPPERCASE_A;
 constexpr int kBtnRebuildSprayTools = 0x143;
-constexpr int kBtnRebuildProtoList = 0x144;
 constexpr int kBtnDestroyProtoList = 0x185;
 constexpr int kBtnHighlightByProto = 0x123;
 constexpr int kBtnAnimDebugStep = 0x12E;
+
+// LIBRARIAN menu pulldown keycodes
+constexpr int kBtnLibrarianRebuildAll = 5545;
+constexpr int kBtnLibrarianRebuildBinary = 5546;
+constexpr int kBtnLibrarianArtToProtos = 5547;
+constexpr int kBtnLibrarianSwapProtos = 5548;
 
 constexpr int kArtMaxDirect = 0x4B0;
 
@@ -645,7 +653,7 @@ void MapperInit()
     menu_val_0[3] = kBtnSaveAs;
     menu_val_0[4] = KEY_ESCAPE;
     menu_val_0[5] = kBtnLoadAllTexts;
-    menu_val_0[6] = kBtnInfo;
+    menu_val_0[6] = kBtnOpenFromText;
     menu_val_0[7] = KEY_ESCAPE;
 
     menu_val_1[0] = kBtnCreatePattern;
@@ -678,6 +686,14 @@ void MapperInit()
     menu_val_2[5] = kBtnCreateScript;
     menu_val_2[6] = kBtnSetMapScript;
     menu_val_2[7] = kBtnShowMapScript;
+
+    menu_val_3[0] = kBtnRebuildSprayTools;
+    menu_val_3[1] = kBtnRebuildProtoList;
+    menu_val_3[2] = kBtnLibrarianRebuildAll;
+    menu_val_3[3] = kBtnLibrarianRebuildBinary;
+    menu_val_3[4] = KEY_ESCAPE;
+    menu_val_3[5] = kBtnLibrarianArtToProtos;
+    menu_val_3[6] = kBtnLibrarianSwapProtos;
 }
 
 static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
@@ -772,8 +788,8 @@ int mapper_edit_init(int argc, char** argv)
             130,
             "LIBRARIAN",
             292,
-            6,
-            &(menu_1[14]),
+            7,
+            menu_names[3],
             260,
             _colorTable[8456]);
     }
@@ -1179,17 +1195,19 @@ void edit_mapper()
         // Only F8 and Escape are NOT forwarded (they toggle modes).
         // ----------------------------------------------------------------
         bool routeToGame = map_entered && playModeEnabled
-            && keyCode != kMenuBarActivation && keyCode != kMenuBarActivationAlt
+            && keyCode != kBtnPlayMode && keyCode != kBtnF8AsGame
             && keyCode != KEY_ESCAPE;
 
         if (routeToGame) {
             gameHandleKey(keyCode, false);
 
             if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-                _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
+                // TODO: this logic is incorrect
                 if (!map_entered) {
                     break;
                 }
+                keyCode = kBtnPlayMode;
+                _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
                 mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
             } else {
                 scriptsHandleRequests();
@@ -1351,6 +1369,10 @@ void edit_mapper()
             int index = inputGetInput();
             if (index == -1) continue;
             keyCode = menu_val_2[index];
+        } else if (keyCode == kMenuHeaderLibrarian) {
+            int index = inputGetInput();
+            if (index == -1) continue;
+            keyCode = menu_val_3[index];
         }
 
         // Toolbar art-slot left-click: select proto from toolbar
@@ -1419,26 +1441,15 @@ void edit_mapper()
 
         // --- FILE menu ---
         case kBtnNew:
-            map_toggle_block_obj_viewing(0);
-            mapNewMap();
-            handle_new_map(&currentType, &scrollOffset);
-            break;
-        case kBtnEraseMap:
-            if (map_entered) {
-                break;
-            }
-            if (win_yes_no("Erase this map?", 80, 80, 0x10104)) {
+            if (map_entered) break;
+            if (mapperYesNoDialog("Erase this map?")) {
                 bool wasBlockOn = map_toggle_block_obj_viewing_on();
-                if (wasBlockOn) {
-                    map_toggle_block_obj_viewing(0);
-                }
+                if (wasBlockOn) map_toggle_block_obj_viewing(0);
                 mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
                 mapNewMap();
                 handle_new_map(&currentType, &scrollOffset);
                 interfaceBarHide();
-                if (wasBlockOn) {
-                    map_toggle_block_obj_viewing(1);
-                }
+                if (wasBlockOn) map_toggle_block_obj_viewing(1);
             }
             break;
         case kBtnOpen:
@@ -1465,9 +1476,39 @@ void edit_mapper()
                 }
             }
             break;
+        case kBtnSaveText:
         case kBtnSave: {
             if (map_entered) {
+                mapperShowTimedMsg("This map has been Entered.  Can't Save.");
+                break;
+            }
+            if (settings.mapper.use_art_not_protos) {
+                mapperShowTimedMsg("WARNING!  You are saving ART, not PROTOS!!!");
+            }
+            if (can_modify_protos && !proto_user_is_librarian() || target_overriden()) {
+                win_timed_msg("This map is for TESTING.  Can't Save.", _colorTable[32747] | FONT_SHADOW);
+                break;
+            }
+            char mapName[64];
+            map_get_name(mapName);
+            int saveResult = 0;
+            if (keyCode == kBtnSave) {
+                bool wasBlockOn = map_toggle_block_obj_viewing_on();
+                if (wasBlockOn) map_toggle_block_obj_viewing(0);
+                saveResult = map_save_as(mapName);
+                if (wasBlockOn) map_toggle_block_obj_viewing(1);
+            }
+            if (saveResult != -1 && settings.mapper.save_text_maps) map_save_text();
+            mapper_save_toolbar();
+            break;
+        }
+        case kBtnSaveAs: {
+            if (map_entered) {
                 win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[32747] | FONT_SHADOW);
+                break;
+            }
+            if (can_modify_protos && !proto_user_is_librarian() || target_overriden()) {
+                win_timed_msg("This map is for TESTING.  Can't Save.", _colorTable[32747] | FONT_SHADOW);
                 break;
             }
             bool wasBlockOn = map_toggle_block_obj_viewing_on();
@@ -1477,25 +1518,12 @@ void edit_mapper()
             if (wasBlockOn) map_toggle_block_obj_viewing(1);
             break;
         }
-        case kBtnSaveAs: {
-            if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[32747] | FONT_SHADOW);
-                break;
-            }
-            bool wasBlockOn = map_toggle_block_obj_viewing_on();
-            if (wasBlockOn) map_toggle_block_obj_viewing(0);
-            map_save_as();
-            mapper_save_toolbar();
-            if (wasBlockOn) map_toggle_block_obj_viewing(1);
-            break;
-        }
-        case kBtnInfo:
-            map_info_dialog();
+        case kBtnOpenFromText:
+            mapperShowTimedMsg("Map Text Code Disabled.  Can't Load Text.");
             break;
         case kBtnLoadAllTexts:
             load_all_maps_text();
             break;
-
         // --- TOOLS menu ---
         case kBtnCreatePattern:
             create_spray_tool();
@@ -1608,9 +1636,16 @@ void edit_mapper()
         case kBtnCreateScript:
             // TODO: create a new script file
             break;
-        case kBtnSetMapScript:
-            map_set_script();
+        case kBtnSetMapScript: {
+            if (map_entered) break;
+            int id = scr_choose(0);
+            if (id == -2) {
+                map_set_script(-1);
+            } else if (id >= 0) {
+                map_set_script((id & 0xFFFFFF) + 1);
+            }
             break;
+        }
         case kBtnShowMapScript:
             map_show_script();
             break;
@@ -1779,8 +1814,7 @@ void edit_mapper()
             break;
 
         // --- Play mode toggle ---
-        case kMenuBarActivation:
-        case kMenuBarActivationAlt:
+        case kBtnPlayMode:
             if (map_entered) {
                 mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
             } else {
@@ -1976,18 +2010,20 @@ void edit_mapper()
             if (map_entered) break;
             if (!can_modify_protos) break;
             if (win_yes_no("Do you REALLY want to rebuild spray tools?", 80, 80, 0x10104)) {
-                // TODO: rebuild_spray_tools()
-                win_timed_msg("Rebuild spray tools not yet implemented.", _colorTable[31744] | FONT_SHADOW);
+                rebuild_spray_tools();
             }
             break;
 
         // --- Rebuild proto list for current type ---
         case kBtnRebuildProtoList:
-            if (map_entered) break;
-            if (!can_modify_protos) break;
-            if (win_yes_no("Do you REALLY want to rebuild this list?", 80, 80, 0x10104)) {
-                // TODO: proto_remove_all + proto_build_all_type(currentType)
-                win_timed_msg("Rebuild proto list not yet implemented.", _colorTable[31744] | FONT_SHADOW);
+            if (!map_entered && can_modify_protos) {
+                if (win_yes_no("Do you REALLY want to rebuild this list?", 80, 80, 65796) > 0) {
+                    mapperShowTimedMsg("Please wait.");
+                    _proto_remove_all();
+                    proto_build_all_type(currentType);
+                    update_art(currentType, scrollOffset);
+                    mapperShowTimedMsg("Done.");
+                }
             }
             break;
 
@@ -1996,9 +2032,42 @@ void edit_mapper()
             if (map_entered) break;
             if (!can_modify_protos) break;
             if (win_yes_no("Do you REALLY want to destroy the space proto list?", 80, 80, 0x10104)) {
-                // TODO: proto_remove_all + proto_build_all_texts
-                win_timed_msg("Destroy proto list not yet implemented.", _colorTable[31744] | FONT_SHADOW);
+                _proto_remove_all();
+                proto_build_all_texts();
             }
+            break;
+
+        // --- Librarian: Rebuild ALL ---
+        case kBtnLibrarianRebuildAll:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            if (win_yes_no("Do you REALLY want to rebuild ALL?", 80, 80, 0x10104)) {
+                _proto_remove_all();
+                proto_build_all_texts();
+            }
+            break;
+
+        // --- Librarian: Rebuild Binary ---
+        case kBtnLibrarianRebuildBinary:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            if (win_yes_no("Do you REALLY want to rebuild Binary?", 80, 80, 0x10104)) {
+                rebuild_binary();
+            }
+            break;
+
+        // --- Librarian: Art => New Protos ---
+        case kBtnLibrarianArtToProtos:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            art_to_protos();
+            break;
+
+        // --- Librarian: Swap Prototypes ---
+        case kBtnLibrarianSwapProtos:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            swap_protos();
             break;
 
         // --- Highlight object by proto ---
@@ -2646,6 +2715,16 @@ static void mapper_mark_all_exit_grids()
         }
         obj = objectFindNextAtElevation();
     }
+}
+
+void mapperShowTimedMsg(const char* msg)
+{
+    win_timed_msg(msg, _colorTable[31744] | FONT_SHADOW);
+}
+
+bool mapperYesNoDialog(const char* msg)
+{
+    return win_yes_no(msg, 80, 80, 0x104 | FONT_SHADOW) > 0;
 }
 
 } // namespace fallout

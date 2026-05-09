@@ -3,6 +3,7 @@
 #include "color.h"
 #include "input.h"
 #include "kb.h"
+#include "mapper/mapper.h"
 #include "mapper/mp_proto.h"
 #include "obj_types.h"
 #include "window_manager_private.h"
@@ -28,6 +29,14 @@ int proto_build_all_texts()
 void load_all_maps_text()
 {
     // TODO: load all maps from text format
+    mapperShowTimedMsg("Loading maps from text not implemented yet!");
+
+}
+
+void map_save_text()
+{
+    // TODO:
+    mapperShowTimedMsg("Saving map text not implemented yet!");
 }
 
 } // namespace fallout
