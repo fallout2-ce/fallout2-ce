@@ -82,6 +82,8 @@ void _gmouse_enable_scrolling();
 void _gmouse_disable_scrolling();
 bool gmouse_scrolling_is_enabled();
 int _gmouse_is_scrolling();
+int _gmouse_get_click_to_scroll();
+void _gmouse_set_click_to_scroll(int value);
 void gameMouseRefresh();
 void _gmouse_handle_event(int mouseX, int mouseY, int mouseState);
 int gameMouseSetCursor(int cursor);

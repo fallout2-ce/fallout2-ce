@@ -86,7 +86,6 @@ namespace fallout {
 #define SPLASH_HEIGHT (480)
 #define SPLASH_COUNT (10)
 
-static int gameLoadGlobalVars();
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void gameFreeGlobalVars();
 static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed);
@@ -1016,7 +1015,7 @@ int gameSetGlobalVar(int var, int value)
 
 // game_load_info
 // 0x443CC8
-static int gameLoadGlobalVars()
+int gameLoadGlobalVars()
 {
     if (globalVarsRead("data\\vault13.gam", "GAME_GLOBAL_VARS:", &gGameGlobalVarsLength, &gGameGlobalVars) != 0) {
         return -1;

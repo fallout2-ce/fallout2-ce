@@ -48,6 +48,7 @@
 #include "tile.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -131,6 +132,9 @@ static char kArtToProtos[] = " Art => New Protos ";
 static char kSwapPrototypse[] = " Swap Prototypes ";
 
 static char kTmpMapName[] = "TMP$MAP#.MAP";
+
+// Stored statically in CE so it survives across enter/exit.
+static char gSavedMapName[16];
 
 // 0x559618
 int rotate_arrows_x_offs[] = {
@@ -1164,8 +1168,7 @@ void edit_mapper()
         map_scr_toggle_hexes();
     }
 
-    // TODO: these calls aren't in original code, figure out how it worked without them
-    _gmouse_enable();
+    // TODO: this call aren't in original code, figure out how it worked without
     interfaceBarHide();
     while (true) {
         sharedFpsLimiter.mark();
@@ -1184,14 +1187,17 @@ void edit_mapper()
 
             if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
                 _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
-                if (map_entered) {
-                    // Simulate F8 press to exit play mode.
-                    mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
+                if (!map_entered) {
+                    break;
                 }
+                mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
+            } else {
+                scriptsHandleRequests();
+                mapHandleTransition();
             }
 
-            scriptsHandleRequests();
-            mapHandleTransition();
+            renderPresent();
+            sharedFpsLimiter.throttle();
             continue;
         }
 
@@ -1204,7 +1210,7 @@ void edit_mapper()
             _gdialogSystemEnter();
         }
 
-        bool mouseInMenuArea = _mouse_click_in(0, 0, _scr_size.right - _scr_size.left, 15);
+        bool mouseInMenuArea = _mouse_click_in(_scr_size.left, 1, _scr_size.right, 15);
         if (!map_entered && mouseInMenuArea) {
             windowShow(menu_bar);
         } else if (!mouseInMenuArea) {
@@ -1513,10 +1519,17 @@ void edit_mapper()
             mapper_flush_cache();
             break;
         case kBtnAnimStepping:
-            // TODO: toggle anim debug stepping
+            // CE has no equivalent for anim debug stepping.
             break;
         case kBtnFixMapPids:
-            // TODO: fix map objects to PID
+            // Original prompts for confirmation, then sets a config flag that triggers a fix-up
+            // pass on the next save. Mirror the config write only.
+            if (!map_entered) {
+                if (win_yes_no("Fix Map-Object flags?", 180, 180, 0x10104)) {
+                    // TODO: read the flag
+                    settings.mapper.fix_map_objects = true;
+                }
+            }
             break;
         case kBtnBookmark:
             bookmarkChoose(currentType, &scrollOffset);
@@ -1525,7 +1538,7 @@ void edit_mapper()
             map_toggle_block_obj_viewing(-1);
             break;
         case kBtnClickToScroll:
-            // TODO: toggle click-to-scroll mode
+            _gmouse_set_click_to_scroll(_gmouse_get_click_to_scroll() ? 0 : 1);
             break;
         case kBtnSetExitGridData: {
             int val;
@@ -1701,7 +1714,8 @@ void edit_mapper()
                 if (currentType == OBJ_TYPE_TILE) {
                     copyTile();
                 } else {
-                    copyObject();
+                    // 'c' filters region copy to the current toolbar type.
+                    copyObject(currentType);
                 }
             }
             break;
@@ -1721,11 +1735,13 @@ void edit_mapper()
             }
             break;
         case kBtnPaste:
+            // 'C' is the unfiltered region-copy: pick a region, then place every object inside
+            // it (regardless of type) at the new mouse position.
             if (!map_entered) {
                 if (currentType == OBJ_TYPE_TILE) {
                     copyTile();
                 } else {
-                    copyObject();
+                    copyObject(-1);
                 }
             }
             break;
@@ -1904,9 +1920,10 @@ void edit_mapper()
             break;
 
         // --- Toggle interrupt walk ---
-        case kBtnToggleInterruptWalk:
-            // TODO: toggle interrupt_walk config via gameConfig
+        case kBtnToggleInterruptWalk: {
+            settings.system.interrupt_walk = !settings.system.interrupt_walk;
             break;
+        }
 
         // --- Set rotation to 0 ---
         case kBtnRotation0:
@@ -1941,7 +1958,15 @@ void edit_mapper()
             if (map_entered) break;
             if (win_yes_no("Do you want to destroy all scripts!?", 80, 80, 0x10104)) {
                 if (win_yes_no("ARE YOU SURE?", 80, 80, 0x10104)) {
-                    // TODO: iterate objects, remove scripts, call scr_remove_all
+                    Object* obj = objectFindFirst();
+                    while (obj != nullptr) {
+                        if (obj->sid != -1) {
+                            scriptRemove(obj->sid);
+                            obj->sid = -1;
+                        }
+                        obj = objectFindNext();
+                    }
+                    _scr_remove_all();
                 }
             }
             break;
@@ -2479,13 +2504,15 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
 
     _screen_obj = nullptr;
 
-    // TODO: bookmarkWin hide
+    bookmarkHide();
 
-    // TODO: gameLoadGlobalVars();
+    gameLoadGlobalVars();
 
     windowHide(tool_win);
 
-    // TODO: save map name for restoration on exit
+    // Save current map name so exit can restore it after reloading the temp snapshot.
+    strncpy(gSavedMapName, gMapHeader.name, sizeof(gSavedMapName));
+    gSavedMapName[sizeof(gSavedMapName) - 1] = '\0';
 
     remove(mapBuildPath(tmp_map_name));
     remove(mapBuildPath("TMP$MAP#.MAP"));
@@ -2494,18 +2521,21 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
 
     map_toggle_block_obj_viewing(0);
 
-    // TODO: mapSaveAs(tmp_map_name);
+    // Save current map under the temp name so we can restore on exit.
+    strncpy(gMapHeader.name, kTmpMapName, sizeof(gMapHeader.name) - 1);
+    gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
+    _map_save();
 
     int centerTile = (gDude != nullptr) ? gDude->tile : 0;
     objectSetLocation(gDude, centerTile, gElevation, nullptr);
 
     objectSetRotation(gDude, 0, nullptr);
 
-    // TODO: objectShow(gDude);
+    objectShow(gDude, nullptr);
 
-    // TODO: proto_dude_reset("premade\\blank.gcd")
+    _proto_dude_init("premade\\blank.gcd");
 
-    // TODO: set dude FID from art_vault_guy_num
+    gDude->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, 0, 0);
 
     _scr_game_init();
 
@@ -2517,7 +2547,7 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
     gameMouseObjectsShow();
     gameMouseSetCursor(0);
 
-    // TODO: _draw_mode = 0
+    draw_mode = false;
 
     lightSetAmbientIntensity(0x10000, true);
 
@@ -2525,17 +2555,18 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
     tileScrollLimitingEnable();
 
     if (settings.mapper.run_mapper_as_game) {
-        // TODO: scriptExecProc(gMapSid, 0xF);
-        // TODO: _scr_load_all_scripts();
+        scriptExecProc(gMapSid, SCRIPT_PROC_MAP_ENTER);
+        scriptsExecStartProc();
+        scriptsExecMapEnterProc();
+        scriptsExecMapUpdateProc();
+        tileSetCenter(gDude->tile, 1);
+    } else {
+        tileSetCenter(centerTile, 1);
     }
 
-    // TODO: scriptExecMapEnterScripts() / scriptExecMapUpdateScripts()
+    isoEnable();
 
-    tileSetCenter(gDude->tile, 1);
-
-    // TODO: mapEnableBkProcesses()
-
-    // TODO: wmMapMusicStart()
+    wmMapMusicStart();
 
     tileWindowRefresh();
 }
@@ -2552,14 +2583,16 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
 
     scriptsClearDudeScript();
 
-    // TODO: mapLoadByName(tmp_map_name);
+    mapLoadByName(kTmpMapName);
 
     remove(mapBuildPath(tmp_map_name));
     remove(mapBuildPath("TMP$MAP#.MAP"));
     remove(mapBuildPath("TMP$MAP#.CFG"));
     MapDirErase("MAPS\\", "SAV");
 
-    // TODO: restore saved map name -> gMapHeader.name
+    // Restore original map name (mapLoadByName resets it to the loaded file's header name).
+    strncpy(gMapHeader.name, gSavedMapName, sizeof(gMapHeader.name) - 1);
+    gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
 
     handle_new_map(pCurrentType, pScrollOffset);
 
@@ -2585,13 +2618,17 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
     tileScrollBlockingDisable();
     tileScrollLimitingDisable();
 
-    // TODO: gmouse click-to-scroll restore
+    // Match the original: if click-to-scroll was on during play, force it off on exit.
+    if (_gmouse_get_click_to_scroll() == 1) {
+        _gmouse_set_click_to_scroll(0);
+    }
 
-    // TODO: gmouse_3d_set_mode(0)
+    gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
 
     backgroundSoundDelete();
 
-    // TODO: bookmarkWin show
+    bookmarkUnHide();
+
     tileWindowRefresh();
 }
 

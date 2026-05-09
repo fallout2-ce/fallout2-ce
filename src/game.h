@@ -47,6 +47,7 @@ int gameRequestState(int newGameState);
 void gameUpdateState();
 int showQuitConfirmationDialog();
 
+int gameLoadGlobalVars();
 int gameShowDeathDialog(const char* message);
 void gameHandleSkilldexResult(int rc);
 void* gameGetGlobalPointer(int var);

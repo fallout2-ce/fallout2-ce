@@ -32,7 +32,9 @@ int pickHex();
 int pickToolbar(int topY);
 void placeObject(int pid, int fid);
 void placeTile(int pid, int fid);
-void copyObject();
+// Pass the current toolbar type to filter the region copy by type, or -1 to copy all object
+// types in the picked region (mirrors the original mapper's `copy_object(arg1)` arg).
+void copyObject(int filterType);
 void copyTile();
 void eraseObject();
 

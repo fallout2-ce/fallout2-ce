@@ -313,7 +313,6 @@ Object* gGameMouseHexCursor;
 // 0x596C74
 static Object* gGameMousePointedObject;
 
-static int _gmouse_get_click_to_scroll();
 static void _gmouse_3d_enable_modes();
 static int gameMouseSetBouncingCursorFid(int fid);
 static int gameMouseRenderAccuracy(const char* string, int color);
@@ -453,6 +452,15 @@ bool gmouse_scrolling_is_enabled()
 int _gmouse_get_click_to_scroll()
 {
     return _gmouse_click_to_scroll;
+}
+
+// gmouse_set_click_to_scroll
+void _gmouse_set_click_to_scroll(int value)
+{
+    if (value != _gmouse_click_to_scroll) {
+        _gmouse_click_to_scroll = value;
+        _gmouse_clicked_on_edge = false;
+    }
 }
 
 // 0x44B54C
@@ -2381,6 +2389,19 @@ int gameMouseHandleScrolling(int x, int y, int cursor)
 
     if (y >= _scr_size.bottom) {
         flags |= SCROLLABLE_S;
+    }
+
+    // Click-to-scroll mode (mapper Alt-Z): only scroll while the left button is held at an
+    // edge. Track this in _gmouse_clicked_on_edge so callers can react (e.g. suppress the
+    // regular 3D cursor update while an edge-click scroll is active).
+    // TODO: reconcile with other site where _gmouse_clicked_on_edge is set to true
+    if (_gmouse_click_to_scroll) {
+        bool atEdge = flags != 0;
+        bool leftHeld = (mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_REPEAT) != 0;
+        _gmouse_clicked_on_edge = atEdge && leftHeld;
+        if (!_gmouse_clicked_on_edge) {
+            return -1;
+        }
     }
 
     int dx = 0;
