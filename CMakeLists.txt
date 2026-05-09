@@ -207,6 +207,8 @@ set(FALLOUT_ENGINE_SOURCES
     "src/proto.h"
     "src/queue.cc"
     "src/queue.h"
+    "src/radiation.cc"
+    "src/radiation.h"
     "src/random.cc"
     "src/random.h"
     "src/reaction.cc"
