@@ -23,9 +23,6 @@ void contentConfigInit()
     }
 
     configRead(&gContentConfig, kConfigPath, true);
-    // Patch config allows to override only certain fields, without replacing the whole file.
-    // TODO: remove this after config patching by mods is implemented inside configRead
-    configRead(&gContentConfig, kConfigPatchPath, true);
 }
 
 void contentConfigExit()
