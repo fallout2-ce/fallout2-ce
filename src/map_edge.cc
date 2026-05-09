@@ -78,10 +78,12 @@ static bool parseEdgFile(File* stream)
             }
 
             EdgeZone* zone = new EdgeZone();
-            // tileRect[0]=left, [1]=right: left tile has smaller tile_x than right in CE coords
+            // File stores RECT order: [0]=left, [1]=top, [2]=right, [3]=bottom.
+            // "left" tile has larger raw tile_x → smaller CE tile_x (minTileX).
+            // "right" tile has smaller raw tile_x → larger CE tile_x (maxTileX).
             zone->minTileX = HEX_GRID_WIDTH - 1 - (tileRect[0] % HEX_GRID_WIDTH);
-            zone->maxTileX = HEX_GRID_WIDTH - 1 - (tileRect[1] % HEX_GRID_WIDTH);
-            zone->minTileY = tileRect[2] / HEX_GRID_WIDTH;
+            zone->maxTileX = HEX_GRID_WIDTH - 1 - (tileRect[2] % HEX_GRID_WIDTH);
+            zone->minTileY = tileRect[1] / HEX_GRID_WIDTH;
             zone->maxTileY = tileRect[3] / HEX_GRID_WIDTH;
             // squareRect is per-elevation (stored in first zone only)
             zone->sqLeft = isFirstZone ? sqLeft : -1;

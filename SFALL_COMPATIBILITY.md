@@ -4,6 +4,27 @@ This document tracks Fallout 2 CE compatibility with sfall.  This is for modders
 
 For now, this covers opcodes/metarules, and hooks.  In the future, it will include other ways of modifying the engine (like ini files), and other Sfall-specific behaviour.
 
+## HRP EDG Scroll-Blocker Support
+
+CE supports the `.edg` file format from the HRP (High Resolution Patch), which defines per-map scroll boundaries and square-level render clipping.
+
+**How it works in CE:**
+
+- On map load, `maps/<mapname>.edg` is read if present. Missing file = silent fallback to the existing scroll-blocker-object system.
+- The `.edg` file defines up to three per-elevation `TileRect` boundaries (in tile-index space). Multiple chained rects per elevation are supported.
+- When loaded, EDG clamping replaces both scroll-blocker object checks (`_obj_scroll_blocking_at`) and the auto-computed tile border (`gTileBorderMin/Max`).
+- v2 EDG files also contain a `SquareRect` per elevation that drives the stencil flood-fill in `tile_hires_stencil`, marking visible squares directly instead of using a flood-fill.
+- v1 EDG files fall back to a flood-fill gated by `mapEdgeTileInBounds`.
+- `clipData` bitmask (controls which sides use a two-pass filler render in sfall's `square_obj_render`) is read but not used; CE's black-fill stencil provides equivalent visual results.
+- Multi-zone support (chained `TileRect`s) is implemented: the zone whose bounds contain the target tile is selected, with fallback to the last zone.
+
+**Key differences from sfall/HRP:**
+
+- CE does not implement `GetCenterTile`/`CheckBorder` as sfall does; instead it stores precomputed `[min/max]TileX/Y` bounds and clamps directly in `tileSetCenter`.
+- CE has no `borderRect`/`rect_2`/`mapModWidth` system; scroll clamping is tile-coordinate-only (no sub-pixel scroll cushion).
+- CE has no `EDGE_CLIPPING_ON` visual clip rect (`mapVisibleArea`); out-of-bounds areas are hidden by the stencil black-fill rather than by per-rect render clipping.
+- `gmouse_check_scrolling_hack` (pre-filter for mouse-edge scroll in clipped areas) is not ported.
+
 ## Settings (ddraw.ini → fallout2.cfg / game.cfg)
 
 Settings previously read from `ddraw.ini` have been moved into standard CE config files.
