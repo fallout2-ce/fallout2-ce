@@ -80,8 +80,9 @@ static int mapperPickTile(int* outOffset);
 static void handle_new_map(int* a1, int* a2);
 static int mapper_mark_exit_grid();
 static void mapper_mark_all_exit_grids();
-static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object** pHlObj1, Object* dudeToRestore);
+static void mapper_enter_play_mode(Object** pHlObj1);
 static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object* dudeToRestore);
+static void mapper_remove_tmp_map_files();
 
 // TODO: Underlying menu/pulldown interface wants menu items to be non-const,
 // needs some refactoring.
@@ -1818,7 +1819,7 @@ void edit_mapper()
             if (map_entered) {
                 mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
             } else {
-                mapper_enter_play_mode(&currentType, &scrollOffset, &hl_obj1, dudeToRestore);
+                mapper_enter_play_mode(&hl_obj1);
             }
             break;
 
@@ -2102,6 +2103,14 @@ void edit_mapper()
     }
 
 exitLoop:
+    // If quitting while still in play mode, restore the editor's dude object,
+    // tear down the active scripts and erase the temp snapshot files.
+    if (map_entered) {
+        gDude = dudeToRestore;
+        _scr_game_exit();
+        mapper_remove_tmp_map_files();
+        interfaceBarHide();
+    }
     toolbar_info[currentType].offset = scrollOffset;
     mapper_save_toolbar();
 }
@@ -2563,13 +2572,29 @@ int mapper_mark_exit_grid()
     return 0;
 }
 
-static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object** pHlObj1, Object* dudeToRestore)
+// Erase the play-mode temp map snapshot from disk. Used on enter (to start
+// from a clean slate), on exit (after the snapshot has been loaded back),
+// and on editor shutdown if the user quit while still in play mode.
+static void mapper_remove_tmp_map_files()
+{
+    remove(mapBuildPath(tmp_map_name));
+    remove(mapBuildPath("TMP$MAP#.MAP"));
+    remove(mapBuildPath("TMP$MAP#.CFG"));
+    MapDirErase("MAPS\\", "SAV");
+}
+
+static void mapper_enter_play_mode(Object** pHlObj1)
 {
     windowHide(menu_bar);
 
     gmouse_set_mapper_mode(0);
 
     mapper_destroy_highlight_obj(pHlObj1, nullptr);
+
+    // Capture current view center BEFORE the save/remove sequence; vanilla
+    // uses this both as the dude's spawn tile and to restore the view when
+    // run_mapper_as_game is off.
+    int savedCenterTile = gCenterTile;
 
     _screen_obj = nullptr;
 
@@ -2583,10 +2608,7 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
     strncpy(gSavedMapName, gMapHeader.name, sizeof(gSavedMapName));
     gSavedMapName[sizeof(gSavedMapName) - 1] = '\0';
 
-    remove(mapBuildPath(tmp_map_name));
-    remove(mapBuildPath("TMP$MAP#.MAP"));
-    remove(mapBuildPath("TMP$MAP#.CFG"));
-    MapDirErase("MAPS\\", "SAV");
+    mapper_remove_tmp_map_files();
 
     map_toggle_block_obj_viewing(0);
 
@@ -2595,8 +2617,7 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
     gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
     _map_save();
 
-    int centerTile = (gDude != nullptr) ? gDude->tile : 0;
-    objectSetLocation(gDude, centerTile, gElevation, nullptr);
+    objectSetLocation(gDude, savedCenterTile, gElevation, nullptr);
 
     objectSetRotation(gDude, 0, nullptr);
 
@@ -2611,26 +2632,29 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
     interfaceBarShow();
 
     map_entered = true;
+    tool_active = -1;
 
     gameMouseResetBouncingCursorFid();
     gameMouseObjectsShow();
-    gameMouseSetCursor(0);
+    gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
     draw_mode = false;
 
-    lightSetAmbientIntensity(0x10000, true);
+    lightSetAmbientIntensity(0x10000, false);
 
     tileScrollBlockingEnable();
     tileScrollLimitingEnable();
 
     if (settings.mapper.run_mapper_as_game) {
         scriptExecProc(gMapSid, SCRIPT_PROC_MAP_ENTER);
-        scriptsExecStartProc();
+        if (scriptsExecStartProc() == -1) {
+            debugPrint("\n   Error: scr_load_all_scripts failed!");
+        }
         scriptsExecMapEnterProc();
         scriptsExecMapUpdateProc();
         tileSetCenter(gDude->tile, 1);
     } else {
-        tileSetCenter(centerTile, 1);
+        tileSetCenter(savedCenterTile, 1);
     }
 
     isoEnable();
@@ -2654,10 +2678,7 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
 
     mapLoadByName(kTmpMapName);
 
-    remove(mapBuildPath(tmp_map_name));
-    remove(mapBuildPath("TMP$MAP#.MAP"));
-    remove(mapBuildPath("TMP$MAP#.CFG"));
-    MapDirErase("MAPS\\", "SAV");
+    mapper_remove_tmp_map_files();
 
     // Restore original map name (mapLoadByName resets it to the loaded file's header name).
     strncpy(gMapHeader.name, gSavedMapName, sizeof(gMapHeader.name) - 1);
@@ -2682,7 +2703,7 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
 
     windowShow(tool_win);
 
-    lightSetAmbientIntensity(0x10000, true);
+    lightSetAmbientIntensity(0x10000, false);
 
     tileScrollBlockingDisable();
     tileScrollLimitingDisable();
