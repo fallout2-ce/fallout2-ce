@@ -9,8 +9,8 @@ namespace fallout {
 
 // The number of effects caused by radiation.
 //
-// A radiation effect is an identifier and does not have it's own name. It's
-// stat is specified in [gRadiationEffectStats], and it's amount is specified
+// A radiation effect is an identifier and does not have its own name. Its
+// stat is specified in [gRadiationEffectStats], and its amount is specified
 // in [gRadiationEffectPenalties] for every [RadiationLevel].
 constexpr int RADIATION_EFFECT_COUNT = 8;
 
@@ -45,14 +45,8 @@ typedef enum RadiationLevel {
     RADIATION_LEVEL_COUNT,
 } RadiationLevel;
 
-// Modifiers to endurance for performing radiation damage check.
-extern const int gRadiationEnduranceModifiers[RADIATION_LEVEL_COUNT];
-extern const int gRadiationEffectStats[RADIATION_EFFECT_COUNT];
-extern const int gRadiationEffectPenalties[RADIATION_LEVEL_COUNT][RADIATION_EFFECT_COUNT];
-
 // Radiation for Critter
 int critterGetRadiation(Object* obj);
-int _get_rad_damage_level(Object* obj, void* data);
 int critterCheckRadiationEvent(Object* obj);
 int critterAdjustRadiation(Object* obj, int amount);
 

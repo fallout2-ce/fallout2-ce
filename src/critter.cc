@@ -22,7 +22,6 @@
 #include "platform_compat.h"
 #include "proto.h"
 #include "queue.h"
-#include "radiation.h"
 #include "random.h"
 #include "reaction.h"
 #include "scripts.h"

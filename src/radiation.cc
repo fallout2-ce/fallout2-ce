@@ -1,19 +1,19 @@
 
 #include "radiation.h"
+#include "critter.h"
+#include "display_monitor.h"
+#include "game.h"
+#include "interface.h"
+#include "item.h"
+#include "memory.h"
 #include "message.h"
 #include "object.h"
-#include "proto_types.h"
 #include "proto.h"
-#include "stat.h"
-#include "item.h"
-#include "game.h"
-#include "display_monitor.h"
-#include "interface.h"
+#include "proto_types.h"
 #include "queue.h"
 #include "random.h"
-#include "memory.h"
 #include "scripts.h"
-#include "critter.h"
+#include "stat.h"
 
 namespace fallout {
 
@@ -149,6 +149,16 @@ int critterAdjustRadiation(Object* obj, int amount)
     return 0;
 }
 
+// 0x42D618
+int _get_rad_damage_level(Object* obj, void* data)
+{
+    RadiationEvent* radiationEvent = (RadiationEvent*)data;
+
+    oldRadLevel = radiationEvent->radiationLevel;
+
+    return 0;
+}
+
 // 0x42D4F4
 // note: original ASM always returned 0
 int critterCheckRadiationEvent(Object* obj)
@@ -201,16 +211,6 @@ int critterCheckRadiationEvent(Object* obj)
     }
 
     proto->critter.data.flags &= ~CRITTER_RADIATED;
-
-    return 0;
-}
-
-// 0x42D618
-int _get_rad_damage_level(Object* obj, void* data)
-{
-    RadiationEvent* radiationEvent = (RadiationEvent*)data;
-
-    oldRadLevel = radiationEvent->radiationLevel;
 
     return 0;
 }
