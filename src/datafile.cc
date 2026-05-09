@@ -1,15 +1,15 @@
 #include "datafile.h"
-#include <string.h>
 #include "color.h"
 #include "db.h"
-#include "pcx.h"
 #include "memory_manager.h"
+#include "pcx.h"
 #include "platform_compat.h"
+#include <string.h>
 
 namespace fallout {
 
 constexpr size_t DATA_FILE_PALETTE_MAX = 768;
-constexpr size_t INDEXED_PALETTE_MAX   = 256;
+constexpr size_t INDEXED_PALETTE_MAX = 256;
 
 // 0x5184AC
 DatafileLoader* gDatafileLoader = nullptr;
