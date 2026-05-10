@@ -100,6 +100,7 @@ void _obj_preload_art_cache(int flags);
 int _obj_save_dude(File* stream);
 int _obj_load_dude(File* stream);
 void _obj_fix_violence_settings(int* fid);
+void _object_fix_weapon_ammo(Object* obj);
 
 Object* objectTypedFindById(int id, int type);
 bool isExitGridAt(int tile, int elevation);

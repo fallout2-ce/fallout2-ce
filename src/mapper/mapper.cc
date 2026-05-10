@@ -1649,6 +1649,7 @@ void edit_mapper()
                 mapperShowTimedMsg("Please wait.");
                 map_toggle_block_obj_viewing(0);
                 load_all_maps_text(1);
+                debugPrint("\nDone creating all map text version.");
                 mapperShowTimedMsg("Done.");
             }
             break;

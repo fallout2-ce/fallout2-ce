@@ -247,6 +247,74 @@ int _proto_list_str(int pid, char* proto_path)
     return 0;
 }
 
+// Finds a proto pid by type name and proto name string (e.g., "critter.vault").
+// Returns 0 on success, -1 on failure.
+int proto_find_str(int pid, const char* name, int* outPid)
+{
+    if (pid == -1) {
+        if (outPid != nullptr) {
+            *outPid = -1;
+        }
+        return -1;
+    }
+
+    if (name == nullptr || outPid == nullptr) {
+        return -1;
+    }
+
+    // Parse type name from pid
+    int type = PID_TYPE(pid);
+    if (type < 0 || type >= OBJ_TYPE_COUNT) {
+        return -1;
+    }
+
+    const char* typeName = artGetObjectTypeName(type);
+    if (typeName == nullptr) {
+        return -1;
+    }
+
+    // Build path to <type>.lst
+    char path[COMPAT_MAX_PATH];
+    proto_make_path(path, pid);
+    strcat(path, typeName);
+    strcat(path, ".lst");
+
+    File* stream = fileOpen(path, "rt");
+    if (stream == nullptr) {
+        return -1;
+    }
+
+    // Search for the name in the lst file
+    char line[256];
+    int foundPid = -1;
+    while (fileReadString(line, sizeof(line), stream) != nullptr) {
+        // Skip CR/LF
+        char* pch = strpbrk(line, "\r\n");
+        if (pch != nullptr) {
+            *pch = '\0';
+        }
+
+        // Parse "index name" format
+        int index = 0;
+        char foundName[256];
+        if (sscanf(line, "%d %255s", &index, foundName) == 2) {
+            if (strcmp(foundName, name) == 0) {
+                foundPid = index << 24 | type;
+                break;
+            }
+        }
+    }
+
+    fileClose(stream);
+
+    if (foundPid == -1) {
+        return -1;
+    }
+
+    *outPid = foundPid;
+    return 0;
+}
+
 // 0x49E984
 size_t proto_size(int type)
 {
@@ -2191,6 +2259,83 @@ int _ResetPlayer()
     perksReset();
     traitsReset();
     critterUpdateDerivedStats(gDude);
+    return 0;
+}
+
+// Parses a FID from text format (numeric value) and validates it.
+// Returns 0 on success, -1 on failure.
+int proto_read_text_fid(const char* text, int* fidPtr, int pidType)
+{
+    if (text == nullptr || fidPtr == nullptr) {
+        return -1;
+    }
+
+    int fid = 0;
+    int type = 0;
+    int num = 0;
+    int animType = 0;
+    int rotation = 0;
+
+    // TODO: deviation
+    // Parse "type num animType rotation" format (e.g., "0 100 0 0")
+    if (sscanf(text, "%d %d %d %d", &type, &num, &animType, &rotation) >= 2) {
+        fid = buildFid(type, num, animType, rotation, 0);
+    } else {
+        // Try parsing as a single numeric FID value
+        if (sscanf(text, "%d", &fid) != 1) {
+            return -1;
+        }
+    }
+    // TODO: art_list_index and related logic
+
+    *fidPtr = fid;
+
+    if (!_art_fid_valid(fid)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+// Parses a PID from text format (numeric value or "num type.name" string) and validates it.
+// Returns 0 on success, -1 on failure.
+int proto_read_text_pid(const char* text, int* pidPtr)
+{
+    if (text == nullptr || pidPtr == nullptr) {
+        return -1;
+    }
+
+    int numericPid = 0;
+    if (sscanf(text, "%u", &numericPid) != 1) {
+        return -1;
+    }
+
+    // Find first space to check for string component (e.g., "100 critter.vault")
+    const char* space = strchr(text, ' ');
+    if (space != nullptr) {
+        // Skip to the string after the space
+        const char* str = space + 1;
+        while (*str == ' ') {
+            str++;
+        }
+
+        int foundPid = -1;
+        if (proto_find_str(numericPid, str, &foundPid) == 0) {
+            Proto* proto;
+            if (protoGetProto(foundPid, &proto) == 0) {
+                *pidPtr = foundPid;
+                return 0;
+            }
+        }
+    }
+
+    // Fallback: use numeric pid
+    Proto* proto;
+    if (protoGetProto(numericPid, &proto) == -1) {
+        return -1;
+    }
+
+    *pidPtr = numericPid;
     return 0;
 }
 

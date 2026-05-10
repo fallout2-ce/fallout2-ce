@@ -31,7 +31,7 @@
 namespace fallout {
 
 static int objectLoadAllInternal(File* stream);
-static void _object_fix_weapon_ammo(Object* obj);
+void _object_fix_weapon_ammo(Object* obj);
 static int objectWrite(Object* obj, File* stream);
 static int _obj_offset_table_init();
 static void _obj_offset_table_exit();
@@ -598,7 +598,7 @@ static int objectLoadAllInternal(File* stream)
 // Fixes ammo pid and number of charges.
 //
 // 0x48911C
-static void _object_fix_weapon_ammo(Object* obj)
+void _object_fix_weapon_ammo(Object* obj)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_ITEM) {
         return;

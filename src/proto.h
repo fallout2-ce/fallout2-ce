@@ -140,6 +140,10 @@ int protoGetProto(int pid, Proto** protoPtr);
 int _ResetPlayer();
 int proto_max_id(int type);
 
+int proto_read_text_fid(const char* text, int* fidPtr, int pidType);
+int proto_read_text_pid(const char* text, int* pidPtr);
+int proto_find_str(int pid, const char* name, int* outPid);
+
 static bool isExitGridPid(int pid)
 {
     return pid >= FIRST_EXIT_GRID_PID && pid <= LAST_EXIT_GRID_PID;
