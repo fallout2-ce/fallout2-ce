@@ -514,7 +514,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
     }
 
     if (maxWidth == 0) {
-        if (flags & 0x040000) {
+        if (flags & DRAW_TEXT_FLAG_MONOSPACED) {
             maxWidth = fontGetMonospacedStringWidth(str);
         } else {
             maxWidth = fontGetStringWidth(str);
@@ -522,7 +522,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
     }
 
     if (maxWidth + x > window->width) {
-        if (!(flags & 0x04000000)) {
+        if (!(flags & DRAW_TEXT_FLAG_OVERFLOW)) {
             return;
         }
 
@@ -535,7 +535,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
         return;
     }
 
-    if (!(flags & 0x02000000)) {
+    if (!(flags & DRAW_TEXT_FLAG_NO_BG)) {
         if (window->color == 256 && _GNW_texture != nullptr) {
             _buf_texture(buf, maxWidth, fontGetLineHeight(), window->width, _GNW_texture, window->tx + x, window->ty + y);
         } else {
@@ -552,7 +552,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
 
     fontDrawText(buf, str, maxWidth, window->width, textColor);
 
-    if (flags & 0x01000000) {
+    if (flags & DRAW_TEXT_FLAG_REFRESH) {
         // TODO: Check.
         Rect rect;
         rect.left = window->rect.left + x;

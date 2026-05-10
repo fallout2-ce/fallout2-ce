@@ -635,6 +635,14 @@ constexpr int kBtnBuildAllTypeBinary = 6123; // UI — Build all type binary (pr
 
 constexpr int kArtMaxDirect = 0x4B0;
 
+// Toolbar background lbm dimensions (mapper2.lbm). The artwork is anchored to
+// the left edge of tool_win, so any prompt/labels rendered inside the toolbar
+// must use this width as the basis — NOT _scr_size.right (which can be
+// wider than 640 on CE high-resolution screens, leaving the right side of
+// tool_win as empty filler beyond the artwork).
+constexpr int kToolbarArtWidth = 640;
+constexpr int kToolbarArtHeight = 480;
+
 // gnw_main
 // 0x485DD0
 int mapper_main(int argc, char** argv)
@@ -719,8 +727,8 @@ static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
 // 0x485F94
 int mapper_edit_init(int argc, char** argv)
 {
-    constexpr int lbmBufWidth = 640;
-    constexpr int lbmBufHeight = 480;
+    constexpr int lbmBufWidth = kToolbarArtWidth;
+    constexpr int lbmBufHeight = kToolbarArtHeight;
 
     int index;
 
@@ -1516,6 +1524,9 @@ void edit_mapper()
             mapper_save_toolbar();
             break;
         }
+        case kBtnInfo:
+            // No op, matching original.
+            break;
         case kBtnSaveAs: {
             if (map_entered) {
                 mapperShowTimedMsg("This map has been Entered.  Can't Save.");
@@ -1644,28 +1655,38 @@ void edit_mapper()
                 // TODO: original 's' map-entered branch — switch_dude() and proto_dude_init("premade\\blank.gcd") chain. (actually this is never reached because in play mode 's' opens Skilldex).
                 break;
             }
-            int screenWidth = _scr_size.right - _scr_size.left;
-            windowDrawText(tool_win, "Place Script", 0x104, screenWidth - 149, 70, _colorTable[32747] | FONT_SHADOW);
-            redraw_toolname();
+            Rect labelRect = { kToolbarArtWidth - 149, 71, kToolbarArtWidth + 1, 85 };
+
+            windowDrawText(tool_win, "Place Script", 118, labelRect.left, labelRect.top, 260);
+            windowRefreshRect(tool_win, &labelRect);
 
             int tile = pickHex();
-
-            clear_toolname();
-
             if (tile != -1) {
                 if (map_scr_add_spatial(tile, gElevation) == -1) {
                     mapperShowTimedMsg("Error creating spatial Script!");
                 }
             }
+
+            // Restore the label row only (y=70). Vanilla never touches y=60/80
+            // here, so the active proto name drawn by update_toolname is preserved.
+            windowDrawText(tool_win, "", 120, labelRect.left, labelRect.top, 260);
+            windowRefreshRect(tool_win, &labelRect);
             break;
         }
+        // --- CTRL+F7 — Delete spatial: prompt, pick hex, remove ---
         case kBtnDeleteSpatial: {
-            int x, y;
-            mouseGetPosition(&x, &y);
-            int tile = tileFromScreenXY(x, y);
+            if (map_entered) break;
+            Rect labelRect = { kToolbarArtWidth - 149, 71, kToolbarArtWidth + 1, 85 };
+
+            windowDrawText(tool_win, "Delete Script", 118, labelRect.left, labelRect.top, 260);
+            windowRefreshRect(tool_win, &labelRect);
+
+            int tile = pickHex();
             if (tile != -1) {
                 map_scr_remove_spatial(tile, gElevation);
             }
+            windowDrawText(tool_win, "", 120, labelRect.left, labelRect.top, 260);
+            windowRefreshRect(tool_win, &labelRect);
             break;
         }
         case kBtnDeleteAllSpatialScripts:
@@ -2248,7 +2269,7 @@ void print_toolbar_name(int object_type)
 
     sprintf(name, "%s", artGetObjectTypeName(object_type));
     name[0] = static_cast<char>(toupper(name[0]));
-    windowDrawText(tool_win, name, 0, 7, 7, _colorTable[32747] | 0x2000000);
+    windowDrawText(tool_win, name, 0, 7, 7, _colorTable[32747] | DRAW_TEXT_FLAG_NO_BG);
     windowRefreshRect(tool_win, &rect);
 }
 
@@ -2257,9 +2278,9 @@ void redraw_toolname()
 {
     Rect rect;
 
-    rect.left = _scr_size.right - _scr_size.left - 149;
+    rect.left = kToolbarArtWidth - 149;
     rect.top = 60;
-    rect.right = _scr_size.right - _scr_size.left + 1;
+    rect.right = kToolbarArtWidth + 1;
     rect.bottom = 95;
     windowRefreshRect(tool_win, &rect);
 }
@@ -2267,9 +2288,9 @@ void redraw_toolname()
 // 0x48B278
 void clear_toolname()
 {
-    windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 60, 260);
-    windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 70, 260);
-    windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 80, 260);
+    windowDrawText(tool_win, "", 120, kToolbarArtWidth - 149, 60, 260);
+    windowDrawText(tool_win, "", 120, kToolbarArtWidth - 149, 70, 260);
+    windowDrawText(tool_win, "", 120, kToolbarArtWidth - 149, 80, 260);
     redraw_toolname();
 }
 
