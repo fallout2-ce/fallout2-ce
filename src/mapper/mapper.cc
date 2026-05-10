@@ -643,6 +643,12 @@ constexpr int kArtMaxDirect = 0x4B0;
 constexpr int kToolbarArtWidth = 640;
 constexpr int kToolbarArtHeight = 480;
 
+constexpr int kToolNameX = kToolbarArtWidth - 150;
+constexpr int kToolNameY1 = 60;
+constexpr int kToolNameY2 = kToolNameY1 + 10;
+constexpr int kToolNameY3 = kToolNameY1 + 20;
+constexpr int kToolNameWidth = 120;
+
 // gnw_main
 // 0x485DD0
 int mapper_main(int argc, char** argv)
@@ -1160,6 +1166,19 @@ static void elevationNumberRefresh()
     windowRefreshRect(tool_win, &numRect);
 }
 
+static int pickHexWithToolLabel(const char* label)
+{
+    Rect labelRect = { kToolNameX, kToolNameY2, kToolNameX + kToolNameWidth - 1, kToolNameY2 + 15 };
+
+    windowDrawText(tool_win, label, 118, labelRect.left, labelRect.top, 260);
+    windowRefreshRect(tool_win, &labelRect);
+
+    int tile = pickHex();
+    windowDrawText(tool_win, "", 120, labelRect.left, labelRect.top, 260);
+    windowRefreshRect(tool_win, &labelRect);
+    return tile;
+}
+
 // This is the main mapper UI loop: handles all input and redrawing.
 // 0x4877D0
 void edit_mapper()
@@ -1295,6 +1314,9 @@ void edit_mapper()
 
                     int tile = gGameMouseBouncingCursor->tile;
 
+                    if (settings.debug.show_tile_num) {
+                        debugPrint("tilenum = %d ", tile);
+                    }
                     // Display tile number on toolbar (vanilla: x=7, y=27, maxWidth=260, color=35)
                     char tileNumStr[32];
                     snprintf(tileNumStr, sizeof(tileNumStr), "%d", tile);
@@ -1304,7 +1326,9 @@ void edit_mapper()
                     windowRefreshRect(tool_win, &tileNumRect);
 
                     // toolbar item selected: place object
-                    if (tool_active != -1) {
+                    if (markExitGridMode) {
+                        mapper_mark_exit_grid();
+                    } else if (tool_active != -1) {
                         if (selectedPid != -1) {
                             if (PID_TYPE(selectedPid) == OBJ_TYPE_TILE) {
                                 placeTile(selectedPid, gGameMouseBouncingCursor->fid);
@@ -1655,38 +1679,21 @@ void edit_mapper()
                 // TODO: original 's' map-entered branch — switch_dude() and proto_dude_init("premade\\blank.gcd") chain. (actually this is never reached because in play mode 's' opens Skilldex).
                 break;
             }
-            Rect labelRect = { kToolbarArtWidth - 149, 71, kToolbarArtWidth + 1, 85 };
-
-            windowDrawText(tool_win, "Place Script", 118, labelRect.left, labelRect.top, 260);
-            windowRefreshRect(tool_win, &labelRect);
-
-            int tile = pickHex();
+            int tile = pickHexWithToolLabel("Place Script");
             if (tile != -1) {
                 if (map_scr_add_spatial(tile, gElevation) == -1) {
                     mapperShowTimedMsg("Error creating spatial Script!");
                 }
             }
-
-            // Restore the label row only (y=70). Vanilla never touches y=60/80
-            // here, so the active proto name drawn by update_toolname is preserved.
-            windowDrawText(tool_win, "", 120, labelRect.left, labelRect.top, 260);
-            windowRefreshRect(tool_win, &labelRect);
             break;
         }
         // --- CTRL+F7 — Delete spatial: prompt, pick hex, remove ---
         case kBtnDeleteSpatial: {
             if (map_entered) break;
-            Rect labelRect = { kToolbarArtWidth - 149, 71, kToolbarArtWidth + 1, 85 };
-
-            windowDrawText(tool_win, "Delete Script", 118, labelRect.left, labelRect.top, 260);
-            windowRefreshRect(tool_win, &labelRect);
-
-            int tile = pickHex();
+            int tile = pickHexWithToolLabel("Delete Script");
             if (tile != -1) {
                 map_scr_remove_spatial(tile, gElevation);
             }
-            windowDrawText(tool_win, "", 120, labelRect.left, labelRect.top, 260);
-            windowRefreshRect(tool_win, &labelRect);
             break;
         }
         case kBtnDeleteAllSpatialScripts:
@@ -2278,19 +2285,19 @@ void redraw_toolname()
 {
     Rect rect;
 
-    rect.left = kToolbarArtWidth - 149;
-    rect.top = 60;
-    rect.right = kToolbarArtWidth + 1;
-    rect.bottom = 95;
+    rect.left = kToolNameX;
+    rect.top = kToolNameY1;
+    rect.right = kToolNameX + kToolNameWidth - 1;
+    rect.bottom = kToolNameY3 + 5;
     windowRefreshRect(tool_win, &rect);
 }
 
 // 0x48B278
 void clear_toolname()
 {
-    windowDrawText(tool_win, "", 120, kToolbarArtWidth - 149, 60, 260);
-    windowDrawText(tool_win, "", 120, kToolbarArtWidth - 149, 70, 260);
-    windowDrawText(tool_win, "", 120, kToolbarArtWidth - 149, 80, 260);
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY1, 260);
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, 260);
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, 260);
     redraw_toolname();
 }
 
@@ -2307,67 +2314,67 @@ void update_toolname(int* pid, int type, int id)
 
     windowDrawText(tool_win,
         protoGetName(proto->pid),
-        120,
-        _scr_size.right - _scr_size.left - 149,
-        60,
+        kToolNameWidth,
+        kToolNameX,
+        kToolNameY1,
         260);
 
     switch (PID_TYPE(proto->pid)) {
     case OBJ_TYPE_ITEM:
         windowDrawText(tool_win,
             gItemTypeNames[proto->item.type],
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     case OBJ_TYPE_CRITTER:
         windowDrawText(tool_win,
             "",
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     case OBJ_TYPE_WALL:
         windowDrawText(tool_win,
             proto_wall_light_str(proto->wall.flags),
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     case OBJ_TYPE_TILE:
         windowDrawText(tool_win,
             "",
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     case OBJ_TYPE_MISC:
         windowDrawText(tool_win,
             "",
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     default:
         windowDrawText(tool_win,
             "",
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     }
 
     windowDrawText(tool_win,
         "",
-        120,
-        _scr_size.right - _scr_size.left - 149,
-        80,
+        kToolNameWidth,
+        kToolNameX,
+        kToolNameY3,
         260);
 
     redraw_toolname();
@@ -2379,9 +2386,9 @@ void update_high_obj_name(Object* obj)
     Proto* proto;
 
     if (protoGetProto(obj->pid, &proto) != -1) {
-        windowDrawText(tool_win, protoGetName(obj->pid), 120, _scr_size.right - _scr_size.left - 149, 60, 260);
-        windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 70, 260);
-        windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 80, 260);
+        windowDrawText(tool_win, protoGetName(obj->pid), kToolNameWidth, kToolNameX, kToolNameY1, 260);
+        windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, 260);
+        windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, 260);
         redraw_toolname();
     }
 }
