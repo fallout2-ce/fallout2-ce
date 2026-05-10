@@ -77,6 +77,7 @@ extern int gElevation;
 extern MessageList gMapMessageList;
 extern MapHeader gMapHeader;
 extern TileData* _square[ELEVATION_COUNT];
+extern const int _map_data_elev_flags[ELEVATION_COUNT];
 extern int gIsoWindow;
 
 int isoInit();

@@ -82,7 +82,7 @@ static char _aErrorF2[] = "ERROR! F2";
 static IsoWindowRefreshProc* _map_scroll_refresh = isoWindowRefreshRectGame;
 
 // 0x519544
-static const int _map_data_elev_flags[ELEVATION_COUNT] = {
+const int _map_data_elev_flags[ELEVATION_COUNT] = {
     2,
     4,
     8,
