@@ -325,6 +325,54 @@ int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookT
 }
 
 /*
+Runs when checking an attempt to steal or plant an item.
+
+Critter arg0 - The thief
+Obj     arg1 - The target
+Item    arg2 - The item being stolen/planted
+int     arg3 - 0 when stealing, 1 when planting
+int     arg4 - Quantity being stolen/planted
+
+int     ret0 - Override the handler:
+               2 - fail without being caught
+               1 - success
+               0 - fail and get caught
+              -1 - use engine handler
+int     ret1 - Override XP gained for this action. Values below 0 are ignored.
+*/
+int scriptHooks_Steal(Object* thief, Object* target, Object* item, bool isPlanting, int quantity, int* xpOverride)
+{
+    assert(thief != nullptr);
+    assert(target != nullptr);
+    assert(item != nullptr);
+    assert(quantity >= 0);
+    assert(xpOverride != nullptr);
+
+    *xpOverride = -1;
+
+    ScriptHookCall hook(HOOK_STEAL, 2, { thief, target, item, isPlanting ? 1 : 0, quantity });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return -1;
+    }
+
+    if (hook.numReturnValues() > 1) {
+        int overrideXp = hook.getReturnValueAt(1).asInt();
+        if (overrideXp >= 0) {
+            *xpOverride = overrideXp;
+        }
+    }
+
+    int overrideResult = hook.getReturnValueAt(0).asInt();
+    if (overrideResult >= 0 && overrideResult <= 2) {
+        return overrideResult;
+    }
+
+    return -1;
+}
+
+/*
 Runs immediately after a critter dies for any reason.
 
 Critter arg0 - The critter that just died

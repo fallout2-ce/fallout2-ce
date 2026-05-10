@@ -330,7 +330,7 @@ static void inventoryDrawCenteredText(unsigned char* buffer, int pitch, int widt
 static void inventoryExamineItem(Object* critter, Object* item);
 static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inventoryWindowType);
 static void inventoryWindowOpenContextMenu(int eventCode, int inventoryWindowType);
-static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting);
+static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting, int* stealXpOverridePtr);
 static std::pair<int, int> barterComputeTablesValue(Object* dude, Object* npc, bool offerButton = false);
 static std::pair<int, int> barterComputeTablesWeight(Object* dude, Object* npc);
 static int barterAttemptTransaction(Object* dude, Object* offerTable, Object* npc, Object* barterTable);
@@ -4622,11 +4622,12 @@ int inventoryOpenLooting(Object* looter, Object* target)
                             _gStealSize += itemGetSize(_stack[_curr_stack]);
 
                             InventoryItem* inventoryItem = &(_pud->items[_pud->length - (slotIndex + _stack_offset[_curr_stack] + 1)]);
-                            InventoryMoveResult rc = _move_inventory(inventoryItem->item, slotIndex, _target_stack[_target_curr_stack], true);
+                            int stealXpOverride = -1;
+                            InventoryMoveResult rc = _move_inventory(inventoryItem->item, slotIndex, _target_stack[_target_curr_stack], true, &stealXpOverride);
                             if (rc == INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                                 isCaughtStealing = true;
                             } else if (rc == INVENTORY_MOVE_RESULT_SUCCESS) {
-                                stealingXp += stealingXpBonus;
+                                stealingXp += stealXpOverride >= 0 ? stealXpOverride : stealingXpBonus;
                                 stealingXpBonus += 10;
                             }
 
@@ -4646,11 +4647,12 @@ int inventoryOpenLooting(Object* looter, Object* target)
                             _gStealSize += itemGetSize(_stack[_curr_stack]);
 
                             InventoryItem* inventoryItem = &(_target_pud->items[_target_pud->length - (slotIndex + _target_stack_offset[_target_curr_stack] + 1)]);
-                            InventoryMoveResult rc = _move_inventory(inventoryItem->item, slotIndex, _target_stack[_target_curr_stack], false);
+                            int stealXpOverride = -1;
+                            InventoryMoveResult rc = _move_inventory(inventoryItem->item, slotIndex, _target_stack[_target_curr_stack], false, &stealXpOverride);
                             if (rc == INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                                 isCaughtStealing = true;
                             } else if (rc == INVENTORY_MOVE_RESULT_SUCCESS) {
-                                stealingXp += stealingXpBonus;
+                                stealingXp += stealXpOverride >= 0 ? stealXpOverride : stealingXpBonus;
                                 stealingXpBonus += 10;
                             }
 
@@ -4764,8 +4766,11 @@ int inventoryOpenStealing(Object* thief, Object* target)
 
 // 0x474708
 // note: this is looting and stealing, not the inventory screen
-static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting)
+static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* targetObj, bool isPlanting, int* stealXpOverridePtr)
 {
+    assert(stealXpOverridePtr != nullptr);
+    *stealXpOverridePtr = -1;
+
     bool needRefresh = true;
 
     Rect rect;
@@ -4827,13 +4832,17 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
             }
 
             if (quantityToMove != -1) {
+                bool skipMove = false;
                 if (_gIsSteal && _inven_dude == gDude) {
-                    if (skillsPerformStealing(_inven_dude, targetObj, item, true) == 0) {
+                    SkillStealResult stealResult = skillsPerformStealing(_inven_dude, targetObj, item, quantityToMove, true, stealXpOverridePtr);
+                    if (stealResult == SkillStealResult::Caught) {
                         result = INVENTORY_MOVE_RESULT_CAUGHT_STEALING;
+                    } else if (stealResult == SkillStealResult::Fail) {
+                        skipMove = true;
                     }
                 }
 
-                if (result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
+                if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(_inven_dude, targetObj, item, quantityToMove) != -1) {
                         result = INVENTORY_MOVE_RESULT_SUCCESS;
                     } else {
@@ -4854,13 +4863,17 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
             }
 
             if (quantityToMove != -1) {
+                bool skipMove = false;
                 if (_gIsSteal && _inven_dude == gDude) {
-                    if (skillsPerformStealing(_inven_dude, targetObj, item, false) == 0) {
+                    SkillStealResult stealResult = skillsPerformStealing(_inven_dude, targetObj, item, quantityToMove, false, stealXpOverridePtr);
+                    if (stealResult == SkillStealResult::Caught) {
                         result = INVENTORY_MOVE_RESULT_CAUGHT_STEALING;
+                    } else if (stealResult == SkillStealResult::Fail) {
+                        skipMove = true;
                     }
                 }
 
-                if (result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
+                if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != 0) {
                             targetObj->fid = buildFid(FID_TYPE(targetObj->fid), targetObj->fid & 0xFFF, FID_ANIM_TYPE(targetObj->fid), 0, targetObj->rotation + 1);
