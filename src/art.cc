@@ -447,9 +447,54 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
 // mapper2.exe: 0x40A03C
 int art_list_str(int fid, char* name)
 {
-    // TODO: Incomplete.
+    if (fid == -1 || name == nullptr) {
+        return -1;
+    }
 
-    return -1;
+    int objectType = (fid & 0xF000000) >> 24;
+    int index = fid & 0xFFF;
+
+    const char* typeName = artGetObjectTypeName(objectType);
+    if (typeName == nullptr) {
+        return -1;
+    }
+
+    char path[260];
+    snprintf(path, sizeof(path), "%s%s%s\\%s.lst", _cd_path_base, "art\\", typeName, typeName);
+
+    File* stream = fileOpen(path, "rt");
+    if (stream == nullptr) {
+        return -1;
+    }
+
+    char buffer[260];
+    int line = 0;
+    bool found = false;
+    while (fileReadString(buffer, sizeof(buffer), stream) != nullptr) {
+        if (line == index) {
+            char* p = buffer;
+            while (*p) {
+                if (*p == ' ' || *p == '\n') {
+                    *p = '\0';
+                    break;
+                }
+                p++;
+            }
+            char* dst = name;
+            const char* src = buffer;
+            do {
+                *dst++ = *src++;
+                *dst++ = *src++;
+            } while (dst[-2] != '\0' || dst[-1] != '\0');
+            found = true;
+            break;
+        }
+        line++;
+    }
+
+    fileClose(stream);
+
+    return found ? 0 : -1;
 }
 
 int artListIndex(int objectType, const char* name)

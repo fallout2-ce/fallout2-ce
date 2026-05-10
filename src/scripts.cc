@@ -45,8 +45,6 @@
 
 namespace fallout {
 
-#define SCRIPT_LIST_EXTENT_SIZE 16
-
 // SFALL: Increase number of message lists for scripted dialogs.
 // CE: In Sfall this increase is configurable with `BoostScriptDialogLimit`.
 #define SCRIPT_DIALOG_MESSAGE_LIST_CAPACITY 10000
@@ -55,21 +53,6 @@ typedef struct ScriptsListEntry {
     char name[16];
     int local_vars_num;
 } ScriptsListEntry;
-
-typedef struct ScriptListExtent {
-    Script scripts[SCRIPT_LIST_EXTENT_SIZE];
-    // Number of scripts in the extent
-    int length;
-    struct ScriptListExtent* next;
-} ScriptListExtent;
-
-typedef struct ScriptList {
-    ScriptListExtent* head;
-    ScriptListExtent* tail;
-    // Number of extents in the script list.
-    int length;
-    int nextScriptId;
-} ScriptList;
 
 static Program* scriptsCreateProgramByName(const char* name);
 static void _doBkProcesses();
@@ -116,7 +99,7 @@ static int gScriptsEnumerationElevation = 0;
 static bool gSpatialsEnabled = true;
 
 // 0x51C6C0
-static ScriptList gScriptLists[SCRIPT_TYPE_COUNT];
+ScriptList gScriptLists[SCRIPT_TYPE_COUNT];
 
 // 0x51C710
 static const char* gScriptsBasePath = "scripts\\";

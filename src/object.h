@@ -20,6 +20,7 @@ extern Object* _moveBlockObj;
 extern unsigned char _commonGrayTable[256];
 extern Object* gEgg;
 extern Object* gDude;
+extern ObjectListNode* gObjectListHeadByTile[HEX_GRID_SIZE];
 
 int objectsInit(unsigned char* buf, int width, int height, int pitch);
 void objectsReset();

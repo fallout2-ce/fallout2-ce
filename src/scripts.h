@@ -79,7 +79,7 @@ typedef enum ScriptProc {
     SCRIPT_PROC_COUNT,
 } ScriptProc;
 
-typedef struct Script {
+struct Script {
     // scr_id
     int sid;
 
@@ -146,8 +146,24 @@ typedef struct Script {
     int field_DC;
 
     Object* overriddenSelf;
-} Script;
+};
 
+#define SCRIPT_LIST_EXTENT_SIZE (16)
+
+struct ScriptListExtent {
+    Script scripts[SCRIPT_LIST_EXTENT_SIZE];
+    int length;
+    ScriptListExtent* next;
+};
+
+struct ScriptList {
+    ScriptListExtent* head;
+    ScriptListExtent* tail;
+    int length;
+    int nextScriptId;
+};
+
+extern ScriptList gScriptLists[SCRIPT_TYPE_COUNT];
 extern const char* gScriptProcNames[SCRIPT_PROC_COUNT];
 
 unsigned int gameTimeGetTime();

@@ -242,7 +242,7 @@ static Rect gObjectsUpdateAreaPixelBounds;
 // Contains objects that are bounded to tiles.
 //
 // 0x639DA0
-static ObjectListNode* gObjectListHeadByTile[HEX_GRID_SIZE];
+ObjectListNode* gObjectListHeadByTile[HEX_GRID_SIZE];
 
 // 0x660EA0
 static unsigned char _glassGrayTable[256];
@@ -2308,7 +2308,7 @@ Object* objectFindNextAtLocation()
     return nullptr;
 }
 
-// 0x0x48B66C
+// 0x48B66C
 void objectGetRect(Object* obj, Rect* rect)
 {
     if (obj == nullptr) {
