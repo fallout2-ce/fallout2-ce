@@ -1262,18 +1262,18 @@ int actionPickUp(Object* critter, Object* item)
     return reg_anim_end();
 }
 
-// This is primarily used to look critters, namely corpses.  I don't believe it can
+// This is primarily used to loot critters, namely corpses.  I don't believe it can
 // be called with a living creature, but am not 100% certain.
 //
 // 0x4123E8 was _action_loot_container
-int _action_loot_critter(Object* critter, Object* container)
+int _action_loot_critter(Object* critter, Object* target)
 {
-    if (FID_TYPE(container->fid) != OBJ_TYPE_CRITTER) {
+    if (FID_TYPE(target->fid) != OBJ_TYPE_CRITTER) {
         return -1;
     }
 
     // SFALL: Fix for trying to loot corpses with the "NoSteal" flag.
-    if (critterFlagCheck(container->pid, CRITTER_NO_STEAL)) {
+    if (critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
         return -1;
     }
 
@@ -1286,20 +1286,20 @@ int _action_loot_critter(Object* critter, Object* container)
 
     if (isInCombat()) {
         reg_anim_begin(ANIMATION_REQUEST_RESERVED);
-        animationRegisterMoveToObject(critter, container, critter->data.critter.combat.ap, 0);
+        animationRegisterMoveToObject(critter, target, critter->data.critter.combat.ap, 0);
     } else {
         reg_anim_begin(critter == gDude ? ANIMATION_REQUEST_RESERVED : ANIMATION_REQUEST_UNRESERVED);
 
-        if (objectWithinWalkDistance(critter, container)) {
-            animationRegisterMoveToObject(critter, container, -1, 0);
+        if (objectWithinWalkDistance(critter, target)) {
+            animationRegisterMoveToObject(critter, target, -1, 0);
         } else {
-            animationRegisterRunToObject(critter, container, -1, 0);
+            animationRegisterRunToObject(critter, target, -1, 0);
         }
     }
 
-    animationRegisterCallbackForced(critter, container, (AnimationCallback*)_is_next_to, -1);
-    animationRegisterCallback(critter, container, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
-    animationRegisterCallback(critter, container, (AnimationCallback*)scriptsRequestLooting, -1);
+    animationRegisterCallbackForced(critter, target, (AnimationCallback*)_is_next_to, -1);
+    animationRegisterCallback(critter, target, (AnimationCallback*)checkSceneryUseActionPointCost, -1);
+    animationRegisterCallback(critter, target, (AnimationCallback*)scriptsRequestLooting, -1);
     return reg_anim_end();
 }
 
