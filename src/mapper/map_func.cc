@@ -278,7 +278,7 @@ void map_load_dialog()
 // map_save_dialog
 void map_save_dialog()
 {
-    char newName[16] = {};
+    char newName[16] = { };
     if (_win_get_str(newName, 8, "Save file (no extension):", 80, 80) != 0) return;
     strcat(newName, ".map");
     strncpy(gMapHeader.name, newName, sizeof(gMapHeader.name) - 1);
@@ -297,7 +297,8 @@ int map_save_as(const char* name)
 // map_get_name
 void map_get_name(char* buf)
 {
-    strncpy(buf, gMapHeader.name, 16);
+    strncpy(buf, gMapHeader.name, sizeof(gMapHeader.name));
+    buf[sizeof(gMapHeader.name) - 1] = '\0';
 }
 
 void map_clear_elevation()
@@ -536,10 +537,10 @@ static void mpMouseCheckScrolling(int x, int y)
 }
 
 // Copy buffer for copy_object_to_tile_pobj / copyObject. mpCopyEntry mirrors the original's
-// interleaved {fid, sid, dx, dy} record; mpCopyList2 holds the source object pointer.
+// interleaved {fid, pid, dx, dy} record; mpCopyList2 holds the source object pointer.
 struct CopyEntry {
     int fid;
-    int sid;
+    int pid;
     int dx;
     int dy;
 };
@@ -573,11 +574,9 @@ static void mp_run_placement_loop(PlaceFn place)
             if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
                 int ix, iy;
                 get_input_position(&ix, &iy);
-                if (!_mouse_click_in(0, 0,
+                if (_mouse_click_in(0, 0,
                         _scr_size.right - _scr_size.left,
                         _scr_size.bottom - _scr_size.top - 100)) {
-                    exit = true;
-                } else {
                     place(ix, iy);
                     tileWindowRefresh();
                 }
@@ -640,16 +639,15 @@ static void mp_run_placement_loop(PlaceFn place)
 // affected screen rect.
 static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bool refresh)
 {
-    Object* blocking;
     gGameMouseBouncingCursor->flags |= OBJECT_HIDDEN;
-    blocking = _obj_blocking_at(nullptr, dstTile, gElevation);
+    Object* existing = _obj_blocking_at(nullptr, dstTile, gElevation);
     gGameMouseBouncingCursor->flags &= ~OBJECT_HIDDEN;
 
     bool useArtNotProtos = settings.mapper.use_art_not_protos;
 
     Proto* proto = nullptr;
     bool gatePassed = useArtNotProtos
-        || blocking == nullptr
+        || existing == nullptr
         || srcObj == nullptr
         || PID_TYPE(srcObj->pid) == OBJ_TYPE_TILE
         || protoGetProto(srcObj->pid, &proto) == -1
@@ -660,10 +658,9 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
     }
 
     // Look for an existing duplicate (same tile + same fid) before placing.
-    Object* existing = nullptr;
     for (Object* obj = objectFindFirstAtElevation(gElevation);
-         obj != nullptr;
-         obj = objectFindNextAtElevation()) {
+        obj != nullptr;
+        obj = objectFindNextAtElevation()) {
         if (obj->tile == dstTile
             && obj->fid == srcFid
             && obj != gGameMouseBouncingCursor
@@ -715,9 +712,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
                 if (SID_TYPE(sid) == 1 /* spatial */) {
                     script->sp.built_tile = (gElevation << 29) | dstTile;
                 }
-                // CE mapper builds as 32-bit x86, so an Object* fits in `int`. Mirrors the
-                // original mapper's `*(_DWORD *)(script + 52) = obj` assignment.
-                script->ownerId = static_cast<int>(reinterpret_cast<intptr_t>(copy));
+                script->owner = copy;
             }
         }
     }
@@ -750,6 +745,7 @@ void copyObject(int filterType)
 
     mpCopyCount = 0;
 
+    int elevation = gElevation;
     // Walk the region cell-by-cell and add matching objects. Outer loop skips by 12 vertically
     // and 32 horizontally to match the hex stride used by the original (one unit per visual hex).
     for (int sy = region.top + 8; sy < region.bottom; sy += 12) {
@@ -757,24 +753,23 @@ void copyObject(int filterType)
             int tile = tileFromScreenXY(sx, sy);
             if (tile == -1) continue;
 
-            for (Object* obj = objectFindFirstAtElevation(gElevation);
-                 obj != nullptr;
-                 obj = objectFindNextAtElevation()) {
-                if (obj->tile != tile) continue;
-                if (obj == gDude) continue;
-                if (obj == gGameMouseBouncingCursor) continue;
-                if (obj == gGameMouseHexCursor) continue;
-                if ((obj->flags & OBJECT_HIDDEN) != 0) continue;
-                if (filterType != -1 && static_cast<int>(PID_TYPE(obj->pid)) != filterType) continue;
+            for (Object* obj = objectFindFirstAtElevation(elevation);
+                obj != nullptr;
+                obj = objectFindNextAtElevation()) {
+                if (obj->tile != tile
+                    || obj == gDude
+                    || obj == gGameMouseBouncingCursor
+                    || obj == gGameMouseHexCursor
+                    || (obj->flags & OBJECT_HIDDEN) != 0
+                    || filterType != -1 && FID_TYPE(obj->fid) != filterType) continue;
 
                 if (mpCopyCount >= kMaxCopyEntries) {
-                    win_timed_msg("Too many objects in region!",
-                        _colorTable[31744] | FONT_SHADOW);
+                    _win_msg("Too many objects in region!", 80, 80, _colorTable[31744]);
                     return;
                 }
 
                 mpCopyList[mpCopyCount].fid = obj->fid;
-                mpCopyList[mpCopyCount].sid = obj->sid;
+                mpCopyList[mpCopyCount].pid = obj->pid;
                 mpCopyList[mpCopyCount].dx = sx - region.left;
                 mpCopyList[mpCopyCount].dy = sy - region.top;
                 mpCopyList2[mpCopyCount] = obj;
@@ -784,7 +779,7 @@ void copyObject(int filterType)
     }
 
     if (mpCopyCount == 0) {
-        win_timed_msg("Nothing selected.", _colorTable[31744] | FONT_SHADOW);
+        _win_msg("Nothing selected.", 80, 80, _colorTable[31744]);
         return;
     }
 
@@ -932,8 +927,8 @@ void eraseObject()
                     // Find topmost (last-rendered) object at gElevation under the mouse.
                     Object* hit = nullptr;
                     for (Object* obj = objectFindFirstAtElevation(gElevation);
-                         obj != nullptr;
-                         obj = objectFindNextAtElevation()) {
+                        obj != nullptr;
+                        obj = objectFindNextAtElevation()) {
                         if (obj == gDude) continue;
                         if (PID_TYPE(obj->pid) == OBJ_TYPE_INTERFACE) continue;
                         if ((obj->flags & OBJECT_HIDDEN) != 0) continue;
@@ -1020,8 +1015,8 @@ static void mapper_shift_map_once(int dx, int dy)
     };
     std::vector<Snap> snap;
     for (Object* obj = objectFindFirstAtElevation(gElevation);
-         obj != nullptr;
-         obj = objectFindNextAtElevation()) {
+        obj != nullptr;
+        obj = objectFindNextAtElevation()) {
         if (obj->tile < 0 || obj->tile >= kShiftMapTiles) continue;
         if (obj == gDude) continue;
         if (obj == gGameMouseBouncingCursor) continue;
