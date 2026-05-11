@@ -4,6 +4,7 @@
 #include "db.h"
 #include "obj_types.h"
 #include "proto_types.h"
+#include "radiation.h"
 
 namespace fallout {
 
@@ -27,14 +28,6 @@ int critterAdjustHitPoints(Object* critter, int hp);
 int critterGetPoison(Object* critter);
 int critterAdjustPoison(Object* obj, int amount);
 int poisonEventProcess(Object* obj, void* data);
-int critterGetRadiation(Object* critter);
-int critterAdjustRadiation(Object* obj, int amount);
-int critterCheckRadiationEvent(Object* critter);
-int radiationClearDamage(Object* obj, void* data);
-void radiationProcess(Object* obj, int radiationLevel, bool direction);
-int radiationEventProcess(Object* obj, void* data);
-int radiationEventRead(File* stream, void** dataPtr);
-int radiationEventWrite(File* stream, void* data);
 int critterGetDamageType(Object* critter);
 int killsIncByType(int killType);
 int killsGetByType(int killType);
