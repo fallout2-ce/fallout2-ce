@@ -528,6 +528,13 @@ static Object* _stack[10];
 // 0x59E894
 static int _mt_wid;
 
+// Note: Sfall also has InventoryApCost and QuickPocketsApCostReduction settings which we don't look at
+static constexpr int kDefaultInventoryApCost = 4;
+static constexpr int kQuickPocketsApCostReduction = 2;
+
+// Current inventory AP cost
+static int gInventoryApCost = kDefaultInventoryApCost;
+
 // Current barter price modifier, based on gGameDialogBarterModifier, with the reaction-based modifier added (in percent).
 // 0x59E898 barter_mod
 static int gBarterFinalModifier;
@@ -849,6 +856,26 @@ void inventoryResetDude()
     _inven_pid = 0x1000000;
 }
 
+int inventoryGetInvenApCost()
+{
+    int quickPockets = 0;
+    if (gDude != nullptr) {
+        quickPockets = perkGetRank(gDude, PERK_QUICK_POCKETS);
+    }
+
+    return std::max(gInventoryApCost - kQuickPocketsApCostReduction * quickPockets, 0);
+}
+
+void inventorySetInvenApCost(int cost)
+{
+    gInventoryApCost = cost;
+}
+
+void inventoryResetInvenApCost()
+{
+    gInventoryApCost = kDefaultInventoryApCost;
+}
+
 // inven_set_dude
 void inventorySetDude(Object* obj, int pid)
 {
@@ -938,7 +965,7 @@ void inventoryOpen()
 
     if (isInCombat()) {
         if (_inven_dude == gDude) {
-            int actionPointsRequired = 4 - 2 * perkGetRank(_inven_dude, PERK_QUICK_POCKETS);
+            int actionPointsRequired = inventoryGetInvenApCost();
             if (actionPointsRequired > 0 && actionPointsRequired > gDude->data.critter.combat.ap) {
                 // You don't have enough action points to use inventory
                 MessageListItem messageListItem;

@@ -1,5 +1,6 @@
 #include "sfall_opcodes.h"
 
+#include <algorithm>
 #include <math.h>
 #include <string.h>
 
@@ -310,6 +311,44 @@ static void op_set_critter_current_ap(Program* program)
     if (critter == gDude && isInCombat()) {
         interfaceRenderActionPoints(actionPoints, _combat_free_move);
     }
+}
+
+static void refreshUnspentApArmorClass()
+{
+    if (isInCombat() && _combat_whose_turn() != gDude) {
+        interfaceRenderArmorClass(false);
+    }
+}
+
+static void op_set_unspent_ap_bonus(Program* program)
+{
+    int multiplier = programStackPopInteger(program);
+    statSetUnspentApBonus(multiplier);
+    refreshUnspentApArmorClass();
+}
+
+static void op_get_unspent_ap_bonus(Program* program)
+{
+    programStackPushInteger(program, statGetUnspentApBonus());
+}
+
+static void op_set_unspent_ap_perk_bonus(Program* program)
+{
+    int multiplier = programStackPopInteger(program);
+    statSetUnspentApPerkBonus(multiplier);
+    refreshUnspentApArmorClass();
+}
+
+static void op_get_unspent_ap_perk_bonus(Program* program)
+{
+    programStackPushInteger(program, statGetUnspentApPerkBonus());
+}
+
+static void op_set_inven_ap_cost(Program* program)
+{
+    int cost = programStackPopInteger(program);
+    cost = std::clamp(cost, 0, 100);
+    inventorySetInvenApCost(cost);
 }
 
 // toggle_active_hand
@@ -1977,9 +2016,13 @@ void sfallOpcodesInit()
     // 0x81ea - int   init_hook()  -> OBSOLETE, do not implement
 
     // 0x81e6 - void set_unspent_ap_bonus(int multiplier)
+    interpreterRegisterOpcode(0x81E6, op_set_unspent_ap_bonus);
     // 0x81e7 - int  get_unspent_ap_bonus()
+    interpreterRegisterOpcode(0x81E7, op_get_unspent_ap_bonus);
     // 0x81e8 - void set_unspent_ap_perk_bonus(int multiplier)
+    interpreterRegisterOpcode(0x81E8, op_set_unspent_ap_perk_bonus);
     // 0x81e9 - int  get_unspent_ap_perk_bonus()
+    interpreterRegisterOpcode(0x81E9, op_get_unspent_ap_perk_bonus);
 
     // 0x81ec - float sqrt(float)
     interpreterRegisterOpcode(0x81EC, op_sqrt);
@@ -2137,6 +2180,7 @@ void sfallOpcodesInit()
     // 0x824c - int gdialog_get_barter_mod()
     interpreterRegisterOpcode(0x824C, op_gdialog_get_barter_mod);
     // 0x824d - void set_inven_ap_cost(int cost)
+    interpreterRegisterOpcode(0x824D, op_set_inven_ap_cost);
 
     // 0x825a - void reg_anim_destroy(object object)
     interpreterRegisterOpcode(0x825A, op_reg_anim_destroy);
