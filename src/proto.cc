@@ -2270,34 +2270,55 @@ int proto_read_text_fid(const char* text, int* fidPtr, int pidType)
         return -1;
     }
 
-    int fid = 0;
-    int type = 0;
-    int num = 0;
-    int animType = 0;
-    int rotation = 0;
+    int v6 = pidType;
+    if (pidType == 255) {
+        v6 = -1;
+    }
 
-    // TODO: deviation
-    // Parse "type num animType rotation" format (e.g., "0 100 0 0")
-    if (sscanf(text, "%d %d %d %d", &type, &num, &animType, &rotation) >= 2) {
-        fid = buildFid(type, num, animType, rotation, 0);
-    } else {
-        // Try parsing as a single numeric FID value
-        if (sscanf(text, "%d", &fid) != 1) {
-            return -1;
+    int firstNum;
+    if (sscanf(text, "%d", &firstNum) != 1) {
+        return -1;
+    }
+
+    // Skip past the first integer token
+    const char* p = text;
+    if (*p != ' ') {
+        while (*p != ' ' && *p != '\0') {
+            p++;
         }
     }
-    // TODO: art_list_index and related logic
+    while (*p == ' ') {
+        p++;
+    }
 
-    *fidPtr = fid;
+    int index = artListIndex(FID_TYPE(firstNum), p);
 
-    if (!_art_fid_valid(fid)) {
-        return -1;
+    if (index == -1) {
+        int type = (v6 == -1) ? FID_TYPE(firstNum) : v6;
+        *fidPtr = buildFid(type, 0, 0, 0, 0);
+    } else {
+        int fid = buildFid(
+            (firstNum & 0xF000000u) >> 24,
+            index,
+            (firstNum & 0xFF0000u) >> 16,
+            static_cast<uint16_t>(firstNum & 0xF000) >> 12,
+            0);
+
+        if (!_art_fid_valid(fid)) {
+            int type = (v6 == -1) ? FID_TYPE(firstNum) : v6;
+            fid = buildFid(type, 0, 0, 0, 0);
+            debugPrint("\nError: proto_read_text_fid: art-check-valid failed: %s!\n", p);
+        }
+
+        *fidPtr = fid;
     }
 
     return 0;
 }
 
-// Parses a PID from text format (numeric value or "num type.name" string) and validates it.
+// Parses a PID from text format and validates it.
+// Text format: "number name" (e.g. "16777218 Vault13"). The name is looked up via proto_find_str
+// and must match the number's type. No fallback to raw numeric PID if the name isn't found.
 // Returns 0 on success, -1 on failure.
 int proto_read_text_pid(const char* text, int* pidPtr)
 {
@@ -2305,37 +2326,33 @@ int proto_read_text_pid(const char* text, int* pidPtr)
         return -1;
     }
 
-    int numericPid = 0;
-    if (sscanf(text, "%u", &numericPid) != 1) {
+    int firstNum;
+    if (sscanf(text, "%d", &firstNum) != 1) {
         return -1;
     }
 
-    // Find first space to check for string component (e.g., "100 critter.vault")
-    const char* space = strchr(text, ' ');
-    if (space != nullptr) {
-        // Skip to the string after the space
-        const char* str = space + 1;
-        while (*str == ' ') {
-            str++;
-        }
-
-        int foundPid = -1;
-        if (proto_find_str(numericPid, str, &foundPid) == 0) {
-            Proto* proto;
-            if (protoGetProto(foundPid, &proto) == 0) {
-                *pidPtr = foundPid;
-                return 0;
-            }
+    // Skip past the first integer token
+    const char* p = text;
+    if (*p != ' ') {
+        while (*p != ' ' && *p != '\0') {
+            p++;
         }
     }
+    while (*p == ' ') {
+        p++;
+    }
 
-    // Fallback: use numeric pid
+    int foundPid;
+    if (proto_find_str(firstNum, p, &foundPid) == -1) {
+        return -1;
+    }
+
     Proto* proto;
-    if (protoGetProto(numericPid, &proto) == -1) {
+    if (protoGetProto(foundPid, &proto) == -1) {
         return -1;
     }
 
-    *pidPtr = numericPid;
+    *pidPtr = foundPid;
     return 0;
 }
 

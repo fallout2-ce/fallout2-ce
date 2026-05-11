@@ -497,6 +497,7 @@ int art_list_str(int fid, char* name)
     return found ? 0 : -1;
 }
 
+// art_list_index
 int artListIndex(int objectType, const char* name)
 {
     if (objectType < 0 || objectType >= OBJ_TYPE_COUNT) return -1;

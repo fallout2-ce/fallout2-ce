@@ -31,7 +31,7 @@ namespace fallout {
 static int obj_save_obj_text(File* stream, Object* obj);
 
 // Forward declarations for load functions.
-static int obj_load_obj_text(File* stream, Object** outObj, int pid, int a4);
+static int obj_load_obj_text(File* stream, Object** outObj, Object* owner);
 // Functions to build path strings for PID/FID (maps to original pid_to_string/fid_to_string)
 static const char* pid_to_string(int pid);
 static const char* fid_to_string(int fid);
@@ -215,7 +215,7 @@ static int obj_save_obj_text(File* stream, Object* obj)
                 break;
             }
             break;
-       case OBJ_TYPE_SCENERY:
+        case OBJ_TYPE_SCENERY:
             switch (protoSubtype) {
             case SCENERY_TYPE_DOOR:
                 xfilePrintFormatted(stream, "obj_pudg.pudportal.cur_open_flags: %d\n", obj->data.scenery.door.openFlags);
@@ -533,8 +533,8 @@ static const char* obj_load_parse_key_value(const char* line, const char* key, c
 
 // scr_obj_load_obj_text
 // Loads a single object from text format.
-// Returns 0 on success, -1 on failure.
-static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
+// Returns 0 on success, -1 on failure, -2 on invalid object data.
+static int obj_load_obj_text(File* stream, Object** outObj, Object* owner)
 {
     if (stream == nullptr) {
         return -1;
@@ -542,9 +542,9 @@ static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
 
     char line[256];
     Object* obj = nullptr;
+    ObjectListNode* node = nullptr;
     bool inObject = false;
     bool inInventory = false;
-    bool isCritter = (PID_TYPE(pid) == OBJ_TYPE_CRITTER);
 
     while (obj_load_read_line(line, sizeof(line), stream) == 0) {
         // Check for section markers
@@ -555,42 +555,27 @@ static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
             return -1;
         }
         if (strcmp(line, "[OBJECT BEGIN]") == 0) {
-            // Create a new object with default fid/pid, will be set by parsed values
-            int defaultFid = buildFid(OBJ_TYPE_CRITTER, 0, 0, 0, 0);
-            if (objectCreateWithFidPid(&obj, defaultFid, pid) == -1) {
+            if (objectCreateEmpty(&obj, &node) == -1) {
                 return -1;
             }
-            obj->id = 0;
-            obj->tile = -1;
-            obj->x = 0;
-            obj->y = 0;
-            obj->sx = 0;
-            obj->sy = 0;
-            obj->frame = 0;
-            obj->rotation = 0;
-            obj->fid = 0;
-            obj->flags = 0;
-            obj->elevation = 0;
-            obj->cid = 0;
-            obj->lightDistance = 0;
-            obj->lightIntensity = 0;
-            obj->sid = -1;
-            obj->owner = nullptr;
-            obj->scriptIndex = 0;
-            objectDataReset(obj);
+            obj->data.critter.combat.whoHitMeCid = 0;
+            obj->data.critter.combat.aiPacket = 1;
+            obj->data.critter.combat.team = 1;
+            obj->outline = 0;
+            obj->owner = owner;
             inObject = true;
             continue;
         }
         if (strcmp(line, "[OBJECT END]") == 0) {
             if (outObj != nullptr) {
                 *outObj = obj;
+                objectDestroyEmpty(nullptr, &node);
                 return 0;
             }
 
-            // Insert object into the world (already handled by objectCreateWithFidPid)
+            _obj_insert(node);
 
-            // If critter, adjust hit points, radiation, poison
-            if (isCritter && obj != nullptr) {
+            if (obj != nullptr && PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
                 int maxHp = critterGetStat(obj, STAT_MAXIMUM_HIT_POINTS);
                 critterAdjustHitPoints(obj, maxHp);
                 int rad = critterGetRadiation(obj);
@@ -607,90 +592,38 @@ static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
             continue;
         }
 
-        // Parse key-value pairs
+        // Helper to parse an integer field from a key-value line.
+        auto parseInt = [&](const char* key, int* fieldPtr) -> bool {
+            const char* v;
+            if (obj_load_parse_key_value(line, key, &v) == nullptr) {
+                return false;
+            }
+            int val;
+            if (sscanf(v, "%d", &val) != 1) {
+                return false;
+            }
+            *fieldPtr = val;
+            return true;
+        };
+
+        if (parseInt("obj_id", &obj->id)) continue;
+        if (parseInt("obj_tile_num", &obj->tile)) continue;
+        if (parseInt("obj_x", &obj->x)) continue;
+        if (parseInt("obj_y", &obj->y)) continue;
+        if (parseInt("obj_sx", &obj->sx)) continue;
+        if (parseInt("obj_sy", &obj->sy)) continue;
+        if (parseInt("obj_cur_frm", &obj->frame)) continue;
+        if (parseInt("obj_cur_rot", &obj->rotation)) continue;
+
         const char* value;
 
-        // obj_id
-        if (obj_load_parse_key_value(line, "obj_id", &value) != nullptr) {
-            unsigned int id;
-            if (sscanf(value, "%u", &id) == 1) {
-                obj->id = static_cast<int>(id);
-            }
-            continue;
-        }
-
-        // obj_tile_num
-        if (obj_load_parse_key_value(line, "obj_tile_num", &value) != nullptr) {
-            int tile;
-            if (sscanf(value, "%d", &tile) == 1) {
-                obj->tile = tile;
-            }
-            continue;
-        }
-
-        // obj_x
-        if (obj_load_parse_key_value(line, "obj_x", &value) != nullptr) {
-            int x;
-            if (sscanf(value, "%d", &x) == 1) {
-                obj->x = x;
-            }
-            continue;
-        }
-
-        // obj_y
-        if (obj_load_parse_key_value(line, "obj_y", &value) != nullptr) {
-            int y;
-            if (sscanf(value, "%d", &y) == 1) {
-                obj->y = y;
-            }
-            continue;
-        }
-
-        // obj_sx
-        if (obj_load_parse_key_value(line, "obj_sx", &value) != nullptr) {
-            int sx;
-            if (sscanf(value, "%d", &sx) == 1) {
-                obj->sx = sx;
-            }
-            continue;
-        }
-
-        // obj_sy
-        if (obj_load_parse_key_value(line, "obj_sy", &value) != nullptr) {
-            int sy;
-            if (sscanf(value, "%d", &sy) == 1) {
-                obj->sy = sy;
-            }
-            continue;
-        }
-
-        // obj_cur_frm
-        if (obj_load_parse_key_value(line, "obj_cur_frm", &value) != nullptr) {
-            unsigned int frame;
-            if (sscanf(value, "%u", &frame) == 1) {
-                obj->frame = static_cast<int>(frame);
-            }
-            continue;
-        }
-
-        // obj_cur_rot
-        if (obj_load_parse_key_value(line, "obj_cur_rot", &value) != nullptr) {
-            unsigned int rot;
-            if (sscanf(value, "%u", &rot) == 1) {
-                obj->rotation = static_cast<int>(rot);
-            }
-            continue;
-        }
-
         // obj_pid
-        // CE: loads before obj_fid (instead of before obj_elev), to match actual vanilla TXT format
         if (obj_load_parse_key_value(line, "obj_pid", &value) != nullptr) {
             if (proto_read_text_pid(value, &obj->pid) == -1) {
                 debugPrint("\nError: invalid object pid: %u [%s]", obj->pid, value);
-                return -1;
+                objectDestroyEmpty(&obj, &node);
+                return -2;
             }
-            // Re-check if it's a critter after pid is set
-            isCritter = (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER);
             continue;
         }
 
@@ -698,55 +631,18 @@ static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
         if (obj_load_parse_key_value(line, "obj_fid", &value) != nullptr) {
             if (proto_read_text_fid(value, &obj->fid, PID_TYPE(obj->pid)) == -1) {
                 debugPrint("\nError: invalid object art fid: %u [%s]", obj->fid, value);
-                return -1;
+                objectDestroyEmpty(&obj, &node);
+                return -2;
             }
             continue;
         }
 
-        // obj_flags
-        if (obj_load_parse_key_value(line, "obj_flags", &value) != nullptr) {
-            unsigned int flags;
-            if (sscanf(value, "%u", &flags) == 1) {
-                obj->flags = static_cast<int>(flags);
-            }
-            continue;
-        }
+        if (parseInt("obj_flags", &obj->flags)) continue;
+        if (parseInt("obj_elev", &obj->elevation)) continue;
 
-        // obj_elev
-        if (obj_load_parse_key_value(line, "obj_elev", &value) != nullptr) {
-            int elev;
-            if (sscanf(value, "%d", &elev) == 1) {
-                obj->elevation = elev;
-            }
-            continue;
-        }
-
-        // obj_cid
-        if (obj_load_parse_key_value(line, "obj_cid", &value) != nullptr) {
-            unsigned int cid;
-            if (sscanf(value, "%u", &cid) == 1) {
-                obj->cid = static_cast<int>(cid);
-            }
-            continue;
-        }
-
-        // obj_light_distance
-        if (obj_load_parse_key_value(line, "obj_light_distance", &value) != nullptr) {
-            int dist;
-            if (sscanf(value, "%d", &dist) == 1) {
-                obj->lightDistance = dist;
-            }
-            continue;
-        }
-
-        // obj_light_intensity
-        if (obj_load_parse_key_value(line, "obj_light_intensity", &value) != nullptr) {
-            int intensity;
-            if (sscanf(value, "%d", &intensity) == 1) {
-                obj->lightIntensity = intensity;
-            }
-            continue;
-        }
+        if (parseInt("obj_cid", &obj->cid)) continue;
+        if (parseInt("obj_light_distance", &obj->lightDistance)) continue;
+        if (parseInt("obj_light_intensity", &obj->lightIntensity)) continue;
 
         // obj_sid
         if (obj_load_parse_key_value(line, "obj_sid", &value) != nullptr) {
@@ -788,11 +684,11 @@ static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
         // obj_pud.[BEGIN INVEN ITEMS]
         if (strcmp(line, "obj_pud.[BEGIN INVEN ITEMS]:") == 0) {
             if (obj->data.inventory.capacity > 0) {
-                obj->data.inventory.items =
-                    reinterpret_cast<InventoryItem*>(internal_malloc(sizeof(InventoryItem) * obj->data.inventory.capacity));
+                obj->data.inventory.items = reinterpret_cast<InventoryItem*>(internal_malloc(sizeof(InventoryItem) * obj->data.inventory.capacity));
                 if (obj->data.inventory.items == nullptr) {
                     return -1;
                 }
+                memset(obj->data.inventory.items, 0, sizeof(InventoryItem) * obj->data.inventory.capacity);
                 inInventory = true;
             }
             continue;
@@ -816,7 +712,7 @@ static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
 
                 // Load the inventory item object recursively
                 Object* invItem = nullptr;
-                int result = obj_load_obj_text(stream, &invItem, 0x1000000, 0);
+                int result = obj_load_obj_text(stream, &invItem, obj);
                 if (result) return result;
 
                 if (invItem != nullptr) {
@@ -835,145 +731,56 @@ static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
         // obj_pud.[END INVEN ITEMS]
         if (strcmp(line, "obj_pud.[END INVEN ITEMS]:") == 0) {
             inInventory = false;
+            if (obj->data.inventory.items != nullptr) {
+                int actualCount = 0;
+                for (int i = 0; i < obj->data.inventory.capacity; i++) {
+                    if (obj->data.inventory.items[i].item != nullptr) {
+                        actualCount++;
+                    }
+                }
+                obj->data.inventory.length = actualCount;
+            }
             continue;
         }
 
         // Critter-specific data (obj_pud.*)
-        if (isCritter) {
-            int* target = nullptr;
-
-            if (obj_load_parse_key_value(line, "obj_pud.reaction_to_pc", &value) != nullptr) {
-                target = &(obj->data.critter.reaction);
-            } else if (obj_load_parse_key_value(line, "obj_pud.curr_hp", &value) != nullptr) {
-                target = &(obj->data.critter.hp);
-            } else if (obj_load_parse_key_value(line, "obj_pud.curr_rad", &value) != nullptr) {
-                target = &(obj->data.critter.radiation);
-            } else if (obj_load_parse_key_value(line, "obj_pud.curr_poison", &value) != nullptr) {
-                target = &(obj->data.critter.poison);
-            } else if (obj_load_parse_key_value(line, "obj_pud.combat_data.curr_mp", &value) != nullptr) {
-                target = &(obj->data.critter.combat.ap);
-            } else if (obj_load_parse_key_value(line, "obj_pud.combat_data.damage_last_turn", &value) != nullptr) {
-                target = &(obj->data.critter.combat.damageLastTurn);
-            } else if (obj_load_parse_key_value(line, "obj_pud.combat_data.results", &value) != nullptr) {
-                target = &(obj->data.critter.combat.results);
-            } else if (obj_load_parse_key_value(line, "obj_pud.combat_data.ai_packet", &value) != nullptr) {
-                target = &(obj->data.critter.combat.aiPacket);
-            } else if (obj_load_parse_key_value(line, "obj_pud.combat_data.team_num", &value) != nullptr) {
-                target = &(obj->data.critter.combat.team);
-            } else if (obj_load_parse_key_value(line, "obj_pud.combat_data.who_hit_me", &value) != nullptr) {
-                int whoHitMeCid;
-                if (sscanf(value, "%d", &whoHitMeCid) == 1) {
-                    obj->data.critter.combat.whoHitMeCid = whoHitMeCid;
-                }
-                continue;
-            }
-
-            if (target != nullptr) {
-                int val;
-                if (sscanf(value, "%d", &val) == 1) {
-                    *target = val;
-                }
-            }
+        if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
+            if (parseInt("obj_pud.reaction_to_pc", &obj->data.critter.reaction)) continue;
+            if (parseInt("obj_pud.curr_hp", &obj->data.critter.hp)) continue;
+            if (parseInt("obj_pud.curr_rad", &obj->data.critter.radiation)) continue;
+            if (parseInt("obj_pud.curr_poison", &obj->data.critter.poison)) continue;
+            if (parseInt("obj_pud.combat_data.curr_mp", &obj->data.critter.combat.ap)) continue;
+            if (parseInt("obj_pud.combat_data.damage_last_turn", &obj->data.critter.combat.damageLastTurn)) continue;
+            if (parseInt("obj_pud.combat_data.results", &obj->data.critter.combat.results)) continue;
+            if (parseInt("obj_pud.combat_data.ai_packet", &obj->data.critter.combat.aiPacket)) continue;
+            if (parseInt("obj_pud.combat_data.team_num", &obj->data.critter.combat.team)) continue;
+            if (parseInt("obj_pud.combat_data.who_hit_me", &obj->data.critter.combat.whoHitMeCid)) continue;
             continue;
         }
 
         // Non-critter PUDG data
-        if (obj_load_parse_key_value(line, "obj_pudg.updated_flags", &value) != nullptr) {
-            int flags;
-            if (sscanf(value, "%d", &flags) == 1) {
-                obj->data.flags = flags;
-            }
-            continue;
-        }
+        if (parseInt("obj_pudg.updated_flags", &obj->data.flags)) continue;
 
         // Item-specific PUDG data
         int pidType = PID_TYPE(obj->pid);
         if (pidType == OBJ_TYPE_ITEM) {
-            Proto* proto;
-            if (protoGetProto(obj->pid, &proto) == 0) {
-                int protoSubtype = static_cast<int>(proto->item.type);
-
-                if (obj_load_parse_key_value(line, "obj_pudg.pudweapon.cur_ammo_quantity", &value) != nullptr) {
-                    int qty;
-                    if (sscanf(value, "%d", &qty) == 1) {
-                        obj->data.item.weapon.ammoQuantity = qty;
-                    }
-                    continue;
-                }
-                if (obj_load_parse_key_value(line, "obj_pudg.pudweapon.cur_ammo_type_pid", &value) != nullptr) {
-                    int ammoPid;
-                    if (sscanf(value, "%d", &ammoPid) == 1) {
-                        obj->data.item.weapon.ammoTypePid = ammoPid;
-                    }
-                    continue;
-                }
-                if (obj_load_parse_key_value(line, "obj_pudg.pudammo.cur_ammo_quantity", &value) != nullptr) {
-                    int qty;
-                    if (sscanf(value, "%d", &qty) == 1) {
-                        obj->data.item.ammo.quantity = qty;
-                    }
-                    _object_fix_weapon_ammo(obj);
-                    continue;
-                }
-                if (obj_load_parse_key_value(line, "obj_pudg.pudmisc_item.curr_charges", &value) != nullptr) {
-                    int charges;
-                    if (sscanf(value, "%d", &charges) == 1) {
-                        obj->data.item.misc.charges = charges;
-                    }
-                    continue;
-                }
-                if (obj_load_parse_key_value(line, "obj_pudg.pudkey_item.cur_key_code", &value) != nullptr) {
-                    int keyCode;
-                    if (sscanf(value, "%d", &keyCode) == 1) {
-                        obj->data.item.key.keyCode = keyCode;
-                    }
-                    continue;
-                }
+            if (parseInt("obj_pudg.pudweapon.cur_ammo_quantity", &obj->data.item.weapon.ammoQuantity)) continue;
+            if (parseInt("obj_pudg.pudweapon.cur_ammo_type_pid", &obj->data.item.weapon.ammoTypePid)) continue;
+            if (parseInt("obj_pudg.pudammo.cur_ammo_quantity", &obj->data.item.ammo.quantity)) {
+                _object_fix_weapon_ammo(obj);
+                continue;
             }
+            if (parseInt("obj_pudg.pudmisc_item.curr_charges", &obj->data.item.misc.charges)) continue;
+            if (parseInt("obj_pudg.pudkey_item.cur_key_code", &obj->data.item.key.keyCode)) continue;
         }
 
         // Scenery-specific PUDG data
         if (pidType == OBJ_TYPE_SCENERY) {
-            Proto* proto;
-            if (protoGetProto(obj->pid, &proto) == 0) {
-                int protoSubtype = static_cast<int>(proto->item.type);
-
-                if (obj_load_parse_key_value(line, "obj_pudg.pudportal.cur_open_flags", &value) != nullptr) {
-                    int flags;
-                    if (sscanf(value, "%d", &flags) == 1) {
-                        obj->data.scenery.door.openFlags = flags;
-                    }
-                    continue;
-                }
-                if (obj_load_parse_key_value(line, "obj_pudg.pudstairs.destMap", &value) != nullptr) {
-                    int map;
-                    if (sscanf(value, "%d", &map) == 1) {
-                        obj->data.scenery.stairs.destinationMap = map;
-                    }
-                    continue;
-                }
-                if (obj_load_parse_key_value(line, "obj_pudg.pudstairs.destBuiltTile", &value) != nullptr) {
-                    int builtTile;
-                    if (sscanf(value, "%d", &builtTile) == 1) {
-                        obj->data.scenery.stairs.destinationBuiltTile = builtTile;
-                    }
-                    continue;
-                }
-                if (obj_load_parse_key_value(line, "obj_pudg.pudelevator.elevType", &value) != nullptr) {
-                    int type;
-                    if (sscanf(value, "%d", &type) == 1) {
-                        obj->data.scenery.elevator.type = type;
-                    }
-                    continue;
-                }
-                if (obj_load_parse_key_value(line, "obj_pudg.pudelevator.elevLevel", &value) != nullptr) {
-                    int level;
-                    if (sscanf(value, "%d", &level) == 1) {
-                        obj->data.scenery.elevator.level = level;
-                    }
-                    continue;
-                }
-            }
+            if (parseInt("obj_pudg.pudportal.cur_open_flags", &obj->data.scenery.door.openFlags)) continue;
+            if (parseInt("obj_pudg.pudstairs.destMap", &obj->data.scenery.stairs.destinationMap)) continue;
+            if (parseInt("obj_pudg.pudstairs.destBuiltTile", &obj->data.scenery.stairs.destinationBuiltTile)) continue;
+            if (parseInt("obj_pudg.pudelevator.elevType", &obj->data.scenery.elevator.type)) continue;
+            if (parseInt("obj_pudg.pudelevator.elevLevel", &obj->data.scenery.elevator.level)) continue;
         }
     }
 
@@ -987,12 +794,9 @@ static int obj_load_obj_text(File* stream, Object** outObj, int pid, int /*a4*/)
 // scr_obj_load
 // Loads all objects from a text file.
 // Returns 0 on success, -1 on failure.
-void obj_load_text(File* stream)
+int obj_load_text(File* stream)
 {
-    if (stream == nullptr) {
-        return;
-    }
-    obj_load_obj_text(stream, nullptr, 0x1000000, 0);
+    return obj_load_obj_text(stream, nullptr, nullptr);
 }
 
 } // namespace fallout

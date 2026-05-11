@@ -51,7 +51,7 @@ static void objectDeallocate(Object** objectPtr);
 static int objectListNodeCreate(ObjectListNode** nodePtr);
 static void objectListNodeDestroy(ObjectListNode** nodePtr);
 static int objectGetListNode(Object* obj, ObjectListNode** out_node, ObjectListNode** out_prev_node);
-static void _obj_insert(ObjectListNode* ptr);
+void _obj_insert(ObjectListNode* ptr);
 static int _obj_remove(ObjectListNode* a1, ObjectListNode* a2);
 static int _obj_connect_to_tile(ObjectListNode* node, int tile_index, int elev, Rect* rect);
 static int _obj_adjust_light(Object* obj, int a2, Rect* rect);
@@ -3852,7 +3852,7 @@ static int objectGetListNode(Object* object, ObjectListNode** nodePtr, ObjectLis
 }
 
 // 0x48D8E8
-static void _obj_insert(ObjectListNode* objectListNode)
+void _obj_insert(ObjectListNode* objectListNode)
 {
     ObjectListNode** objectListNodePtr;
 
@@ -4021,7 +4021,7 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
         obj->lightIntensity = 65536;
     }
 
-    int(*v70)[36] = _light_offsets[obj->tile & 1];
+    int (*v70)[36] = _light_offsets[obj->tile & 1];
     int v7 = (obj->lightIntensity - 655) / (obj->lightDistance + 1);
     int v28[36];
     v28[0] = obj->lightIntensity - v7;
@@ -5262,6 +5262,40 @@ int objectCreateWithFidPid(UniqueObject& obj, int fid, int pid)
     int rc = objectCreateWithFidPid(&raw, fid, pid);
     if (rc != -1) obj.reset(raw);
     return rc;
+}
+
+int objectCreateEmpty(Object** objectPtr, ObjectListNode** nodePtr)
+{
+    if (objectPtr == nullptr || nodePtr == nullptr) {
+        return -1;
+    }
+
+    if (objectListNodeCreate(nodePtr) == -1) {
+        return -1;
+    }
+
+    if (objectAllocate(&((*nodePtr)->obj)) == -1) {
+        objectListNodeDestroy(nodePtr);
+        return -1;
+    }
+
+    *objectPtr = (*nodePtr)->obj;
+    return 0;
+}
+
+void objectDestroyEmpty(Object** objectPtr, ObjectListNode** nodePtr)
+{
+    if (objectPtr == nullptr && nodePtr == nullptr) {
+        return;
+    }
+
+    if (objectPtr != nullptr && *objectPtr != nullptr) {
+        objectDeallocate(objectPtr);
+    }
+
+    if (nodePtr != nullptr && *nodePtr != nullptr) {
+        objectListNodeDestroy(nodePtr);
+    }
 }
 
 } // namespace fallout
