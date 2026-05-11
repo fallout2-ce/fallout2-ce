@@ -138,63 +138,63 @@ static void sidePanelsHide();
 static void sidePanelsShow();
 static void sidePanelsDraw(const char* path, int win, bool isLeading);
 
-// 0x518F08
+// 0x518F08 insideInit
 static bool gInterfaceBarInitialized = false;
 
-// 0x518F0C
+// 0x518F0C intface_fid_is_changing
 static bool gInterfaceBarSwapHandsInProgress = false;
 
-// 0x518F10
+// 0x518F10 intfaceEnabled
 static bool gInterfaceBarEnabled = false;
 
-// 0x518F14
+// 0x518F14 intfaceHidden
 static bool gInterfaceBarHidden = false;
 
-// 0x518F18
+// 0x518F18 inventoryButton
 static int gInventoryButton = -1;
 
-// 0x518F24
+// 0x518F24 optionsButton
 static int gOptionsButton = -1;
 
-// 0x518F30
+// 0x518F30 skilldexButton
 static int gSkilldexButton = -1;
 
-// 0x518F40
+// 0x518F40 automapButton
 static int gMapButton = -1;
 
-// 0x518F50
+// 0x518F50 pipboyButton
 static int gPipboyButton = -1;
 
-// 0x518F5C
+// 0x518F5C characterButton
 static int gCharacterButton = -1;
 
-// 0x518F68
+// 0x518F68 itemButton
 static int gSingleAttackButton = -1;
 
-// 0x518F78
+// 0x518F78 itemCurrentItem
 static int gInterfaceCurrentHand = HAND_LEFT;
 
-// 0x518F7C
+// 0x518F7C itemButtonRect
 static Rect gInterfaceBarMainActionRect;
 
-// 0x518F8C
+// 0x518F8C toggleButton
 static int gChangeHandsButton = -1;
 
-// 0x518F9C
+// 0x518F9C endWindowOpen
 static bool gInterfaceBarEndButtonsIsVisible = false;
 
 // Combat mode curtains rect.
 //
-// 0x518FA0
+// 0x518FA0 endWindowRect
 static Rect gInterfaceBarEndButtonsRect;
 
-// 0x518FB0
+// 0x518FB0 endTurnButton
 static int gEndTurnButton = -1;
 
-// 0x518FBC
+// 0x518FBC endCombatButton
 static int gEndCombatButton = -1;
 
-// 0x518FE8
+// 0x518FE8 bbox
 static IndicatorDescription gIndicatorDescriptions[INDICATOR_COUNT] = {
     { 102, true, nullptr }, // ADDICT
     { 100, false, nullptr }, // SNEAK
@@ -203,55 +203,55 @@ static IndicatorDescription gIndicatorDescriptions[INDICATOR_COUNT] = {
     { 104, true, nullptr }, // RADIATED
 };
 
-// 0x519024
+// 0x519024 interfaceWindow
 int gInterfaceBarWindow = -1;
 
-// 0x519028
+// 0x519028 bar_window
 static int gIndicatorBarWindow = -1;
 
 // Last hit points rendered in interface.
 //
 // Used to animate changes.
 //
-// 0x51902C
+// 0x51902C last_points
 static int gInterfaceLastRenderedHitPoints = 0;
 
 // Last color used to render hit points in interface.
 //
 // Used to animate changes.
 //
-// 0x519030
+// 0x519030 last_points_color
 static int gInterfaceLastRenderedHitPointsColor = INTERFACE_NUMBERS_COLOR_RED;
 
 // Last armor class rendered in interface.
 //
 // Used to animate changes.
 //
-// 0x519034
+// 0x519034 last_ac
 static int gInterfaceLastRenderedArmorClass = 0;
 
 // Each slot contains one of indicators or -1 if slot is empty.
 //
-// 0x5970E0
+// 0x5970E0 bboxslot
 static int gIndicatorSlots[INDICATOR_SLOTS_COUNT];
 
-// 0x5970F8
+// 0x5970F8 Hand
 static InterfaceItemState gInterfaceItemStates[HAND_COUNT];
 
-// 0x597138
+// 0x597138 box_status_flag
 static bool gIndicatorBarIsVisible;
 
-// 0x597154
+// 0x597154 itemButtonDown
 static unsigned char _itemButtonDown[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERFACE_ITEM_ACTION_BUTTON_HEIGHT];
 
-// 0x59A2B4
+// 0x59A2B4 itemButtonUp
 static unsigned char _itemButtonUp[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERFACE_ITEM_ACTION_BUTTON_HEIGHT];
 
-// 0x59D3F4
+// 0x59D3F4 _interfaceBuffer
 static unsigned char* gInterfaceWindowBuffer;
 
 // Rectangle within Interface Bar window covering the Action Points bar.
-// 0x518FD4
+// 0x518FD4 movePointRect
 static Rect apBarRect;
 
 // Width and height of AP bulbs.
@@ -269,7 +269,7 @@ constexpr int kApBarMaxWidth = (kApBarBulbSize + kApBarBulbMargin) * kApBarMaxBu
 //
 // This buffer is initialized once and does not change throughout the game.
 //
-// 0x59D40C
+// 0x59D40C movePointBackground
 static unsigned char apBarBackgroundData[kApBarMaxWidth * kApBarBulbSize];
 
 static int apBarMaxAP;
@@ -329,7 +329,7 @@ static Buffer2D apBarBackgroundBuf2D()
 }
 
 // intface_init
-// 0x45D880 intface_init_
+// 0x45D880 intface_init
 int interfaceInit()
 {
     int fid;
@@ -619,7 +619,7 @@ int interfaceInit()
     return 0;
 }
 
-// 0x45E3D0 intface_reset_
+// 0x45E3D0 intface_reset
 void interfaceReset()
 {
     interfaceBarEnable();
@@ -636,7 +636,7 @@ void interfaceReset()
     gInterfaceCurrentHand = 0;
 }
 
-// 0x45E440 intface_exit_
+// 0x45E440 intface_exit
 void interfaceFree()
 {
     quickToolbarFree();
@@ -732,7 +732,7 @@ void interfaceFree()
     interfaceBarFree();
 }
 
-// 0x45E860 intface_load_
+// 0x45E860 intface_load
 int interfaceLoad(File* stream)
 {
     if (gInterfaceBarWindow == -1) {
@@ -793,7 +793,7 @@ int interfaceLoad(File* stream)
     return 0;
 }
 
-// 0x45E988 intface_save_
+// 0x45E988 intface_save
 int interfaceSave(File* stream)
 {
     if (gInterfaceBarWindow == -1) {
@@ -810,7 +810,7 @@ int interfaceSave(File* stream)
 
 // NOTE: Inlined.
 //
-// 0x45E9E0 intface_hide_
+// 0x45E9E0 intface_hide
 void interfaceBarHide()
 {
     if (gInterfaceBarWindow != -1) {
@@ -828,7 +828,7 @@ void interfaceBarHide()
     indicatorBarRefresh();
 }
 
-// 0x45EA10 intface_show_
+// 0x45EA10 intface_show
 void interfaceBarShow()
 {
     if (gInterfaceBarWindow != -1) {
@@ -850,7 +850,7 @@ void interfaceBarShow()
     indicatorBarRefresh();
 }
 
-// 0x45EA64 intface_enable_
+// 0x45EA64 intface_enable
 void interfaceBarEnable()
 {
     if (!gInterfaceBarEnabled) {
@@ -873,7 +873,7 @@ void interfaceBarEnable()
     }
 }
 
-// 0x45EAFC intface_disable_
+// 0x45EAFC intface_disable
 void interfaceBarDisable()
 {
     if (gInterfaceBarEnabled) {
@@ -893,13 +893,13 @@ void interfaceBarDisable()
     }
 }
 
-// 0x45EB90 intface_is_enabled_
+// 0x45EB90 intface_is_enabled
 bool interfaceBarEnabled()
 {
     return gInterfaceBarEnabled;
 }
 
-// 0x45EB98 intface_redraw_
+// 0x45EB98 intface_redraw
 void interfaceBarRefresh()
 {
     if (gInterfaceBarWindow != -1) {
@@ -919,7 +919,7 @@ static int counterAnimationBaseDelayMs()
 
 // Render hit points.
 //
-// 0x45EBD8 intface_update_hit_points_
+// 0x45EBD8 intface_update_hit_points
 void interfaceRenderHitPoints(bool animate)
 {
     if (gInterfaceBarWindow == -1) {
@@ -993,7 +993,7 @@ void interfaceRenderHitPoints(bool animate)
 
 // Render armor class.
 //
-// 0x45EDA8 intface_update_ac_
+// 0x45EDA8 intface_update_ac
 void interfaceRenderArmorClass(bool animate)
 {
     int armorClass = critterGetStat(gDude, STAT_ARMOR_CLASS);
@@ -1008,7 +1008,7 @@ void interfaceRenderArmorClass(bool animate)
     gInterfaceLastRenderedArmorClass = armorClass;
 }
 
-// 0x45EE0C intface_update_move_points_
+// 0x45EE0C intface_update_move_points
 void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
 {
     ConstBuffer2D bulbFrmBuf {};
@@ -1057,7 +1057,7 @@ void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
     }
 }
 
-// 0x45EF6C intface_get_attack_
+// 0x45EF6C intface_get_attack
 int interfaceGetCurrentHitMode(int* hitMode, bool* aiming)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1084,7 +1084,7 @@ int interfaceGetCurrentHitMode(int* hitMode, bool* aiming)
     return -1;
 }
 
-// 0x45EFEC intface_update_items_
+// 0x45EFEC intface_update_items
 int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
 {
     if (isoIsDisabled()) {
@@ -1214,7 +1214,7 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
     return 0;
 }
 
-// 0x45F404 intface_toggle_items_
+// 0x45F404 intface_toggle_items
 int interfaceBarSwapHands(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1245,7 +1245,7 @@ int interfaceBarSwapHands(bool animated)
     return 0;
 }
 
-// 0x45F4B4 intface_get_item_states_
+// 0x45F4B4 intface_get_item_states
 int interfaceGetItemActions(int* leftItemAction, int* rightItemAction)
 {
     *leftItemAction = gInterfaceItemStates[HAND_LEFT].action;
@@ -1253,7 +1253,7 @@ int interfaceGetItemActions(int* leftItemAction, int* rightItemAction)
     return 0;
 }
 
-// 0x45F4E0 intface_toggle_item_state_
+// 0x45F4E0 intface_toggle_item_state
 int interfaceCycleItemAction()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1310,7 +1310,7 @@ int interfaceCycleItemAction()
     return 0;
 }
 
-// 0x45F5EC intface_use_item_
+// 0x45F5EC intface_use_item
 void _intface_use_item()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1371,13 +1371,13 @@ void _intface_use_item()
     }
 }
 
-// 0x45F7FC intface_is_item_right_hand_
+// 0x45F7FC intface_is_item_right_hand
 int interfaceGetCurrentHand()
 {
     return gInterfaceCurrentHand;
 }
 
-// 0x45F804 intface_get_current_item_
+// 0x45F804 intface_get_current_item
 int interfaceGetActiveItem(Object** itemPtr)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1389,7 +1389,7 @@ int interfaceGetActiveItem(Object** itemPtr)
     return 0;
 }
 
-// 0x45F838 intface_update_ammo_lights_
+// 0x45F838 intface_update_ammo_lights
 int _intface_update_ammo_lights()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1426,7 +1426,7 @@ static int interfaceBarBaseDelayMs()
     return std::max(static_cast<int>(1000.0 / settings.ui.anim_speed), 100);
 }
 
-// 0x45F96C intface_end_window_open_
+// 0x45F96C intface_end_window_open
 void interfaceBarEndButtonsShow(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1483,7 +1483,7 @@ void interfaceBarEndButtonsShow(bool animated)
     interfaceBarEndButtonsRenderRedLights();
 }
 
-// 0x45FAC0 intface_end_window_close_
+// 0x45FAC0 intface_end_window_close
 void interfaceBarEndButtonsHide(bool animated)
 {
     if (gInterfaceBarWindow == -1) {
@@ -1540,7 +1540,7 @@ void interfaceBarEndButtonsHide(bool animated)
     gInterfaceBarEndButtonsIsVisible = false;
 }
 
-// 0x45FC04 intface_end_buttons_enable_
+// 0x45FC04 intface_end_buttons_enable
 void interfaceBarEndButtonsRenderGreenLights()
 {
     if (gInterfaceBarEndButtonsIsVisible) {
@@ -1560,7 +1560,7 @@ void interfaceBarEndButtonsRenderGreenLights()
     }
 }
 
-// 0x45FC98 intface_end_buttons_disable_
+// 0x45FC98 intface_end_buttons_disable
 void interfaceBarEndButtonsRenderRedLights()
 {
     if (gInterfaceBarEndButtonsIsVisible) {
@@ -1582,7 +1582,7 @@ void interfaceBarEndButtonsRenderRedLights()
 
 // NOTE: Inlined.
 //
-// 0x45FD2C intface_init_items_
+// 0x45FD2C intface_init_items
 static int intface_init_items()
 {
     // FIXME: For unknown reason these values initialized with -1. It's never
@@ -1593,7 +1593,7 @@ static int intface_init_items()
     return 0;
 }
 
-// 0x45FD88 intface_redraw_items_
+// 0x45FD88 intface_redraw_items
 static int interfaceBarRefreshMainAction()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1836,21 +1836,21 @@ static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int
     }
 }
 
-// 0x460658 intface_redraw_items_callback_
+// 0x460658 intface_redraw_items_callback
 static int _intface_redraw_items_callback(Object* _, Object* __)
 {
     interfaceBarRefreshMainAction();
     return 0;
 }
 
-// 0x460660 intface_change_fid_callback_
+// 0x460660 intface_change_fid_callback
 static int _intface_change_fid_callback(Object* _, Object* __)
 {
     gInterfaceBarSwapHandsInProgress = false;
     return 0;
 }
 
-// 0x46066C intface_change_fid_animate_
+// 0x46066C intface_change_fid_animate
 static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeaponAnimationCode, int weaponAnimationCode)
 {
     gInterfaceBarSwapHandsInProgress = true;
@@ -1916,7 +1916,7 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeapo
     }
 }
 
-// 0x4607E0 intface_create_end_turn_button_
+// 0x4607E0 intface_create_end_turn_button
 static int endTurnButtonInit()
 {
     int fid;
@@ -1950,7 +1950,7 @@ static int endTurnButtonInit()
     return 0;
 }
 
-// 0x4608C4 intface_destroy_end_turn_button_
+// 0x4608C4 intface_destroy_end_turn_button
 static int endTurnButtonFree()
 {
     if (gInterfaceBarWindow == -1) {
@@ -1968,7 +1968,7 @@ static int endTurnButtonFree()
     return 0;
 }
 
-// 0x460940 intface_create_end_combat_button_
+// 0x460940 intface_create_end_combat_button
 static int endCombatButtonInit()
 {
     int fid;
@@ -2002,7 +2002,7 @@ static int endCombatButtonInit()
     return 0;
 }
 
-// 0x460A24 intface_destroy_end_combat_button_
+// 0x460A24 intface_destroy_end_combat_button
 static int endCombatButtonFree()
 {
     if (gInterfaceBarWindow == -1) {
@@ -2020,7 +2020,7 @@ static int endCombatButtonFree()
     return 0;
 }
 
-// 0x460AA0 intface_draw_ammo_lights_
+// 0x460AA0 intface_draw_ammo_lights
 static void interfaceUpdateAmmoBar(int x, int ratio)
 {
     if ((ratio & 1) != 0) {
@@ -2054,7 +2054,7 @@ static void interfaceUpdateAmmoBar(int x, int ratio)
     }
 }
 
-// 0x460B20 intface_item_reload_
+// 0x460B20 intface_item_reload
 static int _intface_item_reload()
 {
     if (gInterfaceBarWindow == -1) {
@@ -2100,7 +2100,7 @@ static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned cha
 // [previousValue] is only meaningful for animation.
 // [offset] = 0 - grey, 120 - yellow, 240 - red.
 //
-// 0x460BA0 intface_rotate_numbers_
+// 0x460BA0 intface_rotate_numbers
 static void interfaceRenderCounter(int x, int y, int previousValue, int value, int offset, int delay)
 {
     if (value > 999) {
@@ -2198,7 +2198,7 @@ static void interfaceRenderCounter(int x, int y, int previousValue, int value, i
 
 // NOTE: Inlined.
 //
-// 0x461128 intface_fatal_error_
+// 0x461128 intface_fatal_error
 static int intface_fatal_error(int rc)
 {
     interfaceFree();
@@ -2206,7 +2206,7 @@ static int intface_fatal_error(int rc)
     return rc;
 }
 
-// 0x461134 construct_box_bar_win_
+// 0x461134 construct_box_bar_win
 static int indicatorBarInit()
 {
     int oldFont = fontGetCurrent();
@@ -2292,7 +2292,7 @@ static int indicatorBarInit()
     return 0;
 }
 
-// 0x461454 deconstruct_box_bar_win_
+// 0x461454 deconstruct_box_bar_win
 static void interfaceBarFree()
 {
     if (gIndicatorBarWindow != -1) {
@@ -2311,7 +2311,7 @@ static void interfaceBarFree()
 
 // NOTE: This function is not referenced in the original code.
 //
-// 0x4614A0 reset_box_bar_win_
+// 0x4614A0 reset_box_bar_win
 static void indicatorBarReset()
 {
     if (gIndicatorBarWindow != -1) {
@@ -2324,7 +2324,7 @@ static void indicatorBarReset()
 
 // Updates indicator bar.
 //
-// 0x4614CC refresh_box_bar_win_
+// 0x4614CC refresh_box_bar_win
 int indicatorBarRefresh()
 {
     if (gInterfaceBarWindow != -1 && gIndicatorBarIsVisible && !gInterfaceBarHidden) {
@@ -2398,7 +2398,7 @@ int indicatorBarRefresh()
     return 0;
 }
 
-// 0x461624 bbox_comp_
+// 0x461624 bbox_comp
 static int indicatorBoxCompareByPosition(const void* a, const void* b)
 {
     int indicatorBox1 = *(int*)a;
@@ -2415,7 +2415,7 @@ static int indicatorBoxCompareByPosition(const void* a, const void* b)
 
 // Renders indicator boxes into the indicator bar window.
 //
-// 0x461648 draw_bboxes_
+// 0x461648 draw_bboxes
 static void indicatorBarRender(int count)
 {
     if (gIndicatorBarWindow == -1) {
@@ -2468,7 +2468,7 @@ static void indicatorBarRender(int count)
 // Returns `true` if indicator was added, or `false` if there is no available
 // space in the indicator bar.
 //
-// 0x4616F0 add_bar_box_
+// 0x4616F0 add_bar_box
 static bool indicatorBarAdd(int indicator)
 {
     for (int index = 0; index < INDICATOR_SLOTS_COUNT; index++) {
@@ -2483,7 +2483,7 @@ static bool indicatorBarAdd(int indicator)
     return false;
 }
 
-// 0x461740 enable_box_bar_win_
+// 0x461740 enable_box_bar_win
 bool indicatorBarShow()
 {
     bool oldIsVisible = gIndicatorBarIsVisible;
@@ -2494,7 +2494,7 @@ bool indicatorBarShow()
     return oldIsVisible;
 }
 
-// 0x461760 disable_box_bar_win_
+// 0x461760 disable_box_bar_win
 bool indicatorBarHide()
 {
     bool oldIsVisible = gIndicatorBarIsVisible;
@@ -2692,7 +2692,7 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
 // differs from `interfaceGetCurrentHitMode` (can return one of `reload` hit
 // modes, the default is `punch`).
 //
-// 0x45EF6C intface_get_attack_
+// 0x45EF6C intface_get_attack
 bool interface_get_current_attack_mode(int* hit_mode)
 {
     if (gInterfaceBarWindow == -1) {

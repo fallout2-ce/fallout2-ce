@@ -13,61 +13,61 @@
 
 namespace fallout {
 
-// 0x5195A8
+// 0x5195A8 _mouseNameMangler
 MouseManagerNameMangler* gMouseManagerNameMangler = mouseManagerNameManglerDefaultImpl;
 
-// 0x5195AC
+// 0x5195AC _rateCallback
 MouseManagerRateProvider* gMouseManagerRateProvider = mouseManagerRateProviderDefaultImpl;
 
-// 0x5195B0
+// 0x5195B0 _currentTimeCallback
 MouseManagerTimeProvider* gMouseManagerTimeProvider = mouseManagerTimeProviderDefaultImpl;
 
-// 0x5195B4
+// 0x5195B4 _curref
 int gMouseManagerCurrentRef = 1;
 
-// 0x63247C
+// 0x63247C Cache
 MouseManagerCacheEntry gMouseManagerCache[MOUSE_MGR_CACHE_CAPACITY];
 
-// 0x638DFC
+// 0x638DFC animating
 bool gMouseManagerIsAnimating;
 
-// 0x638E00
+// 0x638E00 curPal
 unsigned char* gMouseManagerCurrentPalette;
 
-// 0x638E04
+// 0x638E04 curAnim
 MouseManagerAnimatedData* gMouseManagerCurrentAnimatedData;
 
-// 0x638E08
+// 0x638E08 _curMouseBuf
 unsigned char* gMouseManagerCurrentStaticData;
 
-// 0x638E0C
+// 0x638E0C lastMouseIndex
 int gMouseManagerCurrentCacheEntryIndex;
 
-// 0x485250 defaultNameMangler_
+// 0x485250 defaultNameMangler
 char* mouseManagerNameManglerDefaultImpl(char* name)
 {
     return name;
 }
 
-// 0x485254 defaultRateCallback_
+// 0x485254 defaultRateCallback
 int mouseManagerRateProviderDefaultImpl()
 {
     return 1000;
 }
 
-// 0x48525C defaultTimeCallback_
+// 0x48525C defaultTimeCallback
 int mouseManagerTimeProviderDefaultImpl()
 {
     return getTicks();
 }
 
-// 0x485288 mousemgrSetNameMangler_
+// 0x485288 mousemgrSetNameMangler
 void mouseManagerSetNameMangler(MouseManagerNameMangler* func)
 {
     gMouseManagerNameMangler = func;
 }
 
-// 0x4852B8 freeCacheEntry_
+// 0x4852B8 freeCacheEntry
 void mouseManagerFreeCacheEntry(MouseManagerCacheEntry* entry)
 {
     switch (entry->type) {
@@ -103,7 +103,7 @@ void mouseManagerFreeCacheEntry(MouseManagerCacheEntry* entry)
     entry->fileName[0] = '\0';
 }
 
-// 0x4853F8 cacheInsert_
+// 0x4853F8 cacheInsert
 int mouseManagerInsertCacheEntry(void** data, int type, unsigned char* palette, const char* fileName)
 {
     int foundIndex = -1;
@@ -158,7 +158,7 @@ int mouseManagerInsertCacheEntry(void** data, int type, unsigned char* palette, 
 
 // NOTE: Inlined.
 //
-// 0x4853D4 cacheFlush_
+// 0x4853D4 cacheFlush
 void mouseManagerFlushCache()
 {
     for (int index = 0; index < MOUSE_MGR_CACHE_CAPACITY; index++) {
@@ -166,7 +166,7 @@ void mouseManagerFlushCache()
     }
 }
 
-// 0x48554C cacheFind_
+// 0x48554C cacheFind
 MouseManagerCacheEntry* mouseManagerFindCacheEntry(const char* fileName, unsigned char** palettePtr, int* a3, int* a4, int* widthPtr, int* heightPtr, int* typePtr)
 {
     for (int index = 0; index < MOUSE_MGR_CACHE_CAPACITY; index++) {
@@ -199,13 +199,13 @@ MouseManagerCacheEntry* mouseManagerFindCacheEntry(const char* fileName, unsigne
     return nullptr;
 }
 
-// 0x48568C initMousemgr_
+// 0x48568C initMousemgr
 void mouseManagerInit()
 {
     mouseSetSensitivity(1.0);
 }
 
-// 0x48569C mousemgrClose_
+// 0x48569C mousemgrClose
 void mouseManagerExit()
 {
     mouseSetFrame(nullptr, 0, 0, 0, 0, 0, 0);
@@ -222,7 +222,7 @@ void mouseManagerExit()
     gMouseManagerCurrentAnimatedData = nullptr;
 }
 
-// 0x485704 mousemgrUpdate_
+// 0x485704 mousemgrUpdate
 void mouseManagerUpdate()
 {
     if (!gMouseManagerIsAnimating) {
@@ -264,7 +264,7 @@ void mouseManagerUpdate()
     }
 }
 
-// 0x485868 mouseSetFrame_
+// 0x485868 mouseSetFrame
 int mouseManagerSetFrame(char* fileName, int a2)
 {
     char* mangledFileName = gMouseManagerNameMangler(fileName);
@@ -427,7 +427,7 @@ int mouseManagerSetFrame(char* fileName, int a2)
     return true;
 }
 
-// 0x485E58 mouseSetMouseShape_
+// 0x485E58 mouseSetMouseShape
 bool mouseManagerSetMouseShape(char* fileName, int a2, int a3)
 {
     unsigned char* palette;
@@ -480,7 +480,7 @@ bool mouseManagerSetMouseShape(char* fileName, int a2, int a3)
     return true;
 }
 
-// 0x486010 mouseSetMousePointer_
+// 0x486010 mouseSetMousePointer
 bool mouseManagerSetMousePointer(char* fileName)
 {
     unsigned char* palette;
@@ -572,7 +572,7 @@ bool mouseManagerSetMousePointer(char* fileName)
     return rc;
 }
 
-// 0x4862AC mousemgrResetMouse_
+// 0x4862AC mousemgrResetMouse
 void mouseManagerResetMouse()
 {
     MouseManagerCacheEntry* entry = &(gMouseManagerCache[gMouseManagerCurrentCacheEntryIndex]);
@@ -632,13 +632,13 @@ void mouseManagerResetMouse()
     }
 }
 
-// 0x4865C4 mouseHide_
+// 0x4865C4 mouseHide
 void mouseManagerHideMouse()
 {
     mouseHideCursor();
 }
 
-// 0x4865CC mouseShow_
+// 0x4865CC mouseShow
 void mouseManagerShowMouse()
 {
     mouseShowCursor();

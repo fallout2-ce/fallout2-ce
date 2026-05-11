@@ -43,7 +43,7 @@ static void configWriteSection(FILE* stream, const char* sectionName, ConfigSect
 
 // Last section key read from .INI file.
 //
-// 0x518224
+// 0x518224 aUnknown_0
 static char gConfigLastSectionKey[CONFIG_FILE_MAX_LINE_LENGTH] = "unknown";
 
 // 0x42BD90

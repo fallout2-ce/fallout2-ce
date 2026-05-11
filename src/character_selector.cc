@@ -90,44 +90,44 @@ static bool characterSelectorWindowFatalError(bool result);
 
 static void premadeCharactersLocalizePath(char* path);
 
-// 0x51C84C
+// 0x51C84C premade_index
 static int gCurrentPremadeCharacter = PREMADE_CHARACTER_NARG;
 
-// 0x51C850
+// 0x51C850 premade_characters
 static PremadeCharacterDescription gPremadeCharacterDescriptions[PREMADE_CHARACTER_COUNT] = {
     { "premade\\combat", 201, "VID 208-197-88-125" },
     { "premade\\stealth", 202, "VID 208-206-49-229" },
     { "premade\\diplomat", 203, "VID 208-206-49-227" },
 };
 
-// 0x51C8D4
+// 0x51C8D4 premade_total
 static int gPremadeCharacterCount = PREMADE_CHARACTER_COUNT;
 
-// 0x51C7F8
+// 0x51C7F8 select_window_id
 static int gCharacterSelectorWindow = -1;
 
-// 0x51C7FC
+// 0x51C7FC _select_window_buffer
 static unsigned char* gCharacterSelectorWindowBuffer = nullptr;
 
-// 0x51C800
+// 0x51C800 _monitor
 static unsigned char* gCharacterSelectorBackground = nullptr;
 
-// 0x51C804
+// 0x51C804 previous_button
 static int gCharacterSelectorWindowPreviousButton = -1;
 
-// 0x51C810
+// 0x51C810 next_button
 static int gCharacterSelectorWindowNextButton = -1;
 
-// 0x51C81C
+// 0x51C81C take_button
 static int gCharacterSelectorWindowTakeButton = -1;
 
-// 0x51C828
+// 0x51C828 modify_button
 static int gCharacterSelectorWindowModifyButton = -1;
 
-// 0x51C834
+// 0x51C834 create_button
 static int gCharacterSelectorWindowCreateButton = -1;
 
-// 0x51C840
+// 0x51C840 back_button
 static int gCharacterSelectorWindowBackButton = -1;
 
 static FrmImage _takeButtonNormalFrmImage;
@@ -145,7 +145,7 @@ static FrmImage _previousButtonPressedFrmImage;
 
 static std::vector<PremadeCharacterDescription> gCustomPremadeCharacterDescriptions;
 
-// 0x4A71D0 select_character_
+// 0x4A71D0 select_character
 int characterSelectorOpen()
 {
 #if __APPLE__ && TARGET_OS_IOS
@@ -260,7 +260,7 @@ int characterSelectorOpen()
     return rc;
 }
 
-// 0x4A7468 select_init_
+// 0x4A7468 select_init
 static bool characterSelectorWindowInit()
 {
     if (gCharacterSelectorWindow != -1) {
@@ -497,7 +497,7 @@ static bool characterSelectorWindowInit()
     return true;
 }
 
-// 0x4A7AD4 select_exit_
+// 0x4A7AD4 select_exit
 static void characterSelectorWindowFree()
 {
     if (gCharacterSelectorWindow == -1) {
@@ -561,7 +561,7 @@ static void characterSelectorWindowFree()
     gCharacterSelectorWindow = -1;
 }
 
-// 0x4A7D58 select_update_display_
+// 0x4A7D58 select_update_display
 static bool characterSelectorWindowRefresh()
 {
     char path[COMPAT_MAX_PATH];
@@ -592,7 +592,7 @@ static bool characterSelectorWindowRefresh()
     return success;
 }
 
-// 0x4A7E08 select_display_portrait_
+// 0x4A7E08 select_display_portrait
 static bool characterSelectorWindowRenderFace()
 {
     bool success = false;
@@ -613,7 +613,7 @@ static bool characterSelectorWindowRenderFace()
     return success;
 }
 
-// 0x4A7EA8 select_display_stats_
+// 0x4A7EA8 select_display_stats
 static bool characterSelectorWindowRenderStats()
 {
     char* str;
@@ -865,7 +865,7 @@ static bool characterSelectorWindowRenderStats()
     return true;
 }
 
-// 0x4A8AE4 select_display_bio_
+// 0x4A8AE4 select_display_bio
 static bool characterSelectorWindowRenderBio()
 {
     int oldFont = fontGetCurrent();
@@ -896,7 +896,7 @@ static bool characterSelectorWindowRenderBio()
 
 // NOTE: Inlined.
 //
-// 0x4A8BD0 select_fatal_error_
+// 0x4A8BD0 select_fatal_error
 static bool characterSelectorWindowFatalError(bool result)
 {
     characterSelectorWindowFree();

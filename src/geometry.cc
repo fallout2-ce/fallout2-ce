@@ -8,10 +8,10 @@
 
 namespace fallout {
 
-// 0x51DEF4
+// 0x51DEF4 _rectList
 static RectListNode* _rectList = nullptr;
 
-// 0x4C6900 GNW_rect_exit_
+// 0x4C6900 GNW_rect_exit
 void _GNW_rect_exit()
 {
     while (_rectList != nullptr) {
@@ -21,7 +21,7 @@ void _GNW_rect_exit()
     }
 }
 
-// 0x4C6924 rect_clip_list_
+// 0x4C6924 rect_clip_list
 void _rect_clip_list(RectListNode** rectListNodePtr, Rect* rect)
 {
     Rect clipRect;
@@ -107,7 +107,7 @@ void _rect_clip_list(RectListNode** rectListNodePtr, Rect* rect)
     }
 }
 
-// 0x4C6AAC rect_clip_
+// 0x4C6AAC rect_clip
 RectListNode* rect_clip(Rect* b, Rect* t)
 {
     RectListNode* list = nullptr;
@@ -163,7 +163,7 @@ RectListNode* rect_clip(Rect* b, Rect* t)
     return list;
 }
 
-// 0x4C6BB8 rect_malloc_
+// 0x4C6BB8 rect_malloc
 RectListNode* _rect_malloc()
 {
     if (_rectList == nullptr) {
@@ -188,7 +188,7 @@ RectListNode* _rect_malloc()
     return rectListNode;
 }
 
-// 0x4C6C04 rect_free_
+// 0x4C6C04 rect_free
 void _rect_free(RectListNode* rectListNode)
 {
     rectListNode->next = _rectList;
@@ -198,7 +198,7 @@ void _rect_free(RectListNode* rectListNode)
 // Calculates a union of two source rectangles and places it into result
 // rectangle.
 //
-// 0x4C6C18 rect_min_bound_
+// 0x4C6C18 rect_min_bound
 void rectUnion(const Rect* s1, const Rect* s2, Rect* r)
 {
     r->left = std::min(s1->left, s2->left);
@@ -211,7 +211,7 @@ void rectUnion(const Rect* s1, const Rect* s2, Rect* r)
 // rectangle and returns 0. If two source rectangles do not have intersection
 // it returns -1 and resulting rectangle is a copy of s1.
 //
-// 0x4C6C68 rect_inside_bound_
+// 0x4C6C68 rect_inside_bound
 int rectIntersection(const Rect* s1, const Rect* s2, Rect* r)
 {
     r->left = s1->left;

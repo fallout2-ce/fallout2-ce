@@ -363,7 +363,7 @@ static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int sc
 static int inventoryGetCenteredWindowY(int windowHeight);
 static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index);
 
-// 0x46E6D0
+// 0x46E6D0 stats_array0
 static const int gSummaryStats[7] = {
     STAT_CURRENT_HIT_POINTS,
     STAT_ARMOR_CLASS,
@@ -374,7 +374,7 @@ static const int gSummaryStats[7] = {
     STAT_DAMAGE_THRESHOLD_EXPLOSION,
 };
 
-// 0x46E6EC
+// 0x46E6EC stats_array1
 static const int gSummaryStats2[7] = {
     STAT_MAXIMUM_HIT_POINTS,
     -1,
@@ -395,7 +395,7 @@ static const int gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_COUNT] = {
 
 // The number of items to show in scroller.
 //
-// 0x519054
+// 0x519054 inven_cur_disp
 static int gInventorySlotsCount = 6;
 
 static InventoryNormalLayout inventoryLayout;
@@ -404,21 +404,21 @@ static InventoryLootLayout inventoryLootLayout;
 static FrmImage inventoryFrmImage;
 static FrmImage inventoryLootFrmImage;
 
-// 0x519058 inven_dude
+// 0x519058 _inven_dude
 static Object* _inven_dude = nullptr;
 
 // Probably fid of armor to display in inventory dialog.
 //
-// 0x51905C
+// 0x51905C inven_pid
 static int _inven_pid = -1;
 
-// 0x519060
+// 0x519060 inven_is_initialized
 static bool _inven_is_initialized = false;
 
-// 0x519064
+// 0x519064 inven_display_msg_line
 static int _inven_display_msg_line = 1;
 
-// 0x519068
+// 0x519068 iscr_data
 static const InventoryWindowDescription gInventoryWindowDescriptions[INVENTORY_WINDOW_TYPE_COUNT] = {
     { INVENTORY_NORMAL_BACKGROUND_FRM_ID, INVENTORY_WINDOW_WIDTH, 377, 80, 0 },
     { 113, INVENTORY_USE_ON_WINDOW_WIDTH, 376, 80, 0 },
@@ -428,28 +428,28 @@ static const InventoryWindowDescription gInventoryWindowDescriptions[INVENTORY_W
     { 305, INVENTORY_TIMER_WINDOW_WIDTH, 162, 140, 80 },
 };
 
-// 0x5190E0
+// 0x5190E0 dropped_explosive
 static bool _dropped_explosive = false;
 
-// 0x5190E4
+// 0x5190E4 inven_scroll_up_bid
 static int gInventoryScrollUpButton = -1;
 
-// 0x5190E8
+// 0x5190E8 inven_scroll_dn_bid
 static int gInventoryScrollDownButton = -1;
 
-// 0x5190EC
+// 0x5190EC loot_scroll_up_bid
 static int gSecondaryInventoryScrollUpButton = -1;
 
-// 0x5190F0
+// 0x5190F0 loot_scroll_dn_bid
 static int gSecondaryInventoryScrollDownButton = -1;
 
-// 0x5190F4
+// 0x5190F4 ticker
 static unsigned int gInventoryWindowDudeRotationTimestamp = 0;
 
-// 0x5190F8
+// 0x5190F8 curr_rot
 static int gInventoryWindowDudeRotation = 0;
 
-// 0x5190FC
+// 0x5190FC num
 static const int gInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
     286, // pointing hand
     250, // action arrow
@@ -458,10 +458,10 @@ static const int gInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
     266, // blank
 };
 
-// 0x519110
+// 0x519110 last_target
 static Object* _last_target = nullptr;
 
-// 0x519114
+// 0x519114 act_use
 static const int _act_use[4] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_USE,
@@ -469,27 +469,27 @@ static const int _act_use[4] = {
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
-// 0x519124
+// 0x519124 act_no_use
 static const int _act_no_use[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_DROP,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
-// 0x519130
+// 0x519130 act_just_use
 static const int _act_just_use[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_USE,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
-// 0x51913C
+// 0x51913C act_nothing
 static const int _act_nothing[2] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
-// 0x519144
+// 0x519144 act_weap
 static const int _act_weap[4] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_UNLOAD,
@@ -497,7 +497,7 @@ static const int _act_weap[4] = {
     GAME_MOUSE_ACTION_MENU_ITEM_CANCEL,
 };
 
-// 0x519154
+// 0x519154 act_weap2
 static const int _act_weap2[3] = {
     GAME_MOUSE_ACTION_MENU_ITEM_LOOK,
     GAME_MOUSE_ACTION_MENU_ITEM_UNLOAD,
@@ -505,27 +505,27 @@ static const int _act_weap2[3] = {
 };
 
 // Scroll offsets to target inventory for every container nesting level (stack).
-// 0x59E7EC
+// 0x59E7EC target_stack_offset
 static int _target_stack_offset[10];
 
 // inventory.msg
 //
-// 0x59E814
+// 0x59E814 inventry_message_file
 static MessageList gInventoryMessageList;
 
 // Current target critter or container for every nesting level (stack).
-// 0x59E81C
+// 0x59E81C _target_stack
 static Object* _target_stack[10];
 
 // Scroll offsets to main inventory for every container nesting level (stack).
-// 0x59E844
+// 0x59E844 stack_offset
 static int _stack_offset[10];
 
 // Current critter or container for every nesting level (stack).
-// 0x59E86C
+// 0x59E86C _stack
 static Object* _stack[10];
 
-// 0x59E894
+// 0x59E894 mt_wid
 static int _mt_wid;
 
 // Note: Sfall also has InventoryApCost and QuickPocketsApCostReduction settings which we don't look at
@@ -546,23 +546,23 @@ static int gBartererTableOffset;
 static int gPlayerTableOffset;
 
 // An inventory containing a subset of Player's items offered to the NPC during barter.
-// 0x59E8A4 _ptable_pud
+// 0x59E8A4 ptable_pud
 static Inventory* gPlayerTableInventory;
 
-// 0x59E8A8
+// 0x59E8A8 imdata
 static InventoryCursorData gInventoryCursorData[INVENTORY_WINDOW_CURSOR_COUNT];
 
 // An object (PID -1) with an inventory containing a subset of Player's items offered to the NPC during barter.
 // 0x59E934 _ptable
 static Object* gPlayerTableObj;
 
-// 0x59E938
+// 0x59E938 _display_msg
 static InventoryPrintItemDescriptionHandler* gInventoryPrintItemDescriptionHandler;
 
-// 0x59E93C
+// 0x59E93C im_value
 static int _im_value; // "keyCode" corresponding to an inventory item "button", or -1 if nothing
 
-// 0x59E940
+// 0x59E940 immode
 static int gInventoryCursor;
 
 // An object (PID -1) with an inventory containing a subset of NPC's items asked for by the player during barter.
@@ -570,47 +570,47 @@ static int gInventoryCursor;
 static Object* gBartererTableObj;
 
 // Current nesting level for viewing target's bag/backpack contents.
-// 0x59E948
+// 0x59E948 target_curr_stack
 static int _target_curr_stack;
 
 // 0x59E94C btable_pud
 static Inventory* gBartererTableInventory;
 
-// 0x59E950
+// 0x59E950 inven_ui_was_disabled
 static bool _inven_ui_was_disabled;
 
-// 0x59E954
+// 0x59E954 _i_worn
 static Object* gInventoryArmor;
 
-// 0x59E958
+// 0x59E958 _i_lhand
 static Object* gInventoryLeftHandItem;
 
 // Rotating character's fid.
 //
-// 0x59E95C
+// 0x59E95C i_fid
 static int gInventoryWindowDudeFid;
 
-// 0x59E960
+// 0x59E960 pud
 static Inventory* _pud;
 
-// 0x59E964
+// 0x59E964 i_wid
 static int gInventoryWindow;
 
 // item2
-// 0x59E968
+// 0x59E968 _i_rhand
 static Object* gInventoryRightHandItem;
 
 // Current nesting level for viewing bag/backpack contents.
-// 0x59E96C
+// 0x59E96C curr_stack
 static int _curr_stack;
 
-// 0x59E970
+// 0x59E970 i_wid_max_y
 static int gInventoryWindowMaxY;
 
-// 0x59E974
+// 0x59E974 i_wid_max_x
 static int gInventoryWindowMaxX;
 
-// 0x59E978
+// 0x59E978 _target_pud
 static Inventory* _target_pud;
 
 // 0x59E97C barter_back_win

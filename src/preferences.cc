@@ -116,7 +116,7 @@ static int preferencesWindowInit();
 static int preferencesWindowFree();
 static void _DoThing(int eventCode);
 
-// 0x48FBD0
+// 0x48FBD0 row1Ytab
 static const int _row1Ytab[PRIMARY_PREF_COUNT] = {
     48,
     125,
@@ -125,7 +125,7 @@ static const int _row1Ytab[PRIMARY_PREF_COUNT] = {
     363,
 };
 
-// 0x48FBDA
+// 0x48FBDA row2Ytab
 static const int _row2Ytab[SECONDARY_PREF_COUNT] = {
     49,
     116,
@@ -135,7 +135,7 @@ static const int _row2Ytab[SECONDARY_PREF_COUNT] = {
     380,
 };
 
-// 0x48FBE6
+// 0x48FBE6 row3Ytab
 static const int _row3Ytab[RANGE_PREF_COUNT] = {
     19,
     94,
@@ -148,7 +148,7 @@ static const int _row3Ytab[RANGE_PREF_COUNT] = {
 };
 
 // x offsets for primary preferences from the knob position
-// 0x48FBF6
+// 0x48FBF6 _bglbx
 static const short kPrimaryOptionLabelXOffsetByValue[PRIMARY_OPTION_VALUE_COUNT] = {
     2,
     25,
@@ -157,7 +157,7 @@ static const short kPrimaryOptionLabelXOffsetByValue[PRIMARY_OPTION_VALUE_COUNT]
 };
 
 // y offsets for primary preference option values from the knob position
-// 0x48FBFE
+// 0x48FBFE _bglby
 static const short kPrimaryOptionLabelYOffsetByValue[PRIMARY_OPTION_VALUE_COUNT] = {
     10,
     -4,
@@ -166,7 +166,7 @@ static const short kPrimaryOptionLabelYOffsetByValue[PRIMARY_OPTION_VALUE_COUNT]
 };
 
 // x offsets for secondary prefrence option values from the knob position
-// 0x48FC06
+// 0x48FC06 _smlbx
 static const short word_48FC06[SECONDARY_OPTION_VALUE_COUNT] = {
     4,
     21,
@@ -211,7 +211,7 @@ static const double kTextLineDelayScale = 0.2;
 // 0x50C2E0
 static const double kTextLineDelayRange = 2.0;
 
-// 0x5197CC
+// 0x5197CC prfgrphs
 static const int gPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
     240, // prefscrn.frm - options screen
     241, // prfsldof.frm - options screen
@@ -225,37 +225,37 @@ static const int gPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
     9, // lilreddn.frm - little red button down
 };
 
-// 0x6637E8
+// 0x6637E8 optn_msgfl
 static MessageList gPreferencesMessageList;
 
-// 0x663840
+// 0x663840 optnmesg
 static MessageListItem gPreferencesMessageListItem;
 
-// 0x6638C8
+// 0x6638C8 _text_delay_back
 static double gPreferencesTextBaseDelay2;
 
-// 0x6638D0
+// 0x6638D0 gamma_value
 static double gPreferencesBrightness1;
 
-// 0x6638D8
+// 0x6638D8 _gamma_value_back
 static double gPreferencesBrightness2;
 
-// 0x6638E0
+// 0x6638E0 text_delay
 static double gPreferencesTextBaseDelay1;
 
-// 0x6638E8
+// 0x6638E8 mouse_sens
 static double gPreferencesMouseSensitivity1;
 
-// 0x6638F0
+// 0x6638F0 _mouse_sens_back
 static double gPreferencesMouseSensitivity2;
 
-// 0x6638F8
+// 0x6638F8 prefbuf
 static unsigned char* gPreferencesWindowBuffer;
 
-// 0x663904
+// 0x663904 prfwin
 static int gPreferencesWindow = -1;
 
-// 0x663924
+// 0x663924 _settings_backup
 static int gPreferencesGameDifficulty2;
 
 // 0x663928
@@ -306,43 +306,43 @@ static int gPreferencesSoundEffectsVolume2;
 // 0x663964
 static int gPreferencesSpeechVolume2;
 
-// 0x663970
+// 0x663970 sndfx_volume_2
 static int gPreferencesSoundEffectsVolume1;
 
-// 0x663974
+// 0x663974 subtitles
 static int gPreferencesSubtitles1;
 
-// 0x663978
+// 0x663978 language_filter
 static int gPreferencesLanguageFilter1;
 
-// 0x66397C
+// 0x66397C speech_volume_2
 static int gPreferencesSpeechVolume1;
 
-// 0x663980
+// 0x663980 master_volume_2
 static int gPreferencesMasterVolume1;
 
-// 0x663984
+// 0x663984 player_speedup
 static int gPreferencesPlayerSpeedup1;
 
-// 0x663988
+// 0x663988 combat_taunts
 static int gPreferencesCombatTaunts1;
 
-// 0x663990
+// 0x663990 music_volume
 static int gPreferencesMusicVolume1;
 
-// 0x663998
+// 0x663998 prf_running
 static int gPreferencesRunning1;
 
-// 0x66399C
+// 0x66399C combat_speed
 static int gPreferencesCombatSpeed1;
 
-// 0x6639A0
+// 0x6639A0 plyrspdbid
 static int _plyrspdbid;
 
-// 0x6639A4
+// 0x6639A4 item_highlight
 static int gPreferencesItemHighlight1;
 
-// 0x6639A8
+// 0x6639A8 changed
 static bool _changed;
 
 static void preferencesRefreshBrightnessSlider()
@@ -351,25 +351,25 @@ static void preferencesRefreshBrightnessSlider()
     windowRefresh(gPreferencesWindow);
 }
 
-// 0x6639AC
+// 0x6639AC combat_messages
 static int gPreferencesCombatMessages1;
 
-// 0x6639B0
+// 0x6639B0 target_highlight
 static int gPreferencesTargetHighlight1;
 
-// 0x6639B4
+// 0x6639B4 combat_difficulty
 static int gPreferencesCombatDifficulty1;
 
-// 0x6639B8
+// 0x6639B8 violence_level
 static int gPreferencesViolenceLevel1;
 
-// 0x6639BC
+// 0x6639BC game_difficulty
 static int gPreferencesGameDifficulty1;
 
-// 0x6639C0
+// 0x6639C0 combatLookValue
 static int gPreferencesCombatLooks1;
 
-// 0x5197F8
+// 0x5197F8 btndat
 static PreferenceDescription gPreferenceDescriptions[PREF_COUNT] = {
     { 3, 0, 76, 71, 0, 0, { 203, 204, 205, 0 }, 0, 0, 0, &gPreferencesGameDifficulty1 },
     { 3, 0, 76, 149, 0, 0, { 206, 204, 208, 0 }, 0, 0, 0, &gPreferencesCombatDifficulty1 },
@@ -406,7 +406,7 @@ int preferencesInit()
     return 0;
 }
 
-// 0x492AA8 SetSystemPrefs_
+// 0x492AA8 SetSystemPrefs
 static void _SetSystemPrefs()
 {
     preferencesSetDefaults(false);
@@ -435,7 +435,7 @@ static void _SetSystemPrefs()
     _JustUpdate_();
 }
 
-// 0x493054 SaveSettings_
+// 0x493054 SaveSettings
 static void _SaveSettings()
 {
     gPreferencesGameDifficulty2 = gPreferencesGameDifficulty1;
@@ -460,7 +460,7 @@ static void _SaveSettings()
     gPreferencesSpeechVolume2 = gPreferencesSpeechVolume1;
 }
 
-// 0x493128 RestoreSettings_
+// 0x493128 RestoreSettings
 static void _RestoreSettings()
 {
     gPreferencesGameDifficulty1 = gPreferencesGameDifficulty2;
@@ -487,7 +487,7 @@ static void _RestoreSettings()
     _JustUpdate_();
 }
 
-// 0x492F60 SetDefaults_
+// 0x492F60 SetDefaults
 static void preferencesSetDefaults(bool updateUi)
 {
     gPreferencesCombatDifficulty1 = COMBAT_DIFFICULTY_NORMAL;
@@ -562,7 +562,7 @@ static void _JustUpdate_()
     colorSetBrightness(gPreferencesBrightness1);
 }
 
-// 0x491A68 UpdateThing_
+// 0x491A68 UpdateThing
 static void _UpdateThing(int index)
 {
     fontSetCurrent(101);
@@ -778,7 +778,7 @@ static void _UpdateThing(int index)
     // return true;
 }
 
-// 0x492CB0 SavePrefs_
+// 0x492CB0 SavePrefs
 int _SavePrefs(bool save)
 {
     settings.preferences.game_difficulty = gPreferencesGameDifficulty1;
@@ -909,7 +909,7 @@ err:
     return -1;
 }
 
-// 0x4928E4 IncGamma_
+// 0x4928E4 IncGamma
 // Note: this can be called from many different contexts, not just the preferences window.
 void brightnessIncrease()
 {
@@ -939,7 +939,7 @@ void brightnessIncrease()
     }
 }
 
-// 0x4929C8 DecGamma_
+// 0x4929C8 DecGamma
 void brightnessDecrease()
 {
     if (!GameMode::isInGameMode(GameMode::kPreferences)) {
@@ -968,7 +968,7 @@ void brightnessDecrease()
     }
 }
 
-// 0x4908A0 PrefStart_
+// 0x4908A0 PrefStart
 static int preferencesWindowInit()
 {
     int i;
@@ -1191,7 +1191,7 @@ static int preferencesWindowInit()
     return 0;
 }
 
-// 0x492870 PrefEnd_
+// 0x492870 PrefEnd
 static int preferencesWindowFree()
 {
     if (_changed) {
@@ -1216,7 +1216,7 @@ static int preferencesWindowFree()
     return 0;
 }
 
-// 0x490798 do_prefscreen_
+// 0x490798 do_prefscreen
 int doPreferences(bool animated)
 {
     ScopedGameMode gm(GameMode::kPreferences);
@@ -1299,7 +1299,7 @@ int doPreferences(bool animated)
     return rc;
 }
 
-// 0x490E8C DoThing_
+// 0x490E8C DoThing
 static void _DoThing(int eventCode)
 {
     int x;

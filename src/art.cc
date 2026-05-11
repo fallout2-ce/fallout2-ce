@@ -44,19 +44,19 @@ static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 
-// 0x5002D8
+// 0x5002D8 str2
 static char gDefaultJumpsuitMaleFileName[] = "hmjmps";
 
-// 0x05002E0
+// 0x05002E0 aHfjmps
 static char gDefaultJumpsuitFemaleFileName[] = "hfjmps";
 
-// 0x5002E8
+// 0x5002E8 aHmwarr
 static char gDefaultTribalMaleFileName[] = "hmwarr";
 
-// 0x5002F0
+// 0x5002F0 aHfprim
 static char gDefaultTribalFemaleFileName[] = "hfprim";
 
-// 0x510738
+// 0x510738 art
 static ArtListDescription gArtListDescriptions[OBJ_TYPE_COUNT] = {
     { 0, "items", nullptr, nullptr, 0 },
     { 0, "critters", nullptr, nullptr, 0 },
@@ -74,18 +74,18 @@ static ArtListDescription gArtListDescriptions[OBJ_TYPE_COUNT] = {
 // This flag denotes that localized arts should be looked up first. Used
 // together with [gArtLanguage].
 //
-// 0x510898
+// 0x510898 darn_foreigners
 static bool gArtLanguageInitialized = false;
 
-// 0x51089C
+// 0x51089C _head1
 static const char* _head1 = "gggnnnbbbgnb";
 
-// 0x5108A0
+// 0x5108A0 _head2
 static const char* _head2 = "vfngfbnfvppp";
 
 // Current native look base fid.
 //
-// 0x5108A4
+// 0x5108A4 art_vault_guy_num
 int _art_vault_guy_num = 0;
 
 // Base fids for unarmored dude.
@@ -99,37 +99,37 @@ int _art_vault_guy_num = 0;
 // been accessed differently in 0x49F984, which clearly uses look type as an
 // index, not gender.
 //
-// 0x5108A8
+// 0x5108A8 art_vault_person_nums
 int _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
 
 // Index of "grid001.frm" in tiles.lst.
 //
-// 0x5108B8
+// 0x5108B8 art_mapper_blank_tile
 static int _art_mapper_blank_tile = 1;
 
 // Non-english language name.
 //
 // This value is used as a directory name to display localized arts.
 //
-// 0x56C970
+// 0x56C970 darn_foreign_sub_path
 static char gArtLanguage[32];
 
-// 0x56C990
+// 0x56C990 art_cache
 Cache gArtCache;
 
-// 0x56C9E4
+// 0x56C9E4 art_name
 static char _art_name[COMPAT_MAX_PATH];
 
 // head_info
-// 0x56CAE8
+// 0x56CAE8 head_info
 static HeadDescription* gHeadDescriptions;
 
 // anon_alias
-// 0x56CAEC
+// 0x56CAEC anon_alias
 static int* _anon_alias;
 
 // artCritterFidShouldRunData
-// 0x56CAF0
+// 0x56CAF0 artCritterFidShouldRunData
 static int* gArtCritterFidShoudRunData;
 
 static std::unordered_map<std::string, std::shared_ptr<NamedCacheEntry>> gNamedArtCache;

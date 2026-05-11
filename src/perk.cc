@@ -52,7 +52,7 @@ static PerkRankData* perkGetRankData(Object* critter);
 static bool perkCanAdd(Object* critter, int perk);
 static void perkResetRanks();
 
-// 0x519DCC
+// 0x519DCC perk_data
 static PerkDescription gPerkDescriptions[PERK_COUNT] = {
     { nullptr, nullptr, 72, 1, 3, -1, 0, -1, 0, 0, -1, 0, 0, 5, 0, 0, 0, 0, 0 },
     { nullptr, nullptr, 73, 1, 15, -1, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 6, 0 },
@@ -177,21 +177,21 @@ static PerkDescription gPerkDescriptions[PERK_COUNT] = {
 
 // An array of perk ranks for each party member.
 //
-// 0x51C120
+// 0x51C120 perkLevelDataList
 static PerkRankData* gPartyMemberPerkRanks = nullptr;
 
 // Amount of experience points granted when player selected "Here and now"
 // perk.
 //
-// 0x51C124
+// 0x51C124 hereAndNowExps
 static int gHereAndNowBonusExperience = 0;
 
 // perk.msg
 //
-// 0x6642D4
+// 0x6642D4 perk_message_file
 static MessageList gPerksMessageList;
 
-// 0x4965A0 perk_init_
+// 0x4965A0 perk_init
 int perksInit()
 {
     gPartyMemberPerkRanks = (PerkRankData*)internal_malloc(sizeof(*gPartyMemberPerkRanks) * gPartyMemberDescriptionsLength);
@@ -231,13 +231,13 @@ int perksInit()
     return 0;
 }
 
-// 0x4966B0 perk_reset_
+// 0x4966B0 perk_reset
 void perksReset()
 {
     perkResetRanks();
 }
 
-// 0x4966B8 perk_exit_
+// 0x4966B8 perk_exit
 void perksExit()
 {
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_PERK, nullptr);
@@ -249,7 +249,7 @@ void perksExit()
     }
 }
 
-// 0x4966E4 perk_load_
+// 0x4966E4 perk_load
 int perksLoad(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
@@ -264,7 +264,7 @@ int perksLoad(File* stream)
     return 0;
 }
 
-// 0x496738 perk_save_
+// 0x496738 perk_save
 int perksSave(File* stream)
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
@@ -280,7 +280,7 @@ int perksSave(File* stream)
 }
 
 // perkGetLevelData
-// 0x49678C perkGetLevelData_
+// 0x49678C perkGetLevelData
 static PerkRankData* perkGetRankData(Object* critter)
 {
     if (critter == gDude) {
@@ -298,7 +298,7 @@ static PerkRankData* perkGetRankData(Object* critter)
     return gPartyMemberPerkRanks;
 }
 
-// 0x49680C perk_can_add_
+// 0x49680C perk_can_add
 static bool perkCanAdd(Object* critter, int perk)
 {
     if (!perkIsValid(perk)) {
@@ -419,7 +419,7 @@ static bool perkCanAdd(Object* critter, int perk)
 
 // Resets party member perks.
 //
-// 0x496A0C perk_defaults_
+// 0x496A0C perk_defaults
 static void perkResetRanks()
 {
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
@@ -430,7 +430,7 @@ static void perkResetRanks()
     }
 }
 
-// 0x496A5C perk_add_
+// 0x496A5C perk_add
 int perkAdd(Object* critter, int perk)
 {
     if (!perkIsValid(perk)) {
@@ -450,7 +450,7 @@ int perkAdd(Object* critter, int perk)
 }
 
 // perk_add_force
-// 0x496A9C perk_add_force_
+// 0x496A9C perk_add_force
 int perkAddForce(Object* critter, int perk)
 {
     if (!perkIsValid(perk)) {
@@ -474,7 +474,7 @@ int perkAddForce(Object* critter, int perk)
 }
 
 // perk_sub
-// 0x496AFC perk_sub_
+// 0x496AFC perk_sub
 int perkRemove(Object* critter, int perk)
 {
     if (!perkIsValid(perk)) {
@@ -497,7 +497,7 @@ int perkRemove(Object* critter, int perk)
 
 // Returns perks available to pick.
 //
-// 0x496B44 perk_make_list_
+// 0x496B44 perk_make_list
 int perkGetAvailablePerks(Object* critter, int* perks)
 {
     int count = 0;
@@ -511,7 +511,7 @@ int perkGetAvailablePerks(Object* critter, int* perks)
 }
 
 // has_perk
-// 0x496B78 perk_level_
+// 0x496B78 perk_level
 int perkGetRank(Object* critter, int perk)
 {
     if (!perkIsValid(perk)) {
@@ -522,7 +522,7 @@ int perkGetRank(Object* critter, int perk)
     return ranksData->ranks[perk];
 }
 
-// 0x496B90 perk_name_
+// 0x496B90 perk_name
 char* perkGetName(int perk)
 {
     if (!perkIsValid(perk)) {
@@ -531,7 +531,7 @@ char* perkGetName(int perk)
     return gPerkDescriptions[perk].name;
 }
 
-// 0x496BB4 perk_description_
+// 0x496BB4 perk_description
 char* perkGetDescription(int perk)
 {
     if (!perkIsValid(perk)) {
@@ -540,7 +540,7 @@ char* perkGetDescription(int perk)
     return gPerkDescriptions[perk].description;
 }
 
-// 0x496BD8 perk_skilldex_fid_
+// 0x496BD8 perk_skilldex_fid
 int perkGetFrmId(int perk)
 {
     if (!perkIsValid(perk)) {
@@ -550,7 +550,7 @@ int perkGetFrmId(int perk)
 }
 
 // perk_add_effect
-// 0x496BFC perk_add_effect_
+// 0x496BFC perk_add_effect
 void perkAddEffect(Object* critter, int perk)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
@@ -590,7 +590,7 @@ void perkAddEffect(Object* critter, int perk)
 }
 
 // perk_remove_effect
-// 0x496CE0 perk_remove_effect_
+// 0x496CE0 perk_remove_effect
 void perkRemoveEffect(Object* critter, int perk)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
@@ -624,7 +624,7 @@ void perkRemoveEffect(Object* critter, int perk)
 
 // Returns modifier to specified skill accounting for perks.
 //
-// 0x496DD0 perk_adjust_skill_
+// 0x496DD0 perk_adjust_skill
 int perkGetSkillModifier(Object* critter, int skill)
 {
     int modifier = 0;

@@ -181,7 +181,7 @@ static int _LoadObjDudeCid(File* stream);
 static int _SaveObjDudeCid(File* stream);
 static int _EraseSave();
 
-// 0x47B7C0
+// 0x47B7C0 lsgrphs
 static const int gLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
     237, // lsgame.frm - load/save game
     238, // lsgbox.frm - load/save game
@@ -203,27 +203,27 @@ constexpr int kLoadSaveActionDone = 500;
 // Global variable to track the current slot page
 static int _currentSlotPage = 0;
 
-// 0x5193B8
+// 0x5193B8 slot_cursor
 static int _slot_cursor = 0;
 
 static int gDevLoadGameSlot = -1;
 
-// 0x5193BC
+// 0x5193BC quick_done
 static bool _quick_done = false;
 
-// 0x5193C0
+// 0x5193C0 bk_enable_3
 static bool gLoadSaveWindowIsoWasEnabled = false;
 
-// 0x5193C4
+// 0x5193C4 map_backup_count
 static int _map_backup_count = -1;
 
-// 0x5193C8
+// 0x5193C8 automap_db_flag
 static bool _automap_db_flag = false;
 
-// 0x5193CC
+// 0x5193CC patches
 static const char* _patches = nullptr;
 
-// 0x5193EC
+// 0x5193EC _master_save_list
 static SaveGameHandler* _master_save_list[LOAD_SAVE_HANDLER_COUNT] = {
     _DummyFunc,
     _SaveObjDudeCid,
@@ -254,7 +254,7 @@ static SaveGameHandler* _master_save_list[LOAD_SAVE_HANDLER_COUNT] = {
     _DummyFunc,
 };
 
-// 0x519458
+// 0x519458 _master_load_list
 static LoadGameHandler* _master_load_list[LOAD_SAVE_HANDLER_COUNT] = {
     _PrepLoad,
     _LoadObjDudeCid,
@@ -285,63 +285,63 @@ static LoadGameHandler* _master_load_list[LOAD_SAVE_HANDLER_COUNT] = {
     _EndLoad,
 };
 
-// 0x5194C4
+// 0x5194C4 loadingGame
 static bool _loadingGame = false;
 
 // lsgame.msg
 //
-// 0x613D28
+// 0x613D28 lsgame_msgfl
 static MessageList gLoadSaveMessageList;
 
-// 0x613D30
+// 0x613D30 LSData
 static LoadSaveSlotData _LSData[saveLoadTotalSlots];
 
-// 0x614280
+// 0x614280 LSstatus
 static int _LSstatus[saveLoadTotalSlots];
 
-// 0x6142A8
+// 0x6142A8 _thumbnail_image
 static unsigned char* _thumbnail_image;
 
-// 0x6142AC
+// 0x6142AC _snapshotBuf
 static unsigned char* _snapshotBuf;
 
-// 0x6142B0
+// 0x6142B0 lsgmesg
 static MessageListItem gLoadSaveMessageListItem;
 
-// 0x6142C0
+// 0x6142C0 dbleclkcntr
 static int _dbleclkcntr;
 
-// 0x6142C4
+// 0x6142C4 lsgwin
 static int gLoadSaveWindow;
 
-// 0x6142EC
+// 0x6142EC _snapshot
 static unsigned char* _snapshot;
 
-// 0x6142F0
+// 0x6142F0 str2
 static char _str2[COMPAT_MAX_PATH];
 
-// 0x6143F4
+// 0x6143F4 str0
 static char _str0[COMPAT_MAX_PATH];
 
-// 0x6144F8
+// 0x6144F8 str1
 static char _str1[COMPAT_MAX_PATH];
 
-// 0x6145FC
+// 0x6145FC str
 static char _str[COMPAT_MAX_PATH];
 
-// 0x614700
+// 0x614700 lsgbuf
 static unsigned char* gLoadSaveWindowBuffer;
 
-// 0x614704
+// 0x614704 gmpath
 static char _gmpath[COMPAT_MAX_PATH];
 
-// 0x614808
+// 0x614808 _flptr
 static File* _flptr;
 
-// 0x61480C
+// 0x61480C ls_error_code
 static int _ls_error_code;
 
-// 0x614810
+// 0x614810 fontsave_2
 static int gLoadSaveWindowOldFont;
 
 static FrmImage _loadsaveFrmImages[LOAD_SAVE_FRM_COUNT];

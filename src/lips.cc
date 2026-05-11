@@ -19,19 +19,19 @@ static char* lips_fix_string(const char* fileName, size_t length);
 static int lipsReadV1(LipsData* lipsData, File* stream);
 static int _lips_make_speech();
 
-// 0x519240
+// 0x519240 _head_phoneme_current
 unsigned char gLipsCurrentPhoneme = 0;
 
-// 0x519241
+// 0x519241 head_phoneme_drawn
 static unsigned char gLipsPreviousPhoneme = 0;
 
-// 0x519244
+// 0x519244 head_marker_current
 static int _head_marker_current = 0;
 
-// 0x519248
+// 0x519248 lips_draw_head
 bool gLipsPhonemeChanged = true;
 
-// 0x51924C
+// 0x51924C lip_info
 LipsData gLipsData = {
     2,
     22528,
@@ -59,13 +59,13 @@ LipsData gLipsData = {
     "LIP",
 };
 
-// 0x5193B4
+// 0x5193B4 speechStartTime
 static int _speechStartTime = 0;
 
-// 0x613CA0
+// 0x613CA0 lips_subdir_name
 static char _lips_subdir_name[14];
 
-// 0x47AAC0 lips_fix_string_
+// 0x47AAC0 lips_fix_string
 static char* lips_fix_string(const char* fileName, size_t length)
 {
     // 0x613CAE
@@ -76,7 +76,7 @@ static char* lips_fix_string(const char* fileName, size_t length)
     return tmp_str;
 }
 
-// 0x47AAD8 lips_bkg_proc_
+// 0x47AAD8 lips_bkg_proc
 void lipsTicker()
 {
     int v0;
@@ -145,7 +145,7 @@ void lipsTicker()
     soundContinueAll();
 }
 
-// 0x47AC2C lips_play_speech_
+// 0x47AC2C lips_play_speech
 int lipsStart()
 {
     gLipsData.flags |= LIPS_FLAG_0x02;
@@ -185,7 +185,7 @@ int lipsStart()
     return 0;
 }
 
-// 0x47AD98 lips_read_lipsynch_info_
+// 0x47AD98 lips_read_lipsynch_info
 static int lipsReadV1(LipsData* lipsData, File* stream)
 {
     int sound;
@@ -231,7 +231,7 @@ static int lipsReadV1(LipsData* lipsData, File* stream)
 }
 
 // lips_load_file
-// 0x47AFAC lips_load_file_
+// 0x47AFAC lips_load_file
 int lipsLoad(const char* audioFileName, const char* headFileName)
 {
     char* sep;
@@ -397,7 +397,7 @@ int lipsLoad(const char* audioFileName, const char* headFileName)
 }
 
 // lips_make_speech
-// 0x47B5D0 lips_make_speech_
+// 0x47B5D0 lips_make_speech
 static int _lips_make_speech()
 {
     if (gLipsData.field_14 != nullptr) {
@@ -439,7 +439,7 @@ static int _lips_make_speech()
     return 0;
 }
 
-// 0x47B730 lips_free_speech_
+// 0x47B730 lips_free_speech
 int lipsFree()
 {
     if (gLipsData.field_14 != nullptr) {

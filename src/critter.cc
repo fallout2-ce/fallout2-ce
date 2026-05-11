@@ -74,18 +74,18 @@ static int _get_rad_damage_level(Object* obj, void* data);
 static int critter_kill_count_clear();
 static int _critterClearObjDrugs(Object* obj, void* data);
 
-// 0x50141C
+// 0x50141C aCorpse
 static char _aCorpse[] = "corpse";
 
 // 0x501494
 static char byte_501494[] = "";
 
-// 0x51833C
+// 0x51833C _name_critter
 static char* _name_critter = _aCorpse;
 
 // Modifiers to endurance for performing radiation damage check.
 //
-// 0x518340
+// 0x518340 bonus
 static const int gRadiationEnduranceModifiers[RADIATION_LEVEL_COUNT] = {
     2,
     0,
@@ -104,7 +104,7 @@ static const int gRadiationEnduranceModifiers[RADIATION_LEVEL_COUNT] = {
 // The order of stats is important - primary stats must be at the top. See
 // [RADIATION_EFFECT_PRIMARY_STAT_COUNT] for more info.
 //
-// 0x518358
+// 0x518358 rad_stat
 static const int gRadiationEffectStats[RADIATION_EFFECT_COUNT] = {
     STAT_STRENGTH,
     STAT_PERCEPTION,
@@ -123,7 +123,7 @@ static const int gRadiationEffectStats[RADIATION_EFFECT_COUNT] = {
 
 // List of stat modifiers caused by radiation at different radiation levels.
 //
-// 0x518378
+// 0x518378 rad_bonus
 static const int gRadiationEffectPenalties[RADIATION_LEVEL_COUNT][RADIATION_EFFECT_COUNT] = {
     // clang-format off
     {   0,   0,   0,   0,   0,   0,   0,   0 },
@@ -135,30 +135,30 @@ static const int gRadiationEffectPenalties[RADIATION_LEVEL_COUNT][RADIATION_EFFE
     // clang-format on
 };
 
-// 0x518438
+// 0x518438 critterClearObj
 static Object* _critterClearObj = nullptr;
 
 // scrname.msg
 //
-// 0x56D754
+// 0x56D754 critter_scrmsg_file
 static MessageList gCritterMessageList;
 
-// 0x56D75C
+// 0x56D75C pc_name
 static char gDudeName[DUDE_NAME_MAX_LENGTH];
 
-// 0x56D77C
+// 0x56D77C sneak_working
 static int _sneak_working;
 
-// 0x56D780
+// 0x56D780 pc_kill_counts
 static int gKillsByType[KILL_TYPE_COUNT];
 
 // Something with radiation.
 //
-// 0x56D7CC
+// 0x56D7CC old_rad_level
 static int oldRadLevel;
 
 // scrname_init
-// 0x42CF50 critter_init_
+// 0x42CF50 critter_init
 int critterInit()
 {
     dudeResetName();
@@ -184,7 +184,7 @@ int critterInit()
     return 0;
 }
 
-// 0x42CFE4 critter_reset_
+// 0x42CFE4 critter_reset
 void critterReset()
 {
     dudeResetName();
@@ -193,14 +193,14 @@ void critterReset()
     critter_kill_count_clear();
 }
 
-// 0x42D004 critter_exit_
+// 0x42D004 critter_exit
 void critterExit()
 {
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SCRNAME, nullptr);
     messageListFree(&gCritterMessageList);
 }
 
-// 0x42D01C critter_load_
+// 0x42D01C critter_load
 int critterLoad(File* stream)
 {
     if (fileReadInt32(stream, &_sneak_working) == -1) {
@@ -213,7 +213,7 @@ int critterLoad(File* stream)
     return protoCritterDataRead(stream, &(proto->critter.data));
 }
 
-// 0x42D058 critter_save_
+// 0x42D058 critter_save
 int critterSave(File* stream)
 {
     if (fileWriteInt32(stream, _sneak_working) == -1) {
@@ -226,13 +226,13 @@ int critterSave(File* stream)
     return protoCritterDataWrite(stream, &(proto->critter.data));
 }
 
-// 0x42D094 critter_copy_
+// 0x42D094 critter_copy
 void critterProtoDataCopy(CritterProtoData* dest, CritterProtoData* src)
 {
     memcpy(dest, src, sizeof(CritterProtoData));
 }
 
-// 0x42D0A8 critter_name_
+// 0x42D0A8 critter_name
 char* critterGetName(Object* obj)
 {
     if (obj == gDude) {
@@ -266,7 +266,7 @@ char* critterGetName(Object* obj)
     return name;
 }
 
-// 0x42D138 critter_pc_set_name_
+// 0x42D138 critter_pc_set_name
 int dudeSetName(const char* name)
 {
     if (strlen(name) <= DUDE_NAME_MAX_LENGTH) {
@@ -277,19 +277,19 @@ int dudeSetName(const char* name)
     return -1;
 }
 
-// 0x42D170 critter_pc_reset_name_
+// 0x42D170 critter_pc_reset_name
 void dudeResetName()
 {
     strncpy(gDudeName, "None", DUDE_NAME_MAX_LENGTH);
 }
 
-// 0x42D18C critter_get_hits_
+// 0x42D18C critter_get_hits
 int critterGetHitPoints(Object* critter)
 {
     return PID_TYPE(critter->pid) == OBJ_TYPE_CRITTER ? critter->data.critter.hp : 0;
 }
 
-// 0x42D1A4 critter_adjust_hits_
+// 0x42D1A4 critter_adjust_hits
 int critterAdjustHitPoints(Object* critter, int hp)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
@@ -311,7 +311,7 @@ int critterAdjustHitPoints(Object* critter, int hp)
     return 0;
 }
 
-// 0x42D1F8 critter_get_poison_
+// 0x42D1F8 critter_get_poison
 int critterGetPoison(Object* critter)
 {
     return PID_TYPE(critter->pid) == OBJ_TYPE_CRITTER ? critter->data.critter.poison : 0;
@@ -324,7 +324,7 @@ int critterGetPoison(Object* critter)
 // The [amount] can either be positive (adds poison) or negative (removes
 // poison).
 //
-// 0x42D210 critter_adjust_poison_
+// 0x42D210 critter_adjust_poison
 int critterAdjustPoison(Object* critter, int amount)
 {
     MessageListItem messageListItem;
@@ -375,7 +375,7 @@ int critterAdjustPoison(Object* critter, int amount)
     return 0;
 }
 
-// 0x42D318 critter_check_poison_
+// 0x42D318 critter_check_poison
 int poisonEventProcess(Object* obj, void* data)
 {
     if (obj != gDude) {
@@ -403,13 +403,13 @@ int poisonEventProcess(Object* obj, void* data)
     return 1;
 }
 
-// 0x42D38C critter_get_rads_
+// 0x42D38C critter_get_rads
 int critterGetRadiation(Object* obj)
 {
     return PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER ? obj->data.critter.radiation : 0;
 }
 
-// 0x42D3A4 critter_adjust_rads_
+// 0x42D3A4 critter_adjust_rads
 int critterAdjustRadiation(Object* obj, int amount)
 {
     MessageListItem messageListItem;
@@ -484,7 +484,7 @@ int critterAdjustRadiation(Object* obj, int amount)
     return 0;
 }
 
-// 0x42D4F4 critter_check_rads_
+// 0x42D4F4 critter_check_rads
 // note: original ASM always returned 0
 int critterCheckRadiationEvent(Object* obj)
 {
@@ -540,7 +540,7 @@ int critterCheckRadiationEvent(Object* obj)
     return 0;
 }
 
-// 0x42D618 get_rad_damage_level_
+// 0x42D618 get_rad_damage_level
 static int _get_rad_damage_level(Object* obj, void* data)
 {
     RadiationEvent* radiationEvent = (RadiationEvent*)data;
@@ -550,7 +550,7 @@ static int _get_rad_damage_level(Object* obj, void* data)
     return 0;
 }
 
-// 0x42D624 clear_rad_damage_
+// 0x42D624 clear_rad_damage
 int radiationClearDamage(Object* obj, void* data)
 {
     RadiationEvent* radiationEvent = (RadiationEvent*)data;
@@ -564,7 +564,7 @@ int radiationClearDamage(Object* obj, void* data)
 
 // Applies radiation.
 //
-// 0x42D63C process_rads_
+// 0x42D63C process_rads
 void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
 {
     MessageListItem messageListItem;
@@ -625,7 +625,7 @@ void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
     }
 }
 
-// 0x42D740 critter_process_rads_
+// 0x42D740 critter_process_rads
 int radiationEventProcess(Object* obj, void* data)
 {
     RadiationEvent* radiationEvent = (RadiationEvent*)data;
@@ -645,7 +645,7 @@ int radiationEventProcess(Object* obj, void* data)
     return 1;
 }
 
-// 0x42D7A0 critter_load_rads_
+// 0x42D7A0 critter_load_rads
 int radiationEventRead(File* stream, void** dataPtr)
 {
     RadiationEvent* radiationEvent = (RadiationEvent*)internal_malloc(sizeof(*radiationEvent));
@@ -665,7 +665,7 @@ err:
     return -1;
 }
 
-// 0x42D7FC critter_save_rads_
+// 0x42D7FC critter_save_rads
 int radiationEventWrite(File* stream, void* data)
 {
     RadiationEvent* radiationEvent = (RadiationEvent*)data;
@@ -676,7 +676,7 @@ int radiationEventWrite(File* stream, void* data)
     return 0;
 }
 
-// 0x42D82C critter_get_base_damage_type_
+// 0x42D82C critter_get_base_damage_type
 int critterGetDamageType(Object* obj)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
@@ -693,14 +693,14 @@ int critterGetDamageType(Object* obj)
 
 // NOTE: Inlined.
 //
-// 0x42D860 critter_kill_count_clear_
+// 0x42D860 critter_kill_count_clear
 static int critter_kill_count_clear()
 {
     memset(gKillsByType, 0, sizeof(gKillsByType));
     return 0;
 }
 
-// 0x42D878 critter_kill_count_inc_
+// 0x42D878 critter_kill_count_inc
 int killsIncByType(int killType)
 {
     if (killType != -1 && killType < KILL_TYPE_COUNT) {
@@ -711,7 +711,7 @@ int killsIncByType(int killType)
     return -1;
 }
 
-// 0x42D8A8 critter_kill_count_
+// 0x42D8A8 critter_kill_count
 int killsGetByType(int killType)
 {
     if (killType != -1 && killType < KILL_TYPE_COUNT) {
@@ -721,7 +721,7 @@ int killsGetByType(int killType)
     return 0;
 }
 
-// 0x42D8C0 critter_kill_count_load_
+// 0x42D8C0 critter_kill_count_load
 int killsLoad(File* stream)
 {
     if (fileReadInt32List(stream, gKillsByType, KILL_TYPE_COUNT) == -1) {
@@ -732,7 +732,7 @@ int killsLoad(File* stream)
     return 0;
 }
 
-// 0x42D8F0 critter_kill_count_save_
+// 0x42D8F0 critter_kill_count_save
 int killsSave(File* stream)
 {
     if (fileWriteInt32List(stream, gKillsByType, KILL_TYPE_COUNT) == -1) {
@@ -743,7 +743,7 @@ int killsSave(File* stream)
     return 0;
 }
 
-// 0x42D920 critter_kill_count_type_
+// 0x42D920 critter_kill_count_type
 int critterGetKillType(Object* obj)
 {
     if (obj == gDude) {
@@ -764,7 +764,7 @@ int critterGetKillType(Object* obj)
     return proto->critter.data.killType;
 }
 
-// 0x42D974 critter_kill_name_
+// 0x42D974 critter_kill_name
 char* killTypeGetName(int killType)
 {
     if (killType != -1 && killType < KILL_TYPE_COUNT) {
@@ -779,7 +779,7 @@ char* killTypeGetName(int killType)
     }
 }
 
-// 0x42D9B4 critter_kill_info_
+// 0x42D9B4 critter_kill_info
 char* killTypeGetDescription(int killType)
 {
     if (killType != -1 && killType < KILL_TYPE_COUNT) {
@@ -794,7 +794,7 @@ char* killTypeGetDescription(int killType)
     }
 }
 
-// 0x42D9F4 critter_heal_hours_
+// 0x42D9F4 critter_heal_hours
 // heals critters based on the number of elapsed hours
 int critterHealByHours(Object* critter, int hours)
 {
@@ -811,13 +811,13 @@ int critterHealByHours(Object* critter, int hours)
     return 0;
 }
 
-// 0x42DA54 critterClearObjDrugs_
+// 0x42DA54 critterClearObjDrugs
 static int _critterClearObjDrugs(Object* obj, void* data)
 {
     return obj == _critterClearObj;
 }
 
-// 0x42DA64 critter_kill_
+// 0x42DA64 critter_kill
 void critterKill(Object* critter, int anim, bool refreshRect)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
@@ -920,7 +920,7 @@ void critterKill(Object* critter, int anim, bool refreshRect)
 
 // Returns experience for killing [critter].
 //
-// 0x42DCB8 critter_kill_exps_
+// 0x42DCB8 critter_kill_exps
 int critterGetExp(Object* critter)
 {
     Proto* proto;
@@ -928,7 +928,7 @@ int critterGetExp(Object* critter)
     return proto->critter.data.experience;
 }
 
-// 0x42DCDC critter_is_active_
+// 0x42DCDC critter_is_active
 bool critterIsActive(Object* critter)
 {
     if (critter == nullptr) {
@@ -950,7 +950,7 @@ bool critterIsActive(Object* critter)
     return (critter->data.critter.combat.results & DAM_DEAD) == 0;
 }
 
-// 0x42DD18 critter_is_dead_
+// 0x42DD18 critter_is_dead
 bool critterIsDead(Object* critter)
 {
     if (critter == nullptr) {
@@ -972,7 +972,7 @@ bool critterIsDead(Object* critter)
     return false;
 }
 
-// 0x42DD58 critter_is_crippled_
+// 0x42DD58 critter_is_crippled
 bool critterIsCrippled(Object* critter)
 {
     if (critter == nullptr) {
@@ -986,7 +986,7 @@ bool critterIsCrippled(Object* critter)
     return (critter->data.critter.combat.results & DAM_CRIP) != 0;
 }
 
-// 0x42DD80 critter_is_prone_
+// 0x42DD80 critter_is_prone
 bool critterIsProne(Object* critter)
 {
     if (critter == nullptr) {
@@ -1005,7 +1005,7 @@ bool critterIsProne(Object* critter)
 }
 
 // critter_body_type
-// 0x42DDC4 critter_body_type_
+// 0x42DDC4 critter_body_type
 int critterGetBodyType(Object* critter)
 {
     if (critter == nullptr) {
@@ -1022,7 +1022,7 @@ int critterGetBodyType(Object* critter)
     return proto->critter.data.bodyType;
 }
 
-// 0x42DE58 pc_load_data_
+// 0x42DE58 pc_load_data
 int gcdLoad(const char* path)
 {
     File* stream = fileOpen(path, "rb");
@@ -1064,7 +1064,7 @@ int gcdLoad(const char* path)
     return 0;
 }
 
-// 0x42DF70 critter_read_data_
+// 0x42DF70 critter_read_data
 int protoCritterDataRead(File* stream, CritterProtoData* critterData)
 {
     if (fileReadInt32(stream, &(critterData->flags)) == -1) return -1;
@@ -1094,7 +1094,7 @@ int protoCritterDataRead(File* stream, CritterProtoData* critterData)
     return 0;
 }
 
-// 0x42E08C pc_save_data_
+// 0x42E08C pc_save_data
 int gcdSave(const char* path)
 {
     File* stream = fileOpen(path, "wb");
@@ -1131,7 +1131,7 @@ int gcdSave(const char* path)
     return 0;
 }
 
-// 0x42E174 critter_write_data_
+// 0x42E174 critter_write_data
 int protoCritterDataWrite(File* stream, CritterProtoData* critterData)
 {
     if (fileWriteInt32(stream, critterData->flags) == -1) return -1;
@@ -1146,7 +1146,7 @@ int protoCritterDataWrite(File* stream, CritterProtoData* critterData)
     return 0;
 }
 
-// 0x42E220 pc_flag_off_
+// 0x42E220 pc_flag_off
 void dudeDisableState(int state)
 {
     Proto* proto;
@@ -1161,7 +1161,7 @@ void dudeDisableState(int state)
     indicatorBarRefresh();
 }
 
-// 0x42E26C pc_flag_on_
+// 0x42E26C pc_flag_on
 void dudeEnableState(int state)
 {
     Proto* proto;
@@ -1176,7 +1176,7 @@ void dudeEnableState(int state)
     indicatorBarRefresh();
 }
 
-// 0x42E2B0 pc_flag_toggle_
+// 0x42E2B0 pc_flag_toggle
 void dudeToggleState(int state)
 {
     // NOTE: Uninline.
@@ -1187,7 +1187,7 @@ void dudeToggleState(int state)
     }
 }
 
-// 0x42E2F8 is_pc_flag_
+// 0x42E2F8 is_pc_flag
 bool dudeHasState(int state)
 {
     Proto* proto;
@@ -1195,7 +1195,7 @@ bool dudeHasState(int state)
     return (proto->critter.data.flags & (1 << state)) != 0;
 }
 
-// 0x42E32C critter_sneak_check_
+// 0x42E32C critter_sneak_check
 int sneakEventProcess(Object* obj, void* data)
 {
     int time;
@@ -1227,7 +1227,7 @@ int sneakEventProcess(Object* obj, void* data)
     return 0;
 }
 
-// 0x42E3E4 critter_sneak_clear_
+// 0x42E3E4 critter_sneak_clear
 int critterDisableSneak(Object* obj, void* data)
 {
     dudeDisableState(DUDE_STATE_SNEAKING);
@@ -1236,7 +1236,7 @@ int critterDisableSneak(Object* obj, void* data)
 
 // Returns true if dude is really sneaking.
 //
-// 0x42E3F4 is_pc_sneak_working_
+// 0x42E3F4 is_pc_sneak_working
 bool dudeIsSneaking()
 {
     // NOTE: Uninline.
@@ -1247,7 +1247,7 @@ bool dudeIsSneaking()
     return false;
 }
 
-// 0x42E424 critter_wake_up_
+// 0x42E424 critter_wake_up
 int knockoutEventProcess(Object* obj, void* data)
 {
     if ((obj->data.critter.combat.results & DAM_DEAD) != 0) {
@@ -1266,7 +1266,7 @@ int knockoutEventProcess(Object* obj, void* data)
     return 0;
 }
 
-// 0x42E460 critter_wake_clear_
+// 0x42E460 critter_wake_clear
 int knockoutClear(Object* obj, void* data)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
@@ -1285,7 +1285,7 @@ int knockoutClear(Object* obj, void* data)
     return 0;
 }
 
-// 0x42E4C0 critter_set_who_hit_me_
+// 0x42E4C0 critter_set_who_hit_me
 // note: this is sometimes called with (attacker, defender) and sometimes with (defender, attacker).
 // `hitMe` may be nullptr
 int critterSetWhoHitMe(Object* critter, Object* hitMe)
@@ -1310,7 +1310,7 @@ int critterSetWhoHitMe(Object* critter, Object* hitMe)
     return 0;
 }
 
-// 0x42E564 critter_can_obj_dude_rest_
+// 0x42E564 critter_can_obj_dude_rest
 bool critterCanDudeRest()
 {
     bool mapDisallowsRest = false;
@@ -1351,7 +1351,7 @@ bool critterCanDudeRest()
     return result;
 }
 
-// 0x42E62C critter_compute_ap_from_distance_
+// 0x42E62C critter_compute_ap_from_distance
 int critterGetMovementPointCostAdjustedForCrippledLegs(Object* critter, int distance)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
@@ -1368,7 +1368,7 @@ int critterGetMovementPointCostAdjustedForCrippledLegs(Object* critter, int dist
     }
 }
 
-// 0x42E66C critterIsOverloaded_
+// 0x42E66C critterIsOverloaded
 bool critterIsEncumbered(Object* critter)
 {
     int maxWeight = critterGetStat(critter, STAT_CARRY_WEIGHT);
@@ -1376,7 +1376,7 @@ bool critterIsEncumbered(Object* critter)
     return maxWeight < currentWeight;
 }
 
-// 0x42E690 critter_is_fleeing_
+// 0x42E690 critter_is_fleeing
 bool critterIsFleeing(Object* critter)
 {
     return critter != nullptr
@@ -1386,7 +1386,7 @@ bool critterIsFleeing(Object* critter)
 
 // Checks proto critter flag.
 //
-// 0x42E6AC critter_flag_check_
+// 0x42E6AC critter_flag_check
 bool critterFlagCheck(int pid, int flag)
 {
     if (pid == -1) {
@@ -1402,7 +1402,7 @@ bool critterFlagCheck(int pid, int flag)
     return (proto->critter.data.flags & flag) != 0;
 }
 
-// 0x42E6F0 critter_flag_set_
+// 0x42E6F0 critter_flag_set
 void critterFlagSet(int pid, int flag)
 {
     Proto* proto;
@@ -1420,7 +1420,7 @@ void critterFlagSet(int pid, int flag)
     proto->critter.data.flags |= flag;
 }
 
-// 0x42E71C critter_flag_unset_
+// 0x42E71C critter_flag_unset
 void critterFlagUnset(int pid, int flag)
 {
     Proto* proto;

@@ -46,13 +46,13 @@ typedef enum ScienceRepairTargetType {
     SCIENCE_REPAIR_TARGET_TYPE_ANYONE,
 } ScienceRepairTargetType;
 
-// 0x5106D0
+// 0x5106D0 action_in_explode
 static bool _action_in_explode = false;
 
-// 0x5106D4
+// 0x5106D4 rotation
 int rotation;
 
-// 0x5106E0
+// 0x5106E0 death_2
 static const int gNormalDeathAnimations[DAMAGE_TYPE_COUNT] = {
     ANIM_DANCING_AUTOFIRE,
     ANIM_SLICED_IN_HALF,
@@ -63,7 +63,7 @@ static const int gNormalDeathAnimations[DAMAGE_TYPE_COUNT] = {
     ANIM_BIG_HOLE,
 };
 
-// 0x5106FC
+// 0x5106FC death_3
 static const int gMaximumBloodDeathAnimations[DAMAGE_TYPE_COUNT] = {
     ANIM_CHUNKS_OF_FLESH,
     ANIM_SLICED_IN_HALF,

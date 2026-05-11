@@ -147,19 +147,19 @@ static int _combatai_rating(Object* obj);
 static int aiMessageListInit();
 static int aiMessageListFree();
 
-// 0x51805C
+// 0x51805C _combat_obj
 static Object* _combat_obj = nullptr;
 
-// 0x518060
+// 0x518060 num_caps
 static int gAiPacketsLength = 0;
 
-// 0x518064
+// 0x518064 _cap
 static AiPacket* gAiPackets = nullptr;
 
-// 0x518068
+// 0x518068 combatai_is_initialized
 static bool gAiInitialized = false;
 
-// 0x51806C
+// 0x51806C area_attack_mode_strs
 const char* gAreaAttackModeKeys[AREA_ATTACK_MODE_COUNT] = {
     "always",
     "sometimes",
@@ -168,7 +168,7 @@ const char* gAreaAttackModeKeys[AREA_ATTACK_MODE_COUNT] = {
     "be_absolutely_sure",
 };
 
-// 0x5180D0
+// 0x5180D0 attack_who_mode_strs
 const char* gAttackWhoKeys[ATTACK_WHO_COUNT] = {
     "whomever_attacking_me",
     "strongest",
@@ -177,7 +177,7 @@ const char* gAttackWhoKeys[ATTACK_WHO_COUNT] = {
     "closest",
 };
 
-// 0x51809C
+// 0x51809C weapon_pref_strs
 const char* gBestWeaponKeys[BEST_WEAPON_COUNT] = {
     "no_pref",
     "melee",
@@ -189,7 +189,7 @@ const char* gBestWeaponKeys[BEST_WEAPON_COUNT] = {
     "random",
 };
 
-// 0x5180E4
+// 0x5180E4 chem_use_mode_strs
 const char* gChemUseKeys[CHEM_USE_COUNT] = {
     "clean",
     "stims_when_hurt_little",
@@ -199,7 +199,7 @@ const char* gChemUseKeys[CHEM_USE_COUNT] = {
     "always",
 };
 
-// 0x5180BC
+// 0x5180BC distance_pref_strs
 const char* gDistanceModeKeys[DISTANCE_COUNT] = {
     "stay_close",
     "charge",
@@ -208,7 +208,7 @@ const char* gDistanceModeKeys[DISTANCE_COUNT] = {
     "stay",
 };
 
-// 0x518080
+// 0x518080 run_away_mode_strs
 const char* gRunAwayModeKeys[RUN_AWAY_MODE_COUNT] = {
     "none",
     "coward",
@@ -219,7 +219,7 @@ const char* gRunAwayModeKeys[RUN_AWAY_MODE_COUNT] = {
     "never",
 };
 
-// 0x5180FC
+// 0x5180FC disposition_strs
 const char* gDispositionKeys[DISPOSITION_COUNT] = {
     "none",
     "custom",
@@ -229,7 +229,7 @@ const char* gDispositionKeys[DISPOSITION_COUNT] = {
     "berserk",
 };
 
-// 0x518114
+// 0x518114 _matchHurtStrs
 const char* gHurtTooMuchKeys[HURT_COUNT] = {
     "blind",
     "crippled",
@@ -239,7 +239,7 @@ const char* gHurtTooMuchKeys[HURT_COUNT] = {
 
 // hurt_too_much
 //
-// 0x518124
+// 0x518124 rmatchHurtVals
 static const int _rmatchHurtVals[5] = {
     DAM_BLIND,
     DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT | DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
@@ -250,7 +250,7 @@ static const int _rmatchHurtVals[5] = {
 
 // Hit points in percent to choose run away mode.
 //
-// 0x518138
+// 0x518138 hp_run_away_value
 static const int _hp_run_away_value[6] = {
     0,
     25,
@@ -260,13 +260,13 @@ static const int _hp_run_away_value[6] = {
     100,
 };
 
-// 0x518150
+// 0x518150 _attackerTeamObj
 static Object* _attackerTeamObj = nullptr;
 
-// 0x518154
+// 0x518154 _targetTeamObj
 static Object* _targetTeamObj = nullptr;
 
-// 0x518158
+// 0x518158 weapPrefOrderings
 static const int _weapPrefOrderings[BEST_WEAPON_COUNT + 1][ATTACK_TYPE_COUNT] = {
     { ATTACK_TYPE_RANGED, ATTACK_TYPE_THROW, ATTACK_TYPE_MELEE, ATTACK_TYPE_UNARMED, 0 },
     { ATTACK_TYPE_RANGED, ATTACK_TYPE_THROW, ATTACK_TYPE_MELEE, ATTACK_TYPE_UNARMED, 0 }, // BEST_WEAPON_NO_PREF
@@ -279,24 +279,24 @@ static const int _weapPrefOrderings[BEST_WEAPON_COUNT + 1][ATTACK_TYPE_COUNT] = 
     { 0, 0, 0, 0, 0 }, // BEST_WEAPON_RANDOM
 };
 
-// 0x518220
+// 0x518220 _old_state
 static int gLanguageFilter = -1;
 
 // ai.msg
 //
-// 0x56D510
+// 0x56D510 ai_message_file
 static MessageList gCombatAiMessageList;
 
-// 0x56D518
+// 0x56D518 target_str
 static char _target_str[AI_MESSAGE_SIZE];
 
-// 0x56D61C
+// 0x56D61C curr_crit_num
 static int _curr_crit_num;
 
-// 0x56D620
+// 0x56D620 _curr_crit_list
 static Object** _curr_crit_list;
 
-// 0x56D624
+// 0x56D624 attack_str
 static char _attack_str[AI_MESSAGE_SIZE];
 
 // parse hurt_too_much

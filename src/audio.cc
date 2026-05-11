@@ -47,13 +47,13 @@ static int audioSoundDecoderReadHandler(void* data, void* buf, unsigned int size
 static bool audioIsWavePath(const char* filePath);
 static bool audioDecodeWave(File* stream, AudioFileInfo* info, unsigned char** dataPtr, int* sizePtr);
 
-// 0x5108BC
+// 0x5108BC _queryCompressedFunc
 static AudioQueryCompressedFunc* queryCompressedFunc = defaultCompressionFunc;
 
-// 0x56CB00
+// 0x56CB00 numAudio
 static int gAudioListLength;
 
-// 0x56CB04
+// 0x56CB04 audio
 static Audio* gAudioList;
 
 // 0x41A2B0

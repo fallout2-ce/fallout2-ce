@@ -309,39 +309,39 @@ static unsigned int animationComputeTicksPerFrame(Object* object, int fid);
 
 static void reportOverloaded(Object* critter);
 
-// 0x510718
+// 0x510718 curr_sad
 static int gAnimationCurrentSad = 0;
 
-// 0x51071C
+// 0x51071C curr_anim_set
 static int gAnimationSequenceCurrentIndex = -1;
 
-// 0x510720
+// 0x510720 anim_in_init
 static bool gAnimationInInit = false;
 
-// 0x510724
+// 0x510724 anim_in_anim_stop
 static bool gAnimationInStop = false;
 
-// 0x510728
+// 0x510728 anim_in_bk
 static bool _anim_in_bk = false;
 
-// 0x530014
+// 0x530014 sad
 static AnimationSad gAnimationSads[ANIMATION_SAD_LIST_CAPACITY];
 
 #define PATH_NODE_CAPACITY 10000
 
-// 0x542FD4
+// 0x542FD4 dad
 static PathNode gClosedPathNodeList[PATH_NODE_CAPACITY];
 
-// 0x54CC14
+// 0x54CC14 anim_set
 static AnimationSequence gAnimationSequences[32];
 
-// 0x561814
+// 0x561814 seen_tile
 static unsigned char gPathfinderProcessedTiles[5000];
 
-// 0x562B9C
+// 0x562B9C child_path
 static PathNode gOpenPathNodeList[PATH_NODE_CAPACITY];
 
-// 0x56C7DC
+// 0x56C7DC curr_anim_counter
 static int gAnimationDescriptionCurrentIndex;
 
 // anim_init

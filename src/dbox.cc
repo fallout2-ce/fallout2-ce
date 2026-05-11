@@ -89,43 +89,43 @@ typedef enum FileDialogScrollDirection {
 
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
 
-// 0x5108C8
+// 0x5108C8 dbox
 static const int gDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
     218, // MEDIALOG.FRM - Medium generic dialog box
     217, // LGDIALOG.FRM - Large generic dialog box
 };
 
-// 0x5108D0
+// 0x5108D0 ytable
 static const int _ytable[DIALOG_TYPE_COUNT] = {
     23,
     27,
 };
 
-// 0x5108D8
+// 0x5108D8 xtable
 static const int _xtable[DIALOG_TYPE_COUNT] = {
     29,
     29,
 };
 
-// 0x5108E0
+// 0x5108E0 doneY
 static const int _doneY[DIALOG_TYPE_COUNT] = {
     81,
     98,
 };
 
-// 0x5108E8
+// 0x5108E8 doneX
 static const int _doneX[DIALOG_TYPE_COUNT] = {
     51,
     37,
 };
 
-// 0x5108F0
+// 0x5108F0 dblines
 static const int _dblines[DIALOG_TYPE_COUNT] = {
     5,
     6,
 };
 
-// 0x510900
+// 0x510900 flgids
 static int gLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
     224, // loadbox.frm - character editor
     8, // lilredup.frm - little red button up
@@ -136,7 +136,7 @@ static int gLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
     200, // uparwon.frm - character editor
 };
 
-// 0x51091C
+// 0x51091C flgids2
 static int gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
     225, // savebox.frm - character editor
     8, // lilredup.frm - little red button up
@@ -147,7 +147,7 @@ static int gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
     200, // uparwon.frm - character editor
 };
 
-// 0x41CF20 dialog_out_
+// 0x41CF20 dialog_out
 int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, int titleColor, const char* secondaryButtonText, int bodyColor, int flags)
 {
     MessageList messageList;
@@ -565,7 +565,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     return rc;
 }
 
-// 0x41DE90 file_dialog_
+// 0x41DE90 file_dialog
 int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
     int oldFont = fontGetCurrent();
@@ -930,7 +930,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     return rc;
 }
 
-// 0x41EA78 save_file_dialog_
+// 0x41EA78 save_file_dialog
 int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLength, int x, int y, int flags)
 {
     int oldFont = fontGetCurrent();
@@ -1402,7 +1402,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     return rc;
 }
 
-// 0x41FBDC PrntFlist_
+// 0x41FBDC PrntFlist
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch)
 {
     int lineHeight = fontGetLineHeight();

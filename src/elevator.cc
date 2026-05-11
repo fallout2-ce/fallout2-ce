@@ -55,14 +55,14 @@ static int elevatorWindowInit(int elevator);
 static void elevatorWindowFree();
 static int elevatorGetLevelFromKeyCode(int elevator, int keyCode);
 
-// 0x43E950
+// 0x43E950 grph_id_2
 static const int gElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
     141, // ebut_in.frm - map elevator screen
     142, // ebut_out.frm - map elevator screen
     149, // gaj000.frm - map elevator screen
 };
 
-// 0x43E95C
+// 0x43E95C intotal
 static ElevatorBackground gElevatorBackgrounds[ELEVATORS_MAX] = {
     { 143, -1 },
     { 143, 150 },
@@ -92,7 +92,7 @@ static ElevatorBackground gElevatorBackgrounds[ELEVATORS_MAX] = {
 
 // Number of levels for eleveators.
 //
-// 0x43EA1C
+// 0x43EA1C btncnt
 static int gElevatorLevels[ELEVATORS_MAX] = {
     4,
     2,
@@ -120,7 +120,7 @@ static int gElevatorLevels[ELEVATORS_MAX] = {
     2,
 };
 
-// 0x43EA7C
+// 0x43EA7C retvals
 static ElevatorDescription gElevatorDescriptions[ELEVATORS_MAX][ELEVATOR_LEVEL_MAX] = {
     {
         { 14, 0, 18940 },
@@ -270,7 +270,7 @@ static ElevatorDescription gElevatorDescriptions[ELEVATORS_MAX][ELEVATOR_LEVEL_M
 
 // NOTE: These values are also used as key bindings.
 //
-// 0x43EEFC
+// 0x43EEFC keytable
 static char gElevatorLevelLabels[ELEVATORS_MAX][ELEVATOR_LEVEL_MAX] = {
     { '1', '2', '3', '4' },
     { 'G', '1', '\0', '\0' },
@@ -298,7 +298,7 @@ static char gElevatorLevelLabels[ELEVATORS_MAX][ELEVATOR_LEVEL_MAX] = {
     { '1', '2', '\0', '\0' },
 };
 
-// 0x51862C
+// 0x51862C _sfxtable
 static const char* gElevatorSoundEffects[ELEVATOR_LEVEL_MAX - 1][ELEVATOR_LEVEL_MAX] = {
     {
         "ELV1_1",
@@ -320,13 +320,13 @@ static const char* gElevatorSoundEffects[ELEVATOR_LEVEL_MAX - 1][ELEVATOR_LEVEL_
     },
 };
 
-// 0x570A54
+// 0x570A54 elev_win
 static int gElevatorWindow;
 
-// 0x570A6C
+// 0x570A6C win_buf_2
 static unsigned char* gElevatorWindowBuffer;
 
-// 0x570A70
+// 0x570A70 bk_enable_2
 static bool gElevatorWindowIsoWasEnabled;
 
 static FrmImage _elevatorFrmImages[ELEVATOR_FRM_COUNT];
@@ -335,7 +335,7 @@ static FrmImage _elevatorPanelFrmImage;
 
 // Presents elevator dialog for player to pick a desired level.
 //
-// 0x43EF5C elevator_select_
+// 0x43EF5C elevator_select
 int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tilePtr)
 {
     if (elevator < 0 || elevator >= ELEVATORS_MAX) {
@@ -479,7 +479,7 @@ int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tileP
     return 0;
 }
 
-// 0x43F324 elevator_start_
+// 0x43F324 elevator_start
 static int elevatorWindowInit(int elevator)
 {
     gElevatorWindowIsoWasEnabled = isoDisable();
@@ -607,7 +607,7 @@ static int elevatorWindowInit(int elevator)
     return 0;
 }
 
-// 0x43F6D0 elevator_end_
+// 0x43F6D0 elevator_end
 static void elevatorWindowFree()
 {
     windowDestroy(gElevatorWindow);
@@ -630,7 +630,7 @@ static void elevatorWindowFree()
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 }
 
-// 0x43F73C Check4Keys_
+// 0x43F73C Check4Keys
 static int elevatorGetLevelFromKeyCode(int elevator, int keyCode)
 {
     for (int index = 0; index < ELEVATOR_LEVEL_MAX; index++) {

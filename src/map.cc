@@ -75,92 +75,92 @@ static int mapHeaderRead(MapHeader* ptr, File* stream);
 // 0x50B058
 static char byte_50B058[] = "";
 
-// 0x50B30C
+// 0x50B30C aErrorF2
 static char _aErrorF2[] = "ERROR! F2";
 
-// 0x519540
+// 0x519540 _map_scroll_refresh
 static IsoWindowRefreshProc* _map_scroll_refresh = isoWindowRefreshRectGame;
 
-// 0x519544
+// 0x519544 map_data_elev_flags
 static const int _map_data_elev_flags[ELEVATION_COUNT] = {
     2,
     4,
     8,
 };
 
-// 0x519550
+// 0x519550 map_last_scroll_time
 static unsigned int gIsoWindowScrollTimestamp = 0;
 
-// 0x519554
+// 0x519554 map_bk_enabled
 static bool gIsoEnabled = false;
 
-// 0x519558
+// 0x519558 mapEntranceElevation
 static int gEnteringElevation = 0;
 
-// 0x51955C
+// 0x51955C mapEntranceTileNum
 static int gEnteringTile = -1;
 
-// 0x519560
+// 0x519560 mapEntranceRotation
 static int gEnteringRotation = ROTATION_NE;
 
-// 0x519564
+// 0x519564 map_script_id
 int gMapSid = -1;
 
 // local_vars
-// 0x519568
+// 0x519568 _map_local_vars
 int* gMapLocalVars = nullptr;
 
 // map_vars
-// 0x51956C
+// 0x51956C _map_global_vars
 int* gMapGlobalVars = nullptr;
 
 // local_vars_num
-// 0x519570
+// 0x519570 num_map_local_vars
 int gMapLocalVarsLength = 0;
 
 // map_vars_num
-// 0x519574
+// 0x519574 num_map_global_vars
 int gMapGlobalVarsLength = 0;
 
 // Current elevation.
 //
-// 0x519578
+// 0x519578 map_elevation
 int gElevation = 0;
 
-// 0x51957C
+// 0x51957C _errMapName
 static char* _errMapName = byte_50B058;
 
-// 0x519584
+// 0x519584 wmMapIdx
 static int _wmMapIdx = -1;
 
-// 0x614868
+// 0x614868 square_data
 static TileData _square_data[ELEVATION_COUNT];
 
-// 0x631D28
+// 0x631D28 map_state
 static MapTransition gMapTransition;
 
-// 0x631D38
+// 0x631D38 map_display_rect
 static Rect gIsoWindowRect;
 
 // map.msg
 //
 // map_msg_file
-// 0x631D48
+// 0x631D48 map_msg_file
 MessageList gMapMessageList;
 
-// 0x631D50
+// 0x631D50 _display_buf
 static unsigned char* gIsoWindowBuffer;
 
-// 0x631D54
+// 0x631D54 map_data
 MapHeader gMapHeader;
 
-// 0x631E40
+// 0x631E40 square
 TileData* _square[ELEVATION_COUNT];
 
-// 0x631E4C
+// 0x631E4C display_win
 int gIsoWindow;
 
-// 0x631E50
+// 0x631E50 scratchStr
 static char _scratchStr[40];
 
 // CE: Basically the same problem described in |gMapLocalPointers|, but this

@@ -31,38 +31,38 @@ static void keyboardBuildSpanishConfiguration();
 static void _kb_init_lock_status();
 static int keyboardPeekEvent(int index, KeyboardEvent** keyboardEventPtr);
 
-// 0x51E2D0
+// 0x51E2D0 kb_installed
 static unsigned char _kb_installed = 0;
 
-// 0x51E2D4
+// 0x51E2D4 _kb_disabled
 static bool gKeyboardDisabled = false;
 
-// 0x51E2D8
+// 0x51E2D8 _kb_numpad_disabled
 static bool gKeyboardNumpadDisabled = false;
 
-// 0x51E2DC
+// 0x51E2DC kb_numlock_disabled
 static bool gKeyboardNumlockDisabled = false;
 
-// 0x51E2E0
+// 0x51E2E0 kb_put
 static int gKeyboardEventQueueWriteIndex = 0;
 
-// 0x51E2E4
+// 0x51E2E4 kb_get
 static int gKeyboardEventQueueReadIndex = 0;
 
-// 0x51E2E8
+// 0x51E2E8 extended_code
 static short word_51E2E8 = 0;
 
-// 0x51E2EA
+// 0x51E2EA kb_lock_flags
 static int gModifierKeysState = 0;
 
 // TODO: It's _kb_next_ascii_English_US (not implemented yet).
 //
-// 0x51E2EC
+// 0x51E2EC _kb_scan_to_ascii
 static int (*_kb_scan_to_ascii)() = keyboardDequeueLogicalKeyCode;
 
 // Ring buffer of keyboard events.
 //
-// 0x6ACB30
+// 0x6ACB30 kb_buffer
 static KeyboardEvent gKeyboardEventsQueue[64];
 
 // A map of logical key configurations for physical scan codes [SDL_SCANCODE_*].
@@ -75,24 +75,24 @@ static LogicalKeyEntry gLogicalKeyEntries[SDL_NUM_SCANCODES];
 // 0 - key is not pressed.
 // 1 - key pressed.
 //
-// 0x6AD830
+// 0x6AD830 keys
 unsigned char gPressedPhysicalKeys[SDL_NUM_SCANCODES];
 
-// 0x6AD930
+// 0x6AD930 kb_idle_start_time
 static unsigned int _kb_idle_start_time;
 
-// 0x6AD934
+// 0x6AD934 temp
 static KeyboardEvent gLastKeyboardEvent;
 
-// 0x6AD938
+// 0x6AD938 kb_layout
 int gKeyboardLayout;
 
 // The number of keys currently pressed.
 //
-// 0x6AD93C
+// 0x6AD93C keynumpress
 unsigned char gPressedPhysicalKeysCount;
 
-// 0x4CBC90 GNW_kb_set_
+// 0x4CBC90 GNW_kb_set
 int keyboardInit()
 {
     if (_kb_installed) {
@@ -112,7 +112,7 @@ int keyboardInit()
     return 0;
 }
 
-// 0x4CBD00 GNW_kb_restore_
+// 0x4CBD00 GNW_kb_restore
 void keyboardFree()
 {
     if (_kb_installed) {
@@ -120,7 +120,7 @@ void keyboardFree()
     }
 }
 
-// 0x4CBDA8 kb_clear_
+// 0x4CBDA8 kb_clear
 void keyboardReset()
 {
     if (_kb_installed) {
@@ -147,25 +147,25 @@ int _kb_getch()
     return rc;
 }
 
-// 0x4CBE00 kb_disable_
+// 0x4CBE00 kb_disable
 void keyboardDisable()
 {
     gKeyboardDisabled = true;
 }
 
-// 0x4CBE0C kb_enable_
+// 0x4CBE0C kb_enable
 void keyboardEnable()
 {
     gKeyboardDisabled = false;
 }
 
-// 0x4CBE18 kb_is_disabled_
+// 0x4CBE18 kb_is_disabled
 int keyboardIsDisabled()
 {
     return gKeyboardDisabled;
 }
 
-// 0x4CBE74 kb_set_layout_
+// 0x4CBE74 kb_set_layout
 void keyboardSetLayout(int keyboardLayout)
 {
     int oldKeyboardLayout = gKeyboardLayout;
@@ -198,7 +198,7 @@ void keyboardSetLayout(int keyboardLayout)
     }
 }
 
-// 0x4CBEEC kb_get_layout_
+// 0x4CBEEC kb_get_layout
 int keyboardGetLayout()
 {
     return gKeyboardLayout;
@@ -314,7 +314,7 @@ void _kb_simulate_key(KeyboardData* data)
     }
 }
 
-// 0x4CC2F0 kb_next_ascii_English_US_
+// 0x4CC2F0 kb_next_ascii_English_US
 static int _kb_next_ascii_English_US()
 {
     KeyboardEvent* keyboardEvent;
@@ -396,7 +396,7 @@ static int _kb_next_ascii_English_US()
     return keyboardDequeueLogicalKeyCode();
 }
 
-// 0x4CDA4C kb_next_ascii_
+// 0x4CDA4C kb_next_ascii
 static int keyboardDequeueLogicalKeyCode()
 {
     KeyboardEvent* keyboardEvent;
@@ -470,7 +470,7 @@ static int keyboardDequeueLogicalKeyCode()
     return logicalKey;
 }
 
-// 0x4CDC08 kb_map_ascii_English_US_
+// 0x4CDC08 kb_map_ascii_English_US
 static void keyboardBuildQwertyConfiguration()
 {
     int k;
@@ -1268,7 +1268,7 @@ static void keyboardBuildQwertyConfiguration()
     gLogicalKeyEntries[SDL_SCANCODE_KP_DECIMAL].ctrl = KEY_CTRL_DELETE;
 }
 
-// 0x4D0400 kb_map_ascii_French_
+// 0x4D0400 kb_map_ascii_French
 static void keyboardBuildFrenchConfiguration()
 {
     int k;
@@ -1448,7 +1448,7 @@ static void keyboardBuildFrenchConfiguration()
     gLogicalKeyEntries[SDL_SCANCODE_SLASH].ctrl = -1;
 }
 
-// 0x4D0C54 kb_map_ascii_German_
+// 0x4D0C54 kb_map_ascii_German
 static void keyboardBuildGermanConfiguration()
 {
     int k;
@@ -1658,7 +1658,7 @@ static void keyboardBuildGermanConfiguration()
     gLogicalKeyEntries[SDL_SCANCODE_KP_DECIMAL].ctrl = KEY_CTRL_DELETE;
 }
 
-// 0x4D1758 kb_map_ascii_Italian_
+// 0x4D1758 kb_map_ascii_Italian
 static void keyboardBuildItalianConfiguration()
 {
     int k;
@@ -1798,7 +1798,7 @@ static void keyboardBuildItalianConfiguration()
     gLogicalKeyEntries[k].ctrl = -1;
 }
 
-// 0x4D1E24 kb_map_ascii_Spanish_
+// 0x4D1E24 kb_map_ascii_Spanish
 static void keyboardBuildSpanishConfiguration()
 {
     int k;
@@ -1956,7 +1956,7 @@ static void keyboardBuildSpanishConfiguration()
     gLogicalKeyEntries[k].ctrl = -1;
 }
 
-// 0x4D24F8 kb_init_lock_status_
+// 0x4D24F8 kb_init_lock_status
 static void _kb_init_lock_status()
 {
     if ((SDL_GetModState() & KMOD_CAPS) != 0) {
@@ -1976,7 +1976,7 @@ static void _kb_init_lock_status()
 
 // Get pointer to pending key event from the queue but do not consume it.
 //
-// 0x4D2614 kb_buffer_peek_
+// 0x4D2614 kb_buffer_peek
 static int keyboardPeekEvent(int index, KeyboardEvent** keyboardEventPtr)
 {
     int rc = -1;

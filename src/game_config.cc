@@ -23,18 +23,18 @@ constexpr char kMapperConfigFileName[] = "mapper2.cfg";
 
 // A flag indicating if [gGameConfig] was initialized.
 //
-// 0x5186D0
+// 0x5186D0 gconfig_initialized
 bool gGameConfigInitialized = false;
 
 // fallout2.cfg
 //
-// 0x58E950
+// 0x58E950 game_config
 Config gGameConfig;
 
 // NOTE: There are additional 4 bytes following this array at 0x58EA7C, which
 // probably means it's size is 264 bytes.
 //
-// 0x58E978
+// 0x58E978 gconfig_file_name
 char gGameConfigFilePath[COMPAT_MAX_PATH];
 
 // Inits main game config.
@@ -54,7 +54,7 @@ char gGameConfigFilePath[COMPAT_MAX_PATH];
 // Finally, this function merges key-value pairs from [argv] if any, see
 // [configParseCommandLineArguments] for expected format.
 //
-// 0x444570 gconfig_init_
+// 0x444570 gconfig_init
 bool gameConfigInit(bool isMapper, int argc, char** argv)
 {
     if (gGameConfigInitialized) {
@@ -148,7 +148,7 @@ EM_ASYNC_JS(void, do_save_idbfs_gameconfig, (), {
 
 // Saves game config into `fallout2.cfg`.
 //
-// 0x444C14 gconfig_save_
+// 0x444C14 gconfig_save
 bool gameConfigSave()
 {
     if (!gGameConfigInitialized) {
@@ -168,7 +168,7 @@ bool gameConfigSave()
 
 // Frees game config, optionally saving it.
 //
-// 0x444C3C gconfig_exit_
+// 0x444C3C gconfig_exit
 bool gameConfigExit(bool shouldSave)
 {
     if (!gGameConfigInitialized) {

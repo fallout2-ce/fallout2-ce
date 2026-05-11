@@ -57,10 +57,10 @@ typedef enum SkilldexSkill {
 static int skilldexWindowInit();
 static void skilldexWindowFree();
 
-// 0x51D43C
+// 0x51D43C bk_enable_6
 static bool gSkilldexWindowIsoWasEnabled = false;
 
-// 0x51D440
+// 0x51D440 grphfid
 static const int gSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
     121,
     119,
@@ -72,7 +72,7 @@ static const int gSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
 
 // Maps Skilldex options into skills.
 //
-// 0x51D458
+// 0x51D458 sklxref
 static const int gSkilldexSkills[SKILLDEX_SKILL_COUNT] = {
     SKILL_SNEAK,
     SKILL_LOCKPICK,
@@ -84,29 +84,29 @@ static const int gSkilldexSkills[SKILLDEX_SKILL_COUNT] = {
     SKILL_REPAIR,
 };
 
-// 0x6680B8
+// 0x6680B8 skldxbtn
 static unsigned char* gSkilldexButtonsData[SKILLDEX_SKILL_BUTTON_BUFFER_COUNT];
 
 // skilldex.msg
-// 0x6680F8
+// 0x6680F8 skldxmsg
 static MessageList gSkilldexMessageList;
 
-// 0x668100
+// 0x668100 mesg_2
 static MessageListItem gSkilldexMessageListItem;
 
-// 0x668140
+// 0x668140 skldxwin
 static int gSkilldexWindow;
 
-// 0x668144
+// 0x668144 winbuf_2
 static unsigned char* gSkilldexWindowBuffer;
 
-// 0x668148
+// 0x668148 fontsave_4
 static int gSkilldexWindowOldFont;
 
 static FrmImage _skilldexFrmImages[SKILLDEX_FRM_COUNT];
 
 // skilldex_select
-// 0x4ABFD0 skilldex_select_
+// 0x4ABFD0 skilldex_select
 int skilldexOpen()
 {
     ScopedGameMode gm(GameMode::kSkilldex);
@@ -147,7 +147,7 @@ int skilldexOpen()
     return rc;
 }
 
-// 0x4AC054 skilldex_start_
+// 0x4AC054 skilldex_start
 static int skilldexWindowInit()
 {
     gSkilldexWindowOldFont = fontGetCurrent();
@@ -390,7 +390,7 @@ static int skilldexWindowInit()
     return 0;
 }
 
-// 0x4AC67C skilldex_end_
+// 0x4AC67C skilldex_end
 static void skilldexWindowFree()
 {
     windowDestroy(gSkilldexWindow);

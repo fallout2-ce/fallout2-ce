@@ -62,14 +62,14 @@ typedef struct AutomapEntry {
     unsigned char* data;
 } AutomapEntry;
 
-// 0x41ADE0
+// 0x41ADE0 defam
 static const int _defam[AUTOMAP_MAP_COUNT][ELEVATION_COUNT] = {
     { -1, -1, -1 },
     { -1, -1, -1 },
     { -1, -1, -1 },
 };
 
-// 0x41B560
+// 0x41B560 displayMapList
 static int _displayMapList[AUTOMAP_MAP_COUNT] = {
     -1,
     -1,
@@ -242,17 +242,17 @@ static const int gAutomapFrmIds[AUTOMAP_FRM_COUNT] = {
     173, // autodwn.frm - switch down
 };
 
-// 0x5108C4
+// 0x5108C4 autoflags
 static int gAutomapFlags = 0;
 
-// 0x56CB18
+// 0x56CB18 amdbhead
 static AutomapHeader gAutomapHeader;
 
-// 0x56D2A0
+// 0x56D2A0 amdbsubhead
 static AutomapEntry gAutomapEntry;
 
 // automap_init
-// 0x41B7F4 automap_init_
+// 0x41B7F4 automap_init
 int automapInit()
 {
     gAutomapFlags = 0;
@@ -260,7 +260,7 @@ int automapInit()
     return 0;
 }
 
-// 0x41B808 automap_reset_
+// 0x41B808 automap_reset
 int automapReset()
 {
     gAutomapFlags = 0;
@@ -268,7 +268,7 @@ int automapReset()
     return 0;
 }
 
-// 0x41B81C automap_exit_
+// 0x41B81C automap_exit
 void automapExit()
 {
     char path[COMPAT_MAX_PATH];
@@ -276,25 +276,25 @@ void automapExit()
     compat_remove(path);
 }
 
-// 0x41B87C automap_load_
+// 0x41B87C automap_load
 int automapLoad(File* stream)
 {
     return fileReadInt32(stream, &gAutomapFlags);
 }
 
-// 0x41B898 automap_save_
+// 0x41B898 automap_save
 int automapSave(File* stream)
 {
     return fileWriteInt32(stream, gAutomapFlags);
 }
 
-// 0x41B8B4 automapDisplayMap_
+// 0x41B8B4 automapDisplayMap
 int _automapDisplayMap(int map)
 {
     return _displayMapList[map];
 }
 
-// 0x41B8BC automap_
+// 0x41B8BC automap
 void automapShow(bool isInGame, bool isUsingScanner)
 {
     ScopedGameMode gm(GameMode::kAutomap);
@@ -499,7 +499,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
 
 // Renders automap in Map window.
 //
-// 0x41BD1C draw_top_down_map_
+// 0x41BD1C draw_top_down_map
 static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, int flags)
 {
     int color;
@@ -620,7 +620,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
 
 // Renders automap in Pipboy window.
 //
-// 0x41C004 draw_top_down_map_pipboy_
+// 0x41C004 draw_top_down_map_pipboy
 int automapRenderInPipboyWindow(int window, int map, int elevation)
 {
     unsigned char* windowBuffer = windowGetBuffer(window) + 640 * AUTOMAP_PIPBOY_VIEW_Y + AUTOMAP_PIPBOY_VIEW_X;
@@ -682,7 +682,7 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
 }
 
 // automap_pip_save
-// 0x41C0F0 automap_pip_save_
+// 0x41C0F0 automap_pip_save
 int automapSaveCurrent()
 {
     int map = mapGetCurrentMap();
@@ -896,7 +896,7 @@ int automapSaveCurrent()
 
 // Saves automap entry into stream.
 //
-// 0x41C844 WriteAM_Entry_
+// 0x41C844 WriteAM_Entry
 static int automapSaveEntry(File* stream)
 {
     unsigned char* buffer;
@@ -928,7 +928,7 @@ err:
     return -1;
 }
 
-// 0x41C8CC AM_ReadEntry_
+// 0x41C8CC AM_ReadEntry
 static int automapLoadEntry(int map, int elevation)
 {
     gAutomapEntry.compressedData = nullptr;
@@ -1015,7 +1015,7 @@ out:
 
 // Saves automap.db header.
 //
-// 0x41CAD8 WriteAM_Header_
+// 0x41CAD8 WriteAM_Header
 static int automapSaveHeader(File* stream)
 {
     fileRewind(stream);
@@ -1045,7 +1045,7 @@ err:
 
 // Loads automap.db header.
 //
-// 0x41CB50 AM_ReadMainHeader_
+// 0x41CB50 AM_ReadMainHeader
 static int automapLoadHeader(File* stream)
 {
 
@@ -1068,7 +1068,7 @@ static int automapLoadHeader(File* stream)
     return 0;
 }
 
-// 0x41CBA4 decode_map_data_
+// 0x41CBA4 decode_map_data
 static void _decode_map_data(int elevation)
 {
     memset(gAutomapEntry.data, 0, SQUARE_GRID_SIZE);
@@ -1101,7 +1101,7 @@ static void _decode_map_data(int elevation)
     }
 }
 
-// 0x41CC98 am_pip_init_
+// 0x41CC98 am_pip_init
 static int automapCreate()
 {
     gAutomapHeader.version = 1;
@@ -1128,7 +1128,7 @@ static int automapCreate()
 
 // Copy data from stream1 to stream2.
 //
-// 0x41CD6C copy_file_data_
+// 0x41CD6C copy_file_data
 static int _copy_file_data(File* stream1, File* stream2, int length)
 {
     void* buffer = internal_malloc(0xFFFF);
@@ -1160,7 +1160,7 @@ static int _copy_file_data(File* stream1, File* stream2, int length)
     return 0;
 }
 
-// 0x41CE74 ReadAMList_
+// 0x41CE74 ReadAMList
 int automapGetHeader(AutomapHeader** automapHeaderPtr)
 {
     char path[COMPAT_MAX_PATH];

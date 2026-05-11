@@ -14,19 +14,19 @@ namespace fallout {
 
 static void _palette_reset_();
 
-// 0x6639D0
+// 0x6639D0 current_palette
 static unsigned char gPalette[256 * 3];
 
-// 0x663CD0
+// 0x663CD0 white_palette
 unsigned char gPaletteWhite[256 * 3];
 
-// 0x663FD0
+// 0x663FD0 black_palette
 unsigned char gPaletteBlack[256 * 3];
 
-// 0x6642D0
+// 0x6642D0 fade_steps
 static int gPaletteFadeSteps;
 
-// 0x493A00 palette_init_
+// 0x493A00 palette_init
 void paletteInit()
 {
     memset(gPaletteBlack, 0, 256 * 3);
@@ -75,7 +75,7 @@ void paletteExit()
     _palette_reset_();
 }
 
-// 0x493AD4 palette_fade_to_
+// 0x493AD4 palette_fade_to
 void paletteFadeTo(unsigned char* palette)
 {
     bool colorCycleWasEnabled = colorCycleEnabled();
@@ -95,14 +95,14 @@ void paletteFadeTo(unsigned char* palette)
     }
 }
 
-// 0x493B48 palette_set_to_
+// 0x493B48 palette_set_to
 void paletteSetEntries(unsigned char* palette)
 {
     memcpy(gPalette, palette, sizeof(gPalette));
     _setSystemPalette(palette);
 }
 
-// 0x493B78 palette_set_entries_
+// 0x493B78 palette_set_entries
 void paletteSetEntriesInRange(unsigned char* palette, int start, int end)
 {
     memcpy(gPalette + 3 * start, palette, 3 * (end - start + 1));

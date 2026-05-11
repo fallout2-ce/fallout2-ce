@@ -32,7 +32,7 @@
 
 namespace fallout {
 
-// 0x51E444
+// 0x51E444 GNW95_isActive
 bool gProgramIsActive = false;
 
 #if __APPLE__ && TARGET_OS_OSX

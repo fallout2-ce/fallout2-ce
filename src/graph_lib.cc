@@ -15,31 +15,31 @@ static void _InitTree();
 static void _InsertNode(int a1);
 static void _DeleteNode(int a1);
 
-// 0x596D90
+// 0x596D90 GreyTable
 static unsigned char _GreyTable[256];
 
-// 0x596E90
+// 0x596E90 dad_2
 static int* _dad_2;
 
-// 0x596E94
+// 0x596E94 match_length
 static int _match_length;
 
-// 0x596E98
+// 0x596E98 _textsize
 static int _textsize;
 
-// 0x596E9C
+// 0x596E9C rson
 static int* _rson;
 
-// 0x596EA0
+// 0x596EA0 lson
 static int* _lson;
 
-// 0x596EA4
+// 0x596EA4 _text_buf
 static unsigned char* _text_buf;
 
-// 0x596EA8
+// 0x596EA8 _codesize
 static int _codesize;
 
-// 0x596EAC
+// 0x596EAC match_position
 static int _match_position;
 
 // 0x44EBC0

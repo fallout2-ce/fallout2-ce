@@ -2291,7 +2291,7 @@ void redraw_toolname()
     windowRefreshRect(tool_win, &rect);
 }
 
-// 0x48B278 obj_action_can_talk_to_
+// 0x48B278 obj_action_can_talk_to
 void clear_toolname()
 {
     windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY1, 260);

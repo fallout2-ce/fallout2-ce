@@ -30,15 +30,15 @@ static ExternalVariable* externalVariableFind(const char* identifier);
 static ExternalVariable* externalVariableAdd(const char* identifier);
 static void _removeProgramReferences(Program* program);
 
-// 0x570C00
+// 0x570C00 procHashTable
 static ExternalProcedure gExternalProcedures[1013];
 
-// 0x57BA1C
+// 0x57BA1C varHashTable
 static ExternalVariable gExternalVariables[1013];
 
 // NOTE: Inlined.
 //
-// 0x440F10 hashName_
+// 0x440F10 hashName
 static unsigned int _hashName(const char* identifier)
 {
     unsigned int h = 0;
@@ -53,7 +53,7 @@ static unsigned int _hashName(const char* identifier)
     return h;
 }
 
-// 0x440F58 findProc_
+// 0x440F58 findProc
 static ExternalProcedure* externalProcedureFind(const char* identifier)
 {
     // NOTE: Uninline.
@@ -84,7 +84,7 @@ static ExternalProcedure* externalProcedureFind(const char* identifier)
     return nullptr;
 }
 
-// 0x441018 findEmptyProc_
+// 0x441018 findEmptyProc
 static ExternalProcedure* externalProcedureAdd(const char* identifier)
 {
     // NOTE: Uninline.
@@ -111,7 +111,7 @@ static ExternalProcedure* externalProcedureAdd(const char* identifier)
     return nullptr;
 }
 
-// 0x4410AC findVar_
+// 0x4410AC findVar
 static ExternalVariable* externalVariableFind(const char* identifier)
 {
     // NOTE: Uninline.
@@ -143,7 +143,7 @@ static ExternalVariable* externalVariableFind(const char* identifier)
     return nullptr;
 }
 
-// 0x44118C findEmptyVar_
+// 0x44118C findEmptyVar
 static ExternalVariable* externalVariableAdd(const char* identifier)
 {
     // NOTE: Uninline.
@@ -170,7 +170,7 @@ static ExternalVariable* externalVariableAdd(const char* identifier)
     return nullptr;
 }
 
-// 0x44127C exportStoreVariable_
+// 0x44127C exportStoreVariable
 int externalVariableSetValue(Program* program, const char* name, ProgramValue& programValue)
 {
     ExternalVariable* exportedVariable = externalVariableFind(name);
@@ -197,7 +197,7 @@ int externalVariableSetValue(Program* program, const char* name, ProgramValue& p
     return 0;
 }
 
-// 0x4413D4 exportFetchVariable_
+// 0x4413D4 exportFetchVariable
 int externalVariableGetValue(Program* program, const char* name, ProgramValue& value)
 {
     ExternalVariable* exportedVariable = externalVariableFind(name);
@@ -215,7 +215,7 @@ int externalVariableGetValue(Program* program, const char* name, ProgramValue& v
     return 0;
 }
 
-// 0x4414B8 exportExportVariable_
+// 0x4414B8 exportExportVariable
 int externalVariableCreate(Program* program, const char* identifier)
 {
     const char* programName = program->name;
@@ -247,7 +247,7 @@ int externalVariableCreate(Program* program, const char* identifier)
     return 0;
 }
 
-// 0x4414FC removeProgramReferences_
+// 0x4414FC removeProgramReferences
 static void _removeProgramReferences(Program* program)
 {
     for (int index = 0; index < 1013; index++) {
@@ -259,13 +259,13 @@ static void _removeProgramReferences(Program* program)
     }
 }
 
-// 0x44152C initExport_
+// 0x44152C initExport
 void _initExport()
 {
     intLibRegisterProgramDeleteCallback(_removeProgramReferences);
 }
 
-// 0x441538 exportClose_
+// 0x441538 exportClose
 void externalVariablesClear()
 {
     for (int index = 0; index < 1013; index++) {
@@ -281,7 +281,7 @@ void externalVariablesClear()
     }
 }
 
-// 0x44158C exportFindProcedure_
+// 0x44158C exportFindProcedure
 Program* externalProcedureGetProgram(const char* identifier, int* addressPtr, int* argumentCountPtr)
 {
     ExternalProcedure* externalProcedure = externalProcedureFind(identifier);
@@ -299,7 +299,7 @@ Program* externalProcedureGetProgram(const char* identifier, int* addressPtr, in
     return externalProcedure->program;
 }
 
-// 0x4415B0 exportExportProcedure_
+// 0x4415B0 exportExportProcedure
 int externalProcedureCreate(Program* program, const char* identifier, int address, int argumentCount)
 {
     ExternalProcedure* externalProcedure = externalProcedureFind(identifier);
@@ -323,7 +323,7 @@ int externalProcedureCreate(Program* program, const char* identifier, int addres
     return 0;
 }
 
-// 0x441824 exportClearAllVariables_
+// 0x441824 exportClearAllVariables
 void _exportClearAllVariables()
 {
     for (int index = 0; index < 1013; index++) {

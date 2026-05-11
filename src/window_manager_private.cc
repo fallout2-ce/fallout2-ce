@@ -28,64 +28,64 @@ static void tm_kill_out_of_order(int queueIndex);
 static void tm_click_response(int btn, int keyCode);
 static bool tm_index_active(int queueIndex);
 
-// 0x51E414
+// 0x51E414 wd
 static int _wd = -1;
 
-// 0x51E418
+// 0x51E418 curr_menu
 static MenuBar* _curr_menu = nullptr;
 
-// 0x51E41C
+// 0x51E41C _tm_watch_active
 static bool tm_watch_active = false;
 
 // NOTE: Also anonymous in the original code.
 //
-// 0x6B2340
+// 0x6B2340 tm_location
 static struct {
     bool taken;
     int y;
 } tm_location[kTimedMsgs];
 
-// 0x6B2368
+// 0x6B2368 tm_text_x
 static int tm_text_x;
 
-// 0x6B236C
+// 0x6B236C tm_h
 static int tm_h;
 
 // NOTE: Also anonymous in the original code.
 //
-// 0x6B2370
+// 0x6B2370 tm_queue
 static struct {
     unsigned int created;
     int id;
     int location;
 } tm_queue[kTimedMsgs];
 
-// 0x6B23AC
+// 0x6B23AC tm_persistence
 static unsigned int tm_persistence;
 
-// 0x6B23B0
+// 0x6B23B0 scr_center_x
 static int scr_center_x;
 
-// 0x6B23B4
+// 0x6B23B4 tm_text_y
 static int tm_text_y;
 
-// 0x6B23B8
+// 0x6B23B8 tm_kill
 static int tm_kill;
 
-// 0x6B23BC
+// 0x6B23BC tm_add
 static int tm_add;
 
 // x
 //
-// 0x6B23C0
+// 0x6B23C0 curry
 static int _curry;
 
 // y
 //
-// 0x6B23C4
+// 0x6B23C4 currx
 static int _currx;
 
-// 0x6B23D0
+// 0x6B23D0 GNW95_title
 char gProgramWindowTitle[256];
 
 // 0x4DA6C0
