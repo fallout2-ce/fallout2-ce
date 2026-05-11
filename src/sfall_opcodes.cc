@@ -346,6 +346,7 @@ static void op_get_unspent_ap_perk_bonus(Program* program)
 static void op_set_inven_ap_cost(Program* program)
 {
     int cost = programStackPopInteger(program);
+    cost = std::clamp(cost, 0, 100);
     inventorySetInvenApCost(cost);
 }
 
