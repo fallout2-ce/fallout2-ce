@@ -1300,7 +1300,7 @@ int _GNW_check_menu_bars(int input)
 }
 
 // 0x4D69DC
-void _win_text(int win, char** fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags)
+void _win_text(int win, const char* const* fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags)
 {
     Window* window = windowGetWindow(win);
 
@@ -1322,7 +1322,7 @@ void _win_text(int win, char** fileNameList, int fileNameListLength, int maxWidt
     int separatorRight = maxWidth - 1;
 
     for (int index = 0; index < fileNameListLength; index++) {
-        char* fileName = fileNameList[index];
+        const char* fileName = fileNameList[index];
         if (*fileName != '\0') {
             windowDrawText(win, fileName, maxWidth, x, y, flags);
         } else {
@@ -1487,7 +1487,7 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
 
     _lighten_buf(normal, buttonWidth, buttonHeight, buttonWidth);
 
-    fontDrawText(normal + buttonWidth * 3 + 8, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]]);
+    fontDrawText(normal + buttonWidth * 3 + 8, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]] | FONT_SHADOW);
     bufferDrawRectShadowed(normal,
         buttonWidth,
         2,
@@ -1506,7 +1506,7 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
         _colorTable[_GNW_wcolor[2]]);
     bufferDrawRect(normal, buttonWidth, 0, 0, buttonWidth - 1, buttonHeight - 1, _colorTable[0]);
 
-    fontDrawText(pressed + buttonWidth * 4 + 9, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]]);
+    fontDrawText(pressed + buttonWidth * 4 + 9, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]] | FONT_SHADOW);
     bufferDrawRectShadowed(pressed,
         buttonWidth,
         2,

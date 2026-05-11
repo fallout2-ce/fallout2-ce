@@ -140,4 +140,14 @@ void lightResetTileIntensity()
     }
 }
 
+void lightDecreaseAmbient(int val)
+{
+    lightSetAmbientIntensity(gAmbientIntensity - val, true);
+}
+
+void lightIncreaseAmbient(int val)
+{
+    lightSetAmbientIntensity(gAmbientIntensity + val, true);
+}
+
 } // namespace fallout

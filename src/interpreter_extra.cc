@@ -36,7 +36,9 @@
 #include "reaction.h"
 #include "scripts.h"
 #include "settings.h"
+#include "sfall_config.h"
 #include "sfall_opcodes.h"
+#include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
 #include "svga.h"
@@ -120,13 +122,6 @@ typedef enum CritterState {
     CRITTER_STATE_DEAD = 0x01,
     CRITTER_STATE_PRONE = 0x02,
 } CritterState;
-
-enum {
-    INVEN_TYPE_WORN = 0,
-    INVEN_TYPE_RIGHT_HAND = 1,
-    INVEN_TYPE_LEFT_HAND = 2,
-    INVEN_TYPE_INV_COUNT = -2,
-};
 
 typedef enum FloatingMessageType {
     FLOATING_MESSAGE_TYPE_WARNING = -2,
@@ -414,6 +409,15 @@ static int tileIsVisible(int tile)
 // 0x45409C
 static int _correctFidForRemovedItem(Object* critter, Object* item, int flags)
 {
+    InvenSlot invenSlot = InvenSlot::Armor;
+    if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
+        invenSlot = InvenSlot::RightHand;
+    } else if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
+        invenSlot = InvenSlot::LeftHand;
+    }
+
+    scriptHooks_InvenWield(critter, item, invenSlot, 0, 1);
+
     if (critter == gDude) {
         bool animated = !gameUiIsDisabled();
         interfaceUpdateItems(animated, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
@@ -3015,11 +3019,16 @@ static void opCritterGetInventoryObject(Program* program)
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
     if (PID_TYPE(critter->pid) == OBJ_TYPE_CRITTER) {
-        switch (type) {
-        case INVEN_TYPE_WORN:
+        if (type == kInvenSlotInvCount) {
+            programStackPushInteger(program, critter->data.inventory.length);
+            return;
+        }
+
+        switch (static_cast<InvenSlot>(type)) {
+        case InvenSlot::Armor:
             programStackPushPointer(program, critterGetArmor(critter));
             break;
-        case INVEN_TYPE_RIGHT_HAND:
+        case InvenSlot::RightHand:
             if (critter == gDude) {
                 if (interfaceGetCurrentHand() != HAND_LEFT) {
                     programStackPushPointer(program, critterGetItem2(critter));
@@ -3030,7 +3039,7 @@ static void opCritterGetInventoryObject(Program* program)
                 programStackPushPointer(program, critterGetItem2(critter));
             }
             break;
-        case INVEN_TYPE_LEFT_HAND:
+        case InvenSlot::LeftHand:
             if (critter == gDude) {
                 if (interfaceGetCurrentHand() == HAND_LEFT) {
                     programStackPushPointer(program, critterGetItem1(critter));
@@ -3040,9 +3049,6 @@ static void opCritterGetInventoryObject(Program* program)
             } else {
                 programStackPushPointer(program, critterGetItem1(critter));
             }
-            break;
-        case INVEN_TYPE_INV_COUNT:
-            programStackPushInteger(program, critter->data.inventory.length);
             break;
         default:
             scriptError("script error: %s: Error in critter_inven_obj -- wrong type!", program->name);
@@ -4599,24 +4605,43 @@ static void opMoveObjectInventoryToObject(Program* program)
     }
 
     Object* oldArmor = nullptr;
-    Object* item2 = nullptr;
+    Object* oldWeapon = nullptr;
     if (object1 == gDude) {
         oldArmor = critterGetArmor(object1);
+        if (interfaceGetCurrentHand() == HAND_RIGHT) {
+            oldWeapon = critterGetItem2(object1);
+        } else {
+            oldWeapon = critterGetItem1(object1);
+        }
     } else {
-        item2 = critterGetItem2(object1);
+        oldWeapon = critterGetItem2(object1);
     }
 
-    if (object1 != gDude && item2 != nullptr) {
+    if (object1 == gDude) {
+        if (oldWeapon != nullptr) {
+            InvenSlot invenSlot = interfaceGetCurrentHand() == HAND_RIGHT
+                ? InvenSlot::RightHand
+                : InvenSlot::LeftHand;
+            scriptHooks_InvenWield(object1, oldWeapon, invenSlot, 0, 1);
+        }
+
+        if (oldArmor != nullptr) {
+            scriptHooks_InvenWield(object1, oldArmor, InvenSlot::Armor, 0, 1);
+        }
+    } else if (oldWeapon != nullptr) {
+        // CE intentionally reports the NPC weapon's actual hand slot here.
+        // Sfall's op_move_obj_inven_to_obj HOOK_INVENWIELD path passes
+        // InvenSlot::Armor unconditionally for NPC weapons in this case.
         int flags = 0;
-        if ((item2->flags & OBJECT_IN_LEFT_HAND) != 0) {
+        if ((oldWeapon->flags & OBJECT_IN_LEFT_HAND) != 0) {
             flags |= OBJECT_IN_LEFT_HAND;
         }
 
-        if ((item2->flags & OBJECT_IN_RIGHT_HAND) != 0) {
+        if ((oldWeapon->flags & OBJECT_IN_RIGHT_HAND) != 0) {
             flags |= OBJECT_IN_RIGHT_HAND;
         }
 
-        _correctFidForRemovedItem(object1, item2, flags);
+        _correctFidForRemovedItem(object1, oldWeapon, flags);
     }
 
     itemMoveAll(object1, object2);

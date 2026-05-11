@@ -1,5 +1,6 @@
 #include "sfall_opcodes.h"
 
+#include <algorithm>
 #include <math.h>
 #include <string.h>
 
@@ -26,6 +27,7 @@
 #include "party_member.h"
 #include "proto.h"
 #include "proto_instance.h"
+#include "script_sound.h"
 #include "scripts.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h"
@@ -309,6 +311,44 @@ static void op_set_critter_current_ap(Program* program)
     if (critter == gDude && isInCombat()) {
         interfaceRenderActionPoints(actionPoints, _combat_free_move);
     }
+}
+
+static void refreshUnspentApArmorClass()
+{
+    if (isInCombat() && _combat_whose_turn() != gDude) {
+        interfaceRenderArmorClass(false);
+    }
+}
+
+static void op_set_unspent_ap_bonus(Program* program)
+{
+    int multiplier = programStackPopInteger(program);
+    statSetUnspentApBonus(multiplier);
+    refreshUnspentApArmorClass();
+}
+
+static void op_get_unspent_ap_bonus(Program* program)
+{
+    programStackPushInteger(program, statGetUnspentApBonus());
+}
+
+static void op_set_unspent_ap_perk_bonus(Program* program)
+{
+    int multiplier = programStackPopInteger(program);
+    statSetUnspentApPerkBonus(multiplier);
+    refreshUnspentApArmorClass();
+}
+
+static void op_get_unspent_ap_perk_bonus(Program* program)
+{
+    programStackPushInteger(program, statGetUnspentApPerkBonus());
+}
+
+static void op_set_inven_ap_cost(Program* program)
+{
+    int cost = programStackPopInteger(program);
+    cost = std::clamp(cost, 0, 100);
+    inventorySetInvenApCost(cost);
 }
 
 // toggle_active_hand
@@ -889,6 +929,19 @@ static void op_get_attack_type(Program* program)
     } else {
         programStackPushInteger(program, -1);
     }
+}
+
+static void op_play_sfall_sound(Program* program)
+{
+    int mode = programStackPopInteger(program);
+    const char* path = programStackPopString(program);
+    programStackPushInteger(program, scriptSoundPlay(path, mode));
+}
+
+static void op_stop_sfall_sound(Program* program)
+{
+    int soundId = programStackPopInteger(program);
+    scriptSoundStop(soundId);
 }
 
 // force_encounter_with_flags
@@ -1963,9 +2016,13 @@ void sfallOpcodesInit()
     // 0x81ea - int   init_hook()  -> OBSOLETE, do not implement
 
     // 0x81e6 - void set_unspent_ap_bonus(int multiplier)
+    interpreterRegisterOpcode(0x81E6, op_set_unspent_ap_bonus);
     // 0x81e7 - int  get_unspent_ap_bonus()
+    interpreterRegisterOpcode(0x81E7, op_get_unspent_ap_bonus);
     // 0x81e8 - void set_unspent_ap_perk_bonus(int multiplier)
+    interpreterRegisterOpcode(0x81E8, op_set_unspent_ap_perk_bonus);
     // 0x81e9 - int  get_unspent_ap_perk_bonus()
+    interpreterRegisterOpcode(0x81E9, op_get_unspent_ap_perk_bonus);
 
     // 0x81ec - float sqrt(float)
     interpreterRegisterOpcode(0x81EC, op_sqrt);
@@ -2083,7 +2140,9 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8228, op_get_attack_type);
 
     // 0x822b - int  play_sfall_sound(string file, int mode)
+    interpreterRegisterOpcode(0x822B, op_play_sfall_sound);
     // 0x822c - void stop_sfall_sound(int soundID)
+    interpreterRegisterOpcode(0x822C, op_stop_sfall_sound);
 
     // 0x8235 - array string_split(string string, string split)
     interpreterRegisterOpcode(0x8235, op_string_split);
@@ -2121,6 +2180,7 @@ void sfallOpcodesInit()
     // 0x824c - int gdialog_get_barter_mod()
     interpreterRegisterOpcode(0x824C, op_gdialog_get_barter_mod);
     // 0x824d - void set_inven_ap_cost(int cost)
+    interpreterRegisterOpcode(0x824D, op_set_inven_ap_cost);
 
     // 0x825a - void reg_anim_destroy(object object)
     interpreterRegisterOpcode(0x825A, op_reg_anim_destroy);

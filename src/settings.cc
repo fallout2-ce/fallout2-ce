@@ -160,6 +160,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(display_karma_changes);
     SETTING(display_bonus_damage);
     SETTING(numbers_in_dialogue);
+    SETTING(dialog_border);
     SETTING_P(auto_quick_save, clamp(0, 10));
     SETTING(enable_high_resolution_stencil);
     SETTING(extend_ap_bar);
@@ -220,6 +221,7 @@ void initSettingsRegistry(bool isMapper)
 #define SECT qol
     SETTING_P(use_walk_distance, clamp(0, 100));
     SETTING(auto_open_doors);
+    SETTING(party_loot_and_barter);
 #undef SECT
 
     if (isMapper) {
@@ -236,6 +238,9 @@ void initSettingsRegistry(bool isMapper)
         SETTING(run_mapper_as_game);
         SETTING(default_f8_as_game);
         SETTING(sort_script_list);
+        SETTING(map);
+        SETTING(dev_path);
+        SETTING(use_grid_item_picker);
 #undef SECT
     }
 }

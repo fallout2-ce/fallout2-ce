@@ -1,11 +1,13 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
+#include "sound.h"
+
 namespace fallout {
 
 typedef bool(AudioQueryCompressedFunc)(char* filePath);
 
-int audioOpen(const char* fname, int* sampleRate);
+int audioOpen(const char* fname, AudioFileInfo* info, bool* isMemoryBackedPtr);
 int audioClose(int handle);
 int audioRead(int handle, void* buffer, unsigned int size);
 long audioSeek(int handle, long offset, int origin);

@@ -1,0 +1,83 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+
+variable steal_mode := 0;
+
+procedure steal_mode_name(variable mode) begin
+    if (mode == 1) then return "force_success";
+    if (mode == 2) then return "caught_fail";
+    if (mode == 3) then return "silent_fail";
+    if (mode == 4) then return "xp_override";
+    return "vanilla";
+end
+
+procedure steal_handler begin
+    variable
+        args := get_sfall_args,
+        thief := args[0],
+        target := args[1],
+        item := args[2],
+        is_planting := args[3],
+        quantity := args[4],
+        thief_name := "<null>",
+        target_name := "<null>",
+        item_name := "<null>";
+
+    if (thief) then thief_name := obj_name(thief);
+    if (target) then target_name := obj_name(target);
+    if (item) then item_name := obj_name(item);
+
+    display_msg(string_format6("steal mode=%s thief=%s target=%s item=%s planting=%d qty=%d",
+        steal_mode_name(steal_mode),
+        thief_name,
+        target_name,
+        item_name,
+        is_planting,
+        quantity));
+    display_msg(string_format1("steal args=%s", debug_array_str(args)));
+
+    if (thief != dude_obj) then return;
+
+    if (steal_mode == 1) then begin
+        display_msg("steal forcing success");
+        display_msg(sprintf(mstr_skill(571 + is_planting * 2), item_name));
+        set_sfall_return(1);
+    end else if (steal_mode == 2) then begin
+        display_msg("steal forcing caught failure");
+        display_msg(sprintf(mstr_skill(570 + is_planting * 2), item_name));
+        set_sfall_return(0);
+    end else if (steal_mode == 3) then begin
+        display_msg("steal forcing silent failure");
+        set_sfall_return(2);
+    end else if (steal_mode == 4) then begin
+        display_msg("steal forcing success with xp override 77");
+        display_msg(sprintf(mstr_skill(571 + is_planting * 2), item_name));
+        set_sfall_return(1);
+        set_sfall_return(77);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_X) then return;
+
+    steal_mode += 1;
+    if (steal_mode > 4) then steal_mode := 0;
+
+    display_msg(string_format1("steal mode -> %s", steal_mode_name(steal_mode)));
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("steal manual test ready: press X to cycle vanilla / force_success / caught_fail / silent_fail / xp_override");
+    display_msg("open a steal screen and move an item in either direction; mode 4 should award 77 XP for a successful action");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_STEAL, steal_handler);
+end

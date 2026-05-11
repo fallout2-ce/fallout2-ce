@@ -48,6 +48,7 @@ static void mf_dialog_obj(OpcodeContext& ctx);
 static void mf_get_combat_free_move(OpcodeContext& ctx);
 static void mf_get_cursor_mode(OpcodeContext& ctx);
 static void mf_get_flags(OpcodeContext& ctx);
+static void mf_get_inven_ap_cost(OpcodeContext& ctx);
 static void mf_get_object_data(OpcodeContext& ctx);
 static void mf_get_outline(OpcodeContext& ctx);
 static void mf_get_sfall_arg_at(OpcodeContext& ctx);
@@ -108,7 +109,7 @@ const MetaruleInfo kMetarules[] = {
     // {"get_ini_config",            mf_get_ini_config,            2, 2,  0, {ARG_STRING, ARG_INT}},
     { "get_ini_section", mf_get_ini_section, 2, 2, -1, { ARG_STRING, ARG_STRING } },
     { "get_ini_sections", mf_get_ini_sections, 1, 1, -1, { ARG_STRING } },
-    // {"get_inven_ap_cost",         mf_get_inven_ap_cost,         0, 0},
+    { "get_inven_ap_cost", mf_get_inven_ap_cost, 0, 0 },
     // {"get_map_enter_position",    mf_get_map_enter_position,    0, 0},
     // {"get_metarule_table",        mf_get_metarule_table,        0, 0},
     // {"get_object_ai_data",        mf_get_object_ai_data,        2, 2, -1, {ARG_OBJECT, ARG_INT}},
@@ -244,6 +245,11 @@ void mf_dialog_obj(OpcodeContext& ctx)
 void mf_get_combat_free_move(OpcodeContext& ctx)
 {
     ctx.setReturn(_combat_free_move);
+}
+
+void mf_get_inven_ap_cost(OpcodeContext& ctx)
+{
+    ctx.setReturn(inventoryGetInvenApCost());
 }
 
 void mf_get_cursor_mode(OpcodeContext& ctx)

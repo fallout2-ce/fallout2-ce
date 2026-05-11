@@ -69,8 +69,12 @@ struct UISettings {
     bool display_karma_changes = false;
     bool display_bonus_damage = false;
     bool numbers_in_dialogue = false;
+
+    // Whether to use high resolution art for dialog borders.
+    bool dialog_border = true;
     int auto_quick_save = 0;
     bool enable_high_resolution_stencil = true;
+    // Maximum number of columns in inventory and loot windows
     int inventory_columns = 1;
 };
 
@@ -110,7 +114,7 @@ struct SoundSettings {
     int cache_size = 448;
     std::string music_path1 = "sound\\music\\";
     std::string music_path2 = "sound\\music\\";
-    int gapless_music = 0;
+    int gapless_music = 1;
 };
 
 struct DebugSettings {
@@ -121,12 +125,13 @@ struct DebugSettings {
     bool output_map_data_info = false;
     int window_width = 300;
     int window_height = 192;
-    std::string console_output_path = "";
+    std::string console_output_path;
 };
 
 struct QolSettings {
     int use_walk_distance = 5;
     bool auto_open_doors = false;
+    bool party_loot_and_barter = false;
 };
 
 struct MapperSettings {
@@ -142,6 +147,12 @@ struct MapperSettings {
     bool run_mapper_as_game = false;
     bool default_f8_as_game = true;
     bool sort_script_list = false;
+    std::string map;
+    // CE: switch between vanilla grid item picker and simpler list-based one.
+    bool use_grid_item_picker = true;
+    // CE: change mapper path for saving various data.
+    // TODO: use
+    std::string dev_path = R"(\fallout\cd\)";
 };
 
 struct Settings {

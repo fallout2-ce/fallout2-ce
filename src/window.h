@@ -72,7 +72,7 @@ bool scriptWindowDelete(const char* windowName);
 int scriptWindowResize(const char* windowName, int x, int y, int width, int height);
 int scriptWindowScale(const char* windowName, int x, int y, int width, int height);
 int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, int a6, int flags);
-int scriptWindowOutput(char* string);
+int scriptWindowOutput(const char* string);
 bool scriptWindowGotoXY(int x, int y);
 bool scriptWindowSelectId(int index);
 int scriptWindowSelect(const char* windowName);

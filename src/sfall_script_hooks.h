@@ -2,6 +2,7 @@
 #define FALLOUT_SFALL_SCRIPT_HOOKS_H_
 
 #include "interpreter.h"
+#include "interpreter_extra.h"
 #include "scripts.h"
 
 #include <initializer_list>
@@ -266,6 +267,7 @@ enum AmmoCostHookType {
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
 int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
+int scriptHooks_Steal(Object* thief, Object* target, Object* item, bool isPlanting, int quantity, int* xpOverride);
 
 bool scriptHooksInit();
 void scriptHooksReset();
@@ -288,6 +290,10 @@ int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
+
+int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid);
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove);
+bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, int hitMode);
 
 } // namespace fallout
 

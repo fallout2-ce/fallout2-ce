@@ -185,7 +185,7 @@ int windowCreate(int x, int y, int width, int height, int color, int flags);
 void windowDestroy(int win);
 void windowDrawBorder(int win);
 void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int flags);
-void _win_text(int win, char** fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags);
+void _win_text(int win, const char* const* fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags);
 void windowDrawLine(int win, int left, int top, int right, int bottom, int color);
 void windowDrawRect(int win, int left, int top, int right, int bottom, int color);
 void windowFill(int win, int x, int y, int width, int height, int color);

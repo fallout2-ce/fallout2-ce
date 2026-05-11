@@ -35,6 +35,7 @@
 #include "proto_instance.h"
 #include "queue.h"
 #include "random.h"
+#include "script_sound.h"
 #include "scripts.h"
 #include "settings.h"
 #include "sfall_callbacks.h"
@@ -48,12 +49,12 @@
 
 namespace fallout {
 
-static char* mapBuildPath(char* name);
+const char* mapBuildPath(const char* name);
 static int mapLoad(File* stream);
 static int _map_age_dead_critters();
 static void _map_fix_critter_combat_data();
-static int _map_save();
 static int _map_save_file(File* stream);
+int _map_save();
 static void mapMakeMapsDirectory();
 static void isoWindowRefreshRect(Rect* rect);
 static void isoWindowRefreshRectGame(Rect* rect);
@@ -708,7 +709,7 @@ int mapScroll(int dx, int dy)
 }
 
 // 0x482900
-static char* mapBuildPath(char* name)
+const char* mapBuildPath(const char* name)
 {
     // 0x631E78
     static char map_path[COMPAT_MAX_PATH];
@@ -822,10 +823,11 @@ int mapLoadById(int map)
 static int mapLoad(File* stream)
 {
     _map_save_in_game(true);
-    int gaplessMusic = settings.sound.gapless_music;
-    if (backgoundSoundIsPlaying() && !gaplessMusic) {
-        // playing the loading sound might interrupt continuous music playback
-        backgroundSoundLoad("wind2", GSOUND_LIMIT_AFTER, GSOUND_MEMORY, GSOUND_LOOP);
+    int mapLoadSoundId = 0;
+    if (backgoundSoundIsPlaying()) {
+        // Use the sfall sound path so the map-loading ambience does not depend
+        // on the native background music loader.
+        mapLoadSoundId = scriptSoundPlay("sound\\music\\WIND2.ACM", SCRIPT_SOUND_MODE_LOOP);
     }
     isoDisable();
     _partyMemberPrepLoad();
@@ -1064,6 +1066,11 @@ err:
     gameMovieFadeOut();
 
     gMapHeader.version = 20;
+
+    if (mapLoadSoundId != 0) {
+        scriptSoundStop(mapLoadSoundId);
+        mapLoadSoundId = 0;
+    }
 
     return rc;
 }
@@ -1328,7 +1335,7 @@ static void _map_fix_critter_combat_data()
 
 // map_save
 // 0x483850
-static int _map_save()
+int _map_save()
 {
     char temp[80];
     temp[0] = '\0';
@@ -1341,7 +1348,7 @@ static int _map_save()
 
     int rc = -1;
     if (gMapHeader.name[0] != '\0') {
-        char* mapFileName = mapBuildPath(gMapHeader.name);
+        const char* mapFileName = mapBuildPath(gMapHeader.name);
         File* stream = fileOpen(mapFileName, "wb");
         if (stream != nullptr) {
             rc = _map_save_file(stream);

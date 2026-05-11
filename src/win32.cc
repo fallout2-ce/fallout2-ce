@@ -16,7 +16,11 @@
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 
+#ifdef FALLOUT_MAPPER
+#include "mapper/mapper.h"
+#else
 #include "main.h"
+#endif
 #include "svga.h"
 #include "window_manager.h"
 
@@ -103,7 +107,11 @@ int main(int argc, char* argv[])
     SDL_ShowCursor(SDL_DISABLE);
 
     gProgramIsActive = true;
+#ifdef FALLOUT_MAPPER
+    rc = mapper_main(argc, argv);
+#else
     rc = falloutMain(argc, argv);
+#endif
 
 #if _WIN32
     CloseHandle(GNW95_mutex);

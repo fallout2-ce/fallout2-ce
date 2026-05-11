@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <assert.h>
+
 #include "actions.h"
 #include "color.h"
 #include "combat.h"
@@ -24,6 +26,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
+#include "sfall_script_hooks.h"
 #include "stat.h"
 #include "trait.h"
 
@@ -1028,8 +1031,30 @@ int skillUse(Object* obj, Object* target, int skill, int skillBonus)
 }
 
 // 0x4ABBE4
-int skillsPerformStealing(Object* thief, Object* target, Object* item, bool isPlanting)
+SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* item, int quantity, bool isPlanting, int* xpOverride)
 {
+    assert(thief != nullptr);
+    assert(target != nullptr);
+    assert(item != nullptr);
+    assert(quantity >= 0);
+    assert(xpOverride != nullptr);
+
+    *xpOverride = -1;
+
+    int hookXpOverride = -1;
+    int hookResult = scriptHooks_Steal(thief, target, item, isPlanting, quantity, &hookXpOverride);
+    if (hookXpOverride >= 0) {
+        *xpOverride = hookXpOverride;
+    }
+
+    if (hookResult == static_cast<int>(SkillStealResult::Fail)) {
+        return SkillStealResult::Fail;
+    }
+
+    if (hookResult == static_cast<int>(SkillStealResult::Success) || hookResult == static_cast<int>(SkillStealResult::Caught)) {
+        return static_cast<SkillStealResult>(hookResult);
+    }
+
     int howMuch;
 
     int stealModifier = -_gStealCount + 1;
@@ -1086,26 +1111,22 @@ int skillsPerformStealing(Object* thief, Object* target, Object* item, bool isPl
         // 571: You steal the %s.
         // 573: You plant the %s.
         messageListItem.num = isPlanting ? 573 : 571;
-        if (!messageListGetItem(&gSkillsMessageList, &messageListItem)) {
-            return -1;
+        if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
+            snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
+            displayMonitorAddMessage(text);
         }
 
-        snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
-        displayMonitorAddMessage(text);
-
-        return 1;
+        return SkillStealResult::Success;
     } else {
         // 570: You're caught stealing the %s.
         // 572: You're caught planting the %s.
         messageListItem.num = isPlanting ? 572 : 570;
-        if (!messageListGetItem(&gSkillsMessageList, &messageListItem)) {
-            return -1;
+        if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
+            snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
+            displayMonitorAddMessage(text);
         }
 
-        snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
-        displayMonitorAddMessage(text);
-
-        return 0;
+        return SkillStealResult::Caught;
     }
 }
 

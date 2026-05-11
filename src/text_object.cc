@@ -17,7 +17,7 @@
 namespace fallout {
 
 // The maximum number of text objects that can exist at the same time.
-#define TEXT_OBJECTS_MAX_COUNT (20)
+#define TEXT_OBJECTS_MAX_COUNT (200)
 
 typedef enum TextObjectFlags {
     TEXT_OBJECT_MARKED_FOR_REMOVAL = 0x01,

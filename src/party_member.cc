@@ -667,7 +667,7 @@ int _partyMemberRecoverLoad()
 static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
 {
     if (a1->script == nullptr) {
-        showMesageBox("\n  Error!: partyMemberRecoverLoadInstance: No script!");
+        debugPrint("\n  Error!: partyMemberRecoverLoadInstance: No script!");
         return 0;
     }
 

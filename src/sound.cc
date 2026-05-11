@@ -16,6 +16,7 @@
 
 #include <SDL.h>
 
+#include "audio.h"
 #include "audio_engine.h"
 #include "debug.h"
 #include "platform_compat.h"
@@ -49,7 +50,7 @@ static long soundFileSize(int fileHandle);
 static long soundTellData(int fileHandle);
 static int soundWriteData(int fileHandle, const void* buf, unsigned int size);
 static int soundReadData(int fileHandle, void* buf, unsigned int size);
-static int soundOpenData(const char* filePath, int* sampleRate);
+static int soundOpenData(const char* filePath, AudioFileInfo* openInfo, bool* isMemoryBackedPtr);
 static long soundSeekData(int fileHandle, long offset, int origin);
 static int soundCloseData(int fileHandle);
 static char* soundFileManglerDefaultImpl(char* fname);
@@ -223,7 +224,7 @@ static int soundReadData(int fileHandle, void* buf, unsigned int size)
 }
 
 // 0x4AC768
-static int soundOpenData(const char* filePath, int* sampleRate)
+static int soundOpenData(const char* filePath, AudioFileInfo* openInfo, bool* isMemoryBackedPtr)
 {
     int flags;
 
@@ -616,10 +617,27 @@ int soundLoad(Sound* sound, char* filePath)
         return gSoundLastError;
     }
 
-    sound->io.fd = sound->io.open(gSoundFileNameMangler(filePath), &(sound->rate));
+    char* mangledFilePath = gSoundFileNameMangler(filePath);
+
+    AudioFileInfo openInfo = {
+        sound->channels,
+        sound->rate,
+        sound->bitsPerSample,
+    };
+    bool isMemoryBacked = (sound->type & SOUND_TYPE_MEMORY) != 0;
+
+    sound->io.fd = sound->io.open(mangledFilePath, &openInfo, &isMemoryBacked);
     if (sound->io.fd == -1) {
         gSoundLastError = SOUND_FILE_NOT_FOUND;
         return gSoundLastError;
+    }
+
+    sound->channels = openInfo.channels;
+    sound->rate = openInfo.sampleRate;
+    sound->bitsPerSample = openInfo.bitsPerSample;
+    if (isMemoryBacked) {
+        sound->type &= ~SOUND_TYPE_STREAMING;
+        sound->type |= SOUND_TYPE_MEMORY;
     }
 
     return _preloadBuffers(sound);
@@ -967,7 +985,7 @@ int soundGetDuration(Sound* sound)
         return gSoundLastError;
     }
 
-    int bytesPerSec = sound->bitsPerSample / 8 * sound->rate;
+    int bytesPerSec = sound->bitsPerSample / 8 * sound->channels * sound->rate;
     int v3 = sound->fileSize;
     int v4 = v3 % bytesPerSec;
     int result = v3 / bytesPerSec;

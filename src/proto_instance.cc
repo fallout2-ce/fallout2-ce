@@ -17,6 +17,7 @@
 #include "game_sound.h"
 #include "geometry.h"
 #include "interface.h"
+#include "interpreter_extra.h"
 #include "item.h"
 #include "map.h"
 #include "message.h"
@@ -624,34 +625,51 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
     Rect updatedRect;
     int fid;
     int appearanceUpdateType = 0;
+    InvenSlot slot = InvenSlot::Armor;
+    bool hasSlot = false;
+
     if (critterGetItem2(critter) == item) {
-        if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
-            fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
-            objectSetFid(critter, fid, &updatedRect);
-            appearanceUpdateType = 2;
-        } else {
-            appearanceUpdateType = 1;
-        }
+        slot = InvenSlot::RightHand;
+        hasSlot = true;
     } else if (critterGetItem1(critter) == item) {
-        if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
-            fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
-            objectSetFid(critter, fid, &updatedRect);
-            appearanceUpdateType = 2;
-        } else {
-            appearanceUpdateType = 1;
-        }
+        slot = InvenSlot::LeftHand;
+        hasSlot = true;
     } else if (critterGetArmor(critter) == item) {
-        if (critter == gDude) {
-            int defaultFid = 1;
+        slot = InvenSlot::Armor;
+        hasSlot = true;
+    }
 
-            Proto* proto;
-            if (protoGetProto(0x1000000, &proto) != -1) {
-                defaultFid = proto->fid;
+    if (hasSlot) {
+        scriptHooks_InvenWield(critter, item, slot, 0, 1);
+        if (slot == InvenSlot::RightHand) {
+            if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
+                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
+                objectSetFid(critter, fid, &updatedRect);
+                appearanceUpdateType = 2;
+            } else {
+                appearanceUpdateType = 1;
             }
+        } else if (slot == InvenSlot::LeftHand) {
+            if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
+                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
+                objectSetFid(critter, fid, &updatedRect);
+                appearanceUpdateType = 2;
+            } else {
+                appearanceUpdateType = 1;
+            }
+        } else if (slot == InvenSlot::Armor) {
+            if (critter == gDude) {
+                int defaultFid = 1;
 
-            fid = buildFid(OBJ_TYPE_CRITTER, defaultFid, FID_ANIM_TYPE(critter->fid), (critter->fid & 0xF000) >> 12, critter->rotation);
-            objectSetFid(critter, fid, &updatedRect);
-            appearanceUpdateType = 3;
+                Proto* proto;
+                if (protoGetProto(0x1000000, &proto) != -1) {
+                    defaultFid = proto->fid;
+                }
+
+                fid = buildFid(OBJ_TYPE_CRITTER, defaultFid, FID_ANIM_TYPE(critter->fid), (critter->fid & 0xF000) >> 12, critter->rotation);
+                objectSetFid(critter, fid, &updatedRect);
+                appearanceUpdateType = 3;
+            }
         }
     }
 

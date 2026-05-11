@@ -98,6 +98,9 @@ static char* gStatValueDescriptions[PRIMARY_STAT_RANGE];
 // 0x6681AC
 static int gPcStatValues[PC_STAT_COUNT];
 
+static int unspentApBonus = 4;
+static int unspentApPerkBonus = 4;
+
 // 0x4AED70
 int statsInit()
 {
@@ -141,6 +144,7 @@ int statsReset()
 {
     // NOTE: Uninline.
     pcStatsReset();
+    statResetUnspentApBonuses();
 
     return 0;
 }
@@ -178,6 +182,32 @@ int statsSave(File* stream)
     return 0;
 }
 
+void statResetUnspentApBonuses()
+{
+    unspentApBonus = 4;
+    unspentApPerkBonus = 4;
+}
+
+void statSetUnspentApBonus(int multiplier)
+{
+    unspentApBonus = multiplier;
+}
+
+int statGetUnspentApBonus()
+{
+    return unspentApBonus;
+}
+
+void statSetUnspentApPerkBonus(int multiplier)
+{
+    unspentApPerkBonus = multiplier;
+}
+
+int statGetUnspentApPerkBonus()
+{
+    return unspentApPerkBonus;
+}
+
 // 0x4AEF48
 int critterGetStat(Object* critter, int stat)
 {
@@ -206,8 +236,7 @@ int critterGetStat(Object* critter, int stat)
         case STAT_ARMOR_CLASS:
             if (isInCombat()) {
                 if (_combat_whose_turn() != critter) {
-                    int actionPointsMultiplier = 1;
-                    int hthEvadeBonus = 0;
+                    int armorClassBonus = critter->data.critter.combat.ap * unspentApBonus;
 
                     if (critter == gDude) {
                         if (perkHasRank(gDude, PERK_HTH_EVADE)) {
@@ -234,13 +263,12 @@ int critterGetStat(Object* critter, int stat)
                             }
 
                             if (!hasWeapon) {
-                                actionPointsMultiplier = 2;
-                                hthEvadeBonus = skillGetValue(gDude, SKILL_UNARMED) / 12;
+                                armorClassBonus += critter->data.critter.combat.ap * perkGetRank(gDude, PERK_HTH_EVADE) * unspentApPerkBonus;
+                                value += skillGetValue(gDude, SKILL_UNARMED) / 12;
                             }
                         }
                     }
-                    value += hthEvadeBonus;
-                    value += critter->data.critter.combat.ap * actionPointsMultiplier;
+                    value += armorClassBonus / 4;
                 }
             }
             break;

@@ -119,11 +119,6 @@ bool gameConfigInit(bool isMapper, int argc, char** argv)
 
     configRead(&gGameConfig, gGameConfigFilePath, false);
 
-    // Init debug mode ASAP to catch early debug messages.
-    char* debugMode;
-    configGetString(&gGameConfig, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_MODE_KEY, &debugMode);
-    debugModeInit(debugMode);
-
     debugPrint("Game config loaded from %s.\n", gGameConfigFilePath);
 
     if (!isMapper && gameConfigMigrateFromF2Res(gGameConfigFilePath, &gGameConfig)) {

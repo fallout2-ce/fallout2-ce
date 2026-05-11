@@ -43,7 +43,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Combat / Knockback | set_weapon_knockback<br>set_target_knockback<br>set_attacker_knockback<br>remove_weapon_knockback<br>remove_target_knockback<br>remove_attacker_knockback | not implemented | - |
 | Maps and encounters | in_world_map<br>force_encounter<br>force_encounter_with_flags<br>set_map_time_multi<br>get/set_map_enter_position<br>exec_map_update_scripts<br>get/set_terrain_name<br>set_town_title<br>get/set_can_rest_on_map<br>set_rest_heal_time<br>set_rest_mode<br>set_worldmap_heal_time | implemented: in_world_map, force_encounter, force_encounter_with_flags, set_map_time_multi | - |
 | Maps and encounters / Worldmap | get_world_map_x/y_pos<br>set_world_map_pos | ✅ | - |
-| Audio | eax_available<br>set_eax_environment<br>play_sfall_sound<br>stop_sfall_sound | not implemented | *eax* opcodes will not be implemented |
+| Audio | play_sfall_sound<br>stop_sfall_sound | ✅ | `play_sfall_sound` currently supports `.acm`, `.wav`, `.ogg` formats, and can load from `.dat` archives. `.mp3` is not yet supported. |
 | Combat / Weapons and ammo | get/set_weapon_ammo_pid<br>get/set_weapon_ammo_count | ✅ | - |
 | Sfall / Version | sfall_ver_major<br>sfall_ver_minor<br>sfall_ver_build | ✅ | CE currently reports `4.3.4` |
 | Utility / Math | log, exponent, round, sqrt, abs, sin, cos, tan, arctan, ceil, ^, floor2, div | ✅ | - |
@@ -72,7 +72,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | INI settings | get_ini_setting<br>get_ini_string<br>get_ini_section<br>get_ini_sections<br>get_ini_config<br>get_ini_config_db<br>set_ini_setting | ✅ except get_ini_config, get_ini_config_db | `modified_ini` is intentionally omitted as deprecated. |
 | Objects and scripts | set_self<br>set_dude_obj<br>real_dude_obj<br>remove_script<br>get/set_script<br>obj_is_carrying_obj<br>loot_obj<br>dialog_obj<br>obj_under_cursor<br>get/set_object_data<br>get/set_flags<br>set_unique_id<br>set_scr_name<br>obj_is_openable<br>get/set_proto_data<br>get_object_ai_data | implemented: set_self, get/set/remove_script, obj_is_carrying_obj, loot_obj, dialog_obj, obj_under_cursor, get_object_data, get_flags, set_flags, obj_is_openable, get_proto_data, set_proto_data | - |
 | Other / Game management | set_movie_path<br>stop/resume_game<br>mark_movie_played<br>game_loaded<br>get_game_mode<br>get_uptime<br>signal_close_game | implemented: game_loaded, get_game_mode, get_uptime, signal_close_game | - |
-| Gameplay tweaks | set_pickpocket_max<br>set_hit_chance_max<br>set_xp_mod<br>set_critter_hit_chance_mod<br>set_base_hit_chance_mod<br>set_hp_per_level_mod<br>gdialog_get_barter_mod<br>get/set_unspent_ap_bonus<br>get/<br>set_base_pickpocket_mod<br>set_critter_pickpocket_mod<br>get/set_inven_ap_cost<br>set_drugs_data<br>get_kill_counter<br>mod_kill_counter<br>set_pipboy_available | implemented: gdialog_get_barter_mod | - |
+| Gameplay tweaks | set_pickpocket_max<br>set_hit_chance_max<br>set_xp_mod<br>set_critter_hit_chance_mod<br>set_base_hit_chance_mod<br>set_hp_per_level_mod<br>gdialog_get_barter_mod<br>get/set_unspent_ap_bonus<br>get/set_unspent_ap_perk_bonus<br>set_base_pickpocket_mod<br>set_critter_pickpocket_mod<br>get/set_inven_ap_cost<br>set_drugs_data<br>get_kill_counter<br>mod_kill_counter<br>set_pipboy_available | implemented: gdialog_get_barter_mod, get/set_unspent_ap{_perk}_bonus, get/set_inven_ap_cost | - |
 | NPCs | inc_npc_level<br>get_npc_level<br>npc_engine_level_up | not implemented | - |
 | Other | get_year<br>set_dm/df_model<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>hero_select_win<br>get_light_level<br>message_str_game<br>sneak_success<br>create_spatial<br>unwield_slot<br>add_g_timer_event<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br>remove_timer_event<br>spatial_radius | implemented: get_year, active_hand, toggle_active_hand, get_light_level, message_str_game, add_extra_msg_file, metarule_exist | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. |
 
@@ -98,11 +98,11 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | ✅ | - |
 | UseSkill | `HOOK_USESKILL` | 🚫 | - |
-| Steal | `HOOK_STEAL` | 🚫 | Et tu |
+| Steal | `HOOK_STEAL` | ✅ | - |
 | WithinPerception | `HOOK_WITHINPERCEPTION` | ✅ | - |
 | InventoryMove | `HOOK_INVENTORYMOVE` | ✅ | - |
-| InvenWield | `HOOK_INVENWIELD` | 🚫 | - |
-| AdjustFID | `HOOK_ADJUSTFID` | 🚫 | - |
+| InvenWield | `HOOK_INVENWIELD` | ✅ | - |
+| AdjustFID | `HOOK_ADJUSTFID` | ✅ | Second hook arg currently matches the first because CE has no internal FID modifiers like Hero Appearance. |
 | CombatTurn | `HOOK_COMBATTURN` | ✅ | - |
 | StdProcedure | `HOOK_STDPROCEDURE` | ✅ | - |
 | StdProcedureEnd | `HOOK_STDPROCEDURE_END` | ✅ | - |
@@ -124,5 +124,5 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | AdjustRads | `HOOK_ADJUSTRADS` | 🚫 | (maybe) |
 | RollCheck | `HOOK_ROLLCHECK` | 🚫 | - |
 | BestWeapon | `HOOK_BESTWEAPON` | 🚫 | - |
-| CanUseWeapon | `HOOK_CANUSEWEAPON` | 🚫 | - |
+| CanUseWeapon | `HOOK_CANUSEWEAPON` | ✅ | - |
 | BuildSfxWeapon | `HOOK_BUILDSFXWEAPON` | 🚫 | - |

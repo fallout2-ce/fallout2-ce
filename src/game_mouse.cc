@@ -2279,7 +2279,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
     int fid = gGameMouseBouncingCursor->fid;
     if (FID_TYPE(fid) == OBJ_TYPE_TILE) {
         int squareTile = squareTileFromScreenXY(x, y, elevation);
-        if (squareTile == -1) {
+        if (squareTile != -1) {
             tile = HEX_GRID_WIDTH * (2 * (squareTile / SQUARE_GRID_WIDTH) + 1) + 2 * (squareTile % SQUARE_GRID_WIDTH) + 1;
             x1 = -8;
             y1 = 13;

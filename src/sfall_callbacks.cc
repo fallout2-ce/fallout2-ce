@@ -3,7 +3,10 @@
 #include "content_config.h"
 #include "display_monitor.h"
 #include "interface.h"
+#include "inventory.h"
+#include "script_sound.h"
 #include "sfall_script_hooks.h"
+#include "stat.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -25,11 +28,15 @@ void sfallOnAfterGameInit()
 
 void sfallOnGameExit()
 {
+    scriptSoundExit();
     return;
 }
 
 void sfallOnGameReset()
 {
+    inventoryResetInvenApCost();
+    scriptSoundReset();
+    statResetUnspentApBonuses();
     return;
 }
 
