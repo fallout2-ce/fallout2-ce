@@ -1,14 +1,15 @@
 #include "datafile.h"
-
-#include <string.h>
-
 #include "color.h"
 #include "db.h"
 #include "memory_manager.h"
 #include "pcx.h"
 #include "platform_compat.h"
+#include <string.h>
 
 namespace fallout {
+
+constexpr size_t DATA_FILE_PALETTE_MAX = 768;
+constexpr size_t INDEXED_PALETTE_MAX = 256;
 
 // 0x5184AC
 DatafileLoader* gDatafileLoader = nullptr;
@@ -17,7 +18,7 @@ DatafileLoader* gDatafileLoader = nullptr;
 DatafileNameMangler* gDatafileNameMangler = datafileDefaultNameManglerImpl;
 
 // 0x56D7E0
-unsigned char gDatafilePalette[768];
+uint8_t gDatafilePalette[DATA_FILE_PALETTE_MAX];
 
 // 0x42EE70
 char* datafileDefaultNameManglerImpl(char* path)
@@ -42,12 +43,12 @@ void datafileSetLoader(DatafileLoader* loader)
 }
 
 // 0x42EE84
-void datafileRemapPixelsRgb8(unsigned char* data, unsigned char* palette, int width, int height)
+void datafileRemapPixelsRgb8(uint8_t* data, uint8_t* palette, int width, int height)
 {
-    unsigned char indexedPalette[256];
+    uint8_t indexedPalette[INDEXED_PALETTE_MAX];
 
     indexedPalette[0] = 0;
-    for (int index = 1; index < 256; index++) {
+    for (int index = 1; index < INDEXED_PALETTE_MAX; index++) {
         // TODO: Check.
         int r = palette[index * 3 + 2] >> 3;
         int g = palette[index * 3 + 1] >> 3;
@@ -65,12 +66,12 @@ void datafileRemapPixelsRgb8(unsigned char* data, unsigned char* palette, int wi
 // NOTE: Unused.
 //
 // 0x42EEF8
-void datafileRemapPixelsRgb6(unsigned char* data, unsigned char* palette, int width, int height)
+void datafileRemapPixelsRgb6(uint8_t* data, uint8_t* palette, int width, int height)
 {
-    unsigned char indexedPalette[256];
+    uint8_t indexedPalette[INDEXED_PALETTE_MAX];
 
     indexedPalette[0] = 0;
-    for (int index = 1; index < 256; index++) {
+    for (int index = 1; index < INDEXED_PALETTE_MAX; index++) {
         // TODO: Check.
         int r = palette[index * 3 + 2] >> 1;
         int g = palette[index * 3 + 1] >> 1;
@@ -86,7 +87,7 @@ void datafileRemapPixelsRgb6(unsigned char* data, unsigned char* palette, int wi
 }
 
 // 0x42EF60
-unsigned char* datafileReadRaw(char* path, int* widthPtr, int* heightPtr)
+uint8_t* datafileReadRaw(char* path, int* widthPtr, int* heightPtr)
 {
     char* mangledPath = gDatafileNameMangler(path);
     char* dot = strrchr(mangledPath, '.');
@@ -104,9 +105,9 @@ unsigned char* datafileReadRaw(char* path, int* widthPtr, int* heightPtr)
 }
 
 // 0x42EFCC
-unsigned char* datafileRead(char* path, int* widthPtr, int* heightPtr)
+uint8_t* datafileRead(char* path, int* widthPtr, int* heightPtr)
 {
-    unsigned char* imageData = datafileReadRaw(path, widthPtr, heightPtr);
+    uint8_t* imageData = datafileReadRaw(path, widthPtr, heightPtr);
     if (imageData != nullptr) {
         datafileRemapPixelsRgb8(imageData, gDatafilePalette, *widthPtr, *heightPtr);
     }
@@ -116,11 +117,11 @@ unsigned char* datafileRead(char* path, int* widthPtr, int* heightPtr)
 // NOTE: Unused
 //
 // 0x42EFF4
-unsigned char* datafileLoadPalette(char* path)
+uint8_t* datafileLoadPalette(char* path)
 {
     int width;
     int height;
-    unsigned char* imageData = datafileReadRaw(path, &width, &height);
+    uint8_t* imageData = datafileReadRaw(path, &width, &height);
     if (imageData != nullptr) {
         internal_free_safe(imageData, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 148
         return gDatafilePalette;
@@ -132,23 +133,23 @@ unsigned char* datafileLoadPalette(char* path)
 // NOTE: Unused.
 //
 // 0x42F024
-void datafilePackUntilZero(unsigned char* data, int* widthPtr, int* heightPtr)
+void datafilePackUntilZero(uint8_t* data, int* widthPtr, int* heightPtr)
 {
     int width = *widthPtr;
     int height = *heightPtr;
-    unsigned char* compactDataWritePtr = (unsigned char*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 157
+    uint8_t* compactDataWritePtr = (uint8_t*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 157
 
     // NOTE: Original code does not initialize `x`.
     int y = 0;
     int x = 0;
-    unsigned char* rowStart = data;
+    uint8_t* rowStart = data;
 
     for (y = 0; y < height; y++) {
         if (*rowStart == 0) {
             break;
         }
 
-        unsigned char* currentPixel = rowStart;
+        uint8_t* currentPixel = rowStart;
         for (x = 0; x < width; x++) {
             if (*currentPixel == 0) {
                 break;
@@ -165,7 +166,7 @@ void datafilePackUntilZero(unsigned char* data, int* widthPtr, int* heightPtr)
 }
 
 // 0x42F0E4
-unsigned char* datafileGetPalette()
+uint8_t* datafileGetPalette()
 {
     return gDatafilePalette;
 }
@@ -173,7 +174,7 @@ unsigned char* datafileGetPalette()
 // NOTE: Unused.
 //
 // 0x42F0EC
-unsigned char* datafileLoad(char* path, int* sizePtr)
+uint8_t* datafileLoad(char* path, int* sizePtr)
 {
     const char* mangledPath = gDatafileNameMangler(path);
     File* stream = fileOpen(mangledPath, "rb");
@@ -182,7 +183,7 @@ unsigned char* datafileLoad(char* path, int* sizePtr)
     }
 
     int size = fileGetSize(stream);
-    unsigned char* data = (unsigned char*)internal_malloc_safe(size, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 185
+    uint8_t* data = (uint8_t*)internal_malloc_safe(size, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 185
     if (data == nullptr) {
         // NOTE: This code is unreachable, internal_malloc_safe never fails.
         // Otherwise it leaks stream.
