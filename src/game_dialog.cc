@@ -295,7 +295,7 @@ static Rect _backgrndRects[8] = {
 
 static bool gameDialogShouldUseHrArt()
 {
-    return settings.ui.enable_dialog_border
+    return settings.ui.dialog_border
         && (screenGetWidth() > GAME_DIALOG_WINDOW_WIDTH || screenGetHeight() > GAME_DIALOG_WINDOW_HEIGHT);
 }
 

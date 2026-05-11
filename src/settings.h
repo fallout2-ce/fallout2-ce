@@ -69,9 +69,12 @@ struct UISettings {
     bool display_karma_changes = false;
     bool display_bonus_damage = false;
     bool numbers_in_dialogue = false;
-    bool enable_dialog_border = true;
+
+    // Whether to use high resolution art for dialog borders.
+    bool dialog_border = true;
     int auto_quick_save = 0;
     bool enable_high_resolution_stencil = true;
+    // Maximum number of columns in inventory and loot windows
     int inventory_columns = 1;
 };
 
