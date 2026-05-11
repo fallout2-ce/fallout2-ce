@@ -1262,13 +1262,11 @@ int actionPickUp(Object* critter, Object* item)
     return reg_anim_end();
 }
 
-// TODO: Looks like the name is a little misleading, container can only be a
-// critter, which is enforced by this function as well as at the call sites.
-// Used to loot corpses, so probably should be something like actionLootCorpse.
-// Check if it can be called with a living critter.
+// This is primarily used to look critters, namely corpses.  I don't believe it can
+// be called with a living creature, but am not 100% certain.
 //
-// 0x4123E8
-int _action_loot_container(Object* critter, Object* container)
+// 0x4123E8 was _action_loot_container
+int _action_loot_critter(Object* critter, Object* container)
 {
     if (FID_TYPE(container->fid) != OBJ_TYPE_CRITTER) {
         return -1;

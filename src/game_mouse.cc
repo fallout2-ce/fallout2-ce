@@ -26,6 +26,7 @@
 #include "kb.h"
 #include "mouse.h"
 #include "object.h"
+#include "party_member.h"
 #include "proto.h"
 #include "proto_instance.h"
 #include "settings.h"
@@ -328,8 +329,22 @@ static int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect);
 static int gameMouseHandleScrolling(int x, int y, int cursor);
 static int objectIsDoor(Object* object);
 static bool gameMouseClickOnInterfaceBar();
+static bool gameMouseLongPressUsesLootActionForCritter(Object* object);
 
 static void customMouseModeFrmsInit();
+
+static bool gameMouseLongPressUsesLootActionForCritter(Object* object)
+{
+    constexpr int kExpandedActionMenuFrmHeight = 302;
+
+    return settings.qol.party_trade_from_menu
+        && gGameMouseActionMenuFrmHeight >= kExpandedActionMenuFrmHeight
+        && object != nullptr
+        && object != gDude
+        && !isInCombat()
+        && objectIsPartyMember(object)
+        && _obj_action_can_talk_to(object);
+}
 
 // 0x44B2B0 gmouse_init
 int gameMouseInit()
@@ -995,7 +1010,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                                 actionTalk(gDude, targetObj);
                             }
                         } else {
-                            _action_loot_container(gDude, targetObj);
+                            _action_loot_critter(gDude, targetObj);
                         }
                     }
                     break;
@@ -1089,7 +1104,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         Object* targetObj = gameMouseGetObjectUnderCursor(-1, true, gElevation);
         if (targetObj != nullptr) {
             int actionMenuItemsCount = 0;
-            int actionMenuItems[6];
+            int actionMenuItems[GAME_MOUSE_ACTION_MENU_ITEM_COUNT - 1];
             switch (FID_TYPE(targetObj->fid)) {
             case OBJ_TYPE_ITEM:
                 actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
@@ -1104,9 +1119,15 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                 if (targetObj == gDude) {
                     actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_ROTATE;
                 } else {
+                    bool usesPartyTradeAction = gameMouseLongPressUsesLootActionForCritter(targetObj);
+
                     if (_obj_action_can_talk_to(targetObj)) {
                         if (!isInCombat()) {
                             actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_TALK;
+                        }
+
+                        if (usesPartyTradeAction) {
+                            actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                         }
                     } else {
                         if (!critterFlagCheck(targetObj->pid, CRITTER_NO_STEAL)) {
@@ -1219,7 +1240,12 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                             _action_use_an_object(gDude, targetObj);
                             break;
                         case OBJ_TYPE_CRITTER:
-                            _action_loot_container(gDude, targetObj);
+                            if (gameMouseLongPressUsesLootActionForCritter(targetObj)) {
+                                // party member: trade via steal skill
+                                actionUseSkill(gDude, targetObj, SKILL_STEAL);
+                            } else {
+                                _action_loot_critter(gDude, targetObj);
+                            }
                             break;
                         default:
                             actionPickUp(gDude, targetObj);
