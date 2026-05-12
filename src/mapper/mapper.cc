@@ -1222,6 +1222,7 @@ void edit_mapper()
 
     // TODO: this call aren't in original code, figure out how it worked without
     interfaceBarHide();
+
     while (true) {
         sharedFpsLimiter.mark();
         int keyCode = inputGetInput();
@@ -1238,21 +1239,19 @@ void edit_mapper()
             gameHandleKey(keyCode, false);
 
             if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-                // TODO: this logic is incorrect
                 if (!map_entered) {
                     break;
                 }
                 keyCode = kBtnPlayMode;
                 _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
-                mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
             } else {
                 scriptsHandleRequests();
                 mapHandleTransition();
-            }
 
-            renderPresent();
-            sharedFpsLimiter.throttle();
-            continue;
+                renderPresent();
+                sharedFpsLimiter.throttle();
+                continue;
+            }
         }
 
         // ----------------------------------------------------------------
@@ -2677,7 +2676,6 @@ int mapper_mark_exit_grid()
 static void mapper_remove_tmp_map_files()
 {
     remove(mapBuildPath(tmp_map_name));
-    remove(mapBuildPath("TMP$MAP#.MAP"));
     remove(mapBuildPath("TMP$MAP#.CFG"));
     MapDirErase("MAPS\\", "SAV");
 }
@@ -2808,8 +2806,8 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
     tileScrollLimitingDisable();
 
     // Match the original: if click-to-scroll was on during play, force it off on exit.
-    if (_gmouse_get_click_to_scroll() == 1) {
-        _gmouse_set_click_to_scroll(0);
+    if (_gmouse_get_click_to_scroll()) {
+        _gmouse_set_click_to_scroll(false);
     }
 
     gameMouseSetMode(GAME_MOUSE_MODE_MOVE);

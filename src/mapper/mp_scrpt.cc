@@ -262,7 +262,7 @@ int scr_choose(int scriptType)
                 result = foundIndex | (type << 24);
             }
         } else if (selection == -1) {
-            char typedName[14] = {};
+            char typedName[14] = { };
             _win_get_str(typedName, 13, "Type in Script Name", 100, 50);
             compat_strupr(typedName);
 
@@ -330,26 +330,31 @@ int map_scr_add_spatial(int tile, int elevation)
     return 0;
 }
 
+// 1-based script index, 0 means no script
 void map_set_script(int scriptIndex)
 {
-    if (scriptIndex == -1) {
-        if (gMapSid != -1) {
-            scriptRemove(gMapSid);
-            gMapSid = -1;
-        }
-        gMapHeader.scriptIndex = -1;
-    } else {
-        int idx = scriptIndex - 1;
-        if (gMapSid == -1) {
-            scriptAdd(&gMapSid, SCRIPT_TYPE_SYSTEM);
-        }
-        Script* script;
-        if (scriptGetScript(gMapSid, &script) != -1) {
-            script->index = idx;
-            gMapHeader.scriptIndex = idx;
-            _scr_find_str_run_info(idx, nullptr, gMapSid);
-        }
+    int newIndex = scriptIndex < 0 ? 0 : scriptIndex;
+    gMapHeader.scriptIndex = newIndex;
+    if (gMapSid != -1) {
+        scriptRemove(gMapSid);
+        gMapSid = -1;
     }
+    if (newIndex <= 0 || scriptAdd(&gMapSid, SCRIPT_TYPE_SYSTEM) == -1) return;
+
+    Object* obj;
+    int fid = buildFid(OBJ_TYPE_MISC, 12, 0, 0, 0);
+    objectCreateWithFidPid(&obj, fid, -1);
+    obj->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
+    objectSetLocation(obj, 1, 0, nullptr);
+    obj->sid = gMapSid;
+    scriptSetFixedParam(gMapSid, (gMapHeader.flags & 1) == 0);
+    Script* script;
+    scriptGetScript(gMapSid, &script);
+    script->index = gMapHeader.scriptIndex - 1;
+    script->flags |= SCRIPT_FLAG_NO_SAVE;
+    obj->id = scriptsNewObjectId();
+    script->ownerId = obj->id;
+    script->owner = obj;
 }
 
 void map_show_script()

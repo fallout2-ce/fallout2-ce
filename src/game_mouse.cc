@@ -53,16 +53,16 @@ static constexpr int REFRESH_BOTH_CURSORS = REFRESH_BOUNCING_CURSOR | REFRESH_HE
 static bool gGameMouseInitialized = false;
 
 // 0x518BFC
-static int _gmouse_enabled = 0;
+static bool _gmouse_enabled = false;
 
 // 0x518C00
 static int _gmouse_mapper_mode = 0;
 
 // 0x518C04
-static int _gmouse_click_to_scroll = 0;
+static bool _gmouse_click_to_scroll = false;
 
 // 0x518C08
-static int _gmouse_scrolling_enabled = 1;
+static bool _gmouse_scrolling_enabled = true;
 
 // 0x518C0C
 static int gGameMouseCursor = MOUSE_CURSOR_NONE;
@@ -343,7 +343,7 @@ int gameMouseInit()
     }
 
     gGameMouseInitialized = true;
-    _gmouse_enabled = 1;
+    _gmouse_enabled = true;
 
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
@@ -368,11 +368,11 @@ int gameMouseReset()
     // NOTE: Uninline.
     _gmouse_enable();
 
-    _gmouse_scrolling_enabled = 1;
+    _gmouse_scrolling_enabled = true;
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
     gGameMouseAnimatedCursorNextFrame = 0;
     gGameMouseAnimatedCursorLastUpdateTimestamp = 0;
-    _gmouse_clicked_on_edge = 0;
+    _gmouse_clicked_on_edge = false;
 
     return 0;
 }
@@ -396,7 +396,7 @@ void gameMouseExit()
     }
     gGameMouseCursorFrmHandle = INVALID_CACHE_ENTRY;
 
-    _gmouse_enabled = 0;
+    _gmouse_enabled = false;
     gGameMouseInitialized = false;
     gGameMouseCursor = -1;
 }
@@ -407,8 +407,8 @@ void _gmouse_enable()
     if (!_gmouse_enabled) {
         gGameMouseCursor = -1;
         gameMouseSetCursor(MOUSE_CURSOR_NONE);
-        _gmouse_scrolling_enabled = 1;
-        _gmouse_enabled = 1;
+        _gmouse_scrolling_enabled = true;
+        _gmouse_enabled = true;
         _gmouse_bk_last_cursor = -1;
     }
 }
@@ -418,12 +418,12 @@ void _gmouse_disable(int allowScrolling)
 {
     if (_gmouse_enabled) {
         gameMouseSetCursor(MOUSE_CURSOR_NONE);
-        _gmouse_enabled = 0;
+        _gmouse_enabled = false;
 
         if (allowScrolling & 1) {
-            _gmouse_scrolling_enabled = 1;
+            _gmouse_scrolling_enabled = true;
         } else {
-            _gmouse_scrolling_enabled = 0;
+            _gmouse_scrolling_enabled = false;
         }
     }
 }
@@ -431,13 +431,13 @@ void _gmouse_disable(int allowScrolling)
 // 0x44B4CC
 void _gmouse_enable_scrolling()
 {
-    _gmouse_scrolling_enabled = 1;
+    _gmouse_scrolling_enabled = true;
 }
 
 // 0x44B4D8
 void _gmouse_disable_scrolling()
 {
-    _gmouse_scrolling_enabled = 0;
+    _gmouse_scrolling_enabled = false;
 }
 
 // NOTE: Inlined.
@@ -449,13 +449,13 @@ bool gmouse_scrolling_is_enabled()
 }
 
 // 0x44B504
-int _gmouse_get_click_to_scroll()
+bool _gmouse_get_click_to_scroll()
 {
     return _gmouse_click_to_scroll;
 }
 
 // gmouse_set_click_to_scroll
-void _gmouse_set_click_to_scroll(int value)
+void _gmouse_set_click_to_scroll(bool value)
 {
     if (value != _gmouse_click_to_scroll) {
         _gmouse_click_to_scroll = value;
