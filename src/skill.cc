@@ -1104,7 +1104,8 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         catchRoll = randomRoll(catchChance, 0, &howMuch);
     }
 
-    bool skipMessages = settings.qol.party_trade_from_menu && objectIsPartyMember(target);
+    // CE: skip "You steal/plant the..." messages when using steal to trade with companions
+    bool skipMessages = objectIsPartyMember(target);
     MessageListItem messageListItem;
     char text[60];
 

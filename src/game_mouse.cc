@@ -338,7 +338,7 @@ static bool gameMouseLongPressUsesLootActionForCritter(Object* object)
     constexpr int kExpandedActionMenuFrmHeight = 302;
 
     return settings.qol.party_trade_from_menu
-        && gGameMouseActionMenuFrmHeight >= kExpandedActionMenuFrmHeight
+        && gGameMouseActionMenuFrmHeight >= kExpandedActionMenuFrmHeight // make sure we can accomodate 7 items in the action menu, otherwise the loot option won't be visible
         && object != nullptr
         && object != gDude
         && !isInCombat()
