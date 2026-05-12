@@ -238,7 +238,7 @@ static int questDescriptionCompare(const void* a1, const void* a2);
 static int holodiskInit();
 static void holodiskFree();
 
-// 0x496FC0
+// 0x496FC0 pip_rect
 const Rect gPipboyWindowContentRect = {
     PIPBOY_WINDOW_CONTENT_VIEW_X,
     PIPBOY_WINDOW_CONTENT_VIEW_Y,
@@ -246,7 +246,7 @@ const Rect gPipboyWindowContentRect = {
     PIPBOY_WINDOW_CONTENT_VIEW_Y + PIPBOY_WINDOW_CONTENT_VIEW_HEIGHT,
 };
 
-// 0x496FD0
+// 0x496FD0 pipgrphs
 const int gPipboyFrmIds[PIPBOY_FRM_COUNT] = {
     8,
     9,
@@ -261,27 +261,27 @@ const int gPipboyFrmIds[PIPBOY_FRM_COUNT] = {
     226,
 };
 
-// 0x51C128
+// 0x51C128 quests
 QuestDescription* gQuestDescriptions = nullptr;
 
-// 0x51C12C
+// 0x51C12C quest_count
 int gQuestsCount = 0;
 
-// 0x51C130
+// 0x51C130 holodisks
 HolodiskDescription* gHolodiskDescriptions = nullptr;
 
-// 0x51C134
+// 0x51C134 holodisks_count
 int gHolodisksCount = 0;
 
 // Number of rest options available.
 //
-// 0x51C138
+// 0x51C138 currentAlarmTypeCount
 int gPipboyRestOptionsCount = PIPBOY_REST_DURATION_COUNT;
 
-// 0x51C13C
+// 0x51C13C bk_enable_5
 bool gPipboyWindowIsoWasEnabled = false;
 
-// 0x51C140
+// 0x51C140 SpclDate
 const HolidayDescription gHolidayDescriptions[HOLIDAY_COUNT] = {
     { 1, 1, 100 },
     { 2, 14, 101 },
@@ -293,7 +293,7 @@ const HolidayDescription gHolidayDescriptions[HOLIDAY_COUNT] = {
     { 12, 25, 107 },
 };
 
-// 0x51C170
+// 0x51C170 PipFnctn
 PipboyRenderProc* _PipFnctn[5] = {
     pipboyWindowHandleStatus,
     pipboyWindowHandleAutomaps,
@@ -302,76 +302,76 @@ PipboyRenderProc* _PipFnctn[5] = {
     pipboyHandleAlarmClock,
 };
 
-// 0x664338
+// 0x664338 pipmesg
 MessageListItem gPipboyMessageListItem;
 
 // pipboy.msg
 //
-// 0x664348
+// 0x664348 pipboy_message_file
 MessageList gPipboyMessageList = { 0, nullptr };
 
-// 0x664350
+// 0x664350 sortlist
 STRUCT_664350 _sortlist[24];
 
 // quests.msg
 //
-// 0x664410
+// 0x664410 quest_message_file
 MessageList gQuestsMessageList;
 
-// 0x664418
+// 0x664418 statcount
 int gPipboyQuestLocationsCount;
 
-// 0x66441C
+// 0x66441C scrn_buf
 unsigned char* gPipboyWindowBuffer;
 
-// 0x66444C
+// 0x66444C holocount
 int gPipboyWindowHolodisksCount;
 
-// 0x664450
+// 0x664450 mouse_y
 int gPipboyMouseY;
 
-// 0x664454
+// 0x664454 mouse_x
 int gPipboyMouseX;
 
-// 0x664458
+// 0x664458 wait_time
 unsigned int gPipboyLastEventTimestamp;
 
 // Index of the last page when rendering holodisk content.
 //
-// 0x66445C
+// 0x66445C holopages
 int gPipboyHolodiskLastPage;
 
-// 0x664460
+// 0x664460 HotLines
 int _HotLines[22];
 
-// 0x6644B8
+// 0x6644B8 button
 int _button;
 
-// 0x6644BC
+// 0x6644BC old_mouse_x
 int gPipboyPreviousMouseX;
 
-// 0x6644C0
+// 0x6644C0 old_mouse_y
 int gPipboyPreviousMouseY;
 
-// 0x6644C4
+// 0x6644C4 pip_win
 int gPipboyWindow;
 
-// 0x6644F4
+// 0x6644F4 holodisk
 int _holodisk;
 
-// 0x6644F8
+// 0x6644F8 hot_line_count
 int gPipboyWindowButtonCount;
 
-// 0x6644FC
+// 0x6644FC savefont
 int gPipboyWindowOldFont;
 
-// 0x664500
+// 0x664500 proc_bail_flag
 bool _proc_bail_flag;
 
-// 0x664504
+// 0x664504 amlst_mode
 int main_sub_mode;
 
-// 0x664508
+// 0x664508 crnt_func
 int gPipboyTab;
 
 // automap location count
@@ -383,16 +383,16 @@ int _map_count;
 // adjusted index for pagination
 int realIndex;
 
-// 0x664510
+// 0x664510 hot_line_start
 int gPipboyWindowButtonStart;
 
-// 0x664514
+// 0x664514 cursor_line
 int gPipboyCurrentLine;
 
-// 0x664518
+// 0x664518 rest_time
 int _rest_time;
 
-// 0x66451C
+// 0x66451C amcty_indx
 int _amcty_indx;
 
 // current page for holodisk entry pagination
@@ -413,16 +413,16 @@ int _view_page_questlist;
 // current page for main holodisk pagination
 int _view_page_holodisk;
 
-// 0x664524
+// 0x664524 bottom_line
 int gPipboyLinesCount;
 
-// 0x664528
+// 0x664528 hot_back_line
 unsigned char _hot_back_line;
 
-// 0x664529
+// 0x664529 holo_flag
 unsigned char _holo_flag;
 
-// 0x66452A
+// 0x66452A stat_flag
 unsigned char _stat_flag;
 
 void handlePipboyPageNavigation(

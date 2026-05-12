@@ -93,56 +93,56 @@ static void endgameEndingUpdateOverlay();
 //
 // This value does not exceed [ENDGAME_ENDING_SUBTITLES_CAPACITY].
 //
-// 0x518668
+// 0x518668 endgame_subtitle_count
 static int gEndgameEndingSubtitlesLength = 0;
 
 // The number of characters in current subtitles file.
 //
 // This value is used to determine
 //
-// 0x51866C
+// 0x51866C endgame_subtitle_characters
 static int gEndgameEndingSubtitlesCharactersCount = 0;
 
-// 0x518670
+// 0x518670 endgame_current_subtitle
 static int gEndgameEndingSubtitlesCurrentLine = 0;
 
-// 0x518674
+// 0x518674 endgame_maybe_done
 static int _endgame_maybe_done = 0;
 
 // enddeath.txt
 //
-// 0x518678
+// 0x518678 endDeathInfoList
 static EndgameDeathEnding* gEndgameDeathEndings = nullptr;
 
 // The number of death endings in [gEndgameDeathEndings] array.
 //
-// 0x51867C
+// 0x51867C maxEndDeathInfo
 static int gEndgameDeathEndingsLength = 0;
 
 // Base file name for death ending.
 //
 // This value does not include extension.
 //
-// 0x570A90
+// 0x570A90 endDeathSndChoice
 static char gEndgameDeathEndingFileName[40];
 
 // This flag denotes whether speech sound was successfully loaded for
 // the current slide.
 //
-// 0x570AB8
+// 0x570AB8 endgame_voiceover_loaded
 static bool gEndgameEndingVoiceOverSpeechLoaded;
 
-// 0x570ABC
+// 0x570ABC endgame_subtitle_path
 static char gEndgameEndingSubtitlesLocalizedPath[COMPAT_MAX_PATH];
 
 // The flag used to denote voice over speech for current slide has ended.
 //
-// 0x570BC0
+// 0x570BC0 endgame_voiceover_done
 static bool gEndgameEndingSpeechEnded;
 
 // endgame.txt
 //
-// 0x570BC4
+// 0x570BC4 slides
 static EndgameEnding* gEndgameEndings;
 
 // The array of text lines in current subtitles file.
@@ -150,32 +150,32 @@ static EndgameEnding* gEndgameEndings;
 // The length is specified in [gEndgameEndingSubtitlesLength]. It's capacity
 // is [ENDGAME_ENDING_SUBTITLES_CAPACITY].
 //
-// 0x570BC8
+// 0x570BC8 endgame_subtitle_text
 static char** gEndgameEndingSubtitles;
 
-// 0x570BCC
+// 0x570BCC endgame_do_subtitles
 static bool gEndgameEndingSubtitlesEnabled;
 
 // The flag used to denote voice over subtitles for current slide has ended.
 //
-// 0x570BD0
+// 0x570BD0 endgame_subtitle_done
 static bool gEndgameEndingSubtitlesEnded;
 
-// 0x570BD4
+// 0x570BD4 endgame_map_enabled
 static bool _endgame_map_enabled;
 
-// 0x570BD8
+// 0x570BD8 endgame_mouse_state
 static bool _endgame_mouse_state;
 
 // The number of endings in [gEndgameEndings] array.
 //
-// 0x570BDC
+// 0x570BDC num_slides
 static int gEndgameEndingsLength = 0;
 
 // This flag denotes whether subtitles was successfully loaded for
 // the current slide.
 //
-// 0x570BE0
+// 0x570BE0 endgame_subtitle_loaded
 static bool gEndgameEndingVoiceOverSubtitlesLoaded;
 
 // Reference time is a timestamp when subtitle is first displayed.
@@ -183,7 +183,7 @@ static bool gEndgameEndingVoiceOverSubtitlesLoaded;
 // This value is used together with [gEndgameEndingSubtitlesTimings] array to
 // determine when next line needs to be displayed.
 //
-// 0x570BE4
+// 0x570BE4 endgame_subtitle_start_time
 static unsigned int gEndgameEndingSubtitlesReferenceTime;
 
 // The array of timings for each line in current subtitles file.
@@ -191,23 +191,23 @@ static unsigned int gEndgameEndingSubtitlesReferenceTime;
 // The length is specified in [gEndgameEndingSubtitlesLength]. It's capacity
 // is [ENDGAME_ENDING_SUBTITLES_CAPACITY].
 //
-// 0x570BE8
+// 0x570BE8 endgame_subtitle_times
 static unsigned int* gEndgameEndingSubtitlesTimings;
 
 // Font that was current before endgame slideshow window was created.
 //
-// 0x570BEC
+// 0x570BEC endgame_old_font
 static int gEndgameEndingSlideshowOldFont;
 
-// 0x570BF0
+// 0x570BF0 endgame_window_buffer
 static unsigned char* gEndgameEndingSlideshowWindowBuffer;
 
-// 0x570BF4
+// 0x570BF4 endgame_window
 static int gEndgameEndingSlideshowWindow;
 
 static int gEndgameEndingOverlay;
 
-// 0x43F788
+// 0x43F788 endgame_slideshow
 void endgamePlaySlideshow()
 {
     if (endgameEndingSlideshowWindowInit() == -1) {
@@ -230,7 +230,7 @@ void endgamePlaySlideshow()
     endgameEndingSlideshowWindowFree();
 }
 
-// 0x43F810
+// 0x43F810 endgame_movie
 void endgamePlayMovie()
 {
     backgroundSoundDelete();
@@ -257,7 +257,7 @@ void endgamePlayMovie()
     endgameEndingHandleContinuePlaying();
 }
 
-// 0x43F8C4
+// 0x43F8C4 gameOverConfim
 static int endgameEndingHandleContinuePlaying()
 {
     bool isoWasEnabled = isoDisable();
@@ -310,7 +310,7 @@ static int endgameEndingHandleContinuePlaying()
     return rc;
 }
 
-// 0x43FBDC
+// 0x43FBDC endgame_pan_desert
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
     int fid = buildFid(OBJ_TYPE_INTERFACE, 327, 0, 0, 0);
@@ -449,7 +449,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
     }
 }
 
-// 0x440004
+// 0x440004 endgame_display_image
 static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName)
 {
     CacheEntry* backgroundHandle;
@@ -543,7 +543,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
     artUnlock(backgroundHandle);
 }
 
-// 0x43F99C
+// 0x43F99C endgame_init
 static int endgameEndingSlideshowWindowInit()
 {
     if (endgameEndingInit() != 0) {
@@ -624,7 +624,7 @@ static int endgameEndingSlideshowWindowInit()
     return 0;
 }
 
-// 0x43FB28
+// 0x43FB28 endgame_exit
 static void endgameEndingSlideshowWindowFree()
 {
     if (gEndgameEndingSubtitlesEnabled) {
@@ -662,7 +662,7 @@ static void endgameEndingSlideshowWindowFree()
     }
 }
 
-// 0x4401A0
+// 0x4401A0 endgame_load_voiceover
 static void endgameEndingVoiceOverInit(const char* fileBaseName)
 {
     char path[COMPAT_MAX_PATH];
@@ -710,7 +710,7 @@ static void endgameEndingVoiceOverInit(const char* fileBaseName)
 
 // NOTE: This function was inlined at every call site.
 //
-// 0x440324
+// 0x440324 endgame_play_voiceover
 static void endgameEndingVoiceOverReset()
 {
     gEndgameEndingSubtitlesEnded = false;
@@ -727,7 +727,7 @@ static void endgameEndingVoiceOverReset()
 
 // NOTE: This function was inlined at every call site.
 //
-// 0x44035C
+// 0x44035C endgame_stop_voiceover
 static void endgameEndingVoiceOverFree()
 {
     speechDelete();
@@ -736,7 +736,7 @@ static void endgameEndingVoiceOverFree()
     gEndgameEndingVoiceOverSubtitlesLoaded = false;
 }
 
-// 0x440378
+// 0x440378 endgame_load_palette
 static void endgameEndingLoadPalette(int type, int id)
 {
     char fileName[13];
@@ -757,7 +757,7 @@ static void endgameEndingLoadPalette(int type, int id)
     }
 }
 
-// 0x4403F0
+// 0x4403F0 endgame_voiceover_callback
 static void _endgame_voiceover_callback()
 {
     gEndgameEndingSpeechEnded = true;
@@ -765,7 +765,7 @@ static void _endgame_voiceover_callback()
 
 // Loads subtitles file.
 //
-// 0x4403FC
+// 0x4403FC endgame_load_subtitles
 static int endgameEndingSubtitlesLoad(const char* filePath)
 {
     endgameEndingSubtitlesFree();
@@ -806,7 +806,7 @@ static int endgameEndingSubtitlesLoad(const char* filePath)
 
 // Refreshes subtitles.
 //
-// 0x4404EC
+// 0x4404EC endgame_show_subtitles
 static void endgameEndingRefreshSubtitles()
 {
     if (gEndgameEndingSubtitlesLength <= gEndgameEndingSubtitlesCurrentLine) {
@@ -857,7 +857,7 @@ static void endgameEndingRefreshSubtitles()
     }
 }
 
-// 0x4406CC
+// 0x4406CC endgame_clear_subtitles
 static void endgameEndingSubtitlesFree()
 {
     for (int index = 0; index < gEndgameEndingSubtitlesLength; index++) {
@@ -872,13 +872,13 @@ static void endgameEndingSubtitlesFree()
     gEndgameEndingSubtitlesLength = 0;
 }
 
-// 0x440728
+// 0x440728 endgame_movie_callback
 static void _endgame_movie_callback()
 {
     _endgame_maybe_done = 1;
 }
 
-// 0x440734
+// 0x440734 endgame_movie_bk_process
 static void _endgame_movie_bk_process()
 {
     if (_endgame_maybe_done) {
@@ -888,7 +888,7 @@ static void _endgame_movie_bk_process()
     }
 }
 
-// 0x440770
+// 0x440770 endgame_load_slide_info
 static int endgameEndingInit()
 {
     File* stream;
@@ -985,7 +985,7 @@ err:
 
 // NOTE: There are no references to this function. It was inlined.
 //
-// 0x44095C
+// 0x44095C endgame_unload_slide_info
 static void endgameEndingFree()
 {
     if (gEndgameEndings != nullptr) {
@@ -997,7 +997,7 @@ static void endgameEndingFree()
 }
 
 // endgameDeathEndingInit
-// 0x440984
+// 0x440984 endgameDeathEndingInit
 int endgameDeathEndingInit()
 {
     File* stream;
@@ -1105,7 +1105,7 @@ err:
     return -1;
 }
 
-// 0x440BA8
+// 0x440BA8 endgameDeathEndingExit
 int endgameDeathEndingExit()
 {
     if (gEndgameDeathEndings != nullptr) {
@@ -1119,7 +1119,7 @@ int endgameDeathEndingExit()
 }
 
 // endgameSetupDeathEnding
-// 0x440BD0
+// 0x440BD0 endgameSetupDeathEnding
 void endgameSetupDeathEnding(int reason)
 {
     if (!gEndgameDeathEndingsLength) {
@@ -1177,7 +1177,7 @@ void endgameSetupDeathEnding(int reason)
 // Upon return [percentage] is set as a sum of all valid endings' percentages.
 // Always returns 0.
 //
-// 0x440CF4
+// 0x440CF4 endgameSetupInit
 static int endgameDeathEndingValidate(int* percentage)
 {
     *percentage = 0;
@@ -1221,7 +1221,7 @@ static int endgameDeathEndingValidate(int* percentage)
 //
 // This path does not include extension.
 //
-// 0x440D8C
+// 0x440D8C endgameGetDeathEndingFileName
 char* endgameDeathEndingGetFileName()
 {
     if (gEndgameDeathEndingsLength == 0) {

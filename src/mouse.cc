@@ -31,7 +31,7 @@ static void _mouse_clip();
 // - 1: white
 // - 15: black
 //
-// 0x51E250
+// 0x51E250 or_mask
 static unsigned char gMouseDefaultCursor[MOUSE_DEFAULT_CURSOR_SIZE] = {
     // clang-format off
     1,  1,  1,  1,  1,  1,  1, 0,
@@ -45,85 +45,85 @@ static unsigned char gMouseDefaultCursor[MOUSE_DEFAULT_CURSOR_SIZE] = {
     // clang-format on
 };
 
-// 0x51E290
+// 0x51E290 mouse_idling
 static int _mouse_idling = 0;
 
-// 0x51E294
+// 0x51E294 mouse_buf
 static unsigned char* gMouseCursorData = nullptr;
 
-// 0x51E298
+// 0x51E298 mouse_shape
 static unsigned char* _mouse_shape = nullptr;
 
-// 0x51E29C
+// 0x51E29C mouse_fptr
 static unsigned char* _mouse_fptr = nullptr;
 
-// 0x51E2A0
+// 0x51E2A0 mouse_sensitivity
 static double gMouseSensitivity = 1.0;
 
-// 0x51E2AC
+// 0x51E2AC last_buttons
 static int last_buttons = 0;
 
-// 0x6AC790
+// 0x6AC790 mouse_is_hidden
 static bool gCursorIsHidden;
 
-// 0x6AC794
+// 0x6AC794 raw_x
 static int _raw_x;
 
-// 0x6AC798
+// 0x6AC798 mouse_length
 static int gMouseCursorHeight;
 
-// 0x6AC79C
+// 0x6AC79C raw_y
 static int _raw_y;
 
-// 0x6AC7A0
+// 0x6AC7A0 raw_buttons
 static int _raw_buttons;
 
-// 0x6AC7A4
+// 0x6AC7A4 mouse_y
 static int gMouseCursorY;
 
-// 0x6AC7A8
+// 0x6AC7A8 mouse_x
 static int gMouseCursorX;
 
-// 0x6AC7AC
+// 0x6AC7AC mouse_disabled
 static int _mouse_disabled;
 
-// 0x6AC7B0
+// 0x6AC7B0 mouse_buttons
 static int gMouseEvent;
 
-// 0x6AC7B4
+// 0x6AC7B4 mouse_speed
 static unsigned int _mouse_speed;
 
-// 0x6AC7B8
+// 0x6AC7B8 mouse_curr_frame
 static int _mouse_curr_frame;
 
-// 0x6AC7BC
+// 0x6AC7BC have_mouse
 static bool gMouseInitialized;
 
-// 0x6AC7C0
+// 0x6AC7C0 mouse_pitch
 static int gMouseCursorPitch;
 
-// 0x6AC7C4
+// 0x6AC7C4 mouse_width
 static int gMouseCursorWidth;
 
-// 0x6AC7C8
+// 0x6AC7C8 mouse_num_frames
 static int _mouse_num_frames;
 
-// 0x6AC7CC
+// 0x6AC7CC mouse_hoty
 static int _mouse_hoty;
 
-// 0x6AC7D0
+// 0x6AC7D0 mouse_hotx
 static int _mouse_hotx;
 
-// 0x6AC7D4
+// 0x6AC7D4 mouse_idle_start_time
 static unsigned int _mouse_idle_start_time;
 
-// 0x6AC7D8
+// 0x6AC7D8 mouse_blit_trans
 WindowDrawingProc2* _mouse_blit_trans;
 
-// 0x6AC7DC
+// 0x6AC7DC mouse_blit
 WINDOWDRAWINGPROC _mouse_blit;
 
-// 0x6AC7E0
+// 0x6AC7E0 mouse_trans
 static char _mouse_trans;
 
 static int gMouseWheelX = 0;

@@ -27,16 +27,16 @@ static const double kChiSquared95Threshold = 36.42;
 // 0x50D4C2
 static const double kExpectedBucketHits = 4000;
 
-// 0x51C694
+// 0x51C694 iy
 static int _iy = 0;
 
-// 0x6648D0
+// 0x6648D0 iv
 static int _iv[32];
 
-// 0x664950
+// 0x664950 idum
 static int _idum;
 
-// 0x4A2FE0
+// 0x4A2FE0 roll_init
 void randomInit()
 {
     unsigned int randomSeed = randomGetSeed();
@@ -82,7 +82,7 @@ int randomLoad(File* stream)
 
 // Rolls d% against [difficulty].
 //
-// 0x4A3000
+// 0x4A3000 roll_check
 int randomRoll(int difficulty, int criticalSuccessModifier, int* howMuchPtr)
 {
     int delta = difficulty - randomBetween(1, 100);
@@ -98,7 +98,7 @@ int randomRoll(int difficulty, int criticalSuccessModifier, int* howMuchPtr)
 // Translates raw d% result into [Roll] constants, possibly upgrading to
 // criticals (starting from day 2).
 //
-// 0x4A3030
+// 0x4A3030 roll_check_critical
 static int randomTranslateRoll(int delta, int criticalSuccessModifier)
 {
     unsigned int gameTime = gameTimeGetTime();
@@ -127,7 +127,7 @@ static int randomTranslateRoll(int delta, int criticalSuccessModifier)
     return roll;
 }
 
-// 0x4A30C0
+// 0x4A30C0 roll_random
 int randomBetween(int min, int max)
 {
     int result;
@@ -146,7 +146,7 @@ int randomBetween(int min, int max)
     return result;
 }
 
-// 0x4A30FC
+// 0x4A30FC ran1
 static int getRandom(int max)
 {
     int seed = 16807 * (_idum % 127773) - 2836 * (_idum / 127773);
@@ -168,7 +168,7 @@ static int getRandom(int max)
     return value % max;
 }
 
-// 0x4A31A0
+// 0x4A31A0 roll_set_seed
 void randomSeedPrerandom(int seed)
 {
     if (seed == -1) {
@@ -179,13 +179,13 @@ void randomSeedPrerandom(int seed)
     randomSeedPrerandomInternal(seed);
 }
 
-// 0x4A31C4
+// 0x4A31C4 random_seed
 static int randomInt32()
 {
     return std::rand();
 }
 
-// 0x4A31E0
+// 0x4A31E0 seed_generator
 static void randomSeedPrerandomInternal(int seed)
 {
     int num = seed;
@@ -211,13 +211,13 @@ static void randomSeedPrerandomInternal(int seed)
 
 // Provides seed for random number generator.
 //
-// 0x4A3258
+// 0x4A3258 timer_read
 static unsigned int randomGetSeed()
 {
     return compat_timeGetTime();
 }
 
-// 0x4A3264
+// 0x4A3264 check_chi_squared
 static void randomValidatePrerandom()
 {
     int results[25];

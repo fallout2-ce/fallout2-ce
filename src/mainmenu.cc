@@ -38,24 +38,24 @@ typedef enum MainMenuButton {
 static int main_menu_fatal_error();
 static void main_menu_play_sound(const char* fileName);
 
-// 0x5194F0
+// 0x5194F0 main_window
 static int gMainMenuWindow = -1;
 
-// 0x5194F4
+// 0x5194F4 main_window_buf
 static unsigned char* gMainMenuWindowBuffer = nullptr;
 
-// 0x519504
+// 0x519504 in_main_menu
 static bool _in_main_menu = false;
 
-// 0x519508
+// 0x519508 main_menu_created
 static bool gMainMenuWindowInitialized = false;
 
 static bool gMainMenuExitRequested = false;
 
-// 0x51950C
+// 0x51950C main_menu_timeout
 static unsigned int gMainMenuScreensaverDelay = 120000;
 
-// 0x519510
+// 0x519510 button_values
 static const int gMainMenuButtonKeyBindings[MAIN_MENU_BUTTON_COUNT] = {
     KEY_LOWERCASE_I, // intro
     KEY_LOWERCASE_N, // new game
@@ -65,7 +65,7 @@ static const int gMainMenuButtonKeyBindings[MAIN_MENU_BUTTON_COUNT] = {
     KEY_LOWERCASE_E, // exit
 };
 
-// 0x519528
+// 0x519528 return_values
 static const int _return_values[MAIN_MENU_BUTTON_COUNT] = {
     MAIN_MENU_INTRO,
     MAIN_MENU_NEW_GAME,
@@ -75,17 +75,17 @@ static const int _return_values[MAIN_MENU_BUTTON_COUNT] = {
     MAIN_MENU_EXIT,
 };
 
-// 0x614840
+// 0x614840 buttons
 static int gMainMenuButtons[MAIN_MENU_BUTTON_COUNT];
 
-// 0x614858
+// 0x614858 main_menu_is_hidden
 static bool gMainMenuWindowHidden;
 
 static FrmImage _mainMenuBackgroundFrmImage;
 static FrmImage _mainMenuButtonNormalFrmImage;
 static FrmImage _mainMenuButtonPressedFrmImage;
 
-// 0x481650
+// 0x481650 main_menu_create
 int mainMenuWindowInit()
 {
     int fid;
@@ -237,7 +237,7 @@ int mainMenuWindowInit()
     return 0;
 }
 
-// 0x481968
+// 0x481968 main_menu_destroy
 void mainMenuWindowFree()
 {
     if (!gMainMenuWindowInitialized) {
@@ -261,7 +261,7 @@ void mainMenuWindowFree()
     gMainMenuWindowInitialized = false;
 }
 
-// 0x481A00
+// 0x481A00 main_menu_hide
 void mainMenuWindowHide(bool animate)
 {
     if (!gMainMenuWindowInitialized) {
@@ -285,7 +285,7 @@ void mainMenuWindowHide(bool animate)
     gMainMenuWindowHidden = true;
 }
 
-// 0x481A48
+// 0x481A48 main_menu_show
 void mainMenuWindowUnhide(bool animate)
 {
     if (!gMainMenuWindowInitialized) {
@@ -307,13 +307,13 @@ void mainMenuWindowUnhide(bool animate)
     gMainMenuWindowHidden = false;
 }
 
-// 0x481AA8
+// 0x481AA8 main_menu_is_enabled
 int _main_menu_is_enabled()
 {
     return 1;
 }
 
-// 0x481AEC
+// 0x481AEC main_menu_loop
 int mainMenuWindowHandleEvents()
 {
     _in_main_menu = true;
@@ -405,7 +405,7 @@ void mainMenuRequestExit()
 
 // NOTE: Inlined.
 //
-// 0x481C88
+// 0x481C88 main_menu_fatal_error
 static int main_menu_fatal_error()
 {
     mainMenuWindowFree();
@@ -415,7 +415,7 @@ static int main_menu_fatal_error()
 
 // NOTE: Inlined.
 //
-// 0x481C94
+// 0x481C94 main_menu_play_sound
 static void main_menu_play_sound(const char* fileName)
 {
     soundPlayFile(fileName);

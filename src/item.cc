@@ -92,12 +92,12 @@ typedef struct ExplosiveDescription {
     int maxDamage;
 } ExplosiveDescription;
 
-// 0x509FFC
+// 0x509FFC aItem_1
 static char _aItem_1[] = "<item>";
 
 // Maps weapon extended flags to skill.
 //
-// 0x519160
+// 0x519160 attack_skill
 static const int _attack_skill[9] = {
     -1,
     SKILL_UNARMED,
@@ -112,7 +112,7 @@ static const int _attack_skill[9] = {
 
 // A map of item's extendedFlags to animation.
 //
-// 0x519184
+// 0x519184 attack_anim
 static const int _attack_anim[9] = {
     ANIM_STAND,
     ANIM_THROW_PUNCH,
@@ -127,7 +127,7 @@ static const int _attack_anim[9] = {
 
 // Maps weapon extended flags to weapon class
 //
-// 0x5191A8
+// 0x5191A8 attack_subtype
 static const int _attack_subtype[9] = {
     ATTACK_TYPE_NONE, // 0 // None
     ATTACK_TYPE_UNARMED, // 1 // Punch // Brass Knuckles, Power First
@@ -140,7 +140,7 @@ static const int _attack_subtype[9] = {
     ATTACK_TYPE_RANGED, // 8 // Continous // Only: Flamer, Improved Flamer, Flame Breath
 };
 
-// 0x5191CC
+// 0x5191CC drugInfoList
 static DrugDescription gDrugDescriptions[ADDICTION_COUNT] = {
     { PROTO_ID_NUKA_COLA, GVAR_NUKA_COLA_ADDICT, 0 },
     { PROTO_ID_BUFF_OUT, GVAR_BUFF_OUT_ADDICT, 4 },
@@ -153,21 +153,21 @@ static DrugDescription gDrugDescriptions[ADDICTION_COUNT] = {
     { PROTO_ID_DECK_OF_TRAGIC_CARDS, GVAR_ADDICT_TRAGIC, 0 },
 };
 
-// 0x519238
+// 0x519238 name_item
 static char* _name_item = _aItem_1;
 
 // item.msg
 //
-// 0x59E980
+// 0x59E980 item_message_file
 static MessageList gItemsMessageList;
 
-// 0x59E988
+// 0x59E988 wd_onset
 static int _wd_onset;
 
-// 0x59E98C
+// 0x59E98C wd_obj
 static Object* _wd_obj;
 
-// 0x59E990
+// 0x59E990 wd_gvar
 static int _wd_gvar;
 
 static std::vector<BookDescription> gBooks;

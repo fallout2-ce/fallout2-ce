@@ -27,10 +27,10 @@ static void destroyRenderer();
 // screen rect
 Rect _scr_size;
 
-// 0x6ACA18
+// 0x6ACA18 scr_blit
 void (*_scr_blit)(unsigned char* src, int src_pitch, int unused, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y) = _GNW95_ShowRect;
 
-// 0x6ACA1C
+// 0x6ACA1C zero_mem
 void (*_zero_mem)() = nullptr;
 
 SDL_Window* gSdlWindow = nullptr;
@@ -42,49 +42,49 @@ SDL_Surface* gSdlTextureSurface = nullptr;
 // TODO: Remove once migration to update-render cycle is completed.
 FpsLimiter sharedFpsLimiter;
 
-// 0x4CAD08
+// 0x4CAD08 init_mode_320_200
 int _init_mode_320_200()
 {
     return _GNW95_init_mode_ex(320, 200, 8);
 }
 
-// 0x4CAD40
+// 0x4CAD40 init_mode_320_400
 int _init_mode_320_400()
 {
     return _GNW95_init_mode_ex(320, 400, 8);
 }
 
-// 0x4CAD5C
+// 0x4CAD5C init_mode_640_480_16
 int _init_mode_640_480_16()
 {
     return -1;
 }
 
-// 0x4CAD64
+// 0x4CAD64 init_mode_640_480
 int _init_mode_640_480()
 {
     return _init_vesa_mode(640, 480);
 }
 
-// 0x4CAD94
+// 0x4CAD94 init_mode_640_400
 int _init_mode_640_400()
 {
     return _init_vesa_mode(640, 400);
 }
 
-// 0x4CADA8
+// 0x4CADA8 init_mode_800_600
 int _init_mode_800_600()
 {
     return _init_vesa_mode(800, 600);
 }
 
-// 0x4CADBC
+// 0x4CADBC init_mode_1024_768
 int _init_mode_1024_768()
 {
     return _init_vesa_mode(1024, 768);
 }
 
-// 0x4CADD0
+// 0x4CADD0 init_mode_1280_1024
 int _init_mode_1280_1024()
 {
     return _init_vesa_mode(1280, 1024);
@@ -95,7 +95,7 @@ void _get_start_mode_()
 {
 }
 
-// 0x4CADFC
+// 0x4CADFC zero_vid_mem
 void _zero_vid_mem()
 {
     if (_zero_mem) {
@@ -103,7 +103,7 @@ void _zero_vid_mem()
     }
 }
 
-// 0x4CAE1C
+// 0x4CAE1C GNW95_init_mode_ex
 int _GNW95_init_mode_ex(int width, int height, int bpp)
 {
     width = settings.screen.resolution_x;
@@ -148,13 +148,13 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
     return 0;
 }
 
-// 0x4CAECC
+// 0x4CAECC init_vesa_mode
 int _init_vesa_mode(int width, int height)
 {
     return _GNW95_init_mode_ex(width, height, 8);
 }
 
-// 0x4CAEDC
+// 0x4CAEDC GNW95_init_window
 int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
 {
     if (gSdlWindow == nullptr) {
@@ -184,7 +184,7 @@ int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
     return 0;
 }
 
-// 0x4CAF9C
+// 0x4CAF9C GNW95_init_DirectDraw
 int directDrawInit(int width, int height, int bpp)
 {
     if (gSdlSurface != nullptr) {
@@ -215,7 +215,7 @@ int directDrawInit(int width, int height, int bpp)
     return 0;
 }
 
-// 0x4CB1B0
+// 0x4CB1B0 GNW95_reset_mode
 void directDrawFree()
 {
     if (gSdlSurface != nullptr) {
@@ -224,7 +224,7 @@ void directDrawFree()
     }
 }
 
-// 0x4CB310
+// 0x4CB310 GNW95_SetPaletteEntries
 void directDrawSetPaletteInRange(unsigned char* palette, int start, int count)
 {
     if (gSdlSurface != nullptr && gSdlSurface->format->palette != nullptr) {
@@ -244,7 +244,7 @@ void directDrawSetPaletteInRange(unsigned char* palette, int start, int count)
     }
 }
 
-// 0x4CB568
+// 0x4CB568 GNW95_SetPalette
 void directDrawSetPalette(unsigned char* palette)
 {
     if (gSdlSurface != nullptr && gSdlSurface->format->palette != nullptr) {
@@ -262,7 +262,7 @@ void directDrawSetPalette(unsigned char* palette)
     }
 }
 
-// 0x4CB68C
+// 0x4CB68C GNW95_GetPalette
 unsigned char* directDrawGetPalette()
 {
     // 0x6ACA24
@@ -282,7 +282,7 @@ unsigned char* directDrawGetPalette()
     return palette;
 }
 
-// 0x4CB850
+// 0x4CB850 GNW95_ShowRect
 void _GNW95_ShowRect(unsigned char* src, int srcPitch, int unused, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY)
 {
     (void)unused;
@@ -303,7 +303,7 @@ void _GNW95_ShowRect(unsigned char* src, int srcPitch, int unused, int srcX, int
 
 // Clears drawing surface.
 //
-// 0x4CBBC8
+// 0x4CBBC8 GNW95_zero_vid_mem
 void _GNW95_zero_vid_mem()
 {
     if (!gProgramIsActive) {

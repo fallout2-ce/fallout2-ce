@@ -92,20 +92,20 @@ typedef int (*INITVIDEOFN)();
 
 static void redrawButton(ManagedButton* managedButton);
 
-// 0x51DCAC
+// 0x51DCAC holdTime
 static int _holdTime = 250;
 
-// 0x51DCB0
+// 0x51DCB0 checkRegionEnable
 static int _checkRegionEnable = 1;
 
-// 0x51DCB4
+// 0x51DCB4 winTOS
 static int _winTOS = -1;
 
 // 051DCB8
 static int gCurrentManagedWindowIndex = -1;
 
 // TODO: this is probably not needed: FO always used mode 1
-// 0x51DCBC
+// 0x51DCBC gfx_init
 static INITVIDEOFN _gfx_init[12] = {
     _init_mode_320_200,
     _init_mode_640_480,
@@ -121,7 +121,7 @@ static INITVIDEOFN _gfx_init[12] = {
     _init_mode_1280_1024,
 };
 
-// 0x51DD1C
+// 0x51DD1C sizes_x
 static Size _sizes_x[12] = {
     { 320, 200 },
     { 640, 480 },
@@ -137,87 +137,87 @@ static Size _sizes_x[12] = {
     { 1280, 1024 },
 };
 
-// 0x51DD7C
+// 0x51DD7C numInputFunc
 static int gWindowInputHandlersLength = 0;
 
-// 0x51DD80
+// 0x51DD80 lastWin
 static int _lastWin = -1;
 
-// 0x51DD84
+// 0x51DD84 said_quit
 static int _said_quit = 1;
 
-// 0x66E770
+// 0x66E770 winStack
 static int _winStack[MANAGED_WINDOW_COUNT];
 
-// 0x66E7B0
+// 0x66E7B0 alphaBlendTable
 static char _alphaBlendTable[64 * 256];
 
-// 0x6727B0
+// 0x6727B0 sWindows
 static ManagedWindow gManagedWindows[MANAGED_WINDOW_COUNT];
 
-// 0x672D70
+// 0x672D70 inputFunc
 static WindowInputHandler** gWindowInputHandlers;
 
-// 0x672D74
+// 0x672D74 createWindowFunc
 static ManagedWindowCreateCallback* off_672D74;
 
 // NOTE: This value is never set.
 //
-// 0x672D78
+// 0x672D78 selectWindowFunc
 static void (*_selectWindowFunc)(int, ManagedWindow*);
 
-// 0x672D7C
+// 0x672D7C xres
 static int _xres;
 
-// 0x672D80
+// 0x672D80 displayFunc
 static DisplayInWindowCallback* gDisplayInWindowCallback;
 
-// 0x672D84
+// 0x672D84 deleteWindowFunc
 static WindowDeleteCallback* gWindowDeleteCallback;
 
-// 0x672D88
+// 0x672D88 yres
 static int _yres;
 
 // Highlight color (maybe r).
 //
-// 0x672D8C
+// 0x672D8C currentHighlightColorR
 static int _currentHighlightColorR;
 
-// 0x672D90
+// 0x672D90 currentFont
 static int gWidgetFont;
 
-// 0x672D98
+// 0x672D98 soundPressFunc
 ButtonCallback* off_672D98;
 
-// 0x672D9C
+// 0x672D9C soundReleaseFunc
 ButtonCallback* off_672D9C;
 
 // Text color (maybe g).
 //
-// 0x672DA0
+// 0x672DA0 currentTextColorG
 static int _currentTextColorG;
 
 // text color (maybe b).
 //
-// 0x672DA4
+// 0x672DA4 currentTextColorB
 static int _currentTextColorB;
 
-// 0x672DA8
+// 0x672DA8 currentTextFlags
 static int gWidgetTextFlags;
 
 // Text color (maybe r)
 //
-// 0x672DAC
+// 0x672DAC currentTextColorR
 static int _currentTextColorR;
 
 // highlight color (maybe g)
 //
-// 0x672DB0
+// 0x672DB0 currentHighlightColorG
 static int _currentHighlightColorG;
 
 // Highlight color (maybe b).
 //
-// 0x672DB4
+// 0x672DB4 currentHighlightColorB
 static int _currentHighlightColorB;
 
 // 0x4B6120

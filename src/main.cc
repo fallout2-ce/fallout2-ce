@@ -62,16 +62,16 @@ static void _main_death_voiceover_callback();
 static int _mainDeathGrabTextFile(const char* fileName, char* dest);
 static int _mainDeathWordWrap(char* text, int width, short* beginnings, short* count);
 
-// 0x5194C8
+// 0x5194C8 mainMap
 static char _mainMap[] = "artemple.map";
 
-// 0x5194D8
+// 0x5194D8 main_game_paused
 static int _main_game_paused = 0;
 
-// 0x5194E8
+// 0x5194E8 main_show_death_scene
 static bool _main_show_death_scene = false;
 
-// 0x614838
+// 0x614838 main_death_voiceover_done
 static bool _main_death_voiceover_done;
 
 static int commandLineDevLoadGameSlot = -1;

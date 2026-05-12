@@ -65,31 +65,31 @@ static void _draw_grid(int tile, int elevation, Rect* rect);
 static void tileRenderFloor(int fid, int x, int y, Rect* rect);
 static int _tile_make_line(int currentCenterTile, int newCenterTile, int* tiles, int tilesCapacity);
 
-// 0x50E7C7
+// 0x50E7C7 minus_4_0f
 static double const dbl_50E7C7 = -4.0;
 
-// 0x51D950
+// 0x51D950 borderInitialized
 bool gTileBorderInitialized = false;
 
-// 0x51D954
+// 0x51D954 scroll_blocking_on
 static bool gTileScrollBlockingEnabled = true;
 
-// 0x51D958
+// 0x51D958 scroll_limiting_on
 static bool gTileScrollLimitingEnabled = true;
 
-// 0x51D95C
+// 0x51D95C show_roof
 static bool gTileRoofIsVisible = true;
 
-// 0x51D960
+// 0x51D960 show_grid
 static bool gTileGridIsVisible = false;
 
-// 0x51D964
+// 0x51D964 tile_refresh
 static TileWindowRefreshElevationProc* gTileWindowRefreshElevationProc = tileRefreshGame;
 
-// 0x51D968
+// 0x51D968 refresh_enabled
 static bool gTileEnabled = true;
 
-// 0x51D96C
+// 0x51D96C off_tile
 const int _off_tile[6] = {
     16,
     32,
@@ -109,7 +109,7 @@ const int dword_51D984[6] = {
     -12,
 };
 
-// 0x51D99C
+// 0x51D99C rightside_up_table
 static RightsideUpTableEntry _rightside_up_table[13] = {
     { -1, 2 },
     { 78, 2 },
@@ -126,7 +126,7 @@ static RightsideUpTableEntry _rightside_up_table[13] = {
     { 50, 32 },
 };
 
-// 0x51DA04
+// 0x51DA04 upside_down_table
 static UpsideDownTableEntry _upside_down_table[13] = {
     { 0, 32 },
     { 48, 32 },
@@ -143,7 +143,7 @@ static UpsideDownTableEntry _upside_down_table[13] = {
     { 75, 4 },
 };
 
-// 0x51DA6C
+// 0x51DA6C verticies
 static STRUCT_51DA6C _verticies[10] = {
     { 16, -1, -201, 0 },
     { 48, -2, -2, 0 },
@@ -157,7 +157,7 @@ static STRUCT_51DA6C _verticies[10] = {
     { 2944, 599, 399, 0 },
 };
 
-// 0x51DB0C
+// 0x51DB0C rightside_up_triangles
 static RightsideUpTriangle _rightside_up_triangles[5] = {
     { 2, 3, 0 },
     { 3, 4, 1 },
@@ -166,7 +166,7 @@ static RightsideUpTriangle _rightside_up_triangles[5] = {
     { 8, 9, 6 },
 };
 
-// 0x51DB48
+// 0x51DB48 upside_down_triangles
 static UpsideDownTriangle _upside_down_triangles[5] = {
     { 0, 3, 1 },
     { 2, 5, 3 },
@@ -175,27 +175,27 @@ static UpsideDownTriangle _upside_down_triangles[5] = {
     { 6, 9, 7 },
 };
 
-// 0x668224
+// 0x668224 intensity_map
 static int _intensity_map[3280];
 
-// 0x66B564
+// 0x66B564 dir_tile2
 static int _dir_tile2[2][6];
 
 // Deltas to perform tile calculations in given direction.
 //
-// 0x66B594
+// 0x66B594 dir_tile
 static int _dir_tile[2][6];
 
-// 0x66B5C4
+// 0x66B5C4 tile_grid_blocked
 static unsigned char _tile_grid_blocked[512];
 
-// 0x66B7C4
+// 0x66B7C4 tile_grid_occupied
 static unsigned char _tile_grid_occupied[512];
 
-// 0x66B9C4
+// 0x66B9C4 tile_mask
 static unsigned char _tile_mask[512];
 
-// 0x66BBC4
+// 0x66BBC4 tile_border
 int gTileBorderMinX = 0;
 
 // 0x66BBC8
@@ -207,86 +207,86 @@ int gTileBorderMaxX = 0;
 // 0x66BBD0
 int gTileBorderMaxY = 0;
 
-// 0x66BBD4
+// 0x66BBD4 buf_rect_2
 static Rect gTileWindowRect;
 
-// 0x66BBE4
+// 0x66BBE4 tile_grid
 static unsigned char _tile_grid[32 * 16];
 
-// 0x66BDE4
+// 0x66BDE4 square_y
 static int _square_y;
 
-// 0x66BDE8
+// 0x66BDE8 square_x
 static int _square_x;
 
-// 0x66BDEC
+// 0x66BDEC square_offx
 static int _square_offx;
 
-// 0x66BDF0
+// 0x66BDF0 square_offy
 static int _square_offy;
 
-// 0x66BDF4
+// 0x66BDF4 blit
 static TileWindowRefreshProc* gTileWindowRefreshProc;
 
-// 0x66BDF8
+// 0x66BDF8 tile_offy
 static int _tile_offy;
 
-// 0x66BDFC
+// 0x66BDFC tile_offx
 static int _tile_offx;
 
-// 0x66BE00
+// 0x66BE00 square_size
 static int gSquareGridSize;
 
 // Number of tiles horizontally.
 //
 // Currently this value is always 200.
 //
-// 0x66BE04
+// 0x66BE04 grid_width
 static int gHexGridWidth;
 
-// 0x66BE08
+// 0x66BE08 squares
 static TileData** gTileSquares;
 
-// 0x66BE0C
+// 0x66BE0C tile_back_buf
 static unsigned char* gTileWindowBuffer;
 
 // Number of tiles vertically.
 //
 // Currently this value is always 200.
 //
-// 0x66BE10
+// 0x66BE10 grid_length
 static int gHexGridHeight;
 
-// 0x66BE14
+// 0x66BE14 buf_length_2
 static int gTileWindowHeight;
 
-// 0x66BE18
+// 0x66BE18 tile_x
 static int _tile_x;
 
-// 0x66BE1C
+// 0x66BE1C tile_y
 static int _tile_y;
 
 // The number of tiles in the hex grid.
 //
-// 0x66BE20
+// 0x66BE20 grid_size
 int gHexGridSize;
 
-// 0x66BE24
+// 0x66BE24 square_length
 static int gSquareGridHeight;
 
-// 0x66BE28
+// 0x66BE28 buf_to_width
 static int gTileWindowPitch;
 
-// 0x66BE2C
+// 0x66BE2C square_width
 static int gSquareGridWidth;
 
-// 0x66BE30
+// 0x66BE30 buf_width_2
 static int gTileWindowWidth;
 
-// 0x66BE34
+// 0x66BE34 tile_center_tile
 int gCenterTile;
 
-// 0x4B0C40
+// 0x4B0C40 tile_init
 int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, int hexGridWidth, int hexGridHeight, unsigned char* buf, int windowWidth, int windowHeight, int windowPitch, TileWindowRefreshProc* windowRefreshProc)
 {
     int v11;
@@ -458,7 +458,7 @@ int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, i
     return 0;
 }
 
-// 0x4B11E4
+// 0x4B11E4 tile_set_border
 static void tileSetBorder(int windowWidth, int windowHeight, int hexGridWidth, int hexGridHeight)
 {
     // TODO: Borders, scroll blockers and tile system overall were designed
@@ -503,19 +503,19 @@ void tileExit()
     _tile_reset_();
 }
 
-// 0x4B12A8
+// 0x4B12A8 tile_disable_refresh
 void tileDisable()
 {
     gTileEnabled = false;
 }
 
-// 0x4B12B4
+// 0x4B12B4 tile_enable_refresh
 void tileEnable()
 {
     gTileEnabled = true;
 }
 
-// 0x4B12C0
+// 0x4B12C0 tile_refresh_rect
 void tileWindowRefreshRect(Rect* rect, int elevation)
 {
     if (gTileEnabled) {
@@ -525,7 +525,7 @@ void tileWindowRefreshRect(Rect* rect, int elevation)
     }
 }
 
-// 0x4B12D8
+// 0x4B12D8 tile_refresh_display
 void tileWindowRefresh()
 {
     if (gTileEnabled) {
@@ -533,7 +533,7 @@ void tileWindowRefresh()
     }
 }
 
-// 0x4B12F8
+// 0x4B12F8 tile_set_center
 int tileSetCenter(int tile, int flags)
 {
     if (!tileIsValid(tile)) {
@@ -609,7 +609,7 @@ int tileSetCenter(int tile, int flags)
     return 0;
 }
 
-// 0x4B1554
+// 0x4B1554 refresh_mapper
 static void tileRefreshMapper(Rect* rect, int elevation)
 {
     Rect rectToUpdate;
@@ -635,7 +635,7 @@ static void tileRefreshMapper(Rect* rect, int elevation)
     gTileWindowRefreshProc(&rectToUpdate);
 }
 
-// 0x4B15E8
+// 0x4B15E8 refresh_game
 static void tileRefreshGame(Rect* rect, int elevation)
 {
     Rect rectToUpdate;
@@ -662,7 +662,7 @@ static void tileRefreshGame(Rect* rect, int elevation)
     gTileWindowRefreshProc(&rectToUpdate);
 }
 
-// 0x4B1634
+// 0x4B1634 tile_toggle_roof
 void tile_toggle_roof(bool refresh)
 {
     gTileRoofIsVisible = !gTileRoofIsVisible;
@@ -673,13 +673,13 @@ void tile_toggle_roof(bool refresh)
     }
 }
 
-// 0x4B166C
+// 0x4B166C tile_roof_visible
 int tileRoofIsVisible()
 {
     return gTileRoofIsVisible;
 }
 
-// 0x4B1674
+// 0x4B1674 tile_coord
 int tileToScreenXY(int tile, int* screenX, int* screenY)
 {
     int v3;
@@ -721,7 +721,7 @@ int tileToScreenXY(int tile, int* screenX, int* screenY)
 // validating hex grid bounds. The resulting invalid tile number serves as an
 // origin for calculations using prepared offsets table during objects
 // rendering.
-// 0x4B1754
+// 0x4B1754 tile_num
 int tileFromScreenXY(int screenX, int screenY, bool ignoreBounds)
 {
     int x, y;
@@ -802,7 +802,7 @@ int squareTileFromTile(int tile)
 }
 
 // tile_distance
-// 0x4B185C
+// 0x4B185C tile_dist
 int tileDistanceBetween(int tile1, int tile2)
 {
     if (tile1 == -1 || tile2 == -1) {
@@ -820,7 +820,7 @@ int tileDistanceBetween(int tile1, int tile2)
     return step;
 }
 
-// 0x4B1994
+// 0x4B1994 tile_in_front_of
 bool tileIsInFrontOf(int tile1, int tile2)
 {
     int x1, y1;
@@ -835,7 +835,7 @@ bool tileIsInFrontOf(int tile1, int tile2)
     return (double)dx <= (double)dy * dbl_50E7C7;
 }
 
-// 0x4B1A00
+// 0x4B1A00 tile_to_right_of
 bool tileIsToRightOf(int tile1, int tile2)
 {
     int x1, y1;
@@ -855,7 +855,7 @@ bool tileIsToRightOf(int tile1, int tile2)
 }
 
 // tile_num_in_direction
-// 0x4B1A6C
+// 0x4B1A6C tile_num_in_direction
 int tileGetTileInDirection(int tile, int rotation, int distance)
 {
     int newTile = tile;
@@ -872,7 +872,7 @@ int tileGetTileInDirection(int tile, int rotation, int distance)
 }
 
 // rotation_to_tile
-// 0x4B1ABC
+// 0x4B1ABC tile_dir
 int tileGetRotationTo(int tile1, int tile2)
 {
     int x1, y1;
@@ -902,7 +902,7 @@ int tileGetRotationTo(int tile1, int tile2)
     return dy < 0 ? ROTATION_NE : ROTATION_SE;
 }
 
-// 0x4B1B84
+// 0x4B1B84 tile_num_beyond
 int _tile_num_beyond(int from, int to, int distance)
 {
     if (distance <= 0 || from == to) {
@@ -991,7 +991,7 @@ int _tile_num_beyond(int from, int to, int distance)
     assert(false && "Should be unreachable");
 }
 
-// 0x4B1D20
+// 0x4B1D20 tile_on_edge
 bool tileIsEdge(int tile)
 {
     if (!tileIsValid(tile)) {
@@ -1017,43 +1017,43 @@ bool tileIsEdge(int tile)
     return false;
 }
 
-// 0x4B1D80
+// 0x4B1D80 tile_enable_scroll_blocking
 void tileScrollBlockingEnable()
 {
     gTileScrollBlockingEnabled = true;
 }
 
-// 0x4B1D8C
+// 0x4B1D8C tile_disable_scroll_blocking
 void tileScrollBlockingDisable()
 {
     gTileScrollBlockingEnabled = false;
 }
 
-// 0x4B1D98
+// 0x4B1D98 tile_get_scroll_blocking
 bool tileScrollBlockingIsEnabled()
 {
     return gTileScrollBlockingEnabled;
 }
 
-// 0x4B1DA0
+// 0x4B1DA0 tile_enable_scroll_limiting
 void tileScrollLimitingEnable()
 {
     gTileScrollLimitingEnabled = true;
 }
 
-// 0x4B1DAC
+// 0x4B1DAC tile_disable_scroll_limiting
 void tileScrollLimitingDisable()
 {
     gTileScrollLimitingEnabled = false;
 }
 
-// 0x4B1DB8
+// 0x4B1DB8 tile_get_scroll_limiting
 bool tileScrollLimitingIsEnabled()
 {
     return gTileScrollLimitingEnabled;
 }
 
-// 0x4B1DC0
+// 0x4B1DC0 square_coord
 int squareTileToScreenXY(int squareTile, int* coordX, int* coordY, int elevation)
 {
     if (squareTile < 0 || squareTile >= gSquareGridSize) {
@@ -1077,7 +1077,7 @@ int squareTileToScreenXY(int squareTile, int* coordX, int* coordY, int elevation
     return 0;
 }
 
-// 0x4B1E60
+// 0x4B1E60 square_coord_roof
 int squareTileToRoofScreenXY(int squareTile, int* screenX, int* screenY, int elevation)
 {
     int v5;
@@ -1110,7 +1110,7 @@ int squareTileToRoofScreenXY(int squareTile, int* screenX, int* screenY, int ele
     return 0;
 }
 
-// 0x4B1F04
+// 0x4B1F04 square_num
 int squareTileFromScreenXY(int screenX, int screenY, int elevation)
 {
     int coordY;
@@ -1125,7 +1125,7 @@ int squareTileFromScreenXY(int screenX, int screenY, int elevation)
     return -1;
 }
 
-// 0x4B1F94
+// 0x4B1F94 square_xy
 void squareTileScreenToCoord(int screenX, int screenY, int elevation, int* coordX, int* coordY)
 {
     int v4;
@@ -1147,7 +1147,7 @@ void squareTileScreenToCoord(int screenX, int screenY, int elevation, int* coord
     *coordX = gSquareGridWidth - 1 - *coordX;
 }
 
-// 0x4B203C
+// 0x4B203C square_xy_roof
 void squareTileScreenToCoordRoof(int screenX, int screenY, int elevation, int* coordX, int* coordY)
 {
     int v4;
@@ -1170,7 +1170,7 @@ void squareTileScreenToCoordRoof(int screenX, int screenY, int elevation, int* c
     *coordX = gSquareGridWidth - 1 - *coordX;
 }
 
-// 0x4B20E8
+// 0x4B20E8 square_render_roof
 void tileRenderRoofsInRect(Rect* rect, int elevation)
 {
     if (!gTileRoofIsVisible) {
@@ -1265,7 +1265,7 @@ static void roof_fill_off_process_task(std::stack<roof_fill_task>& tasks_stack, 
     }
 }
 
-// 0x4B23D4
+// 0x4B23D4 tile_fill_roof
 void tile_fill_roof(int x, int y, int elevation, bool on)
 {
     std::stack<roof_fill_task> tasks_stack;
@@ -1277,7 +1277,7 @@ void tile_fill_roof(int x, int y, int elevation, bool on)
     }
 }
 
-// 0x4B24E0
+// 0x4B24E0 roof_draw
 static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
 {
     CacheEntry* tileFrmHandle;
@@ -1387,7 +1387,7 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
     artUnlock(tileFrmHandle);
 }
 
-// 0x4B2944
+// 0x4B2944 square_render_floor
 void tileRenderFloorsInRect(Rect* rect, int elevation)
 {
     int minY;
@@ -1437,7 +1437,7 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
     }
 }
 
-// 0x4B2B10
+// 0x4B2B10 square_roof_intersect
 bool _square_roof_intersect(int x, int y, int elevation)
 {
     if (!gTileRoofIsVisible) {
@@ -1479,7 +1479,7 @@ bool _square_roof_intersect(int x, int y, int elevation)
     return result;
 }
 
-// 0x4B2E98
+// 0x4B2E98 grid_render
 void _grid_render(Rect* rect, int elevation)
 {
     if (!gTileGridIsVisible) {
@@ -1494,7 +1494,7 @@ void _grid_render(Rect* rect, int elevation)
     }
 }
 
-// 0x4B2F4C
+// 0x4B2F4C draw_grid
 static void _draw_grid(int tile, int elevation, Rect* rect)
 {
     if (tile == -1) {
@@ -1547,7 +1547,7 @@ static void _draw_grid(int tile, int elevation, Rect* rect)
         _commonGrayTable);
 }
 
-// 0x4B30C4
+// 0x4B30C4 floor_draw
 static void tileRenderFloor(int fid, int x, int y, Rect* rect)
 {
     if (artIsObjectTypeHidden(FID_TYPE(fid)) != 0) {
@@ -1784,7 +1784,7 @@ out:
     artUnlock(cacheEntry);
 }
 
-// 0x4B372C
+// 0x4B372C tile_make_line
 static int _tile_make_line(int from, int to, int* tiles, int tilesCapacity)
 {
     if (tilesCapacity <= 1) {
@@ -1896,7 +1896,7 @@ static int _tile_make_line(int from, int to, int* tiles, int tilesCapacity)
     return count;
 }
 
-// 0x4B3924
+// 0x4B3924 tile_scroll_to
 int _tile_scroll_to(int tile, int flags)
 {
     if (tile == gCenterTile) {

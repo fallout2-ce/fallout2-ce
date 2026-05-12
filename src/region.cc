@@ -8,12 +8,12 @@
 
 namespace fallout {
 
-// 0x50D394
+// 0x50D394 aNull
 static char _aNull[] = "<null>";
 
 // Probably recalculates bounding box of the region.
 //
-// 0x4A2B50
+// 0x4A2B50 regionSetBound
 void _regionSetBound(Region* region)
 {
     int minX = INT_MAX;
@@ -46,7 +46,7 @@ void _regionSetBound(Region* region)
     }
 }
 
-// 0x4A2C14
+// 0x4A2C14 pointInRegion
 bool regionContainsPoint(Region* region, int x, int y)
 {
     if (region == nullptr) {
@@ -122,7 +122,7 @@ bool regionContainsPoint(Region* region, int x, int y)
     return false;
 }
 
-// 0x4A2D78
+// 0x4A2D78 allocateRegion
 Region* regionCreate(int initialCapacity)
 {
     Region* region = (Region*)internal_malloc_safe(sizeof(*region), __FILE__, __LINE__); // "..\int\REGION.C", 142
@@ -163,7 +163,7 @@ Region* regionCreate(int initialCapacity)
 }
 
 // regionAddPoint
-// 0x4A2E68
+// 0x4A2E68 regionAddPoint
 void regionAddPoint(Region* region, int x, int y)
 {
     if (region == nullptr) {
@@ -195,7 +195,7 @@ void regionAddPoint(Region* region, int x, int y)
 }
 
 // regionDelete
-// 0x4A2F0C
+// 0x4A2F0C regionDelete
 void regionDelete(Region* region)
 {
     if (region == nullptr) {
@@ -211,7 +211,7 @@ void regionDelete(Region* region)
 }
 
 // regionAddName
-// 0x4A2F54
+// 0x4A2F54 regionAddName
 void regionSetName(Region* region, const char* name)
 {
     if (region == nullptr) {
@@ -228,7 +228,7 @@ void regionSetName(Region* region, const char* name)
 }
 
 // regionGetName
-// 0x4A2F80
+// 0x4A2F80 regionGetName
 char* regionGetName(Region* region)
 {
     if (region == nullptr) {
@@ -240,7 +240,7 @@ char* regionGetName(Region* region)
 }
 
 // regionGetUserData
-// 0x4A2F98
+// 0x4A2F98 regionGetUserData
 void* regionGetUserData(Region* region)
 {
     if (region == nullptr) {
@@ -252,7 +252,7 @@ void* regionGetUserData(Region* region)
 }
 
 // regionSetUserData
-// 0x4A2FB4
+// 0x4A2FB4 regionSetUserData
 void regionSetUserData(Region* region, void* data)
 {
     if (region == nullptr) {
@@ -263,7 +263,7 @@ void regionSetUserData(Region* region, void* data)
     region->userData = data;
 }
 
-// 0x4A2FD0
+// 0x4A2FD0 regionSetFlag
 void regionAddFlag(Region* region, int value)
 {
     region->flags |= value;

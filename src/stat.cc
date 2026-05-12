@@ -38,7 +38,7 @@ typedef struct StatDescription {
     int defaultValue;
 } StatDescription;
 
-// 0x51D53C
+// 0x51D53C stat_data
 static StatDescription gStatDescriptions[STAT_COUNT] = {
     { nullptr, nullptr, 0, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
     { nullptr, nullptr, 1, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 },
@@ -80,7 +80,7 @@ static StatDescription gStatDescriptions[STAT_COUNT] = {
     { nullptr, nullptr, 12, 0, 2000, 0 },
 };
 
-// 0x51D8CC
+// 0x51D8CC pc_stat_data
 static StatDescription gPcStatDescriptions[PC_STAT_COUNT] = {
     { nullptr, nullptr, 0, 0, INT_MAX, 0 },
     { nullptr, nullptr, 0, 1, PC_LEVEL_MAX, 1 },
@@ -89,13 +89,13 @@ static StatDescription gPcStatDescriptions[PC_STAT_COUNT] = {
     { nullptr, nullptr, 0, 0, INT_MAX, 0 },
 };
 
-// 0x66817C
+// 0x66817C stat_message_file
 static MessageList gStatsMessageList;
 
 // 0x668184
 static char* gStatValueDescriptions[PRIMARY_STAT_RANGE];
 
-// 0x6681AC
+// 0x6681AC curr_pc_stat
 static int gPcStatValues[PC_STAT_COUNT];
 
 static int unspentApBonus = 4;

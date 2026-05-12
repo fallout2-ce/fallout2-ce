@@ -49,28 +49,28 @@ static constexpr int REFRESH_BOUNCING_CURSOR = 0x01;
 static constexpr int REFRESH_HEX_CURSOR = 0x02;
 static constexpr int REFRESH_BOTH_CURSORS = REFRESH_BOUNCING_CURSOR | REFRESH_HEX_CURSOR;
 
-// 0x518BF8
+// 0x518BF8 gmouse_initialized
 static bool gGameMouseInitialized = false;
 
-// 0x518BFC
+// 0x518BFC gmouse_enabled
 static bool _gmouse_enabled = false;
 
-// 0x518C00
+// 0x518C00 gmouse_mapper_mode
 static int _gmouse_mapper_mode = 0;
 
-// 0x518C04
+// 0x518C04 gmouse_click_to_scroll
 static bool _gmouse_click_to_scroll = false;
 
-// 0x518C08
+// 0x518C08 gmouse_scrolling_enabled
 static bool _gmouse_scrolling_enabled = true;
 
-// 0x518C0C
+// 0x518C0C gmouse_current_cursor
 static int gGameMouseCursor = MOUSE_CURSOR_NONE;
 
-// 0x518C10
+// 0x518C10 gmouse_current_cursor_key
 static CacheEntry* gGameMouseCursorFrmHandle = INVALID_CACHE_ENTRY;
 
-// 0x518C14
+// 0x518C14 gmouse_cursor_nums
 static const int gGameMouseCursorFrmIds[MOUSE_CURSOR_TYPE_COUNT] = {
     266,
     267,
@@ -101,132 +101,132 @@ static const int gGameMouseCursorFrmIds[MOUSE_CURSOR_TYPE_COUNT] = {
     295,
 };
 
-// 0x518C80
+// 0x518C80 gmouse_3d_initialized
 static bool gGameMouseObjectsInitialized = false;
 
-// 0x518C84
+// 0x518C84 gmouse_3d_hover_test
 static bool _gmouse_3d_hover_test = false;
 
-// 0x518C88
+// 0x518C88 gmouse_3d_last_move_time
 static unsigned int _gmouse_3d_last_move_time = 0;
 
 // actmenu.frm
-// 0x518C8C
+// 0x518C8C gmouse_3d_menu_frame
 static Art* gGameMouseActionMenuFrm = nullptr;
 
-// 0x518C90
+// 0x518C90 gmouse_3d_menu_frame_key
 static CacheEntry* gGameMouseActionMenuFrmHandle = INVALID_CACHE_ENTRY;
 
-// 0x518C94
+// 0x518C94 gmouse_3d_menu_frame_width
 static int gGameMouseActionMenuFrmWidth = 0;
 
-// 0x518C98
+// 0x518C98 gmouse_3d_menu_frame_height
 static int gGameMouseActionMenuFrmHeight = 0;
 
-// 0x518C9C
+// 0x518C9C gmouse_3d_menu_frame_size
 static int gGameMouseActionMenuFrmDataSize = 0;
 
-// 0x518CA0
+// 0x518CA0 gmouse_3d_menu_frame_hot_x
 static int _gmouse_3d_menu_frame_hot_x = 0;
 
-// 0x518CA4
+// 0x518CA4 gmouse_3d_menu_frame_hot_y
 static int _gmouse_3d_menu_frame_hot_y = 0;
 
-// 0x518CA8
+// 0x518CA8 gmouse_3d_menu_frame_data
 static unsigned char* gGameMouseActionMenuFrmData = nullptr;
 
 // actpick.frm
-// 0x518CAC
+// 0x518CAC gmouse_3d_pick_frame
 static Art* gGameMouseActionPickFrm = nullptr;
 
-// 0x518CB0
+// 0x518CB0 gmouse_3d_pick_frame_key
 static CacheEntry* gGameMouseActionPickFrmHandle = INVALID_CACHE_ENTRY;
 
-// 0x518CB4
+// 0x518CB4 gmouse_3d_pick_frame_width
 static int gGameMouseActionPickFrmWidth = 0;
 
-// 0x518CB8
+// 0x518CB8 gmouse_3d_pick_frame_height
 static int gGameMouseActionPickFrmHeight = 0;
 
-// 0x518CBC
+// 0x518CBC gmouse_3d_pick_frame_size
 static int gGameMouseActionPickFrmDataSize = 0;
 
-// 0x518CC0
+// 0x518CC0 gmouse_3d_pick_frame_hot_x
 static int _gmouse_3d_pick_frame_hot_x = 0;
 
-// 0x518CC4
+// 0x518CC4 gmouse_3d_pick_frame_hot_y
 static int _gmouse_3d_pick_frame_hot_y = 0;
 
-// 0x518CC8
+// 0x518CC8 gmouse_3d_pick_frame_data
 static unsigned char* gGameMouseActionPickFrmData = nullptr;
 
 // acttohit.frm
-// 0x518CCC
+// 0x518CCC gmouse_3d_to_hit_frame
 static Art* gGameMouseActionHitFrm = nullptr;
 
-// 0x518CD0
+// 0x518CD0 gmouse_3d_to_hit_frame_key
 static CacheEntry* gGameMouseActionHitFrmHandle = INVALID_CACHE_ENTRY;
 
-// 0x518CD4
+// 0x518CD4 gmouse_3d_to_hit_frame_width
 static int gGameMouseActionHitFrmWidth = 0;
 
-// 0x518CD8
+// 0x518CD8 gmouse_3d_to_hit_frame_height
 static int gGameMouseActionHitFrmHeight = 0;
 
-// 0x518CDC
+// 0x518CDC gmouse_3d_to_hit_frame_size
 static int gGameMouseActionHitFrmDataSize = 0;
 
-// 0x518CE0
+// 0x518CE0 gmouse_3d_to_hit_frame_data
 static unsigned char* gGameMouseActionHitFrmData = nullptr;
 
 // blank.frm
-// 0x518CE4
+// 0x518CE4 gmouse_3d_hex_base_frame
 static Art* gGameMouseBouncingCursorFrm = nullptr;
 
-// 0x518CE8
+// 0x518CE8 gmouse_3d_hex_base_frame_key
 static CacheEntry* gGameMouseBouncingCursorFrmHandle = INVALID_CACHE_ENTRY;
 
-// 0x518CEC
+// 0x518CEC gmouse_3d_hex_base_frame_width
 static int gGameMouseBouncingCursorFrmWidth = 0;
 
-// 0x518CF0
+// 0x518CF0 gmouse_3d_hex_base_frame_height
 static int gGameMouseBouncingCursorFrmHeight = 0;
 
-// 0x518CF4
+// 0x518CF4 gmouse_3d_hex_base_frame_size
 static int gGameMouseBouncingCursorFrmDataSize = 0;
 
-// 0x518CF8
+// 0x518CF8 gmouse_3d_hex_base_frame_data
 static unsigned char* gGameMouseBouncingCursorFrmData = nullptr;
 
 // msef000.frm
-// 0x518CFC
+// 0x518CFC gmouse_3d_hex_frame
 static Art* gGameMouseHexCursorFrm = nullptr;
 
-// 0x518D00
+// 0x518D00 gmouse_3d_hex_frame_key
 static CacheEntry* gGameMouseHexCursorFrmHandle = INVALID_CACHE_ENTRY;
 
-// 0x518D04
+// 0x518D04 gmouse_3d_hex_frame_width
 static int gGameMouseHexCursorFrmWidth = 0;
 
-// 0x518D08
+// 0x518D08 gmouse_3d_hex_frame_height
 static int gGameMouseHexCursorHeight = 0;
 
-// 0x518D0C
+// 0x518D0C gmouse_3d_hex_frame_size
 static int gGameMouseHexCursorDataSize = 0;
 
-// 0x518D10
+// 0x518D10 gmouse_3d_hex_frame_data
 static unsigned char* gGameMouseHexCursorFrmData = nullptr;
 
-// 0x518D14
+// 0x518D14 gmouse_3d_menu_available_actions
 static unsigned char gGameMouseActionMenuItemsLength = 0;
 
-// 0x518D18
+// 0x518D18 gmouse_3d_menu_actions_start
 static unsigned char* _gmouse_3d_menu_actions_start = nullptr;
 
-// 0x518D1C
+// 0x518D1C gmouse_3d_menu_current_action_index
 static unsigned char gGameMouseActionMenuHighlightedItemIndex = 0;
 
-// 0x518D1E
+// 0x518D1E gmouse_3d_action_nums
 static const short gGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT] = {
     253, // Cancel
     255, // Drop
@@ -240,13 +240,13 @@ static const short gGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_CO
     435, // Push
 };
 
-// 0x518D34
+// 0x518D34 gmouse_3d_modes_enabled
 static int _gmouse_3d_modes_enabled = 1;
 
-// 0x518D38
+// 0x518D38 gmouse_3d_current_mode
 static int gGameMouseMode = GAME_MOUSE_MODE_MOVE;
 
-// 0x518D3C
+// 0x518D3C gmouse_3d_mode_nums
 static int gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
     249,
     250,
@@ -261,7 +261,7 @@ static int gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
     293,
 };
 
-// 0x518D68
+// 0x518D68 gmouse_skill_table
 static const int gGameMouseModeSkills[GAME_MOUSE_MODE_SKILL_COUNT] = {
     SKILL_FIRST_AID,
     SKILL_DOCTOR,
@@ -272,42 +272,42 @@ static const int gGameMouseModeSkills[GAME_MOUSE_MODE_SKILL_COUNT] = {
     SKILL_REPAIR,
 };
 
-// 0x518D84
+// 0x518D84 gmouse_wait_cursor_frame
 static int gGameMouseAnimatedCursorNextFrame = 0;
 
-// 0x518D88
+// 0x518D88 gmouse_wait_cursor_time
 static unsigned int gGameMouseAnimatedCursorLastUpdateTimestamp = 0;
 
-// 0x518D8C
+// 0x518D8C gmouse_bk_last_cursor
 static int _gmouse_bk_last_cursor = -1;
 
-// 0x518D90
+// 0x518D90 gmouse_3d_item_highlight
 static bool gGameMouseItemHighlightEnabled = true;
 
-// 0x518D94
+// 0x518D94 outlined_object
 static Object* gGameMouseHighlightedItem = nullptr;
 
-// 0x518D98
+// 0x518D98 gmouse_clicked_on_edge
 bool _gmouse_clicked_on_edge = false;
 
-// 0x518D9C
+// 0x518D9C mouse_flat_tile
 static int dword_518D9C = -1;
 
-// 0x596C3C
+// 0x596C3C gmouse_3d_menu_frame_actions
 static int gGameMouseActionMenuItems[GAME_MOUSE_ACTION_MENU_ITEM_COUNT];
 
-// 0x596C64
+// 0x596C64 gmouse_3d_last_mouse_x
 static int gGameMouseLastX;
 
-// 0x596C68
+// 0x596C68 gmouse_3d_last_mouse_y
 static int gGameMouseLastY;
 
 // blank.frm
-// 0x596C6C
+// 0x596C6C obj_mouse
 Object* gGameMouseBouncingCursor;
 
 // msef000.frm
-// 0x596C70
+// 0x596C70 obj_mouse_flat
 Object* gGameMouseHexCursor;
 
 // 0x596C74
@@ -331,7 +331,7 @@ static bool gameMouseClickOnInterfaceBar();
 
 static void customMouseModeFrmsInit();
 
-// 0x44B2B0
+// 0x44B2B0 gmouse_init
 int gameMouseInit()
 {
     if (gGameMouseInitialized) {
@@ -353,7 +353,7 @@ int gameMouseInit()
     return 0;
 }
 
-// 0x44B2E8
+// 0x44B2E8 gmouse_reset
 int gameMouseReset()
 {
     if (!gGameMouseInitialized) {
@@ -377,7 +377,7 @@ int gameMouseReset()
     return 0;
 }
 
-// 0x44B3B8
+// 0x44B3B8 gmouse_exit
 void gameMouseExit()
 {
     if (!gGameMouseInitialized) {
@@ -401,7 +401,7 @@ void gameMouseExit()
     gGameMouseCursor = -1;
 }
 
-// 0x44B454
+// 0x44B454 gmouse_enable
 void _gmouse_enable()
 {
     if (!_gmouse_enabled) {
@@ -413,7 +413,7 @@ void _gmouse_enable()
     }
 }
 
-// 0x44B48C
+// 0x44B48C gmouse_disable
 void _gmouse_disable(int allowScrolling)
 {
     if (_gmouse_enabled) {
@@ -428,13 +428,13 @@ void _gmouse_disable(int allowScrolling)
     }
 }
 
-// 0x44B4CC
+// 0x44B4CC gmouse_enable_scrolling
 void _gmouse_enable_scrolling()
 {
     _gmouse_scrolling_enabled = true;
 }
 
-// 0x44B4D8
+// 0x44B4D8 gmouse_disable_scrolling
 void _gmouse_disable_scrolling()
 {
     _gmouse_scrolling_enabled = false;
@@ -442,13 +442,13 @@ void _gmouse_disable_scrolling()
 
 // NOTE: Inlined.
 //
-// 0x44B4E4
+// 0x44B4E4 gmouse_scrolling_is_enabled
 bool gmouse_scrolling_is_enabled()
 {
     return _gmouse_scrolling_enabled;
 }
 
-// 0x44B504
+// 0x44B504 gmouse_get_click_to_scroll
 bool _gmouse_get_click_to_scroll()
 {
     return _gmouse_click_to_scroll;
@@ -463,7 +463,7 @@ void _gmouse_set_click_to_scroll(bool value)
     }
 }
 
-// 0x44B54C
+// 0x44B54C gmouse_is_scrolling
 int _gmouse_is_scrolling()
 {
     int isScrolling = 0;
@@ -501,7 +501,7 @@ int _gmouse_is_scrolling()
     return isScrolling;
 }
 
-// 0x44B684
+// 0x44B684 gmouse_bk_process
 void gameMouseRefresh()
 {
     if (!gGameMouseInitialized) {
@@ -907,7 +907,7 @@ bool gameMouseClickOnInterfaceBar()
     return _mouse_click_in(interfaceBarWindowRectLeft, interfaceBarWindowRect.top, interfaceBarWindowRectRight, interfaceBarWindowRect.bottom);
 }
 
-// 0x44BFA8
+// 0x44BFA8 gmouse_handle_event
 void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
 {
     if (!gGameMouseInitialized) {
@@ -1273,7 +1273,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
     }
 }
 
-// 0x44C840
+// 0x44C840 gmouse_set_cursor
 int gameMouseSetCursor(int cursor)
 {
     if (!gGameMouseInitialized) {
@@ -1343,25 +1343,25 @@ int gameMouseSetCursor(int cursor)
     return 0;
 }
 
-// 0x44C9E8
+// 0x44C9E8 gmouse_get_cursor
 int gameMouseGetCursor()
 {
     return gGameMouseCursor;
 }
 
-// 0x44C9F0
+// 0x44C9F0 gmouse_set_mapper_mode
 void gmouse_set_mapper_mode(int mode)
 {
     _gmouse_mapper_mode = mode;
 }
 
-// 0x44C9F8
+// 0x44C9F8 gmouse_3d_enable_modes
 void _gmouse_3d_enable_modes()
 {
     _gmouse_3d_modes_enabled = 1;
 }
 
-// 0x44CA18
+// 0x44CA18 gmouse_3d_set_mode
 void gameMouseSetMode(int mode)
 {
     if (!gGameMouseInitialized) {
@@ -1448,7 +1448,7 @@ int gameMouseGetMode()
     return gGameMouseMode;
 }
 
-// 0x44CB74
+// 0x44CB74 gmouse_3d_toggle_mode
 void gameMouseCycleMode()
 {
     int mode = (gGameMouseMode + 1) % 3;
@@ -1469,7 +1469,7 @@ void gameMouseCycleMode()
     gameMouseSetMode(mode);
 }
 
-// 0x44CBD0
+// 0x44CBD0 gmouse_3d_refresh
 void _gmouse_3d_refresh()
 {
     gGameMouseLastX = -1;
@@ -1479,7 +1479,7 @@ void _gmouse_3d_refresh()
     gameMouseRefresh();
 }
 
-// 0x44CBFC
+// 0x44CBFC gmouse_3d_set_fid
 int gameMouseSetBouncingCursorFid(int fid)
 {
     if (!gGameMouseInitialized) {
@@ -1528,14 +1528,14 @@ int gameMouseSetBouncingCursorFid(int fid)
     return rc;
 }
 
-// 0x44CD0C
+// 0x44CD0C gmouse_3d_reset_fid
 void gameMouseResetBouncingCursorFid()
 {
     int fid = buildFid(OBJ_TYPE_INTERFACE, 0, 0, 0, 0);
     gameMouseSetBouncingCursorFid(fid);
 }
 
-// 0x44CD2C
+// 0x44CD2C gmouse_3d_on
 void gameMouseObjectsShow()
 {
     if (!gGameMouseInitialized) {
@@ -1599,7 +1599,7 @@ void gameMouseObjectsShow()
     _gmouse_3d_last_move_time = getTicks() - 250;
 }
 
-// 0x44CE34
+// 0x44CE34 gmouse_3d_off
 void gameMouseObjectsHide()
 {
     if (!gGameMouseInitialized) {
@@ -1628,13 +1628,13 @@ void gameMouseObjectsHide()
     }
 }
 
-// 0x44CEB0
+// 0x44CEB0 gmouse_3d_is_on
 bool gameMouseObjectsIsVisible()
 {
     return (gGameMouseHexCursor->flags & OBJECT_HIDDEN) == 0;
 }
 
-// 0x44CEC4
+// 0x44CEC4 object_under_mouse
 Object* gameMouseGetObjectUnderCursor(int objectType, bool includeDude, int elevation)
 {
     int mouseX;
@@ -1675,7 +1675,7 @@ Object* gameMouseGetObjectUnderCursor(int objectType, bool includeDude, int elev
     return found;
 }
 
-// 0x44CFA0
+// 0x44CFA0 gmouse_3d_build_pick_frame
 int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int height)
 {
     CacheEntry* menuItemFrmHandle;
@@ -1753,7 +1753,7 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
     return 0;
 }
 
-// 0x44D200
+// 0x44D200 gmouse_3d_pick_frame_hot
 int _gmouse_3d_pick_frame_hot(int* x, int* y)
 {
     *x = _gmouse_3d_pick_frame_hot_x;
@@ -1761,7 +1761,7 @@ int _gmouse_3d_pick_frame_hot(int* x, int* y)
     return 0;
 }
 
-// 0x44D214
+// 0x44D214 gmouse_3d_build_menu_frame
 int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuItemsLength, int width, int height)
 {
     _gmouse_3d_menu_actions_start = nullptr;
@@ -1877,7 +1877,7 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
     return 0;
 }
 
-// 0x44D630
+// 0x44D630 gmouse_3d_highlight_menu_frame
 int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex)
 {
     if (menuItemIndex < 0 || menuItemIndex >= gGameMouseActionMenuItemsLength) {
@@ -1912,7 +1912,7 @@ int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex)
     return 0;
 }
 
-// 0x44D774
+// 0x44D774 gmouse_3d_build_to_hit_frame
 int gameMouseRenderAccuracy(const char* string, int color)
 {
     CacheEntry* crosshairFrmHandle;
@@ -1956,7 +1956,7 @@ int gameMouseRenderAccuracy(const char* string, int color)
     return 0;
 }
 
-// 0x44D878
+// 0x44D878 gmouse_3d_build_hex_frame
 int gameMouseRenderActionPoints(const char* string, int color)
 {
     memset(gGameMouseHexCursorFrmData, 0, gGameMouseHexCursorFrmWidth * gGameMouseHexCursorHeight);
@@ -1981,13 +1981,13 @@ int gameMouseRenderActionPoints(const char* string, int color)
     return 0;
 }
 
-// 0x44D954
+// 0x44D954 gmouse_3d_synch_item_highlight
 void gameMouseLoadItemHighlight()
 {
     gGameMouseItemHighlightEnabled = settings.preferences.item_highlight;
 }
 
-// 0x44D984
+// 0x44D984 gmouse_3d_init
 int gameMouseObjectsInit()
 {
     int fid;
@@ -2044,7 +2044,7 @@ int gameMouseObjectsInit()
 
 // NOTE: Inlined.
 //
-// 0x44DAC0
+// 0x44DAC0 gmouse_3d_reset
 int gameMouseObjectsReset()
 {
     if (!gGameMouseObjectsInitialized) {
@@ -2071,7 +2071,7 @@ int gameMouseObjectsReset()
 
 // NOTE: Inlined.
 //
-// 0x44DB34
+// 0x44DB34 gmouse_3d_exit
 void gameMouseObjectsFree()
 {
     if (gGameMouseObjectsInitialized) {
@@ -2087,7 +2087,7 @@ void gameMouseObjectsFree()
     }
 }
 
-// 0x44DB78
+// 0x44DB78 gmouse_3d_lock_frames
 int gameMouseActionMenuInit()
 {
     int fid;
@@ -2164,7 +2164,7 @@ err:
     return -1;
 }
 
-// 0x44DE44
+// 0x44DE44 gmouse_3d_unlock_frames
 void gameMouseActionMenuFree()
 {
     if (gGameMouseBouncingCursorFrmHandle != INVALID_CACHE_ENTRY) {
@@ -2206,7 +2206,7 @@ void gameMouseActionMenuFree()
 
 // NOTE: Inlined.
 //
-// 0x44DF1C
+// 0x44DF1C gmouse_3d_set_flat_fid
 static int gmouse_3d_set_flat_fid(int fid, Rect* rect)
 {
     if (objectSetFid(gGameMouseHexCursor, fid, rect) == 0) {
@@ -2216,7 +2216,7 @@ static int gmouse_3d_set_flat_fid(int fid, Rect* rect)
     return -1;
 }
 
-// 0x44DF40
+// 0x44DF40 gmouse_3d_reset_flat_fid
 int gameMouseUpdateHexCursorFid(Rect* rect)
 {
     int fid = buildFid(OBJ_TYPE_INTERFACE, gGameMouseModeFrmIds[gGameMouseMode], 0, 0, 0);
@@ -2228,7 +2228,7 @@ int gameMouseUpdateHexCursorFid(Rect* rect)
     return gmouse_3d_set_flat_fid(fid, rect);
 }
 
-// 0x44DF94
+// 0x44DF94 gmouse_3d_move_to
 int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
 {
     if (_gmouse_mapper_mode == 0) {
@@ -2366,7 +2366,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
     return 0;
 }
 
-// 0x44E42C
+// 0x44E42C gmouse_check_scrolling
 int gameMouseHandleScrolling(int x, int y, int cursor)
 {
     if (!_gmouse_scrolling_enabled) {
@@ -2465,7 +2465,7 @@ int gameMouseHandleScrolling(int x, int y, int cursor)
     return 0;
 }
 
-// 0x44E544
+// 0x44E544 gmouse_remove_item_outline
 void _gmouse_remove_item_outline(Object* object)
 {
     if (gGameMouseHighlightedItem != nullptr && gGameMouseHighlightedItem == object) {
@@ -2477,7 +2477,7 @@ void _gmouse_remove_item_outline(Object* object)
     }
 }
 
-// 0x44E580
+// 0x44E580 gmObjIsValidTarget
 int objectIsDoor(Object* object)
 {
     if (object == nullptr) {

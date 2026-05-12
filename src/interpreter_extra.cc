@@ -334,13 +334,13 @@ static void opTileGetObjectWithPid(Program* program);
 static void opGetObjectName(Program* program);
 static void opGetPcStat(Program* program);
 
-// 0x504B0C
+// 0x504B0C aCritter
 static char _aCritter[] = "<Critter>";
 
-// 0x453FC0
+// 0x453FC0 obj_on_screen_rect
 static Rect stru_453FC0 = { 0, 0, 640, 480 };
 
-// 0x518EC0
+// 0x518EC0 dbg_error_strs
 static const char* _dbg_error_strs[SCRIPT_ERROR_COUNT] = {
     "unimped",
     "obj is NULL",
@@ -350,10 +350,10 @@ static const char* _dbg_error_strs[SCRIPT_ERROR_COUNT] = {
 
 // Last message type during op_float_msg sequential.
 //
-// 0x518F00
+// 0x518F00 last_color
 static int _last_color = 1;
 
-// 0x518F04
+// 0x518F04 strName
 static char* _strName = _aCritter;
 
 // NOTE: This value is a little bit odd. It's used to handle 2 operations:
@@ -366,10 +366,10 @@ static char* _strName = _aCritter;
 // When used inside [opGameDialogReaction] this value contains specified
 // reaction (-1 - Good, 0 - Neutral, 1 - Bad).
 //
-// 0x5970D0
+// 0x5970D0 dialogue_mood
 static int gGameDialogReactionOrFidget;
 
-// 0x453FD0
+// 0x453FD0 dbg_error
 static void scriptPredefinedError(Program* program, const char* name, int error)
 {
     char string[260];
@@ -379,7 +379,7 @@ static void scriptPredefinedError(Program* program, const char* name, int error)
     debugPrint(string);
 }
 
-// 0x45400C
+// 0x45400C int_debug
 static void scriptError(const char* format, ...)
 {
     char string[260];
@@ -392,7 +392,7 @@ static void scriptError(const char* format, ...)
     debugPrint(string);
 }
 
-// 0x45404C
+// 0x45404C scripts_tile_is_visible
 static int tileIsVisible(int tile)
 {
     if (abs(gCenterTile - tile) % 200 < 5) {
@@ -406,7 +406,7 @@ static int tileIsVisible(int tile)
     return 0;
 }
 
-// 0x45409C
+// 0x45409C correctFidForRemovedItem
 static int _correctFidForRemovedItem(Object* critter, Object* item, int flags)
 {
     InvenSlot invenSlot = InvenSlot::Armor;
@@ -465,7 +465,7 @@ static int _correctFidForRemovedItem(Object* critter, Object* item, int flags)
 }
 
 // give_exp_points
-// 0x4541C8
+// 0x4541C8 op_give_exp_points
 static void opGiveExpPoints(Program* program)
 {
     int xp = programStackPopInteger(program);
@@ -476,7 +476,7 @@ static void opGiveExpPoints(Program* program)
 }
 
 // scr_return
-// 0x454238
+// 0x454238 op_scr_return
 static void opScrReturn(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -490,7 +490,7 @@ static void opScrReturn(Program* program)
 }
 
 // play_sfx
-// 0x4542AC
+// 0x4542AC op_play_sfx
 static void opPlaySfx(Program* program)
 {
     char* name = programStackPopString(program);
@@ -499,7 +499,7 @@ static void opPlaySfx(Program* program)
 }
 
 // set_map_start
-// 0x454314
+// 0x454314 op_set_map_start
 static void opSetMapStart(Program* program)
 {
     int rotation = programStackPopInteger(program);
@@ -522,7 +522,7 @@ static void opSetMapStart(Program* program)
 }
 
 // override_map_start
-// 0x4543F4
+// 0x4543F4 op_override_map_start
 static void opOverrideMapStart(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -560,7 +560,7 @@ static void opOverrideMapStart(Program* program)
 }
 
 // has_skill
-// 0x454568
+// 0x454568 op_has_skill
 static void opHasSkill(Program* program)
 {
     int skill = programStackPopInteger(program);
@@ -579,7 +579,7 @@ static void opHasSkill(Program* program)
 }
 
 // using_skill
-// 0x454634
+// 0x454634 op_using_skill
 static void opUsingSkill(Program* program)
 {
     int skill = programStackPopInteger(program);
@@ -598,7 +598,7 @@ static void opUsingSkill(Program* program)
 }
 
 // roll_vs_skill
-// 0x4546E8
+// 0x4546E8 op_roll_vs_skill
 static void opRollVsSkill(Program* program)
 {
     int modifier = programStackPopInteger(program);
@@ -623,7 +623,7 @@ static void opRollVsSkill(Program* program)
 }
 
 // skill_contest
-// 0x4547D4
+// 0x4547D4 op_skill_contest
 static void opSkillContest(Program* program)
 {
     int data[3];
@@ -637,7 +637,7 @@ static void opSkillContest(Program* program)
 }
 
 // do_check
-// 0x454890
+// 0x454890 op_do_check
 static void opDoCheck(Program* program)
 {
     int mod = programStackPopInteger(program);
@@ -673,7 +673,7 @@ static void opDoCheck(Program* program)
 }
 
 // is_success
-// 0x4549A8
+// 0x4549A8 op_is_success
 static void opSuccess(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -695,7 +695,7 @@ static void opSuccess(Program* program)
 }
 
 // is_critical
-// 0x454A44
+// 0x454A44 op_is_critical
 static void opCritical(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -717,7 +717,7 @@ static void opCritical(Program* program)
 }
 
 // how_much
-// 0x454AD0
+// 0x454AD0 op_how_much
 static void opHowMuch(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -737,7 +737,7 @@ static void opHowMuch(Program* program)
 }
 
 // mark_area_known
-// 0x454B6C
+// 0x454B6C op_mark_area_known
 static void opMarkAreaKnown(Program* program)
 {
     int data[3];
@@ -760,7 +760,7 @@ static void opMarkAreaKnown(Program* program)
 }
 
 // reaction_influence
-// 0x454C34
+// 0x454C34 op_reaction_influence
 static void opReactionInfluence(Program* program)
 {
     int data[3];
@@ -774,7 +774,7 @@ static void opReactionInfluence(Program* program)
 }
 
 // random
-// 0x454CD4
+// 0x454CD4 op_random
 static void opRandom(Program* program)
 {
     int data[2];
@@ -789,7 +789,7 @@ static void opRandom(Program* program)
 }
 
 // roll_dice
-// 0x454D88
+// 0x454D88 op_roll_dice
 static void opRollDice(Program* program)
 {
     int data[2];
@@ -804,7 +804,7 @@ static void opRollDice(Program* program)
 }
 
 // move_to
-// 0x454E28
+// 0x454E28 op_move_to
 static void opMoveTo(Program* program)
 {
     int elevation = programStackPopInteger(program);
@@ -863,7 +863,7 @@ static void opMoveTo(Program* program)
 }
 
 // create_object_sid
-// 0x454FA8
+// 0x454FA8 op_create_object_sid
 static void opCreateObject(Program* program)
 {
     int data[4];
@@ -951,7 +951,7 @@ out:
 }
 
 // destroy_object
-// 0x4551E4
+// 0x4551E4 op_destroy_object
 static void opDestroyObject(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -1013,7 +1013,7 @@ static void opDestroyObject(Program* program)
 }
 
 // display_msg
-// 0x455388
+// 0x455388 op_display_msg
 static void opDisplayMsg(Program* program)
 {
     char* string = programStackPopString(program);
@@ -1026,7 +1026,7 @@ static void opDisplayMsg(Program* program)
 }
 
 // script_overrides
-// 0x455430
+// 0x455430 op_script_overrides
 static void opScriptOverrides(Program* program)
 {
     int sid = scriptGetSid(program);
@@ -1040,7 +1040,7 @@ static void opScriptOverrides(Program* program)
 }
 
 // obj_is_carrying_obj_pid
-// 0x455470
+// 0x455470 op_obj_is_carrying_obj_pid
 static void opObjectIsCarryingObjectWithPid(Program* program)
 {
     int pid = programStackPopInteger(program);
@@ -1057,7 +1057,7 @@ static void opObjectIsCarryingObjectWithPid(Program* program)
 }
 
 // tile_contains_obj_pid
-// 0x455534
+// 0x455534 op_tile_contains_obj_pid
 static void opTileContainsObjectWithPid(Program* program)
 {
     int pid = programStackPopInteger(program);
@@ -1079,7 +1079,7 @@ static void opTileContainsObjectWithPid(Program* program)
 }
 
 // self_obj
-// 0x455600
+// 0x455600 op_self_obj
 static void opGetSelf(Program* program)
 {
     Object* object = scriptGetSelf(program);
@@ -1087,7 +1087,7 @@ static void opGetSelf(Program* program)
 }
 
 // source_obj
-// 0x455624
+// 0x455624 op_source_obj
 static void opGetSource(Program* program)
 {
     Object* object = nullptr;
@@ -1105,7 +1105,7 @@ static void opGetSource(Program* program)
 }
 
 // target_obj
-// 0x455678
+// 0x455678 op_target_obj
 static void opGetTarget(Program* program)
 {
     Object* object = nullptr;
@@ -1123,7 +1123,7 @@ static void opGetTarget(Program* program)
 }
 
 // dude_obj
-// 0x4556CC
+// 0x4556CC op_dude_obj
 static void opGetDude(Program* program)
 {
     programStackPushPointer(program, gDude);
@@ -1132,7 +1132,7 @@ static void opGetDude(Program* program)
 // NOTE: The implementation is the same as in [opGetTarget].
 //
 // obj_being_used_with
-// 0x4556EC
+// 0x4556EC op_obj_being_used_with
 static void opGetObjectBeingUsed(Program* program)
 {
     Object* object = nullptr;
@@ -1150,7 +1150,7 @@ static void opGetObjectBeingUsed(Program* program)
 }
 
 // local_var
-// 0x455740
+// 0x455740 op_local_var
 static void opGetLocalVar(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -1166,7 +1166,7 @@ static void opGetLocalVar(Program* program)
 }
 
 // set_local_var
-// 0x4557C8
+// 0x4557C8 op_set_local_var
 static void opSetLocalVar(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
@@ -1177,7 +1177,7 @@ static void opSetLocalVar(Program* program)
 }
 
 // map_var
-// 0x455858
+// 0x455858 op_map_var
 static void opGetMapVar(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -1192,7 +1192,7 @@ static void opGetMapVar(Program* program)
 }
 
 // set_map_var
-// 0x4558C8
+// 0x4558C8 op_set_map_var
 static void opSetMapVar(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
@@ -1202,7 +1202,7 @@ static void opSetMapVar(Program* program)
 }
 
 // global_var
-// 0x455950
+// 0x455950 op_global_var
 static void opGetGlobalVar(Program* program)
 {
     int variable = programStackPopInteger(program);
@@ -1221,7 +1221,7 @@ static void opGetGlobalVar(Program* program)
 }
 
 // set_global_var
-// 0x4559EC
+// 0x4559EC op_set_global_var
 // 0x80C6
 static void opSetGlobalVar(Program* program)
 {
@@ -1242,7 +1242,7 @@ static void opSetGlobalVar(Program* program)
 }
 
 // script_action
-// 0x455A90
+// 0x455A90 op_script_action
 static void opGetScriptAction(Program* program)
 {
     int action = 0;
@@ -1260,7 +1260,7 @@ static void opGetScriptAction(Program* program)
 }
 
 // obj_type
-// 0x455AE4
+// 0x455AE4 op_obj_type
 static void opGetObjectType(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -1274,7 +1274,7 @@ static void opGetObjectType(Program* program)
 }
 
 // obj_item_subtype
-// 0x455B6C
+// 0x455B6C op_obj_item_subtype
 static void opGetItemType(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
@@ -1293,7 +1293,7 @@ static void opGetItemType(Program* program)
 }
 
 // get_critter_stat
-// 0x455C10
+// 0x455C10 op_get_critter_stat
 static void opGetCritterStat(Program* program)
 {
     int stat = programStackPopInteger(program);
@@ -1313,7 +1313,7 @@ static void opGetCritterStat(Program* program)
 // it's last argument is amount of adjustment, not it's final value.
 //
 // set_critter_stat
-// 0x455CCC
+// 0x455CCC op_set_critter_stat
 static void opSetCritterStat(Program* program)
 {
     int value = programStackPopInteger(program);
@@ -1339,7 +1339,7 @@ static void opSetCritterStat(Program* program)
 }
 
 // animate_stand_obj
-// 0x455DC8
+// 0x455DC8 op_animate_stand_obj
 static void opAnimateStand(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -1363,7 +1363,7 @@ static void opAnimateStand(Program* program)
 }
 
 // animate_stand_reverse_obj
-// 0x455E7C
+// 0x455E7C op_animate_stand_reverse_obj
 static void opAnimateStandReverse(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -1387,7 +1387,7 @@ static void opAnimateStandReverse(Program* program)
 }
 
 // animate_move_obj_to_tile
-// 0x455F30
+// 0x455F30 op_animate_move_obj_to_tile
 static void opAnimateMoveObjectToTile(Program* program)
 {
     int flags = programStackPopInteger(program);
@@ -1436,7 +1436,7 @@ static void opAnimateMoveObjectToTile(Program* program)
 }
 
 // tile_in_tile_rect
-// 0x45607C
+// 0x45607C op_tile_in_tile_rect
 static void opTileInTileRect(Program* program)
 {
     Point points[5];
@@ -1472,7 +1472,7 @@ static void opMakeDayTime(Program* program)
 }
 
 // tile_distance
-// 0x456174
+// 0x456174 op_tile_distance
 static void opTileDistanceBetween(Program* program)
 {
     int tile2 = programStackPopInteger(program);
@@ -1490,7 +1490,7 @@ static void opTileDistanceBetween(Program* program)
 }
 
 // tile_distance_objs
-// 0x456228
+// 0x456228 op_tile_distance_objs
 static void opTileDistanceBetweenObjects(Program* program)
 {
     Object* object2 = static_cast<Object*>(programStackPopPointer(program));
@@ -1514,7 +1514,7 @@ static void opTileDistanceBetweenObjects(Program* program)
 }
 
 // tile_num
-// 0x456324
+// 0x456324 op_tile_num
 static void opGetObjectTile(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
@@ -1530,7 +1530,7 @@ static void opGetObjectTile(Program* program)
 }
 
 // tile_num_in_direction
-// 0x4563B4
+// 0x4563B4 op_tile_num_in_direction
 static void opGetTileInDirection(Program* program)
 {
     int distance = programStackPopInteger(program);
@@ -1561,7 +1561,7 @@ static void opGetTileInDirection(Program* program)
 }
 
 // pickup_obj
-// 0x4564D4
+// 0x4564D4 op_pickup_obj
 static void opPickup(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -1597,7 +1597,7 @@ static void opPickup(Program* program)
 }
 
 // drop_obj
-// 0x456580
+// 0x456580 op_drop_obj
 static void opDrop(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -1625,7 +1625,7 @@ static void opDrop(Program* program)
 }
 
 // add_obj_to_inven
-// 0x45662C
+// 0x45662C op_add_obj_to_inven
 static void opAddObjectToInventory(Program* program)
 {
     Object* item = static_cast<Object*>(programStackPopPointer(program));
@@ -1648,7 +1648,7 @@ static void opAddObjectToInventory(Program* program)
 }
 
 // rm_obj_from_inven
-// 0x456708
+// 0x456708 op_rm_obj_from_inven
 static void opRemoveObjectFromInventory(Program* program)
 {
     Object* item = static_cast<Object*>(programStackPopPointer(program));
@@ -1689,7 +1689,7 @@ static void opRemoveObjectFromInventory(Program* program)
 }
 
 // wield_obj_critter
-// 0x45681C
+// 0x45681C op_wield_obj_critter
 static void opWieldItem(Program* program)
 {
     Object* item = static_cast<Object*>(programStackPopPointer(program));
@@ -1750,7 +1750,7 @@ static void opWieldItem(Program* program)
 }
 
 // use_obj
-// 0x4569D0
+// 0x4569D0 op_use_obj
 static void opUseObject(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -1783,7 +1783,7 @@ static void opUseObject(Program* program)
 }
 
 // obj_can_see_obj
-// 0x456AC4
+// 0x456AC4 op_obj_can_see_obj
 static void opObjectCanSeeObject(Program* program)
 {
     Object* object2 = static_cast<Object*>(programStackPopPointer(program));
@@ -1816,7 +1816,7 @@ static void opObjectCanSeeObject(Program* program)
 }
 
 // attack_complex
-// 0x456C00
+// 0x456C00 op_attack
 static void opAttackComplex(Program* program)
 {
     int data[8];
@@ -1896,7 +1896,7 @@ static void opAttackComplex(Program* program)
 }
 
 // start_gdialog
-// 0x456DF0
+// 0x456DF0 op_start_gdialog
 static void opStartGameDialog(Program* program)
 {
     int backgroundId = programStackPopInteger(program);
@@ -1951,7 +1951,7 @@ static void opStartGameDialog(Program* program)
 }
 
 // end_dialogue
-// 0x456F80
+// 0x456F80 op_end_dialogue
 static void opEndGameDialog(Program* program)
 {
     if (_gdialogExitFromScript() != -1) {
@@ -1961,7 +1961,7 @@ static void opEndGameDialog(Program* program)
 }
 
 // dialogue_reaction
-// 0x456FA4
+// 0x456FA4 op_dialogue_reaction
 static void opGameDialogReaction(Program* program)
 {
     int value = programStackPopInteger(program);
@@ -1971,7 +1971,7 @@ static void opGameDialogReaction(Program* program)
 }
 
 // metarule3
-// 0x457110
+// 0x457110 op_metarule3
 static void opMetarule3(Program* program)
 {
     ProgramValue param3 = programStackPopValue(program);
@@ -2067,7 +2067,7 @@ static void opMetarule3(Program* program)
 }
 
 // set_map_music
-// 0x45734C
+// 0x45734C op_set_map_music
 static void opSetMapMusic(Program* program)
 {
     char* string = programStackPopString(program);
@@ -2083,7 +2083,7 @@ static void opSetMapMusic(Program* program)
 //
 //
 // set_obj_visibility
-// 0x45741C
+// 0x45741C op_set_obj_visibility
 static void opSetObjectVisibility(Program* program)
 {
     int invisible = programStackPopInteger(program);
@@ -2130,7 +2130,7 @@ static void opSetObjectVisibility(Program* program)
 }
 
 // load_map
-// 0x45755C
+// 0x45755C op_load_map
 static void opLoadMap(Program* program)
 {
     int param = programStackPopInteger(program);
@@ -2169,7 +2169,7 @@ static void opLoadMap(Program* program)
 }
 
 // wm_area_set_pos
-// 0x457680
+// 0x457680 op_wm_area_set_pos
 static void opWorldmapCitySetPos(Program* program)
 {
     int y = programStackPopInteger(program);
@@ -2183,7 +2183,7 @@ static void opWorldmapCitySetPos(Program* program)
 }
 
 // set_exit_grids
-// 0x457730
+// 0x457730 op_set_exit_grids
 static void opSetExitGrids(Program* program)
 {
     int destinationRotation = programStackPopInteger(program);
@@ -2204,7 +2204,7 @@ static void opSetExitGrids(Program* program)
 }
 
 // anim_busy
-// 0x4577EC
+// 0x4577EC op_anim_busy
 static void opAnimBusy(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -2220,7 +2220,7 @@ static void opAnimBusy(Program* program)
 }
 
 // critter_heal
-// 0x457880
+// 0x457880 op_critter_heal
 static void opCritterHeal(Program* program)
 {
     int amount = programStackPopInteger(program);
@@ -2236,7 +2236,7 @@ static void opCritterHeal(Program* program)
 }
 
 // set_light_level
-// 0x457934
+// 0x457934 op_set_light_level
 static void opSetLightLevel(Program* program)
 {
     // Maps light level to light intensity.
@@ -2272,7 +2272,7 @@ static void opSetLightLevel(Program* program)
 }
 
 // game_time
-// 0x4579F4
+// 0x4579F4 op_game_time
 static void opGetGameTime(Program* program)
 {
     int time = gameTimeGetTime();
@@ -2280,7 +2280,7 @@ static void opGetGameTime(Program* program)
 }
 
 // game_time_in_seconds
-// 0x457A18
+// 0x457A18 op_game_time_in_seconds
 static void opGetGameTimeInSeconds(Program* program)
 {
     int time = gameTimeGetTime();
@@ -2288,7 +2288,7 @@ static void opGetGameTimeInSeconds(Program* program)
 }
 
 // elevation
-// 0x457A44
+// 0x457A44 op_elevation
 static void opGetObjectElevation(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -2304,7 +2304,7 @@ static void opGetObjectElevation(Program* program)
 }
 
 // kill_critter
-// 0x457AD4
+// 0x457AD4 op_kill_critter
 static void opKillCritter(Program* program)
 {
     int deathFrame = programStackPopInteger(program);
@@ -2367,7 +2367,7 @@ static int _correctDeath(Object* critter, int anim, bool forceBack)
 }
 
 // kill_critter_type
-// 0x457CB4
+// 0x457CB4 op_kill_critter_type
 static void opKillCritterType(Program* program)
 {
     // 0x518ED0
@@ -2474,7 +2474,7 @@ static void opKillCritterType(Program* program)
 }
 
 // critter_dmg
-// 0x457EB4
+// 0x457EB4 op_critter_damage
 static void opCritterDamage(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -2512,7 +2512,7 @@ static void opCritterDamage(Program* program)
 }
 
 // add_timer_event
-// 0x457FF0
+// 0x457FF0 op_add_timer_event
 static void opAddTimerEvent(Program* program)
 {
     int param = programStackPopInteger(program);
@@ -2528,7 +2528,7 @@ static void opAddTimerEvent(Program* program)
 }
 
 // rm_timer_event
-// 0x458094
+// 0x458094 op_rm_timer_event
 static void opRemoveTimerEvent(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -2545,7 +2545,7 @@ static void opRemoveTimerEvent(Program* program)
 // Converts seconds into game ticks.
 //
 // game_ticks
-// 0x458108
+// 0x458108 op_game_ticks
 static void opGameTicks(Program* program)
 {
     int ticks = programStackPopInteger(program);
@@ -2562,7 +2562,7 @@ static void opGameTicks(Program* program)
 // information of the critters using passed parameters. It's like "metarule" but
 // for critters.
 //
-// 0x458180
+// 0x458180 op_has_trait
 // has_trait
 static void opHasTrait(Program* program)
 {
@@ -2623,7 +2623,7 @@ static void opHasTrait(Program* program)
 }
 
 // obj_can_hear_obj
-// 0x45835C
+// 0x45835C op_obj_can_hear_obj
 static void opObjectCanHearObject(Program* program)
 {
     Object* object2 = static_cast<Object*>(programStackPopPointer(program));
@@ -2648,7 +2648,7 @@ static void opObjectCanHearObject(Program* program)
 }
 
 // game_time_hour
-// 0x458438
+// 0x458438 op_game_time_hour
 static void opGameTimeHour(Program* program)
 {
     int value = gameTimeGetHour();
@@ -2656,7 +2656,7 @@ static void opGameTimeHour(Program* program)
 }
 
 // fixed_param
-// 0x45845C
+// 0x45845C op_fixed_param
 static void opGetFixedParam(Program* program)
 {
     int fixedParam = 0;
@@ -2674,7 +2674,7 @@ static void opGetFixedParam(Program* program)
 }
 
 // tile_is_visible
-// 0x4584B0
+// 0x4584B0 op_tile_is_visible
 static void opTileIsVisible(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -2688,7 +2688,7 @@ static void opTileIsVisible(Program* program)
 }
 
 // dialogue_system_enter
-// 0x458534
+// 0x458534 op_dialogue_system_enter
 static void opGameDialogSystemEnter(Program* program)
 {
     int sid = scriptGetSid(program);
@@ -2717,7 +2717,7 @@ static void opGameDialogSystemEnter(Program* program)
 }
 
 // action_being_used
-// 0x458594
+// 0x458594 op_action_being_used
 static void opGetActionBeingUsed(Program* program)
 {
     int action = -1;
@@ -2735,7 +2735,7 @@ static void opGetActionBeingUsed(Program* program)
 }
 
 // critter_state
-// 0x4585E8
+// 0x4585E8 op_critter_state
 static void opGetCritterState(Program* program)
 {
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
@@ -2764,7 +2764,7 @@ static void opGetCritterState(Program* program)
 }
 
 // game_time_advance
-// 0x4586C8
+// 0x4586C8 op_game_time_advance
 static void opGameTimeAdvance(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -2782,7 +2782,7 @@ static void opGameTimeAdvance(Program* program)
 }
 
 // radiation_inc
-// 0x458760
+// 0x458760 op_radiation_inc
 static void opRadiationIncrease(Program* program)
 {
     int amount = programStackPopInteger(program);
@@ -2797,7 +2797,7 @@ static void opRadiationIncrease(Program* program)
 }
 
 // radiation_dec
-// 0x458800
+// 0x458800 op_radiation_dec
 static void opRadiationDecrease(Program* program)
 {
     int amount = programStackPopInteger(program);
@@ -2815,7 +2815,7 @@ static void opRadiationDecrease(Program* program)
 }
 
 // critter_attempt_placement
-// 0x4588B4
+// 0x4588B4 op_critter_attempt_placement
 static void opCritterAttemptPlacement(Program* program)
 {
     int elevation = programStackPopInteger(program);
@@ -2838,7 +2838,7 @@ static void opCritterAttemptPlacement(Program* program)
 }
 
 // obj_pid
-// 0x4589A0
+// 0x4589A0 op_obj_pid
 static void opGetObjectPid(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
@@ -2854,7 +2854,7 @@ static void opGetObjectPid(Program* program)
 }
 
 // cur_map_index
-// 0x458A30
+// 0x458A30 op_cur_map_index
 static void opGetCurrentMap(Program* program)
 {
     int mapIndex = mapGetCurrentMap();
@@ -2862,7 +2862,7 @@ static void opGetCurrentMap(Program* program)
 }
 
 // critter_add_trait
-// 0x458A54
+// 0x458A54 op_critter_add_trait
 static void opCritterAddTrait(Program* program)
 {
     int value = programStackPopInteger(program);
@@ -2932,7 +2932,7 @@ static void opCritterAddTrait(Program* program)
 }
 
 // critter_rm_trait
-// 0x458C2C
+// 0x458C2C op_critter_rm_trait
 static void opCritterRemoveTrait(Program* program)
 {
     int value = programStackPopInteger(program);
@@ -2965,7 +2965,7 @@ static void opCritterRemoveTrait(Program* program)
 }
 
 // proto_data
-// 0x458D38
+// 0x458D38 op_proto_data
 static void opGetProtoData(Program* program)
 {
     int member = programStackPopInteger(program);
@@ -2988,7 +2988,7 @@ static void opGetProtoData(Program* program)
 }
 
 // message_str
-// 0x458E10
+// 0x458E10 op_message_str
 static void opGetMessageString(Program* program)
 {
     // 0x518EFC
@@ -3012,7 +3012,7 @@ static void opGetMessageString(Program* program)
 }
 
 // critter_inven_obj
-// 0x458F00
+// 0x458F00 op_critter_inven_obj
 static void opCritterGetInventoryObject(Program* program)
 {
     int type = programStackPopInteger(program);
@@ -3063,7 +3063,7 @@ static void opCritterGetInventoryObject(Program* program)
 }
 
 // obj_set_light_level
-// 0x459088
+// 0x459088 op_obj_set_light_level
 static void opSetObjectLightLevel(Program* program)
 {
     int lightDistance = programStackPopInteger(program);
@@ -3089,14 +3089,14 @@ static void opSetObjectLightLevel(Program* program)
 }
 
 // world_map
-// 0x459170
+// 0x459170 op_world_map
 static void opWorldmap(Program* program)
 {
     scriptsRequestWorldMap();
 }
 
 // inven_cmds
-// 0x459178
+// 0x459178 op_inven_cmds
 static void _op_inven_cmds(Program* program)
 {
     int index = programStackPopInteger(program);
@@ -3119,7 +3119,7 @@ static void _op_inven_cmds(Program* program)
 }
 
 // float_msg
-// 0x459280
+// 0x459280 op_float_msg
 static void opFloatMessage(Program* program)
 {
     int floatingMessageType = programStackPopInteger(program);
@@ -3206,7 +3206,7 @@ static void opFloatMessage(Program* program)
 }
 
 // metarule
-// 0x4594A0
+// 0x4594A0 op_metarule
 static void opMetarule(Program* program)
 {
     ProgramValue param = programStackPopValue(program);
@@ -3361,7 +3361,7 @@ static void opMetarule(Program* program)
 }
 
 // anim
-// 0x4598BC
+// 0x4598BC op_anim
 static void opAnim(Program* program)
 {
     ProgramValue frameValue = programStackPopValue(program);
@@ -3444,7 +3444,7 @@ static void opAnim(Program* program)
 }
 
 // obj_carrying_pid_obj
-// 0x459B5C
+// 0x459B5C op_obj_carrying_pid_obj
 static void opObjectCarryingObjectByPid(Program* program)
 {
     int pid = programStackPopInteger(program);
@@ -3461,7 +3461,7 @@ static void opObjectCarryingObjectByPid(Program* program)
 }
 
 // reg_anim_func
-// 0x459C20
+// 0x459C20 op_reg_anim_func
 static void opRegAnimFunc(Program* program)
 {
     ProgramValue param = programStackPopValue(program);
@@ -3483,7 +3483,7 @@ static void opRegAnimFunc(Program* program)
 }
 
 // reg_anim_animate
-// 0x459CD4
+// 0x459CD4 op_reg_anim_animate
 static void opRegAnimAnimate(Program* program)
 {
     int delay = programStackPopInteger(program);
@@ -3502,7 +3502,7 @@ static void opRegAnimAnimate(Program* program)
 }
 
 // reg_anim_animate_reverse
-// 0x459DC4
+// 0x459DC4 op_reg_anim_animate_reverse
 static void opRegAnimAnimateReverse(Program* program)
 {
     int delay = programStackPopInteger(program);
@@ -3519,7 +3519,7 @@ static void opRegAnimAnimateReverse(Program* program)
 }
 
 // reg_anim_obj_move_to_obj
-// 0x459E74
+// 0x459E74 op_reg_anim_obj_move_to_obj
 static void opRegAnimObjectMoveToObject(Program* program)
 {
     int delay = programStackPopInteger(program);
@@ -3536,7 +3536,7 @@ static void opRegAnimObjectMoveToObject(Program* program)
 }
 
 // reg_anim_obj_run_to_obj
-// 0x459F28
+// 0x459F28 op_reg_anim_obj_run_to_obj
 static void opRegAnimObjectRunToObject(Program* program)
 {
     int delay = programStackPopInteger(program);
@@ -3553,7 +3553,7 @@ static void opRegAnimObjectRunToObject(Program* program)
 }
 
 // reg_anim_obj_move_to_tile
-// 0x459FDC
+// 0x459FDC op_reg_anim_obj_move_to_tile
 static void opRegAnimObjectMoveToTile(Program* program)
 {
     int delay = programStackPopInteger(program);
@@ -3570,7 +3570,7 @@ static void opRegAnimObjectMoveToTile(Program* program)
 }
 
 // reg_anim_obj_run_to_tile
-// 0x45A094
+// 0x45A094 op_reg_anim_obj_run_to_tile
 static void opRegAnimObjectRunToTile(Program* program)
 {
     int delay = programStackPopInteger(program);
@@ -3587,7 +3587,7 @@ static void opRegAnimObjectRunToTile(Program* program)
 }
 
 // play_gmovie
-// 0x45A14C
+// 0x45A14C op_play_gmovie
 static void opPlayGameMovie(Program* program)
 {
     // 0x453F9C
@@ -3636,7 +3636,7 @@ static void opPlayGameMovie(Program* program)
 }
 
 // add_mult_objs_to_inven
-// 0x45A200
+// 0x45A200 op_add_mult_objs_to_inven
 static void opAddMultipleObjectsToInventory(Program* program)
 {
     int quantity = programStackPopInteger(program);
@@ -3662,7 +3662,7 @@ static void opAddMultipleObjectsToInventory(Program* program)
 }
 
 // rm_mult_objs_from_inven
-// 0x45A2D4
+// 0x45A2D4 op_rm_mult_objs_from_inven
 static void opRemoveMultipleObjectsFromInventory(Program* program)
 {
     int quantityToRemove = programStackPopInteger(program);
@@ -3699,7 +3699,7 @@ static void opRemoveMultipleObjectsFromInventory(Program* program)
 }
 
 // get_month
-// 0x45A40C
+// 0x45A40C op_get_month
 static void opGetMonth(Program* program)
 {
     int month;
@@ -3709,7 +3709,7 @@ static void opGetMonth(Program* program)
 }
 
 // get_day
-// 0x45A43C
+// 0x45A43C op_get_day
 static void opGetDay(Program* program)
 {
     int day;
@@ -3719,7 +3719,7 @@ static void opGetDay(Program* program)
 }
 
 // explosion
-// 0x45A46C
+// 0x45A46C op_explosion
 static void opExplosion(Program* program)
 {
     int maxDamage = programStackPopInteger(program);
@@ -3740,7 +3740,7 @@ static void opExplosion(Program* program)
 }
 
 // days_since_visited
-// 0x45A528
+// 0x45A528 op_days_since_visited
 static void opGetDaysSinceLastVisit(Program* program)
 {
     int days;
@@ -3755,7 +3755,7 @@ static void opGetDaysSinceLastVisit(Program* program)
 }
 
 // gsay_start
-// 0x45A56C
+// 0x45A56C op_gsay_start
 static void _op_gsay_start(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -3769,7 +3769,7 @@ static void _op_gsay_start(Program* program)
 }
 
 // gsay_end
-// 0x45A5B0
+// 0x45A5B0 op_gsay_end
 static void _op_gsay_end(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -3778,7 +3778,7 @@ static void _op_gsay_end(Program* program)
 }
 
 // gsay_reply
-// 0x45A5D4
+// 0x45A5D4 op_gsay_reply
 static void _op_gsay_reply(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -3799,7 +3799,7 @@ static void _op_gsay_reply(Program* program)
 }
 
 // gsay_option
-// 0x45A6C4
+// 0x45A6C4 op_gsay_option
 static void _op_gsay_option(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -3836,7 +3836,7 @@ static void _op_gsay_option(Program* program)
 }
 
 // gsay_message
-// 0x45A8AC
+// 0x45A8AC op_gsay_message
 static void _op_gsay_message(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -3861,7 +3861,7 @@ static void _op_gsay_message(Program* program)
 }
 
 // giq_option
-// 0x45A9B4
+// 0x45A9B4 op_giq_option
 static void _op_giq_option(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -3914,7 +3914,7 @@ static void _op_giq_option(Program* program)
 }
 
 // poison
-// 0x45AB90
+// 0x45AB90 op_poison
 static void opPoison(Program* program)
 {
     int amount = programStackPopInteger(program);
@@ -3931,7 +3931,7 @@ static void opPoison(Program* program)
 }
 
 // get_poison
-// 0x45AC44
+// 0x45AC44 op_get_poison
 static void opGetPoison(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
@@ -3951,7 +3951,7 @@ static void opGetPoison(Program* program)
 }
 
 // party_add
-// 0x45ACF4
+// 0x45ACF4 op_party_add
 static void opPartyAdd(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -3964,7 +3964,7 @@ static void opPartyAdd(Program* program)
 }
 
 // party_remove
-// 0x45AD68
+// 0x45AD68 op_party_remove
 static void opPartyRemove(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -3977,7 +3977,7 @@ static void opPartyRemove(Program* program)
 }
 
 // reg_anim_animate_forever
-// 0x45ADDC
+// 0x45ADDC op_reg_anim_animate_forever
 static void opRegAnimAnimateForever(Program* program)
 {
     int anim = programStackPopInteger(program);
@@ -3993,7 +3993,7 @@ static void opRegAnimAnimateForever(Program* program)
 }
 
 // critter_injure
-// 0x45AE8C
+// 0x45AE8C op_critter_injure
 static void opCritterInjure(Program* program)
 {
     int flags = programStackPopInteger(program);
@@ -4025,14 +4025,14 @@ static void opCritterInjure(Program* program)
 }
 
 // combat_is_initialized
-// 0x45AF7C
+// 0x45AF7C op_combat_is_initialized
 static void opCombatIsInitialized(Program* program)
 {
     programStackPushInteger(program, isInCombat() ? 1 : 0);
 }
 
 // gdialog_barter
-// 0x45AFA0
+// 0x45AFA0 op_gdialog_barter
 static void _op_gdialog_barter(Program* program)
 {
     int modifier = programStackPopInteger(program);
@@ -4043,14 +4043,14 @@ static void _op_gdialog_barter(Program* program)
 }
 
 // difficulty_level
-// 0x45B010
+// 0x45B010 op_difficulty_level
 static void opGetGameDifficulty(Program* program)
 {
     programStackPushInteger(program, settings.preferences.game_difficulty);
 }
 
 // running_burning_guy
-// 0x45B05C
+// 0x45B05C op_running_burning_guy
 static void opGetRunningBurningGuy(Program* program)
 {
     programStackPushInteger(program, static_cast<int>(settings.preferences.running_burning_guy));
@@ -4073,7 +4073,7 @@ static void _op_inven_unwield(Program* program)
 }
 
 // obj_is_locked
-// 0x45B0D8
+// 0x45B0D8 op_obj_is_locked
 static void opObjectIsLocked(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4089,7 +4089,7 @@ static void opObjectIsLocked(Program* program)
 }
 
 // obj_lock
-// 0x45B16C
+// 0x45B16C op_obj_lock
 static void opObjectLock(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4102,7 +4102,7 @@ static void opObjectLock(Program* program)
 }
 
 // obj_unlock
-// 0x45B1E0
+// 0x45B1E0 op_obj_unlock
 static void opObjectUnlock(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4115,7 +4115,7 @@ static void opObjectUnlock(Program* program)
 }
 
 // obj_is_open
-// 0x45B254
+// 0x45B254 op_obj_is_open
 static void opObjectIsOpen(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4131,7 +4131,7 @@ static void opObjectIsOpen(Program* program)
 }
 
 // obj_open
-// 0x45B2E8
+// 0x45B2E8 op_obj_open
 static void opObjectOpen(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4144,7 +4144,7 @@ static void opObjectOpen(Program* program)
 }
 
 // obj_close
-// 0x45B35C
+// 0x45B35C op_obj_close
 static void opObjectClose(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4157,28 +4157,28 @@ static void opObjectClose(Program* program)
 }
 
 // game_ui_disable
-// 0x45B3D0
+// 0x45B3D0 op_game_ui_disable
 static void opGameUiDisable(Program* program)
 {
     gameUiDisable(0);
 }
 
 // game_ui_enable
-// 0x45B3D8
+// 0x45B3D8 op_game_ui_enable
 static void opGameUiEnable(Program* program)
 {
     gameUiEnable();
 }
 
 // game_ui_is_disabled
-// 0x45B3E0
+// 0x45B3E0 op_game_ui_is_disabled
 static void opGameUiIsDisabled(Program* program)
 {
     programStackPushInteger(program, gameUiIsDisabled() ? 1 : 0);
 }
 
 // gfade_out
-// 0x45B404
+// 0x45B404 op_gfade_out
 static void opGameFadeOut(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -4191,7 +4191,7 @@ static void opGameFadeOut(Program* program)
 }
 
 // gfade_in
-// 0x45B47C
+// 0x45B47C op_gfade_in
 static void opGameFadeIn(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -4204,7 +4204,7 @@ static void opGameFadeIn(Program* program)
 }
 
 // item_caps_total
-// 0x45B4F4
+// 0x45B4F4 op_item_caps_total
 static void opItemCapsTotal(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4220,7 +4220,7 @@ static void opItemCapsTotal(Program* program)
 }
 
 // item_caps_adjust
-// 0x45B588
+// 0x45B588 op_item_caps_adjust
 static void opItemCapsAdjust(Program* program)
 {
     int amount = programStackPopInteger(program);
@@ -4261,7 +4261,7 @@ static void _op_anim_action_frame(Program* program)
 }
 
 // reg_anim_play_sfx
-// 0x45B740
+// 0x45B740 op_reg_anim_play_sfx
 static void opRegAnimPlaySfx(Program* program)
 {
     int delay = programStackPopInteger(program);
@@ -4281,7 +4281,7 @@ static void opRegAnimPlaySfx(Program* program)
 }
 
 // critter_mod_skill
-// 0x45B840
+// 0x45B840 op_critter_mod_skill
 static void opCritterModifySkill(Program* program)
 {
     int points = programStackPopInteger(program);
@@ -4331,7 +4331,7 @@ static void opCritterModifySkill(Program* program)
 }
 
 // sfx_build_char_name
-// 0x45B9C4
+// 0x45B9C4 op_sfx_build_char_name
 static void opSfxBuildCharName(Program* program)
 {
     int extra = programStackPopInteger(program);
@@ -4349,7 +4349,7 @@ static void opSfxBuildCharName(Program* program)
 }
 
 // sfx_build_ambient_name
-// 0x45BAA8
+// 0x45BAA8 op_sfx_build_ambient_name
 static void opSfxBuildAmbientName(Program* program)
 {
     char* baseName = programStackPopString(program);
@@ -4360,7 +4360,7 @@ static void opSfxBuildAmbientName(Program* program)
 }
 
 // sfx_build_interface_name
-// 0x45BB54
+// 0x45BB54 op_sfx_build_interface_name
 static void opSfxBuildInterfaceName(Program* program)
 {
     char* baseName = programStackPopString(program);
@@ -4371,7 +4371,7 @@ static void opSfxBuildInterfaceName(Program* program)
 }
 
 // sfx_build_item_name
-// 0x45BC00
+// 0x45BC00 op_sfx_build_item_name
 static void opSfxBuildItemName(Program* program)
 {
     const char* baseName = programStackPopString(program);
@@ -4382,7 +4382,7 @@ static void opSfxBuildItemName(Program* program)
 }
 
 // sfx_build_weapon_name
-// 0x45BCAC
+// 0x45BCAC op_sfx_build_weapon_name
 static void opSfxBuildWeaponName(Program* program)
 {
     Object* target = static_cast<Object*>(programStackPopPointer(program));
@@ -4396,7 +4396,7 @@ static void opSfxBuildWeaponName(Program* program)
 }
 
 // sfx_build_scenery_name
-// 0x45BD7C
+// 0x45BD7C op_sfx_build_scenery_name
 static void opSfxBuildSceneryName(Program* program)
 {
     int actionType = programStackPopInteger(program);
@@ -4409,7 +4409,7 @@ static void opSfxBuildSceneryName(Program* program)
 }
 
 // sfx_build_open_name
-// 0x45BE58
+// 0x45BE58 op_sfx_build_open_name
 static void opSfxBuildOpenName(Program* program)
 {
     int action = programStackPopInteger(program);
@@ -4426,7 +4426,7 @@ static void opSfxBuildOpenName(Program* program)
 }
 
 // attack_setup
-// 0x45BF38
+// 0x45BF38 op_attack_setup
 static void opAttackSetup(Program* program)
 {
     Object* defender = static_cast<Object*>(programStackPopPointer(program));
@@ -4477,7 +4477,7 @@ static void opAttackSetup(Program* program)
 }
 
 // destroy_mult_objs
-// 0x45C0E8
+// 0x45C0E8 op_destroy_mult_objs
 static void opDestroyMultipleObjects(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -4537,7 +4537,7 @@ static void opDestroyMultipleObjects(Program* program)
 }
 
 // use_obj_on_obj
-// 0x45C290
+// 0x45C290 op_use_obj_on_obj
 static void opUseObjectOnObject(Program* program)
 {
     Object* target = static_cast<Object*>(programStackPopPointer(program));
@@ -4579,7 +4579,7 @@ static void opUseObjectOnObject(Program* program)
 }
 
 // endgame_slideshow
-// 0x45C3B0
+// 0x45C3B0 op_endgame_slideshow
 static void opEndgameSlideshow(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -4588,7 +4588,7 @@ static void opEndgameSlideshow(Program* program)
 }
 
 // move_obj_inven_to_obj
-// 0x45C3D0
+// 0x45C3D0 op_move_obj_inven_to_obj
 static void opMoveObjectInventoryToObject(Program* program)
 {
     Object* object2 = static_cast<Object*>(programStackPopPointer(program));
@@ -4659,7 +4659,7 @@ static void opMoveObjectInventoryToObject(Program* program)
 }
 
 // endgame_movie
-// 0x45C54C
+// 0x45C54C op_endgame_movie
 static void opEndgameMovie(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
@@ -4668,7 +4668,7 @@ static void opEndgameMovie(Program* program)
 }
 
 // obj_art_fid
-// 0x45C56C
+// 0x45C56C op_obj_art_fid
 static void opGetObjectFid(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4684,7 +4684,7 @@ static void opGetObjectFid(Program* program)
 }
 
 // art_anim
-// 0x45C5F8
+// 0x45C5F8 op_art_anim
 static void opGetFidAnim(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -4692,7 +4692,7 @@ static void opGetFidAnim(Program* program)
 }
 
 // party_member_obj
-// 0x45C66C
+// 0x45C66C op_party_member_obj
 static void opGetPartyMember(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -4702,7 +4702,7 @@ static void opGetPartyMember(Program* program)
 }
 
 // rotation_to_tile
-// 0x45C6DC
+// 0x45C6DC op_rotation_to_tile
 static void opGetRotationToTile(Program* program)
 {
     int tile2 = programStackPopInteger(program);
@@ -4713,7 +4713,7 @@ static void opGetRotationToTile(Program* program)
 }
 
 // jam_lock
-// 0x45C778
+// 0x45C778 op_jam_lock
 static void opJamLock(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
@@ -4722,7 +4722,7 @@ static void opJamLock(Program* program)
 }
 
 // gdialog_set_barter_mod
-// 0x45C7D4
+// 0x45C7D4 op_gdialog_set_barter_mod
 static void opGameDialogSetBarterMod(Program* program)
 {
     int modifier = programStackPopInteger(program);
@@ -4731,14 +4731,14 @@ static void opGameDialogSetBarterMod(Program* program)
 }
 
 // combat_difficulty
-// 0x45C830
+// 0x45C830 op_combat_difficulty
 static void opGetCombatDifficulty(Program* program)
 {
     programStackPushInteger(program, settings.preferences.combat_difficulty);
 }
 
 // obj_on_screen
-// 0x45C878
+// 0x45C878 op_obj_on_screen
 static void opObjectOnScreen(Program* program)
 {
     Rect rect;
@@ -4765,7 +4765,7 @@ static void opObjectOnScreen(Program* program)
 }
 
 // critter_is_fleeing
-// 0x45C93C
+// 0x45C93C op_critter_is_fleeing
 static void opCritterIsFleeing(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
@@ -4781,7 +4781,7 @@ static void opCritterIsFleeing(Program* program)
 }
 
 // critter_set_flee_state
-// 0x45C9DC
+// 0x45C9DC op_critter_set_flee_state
 static void opCritterSetFleeState(Program* program)
 {
     int fleeing = programStackPopInteger(program);
@@ -4799,7 +4799,7 @@ static void opCritterSetFleeState(Program* program)
 }
 
 // terminate_combat
-// 0x45CA84
+// 0x45CA84 op_terminate_combat
 static void opTerminateCombat(Program* program)
 {
     if (isInCombat()) {
@@ -4816,7 +4816,7 @@ static void opTerminateCombat(Program* program)
 }
 
 // debug_msg
-// 0x45CAC8
+// 0x45CAC8 op_debug_msg
 static void opDebugMessage(Program* program)
 {
     char* string = programStackPopString(program);
@@ -4830,7 +4830,7 @@ static void opDebugMessage(Program* program)
 }
 
 // critter_stop_attacking
-// 0x45CB70
+// 0x45CB70 op_critter_stop_attacking
 static void opCritterStopAttacking(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
@@ -4845,7 +4845,7 @@ static void opCritterStopAttacking(Program* program)
 }
 
 // tile_contains_pid_obj
-// 0x45CBF8
+// 0x45CBF8 op_tile_contains_pid_obj
 static void opTileGetObjectWithPid(Program* program)
 {
     int pid = programStackPopInteger(program);
@@ -4868,7 +4868,7 @@ static void opTileGetObjectWithPid(Program* program)
 }
 
 // obj_name
-// 0x45CCC8
+// 0x45CCC8 op_obj_name
 static void opGetObjectName(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
@@ -4882,7 +4882,7 @@ static void opGetObjectName(Program* program)
 }
 
 // get_pc_stat
-// 0x45CD64
+// 0x45CD64 op_get_pc_stat
 static void opGetPcStat(Program* program)
 {
     int data = programStackPopInteger(program);
@@ -4897,7 +4897,7 @@ void _intExtraClose_()
     sfallOpcodesExit();
 }
 
-// 0x45CDD8
+// 0x45CDD8 initIntExtra
 void _initIntExtra()
 {
     interpreterRegisterOpcode(0x80A1, opGiveExpPoints); // op_give_exp_points

@@ -172,59 +172,59 @@ typedef enum PartyMemberCustomizationOption {
     PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT,
 } PartyMemberCustomizationOption;
 
-// 0x444D10
+// 0x444D10 Dogs
 static int _Dogs[3] = {
     0x1000088,
     0x1000156,
     0x1000180,
 };
 
-// 0x5186D4
+// 0x5186D4 dialog_state_fix
 static int _dialog_state_fix = 0;
 
-// 0x5186D8
+// 0x5186D8 gdNumOptions
 static int gGameDialogOptionEntriesLength = 0;
 
-// 0x5186DC
+// 0x5186DC curReviewSlot
 static int gGameDialogReviewEntriesLength = 0;
 
-// 0x5186E0
+// 0x5186E0 headWindowBuffer
 static unsigned char* gGameDialogDisplayBuffer = nullptr;
 
-// 0x5186E4
+// 0x5186E4 gReplyWin
 static int gGameDialogReplyWindow = -1;
 
-// 0x5186E8
+// 0x5186E8 gOptionWin
 static int gGameDialogOptionsWindow = -1;
 
-// 0x5186EC
+// 0x5186EC gdialog_window_created
 static bool _gdialog_window_created = false;
 
-// 0x5186F0
+// 0x5186F0 boxesWereDisabled
 static int _boxesWereDisabled = 0;
 
-// 0x5186F4
+// 0x5186F4 fidgetFID
 static int gGameDialogFidgetFid = 0;
 
-// 0x5186F8
+// 0x5186F8 fidgetKey
 static CacheEntry* gGameDialogFidgetFrmHandle = nullptr;
 
-// 0x5186FC
+// 0x5186FC fidgetFp
 static Art* gGameDialogFidgetFrm = nullptr;
 
-// 0x518700
+// 0x518700 backgroundIndex
 static int gGameDialogBackground = 2;
 
-// 0x518704
+// 0x518704 lipsFID
 static int _lipsFID = 0;
 
-// 0x518708
+// 0x518708 lipsKey
 static CacheEntry* _lipsKey = nullptr;
 
-// 0x51870C
+// 0x51870C lipsFp
 static Art* _lipsFp = nullptr;
 
-// 0x518710
+// 0x518710 gdialog_speech_playing
 static bool gGameDialogLipSyncStarted = false;
 
 // 0x518714
@@ -239,16 +239,16 @@ static GameDialogMode dialogSwitchMode = GAME_DIALOG_MODE_NONE;
 // whether the dialog system is active or not
 static GameDialogStatus _gdialog_state = GAME_DIALOG_NONE;
 
-// 0x518720
+// 0x518720 gdDialogWentOff
 static bool _gdDialogWentOff = false;
 
-// 0x518724
+// 0x518724 gdDialogTurnMouseOff
 static bool _gdDialogTurnMouseOff = false;
 
-// 0x518728
+// 0x518728 gdReenterLevel
 static int _gdReenterLevel = 0;
 
-// 0x51872C
+// 0x51872C gdReplyTooBig
 static bool _gdReplyTooBig = false;
 
 // A hidden object (PID -1) created during barter to serve as a container for player items offered to the NPC.
@@ -272,16 +272,16 @@ static Object* _barterer_temp_obj = nullptr;
 static int gGameDialogBarterModifier = 0;
 
 // dialogueBackWindow
-// 0x518740
+// 0x518740 dialogueBackWindow
 static int gGameDialogBackgroundWindow = -1;
 
 // Dialog sub-window: barter, party control, customization
-// 0x518744
+// 0x518744 dialogueWindow
 static int gGameDialogWindow = -1;
 
 static bool gameDialogUseHrArt = false;
 
-// 0x518748
+// 0x518748 backgrndRects
 static Rect _backgrndRects[8] = {
     { 126, 14, 152, 40 },
     { 488, 14, 514, 40 },
@@ -324,54 +324,54 @@ static int gameDialogGetBackgroundWindowY()
     return (screenGetHeight() - GAME_DIALOG_WINDOW_HEIGHT) / 2;
 }
 
-// 0x5187C8
+// 0x5187C8 talk_need_to_center
 static bool _talk_need_to_center = true;
 
-// 0x5187CC
+// 0x5187CC can_start_new_fidget
 static bool _can_start_new_fidget = false;
 
-// 0x5187D0
+// 0x5187D0 gd_replyWin
 static int _gd_replyWin = -1;
 
-// 0x5187D4
+// 0x5187D4 gd_optionsWin
 static int _gd_optionsWin = -1;
 
-// 0x5187D8
+// 0x5187D8 gDialogMusicVol
 static int gGameDialogOldMusicVolume = -1;
 
-// 0x5187DC
+// 0x5187DC gdCenterTile
 static int gGameDialogOldCenterTile = -1;
 
-// 0x5187E0
+// 0x5187E0 gdPlayerTile
 static int gGameDialogOldDudeTile = -1;
 
-// 0x5187E4
+// 0x5187E4 light_BlendTable
 static unsigned char* _light_BlendTable = nullptr;
 
-// 0x5187E8
+// 0x5187E8 dark_BlendTable
 static unsigned char* _dark_BlendTable = nullptr;
 
-// 0x5187EC
+// 0x5187EC dialogue_just_started
 static int _dialogue_just_started = 0;
 
-// 0x5187F0
+// 0x5187F0 dialogue_seconds_since_last_input
 static int _dialogue_seconds_since_last_input = 0;
 
-// 0x518818
+// 0x518818 reviewFidWids
 static const int gGameDialogReviewWindowButtonWidths[GAME_DIALOG_REVIEW_WINDOW_BUTTON_COUNT] = {
     35,
     35,
     82,
 };
 
-// 0x518824
+// 0x518824 reviewFidLens
 static const int gGameDialogReviewWindowButtonHeights[GAME_DIALOG_REVIEW_WINDOW_BUTTON_COUNT] = {
     35,
     37,
     46,
 };
 
-// 0x518830
+// 0x518830 reviewFids
 static int gGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
     89, // di_bgdn1.frm - dialog big down arrow
     90, // di_bgdn2.frm - dialog big down arrow
@@ -381,21 +381,21 @@ static int gGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_
     92, // di_done2.frm - dialog big done button down
 };
 
-// 0x518848
+// 0x518848 dialog_target
 Object* gGameDialogSpeaker = nullptr;
 
-// 0x51884C
+// 0x51884C dialog_target_is_party
 bool gGameDialogSpeakerIsPartyMember = false;
 
-// 0x518850
+// 0x518850 dialogue_head
 int gGameDialogHeadFid = 0;
 
-// 0x518854
+// 0x518854 dialogue_scr_id
 int gGameDialogSid = -1;
 
 // Maps phoneme to talking head frame.
 //
-// 0x518858
+// 0x518858 head_phoneme_lookup
 static int _head_phoneme_lookup[PHONEME_COUNT] = {
     0,
     3,
@@ -441,23 +441,23 @@ static int _head_phoneme_lookup[PHONEME_COUNT] = {
     8,
 };
 
-// 0x518900
+// 0x518900 phone_anim
 static int _phone_anim = 0;
 
-// 0x518904
+// 0x518904 loop_cnt
 static int _loop_cnt = -1;
 
-// 0x518908
+// 0x518908 tocksWaiting
 static unsigned int _tocksWaiting = 10000;
 
-// 0x51890C
+// 0x51890C react_strs
 static const char* _react_strs[3] = {
     "Said Good",
     "Said Neutral",
     "Said Bad",
 };
 
-// 0x518918
+// 0x518918 dialogue_subwin_len
 static int _dialogue_subwin_len = 0;
 
 // Extra pixels the expanded barter frame adds below the 480-tall dialog background.
@@ -471,7 +471,7 @@ static bool gBarterWindowExpanded = false;
 // Cached FRM availability; set once per dialog session in talk_to_create_background_window.
 static bool gExpandedBarterEnabled = false;
 
-// 0x51891C
+// 0x51891C control_button_info
 static GameDialogButtonData gGameDialogDispositionButtonsData[5] = {
     { 438, 37, 397, 395, 396, nullptr, nullptr, nullptr, 2098, 4 },
     { 438, 67, 394, 392, 393, nullptr, nullptr, nullptr, 2103, 3 },
@@ -480,7 +480,7 @@ static GameDialogButtonData gGameDialogDispositionButtonsData[5] = {
     { 438, 156, 403, 401, 402, nullptr, nullptr, nullptr, 2099, 0 },
 };
 
-// 0x5189E4
+// 0x5189E4 custom_settings
 static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT][6] = {
     {
         { 100, AREA_ATTACK_MODE_ALWAYS }, // Always!
@@ -532,7 +532,7 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
     },
 };
 
-// 0x518B04
+// 0x518B04 custom_button_info
 static GameDialogButtonData _custom_button_info[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT] = {
     { 95, 9, 410, 409, -1, nullptr, nullptr, nullptr, 0, 0 },
     { 96, 38, 416, 415, -1, nullptr, nullptr, nullptr, 1, 0 },
@@ -542,57 +542,57 @@ static GameDialogButtonData _custom_button_info[PARTY_MEMBER_CUSTOMIZATION_OPTIO
     { 96, 157, 412, 411, -1, nullptr, nullptr, nullptr, 5, 0 },
 };
 
-// 0x518BF4
+// 0x518BF4 totalHotx
 static int _totalHotx = 0;
 
-// 0x58EA80
+// 0x58EA80 custom_current_selected
 static int _custom_current_selected[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT];
 
 // custom.msg
 //
-// 0x58EA98
+// 0x58EA98 custom_msg_file
 static MessageList gCustomMessageList;
 
-// 0x58EAA0
+// 0x58EAA0 light_GrayTable
 static unsigned char _light_GrayTable[256];
 
-// 0x58EBA0
+// 0x58EBA0 dark_GrayTable
 static unsigned char _dark_GrayTable[256];
 
-// 0x58ECA0
+// 0x58ECA0 backgrndBufs
 static unsigned char* _backgrndBufs[8];
 
-// 0x58ECC0
+// 0x58ECC0 optionRect
 static Rect _optionRect;
 
-// 0x58ECD0
+// 0x58ECD0 replyRect
 static Rect _replyRect;
 
-// 0x58ECE0
+// 0x58ECE0 reviewList
 static GameDialogReviewEntry gDialogReviewEntries[DIALOG_REVIEW_ENTRIES_CAPACITY];
 
-// 0x58F460
+// 0x58F460 custom_buttons_start
 static int _custom_buttons_start;
 
-// 0x58F464
+// 0x58F464 control_buttons_start
 static int _control_buttons_start;
 
-// 0x58F468
+// 0x58F468 reviewOldFont
 static int gGameDialogReviewWindowOldFont;
 
-// 0x58F470
+// 0x58F470 gdialog_buttons
 static int _gdialog_buttons[9];
 
-// 0x58F4C8
+// 0x58F4C8 oldFont
 static int _oldFont;
 
-// 0x58F4CC
+// 0x58F4CC fidgetLastTime
 static unsigned int gGameDialogFidgetLastUpdateTimestamp;
 
-// 0x58F4D0
+// 0x58F4D0 fidgetAnim
 static int gGameDialogFidgetReaction;
 
-// 0x58F4D4
+// 0x58F4D4 dialogBlock
 static Program* gDialogReplyProgram;
 
 // 0x58F4D8
@@ -615,19 +615,19 @@ static int gDialogReplyTextOffset;
 // See `_gdProcessChoice` for more info how this unreferenced range plays
 // important role.
 //
-// 0x58F4E4
+// 0x58F4E4 destination
 static char gDialogReplyText[900];
 
 // 0x58FF70
 static GameDialogOptionEntry gDialogOptionEntries[DIALOG_OPTION_ENTRIES_CAPACITY];
 
-// 0x596C30
+// 0x596C30 talkOldFont
 static int _talkOldFont;
 
-// 0x596C34
+// 0x596C34 fidgetTocksPerFrame
 static unsigned int gGameDialogFidgetUpdateDelay;
 
-// 0x596C38
+// 0x596C38 fidgetFrameCounter
 static int gGameDialogFidgetFrmCurrentFrame;
 
 static FrmImage _reviewBackgroundFrmImage;
@@ -1951,7 +1951,7 @@ int _gdProcessExit()
     return 0;
 }
 
-// 0x446504
+// 0x446504 gdUpdateDudeCaps
 void gameDialogRenderCaps()
 {
     Rect rect;

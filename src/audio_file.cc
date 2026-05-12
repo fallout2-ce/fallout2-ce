@@ -30,13 +30,13 @@ typedef struct AudioFile {
 static bool defaultCompressionFunc(char* filePath);
 static int audioFileSoundDecoderReadHandler(void* data, void* buffer, unsigned int size);
 
-// 0x5108C0
+// 0x5108C0 queryCompressedFunc_2
 static AudioFileQueryCompressedFunc* queryCompressedFunc = defaultCompressionFunc;
 
-// 0x56CB10
+// 0x56CB10 audiof
 static AudioFile* gAudioFileList;
 
-// 0x56CB14
+// 0x56CB14 numAudiof
 static int gAudioFileListLength;
 
 // 0x41A850
