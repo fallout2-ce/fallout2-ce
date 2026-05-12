@@ -615,11 +615,38 @@ int proto_build_all_type(int type)
     return 0;
 }
 
+int proto_build_all_type_binary(int type)
+{
+    // TODO: rebuild binary proto list for given object type.
+    (void)type;
+    return 0;
+}
+
 int protoEdit(int protoId)
 {
     // TODO: implement proto editor dialog — load proto, show editor UI
     (void)protoId;
     return -1;
+}
+
+void rebuild_spray_tools()
+{
+    // TODO: rebuild spray tool (create/update pattern protos)
+}
+
+void rebuild_binary()
+{
+    // TODO: rebuild binary proto files from text sources
+}
+
+void art_to_protos()
+{
+    // TODO: create new proto entries for art files that have no proto yet
+}
+
+void swap_protos()
+{
+    // TODO: swap two prototype slots
 }
 
 static unsigned char itemIconsBgColor()

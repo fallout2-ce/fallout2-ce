@@ -3,6 +3,7 @@
 #include "color.h"
 #include "input.h"
 #include "kb.h"
+#include "mapper/mapper.h"
 #include "mapper/mp_proto.h"
 #include "obj_types.h"
 #include "window_manager_private.h"
@@ -25,9 +26,18 @@ int proto_build_all_texts()
     return 0;
 }
 
-void load_all_maps_text()
+void load_all_maps_text(int mode)
 {
-    // TODO: load all maps from text format
+    // TODO: load all maps from text format. mode==0 → rebuild from text;
+    // mode==1 → generate text versions from binary maps.
+    (void)mode;
+    mapperShowTimedMsg("Loading maps from text not implemented yet!");
+}
+
+void map_save_text()
+{
+    // TODO:
+    mapperShowTimedMsg("Saving map text not implemented yet!");
 }
 
 } // namespace fallout

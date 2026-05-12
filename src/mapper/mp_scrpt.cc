@@ -330,12 +330,31 @@ int map_scr_add_spatial(int tile, int elevation)
     return 0;
 }
 
-void map_set_script()
+// 1-based script index, 0 means no script
+void map_set_script(int scriptIndex)
 {
-    char info[256];
-    snprintf(info, sizeof(info), "Map SID: %d", gMapSid);
-    _win_msg(info, 80, 80, 0x10104);
-    // TODO: full script selection dialog
+    int newIndex = scriptIndex < 0 ? 0 : scriptIndex;
+    gMapHeader.scriptIndex = newIndex;
+    if (gMapSid != -1) {
+        scriptRemove(gMapSid);
+        gMapSid = -1;
+    }
+    if (newIndex <= 0 || scriptAdd(&gMapSid, SCRIPT_TYPE_SYSTEM) == -1) return;
+
+    Object* obj;
+    int fid = buildFid(OBJ_TYPE_MISC, 12, 0, 0, 0);
+    objectCreateWithFidPid(&obj, fid, -1);
+    obj->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
+    objectSetLocation(obj, 1, 0, nullptr);
+    obj->sid = gMapSid;
+    scriptSetFixedParam(gMapSid, (gMapHeader.flags & 1) == 0);
+    Script* script;
+    scriptGetScript(gMapSid, &script);
+    script->index = gMapHeader.scriptIndex - 1;
+    script->flags |= SCRIPT_FLAG_NO_SAVE;
+    obj->id = scriptsNewObjectId();
+    script->ownerId = obj->id;
+    script->owner = obj;
 }
 
 void map_show_script()

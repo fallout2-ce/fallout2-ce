@@ -17,8 +17,8 @@ bool map_toggle_block_obj_viewing_on();
 
 void map_load_dialog();
 void map_save_dialog();
-void map_save_as();
-void map_info_dialog();
+int map_save_as(const char* name);
+void map_get_name(char* buf);
 void create_spray_tool();
 void copy_spray_tile();
 // mode = 1 - enable, 0 - disable, -1 - toggle
@@ -32,7 +32,9 @@ int pickHex();
 int pickToolbar(int topY);
 void placeObject(int pid, int fid);
 void placeTile(int pid, int fid);
-void copyObject();
+// Pass the current toolbar type to filter the region copy by type, or -1 to copy all object
+// types in the picked region (mirrors the original mapper's `copy_object(arg1)` arg).
+void copyObject(int filterType);
 void copyTile();
 void eraseObject();
 
