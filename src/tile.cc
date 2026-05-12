@@ -14,12 +14,12 @@
 #include "game_mouse.h"
 #include "light.h"
 #include "map.h"
+#include "map_edge.h"
 #include "object.h"
 #include "platform_compat.h"
 #include "settings.h"
 #include "svga.h"
 #include "tile_hires_stencil.h"
-#include "map_edge.h"
 
 namespace fallout {
 
