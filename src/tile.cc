@@ -441,6 +441,7 @@ int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, i
     gTileWindowWidth = ORIGINAL_ISO_WINDOW_WIDTH;
     gTileWindowHeight = ORIGINAL_ISO_WINDOW_HEIGHT;
 
+    tile_hires_stencil_init();
     tileSetCenter(hexGridWidth * (hexGridHeight / 2) + hexGridWidth / 2, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     tileSetBorder(windowWidth, windowHeight, hexGridWidth, hexGridHeight);
 
@@ -541,12 +542,18 @@ int tileSetCenter(int tile, int flags)
         return -1;
     }
 
-    // When EDG data is loaded, clamp to map boundary (like sfall's GetCenterTile).
-    // This handles starting positions outside the defined boundary.
     if (mapEdgeIsLoaded() && !settings.ui.ignore_map_edges) {
-        tile = mapEdgeClampTile(tile, gElevation);
-        if (!tileIsValid(tile)) {
-            return -1;
+        if (flags != 0) {
+            // Forced positioning (teleport, initial load, etc.): clamp to edge boundary.
+            tile = mapEdgeClampTile(tile, gElevation);
+            if (!tileIsValid(tile)) return -1;
+        } else {
+            // Normal scroll: block if tile is outside boundary (matching sfall CheckBorder).
+            // Clamping here would move the center slightly and cause mapScroll's buffer
+            // copy to produce visual artifacts; blocking preserves the current view.
+            if (!mapEdgeTileInBounds(tile, gElevation)) {
+                return -1;
+            }
         }
     }
 

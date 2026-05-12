@@ -1,25 +1,28 @@
 #ifndef MAP_EDGE_H
 #define MAP_EDGE_H
 
+#include "geometry.h"
+
 namespace fallout {
 
 struct EdgeZone {
-    // Scroll boundary in CE tile_x/tile_y coordinates (inclusive).
-    // CE tile_x = HEX_GRID_WIDTH - 1 - tile % HEX_GRID_WIDTH
-    // CE tile_y = tile / HEX_GRID_WIDTH
-    int minTileX;
-    int maxTileX;
-    int minTileY;
-    int maxTileY;
+    // Raw tile indices from EDG file (tileRect in tile space, 0-39999).
+    Rect tileRect;
 
-    // squareRect in sfall native format (v2 only).
-    // valid range: squareTile%100 in [sqRight, sqLeft], squareTile/100 in [sqTop, sqBottom]
-    // All fields are -1 when not present (v1 EDG).
-    int sqLeft;
-    int sqTop;
-    int sqRight;
-    int sqBottom;
+    // Pixel-offset space scroll boundary (screen-size dependent).
+    Rect borderRect;
 
+    // borderRect shifted by half window size (for EdgeClipping mapVisibleArea).
+    Rect rect2;
+
+    // Center point in pixel-offset space, aligned to 32x24.
+    Point center;
+
+    // Square-grid clip rect for floor/roof rendering (v2 EDG only).
+    // Valid when left >= 0.
+    Rect squareRect;
+
+    int clipData;
     EdgeZone* next;
 };
 
@@ -44,9 +47,13 @@ bool mapEdgeTileInBounds(int tile, int elevation);
 // Returns true if squareRect data (v2 EDG) is available for this elevation.
 bool mapEdgeHasSquareRect(int elevation);
 
-// Fills the squareRect fields for the given elevation.
+// Fills the squareRect for the given elevation.
 // Only valid when mapEdgeHasSquareRect(elevation) returns true.
-void mapEdgeGetSquareRect(int elevation, int* left, int* top, int* right, int* bottom);
+void mapEdgeGetSquareRect(int elevation, Rect* outRect);
+
+// Recalculate all pixel-space fields using current screen dimensions.
+// Call when resolution changes while a map is loaded.
+void mapEdgeRecalc();
 
 } // namespace fallout
 

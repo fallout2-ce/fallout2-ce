@@ -1,39 +1,164 @@
 #include "map_edge.h"
 
-#include <algorithm>
-
 #include "db.h"
 #include "debug.h"
 #include "map_defs.h"
 #include "platform_compat.h"
+#include "svga.h"
 
 namespace fallout {
 
 static EdgeZone* gEdgeZones[ELEVATION_COUNT];
 static bool gEdgeDataLoaded = false;
+static bool gEdgeVersion = false;
 
-// Find the appropriate zone for a tile, or return the last zone as fallback
-// (matches sfall behavior: use last zone when tile is outside all zones).
-static EdgeZone* findZone(int tile, int elevation)
+// Convert tile index to pixel-offset coordinates.
+// Equivalent to sfall ViewMap::GetTileCoordOffset.
+static void tileToPixelOffset(int tile, int& outX, int& outY)
 {
-    int tile_x = HEX_GRID_WIDTH - 1 - tile % HEX_GRID_WIDTH;
-    int tile_y = tile / HEX_GRID_WIDTH;
-
-    EdgeZone* zone = gEdgeZones[elevation];
-    EdgeZone* last = zone;
-    while (zone != nullptr) {
-        last = zone;
-        if (tile_x >= zone->minTileX && tile_x <= zone->maxTileX
-            && tile_y >= zone->minTileY && tile_y <= zone->maxTileY) {
-            return zone;
-        }
-        zone = zone->next;
-    }
-    return last;
+    int x = tile % HEX_GRID_WIDTH;
+    int y = (tile / HEX_GRID_WIDTH) + (x / 2);
+    y &= ~1; // force even row
+    x = (2 * x) + 200 - y;
+    outY = 12 * y;
+    outX = 16 * x;
 }
 
-// Parse the EDG file and populate gEdgeZones. Returns true on success.
-// EDG files use big-endian byte order (same as other Fallout 2 files).
+// Convert pixel-offset to tile coord (in-place, like sfall GetCoordFromOffset).
+static void pixelToTileCoord(int& inOutX, int& inOutY)
+{
+    int y = inOutY / 24;
+    int x = (inOutX / 32) + y - 100;
+    inOutX = x;
+    inOutY = (2 * y) - (x / 2);
+}
+
+// Convert pixel-offset to tile number.
+static int pixelToTile(int px, int py)
+{
+    pixelToTileCoord(px, py);
+    return px + py * HEX_GRID_WIDTH;
+}
+
+// Fill pixel-space fields of a zone from its stored tileRect corners.
+// Screen-size dependent — must be re-run if resolution changes.
+static void calcEdgeData(EdgeZone* zone)
+{
+    const int winW = screenGetWidth();
+    const int winH = screenGetVisibleHeight();
+
+    // Truncated half sizes for border expansion (matching sfall ViewMap::GetWinMapHalfSize).
+    int w = (winW >> 1) - ((winW >> 1) & 31);
+    int h = (winH >> 1) - ((winH >> 1) % 24);
+
+    // Convert tileRect corners to pixel offsets → borderRect
+    int px, py;
+
+    tileToPixelOffset(zone->tileRect.left, px, py);
+    zone->borderRect.left = px;
+
+    tileToPixelOffset(zone->tileRect.top, px, py);
+    zone->borderRect.top = py;
+
+    tileToPixelOffset(zone->tileRect.right, px, py);
+    zone->borderRect.right = px;
+
+    tileToPixelOffset(zone->tileRect.bottom, px, py);
+    zone->borderRect.bottom = py;
+
+    // rect2 = borderRect shifted by (winWidth/2 - 1, winHeight/2 - 1)
+    // Used by EdgeClipping to compute mapVisibleArea (screen-space clipping rect).
+    const int mapWinW = (winW / 2) - 1;
+    const int mapWinH = (winH / 2) - 1;
+
+    zone->rect2.left = zone->borderRect.left - mapWinW;
+    zone->rect2.right = zone->borderRect.right - mapWinW;
+    zone->rect2.top = zone->borderRect.top + mapWinH;
+    zone->rect2.bottom = zone->borderRect.bottom + mapWinH;
+
+    // Expand borderRect outward by half its own size (or window half-size if very large).
+    // This creates the "scroll cushion" zone that allows the camera to reach the map edge.
+    {
+        long rectW = (zone->borderRect.left - zone->borderRect.right) / 2;
+        long _rectW = rectW;
+        if (rectW & 31) {
+            rectW &= ~31;
+            _rectW = rectW + 32;
+        }
+        if (rectW < w) {
+            zone->borderRect.left -= rectW;
+            zone->borderRect.right += _rectW;
+        } else {
+            zone->borderRect.left -= w;
+            zone->borderRect.right += w;
+        }
+    }
+
+    {
+        long rectH = (zone->borderRect.bottom - zone->borderRect.top) / 2;
+        long _rectH = rectH;
+        if (rectH % 24) {
+            rectH -= rectH % 24;
+            _rectH = rectH + 24;
+        }
+        if (rectH < h) {
+            zone->borderRect.top += _rectH;
+            zone->borderRect.bottom -= rectH;
+        } else {
+            zone->borderRect.top += h;
+            zone->borderRect.bottom -= h;
+        }
+    }
+
+    // Inverted-X guard: collapse to vertical line if left/right cross or nearly touch.
+    if ((zone->borderRect.left < zone->borderRect.right) || (zone->borderRect.left - zone->borderRect.right) == 32) {
+        zone->borderRect.left = zone->borderRect.right;
+    }
+
+    // Inverted-Y guard
+    if ((zone->borderRect.bottom < zone->borderRect.top) || (zone->borderRect.bottom - zone->borderRect.top) == 24) {
+        zone->borderRect.bottom = zone->borderRect.top;
+    }
+
+    // Center point, aligned to 32×24 pixel grid.
+    zone->center.x = zone->borderRect.right + ((zone->borderRect.left - zone->borderRect.right) / 2);
+    zone->center.x &= ~31;
+
+    zone->center.y = zone->borderRect.top + ((zone->borderRect.bottom - zone->borderRect.top) / 2);
+    zone->center.y -= zone->center.y % 24;
+}
+
+// Multi-edge zone selection: pick the zone whose borderRect contains the pixel position.
+// Matches GetCenterTile logic: advance while target is outside current zone, use last if
+// none contains it.
+static EdgeZone* findZoneByPixel(int px, int py, int elevation)
+{
+    EdgeZone* zone = gEdgeZones[elevation];
+    if (zone == nullptr) {
+        return nullptr;
+    }
+
+    if (zone->next != nullptr) {
+        // Multi-edge: advance while target pixel is outside this zone's border.
+        // rect2.left + width == borderRect.left, rect2.top - height == borderRect.top - 2
+        const int width = (screenGetWidth() / 2) - 1;
+        const int height = (screenGetVisibleHeight() / 2) + 1;
+
+        while (px >= (zone->rect2.left + width) || px <= (zone->rect2.right + width)
+            || py <= (zone->rect2.top - height) || py >= (zone->rect2.bottom - height)) {
+            EdgeZone* next = zone->next;
+            if (next == nullptr) {
+                break;
+            }
+            zone = next;
+        }
+    }
+
+    return zone;
+}
+
+// Parse EDG file, populate gEdgeZones, and compute pixel-space fields.
+// EDG files use big-endian byte order (like all Fallout 2 files).
 static bool parseEdgFile(File* stream)
 {
     int magic;
@@ -45,26 +170,28 @@ static bool parseEdgFile(File* stream)
     int reserved;
     if (fileReadInt32(stream, &reserved) == -1 || reserved != 0) return false;
 
+    gEdgeVersion = (version == 2);
+
     int levelIndicator = 0;
 
     for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
-        int sqLeft = -1, sqTop = -1, sqRight = -1, sqBottom = -1;
-        if (version == 2) {
-            int sqRect[4], clipData;
+        int sqLeft = 99, sqTop = 0, sqRight = 0, sqBottom = 99;
+        int sqClipData = 0;
+
+        if (gEdgeVersion) {
+            int sqRect[4];
             if (fileReadInt32List(stream, sqRect, 4) == -1
-                || fileReadInt32(stream, &clipData) == -1) {
+                || fileReadInt32(stream, &sqClipData) == -1) {
                 return false;
             }
             sqLeft = sqRect[0];
             sqTop = sqRect[1];
             sqRight = sqRect[2];
             sqBottom = sqRect[3];
-            // clipData skipped: CE's black fill is equivalent to sfall's blank-tile render
         }
 
         if (levelIndicator != elev) {
-            // No tileRect data for this elevation in the file
-            continue;
+            continue; // no tileRect data for this elevation
         }
 
         EdgeZone** tail = &gEdgeZones[elev];
@@ -73,31 +200,30 @@ static bool parseEdgFile(File* stream)
         while (true) {
             int tileRect[4];
             if (fileReadInt32List(stream, tileRect, 4) == -1) {
-                // EOF during read
                 return elev == ELEVATION_COUNT - 1;
             }
 
-            EdgeZone* zone = new EdgeZone();
+            auto* zone = new EdgeZone();
             // File stores RECT order: [0]=left, [1]=top, [2]=right, [3]=bottom.
-            // "left" tile has larger raw tile_x → smaller CE tile_x (minTileX).
-            // "right" tile has smaller raw tile_x → larger CE tile_x (maxTileX).
-            zone->minTileX = HEX_GRID_WIDTH - 1 - (tileRect[0] % HEX_GRID_WIDTH);
-            zone->maxTileX = HEX_GRID_WIDTH - 1 - (tileRect[2] % HEX_GRID_WIDTH);
-            zone->minTileY = tileRect[1] / HEX_GRID_WIDTH;
-            zone->maxTileY = tileRect[3] / HEX_GRID_WIDTH;
-            // squareRect is per-elevation (stored in first zone only)
-            zone->sqLeft = isFirstZone ? sqLeft : -1;
-            zone->sqTop = isFirstZone ? sqTop : -1;
-            zone->sqRight = isFirstZone ? sqRight : -1;
-            zone->sqBottom = isFirstZone ? sqBottom : -1;
+            zone->tileRect.left = tileRect[0];
+            zone->tileRect.top = tileRect[1];
+            zone->tileRect.right = tileRect[2];
+            zone->tileRect.bottom = tileRect[3];
+
+            zone->squareRect.left = sqLeft;
+            zone->squareRect.top = sqTop;
+            zone->squareRect.right = sqRight;
+            zone->squareRect.bottom = sqBottom;
+            zone->clipData = isFirstZone ? sqClipData : 0;
             zone->next = nullptr;
+
+            calcEdgeData(zone);
 
             *tail = zone;
             tail = &zone->next;
             isFirstZone = false;
 
             if (fileReadInt32(stream, &levelIndicator) == -1) {
-                // EOF after tileRect is valid for the last elevation
                 return elev == ELEVATION_COUNT - 1;
             }
 
@@ -114,7 +240,6 @@ void mapEdgeInit(const char* mapName)
 {
     mapEdgeFree();
 
-    // Build "MAPS\<basename>.EDG" from e.g. "ARROYO.MAP"
     char fname[COMPAT_MAX_FNAME];
     compat_splitpath(mapName, nullptr, nullptr, fname, nullptr);
 
@@ -159,47 +284,61 @@ bool mapEdgeIsLoaded()
 
 int mapEdgeClampTile(int tile, int elevation)
 {
-    EdgeZone* zone = findZone(tile, elevation);
+    int px, py;
+    tileToPixelOffset(tile, px, py);
+
+    EdgeZone* zone = findZoneByPixel(px, py, elevation);
     if (zone == nullptr) {
         return tile;
     }
 
-    int tile_x = HEX_GRID_WIDTH - 1 - tile % HEX_GRID_WIDTH;
-    int tile_y = tile / HEX_GRID_WIDTH;
+    // Clamp pixel position to borderRect (matching sfall GetCenterTile).
+    int cx = (px <= zone->borderRect.left)
+        ? ((px >= zone->borderRect.right) ? px : zone->borderRect.right)
+        : zone->borderRect.left;
 
-    int cx = std::clamp(tile_x, zone->minTileX, zone->maxTileX);
-    int cy = std::clamp(tile_y, zone->minTileY, zone->maxTileY);
+    int cy = (py <= zone->borderRect.bottom)
+        ? ((py >= zone->borderRect.top) ? py : zone->borderRect.top)
+        : zone->borderRect.bottom;
 
-    return HEX_GRID_WIDTH * cy + (HEX_GRID_WIDTH - 1 - cx);
+    return pixelToTile(cx, cy);
 }
 
 bool mapEdgeTileInBounds(int tile, int elevation)
 {
-    EdgeZone* zone = findZone(tile, elevation);
+    int px, py;
+    tileToPixelOffset(tile, px, py);
+
+    EdgeZone* zone = findZoneByPixel(px, py, elevation);
     if (zone == nullptr) {
         return false;
     }
 
-    int tile_x = HEX_GRID_WIDTH - 1 - tile % HEX_GRID_WIDTH;
-    int tile_y = tile / HEX_GRID_WIDTH;
-
-    return tile_x >= zone->minTileX && tile_x <= zone->maxTileX
-        && tile_y >= zone->minTileY && tile_y <= zone->maxTileY;
+    return px >= zone->borderRect.right && px <= zone->borderRect.left
+        && py >= zone->borderRect.top && py <= zone->borderRect.bottom;
 }
 
 bool mapEdgeHasSquareRect(int elevation)
 {
     EdgeZone* zone = gEdgeZones[elevation];
-    return zone != nullptr && zone->sqLeft >= 0;
+    return zone != nullptr && zone->squareRect.left >= 0;
 }
 
-void mapEdgeGetSquareRect(int elevation, int* left, int* top, int* right, int* bottom)
+void mapEdgeGetSquareRect(int elevation, Rect* outRect)
 {
     EdgeZone* zone = gEdgeZones[elevation];
-    *left = zone->sqLeft;
-    *top = zone->sqTop;
-    *right = zone->sqRight;
-    *bottom = zone->sqBottom;
+    *outRect = zone->squareRect;
+}
+
+void mapEdgeRecalc()
+{
+    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+        EdgeZone* zone = gEdgeZones[elev];
+        while (zone != nullptr) {
+            calcEdgeData(zone);
+            zone = zone->next;
+        }
+    }
 }
 
 } // namespace fallout
