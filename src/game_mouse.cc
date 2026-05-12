@@ -338,7 +338,7 @@ static bool gameMouseLongPressUsesLootActionForCritter(Object* object)
     constexpr int kExpandedActionMenuFrmHeight = 302;
 
     return settings.qol.party_trade_from_menu
-        && gGameMouseActionMenuFrmHeight >= kExpandedActionMenuFrmHeight // make sure we can accomodate 7 items in the action menu, otherwise the loot option won't be visible
+        && gGameMouseActionMenuFrmHeight >= kExpandedActionMenuFrmHeight // make sure we can accommodate 7 items in the action menu
         && object != nullptr
         && object != gDude
         && !isInCombat()
@@ -1119,14 +1119,12 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                 if (targetObj == gDude) {
                     actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_ROTATE;
                 } else {
-                    bool usesPartyTradeAction = gameMouseLongPressUsesLootActionForCritter(targetObj);
-
                     if (_obj_action_can_talk_to(targetObj)) {
                         if (!isInCombat()) {
                             actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_TALK;
                         }
 
-                        if (usesPartyTradeAction) {
+                        if (gameMouseLongPressUsesLootActionForCritter(targetObj)) {
                             actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                         }
                     } else {
