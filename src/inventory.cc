@@ -404,7 +404,7 @@ static InventoryLootLayout inventoryLootLayout;
 static FrmImage inventoryFrmImage;
 static FrmImage inventoryLootFrmImage;
 
-// 0x519058 _inven_dude
+// 0x519058 inven_dude
 static Object* _inven_dude = nullptr;
 
 // Probably fid of armor to display in inventory dialog.
@@ -514,7 +514,7 @@ static int _target_stack_offset[10];
 static MessageList gInventoryMessageList;
 
 // Current target critter or container for every nesting level (stack).
-// 0x59E81C _target_stack
+// 0x59E81C target_stack
 static Object* _target_stack[10];
 
 // Scroll offsets to main inventory for every container nesting level (stack).
@@ -522,7 +522,7 @@ static Object* _target_stack[10];
 static int _stack_offset[10];
 
 // Current critter or container for every nesting level (stack).
-// 0x59E86C _stack
+// 0x59E86C stack
 static Object* _stack[10];
 
 // 0x59E894 mt_wid
@@ -553,10 +553,10 @@ static Inventory* gPlayerTableInventory;
 static InventoryCursorData gInventoryCursorData[INVENTORY_WINDOW_CURSOR_COUNT];
 
 // An object (PID -1) with an inventory containing a subset of Player's items offered to the NPC during barter.
-// 0x59E934 _ptable
+// 0x59E934 ptable
 static Object* gPlayerTableObj;
 
-// 0x59E938 _display_msg
+// 0x59E938 display_msg
 static InventoryPrintItemDescriptionHandler* gInventoryPrintItemDescriptionHandler;
 
 // 0x59E93C im_value
@@ -566,7 +566,7 @@ static int _im_value; // "keyCode" corresponding to an inventory item "button", 
 static int gInventoryCursor;
 
 // An object (PID -1) with an inventory containing a subset of NPC's items asked for by the player during barter.
-// 0x59E944 _btable
+// 0x59E944 btable
 static Object* gBartererTableObj;
 
 // Current nesting level for viewing target's bag/backpack contents.
@@ -579,10 +579,10 @@ static Inventory* gBartererTableInventory;
 // 0x59E950 inven_ui_was_disabled
 static bool _inven_ui_was_disabled;
 
-// 0x59E954 _i_worn
+// 0x59E954 i_worn
 static Object* gInventoryArmor;
 
-// 0x59E958 _i_lhand
+// 0x59E958 i_lhand
 static Object* gInventoryLeftHandItem;
 
 // Rotating character's fid.
@@ -597,7 +597,7 @@ static Inventory* _pud;
 static int gInventoryWindow;
 
 // item2
-// 0x59E968 _i_rhand
+// 0x59E968 i_rhand
 static Object* gInventoryRightHandItem;
 
 // Current nesting level for viewing bag/backpack contents.
@@ -610,7 +610,7 @@ static int gInventoryWindowMaxY;
 // 0x59E974 i_wid_max_x
 static int gInventoryWindowMaxX;
 
-// 0x59E978 _target_pud
+// 0x59E978 target_pud
 static Inventory* _target_pud;
 
 // 0x59E97C barter_back_win

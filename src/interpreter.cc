@@ -142,16 +142,16 @@ int _TimeOut = 0;
 // 0x51903C enabled
 static bool interpreterEnabled = true;
 
-// 0x519040 _timerFunc
+// 0x519040 timerFunc
 static InterpretTimerFunc* interpreterTimerFunc = _defaultTimerFunc;
 
 // 0x519044 timerTick
 static unsigned int interpreterTimerTick = 1000;
 
-// 0x519048 _filenameFunc
+// 0x519048 filenameFunc
 static char* (*interpreterFilenameMangler)(char*) = defaultFilename;
 
-// 0x51904C _outputFunc
+// 0x51904C outputFunc
 static int (*interpreterOutputFunc)(const char*) = outputString;
 
 // 0x519050 cpuBurstSize
@@ -160,10 +160,10 @@ static int interpreterCpuBurstSize = 10;
 // 0x59E230 opTable
 OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
 
-// 0x59E78C _currentProgram
+// 0x59E78C currentProgram
 static Program* gInterpreterCurrentProgram;
 
-// 0x59E790 _head
+// 0x59E790 head
 static ProgramListNode* gInterpreterProgramListHead;
 
 // 0x59E794 suspendEvents

@@ -8,7 +8,7 @@
 
 namespace fallout {
 
-// 0x51DEF4 _rectList
+// 0x51DEF4 rectList
 static RectListNode* _rectList = nullptr;
 
 // 0x4C6900 GNW_rect_exit

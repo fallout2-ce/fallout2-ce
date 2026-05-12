@@ -111,13 +111,13 @@ static int gGameState = GAME_STATE_0;
 // 0x5186BC game_in_mapper
 static bool gIsMapper = false;
 
-// 0x5186C0 _game_global_vars
+// 0x5186C0 game_global_vars
 int* gGameGlobalVars = nullptr;
 
 // 0x5186C4 num_game_global_vars
 int gGameGlobalVarsLength = 0;
 
-// 0x5186C8 _msg_path
+// 0x5186C8 msg_path
 const char* asc_5186C8 = _aGame_0;
 
 // 0x5186CC game_user_wants_to_quit

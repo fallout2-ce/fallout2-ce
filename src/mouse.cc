@@ -48,7 +48,7 @@ static unsigned char gMouseDefaultCursor[MOUSE_DEFAULT_CURSOR_SIZE] = {
 // 0x51E290 mouse_idling
 static int _mouse_idling = 0;
 
-// 0x51E294 _mouse_buf
+// 0x51E294 mouse_buf
 static unsigned char* gMouseCursorData = nullptr;
 
 // 0x51E298 mouse_shape
@@ -117,10 +117,10 @@ static int _mouse_hotx;
 // 0x6AC7D4 mouse_idle_start_time
 static unsigned int _mouse_idle_start_time;
 
-// 0x6AC7D8 _mouse_blit_trans
+// 0x6AC7D8 mouse_blit_trans
 WindowDrawingProc2* _mouse_blit_trans;
 
-// 0x6AC7DC _mouse_blit
+// 0x6AC7DC mouse_blit
 WINDOWDRAWINGPROC _mouse_blit;
 
 // 0x6AC7E0 mouse_trans

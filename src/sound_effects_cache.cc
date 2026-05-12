@@ -53,14 +53,14 @@ static bool gSoundEffectsCacheInitialized = false;
 static int _sfxc_cmpr = 1;
 
 // sfxc_pcache
-// 0x51C8EC _sfxc_pcache
+// 0x51C8EC sfxc_pcache
 static Cache* gSoundEffectsCache = nullptr;
 
 // sfxc_dlevel
 // 0x51C8DC sfxc_dlevel
 static int gSoundEffectsCacheDebugLevel = INT_MAX;
 
-// 0x51C8E0 _sfxc_effect_path
+// 0x51C8E0 sfxc_effect_path
 static char* gSoundEffectsCacheEffectsPath = nullptr;
 
 // 0x51C8E4 sfxc_handle_list

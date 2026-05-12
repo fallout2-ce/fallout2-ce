@@ -77,10 +77,10 @@ static ArtListDescription gArtListDescriptions[OBJ_TYPE_COUNT] = {
 // 0x510898 darn_foreigners
 static bool gArtLanguageInitialized = false;
 
-// 0x51089C _head1
+// 0x51089C head1
 static const char* _head1 = "gggnnnbbbgnb";
 
-// 0x5108A0 _head2
+// 0x5108A0 head2
 static const char* _head2 = "vfngfbnfvppp";
 
 // Current native look base fid.

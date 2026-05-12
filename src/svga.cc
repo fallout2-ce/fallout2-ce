@@ -27,10 +27,10 @@ static void destroyRenderer();
 // screen rect
 Rect _scr_size;
 
-// 0x6ACA18 _scr_blit
+// 0x6ACA18 scr_blit
 void (*_scr_blit)(unsigned char* src, int src_pitch, int unused, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y) = _GNW95_ShowRect;
 
-// 0x6ACA1C _zero_mem
+// 0x6ACA1C zero_mem
 void (*_zero_mem)() = nullptr;
 
 SDL_Window* gSdlWindow = nullptr;

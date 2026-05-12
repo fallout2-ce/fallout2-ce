@@ -19,7 +19,7 @@ static char* lips_fix_string(const char* fileName, size_t length);
 static int lipsReadV1(LipsData* lipsData, File* stream);
 static int _lips_make_speech();
 
-// 0x519240 _head_phoneme_current
+// 0x519240 head_phoneme_current
 unsigned char gLipsCurrentPhoneme = 0;
 
 // 0x519241 head_phoneme_drawn

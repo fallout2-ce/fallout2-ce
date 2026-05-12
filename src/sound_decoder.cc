@@ -47,7 +47,7 @@ static int ReadBand_Fmt31(SoundDecoder* soundDecoder, int offset, int bits);
 // 0x51E328 AudioDecoder_cnt
 static int gSoundDecodersCount = 0;
 
-// 0x51E330 _ReadBand_tbl
+// 0x51E330 ReadBand_tbl
 static ReadBandFunc _ReadBand_tbl[32] = {
     ReadBand_Fmt0,
     ReadBand_Fail,
@@ -83,13 +83,13 @@ static ReadBandFunc _ReadBand_tbl[32] = {
     ReadBand_Fmt31,
 };
 
-// 0x6AD960 _pack11_2
+// 0x6AD960 pack11_2
 static unsigned char pack11_2[128];
 
-// 0x6AD9E0 _pack3_3
+// 0x6AD9E0 pack3_3
 static unsigned char pack3_3[32];
 
-// 0x6ADA00 _pack5_3
+// 0x6ADA00 pack5_3
 static unsigned short pack5_3[128];
 
 // 0x6ADB00 AudioDecoder_scale0

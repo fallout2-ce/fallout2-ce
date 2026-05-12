@@ -247,7 +247,7 @@ static unsigned char _itemButtonDown[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERF
 // 0x59A2B4 itemButtonUp
 static unsigned char _itemButtonUp[INTERFACE_ITEM_ACTION_BUTTON_WIDTH * INTERFACE_ITEM_ACTION_BUTTON_HEIGHT];
 
-// 0x59D3F4 _interfaceBuffer
+// 0x59D3F4 interfaceBuffer
 static unsigned char* gInterfaceWindowBuffer;
 
 // Rectangle within Interface Bar window covering the Action Points bar.

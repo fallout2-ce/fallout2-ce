@@ -519,7 +519,7 @@ int _show_death(Object* obj, int anim)
 
 // Animates damage to extras in a given attack (secondary targets).
 //
-// 0x410FEC _show_damage_extras
+// 0x410FEC show_damage_extras
 int showDamageToExtras(Attack* attack)
 {
     for (int index = 0; index < attack->extrasLength; index++) {

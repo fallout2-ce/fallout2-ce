@@ -75,13 +75,13 @@ static Sound* gBackgroundSound = nullptr;
 // 0x518E54 gsound_speech_tag
 static Sound* gSpeechSound = nullptr;
 
-// 0x518E58 _gsound_background_callback_fp
+// 0x518E58 gsound_background_callback_fp
 static SoundEndCallback* gBackgroundSoundEndCallback = nullptr;
 
-// 0x518E5C _gsound_speech_callback_fp
+// 0x518E5C gsound_speech_callback_fp
 static SoundEndCallback* gSpeechEndCallback = nullptr;
 
-// 0x518E60 _snd_lookup_weapon_type
+// 0x518E60 snd_lookup_weapon_type
 static char _snd_lookup_weapon_type[WEAPON_SOUND_EFFECT_COUNT] = {
     'R', // Ready
     'A', // Attack
@@ -90,7 +90,7 @@ static char _snd_lookup_weapon_type[WEAPON_SOUND_EFFECT_COUNT] = {
     'H', // Hit
 };
 
-// 0x518E65 _snd_lookup_scenery_action
+// 0x518E65 snd_lookup_scenery_action
 static char _snd_lookup_scenery_action[SCENERY_SOUND_EFFECT_COUNT] = {
     'O', // Open
     'C', // Close
@@ -105,16 +105,16 @@ static GameSoundStorageType _background_storage_requested = GSOUND_STORAGE_INVAL
 // 0x518E70 background_loop_requested
 static GameSoundLoopingMode _background_loop_requested = GSOUND_LOOPING_INVALID;
 
-// 0x518E74 _sound_sfx_path
+// 0x518E74 sound_sfx_path
 static char* _sound_sfx_path = _aSoundSfx;
 
-// 0x518E78 _sound_music_path1
+// 0x518E78 sound_music_path1
 static char* _sound_music_path1 = nullptr;
 
-// 0x518E7C _sound_music_path2
+// 0x518E7C sound_music_path2
 static char* _sound_music_path2 = nullptr;
 
-// 0x518E80 _sound_speech_path
+// 0x518E80 sound_speech_path
 static char* _sound_speech_path = _aSoundSpeech_0;
 
 // 0x518E84 master_volume
@@ -132,7 +132,7 @@ static int gSoundEffectsVolume = VOLUME_MAX;
 // 0x518E94 detectDevices
 static int _detectDevices = -1;
 
-// 0x518E98 _lastTime_1
+// 0x518E98 lastTime_1
 static int _lastTime_1 = 0;
 
 // 0x596EB0 background_fname_copied

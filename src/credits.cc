@@ -29,7 +29,7 @@ namespace fallout {
 
 static bool creditsFileParseNextLine(char* dest, int* font, int* color);
 
-// 0x56D740 _credits_file
+// 0x56D740 credits_file
 static File* gCreditsFile;
 
 // 0x56D744 name_color

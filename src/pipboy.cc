@@ -261,13 +261,13 @@ const int gPipboyFrmIds[PIPBOY_FRM_COUNT] = {
     226,
 };
 
-// 0x51C128 _quests
+// 0x51C128 quests
 QuestDescription* gQuestDescriptions = nullptr;
 
 // 0x51C12C quest_count
 int gQuestsCount = 0;
 
-// 0x51C130 _holodisks
+// 0x51C130 holodisks
 HolodiskDescription* gHolodiskDescriptions = nullptr;
 
 // 0x51C134 holodisks_count
@@ -293,7 +293,7 @@ const HolidayDescription gHolidayDescriptions[HOLIDAY_COUNT] = {
     { 12, 25, 107 },
 };
 
-// 0x51C170 _PipFnctn
+// 0x51C170 PipFnctn
 PipboyRenderProc* _PipFnctn[5] = {
     pipboyWindowHandleStatus,
     pipboyWindowHandleAutomaps,
@@ -310,7 +310,7 @@ MessageListItem gPipboyMessageListItem;
 // 0x664348 pipboy_message_file
 MessageList gPipboyMessageList = { 0, nullptr };
 
-// 0x664350 _sortlist
+// 0x664350 sortlist
 STRUCT_664350 _sortlist[24];
 
 // quests.msg
@@ -341,7 +341,7 @@ unsigned int gPipboyLastEventTimestamp;
 // 0x66445C holopages
 int gPipboyHolodiskLastPage;
 
-// 0x664460 _HotLines
+// 0x664460 HotLines
 int _HotLines[22];
 
 // 0x6644B8 button

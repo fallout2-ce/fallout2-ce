@@ -29,7 +29,7 @@ static char _aColor_cColorpa[] = "color.c: colorpalettestack overflow";
 // 0x50F9AC aColor_cColor_0
 static char aColor_cColor_0[] = "color.c: colorpalettestack underflow";
 
-// 0x51DF10 _errorStr
+// 0x51DF10 errorStr
 static char* _errorStr = _aColor_cNoError;
 
 // 0x51DF14 colorsInited

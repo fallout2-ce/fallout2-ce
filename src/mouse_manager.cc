@@ -13,16 +13,16 @@
 
 namespace fallout {
 
-// 0x5195A8 _mouseNameMangler
+// 0x5195A8 mouseNameMangler
 MouseManagerNameMangler* gMouseManagerNameMangler = mouseManagerNameManglerDefaultImpl;
 
-// 0x5195AC _rateCallback
+// 0x5195AC rateCallback
 MouseManagerRateProvider* gMouseManagerRateProvider = mouseManagerRateProviderDefaultImpl;
 
-// 0x5195B0 _currentTimeCallback
+// 0x5195B0 currentTimeCallback
 MouseManagerTimeProvider* gMouseManagerTimeProvider = mouseManagerTimeProviderDefaultImpl;
 
-// 0x5195B4 _curref
+// 0x5195B4 curref
 int gMouseManagerCurrentRef = 1;
 
 // 0x63247C Cache
@@ -37,7 +37,7 @@ unsigned char* gMouseManagerCurrentPalette;
 // 0x638E04 curAnim
 MouseManagerAnimatedData* gMouseManagerCurrentAnimatedData;
 
-// 0x638E08 _curMouseBuf
+// 0x638E08 curMouseBuf
 unsigned char* gMouseManagerCurrentStaticData;
 
 // 0x638E0C lastMouseIndex

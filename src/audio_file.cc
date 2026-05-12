@@ -30,7 +30,7 @@ typedef struct AudioFile {
 static bool defaultCompressionFunc(char* filePath);
 static int audioFileSoundDecoderReadHandler(void* data, void* buffer, unsigned int size);
 
-// 0x5108C0 _queryCompressedFunc_2
+// 0x5108C0 queryCompressedFunc_2
 static AudioFileQueryCompressedFunc* queryCompressedFunc = defaultCompressionFunc;
 
 // 0x56CB10 audiof

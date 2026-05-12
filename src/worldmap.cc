@@ -613,7 +613,7 @@ static const char* wmYesNoStrs[2] = {
     "yes",
 };
 
-// 0x51DD98 _wmFreqStrs
+// 0x51DD98 wmFreqStrs
 static const char* wmFreqStrs[ENCOUNTER_FREQUENCY_TYPE_COUNT] = {
     "none",
     "rare",
@@ -647,10 +647,10 @@ static const char* wmSceneryStrs[ENCOUNTER_SCENERY_TYPE_COUNT] = {
 // 0x51DDE4 wmTerrainTypeList
 static Terrain* wmTerrainTypeList = nullptr;
 
-// 0x51DDE8 _wmMaxTerrainTypes
+// 0x51DDE8 wmMaxTerrainTypes
 static int wmMaxTerrainTypes = 0;
 
-// 0x51DDEC _wmTileInfoList
+// 0x51DDEC wmTileInfoList
 static TileInfo* wmTileInfoList = nullptr;
 
 // 0x51DDF0 wmMaxTileNum
@@ -665,7 +665,7 @@ static int wmMaxTileNum = 0;
 // 0x51DDF4 wmNumHorizontalTiles
 static int wmNumHorizontalTiles = 0;
 
-// 0x51DDF8 _wmAreaInfoList
+// 0x51DDF8 wmAreaInfoList
 static CityInfo* wmAreaInfoList = nullptr;
 
 // 0x51DDFC wmMaxAreaNum
@@ -678,7 +678,7 @@ static const char* wmAreaSizeStrs[CITY_SIZE_COUNT] = {
     "large",
 };
 
-// 0x51DE0C _wmMapInfoList
+// 0x51DE0C wmMapInfoList
 static MapInfo* wmMapInfoList = nullptr;
 
 // 0x51DE10 wmMaxMapNum
@@ -714,7 +714,7 @@ static const char* wmEncOpStrs[ENCOUNTER_SITUATION_COUNT] = {
     "and",
 };
 
-// 0x51DE4C _wmConditionalOpStrs
+// 0x51DE4C wmConditionalOpStrs
 static const char* wmConditionalOpStrs[ENCOUNTER_CONDITIONAL_OPERATOR_COUNT] = {
     "_",
     "==",
@@ -828,13 +828,13 @@ static Config* pConfigCfg;
 // 0x672FD8 wmTownMapSubButtonIds
 static int wmTownMapSubButtonIds[WM_TOWN_LIST_VISIBLE_SLOT_COUNT];
 
-// 0x672FF4 _wmEncBaseTypeList
+// 0x672FF4 wmEncBaseTypeList
 static Encounter* wmEncBaseTypeList;
 
 // 0x672FF8 wmSphereData
 static CitySizeDescription wmSphereData[CITY_SIZE_COUNT];
 
-// 0x673034 _wmEncounterTableList
+// 0x673034 wmEncounterTableList
 static EncounterTable* wmEncounterTableList;
 
 // Number of enc_base_types.

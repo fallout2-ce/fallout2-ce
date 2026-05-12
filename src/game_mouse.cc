@@ -132,7 +132,7 @@ static int _gmouse_3d_menu_frame_hot_x = 0;
 // 0x518CA4 gmouse_3d_menu_frame_hot_y
 static int _gmouse_3d_menu_frame_hot_y = 0;
 
-// 0x518CA8 _gmouse_3d_menu_frame_data
+// 0x518CA8 gmouse_3d_menu_frame_data
 static unsigned char* gGameMouseActionMenuFrmData = nullptr;
 
 // actpick.frm
@@ -157,7 +157,7 @@ static int _gmouse_3d_pick_frame_hot_x = 0;
 // 0x518CC4 gmouse_3d_pick_frame_hot_y
 static int _gmouse_3d_pick_frame_hot_y = 0;
 
-// 0x518CC8 _gmouse_3d_pick_frame_data
+// 0x518CC8 gmouse_3d_pick_frame_data
 static unsigned char* gGameMouseActionPickFrmData = nullptr;
 
 // acttohit.frm
@@ -176,7 +176,7 @@ static int gGameMouseActionHitFrmHeight = 0;
 // 0x518CDC gmouse_3d_to_hit_frame_size
 static int gGameMouseActionHitFrmDataSize = 0;
 
-// 0x518CE0 _gmouse_3d_to_hit_frame_data
+// 0x518CE0 gmouse_3d_to_hit_frame_data
 static unsigned char* gGameMouseActionHitFrmData = nullptr;
 
 // blank.frm
@@ -214,7 +214,7 @@ static int gGameMouseHexCursorHeight = 0;
 // 0x518D0C gmouse_3d_hex_frame_size
 static int gGameMouseHexCursorDataSize = 0;
 
-// 0x518D10 _gmouse_3d_hex_frame_data
+// 0x518D10 gmouse_3d_hex_frame_data
 static unsigned char* gGameMouseHexCursorFrmData = nullptr;
 
 // 0x518D14 gmouse_3d_menu_available_actions
@@ -261,7 +261,7 @@ static int gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
     293,
 };
 
-// 0x518D68 _gmouse_skill_table
+// 0x518D68 gmouse_skill_table
 static const int gGameMouseModeSkills[GAME_MOUSE_MODE_SKILL_COUNT] = {
     SKILL_FIRST_AID,
     SKILL_DOCTOR,
@@ -307,7 +307,7 @@ static int gGameMouseLastY;
 Object* gGameMouseBouncingCursor;
 
 // msef000.frm
-// 0x596C70 _obj_mouse_flat
+// 0x596C70 obj_mouse_flat
 Object* gGameMouseHexCursor;
 
 // 0x596C74

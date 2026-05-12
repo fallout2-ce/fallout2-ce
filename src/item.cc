@@ -153,7 +153,7 @@ static DrugDescription gDrugDescriptions[ADDICTION_COUNT] = {
     { PROTO_ID_DECK_OF_TRAGIC_CARDS, GVAR_ADDICT_TRAGIC, 0 },
 };
 
-// 0x519238 _name_item
+// 0x519238 name_item
 static char* _name_item = _aItem_1;
 
 // item.msg
@@ -164,7 +164,7 @@ static MessageList gItemsMessageList;
 // 0x59E988 wd_onset
 static int _wd_onset;
 
-// 0x59E98C _wd_obj
+// 0x59E98C wd_obj
 static Object* _wd_obj;
 
 // 0x59E990 wd_gvar

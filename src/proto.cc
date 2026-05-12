@@ -109,7 +109,7 @@ static CritterProto gDudeProto = {
     0,
 };
 
-// 0x51C534 _proto_path_base
+// 0x51C534 proto_path_base
 static char* _proto_path_base = _aProto_0;
 
 // 0x51C538 init_true
@@ -147,7 +147,7 @@ static MessageList _proto_msg_files[6];
 // 0x6647DC race_type_strs
 static char* gRaceTypeNames[RACE_TYPE_COUNT];
 
-// 0x6647E4 _scenery_pro_type
+// 0x6647E4 scenery_pro_type
 static char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
 
 // proto.msg
@@ -155,12 +155,12 @@ static char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
 // 0x6647FC proto_main_msg_file
 MessageList gProtoMessageList;
 
-// 0x664804 _item_pro_material
+// 0x664804 item_pro_material
 static char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
 
 // "<None>" from proto.msg
 //
-// 0x664824 _proto_none_str
+// 0x664824 proto_none_str
 char* _proto_none_str;
 
 // 0x664828 body_type_strs
@@ -172,7 +172,7 @@ char* gItemTypeNames[ITEM_TYPE_COUNT];
 // 0x66484C
 static char* gDamageTypeNames[DAMAGE_TYPE_COUNT];
 
-// 0x66486C _cal_type_strs
+// 0x66486C cal_type_strs
 static char* gCaliberTypeNames[CALIBER_TYPE_COUNT];
 
 // Perk names.

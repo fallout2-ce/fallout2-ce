@@ -72,7 +72,7 @@ static InterfaceFontDescriptor gInterfaceFontDescriptors[INTERFACE_FONT_MAX];
 // 0x58E938 gCurrentFontNum
 static int gCurrentInterfaceFont;
 
-// 0x58E93C _gCurrentFont
+// 0x58E93C gCurrentFont
 static InterfaceFontDescriptor* gCurrentInterfaceFontDescriptor;
 
 // 0x441C80 FMInit

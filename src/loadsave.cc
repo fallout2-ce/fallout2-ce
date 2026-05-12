@@ -223,7 +223,7 @@ static bool _automap_db_flag = false;
 // 0x5193CC patches
 static const char* _patches = nullptr;
 
-// 0x5193EC _master_save_list
+// 0x5193EC master_save_list
 static SaveGameHandler* _master_save_list[LOAD_SAVE_HANDLER_COUNT] = {
     _DummyFunc,
     _SaveObjDudeCid,
@@ -254,7 +254,7 @@ static SaveGameHandler* _master_save_list[LOAD_SAVE_HANDLER_COUNT] = {
     _DummyFunc,
 };
 
-// 0x519458 _master_load_list
+// 0x519458 master_load_list
 static LoadGameHandler* _master_load_list[LOAD_SAVE_HANDLER_COUNT] = {
     _PrepLoad,
     _LoadObjDudeCid,
@@ -299,10 +299,10 @@ static LoadSaveSlotData _LSData[saveLoadTotalSlots];
 // 0x614280 LSstatus
 static int _LSstatus[saveLoadTotalSlots];
 
-// 0x6142A8 _thumbnail_image
+// 0x6142A8 thumbnail_image
 static unsigned char* _thumbnail_image;
 
-// 0x6142AC _snapshotBuf
+// 0x6142AC snapshotBuf
 static unsigned char* _snapshotBuf;
 
 // 0x6142B0 lsgmesg
@@ -314,7 +314,7 @@ static int _dbleclkcntr;
 // 0x6142C4 lsgwin
 static int gLoadSaveWindow;
 
-// 0x6142EC _snapshot
+// 0x6142EC snapshot
 static unsigned char* _snapshot;
 
 // 0x6142F0 str2
@@ -335,7 +335,7 @@ static unsigned char* gLoadSaveWindowBuffer;
 // 0x614704 gmpath
 static char _gmpath[COMPAT_MAX_PATH];
 
-// 0x614808 _flptr
+// 0x614808 flptr
 static File* _flptr;
 
 // 0x61480C ls_error_code

@@ -28,16 +28,16 @@ static std::string debugBuffer;
 static constexpr size_t kDebugBufferMaxSize = 64 * 1024;
 static bool debugBufferDisabled = false;
 
-// 0x51DEF8 _fd
+// 0x51DEF8 fd
 static FILE* _fd = nullptr;
 
-// 0x51DEFC _curx
+// 0x51DEFC curx
 static int _curx = 0;
 
-// 0x51DF00 _cury
+// 0x51DF00 cury
 static int _cury = 0;
 
-// 0x51DF04 _debug_func
+// 0x51DF04 debug_func
 static DebugPrintProc* gDebugPrintProc = nullptr;
 
 void debugModeInit(const char* debugMode)

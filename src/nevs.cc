@@ -28,7 +28,7 @@ static void _nevs_reset(Nevs* nevs);
 static void _nevs_removeprogramreferences(Program* program);
 static Nevs* _nevs_find(const char* name);
 
-// 0x6391C8 _nevs
+// 0x6391C8 nevs
 static Nevs* gNevs;
 
 // 0x6391CC anyhits

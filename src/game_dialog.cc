@@ -172,7 +172,7 @@ typedef enum PartyMemberCustomizationOption {
     PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT,
 } PartyMemberCustomizationOption;
 
-// 0x444D10 _Dogs
+// 0x444D10 Dogs
 static int _Dogs[3] = {
     0x1000088,
     0x1000156,
@@ -188,7 +188,7 @@ static int gGameDialogOptionEntriesLength = 0;
 // 0x5186DC curReviewSlot
 static int gGameDialogReviewEntriesLength = 0;
 
-// 0x5186E0 _headWindowBuffer
+// 0x5186E0 headWindowBuffer
 static unsigned char* gGameDialogDisplayBuffer = nullptr;
 
 // 0x5186E4 gReplyWin
@@ -253,12 +253,12 @@ static bool _gdReplyTooBig = false;
 
 // A hidden object (PID -1) created during barter to serve as a container for player items offered to the NPC.
 //
-// 0x518730 _peon_table_obj
+// 0x518730 peon_table_obj
 static Object* gGameDialogPlayerTableObj = nullptr;
 
 // A hidden object (PID -1) created during barter to serve as a container for NPC items requested by player.
 //
-// 0x518734 _barterer_table_obj
+// 0x518734 barterer_table_obj
 static Object* gGameDialogBartererTableObj = nullptr;
 
 // A hidden object (PID -1) created during barter.
@@ -381,7 +381,7 @@ static int gGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_
     92, // di_done2.frm - dialog big done button down
 };
 
-// 0x518848 _dialog_target
+// 0x518848 dialog_target
 Object* gGameDialogSpeaker = nullptr;
 
 // 0x51884C dialog_target_is_party
@@ -450,7 +450,7 @@ static int _loop_cnt = -1;
 // 0x518908 tocksWaiting
 static unsigned int _tocksWaiting = 10000;
 
-// 0x51890C _react_strs
+// 0x51890C react_strs
 static const char* _react_strs[3] = {
     "Said Good",
     "Said Neutral",
@@ -592,7 +592,7 @@ static unsigned int gGameDialogFidgetLastUpdateTimestamp;
 // 0x58F4D0 fidgetAnim
 static int gGameDialogFidgetReaction;
 
-// 0x58F4D4 _dialogBlock
+// 0x58F4D4 dialogBlock
 static Program* gDialogReplyProgram;
 
 // 0x58F4D8

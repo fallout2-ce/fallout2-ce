@@ -76,7 +76,7 @@ static int* gBadwordsLengths = nullptr;
 
 // Default text for getmsg when no entry is found.
 //
-// 0x5195A4 _message_error_str
+// 0x5195A4 message_error_str
 static char* _message_error_str = _Error_1;
 
 // Temporary message list item text used during filtering badwords.

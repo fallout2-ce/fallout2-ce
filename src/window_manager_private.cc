@@ -34,7 +34,7 @@ static int _wd = -1;
 // 0x51E418 curr_menu
 static MenuBar* _curr_menu = nullptr;
 
-// 0x51E41C _tm_watch_active
+// 0x51E41C tm_watch_active
 static bool tm_watch_active = false;
 
 // NOTE: Also anonymous in the original code.

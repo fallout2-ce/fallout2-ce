@@ -27,10 +27,10 @@ int _topDialogLine = 0;
 // 0x5184BC topDialogReply
 int _topDialogReply = 0;
 
-// 0x5184E4 _replyWinDrawCallback
+// 0x5184E4 replyWinDrawCallback
 DialogFunc1* _replyWinDrawCallback = nullptr;
 
-// 0x5184E8 _optionsWinDrawCallback
+// 0x5184E8 optionsWinDrawCallback
 DialogFunc2* _optionsWinDrawCallback = nullptr;
 
 // 0x5184EC defaultBorderX
@@ -77,7 +77,7 @@ int dword_56DB6C;
 // 0x56DB70 y_option_win
 int dword_56DB70;
 
-// 0x56DB74 _pcx_option_win
+// 0x56DB74 pcx_option_win
 char* off_56DB74;
 
 // 0x56DB7C
@@ -95,7 +95,7 @@ int dword_56DB88;
 // 0x56DB8C
 char* off_56DB8C;
 
-// 0x56DB90 _replyPlaying
+// 0x56DB90 replyPlaying
 int _replyPlaying;
 
 // 0x56DB94 replyWin
@@ -119,7 +119,7 @@ int gDialogOptionColorB;
 // 0x56DBB0 optionR
 int gDialogOptionColorR;
 
-// 0x56DBB4 _downButton
+// 0x56DBB4 downButton
 int _downButton;
 
 // 0x56DBB8
@@ -143,7 +143,7 @@ char* off_56DBCC;
 // 0x56DBD0 replyTitleDefault
 char* gDialogReplyTitle;
 
-// 0x56DBD4 _upButton
+// 0x56DBD4 upButton
 int _upButton;
 
 // 0x56DBD8

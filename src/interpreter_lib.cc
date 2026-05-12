@@ -128,7 +128,7 @@ static void opSoundDelete(Program* program);
 static void opSetOneOptPause(Program* program);
 static bool intLibDoInput(int key);
 
-// 0x59D5D0 _interpretSounds
+// 0x59D5D0 interpretSounds
 static Sound* gIntLibSounds[INT_LIB_SOUNDS_CAPACITY];
 
 // 0x59D650 blackPal
@@ -146,7 +146,7 @@ static int gIntLibGenericKeyHandlerProc;
 // 0x59E158 numCallbacks
 static int gIntLibProgramDeleteCallbacksLength;
 
-// 0x59E15C _anyKeyProg
+// 0x59E15C anyKeyProg
 static Program* gIntLibGenericKeyHandlerProgram;
 
 // 0x59E160 callbacks

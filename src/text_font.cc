@@ -73,28 +73,28 @@ int gCurrentFont = -1;
 // 0x51E3B4 total_managers
 int gFontManagersCount = 0;
 
-// 0x51E3B8 _text_to_buf
+// 0x51E3B8 text_to_buf
 FontManagerDrawTextProc* fontDrawText = nullptr;
 
-// 0x51E3BC _text_height
+// 0x51E3BC text_height
 FontManagerGetLineHeightProc* fontGetLineHeight = nullptr;
 
-// 0x51E3C0 _text_width
+// 0x51E3C0 text_width
 FontManagerGetStringWidthProc* fontGetStringWidth = nullptr;
 
-// 0x51E3C4 _text_char_width
+// 0x51E3C4 text_char_width
 FontManagerGetCharacterWidthProc* fontGetCharacterWidth = nullptr;
 
-// 0x51E3C8 _text_mono_width
+// 0x51E3C8 text_mono_width
 FontManagerGetMonospacedStringWidthProc* fontGetMonospacedStringWidth = nullptr;
 
-// 0x51E3CC _text_spacing
+// 0x51E3CC text_spacing
 FontManagerGetLetterSpacingProc* fontGetLetterSpacing = nullptr;
 
 // 0x51E3D0 text_size
 FontManagerGetBufferSizeProc* fontGetBufferSize = nullptr;
 
-// 0x51E3D4 _text_max
+// 0x51E3D4 text_max
 FontManagerGetMonospacedCharacterWidth* fontGetMonospacedCharacterWidth = nullptr;
 
 // 0x6ADB08 font

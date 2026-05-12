@@ -80,7 +80,7 @@ static char _aCorpse[] = "corpse";
 // 0x501494
 static char byte_501494[] = "";
 
-// 0x51833C _name_critter
+// 0x51833C name_critter
 static char* _name_critter = _aCorpse;
 
 // Modifiers to endurance for performing radiation damage check.

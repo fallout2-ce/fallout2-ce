@@ -46,7 +46,7 @@ static int gSoundEffectsListPathLength = 0;
 // sndlist.lst
 //
 // sfxl_list
-// 0x51C908 _sfxl_list
+// 0x51C908 sfxl_list
 static SoundEffectsListEntry* gSoundEffectsListEntries = nullptr;
 
 // The length of [gSoundEffectsListEntries] array.

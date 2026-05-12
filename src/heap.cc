@@ -84,23 +84,23 @@ static bool heapBuildMoveableBlocksList(int extentIndex);
 
 // An array of pointers to free heap blocks.
 //
-// 0x518E9C _heap_free_list
+// 0x518E9C heap_free_list
 static unsigned char** gHeapFreeBlocks = nullptr;
 
 // An array of moveable extents in heap.
 //
-// 0x518EA0 _heap_moveable_list
+// 0x518EA0 heap_moveable_list
 static HeapMoveableExtent* gHeapMoveableExtents = nullptr;
 
 // An array of pointers to moveable heap blocks.
 //
-// 0x518EA4 _heap_subblock_list
+// 0x518EA4 heap_subblock_list
 static unsigned char** gHeapMoveableBlocks = nullptr;
 
 // An array of indexes into [gHeapFreeBlocks] array to track which free blocks
 // were already reserved for subsequent moving.
 //
-// 0x518EA8 _heap_fake_move_list
+// 0x518EA8 heap_fake_move_list
 static int* gHeapReservedFreeBlockIndexes = nullptr;
 
 // The length of the [gHeapFreeBlocks] array.
@@ -110,12 +110,12 @@ static int gHeapFreeBlocksLength = 0;
 
 // The length of [gHeapMoveableExtents] array.
 //
-// 0x518EB0 _heap_moveable_list_size
+// 0x518EB0 heap_moveable_list_size
 static int gHeapMoveableExtentsLength = 0;
 
 // The length of [gHeapMoveableBlocks] array.
 //
-// 0x518EB4 _heap_subblock_list_size
+// 0x518EB4 heap_subblock_list_size
 static int gHeapMoveableBlocksLength = 0;
 
 // The length of [gHeapReservedFreeBlockIndexes] array.

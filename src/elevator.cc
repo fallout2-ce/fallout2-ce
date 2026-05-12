@@ -298,7 +298,7 @@ static char gElevatorLevelLabels[ELEVATORS_MAX][ELEVATOR_LEVEL_MAX] = {
     { '1', '2', '\0', '\0' },
 };
 
-// 0x51862C _sfxtable
+// 0x51862C sfxtable
 static const char* gElevatorSoundEffects[ELEVATOR_LEVEL_MAX - 1][ELEVATOR_LEVEL_MAX] = {
     {
         "ELV1_1",

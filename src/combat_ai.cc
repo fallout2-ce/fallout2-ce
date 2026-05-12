@@ -147,13 +147,13 @@ static int _combatai_rating(Object* obj);
 static int aiMessageListInit();
 static int aiMessageListFree();
 
-// 0x51805C _combat_obj
+// 0x51805C combat_obj
 static Object* _combat_obj = nullptr;
 
 // 0x518060 num_caps
 static int gAiPacketsLength = 0;
 
-// 0x518064 _cap
+// 0x518064 cap
 static AiPacket* gAiPackets = nullptr;
 
 // 0x518068 combatai_is_initialized
@@ -229,7 +229,7 @@ const char* gDispositionKeys[DISPOSITION_COUNT] = {
     "berserk",
 };
 
-// 0x518114 _matchHurtStrs
+// 0x518114 matchHurtStrs
 const char* gHurtTooMuchKeys[HURT_COUNT] = {
     "blind",
     "crippled",
@@ -260,10 +260,10 @@ static const int _hp_run_away_value[6] = {
     100,
 };
 
-// 0x518150 _attackerTeamObj
+// 0x518150 attackerTeamObj
 static Object* _attackerTeamObj = nullptr;
 
-// 0x518154 _targetTeamObj
+// 0x518154 targetTeamObj
 static Object* _targetTeamObj = nullptr;
 
 // 0x518158 weapPrefOrderings
@@ -279,7 +279,7 @@ static const int _weapPrefOrderings[BEST_WEAPON_COUNT + 1][ATTACK_TYPE_COUNT] = 
     { 0, 0, 0, 0, 0 }, // BEST_WEAPON_RANDOM
 };
 
-// 0x518220 _old_state
+// 0x518220 old_state
 static int gLanguageFilter = -1;
 
 // ai.msg
@@ -293,7 +293,7 @@ static char _target_str[AI_MESSAGE_SIZE];
 // 0x56D61C curr_crit_num
 static int _curr_crit_num;
 
-// 0x56D620 _curr_crit_list
+// 0x56D620 curr_crit_list
 static Object** _curr_crit_list;
 
 // 0x56D624 attack_str

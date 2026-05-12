@@ -66,7 +66,7 @@ static int _MVE_sndDecompS16(unsigned short* a1, unsigned char* a2, int a3, int 
 static void _nfPkConfig();
 static void _nfPkDecomp(unsigned char* buf, unsigned char* a2, int a3, int a4, int a5, int a6);
 
-// 0x51EBE0 _snd_8to16
+// 0x51EBE0 snd_8to16
 static unsigned short word_51EBE0[256] = {
     // clang-format off
     0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -116,10 +116,10 @@ static int sync_FrameDropped = 0;
 // 0x51EDF8
 static int mve_volume = 0;
 
-// 0x51EE08 _sf_ShowFrame
+// 0x51EE08 sf_ShowFrame
 static MveShowFrameFunc* sf_ShowFrame;
 
-// 0x51EE14 _pal_SetPalette
+// 0x51EE14 pal_SetPalette
 static MveSetPaletteFunc* pal_SetPalette;
 
 // 0x51EE1C rm_active
@@ -321,7 +321,7 @@ static int rm_FrameCount;
 // 0x6B36AC sf_ScreenHeight
 static int sf_ScreenHeight;
 
-// 0x6B39B8 _mem_alloc
+// 0x6B39B8 mem_alloc
 static MveMallocFunc* mve_malloc_func;
 
 // 0x6B39C0 rm_dx
@@ -339,7 +339,7 @@ static void* io_handle;
 // 0x6B39D0 rm_len
 static int rm_len;
 
-// 0x6B39D4 _mem_free
+// 0x6B39D4 mem_free
 static MveFreeFunc* mve_free_func;
 
 // 0x6B39D8 snd_comp
@@ -360,7 +360,7 @@ static int rm_track_bit;
 // 0x6B3ADC sync_time
 static int sync_time;
 
-// 0x6B3AE0 _io_read
+// 0x6B3AE0 io_read
 static MveReadFunc* mve_read_func;
 
 // 0x6B3AE4
@@ -378,7 +378,7 @@ static int nf_width;
 // 0x6B3D00
 static int dword_6B3D00;
 
-// 0x6B3D0C _pal_tbl
+// 0x6B3D0C pal_tbl
 static unsigned char pal_tbl[768];
 
 // 0x6B4016

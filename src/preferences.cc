@@ -148,7 +148,7 @@ static const int _row3Ytab[RANGE_PREF_COUNT] = {
 };
 
 // x offsets for primary preferences from the knob position
-// 0x48FBF6 _bglbx
+// 0x48FBF6 bglbx
 static const short kPrimaryOptionLabelXOffsetByValue[PRIMARY_OPTION_VALUE_COUNT] = {
     2,
     25,
@@ -157,7 +157,7 @@ static const short kPrimaryOptionLabelXOffsetByValue[PRIMARY_OPTION_VALUE_COUNT]
 };
 
 // y offsets for primary preference option values from the knob position
-// 0x48FBFE _bglby
+// 0x48FBFE bglby
 static const short kPrimaryOptionLabelYOffsetByValue[PRIMARY_OPTION_VALUE_COUNT] = {
     10,
     -4,
@@ -166,7 +166,7 @@ static const short kPrimaryOptionLabelYOffsetByValue[PRIMARY_OPTION_VALUE_COUNT]
 };
 
 // x offsets for secondary prefrence option values from the knob position
-// 0x48FC06 _smlbx
+// 0x48FC06 smlbx
 static const short word_48FC06[SECONDARY_OPTION_VALUE_COUNT] = {
     4,
     21,
@@ -231,13 +231,13 @@ static MessageList gPreferencesMessageList;
 // 0x663840 optnmesg
 static MessageListItem gPreferencesMessageListItem;
 
-// 0x6638C8 _text_delay_back
+// 0x6638C8 text_delay_back
 static double gPreferencesTextBaseDelay2;
 
 // 0x6638D0 gamma_value
 static double gPreferencesBrightness1;
 
-// 0x6638D8 _gamma_value_back
+// 0x6638D8 gamma_value_back
 static double gPreferencesBrightness2;
 
 // 0x6638E0 text_delay
@@ -246,7 +246,7 @@ static double gPreferencesTextBaseDelay1;
 // 0x6638E8 mouse_sens
 static double gPreferencesMouseSensitivity1;
 
-// 0x6638F0 _mouse_sens_back
+// 0x6638F0 mouse_sens_back
 static double gPreferencesMouseSensitivity2;
 
 // 0x6638F8 prefbuf
@@ -255,7 +255,7 @@ static unsigned char* gPreferencesWindowBuffer;
 // 0x663904 prfwin
 static int gPreferencesWindow = -1;
 
-// 0x663924 _settings_backup
+// 0x663924 settings_backup
 static int gPreferencesGameDifficulty2;
 
 // 0x663928

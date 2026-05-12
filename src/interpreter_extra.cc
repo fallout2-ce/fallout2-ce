@@ -340,7 +340,7 @@ static char _aCritter[] = "<Critter>";
 // 0x453FC0 obj_on_screen_rect
 static Rect stru_453FC0 = { 0, 0, 640, 480 };
 
-// 0x518EC0 _dbg_error_strs
+// 0x518EC0 dbg_error_strs
 static const char* _dbg_error_strs[SCRIPT_ERROR_COUNT] = {
     "unimped",
     "obj is NULL",
@@ -353,7 +353,7 @@ static const char* _dbg_error_strs[SCRIPT_ERROR_COUNT] = {
 // 0x518F00 last_color
 static int _last_color = 1;
 
-// 0x518F04 _strName
+// 0x518F04 strName
 static char* _strName = _aCritter;
 
 // NOTE: This value is a little bit odd. It's used to handle 2 operations:

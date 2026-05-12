@@ -35,7 +35,7 @@ static void xbaseCloseAll();
 static void xbaseExitHandler(void);
 static bool xlistEnumerateHandler(XListEnumerationContext* context);
 
-// 0x6B24D0 _paths
+// 0x6B24D0 paths
 static XBase* gXbaseHead;
 
 // 0x6B24D4 init

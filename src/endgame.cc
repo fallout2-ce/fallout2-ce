@@ -111,7 +111,7 @@ static int _endgame_maybe_done = 0;
 
 // enddeath.txt
 //
-// 0x518678 _endDeathInfoList
+// 0x518678 endDeathInfoList
 static EndgameDeathEnding* gEndgameDeathEndings = nullptr;
 
 // The number of death endings in [gEndgameDeathEndings] array.
@@ -142,7 +142,7 @@ static bool gEndgameEndingSpeechEnded;
 
 // endgame.txt
 //
-// 0x570BC4 _slides
+// 0x570BC4 slides
 static EndgameEnding* gEndgameEndings;
 
 // The array of text lines in current subtitles file.
@@ -199,7 +199,7 @@ static unsigned int* gEndgameEndingSubtitlesTimings;
 // 0x570BEC endgame_old_font
 static int gEndgameEndingSlideshowOldFont;
 
-// 0x570BF0 _endgame_window_buffer
+// 0x570BF0 endgame_window_buffer
 static unsigned char* gEndgameEndingSlideshowWindowBuffer;
 
 // 0x570BF4 endgame_window

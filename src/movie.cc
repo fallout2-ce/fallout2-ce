@@ -55,7 +55,7 @@ static int gMovieWindow = -1;
 // 0x5195BC subtitleFont
 static int gMovieSubtitlesFont = -1;
 
-// 0x5195C0 _showFrameFuncs
+// 0x5195C0 showFrameFuncs
 static MovieBlitFunc* gMovieBlitFuncs[2][2][2] = {
     {
         {
@@ -79,7 +79,7 @@ static MovieBlitFunc* gMovieBlitFuncs[2][2][2] = {
     },
 };
 
-// 0x5195E0 _paletteFunc
+// 0x5195E0 paletteFunc
 static MovieSetPaletteEntriesProc* gMovieSetPaletteEntriesProc = _setSystemPaletteEntries;
 
 // 0x5195E4 subtitleR
@@ -97,13 +97,13 @@ static Rect gMovieWindowRect;
 // 0x638E20 movieRect
 static Rect _movieRect;
 
-// 0x638E30 _movieCallback
+// 0x638E30 movieCallback
 static void (*_movieCallback)();
 
-// 0x638E38 _updateCallbackFunc
+// 0x638E38 updateCallbackFunc
 static MovieSetPaletteProc* gMoviePaletteProc;
 
-// 0x638E40 _subtitleFilenameFunc
+// 0x638E40 subtitleFilenameFunc
 static MovieBuildSubtitleFilePathProc* gMovieBuildSubtitleFilePathProc;
 
 // 0x638E48 subtitleW
@@ -136,7 +136,7 @@ static int _lastMovieX;
 // 0x638E70 lastMovieY
 static int _lastMovieY;
 
-// 0x638E74 _subtitleList
+// 0x638E74 subtitleList
 static MovieSubtitleListNode* gMovieSubtitleHead;
 
 // 0x638E78 movieFlags
@@ -166,10 +166,10 @@ static int _subtitleH;
 // 0x638EA4 mve_running
 static int _running;
 
-// 0x638EA8 _MVE_handle_file
+// 0x638EA8 MVE_handle_file
 static File* gMovieFileStream;
 
-// 0x638EAC _alphaWindowBuf
+// 0x638EAC alphaWindowBuf
 static unsigned char* _alphaWindowBuf;
 
 // 0x638EB0 movieX
@@ -178,7 +178,7 @@ static int _movieX;
 // 0x638EB4 movieY
 static int _movieY;
 
-// 0x638EBC _alphaHandle
+// 0x638EBC alphaHandle
 static File* _alphaHandle;
 
 // 0x638EC0 alphaBuf

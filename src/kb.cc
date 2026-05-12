@@ -34,10 +34,10 @@ static int keyboardPeekEvent(int index, KeyboardEvent** keyboardEventPtr);
 // 0x51E2D0 kb_installed
 static unsigned char _kb_installed = 0;
 
-// 0x51E2D4 _kb_disabled
+// 0x51E2D4 kb_disabled
 static bool gKeyboardDisabled = false;
 
-// 0x51E2D8 _kb_numpad_disabled
+// 0x51E2D8 kb_numpad_disabled
 static bool gKeyboardNumpadDisabled = false;
 
 // 0x51E2DC kb_numlock_disabled
@@ -57,7 +57,7 @@ static int gModifierKeysState = 0;
 
 // TODO: It's _kb_next_ascii_English_US (not implemented yet).
 //
-// 0x51E2EC _kb_scan_to_ascii
+// 0x51E2EC kb_scan_to_ascii
 static int (*_kb_scan_to_ascii)() = keyboardDequeueLogicalKeyCode;
 
 // Ring buffer of keyboard events.

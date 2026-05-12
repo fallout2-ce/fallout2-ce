@@ -80,7 +80,7 @@ static int _input_my;
 // 0x6AC760 screendump_key
 static int gScreenshotKeyCode;
 
-// 0x6AC76C _screendump_func
+// 0x6AC76C screendump_func
 static ScreenshotHandler* gScreenshotHandler;
 
 // 0x6AC770 input_get

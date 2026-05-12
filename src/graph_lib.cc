@@ -24,7 +24,7 @@ static int* _dad_2;
 // 0x596E94 match_length
 static int _match_length;
 
-// 0x596E98 _textsize
+// 0x596E98 textsize
 static int _textsize;
 
 // 0x596E9C rson
@@ -33,10 +33,10 @@ static int* _rson;
 // 0x596EA0 lson
 static int* _lson;
 
-// 0x596EA4 _text_buf
+// 0x596EA4 text_buf
 static unsigned char* _text_buf;
 
-// 0x596EA8 _codesize
+// 0x596EA8 codesize
 static int _codesize;
 
 // 0x596EAC match_position

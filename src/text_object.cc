@@ -51,7 +51,7 @@ static unsigned int gTextObjectsBaseDelay = 3500;
 // 0x51D94C text_object_line_delay
 static unsigned int gTextObjectsLineDelay = 1399;
 
-// 0x6681C0 _text_object_list
+// 0x6681C0 text_object_list
 static TextObject* gTextObjects[TEXT_OBJECTS_MAX_COUNT];
 
 // 0x668210 display_width

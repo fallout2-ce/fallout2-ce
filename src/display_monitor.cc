@@ -71,7 +71,7 @@ static int gDisplayMonitorScrollUpButton = -1;
 // 0x56DBFC display_string_buf
 static char gDisplayMonitorLines[DISPLAY_MONITOR_LINES_CAPACITY][DISPLAY_MONITOR_LINE_LENGTH];
 
-// 0x56FB3C _disp_buf
+// 0x56FB3C disp_buf
 static unsigned char* gDisplayMonitorBackgroundFrmData;
 
 // 0x56FB40 max_disp

@@ -118,7 +118,7 @@ static bool gSpatialsEnabled = true;
 // 0x51C6C0 scriptlists
 static ScriptList gScriptLists[SCRIPT_TYPE_COUNT];
 
-// 0x51C710 _script_path_base
+// 0x51C710 script_path_base
 static const char* gScriptsBasePath = "scripts\\";
 
 // 0x51C714 script_engine_running
@@ -151,7 +151,7 @@ static const int gGameTimeDaysPerMonth[12] = {
     31, // Dec
 };
 
-// 0x51C758 _procTableStrs
+// 0x51C758 procTableStrs
 const char* gScriptProcNames[SCRIPT_PROC_COUNT] = {
     "no_p_proc",
     "start",
@@ -185,7 +185,7 @@ const char* gScriptProcNames[SCRIPT_PROC_COUNT] = {
 
 // scripts.lst
 //
-// 0x51C7C8 _scriptListInfo
+// 0x51C7C8 scriptListInfo
 static ScriptsListEntry* gScriptsListEntries = nullptr;
 
 // 0x51C7CC maxScriptNum
@@ -209,10 +209,10 @@ static Object* _scrQueueTestObj = nullptr;
 // 0x51C7EC scrQueueTestValue
 static int _scrQueueTestValue = 0;
 
-// 0x51C7F0 _err_str
+// 0x51C7F0 err_str
 static char* gErrorString = gScriptsErrorText;
 
-// 0x51C7F4 _blank_str
+// 0x51C7F4 blank_str
 static char* gEmptyString = gScriptsEmptyText;
 
 // 0x664954 scriptState
@@ -242,13 +242,13 @@ static int gScriptsRequestedExplosionMinDamage;
 // 0x6649BC max_dmg
 static int gScriptsRequestedExplosionMaxDamage;
 
-// 0x6649C0 _dialogTarget
+// 0x6649C0 dialogTarget
 static Object* gScriptsRequestedDialogWith;
 
-// 0x6649C4 _lootSource
+// 0x6649C4 lootSource
 static Object* gScriptsRequestedLootingBy;
 
-// 0x6649C8 _lootTarget
+// 0x6649C8 lootTarget
 static Object* gScriptsRequestedLootingFrom;
 
 // 0x6649CC stealSource

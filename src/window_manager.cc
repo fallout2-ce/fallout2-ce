@@ -67,7 +67,7 @@ int _GNW_wcolor[6] = {
     0,
 };
 
-// 0x51E3FC _screen_buffer
+// 0x51E3FC screen_buffer
 static unsigned char* _screen_buffer = nullptr;
 
 // 0x51E400 insideWinExit
@@ -79,10 +79,10 @@ static int _last_button_winID = -1;
 // 0x6ADD90 window_index
 static int gWindowIndexes[MAX_WINDOW_COUNT];
 
-// 0x6ADE58 _window
+// 0x6ADE58 window
 static Window* gWindows[MAX_WINDOW_COUNT];
 
-// 0x6ADF20 _video_reset
+// 0x6ADF20 video_reset
 static VideoSystemExitProc* gVideoSystemExitProc;
 
 // 0x6ADF24 num_windows
@@ -97,7 +97,7 @@ static bool _buffering = false;
 // 0x6ADF30 bk_color
 static int _bk_color;
 
-// 0x6ADF34 _video_set
+// 0x6ADF34 video_set
 static VideoSystemInitProc* gVideoSystemInitProc;
 
 // 0x6ADF38 doing_refresh_all
@@ -106,7 +106,7 @@ static int _doing_refresh_all;
 // 0x6ADF3C GNW_texture
 static void* _GNW_texture;
 
-// 0x6ADF40 _btn_grp
+// 0x6ADF40 btn_grp
 static ButtonGroup gButtonGroups[BUTTON_GROUP_LIST_CAPACITY];
 
 // 0x4D5C30

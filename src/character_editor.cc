@@ -502,13 +502,13 @@ static int gCharacterEditorSkillValueAdjustmentSliderY = 27;
 // 0x518538 character_points
 int gCharacterEditorRemainingCharacterPoints = 0;
 
-// 0x51853C _karma_vars
+// 0x51853C karma_vars
 static KarmaEntry* gKarmaEntries = nullptr;
 
 // 0x518540 karma_vars_count
 static int gKarmaEntriesLength = 0;
 
-// 0x518544 _general_reps
+// 0x518544 general_reps
 static GenericReputationEntry* gGenericReputationEntries = nullptr;
 
 // 0x518548 general_reps_count
@@ -618,10 +618,10 @@ static int gCharacterEditorFolderCardFrmId;
 // 0x5705B4 folder_top_line
 static int gCharacterEditorFolderViewTopLine;
 
-// 0x5705B8 _folder_card_title
+// 0x5705B8 folder_card_title
 static char* gCharacterEditorFolderCardTitle;
 
-// 0x5705BC _folder_card_title2
+// 0x5705BC folder_card_title2
 static char* gCharacterEditorFolderCardSubtitle;
 
 // 0x5705C0 folder_yoffset
@@ -633,7 +633,7 @@ static int gCharacterEditorKarmaFolderTopLine;
 // 0x5705C8 folder_highlight_line
 static int gCharacterEditorFolderViewHighlightedLine;
 
-// 0x5705CC _folder_card_desc
+// 0x5705CC folder_card_desc
 static char* gCharacterEditorFolderCardDescription;
 
 // 0x5705D0 folder_ypos

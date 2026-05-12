@@ -83,13 +83,13 @@ static bool gTileRoofIsVisible = true;
 // 0x51D960 show_grid
 static bool gTileGridIsVisible = false;
 
-// 0x51D964 _tile_refresh
+// 0x51D964 tile_refresh
 static TileWindowRefreshElevationProc* gTileWindowRefreshElevationProc = tileRefreshGame;
 
 // 0x51D968 refresh_enabled
 static bool gTileEnabled = true;
 
-// 0x51D96C _off_tile
+// 0x51D96C off_tile
 const int _off_tile[6] = {
     16,
     32,
@@ -225,7 +225,7 @@ static int _square_offx;
 // 0x66BDF0 square_offy
 static int _square_offy;
 
-// 0x66BDF4 _blit
+// 0x66BDF4 blit
 static TileWindowRefreshProc* gTileWindowRefreshProc;
 
 // 0x66BDF8 tile_offy
@@ -244,7 +244,7 @@ static int gSquareGridSize;
 // 0x66BE04 grid_width
 static int gHexGridWidth;
 
-// 0x66BE08 _squares
+// 0x66BE08 squares
 static TileData** gTileSquares;
 
 // 0x66BE0C tile_back_buf

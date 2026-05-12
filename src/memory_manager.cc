@@ -16,16 +16,16 @@ static void* memoryManagerDefaultMallocImpl(size_t size);
 static void* memoryManagerDefaultReallocImpl(void* ptr, size_t size);
 static void memoryManagerDefaultFreeImpl(void* ptr);
 
-// 0x519588 _outputFunc_
+// 0x519588 outputFunc_
 static MemoryManagerPrintErrorProc* gMemoryManagerPrintErrorProc = memoryManagerDefaultPrintErrorImpl;
 
-// 0x51958C _mallocPtr
+// 0x51958C mallocPtr
 static MallocProc* gMemoryManagerMallocProc = memoryManagerDefaultMallocImpl;
 
-// 0x519590 _reallocPtr
+// 0x519590 reallocPtr
 static ReallocProc* gMemoryManagerReallocProc = memoryManagerDefaultReallocImpl;
 
-// 0x519594 _freePtr
+// 0x519594 freePtr
 static FreeProc* gMemoryManagerFreeProc = memoryManagerDefaultFreeImpl;
 
 // 0x4845B0 defaultOutput

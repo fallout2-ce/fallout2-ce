@@ -11,10 +11,10 @@ namespace fallout {
 constexpr size_t DATA_FILE_PALETTE_MAX = 768;
 constexpr size_t INDEXED_PALETTE_MAX = 256;
 
-// 0x5184AC _loadFunc
+// 0x5184AC loadFunc
 DatafileLoader* gDatafileLoader = nullptr;
 
-// 0x5184B0 _mangleName
+// 0x5184B0 mangleName
 DatafileNameMangler* gDatafileNameMangler = datafileDefaultNameManglerImpl;
 
 // 0x56D7E0 pal

@@ -163,10 +163,10 @@ static int combatTurnHookResult = 0;
 // 0x510944 combat_state
 unsigned int gCombatState = COMBAT_STATE_0x02;
 
-// 0x510948 _aiInfoList
+// 0x510948 aiInfoList
 static CombatAiInfo* _aiInfoList = nullptr;
 
-// 0x51094C _gcsd
+// 0x51094C gcsd
 static CombatStartData* _gcsd = nullptr;
 
 // 0x510950 combat_call_display
@@ -1948,7 +1948,7 @@ static Object* _combat_turn_obj;
 // 0x56D38C combat_highlight
 static int _combat_highlight;
 
-// 0x56D390 _combat_list
+// 0x56D390 combat_list
 static Object** _combat_list;
 
 // 0x56D394 list_com

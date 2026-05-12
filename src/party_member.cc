@@ -87,7 +87,7 @@ static int _partyMemberCopyLevelInfo(Object* object, int a2);
 // 0x519D9C partyMemberMaxCount
 int gPartyMemberDescriptionsLength = 0;
 
-// 0x519DA0 _partyMemberPidList
+// 0x519DA0 partyMemberPidList
 int* gPartyMemberPids = nullptr;
 
 //
@@ -95,7 +95,7 @@ static PartyMemberListItem* _itemSaveListHead = nullptr;
 
 // List of party members, it's length is [gPartyMemberDescriptionsLength] + 20.
 //
-// 0x519DA8 _partyMemberList
+// 0x519DA8 partyMemberList
 PartyMemberListItem* gPartyMembers = nullptr;
 
 // Number of critters added to party.
@@ -109,7 +109,7 @@ static int _partyMemberItemCount = 20000;
 // 0x519DB4 partyStatePrepped
 static int _partyStatePrepped = 0;
 
-// 0x519DB8 _partyMemberAIOptions
+// 0x519DB8 partyMemberAIOptions
 static PartyMemberDescription* gPartyMemberDescriptions = nullptr;
 
 // 0x519DBC partyMemberLevelUpInfoList

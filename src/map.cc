@@ -78,7 +78,7 @@ static char byte_50B058[] = "";
 // 0x50B30C aErrorF2
 static char _aErrorF2[] = "ERROR! F2";
 
-// 0x519540 _map_scroll_refresh
+// 0x519540 map_scroll_refresh
 static IsoWindowRefreshProc* _map_scroll_refresh = isoWindowRefreshRectGame;
 
 // 0x519544 map_data_elev_flags
@@ -107,11 +107,11 @@ static int gEnteringRotation = ROTATION_NE;
 int gMapSid = -1;
 
 // local_vars
-// 0x519568 _map_local_vars
+// 0x519568 map_local_vars
 int* gMapLocalVars = nullptr;
 
 // map_vars
-// 0x51956C _map_global_vars
+// 0x51956C map_global_vars
 int* gMapGlobalVars = nullptr;
 
 // local_vars_num
@@ -127,7 +127,7 @@ int gMapGlobalVarsLength = 0;
 // 0x519578 map_elevation
 int gElevation = 0;
 
-// 0x51957C _errMapName
+// 0x51957C errMapName
 static char* _errMapName = byte_50B058;
 
 // 0x519584 wmMapIdx
@@ -148,7 +148,7 @@ static Rect gIsoWindowRect;
 // 0x631D48 map_msg_file
 MessageList gMapMessageList;
 
-// 0x631D50 _display_buf
+// 0x631D50 display_buf
 static unsigned char* gIsoWindowBuffer;
 
 // 0x631D54 map_data

@@ -106,10 +106,10 @@ static int gPremadeCharacterCount = PREMADE_CHARACTER_COUNT;
 // 0x51C7F8 select_window_id
 static int gCharacterSelectorWindow = -1;
 
-// 0x51C7FC _select_window_buffer
+// 0x51C7FC select_window_buffer
 static unsigned char* gCharacterSelectorWindowBuffer = nullptr;
 
-// 0x51C800 _monitor
+// 0x51C800 monitor
 static unsigned char* gCharacterSelectorBackground = nullptr;
 
 // 0x51C804 previous_button

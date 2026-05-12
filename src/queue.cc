@@ -46,7 +46,7 @@ static int explosionFailureEventProcess(Object* obj, void* data);
 // 0x51C690 tmpQNode
 static QueueListNode* gLastFoundQueueListNode = nullptr;
 
-// 0x6648C0 _queue
+// 0x6648C0 queue
 static QueueListNode* gQueueListHead;
 
 // 0x51C540 q_func

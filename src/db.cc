@@ -18,7 +18,7 @@ static int _db_list_compare(const void* p1, const void* p2);
 
 // Generic file progress report handler.
 //
-// 0x51DEEC _read_callback
+// 0x51DEEC read_callback
 static FileReadProgressHandler* gFileReadProgressHandler = nullptr;
 
 // Bytes read so far while tracking progress.

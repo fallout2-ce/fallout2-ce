@@ -36,19 +36,19 @@ static void memoryBlockFreeImpl(void* ptr);
 static void* mem_prep_block(void* block, size_t size);
 static void memoryBlockValidate(void* block);
 
-// 0x51DED0 _p_malloc
+// 0x51DED0 p_malloc
 static MallocProc* gMallocProc = memoryBlockMallocImpl;
 
-// 0x51DED4 _p_realloc
+// 0x51DED4 p_realloc
 static ReallocProc* gReallocProc = memoryBlockReallocImpl;
 
-// 0x51DED8 _p_free
+// 0x51DED8 p_free
 static FreeProc* gFreeProc = memoryBlockFreeImpl;
 
 // 0x51DEDC num_blocks
 static int gMemoryBlocksCurrentCount = 0;
 
-// 0x51DEE0 _max_blocks
+// 0x51DEE0 max_blocks
 static int gMemoryBlockMaximumCount = 0;
 
 // 0x51DEE4 mem_allocated

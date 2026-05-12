@@ -71,7 +71,7 @@ static int gObjectsUpdateAreaHexHeight = 0;
 // 0x519604 updateHexArea
 static int gObjectsUpdateAreaHexSize = 0;
 
-// 0x519608 _orderTable
+// 0x519608 orderTable
 static int* _orderTable[2] = {
     nullptr,
     nullptr,
@@ -89,7 +89,7 @@ static int* _offsetDivTable = nullptr;
 // 0x51961C offsetModTable
 static int* _offsetModTable = nullptr;
 
-// 0x519620 _renderTable
+// 0x519620 renderTable
 static ObjectListNode** _renderTable = nullptr;
 
 // Number of objects in _outlinedObjects.
@@ -99,7 +99,7 @@ static int _outlineCount = 0;
 
 // Contains objects that are not bounded to tiles.
 //
-// 0x519628 _floatingObjects
+// 0x519628 floatingObjects
 static ObjectListNode* gObjectListHead = nullptr;
 
 // 0x51962C centerToUpperLeft
@@ -114,7 +114,7 @@ static int gObjectFindTile = 0;
 // 0x519638 find_ptr
 static ObjectListNode* gObjectFindLastObjectListNode = nullptr;
 
-// 0x51963C _preload_list
+// 0x51963C preload_list
 static int* gObjectFids = nullptr;
 
 // 0x519640 preload_list_index
@@ -188,7 +188,7 @@ static int _obj_last_elev = -1;
 // 0x51977C obj_last_is_empty
 static bool _obj_last_is_empty = true;
 
-// 0x519780 _wallBlendTable
+// 0x519780 wallBlendTable
 unsigned char* _wallBlendTable = nullptr;
 
 // 0x519784 glassBlendTable
@@ -203,13 +203,13 @@ static unsigned char* _energyBlendTable = nullptr;
 // 0x519790 redBlendTable
 static unsigned char* _redBlendTable = nullptr;
 
-// 0x519794 _moveBlockObj
+// 0x519794 moveBlockObj
 Object* _moveBlockObj = nullptr;
 
 // 0x519798 objItemOutlineState
 static int _objItemOutlineState = 0;
 
-// 0x51979C _cd_order
+// 0x51979C cd_order
 static int _cd_order[9] = {
     1,
     0,
@@ -233,7 +233,7 @@ static Rect gObjectsWindowRect;
 
 // Likely outlined objects on the screen.
 //
-// 0x639C00 _outlinedObjects
+// 0x639C00 outlinedObjects
 static Object* _outlinedObjects[100];
 
 // 0x639D90 updateAreaPixelBounds
@@ -241,7 +241,7 @@ static Rect gObjectsUpdateAreaPixelBounds;
 
 // Contains objects that are bounded to tiles.
 //
-// 0x639DA0 _objectTable
+// 0x639DA0 objectTable
 static ObjectListNode* gObjectListHeadByTile[HEX_GRID_SIZE];
 
 // 0x660EA0 glassGrayTable
@@ -261,7 +261,7 @@ static int gObjectsWindowHeight;
 
 // Translucent "egg" effect around player.
 //
-// 0x6610AC _obj_egg
+// 0x6610AC obj_egg
 Object* gEgg;
 
 // 0x6610B0 back_buf_width
@@ -271,7 +271,7 @@ static int gObjectsWindowPitch;
 static int gObjectsWindowWidth;
 
 // obj_dude
-// 0x6610B8 _obj_dude
+// 0x6610B8 obj_dude
 Object* gDude;
 
 // 0x6610BC obj_seen_check

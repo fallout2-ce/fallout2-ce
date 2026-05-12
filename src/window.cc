@@ -105,7 +105,7 @@ static int _winTOS = -1;
 static int gCurrentManagedWindowIndex = -1;
 
 // TODO: this is probably not needed: FO always used mode 1
-// 0x51DCBC _gfx_init
+// 0x51DCBC gfx_init
 static INITVIDEOFN _gfx_init[12] = {
     _init_mode_320_200,
     _init_mode_640_480,
@@ -143,7 +143,7 @@ static int gWindowInputHandlersLength = 0;
 // 0x51DD80 lastWin
 static int _lastWin = -1;
 
-// 0x51DD84 _said_quit
+// 0x51DD84 said_quit
 static int _said_quit = 1;
 
 // 0x66E770 winStack
@@ -158,21 +158,21 @@ static ManagedWindow gManagedWindows[MANAGED_WINDOW_COUNT];
 // 0x672D70 inputFunc
 static WindowInputHandler** gWindowInputHandlers;
 
-// 0x672D74 _createWindowFunc
+// 0x672D74 createWindowFunc
 static ManagedWindowCreateCallback* off_672D74;
 
 // NOTE: This value is never set.
 //
-// 0x672D78 _selectWindowFunc
+// 0x672D78 selectWindowFunc
 static void (*_selectWindowFunc)(int, ManagedWindow*);
 
 // 0x672D7C xres
 static int _xres;
 
-// 0x672D80 _displayFunc
+// 0x672D80 displayFunc
 static DisplayInWindowCallback* gDisplayInWindowCallback;
 
-// 0x672D84 _deleteWindowFunc
+// 0x672D84 deleteWindowFunc
 static WindowDeleteCallback* gWindowDeleteCallback;
 
 // 0x672D88 yres
@@ -186,10 +186,10 @@ static int _currentHighlightColorR;
 // 0x672D90 currentFont
 static int gWidgetFont;
 
-// 0x672D98 _soundPressFunc
+// 0x672D98 soundPressFunc
 ButtonCallback* off_672D98;
 
-// 0x672D9C _soundReleaseFunc
+// 0x672D9C soundReleaseFunc
 ButtonCallback* off_672D9C;
 
 // Text color (maybe g).
