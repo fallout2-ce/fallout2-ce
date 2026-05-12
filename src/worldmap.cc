@@ -2816,7 +2816,7 @@ int wmMapMaxCount()
 // 0x4BF974 wmMapIdxToName
 int wmMapIdxToName(int mapIdx, char* dest, size_t size)
 {
-    if (mapIdx == -1 || mapIdx > wmMaxMapNum) {
+    if (mapIdx < 0 || mapIdx >= wmMaxMapNum) {
         dest[0] = '\0';
         return -1;
     }
@@ -3451,7 +3451,7 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
 
     int dayPart;
     int gameTimeHour = gameTimeGetHour();
-    if (gameTimeHour >= 1800 || gameTimeHour < 600) {
+    if (gameTimeHour >= 1800 || gameTimeHour <= 600) {
         dayPart = DAY_PART_NIGHT;
     } else if (gameTimeHour >= 1200) {
         dayPart = DAY_PART_AFTERNOON;
@@ -3612,7 +3612,7 @@ static bool wmTryMatchAreaContainingMapIdx(int mapIdx, int* areaIdxPtr)
 {
     assert(areaIdxPtr != nullptr);
 
-    return wmMatchAreaContainingMapIdx(mapIdx, areaIdxPtr) == 0 && cityIsValid(*areaIdxPtr);
+    return wmMatchAreaContainingMapIdx(mapIdx, areaIdxPtr) == 0;
 }
 
 // NOTE: Inlined.
