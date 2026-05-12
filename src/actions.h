@@ -12,7 +12,7 @@ int _action_attack(Attack* attack);
 int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item);
 int _action_use_an_object(Object* user, Object* targetObj);
 int actionPickUp(Object* critter, Object* item);
-int _action_loot_critter(Object* critter, Object* target);
+int actionLootCritter(Object* critter, Object* target);
 int _action_skill_use(int skill);
 int actionUseSkill(Object* user, Object* target, int skill);
 bool _is_hit_from_front(const Object* attacker, const Object* defender);

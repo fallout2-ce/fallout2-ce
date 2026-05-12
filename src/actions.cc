@@ -1266,7 +1266,7 @@ int actionPickUp(Object* critter, Object* item)
 // be called with a living creature, but am not 100% certain.
 //
 // 0x4123E8 was _action_loot_container
-int _action_loot_critter(Object* critter, Object* target)
+int actionLootCritter(Object* critter, Object* target)
 {
     if (FID_TYPE(target->fid) != OBJ_TYPE_CRITTER) {
         return -1;

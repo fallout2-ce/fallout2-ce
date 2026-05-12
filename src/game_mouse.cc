@@ -1010,7 +1010,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                                 actionTalk(gDude, targetObj);
                             }
                         } else {
-                            _action_loot_critter(gDude, targetObj);
+                            actionLootCritter(gDude, targetObj);
                         }
                     }
                     break;
@@ -1242,7 +1242,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                                 // party member: trade via steal skill
                                 actionUseSkill(gDude, targetObj, SKILL_STEAL);
                             } else {
-                                _action_loot_critter(gDude, targetObj);
+                                actionLootCritter(gDude, targetObj);
                             }
                             break;
                         default:
