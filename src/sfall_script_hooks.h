@@ -264,6 +264,17 @@ enum AmmoCostHookType {
     AMMO_COST_HOOK_BURST_SHOT = 3,
 };
 
+enum class EncounterHookEventType {
+    RandomEncounter = 0,
+    LocalMapEnter = 1,
+};
+
+enum class EncounterHookResult {
+    ContinueEncounter,
+    ContinueTravel,
+    LoadMapDirectly,
+};
+
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
 int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
@@ -277,6 +288,7 @@ void scriptHooks_GameModeChange(int exit, int previousGameMode);
 bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes);
 void scriptHooks_OnDeath(Object* critter);
 int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType);
+EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, int* mapIdPtr, bool isSpecial, int tableId, int entryId);
 bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
 bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);
