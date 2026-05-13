@@ -11,7 +11,8 @@ namespace fallout {
 
 static EdgeZone* gEdgeZones[ELEVATION_COUNT];
 static bool gEdgeDataLoaded = false;
-static bool gEdgeVersion = false;
+static bool gEdgeVersion2 = false;
+static EdgeZone* gCurrentEdgeZone = nullptr;
 
 // Boundary alignment mods (sfall mapModWidth/Height), set by clamp/check functions.
 static int gMapModWidth = 0;
@@ -180,7 +181,7 @@ static bool parseEdgFile(File* stream)
     int reserved;
     if (fileReadInt32(stream, &reserved) == -1 || reserved != 0) return false;
 
-    gEdgeVersion = (version == 2);
+    gEdgeVersion2 = (version == 2);
 
     int levelIndicator = 0;
 
@@ -188,7 +189,7 @@ static bool parseEdgFile(File* stream)
         int sqLeft = 99, sqTop = 0, sqRight = 0, sqBottom = 99;
         int sqClipData = 0;
 
-        if (gEdgeVersion) {
+        if (gEdgeVersion2) {
             int sqRect[4];
             if (fileReadInt32List(stream, sqRect, 4) == -1
                 || fileReadInt32(stream, &sqClipData) == -1) {
@@ -285,6 +286,11 @@ void mapEdgeFree()
         gEdgeZones[elev] = nullptr;
     }
     gEdgeDataLoaded = false;
+    gCurrentEdgeZone = nullptr;
+    gMapModWidth = 0;
+    gMapModHeight = 0;
+    gMapWidthModSize = 0;
+    gMapHeightModSize = 0;
 }
 
 bool mapEdgeIsLoaded()
@@ -304,6 +310,9 @@ int mapEdgeClampTile(int tile, int elevation)
     if (zone == nullptr) {
         return tile;
     }
+
+    // Set current zone for subsequent scroll blocking checks.
+    gCurrentEdgeZone = zone;
 
     // Clamp pixel position to borderRect (matching sfall GetCenterTile).
     // Note: X is inverted (left > right), so the valid range is [right, left].
@@ -325,7 +334,7 @@ bool mapEdgeTileInBounds(int tile, int elevation)
     int px, py;
     tileToPixelOffset(tile, px, py);
 
-    EdgeZone* zone = findZoneByPixel(px, py, elevation);
+    EdgeZone* zone = gCurrentEdgeZone;
     if (zone == nullptr) {
         return false;
     }
@@ -357,7 +366,7 @@ bool mapEdgeSetBoundaryMods(int tile, int elevation)
     int px, py;
     tileToPixelOffset(tile, px, py);
 
-    EdgeZone* zone = findZoneByPixel(px, py, elevation);
+    EdgeZone* zone = gCurrentEdgeZone;
     if (zone == nullptr) {
         return false;
     }
@@ -375,7 +384,7 @@ int mapEdgeGetModHeight() { return gMapModHeight; }
 bool mapEdgeHasSquareRect(int elevation)
 {
     EdgeZone* zone = gEdgeZones[elevation];
-    return zone != nullptr && zone->squareRect.left >= 0;
+    return gEdgeVersion2 && zone != nullptr && zone->squareRect.left >= 0;
 }
 
 void mapEdgeGetSquareRect(int elevation, Rect* outRect)

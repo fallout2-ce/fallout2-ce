@@ -932,6 +932,8 @@ static int mapLoad(File* stream)
         goto err;
     }
 
+    mapEdgeInit(gMapHeader.name);
+
     error = "Error setting tile center";
     if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) != 0) {
         goto err;
@@ -1062,8 +1064,6 @@ err:
     // NOTE: Uninline.
     mapSetEnteringLocation(-1, -1, -1);
 
-    mapEdgeFree();
-    mapEdgeInit(gMapHeader.name);
     tile_hires_stencil_init();
 
     gameMovieFadeOut();
