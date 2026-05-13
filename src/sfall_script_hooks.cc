@@ -383,6 +383,60 @@ void scriptHooks_OnDeath(Object* critter)
 }
 
 /*
+Runs whenever a random encounter occurs (except the Horrigan meeting and scripted encounters), or when the player enters a local map from the world map.
+You can override the map for loading or the encounter.
+
+int     arg0 - event type: 0 - when a random encounter occurs, 1 - when the player enters from the world map
+int     arg1 - the map ID that the encounter will load
+int     arg2 - 1 when the encounter is a special encounter, 0 otherwise
+int     arg3 - encounter table number, or -1 if not an encounter
+int     arg4 - encounter index in the table, or -1 if not an encounter
+
+int     ret0 - overrides the map ID, or pass -1 for event type 0 to cancel the encounter and continue traveling
+int     ret1 - pass 1 to cancel the encounter and load the specified map from the ret0 (only for event type 0)
+*/
+EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, int* mapIdPtr, bool isSpecial, int tableId, int entryId)
+{
+    assert(mapIdPtr != nullptr);
+
+    const int maxReturnValues = eventType == EncounterHookEventType::RandomEncounter ? 2 : 1;
+    ScriptHookCall hook(HOOK_ENCOUNTER, maxReturnValues,
+        { static_cast<int>(eventType),
+            *mapIdPtr,
+            isSpecial ? 1 : 0,
+            tableId,
+            entryId });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return EncounterHookResult::ContinueEncounter;
+    }
+
+    int overrideMapId = hook.getReturnValueAt(0).asInt();
+    if (eventType == EncounterHookEventType::LocalMapEnter) {
+        if (overrideMapId >= 0) {
+            *mapIdPtr = overrideMapId;
+        }
+        return EncounterHookResult::ContinueEncounter;
+    }
+
+    if (overrideMapId < -1) {
+        overrideMapId = -1;
+    }
+    *mapIdPtr = overrideMapId;
+
+    if (overrideMapId < 0) {
+        return EncounterHookResult::ContinueTravel;
+    }
+
+    if (hook.numReturnValues() > 1 && hook.getReturnValueAt(1).asInt() == 1) {
+        return EncounterHookResult::LoadMapDirectly;
+    }
+
+    return EncounterHookResult::ContinueEncounter;
+}
+
+/*
 Runs before and after each turn in combat (for both PC and NPC).
 
 int     arg0 - event type:

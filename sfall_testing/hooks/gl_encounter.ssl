@@ -1,0 +1,93 @@
+#include "sfall.h"
+#include "dik.h"
+#include "../test_utils.h"
+
+#define AREA_ARROYO      (0)
+#define AREA_RND_CITY    (28)
+#define MAP_RND_CITY1    (68)
+
+variable mode := 0;
+variable pending_event := -1;
+variable expected_map := -1;
+variable arroyo_known_before := 0;
+variable car_town_before := 0;
+
+procedure mode_name(variable value) begin
+    if (value == 0) then return "observe";
+    if (value == 1) then return "reroute_worldmap_enter";
+    if (value == 2) then return "cancel_encounters";
+    return "unknown";
+end
+
+procedure log_mode begin
+    display_msg(string_format2("encounter mode=%d (%s)", mode, mode_name(mode)));
+end
+
+procedure begin_pending_assertions(variable event_type) begin
+    pending_event := event_type;
+    expected_map := MAP_RND_CITY1;
+    arroyo_known_before := town_known(AREA_ARROYO);
+    car_town_before := car_current_town;
+end
+
+procedure encounter_handler begin
+    variable
+        event_type := get_sfall_arg_at(0),
+        map_id := get_sfall_arg_at(1),
+        is_special := get_sfall_arg_at(2),
+        table_num := get_sfall_arg_at(3),
+        entry_num := get_sfall_arg_at(4);
+
+    display_msg(string_format5("encounter event=%d map=%d special=%d table=%d entry=%d", event_type, map_id, is_special, table_num, entry_num));
+
+    if (mode == 1 and event_type == 1) then begin
+        call begin_pending_assertions(event_type);
+        display_msg(string_format1("encounter rerouting worldmap entry to map %d", expected_map));
+        set_sfall_return(expected_map);
+    end else if (mode == 2 and event_type == 0) then begin
+        display_msg("canceling encounter");
+        set_sfall_return(-1);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_X) then return;
+
+    mode := mode + 1;
+    if (mode > 2) then mode := 0;
+    call log_mode;
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("encounter manual test ready:");
+    display_msg("press X to cycle mode: observe, reroute worldmap enter, cancel encounters");
+    display_msg("mode 1: enter any location from the world map");
+    display_msg("mode 2: cancel encounters");
+    call log_mode;
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_ENCOUNTER, encounter_handler);
+end
+
+procedure map_enter_p_proc begin
+    if (expected_map == -1) then return;
+
+    call assertEquals("encounter reroute loaded expected map", cur_map_index, expected_map);
+    call assertEquals("encounter reroute load area matches rerouted map", map_get_load_area, AREA_RND_CITY);
+    call assertEquals("encounter reroute does not mutate Arroyo known state", town_known(AREA_ARROYO), arroyo_known_before);
+
+    call assertEquals("encounter reroute preserves car town", car_current_town, car_town_before);
+
+    if (pending_event == 1) then
+        call report_test_results("hook_encounter_worldmap_enter");
+
+    pending_event := -1;
+    expected_map := -1;
+end
