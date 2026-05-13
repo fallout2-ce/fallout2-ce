@@ -1211,12 +1211,18 @@ static Art* artLoadIndexedPng(const char* path)
         return nullptr;
     }
 
+    if (lodepng_has_palette_alpha(&state.info_png.color)) {
+        debugPrint("ART: indexed PNG transparency is unsupported, reserve palette index 0 instead: %s\n", path);
+        return nullptr;
+    }
+
+    size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
+
     if (width == 0 || height == 0 || width > SHRT_MAX || height > SHRT_MAX) {
         debugPrint("ART: invalid indexed PNG dimensions for %s: %ux%u\n", path, width, height);
         return nullptr;
     }
 
-    size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
     if (pixelCount > kMaxNamedPngPixels || pixelCount > INT_MAX) {
         debugPrint("ART: indexed PNG is too large: %s\n", path);
         return nullptr;
