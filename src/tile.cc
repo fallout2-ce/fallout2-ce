@@ -542,6 +542,7 @@ int tileSetCenter(int tile, int flags)
         return -1;
     }
 
+    bool boundaryModsSet = false;
     if (mapEdgeIsLoaded() && !settings.ui.ignore_map_edges) {
         if (flags != 0) {
             // Forced positioning (teleport, initial load, etc.): clamp to edge boundary.
@@ -553,6 +554,13 @@ int tileSetCenter(int tile, int flags)
             // copy to produce visual artifacts; blocking preserves the current view.
             if (!mapEdgeTileInBounds(tile, gElevation)) {
                 return -1;
+            }
+            // Tile is in bounds; set sub-tile boundary mods if tile is on the edge.
+            // If the tile is exactly on a boundary edge, force a full redraw
+            // (matching sfall's CheckBorder returning 1 → modeFlags |= 1).
+            if (mapEdgeSetBoundaryMods(tile, gElevation)) {
+                boundaryModsSet = true;
+                flags |= TILE_SET_CENTER_REFRESH_WINDOW;
             }
         }
     }
@@ -598,9 +606,9 @@ int tileSetCenter(int tile, int flags)
     }
 
     _tile_y = tile_y;
-    _tile_offx = (gTileWindowWidth - 32) / 2;
+    _tile_offx = mapEdgeGetModWidth() + (gTileWindowWidth - 32) / 2;
     _tile_x = tile_x;
-    _tile_offy = (gTileWindowHeight - 16) / 2;
+    _tile_offy = mapEdgeGetModHeight() + (gTileWindowHeight - 16) / 2;
 
     if (tile_x & 1) {
         _tile_x -= 1;
@@ -624,6 +632,8 @@ int tileSetCenter(int tile, int flags)
     if ((flags & TILE_SET_CENTER_REFRESH_WINDOW) != 0) {
         // NOTE: Uninline.
         tileWindowRefresh();
+        if (boundaryModsSet)
+            return -1; // necessary for the correct rendering of the map
     }
 
     return 0;
@@ -637,6 +647,15 @@ static void tileRefreshMapper(Rect* rect, int elevation)
     if (rectIntersection(rect, &gTileWindowRect, &rectToUpdate) == -1) {
         return;
     }
+
+    // TODO:
+    // Clip to visible area (sfall rect_inside_bound_clip mapVisibleArea).
+    /*Rect visArea;
+    if (mapEdgeComputeVisibleArea(elevation, &visArea)) {
+        if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+            return;
+        }
+    }*/
 
     bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
         rectToUpdate.right - rectToUpdate.left + 1,
@@ -663,6 +682,15 @@ static void tileRefreshGame(Rect* rect, int elevation)
     if (rectIntersection(rect, &gTileWindowRect, &rectToUpdate) == -1) {
         return;
     }
+
+    // TODO:
+    // Clip to visible area (sfall rect_inside_bound_clip mapVisibleArea).
+    /*Rect visArea;
+    if (mapEdgeComputeVisibleArea(elevation, &visArea)) {
+        if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+            return;
+        }
+    }*/
 
     // CE: Clear dirty rect to prevent most of the visual artifacts near map
     // edges.

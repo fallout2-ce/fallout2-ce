@@ -1535,13 +1535,22 @@ static void isoWindowRefreshRect(Rect* rect)
     windowRefreshRect(gIsoWindow, rect);
 }
 
-// 0x483EE4
+// 0x483EE4 map_scroll_refresh_game
 static void isoWindowRefreshRectGame(Rect* rect)
 {
     Rect rectToUpdate;
     if (rectIntersection(rect, &gIsoWindowRect, &rectToUpdate) == -1) {
         return;
     }
+
+    // TODO: use when clipping is enabled
+    // Clip to visible area (sfall rect_inside_bound_scroll_clip).
+    /*Rect visArea;
+    if (mapEdgeComputeVisibleArea(gElevation, &visArea)) {
+        if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+            return;
+        }
+    }*/
 
     // CE: Clear dirty rect to prevent most of the visual artifacts near map
     // edges.
@@ -1559,13 +1568,22 @@ static void isoWindowRefreshRectGame(Rect* rect)
     tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
 }
 
-// 0x483F44
+// 0x483F44 map_scroll_refresh_mapper
 static void isoWindowRefreshRectMapper(Rect* rect)
 {
     Rect rectToUpdate;
     if (rectIntersection(rect, &gIsoWindowRect, &rectToUpdate) == -1) {
         return;
     }
+
+    // TODO:
+    // Clip to visible area (sfall rect_inside_bound_scroll_clip).
+    /* Rect visArea;
+    if (mapEdgeComputeVisibleArea(gElevation, &visArea)) {
+        if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+            return;
+        }
+    }*/
 
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
         rectGetWidth(&rectToUpdate),

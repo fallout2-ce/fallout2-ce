@@ -5,12 +5,19 @@
 #include "map_defs.h"
 #include "platform_compat.h"
 #include "svga.h"
+#include "tile.h"
 
 namespace fallout {
 
 static EdgeZone* gEdgeZones[ELEVATION_COUNT];
 static bool gEdgeDataLoaded = false;
 static bool gEdgeVersion = false;
+
+// Boundary alignment mods (sfall mapModWidth/Height), set by clamp/check functions.
+static int gMapModWidth = 0;
+static int gMapModHeight = 0;
+static int gMapWidthModSize = 0;
+static int gMapHeightModSize = 0;
 
 // Convert tile index to pixel-offset coordinates.
 // Equivalent to sfall ViewMap::GetTileCoordOffset.
@@ -120,12 +127,15 @@ static void calcEdgeData(EdgeZone* zone)
         zone->borderRect.bottom = zone->borderRect.top;
     }
 
-    // Center point, aligned to 32×24 pixel grid.
-    zone->center.x = zone->borderRect.right + ((zone->borderRect.left - zone->borderRect.right) / 2);
-    zone->center.x &= ~31;
+    debugPrint("EDG[%p] tileRect=(%d,%d,%d,%d) win=(%d,%d) w=%d h=%d borderRect=(%d,%d,%d,%d)\n",
+        static_cast<void*>(zone), zone->tileRect.left, zone->tileRect.top,
+        zone->tileRect.right, zone->tileRect.bottom, winW, winH, w, h,
+        zone->borderRect.left, zone->borderRect.top,
+        zone->borderRect.right, zone->borderRect.bottom);
 
-    zone->center.y = zone->borderRect.top + ((zone->borderRect.bottom - zone->borderRect.top) / 2);
-    zone->center.y -= zone->center.y % 24;
+    // Compute sub-tile alignment sizes (sfall mapWidthModSize / mapHeightModSize).
+    gMapWidthModSize = (winW >> 1) & 31;
+    gMapHeightModSize = (winH >> 1) % 24;
 }
 
 // Multi-edge zone selection: pick the zone whose borderRect contains the pixel position.
@@ -282,6 +292,9 @@ bool mapEdgeIsLoaded()
     return gEdgeDataLoaded;
 }
 
+// Shared helper: set gMapModWidth/Height if the pixel is on a borderRect edge.
+static void setBoundaryMods(const EdgeZone* zone, int px, int py);
+
 int mapEdgeClampTile(int tile, int elevation)
 {
     int px, py;
@@ -293,6 +306,7 @@ int mapEdgeClampTile(int tile, int elevation)
     }
 
     // Clamp pixel position to borderRect (matching sfall GetCenterTile).
+    // Note: X is inverted (left > right), so the valid range is [right, left].
     int cx = (px <= zone->borderRect.left)
         ? ((px >= zone->borderRect.right) ? px : zone->borderRect.right)
         : zone->borderRect.left;
@@ -300,6 +314,8 @@ int mapEdgeClampTile(int tile, int elevation)
     int cy = (py <= zone->borderRect.bottom)
         ? ((py >= zone->borderRect.top) ? py : zone->borderRect.top)
         : zone->borderRect.bottom;
+
+    setBoundaryMods(zone, cx, cy);
 
     return pixelToTile(cx, cy);
 }
@@ -314,9 +330,47 @@ bool mapEdgeTileInBounds(int tile, int elevation)
         return false;
     }
 
+    // Note: X is inverted (left > right), so check px in [right, left].
     return px >= zone->borderRect.right && px <= zone->borderRect.left
         && py >= zone->borderRect.top && py <= zone->borderRect.bottom;
 }
+
+// Shared helper: set gMapModWidth/Height if the pixel is on a borderRect edge.
+static void setBoundaryMods(const EdgeZone* zone, int px, int py)
+{
+    gMapModWidth = 0;
+    gMapModHeight = 0;
+    if (px == zone->borderRect.left) {
+        gMapModWidth = -gMapWidthModSize;
+    } else if (px == zone->borderRect.right) {
+        gMapModWidth = gMapWidthModSize;
+    }
+    if (py == zone->borderRect.top) {
+        gMapModHeight = -gMapHeightModSize;
+    } else if (py == zone->borderRect.bottom) {
+        gMapModHeight = gMapHeightModSize;
+    }
+}
+
+bool mapEdgeSetBoundaryMods(int tile, int elevation)
+{
+    int px, py;
+    tileToPixelOffset(tile, px, py);
+
+    EdgeZone* zone = findZoneByPixel(px, py, elevation);
+    if (zone == nullptr) {
+        return false;
+    }
+
+    const int oldModW = gMapModWidth;
+    const int oldModH = gMapModHeight;
+    setBoundaryMods(zone, px, py);
+    return gMapModWidth != oldModW || gMapModHeight != oldModH;
+}
+
+int mapEdgeGetModWidth() { return gMapModWidth; }
+
+int mapEdgeGetModHeight() { return gMapModHeight; }
 
 bool mapEdgeHasSquareRect(int elevation)
 {
@@ -339,6 +393,30 @@ void mapEdgeRecalc()
             zone = zone->next;
         }
     }
+}
+
+// TODO: use
+bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
+{
+    if (!gEdgeDataLoaded) return false;
+
+    int px, py;
+    tileToPixelOffset(gCenterTile, px, py);
+
+    px += gMapModWidth;
+    py -= gMapModHeight;
+
+    EdgeZone* zone = findZoneByPixel(px, py, elevation);
+    if (zone == nullptr) return false;
+
+    // Convert pixel-offset space to screen space via rect_2.
+    // Matches sfall EdgeClipping::rect_inside_bound_clip mapVisibleArea computation.
+    outRect->left = px - zone->rect2.left;
+    outRect->right = px - zone->rect2.right;
+    outRect->top = zone->rect2.top - py;
+    outRect->bottom = zone->rect2.bottom - py;
+
+    return true;
 }
 
 } // namespace fallout
