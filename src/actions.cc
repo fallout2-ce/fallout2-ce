@@ -1336,10 +1336,15 @@ static int _action_use_skill_in_combat_error(Object* critter)
 // 0x41255C
 int actionUseSkill(Object* user, Object* target, int skill)
 {
+    UseSkillOnHookResult hookResult = scriptHooks_UseSkillOn(&user, target, skill);
+    if (!hookResult.shouldContinue) {
+        return -1;
+    }
+
     switch (skill) {
     case SKILL_FIRST_AID:
     case SKILL_DOCTOR:
-        if (isInCombat()) {
+        if (isInCombat() && !hookResult.allowInCombat) {
             // NOTE: Uninline.
             return _action_use_skill_in_combat_error(user);
         }
@@ -1349,7 +1354,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
         }
         break;
     case SKILL_LOCKPICK:
-        if (isInCombat()) {
+        if (isInCombat() && !hookResult.allowInCombat) {
             // NOTE: Uninline.
             return _action_use_skill_in_combat_error(user);
         }
@@ -1360,7 +1365,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
 
         break;
     case SKILL_STEAL:
-        if (isInCombat()) {
+        if (isInCombat() && !hookResult.allowInCombat) {
             // NOTE: Uninline.
             return _action_use_skill_in_combat_error(user);
         }
@@ -1375,7 +1380,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
 
         break;
     case SKILL_TRAPS:
-        if (isInCombat()) {
+        if (isInCombat() && !hookResult.allowInCombat) {
             // NOTE: Uninline.
             return _action_use_skill_in_combat_error(user);
         }
@@ -1387,7 +1392,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
         break;
     case SKILL_SCIENCE:
     case SKILL_REPAIR:
-        if (isInCombat()) {
+        if (isInCombat() && !hookResult.allowInCombat) {
             // NOTE: Uninline.
             return _action_use_skill_in_combat_error(user);
         }
@@ -1428,9 +1433,9 @@ int actionUseSkill(Object* user, Object* target, int skill)
 
     // Performer is either dude, or party member who's best at the specified
     // skill in entire party, and this skill is his/her own best.
-    Object* performer = gDude;
+    Object* performer = hookResult.userOverridden ? user : gDude;
 
-    if (user == gDude) {
+    if (user == gDude && !hookResult.userOverridden) {
         Object* partyMember = partyMemberGetBestInSkill(skill);
 
         if (partyMember == gDude) {
