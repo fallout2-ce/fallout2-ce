@@ -3451,7 +3451,8 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
 
     int dayPart;
     int gameTimeHour = gameTimeGetHour();
-    if (gameTimeHour >= 1800 || gameTimeHour <= 600) {
+    // CE: vanilla has gameTimeHour <= 600, so day doesn't start until 6:01
+    if (gameTimeHour >= 1800 || gameTimeHour < 600) {
         dayPart = DAY_PART_NIGHT;
     } else if (gameTimeHour >= 1200) {
         dayPart = DAY_PART_AFTERNOON;
