@@ -46,6 +46,13 @@ bool mapEdgeTileInBounds(int tile, int elevation);
 // Returns true if squareRect data (v2 EDG) is available for this elevation.
 bool mapEdgeHasSquareRect(int elevation);
 
+// Convert tile index to pixel-offset coordinates.
+// Equivalent to sfall ViewMap::GetTileCoordOffset.
+void tileToPixelOffset(int tile, int& outX, int& outY);
+
+// Convert pixel-offset to tile coord (in-place, like sfall GetCoordFromOffset).
+void pixelToTileCoord(int& inOutX, int& inOutY);
+
 // Fills the squareRect for the given elevation.
 // Only valid when mapEdgeHasSquareRect(elevation) returns true.
 void mapEdgeGetSquareRect(int elevation, Rect* outRect);

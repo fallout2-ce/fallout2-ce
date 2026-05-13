@@ -212,8 +212,13 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         return;
     }
 
-    // EDG-based stencil does not need the auto-computed border to be ready.
-    if (!mapEdgeIsLoaded() && !gTileBorderInitialized) {
+    // With EDG loaded, the EdgeClipping path handles blackening via ClearRect/CheckRect.
+    // The stencil is only needed as a backup when no EDG is present.
+    if (mapEdgeIsLoaded()) {
+        return;
+    }
+
+    if (!gTileBorderInitialized) {
         return;
     }
 
@@ -255,7 +260,7 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
         MarkOnlyPart part;
     };
 
-    std::vector<struct TileToVisit> tiles_to_visit {};
+    std::vector<struct TileToVisit> tiles_to_visit { };
     tiles_to_visit.reserve(7000);
 
     tiles_to_visit.push_back({ gCenterTile, MarkOnlyPart::FULL });
@@ -276,20 +281,14 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
             if (tileInfo.tile < 0 || tileInfo.tile >= HEX_GRID_SIZE) {
                 continue;
             }
-            if (mapEdgeIsLoaded()) {
-                if (!mapEdgeTileInBounds(tileInfo.tile, gElevation)) {
-                    continue;
-                }
-            } else {
-                if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
-                    continue;
-                }
-                // TODO: Maybe create new function in tile.cc and use it here
-                int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
-                int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
-                if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
-                    continue;
-                }
+            if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
+                continue;
+            }
+            // TODO: Maybe create new function in tile.cc and use it here
+            int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
+            int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
+            if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
+                continue;
             }
         }
 

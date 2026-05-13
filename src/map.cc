@@ -1543,29 +1543,39 @@ static void isoWindowRefreshRectGame(Rect* rect)
         return;
     }
 
-    // TODO: use when clipping is enabled
-    // Clip to visible area (sfall rect_inside_bound_scroll_clip).
-    /*Rect visArea;
-    if (mapEdgeComputeVisibleArea(gElevation, &visArea)) {
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+
+    if (hasVisArea) {
+        // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
+        bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
+            rectGetWidth(&rectToUpdate),
+            rectGetHeight(&rectToUpdate),
+            rectGetWidth(&gIsoWindowRect),
+            0);
+
         if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
             return;
         }
-    }*/
 
-    // CE: Clear dirty rect to prevent most of the visual artifacts near map
-    // edges.
-    bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
-        rectGetWidth(&rectToUpdate),
-        rectGetHeight(&rectToUpdate),
-        rectGetWidth(&gIsoWindowRect),
-        0);
+        tileRenderFloorsInRect(&rectToUpdate, gElevation);
+        _obj_render_pre_roof(&rectToUpdate, gElevation);
+        tileRenderRoofsInRect(&rectToUpdate, gElevation);
+        _obj_render_post_roof(&rectToUpdate, gElevation);
+    } else {
+        bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
+            rectGetWidth(&rectToUpdate),
+            rectGetHeight(&rectToUpdate),
+            rectGetWidth(&gIsoWindowRect),
+            0);
 
-    tileRenderFloorsInRect(&rectToUpdate, gElevation);
-    _obj_render_pre_roof(&rectToUpdate, gElevation);
-    tileRenderRoofsInRect(&rectToUpdate, gElevation);
-    _obj_render_post_roof(&rectToUpdate, gElevation);
+        tileRenderFloorsInRect(&rectToUpdate, gElevation);
+        _obj_render_pre_roof(&rectToUpdate, gElevation);
+        tileRenderRoofsInRect(&rectToUpdate, gElevation);
+        _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+        tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    }
 }
 
 // 0x483F44 map_scroll_refresh_mapper
@@ -1576,28 +1586,41 @@ static void isoWindowRefreshRectMapper(Rect* rect)
         return;
     }
 
-    // TODO:
-    // Clip to visible area (sfall rect_inside_bound_scroll_clip).
-    /* Rect visArea;
-    if (mapEdgeComputeVisibleArea(gElevation, &visArea)) {
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+
+    if (hasVisArea) {
+        // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
+        bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
+            rectGetWidth(&rectToUpdate),
+            rectGetHeight(&rectToUpdate),
+            rectGetWidth(&gIsoWindowRect),
+            0);
+
         if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
             return;
         }
-    }*/
 
-    bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
-        rectGetWidth(&rectToUpdate),
-        rectGetHeight(&rectToUpdate),
-        rectGetWidth(&gIsoWindowRect),
-        0);
+        tileRenderFloorsInRect(&rectToUpdate, gElevation);
+        _grid_render(&rectToUpdate, gElevation);
+        _obj_render_pre_roof(&rectToUpdate, gElevation);
+        tileRenderRoofsInRect(&rectToUpdate, gElevation);
+        _obj_render_post_roof(&rectToUpdate, gElevation);
+    } else {
+        bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
+            rectGetWidth(&rectToUpdate),
+            rectGetHeight(&rectToUpdate),
+            rectGetWidth(&gIsoWindowRect),
+            0);
 
-    tileRenderFloorsInRect(&rectToUpdate, gElevation);
-    _grid_render(&rectToUpdate, gElevation);
-    _obj_render_pre_roof(&rectToUpdate, gElevation);
-    tileRenderRoofsInRect(&rectToUpdate, gElevation);
-    _obj_render_post_roof(&rectToUpdate, gElevation);
+        tileRenderFloorsInRect(&rectToUpdate, gElevation);
+        _grid_render(&rectToUpdate, gElevation);
+        _obj_render_pre_roof(&rectToUpdate, gElevation);
+        tileRenderRoofsInRect(&rectToUpdate, gElevation);
+        _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+        tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    }
 }
 
 // NOTE: Inlined.

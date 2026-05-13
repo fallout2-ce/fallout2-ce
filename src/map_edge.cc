@@ -22,7 +22,7 @@ static int gMapHeightModSize = 0;
 
 // Convert tile index to pixel-offset coordinates.
 // Equivalent to sfall ViewMap::GetTileCoordOffset.
-static void tileToPixelOffset(int tile, int& outX, int& outY)
+void tileToPixelOffset(int tile, int& outX, int& outY)
 {
     int x = tile % HEX_GRID_WIDTH;
     int y = (tile / HEX_GRID_WIDTH) + (x / 2);
@@ -33,7 +33,7 @@ static void tileToPixelOffset(int tile, int& outX, int& outY)
 }
 
 // Convert pixel-offset to tile coord (in-place, like sfall GetCoordFromOffset).
-static void pixelToTileCoord(int& inOutX, int& inOutY)
+void pixelToTileCoord(int& inOutX, int& inOutY)
 {
     int y = inOutY / 24;
     int x = (inOutX / 32) + y - 100;
@@ -128,11 +128,13 @@ static void calcEdgeData(EdgeZone* zone)
         zone->borderRect.bottom = zone->borderRect.top;
     }
 
-    debugPrint("EDG[%p] tileRect=(%d,%d,%d,%d) win=(%d,%d) w=%d h=%d borderRect=(%d,%d,%d,%d)\n",
+    debugPrint("EDG[%p] tileRect=(%d,%d,%d,%d) win=(%d,%d) w=%d h=%d borderRect=(%d,%d,%d,%d) rect2=(%d,%d,%d,%d)\n",
         static_cast<void*>(zone), zone->tileRect.left, zone->tileRect.top,
         zone->tileRect.right, zone->tileRect.bottom, winW, winH, w, h,
         zone->borderRect.left, zone->borderRect.top,
-        zone->borderRect.right, zone->borderRect.bottom);
+        zone->borderRect.right, zone->borderRect.bottom,
+        zone->rect2.left, zone->rect2.top,
+        zone->rect2.right, zone->rect2.bottom);
 
     // Compute sub-tile alignment sizes (sfall mapWidthModSize / mapHeightModSize).
     gMapWidthModSize = (winW >> 1) & 31;
@@ -155,6 +157,7 @@ static EdgeZone* findZoneByPixel(int px, int py, int elevation)
         const int width = (screenGetWidth() / 2) - 1;
         const int height = (screenGetVisibleHeight() / 2) + 1;
 
+        EdgeZone* startZone = zone;
         while (px >= (zone->rect2.left + width) || px <= (zone->rect2.right + width)
             || py <= (zone->rect2.top - height) || py >= (zone->rect2.bottom - height)) {
             EdgeZone* next = zone->next;
@@ -404,7 +407,6 @@ void mapEdgeRecalc()
     }
 }
 
-// TODO: use
 bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
 {
     if (!gEdgeDataLoaded) return false;
@@ -424,6 +426,12 @@ bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
     outRect->right = px - zone->rect2.right;
     outRect->top = zone->rect2.top - py;
     outRect->bottom = zone->rect2.bottom - py;
+
+    debugPrint("EDG: visibleArea tile=%d px=(%d,%d) mods=(%d,%d) zone=%p rect2=(%d,%d,%d,%d) result=(%d,%d,%d,%d)\n",
+        gCenterTile, px, py, gMapModWidth, gMapModHeight,
+        static_cast<void*>(zone),
+        zone->rect2.left, zone->rect2.top, zone->rect2.right, zone->rect2.bottom,
+        outRect->left, outRect->top, outRect->right, outRect->bottom);
 
     return true;
 }

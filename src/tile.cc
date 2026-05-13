@@ -639,6 +639,41 @@ int tileSetCenter(int tile, int flags)
     return 0;
 }
 
+// Port of HRP EdgeClipping::CheckRect.
+// Returns true if any corner of the screen-space rect maps to a tile outside the 200x200 grid.
+bool checkRectNeedsClear(const Rect* rect, int elevation)
+{
+    (void)elevation;
+
+    int cX, cY;
+    tileToPixelOffset(gCenterTile, cX, cY);
+
+    const int halfW = gTileWindowWidth / 2;
+    const int halfH = gTileWindowHeight / 2;
+
+    // Convert screen-space rect corners to pixel-offset space (HRP formula).
+    // xLeft = (cX + width) - rect->left,  yTop = (cY + rect->top) - height
+    // xRight = (cX + width) - rect->right, yBottom = (cY + rect->bottom) - height
+    struct {
+        int x, y;
+    } corners[4] = {
+        { (cX + halfW) - rect->left, (cY + rect->top) - halfH },
+        { (cX + halfW) - rect->right, (cY + rect->top) - halfH },
+        { (cX + halfW) - rect->left, (cY + rect->bottom) - halfH },
+        { (cX + halfW) - rect->right, (cY + rect->bottom) - halfH }
+    };
+
+    for (int i = 0; i < 4; i++) {
+        int x = corners[i].x;
+        int y = corners[i].y;
+        pixelToTileCoord(x, y);
+        if (x < 0 || x >= HEX_GRID_WIDTH || y < 0 || y >= HEX_GRID_HEIGHT) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // 0x4B1554 refresh_mapper
 static void tileRefreshMapper(Rect* rect, int elevation)
 {
@@ -648,28 +683,42 @@ static void tileRefreshMapper(Rect* rect, int elevation)
         return;
     }
 
-    // TODO:
-    // Clip to visible area (sfall rect_inside_bound_clip mapVisibleArea).
-    /*Rect visArea;
-    if (mapEdgeComputeVisibleArea(elevation, &visArea)) {
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
+
+    if (hasVisArea) {
+        // HRP EdgeClipping: ClearRect if CheckRect, then clip to mapVisibleArea.
+        if (checkRectNeedsClear(&rectToUpdate, elevation)) {
+            bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
+                rectToUpdate.right - rectToUpdate.left + 1,
+                rectToUpdate.bottom - rectToUpdate.top + 1,
+                gTileWindowPitch,
+                0);
+        }
         if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
             return;
         }
-    }*/
 
-    bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
-        rectToUpdate.right - rectToUpdate.left + 1,
-        rectToUpdate.bottom - rectToUpdate.top + 1,
-        gTileWindowPitch,
-        0);
+        tileRenderFloorsInRect(&rectToUpdate, elevation);
+        _grid_render(&rectToUpdate, elevation);
+        _obj_render_pre_roof(&rectToUpdate, elevation);
+        tileRenderRoofsInRect(&rectToUpdate, elevation);
+        _obj_render_post_roof(&rectToUpdate, elevation);
+    } else {
+        bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
+            rectToUpdate.right - rectToUpdate.left + 1,
+            rectToUpdate.bottom - rectToUpdate.top + 1,
+            gTileWindowPitch,
+            0);
 
-    tileRenderFloorsInRect(&rectToUpdate, elevation);
-    _grid_render(&rectToUpdate, elevation);
-    _obj_render_pre_roof(&rectToUpdate, elevation);
-    tileRenderRoofsInRect(&rectToUpdate, elevation);
-    _obj_render_post_roof(&rectToUpdate, elevation);
+        tileRenderFloorsInRect(&rectToUpdate, elevation);
+        _grid_render(&rectToUpdate, elevation);
+        _obj_render_pre_roof(&rectToUpdate, elevation);
+        tileRenderRoofsInRect(&rectToUpdate, elevation);
+        _obj_render_post_roof(&rectToUpdate, elevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+        tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+    }
 
     gTileWindowRefreshProc(&rectToUpdate);
 }
@@ -683,29 +732,40 @@ static void tileRefreshGame(Rect* rect, int elevation)
         return;
     }
 
-    // TODO:
-    // Clip to visible area (sfall rect_inside_bound_clip mapVisibleArea).
-    /*Rect visArea;
-    if (mapEdgeComputeVisibleArea(elevation, &visArea)) {
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
+
+    if (hasVisArea) {
+        // HRP EdgeClipping: ClearRect if CheckRect, then clip to mapVisibleArea.
+        if (checkRectNeedsClear(&rectToUpdate, elevation)) {
+            bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
+                rectGetWidth(&rectToUpdate),
+                rectGetHeight(&rectToUpdate),
+                gTileWindowPitch,
+                0);
+        }
         if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
             return;
         }
-    }*/
 
-    // CE: Clear dirty rect to prevent most of the visual artifacts near map
-    // edges.
-    bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
-        rectGetWidth(&rectToUpdate),
-        rectGetHeight(&rectToUpdate),
-        gTileWindowPitch,
-        0);
+        tileRenderFloorsInRect(&rectToUpdate, elevation);
+        _obj_render_pre_roof(&rectToUpdate, elevation);
+        tileRenderRoofsInRect(&rectToUpdate, elevation);
+        _obj_render_post_roof(&rectToUpdate, elevation);
+    } else {
+        bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
+            rectGetWidth(&rectToUpdate),
+            rectGetHeight(&rectToUpdate),
+            gTileWindowPitch,
+            0);
 
-    tileRenderFloorsInRect(&rectToUpdate, elevation);
-    _obj_render_pre_roof(&rectToUpdate, elevation);
-    tileRenderRoofsInRect(&rectToUpdate, elevation);
-    _obj_render_post_roof(&rectToUpdate, elevation);
+        tileRenderFloorsInRect(&rectToUpdate, elevation);
+        _obj_render_pre_roof(&rectToUpdate, elevation);
+        tileRenderRoofsInRect(&rectToUpdate, elevation);
+        _obj_render_post_roof(&rectToUpdate, elevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+        tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+    }
 
     gTileWindowRefreshProc(&rectToUpdate);
 }
