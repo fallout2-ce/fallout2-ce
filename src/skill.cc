@@ -1104,6 +1104,8 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         catchRoll = randomRoll(catchChance, 0, &howMuch);
     }
 
+    // CE: skip "You steal/plant the..." messages when using steal to trade with companions
+    bool skipMessages = objectIsPartyMember(target);
     MessageListItem messageListItem;
     char text[60];
 
@@ -1111,7 +1113,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         // 571: You steal the %s.
         // 573: You plant the %s.
         messageListItem.num = isPlanting ? 573 : 571;
-        if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
+        if (!skipMessages && messageListGetItem(&gSkillsMessageList, &messageListItem)) {
             snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
             displayMonitorAddMessage(text);
         }
@@ -1121,7 +1123,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         // 570: You're caught stealing the %s.
         // 572: You're caught planting the %s.
         messageListItem.num = isPlanting ? 572 : 570;
-        if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
+        if (!skipMessages && messageListGetItem(&gSkillsMessageList, &messageListItem)) {
             snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
             displayMonitorAddMessage(text);
         }

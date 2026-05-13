@@ -221,6 +221,7 @@ void initSettingsRegistry(bool isMapper)
 #define SECT qol
     SETTING_P(use_walk_distance, clamp(0, 100));
     SETTING(auto_open_doors);
+    SETTING(party_trade_from_menu);
     SETTING(party_loot_and_barter);
 #undef SECT
 
