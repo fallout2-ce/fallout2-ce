@@ -3196,6 +3196,10 @@ static int wmWorldMapFunc(int a1)
                                 break;
                             }
 
+                            // SFALL/CE: LocalMapEnter runs after this first-entry
+                            // state transition, so a hook that redirects to a
+                            // different map still leaves the clicked area marked
+                            // visited.
                             city->visitedState = 2;
                         }
                     } else {
@@ -3248,14 +3252,12 @@ static int wmWorldMapFunc(int a1)
                             // location via the Town/World button and then
                             // leaving on foot.
                             //
-                            // CE: Fix is very different, but looks right -
-                            // matches the code above (processing mouse events).
+                            // CE: Keep this in sync with the mouse-entry path
+                            // above. When already in a town, park the car in
+                            // the current area instead of any hook-overridden
+                            // destination.
                             wmGenData.isInCar = false;
-
-                            int areaIdx;
-                            if (wmTryMatchAreaContainingMapIdx(map, &areaIdx)) {
-                                wmGenData.currentCarAreaId = areaIdx;
-                            }
+                            wmGenData.currentCarAreaId = wmGenData.currentAreaId;
                         }
 
                         wmFadeOut();
