@@ -442,6 +442,7 @@ int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, i
     gTileWindowHeight = ORIGINAL_ISO_WINDOW_HEIGHT;
 
     tile_hires_stencil_init();
+
     tileSetCenter(hexGridWidth * (hexGridHeight / 2) + hexGridWidth / 2, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     tileSetBorder(windowWidth, windowHeight, hexGridWidth, hexGridHeight);
 
@@ -543,22 +544,23 @@ int tileSetCenter(int tile, int flags)
     }
 
     bool boundaryModsSet = false;
-    if (mapEdgeIsLoaded() && !settings.ui.ignore_map_edges) {
-        if (flags != 0) {
+    if (mapEdgeIsLoaded() && gTileScrollBlockingEnabled) {
+        bool isScroll = flags == 0;
+        if (!isScroll) {
             // Forced positioning (teleport, initial load, etc.): clamp to edge boundary.
-            tile = mapEdgeClampTile(tile, gElevation);
+            tile = mapEdgeSelectZoneAndClamp(tile, gElevation);
             if (!tileIsValid(tile)) return -1;
-        } else {
+        } else if (mapEdgeZoneIsSelected()) {
             // Normal scroll: block if tile is outside boundary (matching sfall CheckBorder).
             // Clamping here would move the center slightly and cause mapScroll's buffer
             // copy to produce visual artifacts; blocking preserves the current view.
-            if (!mapEdgeTileInBounds(tile, gElevation)) {
+            if (!mapEdgeTileInBounds(tile)) {
                 return -1;
             }
             // Tile is in bounds; set sub-tile boundary mods if tile is on the edge.
             // If the tile is exactly on a boundary edge, force a full redraw
             // (matching sfall's CheckBorder returning 1 → modeFlags |= 1).
-            if (mapEdgeSetBoundaryMods(tile, gElevation)) {
+            if (mapEdgeSetBoundaryMods(tile)) {
                 boundaryModsSet = true;
                 flags |= TILE_SET_CENTER_REFRESH_WINDOW;
             }
@@ -588,7 +590,7 @@ int tileSetCenter(int tile, int flags)
 
         // Scroll-blocker object check only runs when no EDG is loaded.
         // EDG clamping above already enforces the boundary.
-        if (!mapEdgeIsLoaded() && gTileScrollBlockingEnabled && !settings.ui.ignore_map_edges) {
+        if ((!mapEdgeIsLoaded() || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
                 return -1;
             }
@@ -598,8 +600,8 @@ int tileSetCenter(int tile, int flags)
     int tile_x = gHexGridWidth - 1 - tile % gHexGridWidth;
     int tile_y = tile / gHexGridWidth;
 
-    // Auto-computed border check only runs when no EDG is loaded.
-    if (!mapEdgeIsLoaded() && gTileBorderInitialized && !settings.ui.ignore_map_edges) {
+    // Global tile borders are always checked, unless scroll blocking is disabled.
+    if (gTileBorderInitialized && gTileScrollBlockingEnabled) {
         if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
             return -1;
         }
@@ -674,6 +676,7 @@ bool checkRectNeedsClear(const Rect* rect, int elevation)
     return false;
 }
 
+// TODO: these two functions are exact copies of isoWindowRefreshRect*. gTileWindowBuffer == gIsoWindowBuffer, these are the same window!
 // 0x4B1554 refresh_mapper
 static void tileRefreshMapper(Rect* rect, int elevation)
 {
@@ -686,37 +689,26 @@ static void tileRefreshMapper(Rect* rect, int elevation)
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
 
-    if (hasVisArea) {
-        // HRP EdgeClipping: ClearRect if CheckRect, then clip to mapVisibleArea.
-        if (checkRectNeedsClear(&rectToUpdate, elevation)) {
-            bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
-                rectToUpdate.right - rectToUpdate.left + 1,
-                rectToUpdate.bottom - rectToUpdate.top + 1,
-                gTileWindowPitch,
-                0);
-        }
-        if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
-            return;
-        }
-
-        tileRenderFloorsInRect(&rectToUpdate, elevation);
-        _grid_render(&rectToUpdate, elevation);
-        _obj_render_pre_roof(&rectToUpdate, elevation);
-        tileRenderRoofsInRect(&rectToUpdate, elevation);
-        _obj_render_post_roof(&rectToUpdate, elevation);
-    } else {
+    // HRP EdgeClipping: when clipped, clear only if CheckRect; otherwise always clear.
+    if (!hasVisArea || checkRectNeedsClear(&rectToUpdate, elevation)) {
         bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
-            rectToUpdate.right - rectToUpdate.left + 1,
-            rectToUpdate.bottom - rectToUpdate.top + 1,
+            rectGetWidth(&rectToUpdate),
+            rectGetHeight(&rectToUpdate),
             gTileWindowPitch,
             0);
+    }
 
-        tileRenderFloorsInRect(&rectToUpdate, elevation);
-        _grid_render(&rectToUpdate, elevation);
-        _obj_render_pre_roof(&rectToUpdate, elevation);
-        tileRenderRoofsInRect(&rectToUpdate, elevation);
-        _obj_render_post_roof(&rectToUpdate, elevation);
+    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+        return;
+    }
 
+    tileRenderFloorsInRect(&rectToUpdate, elevation);
+    _grid_render(&rectToUpdate, elevation);
+    _obj_render_pre_roof(&rectToUpdate, elevation);
+    tileRenderRoofsInRect(&rectToUpdate, elevation);
+    _obj_render_post_roof(&rectToUpdate, elevation);
+
+    if (!hasVisArea) {
         tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 
@@ -735,35 +727,25 @@ static void tileRefreshGame(Rect* rect, int elevation)
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
 
-    if (hasVisArea) {
-        // HRP EdgeClipping: ClearRect if CheckRect, then clip to mapVisibleArea.
-        if (checkRectNeedsClear(&rectToUpdate, elevation)) {
-            bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
-                rectGetWidth(&rectToUpdate),
-                rectGetHeight(&rectToUpdate),
-                gTileWindowPitch,
-                0);
-        }
-        if (rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
-            return;
-        }
-
-        tileRenderFloorsInRect(&rectToUpdate, elevation);
-        _obj_render_pre_roof(&rectToUpdate, elevation);
-        tileRenderRoofsInRect(&rectToUpdate, elevation);
-        _obj_render_post_roof(&rectToUpdate, elevation);
-    } else {
+    // HRP EdgeClipping: when clipped, clear only if CheckRect; otherwise always clear.
+    if (!hasVisArea || checkRectNeedsClear(&rectToUpdate, elevation)) {
         bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
             rectGetWidth(&rectToUpdate),
             rectGetHeight(&rectToUpdate),
             gTileWindowPitch,
             0);
+    }
 
-        tileRenderFloorsInRect(&rectToUpdate, elevation);
-        _obj_render_pre_roof(&rectToUpdate, elevation);
-        tileRenderRoofsInRect(&rectToUpdate, elevation);
-        _obj_render_post_roof(&rectToUpdate, elevation);
+    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+        return;
+    }
 
+    tileRenderFloorsInRect(&rectToUpdate, elevation);
+    _obj_render_pre_roof(&rectToUpdate, elevation);
+    tileRenderRoofsInRect(&rectToUpdate, elevation);
+    _obj_render_post_roof(&rectToUpdate, elevation);
+
+    if (!hasVisArea) {
         tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 

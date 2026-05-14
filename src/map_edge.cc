@@ -7,9 +7,11 @@
 #include "svga.h"
 #include "tile.h"
 
+#include <memory>
+
 namespace fallout {
 
-static EdgeZone* gEdgeZones[ELEVATION_COUNT];
+static std::unique_ptr<EdgeZone> gEdgeZones[ELEVATION_COUNT];
 static bool gEdgeDataLoaded = false;
 static bool gEdgeVersion2 = false;
 static EdgeZone* gCurrentEdgeZone = nullptr;
@@ -146,7 +148,7 @@ static void calcEdgeData(EdgeZone* zone)
 // none contains it.
 static EdgeZone* findZoneByPixel(int px, int py, int elevation)
 {
-    EdgeZone* zone = gEdgeZones[elevation];
+    EdgeZone* zone = gEdgeZones[elevation].get();
     if (zone == nullptr) {
         return nullptr;
     }
@@ -157,10 +159,9 @@ static EdgeZone* findZoneByPixel(int px, int py, int elevation)
         const int width = (screenGetWidth() / 2) - 1;
         const int height = (screenGetVisibleHeight() / 2) + 1;
 
-        EdgeZone* startZone = zone;
         while (px >= (zone->rect2.left + width) || px <= (zone->rect2.right + width)
             || py <= (zone->rect2.top - height) || py >= (zone->rect2.bottom - height)) {
-            EdgeZone* next = zone->next;
+            EdgeZone* next = zone->next.get();
             if (next == nullptr) {
                 break;
             }
@@ -208,7 +209,7 @@ static bool parseEdgFile(File* stream)
             continue; // no tileRect data for this elevation
         }
 
-        EdgeZone** tail = &gEdgeZones[elev];
+        auto tail = &gEdgeZones[elev];
         bool isFirstZone = true;
 
         while (true) {
@@ -217,7 +218,7 @@ static bool parseEdgFile(File* stream)
                 return elev == ELEVATION_COUNT - 1;
             }
 
-            auto* zone = new EdgeZone();
+            auto zone = std::make_unique<EdgeZone>();
             // File stores RECT order: [0]=left, [1]=top, [2]=right, [3]=bottom.
             zone->tileRect.left = tileRect[0];
             zone->tileRect.top = tileRect[1];
@@ -231,9 +232,9 @@ static bool parseEdgFile(File* stream)
             zone->clipData = isFirstZone ? sqClipData : 0;
             zone->next = nullptr;
 
-            calcEdgeData(zone);
+            calcEdgeData(zone.get());
 
-            *tail = zone;
+            *tail = std::move(zone);
             tail = &zone->next;
             isFirstZone = false;
 
@@ -250,7 +251,7 @@ static bool parseEdgFile(File* stream)
     return true;
 }
 
-void mapEdgeInit(const char* mapName)
+void mapEdgeLoad(const char* mapName)
 {
     mapEdgeFree();
 
@@ -270,23 +271,17 @@ void mapEdgeInit(const char* mapName)
 
     if (ok) {
         gEdgeDataLoaded = true;
-        debugPrint("mapEdgeInit: loaded %s\n", edgPath);
+        debugPrint("mapEdgeLoad: loaded %s\n", edgPath);
     } else {
-        debugPrint("mapEdgeInit: failed to parse %s\n", edgPath);
+        debugPrint("mapEdgeLoad: failed to parse %s\n", edgPath);
         mapEdgeFree();
     }
 }
 
 void mapEdgeFree()
 {
-    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
-        EdgeZone* zone = gEdgeZones[elev];
-        while (zone != nullptr) {
-            EdgeZone* next = zone->next;
-            delete zone;
-            zone = next;
-        }
-        gEdgeZones[elev] = nullptr;
+    for (auto & gEdgeZone : gEdgeZones) {
+        gEdgeZone.reset();
     }
     gEdgeDataLoaded = false;
     gCurrentEdgeZone = nullptr;
@@ -301,21 +296,24 @@ bool mapEdgeIsLoaded()
     return gEdgeDataLoaded;
 }
 
+bool mapEdgeZoneIsSelected()
+{
+    return gCurrentEdgeZone != nullptr;
+}
+
 // Shared helper: set gMapModWidth/Height if the pixel is on a borderRect edge.
 static void setBoundaryMods(const EdgeZone* zone, int px, int py);
 
-int mapEdgeClampTile(int tile, int elevation)
+int mapEdgeSelectZoneAndClamp(int tile, int elevation)
 {
     int px, py;
     tileToPixelOffset(tile, px, py);
 
-    EdgeZone* zone = findZoneByPixel(px, py, elevation);
+    // Set current zone for subsequent scroll blocking checks.
+    EdgeZone* zone = gCurrentEdgeZone = findZoneByPixel(px, py, elevation);
     if (zone == nullptr) {
         return tile;
     }
-
-    // Set current zone for subsequent scroll blocking checks.
-    gCurrentEdgeZone = zone;
 
     // Clamp pixel position to borderRect (matching sfall GetCenterTile).
     // Note: X is inverted (left > right), so the valid range is [right, left].
@@ -332,7 +330,7 @@ int mapEdgeClampTile(int tile, int elevation)
     return pixelToTile(cx, cy);
 }
 
-bool mapEdgeTileInBounds(int tile, int elevation)
+bool mapEdgeTileInBounds(int tile)
 {
     int px, py;
     tileToPixelOffset(tile, px, py);
@@ -364,13 +362,15 @@ static void setBoundaryMods(const EdgeZone* zone, int px, int py)
     }
 }
 
-bool mapEdgeSetBoundaryMods(int tile, int elevation)
+bool mapEdgeSetBoundaryMods(int tile)
 {
     int px, py;
     tileToPixelOffset(tile, px, py);
 
     EdgeZone* zone = gCurrentEdgeZone;
     if (zone == nullptr) {
+        gMapModWidth = 0;
+        gMapModHeight = 0;
         return false;
     }
 
@@ -386,23 +386,23 @@ int mapEdgeGetModHeight() { return gMapModHeight; }
 
 bool mapEdgeHasSquareRect(int elevation)
 {
-    EdgeZone* zone = gEdgeZones[elevation];
+    const auto& zone = gEdgeZones[elevation];
     return gEdgeVersion2 && zone != nullptr && zone->squareRect.left >= 0;
 }
 
 void mapEdgeGetSquareRect(int elevation, Rect* outRect)
 {
-    EdgeZone* zone = gEdgeZones[elevation];
+    const auto& zone = gEdgeZones[elevation];
     *outRect = zone->squareRect;
 }
 
 void mapEdgeRecalc()
 {
-    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
-        EdgeZone* zone = gEdgeZones[elev];
+    for (auto & gEdgeZone : gEdgeZones) {
+        const auto* zone = &gEdgeZone;
         while (zone != nullptr) {
-            calcEdgeData(zone);
-            zone = zone->next;
+            calcEdgeData(zone->get());
+            zone = &zone->get()->next;
         }
     }
 }
@@ -427,11 +427,11 @@ bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
     outRect->top = zone->rect2.top - py;
     outRect->bottom = zone->rect2.bottom - py;
 
-    debugPrint("EDG: visibleArea tile=%d px=(%d,%d) mods=(%d,%d) zone=%p rect2=(%d,%d,%d,%d) result=(%d,%d,%d,%d)\n",
+    /*debugPrint("EDG: visibleArea tile=%d px=(%d,%d) mods=(%d,%d) zone=%p rect2=(%d,%d,%d,%d) result=(%d,%d,%d,%d)\n",
         gCenterTile, px, py, gMapModWidth, gMapModHeight,
         static_cast<void*>(zone),
         zone->rect2.left, zone->rect2.top, zone->rect2.right, zone->rect2.bottom,
-        outRect->left, outRect->top, outRect->right, outRect->bottom);
+        outRect->left, outRect->top, outRect->right, outRect->bottom);*/
 
     return true;
 }

@@ -1,6 +1,8 @@
 #ifndef MAP_EDGE_H
 #define MAP_EDGE_H
 
+#include <memory>
+
 #include "geometry.h"
 
 namespace fallout {
@@ -15,6 +17,7 @@ struct EdgeZone {
     Rect borderRect;
 
     // borderRect shifted by half window size (for EdgeClipping mapVisibleArea).
+    // TODO: this rect is extremely confusing, should be removed
     Rect rect2;
 
     // Square-grid clip rect for floor/roof rendering (v2 EDG only).
@@ -22,12 +25,13 @@ struct EdgeZone {
     Rect squareRect;
 
     int clipData;
-    EdgeZone* next;
+
+    std::unique_ptr<EdgeZone> next;
 };
 
 // Load EDG file for a map. mapName is the raw map filename e.g. "ARROYO.MAP".
 // Silently does nothing if no .edg file is found.
-void mapEdgeInit(const char* mapName);
+void mapEdgeLoad(const char* mapName);
 
 // Free all loaded EDG data. Safe to call when nothing is loaded.
 void mapEdgeFree();
@@ -35,13 +39,16 @@ void mapEdgeFree();
 // Returns true if EDG data was successfully loaded for the current map.
 bool mapEdgeIsLoaded();
 
+// Returns true if a zone was selected on last tileSetCenter call.
+bool mapEdgeZoneIsSelected();
+
 // Clamps tile to the EDG boundary for the given elevation.
 // Returns the clamped tile (may equal tile if already in bounds).
-int mapEdgeClampTile(int tile, int elevation);
+int mapEdgeSelectZoneAndClamp(int tile, int elevation);
 
 // Returns true if tile is within the EDG boundary for the given elevation.
 // Used by the stencil flood-fill as a traversal gate.
-bool mapEdgeTileInBounds(int tile, int elevation);
+bool mapEdgeTileInBounds(int tile);
 
 // Returns true if squareRect data (v2 EDG) is available for this elevation.
 bool mapEdgeHasSquareRect(int elevation);
@@ -62,7 +69,7 @@ void mapEdgeGetSquareRect(int elevation, Rect* outRect);
 void mapEdgeRecalc();
 
 // Pixel-offset adjustments for sub-tile boundary alignment (sfall mapModWidth/Height).
-// Computed by mapEdgeClampTile or mapEdgeSetBoundaryMods, read by tileSetCenter
+// Computed by mapEdgeSelectZoneAndClamp or mapEdgeSetBoundaryMods, read by tileSetCenter
 // to adjust _tile_offx / _tile_offy so the camera stops exactly at the borderRect edge.
 int mapEdgeGetModWidth();
 int mapEdgeGetModHeight();
@@ -71,7 +78,7 @@ int mapEdgeGetModHeight();
 // tile's pixel position is exactly on a borderRect edge.
 // Returns true if the tile is on a boundary edge (mods changed) — caller should set
 // TILE_SET_CENTER_REFRESH_WINDOW for full redraw, matching sfall CheckBorder result==1.
-bool mapEdgeSetBoundaryMods(int tile, int elevation);
+bool mapEdgeSetBoundaryMods(int tile);
 
 // Computes the screen-space visible area rectangle by converting the current center
 // tile's pixel offset (adjusted by mapModWidth/Height) through the edge zone's rect_2.

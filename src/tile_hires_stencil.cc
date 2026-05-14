@@ -211,49 +211,15 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
     if (!gIsTileHiresStencilEnabled) {
         return;
     }
-
     // With EDG loaded, the EdgeClipping path handles blackening via ClearRect/CheckRect.
-    // The stencil is only needed as a backup when no EDG is present.
-    if (mapEdgeIsLoaded()) {
-        return;
-    }
-
-    if (!gTileBorderInitialized) {
-        return;
-    }
-
-    if (visited_tiles[gElevation][gCenterTile]) {
+    // The stencil used as a backup when no EDG is present.
+    if (mapEdgeIsLoaded() ||
+        !gTileBorderInitialized ||
+        visited_tiles[gElevation][gCenterTile]) {
         return;
     }
 
     clean_cache_for_elevation(gElevation);
-
-    // Branch A: v2 EDG — use squareRect directly to fill visible_squares.
-    // This avoids the flood-fill and matches sfall's squareRect clipping behavior.
-    if (mapEdgeIsLoaded() && mapEdgeHasSquareRect(gElevation)) {
-        visited_tiles[gElevation][gCenterTile] = true;
-        Rect squareRect;
-        mapEdgeGetSquareRect(gElevation, &squareRect);
-        auto diff = get_screen_diff();
-        for (int cx = 0; cx < square_grid_width; cx++) {
-            for (int cy = 0; cy < square_grid_height; cy++) {
-                int screenX = cx * square_width + diff.x;
-                int screenY = cy * square_height + diff.y;
-                int squareTile = squareTileFromScreenXY(screenX, screenY, gElevation);
-                if (squareTile >= 0) {
-                    int x = squareTile % SQUARE_GRID_WIDTH;
-                    int y = squareTile / SQUARE_GRID_WIDTH;
-                    if (x >= squareRect.right && x <= squareRect.left && y >= squareRect.top && y <= squareRect.bottom) {
-                        visible_squares[gElevation][cx][cy] = true;
-                    }
-                }
-            }
-        }
-        return;
-    }
-
-    // Branch B: flood-fill. Uses EDG tileRect bounds (v1 EDG) or scroll-blocker
-    // objects + auto-computed border (no EDG) as the traversal gate.
 
     struct TileToVisit {
         int tile;
@@ -448,9 +414,14 @@ void tile_hires_stencil_init()
     }
 
     debugPrint("tile_hires_stencil_init\n");
+}
+
+void tile_hires_stencil_on_map_load()
+{
     clean_cache();
     tile_hires_stencil_on_center_tile_or_elevation_change();
     tileWindowRefresh();
+    debugPrint("tile_hires_stencil_on_map_load\n");
 }
 
 } // namespace fallout

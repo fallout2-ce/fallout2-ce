@@ -590,12 +590,12 @@ static void mp_run_placement_loop(PlaceFn place)
         }
 
         switch (keyCode) {
-        case 327: // Home
+        case KEY_HOME: // Home
             if (gDude != nullptr) {
                 if (gElevation != gDude->elevation) {
                     mapSetElevation(gDude->elevation);
                 }
-                tileSetCenter(gDude->tile, 1);
+                tileSetCenter(gDude->tile, TILE_SET_CENTER_REFRESH_WINDOW);
             }
             break;
         case KEY_ARROW_UP:
