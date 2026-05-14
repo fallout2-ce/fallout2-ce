@@ -280,7 +280,7 @@ void mapEdgeLoad(const char* mapName)
 
 void mapEdgeFree()
 {
-    for (auto & gEdgeZone : gEdgeZones) {
+    for (auto& gEdgeZone : gEdgeZones) {
         gEdgeZone.reset();
     }
     gEdgeDataLoaded = false;
@@ -398,7 +398,7 @@ void mapEdgeGetSquareRect(int elevation, Rect* outRect)
 
 void mapEdgeRecalc()
 {
-    for (auto & gEdgeZone : gEdgeZones) {
+    for (auto& gEdgeZone : gEdgeZones) {
         const auto* zone = &gEdgeZone;
         while (zone != nullptr) {
             calcEdgeData(zone->get());

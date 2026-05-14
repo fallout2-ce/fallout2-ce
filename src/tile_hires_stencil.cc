@@ -213,9 +213,7 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
     }
     // With EDG loaded, the EdgeClipping path handles blackening via ClearRect/CheckRect.
     // The stencil used as a backup when no EDG is present.
-    if (mapEdgeIsLoaded() ||
-        !gTileBorderInitialized ||
-        visited_tiles[gElevation][gCenterTile]) {
+    if (mapEdgeIsLoaded() || !gTileBorderInitialized || visited_tiles[gElevation][gCenterTile]) {
         return;
     }
 
