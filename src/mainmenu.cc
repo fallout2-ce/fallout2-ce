@@ -115,6 +115,7 @@ struct MainMenuLayout {
     float scale;
     bool useHiresArt;
     bool drawHiresPanel;
+    bool scaleButtonsAndText;
 };
 
 static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int dstWidth, int dstHeight, int& outX, int& outY, int& outWidth, int& outHeight);
@@ -122,10 +123,17 @@ static bool mainMenuShouldUseVanillaArtForLayout(int backgroundWidth, int backgr
 static bool mainMenuLoadArt();
 static MainMenuLayout mainMenuBuildLayout();
 static void mainMenuDrawBackground(const MainMenuLayout& layout);
-static void mainMenuDrawPanel(const MainMenuLayout& layout);
+static void mainMenuDrawPanel(const MainMenuLayout& layout, int offsetX, int offsetY);
 static int mainMenuScaleX(const MainMenuLayout& layout, int value);
 static int mainMenuScaleY(const MainMenuLayout& layout, int value);
 static int mainMenuScaleUniform(const MainMenuLayout& layout, int value);
+static int mainMenuScaleElementX(const MainMenuLayout& layout, int value);
+static int mainMenuScaleElementY(const MainMenuLayout& layout, int value);
+static int mainMenuScaleElementUniform(const MainMenuLayout& layout, int value);
+static int mainMenuGetElementOffsetX(const MainMenuLayout& layout, int value);
+static int mainMenuGetElementOffsetY(const MainMenuLayout& layout, int value);
+static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value);
+static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width);
 static void mainMenuDrawScaledText(const MainMenuLayout& layout, int x, int y, const char* text, int color);
 static void mainMenuGetButtonBuffers(const MainMenuLayout& layout, unsigned char*& normalData, unsigned char*& pressedData, int& width, int& height);
 
@@ -252,6 +260,7 @@ static MainMenuLayout mainMenuBuildLayout()
     layout.scaleX = layout.backgroundWidth / 640.0f;
     layout.scaleY = layout.backgroundHeight / 480.0f;
     layout.scale = layout.scaleY;
+    layout.scaleButtonsAndText = !layout.useHiresArt || settings.ui.main_menu_scale_buttons_and_text;
     return layout;
 }
 
@@ -281,16 +290,16 @@ static void mainMenuDrawBackground(const MainMenuLayout& layout)
     }
 }
 
-static void mainMenuDrawPanel(const MainMenuLayout& layout)
+static void mainMenuDrawPanel(const MainMenuLayout& layout, int offsetX, int offsetY)
 {
     if (!layout.drawHiresPanel) {
         return;
     }
 
-    int width = std::max(1, mainMenuScaleUniform(layout, gMainMenuButtonPanelFrmImage.getWidth()));
-    int height = std::max(1, mainMenuScaleUniform(layout, gMainMenuButtonPanelFrmImage.getHeight()));
-    int x = layout.backgroundX + mainMenuScaleX(layout, MAIN_MENU_PANEL_OFFSET_X);
-    int y = layout.backgroundY + mainMenuScaleY(layout, MAIN_MENU_PANEL_OFFSET_Y);
+    int width = layout.scaleButtonsAndText ? std::max(1, mainMenuScaleUniform(layout, gMainMenuButtonPanelFrmImage.getWidth())) : gMainMenuButtonPanelFrmImage.getWidth();
+    int height = layout.scaleButtonsAndText ? std::max(1, mainMenuScaleUniform(layout, gMainMenuButtonPanelFrmImage.getHeight())) : gMainMenuButtonPanelFrmImage.getHeight();
+    int x = layout.backgroundX + mainMenuScaleElementX(layout, MAIN_MENU_PANEL_OFFSET_X) + offsetX;
+    int y = layout.backgroundY + mainMenuScaleElementY(layout, MAIN_MENU_PANEL_OFFSET_Y) + offsetY;
 
     blitBuffer2DScaledTrans(gMainMenuButtonPanelFrmImage.getBuffer(),
         Buffer2D(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight),
@@ -315,6 +324,51 @@ static int mainMenuScaleUniform(const MainMenuLayout& layout, int value)
     return static_cast<int>(lround(value * layout.scale));
 }
 
+static int mainMenuScaleElementX(const MainMenuLayout& layout, int value)
+{
+    return layout.scaleButtonsAndText ? mainMenuScaleX(layout, value) : value;
+}
+
+static int mainMenuScaleElementY(const MainMenuLayout& layout, int value)
+{
+    return layout.scaleButtonsAndText ? mainMenuScaleY(layout, value) : value;
+}
+
+static int mainMenuScaleElementUniform(const MainMenuLayout& layout, int value)
+{
+    return layout.scaleButtonsAndText ? mainMenuScaleUniform(layout, value) : value;
+}
+
+static int mainMenuGetElementOffsetX(const MainMenuLayout& layout, int value)
+{
+    int offset = mainMenuScaleX(layout, value);
+    if (layout.useHiresArt && !layout.scaleButtonsAndText && layout.screenWidth != MAIN_MENU_LOGICAL_WIDTH) {
+        float diff = layout.screenWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
+        offset += static_cast<int>(lround(8.0f * diff * diff));
+    }
+    return offset;
+}
+
+static int mainMenuGetElementOffsetY(const MainMenuLayout& layout, int value)
+{
+    int offset = mainMenuScaleY(layout, value);
+    if (layout.useHiresArt && !layout.scaleButtonsAndText && layout.screenHeight != MAIN_MENU_LOGICAL_HEIGHT) {
+        float diff = layout.screenHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
+        offset += static_cast<int>(lround(6.0f * diff * diff));
+    }
+    return offset;
+}
+
+static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value)
+{
+    return layout.backgroundY + layout.backgroundHeight + value - MAIN_MENU_LOGICAL_HEIGHT;
+}
+
+static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width)
+{
+    return layout.backgroundX + layout.backgroundWidth - rightMargin - width;
+}
+
 static void mainMenuDrawScaledText(const MainMenuLayout& layout, int x, int y, const char* text, int color)
 {
     Buffer2D dest(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight);
@@ -323,8 +377,8 @@ static void mainMenuDrawScaledText(const MainMenuLayout& layout, int x, int y, c
 
 static void mainMenuGetButtonBuffers(const MainMenuLayout& layout, unsigned char*& normalData, unsigned char*& pressedData, int& width, int& height)
 {
-    width = std::max(1, mainMenuScaleUniform(layout, MAIN_MENU_BUTTON_WIDTH));
-    height = std::max(1, mainMenuScaleUniform(layout, MAIN_MENU_BUTTON_HEIGHT));
+    width = std::max(1, mainMenuScaleElementUniform(layout, MAIN_MENU_BUTTON_WIDTH));
+    height = std::max(1, mainMenuScaleElementUniform(layout, MAIN_MENU_BUTTON_HEIGHT));
 
     if (width == MAIN_MENU_BUTTON_WIDTH && height == MAIN_MENU_BUTTON_HEIGHT) {
         normalData = _mainMenuButtonNormalFrmImage.getData();
@@ -371,8 +425,15 @@ int mainMenuWindowInit()
     }
 
     MainMenuLayout layout = mainMenuBuildLayout();
+    int menuOffsetX = 0;
+    int menuOffsetY = 0;
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_x", &menuOffsetX, 0);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", &menuOffsetY, 0);
+    menuOffsetX = mainMenuGetElementOffsetX(layout, menuOffsetX);
+    menuOffsetY = mainMenuGetElementOffsetY(layout, menuOffsetY);
+
     mainMenuDrawBackground(layout);
-    mainMenuDrawPanel(layout);
+    mainMenuDrawPanel(layout, menuOffsetX, menuOffsetY);
 
     int oldFont = fontGetCurrent();
     fontSetCurrent(100);
@@ -395,15 +456,7 @@ int mainMenuWindowInit()
     // Copyright.
     msg.num = 20;
     if (messageListGetItem(&gMiscMessageList, &msg)) {
-        if (layout.scale == 1.0f) {
-            windowDrawText(gMainMenuWindow, msg.text, 0, layout.backgroundX + offsetX + 15, layout.backgroundY + offsetY + 460, fontSettings | 0x06000000);
-        } else {
-            mainMenuDrawScaledText(layout,
-                layout.backgroundX + mainMenuScaleX(layout, offsetX + 15),
-                layout.backgroundY + mainMenuScaleY(layout, offsetY + 460),
-                msg.text,
-                fontSettings);
-        }
+        windowDrawText(gMainMenuWindow, msg.text, 0, layout.backgroundX + offsetX + 15, mainMenuGetAnchoredY(layout, offsetY + 460), fontSettings | 0x06000000);
     }
 
     // SFALL: Make sure font settings are applied when using 0x010000 flag
@@ -416,52 +469,22 @@ int mainMenuWindowInit()
     char version[VERSION_MAX];
     versionGetVersion(version, sizeof(version));
     len = fontGetStringWidth(version);
-    if (layout.scale == 1.0f) {
-        windowDrawText(gMainMenuWindow, version, 0, layout.backgroundX + 615 - len, layout.backgroundY + 440, versionFontSettings | 0x06000000);
-    } else {
-        int scaledLen = interfaceFontGetStringWidthScaled(version, versionFontSettings, layout.scale);
-        mainMenuDrawScaledText(layout,
-            layout.backgroundX + mainMenuScaleX(layout, 615) - scaledLen,
-            layout.backgroundY + mainMenuScaleY(layout, 440),
-            version,
-            versionFontSettings);
-    }
+    windowDrawText(gMainMenuWindow, version, 0, mainMenuGetAnchoredRightX(layout, 25, len), mainMenuGetAnchoredY(layout, 440), versionFontSettings | 0x06000000);
 
     char commitHash[VERSION_MAX] = "BUILD HASH: ";
     strcat(commitHash, _BUILD_HASH);
     len = fontGetStringWidth(commitHash);
-    if (layout.scale == 1.0f) {
-        windowDrawText(gMainMenuWindow, commitHash, 0, layout.backgroundX + 615 - len, layout.backgroundY + 450, versionFontSettings | 0x06000000);
-    } else {
-        int scaledLen = interfaceFontGetStringWidthScaled(commitHash, versionFontSettings, layout.scale);
-        mainMenuDrawScaledText(layout,
-            layout.backgroundX + mainMenuScaleX(layout, 615) - scaledLen,
-            layout.backgroundY + mainMenuScaleY(layout, 450),
-            commitHash,
-            versionFontSettings);
-    }
+    windowDrawText(gMainMenuWindow, commitHash, 0, mainMenuGetAnchoredRightX(layout, 25, len), mainMenuGetAnchoredY(layout, 450), versionFontSettings | 0x06000000);
 
     char buildDate[VERSION_MAX] = "DATE: ";
     strcat(buildDate, _BUILD_DATE);
     len = fontGetStringWidth(buildDate);
-    if (layout.scale == 1.0f) {
-        windowDrawText(gMainMenuWindow, buildDate, 0, layout.backgroundX + 615 - len, layout.backgroundY + 460, versionFontSettings | 0x06000000);
-    } else {
-        int scaledLen = interfaceFontGetStringWidthScaled(buildDate, versionFontSettings, layout.scale);
-        mainMenuDrawScaledText(layout,
-            layout.backgroundX + mainMenuScaleX(layout, 615) - scaledLen,
-            layout.backgroundY + mainMenuScaleY(layout, 460),
-            buildDate,
-            versionFontSettings);
-    }
+    windowDrawText(gMainMenuWindow, buildDate, 0, mainMenuGetAnchoredRightX(layout, 25, len), mainMenuGetAnchoredY(layout, 460), versionFontSettings | 0x06000000);
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
         gMainMenuButtons[index] = -1;
     }
 
-    // SFALL: Allow to move menu buttons
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_x", &offsetX, 0);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", &offsetY, 0);
     unsigned char* buttonNormalData;
     unsigned char* buttonPressedData;
     int buttonWidth;
@@ -470,8 +493,8 @@ int mainMenuWindowInit()
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
         gMainMenuButtons[index] = buttonCreate(gMainMenuWindow,
-            layout.backgroundX + mainMenuScaleX(layout, offsetX + 30),
-            layout.backgroundY + mainMenuScaleY(layout, offsetY + 19 + index * 42 - index),
+            layout.backgroundX + mainMenuScaleElementX(layout, 30) + menuOffsetX,
+            layout.backgroundY + mainMenuScaleElementY(layout, 19 + index * 42 - index) + menuOffsetY,
             buttonWidth,
             buttonHeight,
             -1,
@@ -503,17 +526,17 @@ int mainMenuWindowInit()
         msg.num = 9 + index;
         if (messageListGetItem(&gMiscMessageList, &msg)) {
             len = fontGetStringWidth(msg.text);
-            if (layout.scale == 1.0f) {
-                fontDrawText(gMainMenuWindowBuffer + (layout.backgroundY + offsetY + 42 * index - index + 20) * layout.screenWidth + layout.backgroundX + offsetX + 126 - (len / 2),
+            if (!layout.scaleButtonsAndText) {
+                fontDrawText(gMainMenuWindowBuffer + (layout.backgroundY + menuOffsetY + 42 * index - index + 20) * layout.screenWidth + layout.backgroundX + menuOffsetX + 126 - (len / 2),
                     msg.text,
-                    layout.screenWidth - (layout.backgroundX + offsetX + 126 - (len / 2)) - 1,
+                    layout.screenWidth - (layout.backgroundX + menuOffsetX + 126 - (len / 2)) - 1,
                     layout.screenWidth,
                     fontSettings);
             } else {
                 int scaledLen = interfaceFontGetStringWidthScaled(msg.text, fontSettings, layout.scale);
                 mainMenuDrawScaledText(layout,
-                    layout.backgroundX + mainMenuScaleX(layout, offsetX + 126) - scaledLen / 2,
-                    layout.backgroundY + mainMenuScaleY(layout, offsetY + 42 * index - index + 20),
+                    layout.backgroundX + mainMenuScaleElementX(layout, 126) + menuOffsetX - scaledLen / 2,
+                    layout.backgroundY + mainMenuScaleElementY(layout, 42 * index - index + 20) + menuOffsetY,
                     msg.text,
                     fontSettings);
             }

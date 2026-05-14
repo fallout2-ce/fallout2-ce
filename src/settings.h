@@ -35,9 +35,12 @@ struct ScreenSettings {
 
 struct UISettings {
     // Main menu background scaling mode.
-    // 0 - native size if it fits, otherwise aspect-fit.
-    // 1 - always aspect-fit.
-    int main_menu_scale_mode = 0;
+    // 0 - native size
+    // 1 - aspect-fit
+    int main_menu_scale_mode = 1;
+
+    // Whether main menu panel/buttons/button labels scale with hi-res main menu art.
+    bool main_menu_scale_buttons_and_text = false;
 
     // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
     bool iface_bar_mode = false;
