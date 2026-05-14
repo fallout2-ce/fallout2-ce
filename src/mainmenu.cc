@@ -240,7 +240,7 @@ static bool mainMenuLoadArt()
 
 static MainMenuLayout mainMenuBuildLayout()
 {
-    MainMenuLayout layout{};
+    MainMenuLayout layout {};
     layout.screenWidth = screenGetWidth();
     layout.screenHeight = screenGetHeight();
     layout.useHiresArt = _mainMenuBackgroundFrmImage.getWidth() != MAIN_MENU_LOGICAL_WIDTH || _mainMenuBackgroundFrmImage.getHeight() != MAIN_MENU_LOGICAL_HEIGHT;
@@ -306,7 +306,7 @@ static void mainMenuDrawBackground(const MainMenuLayout& layout)
 
 static MainMenuOffsets mainMenuReadOffsets(const MainMenuLayout& layout)
 {
-    MainMenuOffsets offsets{};
+    MainMenuOffsets offsets {};
     configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_x", &offsets.menuX, 0);
     configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", &offsets.menuY, 0);
     configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_x", &offsets.creditsX, 0);
