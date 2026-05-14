@@ -171,12 +171,11 @@ static bool mainMenuLoadArt()
                 settings.ui.main_menu_scale_mode);
             _mainMenuBackgroundFrmImage.unlock();
         } else {
-        gMainMenuButtonPanelFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MENU_BG.FRM"));
-        debugPrint("MAINMENU: loaded hires art HR_MAINMENU.FRM (%dx%d), panel=%s\n",
-            _mainMenuBackgroundFrmImage.getWidth(),
-            _mainMenuBackgroundFrmImage.getHeight(),
-            gMainMenuButtonPanelFrmImage.isLocked() ? "yes" : "no");
-            return true;
+            gMainMenuButtonPanelFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MENU_BG.FRM"));
+            debugPrint("MAINMENU: loaded hires art HR_MAINMENU.FRM (%dx%d), panel=%s\n",
+                _mainMenuBackgroundFrmImage.getWidth(),
+                _mainMenuBackgroundFrmImage.getHeight(),
+                gMainMenuButtonPanelFrmImage.isLocked() ? "yes" : "no");
         }
     }
 
