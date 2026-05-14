@@ -544,7 +544,7 @@ int tileSetCenter(int tile, int flags)
     }
 
     bool boundaryModsSet = false;
-    if (mapEdgeIsLoaded() && gTileScrollBlockingEnabled) {
+    if (mapEdgeIsLoaded() && !settings.ui.ignore_map_edges) {
         bool isScroll = flags == 0;
         if (!isScroll) {
             // Forced positioning (teleport, initial load, etc.): clamp to edge boundary.
