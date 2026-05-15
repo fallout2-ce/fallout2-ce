@@ -153,7 +153,7 @@ static int mainMenuGetElementOffsetY(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width);
 static void mainMenuDrawScaledText(const MainMenuLayout& layout, int x, int y, const char* text, int color);
-static void mainMenuDrawBuildInfo(const MainMenuLayout& layout);
+static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static void mainMenuGetButtonBuffers(const MainMenuLayout& layout, unsigned char*& normalData, unsigned char*& pressedData, int& width, int& height);
 static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
@@ -226,12 +226,17 @@ static bool mainMenuLoadArt()
     int fid = buildFid(OBJ_TYPE_INTERFACE, 299, 0, 0, 0);
     if (!_mainMenuButtonNormalFrmImage.lock(fid)) {
         debugPrint("MAINMENU: failed to load menuup.frm\n");
+        gMainMenuButtonPanelFrmImage.unlock();
+        _mainMenuBackgroundFrmImage.unlock();
         return false;
     }
 
     fid = buildFid(OBJ_TYPE_INTERFACE, 300, 0, 0, 0);
     if (!_mainMenuButtonPressedFrmImage.lock(fid)) {
         debugPrint("MAINMENU: failed to load menudown.frm\n");
+        _mainMenuButtonNormalFrmImage.unlock();
+        gMainMenuButtonPanelFrmImage.unlock();
+        _mainMenuBackgroundFrmImage.unlock();
         return false;
     }
 
