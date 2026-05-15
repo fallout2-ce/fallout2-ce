@@ -293,7 +293,7 @@ void mapEdgeFree()
     gMapModHeight = 0;
     gMapWidthModSize = 0;
     gMapHeightModSize = 0;
-    gMapVisibleArea = { };
+    gMapVisibleArea = {};
 }
 
 bool mapEdgeIsLoaded()
