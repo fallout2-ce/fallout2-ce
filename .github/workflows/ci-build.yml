@@ -46,6 +46,15 @@ jobs:
       - name: Clone
         uses: actions/checkout@v4
 
+      - name: Install clang-format 14
+        run: |
+          sudo apt-get update
+          if apt-cache show clang-format-14 &>/dev/null; then
+            sudo apt-get install -y clang-format-14
+          else
+            sudo apt-get install -y clang-format
+          fi
+
       - name: Show clang-format version
         run: ./fix_formatting.sh --version
 
