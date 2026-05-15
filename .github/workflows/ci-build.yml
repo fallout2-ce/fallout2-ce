@@ -102,7 +102,7 @@ jobs:
 
       - name: Verify git pre-commit hook
         run: |
-          ./scripts/setup-git-hooks.sh
+          git config --local core.hooksPath .githooks
           .githooks/pre-commit
 
   code-format-windows:

@@ -60,19 +60,13 @@ C++ sources under `src/` are formatted with **clang-format 14** (see `.clang-for
 
 ### Optional: format staged files on `git commit`
 
-After cloning, run **once per machine** (IDE does not matter — hooks run whenever you `git commit`):
+After cloning, run **once per clone** (`--local` affects only this repository; any IDE that uses Git will run the hook):
 
 ```sh
-./scripts/setup-git-hooks.sh
+git config --local core.hooksPath .githooks
 ```
 
-Windows (PowerShell):
-
-```powershell
-.\scripts\setup-git-hooks.ps1
-```
-
-That sets `core.hooksPath` to `.githooks`. The `pre-commit` hook formats staged `*.cc` / `*.h` with clang-format 14 (or Docker on Linux/macOS if 14 is missing). If no formatter is available, it prints a warning and **does not block** the commit.
+The `pre-commit` hook is already executable in the repo. It formats staged `*.cc` / `*.h` with clang-format 14 (or Docker on Linux/macOS if 14 is missing). If no formatter is available, it prints a warning and **does not block** the commit.
 
 Install clang-format 14 before relying on the hook — see `fix_formatting.sh` / `fix_formatting.ps1` help output.
 

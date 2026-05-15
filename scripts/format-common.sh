@@ -53,7 +53,7 @@ format_files_inplace() {
 format_print_hook_warning() {
     cat <<'EOF' >&2
 pre-commit: clang-format 14 not found — skipping format of staged C++ files.
-Install clang-format 14 or run ./scripts/setup-git-hooks.sh after installing a formatter.
+Install clang-format 14 (see CONTRIBUTING.md) to enable format-on-commit.
 See CONTRIBUTING.md (Code formatting) or use ./fix_formatting.sh / .\fix_formatting.ps1
 EOF
 }
