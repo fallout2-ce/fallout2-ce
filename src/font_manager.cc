@@ -443,12 +443,14 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
 
     int monospacedCharacterWidth = 0;
     int scaledMonospacedCharacterWidth = 0;
+    float scaledMonospacedAdvance = 0.0f;
     if ((color & FONT_MONO) != 0) {
         monospacedCharacterWidth = interfaceFontGetMonospacedCharacterWidthImpl();
         scaledMonospacedCharacterWidth = std::max(1, static_cast<int>(lround(monospacedCharacterWidth * scale)));
+        scaledMonospacedAdvance = monospacedCharacterWidth * scale;
     }
 
-    int cursorX = x;
+    float cursorX = static_cast<float>(x);
     while (*string != '\0') {
         unsigned char ch = static_cast<unsigned char>(*string++);
 
@@ -457,10 +459,9 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
             : gCurrentInterfaceFontDescriptor->glyphs[ch].width;
 
         int advance = characterWidth + gCurrentInterfaceFontDescriptor->letterSpacing;
-        int scaledAdvance = std::max(1, static_cast<int>(lround(advance * scale)));
         int scaledCharacterWidth = std::max(1, static_cast<int>(lround(characterWidth * scale)));
 
-        int glyphX = cursorX;
+        int glyphX = static_cast<int>(lround(cursorX));
         if ((color & FONT_MONO) != 0) {
             glyphX += (scaledMonospacedCharacterWidth - scaledCharacterWidth) / 2;
         }
@@ -491,8 +492,8 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
             }
         }
 
-        cursorX += (color & FONT_MONO) != 0 ? scaledMonospacedCharacterWidth : scaledAdvance;
-        if (cursorX >= dest.width) {
+        cursorX += (color & FONT_MONO) != 0 ? scaledMonospacedAdvance : advance * scale;
+        if (static_cast<int>(lround(cursorX)) >= dest.width) {
             break;
         }
     }
@@ -501,7 +502,7 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
         int lineY = y + std::max(0, static_cast<int>(lround((gCurrentInterfaceFontDescriptor->maxHeight - 1) * scale)));
         int thickness = std::max(1, static_cast<int>(lround(scale)));
         int left = std::clamp(x, 0, dest.width);
-        int right = std::min(cursorX, dest.width);
+        int right = std::min(static_cast<int>(lround(cursorX)), dest.width);
         if (right <= left) {
             _freeColorBlendTable(color & 0xFF);
             return;
@@ -526,21 +527,20 @@ static int interfaceFontGetScaledWidthImpl(const char* string, int color, float 
 {
     if ((color & FONT_MONO) != 0) {
         int monospacedCharacterWidth = interfaceFontGetMonospacedCharacterWidthImpl();
-        int scaledMonospacedCharacterWidth = std::max(1, static_cast<int>(lround(monospacedCharacterWidth * scale)));
-        return scaledMonospacedCharacterWidth * static_cast<int>(strlen(string));
+        return std::max(0, static_cast<int>(lround(monospacedCharacterWidth * scale * strlen(string))));
     }
 
-    int width = 0;
+    float width = 0.0f;
     while (*string != '\0') {
         unsigned char ch = static_cast<unsigned char>(*string++);
         int characterWidth = ch == ' '
             ? gCurrentInterfaceFontDescriptor->wordSpacing
             : gCurrentInterfaceFontDescriptor->glyphs[ch].width;
         int advance = characterWidth + gCurrentInterfaceFontDescriptor->letterSpacing;
-        width += std::max(1, static_cast<int>(lround(advance * scale)));
+        width += advance * scale;
     }
 
-    return width;
+    return std::max(0, static_cast<int>(lround(width)));
 }
 
 // NOTE: Inlined.
