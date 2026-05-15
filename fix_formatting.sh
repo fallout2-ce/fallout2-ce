@@ -20,10 +20,15 @@ ensure_repo_root() {
 }
 
 run_format() {
-    if ! format_run_src "$@"; then
-        format_print_install_help
-        exit 1
+    local rc=0
+    format_run_src "$@" || rc=$?
+    if [ "$rc" -eq 0 ]; then
+        return 0
     fi
+    if [ "$rc" -eq 1 ]; then
+        format_print_install_help
+    fi
+    exit "$rc"
 }
 
 ensure_repo_root

@@ -42,7 +42,8 @@ format_warn_wrong_clang_format_on_path() {
     done
 }
 
-# Format the given file paths (repo-relative). Returns 0 on success, 1 if no formatter.
+# Format the given file paths (repo-relative).
+# Returns 0 on success, 1 if no formatter, or clang-format's exit code on failure.
 format_files_inplace() {
     if [ "$#" -eq 0 ]; then
         return 0
@@ -51,7 +52,7 @@ format_files_inplace() {
     local bin
     if bin=$(format_find_clang_format); then
         "$bin" -i "$@"
-        return 0
+        return $?
     fi
 
     if format_have_docker; then
@@ -63,13 +64,14 @@ format_files_inplace() {
             -v "$root":/app --workdir /app \
             "$FORMATTER_CLANG_IMAGE" \
             clang-format -i "$@"
-        return 0
+        return $?
     fi
 
     return 1
 }
 
-# Format all of src/ with clang-format flags (e.g. -i or --dry-run --Werror). Returns 0/1.
+# Format all of src/ with clang-format flags (e.g. -i or --dry-run --Werror).
+# Returns 0 on success, 1 if no formatter, or clang-format's exit code on failure.
 format_run_src() {
     local bin user_args
     format_warn_wrong_clang_format_on_path
@@ -77,7 +79,7 @@ format_run_src() {
     if bin=$(format_find_clang_format); then
         find src -type f \( -name '*.cc' -o -name '*.h' \) -print0 |
             xargs -0 "$bin" "$@"
-        return 0
+        return $?
     fi
 
     if format_have_docker; then
@@ -88,7 +90,7 @@ format_run_src() {
             -v "$(pwd)":/app --workdir /app \
             "$FORMATTER_CLANG_IMAGE" \
             bash -c 'find src -type f \( -name "*.cc" -o -name "*.h" \) -print0 | xargs -0 clang-format '"$*"
-        return 0
+        return $?
     fi
 
     return 1
@@ -127,5 +129,11 @@ format_print_hook_warning() {
     cat <<'EOF' >&2
 pre-commit: clang-format 14 not found — skipping format of staged C++ files.
 Install clang-format 14 (see CONTRIBUTING.md) or use Docker; see ./fix_formatting.sh
+EOF
+}
+
+format_print_hook_format_failed() {
+    cat <<'EOF' >&2
+pre-commit: clang-format failed — skipping re-stage; commit continues.
 EOF
 }

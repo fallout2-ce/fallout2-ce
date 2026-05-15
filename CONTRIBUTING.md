@@ -66,7 +66,7 @@ After cloning, run **once per clone** (`--local` affects only this repository; a
 git config --local core.hooksPath .githooks
 ```
 
-The `pre-commit` hook is already executable in the repo. It formats staged `*.cc` / `*.h` with clang-format 14 (or Docker on Linux/macOS if 14 is missing). If no formatter is available, it prints a warning and **does not block** the commit.
+The `pre-commit` hook is already executable in the repo. It formats staged `*.cc` / `*.h` with clang-format 14 (or Docker if 14 is missing). Unstaged edits are stashed temporarily so partial commits (`git add -p`) stay safe. If no formatter is available, it prints a warning and **does not block** the commit.
 
 Install clang-format 14 before relying on the hook — see `fix_formatting.sh` / `fix_formatting.ps1` help output.
 

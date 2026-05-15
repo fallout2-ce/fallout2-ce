@@ -97,6 +97,18 @@ function Get-SourceFiles {
         ForEach-Object { $_.FullName.Substring($root.Length + 1) -replace '\\', '/' }
 }
 
+function Invoke-NativeClangFormat {
+    param(
+        [string[]]$ClangArgs,
+        [string[]]$Files
+    )
+
+    & $clangFormat @ClangArgs @Files
+    if ($LASTEXITCODE -ne 0) {
+        throw "clang-format failed with exit code $LASTEXITCODE"
+    }
+}
+
 Assert-RepoRoot
 
 $clangFormat = Get-ClangFormat14
@@ -126,7 +138,7 @@ switch ($mode) {
         else {
             $files = @(Get-SourceFiles)
             if ($files.Count -eq 0) { throw "No .cc/.h files under src/" }
-            & $clangFormat -i @files
+            Invoke-NativeClangFormat -ClangArgs @("-i") -Files $files
             Write-Host "Formatted $($files.Count) files with $clangFormat"
         }
     }
@@ -136,7 +148,7 @@ switch ($mode) {
         }
         else {
             $files = @(Get-SourceFiles)
-            & $clangFormat --dry-run --Werror @files
+            Invoke-NativeClangFormat -ClangArgs @("--dry-run", "--Werror") -Files $files
         }
         Write-Host "Format check passed."
     }
@@ -146,7 +158,7 @@ switch ($mode) {
         }
         else {
             $files = @(Get-SourceFiles)
-            & $clangFormat --dry-run @files
+            Invoke-NativeClangFormat -ClangArgs @("--dry-run") -Files $files
         }
     }
     default {

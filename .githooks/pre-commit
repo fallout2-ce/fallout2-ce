@@ -11,8 +11,17 @@ cd "$ROOT" || exit 0
 # shellcheck source=scripts/format-common.sh
 . "$ROOT/scripts/format-common.sh"
 
+HOOK_STASHED=0
+
+hook_cleanup() {
+    if [ "$HOOK_STASHED" -eq 1 ]; then
+        git stash pop -q 2>/dev/null || git stash pop -q 2>/dev/null || true
+        HOOK_STASHED=0
+    fi
+}
+
 list=$(mktemp "${TMPDIR:-/tmp}/f2ce-fmt.XXXXXX") || exit 0
-trap 'rm -f "$list"' EXIT INT HUP
+trap 'rm -f "$list"; hook_cleanup' EXIT INT HUP
 
 git diff --cached --name-only --diff-filter=ACM |
     grep -E '\.(cc|h)$' >"$list" 2>/dev/null || true
@@ -32,11 +41,27 @@ if [ "$#" -eq 0 ]; then
     exit 0
 fi
 
-if ! format_files_inplace "$@"; then
-    format_print_hook_warning
+# Hide unstaged edits so `git add` only updates already-staged hunks (git add -p safe).
+if ! git diff --quiet; then
+    if git stash push --keep-index -q -m "f2ce-pre-commit-format"; then
+        HOOK_STASHED=1
+    fi
+fi
+
+format_rc=0
+format_files_inplace "$@" || format_rc=$?
+
+if [ "$format_rc" -ne 0 ]; then
+    hook_cleanup
+    if [ "$format_rc" -eq 1 ] && ! format_find_clang_format >/dev/null 2>&1 && ! format_have_docker; then
+        format_print_hook_warning
+    else
+        format_print_hook_format_failed
+    fi
     exit 0
 fi
 
 git add "$@"
+hook_cleanup
 
 exit 0
