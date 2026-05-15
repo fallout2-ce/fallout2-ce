@@ -100,6 +100,11 @@ jobs:
           ./fix_formatting.sh --version
           ./fix_formatting.sh --check
 
+      - name: Verify git pre-commit hook
+        run: |
+          ./scripts/setup-git-hooks.sh
+          .githooks/pre-commit
+
   code-format-windows:
     name: Code format check (Windows script)
 

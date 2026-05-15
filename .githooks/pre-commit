@@ -1,0 +1,36 @@
+#!/bin/sh
+# Format staged *.cc / *.h with clang-format 14 before commit.
+# IDE-agnostic: runs for any `git commit` (CLI, VS, CLion, etc.).
+# If clang-format 14 is unavailable, prints a warning and does not block the commit.
+
+set -u
+
+ROOT=$(git rev-parse --show-toplevel) || exit 0
+cd "$ROOT" || exit 0
+
+# shellcheck source=scripts/format-common.sh
+. "$ROOT/scripts/format-common.sh"
+
+list=$(mktemp "${TMPDIR:-/tmp}/f2ce-fmt.XXXXXX") || exit 0
+trap 'rm -f "$list"' EXIT INT HUP
+
+git diff --cached --name-only --diff-filter=ACM |
+    grep -E '\.(cc|h)$' >"$list" 2>/dev/null || true
+
+if [ ! -s "$list" ]; then
+    exit 0
+fi
+
+while IFS= read -r file || [ -n "$file" ]; do
+    [ -z "$file" ] && continue
+    [ -f "$file" ] || continue
+
+    if ! format_files_inplace "$file"; then
+        format_print_hook_warning
+        exit 0
+    fi
+
+    git add "$file"
+done <"$list"
+
+exit 0

@@ -51,6 +51,31 @@ cmake --build out/build/linux-x64-debug --target fallout2-ce
 
 TODO: add Visual Studio build instructions. This will likely need a Visual Studio generator or preset plus the MSVC toolchain and Windows SDK.
 
+## Code formatting
+
+C++ sources under `src/` are formatted with **clang-format 14** (see `.clang-format`).
+
+- Format everything: `./fix_formatting.sh` (Linux / macOS / Git Bash) or `.\fix_formatting.ps1` (PowerShell).
+- CI uses the same major version; see `fix_formatting.sh --check`.
+
+### Optional: format staged files on `git commit`
+
+After cloning, run **once per machine** (IDE does not matter — hooks run whenever you `git commit`):
+
+```sh
+./scripts/setup-git-hooks.sh
+```
+
+Windows (PowerShell):
+
+```powershell
+.\scripts\setup-git-hooks.ps1
+```
+
+That sets `core.hooksPath` to `.githooks`. The `pre-commit` hook formats staged `*.cc` / `*.h` with clang-format 14 (or Docker on Linux/macOS if 14 is missing). If no formatter is available, it prints a warning and **does not block** the commit.
+
+Install clang-format 14 before relying on the hook — see `fix_formatting.sh` / `fix_formatting.ps1` help output.
+
 ## `.dat` CLI Tool
 
 There is a small command-line archive tool in this repo for inspecting Fallout `.dat` files. It supports both Fallout 2 and Fallout 1 archives.

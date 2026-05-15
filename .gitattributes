@@ -14,6 +14,9 @@
 *.xml text eol=lf
 *.yml text eol=lf
 .clang-format text eol=lf
+.githooks/* text eol=lf
+scripts/format-common.sh text eol=lf
+scripts/setup-git-hooks.sh text eol=lf
 .editorconfig text eol=lf
 .gitattributes text eol=lf
 .gitignore text eol=lf
