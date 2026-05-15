@@ -85,6 +85,9 @@ bool mapEdgeSetBoundaryMods(int tile);
 // Equivalent to sfall EdgeClipping's mapVisibleArea. Returns false if no EDG loaded.
 bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect);
 
+// Returns true if the screen coordinate is over the map window but outside the EDG-visible area.
+bool mapEdgeIsOverClippedArea(int screenX, int screenY);
+
 } // namespace fallout
 
 #endif /* MAP_EDGE_H */

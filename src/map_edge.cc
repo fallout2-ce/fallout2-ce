@@ -2,10 +2,12 @@
 
 #include "db.h"
 #include "debug.h"
+#include "map.h"
 #include "map_defs.h"
 #include "platform_compat.h"
 #include "svga.h"
 #include "tile.h"
+#include "window_manager.h"
 
 #include <memory>
 
@@ -21,6 +23,8 @@ static int gMapModWidth = 0;
 static int gMapModHeight = 0;
 static int gMapWidthModSize = 0;
 static int gMapHeightModSize = 0;
+
+static Rect gMapVisibleArea;
 
 // Convert tile index to pixel-offset coordinates.
 // Equivalent to sfall ViewMap::GetTileCoordOffset.
@@ -289,6 +293,7 @@ void mapEdgeFree()
     gMapModHeight = 0;
     gMapWidthModSize = 0;
     gMapHeightModSize = 0;
+    gMapVisibleArea = { };
 }
 
 bool mapEdgeIsLoaded()
@@ -427,13 +432,18 @@ bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
     outRect->top = zone->rect2.top - py;
     outRect->bottom = zone->rect2.bottom - py;
 
-    /*debugPrint("EDG: visibleArea tile=%d px=(%d,%d) mods=(%d,%d) zone=%p rect2=(%d,%d,%d,%d) result=(%d,%d,%d,%d)\n",
-        gCenterTile, px, py, gMapModWidth, gMapModHeight,
-        static_cast<void*>(zone),
-        zone->rect2.left, zone->rect2.top, zone->rect2.right, zone->rect2.bottom,
-        outRect->left, outRect->top, outRect->right, outRect->bottom);*/
+    gMapVisibleArea = *outRect;
 
     return true;
+}
+
+bool mapEdgeIsOverClippedArea(int screenX, int screenY)
+{
+    if (!gEdgeDataLoaded) return false;
+
+    if (screenX >= gMapVisibleArea.left && screenX <= gMapVisibleArea.right && screenY >= gMapVisibleArea.top && screenY < gMapVisibleArea.bottom) return false;
+
+    return windowGetAtPoint(screenX, screenY) == gIsoWindow;
 }
 
 } // namespace fallout
