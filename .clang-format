@@ -1,3 +1,14 @@
+# ------------------------------------------------------------------------------
+# Formatting is pinned to clang-format 14 — run ./fix_formatting.sh (Docker).
+#
+# clang-format has NO version conditionals and NO "ignore unknown keys" mode:
+# an older binary errors out if this file contains options it does not know.
+#
+# The same .clang-format also does NOT guarantee the same output across versions:
+# clang-format 17+ uses different rules (e.g. spaces inside #define bodies).
+# With THIS file, versions 14 / 15 / 16 match each other; 17+ may still differ.
+# ------------------------------------------------------------------------------
+
 AccessModifierOffset: -4
 AlignAfterOpenBracket: DontAlign
 AlignArrayOfStructures: None
@@ -68,7 +79,6 @@ EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: LogicalBlock
 ExperimentalAutoDetectBinPacking: false
 PackConstructorInitializers: BinPack
-BasedOnStyle:    ''
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 AllowAllConstructorInitializersOnNextLine: true
 FixNamespaceComments: true
