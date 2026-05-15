@@ -14,9 +14,13 @@ function Show-InstallHelp {
 clang-format 14 is required but was not found on PATH.
 
 Windows:
-  winget install -e --id LLVM.LLVM
-  Or LLVM 14.0.6: https://github.com/llvm/llvm-project/releases/tag/llvmorg-14.0.6
+  Install LLVM 14.0.6 (recommended — winget often installs a newer LLVM):
+  https://github.com/llvm/llvm-project/releases/tag/llvmorg-14.0.6
   Add LLVM\bin to PATH and reopen the terminal.
+
+  winget (Windows 10/11 with App Installer only, not all editions):
+  winget install -e --id LLVM.LLVM --version 14.0.6
+  If that version is unavailable, use the installer link above.
 
 Visual Studio:
   VS Installer -> modify -> "C++ Clang tools for Windows"

@@ -81,6 +81,50 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  code-format-macos:
+    name: Code format check (macOS script)
+
+    runs-on: macos-latest
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Install clang-format 14
+        run: |
+          brew install llvm@14
+          echo "$(brew --prefix llvm@14)/bin" >> "$GITHUB_PATH"
+
+      - name: Verify fix_formatting.sh
+        run: |
+          ./fix_formatting.sh --version
+          ./fix_formatting.sh --check
+
+  code-format-windows:
+    name: Code format check (Windows script)
+
+    runs-on: windows-latest
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Install LLVM 14 (clang-format)
+        shell: pwsh
+        run: |
+          $installer = "$env:RUNNER_TEMP\LLVM-14.0.6-win64.exe"
+          Invoke-WebRequest `
+            -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/LLVM-14.0.6-win64.exe" `
+            -OutFile $installer
+          Start-Process -FilePath $installer -ArgumentList "/S" -Wait
+          "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+
+      - name: Verify fix_formatting.ps1
+        shell: pwsh
+        run: |
+          .\fix_formatting.ps1 --version
+          .\fix_formatting.ps1 --check
+
   android:
     name: Android
 

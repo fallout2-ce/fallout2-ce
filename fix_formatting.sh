@@ -21,7 +21,7 @@ Install clang-format 14 for your system, then re-run this script:
   Linux (Ubuntu 24.04+)    sudo apt install clang-format-14
   macOS (Homebrew)         brew install llvm@14
                            export PATH="$(brew --prefix llvm@14)/bin:$PATH"
-  Windows                  .\fix_formatting.ps1  (see script for LLVM / VS install notes)
+  Windows                  .\fix_formatting.ps1  (LLVM 14 installer; winget not on all Windows)
 
 Optional fallback on Linux/macOS (if you have Docker):
   This script uses silkeh/clang:14 when no local clang-format 14 exists.
