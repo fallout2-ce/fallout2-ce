@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Formatting is pinned to clang-format 14 — run ./fix_formatting.sh (Docker).
+# Formatting is pinned to clang-format 14 — run ./fix_formatting.sh or fix_formatting.ps1.
 #
 # clang-format has NO version conditionals and NO "ignore unknown keys" mode:
 # an older binary errors out if this file contains options it does not know.

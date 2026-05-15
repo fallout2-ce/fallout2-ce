@@ -17,7 +17,7 @@
 
 - *Preview builds are not available for pull requests from forked repositories.* To enable preview builds, submit the PR from a branch within this repository.
 
-- **Formatting:** Run `./fix_formatting.sh` before pushing (CI and auto-format use the same script). Requires Docker.
+- **Formatting:** Run `./fix_formatting.sh` (Linux/macOS/Git Bash) or `.\fix_formatting.ps1` (Windows) before pushing. Needs **clang-format 14** on PATH; Docker is only an optional fallback on Linux/macOS.
 
 --->
 
