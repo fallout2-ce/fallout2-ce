@@ -48,14 +48,14 @@ jobs:
 
       - name: Show clang-format version
         run: |
-          docker run --rm silkeh/clang:18 clang-format --version
+          docker run --rm silkeh/clang:14 clang-format --version
 
       - name: clang-format
         run: |
           run_clang_format() {
             docker run --rm \
               -v "${{ github.workspace }}":/app --workdir /app \
-              silkeh/clang:18 \
+              silkeh/clang:14 \
               bash -c "find src -type f \( -name '*.cc' -o -name '*.h' \) -print0 | xargs -0 clang-format $*"
           }
 
