@@ -37,11 +37,14 @@ format_files_inplace() {
     fi
 
     if format_have_docker; then
-        local root
+        local root user_args=""
         root=$(pwd)
-        docker run --rm \
+        case "$(uname -s)" in
+            Linux | Darwin) user_args="--user $(id -u):$(id -g)" ;;
+        esac
+        # shellcheck disable=SC2086
+        docker run --rm $user_args \
             -v "$root":/app --workdir /app \
-            --user "$(id -u):$(id -g)" 2>/dev/null \
             "$FORMATTER_CLANG_IMAGE" \
             clang-format -i "$@"
         return 0

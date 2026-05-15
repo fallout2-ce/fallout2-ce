@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Format src/ with clang-format 14 (matches CI). Uses a local binary when possible;
-# falls back to Docker only if clang-format 14 is not on PATH.
+# falls back to Docker if clang-format 14 is not on PATH (Linux, macOS, Windows).
 
 set -euo pipefail
 
@@ -23,8 +23,8 @@ Install clang-format 14 for your system, then re-run this script:
                            export PATH="$(brew --prefix llvm@14)/bin:$PATH"
   Windows                  .\fix_formatting.ps1  (LLVM 14 installer; winget not on all Windows)
 
-Optional fallback on Linux/macOS (if you have Docker):
-  This script uses silkeh/clang:14 when no local clang-format 14 exists.
+Optional fallback (if you have Docker):
+  Uses silkeh/clang:14 when no local clang-format 14 exists.
 
 EOF
 }

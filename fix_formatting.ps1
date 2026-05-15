@@ -1,9 +1,10 @@
 # Format src/ with clang-format 14 (matches CI). For Windows (PowerShell / Visual Studio).
-# Requires clang-format 14 on PATH — see Show-InstallHelp.
+# Uses local clang-format 14 when on PATH; falls back to Docker if available.
 
 $ErrorActionPreference = "Stop"
 
 $RequiredMajor = 14
+$ClangImage = "silkeh/clang:14"
 
 function Show-Usage {
     Write-Host "Usage: .\fix_formatting.ps1 [--fix|--check|--dry-run|--version]"
@@ -11,16 +12,14 @@ function Show-Usage {
 
 function Show-InstallHelp {
     Write-Host @"
-clang-format 14 is required but was not found on PATH.
+clang-format 14 is required but was not found on PATH, and Docker is not available.
 
 Windows:
-  Install LLVM 14.0.6 (recommended — winget often installs a newer LLVM):
+  Install LLVM 14.0.6 (recommended):
   https://github.com/llvm/llvm-project/releases/tag/llvmorg-14.0.6
   Add LLVM\bin to PATH and reopen the terminal.
 
-  winget (Windows 10/11 with App Installer only, not all editions):
-  winget install -e --id LLVM.LLVM --version 14.0.6
-  If that version is unavailable, use the installer link above.
+  Or install Docker Desktop and re-run this script (uses $ClangImage).
 
 Visual Studio:
   VS Installer -> modify -> "C++ Clang tools for Windows"
@@ -31,6 +30,14 @@ Linux / macOS:
   ./fix_formatting.sh
 
 "@ -ForegroundColor Yellow
+}
+
+function Test-Docker {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        return $false
+    }
+    docker info 2>&1 | Out-Null
+    return $LASTEXITCODE -eq 0
 }
 
 function Get-ClangFormat14 {
@@ -49,51 +56,95 @@ function Get-ClangFormat14 {
     return $null
 }
 
-function Get-SourceFiles {
+function Assert-RepoRoot {
     if (-not (Test-Path "src")) {
         throw "Run from the repository root (missing src/)."
     }
     if (-not (Test-Path ".clang-format")) {
         throw "Run from the repository root (missing .clang-format)."
     }
+}
+
+function Invoke-DockerClangFormat {
+    param([string]$FormatArgs)
+
+    $root = (Get-Location).Path
+    Write-Host "note: using Docker ($ClangImage). Install clang-format 14 locally to skip Docker."
+
+    docker run --rm `
+        -v "${root}:/app" `
+        -w /app `
+        $ClangImage `
+        bash -c "find src -type f \( -name '*.cc' -o -name '*.h' \) -print0 | xargs -0 -r clang-format $FormatArgs"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "docker clang-format failed (exit $LASTEXITCODE)"
+    }
+}
+
+function Get-SourceFiles {
     @(
         Get-ChildItem -Path "src" -Recurse -File -Include "*.cc", "*.h" |
             ForEach-Object { $_.FullName }
     )
 }
 
+Assert-RepoRoot
+
 $clangFormat = Get-ClangFormat14
-if (-not $clangFormat) {
+$useDocker = (-not $clangFormat) -and (Test-Docker)
+
+if (-not $clangFormat -and -not $useDocker) {
     Show-InstallHelp
     exit 1
-}
-
-$files = Get-SourceFiles
-if ($files.Count -eq 0) {
-    throw "No .cc/.h files under src/"
 }
 
 $mode = if ($args.Count -gt 0) { $args[0] } else { "--fix" }
 
 switch ($mode) {
     "--version" {
-        & $clangFormat --version
+        if ($clangFormat) {
+            & $clangFormat --version
+        }
+        else {
+            docker run --rm $ClangImage clang-format --version
+        }
     }
     "--fix" {
-        foreach ($file in $files) {
-            & $clangFormat -i $file
+        if ($useDocker) {
+            Invoke-DockerClangFormat "-i"
+            Write-Host "Formatted src/ via Docker."
         }
-        Write-Host "Formatted $($files.Count) files with $clangFormat"
+        else {
+            $files = Get-SourceFiles
+            if ($files.Count -eq 0) { throw "No .cc/.h files under src/" }
+            foreach ($file in $files) {
+                & $clangFormat -i $file
+            }
+            Write-Host "Formatted $($files.Count) files with $clangFormat"
+        }
     }
     "--check" {
-        foreach ($file in $files) {
-            & $clangFormat --dry-run --Werror $file
+        if ($useDocker) {
+            Invoke-DockerClangFormat "--dry-run --Werror"
         }
-        Write-Host "Format check passed ($($files.Count) files)."
+        else {
+            $files = Get-SourceFiles
+            foreach ($file in $files) {
+                & $clangFormat --dry-run --Werror $file
+            }
+        }
+        Write-Host "Format check passed."
     }
     "--dry-run" {
-        foreach ($file in $files) {
-            & $clangFormat --dry-run $file
+        if ($useDocker) {
+            Invoke-DockerClangFormat "--dry-run"
+        }
+        else {
+            $files = Get-SourceFiles
+            foreach ($file in $files) {
+                & $clangFormat --dry-run $file
+            }
         }
     }
     default {

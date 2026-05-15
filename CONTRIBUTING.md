@@ -55,7 +55,7 @@ TODO: add Visual Studio build instructions. This will likely need a Visual Studi
 
 C++ sources under `src/` are formatted with **clang-format 14** (see `.clang-format`).
 
-- Format everything: `./fix_formatting.sh` (Linux / macOS / Git Bash) or `.\fix_formatting.ps1` (PowerShell).
+- Format everything: `./fix_formatting.sh` (Linux / macOS / Git Bash) or `.\fix_formatting.ps1` (PowerShell). Both use local clang-format 14, or Docker (`silkeh/clang:14`) if 14 is not on `PATH`.
 - CI uses the same major version; see `fix_formatting.sh --check`.
 
 ### Optional: format staged files on `git commit`
