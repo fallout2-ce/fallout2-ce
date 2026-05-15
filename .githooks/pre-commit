@@ -21,16 +21,22 @@ if [ ! -s "$list" ]; then
     exit 0
 fi
 
+set --
 while IFS= read -r file || [ -n "$file" ]; do
     [ -z "$file" ] && continue
     [ -f "$file" ] || continue
-
-    if ! format_files_inplace "$file"; then
-        format_print_hook_warning
-        exit 0
-    fi
-
-    git add "$file"
+    set -- "$@" "$file"
 done <"$list"
+
+if [ "$#" -eq 0 ]; then
+    exit 0
+fi
+
+if ! format_files_inplace "$@"; then
+    format_print_hook_warning
+    exit 0
+fi
+
+git add "$@"
 
 exit 0

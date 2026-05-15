@@ -66,16 +66,25 @@ function Assert-RepoRoot {
 }
 
 function Invoke-DockerClangFormat {
-    param([string]$FormatArgs)
+    param(
+        [ValidateSet("fix", "check", "dry-run")]
+        [string]$Mode
+    )
 
     $root = (Get-Location).Path
     Write-Host "note: using Docker ($ClangImage). Install clang-format 14 locally to skip Docker."
+
+    $bashCmd = switch ($Mode) {
+        "fix"     { 'find src -type f \( -name "*.cc" -o -name "*.h" \) -print0 | xargs -0 -r clang-format -i' }
+        "check"   { 'find src -type f \( -name "*.cc" -o -name "*.h" \) -print0 | xargs -0 -r clang-format --dry-run --Werror' }
+        "dry-run" { 'find src -type f \( -name "*.cc" -o -name "*.h" \) -print0 | xargs -0 -r clang-format --dry-run' }
+    }
 
     docker run --rm `
         -v "${root}:/app" `
         -w /app `
         $ClangImage `
-        bash -c "find src -type f \( -name '*.cc' -o -name '*.h' \) -print0 | xargs -0 -r clang-format $FormatArgs"
+        bash -c $bashCmd
 
     if ($LASTEXITCODE -ne 0) {
         throw "docker clang-format failed (exit $LASTEXITCODE)"
@@ -83,10 +92,9 @@ function Invoke-DockerClangFormat {
 }
 
 function Get-SourceFiles {
-    @(
-        Get-ChildItem -Path "src" -Recurse -File -Include "*.cc", "*.h" |
-            ForEach-Object { $_.FullName }
-    )
+    $root = (Get-Location).Path
+    Get-ChildItem -Path "src" -Recurse -File -Include "*.cc", "*.h" |
+        ForEach-Object { $_.FullName.Substring($root.Length + 1) -replace '\\', '/' }
 }
 
 Assert-RepoRoot
@@ -112,39 +120,33 @@ switch ($mode) {
     }
     "--fix" {
         if ($useDocker) {
-            Invoke-DockerClangFormat "-i"
+            Invoke-DockerClangFormat "fix"
             Write-Host "Formatted src/ via Docker."
         }
         else {
-            $files = Get-SourceFiles
+            $files = @(Get-SourceFiles)
             if ($files.Count -eq 0) { throw "No .cc/.h files under src/" }
-            foreach ($file in $files) {
-                & $clangFormat -i $file
-            }
+            & $clangFormat -i @files
             Write-Host "Formatted $($files.Count) files with $clangFormat"
         }
     }
     "--check" {
         if ($useDocker) {
-            Invoke-DockerClangFormat "--dry-run --Werror"
+            Invoke-DockerClangFormat "check"
         }
         else {
-            $files = Get-SourceFiles
-            foreach ($file in $files) {
-                & $clangFormat --dry-run --Werror $file
-            }
+            $files = @(Get-SourceFiles)
+            & $clangFormat --dry-run --Werror @files
         }
         Write-Host "Format check passed."
     }
     "--dry-run" {
         if ($useDocker) {
-            Invoke-DockerClangFormat "--dry-run"
+            Invoke-DockerClangFormat "dry-run"
         }
         else {
-            $files = Get-SourceFiles
-            foreach ($file in $files) {
-                & $clangFormat --dry-run $file
-            }
+            $files = @(Get-SourceFiles)
+            & $clangFormat --dry-run @files
         }
     }
     default {
