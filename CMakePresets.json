@@ -140,7 +140,7 @@
                 "CMAKE_SYSTEM_NAME": "iOS"
             }
         },
-                {
+        {
             "name": "Mingw-base",
             "hidden": true,
             "description": "Base preset for all MinGW builds.",

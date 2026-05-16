@@ -640,11 +640,30 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
             WIN32_LEAN_AND_MEAN
             _STATIC_CPPLIB
         )
+
+        if(MINGW)
+            target_compile_definitions(mapper-ce PUBLIC
+                _USE_MATH_DEFINES
+            )
+
+            target_link_options(mapper-ce PRIVATE
+                -static
+                -static-libgcc
+                -static-libstdc++
+            )
+        endif()
+
         target_link_libraries(mapper-ce
             winmm
-            debug libcpmtd
-            optimized libcpmt
         )
+        
+        if(MSVC)
+            target_link_libraries(mapper-ce
+                debug libcpmtd
+                optimized libcpmt
+            )
+        endif()
+
         target_sources(mapper-ce PUBLIC
             "os/windows/fallout2-ce.rc"
         )
@@ -668,6 +687,7 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
         fpattern_windows::fpattern_windows
         ${ZLIB_LIBRARIES}
         ${SDL2_LIBRARIES}
+        ${SDL2_MAIN_LIBRARIES}
     )
 endif()
 
