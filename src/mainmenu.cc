@@ -501,14 +501,12 @@ int mainMenuWindowInit()
         0,
         WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
     if (gMainMenuWindow == -1) {
-        // NOTE: Uninline.
         return main_menu_fatal_error();
     }
 
     gMainMenuWindowBuffer = windowGetBuffer(gMainMenuWindow);
 
     if (!mainMenuLoadArt()) {
-        // NOTE: Uninline.
         return main_menu_fatal_error();
     }
 
@@ -527,7 +525,6 @@ int mainMenuWindowInit()
     }
 
     if (!mainMenuCreateButtons(layout, offsets)) {
-        // NOTE: Uninline.
         return main_menu_fatal_error();
     }
 
