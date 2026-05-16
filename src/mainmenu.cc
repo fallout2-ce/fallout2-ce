@@ -41,8 +41,6 @@ namespace fallout {
 #define MAIN_MENU_BUTTON_Y_STEP 41
 #define MAIN_MENU_BUTTON_LABEL_X 126
 #define MAIN_MENU_BUTTON_LABEL_Y 20
-#define MAIN_MENU_BUTTON_PANEL_COMPENSATION_X 8.0f
-#define MAIN_MENU_BUTTON_PANEL_COMPENSATION_Y 6.0f
 #define MAIN_MENU_FOOTER_LEFT_X 15
 #define MAIN_MENU_FOOTER_RIGHT_MARGIN 25
 #define MAIN_MENU_COPYRIGHT_Y 460
@@ -107,8 +105,8 @@ static int gMainMenuButtons[MAIN_MENU_BUTTON_COUNT];
 // 0x614858 main_menu_is_hidden
 static bool gMainMenuWindowHidden;
 
-static FrmImage _mainMenuBackgroundFrmImage;
-static FrmImage gMainMenuButtonPanelFrmImage;
+static FrmImage mainMenuBackgroundFrmImage;
+static FrmImage mainMenuButtonPanelFrmImage;
 static FrmImage _mainMenuButtonNormalFrmImage;
 static FrmImage _mainMenuButtonPressedFrmImage;
 static std::vector<unsigned char> gMainMenuScaledButtonData;
@@ -144,8 +142,8 @@ struct MainMenuOffsets {
     int creditsY;
 };
 
-static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int dstWidth, int dstHeight, int& outX, int& outY, int& outWidth, int& outHeight);
-static bool mainMenuShouldAspectFit(int backgroundWidth, int backgroundHeight, int screenWidth, int screenHeight);
+static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int& outX, int& outY, int& outWidth, int& outHeight);
+static bool mainMenuShouldAspectFit(int backgroundWidth, int backgroundHeight);
 static bool mainMenuShouldUseVanillaArtForLayout(int backgroundWidth, int backgroundHeight);
 static bool mainMenuLoadArt();
 static MainMenuLayout mainMenuBuildLayout();
@@ -153,7 +151,6 @@ static void mainMenuDrawBackground(const MainMenuLayout& layout);
 static MainMenuOffsets mainMenuReadOffsets(const MainMenuLayout& layout);
 static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y);
-static MainMenuPoint mainMenuTransformOffset(const MainMenuLayout& layout, int x, int y);
 static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int width, int height);
 static int mainMenuScaleX(const MainMenuLayout& layout, int value);
 static int mainMenuScaleY(const MainMenuLayout& layout, int value);
@@ -161,12 +158,13 @@ static int mainMenuScaleUniform(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width);
 static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
-static void mainMenuGetButtonBuffers(const MainMenuLayout& layout, unsigned char*& normalData, unsigned char*& pressedData, int& width, int& height);
 static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 
-static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int dstWidth, int dstHeight, int& outX, int& outY, int& outWidth, int& outHeight)
+static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int& outX, int& outY, int& outWidth, int& outHeight)
 {
+    int dstWidth = screenGetWidth();
+    int dstHeight = screenGetHeight();
     outWidth = dstWidth;
     outHeight = dstHeight;
 
@@ -180,54 +178,41 @@ static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int dstWidth, 
     outY = (dstHeight - outHeight) / 2;
 }
 
-static bool mainMenuShouldAspectFit(int backgroundWidth, int backgroundHeight, int screenWidth, int screenHeight)
+static bool mainMenuShouldAspectFit(int backgroundWidth, int backgroundHeight)
 {
-    return settings.ui.main_menu_scale_mode != 0 || backgroundWidth > screenWidth || backgroundHeight > screenHeight;
+    return settings.ui.main_menu_scale_mode != 0 || backgroundWidth > screenGetWidth() || backgroundHeight > screenGetHeight();
 }
 
 static bool mainMenuShouldUseVanillaArtForLayout(int backgroundWidth, int backgroundHeight)
 {
-    int backgroundX;
-    int backgroundY;
-    int scaledWidth;
-    int scaledHeight;
-    if (!mainMenuShouldAspectFit(backgroundWidth, backgroundHeight, screenGetWidth(), screenGetHeight())) {
+    int x, y, width, height;
+    if (!mainMenuShouldAspectFit(backgroundWidth, backgroundHeight)) {
         return false;
     }
 
-    mainMenuComputeAspectFit(backgroundWidth, backgroundHeight, screenGetWidth(), screenGetHeight(), backgroundX, backgroundY, scaledWidth, scaledHeight);
-
-    return scaledWidth == MAIN_MENU_LOGICAL_WIDTH && scaledHeight == MAIN_MENU_LOGICAL_HEIGHT;
+    mainMenuComputeAspectFit(backgroundWidth, backgroundHeight, x, y, width, height);
+    return width == MAIN_MENU_LOGICAL_WIDTH && height == MAIN_MENU_LOGICAL_HEIGHT;
 }
 
 static bool mainMenuLoadArt()
 {
     bool canUseHiresArt = screenGetWidth() != MAIN_MENU_LOGICAL_WIDTH || screenGetHeight() != MAIN_MENU_LOGICAL_HEIGHT;
-    if (canUseHiresArt && _mainMenuBackgroundFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MAINMENU.FRM"))) {
-        if (mainMenuShouldUseVanillaArtForLayout(_mainMenuBackgroundFrmImage.getWidth(), _mainMenuBackgroundFrmImage.getHeight())) {
-            debugPrint("MAINMENU: using vanilla art because hires layout resolves to 640x480 on %dx%d (mode=%d)\n",
-                screenGetWidth(),
-                screenGetHeight(),
-                settings.ui.main_menu_scale_mode);
-            _mainMenuBackgroundFrmImage.unlock();
+    if (canUseHiresArt && mainMenuBackgroundFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MAINMENU.FRM"))) {
+        if (mainMenuShouldUseVanillaArtForLayout(mainMenuBackgroundFrmImage.getWidth(), mainMenuBackgroundFrmImage.getHeight())) {
+            // use Vanilla art if not scaling to reduce artifacts
+            mainMenuBackgroundFrmImage.unlock();
         } else {
-            gMainMenuButtonPanelFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MENU_BG.FRM"));
-            debugPrint("MAINMENU: loaded hires art HR_MAINMENU.FRM (%dx%d), panel=%s\n",
-                _mainMenuBackgroundFrmImage.getWidth(),
-                _mainMenuBackgroundFrmImage.getHeight(),
-                gMainMenuButtonPanelFrmImage.isLocked() ? "yes" : "no");
+            // for highres main menu art, use separate panel art
+            mainMenuButtonPanelFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MENU_BG.FRM"));
         }
     }
 
-    if (!_mainMenuBackgroundFrmImage.isLocked()) {
+    if (!mainMenuBackgroundFrmImage.isLocked()) {
         int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 140, 0, 0, 0);
-        if (!_mainMenuBackgroundFrmImage.lock(backgroundFid)) {
+        if (!mainMenuBackgroundFrmImage.lock(backgroundFid)) {
             debugPrint("MAINMENU: failed to load vanilla mainmenu.frm\n");
             return false;
         }
-        debugPrint("MAINMENU: loaded vanilla mainmenu.frm (%dx%d)\n",
-            _mainMenuBackgroundFrmImage.getWidth(),
-            _mainMenuBackgroundFrmImage.getHeight());
     }
 
     int fid = buildFid(OBJ_TYPE_INTERFACE, 299, 0, 0, 0);
@@ -248,16 +233,16 @@ static MainMenuLayout mainMenuBuildLayout()
     MainMenuLayout layout {};
     layout.screenWidth = screenGetWidth();
     layout.screenHeight = screenGetHeight();
-    layout.art = _mainMenuBackgroundFrmImage.getWidth() != MAIN_MENU_LOGICAL_WIDTH || _mainMenuBackgroundFrmImage.getHeight() != MAIN_MENU_LOGICAL_HEIGHT
+    layout.art = mainMenuBackgroundFrmImage.getWidth() != MAIN_MENU_LOGICAL_WIDTH || mainMenuBackgroundFrmImage.getHeight() != MAIN_MENU_LOGICAL_HEIGHT
         ? MenuArt::Hires
         : MenuArt::Vanilla;
 
-    int backgroundWidth = _mainMenuBackgroundFrmImage.getWidth();
-    int backgroundHeight = _mainMenuBackgroundFrmImage.getHeight();
+    int backgroundWidth = mainMenuBackgroundFrmImage.getWidth();
+    int backgroundHeight = mainMenuBackgroundFrmImage.getHeight();
 
-    bool aspectFit = mainMenuShouldAspectFit(backgroundWidth, backgroundHeight, layout.screenWidth, layout.screenHeight);
+    bool aspectFit = mainMenuShouldAspectFit(backgroundWidth, backgroundHeight);
     if (aspectFit) {
-        mainMenuComputeAspectFit(backgroundWidth, backgroundHeight, layout.screenWidth, layout.screenHeight, layout.backgroundX, layout.backgroundY, layout.backgroundWidth, layout.backgroundHeight);
+        mainMenuComputeAspectFit(backgroundWidth, backgroundHeight, layout.backgroundX, layout.backgroundY, layout.backgroundWidth, layout.backgroundHeight);
     } else {
         layout.backgroundWidth = backgroundWidth;
         layout.backgroundHeight = backgroundHeight;
@@ -265,8 +250,8 @@ static MainMenuLayout mainMenuBuildLayout()
         layout.backgroundY = (layout.screenHeight - layout.backgroundHeight) / 2;
     }
 
-    layout.scaleX = layout.backgroundWidth / 640.0f;
-    layout.scaleY = layout.backgroundHeight / 480.0f;
+    layout.scaleX = layout.backgroundWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
+    layout.scaleY = layout.backgroundHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
     layout.scale = layout.scaleY;
     layout.scaleControls = layout.art == MenuArt::Vanilla || settings.ui.main_menu_scale_buttons_and_text;
     return layout;
@@ -277,15 +262,15 @@ static void mainMenuDrawBackground(const MainMenuLayout& layout)
     Buffer2D dest(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight);
     bufferFill2D(dest, 0);
 
-    if (layout.backgroundWidth == _mainMenuBackgroundFrmImage.getWidth()
-        && layout.backgroundHeight == _mainMenuBackgroundFrmImage.getHeight()) {
-        blitBuffer2D(_mainMenuBackgroundFrmImage.getBuffer(), dest, layout.backgroundX, layout.backgroundY);
+    if (layout.backgroundWidth == mainMenuBackgroundFrmImage.getWidth()
+        && layout.backgroundHeight == mainMenuBackgroundFrmImage.getHeight()) {
+        blitBuffer2D(mainMenuBackgroundFrmImage.getBuffer(), dest, layout.backgroundX, layout.backgroundY);
     } else {
-        blitBuffer2DScaled(_mainMenuBackgroundFrmImage.getBuffer(),
+        blitBuffer2DScaled(mainMenuBackgroundFrmImage.getBuffer(),
             0,
             0,
-            _mainMenuBackgroundFrmImage.getWidth(),
-            _mainMenuBackgroundFrmImage.getHeight(),
+            mainMenuBackgroundFrmImage.getWidth(),
+            mainMenuBackgroundFrmImage.getHeight(),
             dest,
             layout.backgroundX,
             layout.backgroundY,
@@ -302,69 +287,50 @@ static MainMenuOffsets mainMenuReadOffsets(const MainMenuLayout& layout)
     configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_x", &offsets.creditsX, 0);
     configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_y", &offsets.creditsY, 0);
 
-    MainMenuPoint menuOffset = mainMenuTransformOffset(layout, offsets.menuX, offsets.menuY);
-    offsets.menuX = menuOffset.x;
-    offsets.menuY = menuOffset.y;
+    offsets.menuX = mainMenuScaleX(layout, offsets.menuX);
+    offsets.menuY = mainMenuScaleY(layout, offsets.menuY);
+
+    // Match HRP's extra compensation when the hires background is scaled but
+    // the buttons/panel stay at their original size.  It uses this funny quadratic scaling to place the menu
+    if (layout.art == MenuArt::Hires && !layout.scaleControls) {
+        if (layout.screenWidth != MAIN_MENU_LOGICAL_WIDTH) {
+            float diff = layout.screenWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
+            offsets.menuX += static_cast<int>(lround(8.0f * diff * diff));
+        }
+        if (layout.screenHeight != MAIN_MENU_LOGICAL_HEIGHT) {
+            float diff = layout.screenHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
+            offsets.menuY += static_cast<int>(lround(6.0f * diff * diff));
+        }
+    }
+
     return offsets;
 }
 
 static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
 {
-    if (layout.art != MenuArt::Hires || !gMainMenuButtonPanelFrmImage.isLocked()) {
+    if (layout.art != MenuArt::Hires || !mainMenuButtonPanelFrmImage.isLocked()) {
         return;
     }
 
     MainMenuSize panelSize = layout.scaleControls
-        ? mainMenuTransformSize(layout, gMainMenuButtonPanelFrmImage.getWidth(), gMainMenuButtonPanelFrmImage.getHeight())
-        : MainMenuSize { gMainMenuButtonPanelFrmImage.getWidth(), gMainMenuButtonPanelFrmImage.getHeight() };
+        ? mainMenuTransformSize(layout, mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight())
+        : MainMenuSize { mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight() };
     MainMenuPoint panelOrigin = mainMenuTransformPoint(layout, MAIN_MENU_PANEL_OFFSET_X, MAIN_MENU_PANEL_OFFSET_Y);
-    int x = panelOrigin.x + offsets.menuX;
-    int y = panelOrigin.y + offsets.menuY;
 
-    blitBuffer2DScaledTrans(gMainMenuButtonPanelFrmImage.getBuffer(),
+    blitBuffer2DScaledTrans(mainMenuButtonPanelFrmImage.getBuffer(),
         Buffer2D(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight),
-        x,
-        y,
+        panelOrigin.x + offsets.menuX,
+        panelOrigin.y + offsets.menuY,
         panelSize.width,
         panelSize.height);
 }
 
 static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y)
 {
-    if (layout.scaleControls) {
-        return {
-            layout.backgroundX + mainMenuScaleX(layout, x),
-            layout.backgroundY + mainMenuScaleY(layout, y),
-        };
-    }
-
     return {
-        layout.backgroundX + x,
-        layout.backgroundY + y,
+        layout.backgroundX + (layout.scaleControls ? mainMenuScaleX(layout, x) : x),
+        layout.backgroundY + (layout.scaleControls ? mainMenuScaleY(layout, y) : y),
     };
-}
-
-static MainMenuPoint mainMenuTransformOffset(const MainMenuLayout& layout, int x, int y)
-{
-    MainMenuPoint offset {
-        mainMenuScaleX(layout, x),
-        mainMenuScaleY(layout, y),
-    };
-
-    // Match HRP's extra compensation when the hires background is scaled but
-    // the buttons/panel stay at their original size.
-    if (layout.art == MenuArt::Hires && !layout.scaleControls) {
-        if (layout.screenWidth != MAIN_MENU_LOGICAL_WIDTH) {
-            float diff = layout.screenWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
-            offset.x += static_cast<int>(lround(MAIN_MENU_BUTTON_PANEL_COMPENSATION_X * diff * diff));
-        }
-        if (layout.screenHeight != MAIN_MENU_LOGICAL_HEIGHT) {
-            float diff = layout.screenHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
-            offset.y += static_cast<int>(lround(MAIN_MENU_BUTTON_PANEL_COMPENSATION_Y * diff * diff));
-        }
-    }
-
-    return offset;
 }
 
 static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int width, int height)
@@ -451,33 +417,24 @@ static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOf
     windowDrawText(gMainMenuWindow, buildDate, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_BUILD_DATE_Y), versionFontSettings | 0x06000000);
 }
 
-static void mainMenuGetButtonBuffers(const MainMenuLayout& layout, unsigned char*& normalData, unsigned char*& pressedData, int& width, int& height)
-{
-    MainMenuSize buttonSize = mainMenuTransformSize(layout, MAIN_MENU_BUTTON_WIDTH, MAIN_MENU_BUTTON_HEIGHT);
-    width = buttonSize.width;
-    height = buttonSize.height;
-
-    if (width == MAIN_MENU_BUTTON_WIDTH && height == MAIN_MENU_BUTTON_HEIGHT) {
-        normalData = _mainMenuButtonNormalFrmImage.getData();
-        pressedData = _mainMenuButtonPressedFrmImage.getData();
-        return;
-    }
-
-    gMainMenuScaledButtonData.assign(width * height * 2, 0);
-    normalData = gMainMenuScaledButtonData.data();
-    pressedData = normalData + width * height;
-
-    blitBuffer2DScaledTrans(_mainMenuButtonNormalFrmImage.getBuffer(), Buffer2D(normalData, width, height), 0, 0, width, height);
-    blitBuffer2DScaledTrans(_mainMenuButtonPressedFrmImage.getBuffer(), Buffer2D(pressedData, width, height), 0, 0, width, height);
-}
-
 static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
 {
+    MainMenuSize buttonSize = mainMenuTransformSize(layout, MAIN_MENU_BUTTON_WIDTH, MAIN_MENU_BUTTON_HEIGHT);
+    int buttonWidth = buttonSize.width;
+    int buttonHeight = buttonSize.height;
     unsigned char* buttonNormalData;
     unsigned char* buttonPressedData;
-    int buttonWidth;
-    int buttonHeight;
-    mainMenuGetButtonBuffers(layout, buttonNormalData, buttonPressedData, buttonWidth, buttonHeight);
+    if (buttonWidth == MAIN_MENU_BUTTON_WIDTH && buttonHeight == MAIN_MENU_BUTTON_HEIGHT) {
+        buttonNormalData = _mainMenuButtonNormalFrmImage.getData();
+        buttonPressedData = _mainMenuButtonPressedFrmImage.getData();
+    } else {
+        gMainMenuScaledButtonData.assign(buttonWidth * buttonHeight * 2, 0);
+        buttonNormalData = gMainMenuScaledButtonData.data();
+        buttonPressedData = buttonNormalData + buttonWidth * buttonHeight;
+
+        blitBuffer2DScaledTrans(_mainMenuButtonNormalFrmImage.getBuffer(), Buffer2D(buttonNormalData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
+        blitBuffer2DScaledTrans(_mainMenuButtonPressedFrmImage.getBuffer(), Buffer2D(buttonPressedData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
+    }
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
         MainMenuPoint buttonPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_X, MAIN_MENU_BUTTON_Y + index * MAIN_MENU_BUTTON_Y_STEP);
@@ -590,8 +547,8 @@ int mainMenuWindowInit()
     mainMenuDrawButtonLabels(layout, offsets);
 
     fontSetCurrent(oldFont);
-    _mainMenuBackgroundFrmImage.unlock();
-    gMainMenuButtonPanelFrmImage.unlock();
+    mainMenuBackgroundFrmImage.unlock();
+    mainMenuButtonPanelFrmImage.unlock();
 
     gMainMenuWindowInitialized = true;
     gMainMenuWindowHidden = true;
@@ -610,10 +567,10 @@ void mainMenuWindowFree()
     }
 
     gMainMenuScaledButtonData.clear();
-    gMainMenuButtonPanelFrmImage.unlock();
+    mainMenuButtonPanelFrmImage.unlock();
     _mainMenuButtonPressedFrmImage.unlock();
     _mainMenuButtonNormalFrmImage.unlock();
-    _mainMenuBackgroundFrmImage.unlock();
+    mainMenuBackgroundFrmImage.unlock();
 
     if (gMainMenuWindow != -1) {
         windowDestroy(gMainMenuWindow);
