@@ -68,22 +68,22 @@ static void _removeFadeSound(FadeSound* fadeSound);
 static void _fadeSounds();
 static int _internalSoundFade(Sound* sound, int duration, int targetVolume, bool pause);
 
-// 0x51D478
+// 0x51D478 fadeHead
 static FadeSound* _fadeHead = nullptr;
 
-// 0x51D47C
+// 0x51D47C fadeFreeList
 static FadeSound* _fadeFreeList = nullptr;
 
-// 0x51D488
+// 0x51D488 mallocPtr_2
 static MallocProc* gSoundMallocProc = soundMallocProcDefaultImpl;
 
-// 0x51D48C
+// 0x51D48C reallocPtr_2
 static ReallocProc* gSoundReallocProc = soundReallocProcDefaultImpl;
 
-// 0x51D490
+// 0x51D490 freePtr_2
 static FreeProc* gSoundFreeProc = soundFreeProcDefaultImpl;
 
-// 0x51D494
+// 0x51D494 defaultStream
 static SoundFileIO gSoundDefaultFileIO = {
     soundOpenData,
     soundCloseData,
@@ -95,10 +95,10 @@ static SoundFileIO gSoundDefaultFileIO = {
     -1,
 };
 
-// 0x51D4B4
+// 0x51D4B4 nameMangler
 static SoundFileNameMangler* gSoundFileNameMangler = soundFileManglerDefaultImpl;
 
-// 0x51D4B8
+// 0x51D4B8 errorMsgs
 static const char* gSoundErrorDescriptions[SOUND_ERR_COUNT] = {
     "sound.c: No error",
     "sound.c: SOS driver not loaded",
@@ -135,33 +135,33 @@ static const char* gSoundErrorDescriptions[SOUND_ERR_COUNT] = {
     "sound.c: unknown error",
 };
 
-// 0x668150
+// 0x668150 soundErrorno
 static int gSoundLastError;
 
-// 0x668154
+// 0x668154 masterVol
 static int _masterVol;
 
-// 0x66815C
+// 0x66815C sampleRate
 static int _sampleRate;
 
 // Number of sounds currently playing.
 //
-// 0x668160
+// 0x668160 numSounds
 static int _numSounds;
 
-// 0x668164
+// 0x668164 deviceInit
 static int _deviceInit;
 
-// 0x668168
+// 0x668168 dataSize
 static int _dataSize;
 
-// 0x66816C
+// 0x66816C numBuffers
 static int _numBuffers;
 
-// 0x668170
+// 0x668170 shouldUseSound
 static bool gSoundInitialized;
 
-// 0x668174
+// 0x668174 soundMgrList
 static Sound* gSoundListHead;
 
 static SDL_TimerID gFadeSoundsTimerId = 0;

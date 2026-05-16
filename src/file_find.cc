@@ -7,7 +7,7 @@
 
 namespace fallout {
 
-// 0x4E6380
+// 0x4E6380 xsys_findfirst
 bool fileFindFirst(const char* path, DirectoryFileFindData* findData)
 {
 #if defined(_WIN32)
@@ -58,7 +58,7 @@ bool fileFindFirst(const char* path, DirectoryFileFindData* findData)
     return true;
 }
 
-// 0x4E63A8
+// 0x4E63A8 xsys_findnext
 bool fileFindNext(DirectoryFileFindData* findData)
 {
 #if defined(_WIN32)
@@ -87,7 +87,7 @@ bool fileFindNext(DirectoryFileFindData* findData)
     return true;
 }
 
-// 0x4E63CC
+// 0x4E63CC xsys_findclose
 bool findFindClose(DirectoryFileFindData* findData)
 {
 #if defined(_WIN32)

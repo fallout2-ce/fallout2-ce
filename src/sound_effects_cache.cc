@@ -46,27 +46,27 @@ static int soundEffectsCacheSoundDecoderReadHandler(void* data, void* buf, unsig
 static const char* off_50DE04 = "";
 
 // sfxc_initialized
-// 0x51C8F0
+// 0x51C8F0 sfxc_initialized
 static bool gSoundEffectsCacheInitialized = false;
 
-// 0x51C8F4
+// 0x51C8F4 sfxc_cmpr
 static int _sfxc_cmpr = 1;
 
 // sfxc_pcache
-// 0x51C8EC
+// 0x51C8EC sfxc_pcache
 static Cache* gSoundEffectsCache = nullptr;
 
 // sfxc_dlevel
-// 0x51C8DC
+// 0x51C8DC sfxc_dlevel
 static int gSoundEffectsCacheDebugLevel = INT_MAX;
 
-// 0x51C8E0
+// 0x51C8E0 sfxc_effect_path
 static char* gSoundEffectsCacheEffectsPath = nullptr;
 
-// 0x51C8E4
+// 0x51C8E4 sfxc_handle_list
 static SoundEffect* gSoundEffects = nullptr;
 
-// 0x51C8E8
+// 0x51C8E8 sfxc_files_open
 static int _sfxc_files_open = 0;
 
 // sfxc_init

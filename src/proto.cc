@@ -40,19 +40,19 @@ static void _proto_remove_some_list(int type);
 static void _proto_remove_list(int type);
 static int _proto_new_id(int type);
 
-// 0x50CF3C
+// 0x50CF3C aProto_0
 static char _aProto_0[] = "proto\\";
 
-// 0x50D1B0
+// 0x50D1B0 aDrugStatSpecia
 static char _aDrugStatSpecia[] = "Drug Stat (Special)";
 
-// 0x50D1C4
+// 0x50D1C4 aNone_1
 static char _aNone_1[] = "None";
 
-// 0x51C18C
+// 0x51C18C cd_path_base
 char _cd_path_base[COMPAT_MAX_PATH];
 
-// 0x51C290
+// 0x51C290 protoLists
 static ProtoList _protoLists[11] = {
     { nullptr, nullptr, 0, 1 },
     { nullptr, nullptr, 0, 1 },
@@ -67,7 +67,7 @@ static ProtoList _protoLists[11] = {
     { nullptr, nullptr, 0, 0 },
 };
 
-// 0x51C340
+// 0x51C340 proto_sizes
 static const size_t _proto_sizes[11] = {
     sizeof(ItemProto), // 0x84
     sizeof(CritterProto), // 0x1A0
@@ -82,11 +82,11 @@ static const size_t _proto_sizes[11] = {
     0,
 };
 
-// 0x51C36C
+// 0x51C36C protos_been_initialized
 static int _protos_been_initialized = 0;
 
 // obj_dude_proto
-// 0x51C370
+// 0x51C370 pc_proto
 static CritterProto gDudeProto = {
     0x1000000,
     -1,
@@ -109,28 +109,28 @@ static CritterProto gDudeProto = {
     0,
 };
 
-// 0x51C534
+// 0x51C534 proto_path_base
 static char* _proto_path_base = _aProto_0;
 
-// 0x51C538
+// 0x51C538 init_true
 static int _init_true = 0;
 
-// 0x51C53C
+// 0x51C53C retval
 static int _retval = 0;
 
-// 0x66452C
+// 0x66452C mp_perk_code_None
 static char* _mp_perk_code_None;
 
-// 0x664530
+// 0x664530 mp_perk_code_strs
 static char* _mp_perk_code_strs[PERK_COUNT];
 
-// 0x66470C
+// 0x66470C mp_critter_stats_list
 static char* _mp_critter_stats_list;
 
-// 0x664710
+// 0x664710 critter_stats_list_None
 static char* _critter_stats_list_None;
 
-// 0x664714
+// 0x664714 critter_stats_list_strs
 static char* _critter_stats_list_strs[STAT_COUNT];
 
 // Message list by object type
@@ -141,51 +141,51 @@ static char* _critter_stats_list_strs[STAT_COUNT];
 // 4 - pro_tile.msg
 // 5 - pro_misc.msg
 //
-// 0x6647AC
+// 0x6647AC proto_msg_files
 static MessageList _proto_msg_files[6];
 
-// 0x6647DC
+// 0x6647DC race_type_strs
 static char* gRaceTypeNames[RACE_TYPE_COUNT];
 
-// 0x6647E4
+// 0x6647E4 scenery_pro_type
 static char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
 
 // proto.msg
 //
-// 0x6647FC
+// 0x6647FC proto_main_msg_file
 MessageList gProtoMessageList;
 
-// 0x664804
+// 0x664804 item_pro_material
 static char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
 
 // "<None>" from proto.msg
 //
-// 0x664824
+// 0x664824 proto_none_str
 char* _proto_none_str;
 
-// 0x664828
+// 0x664828 body_type_strs
 static char* gBodyTypeNames[BODY_TYPE_COUNT];
 
-// 0x664834
+// 0x664834 item_pro_type
 char* gItemTypeNames[ITEM_TYPE_COUNT];
 
 // 0x66484C
 static char* gDamageTypeNames[DAMAGE_TYPE_COUNT];
 
-// 0x66486C
+// 0x66486C cal_type_strs
 static char* gCaliberTypeNames[CALIBER_TYPE_COUNT];
 
 // Perk names.
 //
-// 0x6648B8
+// 0x6648B8 perk_code_strs
 static char** _perk_code_strs;
 
 // Stat names.
 //
-// 0x6648BC
+// 0x6648BC critter_stats_list
 static char** _critter_stats_list;
 
-// 0x49E270
+// 0x49E270 proto_make_path
 void proto_make_path(char* path, int pid)
 {
     strcpy(path, _cd_path_base);
@@ -197,7 +197,7 @@ void proto_make_path(char* path, int pid)
 
 // Append proto file name to proto_path from proto.lst.
 //
-// 0x49E758
+// 0x49E758 proto_list_str
 int _proto_list_str(int pid, char* proto_path)
 {
     if (pid == -1) {
@@ -247,13 +247,13 @@ int _proto_list_str(int pid, char* proto_path)
     return 0;
 }
 
-// 0x49E984
+// 0x49E984 proto_size
 size_t proto_size(int type)
 {
     return type >= 0 && type < OBJ_TYPE_COUNT ? _proto_sizes[type] : 0;
 }
 
-// 0x49E99C
+// 0x49E99C proto_action_can_use
 bool _proto_action_can_use(int pid)
 {
     Proto* proto;
@@ -272,7 +272,7 @@ bool _proto_action_can_use(int pid)
     return false;
 }
 
-// 0x49E9DC
+// 0x49E9DC proto_action_can_use_on
 bool _proto_action_can_use_on(int pid)
 {
     Proto* proto;
@@ -291,7 +291,7 @@ bool _proto_action_can_use_on(int pid)
     return false;
 }
 
-// 0x49EA24
+// 0x49EA24 proto_action_can_talk_to
 bool _proto_action_can_talk_to(int pid)
 {
     Proto* proto;
@@ -312,7 +312,7 @@ bool _proto_action_can_talk_to(int pid)
 
 // Likely returns true if item with given pid can be picked up.
 //
-// 0x49EA5C
+// 0x49EA5C proto_action_can_pickup
 int _proto_action_can_pickup(int pid)
 {
     if (PID_TYPE(pid) != OBJ_TYPE_ITEM) {
@@ -331,7 +331,7 @@ int _proto_action_can_pickup(int pid)
     return true;
 }
 
-// 0x49EAA4
+// 0x49EAA4 proto_get_msg_info
 char* protoGetMessage(int pid, int message)
 {
     char* messageText = _proto_none_str;
@@ -352,7 +352,7 @@ char* protoGetMessage(int pid, int message)
     return messageText;
 }
 
-// 0x49EAFC
+// 0x49EAFC proto_name
 char* protoGetName(int pid)
 {
     if (pid == 0x1000000) {
@@ -362,13 +362,13 @@ char* protoGetName(int pid)
     return protoGetMessage(pid, PROTOTYPE_MESSAGE_NAME);
 }
 
-// 0x49EB1C
+// 0x49EB1C proto_description
 char* protoGetDescription(int pid)
 {
     return protoGetMessage(pid, PROTOTYPE_MESSAGE_DESCRIPTION);
 }
 
-// 0x49EB2C
+// 0x49EB2C proto_item_init
 int proto_item_init(Proto* proto, int pid)
 {
     int protoNum = pid & 0xFFFFFF;
@@ -396,7 +396,7 @@ int proto_item_init(Proto* proto, int pid)
     return 0;
 }
 
-// 0x49EBFC
+// 0x49EBFC proto_item_subdata_init
 int proto_item_subdata_init(Proto* proto, int type)
 {
     int index;
@@ -479,7 +479,7 @@ int proto_item_subdata_init(Proto* proto, int type)
     return 0;
 }
 
-// 0x49EDB4
+// 0x49EDB4 proto_critter_init
 int proto_critter_init(Proto* proto, int pid)
 {
     if (!_protos_been_initialized) {
@@ -514,7 +514,7 @@ int proto_critter_init(Proto* proto, int pid)
     return 0;
 }
 
-// 0x49EEA4
+// 0x49EEA4 clear_pupdate_data
 void objectDataReset(Object* obj)
 {
     // NOTE: Original code is slightly different. It uses loop to zero object
@@ -522,7 +522,7 @@ void objectDataReset(Object* obj)
     memset(&(obj->data), 0, sizeof(obj->data));
 }
 
-// 0x49EEB8
+// 0x49EEB8 proto_read_CombatData
 static int objectCritterCombatDataRead(CritterCombatData* data, File* stream)
 {
     if (fileReadInt32(stream, &(data->damageLastTurn)) == -1) return -1;
@@ -536,7 +536,7 @@ static int objectCritterCombatDataRead(CritterCombatData* data, File* stream)
     return 0;
 }
 
-// 0x49EF40
+// 0x49EF40 proto_write_CombatData
 static int objectCritterCombatDataWrite(CritterCombatData* data, File* stream)
 {
     if (fileWriteInt32(stream, data->damageLastTurn) == -1) return -1;
@@ -550,7 +550,7 @@ static int objectCritterCombatDataWrite(CritterCombatData* data, File* stream)
     return 0;
 }
 
-// 0x49F004
+// 0x49F004 proto_read_protoUpdateData
 int objectDataRead(Object* obj, File* stream)
 {
     Proto* proto;
@@ -647,7 +647,7 @@ int objectDataRead(Object* obj, File* stream)
     return 0;
 }
 
-// 0x49F428
+// 0x49F428 proto_write_protoUpdateData
 int objectDataWrite(Object* obj, File* stream)
 {
     Proto* proto;
@@ -730,7 +730,7 @@ int objectDataWrite(Object* obj, File* stream)
     return 0;
 }
 
-// 0x49F73C
+// 0x49F73C proto_update_gen
 static int _proto_update_gen(Object* obj)
 {
     Proto* proto;
@@ -803,7 +803,7 @@ static int _proto_update_gen(Object* obj)
     return 0;
 }
 
-// 0x49F8A0
+// 0x49F8A0 proto_update_init
 int _proto_update_init(Object* obj)
 {
     if (!_protos_been_initialized) {
@@ -843,7 +843,7 @@ int _proto_update_init(Object* obj)
     return 0;
 }
 
-// 0x49F984
+// 0x49F984 proto_dude_update_gender
 int _proto_dude_update_gender()
 {
     Proto* proto;
@@ -881,7 +881,7 @@ int _proto_dude_update_gender()
 }
 
 // proto_dude_init
-// 0x49FA64
+// 0x49FA64 proto_dude_init
 int _proto_dude_init(const char* path)
 {
     gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, 0, 0);
@@ -935,7 +935,7 @@ int _proto_dude_init(const char* path)
     return 0;
 }
 
-// 0x49FBBC
+// 0x49FBBC proto_scenery_init
 int proto_scenery_init(Proto* proto, int pid)
 {
     int num = pid & 0xFFFFFF;
@@ -959,7 +959,7 @@ int proto_scenery_init(Proto* proto, int pid)
     return 0;
 }
 
-// 0x49FC74
+// 0x49FC74 proto_scenery_subdata_init
 int proto_scenery_subdata_init(Proto* proto, int type)
 {
     switch (type) {
@@ -990,7 +990,7 @@ int proto_scenery_subdata_init(Proto* proto, int type)
     return 0;
 }
 
-// 0x49FCFC
+// 0x49FCFC proto_wall_init
 int proto_wall_init(Proto* proto, int pid)
 {
     int num = pid & 0xFFFFFF;
@@ -1011,7 +1011,7 @@ int proto_wall_init(Proto* proto, int pid)
     return 0;
 }
 
-// 0x49FD84
+// 0x49FD84 proto_tile_init
 int proto_tile_init(Proto* proto, int pid)
 {
     int num = pid & 0xFFFFFF;
@@ -1030,7 +1030,7 @@ int proto_tile_init(Proto* proto, int pid)
     return 0;
 }
 
-// 0x49FDFC
+// 0x49FDFC proto_misc_init
 int proto_misc_init(Proto* proto, int pid)
 {
     int num = pid & 0xFFFFFF;
@@ -1049,7 +1049,7 @@ int proto_misc_init(Proto* proto, int pid)
     return 0;
 }
 
-// 0x49FE74
+// 0x49FE74 proto_copy_proto
 int proto_copy_proto(int srcPid, int dstPid)
 {
     int srcType;
@@ -1077,7 +1077,7 @@ int proto_copy_proto(int srcPid, int dstPid)
     return 0;
 }
 
-// 0x49FEDC
+// 0x49FEDC proto_is_subtype
 bool proto_is_subtype(Proto* proto, int subtype)
 {
     if (subtype == -1) {
@@ -1095,7 +1095,7 @@ bool proto_is_subtype(Proto* proto, int subtype)
 }
 
 // proto_data_member
-// 0x49FFD8
+// 0x49FFD8 proto_data_member
 int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
 {
     Proto* proto;
@@ -1329,7 +1329,7 @@ int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
 }
 
 // proto_init
-// 0x4A0390
+// 0x4A0390 proto_init
 int protoInit()
 {
     size_t len;
@@ -1462,7 +1462,7 @@ int protoInit()
     return 0;
 }
 
-// 0x4A0814
+// 0x4A0814 proto_reset
 void protoReset()
 {
     int i;
@@ -1486,7 +1486,7 @@ void protoReset()
     _proto_dude_init("premade\\player.gcd");
 }
 
-// 0x4A0898
+// 0x4A0898 proto_exit
 void protoExit()
 {
     int i;
@@ -1506,7 +1506,7 @@ void protoExit()
 
 // Count .pro lines in .lst files.
 //
-// 0x4A08E0
+// 0x4A08E0 proto_header_load
 static int _proto_header_load()
 {
     for (int index = 0; index < 6; index++) {
@@ -1549,7 +1549,7 @@ static int _proto_header_load()
     return 0;
 }
 
-// 0x4A0AEC
+// 0x4A0AEC proto_read_item_data
 static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
 {
     switch (type) {
@@ -1625,7 +1625,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
     return 0;
 }
 
-// 0x4A0ED0
+// 0x4A0ED0 proto_read_scenery_data
 static int protoSceneryDataRead(SceneryProtoData* scenery_data, int type, File* stream)
 {
     switch (type) {
@@ -1659,7 +1659,7 @@ static int protoSceneryDataRead(SceneryProtoData* scenery_data, int type, File* 
 }
 
 // read .pro file
-// 0x4A0FA0
+// 0x4A0FA0 proto_read_protoSubNode
 static int protoRead(Proto* proto, File* stream)
 {
     if (fileReadInt32(stream, &(proto->pid)) == -1) return -1;
@@ -1735,7 +1735,7 @@ static int protoRead(Proto* proto, File* stream)
     return -1;
 }
 
-// 0x4A1390
+// 0x4A1390 proto_write_item_data
 static int protoItemDataWrite(ItemProtoData* item_data, int type, File* stream)
 {
     switch (type) {
@@ -1811,7 +1811,7 @@ static int protoItemDataWrite(ItemProtoData* item_data, int type, File* stream)
     return 0;
 }
 
-// 0x4A16E4
+// 0x4A16E4 proto_write_scenery_data
 static int protoSceneryDataWrite(SceneryProtoData* scenery_data, int type, File* stream)
 {
     switch (type) {
@@ -1844,7 +1844,7 @@ static int protoSceneryDataWrite(SceneryProtoData* scenery_data, int type, File*
     return 0;
 }
 
-// 0x4A17B4
+// 0x4A17B4 proto_write_protoSubNode
 static int protoWrite(Proto* proto, File* stream)
 {
     if (fileWriteInt32(stream, proto->pid) == -1) return -1;
@@ -1918,7 +1918,7 @@ static int protoWrite(Proto* proto, File* stream)
     return -1;
 }
 
-// 0x4A1B30
+// 0x4A1B30 proto_save_pid
 int _proto_save_pid(int pid)
 {
     Proto* proto;
@@ -1944,7 +1944,7 @@ int _proto_save_pid(int pid)
     return rc;
 }
 
-// 0x4A1C3C
+// 0x4A1C3C proto_load_pid
 static int _proto_load_pid(int pid, Proto** protoPtr)
 {
     char path[COMPAT_MAX_PATH];
@@ -1976,7 +1976,7 @@ static int _proto_load_pid(int pid, Proto** protoPtr)
     return 0;
 }
 
-// 0x4A1D98
+// 0x4A1D98 proto_find_free_subnode
 static int _proto_find_free_subnode(int type, Proto** protoPtr)
 {
     Proto* proto = (Proto*)internal_malloc(proto_size(type));
@@ -2027,7 +2027,7 @@ static int _proto_find_free_subnode(int type, Proto** protoPtr)
     return 0;
 }
 
-// 0x4A1E90
+// 0x4A1E90 proto_new
 int proto_new(int* pid, int type)
 {
     Proto* proto;
@@ -2071,7 +2071,7 @@ int proto_new(int* pid, int type)
 
 // Evict top most proto cache block.
 //
-// 0x4A2040
+// 0x4A2040 proto_remove_some_list
 static void _proto_remove_some_list(int type)
 {
     ProtoList* protoList = &(_protoLists[type]);
@@ -2090,7 +2090,7 @@ static void _proto_remove_some_list(int type)
 
 // Clear proto cache of given type.
 //
-// 0x4A2094
+// 0x4A2094 proto_remove_list
 static void _proto_remove_list(int type)
 {
     ProtoList* protoList = &(_protoLists[type]);
@@ -2112,7 +2112,7 @@ static void _proto_remove_list(int type)
 
 // Clear all proto cache.
 //
-// 0x4A20F4
+// 0x4A20F4 proto_remove_all
 void _proto_remove_all()
 {
     for (int index = 0; index < 6; index++) {
@@ -2121,7 +2121,7 @@ void _proto_remove_all()
 }
 
 // proto_ptr
-// 0x4A2108
+// 0x4A2108 proto_ptr
 int protoGetProto(int pid, Proto** protoPtr)
 {
     *protoPtr = nullptr;
@@ -2157,7 +2157,7 @@ int protoGetProto(int pid, Proto** protoPtr)
     return _proto_load_pid(pid, protoPtr);
 }
 
-// 0x4A21DC
+// 0x4A21DC proto_new_id
 static int _proto_new_id(int type)
 {
     int result = _protoLists[type].max_entries_num;
@@ -2166,13 +2166,13 @@ static int _proto_new_id(int type)
     return result;
 }
 
-// 0x4A2214
+// 0x4A2214 proto_max_id
 int proto_max_id(int type)
 {
     return _protoLists[type].max_entries_num;
 }
 
-// 0x4A22C0
+// 0x4A22C0 ResetPlayer
 int _ResetPlayer()
 {
     Proto* proto;

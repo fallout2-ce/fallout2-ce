@@ -52,40 +52,40 @@ static const int gPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
     9, // lilreddn.frm - little red button down
 };
 
-// 0x5197C0
+// 0x5197C0 opgrphs
 static const int gOptionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
     220, // opbase.frm - character editor
     222, // opbtnon.frm - character editor
     221, // opbtnoff.frm - character editor
 };
 
-// 0x6637E8
+// 0x6637E8 optn_msgfl
 static MessageList gPreferencesMessageList;
 
-// 0x663840
+// 0x663840 optnmesg
 static MessageListItem gPreferencesMessageListItem;
 
-// 0x663878
+// 0x663878 opbtns
 static unsigned char* _opbtns[OPTIONS_WINDOW_BUTTONS_COUNT];
 
-// 0x6638FC
+// 0x6638FC mouse_3d_was_on
 static bool gOptionsWindowGameMouseObjectsWasVisible;
 
-// 0x663900
+// 0x663900 optnwin
 static int gOptionsWindow;
 
-// 0x663908
+// 0x663908 winbuf
 static unsigned char* gOptionsWindowBuffer;
 
-// 0x66398C
+// 0x66398C fontsave_3
 static int gOptionsWindowOldFont;
 
-// 0x663994
+// 0x663994 bk_enable_4
 static bool gOptionsWindowIsoWasEnabled;
 
 static FrmImage _optionsFrmImages[OPTIONS_WINDOW_FRM_COUNT];
 
-// 0x48FC50
+// 0x48FC50 do_optionsFunc
 int showOptions()
 {
     ScopedGameMode gm(GameMode::kOptions);
@@ -168,7 +168,7 @@ int showOptions()
     return rc;
 }
 
-// 0x48FE14
+// 0x48FE14 OptnStart
 static int optionsWindowInit()
 {
     gOptionsWindowOldFont = fontGetCurrent();
@@ -299,7 +299,7 @@ static int optionsWindowInit()
     return 0;
 }
 
-// 0x490244
+// 0x490244 OptnEnd
 static int optionsWindowFree()
 {
     windowDestroy(gOptionsWindow);
@@ -327,7 +327,7 @@ static int optionsWindowFree()
     return 0;
 }
 
-// 0x4902B0
+// 0x4902B0 PauseWindow
 // preserveWorldState is always false
 int showPause(bool preserveWorldState)
 {
@@ -498,7 +498,7 @@ int showPause(bool preserveWorldState)
     return 0;
 }
 
-// 0x490748
+// 0x490748 ShadeScreen
 static void _ShadeScreen(bool preserveWorldState)
 {
     if (preserveWorldState) {
@@ -519,7 +519,7 @@ static void _ShadeScreen(bool preserveWorldState)
 }
 
 // init_options_menu
-// 0x4928B8
+// 0x4928B8 init_options_menu
 int _init_options_menu()
 {
     preferencesInit();

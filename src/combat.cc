@@ -149,32 +149,32 @@ static void damageModCalculateGlovz(DamageCalculationContext* context);
 static int damageModGlovzDivRound(int dividend, int divisor);
 static void damageModCalculateYaam(DamageCalculationContext* context);
 
-// 0x500B50
+// 0x500B50 a_1
 static char _a_1[] = ".";
 
-// 0x51093C
+// 0x51093C combat_turn_running
 static int _combat_turn_running = 0;
 
-// 0x510940
+// 0x510940 combatNumTurns
 int _combatNumTurns = 0;
 
 static int combatTurnHookResult = 0;
 
-// 0x510944
+// 0x510944 combat_state
 unsigned int gCombatState = COMBAT_STATE_0x02;
 
-// 0x510948
+// 0x510948 aiInfoList
 static CombatAiInfo* _aiInfoList = nullptr;
 
-// 0x51094C
+// 0x51094C gcsd
 static CombatStartData* _gcsd = nullptr;
 
-// 0x510950
+// 0x510950 combat_call_display
 static bool _combat_call_display = false;
 
 // Accuracy modifiers for hit locations.
 //
-// 0x510954
+// 0x510954 hit_location_penalty
 static int hit_location_penalty_default[HIT_LOCATION_COUNT] = {
     -40,
     -30,
@@ -191,7 +191,7 @@ static int hit_location_penalty[HIT_LOCATION_COUNT];
 
 // Critical hit tables for every kill type.
 //
-// 0x510978
+// 0x510978 crit_succ_eff
 static CriticalHitDescription gCriticalHitTables[SFALL_KILL_TYPE_COUNT][HIT_LOCATION_COUNT][CRTICIAL_EFFECT_COUNT] = {
     // KILL_TYPE_MAN
     {
@@ -1793,7 +1793,7 @@ static CriticalHitDescription gCriticalHitTables[SFALL_KILL_TYPE_COUNT][HIT_LOCA
 
 // Player's criticals effects.
 //
-// 0x5179B0
+// 0x5179B0 pc_crit_succ_eff
 static CriticalHitDescription gPlayerCriticalHitTable[HIT_LOCATION_COUNT][CRTICIAL_EFFECT_COUNT] = {
     {
         { 3, 0, -1, 0, 0, 6500, 5000 },
@@ -1869,15 +1869,15 @@ static CriticalHitDescription gPlayerCriticalHitTable[HIT_LOCATION_COUNT][CRTICI
     },
 };
 
-// 0x517F98
+// 0x517F98 combat_end_due_to_load
 static int _combat_end_due_to_load = 0;
 
-// 0x517F9C
+// 0x517F9C combat_cleanup_enabled
 static bool _combat_cleanup_enabled = false;
 
 // Provides effects caused by failing weapons.
 //
-// 0x517FA0
+// 0x517FA0 cf_table
 static const int _cf_table[WEAPON_CRITICAL_FAILURE_TYPE_COUNT][WEAPON_CRITICAL_FAILURE_EFFECT_COUNT] = {
     { 0, DAM_LOSE_TURN, DAM_LOSE_TURN, DAM_HURT_SELF | DAM_KNOCKED_DOWN, DAM_CRIP_RANDOM },
     { 0, DAM_LOSE_TURN, DAM_DROP, DAM_RANDOM_HIT, DAM_HIT_SELF },
@@ -1888,7 +1888,7 @@ static const int _cf_table[WEAPON_CRITICAL_FAILURE_TYPE_COUNT][WEAPON_CRITICAL_F
     { 0, DAM_LOSE_TURN, DAM_RANDOM_HIT, DAM_DESTROY, DAM_EXPLODE | DAM_LOSE_TURN | DAM_ON_FIRE },
 };
 
-// 0x51802C
+// 0x51802C call_ty
 static const int _call_ty[4] = {
     122,
     188,
@@ -1896,7 +1896,7 @@ static const int _call_ty[4] = {
     316,
 };
 
-// 0x51803C
+// 0x51803C hit_loc_left
 static const int _hit_loc_left[4] = {
     HIT_LOCATION_HEAD,
     HIT_LOCATION_EYES,
@@ -1904,7 +1904,7 @@ static const int _hit_loc_left[4] = {
     HIT_LOCATION_RIGHT_LEG,
 };
 
-// 0x51804C
+// 0x51804C hit_loc_right
 static const int _hit_loc_right[4] = {
     HIT_LOCATION_TORSO,
     HIT_LOCATION_GROIN,
@@ -1912,62 +1912,62 @@ static const int _hit_loc_right[4] = {
     HIT_LOCATION_LEFT_LEG,
 };
 
-// 0x56D2B0
+// 0x56D2B0 main_ctd
 static Attack _main_ctd;
 
 // combat.msg
 //
-// 0x56D368
+// 0x56D368 combat_message_file
 static MessageList gCombatMessageList;
 
-// 0x56D370
+// 0x56D370 call_target
 static Object* gCalledShotCritter;
 
-// 0x56D374
+// 0x56D374 call_win
 static int gCalledShotWindow;
 
-// 0x56D378
+// 0x56D378 combat_elev
 static int _combat_elev;
 
-// 0x56D37C
+// 0x56D37C list_total
 static int _list_total;
 
 // Probably last who_hit_me of obj_dude
 //
-// 0x56D380
+// 0x56D380 combat_ending_guy
 static Object* _combat_ending_guy;
 
-// 0x56D384
+// 0x56D384 list_noncom
 static int _list_noncom;
 
-// 0x56D388
+// 0x56D388 combat_turn_obj
 static Object* _combat_turn_obj;
 
 // target_highlight
 //
-// 0x56D38C
+// 0x56D38C combat_highlight
 static int _combat_highlight;
 
-// 0x56D390
+// 0x56D390 combat_list
 static Object** _combat_list;
 
-// 0x56D394
+// 0x56D394 list_com
 static int _list_com;
 
 // Experience received for killing critters during current combat.
 //
-// 0x56D398
+// 0x56D398 combat_exps
 static int _combat_exps;
 
 // bonus action points from BONUS_MOVE perk.
 //
-// 0x56D39C
+// 0x56D39C combat_free_move
 int _combat_free_move;
 
-// 0x56D3A0
+// 0x56D3A0 shoot_ctd
 static Attack _shoot_ctd;
 
-// 0x56D458
+// 0x56D458 explosion_ctd
 static Attack _explosion_ctd;
 
 static CriticalHitDescription gBaseCriticalHitTables[SFALL_KILL_TYPE_COUNT][HIT_LOCATION_COUNT][CRTICIAL_EFFECT_COUNT];

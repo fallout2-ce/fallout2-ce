@@ -77,7 +77,7 @@ static const int gHealableDamageFlags[HEALABLE_DAMAGE_FLAGS_LENGTH] = {
     DAM_CRIP_LEG_LEFT,
 };
 
-// 0x51D118
+// 0x51D118 skill_data
 static SkillDescription gSkillDescriptions[SKILL_COUNT] = {
     { nullptr, nullptr, nullptr, 28, 5, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
     { nullptr, nullptr, nullptr, 29, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
@@ -99,26 +99,26 @@ static SkillDescription gSkillDescriptions[SKILL_COUNT] = {
     { nullptr, nullptr, nullptr, 45, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
 };
 
-// 0x51D430
+// 0x51D430 gIsSteal
 int _gIsSteal = 0;
 
 // Something about stealing, base value?
 //
-// 0x51D434
+// 0x51D434 gStealCount
 int _gStealCount = 0;
 
-// 0x51D438
+// 0x51D438 gStealSize
 int _gStealSize = 0;
 
-// 0x667F98
+// 0x667F98 timesSkillUsed
 static int _timesSkillUsed[SKILL_COUNT][SKILLS_MAX_USES_PER_DAY];
 
-// 0x668070
+// 0x668070 tag_skill
 static int gTaggedSkills[NUM_TAGGED_SKILLS];
 
 // skill.msg
 //
-// 0x668080
+// 0x668080 skill_message_file
 static MessageList gSkillsMessageList;
 
 // 0x4AA318
@@ -1104,6 +1104,8 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         catchRoll = randomRoll(catchChance, 0, &howMuch);
     }
 
+    // CE: skip "You steal/plant the..." messages when using steal to trade with companions
+    bool skipMessages = objectIsPartyMember(target);
     MessageListItem messageListItem;
     char text[60];
 
@@ -1111,7 +1113,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         // 571: You steal the %s.
         // 573: You plant the %s.
         messageListItem.num = isPlanting ? 573 : 571;
-        if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
+        if (!skipMessages && messageListGetItem(&gSkillsMessageList, &messageListItem)) {
             snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
             displayMonitorAddMessage(text);
         }
@@ -1121,7 +1123,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         // 570: You're caught stealing the %s.
         // 572: You're caught planting the %s.
         messageListItem.num = isPlanting ? 572 : 570;
-        if (messageListGetItem(&gSkillsMessageList, &messageListItem)) {
+        if (!skipMessages && messageListGetItem(&gSkillsMessageList, &messageListItem)) {
             snprintf(text, sizeof(text), messageListItem.text, objectGetName(item));
             displayMonitorAddMessage(text);
         }

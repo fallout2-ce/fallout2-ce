@@ -143,6 +143,7 @@ In time this stuff will receive in-game interface, right now you have to do it m
 * Expanded 2-column inventory
 * Expanded 4-row barter screen
 * Expanded AP bar
+* Party members can loot and barter in place of PC
 * Increased pathfinding nodes 5x for more accurate pathfinding
 * Ctrl-click to quickly move items when bartering, looting, or stealing
 * _a_ to select "all" when selecting item quantity

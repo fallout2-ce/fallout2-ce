@@ -8,6 +8,7 @@
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
+#include "automap.h"
 #include "character_editor.h"
 #include "color.h"
 #include "config.h"
@@ -48,6 +49,7 @@
 #include "tile.h"
 #include "window_manager.h"
 #include "window_manager_private.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -79,8 +81,9 @@ static int mapperPickTile(int* outOffset);
 static void handle_new_map(int* a1, int* a2);
 static int mapper_mark_exit_grid();
 static void mapper_mark_all_exit_grids();
-static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object** pHlObj1, Object* dudeToRestore);
+static void mapper_enter_play_mode(Object** pHlObj1);
 static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object* dudeToRestore);
+static void mapper_remove_tmp_map_files();
 
 // TODO: Underlying menu/pulldown interface wants menu items to be non-const,
 // needs some refactoring.
@@ -131,6 +134,9 @@ static char kArtToProtos[] = " Art => New Protos ";
 static char kSwapPrototypse[] = " Swap Prototypes ";
 
 static char kTmpMapName[] = "TMP$MAP#.MAP";
+
+// Stored statically in CE so it survives across enter/exit.
+static char gSavedMapName[16];
 
 // 0x559618
 int rotate_arrows_x_offs[] = {
@@ -274,6 +280,8 @@ int menu_val_0[8];
 
 // 0x6EAA60
 int menu_val_2[8];
+
+int menu_val_3[7];
 
 // 0x6EAA80
 unsigned char e_num[4][19 * 26];
@@ -531,13 +539,15 @@ constexpr int kBtnRotateRight = KEY_CTRL_ARROW_RIGHT;
 constexpr int kBtnRotateLeft = KEY_CTRL_ARROW_LEFT;
 constexpr int kBtnRoof = 'r';
 constexpr int kBtnHex = 'h';
-constexpr int kMenuHeaderFile = KEY_ALT_F;
-constexpr int kMenuHeaderTools = KEY_ALT_V;
-constexpr int kMenuHeaderScripts = KEY_ALT_T;
-constexpr int kMenuHeaderLibrarian = KEY_ALT_J;
-constexpr int kMenuBarActivation = KEY_F8;
-constexpr int kMenuBarActivationAlt = KEY_CTRL_F12;
-constexpr int kBtnEraseMap = KEY_F12;
+
+constexpr int kBtnMenuHeaderFile = KEY_ALT_F;
+constexpr int kBtnMenuHeaderTools = KEY_ALT_V;
+constexpr int kBtnMenuHeaderScripts = KEY_ALT_T;
+constexpr int kBtnMenuHeaderLibrarian = KEY_ALT_J;
+
+constexpr int kBtnPlayMode = KEY_F8;
+constexpr int kBtnRebuildProtoList = KEY_F10;
+constexpr int kBtnF8AsGame = KEY_CTRL_F12;
 
 constexpr int kBtnMoveMapElev = 4186;
 constexpr int kBtnCopyMapElev = 4188;
@@ -549,17 +559,15 @@ constexpr int kBtnMarkAllExitGrids = 5679;
 constexpr int kBtnClearMapLevel = 5666;
 constexpr int kBtnCreateAllMapTexts = 5406;
 constexpr int kBtnRebuildAllMaps = 5405;
-constexpr int kBtnSetStartHex = 5400;
-constexpr int kBtnDeleteAllSpatialScripts = 5410;
-constexpr int kBtnShowMapScript = 5544;
 
 // FILE menu pulldown keycodes
 constexpr int kBtnNew = KEY_ALT_N;
 constexpr int kBtnOpen = KEY_ALT_O;
 constexpr int kBtnSave = KEY_ALT_S;
 constexpr int kBtnSaveAs = KEY_ALT_A;
-constexpr int kBtnInfo = KEY_ALT_I;
-constexpr int kBtnLoadAllTexts = KEY_ALT_K;
+constexpr int kBtnSaveText = KEY_ALT_P;
+constexpr int kBtnInfo = KEY_ALT_K;
+constexpr int kBtnOpenFromText = KEY_ALT_I;
 
 // TOOLS menu pulldown keycodes
 constexpr int kBtnCreatePattern = KEY_ALT_U;
@@ -573,10 +581,13 @@ constexpr int kBtnClickToScroll = KEY_ALT_Z;
 
 // SCRIPTS menu pulldown keycodes
 constexpr int kBtnListScripts = KEY_LOWERCASE_I;
+constexpr int kBtnSetStartHex = 5400;
 constexpr int kBtnPlaceSpatial = KEY_LOWERCASE_S;
-constexpr int kBtnDeleteSpatial = KEY_CTRL_F8;
-constexpr int kBtnCreateScript = KEY_GRAVE;
+constexpr int kBtnDeleteSpatial = KEY_CTRL_F7;
+constexpr int kBtnDeleteAllSpatialScripts = 5410;
+constexpr int kBtnCreateScript = 96; // Unknown key code. Had no handler in original.
 constexpr int kBtnSetMapScript = KEY_ALT_W;
+constexpr int kBtnShowMapScript = 5544;
 
 // Toolbar type selection (F1–F6)
 constexpr int kBtnTypeItem = KEY_F1;
@@ -602,17 +613,41 @@ constexpr int kBtnQuit = KEY_ESCAPE;
 constexpr int kBtnClearScroll = 0x175;
 constexpr int kBtnLastProto = 0x14F;
 constexpr int kBtnGotoDudeElev = 0x147;
-constexpr int kBtnToggleInterruptWalk = KEY_CTRL_F11;
-constexpr int kBtnRotation0 = KEY_CTRL_F9;
-constexpr int kBtnRotation3 = KEY_CTRL_F10;
+constexpr int kBtnToggleInterruptWalk = KEY_ALT_R;
+constexpr int kBtnRotation0 = KEY_CTRL_ARROW_UP;
+constexpr int kBtnRotation3 = KEY_CTRL_ARROW_DOWN;
 constexpr int kBtnDestroyAllScripts = KEY_UPPERCASE_A;
 constexpr int kBtnRebuildSprayTools = 0x143;
-constexpr int kBtnRebuildProtoList = 0x144;
 constexpr int kBtnDestroyProtoList = 0x185;
 constexpr int kBtnHighlightByProto = 0x123;
 constexpr int kBtnAnimDebugStep = 0x12E;
 
+// LIBRARIAN menu pulldown keycodes
+constexpr int kBtnLibrarianRebuildAll = 5545;
+constexpr int kBtnLibrarianRebuildBinary = 5546;
+constexpr int kBtnLibrarianArtToProtos = 5547;
+constexpr int kBtnLibrarianSwapProtos = 5548;
+
+// Direct-key bindings restored from the original mapper switch.
+constexpr int kBtnAutomap = KEY_TAB; //   9 — Automap (uses existing automapShow)
+constexpr int kBtnBookmarkChoose = 7777; //  UI — Bookmark choose dialog (existing bookmarkChoose)
+constexpr int kBtnBuildAllTypeBinary = 6123; // UI — Build all type binary (proto_build_all_type_binary)
+
 constexpr int kArtMaxDirect = 0x4B0;
+
+// Toolbar background lbm dimensions (mapper2.lbm). The artwork is anchored to
+// the left edge of tool_win, so any prompt/labels rendered inside the toolbar
+// must use this width as the basis — NOT _scr_size.right (which can be
+// wider than 640 on CE high-resolution screens, leaving the right side of
+// tool_win as empty filler beyond the artwork).
+constexpr int kToolbarArtWidth = 640;
+constexpr int kToolbarArtHeight = 480;
+
+constexpr int kToolNameX = kToolbarArtWidth - 150;
+constexpr int kToolNameY1 = 60;
+constexpr int kToolNameY2 = kToolNameY1 + 10;
+constexpr int kToolNameY3 = kToolNameY1 + 20;
+constexpr int kToolNameWidth = 120;
 
 // gnw_main
 // 0x485DD0
@@ -640,8 +675,8 @@ void MapperInit()
     menu_val_0[2] = kBtnSave;
     menu_val_0[3] = kBtnSaveAs;
     menu_val_0[4] = KEY_ESCAPE;
-    menu_val_0[5] = kBtnLoadAllTexts;
-    menu_val_0[6] = kBtnInfo;
+    menu_val_0[5] = kBtnInfo;
+    menu_val_0[6] = kBtnOpenFromText;
     menu_val_0[7] = KEY_ESCAPE;
 
     menu_val_1[0] = kBtnCreatePattern;
@@ -674,6 +709,14 @@ void MapperInit()
     menu_val_2[5] = kBtnCreateScript;
     menu_val_2[6] = kBtnSetMapScript;
     menu_val_2[7] = kBtnShowMapScript;
+
+    menu_val_3[0] = kBtnRebuildSprayTools;
+    menu_val_3[1] = kBtnRebuildProtoList;
+    menu_val_3[2] = kBtnLibrarianRebuildAll;
+    menu_val_3[3] = kBtnLibrarianRebuildBinary;
+    menu_val_3[4] = KEY_ESCAPE;
+    menu_val_3[5] = kBtnLibrarianArtToProtos;
+    menu_val_3[6] = kBtnLibrarianSwapProtos;
 }
 
 static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
@@ -690,8 +733,8 @@ static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
 // 0x485F94
 int mapper_edit_init(int argc, char** argv)
 {
-    constexpr int lbmBufWidth = 640;
-    constexpr int lbmBufHeight = 480;
+    constexpr int lbmBufWidth = kToolbarArtWidth;
+    constexpr int lbmBufHeight = kToolbarArtHeight;
 
     int index;
 
@@ -741,7 +784,7 @@ int mapper_edit_init(int argc, char** argv)
     _win_register_menu_pulldown(menu_bar,
         8,
         "FILE",
-        289,
+        kBtnMenuHeaderFile,
         8,
         menu_names[0],
         260,
@@ -749,7 +792,7 @@ int mapper_edit_init(int argc, char** argv)
     _win_register_menu_pulldown(menu_bar,
         40,
         "TOOLS",
-        303,
+        kBtnMenuHeaderTools,
         21,
         menu_names[1],
         260,
@@ -757,7 +800,7 @@ int mapper_edit_init(int argc, char** argv)
     _win_register_menu_pulldown(menu_bar,
         80,
         "SCRIPTS",
-        276,
+        kBtnMenuHeaderScripts,
         8,
         menu_names[2],
         260,
@@ -767,9 +810,9 @@ int mapper_edit_init(int argc, char** argv)
         _win_register_menu_pulldown(menu_bar,
             130,
             "LIBRARIAN",
-            292,
-            6,
-            &(menu_1[14]),
+            kBtnMenuHeaderLibrarian,
+            7,
+            menu_names[3],
             260,
             _colorTable[8456]);
     }
@@ -1123,6 +1166,19 @@ static void elevationNumberRefresh()
     windowRefreshRect(tool_win, &numRect);
 }
 
+static int pickHexWithToolLabel(const char* label)
+{
+    Rect labelRect = { kToolNameX, kToolNameY2, kToolNameX + kToolNameWidth - 1, kToolNameY2 + 15 };
+
+    windowDrawText(tool_win, label, 118, labelRect.left, labelRect.top, 260);
+    windowRefreshRect(tool_win, &labelRect);
+
+    int tile = pickHex();
+    windowDrawText(tool_win, "", 120, labelRect.left, labelRect.top, 260);
+    windowRefreshRect(tool_win, &labelRect);
+    return tile;
+}
+
 // This is the main mapper UI loop: handles all input and redrawing.
 // 0x4877D0
 void edit_mapper()
@@ -1164,9 +1220,9 @@ void edit_mapper()
         map_scr_toggle_hexes();
     }
 
-    // TODO: these calls aren't in original code, figure out how it worked without them
-    _gmouse_enable();
+    // TODO: this call aren't in original code, figure out how it worked without
     interfaceBarHide();
+
     while (true) {
         sharedFpsLimiter.mark();
         int keyCode = inputGetInput();
@@ -1176,23 +1232,26 @@ void edit_mapper()
         // Only F8 and Escape are NOT forwarded (they toggle modes).
         // ----------------------------------------------------------------
         bool routeToGame = map_entered && playModeEnabled
-            && keyCode != kMenuBarActivation && keyCode != kMenuBarActivationAlt
+            && keyCode != kBtnPlayMode && keyCode != kBtnF8AsGame
             && keyCode != KEY_ESCAPE;
 
         if (routeToGame) {
             gameHandleKey(keyCode, false);
 
             if (_game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-                _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
-                if (map_entered) {
-                    // Simulate F8 press to exit play mode.
-                    mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
+                if (!map_entered) {
+                    break;
                 }
-            }
+                keyCode = kBtnPlayMode;
+                _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
+            } else {
+                scriptsHandleRequests();
+                mapHandleTransition();
 
-            scriptsHandleRequests();
-            mapHandleTransition();
-            continue;
+                renderPresent();
+                sharedFpsLimiter.throttle();
+                continue;
+            }
         }
 
         // ----------------------------------------------------------------
@@ -1204,7 +1263,7 @@ void edit_mapper()
             _gdialogSystemEnter();
         }
 
-        bool mouseInMenuArea = _mouse_click_in(0, 0, _scr_size.right - _scr_size.left, 15);
+        bool mouseInMenuArea = _mouse_click_in(_scr_size.left, 1, _scr_size.right, 15);
         if (!map_entered && mouseInMenuArea) {
             windowShow(menu_bar);
         } else if (!mouseInMenuArea) {
@@ -1254,6 +1313,9 @@ void edit_mapper()
 
                     int tile = gGameMouseBouncingCursor->tile;
 
+                    if (settings.debug.show_tile_num) {
+                        debugPrint("tilenum = %d ", tile);
+                    }
                     // Display tile number on toolbar (vanilla: x=7, y=27, maxWidth=260, color=35)
                     char tileNumStr[32];
                     snprintf(tileNumStr, sizeof(tileNumStr), "%d", tile);
@@ -1263,7 +1325,9 @@ void edit_mapper()
                     windowRefreshRect(tool_win, &tileNumRect);
 
                     // toolbar item selected: place object
-                    if (tool_active != -1) {
+                    if (markExitGridMode) {
+                        mapper_mark_exit_grid();
+                    } else if (tool_active != -1) {
                         if (selectedPid != -1) {
                             if (PID_TYPE(selectedPid) == OBJ_TYPE_TILE) {
                                 placeTile(selectedPid, gGameMouseBouncingCursor->fid);
@@ -1333,18 +1397,22 @@ void edit_mapper()
 
         // Menu header delegation: if user clicked a menu header, read the
         // pulldown selection and map it to the real handler code.
-        if (keyCode == kMenuHeaderFile) {
+        if (keyCode == kBtnMenuHeaderFile) {
             int index = inputGetInput();
             if (index == -1) continue;
             keyCode = menu_val_0[index];
-        } else if (keyCode == kMenuHeaderTools) {
+        } else if (keyCode == kBtnMenuHeaderTools) {
             int index = inputGetInput();
             if (index == -1) continue;
             keyCode = menu_val_1[index];
-        } else if (keyCode == kMenuHeaderScripts) {
+        } else if (keyCode == kBtnMenuHeaderScripts) {
             int index = inputGetInput();
             if (index == -1) continue;
             keyCode = menu_val_2[index];
+        } else if (keyCode == kBtnMenuHeaderLibrarian) {
+            int index = inputGetInput();
+            if (index == -1) continue;
+            keyCode = menu_val_3[index];
         }
 
         // Toolbar art-slot left-click: select proto from toolbar
@@ -1413,34 +1481,26 @@ void edit_mapper()
 
         // --- FILE menu ---
         case kBtnNew:
-            map_toggle_block_obj_viewing(0);
-            mapNewMap();
-            handle_new_map(&currentType, &scrollOffset);
-            break;
-        case kBtnEraseMap:
-            if (map_entered) {
-                break;
-            }
-            if (win_yes_no("Erase this map?", 80, 80, 0x10104)) {
+            if (map_entered) break;
+            if (mapperYesNoDialog("Erase this map?")) {
                 bool wasBlockOn = map_toggle_block_obj_viewing_on();
-                if (wasBlockOn) {
-                    map_toggle_block_obj_viewing(0);
-                }
+                if (wasBlockOn) map_toggle_block_obj_viewing(0);
                 mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
                 mapNewMap();
                 handle_new_map(&currentType, &scrollOffset);
                 interfaceBarHide();
-                if (wasBlockOn) {
-                    map_toggle_block_obj_viewing(1);
-                }
+                if (wasBlockOn) map_toggle_block_obj_viewing(1);
             }
             break;
         case kBtnOpen:
             if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Load.", _colorTable[32747] | FONT_SHADOW);
+                mapperShowTimedMsg("This map has been Entered.  Can't Load.");
                 break;
             }
             {
+                if (settings.mapper.use_art_not_protos) {
+                    mapperShowTimedMsg("WARNING!  You are loading ART, not PROTOS!!!");
+                }
                 mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
                 bool wasBlockOn = map_toggle_block_obj_viewing_on();
                 if (wasBlockOn) {
@@ -1451,7 +1511,9 @@ void edit_mapper()
                 map_scr_toggle_hexes();
                 handle_new_map(&currentType, &scrollOffset);
                 map_scr_toggle_hexes();
-                map_scr_toggle_hexes();
+                if (tileRoofIsVisible()) {
+                    tile_toggle_roof(true);
+                }
                 interfaceBarHide();
                 mapper_load_toolbar(currentType, &scrollOffset);
                 if (wasBlockOn) {
@@ -1459,9 +1521,42 @@ void edit_mapper()
                 }
             }
             break;
+        case kBtnSaveText:
         case kBtnSave: {
             if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[32747] | FONT_SHADOW);
+                mapperShowTimedMsg("This map has been Entered.  Can't Save.");
+                break;
+            }
+            if (settings.mapper.use_art_not_protos) {
+                mapperShowTimedMsg("WARNING!  You are saving ART, not PROTOS!!!");
+            }
+            if (can_modify_protos && !proto_user_is_librarian() || target_overriden()) {
+                mapperShowTimedMsg("This map is for TESTING.  Can't Save.");
+                break;
+            }
+            char mapName[64];
+            map_get_name(mapName);
+            int saveResult = 0;
+            if (keyCode == kBtnSave) {
+                bool wasBlockOn = map_toggle_block_obj_viewing_on();
+                if (wasBlockOn) map_toggle_block_obj_viewing(0);
+                saveResult = map_save_as(mapName);
+                if (wasBlockOn) map_toggle_block_obj_viewing(1);
+            }
+            if (saveResult != -1 && settings.mapper.save_text_maps) map_save_text();
+            mapper_save_toolbar();
+            break;
+        }
+        case kBtnInfo:
+            // No op, matching original.
+            break;
+        case kBtnSaveAs: {
+            if (map_entered) {
+                mapperShowTimedMsg("This map has been Entered.  Can't Save.");
+                break;
+            }
+            if (can_modify_protos && !proto_user_is_librarian() || target_overriden()) {
+                mapperShowTimedMsg("This map is for TESTING.  Can't Save.");
                 break;
             }
             bool wasBlockOn = map_toggle_block_obj_viewing_on();
@@ -1471,25 +1566,9 @@ void edit_mapper()
             if (wasBlockOn) map_toggle_block_obj_viewing(1);
             break;
         }
-        case kBtnSaveAs: {
-            if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Save.", _colorTable[32747] | FONT_SHADOW);
-                break;
-            }
-            bool wasBlockOn = map_toggle_block_obj_viewing_on();
-            if (wasBlockOn) map_toggle_block_obj_viewing(0);
-            map_save_as();
-            mapper_save_toolbar();
-            if (wasBlockOn) map_toggle_block_obj_viewing(1);
+        case kBtnOpenFromText:
+            mapperShowTimedMsg("Map Text Code Disabled.  Can't Load Text.");
             break;
-        }
-        case kBtnInfo:
-            map_info_dialog();
-            break;
-        case kBtnLoadAllTexts:
-            load_all_maps_text();
-            break;
-
         // --- TOOLS menu ---
         case kBtnCreatePattern:
             create_spray_tool();
@@ -1513,45 +1592,75 @@ void edit_mapper()
             mapper_flush_cache();
             break;
         case kBtnAnimStepping:
-            // TODO: toggle anim debug stepping
+            // CE has no equivalent for anim debug stepping.
             break;
         case kBtnFixMapPids:
-            // TODO: fix map objects to PID
+            if (!map_entered) {
+                if (mapperYesNoDialog("Fix map-object flags to pids?!?!?!")) {
+                    settings.mapper.fix_map_objects = true;
+                }
+            }
             break;
         case kBtnBookmark:
-            bookmarkChoose(currentType, &scrollOffset);
+            if (!map_entered) {
+                // TODO: original 2165 = SET bookmark — poll digit key, store current
+                // scrollOffset into toolbar_info[currentType].bookmark[digit] and
+                // mapper_save_toolbar(). See edit_mapper.c. Currently no-op.
+            }
             break;
         case kBtnToggleBlockObjView:
             map_toggle_block_obj_viewing(-1);
             break;
         case kBtnClickToScroll:
-            // TODO: toggle click-to-scroll mode
+            _gmouse_set_click_to_scroll(_gmouse_get_click_to_scroll() ? 0 : 1);
             break;
         case kBtnSetExitGridData: {
+            if (map_entered) break;
             int val;
-            if (win_get_num_i(&val, -1, 1000, false, "Map #:", 80, 80) != -1) mapInfo.map = val;
-            if (win_get_num_i(&val, -1, 20000, false, "Tile #:", 80, 80) != -1) mapInfo.tile = val;
-            if (win_get_num_i(&val, -1, 4, false, "Elevation #:", 80, 80) != -1) mapInfo.elevation = val;
-            if (win_get_num_i(&val, -1, 5, false, "Rotation #:", 80, 80) != -1) mapInfo.rotation = val;
+            if (win_get_num_i(&val, -2, 255, false, "Exit Grid Dest Map", 100, 100) != -1) mapInfo.map = val;
+            if (win_get_num_i(&val, -1, 40000, false, "Exit Grid Dest Tile #", 100, 100) != -1) mapInfo.tile = val;
+            if (win_get_num_i(&val, 0, 3, false, "Exit Grid Dest Elevation", 100, 100) != -1) mapInfo.elevation = val;
+            if (win_get_num_i(&val, 0, 6, false, "Exit Grid Dest Rotation", 100, 100) != -1) mapInfo.rotation = val;
             break;
         }
         case kBtnMarkExitGrids:
-            markExitGridMode = 1;
-            mapper_mark_exit_grid();
+            if (!map_entered) {
+                markExitGridMode = 1;
+                mapperShowTimedMsg("Entering mark exit-grids mode!");
+            }
             break;
         case kBtnMarkAllExitGrids:
-            mapper_mark_all_exit_grids();
+            if (!map_entered) {
+                mapperShowTimedMsg("Marking *ALL* exit-grids!");
+                mapper_mark_all_exit_grids();
+            }
             break;
         case kBtnClearMapLevel:
-            map_clear_elevation();
+            if (!map_entered) {
+                if (mapperYesNoDialog("*Clear Map LEVEL*|!@@?!")) {
+                    map_clear_elevation();
+                    mapperShowTimedMsg("Done.");
+                }
+            }
             break;
         case kBtnCreateAllMapTexts:
             if (!map_entered) {
-                load_all_maps_text();
+                mapperShowTimedMsg("Please wait.");
+                map_toggle_block_obj_viewing(0);
+                load_all_maps_text(1);
+                mapperShowTimedMsg("Done.");
             }
             break;
         case kBtnRebuildAllMaps:
-            proto_build_all_texts();
+            if (!map_entered) {
+                if (mapperYesNoDialog("Do you REALLY want to rebuild all MAPS!!?")) {
+                    mapperShowTimedMsg("Please wait.");
+                    map_toggle_block_obj_viewing(0);
+                    load_all_maps_text(0);
+                    debugPrint("\nDone loading all maps from text.");
+                    mapperShowTimedMsg("Done.");
+                }
+            }
             break;
 
         // --- SCRIPTS menu ---
@@ -1559,45 +1668,54 @@ void edit_mapper()
             scr_debug_print_scripts();
             break;
         case kBtnSetStartHex:
-            place_entrance_hex();
+            if (!map_entered) {
+                mapperShowTimedMsg("Click on the new Start Hex.");
+                place_entrance_hex();
+            }
             break;
         case kBtnPlaceSpatial: {
             if (map_entered) {
+                // TODO: original 's' map-entered branch — switch_dude() and proto_dude_init("premade\\blank.gcd") chain. (actually this is never reached because in play mode 's' opens Skilldex).
                 break;
             }
-            int screenWidth = _scr_size.right - _scr_size.left;
-            windowDrawText(tool_win, "Place Script", 0x104, screenWidth - 149, 70, _colorTable[32747] | FONT_SHADOW);
-            redraw_toolname();
-
-            int tile = pickHex();
-
-            clear_toolname();
-
+            int tile = pickHexWithToolLabel("Place Script");
             if (tile != -1) {
                 if (map_scr_add_spatial(tile, gElevation) == -1) {
-                    win_timed_msg("Error creating spatial Script!", _colorTable[32747] | FONT_SHADOW);
+                    mapperShowTimedMsg("Error creating spatial Script!");
                 }
             }
             break;
         }
+        // --- CTRL+F7 — Delete spatial: prompt, pick hex, remove ---
         case kBtnDeleteSpatial: {
-            int x, y;
-            mouseGetPosition(&x, &y);
-            int tile = tileFromScreenXY(x, y);
+            if (map_entered) break;
+            int tile = pickHexWithToolLabel("Delete Script");
             if (tile != -1) {
                 map_scr_remove_spatial(tile, gElevation);
             }
             break;
         }
         case kBtnDeleteAllSpatialScripts:
-            map_scr_remove_all_spatials();
+            if (!map_entered) {
+                if (mapperYesNoDialog("Are you sure you want to Delete ALL Spatials?!")) {
+                    map_scr_remove_all_spatials();
+                    mapperShowTimedMsg("Done.");
+                }
+            }
             break;
         case kBtnCreateScript:
             // TODO: create a new script file
             break;
-        case kBtnSetMapScript:
-            map_set_script();
+        case kBtnSetMapScript: {
+            if (map_entered) break;
+            int id = scr_choose(0);
+            if (id == -2) {
+                map_set_script(-1);
+            } else if (id >= 0) {
+                map_set_script((id & 0xFFFFFF) + 1);
+            }
             break;
+        }
         case kBtnShowMapScript:
             map_show_script();
             break;
@@ -1664,7 +1782,8 @@ void edit_mapper()
         // --- Rotation (Height Inc/Dec keys rotate objects) ---
         case kBtnRotateRight:
         case kBtnRotateLeft: {
-            Object* obj = map_entered ? gDude : (_screen_obj ? _screen_obj : gGameMouseBouncingCursor);
+            if (map_entered) break;
+            Object* obj = _screen_obj ? _screen_obj : gGameMouseBouncingCursor;
             if (obj != nullptr) {
                 Rect rect;
                 int newRot = (keyCode == kBtnRotateRight) ? (obj->rotation + 1) % 6 : (obj->rotation + 5) % 6;
@@ -1676,15 +1795,17 @@ void edit_mapper()
             break;
         }
 
-        // --- Type toggle buttons ---
+        // --- Type toggle buttons (CTRL+F1..F6) ---
         case kBtnHideItem:
         case kBtnHideCrit:
         case kBtnHideScen:
         case kBtnHideWall:
         case kBtnHideTile:
         case kBtnHideMisc:
-            artToggleObjectTypeHidden(keyCode - kBtnHideItem);
-            tileWindowRefresh();
+            if (!map_entered) {
+                artToggleObjectTypeHidden(keyCode - kBtnHideItem);
+                tileWindowRefresh();
+            }
             break;
 
         // --- Hex/Roof overlay toggles ---
@@ -1701,7 +1822,8 @@ void edit_mapper()
                 if (currentType == OBJ_TYPE_TILE) {
                     copyTile();
                 } else {
-                    copyObject();
+                    // 'c' filters region copy to the current toolbar type.
+                    copyObject(currentType);
                 }
             }
             break;
@@ -1721,11 +1843,13 @@ void edit_mapper()
             }
             break;
         case kBtnPaste:
+            // 'C' is the unfiltered region-copy: pick a region, then place every object inside
+            // it (regardless of type) at the new mouse position.
             if (!map_entered) {
                 if (currentType == OBJ_TYPE_TILE) {
                     copyTile();
                 } else {
-                    copyObject();
+                    copyObject(-1);
                 }
             }
             break;
@@ -1763,12 +1887,11 @@ void edit_mapper()
             break;
 
         // --- Play mode toggle ---
-        case kMenuBarActivation:
-        case kMenuBarActivationAlt:
+        case kBtnPlayMode:
             if (map_entered) {
                 mapper_exit_play_mode(&currentType, &scrollOffset, dudeToRestore);
             } else {
-                mapper_enter_play_mode(&currentType, &scrollOffset, &hl_obj1, dudeToRestore);
+                mapper_enter_play_mode(&hl_obj1);
             }
             break;
 
@@ -1776,11 +1899,34 @@ void edit_mapper()
         case kBtnQuit:
             if (markExitGridMode == 1) {
                 markExitGridMode = 0;
-                win_timed_msg("Exiting mark exit-grids!", _colorTable[32747] | FONT_SHADOW);
+                mapperShowTimedMsg("Exiting mark exit-grids!");
                 break;
             }
-            if (win_yes_no("Are you sure you want to quit?", 80, 80, 0x10104)) {
+            if (mapperYesNoDialog("Are you sure you want to quit?")) {
                 goto exitLoop;
+            }
+            break;
+
+        // --- TAB — Automap (gated on intface visibility flags in vanilla) ---
+        case kBtnAutomap:
+            automapShow(map_entered, false);
+            break;
+
+        // --- 7777 — Bookmark choose dialog (UI button) ---
+        case kBtnBookmarkChoose:
+            if (!map_entered) {
+                bookmarkChoose(currentType, &scrollOffset);
+            }
+            break;
+
+        // --- 6123 — Build all type binary (UI button) ---
+        case kBtnBuildAllTypeBinary:
+            if (!map_entered) {
+                if (mapperYesNoDialog("Are you sure you want to Build all binary?!")) {
+                    proto_build_all_type_binary(OBJ_TYPE_ITEM);
+                    proto_build_all_type_binary(OBJ_TYPE_SCENERY);
+                    mapperShowTimedMsg("Done.");
+                }
             }
             break;
 
@@ -1824,10 +1970,10 @@ void edit_mapper()
                 Object* obj = _screen_obj;
                 if (obj->flags & OBJ_LOCKED) {
                     objectUnlock(obj);
-                    win_timed_msg("Unlocked.", _colorTable[32747] | FONT_SHADOW);
+                    mapperShowTimedMsg("Unlocked.");
                 } else {
                     objectLock(obj);
-                    win_timed_msg("Locked.", _colorTable[32747] | FONT_SHADOW);
+                    mapperShowTimedMsg("Locked.");
                 }
             }
             break;
@@ -1904,9 +2050,10 @@ void edit_mapper()
             break;
 
         // --- Toggle interrupt walk ---
-        case kBtnToggleInterruptWalk:
-            // TODO: toggle interrupt_walk config via gameConfig
+        case kBtnToggleInterruptWalk: {
+            settings.system.interrupt_walk = !settings.system.interrupt_walk;
             break;
+        }
 
         // --- Set rotation to 0 ---
         case kBtnRotation0:
@@ -1939,9 +2086,17 @@ void edit_mapper()
         // --- Destroy all scripts ---
         case kBtnDestroyAllScripts:
             if (map_entered) break;
-            if (win_yes_no("Do you want to destroy all scripts!?", 80, 80, 0x10104)) {
-                if (win_yes_no("ARE YOU SURE?", 80, 80, 0x10104)) {
-                    // TODO: iterate objects, remove scripts, call scr_remove_all
+            if (mapperYesNoDialog("Do you want to destroy all scripts!?")) {
+                if (mapperYesNoDialog("ARE YOU SURE?")) {
+                    Object* obj = objectFindFirst();
+                    while (obj != nullptr) {
+                        if (obj->sid != -1) {
+                            scriptRemove(obj->sid);
+                            obj->sid = -1;
+                        }
+                        obj = objectFindNext();
+                    }
+                    _scr_remove_all();
                 }
             }
             break;
@@ -1950,36 +2105,74 @@ void edit_mapper()
         case kBtnRebuildSprayTools:
             if (map_entered) break;
             if (!can_modify_protos) break;
-            if (win_yes_no("Do you REALLY want to rebuild spray tools?", 80, 80, 0x10104)) {
-                // TODO: rebuild_spray_tools()
-                win_timed_msg("Rebuild spray tools not yet implemented.", _colorTable[31744] | FONT_SHADOW);
+            if (mapperYesNoDialog("Do you REALLY want to rebuild spray tools?")) {
+                rebuild_spray_tools();
             }
             break;
 
         // --- Rebuild proto list for current type ---
         case kBtnRebuildProtoList:
-            if (map_entered) break;
-            if (!can_modify_protos) break;
-            if (win_yes_no("Do you REALLY want to rebuild this list?", 80, 80, 0x10104)) {
-                // TODO: proto_remove_all + proto_build_all_type(currentType)
-                win_timed_msg("Rebuild proto list not yet implemented.", _colorTable[31744] | FONT_SHADOW);
+            if (!map_entered && can_modify_protos) {
+                if (win_yes_no("Do you REALLY want to rebuild this list?", 80, 80, 65796) > 0) {
+                    mapperShowTimedMsg("Please wait.");
+                    _proto_remove_all();
+                    proto_build_all_type(currentType);
+                    update_art(currentType, scrollOffset);
+                    mapperShowTimedMsg("Done.");
+                }
             }
             break;
 
-        // --- Destroy space proto list and rebuild ---
+        // --- F11 — Rebuild ALL protos (destroy + rebuild) ---
         case kBtnDestroyProtoList:
             if (map_entered) break;
             if (!can_modify_protos) break;
-            if (win_yes_no("Do you REALLY want to destroy the space proto list?", 80, 80, 0x10104)) {
-                // TODO: proto_remove_all + proto_build_all_texts
-                win_timed_msg("Destroy proto list not yet implemented.", _colorTable[31744] | FONT_SHADOW);
+            if (mapperYesNoDialog("Do you REALLY want to destroy the space-time continuum?")) {
+                mapperShowTimedMsg("Please wait.");
+                _proto_remove_all();
+                proto_build_all_texts();
+                update_art(currentType, scrollOffset);
+                mapperShowTimedMsg("Done.");
             }
+            break;
+
+        // --- Librarian: Rebuild ALL ---
+        case kBtnLibrarianRebuildAll:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            if (mapperYesNoDialog("Do you REALLY want to rebuild ALL?")) {
+                _proto_remove_all();
+                proto_build_all_texts();
+            }
+            break;
+
+        // --- Librarian: Rebuild Binary ---
+        case kBtnLibrarianRebuildBinary:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            if (mapperYesNoDialog("Do you REALLY want to rebuild Binary?")) {
+                rebuild_binary();
+            }
+            break;
+
+        // --- Librarian: Art => New Protos ---
+        case kBtnLibrarianArtToProtos:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            art_to_protos();
+            break;
+
+        // --- Librarian: Swap Prototypes ---
+        case kBtnLibrarianSwapProtos:
+            if (map_entered) break;
+            if (!can_modify_protos) break;
+            swap_protos();
             break;
 
         // --- Highlight object by proto ---
         case kBtnHighlightByProto:
             if (map_entered) {
-                win_timed_msg("This map has been Entered.  Can't Highlight.", _colorTable[32747] | FONT_SHADOW);
+                mapperShowTimedMsg("This map has been Entered.  Can't Highlight.");
                 break;
             }
             // TODO: pick_object(currentType) → set highlight, scroll toolbar to matching proto
@@ -1987,7 +2180,7 @@ void edit_mapper()
 
         // --- Anim debug step ---
         case kBtnAnimDebugStep:
-            // TODO: anim_debug_can_do_step = 1
+            // TODO: implement anim_debug_can_do_step (animation single-step trigger).
             break;
 
         // --- Light ambient adjust ---
@@ -2008,6 +2201,14 @@ void edit_mapper()
     }
 
 exitLoop:
+    // If quitting while still in play mode, restore the editor's dude object,
+    // tear down the active scripts and erase the temp snapshot files.
+    if (map_entered) {
+        gDude = dudeToRestore;
+        _scr_game_exit();
+        mapper_remove_tmp_map_files();
+        interfaceBarHide();
+    }
     toolbar_info[currentType].offset = scrollOffset;
     mapper_save_toolbar();
 }
@@ -2074,7 +2275,7 @@ void print_toolbar_name(int object_type)
 
     sprintf(name, "%s", artGetObjectTypeName(object_type));
     name[0] = static_cast<char>(toupper(name[0]));
-    windowDrawText(tool_win, name, 0, 7, 7, _colorTable[32747] | 0x2000000);
+    windowDrawText(tool_win, name, 0, 7, 7, _colorTable[32747] | DRAW_TEXT_FLAG_NO_BG);
     windowRefreshRect(tool_win, &rect);
 }
 
@@ -2083,19 +2284,19 @@ void redraw_toolname()
 {
     Rect rect;
 
-    rect.left = _scr_size.right - _scr_size.left - 149;
-    rect.top = 60;
-    rect.right = _scr_size.right - _scr_size.left + 1;
-    rect.bottom = 95;
+    rect.left = kToolNameX;
+    rect.top = kToolNameY1;
+    rect.right = kToolNameX + kToolNameWidth - 1;
+    rect.bottom = kToolNameY3 + 5;
     windowRefreshRect(tool_win, &rect);
 }
 
 // 0x48B278
 void clear_toolname()
 {
-    windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 60, 260);
-    windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 70, 260);
-    windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 80, 260);
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY1, 260);
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, 260);
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, 260);
     redraw_toolname();
 }
 
@@ -2112,67 +2313,67 @@ void update_toolname(int* pid, int type, int id)
 
     windowDrawText(tool_win,
         protoGetName(proto->pid),
-        120,
-        _scr_size.right - _scr_size.left - 149,
-        60,
+        kToolNameWidth,
+        kToolNameX,
+        kToolNameY1,
         260);
 
     switch (PID_TYPE(proto->pid)) {
     case OBJ_TYPE_ITEM:
         windowDrawText(tool_win,
             gItemTypeNames[proto->item.type],
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     case OBJ_TYPE_CRITTER:
         windowDrawText(tool_win,
             "",
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     case OBJ_TYPE_WALL:
         windowDrawText(tool_win,
             proto_wall_light_str(proto->wall.flags),
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     case OBJ_TYPE_TILE:
         windowDrawText(tool_win,
             "",
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     case OBJ_TYPE_MISC:
         windowDrawText(tool_win,
             "",
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     default:
         windowDrawText(tool_win,
             "",
-            120,
-            _scr_size.right - _scr_size.left - 149,
-            70,
+            kToolNameWidth,
+            kToolNameX,
+            kToolNameY2,
             260);
         break;
     }
 
     windowDrawText(tool_win,
         "",
-        120,
-        _scr_size.right - _scr_size.left - 149,
-        80,
+        kToolNameWidth,
+        kToolNameX,
+        kToolNameY3,
         260);
 
     redraw_toolname();
@@ -2184,9 +2385,9 @@ void update_high_obj_name(Object* obj)
     Proto* proto;
 
     if (protoGetProto(obj->pid, &proto) != -1) {
-        windowDrawText(tool_win, protoGetName(obj->pid), 120, _scr_size.right - _scr_size.left - 149, 60, 260);
-        windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 70, 260);
-        windowDrawText(tool_win, "", 120, _scr_size.right - _scr_size.left - 149, 80, 260);
+        windowDrawText(tool_win, protoGetName(obj->pid), kToolNameWidth, kToolNameX, kToolNameY1, 260);
+        windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, 260);
+        windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, 260);
         redraw_toolname();
     }
 }
@@ -2469,7 +2670,17 @@ int mapper_mark_exit_grid()
     return 0;
 }
 
-static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object** pHlObj1, Object* dudeToRestore)
+// Erase the play-mode temp map snapshot from disk. Used on enter (to start
+// from a clean slate), on exit (after the snapshot has been loaded back),
+// and on editor shutdown if the user quit while still in play mode.
+static void mapper_remove_tmp_map_files()
+{
+    remove(mapBuildPath(tmp_map_name));
+    remove(mapBuildPath("TMP$MAP#.CFG"));
+    MapDirErase("MAPS\\", "SAV");
+}
+
+static void mapper_enter_play_mode(Object** pHlObj1)
 {
     windowHide(menu_bar);
 
@@ -2477,65 +2688,75 @@ static void mapper_enter_play_mode(int* pCurrentType, int* pScrollOffset, Object
 
     mapper_destroy_highlight_obj(pHlObj1, nullptr);
 
+    // Capture current view center BEFORE the save/remove sequence; vanilla
+    // uses this both as the dude's spawn tile and to restore the view when
+    // run_mapper_as_game is off.
+    int savedCenterTile = gCenterTile;
+
     _screen_obj = nullptr;
 
-    // TODO: bookmarkWin hide
+    bookmarkHide();
 
-    // TODO: gameLoadGlobalVars();
+    gameLoadGlobalVars();
 
     windowHide(tool_win);
 
-    // TODO: save map name for restoration on exit
+    // Save current map name so exit can restore it after reloading the temp snapshot.
+    strncpy(gSavedMapName, gMapHeader.name, sizeof(gSavedMapName));
+    gSavedMapName[sizeof(gSavedMapName) - 1] = '\0';
 
-    remove(mapBuildPath(tmp_map_name));
-    remove(mapBuildPath("TMP$MAP#.MAP"));
-    remove(mapBuildPath("TMP$MAP#.CFG"));
-    MapDirErase("MAPS\\", "SAV");
+    mapper_remove_tmp_map_files();
 
     map_toggle_block_obj_viewing(0);
 
-    // TODO: mapSaveAs(tmp_map_name);
+    // Save current map under the temp name so we can restore on exit.
+    strncpy(gMapHeader.name, kTmpMapName, sizeof(gMapHeader.name) - 1);
+    gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
+    _map_save();
 
-    int centerTile = (gDude != nullptr) ? gDude->tile : 0;
-    objectSetLocation(gDude, centerTile, gElevation, nullptr);
+    objectSetLocation(gDude, savedCenterTile, gElevation, nullptr);
 
     objectSetRotation(gDude, 0, nullptr);
 
-    // TODO: objectShow(gDude);
+    objectShow(gDude, nullptr);
 
-    // TODO: proto_dude_reset("premade\\blank.gcd")
+    _proto_dude_init("premade\\blank.gcd");
 
-    // TODO: set dude FID from art_vault_guy_num
+    gDude->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, 0, 0);
 
     _scr_game_init();
 
     interfaceBarShow();
 
     map_entered = true;
+    tool_active = -1;
 
     gameMouseResetBouncingCursorFid();
     gameMouseObjectsShow();
-    gameMouseSetCursor(0);
+    gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
-    // TODO: _draw_mode = 0
+    draw_mode = false;
 
-    lightSetAmbientIntensity(0x10000, true);
+    lightSetAmbientIntensity(0x10000, false);
 
     tileScrollBlockingEnable();
     tileScrollLimitingEnable();
 
     if (settings.mapper.run_mapper_as_game) {
-        // TODO: scriptExecProc(gMapSid, 0xF);
-        // TODO: _scr_load_all_scripts();
+        scriptExecProc(gMapSid, SCRIPT_PROC_MAP_ENTER);
+        if (scriptsExecStartProc() == -1) {
+            debugPrint("\n   Error: scr_load_all_scripts failed!");
+        }
+        scriptsExecMapEnterProc();
+        scriptsExecMapUpdateProc();
+        tileSetCenter(gDude->tile, 1);
+    } else {
+        tileSetCenter(savedCenterTile, 1);
     }
 
-    // TODO: scriptExecMapEnterScripts() / scriptExecMapUpdateScripts()
+    isoEnable();
 
-    tileSetCenter(gDude->tile, 1);
-
-    // TODO: mapEnableBkProcesses()
-
-    // TODO: wmMapMusicStart()
+    wmMapMusicStart();
 
     tileWindowRefresh();
 }
@@ -2552,14 +2773,13 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
 
     scriptsClearDudeScript();
 
-    // TODO: mapLoadByName(tmp_map_name);
+    mapLoadByName(kTmpMapName);
 
-    remove(mapBuildPath(tmp_map_name));
-    remove(mapBuildPath("TMP$MAP#.MAP"));
-    remove(mapBuildPath("TMP$MAP#.CFG"));
-    MapDirErase("MAPS\\", "SAV");
+    mapper_remove_tmp_map_files();
 
-    // TODO: restore saved map name -> gMapHeader.name
+    // Restore original map name (mapLoadByName resets it to the loaded file's header name).
+    strncpy(gMapHeader.name, gSavedMapName, sizeof(gMapHeader.name) - 1);
+    gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
 
     handle_new_map(pCurrentType, pScrollOffset);
 
@@ -2580,18 +2800,22 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
 
     windowShow(tool_win);
 
-    lightSetAmbientIntensity(0x10000, true);
+    lightSetAmbientIntensity(0x10000, false);
 
     tileScrollBlockingDisable();
     tileScrollLimitingDisable();
 
-    // TODO: gmouse click-to-scroll restore
+    // Match the original: if click-to-scroll was on during play, force it off on exit.
+    if (_gmouse_get_click_to_scroll()) {
+        _gmouse_set_click_to_scroll(false);
+    }
 
-    // TODO: gmouse_3d_set_mode(0)
+    gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
 
     backgroundSoundDelete();
 
-    // TODO: bookmarkWin show
+    bookmarkUnHide();
+
     tileWindowRefresh();
 }
 
@@ -2609,6 +2833,16 @@ static void mapper_mark_all_exit_grids()
         }
         obj = objectFindNextAtElevation();
     }
+}
+
+void mapperShowTimedMsg(const char* msg)
+{
+    win_timed_msg(msg, _colorTable[31744] | FONT_SHADOW);
+}
+
+bool mapperYesNoDialog(const char* msg)
+{
+    return win_yes_no(msg, 80, 80, 0x104 | FONT_SHADOW) > 0;
 }
 
 } // namespace fallout

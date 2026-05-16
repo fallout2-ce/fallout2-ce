@@ -4,7 +4,9 @@
 namespace fallout {
 
 int proto_build_all_texts();
-void load_all_maps_text();
+// mode==0 → rebuild from text; mode==1 → generate text versions from binary maps.
+void load_all_maps_text(int mode = 0);
+void map_save_text();
 
 } // namespace fallout
 

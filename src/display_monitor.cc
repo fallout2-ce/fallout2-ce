@@ -54,51 +54,51 @@ static void consoleFileExit();
 static void consoleFileAddMessage(const char* message);
 static void consoleFileFlush();
 
-// 0x51850C
+// 0x51850C disp_init
 static bool gDisplayMonitorInitialized = false;
 
 // The rectangle that display monitor occupies in the main interface window.
 //
-// 0x518510
+// 0x518510 disp_rect
 static Rect gDisplayMonitorRect;
 
-// 0x518520
+// 0x518520 dn_bid
 static int gDisplayMonitorScrollDownButton = -1;
 
-// 0x518524
+// 0x518524 up_bid
 static int gDisplayMonitorScrollUpButton = -1;
 
-// 0x56DBFC
+// 0x56DBFC display_string_buf
 static char gDisplayMonitorLines[DISPLAY_MONITOR_LINES_CAPACITY][DISPLAY_MONITOR_LINE_LENGTH];
 
-// 0x56FB3C
+// 0x56FB3C disp_buf
 static unsigned char* gDisplayMonitorBackgroundFrmData;
 
-// 0x56FB40
+// 0x56FB40 max_disp
 static int _max_disp;
 
-// 0x56FB44
+// 0x56FB44 display_enabled
 static bool gDisplayMonitorEnabled;
 
-// 0x56FB48
+// 0x56FB48 disp_curr
 static int _disp_curr;
 
-// 0x56FB4C
+// 0x56FB4C intface_full_width
 static int _intface_full_width;
 
-// 0x56FB50
+// 0x56FB50 max
 static int gDisplayMonitorLinesCapacity;
 
-// 0x56FB54
+// 0x56FB54 disp_start
 static int _disp_start;
 
-// 0x56FB58
+// 0x56FB58 lastTime
 static unsigned int gDisplayMonitorLastBeepTimestamp;
 
 static std::ofstream gConsoleFileStream;
 static int gConsoleFilePrintCount = 0;
 
-// 0x431610
+// 0x431610 display_init
 int displayMonitorInit()
 {
     if (!gDisplayMonitorInitialized) {
@@ -205,7 +205,7 @@ int displayMonitorInit()
     return 0;
 }
 
-// 0x431800
+// 0x431800 display_reset
 int displayMonitorReset()
 {
     // NOTE: Uninline.
@@ -217,7 +217,7 @@ int displayMonitorReset()
     return 0;
 }
 
-// 0x43184C
+// 0x43184C display_exit
 void displayMonitorExit()
 {
     if (gDisplayMonitorInitialized) {
@@ -229,7 +229,7 @@ void displayMonitorExit()
     }
 }
 
-// 0x43186C
+// 0x43186C display_print
 void displayMonitorAddMessage(const char* str)
 {
     if (!gDisplayMonitorInitialized || str == nullptr) {
@@ -327,7 +327,7 @@ void displayMonitorAddMessage(const char* str)
 
 // NOTE: Inlined.
 //
-// 0x431A2C
+// 0x431A2C display_clear
 static void display_clear()
 {
     int index;
@@ -343,7 +343,7 @@ static void display_clear()
     }
 }
 
-// 0x431A78
+// 0x431A78 display_redraw
 static void displayMonitorRefresh()
 {
     if (!gDisplayMonitorInitialized) {
@@ -382,7 +382,7 @@ static void displayMonitorRefresh()
     fontSetCurrent(oldFont);
 }
 
-// 0x431B70
+// 0x431B70 display_scroll_up
 static void displayMonitorScrollUpOnMouseDown(int btn, int keyCode)
 {
     if ((gDisplayMonitorLinesCapacity + _disp_curr - 1) % gDisplayMonitorLinesCapacity != _disp_start) {
@@ -391,7 +391,7 @@ static void displayMonitorScrollUpOnMouseDown(int btn, int keyCode)
     }
 }
 
-// 0x431B9C
+// 0x431B9C display_scroll_down
 static void displayMonitorScrollDownOnMouseDown(int btn, int keyCode)
 {
     if (_disp_curr != _disp_start) {
@@ -400,25 +400,25 @@ static void displayMonitorScrollDownOnMouseDown(int btn, int keyCode)
     }
 }
 
-// 0x431BC8
+// 0x431BC8 display_arrow_up
 static void displayMonitorScrollUpOnMouseEnter(int btn, int keyCode)
 {
     gameMouseSetCursor(MOUSE_CURSOR_SMALL_ARROW_UP);
 }
 
-// 0x431BD4
+// 0x431BD4 display_arrow_down
 static void displayMonitorScrollDownOnMouseEnter(int btn, int keyCode)
 {
     gameMouseSetCursor(MOUSE_CURSOR_SMALL_ARROW_DOWN);
 }
 
-// 0x431BE0
+// 0x431BE0 display_arrow_restore
 static void displayMonitorOnMouseExit(int btn, int keyCode)
 {
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 }
 
-// 0x431BEC
+// 0x431BEC display_disable
 void displayMonitorDisable()
 {
     if (gDisplayMonitorEnabled) {
@@ -428,7 +428,7 @@ void displayMonitorDisable()
     }
 }
 
-// 0x431C14
+// 0x431C14 display_enable
 void displayMonitorEnable()
 {
     if (!gDisplayMonitorEnabled) {

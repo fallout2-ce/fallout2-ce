@@ -92,7 +92,7 @@ static int scriptGetNewId(int scriptType);
 static int scriptsRemoveLocalVars(Script* script);
 static int scriptsGetMessageList(int messageListId, MessageList** outMessageList);
 
-// 0x50D6B8
+// 0x50D6B8 Error_2
 static char gScriptsErrorText[] = "Error";
 
 // 0x50D6C0
@@ -100,42 +100,42 @@ static char gScriptsEmptyText[] = "";
 
 // Number of lines in scripts.lst
 //
-// 0x51C6AC
+// 0x51C6AC num_script_indexes
 static int _num_script_indexes = 0;
 
-// 0x51C6B0
+// 0x51C6B0 scr_find_first_idx
 static int gScriptsEnumerationScriptIndex = 0;
 
-// 0x51C6B4
+// 0x51C6B4 scr_find_first_ptr
 static ScriptListExtent* gScriptsEnumerationScriptListExtent = nullptr;
 
-// 0x51C6B8
+// 0x51C6B8 scr_find_first_elev
 static int gScriptsEnumerationElevation = 0;
 
-// 0x51C6BC
+// 0x51C6BC scrSpatialsEnabled
 static bool gSpatialsEnabled = true;
 
-// 0x51C6C0
+// 0x51C6C0 scriptlists
 static ScriptList gScriptLists[SCRIPT_TYPE_COUNT];
 
-// 0x51C710
+// 0x51C710 script_path_base
 static const char* gScriptsBasePath = "scripts\\";
 
-// 0x51C714
+// 0x51C714 script_engine_running
 static bool gScriptsEnabled = false;
 
-// 0x51C718
+// 0x51C718 script_engine_run_critters
 static int gCritterProcessingEnabled = 0;
 
-// 0x51C71C
+// 0x51C71C script_engine_game_mode
 static int gGameModeEnabled = 0;
 
 // Game time in ticks (1/10 second).
 //
-// 0x51C720
+// 0x51C720 fallout_game_time
 static unsigned int gGameTime = 302400;
 
-// 0x51C724
+// 0x51C724 days_in_month
 static const int gGameTimeDaysPerMonth[12] = {
     31, // Jan
     28, // Feb
@@ -151,7 +151,7 @@ static const int gGameTimeDaysPerMonth[12] = {
     31, // Dec
 };
 
-// 0x51C758
+// 0x51C758 procTableStrs
 const char* gScriptProcNames[SCRIPT_PROC_COUNT] = {
     "no_p_proc",
     "start",
@@ -185,93 +185,93 @@ const char* gScriptProcNames[SCRIPT_PROC_COUNT] = {
 
 // scripts.lst
 //
-// 0x51C7C8
+// 0x51C7C8 scriptListInfo
 static ScriptsListEntry* gScriptsListEntries = nullptr;
 
-// 0x51C7CC
+// 0x51C7CC maxScriptNum
 static int gScriptsListEntriesLength = 0;
 
-// 0x51C7D4
+// 0x51C7D4 cur_id
 static int gObjectIdCounter = 4;
 
-// 0x51C7DC
+// 0x51C7DC count
 static int gCritterProcessingIndex = 0;
 
-// 0x51C7E0
+// 0x51C7E0 last_time_
 static int gLastQueueProcessingTime = 0;
 
-// 0x51C7E4
+// 0x51C7E4 last_light_time
 static int gLastMapUpdateTime = 0;
 
-// 0x51C7E8
+// 0x51C7E8 scrQueueTestObj
 static Object* _scrQueueTestObj = nullptr;
 
-// 0x51C7EC
+// 0x51C7EC scrQueueTestValue
 static int _scrQueueTestValue = 0;
 
-// 0x51C7F0
+// 0x51C7F0 err_str
 static char* gErrorString = gScriptsErrorText;
 
-// 0x51C7F4
+// 0x51C7F4 blank_str
 static char* gEmptyString = gScriptsEmptyText;
 
-// 0x664954
+// 0x664954 scriptState
 static unsigned int gScriptsRequests;
 
-// 0x664958
+// 0x664958 gcsd_requests
 static CombatStartData gScriptsRequestedCSD;
 
-// 0x664980
+// 0x664980 gcsd_copy
 static CombatStartData gScriptsCSD;
 
-// 0x6649A8
+// 0x6649A8 elevType
 static int gScriptsRequestedElevatorType;
 
-// 0x6649AC
+// 0x6649AC elevLevel
 static int gScriptsRequestedElevatorLevel;
 
-// 0x6649B0
+// 0x6649B0 tile_num
 static int gScriptsRequestedExplosionTile;
 
-// 0x6649B4
+// 0x6649B4 elev
 static int gScriptsRequestedExplosionElevation;
 
-// 0x6649B8
+// 0x6649B8 min_dmg
 static int gScriptsRequestedExplosionMinDamage;
 
-// 0x6649BC
+// 0x6649BC max_dmg
 static int gScriptsRequestedExplosionMaxDamage;
 
-// 0x6649C0
+// 0x6649C0 dialogTarget
 static Object* gScriptsRequestedDialogWith;
 
-// 0x6649C4
+// 0x6649C4 lootSource
 static Object* gScriptsRequestedLootingBy;
 
-// 0x6649C8
+// 0x6649C8 lootTarget
 static Object* gScriptsRequestedLootingFrom;
 
-// 0x6649CC
+// 0x6649CC stealSource
 static Object* gScriptsRequestedStealingBy;
 
-// 0x6649D0
+// 0x6649D0 stealTarget
 static Object* gScriptsRequestedStealingFrom;
 
-// 0x6649D4
+// 0x6649D4 script_dialog_msgs
 static MessageList gScriptDialogMessageLists[SCRIPT_DIALOG_MESSAGE_LIST_CAPACITY];
 
 // scr.msg
 //
-// 0x667724
+// 0x667724 script_message_file
 static MessageList gScrMessageList;
 
-// 0x667748
+// 0x667748 lasttime
 static int gLastBackgroundProcessTime;
 
-// 0x66774C
+// 0x66774C last_is_set
 static bool gBackgroundProcessTimeInitialized;
 
-// 0x667750
+// 0x667750 tempStr1
 static char gDebugScriptFileName[20];
 
 static int gStartYear;

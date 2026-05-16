@@ -35,34 +35,34 @@ typedef enum SoundEffectActionType {
     SOUND_EFFECT_ACTION_TYPE_PASSIVE,
 } SoundEffectActionType;
 
-// 0x5035BC
+// 0x5035BC aSoundSfx
 static char _aSoundSfx[] = "sound\\sfx\\";
 
-// 0x5035C8
+// 0x5035C8 aSoundMusic_0
 static char _aSoundMusic_0[] = "sound\\music\\";
 
-// 0x5035D8
+// 0x5035D8 aSoundSpeech_0
 static char _aSoundSpeech_0[] = "sound\\speech\\";
 
-// 0x518E30
+// 0x518E30 gsound_initialized
 static bool gGameSoundInitialized = false;
 
-// 0x518E34
+// 0x518E34 gsound_debug
 static bool gGameSoundDebugEnabled = false;
 
-// 0x518E38
+// 0x518E38 gsound_background_enabled
 static bool gMusicEnabled = false;
 
-// 0x518E3C
+// 0x518E3C gsound_background_df_vol
 static int _gsound_background_df_vol = 0;
 
-// 0x518E40
+// 0x518E40 gsound_background_fade
 static int _gsound_background_fade = 0;
 
-// 0x518E44
+// 0x518E44 gsound_speech_enabled
 static bool gSpeechEnabled = false;
 
-// 0x518E48
+// 0x518E48 gsound_sfx_enabled
 static bool gSoundEffectsEnabled = false;
 
 // number of active effects (max 4)
@@ -72,16 +72,16 @@ static int _gsound_active_effect_counter;
 // background music
 static Sound* gBackgroundSound = nullptr;
 
-// 0x518E54
+// 0x518E54 gsound_speech_tag
 static Sound* gSpeechSound = nullptr;
 
-// 0x518E58
+// 0x518E58 gsound_background_callback_fp
 static SoundEndCallback* gBackgroundSoundEndCallback = nullptr;
 
-// 0x518E5C
+// 0x518E5C gsound_speech_callback_fp
 static SoundEndCallback* gSpeechEndCallback = nullptr;
 
-// 0x518E60
+// 0x518E60 snd_lookup_weapon_type
 static char _snd_lookup_weapon_type[WEAPON_SOUND_EFFECT_COUNT] = {
     'R', // Ready
     'A', // Attack
@@ -90,7 +90,7 @@ static char _snd_lookup_weapon_type[WEAPON_SOUND_EFFECT_COUNT] = {
     'H', // Hit
 };
 
-// 0x518E65
+// 0x518E65 snd_lookup_scenery_action
 static char _snd_lookup_scenery_action[SCENERY_SOUND_EFFECT_COUNT] = {
     'O', // Open
     'C', // Close
@@ -99,51 +99,51 @@ static char _snd_lookup_scenery_action[SCENERY_SOUND_EFFECT_COUNT] = {
     'U', // Use
 };
 
-// 0x518E6C
+// 0x518E6C background_storage_requested
 static GameSoundStorageType _background_storage_requested = GSOUND_STORAGE_INVALID;
 
-// 0x518E70
+// 0x518E70 background_loop_requested
 static GameSoundLoopingMode _background_loop_requested = GSOUND_LOOPING_INVALID;
 
-// 0x518E74
+// 0x518E74 sound_sfx_path
 static char* _sound_sfx_path = _aSoundSfx;
 
-// 0x518E78
+// 0x518E78 sound_music_path1
 static char* _sound_music_path1 = nullptr;
 
-// 0x518E7C
+// 0x518E7C sound_music_path2
 static char* _sound_music_path2 = nullptr;
 
-// 0x518E80
+// 0x518E80 sound_speech_path
 static char* _sound_speech_path = _aSoundSpeech_0;
 
-// 0x518E84
+// 0x518E84 master_volume
 static int gMasterVolume = VOLUME_MAX;
 
-// 0x518E88
+// 0x518E88 background_volume
 int gMusicVolume = VOLUME_MAX;
 
-// 0x518E8C
+// 0x518E8C speech_volume
 static int gSpeechVolume = VOLUME_MAX;
 
-// 0x518E90
+// 0x518E90 sndfx_volume
 static int gSoundEffectsVolume = VOLUME_MAX;
 
-// 0x518E94
+// 0x518E94 detectDevices
 static int _detectDevices = -1;
 
-// 0x518E98
+// 0x518E98 lastTime_1
 static int _lastTime_1 = 0;
 
-// 0x596EB0
+// 0x596EB0 background_fname_copied
 static char _background_fname_copied[COMPAT_MAX_PATH];
 
-// 0x596FB5
+// 0x596FB5 sfx_file_name
 static char _sfx_file_name[13];
 
 // NOTE: I'm mot sure about it's size. Why not MAX_PATH?
 //
-// 0x596FC2
+// 0x596FC2 background_fname_requested
 static char gBackgroundSoundFileName[270];
 
 static void soundEffectsEnable();

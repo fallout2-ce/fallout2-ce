@@ -119,7 +119,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | SetLighting | `HOOK_SETLIGHTING` | 🚫 | Et tu; (maybe) |
 | Sneak | `HOOK_SNEAK` | 🚫 | - |
 | TargetObject | `HOOK_TARGETOBJECT` | 🚫 | (maybe) |
-| Encounter | `HOOK_ENCOUNTER` | 🚫 | Et tu |
+| Encounter | `HOOK_ENCOUNTER` | ✅ | - |
 | AdjustPoison | `HOOK_ADJUSTPOISON` | 🚫 | (maybe) |
 | AdjustRads | `HOOK_ADJUSTRADS` | 🚫 | (maybe) |
 | RollCheck | `HOOK_ROLLCHECK` | 🚫 | - |

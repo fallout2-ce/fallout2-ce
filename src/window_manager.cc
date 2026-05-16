@@ -43,21 +43,21 @@ static int _button_check_group(Button* button);
 static void _button_draw(Button* button, Window* window, unsigned char* data, bool draw, Rect* bound, bool sound);
 static void _GNW_button_refresh(Window* window, Rect* rect);
 
-// 0x50FA30
+// 0x50FA30 path_patches
 static char _path_patches[] = "";
 
-// 0x51E3D8
+// 0x51E3D8 GNW95_already_running
 static bool _GNW95_already_running = false;
 
 #ifdef _WIN32
-// 0x51E3DC
+// 0x51E3DC GNW95_title_mutex
 static HANDLE _GNW95_title_mutex = INVALID_HANDLE_VALUE;
 #endif
 
-// 0x51E3E0
+// 0x51E3E0 GNW_win_init_flag
 bool gWindowSystemInitialized = false;
 
-// 0x51E3E4
+// 0x51E3E4 GNW_wcolor
 int _GNW_wcolor[6] = {
     0,
     0,
@@ -67,46 +67,46 @@ int _GNW_wcolor[6] = {
     0,
 };
 
-// 0x51E3FC
+// 0x51E3FC screen_buffer
 static unsigned char* _screen_buffer = nullptr;
 
-// 0x51E400
+// 0x51E400 insideWinExit
 static bool _insideWinExit = false;
 
-// 0x51E404
+// 0x51E404 last_button_winID
 static int _last_button_winID = -1;
 
-// 0x6ADD90
+// 0x6ADD90 window_index
 static int gWindowIndexes[MAX_WINDOW_COUNT];
 
-// 0x6ADE58
+// 0x6ADE58 window
 static Window* gWindows[MAX_WINDOW_COUNT];
 
-// 0x6ADF20
+// 0x6ADF20 video_reset
 static VideoSystemExitProc* gVideoSystemExitProc;
 
-// 0x6ADF24
+// 0x6ADF24 num_windows
 static int gWindowsLength;
 
-// 0x6ADF28
+// 0x6ADF28 window_flags
 static int _window_flags;
 
-// 0x6ADF2C
+// 0x6ADF2C buffering
 static bool _buffering = false;
 
-// 0x6ADF30
+// 0x6ADF30 bk_color
 static int _bk_color;
 
-// 0x6ADF34
+// 0x6ADF34 video_set
 static VideoSystemInitProc* gVideoSystemInitProc;
 
-// 0x6ADF38
+// 0x6ADF38 doing_refresh_all
 static int _doing_refresh_all;
 
-// 0x6ADF3C
+// 0x6ADF3C GNW_texture
 static void* _GNW_texture;
 
-// 0x6ADF40
+// 0x6ADF40 btn_grp
 static ButtonGroup gButtonGroups[BUTTON_GROUP_LIST_CAPACITY];
 
 // 0x4D5C30
@@ -514,7 +514,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
     }
 
     if (maxWidth == 0) {
-        if (flags & 0x040000) {
+        if (flags & DRAW_TEXT_FLAG_MONOSPACED) {
             maxWidth = fontGetMonospacedStringWidth(str);
         } else {
             maxWidth = fontGetStringWidth(str);
@@ -522,7 +522,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
     }
 
     if (maxWidth + x > window->width) {
-        if (!(flags & 0x04000000)) {
+        if (!(flags & DRAW_TEXT_FLAG_OVERFLOW)) {
             return;
         }
 
@@ -535,7 +535,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
         return;
     }
 
-    if (!(flags & 0x02000000)) {
+    if (!(flags & DRAW_TEXT_FLAG_NO_BG)) {
         if (window->color == 256 && _GNW_texture != nullptr) {
             _buf_texture(buf, maxWidth, fontGetLineHeight(), window->width, _GNW_texture, window->tx + x, window->ty + y);
         } else {
@@ -552,7 +552,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
 
     fontDrawText(buf, str, maxWidth, window->width, textColor);
 
-    if (flags & 0x01000000) {
+    if (flags & DRAW_TEXT_FLAG_REFRESH) {
         // TODO: Check.
         Rect rect;
         rect.left = window->rect.left + x;

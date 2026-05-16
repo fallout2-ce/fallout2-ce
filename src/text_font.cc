@@ -52,7 +52,7 @@ static int textFontGetLetterSpacingImpl();
 static int textFontGetBufferSizeImpl(const char* string);
 static int textFontGetMonospacedCharacterWidthImpl();
 
-// 0x4D5530
+// 0x4D5530 GNW_text_functions
 FontManager gTextFontManager = {
     0,
     9,
@@ -67,46 +67,46 @@ FontManager gTextFontManager = {
     textFontGetMonospacedCharacterWidthImpl,
 };
 
-// 0x51E3B0
+// 0x51E3B0 curr_font_num
 int gCurrentFont = -1;
 
-// 0x51E3B4
+// 0x51E3B4 total_managers
 int gFontManagersCount = 0;
 
-// 0x51E3B8
+// 0x51E3B8 text_to_buf
 FontManagerDrawTextProc* fontDrawText = nullptr;
 
-// 0x51E3BC
+// 0x51E3BC text_height
 FontManagerGetLineHeightProc* fontGetLineHeight = nullptr;
 
-// 0x51E3C0
+// 0x51E3C0 text_width
 FontManagerGetStringWidthProc* fontGetStringWidth = nullptr;
 
-// 0x51E3C4
+// 0x51E3C4 text_char_width
 FontManagerGetCharacterWidthProc* fontGetCharacterWidth = nullptr;
 
-// 0x51E3C8
+// 0x51E3C8 text_mono_width
 FontManagerGetMonospacedStringWidthProc* fontGetMonospacedStringWidth = nullptr;
 
-// 0x51E3CC
+// 0x51E3CC text_spacing
 FontManagerGetLetterSpacingProc* fontGetLetterSpacing = nullptr;
 
-// 0x51E3D0
+// 0x51E3D0 text_size
 FontManagerGetBufferSizeProc* fontGetBufferSize = nullptr;
 
-// 0x51E3D4
+// 0x51E3D4 text_max
 FontManagerGetMonospacedCharacterWidth* fontGetMonospacedCharacterWidth = nullptr;
 
-// 0x6ADB08
+// 0x6ADB08 font
 static TextFontDescriptor gTextFontDescriptors[TEXT_FONT_MAX];
 
-// 0x6ADBD0
+// 0x6ADBD0 font_managers
 static FontManager gFontManagers[FONT_MANAGER_MAX];
 
-// 0x6ADD88
+// 0x6ADD88 curr_font
 static TextFontDescriptor* gCurrentTextFontDescriptor;
 
-// 0x4D555C
+// 0x4D555C GNW_text_init
 int textFontsInit()
 {
     int currentFont = -1;
@@ -137,7 +137,7 @@ int textFontsInit()
     return 0;
 }
 
-// 0x4D55CC
+// 0x4D55CC GNW_text_exit
 void textFontsExit()
 {
     for (int index = 0; index < TEXT_FONT_MAX; index++) {
@@ -149,7 +149,7 @@ void textFontsExit()
     }
 }
 
-// 0x4D55FC
+// 0x4D55FC load_font
 int textFontLoad(int font)
 {
     int rc = -1;
@@ -237,7 +237,7 @@ out:
     return rc;
 }
 
-// 0x4D5780
+// 0x4D5780 text_add_manager
 int fontManagerAdd(FontManager* fontManager)
 {
     if (fontManager == nullptr) {
@@ -262,7 +262,7 @@ int fontManagerAdd(FontManager* fontManager)
     return 0;
 }
 
-// 0x4D58AC
+// 0x4D58AC GNW_text_font
 static void textFontSetCurrentImpl(int font)
 {
     if (font >= TEXT_FONT_MAX) {
@@ -277,13 +277,13 @@ static void textFontSetCurrentImpl(int font)
     gCurrentTextFontDescriptor = textFontDescriptor;
 }
 
-// 0x4D58D4
+// 0x4D58D4 text_curr
 int fontGetCurrent()
 {
     return gCurrentFont;
 }
 
-// 0x4D58DC
+// 0x4D58DC text_font
 void fontSetCurrent(int font)
 {
     FontManager* fontManager;
@@ -304,7 +304,7 @@ void fontSetCurrent(int font)
     }
 }
 
-// 0x4D595C
+// 0x4D595C text_font_exists
 static bool fontManagerFind(int font, FontManager** fontManagerPtr)
 {
     for (int index = 0; index < gFontManagersCount; index++) {
@@ -318,7 +318,7 @@ static bool fontManagerFind(int font, FontManager** fontManagerPtr)
     return false;
 }
 
-// 0x4D59B0
+// 0x4D59B0 GNW_text_to_buf
 static void textFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, int color)
 {
     if ((color & FONT_SHADOW) != 0) {
@@ -383,13 +383,13 @@ static void textFontDrawImpl(unsigned char* buf, const char* string, int length,
     }
 }
 
-// 0x4D5B54
+// 0x4D5B54 GNW_text_height
 static int textFontGetLineHeightImpl()
 {
     return gCurrentTextFontDescriptor->lineHeight;
 }
 
-// 0x4D5B60
+// 0x4D5B60 GNW_text_width
 static int textFontGeStringWidthImpl(const char* string)
 {
     int width = 0;
@@ -405,31 +405,31 @@ static int textFontGeStringWidthImpl(const char* string)
     return width;
 }
 
-// 0x4D5BA4
+// 0x4D5BA4 GNW_text_char_width
 static int textFontGetCharacterWidthImpl(int ch)
 {
     return gCurrentTextFontDescriptor->glyphs[ch & 0xFF].width;
 }
 
-// 0x4D5BB8
+// 0x4D5BB8 GNW_text_mono_width
 static int textFontGetMonospacedStringWidthImpl(const char* string)
 {
     return fontGetMonospacedCharacterWidth() * strlen(string);
 }
 
-// 0x4D5BD8
+// 0x4D5BD8 GNW_text_spacing
 static int textFontGetLetterSpacingImpl()
 {
     return gCurrentTextFontDescriptor->letterSpacing;
 }
 
-// 0x4D5BE4
+// 0x4D5BE4 GNW_text_size
 static int textFontGetBufferSizeImpl(const char* string)
 {
     return fontGetStringWidth(string) * fontGetLineHeight();
 }
 
-// 0x4D5BF8
+// 0x4D5BF8 GNW_text_max
 static int textFontGetMonospacedCharacterWidthImpl()
 {
     int width = 0;

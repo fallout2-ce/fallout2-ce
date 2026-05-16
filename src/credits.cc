@@ -29,22 +29,22 @@ namespace fallout {
 
 static bool creditsFileParseNextLine(char* dest, int* font, int* color);
 
-// 0x56D740
+// 0x56D740 credits_file
 static File* gCreditsFile;
 
-// 0x56D744
+// 0x56D744 name_color
 static int gCreditsWindowNameColor;
 
-// 0x56D748
+// 0x56D748 title_font
 static int gCreditsWindowTitleFont;
 
-// 0x56D74C
+// 0x56D74C name_font
 static int gCreditsWindowNameFont;
 
-// 0x56D750
+// 0x56D750 title_color
 static int gCreditsWindowTitleColor;
 
-// 0x42C860
+// 0x42C860 credits
 void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
 {
     int oldFont = fontGetCurrent();
@@ -253,7 +253,7 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
     fontSetCurrent(oldFont);
 }
 
-// 0x42CE6C
+// 0x42CE6C credits_get_next_line
 static bool creditsFileParseNextLine(char* dest, int* font, int* color)
 {
     char string[256];

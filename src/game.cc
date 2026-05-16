@@ -86,7 +86,6 @@ namespace fallout {
 #define SPLASH_HEIGHT (480)
 #define SPLASH_COUNT (10)
 
-static int gameLoadGlobalVars();
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void gameFreeGlobalVars();
 static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed);
@@ -96,37 +95,37 @@ static void showSplash();
 
 inline constexpr char kBaseModPath[] = "ce.dat";
 
-// 0x501C9C
+// 0x501C9C aGame_0
 static char _aGame_0[] = "game\\";
 
-// 0x5020B8
+// 0x5020B8 aDec11199816543
 static char _aBuildDate[] = _BUILD_DATE;
 static char _aBuildHash[] = _BUILD_HASH;
 
-// 0x5186B4
+// 0x5186B4 game_ui_disabled
 static bool gGameUiDisabled = false;
 
-// 0x5186B8
+// 0x5186B8 game_state_cur
 static int gGameState = GAME_STATE_0;
 
-// 0x5186BC
+// 0x5186BC game_in_mapper
 static bool gIsMapper = false;
 
-// 0x5186C0
+// 0x5186C0 game_global_vars
 int* gGameGlobalVars = nullptr;
 
-// 0x5186C4
+// 0x5186C4 num_game_global_vars
 int gGameGlobalVarsLength = 0;
 
-// 0x5186C8
+// 0x5186C8 msg_path
 const char* asc_5186C8 = _aGame_0;
 
-// 0x5186CC
+// 0x5186CC game_user_wants_to_quit
 GameQuitRequest _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
 
 // misc.msg
 //
-// 0x58E940
+// 0x58E940 misc_message_file
 MessageList gMiscMessageList;
 
 bool gGameLoaded = false;
@@ -1016,7 +1015,7 @@ int gameSetGlobalVar(int var, int value)
 
 // game_load_info
 // 0x443CC8
-static int gameLoadGlobalVars()
+int gameLoadGlobalVars()
 {
     if (globalVarsRead("data\\vault13.gam", "GAME_GLOBAL_VARS:", &gGameGlobalVarsLength, &gGameGlobalVars) != 0) {
         return -1;

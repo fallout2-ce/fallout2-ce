@@ -132,44 +132,44 @@ static void interpreterPrintStats();
 
 constexpr int kDynamicStringsMaxBlockSize = 32766;
 
-// 0x50942C
+// 0x50942C aCouldnTFindPro
 static char interpreterMissingProcedureName[] = "<couldn't find proc>";
 
 // sayTimeoutMsg
-// 0x519038
+// 0x519038 TimeOut
 int _TimeOut = 0;
 
-// 0x51903C
+// 0x51903C enabled
 static bool interpreterEnabled = true;
 
-// 0x519040
+// 0x519040 timerFunc
 static InterpretTimerFunc* interpreterTimerFunc = _defaultTimerFunc;
 
-// 0x519044
+// 0x519044 timerTick
 static unsigned int interpreterTimerTick = 1000;
 
-// 0x519048
+// 0x519048 filenameFunc
 static char* (*interpreterFilenameMangler)(char*) = defaultFilename;
 
-// 0x51904C
+// 0x51904C outputFunc
 static int (*interpreterOutputFunc)(const char*) = outputString;
 
-// 0x519050
+// 0x519050 cpuBurstSize
 static int interpreterCpuBurstSize = 10;
 
-// 0x59E230
+// 0x59E230 opTable
 OpcodeHandler* gInterpreterOpcodeHandlers[OPCODE_MAX_COUNT];
 
-// 0x59E78C
+// 0x59E78C currentProgram
 static Program* gInterpreterCurrentProgram;
 
-// 0x59E790
+// 0x59E790 head
 static ProgramListNode* gInterpreterProgramListHead;
 
-// 0x59E794
+// 0x59E794 suspendEvents
 static bool interpreterEventsSuspended;
 
-// 0x59E798
+// 0x59E798 busy
 static bool interpreterBusy;
 
 // 0x4670A0
@@ -196,7 +196,7 @@ char* _interpretMangleName(char* s)
     return interpreterFilenameMangler(s);
 }
 
-// 0x4670C0 (unused)
+// 0x4670C0 outputStr (unused)
 static int outputString(const char*)
 {
     return 1;

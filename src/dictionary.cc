@@ -21,7 +21,7 @@ bool Dictionary::isInitialized() const
 
 static int dictionaryFindIndexForKey(Dictionary* dictionary, const char* key, int* index);
 
-// 0x4D9BA8
+// 0x4D9BA8 assoc_init
 int dictionaryInit(Dictionary* dictionary, int initialCapacity, size_t valueSize, DictionaryIO* io)
 {
     dictionary->entriesCapacity = initialCapacity;
@@ -53,7 +53,7 @@ int dictionaryInit(Dictionary* dictionary, int initialCapacity, size_t valueSize
     return rc;
 }
 
-// 0x4D9C0C
+// 0x4D9C0C assoc_resize
 int dictionarySetCapacity(Dictionary* dictionary, int newCapacity)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
@@ -75,7 +75,7 @@ int dictionarySetCapacity(Dictionary* dictionary, int newCapacity)
     return 0;
 }
 
-// 0x4D9C48
+// 0x4D9C48 assoc_free
 int dictionaryFree(Dictionary* dictionary)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
@@ -107,7 +107,7 @@ int dictionaryFree(Dictionary* dictionary)
 // Returns 0 if key is found. Otherwise returns -1, in this case [indexPtr]
 // specifies an insertion point for given key.
 //
-// 0x4D9CC4
+// 0x4D9CC4 assoc_find
 static int dictionaryFindIndexForKey(Dictionary* dictionary, const char* key, int* indexPtr)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
@@ -155,7 +155,7 @@ static int dictionaryFindIndexForKey(Dictionary* dictionary, const char* key, in
 // Returns the index of the entry for the specified key, or -1 if it's not
 // present in the dictionary.
 //
-// 0x4D9D5C
+// 0x4D9D5C assoc_search
 int dictionaryGetIndexByKey(Dictionary* dictionary, const char* key)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
@@ -176,7 +176,7 @@ int dictionaryGetIndexByKey(Dictionary* dictionary, const char* key)
 // Returns 0 on success, or -1 on any error (including key already exists
 // error).
 //
-// 0x4D9D88
+// 0x4D9D88 assoc_insert
 int dictionaryAddValue(Dictionary* dictionary, const char* key, const void* value)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
@@ -240,7 +240,7 @@ int dictionaryAddValue(Dictionary* dictionary, const char* key, const void* valu
 //
 // Returns 0 on success, -1 on any error (including key not present error).
 //
-// 0x4D9EE8
+// 0x4D9EE8 assoc_delete
 int dictionaryRemoveValue(Dictionary* dictionary, const char* key)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
@@ -275,7 +275,7 @@ int dictionaryRemoveValue(Dictionary* dictionary, const char* key)
 
 // NOTE: Unused.
 //
-// 0x4D9F84
+// 0x4D9F84 assoc_copy
 int dictionaryCopy(Dictionary* dest, Dictionary* src)
 {
     if (src->marker != DICTIONARY_MARKER) {
@@ -299,7 +299,7 @@ int dictionaryCopy(Dictionary* dest, Dictionary* src)
 
 // NOTE: Unused.
 //
-// 0x4DA090
+// 0x4DA090 assoc_read_long
 int dictionaryReadInt(FILE* stream, int* valuePtr)
 {
     int ch;
@@ -340,7 +340,7 @@ int dictionaryReadInt(FILE* stream, int* valuePtr)
 
 // NOTE: Unused.
 //
-// 0x4DA0F4
+// 0x4DA0F4 assoc_read_assoc_array
 int dictionaryReadHeader(FILE* stream, Dictionary* dictionary)
 {
     int value;
@@ -362,7 +362,7 @@ int dictionaryReadHeader(FILE* stream, Dictionary* dictionary)
 
 // NOTE: Unused.
 //
-// 0x4DA158
+// 0x4DA158 assoc_load
 int dictionaryLoad(FILE* stream, Dictionary* dictionary, int a3)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {
@@ -448,7 +448,7 @@ int dictionaryLoad(FILE* stream, Dictionary* dictionary, int a3)
 
 // NOTE: Unused.
 //
-// 0x4DA2EC
+// 0x4DA2EC assoc_write_long
 int dictionaryWriteInt(FILE* stream, int value)
 {
     if (fputc((value >> 24) & 0xFF, stream) == -1) return -1;
@@ -461,7 +461,7 @@ int dictionaryWriteInt(FILE* stream, int value)
 
 // NOTE: Unused.
 //
-// 0x4DA360
+// 0x4DA360 assoc_write_assoc_array
 int dictionaryWriteHeader(FILE* stream, Dictionary* dictionary)
 {
     if (dictionaryWriteInt(stream, dictionary->entriesLength) != 0) return -1;
@@ -475,7 +475,7 @@ int dictionaryWriteHeader(FILE* stream, Dictionary* dictionary)
 
 // NOTE: Unused.
 //
-// 0x4DA3A4
+// 0x4DA3A4 assoc_save
 int dictionaryWrite(FILE* stream, Dictionary* dictionary, int a3)
 {
     if (dictionary->marker != DICTIONARY_MARKER) {

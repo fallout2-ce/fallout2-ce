@@ -57,6 +57,13 @@ typedef enum WindowFlags {
     WINDOW_MANAGED = 0x100,
 } WindowFlags;
 
+enum DrawTextFlags {
+    DRAW_TEXT_FLAG_MONOSPACED = 0x040000,
+    DRAW_TEXT_FLAG_REFRESH = 0x01000000,
+    DRAW_TEXT_FLAG_NO_BG = 0x02000000,
+    DRAW_TEXT_FLAG_OVERFLOW = 0x04000000,
+};
+
 typedef enum ButtonFlags {
     // Button keeps a persistent checked state and uses the pressed image while checked.
     //
@@ -184,6 +191,7 @@ void windowManagerExit(void);
 int windowCreate(int x, int y, int width, int height, int color, int flags);
 void windowDestroy(int win);
 void windowDrawBorder(int win);
+// flags is also used to pass color
 void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int flags);
 void _win_text(int win, const char* const* fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags);
 void windowDrawLine(int win, int left, int top, int right, int bottom, int color);

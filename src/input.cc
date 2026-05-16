@@ -49,15 +49,15 @@ static void _GNW95_process_key(KeyboardData* data);
 static int inputGetHookMouseButton(int sdlButton);
 static void inputHandleMouseClickHook(int sdlButton, bool pressed);
 
-// 0x51E23C
+// 0x51E23C GNW95_repeat_rate
 static int gKeyboardKeyRepeatRate = 80;
 
-// 0x51E240
+// 0x51E240 GNW95_repeat_delay
 static int gKeyboardKeyRepeatDelay = 500;
 
 // A map of SDL_SCANCODE_* constants normalized for QWERTY keyboard.
 //
-// 0x6ABC70
+// 0x6ABC70 GNW95_key_map
 static int gNormalizedQwertyKeys[SDL_NUM_SCANCODES];
 
 // Ring buffer of input events.
@@ -65,40 +65,40 @@ static int gNormalizedQwertyKeys[SDL_NUM_SCANCODES];
 // Looks like this buffer does not support overwriting of values. Once the
 // buffer is full it will not overwrite values until they are dequeued.
 //
-// 0x6ABD70
+// 0x6ABD70 input_buffer
 static InputEvent gInputEventQueue[40];
 
-// 0x6ABF50
+// 0x6ABF50 GNW95_key_time_stamps
 static RepeatInfo _GNW95_key_time_stamps[SDL_NUM_SCANCODES];
 
-// 0x6AC750
+// 0x6AC750 input_mx
 static int _input_mx;
 
-// 0x6AC754
+// 0x6AC754 input_my
 static int _input_my;
 
-// 0x6AC760
+// 0x6AC760 screendump_key
 static int gScreenshotKeyCode;
 
-// 0x6AC76C
+// 0x6AC76C screendump_func
 static ScreenshotHandler* gScreenshotHandler;
 
-// 0x6AC770
+// 0x6AC770 input_get
 static int gInputEventQueueReadIndex;
 
-// 0x6AC774
+// 0x6AC774 screendump_buf
 static unsigned char* gScreenshotBuffer;
 
-// 0x6AC77C
+// 0x6AC77C input_put
 static int gInputEventQueueWriteIndex;
 
-// 0x6AC780
+// 0x6AC780 bk_disabled
 static bool gRunLoopDisabled;
 
-// 0x6AC784
+// 0x6AC784 bk_list
 static TickerListNode* gTickerListHead;
 
-// 0x6AC788
+// 0x6AC788 bk_process_time
 static unsigned int gTickerLastTimestamp;
 
 // global for inventoryOpenUseItemOn inventory to prevent click through bug

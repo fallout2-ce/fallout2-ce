@@ -49,13 +49,13 @@ static int _movieStart(int win, char* filePath);
 static bool _localMovieCallback();
 static int _stepMovie();
 
-// 0x5195B8
+// 0x5195B8 GNWWin
 static int gMovieWindow = -1;
 
-// 0x5195BC
+// 0x5195BC subtitleFont
 static int gMovieSubtitlesFont = -1;
 
-// 0x5195C0
+// 0x5195C0 showFrameFuncs
 static MovieBlitFunc* gMovieBlitFuncs[2][2][2] = {
     {
         {
@@ -79,132 +79,132 @@ static MovieBlitFunc* gMovieBlitFuncs[2][2][2] = {
     },
 };
 
-// 0x5195E0
+// 0x5195E0 paletteFunc
 static MovieSetPaletteEntriesProc* gMovieSetPaletteEntriesProc = _setSystemPaletteEntries;
 
-// 0x5195E4
+// 0x5195E4 subtitleR
 static int gMovieSubtitlesColorR = 31;
 
-// 0x5195E8
+// 0x5195E8 subtitleG
 static int gMovieSubtitlesColorG = 31;
 
-// 0x5195EC
+// 0x5195EC subtitleB
 static int gMovieSubtitlesColorB = 31;
 
-// 0x638E10
+// 0x638E10 mve_win_rect
 static Rect gMovieWindowRect;
 
-// 0x638E20
+// 0x638E20 movieRect
 static Rect _movieRect;
 
-// 0x638E30
+// 0x638E30 movieCallback
 static void (*_movieCallback)();
 
-// 0x638E38
+// 0x638E38 updateCallbackFunc
 static MovieSetPaletteProc* gMoviePaletteProc;
 
-// 0x638E40
+// 0x638E40 subtitleFilenameFunc
 static MovieBuildSubtitleFilePathProc* gMovieBuildSubtitleFilePathProc;
 
-// 0x638E48
+// 0x638E48 subtitleW
 static int _subtitleW;
 
-// 0x638E4C
+// 0x638E4C lastMovieBH
 static int _lastMovieBH;
 
-// 0x638E50
+// 0x638E50 lastMovieBW
 static int _lastMovieBW;
 
-// 0x638E54
+// 0x638E54 lastMovieSX
 static int _lastMovieSX;
 
-// 0x638E58
+// 0x638E58 lastMovieSY
 static int _lastMovieSY;
 
-// 0x638E5C
+// 0x638E5C movieScaleFlag
 static int _movieScaleFlag;
 
-// 0x638E64
+// 0x638E64 lastMovieH
 static int _lastMovieH;
 
-// 0x638E68
+// 0x638E68 lastMovieW
 static int _lastMovieW;
 
-// 0x638E6C
+// 0x638E6C lastMovieX
 static int _lastMovieX;
 
-// 0x638E70
+// 0x638E70 lastMovieY
 static int _lastMovieY;
 
-// 0x638E74
+// 0x638E74 subtitleList
 static MovieSubtitleListNode* gMovieSubtitleHead;
 
-// 0x638E78
+// 0x638E78 movieFlags
 static unsigned int gMovieFlags;
 
-// 0x638E7C
+// 0x638E7C movieAlphaFlag
 static int _movieAlphaFlag;
 
-// 0x638E80
+// 0x638E80 movieSubRectFlag
 static bool _movieSubRectFlag;
 
-// 0x638E84
+// 0x638E84 movieH
 static int _movieH;
 
-// 0x638E88
+// 0x638E88 movieOffset
 static int _movieOffset;
 
-// 0x638E90
+// 0x638E90 lastMovieBuffer
 static unsigned char* _lastMovieBuffer;
 
-// 0x638E94
+// 0x638E94 movieW
 static int _movieW;
 
-// 0x638EA0
+// 0x638EA0 subtitleH
 static int _subtitleH;
 
-// 0x638EA4
+// 0x638EA4 mve_running
 static int _running;
 
-// 0x638EA8
+// 0x638EA8 MVE_handle_file
 static File* gMovieFileStream;
 
-// 0x638EAC
+// 0x638EAC alphaWindowBuf
 static unsigned char* _alphaWindowBuf;
 
-// 0x638EB0
+// 0x638EB0 movieX
 static int _movieX;
 
-// 0x638EB4
+// 0x638EB4 movieY
 static int _movieY;
 
-// 0x638EBC
+// 0x638EBC alphaHandle
 static File* _alphaHandle;
 
-// 0x638EC0
+// 0x638EC0 alphaBuf
 static unsigned char* _alphaBuf;
 
 static unsigned char* MVE_lastBuffer = nullptr;
 
-// 0x4865FC
+// 0x4865FC movieMalloc
 static void* movieMallocImpl(size_t size)
 {
     return internal_malloc_safe(size, __FILE__, __LINE__); // "..\\int\\MOVIE.C", 209
 }
 
-// 0x486614
+// 0x486614 movieFree
 static void movieFreeImpl(void* ptr)
 {
     internal_free_safe(ptr, __FILE__, __LINE__); // "..\\int\\MOVIE.C", 213
 }
 
-// 0x48662C
+// 0x48662C movieRead
 static bool movieReadImpl(void* handle, void* buf, int count)
 {
     return fileRead(buf, 1, count, (File*)handle) == count;
 }
 
-// 0x486654
+// 0x486654 movie_MVE_ShowFrame
 static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height, int src_x, int src_y, int dst_width, int dst_height, int dst_x, int dst_y)
 {
     int movieWindowWidth;
@@ -265,7 +265,7 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
     renderPresent();
 }
 
-// 0x486900
+// 0x486900 movieShowFrame
 static void movieBufferedImpl(unsigned char* pixels, int src_width, int src_height, int src_x, int src_y, int dst_width, int dst_height, int dst_x, int dst_y)
 {
     if (gMovieWindow == -1) {
@@ -288,7 +288,7 @@ static void movieBufferedImpl(unsigned char* pixels, int src_width, int src_heig
     }
 }
 
-// 0x486B68
+// 0x486B68 movieScaleSubRect
 int _movieScaleSubRect(int win, unsigned char* data, int width, int height, int pitch)
 {
     int windowWidth = windowGetWidth(win);
@@ -324,7 +324,7 @@ int _movieScaleSubRect(int win, unsigned char* data, int width, int height, int 
     return 1;
 }
 
-// 0x486C74
+// 0x486C74 movieScaleSubRectAlpha
 int _movieScaleSubRectAlpha(int win, unsigned char* data, int width, int height, int pitch)
 {
     gMovieFlags |= 1;
@@ -338,7 +338,7 @@ int _movieScaleWindowAlpha(int win, unsigned char* data, int width, int height, 
     return 0;
 }
 
-// 0x486C80
+// 0x486C80 blitAlpha
 int _blitAlpha(int win, unsigned char* data, int width, int height, int pitch)
 {
     int windowWidth = windowGetWidth(win);
@@ -347,7 +347,7 @@ int _blitAlpha(int win, unsigned char* data, int width, int height, int pitch)
     return 1;
 }
 
-// 0x486CD4
+// 0x486CD4 movieScaleWindow
 int _movieScaleWindow(int win, unsigned char* data, int width, int height, int pitch)
 {
     int windowWidth = windowGetWidth(win);
@@ -376,7 +376,7 @@ int _movieScaleWindow(int win, unsigned char* data, int width, int height, int p
     return 1;
 }
 
-// 0x486D84
+// 0x486D84 blitNormal
 int _blitNormal(int win, unsigned char* data, int width, int height, int pitch)
 {
     int windowWidth = windowGetWidth(win);
@@ -385,7 +385,7 @@ int _blitNormal(int win, unsigned char* data, int width, int height, int pitch)
     return 1;
 }
 
-// 0x486DDC
+// 0x486DDC movieSetPalette
 static void movieSetPaletteEntriesImpl(unsigned char* palette, int start, int end)
 {
     if (end != 0) {
@@ -394,7 +394,7 @@ static void movieSetPaletteEntriesImpl(unsigned char* palette, int start, int en
 }
 
 // initMovie
-// 0x486E0C
+// 0x486E0C initMovie
 void movieInit()
 {
     MveSetMemory(movieMallocImpl, movieFreeImpl);
@@ -403,7 +403,7 @@ void movieInit()
     MveSetIO(movieReadImpl);
 }
 
-// 0x486E98
+// 0x486E98 cleanupMovie
 static void _cleanupMovie(bool shouldEndMovie)
 {
     if (!_running) {
@@ -469,7 +469,7 @@ static void _cleanupMovie(bool shouldEndMovie)
     gMovieWindow = -1;
 }
 
-// 0x48711C
+// 0x48711C movieClose
 void movieExit()
 {
     _cleanupMovie(1);
@@ -480,7 +480,7 @@ void movieExit()
     }
 }
 
-// 0x487150
+// 0x487150 movieStop
 void _movieStop()
 {
     if (_running) {
@@ -488,7 +488,7 @@ void _movieStop()
     }
 }
 
-// 0x487164
+// 0x487164 movieSetFlags
 int movieSetFlags(int flags)
 {
     if ((flags & MOVIE_FLAG_0x04) != 0) {
@@ -521,19 +521,19 @@ int movieSetFlags(int flags)
     return 0;
 }
 
-// 0x48725C
+// 0x48725C movieSetPaletteFunc
 void _movieSetPaletteFunc(MovieSetPaletteEntriesProc* proc)
 {
     gMovieSetPaletteEntriesProc = proc != nullptr ? proc : _setSystemPaletteEntries;
 }
 
-// 0x487274
+// 0x487274 movieSetCallback
 void movieSetPaletteProc(MovieSetPaletteProc* proc)
 {
     gMoviePaletteProc = proc;
 }
 
-// 0x4872E8
+// 0x4872E8 cleanupLast
 static void _cleanupLast()
 {
     if (_lastMovieBuffer != nullptr) {
@@ -544,7 +544,7 @@ static void _cleanupLast()
     MVE_lastBuffer = nullptr;
 }
 
-// 0x48731C
+// 0x48731C openFile
 static File* movieOpen(char* filePath)
 {
     gMovieFileStream = fileOpen(filePath, "rb");
@@ -555,7 +555,7 @@ static File* movieOpen(char* filePath)
     return gMovieFileStream;
 }
 
-// 0x487380
+// 0x487380 openSubtitle
 static void movieLoadSubtitles(char* filePath)
 {
     _subtitleW = windowGetWidth(gMovieWindow);
@@ -626,7 +626,7 @@ static void movieLoadSubtitles(char* filePath)
     debugPrint("Read %d subtitles\n", subtitleCount);
 }
 
-// 0x48755C
+// 0x48755C doSubtitle
 static void movieRenderSubtitles()
 {
     if (gMovieSubtitleHead == nullptr) {
@@ -684,7 +684,7 @@ static void movieRenderSubtitles()
     }
 }
 
-// 0x487710
+// 0x487710 movieStart
 static int _movieStart(int win, char* filePath)
 {
     if (_running) {
@@ -752,7 +752,7 @@ static int _movieStart(int win, char* filePath)
     return 0;
 }
 
-// 0x487964
+// 0x487964 localMovieCallback
 static bool _localMovieCallback()
 {
     movieRenderSubtitles();
@@ -764,7 +764,7 @@ static bool _localMovieCallback()
     return inputGetInput() != -1;
 }
 
-// 0x487AC8
+// 0x487AC8 movieRun
 int _movieRun(int win, char* filePath)
 {
     if (_running) {
@@ -780,7 +780,7 @@ int _movieRun(int win, char* filePath)
     return _movieStart(win, filePath);
 }
 
-// 0x487B1C
+// 0x487B1C movieRunRect
 int _movieRunRect(int win, char* filePath, int x, int y, int w, int h)
 {
     if (_running) {
@@ -797,7 +797,7 @@ int _movieRunRect(int win, char* filePath, int x, int y, int w, int h)
     return _movieStart(win, filePath);
 }
 
-// 0x487B7C
+// 0x487B7C stepMovie
 static int _stepMovie()
 {
     if (_alphaHandle != nullptr) {
@@ -814,20 +814,20 @@ static int _stepMovie()
     return stepResult;
 }
 
-// 0x487BC8
+// 0x487BC8 movieSetSubtitleFunc
 void movieSetBuildSubtitleFilePathProc(MovieBuildSubtitleFilePathProc* proc)
 {
     gMovieBuildSubtitleFilePathProc = proc;
 }
 
-// 0x487BD0
+// 0x487BD0 movieSetVolume
 void movieSetVolume(int volume)
 {
     int normalizedVolume = _soundVolumeHMItoDirectSound(volume);
     MveSetVolume(normalizedVolume);
 }
 
-// 0x487BEC
+// 0x487BEC movieUpdate
 void _movieUpdate()
 {
     if (!_running) {
@@ -859,7 +859,7 @@ void _movieUpdate()
     }
 }
 
-// 0x487C88
+// 0x487C88 moviePlaying
 int _moviePlaying()
 {
     return _running;

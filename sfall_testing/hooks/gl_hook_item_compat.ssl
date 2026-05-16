@@ -1,0 +1,153 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+#include "../test_utils.h"
+
+variable seen_adjustfid := 0;
+variable seen_invenwield := 0;
+variable seen_invenwield_remove := 0;
+variable seen_canuseweapon_player := 0;
+variable seen_canuseweapon_ai := 0;
+variable temp_container := 0;
+variable invenwield_override_enabled := false;
+variable canuseweapon_override := -1;
+
+procedure invenwield_mode_name begin
+    if (invenwield_override_enabled) then return "suppress";
+    return "engine";
+end
+
+procedure canuseweapon_mode_name(variable value) begin
+    if (value == -1) then return "engine";
+    if (value == 1) then return "on";
+    if (value == 0) then return "off";
+    return "unknown";
+end
+
+procedure cycle_canuseweapon_override begin
+    if (canuseweapon_override == -1) then canuseweapon_override := 1;
+    else if (canuseweapon_override == 1) then canuseweapon_override := 0;
+    else canuseweapon_override := -1;
+
+    display_msg(string_format1("hook_item_compat canuseweapon mode=%s", canuseweapon_mode_name(canuseweapon_override)));
+end
+
+procedure adjustfid_handler begin
+    variable args := get_sfall_args;
+
+    call assertEquals("adjustfid arg count", len_array(args), 2);
+    call assertEquals("adjustfid arg0 type", typeof(args[0]), VALTYPE_INT);
+    call assertEquals("adjustfid arg1 type", typeof(args[1]), VALTYPE_INT);
+
+    seen_adjustfid := seen_adjustfid + 1;
+    display_msg(string_format2("adjustfid vanilla=%d modified=%d", args[0], args[1]));
+end
+
+procedure invenwield_handler begin
+    variable
+        args := get_sfall_args,
+        item := args[1],
+        slot := args[2],
+        is_wield := args[3],
+        is_remove := args[4];
+
+    call assertEquals("invenwield arg count", len_array(args), 5);
+    call assertTrue("invenwield slot range", slot >= 0 and slot <= 2);
+    call assertTrue("invenwield is_wield flag", is_wield == 0 or is_wield == 1);
+    call assertTrue("invenwield is_remove flag", is_remove == 0 or is_remove == 1);
+
+    seen_invenwield := seen_invenwield + 1;
+    if (is_remove) then begin
+        seen_invenwield_remove := seen_invenwield_remove + 1;
+    end
+
+    display_msg(string_format4("invenwield item=%s slot=%d wield=%d remove=%d", obj_name(item), slot, is_wield, is_remove));
+
+    if (invenwield_override_enabled) then begin
+        set_sfall_return(0);
+    end
+end
+
+procedure canuseweapon_handler begin
+    variable
+        args := get_sfall_args,
+        hit_mode := args[2],
+        result := args[3],
+        weapon := args[1];
+
+    call assertEquals("canuseweapon arg count", len_array(args), 4);
+    call assertTrue("canuseweapon result flag", result == 0 or result == 1);
+
+    if (hit_mode == -1) then begin
+        seen_canuseweapon_player := seen_canuseweapon_player + 1;
+    end else begin
+        seen_canuseweapon_ai := seen_canuseweapon_ai + 1;
+    end
+
+    display_msg(string_format3("canuseweapon item=%s hitmode=%d result=%d", obj_name(weapon), hit_mode, result));
+
+    if (canuseweapon_override != -1) then begin
+        set_sfall_return(canuseweapon_override);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_Z) then begin
+        display_msg("hook_item_compat: unwield armor");
+        unwield_slot(dude_obj, INVEN_TYPE_WORN);
+    end else if (key == DIK_X) then begin
+        display_msg("hook_item_compat: unwield right hand");
+        unwield_slot(dude_obj, INVEN_TYPE_RIGHT_HAND);
+    end else if (key == DIK_C) then begin
+        display_msg("hook_item_compat: unwield left hand");
+        unwield_slot(dude_obj, INVEN_TYPE_LEFT_HAND);
+    end else if (key == DIK_V) then begin
+        display_msg("hook_item_compat: toggle active hand");
+        toggle_active_hand;
+    end else if (key == DIK_N) then begin
+        display_msg("hook_item_compat: move inventory to temp container");
+        if (temp_container == 0) then begin
+            temp_container := create_object_sid(467, 0, 0, -1);
+        end
+        move_obj_inven_to_obj(dude_obj, temp_container);
+    end else if (key == DIK_M) then begin
+        invenwield_override_enabled := not invenwield_override_enabled;
+        display_msg(string_format1("hook_item_compat invenwield mode=%s", invenwield_mode_name));
+    end else if (key == DIK_G) then begin
+        call cycle_canuseweapon_override;
+    end else if (key == DIK_B) then begin
+        display_msg(string_format7("hook_item_compat summary inven_mode=%s canuse_mode=%s adjust=%d inven=%d remove=%d player=%d ai=%d",
+            invenwield_mode_name,
+            canuseweapon_mode_name(canuseweapon_override),
+            seen_adjustfid,
+            seen_invenwield,
+            seen_invenwield_remove,
+            seen_canuseweapon_player,
+            seen_canuseweapon_ai));
+        call assertTrue("adjustfid observed", seen_adjustfid > 0);
+        call assertTrue("invenwield observed", seen_invenwield > 0);
+        call assertTrue("player canuseweapon observed", seen_canuseweapon_player > 0);
+        call report_test_results("hook_item_compat");
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("hook_item_compat ready:");
+    display_msg("open inventory/barter to trigger adjustfid");
+    display_msg("press Z armor, X right, C left, V swap hand");
+    display_msg("press N disposable-save inventory move, M invenwield mode");
+    display_msg("press G canuseweapon mode (engine/on/off), B report");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_INVENWIELD, invenwield_handler);
+    register_hook_proc(HOOK_ADJUSTFID, adjustfid_handler);
+    register_hook_proc(HOOK_CANUSEWEAPON, canuseweapon_handler);
+end
