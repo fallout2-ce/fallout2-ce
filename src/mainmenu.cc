@@ -107,9 +107,9 @@ static bool gMainMenuWindowHidden;
 
 static FrmImage mainMenuBackgroundFrmImage;
 static FrmImage mainMenuButtonPanelFrmImage;
-static FrmImage _mainMenuButtonNormalFrmImage;
-static FrmImage _mainMenuButtonPressedFrmImage;
-static std::vector<unsigned char> gMainMenuScaledButtonData;
+static FrmImage mainMenuButtonNormalFrmImage;
+static FrmImage mainMenuButtonPressedFrmImage;
+static std::vector<unsigned char> mainMenuScaledButtonData;
 
 struct MainMenuLayout {
     int screenWidth;
@@ -154,7 +154,6 @@ static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x,
 static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int width, int height);
 static int mainMenuScaleX(const MainMenuLayout& layout, int value);
 static int mainMenuScaleY(const MainMenuLayout& layout, int value);
-static int mainMenuScaleUniform(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width);
 static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
@@ -216,12 +215,12 @@ static bool mainMenuLoadArt()
     }
 
     int fid = buildFid(OBJ_TYPE_INTERFACE, 299, 0, 0, 0);
-    if (!_mainMenuButtonNormalFrmImage.lock(fid)) {
+    if (!mainMenuButtonNormalFrmImage.lock(fid)) {
         return false;
     }
 
     fid = buildFid(OBJ_TYPE_INTERFACE, 300, 0, 0, 0);
-    if (!_mainMenuButtonPressedFrmImage.lock(fid)) {
+    if (!mainMenuButtonPressedFrmImage.lock(fid)) {
         return false;
     }
 
@@ -312,9 +311,7 @@ static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffset
         return;
     }
 
-    MainMenuSize panelSize = layout.scaleControls
-        ? mainMenuTransformSize(layout, mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight())
-        : MainMenuSize { mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight() };
+    MainMenuSize panelSize = mainMenuTransformSize(layout, mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight());
     MainMenuPoint panelOrigin = mainMenuTransformPoint(layout, MAIN_MENU_PANEL_OFFSET_X, MAIN_MENU_PANEL_OFFSET_Y);
 
     blitBuffer2DScaledTrans(mainMenuButtonPanelFrmImage.getBuffer(),
@@ -337,8 +334,8 @@ static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int widt
 {
     if (layout.scaleControls) {
         return {
-            std::max(1, mainMenuScaleUniform(layout, width)),
-            std::max(1, mainMenuScaleUniform(layout, height)),
+            std::max(1, static_cast<int>(lround(width * layout.scale))),
+            std::max(1, static_cast<int>(lround(height * layout.scale))),
         };
     }
 
@@ -353,11 +350,6 @@ static int mainMenuScaleX(const MainMenuLayout& layout, int value)
 static int mainMenuScaleY(const MainMenuLayout& layout, int value)
 {
     return static_cast<int>(lround(value * layout.scaleY));
-}
-
-static int mainMenuScaleUniform(const MainMenuLayout& layout, int value)
-{
-    return static_cast<int>(lround(value * layout.scale));
 }
 
 static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value)
@@ -425,15 +417,15 @@ static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOf
     unsigned char* buttonNormalData;
     unsigned char* buttonPressedData;
     if (buttonWidth == MAIN_MENU_BUTTON_WIDTH && buttonHeight == MAIN_MENU_BUTTON_HEIGHT) {
-        buttonNormalData = _mainMenuButtonNormalFrmImage.getData();
-        buttonPressedData = _mainMenuButtonPressedFrmImage.getData();
+        buttonNormalData = mainMenuButtonNormalFrmImage.getData();
+        buttonPressedData = mainMenuButtonPressedFrmImage.getData();
     } else {
-        gMainMenuScaledButtonData.assign(buttonWidth * buttonHeight * 2, 0);
-        buttonNormalData = gMainMenuScaledButtonData.data();
+        mainMenuScaledButtonData.assign(buttonWidth * buttonHeight * 2, 0);
+        buttonNormalData = mainMenuScaledButtonData.data();
         buttonPressedData = buttonNormalData + buttonWidth * buttonHeight;
 
-        blitBuffer2DScaledTrans(_mainMenuButtonNormalFrmImage.getBuffer(), Buffer2D(buttonNormalData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
-        blitBuffer2DScaledTrans(_mainMenuButtonPressedFrmImage.getBuffer(), Buffer2D(buttonPressedData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
+        blitBuffer2DScaledTrans(mainMenuButtonNormalFrmImage.getBuffer(), Buffer2D(buttonNormalData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
+        blitBuffer2DScaledTrans(mainMenuButtonPressedFrmImage.getBuffer(), Buffer2D(buttonPressedData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
     }
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
@@ -566,10 +558,10 @@ void mainMenuWindowFree()
         }
     }
 
-    gMainMenuScaledButtonData.clear();
+    mainMenuScaledButtonData.clear();
     mainMenuButtonPanelFrmImage.unlock();
-    _mainMenuButtonPressedFrmImage.unlock();
-    _mainMenuButtonNormalFrmImage.unlock();
+    mainMenuButtonPressedFrmImage.unlock();
+    mainMenuButtonNormalFrmImage.unlock();
     mainMenuBackgroundFrmImage.unlock();
 
     if (gMainMenuWindow != -1) {
