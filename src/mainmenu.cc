@@ -251,8 +251,8 @@ static MainMenuLayout mainMenuBuildLayout()
 
     layout.scaleX = layout.backgroundWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
     layout.scaleY = layout.backgroundHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
-    layout.scale = layout.scaleY;
     layout.scaleControls = layout.art == MenuArt::Vanilla || settings.ui.main_menu_scale_buttons_and_text;
+    layout.scale = layout.scaleControls ? layout.scaleY : 1.0f;
     return layout;
 }
 
@@ -332,14 +332,10 @@ static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x,
 
 static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int width, int height)
 {
-    if (layout.scaleControls) {
-        return {
-            std::max(1, static_cast<int>(lround(width * layout.scale))),
-            std::max(1, static_cast<int>(lround(height * layout.scale))),
-        };
-    }
-
-    return { width, height };
+    return {
+        std::max(1, static_cast<int>(lround(width * layout.scale))),
+        std::max(1, static_cast<int>(lround(height * layout.scale))),
+    };
 }
 
 static int mainMenuScaleX(const MainMenuLayout& layout, int value)
