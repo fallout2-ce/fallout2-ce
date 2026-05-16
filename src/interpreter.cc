@@ -280,7 +280,7 @@ static void programPrintError(const char* format, va_list args)
     if (gInterpreterCurrentProgram) {
         longjmp(gInterpreterCurrentProgram->env, 1);
     }
-#ifdef _WIN32
+#ifdef _MSC_VER
     __assume(0);
 #else
     __builtin_unreachable();

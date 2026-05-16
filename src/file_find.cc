@@ -90,7 +90,7 @@ bool fileFindNext(DirectoryFileFindData* findData)
 // 0x4E63CC xsys_findclose
 bool findFindClose(DirectoryFileFindData* findData)
 {
-#if defined(_MSC_VER)
+#if defined(_WIN32)
     FindClose(findData->hFind);
 #else
     if (findData->dir != nullptr) {
