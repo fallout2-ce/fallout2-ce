@@ -202,7 +202,10 @@ static bool mainMenuLoadArt()
             mainMenuBackgroundFrmImage.unlock();
         } else {
             // for highres main menu art, use separate panel art
-            mainMenuButtonPanelFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MENU_BG.FRM"));
+            if (!mainMenuButtonPanelFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MENU_BG.FRM"))) {
+                debugPrint("MAINMENU: failed to load hires HR_MENU_BG.FRM, falling back to vanilla mainmenu.frm\n");
+                mainMenuBackgroundFrmImage.unlock();
+            }
         }
     }
 
