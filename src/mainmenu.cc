@@ -495,6 +495,10 @@ int mainMenuWindowInit()
         return 0;
     }
 
+    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
+        gMainMenuButtons[index] = -1;
+    }
+
     colorPaletteLoad("color.pal");
 
     gMainMenuWindow = windowCreate(0,
@@ -522,10 +526,6 @@ int mainMenuWindowInit()
     int oldFont = fontGetCurrent();
     fontSetCurrent(100);
     mainMenuDrawBuildInfo(layout, offsets);
-
-    for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
-        gMainMenuButtons[index] = -1;
-    }
 
     if (!mainMenuCreateButtons(layout, offsets)) {
         return main_menu_fatal_error();

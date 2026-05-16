@@ -9,6 +9,7 @@
 namespace fallout {
 
 static void blitBuffer2DScaledImpl(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight, bool transparent);
+static int scaledCeilDiv(int value, int numerator, int denominator);
 
 // 0x4D2FC0
 void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y2, int color)
@@ -310,28 +311,23 @@ static void blitBuffer2DScaledImpl(ConstBuffer2D src, int srcX, int srcY, int sr
         return;
     }
 
-    if (srcX < 0) {
-        srcWidth += srcX;
-        srcX = 0;
-    }
-    if (srcY < 0) {
-        srcHeight += srcY;
-        srcY = 0;
-    }
-    if (srcX + srcWidth > src.width) {
-        srcWidth = src.width - srcX;
-    }
-    if (srcY + srcHeight > src.height) {
-        srcHeight = src.height - srcY;
-    }
-    if (srcWidth <= 0 || srcHeight <= 0) {
+    int clippedSrcLeft = std::max(srcX, 0);
+    int clippedSrcTop = std::max(srcY, 0);
+    int clippedSrcRight = std::min(srcX + srcWidth, src.width);
+    int clippedSrcBottom = std::min(srcY + srcHeight, src.height);
+    if (clippedSrcLeft >= clippedSrcRight || clippedSrcTop >= clippedSrcBottom) {
         return;
     }
 
-    int left = std::max(dstX, 0);
-    int top = std::max(dstY, 0);
-    int right = std::min(dstX + dstWidth, dst.width);
-    int bottom = std::min(dstY + dstHeight, dst.height);
+    int left = dstX + scaledCeilDiv(clippedSrcLeft - srcX, dstWidth, srcWidth);
+    int top = dstY + scaledCeilDiv(clippedSrcTop - srcY, dstHeight, srcHeight);
+    int right = dstX + scaledCeilDiv(clippedSrcRight - srcX, dstWidth, srcWidth);
+    int bottom = dstY + scaledCeilDiv(clippedSrcBottom - srcY, dstHeight, srcHeight);
+
+    left = std::max(left, 0);
+    top = std::max(top, 0);
+    right = std::min(right, dst.width);
+    bottom = std::min(bottom, dst.height);
     if (left >= right || top >= bottom) {
         return;
     }
@@ -352,6 +348,11 @@ static void blitBuffer2DScaledImpl(ConstBuffer2D src, int srcX, int srcY, int sr
             }
         }
     }
+}
+
+static int scaledCeilDiv(int value, int numerator, int denominator)
+{
+    return static_cast<int>((static_cast<int64_t>(value) * numerator + denominator - 1) / denominator);
 }
 
 // 0x4D387C
