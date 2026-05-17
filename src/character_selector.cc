@@ -248,9 +248,9 @@ int characterSelectorOpen()
     }
 
     if (rc == 2) {
-        mainMenuDismissSubscreen(MainMenuSubscreenDismissMode::FadeOut, true);
+        mainMenuFadeOutAfterSubscreen(true);
     } else {
-        mainMenuDismissSubscreen(MainMenuSubscreenDismissMode::RestoreMenu, true);
+        mainMenuRestoreAfterSubscreen(true);
     }
     characterSelectorWindowFree();
 

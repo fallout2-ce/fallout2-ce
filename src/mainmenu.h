@@ -16,27 +16,17 @@ typedef enum MainMenuOption {
     MAIN_MENU_OPTIONS,
 } MainMenuOption;
 
-enum class MainMenuSubscreenMode {
-    Hidden,
-    Overlay,
-};
-
-enum class MainMenuSubscreenDismissMode {
-    RestoreMenu,
-    FadeOut,
-    KeepVisible,
-};
-
 int mainMenuWindowInit();
 void mainMenuWindowFree();
 void mainMenuWindowHide(bool animate);
 void mainMenuWindowUnhide(bool animate);
-MainMenuSubscreenMode mainMenuSubscreenOpen();
-void mainMenuSubscreenClose(MainMenuSubscreenMode mode);
-void mainMenuSubscreenFinish(MainMenuSubscreenMode mode);
+void mainMenuBeginSubscreen();
+void mainMenuCancelSubscreen();
+void mainMenuFinishSubscreen();
 int mainMenuSubscreenWindowFlags(int defaultFlags, int overlayFlags);
 void mainMenuShowSubscreen(bool animate);
-void mainMenuDismissSubscreen(MainMenuSubscreenDismissMode mode, bool animate);
+void mainMenuRestoreAfterSubscreen(bool animate);
+void mainMenuFadeOutAfterSubscreen(bool animate);
 int _main_menu_is_enabled();
 int mainMenuWindowHandleEvents();
 void mainMenuRequestExit();

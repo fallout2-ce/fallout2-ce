@@ -1286,7 +1286,7 @@ int doPreferences(bool animated)
         sharedFpsLimiter.throttle();
     }
 
-    mainMenuDismissSubscreen(MainMenuSubscreenDismissMode::RestoreMenu, animated);
+    mainMenuRestoreAfterSubscreen(animated);
 
     if (cursorWasHidden) {
         mouseHideCursor();

@@ -127,9 +127,9 @@ int falloutMain(int argc, char** argv)
                 gameMoviePlay(MOVIE_CREDITS, 0);
                 break;
             case MAIN_MENU_NEW_GAME: {
-                MainMenuSubscreenMode subscreenMode = mainMenuSubscreenOpen();
+                mainMenuBeginSubscreen();
                 if (characterSelectorOpen() == 2) {
-                    mainMenuSubscreenFinish(subscreenMode);
+                    mainMenuFinishSubscreen();
 
                     gameMoviePlay(MOVIE_ELDER, GAME_MOVIE_STOP_MUSIC);
                     randomSeedPrerandom(-1);
@@ -155,12 +155,12 @@ int falloutMain(int argc, char** argv)
                     mainRunGameLoopAndCleanup();
                     mainMenuWindowInit();
                 } else {
-                    mainMenuSubscreenClose(subscreenMode);
+                    mainMenuCancelSubscreen();
                 }
                 break;
             }
             case MAIN_MENU_LOAD_GAME: {
-                MainMenuSubscreenMode subscreenMode = mainMenuSubscreenOpen();
+                mainMenuBeginSubscreen();
 
                 // NOTE: Uninline.
                 main_loadgame_new();
@@ -174,13 +174,13 @@ int falloutMain(int argc, char** argv)
                 }
 
                 if (loadGameRc > 0) {
-                    mainMenuSubscreenFinish(subscreenMode);
+                    mainMenuFinishSubscreen();
                     mainRunGameLoopAndCleanup();
                     mainMenuWindowInit();
                 } else {
                     main_unload_new();
                     main_reset_system();
-                    mainMenuSubscreenClose(subscreenMode);
+                    mainMenuCancelSubscreen();
                 }
                 break;
             }
@@ -192,9 +192,9 @@ int falloutMain(int argc, char** argv)
                 gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
                 break;
             case MAIN_MENU_OPTIONS: {
-                MainMenuSubscreenMode subscreenMode = mainMenuSubscreenOpen();
+                mainMenuBeginSubscreen();
                 doPreferences(true);
-                mainMenuSubscreenClose(subscreenMode);
+                mainMenuCancelSubscreen();
                 break;
             }
             case MAIN_MENU_CREDITS:

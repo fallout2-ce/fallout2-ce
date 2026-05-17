@@ -1510,7 +1510,7 @@ int lsgLoadGame(int mode)
     }
 
     if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0) {
-        mainMenuDismissSubscreen(MainMenuSubscreenDismissMode::RestoreMenu, true);
+        mainMenuRestoreAfterSubscreen(true);
     }
 
     lsgWindowFree(mode == LOAD_SAVE_MODE_FROM_MAIN_MENU

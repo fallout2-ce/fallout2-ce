@@ -706,27 +706,26 @@ static void mainMenuWindowShowOverlayDim()
     mainMenuApplyOverlayDim();
 }
 
-MainMenuSubscreenMode mainMenuSubscreenOpen()
+void mainMenuBeginSubscreen()
 {
     if (mainMenuWindowShouldUseOverlayBackground()) {
         mainMenuWindowEnterOverlay();
-        return MainMenuSubscreenMode::Overlay;
+        return;
     }
 
     mainMenuWindowHide(true);
-    return MainMenuSubscreenMode::Hidden;
 }
 
-void mainMenuSubscreenClose(MainMenuSubscreenMode mode)
+void mainMenuCancelSubscreen()
 {
-    if (mode == MainMenuSubscreenMode::Overlay) {
+    if (mainMenuWindowIsOverlayActive()) {
         mainMenuWindowLeaveOverlay();
     }
 }
 
-void mainMenuSubscreenFinish(MainMenuSubscreenMode mode)
+void mainMenuFinishSubscreen()
 {
-    if (mode == MainMenuSubscreenMode::Overlay) {
+    if (mainMenuWindowIsOverlayActive()) {
         mainMenuWindowHide(false);
     }
 
@@ -749,16 +748,22 @@ void mainMenuShowSubscreen(bool animate)
     }
 }
 
-void mainMenuDismissSubscreen(MainMenuSubscreenDismissMode mode, bool animate)
+void mainMenuRestoreAfterSubscreen(bool animate)
 {
-    if (!animate || mode == MainMenuSubscreenDismissMode::KeepVisible) {
+    if (!animate || mainMenuWindowIsOverlayActive()) {
         return;
     }
 
-    if (mode == MainMenuSubscreenDismissMode::FadeOut
-        || !mainMenuWindowIsOverlayActive()) {
-        paletteFadeTo(gPaletteBlack);
+    paletteFadeTo(gPaletteBlack);
+}
+
+void mainMenuFadeOutAfterSubscreen(bool animate)
+{
+    if (!animate) {
+        return;
     }
+
+    paletteFadeTo(gPaletteBlack);
 }
 
 // 0x481AA8 main_menu_is_enabled
