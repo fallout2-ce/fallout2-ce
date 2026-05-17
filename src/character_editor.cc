@@ -28,6 +28,7 @@
 #include "interface.h"
 #include "item.h"
 #include "kb.h"
+#include "mainmenu.h"
 #include "map.h"
 #include "memory.h"
 #include "message.h"
@@ -263,6 +264,7 @@ typedef struct KillInfo {
 
 static int characterEditorWindowInit();
 static void characterEditorWindowFree();
+static int characterEditorGetModalWindowFlags();
 static int _get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags);
 static void characterEditorDrawFolders();
 static void characterEditorDrawPerksFolder();
@@ -1271,6 +1273,11 @@ int characterEditorShow(bool isCreationMode)
     return rc;
 }
 
+static int characterEditorGetModalWindowFlags()
+{
+    return WINDOW_MODAL | (mainMenuWindowIsOverlayActive() ? WINDOW_MOVE_ON_TOP : WINDOW_DONT_MOVE_TOP);
+}
+
 // 0x4329EC CharEditStart
 static int characterEditorWindowInit()
 {
@@ -1444,7 +1451,7 @@ static int characterEditorWindowInit()
         EDITOR_WINDOW_WIDTH,
         EDITOR_WINDOW_HEIGHT,
         static_cast<ColorWithFlags>(256),
-        WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+        characterEditorGetModalWindowFlags());
     if (gCharacterEditorWindow == -1) {
         for (i = 0; i < EDITOR_GRAPHIC_COUNT; i++) {
             if (gCharacterEditorFrmShouldCopy[i]) {
@@ -3306,7 +3313,7 @@ static int characterEditorEditName()
 
     int nameWindowX = (screenGetWidth() - EDITOR_WINDOW_WIDTH) / 2 + 17;
     int nameWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
-    int win = windowCreate(nameWindowX, nameWindowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+    int win = windowCreate(nameWindowX, nameWindowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), characterEditorGetModalWindowFlags());
     if (win == -1) {
         return -1;
     }
@@ -3438,7 +3445,7 @@ static int characterEditorEditAge()
 
     int ageWindowX = (screenGetWidth() - EDITOR_WINDOW_WIDTH) / 2 + _editorFrmImages[EDITOR_GRAPHIC_NAME_ON].getWidth() + 9;
     int ageWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
-    win = windowCreate(ageWindowX, ageWindowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+    win = windowCreate(ageWindowX, ageWindowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), characterEditorGetModalWindowFlags());
     if (win == -1) {
         return -1;
     }
@@ -3677,7 +3684,7 @@ static void characterEditorEditGender()
         + _editorFrmImages[EDITOR_GRAPHIC_NAME_ON].getWidth()
         + _editorFrmImages[EDITOR_GRAPHIC_AGE_ON].getWidth();
     int genderWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
-    int win = windowCreate(genderWindowX, genderWindowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+    int win = windowCreate(genderWindowX, genderWindowY, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), characterEditorGetModalWindowFlags());
 
     if (win == -1) {
         return;
@@ -3921,7 +3928,7 @@ static int characterEditorShowOptions()
         int optionsWindowY = (screenGetHeight() != 480)
             ? (screenGetHeight() - _editorFrmImages[41].getHeight()) / 2
             : 90;
-        int win = windowCreate(optionsWindowX, optionsWindowY, _editorFrmImages[41].getWidth(), _editorFrmImages[41].getHeight(), static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+        int win = windowCreate(optionsWindowX, optionsWindowY, _editorFrmImages[41].getWidth(), _editorFrmImages[41].getHeight(), static_cast<ColorWithFlags>(256), characterEditorGetModalWindowFlags());
         if (win == -1) {
             return -1;
         }
@@ -6147,7 +6154,7 @@ static int perkDialogShow()
     int perkWindowY = screenGetHeight() != 480
         ? (screenGetHeight() - PERK_WINDOW_HEIGHT) / 2
         : PERK_WINDOW_Y;
-    gPerkDialogWindow = windowCreate(perkWindowX, perkWindowY, PERK_WINDOW_WIDTH, PERK_WINDOW_HEIGHT, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+    gPerkDialogWindow = windowCreate(perkWindowX, perkWindowY, PERK_WINDOW_WIDTH, PERK_WINDOW_HEIGHT, static_cast<ColorWithFlags>(256), characterEditorGetModalWindowFlags());
     if (gPerkDialogWindow == -1) {
         _perkDialogBackgroundFrmImage.unlock();
         debugPrint("\n *** Error running perks dialog window ***\n");
