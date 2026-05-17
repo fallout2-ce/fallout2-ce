@@ -1159,12 +1159,7 @@ int lsgLoadGame(int mode)
     windowRefresh(gLoadSaveWindow);
     renderPresent();
     if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
-        if (mainMenuWindowIsOverlayActive()) {
-            mainMenuWindowShowOverlayDim();
-        } else {
-            colorPaletteLoad("color.pal");
-            paletteFadeTo(_cmap);
-        }
+        mainMenuShowSubscreen(true);
     }
     _dbleclkcntr = 24;
 
@@ -1514,8 +1509,8 @@ int lsgLoadGame(int mode)
         sharedFpsLimiter.throttle();
     }
 
-    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0 && !mainMenuWindowIsOverlayActive()) {
-        paletteFadeTo(gPaletteBlack);
+    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0) {
+        mainMenuDismissSubscreen(MainMenuSubscreenDismissMode::RestoreMenu, true);
     }
 
     lsgWindowFree(mode == LOAD_SAVE_MODE_FROM_MAIN_MENU
