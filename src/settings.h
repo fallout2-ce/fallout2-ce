@@ -42,6 +42,10 @@ struct UISettings {
     // Whether main menu panel/buttons/button labels scale with hi-res main menu art.
     bool main_menu_scale_buttons_and_text = false;
 
+    // Whether to keep the main menu visible behind 640x480 main-menu subwindows
+    // like load, options, and new game when the effective menu background is larger.
+    bool main_menu_overlay_subscreens = true;
+
     // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
     bool iface_bar_mode = false;
 

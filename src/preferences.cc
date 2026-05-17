@@ -15,6 +15,7 @@
 #include "graph_lib.h"
 #include "input.h"
 #include "kb.h"
+#include "mainmenu.h"
 #include "message.h"
 #include "mouse.h"
 #include "palette.h"
@@ -1009,12 +1010,14 @@ static int preferencesWindowInit()
 
     int preferencesWindowX = (screenGetWidth() - PREFERENCES_WINDOW_WIDTH) / 2;
     int preferencesWindowY = (screenGetHeight() - PREFERENCES_WINDOW_HEIGHT) / 2;
+    int preferencesWindowFlags = mainMenuSubscreenWindowFlags(WINDOW_MODAL | WINDOW_DONT_MOVE_TOP, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+
     gPreferencesWindow = windowCreate(preferencesWindowX,
         preferencesWindowY,
         PREFERENCES_WINDOW_WIDTH,
         PREFERENCES_WINDOW_HEIGHT,
         256,
-        WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
+        preferencesWindowFlags);
     if (gPreferencesWindow == -1) {
         for (i = 0; i < PREFERENCES_WINDOW_FRM_COUNT; i++) {
             _preferencesFrmImages[i].unlock();
@@ -1233,10 +1236,7 @@ int doPreferences(bool animated)
 
     touch_set_touchscreen_mode(true);
 
-    if (animated) {
-        colorPaletteLoad("color.pal");
-        paletteFadeTo(_cmap);
-    }
+    mainMenuShowSubscreen(animated);
 
     int rc = -1;
     while (rc == -1) {
@@ -1286,9 +1286,7 @@ int doPreferences(bool animated)
         sharedFpsLimiter.throttle();
     }
 
-    if (animated) {
-        paletteFadeTo(gPaletteBlack);
-    }
+    mainMenuRestoreAfterSubscreen(animated);
 
     if (cursorWasHidden) {
         mouseHideCursor();
