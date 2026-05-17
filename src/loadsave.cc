@@ -33,6 +33,7 @@
 #include "item.h"
 #include "kb.h"
 #include "map.h"
+#include "mainmenu.h"
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"
@@ -1202,8 +1203,12 @@ int lsgLoadGame(int mode)
     windowRefresh(gLoadSaveWindow);
     renderPresent();
     if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
-        colorPaletteLoad("color.pal");
-        paletteFadeTo(_cmap);
+        if (mainMenuWindowIsOverlayActive()) {
+            mainMenuWindowShowOverlayDim();
+        } else {
+            colorPaletteLoad("color.pal");
+            paletteFadeTo(_cmap);
+        }
     }
     _dbleclkcntr = 24;
 
@@ -1553,7 +1558,7 @@ int lsgLoadGame(int mode)
         sharedFpsLimiter.throttle();
     }
 
-    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0) {
+    if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0 && !mainMenuWindowIsOverlayActive()) {
         paletteFadeTo(gPaletteBlack);
     }
 
