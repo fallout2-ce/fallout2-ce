@@ -126,9 +126,19 @@ int falloutMain(int argc, char** argv)
                 gameMoviePlay(MOVIE_CREDITS, 0);
                 break;
             case MAIN_MENU_NEW_GAME:
-                mainMenuWindowHide(true);
-                mainMenuWindowFree();
+                if (mainMenuWindowShouldUseOverlayBackground()) {
+                    mainMenuWindowEnterOverlay();
+                } else {
+                    mainMenuWindowHide(true);
+                    mainMenuWindowFree();
+                }
+
                 if (characterSelectorOpen() == 2) {
+                    if (mainMenuWindowShouldUseOverlayBackground()) {
+                        mainMenuWindowHide(false);
+                        mainMenuWindowFree();
+                    }
+
                     gameMoviePlay(MOVIE_ELDER, GAME_MOVIE_STOP_MUSIC);
                     randomSeedPrerandom(-1);
 
@@ -163,6 +173,8 @@ int falloutMain(int argc, char** argv)
                         showDeath();
                         _main_show_death_scene = 0;
                     }
+                } else if (mainMenuWindowShouldUseOverlayBackground()) {
+                    mainMenuWindowLeaveOverlay();
                 }
 
                 mainMenuWindowInit();
@@ -170,40 +182,80 @@ int falloutMain(int argc, char** argv)
                 break;
             case MAIN_MENU_LOAD_GAME:
                 if (1) {
-                    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
-                    mainMenuWindowHide(true);
-                    mainMenuWindowFree();
+                    if (mainMenuWindowShouldUseOverlayBackground()) {
+                        mainMenuWindowEnterOverlay();
 
-                    // NOTE: Uninline.
-                    main_loadgame_new();
+                        // NOTE: Uninline.
+                        main_loadgame_new();
 
-                    if (devLoadGameSlot != -1) {
-                        lsgDevSetLoadGameSlot(devLoadGameSlot);
+                        if (devLoadGameSlot != -1) {
+                            lsgDevSetLoadGameSlot(devLoadGameSlot);
+                        }
+                        int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+                        bool didLoadGame = loadGameRc > 0;
+                        if (loadGameRc == -1) {
+                            debugPrint("\n ** Error running LoadGame()! **\n");
+                        }
+
+                        if (didLoadGame) {
+                            mainMenuWindowHide(false);
+                            mainMenuWindowFree();
+                            mainLoop();
+                            paletteFadeTo(gPaletteWhite);
+
+                            // NOTE: Uninline.
+                            main_unload_new();
+
+                            // NOTE: Uninline.
+                            main_reset_system();
+
+                            if (_main_show_death_scene != 0) {
+                                showDeath();
+                                _main_show_death_scene = 0;
+                            }
+
+                            mainMenuWindowInit();
+                        } else {
+                            main_unload_new();
+                            main_reset_system();
+                            mainMenuWindowLeaveOverlay();
+                        }
+                    } else {
+                        int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+                        mainMenuWindowHide(true);
+                        mainMenuWindowFree();
+
+                        // NOTE: Uninline.
+                        main_loadgame_new();
+
+                        if (devLoadGameSlot != -1) {
+                            lsgDevSetLoadGameSlot(devLoadGameSlot);
+                        }
+                        int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+                        if (loadGameRc == -1) {
+                            debugPrint("\n ** Error running LoadGame()! **\n");
+                        } else if (loadGameRc != 0) {
+                            windowDestroy(win);
+                            win = -1;
+                            mainLoop();
+                            paletteFadeTo(gPaletteWhite);
+                        }
+                        if (win != -1) {
+                            windowDestroy(win);
+                        }
+
+                        // NOTE: Uninline.
+                        main_unload_new();
+
+                        // NOTE: Uninline.
+                        main_reset_system();
+
+                        if (_main_show_death_scene != 0) {
+                            showDeath();
+                            _main_show_death_scene = 0;
+                        }
+                        mainMenuWindowInit();
                     }
-                    int loadGameRc = lsgLoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
-                    if (loadGameRc == -1) {
-                        debugPrint("\n ** Error running LoadGame()! **\n");
-                    } else if (loadGameRc != 0) {
-                        windowDestroy(win);
-                        win = -1;
-                        mainLoop();
-                        paletteFadeTo(gPaletteWhite);
-                    }
-                    if (win != -1) {
-                        windowDestroy(win);
-                    }
-
-                    // NOTE: Uninline.
-                    main_unload_new();
-
-                    // NOTE: Uninline.
-                    main_reset_system();
-
-                    if (_main_show_death_scene != 0) {
-                        showDeath();
-                        _main_show_death_scene = 0;
-                    }
-                    mainMenuWindowInit();
                 }
                 break;
             case MAIN_MENU_TIMEOUT:
@@ -214,8 +266,14 @@ int falloutMain(int argc, char** argv)
                 gameMoviePlay(MOVIE_INTRO, GAME_MOVIE_PAUSE_MUSIC);
                 break;
             case MAIN_MENU_OPTIONS:
-                mainMenuWindowHide(true);
-                doPreferences(true);
+                if (mainMenuWindowShouldUseOverlayBackground()) {
+                    mainMenuWindowEnterOverlay();
+                    doPreferences(false);
+                    mainMenuWindowLeaveOverlay();
+                } else {
+                    mainMenuWindowHide(true);
+                    doPreferences(true);
+                }
                 break;
             case MAIN_MENU_CREDITS:
                 mainMenuWindowHide(true);

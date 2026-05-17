@@ -25,6 +25,7 @@ namespace fallout {
 #define GAME_CONFIG_SCALE_KEY "scale"
 #define GAME_CONFIG_MAIN_MENU_SCALE_MODE_KEY "main_menu_scale_mode"
 #define GAME_CONFIG_MAIN_MENU_SCALE_BUTTONS_AND_TEXT_KEY "main_menu_scale_buttons_and_text"
+#define GAME_CONFIG_MAIN_MENU_OVERLAY_SUBSCREENS_KEY "main_menu_overlay_subscreens"
 #define GAME_CONFIG_IFACE_BAR_MODE_KEY "iface_bar_mode"
 #define GAME_CONFIG_IFACE_BAR_WIDTH_KEY "iface_bar_width"
 #define GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY "iface_bar_side_art"
