@@ -29,5 +29,27 @@ procedure start begin
     // RADIATED
     call assertFalse("hide_iface_tag(RADIATED)", is_iface_tag_active(2));
 
+    // Default custom box from BoxBarCount.
+    set_iface_tag_text(5, "TAG FIVE", 2);
+    call assertFalse("custom tag 5 starts inactive", is_iface_tag_active(5));
+    show_iface_tag(5);
+    call assertTrue("show_iface_tag(custom 5)", is_iface_tag_active(5));
+    hide_iface_tag(5);
+    call assertFalse("hide_iface_tag(custom 5)", is_iface_tag_active(5));
+
+    // Dynamically added custom box.
+    variable extra_tag := add_iface_tag;
+    call assertTrue("add_iface_tag lower bound", extra_tag >= 10);
+    call assertTrue("add_iface_tag upper bound", extra_tag <= 126);
+    set_iface_tag_text(extra_tag, "EXTRA TAG", 3);
+    call assertFalse("added custom tag starts inactive", is_iface_tag_active(extra_tag));
+    show_iface_tag(extra_tag);
+    call assertTrue("show_iface_tag(added custom)", is_iface_tag_active(extra_tag));
+    hide_iface_tag(extra_tag);
+    call assertFalse("hide_iface_tag(added custom)", is_iface_tag_active(extra_tag));
+
+    variable next_tag := add_iface_tag;
+    call assertEquals("add_iface_tag increments", next_tag, extra_tag + 1);
+
     call report_test_results("iface_tag");
 end

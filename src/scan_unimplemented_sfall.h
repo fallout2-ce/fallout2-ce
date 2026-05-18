@@ -8,7 +8,6 @@
 
 static const std::string sfall_metarules[] = {
     "add_extra_msg_file",
-    "add_iface_tag",
     "add_g_timer_event",
     "add_trait",
     "art_cache_clear",
@@ -81,7 +80,6 @@ static const std::string sfall_metarules[] = {
     "set_fake_perk_npc",
     "set_fake_trait_npc",
     "set_flags",
-    "set_iface_tag_text",
     "set_ini_setting",
     "set_map_enter_position",
     "set_object_data",

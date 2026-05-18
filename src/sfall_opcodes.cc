@@ -1574,7 +1574,7 @@ static void op_show_iface_tag(fallout::Program* program)
         dudeEnableState(tag);
         break;
     default:
-        debugPrint("op_show_iface_tag: custom tag %d is not handled", tag);
+        interfaceTagShow(tag);
     }
 }
 
@@ -1589,7 +1589,7 @@ static void op_hide_iface_tag(fallout::Program* program)
         dudeDisableState(tag);
         break;
     default:
-        debugPrint("op_hide_iface_tag: custom tag %d is not handled", tag);
+        interfaceTagHide(tag);
     }
 }
 
@@ -1611,7 +1611,7 @@ static void op_is_iface_tag_active(fallout::Program* program)
         isActive = critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
         break;
     default:
-        debugPrint("op_is_iface_tag_active: custom tag %d is not handled", tag);
+        isActive = interfaceTagIsActive(tag);
     }
 
     fallout::programStackPushInteger(program, isActive ? 1 : 0);
