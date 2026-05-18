@@ -2,6 +2,9 @@
 
    Item Highlighting mod from Sfall
 
+   This is based on https://github.com/sfall-team/sfall/blob/master/artifacts/mods/gl_highlighting.ssl and all credit goes
+   to the Sfall authors.
+
    Previously was part of sfall itself, now a separate mod.
    Features:
    - highlights items, containers (optional) and lootable corpses (optional) on the ground
@@ -199,7 +202,7 @@ procedure start begin
       alsoCorpse := GetConfig(configSection, "corpses", 0);
       alsoCritter := GetConfig(configSection, "critters", 0);
       checkLOS := GetConfig(configSection, "check_los", 0);
-      outlineColor := GetConfig(configSection, "cutline_color", 16);
+      outlineColor := GetConfig(configSection, "outline_color", 16);
       if (outlineColor < 1) then outlineColor := 64;
       outlineColorContainers := GetConfig(configSection, "outline_color_containers", 16);
       if (outlineColorContainers < 1) then outlineColorContainers := 64;
