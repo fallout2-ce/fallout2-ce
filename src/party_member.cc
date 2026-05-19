@@ -586,7 +586,7 @@ static int _partyMemberPrepLoadInstance(PartyMemberListItem* a1)
 
     a1->script = (Script*)internal_malloc(sizeof(*script));
     if (a1->script == nullptr) {
-        showMesageBox("\n  Error!: partyMemberPrepLoad: Out of memory!");
+        showMessageBox("\n  Error!: partyMemberPrepLoad: Out of memory!");
         exit(1);
     }
 
@@ -595,7 +595,7 @@ static int _partyMemberPrepLoadInstance(PartyMemberListItem* a1)
     if (script->localVarsCount != 0 && script->localVarsOffset != -1) {
         a1->vars = (int*)internal_malloc(sizeof(*a1->vars) * script->localVarsCount);
         if (a1->vars == nullptr) {
-            showMesageBox("\n  Error!: partyMemberPrepLoad: Out of memory!");
+            showMessageBox("\n  Error!: partyMemberPrepLoad: Out of memory!");
             exit(1);
         }
 
@@ -678,13 +678,13 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
 
     int v1 = -1;
     if (scriptAdd(&v1, scriptType) == -1) {
-        showMesageBox("\n  Error!: partyMemberRecoverLoad: Can't create script!");
+        showMessageBox("\n  Error!: partyMemberRecoverLoad: Can't create script!");
         exit(1);
     }
 
     Script* script;
     if (scriptGetScript(v1, &script) == -1) {
-        showMesageBox("\n  Error!: partyMemberRecoverLoad: Can't find script!");
+        showMessageBox("\n  Error!: partyMemberRecoverLoad: Can't find script!");
         exit(1);
     }
 
@@ -994,7 +994,7 @@ static int _partyMemberPrepItemSave(Object* object)
     if (object->sid != -1) {
         Script* script;
         if (scriptGetScript(object->sid, &script) == -1) {
-            showMesageBox("\n  Error!: partyMemberPrepItemSaveAll: Can't find script!");
+            showMessageBox("\n  Error!: partyMemberPrepItemSaveAll: Can't find script!");
             exit(1);
         }
 
@@ -1016,7 +1016,7 @@ static int _partyMemberItemSave(Object* object)
     if (object->sid != -1) {
         Script* script;
         if (scriptGetScript(object->sid, &script) == -1) {
-            showMesageBox("\n  Error!: partyMemberItemSave: Can't find script!");
+            showMessageBox("\n  Error!: partyMemberItemSave: Can't find script!");
             exit(1);
         }
 
@@ -1027,7 +1027,7 @@ static int _partyMemberItemSave(Object* object)
 
         PartyMemberListItem* node = (PartyMemberListItem*)internal_malloc(sizeof(*node));
         if (node == nullptr) {
-            showMesageBox("\n  Error!: partyMemberItemSave: Out of memory!");
+            showMessageBox("\n  Error!: partyMemberItemSave: Out of memory!");
             exit(1);
         }
 
@@ -1035,7 +1035,7 @@ static int _partyMemberItemSave(Object* object)
 
         node->script = (Script*)internal_malloc(sizeof(*script));
         if (node->script == nullptr) {
-            showMesageBox("\n  Error!: partyMemberItemSave: Out of memory!");
+            showMessageBox("\n  Error!: partyMemberItemSave: Out of memory!");
             exit(1);
         }
 
@@ -1044,7 +1044,7 @@ static int _partyMemberItemSave(Object* object)
         if (script->localVarsCount != 0 && script->localVarsOffset != -1) {
             node->vars = (int*)internal_malloc(sizeof(*node->vars) * script->localVarsCount);
             if (node->vars == nullptr) {
-                showMesageBox("\n  Error!: partyMemberItemSave: Out of memory!");
+                showMessageBox("\n  Error!: partyMemberItemSave: Out of memory!");
                 exit(1);
             }
 
@@ -1073,13 +1073,13 @@ static int _partyMemberItemRecover(PartyMemberListItem* a1)
 {
     int sid = -1;
     if (scriptAdd(&sid, SCRIPT_TYPE_ITEM) == -1) {
-        showMesageBox("\n  Error!: partyMemberItemRecover: Can't create script!");
+        showMessageBox("\n  Error!: partyMemberItemRecover: Can't create script!");
         exit(1);
     }
 
     Script* script;
     if (scriptGetScript(sid, &script) == -1) {
-        showMesageBox("\n  Error!: partyMemberItemRecover: Can't find script!");
+        showMessageBox("\n  Error!: partyMemberItemRecover: Can't find script!");
         exit(1);
     }
 

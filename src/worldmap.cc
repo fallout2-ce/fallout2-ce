@@ -1336,7 +1336,7 @@ static int wmConfigInit()
         }
 
         if (!configGetInt(&config, "Tile Data", "num_horizontal_tiles", &wmNumHorizontalTiles)) {
-            showMesageBox("\nwmConfigInit::Error loading tile data!");
+            showMessageBox("\nwmConfigInit::Error loading tile data!");
             return -1;
         }
 
@@ -1353,7 +1353,7 @@ static int wmConfigInit()
 
             TileInfo* worldmapTiles = (TileInfo*)internal_realloc(wmTileInfoList, sizeof(*wmTileInfoList) * wmMaxTileNum);
             if (worldmapTiles == nullptr) {
-                showMesageBox("\nwmConfigInit::Error loading tiles!");
+                showMessageBox("\nwmConfigInit::Error loading tiles!");
                 exit(1);
             }
 
@@ -1383,12 +1383,12 @@ static int wmConfigInit()
 
                     char* subtileProps;
                     if (!configGetString(&config, section, key, &subtileProps)) {
-                        showMesageBox("\nwmConfigInit::Error loading tiles!");
+                        showMessageBox("\nwmConfigInit::Error loading tiles!");
                         exit(1);
                     }
 
                     if (wmParseSubTileInfo(tile, row, column, subtileProps) == -1) {
-                        showMesageBox("\nwmConfigInit::Error loading tiles!");
+                        showMessageBox("\nwmConfigInit::Error loading tiles!");
                         exit(1);
                     }
                 }
@@ -1408,7 +1408,7 @@ static int wmReadEncounterType(Config* config, char* lookupName, char* sectionKe
 
     EncounterTable* encounterTables = (EncounterTable*)internal_realloc(wmEncounterTableList, sizeof(EncounterTable) * wmMaxEncounterInfoTables);
     if (encounterTables == nullptr) {
-        showMesageBox("\nwmConfigInit::Error loading Encounter Table!");
+        showMessageBox("\nwmConfigInit::Error loading Encounter Table!");
         exit(1);
     }
 
@@ -1447,7 +1447,7 @@ static int wmReadEncounterType(Config* config, char* lookupName, char* sectionKe
         }
 
         if (encounterTable->entriesLength >= 40) {
-            showMesageBox("\nwmConfigInit::Error: Encounter Table: Too many table indexes!!");
+            showMessageBox("\nwmConfigInit::Error: Encounter Table: Too many table indexes!!");
             exit(1);
         }
 
@@ -1673,7 +1673,7 @@ static int wmReadEncBaseType(char* name, int* valuePtr)
 
     Encounter* encounters = (Encounter*)internal_realloc(wmEncBaseTypeList, sizeof(*wmEncBaseTypeList) * wmMaxEncBaseTypes);
     if (encounters == nullptr) {
-        showMesageBox("\nwmConfigInit::Error Reading EncBaseType!");
+        showMessageBox("\nwmConfigInit::Error Reading EncBaseType!");
         exit(1);
     }
 
@@ -2453,7 +2453,7 @@ static int wmAreaInit()
 
             cities = (CityInfo*)internal_realloc(wmAreaInfoList, sizeof(CityInfo) * wmMaxAreaNum);
             if (cities == nullptr) {
-                showMesageBox("\nwmConfigInit::Error loading areas!");
+                showMessageBox("\nwmConfigInit::Error loading areas!");
                 exit(1);
             }
 
@@ -2481,14 +2481,14 @@ static int wmAreaInit()
             }
 
             if (!configGetString(&cfg, section, "area_name", &str)) {
-                showMesageBox("\nwmConfigInit::Error loading areas!");
+                showMessageBox("\nwmConfigInit::Error loading areas!");
                 exit(1);
             }
 
             strncpy(city->name, str, 40);
 
             if (!configGetString(&cfg, section, "world_pos", &str)) {
-                showMesageBox("\nwmConfigInit::Error loading areas!");
+                showMessageBox("\nwmConfigInit::Error loading areas!");
                 exit(1);
             }
 
@@ -2501,7 +2501,7 @@ static int wmAreaInit()
             }
 
             if (!configGetString(&cfg, section, "start_state", &str)) {
-                showMesageBox("\nwmConfigInit::Error loading areas!");
+                showMessageBox("\nwmConfigInit::Error loading areas!");
                 exit(1);
             }
 
@@ -2516,7 +2516,7 @@ static int wmAreaInit()
             }
 
             if (!configGetString(&cfg, section, "size", &str)) {
-                showMesageBox("\nwmConfigInit::Error loading areas!");
+                showMessageBox("\nwmConfigInit::Error loading areas!");
                 exit(1);
             }
 
@@ -2656,7 +2656,7 @@ static int wmMapInit()
 
             maps = (MapInfo*)internal_realloc(wmMapInfoList, sizeof(*wmMapInfoList) * wmMaxMapNum);
             if (maps == nullptr) {
-                showMesageBox("\nwmConfigInit::Error loading maps!");
+                showMessageBox("\nwmConfigInit::Error loading maps!");
                 exit(1);
             }
 
@@ -2668,7 +2668,7 @@ static int wmMapInit()
             strncpy(map->lookupName, str, 40);
 
             if (!configGetString(&config, section, "map_name", &str)) {
-                showMesageBox("\nwmConfigInit::Error loading maps!");
+                showMessageBox("\nwmConfigInit::Error loading maps!");
                 exit(1);
             }
 

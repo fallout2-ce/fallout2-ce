@@ -1392,8 +1392,12 @@ static int gameDbInit()
 
     int master_db_handle = dbOpen(main_file_name, patch_file_name);
     if (master_db_handle == -1) {
-        showMesageBox("Could not find the master datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
+        showMessageBox("Could not find the master datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
         return -1;
+    }
+
+    if (compat_access("f2_res.dat", 0) == 0) {
+        dbOpen("f2_res.dat");
     }
 
     main_file_name = settings.system.critter_dat_path.c_str();
@@ -1408,7 +1412,7 @@ static int gameDbInit()
 
     int critter_db_handle = dbOpen(main_file_name, patch_file_name);
     if (critter_db_handle == -1) {
-        showMesageBox("Could not find the critter datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
+        showMessageBox("Could not find the critter datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
         return -1;
     }
 
@@ -1431,10 +1435,6 @@ static int gameDbInit()
     TryLoadBaseCEMod();
 
     sfallLoadMods();
-
-    if (compat_access("f2_res.dat", 0) == 0) {
-        dbOpen("f2_res.dat");
-    }
 
     return 0;
 }

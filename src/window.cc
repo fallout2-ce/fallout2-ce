@@ -1388,37 +1388,37 @@ void windowInit(int resolution, int flags)
         switch (rc) {
         case WINDOW_MANAGER_ERR_INITIALIZING_VIDEO_MODE:
             snprintf(err, sizeof(err), "Error initializing video mode %dx%d\n", _xres, _yres);
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_NO_MEMORY:
             snprintf(err, sizeof(err), "Not enough memory to initialize video mode\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_INITIALIZING_TEXT_FONTS:
             snprintf(err, sizeof(err), "Couldn't find/load text fonts\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_WINDOW_SYSTEM_ALREADY_INITIALIZED:
             snprintf(err, sizeof(err), "Attempt to initialize window system twice\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_WINDOW_SYSTEM_NOT_INITIALIZED:
             snprintf(err, sizeof(err), "Window system not initialized\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_CURRENT_WINDOWS_TOO_BIG:
             snprintf(err, sizeof(err), "Current windows are too big for new resolution\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_INITIALIZING_DEFAULT_DATABASE:
             snprintf(err, sizeof(err), "Error initializing default database.\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_8:
@@ -1426,22 +1426,22 @@ void windowInit(int resolution, int flags)
             break;
         case WINDOW_MANAGER_ERR_ALREADY_RUNNING:
             snprintf(err, sizeof(err), "Program already running.\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_TITLE_NOT_SET:
             snprintf(err, sizeof(err), "Program title not set.\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         case WINDOW_MANAGER_ERR_INITIALIZING_INPUT:
             snprintf(err, sizeof(err), "Failure initializing input devices.\n");
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         default:
             snprintf(err, sizeof(err), "Unknown error code %d\n", rc);
-            showMesageBox(err);
+            showMessageBox(err);
             exit(1);
             break;
         }
