@@ -2,8 +2,8 @@
 
 #include "platform/ios/quick_toolbar.h"
 
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
