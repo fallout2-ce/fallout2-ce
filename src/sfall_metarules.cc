@@ -202,7 +202,7 @@ void mf_add_iface_tag(OpcodeContext& ctx)
 {
     int result = interfaceTagAdd();
     if (result == -1) {
-        ctx.printError("%s() - cannot add new tag as the maximum limit of 126 tags has been reached.", ctx.name());
+        ctx.printError("%s() - cannot add new tag as the maximum limit has been reached.", ctx.name());
     }
     ctx.setReturn(result);
 }

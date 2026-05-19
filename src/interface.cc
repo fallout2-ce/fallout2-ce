@@ -2566,11 +2566,11 @@ static int indicatorBarTextColor(int color)
         return _colorTable[32767];
     case 3: // yellow
         return _colorTable[32328];
-    case 4: // peanut butter
+    case 4: // peanut butter // TODO: validate
         return _colorTable[23624];
     case 5: // blue
         return _colorTable[31];
-    case 6: // good
+    case 6: // good // TODO: validate
         return _colorTable[31775];
     case 7: // dull pink
         return _colorTable[31215];
@@ -2592,8 +2592,11 @@ static void indicatorBarRenderBox(unsigned char* data, const char* text, int col
     // [INDICATOR_BOX_HEIGHT] + [INDICATOR_BOX_CONNECTOR_WIDTH]. Maybe just
     // a coincidence. I guess we'll never find out.
     int y = (24 - fontGetLineHeight()) / 2;
-    int x = (INDICATOR_BOX_WIDTH - fontGetStringWidth(text)) / 2;
-    fontDrawText(data + INDICATOR_BOX_WIDTH * y + x, text, INDICATOR_BOX_WIDTH, INDICATOR_BOX_WIDTH, color);
+    int x = std::max(0, (INDICATOR_BOX_WIDTH - fontGetStringWidth(text)) / 2);
+    int maxDrawWidth = INDICATOR_BOX_WIDTH - x;
+    if (maxDrawWidth > 0) {
+        fontDrawText(data + INDICATOR_BOX_WIDTH * y + x, text, maxDrawWidth, INDICATOR_BOX_WIDTH, color);
+    }
 
     fontSetCurrent(oldFont);
 }
