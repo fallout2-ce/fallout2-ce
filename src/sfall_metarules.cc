@@ -493,12 +493,11 @@ void mf_set_flags(OpcodeContext& ctx)
 void mf_set_iface_tag_text(OpcodeContext& ctx)
 {
     int boxTag = ctx.arg(0).asInt();
-    int maxBox = interfaceTagGetMax();
 
-    if (boxTag > 4 && boxTag <= maxBox) {
+    if (boxTag > 4 && boxTag <= interfaceTagGetMax()) {
         interfaceTagSetText(boxTag, ctx.stringArg(1), ctx.arg(2).asInt());
     } else {
-        ctx.printError("%s() - tag value must be in the range of 5 to %d.", ctx.name(), maxBox);
+        ctx.printError("%s() - tag value must be in the range of 5 to %d.", ctx.name(), interfaceTagGetMax());
         ctx.setReturn(-1);
     }
 }

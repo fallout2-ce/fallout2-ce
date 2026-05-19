@@ -1,5 +1,63 @@
 #include "test_utils.h"
 #include "sfall.h"
+#include "dik.h"
+
+variable manual_extra_tag := 0;
+variable manual_tag5_color := 2;
+
+procedure print_custom_tag_state(variable tag, variable label) begin
+    display_msg(label + ": " + is_iface_tag_active(tag));
+end
+
+procedure toggle_custom_tag(variable tag, variable label) begin
+    if (is_iface_tag_active(tag)) then begin
+        hide_iface_tag(tag);
+        display_msg(label + " hidden");
+    end else begin
+        show_iface_tag(tag);
+        display_msg(label + " shown");
+    end
+
+    call print_custom_tag_state(tag, label);
+end
+
+procedure apply_tag5_color begin
+    set_iface_tag_text(5, "TAG FIVE", manual_tag5_color);
+    display_msg(string_format1("custom tag 5 color -> %d", manual_tag5_color));
+end
+
+procedure keypress_handler begin
+    variable pressed := get_sfall_arg_at(0);
+    variable key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_B) then begin
+        call toggle_custom_tag(5, "custom tag 5");
+    end else if (key == DIK_C) then begin
+        manual_tag5_color := manual_tag5_color + 1;
+        if (manual_tag5_color > 7) then begin
+            manual_tag5_color := 0;
+        end
+
+        call apply_tag5_color;
+    end else if (key == DIK_N) then begin
+        call toggle_custom_tag(6, "custom tag 6");
+    end else if (key == DIK_M) then begin
+        if (manual_extra_tag == 0) then begin
+            display_msg("manual extra tag is not initialized");
+            return;
+        end
+
+        call toggle_custom_tag(manual_extra_tag, "manual extra tag");
+    end else if (key == DIK_V) then begin
+        call print_custom_tag_state(5, "custom tag 5");
+        call print_custom_tag_state(6, "custom tag 6");
+        if (manual_extra_tag != 0) then begin
+            call print_custom_tag_state(manual_extra_tag, "manual extra tag");
+        end
+    end
+end
 
 procedure start begin
     display_msg("Testing iface_tag functions...");
@@ -30,17 +88,35 @@ procedure start begin
     call assertFalse("hide_iface_tag(RADIATED)", is_iface_tag_active(2));
 
     // Default custom box from BoxBarCount.
-    set_iface_tag_text(5, "TAG FIVE", 2);
+    call apply_tag5_color;
     call assertFalse("custom tag 5 starts inactive", is_iface_tag_active(5));
     show_iface_tag(5);
     call assertTrue("show_iface_tag(custom 5)", is_iface_tag_active(5));
+    show_iface_tag(5);
+    call assertTrue("show_iface_tag(custom 5 again)", is_iface_tag_active(5));
     hide_iface_tag(5);
     call assertFalse("hide_iface_tag(custom 5)", is_iface_tag_active(5));
+    hide_iface_tag(5);
+    call assertFalse("hide_iface_tag(custom 5 again)", is_iface_tag_active(5));
+
+    set_iface_tag_text(6, "TAG SIX", 6);
+    call assertFalse("custom tag 6 starts inactive", is_iface_tag_active(6));
+    show_iface_tag(6);
+    call assertTrue("show_iface_tag(custom 6)", is_iface_tag_active(6));
+    show_iface_tag(5);
+    call assertTrue("custom tag 5 still active", is_iface_tag_active(5));
+    call assertTrue("custom tag 6 still active", is_iface_tag_active(6));
+    hide_iface_tag(5);
+    call assertFalse("hide_iface_tag(custom 5 with 6 active)", is_iface_tag_active(5));
+    call assertTrue("custom tag 6 remains active", is_iface_tag_active(6));
+    hide_iface_tag(6);
+    call assertFalse("hide_iface_tag(custom 6)", is_iface_tag_active(6));
 
     // Dynamically added custom box.
     variable extra_tag := add_iface_tag;
     call assertTrue("add_iface_tag lower bound", extra_tag >= 10);
     call assertTrue("add_iface_tag upper bound", extra_tag <= 126);
+    manual_extra_tag := extra_tag;
     set_iface_tag_text(extra_tag, "EXTRA TAG", 3);
     call assertFalse("added custom tag starts inactive", is_iface_tag_active(extra_tag));
     show_iface_tag(extra_tag);
@@ -52,4 +128,6 @@ procedure start begin
     call assertEquals("add_iface_tag increments", next_tag, extra_tag + 1);
 
     call report_test_results("iface_tag");
+    display_msg("iface_tag manual test ready: B toggle tag 5, C cycle tag 5 color, N toggle tag 6, M toggle extra tag, V print states");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
 end
