@@ -205,11 +205,13 @@ char* compat_gzgets(gzFile stream, char* buffer, int maxCount)
 
 int compat_remove(const char* path)
 {
+    std::error_code err;
     char nativePath[COMPAT_MAX_PATH];
     strcpy(nativePath, path);
     compat_windows_path_to_native(nativePath);
     compat_resolve_path(nativePath);
-    return remove(nativePath);
+    std::filesystem::remove(nativePath, err);
+    return err.value();
 }
 
 int compat_rename(const char* oldFileName, const char* newFileName)
