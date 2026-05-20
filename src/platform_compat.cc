@@ -132,26 +132,13 @@ int compat_mkdir(const char* path)
 
 int compat_mkdir_recursive(const char* path)
 {
-    char drive[COMPAT_MAX_DRIVE];
-    compat_splitpath(path, drive, nullptr, nullptr, nullptr);
-
-    char pathCopy[COMPAT_MAX_PATH];
-    strcpy(pathCopy, path);
-
-    // Skip drive root (e.g. "C:\\" or leading "/") to avoid mkdir("") or mkdir("C:").
-    char* sep = pathCopy + strlen(drive);
-    if (*sep == '\\' || *sep == '/') sep++;
-    for (; *sep != '\0'; sep++) {
-        if (*sep == '\\' || *sep == '/') {
-            char saved = *sep;
-            *sep = '\0';
-            if (compat_mkdir(pathCopy) < 0) {
-                break;
-            }
-            *sep = saved;
-        }
-    }
-    return compat_mkdir(path);
+    std::error_code ec;
+    char nativePath[COMPAT_MAX_PATH];
+    strcpy(nativePath, path);
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+    std::filesystem::create_directories(nativePath, ec) ;
+    return ec.value();
 }
 
 bool compat_file_exists(const char* filePath)
