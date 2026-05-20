@@ -143,11 +143,11 @@ int compat_mkdir_recursive(const char* path)
 
 bool compat_file_exists(const char* filePath)
 {
-    FILE* file = compat_fopen(filePath, "rb");
-    if (file == nullptr) return false;
-
-    fclose(file);
-    return true;
+    char nativePath[COMPAT_MAX_PATH];
+    strcpy(nativePath, filePath);
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+    return std::filesystem::exists(nativePath);
 }
 
 unsigned int compat_timeGetTime()
