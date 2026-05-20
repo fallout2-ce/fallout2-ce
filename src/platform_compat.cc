@@ -216,6 +216,8 @@ int compat_remove(const char* path)
 
 int compat_rename(const char* oldFileName, const char* newFileName)
 {
+    std::error_code err;
+    
     char nativeOldFileName[COMPAT_MAX_PATH];
     strcpy(nativeOldFileName, oldFileName);
     compat_windows_path_to_native(nativeOldFileName);
@@ -226,7 +228,8 @@ int compat_rename(const char* oldFileName, const char* newFileName)
     compat_windows_path_to_native(nativeNewFileName);
     compat_resolve_path(nativeNewFileName);
 
-    return rename(nativeOldFileName, nativeNewFileName);
+    std::filesystem::rename(nativeOldFileName, nativeNewFileName, err);
+    return err.value();
 }
 
 void compat_windows_path_to_native(char* path)
