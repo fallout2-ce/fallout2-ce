@@ -152,13 +152,7 @@ bool compat_file_exists(const char* filePath)
 
 unsigned int compat_timeGetTime()
 {
-#ifdef _WIN32
-    return timeGetTime();
-#else
-    static auto start = std::chrono::steady_clock::now();
-    auto now = std::chrono::steady_clock::now();
-    return static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count());
-#endif
+    return SDL_GetTicks64();
 }
 
 FILE* compat_fopen(const char* path, const char* mode)
