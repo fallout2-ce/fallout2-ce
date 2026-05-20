@@ -680,7 +680,7 @@ void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, i
 /*
 Runs before using any skill on any object. Lets you override the critter that uses the skill.
 
-NOTE: The user critter can't be overridden when using Steal skill.
+NOTE: The hook runs for Steal, but return values are ignored.
 
 Critter arg0 - the user critter (usually dude_obj)
 Obj     arg1 - the target object/critter
