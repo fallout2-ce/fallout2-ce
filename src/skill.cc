@@ -548,6 +548,11 @@ static void _show_skill_use_messages(Object* obj, int skill, Object* target, int
 // 0x4AAD08
 int skillUse(Object* obj, Object* target, int skill, int skillBonus)
 {
+    int hookResult = scriptHooks_UseSkill(obj, target, skill, skillBonus);
+    if (hookResult != -1) {
+        return hookResult;
+    }
+
     MessageListItem messageListItem;
     char text[60];
 

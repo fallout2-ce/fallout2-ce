@@ -15,6 +15,7 @@
 #include "queue.h"
 #include "random.h"
 #include "scripts.h"
+#include "skill.h"
 
 #include <assert.h>
 
@@ -674,6 +675,85 @@ void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, i
     if (hook.numReturnValues() > 0) {
         *anim = hook.getReturnValueAt(0).asInt();
     }
+}
+
+/*
+Runs before using any skill on any object. Lets you override the critter that uses the skill.
+
+NOTE: The hook runs for Steal, but return values are ignored.
+
+Critter arg0 - the user critter (usually dude_obj)
+Obj     arg1 - the target object/critter
+int     arg2 - skill being used
+
+int     ret0 - a new critter to override the user critter. Pass -1 to cancel the skill use, pass 0 to skip this return value
+int     ret1 - pass 1 to allow the skill to be used in combat
+*/
+UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, int skill)
+{
+    assert(userPtr != nullptr);
+    assert(*userPtr != nullptr);
+    assert(target != nullptr);
+
+    UseSkillOnHookResult result = { true, false, false };
+
+    ScriptHookCall hook(HOOK_USESKILLON, 2, { *userPtr, target, skill });
+    hook.call();
+
+    // sfall still runs the hook for Steal, but ignores return values.
+    if (skill == SKILL_STEAL || hook.numReturnValues() <= 0) {
+        return result;
+    }
+
+    ProgramValue userOverride = hook.getReturnValueAt(0);
+    if (userOverride.isInt()) {
+        int value = userOverride.asInt();
+        if (value == -1) {
+            result.shouldContinue = false;
+            return result;
+        }
+
+        if (value != 0) {
+            debugPrint("HOOK_USESKILLON: ignoring invalid user override %d", value);
+        }
+    } else {
+        Object* overrideUser = userOverride.asObject();
+        if (overrideUser != nullptr) {
+            *userPtr = overrideUser;
+            result.userOverridden = true;
+        }
+    }
+
+    if (hook.numReturnValues() > 1 && hook.getReturnValueAt(1).asInt() == 1) {
+        result.allowInCombat = true;
+    }
+
+    return result;
+}
+
+/*
+Runs when using any skill on any object.
+
+Does not run if the script of the object calls `script_overrides` for using the skill.
+
+Critter arg0 - The user critter
+Obj     arg1 - The target object
+int     arg2 - skill being used
+int     arg3 - skill bonus from items such as first aid kits
+
+int     ret0 - overrides hard-coded handler (-1 - use engine handler, any other value - override)
+*/
+int scriptHooks_UseSkill(Object* user, Object* target, int skill, int skillBonus)
+{
+    ScriptHookCall hook(HOOK_USESKILL, 1, { user, target, skill, skillBonus });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return -1;
+    }
+
+    int overrideResult = hook.getReturnValueAt(0).asInt();
+    return overrideResult != -1 ? overrideResult : -1;
 }
 
 /*

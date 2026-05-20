@@ -97,7 +97,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | AmmoCost | `HOOK_AMMOCOST` | ✅ | Requires `check_weapon_ammo_cost=1` if you want pre-attack ammo validation to respect per-shot/per-round overrides. |
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | ✅ | - |
-| UseSkill | `HOOK_USESKILL` | 🚫 | - |
+| UseSkill | `HOOK_USESKILL` | ✅ | - |
 | Steal | `HOOK_STEAL` | ✅ | - |
 | WithinPerception | `HOOK_WITHINPERCEPTION` | ✅ | - |
 | InventoryMove | `HOOK_INVENTORYMOVE` | ✅ | - |
@@ -113,7 +113,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | UseAnimObj | `HOOK_USEANIMOBJ` | 🚫 | Et tu; (maybe) |
 | ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | ✅ | - |
 | DescriptionObj | `HOOK_DESCRIPTIONOBJ` | 🚫 | Et tu |
-| UseSkillOn | `HOOK_USESKILLON` | 🚫 | Et tu |
+| UseSkillOn | `HOOK_USESKILLON` | ✅ | - |
 | OnExplosion | `HOOK_ONEXPLOSION` | 🚫 | (maybe) |
 | SubCombatDamage | `HOOK_SUBCOMBATDAMAGE` | 🚫 | (maybe) |
 | SetLighting | `HOOK_SETLIGHTING` | 🚫 | Et tu; (maybe) |

@@ -257,6 +257,12 @@ struct BarterPriceContext {
     bool partyMember;
 };
 
+struct UseSkillOnHookResult {
+    bool shouldContinue;
+    bool userOverridden;
+    bool allowInCombat;
+};
+
 enum AmmoCostHookType {
     AMMO_COST_HOOK_SINGLE_SHOT = 0,
     AMMO_COST_HOOK_CHECK_OUT_OF_AMMO = 1,
@@ -298,6 +304,8 @@ int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int action
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLocationPtr, int hitChance, int roll);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
+UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, int skill);
+int scriptHooks_UseSkill(Object* user, Object* target, int skill, int skillBonus);
 int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
