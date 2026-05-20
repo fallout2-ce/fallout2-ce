@@ -3,6 +3,7 @@
 #include "platform/ios/quick_toolbar.h"
 
 #include <algorithm>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -49,10 +50,9 @@ namespace fallout {
 
 // The maximum number of indicator boxes the indicator bar can display.
 //
-// For unknown reason this number is 6, even though there are only 5 different
-// indicator types. In addition to that, default screen width 640px cannot hold
-// 6 boxes 130px each.
-#define INDICATOR_SLOTS_COUNT (6)
+// CE extends these slots for sfall custom tags, but the actual visible count
+// is still clamped per-screen at runtime.
+#define INDICATOR_SLOTS_COUNT (16)
 
 #define INTERFACE_ITEM_ACTION_BUTTON_WIDTH 188
 #define INTERFACE_ITEM_ACTION_BUTTON_HEIGHT 67
@@ -105,6 +105,22 @@ typedef struct InterfaceItemState {
     int itemFid;
 } InterfaceItemState;
 
+constexpr int kCustomIndicatorMinTag = 5;
+constexpr int kCustomIndicatorMaxTag = 126;
+constexpr int kCustomIndicatorMaxCount = kCustomIndicatorMaxTag - kCustomIndicatorMinTag + 1;
+constexpr int kCustomIndicatorDefaultCount = 5;
+constexpr int kCustomIndicatorTextLength = 19;
+constexpr int kCustomIndicatorTextBufferSize = kCustomIndicatorTextLength + 1;
+
+struct CustomIndicatorDescription {
+    bool isActive;
+    int configColor;
+    int textColor;
+    unsigned char* data;
+    char defaultText[kCustomIndicatorTextBufferSize];
+    char text[kCustomIndicatorTextBufferSize];
+};
+
 static int _intface_redraw_items_callback(Object* _, Object* __);
 static int _intface_change_fid_callback(Object* _, Object* __);
 static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeaponAnimationCode, int weaponAnimationCode);
@@ -126,6 +142,14 @@ static void indicatorBarReset();
 static int indicatorBoxCompareByPosition(const void* a, const void* b);
 static void indicatorBarRender(int count);
 static bool indicatorBarAdd(int indicator);
+static int indicatorBarGetVisibleSlotCount();
+static int indicatorBarTextColor(int color);
+static void indicatorBarRenderBox(unsigned char* data, const char* text, int color);
+static int indicatorBarMaxCustomTag();
+static CustomIndicatorDescription* indicatorBarGetCustomTag(int tag);
+static bool indicatorBarInitCustomTag(int tag, const char* defaultText, int configColor);
+static void indicatorBarRefreshCustomTag(int tag);
+static void indicatorBarResetCustomTags();
 
 static void customInterfaceBarInit();
 static void customInterfaceBarExit();
@@ -234,6 +258,10 @@ static int gInterfaceLastRenderedArmorClass = 0;
 //
 // 0x5970E0 bboxslot
 static int gIndicatorSlots[INDICATOR_SLOTS_COUNT];
+static unsigned char indicatorBoxBackgroundData[INDICATOR_BOX_WIDTH * INDICATOR_BOX_HEIGHT];
+static CustomIndicatorDescription customIndicatorDescriptions[kCustomIndicatorMaxCount];
+static int initialCustomIndicatorCount = kCustomIndicatorDefaultCount;
+static int availableCustomIndicatorCount = kCustomIndicatorDefaultCount;
 
 // 0x5970F8 Hand
 static InterfaceItemState gInterfaceItemStates[HAND_COUNT];
@@ -2209,8 +2237,6 @@ static int intface_fatal_error(int rc)
 // 0x461134 construct_box_bar_win
 static int indicatorBarInit()
 {
-    int oldFont = fontGetCurrent();
-
     if (gIndicatorBarWindow != -1) {
         return 0;
     }
@@ -2244,6 +2270,8 @@ static int indicatorBarInit()
         return -1;
     }
 
+    memcpy(indicatorBoxBackgroundData, indicatorBoxFrmImage.getData(), sizeof(indicatorBoxBackgroundData));
+
     for (int index = 0; index < INDICATOR_COUNT; index++) {
         IndicatorDescription* indicatorDescription = &(gIndicatorDescriptions[index]);
 
@@ -2253,6 +2281,7 @@ static int indicatorBarInit()
 
             while (--index >= 0) {
                 internal_free(gIndicatorDescriptions[index].data);
+                gIndicatorDescriptions[index].data = nullptr;
             }
 
             messageListFree(&messageList);
@@ -2261,8 +2290,6 @@ static int indicatorBarInit()
         }
     }
 
-    fontSetCurrent(101);
-
     for (int index = 0; index < INDICATOR_COUNT; index++) {
         IndicatorDescription* indicator = &(gIndicatorDescriptions[index]);
 
@@ -2270,24 +2297,34 @@ static int indicatorBarInit()
         strcpy(text, getmsg(&messageList, &messageListItem, indicator->title));
 
         int color = indicator->isBad ? _colorTable[31744] : _colorTable[992];
+        indicatorBarRenderBox(indicator->data, text, color);
+    }
 
-        memcpy(indicator->data, indicatorBoxFrmImage.getData(), INDICATOR_BOX_WIDTH * INDICATOR_BOX_HEIGHT);
+    initialCustomIndicatorCount = kCustomIndicatorDefaultCount;
+    availableCustomIndicatorCount = initialCustomIndicatorCount;
 
-        // NOTE: For unknown reason it uses 24 as a height of the box to center
-        // the title. One explanation is that these boxes were redesigned, but
-        // this value was not changed. On the other hand 24 is
-        // [INDICATOR_BOX_HEIGHT] + [INDICATOR_BOX_CONNECTOR_WIDTH]. Maybe just
-        // a coincidence. I guess we'll never find out.
-        int y = (24 - fontGetLineHeight()) / 2;
-        int x = (INDICATOR_BOX_WIDTH - fontGetStringWidth(text)) / 2;
-        fontDrawText(indicator->data + INDICATOR_BOX_WIDTH * y + x, text, INDICATOR_BOX_WIDTH, INDICATOR_BOX_WIDTH, color);
+    for (int tag = kCustomIndicatorMinTag; tag <= indicatorBarMaxCustomTag(); tag++) {
+        char defaultText[kCustomIndicatorTextBufferSize] = {};
+        int messageId = 100 + tag;
+        messageListItem.num = messageId;
+        if (messageListGetItem(&messageList, &messageListItem)) {
+            strncpy(defaultText, messageListItem.text, kCustomIndicatorTextLength);
+            defaultText[kCustomIndicatorTextLength] = '\0';
+        }
+
+        int configColor = 0;
+
+        if (!indicatorBarInitCustomTag(tag, defaultText, configColor)) {
+            debugPrint("\nINTRFACE: Error initializing custom indicator box graphics! **");
+            messageListFree(&messageList);
+            return -1;
+        }
     }
 
     gIndicatorBarIsVisible = true;
     indicatorBarRefresh();
 
     messageListFree(&messageList);
-    fontSetCurrent(oldFont);
 
     return 0;
 }
@@ -2307,6 +2344,14 @@ static void interfaceBarFree()
             indicatorBoxDescription->data = nullptr;
         }
     }
+
+    for (int index = 0; index < kCustomIndicatorMaxCount; index++) {
+        CustomIndicatorDescription* indicatorBoxDescription = &(customIndicatorDescriptions[index]);
+        if (indicatorBoxDescription->data != nullptr) {
+            internal_free(indicatorBoxDescription->data);
+            indicatorBoxDescription->data = nullptr;
+        }
+    }
 }
 
 // NOTE: This function is not referenced in the original code.
@@ -2320,6 +2365,7 @@ static void indicatorBarReset()
     }
 
     gIndicatorBarIsVisible = true;
+    indicatorBarResetCustomTags();
 }
 
 // Updates indicator bar.
@@ -2361,6 +2407,15 @@ int indicatorBarRefresh()
         if (critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD) {
             if (indicatorBarAdd(INDICATOR_RADIATED)) {
                 ++count;
+            }
+        }
+
+        for (int tag = kCustomIndicatorMinTag; tag <= indicatorBarMaxCustomTag(); tag++) {
+            CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+            if (indicator != nullptr && indicator->isActive) {
+                if (indicatorBarAdd(tag)) {
+                    ++count;
+                }
             }
         }
 
@@ -2447,9 +2502,21 @@ static void indicatorBarRender(int count)
 
     for (int index = 0; index < count; index++) {
         int indicator = gIndicatorSlots[index];
-        IndicatorDescription* indicatorDescription = &(gIndicatorDescriptions[indicator]);
+        unsigned char* indicatorData = nullptr;
+        if (indicator < INDICATOR_COUNT) {
+            indicatorData = gIndicatorDescriptions[indicator].data;
+        } else {
+            CustomIndicatorDescription* customIndicator = indicatorBarGetCustomTag(indicator);
+            if (customIndicator != nullptr) {
+                indicatorData = customIndicator->data;
+            }
+        }
 
-        blitBufferToBufferTrans(indicatorDescription->data + connectorWidthCompensation,
+        if (indicatorData == nullptr) {
+            continue;
+        }
+
+        blitBufferToBufferTrans(indicatorData + connectorWidthCompensation,
             INDICATOR_BOX_WIDTH - connectorWidthCompensation,
             INDICATOR_BOX_HEIGHT,
             INDICATOR_BOX_WIDTH,
@@ -2471,7 +2538,8 @@ static void indicatorBarRender(int count)
 // 0x4616F0 add_bar_box
 static bool indicatorBarAdd(int indicator)
 {
-    for (int index = 0; index < INDICATOR_SLOTS_COUNT; index++) {
+    int visibleSlotCount = indicatorBarGetVisibleSlotCount();
+    for (int index = 0; index < visibleSlotCount; index++) {
         if (gIndicatorSlots[index] == -1) {
             gIndicatorSlots[index] = indicator;
             return true;
@@ -2481,6 +2549,186 @@ static bool indicatorBarAdd(int indicator)
     debugPrint("\nINTRFACE: no free bar box slots!\n");
 
     return false;
+}
+
+static int indicatorBarGetVisibleSlotCount()
+{
+    int visibleSlotCount = screenGetWidth() / (INDICATOR_BOX_WIDTH - INDICATOR_BOX_CONNECTOR_WIDTH);
+    return std::clamp(visibleSlotCount, 5, INDICATOR_SLOTS_COUNT);
+}
+
+static int indicatorBarTextColor(int color)
+{
+    switch (color) {
+    case 1: // red
+        return _colorTable[31744];
+    case 2: // white
+        return _colorTable[32767];
+    case 3: // yellow
+        return _colorTable[32328];
+    case 4: // peanut butter // TODO: validate
+        return _colorTable[23624];
+    case 5: // blue
+        return _colorTable[31];
+    case 6: // good // TODO: validate
+        return _colorTable[31775];
+    case 7: // dull pink
+        return _colorTable[31215];
+    default: // (also 0) green
+        return _colorTable[992];
+    }
+}
+
+static void indicatorBarRenderBox(unsigned char* data, const char* text, int color)
+{
+    int oldFont = fontGetCurrent();
+    fontSetCurrent(101);
+
+    memcpy(data, indicatorBoxBackgroundData, sizeof(indicatorBoxBackgroundData));
+
+    // NOTE: For unknown reason it uses 24 as a height of the box to center
+    // the title. One explanation is that these boxes were redesigned, but
+    // this value was not changed. On the other hand 24 is
+    // [INDICATOR_BOX_HEIGHT] + [INDICATOR_BOX_CONNECTOR_WIDTH]. Maybe just
+    // a coincidence. I guess we'll never find out.
+    int y = (24 - fontGetLineHeight()) / 2;
+    int x = std::max(0, (INDICATOR_BOX_WIDTH - fontGetStringWidth(text)) / 2);
+    int maxDrawWidth = INDICATOR_BOX_WIDTH - x;
+    if (maxDrawWidth > 0) {
+        fontDrawText(data + INDICATOR_BOX_WIDTH * y + x, text, maxDrawWidth, INDICATOR_BOX_WIDTH, color);
+    }
+
+    fontSetCurrent(oldFont);
+}
+
+static int indicatorBarMaxCustomTag()
+{
+    return kCustomIndicatorMinTag + availableCustomIndicatorCount - 1;
+}
+
+static CustomIndicatorDescription* indicatorBarGetCustomTag(int tag)
+{
+    if (tag < kCustomIndicatorMinTag || tag > indicatorBarMaxCustomTag()) {
+        return nullptr;
+    }
+
+    return &(customIndicatorDescriptions[tag - kCustomIndicatorMinTag]);
+}
+
+static bool indicatorBarInitCustomTag(int tag, const char* defaultText, int configColor)
+{
+    assert(tag >= kCustomIndicatorMinTag);
+    assert(tag <= kCustomIndicatorMaxTag);
+
+    CustomIndicatorDescription* indicator = &(customIndicatorDescriptions[tag - kCustomIndicatorMinTag]);
+    if (indicator->data == nullptr) {
+        indicator->data = (unsigned char*)internal_malloc(INDICATOR_BOX_WIDTH * INDICATOR_BOX_HEIGHT);
+        if (indicator->data == nullptr) {
+            return false;
+        }
+    }
+
+    indicator->isActive = false;
+    indicator->configColor = configColor;
+    indicator->textColor = configColor;
+    strncpy(indicator->defaultText, defaultText, kCustomIndicatorTextLength);
+    indicator->defaultText[kCustomIndicatorTextLength] = '\0';
+    strncpy(indicator->text, indicator->defaultText, kCustomIndicatorTextLength);
+    indicator->text[kCustomIndicatorTextLength] = '\0';
+    indicatorBarRenderBox(indicator->data, indicator->text, indicatorBarTextColor(indicator->textColor));
+
+    return true;
+}
+
+static void indicatorBarRefreshCustomTag(int tag)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    if (indicator == nullptr || indicator->data == nullptr) {
+        return;
+    }
+
+    indicatorBarRenderBox(indicator->data, indicator->text, indicatorBarTextColor(indicator->textColor));
+}
+
+static void indicatorBarResetCustomTags()
+{
+    for (int tag = kCustomIndicatorMinTag; tag <= indicatorBarMaxCustomTag(); tag++) {
+        CustomIndicatorDescription* indicator = &(customIndicatorDescriptions[tag - kCustomIndicatorMinTag]);
+        indicator->isActive = false;
+        indicator->textColor = indicator->configColor;
+        strncpy(indicator->text, indicator->defaultText, kCustomIndicatorTextLength);
+        indicator->text[kCustomIndicatorTextLength] = '\0';
+        indicatorBarRefreshCustomTag(tag);
+    }
+
+    availableCustomIndicatorCount = initialCustomIndicatorCount;
+}
+
+int interfaceTagAdd()
+{
+    if (indicatorBarMaxCustomTag() >= kCustomIndicatorMaxTag) {
+        return -1;
+    }
+
+    int tag = kCustomIndicatorMinTag + availableCustomIndicatorCount;
+    if (!indicatorBarInitCustomTag(tag, "", 0)) {
+        return -1;
+    }
+
+    availableCustomIndicatorCount++;
+    return tag;
+}
+
+int interfaceTagGetMax()
+{
+    return indicatorBarMaxCustomTag();
+}
+
+bool interfaceTagShow(int tag)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    if (indicator == nullptr || indicator->isActive) {
+        return false;
+    }
+
+    indicator->isActive = true;
+    indicatorBarRefresh();
+    return true;
+}
+
+bool interfaceTagHide(int tag)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    if (indicator == nullptr || !indicator->isActive) {
+        return false;
+    }
+
+    indicator->isActive = false;
+    indicatorBarRefresh();
+    return true;
+}
+
+bool interfaceTagIsActive(int tag)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    return indicator != nullptr && indicator->isActive;
+}
+
+void interfaceTagSetText(int tag, const char* text, int color)
+{
+    CustomIndicatorDescription* indicator = indicatorBarGetCustomTag(tag);
+    if (indicator == nullptr) {
+        return;
+    }
+
+    indicator->textColor = color;
+    strncpy(indicator->text, text, kCustomIndicatorTextLength);
+    indicator->text[kCustomIndicatorTextLength] = '\0';
+    indicatorBarRefreshCustomTag(tag);
+
+    if (indicator->isActive) {
+        indicatorBarRefresh();
+    }
 }
 
 // 0x461740 enable_box_bar_win

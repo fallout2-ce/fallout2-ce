@@ -58,6 +58,7 @@ static void mf_item_weight(OpcodeContext& ctx);
 static void mf_loot_obj(OpcodeContext& ctx);
 static void mf_message_box(OpcodeContext& ctx);
 static void mf_add_extra_msg_file(OpcodeContext& ctx);
+static void mf_add_iface_tag(OpcodeContext& ctx);
 static void mf_art_cache_flush(OpcodeContext& ctx);
 static void mf_metarule_exist(OpcodeContext& ctx);
 static void mf_obj_is_openable(OpcodeContext& ctx);
@@ -68,6 +69,7 @@ static void mf_outlined_object(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
+static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
 static void mf_show_window(OpcodeContext& ctx);
 static void mf_signal_close_game(OpcodeContext& ctx);
@@ -84,7 +86,7 @@ static void mf_floor2(OpcodeContext& ctx);
 // TODO: reduce duplication further once this context is shared with opcode handlers too.
 const MetaruleInfo kMetarules[] = {
     { "add_extra_msg_file", mf_add_extra_msg_file, 1, 2, -1, { ARG_STRING, ARG_INT } },
-    // {"add_iface_tag",             mf_add_iface_tag,             0, 0},
+    { "add_iface_tag", mf_add_iface_tag, 0, 0 },
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
     { "art_cache_clear", mf_art_cache_flush, 0, 0 },
@@ -157,7 +159,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_fake_perk_npc",         mf_set_fake_perk_npc,         5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     // {"set_fake_trait_npc",        mf_set_fake_trait_npc,        5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     { "set_flags", mf_set_flags, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
-    // {"set_iface_tag_text",        mf_set_iface_tag_text,        3, 3, -1, {ARG_INT, ARG_STRING, ARG_INT}},
+    { "set_iface_tag_text", mf_set_iface_tag_text, 3, 3, -1, { ARG_INT, ARG_STRING, ARG_INT } },
     { "set_ini_setting", mf_set_ini_setting, 2, 2, -1, { ARG_STRING, ARG_INTSTR } },
     // {"set_map_enter_position",    mf_set_map_enter_position,    3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     // {"set_object_data",           mf_set_object_data,           3, 3, -1, {ARG_OBJECT, ARG_INT, ARG_INT}},
@@ -194,6 +196,15 @@ constexpr int kMetarulesMax = sizeof(kMetarules) / sizeof(kMetarules[0]);
 void mf_art_cache_flush(OpcodeContext& ctx)
 {
     artCacheFlush();
+}
+
+void mf_add_iface_tag(OpcodeContext& ctx)
+{
+    int result = interfaceTagAdd();
+    if (result == -1) {
+        ctx.printError("%s() - cannot add new tag as the maximum limit has been reached.", ctx.name());
+    }
+    ctx.setReturn(result);
 }
 
 void mf_car_gas_amount(OpcodeContext& ctx)
@@ -477,6 +488,18 @@ void mf_set_flags(OpcodeContext& ctx)
     int flags = ctx.arg(1).asInt();
 
     object->flags = flags;
+}
+
+void mf_set_iface_tag_text(OpcodeContext& ctx)
+{
+    int boxTag = ctx.arg(0).asInt();
+
+    if (boxTag > 4 && boxTag <= interfaceTagGetMax()) {
+        interfaceTagSetText(boxTag, ctx.stringArg(1), ctx.arg(2).asInt());
+    } else {
+        ctx.printError("%s() - tag value must be in the range of 5 to %d.", ctx.name(), interfaceTagGetMax());
+        ctx.setReturn(-1);
+    }
 }
 
 void mf_set_outline(OpcodeContext& ctx)
