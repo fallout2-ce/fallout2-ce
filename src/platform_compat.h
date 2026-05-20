@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <errno.h>
+#include <filesystem>
+#include <string>
 
 #include <zlib.h>
 
