@@ -110,13 +110,13 @@ long compat_tell(int fd)
     return lseek(fd, 0, SEEK_CUR);
 }
 
-long compat_filelength(int fd)
+long compat_filelength(const char* path)
 {
-    long originalOffset = lseek(fd, 0, SEEK_CUR);
-    lseek(fd, 0, SEEK_SET);
-    long filesize = lseek(fd, 0, SEEK_END);
-    lseek(fd, originalOffset, SEEK_SET);
-    return filesize;
+    char nativePath[COMPAT_MAX_PATH];
+    strcpy(nativePath, path);
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+    return std::filesystem::file_size(nativePath);
 }
 
 int compat_mkdir(const char* path)
