@@ -214,7 +214,7 @@ int windowGetRect(int win, Rect* rect);
 int _win_check_all_buttons();
 int _GNW_check_menu_bars(int input);
 void programWindowSetTitle(const char* title);
-bool showMesageBox(const char* str);
+bool showMessageBox(const char* str);
 int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode = -1, int mouseExitEventCode = -1, int mouseDownEventCode = -1, int mouseUpEventCode = -1, unsigned char* normal = nullptr, unsigned char* pressed = nullptr, unsigned char* hover = nullptr, int flags = 0);
 // Same as buttonCreate, but accepts FrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
 // Only normalId is required to be non-empty.

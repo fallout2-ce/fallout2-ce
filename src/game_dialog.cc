@@ -1681,7 +1681,7 @@ void gameDialogReviewWindowUpdate(int win, int origin)
         }
 
         if (replyText == nullptr) {
-            showMesageBox("\nGDialog::Error Grabbing text message!");
+            showMessageBox("\nGDialog::Error Grabbing text message!");
             exit(1);
         }
 
@@ -1714,7 +1714,7 @@ void gameDialogReviewWindowUpdate(int win, int origin)
             }
 
             if (optionText == nullptr) {
-                showMesageBox("\nGDialog::Error Grabbing text message!");
+                showMessageBox("\nGDialog::Error Grabbing text message!");
                 exit(1);
             }
 
@@ -2380,7 +2380,7 @@ void _gdProcessUpdate()
     if (gDialogReplyMessageListId > 0) {
         char* s = _scr_get_msg_str_speech(gDialogReplyMessageListId, gDialogReplyMessageId, 1);
         if (s == nullptr) {
-            showMesageBox("\n'GDialog::Error Grabbing text message!");
+            showMessageBox("\n'GDialog::Error Grabbing text message!");
             exit(1);
         }
 
@@ -2423,7 +2423,7 @@ void _gdProcessUpdate()
         if (dialogOptionEntry->messageListId >= 0) {
             char* text = _scr_get_msg_str_speech(dialogOptionEntry->messageListId, dialogOptionEntry->messageId, 0);
             if (text == nullptr) {
-                showMesageBox("\nGDialog::Error Grabbing text message!");
+                showMessageBox("\nGDialog::Error Grabbing text message!");
                 exit(1);
             }
 

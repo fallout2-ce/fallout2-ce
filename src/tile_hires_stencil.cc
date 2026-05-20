@@ -413,7 +413,7 @@ void tile_hires_stencil_init()
     if (settings.ui.ignore_map_edges) {
         static bool isMessageShown = false;
         if (!isMessageShown) {
-            showMesageBox("Tile hires stencil is disabled because map edges are ignored.");
+            showMessageBox("Tile hires stencil is disabled because map edges are ignored.");
             isMessageShown = true;
         }
         gIsTileHiresStencilEnabled = false;

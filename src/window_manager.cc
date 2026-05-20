@@ -1363,8 +1363,9 @@ void programWindowSetTitle(const char* title)
 }
 
 // 0x4D8200
-bool showMesageBox(const char* text)
+bool showMessageBox(const char* text)
 {
+    debugPrint("showMessageBox: %s\n", text);
     SDL_Cursor* prev = SDL_GetCursor();
     SDL_Cursor* cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
     SDL_SetCursor(cursor);
