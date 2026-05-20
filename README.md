@@ -151,6 +151,7 @@ In time this stuff will receive in-game interface, right now you have to do it m
 * When bartering, caps default to the right amount to balance the trade (if possible)
 * Music continues playing between maps
 * Auto open doors
+* Item/Corpse/Container/Critter highlighting
 
 ## Contributing
 
