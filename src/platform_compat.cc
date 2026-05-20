@@ -305,7 +305,9 @@ int compat_access(const char* path, int mode)
     strcpy(nativePath, path);
     compat_windows_path_to_native(nativePath);
     compat_resolve_path(nativePath);
-    return access(nativePath, mode);
+    std::filesystem::perms targetPrms = static_cast<std::filesystem::perms>(mode);
+    std::filesystem::perms fsPrms = std::filesystem::status(nativePath).permissions();
+    return targetPrms == fsPrms;
 }
 
 char* compat_strdup(const char* string)
