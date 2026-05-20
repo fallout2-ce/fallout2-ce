@@ -26,6 +26,7 @@
 #include "item.h"
 #include "light.h"
 #include "loadsave.h"
+#include "map_edge.h"
 #include "memory.h"
 #include "object.h"
 #include "palette.h"
@@ -225,7 +226,9 @@ int isoInit()
     colorCycleInit();
     debugPrint(">cycle_init\t\t");
 
-    tileScrollBlockingEnable();
+    if (!settings.ui.ignore_map_edges) {
+        tileScrollBlockingEnable();
+    }
     tileScrollLimitingEnable();
 
     if (interfaceInit() != 0) {
@@ -734,6 +737,7 @@ int mapSetEnteringLocation(int elevation, int tile_num, int orientation)
 // 0x482938
 void mapNewMap()
 {
+    mapEdgeFree();
     mapSetElevation(0);
     tileSetCenter(20100, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     memset(&gMapTransition, 0, sizeof(gMapTransition));
@@ -931,6 +935,8 @@ static int mapLoad(File* stream)
         goto err;
     }
 
+    mapEdgeLoad(gMapHeader.name);
+
     error = "Error setting tile center";
     if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) != 0) {
         goto err;
@@ -1061,7 +1067,7 @@ err:
     // NOTE: Uninline.
     mapSetEnteringLocation(-1, -1, -1);
 
-    tile_hires_stencil_init();
+    tile_hires_stencil_on_map_load();
 
     gameMovieFadeOut();
 
@@ -1532,7 +1538,7 @@ static void isoWindowRefreshRect(Rect* rect)
     windowRefreshRect(gIsoWindow, rect);
 }
 
-// 0x483EE4
+// 0x483EE4 map_scroll_refresh_game
 static void isoWindowRefreshRectGame(Rect* rect)
 {
     Rect rectToUpdate;
@@ -1540,23 +1546,31 @@ static void isoWindowRefreshRectGame(Rect* rect)
         return;
     }
 
-    // CE: Clear dirty rect to prevent most of the visual artifacts near map
-    // edges.
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+
+    // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
         rectGetWidth(&rectToUpdate),
         rectGetHeight(&rectToUpdate),
         rectGetWidth(&gIsoWindowRect),
         0);
 
+    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+        return;
+    }
+
     tileRenderFloorsInRect(&rectToUpdate, gElevation);
     _obj_render_pre_roof(&rectToUpdate, gElevation);
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    if (!hasVisArea) {
+        tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    }
 }
 
-// 0x483F44
+// 0x483F44 map_scroll_refresh_mapper
 static void isoWindowRefreshRectMapper(Rect* rect)
 {
     Rect rectToUpdate;
@@ -1564,11 +1578,19 @@ static void isoWindowRefreshRectMapper(Rect* rect)
         return;
     }
 
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(gElevation, &visArea);
+
+    // HRP rect_inside_bound_scroll_clip: always clear srcRect, then clip to mapVisibleArea.
     bufferFill(gIsoWindowBuffer + rectToUpdate.top * rectGetWidth(&gIsoWindowRect) + rectToUpdate.left,
         rectGetWidth(&rectToUpdate),
         rectGetHeight(&rectToUpdate),
         rectGetWidth(&gIsoWindowRect),
         0);
+
+    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+        return;
+    }
 
     tileRenderFloorsInRect(&rectToUpdate, gElevation);
     _grid_render(&rectToUpdate, gElevation);
@@ -1576,7 +1598,9 @@ static void isoWindowRefreshRectMapper(Rect* rect)
     tileRenderRoofsInRect(&rectToUpdate, gElevation);
     _obj_render_post_roof(&rectToUpdate, gElevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    if (!hasVisArea) {
+        tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
+    }
 }
 
 // NOTE: Inlined.

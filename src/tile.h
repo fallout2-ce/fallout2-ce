@@ -67,6 +67,10 @@ static bool tileIsValid(int tile)
     return tile >= 0 && tile < gHexGridSize;
 }
 
+// Returns true if the rect's screen-space corners map to tiles outside the 200x200 grid.
+// Port of HRP EdgeClipping::CheckRect — used to decide whether to clear (blacken) a rect.
+bool checkRectNeedsClear(const Rect* rect, int elevation);
+
 } // namespace fallout
 
 #endif /* TILE_H */

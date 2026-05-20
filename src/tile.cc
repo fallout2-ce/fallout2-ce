@@ -14,6 +14,7 @@
 #include "game_mouse.h"
 #include "light.h"
 #include "map.h"
+#include "map_edge.h"
 #include "object.h"
 #include "platform_compat.h"
 #include "settings.h"
@@ -440,6 +441,8 @@ int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, i
     gTileWindowWidth = ORIGINAL_ISO_WINDOW_WIDTH;
     gTileWindowHeight = ORIGINAL_ISO_WINDOW_HEIGHT;
 
+    tile_hires_stencil_init();
+
     tileSetCenter(hexGridWidth * (hexGridHeight / 2) + hexGridWidth / 2, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     tileSetBorder(windowWidth, windowHeight, hexGridWidth, hexGridHeight);
 
@@ -540,6 +543,30 @@ int tileSetCenter(int tile, int flags)
         return -1;
     }
 
+    bool boundaryModsSet = false;
+    if (mapEdgeIsLoaded() && !settings.ui.ignore_map_edges) {
+        bool isScroll = flags == 0;
+        if (!isScroll) {
+            // Forced positioning (teleport, initial load, etc.): clamp to edge boundary.
+            tile = mapEdgeSelectZoneAndClamp(tile, gElevation);
+            if (!tileIsValid(tile)) return -1;
+        } else if (mapEdgeZoneIsSelected()) {
+            // Normal scroll: block if tile is outside boundary (matching sfall CheckBorder).
+            // Clamping here would move the center slightly and cause mapScroll's buffer
+            // copy to produce visual artifacts; blocking preserves the current view.
+            if (!mapEdgeTileInBounds(tile)) {
+                return -1;
+            }
+            // Tile is in bounds; set sub-tile boundary mods if tile is on the edge.
+            // If the tile is exactly on a boundary edge, force a full redraw
+            // (matching sfall's CheckBorder returning 1 → modeFlags |= 1).
+            if (mapEdgeSetBoundaryMods(tile)) {
+                boundaryModsSet = true;
+                flags |= TILE_SET_CENTER_REFRESH_WINDOW;
+            }
+        }
+    }
+
     if ((flags & TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
         if (gTileScrollLimitingEnabled) {
             int tileScreenX;
@@ -561,7 +588,9 @@ int tileSetCenter(int tile, int flags)
             }
         }
 
-        if (gTileScrollBlockingEnabled && !settings.ui.ignore_map_edges) {
+        // Scroll-blocker object check only runs when no EDG is loaded.
+        // EDG clamping above already enforces the boundary.
+        if ((!mapEdgeIsLoaded() || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
                 return -1;
             }
@@ -571,16 +600,17 @@ int tileSetCenter(int tile, int flags)
     int tile_x = gHexGridWidth - 1 - tile % gHexGridWidth;
     int tile_y = tile / gHexGridWidth;
 
-    if (gTileBorderInitialized && !settings.ui.ignore_map_edges) {
+    // Global tile borders are always checked, unless scroll blocking is disabled.
+    if (gTileBorderInitialized && gTileScrollBlockingEnabled) {
         if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
             return -1;
         }
     }
 
     _tile_y = tile_y;
-    _tile_offx = (gTileWindowWidth - 32) / 2;
+    _tile_offx = mapEdgeGetModWidth() + (gTileWindowWidth - 32) / 2;
     _tile_x = tile_x;
-    _tile_offy = (gTileWindowHeight - 16) / 2;
+    _tile_offy = mapEdgeGetModHeight() + (gTileWindowHeight - 16) / 2;
 
     if (tile_x & 1) {
         _tile_x -= 1;
@@ -604,11 +634,49 @@ int tileSetCenter(int tile, int flags)
     if ((flags & TILE_SET_CENTER_REFRESH_WINDOW) != 0) {
         // NOTE: Uninline.
         tileWindowRefresh();
+        if (boundaryModsSet)
+            return -1; // necessary for the correct rendering of the map
     }
 
     return 0;
 }
 
+// Port of HRP EdgeClipping::CheckRect.
+// Returns true if any corner of the screen-space rect maps to a tile outside the 200x200 grid.
+bool checkRectNeedsClear(const Rect* rect, int elevation)
+{
+    (void)elevation;
+
+    int cX, cY;
+    tileToPixelOffset(gCenterTile, cX, cY);
+
+    const int halfW = gTileWindowWidth / 2;
+    const int halfH = gTileWindowHeight / 2;
+
+    // Convert screen-space rect corners to pixel-offset space (HRP formula).
+    // xLeft = (cX + width) - rect->left,  yTop = (cY + rect->top) - height
+    // xRight = (cX + width) - rect->right, yBottom = (cY + rect->bottom) - height
+    struct {
+        int x, y;
+    } corners[4] = {
+        { (cX + halfW) - rect->left, (cY + rect->top) - halfH },
+        { (cX + halfW) - rect->right, (cY + rect->top) - halfH },
+        { (cX + halfW) - rect->left, (cY + rect->bottom) - halfH },
+        { (cX + halfW) - rect->right, (cY + rect->bottom) - halfH }
+    };
+
+    for (int i = 0; i < 4; i++) {
+        int x = corners[i].x;
+        int y = corners[i].y;
+        pixelToTileCoord(x, y);
+        if (x < 0 || x >= HEX_GRID_WIDTH || y < 0 || y >= HEX_GRID_HEIGHT) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// TODO: these two functions are exact copies of isoWindowRefreshRect*. gTileWindowBuffer == gIsoWindowBuffer, these are the same window!
 // 0x4B1554 refresh_mapper
 static void tileRefreshMapper(Rect* rect, int elevation)
 {
@@ -618,11 +686,21 @@ static void tileRefreshMapper(Rect* rect, int elevation)
         return;
     }
 
-    bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
-        rectToUpdate.right - rectToUpdate.left + 1,
-        rectToUpdate.bottom - rectToUpdate.top + 1,
-        gTileWindowPitch,
-        0);
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
+
+    // HRP EdgeClipping: when clipped, clear only if CheckRect; otherwise always clear.
+    if (!hasVisArea || checkRectNeedsClear(&rectToUpdate, elevation)) {
+        bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
+            rectGetWidth(&rectToUpdate),
+            rectGetHeight(&rectToUpdate),
+            gTileWindowPitch,
+            0);
+    }
+
+    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+        return;
+    }
 
     tileRenderFloorsInRect(&rectToUpdate, elevation);
     _grid_render(&rectToUpdate, elevation);
@@ -630,7 +708,9 @@ static void tileRefreshMapper(Rect* rect, int elevation)
     tileRenderRoofsInRect(&rectToUpdate, elevation);
     _obj_render_post_roof(&rectToUpdate, elevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+    if (!hasVisArea) {
+        tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+    }
 
     gTileWindowRefreshProc(&rectToUpdate);
 }
@@ -644,20 +724,30 @@ static void tileRefreshGame(Rect* rect, int elevation)
         return;
     }
 
-    // CE: Clear dirty rect to prevent most of the visual artifacts near map
-    // edges.
-    bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
-        rectGetWidth(&rectToUpdate),
-        rectGetHeight(&rectToUpdate),
-        gTileWindowPitch,
-        0);
+    Rect visArea;
+    bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
+
+    // HRP EdgeClipping: when clipped, clear only if CheckRect; otherwise always clear.
+    if (!hasVisArea || checkRectNeedsClear(&rectToUpdate, elevation)) {
+        bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
+            rectGetWidth(&rectToUpdate),
+            rectGetHeight(&rectToUpdate),
+            gTileWindowPitch,
+            0);
+    }
+
+    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+        return;
+    }
 
     tileRenderFloorsInRect(&rectToUpdate, elevation);
     _obj_render_pre_roof(&rectToUpdate, elevation);
     tileRenderRoofsInRect(&rectToUpdate, elevation);
     _obj_render_post_roof(&rectToUpdate, elevation);
 
-    tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+    if (!hasVisArea) {
+        tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+    }
 
     gTileWindowRefreshProc(&rectToUpdate);
 }

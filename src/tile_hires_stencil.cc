@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "draw.h"
 #include "geometry.h"
+#include "map_edge.h"
 #include "settings.h"
 #include "stdio.h"
 #include "tile.h"
@@ -210,20 +211,11 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
     if (!gIsTileHiresStencilEnabled) {
         return;
     }
-
-    if (!gTileBorderInitialized) {
+    // With EDG loaded, the EdgeClipping path handles blackening via ClearRect/CheckRect.
+    // The stencil used as a backup when no EDG is present.
+    if (mapEdgeIsLoaded() || !gTileBorderInitialized || visited_tiles[gElevation][gCenterTile]) {
         return;
-    };
-
-    if (visited_tiles[gElevation][gCenterTile]) {
-        // debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change tile was visited gElevation=%i gCenterTile=%i so doing nothing\n",
-        //     gElevation, gCenterTile);
-
-        return;
-    };
-
-    // debugPrint("tile_hires_stencil_on_center_tile_or_elevation_change non-visited tile gElevation=%i gCenterTile=%i\n",
-    //     gElevation, gCenterTile);
+    }
 
     clean_cache_for_elevation(gElevation);
 
@@ -256,7 +248,6 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
             if (_obj_scroll_blocking_at(tileInfo.tile, gElevation) == 0) {
                 continue;
             }
-
             // TODO: Maybe create new function in tile.cc and use it here
             int tile_x = HEX_GRID_WIDTH - 1 - tileInfo.tile % HEX_GRID_WIDTH;
             int tile_y = tileInfo.tile / HEX_GRID_WIDTH;
@@ -421,9 +412,14 @@ void tile_hires_stencil_init()
     }
 
     debugPrint("tile_hires_stencil_init\n");
+}
+
+void tile_hires_stencil_on_map_load()
+{
     clean_cache();
     tile_hires_stencil_on_center_tile_or_elevation_change();
     tileWindowRefresh();
+    debugPrint("tile_hires_stencil_on_map_load\n");
 }
 
 } // namespace fallout
