@@ -80,67 +80,29 @@ void compat_splitpath(const char* path, char* drive, char* dir, char* fname, cha
 
 void compat_makepath(char* path, const char* drive, const char* dir, const char* fname, const char* ext)
 {
-#ifdef _WIN32
-    _makepath(path, drive, dir, fname, ext);
-#else
-    path[0] = '\0';
+        std::filesystem::path fsPath;
 
-    if (drive != nullptr) {
-        if (*drive != '\0') {
-            strcpy(path, drive);
-            path = strchr(path, '\0');
-
-            if (path[-1] == '/') {
-                path--;
-            } else {
-                *path = '/';
-            }
-        }
+    if (drive != nullptr && *drive != '\0')
+    {
+        fsPath /= drive;
     }
 
-    if (dir != nullptr) {
-        if (*dir != '\0') {
-            if (*dir != '/' && *path == '/') {
-                path++;
-            }
-
-            strcpy(path, dir);
-            path = strchr(path, '\0');
-
-            if (path[-1] == '/') {
-                path--;
-            } else {
-                *path = '/';
-            }
-        }
+    if (dir != nullptr && *dir != '\0')
+    {
+        fsPath /= dir;
     }
 
-    if (fname != nullptr && *fname != '\0') {
-        if (*fname != '/' && *path == '/') {
-            path++;
-        }
-
-        strcpy(path, fname);
-        path = strchr(path, '\0');
-    } else {
-        if (*path == '/') {
-            path++;
-        }
+    if (fname != nullptr && *fname != '\0')
+    {
+        fsPath /= fname;
     }
 
-    if (ext != nullptr) {
-        if (*ext != '\0') {
-            if (*ext != '.') {
-                *path++ = '.';
-            }
-
-            strcpy(path, ext);
-            path = strchr(path, '\0');
-        }
+    if (ext != nullptr && *ext != '\0')
+    {
+        fsPath += ext;
     }
-
-    *path = '\0';
-#endif
+    
+    strncpy(path, fsPath.string().c_str(), COMPAT_MAX_PATH - 1);
 }
 
 long compat_tell(int fd)
