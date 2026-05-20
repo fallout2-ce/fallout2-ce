@@ -121,16 +121,13 @@ long compat_filelength(const char* path)
 
 int compat_mkdir(const char* path)
 {
+    std::error_code ec;
     char nativePath[COMPAT_MAX_PATH];
     strcpy(nativePath, path);
     compat_windows_path_to_native(nativePath);
     compat_resolve_path(nativePath);
-
-#ifdef _WIN32
-    return mkdir(nativePath);
-#else
-    return mkdir(nativePath, 0755);
-#endif
+    std::filesystem::create_directory(nativePath ,ec);
+    return ec.value();
 }
 
 int compat_mkdir_recursive(const char* path)
