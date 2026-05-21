@@ -10,6 +10,7 @@
 #include "font_manager.h"
 #include "game.h"
 #include "game_sound.h"
+#include "geometry.h"
 #include "input.h"
 #include "kb.h"
 #include "mouse.h"
@@ -125,16 +126,6 @@ struct MainMenuLayout {
     bool scaleControls;
 };
 
-struct MainMenuPoint {
-    int x;
-    int y;
-};
-
-struct MainMenuSize {
-    int width;
-    int height;
-};
-
 struct MainMenuOffsets {
     int menuX;
     int menuY;
@@ -150,8 +141,8 @@ static MainMenuLayout mainMenuBuildLayout();
 static void mainMenuDrawBackground(const MainMenuLayout& layout);
 static MainMenuOffsets mainMenuReadOffsets(const MainMenuLayout& layout);
 static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
-static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y);
-static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int width, int height);
+static Point mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y);
+static Size mainMenuTransformSize(const MainMenuLayout& layout, int width, int height);
 static int mainMenuScaleX(const MainMenuLayout& layout, int value);
 static int mainMenuScaleY(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value);
@@ -254,7 +245,7 @@ static MainMenuLayout mainMenuBuildLayout()
 
     layout.scaleX = layout.backgroundWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
     layout.scaleY = layout.backgroundHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
-    layout.scaleControls = layout.art == MenuArt::Vanilla || settings.ui.main_menu_scale_buttons_and_text;
+    layout.scaleControls = layout.art == MenuArt::Vanilla || settings.ui.main_menu_scale_mode >= 2;
     layout.scale = layout.scaleControls ? layout.scaleY : 1.0f;
     return layout;
 }
@@ -314,8 +305,8 @@ static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffset
         return;
     }
 
-    MainMenuSize panelSize = mainMenuTransformSize(layout, mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight());
-    MainMenuPoint panelOrigin = mainMenuTransformPoint(layout, MAIN_MENU_PANEL_OFFSET_X, MAIN_MENU_PANEL_OFFSET_Y);
+    Size panelSize = mainMenuTransformSize(layout, mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight());
+    Point panelOrigin = mainMenuTransformPoint(layout, MAIN_MENU_PANEL_OFFSET_X, MAIN_MENU_PANEL_OFFSET_Y);
 
     blitBuffer2DScaledTrans(mainMenuButtonPanelFrmImage.getBuffer(),
         Buffer2D(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight),
@@ -325,7 +316,7 @@ static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffset
         panelSize.height);
 }
 
-static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y)
+static Point mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y)
 {
     return {
         layout.backgroundX + (layout.scaleControls ? mainMenuScaleX(layout, x) : x),
@@ -333,7 +324,7 @@ static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x,
     };
 }
 
-static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int width, int height)
+static Size mainMenuTransformSize(const MainMenuLayout& layout, int width, int height)
 {
     return {
         std::max(1, static_cast<int>(lround(width * layout.scale))),
@@ -410,7 +401,7 @@ static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOf
 
 static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
 {
-    MainMenuSize buttonSize = mainMenuTransformSize(layout, MAIN_MENU_BUTTON_WIDTH, MAIN_MENU_BUTTON_HEIGHT);
+    Size buttonSize = mainMenuTransformSize(layout, MAIN_MENU_BUTTON_WIDTH, MAIN_MENU_BUTTON_HEIGHT);
     int buttonWidth = buttonSize.width;
     int buttonHeight = buttonSize.height;
     unsigned char* buttonNormalData;
@@ -428,7 +419,7 @@ static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOf
     }
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
-        MainMenuPoint buttonPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_X, MAIN_MENU_BUTTON_Y + index * MAIN_MENU_BUTTON_Y_STEP);
+        Point buttonPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_X, MAIN_MENU_BUTTON_Y + index * MAIN_MENU_BUTTON_Y_STEP);
         gMainMenuButtons[index] = buttonCreate(gMainMenuWindow,
             buttonPosition.x + offsets.menuX,
             buttonPosition.y + offsets.menuY,
@@ -469,7 +460,7 @@ static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMen
         }
 
         int len = fontGetStringWidth(msg.text);
-        MainMenuPoint labelPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_LABEL_X, MAIN_MENU_BUTTON_LABEL_Y + index * MAIN_MENU_BUTTON_Y_STEP);
+        Point labelPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_LABEL_X, MAIN_MENU_BUTTON_LABEL_Y + index * MAIN_MENU_BUTTON_Y_STEP);
         if (!layout.scaleControls) {
             fontDrawText(gMainMenuWindowBuffer + (labelPosition.y + offsets.menuY) * layout.screenWidth + labelPosition.x + offsets.menuX - (len / 2),
                 msg.text,

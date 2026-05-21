@@ -148,8 +148,7 @@ void initSettingsRegistry(bool isMapper)
 #undef SECT
 
 #define SECT ui
-    SETTING_P(main_menu_scale_mode, clamp(0, 1));
-    SETTING(main_menu_scale_buttons_and_text);
+    SETTING_P(main_menu_scale_mode, clamp(0, 2));
     SETTING(iface_bar_mode);
     SETTING_P(iface_bar_width, clamp(640, 4320));
     SETTING_P(iface_bar_side_art, clamp(0, 999));
