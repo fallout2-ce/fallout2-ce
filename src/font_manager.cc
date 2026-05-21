@@ -8,6 +8,7 @@
 
 #include "color.h"
 #include "db.h"
+#include "debug.h"
 #include "memory_manager.h"
 #include "settings.h"
 
@@ -439,16 +440,11 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
         interfaceFontDrawScaledImpl(dest, x + 1, y + 1, string, (color & ~0xFF) | _colorTable[0], scale);
     }
 
-    unsigned char* palette = _getColorBlendTable(color & 0xFF);
-
-    int monospacedCharacterWidth = 0;
-    int scaledMonospacedCharacterWidth = 0;
-    float scaledMonospacedAdvance = 0.0f;
-    if ((color & FONT_MONO) != 0) {
-        monospacedCharacterWidth = interfaceFontGetMonospacedCharacterWidthImpl();
-        scaledMonospacedCharacterWidth = std::max(1, static_cast<int>(lround(monospacedCharacterWidth * scale)));
-        scaledMonospacedAdvance = monospacedCharacterWidth * scale;
+    if ((color & (FONT_MONO | FONT_UNDERLINE)) != 0) {
+        debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
     }
+
+    unsigned char* palette = _getColorBlendTable(color & 0xFF);
 
     float cursorX = static_cast<float>(x);
     while (*string != '\0') {
@@ -462,9 +458,6 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
         int scaledCharacterWidth = std::max(1, static_cast<int>(lround(characterWidth * scale)));
 
         int glyphX = static_cast<int>(lround(cursorX));
-        if ((color & FONT_MONO) != 0) {
-            glyphX += (scaledMonospacedCharacterWidth - scaledCharacterWidth) / 2;
-        }
 
         InterfaceFontGlyph* glyph = &(gCurrentInterfaceFontDescriptor->glyphs[ch]);
         if (glyph->width > 0 && glyph->height > 0) {
@@ -492,31 +485,9 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
             }
         }
 
-        cursorX += (color & FONT_MONO) != 0 ? scaledMonospacedAdvance : advance * scale;
+        cursorX += advance * scale;
         if (static_cast<int>(lround(cursorX)) >= dest.width) {
             break;
-        }
-    }
-
-    if ((color & FONT_UNDERLINE) != 0) {
-        int lineY = y + std::max(0, static_cast<int>(lround((gCurrentInterfaceFontDescriptor->maxHeight - 1) * scale)));
-        int thickness = std::max(1, static_cast<int>(lround(scale)));
-        int left = std::clamp(x, 0, dest.width);
-        int right = std::min(static_cast<int>(lround(cursorX)), dest.width);
-        if (right <= left) {
-            _freeColorBlendTable(color & 0xFF);
-            return;
-        }
-        for (int line = 0; line < thickness; line++) {
-            int drawY = lineY + line;
-            if (drawY < 0 || drawY >= dest.height) {
-                continue;
-            }
-
-            unsigned char* underline = dest.data + drawY * dest.width + left;
-            for (int drawX = left; drawX < right; drawX++) {
-                *underline++ = color & 0xFF;
-            }
         }
     }
 
@@ -525,9 +496,8 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
 
 static int interfaceFontGetScaledWidthImpl(const char* string, int color, float scale)
 {
-    if ((color & FONT_MONO) != 0) {
-        int monospacedCharacterWidth = interfaceFontGetMonospacedCharacterWidthImpl();
-        return std::max(0, static_cast<int>(lround(monospacedCharacterWidth * scale * strlen(string))));
+    if ((color & (FONT_MONO | FONT_UNDERLINE)) != 0) {
+        debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
     }
 
     float width = 0.0f;
