@@ -26,6 +26,7 @@ namespace {
 
     static bool gameConfigHasKey(Config* config, const char* section, const char* key);
     static bool gameConfigNeedsF2ResMigration(Config* gameConfig);
+    static bool gameConfigMigrateMainMenuScaleModeKey(Config* legacyConfig, Config* gameConfig);
     static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry);
     static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig);
 
@@ -33,8 +34,6 @@ namespace {
         { "MAIN", "SCR_WIDTH", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY },
         { "MAIN", "SCR_HEIGHT", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_Y_KEY },
         { "MAIN", "WINDOWED", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_WINDOWED_KEY },
-        { "MAINMENU", "MAIN_MENU_SIZE", GAME_CONFIG_UI_KEY, GAME_CONFIG_MAIN_MENU_SCALE_MODE_KEY },
-        { "MAINMENU", "SCALE_BUTTONS_AND_TEXT_MENU", GAME_CONFIG_UI_KEY, GAME_CONFIG_MAIN_MENU_SCALE_BUTTONS_AND_TEXT_KEY },
         { "IFACE", "IFACE_BAR_MODE", GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_MODE_KEY },
         { "IFACE", "IFACE_BAR_WIDTH", GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_WIDTH_KEY },
         { "IFACE", "IFACE_BAR_SIDE_ART", GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY },
@@ -70,6 +69,29 @@ namespace {
         }
 
         return configSetString(gameConfig, entry.targetSection, entry.targetKey, value);
+    }
+
+    static bool gameConfigMigrateMainMenuScaleModeKey(Config* legacyConfig, Config* gameConfig)
+    {
+        assert(legacyConfig != nullptr && gameConfig != nullptr);
+
+        if (gameConfigHasKey(gameConfig, GAME_CONFIG_UI_KEY, GAME_CONFIG_MAIN_MENU_SCALE_MODE_KEY)) {
+            return false;
+        }
+
+        int scaleMode;
+        if (!configGetInt(legacyConfig, "MAINMENU", "MAIN_MENU_SIZE", &scaleMode)) {
+            return false;
+        }
+
+        bool legacyScaleButtonsAndText = false;
+        if (configGetBool(legacyConfig, "MAINMENU", "SCALE_BUTTONS_AND_TEXT_MENU", &legacyScaleButtonsAndText)
+            && legacyScaleButtonsAndText
+            && scaleMode != 0) {
+            scaleMode = 2;
+        }
+
+        return configSetInt(gameConfig, GAME_CONFIG_UI_KEY, GAME_CONFIG_MAIN_MENU_SCALE_MODE_KEY, scaleMode);
     }
 
     static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig)
@@ -120,6 +142,10 @@ bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConf
             if (gameConfigMigrateStringKey(&legacyConfig, gameConfig, entry)) {
                 migrated = true;
             }
+        }
+
+        if (gameConfigMigrateMainMenuScaleModeKey(&legacyConfig, gameConfig)) {
+            migrated = true;
         }
 
         if (gameConfigMigrateScaleKey(&legacyConfig, gameConfig)) {
