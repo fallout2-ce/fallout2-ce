@@ -365,7 +365,7 @@ static void loadSaveRememberSelectedSlot()
     snprintf(path, sizeof(path), "%s\\%s", _patches, kLoadSaveSlotDataFile);
 
     int slot = 0;
-    if (ScopedConfig config{ path, false }; config) {
+    if (ScopedConfig config { path, false }; config) {
         configGetInt(config, kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, &slot, 0);
     }
 
@@ -384,7 +384,7 @@ static void loadSavePersistSelectedSlot()
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s\\%s", _patches, kLoadSaveSlotDataFile);
 
-    ScopedConfig config{ path, false };
+    ScopedConfig config { path, false };
     if (!config.isInitialized()) {
         return;
     }
