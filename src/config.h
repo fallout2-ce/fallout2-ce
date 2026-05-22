@@ -54,6 +54,28 @@ bool configGetBool(Config* config, const char* sectionKey, const char* key, bool
 bool configGetBool(Config* config, const char* sectionKey, const char* key, bool* valuePtr, bool defaultValue);
 bool configSetBool(Config* config, const char* sectionKey, const char* key, bool value);
 
+class ScopedConfig {
+public:
+    ScopedConfig();
+    ScopedConfig(const char* filePath, bool isDb);
+    ~ScopedConfig();
+
+    ScopedConfig(const ScopedConfig&) = delete;
+    ScopedConfig& operator=(const ScopedConfig&) = delete;
+
+    bool isInitialized() const;
+
+    Config* operator->();
+
+    operator Config*();
+
+    explicit operator bool() const;
+
+private:
+    Config config = {};
+    bool loaded = false;
+};
+
 } // namespace fallout
 
 #endif /* CONFIG_H */

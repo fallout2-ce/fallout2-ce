@@ -364,16 +364,10 @@ static void loadSaveRememberSelectedSlot()
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s\\%s", _patches, kLoadSaveSlotDataFile);
 
-    Config config;
-    if (!configInit(&config)) {
-        return;
-    }
-
     int slot = 0;
-    if (configRead(&config, path, false)) {
-        configGetInt(&config, kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, &slot, 0);
+    if (ScopedConfig config{ path, false }; config) {
+        configGetInt(config, kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, &slot, 0);
     }
-    configFree(&config);
 
     _slot_cursor = std::clamp(slot, 0, saveLoadTotalSlots - 1);
     _currentSlotPage = _slot_cursor / slotsPerPage;
@@ -390,15 +384,13 @@ static void loadSavePersistSelectedSlot()
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s\\%s", _patches, kLoadSaveSlotDataFile);
 
-    Config config;
-    if (!configInit(&config)) {
+    ScopedConfig config{ path, false };
+    if (!config.isInitialized()) {
         return;
     }
 
-    configRead(&config, path, false);
-    configSetInt(&config, kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, _slot_cursor);
-    configWrite(&config, path, false);
-    configFree(&config);
+    configSetInt(config, kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, _slot_cursor);
+    configWrite(config, path, false);
 }
 
 // 0x47B7E4

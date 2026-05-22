@@ -851,4 +851,44 @@ bool configSetBool(Config* config, const char* sectionKey, const char* key, bool
     return configSetInt(config, sectionKey, key, value ? 1 : 0);
 }
 
+ScopedConfig::ScopedConfig()
+{
+    loaded = configInit(&config);
+}
+
+ScopedConfig::ScopedConfig(const char* filePath, bool isDb)
+    : ScopedConfig()
+{
+    if (loaded) {
+        loaded = configRead(&config, filePath, isDb);
+    }
+}
+
+ScopedConfig::~ScopedConfig()
+{
+    if (config.isInitialized()) {
+        configFree(&config);
+    }
+}
+
+bool ScopedConfig::isInitialized() const
+{
+    return config.isInitialized();
+}
+
+Config* ScopedConfig::operator->()
+{
+    return &config;
+}
+
+ScopedConfig::operator Config*()
+{
+    return &config;
+}
+
+ScopedConfig::operator bool() const
+{
+    return loaded;
+}
+
 } // namespace fallout

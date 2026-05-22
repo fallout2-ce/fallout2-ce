@@ -75,8 +75,8 @@ static bool is_system_file_name(const char* fileName)
 
 // Loads an INI file specified by 'ini_file_name' (e.g., "myconfig.ini" or "ddraw.ini")
 // into the provided 'config_out' object.
-// The 'config_out' object must be initialized by the caller (using configInit).
-// The caller is also responsible for freeing 'config_out' (using configFree).
+// The caller must provide a live config instance and keep it alive while the
+// loaded values are being read.
 // Returns true if the file was successfully found and read, false otherwise.
 static bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out)
 {
@@ -142,12 +142,12 @@ static bool sfall_ini_get_string_internal(const char* triplet, char* value, size
         return false;
     }
 
-    Config config;
-    if (!configInit(&config)) {
+    ScopedConfig config;
+    if (!config) {
         return false;
     }
 
-    bool loaded = sfall_load_named_ini_file(fileName, &config);
+    bool loaded = sfall_load_named_ini_file(fileName, config);
 
     // NOTE: Sfall's `GetIniSetting` returns error code (-1) only when it cannot
     // parse triplet. Otherwise the default for string settings is empty string.
@@ -155,7 +155,7 @@ static bool sfall_ini_get_string_internal(const char* triplet, char* value, size
 
     if (loaded) {
         char* stringValue;
-        if (configGetString(&config, section, key, &stringValue)) {
+        if (configGetString(config, section, key, &stringValue)) {
             strncpy(value, stringValue, size - 1);
             value[size - 1] = '\0';
             if (found != nullptr) {
@@ -163,8 +163,6 @@ static bool sfall_ini_get_string_internal(const char* triplet, char* value, size
             }
         }
     }
-
-    configFree(&config);
 
     return true;
 }
@@ -212,8 +210,8 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
         return false;
     }
 
-    Config config;
-    if (!configInit(&config)) {
+    ScopedConfig config;
+    if (!config) {
         return false;
     }
 
@@ -223,7 +221,7 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
     if (basePath[0] != '\0' && !is_system_file_name(fileName)) {
         // Attempt to load requested file in base directory.
         snprintf(path, sizeof(path), "%s\\%s", basePath, fileName);
-        loaded = configRead(&config, path, false);
+        loaded = configRead(config, path, false);
     }
 
     if (!loaded) {
@@ -231,14 +229,12 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
         // non-system config file was not found the base path - attempt to load
         // from current working directory.
         strcpy(path, fileName);
-        loaded = configRead(&config, path, false);
+        loaded = configRead(config, path, false);
     }
 
-    configSetString(&config, section, key, value);
+    configSetString(config, section, key, value);
 
-    bool saved = configWrite(&config, path, false);
-
-    configFree(&config);
+    bool saved = configWrite(config, path, false);
 
     return saved;
 }
@@ -296,15 +292,15 @@ void mf_get_ini_section(OpcodeContext& ctx)
         return;
     }
 
-    Config iniConfig;
-    if (!configInit(&iniConfig)) {
+    ScopedConfig iniConfig;
+    if (!iniConfig) {
         debugPrint("mf_get_ini_section: Failed to initialize Config structure.");
         ctx.setReturn(arrayId);
         return;
     }
 
-    if (sfall_load_named_ini_file(filePath, &iniConfig)) {
-        const ConfigSection* section = sfall_find_section_in_config(&iniConfig, sectionName);
+    if (sfall_load_named_ini_file(filePath, iniConfig)) {
+        const ConfigSection* section = sfall_find_section_in_config(iniConfig, sectionName);
 
         if (section != nullptr) {
             for (int i = 0; i < section->entriesLength; ++i) {
@@ -318,8 +314,6 @@ void mf_get_ini_section(OpcodeContext& ctx)
             }
         }
     }
-
-    configFree(&iniConfig);
 
     ctx.setReturn(arrayId);
 }
@@ -336,19 +330,19 @@ void mf_get_ini_sections(OpcodeContext& ctx)
         return;
     }
 
-    Config iniConfig;
-    if (!configInit(&iniConfig)) {
+    ScopedConfig iniConfig;
+    if (!iniConfig) {
         debugPrint("mf_get_ini_sections: Failed to initialize Config structure.");
         ctx.setReturn(arrayId);
         return;
     }
 
     // note: seems to load sections in random order
-    if (sfall_load_named_ini_file(filePath, &iniConfig)) {
-        if (iniConfig.entriesLength > 0) {
-            arrayId = CreateTempArray(iniConfig.entriesLength, 0);
-            for (int i = 0; i < iniConfig.entriesLength; ++i) {
-                DictionaryEntry* entry = &(iniConfig.entries[i]);
+    if (sfall_load_named_ini_file(filePath, iniConfig)) {
+        if (iniConfig->entriesLength > 0) {
+            arrayId = CreateTempArray(iniConfig->entriesLength, 0);
+            for (int i = 0; i < iniConfig->entriesLength; ++i) {
+                DictionaryEntry* entry = &(iniConfig->entries[i]);
                 const char* sectionName = entry->key;
 
                 if (sectionName != nullptr) {
@@ -357,8 +351,6 @@ void mf_get_ini_sections(OpcodeContext& ctx)
             }
         }
     }
-
-    configFree(&iniConfig);
 
     if (arrayId == -1) {
         arrayId = CreateTempArray(0, 0);
