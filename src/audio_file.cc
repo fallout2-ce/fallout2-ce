@@ -169,10 +169,10 @@ long audioFileSeek(int handle, long offset, int origin)
         targetPosition = offset;
         break;
     case SEEK_CUR:
-        targetPosition = audioFile->fileSize + offset;
+        targetPosition = audioFile->position + offset;
         break;
     case SEEK_END:
-        targetPosition = audioFile->position + offset;
+        targetPosition = audioFile->fileSize + offset;
         break;
     default:
         assert(false && "Should be unreachable");
@@ -201,7 +201,7 @@ long audioFileSeek(int handle, long offset, int origin)
             }
         } else {
             buf = internal_malloc_safe(0x400, __FILE__, __LINE__); // "..\int\audiof.c", 316
-            remaining = audioFile->position - targetPosition;
+            remaining = targetPosition - audioFile->position;
             while (remaining > 1024) {
                 audioFileRead(handle, buf, 1024);
                 remaining -= 1024;

@@ -136,9 +136,6 @@ static int _detectDevices = -1;
 // 0x518E98 lastTime_1
 static int _lastTime_1 = 0;
 
-// 0x596EB0 background_fname_copied
-static char _background_fname_copied[COMPAT_MAX_PATH];
-
 // 0x596FB5 sfx_file_name
 static char _sfx_file_name[13];
 
@@ -175,12 +172,10 @@ static void soundEffectCallback(void* userData, int event);
 static int _gsound_background_allocate(Sound** outSound, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 static int gameSoundFindBackgroundSoundPath(char* dest, const char* src);
 static int gameSoundFindSpeechSoundPath(char* dest, const char* src);
-static void gameSoundDeleteOldMusicFile();
 static int backgroundSoundPlay();
 static int speechPlay();
 static int _gsound_get_music_path(char** out_value, const char* key);
 static Sound* _gsound_get_sound_ready_for_effect();
-static bool _gsound_file_exists_f(const char* fname);
 static int _gsound_setup_paths();
 
 // Generic decoded backend: supports arbitrary script/speech paths via audio decoders.
@@ -400,7 +395,6 @@ int gameSoundExit()
     speechDelete();
 
     backgroundSoundDelete();
-    gameSoundDeleteOldMusicFile();
     soundExit();
     soundEffectsCacheExit();
     audioFileExit();
@@ -1803,23 +1797,6 @@ int gameSoundFindSpeechSoundPath(char* dest, const char* src)
     return 0;
 }
 
-// delete old music file
-// 0x452088
-void gameSoundDeleteOldMusicFile()
-{
-    if (_background_fname_copied[0] != '\0') {
-        char path[COMPAT_MAX_PATH];
-        snprintf(path, sizeof(path), "%s%s%s", "sound\\music\\", _background_fname_copied, ".ACM");
-        if (compat_remove(path)) {
-            if (gGameSoundDebugEnabled) {
-                debugPrint("Deleting old music file failed.\n");
-            }
-        }
-
-        _background_fname_copied[0] = '\0';
-    }
-}
-
 // 0x4520EC
 int backgroundSoundPlay()
 {
@@ -1983,21 +1960,6 @@ Sound* _gsound_get_sound_ready_for_effect()
     soundSetVolume(sound, gSoundEffectsVolume);
 
     return sound;
-}
-
-// Check file for existence.
-//
-// 0x4524E0
-bool _gsound_file_exists_f(const char* fname)
-{
-    FILE* f = compat_fopen(fname, "rb");
-    if (f == nullptr) {
-        return false;
-    }
-
-    fclose(f);
-
-    return true;
 }
 
 // gsound_setup_paths
