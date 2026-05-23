@@ -440,7 +440,7 @@ int audioInit(AudioQueryCompressedFunc* func)
     gAudioList = nullptr;
     gAudioListLength = 0;
 
-    return 0;
+    return soundSetDefaultFileIO(audioOpen, audioClose, audioRead, audioWrite, audioSeek, audioTell, audioGetSize);
 }
 
 // 0x41A818
