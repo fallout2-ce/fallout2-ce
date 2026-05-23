@@ -99,6 +99,7 @@ int audioFileOpen(const char* fname, AudioFileInfo* info, bool* isMemoryBackedPt
         audioFile->soundDecoder = soundDecoderInit(audioFileSoundDecoderReadHandler, audioFile->stream, &(audioFile->channels), &(audioFile->sampleRate), &(audioFile->fileSize));
         audioFile->fileSize *= 2;
         if (info != nullptr) {
+            info->channels = audioFile->channels;
             info->sampleRate = audioFile->sampleRate;
             info->bitsPerSample = 16;
         }

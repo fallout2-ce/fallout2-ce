@@ -62,7 +62,6 @@ typedef struct GameSoundLoadOptions {
 typedef void(SoundEndCallback)();
 
 extern int gMusicVolume;
-extern const SoundFileIO gGameSoundAudioFileIO;
 extern const SoundFileIO gGameSoundAudioIO;
 
 int gameSoundInit();
