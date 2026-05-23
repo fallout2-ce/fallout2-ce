@@ -263,7 +263,9 @@ int audioOpen(const char* fname, AudioFileInfo* info, bool* isMemoryBackedPtr)
         audioFile->bitsPerSample = 16;
 
         if (info != nullptr) {
-            info->channels = audioFile->channels;
+            // Do not propagate decoder-reported channels by default. Legacy
+            // speech/lips paths rely on the caller's existing mono/stereo
+            // choice unless they explicitly opt into stereo before soundLoad.
             info->sampleRate = audioFile->sampleRate;
             info->bitsPerSample = audioFile->bitsPerSample;
         }
