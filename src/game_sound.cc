@@ -7,7 +7,6 @@
 #include "art.h"
 #include "audio.h"
 #include "audio_engine.h"
-#include "audio_file.h"
 #include "combat.h"
 #include "debug.h"
 #include "game_config.h"
@@ -245,7 +244,6 @@ int gameSoundInit()
         debugPrint("success.\n");
     }
 
-    audioFileInit(gameSoundIsCompressed);
     audioInit(gameSoundIsCompressed);
 
     int cacheSize = settings.sound.cache_size;
@@ -397,7 +395,6 @@ int gameSoundExit()
     backgroundSoundDelete();
     soundExit();
     soundEffectsCacheExit();
-    audioFileExit();
     audioExit();
 
     internal_free(_sound_music_path1);
