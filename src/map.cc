@@ -935,7 +935,9 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    mapEdgeLoad(gMapHeader.name);
+    if (settings.ui.edg_support) {
+        mapEdgeLoad(gMapHeader.name);
+    }
 
     error = "Error setting tile center";
     if (tileSetCenter(gEnteringTile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) != 0) {

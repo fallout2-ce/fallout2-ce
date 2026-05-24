@@ -56,6 +56,10 @@ struct UISettings {
 
     int splash_screen_size = 0;
 
+    // Whether to load EDG files (HRP format) when loading maps. If loaded, they override default edge clipping and scroll blocking behavior.
+    bool edg_support = true;
+
+    // Disables map edges, including vanilla scroll blockers and CE hi-res stencil.
     bool ignore_map_edges = false;
 
     // iOS quick-actions toolbar above the interface bar. No-op on other platforms.
