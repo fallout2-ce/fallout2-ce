@@ -78,10 +78,6 @@ static void _script_chk_timed_events();
 static int scriptsClearPendingRequests();
 static int scriptLocateProcs(Script* scr);
 static int scriptsLoadScriptsList();
-static bool scriptsObjectHasId(Object* object, int objectId);
-static bool scriptsInventoryContainsId(Object* object, int objectId);
-static int scriptsFindMaxUniqueObjectId(Object* object);
-static int scriptsFindMaxUniqueObjectIdInInventory(Object* object);
 static int scriptsFreeScriptsList();
 int scriptsGetFileName(int scriptIndex, char* name, size_t size);
 static int _scr_header_load();
@@ -569,18 +565,12 @@ bool scriptsIsUniqueObjectId(int objectId)
 
 int scriptsNewUniqueObjectId()
 {
-    int objectId = uniqueObjectIdCounter;
+    if (uniqueObjectIdCounter >= OBJECT_ID_UNIQUE_END) {
+        uniqueObjectIdCounter = OBJECT_ID_UNIQUE_START;
+    }
 
-    do {
-        if (objectId >= OBJECT_ID_UNIQUE_END) {
-            objectId = OBJECT_ID_UNIQUE_START;
-        }
-
-        objectId++;
-    } while (scriptsObjectHasId(objectFindFirst(), objectId));
-
-    uniqueObjectIdCounter = objectId;
-    return objectId;
+    uniqueObjectIdCounter++;
+    return uniqueObjectIdCounter;
 }
 
 int scriptsGetUniqueObjectIdCounter()
@@ -595,17 +585,11 @@ void scriptsResetUniqueObjectIdCounter()
 
 void scriptsRestoreUniqueObjectIdCounter(int savedCounter)
 {
-    int objectIdCounter = OBJECT_ID_UNIQUE_START;
     if (savedCounter >= OBJECT_ID_UNIQUE_START && savedCounter <= OBJECT_ID_UNIQUE_END) {
-        objectIdCounter = savedCounter;
+        uniqueObjectIdCounter = savedCounter;
+    } else {
+        uniqueObjectIdCounter = OBJECT_ID_UNIQUE_START;
     }
-
-    int maxObjectId = scriptsFindMaxUniqueObjectId(objectFindFirst());
-    if (maxObjectId > objectIdCounter) {
-        objectIdCounter = maxObjectId;
-    }
-
-    uniqueObjectIdCounter = objectIdCounter;
 }
 
 int scriptsSetUniqueObjectId(Object* object)
@@ -633,66 +617,6 @@ void scriptsSyncObjectId(Object* object)
     if (scriptGetScript(object->sid, &script) != -1) {
         script->ownerId = object->id;
     }
-}
-
-static bool scriptsObjectHasId(Object* object, int objectId)
-{
-    while (object != nullptr) {
-        if (scriptsInventoryContainsId(object, objectId)) {
-            return true;
-        }
-
-        object = objectFindNext();
-    }
-
-    return false;
-}
-
-static bool scriptsInventoryContainsId(Object* object, int objectId)
-{
-    if (object->id == objectId) {
-        return true;
-    }
-
-    Inventory* inventory = &(object->data.inventory);
-    for (int index = 0; index < inventory->length; index++) {
-        if (scriptsInventoryContainsId(inventory->items[index].item, objectId)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static int scriptsFindMaxUniqueObjectId(Object* object)
-{
-    int maxObjectId = OBJECT_ID_UNIQUE_START;
-
-    while (object != nullptr) {
-        int objectMaxId = scriptsFindMaxUniqueObjectIdInInventory(object);
-        if (objectMaxId > maxObjectId) {
-            maxObjectId = objectMaxId;
-        }
-
-        object = objectFindNext();
-    }
-
-    return maxObjectId;
-}
-
-static int scriptsFindMaxUniqueObjectIdInInventory(Object* object)
-{
-    int maxObjectId = object->id > OBJECT_ID_UNIQUE_START ? object->id : OBJECT_ID_UNIQUE_START;
-
-    Inventory* inventory = &(object->data.inventory);
-    for (int index = 0; index < inventory->length; index++) {
-        int objectMaxId = scriptsFindMaxUniqueObjectIdInInventory(inventory->items[index].item);
-        if (objectMaxId > maxObjectId) {
-            maxObjectId = objectMaxId;
-        }
-    }
-
-    return maxObjectId;
 }
 
 // 0x4A390C

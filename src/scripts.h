@@ -25,7 +25,8 @@ namespace fallout {
 #define GAME_TIME_TICKS_PER_YEAR (315360000)
 
 constexpr int OBJECT_ID_PLAYER = 18000;
-constexpr int OBJECT_ID_PARTY_MEMBER_END = 83536;
+// Party member IDs are assigned as (pid & 0xFFFFFF) + OBJECT_ID_PLAYER.
+constexpr int OBJECT_ID_PARTY_MEMBER_END = OBJECT_ID_PLAYER + 0x01000000;
 constexpr int OBJECT_ID_UNIQUE_START = 0x0FFFFFFF;
 constexpr int OBJECT_ID_UNIQUE_END = 0x7FFFFFFF;
 

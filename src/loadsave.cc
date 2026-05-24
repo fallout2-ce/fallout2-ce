@@ -1990,8 +1990,6 @@ static int lsgLoadGameInSlot(int slot)
         if (!loaded) {
             return -1;
         }
-    } else {
-        scriptsRestoreUniqueObjectIdCounter(OBJECT_ID_UNIQUE_START);
     }
 
     snprintf(_str, sizeof(_str), "%s\\", "MAPS");
