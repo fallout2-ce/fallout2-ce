@@ -490,12 +490,6 @@ void mf_set_outline(OpcodeContext& ctx)
 void mf_set_unique_id(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
-    if (object == nullptr) {
-        ctx.printError("%s() - expected object.", ctx.name());
-        ctx.setReturn(-1);
-        return;
-    }
-
     if (ctx.numArgs() > 1 && ctx.arg(1).asInt() == -1) {
         // unassign unique_id
         object->id = scriptsNewObjectId();
