@@ -28,6 +28,7 @@
 #include "proto_instance.h"
 #include "queue.h"
 #include "random.h"
+#include "scripts.h"
 #include "sfall_config.h"
 #include "sfall_script_hooks.h"
 #include "skill.h"
@@ -657,6 +658,10 @@ int itemDropAll(Object* critter, int tile)
 static bool _item_identical(Object* item1, Object* item2)
 {
     if (item1->pid != item2->pid) {
+        return false;
+    }
+
+    if (scriptsIsUniqueObjectId(item1->id) || scriptsIsUniqueObjectId(item2->id)) {
         return false;
     }
 

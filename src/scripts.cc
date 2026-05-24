@@ -78,6 +78,10 @@ static void _script_chk_timed_events();
 static int scriptsClearPendingRequests();
 static int scriptLocateProcs(Script* scr);
 static int scriptsLoadScriptsList();
+static bool scriptsObjectHasId(Object* object, int objectId);
+static bool scriptsInventoryContainsId(Object* object, int objectId);
+static int scriptsFindMaxUniqueObjectId(Object* object);
+static int scriptsFindMaxUniqueObjectIdInInventory(Object* object);
 static int scriptsFreeScriptsList();
 int scriptsGetFileName(int scriptIndex, char* name, size_t size);
 static int _scr_header_load();
@@ -193,6 +197,7 @@ static int gScriptsListEntriesLength = 0;
 
 // 0x51C7D4 cur_id
 static int gObjectIdCounter = 4;
+static int uniqueObjectIdCounter = OBJECT_ID_UNIQUE_START;
 
 // 0x51C7DC count
 static int gCritterProcessingIndex = 0;
@@ -554,6 +559,140 @@ int scriptsNewObjectId()
     gObjectIdCounter++;
 
     return gObjectIdCounter;
+}
+
+bool scriptsIsUniqueObjectId(int objectId)
+{
+    return objectId > OBJECT_ID_UNIQUE_START
+        || (objectId >= OBJECT_ID_PLAYER && objectId < OBJECT_ID_PARTY_MEMBER_END);
+}
+
+int scriptsNewUniqueObjectId()
+{
+    int objectId = uniqueObjectIdCounter;
+
+    do {
+        if (objectId >= OBJECT_ID_UNIQUE_END) {
+            objectId = OBJECT_ID_UNIQUE_START;
+        }
+
+        objectId++;
+    } while (scriptsObjectHasId(objectFindFirst(), objectId));
+
+    uniqueObjectIdCounter = objectId;
+    return objectId;
+}
+
+int scriptsGetUniqueObjectIdCounter()
+{
+    return uniqueObjectIdCounter;
+}
+
+void scriptsResetUniqueObjectIdCounter()
+{
+    uniqueObjectIdCounter = OBJECT_ID_UNIQUE_START;
+}
+
+void scriptsRestoreUniqueObjectIdCounter(int savedCounter)
+{
+    int objectIdCounter = OBJECT_ID_UNIQUE_START;
+    if (savedCounter >= OBJECT_ID_UNIQUE_START && savedCounter <= OBJECT_ID_UNIQUE_END) {
+        objectIdCounter = savedCounter;
+    }
+
+    int maxObjectId = scriptsFindMaxUniqueObjectId(objectFindFirst());
+    if (maxObjectId > objectIdCounter) {
+        objectIdCounter = maxObjectId;
+    }
+
+    uniqueObjectIdCounter = objectIdCounter;
+}
+
+int scriptsSetUniqueObjectId(Object* object)
+{
+    if (object == nullptr) {
+        return -1;
+    }
+
+    if (scriptsIsUniqueObjectId(object->id)) {
+        return object->id;
+    }
+
+    object->id = scriptsNewUniqueObjectId();
+    scriptsSyncObjectId(object);
+    return object->id;
+}
+
+void scriptsSyncObjectId(Object* object)
+{
+    if (object == nullptr || object->sid == -1) {
+        return;
+    }
+
+    Script* script;
+    if (scriptGetScript(object->sid, &script) != -1) {
+        script->ownerId = object->id;
+    }
+}
+
+static bool scriptsObjectHasId(Object* object, int objectId)
+{
+    while (object != nullptr) {
+        if (scriptsInventoryContainsId(object, objectId)) {
+            return true;
+        }
+
+        object = objectFindNext();
+    }
+
+    return false;
+}
+
+static bool scriptsInventoryContainsId(Object* object, int objectId)
+{
+    if (object->id == objectId) {
+        return true;
+    }
+
+    Inventory* inventory = &(object->data.inventory);
+    for (int index = 0; index < inventory->length; index++) {
+        if (scriptsInventoryContainsId(inventory->items[index].item, objectId)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static int scriptsFindMaxUniqueObjectId(Object* object)
+{
+    int maxObjectId = OBJECT_ID_UNIQUE_START;
+
+    while (object != nullptr) {
+        int objectMaxId = scriptsFindMaxUniqueObjectIdInInventory(object);
+        if (objectMaxId > maxObjectId) {
+            maxObjectId = objectMaxId;
+        }
+
+        object = objectFindNext();
+    }
+
+    return maxObjectId;
+}
+
+static int scriptsFindMaxUniqueObjectIdInInventory(Object* object)
+{
+    int maxObjectId = object->id > OBJECT_ID_UNIQUE_START ? object->id : OBJECT_ID_UNIQUE_START;
+
+    Inventory* inventory = &(object->data.inventory);
+    for (int index = 0; index < inventory->length; index++) {
+        int objectMaxId = scriptsFindMaxUniqueObjectIdInInventory(inventory->items[index].item);
+        if (objectMaxId > maxObjectId) {
+            maxObjectId = objectMaxId;
+        }
+    }
+
+    return maxObjectId;
 }
 
 // 0x4A390C
@@ -1576,6 +1715,7 @@ int _scr_game_init()
     gScriptsEnabled = true;
     gGameModeEnabled = 1;
     gGameTime = 1;
+    scriptsResetUniqueObjectIdCounter();
     gameTimeSetTime(302400);
     tickersAdd(_doBkProcesses);
 
