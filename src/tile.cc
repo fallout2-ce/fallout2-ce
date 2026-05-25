@@ -608,9 +608,9 @@ int tileSetCenter(int tile, int flags)
     }
 
     _tile_y = tile_y;
-    _tile_offx = mapEdgeGetModWidth() + (gTileWindowWidth - 32) / 2;
+    _tile_offx = mapEdgeGetTileXAlignment() + (gTileWindowWidth - 32) / 2;
     _tile_x = tile_x;
-    _tile_offy = mapEdgeGetModHeight() + (gTileWindowHeight - 16) / 2;
+    _tile_offy = mapEdgeGetTileYAlignment() + (gTileWindowHeight - 16) / 2;
 
     if (tile_x & 1) {
         _tile_x -= 1;

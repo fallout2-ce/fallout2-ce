@@ -2,6 +2,7 @@
 
 #include "db.h"
 #include "debug.h"
+#include "geometry.h"
 #include "map.h"
 #include "map_defs.h"
 #include "platform_compat.h"
@@ -9,9 +10,14 @@
 #include "tile.h"
 #include "window_manager.h"
 
+#include <cassert>
 #include <memory>
 
 namespace fallout {
+
+// Tile size in pixels
+constexpr int kTileWidth = 32;
+constexpr int kTileHeight = 24;
 
 static std::unique_ptr<EdgeZone> gEdgeZones[ELEVATION_COUNT];
 static bool gEdgeDataLoaded = false;
@@ -19,10 +25,10 @@ static bool gEdgeVersion2 = false;
 static EdgeZone* gCurrentEdgeZone = nullptr;
 
 // Boundary alignment mods (sfall mapModWidth/Height), set by clamp/check functions.
-static int gMapModWidth = 0;
-static int gMapModHeight = 0;
-static int gMapWidthModSize = 0;
-static int gMapHeightModSize = 0;
+static int currentTileXAlignment = 0;
+static int currentTileYAlignment = 0;
+static int maxTileXAlignment = 0;
+static int maxTileYAlignment = 0;
 
 static Rect gMapVisibleArea;
 
@@ -34,15 +40,15 @@ void tileToPixelOffset(int tile, int& outX, int& outY)
     int y = (tile / HEX_GRID_WIDTH) + (x / 2);
     y &= ~1; // force even row
     x = (2 * x) + 200 - y;
-    outY = 12 * y;
-    outX = 16 * x;
+    outY = kTileHeight / 2 * y;
+    outX = kTileWidth / 2 * x;
 }
 
 // Convert pixel-offset to tile coord (in-place, like sfall GetCoordFromOffset).
 void pixelToTileCoord(int& inOutX, int& inOutY)
 {
-    int y = inOutY / 24;
-    int x = (inOutX / 32) + y - 100;
+    int y = inOutY / kTileHeight;
+    int x = (inOutX / kTileWidth) + y - 100;
     inOutX = x;
     inOutY = (2 * y) - (x / 2);
 }
@@ -54,100 +60,99 @@ static int pixelToTile(int px, int py)
     return px + py * HEX_GRID_WIDTH;
 }
 
+static Size getIsoWindowSize()
+{
+    Rect winRect;
+    assert(windowGetRect(gIsoWindow, &winRect) != -1);
+    return {rectGetWidth(&winRect), rectGetHeight(&winRect)};
+}
+
 // Fill pixel-space fields of a zone from its stored tileRect corners.
 // Screen-size dependent — must be re-run if resolution changes.
 static void calcEdgeData(EdgeZone* zone)
 {
-    const int winW = screenGetWidth();
-    const int winH = screenGetVisibleHeight();
+    const auto [winWidth, winHeight] = getIsoWindowSize();
+    const int winHalfWidth = winWidth / 2;
+    const int winHalfHeight = winHeight / 2;
 
-    // Truncated half sizes for border expansion (matching sfall ViewMap::GetWinMapHalfSize).
-    int w = (winW >> 1) - ((winW >> 1) & 31);
-    int h = (winH >> 1) - ((winH >> 1) % 24);
+    // Compute sub-tile alignment sizes (sfall mapWidthModSize / mapHeightModSize).
+    maxTileXAlignment = winHalfWidth % kTileWidth;
+    maxTileYAlignment = winHalfHeight % kTileHeight;
 
-    // Convert tileRect corners to pixel offsets → borderRect
+    // Truncated half sizes for border contraction (matching sfall ViewMap::GetWinMapHalfSize).
+    const int winHalfWidthSnapped = winHalfWidth - maxTileXAlignment;
+    const int winHalfHeightSnapped = winHalfHeight - maxTileYAlignment;
+
+    // Convert tileRect corners to pixel offsets → scrollBorderRect
     int px, py;
 
     tileToPixelOffset(zone->tileRect.left, px, py);
-    zone->borderRect.left = px;
+    zone->scrollBorderRect.left = px;
 
     tileToPixelOffset(zone->tileRect.top, px, py);
-    zone->borderRect.top = py;
+    zone->scrollBorderRect.top = py;
 
     tileToPixelOffset(zone->tileRect.right, px, py);
-    zone->borderRect.right = px;
+    zone->scrollBorderRect.right = px;
 
     tileToPixelOffset(zone->tileRect.bottom, px, py);
-    zone->borderRect.bottom = py;
+    zone->scrollBorderRect.bottom = py;
 
-    // rect2 = borderRect shifted by (winWidth/2 - 1, winHeight/2 - 1)
+    // rect2 = tileRect in pixel coordinates shifted by to the right-bottom by (winHalfW - 1, winHalfH - 1)
     // Used by EdgeClipping to compute mapVisibleArea (screen-space clipping rect).
-    const int mapWinW = (winW / 2) - 1;
-    const int mapWinH = (winH / 2) - 1;
+    zone->rect2.left = zone->scrollBorderRect.left - winHalfWidth + 1;
+    zone->rect2.right = zone->scrollBorderRect.right - winHalfWidth + 1;
+    zone->rect2.top = zone->scrollBorderRect.top + winHalfHeight - 1;
+    zone->rect2.bottom = zone->scrollBorderRect.bottom + winHalfHeight - 1;
 
-    zone->rect2.left = zone->borderRect.left - mapWinW;
-    zone->rect2.right = zone->borderRect.right - mapWinW;
-    zone->rect2.top = zone->borderRect.top + mapWinH;
-    zone->rect2.bottom = zone->borderRect.bottom + mapWinH;
-
-    // Expand borderRect outward by half its own size (or window half-size if very large).
-    // This creates the "scroll cushion" zone that allows the camera to reach the map edge.
+    // Contract scrollBorderRect inward by window half-size (or half its own size snapped to hex grid, if it's smaller than the window).
+    // Narrows the scrollable area, with guards below collapsing to a point if it crosses.
     {
-        long rectW = (zone->borderRect.left - zone->borderRect.right) / 2;
-        long _rectW = rectW;
-        if (rectW & 31) {
-            rectW &= ~31;
-            _rectW = rectW + 32;
-        }
-        if (rectW < w) {
-            zone->borderRect.left -= rectW;
-            zone->borderRect.right += _rectW;
+        long rectHalfWidth = (zone->scrollBorderRect.left - zone->scrollBorderRect.right) / 2;
+        if (rectHalfWidth < winHalfWidthSnapped) {
+            long remainder = rectHalfWidth % kTileWidth;
+            long rectHalfWidthSnapped = rectHalfWidth - remainder;
+            zone->scrollBorderRect.left -= rectHalfWidthSnapped;
+            zone->scrollBorderRect.right += rectHalfWidthSnapped + (remainder ? kTileWidth : 0);
         } else {
-            zone->borderRect.left -= w;
-            zone->borderRect.right += w;
+            zone->scrollBorderRect.left -= winHalfWidthSnapped;
+            zone->scrollBorderRect.right += winHalfWidthSnapped;
         }
     }
 
     {
-        long rectH = (zone->borderRect.bottom - zone->borderRect.top) / 2;
-        long _rectH = rectH;
-        if (rectH % 24) {
-            rectH -= rectH % 24;
-            _rectH = rectH + 24;
-        }
-        if (rectH < h) {
-            zone->borderRect.top += _rectH;
-            zone->borderRect.bottom -= rectH;
+        long rectHalfHeight = (zone->scrollBorderRect.bottom - zone->scrollBorderRect.top) / 2;
+        if (rectHalfHeight < winHalfHeightSnapped) {
+            long remainder = rectHalfHeight % kTileHeight;
+            long rectHalfHeightSnapped = rectHalfHeight - remainder;
+            zone->scrollBorderRect.top += rectHalfHeightSnapped + (remainder ? kTileHeight : 0);
+            zone->scrollBorderRect.bottom -= rectHalfHeightSnapped;
         } else {
-            zone->borderRect.top += h;
-            zone->borderRect.bottom -= h;
+            zone->scrollBorderRect.top += winHalfHeightSnapped;
+            zone->scrollBorderRect.bottom -= winHalfHeightSnapped;
         }
     }
 
     // Inverted-X guard: collapse to vertical line if left/right cross or nearly touch.
-    if ((zone->borderRect.left < zone->borderRect.right) || (zone->borderRect.left - zone->borderRect.right) == 32) {
-        zone->borderRect.left = zone->borderRect.right;
+    if ((zone->scrollBorderRect.left < zone->scrollBorderRect.right) || (zone->scrollBorderRect.left - zone->scrollBorderRect.right) == kTileWidth) {
+        zone->scrollBorderRect.left = zone->scrollBorderRect.right;
     }
 
     // Inverted-Y guard
-    if ((zone->borderRect.bottom < zone->borderRect.top) || (zone->borderRect.bottom - zone->borderRect.top) == 24) {
-        zone->borderRect.bottom = zone->borderRect.top;
+    if ((zone->scrollBorderRect.bottom < zone->scrollBorderRect.top) || (zone->scrollBorderRect.bottom - zone->scrollBorderRect.top) == kTileHeight) {
+        zone->scrollBorderRect.bottom = zone->scrollBorderRect.top;
     }
 
-    debugPrint("EDG[%p] tileRect=(%d,%d,%d,%d) win=(%d,%d) w=%d h=%d borderRect=(%d,%d,%d,%d) rect2=(%d,%d,%d,%d)\n",
+    debugPrint("EDG[%p] tileRect=(%d,%d,%d,%d) win=(%d,%d) half size snap=(%d,%d) scrollBorderRect=(%d,%d,%d,%d) rect2=(%d,%d,%d,%d)\n",
         static_cast<void*>(zone), zone->tileRect.left, zone->tileRect.top,
-        zone->tileRect.right, zone->tileRect.bottom, winW, winH, w, h,
-        zone->borderRect.left, zone->borderRect.top,
-        zone->borderRect.right, zone->borderRect.bottom,
+        zone->tileRect.right, zone->tileRect.bottom, winWidth, winHeight, winHalfWidthSnapped, winHalfHeightSnapped,
+        zone->scrollBorderRect.left, zone->scrollBorderRect.top,
+        zone->scrollBorderRect.right, zone->scrollBorderRect.bottom,
         zone->rect2.left, zone->rect2.top,
         zone->rect2.right, zone->rect2.bottom);
-
-    // Compute sub-tile alignment sizes (sfall mapWidthModSize / mapHeightModSize).
-    gMapWidthModSize = (winW >> 1) & 31;
-    gMapHeightModSize = (winH >> 1) % 24;
 }
 
-// Multi-edge zone selection: pick the zone whose borderRect contains the pixel position.
+// Multi-edge zone selection: pick the zone whose scrollBorderRect contains the pixel position.
 // Matches GetCenterTile logic: advance while target is outside current zone, use last if
 // none contains it.
 static EdgeZone* findZoneByPixel(int px, int py, int elevation)
@@ -158,10 +163,11 @@ static EdgeZone* findZoneByPixel(int px, int py, int elevation)
     }
 
     if (zone->next != nullptr) {
+        const auto [winWidth, winHeight] = getIsoWindowSize();
         // Multi-edge: advance while target pixel is outside this zone's border.
-        // rect2.left + width == borderRect.left, rect2.top - height == borderRect.top - 2
-        const int width = (screenGetWidth() / 2) - 1;
-        const int height = (screenGetVisibleHeight() / 2) + 1;
+        // rect2.left + width == scrollBorderRect.left, rect2.top - height == scrollBorderRect.top - 2
+        const int width = winWidth - 1;
+        const int height = winHeight + 1;
 
         while (px >= (zone->rect2.left + width) || px <= (zone->rect2.right + width)
             || py <= (zone->rect2.top - height) || py >= (zone->rect2.bottom - height)) {
@@ -176,9 +182,9 @@ static EdgeZone* findZoneByPixel(int px, int py, int elevation)
     return zone;
 }
 
-// Parse EDG file, populate gEdgeZones, and compute pixel-space fields.
+// Load EDG file, populate gEdgeZones, and compute pixel-space fields.
 // EDG files use big-endian byte order (like all Fallout 2 files).
-static bool parseEdgFile(File* stream)
+static bool mapEdgeLoadFromStream(File* stream)
 {
     int magic;
     if (fileReadInt32(stream, &magic) == -1 || magic != 'EDGE') return false;
@@ -239,7 +245,7 @@ static bool parseEdgFile(File* stream)
             calcEdgeData(zone.get());
 
             *tail = std::move(zone);
-            tail = &zone->next;
+            tail = &(*tail)->next;
             isFirstZone = false;
 
             if (fileReadInt32(stream, &levelIndicator) == -1) {
@@ -270,7 +276,7 @@ void mapEdgeLoad(const char* mapName)
         return;
     }
 
-    bool ok = parseEdgFile(stream);
+    bool ok = mapEdgeLoadFromStream(stream);
     fileClose(stream);
 
     if (ok) {
@@ -289,10 +295,10 @@ void mapEdgeFree()
     }
     gEdgeDataLoaded = false;
     gCurrentEdgeZone = nullptr;
-    gMapModWidth = 0;
-    gMapModHeight = 0;
-    gMapWidthModSize = 0;
-    gMapHeightModSize = 0;
+    currentTileXAlignment = 0;
+    currentTileYAlignment = 0;
+    maxTileXAlignment = 0;
+    maxTileYAlignment = 0;
     gMapVisibleArea = {};
 }
 
@@ -306,8 +312,8 @@ bool mapEdgeZoneIsSelected()
     return gCurrentEdgeZone != nullptr;
 }
 
-// Shared helper: set gMapModWidth/Height if the pixel is on a borderRect edge.
-static void setBoundaryMods(const EdgeZone* zone, int px, int py);
+// Shared helper: set currentTileXAlignment/Height if the pixel is on a scrollBorderRect edge.
+static void updateTileAlignment(const EdgeZone* zone, int px, int py);
 
 int mapEdgeSelectZoneAndClamp(int tile, int elevation)
 {
@@ -320,17 +326,17 @@ int mapEdgeSelectZoneAndClamp(int tile, int elevation)
         return tile;
     }
 
-    // Clamp pixel position to borderRect (matching sfall GetCenterTile).
+    // Clamp pixel position to scrollBorderRect (matching sfall GetCenterTile).
     // Note: X is inverted (left > right), so the valid range is [right, left].
-    int cx = (px <= zone->borderRect.left)
-        ? ((px >= zone->borderRect.right) ? px : zone->borderRect.right)
-        : zone->borderRect.left;
+    int cx = (px <= zone->scrollBorderRect.left)
+        ? ((px >= zone->scrollBorderRect.right) ? px : zone->scrollBorderRect.right)
+        : zone->scrollBorderRect.left;
 
-    int cy = (py <= zone->borderRect.bottom)
-        ? ((py >= zone->borderRect.top) ? py : zone->borderRect.top)
-        : zone->borderRect.bottom;
+    int cy = (py <= zone->scrollBorderRect.bottom)
+        ? ((py >= zone->scrollBorderRect.top) ? py : zone->scrollBorderRect.top)
+        : zone->scrollBorderRect.bottom;
 
-    setBoundaryMods(zone, cx, cy);
+    updateTileAlignment(zone, cx, cy);
 
     return pixelToTile(cx, cy);
 }
@@ -346,24 +352,24 @@ bool mapEdgeTileInBounds(int tile)
     }
 
     // Note: X is inverted (left > right), so check px in [right, left].
-    return px >= zone->borderRect.right && px <= zone->borderRect.left
-        && py >= zone->borderRect.top && py <= zone->borderRect.bottom;
+    return px >= zone->scrollBorderRect.right && px <= zone->scrollBorderRect.left
+        && py >= zone->scrollBorderRect.top && py <= zone->scrollBorderRect.bottom;
 }
 
-// Shared helper: set gMapModWidth/Height if the pixel is on a borderRect edge.
-static void setBoundaryMods(const EdgeZone* zone, int px, int py)
+// Shared helper: set currentTileXAlignment if the pixel is on a scrollBorderRect edge.
+static void updateTileAlignment(const EdgeZone* zone, int px, int py)
 {
-    gMapModWidth = 0;
-    gMapModHeight = 0;
-    if (px == zone->borderRect.left) {
-        gMapModWidth = -gMapWidthModSize;
-    } else if (px == zone->borderRect.right) {
-        gMapModWidth = gMapWidthModSize;
+    currentTileXAlignment = 0;
+    currentTileYAlignment = 0;
+    if (px == zone->scrollBorderRect.left) {
+        currentTileXAlignment = -maxTileXAlignment;
+    } else if (px == zone->scrollBorderRect.right) {
+        currentTileXAlignment = maxTileXAlignment;
     }
-    if (py == zone->borderRect.top) {
-        gMapModHeight = -gMapHeightModSize;
-    } else if (py == zone->borderRect.bottom) {
-        gMapModHeight = gMapHeightModSize;
+    if (py == zone->scrollBorderRect.top) {
+        currentTileYAlignment = -maxTileYAlignment;
+    } else if (py == zone->scrollBorderRect.bottom) {
+        currentTileYAlignment = maxTileYAlignment;
     }
 }
 
@@ -374,20 +380,20 @@ bool mapEdgeSetBoundaryMods(int tile)
 
     EdgeZone* zone = gCurrentEdgeZone;
     if (zone == nullptr) {
-        gMapModWidth = 0;
-        gMapModHeight = 0;
+        currentTileXAlignment = 0;
+        currentTileYAlignment = 0;
         return false;
     }
 
-    const int oldModW = gMapModWidth;
-    const int oldModH = gMapModHeight;
-    setBoundaryMods(zone, px, py);
-    return gMapModWidth != oldModW || gMapModHeight != oldModH;
+    const int oldModW = currentTileXAlignment;
+    const int oldModH = currentTileYAlignment;
+    updateTileAlignment(zone, px, py);
+    return currentTileXAlignment != oldModW || currentTileYAlignment != oldModH;
 }
 
-int mapEdgeGetModWidth() { return gMapModWidth; }
+int mapEdgeGetTileXAlignment() { return currentTileXAlignment; }
 
-int mapEdgeGetModHeight() { return gMapModHeight; }
+int mapEdgeGetTileYAlignment() { return currentTileYAlignment; }
 
 bool mapEdgeHasSquareRect(int elevation)
 {
@@ -419,13 +425,13 @@ bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
     int px, py;
     tileToPixelOffset(gCenterTile, px, py);
 
-    px += gMapModWidth;
-    py -= gMapModHeight;
+    px += currentTileXAlignment;
+    py -= currentTileYAlignment;
 
     EdgeZone* zone = findZoneByPixel(px, py, elevation);
     if (zone == nullptr) return false;
 
-    // Convert pixel-offset space to screen space via rect_2.
+    // Convert pixel-offset space to screen space via rect2.
     // Matches sfall EdgeClipping::rect_inside_bound_clip mapVisibleArea computation.
     outRect->left = px - zone->rect2.left;
     outRect->right = px - zone->rect2.right;
