@@ -8,6 +8,13 @@
 namespace fallout {
 
 struct EdgeZone {
+    struct ClipSides {
+        bool bottom = false;
+        bool right = false;
+        bool top = false;
+        bool left = false;
+    };
+
     // Raw tile indices from EDG file (tileRect in tile space, 0-39999).
     Rect tileRect;
 
@@ -22,11 +29,11 @@ struct EdgeZone {
 
     // Square-grid clip rect for floor/roof rendering (v2 EDG only).
     // Valid when left >= 0.
-    // TODO: implement
     Rect squareRect;
 
-    // Bit-mask specifying for each of 4 sides from the squareRect whether to draw black squares on top of non-flat objects.
-    int clipData;
+    // Per-side clip flags unpacked from EDG v2. True means the black square overlay
+    // for that side is drawn on top of (after) non-flat objects.
+    ClipSides clipSides;
 
     std::unique_ptr<EdgeZone> next;
 };
@@ -65,6 +72,9 @@ void pixelToTileCoord(int& inOutX, int& inOutY);
 // Fills the squareRect for the given elevation.
 // Only valid when mapEdgeHasSquareRect(elevation) returns true.
 void mapEdgeGetSquareRect(int elevation, Rect* outRect);
+
+// Returns the clipSides for the given elevation (default-constructed if no EDG data).
+EdgeZone::ClipSides mapEdgeGetClipSides(int elevation);
 
 // Recalculate all pixel-space fields using current screen dimensions.
 // Call when resolution changes while a map is loaded.

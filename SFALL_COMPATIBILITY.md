@@ -13,7 +13,7 @@ CE supports the `.edg` file format from the HRP (High Resolution Patch), which d
 - On map load, `maps/<mapname>.edg` is read if present. Missing file = silent fallback to the scroll-blocker object system.
 - The `.edg` file defines per-elevation rectangle boundary zones. Multiple chained zones per elevation are supported.
 - When loaded, these zones are used for both scroll blocking and visible area clipping (black bars), replacing both vanilla scroll blocking and CE hi-res stencil system.
-- v2 EDG files also contain a `SquareRect` that defines "Angled edges", or square-grid stencil. This is not yet supported in CE.
+- v2 EDG files also contain a `SquareRect` that defines "Angled edges", or square-grid stencil. This is also supported.
 
 
 ## Settings (ddraw.ini → fallout2.cfg / game.cfg)

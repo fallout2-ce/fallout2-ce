@@ -1527,6 +1527,54 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
     }
 }
 
+// Port of sfall HRP ViewMap::square_obj_render
+void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop)
+{
+    if (!mapEdgeHasSquareRect(elevation)) {
+        return;
+    }
+
+    Rect squareRect;
+    mapEdgeGetSquareRect(elevation, &squareRect);
+    EdgeZone::ClipSides clipSides = mapEdgeGetClipSides(elevation);
+
+    int maxX, minY, minX, maxY, temp;
+
+    squareTileScreenToCoord(rect->left, rect->bottom, elevation, &maxX, &temp);
+    squareTileScreenToCoord(rect->left, rect->top, elevation, &temp, &minY);
+    squareTileScreenToCoord(rect->right, rect->top, elevation, &minX, &temp);
+    squareTileScreenToCoord(rect->right, rect->bottom, elevation, &temp, &maxY);
+
+    if (++maxX > gSquareGridWidth) maxX = gSquareGridWidth - 1;
+    if (--minX < 0) minX = 0;
+    if (--minY < 0) minY = 0;
+    if (++maxY > gSquareGridHeight) maxY = gSquareGridHeight - 1;
+
+    if (minY >= maxY || minX >= maxX) return;
+
+    bool drawLeft = clipSides.left == drawOnTop;
+    bool drawTop = clipSides.top == drawOnTop;
+    bool drawRight = clipSides.right == drawOnTop;
+    bool drawBottom = clipSides.bottom == drawOnTop;
+
+    const int kEdgeFid = buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0);
+    int baseSquareTile = gSquareGridWidth * minY;
+
+    for (int y = minY; y < maxY; y++) {
+        for (int x = minX; x < maxX; x++) {
+            if ((drawLeft && x > squareRect.left)
+                || (drawTop && y < squareRect.top)
+                || (drawRight && x < squareRect.right)
+                || (drawBottom && y > squareRect.bottom)) {
+                int sx, sy;
+                squareTileToScreenXY(baseSquareTile + x, &sx, &sy, elevation);
+                tileRenderFloor(kEdgeFid, sx, sy, rect);
+            }
+        }
+        baseSquareTile += gSquareGridWidth;
+    }
+}
+
 // 0x4B2B10 square_roof_intersect
 bool _square_roof_intersect(int x, int y, int elevation)
 {
