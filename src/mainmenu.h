@@ -14,6 +14,7 @@ typedef enum MainMenuOption {
     MAIN_MENU_EXIT,
     MAIN_MENU_SELFRUN,
     MAIN_MENU_OPTIONS,
+    MAIN_MENU_PROTOTYPE_OPTIONS,
 } MainMenuOption;
 
 int mainMenuWindowInit();

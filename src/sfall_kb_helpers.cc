@@ -364,6 +364,16 @@ void sfall_kb_clear_synthetic_key_events()
     syntheticKeyEvents.clear();
 }
 
+int sfall_kb_get_scancode_from_key(int key)
+{
+    return get_scancode_from_key(key);
+}
+
+int sfall_kb_get_key_from_scancode(int sdlScanCode)
+{
+    return get_key_from_scancode(static_cast<SDL_Scancode>(sdlScanCode));
+}
+
 int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
 {
     if (!gGameLoaded) return SDL_SCANCODE_UNKNOWN;

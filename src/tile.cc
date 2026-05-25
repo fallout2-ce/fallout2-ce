@@ -64,9 +64,15 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light);
 static void _draw_grid(int tile, int elevation, Rect* rect);
 static void tileRenderFloor(int fid, int x, int y, Rect* rect);
 static int _tile_make_line(int currentCenterTile, int newCenterTile, int* tiles, int tilesCapacity);
+static void tileToScrollCoord(int tile, int* outX, int* outY);
+static void debugLogScrollLimitBlock(int tile, int centerCoordX, int centerCoordY, int dudeCoordX, int dudeCoordY, int dx, int dy);
+static void debugLogScrollObjectBlock(int tile);
+static void debugLogScrollBorderBlock(int tile, int tileX, int tileY);
 
 // 0x50E7C7 minus_4_0f
 static double const dbl_50E7C7 = -4.0;
+static constexpr int kScrollLimitX = 480;
+static constexpr int kScrollLimitY = 400;
 
 // 0x51D950 borderInitialized
 bool gTileBorderInitialized = false;
@@ -484,6 +490,58 @@ static void tileSetBorder(int windowWidth, int windowHeight, int hexGridWidth, i
     gTileBorderInitialized = true;
 }
 
+static void tileToScrollCoord(int tile, int* outX, int* outY)
+{
+    int x = tile % gHexGridWidth;
+    int y = (tile / gHexGridWidth) + (x / 2);
+
+    *outY = y;
+    *outX = 2 * x - y;
+}
+
+static void debugLogScrollLimitBlock(int tile, int centerCoordX, int centerCoordY, int dudeCoordX, int dudeCoordY, int dx, int dy)
+{
+    int tileCoordX;
+    int tileCoordY;
+    tileToScrollCoord(tile, &tileCoordX, &tileCoordY);
+
+    debugPrint("tileSetCenter: scroll limit blocked tile=%d center=%d dude=%d tileCoord=(%d,%d) centerCoord=(%d,%d) dudeCoord=(%d,%d) dist=(%d,%d) limit=(%d,%d)\n",
+        tile,
+        gCenterTile,
+        gDude != nullptr ? gDude->tile : -1,
+        tileCoordX,
+        tileCoordY,
+        centerCoordX,
+        centerCoordY,
+        dudeCoordX,
+        dudeCoordY,
+        dx,
+        dy,
+        kScrollLimitX,
+        kScrollLimitY);
+}
+
+static void debugLogScrollObjectBlock(int tile)
+{
+    debugPrint("tileSetCenter: scroll blocker object blocked tile=%d center=%d elev=%d\n",
+        tile,
+        gCenterTile,
+        gElevation);
+}
+
+static void debugLogScrollBorderBlock(int tile, int tileX, int tileY)
+{
+    debugPrint("tileSetCenter: tile border blocked tile=%d center=%d tileXY=(%d,%d) borderX=[%d,%d] borderY=[%d,%d]\n",
+        tile,
+        gCenterTile,
+        tileX,
+        tileY,
+        gTileBorderMinX,
+        gTileBorderMaxX,
+        gTileBorderMinY,
+        gTileBorderMaxY);
+}
+
 // NOTE: Collapsed.
 //
 // 0x4B129C
@@ -542,20 +600,25 @@ int tileSetCenter(int tile, int flags)
 
     if ((flags & TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
         if (gTileScrollLimitingEnabled) {
-            int tileScreenX;
-            int tileScreenY;
-            tileToScreenXY(tile, &tileScreenX, &tileScreenY);
+            int tileCoordX;
+            int tileCoordY;
+            tileToScrollCoord(tile, &tileCoordX, &tileCoordY);
 
-            int dudeScreenX;
-            int dudeScreenY;
-            tileToScreenXY(gDude->tile, &dudeScreenX, &dudeScreenY);
+            int dudeCoordX;
+            int dudeCoordY;
+            tileToScrollCoord(gDude->tile, &dudeCoordX, &dudeCoordY);
 
-            int dx = abs(dudeScreenX - tileScreenX);
-            int dy = abs(dudeScreenY - tileScreenY);
+            int dx = 16 * abs(tileCoordX - dudeCoordX);
+            int dy = 12 * abs(tileCoordY - dudeCoordY);
 
-            if (dx > abs(dudeScreenX - _tile_offx)
-                || dy > abs(dudeScreenY - _tile_offy)) {
-                if (dx >= 480 || dy >= 400) {
+            if (dx >= kScrollLimitX || dy >= kScrollLimitY) {
+                int centerCoordX;
+                int centerCoordY;
+                tileToScrollCoord(gCenterTile, &centerCoordX, &centerCoordY);
+
+                if (16 * abs(centerCoordX - dudeCoordX) < dx
+                    || 12 * abs(centerCoordY - dudeCoordY) < dy) {
+                    debugLogScrollLimitBlock(tile, centerCoordX, centerCoordY, dudeCoordX, dudeCoordY, dx, dy);
                     return -1;
                 }
             }
@@ -563,6 +626,7 @@ int tileSetCenter(int tile, int flags)
 
         if (gTileScrollBlockingEnabled && !settings.ui.ignore_map_edges) {
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
+                debugLogScrollObjectBlock(tile);
                 return -1;
             }
         }
@@ -573,6 +637,7 @@ int tileSetCenter(int tile, int flags)
 
     if (gTileBorderInitialized && !settings.ui.ignore_map_edges) {
         if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
+            debugLogScrollBorderBlock(tile, tile_x, tile_y);
             return -1;
         }
     }

@@ -30,6 +30,7 @@
 #include "platform_compat.h"
 #include "preferences.h"
 #include "proto.h"
+#include "prototype_options.h"
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
@@ -75,6 +76,7 @@ static bool _main_show_death_scene = false;
 static bool _main_death_voiceover_done;
 
 static int commandLineDevLoadGameSlot = -1;
+static bool commandLineDevOptionsMenu = false;
 
 // 0x48099C
 int falloutMain(int argc, char** argv)
@@ -111,7 +113,10 @@ int falloutMain(int argc, char** argv)
             mouseShowCursor();
             int devLoadGameSlot = commandLineDevLoadGameSlot;
             int mainMenuRc;
-            if (devLoadGameSlot != -1) {
+            if (commandLineDevOptionsMenu) {
+                commandLineDevOptionsMenu = false;
+                mainMenuRc = MAIN_MENU_PROTOTYPE_OPTIONS;
+            } else if (devLoadGameSlot != -1) {
                 commandLineDevLoadGameSlot = -1;
                 mainMenuRc = MAIN_MENU_LOAD_GAME;
             } else {
@@ -217,6 +222,10 @@ int falloutMain(int argc, char** argv)
                 mainMenuWindowHide(true);
                 doPreferences(true);
                 break;
+            case MAIN_MENU_PROTOTYPE_OPTIONS:
+                mainMenuWindowHide(true);
+                showPrototypeOptionsMenu(true);
+                break;
             case MAIN_MENU_CREDITS:
                 mainMenuWindowHide(true);
                 creditsOpen("credits.txt", -1, false);
@@ -264,9 +273,12 @@ static void mainParseCommandLineArguments(int argc, char** argv)
 {
     const char* devLoadGamePrefix = "--dev-load-game=";
     size_t devLoadGamePrefixLength = strlen(devLoadGamePrefix);
+    const char* devOptionsMenuFlag = "--dev-options-menu";
 
     for (int arg = 1; arg < argc; arg += 1) {
-        if (strncmp(argv[arg], devLoadGamePrefix, devLoadGamePrefixLength) == 0) {
+        if (strcmp(argv[arg], devOptionsMenuFlag) == 0) {
+            commandLineDevOptionsMenu = true;
+        } else if (strncmp(argv[arg], devLoadGamePrefix, devLoadGamePrefixLength) == 0) {
             int slot;
             if (mainTryParseDevLoadGameSlot(argv[arg] + devLoadGamePrefixLength, &slot)) {
                 commandLineDevLoadGameSlot = slot;

@@ -355,6 +355,10 @@ int mainMenuWindowHandleEvents()
             if (keyCode == KEY_CTRL_R) {
                 rc = MAIN_MENU_SELFRUN;
                 continue;
+            } else if (keyCode == KEY_UPPERCASE_Z || keyCode == KEY_LOWERCASE_Z) {
+                main_menu_play_sound("nmselec1");
+                rc = MAIN_MENU_PROTOTYPE_OPTIONS;
+                continue;
             } else if (keyCode == KEY_PLUS || keyCode == KEY_EQUAL) {
                 brightnessIncrease();
             } else if (keyCode == KEY_MINUS || keyCode == KEY_UNDERSCORE) {

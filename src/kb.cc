@@ -147,6 +147,11 @@ int _kb_getch()
     return rc;
 }
 
+int keyboardGetLastScanCode()
+{
+    return gLastKeyboardEvent.scanCode;
+}
+
 // 0x4CBE00 kb_disable
 void keyboardDisable()
 {

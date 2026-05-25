@@ -346,6 +346,7 @@ int keyboardInit();
 void keyboardFree();
 void keyboardReset();
 int _kb_getch();
+int keyboardGetLastScanCode();
 void keyboardDisable();
 void keyboardEnable();
 int keyboardIsDisabled();

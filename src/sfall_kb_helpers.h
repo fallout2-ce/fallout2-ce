@@ -15,6 +15,9 @@ bool sfall_kb_consume_synthetic_key_event(int sdlScanCode, bool pressed);
 /// Clears queued synthetic `tap_key` markers after SDL key events are discarded.
 void sfall_kb_clear_synthetic_key_events();
 
+int sfall_kb_get_scancode_from_key(int key);
+int sfall_kb_get_key_from_scancode(int sdlScanCode);
+
 int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed);
 
 } // namespace fallout
