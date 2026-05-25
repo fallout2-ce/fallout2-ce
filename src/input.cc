@@ -404,7 +404,9 @@ void takeScreenshot()
     _mouse_blit = old_mouse;
     _scr_blit = old_src;
 
-    unsigned char* palette = _getSystemPalette();
+    // Save screenshots with the palette currently presented on screen so the
+    // exported colors match brightness-adjusted rendering.
+    unsigned char* palette = gSdlSurface != nullptr ? directDrawGetPalette() : _getSystemPalette();
     gScreenshotHandler(width, height, gScreenshotBuffer, palette);
     internal_free(gScreenshotBuffer);
 }
