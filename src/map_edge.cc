@@ -405,7 +405,7 @@ void mapEdgeGetSquareRect(int elevation, Rect* outRect)
 EdgeZone::ClipSides mapEdgeGetClipSides(int elevation)
 {
     const auto& zone = gEdgeZones[elevation];
-    return zone ? zone->clipSides : EdgeZone::ClipSides{};
+    return zone ? zone->clipSides : EdgeZone::ClipSides {};
 }
 
 void mapEdgeRecalc()
