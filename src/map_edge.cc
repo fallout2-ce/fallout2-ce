@@ -64,7 +64,7 @@ static Size getIsoWindowSize()
 {
     Rect winRect;
     assert(windowGetRect(gIsoWindow, &winRect) != -1);
-    return {rectGetWidth(&winRect), rectGetHeight(&winRect)};
+    return { rectGetWidth(&winRect), rectGetHeight(&winRect) };
 }
 
 // Fill pixel-space fields of a zone from its stored tileRect corners.
