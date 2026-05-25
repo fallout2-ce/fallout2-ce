@@ -58,7 +58,7 @@ void squareTileScreenToCoordRoof(int screenX, int screenY, int elevation, int* c
 void tileRenderRoofsInRect(Rect* rect, int elevation);
 void tile_fill_roof(int x, int y, int elevation, bool on);
 void tileRenderFloorsInRect(Rect* rect, int elevation);
-void tileRenderEdgeBlackSquares(Rect* rect, int elevation, int tag);
+void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop);
 bool _square_roof_intersect(int x, int y, int elevation);
 void _grid_render(Rect* rect, int elevation);
 int _tile_scroll_to(int tile, int flags);

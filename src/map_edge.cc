@@ -230,7 +230,11 @@ static bool mapEdgeLoadFromStream(File* stream)
             zone->squareRect.top = sqTop;
             zone->squareRect.right = sqRight;
             zone->squareRect.bottom = sqBottom;
-            zone->clipData = isFirstZone ? sqClipData : 0;
+            int rawClip = isFirstZone ? sqClipData : 0;
+            zone->clipSides.bottom = (rawClip & 1) != 0;
+            zone->clipSides.right = ((rawClip >> 8) & 1) != 0;
+            zone->clipSides.top = ((rawClip >> 16) & 1) != 0;
+            zone->clipSides.left = ((rawClip >> 24) & 1) != 0;
             zone->next = nullptr;
 
             calcEdgeData(zone.get());
@@ -398,10 +402,10 @@ void mapEdgeGetSquareRect(int elevation, Rect* outRect)
     *outRect = zone->squareRect;
 }
 
-int mapEdgeGetClipData(int elevation)
+EdgeZone::ClipSides mapEdgeGetClipSides(int elevation)
 {
     const auto& zone = gEdgeZones[elevation];
-    return zone ? zone->clipData : 0;
+    return zone ? zone->clipSides : EdgeZone::ClipSides{};
 }
 
 void mapEdgeRecalc()

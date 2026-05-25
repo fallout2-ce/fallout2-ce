@@ -1528,7 +1528,7 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
 }
 
 // Port of sfall HRP ViewMap::square_obj_render
-void tileRenderEdgeBlackSquares(Rect* rect, int elevation, int tag)
+void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop)
 {
     if (!mapEdgeHasSquareRect(elevation)) {
         return;
@@ -1536,33 +1536,39 @@ void tileRenderEdgeBlackSquares(Rect* rect, int elevation, int tag)
 
     Rect squareRect;
     mapEdgeGetSquareRect(elevation, &squareRect);
-    int clipData = mapEdgeGetClipData(elevation);
+    EdgeZone::ClipSides clipSides = mapEdgeGetClipSides(elevation);
 
-    int x0, y1, x2, y3, temp;
+    int maxX, minY, minX, maxY, temp;
 
-    squareTileScreenToCoord(rect->left, rect->bottom, elevation, &x0, &temp);
-    squareTileScreenToCoord(rect->left, rect->top, elevation, &temp, &y1);
-    squareTileScreenToCoord(rect->right, rect->top, elevation, &x2, &temp);
-    squareTileScreenToCoord(rect->right, rect->bottom, elevation, &temp, &y3);
+    squareTileScreenToCoord(rect->left, rect->bottom, elevation, &maxX, &temp);
+    squareTileScreenToCoord(rect->left, rect->top, elevation, &temp, &minY);
+    squareTileScreenToCoord(rect->right, rect->top, elevation, &minX, &temp);
+    squareTileScreenToCoord(rect->right, rect->bottom, elevation, &temp, &maxY);
 
-    if (++x0 > gSquareGridWidth) x0 = gSquareGridWidth - 1;
-    if (--x2 < 0) x2 = 0;
-    if (--y1 < 0) y1 = 0;
-    if (++y3 > gSquareGridHeight) y3 = gSquareGridHeight - 1;
+    if (++maxX > gSquareGridWidth) maxX = gSquareGridWidth - 1;
+    if (--minX < 0) minX = 0;
+    if (--minY < 0) minY = 0;
+    if (++maxY > gSquareGridHeight) maxY = gSquareGridHeight - 1;
 
-    if (y1 >= y3 || x2 >= x0) return;
+    if (minY >= maxY || minX >= maxX) return;
 
-    int baseSquareTile = gSquareGridWidth * y1;
+    bool drawLeft = clipSides.left == drawOnTop;
+    bool drawTop = clipSides.top == drawOnTop;
+    bool drawRight = clipSides.right == drawOnTop;
+    bool drawBottom = clipSides.bottom == drawOnTop;
 
-    for (int y = y1; y < y3; y++) {
-        for (int x = x2; x < x0; x++) {
-            if ((x > squareRect.left && ((clipData >> 24) & 1) == tag)
-                || (y < squareRect.top && ((clipData >> 16) & 1) == tag)
-                || (x < squareRect.right && ((clipData >> 8) & 1) == tag)
-                || (y > squareRect.bottom && (clipData & 1) == tag)) {
+    const int kEdgeFid = buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0);
+    int baseSquareTile = gSquareGridWidth * minY;
+
+    for (int y = minY; y < maxY; y++) {
+        for (int x = minX; x < maxX; x++) {
+            if ((drawLeft && x > squareRect.left)
+                || (drawTop && y < squareRect.top)
+                || (drawRight && x < squareRect.right)
+                || (drawBottom && y > squareRect.bottom)) {
                 int sx, sy;
                 squareTileToScreenXY(baseSquareTile + x, &sx, &sy, elevation);
-                tileRenderFloor(buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0), sx, sy, rect);
+                tileRenderFloor(kEdgeFid, sx, sy, rect);
             }
         }
         baseSquareTile += gSquareGridWidth;
