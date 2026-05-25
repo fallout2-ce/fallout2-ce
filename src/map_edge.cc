@@ -83,27 +83,21 @@ static void calcEdgeData(EdgeZone* zone)
     const int winHalfWidthSnapped = winHalfWidth - maxTileXAlignment;
     const int winHalfHeightSnapped = winHalfHeight - maxTileYAlignment;
 
-    // Convert tileRect corners to pixel offsets → scrollBorderRect
+    // Convert tileRect corners to pixel offsets.
+    // pixelRect = raw pixel-space rect before any contraction.
     int px, py;
 
     tileToPixelOffset(zone->tileRect.left, px, py);
-    zone->scrollBorderRect.left = px;
+    zone->pixelRect.left = zone->scrollBorderRect.left = px;
 
     tileToPixelOffset(zone->tileRect.top, px, py);
-    zone->scrollBorderRect.top = py;
+    zone->pixelRect.top = zone->scrollBorderRect.top = py;
 
     tileToPixelOffset(zone->tileRect.right, px, py);
-    zone->scrollBorderRect.right = px;
+    zone->pixelRect.right = zone->scrollBorderRect.right = px;
 
     tileToPixelOffset(zone->tileRect.bottom, px, py);
-    zone->scrollBorderRect.bottom = py;
-
-    // rect2 = tileRect in pixel coordinates shifted by to the right-bottom by (winHalfW - 1, winHalfH - 1)
-    // Used by EdgeClipping to compute mapVisibleArea (screen-space clipping rect).
-    zone->rect2.left = zone->scrollBorderRect.left - winHalfWidth + 1;
-    zone->rect2.right = zone->scrollBorderRect.right - winHalfWidth + 1;
-    zone->rect2.top = zone->scrollBorderRect.top + winHalfHeight - 1;
-    zone->rect2.bottom = zone->scrollBorderRect.bottom + winHalfHeight - 1;
+    zone->pixelRect.bottom = zone->scrollBorderRect.bottom = py;
 
     // Contract scrollBorderRect inward by window half-size (or half its own size snapped to hex grid, if it's smaller than the window).
     // Narrows the scrollable area, with guards below collapsing to a point if it crosses.
@@ -143,13 +137,13 @@ static void calcEdgeData(EdgeZone* zone)
         zone->scrollBorderRect.bottom = zone->scrollBorderRect.top;
     }
 
-    debugPrint("EDG[%p] tileRect=(%d,%d,%d,%d) win=(%d,%d) half size snap=(%d,%d) scrollBorderRect=(%d,%d,%d,%d) rect2=(%d,%d,%d,%d)\n",
+    debugPrint("EDG[%p] tileRect=(%d,%d,%d,%d) win=(%d,%d) half size snap=(%d,%d) pixelRect=(%d,%d,%d,%d) scrollBorderRect=(%d,%d,%d,%d)\n",
         static_cast<void*>(zone), zone->tileRect.left, zone->tileRect.top,
         zone->tileRect.right, zone->tileRect.bottom, winWidth, winHeight, winHalfWidthSnapped, winHalfHeightSnapped,
+        zone->pixelRect.left, zone->pixelRect.top,
+        zone->pixelRect.right, zone->pixelRect.bottom,
         zone->scrollBorderRect.left, zone->scrollBorderRect.top,
-        zone->scrollBorderRect.right, zone->scrollBorderRect.bottom,
-        zone->rect2.left, zone->rect2.top,
-        zone->rect2.right, zone->rect2.bottom);
+        zone->scrollBorderRect.right, zone->scrollBorderRect.bottom);
 }
 
 // Multi-edge zone selection: pick the zone whose scrollBorderRect contains the pixel position.
@@ -162,21 +156,18 @@ static EdgeZone* findZoneByPixel(int px, int py, int elevation)
         return nullptr;
     }
 
-    if (zone->next != nullptr) {
-        const auto [winWidth, winHeight] = getIsoWindowSize();
-        // Multi-edge: advance while target pixel is outside this zone's border.
-        // rect2.left + width == scrollBorderRect.left, rect2.top - height == scrollBorderRect.top - 2
-        const int width = winWidth - 1;
-        const int height = winHeight + 1;
+    // Multi-edge: advance while target is outside current zone.
+    // width/height in original are half-window values (winHalfWidth-1, winHalfHeight+1),
+    // so window size cancels out of the condition — only pixelRect ± small constants remain.
+    constexpr int kZoneMarginY = 2;
 
-        while (px >= (zone->rect2.left + width) || px <= (zone->rect2.right + width)
-            || py <= (zone->rect2.top - height) || py >= (zone->rect2.bottom - height)) {
-            EdgeZone* next = zone->next.get();
-            if (next == nullptr) {
-                break;
-            }
-            zone = next;
+    while (zone->next != nullptr) {
+        // Point is inside current zone.
+        if (px < zone->pixelRect.left && px > zone->pixelRect.right
+            && py > zone->pixelRect.top - kZoneMarginY && py < zone->pixelRect.bottom - kZoneMarginY) {
+            break;
         }
+        zone = zone->next.get();
     }
 
     return zone;
@@ -431,12 +422,18 @@ bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
     EdgeZone* zone = findZoneByPixel(px, py, elevation);
     if (zone == nullptr) return false;
 
-    // Convert pixel-offset space to screen space via rect2.
+    // Convert pixel-offset space to screen space via screen origin.
+    // screenOrigin = pixel-space coord of the screen's top-left corner.
+    // X is inverted in pixel-space: screenX = screenOriginX - pixelX.
     // Matches sfall EdgeClipping::rect_inside_bound_clip mapVisibleArea computation.
-    outRect->left = px - zone->rect2.left;
-    outRect->right = px - zone->rect2.right;
-    outRect->top = zone->rect2.top - py;
-    outRect->bottom = zone->rect2.bottom - py;
+    const auto [winWidth, winHeight] = getIsoWindowSize();
+    const int screenOriginX = px + winWidth / 2 - 1;
+    const int screenOriginY = py - (winHeight / 2 - 1);
+
+    outRect->left = screenOriginX - zone->pixelRect.left;
+    outRect->right = screenOriginX - zone->pixelRect.right;
+    outRect->top = zone->pixelRect.top - screenOriginY;
+    outRect->bottom = zone->pixelRect.bottom - screenOriginY;
 
     gMapVisibleArea = *outRect;
 

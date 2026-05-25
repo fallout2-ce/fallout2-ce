@@ -11,14 +11,14 @@ struct EdgeZone {
     // Raw tile indices from EDG file (tileRect in tile space, 0-39999).
     Rect tileRect;
 
+    // Pixel-space rect from tileRect corner conversion (before contraction).
+    Rect pixelRect;
+
     // Pixel-space boundary for center-tile scroll blocking (screen-size dependent).
+    // Derived from pixelRect by contracting inward by window half-size and snapping to hex grid.
     // X axis is inverted: left > right (smaller tile index → larger pixel X).
     // Y axis is normal: bottom > top.
     Rect scrollBorderRect;
-
-    // Pixel-space scroll border shifted by half window size (for edge clipping and visible area calculation).
-    // TODO: this rect is extremely confusing, should be removed
-    Rect rect2;
 
     // Square-grid clip rect for floor/roof rendering (v2 EDG only).
     // Valid when left >= 0.
