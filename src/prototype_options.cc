@@ -31,21 +31,27 @@ namespace {
 constexpr int kWindowWidth = 640;
 constexpr int kWindowHeight = 480;
 
-constexpr int kTabX = 18;
+constexpr int kTabX = 6;
 constexpr int kTabY = 24;
 
-constexpr int kLeftPaneX = 18;
-constexpr int kLeftPaneY = 68;
-constexpr int kLeftPaneWidth = 292;
+constexpr int kLeftPaneX = 6;
+constexpr int kLeftPaneY = 57;
+constexpr int kLeftPaneWidth = 318;
 constexpr int kLeftPaneHeight = 336;
-constexpr int kLeftPaneContentX = kLeftPaneX + 14;
+constexpr int kLeftPaneContentX = kLeftPaneX + 28;
 constexpr int kLeftPaneContentY = kLeftPaneY + 12;
 constexpr int kLeftPaneContentBottom = kLeftPaneY + kLeftPaneHeight - 12;
-constexpr int kLeftPaneValueX = kLeftPaneContentX + 150;
-constexpr int kLeftPaneValueWidth = 90;
-constexpr int kLeftPaneRowWidth = 238;
+constexpr int kLeftPaneValueX = kLeftPaneContentX + 144;
+constexpr int kLeftPaneValueWidth = 78;
+constexpr int kLeftPaneRowWidth = 249;
+constexpr int kLeftPaneSourceX = 11;
+constexpr int kLeftPaneSourceY = 360;
+constexpr int kLeftPaneSourceWidth = 318;
+constexpr int kLeftPaneSourceTopHeight = 9;
+constexpr int kLeftPaneSourceBottomHeight = 9;
+constexpr int kLeftPaneSourceFillY = 40;
 
-constexpr int kInfoPanelX = 325;
+constexpr int kInfoPanelX = 330;
 constexpr int kInfoPanelY = 70;
 constexpr int kInfoPanelWidth = 305;
 constexpr int kInfoPanelHeight = 230;
@@ -69,7 +75,9 @@ constexpr int kScrollUpArrowOffFrmId = 199;
 constexpr int kScrollUpArrowOnFrmId = 200;
 constexpr int kTabFrmIds[] = { 180, 178, 179 };
 constexpr int kTabIllustrationFrmIds[] = { 7, 11, 27 };
+constexpr int kCharacterEditorBackgroundFrmId = 177;
 constexpr int kPerkWindowFrmId = 86;
+constexpr const char* kPrototypeBackgroundImagePath = "OPTMENU.frm";
 
 constexpr int kTextColorIndex = 992;
 constexpr int kHeadingColorIndex = 32747;
@@ -252,7 +260,9 @@ private:
     std::vector<VisibleRow> visibleRows;
 
     FrmImage doneBoxImage;
+    FrmImage characterEditorBackgroundImage;
     FrmImage perkWindowImage;
+    FrmImage prototypeBackgroundImage;
     FrmImage scrollUpArrowOffImage;
     FrmImage scrollDownArrowOffImage;
     FrmImage littleRedButtonUpImage;
@@ -306,7 +316,7 @@ PrototypeOptionsMenu::PrototypeOptionsMenu()
             },
         },
         {
-            "PLAY",
+            "GAME",
             kTabIllustrationFrmIds[2],
             {
                 makeSection("RULES", "Gameplay-facing rows for another tab state."),
@@ -384,6 +394,7 @@ int PrototypeOptionsMenu::run(bool animated)
 bool PrototypeOptionsMenu::init()
 {
     if (!doneBoxImage.lock(FrmId(OBJ_TYPE_INTERFACE, kDoneBoxFrmId))
+        || !characterEditorBackgroundImage.lock(FrmId(OBJ_TYPE_INTERFACE, kCharacterEditorBackgroundFrmId))
         || !perkWindowImage.lock(FrmId(OBJ_TYPE_INTERFACE, kPerkWindowFrmId))
         || !scrollUpArrowOffImage.lock(FrmId(OBJ_TYPE_INTERFACE, kScrollUpArrowOffFrmId))
         || !scrollDownArrowOffImage.lock(FrmId(OBJ_TYPE_INTERFACE, kScrollDownArrowOffFrmId))
@@ -397,6 +408,8 @@ bool PrototypeOptionsMenu::init()
         }
     }
 
+    prototypeBackgroundImage.lock(OBJ_TYPE_INTERFACE, kPrototypeBackgroundImagePath);
+
     int windowX = (screenGetWidth() - kWindowWidth) / 2;
     int windowY = (screenGetHeight() - kWindowHeight) / 2;
     window = windowCreate(windowX, windowY, kWindowWidth, kWindowHeight, _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
@@ -406,8 +419,8 @@ bool PrototypeOptionsMenu::init()
 
     windowBuffer = windowGetBuffer(window);
 
-    scrollButtonX = kLeftPaneX + kLeftPaneWidth - scrollUpArrowOffImage.getWidth() - 8;
-    scrollDownButtonY = kLeftPaneY + kLeftPaneHeight - scrollDownArrowOffImage.getHeight() - 8;
+    scrollButtonX = kLeftPaneX + kLeftPaneWidth - scrollUpArrowOffImage.getWidth() - 1;
+    scrollDownButtonY = kLeftPaneY + 8 + scrollUpArrowOffImage.getHeight();
 
     int scrollUpButton = buttonCreateWithFrm(window,
         scrollButtonX,
@@ -441,7 +454,7 @@ bool PrototypeOptionsMenu::init()
     }
     buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, nullptr);
 
-    buttonPlateX = kInfoPanelX + (kInfoPanelWidth - doneBoxImage.getWidth() * 3) / 2;
+    buttonPlateX = 16 + (kInfoPanelWidth - doneBoxImage.getWidth() * 3) / 2;
     const int buttonCodes[] = { kPrintButtonEventCode, kDoneButtonEventCode, kCancelButtonEventCode };
     for (int index = 0; index < 3; index++) {
         int buttonX = buttonPlateX + index * doneBoxImage.getWidth() + index * 2 + 13;
@@ -477,13 +490,48 @@ void PrototypeOptionsMenu::render()
 
 void PrototypeOptionsMenu::renderBackground()
 {
-    bufferFill(windowBuffer, kWindowWidth, kWindowHeight, kWindowWidth, _colorTable[0]);
-    bufferDrawRect(windowBuffer, kWindowWidth, 0, 0, kWindowWidth - 1, kWindowHeight - 1, _colorTable[kBorderColorIndex]);
-    bufferDrawRect(windowBuffer, kWindowWidth, 1, 1, kWindowWidth - 2, kWindowHeight - 2, _colorTable[kMutedColorIndex]);
+    Buffer2D windowBuffer2D = windowGetBuffer2D(window);
+    if (prototypeBackgroundImage.isLocked()
+        && prototypeBackgroundImage.getWidth() == kWindowWidth
+        && prototypeBackgroundImage.getHeight() == kWindowHeight) {
+        blitBuffer2D(prototypeBackgroundImage.getBuffer(), windowBuffer2D);
+    } else {
+        bufferFill(windowBuffer, kWindowWidth, kWindowHeight, kWindowWidth, _colorTable[0]);
+        bufferDrawRect(windowBuffer, kWindowWidth, 0, 0, kWindowWidth - 1, kWindowHeight - 1, _colorTable[kBorderColorIndex]);
+        bufferDrawRect(windowBuffer, kWindowWidth, 1, 1, kWindowWidth - 2, kWindowHeight - 2, _colorTable[kMutedColorIndex]);
+    }
 
-    windowFill(window, kLeftPaneX, kLeftPaneY, kLeftPaneWidth, kLeftPaneHeight, _colorTable[0]);
-    bufferDrawRect(windowBuffer, kWindowWidth, kLeftPaneX, kLeftPaneY, kLeftPaneX + kLeftPaneWidth, kLeftPaneY + kLeftPaneHeight, _colorTable[kHeadingColorIndex]);
-    bufferDrawRect(windowBuffer, kWindowWidth, kLeftPaneX + 1, kLeftPaneY + 1, kLeftPaneX + kLeftPaneWidth - 1, kLeftPaneY + kLeftPaneHeight - 1, _colorTable[kMutedColorIndex]);
+    ConstBuffer2D characterEditorBackgroundBuffer = characterEditorBackgroundImage.getBuffer();
+
+    blitBuffer2D(characterEditorBackgroundBuffer,
+        kLeftPaneSourceX,
+        kLeftPaneSourceY,
+        kLeftPaneSourceWidth,
+        kLeftPaneSourceTopHeight,
+        windowBuffer2D,
+        kLeftPaneX,
+        kLeftPaneY);
+
+    int fillHeight = kLeftPaneHeight - kLeftPaneSourceTopHeight - kLeftPaneSourceBottomHeight;
+    for (int offset = 0; offset < fillHeight; offset++) {
+        blitBuffer2D(characterEditorBackgroundBuffer,
+            kLeftPaneSourceX,
+            kLeftPaneSourceY + kLeftPaneSourceFillY,
+            kLeftPaneSourceWidth,
+            1,
+            windowBuffer2D,
+            kLeftPaneX,
+            kLeftPaneY + kLeftPaneSourceTopHeight + offset);
+    }
+
+    blitBuffer2D(characterEditorBackgroundBuffer,
+        kLeftPaneSourceX,
+        kLeftPaneSourceY + 120 - kLeftPaneSourceBottomHeight,
+        kLeftPaneSourceWidth,
+        kLeftPaneSourceBottomHeight,
+        windowBuffer2D,
+        kLeftPaneX,
+        kLeftPaneY + kLeftPaneHeight - kLeftPaneSourceBottomHeight);
 
     if (!statusText.empty()) {
         fontSetCurrent(101);
@@ -501,11 +549,17 @@ void PrototypeOptionsMenu::renderTabs()
     blitBuffer2D(tabImage.getBuffer(), windowGetBuffer2D(window), kTabX, kTabY);
 
     fontSetCurrent(103);
+    constexpr int kTabInset = 12;
+    const int innerWidth = tabImage.getWidth() - 2 * kTabInset;
     for (int tabIndex = 0; tabIndex < 3; tabIndex++) {
-        int centerX = kTabX + tabImage.getWidth() * (2 * tabIndex + 1) / 6;
+        int centerX = kTabX + kTabInset + innerWidth * (2 * tabIndex + 1) / 6;
         int width = fontGetStringWidth(tabs[tabIndex].label);
         int color = _colorTable[tabIndex == currentTabIndex ? kMutedColorIndex : kButtonTextColorIndex];
-        fontDrawText(windowBuffer + kWindowWidth * (kTabY + 6) + centerX - width / 2,
+        int xNudge = 0, yNudge = 0;
+        if (tabIndex == currentTabIndex) {
+            xNudge = yNudge = 1;
+        }
+        fontDrawText(windowBuffer + kWindowWidth * (kTabY + 6 - yNudge) + centerX - width / 2 - xNudge,
             tabs[tabIndex].label,
             tabImage.getWidth() / 3,
             kWindowWidth,
