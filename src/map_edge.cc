@@ -398,6 +398,12 @@ void mapEdgeGetSquareRect(int elevation, Rect* outRect)
     *outRect = zone->squareRect;
 }
 
+int mapEdgeGetClipData(int elevation)
+{
+    const auto& zone = gEdgeZones[elevation];
+    return zone ? zone->clipData : 0;
+}
+
 void mapEdgeRecalc()
 {
     for (auto& gEdgeZone : gEdgeZones) {

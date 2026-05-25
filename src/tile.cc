@@ -1527,6 +1527,48 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
     }
 }
 
+// Port of sfall HRP ViewMap::square_obj_render
+void tileRenderEdgeBlackSquares(Rect* rect, int elevation, int tag)
+{
+    if (!mapEdgeHasSquareRect(elevation)) {
+        return;
+    }
+
+    Rect squareRect;
+    mapEdgeGetSquareRect(elevation, &squareRect);
+    int clipData = mapEdgeGetClipData(elevation);
+
+    int x0, y1, x2, y3, temp;
+
+    squareTileScreenToCoord(rect->left, rect->bottom, elevation, &x0, &temp);
+    squareTileScreenToCoord(rect->left, rect->top, elevation, &temp, &y1);
+    squareTileScreenToCoord(rect->right, rect->top, elevation, &x2, &temp);
+    squareTileScreenToCoord(rect->right, rect->bottom, elevation, &temp, &y3);
+
+    if (++x0 > gSquareGridWidth) x0 = gSquareGridWidth - 1;
+    if (--x2 < 0) x2 = 0;
+    if (--y1 < 0) y1 = 0;
+    if (++y3 > gSquareGridHeight) y3 = gSquareGridHeight - 1;
+
+    if (y1 >= y3 || x2 >= x0) return;
+
+    int baseSquareTile = gSquareGridWidth * y1;
+
+    for (int y = y1; y < y3; y++) {
+        for (int x = x2; x < x0; x++) {
+            if ((x > squareRect.left && ((clipData >> 24) & 1) == tag)
+                || (y < squareRect.top && ((clipData >> 16) & 1) == tag)
+                || (x < squareRect.right && ((clipData >> 8) & 1) == tag)
+                || (y > squareRect.bottom && (clipData & 1) == tag)) {
+                int sx, sy;
+                squareTileToScreenXY(baseSquareTile + x, &sx, &sy, elevation);
+                tileRenderFloor(buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0), sx, sy, rect);
+            }
+        }
+        baseSquareTile += gSquareGridWidth;
+    }
+}
+
 // 0x4B2B10 square_roof_intersect
 bool _square_roof_intersect(int x, int y, int elevation)
 {

@@ -66,6 +66,9 @@ void pixelToTileCoord(int& inOutX, int& inOutY);
 // Only valid when mapEdgeHasSquareRect(elevation) returns true.
 void mapEdgeGetSquareRect(int elevation, Rect* outRect);
 
+// Returns clipData for the given elevation.
+int mapEdgeGetClipData(int elevation);
+
 // Recalculate all pixel-space fields using current screen dimensions.
 // Call when resolution changes while a map is loaded.
 void mapEdgeRecalc();
