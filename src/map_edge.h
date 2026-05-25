@@ -22,8 +22,10 @@ struct EdgeZone {
 
     // Square-grid clip rect for floor/roof rendering (v2 EDG only).
     // Valid when left >= 0.
+    // TODO: implement
     Rect squareRect;
 
+    // Bit-mask specifying for each of 4 sides from the squareRect whether to draw black squares on top of non-flat objects.
     int clipData;
 
     std::unique_ptr<EdgeZone> next;

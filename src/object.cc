@@ -826,6 +826,8 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
         }
     }
 
+    // TODO: EDG draw black squares before non-flat objects
+
     for (int i = 0; i < renderCount; i++) {
         int lightIntensity;
 
@@ -856,6 +858,8 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
             objectListNode = objectListNode->next;
         }
     }
+
+    // TODO: EDG draw black squares after non-flat
 }
 
 // 0x4897EC obj_render_post_roof
