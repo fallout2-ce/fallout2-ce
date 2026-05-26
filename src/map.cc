@@ -935,7 +935,7 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    if (settings.ui.edg_support) {
+    if (settings.ui.edg_support && !settings.ui.ignore_map_edges) {
         mapEdgeLoad(gMapHeader.name);
     }
 

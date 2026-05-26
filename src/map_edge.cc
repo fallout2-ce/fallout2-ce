@@ -19,10 +19,10 @@ namespace fallout {
 constexpr int kTileWidth = 32;
 constexpr int kTileHeight = 24;
 
-static std::unique_ptr<EdgeZone> gEdgeZones[ELEVATION_COUNT];
-static bool gEdgeDataLoaded = false;
-static bool gEdgeVersion2 = false;
-static EdgeZone* gCurrentEdgeZone = nullptr;
+static std::unique_ptr<EdgeZone> edgeZones[ELEVATION_COUNT];
+static bool edgeDataLoaded = false;
+static bool edgeVersion2 = false;
+static EdgeZone* currentEdgeZone = nullptr;
 
 // Boundary alignment mods (sfall mapModWidth/Height), set by clamp/check functions.
 static int currentTileXAlignment = 0;
@@ -39,7 +39,7 @@ void tileToPixelOffset(int tile, int& outX, int& outY)
     int x = tile % HEX_GRID_WIDTH;
     int y = (tile / HEX_GRID_WIDTH) + (x / 2);
     y &= ~1; // force even row
-    x = (2 * x) + 200 - y;
+    x = (2 * x) + HEX_GRID_WIDTH - y;
     outY = kTileHeight / 2 * y;
     outX = kTileWidth / 2 * x;
 }
@@ -48,7 +48,7 @@ void tileToPixelOffset(int tile, int& outX, int& outY)
 void pixelToTileCoord(int& inOutX, int& inOutY)
 {
     int y = inOutY / kTileHeight;
-    int x = (inOutX / kTileWidth) + y - 100;
+    int x = (inOutX / kTileWidth) + y - (HEX_GRID_WIDTH / 2);
     inOutX = x;
     inOutY = (2 * y) - (x / 2);
 }
@@ -151,7 +151,7 @@ static void calcEdgeData(EdgeZone* zone)
 // none contains it.
 static EdgeZone* findZoneByPixel(int px, int py, int elevation)
 {
-    EdgeZone* zone = gEdgeZones[elevation].get();
+    EdgeZone* zone = edgeZones[elevation].get();
     if (zone == nullptr) {
         return nullptr;
     }
@@ -173,7 +173,7 @@ static EdgeZone* findZoneByPixel(int px, int py, int elevation)
     return zone;
 }
 
-// Load EDG file, populate gEdgeZones, and compute pixel-space fields.
+// Load EDG file, populate edgeZones, and compute pixel-space fields.
 // EDG files use big-endian byte order (like all Fallout 2 files).
 static bool mapEdgeLoadFromStream(File* stream)
 {
@@ -186,15 +186,15 @@ static bool mapEdgeLoadFromStream(File* stream)
     int reserved;
     if (fileReadInt32(stream, &reserved) == -1 || reserved != 0) return false;
 
-    gEdgeVersion2 = (version == 2);
+    edgeVersion2 = (version == 2);
 
     int levelIndicator = 0;
 
     for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
-        int sqLeft = 99, sqTop = 0, sqRight = 0, sqBottom = 99;
+        int sqLeft = SQUARE_GRID_WIDTH - 1, sqTop = 0, sqRight = 0, sqBottom = SQUARE_GRID_HEIGHT - 1;
         int sqClipData = 0;
 
-        if (gEdgeVersion2) {
+        if (edgeVersion2) {
             int sqRect[4];
             if (fileReadInt32List(stream, sqRect, 4) == -1
                 || fileReadInt32(stream, &sqClipData) == -1) {
@@ -210,7 +210,7 @@ static bool mapEdgeLoadFromStream(File* stream)
             continue; // no tileRect data for this elevation
         }
 
-        auto tail = &gEdgeZones[elev];
+        auto tail = &edgeZones[elev];
         bool isFirstZone = true;
 
         while (true) {
@@ -275,7 +275,7 @@ void mapEdgeLoad(const char* mapName)
     fileClose(stream);
 
     if (ok) {
-        gEdgeDataLoaded = true;
+        edgeDataLoaded = true;
         debugPrint("mapEdgeLoad: loaded %s\n", edgPath);
     } else {
         debugPrint("mapEdgeLoad: failed to parse %s\n", edgPath);
@@ -285,11 +285,11 @@ void mapEdgeLoad(const char* mapName)
 
 void mapEdgeFree()
 {
-    for (auto& gEdgeZone : gEdgeZones) {
+    for (auto& gEdgeZone : edgeZones) {
         gEdgeZone.reset();
     }
-    gEdgeDataLoaded = false;
-    gCurrentEdgeZone = nullptr;
+    edgeDataLoaded = false;
+    currentEdgeZone = nullptr;
     currentTileXAlignment = 0;
     currentTileYAlignment = 0;
     maxTileXAlignment = 0;
@@ -299,12 +299,12 @@ void mapEdgeFree()
 
 bool mapEdgeIsLoaded()
 {
-    return gEdgeDataLoaded;
+    return edgeDataLoaded;
 }
 
 bool mapEdgeZoneIsSelected()
 {
-    return gCurrentEdgeZone != nullptr;
+    return currentEdgeZone != nullptr;
 }
 
 // Shared helper: set currentTileXAlignment/Height if the pixel is on a scrollBorderRect edge.
@@ -316,7 +316,7 @@ int mapEdgeSelectZoneAndClamp(int tile, int elevation)
     tileToPixelOffset(tile, px, py);
 
     // Set current zone for subsequent scroll blocking checks.
-    EdgeZone* zone = gCurrentEdgeZone = findZoneByPixel(px, py, elevation);
+    EdgeZone* zone = currentEdgeZone = findZoneByPixel(px, py, elevation);
     if (zone == nullptr) {
         return tile;
     }
@@ -341,7 +341,7 @@ bool mapEdgeTileInBounds(int tile)
     int px, py;
     tileToPixelOffset(tile, px, py);
 
-    EdgeZone* zone = gCurrentEdgeZone;
+    EdgeZone* zone = currentEdgeZone;
     if (zone == nullptr) {
         return false;
     }
@@ -373,7 +373,7 @@ bool mapEdgeSetBoundaryMods(int tile)
     int px, py;
     tileToPixelOffset(tile, px, py);
 
-    EdgeZone* zone = gCurrentEdgeZone;
+    EdgeZone* zone = currentEdgeZone;
     if (zone == nullptr) {
         currentTileXAlignment = 0;
         currentTileYAlignment = 0;
@@ -392,25 +392,25 @@ int mapEdgeGetTileYAlignment() { return currentTileYAlignment; }
 
 bool mapEdgeHasSquareRect(int elevation)
 {
-    const auto& zone = gEdgeZones[elevation];
-    return gEdgeVersion2 && zone != nullptr && zone->squareRect.left >= 0;
+    const auto& zone = edgeZones[elevation];
+    return edgeVersion2 && zone != nullptr && zone->squareRect.left >= 0;
 }
 
 void mapEdgeGetSquareRect(int elevation, Rect* outRect)
 {
-    const auto& zone = gEdgeZones[elevation];
+    const auto& zone = edgeZones[elevation];
     *outRect = zone->squareRect;
 }
 
 EdgeZone::ClipSides mapEdgeGetClipSides(int elevation)
 {
-    const auto& zone = gEdgeZones[elevation];
+    const auto& zone = edgeZones[elevation];
     return zone ? zone->clipSides : EdgeZone::ClipSides {};
 }
 
 void mapEdgeRecalc()
 {
-    for (auto& gEdgeZone : gEdgeZones) {
+    for (auto& gEdgeZone : edgeZones) {
         const auto* zone = &gEdgeZone;
         while (zone != nullptr) {
             calcEdgeData(zone->get());
@@ -421,7 +421,7 @@ void mapEdgeRecalc()
 
 bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
 {
-    if (!gEdgeDataLoaded) return false;
+    if (!edgeDataLoaded) return false;
 
     int px, py;
     tileToPixelOffset(gCenterTile, px, py);
@@ -452,7 +452,7 @@ bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
 
 bool mapEdgeIsOverClippedArea(int screenX, int screenY)
 {
-    if (!gEdgeDataLoaded) return false;
+    if (!edgeDataLoaded) return false;
 
     if (screenX >= gMapVisibleArea.left && screenX <= gMapVisibleArea.right && screenY >= gMapVisibleArea.top && screenY < gMapVisibleArea.bottom) return false;
 
