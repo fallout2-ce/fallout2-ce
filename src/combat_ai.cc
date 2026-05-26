@@ -615,7 +615,8 @@ int aiSave(File* stream)
 // 0x427BC8
 static int aiPacketRead(File* stream, AiPacket* ai)
 {
-    if (fileReadInt32(stream, &(ai->packet_num)) == -1) return -1;
+    int packetNum;
+    if (fileReadInt32(stream, &packetNum) == -1) return -1;
     if (fileReadInt32(stream, &(ai->max_dist)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->min_to_hit)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->min_hp)) == -1) return -1;
