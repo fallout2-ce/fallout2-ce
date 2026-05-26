@@ -1,10 +1,10 @@
 #ifndef PLATFORM_COMPAT_H
 #define PLATFORM_COMPAT_H
 
-#include <stddef.h>
-#include <stdio.h>
 #include <errno.h>
 #include <filesystem>
+#include <stddef.h>
+#include <stdio.h>
 #include <string>
 
 #include <zlib.h>

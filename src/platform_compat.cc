@@ -44,51 +44,43 @@ void compat_splitpath(const char* path, char* drive, char* dir, char* fname, cha
 {
     std::filesystem::path fsPath(path);
 
-    if (drive != nullptr)
-    {
+    if (drive != nullptr) {
         strncpy(drive, fsPath.root_name().string().c_str(), COMPAT_MAX_DRIVE - 1);
     }
 
-    if (dir != nullptr)
-    {
+    if (dir != nullptr) {
         strncpy(dir, fsPath.parent_path().string().c_str(), COMPAT_MAX_DIR - 1);
     }
 
-    if (fname != nullptr)
-    {
+    if (fname != nullptr) {
         strncpy(fname, fsPath.stem().string().c_str(), COMPAT_MAX_FNAME - 1);
     }
 
-    if (ext != nullptr)
-    {
+    if (ext != nullptr) {
         strncpy(ext, fsPath.extension().string().c_str(), COMPAT_MAX_EXT - 1);
     }
 }
 
 void compat_makepath(char* path, const char* drive, const char* dir, const char* fname, const char* ext)
 {
-        std::filesystem::path fsPath;
+    std::filesystem::path fsPath;
 
-    if (drive != nullptr && *drive != '\0')
-    {
+    if (drive != nullptr && *drive != '\0') {
         fsPath /= drive;
     }
 
-    if (dir != nullptr && *dir != '\0')
-    {
+    if (dir != nullptr && *dir != '\0') {
         fsPath /= dir;
     }
 
-    if (fname != nullptr && *fname != '\0')
-    {
+    if (fname != nullptr && *fname != '\0') {
         fsPath /= fname;
     }
 
-    if (ext != nullptr && *ext != '\0')
-    {
+    if (ext != nullptr && *ext != '\0') {
         fsPath += ext;
     }
-    
+
     strncpy(path, fsPath.string().c_str(), COMPAT_MAX_PATH - 1);
 }
 
@@ -113,7 +105,7 @@ int compat_mkdir(const char* path)
     strcpy(nativePath, path);
     compat_windows_path_to_native(nativePath);
     compat_resolve_path(nativePath);
-    std::filesystem::create_directory(nativePath ,ec);
+    std::filesystem::create_directory(nativePath, ec);
     return ec.value();
 }
 
@@ -124,7 +116,7 @@ int compat_mkdir_recursive(const char* path)
     strcpy(nativePath, path);
     compat_windows_path_to_native(nativePath);
     compat_resolve_path(nativePath);
-    std::filesystem::create_directories(nativePath, ec) ;
+    std::filesystem::create_directories(nativePath, ec);
     return ec.value();
 }
 
@@ -204,7 +196,7 @@ int compat_remove(const char* path)
 int compat_rename(const char* oldFileName, const char* newFileName)
 {
     std::error_code err;
-    
+
     char nativeOldFileName[COMPAT_MAX_PATH];
     strcpy(nativeOldFileName, oldFileName);
     compat_windows_path_to_native(nativeOldFileName);
