@@ -826,6 +826,8 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
         }
     }
 
+    tileRenderEdgeBlackSquares(&updatedRect, elevation, false);
+
     for (int i = 0; i < renderCount; i++) {
         int lightIntensity;
 
@@ -856,6 +858,8 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
             objectListNode = objectListNode->next;
         }
     }
+
+    tileRenderEdgeBlackSquares(&updatedRect, elevation, true);
 }
 
 // 0x4897EC obj_render_post_roof
