@@ -63,7 +63,8 @@ static int pixelToTile(int px, int py)
 static Size getIsoWindowSize()
 {
     Rect winRect;
-    assert(windowGetRect(gIsoWindow, &winRect) != -1);
+    int rc = windowGetRect(gIsoWindow, &winRect);
+    assert(rc != -1);
     return { rectGetWidth(&winRect), rectGetHeight(&winRect) };
 }
 
