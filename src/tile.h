@@ -58,6 +58,7 @@ void squareTileScreenToCoordRoof(int screenX, int screenY, int elevation, int* c
 void tileRenderRoofsInRect(Rect* rect, int elevation);
 void tile_fill_roof(int x, int y, int elevation, bool on);
 void tileRenderFloorsInRect(Rect* rect, int elevation);
+void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop);
 bool _square_roof_intersect(int x, int y, int elevation);
 void _grid_render(Rect* rect, int elevation);
 int _tile_scroll_to(int tile, int flags);
@@ -66,6 +67,10 @@ static bool tileIsValid(int tile)
 {
     return tile >= 0 && tile < gHexGridSize;
 }
+
+// Returns true if the rect's screen-space corners map to tiles outside the 200x200 grid.
+// Port of HRP EdgeClipping::CheckRect — used to decide whether to clear (blacken) a rect.
+bool checkRectNeedsClear(const Rect* rect, int elevation);
 
 } // namespace fallout
 

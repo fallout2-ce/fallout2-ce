@@ -2749,9 +2749,9 @@ static void mapper_enter_play_mode(Object** pHlObj1)
         }
         scriptsExecMapEnterProc();
         scriptsExecMapUpdateProc();
-        tileSetCenter(gDude->tile, 1);
+        tileSetCenter(gDude->tile, TILE_SET_CENTER_REFRESH_WINDOW);
     } else {
-        tileSetCenter(savedCenterTile, 1);
+        tileSetCenter(savedCenterTile, TILE_SET_CENTER_REFRESH_WINDOW);
     }
 
     isoEnable();

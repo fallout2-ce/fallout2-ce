@@ -4,6 +4,18 @@ This document tracks Fallout 2 CE compatibility with sfall.  This is for modders
 
 For now, this covers opcodes/metarules, and hooks.  In the future, it will include other ways of modifying the engine (like ini files), and other Sfall-specific behaviour.
 
+## HRP EDG Scroll-Blocker Support
+
+CE supports the `.edg` file format from the HRP (High Resolution Patch), which defines per-map scroll boundaries and square-level render clipping.
+
+**How it works in CE:**
+
+- On map load, `maps/<mapname>.edg` is read if present. Missing file = silent fallback to the scroll-blocker object system.
+- The `.edg` file defines per-elevation rectangle boundary zones. Multiple chained zones per elevation are supported.
+- When loaded, these zones are used for both scroll blocking and visible area clipping (black bars), replacing both vanilla scroll blocking and CE hi-res stencil system.
+- v2 EDG files also contain a `SquareRect` that defines "Angled edges", or square-grid stencil. This is also supported.
+
+
 ## Settings (ddraw.ini → fallout2.cfg / game.cfg)
 
 Settings previously read from `ddraw.ini` have been moved into standard CE config files.

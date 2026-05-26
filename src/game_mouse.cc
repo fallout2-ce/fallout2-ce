@@ -24,6 +24,7 @@
 #include "interface.h"
 #include "item.h"
 #include "kb.h"
+#include "map_edge.h"
 #include "mouse.h"
 #include "object.h"
 #include "party_member.h"
@@ -944,6 +945,9 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
     }
 
     if (gameMouseClickOnInterfaceBar()) {
+        return;
+    }
+    if (mapEdgeIsOverClippedArea(mouseX, mouseY)) {
         return;
     }
 
@@ -2471,6 +2475,11 @@ int gameMouseHandleScrolling(int x, int y, int cursor)
     }
 
     if (dx == 0 && dy == 0) {
+        if (mapEdgeIsOverClippedArea(x, y)) {
+            gameMouseObjectsHide();
+            gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+            return 0;
+        }
         return -1;
     }
 
