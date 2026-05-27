@@ -28,6 +28,7 @@
 #include "proto_instance.h"
 #include "queue.h"
 #include "random.h"
+#include "scripts.h"
 #include "sfall_config.h"
 #include "sfall_script_hooks.h"
 #include "skill.h"
@@ -656,7 +657,18 @@ int itemDropAll(Object* critter, int tile)
 // 0x4779F0
 static bool _item_identical(Object* item1, Object* item2)
 {
+    if (item1 == item2) {
+        // This is mostly to make sure the unique_id check below doesn't falsely return
+        // false when the same item is passed in here.  Callers rely on this for checking
+        // for "is same pointer"
+        return true;
+    }
+
     if (item1->pid != item2->pid) {
+        return false;
+    }
+
+    if (scriptsIsUniqueObjectId(item1->id) || scriptsIsUniqueObjectId(item2->id)) {
         return false;
     }
 

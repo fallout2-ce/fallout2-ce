@@ -193,6 +193,7 @@ static int gScriptsListEntriesLength = 0;
 
 // 0x51C7D4 cur_id
 static int gObjectIdCounter = 4;
+static int uniqueObjectIdCounter = OBJECT_ID_UNIQUE_START;
 
 // 0x51C7DC count
 static int gCritterProcessingIndex = 0;
@@ -214,6 +215,11 @@ static char* gErrorString = gScriptsErrorText;
 
 // 0x51C7F4 blank_str
 static char* gEmptyString = gScriptsEmptyText;
+
+constexpr int OBJECT_ID_PLAYER = 18000;
+// Party member IDs are assigned as (pid & 0xFFFFFF) + OBJECT_ID_PLAYER.
+constexpr int OBJECT_ID_PARTY_MEMBER_END = OBJECT_ID_PLAYER + 0x01000000;
+constexpr int OBJECT_ID_UNIQUE_END = 0x7FFFFFFF;
 
 // 0x664954 scriptState
 static unsigned int gScriptsRequests;
@@ -554,6 +560,68 @@ int scriptsNewObjectId()
     gObjectIdCounter++;
 
     return gObjectIdCounter;
+}
+
+bool scriptsIsUniqueObjectId(int objectId)
+{
+    return objectId > OBJECT_ID_UNIQUE_START
+        || (objectId >= OBJECT_ID_PLAYER && objectId < OBJECT_ID_PARTY_MEMBER_END);
+}
+
+int scriptsNewUniqueObjectId()
+{
+    if (uniqueObjectIdCounter >= OBJECT_ID_UNIQUE_END) {
+        uniqueObjectIdCounter = OBJECT_ID_UNIQUE_START;
+    }
+
+    uniqueObjectIdCounter++;
+    return uniqueObjectIdCounter;
+}
+
+int scriptsGetUniqueObjectIdCounter()
+{
+    return uniqueObjectIdCounter;
+}
+
+void scriptsResetUniqueObjectIdCounter()
+{
+    uniqueObjectIdCounter = OBJECT_ID_UNIQUE_START;
+}
+
+void scriptsRestoreUniqueObjectIdCounter(int savedCounter)
+{
+    if (savedCounter >= OBJECT_ID_UNIQUE_START && savedCounter <= OBJECT_ID_UNIQUE_END) {
+        uniqueObjectIdCounter = savedCounter;
+    } else {
+        uniqueObjectIdCounter = OBJECT_ID_UNIQUE_START;
+    }
+}
+
+int scriptsSetUniqueObjectId(Object* object)
+{
+    if (object == nullptr) {
+        return -1;
+    }
+
+    if (scriptsIsUniqueObjectId(object->id)) {
+        return object->id;
+    }
+
+    object->id = scriptsNewUniqueObjectId();
+    scriptsSyncObjectId(object);
+    return object->id;
+}
+
+void scriptsSyncObjectId(Object* object)
+{
+    if (object == nullptr || object->sid == -1) {
+        return;
+    }
+
+    Script* script;
+    if (scriptGetScript(object->sid, &script) != -1) {
+        script->ownerId = object->id;
+    }
 }
 
 // 0x4A390C
@@ -1576,6 +1644,7 @@ int _scr_game_init()
     gScriptsEnabled = true;
     gGameModeEnabled = 1;
     gGameTime = 1;
+    scriptsResetUniqueObjectIdCounter();
     gameTimeSetTime(302400);
     tickersAdd(_doBkProcesses);
 

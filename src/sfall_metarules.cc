@@ -71,6 +71,7 @@ static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
+static void mf_set_unique_id(OpcodeContext& ctx);
 static void mf_show_window(OpcodeContext& ctx);
 static void mf_signal_close_game(OpcodeContext& ctx);
 static void mf_tile_by_position(OpcodeContext& ctx);
@@ -172,7 +173,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_selectable_perk_npc",   mf_set_selectable_perk_npc,   5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     // {"set_terrain_name",          mf_set_terrain_name,          3, 3, -1, {ARG_INT, ARG_INT, ARG_STRING}},
     // {"set_town_title",            mf_set_town_title,            2, 2, -1, {ARG_INT, ARG_STRING}},
-    // {"set_unique_id",             mf_set_unique_id,             1, 2, -1, {ARG_OBJECT, ARG_INT}},
+    { "set_unique_id", mf_set_unique_id, 1, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"set_unjam_locks_time",      mf_set_unjam_locks_time,      1, 1, -1, {ARG_INT}},
     // {"set_window_flag",           mf_set_window_flag,           3, 3, -1, {ARG_INTSTR, ARG_INT, ARG_INT}},
     { "show_window", mf_show_window, 0, 1, -1, { ARG_STRING } },
@@ -507,6 +508,22 @@ void mf_set_outline(OpcodeContext& ctx)
     Object* object = ctx.arg(0).asObject();
     int outline = ctx.arg(1).asInt();
     object->outline = outline;
+}
+
+void mf_set_unique_id(OpcodeContext& ctx)
+{
+    Object* object = ctx.arg(0).asObject();
+    if (ctx.numArgs() > 1 && ctx.arg(1).asInt() == -1) {
+        // unassign unique_id only if it has one
+        if (object->id > OBJECT_ID_UNIQUE_START) {
+            object->id = scriptsNewObjectId();
+            scriptsSyncObjectId(object);
+        }
+        ctx.setReturn(object->id);
+        return;
+    }
+
+    ctx.setReturn(scriptsSetUniqueObjectId(object));
 }
 
 void mf_show_window(OpcodeContext& ctx)
