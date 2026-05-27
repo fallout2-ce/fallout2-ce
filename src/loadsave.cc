@@ -366,7 +366,7 @@ static void loadSaveRememberSelectedSlot()
 
     int slot = 0;
     if (ScopedConfig config { path, false }; config) {
-        configGetInt(config, kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, &slot, 0);
+        configGetInt(config.get(), kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, &slot, 0);
     }
 
     _slot_cursor = std::clamp(slot, 0, saveLoadTotalSlots - 1);
@@ -389,8 +389,8 @@ static void loadSavePersistSelectedSlot()
         return;
     }
 
-    configSetInt(config, kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, _slot_cursor);
-    configWrite(config, path, false);
+    configSetInt(config.get(), kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, _slot_cursor);
+    configWrite(config.get(), path, false);
 }
 
 // 0x47B7E4

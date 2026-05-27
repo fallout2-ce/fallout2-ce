@@ -147,7 +147,7 @@ static bool sfall_ini_get_string_internal(const char* triplet, char* value, size
         return false;
     }
 
-    bool loaded = sfall_load_named_ini_file(fileName, config);
+    bool loaded = sfall_load_named_ini_file(fileName, config.get());
 
     // NOTE: Sfall's `GetIniSetting` returns error code (-1) only when it cannot
     // parse triplet. Otherwise the default for string settings is empty string.
@@ -155,7 +155,7 @@ static bool sfall_ini_get_string_internal(const char* triplet, char* value, size
 
     if (loaded) {
         char* stringValue;
-        if (configGetString(config, section, key, &stringValue)) {
+        if (configGetString(config.get(), section, key, &stringValue)) {
             strncpy(value, stringValue, size - 1);
             value[size - 1] = '\0';
             if (found != nullptr) {
@@ -221,7 +221,7 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
     if (basePath[0] != '\0' && !is_system_file_name(fileName)) {
         // Attempt to load requested file in base directory.
         snprintf(path, sizeof(path), "%s\\%s", basePath, fileName);
-        loaded = configRead(config, path, false);
+        loaded = configRead(config.get(), path, false);
     }
 
     if (!loaded) {
@@ -229,12 +229,12 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
         // non-system config file was not found the base path - attempt to load
         // from current working directory.
         strcpy(path, fileName);
-        loaded = configRead(config, path, false);
+        loaded = configRead(config.get(), path, false);
     }
 
-    configSetString(config, section, key, value);
+    configSetString(config.get(), section, key, value);
 
-    bool saved = configWrite(config, path, false);
+    bool saved = configWrite(config.get(), path, false);
 
     return saved;
 }
@@ -299,8 +299,8 @@ void mf_get_ini_section(OpcodeContext& ctx)
         return;
     }
 
-    if (sfall_load_named_ini_file(filePath, iniConfig)) {
-        const ConfigSection* section = sfall_find_section_in_config(iniConfig, sectionName);
+    if (sfall_load_named_ini_file(filePath, iniConfig.get())) {
+        const ConfigSection* section = sfall_find_section_in_config(iniConfig.get(), sectionName);
 
         if (section != nullptr) {
             for (int i = 0; i < section->entriesLength; ++i) {
@@ -338,11 +338,11 @@ void mf_get_ini_sections(OpcodeContext& ctx)
     }
 
     // note: seems to load sections in random order
-    if (sfall_load_named_ini_file(filePath, iniConfig)) {
-        if (iniConfig->entriesLength > 0) {
-            arrayId = CreateTempArray(iniConfig->entriesLength, 0);
-            for (int i = 0; i < iniConfig->entriesLength; ++i) {
-                DictionaryEntry* entry = &(iniConfig->entries[i]);
+    if (sfall_load_named_ini_file(filePath, iniConfig.get())) {
+        if (iniConfig.get()->entriesLength > 0) {
+            arrayId = CreateTempArray(iniConfig.get()->entriesLength, 0);
+            for (int i = 0; i < iniConfig.get()->entriesLength; ++i) {
+                DictionaryEntry* entry = &(iniConfig.get()->entries[i]);
                 const char* sectionName = entry->key;
 
                 if (sectionName != nullptr) {

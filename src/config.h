@@ -65,15 +65,14 @@ public:
 
     bool isInitialized() const;
 
-    Config* operator->();
-
-    operator Config*();
+    Config* get();
+    const Config* get() const;
 
     explicit operator bool() const;
 
 private:
-    Config config = {};
-    bool loaded = false;
+    Config _config = {};
+    bool _loaded = false;
 };
 
 } // namespace fallout

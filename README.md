@@ -152,6 +152,7 @@ In time this stuff will receive in-game interface, right now you have to do it m
 * Music continues playing between maps
 * Auto open doors
 * 44.1 kHz stereo sound/music supported, in .ogg and .wav format as well as legacy .acm
+* Last used save slot is remembered
 
 ## Contributing
 
