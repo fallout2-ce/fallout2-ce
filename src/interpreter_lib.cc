@@ -304,7 +304,7 @@ void opTokenize(Program* program)
             }
         }
 
-        if (*start == ch) {
+        if (start != nullptr && *start == ch) {
             int length = 0;
             char* end = start + 1;
             while (*end != ch && *end != '\0') {
@@ -318,7 +318,7 @@ void opTokenize(Program* program)
         } else {
             programStackPushInteger(program, 0);
         }
-    } else {
+    } else if (string != nullptr) {
         int length = 0;
         char* end = string;
         while (*end != ch && *end != '\0') {
@@ -326,13 +326,11 @@ void opTokenize(Program* program)
             length++;
         }
 
-        if (string != nullptr) {
-            temp = (char*)internal_calloc_safe(1, length + 1, __FILE__, __LINE__); // "..\\int\\INTLIB.C", 248
-            strncpy(temp, string, length);
-            programStackPushString(program, temp);
-        } else {
-            programStackPushInteger(program, 0);
-        }
+        temp = (char*)internal_calloc_safe(1, length + 1, __FILE__, __LINE__); // "..\\int\\INTLIB.C", 248
+        strncpy(temp, string, length);
+        programStackPushString(program, temp);
+    } else {
+        programStackPushInteger(program, 0);
     }
 
     if (temp != nullptr) {
