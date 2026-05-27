@@ -216,6 +216,11 @@ static char* gErrorString = gScriptsErrorText;
 // 0x51C7F4 blank_str
 static char* gEmptyString = gScriptsEmptyText;
 
+constexpr int OBJECT_ID_PLAYER = 18000;
+// Party member IDs are assigned as (pid & 0xFFFFFF) + OBJECT_ID_PLAYER.
+constexpr int OBJECT_ID_PARTY_MEMBER_END = OBJECT_ID_PLAYER + 0x01000000;
+constexpr int OBJECT_ID_UNIQUE_END = 0x7FFFFFFF;
+
 // 0x664954 scriptState
 static unsigned int gScriptsRequests;
 
