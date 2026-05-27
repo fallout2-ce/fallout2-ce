@@ -2566,11 +2566,11 @@ static int indicatorBarTextColor(int color)
         return _colorTable[32767];
     case 3: // yellow
         return _colorTable[32328];
-    case 4: // peanut butter // TODO: validate
+    case 4: // dark red
         return _colorTable[23624];
     case 5: // blue
         return _colorTable[31];
-    case 6: // good // TODO: validate
+    case 6: // pink
         return _colorTable[31775];
     case 7: // dull pink
         return _colorTable[31215];
