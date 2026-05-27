@@ -10,6 +10,8 @@ namespace fallout {
 
 #define AUDIO_ENGINE_SOUND_BUFFERS 8
 
+static constexpr int kAudioEngineTargetSampleRate = 44100;
+
 struct AudioEngineSoundBuffer {
     bool active;
     unsigned int size;
@@ -96,14 +98,17 @@ static void audioEngineMixin(void* userData, Uint8* stream, int length)
 bool audioEngineInit()
 {
     SDL_AudioSpec desiredSpec;
-    desiredSpec.freq = 22050;
+    // Request 44.1 kHz output so 44.1 kHz ACM music can play without being
+    // downsampled by the mixer on the common path.
+    desiredSpec.freq = kAudioEngineTargetSampleRate;
     desiredSpec.format = AUDIO_S16;
     desiredSpec.channels = 2;
     desiredSpec.samples = 1024;
     desiredSpec.callback = audioEngineMixin;
 
     gAudioEngineDeviceId = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &gAudioEngineSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
-    if (gAudioEngineDeviceId == -1) {
+    if (gAudioEngineDeviceId == 0) {
+        gAudioEngineDeviceId = -1;
         return false;
     }
 
