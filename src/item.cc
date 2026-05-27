@@ -3388,46 +3388,42 @@ static void booksInitCustom()
 {
     char* booksFilePath;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_BOOKS_FILE_KEY, &booksFilePath);
-    if (booksFilePath != nullptr && *booksFilePath == '\0') {
-        booksFilePath = nullptr;
+    if (booksFilePath == nullptr || *booksFilePath == '\0') {
+        return;
     }
 
-    if (booksFilePath != nullptr) {
-        Config booksConfig;
-        if (configInit(&booksConfig)) {
-            if (configRead(&booksConfig, booksFilePath, false)) {
-                bool overrideVanilla = false;
-                configGetBool(&booksConfig, "main", "overrideVanilla", &overrideVanilla);
-                if (overrideVanilla) {
-                    gBooks.clear();
-                }
+    ScopedConfig booksConfig(booksFilePath, false);
+    if (!booksConfig) {
+        return;
+    }
 
-                int bookCount = 0;
-                configGetInt(&booksConfig, "main", "count", &bookCount);
-                if (bookCount > BOOKS_MAX) {
-                    bookCount = BOOKS_MAX;
-                }
+    bool overrideVanilla = false;
+    configGetBool(booksConfig.get(), "main", "overrideVanilla", &overrideVanilla);
+    if (overrideVanilla) {
+        gBooks.clear();
+    }
 
-                char sectionKey[4];
-                for (int index = 0; index < bookCount; index++) {
-                    // Books numbering starts with 1.
-                    snprintf(sectionKey, sizeof(sectionKey), "%d", index + 1);
+    int bookCount = 0;
+    configGetInt(booksConfig.get(), "main", "count", &bookCount);
+    if (bookCount > BOOKS_MAX) {
+        bookCount = BOOKS_MAX;
+    }
 
-                    int bookPid;
-                    if (!configGetInt(&booksConfig, sectionKey, "PID", &bookPid)) continue;
+    char sectionKey[4];
+    for (int index = 0; index < bookCount; index++) {
+        // Books numbering starts with 1.
+        snprintf(sectionKey, sizeof(sectionKey), "%d", index + 1);
 
-                    int messageId;
-                    if (!configGetInt(&booksConfig, sectionKey, "TextID", &messageId)) continue;
+        int bookPid;
+        if (!configGetInt(booksConfig.get(), sectionKey, "PID", &bookPid)) continue;
 
-                    int skill;
-                    if (!configGetInt(&booksConfig, sectionKey, "Skill", &skill)) continue;
+        int messageId;
+        if (!configGetInt(booksConfig.get(), sectionKey, "TextID", &messageId)) continue;
 
-                    booksAdd(bookPid, messageId, skill);
-                }
-            }
+        int skill;
+        if (!configGetInt(booksConfig.get(), sectionKey, "Skill", &skill)) continue;
 
-            configFree(&booksConfig);
-        }
+        booksAdd(bookPid, messageId, skill);
     }
 }
 

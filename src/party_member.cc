@@ -122,57 +122,54 @@ static int _curID = 20000;
 // 0x493BC0 partyMember_init
 int partyMembersInit()
 {
-    Config config;
-
     gPartyMemberDescriptionsLength = 0;
 
-    if (!configInit(&config)) {
+    ScopedConfig config("data\\party.txt", true);
+    if (!config) {
         return -1;
-    }
-
-    if (!configRead(&config, "data\\party.txt", true)) {
-        goto err;
     }
 
     char section[50];
     snprintf(section, sizeof(section), "Party Member %d", gPartyMemberDescriptionsLength);
 
     int partyMemberPid;
-    while (configGetInt(&config, section, "party_member_pid", &partyMemberPid)) {
+    while (configGetInt(config.get(), section, "party_member_pid", &partyMemberPid)) {
         gPartyMemberDescriptionsLength++;
         snprintf(section, sizeof(section), "Party Member %d", gPartyMemberDescriptionsLength);
     }
 
     gPartyMemberPids = (int*)internal_malloc(sizeof(*gPartyMemberPids) * gPartyMemberDescriptionsLength);
     if (gPartyMemberPids == nullptr) {
-        goto err;
+        return -1;
     }
 
     memset(gPartyMemberPids, 0, sizeof(*gPartyMemberPids) * gPartyMemberDescriptionsLength);
 
     gPartyMembers = (PartyMemberListItem*)internal_malloc(sizeof(*gPartyMembers) * (gPartyMemberDescriptionsLength + 20));
     if (gPartyMembers == nullptr) {
-        goto err;
+        return -1;
     }
 
     memset(gPartyMembers, 0, sizeof(*gPartyMembers) * (gPartyMemberDescriptionsLength + 20));
 
     gPartyMemberDescriptions = (PartyMemberDescription*)internal_malloc(sizeof(*gPartyMemberDescriptions) * gPartyMemberDescriptionsLength);
     if (gPartyMemberDescriptions == nullptr) {
-        goto err;
+        return -1;
     }
 
     memset(gPartyMemberDescriptions, 0, sizeof(*gPartyMemberDescriptions) * gPartyMemberDescriptionsLength);
 
     _partyMemberLevelUpInfoList = (PartyMemberLevelUpInfo*)internal_malloc(sizeof(*_partyMemberLevelUpInfoList) * gPartyMemberDescriptionsLength);
-    if (_partyMemberLevelUpInfoList == nullptr) goto err;
+    if (_partyMemberLevelUpInfoList == nullptr) {
+        return -1;
+    }
 
     memset(_partyMemberLevelUpInfoList, 0, sizeof(*_partyMemberLevelUpInfoList) * gPartyMemberDescriptionsLength);
 
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
         snprintf(section, sizeof(section), "Party Member %d", index);
 
-        if (!configGetInt(&config, section, "party_member_pid", &partyMemberPid)) {
+        if (!configGetInt(config.get(), section, "party_member_pid", &partyMemberPid)) {
             break;
         }
 
@@ -184,7 +181,7 @@ int partyMembersInit()
 
         char* string;
 
-        if (configGetString(&config, section, "area_attack_mode", &string)) {
+        if (configGetString(config.get(), section, "area_attack_mode", &string)) {
             while (*string != '\0') {
                 int areaAttackMode;
                 strParseStrFromList(&string, &areaAttackMode, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT);
@@ -192,7 +189,7 @@ int partyMembersInit()
             }
         }
 
-        if (configGetString(&config, section, "attack_who", &string)) {
+        if (configGetString(config.get(), section, "attack_who", &string)) {
             while (*string != '\0') {
                 int attachWho;
                 strParseStrFromList(&string, &attachWho, gAttackWhoKeys, ATTACK_WHO_COUNT);
@@ -200,7 +197,7 @@ int partyMembersInit()
             }
         }
 
-        if (configGetString(&config, section, "best_weapon", &string)) {
+        if (configGetString(config.get(), section, "best_weapon", &string)) {
             while (*string != '\0') {
                 int bestWeapon;
                 strParseStrFromList(&string, &bestWeapon, gBestWeaponKeys, BEST_WEAPON_COUNT);
@@ -208,7 +205,7 @@ int partyMembersInit()
             }
         }
 
-        if (configGetString(&config, section, "chem_use", &string)) {
+        if (configGetString(config.get(), section, "chem_use", &string)) {
             while (*string != '\0') {
                 int chemUse;
                 strParseStrFromList(&string, &chemUse, gChemUseKeys, CHEM_USE_COUNT);
@@ -216,7 +213,7 @@ int partyMembersInit()
             }
         }
 
-        if (configGetString(&config, section, "distance", &string)) {
+        if (configGetString(config.get(), section, "distance", &string)) {
             while (*string != '\0') {
                 int distanceMode;
                 strParseStrFromList(&string, &distanceMode, gDistanceModeKeys, DISTANCE_COUNT);
@@ -224,7 +221,7 @@ int partyMembersInit()
             }
         }
 
-        if (configGetString(&config, section, "run_away_mode", &string)) {
+        if (configGetString(config.get(), section, "run_away_mode", &string)) {
             while (*string != '\0') {
                 int runAwayMode;
                 strParseStrFromList(&string, &runAwayMode, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT);
@@ -232,7 +229,7 @@ int partyMembersInit()
             }
         }
 
-        if (configGetString(&config, section, "disposition", &string)) {
+        if (configGetString(config.get(), section, "disposition", &string)) {
             while (*string != '\0') {
                 int disposition;
                 strParseStrFromList(&string, &disposition, gDispositionKeys, DISPOSITION_COUNT);
@@ -241,15 +238,15 @@ int partyMembersInit()
         }
 
         int levelUpEvery;
-        if (configGetInt(&config, section, "level_up_every", &levelUpEvery)) {
+        if (configGetInt(config.get(), section, "level_up_every", &levelUpEvery)) {
             partyMemberDescription->level_up_every = levelUpEvery;
 
             int levelMinimum;
-            if (configGetInt(&config, section, "level_minimum", &levelMinimum)) {
+            if (configGetInt(config.get(), section, "level_minimum", &levelMinimum)) {
                 partyMemberDescription->level_minimum = levelMinimum;
             }
 
-            if (configGetString(&config, section, "level_pids", &string)) {
+            if (configGetString(config.get(), section, "level_pids", &string)) {
                 while (*string != '\0' && partyMemberDescription->level_pids_num < PARTY_MEMBER_MAX_LEVEL) {
                     int levelPid;
                     strParseInt(&string, &levelPid);
@@ -260,15 +257,7 @@ int partyMembersInit()
         }
     }
 
-    configFree(&config);
-
     return 0;
-
-err:
-
-    configFree(&config);
-
-    return -1;
 }
 
 // 0x4940E4 partyMember_reset
