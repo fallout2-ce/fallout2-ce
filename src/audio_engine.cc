@@ -107,7 +107,8 @@ bool audioEngineInit()
     desiredSpec.callback = audioEngineMixin;
 
     gAudioEngineDeviceId = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &gAudioEngineSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
-    if (gAudioEngineDeviceId == -1) {
+    if (gAudioEngineDeviceId == 0) {
+        gAudioEngineDeviceId = -1;
         return false;
     }
 
