@@ -13,6 +13,7 @@
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
+#include "config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "db.h"
@@ -349,12 +350,55 @@ static FrmImage _loadsaveFrmImages[LOAD_SAVE_FRM_COUNT];
 static int quickSaveSlots = 0;
 static bool autoQuickSaveSlots = false;
 
+static constexpr char kLoadSaveSlotDataSection[] = "POSITION";
+static constexpr char kLoadSaveSlotDataKey[] = "CurrentSlot";
+static constexpr char kLoadSaveSlotDataFile[] = "SAVEGAME\\slotdat.ini";
+
+static void loadSaveRememberSelectedSlot()
+{
+    assert(_patches != nullptr);
+
+    _slot_cursor = 0;
+    _currentSlotPage = 0;
+
+    char path[COMPAT_MAX_PATH];
+    snprintf(path, sizeof(path), "%s\\%s", _patches, kLoadSaveSlotDataFile);
+
+    int slot = 0;
+    if (ScopedConfig config { path, false }; config) {
+        configGetInt(config.get(), kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, &slot, 0);
+    }
+
+    _slot_cursor = std::clamp(slot, 0, saveLoadTotalSlots - 1);
+    _currentSlotPage = _slot_cursor / slotsPerPage;
+}
+
+static void loadSavePersistSelectedSlot()
+{
+    assert(_patches != nullptr);
+
+    char savegamePath[COMPAT_MAX_PATH];
+    snprintf(savegamePath, sizeof(savegamePath), "%s\\SAVEGAME", _patches);
+    compat_mkdir(savegamePath);
+
+    char path[COMPAT_MAX_PATH];
+    snprintf(path, sizeof(path), "%s\\%s", _patches, kLoadSaveSlotDataFile);
+
+    ScopedConfig config { path, false };
+    if (!config.isInitialized()) {
+        return;
+    }
+
+    configSetInt(config.get(), kLoadSaveSlotDataSection, kLoadSaveSlotDataKey, _slot_cursor);
+    configWrite(config.get(), path, false);
+}
+
 // 0x47B7E4
 void _InitLoadSave()
 {
     _quick_done = false;
-    _slot_cursor = 0;
     _patches = settings.system.master_patches_path.c_str();
+    loadSaveRememberSelectedSlot();
 
     MapDirErase("MAPS\\", "SAV");
     MapDirErase(PROTO_DIR_NAME "\\" CRITTERS_DIR_NAME "\\", PROTO_FILE_EXT);
@@ -1768,6 +1812,8 @@ static int lsgWindowInit(int windowType)
 // 0x47D824
 static int lsgWindowFree(int windowType)
 {
+    loadSavePersistSelectedSlot();
+
     windowDestroy(gLoadSaveWindow);
     fontSetCurrent(gLoadSaveWindowOldFont);
     messageListFree(&gLoadSaveMessageList);
