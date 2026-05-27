@@ -617,6 +617,12 @@ static int aiPacketRead(File* stream, AiPacket* ai)
 {
     int packetNum;
     if (fileReadInt32(stream, &packetNum) == -1) return -1;
+
+    // Consume the serialized packet number to preserve save compatibility,
+    // but do not overwrite the value in AiPacket to avoid corrupted data on save loads.
+    // This might happen if saves disagree on packet_num and packets are loaded from AI.TXT only on game init.
+    (void)packetNum;
+
     if (fileReadInt32(stream, &(ai->max_dist)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->min_to_hit)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->min_hp)) == -1) return -1;
