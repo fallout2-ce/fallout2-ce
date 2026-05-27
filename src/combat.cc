@@ -6596,41 +6596,39 @@ static void unarmedInitCustom()
 {
     char* unarmedFileName = nullptr;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_UNARMED_FILE_KEY, &unarmedFileName);
-    if (unarmedFileName != nullptr && *unarmedFileName == '\0') {
-        unarmedFileName = nullptr;
-    }
-
-    if (unarmedFileName == nullptr) {
+    if (unarmedFileName == nullptr || *unarmedFileName == '\0') {
         return;
     }
 
     ScopedConfig unarmedConfig(unarmedFileName, false);
-    if (unarmedConfig) {
-        char section[4];
-        char statKey[6];
+    if (!unarmedConfig) {
+        return;
+    }
 
-        for (int hitMode = 0; hitMode < HIT_MODE_COUNT; hitMode++) {
-            if (!isUnarmedHitMode(hitMode)) {
-                continue;
-            }
+    char section[4];
+    char statKey[6];
 
-            UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[hitMode]);
-            snprintf(section, sizeof(section), "%d", hitMode);
+    for (int hitMode = 0; hitMode < HIT_MODE_COUNT; hitMode++) {
+        if (!isUnarmedHitMode(hitMode)) {
+            continue;
+        }
 
-            configGetInt(unarmedConfig.get(), section, "ReqLevel", &(hitDescription->requiredLevel));
-            configGetInt(unarmedConfig.get(), section, "SkillLevel", &(hitDescription->requiredSkill));
-            configGetInt(unarmedConfig.get(), section, "MinDamage", &(hitDescription->minDamage));
-            configGetInt(unarmedConfig.get(), section, "MaxDamage", &(hitDescription->maxDamage));
-            configGetInt(unarmedConfig.get(), section, "BonusDamage", &(hitDescription->bonusDamage));
-            configGetInt(unarmedConfig.get(), section, "BonusCrit", &(hitDescription->bonusCriticalChance));
-            configGetInt(unarmedConfig.get(), section, "APCost", &(hitDescription->actionPointCost));
-            configGetBool(unarmedConfig.get(), section, "BonusDamage", &(hitDescription->isPenetrate));
-            configGetBool(unarmedConfig.get(), section, "Secondary", &(hitDescription->isSecondary));
+        UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[hitMode]);
+        snprintf(section, sizeof(section), "%d", hitMode);
 
-            for (int stat = 0; stat < PRIMARY_STAT_COUNT; stat++) {
-                snprintf(statKey, sizeof(statKey), "Stat%d", stat);
-                configGetInt(unarmedConfig.get(), section, statKey, &(hitDescription->requiredStats[stat]));
-            }
+        configGetInt(unarmedConfig.get(), section, "ReqLevel", &(hitDescription->requiredLevel));
+        configGetInt(unarmedConfig.get(), section, "SkillLevel", &(hitDescription->requiredSkill));
+        configGetInt(unarmedConfig.get(), section, "MinDamage", &(hitDescription->minDamage));
+        configGetInt(unarmedConfig.get(), section, "MaxDamage", &(hitDescription->maxDamage));
+        configGetInt(unarmedConfig.get(), section, "BonusDamage", &(hitDescription->bonusDamage));
+        configGetInt(unarmedConfig.get(), section, "BonusCrit", &(hitDescription->bonusCriticalChance));
+        configGetInt(unarmedConfig.get(), section, "APCost", &(hitDescription->actionPointCost));
+        configGetBool(unarmedConfig.get(), section, "BonusDamage", &(hitDescription->isPenetrate));
+        configGetBool(unarmedConfig.get(), section, "Secondary", &(hitDescription->isSecondary));
+
+        for (int stat = 0; stat < PRIMARY_STAT_COUNT; stat++) {
+            snprintf(statKey, sizeof(statKey), "Stat%d", stat);
+            configGetInt(unarmedConfig.get(), section, statKey, &(hitDescription->requiredStats[stat]));
         }
     }
 }
