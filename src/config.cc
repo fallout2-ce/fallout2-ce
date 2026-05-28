@@ -851,6 +851,7 @@ bool configSetBool(Config* config, const char* sectionKey, const char* key, bool
     return configSetInt(config, sectionKey, key, value ? 1 : 0);
 }
 
+// ScopedConfig is a RAII wrapper around Config that makes cleanup easier.
 ScopedConfig::ScopedConfig()
 {
     _loaded = configInit(&_config);
