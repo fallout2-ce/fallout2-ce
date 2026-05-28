@@ -1124,7 +1124,7 @@ Sound* soundEffectLoad(const char* name, Object* object)
             snprintf(path, sizeof(path), "%sH%cXXXX%s%s", _sound_sfx_path, v9, name + 6, ".ACM");
 
             if (gGameSoundDebugEnabled) {
-                debugPrint("tyring %s ", path + strlen(_sound_sfx_path));
+                debugPrint("trying %s ", path + strlen(_sound_sfx_path));
             }
 
             if (soundLoad(sound, path) == 0) {
@@ -1139,7 +1139,7 @@ Sound* soundEffectLoad(const char* name, Object* object)
                 snprintf(path, sizeof(path), "%sHMXXXX%s%s", _sound_sfx_path, name + 6, ".ACM");
 
                 if (gGameSoundDebugEnabled) {
-                    debugPrint("tyring %s ", path + strlen(_sound_sfx_path));
+                    debugPrint("trying %s ", path + strlen(_sound_sfx_path));
                 }
 
                 if (soundLoad(sound, path) == 0) {
@@ -1157,7 +1157,7 @@ Sound* soundEffectLoad(const char* name, Object* object)
         snprintf(path, sizeof(path), "%sMAMTNT%s%s", _sound_sfx_path, name + 6, ".ACM");
 
         if (gGameSoundDebugEnabled) {
-            debugPrint("tyring %s ", path + strlen(_sound_sfx_path));
+            debugPrint("trying %s ", path + strlen(_sound_sfx_path));
         }
 
         if (soundLoad(sound, path) == 0) {
