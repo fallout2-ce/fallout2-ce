@@ -455,8 +455,6 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
             : gCurrentInterfaceFontDescriptor->glyphs[ch].width;
 
         int advance = characterWidth + gCurrentInterfaceFontDescriptor->letterSpacing;
-        int scaledCharacterWidth = std::max(1, static_cast<int>(lround(characterWidth * scale)));
-
         int glyphX = static_cast<int>(lround(cursorX));
 
         InterfaceFontGlyph* glyph = &(gCurrentInterfaceFontDescriptor->glyphs[ch]);

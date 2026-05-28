@@ -38,7 +38,7 @@ struct UISettings {
     // 0 - native size
     // 1 - aspect-fit background only
     // 2 - aspect-fit background and scale controls to match
-    int main_menu_scale_mode = 2;
+    int main_menu_scale_mode = 1;
 
     // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
     bool iface_bar_mode = false;
