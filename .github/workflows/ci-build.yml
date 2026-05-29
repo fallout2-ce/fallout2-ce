@@ -141,7 +141,7 @@ jobs:
   ios:
     name: iOS
 
-    runs-on: macos-14
+    runs-on: macos-15
     needs: [ce-dat]
 
     steps:
@@ -346,7 +346,7 @@ jobs:
   macos:
     name: macOS
 
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Clone
