@@ -6,9 +6,9 @@
 
 #include "animation.h"
 #include "art.h"
-#include "combat_ai.h"
 #include "color.h"
 #include "combat.h"
+#include "combat_ai.h"
 #include "critter.h"
 #include "dbox.h"
 #include "debug.h"
