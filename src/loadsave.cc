@@ -385,7 +385,7 @@ static void loadSavePersistSelectedSlot()
     snprintf(path, sizeof(path), "%s\\%s", _patches, kLoadSaveSlotDataFile);
 
     ScopedConfig config { path, false };
-    if (!config.isInitialized()) {
+    if (!config.get()->isInitialized()) {
         return;
     }
 

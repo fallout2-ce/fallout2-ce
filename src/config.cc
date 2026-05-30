@@ -872,11 +872,7 @@ ScopedConfig::~ScopedConfig()
     }
 }
 
-bool ScopedConfig::isInitialized() const
-{
-    return _config.isInitialized();
-}
-
+// get returns a pointer to be useful in the config* API above; it cannot be nullptr
 Config* ScopedConfig::get()
 {
     return &_config;
