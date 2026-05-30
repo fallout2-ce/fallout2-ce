@@ -7,8 +7,8 @@
 #include "art.h"
 #include "color.h"
 #include "content_config.h"
-#include "delay.h"
 #include "debug.h"
+#include "delay.h"
 #include "draw.h"
 #include "font_manager.h"
 #include "game.h"
@@ -17,7 +17,6 @@
 #include "input.h"
 #include "kb.h"
 #include "mouse.h"
-#include "object.h"
 #include "palette.h"
 #include "platform_compat.h"
 #include "preferences.h"
@@ -169,6 +168,10 @@ static bool mainMenuShouldEnableOverlayBackground(const MainMenuLayout& layout);
 static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
+static bool mainMenuWindowIsOverlayActive();
+static void mainMenuWindowEnterOverlay();
+static void mainMenuWindowLeaveOverlay();
+static void mainMenuWindowShowOverlayDim();
 
 static void mainMenuComputeAspectFit(int srcWidth, int srcHeight, int& outX, int& outY, int& outWidth, int& outHeight)
 {
@@ -641,7 +644,7 @@ void mainMenuWindowUnhide(bool animate)
     gMainMenuWindowHidden = false;
 }
 
-void mainMenuWindowEnterOverlay()
+static void mainMenuWindowEnterOverlay()
 {
     if (!gMainMenuWindowInitialized || gMainMenuWindowHidden) {
         return;
@@ -654,7 +657,7 @@ void mainMenuWindowEnterOverlay()
     gMainMenuOverlayCount += 1;
 }
 
-void mainMenuWindowLeaveOverlay()
+static void mainMenuWindowLeaveOverlay()
 {
     if (!gMainMenuWindowInitialized || gMainMenuWindowHidden) {
         gMainMenuOverlayCount = 0;
@@ -675,23 +678,83 @@ void mainMenuWindowLeaveOverlay()
     }
 }
 
-bool mainMenuWindowIsOverlayActive()
+static bool mainMenuWindowIsOverlayActive()
 {
     return gMainMenuWindowInitialized && !gMainMenuWindowHidden && gMainMenuOverlayCount > 0;
 }
 
-bool mainMenuWindowShouldUseOverlayBackground()
+static bool mainMenuWindowShouldUseOverlayBackground()
 {
     return gMainMenuOverlayBackgroundEnabled;
 }
 
-void mainMenuWindowShowOverlayDim()
+static void mainMenuWindowShowOverlayDim()
 {
     if (!mainMenuWindowIsOverlayActive() || !mainMenuOverlayDimmedBackup.empty()) {
         return;
     }
 
     mainMenuApplyOverlayDim();
+}
+
+void mainMenuBeginSubscreen()
+{
+    if (mainMenuWindowShouldUseOverlayBackground()) {
+        mainMenuWindowEnterOverlay();
+        return;
+    }
+
+    mainMenuWindowHide(true);
+}
+
+void mainMenuCancelSubscreen()
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        mainMenuWindowLeaveOverlay();
+    }
+}
+
+void mainMenuFinishSubscreen()
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        mainMenuWindowHide(false);
+    }
+
+    mainMenuWindowFree();
+}
+
+int mainMenuSubscreenWindowFlags(int defaultFlags, int overlayFlags)
+{
+    return mainMenuWindowIsOverlayActive() ? overlayFlags : defaultFlags;
+}
+
+void mainMenuShowSubscreen(bool animate)
+{
+    if (mainMenuWindowIsOverlayActive()) {
+        renderPresent();
+        mainMenuWindowShowOverlayDim();
+    } else if (animate) {
+        colorPaletteLoad("color.pal");
+        paletteFadeTo(_cmap);
+    }
+}
+
+void mainMenuRestoreAfterSubscreen(bool animate)
+{
+    if (!animate || mainMenuWindowIsOverlayActive()) {
+        return;
+    }
+
+    paletteFadeTo(gPaletteBlack);
+}
+
+void mainMenuFadeOutAfterSubscreen(bool animate)
+{
+    if (!animate) {
+        return;
+    }
+
+    paletteFadeTo(gPaletteBlack);
 }
 
 // 0x481AA8 main_menu_is_enabled

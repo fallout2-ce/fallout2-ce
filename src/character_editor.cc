@@ -1208,7 +1208,7 @@ int characterEditorShow(bool isCreationMode)
 
 static int characterEditorGetModalWindowFlags()
 {
-    return WINDOW_MODAL | (mainMenuWindowIsOverlayActive() ? WINDOW_MOVE_ON_TOP : WINDOW_DONT_MOVE_TOP);
+    return mainMenuSubscreenWindowFlags(WINDOW_MODAL | WINDOW_DONT_MOVE_TOP, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
 }
 
 // 0x4329EC CharEditStart
