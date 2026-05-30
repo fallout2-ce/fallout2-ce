@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unordered_set>
 
 #include "actions.h"
 #include "animation.h"
@@ -51,6 +52,7 @@ static constexpr int kChemUseAnytimeChance = 75;
 static constexpr int kChemUseAlwaysChance = 100;
 
 static constexpr int kRandomDrugPickingArraySize = 3;
+static std::unordered_set<int> burstDisabledCritterIds;
 
 typedef struct AiMessageRange {
     int start;
@@ -533,6 +535,7 @@ err:
 // 0x4279F8
 void aiReset()
 {
+    burstDisabledCritterIds.clear();
 }
 
 // 0x4279FC
@@ -894,6 +897,33 @@ int aiSetChemUse(Object* critter, int chemUse)
     AiPacket* ai = aiGetPacket(critter);
     ai->chem_use = chemUse;
     return 0;
+}
+
+bool aiIsBurstDisabled(Object* critter)
+{
+    if (critter == nullptr) {
+        return false;
+    }
+
+    return burstDisabledCritterIds.find(critter->id) != burstDisabledCritterIds.end();
+}
+
+void aiSetBurstDisabled(Object* critter, bool disable)
+{
+    if (critter == nullptr || FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER || critter == gDude) {
+        return;
+    }
+
+    int critterId = scriptsSetUniqueObjectId(critter);
+    if (critterId == -1) {
+        return;
+    }
+
+    if (disable) {
+        burstDisabledCritterIds.insert(critterId);
+    } else {
+        burstDisabledCritterIds.erase(critterId);
+    }
 }
 
 // 0x428340
@@ -2291,6 +2321,13 @@ static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender)
     int intelligence = critterGetStat(attacker, STAT_INTELLIGENCE);
     if (attackType == ATTACK_TYPE_NONE || !_ai_can_use_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY)) {
         return HIT_MODE_RIGHT_WEAPON_PRIMARY;
+    }
+
+    if (aiIsBurstDisabled(attacker)) {
+        int secondaryAnimation = weaponGetAnimationForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY);
+        if (secondaryAnimation == ANIM_FIRE_BURST || secondaryAnimation == ANIM_FIRE_CONTINUOUS) {
+            return HIT_MODE_RIGHT_WEAPON_PRIMARY;
+        }
     }
 
     bool useSecondaryMode = false;

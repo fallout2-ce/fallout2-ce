@@ -6,6 +6,7 @@
 
 #include "animation.h"
 #include "art.h"
+#include "combat_ai.h"
 #include "color.h"
 #include "combat.h"
 #include "critter.h"
@@ -311,6 +312,19 @@ static void op_set_critter_current_ap(Program* program)
     if (critter == gDude && isInCombat()) {
         interfaceRenderActionPoints(actionPoints, _combat_free_move);
     }
+}
+
+static void op_set_critter_burst_disable(Program* program)
+{
+    int disable = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (critter == nullptr || FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
+        programPrintError("set_critter_burst_disable: expected critter object");
+        return;
+    }
+
+    aiSetBurstDisabled(critter, disable != 0);
 }
 
 static void refreshUnspentApArmorClass()
@@ -2110,6 +2124,7 @@ void sfallOpcodesInit()
     // 0x8215 - void set_hero_style(int style)
 
     // 0x8216 - void set_critter_burst_disable(object critter, int disable)
+    interpreterRegisterOpcode(0x8216, op_set_critter_burst_disable);
 
     // 0x8217 - int  get_weapon_ammo_pid(object weapon)
     interpreterRegisterOpcode(0x8217, op_get_weapon_ammo_pid);
