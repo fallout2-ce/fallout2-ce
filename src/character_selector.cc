@@ -167,7 +167,6 @@ int characterSelectorOpen()
 #if __APPLE__ && TARGET_OS_IOS
     touch_set_touchscreen_mode(true);
 #endif
-    bool useMainMenuOverlay = mainMenuWindowIsOverlayActive();
     if (!characterSelectorWindowInit()) {
         return 0;
     }
@@ -177,13 +176,7 @@ int characterSelectorOpen()
         mouseShowCursor();
     }
 
-    if (useMainMenuOverlay) {
-        renderPresent();
-        mainMenuWindowShowOverlayDim();
-    } else {
-        colorPaletteLoad("color.pal");
-        paletteFadeTo(_cmap);
-    }
+    mainMenuShowSubscreen(true);
 
     int rc = 0;
     bool done = false;
@@ -269,8 +262,10 @@ int characterSelectorOpen()
         sharedFpsLimiter.throttle();
     }
 
-    if (!useMainMenuOverlay || rc == 2) {
-        paletteFadeTo(gPaletteBlack);
+    if (rc == 2) {
+        mainMenuFadeOutAfterSubscreen(true);
+    } else {
+        mainMenuRestoreAfterSubscreen(true);
     }
     characterSelectorWindowFree();
 
@@ -293,9 +288,7 @@ static bool characterSelectorWindowInit()
 
     int characterSelectorWindowX = (screenGetWidth() - CS_WINDOW_WIDTH) / 2;
     int characterSelectorWindowY = (screenGetHeight() - CS_WINDOW_HEIGHT) / 2;
-    int characterSelectorWindowFlags = mainMenuWindowIsOverlayActive()
-        ? WINDOW_MODAL | WINDOW_MOVE_ON_TOP
-        : 0;
+    int characterSelectorWindowFlags = mainMenuSubscreenWindowFlags(0, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     gCharacterSelectorWindow = windowCreate(characterSelectorWindowX, characterSelectorWindowY, CS_WINDOW_WIDTH, CS_WINDOW_HEIGHT, _colorTable[0], characterSelectorWindowFlags);
     if (gCharacterSelectorWindow == -1) {
         return characterSelectorWindowFatalError(false);
