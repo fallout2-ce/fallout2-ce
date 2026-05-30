@@ -442,6 +442,63 @@ static void op_set_bodypart_hit_modifier(Program* program)
     combat_set_hit_location_penalty(hit_location, penalty);
 }
 
+static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, int killType, int hitLocation, int effect, int dataMember)
+{
+    if (killType < 0 || killType > SFALL_KILL_TYPE_COUNT
+        || hitLocation < 0 || hitLocation >= HIT_LOCATION_COUNT
+        || effect < 0 || effect >= CRTICIAL_EFFECT_COUNT
+        || dataMember < 0 || dataMember >= CRIT_DATA_MEMBER_COUNT) {
+        programPrintError("%s: argument values out of range", opcodeName);
+        return false;
+    }
+
+    return true;
+}
+
+static void op_set_critical_table(Program* program)
+{
+    int value = programStackPopInteger(program);
+    int dataMember = programStackPopInteger(program);
+    int effect = programStackPopInteger(program);
+    int hitLocation = programStackPopInteger(program);
+    int killType = programStackPopInteger(program);
+
+    if (!criticalTableArgsAreValid(program, "set_critical_table", killType, hitLocation, effect, dataMember)) {
+        return;
+    }
+
+    criticalsSetValue(killType, hitLocation, effect, dataMember, value);
+}
+
+static void op_get_critical_table(Program* program)
+{
+    int dataMember = programStackPopInteger(program);
+    int effect = programStackPopInteger(program);
+    int hitLocation = programStackPopInteger(program);
+    int killType = programStackPopInteger(program);
+
+    if (!criticalTableArgsAreValid(program, "get_critical_table", killType, hitLocation, effect, dataMember)) {
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    programStackPushInteger(program, criticalsGetValue(killType, hitLocation, effect, dataMember));
+}
+
+static void op_reset_critical_table(Program* program)
+{
+    int dataMember = programStackPopInteger(program);
+    int effect = programStackPopInteger(program);
+    int hitLocation = programStackPopInteger(program);
+    int killType = programStackPopInteger(program);
+
+    if (!criticalTableArgsAreValid(program, "reset_critical_table", killType, hitLocation, effect, dataMember)) {
+        return;
+    }
+
+    criticalsResetValue(killType, hitLocation, effect, dataMember);
+}
+
 // sqrt
 static void op_sqrt(Program* program)
 {
@@ -2012,8 +2069,11 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x81E0, op_set_bodypart_hit_modifier);
 
     // 0x81e1 - void set_critical_table(int crittertype, int bodypart, int level, int valuetype, int value)
+    interpreterRegisterOpcode(0x81E1, op_set_critical_table);
     // 0x81e2 - int  get_critical_table(int crittertype, int bodypart, int level, int valuetype)
+    interpreterRegisterOpcode(0x81E2, op_get_critical_table);
     // 0x81e3 - void reset_critical_table(int crittertype, int bodypart, int level, int valuetype)
+    interpreterRegisterOpcode(0x81E3, op_reset_critical_table);
 
     // 0x81e4 - int   get_sfall_arg()
     interpreterRegisterOpcode(0x81e4, op_get_sfall_arg);
