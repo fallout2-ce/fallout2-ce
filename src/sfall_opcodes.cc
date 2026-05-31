@@ -8,6 +8,7 @@
 #include "art.h"
 #include "color.h"
 #include "combat.h"
+#include "combat_ai.h"
 #include "critter.h"
 #include "dbox.h"
 #include "debug.h"
@@ -313,6 +314,19 @@ static void op_set_critter_current_ap(Program* program)
     }
 }
 
+static void op_set_critter_burst_disable(Program* program)
+{
+    int disable = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (critter == nullptr || FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
+        programPrintError("set_critter_burst_disable: expected critter object");
+        return;
+    }
+
+    aiSetBurstDisabled(critter, disable != 0);
+}
+
 static void refreshUnspentApArmorClass()
 {
     if (isInCombat() && _combat_whose_turn() != gDude) {
@@ -426,6 +440,63 @@ static void op_set_bodypart_hit_modifier(Program* program)
     int penalty = programStackPopInteger(program);
     int hit_location = programStackPopInteger(program);
     combat_set_hit_location_penalty(hit_location, penalty);
+}
+
+static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, int killType, int hitLocation, int effect, int dataMember)
+{
+    if (killType < 0 || killType > SFALL_KILL_TYPE_COUNT
+        || hitLocation < 0 || hitLocation >= HIT_LOCATION_COUNT
+        || effect < 0 || effect >= CRTICIAL_EFFECT_COUNT
+        || dataMember < 0 || dataMember >= CRIT_DATA_MEMBER_COUNT) {
+        programPrintError("%s: argument values out of range", opcodeName);
+        return false;
+    }
+
+    return true;
+}
+
+static void op_set_critical_table(Program* program)
+{
+    int value = programStackPopInteger(program);
+    int dataMember = programStackPopInteger(program);
+    int effect = programStackPopInteger(program);
+    int hitLocation = programStackPopInteger(program);
+    int killType = programStackPopInteger(program);
+
+    if (!criticalTableArgsAreValid(program, "set_critical_table", killType, hitLocation, effect, dataMember)) {
+        return;
+    }
+
+    criticalsSetValue(killType, hitLocation, effect, dataMember, value);
+}
+
+static void op_get_critical_table(Program* program)
+{
+    int dataMember = programStackPopInteger(program);
+    int effect = programStackPopInteger(program);
+    int hitLocation = programStackPopInteger(program);
+    int killType = programStackPopInteger(program);
+
+    if (!criticalTableArgsAreValid(program, "get_critical_table", killType, hitLocation, effect, dataMember)) {
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    programStackPushInteger(program, criticalsGetValue(killType, hitLocation, effect, dataMember));
+}
+
+static void op_reset_critical_table(Program* program)
+{
+    int dataMember = programStackPopInteger(program);
+    int effect = programStackPopInteger(program);
+    int hitLocation = programStackPopInteger(program);
+    int killType = programStackPopInteger(program);
+
+    if (!criticalTableArgsAreValid(program, "reset_critical_table", killType, hitLocation, effect, dataMember)) {
+        return;
+    }
+
+    criticalsResetValue(killType, hitLocation, effect, dataMember);
 }
 
 // sqrt
@@ -1998,8 +2069,11 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x81E0, op_set_bodypart_hit_modifier);
 
     // 0x81e1 - void set_critical_table(int crittertype, int bodypart, int level, int valuetype, int value)
+    interpreterRegisterOpcode(0x81E1, op_set_critical_table);
     // 0x81e2 - int  get_critical_table(int crittertype, int bodypart, int level, int valuetype)
+    interpreterRegisterOpcode(0x81E2, op_get_critical_table);
     // 0x81e3 - void reset_critical_table(int crittertype, int bodypart, int level, int valuetype)
+    interpreterRegisterOpcode(0x81E3, op_reset_critical_table);
 
     // 0x81e4 - int   get_sfall_arg()
     interpreterRegisterOpcode(0x81e4, op_get_sfall_arg);
@@ -2110,6 +2184,7 @@ void sfallOpcodesInit()
     // 0x8215 - void set_hero_style(int style)
 
     // 0x8216 - void set_critter_burst_disable(object critter, int disable)
+    interpreterRegisterOpcode(0x8216, op_set_critter_burst_disable);
 
     // 0x8217 - int  get_weapon_ammo_pid(object weapon)
     interpreterRegisterOpcode(0x8217, op_get_weapon_ammo_pid);

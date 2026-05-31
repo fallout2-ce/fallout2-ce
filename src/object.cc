@@ -9,6 +9,7 @@
 #include "art.h"
 #include "color.h"
 #include "combat.h"
+#include "combat_ai.h"
 #include "critter.h"
 #include "debug.h"
 #include "draw.h"
@@ -3933,6 +3934,8 @@ static int _obj_remove(ObjectListNode* a1, ObjectListNode* a2)
         scriptExecProc(a1->obj->sid, SCRIPT_PROC_DESTROY);
         scriptRemove(a1->obj->sid);
     }
+
+    aiRemoveBurstDisabled(a1->obj);
 
     if (a1 != a2) {
         if (a2 != nullptr) {

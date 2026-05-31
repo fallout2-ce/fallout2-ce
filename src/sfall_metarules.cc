@@ -41,6 +41,7 @@
 
 namespace fallout {
 
+static void mf_attack_is_aimed(OpcodeContext& ctx);
 static void mf_car_gas_amount(OpcodeContext& ctx);
 static void mf_combat_data(OpcodeContext& ctx);
 static void mf_critter_inven_obj2(OpcodeContext& ctx);
@@ -92,7 +93,7 @@ const MetaruleInfo kMetarules[] = {
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
     { "art_cache_clear", mf_art_cache_flush, 0, 0 },
     // {"art_frame_data",            mf_art_frame_data,            1, 3,  0, {ARG_INTSTR, ARG_INT, ARG_INT}},
-    // {"attack_is_aimed",           mf_attack_is_aimed,           0, 0},
+    { "attack_is_aimed", mf_attack_is_aimed, 0, 0 },
     { "car_gas_amount", mf_car_gas_amount, 0, 0 },
     { "combat_data", mf_combat_data, 0, 0 },
     // {"create_win",                mf_create_win,                5, 6, -1, {ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
@@ -206,6 +207,18 @@ void mf_add_iface_tag(OpcodeContext& ctx)
         ctx.printError("%s() - cannot add new tag as the maximum limit has been reached.", ctx.name());
     }
     ctx.setReturn(result);
+}
+
+void mf_attack_is_aimed(OpcodeContext& ctx)
+{
+    int hitMode;
+    bool aiming;
+
+    if (interfaceGetCurrentHitMode(&hitMode, &aiming) == -1) {
+        ctx.setReturn(0);
+    } else {
+        ctx.setReturn(aiming ? 1 : 0);
+    }
 }
 
 void mf_car_gas_amount(OpcodeContext& ctx)

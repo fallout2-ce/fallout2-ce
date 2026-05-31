@@ -60,12 +60,14 @@ procedure start begin
 
     display_msg("Testing combat/inventory/object helpers...");
 
+    call assertEquals("metarule attack_is_aimed", metarule_exist("attack_is_aimed"), 1);
     call assertEquals("metarule get_combat_free_move", metarule_exist("get_combat_free_move"), 1);
     call assertEquals("metarule set_combat_free_move", metarule_exist("set_combat_free_move"), 1);
     call assertEquals("metarule item_weight", metarule_exist("item_weight"), 1);
     call assertEquals("metarule obj_is_openable", metarule_exist("obj_is_openable"), 1);
     call assertEquals("opcode get_critter_current_ap", opcode_exists(OP_GET_CRITTER_CURRENT_AP), 1);
     call assertEquals("opcode set_critter_current_ap", opcode_exists(OP_SET_CRITTER_CURRENT_AP), 1);
+    call assertEquals("attack_is_aimed defaults to false", attack_is_aimed, 0);
 
     testItem := create_object_sid(TEST_ITEM_PID, 0, 0, -1);
     call assertEquals("item_weight matches proto weight for test item", item_weight(testItem), obj_weight(testItem));
