@@ -27,6 +27,7 @@ namespace {
     static bool gameConfigHasKey(Config* config, const char* section, const char* key);
     static bool gameConfigNeedsF2ResMigration(Config* gameConfig);
     static bool gameConfigMigrateMainMenuScaleModeKey(Config* legacyConfig, Config* gameConfig);
+    static bool gameConfigMigrateMovieAspectFitKey(Config* legacyConfig, Config* gameConfig);
     static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry);
     static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig);
 
