@@ -297,7 +297,6 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
     rect.right = destX + destWidth - 1;
     rect.bottom = destY + destHeight - 1;
     windowRefreshRect(gMovieWindow, &rect);
-    renderPresent();
 }
 
 // 0x486900 movieShowFrame
@@ -320,7 +319,6 @@ static void movieBufferedImpl(unsigned char* pixels, int src_width, int src_heig
     MovieBlitFunc* func = gMovieBlitFuncs[_movieAlphaFlag][_movieScaleFlag][_movieSubRectFlag];
     if (func(gMovieWindow, pixels, src_width, src_height, src_width) != 0) {
         windowRefreshRect(gMovieWindow, &_movieRect);
-        renderPresent();
     }
 }
 
@@ -508,7 +506,7 @@ static void _cleanupMovie(bool shouldEndMovie)
 // 0x48711C movieClose
 void movieExit()
 {
-    _cleanupMovie(1);
+    _cleanupMovie(true);
 
     if (_lastMovieBuffer) {
         internal_free_safe(_lastMovieBuffer, __FILE__, __LINE__); // "..\\int\\MOVIE.C", 869
@@ -699,7 +697,6 @@ static void movieRenderSubtitles()
     int frame;
     int dropped;
     MVE_rmFrameCounts(&frame, &dropped);
-    bool refreshed = false;
 
     while (gMovieSubtitleHead != nullptr) {
         if (frame < gMovieSubtitleHead->num) {
@@ -725,7 +722,6 @@ static void movieRenderSubtitles()
         rect.bottom = subtitleY + subtitleHeight - 1;
         rect.left = subtitleX;
         windowRefreshRect(gMovieWindow, &rect);
-        refreshed = true;
 
         internal_free_safe(gMovieSubtitleHead->text, __FILE__, __LINE__); // "..\\int\\MOVIE.C", 1108
         internal_free_safe(gMovieSubtitleHead, __FILE__, __LINE__); // "..\\int\\MOVIE.C", 1109
@@ -735,10 +731,6 @@ static void movieRenderSubtitles()
         if (gMovieSubtitlesFont != -1) {
             fontSetCurrent(oldFont);
         }
-    }
-
-    if (refreshed) {
-        renderPresent();
     }
 }
 
@@ -759,6 +751,14 @@ static int _movieStart(int win, char* filePath)
     gMovieWindow = win;
     _running = 1;
     gMovieFlags &= ~MOVIE_EXTENDED_FLAG_ERROR;
+    _lastMovieX = 0;
+    _lastMovieY = 0;
+    _lastMovieW = 0;
+    _lastMovieH = 0;
+    _lastMovieSX = 0;
+    _lastMovieSY = 0;
+    _lastMovieBW = 0;
+    _lastMovieBH = 0;
 
     if ((gMovieFlags & MOVIE_EXTENDED_FLAG_SUBTITLES) != 0) {
         movieLoadSubtitles(filePath);
@@ -867,6 +867,7 @@ static int _stepMovie()
     int stepResult = _MVE_rmStepMovie();
     if (stepResult != -1) {
         movieRenderSubtitles();
+        renderPresent();
     }
 
     return stepResult;
@@ -894,18 +895,18 @@ void _movieUpdate()
 
     if ((gMovieFlags & MOVIE_EXTENDED_FLAG_STOP_REQUESTED) != 0) {
         debugPrint("Movie aborted\n");
-        _cleanupMovie(1);
+        _cleanupMovie(true);
         return;
     }
 
     if ((gMovieFlags & MOVIE_EXTENDED_FLAG_ERROR) != 0) {
         debugPrint("Movie error\n");
-        _cleanupMovie(1);
+        _cleanupMovie(true);
         return;
     }
 
     if (_stepMovie() == -1) {
-        _cleanupMovie(1);
+        _cleanupMovie(true);
         return;
     }
 
