@@ -28,7 +28,6 @@
 #include "proto.h"
 #include "proto_instance.h"
 #include "random.h"
-#include "scripts.h"
 #include "settings.h"
 #include "sfall_script_hooks.h"
 #include "skill.h"
@@ -52,7 +51,7 @@ static constexpr int kChemUseAnytimeChance = 75;
 static constexpr int kChemUseAlwaysChance = 100;
 
 static constexpr int kRandomDrugPickingArraySize = 3;
-static std::unordered_set<int> burstDisabledCritterIds;
+static std::unordered_set<Object*> burstDisabledCritters;
 
 typedef struct AiMessageRange {
     int start;
@@ -535,7 +534,7 @@ err:
 // 0x4279F8
 void aiReset()
 {
-    burstDisabledCritterIds.clear();
+    burstDisabledCritters.clear();
 }
 
 // 0x4279FC
@@ -905,7 +904,7 @@ bool aiIsBurstDisabled(Object* critter)
         return false;
     }
 
-    return burstDisabledCritterIds.find(critter->id) != burstDisabledCritterIds.end();
+    return burstDisabledCritters.find(critter) != burstDisabledCritters.end();
 }
 
 void aiSetBurstDisabled(Object* critter, bool disable)
@@ -914,16 +913,20 @@ void aiSetBurstDisabled(Object* critter, bool disable)
         return;
     }
 
-    int critterId = scriptsSetUniqueObjectId(critter);
-    if (critterId == -1) {
+    if (disable) {
+        burstDisabledCritters.insert(critter);
+    } else {
+        burstDisabledCritters.erase(critter);
+    }
+}
+
+void aiRemoveBurstDisabled(Object* critter)
+{
+    if (critter == nullptr) {
         return;
     }
 
-    if (disable) {
-        burstDisabledCritterIds.insert(critterId);
-    } else {
-        burstDisabledCritterIds.erase(critterId);
-    }
+    burstDisabledCritters.erase(critter);
 }
 
 // 0x428340

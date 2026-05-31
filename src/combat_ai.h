@@ -47,6 +47,7 @@ int aiSetAttackWho(Object* critter, int attackWho);
 int aiSetChemUse(Object* critter, int chemUse);
 bool aiIsBurstDisabled(Object* critter);
 void aiSetBurstDisabled(Object* critter, bool disable);
+void aiRemoveBurstDisabled(Object* critter);
 int aiGetDisposition(Object* obj);
 int aiSetDisposition(Object* obj, int a2);
 int _caiSetupTeamCombat(Object* attackerTeam, Object* defenderTeam);
