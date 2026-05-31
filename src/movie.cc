@@ -291,11 +291,7 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
     ConstBuffer2D sourceBuffer(pixels, src_width, src_height);
     blitBuffer2DScaled(sourceBuffer, src_x, src_y, dst_width, dst_height, windowBuffer, destX, destY, destWidth, destHeight);
 
-    Rect rect;
-    rect.left = destX;
-    rect.top = destY;
-    rect.right = destX + destWidth - 1;
-    rect.bottom = destY + destHeight - 1;
+    Rect rect = { destX, destY, destX + destWidth - 1, destY + destHeight - 1 };
     windowRefreshRect(gMovieWindow, &rect);
 }
 

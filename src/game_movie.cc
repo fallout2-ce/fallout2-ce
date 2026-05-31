@@ -23,9 +23,6 @@
 
 namespace fallout {
 
-#define GAME_MOVIE_WINDOW_WIDTH 640
-#define GAME_MOVIE_WINDOW_HEIGHT 480
-
 static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath);
 
 // 0x50352A
