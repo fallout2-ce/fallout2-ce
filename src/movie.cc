@@ -283,7 +283,11 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
         return;
     }
 
-    movieOutputRect = movieComputeDirectRect(src_width, src_height);
+    if (movieOutputRect.w == 0) {
+        // We don't know the movie dimensions until we have the first frame, at which point we can compute the output rect
+        movieOutputRect = movieComputeDirectRect(src_width, src_height);
+        debugPrint("Movie output: x=%d, y=%d, w=%d, h=%d", movieOutputRect.x, movieOutputRect.y, movieOutputRect.w, movieOutputRect.h);
+    }
 
     if (movieOutputRect.w == src_width && movieOutputRect.h == src_height) {
         movieDirectOverlay.active = false;
