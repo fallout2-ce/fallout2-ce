@@ -47,7 +47,6 @@ static File* movieOpen(char* filePath);
 static void movieLoadSubtitles(char* filePath);
 static void movieRenderSubtitles();
 static int _movieStart(int win, char* filePath);
-static bool _localMovieCallback();
 static int _stepMovie();
 
 // 0x5195B8 GNWWin
@@ -170,9 +169,6 @@ static Rect gMovieWindowRect;
 // 0x638E20 movieRect
 static Rect _movieRect;
 
-// 0x638E30 movieCallback
-static void (*_movieCallback)();
-
 // 0x638E38 updateCallbackFunc
 static MovieSetPaletteProc* gMoviePaletteProc;
 
@@ -208,9 +204,6 @@ static bool _movieSubRectFlag;
 
 // 0x638E84 movieH
 static int _movieH;
-
-// 0x638E88 movieOffset
-static int _movieOffset;
 
 // 0x638E94 movieW
 static int _movieW;
@@ -758,18 +751,6 @@ static int _movieStart(int win, char* filePath)
     return 0;
 }
 
-// 0x487964 localMovieCallback
-static bool _localMovieCallback()
-{
-    movieRenderSubtitles();
-
-    if (_movieCallback != nullptr) {
-        _movieCallback();
-    }
-
-    return inputGetInput() != -1;
-}
-
 // 0x487AC8 movieRun
 int _movieRun(int win, char* filePath)
 {
@@ -779,7 +760,6 @@ int _movieRun(int win, char* filePath)
 
     _movieX = 0;
     _movieY = 0;
-    _movieOffset = 0;
     _movieW = windowGetWidth(win);
     _movieH = windowGetHeight(win);
     _movieSubRectFlag = 0;
@@ -795,7 +775,6 @@ int _movieRunRect(int win, char* filePath, int x, int y, int w, int h)
 
     _movieX = x;
     _movieY = y;
-    _movieOffset = x + y * windowGetWidth(win);
     _movieW = w;
     _movieH = h;
     _movieSubRectFlag = 1;
