@@ -1,8 +1,8 @@
 #include "movie.h"
 
 #include <string.h>
-
 #include <SDL.h>
+#include <vector>
 
 #include "color.h"
 #include "db.h"
@@ -29,12 +29,14 @@ typedef struct MovieSubtitleListNode {
     struct MovieSubtitleListNode* next;
 } MovieSubtitleListNode;
 
-static int movieScaledCeilDiv(int value, int numerator, int denominator);
 static void movieComputeDirectRect(int srcWidth, int srcHeight, int* x, int* y, int* width, int* height);
+static void movieDirectOverlayDestroy();
+static bool movieDirectOverlayEnsureTexture(int width, int height);
+static void movieDirectOverlayUpload(unsigned char* pixels, int srcWidth, int srcHeight);
 static void* movieMallocImpl(size_t size);
 static void movieFreeImpl(void* ptr);
 static bool movieReadImpl(void* handle, void* buf, int count);
-static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height, int src_x, int src_y, int dst_width, int dst_height, int dst_x, int dst_y);
+static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height, int, int, int, int, int, int);
 static void movieBufferedImpl(unsigned char* pixels, int src_width, int src_height, int src_x, int src_y, int dst_width, int dst_height, int dst_x, int dst_y);
 static int _movieScaleSubRect(int win, unsigned char* data, int width, int height, int pitch);
 static int _movieScaleSubRectAlpha(int win, unsigned char* data, int width, int height, int pitch);
@@ -54,9 +56,88 @@ static int _stepMovie();
 // 0x5195B8 GNWWin
 static int gMovieWindow = -1;
 
-static int movieScaledCeilDiv(int value, int numerator, int denominator)
+struct MovieDirectOverlay {
+    SDL_Texture* texture = nullptr;
+    int srcWidth = 0;
+    int srcHeight = 0;
+    SDL_Rect dstRect = { 0, 0, 0, 0 };
+    bool active = false;
+    std::vector<uint32_t> uploadBuffer;
+};
+
+static MovieDirectOverlay movieDirectOverlay;
+
+static void movieDirectOverlayDestroy()
 {
-    return (value * numerator + denominator - 1) / denominator;
+    if (movieDirectOverlay.texture != nullptr) {
+        SDL_DestroyTexture(movieDirectOverlay.texture);
+        movieDirectOverlay.texture = nullptr;
+    }
+
+    movieDirectOverlay.srcWidth = 0;
+    movieDirectOverlay.srcHeight = 0;
+    movieDirectOverlay.dstRect = { 0, 0, 0, 0 };
+    movieDirectOverlay.active = false;
+    movieDirectOverlay.uploadBuffer.clear();
+}
+
+static bool movieDirectOverlayEnsureTexture(int width, int height)
+{
+    if (movieDirectOverlay.texture != nullptr
+        && movieDirectOverlay.srcWidth == width
+        && movieDirectOverlay.srcHeight == height) {
+        return true;
+    }
+
+    movieDirectOverlayDestroy();
+
+    movieDirectOverlay.texture = SDL_CreateTexture(gSdlRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+    if (movieDirectOverlay.texture == nullptr) {
+        return false;
+    }
+
+    SDL_SetTextureBlendMode(movieDirectOverlay.texture, SDL_BLENDMODE_NONE);
+#if SDL_VERSION_ATLEAST(2, 0, 12)
+    SDL_SetTextureScaleMode(movieDirectOverlay.texture, SDL_ScaleModeNearest);
+#endif
+
+    movieDirectOverlay.srcWidth = width;
+    movieDirectOverlay.srcHeight = height;
+    return true;
+}
+
+static void movieDirectOverlayUpload(unsigned char* pixels, int srcWidth, int srcHeight)
+{
+    if (movieDirectOverlay.texture == nullptr || gSdlSurface == nullptr || gSdlSurface->format == nullptr || gSdlSurface->format->palette == nullptr) {
+        return;
+    }
+
+    int width = srcWidth;
+    int height = srcHeight;
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+
+    int pixelCount = width * height;
+    if (static_cast<int>(movieDirectOverlay.uploadBuffer.size()) < pixelCount) {
+        movieDirectOverlay.uploadBuffer.resize(pixelCount);
+    }
+
+    SDL_Color* colors = gSdlSurface->format->palette->colors;
+    for (int y = 0; y < height; y++) {
+        const unsigned char* srcRow = pixels + y * srcWidth;
+        uint32_t* dstRow = movieDirectOverlay.uploadBuffer.data() + y * width;
+        for (int x = 0; x < width; x++) {
+            SDL_Color color = colors[srcRow[x]];
+            dstRow[x] = (static_cast<uint32_t>(color.a) << 24)
+                | (static_cast<uint32_t>(color.r) << 16)
+                | (static_cast<uint32_t>(color.g) << 8)
+                | static_cast<uint32_t>(color.b);
+        }
+    }
+
+    SDL_Rect rect = { 0, 0, width, height };
+    SDL_UpdateTexture(movieDirectOverlay.texture, &rect, movieDirectOverlay.uploadBuffer.data(), width * static_cast<int>(sizeof(uint32_t)));
 }
 
 // 0x5195BC subtitleFont
@@ -237,7 +318,7 @@ static bool movieReadImpl(void* handle, void* buf, int count)
 }
 
 // 0x486654 movie_MVE_ShowFrame
-static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height, int src_x, int src_y, int dst_width, int dst_height, int dst_x, int dst_y)
+static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height, int, int, int, int, int, int)
 {
     if (gMovieWindow == -1) {
         return;
@@ -249,27 +330,47 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
     int movieHeight;
     movieComputeDirectRect(src_width, src_height, &movieX, &movieY, &movieWidth, &movieHeight);
 
-    int destX = movieX + src_x * movieWidth / src_width;
-    int destY = movieY + src_y * movieHeight / src_height;
-    int destRight = movieX + movieScaledCeilDiv(src_x + dst_width, movieWidth, src_width);
-    int destBottom = movieY + movieScaledCeilDiv(src_y + dst_height, movieHeight, src_height);
-    int destWidth = destRight - destX;
-    int destHeight = destBottom - destY;
-    if (destWidth <= 0 || destHeight <= 0) {
-        return;
-    }
-
     _lastMovieX = movieX;
     _lastMovieY = movieY;
     _lastMovieW = movieWidth;
     _lastMovieH = movieHeight;
 
-    Buffer2D windowBuffer(windowGetBuffer(gMovieWindow), windowGetWidth(gMovieWindow), windowGetHeight(gMovieWindow));
-    ConstBuffer2D sourceBuffer(pixels, src_width, src_height);
-    blitBuffer2DScaled(sourceBuffer, src_x, src_y, dst_width, dst_height, windowBuffer, destX, destY, destWidth, destHeight);
+    if (movieWidth == src_width && movieHeight == src_height) {
+        movieDirectOverlay.active = false;
+        _scr_blit(
+            pixels,
+            src_width,
+            src_height,
+            0,
+            0,
+            src_width,
+            src_height,
+            movieX,
+            movieY);
+    } else {
+        if (!movieDirectOverlayEnsureTexture(src_width, src_height)) {
+            gMovieFlags |= MOVIE_EXTENDED_FLAG_ERROR;
+            return;
+        }
 
-    Rect rect = { destX, destY, destX + destWidth - 1, destY + destHeight - 1 };
-    windowRefreshRect(gMovieWindow, &rect);
+        movieDirectOverlayUpload(pixels, src_width, src_height);
+        movieDirectOverlay.dstRect = { movieX, movieY, movieWidth, movieHeight };
+        movieDirectOverlay.active = true;
+    }
+}
+
+void movieRenderDirectOverlay()
+{
+    if (!movieDirectOverlay.active || movieDirectOverlay.texture == nullptr) {
+        return;
+    }
+
+    SDL_RenderCopy(gSdlRenderer, movieDirectOverlay.texture, nullptr, &movieDirectOverlay.dstRect);
+}
+
+void movieHandleRendererReset()
+{
+    movieDirectOverlayDestroy();
 }
 
 // 0x486900 movieShowFrame
@@ -399,6 +500,7 @@ static void movieSetPaletteEntriesImpl(unsigned char* palette, int start, int en
 // 0x486E0C initMovie
 void movieInit()
 {
+    movieDirectOverlayDestroy();
     MveSetMemory(movieMallocImpl, movieFreeImpl);
     MveSetPalette(movieSetPaletteEntriesImpl);
     MveSetScreenSize(screenGetWidth(), screenGetHeight());
@@ -424,6 +526,8 @@ static void _cleanupMovie(bool shouldEndMovie)
     MVE_ReleaseMem();
 
     fileClose(gMovieFileStream);
+    gMovieFileStream = nullptr;
+    movieDirectOverlayDestroy();
 
     if (_alphaWindowBuf != nullptr) {
         blitBufferToBuffer(_alphaWindowBuf, _movieW, _movieH, _movieW, windowGetBuffer(gMovieWindow) + _movieY * windowGetWidth(gMovieWindow) + _movieX, windowGetWidth(gMovieWindow));

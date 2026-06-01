@@ -37,6 +37,8 @@ void movieSetBuildSubtitleFilePathProc(MovieBuildSubtitleFilePathProc* proc);
 void movieSetVolume(int volume);
 void _movieUpdate();
 int _moviePlaying();
+void movieHandleRendererReset();
+void movieRenderDirectOverlay();
 
 } // namespace fallout
 
