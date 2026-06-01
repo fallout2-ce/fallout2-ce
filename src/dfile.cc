@@ -77,7 +77,9 @@ DBase* dbaseOpen(const char* filePath)
         dbase->path = compat_strdup(filePath);
 
         if (!dbaseParseZip(dbase, stream)) {
-            goto err;
+            dbaseClose(dbase);
+            fclose(stream);
+            return nullptr;
         }
 
         fclose(stream);
