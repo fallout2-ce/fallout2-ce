@@ -166,9 +166,6 @@ static int gMovieSubtitlesColorB = 31;
 // 0x638E10 mve_win_rect
 static Rect gMovieWindowRect;
 
-// 0x638E20 movieRect
-static Rect _movieRect;
-
 // 0x638E38 updateCallbackFunc
 static MovieSetPaletteProc* gMoviePaletteProc;
 
@@ -292,6 +289,7 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
         movieDirectOverlay.active = false;
         _scr_blit(pixels, src_width, src_height, 0, 0, src_width, src_height, movieOutputRect.x, movieOutputRect.y);
     } else {
+        // we're scaling, so use an SDL overlay to render
         if (!movieDirectOverlayEnsureTexture(src_width, src_height)) {
             gMovieFlags |= MOVIE_EXTENDED_FLAG_ERROR;
             return;
@@ -328,7 +326,8 @@ static void movieBufferedImpl(unsigned char* pixels, int src_width, int src_heig
 
     MovieBlitFunc* func = gMovieBlitFuncs[_movieScaleFlag][_movieSubRectFlag];
     if (func(gMovieWindow, pixels, src_width, src_height, src_width) != 0) {
-        windowRefreshRect(gMovieWindow, &_movieRect);
+        Rect movieRect = { _movieX, _movieY, _movieX + _movieW, _movieY + _movieH };
+        windowRefreshRect(gMovieWindow, &movieRect);
     }
 }
 
@@ -714,11 +713,6 @@ static int _movieStart(int win, char* filePath)
     } else {
         debugPrint("not scaled\n");
     }
-
-    _movieRect.left = _movieX;
-    _movieRect.top = _movieY;
-    _movieRect.right = _movieW + _movieX;
-    _movieRect.bottom = _movieH + _movieY;
 
     return 0;
 }
