@@ -11,6 +11,7 @@
 #include <unistd.h>
 #endif
 
+#include "debug.h"
 #include "file_find.h"
 
 namespace fallout {
@@ -525,6 +526,11 @@ bool xbaseOpen(const char* path)
     if (dbase != nullptr) {
         xbase->isDbase = true;
         xbase->dbase = dbase;
+
+        if (dbase->format == DBaseFormat::ZIP && (dbase->errorFlags & DBASE_ERROR_DESCRIPTORS) != 0) {
+            debugPrint("[xfile] %s: ZIP contains entries with data descriptors (unsupported)\n", path);
+        }
+
         xbase->next = gXbaseHead;
         gXbaseHead = xbase;
         return true;

@@ -9,17 +9,32 @@
 
 namespace fallout {
 
+enum class DBaseFormat : int {
+    DAT = 0,
+    ZIP = 1,
+};
+
+enum DBaseErrorFlags : int {
+    DBASE_ERROR_DESCRIPTORS = 0x01,
+};
+
 typedef struct DBase DBase;
 typedef struct DBaseEntry DBaseEntry;
 typedef struct DFile DFile;
 
-// A representation of .DAT file.
+// A representation of .DAT or .ZIP file.
 typedef struct DBase {
-    // The path of .DAT file that this structure represents.
+    // The path of archive file that this structure represents.
     char* path;
 
     // The offset to the beginning of data section of .DAT file.
     int dataOffset;
+
+    // The format of this archive.
+    DBaseFormat format;
+
+    // Error flags for ZIP archives.
+    int errorFlags;
 
     // The number of entries.
     int entriesLength;

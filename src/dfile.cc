@@ -38,12 +38,14 @@ namespace fallout {
 #define DFILE_HAS_COMPRESSED_UNGETC (0x10)
 
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
+static int dbaseFindEntryByFilePathForSort(const void* a, const void* b);
+static bool dbaseParseZip(DBase* dbase, FILE* stream);
 static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* dfile);
 static int dfileReadCharInternal(DFile* stream);
 static bool dfileReadCompressed(DFile* stream, void* ptr, size_t size);
 static void dfileUngetCompressed(DFile* stream, int ch);
 
-// Reads .DAT file contents.
+// Reads .DAT or .ZIP file contents.
 //
 // 0x4E4F58 dbase_open
 DBase* dbaseOpen(const char* filePath)
@@ -63,8 +65,28 @@ DBase* dbaseOpen(const char* filePath)
 
     memset(dbase, 0, sizeof(*dbase));
 
-    // Get file size, and reposition stream to read footer, which contains two
-    // 32-bits ints.
+    // Read first 4 bytes to detect ZIP format (local file header signature).
+    unsigned char magic[4];
+    bool isZip = fread(magic, 1, 4, stream) == 4
+        && magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04;
+
+    if (isZip) {
+        dbase->format = DBaseFormat::ZIP;
+        dbase->dataOffset = 0;
+        dbase->path = compat_strdup(filePath);
+
+        if (!dbaseParseZip(dbase, stream)) {
+            goto err;
+        }
+
+        fclose(stream);
+        return dbase;
+    }
+
+    dbase->format = DBaseFormat::DAT;
+
+    // DAT format: parse footer.
+    // Reposition stream to read footer, which contains two 32-bit ints.
     int fileSize = getFileSize(stream);
     if (fseek(stream, fileSize - sizeof(int) * 2, SEEK_SET) != 0) {
         goto err;
@@ -147,6 +169,11 @@ DBase* dbaseOpen(const char* filePath)
 
     dbase->path = compat_strdup(filePath);
     dbase->dataOffset = fileSize - dbaseDataSize;
+
+    // Normalize entry data offsets to absolute file positions.
+    for (entryIndex = 0; entryIndex < dbase->entriesLength; entryIndex++) {
+        dbase->entries[entryIndex].dataOffset += dbase->dataOffset;
+    }
 
     fclose(stream);
 
@@ -558,7 +585,7 @@ int dfileSeek(DFile* stream, long offset, int origin)
         return 0;
     }
 
-    if (fseek(stream->stream, stream->dbase->dataOffset + stream->entry->dataOffset, SEEK_SET) != 0) {
+    if (fseek(stream->stream, stream->entry->dataOffset, SEEK_SET) != 0) {
         stream->flags |= DFILE_ERROR;
         return 1;
     }
@@ -575,9 +602,16 @@ int dfileSeek(DFile* stream, long offset, int origin)
         stream->decompressionStream->next_in = stream->decompressionBuffer;
         stream->decompressionStream->avail_in = 0;
 
-        if (inflateInit(stream->decompressionStream) != Z_OK) {
-            stream->flags |= DFILE_ERROR;
-            return 1;
+        if (stream->dbase->format == DBaseFormat::ZIP) {
+            if (inflateInit2(stream->decompressionStream, -15) != Z_OK) {
+                stream->flags |= DFILE_ERROR;
+                return 1;
+            }
+        } else {
+            if (inflateInit(stream->decompressionStream) != Z_OK) {
+                stream->flags |= DFILE_ERROR;
+                return 1;
+            }
         }
     } else {
         // FIXME: I'm not sure what this assignment means. This field is
@@ -636,6 +670,233 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
     return compat_stricmp(filePath, entry->path);
 }
 
+// qsort comparison callback for sorting ZIP entries ascending by path.
+static int dbaseFindEntryByFilePathForSort(const void* a, const void* b)
+{
+    const DBaseEntry* ea = (const DBaseEntry*)a;
+    const DBaseEntry* eb = (const DBaseEntry*)b;
+
+    return compat_stricmp(ea->path, eb->path);
+}
+
+// Parses a ZIP archive's central directory and builds the DBaseEntry array.
+static bool dbaseParseZip(DBase* dbase, FILE* stream)
+{
+    constexpr unsigned int kCentralDirSignature = 0x02014b50;
+    constexpr int kMaxEocdSearch = 65557;
+
+    int fileSize = getFileSize(stream);
+    if (fileSize < 22) {
+        return false;
+    }
+
+    // Search for EOCD signature within the last 65557 bytes of the file.
+    int searchStart = std::max(0, fileSize - kMaxEocdSearch);
+    int searchSize = fileSize - searchStart;
+
+    unsigned char* buf = (unsigned char*)malloc(searchSize);
+    if (!buf) {
+        return false;
+    }
+
+    fseek(stream, searchStart, SEEK_SET);
+    if (fread(buf, searchSize, 1, stream) != 1) {
+        free(buf);
+        return false;
+    }
+
+    int eocdOffset = -1;
+    for (int i = searchSize - 22; i >= 0; i--) {
+        if (buf[i] == 0x50 && buf[i + 1] == 0x4b && buf[i + 2] == 0x05 && buf[i + 3] == 0x06) {
+            eocdOffset = searchStart + i;
+            break;
+        }
+    }
+    free(buf);
+
+    if (eocdOffset < 0) {
+        return false;
+    }
+
+    // Read EOCD fields: total entries, central directory offset.
+    if (fseek(stream, eocdOffset + 8, SEEK_SET) != 0) {
+        return false;
+    }
+
+    unsigned short diskEntries;
+    if (fread(&diskEntries, sizeof(diskEntries), 1, stream) != 1) {
+        return false;
+    }
+
+    unsigned short totalEntries;
+    if (fread(&totalEntries, sizeof(totalEntries), 1, stream) != 1) {
+        return false;
+    }
+
+    unsigned int centralDirSize;
+    if (fread(&centralDirSize, sizeof(centralDirSize), 1, stream) != 1) {
+        return false;
+    }
+
+    unsigned int centralDirOffset;
+    if (fread(&centralDirOffset, sizeof(centralDirOffset), 1, stream) != 1) {
+        return false;
+    }
+
+    if (totalEntries == 0) {
+        dbase->entriesLength = 0;
+        dbase->entries = nullptr;
+        return true;
+    }
+
+    dbase->entries = (DBaseEntry*)malloc(sizeof(*dbase->entries) * totalEntries);
+    if (!dbase->entries) {
+        return false;
+    }
+    memset(dbase->entries, 0, sizeof(*dbase->entries) * totalEntries);
+
+    // Walk central directory entries.
+    if (fseek(stream, centralDirOffset, SEEK_SET) != 0) {
+        return false;
+    }
+
+    int entryCount = 0;
+    for (unsigned short i = 0; i < totalEntries; i++) {
+        unsigned int signature;
+        if (fread(&signature, sizeof(signature), 1, stream) != 1) {
+            break;
+        }
+        if (signature != kCentralDirSignature) {
+            break;
+        }
+
+        fseek(stream, 4, SEEK_CUR); // version made by, version needed to extract
+
+        unsigned short flags;
+        if (fread(&flags, sizeof(flags), 1, stream) != 1) {
+            break;
+        }
+
+        if (flags & 0x08) {
+            dbase->errorFlags = dbase->errorFlags | DBASE_ERROR_DESCRIPTORS;
+        }
+
+        unsigned short method;
+        if (fread(&method, sizeof(method), 1, stream) != 1) {
+            break;
+        }
+
+        fseek(stream, 8, SEEK_CUR); // mod time, mod date, crc32
+
+        unsigned int compressedSize;
+        if (fread(&compressedSize, sizeof(compressedSize), 1, stream) != 1) {
+            break;
+        }
+
+        unsigned int uncompressedSize;
+        if (fread(&uncompressedSize, sizeof(uncompressedSize), 1, stream) != 1) {
+            break;
+        }
+
+        unsigned short fileNameLength;
+        if (fread(&fileNameLength, sizeof(fileNameLength), 1, stream) != 1) {
+            break;
+        }
+
+        unsigned short extraFieldLength;
+        if (fread(&extraFieldLength, sizeof(extraFieldLength), 1, stream) != 1) {
+            break;
+        }
+
+        unsigned short fileCommentLength;
+        if (fread(&fileCommentLength, sizeof(fileCommentLength), 1, stream) != 1) {
+            break;
+        }
+
+        fseek(stream, 8, SEEK_CUR); // disk number start, internal attrs, external attrs
+
+        unsigned int localHeaderOffset;
+        if (fread(&localHeaderOffset, sizeof(localHeaderOffset), 1, stream) != 1) {
+            break;
+        }
+
+        // Read and normalize filename.
+        char* fileName = (char*)malloc(fileNameLength + 1);
+        if (!fileName) {
+            break;
+        }
+        if (fread(fileName, fileNameLength, 1, stream) != 1) {
+            free(fileName);
+            break;
+        }
+        fileName[fileNameLength] = '\0';
+
+        for (unsigned short j = 0; j < fileNameLength; j++) {
+            if (fileName[j] == '/') {
+                fileName[j] = '\\';
+            }
+        }
+
+        // Skip directory entries (trailing slash).
+        if (fileNameLength > 0 && fileName[fileNameLength - 1] == '\\') {
+            free(fileName);
+            fseek(stream, extraFieldLength + fileCommentLength, SEEK_CUR);
+            continue;
+        }
+
+        // Skip extra field and file comment.
+        fseek(stream, extraFieldLength + fileCommentLength, SEEK_CUR);
+
+        // Map compression method: 0=stored, 8=deflated.
+        unsigned char compressed;
+        if (method == 0) {
+            compressed = 0;
+        } else if (method == 8) {
+            compressed = 1;
+        } else {
+            free(fileName);
+            continue;
+        }
+
+        // Read local file header to get actual data offset.
+        long savedPos = ftell(stream);
+        if (fseek(stream, localHeaderOffset + 26, SEEK_SET) != 0) {
+            break;
+        }
+
+        unsigned short localFileNameLength;
+        unsigned short localExtraFieldLength;
+        if (fread(&localFileNameLength, sizeof(localFileNameLength), 1, stream) != 1
+            || fread(&localExtraFieldLength, sizeof(localExtraFieldLength), 1, stream) != 1) {
+            break;
+        }
+
+        if (fseek(stream, savedPos, SEEK_SET) != 0) {
+            break;
+        }
+
+        // Compute absolute offset to file data (past local file header).
+        int dataOffset = static_cast<int>(localHeaderOffset) + 30 + localFileNameLength + localExtraFieldLength;
+
+        DBaseEntry* entry = &dbase->entries[entryCount];
+        entry->path = fileName;
+        entry->compressed = compressed;
+        entry->uncompressedSize = static_cast<int>(uncompressedSize);
+        entry->dataSize = static_cast<int>(compressedSize);
+        entry->dataOffset = dataOffset;
+
+        entryCount++;
+    }
+
+    dbase->entriesLength = entryCount;
+
+    if (entryCount > 1) {
+        qsort(dbase->entries, entryCount, sizeof(*dbase->entries), dbaseFindEntryByFilePathForSort);
+    }
+
+    return true;
+}
+
 // 0x4E5D9C dfile_fopen_helper
 static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* mode, DFile* dfile)
 {
@@ -682,7 +943,7 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* 
     }
 
     // Relocate stream to the beginning of data for specified entry.
-    if (fseek(dfile->stream, dbase->dataOffset + entry->dataOffset, SEEK_SET) != 0) {
+    if (fseek(dfile->stream, entry->dataOffset, SEEK_SET) != 0) {
         goto err;
     }
 
@@ -709,8 +970,14 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* 
         dfile->decompressionStream->next_in = dfile->decompressionBuffer;
         dfile->decompressionStream->avail_in = 0;
 
-        if (inflateInit(dfile->decompressionStream) != Z_OK) {
-            goto err;
+        if (dbase->format == DBaseFormat::ZIP) {
+            if (inflateInit2(dfile->decompressionStream, -15) != Z_OK) {
+                goto err;
+            }
+        } else {
+            if (inflateInit(dfile->decompressionStream) != Z_OK) {
+                goto err;
+            }
         }
     } else {
         // Entry is not compressed, there is no need to keep decompression
