@@ -524,13 +524,31 @@ bool xbaseOpen(const char* path)
 
     DBase* dbase = dbaseOpen(path);
     if (dbase != nullptr) {
-        xbase->isDbase = true;
-        xbase->dbase = dbase;
+        if (dbase->format == DBaseFormat::ZIP && dbase->errorFlags != 0) {
+            if (dbase->errorFlags & DBASE_ERROR_ZIP64) {
+                debugPrint("[xfile] %s: ZIP64 format (unsupported)\n", path);
+            }
+            if (dbase->errorFlags & DBASE_ERROR_MULTI_DISK) {
+                debugPrint("[xfile] %s: multi-disk ZIP (unsupported)\n", path);
+            }
+            if (dbase->errorFlags & DBASE_ERROR_ENCRYPTED) {
+                debugPrint("[xfile] %s: encrypted entries (unsupported)\n", path);
+            }
+            if (dbase->errorFlags & DBASE_ERROR_DESCRIPTORS) {
+                debugPrint("[xfile] %s: data descriptors (unsupported)\n", path);
+            }
+            if (dbase->errorFlags & DBASE_ERROR_UNSUPPORTED_METHOD) {
+                debugPrint("[xfile] %s: unsupported compression method(s)\n", path);
+            }
 
-        if (dbase->format == DBaseFormat::ZIP && (dbase->errorFlags & DBASE_ERROR_DESCRIPTORS) != 0) {
-            debugPrint("[xfile] %s: ZIP contains entries with data descriptors (unsupported)\n", path);
+            dbaseClose(dbase);
+            free(xbase->path);
+            free(xbase);
+            return false;
         }
 
+        xbase->isDbase = true;
+        xbase->dbase = dbase;
         xbase->next = gXbaseHead;
         gXbaseHead = xbase;
         return true;

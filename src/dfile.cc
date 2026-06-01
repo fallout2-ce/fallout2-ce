@@ -39,6 +39,7 @@ namespace fallout {
 
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
 static int dbaseFindEntryByFilePathForSort(const void* a, const void* b);
+static bool dbaseZipIsEocd(const unsigned char* p);
 static bool dbaseParseZip(DBase* dbase, FILE* stream);
 static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* dfile);
 static int dfileReadCharInternal(DFile* stream);
@@ -679,6 +680,11 @@ static int dbaseFindEntryByFilePathForSort(const void* a, const void* b)
     return compat_stricmp(ea->path, eb->path);
 }
 
+static bool dbaseZipIsEocd(const unsigned char* p)
+{
+    return p[0] == 0x50 && p[1] == 0x4b && p[2] == 0x05 && p[3] == 0x06;
+}
+
 // Parses a ZIP archive's central directory and builds the DBaseEntry array.
 static bool dbaseParseZip(DBase* dbase, FILE* stream)
 {
@@ -690,43 +696,53 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream)
         return false;
     }
 
-    // Search for EOCD signature within the last 65557 bytes of the file.
-    int searchStart = std::max(0, fileSize - kMaxEocdSearch);
-    int searchSize = fileSize - searchStart;
-
-    unsigned char* buf = (unsigned char*)malloc(searchSize);
-    if (!buf) {
+    // Try the common case first: no comment, EOCD is the last 22 bytes.
+    unsigned char tail[22];
+    fseek(stream, -22, SEEK_END);
+    if (fread(tail, sizeof(tail), 1, stream) != 1) {
         return false;
     }
 
-    fseek(stream, searchStart, SEEK_SET);
-    if (fread(buf, searchSize, 1, stream) != 1) {
-        free(buf);
-        return false;
-    }
+    int eocdOffset = fileSize - 22;
+    bool found = dbaseZipIsEocd(tail);
 
-    int eocdOffset = -1;
-    for (int i = searchSize - 22; i >= 0; i--) {
-        if (buf[i] == 0x50 && buf[i + 1] == 0x4b && buf[i + 2] == 0x05 && buf[i + 3] == 0x06) {
-            eocdOffset = searchStart + i;
-            break;
+    // ZIP allows a variable-length comment between the EOCD and end of file.
+    // Search backwards through the last 65557 bytes if not at the expected spot.
+    if (!found) {
+        int searchStart = std::max(0, fileSize - kMaxEocdSearch);
+        int searchSize = fileSize - searchStart;
+
+        unsigned char* buf = (unsigned char*)malloc(searchSize);
+        if (!buf) {
+            return false;
         }
-    }
-    free(buf);
 
-    if (eocdOffset < 0) {
+        fseek(stream, searchStart, SEEK_SET);
+        if (fread(buf, searchSize, 1, stream) != 1) {
+            free(buf);
+            return false;
+        }
+
+        for (int i = searchSize - 22; i >= 0; i--) {
+            if (dbaseZipIsEocd(buf + i)) {
+                eocdOffset = searchStart + i;
+                found = true;
+                break;
+            }
+        }
+        free(buf);
+    }
+
+    if (!found) {
         return false;
     }
 
-    // Read EOCD fields: total entries, central directory offset.
+    // Read EOCD: entries on this disk (skip), total entries, CD size, CD offset.
     if (fseek(stream, eocdOffset + 8, SEEK_SET) != 0) {
         return false;
     }
 
-    unsigned short diskEntries;
-    if (fread(&diskEntries, sizeof(diskEntries), 1, stream) != 1) {
-        return false;
-    }
+    fseek(stream, 2, SEEK_CUR); // entries on this disk
 
     unsigned short totalEntries;
     if (fread(&totalEntries, sizeof(totalEntries), 1, stream) != 1) {
@@ -741,6 +757,13 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream)
     unsigned int centralDirOffset;
     if (fread(&centralDirOffset, sizeof(centralDirOffset), 1, stream) != 1) {
         return false;
+    }
+
+    if (totalEntries == 0xFFFF || centralDirSize == 0xFFFFFFFF || centralDirOffset == 0xFFFFFFFF) {
+        dbase->errorFlags |= DBASE_ERROR_ZIP64;
+        dbase->entriesLength = 0;
+        dbase->entries = nullptr;
+        return true;
     }
 
     if (totalEntries == 0) {
@@ -777,8 +800,11 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream)
             break;
         }
 
+        if (flags & 0x01) {
+            dbase->errorFlags |= DBASE_ERROR_ENCRYPTED;
+        }
         if (flags & 0x08) {
-            dbase->errorFlags = dbase->errorFlags | DBASE_ERROR_DESCRIPTORS;
+            dbase->errorFlags |= DBASE_ERROR_DESCRIPTORS;
         }
 
         unsigned short method;
@@ -813,7 +839,16 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream)
             break;
         }
 
-        fseek(stream, 8, SEEK_CUR); // disk number start, internal attrs, external attrs
+        unsigned short diskNumberStart;
+        if (fread(&diskNumberStart, sizeof(diskNumberStart), 1, stream) != 1) {
+            break;
+        }
+
+        if (diskNumberStart != 0) {
+            dbase->errorFlags |= DBASE_ERROR_MULTI_DISK;
+        }
+
+        fseek(stream, 6, SEEK_CUR); // internal attrs, external attrs
 
         unsigned int localHeaderOffset;
         if (fread(&localHeaderOffset, sizeof(localHeaderOffset), 1, stream) != 1) {
@@ -854,6 +889,7 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream)
         } else if (method == 8) {
             compressed = 1;
         } else {
+            dbase->errorFlags |= DBASE_ERROR_UNSUPPORTED_METHOD;
             free(fileName);
             continue;
         }

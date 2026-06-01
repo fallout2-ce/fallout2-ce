@@ -16,6 +16,10 @@ enum class DBaseFormat : int {
 
 enum DBaseErrorFlags : int {
     DBASE_ERROR_DESCRIPTORS = 0x01,
+    DBASE_ERROR_ZIP64 = 0x02,
+    DBASE_ERROR_ENCRYPTED = 0x04,
+    DBASE_ERROR_MULTI_DISK = 0x08,
+    DBASE_ERROR_UNSUPPORTED_METHOD = 0x10,
 };
 
 typedef struct DBase DBase;
