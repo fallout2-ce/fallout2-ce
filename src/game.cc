@@ -1369,72 +1369,78 @@ static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFail
 // 0x44418C
 static int gameDbInit()
 {
-    const char* main_file_name;
-    const char* patch_file_name;
-    int patch_index;
-    char filename[COMPAT_MAX_PATH];
-    main_file_name = nullptr;
-    patch_file_name = nullptr;
-
-    main_file_name = settings.system.master_dat_path.c_str();
-    if (*main_file_name == '\0') {
-        main_file_name = nullptr;
+    const char* master_dat_path = settings.system.master_dat_path.c_str();
+    if (*master_dat_path == '\0') {
+        master_dat_path = nullptr;
     }
 
-    patch_file_name = settings.system.master_patches_path.c_str();
-    if (*patch_file_name == '\0') {
-        patch_file_name = nullptr;
+    const char* master_patches_path = settings.system.master_patches_path.c_str();
+    if (*master_patches_path == '\0') {
+        master_patches_path = nullptr;
     }
     // Try to ensure that patches dir exists early. This is needed for auto-generated game.cfg later.
-    if (patch_file_name != nullptr) {
-        compat_mkdir_recursive(patch_file_name);
+    if (master_patches_path != nullptr) {
+        compat_mkdir_recursive(master_patches_path);
     }
 
-    int master_db_handle = dbOpen(main_file_name, patch_file_name);
-    if (master_db_handle == -1) {
+    const char* critter_dat_path = settings.system.critter_dat_path.c_str();
+    if (*critter_dat_path == '\0') {
+        critter_dat_path = nullptr;
+    }
+
+    const char* critter_patches_path = settings.system.critter_patches_path.c_str();
+    if (*critter_patches_path == '\0') {
+        critter_patches_path = nullptr;
+    }
+
+    // Load archives in reverse priority order (dbOpen prepends to chain).
+    // Resulting chain (head = highest priority):
+    //   master_patches > critter_patches > mods > patchXXX.dat > ce.dat > f2_res.dat > critter.dat > master.dat
+
+    if (dbOpen(master_dat_path) == -1) {
         showMessageBox("Could not find the master datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
         return -1;
     }
 
-    if (compat_access("f2_res.dat", 0) == 0) {
-        dbOpen("f2_res.dat");
-    }
-
-    main_file_name = settings.system.critter_dat_path.c_str();
-    if (*main_file_name == '\0') {
-        main_file_name = nullptr;
-    }
-
-    patch_file_name = settings.system.critter_patches_path.c_str();
-    if (*patch_file_name == '\0') {
-        patch_file_name = nullptr;
-    }
-
-    int critter_db_handle = dbOpen(main_file_name, patch_file_name);
-    if (critter_db_handle == -1) {
+    if (dbOpen(critter_dat_path) == -1) {
         showMessageBox("Could not find the critter datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
         return -1;
     }
 
-    // SFALL: custom patch file name.
+    constexpr char highResPatchDatPath[] = "f2_res.dat";
+
+    if (compat_access(highResPatchDatPath, 0) == 0) {
+        debugPrint("Loading HRP data mod: %s\n", highResPatchDatPath);
+        dbOpen(highResPatchDatPath);
+    }
+
+    TryLoadBaseCEMod();
+
     char* path_file_name_template = nullptr;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PATCH_FILE, &path_file_name_template);
     if (path_file_name_template == nullptr || *path_file_name_template == '\0') {
         path_file_name_template = (char*)"patch%03d.dat";
     }
 
-    for (patch_index = 0; patch_index < 1000; patch_index++) {
+    char filename[COMPAT_MAX_PATH];
+    for (int patch_index = 0; patch_index < 1000; patch_index++) {
         snprintf(filename, sizeof(filename), path_file_name_template, patch_index);
 
-        if (compat_access(filename, 0) == 0) {
-            dbOpen(filename);
+        if (compat_access(filename, 0) != 0) {
+            break;
         }
+        dbOpen(filename);
     }
 
-    // Load CE base mod after vanilla patches but before all regular mods.
-    TryLoadBaseCEMod();
-
     sfallLoadMods();
+
+    if (critter_patches_path != nullptr) {
+        dbOpen(critter_patches_path);
+    }
+
+    if (master_patches_path != nullptr) {
+        dbOpen(master_patches_path);
+    }
 
     return 0;
 }
