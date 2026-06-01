@@ -397,9 +397,9 @@ static void destroyRenderer()
 
 void handleWindowSizeChanged()
 {
+    movieHandleRendererReset();
     destroyRenderer();
     createRenderer(screenGetWidth(), screenGetHeight());
-    movieHandleRendererReset();
     mouseDeviceRefreshWindowMapping();
 }
 
