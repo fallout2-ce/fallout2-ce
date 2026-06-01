@@ -40,6 +40,7 @@ namespace fallout {
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
 static int dbaseFindEntryByFilePathForSort(const void* a, const void* b);
 static bool dbaseZipIsEocd(const unsigned char* p);
+static bool dfileDecompressInit(z_streamp stream, DBaseFormat format, unsigned char* buffer);
 static bool dbaseParseZip(DBase* dbase, FILE* stream);
 static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* dfile);
 static int dfileReadCharInternal(DFile* stream);
@@ -599,22 +600,9 @@ int dfileSeek(DFile* stream, long offset, int origin)
             return 1;
         }
 
-        stream->decompressionStream->zalloc = Z_NULL;
-        stream->decompressionStream->zfree = Z_NULL;
-        stream->decompressionStream->opaque = Z_NULL;
-        stream->decompressionStream->next_in = stream->decompressionBuffer;
-        stream->decompressionStream->avail_in = 0;
-
-        if (stream->dbase->format == DBaseFormat::ZIP) {
-            if (inflateInit2(stream->decompressionStream, -15) != Z_OK) {
-                stream->flags |= DFILE_ERROR;
-                return 1;
-            }
-        } else {
-            if (inflateInit(stream->decompressionStream) != Z_OK) {
-                stream->flags |= DFILE_ERROR;
-                return 1;
-            }
+        if (!dfileDecompressInit(stream->decompressionStream, stream->dbase->format, stream->decompressionBuffer)) {
+            stream->flags |= DFILE_ERROR;
+            return 1;
         }
     } else {
         // FIXME: I'm not sure what this assignment means. This field is
@@ -676,8 +664,8 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName)
 // qsort comparison callback for sorting ZIP entries ascending by path.
 static int dbaseFindEntryByFilePathForSort(const void* a, const void* b)
 {
-    const DBaseEntry* ea = (const DBaseEntry*)a;
-    const DBaseEntry* eb = (const DBaseEntry*)b;
+    const auto* ea = static_cast<const DBaseEntry*>(a);
+    const auto* eb = static_cast<const DBaseEntry*>(b);
 
     return compat_stricmp(ea->path, eb->path);
 }
@@ -685,6 +673,21 @@ static int dbaseFindEntryByFilePathForSort(const void* a, const void* b)
 static bool dbaseZipIsEocd(const unsigned char* p)
 {
     return p[0] == 0x50 && p[1] == 0x4b && p[2] == 0x05 && p[3] == 0x06;
+}
+
+static bool dfileDecompressInit(z_streamp stream, DBaseFormat format, unsigned char* buffer)
+{
+    stream->zalloc = Z_NULL;
+    stream->zfree = Z_NULL;
+    stream->opaque = Z_NULL;
+    stream->next_in = buffer;
+    stream->avail_in = 0;
+
+    int inflateResult = format == DBaseFormat::ZIP
+        ? inflateInit2(stream, -15)
+        : inflateInit(stream);
+
+    return inflateResult == Z_OK;
 }
 
 // Parses a ZIP archive's central directory and builds the DBaseEntry array.
@@ -1002,20 +1005,8 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* 
             }
         }
 
-        dfile->decompressionStream->zalloc = Z_NULL;
-        dfile->decompressionStream->zfree = Z_NULL;
-        dfile->decompressionStream->opaque = Z_NULL;
-        dfile->decompressionStream->next_in = dfile->decompressionBuffer;
-        dfile->decompressionStream->avail_in = 0;
-
-        if (dbase->format == DBaseFormat::ZIP) {
-            if (inflateInit2(dfile->decompressionStream, -15) != Z_OK) {
-                goto err;
-            }
-        } else {
-            if (inflateInit(dfile->decompressionStream) != Z_OK) {
-                goto err;
-            }
+        if (!dfileDecompressInit(dfile->decompressionStream, dbase->format, dfile->decompressionBuffer)) {
+            goto err;
         }
     } else {
         // Entry is not compressed, there is no need to keep decompression
