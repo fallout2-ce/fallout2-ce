@@ -29,7 +29,7 @@ typedef struct MovieSubtitleListNode {
     struct MovieSubtitleListNode* next;
 } MovieSubtitleListNode;
 
-static void movieComputeDirectRect(int srcWidth, int srcHeight, int* x, int* y, int* width, int* height);
+static SDL_Rect movieComputeDirectRect(int srcWidth, int srcHeight);
 static void movieDirectOverlayDestroy();
 static bool movieDirectOverlayEnsureTexture(int width, int height);
 static void movieDirectOverlayUpload(unsigned char* pixels, int srcWidth, int srcHeight);
@@ -181,17 +181,8 @@ static int _subtitleW;
 // 0x638E5C movieScaleFlag
 static int _movieScaleFlag;
 
-// 0x638E64 lastMovieH
-static int _lastMovieH;
-
-// 0x638E68 lastMovieW
-static int _lastMovieW;
-
-// 0x638E6C lastMovieX
-static int _lastMovieX;
-
-// 0x638E70 lastMovieY
-static int _lastMovieY;
+// similar to 0x638E64 lastMovieRect
+static SDL_Rect movieOutputRect;
 
 // 0x638E74 subtitleList
 static MovieSubtitleListNode* gMovieSubtitleHead;
@@ -223,7 +214,7 @@ static int _movieX;
 // 0x638EB4 movieY
 static int _movieY;
 
-static void movieComputeDirectRect(int srcWidth, int srcHeight, int* x, int* y, int* width, int* height)
+static SDL_Rect movieComputeDirectRect(int srcWidth, int srcHeight)
 {
     int availableX = _movieX;
     int availableY = _movieY;
@@ -231,11 +222,12 @@ static void movieComputeDirectRect(int srcWidth, int srcHeight, int* x, int* y, 
     int availableHeight = _movieH;
 
     if (!settings.ui.movie_aspect_fit) {
-        *width = srcWidth;
-        *height = srcHeight;
-        *x = availableX + (availableWidth - srcWidth) / 2;
-        *y = availableY + (availableHeight - srcHeight) / 2;
-        return;
+        return {
+            availableX + (availableWidth - srcWidth) / 2,
+            availableY + (availableHeight - srcHeight) / 2,
+            srcWidth,
+            srcHeight,
+        };
     }
 
     int subtitleReserve = 0;
@@ -243,7 +235,7 @@ static void movieComputeDirectRect(int srcWidth, int srcHeight, int* x, int* y, 
         subtitleReserve = _subtitleH + 4;
     }
 
-    auto fitInto = [&](int fitHeight, int* fitX, int* fitY, int* fitWidth, int* fitHeightOut) {
+    auto fitInto = [&](int fitHeight) {
         int movieWidth = availableWidth;
         int movieHeight = movieWidth * srcHeight / srcWidth;
         if (movieHeight > fitHeight) {
@@ -251,18 +243,22 @@ static void movieComputeDirectRect(int srcWidth, int srcHeight, int* x, int* y, 
             movieWidth = fitHeight * srcWidth / srcHeight;
         }
 
-        *fitWidth = movieWidth;
-        *fitHeightOut = movieHeight;
-        *fitX = availableX + (availableWidth - movieWidth) / 2;
-        *fitY = availableY + (fitHeight - movieHeight) / 2;
+        return SDL_Rect {
+            availableX + (availableWidth - movieWidth) / 2,
+            availableY + (fitHeight - movieHeight) / 2,
+            movieWidth,
+            movieHeight,
+        };
     };
 
-    fitInto(availableHeight, x, y, width, height);
+    SDL_Rect movieRect = fitInto(availableHeight);
 
-    int marginHeight = (availableHeight - *height) / 2;
+    int marginHeight = (availableHeight - movieRect.h) / 2;
     if (subtitleReserve > 0 && marginHeight < subtitleReserve && availableHeight > subtitleReserve) {
-        fitInto(availableHeight - subtitleReserve, x, y, width, height);
+        movieRect = fitInto(availableHeight - subtitleReserve);
     }
+
+    return movieRect;
 }
 
 // 0x4865FC movieMalloc
@@ -290,29 +286,11 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
         return;
     }
 
-    int movieX;
-    int movieY;
-    int movieWidth;
-    int movieHeight;
-    movieComputeDirectRect(src_width, src_height, &movieX, &movieY, &movieWidth, &movieHeight);
+    movieOutputRect = movieComputeDirectRect(src_width, src_height);
 
-    _lastMovieX = movieX;
-    _lastMovieY = movieY;
-    _lastMovieW = movieWidth;
-    _lastMovieH = movieHeight;
-
-    if (movieWidth == src_width && movieHeight == src_height) {
+    if (movieOutputRect.w == src_width && movieOutputRect.h == src_height) {
         movieDirectOverlay.active = false;
-        _scr_blit(
-            pixels,
-            src_width,
-            src_height,
-            0,
-            0,
-            src_width,
-            src_height,
-            movieX,
-            movieY);
+        _scr_blit(pixels, src_width, src_height, 0, 0, src_width, src_height, movieOutputRect.x, movieOutputRect.y);
     } else {
         if (!movieDirectOverlayEnsureTexture(src_width, src_height)) {
             gMovieFlags |= MOVIE_EXTENDED_FLAG_ERROR;
@@ -320,7 +298,7 @@ static void movieDirectImpl(unsigned char* pixels, int src_width, int src_height
         }
 
         movieDirectOverlayUpload(pixels, src_width, src_height);
-        movieDirectOverlay.dstRect = { movieX, movieY, movieWidth, movieHeight };
+        movieDirectOverlay.dstRect = movieOutputRect;
         movieDirectOverlay.active = true;
     }
 }
@@ -346,10 +324,7 @@ static void movieBufferedImpl(unsigned char* pixels, int src_width, int src_heig
         return;
     }
 
-    _lastMovieW = dst_width;
-    _lastMovieH = dst_height;
-    _lastMovieX = src_x;
-    _lastMovieY = src_y;
+    movieOutputRect = { src_x, src_y, dst_width, dst_height };
 
     MovieBlitFunc* func = gMovieBlitFuncs[_movieScaleFlag][_movieSubRectFlag];
     if (func(gMovieWindow, pixels, src_width, src_height, src_width) != 0) {
@@ -642,11 +617,11 @@ static void movieRenderSubtitles()
     int subtitleW = _subtitleW;
     int movieY = _movieY;
     int movieHeight = _movieH;
-    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_DIRECT) != 0 && _lastMovieW > 0 && _lastMovieH > 0) {
-        subtitleX = _lastMovieX;
-        subtitleW = _lastMovieW;
-        movieY = _lastMovieY;
-        movieHeight = _lastMovieH;
+    if ((gMovieFlags & MOVIE_EXTENDED_FLAG_DIRECT) != 0 && movieOutputRect.w > 0 && movieOutputRect.h > 0) {
+        subtitleX = movieOutputRect.x;
+        subtitleW = movieOutputRect.w;
+        movieY = movieOutputRect.y;
+        movieHeight = movieOutputRect.h;
     }
 
     int lineHeight = fontGetLineHeight();
@@ -716,10 +691,7 @@ static int _movieStart(int win, char* filePath)
     gMovieWindow = win;
     _running = 1;
     gMovieFlags &= ~MOVIE_EXTENDED_FLAG_ERROR;
-    _lastMovieX = 0;
-    _lastMovieY = 0;
-    _lastMovieW = 0;
-    _lastMovieH = 0;
+    movieOutputRect = { 0, 0, 0, 0 };
 
     if ((gMovieFlags & MOVIE_EXTENDED_FLAG_SUBTITLES) != 0) {
         movieLoadSubtitles(filePath);
