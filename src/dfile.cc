@@ -189,11 +189,6 @@ DBase* dbaseOpen(const char* filePath, int* errorFlags)
     dbase->path = compat_strdup(filePath);
     dbase->dataOffset = fileSize - dbaseDataSize;
 
-    // Normalize entry data offsets to absolute file positions.
-    for (entryIndex = 0; entryIndex < dbase->entriesLength; entryIndex++) {
-        dbase->entries[entryIndex].dataOffset += dbase->dataOffset;
-    }
-
     fclose(stream);
 
     return dbase;
@@ -604,7 +599,7 @@ int dfileSeek(DFile* stream, long offset, int origin)
         return 0;
     }
 
-    if (fseek(stream->stream, stream->entry->dataOffset, SEEK_SET) != 0) {
+    if (fseek(stream->stream, stream->dbase->dataOffset + stream->entry->dataOffset, SEEK_SET) != 0) {
         stream->flags |= DFILE_ERROR;
         return 1;
     }
@@ -975,7 +970,7 @@ static DFile* dfileOpenInternal(DBase* dbase, const char* filePath, const char* 
     }
 
     // Relocate stream to the beginning of data for specified entry.
-    if (fseek(dfile->stream, entry->dataOffset, SEEK_SET) != 0) {
+    if (fseek(dfile->stream, dbase->dataOffset + entry->dataOffset, SEEK_SET) != 0) {
         goto err;
     }
 
