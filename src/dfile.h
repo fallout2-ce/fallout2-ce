@@ -15,7 +15,7 @@ enum class DBaseFormat : int {
 };
 
 enum DBaseErrorFlags : int {
-    DBASE_ERROR_NO_FILE = 1 << 1,
+    DBASE_ERROR_EMPTY = 1 << 1,
     DBASE_ERROR_DESCRIPTORS = 1 << 2,
     DBASE_ERROR_ZIP64 = 1 << 3,
     DBASE_ERROR_ENCRYPTED = 1 << 4,

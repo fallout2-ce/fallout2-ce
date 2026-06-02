@@ -40,6 +40,9 @@ namespace fallout {
 static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
 static int dbaseFindEntryByFilePathForSort(const void* a, const void* b);
 static bool dbaseZipIsEocd(const unsigned char* p);
+
+enum class ZipSignature : int { NOT_ZIP = 0, ZIP = 1, EMPTY = 2 };
+static ZipSignature dbaseCheckZipSignature(FILE* stream);
 static bool dfileDecompressInit(z_streamp stream, DBaseFormat format, unsigned char* buffer);
 static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags);
 static DFile* dfileOpenInternal(DBase* dbase, const char* filename, const char* mode, DFile* dfile);
@@ -56,9 +59,15 @@ DBase* dbaseOpen(const char* filePath, int* errorFlags)
 
     FILE* stream = compat_fopen(filePath, "rb");
     if (stream == nullptr) {
-        if (errorFlags != nullptr) {
-            *errorFlags = DBASE_ERROR_NO_FILE;
+        return nullptr;
+    }
+
+    ZipSignature zipStatus = dbaseCheckZipSignature(stream);
+    if (zipStatus == ZipSignature::EMPTY) {
+        if (errorFlags) {
+            *errorFlags = DBASE_ERROR_EMPTY;
         }
+        fclose(stream);
         return nullptr;
     }
 
@@ -67,15 +76,9 @@ DBase* dbaseOpen(const char* filePath, int* errorFlags)
         fclose(stream);
         return nullptr;
     }
-
     memset(dbase, 0, sizeof(*dbase));
 
-    // Read first 4 bytes to detect ZIP format (local file header signature).
-    unsigned char magic[4];
-    bool isZip = fread(magic, 1, 4, stream) == 4
-        && magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04;
-
-    if (isZip) {
+    if (zipStatus == ZipSignature::ZIP) {
         dbase->format = DBaseFormat::ZIP;
         dbase->dataOffset = 0;
         dbase->path = compat_strdup(filePath);
@@ -678,11 +681,6 @@ static int dbaseFindEntryByFilePathForSort(const void* a, const void* b)
     return compat_stricmp(ea->path, eb->path);
 }
 
-static bool dbaseZipIsEocd(const unsigned char* p)
-{
-    return p[0] == 0x50 && p[1] == 0x4b && p[2] == 0x05 && p[3] == 0x06;
-}
-
 static bool dfileDecompressInit(z_streamp stream, DBaseFormat format, unsigned char* buffer)
 {
     stream->zalloc = Z_NULL;
@@ -703,6 +701,26 @@ static bool dbaseReadValue(FILE* stream, T* value) {
     return fread(value, sizeof(T), 1, stream) == 1;
 }
 
+static ZipSignature dbaseCheckZipSignature(FILE* stream)
+{
+    unsigned char magic[4];
+    if (fread(magic, 1, 4, stream) != 4 || magic[0] != 0x50 || magic[1] != 0x4B) {
+        return ZipSignature::NOT_ZIP;
+    }
+    if (magic[2] == 0x03 && magic[3] == 0x04) {
+        return ZipSignature::ZIP;
+    }
+    if (magic[2] == 0x05 && magic[3] == 0x06) {
+        return ZipSignature::EMPTY;
+    }
+    return ZipSignature::NOT_ZIP;
+}
+
+static bool dbaseZipIsEocd(const unsigned char* p)
+{
+    return p[0] == 0x50 && p[1] == 0x4b && p[2] == 0x05 && p[3] == 0x06;
+}
+
 // Parses a ZIP archive's central directory and builds the DBaseEntry array.
 static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags)
 {
@@ -716,8 +734,8 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags)
 
     // Try the common case first: no comment, EOCD is the last 22 bytes.
     unsigned char tail[22];
-    fseek(stream, -22, SEEK_END);
-    if (fread(tail, sizeof(tail), 1, stream) != 1) {
+    if (fseek(stream, -22, SEEK_END) != 0
+        || fread(tail, sizeof(tail), 1, stream) != 1) {
         return false;
     }
 
@@ -730,12 +748,14 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags)
         int searchStart = std::max(0, fileSize - kMaxEocdSearch);
         int searchSize = fileSize - searchStart;
 
-        unsigned char* buf = (unsigned char*)malloc(searchSize);
+        if (fseek(stream, searchStart, SEEK_SET) != 0) {
+            return false;
+        }
+        auto* buf = static_cast<unsigned char*>(malloc(searchSize));
         if (!buf) {
             return false;
         }
 
-        fseek(stream, searchStart, SEEK_SET);
         if (fread(buf, searchSize, 1, stream) != 1) {
             free(buf);
             return false;
@@ -755,12 +775,10 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags)
         return false;
     }
 
-    // Read EOCD: entries on this disk (skip), total entries, CD size, CD offset.
-    if (fseek(stream, eocdOffset + 8, SEEK_SET) != 0) {
+    // Read EOCD: skip signature (4) + disk number (2) + disk with CD (2) + entries on this disk (2).
+    if (fseek(stream, eocdOffset + 10, SEEK_SET) != 0) {
         return false;
     }
-
-    fseek(stream, 2, SEEK_CUR); // entries on this disk
 
     unsigned short totalEntries;
     unsigned int centralDirSize, centralDirOffset;
@@ -772,42 +790,52 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags)
 
     if (totalEntries == 0xFFFF || centralDirSize == 0xFFFFFFFF || centralDirOffset == 0xFFFFFFFF) {
         errorFlags |= DBASE_ERROR_ZIP64;
-        dbase->entriesLength = 0;
-        dbase->entries = nullptr;
-        return true;
+        return false;
     }
 
+    // There is no point loading empty ZIP since DBase is read-only.
     if (totalEntries == 0) {
-        dbase->entriesLength = 0;
-        dbase->entries = nullptr;
-        return true;
+        errorFlags |= DBASE_ERROR_EMPTY;
+        return false;
     }
 
-    dbase->entries = (DBaseEntry*)malloc(sizeof(*dbase->entries) * totalEntries);
+    // If any entry is skipped, entries will contain unused elements at the end. But this is acceptable because DBaseEntry is small and both qsort and bsearch use entriesLength.
+    dbase->entries = static_cast<DBaseEntry*>(malloc(sizeof(*dbase->entries) * totalEntries));
     if (!dbase->entries) {
         return false;
     }
     memset(dbase->entries, 0, sizeof(*dbase->entries) * totalEntries);
 
     // Walk central directory entries.
-    if (fseek(stream, centralDirOffset, SEEK_SET) != 0) {
+    if (fseek(stream, static_cast<long>(centralDirOffset), SEEK_SET) != 0) {
         return false;
     }
 
-    int entryCount = 0;
-    for (unsigned short i = 0; i < totalEntries; i++) {
+    dbase->entriesLength = 0;
+
+    for (unsigned short entryIndex = 0; entryIndex < totalEntries; entryIndex++) {
         unsigned int signature;
-        if (!dbaseReadValue(stream, &signature) || signature != kCentralDirSignature) {
-            dbase->entriesLength = entryCount;
-            return false;
-        }
-
-        fseek(stream, 4, SEEK_CUR); // version made by, version needed to extract
-
         unsigned short flags, method;
-        if (!dbaseReadValue(stream, &flags)
-            || !dbaseReadValue(stream, &method)) {
-            break;
+        int compressedSize, uncompressedSize, localHeaderOffset;
+        unsigned short fileNameLength, extraFieldLength, fileCommentLength, diskNumberStart;
+        if (!dbaseReadValue(stream, &signature)
+            || signature != kCentralDirSignature
+            // version made by, version needed to extract
+            || fseek(stream, 4, SEEK_CUR) != 0
+            || !dbaseReadValue(stream, &flags)
+            || !dbaseReadValue(stream, &method)
+            // mod time, mod date, crc32
+            || fseek(stream, 8, SEEK_CUR) != 0
+            || !dbaseReadValue(stream, &compressedSize)
+            || !dbaseReadValue(stream, &uncompressedSize)
+            || !dbaseReadValue(stream, &fileNameLength)
+            || !dbaseReadValue(stream, &extraFieldLength)
+            || !dbaseReadValue(stream, &fileCommentLength)
+            || !dbaseReadValue(stream, &diskNumberStart)
+            // internal attrs, external attrs
+            || fseek(stream, 6, SEEK_CUR) != 0
+            || !dbaseReadValue(stream, &localHeaderOffset)) {
+            return false;
         }
 
         if (flags & 0x01) {
@@ -816,62 +844,37 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags)
         if (flags & 0x08) {
             errorFlags |= DBASE_ERROR_DESCRIPTORS;
         }
-
-        fseek(stream, 8, SEEK_CUR); // mod time, mod date, crc32
-
-        int compressedSize, uncompressedSize;
-        unsigned short fileNameLength, extraFieldLength, fileCommentLength, diskNumberStart;
-        if (!dbaseReadValue(stream, &compressedSize)
-            || !dbaseReadValue(stream, &uncompressedSize)
-            || !dbaseReadValue(stream, &fileNameLength)
-            || !dbaseReadValue(stream, &extraFieldLength)
-            || !dbaseReadValue(stream, &fileCommentLength)
-            || !dbaseReadValue(stream, &diskNumberStart)) {
-            break;
-        }
-
         if (diskNumberStart != 0) {
             errorFlags |= DBASE_ERROR_MULTI_DISK;
         }
-
         // Skip files larger than 2GB since our DBaseEntry uses signed int
-        if (compressedSize < 0 || uncompressedSize < 0) {
+        if (compressedSize < 0 || uncompressedSize < 0 || localHeaderOffset < 0) {
             continue;
         }
 
-        fseek(stream, 6, SEEK_CUR); // internal attrs, external attrs
-
-        int localHeaderOffset;
-        if (!dbaseReadValue(stream, &localHeaderOffset)) {
-            break;
-        }
-
         // Read and normalize filename.
-        char* fileName = (char*)malloc(fileNameLength + 1);
-        if (!fileName) {
-            break;
+        auto fileName = static_cast<char*>(malloc(fileNameLength + 1));
+        if (fileName == nullptr) {
+            return false;
         }
-        if (fread(fileName, fileNameLength, 1, stream) != 1) {
+        if (fread(fileName, fileNameLength, 1, stream) != 1
+            // Skip extra field and file comment.
+            || fseek(stream, extraFieldLength + fileCommentLength, SEEK_CUR) != 0) {
             free(fileName);
-            break;
+            return false;
         }
-        fileName[fileNameLength] = '\0';
 
+        fileName[fileNameLength] = '\0';
         for (unsigned short j = 0; j < fileNameLength; j++) {
             if (fileName[j] == '/') {
                 fileName[j] = '\\';
             }
         }
-
         // Skip directory entries (trailing slash).
         if (fileNameLength > 0 && fileName[fileNameLength - 1] == '\\') {
             free(fileName);
-            fseek(stream, extraFieldLength + fileCommentLength, SEEK_CUR);
             continue;
         }
-
-        // Skip extra field and file comment.
-        fseek(stream, extraFieldLength + fileCommentLength, SEEK_CUR);
 
         // Map compression method: 0=stored, 8=deflated.
         unsigned char compressed;
@@ -894,7 +897,7 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags)
             || !dbaseReadValue(stream, &localExtraFieldLength)
             || fseek(stream, savedPos, SEEK_SET) != 0) {
             free(fileName);
-            break;
+            return false;
         }
 
         // Compute absolute offset to file data (past local file header).
@@ -904,20 +907,18 @@ static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags)
             continue;
         }
 
-        DBaseEntry* entry = &dbase->entries[entryCount];
+        DBaseEntry* entry = &dbase->entries[dbase->entriesLength];
         entry->path = fileName;
         entry->compressed = compressed;
         entry->uncompressedSize = uncompressedSize;
         entry->dataSize = compressedSize;
         entry->dataOffset = dataOffset;
 
-        entryCount++;
+        dbase->entriesLength++;
     }
 
-    dbase->entriesLength = entryCount;
-
-    if (entryCount > 1) {
-        qsort(dbase->entries, entryCount, sizeof(*dbase->entries), dbaseFindEntryByFilePathForSort);
+    if (dbase->entriesLength > 1) {
+        qsort(dbase->entries, dbase->entriesLength, sizeof(*dbase->entries), dbaseFindEntryByFilePathForSort);
     }
 
     return true;

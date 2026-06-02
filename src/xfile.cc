@@ -533,6 +533,9 @@ bool xbaseOpen(const char* path)
     }
 
     if (dbaseErrorFlags != 0) {
+        if (dbaseErrorFlags & DBASE_ERROR_EMPTY) {
+            debugPrint("[xfile] %s: empty archive\n", path);
+        }
         if (dbaseErrorFlags & DBASE_ERROR_ZIP64) {
             debugPrint("[xfile] %s: ZIP64 format (unsupported)\n", path);
         }
@@ -548,29 +551,18 @@ bool xbaseOpen(const char* path)
         if (dbaseErrorFlags & DBASE_ERROR_UNSUPPORTED_METHOD) {
             debugPrint("[xfile] %s: unsupported compression method(s)\n", path);
         }
-        // Don't try mounting as directory if we know this is a file.
-        if ((dbaseErrorFlags & DBASE_ERROR_NO_FILE) == 0) {
-            free(xbase->path);
-            free(xbase);
-            return false;
-        }
     }
 
+    // Try mount as directory
     char workingDirectory[COMPAT_MAX_PATH];
-    if (getcwd(workingDirectory, COMPAT_MAX_PATH) == nullptr) {
-        free(xbase->path);
-        free(xbase);
-        return false;
-    }
-
-    if (chdir(path) == 0) {
+    if (!compat_file_exists(path) && getcwd(workingDirectory, COMPAT_MAX_PATH) != nullptr && chdir(path) == 0) {
         chdir(workingDirectory);
         xbase->next = gXbaseHead;
         gXbaseHead = xbase;
         return true;
     }
 
-    // Cleanup if chdir(path) failed
+    // Cleanup on failure.
     free(xbase->path);
     free(xbase);
     return false; // return false to trigger messages on game load
