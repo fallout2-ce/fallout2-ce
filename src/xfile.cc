@@ -522,36 +522,38 @@ bool xbaseOpen(const char* path)
         return false;
     }
 
-    DBase* dbase = dbaseOpen(path);
+    int dbaseErrorFlags = 0;
+    DBase* dbase = dbaseOpen(path, &dbaseErrorFlags);
     if (dbase != nullptr) {
-        if (dbase->format == DBaseFormat::ZIP && dbase->errorFlags != 0) {
-            if (dbase->errorFlags & DBASE_ERROR_ZIP64) {
-                debugPrint("[xfile] %s: ZIP64 format (unsupported)\n", path);
-            }
-            if (dbase->errorFlags & DBASE_ERROR_MULTI_DISK) {
-                debugPrint("[xfile] %s: multi-disk ZIP (unsupported)\n", path);
-            }
-            if (dbase->errorFlags & DBASE_ERROR_ENCRYPTED) {
-                debugPrint("[xfile] %s: encrypted entries (unsupported)\n", path);
-            }
-            if (dbase->errorFlags & DBASE_ERROR_DESCRIPTORS) {
-                debugPrint("[xfile] %s: data descriptors (unsupported)\n", path);
-            }
-            if (dbase->errorFlags & DBASE_ERROR_UNSUPPORTED_METHOD) {
-                debugPrint("[xfile] %s: unsupported compression method(s)\n", path);
-            }
-
-            dbaseClose(dbase);
-            free(xbase->path);
-            free(xbase);
-            return false;
-        }
-
         xbase->isDbase = true;
         xbase->dbase = dbase;
         xbase->next = gXbaseHead;
         gXbaseHead = xbase;
         return true;
+    }
+
+    if (dbaseErrorFlags != 0) {
+        if (dbaseErrorFlags & DBASE_ERROR_ZIP64) {
+            debugPrint("[xfile] %s: ZIP64 format (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_MULTI_DISK) {
+            debugPrint("[xfile] %s: multi-disk ZIP (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_ENCRYPTED) {
+            debugPrint("[xfile] %s: encrypted entries (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_DESCRIPTORS) {
+            debugPrint("[xfile] %s: data descriptors (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_UNSUPPORTED_METHOD) {
+            debugPrint("[xfile] %s: unsupported compression method(s)\n", path);
+        }
+        // Don't try mounting as directory if we know this is a file.
+        if ((dbaseErrorFlags & DBASE_ERROR_NO_FILE) == 0) {
+            free(xbase->path);
+            free(xbase);
+            return false;
+        }
     }
 
     char workingDirectory[COMPAT_MAX_PATH];

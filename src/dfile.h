@@ -15,11 +15,12 @@ enum class DBaseFormat : int {
 };
 
 enum DBaseErrorFlags : int {
-    DBASE_ERROR_DESCRIPTORS = 0x01,
-    DBASE_ERROR_ZIP64 = 0x02,
-    DBASE_ERROR_ENCRYPTED = 0x04,
-    DBASE_ERROR_MULTI_DISK = 0x08,
-    DBASE_ERROR_UNSUPPORTED_METHOD = 0x10,
+    DBASE_ERROR_NO_FILE = 1 << 1,
+    DBASE_ERROR_DESCRIPTORS = 1 << 2,
+    DBASE_ERROR_ZIP64 = 1 << 3,
+    DBASE_ERROR_ENCRYPTED = 1 << 4,
+    DBASE_ERROR_MULTI_DISK = 1 << 5,
+    DBASE_ERROR_UNSUPPORTED_METHOD = 1 << 6,
 };
 
 typedef struct DBase DBase;
@@ -36,9 +37,6 @@ typedef struct DBase {
 
     // The format of this archive.
     DBaseFormat format;
-
-    // Error flags for ZIP archives.
-    int errorFlags;
 
     // The number of entries.
     int entriesLength;
@@ -129,7 +127,8 @@ typedef struct DFileFindData {
     int index;
 } DFileFindData;
 
-DBase* dbaseOpen(const char* filename);
+// Reads DAT or ZIP file header and table of entries.
+DBase* dbaseOpen(const char* filename, int* errorFlags = nullptr);
 bool dbaseClose(DBase* dbase);
 bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* pattern);
 bool dbaseFindNextEntry(DBase* dbase, DFileFindData* findFileData);
