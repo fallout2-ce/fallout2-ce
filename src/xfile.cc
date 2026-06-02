@@ -11,6 +11,7 @@
 #include <unistd.h>
 #endif
 
+#include "debug.h"
 #include "file_find.h"
 
 namespace fallout {
@@ -521,7 +522,8 @@ bool xbaseOpen(const char* path)
         return false;
     }
 
-    DBase* dbase = dbaseOpen(path);
+    int dbaseErrorFlags = 0;
+    DBase* dbase = dbaseOpen(path, &dbaseErrorFlags);
     if (dbase != nullptr) {
         xbase->isDbase = true;
         xbase->dbase = dbase;
@@ -530,21 +532,37 @@ bool xbaseOpen(const char* path)
         return true;
     }
 
-    char workingDirectory[COMPAT_MAX_PATH];
-    if (getcwd(workingDirectory, COMPAT_MAX_PATH) == nullptr) {
-        free(xbase->path);
-        free(xbase);
-        return false;
+    if (dbaseErrorFlags != 0) {
+        if (dbaseErrorFlags & DBASE_ERROR_EMPTY) {
+            debugPrint("[xfile] %s: empty archive\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_ZIP64) {
+            debugPrint("[xfile] %s: ZIP64 format (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_MULTI_DISK) {
+            debugPrint("[xfile] %s: multi-disk ZIP (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_ENCRYPTED) {
+            debugPrint("[xfile] %s: encrypted entries (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_DESCRIPTORS) {
+            debugPrint("[xfile] %s: data descriptors (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_UNSUPPORTED_METHOD) {
+            debugPrint("[xfile] %s: unsupported compression method(s)\n", path);
+        }
     }
 
-    if (chdir(path) == 0) {
+    // Try mount as directory
+    char workingDirectory[COMPAT_MAX_PATH];
+    if (!compat_file_exists(path) && getcwd(workingDirectory, COMPAT_MAX_PATH) != nullptr && chdir(path) == 0) {
         chdir(workingDirectory);
         xbase->next = gXbaseHead;
         gXbaseHead = xbase;
         return true;
     }
 
-    // Cleanup if chdir(path) failed
+    // Cleanup on failure.
     free(xbase->path);
     free(xbase);
     return false; // return false to trigger messages on game load

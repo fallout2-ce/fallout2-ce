@@ -9,17 +9,34 @@
 
 namespace fallout {
 
+enum class DBaseFormat : int {
+    DAT = 0,
+    ZIP = 1,
+};
+
+enum DBaseErrorFlags : int {
+    DBASE_ERROR_EMPTY = 1 << 1,
+    DBASE_ERROR_DESCRIPTORS = 1 << 2,
+    DBASE_ERROR_ZIP64 = 1 << 3,
+    DBASE_ERROR_ENCRYPTED = 1 << 4,
+    DBASE_ERROR_MULTI_DISK = 1 << 5,
+    DBASE_ERROR_UNSUPPORTED_METHOD = 1 << 6,
+};
+
 typedef struct DBase DBase;
 typedef struct DBaseEntry DBaseEntry;
 typedef struct DFile DFile;
 
-// A representation of .DAT file.
+// A representation of .DAT or .ZIP file.
 typedef struct DBase {
-    // The path of .DAT file that this structure represents.
+    // The path of archive file that this structure represents.
     char* path;
 
     // The offset to the beginning of data section of .DAT file.
     int dataOffset;
+
+    // The format of this archive.
+    DBaseFormat format;
 
     // The number of entries.
     int entriesLength;
@@ -110,7 +127,8 @@ typedef struct DFileFindData {
     int index;
 } DFileFindData;
 
-DBase* dbaseOpen(const char* filename);
+// Reads DAT or ZIP file header and table of entries.
+DBase* dbaseOpen(const char* filename, int* errorFlags = nullptr);
 bool dbaseClose(DBase* dbase);
 bool dbaseFindFirstEntry(DBase* dbase, DFileFindData* findFileData, const char* pattern);
 bool dbaseFindNextEntry(DBase* dbase, DFileFindData* findFileData);
