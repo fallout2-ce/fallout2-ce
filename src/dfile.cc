@@ -41,7 +41,11 @@ static int dbaseFindEntryByFilePath(const void* file, const void* entryName);
 static int dbaseFindEntryByFilePathForSort(const void* a, const void* b);
 static bool dbaseZipIsEocd(const unsigned char* p);
 
-enum class ZipSignature : int { NOT_ZIP = 0, ZIP = 1, EMPTY = 2 };
+enum class ZipSignature : int {
+    NOT_ZIP = 0,
+    ZIP = 1,
+    EMPTY = 2
+};
 static ZipSignature dbaseCheckZipSignature(FILE* stream);
 static bool dfileDecompressInit(z_streamp stream, DBaseFormat format, unsigned char* buffer);
 static bool dbaseParseZip(DBase* dbase, FILE* stream, int& errorFlags);
@@ -697,7 +701,8 @@ static bool dfileDecompressInit(z_streamp stream, DBaseFormat format, unsigned c
 }
 
 template <typename T>
-static bool dbaseReadValue(FILE* stream, T* value) {
+static bool dbaseReadValue(FILE* stream, T* value)
+{
     return fread(value, sizeof(T), 1, stream) == 1;
 }
 
