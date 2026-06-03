@@ -1043,6 +1043,8 @@ int _action_climb_ladder(Object* critter, Object* ladder)
     animationRequestOptions |= ANIMATION_REQUEST_NO_STAND;
     reg_anim_begin(animationRequestOptions);
 
+    // note: distance is checked to ladder tile, but movement is to SE tile, so the walk/run choice
+    // could be slightly off
     int tile = tileGetTileInDirection(ladder->tile, ROTATION_SE, 1);
     if (actionPoints != -1 || objectWithinWalkDistance(critter, ladder)) {
         animationRegisterMoveToTile(critter, tile, ladder->elevation, actionPoints, 0);
