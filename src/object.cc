@@ -2672,7 +2672,10 @@ bool objectWithinWalkDistance(Object* critter, Object* target)
     }
     int walkDistanceLimit = settings.qol.use_walk_distance + 2;
     int distance = objectGetDistanceBetween(critter, target);
-    if (distance >= walkDistanceLimit || distance <= 1) {
+    if (distance <= 1) {
+        return true;
+    }
+    if (distance >= walkDistanceLimit) {
         return false;
     }
 
