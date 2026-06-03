@@ -163,6 +163,14 @@ Integrating Sfall goodies is the top priority. Quality of life updates are OK to
 
 For current sfall compatibility status and the remaining work needed to close gaps, see [SFALL_COMPATIBILITY.md](SFALL_COMPATIBILITY.md).
 
+## For modders
+
+* Robust (though not 100%) Sfall opcode and hook support
+* .ogg/.wav support for map music
+* .png support for static assets (must be 8bit indexed)
+* .zip support for .dat archives
+* Working BIS mapper
+
 ## License
 
 The source code is this repository is available under the [Sustainable Use License](LICENSE.md).
