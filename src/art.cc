@@ -1161,27 +1161,35 @@ static bool artReadFile(const char* path, std::vector<unsigned char>& data)
 
 static bool artUnpackIndexedPngPixels(const std::vector<unsigned char>& indexedData, unsigned width, unsigned height, unsigned bitdepth, unsigned char* output)
 {
-    size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
-    if (bitdepth == 8) {
-        if (indexedData.size() < pixelCount) {
-            return false;
-        }
-
-        memcpy(output, indexedData.data(), pixelCount);
-        return true;
-    }
-
-    unsigned char mask = static_cast<unsigned char>((1 << bitdepth) - 1);
-    size_t neededBytes = (pixelCount * bitdepth + 7) / 8;
-    if (indexedData.size() < neededBytes) {
+    if (bitdepth != 8) {
         return false;
     }
 
-    for (size_t index = 0; index < pixelCount; index++) {
-        size_t bitOffset = index * bitdepth;
-        unsigned char byte = indexedData[bitOffset / 8];
-        unsigned shift = 8 - bitdepth - static_cast<unsigned>(bitOffset % 8);
-        output[index] = (byte >> shift) & mask;
+    size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
+    if (indexedData.size() < pixelCount) {
+        return false;
+    }
+
+    memcpy(output, indexedData.data(), pixelCount);
+    return true;
+}
+
+static bool artIndexedPngHasSupportedTransparency(const LodePNGColorMode& color)
+{
+    if (!lodepng_has_palette_alpha(&color)) {
+        return true;
+    }
+
+    for (size_t index = 0; index < color.palettesize; index++) {
+        unsigned char alpha = color.palette[index * 4 + 3];
+        if (index == 0) {
+            // palette index 0 is allowed to be either fully transparent or fully opaque
+            if (alpha != 0 && alpha != 255) {
+                return false;
+            }
+        } else if (alpha != 255) {
+            return false;
+        }
     }
 
     return true;
@@ -1211,7 +1219,12 @@ static Art* artLoadIndexedPng(const char* path)
         return nullptr;
     }
 
-    if (lodepng_has_palette_alpha(&state.info_png.color)) {
+    if (state.info_png.color.bitdepth != 8) {
+        debugPrint("ART: indexed PNG bit depth must be 8: %s\n", path);
+        return nullptr;
+    }
+
+    if (!artIndexedPngHasSupportedTransparency(state.info_png.color)) {
         debugPrint("ART: indexed PNG transparency is unsupported, reserve palette index 0 instead: %s\n", path);
         return nullptr;
     }
