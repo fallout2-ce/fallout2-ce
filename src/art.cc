@@ -1174,6 +1174,32 @@ static bool artUnpackIndexedPngPixels(const std::vector<unsigned char>& indexedD
     return true;
 }
 
+static bool artValidateIndexedPngHeader(const char* path, unsigned width, unsigned height, const LodePNGColorMode& color)
+{
+    if (color.colortype != LCT_PALETTE) {
+        debugPrint("ART: PNG is not palette-indexed: %s\n", path);
+        return false;
+    }
+
+    if (color.bitdepth != 8) {
+        debugPrint("ART: indexed PNG bit depth must be 8: %s\n", path);
+        return false;
+    }
+
+    if (width == 0 || height == 0 || width > SHRT_MAX || height > SHRT_MAX) {
+        debugPrint("ART: invalid indexed PNG dimensions for %s: %ux%u\n", path, width, height);
+        return false;
+    }
+
+    size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
+    if (pixelCount > kMaxNamedPngPixels || pixelCount > INT_MAX) {
+        debugPrint("ART: indexed PNG is too large: %s\n", path);
+        return false;
+    }
+
+    return true;
+}
+
 static bool artIndexedPngHasSupportedTransparency(const LodePNGColorMode& color)
 {
     if (!lodepng_has_palette_alpha(&color)) {
@@ -1205,22 +1231,22 @@ static Art* artLoadIndexedPng(const char* path)
     lodepng::State state;
     state.decoder.color_convert = 0;
 
-    std::vector<unsigned char> indexedData;
     unsigned width = 0;
     unsigned height = 0;
-    unsigned error = lodepng::decode(indexedData, width, height, state, encoded);
+    unsigned error = lodepng_inspect(&width, &height, &state, encoded.data(), encoded.size());
+    if (error != 0) {
+        debugPrint("ART: failed to inspect indexed PNG %s: %s\n", path, lodepng_error_text(error));
+        return nullptr;
+    }
+
+    if (!artValidateIndexedPngHeader(path, width, height, state.info_png.color)) {
+        return nullptr;
+    }
+
+    std::vector<unsigned char> indexedData;
+    error = lodepng::decode(indexedData, width, height, state, encoded);
     if (error != 0) {
         debugPrint("ART: failed to decode indexed PNG %s: %s\n", path, lodepng_error_text(error));
-        return nullptr;
-    }
-
-    if (state.info_png.color.colortype != LCT_PALETTE) {
-        debugPrint("ART: PNG is not palette-indexed: %s\n", path);
-        return nullptr;
-    }
-
-    if (state.info_png.color.bitdepth != 8) {
-        debugPrint("ART: indexed PNG bit depth must be 8: %s\n", path);
         return nullptr;
     }
 
@@ -1230,16 +1256,6 @@ static Art* artLoadIndexedPng(const char* path)
     }
 
     size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
-
-    if (width == 0 || height == 0 || width > SHRT_MAX || height > SHRT_MAX) {
-        debugPrint("ART: invalid indexed PNG dimensions for %s: %ux%u\n", path, width, height);
-        return nullptr;
-    }
-
-    if (pixelCount > kMaxNamedPngPixels || pixelCount > INT_MAX) {
-        debugPrint("ART: indexed PNG is too large: %s\n", path);
-        return nullptr;
-    }
 
     Art header = {};
     header.version = 4;
