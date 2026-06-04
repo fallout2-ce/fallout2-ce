@@ -12,6 +12,7 @@
 #include "interface.h"
 #include "memory.h"
 #include "mouse.h"
+#include "movie.h"
 #include "scan_unimplemented.h"
 #include "settings.h"
 #include "tile.h"
@@ -396,6 +397,7 @@ static void destroyRenderer()
 
 void handleWindowSizeChanged()
 {
+    movieHandleRendererReset();
     destroyRenderer();
     createRenderer(screenGetWidth(), screenGetHeight());
     mouseDeviceRefreshWindowMapping();
@@ -406,6 +408,8 @@ void renderPresent()
     SDL_UpdateTexture(gSdlTexture, nullptr, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
     SDL_RenderClear(gSdlRenderer);
     SDL_RenderCopy(gSdlRenderer, gSdlTexture, nullptr, nullptr);
+    // render movie SDL texture if present
+    movieRenderDirectOverlay();
     SDL_RenderPresent(gSdlRenderer);
 }
 

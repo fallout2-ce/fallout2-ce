@@ -6,18 +6,18 @@
 namespace fallout {
 
 typedef enum MovieFlags {
-    MOVIE_FLAG_0x01 = 0x01,
-    MOVIE_FLAG_0x02 = 0x02,
-    MOVIE_FLAG_0x04 = 0x04,
-    MOVIE_FLAG_0x08 = 0x08,
+    MOVIE_FLAG_SCALE = 0x01,
+    MOVIE_FLAG_DIRECT = 0x02,
+    MOVIE_FLAG_DIRECT_CENTERED = 0x04,
+    MOVIE_FLAG_SUBTITLES = 0x08,
 } MovieFlags;
 
 typedef enum MovieExtendedFlags {
-    MOVIE_EXTENDED_FLAG_0x01 = 0x01,
-    MOVIE_EXTENDED_FLAG_0x02 = 0x02,
-    MOVIE_EXTENDED_FLAG_0x04 = 0x04,
-    MOVIE_EXTENDED_FLAG_0x08 = 0x08,
-    MOVIE_EXTENDED_FLAG_0x10 = 0x10,
+    MOVIE_EXTENDED_FLAG_ERROR = 0x01,
+    MOVIE_EXTENDED_FLAG_STOP_REQUESTED = 0x02,
+    MOVIE_EXTENDED_FLAG_DIRECT = 0x04,
+    MOVIE_EXTENDED_FLAG_CENTERED = 0x08,
+    MOVIE_EXTENDED_FLAG_SUBTITLES = 0x10,
 } MovieExtendedFlags;
 
 typedef char* MovieBuildSubtitleFilePathProc(char* movieFilePath);
@@ -37,6 +37,8 @@ void movieSetBuildSubtitleFilePathProc(MovieBuildSubtitleFilePathProc* proc);
 void movieSetVolume(int volume);
 void _movieUpdate();
 int _moviePlaying();
+void movieHandleRendererReset();
+void movieRenderDirectOverlay();
 
 } // namespace fallout
 

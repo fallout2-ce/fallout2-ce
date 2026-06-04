@@ -23,9 +23,6 @@
 
 namespace fallout {
 
-#define GAME_MOVIE_WINDOW_WIDTH 640
-#define GAME_MOVIE_WINDOW_HEIGHT 480
-
 static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath);
 
 // 0x50352A
@@ -170,14 +167,12 @@ int gameMoviePlay(int movie, int flags)
         gGameMovieFaded = true;
     }
 
-    int gameMovieWindowX = (screenGetWidth() - GAME_MOVIE_WINDOW_WIDTH) / 2;
-    int gameMovieWindowY = (screenGetHeight() - GAME_MOVIE_WINDOW_HEIGHT) / 2;
-    int win = windowCreate(gameMovieWindowX,
-        gameMovieWindowY,
-        GAME_MOVIE_WINDOW_WIDTH,
-        GAME_MOVIE_WINDOW_HEIGHT,
+    int win = windowCreate(0,
         0,
-        WINDOW_MODAL);
+        screenGetWidth(),
+        screenGetHeight(),
+        0,
+        WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         gGameMovieIsPlaying = false;
         return -1;
@@ -192,13 +187,13 @@ int gameMoviePlay(int movie, int flags)
     windowRefresh(win);
 
     bool subtitlesEnabled = settings.preferences.subtitles;
-    int movieFlags = 4;
+    int movieFlags = MOVIE_FLAG_DIRECT_CENTERED;
     if (subtitlesEnabled) {
         char* subtitlesFilePath = gameMovieBuildSubtitlesFilePath(movieFilePath);
 
         int subtitlesFileSize;
         if (dbGetFileSize(subtitlesFilePath, &subtitlesFileSize) == 0) {
-            movieFlags = 12;
+            movieFlags = MOVIE_FLAG_DIRECT_CENTERED | MOVIE_FLAG_SUBTITLES;
         } else {
             subtitlesEnabled = false;
         }

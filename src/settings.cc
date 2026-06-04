@@ -154,6 +154,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING_P(iface_bar_side_art, clamp(0, 999));
     SETTING(iface_bar_sides_ori);
     SETTING_P(splash_screen_size, clamp(0, 2));
+    SETTING(movie_aspect_fit);
     SETTING(edg_support);
     SETTING(ignore_map_edges);
     SETTING(quick_toolbar_visible);
