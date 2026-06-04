@@ -217,8 +217,18 @@ static SDL_Rect movieComputeDirectRect(int srcWidth, int srcHeight)
     int availableY = _movieY;
     int availableWidth = _movieW;
     int availableHeight = _movieH;
+    bool centered = (gMovieFlags & MOVIE_EXTENDED_FLAG_CENTERED) != 0;
 
     if (!settings.ui.movie_aspect_fit) {
+        if (!centered) {
+            return {
+                availableX,
+                availableY,
+                srcWidth,
+                srcHeight,
+            };
+        }
+
         return {
             availableX + (availableWidth - srcWidth) / 2,
             availableY + (availableHeight - srcHeight) / 2,
@@ -241,8 +251,8 @@ static SDL_Rect movieComputeDirectRect(int srcWidth, int srcHeight)
         }
 
         return SDL_Rect {
-            availableX + (availableWidth - movieWidth) / 2,
-            availableY + (fitHeight - movieHeight) / 2,
+            centered ? availableX + (availableWidth - movieWidth) / 2 : availableX,
+            centered ? availableY + (fitHeight - movieHeight) / 2 : availableY,
             movieWidth,
             movieHeight,
         };
