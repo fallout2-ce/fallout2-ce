@@ -342,12 +342,12 @@ public:
         values.resize(len);
     }
 
-    int size()
+    int size() override
     {
         return static_cast<int>(values.size());
     }
 
-    ProgramValue GetArrayKey(int index, Program* program)
+    ProgramValue GetArrayKey(int index, Program* program) override
     {
         if (index < -1 || index >= size()) {
             return ProgramValue(0);
@@ -360,7 +360,7 @@ public:
         return ProgramValue(index);
     }
 
-    ProgramValue GetArray(const ProgramValue& key, Program* program)
+    ProgramValue GetArray(const ProgramValue& key, Program* program) override
     {
         auto index = key.asInt();
         if (index < 0 || index >= size()) {
@@ -370,12 +370,12 @@ public:
         return values[index].toValue(program);
     }
 
-    void SetArray(const ProgramValue& key, const ProgramValue& val, bool allowUnset, Program* program)
+    void SetArray(const ProgramValue& key, const ProgramValue& val, bool allowUnset, Program* program) override
     {
         SetArray(key, ArrayElement { val, program }, allowUnset);
     }
 
-    void SetArray(const ProgramValue& key, ArrayElement&& val, bool allowUnset)
+    void SetArray(const ProgramValue& key, ArrayElement&& val, bool allowUnset) override
     {
         if (key.isInt()) {
             auto index = key.asInt();
@@ -385,7 +385,7 @@ public:
         }
     }
 
-    void ResizeArray(int newLen)
+    void ResizeArray(int newLen) override
     {
         if (newLen == -1 || size() == newLen) {
             return;
@@ -404,7 +404,7 @@ public:
         }
     }
 
-    ProgramValue ScanArray(const ProgramValue& value, Program* program)
+    ProgramValue ScanArray(const ProgramValue& value, Program* program) override
     {
         auto element = ArrayElement { value, program };
         for (int i = 0; i < size(); i++) {
@@ -441,12 +441,12 @@ public:
     {
     }
 
-    int size()
+    int size() override
     {
         return static_cast<int>(pairs.size());
     }
 
-    ProgramValue GetArrayKey(int index, Program* program)
+    ProgramValue GetArrayKey(int index, Program* program) override
     {
         if (index < -1 || index >= size()) {
             return ProgramValue(0);
@@ -459,7 +459,7 @@ public:
         return pairs[index].key.toValue(program);
     }
 
-    ProgramValue GetArray(const ProgramValue& key, Program* program)
+    ProgramValue GetArray(const ProgramValue& key, Program* program) override
     {
         auto keyEl = ArrayElement { key, program };
         auto it = keyIndex.find(keyEl);
@@ -469,7 +469,7 @@ public:
         return pairs[it->second].value.toValue(program);
     }
 
-    void SetArray(const ProgramValue& key, const ProgramValue& val, bool allowUnset, Program* program)
+    void SetArray(const ProgramValue& key, const ProgramValue& val, bool allowUnset, Program* program) override
     {
         auto keyEl = ArrayElement { key, program };
         auto idxIt = keyIndex.find(keyEl);
@@ -498,12 +498,12 @@ public:
         }
     }
 
-    void SetArray(const ProgramValue& key, ArrayElement&& val, bool allowUnset)
+    void SetArray(const ProgramValue& key, ArrayElement&& val, bool allowUnset) override
     {
         assert(false && "This method is not used for associative arrays thus it is not implemented");
     }
 
-    void ResizeArray(int newLen)
+    void ResizeArray(int newLen) override
     {
         if (newLen == -1 || size() == newLen) {
             return;
@@ -521,7 +521,7 @@ public:
         }
     }
 
-    ProgramValue ScanArray(const ProgramValue& value, Program* program)
+    ProgramValue ScanArray(const ProgramValue& value, Program* program) override
     {
         auto valueEl = ArrayElement { value, program };
         auto it = std::find_if(pairs.begin(), pairs.end(), [&valueEl](const KeyValuePair& pair) {
