@@ -7,6 +7,7 @@
 #include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #else
 #include <dirent.h>
 #include <sys/stat.h>
@@ -237,6 +238,28 @@ int compat_mkdir_recursive(const char* path)
         }
     }
     return compat_mkdir(path);
+}
+
+bool compat_is_dir(const char* path)
+{
+    char nativePath[COMPAT_MAX_PATH];
+    strcpy(nativePath, path);
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+
+#ifdef _WIN32
+    struct _stat info;
+    if (_stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return (info.st_mode & _S_IFDIR) != 0;
+#else
+    struct stat info;
+    if (stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return S_ISDIR(info.st_mode);
+#endif
 }
 
 bool compat_file_exists(const char* filePath)
