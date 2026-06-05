@@ -29,6 +29,13 @@
 
 namespace fallout {
 
+static void compat_prepare_native_path(char* nativePath, const char* path)
+{
+    strcpy(nativePath, path);
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+}
+
 int compat_stricmp(const char* string1, const char* string2)
 {
     return SDL_strcasecmp(string1, string2);
@@ -205,9 +212,7 @@ long compat_filelength(int fd)
 int compat_mkdir(const char* path)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
 
 #ifdef _WIN32
     return mkdir(nativePath);
@@ -243,9 +248,7 @@ int compat_mkdir_recursive(const char* path)
 bool compat_is_dir(const char* path)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
 
 #ifdef _WIN32
     struct _stat info;
@@ -264,11 +267,22 @@ bool compat_is_dir(const char* path)
 
 bool compat_file_exists(const char* filePath)
 {
-    FILE* file = compat_fopen(filePath, "rb");
-    if (file == nullptr) return false;
+    char nativePath[COMPAT_MAX_PATH];
+    compat_prepare_native_path(nativePath, filePath);
 
-    fclose(file);
-    return true;
+#ifdef _WIN32
+    struct _stat info;
+    if (_stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return (info.st_mode & _S_IFDIR) == 0;
+#else
+    struct stat info;
+    if (stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return !S_ISDIR(info.st_mode);
+#endif
 }
 
 unsigned int compat_timeGetTime()
@@ -285,18 +299,14 @@ unsigned int compat_timeGetTime()
 FILE* compat_fopen(const char* path, const char* mode)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     return fopen(nativePath, mode);
 }
 
 gzFile compat_gzopen(const char* path, const char* mode)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     return gzopen(nativePath, mode);
 }
 
@@ -333,23 +343,17 @@ char* compat_gzgets(gzFile stream, char* buffer, int maxCount)
 int compat_remove(const char* path)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     return remove(nativePath);
 }
 
 int compat_rename(const char* oldFileName, const char* newFileName)
 {
     char nativeOldFileName[COMPAT_MAX_PATH];
-    strcpy(nativeOldFileName, oldFileName);
-    compat_windows_path_to_native(nativeOldFileName);
-    compat_resolve_path(nativeOldFileName);
+    compat_prepare_native_path(nativeOldFileName, oldFileName);
 
     char nativeNewFileName[COMPAT_MAX_PATH];
-    strcpy(nativeNewFileName, newFileName);
-    compat_windows_path_to_native(nativeNewFileName);
-    compat_resolve_path(nativeNewFileName);
+    compat_prepare_native_path(nativeNewFileName, newFileName);
 
     return rename(nativeOldFileName, nativeNewFileName);
 }
@@ -424,9 +428,7 @@ void compat_resolve_path(char* path)
 int compat_access(const char* path, int mode)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     return access(nativePath, mode);
 }
 
