@@ -763,6 +763,45 @@ bool writeFrm(const std::string& outputPath, const FrmHeader& header, const FrmF
     return output->good();
 }
 
+bool writePngOutput(const std::string& outputPath, const std::vector<unsigned char>& png)
+{
+    if (outputPath == "-") {
+#ifdef _WIN32
+        _setmode(_fileno(stdout), _O_BINARY);
+#endif
+        std::cout.write(reinterpret_cast<const char*>(png.data()), static_cast<std::streamsize>(png.size()));
+        if (!std::cout) {
+            std::cerr << "Failed while writing PNG to stdout\n";
+            return false;
+        }
+    } else {
+        if (!ensureDirectoriesForFile(outputPath)) {
+            std::cerr << "Failed to create output directory for " << outputPath << "\n";
+            return false;
+        }
+
+        unsigned error = lodepng::save_file(png, outputPath);
+        if (error != 0) {
+            std::cerr << "PNG write failed: " << lodepng_error_text(error) << "\n";
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool encodeAndWriteIndexedPng(const std::string& outputPath, const FrmFrame& frame, const std::array<uint8_t, kPaletteSize>& palette, bool transparent)
+{
+    std::vector<unsigned char> png;
+    unsigned error = encodeIndexedPng(png, frame, palette, transparent);
+    if (error != 0) {
+        std::cerr << "PNG encode failed: " << lodepng_error_text(error) << "\n";
+        return false;
+    }
+
+    return writePngOutput(outputPath, png);
+}
+
 std::optional<InputFormat> detectInputFormat(const Options& options)
 {
     if (hasExtension(options.inputPath, ".frm")) {
@@ -1143,41 +1182,11 @@ int runFrmToPng(const Options& options, const std::array<uint8_t, kPaletteSize>&
         return 1;
     }
 
-    if (options.outputPath == "-") {
-        std::vector<unsigned char> png;
-        unsigned error = encodeIndexedPng(png, *frame, palette, options.transparent);
-        if (error != 0) {
-            std::cerr << "PNG encode failed: " << lodepng_error_text(error) << "\n";
-            return 1;
-        }
+    if (!encodeAndWriteIndexedPng(options.outputPath, *frame, palette, options.transparent)) {
+        return 1;
+    }
 
-#ifdef _WIN32
-        _setmode(_fileno(stdout), _O_BINARY);
-#endif
-        std::cout.write(reinterpret_cast<const char*>(png.data()), static_cast<std::streamsize>(png.size()));
-        if (!std::cout) {
-            std::cerr << "Failed while writing PNG to stdout\n";
-            return 1;
-        }
-    } else {
-        if (!ensureDirectoriesForFile(options.outputPath)) {
-            std::cerr << "Failed to create output directory for " << options.outputPath << "\n";
-            return 1;
-        }
-
-        std::vector<unsigned char> png;
-        unsigned error = encodeIndexedPng(png, *frame, palette, options.transparent);
-        if (error != 0) {
-            std::cerr << "PNG encode failed: " << lodepng_error_text(error) << "\n";
-            return 1;
-        }
-
-        error = lodepng::save_file(png, options.outputPath);
-        if (error != 0) {
-            std::cerr << "PNG write failed: " << lodepng_error_text(error) << "\n";
-            return 1;
-        }
-
+    if (options.outputPath != "-") {
         std::cout << "Wrote " << options.outputPath
                   << " from frame " << options.frame
                   << ", direction " << options.direction
@@ -1222,34 +1231,11 @@ int runPngToIndexedPng(const Options& options, const std::array<uint8_t, kPalett
         return 1;
     }
 
-    std::vector<unsigned char> png;
-    unsigned error = encodeIndexedPng(png, *frame, palette, options.transparent);
-    if (error != 0) {
-        std::cerr << "PNG encode failed: " << lodepng_error_text(error) << "\n";
+    if (!encodeAndWriteIndexedPng(options.outputPath, *frame, palette, options.transparent)) {
         return 1;
     }
 
-    if (options.outputPath == "-") {
-#ifdef _WIN32
-        _setmode(_fileno(stdout), _O_BINARY);
-#endif
-        std::cout.write(reinterpret_cast<const char*>(png.data()), static_cast<std::streamsize>(png.size()));
-        if (!std::cout) {
-            std::cerr << "Failed while writing PNG to stdout\n";
-            return 1;
-        }
-    } else {
-        if (!ensureDirectoriesForFile(options.outputPath)) {
-            std::cerr << "Failed to create output directory for " << options.outputPath << "\n";
-            return 1;
-        }
-
-        error = lodepng::save_file(png, options.outputPath);
-        if (error != 0) {
-            std::cerr << "PNG write failed: " << lodepng_error_text(error) << "\n";
-            return 1;
-        }
-
+    if (options.outputPath != "-") {
         std::cout << "Wrote indexed PNG " << options.outputPath
                   << " using palette " << (options.palettePath.has_value() ? *options.palettePath : "auto-detected")
                   << "\n";
