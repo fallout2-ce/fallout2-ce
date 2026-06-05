@@ -312,7 +312,7 @@ void contentConfigTryMigrateFromSfall(const char* contentConfigPath)
         return;
     }
     if (!compat_is_dir(masterPatches.c_str())) {
-        // Master patches is pointing to a file instead of a folder. This shouldn't normally happen, so don't migrate in this case.
+        // master_patches must point to an existing folder. Don't migrate when it's missing or not a directory.
         return;
     }
     char contentCfgPath[COMPAT_MAX_PATH];

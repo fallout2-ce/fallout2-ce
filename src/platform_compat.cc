@@ -31,7 +31,8 @@ namespace fallout {
 
 static void compat_prepare_native_path(char* nativePath, const char* path)
 {
-    strcpy(nativePath, path);
+    strncpy(nativePath, path, COMPAT_MAX_PATH - 1);
+    nativePath[COMPAT_MAX_PATH - 1] = '\0';
     compat_windows_path_to_native(nativePath);
     compat_resolve_path(nativePath);
 }
