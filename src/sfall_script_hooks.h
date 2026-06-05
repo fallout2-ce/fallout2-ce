@@ -312,7 +312,7 @@ void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
 
 int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid);
-bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove);
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove, bool filterInactiveHand = true);
 bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, int hitMode);
 
 } // namespace fallout

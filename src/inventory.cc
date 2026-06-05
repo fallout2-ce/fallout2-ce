@@ -6344,4 +6344,155 @@ Object* inventoryGetTargetObject()
     return _target_stack[_target_curr_stack];
 }
 
+int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
+{
+    if (critter == nullptr) {
+        return -1;
+    }
+
+    bool isDude = critter == gDude;
+    bool uiModeActive = GameMode::isInGameMode(GameMode::kInventory)
+        || GameMode::isInGameMode(GameMode::kUseOn)
+        || GameMode::isInGameMode(GameMode::kLoot)
+        || GameMode::isInGameMode(GameMode::kBarter);
+    bool update = false;
+
+    if (slot != InvenSlot::Armor && !uiModeActive) {
+        int rc = inventoryUnequipFunc(critter, slot == InvenSlot::LeftHand ? HAND_LEFT : HAND_RIGHT, false);
+        if (rc == 0) {
+            update = isDude;
+        }
+
+        if (update) {
+            interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
+        }
+        return rc;
+    }
+
+    bool forceAdd = false;
+    Object* item = nullptr;
+    Object** itemSlot = nullptr;
+    int clearedFlag = 0;
+    if (slot != InvenSlot::Armor) {
+        if (!isDude || critter != _inven_dude) {
+            return 0;
+        }
+
+        if (slot == InvenSlot::RightHand) {
+            item = gInventoryRightHandItem;
+            itemSlot = &gInventoryRightHandItem;
+            clearedFlag = OBJECT_IN_RIGHT_HAND;
+        } else {
+            item = gInventoryLeftHandItem;
+            itemSlot = &gInventoryLeftHandItem;
+            clearedFlag = OBJECT_IN_LEFT_HAND;
+        }
+
+        if (item != nullptr) {
+            if (!scriptHooks_InvenWield(critter, item, slot, 0, 0, false)) {
+                return -1;
+            }
+
+            int oldFlags = item->flags;
+            *itemSlot = nullptr;
+            item->flags &= ~clearedFlag;
+
+            if (itemAdd(critter, item, 1) != 0) {
+                *itemSlot = item;
+                item->flags = oldFlags;
+                return -1;
+            }
+
+            update = true;
+        }
+    } else {
+        if (isDude && critter == _inven_dude) {
+            item = gInventoryArmor;
+        }
+
+        if (item == nullptr) {
+            item = critterGetArmor(critter);
+        } else {
+            gInventoryArmor = nullptr;
+            forceAdd = true;
+        }
+
+        if (item != nullptr) {
+            if (!scriptHooks_InvenWield(critter, item, InvenSlot::Armor, 0, 0, false)) {
+                return -1;
+            }
+
+            int oldFid = critter->fid;
+            item->flags &= ~OBJECT_WORN;
+            adjustCritterStatsOnArmorChange(critter, item, nullptr);
+
+            int newFid = inventoryComputeCritterFid(critter,
+                critter->pid,
+                critterGetItem2(critter),
+                critterGetItem1(critter),
+                nullptr,
+                isDude ? interfaceGetCurrentHand() : HAND_RIGHT,
+                FID_ANIM_TYPE(critter->fid),
+                FID_ROTATION(critter->fid));
+            Rect rect;
+            objectSetFid(critter, newFid, &rect);
+            tileWindowRefreshRect(&rect, gElevation);
+
+            if (forceAdd) {
+                if (itemAdd(critter, item, 1) != 0) {
+                    if (isDude && critter == _inven_dude) {
+                        gInventoryArmor = item;
+                    }
+                    item->flags |= OBJECT_WORN;
+                    adjustCritterStatsOnArmorChange(critter, nullptr, item);
+                    objectSetFid(critter, oldFid, &rect);
+                    tileWindowRefreshRect(&rect, gElevation);
+                    if (isDude) {
+                        interfaceRenderArmorClass(false);
+                    }
+                    return -1;
+                }
+            }
+
+            if (isDude) {
+                interfaceRenderArmorClass(false);
+            }
+        }
+    }
+
+    if (!uiModeActive) {
+        return 0;
+    }
+
+    InventoryWindowType inventoryWindowType = INVENTORY_WINDOW_TYPE_NORMAL;
+    if (GameMode::isInGameMode(GameMode::kBarter)) {
+        inventoryWindowType = INVENTORY_WINDOW_TYPE_TRADE;
+    } else if (GameMode::isInGameMode(GameMode::kLoot)) {
+        inventoryWindowType = INVENTORY_WINDOW_TYPE_LOOT;
+    } else if (GameMode::isInGameMode(GameMode::kUseOn)) {
+        inventoryWindowType = INVENTORY_WINDOW_TYPE_USE_ITEM_ON;
+    }
+
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
+        inventoryRenderSummary();
+    }
+
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT
+        || inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
+        _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, inventoryWindowType);
+    }
+
+    _display_inventory(_stack_offset[_curr_stack], -1, inventoryWindowType);
+    if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
+        barterDisplayTables(gInventoryBarterBackgroundWindow, gPlayerTableObj, gBartererTableObj, -1);
+    }
+
+    _adjust_fid();
+    if (update) {
+        interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
+    }
+
+    return 0;
+}
+
 } // namespace fallout

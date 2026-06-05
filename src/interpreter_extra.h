@@ -5,7 +5,7 @@
 
 namespace fallout {
 
-enum class InvenSlot {
+enum class InvenSlot : int {
     Armor = 0, // INVEN_TYPE_WORN
     RightHand = 1, // INVEN_TYPE_RIGHT_HAND
     LeftHand = 2, // INVEN_TYPE_LEFT_HAND
