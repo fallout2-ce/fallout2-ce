@@ -76,7 +76,7 @@ For example:
 
 ## `ce-frm2png` CLI Tool
 
-There is also a small FRM conversion tool in this repo for exporting Fallout `.frm` art to `.png`.
+There is also a small FRM conversion tool in this repo for converting Fallout art between `.frm` and `.png`.
 
 From the repo root, build it with your normal CMake workflow, targeting `ce-frm2png`:
 
@@ -89,18 +89,26 @@ Basic usage:
 1. `./<BUILD_DIR>/ce-frm2png <input.frm> [output.png]`
 2. `./<BUILD_DIR>/ce-frm2png <input.frm> [output.png] --palette <path-to-color.pal>`
 3. `./<BUILD_DIR>/ce-frm2png <input.frm> [output.png] --frame <index> --direction <index>`
-4. `./<BUILD_DIR>/ce-frm2png - [output.png|-] --palette <path-to-color.pal>`
+4. `./<BUILD_DIR>/ce-frm2png <input.png> [output.frm] --palette <path-to-color.pal>`
+5. `./<BUILD_DIR>/ce-frm2png <input.png> [output.frm] --fps 10 --action-frame 0 --x-offset 0 --y-offset 0`
+6. `./<BUILD_DIR>/ce-frm2png <input.png> <output.png> --palette <path-to-color.pal>`
+7. `./<BUILD_DIR>/ce-frm2png - [output.png|-] --from-frm --palette <path-to-color.pal>`
+8. `./<BUILD_DIR>/ce-frm2png - [output.frm|-] --from-png --palette <path-to-color.pal>`
 
-`-` can be used to take input from stdin (e.g. from `ce-dat-tool cat` or write to stdout).
+`-` can be used to take input from stdin (e.g. from `ce-dat-tool cat`) or write to stdout. When reading from stdin, pass `--from-frm` or `--from-png`. Output defaults to PNG for FRM input and FRM for PNG input when output is omitted or `-`; use `--to-png` for PNG output to stdout from PNG input.
 
-If `--palette` isn't specified, it will pick up `color.pal` in the .frm's directory or cwd.
+Output file extensions are validated against the selected conversion. For example, PNG-to-FRM output must use `.frm`, and PNG output must use `.png`.
+
+If `--palette` isn't specified, it will pick up `color.pal` in the input file's directory or cwd.
 
 Notes:
 
 - The tool expects a raw `color.pal` file. It does not read palettes directly from `master.dat`, so extract `color.pal` first if needed.
 - A typical extraction flow is: `ce-dat-tool master.dat extract --lower . 'color.pal'`
 - By default palette index `0` becomes transparent in the output PNG. Pass `--opaque` to keep it opaque.
-- The current implementation writes RGBA PNGs. It does not preserve the original Fallout palette indices as a palette-indexed PNG.
+- PNG output is always palette-indexed and preserves Fallout palette indices when possible.
+- For `png -> frm`, transparent pixels (alpha below 128) map to palette index `0` by default. Pass `--opaque` to quantize every pixel instead.
+- The current `png -> frm` implementation writes a single-frame FRM and points all six direction slots at the same frame payload.
 
 ## Updating SDL
 
