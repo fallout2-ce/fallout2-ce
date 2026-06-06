@@ -553,12 +553,7 @@ bool xbaseOpen(const char* path)
         }
     }
 
-    // Try mount as directory. On POSIX, fopen() can succeed for directories,
-    // so compat_file_exists() is not a reliable gate here.
-    // XXX: this might need to be also normalized to local path separators
-    char workingDirectory[COMPAT_MAX_PATH];
-    if (getcwd(workingDirectory, COMPAT_MAX_PATH) != nullptr && chdir(path) == 0) {
-        chdir(workingDirectory);
+    if (compat_is_dir(path)) {
         xbase->next = gXbaseHead;
         gXbaseHead = xbase;
         return true;
