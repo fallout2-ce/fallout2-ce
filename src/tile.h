@@ -12,6 +12,12 @@ namespace fallout {
 typedef void(TileWindowRefreshProc)(Rect* rect);
 typedef void(TileWindowRefreshElevationProc)(Rect* rect, int elevation);
 
+// Optional overlay drawn over the mapper iso view each refresh (e.g. the edge editor).
+// clip is the region being refreshed. Set to nullptr to disable.
+typedef void(TileMapperOverlayProc)(unsigned char* buffer, int pitch, int elevation, const Rect* clip);
+void tileSetMapperOverlayProc(TileMapperOverlayProc* proc);
+void tileMapperOverlayRender(unsigned char* buffer, int pitch, int elevation, const Rect* clip);
+
 extern const int _off_tile[6];
 extern const int dword_51D984[6];
 extern int gHexGridSize;

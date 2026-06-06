@@ -47,6 +47,9 @@ int gameRequestState(int newGameState);
 void gameUpdateState();
 int showQuitConfirmationDialog();
 
+// True when running as the mapper rather than the game.
+bool gameIsMapper();
+
 int gameLoadGlobalVars();
 int gameShowDeathDialog(const char* message);
 void gameHandleSkilldexResult(int rc);

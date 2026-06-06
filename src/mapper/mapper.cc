@@ -32,6 +32,8 @@
 #include "light.h"
 #include "loadsave.h"
 #include "map.h"
+#include "map_edge.h"
+#include "mapper/map_edge_setup.h"
 #include "mapper/map_func.h"
 #include "mapper/mp_instance.h"
 #include "mapper/mp_proto.h"
@@ -52,6 +54,7 @@
 #include "window_manager.h"
 #include "window_manager_private.h"
 #include "worldmap.h"
+#include "xfile.h"
 
 namespace fallout {
 
@@ -134,6 +137,9 @@ static char kRebuildAll[] = " Rebuild ALL ";
 static char kRebuildBinary[] = " Rebuild Binary ";
 static char kArtToProtos[] = " Art => New Protos ";
 static char kSwapPrototypse[] = " Swap Prototypes ";
+
+static char kHiResMapEdges[] = " Hi-Res Map Edges Setup ";
+static char kToggleMapEdgesOverlay[] = " Toggle Map Edges Overlay ";
 
 static char kTmpMapName[] = "TMP$MAP#.MAP";
 
@@ -220,12 +226,18 @@ char* menu_3[] = {
     kSwapPrototypse,
 };
 
+char* menuNamesSettings[] = {
+    kHiResMapEdges,
+    kToggleMapEdgesOverlay,
+};
+
 // 0x5596F8
 char** menu_names[] = {
     menu_0,
     menu_1,
     menu_2,
     menu_3,
+    menuNamesSettings,
 };
 
 // 0x559748
@@ -284,6 +296,8 @@ int menu_val_0[8];
 int menu_val_2[8];
 
 int menu_val_3[7];
+
+int menu_val_4[2];
 
 // 0x6EAA80
 unsigned char e_num[4][19 * 26];
@@ -546,6 +560,7 @@ constexpr int kBtnMenuHeaderFile = KEY_ALT_F;
 constexpr int kBtnMenuHeaderTools = KEY_ALT_V;
 constexpr int kBtnMenuHeaderScripts = KEY_ALT_T;
 constexpr int kBtnMenuHeaderLibrarian = KEY_ALT_J;
+constexpr int kBtnMenuHeaderSettings = KEY_ALT_X;
 
 constexpr int kBtnPlayMode = KEY_F8;
 constexpr int kBtnRebuildProtoList = KEY_F10;
@@ -561,6 +576,8 @@ constexpr int kBtnMarkAllExitGrids = 5679;
 constexpr int kBtnClearMapLevel = 5666;
 constexpr int kBtnCreateAllMapTexts = 5406;
 constexpr int kBtnRebuildAllMaps = 5405;
+constexpr int kBtnHiResMapEdges = 0x3101;
+constexpr int kBtnToggleMapEdgesOverlay = 0x3102;
 
 // FILE menu pulldown keycodes
 constexpr int kBtnNew = KEY_ALT_N;
@@ -719,6 +736,9 @@ void MapperInit()
     menu_val_3[4] = KEY_ESCAPE;
     menu_val_3[5] = kBtnLibrarianArtToProtos;
     menu_val_3[6] = kBtnLibrarianSwapProtos;
+
+    menu_val_4[0] = kBtnHiResMapEdges;
+    menu_val_4[1] = kBtnToggleMapEdgesOverlay;
 }
 
 static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
@@ -730,6 +750,42 @@ static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
         0,
         lbmBufWidth - 1,
         lbmBufHeight - 1);
+}
+
+// Validates the configurable mapper dev_path: it must be an existing folder mounted in the
+// VFS. When invalid, it is cleared (so saves fall back to the patches path) and the user is warned.
+static void mapperValidateDevPath()
+{
+    std::string& devPath = settings.mapper.dev_path;
+    if (devPath.empty()) {
+        return;
+    }
+
+    if (compat_is_dir(devPath.c_str()) && xbaseIsValidDirectory(devPath.c_str())) {
+        return;
+    }
+
+    char msg[COMPAT_MAX_PATH + 128];
+    snprintf(msg, sizeof(msg), "Mapper dev_path \"%s\" is not a valid mounted data folder. Ignoring it.", devPath.c_str());
+
+    showMessageBox(msg);
+    devPath.clear();
+}
+
+static void initMenuBar(const int screenWidth)
+{
+    int foregroundColor = _colorTable[20052];
+    int backgroundColor = _colorTable[8456];
+
+    menu_bar = windowCreate(0, 0, screenWidth, 16, _colorTable[0], WINDOW_HIDDEN);
+    _win_register_menu_bar(menu_bar, 0, 0, screenWidth, 16, foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 8, "FILE", kBtnMenuHeaderFile, 8, menu_names[0], foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 40, "TOOLS", kBtnMenuHeaderTools, 21, menu_names[1], foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 80, "SCRIPTS", kBtnMenuHeaderScripts, 8, menu_names[2], foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 130, "SETTINGS", kBtnMenuHeaderSettings, 2, menu_names[4], foregroundColor, backgroundColor);
+    if (can_modify_protos) {
+        _win_register_menu_pulldown(menu_bar, 180, "LIBRARIAN", kBtnMenuHeaderLibrarian, 7, menu_names[3], foregroundColor, backgroundColor);
+    }
 }
 
 // 0x485F94
@@ -770,54 +826,7 @@ int mapper_edit_init(int argc, char** argv)
 
     max_art_buttons = (screenWidth - 135) / 50;
 
-    menu_bar = windowCreate(0,
-        0,
-        screenWidth,
-        16,
-        _colorTable[0],
-        WINDOW_HIDDEN);
-    _win_register_menu_bar(menu_bar,
-        0,
-        0,
-        screenWidth,
-        16,
-        260,
-        _colorTable[8456]);
-    _win_register_menu_pulldown(menu_bar,
-        8,
-        "FILE",
-        kBtnMenuHeaderFile,
-        8,
-        menu_names[0],
-        260,
-        _colorTable[8456]);
-    _win_register_menu_pulldown(menu_bar,
-        40,
-        "TOOLS",
-        kBtnMenuHeaderTools,
-        21,
-        menu_names[1],
-        260,
-        _colorTable[8456]);
-    _win_register_menu_pulldown(menu_bar,
-        80,
-        "SCRIPTS",
-        kBtnMenuHeaderScripts,
-        8,
-        menu_names[2],
-        260,
-        _colorTable[8456]);
-
-    if (can_modify_protos) {
-        _win_register_menu_pulldown(menu_bar,
-            130,
-            "LIBRARIAN",
-            kBtnMenuHeaderLibrarian,
-            7,
-            menu_names[3],
-            260,
-            _colorTable[8456]);
-    }
+    initMenuBar(screenWidth);
 
     tool_win = windowCreate(0,
         _scr_size.bottom - 99,
@@ -997,6 +1006,8 @@ int mapper_edit_init(int argc, char** argv)
     mapInit();
     target_init();
     mouseShowCursor();
+    mapperValidateDevPath();
+    mapEdgeSetupInit();
 
     if (settings.mapper.rebuild_protos) {
         proto_build_all_texts();
@@ -1316,7 +1327,7 @@ void edit_mapper()
                     int tile = gGameMouseBouncingCursor->tile;
 
                     if (settings.debug.show_tile_num) {
-                        debugPrint("tilenum = %d ", tile);
+                        debugPrint("\ntilenum = %d ", tile);
                     }
                     // Display tile number on toolbar (vanilla: x=7, y=27, maxWidth=260, color=35)
                     char tileNumStr[32];
@@ -1415,6 +1426,10 @@ void edit_mapper()
             int index = inputGetInput();
             if (index == -1) continue;
             keyCode = menu_val_3[index];
+        } else if (keyCode == kBtnMenuHeaderSettings) {
+            int index = inputGetInput();
+            if (index == -1) continue;
+            keyCode = menu_val_4[index];
         }
 
         // Toolbar art-slot left-click: select proto from toolbar
@@ -1551,6 +1566,16 @@ void edit_mapper()
         }
         case kBtnInfo:
             // No op, matching original.
+            break;
+        case kBtnHiResMapEdges:
+            if (map_entered) {
+                mapperShowTimedMsg("This map has been Entered.  Can't edit edges.");
+                break;
+            }
+            mapEdgeSetupDialog();
+            break;
+        case kBtnToggleMapEdgesOverlay:
+            mapEdgeSetupToggleOverlay();
             break;
         case kBtnSaveAs: {
             if (map_entered) {
@@ -2743,6 +2768,11 @@ static void mapper_enter_play_mode(Object** pHlObj1)
 
     tileScrollBlockingEnable();
     tileScrollLimitingEnable();
+
+    // Edges are loaded but disabled while editing; enable them to mirror play behavior.
+    if (settings.ui.edg_support && !settings.ui.ignore_map_edges) {
+        mapEdgeSetEnabled(true);
+    }
 
     if (settings.mapper.run_mapper_as_game) {
         scriptExecProc(gMapSid, SCRIPT_PROC_MAP_ENTER);

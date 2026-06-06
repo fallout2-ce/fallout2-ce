@@ -967,8 +967,11 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    if (settings.ui.edg_support && !settings.ui.ignore_map_edges) {
+    if (gameIsMapper()) {
         mapEdgeLoad(gMapHeader.name);
+    } else if (settings.ui.edg_support && !settings.ui.ignore_map_edges) {
+        mapEdgeLoad(gMapHeader.name);
+        mapEdgeSetEnabled(true);
     }
 
     error = "Error setting tile center";
@@ -1390,6 +1393,9 @@ int _map_save()
 
         if (rc == 0) {
             debugPrint("%s saved.", gMapHeader.name);
+
+            // Write the edge (.EDG) sidecar alongside the map.
+            mapEdgeSave(gMapHeader.name);
         }
     } else {
         debugPrint("\nError: map_save: map header corrupt!");
@@ -1624,6 +1630,8 @@ static void isoWindowRefreshRectMapper(Rect* rect)
     if (!hasVisArea) {
         tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
     }
+
+    tileMapperOverlayRender(gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), gElevation, &rectToUpdate);
 }
 
 // NOTE: Inlined.

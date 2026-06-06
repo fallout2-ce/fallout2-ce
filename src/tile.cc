@@ -287,6 +287,21 @@ static int gTileWindowWidth;
 // 0x66BE34 tile_center_tile
 int gCenterTile;
 
+// Optional mapper overlay drawn over the iso view each refresh (edge editor). Null when unused.
+static TileMapperOverlayProc* gTileMapperOverlayProc = nullptr;
+
+void tileSetMapperOverlayProc(TileMapperOverlayProc* proc)
+{
+    gTileMapperOverlayProc = proc;
+}
+
+void tileMapperOverlayRender(unsigned char* buffer, int pitch, int elevation, const Rect* clip)
+{
+    if (gTileMapperOverlayProc != nullptr) {
+        gTileMapperOverlayProc(buffer, pitch, elevation, clip);
+    }
+}
+
 // 0x4B0C40 tile_init
 int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, int hexGridWidth, int hexGridHeight, unsigned char* buf, int windowWidth, int windowHeight, int windowPitch, TileWindowRefreshProc* windowRefreshProc)
 {
@@ -544,7 +559,7 @@ int tileSetCenter(int tile, int flags)
     }
 
     bool boundaryModsSet = false;
-    if (mapEdgeIsLoaded() && !settings.ui.ignore_map_edges) {
+    if (mapEdgeIsEnabled() && !settings.ui.ignore_map_edges) {
         bool isScroll = flags == 0;
         if (!isScroll) {
             // Forced positioning (teleport, initial load, etc.): clamp to edge boundary.
@@ -590,7 +605,7 @@ int tileSetCenter(int tile, int flags)
 
         // Scroll-blocker object check only runs when no EDG is loaded.
         // EDG clamping above already enforces the boundary.
-        if ((!mapEdgeIsLoaded() || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
+        if ((!mapEdgeIsEnabled() || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
                 return -1;
             }
@@ -711,6 +726,8 @@ static void tileRefreshMapper(Rect* rect, int elevation)
     if (!hasVisArea) {
         tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
+
+    tileMapperOverlayRender(gTileWindowBuffer, gTileWindowPitch, elevation, &rectToUpdate);
 
     gTileWindowRefreshProc(&rectToUpdate);
 }

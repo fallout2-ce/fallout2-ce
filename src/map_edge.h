@@ -1,7 +1,7 @@
 #ifndef MAP_EDGE_H
 #define MAP_EDGE_H
 
-#include <memory>
+#include <vector>
 
 #include "geometry.h"
 
@@ -19,6 +19,7 @@ struct EdgeZone {
     Rect tileRect;
 
     // Pixel-space rect from tileRect corner conversion (before contraction).
+    // Runtime-calculated by calcEdgeData(); stale while the editor mutates tileRect.
     Rect pixelRect;
 
     // Pixel-space boundary for center-tile scroll blocking (screen-size dependent).
@@ -26,27 +27,42 @@ struct EdgeZone {
     // X axis is inverted: left > right (smaller tile index → larger pixel X).
     // Y axis is normal: bottom > top.
     Rect scrollBorderRect;
+};
 
-    // Square-grid clip rect for floor/roof rendering (v2 EDG only).
-    // Valid when left >= 0.
+// All edge data for a single elevation. squareRect/clipSides are per-elevation (v2 EDG),
+// matching the file format; zones is the list of edge rects (one per zone).
+struct EdgeElevationData {
+    std::vector<EdgeZone> zones;
+
+    // Square-grid clip rect for floor/roof rendering (v2 EDG only). Valid when left >= 0.
     Rect squareRect;
 
     // Per-side clip flags unpacked from EDG v2. True means the black square overlay
     // for that side is drawn on top of (after) non-flat objects.
-    ClipSides clipSides;
-
-    std::unique_ptr<EdgeZone> next;
+    EdgeZone::ClipSides clipSides;
 };
 
 // Load EDG file for a map. mapName is the raw map filename e.g. "ARROYO.MAP".
 // Silently does nothing if no .edg file is found.
 void mapEdgeLoad(const char* mapName);
 
+// Writes the current in-memory edge data to the map's EDG file (mapper save path).
+// Does nothing when there are no edge zones. Used by the mapper map-save flow.
+void mapEdgeSave(const char* mapName);
+
+// Mutable access to a single elevation's edge data. Used by the mapper edge editor,
+// which edits this data in place; the disk write happens later via mapEdgeSave.
+EdgeElevationData& mapEdgeGetElevationData(int elevation);
+
 // Free all loaded EDG data. Safe to call when nothing is loaded.
 void mapEdgeFree();
 
 // Returns true if EDG data was successfully loaded for the current map.
 bool mapEdgeIsLoaded();
+
+// Enables/disables edge constraints (scroll blocking, view clipping). Independent of loading.
+void mapEdgeSetEnabled(bool enabled);
+bool mapEdgeIsEnabled();
 
 // Returns true if a zone was selected on last tileSetCenter call.
 bool mapEdgeZoneIsSelected();
