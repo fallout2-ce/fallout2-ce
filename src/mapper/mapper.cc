@@ -1,5 +1,7 @@
 #include "mapper/mapper.h"
 
+#include "mapper/mp_utils.h"
+
 #include <algorithm>
 #include <ctype.h>
 #include <stdio.h>
@@ -2833,16 +2835,6 @@ static void mapper_mark_all_exit_grids()
         }
         obj = objectFindNextAtElevation();
     }
-}
-
-void mapperShowTimedMsg(const char* msg)
-{
-    win_timed_msg(msg, _colorTable[31744] | FONT_SHADOW);
-}
-
-bool mapperYesNoDialog(const char* msg)
-{
-    return win_yes_no(msg, 80, 80, 0x104 | FONT_SHADOW) > 0;
 }
 
 } // namespace fallout
