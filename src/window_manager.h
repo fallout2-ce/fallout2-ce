@@ -51,8 +51,7 @@ typedef enum WindowFlags {
     WINDOW_TRANSPARENT = 0x20,
     WINDOW_FLAG_0x40 = 0x40,
 
-    /// Specifies that the window is draggable by clicking and moving anywhere
-    /// in its background.
+    // Specifies that the window is draggable by clicking and moving anywhere in its background.
     WINDOW_DRAGGABLE_BY_BACKGROUND = 0x80,
     WINDOW_MANAGED = 0x100,
 } WindowFlags;
@@ -82,7 +81,7 @@ typedef enum ButtonFlags {
     BUTTON_FLAG_NO_TOGGLE_OFF = 0x04,
     BUTTON_FLAG_DISABLED = 0x08,
 
-    /// Specifies that the button is a drag handle for parent window.
+    // Specifies that the button is a drag handle for parent window.
     BUTTON_DRAG_HANDLE = 0x10,
     BUTTON_FLAG_TRANSPARENT = 0x20,
     BUTTON_FLAG_0x40 = 0x40,

@@ -16,13 +16,13 @@
 
 namespace fallout {
 
-/// The max length of `fileName` chunk in the triplet.
+// The max length of `fileName` chunk in the triplet.
 static constexpr size_t kFileNameMaxSize = 63;
 
-/// The max length of `section` chunk in the triplet.
+// The max length of `section` chunk in the triplet.
 static constexpr size_t kSectionMaxSize = 32;
 
-/// Special .ini file names which are accessed without adding base path.
+// Special .ini file names which are accessed without adding base path.
 static constexpr const char* kSystemConfigFileNames[] = {
     "ddraw.ini",
     "f2_res.ini",
@@ -30,9 +30,9 @@ static constexpr const char* kSystemConfigFileNames[] = {
 
 static char basePath[COMPAT_MAX_PATH];
 
-/// Parses "fileName|section|key" triplet into parts. `fileName` and `section`
-/// chunks are copied into appropriate variables. Returns the pointer to `key`,
-/// or `nullptr` on any error.
+// Parses "fileName|section|key" triplet into parts. `fileName` and `section`
+// chunks are copied into appropriate variables. Returns the pointer to `key`,
+// or `nullptr` on any error.
 static const char* parse_ini_triplet(const char* triplet, char* fileName, char* section)
 {
     const char* fileNameSectionSep = strchr(triplet, '|');
@@ -64,7 +64,7 @@ static const char* parse_ini_triplet(const char* triplet, char* fileName, char* 
     return sectionKeySep + 1;
 }
 
-/// Returns `true` if given `fileName` is a special system .ini file name.
+// Returns `true` if given `fileName` is a special system .ini file name.
 static bool is_system_file_name(const char* fileName)
 {
     for (auto& systemFileName : kSystemConfigFileNames) {
@@ -76,21 +76,19 @@ static bool is_system_file_name(const char* fileName)
     return false;
 }
 
-/// Resolves the on-disk path for an INI file name (e.g., "myconfig.ini" or
-/// "ddraw.ini") into 'path'. The base directory is preferred for non-system
-/// files when it actually contains the file; otherwise the current working
-/// directory is used.
-static void sfall_resolve_ini_path(const char* iniFileName, char* path, size_t size)
+// Reads the INI file into `config`, trying the base directory first for
+// non-system files and falling back to the working directory on failure.
+static bool sfall_read_named_ini(const char* iniFileName, Config* config)
 {
     if (basePath[0] != '\0' && !is_system_file_name(iniFileName)) {
-        snprintf(path, size, "%s\\%s", basePath, iniFileName);
-        if (compat_access(path, 0) == 0) {
-            return;
+        char path[COMPAT_MAX_PATH];
+        snprintf(path, sizeof(path), "%s\\%s", basePath, iniFileName);
+        if (configRead(config, path, false)) {
+            return true;
         }
     }
 
-    strncpy(path, iniFileName, size - 1);
-    path[size - 1] = '\0';
+    return configRead(config, iniFileName, false);
 }
 
 void sfall_ini_set_base_path(const char* path)
@@ -109,9 +107,7 @@ void sfall_ini_set_base_path(const char* path)
     }
 }
 
-/// Custom deleter so cached `Config` objects are freed via `configFree` before
-/// the heap allocation is released. Guards on `isInitialized()` so it stays safe
-/// even when `configInit` failed.
+// Frees a cached `Config` via `configFree` before releasing it.
 struct ConfigDeleter {
     void operator()(Config* config) const
     {
@@ -126,15 +122,17 @@ struct ConfigDeleter {
 
 using CachedConfigPtr = std::unique_ptr<Config, ConfigDeleter>;
 
-/// Mirror of sfall's `IniReader::_iniCache`: maps a requested .ini file name to
-/// its parsed `Config`. A `nullptr` value is a negative cache entry, recording
-/// that the file could not be read so it isn't retried on every access (and no
-/// `Config` is kept allocated for it). Cleared on game reset (and the relevant
-/// entry erased on write).
+// Maps a requested .ini file name to its parsed `Config`. A `nullptr` value
+// marks a file that could not be read, so it isn't retried.
 static std::unordered_map<std::string, CachedConfigPtr> iniConfigCache;
 
-/// Returns the parsed `Config` for `iniFileName`, reading and caching it on first
-/// access. Returns `nullptr` if the file cannot be read (the miss is cached).
+// Maps a requested .ini file name to a persistent array of its contents, so
+// repeated calls return the same array. Separate caches for file and DAT reads.
+static std::unordered_map<std::string, ArrayId> iniConfigArrayCache;
+static std::unordered_map<std::string, ArrayId> iniConfigArrayCacheDat;
+
+// Returns the parsed `Config` for `iniFileName`, reading and caching it on first
+// access. Returns `nullptr` if the file cannot be read (the miss is cached).
 static Config* sfall_get_ini_config(const char* iniFileName)
 {
     if (iniFileName == nullptr) {
@@ -146,19 +144,14 @@ static Config* sfall_get_ini_config(const char* iniFileName)
         return cacheHit->second.get();
     }
 
-    char path[COMPAT_MAX_PATH];
-    sfall_resolve_ini_path(iniFileName, path, sizeof(path));
-
     CachedConfigPtr config(new Config());
-    if (!configInit(config.get()) || !configRead(config.get(), path, false)) {
+    if (!configInit(config.get()) || !sfall_read_named_ini(iniFileName, config.get())) {
         // Negative cache: remember that this file could not be read.
         iniConfigCache.emplace(iniFileName, nullptr);
         return nullptr;
     }
 
-    Config* result = config.get();
-    iniConfigCache.emplace(iniFileName, std::move(config));
-    return result;
+    return iniConfigCache.emplace(iniFileName, std::move(config)).first->second.get();
 }
 
 // Returns `false` on triplet parse or config initialization error.
@@ -245,8 +238,11 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
         return false;
     }
 
-    // Invalidate the cached config so subsequent reads pick up the new value.
+    // Invalidate cached data so subsequent reads pick up the new value. The
+    // persistent array is left for game reset to free (it holds nested sub-array
+    // IDs and may still be referenced by a script).
     iniConfigCache.erase(fileName);
+    iniConfigArrayCache.erase(fileName);
 
     ScopedConfig config;
     if (!config) {
@@ -292,7 +288,7 @@ static const ConfigSection* sfall_find_section_in_config(Config* config, const c
     return static_cast<const ConfigSection*>(sectionEntry->value);
 }
 
-/// Copies all key/value pairs of a config section into an associative array as string keys mapped to string values.
+// Copies a config section's key/value pairs into an associative array.
 static void copyConfigSectionToArray(ArrayId arrayId, const ConfigSection* section, Program* program)
 {
     for (int i = 0; i < section->entriesLength; ++i) {
@@ -387,14 +383,8 @@ void mf_get_ini_sections(OpcodeContext& ctx)
     ctx.setReturn(arrayId);
 }
 
-/// Maps a requested .ini file name to a persistent Sfall array built from its
-/// contents, so repeated `get_ini_config` calls return the same array. Separate
-/// caches for filesystem and DAT reads, mirroring sfall. Cleared on game reset.
-static std::unordered_map<std::string, ArrayId> iniConfigArrayCache;
-static std::unordered_map<std::string, ArrayId> iniConfigArrayCacheDat;
-
-/// Builds a persistent associative array mapping each section name to a nested
-/// associative array of that section's key/value pairs.
+// Builds a persistent associative array mapping each section name to a nested
+// associative array of that section's key/value pairs.
 static ArrayId sfall_build_config_array(const Config* config, Program* program)
 {
     ArrayId arrayId = CreateArray(-1, 0);
@@ -425,7 +415,7 @@ void mf_get_ini_config(OpcodeContext& ctx)
         return;
     }
 
-    // Return the previously built array if it still exists, otherwise drop the stale entry and rebuild.
+    // Return the cached array if it still exists; otherwise drop the stale entry and rebuild.
     auto& arrayCache = isDb ? iniConfigArrayCacheDat : iniConfigArrayCache;
     auto cacheHit = arrayCache.find(fileName);
     if (cacheHit != arrayCache.end()) {
