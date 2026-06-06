@@ -725,6 +725,38 @@ const char* mapBuildPath(const char* name)
     return name;
 }
 
+const char* mapBuildDataSavePath(const char* relativePath)
+{
+    static char path[COMPAT_MAX_PATH];
+
+    // Save root: the validated mapper dev_path when set, otherwise the master patches path.
+    const std::string& devPath = settings.mapper.dev_path;
+    const char* root = !devPath.empty() ? devPath.c_str() : settings.system.master_patches_path.c_str();
+
+    // Join root + relativePath, tolerating a trailing separator on the root.
+    size_t rootLen = strlen(root);
+    bool rootHasSeparator = rootLen > 0 && (root[rootLen - 1] == '\\' || root[rootLen - 1] == '/');
+    snprintf(path, sizeof(path), "%s%s%s", root, rootHasSeparator ? "" : "\\", relativePath);
+
+    // Ensure the directory portion exists.
+    char dir[COMPAT_MAX_PATH];
+    snprintf(dir, sizeof(dir), "%s", path);
+    char* separator = strrchr(dir, '\\');
+    if (separator != nullptr) {
+        *separator = '\0';
+        compat_mkdir_recursive(dir);
+    }
+
+    return path;
+}
+
+const char* mapBuildSavePath(const char* name)
+{
+    char relativePath[COMPAT_MAX_PATH];
+    snprintf(relativePath, sizeof(relativePath), "MAPS\\%s", name);
+    return mapBuildDataSavePath(relativePath);
+}
+
 // 0x482924
 int mapSetEnteringLocation(int elevation, int tile_num, int orientation)
 {
@@ -1345,30 +1377,19 @@ static void _map_fix_critter_combat_data()
 // 0x483850
 int _map_save()
 {
-    char temp[80];
-    temp[0] = '\0';
-
-    strcat(temp, settings.system.master_patches_path.c_str());
-    compat_mkdir(temp);
-
-    strcat(temp, "\\MAPS");
-    compat_mkdir(temp);
-
     int rc = -1;
     if (gMapHeader.name[0] != '\0') {
-        const char* mapFileName = mapBuildPath(gMapHeader.name);
-        File* stream = fileOpen(mapFileName, "wb");
+        const char* mapFilePath = mapBuildSavePath(gMapHeader.name);
+        File* stream = fileOpen(mapFilePath, "wb");
         if (stream != nullptr) {
             rc = _map_save_file(stream);
             fileClose(stream);
         } else {
-            snprintf(temp, sizeof(temp), "Unable to open %s to write!", gMapHeader.name);
-            debugPrint(temp);
+            debugPrint("Unable to open %s to write!", gMapHeader.name);
         }
 
         if (rc == 0) {
-            snprintf(temp, sizeof(temp), "%s saved.", gMapHeader.name);
-            debugPrint(temp);
+            debugPrint("%s saved.", gMapHeader.name);
         }
     } else {
         debugPrint("\nError: map_save: map header corrupt!");

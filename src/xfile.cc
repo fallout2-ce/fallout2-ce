@@ -565,6 +565,33 @@ bool xbaseOpen(const char* path)
     return false; // return false to trigger messages on game load
 }
 
+bool xbaseIsValidDirectory(const char* path)
+{
+    if (path == nullptr || path[0] == '\0') {
+        return false;
+    }
+
+    auto trimmedLength = [](const char* p) {
+        size_t len = strlen(p);
+        while (len > 0 && (p[len - 1] == '\\' || p[len - 1] == '/')) {
+            len--;
+        }
+        return len;
+    };
+
+    size_t targetLen = trimmedLength(path);
+    for (XBase* curr = gXbaseHead; curr != nullptr; curr = curr->next) {
+        if (curr->isDbase || curr->path == nullptr) {
+            continue;
+        }
+        size_t currLen = trimmedLength(curr->path);
+        if (currLen == targetLen && compat_strnicmp(curr->path, path, targetLen) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // 0x4DFB3C xenumfiles
 static bool xlistEnumerate(const char* pattern, XListEnumerationHandler* handler, XList* xlist)
 {
