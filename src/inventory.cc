@@ -313,6 +313,7 @@ static void _exit_inventory(bool shouldEnableIso);
 static void _display_inventory(int stackOffset, int draggedSlotIndex, int inventoryWindowType);
 static void _display_target_inventory(int stackOffset, int dragSlotIndex, Inventory* inventory, int inventoryWindowType);
 static void _display_inventory_info(Object* item, int quantity, unsigned char* dest, int pitch, bool isDragged);
+static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object, int extraWeight);
 static void _display_body(int fid, int inventoryWindowType);
 static int inventoryCommonInit();
 static void inventoryCommonFree();
@@ -838,6 +839,49 @@ static bool inventoryLootMouseHitTestScroller(bool targetInventory)
         scrollerY,
         scrollerX + inventoryLootLayout.scrollerWidth,
         scrollerY + inventoryLootLayout.scrollerHeight);
+}
+
+static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object, int extraWeight)
+{
+    char formattedText[20];
+    formattedText[0] = '\0';
+
+    int oldFont = fontGetCurrent();
+    fontSetCurrent(101);
+
+    if (inventoryLootFrmImage.isLocked()) {
+        int x = targetPane ? inventoryLootLayout.rightScrollerX : inventoryLootLayout.leftScrollerX;
+        int y = (targetPane ? inventoryLootLayout.rightScrollerY : inventoryLootLayout.leftScrollerY) + inventoryLootLayout.scrollerHeight + 2;
+        blitBufferToBuffer(inventoryLootFrmImage.getData() + inventoryLootFrmImage.getWidth() * y + x,
+            inventoryLootLayout.scrollerWidth,
+            fontGetLineHeight(),
+            inventoryLootFrmImage.getWidth(),
+            windowBuffer + pitch * y + x,
+            pitch);
+    }
+
+    int color = _colorTable[992];
+    if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+        int currentWeight = objectGetInventoryWeight(object) + extraWeight;
+        int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
+        snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
+        if (currentWeight > maxWeight) {
+            color = _colorTable[31744];
+        }
+    } else if (targetPane && PID_TYPE(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
+        int currentSize = containerGetTotalSize(object);
+        int maxSize = containerGetMaxSize(object);
+        snprintf(formattedText, sizeof(formattedText), "%d/%d", currentSize, maxSize);
+    } else {
+        int inventoryWeight = objectGetInventoryWeight(object);
+        snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
+    }
+
+    int x = targetPane ? inventoryLootLayout.rightScrollerX : inventoryLootLayout.leftScrollerX;
+    int y = (targetPane ? inventoryLootLayout.rightScrollerY : inventoryLootLayout.leftScrollerY) + inventoryLootLayout.scrollerHeight + 2;
+    inventoryDrawCenteredText(windowBuffer, pitch, inventoryLootLayout.scrollerWidth, x, y, formattedText, color);
+
+    fontSetCurrent(oldFont);
 }
 
 static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int scrollStep)
@@ -1869,43 +1913,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
 
     // CE: Show items weight.
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        char formattedText[20];
-
-        int oldFont = fontGetCurrent();
-        fontSetCurrent(101);
-
-        FrmImage backgroundFrm;
-        if (inventoryLootFrmImage.isLocked()) {
-            int x = inventoryLootLayout.leftScrollerX;
-            int y = inventoryLootLayout.leftScrollerY + inventoryLootLayout.scrollerHeight + 2;
-            blitBufferToBuffer(inventoryLootFrmImage.getData() + inventoryLootFrmImage.getWidth() * y + x,
-                inventoryLootLayout.scrollerWidth,
-                fontGetLineHeight(),
-                inventoryLootFrmImage.getWidth(),
-                windowBuffer + pitch * y + x,
-                pitch);
-        }
-
-        Object* object = _stack[0];
-
-        int color = _colorTable[992];
-        if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
-            int carryWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
-            int inventoryWeight = objectGetInventoryWeight(object);
-            snprintf(formattedText, sizeof(formattedText), "%d/%d", inventoryWeight, carryWeight);
-
-            if (inventoryWeight > carryWeight) {
-                color = _colorTable[31744];
-            }
-        } else {
-            int inventoryWeight = objectGetInventoryWeight(object);
-            snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
-        }
-
-        int y = inventoryLootLayout.leftScrollerY + inventoryLootLayout.scrollerHeight + 2;
-        inventoryDrawCenteredText(windowBuffer, pitch, inventoryLootLayout.scrollerWidth, inventoryLootLayout.leftScrollerX, y, formattedText, color);
-
-        fontSetCurrent(oldFont);
+        inventoryLootRenderPaneWeight(windowBuffer, pitch, false, _stack[0], 0);
     }
 
     windowRefresh(gInventoryWindow);
@@ -1990,49 +1998,7 @@ static void _display_target_inventory(int stackOffset, int dragSlotIndex, Invent
 
     // CE: Show items weight.
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-        char formattedText[20];
-        formattedText[0] = '\0';
-
-        int oldFont = fontGetCurrent();
-        fontSetCurrent(101);
-
-        if (inventoryLootFrmImage.isLocked()) {
-            int x = inventoryLootLayout.rightScrollerX;
-            int y = inventoryLootLayout.rightScrollerY + inventoryLootLayout.scrollerHeight + 2;
-            blitBufferToBuffer(inventoryLootFrmImage.getData() + inventoryLootFrmImage.getWidth() * y + x,
-                inventoryLootLayout.scrollerWidth,
-                fontGetLineHeight(),
-                inventoryLootFrmImage.getWidth(),
-                windowBuffer + pitch * y + x,
-                pitch);
-        }
-
-        Object* object = _target_stack[_target_curr_stack];
-
-        int color = _colorTable[992];
-        if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
-            int currentWeight = objectGetInventoryWeight(object) + inventoryLootRightEquippedWeight;
-            int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
-            snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
-
-            if (currentWeight > maxWeight) {
-                color = _colorTable[31744];
-            }
-        } else if (PID_TYPE(object->pid) == OBJ_TYPE_ITEM) {
-            if (itemGetType(object) == ITEM_TYPE_CONTAINER) {
-                int currentSize = containerGetTotalSize(object);
-                int maxSize = containerGetMaxSize(object);
-                snprintf(formattedText, sizeof(formattedText), "%d/%d", currentSize, maxSize);
-            }
-        } else {
-            int inventoryWeight = objectGetInventoryWeight(object);
-            snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
-        }
-
-        int y = inventoryLootLayout.rightScrollerY + inventoryLootLayout.scrollerHeight + 2;
-        inventoryDrawCenteredText(windowBuffer, pitch, inventoryLootLayout.scrollerWidth, inventoryLootLayout.rightScrollerX, y, formattedText, color);
-
-        fontSetCurrent(oldFont);
+        inventoryLootRenderPaneWeight(windowBuffer, pitch, true, _target_stack[_target_curr_stack], inventoryLootRightEquippedWeight);
     }
 }
 
