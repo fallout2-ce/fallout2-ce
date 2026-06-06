@@ -346,6 +346,7 @@ static void _draw_amount(int value, int inventoryWindowType);
 static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int maximum, int defaultValue = 1);
 static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item);
 static int inventoryQuantityWindowFree(int inventoryWindowType);
+static void inventoryDisplayMessage(int num);
 static bool _ctrl_pressed();
 static void _drag_item_loop(Object* item, bool immediate);
 static void inventoryNormalLayoutUpdate();
@@ -940,6 +941,15 @@ static int inventoryMessageListInit()
     return 0;
 }
 
+static void inventoryDisplayMessage(int num)
+{
+    MessageListItem messageListItem;
+    messageListItem.num = num;
+    if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
+        displayMonitorAddMessage(messageListItem.text);
+    }
+}
+
 // inventory_msg_free
 // 0x46E7A0
 static int inventoryMessageListFree()
@@ -967,12 +977,7 @@ void inventoryOpen()
         if (_inven_dude == gDude) {
             int actionPointsRequired = inventoryGetInvenApCost();
             if (actionPointsRequired > 0 && actionPointsRequired > gDude->data.critter.combat.ap) {
-                // You don't have enough action points to use inventory
-                MessageListItem messageListItem;
-                messageListItem.num = 19;
-                if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                    displayMonitorAddMessage(messageListItem.text);
-                }
+                inventoryDisplayMessage(19); // You don't have enough action points to use inventory.
 
                 // NOTE: Uninline.
                 inventoryCommonFree();
@@ -4355,11 +4360,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
 
     if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER) {
         if (critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
-            // You can't find anything to take from that.
-            messageListItem.num = 50;
-            if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                displayMonitorAddMessage(messageListItem.text);
-            }
+            inventoryDisplayMessage(50); // You can't find anything to take from that.
             return 0;
         }
     }
@@ -4849,7 +4850,6 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
     _drag_item_loop(item, immediate);
 
     InventoryMoveResult result = INVENTORY_MOVE_RESULT_FAILED;
-    MessageListItem messageListItem;
 
     if (isPlanting) {
         if (immediate || inventoryLootMouseHitTestScroller(true)) {
@@ -4873,11 +4873,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                     if (itemMove(_inven_dude, targetObj, item, quantityToMove) != -1) {
                         result = INVENTORY_MOVE_RESULT_SUCCESS;
                     } else {
-                        // There is no space left for that item.
-                        messageListItem.num = 26;
-                        if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                            displayMonitorAddMessage(messageListItem.text);
-                        }
+                        inventoryDisplayMessage(26); // There is no space left for that item.
                     }
                 }
             }
@@ -4910,11 +4906,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
 
                         result = INVENTORY_MOVE_RESULT_SUCCESS;
                     } else {
-                        // You cannot pick that up. You are at your maximum weight capacity.
-                        messageListItem.num = 25;
-                        if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                            displayMonitorAddMessage(messageListItem.text);
-                        }
+                        inventoryDisplayMessage(25); // You cannot pick that up. You are at your maximum weight capacity.
                     }
                 }
             }
@@ -5137,18 +5129,12 @@ static void barterMoveToTable(Object* item, int quantity, int slotIndex, int ind
     bool immediate = _ctrl_pressed();
     _drag_item_loop(item, immediate);
 
-    MessageListItem messageListItem;
-
     if (fromDude) {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_X, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_Y)) {
             int quantityToMove = barterGetMovedQuantity(item, quantity, true, true, immediate);
             if (quantityToMove != -1) {
                 if (itemMoveForce(_inven_dude, sourceTable, item, quantityToMove) == -1) {
-                    // There is no space left for that item.
-                    messageListItem.num = 26;
-                    if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                        displayMonitorAddMessage(messageListItem.text);
-                    }
+                    inventoryDisplayMessage(26); // There is no space left for that item.
                 }
             }
         }
@@ -5157,11 +5143,7 @@ static void barterMoveToTable(Object* item, int quantity, int slotIndex, int ind
             int quantityToMove = barterGetMovedQuantity(item, quantity, false, true, immediate);
             if (quantityToMove != -1) {
                 if (itemMoveForce(npc, sourceTable, item, quantityToMove) == -1) {
-                    // You cannot pick that up. You are at your maximum weight capacity.
-                    messageListItem.num = 25;
-                    if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                        displayMonitorAddMessage(messageListItem.text);
-                    }
+                    inventoryDisplayMessage(25); // You cannot pick that up. You are at your maximum weight capacity.
                 }
             }
         }
@@ -5203,18 +5185,12 @@ static void barterMoveFromTable(Object* item, int quantity, int slotIndex, Objec
     bool immediate = _ctrl_pressed();
     _drag_item_loop(item, immediate);
 
-    MessageListItem messageListItem;
-
     if (fromDude) {
         if (immediate || mouseHitTestInWindow(gInventoryWindow, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_X, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_Y)) {
             int quantityToMove = barterGetMovedQuantity(item, quantity, true, false, immediate);
             if (quantityToMove != -1) {
                 if (itemMoveForce(sourceTable, _inven_dude, item, quantityToMove) == -1) {
-                    // There is no space left for that item.
-                    messageListItem.num = 26;
-                    if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                        displayMonitorAddMessage(messageListItem.text);
-                    }
+                    inventoryDisplayMessage(26); // There is no space left for that item.
                 }
             }
         }
@@ -5223,11 +5199,7 @@ static void barterMoveFromTable(Object* item, int quantity, int slotIndex, Objec
             int quantityToMove = barterGetMovedQuantity(item, quantity, false, false, immediate);
             if (quantityToMove != -1) {
                 if (itemMoveForce(sourceTable, npc, item, quantityToMove) == -1) {
-                    // You cannot pick that up. You are at your maximum weight capacity.
-                    messageListItem.num = 25;
-                    if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                        displayMonitorAddMessage(messageListItem.text);
-                    }
+                    inventoryDisplayMessage(25); // You cannot pick that up. You are at your maximum weight capacity.
                 }
             }
         }
