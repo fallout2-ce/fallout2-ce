@@ -77,7 +77,7 @@ static Rect fullGridTileRect()
         HEX_GRID_SIZE - 1,
     };
 
-    Rect result { };
+    Rect result {};
     int maxPx = 0;
     int minPx = 0;
     int minPy = 0;
@@ -293,7 +293,7 @@ static void editorResetSquare()
 {
     EdgeElevationData& data = mapEdgeGetElevationData(workingElevation);
     data.squareRect = { SQUARE_GRID_WIDTH - 1, 0, 0, SQUARE_GRID_HEIGHT - 1 };
-    data.clipSides = { };
+    data.clipSides = {};
 }
 
 // Clips an axis-aligned line to clip and draws it; skips lines fully outside.

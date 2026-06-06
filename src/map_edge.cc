@@ -227,7 +227,7 @@ static bool mapEdgeLoadFromStream(File* stream)
     for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
         EdgeElevationData& data = edgeData[elev];
         data.squareRect = { SQUARE_GRID_WIDTH - 1, 0, 0, SQUARE_GRID_HEIGHT - 1 };
-        data.clipSides = { };
+        data.clipSides = {};
 
         if (edgeVersion2) {
             int sqRect[4];
@@ -370,7 +370,7 @@ EdgeElevationData& mapEdgeGetElevationData(int elevation)
 void mapEdgeFree()
 {
     for (auto& data : edgeData) {
-        data = EdgeElevationData { };
+        data = EdgeElevationData {};
     }
     edgeDataLoaded = false;
     edgeEnabled = false;
