@@ -1502,7 +1502,8 @@ void edit_mapper()
             if (mapperYesNoDialog("Erase this map?")) {
                 bool wasBlockOn = map_toggle_block_obj_viewing_on();
                 if (wasBlockOn) map_toggle_block_obj_viewing(0);
-                mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
+                mapper_destroy_highlight_obj(&hl_obj1, nullptr);
+                _screen_obj = nullptr;
                 mapNewMap();
                 handle_new_map(&currentType, &scrollOffset);
                 interfaceBarHide();
@@ -1518,7 +1519,8 @@ void edit_mapper()
                 if (settings.mapper.use_art_not_protos) {
                     mapperShowTimedMsg("WARNING!  You are loading ART, not PROTOS!!!");
                 }
-                mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
+                mapper_destroy_highlight_obj(&hl_obj1, nullptr);
+                _screen_obj = nullptr;
                 bool wasBlockOn = map_toggle_block_obj_viewing_on();
                 if (wasBlockOn) {
                     map_toggle_block_obj_viewing(0);
