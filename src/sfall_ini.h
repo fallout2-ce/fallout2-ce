@@ -12,6 +12,9 @@ namespace fallout {
 /// Sets base directory to lookup .ini files.
 void sfall_ini_set_base_path(const char* path);
 
+/// Clears all cached .ini configs and config arrays. Called on game reset.
+void sfall_ini_cache_clear();
+
 /// Reads integer key identified by "fileName|section|key" triplet into `value`.
 bool sfall_ini_get_int(const char* triplet, int* value);
 
@@ -28,6 +31,7 @@ bool sfall_ini_set_string(const char* triplet, const char* value);
 void mf_set_ini_setting(OpcodeContext& ctx);
 void mf_get_ini_section(OpcodeContext& ctx);
 void mf_get_ini_sections(OpcodeContext& ctx);
+void mf_get_ini_config(OpcodeContext& ctx);
 void op_get_ini_setting(Program* program);
 void op_get_ini_string(Program* program);
 

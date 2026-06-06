@@ -711,6 +711,11 @@ int LenArray(ArrayId arrayId)
     return arr->size();
 }
 
+bool ArrayExists(ArrayId arrayId)
+{
+    return get_array_by_id(arrayId) != nullptr;
+}
+
 ProgramValue GetArray(ArrayId arrayId, const ProgramValue& key, Program* program)
 {
     auto arr = get_array_by_id(arrayId);
