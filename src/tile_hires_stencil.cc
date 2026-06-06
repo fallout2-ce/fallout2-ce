@@ -397,7 +397,7 @@ void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth,
 
 void tile_hires_stencil_init()
 {
-    gIsTileHiresStencilEnabled = !gameIsMapper() && settings.ui.enable_high_resolution_stencil;
+    gIsTileHiresStencilEnabled = !settings.system.executableIsMapper() && settings.ui.enable_high_resolution_stencil;
     if (!gIsTileHiresStencilEnabled) {
         return;
     }

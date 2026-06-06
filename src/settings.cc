@@ -11,6 +11,8 @@
 
 namespace fallout {
 
+bool SystemSettings::executableIsMapper() const { return compat_stricmp(executable.c_str(), "mapper") == 0; }
+
 struct SettingDescriptor {
     std::function<void()> read;
     std::function<void(bool onlyAdd)> write;

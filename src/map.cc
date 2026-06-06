@@ -29,9 +29,7 @@
 #include "map_edge.h"
 #include "memory.h"
 #include "object.h"
-#include "palette.h"
 #include "party_member.h"
-#include "pipboy.h"
 #include "proto.h"
 #include "proto_instance.h"
 #include "queue.h"
@@ -289,7 +287,7 @@ void isoExit()
 // 0x481FB4
 void mapInit()
 {
-    if (compat_stricmp(settings.system.executable.c_str(), "mapper") == 0) {
+    if (settings.system.executableIsMapper()) {
         _map_scroll_refresh = isoWindowRefreshRectMapper;
     }
 
@@ -793,7 +791,7 @@ void mapNewMap()
     tileWindowRefresh();
 }
 
-// 0x482A68
+// 0x482A68 map_load
 int mapLoadByName(char* fileName)
 {
     int rc;
@@ -802,20 +800,22 @@ int mapLoadByName(char* fileName)
 
     rc = -1;
 
-    char* extension = strstr(fileName, ".MAP");
-    if (extension != nullptr) {
-        strcpy(extension, ".SAV");
+    if (!settings.system.executableIsMapper()) {
+        char* extension = strstr(fileName, ".MAP");
+        if (extension != nullptr) {
+            strcpy(extension, ".SAV");
 
-        const char* filePath = mapBuildPath(fileName);
+            const char* filePath = mapBuildPath(fileName);
 
-        File* stream = fileOpen(filePath, "rb");
+            File* stream = fileOpen(filePath, "rb");
 
-        strcpy(extension, ".MAP");
+            strcpy(extension, ".MAP");
 
-        if (stream != nullptr) {
-            fileClose(stream);
-            rc = mapLoadSaved(fileName);
-            wmMapMusicStart();
+            if (stream != nullptr) {
+                fileClose(stream);
+                rc = mapLoadSaved(fileName);
+                wmMapMusicStart();
+            }
         }
     }
 
@@ -855,15 +855,17 @@ int mapLoadById(int map)
     return rc;
 }
 
-// 0x482B74
+// 0x482B74 map_load_file
 static int mapLoad(File* stream)
 {
-    _map_save_in_game(true);
     int mapLoadSoundId = 0;
-    if (backgoundSoundIsPlaying()) {
-        // Use the sfall sound path so the map-loading ambience does not depend
-        // on the native background music loader.
-        mapLoadSoundId = scriptSoundPlay("sound\\music\\WIND2.ACM", SCRIPT_SOUND_MODE_LOOP);
+    if (!settings.system.executableIsMapper()) {
+        _map_save_in_game(true);
+        if (backgoundSoundIsPlaying()) {
+            // Use the sfall sound path so the map-loading ambience does not depend
+            // on the native background music loader.
+            mapLoadSoundId = scriptSoundPlay("sound\\music\\WIND2.ACM", SCRIPT_SOUND_MODE_LOOP);
+        }
     }
     isoDisable();
     _partyMemberPrepLoad();
@@ -967,7 +969,7 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    if (gameIsMapper()) {
+    if (settings.system.executableIsMapper()) {
         mapEdgeLoad(gMapHeader.name);
     } else if (settings.ui.edg_support && !settings.ui.ignore_map_edges) {
         mapEdgeLoad(gMapHeader.name);
@@ -1118,7 +1120,7 @@ err:
     return rc;
 }
 
-// 0x483188
+// 0x483188 map_load_in_game
 int mapLoadSaved(char* fileName)
 {
     debugPrint("\nMAP: Loading SAVED map.");

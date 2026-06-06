@@ -24,6 +24,8 @@ struct SystemSettings {
     int free_space = 20480;
     int times_run = 0;
     std::string screenshots_format = "png";
+
+    bool executableIsMapper() const;
 };
 
 struct ScreenSettings {

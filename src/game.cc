@@ -1318,11 +1318,6 @@ int showQuitConfirmationDialog()
     return rc;
 }
 
-bool gameIsMapper()
-{
-    return gIsMapper;
-}
-
 static void TryLoadBaseCEMod()
 {
     bool found = false;

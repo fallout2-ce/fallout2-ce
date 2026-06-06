@@ -469,7 +469,7 @@ int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, i
 
     tileSetCenter(hexGridWidth * (hexGridHeight / 2) + hexGridWidth / 2, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
 
-    if (compat_stricmp(settings.system.executable.c_str(), "mapper") == 0) {
+    if (settings.system.executableIsMapper()) {
         gTileWindowRefreshElevationProc = tileRefreshMapper;
     }
 
