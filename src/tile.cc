@@ -558,30 +558,16 @@ int tileSetCenter(int tile, int flags)
         return -1;
     }
 
-    bool boundaryModsSet = false;
-    if (mapEdgeIsEnabled() && !settings.ui.ignore_map_edges) {
-        bool isScroll = flags == 0;
-        if (!isScroll) {
-            // Forced positioning (teleport, initial load, etc.): clamp to edge boundary.
-            tile = mapEdgeSelectZoneAndClamp(tile, gElevation);
-            if (!tileIsValid(tile)) return -1;
-        } else if (mapEdgeZoneIsSelected()) {
-            // Normal scroll: block if tile is outside boundary (matching sfall CheckBorder).
-            // Clamping here would move the center slightly and cause mapScroll's buffer
-            // copy to produce visual artifacts; blocking preserves the current view.
-            if (!mapEdgeTileInBounds(tile)) {
-                return -1;
-            }
-            // Tile is in bounds; set sub-tile boundary mods if tile is on the edge.
-            // If the tile is exactly on a boundary edge, force a full redraw
-            // (matching sfall's CheckBorder returning 1 → modeFlags |= 1).
-            if (mapEdgeSetBoundaryMods(tile)) {
-                boundaryModsSet = true;
-                flags |= TILE_SET_CENTER_REFRESH_WINDOW;
-            }
-        }
+    const bool edgeActive = mapEdgeIsEnabled() && !settings.ui.ignore_map_edges;
+    const bool isScroll = flags == 0;
+
+    if (edgeActive && !isScroll) {
+        // Forced positioning (teleport, load): clamp to edge boundary.
+        tile = mapEdgeSelectZoneAndClamp(tile, gElevation);
+        if (!tileIsValid(tile)) return -1;
     }
 
+    bool boundaryModsSet = false;
     if ((flags & TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
         if (gTileScrollLimitingEnabled) {
             int tileScreenX;
@@ -603,9 +589,21 @@ int tileSetCenter(int tile, int flags)
             }
         }
 
-        // Scroll-blocker object check only runs when no EDG is loaded.
-        // EDG clamping above already enforces the boundary.
-        if ((!mapEdgeIsEnabled() || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
+        // Must run after scroll limiting: mapEdgeSetBoundaryMods mutates the persistent
+        // alignment mods, so a scroll the limiter rejects must not touch them.
+        if (edgeActive && isScroll && mapEdgeZoneIsSelected()) {
+            // Block instead of clamp: clamping would shift the center and make
+            // mapScroll's buffer copy produce artifacts.
+            if (!mapEdgeTileInBounds(tile)) {
+                return -1;
+            }
+            // On a boundary edge: set sub-tile mods and force a full redraw.
+            if (mapEdgeSetBoundaryMods(tile)) {
+                boundaryModsSet = true;
+                flags |= TILE_SET_CENTER_REFRESH_WINDOW;
+            }
+        } else if ((!edgeActive || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
+            // Object scroll-blocker only applies when EDG isn't enforcing the boundary.
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
                 return -1;
             }
