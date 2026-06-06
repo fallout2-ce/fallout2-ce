@@ -37,6 +37,7 @@ constexpr int kFrmHeaderSize = 62;
 constexpr int kFrmFrameHeaderSize = 12;
 constexpr int32_t kFrmVersion = 4;
 constexpr size_t kMaxFrmPixels = 16 * 1024 * 1024;
+constexpr size_t kMaxPngInputBytes = kMaxFrmPixels * 8;
 
 enum class ConversionMode {
     FrmToPng,
@@ -470,6 +471,11 @@ std::optional<std::vector<unsigned char>> readBinaryInput(const std::string& inp
             std::cin.read(buffer.data(), buffer.size());
             std::streamsize count = std::cin.gcount();
             if (count > 0) {
+                size_t chunkSize = static_cast<size_t>(count);
+                if (chunkSize > kMaxPngInputBytes || data.size() > kMaxPngInputBytes - chunkSize) {
+                    std::cerr << description << " is too large (limit " << kMaxPngInputBytes << " bytes)\n";
+                    return std::nullopt;
+                }
                 data.insert(data.end(),
                     reinterpret_cast<unsigned char*>(buffer.data()),
                     reinterpret_cast<unsigned char*>(buffer.data()) + count);
@@ -491,6 +497,10 @@ std::optional<std::vector<unsigned char>> readBinaryInput(const std::string& inp
         std::streamoff size = stream.tellg();
         if (size < 0) {
             std::cerr << "Failed to read " << description << ": " << inputPath << "\n";
+            return std::nullopt;
+        }
+        if (size > static_cast<std::streamoff>(kMaxPngInputBytes)) {
+            std::cerr << description << " is too large (limit " << kMaxPngInputBytes << " bytes): " << inputPath << "\n";
             return std::nullopt;
         }
         stream.seekg(0, std::ios::beg);
@@ -562,7 +572,7 @@ bool unpackIndexedPngPixels(const std::vector<unsigned char>& indexedData, unsig
     return true;
 }
 
-bool pngPaletteMatchesFalloutPalette(const LodePNGColorMode& pngColor, const std::array<uint8_t, kPaletteSize>& palette, const std::vector<uint8_t>& pixels)
+bool pngPaletteMatchesFalloutPalette(const LodePNGColorMode& pngColor, const std::array<uint8_t, kPaletteSize>& palette, const std::vector<uint8_t>& pixels, bool transparent)
 {
     if (pngColor.colortype != LCT_PALETTE || pngColor.palette == nullptr) {
         return false;
@@ -585,6 +595,15 @@ bool pngPaletteMatchesFalloutPalette(const LodePNGColorMode& pngColor, const std
             || pngPalette[1] != static_cast<unsigned char>(palette[index * 3 + 1] << 2)
             || pngPalette[2] != static_cast<unsigned char>(palette[index * 3 + 2] << 2)) {
             return false;
+        }
+        if (transparent) {
+            if (index == 0) {
+                if (pngPalette[3] != 0) {
+                    return false;
+                }
+            } else if (pngPalette[3] != 255) {
+                return false;
+            }
         }
     }
 
@@ -683,7 +702,7 @@ std::optional<FrmFrame> loadPngFrame(const Options& options, const std::array<ui
             return std::nullopt;
         }
 
-        if (pngPaletteMatchesFalloutPalette(indexedState.info_png.color, palette, indexedPixels)) {
+        if (pngPaletteMatchesFalloutPalette(indexedState.info_png.color, palette, indexedPixels, options.transparent)) {
             frame->pixels = std::move(indexedPixels);
             return frame;
         }
@@ -885,6 +904,7 @@ void printUsage()
         << "  Input type is auto-detected from .frm/.png paths. Use --from-frm or --from-png for stdin or ambiguous paths.\n"
         << "  Output type is auto-detected from explicit .frm/.png output paths.\n"
         << "  Output defaults to .png for FRM input and .frm for PNG input when output is omitted or '-'.\n"
+        << "  PNG -> indexed PNG requires an explicit output path unless you're streaming to '-'.\n"
         << "  All PNG output is Fallout palette-indexed.\n"
         << "  --from-* selectors are mutually exclusive; --to-* selectors are mutually exclusive.\n"
         << "\n"
@@ -1134,6 +1154,11 @@ std::optional<Options> parseOptions(int argc, char** argv)
         return std::nullopt;
     }
     options.mode = mode;
+
+    if (*options.mode == ConversionMode::PngToIndexedPng && !outputAssigned && options.inputPath != "-") {
+        std::cerr << "PNG -> indexed PNG requires an explicit output path to avoid overwriting the input\n";
+        return std::nullopt;
+    }
 
     const bool frmOnlyOptionSpecified = options.frameSpecified || options.directionSpecified;
     const bool pngToFrmOnlyOptionSpecified = options.framesPerSecondSpecified
