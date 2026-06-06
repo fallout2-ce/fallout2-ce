@@ -448,6 +448,7 @@ void gameReset()
     scriptHooksReset();
     sfallArraysReset();
     sfall_gl_scr_reset();
+    sfall_ini_cache_clear();
     sfallOnGameReset();
     gGameLoaded = false;
 }

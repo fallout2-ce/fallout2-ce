@@ -13,7 +13,7 @@ struct SfallGlobalVarsState {
 #pragma pack(push)
 #pragma pack(8)
 
-/// Matches Sfall's `GlobalVar` to maintain binary compatibility.
+// Matches Sfall's `GlobalVar` to maintain binary compatibility.
 struct GlobalVarEntry {
     uint64_t key;
     int32_t value;

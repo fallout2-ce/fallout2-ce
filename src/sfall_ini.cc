@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <cstdio> // for snprintf
 #include <cstring> // for strncpy, strlen
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 #include "config.h"
 #include "debug.h"
@@ -13,13 +16,13 @@
 
 namespace fallout {
 
-/// The max length of `fileName` chunk in the triplet.
+// The max length of `fileName` chunk in the triplet.
 static constexpr size_t kFileNameMaxSize = 63;
 
-/// The max length of `section` chunk in the triplet.
+// The max length of `section` chunk in the triplet.
 static constexpr size_t kSectionMaxSize = 32;
 
-/// Special .ini file names which are accessed without adding base path.
+// Special .ini file names which are accessed without adding base path.
 static constexpr const char* kSystemConfigFileNames[] = {
     "ddraw.ini",
     "f2_res.ini",
@@ -27,9 +30,9 @@ static constexpr const char* kSystemConfigFileNames[] = {
 
 static char basePath[COMPAT_MAX_PATH];
 
-/// Parses "fileName|section|key" triplet into parts. `fileName` and `section`
-/// chunks are copied into appropriate variables. Returns the pointer to `key`,
-/// or `nullptr` on any error.
+// Parses "fileName|section|key" triplet into parts. `fileName` and `section`
+// chunks are copied into appropriate variables. Returns the pointer to `key`,
+// or `nullptr` on any error.
 static const char* parse_ini_triplet(const char* triplet, char* fileName, char* section)
 {
     const char* fileNameSectionSep = strchr(triplet, '|');
@@ -61,7 +64,7 @@ static const char* parse_ini_triplet(const char* triplet, char* fileName, char* 
     return sectionKeySep + 1;
 }
 
-/// Returns `true` if given `fileName` is a special system .ini file name.
+// Returns `true` if given `fileName` is a special system .ini file name.
 static bool is_system_file_name(const char* fileName)
 {
     for (auto& systemFileName : kSystemConfigFileNames) {
@@ -73,36 +76,19 @@ static bool is_system_file_name(const char* fileName)
     return false;
 }
 
-// Loads an INI file specified by 'ini_file_name' (e.g., "myconfig.ini" or "ddraw.ini")
-// into the provided 'config_out' object.
-// The caller must provide a live config instance and keep it alive while the
-// loaded values are being read.
-// Returns true if the file was successfully found and read, false otherwise.
-static bool sfall_load_named_ini_file(const char* ini_file_name, Config* config_out)
+// Reads the INI file into `config`, trying the base directory first for
+// non-system files and falling back to the working directory on failure.
+static bool sfall_read_named_ini(const char* iniFileName, Config* config)
 {
-    if (ini_file_name == nullptr || config_out == nullptr) {
-        return false;
+    if (basePath[0] != '\0' && !is_system_file_name(iniFileName)) {
+        char path[COMPAT_MAX_PATH];
+        snprintf(path, sizeof(path), "%s\\%s", basePath, iniFileName);
+        if (configRead(config, path, false)) {
+            return true;
+        }
     }
 
-    char path[COMPAT_MAX_PATH];
-    bool loaded = false;
-
-    if (basePath[0] != '\0' && !is_system_file_name(ini_file_name)) {
-        // Attempt to load requested file in base directory.
-        snprintf(path, sizeof(path), "%s\\%s", basePath, ini_file_name);
-        loaded = configRead(config_out, path, false);
-    }
-
-    if (!loaded) {
-        // There was no base path set, requested file is a system config, or
-        // non-system config file was not found the base path - attempt to load
-        // from current working directory.
-        strncpy(path, ini_file_name, sizeof(path) - 1);
-        path[sizeof(path) - 1] = '\0';
-        loaded = configRead(config_out, path, false);
-    }
-
-    return loaded;
+    return configRead(config, iniFileName, false);
 }
 
 void sfall_ini_set_base_path(const char* path)
@@ -119,6 +105,53 @@ void sfall_ini_set_base_path(const char* path)
     } else {
         basePath[0] = '\0';
     }
+}
+
+// Frees a cached `Config` via `configFree` before releasing it.
+struct ConfigDeleter {
+    void operator()(Config* config) const
+    {
+        if (config != nullptr) {
+            if (config->isInitialized()) {
+                configFree(config);
+            }
+            delete config;
+        }
+    }
+};
+
+using CachedConfigPtr = std::unique_ptr<Config, ConfigDeleter>;
+
+// Maps a requested .ini file name to its parsed `Config`. A `nullptr` value
+// marks a file that could not be read, so it isn't retried.
+static std::unordered_map<std::string, CachedConfigPtr> iniConfigCache;
+
+// Maps a requested .ini file name to a persistent array of its contents, so
+// repeated calls return the same array. Separate caches for file and DAT reads.
+static std::unordered_map<std::string, ArrayId> iniConfigArrayCache;
+static std::unordered_map<std::string, ArrayId> iniConfigArrayCacheDat;
+
+// Returns the parsed `Config` for `iniFileName`, reading and caching it on first
+// access. Returns `nullptr` if the file cannot be read (the miss is cached).
+static Config* sfall_get_ini_config(const char* iniFileName)
+{
+    if (iniFileName == nullptr) {
+        return nullptr;
+    }
+
+    auto cacheHit = iniConfigCache.find(iniFileName);
+    if (cacheHit != iniConfigCache.end()) {
+        return cacheHit->second.get();
+    }
+
+    CachedConfigPtr config(new Config());
+    if (!configInit(config.get()) || !sfall_read_named_ini(iniFileName, config.get())) {
+        // Negative cache: remember that this file could not be read.
+        iniConfigCache.emplace(iniFileName, nullptr);
+        return nullptr;
+    }
+
+    return iniConfigCache.emplace(iniFileName, std::move(config)).first->second.get();
 }
 
 // Returns `false` on triplet parse or config initialization error.
@@ -142,20 +175,15 @@ static bool sfall_ini_get_string_internal(const char* triplet, char* value, size
         return false;
     }
 
-    ScopedConfig config;
-    if (!config) {
-        return false;
-    }
-
-    bool loaded = sfall_load_named_ini_file(fileName, config.get());
+    Config* config = sfall_get_ini_config(fileName);
 
     // NOTE: Sfall's `GetIniSetting` returns error code (-1) only when it cannot
     // parse triplet. Otherwise the default for string settings is empty string.
     value[0] = '\0';
 
-    if (loaded) {
+    if (config != nullptr) {
         char* stringValue;
-        if (configGetString(config.get(), section, key, &stringValue)) {
+        if (configGetString(config, section, key, &stringValue)) {
             strncpy(value, stringValue, size - 1);
             value[size - 1] = '\0';
             if (found != nullptr) {
@@ -210,6 +238,12 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
         return false;
     }
 
+    // Invalidate cached data so subsequent reads pick up the new value. The
+    // persistent array is left for game reset to free (it holds nested sub-array
+    // IDs and may still be referenced by a script).
+    iniConfigCache.erase(fileName);
+    iniConfigArrayCache.erase(fileName);
+
     ScopedConfig config;
     if (!config) {
         return false;
@@ -254,6 +288,20 @@ static const ConfigSection* sfall_find_section_in_config(Config* config, const c
     return static_cast<const ConfigSection*>(sectionEntry->value);
 }
 
+// Copies a config section's key/value pairs into an associative array.
+static void copyConfigSectionToArray(ArrayId arrayId, const ConfigSection* section, Program* program)
+{
+    for (int i = 0; i < section->entriesLength; ++i) {
+        const DictionaryEntry* entry = &(section->entries[i]);
+        const char* key = entry->key;
+        const char* value = *(static_cast<char**>(entry->value));
+
+        if (key != nullptr && value != nullptr) {
+            SetArray(arrayId, programMakeString(program, key), programMakeString(program, value), false, program);
+        }
+    }
+}
+
 // set_ini_setting
 void mf_set_ini_setting(OpcodeContext& ctx)
 {
@@ -292,26 +340,11 @@ void mf_get_ini_section(OpcodeContext& ctx)
         return;
     }
 
-    ScopedConfig iniConfig;
-    if (!iniConfig) {
-        debugPrint("mf_get_ini_section: Failed to initialize Config structure.");
-        ctx.setReturn(arrayId);
-        return;
-    }
-
-    if (sfall_load_named_ini_file(filePath, iniConfig.get())) {
-        const ConfigSection* section = sfall_find_section_in_config(iniConfig.get(), sectionName);
-
+    Config* config = sfall_get_ini_config(filePath);
+    if (config != nullptr) {
+        const ConfigSection* section = sfall_find_section_in_config(config, sectionName);
         if (section != nullptr) {
-            for (int i = 0; i < section->entriesLength; ++i) {
-                DictionaryEntry* entry = &(section->entries[i]);
-                const char* key = entry->key;
-                const char* value = *(static_cast<char**>(entry->value));
-
-                if (key != nullptr && value != nullptr) {
-                    SetArray(arrayId, programMakeString(ctx.program(), key), programMakeString(ctx.program(), value), false, ctx.program());
-                }
-            }
+            copyConfigSectionToArray(arrayId, section, ctx.program());
         }
     }
 
@@ -330,24 +363,15 @@ void mf_get_ini_sections(OpcodeContext& ctx)
         return;
     }
 
-    ScopedConfig iniConfig;
-    if (!iniConfig) {
-        debugPrint("mf_get_ini_sections: Failed to initialize Config structure.");
-        ctx.setReturn(arrayId);
-        return;
-    }
+    Config* config = sfall_get_ini_config(filePath);
+    if (config != nullptr && config->entriesLength > 0) {
+        arrayId = CreateTempArray(config->entriesLength, 0);
+        for (int i = 0; i < config->entriesLength; ++i) {
+            const DictionaryEntry* entry = &(config->entries[i]);
+            const char* sectionName = entry->key;
 
-    // note: seems to load sections in random order
-    if (sfall_load_named_ini_file(filePath, iniConfig.get())) {
-        if (iniConfig.get()->entriesLength > 0) {
-            arrayId = CreateTempArray(iniConfig.get()->entriesLength, 0);
-            for (int i = 0; i < iniConfig.get()->entriesLength; ++i) {
-                DictionaryEntry* entry = &(iniConfig.get()->entries[i]);
-                const char* sectionName = entry->key;
-
-                if (sectionName != nullptr) {
-                    SetArray(arrayId, programMakeInt(ctx.program(), i), programMakeString(ctx.program(), sectionName), false, ctx.program());
-                }
+            if (sectionName != nullptr) {
+                SetArray(arrayId, programMakeInt(ctx.program(), i), programMakeString(ctx.program(), sectionName), false, ctx.program());
             }
         }
     }
@@ -356,6 +380,73 @@ void mf_get_ini_sections(OpcodeContext& ctx)
         arrayId = CreateTempArray(0, 0);
     }
 
+    ctx.setReturn(arrayId);
+}
+
+// Builds a persistent associative array mapping each section name to a nested
+// associative array of that section's key/value pairs.
+static ArrayId sfall_build_config_array(const Config* config, Program* program)
+{
+    ArrayId arrayId = CreateArray(-1, 0);
+
+    for (int i = 0; i < config->entriesLength; ++i) {
+        const DictionaryEntry* sectionEntry = &(config->entries[i]);
+        const auto* section = static_cast<const ConfigSection*>(sectionEntry->value);
+
+        ArrayId sectionArrayId = CreateArray(-1, 0);
+        copyConfigSectionToArray(sectionArrayId, section, program);
+
+        SetArray(arrayId, programMakeString(program, sectionEntry->key), ProgramValue(sectionArrayId), false, program);
+    }
+
+    return arrayId;
+}
+
+// get_ini_config
+void mf_get_ini_config(OpcodeContext& ctx)
+{
+    // Arguments: file_name (string), from_dat (bool)
+    const char* fileName = ctx.stringArg(0);
+    bool isDb = ctx.arg(1).asInt() != 0;
+
+    if (fileName == nullptr || fileName[0] == '\0') {
+        ctx.printError("%s() - invalid config file path.", ctx.name());
+        ctx.setReturn(0);
+        return;
+    }
+
+    // Return the cached array if it still exists; otherwise drop the stale entry and rebuild.
+    auto& arrayCache = isDb ? iniConfigArrayCacheDat : iniConfigArrayCache;
+    auto cacheHit = arrayCache.find(fileName);
+    if (cacheHit != arrayCache.end()) {
+        if (ArrayExists(cacheHit->second)) {
+            ctx.setReturn(cacheHit->second);
+            return;
+        }
+        arrayCache.erase(cacheHit);
+    }
+
+    ArrayId arrayId;
+    if (isDb) {
+        // DAT reads bypass the shared config cache, so read into a local config here.
+        ScopedConfig dbConfig(fileName, true);
+        if (!dbConfig) {
+            ctx.printError("%s() - cannot read config file from DAT: %s", ctx.name(), fileName);
+            ctx.setReturn(0);
+            return;
+        }
+        arrayId = sfall_build_config_array(dbConfig.get(), ctx.program());
+    } else {
+        Config* config = sfall_get_ini_config(fileName);
+        if (config == nullptr) {
+            ctx.printError("%s() - cannot read config file: %s", ctx.name(), fileName);
+            ctx.setReturn(0);
+            return;
+        }
+        arrayId = sfall_build_config_array(config, ctx.program());
+    }
+
+    arrayCache.emplace(fileName, arrayId);
     ctx.setReturn(arrayId);
 }
 
@@ -383,6 +474,15 @@ void op_get_ini_string(Program* program)
     } else {
         programStackPushInteger(program, -1);
     }
+}
+
+void sfall_ini_cache_clear()
+{
+    iniConfigCache.clear();
+
+    // Cached array IDs are already invalidated by sfallArraysReset(); just drop the now-stale cache entries.
+    iniConfigArrayCache.clear();
+    iniConfigArrayCacheDat.clear();
 }
 
 } // namespace fallout
