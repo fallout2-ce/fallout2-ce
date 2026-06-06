@@ -64,6 +64,9 @@ bool mapEdgeIsLoaded();
 void mapEdgeSetEnabled(bool enabled);
 bool mapEdgeIsEnabled();
 
+// Marks edge data as version 2 so squareRect/clipSides are written on save.
+void mapEdgeUpgradeToVersion2();
+
 // Returns true if a zone was selected on last tileSetCenter call.
 bool mapEdgeZoneIsSelected();
 

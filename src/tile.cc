@@ -1545,7 +1545,7 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
 // Port of sfall HRP ViewMap::square_obj_render
 void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop)
 {
-    if (!mapEdgeHasSquareRect(elevation)) {
+    if (!mapEdgeIsEnabled() || !mapEdgeHasSquareRect(elevation)) {
         return;
     }
 

@@ -250,7 +250,7 @@ static bool mapEdgeLoadFromStream(File* stream)
             }
 
             // File stores RECT order: [0]=left, [1]=top, [2]=right, [3]=bottom.
-            EdgeZone zone{};
+            EdgeZone zone {};
             zone.tileRect = { tileRect[0], tileRect[1], tileRect[2], tileRect[3] };
             calcEdgeData(&zone);
             data.zones.push_back(zone);
@@ -396,6 +396,11 @@ bool mapEdgeIsEnabled()
 {
     // Edges can only be enabled when data is actually loaded.
     return edgeDataLoaded && edgeEnabled;
+}
+
+void mapEdgeUpgradeToVersion2()
+{
+    edgeVersion2 = true;
 }
 
 bool mapEdgeZoneIsSelected()

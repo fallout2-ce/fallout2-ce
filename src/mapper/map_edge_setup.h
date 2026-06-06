@@ -10,6 +10,10 @@ void mapEdgeSetupInit();
 // Edits the in-memory edge data; the disk write happens on the next map save.
 void mapEdgeSetupDialog();
 
+// Opens the Map Angled Edge Setup dialog to edit the current elevation's squareRect/clipSides.
+// Edits the in-memory edge data; the disk write happens on the next map save.
+void mapEdgeSquareSetupDialog();
+
 // Toggles the persistent edge-rects overlay shown over the iso view while editing.
 void mapEdgeSetupToggleOverlay();
 

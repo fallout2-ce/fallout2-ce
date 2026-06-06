@@ -139,6 +139,7 @@ static char kArtToProtos[] = " Art => New Protos ";
 static char kSwapPrototypse[] = " Swap Prototypes ";
 
 static char kHiResMapEdges[] = " Hi-Res Map Edges Setup ";
+static char kSetAngledEdges[] = " Set Hi-Res Angled Edges ";
 static char kToggleMapEdgesOverlay[] = " Toggle Map Edges Overlay ";
 
 static char kTmpMapName[] = "TMP$MAP#.MAP";
@@ -228,6 +229,7 @@ char* menu_3[] = {
 
 char* menuNamesSettings[] = {
     kHiResMapEdges,
+    kSetAngledEdges,
     kToggleMapEdgesOverlay,
 };
 
@@ -297,7 +299,7 @@ int menu_val_2[8];
 
 int menu_val_3[7];
 
-int menu_val_4[2];
+int menu_val_4[3];
 
 // 0x6EAA80
 unsigned char e_num[4][19 * 26];
@@ -577,6 +579,7 @@ constexpr int kBtnClearMapLevel = 5666;
 constexpr int kBtnCreateAllMapTexts = 5406;
 constexpr int kBtnRebuildAllMaps = 5405;
 constexpr int kBtnHiResMapEdges = 0x3101;
+constexpr int kBtnSetAngledEdges = 0x3103;
 constexpr int kBtnToggleMapEdgesOverlay = 0x3102;
 
 // FILE menu pulldown keycodes
@@ -738,7 +741,8 @@ void MapperInit()
     menu_val_3[6] = kBtnLibrarianSwapProtos;
 
     menu_val_4[0] = kBtnHiResMapEdges;
-    menu_val_4[1] = kBtnToggleMapEdgesOverlay;
+    menu_val_4[1] = kBtnSetAngledEdges;
+    menu_val_4[2] = kBtnToggleMapEdgesOverlay;
 }
 
 static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
@@ -782,7 +786,7 @@ static void initMenuBar(const int screenWidth)
     _win_register_menu_pulldown(menu_bar, 8, "FILE", kBtnMenuHeaderFile, 8, menu_names[0], foregroundColor, backgroundColor);
     _win_register_menu_pulldown(menu_bar, 40, "TOOLS", kBtnMenuHeaderTools, 21, menu_names[1], foregroundColor, backgroundColor);
     _win_register_menu_pulldown(menu_bar, 80, "SCRIPTS", kBtnMenuHeaderScripts, 8, menu_names[2], foregroundColor, backgroundColor);
-    _win_register_menu_pulldown(menu_bar, 130, "SETTINGS", kBtnMenuHeaderSettings, 2, menu_names[4], foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 130, "SETTINGS", kBtnMenuHeaderSettings, 3, menu_names[4], foregroundColor, backgroundColor);
     if (can_modify_protos) {
         _win_register_menu_pulldown(menu_bar, 180, "LIBRARIAN", kBtnMenuHeaderLibrarian, 7, menu_names[3], foregroundColor, backgroundColor);
     }
@@ -1575,6 +1579,13 @@ void edit_mapper()
                 break;
             }
             mapEdgeSetupDialog();
+            break;
+        case kBtnSetAngledEdges:
+            if (map_entered) {
+                mapperShowTimedMsg("This map has been Entered.  Can't edit edges.");
+                break;
+            }
+            mapEdgeSquareSetupDialog();
             break;
         case kBtnToggleMapEdgesOverlay:
             mapEdgeSetupToggleOverlay();
