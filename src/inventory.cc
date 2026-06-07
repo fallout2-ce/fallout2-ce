@@ -681,6 +681,19 @@ static int buttonCreateAction(int win, int x, int y, int width, int height, int 
     return buttonCreate(win, x, y, width, height, -1, -1, keyCode);
 }
 
+static int buttonCreateActionWithFrm(int win, int x, int y, int mouseDownEventCode, int mouseUpEventCode, const FrmId& normalId, const FrmId& pressedId)
+{
+    int btn = buttonCreateWithFrm(win,
+        x, y, -1, -1,
+        mouseDownEventCode, mouseUpEventCode,
+        normalId, pressedId,
+        {}, BUTTON_FLAG_TRANSPARENT);
+    if (btn != -1) {
+        buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+    }
+    return btn;
+}
+
 static ConstBuffer2D inventoryGetBackgroundBuffer(int inventoryWindowType, int fallbackFrmId, FrmImage& fallbackImage, int& sourceXOffset)
 {
     sourceXOffset = 0;
@@ -1397,40 +1410,30 @@ static bool _setup_inventory(int inventoryWindowType)
     }
 
     int fid;
-    int btn;
+    int btn = -1;
+    int doneButtonX = -1;
+    int doneButtonY = -1;
+    switch (inventoryWindowType) {
+    case INVENTORY_WINDOW_TYPE_NORMAL:
+        doneButtonX = inventoryLayout.doneButtonX;
+        doneButtonY = 329;
+        break;
+    case INVENTORY_WINDOW_TYPE_USE_ITEM_ON:
+        doneButtonX = 233;
+        doneButtonY = 328;
+        break;
+    case INVENTORY_WINDOW_TYPE_LOOT:
+        doneButtonX = inventoryLootLayout.doneButtonX;
+        doneButtonY = 331;
+        break;
+    }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0, 0);
-    _inventoryFrmImages[0].lock(fid);
-
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0, 0);
-    _inventoryFrmImages[1].lock(fid);
-
-    if (_inventoryFrmImages[0].isLocked() && _inventoryFrmImages[1].isLocked()) {
-        btn = -1;
-        int doneButtonX = -1;
-        int doneButtonY = -1;
-        switch (inventoryWindowType) {
-        case INVENTORY_WINDOW_TYPE_NORMAL:
-            doneButtonX = inventoryLayout.doneButtonX;
-            doneButtonY = 329;
-            break;
-        case INVENTORY_WINDOW_TYPE_USE_ITEM_ON:
-            doneButtonX = 233;
-            doneButtonY = 328;
-            break;
-        case INVENTORY_WINDOW_TYPE_LOOT:
-            doneButtonX = inventoryLootLayout.doneButtonX;
-            doneButtonY = 331;
-            break;
-        }
-
-        if (doneButtonX != -1) {
-            btn = buttonCreate(gInventoryWindow, doneButtonX, doneButtonY, 15, 16, -1, -1, -1, KEY_ESCAPE, _inventoryFrmImages[0].getData(), _inventoryFrmImages[1].getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
-        }
-
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
+    if (doneButtonX != -1) {
+        btn = buttonCreateActionWithFrm(gInventoryWindow,
+            doneButtonX, doneButtonY,
+            -1, KEY_ESCAPE,
+            FrmId(OBJ_TYPE_INTERFACE, 8),
+            FrmId(OBJ_TYPE_INTERFACE, 9));
     }
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
@@ -1598,24 +1601,12 @@ static bool _setup_inventory(int inventoryWindowType)
     if (inventoryWindowType != INVENTORY_WINDOW_TYPE_TRADE) {
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
             if (!_gIsSteal) {
-                // Take all button (normal)
-                fid = buildFid(OBJ_TYPE_INTERFACE, 436, 0, 0, 0);
-                _inventoryFrmImages[8].lock(fid);
-
-                // Take all button (pressed)
-                fid = buildFid(OBJ_TYPE_INTERFACE, 437, 0, 0, 0);
-                _inventoryFrmImages[9].lock(fid);
-
-                if (_inventoryFrmImages[8].isLocked() && _inventoryFrmImages[9].isLocked()) {
-                    // Take all button.
-                    btn = buttonCreate(gInventoryWindow,
-                        inventoryLootLayout.takeAllButtonX, 204, 39, 41,
-                        -1, -1, 2502, -1,
-                        _inventoryFrmImages[8].getData(), _inventoryFrmImages[9].getData());
-                    if (btn != -1) {
-                        buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-                    }
-                }
+                // Take all button.
+                btn = buttonCreateActionWithFrm(gInventoryWindow,
+                    inventoryLootLayout.takeAllButtonX, 204,
+                    2502, -1,
+                    FrmId(OBJ_TYPE_INTERFACE, 436),
+                    FrmId(OBJ_TYPE_INTERFACE, 437));
             }
         }
     } else {
@@ -5720,7 +5711,7 @@ static int _drop_into_container(Object* container, Object* item, int sourceIndex
     return rc;
 }
 
-// 0x47650C
+// 0x47650C drop ammo into weapon
 static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
 {
     if (itemGetType(weapon) != ITEM_TYPE_WEAPON) {
@@ -5789,7 +5780,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
     return INVENTORY_AMMO_MOVE_RESULT_SUCCESS;
 }
 
-// 0x47664C
+// 0x47664C draw_amount
 static void _draw_amount(int value, int inventoryWindowType)
 {
     // BIGNUM.frm
@@ -5839,7 +5830,7 @@ static void _draw_amount(int value, int inventoryWindowType)
     windowRefreshRect(_mt_wid, &rect);
 }
 
-// 0x47688C
+// 0x47688C do_move_timer
 static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int max, int defaultValue)
 {
     ScopedGameMode gm(GameMode::kCounter);
@@ -6004,7 +5995,7 @@ static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int ma
 
 // Creates move items/set timer interface.
 //
-// 0x476AB8
+// 0x476AB8 setup_move_timer_win
 static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 {
     const int oldFont = fontGetCurrent();
@@ -6054,125 +6045,38 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         int overlayFid = buildFid(OBJ_TYPE_INTERFACE, 306, 0, 0, 0);
         if (overlayFrmImage.lock(overlayFid)) {
             blitBufferToBuffer(overlayFrmImage.getData(),
-                105,
-                81,
-                105,
-                windowBuffer + 34 * windowDescription->width + 113,
-                windowDescription->width);
+                105, 81, 105,
+                windowBuffer + 34 * windowDescription->width + 113, windowDescription->width);
         }
     }
 
     int inventoryFid = itemGetInventoryFid(item);
     artRender(inventoryFid, windowBuffer + windowDescription->width * 46 + 16, INVENTORY_LARGE_SLOT_WIDTH, INVENTORY_LARGE_SLOT_HEIGHT, windowDescription->width);
 
-    int x;
-    int y;
+    int x = 194;
+    int y = 64;
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
         x = 200;
         y = 46;
-    } else {
-        x = 194;
-        y = 64;
     }
 
     int fid;
-    int btn;
 
     // Plus button
-    fid = buildFid(OBJ_TYPE_INTERFACE, 193, 0, 0, 0);
-    _moveFrmImages[0].lock(fid);
-
-    fid = buildFid(OBJ_TYPE_INTERFACE, 194, 0, 0, 0);
-    _moveFrmImages[1].lock(fid);
-
-    if (_moveFrmImages[0].isLocked() && _moveFrmImages[1].isLocked()) {
-        btn = buttonCreate(_mt_wid,
-            x,
-            y,
-            16,
-            12,
-            -1,
-            -1,
-            6000,
-            -1,
-            _moveFrmImages[0].getData(),
-            _moveFrmImages[1].getData(),
-            nullptr,
-            BUTTON_FLAG_TRANSPARENT);
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
-    }
+    int btn = buttonCreateActionWithFrm(_mt_wid,
+        x, y, 6000, -1, FrmId(OBJ_TYPE_INTERFACE, 193), FrmId(OBJ_TYPE_INTERFACE, 194));
 
     // Minus button
-    fid = buildFid(OBJ_TYPE_INTERFACE, 191, 0, 0, 0);
-    _moveFrmImages[2].lock(fid);
+    btn = buttonCreateActionWithFrm(_mt_wid,
+        x, y + 12, 7000, -1, FrmId(OBJ_TYPE_INTERFACE, 191), FrmId(OBJ_TYPE_INTERFACE, 192));
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 192, 0, 0, 0);
-    _moveFrmImages[3].lock(fid);
+    // Done
+    btn = buttonCreateActionWithFrm(_mt_wid,
+        98, 128, -1, 500, FrmId(OBJ_TYPE_INTERFACE, 8), FrmId(OBJ_TYPE_INTERFACE, 9));
 
-    if (_moveFrmImages[2].isLocked() && _moveFrmImages[3].isLocked()) {
-        btn = buttonCreate(_mt_wid,
-            x,
-            y + 12,
-            17,
-            12,
-            -1,
-            -1,
-            7000,
-            -1,
-            _moveFrmImages[2].getData(),
-            _moveFrmImages[3].getData(),
-            nullptr,
-            BUTTON_FLAG_TRANSPARENT);
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
-    }
-
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0, 0);
-    _moveFrmImages[4].lock(fid);
-
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0, 0);
-    _moveFrmImages[5].lock(fid);
-
-    if (_moveFrmImages[4].isLocked() && _moveFrmImages[5].isLocked()) {
-        // Done
-        btn = buttonCreate(_mt_wid,
-            98,
-            128,
-            15,
-            16,
-            -1,
-            -1,
-            -1,
-            500,
-            _moveFrmImages[4].getData(),
-            _moveFrmImages[5].getData(),
-            nullptr,
-            BUTTON_FLAG_TRANSPARENT);
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
-
-        // Cancel
-        btn = buttonCreate(_mt_wid,
-            148,
-            128,
-            15,
-            16,
-            -1,
-            -1,
-            -1,
-            KEY_ESCAPE,
-            _moveFrmImages[4].getData(),
-            _moveFrmImages[5].getData(),
-            nullptr,
-            BUTTON_FLAG_TRANSPARENT);
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
-    }
+    // Cancel
+    btn = buttonCreateActionWithFrm(_mt_wid,
+        148, 128, -1, KEY_ESCAPE, FrmId(OBJ_TYPE_INTERFACE, 8), FrmId(OBJ_TYPE_INTERFACE, 9));
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
         fid = buildFid(OBJ_TYPE_INTERFACE, 307, 0, 0, 0);
@@ -6192,14 +6096,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
                 fontDrawText(_moveFrmImages[7].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, _colorTable[18977]);
 
                 btn = buttonCreate(_mt_wid,
-                    120,
-                    80,
-                    94,
-                    33,
-                    -1,
-                    -1,
-                    -1,
-                    5000,
+                    120, 80, 94, 33, -1, -1, -1, 5000,
                     _moveFrmImages[6].getData(),
                     _moveFrmImages[7].getData(),
                     nullptr,
@@ -6218,7 +6115,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
     return 0;
 }
 
-// 0x477030
+// 0x477030 exit_move_timer_win
 static int inventoryQuantityWindowFree(int inventoryWindowType)
 {
     int count = inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS ? 8 : 6;
@@ -6232,7 +6129,7 @@ static int inventoryQuantityWindowFree(int inventoryWindowType)
     return 0;
 }
 
-// 0x477074
+// 0x477074 inven_set_timer
 int inventorySetTimer(Object* item)
 {
     bool isInitialized = _inven_is_initialized;
