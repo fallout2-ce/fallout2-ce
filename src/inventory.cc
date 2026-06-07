@@ -1350,55 +1350,29 @@ static bool _setup_inventory(int inventoryWindowType)
 
     if (_inventoryFrmImages[0].isLocked() && _inventoryFrmImages[1].isLocked()) {
         btn = -1;
+        int doneButtonX;
+        int doneButtonY;
         switch (inventoryWindowType) {
         case INVENTORY_WINDOW_TYPE_NORMAL:
-            // Done button
-            btn = buttonCreate(gInventoryWindow,
-                inventoryLayout.doneButtonX,
-                329,
-                15,
-                16,
-                -1,
-                -1,
-                -1,
-                KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
-                nullptr,
-                BUTTON_FLAG_TRANSPARENT);
+            doneButtonX = inventoryLayout.doneButtonX;
+            doneButtonY = 329;
             break;
         case INVENTORY_WINDOW_TYPE_USE_ITEM_ON:
-            // Cancel button
-            btn = buttonCreate(gInventoryWindow,
-                233,
-                328,
-                15,
-                16,
-                -1,
-                -1,
-                -1,
-                KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
-                nullptr,
-                BUTTON_FLAG_TRANSPARENT);
+            doneButtonX = 233;
+            doneButtonY = 328;
             break;
         case INVENTORY_WINDOW_TYPE_LOOT:
-            // Done button
-            btn = buttonCreate(gInventoryWindow,
-                inventoryLootLayout.doneButtonX,
-                331,
-                15,
-                16,
-                -1,
-                -1,
-                -1,
-                KEY_ESCAPE,
-                _inventoryFrmImages[0].getData(),
-                _inventoryFrmImages[1].getData(),
-                nullptr,
-                BUTTON_FLAG_TRANSPARENT);
+            doneButtonX = inventoryLootLayout.doneButtonX;
+            doneButtonY = 331;
             break;
+        default:
+            doneButtonX = -1;
+            doneButtonY = -1;
+            break;
+        }
+
+        if (doneButtonX != -1) {
+            btn = buttonCreate(gInventoryWindow, doneButtonX, doneButtonY, 15, 16, -1, -1, -1, KEY_ESCAPE, _inventoryFrmImages[0].getData(), _inventoryFrmImages[1].getData(), nullptr, BUTTON_FLAG_TRANSPARENT);
         }
 
         if (btn != -1) {
