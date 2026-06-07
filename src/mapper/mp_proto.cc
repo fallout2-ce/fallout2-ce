@@ -34,12 +34,17 @@ static int proto_subdata_setup_pid_button(const char* title, int key, int pid, i
 static void proto_critter_flags_redraw(int win, int pid);
 static int proto_critter_flags_modify(int pid);
 static int mp_pick_kill_type();
-// proto_action_redraw is implemented in feature 2; declared here so the
-// shared editor scaffold can link against it.
 void proto_action_redraw(int win, int pid);
 static void reg_text_int(int win, int y, int key, const char* title, int value, int* rowY, bool advance);
 static void reg_text_str(int win, int key, const char* title, const char* value, int* rowY);
 static void reg_text_int_update(int win, int* value, int min, int max, const char* title, int y, int textY);
+static bool proto_action_can_look_at(int pid);
+static void proto_action_modify(int pid);
+static void proto_edit_mod_fid(int win, int objectType, int* fidPtr, int width, int delta = 0);
+static int proto_edit_mod_pid(int win, Proto** protoPtr, int width, int delta);
+static void reg_mod_flags(int* flags, int* extendedFlags, int objectType, int subtype);
+static void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType);
+static void proto_choose_pid(int* pidPtr, int objectType, int hasPid, int subtype);
 
 static char kYes[] = "YES";
 static char kNo[] = "NO";
@@ -110,6 +115,15 @@ constexpr int kProtoEditTitleColor = 32767; // bright title text
 constexpr int kProtoEditBoxBorderColor = 2; // art preview box border
 
 static const char* proto_ed_title = "Prototype Editor";
+
+// proto_action_strs
+static const char* proto_action_strs[5] = {
+    "Useable",
+    "Useable On",
+    "Look",
+    "Talk",
+    "Pick Up",
+};
 
 // sound_code_strs
 static const char* sound_code_strs[] = {
@@ -821,6 +835,558 @@ int proto_pick_ai_packet(int* value)
 
     internal_free(names);
     return 0;
+}
+
+// proto_action_can_look_at
+bool proto_action_can_look_at(int pid)
+{
+    return true;
+}
+
+// reg_mod_flags
+void reg_mod_flags(int* flags, int* extendedFlags, int objectType, int subtype)
+{
+    int savedFlags = *flags;
+    int savedExtended = *extendedFlags;
+    auto* flagBytes = reinterpret_cast<unsigned char*>(flags);
+    auto* extBytes = reinterpret_cast<unsigned char*>(extendedFlags);
+
+    bool escaped = false;
+    bool rebuild = true;
+
+    while (rebuild) {
+        rebuild = false;
+        int rowY = 21;
+        int win = windowCreate(160, 110, 220, 350, edit_window_color, WINDOW_MOVE_ON_TOP);
+        if (win == -1) {
+            return;
+        }
+
+        reg_text_str(win, '1', "Flat", yesno[(*flags & OBJECT_FLAT) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '2', "NoBlock", yesno[(*flags & OBJECT_NO_BLOCK) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '3', "MultiHex", yesno[(*flags & OBJECT_MULTIHEX) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '4', "Trans None", yesno[(*flags & OBJECT_TRANS_NONE) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '5', "Trans Wall", yesno[(*flags & OBJECT_TRANS_WALL) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '6', "Trans Glass", yesno[(*flags & OBJECT_TRANS_GLASS) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '7', "Trans Steam", yesno[(*flags & OBJECT_TRANS_STEAM) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '8', "Trans Energy", yesno[(*flags & OBJECT_TRANS_ENERGY) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '9', "Trans Red", yesno[(*flags & OBJECT_TRANS_RED) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '0', "Shoot Thru", yesno[(*flags & OBJECT_SHOOT_THRU) != 0 ? YES : NO], &rowY);
+        reg_text_str(win, '-', "Light Thru", yesno[(*flags & OBJECT_LIGHT_THRU) != 0 ? YES : NO], &rowY);
+
+        if (objectType == OBJ_TYPE_WALL || objectType == OBJ_TYPE_SCENERY) {
+            if (subtype) {
+                rowY += 21;
+            } else {
+                reg_text_str(win, '=', "Wall Light Type", proto_wall_light_str(*extendedFlags), &rowY);
+            }
+            reg_text_str(win, '_', "Wall Trans End", yesno[(*flags & OBJECT_WALL_TRANS_END) != 0 ? YES : NO], &rowY);
+        }
+
+        if (objectType == OBJ_TYPE_ITEM) {
+            reg_text_str(win, '!', "No Highlight", yesno[(*flags & OBJECT_NO_HIGHLIGHT) != 0 ? YES : NO], &rowY);
+            if (!subtype) {
+                reg_text_str(win, '@', "Hidden Item", yesno[(*extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0 ? YES : NO], &rowY);
+            }
+        }
+
+        _win_register_text_button(win, 10, 320, -1, -1, -1, KEY_BAR, "Done", 0);
+        windowDrawBorder(win);
+        windowRefresh(win);
+
+        int keyCode = 0;
+        while (true) {
+            sharedFpsLimiter.mark();
+
+            keyCode = inputGetInput();
+            if (keyCode == KEY_ESCAPE || keyCode == KEY_BAR) {
+                break;
+            }
+
+            if (keyCode == KEY_RETURN) {
+                keyCode = KEY_BAR;
+                break;
+            }
+
+            int textX = 90;
+            int textY = 0;
+            int valueIndex = -1;
+            int color = kProtoEditNormalColor | FONT_SHADOW;
+
+            switch (keyCode) {
+            case '1':
+                *flags ^= OBJECT_FLAT;
+                textY = 25;
+                valueIndex = (*flags & OBJECT_FLAT) != 0 ? YES : NO;
+                break;
+            case '2':
+                *flags ^= OBJECT_NO_BLOCK;
+                textY = 46;
+                valueIndex = (*flags & OBJECT_NO_BLOCK) != 0 ? YES : NO;
+                break;
+            case '3':
+                flagBytes[1] ^= 8;
+                textY = 67;
+                valueIndex = (flagBytes[1] & 8) != 0 ? YES : NO;
+                break;
+            case '4':
+                *flags &= 0xFFF0BFFF;
+                flagBytes[1] ^= 0x80;
+                textY = 88;
+                valueIndex = (flagBytes[1] & 0x80) != 0 ? YES : NO;
+                break;
+            case '5':
+                *flags &= 0xFFF13FFF;
+                flagBytes[2] ^= 1;
+                textY = 109;
+                valueIndex = (flagBytes[2] & 1) != 0 ? YES : NO;
+                break;
+            case '6':
+                *flags &= 0xFFF23FFF;
+                flagBytes[2] ^= 2;
+                textY = 130;
+                valueIndex = (flagBytes[2] & 2) != 0 ? YES : NO;
+                break;
+            case '7':
+                *flags &= 0xFFF43FFF;
+                flagBytes[2] ^= 4;
+                textY = 151;
+                valueIndex = (flagBytes[2] & 4) != 0 ? YES : NO;
+                break;
+            case '8':
+                *flags &= 0xFFF83FFF;
+                flagBytes[2] ^= 8;
+                textY = 172;
+                valueIndex = (flagBytes[2] & 8) != 0 ? YES : NO;
+                break;
+            case '9':
+                *flags &= 0xFFF07FFF;
+                flagBytes[1] ^= 0x40;
+                textY = 193;
+                valueIndex = (flagBytes[1] & 0x40) != 0 ? YES : NO;
+                break;
+            case '0':
+                flagBytes[3] ^= 0x80;
+                textY = 214;
+                valueIndex = (flagBytes[3] & 0x80) != 0 ? YES : NO;
+                break;
+            case '-':
+                flagBytes[3] ^= 0x20;
+                textY = 235;
+                valueIndex = (flagBytes[3] & 0x20) != 0 ? YES : NO;
+                break;
+            case '!':
+                flagBytes[1] ^= 0x10;
+                textX = 93;
+                textY = 256;
+                valueIndex = (flagBytes[1] & 0x10) != 0 ? YES : NO;
+                break;
+            case '_':
+                flagBytes[3] ^= 0x10;
+                textX = 108;
+                textY = 277;
+                valueIndex = (flagBytes[3] & 0x10) != 0 ? YES : NO;
+                break;
+            case '@':
+                if (!subtype) {
+                    extBytes[3] ^= 8;
+                    textY = 277;
+                    valueIndex = (extBytes[3] & 8) != 0 ? YES : NO;
+                }
+                break;
+            case '=':
+                if (!subtype && (objectType == OBJ_TYPE_WALL || objectType == OBJ_TYPE_SCENERY)) {
+                    unsigned char b = extBytes[3];
+                    if ((b & 8) != 0) {
+                        extBytes[3] = (b & 0xE7) | 0x10;
+                    } else if ((b & 0x10) != 0) {
+                        extBytes[3] = (b & 0xCF) | 0x20;
+                    } else if ((b & 0x20) != 0) {
+                        extBytes[3] = (b & 0x9F) | 0x40;
+                    } else if ((b & 0x40) != 0) {
+                        extBytes[3] = (b & 0x3F) | 0x80;
+                    } else if ((b & 0x80) == 0) {
+                        extBytes[3] = b | 8;
+                    } else {
+                        extBytes[3] = b & 0x7F;
+                    }
+                    windowDrawText(win, proto_wall_light_str(*extendedFlags), 80, 110, 256, color);
+                    windowRefresh(win);
+                }
+                break;
+            default:
+                break;
+            }
+
+            if (valueIndex != -1) {
+                windowDrawText(win, yesno[valueIndex], 40, textX, textY, color);
+                windowRefresh(win);
+            }
+
+            // Trans-flag selections are radio-style: rebuild the dialog to
+            // refresh every sibling row.
+            if (keyCode >= '4' && keyCode <= '8') {
+                rebuild = true;
+                break;
+            }
+
+            renderPresent();
+            sharedFpsLimiter.throttle();
+        }
+
+        windowDestroy(win);
+
+        if (keyCode == KEY_ESCAPE) {
+            escaped = true;
+        }
+    }
+
+    if (escaped) {
+        *flags = savedFlags;
+        *extendedFlags = savedExtended;
+    }
+}
+
+// proto_action_redraw
+void proto_action_redraw(int win, int pid)
+{
+    int colors[5];
+    colors[0] = _proto_action_can_use(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
+    colors[1] = _proto_action_can_use_on(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
+    colors[2] = proto_action_can_look_at(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
+    colors[3] = _proto_action_can_talk_to(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
+    colors[4] = _proto_action_can_pickup(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
+
+    int x = 210;
+    for (int index = 0; index < 5; index++) {
+        windowDrawText(win, proto_action_strs[index], 34, x, 153, colors[index] | FONT_SHADOW);
+        x += 38;
+    }
+}
+
+// proto_action_modify
+void proto_action_modify(int pid)
+{
+    Proto* proto;
+    if (protoGetProto(pid, &proto) == -1) {
+        return;
+    }
+
+    int flags = 0;
+    int type = PID_TYPE(pid);
+
+    if (type == OBJ_TYPE_ITEM || type == OBJ_TYPE_SCENERY || type == OBJ_TYPE_WALL) {
+        int rc = win_yes_no("Useable?", 340, 200, kProtoEditNormalColor);
+        if (rc == -1) {
+            return;
+        }
+        if (rc == 1) {
+            flags |= PROTO_EXT_FLAG_CAN_USE;
+        }
+
+        rc = win_yes_no("Useable On Something?", 340, 200, kProtoEditNormalColor);
+        if (rc == -1) {
+            return;
+        }
+        if (rc == 1) {
+            flags |= PROTO_EXT_FLAG_CAN_USE_ON;
+        }
+    }
+
+    int rc = win_yes_no("Can be looked at?", 340, 200, kProtoEditNormalColor);
+    if (rc == -1) {
+        return;
+    }
+    if (rc == 1) {
+        flags |= PROTO_EXT_FLAG_LOOK;
+    }
+
+    if (type == OBJ_TYPE_CRITTER) {
+        rc = win_yes_no("Can be talked to?", 340, 200, kProtoEditNormalColor);
+        if (rc == -1) {
+            return;
+        }
+        if (rc == 1) {
+            flags |= PROTO_EXT_FLAG_CAN_TALK_TO;
+        }
+    }
+
+    if (type == OBJ_TYPE_ITEM) {
+        rc = win_yes_no("Can it be picked up?", 340, 200, kProtoEditNormalColor);
+        if (rc == -1) {
+            return;
+        }
+        if (rc == 1) {
+            flags |= PROTO_EXT_FLAG_CAN_PICK_UP;
+        }
+    }
+
+    if (!can_modify_protos) {
+        win_timed_msg("Can't modify protos!", _colorTable[31744] | 0x10000);
+        return;
+    }
+
+    int mask = PROTO_EXT_FLAG_CAN_USE | PROTO_EXT_FLAG_CAN_USE_ON | PROTO_EXT_FLAG_LOOK
+        | PROTO_EXT_FLAG_CAN_TALK_TO | PROTO_EXT_FLAG_CAN_PICK_UP;
+    proto->item.extendedFlags = (proto->item.extendedFlags & ~mask) | (flags & mask);
+}
+
+// proto_edit_mod_fid
+void proto_edit_mod_fid(int win, int objectType, int* fidPtr, int width, int delta)
+{
+    int id = (*fidPtr & 0xFFF) + delta;
+    if (id < 0) {
+        id = 0;
+    }
+
+    int fid;
+    while (true) {
+        fid = buildFid(objectType, id, (*fidPtr & 0xFF0000) >> 16, 0, 0);
+        if (artExists(fid)) {
+            break;
+        }
+        if (--id < 0) {
+            break;
+        }
+    }
+
+    if (artExists(fid)) {
+        unsigned char* buf = windowGetBuffer(win);
+        unsigned char* imgPos = buf + width * 26 - 130;
+        bufferFill(imgPos, 100, 100, width, edit_window_color);
+        *fidPtr = fid;
+        artRender(fid, imgPos, 100, 100, width);
+
+        Rect rect = { width - 130, 25, width - 30, 125 };
+        windowRefreshRect(win, &rect);
+
+        char text[80];
+        if (art_list_str(fid, text) != -1) {
+            char* pch = strchr(text, '.');
+            if (pch != nullptr) {
+                *pch = '\0';
+            }
+            windowDrawText(win, text, 80, width - 110, 130, kProtoEditNormalColor | FONT_SHADOW);
+
+            rect.left = width - 130;
+            rect.top = 130;
+            rect.right = width - 50;
+            rect.bottom = fontGetLineHeight() + 130;
+            windowRefreshRect(win, &rect);
+        }
+    } else if (!artExists(*fidPtr)) {
+        *fidPtr = buildFid(objectType, 0, 0, 0, 0);
+    }
+}
+
+// proto_edit_mod_pid
+int proto_edit_mod_pid(int win, Proto** protoPtr, int width, int delta)
+{
+    Proto* proto = *protoPtr;
+    int id = (proto->pid & 0xFFFFFF) + delta;
+    if (id == 0) {
+        return -1;
+    }
+
+    if (id >= proto_max_id(PID_TYPE(proto->pid))) {
+        return -1;
+    }
+
+    int pid = id | (PID_TYPE(proto->pid) << 24);
+    Proto* newProto;
+    if (protoGetProto(pid, &newProto) == -1) {
+        return -1;
+    }
+
+    *protoPtr = newProto;
+
+    unsigned char* buf = windowGetBuffer(win);
+    unsigned char* imgPos = buf + width * 26 - 130;
+    bufferFill(imgPos, 100, 100, width, edit_window_color);
+    artRender(newProto->fid, imgPos, 100, 100, width);
+
+    Rect rect = { width - 130, 25, width - 30, 125 };
+    windowRefreshRect(win, &rect);
+
+    char text[80];
+    if (_proto_list_str(pid, text) != -1) {
+        char* pch = strchr(text, '.');
+        if (pch != nullptr) {
+            *pch = '\0';
+        }
+        windowDrawText(win, text, 80, width - 110, 130, kProtoEditNormalColor | FONT_SHADOW);
+
+        rect.left = width - 130;
+        rect.top = 130;
+        rect.right = width - 50;
+        rect.bottom = fontGetLineHeight() + 130;
+        windowRefreshRect(win, &rect);
+    }
+
+    rect.left = width - 150;
+    rect.top = 140;
+    rect.right = width - 35;
+    rect.bottom = fontGetLineHeight() + 140;
+    windowFill(win, rect.left, rect.top, 80, fontGetLineHeight(), kProtoEditNormalColor);
+    windowDrawText(win, protoGetName(newProto->pid), 110, rect.left, rect.top, kProtoEditNormalColor | FONT_SHADOW);
+    windowRefreshRect(win, &rect);
+    return 0;
+}
+
+// proto_choose_fid
+void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType)
+{
+    constexpr int kWinW = 160;
+    constexpr int kWinH = 240;
+
+    int win = windowCreate(360, 140, kWinW, kWinH, edit_window_color, WINDOW_MOVE_ON_TOP);
+    if (win == -1) {
+        return;
+    }
+
+    windowDrawBorder(win);
+    _win_register_text_button(win, 45, 150, -1, -1, KEY_BRACKET_LEFT, -1, "<<", 0);
+    _win_register_text_button(win, 75, 150, -1, -1, KEY_BRACKET_RIGHT, -1, ">>", 0);
+
+    unsigned char* buf = windowGetBuffer(win);
+    int width = kWinW;
+
+    if (!useFidObjectType && artExists(*fidPtr)) {
+        // keep current fid
+    } else {
+        *fidPtr = buildFid(objectType, 0, 0, 0, 0);
+    }
+
+    int fid = *fidPtr;
+    bufferDrawRect(buf + width * 26 - 130 - width - 1, width, 0, 0, 101, 101, kProtoEditBoxBorderColor);
+    proto_edit_mod_fid(win, objectType, &fid, width);
+    _win_register_text_button(win, kWinW - 50, kWinH - 65, -1, -1, -1, KEY_LOWERCASE_N, "None", 0);
+    _win_register_text_button(win, 10, kWinH - 40, -1, -1, -1, KEY_BAR, "Done", 0);
+    _win_register_text_button(win, kWinW - 60, kWinH - 40, -1, -1, -1, KEY_ESCAPE, "Cancel", 0);
+    windowRefresh(win);
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int keyCode = inputGetInput();
+        bool done = false;
+
+        if (keyCode == KEY_ESCAPE || keyCode == KEY_BAR) {
+            done = true;
+        } else if (keyCode == KEY_RETURN) {
+            keyCode = KEY_BAR;
+            done = true;
+        } else if (keyCode == KEY_BRACKET_LEFT) {
+            proto_edit_mod_fid(win, objectType, &fid, width, -1);
+        } else if (keyCode == KEY_BRACKET_RIGHT) {
+            proto_edit_mod_fid(win, objectType, &fid, width, 1);
+        } else if (keyCode == KEY_LOWERCASE_N) {
+            fid = -1;
+            done = true;
+        } else if (keyCode == KEY_HOME) {
+            proto_edit_mod_fid(win, objectType, &fid, width, -15000);
+        } else if (keyCode == KEY_END) {
+            proto_edit_mod_fid(win, objectType, &fid, width, art_total(objectType));
+        }
+
+        if (done) {
+            windowDestroy(win);
+            if (keyCode != KEY_ESCAPE) {
+                *fidPtr = fid;
+            }
+            return;
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
+// Steps the chooser in `dir` until a proto of `subtype` is shown or a list
+// boundary is hit, then reverses to recover a match if the boundary was hit.
+static void proto_step_to_subtype(int win, Proto** protoPtr, int width, int dir, int subtype)
+{
+    while (proto_edit_mod_pid(win, protoPtr, width, dir) == 0 && !proto_is_subtype(*protoPtr, subtype)) {
+    }
+    if (!proto_is_subtype(*protoPtr, subtype)) {
+        while (proto_edit_mod_pid(win, protoPtr, width, -dir) == 0 && !proto_is_subtype(*protoPtr, subtype)) {
+        }
+    }
+}
+
+// proto_choose_pid
+void proto_choose_pid(int* pidPtr, int objectType, int hasPid, int subtype)
+{
+    constexpr int kWinW = 160;
+    constexpr int kWinH = 240;
+
+    Proto* proto;
+    if (!hasPid) {
+        if (protoGetProto(*pidPtr, &proto) == -1) {
+            *pidPtr = (objectType << 24) | 1;
+        }
+    } else {
+        *pidPtr = (objectType << 24) | 1;
+    }
+
+    if (protoGetProto(*pidPtr, &proto) == -1) {
+        return;
+    }
+
+    int win = windowCreate(360, 140, kWinW, kWinH, edit_window_color, WINDOW_MOVE_ON_TOP);
+    if (win == -1) {
+        return;
+    }
+
+    windowDrawBorder(win);
+    _win_register_text_button(win, 45, 150, -1, -1, KEY_BRACKET_LEFT, -1, "<<", 0);
+    _win_register_text_button(win, 75, 150, -1, -1, KEY_BRACKET_RIGHT, -1, ">>", 0);
+
+    unsigned char* buf = windowGetBuffer(win);
+    int width = kWinW;
+
+    bufferDrawRect(buf + width * 26 - 130 - width - 1, width, 0, 0, 101, 101, kProtoEditBoxBorderColor);
+    proto_edit_mod_pid(win, &proto, width, 0);
+
+    while (proto_edit_mod_pid(win, &proto, width, 1) == 0 && !proto_is_subtype(proto, subtype)) {
+    }
+
+    _win_register_text_button(win, 110, kWinH - 65, -1, -1, -1, KEY_LOWERCASE_N, "None", 0);
+    _win_register_text_button(win, 10, kWinH - 40, -1, -1, -1, KEY_BAR, "Done", 0);
+    _win_register_text_button(win, 100, kWinH - 40, -1, -1, -1, KEY_ESCAPE, "Cancel", 0);
+    windowRefresh(win);
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int keyCode = inputGetInput();
+        bool done = false;
+
+        if (keyCode == KEY_ESCAPE || keyCode == KEY_BAR) {
+            done = true;
+        } else if (keyCode == KEY_RETURN) {
+            keyCode = KEY_BAR;
+            done = true;
+        } else if (keyCode == KEY_BRACKET_LEFT) {
+            proto_step_to_subtype(win, &proto, width, -1, subtype);
+        } else if (keyCode == KEY_BRACKET_RIGHT) {
+            proto_step_to_subtype(win, &proto, width, 1, subtype);
+        } else if (keyCode == KEY_LOWERCASE_N) {
+            proto->pid = -1;
+            done = true;
+        }
+
+        if (done) {
+            windowDestroy(win);
+            if (keyCode != KEY_ESCAPE) {
+                *pidPtr = proto->pid;
+            }
+            return;
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
 }
 
 // 0x49B778

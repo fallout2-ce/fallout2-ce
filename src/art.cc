@@ -367,6 +367,12 @@ void artToggleObjectTypeHidden(int objectType)
     }
 }
 
+// art_total
+int art_total(int objectType)
+{
+    return objectType >= 0 && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].fileNamesLength : 0;
+}
+
 // 0x418F7C
 int artGetFidgetCount(int headFid)
 {
