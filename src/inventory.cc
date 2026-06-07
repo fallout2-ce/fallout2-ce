@@ -1436,7 +1436,7 @@ static bool _setup_inventory(int inventoryWindowType)
     std::pair<int, int> doneButtonXY = { -1, -1 };
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
         doneButtonXY = { inventoryLayout.doneButtonX, 329 };
-    } else if(inventoryWindowType == INVENTORY_WINDOW_TYPE_USE_ITEM_ON) {
+    } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_USE_ITEM_ON) {
         doneButtonXY = { 233, 328 };
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
         doneButtonXY = { inventoryLootLayout.doneButtonX, 331 };
