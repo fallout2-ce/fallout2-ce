@@ -1,5 +1,7 @@
 #include "mapper/mp_proto.h"
 
+#include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "art.h"
@@ -32,6 +34,12 @@ static int proto_subdata_setup_pid_button(const char* title, int key, int pid, i
 static void proto_critter_flags_redraw(int win, int pid);
 static int proto_critter_flags_modify(int pid);
 static int mp_pick_kill_type();
+// proto_action_redraw is implemented in feature 2; declared here so the
+// shared editor scaffold can link against it.
+void proto_action_redraw(int win, int pid);
+static void reg_text_int(int win, int y, int key, const char* title, int value, int* rowY, bool advance);
+static void reg_text_str(int win, int key, const char* title, const char* value, int* rowY);
+static void reg_text_int_update(int win, int* value, int min, int max, const char* title, int y, int textY);
 
 static char kYes[] = "YES";
 static char kNo[] = "NO";
@@ -93,6 +101,88 @@ static const char* critFlagStrs[CRITTER_FLAG_COUNT] = {
     "Special",
     "Rng",
     "_Knock",
+};
+
+// Approximated palette indices for the prototype editor (original color
+// bytes are runtime BSS with no faithful offset).
+constexpr int kProtoEditNormalColor = 32747; // normal field value text
+constexpr int kProtoEditTitleColor = 32767; // bright title text
+constexpr int kProtoEditBoxBorderColor = 2; // art preview box border
+
+static const char* proto_ed_title = "Prototype Editor";
+
+// sound_code_strs
+static const char* sound_code_strs[] = {
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+    "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+    "U", "V", "W", "X", "Y", "Z", "!", "@", "#", "$",
+    "_"
+};
+
+// attack_anim_strs
+static const char* attack_anim_strs[] = {
+    "stand",
+    "throw_punch",
+    "kick_leg",
+    "swing_anim",
+    "thrust_anim",
+    "throw_anim",
+    "fire_single",
+    "fire_burst",
+    "fire_continuous",
+};
+
+// art_anim_strs
+static const char* anim_code_strs[] = {
+    "stand",
+    "walk",
+    "jump_begin",
+    "jump_end",
+    "climb_ladder",
+    "falling",
+    "up_stairs_right",
+    "up_stairs_left",
+    "down_stairs_right",
+    "down_stairs_left",
+    "magic_hands_ground",
+    "magic_hands_middle",
+    "magic_hands_up",
+    "dodge_anim",
+    "hit_from_front",
+    "hit_from_back",
+    "throw_punch",
+    "kick_leg",
+    "throw_anim",
+    "running",
+    "fall_back",
+    "fall_front",
+    "bad_landing",
+    "big_hole",
+    "charred_body",
+    "chunks_of_flesh",
+    "dancing_autofire",
+    "electrify",
+    "sliced_in_half",
+    "burned_to_nothing",
+    "electrified_to_nothing",
+    "exploded_to_nothing",
+    "melted_to_nothing",
+    "fire_dance",
+    "fall_back_blood",
+    "fall_front_blood",
+    "prone_to_standing",
+    "back_to_standing",
+    "take_out",
+    "put_away",
+    "parry_anim",
+    "thrust_anim",
+    "swing_anim",
+    "point",
+    "unpoint",
+    "fire_single",
+    "fire_burst",
+    "fire_continuous",
 };
 
 // 0x4922F8
@@ -411,6 +501,132 @@ const char* proto_wall_light_str(int flags)
     }
 
     return wall_light_strs[0];
+}
+
+// proto_edit_init
+int proto_edit_init(int* outWin, int pid, Proto** outProto, unsigned char** outImgPos, int width)
+{
+    Proto* proto;
+    if (protoGetProto(pid, &proto) == -1) {
+        return -1;
+    }
+    *outProto = proto;
+
+    int winWidth = _scr_size.right - _scr_size.left + 1;
+    int winHeight = _scr_size.bottom - _scr_size.top - 99;
+
+    int type = PID_TYPE(pid);
+    int flags = type != 0 ? WINDOW_MOVE_ON_TOP : 0;
+    int win = windowCreate(0, 0, winWidth, winHeight, edit_window_color, flags);
+    if (win == -1) {
+        return -1;
+    }
+    *outWin = win;
+
+    windowDrawBorder(win);
+
+    int titleWidth = fontGetStringWidth(proto_ed_title);
+    windowDrawText(win, proto_ed_title, titleWidth, (width - titleWidth) / 2, 18, kProtoEditTitleColor | FONT_SHADOW);
+
+    char text[80];
+    strcpy(text, artGetObjectTypeName(type));
+    text[0] = toupper(static_cast<unsigned char>(text[0]));
+    int typeWidth = fontGetStringWidth(text);
+    windowDrawText(win, text, typeWidth, (width - typeWidth) / 2, 28, kProtoEditTitleColor | FONT_SHADOW);
+
+    unsigned char* buf = windowGetBuffer(win);
+    unsigned char* imgPos = buf + width * 26 - 130;
+    *outImgPos = imgPos;
+    bufferDrawRect(imgPos - width - 1, width, 0, 0, 101, 101, kProtoEditBoxBorderColor);
+    bufferFill(imgPos, 100, 100, width, edit_window_color);
+
+    int fid = proto->fid;
+    if (artExists(fid)) {
+        artRender(fid, imgPos, 100, 100, width);
+        if (art_list_str(fid, text) == -1) {
+            strcpy(text, "None");
+        } else {
+            char* pch = strchr(text, '.');
+            if (pch != nullptr) {
+                *pch = '\0';
+            }
+        }
+        windowDrawText(win, text, 80, width - 110, 130, kProtoEditNormalColor | FONT_SHADOW);
+    }
+
+    _win_register_text_button(win, width - 115, 150, -1, -1, KEY_BRACKET_LEFT, -1, "<<", 0);
+    _win_register_text_button(win, width - 85, 150, -1, -1, KEY_BRACKET_RIGHT, -1, ">>", 0);
+    _win_register_text_button(win, 15, 15, -1, -1, KEY_MINUS, -1, "(*", 0);
+    _win_register_text_button(win, 40, 15, -1, -1, KEY_EQUAL, -1, "*)", 0);
+
+    _win_register_text_button(win, 10, 44, -1, -1, -1, KEY_LOWERCASE_N, "Name", 0);
+    windowDrawText(win, protoGetName(proto->pid), 130, 90, 48, kProtoEditNormalColor | FONT_SHADOW);
+
+    _win_register_text_button(win, 10, 65, -1, -1, -1, KEY_LOWERCASE_D, "Description", 0);
+    windowDrawText(win, protoGetDescription(pid), 400, 90, 67, kProtoEditNormalColor | FONT_SHADOW);
+
+    if (type != OBJ_TYPE_TILE) {
+        _win_register_text_button(win, 150, 86, -1, -1, -1, KEY_UPPERCASE_S, "Scripts", 0);
+        _win_register_text_button(win, 170, 107, -1, -1, -1, KEY_LOWERCASE_F, "Flags", 0);
+
+        if (type == OBJ_TYPE_WALL || type == OBJ_TYPE_SCENERY) {
+            windowDrawText(win, proto_wall_light_str(proto->extendedFlags), 60, 235, 131, kProtoEditNormalColor | FONT_SHADOW);
+        }
+
+        _win_register_text_button(win, 260, 107, -1, -1, -1, KEY_UPPERCASE_F, "Flags-Ext", 0);
+
+        if (type == OBJ_TYPE_SCENERY && proto->scenery.type == 0) {
+            windowDrawText(win, yesno[(proto->scenery.data.door.openFlags & 0x04) != 0 ? YES : NO], 60, 375, 131, kProtoEditNormalColor | FONT_SHADOW);
+            _win_register_text_button(win, 360, 107, -1, -1, -1, KEY_UPPERCASE_W, "WalkThru", 0);
+        }
+    }
+
+    if (type < OBJ_TYPE_TILE) {
+        _win_register_text_button(win, 120, 149, -1, -1, -1, KEY_UPPERCASE_U, "Action Flags", 0);
+        proto_action_redraw(win, pid);
+    }
+
+    _win_register_text_button(win, 10, 317, -1, -1, -1, KEY_BAR, "Done", 0);
+    _win_register_text_button(win, 110, 317, -1, -1, -1, KEY_ESCAPE, "Cancel", 0);
+
+    return 0;
+}
+
+// reg_text_int
+void reg_text_int(int win, int y, int key, const char* title, int value, int* rowY, bool advance)
+{
+    char text[48];
+    _win_register_text_button(win, y - 80, *rowY, -1, -1, -1, key, title, 0);
+    snprintf(text, sizeof(text), "%d", value);
+    windowDrawText(win, text, 50, y, *rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+    if (advance) {
+        *rowY += 21;
+    }
+}
+
+// reg_text_str
+void reg_text_str(int win, int key, const char* title, const char* value, int* rowY)
+{
+    _win_register_text_button(win, 10, *rowY, -1, -1, -1, key, title, 0);
+    int titleWidth = fontGetStringWidth(title);
+    int overflow = titleWidth > 60 ? titleWidth - 60 : 0;
+    windowDrawText(win, value, 128 - overflow, overflow + 90, *rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+    *rowY += 21;
+}
+
+// reg_text_int_update
+void reg_text_int_update(int win, int* value, int min, int max, const char* title, int y, int textY)
+{
+    int num = *value;
+    if (win_get_num_i(&num, min, max, false, title, 100, 100) == -1) {
+        return;
+    }
+
+    *value = num;
+
+    char text[36];
+    snprintf(text, sizeof(text), "%d", num);
+    windowDrawText(win, text, 130, 90, textY, kProtoEditNormalColor | FONT_SHADOW);
 }
 
 // 0x4960B8

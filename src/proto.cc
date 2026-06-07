@@ -34,7 +34,6 @@ static int protoRead(Proto* buf, File* stream);
 static int protoItemDataWrite(ItemProtoData* item_data, int type, File* stream);
 static int protoSceneryDataWrite(SceneryProtoData* scenery_data, int type, File* stream);
 static int protoWrite(Proto* buf, File* stream);
-static int _proto_load_pid(int pid, Proto** out_proto);
 static int _proto_find_free_subnode(int type, Proto** out_ptr);
 static void _proto_remove_some_list(int type);
 static void _proto_remove_list(int type);
@@ -1945,7 +1944,7 @@ int _proto_save_pid(int pid)
 }
 
 // 0x4A1C3C proto_load_pid
-static int _proto_load_pid(int pid, Proto** protoPtr)
+int _proto_load_pid(int pid, Proto** protoPtr)
 {
     char path[COMPAT_MAX_PATH];
     proto_make_path(path, pid);
@@ -2118,6 +2117,84 @@ void _proto_remove_all()
     for (int index = 0; index < 6; index++) {
         _proto_remove_list(index);
     }
+}
+
+// Free the now-empty tail extent and make the preceding extent the new tail.
+static void _proto_drop_empty_tail(ProtoList* protoList)
+{
+    protoList->length--;
+    internal_free(protoList->tail);
+
+    if (protoList->length == 0) {
+        protoList->head = nullptr;
+        protoList->tail = nullptr;
+        return;
+    }
+
+    ProtoListExtent* prev = protoList->head;
+    while (prev->next != protoList->tail) {
+        prev = prev->next;
+    }
+    prev->next = nullptr;
+    protoList->tail = prev;
+}
+
+// proto_remove
+void proto_remove(int pid)
+{
+    if (pid == -1) {
+        return;
+    }
+
+    int type = PID_TYPE(pid);
+    if (type >= 11) {
+        return;
+    }
+
+    ProtoList* protoList = &(_protoLists[type]);
+
+    ProtoListExtent* extent = protoList->head;
+    int index = 0;
+    while (extent != nullptr) {
+        for (index = 0; index < extent->length; index++) {
+            if (extent->proto[index]->pid == pid) {
+                break;
+            }
+        }
+        if (index < extent->length) {
+            break;
+        }
+        extent = extent->next;
+    }
+
+    if (extent == nullptr) {
+        return;
+    }
+
+    internal_free(extent->proto[index]);
+    extent->proto[index] = nullptr;
+
+    ProtoListExtent* tail = protoList->tail;
+    if (extent == tail && index + 1 == tail->length) {
+        tail->length--;
+        if (tail->length == 0) {
+            _proto_drop_empty_tail(protoList);
+        }
+    } else {
+        tail->length--;
+        extent->proto[index] = tail->proto[tail->length];
+        if (tail->length != 0) {
+            tail->proto[tail->length] = nullptr;
+        } else {
+            _proto_drop_empty_tail(protoList);
+        }
+    }
+}
+
+// proto_header_save
+int proto_header_save()
+{
+    return 0;
 }
 
 // proto_ptr

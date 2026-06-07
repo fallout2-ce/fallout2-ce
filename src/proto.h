@@ -139,6 +139,9 @@ void _proto_remove_all();
 int protoGetProto(int pid, Proto** protoPtr);
 int _ResetPlayer();
 int proto_max_id(int type);
+void proto_remove(int pid);
+int proto_header_save();
+int _proto_load_pid(int pid, Proto** protoPtr);
 
 static bool isExitGridPid(int pid)
 {
