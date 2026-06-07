@@ -117,7 +117,7 @@ int mapGetLoadedAreaId();
 int mapSetTransition(MapTransition* transition);
 int mapHandleTransition();
 int _map_save_in_game(bool isLeavingMap);
-int _map_save();
+int _map_save(bool isInGame = false);
 
 } // namespace fallout
 

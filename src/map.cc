@@ -53,7 +53,7 @@ static int mapLoad(File* stream);
 static int _map_age_dead_critters();
 static void _map_fix_critter_combat_data();
 static int _map_save_file(File* stream);
-int _map_save();
+int _map_save(bool isInGame);
 static void mapMakeMapsDirectory();
 static void isoWindowRefreshRect(Rect* rect);
 static void isoWindowRefreshRectGame(Rect* rect);
@@ -1376,7 +1376,7 @@ static void _map_fix_critter_combat_data()
 
 // map_save
 // 0x483850
-int _map_save()
+int _map_save(bool isInGame)
 {
     int rc = -1;
     if (gMapHeader.name[0] != '\0') {
@@ -1392,8 +1392,10 @@ int _map_save()
         if (rc == 0) {
             debugPrint("%s saved.", gMapHeader.name);
 
-            // Write the edge (.EDG) sidecar alongside the map.
-            mapEdgeSave(gMapHeader.name);
+            if (!isInGame) {
+                // Write the edge (.EDG) alongside the map.
+                mapEdgeSave(gMapHeader.name);
+            }
         }
     } else {
         debugPrint("\nError: map_save: map header corrupt!");
@@ -1527,7 +1529,7 @@ int _map_save_in_game(bool isLeavingMap)
 
         strcpy(name, gMapHeader.name);
         _strmfe(gMapHeader.name, name, "SAV");
-        if (_map_save() == -1) {
+        if (_map_save(true) == -1) {
             return -1;
         }
 
