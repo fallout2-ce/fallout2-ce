@@ -314,6 +314,8 @@ typedef struct InventoryScroller {
     int totalItems;
     int keyUp;
     int keyDown;
+    int keyPageUp;
+    int keyPageDown;
     int keyHome;
     int keyEnd;
     void (*redraw)(const InventoryScroller& scroller, void* context);
@@ -960,32 +962,33 @@ static void inventoryScrollerScroll(const InventoryScroller& scroller, int direc
     inventoryScrollerJumpTo(scroller, *scroller.offsetPtr + direction * scroller.step);
 }
 
+static void inventoryScrollerPage(const InventoryScroller& scroller, int direction)
+{
+    assert(scroller.offsetPtr != nullptr);
+    assert(scroller.visibleSlots > 0);
+    assert(scroller.redraw != nullptr);
+
+    inventoryScrollerJumpTo(scroller, *scroller.offsetPtr + direction * scroller.visibleSlots);
+}
+
 static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int keyCode, int mouseEvent)
 {
     if (scroller.keyUp != -1 && keyCode == scroller.keyUp) {
         inventoryScrollerScroll(scroller, -1);
-        return;
-    }
-
-    if (scroller.keyDown != -1 && keyCode == scroller.keyDown) {
+    } else if (scroller.keyDown != -1 && keyCode == scroller.keyDown) {
         inventoryScrollerScroll(scroller, 1);
-        return;
-    }
-
-    if (scroller.keyHome != -1 && keyCode == scroller.keyHome) {
+    } else if (scroller.keyPageUp != -1 && keyCode == scroller.keyPageUp) {
+        inventoryScrollerPage(scroller, -1);
+    } else if (scroller.keyPageDown != -1 && keyCode == scroller.keyPageDown) {
+        inventoryScrollerPage(scroller, 1);
+    } else if (scroller.keyHome != -1 && keyCode == scroller.keyHome) {
         inventoryScrollerJumpTo(scroller, 0);
-        return;
-    }
-
-    if (scroller.keyEnd != -1 && keyCode == scroller.keyEnd) {
+    } else if (scroller.keyEnd != -1 && keyCode == scroller.keyEnd) {
         inventoryScrollerJumpTo(scroller, scroller.totalItems - scroller.visibleSlots);
-        return;
     }
-
     if ((mouseEvent & MOUSE_EVENT_WHEEL) == 0) {
         return;
     }
-
     if (!mouseHitTestInWindow(gInventoryWindow, scroller.hitRect.left, scroller.hitRect.top, scroller.hitRect.right, scroller.hitRect.bottom)) {
         return;
     }
@@ -1170,14 +1173,9 @@ void inventoryOpen()
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_NORMAL, nullptr };
         InventoryScroller normalScroller {
             { inventoryLayout.scrollerX, inventoryLayout.scrollerY, inventoryLayout.scrollerX + inventoryLayout.scrollerWidth, inventoryLayout.scrollerY + inventoryLayout.scrollerHeight },
-            &(_stack_offset[_curr_stack]),
-            inventoryLayout.columns,
-            inventoryLayout.visibleSlots,
-            _pud->length,
-            KEY_ARROW_UP,
-            KEY_ARROW_DOWN,
-            KEY_HOME,
-            KEY_END,
+            &(_stack_offset[_curr_stack]), inventoryLayout.columns,
+            inventoryLayout.visibleSlots, _pud->length,
+            KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_PAGE_UP, KEY_PAGE_DOWN, KEY_HOME, KEY_END,
             inventoryScrollerRedrawInventory,
             &inventoryScrollerContext,
             false,
@@ -1200,22 +1198,6 @@ void inventoryOpen()
 
         if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X) {
             showQuitConfirmationDialog();
-        } else if (keyCode == KEY_PAGE_UP) {
-            _stack_offset[_curr_stack] -= inventoryLayout.visibleSlots;
-            if (_stack_offset[_curr_stack] < 0) {
-                _stack_offset[_curr_stack] = 0;
-            }
-            _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_NORMAL);
-        } else if (keyCode == KEY_PAGE_DOWN) {
-            int nextPageOffset = inventoryLayout.visibleSlots + _stack_offset[_curr_stack];
-            int nextPageEnd = nextPageOffset + inventoryLayout.visibleSlots;
-            _stack_offset[_curr_stack] = nextPageOffset;
-            int inventoryLength = _pud->length;
-            if (nextPageEnd >= _pud->length) {
-                _stack_offset[_curr_stack] = inventoryLength - inventoryLayout.visibleSlots;
-                inventoryNormalClampStackOffset();
-            }
-            _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_NORMAL);
         } else if (keyCode == 2500) {
             _container_exit(keyCode, INVENTORY_WINDOW_TYPE_NORMAL);
         } else {
@@ -2695,36 +2677,14 @@ void inventoryOpenUseItemOn(Object* targetObj)
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_USE_ITEM_ON, nullptr };
         InventoryScroller useItemOnScroller {
             { INVENTORY_SCROLLER_X, INVENTORY_SCROLLER_Y, INVENTORY_SCROLLER_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_SCROLLER_Y },
-            &(_stack_offset[_curr_stack]),
-            1,
-            gInventorySlotsCount,
-            _pud->length,
-            KEY_ARROW_UP,
-            KEY_ARROW_DOWN,
-            KEY_HOME,
-            KEY_END,
+            &(_stack_offset[_curr_stack]), 1,
+            gInventorySlotsCount, _pud->length,
+            KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_PAGE_UP, KEY_PAGE_DOWN, KEY_HOME, KEY_END,
             inventoryScrollerRedrawInventory,
             &inventoryScrollerContext,
             false,
         };
         switch (keyCode) {
-        case KEY_PAGE_UP:
-            _stack_offset[_curr_stack] -= gInventorySlotsCount;
-            if (_stack_offset[_curr_stack] < 0) {
-                _stack_offset[_curr_stack] = 0;
-                _display_inventory(_stack_offset[_curr_stack], -1, 1);
-            }
-            break;
-        case KEY_PAGE_DOWN:
-            _stack_offset[_curr_stack] += gInventorySlotsCount;
-            if (_stack_offset[_curr_stack] + gInventorySlotsCount >= _pud->length) {
-                _stack_offset[_curr_stack] = _pud->length - gInventorySlotsCount;
-                if (_stack_offset[_curr_stack] < 0) {
-                    _stack_offset[_curr_stack] = 0;
-                }
-            }
-            _display_inventory(_stack_offset[_curr_stack], -1, 1);
-            break;
         case 2500:
             _container_exit(keyCode, INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
             break;
@@ -4430,28 +4390,18 @@ int inventoryOpenLooting(Object* looter, Object* target)
         InventoryScrollerDisplayContext targetScrollerContext { INVENTORY_WINDOW_TYPE_LOOT, _target_pud };
         InventoryScroller lootInventoryScroller {
             { inventoryLootLayout.leftScrollerX, inventoryLootLayout.leftScrollerY, inventoryLootLayout.leftScrollerX + inventoryLootLayout.scrollerWidth, inventoryLootLayout.leftScrollerY + inventoryLootLayout.scrollerHeight },
-            &(_stack_offset[_curr_stack]),
-            inventoryLootLayout.columns,
-            gInventorySlotsCount,
-            _pud->length,
-            KEY_ARROW_UP,
-            KEY_ARROW_DOWN,
-            -1,
-            -1,
+            &(_stack_offset[_curr_stack]), inventoryLootLayout.columns,
+            gInventorySlotsCount, _pud->length,
+            KEY_ARROW_UP, KEY_ARROW_DOWN, -1, -1, -1, -1,
             inventoryScrollerRedrawInventory,
             &inventoryScrollerContext,
             false,
         };
         InventoryScroller lootTargetScroller {
             { inventoryLootLayout.rightScrollerX, inventoryLootLayout.rightScrollerY, inventoryLootLayout.rightScrollerX + inventoryLootLayout.scrollerWidth, inventoryLootLayout.rightScrollerY + inventoryLootLayout.scrollerHeight },
-            &(_target_stack_offset[_target_curr_stack]),
-            inventoryLootLayout.columns,
-            gInventorySlotsCount,
-            _target_pud->length,
-            KEY_CTRL_ARROW_UP,
-            KEY_CTRL_ARROW_DOWN,
-            -1,
-            -1,
+            &(_target_stack_offset[_target_curr_stack]), inventoryLootLayout.columns,
+            gInventorySlotsCount, _target_pud->length,
+            KEY_CTRL_ARROW_UP, KEY_CTRL_ARROW_DOWN, -1, -1, -1, -1,
             inventoryScrollerRedrawTargetInventory,
             &targetScrollerContext,
             true,
@@ -5290,56 +5240,36 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
         InventoryScrollerBarterContext barterScrollerContext { win, playerTable, bartererTable };
         InventoryScroller tradeInventoryScroller {
             { INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_X, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_LEFT_SCROLLER_TRACKING_Y },
-            &(_stack_offset[_curr_stack]),
-            1,
-            gInventorySlotsCount,
-            _pud->length,
-            KEY_ARROW_UP,
-            KEY_ARROW_DOWN,
-            -1,
-            -1,
+            &(_stack_offset[_curr_stack]), 1,
+            gInventorySlotsCount, _pud->length,
+            KEY_ARROW_UP, KEY_ARROW_DOWN, -1, -1, -1, -1,
             inventoryScrollerRedrawInventory,
             &inventoryScrollerContext,
             false,
         };
         InventoryScroller tradePlayerTableScroller {
             { INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_X, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_LEFT_SCROLLER_TRACKING_Y },
-            &gPlayerTableOffset,
-            1,
-            gInventorySlotsCount,
-            gPlayerTableInventory->length,
-            KEY_PAGE_UP,
-            KEY_PAGE_DOWN,
-            -1,
-            -1,
+            &gPlayerTableOffset, 1,
+            gInventorySlotsCount, gPlayerTableInventory->length,
+            KEY_PAGE_UP, KEY_PAGE_DOWN, -1, -1, -1, -1,
             inventoryScrollerRedrawBarterTables,
             &barterScrollerContext,
             false,
         };
         InventoryScroller tradeTargetScroller {
             { INVENTORY_TRADE_RIGHT_SCROLLER_TRACKING_X, INVENTORY_TRADE_RIGHT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_RIGHT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_RIGHT_SCROLLER_TRACKING_Y },
-            &(_target_stack_offset[_target_curr_stack]),
-            1,
-            gInventorySlotsCount,
-            _target_pud->length,
-            KEY_CTRL_ARROW_UP,
-            KEY_CTRL_ARROW_DOWN,
-            -1,
-            -1,
+            &(_target_stack_offset[_target_curr_stack]), 1,
+            gInventorySlotsCount, _target_pud->length,
+            KEY_CTRL_ARROW_UP, KEY_CTRL_ARROW_DOWN, -1, -1, -1, -1,
             inventoryScrollerRedrawTargetInventory,
             &targetScrollerContext,
             true,
         };
         InventoryScroller tradeBartererTableScroller {
             { INVENTORY_TRADE_INNER_RIGHT_SCROLLER_TRACKING_X, INVENTORY_TRADE_INNER_RIGHT_SCROLLER_TRACKING_Y, INVENTORY_TRADE_INNER_RIGHT_SCROLLER_TRACKING_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_RIGHT_SCROLLER_TRACKING_Y },
-            &gBartererTableOffset,
-            1,
-            gInventorySlotsCount,
-            gBartererTableInventory->length,
-            KEY_CTRL_PAGE_UP,
-            KEY_CTRL_PAGE_DOWN,
-            -1,
-            -1,
+            &gBartererTableOffset, 1,
+            gInventorySlotsCount, gBartererTableInventory->length,
+            KEY_CTRL_PAGE_UP, KEY_CTRL_PAGE_DOWN, -1, -1, -1, -1,
             inventoryScrollerRedrawBarterTables,
             &barterScrollerContext,
             false,
