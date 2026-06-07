@@ -727,10 +727,9 @@ const char* mapBuildDataSavePath(const char* relativePath)
 {
     static char path[COMPAT_MAX_PATH];
 
-    // Save root: the validated mapper dev_path when set, otherwise the master patches path.
+    // Save root: the validated mapper dev_path when set (mapper only), otherwise the master patches path.
     const std::string& devPath = settings.mapper.dev_path;
-    const char* root = !devPath.empty() ? devPath.c_str() : settings.system.master_patches_path.c_str();
-
+    const char* root = (settings.system.executableIsMapper() && !devPath.empty()) ? devPath.c_str() : settings.system.master_patches_path.c_str();
     // Join root + relativePath, tolerating a trailing separator on the root.
     size_t rootLen = strlen(root);
     bool rootHasSeparator = rootLen > 0 && (root[rootLen - 1] == '\\' || root[rootLen - 1] == '/');
