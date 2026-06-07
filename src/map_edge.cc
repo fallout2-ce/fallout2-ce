@@ -6,6 +6,7 @@
 #include "map.h"
 #include "map_defs.h"
 #include "platform_compat.h"
+#include "settings.h"
 #include "svga.h"
 #include "tile.h"
 #include "window_manager.h"
@@ -20,8 +21,7 @@ constexpr int kTileHeight = 24;
 
 static EdgeElevationData edgeData[ELEVATION_COUNT];
 static bool edgeDataLoaded = false;
-// Whether edges constrain scrolling/clipping. Enabled in play mode, disabled in the mapper.
-static bool edgeEnabled = false;
+static bool mapperMode = false;
 static bool edgeVersion2 = false;
 static EdgeZone* currentEdgeZone = nullptr;
 
@@ -373,7 +373,6 @@ void mapEdgeFree()
         data = EdgeElevationData {};
     }
     edgeDataLoaded = false;
-    edgeEnabled = false;
     currentEdgeZone = nullptr;
     currentTileXAlignment = 0;
     currentTileYAlignment = 0;
@@ -387,15 +386,20 @@ bool mapEdgeIsLoaded()
     return edgeDataLoaded;
 }
 
-void mapEdgeSetEnabled(bool enabled)
+void mapEdgeSetMapperMode(bool enabled)
 {
-    edgeEnabled = enabled;
+    mapperMode = enabled;
+}
+
+bool mapEdgeIsMapperMode()
+{
+    return mapperMode;
 }
 
 bool mapEdgeIsEnabled()
 {
-    // Edges can only be enabled when data is actually loaded.
-    return edgeDataLoaded && edgeEnabled;
+    // Enforced when data is loaded, we're not editing in the mapper, and the user enabled it.
+    return edgeDataLoaded && !mapperMode && settings.ui.edg_support && !settings.ui.ignore_map_edges;
 }
 
 void mapEdgeUpgradeToVersion2()

@@ -558,7 +558,7 @@ int tileSetCenter(int tile, int flags)
         return -1;
     }
 
-    const bool edgeActive = mapEdgeIsEnabled() && !settings.ui.ignore_map_edges;
+    const bool edgeActive = mapEdgeIsEnabled();
     const bool isScroll = flags == 0;
 
     if (edgeActive && !isScroll) {

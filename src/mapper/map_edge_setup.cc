@@ -412,10 +412,10 @@ static void drawSquareOverlay(unsigned char* buffer, int pitch, int elevation, c
 
 // Registered as the tile renderer's overlay hook. While a dialog is open, only the active
 // rect is drawn (plus the moving side highlighted). Otherwise the persistent toggle outlines
-// every edge rect. Never drawn in play mode (edges enabled).
+// every edge rect. Never drawn in play mode.
 static void renderOverlay(unsigned char* buffer, int pitch, int elevation, const Rect* clip)
 {
-    if (mapEdgeIsEnabled()) {
+    if (!mapEdgeIsMapperMode()) {
         return;
     }
 

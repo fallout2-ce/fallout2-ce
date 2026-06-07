@@ -1012,6 +1012,7 @@ int mapper_edit_init(int argc, char** argv)
     mouseShowCursor();
     mapperValidateDevPath();
     mapEdgeSetupInit();
+    mapEdgeSetMapperMode(true);
 
     if (settings.mapper.rebuild_protos) {
         proto_build_all_texts();
@@ -1024,10 +1025,7 @@ int mapper_edit_init(int argc, char** argv)
 // 0x48752C
 void mapper_edit_exit()
 {
-    remove(mapBuildPath("TMP$MAP#.MAP"));
-    remove(mapBuildPath("TMP$MAP#.CFG"));
-
-    MapDirErase("MAPS\\", "SAV");
+    mapper_remove_tmp_map_files();
 
     if (can_modify_protos) {
         copy_proto_lists();
@@ -2715,8 +2713,12 @@ int mapper_mark_exit_grid()
 // and on editor shutdown if the user quit while still in play mode.
 static void mapper_remove_tmp_map_files()
 {
-    remove(mapBuildPath(tmp_map_name));
-    remove(mapBuildPath("TMP$MAP#.CFG"));
+    remove(mapBuildSavePath(kTmpMapName));
+    remove(mapBuildSavePath("TMP$MAP#.EDG"));
+
+    char cfgPath[COMPAT_MAX_PATH];
+    snprintf(cfgPath, sizeof(cfgPath), "%s\\MAPS\\TMP$MAP#.CFG", settings.system.master_patches_path.c_str());
+    remove(cfgPath);
     MapDirErase("MAPS\\", "SAV");
 }
 
@@ -2782,10 +2784,8 @@ static void mapper_enter_play_mode(Object** pHlObj1)
     tileScrollBlockingEnable();
     tileScrollLimitingEnable();
 
-    // Edges are loaded but disabled while editing; enable them to mirror play behavior.
-    if (settings.ui.edg_support && !settings.ui.ignore_map_edges) {
-        mapEdgeSetEnabled(true);
-    }
+    // Leave mapper-editing mode so loaded edges behave as in the game (subject to settings).
+    mapEdgeSetMapperMode(false);
 
     if (settings.mapper.run_mapper_as_game) {
         scriptExecProc(gMapSid, SCRIPT_PROC_MAP_ENTER);
@@ -2849,6 +2849,9 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
 
     tileScrollBlockingDisable();
     tileScrollLimitingDisable();
+
+    // Back to editing: loaded edges are kept but no longer enforced.
+    mapEdgeSetMapperMode(true);
 
     // Match the original: if click-to-scroll was on during play, force it off on exit.
     if (_gmouse_get_click_to_scroll()) {

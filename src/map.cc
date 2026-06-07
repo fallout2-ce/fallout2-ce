@@ -969,11 +969,8 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    if (settings.system.executableIsMapper()) {
+    if (settings.system.executableIsMapper() || settings.ui.edg_support) {
         mapEdgeLoad(gMapHeader.name);
-    } else if (settings.ui.edg_support && !settings.ui.ignore_map_edges) {
-        mapEdgeLoad(gMapHeader.name);
-        mapEdgeSetEnabled(true);
     }
 
     error = "Error setting tile center";
