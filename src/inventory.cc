@@ -1325,8 +1325,8 @@ static bool _setup_inventory(int inventoryWindowType)
 
     if (_inventoryFrmImages[0].isLocked() && _inventoryFrmImages[1].isLocked()) {
         btn = -1;
-        int doneButtonX;
-        int doneButtonY;
+        int doneButtonX = -1;
+        int doneButtonY = -1;
         switch (inventoryWindowType) {
         case INVENTORY_WINDOW_TYPE_NORMAL:
             doneButtonX = inventoryLayout.doneButtonX;
@@ -1339,10 +1339,6 @@ static bool _setup_inventory(int inventoryWindowType)
         case INVENTORY_WINDOW_TYPE_LOOT:
             doneButtonX = inventoryLootLayout.doneButtonX;
             doneButtonY = 331;
-            break;
-        default:
-            doneButtonX = -1;
-            doneButtonY = -1;
             break;
         }
 
@@ -2671,7 +2667,7 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
     }
 }
 
-// 0x4716E8
+// 0x4716E8 adjust_fid
 static void _adjust_fid()
 {
     int fid = inventoryComputeCritterFid(_inven_dude,
@@ -2685,7 +2681,7 @@ static void _adjust_fid()
     gInventoryWindowDudeFid = scriptHooks_AdjustFid(fid, fid);
 }
 
-// 0x4717E4
+// 0x4717E4 use_inventory_on
 void inventoryOpenUseItemOn(Object* targetObj)
 {
     ScopedGameMode gm(GameMode::kUseOn);
