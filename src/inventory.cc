@@ -1420,8 +1420,6 @@ static bool _setup_inventory(int inventoryWindowType)
             inventoryItemSlotOnMouseEnter, inventoryItemSlotOnMouseExit);
     }
 
-    int fid;
-    int btn = -1;
     std::pair<int, int> doneButtonXY = { -1, -1 };
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
         doneButtonXY = { inventoryLayout.doneButtonX, 329 };
@@ -1432,7 +1430,7 @@ static bool _setup_inventory(int inventoryWindowType)
     }
 
     if (doneButtonXY.first != -1) {
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
+        buttonCreateActionWithFrm(gInventoryWindow,
             doneButtonXY.first, doneButtonXY.second,
             -1, KEY_ESCAPE,
             FrmId(OBJ_TYPE_INTERFACE, 8),
@@ -1441,14 +1439,14 @@ static bool _setup_inventory(int inventoryWindowType)
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
         // Left inventory up button.
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
+        buttonCreateActionWithFrm(gInventoryWindow,
             109, 56,
             KEY_ARROW_UP, -1,
             FrmId(OBJ_TYPE_INTERFACE, 100),
             FrmId(OBJ_TYPE_INTERFACE, 101));
 
         // Right inventory up button.
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
+        buttonCreateActionWithFrm(gInventoryWindow,
             342, 56,
             KEY_CTRL_ARROW_UP, -1,
             FrmId(OBJ_TYPE_INTERFACE, 100),
@@ -1490,14 +1488,14 @@ static bool _setup_inventory(int inventoryWindowType)
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
         // Left inventory down button.
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
+        buttonCreateActionWithFrm(gInventoryWindow,
             109, 82,
             KEY_ARROW_DOWN, -1,
             FrmId(OBJ_TYPE_INTERFACE, 93),
             FrmId(OBJ_TYPE_INTERFACE, 94));
 
         // Right inventory down button
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
+        buttonCreateActionWithFrm(gInventoryWindow,
             342, 82,
             KEY_CTRL_ARROW_DOWN, -1,
             FrmId(OBJ_TYPE_INTERFACE, 93),
@@ -1538,13 +1536,10 @@ static bool _setup_inventory(int inventoryWindowType)
             gSecondaryInventoryScrollDownButton = buttonCreateActionWithFrm(gInventoryWindow,
                 inventoryLootLayout.rightScrollButtonX, 62,
                 KEY_CTRL_ARROW_DOWN, -1,
-                FrmId(OBJ_TYPE_INTERFACE, 51),
-                FrmId(OBJ_TYPE_INTERFACE, 52));
+                FrmId(OBJ_TYPE_INTERFACE, 51), FrmId(OBJ_TYPE_INTERFACE, 52));
             if (gSecondaryInventoryScrollDownButton != -1) {
                 buttonSetDisabledFrm(gSecondaryInventoryScrollDownButton,
-                    FrmId(OBJ_TYPE_INTERFACE, 54),
-                    FrmId(OBJ_TYPE_INTERFACE, 54),
-                    FrmId(OBJ_TYPE_INTERFACE, 54));
+                    FrmId(OBJ_TYPE_INTERFACE, 54), FrmId(OBJ_TYPE_INTERFACE, 54), FrmId(OBJ_TYPE_INTERFACE, 54));
                 buttonDisable(gSecondaryInventoryScrollDownButton);
             }
 
@@ -1565,29 +1560,29 @@ static bool _setup_inventory(int inventoryWindowType)
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
             if (!_gIsSteal) {
                 // Take all button.
-                btn = buttonCreateActionWithFrm(gInventoryWindow,
+                buttonCreateActionWithFrm(gInventoryWindow,
                     inventoryLootLayout.takeAllButtonX, 204, 2502, -1,
                     FrmId(OBJ_TYPE_INTERFACE, 436), FrmId(OBJ_TYPE_INTERFACE, 437));
             }
         }
     } else {
         // Left offered inventory up button.
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
+        buttonCreateActionWithFrm(gInventoryWindow,
             128, 113, KEY_PAGE_UP, -1,
             FrmId(OBJ_TYPE_INTERFACE, 49), FrmId(OBJ_TYPE_INTERFACE, 50));
 
-        // Right offered inventory up button.
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
-            333, 113, KEY_CTRL_PAGE_UP, -1,
-            FrmId(OBJ_TYPE_INTERFACE, 49), FrmId(OBJ_TYPE_INTERFACE, 50));
-
         // Left offered inventory down button.
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
+        buttonCreateActionWithFrm(gInventoryWindow,
             128, 136, KEY_PAGE_DOWN, -1,
             FrmId(OBJ_TYPE_INTERFACE, 51), FrmId(OBJ_TYPE_INTERFACE, 52));
 
+        // Right offered inventory up button.
+        buttonCreateActionWithFrm(gInventoryWindow,
+            333, 113, KEY_CTRL_PAGE_UP, -1,
+            FrmId(OBJ_TYPE_INTERFACE, 49), FrmId(OBJ_TYPE_INTERFACE, 50));
+
         // Right offered inventory down button.
-        btn = buttonCreateActionWithFrm(gInventoryWindow,
+        buttonCreateActionWithFrm(gInventoryWindow,
             333, 136, KEY_CTRL_PAGE_DOWN, -1,
             FrmId(OBJ_TYPE_INTERFACE, 51), FrmId(OBJ_TYPE_INTERFACE, 52));
     }
