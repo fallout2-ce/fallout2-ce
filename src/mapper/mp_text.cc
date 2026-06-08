@@ -3,8 +3,8 @@
 #include "color.h"
 #include "input.h"
 #include "kb.h"
-#include "mapper/mapper.h"
 #include "mapper/mp_proto.h"
+#include "mapper/mp_utils.h"
 #include "obj_types.h"
 #include "window_manager_private.h"
 

@@ -1,5 +1,7 @@
 #include "mapper/mapper.h"
 
+#include "mapper/mp_utils.h"
+
 #include <algorithm>
 #include <ctype.h>
 #include <stdio.h>
@@ -30,6 +32,8 @@
 #include "light.h"
 #include "loadsave.h"
 #include "map.h"
+#include "map_edge.h"
+#include "mapper/map_edge_setup.h"
 #include "mapper/map_func.h"
 #include "mapper/mp_instance.h"
 #include "mapper/mp_proto.h"
@@ -50,6 +54,7 @@
 #include "window_manager.h"
 #include "window_manager_private.h"
 #include "worldmap.h"
+#include "xfile.h"
 
 namespace fallout {
 
@@ -132,6 +137,10 @@ static char kRebuildAll[] = " Rebuild ALL ";
 static char kRebuildBinary[] = " Rebuild Binary ";
 static char kArtToProtos[] = " Art => New Protos ";
 static char kSwapPrototypse[] = " Swap Prototypes ";
+
+static char kHiResMapEdges[] = " Hi-Res Map Edges Setup ";
+static char kSetAngledEdges[] = " Set Hi-Res Angled Edges ";
+static char kToggleMapEdgesOverlay[] = " Toggle Map Edges Overlay ";
 
 static char kTmpMapName[] = "TMP$MAP#.MAP";
 
@@ -218,12 +227,19 @@ char* menu_3[] = {
     kSwapPrototypse,
 };
 
+char* menuNamesSettings[] = {
+    kHiResMapEdges,
+    kSetAngledEdges,
+    kToggleMapEdgesOverlay,
+};
+
 // 0x5596F8
 char** menu_names[] = {
     menu_0,
     menu_1,
     menu_2,
     menu_3,
+    menuNamesSettings,
 };
 
 // 0x559748
@@ -282,6 +298,8 @@ int menu_val_0[8];
 int menu_val_2[8];
 
 int menu_val_3[7];
+
+int menu_val_4[3];
 
 // 0x6EAA80
 unsigned char e_num[4][19 * 26];
@@ -544,6 +562,7 @@ constexpr int kBtnMenuHeaderFile = KEY_ALT_F;
 constexpr int kBtnMenuHeaderTools = KEY_ALT_V;
 constexpr int kBtnMenuHeaderScripts = KEY_ALT_T;
 constexpr int kBtnMenuHeaderLibrarian = KEY_ALT_J;
+constexpr int kBtnMenuHeaderSettings = KEY_ALT_X;
 
 constexpr int kBtnPlayMode = KEY_F8;
 constexpr int kBtnRebuildProtoList = KEY_F10;
@@ -559,6 +578,9 @@ constexpr int kBtnMarkAllExitGrids = 5679;
 constexpr int kBtnClearMapLevel = 5666;
 constexpr int kBtnCreateAllMapTexts = 5406;
 constexpr int kBtnRebuildAllMaps = 5405;
+constexpr int kBtnHiResMapEdges = 0x3101;
+constexpr int kBtnSetAngledEdges = 0x3103;
+constexpr int kBtnToggleMapEdgesOverlay = 0x3102;
 
 // FILE menu pulldown keycodes
 constexpr int kBtnNew = KEY_ALT_N;
@@ -717,6 +739,10 @@ void MapperInit()
     menu_val_3[4] = KEY_ESCAPE;
     menu_val_3[5] = kBtnLibrarianArtToProtos;
     menu_val_3[6] = kBtnLibrarianSwapProtos;
+
+    menu_val_4[0] = kBtnHiResMapEdges;
+    menu_val_4[1] = kBtnSetAngledEdges;
+    menu_val_4[2] = kBtnToggleMapEdgesOverlay;
 }
 
 static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
@@ -728,6 +754,42 @@ static int loadMapperLbm(int lbmBufWidth, int lbmBufHeight)
         0,
         lbmBufWidth - 1,
         lbmBufHeight - 1);
+}
+
+// Validates the configurable mapper dev_path: it must be an existing folder mounted in the
+// VFS. When invalid, it is cleared (so saves fall back to the patches path) and the user is warned.
+static void mapperValidateDevPath()
+{
+    std::string& devPath = settings.mapper.dev_path;
+    if (devPath.empty()) {
+        return;
+    }
+
+    if (compat_is_dir(devPath.c_str()) && xbaseIsValidDirectory(devPath.c_str())) {
+        return;
+    }
+
+    char msg[COMPAT_MAX_PATH + 128];
+    snprintf(msg, sizeof(msg), "Mapper dev_path \"%s\" is not a valid mounted data folder. Ignoring it.", devPath.c_str());
+
+    showMessageBox(msg);
+    devPath.clear();
+}
+
+static void initMenuBar(const int screenWidth)
+{
+    int foregroundColor = _colorTable[20052];
+    int backgroundColor = _colorTable[8456];
+
+    menu_bar = windowCreate(0, 0, screenWidth, 16, _colorTable[0], WINDOW_HIDDEN);
+    _win_register_menu_bar(menu_bar, 0, 0, screenWidth, 16, foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 8, "FILE", kBtnMenuHeaderFile, 8, menu_names[0], foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 40, "TOOLS", kBtnMenuHeaderTools, 21, menu_names[1], foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 80, "SCRIPTS", kBtnMenuHeaderScripts, 8, menu_names[2], foregroundColor, backgroundColor);
+    _win_register_menu_pulldown(menu_bar, 130, "SETTINGS", kBtnMenuHeaderSettings, 3, menu_names[4], foregroundColor, backgroundColor);
+    if (can_modify_protos) {
+        _win_register_menu_pulldown(menu_bar, 180, "LIBRARIAN", kBtnMenuHeaderLibrarian, 7, menu_names[3], foregroundColor, backgroundColor);
+    }
 }
 
 // 0x485F94
@@ -768,54 +830,7 @@ int mapper_edit_init(int argc, char** argv)
 
     max_art_buttons = (screenWidth - 135) / 50;
 
-    menu_bar = windowCreate(0,
-        0,
-        screenWidth,
-        16,
-        _colorTable[0],
-        WINDOW_HIDDEN);
-    _win_register_menu_bar(menu_bar,
-        0,
-        0,
-        screenWidth,
-        16,
-        260,
-        _colorTable[8456]);
-    _win_register_menu_pulldown(menu_bar,
-        8,
-        "FILE",
-        kBtnMenuHeaderFile,
-        8,
-        menu_names[0],
-        260,
-        _colorTable[8456]);
-    _win_register_menu_pulldown(menu_bar,
-        40,
-        "TOOLS",
-        kBtnMenuHeaderTools,
-        21,
-        menu_names[1],
-        260,
-        _colorTable[8456]);
-    _win_register_menu_pulldown(menu_bar,
-        80,
-        "SCRIPTS",
-        kBtnMenuHeaderScripts,
-        8,
-        menu_names[2],
-        260,
-        _colorTable[8456]);
-
-    if (can_modify_protos) {
-        _win_register_menu_pulldown(menu_bar,
-            130,
-            "LIBRARIAN",
-            kBtnMenuHeaderLibrarian,
-            7,
-            menu_names[3],
-            260,
-            _colorTable[8456]);
-    }
+    initMenuBar(screenWidth);
 
     tool_win = windowCreate(0,
         _scr_size.bottom - 99,
@@ -995,6 +1010,9 @@ int mapper_edit_init(int argc, char** argv)
     mapInit();
     target_init();
     mouseShowCursor();
+    mapperValidateDevPath();
+    mapEdgeSetupInit();
+    mapEdgeSetMapperMode(true);
 
     if (settings.mapper.rebuild_protos) {
         proto_build_all_texts();
@@ -1007,10 +1025,7 @@ int mapper_edit_init(int argc, char** argv)
 // 0x48752C
 void mapper_edit_exit()
 {
-    remove(mapBuildPath("TMP$MAP#.MAP"));
-    remove(mapBuildPath("TMP$MAP#.CFG"));
-
-    MapDirErase("MAPS\\", "SAV");
+    mapper_remove_tmp_map_files();
 
     if (can_modify_protos) {
         copy_proto_lists();
@@ -1314,7 +1329,7 @@ void edit_mapper()
                     int tile = gGameMouseBouncingCursor->tile;
 
                     if (settings.debug.show_tile_num) {
-                        debugPrint("tilenum = %d ", tile);
+                        debugPrint("\ntilenum = %d ", tile);
                     }
                     // Display tile number on toolbar (vanilla: x=7, y=27, maxWidth=260, color=35)
                     char tileNumStr[32];
@@ -1413,6 +1428,10 @@ void edit_mapper()
             int index = inputGetInput();
             if (index == -1) continue;
             keyCode = menu_val_3[index];
+        } else if (keyCode == kBtnMenuHeaderSettings) {
+            int index = inputGetInput();
+            if (index == -1) continue;
+            keyCode = menu_val_4[index];
         }
 
         // Toolbar art-slot left-click: select proto from toolbar
@@ -1485,7 +1504,8 @@ void edit_mapper()
             if (mapperYesNoDialog("Erase this map?")) {
                 bool wasBlockOn = map_toggle_block_obj_viewing_on();
                 if (wasBlockOn) map_toggle_block_obj_viewing(0);
-                mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
+                mapper_destroy_highlight_obj(&hl_obj1, nullptr);
+                _screen_obj = nullptr;
                 mapNewMap();
                 handle_new_map(&currentType, &scrollOffset);
                 interfaceBarHide();
@@ -1501,7 +1521,8 @@ void edit_mapper()
                 if (settings.mapper.use_art_not_protos) {
                     mapperShowTimedMsg("WARNING!  You are loading ART, not PROTOS!!!");
                 }
-                mapper_destroy_highlight_obj(&hl_obj1, &_screen_obj);
+                mapper_destroy_highlight_obj(&hl_obj1, nullptr);
+                _screen_obj = nullptr;
                 bool wasBlockOn = map_toggle_block_obj_viewing_on();
                 if (wasBlockOn) {
                     map_toggle_block_obj_viewing(0);
@@ -1549,6 +1570,23 @@ void edit_mapper()
         }
         case kBtnInfo:
             // No op, matching original.
+            break;
+        case kBtnHiResMapEdges:
+            if (map_entered) {
+                mapperShowTimedMsg("This map has been Entered.  Can't edit edges.");
+                break;
+            }
+            mapEdgeSetupDialog();
+            break;
+        case kBtnSetAngledEdges:
+            if (map_entered) {
+                mapperShowTimedMsg("This map has been Entered.  Can't edit edges.");
+                break;
+            }
+            mapEdgeSquareSetupDialog();
+            break;
+        case kBtnToggleMapEdgesOverlay:
+            mapEdgeSetupToggleOverlay();
             break;
         case kBtnSaveAs: {
             if (map_entered) {
@@ -2675,8 +2713,12 @@ int mapper_mark_exit_grid()
 // and on editor shutdown if the user quit while still in play mode.
 static void mapper_remove_tmp_map_files()
 {
-    remove(mapBuildPath(tmp_map_name));
-    remove(mapBuildPath("TMP$MAP#.CFG"));
+    remove(mapBuildSavePath(kTmpMapName));
+    remove(mapBuildSavePath("TMP$MAP#.EDG"));
+
+    char cfgPath[COMPAT_MAX_PATH];
+    snprintf(cfgPath, sizeof(cfgPath), "%s\\MAPS\\TMP$MAP#.CFG", settings.system.master_patches_path.c_str());
+    remove(cfgPath);
     MapDirErase("MAPS\\", "SAV");
 }
 
@@ -2742,6 +2784,9 @@ static void mapper_enter_play_mode(Object** pHlObj1)
     tileScrollBlockingEnable();
     tileScrollLimitingEnable();
 
+    // Leave mapper-editing mode so loaded edges behave as in the game (subject to settings).
+    mapEdgeSetMapperMode(false);
+
     if (settings.mapper.run_mapper_as_game) {
         scriptExecProc(gMapSid, SCRIPT_PROC_MAP_ENTER);
         if (scriptsExecStartProc() == -1) {
@@ -2805,6 +2850,9 @@ static void mapper_exit_play_mode(int* pCurrentType, int* pScrollOffset, Object*
     tileScrollBlockingDisable();
     tileScrollLimitingDisable();
 
+    // Back to editing: loaded edges are kept but no longer enforced.
+    mapEdgeSetMapperMode(true);
+
     // Match the original: if click-to-scroll was on during play, force it off on exit.
     if (_gmouse_get_click_to_scroll()) {
         _gmouse_set_click_to_scroll(false);
@@ -2833,16 +2881,6 @@ static void mapper_mark_all_exit_grids()
         }
         obj = objectFindNextAtElevation();
     }
-}
-
-void mapperShowTimedMsg(const char* msg)
-{
-    win_timed_msg(msg, _colorTable[31744] | FONT_SHADOW);
-}
-
-bool mapperYesNoDialog(const char* msg)
-{
-    return win_yes_no(msg, 80, 80, 0x104 | FONT_SHADOW) > 0;
 }
 
 } // namespace fallout

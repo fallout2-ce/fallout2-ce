@@ -1,6 +1,7 @@
 #include "tile_hires_stencil.h"
 #include "debug.h"
 #include "draw.h"
+#include "game.h"
 #include "geometry.h"
 #include "map_edge.h"
 #include "settings.h"
@@ -65,7 +66,7 @@ static_assert(screen_view_width % (2 * square_width) == 0);
 // which is covered by squares but theoretically could be seen in the original game
 static_assert(screen_view_height % (2 * square_height) == 20);
 
-static bool gIsTileHiresStencilEnabled = true;
+static bool gIsTileHiresStencilEnabled = false;
 
 static void clean_cache()
 {
@@ -213,7 +214,7 @@ void tile_hires_stencil_on_center_tile_or_elevation_change()
     }
     // With EDG loaded, the EdgeClipping path handles blackening via ClearRect/CheckRect.
     // The stencil used as a backup when no EDG is present.
-    if (mapEdgeIsLoaded() || !gTileBorderInitialized || visited_tiles[gElevation][gCenterTile]) {
+    if (mapEdgeIsEnabled() || !gTileBorderInitialized || visited_tiles[gElevation][gCenterTile]) {
         return;
     }
 
@@ -396,7 +397,7 @@ void tile_hires_stencil_draw(Rect* rect, unsigned char* buffer, int windowWidth,
 
 void tile_hires_stencil_init()
 {
-    gIsTileHiresStencilEnabled = settings.ui.enable_high_resolution_stencil;
+    gIsTileHiresStencilEnabled = !settings.system.executableIsMapper() && settings.ui.enable_high_resolution_stencil;
     if (!gIsTileHiresStencilEnabled) {
         return;
     }
@@ -416,6 +417,9 @@ void tile_hires_stencil_init()
 
 void tile_hires_stencil_on_map_load()
 {
+    if (!gIsTileHiresStencilEnabled) {
+        return;
+    }
     clean_cache();
     tile_hires_stencil_on_center_tile_or_elevation_change();
     tileWindowRefresh();

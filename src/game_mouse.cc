@@ -2320,12 +2320,8 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
             x1 = -8;
             y1 = 13;
 
-            if (compat_stricmp(settings.system.executable.c_str(), "mapper") == 0) {
-                if (tileRoofIsVisible()) {
-                    if ((gDude->flags & OBJECT_HIDDEN) == 0) {
-                        y1 = -83;
-                    }
-                }
+            if (settings.system.executableIsMapper() && tileRoofIsVisible() && (gDude->flags & OBJECT_HIDDEN) == 0) {
+                y1 = -83;
             }
         } else {
             tile = -1;

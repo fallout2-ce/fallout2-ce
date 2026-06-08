@@ -29,9 +29,7 @@
 #include "map_edge.h"
 #include "memory.h"
 #include "object.h"
-#include "palette.h"
 #include "party_member.h"
-#include "pipboy.h"
 #include "proto.h"
 #include "proto_instance.h"
 #include "queue.h"
@@ -55,7 +53,7 @@ static int mapLoad(File* stream);
 static int _map_age_dead_critters();
 static void _map_fix_critter_combat_data();
 static int _map_save_file(File* stream);
-int _map_save();
+int _map_save(bool isInGame);
 static void mapMakeMapsDirectory();
 static void isoWindowRefreshRect(Rect* rect);
 static void isoWindowRefreshRectGame(Rect* rect);
@@ -289,7 +287,7 @@ void isoExit()
 // 0x481FB4
 void mapInit()
 {
-    if (compat_stricmp(settings.system.executable.c_str(), "mapper") == 0) {
+    if (settings.system.executableIsMapper()) {
         _map_scroll_refresh = isoWindowRefreshRectMapper;
     }
 
@@ -725,6 +723,37 @@ const char* mapBuildPath(const char* name)
     return name;
 }
 
+const char* mapBuildDataSavePath(const char* relativePath)
+{
+    static char path[COMPAT_MAX_PATH];
+
+    // Save root: the validated mapper dev_path when set (mapper only), otherwise the master patches path.
+    const std::string& devPath = settings.mapper.dev_path;
+    const char* root = (settings.system.executableIsMapper() && !devPath.empty()) ? devPath.c_str() : settings.system.master_patches_path.c_str();
+    // Join root + relativePath, tolerating a trailing separator on the root.
+    size_t rootLen = strlen(root);
+    bool rootHasSeparator = rootLen > 0 && (root[rootLen - 1] == '\\' || root[rootLen - 1] == '/');
+    snprintf(path, sizeof(path), "%s%s%s", root, rootHasSeparator ? "" : "\\", relativePath);
+
+    // Ensure the directory portion exists.
+    char dir[COMPAT_MAX_PATH];
+    snprintf(dir, sizeof(dir), "%s", path);
+    char* separator = strrchr(dir, '\\');
+    if (separator != nullptr) {
+        *separator = '\0';
+        compat_mkdir_recursive(dir);
+    }
+
+    return path;
+}
+
+const char* mapBuildSavePath(const char* name)
+{
+    char relativePath[COMPAT_MAX_PATH];
+    snprintf(relativePath, sizeof(relativePath), "MAPS\\%s", name);
+    return mapBuildDataSavePath(relativePath);
+}
+
 // 0x482924
 int mapSetEnteringLocation(int elevation, int tile_num, int orientation)
 {
@@ -761,7 +790,7 @@ void mapNewMap()
     tileWindowRefresh();
 }
 
-// 0x482A68
+// 0x482A68 map_load
 int mapLoadByName(char* fileName)
 {
     int rc;
@@ -770,20 +799,22 @@ int mapLoadByName(char* fileName)
 
     rc = -1;
 
-    char* extension = strstr(fileName, ".MAP");
-    if (extension != nullptr) {
-        strcpy(extension, ".SAV");
+    if (!settings.system.executableIsMapper()) {
+        char* extension = strstr(fileName, ".MAP");
+        if (extension != nullptr) {
+            strcpy(extension, ".SAV");
 
-        const char* filePath = mapBuildPath(fileName);
+            const char* filePath = mapBuildPath(fileName);
 
-        File* stream = fileOpen(filePath, "rb");
+            File* stream = fileOpen(filePath, "rb");
 
-        strcpy(extension, ".MAP");
+            strcpy(extension, ".MAP");
 
-        if (stream != nullptr) {
-            fileClose(stream);
-            rc = mapLoadSaved(fileName);
-            wmMapMusicStart();
+            if (stream != nullptr) {
+                fileClose(stream);
+                rc = mapLoadSaved(fileName);
+                wmMapMusicStart();
+            }
         }
     }
 
@@ -823,15 +854,17 @@ int mapLoadById(int map)
     return rc;
 }
 
-// 0x482B74
+// 0x482B74 map_load_file
 static int mapLoad(File* stream)
 {
-    _map_save_in_game(true);
     int mapLoadSoundId = 0;
-    if (backgoundSoundIsPlaying()) {
-        // Use the sfall sound path so the map-loading ambience does not depend
-        // on the native background music loader.
-        mapLoadSoundId = scriptSoundPlay("sound\\music\\WIND2.ACM", SCRIPT_SOUND_MODE_LOOP);
+    if (!settings.system.executableIsMapper()) {
+        _map_save_in_game(true);
+        if (backgoundSoundIsPlaying()) {
+            // Use the sfall sound path so the map-loading ambience does not depend
+            // on the native background music loader.
+            mapLoadSoundId = scriptSoundPlay("sound\\music\\WIND2.ACM", SCRIPT_SOUND_MODE_LOOP);
+        }
     }
     isoDisable();
     _partyMemberPrepLoad();
@@ -935,7 +968,7 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    if (settings.ui.edg_support && !settings.ui.ignore_map_edges) {
+    if (settings.system.executableIsMapper() || settings.ui.edg_support) {
         mapEdgeLoad(gMapHeader.name);
     }
 
@@ -1083,7 +1116,7 @@ err:
     return rc;
 }
 
-// 0x483188
+// 0x483188 map_load_in_game
 int mapLoadSaved(char* fileName)
 {
     debugPrint("\nMAP: Loading SAVED map.");
@@ -1343,32 +1376,26 @@ static void _map_fix_critter_combat_data()
 
 // map_save
 // 0x483850
-int _map_save()
+int _map_save(bool isInGame)
 {
-    char temp[80];
-    temp[0] = '\0';
-
-    strcat(temp, settings.system.master_patches_path.c_str());
-    compat_mkdir(temp);
-
-    strcat(temp, "\\MAPS");
-    compat_mkdir(temp);
-
     int rc = -1;
     if (gMapHeader.name[0] != '\0') {
-        const char* mapFileName = mapBuildPath(gMapHeader.name);
-        File* stream = fileOpen(mapFileName, "wb");
+        const char* mapFilePath = mapBuildSavePath(gMapHeader.name);
+        File* stream = fileOpen(mapFilePath, "wb");
         if (stream != nullptr) {
             rc = _map_save_file(stream);
             fileClose(stream);
         } else {
-            snprintf(temp, sizeof(temp), "Unable to open %s to write!", gMapHeader.name);
-            debugPrint(temp);
+            debugPrint("Unable to open %s to write!", gMapHeader.name);
         }
 
         if (rc == 0) {
-            snprintf(temp, sizeof(temp), "%s saved.", gMapHeader.name);
-            debugPrint(temp);
+            debugPrint("%s saved.", gMapHeader.name);
+
+            if (!isInGame) {
+                // Write the edge (.EDG) alongside the map.
+                mapEdgeSave(gMapHeader.name);
+            }
         }
     } else {
         debugPrint("\nError: map_save: map header corrupt!");
@@ -1502,7 +1529,7 @@ int _map_save_in_game(bool isLeavingMap)
 
         strcpy(name, gMapHeader.name);
         _strmfe(gMapHeader.name, name, "SAV");
-        if (_map_save() == -1) {
+        if (_map_save(true) == -1) {
             return -1;
         }
 
@@ -1603,6 +1630,8 @@ static void isoWindowRefreshRectMapper(Rect* rect)
     if (!hasVisArea) {
         tile_hires_stencil_draw(&rectToUpdate, gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), rectGetHeight(&gIsoWindowRect));
     }
+
+    tileMapperOverlayRender(gIsoWindowBuffer, rectGetWidth(&gIsoWindowRect), gElevation, &rectToUpdate);
 }
 
 // NOTE: Inlined.

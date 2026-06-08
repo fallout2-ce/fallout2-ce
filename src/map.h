@@ -106,12 +106,18 @@ void mapNewMap();
 int mapLoadByName(char* fileName);
 int mapLoadById(int map_index);
 const char* mapBuildPath(const char* name);
+// Resolves a VFS-relative data path (e.g. "MAPS\\ARROYO.MAP") to a writable path, creating its directory.
+// Save root is the validated mapper dev_path when set, otherwise the master patches path.
+const char* mapBuildDataSavePath(const char* relativePath);
+// Convenience wrapper around mapBuildDataSavePath for files under MAPS\, mirroring
+// mapBuildPath semantics: name is the bare filename, e.g. "ARROYO.MAP".
+const char* mapBuildSavePath(const char* name);
 int mapLoadSaved(char* fileName);
 int mapGetLoadedAreaId();
 int mapSetTransition(MapTransition* transition);
 int mapHandleTransition();
 int _map_save_in_game(bool isLeavingMap);
-int _map_save();
+int _map_save(bool isInGame = false);
 
 } // namespace fallout
 
