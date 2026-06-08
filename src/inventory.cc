@@ -1196,18 +1196,12 @@ void inventoryOpen()
         int keyCode = inputGetInput();
         int mouseEvent = mouseGetEvent();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_NORMAL, nullptr };
+        Rect normalRect = { inventoryLayout.scrollerX, inventoryLayout.scrollerY, inventoryLayout.scrollerX + inventoryLayout.scrollerWidth, inventoryLayout.scrollerY + inventoryLayout.scrollerHeight };
         InventoryScroller normalScroller {
-            { inventoryLayout.scrollerX, inventoryLayout.scrollerY, inventoryLayout.scrollerX + inventoryLayout.scrollerWidth, inventoryLayout.scrollerY + inventoryLayout.scrollerHeight },
-            &(_stack_offset[_curr_stack]),
-            inventoryLayout.columns,
-            inventoryLayout.visibleSlots,
-            _pud->length,
-            KEY_ARROW_UP,
-            KEY_ARROW_DOWN,
-            KEY_PAGE_UP,
-            KEY_PAGE_DOWN,
-            KEY_HOME,
-            KEY_END,
+            normalRect,
+            &(_stack_offset[_curr_stack]), inventoryLayout.columns,
+            inventoryLayout.visibleSlots, _pud->length,
+            KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_PAGE_UP, KEY_PAGE_DOWN, KEY_HOME, KEY_END,
             inventoryScrollerRedrawInventory,
             &inventoryScrollerContext,
             false,
@@ -1980,40 +1974,24 @@ static void _display_inventory_info(Object* item, int quantity, unsigned char* d
     char formattedText[12];
 
     // NOTE: Original code is slightly different and probably used goto.
-    bool draw = false;
-
+    int disaplyQuantity = 0;
     if (itemGetType(item) == ITEM_TYPE_AMMO) {
-        int ammoQuantity = ammoGetCapacity(item) * (quantity - 1);
-
+        disaplyQuantity = ammoGetCapacity(item) * (quantity - 1);
         if (!isDragged) {
-            ammoQuantity += ammoGetQuantity(item);
+            disaplyQuantity += ammoGetQuantity(item);
         }
-
-        if (ammoQuantity > 99999) {
-            ammoQuantity = 99999;
-        }
-
-        snprintf(formattedText, sizeof(formattedText), "x%d", ammoQuantity);
-        draw = true;
     } else {
         if (quantity > 1) {
-            int displayedQuantity = quantity;
+            disaplyQuantity = quantity;
             if (isDragged) {
-                displayedQuantity -= 1;
-            }
-
-            if (quantity > 1) {
-                if (displayedQuantity > 99999) {
-                    displayedQuantity = 99999;
-                }
-
-                snprintf(formattedText, sizeof(formattedText), "x%d", displayedQuantity);
-                draw = true;
+                // Note: can display "x1" during drag, which is otherwise not possible.
+                disaplyQuantity -= 1;
             }
         }
     }
 
-    if (draw) {
+    if (disaplyQuantity > 0) {
+        snprintf(formattedText, sizeof(formattedText), "x%d", std::clamp(disaplyQuantity, 0, 99999));
         fontDrawText(dest, formattedText, 80, pitch, _colorTable[32767]);
     }
 
@@ -2703,16 +2681,9 @@ void inventoryOpenUseItemOn(Object* targetObj)
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_USE_ITEM_ON, nullptr };
         InventoryScroller useItemOnScroller {
             { INVENTORY_SCROLLER_X, INVENTORY_SCROLLER_Y, INVENTORY_SCROLLER_MAX_X, INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_SCROLLER_Y },
-            &(_stack_offset[_curr_stack]),
-            1,
-            gInventorySlotsCount,
-            _pud->length,
-            KEY_ARROW_UP,
-            KEY_ARROW_DOWN,
-            KEY_PAGE_UP,
-            KEY_PAGE_DOWN,
-            KEY_HOME,
-            KEY_END,
+            &(_stack_offset[_curr_stack]), 1,
+            gInventorySlotsCount, _pud->length,
+            KEY_ARROW_UP, KEY_ARROW_DOWN, KEY_PAGE_UP, KEY_PAGE_DOWN, KEY_HOME, KEY_END,
             inventoryScrollerRedrawInventory,
             &inventoryScrollerContext,
             false,
@@ -4242,40 +4213,34 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
-    if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER) {
-        if (critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
-            inventoryDisplayMessage(50); // You can't find anything to take from that.
-            return 0;
-        }
+    if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
+        inventoryDisplayMessage(50); // You can't find anything to take from that.
+        return 0;
     }
 
-    if (FID_TYPE(target->fid) == OBJ_TYPE_ITEM) {
-        if (itemGetType(target) == ITEM_TYPE_CONTAINER) {
-            if (target->frame == 0) {
-                CacheEntry* handle;
-                Art* frm = artLock(target->fid, &handle);
-                if (frm != nullptr) {
-                    int frameCount = artGetFrameCount(frm);
-                    artUnlock(handle);
-                    if (frameCount > 1) {
-                        return 0;
-                    }
+    if (FID_TYPE(target->fid) == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
+        if (target->frame == 0) {
+            CacheEntry* handle;
+            Art* frm = artLock(target->fid, &handle);
+            if (frm != nullptr) {
+                int frameCount = artGetFrameCount(frm);
+                artUnlock(handle);
+                if (frameCount > 1) {
+                    return 0;
                 }
             }
         }
     }
 
     int sid = -1;
-    if (!_gIsSteal) {
-        if (objectGetSid(target, &sid) != -1) {
-            scriptSetObjects(sid, looter, nullptr);
-            scriptExecProc(sid, SCRIPT_PROC_PICKUP);
+    if (!_gIsSteal && objectGetSid(target, &sid) != -1) {
+        scriptSetObjects(sid, looter, nullptr);
+        scriptExecProc(sid, SCRIPT_PROC_PICKUP);
 
-            Script* script;
-            if (scriptGetScript(sid, &script) != -1) {
-                if (script->scriptOverrides) {
-                    return 0;
-                }
+        Script* script;
+        if (scriptGetScript(sid, &script) != -1) {
+            if (script->scriptOverrides) {
+                return 0;
             }
         }
     }
