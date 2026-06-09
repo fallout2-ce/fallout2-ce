@@ -2606,7 +2606,7 @@ static void _combat_begin(Object* attacker)
 
             scriptSetObjects(critter->sid, nullptr, nullptr);
             scriptSetFixedParam(critter->sid, 0);
-            if (critter->pid == 0x1000098) {
+            if (critter->pid == PROTO_ID_GORIS) {
                 if (!critterIsDead(critter)) {
                     v1 = critter;
                 }
