@@ -524,8 +524,8 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
     },
     {
         { 600, CHEM_USE_CLEAN }, // I'm clean
-        { 601, CHEM_USE_STIMS_WHEN_HURT_LITTLE }, // Stimpacks when hurt a bit
-        { 602, CHEM_USE_STIMS_WHEN_HURT_LOTS }, // Stimpacks when hurt a lot
+        { 601, CHEM_USE_STIMS_WHEN_HURT_LITTLE }, // Stimpaks when hurt a bit
+        { 602, CHEM_USE_STIMS_WHEN_HURT_LOTS }, // Stimpaks when hurt a lot
         { 603, CHEM_USE_SOMETIMES }, // Any drug some of the time
         { 604, CHEM_USE_ANYTIME }, // Any drug any time
         { -1, 0 },

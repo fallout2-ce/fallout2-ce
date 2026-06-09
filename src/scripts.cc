@@ -971,7 +971,7 @@ static void scriptsCloseNearbyElevatorDoors()
     while (elevatorDoors != nullptr) {
         int pid = elevatorDoors->pid;
         if (PID_TYPE(pid) == OBJ_TYPE_SCENERY
-            && (pid == PROTO_ID_0x2000099 || pid == PROTO_ID_0x20001A5 || pid == PROTO_ID_0x20001D6)
+            && (pid == PROTO_ID_BROTHERHOOD_DOOR || pid == PROTO_ID_ELEVATOR_DOOR || pid == PROTO_ID_ELEVATOR_DOOR_ALT)
             && tileDistanceBetween(elevatorDoors->tile, gDude->tile) <= 4) {
             break;
         }
@@ -1191,7 +1191,7 @@ int scriptsRequestElevator(Object* obj, int elevatorType)
         for (int x = -5; x < 5; x++) {
             elevator = objectFindFirstAtElevation(obj->elevation);
             while (elevator != nullptr) {
-                if (tile == elevator->tile && elevator->pid == PROTO_ID_0x200050D) {
+                if (tile == elevator->tile && elevator->pid == PROTO_ID_ELEVATOR_STUB) {
                     break;
                 }
 
