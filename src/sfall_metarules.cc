@@ -562,7 +562,7 @@ void mf_unwield_slot(OpcodeContext& ctx)
     Object* critter = ctx.arg(0).asObject();
     int slot = ctx.arg(1).asInt();
 
-    if (slot < 0 || slot > 2) {
+    if (slot < static_cast<int>(InvenSlot::Armor) || slot > static_cast<int>(InvenSlot::LeftHand)) {
         ctx.printError("%s() - slot must be 0, 1, or 2.", ctx.name());
         ctx.setReturn(-1);
         return;

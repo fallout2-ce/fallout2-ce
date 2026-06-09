@@ -320,8 +320,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
     return itemAdd(owner, itemToAdd, quantity);
 }
 
-// item_add_force
-// 0x4772B8
+// 0x4772B8 item_add_force
 int itemAdd(Object* owner, Object* itemToAdd, int quantity)
 {
     if (quantity < 1) {

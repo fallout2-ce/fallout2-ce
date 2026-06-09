@@ -3643,7 +3643,6 @@ int inventoryUnequipFunc(Object* critter, int hand, bool animate)
 {
     int activeHand;
     Object* item;
-    int fid;
 
     if (critter == gDude) {
         activeHand = interfaceGetCurrentHand();
@@ -3678,13 +3677,13 @@ int inventoryUnequipFunc(Object* critter, int hand, bool animate)
 
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
 
-            fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, 0, 0, critter->rotation + 1);
+            int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, 0, 0, critter->rotation + 1);
             animationRegisterSetFid(critter, fid, -1);
 
             return reg_anim_end();
         }
 
-        fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, 0, 0, critter->rotation + 1);
+        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, 0, 0, critter->rotation + 1);
         _dude_stand(critter, critter->rotation, fid);
     }
 
@@ -6372,7 +6371,6 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
     bool forceAdd = false;
     Object* item = nullptr;
     Object** itemSlot = nullptr;
-    int clearedFlag = 0;
     if (slot != InvenSlot::Armor) {
         if (!isDude || critter != _inven_dude) {
             return 0;
@@ -6381,11 +6379,9 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
         if (slot == InvenSlot::RightHand) {
             item = gInventoryRightHandItem;
             itemSlot = &gInventoryRightHandItem;
-            clearedFlag = OBJECT_IN_RIGHT_HAND;
         } else {
             item = gInventoryLeftHandItem;
             itemSlot = &gInventoryLeftHandItem;
-            clearedFlag = OBJECT_IN_LEFT_HAND;
         }
 
         if (item != nullptr) {
@@ -6394,12 +6390,17 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
             }
 
             int oldFlags = item->flags;
-            *itemSlot = nullptr;
-            item->flags &= ~clearedFlag;
+            bool clearBothHandSlots = gInventoryLeftHandItem == item && gInventoryRightHandItem == item;
+            if (clearBothHandSlots) {
+                gInventoryLeftHandItem = nullptr;
+                gInventoryRightHandItem = nullptr;
+            } else {
+                *itemSlot = nullptr;
+            }
+            item->flags &= ~OBJECT_IN_ANY_HAND;
 
             if (itemAdd(critter, item, 1) != 0) {
-                *itemSlot = item;
-                item->flags = oldFlags;
+                // item will be in an invalid state, but this can only happen on malloc failure
                 return -1;
             }
 
@@ -6418,40 +6419,18 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
         }
 
         if (item != nullptr) {
-            if (!scriptHooks_InvenWield(critter, item, InvenSlot::Armor, 0, 0, false)) {
+            item->flags &= ~OBJECT_WORN;
+            if (correctFidForRemovedItem(critter, item, OBJECT_WORN) != 0) {
+                if (forceAdd) {
+                    gInventoryArmor = item;
+                    item->flags |= OBJECT_WORN;
+                }
                 return -1;
             }
 
-            int oldFid = critter->fid;
-            item->flags &= ~OBJECT_WORN;
-            adjustCritterStatsOnArmorChange(critter, item, nullptr);
-
-            int newFid = inventoryComputeCritterFid(critter,
-                critter->pid,
-                critterGetItem2(critter),
-                critterGetItem1(critter),
-                nullptr,
-                isDude ? interfaceGetCurrentHand() : HAND_RIGHT,
-                FID_ANIM_TYPE(critter->fid),
-                FID_ROTATION(critter->fid));
-            Rect rect;
-            objectSetFid(critter, newFid, &rect);
-            tileWindowRefreshRect(&rect, gElevation);
-
-            if (forceAdd) {
-                if (itemAdd(critter, item, 1) != 0) {
-                    if (isDude && critter == _inven_dude) {
-                        gInventoryArmor = item;
-                    }
-                    item->flags |= OBJECT_WORN;
-                    adjustCritterStatsOnArmorChange(critter, nullptr, item);
-                    objectSetFid(critter, oldFid, &rect);
-                    tileWindowRefreshRect(&rect, gElevation);
-                    if (isDude) {
-                        interfaceRenderArmorClass(false);
-                    }
-                    return -1;
-                }
+            if (forceAdd && itemAdd(critter, item, 1) != 0) {
+                // improper cleanup, but this can only happen on malloc failure
+                return -1;
             }
 
             if (isDude) {
@@ -6477,17 +6456,20 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
         inventoryRenderSummary();
     }
 
+    int targetFid = -1;
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT
         || inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
+        targetFid = _target_stack[_target_curr_stack]->fid;
         _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, inventoryWindowType);
     }
 
+    _adjust_fid();
     _display_inventory(_stack_offset[_curr_stack], -1, inventoryWindowType);
+    _display_body(targetFid, inventoryWindowType);
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
         barterDisplayTables(gInventoryBarterBackgroundWindow, gPlayerTableObj, gBartererTableObj, -1);
     }
 
-    _adjust_fid();
     if (update) {
         interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
     }

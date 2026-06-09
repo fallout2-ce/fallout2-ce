@@ -312,7 +312,7 @@ void mapInit()
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_MAP, &gMapMessageList);
 }
 
-// 0x482084
+// 0x482084 map_enable_bk_processes
 void mapExit()
 {
     windowHide(gIsoWindow);
@@ -340,7 +340,7 @@ void isoEnable()
     }
 }
 
-// 0x482104
+// 0x482104 map_disable_bk_processes
 bool isoDisable()
 {
     if (!gIsoEnabled) {
@@ -358,14 +358,13 @@ bool isoDisable()
     return true;
 }
 
-// 0x482148
+// 0x482148 map_bk_processes_are_disabled
 bool isoIsDisabled()
 {
     return gIsoEnabled == false;
 }
 
-// map_set_elevation
-// 0x482158
+// 0x482158 map_set_elevation
 int mapSetElevation(int elevation)
 {
     if (!elevationIsValid(elevation)) {

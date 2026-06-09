@@ -2,6 +2,7 @@
 #define INTERPRETER_EXTRA_H
 
 #include "interpreter.h"
+#include "obj_types.h"
 
 namespace fallout {
 
@@ -12,6 +13,8 @@ enum class InvenSlot : int {
 };
 
 constexpr int kInvenSlotInvCount = -2;
+
+int correctFidForRemovedItem(Object* critter, Object* item, int flags);
 
 void _intExtraClose_();
 void _initIntExtra();
