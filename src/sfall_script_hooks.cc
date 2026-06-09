@@ -959,9 +959,9 @@ int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid)
 
     int     ret0 - overrides hard-coded handler (-1 = use engine handler) (NOT RECOMMENDED)
 */
-bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove)
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove, bool filterInactiveHand)
 {
-    if (!isWield) {
+    if (filterInactiveHand && !isWield) {
         // Sfall: NPCs only ever expose the active (right) hand here.
         if (slot == InvenSlot::LeftHand && critter != gDude) {
             return true;

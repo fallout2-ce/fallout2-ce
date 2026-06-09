@@ -5,6 +5,8 @@
 
 namespace fallout {
 
+enum class InvenSlot : int;
+
 #define INVENTORY_SLOT_WIDTH 64
 #define INVENTORY_SLOT_HEIGHT 48
 
@@ -61,6 +63,7 @@ int inventoryOpenStealing(Object* thief, Object* target);
 void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bartererTable, int barterMod);
 int inventorySetTimer(Object* item);
 Object* inventoryGetTargetObject();
+int inventoryUnwieldSlot(Object* critter, InvenSlot slot);
 
 } // namespace fallout
 

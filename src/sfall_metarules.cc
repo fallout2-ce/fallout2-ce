@@ -77,6 +77,7 @@ static void mf_show_window(OpcodeContext& ctx);
 static void mf_signal_close_game(OpcodeContext& ctx);
 static void mf_tile_by_position(OpcodeContext& ctx);
 static void mf_tile_refresh_display(OpcodeContext& ctx);
+static void mf_unwield_slot(OpcodeContext& ctx);
 static void mf_string_compare(OpcodeContext& ctx);
 static void mf_string_find(OpcodeContext& ctx);
 static void mf_string_to_case(OpcodeContext& ctx);
@@ -187,7 +188,7 @@ const MetaruleInfo kMetarules[] = {
     { "tile_by_position", mf_tile_by_position, 2, 2, -1, { ARG_INT, ARG_INT } },
     { "tile_refresh_display", mf_tile_refresh_display, 0, 0 },
     // {"unjam_lock",                mf_unjam_lock,                1, 1, -1, {ARG_OBJECT}},
-    // {"unwield_slot",              mf_unwield_slot,              2, 2, -1, {ARG_OBJECT, ARG_INT}},
+    { "unwield_slot", mf_unwield_slot, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"win_fill_color",            mf_win_fill_color,            0, 5, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "opcode_exists", mf_opcode_exists, 1, 1 },
 };
@@ -554,6 +555,28 @@ void mf_show_window(OpcodeContext& ctx)
 void mf_tile_refresh_display(OpcodeContext& ctx)
 {
     tileWindowRefresh();
+}
+
+void mf_unwield_slot(OpcodeContext& ctx)
+{
+    Object* critter = ctx.arg(0).asObject();
+    int slot = ctx.arg(1).asInt();
+
+    if (slot < static_cast<int>(InvenSlot::Armor) || slot > static_cast<int>(InvenSlot::LeftHand)) {
+        ctx.printError("%s() - slot must be 0, 1, or 2.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+        ctx.printError("%s() - the object is not a critter.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    if (inventoryUnwieldSlot(critter, static_cast<InvenSlot>(slot)) == -1) {
+        ctx.setReturn(-1);
+    }
 }
 
 void mf_tile_by_position(OpcodeContext& ctx)
