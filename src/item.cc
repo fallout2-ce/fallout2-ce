@@ -3664,8 +3664,8 @@ void explosionSetMaxTargets(int maxTargets)
 
 static void healingItemsInit()
 {
-    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "stimpak", &gHealingItemPids[HEALING_ITEM_STIMPACK], PROTO_ID_STIMPACK);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "super_stimpak", &gHealingItemPids[HEALING_ITEM_SUPER_STIMPACK], PROTO_ID_SUPER_STIMPACK);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "stimpak", &gHealingItemPids[HEALING_ITEM_STIMPAK], PROTO_ID_STIMPAK);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "super_stimpak", &gHealingItemPids[HEALING_ITEM_SUPER_STIMPAK], PROTO_ID_SUPER_STIMPAK);
     configGetInt(&gContentConfig, CONTENT_CONFIG_ITEMS_SECTION, "healing_powder", &gHealingItemPids[HEALING_ITEM_HEALING_POWDER], PROTO_ID_HEALING_POWDER);
 }
 
