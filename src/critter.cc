@@ -1,5 +1,6 @@
 #include "critter.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -1020,6 +1021,15 @@ int critterGetBodyType(Object* critter)
     Proto* proto;
     protoGetProto(critter->pid, &proto);
     return proto->critter.data.bodyType;
+}
+
+int critterBuildGorisFid(Object* critter, int frmId)
+{
+    assert(critter != nullptr && critter->pid == PROTO_ID_GORIS);
+
+    // Goris needs the live critter FID preserved exactly as-is except for the
+    // base FRM id swap between robe and claw body art.
+    return (critter->fid & ~0xFFF) | FID_FRM_ID(frmId);
 }
 
 // 0x42DE58 pc_load_data
