@@ -3375,7 +3375,6 @@ static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFid)
     reg_anim_end();
 }
 
-
 static void waitForGorisAnimation(Object* critter, const char* reason)
 {
     int iterations = 0;
