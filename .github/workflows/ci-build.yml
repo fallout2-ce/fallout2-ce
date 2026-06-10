@@ -46,9 +46,17 @@ jobs:
       - name: Clone
         uses: actions/checkout@v4
 
-      - name: Show clang-format version
+      - name: Install clang-format 14
         run: |
-          clang-format --version
+          sudo apt-get update
+          if apt-cache show clang-format-14 &>/dev/null; then
+            sudo apt-get install -y clang-format-14
+          else
+            sudo apt-get install -y clang-format
+          fi
+
+      - name: Show clang-format version
+        run: ./fix_formatting.sh --version
 
       - name: clang-format
         run: |
@@ -59,7 +67,7 @@ jobs:
             if gh pr view ${{ github.event.pull_request.number }} --repo "${{ github.repository }}" --json labels --jq '.labels[].name' | grep -q "skip-formatting"; then
               echo "skip-formatting label found - do not raise error"
               echo "==============================="
-              find src -type f \( -name \*.cc -o -name \*.h \) | xargs clang-format --dry-run
+              ./fix_formatting.sh --dry-run
               exit 0
             fi
             echo "skip-formatting label not found - raise error if formatting is not correct"
@@ -67,11 +75,60 @@ jobs:
             echo "Not a PR, do not check labels"
           fi
 
-          find src -type f \( -name \*.cc -o -name \*.h \) | xargs clang-format --dry-run --Werror
+          ./fix_formatting.sh --check
 
           echo "Code is formatted correctly"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  code-format-macos:
+    name: Code format check (macOS script)
+
+    runs-on: macos-latest
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Install clang-format 14
+        run: |
+          brew install llvm@14
+          echo "$(brew --prefix llvm@14)/bin" >> "$GITHUB_PATH"
+
+      - name: Verify fix_formatting.sh
+        run: |
+          ./fix_formatting.sh --version
+          ./fix_formatting.sh --check
+
+      - name: Verify git pre-commit hook
+        run: |
+          git config --local core.hooksPath .githooks
+          .githooks/pre-commit
+
+  code-format-windows:
+    name: Code format check (Windows script)
+
+    runs-on: windows-latest
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Install LLVM 14 (clang-format)
+        shell: pwsh
+        run: |
+          $installer = "$env:RUNNER_TEMP\LLVM-14.0.6-win64.exe"
+          Invoke-WebRequest `
+            -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/LLVM-14.0.6-win64.exe" `
+            -OutFile $installer
+          Start-Process -FilePath $installer -ArgumentList "/S" -Wait
+          "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+
+      - name: Verify fix_formatting.ps1
+        shell: pwsh
+        run: |
+          .\fix_formatting.ps1 --version
+          .\fix_formatting.ps1 --check
 
   android:
     name: Android
