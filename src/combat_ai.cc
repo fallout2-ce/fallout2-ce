@@ -2105,6 +2105,10 @@ Object* _ai_search_inven_armor(Object* critter)
         return nullptr;
     }
 
+    if (critterGetBodyType(critter) != BODY_TYPE_BIPED) {
+        return nullptr;
+    }
+
     // Calculate armor score - it's a unitless combination of armor class and bonuses across
     // all damage types.
     int armorScore = 0;

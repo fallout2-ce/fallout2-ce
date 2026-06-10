@@ -3377,10 +3377,7 @@ static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFid)
 
 static void waitForGorisAnimation(Object* critter, const char* reason)
 {
-    int iterations = 0;
-
     while (animationIsBusy(critter)) {
-        iterations++;
         sharedFpsLimiter.mark();
         _process_bk();
         renderPresent();
