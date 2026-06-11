@@ -8,6 +8,7 @@
 #include "color.h"
 #include "combat_ai.h"
 #include "critter.h"
+#include "debug.h"
 #include "game_sound.h"
 #include "input.h"
 #include "kb.h"
@@ -16,6 +17,7 @@
 #include "memory.h"
 #include "proto.h"
 #include "scripts.h"
+#include "stat.h"
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
@@ -33,13 +35,24 @@ static int proto_choose_container_flags(Proto* proto);
 static int proto_subdata_setup_int_button(const char* title, int key, int value, int min_value, int max_value, int* y, int itemIndex);
 static int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, int itemIndex);
 static int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex);
+static void proto_subdata_setup_str_button(const char* title, int key, int value, const char* const* strs, int count, int* y, int itemIndex);
+static void proto_subdata_setup_x_str_button(const char* title, int key, int value, const char* const* strs, int base, int upper, int* y, int itemIndex);
+static void proto_subdata_process_int_button(const char* title, int* value, int min, int max, int itemIndex);
+static void proto_subdata_process_str_button(const char* title, int* value, const char* const* strs, int count, int itemIndex);
+static void proto_subdata_process_x_str_button(const char* title, int* value, const char* const* strs, int base, int upper, int itemIndex);
+static void proto_subdata_process_fid_button(int* fidPtr, int itemIndex);
+static void proto_subdata_process_pid_button(const char* title, int* pidPtr, int itemIndex);
+static void proto_item_subdata_edit_init(Proto* proto);
+static int proto_item_subdata_edit_exit();
+static void proto_item_subdata_edit_handle(Proto* proto, int key);
+static const char* const* mp_critter_stats_strs();
 static void proto_critter_flags_redraw(int win, int pid);
 static int proto_critter_flags_modify(int pid);
 static int mp_pick_kill_type();
 void proto_action_redraw(int win, int pid);
 static void reg_text_int(int win, int y, int key, const char* title, int value, int* rowY, bool advance);
 static void reg_text_str(int win, int key, const char* title, const char* value, int* rowY);
-static void reg_text_int_update(int win, int* value, int min, int max, const char* title, int y, int textY);
+static void reg_text_int_update(int win, int* value, int min, int max, const char* title, int textY);
 static bool proto_action_can_look_at(int pid);
 static void proto_action_modify(int pid);
 static void proto_edit_mod_fid(int win, int objectType, int* fidPtr, int width, int delta = 0);
@@ -203,6 +216,26 @@ static const char* anim_code_strs[] = {
     "fire_burst",
     "fire_continuous",
 };
+
+// mp_perk_max
+constexpr int kPerkMax = PERK_COUNT;
+
+// Drug-stat picker list: "Drug Stat (Special)", "None", then the stat names.
+// Indexed with base -2 by proto_subdata_*_x_str_button.
+static const char* mp_critter_stats_list[2 + STAT_COUNT];
+
+// mp_critter_stats_list — lazily filled wrapper over the stat names.
+const char* const* mp_critter_stats_strs()
+{
+    if (mp_critter_stats_list[0] == nullptr) {
+        mp_critter_stats_list[0] = "Drug Stat (Special)";
+        mp_critter_stats_list[1] = "None";
+        for (int i = 0; i < STAT_COUNT; i++) {
+            mp_critter_stats_list[2 + i] = statGetName(i);
+        }
+    }
+    return mp_critter_stats_list;
+}
 
 // 0x4922F8
 void init_mapper_protos()
@@ -496,6 +529,530 @@ int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, 
     return 0;
 }
 
+// 0x492CF0
+void proto_subdata_setup_str_button(const char* title, int key, int value, const char* const* strs, int count, int* y, int itemIndex)
+{
+    proto_subdata_setup_x_str_button(title, key, value, strs, 0, count, y, itemIndex);
+}
+
+// 0x492DFC
+void proto_subdata_setup_x_str_button(const char* title, int key, int value, const char* const* strs, int base, int upper, int* y, int itemIndex)
+{
+    int textWidth = 135;
+    int button_x = 10;
+    int value_offset_x = 90;
+
+    if (itemIndex == SUBDATA_ROWS_PER_COLUMN) {
+        *y -= 189;
+    }
+
+    if (itemIndex > 8) {
+        textWidth = 110;
+        button_x = 165;
+        value_offset_x = 74;
+    }
+
+    _win_register_text_button(subwin, button_x, *y, -1, -1, -1, key, title, 0);
+
+    const char* text;
+    int color;
+    if (value >= base && value < upper) {
+        text = strs[value - base];
+        color = _colorTable[32747];
+    } else if (value == -1) {
+        text = "None";
+        color = _colorTable[992];
+    } else {
+        text = "<ERROR>";
+        color = _colorTable[31744];
+    }
+
+    windowDrawText(subwin, text, textWidth, button_x + value_offset_x, *y + 4, color | 0x10000);
+
+    *y += 21;
+}
+
+// 0x49397C
+void proto_subdata_process_int_button(const char* title, int* value, int min, int max, int itemIndex)
+{
+    int button_x = 10;
+    int value_offset_x = 90;
+
+    if (itemIndex > 8) {
+        button_x = 165;
+        itemIndex -= 9;
+        value_offset_x = 74;
+    }
+
+    int num = *value;
+    if (win_get_num_i(&num, min, max, false, title, 100, 100) != -1) {
+        char text[36];
+        snprintf(text, sizeof(text), "%d", num);
+        windowDrawText(subwin, text, 38, button_x + value_offset_x, 21 * itemIndex + 15, _colorTable[32747] | 0x10000);
+        *value = num;
+    }
+}
+
+// 0x493C14
+void proto_subdata_process_str_button(const char* title, int* value, const char* const* strs, int count, int itemIndex)
+{
+    proto_subdata_process_x_str_button(title, value, strs, 0, count, itemIndex);
+}
+
+// 0x493CD8
+void proto_subdata_process_x_str_button(const char* title, int* value, const char* const* strs, int base, int upper, int itemIndex)
+{
+    int value_offset_x = 90;
+    int textWidth = 135;
+    int button_x = 10;
+
+    if (itemIndex > 8) {
+        button_x = 165;
+        itemIndex -= 9;
+        textWidth = 110;
+        value_offset_x = 74;
+    }
+
+    int sel = _win_list_select(title, strs, upper - base, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+    if (sel != -1) {
+        windowDrawText(subwin, strs[sel], textWidth, value_offset_x + button_x, 21 * itemIndex + 15, _colorTable[32747] | 0x10000);
+        *value = base + sel;
+    }
+}
+
+// Resolves an art name without its extension, falling back to "None".
+static void art_name_no_ext(int fid, char* buf)
+{
+    if (art_list_str(fid, buf) == -1) {
+        strcpy(buf, "None");
+    } else {
+        char* pch = strchr(buf, '.');
+        if (pch != nullptr) {
+            *pch = '\0';
+        }
+    }
+}
+
+// 0x493A40
+void proto_subdata_process_fid_button(int* fidPtr, int itemIndex)
+{
+    int button_x = 10;
+    int value_offset_x = 90;
+
+    if (itemIndex > 8) {
+        itemIndex -= 9;
+        value_offset_x = 74;
+        button_x = 165;
+    }
+
+    int fid = *fidPtr;
+    proto_choose_fid(&fid, 1, 1);
+
+    char text[36];
+    art_name_no_ext(fid, text);
+    windowDrawText(subwin, text, 80, value_offset_x + button_x, 21 * itemIndex + 15, _colorTable[32747] | 0x10000);
+    *fidPtr = fid;
+}
+
+// 0x493B3C
+void proto_subdata_process_pid_button(const char* title, int* pidPtr, int itemIndex)
+{
+    int chooseSubtype = 4;
+    int button_x = 10;
+    int value_offset_x = 90;
+    int chooseObjectType = 0;
+
+    if (itemIndex > 8) {
+        itemIndex -= 9;
+        value_offset_x = 74;
+        button_x = 165;
+    }
+
+    int pid = *pidPtr;
+    if (strcmp(title, "Projectile Pid:") == 0) {
+        chooseSubtype = -1;
+        chooseObjectType = 5;
+    }
+
+    proto_choose_pid(&pid, chooseObjectType, 1, chooseSubtype);
+    if (pid != -1) {
+        windowDrawText(subwin, protoGetName(pid), 49, value_offset_x + button_x, 21 * itemIndex + 15, _colorTable[32747] | 0x10000);
+        *pidPtr = pid;
+    }
+}
+
+// 0x493954
+int proto_item_subdata_edit_exit()
+{
+    if (subwin == -1) {
+        return -1;
+    }
+    windowDestroy(subwin);
+    subwin = -1;
+    return 0;
+}
+
+// 0x492F34
+void proto_item_subdata_edit_init(Proto* proto)
+{
+    if (subwin != -1) {
+        proto_item_subdata_edit_exit();
+    }
+
+    subwin = windowCreate(280, 175, 360, 205, edit_window_color, WINDOW_MOVE_ON_TOP);
+    if (subwin == -1) {
+        return;
+    }
+
+    windowDrawBorder(subwin);
+
+    char text[36];
+    int y = 11;
+
+    switch (proto->item.type) {
+    case ITEM_TYPE_ARMOR: {
+        proto_subdata_setup_int_button("AC", '1', proto->item.data.armor.armorClass, -120, 120, &y, 0);
+
+        _win_register_text_button(subwin, 10, y, -1, -1, -1, '2', "Dmg Resists", 0);
+        int labelY = y;
+        int valueX = 100;
+        for (int i = 0; i < 7; i++) {
+            snprintf(text, sizeof(text), "%d", proto->item.data.armor.damageResistance[i]);
+            windowDrawText(subwin, text, 26, valueX, y + 4, kProtoEditNormalColor | 0x10000);
+            windowDrawText(subwin, gDamageTypeNames[i], 35, valueX - 6, labelY + 14, kProtoEditNormalColor);
+            valueX += 37;
+        }
+
+        y += 21;
+        _win_register_text_button(subwin, 10, y, -1, -1, -1, '3', "Dmg Threshs", 0);
+        valueX = 100;
+        for (int i = 0; i < 7; i++) {
+            snprintf(text, sizeof(text), "%d", proto->item.data.armor.damageThreshold[i]);
+            windowDrawText(subwin, text, 26, valueX, y + 4, kProtoEditNormalColor | 0x10000);
+            valueX += 37;
+        }
+
+        y += 21;
+        proto_subdata_setup_x_str_button("Perk", '4', proto->item.data.armor.perk, _mp_perk_code_strs, -1, kPerkMax, &y, 0);
+        proto_subdata_setup_fid_button("Male Fid", '5', proto->item.data.armor.maleFid, &y, 4);
+        proto_subdata_setup_fid_button("Female Fid", '6', proto->item.data.armor.femaleFid, &y, 5);
+        break;
+    }
+    case ITEM_TYPE_CONTAINER:
+        proto_subdata_setup_int_button("Max Size", '1', proto->item.data.container.maxSize, 0, 15000, &y, 0);
+        proto_subdata_setup_int_button("Open Flags", '2', proto->item.data.container.openFlags, 0, 0xFFFFFF, &y, 0);
+        break;
+    case ITEM_TYPE_DRUG: {
+        const char* const* stats = mp_critter_stats_strs();
+        proto_subdata_setup_x_str_button("Stat 0", '1', proto->item.data.drug.stat[0], stats, -2, 38, &y, 0);
+        proto_subdata_setup_int_button("Amount 1", '3', proto->item.data.drug.amount1[0], -500, 500, &y, 2);
+        proto_subdata_setup_x_str_button("Stat 1", '5', proto->item.data.drug.stat[1], stats, -2, 38, &y, 4);
+        proto_subdata_setup_int_button("Amount 1", '7', proto->item.data.drug.amount1[1], -500, 500, &y, 6);
+        proto_subdata_setup_x_str_button("Stat 2", '9', proto->item.data.drug.stat[2], stats, -2, 38, &y, 8);
+        proto_subdata_setup_int_button("Amount 1", '!', proto->item.data.drug.amount1[2], -500, 500, &y, 10);
+        proto_subdata_setup_int_button("Duration 1", '@', proto->item.data.drug.duration1, 0, 32000, &y, 1);
+        proto_subdata_setup_int_button("Duration 2", '#', proto->item.data.drug.duration2, 0, 32000, &y, 3);
+        proto_subdata_setup_int_button("Addiction", '$', proto->item.data.drug.addictionChance, 0, 100, &y, 5);
+        proto_subdata_setup_int_button("Amount 0", '2', proto->item.data.drug.amount[0], -500, 500, &y, 7);
+        proto_subdata_setup_int_button("Amount 2", '4', proto->item.data.drug.amount2[0], -500, 500, &y, 9);
+        proto_subdata_setup_int_button("Amount 0", '6', proto->item.data.drug.amount[1], -500, 500, &y, 11);
+        proto_subdata_setup_int_button("Amount 2", '8', proto->item.data.drug.amount2[1], -500, 500, &y, 13);
+        proto_subdata_setup_int_button("Amount 0", '%', proto->item.data.drug.amount[2], -500, 500, &y, 15);
+        proto_subdata_setup_int_button("Amount 2", '^', proto->item.data.drug.amount2[2], -500, 500, &y, 17);
+        proto_subdata_setup_x_str_button("W. Effect", '&', proto->item.data.drug.withdrawalEffect, _mp_perk_code_strs, -1, kPerkMax, &y, 14);
+        proto_subdata_setup_int_button("W. Onset", '*', proto->item.data.drug.withdrawalOnset, -32000, 32000, &y, 16);
+        break;
+    }
+    case ITEM_TYPE_WEAPON: {
+        _win_register_text_button(subwin, 10, y, -1, -1, -1, '1', "Flags", 0);
+        windowDrawText(subwin, (proto->item.extendedFlags & PROTO_EXT_FLAG_IS_TWO_HANDED) != 0 ? "2Hnd" : "1Hnd", 30, 100, y + 4, kProtoEditNormalColor | 0x10000);
+        y += 21;
+        proto_subdata_setup_str_button("Anim Code", '2', proto->item.data.weapon.animationCode, anim_code_strs, 11, &y, 1);
+        proto_subdata_setup_int_button("Min Dmg", '3', proto->item.data.weapon.minDamage, 0, 32000, &y, 2);
+        proto_subdata_setup_int_button("Max Dmg", '4', proto->item.data.weapon.maxDamage, 0, 32000, &y, 3);
+        proto_subdata_setup_str_button("Dmg Type", '5', proto->item.data.weapon.damageType, gDamageTypeNames, 7, &y, 4);
+        proto_subdata_setup_int_button("Max Range 1", '6', proto->item.data.weapon.maxRange1, 0, 32000, &y, 5);
+        proto_subdata_setup_int_button("Max Range 2", '7', proto->item.data.weapon.maxRange2, 0, 32000, &y, 6);
+        proto_subdata_setup_pid_button("Proj Pid", '8', proto->item.data.weapon.projectilePid, &y, 7);
+        proto_subdata_setup_int_button("Min ST", '9', proto->item.data.weapon.minStrength, 0, 10, &y, 8);
+        proto_subdata_setup_int_button("MP Cost 1", '!', proto->item.data.weapon.actionPointCost1, 0, 100, &y, 9);
+        proto_subdata_setup_int_button("MP Cost 2", '@', proto->item.data.weapon.actionPointCost2, 0, 100, &y, 10);
+        proto_subdata_setup_int_button("Crit Fail", '#', proto->item.data.weapon.criticalFailureType, 0, 100, &y, 11);
+        proto_subdata_setup_x_str_button("Perk", '$', proto->item.data.weapon.perk, _mp_perk_code_strs, -1, kPerkMax, &y, 12);
+        proto_subdata_setup_int_button("Rounds", '%', proto->item.data.weapon.rounds, 0, 32000, &y, 13);
+        proto_subdata_setup_str_button("Caliber", '^', proto->item.data.weapon.caliber, gCaliberTypeNames, 19, &y, 14);
+        proto_subdata_setup_pid_button("Ammo Pid", '&', proto->item.data.weapon.ammoTypePid, &y, 15);
+        proto_subdata_setup_int_button("Max Ammo", '*', proto->item.data.weapon.ammoCapacity, 0, 32000, &y, 16);
+        _win_register_text_button(subwin, 165, y, -1, -1, -1, '(', "Sound ID", 0);
+        if (proto->item.data.weapon.soundCode != 0) {
+            snprintf(text, sizeof(text), "%c", proto->item.data.weapon.soundCode);
+            windowDrawText(subwin, text, 25, 239, y + 4, kProtoEditNormalColor | 0x10000);
+        } else {
+            windowDrawText(subwin, "None", 25, 239, y + 4, _colorTable[31744] | 0x10000);
+        }
+        break;
+    }
+    case ITEM_TYPE_AMMO:
+        proto_subdata_setup_str_button("Caliber", '1', proto->item.data.ammo.caliber, gCaliberTypeNames, 19, &y, 0);
+        proto_subdata_setup_int_button("Quantity", '2', proto->item.data.ammo.quantity, 0, 32000, &y, 0);
+        proto_subdata_setup_int_button("AC Adjust", '3', proto->item.data.ammo.armorClassModifier, -250, 250, &y, 0);
+        proto_subdata_setup_int_button("DR Adjust", '4', proto->item.data.ammo.damageResistanceModifier, -250, 250, &y, 0);
+        proto_subdata_setup_int_button("Dam Mult", '5', proto->item.data.ammo.damageMultiplier, 1, 250, &y, 0);
+        proto_subdata_setup_int_button("Dam Div", '6', proto->item.data.ammo.damageDivisor, 1, 250, &y, 0);
+        break;
+    case ITEM_TYPE_MISC:
+        proto_subdata_setup_pid_button("Power Pid", '1', proto->item.data.misc.powerTypePid, &y, 0);
+        proto_subdata_setup_str_button("Power Type", '2', proto->item.data.misc.powerType, gCaliberTypeNames, 19, &y, 0);
+        proto_subdata_setup_int_button("Charges", '3', proto->item.data.misc.charges, 0, 32000, &y, 0);
+        break;
+    case ITEM_TYPE_KEY:
+        break;
+    default:
+        return;
+    }
+
+    windowRefresh(subwin);
+}
+
+// 0x493DFC
+void proto_item_subdata_edit_handle(Proto* proto, int key)
+{
+    char text[36];
+
+    switch (proto->item.type) {
+    case ITEM_TYPE_ARMOR:
+        switch (key) {
+        case '1':
+            proto_subdata_process_int_button("AC:", &proto->item.data.armor.armorClass, -120, 120, 0);
+            break;
+        case '2': {
+            int rowY = 100;
+            for (int i = 0; i < 7; i++) {
+                snprintf(text, sizeof(text), "%s Damage Resistance", gDamageTypeNames[i]);
+                int num = proto->item.data.armor.damageResistance[i];
+                if (win_get_num_i(&num, -999, 999, false, text, 100, 100) == -1) {
+                    break;
+                }
+                snprintf(text, sizeof(text), "%d", num);
+                windowDrawText(subwin, text, 26, rowY, 36, kProtoEditNormalColor | 0x10000);
+                windowRefresh(subwin);
+                proto->item.data.armor.damageResistance[i] = num;
+                rowY += 37;
+            }
+            break;
+        }
+        case '3': {
+            int rowY = 100;
+            for (int i = 0; i < 7; i++) {
+                snprintf(text, sizeof(text), "%s Damage Threshold", gDamageTypeNames[i]);
+                int num = proto->item.data.armor.damageThreshold[i];
+                if (win_get_num_i(&num, -999, 999, false, text, 100, 100) == -1) {
+                    break;
+                }
+                snprintf(text, sizeof(text), "%d", num);
+                windowDrawText(subwin, text, 26, rowY, 57, kProtoEditNormalColor | 0x10000);
+                windowRefresh(subwin);
+                proto->item.data.armor.damageThreshold[i] = num;
+                rowY += 37;
+            }
+            break;
+        }
+        case '4':
+            proto_subdata_process_x_str_button("Perk:", &proto->item.data.armor.perk, _mp_perk_code_strs, -1, kPerkMax, 3);
+            break;
+        case '5':
+            proto_subdata_process_fid_button(&proto->item.data.armor.maleFid, 4);
+            break;
+        case '6':
+            proto_subdata_process_fid_button(&proto->item.data.armor.femaleFid, 5);
+            break;
+        default:
+            return;
+        }
+        break;
+    case ITEM_TYPE_CONTAINER:
+        if (key == '1') {
+            proto_subdata_process_int_button("Max Size:", &proto->item.data.container.maxSize, 0, 15000, 0);
+        } else if (key == '2') {
+            proto_choose_container_flags(proto);
+            snprintf(text, sizeof(text), "%d", proto->item.data.container.openFlags);
+            windowDrawText(subwin, text, 50, 100, 36, kProtoEditNormalColor | 0x10000);
+        } else {
+            return;
+        }
+        break;
+    case ITEM_TYPE_DRUG: {
+        const char* const* stats = mp_critter_stats_strs();
+        switch (key) {
+        case '1':
+            proto_subdata_process_x_str_button("Stat 0:", &proto->item.data.drug.stat[0], stats, -2, 38, 0);
+            break;
+        case '3':
+            proto_subdata_process_int_button("Amount 1:", &proto->item.data.drug.amount1[0], -500, 500, 1);
+            break;
+        case '5':
+            proto_subdata_process_x_str_button("Stat 1:", &proto->item.data.drug.stat[1], stats, -2, 38, 2);
+            break;
+        case '7':
+            proto_subdata_process_int_button("Amount 1:", &proto->item.data.drug.amount1[1], -500, 500, 3);
+            break;
+        case '9':
+            proto_subdata_process_x_str_button("Stat 2:", &proto->item.data.drug.stat[2], stats, -2, 38, 4);
+            break;
+        case '!':
+            proto_subdata_process_int_button("Amount 1:", &proto->item.data.drug.amount1[2], -500, 500, 5);
+            break;
+        case '@':
+            proto_subdata_process_int_button("Duration 1:", &proto->item.data.drug.duration1, 0, 32000, 6);
+            break;
+        case '#':
+            proto_subdata_process_int_button("Duration 2:", &proto->item.data.drug.duration2, 0, 32000, 7);
+            break;
+        case '$':
+            proto_subdata_process_int_button("Addiction:", &proto->item.data.drug.addictionChance, 0, 100, 8);
+            break;
+        case '2':
+            proto_subdata_process_int_button("Amount 0:", &proto->item.data.drug.amount[0], -500, 500, 9);
+            break;
+        case '4':
+            proto_subdata_process_int_button("Amount 2:", &proto->item.data.drug.amount2[0], -500, 500, 10);
+            break;
+        case '6':
+            proto_subdata_process_int_button("Amount 0:", &proto->item.data.drug.amount[1], -500, 500, 11);
+            break;
+        case '8':
+            proto_subdata_process_int_button("Amount 2:", &proto->item.data.drug.amount2[1], -500, 500, 12);
+            break;
+        case '%':
+            proto_subdata_process_int_button("Amount 0:", &proto->item.data.drug.amount[2], -500, 500, 13);
+            break;
+        case '^':
+            proto_subdata_process_int_button("Amount 2:", &proto->item.data.drug.amount2[2], -500, 500, 14);
+            break;
+        case '&':
+            proto_subdata_process_x_str_button("Withdrawal Effect:", &proto->item.data.drug.withdrawalEffect, _mp_perk_code_strs, -1, kPerkMax, 15);
+            break;
+        case '*':
+            proto_subdata_process_int_button("Withdrawal Onset:", &proto->item.data.drug.withdrawalOnset, -32000, 32000, 16);
+            break;
+        default:
+            return;
+        }
+        break;
+    }
+    case ITEM_TYPE_WEAPON:
+        switch (key) {
+        case '1': {
+            proto->item.extendedFlags ^= PROTO_EXT_FLAG_IS_TWO_HANDED;
+            const char* label = (proto->item.extendedFlags & PROTO_EXT_FLAG_IS_TWO_HANDED) != 0 ? "2Hnd" : "1Hnd";
+            windowDrawText(subwin, label, 50, 100, 15, kProtoEditNormalColor | 0x10000);
+            break;
+        }
+        case '2':
+            proto_subdata_process_str_button("Animation Code:", &proto->item.data.weapon.animationCode, anim_code_strs, 11, 1);
+            break;
+        case '3':
+            proto_subdata_process_int_button("Minimum Damage:", &proto->item.data.weapon.minDamage, 0, 32000, 2);
+            break;
+        case '4':
+            proto_subdata_process_int_button("Maximum Damage:", &proto->item.data.weapon.maxDamage, 0, 32000, 3);
+            break;
+        case '5':
+            proto_subdata_process_str_button("Damage Type:", &proto->item.data.weapon.damageType, gDamageTypeNames, 7, 4);
+            break;
+        case '6':
+            proto_subdata_process_int_button("Max Range 1:", &proto->item.data.weapon.maxRange1, 0, 32000, 5);
+            break;
+        case '7':
+            proto_subdata_process_int_button("Max Range 2:", &proto->item.data.weapon.maxRange2, 0, 32000, 6);
+            break;
+        case '8':
+            proto_subdata_process_pid_button("Projectile Pid:", &proto->item.data.weapon.projectilePid, 7);
+            break;
+        case '9':
+            proto_subdata_process_int_button("Minimum Strength Required:", &proto->item.data.weapon.minStrength, 0, 10, 8);
+            break;
+        case '!':
+            proto_subdata_process_int_button("Movement Point Cost 1:", &proto->item.data.weapon.actionPointCost1, 0, 100, 9);
+            break;
+        case '@':
+            proto_subdata_process_int_button("Movement Point Cost 2:", &proto->item.data.weapon.actionPointCost2, 0, 100, 10);
+            break;
+        case '#':
+            proto_subdata_process_int_button("Critical Failure Table:", &proto->item.data.weapon.criticalFailureType, 0, 100, 11);
+            break;
+        case '$':
+            proto_subdata_process_x_str_button("Perk:", &proto->item.data.weapon.perk, _mp_perk_code_strs, -1, kPerkMax, 12);
+            break;
+        case '%':
+            proto_subdata_process_int_button("Rounds:", &proto->item.data.weapon.rounds, 0, 32000, 13);
+            break;
+        case '^':
+            proto_subdata_process_str_button("Weapon Caliber:", &proto->item.data.weapon.caliber, gCaliberTypeNames, 19, 14);
+            break;
+        case '&':
+            proto_subdata_process_pid_button("Ammo Pid:", &proto->item.data.weapon.ammoTypePid, 15);
+            break;
+        case '*':
+            proto_subdata_process_int_button("Maximum Ammo:", &proto->item.data.weapon.ammoCapacity, 0, 32000, 16);
+            break;
+        case '(': {
+            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+            if (sel != -1) {
+                proto->item.data.weapon.soundCode = sound_code_strs[sel][0];
+                snprintf(text, sizeof(text), "%c", proto->item.data.weapon.soundCode);
+                windowDrawText(subwin, text, 25, 239, 183, kProtoEditNormalColor | 0x10000);
+            }
+            break;
+        }
+        default:
+            return;
+        }
+        break;
+    case ITEM_TYPE_AMMO:
+        switch (key) {
+        case '1':
+            proto_subdata_process_str_button("Caliber:", &proto->item.data.ammo.caliber, gCaliberTypeNames, 19, 0);
+            break;
+        case '2':
+            proto_subdata_process_int_button("Quantity:", &proto->item.data.ammo.quantity, 0, 32000, 1);
+            break;
+        case '3':
+            proto_subdata_process_int_button("AC Adjust:", &proto->item.data.ammo.armorClassModifier, -250, 250, 2);
+            break;
+        case '4':
+            proto_subdata_process_int_button("DR Adjust:", &proto->item.data.ammo.damageResistanceModifier, -250, 250, 3);
+            break;
+        case '5':
+            proto_subdata_process_int_button("Damage Multiplier:", &proto->item.data.ammo.damageMultiplier, 1, 250, 4);
+            break;
+        case '6':
+            proto_subdata_process_int_button("Damage Divisor:", &proto->item.data.ammo.damageDivisor, 1, 250, 5);
+            break;
+        default:
+            return;
+        }
+        break;
+    case ITEM_TYPE_MISC:
+        if (key == '1') {
+            proto_subdata_process_pid_button("Power Type Pid:", &proto->item.data.misc.powerTypePid, 0);
+        } else if (key == '2') {
+            proto_subdata_process_str_button("Power Type:", &proto->item.data.misc.powerType, gCaliberTypeNames, 19, 1);
+        } else if (key == '3') {
+            proto_subdata_process_int_button("Charges:", &proto->item.data.misc.charges, 0, 32000, 2);
+        } else {
+            return;
+        }
+        break;
+    case ITEM_TYPE_KEY:
+        break;
+    default:
+        return;
+    }
+
+    windowRefresh(subwin);
+}
+
 // 0x495438
 const char* proto_wall_light_str(int flags)
 {
@@ -634,7 +1191,7 @@ void reg_text_str(int win, int key, const char* title, const char* value, int* r
 }
 
 // reg_text_int_update
-void reg_text_int_update(int win, int* value, int min, int max, const char* title, int y, int textY)
+void reg_text_int_update(int win, int* value, int min, int max, const char* title, int textY)
 {
     int num = *value;
     if (win_get_num_i(&num, min, max, false, title, 100, 100) == -1) {
@@ -2117,6 +2674,317 @@ static int proto_scenery_edit(int pid)
             break;
         case KEY_END:
             proto_edit_mod_fid(win, OBJ_TYPE_SCENERY, &proto->scenery.fid, width, art_total(OBJ_TYPE_SCENERY));
+            modified = true;
+            break;
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
+// Creates an ad-hoc prompt window sized to the label. Returns -1 on failure.
+static int proto_item_temp_win(const char* prompt)
+{
+    int width = fontGetStringWidth(prompt) + 50;
+    int height = fontGetLineHeight() + 120;
+    int temp = windowCreate(340 - width, 200, width, height, edit_window_color, WINDOW_MOVE_ON_TOP);
+    if (temp == -1) {
+        debugPrint("\nError creating temp_win!");
+        return -1;
+    }
+
+    windowDrawText(temp, prompt, fontGetStringWidth(prompt), 10, 10, kProtoEditNormalColor | FONT_SHADOW);
+    windowRefresh(temp);
+    return temp;
+}
+
+// Shows a label in an ad-hoc window, then lets the user pick an attack
+// animation. Returns the selected index, or -1 if cancelled.
+static int proto_item_attack_popup(const char* prompt, const char* title)
+{
+    int temp = proto_item_temp_win(prompt);
+    if (temp == -1) {
+        return -1;
+    }
+
+    int sel = _win_list_select(title, attack_anim_strs, 9, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+    windowDestroy(temp);
+    return sel;
+}
+
+// Redraws the three weapon attack-type labels (primary/secondary/big gun).
+static void proto_item_redraw_attack(int win, Proto* proto)
+{
+    windowDrawText(win, attack_anim_strs[proto->item.extendedFlags & 0xF], 59, 330, 107, kProtoEditNormalColor | 0x10000);
+    windowDrawText(win, attack_anim_strs[(proto->item.extendedFlags & 0xF0) >> 4], 59, 330, 117, kProtoEditNormalColor | 0x10000);
+    windowDrawText(win, (proto->item.extendedFlags & PROTO_EXT_FLAG_BIG_GUN) != 0 ? "Big Gun" : "", 59, 330, 127, kProtoEditNormalColor | 0x10000);
+}
+
+// Picks an inventory FID for the item and redraws its name.
+static void proto_item_choose_inv_fid(int win, Proto* proto)
+{
+    proto_choose_fid(&proto->item.inventoryFid, OBJ_TYPE_INVENTORY, proto->item.inventoryFid == -1);
+
+    char text[80];
+    art_name_no_ext(proto->item.inventoryFid, text);
+    windowDrawText(win, text, 80, 235, 132, kProtoEditNormalColor | FONT_SHADOW);
+    windowRefresh(win);
+}
+
+// Edits weapon primary/secondary attack types (+ Big Gun flag) via popups.
+static void proto_item_edit_attack(int win, Proto* proto)
+{
+    char prompt[80];
+
+    snprintf(prompt, sizeof(prompt), "Primary Attack Type: %s", attack_anim_strs[proto->item.extendedFlags & 0xF]);
+    int primary = proto_item_attack_popup(prompt, "Primary Attack Type");
+    if (primary == -1) {
+        return;
+    }
+    primary &= 0xF;
+
+    snprintf(prompt, sizeof(prompt), "Secondary Attack Type: %s", attack_anim_strs[(proto->item.extendedFlags & 0xF0) >> 4]);
+    int secondary = proto_item_attack_popup(prompt, "Secondary Attack Type");
+    if (secondary == -1) {
+        return;
+    }
+
+    int packed = (16 * (secondary & 0xF)) | primary;
+    if ((packed & 0xF) > 5 || ((packed & 0xF0) >> 4) > 5) {
+        snprintf(prompt, sizeof(prompt), "Big Gun: %s", yesno[(proto->item.extendedFlags & PROTO_EXT_FLAG_BIG_GUN) != 0 ? YES : NO]);
+        int temp = proto_item_temp_win(prompt);
+        if (temp == -1) {
+            return;
+        }
+
+        int bigGun = win_yes_no("Is this a Big Gun?", 340, 200, kProtoEditNormalColor | 0x10000);
+        windowDestroy(temp);
+        if (bigGun == -1) {
+            return;
+        }
+        if (bigGun) {
+            packed |= PROTO_EXT_FLAG_BIG_GUN;
+        } else {
+            packed &= ~PROTO_EXT_FLAG_BIG_GUN;
+        }
+    }
+
+    proto->item.extendedFlags = (proto->item.extendedFlags & ~0x1FF) | packed;
+    proto_item_redraw_attack(win, proto);
+    windowRefresh(win);
+}
+
+// proto_item_edit
+static int proto_item_edit(int pid)
+{
+    int win;
+    Proto* proto;
+    unsigned char* imgPos;
+    int width = _scr_size.right - _scr_size.left + 1;
+    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+        return -1;
+    }
+
+    char text[80];
+    int rowY = 86;
+    reg_text_int(win, 90, KEY_LOWERCASE_L, "Light Dist/Int", proto->item.lightDistance, &rowY, false);
+
+    if (proto->item.sid != -1) {
+        if (proto_scr_name(proto->item.sid, text, sizeof(text)) == -1) {
+            strcpy(text, "Error: Bad script index!");
+            win_timed_msg(text, _colorTable[31744] | 0x10000);
+            windowDrawText(win, text, 130, 240, rowY + 4, _colorTable[31744] | 0x10000);
+        } else {
+            windowDrawText(win, text, 130, 240, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        }
+    }
+
+    rowY += 21;
+    if (proto->item.type < 0 || proto->item.type >= ITEM_TYPE_COUNT) {
+        win_timed_msg("Proto Item Error: Type out of range!", _colorTable[31744] | 0x10000);
+        proto_item_subdata_edit_exit();
+        windowDestroy(win);
+        return -1;
+    }
+
+    reg_text_str(win, KEY_LOWERCASE_T, "Type", gItemTypeNames[proto->item.type], &rowY);
+    proto_item_subdata_edit_init(proto);
+
+    _win_register_text_button(win, 170, rowY, -1, -1, -1, KEY_UPPERCASE_I, "Inv Fid", 0);
+    art_name_no_ext(proto->item.inventoryFid, text);
+    windowDrawText(win, text, 80, 235, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+
+    if (proto->item.type == ITEM_TYPE_WEAPON) {
+        proto_item_redraw_attack(win, proto);
+    }
+
+    if (proto->item.material < 0 || proto->item.material > 8) {
+        win_timed_msg("Proto Item Error: Material out of range!", _colorTable[31744] | 0x10000);
+        proto_item_subdata_edit_exit();
+        windowDestroy(win);
+        return -1;
+    }
+
+    reg_text_str(win, KEY_LOWERCASE_M, "Material", gMaterialTypeNames[proto->item.material], &rowY);
+    reg_text_int(win, 90, KEY_LOWERCASE_S, "Size", proto->item.size, &rowY, true);
+    reg_text_int(win, 90, KEY_LOWERCASE_W, "Weight", proto->item.weight, &rowY, true);
+    reg_text_int(win, 90, KEY_LOWERCASE_V, "Cost", proto->item.cost, &rowY, true);
+
+    if (proto->item.soundId != 0) {
+        snprintf(text, sizeof(text), "%c", proto->item.soundId);
+    } else {
+        strcpy(text, "Error");
+    }
+    reg_text_str(win, KEY_LOWERCASE_I, "Sound ID", text, &rowY);
+    windowRefresh(win);
+
+    int objectType = PID_TYPE(pid);
+    bool modified = false;
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int key = inputGetInput();
+
+        if (key == KEY_ESCAPE || key == KEY_RETURN || key == KEY_BAR || key == KEY_MINUS || key == KEY_EQUAL) {
+            int exitKey = key == KEY_RETURN ? KEY_BAR : key;
+            proto_item_subdata_edit_exit();
+            return proto_edit_exit_code(win, exitKey, modified);
+        }
+
+        switch (key) {
+        case KEY_UPPERCASE_S:
+            proto_edit_script(win, proto, text, sizeof(text));
+            modified = true;
+            break;
+        case KEY_UPPERCASE_U:
+            proto_action_modify(pid);
+            proto_action_redraw(win, pid);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_UPPERCASE_I:
+            proto_item_choose_inv_fid(win, proto);
+            modified = true;
+            break;
+        case KEY_UPPERCASE_F:
+            if (proto->item.type == ITEM_TYPE_WEAPON) {
+                proto_item_edit_attack(win, proto);
+                modified = true;
+            }
+            break;
+        case KEY_LOWERCASE_T: {
+            int sel = _win_list_select("Item Type", gItemTypeNames, ITEM_TYPE_COUNT, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+            if (sel != -1 && sel != proto->item.type) {
+                windowDrawText(win, "No", 130, 90, 300, kProtoEditNormalColor | FONT_SHADOW);
+                proto->item.type = sel;
+                proto_item_subdata_init(proto, sel);
+                proto_item_subdata_edit_init(proto);
+                windowDrawText(win, gItemTypeNames[sel], 130, 90, 111, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+            }
+            break;
+        }
+        case KEY_LOWERCASE_I: {
+            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+            if (sel != -1) {
+                proto->item.soundId = sound_code_strs[sel][0];
+                snprintf(text, sizeof(text), "%c", proto->item.soundId);
+                windowDrawText(win, text, 280, 90, 216, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+            }
+            break;
+        }
+        case KEY_LOWERCASE_M:
+        case KEY_UPPERCASE_M:
+            proto_edit_material(win, &proto->item.material);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_S:
+            reg_text_int_update(win, &proto->item.size, 0, 4095, "Size", 153);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_UPPERCASE_W:
+        case KEY_LOWERCASE_W:
+            reg_text_int_update(win, &proto->item.weight, 0, 4095, "Weight", 174);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_UPPERCASE_V:
+        case KEY_LOWERCASE_V:
+            reg_text_int_update(win, &proto->item.cost, 0, 0xFFFFFF, "Cost", 195);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_L:
+        case KEY_UPPERCASE_L:
+            proto_edit_light(win, &proto->item.lightDistance, &proto->item.lightIntensity);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_F:
+            reg_mod_flags(&proto->item.flags, &proto->item.extendedFlags, objectType, 0);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_UPPERCASE_N:
+        case KEY_LOWERCASE_N:
+            proto_edit_name(win, pid);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_D:
+            proto_edit_description(win, pid);
+            modified = true;
+            break;
+        case KEY_BRACKET_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->item.fid, width, -1);
+            modified = true;
+            break;
+        case KEY_BRACKET_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->item.fid, width, 1);
+            modified = true;
+            break;
+        case KEY_BRACE_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->item.fid, width, -10);
+            modified = true;
+            break;
+        case KEY_BRACE_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->item.fid, width, 10);
+            modified = true;
+            break;
+        case KEY_HOME:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->item.fid, width, -15000);
+            modified = true;
+            break;
+        case KEY_END:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->item.fid, width, art_total(OBJ_TYPE_ITEM));
+            modified = true;
+            break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '!':
+        case '@':
+        case '#':
+        case '$':
+        case '%':
+        case '^':
+        case '&':
+        case '(':
+        case '*':
+            proto_item_subdata_edit_handle(proto, key);
+            windowRefresh(win);
             modified = true;
             break;
         }

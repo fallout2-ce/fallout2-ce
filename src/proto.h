@@ -4,6 +4,7 @@
 #include "db.h"
 #include "message.h"
 #include "obj_types.h"
+#include "perk_defs.h"
 #include "platform_compat.h"
 #include "proto_types.h"
 
@@ -104,6 +105,9 @@ extern char* _proto_none_str;
 extern char* gItemTypeNames[ITEM_TYPE_COUNT];
 extern char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
 extern char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
+extern char* gDamageTypeNames[DAMAGE_TYPE_COUNT];
+extern char* gCaliberTypeNames[CALIBER_TYPE_COUNT];
+extern char* _mp_perk_code_strs[PERK_COUNT];
 
 void proto_make_path(char* path, int pid);
 int _proto_list_str(int pid, char* proto_path);

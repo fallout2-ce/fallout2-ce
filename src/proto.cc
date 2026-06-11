@@ -121,7 +121,7 @@ static int _retval = 0;
 static char* _mp_perk_code_None;
 
 // 0x664530 mp_perk_code_strs
-static char* _mp_perk_code_strs[PERK_COUNT];
+char* _mp_perk_code_strs[PERK_COUNT];
 
 // 0x66470C mp_critter_stats_list
 static char* _mp_critter_stats_list;
@@ -169,10 +169,10 @@ static char* gBodyTypeNames[BODY_TYPE_COUNT];
 char* gItemTypeNames[ITEM_TYPE_COUNT];
 
 // 0x66484C
-static char* gDamageTypeNames[DAMAGE_TYPE_COUNT];
+char* gDamageTypeNames[DAMAGE_TYPE_COUNT];
 
 // 0x66486C cal_type_strs
-static char* gCaliberTypeNames[CALIBER_TYPE_COUNT];
+char* gCaliberTypeNames[CALIBER_TYPE_COUNT];
 
 // Perk names.
 //
