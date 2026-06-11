@@ -143,11 +143,11 @@ static const char* proto_ed_title = "Prototype Editor";
 
 // proto_action_strs
 static const char* proto_action_strs[5] = {
-    "Useable",
-    "Useable On",
+    "Use",
+    "UseOn",
     "Look",
     "Talk",
-    "Pick Up",
+    "Pickup",
 };
 
 // sound_code_strs
@@ -172,56 +172,19 @@ static const char* attack_anim_strs[] = {
     "fire_continuous",
 };
 
-// art_anim_strs
+// anim_code_strs
 const char* const anim_code_strs[] = {
-    "stand",
-    "walk",
-    "jump_begin",
-    "jump_end",
-    "climb_ladder",
-    "falling",
-    "up_stairs_right",
-    "up_stairs_left",
-    "down_stairs_right",
-    "down_stairs_left",
-    "magic_hands_ground",
-    "magic_hands_middle",
-    "magic_hands_up",
-    "dodge_anim",
-    "hit_from_front",
-    "hit_from_back",
-    "throw_punch",
-    "kick_leg",
-    "throw_anim",
-    "running",
-    "fall_back",
-    "fall_front",
-    "bad_landing",
-    "big_hole",
-    "charred_body",
-    "chunks_of_flesh",
-    "dancing_autofire",
-    "electrify",
-    "sliced_in_half",
-    "burned_to_nothing",
-    "electrified_to_nothing",
-    "exploded_to_nothing",
-    "melted_to_nothing",
-    "fire_dance",
-    "fall_back_blood",
-    "fall_front_blood",
-    "prone_to_standing",
-    "back_to_standing",
-    "take_out",
-    "put_away",
-    "parry_anim",
-    "thrust_anim",
-    "swing_anim",
-    "point",
-    "unpoint",
-    "fire_single",
-    "fire_burst",
-    "fire_continuous",
+    "NONE",
+    "D-KNIFE",
+    "E-CLUB",
+    "F-2_HANDED_CLUB",
+    "G-SPEAR",
+    "H-PISTOL",
+    "I-UZI",
+    "J-RIFLE",
+    "K-LASER",
+    "L-MINIGUN",
+    "M-ROCKET",
 };
 
 // mp_perk_max
