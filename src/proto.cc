@@ -168,7 +168,7 @@ char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
 char* _proto_none_str;
 
 // 0x664828 body_type_strs
-static char* gBodyTypeNames[BODY_TYPE_COUNT];
+char* gBodyTypeNames[BODY_TYPE_COUNT];
 
 // 0x664834 item_pro_type
 char* gItemTypeNames[ITEM_TYPE_COUNT];

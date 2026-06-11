@@ -5,10 +5,12 @@
 #include <string.h>
 
 #include "art.h"
+#include "character_editor.h"
 #include "color.h"
 #include "combat_ai.h"
 #include "critter.h"
 #include "debug.h"
+#include "object.h"
 #include "game_sound.h"
 #include "input.h"
 #include "kb.h"
@@ -62,6 +64,12 @@ static void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType);
 static void proto_choose_pid(int* pidPtr, int objectType, int hasPid, int subtype);
 
 static void proto_change_proto_info(int pid, int mode);
+static int proto_item_edit(int pid);
+static int proto_critter_edit(int pid);
+static int proto_scenery_edit(int pid);
+static int proto_wall_edit(int pid);
+static int proto_tile_edit(int pid);
+static int proto_misc_edit(int pid);
 
 static char kYes[] = "YES";
 static char kNo[] = "NO";
@@ -1965,11 +1973,94 @@ int proto_build_all_type_binary(int type)
     return 0;
 }
 
+// proto_edit
 int protoEdit(int protoId)
 {
-    // TODO: implement proto editor dialog — load proto, show editor UI
-    (void)protoId;
-    return -1;
+    int pid = protoId;
+
+    while (true) {
+        Proto* proto;
+        if (protoGetProto(pid, &proto) == -1) {
+            return 0;
+        }
+
+        debugPrint("\nproto->fid = %d", proto->fid);
+
+        int type = PID_TYPE(pid);
+        int rc;
+        switch (type) {
+        case OBJ_TYPE_ITEM:
+            rc = proto_item_edit(pid);
+            break;
+        case OBJ_TYPE_CRITTER:
+            rc = proto_critter_edit(pid);
+            break;
+        case OBJ_TYPE_SCENERY:
+            rc = proto_scenery_edit(pid);
+            break;
+        case OBJ_TYPE_WALL:
+            rc = proto_wall_edit(pid);
+            break;
+        case OBJ_TYPE_TILE:
+            rc = proto_tile_edit(pid);
+            break;
+        case OBJ_TYPE_MISC:
+            rc = proto_misc_edit(pid);
+            break;
+        default:
+            return 0;
+        }
+
+        if (rc == 0) {
+            return 0;
+        }
+
+        if (rc == -1) {
+            proto_remove(pid);
+            _proto_load_pid(pid, &proto);
+            return 0;
+        }
+
+        int id = pid & 0xFFFFFF;
+        int typeBits = type << 24;
+
+        if (rc == -2 || rc == -5 || rc == -6) {
+            if (!can_modify_protos) {
+                win_timed_msg("Not capable of modifying prototypes from here.", _colorTable[31744] | 0x10000);
+                proto_remove(pid);
+                _proto_load_pid(pid, &proto);
+                return 0;
+            }
+
+            if (proto_save_text(pid) == -1) {
+                return 0;
+            }
+            _proto_save_pid(pid);
+            proto_header_save();
+
+            if (rc == -2) {
+                return 0;
+            }
+            if (rc == -5) {
+                if (id > 1) {
+                    pid = typeBits | (id - 1);
+                }
+            } else if (id < proto_max_id(type) - 1) {
+                pid = typeBits | (id + 1);
+            }
+            continue;
+        }
+
+        if (rc == -3) {
+            if (id > 1) {
+                pid = typeBits | (id - 1);
+            }
+        } else if (rc == -4) {
+            if (id < proto_max_id(type) - 1) {
+                pid = typeBits | (id + 1);
+            }
+        }
+    }
 }
 
 void rebuild_spray_tools()
@@ -3024,6 +3115,452 @@ static int proto_item_edit(int pid)
         renderPresent();
         sharedFpsLimiter.throttle();
     }
+}
+
+// Draws an AI combat packet name into the critter editor.
+static void proto_critter_redraw_ai(int win, int aiPacket)
+{
+    char text[80];
+    strcpy(text, combat_ai_name(aiPacket));
+    windowDrawText(win, text, 80, 100, 174, kProtoEditNormalColor | FONT_SHADOW);
+}
+
+// Edits a numeric critter bonus stat in place and redraws it at the given spot.
+static void proto_critter_edit_bonus(int win, int* value, int min, int max, const char* title, int drawWidth, int x, int y)
+{
+    int num = *value;
+    win_get_num_i(&num, min, max, false, title, 100, 100);
+    *value = num;
+    char text[36];
+    snprintf(text, sizeof(text), "%d", num);
+    windowDrawText(win, text, drawWidth, x, y, kProtoEditNormalColor | FONT_SHADOW);
+}
+
+// Copies armor class, resistances and thresholds from a stamped armor proto
+// into the critter's bonus stats and redraws the resistance/threshold columns.
+static void proto_critter_stamp_armor(int win, Proto* proto, Proto* armor)
+{
+    char text[80];
+    proto->critter.data.bonusStats[STAT_ARMOR_CLASS] = armor->item.data.armor.armorClass;
+
+    int x = 265;
+    for (int i = 0; i < 7; i++) {
+        proto->critter.data.bonusStats[STAT_DAMAGE_RESISTANCE + i] = armor->item.data.armor.damageResistance[i];
+        snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_DAMAGE_RESISTANCE + i]);
+        windowDrawText(win, text, 26, x, 258, kProtoEditNormalColor | FONT_SHADOW);
+
+        proto->critter.data.bonusStats[STAT_DAMAGE_THRESHOLD + i] = armor->item.data.armor.damageThreshold[i];
+        snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_DAMAGE_THRESHOLD + i]);
+        windowDrawText(win, text, 26, x, 279, kProtoEditNormalColor | FONT_SHADOW);
+        x += 37;
+    }
+}
+
+// Edits one of the seven damage resistances (kind 0) or thresholds (kind 1).
+static void proto_critter_edit_damage(int win, Proto* proto, bool threshold)
+{
+    int base = threshold ? STAT_DAMAGE_THRESHOLD : STAT_DAMAGE_RESISTANCE;
+    int textY = threshold ? 279 : 258;
+    char text[80];
+    int x = 265;
+    for (int i = 0; i < 7; i++) {
+        snprintf(text, sizeof(text), "%s Damage %s", gDamageTypeNames[i], threshold ? "Threshold" : "Resistance");
+        int value = proto->critter.data.bonusStats[base + i];
+        if (win_get_num_i(&value, -999, 999, false, text, 100, 100) == -1) {
+            break;
+        }
+        snprintf(text, sizeof(text), "%d", value);
+        windowDrawText(win, text, 26, x, textY, kProtoEditNormalColor | FONT_SHADOW);
+        proto->critter.data.bonusStats[base + i] = value;
+        windowRefresh(win);
+        x += 37;
+    }
+}
+
+// proto_critter_edit
+static int proto_critter_edit(int pid)
+{
+    int width = _scr_size.right - _scr_size.left + 1;
+    int objectType = PID_TYPE(pid);
+
+    int exitKey = KEY_BAR;
+    bool modified = false;
+    bool advancedReentry = false;
+
+    do {
+        int win;
+        Proto* proto;
+        unsigned char* imgPos;
+        if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+            return -1;
+        }
+
+        char text[80];
+        int rowY = 86;
+        reg_text_int(win, 90, KEY_LOWERCASE_L, "Light Dist/Int", proto->critter.lightDistance, &rowY, false);
+
+        if (proto->critter.sid != -1) {
+            if (proto_scr_name(proto->critter.sid, text, sizeof(text)) == -1) {
+                strcpy(text, "Error: Bad script index!");
+                win_timed_msg(text, _colorTable[31744] | 0x10000);
+                windowDrawText(win, text, 130, 240, rowY + 4, _colorTable[31744] | 0x10000);
+            } else {
+                windowDrawText(win, text, 130, 240, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+            }
+        }
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_1, "Advanced", 0);
+        _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_2, "Gender", 0);
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_LOWERCASE_H, "Head Fid", 0);
+        art_name_no_ext(proto->critter.headFid, text);
+        windowDrawText(win, text, 80, 80, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_LOWERCASE_B, "Body Type", 0);
+        if (proto->critter.data.bodyType < 0 || proto->critter.data.bodyType >= BODY_TYPE_COUNT) {
+            win_timed_msg("Proto Critter Error: Body out of range!", _colorTable[31744] | 0x10000);
+            windowDestroy(win);
+            return -1;
+        }
+        windowDrawText(win, gBodyTypeNames[proto->critter.data.bodyType], 80, 85, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_A, "AI Packet", 0);
+        proto_critter_redraw_ai(win, proto->critter.aiPacket);
+        _win_register_text_button(win, 220, rowY, -1, -1, -1, KEY_UPPERCASE_T, "Team Num", 0);
+        snprintf(text, sizeof(text), "%d", proto->critter.team);
+        windowDrawText(win, text, 80, 300, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_EXCLAMATION, "Critter Flags", 0);
+        proto_critter_flags_redraw(win, pid);
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_X, "Exp. Val", 0);
+        snprintf(text, sizeof(text), "%d", proto->critter.data.experience);
+        windowDrawText(win, text, 80, 80, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_UPPERCASE_B, "Barter", 0);
+        windowDrawText(win, yesno[(proto->critter.data.flags & 2) != 0 ? YES : NO], 50, 200, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        _win_register_text_button(win, 230, rowY, -1, -1, -1, KEY_UPPERCASE_D, "Dmg Type", 0);
+        windowDrawText(win, gDamageTypeNames[proto->critter.data.damageType], 50, 320, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_K, "Kill Type", 0);
+        const char* killName = killTypeGetName(proto->critter.data.killType);
+        if (killName != nullptr) {
+            windowDrawText(win, killName, 80, 80, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        }
+        _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_LOWERCASE_C, "Crit. Bonus", 0);
+        snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_CRITICAL_CHANCE]);
+        windowDrawText(win, text, 60, 200, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        _win_register_text_button(win, 310, rowY, -1, -1, -1, KEY_PERCENT, "Stamp Armor", 0);
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_H, "HP Bonus", 0);
+        snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_MAXIMUM_HIT_POINTS]);
+        windowDrawText(win, text, 60, 100, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_LOWERCASE_S, "Seq. Bonus", 0);
+        snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_SEQUENCE]);
+        windowDrawText(win, text, 60, 200, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+
+        rowY += 21;
+        _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_LOWERCASE_A, "AP Bonus", 0);
+        snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_MAXIMUM_ACTION_POINTS]);
+        windowDrawText(win, text, 60, 100, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_LOWERCASE_M, "Melee Dam", 0);
+        snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_MELEE_DAMAGE]);
+        windowDrawText(win, text, 60, 200, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+
+        rowY -= 21;
+        _win_register_text_button(win, 210, rowY, -1, -1, -1, KEY_LOWERCASE_R, "Dm Res", 0);
+        int x = 265;
+        for (int i = 0; i < 7; i++) {
+            snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_DAMAGE_RESISTANCE + i]);
+            windowDrawText(win, text, 26, x, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, gDamageTypeNames[i], 35, x, rowY + 14, kProtoEditNormalColor);
+            x += 37;
+        }
+
+        rowY += 21;
+        _win_register_text_button(win, 210, rowY, -1, -1, -1, KEY_UPPERCASE_R, "Dm Thr", 0);
+        x = 265;
+        for (int i = 0; i < 7; i++) {
+            snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_DAMAGE_THRESHOLD + i]);
+            windowDrawText(win, text, 26, x, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+            x += 37;
+        }
+
+        windowRefresh(win);
+
+        bool reenter = false;
+        while (true) {
+            sharedFpsLimiter.mark();
+
+            int key = inputGetInput();
+
+            if (key == KEY_ESCAPE || key == KEY_BAR || key == KEY_MINUS || key == KEY_EQUAL) {
+                exitKey = key;
+                break;
+            }
+            if (key == KEY_RETURN) {
+                exitKey = KEY_BAR;
+                break;
+            }
+
+            switch (key) {
+            case KEY_1:
+            case KEY_2: {
+                windowDestroy(win);
+                Proto* dudeProto;
+                if (protoGetProto(gDude->pid, &dudeProto) == -1) {
+                    return -1;
+                }
+                critterProtoDataCopy(&dudeProto->critter.data, &proto->critter.data);
+                characterEditorShow(key != KEY_1);
+                critterProtoDataCopy(&proto->critter.data, &dudeProto->critter.data);
+                modified = true;
+                _proto_dude_init("premade\\blank.gcd");
+                if (key == KEY_1) {
+                    reenter = true;
+                }
+                break;
+            }
+            case KEY_UPPERCASE_S: {
+                int sel = scr_choose(4);
+                if (sel == -1) {
+                    break;
+                }
+                if (sel == -2) {
+                    strcpy(text, "None");
+                    proto->critter.sid = -1;
+                } else {
+                    if (proto_scr_name(sel, text, sizeof(text)) == -1) {
+                        win_timed_msg("Error: Bad script index!", _colorTable[31744] | 0x10000);
+                    }
+                    proto->critter.sid = sel;
+                }
+                windowDrawText(win, text, 130, 240, 90, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            case KEY_LOWERCASE_H: {
+                proto_choose_fid(&proto->critter.headFid, OBJ_TYPE_HEAD, 1);
+                art_name_no_ext(proto->critter.headFid, text);
+                windowDrawText(win, text, 80, 80, 132, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            case KEY_LOWERCASE_B: {
+                int sel = _win_list_select("Body Type", gBodyTypeNames, BODY_TYPE_COUNT, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+                if (sel == -1) {
+                    sel = 0;
+                }
+                proto->critter.data.bodyType = sel;
+                windowDrawText(win, gBodyTypeNames[sel], 80, 85, 153, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            case KEY_UPPERCASE_A:
+                proto_pick_ai_packet(&proto->critter.aiPacket);
+                proto_critter_redraw_ai(win, proto->critter.aiPacket);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_UPPERCASE_T: {
+                int value = proto->critter.team;
+                win_get_num_i(&value, 0, 32000, false, "Team Num", 100, 100);
+                proto->critter.team = value;
+                snprintf(text, sizeof(text), "%d", value);
+                windowDrawText(win, text, 80, 300, 174, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            case KEY_EXCLAMATION:
+                if (proto_critter_flags_modify(pid) == 0) {
+                    proto_critter_flags_redraw(win, pid);
+                    windowRefresh(win);
+                    modified = true;
+                }
+                break;
+            case KEY_UPPERCASE_X: {
+                int value = proto->critter.data.experience;
+                if (win_get_num_i(&value, 0, 32000, false, "Experience Value", 200, 200) == -1) {
+                    break;
+                }
+                proto->critter.data.experience = value;
+                snprintf(text, sizeof(text), "%d", value);
+                windowDrawText(win, text, 80, 80, 216, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            case KEY_UPPERCASE_B:
+                proto->critter.data.flags ^= 2;
+                windowDrawText(win, yesno[(proto->critter.data.flags & 2) != 0 ? YES : NO], 50, 200, 216, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_UPPERCASE_D: {
+                int sel = _win_list_select("Damage Type", gDamageTypeNames, 7, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+                if (sel == -1) {
+                    break;
+                }
+                proto->critter.data.damageType = sel;
+                windowDrawText(win, gDamageTypeNames[sel], 50, 320, 216, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            case KEY_UPPERCASE_K: {
+                int sel = mp_pick_kill_type();
+                if (sel == -1) {
+                    break;
+                }
+                proto->critter.data.killType = sel;
+                const char* name = killTypeGetName(sel);
+                if (name != nullptr) {
+                    windowDrawText(win, name, 80, 80, 237, kProtoEditNormalColor | FONT_SHADOW);
+                }
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            case KEY_LOWERCASE_C:
+                proto_critter_edit_bonus(win, &proto->critter.data.bonusStats[STAT_CRITICAL_CHANCE], -180, 180, "Critical Chance Bonus", 60, 200, 237);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_PERCENT: {
+                int armorPid;
+                proto_choose_pid(&armorPid, OBJ_TYPE_ITEM, 1, 0);
+                if (armorPid == -1) {
+                    break;
+                }
+                Proto* armor;
+                if (protoGetProto(armorPid, &armor) == -1) {
+                    return -1;
+                }
+                proto_critter_stamp_armor(win, proto, armor);
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            case KEY_UPPERCASE_H:
+                proto_critter_edit_bonus(win, &proto->critter.data.bonusStats[STAT_MAXIMUM_HIT_POINTS], -200, 9000, "Hit Point Bonus", 60, 100, 258);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_LOWERCASE_S:
+                proto_critter_edit_bonus(win, &proto->critter.data.bonusStats[STAT_SEQUENCE], -180, 180, "Sequence Bonus", 60, 200, 258);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_LOWERCASE_A:
+                proto_critter_edit_bonus(win, &proto->critter.data.bonusStats[STAT_MAXIMUM_ACTION_POINTS], -80, 80, "Action Point Bonus", 60, 100, 279);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_LOWERCASE_M:
+                proto_critter_edit_bonus(win, &proto->critter.data.bonusStats[STAT_MELEE_DAMAGE], -180, 180, "Melee Damage Bonus", 60, 200, 279);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_LOWERCASE_L:
+            case KEY_UPPERCASE_L:
+                proto_edit_light(win, &proto->critter.lightDistance, &proto->critter.lightIntensity);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_LOWERCASE_R:
+                proto_critter_edit_damage(win, proto, false);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_UPPERCASE_R:
+                proto_critter_edit_damage(win, proto, true);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_LOWERCASE_N:
+            case KEY_UPPERCASE_N:
+                proto_edit_name(win, pid);
+                modified = true;
+                break;
+            case KEY_LOWERCASE_D:
+                proto_edit_description(win, pid);
+                modified = true;
+                break;
+            case KEY_UPPERCASE_U:
+                proto_action_modify(pid);
+                proto_action_redraw(win, pid);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_LOWERCASE_F:
+                reg_mod_flags(&proto->critter.flags, &proto->critter.extendedFlags, objectType, 0);
+                windowRefresh(win);
+                modified = true;
+                break;
+            case KEY_BRACKET_LEFT:
+                proto_edit_mod_fid(win, OBJ_TYPE_CRITTER, &proto->critter.fid, width, -1);
+                modified = true;
+                break;
+            case KEY_BRACKET_RIGHT:
+                proto_edit_mod_fid(win, OBJ_TYPE_CRITTER, &proto->critter.fid, width, 1);
+                modified = true;
+                break;
+            case KEY_BRACE_LEFT:
+                proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->critter.fid, width, -10);
+                modified = true;
+                break;
+            case KEY_BRACE_RIGHT:
+                proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->critter.fid, width, 10);
+                modified = true;
+                break;
+            case KEY_HOME:
+                proto_edit_mod_fid(win, OBJ_TYPE_CRITTER, &proto->critter.fid, width, -15000);
+                modified = true;
+                break;
+            case KEY_END:
+                proto_edit_mod_fid(win, OBJ_TYPE_CRITTER, &proto->critter.fid, width, art_total(OBJ_TYPE_CRITTER));
+                modified = true;
+                break;
+            }
+
+            if (reenter) {
+                break;
+            }
+
+            renderPresent();
+            sharedFpsLimiter.throttle();
+        }
+
+        if (reenter) {
+            advancedReentry = true;
+            continue;
+        }
+
+        advancedReentry = false;
+        int code = proto_edit_exit_code(win, exitKey, modified);
+
+        // Saving paths first validate the proto can spawn an object.
+        if (code == -2 || code == -5 || code == -6) {
+            Object* obj;
+            if (objectCreateWithFidPid(&obj, -1, pid) != -1) {
+                objectDestroy(obj, nullptr);
+            }
+        }
+        return code;
+    } while (advancedReentry);
+
+    return 0;
 }
 
 // protoInstEdit implemented in mp_instance.cc

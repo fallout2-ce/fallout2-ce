@@ -107,6 +107,7 @@ extern char* gItemTypeNames[ITEM_TYPE_COUNT];
 extern char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
 extern char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
 extern char* gDamageTypeNames[DAMAGE_TYPE_COUNT];
+extern char* gBodyTypeNames[BODY_TYPE_COUNT];
 extern char* gCaliberTypeNames[CALIBER_TYPE_COUNT];
 extern char* _mp_perk_code_strs[PERK_COUNT];
 
