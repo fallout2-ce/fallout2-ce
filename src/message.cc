@@ -297,6 +297,44 @@ err:
     return success;
 }
 
+// message_insert
+bool message_insert(MessageList* msg, MessageListItem* entry)
+{
+    if (msg == nullptr || entry == nullptr) {
+        return false;
+    }
+
+    return _message_add(msg, entry);
+}
+
+// message_save
+bool message_save(MessageList* msg, const char* path)
+{
+    if (msg == nullptr || path == nullptr) {
+        return false;
+    }
+
+    char localized_path[COMPAT_MAX_PATH];
+    snprintf(localized_path, sizeof(localized_path), "%s\\%s\\%s", "text", settings.system.language.c_str(), path);
+
+    File* stream = fileOpen(localized_path, "wt");
+    if (stream == nullptr) {
+        return false;
+    }
+
+    for (int index = 0; index < msg->entries_num; index++) {
+        MessageListItem* entry = &(msg->entries[index]);
+        filePrintFormatted(stream, "%c%d%c%c%s%c%c%s%c\n",
+            '{', entry->num, '}',
+            '{', entry->audio, '}',
+            '{', entry->text, '}');
+    }
+
+    fileClose(stream);
+
+    return true;
+}
+
 // 0x484C30 message_search
 bool messageListGetItem(MessageList* msg, MessageListItem* entry)
 {

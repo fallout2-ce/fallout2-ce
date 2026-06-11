@@ -101,6 +101,7 @@ typedef enum PrototypeMessage {
 extern char _cd_path_base[COMPAT_MAX_PATH];
 
 extern MessageList gProtoMessageList;
+extern MessageList _proto_msg_files[6];
 extern char* _proto_none_str;
 extern char* gItemTypeNames[ITEM_TYPE_COUNT];
 extern char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];

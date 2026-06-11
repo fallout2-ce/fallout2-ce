@@ -61,8 +61,7 @@ static void reg_mod_flags(int* flags, int* extendedFlags, int objectType, int su
 static void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType);
 static void proto_choose_pid(int* pidPtr, int objectType, int hasPid, int subtype);
 
-// proto_change_proto_info (body implemented in disk-persistence feature)
-void proto_change_proto_info(int pid, int mode);
+static void proto_change_proto_info(int pid, int mode);
 
 static char kYes[] = "YES";
 static char kNo[] = "NO";
@@ -166,7 +165,7 @@ static const char* attack_anim_strs[] = {
 };
 
 // art_anim_strs
-static const char* anim_code_strs[] = {
+const char* const anim_code_strs[] = {
     "stand",
     "walk",
     "jump_begin",
@@ -2211,6 +2210,39 @@ static void proto_edit_material(int win, int* material)
     *material = sel == -1 ? 0 : sel;
     windowDrawText(win, gMaterialTypeNames[*material], 130, 90, 132, kProtoEditNormalColor | FONT_SHADOW);
     windowRefresh(win);
+}
+
+// proto_change_proto_info
+static void proto_change_proto_info(int pid, int mode)
+{
+    static const char* const titles[] = { "Name", "Description" };
+    if (mode != 0 && mode != 1) {
+        return;
+    }
+
+    char buffer[MESSAGE_LIST_ITEM_FIELD_MAX_SIZE];
+    buffer[0] = '\0';
+
+    int maxLength = mode == 0 ? 39 : 49;
+    if (_win_get_str(buffer, maxLength, titles[mode], 100, 100) == -1) {
+        return;
+    }
+
+    int type = PID_TYPE(pid);
+
+    MessageListItem entry;
+    entry.num = mode + 100 * (pid & 0xFFFFFF);
+    entry.audio = const_cast<char*>("");
+    entry.text = buffer;
+    if (!message_insert(&_proto_msg_files[type], &entry)) {
+        debugPrint("\nError attempting to message_insert prototype name!");
+    }
+
+    char path[COMPAT_MAX_PATH];
+    snprintf(path, sizeof(path), "%spro_%.4s%s", "game\\", artGetObjectTypeName(type), ".msg");
+    if (!message_save(&_proto_msg_files[type], path)) {
+        debugPrint("\nError attempting to message_save prototype name!");
+    }
 }
 
 // Edits the prototype name and redraws it.
