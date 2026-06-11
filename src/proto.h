@@ -103,6 +103,7 @@ extern MessageList gProtoMessageList;
 extern char* _proto_none_str;
 extern char* gItemTypeNames[ITEM_TYPE_COUNT];
 extern char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
+extern char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
 
 void proto_make_path(char* path, int pid);
 int _proto_list_str(int pid, char* proto_path);

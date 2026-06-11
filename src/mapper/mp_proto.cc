@@ -1585,7 +1585,7 @@ static int proto_edit_exit_code(int win, int key, bool modified)
     windowDestroy(win);
 
     if (key == KEY_ESCAPE) {
-        return 0;
+        return -1;
     }
 
     if (!modified) {
@@ -1624,6 +1624,27 @@ static int proto_scr_name(int packedIndex, char* name, size_t size)
 {
     name[0] = '\0';
     return scriptsGetFileName(packedIndex & 0xFFFFFF, name, size);
+}
+
+// Picks a script for the prototype and redraws its name. Returns false if the
+// chooser was cancelled (window only needs a refresh).
+static bool proto_edit_script(int win, Proto* proto, char* name, size_t size)
+{
+    int sel = scr_choose(3);
+    if (sel == -1) {
+        windowRefresh(win);
+        return false;
+    }
+    if (sel == -2) {
+        strncpy(name, "None", size);
+        proto->sid = -1;
+    } else {
+        proto_scr_name(sel, name, size);
+        proto->sid = sel;
+    }
+    windowDrawText(win, name, 130, 240, 90, kProtoEditNormalColor | FONT_SHADOW);
+    windowRefresh(win);
+    return true;
 }
 
 // Picks a material from the list and redraws its label.
@@ -1866,25 +1887,10 @@ static int proto_wall_edit(int pid)
         }
 
         switch (key) {
-        case KEY_UPPERCASE_S: {
-            int sel = scr_choose(3);
-            if (sel == -1) {
-                windowRefresh(win);
-                modified = true;
-                break;
-            }
-            if (sel == -2) {
-                strcpy(scriptName, "None");
-                proto->wall.sid = -1;
-            } else {
-                proto_scr_name(sel, scriptName, sizeof(scriptName));
-                proto->wall.sid = sel;
-            }
-            windowDrawText(win, scriptName, 130, 240, 90, kProtoEditNormalColor | FONT_SHADOW);
-            windowRefresh(win);
+        case KEY_UPPERCASE_S:
+            proto_edit_script(win, proto, scriptName, sizeof(scriptName));
             modified = true;
             break;
-        }
         case KEY_UPPERCASE_U:
             proto_action_modify(pid);
             proto_action_redraw(win, pid);
@@ -1938,6 +1944,179 @@ static int proto_wall_edit(int pid)
             break;
         case KEY_END:
             proto_edit_mod_fid(win, OBJ_TYPE_WALL, &proto->wall.fid, width, art_total(OBJ_TYPE_WALL));
+            modified = true;
+            break;
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
+// proto_scenery_edit
+static int proto_scenery_edit(int pid)
+{
+    int win;
+    Proto* proto;
+    unsigned char* imgPos;
+    int width = _scr_size.right - _scr_size.left + 1;
+    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+        return -1;
+    }
+
+    int rowY = 86;
+    reg_text_int(win, 90, KEY_LOWERCASE_L, "Light Dist/Int", proto->scenery.lightDistance, &rowY, false);
+
+    char text[80];
+    if (proto->scenery.sid != -1) {
+        if (proto_scr_name(proto->scenery.sid, text, sizeof(text)) == -1) {
+            strcpy(text, "Error: Bad script index!");
+            win_timed_msg(text, _colorTable[31744] | 0x10000);
+            windowDrawText(win, text, 130, 240, rowY + 4, _colorTable[31744] | 0x10000);
+        } else {
+            windowDrawText(win, text, 130, 240, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        }
+    }
+
+    rowY += 21;
+    if (proto->scenery.type < 0 || proto->scenery.type > 6) {
+        win_timed_msg("Proto Scenery Error: Type out of range!", _colorTable[31744] | 0x10000);
+        windowDestroy(win);
+        return -1;
+    }
+
+    reg_text_str(win, KEY_LOWERCASE_T, "Type", gSceneryTypeNames[proto->scenery.type], &rowY);
+
+    if (proto->scenery.material < 0 || proto->scenery.material > 8) {
+        win_timed_msg("Proto Scenery Error: Material out of range!", _colorTable[31744] | 0x10000);
+        windowDestroy(win);
+        return -1;
+    }
+
+    reg_text_str(win, KEY_LOWERCASE_M, "Material", gMaterialTypeNames[proto->scenery.material], &rowY);
+
+    if (proto->scenery.soundId != 0) {
+        snprintf(text, sizeof(text), "%c", proto->scenery.soundId);
+    } else {
+        strcpy(text, "Error");
+    }
+    reg_text_str(win, KEY_LOWERCASE_I, "Sound ID", text, &rowY);
+    windowRefresh(win);
+
+    int objectType = PID_TYPE(pid);
+    bool modified = false;
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int key = inputGetInput();
+
+        if (key == KEY_ESCAPE || key == KEY_RETURN || key == KEY_BAR || key == KEY_MINUS || key == KEY_EQUAL) {
+            int exitKey = key == KEY_RETURN ? KEY_BAR : key;
+            return proto_edit_exit_code(win, exitKey, modified);
+        }
+
+        switch (key) {
+        case KEY_UPPERCASE_S:
+            proto_edit_script(win, proto, text, sizeof(text));
+            modified = true;
+            break;
+        case KEY_UPPERCASE_U:
+            proto_action_modify(pid);
+            proto_action_redraw(win, pid);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_UPPERCASE_W:
+            if (proto->scenery.type == 0) {
+                proto->scenery.data.door.openFlags ^= 0x04;
+                bool walkThru = (proto->scenery.data.door.openFlags & 0x04) != 0;
+                snprintf(text, sizeof(text), "Walk Thru: %s", walkThru ? "Yes" : "No");
+                windowDrawText(win, yesno[walkThru ? YES : NO], 60, 375, 131, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+            }
+            break;
+        case KEY_UPPERCASE_F:
+            proto->scenery.extendedFlags ^= 1;
+            snprintf(text, sizeof(text), "Magic Hands %s", (proto->scenery.extendedFlags & 1) != 0 ? "Ground" : "Middle");
+            win_timed_msg(text, _colorTable[31744] | 0x10000);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_BRACKET_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_SCENERY, &proto->scenery.fid, width, -1);
+            modified = true;
+            break;
+        case KEY_BRACKET_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_SCENERY, &proto->scenery.fid, width, 1);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_F:
+            reg_mod_flags(&proto->scenery.flags, &proto->scenery.extendedFlags, objectType, 0);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_M:
+        case KEY_UPPERCASE_M:
+            proto_edit_material(win, &proto->scenery.material);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_T: {
+            int sel = _win_list_select("Type", gSceneryTypeNames, 6, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+            if (sel == -1) {
+                sel = 0;
+            }
+            if (sel != proto->scenery.type) {
+                windowDrawText(win, "No", 130, 90, 300, kProtoEditNormalColor | FONT_SHADOW);
+                proto->scenery.type = sel;
+                proto_scenery_subdata_init(proto, sel);
+                windowDrawText(win, gSceneryTypeNames[sel], 130, 90, 111, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+            }
+            break;
+        }
+        case KEY_LOWERCASE_I: {
+            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+            if (sel != -1) {
+                proto->scenery.soundId = sound_code_strs[sel][0];
+                snprintf(text, sizeof(text), "%c", proto->scenery.soundId);
+                windowDrawText(win, text, 280, 90, 153, kProtoEditNormalColor | FONT_SHADOW);
+                windowRefresh(win);
+                modified = true;
+            }
+            break;
+        }
+        case KEY_LOWERCASE_L:
+        case KEY_UPPERCASE_L:
+            proto_edit_light(win, &proto->scenery.lightDistance, &proto->scenery.lightIntensity);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_N:
+        case KEY_UPPERCASE_N:
+            proto_edit_name(win, pid);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_D:
+            proto_edit_description(win, pid);
+            modified = true;
+            break;
+        case KEY_BRACE_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->scenery.fid, width, -10);
+            modified = true;
+            break;
+        case KEY_BRACE_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->scenery.fid, width, 10);
+            modified = true;
+            break;
+        case KEY_HOME:
+            proto_edit_mod_fid(win, OBJ_TYPE_SCENERY, &proto->scenery.fid, width, -15000);
+            modified = true;
+            break;
+        case KEY_END:
+            proto_edit_mod_fid(win, OBJ_TYPE_SCENERY, &proto->scenery.fid, width, art_total(OBJ_TYPE_SCENERY));
             modified = true;
             break;
         }

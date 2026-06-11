@@ -147,7 +147,7 @@ static MessageList _proto_msg_files[6];
 static char* gRaceTypeNames[RACE_TYPE_COUNT];
 
 // 0x6647E4 scenery_pro_type
-static char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
+char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
 
 // proto.msg
 //
