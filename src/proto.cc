@@ -155,7 +155,7 @@ static char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
 MessageList gProtoMessageList;
 
 // 0x664804 item_pro_material
-static char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
+char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
 
 // "<None>" from proto.msg
 //

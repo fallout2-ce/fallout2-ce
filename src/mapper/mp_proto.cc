@@ -11,9 +11,11 @@
 #include "game_sound.h"
 #include "input.h"
 #include "kb.h"
+#include "mapper/mp_scrpt.h"
 #include "mapper/mp_targt.h"
 #include "memory.h"
 #include "proto.h"
+#include "scripts.h"
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
@@ -45,6 +47,9 @@ static int proto_edit_mod_pid(int win, Proto** protoPtr, int width, int delta);
 static void reg_mod_flags(int* flags, int* extendedFlags, int objectType, int subtype);
 static void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType);
 static void proto_choose_pid(int* pidPtr, int objectType, int hasPid, int subtype);
+
+// proto_change_proto_info (body implemented in disk-persistence feature)
+void proto_change_proto_info(int pid, int mode);
 
 static char kYes[] = "YES";
 static char kNo[] = "NO";
@@ -1564,6 +1569,377 @@ int protoChooseMultiPids(int pidType, protoChooseFidCallback fidFunc, protoChoos
         } else if (key == KEY_HOME) {
             scrollOffset = 1;
             protoChooseMultiPidsUpdate(win, pidType, scrollOffset, fidFunc, pitch);
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
+constexpr int kProtoLightScale = 0x10000;
+
+// Maps a per-type editor exit key to the dispatcher return code.
+// modified: prototype was changed during this session.
+static int proto_edit_exit_code(int win, int key, bool modified)
+{
+    windowDestroy(win);
+
+    if (key == KEY_ESCAPE) {
+        return 0;
+    }
+
+    if (!modified) {
+        if (key == KEY_MINUS) {
+            return -3;
+        }
+        if (key == KEY_EQUAL) {
+            return -4;
+        }
+        return 0;
+    }
+
+    if (key == KEY_MINUS) {
+        return -5;
+    }
+    if (key == KEY_EQUAL) {
+        return -6;
+    }
+    return -2;
+}
+
+// Edits light distance/intensity in place (intensity stored as fixed point).
+static void proto_edit_light(int win, int* lightDistance, int* lightIntensity)
+{
+    int dist = *lightDistance;
+    win_get_num_i(&dist, 0, 8, false, "Light distance in hexes (0-8)", 100, 100);
+    *lightDistance = dist;
+
+    int pct = *lightIntensity * 100 / kProtoLightScale;
+    win_get_num_i(&pct, 0, 100, false, "Light intensity (0-100 percent)", 100, 100);
+    *lightIntensity = pct * kProtoLightScale / 100;
+}
+
+// Resolves a packed script index to its display name. Returns -1 on failure.
+static int proto_scr_name(int packedIndex, char* name, size_t size)
+{
+    name[0] = '\0';
+    return scriptsGetFileName(packedIndex & 0xFFFFFF, name, size);
+}
+
+// Picks a material from the list and redraws its label.
+static void proto_edit_material(int win, int* material)
+{
+    int sel = _win_list_select("Materials", gMaterialTypeNames, 8, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+    *material = sel == -1 ? 0 : sel;
+    windowDrawText(win, gMaterialTypeNames[*material], 130, 90, 132, kProtoEditNormalColor | FONT_SHADOW);
+    windowRefresh(win);
+}
+
+// Edits the prototype name and redraws it.
+static void proto_edit_name(int win, int pid)
+{
+    if (can_modify_protos) {
+        proto_change_proto_info(pid, 0);
+        windowDrawText(win, protoGetName(pid), 130, 90, 48, kProtoEditNormalColor | FONT_SHADOW);
+    }
+    windowRefresh(win);
+}
+
+// Edits the prototype description and redraws it.
+static void proto_edit_description(int win, int pid)
+{
+    if (can_modify_protos) {
+        proto_change_proto_info(pid, 1);
+        windowFill(win, 90, 67, 280, fontGetLineHeight(), edit_window_color);
+        windowDrawText(win, protoGetDescription(pid), 280, 90, 67, kProtoEditNormalColor | FONT_SHADOW);
+    }
+    windowRefresh(win);
+}
+
+// proto_tile_edit
+static int proto_tile_edit(int pid)
+{
+    int win;
+    Proto* proto;
+    unsigned char* imgPos;
+    int width = _scr_size.right - _scr_size.left + 1;
+    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+        return -1;
+    }
+
+    if (proto->tile.material < 0 || proto->tile.material > 8) {
+        win_timed_msg("Proto Tile Error: Material out of range!", _colorTable[31744] | 0x10000);
+        windowDestroy(win);
+        return -1;
+    }
+
+    int rowY = 128;
+    reg_text_str(win, KEY_LOWERCASE_M, "Material", gMaterialTypeNames[proto->tile.material], &rowY);
+    windowRefresh(win);
+
+    int objectType = PID_TYPE(pid);
+    bool modified = false;
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int key = inputGetInput();
+
+        if (key == KEY_ESCAPE || key == KEY_RETURN || key == KEY_BAR || key == KEY_MINUS || key == KEY_EQUAL) {
+            int exitKey = key == KEY_RETURN ? KEY_BAR : key;
+            return proto_edit_exit_code(win, exitKey, modified);
+        }
+
+        switch (key) {
+        case KEY_BRACKET_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_TILE, &proto->tile.fid, width, -1);
+            modified = true;
+            break;
+        case KEY_BRACKET_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_TILE, &proto->tile.fid, width, 1);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_M:
+        case KEY_UPPERCASE_M:
+            proto_edit_material(win, &proto->tile.material);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_F:
+            reg_mod_flags(&proto->tile.flags, &proto->tile.extendedFlags, objectType, 0);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_N:
+        case KEY_UPPERCASE_N:
+            proto_edit_name(win, pid);
+            modified = true;
+            break;
+        case KEY_BRACE_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->tile.fid, width, -10);
+            modified = true;
+            break;
+        case KEY_BRACE_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->tile.fid, width, 10);
+            modified = true;
+            break;
+        case KEY_HOME:
+            proto_edit_mod_fid(win, OBJ_TYPE_TILE, &proto->tile.fid, width, -15000);
+            modified = true;
+            break;
+        case KEY_END:
+            proto_edit_mod_fid(win, OBJ_TYPE_TILE, &proto->tile.fid, width, art_total(OBJ_TYPE_TILE));
+            modified = true;
+            break;
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
+// proto_misc_edit
+static int proto_misc_edit(int pid)
+{
+    int win;
+    Proto* proto;
+    unsigned char* imgPos;
+    int width = _scr_size.right - _scr_size.left + 1;
+    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+        return -1;
+    }
+
+    int rowY = 86;
+    reg_text_int(win, 90, KEY_LOWERCASE_L, "Light Dist/Int", proto->misc.lightDistance, &rowY, false);
+    windowRefresh(win);
+
+    int objectType = PID_TYPE(pid);
+    bool modified = false;
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int key = inputGetInput();
+
+        if (key == KEY_ESCAPE || key == KEY_RETURN || key == KEY_BAR || key == KEY_MINUS || key == KEY_EQUAL) {
+            int exitKey = key == KEY_RETURN ? KEY_BAR : key;
+            return proto_edit_exit_code(win, exitKey, modified);
+        }
+
+        switch (key) {
+        case KEY_BRACKET_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_MISC, &proto->misc.fid, width, -1);
+            modified = true;
+            break;
+        case KEY_BRACKET_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_MISC, &proto->misc.fid, width, 1);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_F:
+            reg_mod_flags(&proto->misc.flags, &proto->misc.extendedFlags, objectType, 0);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_L:
+        case KEY_UPPERCASE_L:
+            proto_edit_light(win, &proto->misc.lightDistance, &proto->misc.lightIntensity);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_D:
+            proto_edit_description(win, pid);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_N:
+        case KEY_UPPERCASE_N:
+            proto_edit_name(win, pid);
+            modified = true;
+            break;
+        case KEY_BRACE_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->misc.fid, width, -10);
+            modified = true;
+            break;
+        case KEY_BRACE_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->misc.fid, width, 10);
+            modified = true;
+            break;
+        case KEY_HOME:
+            proto_edit_mod_fid(win, OBJ_TYPE_MISC, &proto->misc.fid, width, -15000);
+            modified = true;
+            break;
+        case KEY_END:
+            proto_edit_mod_fid(win, OBJ_TYPE_MISC, &proto->misc.fid, width, art_total(OBJ_TYPE_MISC));
+            modified = true;
+            break;
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
+// proto_wall_edit
+static int proto_wall_edit(int pid)
+{
+    int win;
+    Proto* proto;
+    unsigned char* imgPos;
+    int width = _scr_size.right - _scr_size.left + 1;
+    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+        return -1;
+    }
+
+    int rowY = 86;
+    reg_text_int(win, 90, KEY_LOWERCASE_L, "Light Dist/Int", proto->wall.lightDistance, &rowY, false);
+
+    char scriptName[36];
+    if (proto->wall.sid != -1) {
+        if (proto_scr_name(proto->wall.sid, scriptName, sizeof(scriptName)) == -1) {
+            strcpy(scriptName, "Error: Bad script index!");
+            win_timed_msg(scriptName, _colorTable[31744] | 0x10000);
+            windowDrawText(win, scriptName, 130, 240, rowY + 4, _colorTable[31744] | 0x10000);
+        } else {
+            windowDrawText(win, scriptName, 40, 240, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        }
+    }
+
+    rowY += 42;
+    if (proto->wall.material < 0 || proto->wall.material > 8) {
+        win_timed_msg("Proto Wall Error: Material out of range!", _colorTable[31744] | 0x10000);
+        windowDestroy(win);
+        return -1;
+    }
+
+    reg_text_str(win, KEY_LOWERCASE_M, "Material", gMaterialTypeNames[proto->wall.material], &rowY);
+    windowRefresh(win);
+
+    int objectType = PID_TYPE(pid);
+    bool modified = false;
+
+    while (true) {
+        sharedFpsLimiter.mark();
+
+        int key = inputGetInput();
+
+        if (key == KEY_ESCAPE || key == KEY_RETURN || key == KEY_BAR || key == KEY_MINUS || key == KEY_EQUAL) {
+            int exitKey = key == KEY_RETURN ? KEY_BAR : key;
+            return proto_edit_exit_code(win, exitKey, modified);
+        }
+
+        switch (key) {
+        case KEY_UPPERCASE_S: {
+            int sel = scr_choose(3);
+            if (sel == -1) {
+                windowRefresh(win);
+                modified = true;
+                break;
+            }
+            if (sel == -2) {
+                strcpy(scriptName, "None");
+                proto->wall.sid = -1;
+            } else {
+                proto_scr_name(sel, scriptName, sizeof(scriptName));
+                proto->wall.sid = sel;
+            }
+            windowDrawText(win, scriptName, 130, 240, 90, kProtoEditNormalColor | FONT_SHADOW);
+            windowRefresh(win);
+            modified = true;
+            break;
+        }
+        case KEY_UPPERCASE_U:
+            proto_action_modify(pid);
+            proto_action_redraw(win, pid);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_BRACKET_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_WALL, &proto->wall.fid, width, -1);
+            modified = true;
+            break;
+        case KEY_BRACKET_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_WALL, &proto->wall.fid, width, 1);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_F:
+            reg_mod_flags(&proto->wall.flags, &proto->wall.extendedFlags, objectType, 0);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_M:
+        case KEY_UPPERCASE_M:
+            proto_edit_material(win, &proto->wall.material);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_N:
+        case KEY_UPPERCASE_N:
+            proto_edit_name(win, pid);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_D:
+            proto_edit_description(win, pid);
+            modified = true;
+            break;
+        case KEY_LOWERCASE_L:
+        case KEY_UPPERCASE_L:
+            proto_edit_light(win, &proto->wall.lightDistance, &proto->wall.lightIntensity);
+            windowRefresh(win);
+            modified = true;
+            break;
+        case KEY_BRACE_LEFT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->wall.fid, width, -10);
+            modified = true;
+            break;
+        case KEY_BRACE_RIGHT:
+            proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->wall.fid, width, 10);
+            modified = true;
+            break;
+        case KEY_HOME:
+            proto_edit_mod_fid(win, OBJ_TYPE_WALL, &proto->wall.fid, width, -15000);
+            modified = true;
+            break;
+        case KEY_END:
+            proto_edit_mod_fid(win, OBJ_TYPE_WALL, &proto->wall.fid, width, art_total(OBJ_TYPE_WALL));
+            modified = true;
+            break;
         }
 
         renderPresent();
