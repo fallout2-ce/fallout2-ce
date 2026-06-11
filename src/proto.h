@@ -150,6 +150,10 @@ void proto_remove(int pid);
 int proto_header_save();
 int _proto_load_pid(int pid, Proto** protoPtr);
 
+#ifdef FALLOUT_MAPPER
+int proto_save_text(int pid);
+#endif
+
 static bool isExitGridPid(int pid)
 {
     return pid >= FIRST_EXIT_GRID_PID && pid <= LAST_EXIT_GRID_PID;
