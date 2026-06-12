@@ -2782,10 +2782,6 @@ static void _combat_over()
         scriptSetFixedParam(critter->sid, 0);
 
         if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter) && !_isLoadingGame()) {
-            if (!animationIsBusy(critter)) {
-                queueGorisCombatBeginEndAnimation(critter, kGorisCombatBaseFid);
-            }
-
             waitForGorisAnimation(critter, "combat_end_tail");
         }
     }
