@@ -10,13 +10,14 @@
 #include "combat_ai.h"
 #include "critter.h"
 #include "debug.h"
-#include "object.h"
 #include "game_sound.h"
 #include "input.h"
 #include "kb.h"
 #include "mapper/mp_scrpt.h"
 #include "mapper/mp_targt.h"
+#include "mapper/mp_utils.h"
 #include "memory.h"
+#include "object.h"
 #include "proto.h"
 #include "proto_txt.h"
 #include "scripts.h"
@@ -35,9 +36,9 @@ namespace fallout {
 #define NO 1
 
 static int proto_choose_container_flags(Proto* proto);
-static int proto_subdata_setup_int_button(const char* title, int key, int value, int min_value, int max_value, int* y, int itemIndex);
-static int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, int itemIndex);
-static int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex);
+static void proto_subdata_setup_int_button(const char* title, int key, int value, int min_value, int max_value, int* y, int itemIndex);
+static void proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, int itemIndex);
+static void proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex);
 static void proto_subdata_setup_str_button(const char* title, int key, int value, const char* const* strs, int count, int* y, int itemIndex);
 static void proto_subdata_setup_x_str_button(const char* title, int key, int value, const char* const* strs, int base, int upper, int* y, int itemIndex);
 static void proto_subdata_process_int_button(const char* title, int* value, int min, int max, int itemIndex);
@@ -53,7 +54,7 @@ static void proto_critter_flags_redraw(int win, int pid);
 static int proto_critter_flags_modify(int pid);
 static int mp_pick_kill_type();
 void proto_action_redraw(int win, int pid);
-static void reg_text_int(int win, int y, int key, const char* title, int value, int* rowY, bool advance);
+static void reg_text_int(int win, int valueX, int key, const char* title, int value, int* rowY, bool advance);
 static void reg_text_str(int win, int key, const char* title, const char* value, int* rowY);
 static void reg_text_int_update(int win, int* value, int min, int max, const char* title, int textY);
 static bool proto_action_can_look_at(int pid);
@@ -134,11 +135,38 @@ static const char* critFlagStrs[CRITTER_FLAG_COUNT] = {
     "_Knock",
 };
 
-// Approximated palette indices for the prototype editor (original color
-// bytes are runtime BSS with no faithful offset).
-constexpr int kProtoEditNormalColor = 32747; // normal field value text
-constexpr int kProtoEditTitleColor = 32767; // bright title text
-constexpr int kProtoEditBoxBorderColor = 2; // art preview box border
+// Color-table (RGB15) indices for the prototype editor; resolve through
+// _colorTable[] before use. Text colors are drawn with FONT_SHADOW (see
+// proto_text_color); dialog and fill colors are used raw.
+constexpr int kProtoEditNormalColor = 32747; // normal field text
+constexpr int kProtoEditTitleColor = 32767; // title/type header, info & range-error popups
+constexpr int kProtoEditErrorColor = 31744; // critical errors (bad script, can't modify)
+constexpr int kProtoEditNoneColor = 992; // "None" text, attack-popup prompt, enabled actions/flags
+constexpr int kProtoEditDialogColor = 15855; // list/yes-no dialogs and name-field fill
+constexpr int kProtoEditArtBgColor = 31; // art preview background fill
+constexpr int kProtoEditPopupBgColor = 8456; // attack-type popup window background
+constexpr int kProtoEditDarkColor = 0; // art preview border and sub-labels
+
+// Resolves a proto-editor palette index to a shadowed text color.
+static int proto_text_color(int colorIndex)
+{
+    return _colorTable[colorIndex] | FONT_SHADOW;
+}
+
+inline int proto_text_color_normal()
+{
+    return proto_text_color(kProtoEditNormalColor);
+}
+
+inline int proto_text_color_title()
+{
+    return proto_text_color(kProtoEditTitleColor);
+}
+
+inline int proto_text_color_dialog()
+{
+    return _colorTable[kProtoEditDialogColor];
+}
 
 static const char* proto_ed_title = "Prototype Editor";
 
@@ -172,7 +200,6 @@ static const char* attack_anim_strs[] = {
     "fire_burst",
     "fire_continuous",
 };
-
 
 // mp_perk_max
 constexpr int kPerkMax = PERK_COUNT;
@@ -224,21 +251,7 @@ int proto_choose_container_flags(Proto* proto)
         "Magic Hands Grnd",
         0);
 
-    if ((proto->item.data.container.openFlags & 0x1) != 0) {
-        windowDrawText(win,
-            yesno[YES],
-            50,
-            125,
-            15,
-            _colorTable[32747] | 0x10000);
-    } else {
-        windowDrawText(win,
-            yesno[NO],
-            50,
-            125,
-            15,
-            _colorTable[32747] | 0x10000);
-    }
+    windowDrawText(win, yesno[(proto->item.data.container.openFlags & 0x1) != 0 ? YES : NO], 50, 125, 15, proto_text_color_normal());
 
     _win_register_text_button(win,
         10,
@@ -250,21 +263,7 @@ int proto_choose_container_flags(Proto* proto)
         "Cannot Pick Up",
         0);
 
-    if (_proto_action_can_pickup(proto->pid)) {
-        windowDrawText(win,
-            yesno[YES],
-            50,
-            125,
-            36,
-            _colorTable[32747] | 0x10000);
-    } else {
-        windowDrawText(win,
-            yesno[NO],
-            50,
-            125,
-            36,
-            _colorTable[32747] | 0x10000);
-    }
+    windowDrawText(win, yesno[_proto_action_can_pickup(proto->pid) ? YES : NO], 50, 125, 36, proto_text_color_normal());
 
     windowDrawBorder(win);
     windowRefresh(win);
@@ -281,43 +280,11 @@ int proto_choose_container_flags(Proto* proto)
 
         if (input == '1') {
             proto->item.data.container.openFlags ^= 0x1;
-
-            if ((proto->item.data.container.openFlags & 0x1) != 0) {
-                windowDrawText(win,
-                    yesno[YES],
-                    50,
-                    125,
-                    15,
-                    _colorTable[32747] | 0x10000);
-            } else {
-                windowDrawText(win,
-                    yesno[NO],
-                    50,
-                    125,
-                    15,
-                    _colorTable[32747] | 0x10000);
-            }
-
+            windowDrawText(win, yesno[(proto->item.data.container.openFlags & 0x1) != 0 ? YES : NO], 50, 125, 15, proto_text_color_normal());
             windowRefresh(win);
         } else if (input == '2') {
             proto->item.extendedFlags ^= PROTO_EXT_FLAG_CAN_PICK_UP;
-
-            if (_proto_action_can_pickup(proto->pid)) {
-                windowDrawText(win,
-                    yesno[YES],
-                    50,
-                    125,
-                    36,
-                    _colorTable[32747] | 0x10000);
-            } else {
-                windowDrawText(win,
-                    yesno[NO],
-                    50,
-                    125,
-                    36,
-                    _colorTable[32747] | 0x10000);
-            }
-
+            windowDrawText(win, yesno[_proto_action_can_pickup(proto->pid) ? YES : NO], 50, 125, 36, proto_text_color_normal());
             windowRefresh(win);
         }
 
@@ -331,7 +298,7 @@ int proto_choose_container_flags(Proto* proto)
 }
 
 // 0x492A3C
-int proto_subdata_setup_int_button(const char* title, int key, int value, int min_value, int max_value, int* y, int itemIndex)
+void proto_subdata_setup_int_button(const char* title, int key, int value, int min_value, int max_value, int* y, int itemIndex)
 {
     char text[36];
     int button_x;
@@ -366,23 +333,21 @@ int proto_subdata_setup_int_button(const char* title, int key, int value, int mi
             38,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[32747] | 0x10000);
+            proto_text_color_normal());
     } else {
         windowDrawText(subwin,
             "<ERROR>",
             38,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[31744] | 0x10000);
+            proto_text_color(kProtoEditErrorColor));
     }
 
     *y += 21;
-
-    return 0;
 }
 
 // 0x492B28
-int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, int itemIndex)
+void proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, int itemIndex)
 {
     char text[36];
     char* pch;
@@ -422,23 +387,21 @@ int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, 
             80,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[32747] | 0x10000);
+            proto_text_color_normal());
     } else {
         windowDrawText(subwin,
             "None",
             80,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[992] | 0x10000);
+            proto_text_color(kProtoEditNoneColor));
     }
 
     *y += 21;
-
-    return 0;
 }
 
 // 0x492C20
-int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex)
+void proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, int itemIndex)
 {
     int button_x;
     int value_offset_x;
@@ -471,19 +434,17 @@ int proto_subdata_setup_pid_button(const char* title, int key, int pid, int* y, 
             49,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[32747] | 0x10000);
+            proto_text_color_normal());
     } else {
         windowDrawText(subwin,
             "None",
             49,
             button_x + value_offset_x,
             *y + 4,
-            _colorTable[992] | 0x10000);
+            proto_text_color(kProtoEditNoneColor));
     }
 
     *y += 21;
-
-    return 0;
 }
 
 // 0x492CF0
@@ -503,7 +464,7 @@ void proto_subdata_setup_x_str_button(const char* title, int key, int value, con
         *y -= 189;
     }
 
-    if (itemIndex > 8) {
+    if (itemIndex >= SUBDATA_ROWS_PER_COLUMN) {
         textWidth = 110;
         button_x = 165;
         value_offset_x = 74;
@@ -512,19 +473,19 @@ void proto_subdata_setup_x_str_button(const char* title, int key, int value, con
     _win_register_text_button(subwin, button_x, *y, -1, -1, -1, key, title, 0);
 
     const char* text;
-    int color;
+    int colorIndex;
     if (value >= base && value < upper) {
         text = strs[value - base];
-        color = _colorTable[32747];
+        colorIndex = kProtoEditNormalColor;
     } else if (value == -1) {
         text = "None";
-        color = _colorTable[992];
+        colorIndex = kProtoEditNoneColor;
     } else {
         text = "<ERROR>";
-        color = _colorTable[31744];
+        colorIndex = kProtoEditErrorColor;
     }
 
-    windowDrawText(subwin, text, textWidth, button_x + value_offset_x, *y + 4, color | 0x10000);
+    windowDrawText(subwin, text, textWidth, button_x + value_offset_x, *y + 4, _colorTable[colorIndex] | FONT_SHADOW);
 
     *y += 21;
 }
@@ -535,9 +496,9 @@ void proto_subdata_process_int_button(const char* title, int* value, int min, in
     int button_x = 10;
     int value_offset_x = 90;
 
-    if (itemIndex > 8) {
+    if (itemIndex >= SUBDATA_ROWS_PER_COLUMN) {
         button_x = 165;
-        itemIndex -= 9;
+        itemIndex -= SUBDATA_ROWS_PER_COLUMN;
         value_offset_x = 74;
     }
 
@@ -545,7 +506,7 @@ void proto_subdata_process_int_button(const char* title, int* value, int min, in
     if (win_get_num_i(&num, min, max, false, title, 100, 100) != -1) {
         char text[36];
         snprintf(text, sizeof(text), "%d", num);
-        windowDrawText(subwin, text, 38, button_x + value_offset_x, 21 * itemIndex + 15, _colorTable[32747] | 0x10000);
+        windowDrawText(subwin, text, 38, button_x + value_offset_x, 21 * itemIndex + 15, proto_text_color_normal());
         *value = num;
     }
 }
@@ -563,30 +524,17 @@ void proto_subdata_process_x_str_button(const char* title, int* value, const cha
     int textWidth = 135;
     int button_x = 10;
 
-    if (itemIndex > 8) {
+    if (itemIndex >= SUBDATA_ROWS_PER_COLUMN) {
         button_x = 165;
-        itemIndex -= 9;
+        itemIndex -= SUBDATA_ROWS_PER_COLUMN;
         textWidth = 110;
         value_offset_x = 74;
     }
 
-    int sel = _win_list_select(title, strs, upper - base, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+    int sel = _win_list_select(title, strs, upper - base, nullptr, 340, 200, proto_text_color_dialog());
     if (sel != -1) {
-        windowDrawText(subwin, strs[sel], textWidth, value_offset_x + button_x, 21 * itemIndex + 15, _colorTable[32747] | 0x10000);
+        windowDrawText(subwin, strs[sel], textWidth, value_offset_x + button_x, 21 * itemIndex + 15, proto_text_color_normal());
         *value = base + sel;
-    }
-}
-
-// Resolves an art name without its extension, falling back to "None".
-static void art_name_no_ext(int fid, char* buf)
-{
-    if (art_list_str(fid, buf) == -1) {
-        strcpy(buf, "None");
-    } else {
-        char* pch = strchr(buf, '.');
-        if (pch != nullptr) {
-            *pch = '\0';
-        }
     }
 }
 
@@ -596,8 +544,8 @@ void proto_subdata_process_fid_button(int* fidPtr, int itemIndex)
     int button_x = 10;
     int value_offset_x = 90;
 
-    if (itemIndex > 8) {
-        itemIndex -= 9;
+    if (itemIndex >= SUBDATA_ROWS_PER_COLUMN) {
+        itemIndex -= SUBDATA_ROWS_PER_COLUMN;
         value_offset_x = 74;
         button_x = 165;
     }
@@ -607,7 +555,7 @@ void proto_subdata_process_fid_button(int* fidPtr, int itemIndex)
 
     char text[36];
     art_name_no_ext(fid, text);
-    windowDrawText(subwin, text, 80, value_offset_x + button_x, 21 * itemIndex + 15, _colorTable[32747] | 0x10000);
+    windowDrawText(subwin, text, 80, value_offset_x + button_x, 21 * itemIndex + 15, proto_text_color_normal());
     *fidPtr = fid;
 }
 
@@ -619,8 +567,8 @@ void proto_subdata_process_pid_button(const char* title, int* pidPtr, int itemIn
     int value_offset_x = 90;
     int chooseObjectType = 0;
 
-    if (itemIndex > 8) {
-        itemIndex -= 9;
+    if (itemIndex >= SUBDATA_ROWS_PER_COLUMN) {
+        itemIndex -= SUBDATA_ROWS_PER_COLUMN;
         value_offset_x = 74;
         button_x = 165;
     }
@@ -633,7 +581,7 @@ void proto_subdata_process_pid_button(const char* title, int* pidPtr, int itemIn
 
     proto_choose_pid(&pid, chooseObjectType, 1, chooseSubtype);
     if (pid != -1) {
-        windowDrawText(subwin, protoGetName(pid), 49, value_offset_x + button_x, 21 * itemIndex + 15, _colorTable[32747] | 0x10000);
+        windowDrawText(subwin, protoGetName(pid), 49, value_offset_x + button_x, 21 * itemIndex + 15, proto_text_color_normal());
         *pidPtr = pid;
     }
 }
@@ -675,8 +623,8 @@ void proto_item_subdata_edit_init(Proto* proto)
         int valueX = 100;
         for (int i = 0; i < 7; i++) {
             snprintf(text, sizeof(text), "%d", proto->item.data.armor.damageResistance[i]);
-            windowDrawText(subwin, text, 26, valueX, y + 4, kProtoEditNormalColor | 0x10000);
-            windowDrawText(subwin, gDamageTypeNames[i], 35, valueX - 6, labelY + 14, kProtoEditNormalColor);
+            windowDrawText(subwin, text, 26, valueX, y + 4, proto_text_color_normal());
+            windowDrawText(subwin, gDamageTypeNames[i], 35, valueX - 6, labelY + 14, _colorTable[kProtoEditDarkColor]);
             valueX += 37;
         }
 
@@ -685,7 +633,7 @@ void proto_item_subdata_edit_init(Proto* proto)
         valueX = 100;
         for (int i = 0; i < 7; i++) {
             snprintf(text, sizeof(text), "%d", proto->item.data.armor.damageThreshold[i]);
-            windowDrawText(subwin, text, 26, valueX, y + 4, kProtoEditNormalColor | 0x10000);
+            windowDrawText(subwin, text, 26, valueX, y + 4, proto_text_color_normal());
             valueX += 37;
         }
 
@@ -722,7 +670,7 @@ void proto_item_subdata_edit_init(Proto* proto)
     }
     case ITEM_TYPE_WEAPON: {
         _win_register_text_button(subwin, 10, y, -1, -1, -1, '1', "Flags", 0);
-        windowDrawText(subwin, (proto->item.extendedFlags & PROTO_EXT_FLAG_IS_TWO_HANDED) != 0 ? "2Hnd" : "1Hnd", 30, 100, y + 4, kProtoEditNormalColor | 0x10000);
+        windowDrawText(subwin, (proto->item.extendedFlags & PROTO_EXT_FLAG_IS_TWO_HANDED) != 0 ? "2Hnd" : "1Hnd", 30, 100, y + 4, proto_text_color_normal());
         y += 21;
         proto_subdata_setup_str_button("Anim Code", '2', proto->item.data.weapon.animationCode, anim_code_strs, 11, &y, 1);
         proto_subdata_setup_int_button("Min Dmg", '3', proto->item.data.weapon.minDamage, 0, 32000, &y, 2);
@@ -743,9 +691,9 @@ void proto_item_subdata_edit_init(Proto* proto)
         _win_register_text_button(subwin, 165, y, -1, -1, -1, '(', "Sound ID", 0);
         if (proto->item.data.weapon.soundCode != 0) {
             snprintf(text, sizeof(text), "%c", proto->item.data.weapon.soundCode);
-            windowDrawText(subwin, text, 25, 239, y + 4, kProtoEditNormalColor | 0x10000);
+            windowDrawText(subwin, text, 25, 239, y + 4, proto_text_color_normal());
         } else {
-            windowDrawText(subwin, "None", 25, 239, y + 4, _colorTable[31744] | 0x10000);
+            windowDrawText(subwin, "None", 25, 239, y + 4, proto_text_color(kProtoEditErrorColor));
         }
         break;
     }
@@ -791,7 +739,7 @@ void proto_item_subdata_edit_handle(Proto* proto, int key)
                     break;
                 }
                 snprintf(text, sizeof(text), "%d", num);
-                windowDrawText(subwin, text, 26, rowY, 36, kProtoEditNormalColor | 0x10000);
+                windowDrawText(subwin, text, 26, rowY, 36, proto_text_color_normal());
                 windowRefresh(subwin);
                 proto->item.data.armor.damageResistance[i] = num;
                 rowY += 37;
@@ -807,7 +755,7 @@ void proto_item_subdata_edit_handle(Proto* proto, int key)
                     break;
                 }
                 snprintf(text, sizeof(text), "%d", num);
-                windowDrawText(subwin, text, 26, rowY, 57, kProtoEditNormalColor | 0x10000);
+                windowDrawText(subwin, text, 26, rowY, 57, proto_text_color_normal());
                 windowRefresh(subwin);
                 proto->item.data.armor.damageThreshold[i] = num;
                 rowY += 37;
@@ -833,7 +781,7 @@ void proto_item_subdata_edit_handle(Proto* proto, int key)
         } else if (key == '2') {
             proto_choose_container_flags(proto);
             snprintf(text, sizeof(text), "%d", proto->item.data.container.openFlags);
-            windowDrawText(subwin, text, 50, 100, 36, kProtoEditNormalColor | 0x10000);
+            windowDrawText(subwin, text, 50, 100, 36, proto_text_color_normal());
         } else {
             return;
         }
@@ -902,7 +850,7 @@ void proto_item_subdata_edit_handle(Proto* proto, int key)
         case '1': {
             proto->item.extendedFlags ^= PROTO_EXT_FLAG_IS_TWO_HANDED;
             const char* label = (proto->item.extendedFlags & PROTO_EXT_FLAG_IS_TWO_HANDED) != 0 ? "2Hnd" : "1Hnd";
-            windowDrawText(subwin, label, 50, 100, 15, kProtoEditNormalColor | 0x10000);
+            windowDrawText(subwin, label, 50, 100, 15, proto_text_color_normal());
             break;
         }
         case '2':
@@ -954,11 +902,11 @@ void proto_item_subdata_edit_handle(Proto* proto, int key)
             proto_subdata_process_int_button("Maximum Ammo:", &proto->item.data.weapon.ammoCapacity, 0, 32000, 16);
             break;
         case '(': {
-            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, proto_text_color_dialog());
             if (sel != -1) {
                 proto->item.data.weapon.soundCode = sound_code_strs[sel][0];
                 snprintf(text, sizeof(text), "%c", proto->item.data.weapon.soundCode);
-                windowDrawText(subwin, text, 25, 239, 183, kProtoEditNormalColor | 0x10000);
+                windowDrawText(subwin, text, 25, 239, 183, proto_text_color_normal());
             }
             break;
         }
@@ -1037,7 +985,7 @@ const char* proto_wall_light_str(int flags)
 }
 
 // proto_edit_init
-int proto_edit_init(int* outWin, int pid, Proto** outProto, unsigned char** outImgPos, int width)
+int proto_edit_init(int* outWin, int pid, Proto** outProto, int width)
 {
     Proto* proto;
     if (protoGetProto(pid, &proto) == -1) {
@@ -1059,19 +1007,18 @@ int proto_edit_init(int* outWin, int pid, Proto** outProto, unsigned char** outI
     windowDrawBorder(win);
 
     int titleWidth = fontGetStringWidth(proto_ed_title);
-    windowDrawText(win, proto_ed_title, titleWidth, (width - titleWidth) / 2, 18, kProtoEditTitleColor | FONT_SHADOW);
+    windowDrawText(win, proto_ed_title, titleWidth, (width - titleWidth) / 2, 18, proto_text_color_title());
 
     char text[80];
     strcpy(text, artGetObjectTypeName(type));
     text[0] = toupper(static_cast<unsigned char>(text[0]));
     int typeWidth = fontGetStringWidth(text);
-    windowDrawText(win, text, typeWidth, (width - typeWidth) / 2, 28, kProtoEditTitleColor | FONT_SHADOW);
+    windowDrawText(win, text, typeWidth, (width - typeWidth) / 2, 28, proto_text_color_title());
 
     unsigned char* buf = windowGetBuffer(win);
     unsigned char* imgPos = buf + width * 26 - 130;
-    *outImgPos = imgPos;
-    bufferDrawRect(imgPos - width - 1, width, 0, 0, 101, 101, kProtoEditBoxBorderColor);
-    bufferFill(imgPos, 100, 100, width, edit_window_color);
+    bufferDrawRect(imgPos - width - 1, width, 0, 0, 101, 101, _colorTable[kProtoEditDarkColor]);
+    bufferFill(imgPos, 100, 100, width, _colorTable[kProtoEditArtBgColor]);
 
     int fid = proto->fid;
     if (artExists(fid)) {
@@ -1084,7 +1031,7 @@ int proto_edit_init(int* outWin, int pid, Proto** outProto, unsigned char** outI
                 *pch = '\0';
             }
         }
-        windowDrawText(win, text, 80, width - 110, 130, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 80, width - 110, 130, proto_text_color_normal());
     }
 
     _win_register_text_button(win, width - 115, 150, -1, -1, KEY_BRACKET_LEFT, -1, "<<", 0);
@@ -1093,23 +1040,23 @@ int proto_edit_init(int* outWin, int pid, Proto** outProto, unsigned char** outI
     _win_register_text_button(win, 40, 15, -1, -1, KEY_EQUAL, -1, "*)", 0);
 
     _win_register_text_button(win, 10, 44, -1, -1, -1, KEY_LOWERCASE_N, "Name", 0);
-    windowDrawText(win, protoGetName(proto->pid), 130, 90, 48, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, protoGetName(proto->pid), 130, 90, 48, proto_text_color_normal());
 
     _win_register_text_button(win, 10, 65, -1, -1, -1, KEY_LOWERCASE_D, "Description", 0);
-    windowDrawText(win, protoGetDescription(pid), 400, 90, 67, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, protoGetDescription(pid), 400, 90, 67, proto_text_color_normal());
 
     if (type != OBJ_TYPE_TILE) {
         _win_register_text_button(win, 150, 86, -1, -1, -1, KEY_UPPERCASE_S, "Scripts", 0);
         _win_register_text_button(win, 170, 107, -1, -1, -1, KEY_LOWERCASE_F, "Flags", 0);
 
         if (type == OBJ_TYPE_WALL || type == OBJ_TYPE_SCENERY) {
-            windowDrawText(win, proto_wall_light_str(proto->extendedFlags), 60, 235, 131, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, proto_wall_light_str(proto->extendedFlags), 60, 235, 131, proto_text_color_normal());
         }
 
         _win_register_text_button(win, 260, 107, -1, -1, -1, KEY_UPPERCASE_F, "Flags-Ext", 0);
 
         if (type == OBJ_TYPE_SCENERY && proto->scenery.type == 0) {
-            windowDrawText(win, yesno[(proto->scenery.data.door.openFlags & 0x04) != 0 ? YES : NO], 60, 375, 131, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, yesno[(proto->scenery.data.door.openFlags & 0x04) != 0 ? YES : NO], 60, 375, 131, proto_text_color_normal());
             _win_register_text_button(win, 360, 107, -1, -1, -1, KEY_UPPERCASE_W, "WalkThru", 0);
         }
     }
@@ -1126,12 +1073,12 @@ int proto_edit_init(int* outWin, int pid, Proto** outProto, unsigned char** outI
 }
 
 // reg_text_int
-void reg_text_int(int win, int y, int key, const char* title, int value, int* rowY, bool advance)
+void reg_text_int(int win, int valueX, int key, const char* title, int value, int* rowY, bool advance)
 {
     char text[48];
-    _win_register_text_button(win, y - 80, *rowY, -1, -1, -1, key, title, 0);
+    _win_register_text_button(win, valueX - 80, *rowY, -1, -1, -1, key, title, 0);
     snprintf(text, sizeof(text), "%d", value);
-    windowDrawText(win, text, 50, y, *rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, text, 50, valueX, *rowY + 4, proto_text_color_normal());
     if (advance) {
         *rowY += 21;
     }
@@ -1143,7 +1090,7 @@ void reg_text_str(int win, int key, const char* title, const char* value, int* r
     _win_register_text_button(win, 10, *rowY, -1, -1, -1, key, title, 0);
     int titleWidth = fontGetStringWidth(title);
     int overflow = titleWidth > 60 ? titleWidth - 60 : 0;
-    windowDrawText(win, value, 128 - overflow, overflow + 90, *rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, value, 128 - overflow, overflow + 90, *rowY + 4, proto_text_color_normal());
     *rowY += 21;
 }
 
@@ -1159,7 +1106,7 @@ void reg_text_int_update(int win, int* value, int min, int max, const char* titl
 
     char text[36];
     snprintf(text, sizeof(text), "%d", num);
-    windowDrawText(win, text, 130, 90, textY, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, text, 130, 90, textY, proto_text_color_normal());
 }
 
 // 0x4960B8
@@ -1171,12 +1118,12 @@ void proto_critter_flags_redraw(int win, int pid)
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
         if (critterFlagCheck(pid, critFlagList[index])) {
-            color = _colorTable[992];
+            color = _colorTable[kProtoEditNoneColor];
         } else {
-            color = _colorTable[10570];
+            color = edit_window_color;
         }
 
-        windowDrawText(win, critFlagStrs[index], 44, x, 195, color | 0x10000);
+        windowDrawText(win, critFlagStrs[index], 44, x, 195, color | FONT_SHADOW);
         x += 48;
     }
 }
@@ -1193,7 +1140,7 @@ int proto_critter_flags_modify(int pid)
         return -1;
     }
 
-    rc = win_yes_no("Can't be stolen from?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Can't be stolen from?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1202,7 +1149,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_STEAL;
     }
 
-    rc = win_yes_no("Can't Drop items?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Can't Drop items?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1211,7 +1158,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_DROP;
     }
 
-    rc = win_yes_no("Can't lose limbs?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Can't lose limbs?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1220,7 +1167,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_LIMBS;
     }
 
-    rc = win_yes_no("Dead Bodies Can't Age?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Dead Bodies Can't Age?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1229,7 +1176,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_AGE;
     }
 
-    rc = win_yes_no("Can't Heal by Aging?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Can't Heal by Aging?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1238,7 +1185,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_NO_HEAL;
     }
 
-    rc = win_yes_no("Is Invlunerable????", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Is Invlunerable????", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1247,7 +1194,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_INVULNERABLE;
     }
 
-    rc = win_yes_no("Can't Flatten on Death?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Can't Flatten on Death?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1256,7 +1203,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_FLAT;
     }
 
-    rc = win_yes_no("Has Special Death?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Has Special Death?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1265,7 +1212,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_SPECIAL_DEATH;
     }
 
-    rc = win_yes_no("Has Extra Hand-To-Hand Range?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Has Extra Hand-To-Hand Range?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1274,7 +1221,7 @@ int proto_critter_flags_modify(int pid)
         flags |= CRITTER_LONG_LIMBS;
     }
 
-    rc = win_yes_no("Can't be knocked back?", 340, 200, _colorTable[32747] | 0x10000);
+    rc = win_yes_no("Can't be knocked back?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return -1;
     }
@@ -1284,7 +1231,7 @@ int proto_critter_flags_modify(int pid)
     }
 
     if (!can_modify_protos) {
-        win_timed_msg("Can't modify protos!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Can't modify protos!", proto_text_color(kProtoEditErrorColor));
         return -1;
     }
 
@@ -1315,7 +1262,7 @@ int mp_pick_kill_type()
         nullptr,
         50,
         100,
-        _colorTable[32747] | 0x10000);
+        proto_text_color_dialog());
 }
 
 // 0x497568
@@ -1343,7 +1290,7 @@ int proto_pick_ai_packet(int* value)
         nullptr,
         50,
         100,
-        _colorTable[32747] | 0x10000);
+        proto_text_color_dialog());
     if (rc != -1) {
         *value = rc;
     }
@@ -1357,6 +1304,7 @@ int proto_pick_ai_packet(int* value)
 }
 
 // proto_action_can_look_at
+// Vanilla always returns true; pid unused.
 bool proto_action_can_look_at(int pid)
 {
     return true;
@@ -1430,7 +1378,7 @@ void reg_mod_flags(int* flags, int* extendedFlags, int objectType, int subtype)
             int textX = 90;
             int textY = 0;
             int valueIndex = -1;
-            int color = kProtoEditNormalColor | FONT_SHADOW;
+            int color = proto_text_color_normal();
 
             switch (keyCode) {
             case '1':
@@ -1570,11 +1518,11 @@ void reg_mod_flags(int* flags, int* extendedFlags, int objectType, int subtype)
 void proto_action_redraw(int win, int pid)
 {
     int colors[5];
-    colors[0] = _proto_action_can_use(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
-    colors[1] = _proto_action_can_use_on(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
-    colors[2] = proto_action_can_look_at(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
-    colors[3] = _proto_action_can_talk_to(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
-    colors[4] = _proto_action_can_pickup(pid) ? kProtoEditTitleColor : kProtoEditNormalColor;
+    colors[0] = _proto_action_can_use(pid) ? _colorTable[kProtoEditNoneColor] : edit_window_color;
+    colors[1] = _proto_action_can_use_on(pid) ? _colorTable[kProtoEditNoneColor] : edit_window_color;
+    colors[2] = proto_action_can_look_at(pid) ? _colorTable[kProtoEditNoneColor] : edit_window_color;
+    colors[3] = _proto_action_can_talk_to(pid) ? _colorTable[kProtoEditNoneColor] : edit_window_color;
+    colors[4] = _proto_action_can_pickup(pid) ? _colorTable[kProtoEditNoneColor] : edit_window_color;
 
     int x = 210;
     for (int index = 0; index < 5; index++) {
@@ -1595,7 +1543,7 @@ void proto_action_modify(int pid)
     int type = PID_TYPE(pid);
 
     if (type == OBJ_TYPE_ITEM || type == OBJ_TYPE_SCENERY || type == OBJ_TYPE_WALL) {
-        int rc = win_yes_no("Useable?", 340, 200, kProtoEditNormalColor);
+        int rc = win_yes_no("Useable?", 340, 200, proto_text_color_dialog());
         if (rc == -1) {
             return;
         }
@@ -1603,7 +1551,7 @@ void proto_action_modify(int pid)
             flags |= PROTO_EXT_FLAG_CAN_USE;
         }
 
-        rc = win_yes_no("Useable On Something?", 340, 200, kProtoEditNormalColor);
+        rc = win_yes_no("Useable On Something?", 340, 200, proto_text_color_dialog());
         if (rc == -1) {
             return;
         }
@@ -1612,7 +1560,7 @@ void proto_action_modify(int pid)
         }
     }
 
-    int rc = win_yes_no("Can be looked at?", 340, 200, kProtoEditNormalColor);
+    int rc = win_yes_no("Can be looked at?", 340, 200, proto_text_color_dialog());
     if (rc == -1) {
         return;
     }
@@ -1621,7 +1569,7 @@ void proto_action_modify(int pid)
     }
 
     if (type == OBJ_TYPE_CRITTER) {
-        rc = win_yes_no("Can be talked to?", 340, 200, kProtoEditNormalColor);
+        rc = win_yes_no("Can be talked to?", 340, 200, proto_text_color_dialog());
         if (rc == -1) {
             return;
         }
@@ -1631,7 +1579,7 @@ void proto_action_modify(int pid)
     }
 
     if (type == OBJ_TYPE_ITEM) {
-        rc = win_yes_no("Can it be picked up?", 340, 200, kProtoEditNormalColor);
+        rc = win_yes_no("Can it be picked up?", 340, 200, proto_text_color_dialog());
         if (rc == -1) {
             return;
         }
@@ -1641,7 +1589,7 @@ void proto_action_modify(int pid)
     }
 
     if (!can_modify_protos) {
-        win_timed_msg("Can't modify protos!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Can't modify protos!", proto_text_color(kProtoEditErrorColor));
         return;
     }
 
@@ -1672,7 +1620,7 @@ void proto_edit_mod_fid(int win, int objectType, int* fidPtr, int width, int del
     if (artExists(fid)) {
         unsigned char* buf = windowGetBuffer(win);
         unsigned char* imgPos = buf + width * 26 - 130;
-        bufferFill(imgPos, 100, 100, width, edit_window_color);
+        bufferFill(imgPos, 100, 100, width, _colorTable[kProtoEditArtBgColor]);
         *fidPtr = fid;
         artRender(fid, imgPos, 100, 100, width);
 
@@ -1685,7 +1633,7 @@ void proto_edit_mod_fid(int win, int objectType, int* fidPtr, int width, int del
             if (pch != nullptr) {
                 *pch = '\0';
             }
-            windowDrawText(win, text, 80, width - 110, 130, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, text, 80, width - 110, 130, proto_text_color_normal());
 
             rect.left = width - 130;
             rect.top = 130;
@@ -1721,7 +1669,7 @@ int proto_edit_mod_pid(int win, Proto** protoPtr, int width, int delta)
 
     unsigned char* buf = windowGetBuffer(win);
     unsigned char* imgPos = buf + width * 26 - 130;
-    bufferFill(imgPos, 100, 100, width, edit_window_color);
+    bufferFill(imgPos, 100, 100, width, _colorTable[kProtoEditArtBgColor]);
     artRender(newProto->fid, imgPos, 100, 100, width);
 
     Rect rect = { width - 130, 25, width - 30, 125 };
@@ -1733,7 +1681,7 @@ int proto_edit_mod_pid(int win, Proto** protoPtr, int width, int delta)
         if (pch != nullptr) {
             *pch = '\0';
         }
-        windowDrawText(win, text, 80, width - 110, 130, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 80, width - 110, 130, proto_text_color_normal());
 
         rect.left = width - 130;
         rect.top = 130;
@@ -1746,21 +1694,23 @@ int proto_edit_mod_pid(int win, Proto** protoPtr, int width, int delta)
     rect.top = 140;
     rect.right = width - 35;
     rect.bottom = fontGetLineHeight() + 140;
-    windowFill(win, rect.left, rect.top, 80, fontGetLineHeight(), kProtoEditNormalColor);
-    windowDrawText(win, protoGetName(newProto->pid), 110, rect.left, rect.top, kProtoEditNormalColor | FONT_SHADOW);
+    windowFill(win, rect.left, rect.top, 80, fontGetLineHeight(), proto_text_color_dialog());
+    windowDrawText(win, protoGetName(newProto->pid), 110, rect.left, rect.top, proto_text_color_normal());
     windowRefreshRect(win, &rect);
     return 0;
 }
 
-// proto_choose_fid
-void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType)
+// Shared chooser window + loop; init/step/selectNone supply the per-type bits.
+// Home/End step by homeDelta/endDelta when nonzero. True on commit, false on cancel.
+template <typename InitFn, typename StepFn, typename NoneFn>
+static bool proto_run_chooser(int homeDelta, int endDelta, InitFn init, StepFn step, NoneFn selectNone)
 {
     constexpr int kWinW = 160;
     constexpr int kWinH = 240;
 
     int win = windowCreate(360, 140, kWinW, kWinH, edit_window_color, WINDOW_MOVE_ON_TOP);
     if (win == -1) {
-        return;
+        return false;
     }
 
     windowDrawBorder(win);
@@ -1769,51 +1719,43 @@ void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType)
 
     unsigned char* buf = windowGetBuffer(win);
     int width = kWinW;
+    bufferDrawRect(buf + width * 26 - 130 - width - 1, width, 0, 0, 101, 101, _colorTable[kProtoEditDarkColor]);
 
-    if (!useFidObjectType && artExists(*fidPtr)) {
-        // keep current fid
-    } else {
-        *fidPtr = buildFid(objectType, 0, 0, 0, 0);
-    }
+    init(win, width);
 
-    int fid = *fidPtr;
-    bufferDrawRect(buf + width * 26 - 130 - width - 1, width, 0, 0, 101, 101, kProtoEditBoxBorderColor);
-    proto_edit_mod_fid(win, objectType, &fid, width);
-    _win_register_text_button(win, kWinW - 50, kWinH - 65, -1, -1, -1, KEY_LOWERCASE_N, "None", 0);
+    _win_register_text_button(win, 110, kWinH - 65, -1, -1, -1, KEY_LOWERCASE_N, "None", 0);
     _win_register_text_button(win, 10, kWinH - 40, -1, -1, -1, KEY_BAR, "Done", 0);
-    _win_register_text_button(win, kWinW - 60, kWinH - 40, -1, -1, -1, KEY_ESCAPE, "Cancel", 0);
+    _win_register_text_button(win, 100, kWinH - 40, -1, -1, -1, KEY_ESCAPE, "Cancel", 0);
     windowRefresh(win);
 
     while (true) {
         sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
-        bool done = false;
+        bool commit = false;
 
-        if (keyCode == KEY_ESCAPE || keyCode == KEY_BAR) {
-            done = true;
-        } else if (keyCode == KEY_RETURN) {
-            keyCode = KEY_BAR;
-            done = true;
+        if (keyCode == KEY_ESCAPE) {
+            windowDestroy(win);
+            return false;
+        }
+        if (keyCode == KEY_BAR || keyCode == KEY_RETURN) {
+            commit = true;
         } else if (keyCode == KEY_BRACKET_LEFT) {
-            proto_edit_mod_fid(win, objectType, &fid, width, -1);
+            step(win, width, -1);
         } else if (keyCode == KEY_BRACKET_RIGHT) {
-            proto_edit_mod_fid(win, objectType, &fid, width, 1);
+            step(win, width, 1);
         } else if (keyCode == KEY_LOWERCASE_N) {
-            fid = -1;
-            done = true;
-        } else if (keyCode == KEY_HOME) {
-            proto_edit_mod_fid(win, objectType, &fid, width, -15000);
-        } else if (keyCode == KEY_END) {
-            proto_edit_mod_fid(win, objectType, &fid, width, art_total(objectType));
+            selectNone();
+            commit = true;
+        } else if (homeDelta != 0 && keyCode == KEY_HOME) {
+            step(win, width, homeDelta);
+        } else if (endDelta != 0 && keyCode == KEY_END) {
+            step(win, width, endDelta);
         }
 
-        if (done) {
+        if (commit) {
             windowDestroy(win);
-            if (keyCode != KEY_ESCAPE) {
-                *fidPtr = fid;
-            }
-            return;
+            return true;
         }
 
         renderPresent();
@@ -1821,24 +1763,56 @@ void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType)
     }
 }
 
-// Steps the chooser in `dir` until a proto of `subtype` is shown or a list
-// boundary is hit, then reverses to recover a match if the boundary was hit.
+// proto_choose_fid
+void proto_choose_fid(int* fidPtr, int objectType, int useFidObjectType)
+{
+    int fid = *fidPtr;
+    bool commit = proto_run_chooser(
+        -15000, art_total(objectType),
+        [&](int win, int width) {
+            if (useFidObjectType || !artExists(*fidPtr)) {
+                *fidPtr = buildFid(objectType, 0, 0, 0, 0);
+            }
+            fid = *fidPtr;
+            proto_edit_mod_fid(win, objectType, &fid, width);
+        },
+        [&](int win, int width, int dir) {
+            proto_edit_mod_fid(win, objectType, &fid, width, dir);
+        },
+        [&]() {
+            fid = -1;
+        });
+
+    if (commit) {
+        *fidPtr = fid;
+    }
+}
+
+// Steps by `dir` (step-before-check) to the next `subtype` proto or the list end; true if found.
+static bool proto_seek_subtype(int win, Proto** protoPtr, int width, int dir, int subtype)
+{
+    for (;;) {
+        if (proto_edit_mod_pid(win, protoPtr, width, dir) != 0) {
+            break; // reached the list boundary
+        }
+        if (proto_is_subtype(*protoPtr, subtype)) {
+            break;
+        }
+    }
+    return proto_is_subtype(*protoPtr, subtype);
+}
+
+// Next `subtype` proto in `dir`; reverses if the boundary is hit without a match.
 static void proto_step_to_subtype(int win, Proto** protoPtr, int width, int dir, int subtype)
 {
-    while (proto_edit_mod_pid(win, protoPtr, width, dir) == 0 && !proto_is_subtype(*protoPtr, subtype)) {
-    }
-    if (!proto_is_subtype(*protoPtr, subtype)) {
-        while (proto_edit_mod_pid(win, protoPtr, width, -dir) == 0 && !proto_is_subtype(*protoPtr, subtype)) {
-        }
+    if (!proto_seek_subtype(win, protoPtr, width, dir, subtype)) {
+        proto_seek_subtype(win, protoPtr, width, -dir, subtype);
     }
 }
 
 // proto_choose_pid
 void proto_choose_pid(int* pidPtr, int objectType, int hasPid, int subtype)
 {
-    constexpr int kWinW = 160;
-    constexpr int kWinH = 240;
-
     Proto* proto;
     if (!hasPid) {
         if (protoGetProto(*pidPtr, &proto) == -1) {
@@ -1852,59 +1826,21 @@ void proto_choose_pid(int* pidPtr, int objectType, int hasPid, int subtype)
         return;
     }
 
-    int win = windowCreate(360, 140, kWinW, kWinH, edit_window_color, WINDOW_MOVE_ON_TOP);
-    if (win == -1) {
-        return;
-    }
-
-    windowDrawBorder(win);
-    _win_register_text_button(win, 45, 150, -1, -1, KEY_BRACKET_LEFT, -1, "<<", 0);
-    _win_register_text_button(win, 75, 150, -1, -1, KEY_BRACKET_RIGHT, -1, ">>", 0);
-
-    unsigned char* buf = windowGetBuffer(win);
-    int width = kWinW;
-
-    bufferDrawRect(buf + width * 26 - 130 - width - 1, width, 0, 0, 101, 101, kProtoEditBoxBorderColor);
-    proto_edit_mod_pid(win, &proto, width, 0);
-
-    while (proto_edit_mod_pid(win, &proto, width, 1) == 0 && !proto_is_subtype(proto, subtype)) {
-    }
-
-    _win_register_text_button(win, 110, kWinH - 65, -1, -1, -1, KEY_LOWERCASE_N, "None", 0);
-    _win_register_text_button(win, 10, kWinH - 40, -1, -1, -1, KEY_BAR, "Done", 0);
-    _win_register_text_button(win, 100, kWinH - 40, -1, -1, -1, KEY_ESCAPE, "Cancel", 0);
-    windowRefresh(win);
-
-    while (true) {
-        sharedFpsLimiter.mark();
-
-        int keyCode = inputGetInput();
-        bool done = false;
-
-        if (keyCode == KEY_ESCAPE || keyCode == KEY_BAR) {
-            done = true;
-        } else if (keyCode == KEY_RETURN) {
-            keyCode = KEY_BAR;
-            done = true;
-        } else if (keyCode == KEY_BRACKET_LEFT) {
-            proto_step_to_subtype(win, &proto, width, -1, subtype);
-        } else if (keyCode == KEY_BRACKET_RIGHT) {
-            proto_step_to_subtype(win, &proto, width, 1, subtype);
-        } else if (keyCode == KEY_LOWERCASE_N) {
+    bool commit = proto_run_chooser(
+        0, 0,
+        [&](int win, int width) {
+            proto_edit_mod_pid(win, &proto, width, 0);
+            proto_seek_subtype(win, &proto, width, 1, subtype);
+        },
+        [&](int win, int width, int dir) {
+            proto_step_to_subtype(win, &proto, width, dir, subtype);
+        },
+        [&]() {
             proto->pid = -1;
-            done = true;
-        }
+        });
 
-        if (done) {
-            windowDestroy(win);
-            if (keyCode != KEY_ESCAPE) {
-                *pidPtr = proto->pid;
-            }
-            return;
-        }
-
-        renderPresent();
-        sharedFpsLimiter.throttle();
+    if (commit) {
+        *pidPtr = proto->pid;
     }
 }
 
@@ -1976,7 +1912,7 @@ int protoEdit(int protoId)
 
         if (rc == -2 || rc == -5 || rc == -6) {
             if (!can_modify_protos) {
-                win_timed_msg("Not capable of modifying prototypes from here.", _colorTable[31744] | 0x10000);
+                win_timed_msg("Not capable of modifying prototypes from here.", proto_text_color_title());
                 proto_remove(pid);
                 _proto_load_pid(pid, &proto);
                 return 0;
@@ -2035,11 +1971,6 @@ void swap_protos()
     // TODO: swap two prototype slots
 }
 
-static unsigned char itemIconsBgColor()
-{
-    return _colorTable[21];
-};
-
 // proto_choose_multi_pids_update
 static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, protoChooseFidCallback fidFunc, int pitch)
 {
@@ -2061,7 +1992,7 @@ static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, p
             int cellX = kGridX + col * kCellPitchX + 1;
             int cellY = kGridY + row * kCellPitchY + 1;
 
-            bufferFill(buf + cellY * pitch + cellX, kArtW, kArtH, pitch, itemIconsBgColor());
+            bufferFill(buf + cellY * pitch + cellX, kArtW, kArtH, pitch, _colorTable[kProtoEditArtBgColor]);
             Proto* proto;
             if (protoGetProto(pid, &proto) != -1) {
                 int fid = fidFunc ? fidFunc(proto) : proto->fid;
@@ -2069,8 +2000,8 @@ static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, p
 
                 const char* name = protoGetName(pid);
                 int textY = cellY + kArtH + 5;
-                bufferFill(buf + textY * pitch + cellX, kCellPitchX, fontGetLineHeight(), pitch, edit_window_color);
-                windowDrawText(win, name, 80, cellX, textY, _colorTable[32747] | FONT_SHADOW);
+                bufferFill(buf + textY * pitch + cellX, kCellPitchX, fontGetLineHeight(), pitch, proto_text_color_dialog());
+                windowDrawText(win, name, 80, cellX, textY, proto_text_color_normal());
             }
         }
     }
@@ -2113,7 +2044,7 @@ int protoChooseMultiPids(int pidType, protoChooseFidCallback fidFunc, protoChoos
             int cellY = kGridY + row * kCellPitchY;
             int keyCode = kBaseKey + row * kGridCols + col;
 
-            bufferDrawRect(buf, pitch, cellX, cellY, cellX + kCellBorderW - 1, cellY + kCellBorderH - 1, _colorTable[2]);
+            bufferDrawRect(buf, pitch, cellX, cellY, cellX + kCellBorderW - 1, cellY + kCellBorderH - 1, _colorTable[kProtoEditDarkColor]);
 
             int btn = buttonCreate(win, cellX, cellY, kCellBorderW, kCellBorderH, -1, -1, -1, keyCode, nullptr, nullptr, nullptr, 0);
             if (btn != -1) {
@@ -2241,7 +2172,7 @@ static bool proto_edit_script(int win, Proto* proto, char* name, size_t size)
         proto_scr_name(sel, name, size);
         proto->sid = sel;
     }
-    windowDrawText(win, name, 130, 240, 90, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, name, 130, 240, 90, proto_text_color_normal());
     windowRefresh(win);
     return true;
 }
@@ -2249,9 +2180,9 @@ static bool proto_edit_script(int win, Proto* proto, char* name, size_t size)
 // Picks a material from the list and redraws its label.
 static void proto_edit_material(int win, int* material)
 {
-    int sel = _win_list_select("Materials", gMaterialTypeNames, 8, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+    int sel = _win_list_select("Materials", gMaterialTypeNames, 8, nullptr, 100, 100, proto_text_color_dialog());
     *material = sel == -1 ? 0 : sel;
-    windowDrawText(win, gMaterialTypeNames[*material], 130, 90, 132, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, gMaterialTypeNames[*material], 130, 90, 132, proto_text_color_normal());
     windowRefresh(win);
 }
 
@@ -2282,7 +2213,7 @@ static void proto_change_proto_info(int pid, int mode)
     }
 
     char path[COMPAT_MAX_PATH];
-    snprintf(path, sizeof(path), "%spro_%.4s%s", "game\\", artGetObjectTypeName(type), ".msg");
+    snprintf(path, sizeof(path), "game\\pro_%.4s.msg", artGetObjectTypeName(type));
     if (!message_save(&_proto_msg_files[type], path)) {
         debugPrint("\nError attempting to message_save prototype name!");
     }
@@ -2293,7 +2224,7 @@ static void proto_edit_name(int win, int pid)
 {
     if (can_modify_protos) {
         proto_change_proto_info(pid, 0);
-        windowDrawText(win, protoGetName(pid), 130, 90, 48, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, protoGetName(pid), 130, 90, 48, proto_text_color_normal());
     }
     windowRefresh(win);
 }
@@ -2304,7 +2235,7 @@ static void proto_edit_description(int win, int pid)
     if (can_modify_protos) {
         proto_change_proto_info(pid, 1);
         windowFill(win, 90, 67, 280, fontGetLineHeight(), edit_window_color);
-        windowDrawText(win, protoGetDescription(pid), 280, 90, 67, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, protoGetDescription(pid), 280, 90, 67, proto_text_color_normal());
     }
     windowRefresh(win);
 }
@@ -2314,14 +2245,13 @@ static int proto_tile_edit(int pid)
 {
     int win;
     Proto* proto;
-    unsigned char* imgPos;
     int width = _scr_size.right - _scr_size.left + 1;
-    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+    if (proto_edit_init(&win, pid, &proto, width) == -1) {
         return -1;
     }
 
     if (proto->tile.material < 0 || proto->tile.material > 8) {
-        win_timed_msg("Proto Tile Error: Material out of range!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Proto Tile Error: Material out of range!", proto_text_color_title());
         windowDestroy(win);
         return -1;
     }
@@ -2367,6 +2297,8 @@ static int proto_tile_edit(int pid)
             proto_edit_name(win, pid);
             modified = true;
             break;
+        // The ±10 fid step passes OBJ_TYPE_ITEM in every editor (not the
+        // editor's own type) — faithful to the original mapper.
         case KEY_BRACE_LEFT:
             proto_edit_mod_fid(win, OBJ_TYPE_ITEM, &proto->tile.fid, width, -10);
             modified = true;
@@ -2395,9 +2327,8 @@ static int proto_misc_edit(int pid)
 {
     int win;
     Proto* proto;
-    unsigned char* imgPos;
     int width = _scr_size.right - _scr_size.left + 1;
-    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+    if (proto_edit_init(&win, pid, &proto, width) == -1) {
         return -1;
     }
 
@@ -2475,9 +2406,8 @@ static int proto_wall_edit(int pid)
 {
     int win;
     Proto* proto;
-    unsigned char* imgPos;
     int width = _scr_size.right - _scr_size.left + 1;
-    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+    if (proto_edit_init(&win, pid, &proto, width) == -1) {
         return -1;
     }
 
@@ -2488,16 +2418,16 @@ static int proto_wall_edit(int pid)
     if (proto->wall.sid != -1) {
         if (proto_scr_name(proto->wall.sid, scriptName, sizeof(scriptName)) == -1) {
             strcpy(scriptName, "Error: Bad script index!");
-            win_timed_msg(scriptName, _colorTable[31744] | 0x10000);
-            windowDrawText(win, scriptName, 130, 240, rowY + 4, _colorTable[31744] | 0x10000);
+            win_timed_msg(scriptName, proto_text_color(kProtoEditErrorColor));
+            windowDrawText(win, scriptName, 130, 240, rowY + 4, proto_text_color(kProtoEditErrorColor));
         } else {
-            windowDrawText(win, scriptName, 40, 240, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, scriptName, 40, 240, rowY + 4, proto_text_color_normal());
         }
     }
 
     rowY += 42;
     if (proto->wall.material < 0 || proto->wall.material > 8) {
-        win_timed_msg("Proto Wall Error: Material out of range!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Proto Wall Error: Material out of range!", proto_text_color_title());
         windowDestroy(win);
         return -1;
     }
@@ -2590,9 +2520,8 @@ static int proto_scenery_edit(int pid)
 {
     int win;
     Proto* proto;
-    unsigned char* imgPos;
     int width = _scr_size.right - _scr_size.left + 1;
-    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+    if (proto_edit_init(&win, pid, &proto, width) == -1) {
         return -1;
     }
 
@@ -2603,16 +2532,16 @@ static int proto_scenery_edit(int pid)
     if (proto->scenery.sid != -1) {
         if (proto_scr_name(proto->scenery.sid, text, sizeof(text)) == -1) {
             strcpy(text, "Error: Bad script index!");
-            win_timed_msg(text, _colorTable[31744] | 0x10000);
-            windowDrawText(win, text, 130, 240, rowY + 4, _colorTable[31744] | 0x10000);
+            win_timed_msg(text, proto_text_color(kProtoEditErrorColor));
+            windowDrawText(win, text, 130, 240, rowY + 4, proto_text_color(kProtoEditErrorColor));
         } else {
-            windowDrawText(win, text, 130, 240, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, text, 130, 240, rowY + 4, proto_text_color_normal());
         }
     }
 
     rowY += 21;
     if (proto->scenery.type < 0 || proto->scenery.type > 6) {
-        win_timed_msg("Proto Scenery Error: Type out of range!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Proto Scenery Error: Type out of range!", proto_text_color_title());
         windowDestroy(win);
         return -1;
     }
@@ -2620,7 +2549,7 @@ static int proto_scenery_edit(int pid)
     reg_text_str(win, KEY_LOWERCASE_T, "Type", gSceneryTypeNames[proto->scenery.type], &rowY);
 
     if (proto->scenery.material < 0 || proto->scenery.material > 8) {
-        win_timed_msg("Proto Scenery Error: Material out of range!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Proto Scenery Error: Material out of range!", proto_text_color_title());
         windowDestroy(win);
         return -1;
     }
@@ -2664,7 +2593,7 @@ static int proto_scenery_edit(int pid)
                 proto->scenery.data.door.openFlags ^= 0x04;
                 bool walkThru = (proto->scenery.data.door.openFlags & 0x04) != 0;
                 snprintf(text, sizeof(text), "Walk Thru: %s", walkThru ? "Yes" : "No");
-                windowDrawText(win, yesno[walkThru ? YES : NO], 60, 375, 131, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, yesno[walkThru ? YES : NO], 60, 375, 131, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
             }
@@ -2672,7 +2601,7 @@ static int proto_scenery_edit(int pid)
         case KEY_UPPERCASE_F:
             proto->scenery.extendedFlags ^= 1;
             snprintf(text, sizeof(text), "Magic Hands %s", (proto->scenery.extendedFlags & 1) != 0 ? "Ground" : "Middle");
-            win_timed_msg(text, _colorTable[31744] | 0x10000);
+            win_timed_msg(text, proto_text_color_title());
             windowRefresh(win);
             modified = true;
             break;
@@ -2695,26 +2624,26 @@ static int proto_scenery_edit(int pid)
             modified = true;
             break;
         case KEY_LOWERCASE_T: {
-            int sel = _win_list_select("Type", gSceneryTypeNames, 6, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+            int sel = _win_list_select("Type", gSceneryTypeNames, 6, nullptr, 100, 100, proto_text_color_dialog());
             if (sel == -1) {
                 sel = 0;
             }
             if (sel != proto->scenery.type) {
-                windowDrawText(win, "No", 130, 90, 300, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, "No", 130, 90, 300, proto_text_color_normal());
                 proto->scenery.type = sel;
                 proto_scenery_subdata_init(proto, sel);
-                windowDrawText(win, gSceneryTypeNames[sel], 130, 90, 111, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, gSceneryTypeNames[sel], 130, 90, 111, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
             }
             break;
         }
         case KEY_LOWERCASE_I: {
-            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, proto_text_color_dialog());
             if (sel != -1) {
                 proto->scenery.soundId = sound_code_strs[sel][0];
                 snprintf(text, sizeof(text), "%c", proto->scenery.soundId);
-                windowDrawText(win, text, 280, 90, 153, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, text, 280, 90, 153, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
             }
@@ -2763,13 +2692,13 @@ static int proto_item_temp_win(const char* prompt)
 {
     int width = fontGetStringWidth(prompt) + 50;
     int height = fontGetLineHeight() + 120;
-    int temp = windowCreate(340 - width, 200, width, height, edit_window_color, WINDOW_MOVE_ON_TOP);
+    int temp = windowCreate(340 - width, 200, width, height, _colorTable[kProtoEditPopupBgColor], WINDOW_MOVE_ON_TOP);
     if (temp == -1) {
         debugPrint("\nError creating temp_win!");
         return -1;
     }
 
-    windowDrawText(temp, prompt, fontGetStringWidth(prompt), 10, 10, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(temp, prompt, fontGetStringWidth(prompt), 10, 10, proto_text_color(kProtoEditNoneColor));
     windowRefresh(temp);
     return temp;
 }
@@ -2783,7 +2712,7 @@ static int proto_item_attack_popup(const char* prompt, const char* title)
         return -1;
     }
 
-    int sel = _win_list_select(title, attack_anim_strs, 9, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+    int sel = _win_list_select(title, attack_anim_strs, 9, nullptr, 340, 200, proto_text_color_dialog());
     windowDestroy(temp);
     return sel;
 }
@@ -2791,9 +2720,9 @@ static int proto_item_attack_popup(const char* prompt, const char* title)
 // Redraws the three weapon attack-type labels (primary/secondary/big gun).
 static void proto_item_redraw_attack(int win, Proto* proto)
 {
-    windowDrawText(win, attack_anim_strs[proto->item.extendedFlags & 0xF], 59, 330, 107, kProtoEditNormalColor | 0x10000);
-    windowDrawText(win, attack_anim_strs[(proto->item.extendedFlags & 0xF0) >> 4], 59, 330, 117, kProtoEditNormalColor | 0x10000);
-    windowDrawText(win, (proto->item.extendedFlags & PROTO_EXT_FLAG_BIG_GUN) != 0 ? "Big Gun" : "", 59, 330, 127, kProtoEditNormalColor | 0x10000);
+    windowDrawText(win, attack_anim_strs[proto->item.extendedFlags & 0xF], 59, 330, 107, proto_text_color_normal());
+    windowDrawText(win, attack_anim_strs[(proto->item.extendedFlags & 0xF0) >> 4], 59, 330, 117, proto_text_color_normal());
+    windowDrawText(win, (proto->item.extendedFlags & PROTO_EXT_FLAG_BIG_GUN) != 0 ? "Big Gun" : "", 59, 330, 127, proto_text_color_normal());
 }
 
 // Picks an inventory FID for the item and redraws its name.
@@ -2803,7 +2732,7 @@ static void proto_item_choose_inv_fid(int win, Proto* proto)
 
     char text[80];
     art_name_no_ext(proto->item.inventoryFid, text);
-    windowDrawText(win, text, 80, 235, 132, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, text, 80, 235, 132, proto_text_color_normal());
     windowRefresh(win);
 }
 
@@ -2833,7 +2762,7 @@ static void proto_item_edit_attack(int win, Proto* proto)
             return;
         }
 
-        int bigGun = win_yes_no("Is this a Big Gun?", 340, 200, kProtoEditNormalColor | 0x10000);
+        int bigGun = win_yes_no("Is this a Big Gun?", 340, 200, proto_text_color_dialog());
         windowDestroy(temp);
         if (bigGun == -1) {
             return;
@@ -2855,9 +2784,8 @@ static int proto_item_edit(int pid)
 {
     int win;
     Proto* proto;
-    unsigned char* imgPos;
     int width = _scr_size.right - _scr_size.left + 1;
-    if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+    if (proto_edit_init(&win, pid, &proto, width) == -1) {
         return -1;
     }
 
@@ -2868,16 +2796,16 @@ static int proto_item_edit(int pid)
     if (proto->item.sid != -1) {
         if (proto_scr_name(proto->item.sid, text, sizeof(text)) == -1) {
             strcpy(text, "Error: Bad script index!");
-            win_timed_msg(text, _colorTable[31744] | 0x10000);
-            windowDrawText(win, text, 130, 240, rowY + 4, _colorTable[31744] | 0x10000);
+            win_timed_msg(text, proto_text_color(kProtoEditErrorColor));
+            windowDrawText(win, text, 130, 240, rowY + 4, proto_text_color(kProtoEditErrorColor));
         } else {
-            windowDrawText(win, text, 130, 240, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, text, 130, 240, rowY + 4, proto_text_color_normal());
         }
     }
 
     rowY += 21;
     if (proto->item.type < 0 || proto->item.type >= ITEM_TYPE_COUNT) {
-        win_timed_msg("Proto Item Error: Type out of range!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Proto Item Error: Type out of range!", proto_text_color_title());
         proto_item_subdata_edit_exit();
         windowDestroy(win);
         return -1;
@@ -2888,14 +2816,14 @@ static int proto_item_edit(int pid)
 
     _win_register_text_button(win, 170, rowY, -1, -1, -1, KEY_UPPERCASE_I, "Inv Fid", 0);
     art_name_no_ext(proto->item.inventoryFid, text);
-    windowDrawText(win, text, 80, 235, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, text, 80, 235, rowY + 4, proto_text_color_normal());
 
     if (proto->item.type == ITEM_TYPE_WEAPON) {
         proto_item_redraw_attack(win, proto);
     }
 
     if (proto->item.material < 0 || proto->item.material > 8) {
-        win_timed_msg("Proto Item Error: Material out of range!", _colorTable[31744] | 0x10000);
+        win_timed_msg("Proto Item Error: Material out of range!", proto_text_color_title());
         proto_item_subdata_edit_exit();
         windowDestroy(win);
         return -1;
@@ -2950,24 +2878,24 @@ static int proto_item_edit(int pid)
             }
             break;
         case KEY_LOWERCASE_T: {
-            int sel = _win_list_select("Item Type", item_pro_type, ITEM_TYPE_COUNT, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+            int sel = _win_list_select("Item Type", item_pro_type, ITEM_TYPE_COUNT, nullptr, 100, 100, proto_text_color_dialog());
             if (sel != -1 && sel != proto->item.type) {
-                windowDrawText(win, "No", 130, 90, 300, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, "No", 130, 90, 300, proto_text_color_normal());
                 proto->item.type = sel;
                 proto_item_subdata_init(proto, sel);
                 proto_item_subdata_edit_init(proto);
-                windowDrawText(win, item_pro_type[sel], 130, 90, 111, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, item_pro_type[sel], 130, 90, 111, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
             }
             break;
         }
         case KEY_LOWERCASE_I: {
-            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+            int sel = _win_list_select("Pick Sound ID Code:", sound_code_strs, 41, nullptr, 340, 200, proto_text_color_dialog());
             if (sel != -1) {
                 proto->item.soundId = sound_code_strs[sel][0];
                 snprintf(text, sizeof(text), "%c", proto->item.soundId);
-                windowDrawText(win, text, 280, 90, 216, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, text, 280, 90, 216, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
             }
@@ -3074,7 +3002,7 @@ static void proto_critter_redraw_ai(int win, int aiPacket)
 {
     char text[80];
     strcpy(text, combat_ai_name(aiPacket));
-    windowDrawText(win, text, 80, 100, 174, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, text, 80, 100, 174, proto_text_color_normal());
 }
 
 // Edits a numeric critter bonus stat in place and redraws it at the given spot.
@@ -3085,7 +3013,7 @@ static void proto_critter_edit_bonus(int win, int* value, int min, int max, cons
     *value = num;
     char text[36];
     snprintf(text, sizeof(text), "%d", num);
-    windowDrawText(win, text, drawWidth, x, y, kProtoEditNormalColor | FONT_SHADOW);
+    windowDrawText(win, text, drawWidth, x, y, proto_text_color_normal());
 }
 
 // Copies armor class, resistances and thresholds from a stamped armor proto
@@ -3099,11 +3027,11 @@ static void proto_critter_stamp_armor(int win, Proto* proto, Proto* armor)
     for (int i = 0; i < 7; i++) {
         proto->critter.data.bonusStats[STAT_DAMAGE_RESISTANCE + i] = armor->item.data.armor.damageResistance[i];
         snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_DAMAGE_RESISTANCE + i]);
-        windowDrawText(win, text, 26, x, 258, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 26, x, 258, proto_text_color_normal());
 
         proto->critter.data.bonusStats[STAT_DAMAGE_THRESHOLD + i] = armor->item.data.armor.damageThreshold[i];
         snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_DAMAGE_THRESHOLD + i]);
-        windowDrawText(win, text, 26, x, 279, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 26, x, 279, proto_text_color_normal());
         x += 37;
     }
 }
@@ -3122,7 +3050,7 @@ static void proto_critter_edit_damage(int win, Proto* proto, bool threshold)
             break;
         }
         snprintf(text, sizeof(text), "%d", value);
-        windowDrawText(win, text, 26, x, textY, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 26, x, textY, proto_text_color_normal());
         proto->critter.data.bonusStats[base + i] = value;
         windowRefresh(win);
         x += 37;
@@ -3137,13 +3065,11 @@ static int proto_critter_edit(int pid)
 
     int exitKey = KEY_BAR;
     bool modified = false;
-    bool advancedReentry = false;
 
-    do {
+    while (true) {
         int win;
         Proto* proto;
-        unsigned char* imgPos;
-        if (proto_edit_init(&win, pid, &proto, &imgPos, width) == -1) {
+        if (proto_edit_init(&win, pid, &proto, width) == -1) {
             return -1;
         }
 
@@ -3154,10 +3080,10 @@ static int proto_critter_edit(int pid)
         if (proto->critter.sid != -1) {
             if (proto_scr_name(proto->critter.sid, text, sizeof(text)) == -1) {
                 strcpy(text, "Error: Bad script index!");
-                win_timed_msg(text, _colorTable[31744] | 0x10000);
-                windowDrawText(win, text, 130, 240, rowY + 4, _colorTable[31744] | 0x10000);
+                win_timed_msg(text, proto_text_color(kProtoEditErrorColor));
+                windowDrawText(win, text, 130, 240, rowY + 4, proto_text_color(kProtoEditErrorColor));
             } else {
-                windowDrawText(win, text, 130, 240, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, text, 130, 240, rowY + 4, proto_text_color_normal());
             }
         }
 
@@ -3168,23 +3094,23 @@ static int proto_critter_edit(int pid)
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_LOWERCASE_H, "Head Fid", 0);
         art_name_no_ext(proto->critter.headFid, text);
-        windowDrawText(win, text, 80, 80, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 80, 80, rowY + 4, proto_text_color_normal());
 
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_LOWERCASE_B, "Body Type", 0);
         if (proto->critter.data.bodyType < 0 || proto->critter.data.bodyType >= BODY_TYPE_COUNT) {
-            win_timed_msg("Proto Critter Error: Body out of range!", _colorTable[31744] | 0x10000);
+            win_timed_msg("Proto Critter Error: Body out of range!", proto_text_color_title());
             windowDestroy(win);
             return -1;
         }
-        windowDrawText(win, body_type_strs[proto->critter.data.bodyType], 80, 85, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, body_type_strs[proto->critter.data.bodyType], 80, 85, rowY + 4, proto_text_color_normal());
 
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_A, "AI Packet", 0);
         proto_critter_redraw_ai(win, proto->critter.aiPacket);
         _win_register_text_button(win, 220, rowY, -1, -1, -1, KEY_UPPERCASE_T, "Team Num", 0);
         snprintf(text, sizeof(text), "%d", proto->critter.team);
-        windowDrawText(win, text, 80, 300, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 80, 300, rowY + 4, proto_text_color_normal());
 
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_EXCLAMATION, "Critter Flags", 0);
@@ -3193,46 +3119,46 @@ static int proto_critter_edit(int pid)
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_X, "Exp. Val", 0);
         snprintf(text, sizeof(text), "%d", proto->critter.data.experience);
-        windowDrawText(win, text, 80, 80, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 80, 80, rowY + 4, proto_text_color_normal());
         _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_UPPERCASE_B, "Barter", 0);
-        windowDrawText(win, yesno[(proto->critter.data.flags & 2) != 0 ? YES : NO], 50, 200, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, yesno[(proto->critter.data.flags & 2) != 0 ? YES : NO], 50, 200, rowY + 4, proto_text_color_normal());
         _win_register_text_button(win, 230, rowY, -1, -1, -1, KEY_UPPERCASE_D, "Dmg Type", 0);
-        windowDrawText(win, gDamageTypeNames[proto->critter.data.damageType], 50, 320, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, gDamageTypeNames[proto->critter.data.damageType], 50, 320, rowY + 4, proto_text_color_normal());
 
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_K, "Kill Type", 0);
         const char* killName = killTypeGetName(proto->critter.data.killType);
         if (killName != nullptr) {
-            windowDrawText(win, killName, 80, 80, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, killName, 80, 80, rowY + 4, proto_text_color_normal());
         }
         _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_LOWERCASE_C, "Crit. Bonus", 0);
         snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_CRITICAL_CHANCE]);
-        windowDrawText(win, text, 60, 200, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 60, 200, rowY + 4, proto_text_color_normal());
         _win_register_text_button(win, 310, rowY, -1, -1, -1, KEY_PERCENT, "Stamp Armor", 0);
 
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_H, "HP Bonus", 0);
         snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_MAXIMUM_HIT_POINTS]);
-        windowDrawText(win, text, 60, 100, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 60, 100, rowY + 4, proto_text_color_normal());
         _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_LOWERCASE_S, "Seq. Bonus", 0);
         snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_SEQUENCE]);
-        windowDrawText(win, text, 60, 200, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 60, 200, rowY + 4, proto_text_color_normal());
 
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_LOWERCASE_A, "AP Bonus", 0);
         snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_MAXIMUM_ACTION_POINTS]);
-        windowDrawText(win, text, 60, 100, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 60, 100, rowY + 4, proto_text_color_normal());
         _win_register_text_button(win, 110, rowY, -1, -1, -1, KEY_LOWERCASE_M, "Melee Dam", 0);
         snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_MELEE_DAMAGE]);
-        windowDrawText(win, text, 60, 200, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, text, 60, 200, rowY + 4, proto_text_color_normal());
 
         rowY -= 21;
         _win_register_text_button(win, 210, rowY, -1, -1, -1, KEY_LOWERCASE_R, "Dm Res", 0);
         int x = 265;
         for (int i = 0; i < 7; i++) {
             snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_DAMAGE_RESISTANCE + i]);
-            windowDrawText(win, text, 26, x, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
-            windowDrawText(win, gDamageTypeNames[i], 35, x, rowY + 14, kProtoEditNormalColor);
+            windowDrawText(win, text, 26, x, rowY + 4, proto_text_color_normal());
+            windowDrawText(win, gDamageTypeNames[i], 35, x, rowY + 14, _colorTable[kProtoEditDarkColor]);
             x += 37;
         }
 
@@ -3241,7 +3167,7 @@ static int proto_critter_edit(int pid)
         x = 265;
         for (int i = 0; i < 7; i++) {
             snprintf(text, sizeof(text), "%d", proto->critter.data.bonusStats[STAT_DAMAGE_THRESHOLD + i]);
-            windowDrawText(win, text, 26, x, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+            windowDrawText(win, text, 26, x, rowY + 4, proto_text_color_normal());
             x += 37;
         }
 
@@ -3271,10 +3197,12 @@ static int proto_critter_edit(int pid)
                     return -1;
                 }
                 critterProtoDataCopy(&dudeProto->critter.data, &proto->critter.data);
-                characterEditorShow(key != KEY_1);
+                characterEditorShow(true);
                 critterProtoDataCopy(&proto->critter.data, &dudeProto->critter.data);
                 modified = true;
                 _proto_dude_init("premade\\blank.gcd");
+                // Faithful to the original: only "Advanced" (KEY_1) rebuilds the
+                // editor; "Gender" (KEY_2) falls through and the loop continues.
                 if (key == KEY_1) {
                     reenter = true;
                 }
@@ -3290,11 +3218,11 @@ static int proto_critter_edit(int pid)
                     proto->critter.sid = -1;
                 } else {
                     if (proto_scr_name(sel, text, sizeof(text)) == -1) {
-                        win_timed_msg("Error: Bad script index!", _colorTable[31744] | 0x10000);
+                        win_timed_msg("Error: Bad script index!", proto_text_color(kProtoEditErrorColor));
                     }
                     proto->critter.sid = sel;
                 }
-                windowDrawText(win, text, 130, 240, 90, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, text, 130, 240, 90, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
                 break;
@@ -3302,18 +3230,18 @@ static int proto_critter_edit(int pid)
             case KEY_LOWERCASE_H: {
                 proto_choose_fid(&proto->critter.headFid, OBJ_TYPE_HEAD, 1);
                 art_name_no_ext(proto->critter.headFid, text);
-                windowDrawText(win, text, 80, 80, 132, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, text, 80, 80, 132, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
                 break;
             }
             case KEY_LOWERCASE_B: {
-                int sel = _win_list_select("Body Type", body_type_strs, BODY_TYPE_COUNT, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+                int sel = _win_list_select("Body Type", body_type_strs, BODY_TYPE_COUNT, nullptr, 100, 100, proto_text_color_dialog());
                 if (sel == -1) {
                     sel = 0;
                 }
                 proto->critter.data.bodyType = sel;
-                windowDrawText(win, body_type_strs[sel], 80, 85, 153, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, body_type_strs[sel], 80, 85, 153, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
                 break;
@@ -3329,7 +3257,7 @@ static int proto_critter_edit(int pid)
                 win_get_num_i(&value, 0, 32000, false, "Team Num", 100, 100);
                 proto->critter.team = value;
                 snprintf(text, sizeof(text), "%d", value);
-                windowDrawText(win, text, 80, 300, 174, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, text, 80, 300, 174, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
                 break;
@@ -3348,24 +3276,24 @@ static int proto_critter_edit(int pid)
                 }
                 proto->critter.data.experience = value;
                 snprintf(text, sizeof(text), "%d", value);
-                windowDrawText(win, text, 80, 80, 216, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, text, 80, 80, 216, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
                 break;
             }
             case KEY_UPPERCASE_B:
                 proto->critter.data.flags ^= 2;
-                windowDrawText(win, yesno[(proto->critter.data.flags & 2) != 0 ? YES : NO], 50, 200, 216, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, yesno[(proto->critter.data.flags & 2) != 0 ? YES : NO], 50, 200, 216, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
                 break;
             case KEY_UPPERCASE_D: {
-                int sel = _win_list_select("Damage Type", gDamageTypeNames, 7, nullptr, 340, 200, kProtoEditNormalColor | 0x10000);
+                int sel = _win_list_select("Damage Type", gDamageTypeNames, 7, nullptr, 340, 200, proto_text_color_dialog());
                 if (sel == -1) {
                     break;
                 }
                 proto->critter.data.damageType = sel;
-                windowDrawText(win, gDamageTypeNames[sel], 50, 320, 216, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, gDamageTypeNames[sel], 50, 320, 216, proto_text_color_normal());
                 windowRefresh(win);
                 modified = true;
                 break;
@@ -3378,7 +3306,7 @@ static int proto_critter_edit(int pid)
                 proto->critter.data.killType = sel;
                 const char* name = killTypeGetName(sel);
                 if (name != nullptr) {
-                    windowDrawText(win, name, 80, 80, 237, kProtoEditNormalColor | FONT_SHADOW);
+                    windowDrawText(win, name, 80, 80, 237, proto_text_color_normal());
                 }
                 windowRefresh(win);
                 modified = true;
@@ -3495,11 +3423,9 @@ static int proto_critter_edit(int pid)
         }
 
         if (reenter) {
-            advancedReentry = true;
             continue;
         }
 
-        advancedReentry = false;
         int code = proto_edit_exit_code(win, exitKey, modified);
 
         // Saving paths first validate the proto can spawn an object.
@@ -3510,9 +3436,7 @@ static int proto_critter_edit(int pid)
             }
         }
         return code;
-    } while (advancedReentry);
-
-    return 0;
+    }
 }
 
 // protoInstEdit implemented in mp_instance.cc
