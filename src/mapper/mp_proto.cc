@@ -18,6 +18,7 @@
 #include "mapper/mp_targt.h"
 #include "memory.h"
 #include "proto.h"
+#include "proto_txt.h"
 #include "scripts.h"
 #include "stat.h"
 #include "svga.h"
@@ -172,20 +173,6 @@ static const char* attack_anim_strs[] = {
     "fire_continuous",
 };
 
-// anim_code_strs
-const char* const anim_code_strs[] = {
-    "NONE",
-    "D-KNIFE",
-    "E-CLUB",
-    "F-2_HANDED_CLUB",
-    "G-SPEAR",
-    "H-PISTOL",
-    "I-UZI",
-    "J-RIFLE",
-    "K-LASER",
-    "L-MINIGUN",
-    "M-ROCKET",
-};
 
 // mp_perk_max
 constexpr int kPerkMax = PERK_COUNT;
@@ -750,7 +737,7 @@ void proto_item_subdata_edit_init(Proto* proto)
         proto_subdata_setup_int_button("Crit Fail", '#', proto->item.data.weapon.criticalFailureType, 0, 100, &y, 11);
         proto_subdata_setup_x_str_button("Perk", '$', proto->item.data.weapon.perk, _mp_perk_code_strs, -1, kPerkMax, &y, 12);
         proto_subdata_setup_int_button("Rounds", '%', proto->item.data.weapon.rounds, 0, 32000, &y, 13);
-        proto_subdata_setup_str_button("Caliber", '^', proto->item.data.weapon.caliber, gCaliberTypeNames, 19, &y, 14);
+        proto_subdata_setup_str_button("Caliber", '^', proto->item.data.weapon.caliber, cal_type_strs, 19, &y, 14);
         proto_subdata_setup_pid_button("Ammo Pid", '&', proto->item.data.weapon.ammoTypePid, &y, 15);
         proto_subdata_setup_int_button("Max Ammo", '*', proto->item.data.weapon.ammoCapacity, 0, 32000, &y, 16);
         _win_register_text_button(subwin, 165, y, -1, -1, -1, '(', "Sound ID", 0);
@@ -763,7 +750,7 @@ void proto_item_subdata_edit_init(Proto* proto)
         break;
     }
     case ITEM_TYPE_AMMO:
-        proto_subdata_setup_str_button("Caliber", '1', proto->item.data.ammo.caliber, gCaliberTypeNames, 19, &y, 0);
+        proto_subdata_setup_str_button("Caliber", '1', proto->item.data.ammo.caliber, cal_type_strs, 19, &y, 0);
         proto_subdata_setup_int_button("Quantity", '2', proto->item.data.ammo.quantity, 0, 32000, &y, 0);
         proto_subdata_setup_int_button("AC Adjust", '3', proto->item.data.ammo.armorClassModifier, -250, 250, &y, 0);
         proto_subdata_setup_int_button("DR Adjust", '4', proto->item.data.ammo.damageResistanceModifier, -250, 250, &y, 0);
@@ -772,7 +759,7 @@ void proto_item_subdata_edit_init(Proto* proto)
         break;
     case ITEM_TYPE_MISC:
         proto_subdata_setup_pid_button("Power Pid", '1', proto->item.data.misc.powerTypePid, &y, 0);
-        proto_subdata_setup_str_button("Power Type", '2', proto->item.data.misc.powerType, gCaliberTypeNames, 19, &y, 0);
+        proto_subdata_setup_str_button("Power Type", '2', proto->item.data.misc.powerType, cal_type_strs, 19, &y, 0);
         proto_subdata_setup_int_button("Charges", '3', proto->item.data.misc.charges, 0, 32000, &y, 0);
         break;
     case ITEM_TYPE_KEY:
@@ -958,7 +945,7 @@ void proto_item_subdata_edit_handle(Proto* proto, int key)
             proto_subdata_process_int_button("Rounds:", &proto->item.data.weapon.rounds, 0, 32000, 13);
             break;
         case '^':
-            proto_subdata_process_str_button("Weapon Caliber:", &proto->item.data.weapon.caliber, gCaliberTypeNames, 19, 14);
+            proto_subdata_process_str_button("Weapon Caliber:", &proto->item.data.weapon.caliber, cal_type_strs, 19, 14);
             break;
         case '&':
             proto_subdata_process_pid_button("Ammo Pid:", &proto->item.data.weapon.ammoTypePid, 15);
@@ -982,7 +969,7 @@ void proto_item_subdata_edit_handle(Proto* proto, int key)
     case ITEM_TYPE_AMMO:
         switch (key) {
         case '1':
-            proto_subdata_process_str_button("Caliber:", &proto->item.data.ammo.caliber, gCaliberTypeNames, 19, 0);
+            proto_subdata_process_str_button("Caliber:", &proto->item.data.ammo.caliber, cal_type_strs, 19, 0);
             break;
         case '2':
             proto_subdata_process_int_button("Quantity:", &proto->item.data.ammo.quantity, 0, 32000, 1);
@@ -1007,7 +994,7 @@ void proto_item_subdata_edit_handle(Proto* proto, int key)
         if (key == '1') {
             proto_subdata_process_pid_button("Power Type Pid:", &proto->item.data.misc.powerTypePid, 0);
         } else if (key == '2') {
-            proto_subdata_process_str_button("Power Type:", &proto->item.data.misc.powerType, gCaliberTypeNames, 19, 1);
+            proto_subdata_process_str_button("Power Type:", &proto->item.data.misc.powerType, cal_type_strs, 19, 1);
         } else if (key == '3') {
             proto_subdata_process_int_button("Charges:", &proto->item.data.misc.charges, 0, 32000, 2);
         } else {
@@ -1995,7 +1982,9 @@ int protoEdit(int protoId)
                 return 0;
             }
 
-            if (proto_save_text(pid) == -1) {
+            char dir[COMPAT_MAX_PATH];
+            target_make_path(dir, pid);
+            if (proto_save_text(pid, dir) == -1) {
                 return 0;
             }
             _proto_save_pid(pid);
@@ -2894,7 +2883,7 @@ static int proto_item_edit(int pid)
         return -1;
     }
 
-    reg_text_str(win, KEY_LOWERCASE_T, "Type", gItemTypeNames[proto->item.type], &rowY);
+    reg_text_str(win, KEY_LOWERCASE_T, "Type", item_pro_type[proto->item.type], &rowY);
     proto_item_subdata_edit_init(proto);
 
     _win_register_text_button(win, 170, rowY, -1, -1, -1, KEY_UPPERCASE_I, "Inv Fid", 0);
@@ -2961,13 +2950,13 @@ static int proto_item_edit(int pid)
             }
             break;
         case KEY_LOWERCASE_T: {
-            int sel = _win_list_select("Item Type", gItemTypeNames, ITEM_TYPE_COUNT, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+            int sel = _win_list_select("Item Type", item_pro_type, ITEM_TYPE_COUNT, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
             if (sel != -1 && sel != proto->item.type) {
                 windowDrawText(win, "No", 130, 90, 300, kProtoEditNormalColor | FONT_SHADOW);
                 proto->item.type = sel;
                 proto_item_subdata_init(proto, sel);
                 proto_item_subdata_edit_init(proto);
-                windowDrawText(win, gItemTypeNames[sel], 130, 90, 111, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, item_pro_type[sel], 130, 90, 111, kProtoEditNormalColor | FONT_SHADOW);
                 windowRefresh(win);
                 modified = true;
             }
@@ -3188,7 +3177,7 @@ static int proto_critter_edit(int pid)
             windowDestroy(win);
             return -1;
         }
-        windowDrawText(win, gBodyTypeNames[proto->critter.data.bodyType], 80, 85, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
+        windowDrawText(win, body_type_strs[proto->critter.data.bodyType], 80, 85, rowY + 4, kProtoEditNormalColor | FONT_SHADOW);
 
         rowY += 21;
         _win_register_text_button(win, 10, rowY, -1, -1, -1, KEY_UPPERCASE_A, "AI Packet", 0);
@@ -3319,12 +3308,12 @@ static int proto_critter_edit(int pid)
                 break;
             }
             case KEY_LOWERCASE_B: {
-                int sel = _win_list_select("Body Type", gBodyTypeNames, BODY_TYPE_COUNT, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
+                int sel = _win_list_select("Body Type", body_type_strs, BODY_TYPE_COUNT, nullptr, 100, 100, kProtoEditNormalColor | 0x10000);
                 if (sel == -1) {
                     sel = 0;
                 }
                 proto->critter.data.bodyType = sel;
-                windowDrawText(win, gBodyTypeNames[sel], 80, 85, 153, kProtoEditNormalColor | FONT_SHADOW);
+                windowDrawText(win, body_type_strs[sel], 80, 85, 153, kProtoEditNormalColor | FONT_SHADOW);
                 windowRefresh(win);
                 modified = true;
                 break;

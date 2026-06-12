@@ -614,6 +614,8 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
     target_sources(mapper-ce PUBLIC
         ${FALLOUT_ENGINE_SOURCES}
         ${FALLOUT_PLATFORM_SOURCES}
+        "src/proto_txt.cc"
+        "src/proto_txt.h"
         "src/mapper/map_edge_setup.cc"
         "src/mapper/map_edge_setup.h"
         "src/mapper/map_func.cc"

@@ -102,14 +102,18 @@ extern char _cd_path_base[COMPAT_MAX_PATH];
 
 extern MessageList gProtoMessageList;
 extern MessageList _proto_msg_files[6];
-extern char* _proto_none_str;
-extern char* gItemTypeNames[ITEM_TYPE_COUNT];
+extern char* proto_none_str;
+extern char* item_pro_type[ITEM_TYPE_COUNT];
 extern char* gMaterialTypeNames[MATERIAL_TYPE_COUNT];
 extern char* gSceneryTypeNames[SCENERY_TYPE_COUNT];
 extern char* gDamageTypeNames[DAMAGE_TYPE_COUNT];
-extern char* gBodyTypeNames[BODY_TYPE_COUNT];
-extern char* gCaliberTypeNames[CALIBER_TYPE_COUNT];
+extern char* body_type_strs[BODY_TYPE_COUNT];
+extern char* cal_type_strs[CALIBER_TYPE_COUNT];
 extern char* _mp_perk_code_strs[PERK_COUNT];
+extern char* _mp_perk_code_None;
+extern char* _mp_critter_stats_list;
+extern char* _critter_stats_list_None;
+extern char* _critter_stats_list_strs[];
 
 void proto_make_path(char* path, int pid);
 int _proto_list_str(int pid, char* proto_path);
@@ -150,10 +154,6 @@ int proto_max_id(int type);
 void proto_remove(int pid);
 int proto_header_save();
 int _proto_load_pid(int pid, Proto** protoPtr);
-
-#ifdef FALLOUT_MAPPER
-int proto_save_text(int pid);
-#endif
 
 static bool isExitGridPid(int pid)
 {

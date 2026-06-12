@@ -266,7 +266,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
 
     if (!scriptOverrides) {
         char* description = objectGetDescription(target);
-        if (description != nullptr && strcmp(description, _proto_none_str) == 0) {
+        if (description != nullptr && strcmp(description, proto_none_str) == 0) {
             description = nullptr;
         }
 

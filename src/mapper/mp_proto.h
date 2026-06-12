@@ -11,7 +11,6 @@ typedef int (*protoChooseAddCallback)(int pid, int count);
 
 extern char* proto_builder_name;
 extern bool can_modify_protos;
-extern const char* const anim_code_strs[];
 
 void init_mapper_protos();
 const char* proto_wall_light_str(int flags);

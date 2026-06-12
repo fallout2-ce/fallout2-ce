@@ -2359,7 +2359,7 @@ void update_toolname(int* pid, int type, int id)
     switch (PID_TYPE(proto->pid)) {
     case OBJ_TYPE_ITEM:
         windowDrawText(tool_win,
-            gItemTypeNames[proto->item.type],
+            item_pro_type[proto->item.type],
             kToolNameWidth,
             kToolNameX,
             kToolNameY2,
