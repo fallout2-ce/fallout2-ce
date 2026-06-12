@@ -3353,7 +3353,7 @@ static unsigned int animationComputeTicksPerFrame(Object* object, int fid)
         fps = std::max(static_cast<int>(fps * settings.ui.anim_speed), 1);
     }
 
-    return 1000 / fps;
+    return std::max(1000 / fps, 1);
 }
 
 int animationRegisterSetLightIntensity(Object* owner, int lightDistance, int lightIntensity, int delay)

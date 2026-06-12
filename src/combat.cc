@@ -110,7 +110,7 @@ static int _combat_input();
 static void _combat_set_move_all();
 static int combatTurnHooked(Object* obj, bool reloadedDuringCombat);
 static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFid);
-static void waitForGorisAnimation(Object* critter, const char* reason);
+static void waitForGorisAnimation(Object* critter);
 static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
@@ -2626,7 +2626,7 @@ static void _combat_begin(Object* attacker)
         _caiTeamCombatInit(_combat_list, _list_total);
         interfaceBarEndButtonsShow(true);
         if (goris != nullptr && !_isLoadingGame()) {
-            waitForGorisAnimation(goris, "combat_begin_tail");
+            waitForGorisAnimation(goris);
         }
         _gmouse_enable_scrolling();
         sfallOnCombatStart();
@@ -2782,7 +2782,7 @@ static void _combat_over()
         scriptSetFixedParam(critter->sid, 0);
 
         if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter) && !_isLoadingGame()) {
-            waitForGorisAnimation(critter, "combat_end_tail");
+            waitForGorisAnimation(critter);
         }
     }
 
@@ -3371,7 +3371,7 @@ static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFid)
     reg_anim_end();
 }
 
-static void waitForGorisAnimation(Object* critter, const char* reason)
+static void waitForGorisAnimation(Object* critter)
 {
     while (animationIsBusy(critter)) {
         sharedFpsLimiter.mark();
@@ -3499,7 +3499,7 @@ void _combat(CombatStartData* csd)
                 Object* critter = _combat_list[index];
                 if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter) && !_isLoadingGame()) {
                     if (animationIsBusy(critter)) {
-                        waitForGorisAnimation(critter, "combat_end_pending");
+                        waitForGorisAnimation(critter);
                     }
 
                     queueGorisCombatBeginEndAnimation(critter, kGorisRobeBaseFid);
