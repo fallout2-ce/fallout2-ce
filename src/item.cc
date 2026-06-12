@@ -302,7 +302,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
                 return -5;
             }
 
-            if ((proto->critter.flags & CRITTER_BARTER) == 0) {
+            if ((proto->critter.data.flags & CRITTER_BARTER) == 0) {
                 return -5;
             }
         }
