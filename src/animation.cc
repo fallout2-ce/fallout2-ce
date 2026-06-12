@@ -1,5 +1,6 @@
 #include "animation.h"
 
+#include <algorithm>
 #include <stdio.h>
 #include <string.h>
 
@@ -3345,7 +3346,14 @@ static unsigned int animationComputeTicksPerFrame(Object* object, int fid)
         }
     }
 
-    return 1000 / fps;
+    if (object != nullptr
+        && object->pid == PROTO_ID_GORIS
+        && FID_ANIM_TYPE(fid) == ANIM_UP_STAIRS_RIGHT) {
+        // Scale Goris (dis)robe animation by animation speed setting
+        fps = std::max(static_cast<int>(fps * settings.ui.anim_speed), 1);
+    }
+
+    return std::max(1000 / fps, 1);
 }
 
 int animationRegisterSetLightIntensity(Object* owner, int lightDistance, int lightIntensity, int delay)

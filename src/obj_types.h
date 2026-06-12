@@ -30,6 +30,7 @@ enum ObjectType {
 };
 
 #define FID_TYPE(value) ((value) & 0xF000000) >> 24
+#define FID_FRM_ID(value) ((value) & 0xFFF)
 #define PID_TYPE(value) (value) >> 24
 #define SID_TYPE(value) (value) >> 24
 
