@@ -3537,7 +3537,7 @@ void attackInit(Attack* attack, Object* attacker, Object* defender, int hitMode,
     attack->defenderFlags = 0;
     attack->defenderKnockback = 0;
     attack->extrasLength = 0;
-    attack->oops = defender;
+    attack->intendedTarget = defender;
 }
 
 // 0x422F3C
@@ -4336,7 +4336,7 @@ static int attackComputeCriticalFailure(Attack* attack)
             int rounds = attackType == ATTACK_TYPE_RANGED ? attack->ammoQuantity : 1;
             attackComputeDamage(attack, rounds, 2);
         } else {
-            attack->defender = attack->oops;
+            attack->defender = attack->intendedTarget;
         }
 
         if (attack->defender != nullptr) {
@@ -4758,31 +4758,28 @@ void _apply_damage(Attack* attack, bool animated)
 {
     Object* attacker = attack->attacker;
     bool attackerIsCritter = attacker != nullptr && FID_TYPE(attacker->fid) == OBJ_TYPE_CRITTER;
-    bool v5 = attack->defender != attack->oops;
+    bool hitUnintendedTarget = attack->defender != attack->intendedTarget;
 
     if (attackerIsCritter && (attacker->data.critter.combat.results & DAM_DEAD) == 0) {
         _set_new_results(attacker, attack->attackerFlags);
-        // TODO: Not sure about "attack->defender == attack->oops".
-        _damage_object(attacker, attack->attackerDamage, animated, attack->defender == attack->oops, attacker);
+        _damage_object(attacker, attack->attackerDamage, animated, hitUnintendedTarget, attacker);
     }
 
-    Object* v7 = attack->oops;
-    if (v7 != nullptr && v7 != attack->defender) {
-        _combatai_notify_onlookers(v7);
+    // bystanders might flee
+    if (attack->intendedTarget != nullptr && hitUnintendedTarget) {
+        _combatai_notify_onlookers(attack->intendedTarget);
     }
 
     Object* defender = attack->defender;
     bool defenderIsCritter = defender != nullptr && FID_TYPE(defender->fid) == OBJ_TYPE_CRITTER;
 
-    if (!defenderIsCritter && !v5) {
-        bool v9 = objectIsPartyMember(attack->defender) && objectIsPartyMember(attack->attacker) ? false : true;
-        if (v9) {
-            if (defender != nullptr) {
-                if (defender->sid != -1) {
-                    scriptSetFixedParam(defender->sid, attack->attackerDamage);
-                    scriptSetObjects(defender->sid, attack->attacker, attack->weapon);
-                    scriptExecProc(defender->sid, SCRIPT_PROC_DAMAGE);
-                }
+    if (!defenderIsCritter && !hitUnintendedTarget) {
+        bool shouldRunDamageProc = !objectIsPartyMember(attack->defender) || !objectIsPartyMember(attack->attacker);
+        if (shouldRunDamageProc) {
+            if (defender != nullptr && defender->sid != -1) {
+                scriptSetFixedParam(defender->sid, attack->attackerDamage);
+                scriptSetObjects(defender->sid, attack->attacker, attack->weapon);
+                scriptExecProc(defender->sid, SCRIPT_PROC_DAMAGE);
             }
         }
     }
@@ -4790,24 +4787,17 @@ void _apply_damage(Attack* attack, bool animated)
     if (defenderIsCritter && (defender->data.critter.combat.results & DAM_DEAD) == 0) {
         _set_new_results(defender, attack->defenderFlags);
 
-        if (defenderIsCritter) {
-            if (defenderIsCritter) {
-                if ((defender->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
-                    if (!v5 || defender != gDude) {
-                        critterSetWhoHitMe(defender, attack->attacker);
-                    }
-                } else if (defender == attack->oops || defender->data.critter.combat.team != attack->attacker->data.critter.combat.team) {
-                    _combatai_check_retaliation(defender, attack->attacker);
-                }
+        if ((defender->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
+            if (!hitUnintendedTarget || defender != gDude) {
+                critterSetWhoHitMe(defender, attack->attacker);
             }
+        } else if (attackerIsCritter && (defender == attack->intendedTarget || defender->data.critter.combat.team != attack->attacker->data.critter.combat.team)) {
+            _combatai_check_retaliation(defender, attack->attacker);
         }
 
         scriptSetObjects(defender->sid, attack->attacker, attack->weapon);
-        _damage_object(defender, attack->defenderDamage, animated, attack->defender != attack->oops, attacker);
-
-        if (defenderIsCritter) {
-            _combatai_notify_onlookers(defender);
-        }
+        _damage_object(defender, attack->defenderDamage, animated, hitUnintendedTarget, attacker);
+        _combatai_notify_onlookers(defender);
 
         if (attack->defenderDamage >= 0 && (attack->attackerFlags & DAM_HIT) != 0) {
             scriptSetObjects(attack->attacker->sid, nullptr, attack->defender);
@@ -4824,14 +4814,13 @@ void _apply_damage(Attack* attack, bool animated)
             if (defenderIsCritter) {
                 if ((obj->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
                     critterSetWhoHitMe(obj, attack->attacker);
-                } else if (obj->data.critter.combat.team != attack->attacker->data.critter.combat.team) {
+                } else if (attackerIsCritter && obj->data.critter.combat.team != attack->attacker->data.critter.combat.team) {
                     _combatai_check_retaliation(obj, attack->attacker);
                 }
             }
 
             scriptSetObjects(obj->sid, attack->attacker, attack->weapon);
-            // TODO: Not sure about defender == oops.
-            _damage_object(obj, attack->extrasDamage[index], animated, attack->defender == attack->oops, attack->attacker);
+            _damage_object(obj, attack->extrasDamage[index], animated, hitUnintendedTarget, attack->attacker);
             _combatai_notify_onlookers(obj);
 
             if (attack->extrasDamage[index] >= 0) {
@@ -4900,18 +4889,18 @@ static void _set_new_results(Object* critter, int flags)
     }
 }
 
-// 0x425020
-static void _damage_object(Object* a1, int damage, bool animated, int a4, Object* a5)
+// 0x425020 damage_object
+static void _damage_object(Object* target, int damage, bool animated, int hitUnintendedTarget, Object* damageSource)
 {
-    if (a1 == nullptr) {
+    if (target == nullptr) {
         return;
     }
 
-    if (FID_TYPE(a1->fid) != OBJ_TYPE_CRITTER) {
+    if (FID_TYPE(target->fid) != OBJ_TYPE_CRITTER) {
         return;
     }
 
-    if (critterFlagCheck(a1->pid, CRITTER_INVULNERABLE)) {
+    if (critterFlagCheck(target->pid, CRITTER_INVULNERABLE)) {
         return;
     }
 
@@ -4919,50 +4908,50 @@ static void _damage_object(Object* a1, int damage, bool animated, int a4, Object
         return;
     }
 
-    critterAdjustHitPoints(a1, -damage);
+    critterAdjustHitPoints(target, -damage);
 
-    if (a1 == gDude) {
+    if (target == gDude) {
         interfaceRenderHitPoints(animated);
     }
 
-    a1->data.critter.combat.damageLastTurn += damage;
+    target->data.critter.combat.damageLastTurn += damage;
 
-    if (!a4) {
+    if (!hitUnintendedTarget) {
         // TODO: Not sure about this one.
-        if (!objectIsPartyMember(a1) || !objectIsPartyMember(a5)) {
-            scriptSetFixedParam(a1->sid, damage);
-            scriptExecProc(a1->sid, SCRIPT_PROC_DAMAGE);
+        if (!objectIsPartyMember(target) || !objectIsPartyMember(damageSource)) {
+            scriptSetFixedParam(target->sid, damage);
+            scriptExecProc(target->sid, SCRIPT_PROC_DAMAGE);
         }
     }
 
-    if ((a1->data.critter.combat.results & DAM_DEAD) != 0) {
-        scriptSetObjects(a1->sid, a1->data.critter.combat.whoHitMe, nullptr);
-        scriptExecProc(a1->sid, SCRIPT_PROC_DESTROY);
-        itemDestroyAllHidden(a1);
+    if ((target->data.critter.combat.results & DAM_DEAD) != 0) {
+        scriptSetObjects(target->sid, target->data.critter.combat.whoHitMe, nullptr);
+        scriptExecProc(target->sid, SCRIPT_PROC_DESTROY);
+        itemDestroyAllHidden(target);
 
-        if (a1 != gDude) {
-            Object* whoHitMe = a1->data.critter.combat.whoHitMe;
+        if (target != gDude) {
+            Object* whoHitMe = target->data.critter.combat.whoHitMe;
             if (whoHitMe == gDude || (whoHitMe != nullptr && whoHitMe->data.critter.combat.team == gDude->data.critter.combat.team)) {
                 bool scriptOverrides = false;
                 Script* scr;
-                if (scriptGetScript(a1->sid, &scr) != -1) {
+                if (scriptGetScript(target->sid, &scr) != -1) {
                     scriptOverrides = scr->scriptOverrides;
                 }
 
                 if (!scriptOverrides) {
-                    _combat_exps += critterGetExp(a1);
-                    killsIncByType(critterGetKillType(a1));
+                    _combat_exps += critterGetExp(target);
+                    killsIncByType(critterGetKillType(target));
                 }
             }
         }
 
-        if (a1->sid != -1) {
-            scriptRemove(a1->sid);
-            a1->sid = -1;
+        if (target->sid != -1) {
+            scriptRemove(target->sid);
+            target->sid = -1;
         }
 
-        partyMemberRemove(a1);
-        scriptHooks_OnDeath(a1);
+        partyMemberRemove(target);
+        scriptHooks_OnDeath(target);
     }
 }
 
@@ -5034,11 +5023,11 @@ void _combat_display(Attack* attack)
 
     char text[280];
     if (attack->defender != nullptr
-        && attack->oops != nullptr
-        && attack->defender != attack->oops
+        && attack->intendedTarget != nullptr
+        && attack->defender != attack->intendedTarget
         && (attack->attackerFlags & DAM_HIT) != 0) {
         if (FID_TYPE(attack->defender->fid) == OBJ_TYPE_CRITTER) {
-            if (attack->oops == gDude) {
+            if (attack->intendedTarget == gDude) {
                 // 608 (male) - Oops! %s was hit instead of you!
                 // 708 (female) - Oops! %s was hit instead of you!
                 messageListItem.num = baseMessageId + 8;
@@ -5048,7 +5037,7 @@ void _combat_display(Attack* attack)
             } else {
                 // 509 (male) - Oops! %s were hit instead of %s!
                 // 559 (female) - Oops! %s were hit instead of %s!
-                const char* name = objectGetName(attack->oops);
+                const char* name = objectGetName(attack->intendedTarget);
                 messageListItem.num = baseMessageId + 9;
                 if (messageListGetItem(&gCombatMessageList, &messageListItem)) {
                     snprintf(text, sizeof(text), messageListItem.text, mainCritterName, name);
