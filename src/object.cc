@@ -59,6 +59,7 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect);
 static void objectDrawOutline(Object* object, Rect* rect);
 static void _obj_render_object(Object* object, Rect* rect, int light);
 static int _obj_preload_sort(const void* a1, const void* a2);
+static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData);
 
 // 0x5195F8 objInitialized
 static bool gObjectsInitialized = false;
@@ -222,6 +223,20 @@ static int _cd_order[9] = {
     0,
     0,
 };
+
+static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData)
+{
+    Object* whoHitMe = combatData->whoHitMe;
+
+    // Match sfall: only preserve whoHitMe in active combat saves.
+    if (!isInCombat() || combatData->maneuver == CRITTER_MANEUVER_NONE) {
+        combatData->whoHitMeCid = -1;
+        return whoHitMe;
+    }
+
+    combatData->whoHitMeCid = whoHitMe != nullptr ? whoHitMe->cid : -1;
+    return whoHitMe;
+}
 
 // 0x6391D0 light_blocked
 static int _light_blocked[6][36];
@@ -707,14 +722,7 @@ int objectSaveAll(File* stream)
                 Object* whoHitMe = nullptr;
                 if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
                     combatData = &(object->data.critter.combat);
-                    whoHitMe = combatData->whoHitMe;
-                    if (whoHitMe != nullptr) {
-                        if (combatData->whoHitMeCid != -1) {
-                            combatData->whoHitMeCid = whoHitMe->cid;
-                        }
-                    } else {
-                        combatData->whoHitMeCid = -1;
-                    }
+                    whoHitMe = objectPrepareWhoHitMeForSave(combatData);
                 }
 
                 if (objectWrite(object, stream) == -1) {
@@ -3528,14 +3536,7 @@ static int _obj_save_obj(File* stream, Object* object)
     Object* whoHitMe = nullptr;
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         combatData = &(object->data.critter.combat);
-        whoHitMe = combatData->whoHitMe;
-        if (whoHitMe != nullptr) {
-            if (combatData->whoHitMeCid != -1) {
-                combatData->whoHitMeCid = whoHitMe->cid;
-            }
-        } else {
-            combatData->whoHitMeCid = -1;
-        }
+        whoHitMe = objectPrepareWhoHitMeForSave(combatData);
     }
 
     if (objectWrite(object, stream) == -1) {
