@@ -4931,6 +4931,10 @@ static void _damage_object(Object* target, int damage, bool animated, int hitUni
 
         if (target != gDude) {
             Object* whoHitMe = target->data.critter.combat.whoHitMe;
+            if (whoHitMe != nullptr && FID_TYPE(whoHitMe->fid) != OBJ_TYPE_CRITTER) {
+                // whoHitMe is not guaranteed to be a critter
+                whoHitMe = nullptr;
+            }
             if (whoHitMe == gDude || (whoHitMe != nullptr && whoHitMe->data.critter.combat.team == gDude->data.critter.combat.team)) {
                 bool scriptOverrides = false;
                 Script* scr;

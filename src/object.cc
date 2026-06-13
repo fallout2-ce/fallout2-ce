@@ -440,10 +440,6 @@ int objectRead(Object* obj, File* stream)
         return -1;
     }
 
-    if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER && obj->data.critter.combat.whoHitMeCid == -1) {
-        obj->data.critter.combat.whoHitMe = nullptr;
-    }
-
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
             if ((obj->fid & 0xFFF) < 33) {
