@@ -299,6 +299,42 @@ int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType)
 }
 
 /*
+Runs when retrieving the damage rating of the used weapon. (Which may be fists.)
+
+int     arg0 - The default minimum damage after engine bonuses are applied
+int     arg1 - The default maximum damage after engine bonuses are applied
+Item    arg2 - The weapon used (0 if unarmed)
+Critter arg3 - The critter doing the attacking
+int     arg4 - The type of attack (see ATKTYPE_* constants)
+int     arg5 - 1 if this is an attack using a melee weapon, 0 otherwise
+
+int     ret0 - Either the damage to be used, if ret1 isn't given, or the new minimum damage if it is
+int     ret1 - The new maximum damage
+*/
+ItemDamageHookResult scriptHooks_ItemDamage(Object* weapon, Object* critter, int hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr)
+{
+    assert(critter != nullptr);
+    assert(minDamagePtr != nullptr);
+    assert(maxDamagePtr != nullptr);
+
+    ScriptHookCall hook(HOOK_ITEMDAMAGE, 2, { *minDamagePtr, *maxDamagePtr, weapon, critter, hitMode, isMeleeWeaponAttack ? 1 : 0 });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return { false, 0 };
+    }
+
+    int overrideMinDamage = hook.getReturnValueAt(0).asInt();
+    if (hook.numReturnValues() > 1) {
+        *minDamagePtr = overrideMinDamage;
+        *maxDamagePtr = hook.getReturnValueAt(1).asInt();
+        return { false, 0 };
+    }
+
+    return { true, overrideMinDamage };
+}
+
+/*
 Runs when calculating ammo cost for a weapon.
 
 Item    arg0 - The weapon

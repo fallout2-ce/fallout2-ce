@@ -1274,6 +1274,7 @@ int weaponGetDamage(Object* critter, int hitMode)
     int maxDamage = 0;
     int meleeDamage = 0;
     int bonusDamage = 0;
+    bool isMeleeWeaponAttack = false;
 
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
@@ -1285,6 +1286,7 @@ int weaponGetDamage(Object* critter, int hitMode)
         int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
         if (attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) {
             meleeDamage = critterGetStat(critter, STAT_MELEE_DAMAGE);
+            isMeleeWeaponAttack = attackType == ATTACK_TYPE_MELEE;
 
             // SFALL: Bonus HtH Damage fix.
             if (damageModGetBonusHthDamageFix()) {
@@ -1310,7 +1312,15 @@ int weaponGetDamage(Object* critter, int hitMode)
         }
     }
 
-    return randomBetween(bonusDamage + minDamage, bonusDamage + meleeDamage + maxDamage);
+    minDamage += bonusDamage;
+    maxDamage += bonusDamage + meleeDamage;
+
+    ItemDamageHookResult hookResult = scriptHooks_ItemDamage(weapon, critter, hitMode, isMeleeWeaponAttack, &minDamage, &maxDamage);
+    if (hookResult.fixedDamageOverridden) {
+        return hookResult.fixedDamage;
+    }
+
+    return randomBetween(minDamage, maxDamage);
 }
 
 // 0x478570

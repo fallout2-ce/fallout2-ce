@@ -263,6 +263,11 @@ struct UseSkillOnHookResult {
     bool allowInCombat;
 };
 
+struct ItemDamageHookResult {
+    bool fixedDamageOverridden;
+    int fixedDamage;
+};
+
 enum AmmoCostHookType {
     AMMO_COST_HOOK_SINGLE_SHOT = 0,
     AMMO_COST_HOOK_CHECK_OUT_OF_AMMO = 1,
@@ -283,6 +288,7 @@ enum class EncounterHookResult {
 
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
+ItemDamageHookResult scriptHooks_ItemDamage(Object* weapon, Object* critter, int hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr);
 int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
 int scriptHooks_Steal(Object* thief, Object* target, Object* item, bool isPlanting, int quantity, int* xpOverride);
 
