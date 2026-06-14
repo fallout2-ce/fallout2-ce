@@ -22,7 +22,6 @@
 #include "stat.h"
 #include "trait.h"
 
-
 namespace fallout {
 
 static int objectCritterCombatDataRead(CritterCombatData* data, File* stream);
@@ -1918,21 +1917,20 @@ static int protoWrite(Proto* proto, File* stream)
     return -1;
 }
 
-// 0x4A1B30 proto_save_pid
-int _proto_save_pid(int pid)
+// Writes the proto's binary .pro directly into <root>\proto\<type>\, bypassing
+// the xbase database so it lands in that exact folder.
+static int proto_save_pid_to_root(int pid, const char* root)
 {
     Proto* proto;
     if (protoGetProto(pid, &proto) == -1) {
         return -1;
     }
 
-    char path[260];
-    proto_make_path(path, pid);
-    strcat(path, "\\");
+    char relativePath[COMPAT_MAX_PATH];
+    int len = snprintf(relativePath, sizeof(relativePath), "proto\\%s\\", artGetObjectTypeName(PID_TYPE(pid)));
+    _proto_list_str(pid, relativePath + len);
 
-    _proto_list_str(pid, path + strlen(path));
-
-    File* stream = fileOpen(path, "wb");
+    File* stream = fileOpenDirect(buildDataPath(root, relativePath), "wb");
     if (stream == nullptr) {
         return -1;
     }
@@ -1942,6 +1940,19 @@ int _proto_save_pid(int pid)
     fileClose(stream);
 
     return rc;
+}
+
+// 0x4A1B30 proto_save_pid
+// Runtime/savegame save: protos go to the master patches path.
+int _proto_save_pid(int pid)
+{
+    return proto_save_pid_to_root(pid, settings.system.master_patches_path.c_str());
+}
+
+// Mapper editing save: edited protos are a shipped asset, saved to the edit root.
+int proto_save_pid_edit(int pid)
+{
+    return proto_save_pid_to_root(pid, mapperEditRoot());
 }
 
 // 0x4A1C3C proto_load_pid
@@ -2197,7 +2208,6 @@ int proto_header_save()
 {
     return 0;
 }
-
 
 // proto_ptr
 // 0x4A2108 proto_ptr

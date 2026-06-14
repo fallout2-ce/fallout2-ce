@@ -284,7 +284,7 @@ void map_save_dialog()
     strcat(newName, ".map");
     strncpy(gMapHeader.name, newName, sizeof(gMapHeader.name) - 1);
     gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
-    _map_save();
+    mapSaveToRoot(mapperEditRoot());
 }
 
 // map_save_as
@@ -292,7 +292,7 @@ int map_save_as(const char* name)
 {
     strncpy(gMapHeader.name, name, sizeof(gMapHeader.name) - 1);
     gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
-    return _map_save();
+    return mapSaveToRoot(mapperEditRoot());
 }
 
 // map_get_name
@@ -660,8 +660,8 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
 
     // Look for an existing duplicate (same tile + same fid) before placing.
     for (Object* obj = objectFindFirstAtElevation(gElevation);
-         obj != nullptr;
-         obj = objectFindNextAtElevation()) {
+        obj != nullptr;
+        obj = objectFindNextAtElevation()) {
         if (obj->tile == dstTile
             && obj->fid == srcFid
             && obj != gGameMouseBouncingCursor
@@ -755,8 +755,8 @@ void copyObject(int filterType)
             if (tile == -1) continue;
 
             for (Object* obj = objectFindFirstAtElevation(elevation);
-                 obj != nullptr;
-                 obj = objectFindNextAtElevation()) {
+                obj != nullptr;
+                obj = objectFindNextAtElevation()) {
                 if (obj->tile != tile
                     || obj == gDude
                     || obj == gGameMouseBouncingCursor
@@ -928,8 +928,8 @@ void eraseObject()
                     // Find topmost (last-rendered) object at gElevation under the mouse.
                     Object* hit = nullptr;
                     for (Object* obj = objectFindFirstAtElevation(gElevation);
-                         obj != nullptr;
-                         obj = objectFindNextAtElevation()) {
+                        obj != nullptr;
+                        obj = objectFindNextAtElevation()) {
                         if (obj == gDude) continue;
                         if (PID_TYPE(obj->pid) == OBJ_TYPE_INTERFACE) continue;
                         if ((obj->flags & OBJECT_HIDDEN) != 0) continue;
@@ -1016,8 +1016,8 @@ static void mapper_shift_map_once(int dx, int dy)
     };
     std::vector<Snap> snap;
     for (Object* obj = objectFindFirstAtElevation(gElevation);
-         obj != nullptr;
-         obj = objectFindNextAtElevation()) {
+        obj != nullptr;
+        obj = objectFindNextAtElevation()) {
         if (obj->tile < 0 || obj->tile >= kShiftMapTiles) continue;
         if (obj == gDude) continue;
         if (obj == gGameMouseBouncingCursor) continue;

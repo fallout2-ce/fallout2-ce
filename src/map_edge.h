@@ -46,9 +46,9 @@ struct EdgeElevationData {
 // Silently does nothing if no .edg file is found.
 void mapEdgeLoad(const char* mapName);
 
-// Writes the current in-memory edge data to the map's EDG file (mapper save path).
-// Does nothing when there are no edge zones. Used by the mapper map-save flow.
-void mapEdgeSave(const char* mapName);
+// Writes the current in-memory edge data to the map's EDG file under the given
+// save root. Does nothing when there are no edge zones.
+void mapEdgeSave(const char* root, const char* mapName);
 
 // Mutable access to a single elevation's edge data. Used by the mapper edge editor,
 // which edits this data in place; the disk write happens later via mapEdgeSave.

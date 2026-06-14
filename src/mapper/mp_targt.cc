@@ -8,6 +8,7 @@
 #include "mapper/mp_proto.h"
 #include "memory.h"
 #include "proto.h"
+#include "settings.h"
 #include "window_manager_private.h"
 
 namespace fallout {
@@ -25,14 +26,8 @@ typedef struct TargetList {
     int next_tid;
 } TargetList;
 
-// 0x53F354
-static char default_target_path_base[] = "\\fallout2\\dev\\proto\\";
-
 // 0x559CC4
 static TargetList targetlist = { NULL, 0, 0 };
-
-// 0x559CD0
-static char* target_path_base = default_target_path_base;
 
 // 0x559DBC
 static bool tgt_overriden = false;
@@ -59,18 +54,22 @@ bool target_overriden()
     return tgt_overriden;
 }
 
-// 0x49B34C
+// Builds the mapper temp-root proto directory ("<temp>\proto\[<type>]"), creating
+// it on disk. For pid -1 the path keeps a trailing separator so callers can
+// append "target.dat"; otherwise it ends at the per-type folder.
 void target_make_path(char* path, int pid)
 {
-    if (_cd_path_base[0] != '\0' && _cd_path_base[1] == ':') {
-        strncpy(path, _cd_path_base, 2);
-        strcat(path, target_path_base);
-    } else {
-        strcpy(path, target_path_base);
-    }
+    const char* root = mapperTempRoot();
+    size_t rootLen = strlen(root);
+    const char* separator = (rootLen > 0 && (root[rootLen - 1] == '\\' || root[rootLen - 1] == '/')) ? "" : "\\";
 
     if (pid != -1) {
-        strcat(path, artGetObjectTypeName(PID_TYPE(pid)));
+        snprintf(path, COMPAT_MAX_PATH, "%s%sproto\\%s", root, separator, artGetObjectTypeName(PID_TYPE(pid)));
+        compat_mkdir_recursive(path);
+    } else {
+        snprintf(path, COMPAT_MAX_PATH, "%s%sproto", root, separator);
+        compat_mkdir_recursive(path);
+        strcat(path, "\\");
     }
 }
 

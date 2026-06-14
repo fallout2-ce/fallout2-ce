@@ -144,6 +144,30 @@ File* fileOpen(const char* filename, const char* mode)
     return xfileOpen(filename, mode);
 }
 
+File* fileOpenDirect(const char* filename, const char* mode)
+{
+    return xfileOpenDirect(filename, mode);
+}
+
+const char* buildDataPath(const char* root, const char* relative)
+{
+    static char path[COMPAT_MAX_PATH];
+
+    size_t rootLen = strlen(root);
+    bool rootHasSeparator = rootLen > 0 && (root[rootLen - 1] == '\\' || root[rootLen - 1] == '/');
+    snprintf(path, sizeof(path), "%s%s%s", root, rootHasSeparator ? "" : "\\", relative);
+
+    char dir[COMPAT_MAX_PATH];
+    snprintf(dir, sizeof(dir), "%s", path);
+    char* separator = strrchr(dir, '\\');
+    if (separator != nullptr) {
+        *separator = '\0';
+        compat_mkdir_recursive(dir);
+    }
+
+    return path;
+}
+
 // 0x4C5ED0 db_fprintf
 int filePrintFormatted(File* stream, const char* format, ...)
 {

@@ -337,7 +337,7 @@ static bool writeEdgStream(File* stream)
     return true;
 }
 
-void mapEdgeSave(const char* mapName)
+void mapEdgeSave(const char* root, const char* mapName)
 {
     int totalZones = 0;
     for (const EdgeElevationData& data : edgeData) {
@@ -349,9 +349,11 @@ void mapEdgeSave(const char* mapName)
 
     char edgName[COMPAT_MAX_PATH];
     buildEdgeFileName(mapName, edgName, sizeof(edgName));
-    const char* edgPath = mapBuildSavePath(edgName);
+    char relativePath[COMPAT_MAX_PATH];
+    snprintf(relativePath, sizeof(relativePath), "MAPS\\%s", edgName);
+    const char* edgPath = buildDataPath(root, relativePath);
 
-    File* stream = fileOpen(edgPath, "wb");
+    File* stream = fileOpenDirect(edgPath, "wb");
     if (stream == nullptr) {
         debugPrint("mapEdgeSave: unable to open %s for writing\n", edgPath);
         return;

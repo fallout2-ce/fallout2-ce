@@ -26,7 +26,6 @@ const char* const anim_code_strs[] = {
     "M-ROCKET",
 };
 
-
 // Writes the perk field when in range; index -1 maps to "None".
 static void proto_save_perk(File* stream, int perk)
 {
@@ -150,7 +149,7 @@ int proto_save_text(int pid, const char* dir)
         strcat(path, ".txt");
     }
 
-    File* stream = fileOpen(path, "wt");
+    File* stream = fileOpenDirect(path, "wt");
     if (stream == nullptr) {
         return -1;
     }
@@ -346,6 +345,5 @@ err:
     debugPrint("Error:fprnt_pid!\n");
     return -1;
 }
-
 
 } // namespace fallout

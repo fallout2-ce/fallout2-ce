@@ -18,6 +18,7 @@ int dbGetFileSize(const char* filePath, int* sizePtr);
 int dbGetFileContents(const char* filePath, void* ptr);
 int fileClose(File* stream);
 File* fileOpen(const char* filename, const char* mode);
+File* fileOpenDirect(const char* filename, const char* mode);
 int filePrintFormatted(File* stream, const char* format, ...);
 int fileReadChar(File* stream);
 char* fileReadString(char* str, size_t size, File* stream);
@@ -110,6 +111,10 @@ int fileNameListInit(const char* pattern, char*** fileNames);
 void fileNameListFree(char*** fileNames, int unused);
 int fileGetSize(File* stream);
 void fileSetReadProgressHandler(FileReadProgressHandler* handler, int size);
+
+// Joins [root] and [relative] into a save path and creates its directory.
+// Returns a pointer to a static buffer.
+const char* buildDataPath(const char* root, const char* relative);
 
 } // namespace fallout
 

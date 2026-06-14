@@ -68,6 +68,32 @@ int xfileClose(XFile* stream)
     return rc;
 }
 
+// Opens [filePath] as a plain file at that exact location, bypassing the xbase
+// database. Use for reads/writes that must target a specific folder rather than
+// be resolved against (or into) a .dat archive.
+XFile* xfileOpenDirect(const char* filePath, const char* mode)
+{
+    assert(filePath);
+    assert(mode);
+
+    FILE* file = compat_fopen(filePath, mode);
+    if (file == nullptr) {
+        return nullptr;
+    }
+
+    XFile* stream = (XFile*)malloc(sizeof(*stream));
+    if (stream == nullptr) {
+        fclose(file);
+        return nullptr;
+    }
+
+    memset(stream, 0, sizeof(*stream));
+    stream->type = XFILE_TYPE_FILE;
+    stream->file = file;
+
+    return stream;
+}
+
 // 0x4DEE2C xfopen
 XFile* xfileOpen(const char* filePath, const char* mode)
 {

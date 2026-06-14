@@ -13,13 +13,11 @@
 #include "automap.h"
 #include "character_editor.h"
 #include "color.h"
-#include "config.h"
 #include "critter.h"
 #include "db.h"
 #include "debug.h"
 #include "draw.h"
 #include "game.h"
-#include "game_config.h"
 #include "game_dialog.h"
 #include "game_mouse.h"
 #include "game_movie.h"
@@ -776,6 +774,21 @@ static void mapperValidateDevPath()
     devPath.clear();
 }
 
+// Mounts the mapper temp folder (dev_temp_path, default "dev" relative to cwd) as
+// the highest-priority xbase. Mapper-only artifacts are read from here, and any
+// incidental relative write lands here instead of cluttering the dev_path mod
+// folder. Reverts to "dev" if explicitly cleared, and is created if missing.
+static void mapperMountDevTempPath()
+{
+    std::string& devTemp = settings.mapper.dev_temp_path;
+    if (devTemp.empty()) {
+        devTemp = "dev";
+    }
+
+    compat_mkdir_recursive(devTemp.c_str());
+    xbaseOpen(devTemp.c_str());
+}
+
 static void initMenuBar(const int screenWidth)
 {
     int foregroundColor = _colorTable[20052];
@@ -1011,6 +1024,7 @@ int mapper_edit_init(int argc, char** argv)
     target_init();
     mouseShowCursor();
     mapperValidateDevPath();
+    mapperMountDevTempPath();
     mapEdgeSetupInit();
     mapEdgeSetMapperMode(true);
 
@@ -2288,7 +2302,10 @@ void mapper_save_toolbar()
     if (dot != nullptr) *dot = '\0';
     strcat(name, ".cfg");
 
-    File* stream = fileOpen(mapBuildPath(name), "wb");
+    char relativePath[COMPAT_MAX_PATH];
+    snprintf(relativePath, sizeof(relativePath), "MAPS\\%s", name);
+
+    File* stream = fileOpenDirect(buildDataPath(mapperTempRoot(), relativePath), "wb");
     if (stream != nullptr) {
         fileWrite(toolbar_info, sizeof(ToolbarInfo), 6, stream);
         fileClose(stream);
@@ -2713,12 +2730,18 @@ int mapper_mark_exit_grid()
 // and on editor shutdown if the user quit while still in play mode.
 static void mapper_remove_tmp_map_files()
 {
-    remove(mapBuildSavePath(kTmpMapName));
-    remove(mapBuildSavePath("TMP$MAP#.EDG"));
+    char path[COMPAT_MAX_PATH];
 
-    char cfgPath[COMPAT_MAX_PATH];
-    snprintf(cfgPath, sizeof(cfgPath), "%s\\MAPS\\TMP$MAP#.CFG", settings.system.master_patches_path.c_str());
-    remove(cfgPath);
+    // The play-mode snapshot (.MAP/.EDG) and its toolbar .CFG are all mapper-only
+    // temp artifacts living under the temp root.
+    const char* tempRoot = mapperTempRoot();
+    snprintf(path, sizeof(path), "%s\\MAPS\\%s", tempRoot, kTmpMapName);
+    remove(path);
+    snprintf(path, sizeof(path), "%s\\MAPS\\TMP$MAP#.EDG", tempRoot);
+    remove(path);
+    snprintf(path, sizeof(path), "%s\\MAPS\\TMP$MAP#.CFG", tempRoot);
+    remove(path);
+
     MapDirErase("MAPS\\", "SAV");
 }
 
@@ -2751,10 +2774,11 @@ static void mapper_enter_play_mode(Object** pHlObj1)
 
     map_toggle_block_obj_viewing(0);
 
-    // Save current map under the temp name so we can restore on exit.
+    // Save current map under the temp name (to the temp root) so we can restore
+    // it on exit. This is mapper-only state, kept out of the dev_path mod folder.
     strncpy(gMapHeader.name, kTmpMapName, sizeof(gMapHeader.name) - 1);
     gMapHeader.name[sizeof(gMapHeader.name) - 1] = '\0';
-    _map_save();
+    mapSaveToRoot(mapperTempRoot());
 
     objectSetLocation(gDude, savedCenterTile, gElevation, nullptr);
 

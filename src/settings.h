@@ -166,8 +166,11 @@ struct MapperSettings {
     std::string map;
     // CE: switch between vanilla grid item picker and simpler list-based one.
     bool use_grid_item_picker = true;
-    // CE: change mapper path for saving various data.
+    // CE: change mapper path for saving final/shipped assets (maps, protos).
     std::string dev_path;
+    // CE: mapper path for saving mapper-only scratch artifacts (proto text dumps,
+    // targets, map toolbar configs).
+    std::string dev_temp_path = "dev";
 };
 
 struct Settings {
@@ -187,6 +190,12 @@ bool settingsInit(bool isMapper, int argc, char** argv);
 bool settingsSave();
 void settingsWriteToConfig(bool onlyAdd = false);
 bool settingsExit(bool shouldSave);
+
+// Mapper save root for final/shipped assets: dev_path if set, else master patches path.
+const char* mapperEditRoot();
+
+// Mapper save root for mapper-only temporary artifacts (dev_temp_path).
+const char* mapperTempRoot();
 
 } // namespace fallout
 

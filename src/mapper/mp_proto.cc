@@ -1923,7 +1923,7 @@ int protoEdit(int protoId)
             if (proto_save_text(pid, dir) == -1) {
                 return 0;
             }
-            _proto_save_pid(pid);
+            proto_save_pid_edit(pid);
             proto_header_save();
 
             if (rc == -2) {

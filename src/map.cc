@@ -723,38 +723,6 @@ const char* mapBuildPath(const char* name)
     return name;
 }
 
-const char* mapBuildDataSavePath(const char* relativePath)
-{
-    static char path[COMPAT_MAX_PATH];
-
-    // Save root: the validated mapper dev_path when set, otherwise the master patches path.
-    const std::string& devPath = settings.mapper.dev_path;
-    const char* root = !devPath.empty() ? devPath.c_str() : settings.system.master_patches_path.c_str();
-
-    // Join root + relativePath, tolerating a trailing separator on the root.
-    size_t rootLen = strlen(root);
-    bool rootHasSeparator = rootLen > 0 && (root[rootLen - 1] == '\\' || root[rootLen - 1] == '/');
-    snprintf(path, sizeof(path), "%s%s%s", root, rootHasSeparator ? "" : "\\", relativePath);
-
-    // Ensure the directory portion exists.
-    char dir[COMPAT_MAX_PATH];
-    snprintf(dir, sizeof(dir), "%s", path);
-    char* separator = strrchr(dir, '\\');
-    if (separator != nullptr) {
-        *separator = '\0';
-        compat_mkdir_recursive(dir);
-    }
-
-    return path;
-}
-
-const char* mapBuildSavePath(const char* name)
-{
-    char relativePath[COMPAT_MAX_PATH];
-    snprintf(relativePath, sizeof(relativePath), "MAPS\\%s", name);
-    return mapBuildDataSavePath(relativePath);
-}
-
 // 0x482924
 int mapSetEnteringLocation(int elevation, int tile_num, int orientation)
 {
@@ -1375,32 +1343,39 @@ static void _map_fix_critter_combat_data()
     }
 }
 
-// map_save
-// 0x483850
-int _map_save()
+// Saves the current map (and its .EDG sidecar) under the given save root,
+// writing directly to that folder without consulting the xbase database.
+int mapSaveToRoot(const char* root)
 {
-    int rc = -1;
-    if (gMapHeader.name[0] != '\0') {
-        const char* mapFilePath = mapBuildSavePath(gMapHeader.name);
-        File* stream = fileOpen(mapFilePath, "wb");
-        if (stream != nullptr) {
-            rc = _map_save_file(stream);
-            fileClose(stream);
-        } else {
-            debugPrint("Unable to open %s to write!", gMapHeader.name);
-        }
-
-        if (rc == 0) {
-            debugPrint("%s saved.", gMapHeader.name);
-
-            // Write the edge (.EDG) sidecar alongside the map.
-            mapEdgeSave(gMapHeader.name);
-        }
-    } else {
+    if (gMapHeader.name[0] == '\0') {
         debugPrint("\nError: map_save: map header corrupt!");
+        return -1;
+    }
+
+    char relativePath[COMPAT_MAX_PATH];
+    snprintf(relativePath, sizeof(relativePath), "MAPS\\%s", gMapHeader.name);
+
+    int rc = -1;
+    File* stream = fileOpenDirect(buildDataPath(root, relativePath), "wb");
+    if (stream != nullptr) {
+        rc = _map_save_file(stream);
+        fileClose(stream);
+    } else {
+        debugPrint("Unable to open %s to write!", gMapHeader.name);
+    }
+
+    if (rc == 0) {
+        debugPrint("%s saved.", gMapHeader.name);
+        mapEdgeSave(root, gMapHeader.name);
     }
 
     return rc;
+}
+
+// 0x483850 map_save
+int _map_save()
+{
+    return mapSaveToRoot(settings.system.master_patches_path.c_str());
 }
 
 // 0x483980

@@ -246,6 +246,7 @@ void initSettingsRegistry(bool isMapper)
         SETTING(sort_script_list);
         SETTING(map);
         SETTING(dev_path);
+        SETTING(dev_temp_path);
         SETTING(use_grid_item_picker);
 #undef SECT
     }
@@ -291,6 +292,17 @@ bool settingsExit(bool shouldSave)
     }
 
     return gameConfigExit(shouldSave);
+}
+
+const char* mapperEditRoot()
+{
+    return (!settings.mapper.dev_path.empty() ? settings.mapper.dev_path : settings.system.master_patches_path).c_str();
+}
+
+const char* mapperTempRoot()
+{
+    // dev_temp_path is normalized to a non-empty value when mounted at mapper init.
+    return settings.mapper.dev_temp_path.c_str();
 }
 
 } // namespace fallout
