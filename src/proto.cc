@@ -34,7 +34,6 @@ static int protoRead(Proto* buf, File* stream);
 static int protoItemDataWrite(ItemProtoData* item_data, int type, File* stream);
 static int protoSceneryDataWrite(SceneryProtoData* scenery_data, int type, File* stream);
 static int protoWrite(Proto* buf, File* stream);
-static int _proto_find_free_subnode(int type, Proto** out_ptr);
 static void _proto_remove_some_list(int type);
 static void _proto_remove_list(int type);
 static int _proto_new_id(int type);
@@ -1988,7 +1987,7 @@ int _proto_load_pid(int pid, Proto** protoPtr)
 }
 
 // 0x4A1D98 proto_find_free_subnode
-static int _proto_find_free_subnode(int type, Proto** protoPtr)
+int _proto_find_free_subnode(int type, Proto** protoPtr)
 {
     Proto* proto = (Proto*)internal_malloc(proto_size(type));
     *protoPtr = proto;

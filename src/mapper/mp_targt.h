@@ -55,6 +55,7 @@ int target_header_save();
 int target_header_load();
 int target_save(int pid);
 int target_load(int pid, TargetSubNode** subnode_ptr);
+int target_load_text(int pid);
 int target_find_free_subnode(TargetSubNode** subnode_ptr);
 int target_new(int pid, int* tid_ptr);
 int target_remove(int pid);

@@ -643,8 +643,6 @@ constexpr int kBtnHighlightByProto = 0x123;
 constexpr int kBtnAnimDebugStep = 0x12E;
 
 // LIBRARIAN menu pulldown keycodes
-constexpr int kBtnLibrarianRebuildAll = 5545;
-constexpr int kBtnLibrarianRebuildBinary = 5546;
 constexpr int kBtnLibrarianArtToProtos = 5547;
 constexpr int kBtnLibrarianSwapProtos = 5548;
 
@@ -732,8 +730,8 @@ void MapperInit()
 
     menu_val_3[0] = kBtnRebuildSprayTools;
     menu_val_3[1] = kBtnRebuildProtoList;
-    menu_val_3[2] = kBtnLibrarianRebuildAll;
-    menu_val_3[3] = kBtnLibrarianRebuildBinary;
+    menu_val_3[2] = kBtnDestroyProtoList;
+    menu_val_3[3] = kBtnBuildAllTypeBinary;
     menu_val_3[4] = KEY_ESCAPE;
     menu_val_3[5] = kBtnLibrarianArtToProtos;
     menu_val_3[6] = kBtnLibrarianSwapProtos;
@@ -801,7 +799,7 @@ static void initMenuBar(const int screenWidth)
     _win_register_menu_pulldown(menu_bar, 80, "SCRIPTS", kBtnMenuHeaderScripts, 8, menu_names[2], foregroundColor, backgroundColor);
     _win_register_menu_pulldown(menu_bar, 130, "SETTINGS", kBtnMenuHeaderSettings, 3, menu_names[4], foregroundColor, backgroundColor);
     if (can_modify_protos) {
-        _win_register_menu_pulldown(menu_bar, 180, "LIBRARIAN", kBtnMenuHeaderLibrarian, 7, menu_names[3], foregroundColor, backgroundColor);
+        _win_register_menu_pulldown(menu_bar, 180, "LIBRARIAN", kBtnMenuHeaderLibrarian, 6, menu_names[3], foregroundColor, backgroundColor);
     }
 }
 
@@ -2185,25 +2183,6 @@ void edit_mapper()
                 proto_build_all_texts();
                 update_art(currentType, scrollOffset);
                 mapperShowTimedMsg("Done.");
-            }
-            break;
-
-        // --- Librarian: Rebuild ALL ---
-        case kBtnLibrarianRebuildAll:
-            if (map_entered) break;
-            if (!can_modify_protos) break;
-            if (mapperYesNoDialog("Do you REALLY want to rebuild ALL?")) {
-                _proto_remove_all();
-                proto_build_all_texts();
-            }
-            break;
-
-        // --- Librarian: Rebuild Binary ---
-        case kBtnLibrarianRebuildBinary:
-            if (map_entered) break;
-            if (!can_modify_protos) break;
-            if (mapperYesNoDialog("Do you REALLY want to rebuild Binary?")) {
-                rebuild_binary();
             }
             break;
 

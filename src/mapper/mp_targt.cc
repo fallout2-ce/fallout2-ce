@@ -1,17 +1,47 @@
 #include "mapper/mp_targt.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "art.h"
+#include "color.h"
 #include "game.h"
 #include "map.h"
 #include "mapper/mp_proto.h"
 #include "memory.h"
+#include "platform_compat.h"
 #include "proto.h"
 #include "settings.h"
 #include "window_manager_private.h"
 
 namespace fallout {
+
+// Target field-type names (text format), indexed by TargetSubNode::field_2C.
+static const char* const target_types[] = {
+    "t_hex",
+    "t_hex_offset",
+    "rotation",
+    "elevation",
+    "t_object",
+    "t_item",
+    "t_scenery",
+    "t_global_var",
+    "t_local_var",
+    "t_animation",
+    "number",
+    "string",
+    "script",
+    "yes-no",
+};
+
+// Target placement names (text format), indexed by TargetSubNode::field_30.
+static const char* const target_placements[] = {
+    "proto_inst_struct",
+    "object_inst_struct",
+    "global_var",
+    "local_var",
+    "scr_local_var",
+};
 
 #define TARGET_DAT "target.dat"
 
@@ -236,6 +266,122 @@ int target_load(int pid, TargetSubNode** subnode_ptr)
 
     fclose(stream);
 
+    return 0;
+}
+
+// Splits a "key: value" line in place: trims the newline, null-terminates the key at the
+// first ':', and returns the value with leading spaces skipped (or nullptr if no ':').
+static char* target_text_split(char* line)
+{
+    char* nl = strchr(line, '\n');
+    if (nl != NULL) {
+        *nl = '\0';
+    }
+
+    char* colon = strchr(line, ':');
+    if (colon == NULL) {
+        return NULL;
+    }
+
+    *colon = '\0';
+    char* value = colon + 1;
+    while (*value == ' ') {
+        value++;
+    }
+    return value;
+}
+
+// Case-insensitive lookup of str in list[count]; returns index or -1.
+static int target_strlist_index(const char* str, const char* const* list, int count)
+{
+    for (int i = 0; i < count; i++) {
+        if (compat_stricmp(str, list[i]) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// target_load_text
+int target_load_text(int pid)
+{
+    char path[COMPAT_MAX_PATH];
+    target_make_path(path, pid);
+
+    size_t len = strlen(path);
+    path[len] = '\\';
+    _proto_list_str(pid, path + len + 1);
+
+    char* extension = strchr(path + len + 1, '.');
+    if (extension != NULL) {
+        strcpy(extension + 1, "tar");
+    } else {
+        strcat(path, ".tar");
+    }
+
+    FILE* stream = fopen(path, "rt");
+    if (stream == NULL) {
+        return -1;
+    }
+
+    TargetSubNode* subnode;
+    if (target_find_free_subnode(&subnode) == -1) {
+        fclose(stream);
+        return -1;
+    }
+
+    char line[120];
+    while (fgets(line, sizeof(line), stream) != NULL) {
+        char* value = target_text_split(line);
+        if (value == NULL) {
+            continue;
+        }
+
+        const char* key = line;
+        if (strcmp(key, "pid") == 0) {
+            subnode->pid = pid;
+        } else if (strcmp(key, "tid") == 0) {
+            sscanf(value, "%d", &subnode->tid);
+        } else if (strcmp(key, "desc") == 0) {
+            strcpy(reinterpret_cast<char*>(&subnode->field_8), value);
+        } else if (strcmp(key, "next") == 0) {
+            int hasNext = 0;
+            sscanf(value, "%d", &hasNext);
+            subnode->next = hasNext != 0 ? reinterpret_cast<TargetSubNode*>(1) : NULL;
+        } else if (strcmp(key, "type") == 0) {
+            int index = target_strlist_index(value, target_types, sizeof(target_types) / sizeof(target_types[0]));
+            if (index != -1) {
+                subnode->field_2C = index;
+            }
+        } else if (strcmp(key, "placement") == 0) {
+            int index = target_strlist_index(value, target_placements, sizeof(target_placements) / sizeof(target_placements[0]));
+            if (index != -1) {
+                subnode->field_30 = index;
+            }
+        } else if (strcmp(key, "pmid") == 0) {
+            sscanf(value, "%d", &subnode->field_34);
+        } else if (strcmp(key, "flags") == 0) {
+            sscanf(value, "%d", &subnode->field_38);
+        } else if (strcmp(key, "where") == 0) {
+            sscanf(value, "%d", &subnode->field_3C);
+        } else if (strcmp(key, "v0") == 0) {
+            sscanf(value, "%d", &subnode->field_44);
+        } else if (strcmp(key, "------") == 0) {
+            if (subnode->next != NULL) {
+                subnode->next = (TargetSubNode*)internal_malloc(sizeof(TargetSubNode));
+                if (subnode->next == NULL) {
+                    break;
+                }
+                subnode = subnode->next;
+            }
+        } else {
+            char msg[80];
+            snprintf(msg, sizeof(msg), "Load text as target error:\n\t=>%s", value);
+            _win_msg(msg, 100, 100, _colorTable[31744] | 0x10000);
+        }
+    }
+
+    fclose(stream);
     return 0;
 }
 

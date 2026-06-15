@@ -18,9 +18,11 @@
 #include "mapper/mp_utils.h"
 #include "memory.h"
 #include "object.h"
+#include "platform_compat.h"
 #include "proto.h"
 #include "proto_txt.h"
 #include "scripts.h"
+#include "settings.h"
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
@@ -1844,18 +1846,122 @@ void proto_choose_pid(int* pidPtr, int objectType, int hasPid, int subtype)
     }
 }
 
-// 0x49B778
-int proto_build_all_type(int type)
+// Builds "dir\filename.pro" for pid into path; returns false on filename lookup failure.
+static bool proto_build_pro_path(char* path, int pid)
 {
-    // TODO: Incomplete.
-    (void)type;
+    proto_make_path(path, pid);
+    size_t len = strlen(path);
+    path[len] = '\\';
+    return _proto_list_str(pid, path + len + 1) != -1;
+}
+
+// proto_build_all_type_binary
+int proto_build_all_type_binary(int type)
+{
+    char msg[120];
+    debugPrint("\n\t\t>>> Build Prototype Binary: %s <<<\n", artGetObjectTypeName(type));
+
+    int typeBits = type << 24;
+    for (int id = 1; id < proto_max_id(type); id++) {
+        int pid = typeBits | id;
+        proto_remove(pid);
+
+        bool failed = false;
+        Proto* proto;
+        if (protoGetProto(pid, &proto) == -1) {
+            snprintf(msg, sizeof(msg), "Build Text Error: pid %d Failed Build!", pid);
+            win_timed_msg(msg, proto_text_color_title());
+            debugPrint("%s", msg);
+            proto_remove(pid);
+            failed = true;
+        }
+
+        char path[COMPAT_MAX_PATH];
+        if (!proto_build_pro_path(path, pid)) {
+            snprintf(msg, sizeof(msg), "Build Text Error: pid %d Failed File Name Lookup!", pid);
+            win_timed_msg(msg, proto_text_color_title());
+            debugPrint("%s", msg);
+            return -1;
+        }
+
+        if (failed) {
+            continue;
+        }
+
+        if (_proto_save_pid(pid) == -1) {
+            snprintf(msg, sizeof(msg), "Build Text Error: pid %d Failed Save!", pid);
+            win_timed_msg(msg, proto_text_color_title());
+            debugPrint("%s", msg);
+        }
+        proto_remove(pid);
+    }
+
     return 0;
 }
 
-int proto_build_all_type_binary(int type)
+// proto_build_all_type
+int proto_build_all_type(int type)
 {
-    // TODO: rebuild binary proto list for given object type.
-    (void)type;
+    char msg[120] = "uninited string";
+    debugPrint("\n\t\t>>> Build Prototype Texts: %s <<<\n", artGetObjectTypeName(type));
+
+    int typeBits = type << 24;
+    for (int id = 1; id < proto_max_id(type); id++) {
+        int pid = typeBits | id;
+        proto_remove(pid);
+
+        bool failed = false;
+        if (proto_load_text(pid) == -1) {
+            snprintf(msg, sizeof(msg), "Build Text Error: pid %d Failed Build!", pid);
+            win_timed_msg(msg, proto_text_color_title());
+            debugPrint("%s", msg);
+            proto_remove(pid);
+            failed = true;
+        }
+
+        char path[COMPAT_MAX_PATH];
+        if (!proto_build_pro_path(path, pid)) {
+            snprintf(msg, sizeof(msg), "Build Text Error: pid %d Failed File Name Lookup!", pid);
+            win_timed_msg(msg, proto_text_color_title());
+            debugPrint("%s", msg);
+            return -1;
+        }
+
+        if (compat_remove(path) != 0 && !settings.mapper.ignore_rebuild_errors) {
+            win_timed_msg(msg, proto_text_color_title());
+        }
+
+        if (failed) {
+            continue;
+        }
+
+        if (PID_TYPE(pid) == OBJ_TYPE_CRITTER) {
+            Proto* proto;
+            // TODO: original calls exit_2() (fatal abort) on these failures; needs CE fatal-error handling.
+            if (protoGetProto(pid, &proto) == -1) {
+                return -1;
+            }
+
+            Object* obj;
+            if (objectCreateWithFidPid(&obj, proto->fid, pid) == -1) {
+                return -1;
+            }
+
+            critterUpdateDerivedStats(obj);
+            objectDestroy(obj, nullptr);
+        }
+
+        if (_proto_save_pid(pid) == -1) {
+            snprintf(msg, sizeof(msg), "Build Text Error: pid %d Failed Save!", pid);
+            win_timed_msg(msg, proto_text_color_title());
+            debugPrint("%s", msg);
+        }
+
+        proto_remove(pid);
+        target_load_text(pid);
+        target_remove_all();
+    }
+
     return 0;
 }
 
@@ -1954,11 +2060,6 @@ int protoEdit(int protoId)
 void rebuild_spray_tools()
 {
     // TODO: rebuild spray tool (create/update pattern protos)
-}
-
-void rebuild_binary()
-{
-    // TODO: rebuild binary proto files from text sources
 }
 
 void art_to_protos()

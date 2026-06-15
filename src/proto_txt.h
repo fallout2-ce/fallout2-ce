@@ -6,6 +6,7 @@ namespace fallout {
 extern const char* const anim_code_strs[];
 
 int proto_save_text(int pid, const char* dir);
+int proto_load_text(int pid);
 
 } // namespace fallout
 

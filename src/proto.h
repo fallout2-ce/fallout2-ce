@@ -155,6 +155,7 @@ int proto_max_id(int type);
 void proto_remove(int pid);
 int proto_header_save();
 int _proto_load_pid(int pid, Proto** protoPtr);
+int _proto_find_free_subnode(int type, Proto** protoPtr);
 
 static bool isExitGridPid(int pid)
 {
