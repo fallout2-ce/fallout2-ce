@@ -1889,7 +1889,7 @@ int proto_build_all_type_binary(int type)
             continue;
         }
 
-        if (_proto_save_pid(pid) == -1) {
+        if (proto_save_pid_edit(pid) == -1) {
             snprintf(msg, sizeof(msg), "Build Text Error: pid %d Failed Save!", pid);
             win_timed_msg(msg, proto_text_color_title());
             debugPrint("%s", msg);
@@ -1952,7 +1952,7 @@ int proto_build_all_type(int type)
             objectDestroy(obj, nullptr);
         }
 
-        if (_proto_save_pid(pid) == -1) {
+        if (proto_save_pid_edit(pid) == -1) {
             snprintf(msg, sizeof(msg), "Build Text Error: pid %d Failed Save!", pid);
             win_timed_msg(msg, proto_text_color_title());
             debugPrint("%s", msg);
@@ -2095,9 +2095,13 @@ int map_proto_swap_proto(int pid1, int pid2)
     proto1->pid = proto2->pid;
     proto2->pid = tmpPid;
 
-    char line1[32];
-    char line2[32];
-    bool listError = _proto_list_str(pid1, line1) == -1 || _proto_list_str(pid2, line2) == -1;
+    char line1[128];
+    char line2[128];
+    if (_proto_list_str(pid1, line1) == -1 || _proto_list_str(pid2, line2) == -1) {
+        proto_remove(pid1);
+        proto_remove(pid2);
+        return -1;
+    }
     strcat(line1, "\n");
     strcat(line2, "\n");
 
@@ -2118,18 +2122,22 @@ int map_proto_swap_proto(int pid1, int pid2)
         return -1;
     }
 
-    char line[32];
+    // Only a complete line at the start of a record can match an entry; chunks of an
+    // over-long line are copied verbatim so the .lst is never split or reflowed.
+    char line[128];
+    bool atLineStart = true;
     while (compat_fgets(line, sizeof(line), in) != nullptr) {
-        if (strcmp(line, line1) == 0) {
-            strcpy(line, line2);
-        } else if (strcmp(line, line2) == 0) {
-            strcpy(line, line1);
+        size_t len = strlen(line);
+        bool hasNewline = len > 0 && line[len - 1] == '\n';
+        if (atLineStart && hasNewline) {
+            if (strcmp(line, line1) == 0) {
+                strcpy(line, line2);
+            } else if (strcmp(line, line2) == 0) {
+                strcpy(line, line1);
+            }
         }
         fputs(line, out);
-        size_t len = strlen(line);
-        if (len == 0 || line[len - 1] != '\n') {
-            fputc('\n', out);
-        }
+        atLineStart = hasNewline;
     }
 
     fclose(in);
@@ -2141,25 +2149,18 @@ int map_proto_swap_proto(int pid1, int pid2)
     compat_rename(lstPath, bakPath);
     compat_rename(newPath, lstPath);
 
-    bool failed = listError;
-    if (!failed) {
-        char dir1[COMPAT_MAX_PATH];
-        char dir2[COMPAT_MAX_PATH];
-        target_make_path(dir1, pid1);
-        target_make_path(dir2, pid2);
-        if (proto_save_text(pid1, dir1) == -1 || proto_save_text(pid2, dir2) == -1) {
-            failed = true;
-        }
-    }
-
-    if (failed) {
+    char dir1[COMPAT_MAX_PATH];
+    char dir2[COMPAT_MAX_PATH];
+    target_make_path(dir1, pid1);
+    target_make_path(dir2, pid2);
+    if (proto_save_text(pid1, dir1) == -1 || proto_save_text(pid2, dir2) == -1) {
         proto_remove(pid1);
         proto_remove(pid2);
         return -1;
     }
 
-    _proto_save_pid(pid1);
-    _proto_save_pid(pid2);
+    proto_save_pid_edit(pid1);
+    proto_save_pid_edit(pid2);
     proto_header_save();
     return 0;
 }

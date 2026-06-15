@@ -374,7 +374,7 @@ static char* proto_text_split(char* line)
 // Skips a leading numeric token and the spaces after it, returning the start of the name token.
 static const char* proto_text_skip_field(const char* text)
 {
-    while (*text != ' ') {
+    while (*text != '\0' && *text != ' ') {
         text++;
     }
     while (*text == ' ') {

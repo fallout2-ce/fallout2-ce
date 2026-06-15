@@ -159,7 +159,7 @@ static int load_spray_tool_from_text(int index)
     }
 
     int result = 0;
-    int* fidPtr = reinterpret_cast<int*>(&spinfo);
+    int cellCount = 0;
     char line[120];
     while (compat_fgets(line, sizeof(line), stream) != nullptr) {
         line[strcspn(line, "\n")] = '\0';
@@ -182,11 +182,16 @@ static int load_spray_tool_from_text(int index)
             sscanf(value, "%d", &spinfo.idx);
             spinfo.idx = index;
         } else if (strcmp(line, "fid") == 0) {
-            if (proto_read_text_fid(value, fidPtr, OBJ_TYPE_TILE) == -1) {
+            if (cellCount >= kSprayCellCount) {
+                debugPrint("\nError: too many fids rebuilding spray tool from text!");
                 result = -1;
                 break;
             }
-            fidPtr += 4;
+            if (proto_read_text_fid(value, &spinfo.cells[cellCount].fid, OBJ_TYPE_TILE) == -1) {
+                result = -1;
+                break;
+            }
+            cellCount++;
         } else {
             debugPrint("\nError: rebuilding spray tool from text!");
         }
@@ -200,6 +205,11 @@ static int load_spray_tool_from_text(int index)
 // Returns -1 if the scratch buffer can't be allocated.
 static int draw_spray_to_win(int win, SprayTool* tool)
 {
+    if (tool->width <= 0 || tool->length <= 0 || tool->width * tool->length > kSprayCellCount) {
+        mapperShowMessage("Invalid spray tool dimensions!");
+        return -1;
+    }
+
     int pitch = 48 * tool->width;
     int bufHeight = 12 * tool->length;
     int bufPixels = pitch * bufHeight;
@@ -336,6 +346,10 @@ static int pick_spray_tool(SprayTool** out)
 // Paint the active pattern across the brush area centered on the clicked tile.
 static void copy_spray_paint(SprayTool* tool)
 {
+    if (tool->width <= 0 || tool->length <= 0) {
+        return;
+    }
+
     int areaHeight = _scr_size.bottom - _scr_size.top - 100;
     if (_mouse_click_in(0, 0, _scr_size.right - _scr_size.left, areaHeight) == 0) {
         return;
@@ -376,7 +390,7 @@ static void copy_spray_paint(SprayTool* tool)
         int base = tile + SQUARE_GRID_WIDTH * i;
         for (int t = base + colMin; t <= base + colMax; t++) {
             int cellIndex = t % SQUARE_GRID_WIDTH % tool->width + t / SQUARE_GRID_WIDTH % tool->length * tool->width;
-            if (cellIndex >= kSprayCellCount) {
+            if (cellIndex < 0 || cellIndex >= kSprayCellCount) {
                 continue;
             }
             SprayToolCell* cell = &tool->cells[cellIndex];
