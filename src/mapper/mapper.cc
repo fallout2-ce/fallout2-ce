@@ -36,6 +36,7 @@
 #include "mapper/mp_instance.h"
 #include "mapper/mp_proto.h"
 #include "mapper/mp_scrpt.h"
+#include "mapper/mp_spray.h"
 #include "mapper/mp_targt.h"
 #include "mapper/mp_text.h"
 #include "memory.h"
@@ -263,6 +264,9 @@ static ToolbarInfo toolbar_info[6];
 
 // Currently highlighted art-slot index in the toolbar; -1 = none.
 static int tool_active = -1;
+
+// When set, the next toolbar proto click swaps that proto with the active one.
+static int mapper_copy_proto = 0;
 
 // Color (palette index) used to draw the selection box around the active slot.
 static int toolbar_selection_color = 21;
@@ -563,7 +567,6 @@ constexpr int kBtnMenuHeaderLibrarian = KEY_ALT_J;
 constexpr int kBtnMenuHeaderSettings = KEY_ALT_X;
 
 constexpr int kBtnPlayMode = KEY_F8;
-constexpr int kBtnRebuildProtoList = KEY_F10;
 constexpr int kBtnF8AsGame = KEY_CTRL_F12;
 
 constexpr int kBtnMoveMapElev = 4186;
@@ -637,19 +640,20 @@ constexpr int kBtnToggleInterruptWalk = KEY_ALT_R;
 constexpr int kBtnRotation0 = KEY_CTRL_ARROW_UP;
 constexpr int kBtnRotation3 = KEY_CTRL_ARROW_DOWN;
 constexpr int kBtnDestroyAllScripts = KEY_UPPERCASE_A;
-constexpr int kBtnRebuildSprayTools = 0x143;
-constexpr int kBtnDestroyProtoList = 0x185;
 constexpr int kBtnHighlightByProto = 0x123;
 constexpr int kBtnAnimDebugStep = 0x12E;
 
-// LIBRARIAN menu pulldown keycodes
-constexpr int kBtnLibrarianArtToProtos = 5547;
-constexpr int kBtnLibrarianSwapProtos = 5548;
+// LIBRARIAN menu pulldown keycodes (positionally matched to menu_3 / menu_val_3)
+constexpr int kBtnRebuildSprayTools = 0x143; // 323 — "Rebuild Weapons" (rebuilds spray tools)
+constexpr int kBtnRebuildProtoList = KEY_F10; // 324 — "Rebuild Proto List"
+constexpr int kBtnDestroyProtoList = 0x185; // 389 — "Rebuild ALL"
+constexpr int kBtnBuildAllTypeBinary = 6123; // 0x17EB — "Rebuild Binary"
+constexpr int kBtnLibrarianArtToProtos = KEY_QUESTION; // 63 — "Art => New Protos"
+constexpr int kBtnLibrarianSwapProtos = KEY_BRACE_RIGHT; // 125 — "Swap Prototypes"
 
 // Direct-key bindings restored from the original mapper switch.
 constexpr int kBtnAutomap = KEY_TAB; //   9 — Automap (uses existing automapShow)
 constexpr int kBtnBookmarkChoose = 7777; //  UI — Bookmark choose dialog (existing bookmarkChoose)
-constexpr int kBtnBuildAllTypeBinary = 6123; // UI — Build all type binary (proto_build_all_type_binary)
 
 constexpr int kArtMaxDirect = 0x4B0;
 
@@ -799,7 +803,9 @@ static void initMenuBar(const int screenWidth)
     _win_register_menu_pulldown(menu_bar, 80, "SCRIPTS", kBtnMenuHeaderScripts, 8, menu_names[2], foregroundColor, backgroundColor);
     _win_register_menu_pulldown(menu_bar, 130, "SETTINGS", kBtnMenuHeaderSettings, 3, menu_names[4], foregroundColor, backgroundColor);
     if (can_modify_protos) {
-        _win_register_menu_pulldown(menu_bar, 180, "LIBRARIAN", kBtnMenuHeaderLibrarian, 6, menu_names[3], foregroundColor, backgroundColor);
+        // Count is 7 (vs the original's 6): the original hid the trailing "Swap
+        // Prototypes" entry, but CE wires it up (arms swap mode), so it is shown.
+        _win_register_menu_pulldown(menu_bar, 180, "LIBRARIAN", kBtnMenuHeaderLibrarian, 7, menu_names[3], foregroundColor, backgroundColor);
     }
 }
 
@@ -1468,6 +1474,29 @@ void edit_mapper()
             if (keyCode >= rightBase && keyCode <= rightBase + max_art_buttons) {
 
                 if (map_entered) continue;
+
+                // Swap mode (armed by "Swap Prototypes"): swap the clicked proto with
+                // the active one, then clear the mode and toolbar selection.
+                if (mapper_copy_proto == 1) {
+                    mapper_copy_proto = 0;
+                    if (!settings.mapper.use_art_not_protos && tool_active != -1) {
+                        int pid1 = toolbar_proto(currentType, scrollOffset + tool_active);
+                        if (pid1 != -1) {
+                            int pid2 = toolbar_proto(currentType, scrollOffset + (keyCode - rightBase));
+                            if (map_proto_swap_proto(pid1, pid2) == -1) {
+                                mapperShowTimedMsg("Error Swapping protos!");
+                            }
+                            tool_active = -1;
+                            selectedPid = -1;
+                            draw_mode = false;
+                            mapper_destroy_highlight_obj(&hl_obj1, nullptr);
+                            _screen_obj = nullptr;
+                            gameMouseResetBouncingCursorFid();
+                            update_art(currentType, scrollOffset);
+                        }
+                    }
+                    continue;
+                }
 
                 if (!settings.mapper.use_art_not_protos) {
                     int slotIndex = keyCode - rightBase;
@@ -2156,7 +2185,12 @@ void edit_mapper()
             if (map_entered) break;
             if (!can_modify_protos) break;
             if (mapperYesNoDialog("Do you REALLY want to rebuild spray tools?")) {
-                rebuild_spray_tools();
+                mapperShowTimedMsg("Please wait.");
+                if (rebuild_spray_tools() == -1) {
+                    debugPrint("\nError: Rebuilding spray tools!");
+                    mapperShowTimedMsg("Error rebuilding spray tools!");
+                }
+                mapperShowTimedMsg("Done.");
             }
             break;
 
@@ -2187,17 +2221,24 @@ void edit_mapper()
             break;
 
         // --- Librarian: Art => New Protos ---
+        // Confirmed no-op in the original mapper: keycode 63 falls through to the
+        // default (do-nothing) case and there is no backing implementation in the
+        // original C/ASM. The menu item is kept for parity, but the handler is
+        // disabled until/unless its intended behavior is recovered.
         case kBtnLibrarianArtToProtos:
-            if (map_entered) break;
-            if (!can_modify_protos) break;
-            art_to_protos();
+            // if (map_entered) break;
+            // if (!can_modify_protos) break;
+            // art_to_protos();
             break;
 
         // --- Librarian: Swap Prototypes ---
         case kBtnLibrarianSwapProtos:
             if (map_entered) break;
             if (!can_modify_protos) break;
-            swap_protos();
+            // Original kc125 handler was a no-op (the mode flag was never set, leaving
+            // map_proto_swap_proto unreachable). Wire the intended mode here.
+            mapper_copy_proto = 1;
+            mapperShowTimedMsg("Click a proto to swap with the active one.");
             break;
 
         // --- Highlight object by proto ---

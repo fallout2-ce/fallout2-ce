@@ -443,7 +443,7 @@ static void proto_read_drug_stat(const char* str, int* outStat)
 
 // Parses "<fidNum> <artname>" into *outFid. defaultType is the art type used for the fallback
 // fid (255 means "use the fid's own type"). Returns -1 if the art name is not in its list.
-static int proto_read_text_fid(const char* text, int* outFid, int defaultType)
+int proto_read_text_fid(const char* text, int* outFid, int defaultType)
 {
     if (defaultType == 255) {
         defaultType = -1;

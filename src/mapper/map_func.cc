@@ -18,6 +18,7 @@
 #include "kb.h"
 #include "map.h"
 #include "mapper/mapper.h"
+#include "mapper/mp_spray.h"
 #include "mapper/mp_utils.h"
 #include "memory.h"
 #include "mouse.h"
@@ -316,20 +317,6 @@ void map_clear_elevation()
     }
 }
 
-static void showNotImplementedSprayToolMsg()
-{
-    mapperShowTimedMsg("Spray-tile painting not implemented in CE.");
-}
-
-// copy_spray_tile
-// TODO: porting this requires the spray-tool subsystem (pick_spray_tool / load_spray_tool /
-// draw_spray_to_win / get_max_spray_tool / `spinfo` global / `map_brush_size` global / a sizable
-// SprayTool data struct + .spr file I/O). Pending user direction before pulling that in.
-void copy_spray_tile()
-{
-    showNotImplementedSprayToolMsg();
-}
-
 // pick_hex
 int pickHex()
 {
@@ -451,41 +438,18 @@ void placeTile(int pid, int fid)
         return;
     }
 
-    int newArt = fid & 0xFFF;
-    int* squarePtr = &_square[gElevation]->field_0[squareTile];
-    int oldValue = *squarePtr;
-
-    if (tileRoofIsVisible()) {
-        int oldRoofFid = buildFid(OBJ_TYPE_TILE, (oldValue >> 16) & 0xFFF, 0, 0, 0);
-        if (oldRoofFid == fid) {
-            return;
-        }
-
-        int oldRoofWord = oldValue >> 16;
-        int roofRotation = (oldRoofWord & 0xF000) >> 12;
-        int newRoofWord = roofRotation | newArt;
-        *squarePtr = (newRoofWord << 16) | (oldValue & 0xFFFF);
-
-        int sx, sy;
-        squareTileToRoofScreenXY(squareTile, &sx, &sy, gElevation);
-        Rect rect = { sx, sy, sx + 80, sy + 36 };
-        tileWindowRefreshRect(&rect, gElevation);
-    } else {
-        int oldFloorFid = buildFid(OBJ_TYPE_TILE, oldValue & 0xFFF, 0, 0, 0);
-        if (oldFloorFid == fid) {
-            return;
-        }
-
-        int oldFloorWord = oldValue & 0xFFFF;
-        int floorRotation = (oldFloorWord & 0xF000) >> 12;
-        int newFloorWord = floorRotation | newArt;
-        *squarePtr = (oldValue & 0xFFFF0000) | newFloorWord;
-
-        int sx, sy;
-        squareTileToScreenXY(squareTile, &sx, &sy, gElevation);
-        Rect rect = { sx, sy, sx + 80, sy + 36 };
-        tileWindowRefreshRect(&rect, gElevation);
+    if (!place_tile_at(fid, squareTile)) {
+        return;
     }
+
+    int sx, sy;
+    if (tileRoofIsVisible()) {
+        squareTileToRoofScreenXY(squareTile, &sx, &sy, gElevation);
+    } else {
+        squareTileToScreenXY(squareTile, &sx, &sy, gElevation);
+    }
+    Rect rect = { sx, sy, sx + 80, sy + 36 };
+    tileWindowRefreshRect(&rect, gElevation);
 }
 
 // mpMouseCheckScrolling
@@ -980,13 +944,6 @@ void eraseObject()
 void mapper_flush_cache()
 {
     artCacheFlush();
-}
-
-// create_spray_tool
-// Original implementation just returns -1 (the spray-tool authoring path was disabled in the
-// shipped mapper). We keep the same disabled behavior.
-void create_spray_tool()
-{
 }
 
 // File-scope constants used by mapper_shift_map_once and its helpers (file-scope so the

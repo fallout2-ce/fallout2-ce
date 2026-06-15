@@ -17,9 +17,10 @@ const char* proto_wall_light_str(int flags);
 int proto_pick_ai_packet(int* value);
 int proto_build_all_type(int type);
 int proto_build_all_type_binary(int type);
-void rebuild_spray_tools();
-void art_to_protos();
-void swap_protos();
+// Confirmed no-op in the original mapper (keycode 63 falls through to default);
+// kept commented out, see mp_proto.cc.
+// void art_to_protos();
+int map_proto_swap_proto(int pid1, int pid2);
 int protoEdit(int protoId);
 int protoChooseMultiPids(int pidType, protoChooseFidCallback fidFunc, protoChooseAddCallback addFunc);
 // protoInstEdit moved to mp_instance.h

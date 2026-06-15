@@ -628,6 +628,8 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
         "src/mapper/mp_proto.h"
         "src/mapper/mp_scrpt.cc"
         "src/mapper/mp_scrpt.h"
+        "src/mapper/mp_spray.cc"
+        "src/mapper/mp_spray.h"
         "src/mapper/mp_targt.cc"
         "src/mapper/mp_targt.h"
         "src/mapper/mp_utils.cc"

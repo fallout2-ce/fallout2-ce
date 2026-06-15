@@ -9,6 +9,7 @@
 #include "color.h"
 #include "combat_ai.h"
 #include "critter.h"
+#include "db.h"
 #include "debug.h"
 #include "game_sound.h"
 #include "input.h"
@@ -2057,19 +2058,110 @@ int protoEdit(int protoId)
     }
 }
 
-void rebuild_spray_tools()
+// "Art => New Protos" (LIBRARIAN keycode 63) is a confirmed no-op in the original
+// mapper: the keycode handler falls through to the default case and there is no
+// backing implementation in the original C/ASM. The menu item is kept for parity,
+// but the function is disabled until/unless its intended behavior is recovered.
+// void art_to_protos()
+// {
+// }
+
+// Build "<edit root>\proto\<TYPE>\<TYPE><ext>" for the given pid. The proto .lst
+// is a shipped asset, so it (and its .new/.bak temp siblings) live under the edit root.
+static void proto_type_list_path(char* path, int pid, const char* ext)
 {
-    // TODO: rebuild spray tool (create/update pattern protos)
+    const char* type = artGetObjectTypeName(PID_TYPE(pid));
+    char relative[COMPAT_MAX_PATH];
+    snprintf(relative, sizeof(relative), "proto\\%s\\%s%s", type, type, ext);
+    strcpy(path, buildDataPath(mapperEditRoot(), relative));
 }
 
-void art_to_protos()
+// Swap two same-type prototypes: exchange their pid field, swap their entries in
+// the type .lst (rewritten via a .new file, old list kept as .bak), then persist
+// both protos. Returns -1 on failure.
+int map_proto_swap_proto(int pid1, int pid2)
 {
-    // TODO: create new proto entries for art files that have no proto yet
-}
+    if (pid1 == -1 || pid2 == -1 || PID_TYPE(pid1) != PID_TYPE(pid2) || pid1 == pid2) {
+        return -1;
+    }
 
-void swap_protos()
-{
-    // TODO: swap two prototype slots
+    Proto* proto1;
+    Proto* proto2;
+    if (protoGetProto(pid1, &proto1) == -1 || protoGetProto(pid2, &proto2) == -1) {
+        return -1;
+    }
+
+    int tmpPid = proto1->pid;
+    proto1->pid = proto2->pid;
+    proto2->pid = tmpPid;
+
+    char line1[32];
+    char line2[32];
+    bool listError = _proto_list_str(pid1, line1) == -1 || _proto_list_str(pid2, line2) == -1;
+    strcat(line1, "\n");
+    strcat(line2, "\n");
+
+    char lstPath[COMPAT_MAX_PATH];
+    proto_type_list_path(lstPath, pid1, ".lst");
+
+    FILE* in = compat_fopen(lstPath, "rt");
+    if (in == nullptr) {
+        return -1;
+    }
+
+    char newPath[COMPAT_MAX_PATH];
+    proto_type_list_path(newPath, pid2, ".new");
+
+    FILE* out = compat_fopen(newPath, "wt");
+    if (out == nullptr) {
+        fclose(in);
+        return -1;
+    }
+
+    char line[32];
+    while (compat_fgets(line, sizeof(line), in) != nullptr) {
+        if (strcmp(line, line1) == 0) {
+            strcpy(line, line2);
+        } else if (strcmp(line, line2) == 0) {
+            strcpy(line, line1);
+        }
+        fputs(line, out);
+        size_t len = strlen(line);
+        if (len == 0 || line[len - 1] != '\n') {
+            fputc('\n', out);
+        }
+    }
+
+    fclose(in);
+    fclose(out);
+
+    char bakPath[COMPAT_MAX_PATH];
+    strcpy(bakPath, newPath);
+    strcpy(bakPath + strlen(bakPath) - 3, "bak");
+    compat_rename(lstPath, bakPath);
+    compat_rename(newPath, lstPath);
+
+    bool failed = listError;
+    if (!failed) {
+        char dir1[COMPAT_MAX_PATH];
+        char dir2[COMPAT_MAX_PATH];
+        target_make_path(dir1, pid1);
+        target_make_path(dir2, pid2);
+        if (proto_save_text(pid1, dir1) == -1 || proto_save_text(pid2, dir2) == -1) {
+            failed = true;
+        }
+    }
+
+    if (failed) {
+        proto_remove(pid1);
+        proto_remove(pid2);
+        return -1;
+    }
+
+    _proto_save_pid(pid1);
+    _proto_save_pid(pid2);
+    proto_header_save();
+    return 0;
 }
 
 // proto_choose_multi_pids_update
