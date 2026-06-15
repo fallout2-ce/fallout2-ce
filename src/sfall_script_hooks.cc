@@ -571,6 +571,27 @@ int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int action
 }
 
 /*
+Runs when calculating the AP cost of movement.
+
+Critter arg0 - The critter doing the moving
+int     arg1 - The number of hexes being moved
+int     arg2 - The original AP cost
+
+int     ret0 - The new AP cost
+*/
+int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints)
+{
+    ScriptHookCall hook(HOOK_MOVECOST, 1, { critter, distance, actionPoints });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return actionPoints;
+    }
+
+    return hook.getReturnValueAt(0).asInt();
+}
+
+/*
 Runs before moving items between inventory slots in dude interface. You can override the action.
 
 int     arg0 - Target slot:
