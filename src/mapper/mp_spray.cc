@@ -1,6 +1,7 @@
 #include "mapper/mp_spray.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "art.h"
@@ -175,11 +176,10 @@ static int load_spray_tool_from_text(int index)
         }
 
         if (strcmp(line, "width") == 0) {
-            sscanf(value, "%d", &spinfo.width);
+            spinfo.width = static_cast<int>(strtol(value, nullptr, 10));
         } else if (strcmp(line, "length") == 0) {
-            sscanf(value, "%d", &spinfo.length);
+            spinfo.length = static_cast<int>(strtol(value, nullptr, 10));
         } else if (strcmp(line, "idx") == 0) {
-            sscanf(value, "%d", &spinfo.idx);
             spinfo.idx = index;
         } else if (strcmp(line, "fid") == 0) {
             if (cellCount >= kSprayCellCount) {

@@ -287,7 +287,8 @@ void isoExit()
 // 0x481FB4
 void mapInit()
 {
-    if (settings.system.executableIsMapper()) {
+    bool isMapper = settings.system.executableIsMapper();
+    if (isMapper) {
         _map_scroll_refresh = isoWindowRefreshRectMapper;
     }
 
@@ -304,7 +305,9 @@ void mapInit()
 
     mapNewMap();
     tickersAdd(gameMouseRefresh);
-    _gmouse_disable(0);
+    if (!isMapper) {
+        _gmouse_disable(0);
+    }
     windowShow(gIsoWindow);
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_MAP, &gMapMessageList);
