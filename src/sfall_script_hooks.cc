@@ -586,13 +586,16 @@ int     ret0 - The new AP cost
 */
 int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints)
 {
+    if (scriptHooks[HOOK_MOVECOST].empty()) {
+        return actionPoints;
+    }
+
     ScriptHookCall hook(HOOK_MOVECOST, 1, { critter, distance, actionPoints });
     hook.call();
 
     if (hook.numReturnValues() <= 0) {
         return actionPoints;
     }
-
     return hook.getReturnValueAt(0).asInt();
 }
 
