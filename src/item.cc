@@ -1315,11 +1315,7 @@ int weaponGetDamage(Object* critter, int hitMode)
     minDamage += bonusDamage;
     maxDamage += bonusDamage + meleeDamage;
 
-    ItemDamageHookResult hookResult = scriptHooks_ItemDamage(weapon, critter, hitMode, isMeleeWeaponAttack, &minDamage, &maxDamage);
-    if (hookResult.fixedDamageOverridden) {
-        return hookResult.fixedDamage;
-    }
-
+    scriptHooks_ItemDamage(weapon, critter, hitMode, isMeleeWeaponAttack, &minDamage, &maxDamage);
     return randomBetween(minDamage, maxDamage);
 }
 

@@ -311,7 +311,7 @@ int     arg5 - 1 if this is an attack using a melee weapon, 0 otherwise
 int     ret0 - Either the damage to be used, if ret1 isn't given, or the new minimum damage if it is
 int     ret1 - The new maximum damage
 */
-ItemDamageHookResult scriptHooks_ItemDamage(Object* weapon, Object* critter, int hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr)
+void scriptHooks_ItemDamage(Object* weapon, Object* critter, int hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr)
 {
     assert(critter != nullptr);
     assert(minDamagePtr != nullptr);
@@ -321,17 +321,15 @@ ItemDamageHookResult scriptHooks_ItemDamage(Object* weapon, Object* critter, int
     hook.call();
 
     if (hook.numReturnValues() <= 0) {
-        return { false, 0 };
+        return;
     }
 
-    int overrideMinDamage = hook.getReturnValueAt(0).asInt();
+    *minDamagePtr = hook.getReturnValueAt(0).asInt();
     if (hook.numReturnValues() > 1) {
-        *minDamagePtr = overrideMinDamage;
         *maxDamagePtr = hook.getReturnValueAt(1).asInt();
-        return { false, 0 };
+    } else {
+        *maxDamagePtr = *minDamagePtr;
     }
-
-    return { true, overrideMinDamage };
 }
 
 /*
