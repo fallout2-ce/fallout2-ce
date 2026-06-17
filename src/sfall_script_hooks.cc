@@ -573,6 +573,11 @@ int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int action
 /*
 Runs when calculating the AP cost of movement.
 
+The engine calls this both for full-path AP previews and for per-hex AP
+deduction during movement animation. In practice, arg1 may therefore be the
+full path length or 1, depending on the caller. Non-linear overrides can make
+the UI preview diverge from the AP actually spent.
+
 Critter arg0 - The critter doing the moving
 int     arg1 - The number of hexes being moved
 int     arg2 - The original AP cost

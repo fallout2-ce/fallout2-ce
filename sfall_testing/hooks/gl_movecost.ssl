@@ -7,7 +7,7 @@ procedure movecost_mode_name(variable mode) begin
     variable name := "unknown";
 
     if (mode == 0) then name := "engine";
-    else if (mode == 1) then name := "plus_one";
+    else if (mode == 1) then name := "plus_per_hex";
     else if (mode == 2) then name := "double";
 
     return name;
@@ -38,7 +38,7 @@ procedure movecost_handler begin
         modeName));
 
     if (movecost_mode == 1) then begin
-        newCost := defaultCost + 1;
+        newCost := defaultCost + distance;
     end else if (movecost_mode == 2) then begin
         newCost := defaultCost * 2;
     end else begin
@@ -63,7 +63,7 @@ procedure start begin
     if (not game_loaded) then return;
 
     display_msg("movecost manual test ready: enter combat, hover a tile, then move");
-    display_msg("press M to cycle hook override: engine -> plus_one -> double");
+    display_msg("press M to cycle hook override: engine -> plus_per_hex -> double");
 
     register_hook_proc(HOOK_KEYPRESS, keypress_handler);
     register_hook_proc(HOOK_MOVECOST, movecost_handler);
