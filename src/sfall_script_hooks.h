@@ -302,6 +302,7 @@ bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDur
 void scriptHooks_CombatTurnCombatEnd(Object* critter);
 PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, PerceptionType type, PerceptionResult result);
 int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int actionPoints, Object* weapon);
+int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLocationPtr, int hitChance, int roll);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
