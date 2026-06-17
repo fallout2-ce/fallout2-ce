@@ -283,6 +283,7 @@ enum class EncounterHookResult {
 
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
+void scriptHooks_ItemDamage(Object* weapon, Object* critter, int hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr);
 int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
 int scriptHooks_Steal(Object* thief, Object* target, Object* item, bool isPlanting, int quantity, int* xpOverride);
 
