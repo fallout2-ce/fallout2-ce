@@ -161,43 +161,45 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
     if (dir != nullptr) {
         if (*dir != '\0') {
             if (!compatIsPathSeparator(*dir) && compatIsPathSeparator(*path)) {
-
-                strcpy(path, dir);
-                path = strchr(path, '\0');
-
-                if (compatIsPathSeparator(path[-1])) {
-                    path--;
-                } else {
-                    *path = '/';
-                }
-            }
-        }
-
-        if (fname != nullptr && *fname != '\0') {
-            if (!compatIsPathSeparator(*fname) && *path == '/') {
                 path++;
             }
 
-            strcpy(path, fname);
+            strcpy(path, dir);
             path = strchr(path, '\0');
-        } else {
-            if (*path == '/') {
-                path++;
+
+            if (compatIsPathSeparator(path[-1])) {
+                path--;
+            } else {
+                *path = '/';
             }
         }
+    }
 
-        if (ext != nullptr) {
-            if (*ext != '\0') {
-                if (*ext != '.') {
-                    *path++ = '.';
-                }
-
-                strcpy(path, ext);
-                path = strchr(path, '\0');
-            }
+    if (fname != nullptr && *fname != '\0') {
+        if (!compatIsPathSeparator(*fname) && compatIsPathSeparator(*path)) {
+            path++;
         }
 
-        *path = '\0';
+        strcpy(path, fname);
+        path = strchr(path, '\0');
+    } else {
+        if (compatIsPathSeparator(*path)) {
+            path++;
+        }
+    }
+
+    if (ext != nullptr) {
+        if (*ext != '\0') {
+            if (*ext != '.') {
+                *path++ = '.';
+            }
+
+            strcpy(path, ext);
+            path = strchr(path, '\0');
+        }
+    }
+
+    *path = '\0';
 #endif
 }
 
@@ -223,7 +225,7 @@ int compat_mkdir(const char* path)
 #ifdef _WIN32
     return mkdir(nativePath);
 #else
-        return mkdir(nativePath, 0755);
+    return mkdir(nativePath, 0755);
 #endif
 }
 
@@ -263,11 +265,11 @@ bool compat_is_dir(const char* path)
     }
     return (info.st_mode & _S_IFDIR) != 0;
 #else
-        struct stat info;
-        if (stat(nativePath, &info) != 0) {
-            return false;
-        }
-        return S_ISDIR(info.st_mode);
+    struct stat info;
+    if (stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return S_ISDIR(info.st_mode);
 #endif
 }
 
@@ -283,11 +285,11 @@ bool compat_file_exists(const char* filePath)
     }
     return (info.st_mode & _S_IFDIR) == 0;
 #else
-        struct stat info;
-        if (stat(nativePath, &info) != 0) {
-            return false;
-        }
-        return !S_ISDIR(info.st_mode);
+    struct stat info;
+    if (stat(nativePath, &info) != 0) {
+        return false;
+    }
+    return !S_ISDIR(info.st_mode);
 #endif
 }
 
@@ -296,9 +298,9 @@ unsigned int compat_timeGetTime()
 #ifdef _WIN32
     return timeGetTime();
 #else
-        static auto start = std::chrono::steady_clock::now();
-        auto now = std::chrono::steady_clock::now();
-        return static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count());
+    static auto start = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    return static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count());
 #endif
 }
 
