@@ -29,6 +29,11 @@
 
 namespace fallout {
 
+static bool compatIsPathSeparator(char ch)
+{
+    return ch == '/' || ch == '\\';
+}
+
 static void compat_prepare_native_path(char* nativePath, const char* path)
 {
     strncpy(nativePath, path, COMPAT_MAX_PATH - 1);
@@ -68,46 +73,48 @@ void compat_splitpath(const char* path, char* drive, char* dir, char* fname, cha
     _splitpath(path, drive, dir, fname, ext);
 #else
     const char* driveStart = path;
-    if (path[0] == '/' && path[1] == '/') {
-        path += 2;
-        while (*path != '\0' && *path != '/' && *path != '.') {
-            path++;
+    const char* pathAfterDrive = path;
+    if (pathAfterDrive[0] != '\0'
+        && pathAfterDrive[1] != '\0'
+        && compatIsPathSeparator(pathAfterDrive[0])
+        && compatIsPathSeparator(pathAfterDrive[1])) {
+        pathAfterDrive += 2;
+        while (*pathAfterDrive != '\0' && !compatIsPathSeparator(*pathAfterDrive) && *pathAfterDrive != '.') {
+            pathAfterDrive++;
         }
     }
 
     if (drive != nullptr) {
-        size_t driveSize = path - driveStart;
+        size_t driveSize = pathAfterDrive - driveStart;
         if (driveSize > COMPAT_MAX_DRIVE - 1) {
             driveSize = COMPAT_MAX_DRIVE - 1;
         }
-        strncpy(drive, path, driveSize);
+        strncpy(drive, driveStart, driveSize);
         drive[driveSize] = '\0';
     }
 
-    const char* dirStart = path;
-    const char* fnameStart = path;
-    const char* extStart = nullptr;
-
-    const char* end = path;
-    while (*end != '\0') {
-        if (*end == '/') {
-            fnameStart = end + 1;
-        } else if (*end == '.') {
-            extStart = end;
+    const char* fnameStart = pathAfterDrive;
+    for (const char* pch = pathAfterDrive; *pch != '\0'; pch++) {
+        if (compatIsPathSeparator(*pch)) {
+            fnameStart = pch + 1;
         }
-        end++;
     }
 
-    if (extStart == nullptr) {
-        extStart = end;
+    const char* end = pathAfterDrive + strlen(pathAfterDrive);
+    const char* extStart = end;
+    for (const char* pch = end; pch != fnameStart; pch--) {
+        if (pch[-1] == '.') {
+            extStart = pch - 1;
+            break;
+        }
     }
 
     if (dir != nullptr) {
-        size_t dirSize = fnameStart - dirStart;
+        size_t dirSize = fnameStart - pathAfterDrive;
         if (dirSize > COMPAT_MAX_DIR - 1) {
             dirSize = COMPAT_MAX_DIR - 1;
         }
-        strncpy(dir, path, dirSize);
+        strncpy(dir, pathAfterDrive, dirSize);
         dir[dirSize] = '\0';
     }
 
@@ -143,7 +150,7 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
             strcpy(path, drive);
             path = strchr(path, '\0');
 
-            if (path[-1] == '/') {
+            if (compatIsPathSeparator(path[-1])) {
                 path--;
             } else {
                 *path = '/';
@@ -153,14 +160,14 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
 
     if (dir != nullptr) {
         if (*dir != '\0') {
-            if (*dir != '/' && *path == '/') {
+            if (!compatIsPathSeparator(*dir) && compatIsPathSeparator(*path)) {
                 path++;
             }
 
             strcpy(path, dir);
             path = strchr(path, '\0');
 
-            if (path[-1] == '/') {
+            if (compatIsPathSeparator(path[-1])) {
                 path--;
             } else {
                 *path = '/';
@@ -169,14 +176,14 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
     }
 
     if (fname != nullptr && *fname != '\0') {
-        if (*fname != '/' && *path == '/') {
+        if (!compatIsPathSeparator(*fname) && compatIsPathSeparator(*path)) {
             path++;
         }
 
         strcpy(path, fname);
         path = strchr(path, '\0');
     } else {
-        if (*path == '/') {
+        if (compatIsPathSeparator(*path)) {
             path++;
         }
     }
