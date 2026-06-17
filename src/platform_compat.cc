@@ -74,7 +74,10 @@ void compat_splitpath(const char* path, char* drive, char* dir, char* fname, cha
 #else
     const char* driveStart = path;
     const char* pathAfterDrive = path;
-    if (compatIsPathSeparator(pathAfterDrive[0]) && compatIsPathSeparator(pathAfterDrive[1])) {
+    if (pathAfterDrive[0] != '\0'
+        && pathAfterDrive[1] != '\0'
+        && compatIsPathSeparator(pathAfterDrive[0])
+        && compatIsPathSeparator(pathAfterDrive[1])) {
         pathAfterDrive += 2;
         while (*pathAfterDrive != '\0' && !compatIsPathSeparator(*pathAfterDrive) && *pathAfterDrive != '.') {
             pathAfterDrive++;
@@ -157,9 +160,7 @@ void compat_makepath(char* path, const char* drive, const char* dir, const char*
 
     if (dir != nullptr) {
         if (*dir != '\0') {
-            if (!compatIsPathSeparator(*dir) && *path == '/') {
-                path++;
-            }
+            if (!compatIsPathSeparator(*dir) && compatIsPathSeparator(*path)) {
 
             strcpy(path, dir);
             path = strchr(path, '\0');
