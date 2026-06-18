@@ -227,6 +227,9 @@ static int _cd_order[9] = {
 static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData)
 {
     Object* whoHitMe = combatData->whoHitMe;
+    if (whoHitMe == (Object*)-1) {
+        whoHitMe = nullptr;
+    }
 
     // Match sfall: only preserve whoHitMe in active combat saves.
     if (!isInCombat() || combatData->maneuver == CRITTER_MANEUVER_NONE) {
