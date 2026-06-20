@@ -76,6 +76,27 @@ static bool is_system_file_name(const char* fileName)
     return false;
 }
 
+// Sfall treats non-system INI file names as game-root-relative, even when the
+// script passes a leading backslash like "\mods\foo.ini".
+static void sfall_build_relative_ini_path(const char* iniFileName, char* path, size_t size)
+{
+    if (is_system_file_name(iniFileName)) {
+        snprintf(path, size, "%s", iniFileName);
+        return;
+    }
+
+    const char* fileName = iniFileName;
+    if (fileName[0] == '.' && (fileName[1] == '\\' || fileName[1] == '/')) {
+        fileName += 2;
+    }
+
+    if (fileName[0] == '\\' || fileName[0] == '/') {
+        snprintf(path, size, ".%s", fileName);
+    } else {
+        snprintf(path, size, ".\\%s", fileName);
+    }
+}
+
 // Reads the INI file into `config`, trying the base directory first for
 // non-system files and falling back to the working directory on failure.
 static bool sfall_read_named_ini(const char* iniFileName, Config* config)
@@ -88,7 +109,9 @@ static bool sfall_read_named_ini(const char* iniFileName, Config* config)
         }
     }
 
-    return configRead(config, iniFileName, false);
+    char path[COMPAT_MAX_PATH];
+    sfall_build_relative_ini_path(iniFileName, path, sizeof(path));
+    return configRead(config, path, false);
 }
 
 void sfall_ini_set_base_path(const char* path)
@@ -262,7 +285,7 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
         // There was no base path set, requested file is a system config, or
         // non-system config file was not found the base path - attempt to load
         // from current working directory.
-        strcpy(path, fileName);
+        sfall_build_relative_ini_path(fileName, path, sizeof(path));
         loaded = configRead(config.get(), path, false);
     }
 
