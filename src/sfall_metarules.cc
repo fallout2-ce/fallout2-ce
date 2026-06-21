@@ -44,8 +44,45 @@
 #include "worldmap.h"
 
 #include <assert.h>
+#include <cstddef>
 
 namespace fallout {
+
+namespace {
+
+enum class ObjectDataField : int {
+    Id = 0x00,
+    TileNum = 0x04,
+    CurrFrm = 0x18,
+    Rotation = 0x1C,
+    Fid = 0x20,
+    Flags = 0x24,
+    Elevation = 0x28,
+    Inventory = 0x2C,
+    MiscFlags = 0x38,
+    CurCharges = 0x3C,
+    CombatState = 0x3C,
+    CurActionPoint = 0x40,
+    DamageFlags = 0x44,
+    DamageLastTurn = 0x48,
+    WhoHitMe = 0x54,
+    Pid = 0x64,
+    Cid = 0x68,
+    LightDistance = 0x6C,
+    LightIntensity = 0x70,
+    Sid = 0x78,
+    ScriptIndex = 0x80,
+};
+
+static_assert(offsetof(Object, id) == 0x00);
+static_assert(offsetof(Object, tile) == 0x04);
+static_assert(offsetof(Object, frame) == 0x18);
+static_assert(offsetof(Object, rotation) == 0x1C);
+static_assert(offsetof(Object, fid) == 0x20);
+static_assert(offsetof(Object, flags) == 0x24);
+static_assert(offsetof(Object, elevation) == 0x28);
+
+} // namespace
 
 static void mf_attack_is_aimed(OpcodeContext& ctx);
 static void mf_car_gas_amount(OpcodeContext& ctx);
@@ -529,16 +566,151 @@ void mf_get_sfall_arg_at(OpcodeContext& ctx)
 
 void mf_get_object_data(OpcodeContext& ctx)
 {
-    // TODO: only allow to modify a set of whitelisted object types
-    // TODO: map offsets to fields to avoid potential alignment, 64bit issues!
     Object* ptr = ctx.arg(0).asObject();
-    size_t offset = static_cast<size_t>(ctx.arg(1).asInt());
-
-    if (offset % 4 != 0) {
-        programFatalError("mf_get_object_data: bad offset %d", offset);
+    if (ptr == nullptr) {
+        ctx.setReturn(0);
+        return;
     }
 
-    int value = *reinterpret_cast<int*>(reinterpret_cast<unsigned char*>(ptr) + offset);
+    // Finding: CE's native 64-bit Object layout matches the classic offsets up
+    // through 0x28, but diverges after that due to the wider in-memory
+    // representation (notably ObjectData and pointer-sized fields). Sfall
+    // scripts expect the original 32-bit offsets, so this handler must map
+    // offsets semantically instead of reading raw memory.
+    ObjectDataField field = static_cast<ObjectDataField>(ctx.arg(1).asInt());
+    int value = 0;
+
+    switch (field) {
+    case ObjectDataField::Id:
+        value = ptr->id;
+        break;
+    case ObjectDataField::TileNum:
+        value = ptr->tile;
+        break;
+    case ObjectDataField::CurrFrm:
+        value = ptr->frame;
+        break;
+    case ObjectDataField::Rotation:
+        value = ptr->rotation;
+        break;
+    case ObjectDataField::Fid:
+        value = ptr->fid;
+        break;
+    case ObjectDataField::Flags:
+        value = ptr->flags;
+        break;
+    case ObjectDataField::Elevation:
+        value = ptr->elevation;
+        break;
+    case ObjectDataField::Inventory:
+        // 0x2C is the embedded Inventory struct in the original layout; scripts
+        // generally read its first word, which is the inventory length.
+        value = ptr->data.inventory.length;
+        break;
+    case ObjectDataField::MiscFlags:
+        // This offset is not a generic object field. In the original/sfall
+        // layout 0x38 aliases critter reaction/combat data with item/scenery
+        // subtype data, so only non-critters expose "misc flags" here.
+        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
+            value = ptr->data.critter.reaction;
+        } else {
+            value = ptr->data.flags;
+        }
+        break;
+    case ObjectDataField::CurCharges:
+        // Not 1:1 for every object kind. For items this is charges/key code; for
+        // critters the same offset is combat state.
+        switch (PID_TYPE(ptr->pid)) {
+        case OBJ_TYPE_CRITTER:
+            value = ptr->data.critter.combat.maneuver;
+            break;
+        case OBJ_TYPE_ITEM:
+            switch (itemGetType(ptr)) {
+            case ITEM_TYPE_WEAPON:
+                value = ptr->data.item.weapon.ammoQuantity;
+                break;
+            case ITEM_TYPE_AMMO:
+                value = ptr->data.item.ammo.quantity;
+                break;
+            case ITEM_TYPE_MISC:
+                value = ptr->data.item.misc.charges;
+                break;
+            case ITEM_TYPE_KEY:
+                value = ptr->data.item.key.keyCode;
+                break;
+            default:
+                // No exact 1:1 field for this item subtype at 0x3C.
+                value = 0;
+                break;
+            }
+            break;
+        case OBJ_TYPE_SCENERY:
+            value = ptr->data.scenery.door.openFlags;
+            break;
+        default:
+            // No exact 1:1 field for this object type at 0x3C.
+            value = 0;
+            break;
+        }
+        break;
+    case ObjectDataField::CurActionPoint:
+        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
+            value = ptr->data.critter.combat.ap;
+        } else if (PID_TYPE(ptr->pid) == OBJ_TYPE_ITEM && itemGetType(ptr) == ITEM_TYPE_WEAPON) {
+            value = ptr->data.item.weapon.ammoTypePid;
+        } else {
+            // No exact 1:1 field for this object type at 0x40.
+            value = 0;
+        }
+        break;
+    case ObjectDataField::DamageFlags:
+        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
+            value = ptr->data.critter.combat.results;
+        } else {
+            // No exact 1:1 field for this object type at 0x44.
+            value = 0;
+        }
+        break;
+    case ObjectDataField::DamageLastTurn:
+        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
+            value = ptr->data.critter.combat.damageLastTurn;
+        } else {
+            // No exact 1:1 field for this object type at 0x48.
+            value = 0;
+        }
+        break;
+    case ObjectDataField::WhoHitMe:
+        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
+            value = reinterpret_cast<intptr_t>(ptr->data.critter.combat.whoHitMe);
+        } else {
+            // No exact 1:1 field for this object type at 0x54.
+            value = 0;
+        }
+        break;
+    case ObjectDataField::Pid:
+        value = ptr->pid;
+        break;
+    case ObjectDataField::Cid:
+        value = ptr->cid;
+        break;
+    case ObjectDataField::LightDistance:
+        value = ptr->lightDistance;
+        break;
+    case ObjectDataField::LightIntensity:
+        value = ptr->lightIntensity;
+        break;
+    case ObjectDataField::Sid:
+        value = ptr->sid;
+        break;
+    case ObjectDataField::ScriptIndex:
+        value = ptr->scriptIndex;
+        break;
+    default:
+        // CE intentionally whitelists the common sfall object fields here
+        // instead of exposing arbitrary raw offsets.
+        programFatalError("mf_get_object_data: unsupported offset %d", ctx.arg(1).asInt());
+    }
+
     ctx.setReturn(value);
 }
 
