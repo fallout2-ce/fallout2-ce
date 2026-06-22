@@ -2696,11 +2696,10 @@ static int questInit()
     if (!messageListLoad(&gQuestsMessageList, "game\\quests.msg")) {
         return -1;
     }
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_QUESTS, &gQuestsMessageList);
 
     File* stream = fileOpen("data\\quests.txt", "rt");
     if (stream == nullptr) {
-        // Intentionally keep the loaded list registered; questFree clears it.
+        messageListFree(&gQuestsMessageList);
         return -1;
     }
 
@@ -2768,12 +2767,14 @@ static int questInit()
     qsort(gQuestDescriptions, gQuestsCount, sizeof(*gQuestDescriptions), questDescriptionCompare);
 
     fileClose(stream);
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_QUESTS, &gQuestsMessageList);
 
     return 0;
 
 err:
 
     fileClose(stream);
+    messageListFree(&gQuestsMessageList);
 
     return -1;
 }

@@ -143,6 +143,7 @@ int showOptions()
             case 502:
                 // PREFERENCES
                 doPreferences(false);
+                messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
                 break;
             case KEY_PLUS:
             case KEY_EQUAL:

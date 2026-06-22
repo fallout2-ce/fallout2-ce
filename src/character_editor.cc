@@ -1313,7 +1313,6 @@ static int characterEditorWindowInit()
 
     if (genericReputationInit() == -1) {
         karmaFree();
-    cleanup:
         _editorBackgroundFrmImage.unlock();
 
         characterEditorMessageListReset();
