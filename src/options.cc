@@ -50,6 +50,7 @@ static int optionsWindowInit();
 static int optionsWindowFree();
 static void optionsWindowCleanup(bool restoreWorldState);
 static void _ShadeScreen(bool preserveWorldState);
+static void optionsMessageListReset();
 
 struct OptionsMenuButtonSpec {
     int eventCode;
@@ -112,6 +113,12 @@ static constexpr int optionsWindowButtonCount = (sizeof(optionsMenuButtonSpecs) 
 
 // 0x663878 opbtns
 static unsigned char* _opbtns[optionsWindowButtonCount];
+
+static void optionsMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
+    messageListFree(&preferencesMessageList);
+}
 
 // 0x48FC50 do_optionsFunc
 int showOptions()
@@ -371,9 +378,8 @@ static void optionsWindowCleanup(bool restoreWorldState)
         optionsWindow = -1;
     }
 
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
+    optionsMessageListReset();
     messageListFree(&ceOptionsMessageList);
-    messageListFree(&preferencesMessageList);
 
     for (int index = 0; index < optionsWindowButtonCount; index++) {
         if (_opbtns[index] != nullptr) {
@@ -462,8 +468,7 @@ int showPause(bool preserveWorldState)
         256,
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (window == -1) {
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
-        messageListFree(&preferencesMessageList);
+        optionsMessageListReset();
 
         debugPrint("\n** Error opening pause window! **\n");
         return -1;
@@ -560,8 +565,7 @@ int showPause(bool preserveWorldState)
 
     windowDestroy(window);
     pauseWindow = -1;
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
-    messageListFree(&preferencesMessageList);
+    optionsMessageListReset();
 
     if (!preserveWorldState) {
         if (gameMouseWasVisible) {

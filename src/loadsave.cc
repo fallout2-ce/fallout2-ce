@@ -121,6 +121,8 @@ typedef enum LoadSaveScrollDirection {
     LOAD_SAVE_SCROLL_DIRECTION_DOWN,
 } LoadSaveScrollDirection;
 
+static void loadSaveMessageListReset();
+
 typedef struct LoadSaveSlotData {
     char signature[24];
     short versionMinor;
@@ -333,6 +335,12 @@ static char _str1[COMPAT_MAX_PATH];
 // 0x6145FC str
 static char _str[COMPAT_MAX_PATH];
 
+static void loadSaveMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
+    messageListFree(&gLoadSaveMessageList);
+}
+
 // 0x614700 lsgbuf
 static unsigned char* gLoadSaveWindowBuffer;
 
@@ -488,7 +496,7 @@ int lsgSaveGame(int mode)
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
         if (v6 != -1) {
-            // Preserve the loaded list lifetime used by this path.
+            loadSaveMessageListReset();
             return 1;
         }
 
@@ -504,8 +512,7 @@ int lsgSaveGame(int mode)
         };
         showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
-        messageListFree(&gLoadSaveMessageList);
+        loadSaveMessageListReset();
 
         return -1;
     }
@@ -1116,8 +1123,7 @@ int lsgLoadGame(int mode)
         strcpy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 135));
         showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
-        messageListFree(&gLoadSaveMessageList);
+        loadSaveMessageListReset();
         mapNewMap();
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
 
@@ -1613,8 +1619,7 @@ static int lsgWindowInit(int windowType)
 
     _snapshot = (unsigned char*)internal_malloc(61632);
     if (_snapshot == nullptr) {
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
-        messageListFree(&gLoadSaveMessageList);
+        loadSaveMessageListReset();
         fontSetCurrent(gLoadSaveWindowOldFont);
         return -1;
     }
@@ -1666,8 +1671,7 @@ static int lsgWindowInit(int windowType)
                 _loadsaveFrmImages[index].unlock();
             }
             internal_free(_snapshot);
-            messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
-            messageListFree(&gLoadSaveMessageList);
+            loadSaveMessageListReset();
             fontSetCurrent(gLoadSaveWindowOldFont);
 
             if (windowType != LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU) {
@@ -1693,8 +1697,7 @@ static int lsgWindowInit(int windowType)
     if (gLoadSaveWindow == -1) {
         // FIXME: Leaking frms.
         internal_free(_snapshot);
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
-        messageListFree(&gLoadSaveMessageList);
+        loadSaveMessageListReset();
         fontSetCurrent(gLoadSaveWindowOldFont);
 
         if (windowType != LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU) {
@@ -1832,8 +1835,7 @@ static int lsgWindowFree(int windowType)
 
     windowDestroy(gLoadSaveWindow);
     fontSetCurrent(gLoadSaveWindowOldFont);
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
-    messageListFree(&gLoadSaveMessageList);
+    loadSaveMessageListReset();
 
     for (int index = 0; index < LOAD_SAVE_FRM_COUNT; index++) {
         _loadsaveFrmImages[index].unlock();
