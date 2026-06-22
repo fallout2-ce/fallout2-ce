@@ -595,6 +595,7 @@ int pipboyMessageListInit()
     if (!(messageListLoad(&gPipboyMessageList, path))) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_PIPBOY, &gPipboyMessageList);
 
     return 0;
 }
@@ -602,6 +603,7 @@ int pipboyMessageListInit()
 void pipboyMessageListFree()
 {
     if (gPipboyMessageList.entries != nullptr) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_PIPBOY, nullptr);
         messageListFree(&gPipboyMessageList);
     }
     messageListInit(&gPipboyMessageList);
@@ -2694,9 +2696,11 @@ static int questInit()
     if (!messageListLoad(&gQuestsMessageList, "game\\quests.msg")) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_QUESTS, &gQuestsMessageList);
 
     File* stream = fileOpen("data\\quests.txt", "rt");
     if (stream == nullptr) {
+        // Intentionally keep the loaded list registered; questFree clears it.
         return -1;
     }
 
@@ -2784,6 +2788,7 @@ static void questFree()
 
     gQuestsCount = 0;
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_QUESTS, nullptr);
     messageListFree(&gQuestsMessageList);
 }
 

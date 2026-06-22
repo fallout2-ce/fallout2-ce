@@ -182,6 +182,7 @@ static int optionsWindowInit()
     if (!messageListLoad(&gPreferencesMessageList, path)) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
 
     for (int index = 0; index < OPTIONS_WINDOW_FRM_COUNT; index++) {
         int fid = buildFid(OBJ_TYPE_INTERFACE, gOptionsWindowFrmIds[index], 0, 0, 0);
@@ -190,6 +191,7 @@ static int optionsWindowInit()
                 _optionsFrmImages[index].unlock();
             }
 
+            messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
             messageListFree(&gPreferencesMessageList);
 
             return -1;
@@ -208,6 +210,7 @@ static int optionsWindowInit()
                 _optionsFrmImages[index].unlock();
             }
 
+            messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
             messageListFree(&gPreferencesMessageList);
 
             return -1;
@@ -236,6 +239,7 @@ static int optionsWindowInit()
             _optionsFrmImages[index].unlock();
         }
 
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
         messageListFree(&gPreferencesMessageList);
 
         return -1;
@@ -304,6 +308,7 @@ static int optionsWindowFree()
 {
     windowDestroy(gOptionsWindow);
     fontSetCurrent(gOptionsWindowOldFont);
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
     messageListFree(&gPreferencesMessageList);
 
     for (int index = 0; index < OPTIONS_WINDOW_BUTTONS_COUNT; index++) {
@@ -365,6 +370,7 @@ int showPause(bool preserveWorldState)
         // FIXME: Leaking graphics.
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
 
     int pauseWindowX = (screenGetWidth() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth()) / 2;
     int pauseWindowY = (screenGetHeight() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight()) / 2;
@@ -383,6 +389,7 @@ int showPause(bool preserveWorldState)
         256,
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (window == -1) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
         messageListFree(&gPreferencesMessageList);
 
         debugPrint("\n** Error opening pause window! **\n");
@@ -477,6 +484,7 @@ int showPause(bool preserveWorldState)
     }
 
     windowDestroy(window);
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
     messageListFree(&gPreferencesMessageList);
 
     if (!preserveWorldState) {

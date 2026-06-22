@@ -1284,9 +1284,11 @@ static int characterEditorWindowInit()
     if (!messageListLoad(&gCharacterEditorMessageList, path)) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
     fid = buildFid(OBJ_TYPE_INTERFACE, (gCharacterEditorIsCreationMode ? 169 : 177), 0, 0, 0);
     if (!_editorBackgroundFrmImage.lock(fid)) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
         messageListFree(&gCharacterEditorMessageList);
         return -1;
     }
@@ -1360,6 +1362,7 @@ static int characterEditorWindowInit()
 
         _editorBackgroundFrmImage.unlock();
 
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
         messageListFree(&gCharacterEditorMessageList);
         if (gCharacterEditorIsoWasEnabled) {
             isoEnable();
@@ -1389,6 +1392,7 @@ static int characterEditorWindowInit()
 
         _editorBackgroundFrmImage.unlock();
 
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
         messageListFree(&gCharacterEditorMessageList);
         if (gCharacterEditorIsoWasEnabled) {
             isoEnable();
@@ -1869,6 +1873,7 @@ static void characterEditorWindowFree()
     // SFALL: Custom town reputation.
     customTownReputationFree();
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
     messageListFree(&gCharacterEditorMessageList);
 
     interfaceBarRefresh();

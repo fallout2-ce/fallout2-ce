@@ -12,17 +12,26 @@ namespace fallout {
 // CE: Working with standard message lists is tricky in Sfall. Many message
 // lists are initialized only for the duration of appropriate modal window. This
 // is not documented in Sfall and shifts too much responsibility to scripters
-// (who should check game mode before accessing volatile message lists). For now
-// CE only exposes persistent standard message lists:
+// (who should check game mode before accessing volatile message lists). CE
+// always exposes persistent standard message lists and additionally exposes
+// some volatile lists for the duration of their UI lifetime:
 // - combat.msg
 // - combatai.msg
 // - scrname.msg
 // - misc.msg
+// - custom.msg
+// - editor.msg
+// - inventry.msg
 // - item.msg
+// - lsgame.msg
 // - map.msg
+// - options.msg
+// - pipboy.msg
+// - quests.msg
 // - proto.msg
 // - script.msg
 // - skill.msg
+// - skilldex.msg
 // - stat.msg
 // - trait.msg
 // - worldmap.msg
@@ -47,6 +56,7 @@ enum StandardMessageList {
     STANDARD_MESSAGE_LIST_STAT,
     STANDARD_MESSAGE_LIST_TRAIT,
     STANDARD_MESSAGE_LIST_WORLDMAP,
+    STANDARD_MESSAGE_LIST_EDITOR,
     STANDARD_MESSAGE_LIST_COUNT,
 };
 
