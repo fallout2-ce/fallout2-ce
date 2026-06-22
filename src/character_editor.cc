@@ -1359,7 +1359,7 @@ static int characterEditorWindowInit()
 
     if (genericReputationInit() == -1) {
         karmaFree();
-        cleanup:
+    cleanup:
         _editorBackgroundFrmImage.unlock();
 
         characterEditorMessageListReset();
