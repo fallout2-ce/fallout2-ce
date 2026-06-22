@@ -171,6 +171,7 @@ int showOptions()
             case OPTIONS_MENU_BUTTON_PREFERENCES:
                 // PREFERENCES
                 doPreferences(false);
+                messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
                 break;
             case KEY_UPPERCASE_H:
             case KEY_LOWERCASE_H:
