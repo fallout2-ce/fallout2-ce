@@ -15,48 +15,28 @@ namespace fallout {
 // (who should check game mode before accessing volatile message lists). CE
 // always exposes persistent standard message lists and additionally exposes
 // some volatile lists for the duration of their UI lifetime:
-// - combat.msg
-// - combatai.msg
-// - scrname.msg
-// - misc.msg
-// - custom.msg
-// - editor.msg
-// - inventry.msg
-// - item.msg
-// - lsgame.msg
-// - map.msg
-// - options.msg
-// - pipboy.msg
-// - quests.msg
-// - proto.msg
-// - script.msg
-// - skill.msg
-// - skilldex.msg
-// - stat.msg
-// - trait.msg
-// - worldmap.msg
 enum StandardMessageList {
-    STANDARD_MESSAGE_LIST_COMBAT,
-    STANDARD_MESSAGE_LIST_COMBAT_AI,
+    STANDARD_MESSAGE_LIST_COMBAT, // transient
+    STANDARD_MESSAGE_LIST_COMBAT_AI, // transient
     STANDARD_MESSAGE_LIST_SCRNAME,
     STANDARD_MESSAGE_LIST_MISC,
-    STANDARD_MESSAGE_LIST_CUSTOM,
-    STANDARD_MESSAGE_LIST_INVENTORY,
+    STANDARD_MESSAGE_LIST_CUSTOM, // transient
+    STANDARD_MESSAGE_LIST_INVENTORY, // transient
     STANDARD_MESSAGE_LIST_ITEM,
-    STANDARD_MESSAGE_LIST_LSGAME,
+    STANDARD_MESSAGE_LIST_LSGAME, // transient
     STANDARD_MESSAGE_LIST_MAP,
-    STANDARD_MESSAGE_LIST_OPTIONS,
+    STANDARD_MESSAGE_LIST_OPTIONS, // transient
     STANDARD_MESSAGE_LIST_PERK,
-    STANDARD_MESSAGE_LIST_PIPBOY,
-    STANDARD_MESSAGE_LIST_QUESTS,
+    STANDARD_MESSAGE_LIST_PIPBOY, // transient
+    STANDARD_MESSAGE_LIST_QUESTS, // transient
     STANDARD_MESSAGE_LIST_PROTO,
     STANDARD_MESSAGE_LIST_SCRIPT,
     STANDARD_MESSAGE_LIST_SKILL,
-    STANDARD_MESSAGE_LIST_SKILLDEX,
+    STANDARD_MESSAGE_LIST_SKILLDEX, // transient
     STANDARD_MESSAGE_LIST_STAT,
     STANDARD_MESSAGE_LIST_TRAIT,
     STANDARD_MESSAGE_LIST_WORLDMAP,
-    STANDARD_MESSAGE_LIST_EDITOR,
+    STANDARD_MESSAGE_LIST_EDITOR, // transient; yes, this is supposed to be at the end rather than alphabetical
     STANDARD_MESSAGE_LIST_COUNT,
 };
 
