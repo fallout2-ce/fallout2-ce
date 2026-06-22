@@ -43,6 +43,7 @@ typedef enum OptionsWindowFrm {
 static int optionsWindowInit();
 static int optionsWindowFree();
 static void _ShadeScreen(bool preserveWorldState);
+static void optionsMessageListReset();
 
 // 0x48FC0C
 static const int gPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
@@ -84,6 +85,12 @@ static int gOptionsWindowOldFont;
 static bool gOptionsWindowIsoWasEnabled;
 
 static FrmImage _optionsFrmImages[OPTIONS_WINDOW_FRM_COUNT];
+
+static void optionsMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
+    messageListFree(&gPreferencesMessageList);
+}
 
 // 0x48FC50 do_optionsFunc
 int showOptions()
@@ -191,8 +198,7 @@ static int optionsWindowInit()
                 _optionsFrmImages[index].unlock();
             }
 
-            messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
-            messageListFree(&gPreferencesMessageList);
+            optionsMessageListReset();
 
             return -1;
         }
@@ -210,8 +216,7 @@ static int optionsWindowInit()
                 _optionsFrmImages[index].unlock();
             }
 
-            messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
-            messageListFree(&gPreferencesMessageList);
+            optionsMessageListReset();
 
             return -1;
         }
@@ -239,8 +244,7 @@ static int optionsWindowInit()
             _optionsFrmImages[index].unlock();
         }
 
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
-        messageListFree(&gPreferencesMessageList);
+        optionsMessageListReset();
 
         return -1;
     }
@@ -308,8 +312,7 @@ static int optionsWindowFree()
 {
     windowDestroy(gOptionsWindow);
     fontSetCurrent(gOptionsWindowOldFont);
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
-    messageListFree(&gPreferencesMessageList);
+    optionsMessageListReset();
 
     for (int index = 0; index < OPTIONS_WINDOW_BUTTONS_COUNT; index++) {
         internal_free(_opbtns[index]);
@@ -389,8 +392,7 @@ int showPause(bool preserveWorldState)
         256,
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (window == -1) {
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
-        messageListFree(&gPreferencesMessageList);
+        optionsMessageListReset();
 
         debugPrint("\n** Error opening pause window! **\n");
         return -1;
@@ -484,8 +486,7 @@ int showPause(bool preserveWorldState)
     }
 
     windowDestroy(window);
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
-    messageListFree(&gPreferencesMessageList);
+    optionsMessageListReset();
 
     if (!preserveWorldState) {
         if (gameMouseWasVisible) {

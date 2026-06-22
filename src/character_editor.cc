@@ -112,6 +112,8 @@ typedef enum EditorFolder {
     EDITOR_FOLDER_KILLS,
 } EditorFolder;
 
+static void characterEditorMessageListReset();
+
 enum {
     EDITOR_DERIVED_STAT_ARMOR_CLASS,
     EDITOR_DERIVED_STAT_ACTION_POINTS,
@@ -586,6 +588,12 @@ static int gCharacterEditorOptionalTraitBtns[TRAIT_COUNT];
 
 // 0x5700E8 mesg
 static MessageListItem gCharacterEditorMessageListItem;
+
+static void characterEditorMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
+    messageListFree(&gCharacterEditorMessageList);
+}
 
 // 0x5700F8 old_str1
 static char gCharacterEditorCardTitle[48];
@@ -1288,16 +1296,32 @@ static int characterEditorWindowInit()
 
     fid = buildFid(OBJ_TYPE_INTERFACE, (gCharacterEditorIsCreationMode ? 169 : 177), 0, 0, 0);
     if (!_editorBackgroundFrmImage.lock(fid)) {
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
-        messageListFree(&gCharacterEditorMessageList);
+        characterEditorMessageListReset();
         return -1;
     }
 
     if (karmaInit() == -1) {
+        _editorBackgroundFrmImage.unlock();
+        characterEditorMessageListReset();
+        if (gCharacterEditorIsoWasEnabled) {
+            isoEnable();
+        }
+        colorCycleEnable();
+        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         return -1;
     }
 
     if (genericReputationInit() == -1) {
+        karmaFree();
+        cleanup:
+        _editorBackgroundFrmImage.unlock();
+
+        characterEditorMessageListReset();
+        if (gCharacterEditorIsoWasEnabled) {
+            isoEnable();
+        }
+        colorCycleEnable();
+        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
         return -1;
     }
 
@@ -1320,11 +1344,9 @@ static int characterEditorWindowInit()
         while (--i >= 0) {
             _editorFrmImages[i].unlock();
         }
-        return -1;
-
         _editorBackgroundFrmImage.unlock();
 
-        messageListFree(&gCharacterEditorMessageList);
+        characterEditorMessageListReset();
 
         if (gCharacterEditorIsoWasEnabled) {
             isoEnable();
@@ -1362,8 +1384,7 @@ static int characterEditorWindowInit()
 
         _editorBackgroundFrmImage.unlock();
 
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
-        messageListFree(&gCharacterEditorMessageList);
+        characterEditorMessageListReset();
         if (gCharacterEditorIsoWasEnabled) {
             isoEnable();
         }
@@ -1392,8 +1413,7 @@ static int characterEditorWindowInit()
 
         _editorBackgroundFrmImage.unlock();
 
-        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
-        messageListFree(&gCharacterEditorMessageList);
+        characterEditorMessageListReset();
         if (gCharacterEditorIsoWasEnabled) {
             isoEnable();
         }
@@ -1873,8 +1893,7 @@ static void characterEditorWindowFree()
     // SFALL: Custom town reputation.
     customTownReputationFree();
 
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
-    messageListFree(&gCharacterEditorMessageList);
+    characterEditorMessageListReset();
 
     interfaceBarRefresh();
 

@@ -86,6 +86,8 @@ typedef enum GameDialogReviewWindowButtonFrm {
     GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT,
 } GameDialogReviewWindowButtonFrm;
 
+static void partyMemberCustomizationMessageListReset();
+
 typedef enum GameDialogReaction {
     GAME_DIALOG_REACTION_GOOD = 49,
     GAME_DIALOG_REACTION_NEUTRAL = 50,
@@ -582,6 +584,12 @@ static int gGameDialogReviewWindowOldFont;
 
 // 0x58F470 gdialog_buttons
 static int _gdialog_buttons[9];
+
+static void partyMemberCustomizationMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, nullptr);
+    messageListFree(&gCustomMessageList);
+}
 
 // 0x58F4C8 oldFont
 static int _oldFont;
@@ -3971,6 +3979,7 @@ int partyMemberCustomizationWindowInit()
     FrmImage backgroundFrmImage;
     int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 391, 0, 0, 0);
     if (!backgroundFrmImage.lock(backgroundFid)) {
+        partyMemberCustomizationMessageListReset();
         return -1;
     }
 
@@ -4082,6 +4091,7 @@ int partyMemberCustomizationWindowInit()
 void partyMemberCustomizationWindowFree()
 {
     if (gGameDialogWindow == -1) {
+        partyMemberCustomizationMessageListReset();
         return;
     }
 
@@ -4119,8 +4129,7 @@ void partyMemberCustomizationWindowFree()
     windowDestroy(gGameDialogWindow);
     gGameDialogWindow = -1;
 
-    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, nullptr);
-    messageListFree(&gCustomMessageList);
+    partyMemberCustomizationMessageListReset();
 }
 
 // 0x449B3C
