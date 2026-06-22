@@ -470,6 +470,7 @@ int lsgSaveGame(int mode)
         if (!messageListLoad(&gLoadSaveMessageList, path)) {
             return -1;
         }
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
 
         _snapshotBuf = nullptr;
         int v6 = _QuickSnapShot();
@@ -487,6 +488,7 @@ int lsgSaveGame(int mode)
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
         if (v6 != -1) {
+            // Preserve the loaded list lifetime used by this path.
             return 1;
         }
 
@@ -502,6 +504,7 @@ int lsgSaveGame(int mode)
         };
         showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
         messageListFree(&gLoadSaveMessageList);
 
         return -1;
@@ -1101,6 +1104,7 @@ int lsgLoadGame(int mode)
         if (!messageListLoad(&gLoadSaveMessageList, path)) {
             return -1;
         }
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
 
         if (window != -1) {
             windowDestroy(window);
@@ -1112,6 +1116,7 @@ int lsgLoadGame(int mode)
         strcpy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 135));
         showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
         messageListFree(&gLoadSaveMessageList);
         mapNewMap();
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
@@ -1604,9 +1609,11 @@ static int lsgWindowInit(int windowType)
     if (!messageListLoad(&gLoadSaveMessageList, _str)) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
 
     _snapshot = (unsigned char*)internal_malloc(61632);
     if (_snapshot == nullptr) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
         messageListFree(&gLoadSaveMessageList);
         fontSetCurrent(gLoadSaveWindowOldFont);
         return -1;
@@ -1659,6 +1666,7 @@ static int lsgWindowInit(int windowType)
                 _loadsaveFrmImages[index].unlock();
             }
             internal_free(_snapshot);
+            messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
             messageListFree(&gLoadSaveMessageList);
             fontSetCurrent(gLoadSaveWindowOldFont);
 
@@ -1685,6 +1693,7 @@ static int lsgWindowInit(int windowType)
     if (gLoadSaveWindow == -1) {
         // FIXME: Leaking frms.
         internal_free(_snapshot);
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
         messageListFree(&gLoadSaveMessageList);
         fontSetCurrent(gLoadSaveWindowOldFont);
 
@@ -1823,6 +1832,7 @@ static int lsgWindowFree(int windowType)
 
     windowDestroy(gLoadSaveWindow);
     fontSetCurrent(gLoadSaveWindowOldFont);
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
     messageListFree(&gLoadSaveMessageList);
 
     for (int index = 0; index < LOAD_SAVE_FRM_COUNT; index++) {

@@ -4042,6 +4042,7 @@ int partyMemberCustomizationWindowInit()
     if (!messageListLoad(&gCustomMessageList, "game\\custom.msg")) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, &gCustomMessageList);
 
     FrmImage backgroundFrmImage;
     int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 391);
@@ -4194,6 +4195,7 @@ void partyMemberCustomizationWindowFree()
     windowDestroy(gGameDialogWindow);
     gGameDialogWindow = -1;
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, nullptr);
     messageListFree(&gCustomMessageList);
 }
 

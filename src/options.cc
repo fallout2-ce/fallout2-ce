@@ -236,6 +236,7 @@ static int optionsWindowInit()
             optionsMenuHelpEnabled = false;
         }
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &preferencesMessageList);
 
     for (int index = 0; index < OPTIONS_WINDOW_FRM_COUNT; index++) {
         bool loaded = false;
@@ -370,6 +371,7 @@ static void optionsWindowCleanup(bool restoreWorldState)
         optionsWindow = -1;
     }
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
     messageListFree(&ceOptionsMessageList);
     messageListFree(&preferencesMessageList);
 
@@ -441,6 +443,7 @@ int showPause(bool preserveWorldState)
         // FIXME: Leaking graphics.
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &preferencesMessageList);
 
     int pauseWindowX = (screenGetWidth() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth()) / 2;
     int pauseWindowY = (screenGetHeight() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight()) / 2;
@@ -459,6 +462,7 @@ int showPause(bool preserveWorldState)
         256,
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (window == -1) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
         messageListFree(&preferencesMessageList);
 
         debugPrint("\n** Error opening pause window! **\n");
@@ -556,6 +560,7 @@ int showPause(bool preserveWorldState)
 
     windowDestroy(window);
     pauseWindow = -1;
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
     messageListFree(&preferencesMessageList);
 
     if (!preserveWorldState) {

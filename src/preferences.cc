@@ -992,6 +992,7 @@ static int preferencesWindowInit()
     if (!messageListLoad(&gPreferencesMessageList, path)) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
 
     _oldFont = fontGetCurrent();
 
@@ -1212,6 +1213,7 @@ static int preferencesWindowFree()
 
     fontSetCurrent(_oldFont);
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
     messageListFree(&gPreferencesMessageList);
     touch_set_touchscreen_mode(false);
 
