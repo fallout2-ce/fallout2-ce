@@ -303,6 +303,7 @@ static int optionsWindowInit()
 static int optionsWindowFree()
 {
     windowDestroy(gOptionsWindow);
+    gOptionsWindow = -1;
     fontSetCurrent(gOptionsWindowOldFont);
     messageListFree(&gPreferencesMessageList);
 
@@ -388,6 +389,8 @@ int showPause(bool preserveWorldState)
         debugPrint("\n** Error opening pause window! **\n");
         return -1;
     }
+
+    gPauseWindow = window;
 
     unsigned char* windowBuffer = windowGetBuffer(window);
     memcpy(windowBuffer,
@@ -477,6 +480,7 @@ int showPause(bool preserveWorldState)
     }
 
     windowDestroy(window);
+    gPauseWindow = -1;
     messageListFree(&gPreferencesMessageList);
 
     if (!preserveWorldState) {
@@ -527,6 +531,19 @@ int _init_options_menu()
     grayscalePaletteUpdate(0, 255);
 
     return 0;
+}
+
+int optionsGetWindow()
+{
+    if (windowGetWindow(gOptionsWindow) != nullptr) {
+        return gOptionsWindow;
+    }
+
+    if (windowGetWindow(gPauseWindow) != nullptr) {
+        return gPauseWindow;
+    }
+
+    return -1;
 }
 
 } // namespace fallout

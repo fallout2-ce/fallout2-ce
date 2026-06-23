@@ -55,6 +55,7 @@ void automapShow(bool isInGame, bool isUsingScanner);
 int automapRenderInPipboyWindow(int win, int map, int elevation);
 int automapSaveCurrent();
 int automapGetHeader(AutomapHeader** automapHeaderPtr);
+int automapGetWindow();
 
 void automapSetDisplayMap(int map, bool available);
 

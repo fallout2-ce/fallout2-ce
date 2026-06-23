@@ -147,6 +147,11 @@ int skilldexOpen()
     return rc;
 }
 
+int skilldexGetWindow()
+{
+    return windowGetWindow(gSkilldexWindow) != nullptr ? gSkilldexWindow : -1;
+}
+
 // 0x4AC054 skilldex_start
 static int skilldexWindowInit()
 {

@@ -1014,6 +1014,11 @@ int pipboyLoad(File* stream)
     return _save_pipboy(stream);
 }
 
+int pipboyGetWindow()
+{
+    return windowGetWindow(gPipboyWindow) != nullptr ? gPipboyWindow : -1;
+}
+
 // 0x497BD8
 static void pipboyWindowHandleStatus(int userInput)
 {
