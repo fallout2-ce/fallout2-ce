@@ -16,6 +16,7 @@ void pipboyInit();
 void pipboyReset();
 int pipboySave(File* stream);
 int pipboyLoad(File* stream);
+int pipboyGetWindow();
 
 extern MessageList gPipboyMessageList;
 int pipboyMessageListInit();
