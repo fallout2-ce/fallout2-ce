@@ -128,7 +128,6 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
 Art* artLock(int fid, CacheEntry** cache_entry);
 unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** out_cache_entry);
-unsigned char* artLockFrameDataReturningSize(int fid, CacheEntry** out_cache_entry, int* widthPtr, int* heightPtr);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
 int artCopyFileName(int objectType, int id, char* dest);
@@ -185,8 +184,8 @@ private:
     const char* _path = nullptr;
 };
 
-// A helper for using RAII to read single-frame FRM's.
-// lock/unlock use the art-cache instead of just loading/unloading directly.
+// RAII helper for locking one selected frame from FID-backed or path-backed art.
+// lock/unlock use caches instead of just loading/unloading directly.
 class FrmImage {
 public:
     FrmImage();
@@ -201,13 +200,19 @@ public:
 
     bool isLocked() const { return _key != nullptr || _namedKey; }
     bool lock(const FrmId& frmId);
+    bool lock(const FrmId& frmId, int frame, int direction);
     bool lock(unsigned int fid);
+    bool lock(unsigned int fid, int frame, int direction);
     bool lock(const char* frmPath);
+    bool lock(const char* frmPath, int frame, int direction);
     bool lock(ObjectType objType, const char* frmRelativePath);
+    bool lock(ObjectType objType, const char* frmRelativePath, int frame, int direction);
     void unlock();
 
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
+    int getXOffset() const { return _xOffset; }
+    int getYOffset() const { return _yOffset; }
     // Returns FRM frame data if locked, nullptr otherwise.
     unsigned char* getData() const { return _data; }
 
@@ -218,9 +223,12 @@ private:
 
     std::shared_ptr<NamedCacheEntry> _namedKey;
     CacheEntry* _key = nullptr;
+    ArtFrame* _frame = nullptr;
     unsigned char* _data = nullptr;
     int _width = 0;
     int _height = 0;
+    int _xOffset = 0;
+    int _yOffset = 0;
 };
 
 } // namespace fallout

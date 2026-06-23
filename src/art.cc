@@ -10,6 +10,7 @@
 
 #include "animation.h"
 #include "content_config.h"
+#include "datafile.h"
 #include "debug.h"
 #include "draw.h"
 #include "game.h"
@@ -522,34 +523,6 @@ unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** 
     }
 
     return nullptr;
-}
-
-// 0x4191CC
-unsigned char* artLockFrameDataReturningSize(int fid, CacheEntry** handlePtr, int* widthPtr, int* heightPtr)
-{
-    *handlePtr = nullptr;
-
-    Art* art = nullptr;
-    cacheLock(&gArtCache, fid, (void**)&art, handlePtr);
-
-    if (art == nullptr) {
-        return nullptr;
-    }
-
-    // NOTE: Uninline.
-    *widthPtr = artGetWidth(art, 0, 0);
-    if (*widthPtr == -1) {
-        return nullptr;
-    }
-
-    // NOTE: Uninline.
-    *heightPtr = artGetHeight(art, 0, 0);
-    if (*heightPtr == -1) {
-        return nullptr;
-    }
-
-    // NOTE: Uninline.
-    return artGetFrameData(art, 0, 0);
 }
 
 // 0x419260
@@ -1221,6 +1194,51 @@ static bool artIndexedPngHasSupportedTransparency(const LodePNGColorMode& color)
     return true;
 }
 
+static Art* artAllocateSingleFrame(int width, int height, unsigned char** frameDataPtr)
+{
+    if (width <= 0 || height <= 0 || width > SHRT_MAX || height > SHRT_MAX) {
+        return nullptr;
+    }
+
+    size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
+    if (pixelCount > kMaxNamedPngPixels || pixelCount > INT_MAX) {
+        return nullptr;
+    }
+
+    Art header = {};
+    header.version = 4;
+    header.framesPerSecond = 10;
+    header.actionFrame = 0;
+    header.frameCount = 1;
+    header.dataSize = sizeof(ArtFrame) + static_cast<int>(pixelCount);
+
+    int currentPadding = paddingForSize(sizeof(Art));
+    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        header.dataOffsets[rotation] = 0;
+        header.padding[rotation] = currentPadding;
+    }
+
+    int dataSize = artGetDataSize(&header);
+    unsigned char* data = reinterpret_cast<unsigned char*>(internal_malloc(dataSize));
+    if (data == nullptr) {
+        return nullptr;
+    }
+
+    memset(data, 0, dataSize);
+    Art* art = reinterpret_cast<Art*>(data);
+    *art = header;
+
+    ArtFrame* frame = reinterpret_cast<ArtFrame*>(data + sizeof(Art) + art->padding[0]);
+    frame->width = static_cast<short>(width);
+    frame->height = static_cast<short>(height);
+    frame->size = static_cast<int>(pixelCount);
+    frame->x = 0;
+    frame->y = 0;
+
+    *frameDataPtr = reinterpret_cast<unsigned char*>(frame) + sizeof(ArtFrame);
+    return art;
+}
+
 static Art* artLoadIndexedPng(const char* path)
 {
     std::vector<unsigned char> encoded;
@@ -1255,44 +1273,41 @@ static Art* artLoadIndexedPng(const char* path)
         return nullptr;
     }
 
-    size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
-
-    Art header = {};
-    header.version = 4;
-    header.framesPerSecond = 10;
-    header.actionFrame = 0;
-    header.frameCount = 1;
-    header.dataSize = sizeof(ArtFrame) + static_cast<int>(pixelCount);
-
-    int currentPadding = paddingForSize(sizeof(Art));
-    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
-        header.dataOffsets[rotation] = 0;
-        header.padding[rotation] = currentPadding;
-    }
-
-    int dataSize = artGetDataSize(&header);
-    unsigned char* data = reinterpret_cast<unsigned char*>(internal_malloc(dataSize));
-    if (data == nullptr) {
+    unsigned char* frameData = nullptr;
+    Art* art = artAllocateSingleFrame(static_cast<int>(width), static_cast<int>(height), &frameData);
+    if (art == nullptr) {
         return nullptr;
     }
 
-    memset(data, 0, dataSize);
-    Art* art = reinterpret_cast<Art*>(data);
-    *art = header;
-
-    ArtFrame* frame = reinterpret_cast<ArtFrame*>(data + sizeof(Art) + art->padding[0]);
-    frame->width = static_cast<short>(width);
-    frame->height = static_cast<short>(height);
-    frame->size = static_cast<int>(pixelCount);
-    frame->x = 0;
-    frame->y = 0;
-
-    if (!artUnpackIndexedPngPixels(indexedData, width, height, state.info_png.color.bitdepth, reinterpret_cast<unsigned char*>(frame) + sizeof(ArtFrame))) {
+    if (!artUnpackIndexedPngPixels(indexedData, width, height, state.info_png.color.bitdepth, frameData)) {
         debugPrint("ART: failed to read indexed PNG pixels: %s\n", path);
-        internal_free(data);
+        internal_free(art);
         return nullptr;
     }
 
+    return art;
+}
+
+static Art* artLoadPcx(const char* path)
+{
+    char mutablePath[COMPAT_MAX_PATH];
+    strncpy(mutablePath, path, sizeof(mutablePath));
+    mutablePath[sizeof(mutablePath) - 1] = '\0';
+
+    int width = 0;
+    int height = 0;
+    unsigned char* pcxData = datafileRead(mutablePath, &width, &height);
+    if (pcxData == nullptr) {
+        return nullptr;
+    }
+
+    unsigned char* frameData = nullptr;
+    Art* art = artAllocateSingleFrame(width, height, &frameData);
+    if (art != nullptr) {
+        memcpy(frameData, pcxData, static_cast<size_t>(width) * static_cast<size_t>(height));
+    }
+
+    internal_free(pcxData);
     return art;
 }
 
@@ -1338,6 +1353,10 @@ Art* artLoad(const char* path)
 
     if (artPathHasExtension(path, ".png")) {
         return artLoadIndexedPng(path);
+    }
+
+    if (artPathHasExtension(path, ".pcx")) {
+        return artLoadPcx(path);
     }
 
     Art* art = artLoadFrm(path);
@@ -1491,7 +1510,7 @@ public:
 
     const Art* art() const { return _art.get(); }
 
-    unsigned char* frameData(int frame, int direction, int& outWidth, int& outHeight) const;
+    ArtFrame* frame(int frame, int direction) const;
 
     unsigned int mru = 0;
 
@@ -1504,17 +1523,9 @@ NamedCacheEntry::NamedCacheEntry(ArtPtr&& art)
 {
 }
 
-unsigned char* NamedCacheEntry::frameData(int frame, int direction, int& outWidth, int& outHeight) const
+ArtFrame* NamedCacheEntry::frame(int frame, int direction) const
 {
-    unsigned char* data = artGetFrameData(_art.get(), frame, direction);
-    if (!data) {
-        outWidth = 0;
-        outHeight = 0;
-        return nullptr;
-    }
-    outWidth = artGetWidth(_art.get(), frame, direction);
-    outHeight = artGetHeight(_art.get(), frame, direction);
-    return data;
+    return artGetFrame(_art.get(), frame, direction);
 }
 
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
@@ -1597,9 +1608,12 @@ ObjectType FrmId::objectType() const
 FrmImage::FrmImage()
 {
     _key = nullptr;
+    _frame = nullptr;
     _data = nullptr;
     _width = 0;
     _height = 0;
+    _xOffset = 0;
+    _yOffset = 0;
 }
 
 FrmImage::~FrmImage()
@@ -1610,9 +1624,12 @@ FrmImage::~FrmImage()
 FrmImage::FrmImage(FrmImage&& other) noexcept
     : _namedKey(std::move(other._namedKey))
     , _key(other._key)
+    , _frame(other._frame)
     , _data(other._data)
     , _width(other._width)
     , _height(other._height)
+    , _xOffset(other._xOffset)
+    , _yOffset(other._yOffset)
 {
     other.resetInternal();
 }
@@ -1623,9 +1640,12 @@ FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
         unlock();
         _namedKey = std::move(other._namedKey);
         _key = other._key;
+        _frame = other._frame;
         _data = other._data;
         _width = other._width;
         _height = other._height;
+        _xOffset = other._xOffset;
+        _yOffset = other._yOffset;
 
         other.resetInternal();
     }
@@ -1634,32 +1654,59 @@ FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
 
 bool FrmImage::lock(const FrmId& frmId)
 {
+    return lock(frmId, 0, 0);
+}
+
+bool FrmImage::lock(const FrmId& frmId, int frame, int direction)
+{
     if (frmId.fid() >= 0) {
-        return lock(frmId.fid());
+        return lock(frmId.fid(), frame, direction);
     }
     if (frmId.filePath() != nullptr) {
         return frmId.hasObjectType()
-            ? lock(frmId.objectType(), frmId.filePath())
-            : lock(frmId.filePath());
+            ? lock(frmId.objectType(), frmId.filePath(), frame, direction)
+            : lock(frmId.filePath(), frame, direction);
     }
     return false;
 }
 
 bool FrmImage::lock(unsigned int fid)
 {
+    return lock(fid, 0, 0);
+}
+
+bool FrmImage::lock(unsigned int fid, int frame, int direction)
+{
     if (isLocked()) {
         return false;
     }
 
-    _data = artLockFrameDataReturningSize(fid, &_key, &_width, &_height);
-    if (!_data) {
+    Art* art = artLock(fid, &_key);
+    if (art == nullptr) {
         return false;
     }
+
+    _frame = artGetFrame(art, frame, direction);
+    if (_frame == nullptr) {
+        unlock();
+        return false;
+    }
+
+    _data = reinterpret_cast<unsigned char*>(_frame) + sizeof(ArtFrame);
+    _width = _frame->width;
+    _height = _frame->height;
+    _xOffset = _frame->x;
+    _yOffset = _frame->y;
 
     return true;
 }
 
 bool FrmImage::lock(const char* frmPath)
+{
+    return lock(frmPath, 0, 0);
+}
+
+bool FrmImage::lock(const char* frmPath, int frame, int direction)
 {
     if (isLocked()) {
         return false;
@@ -1668,21 +1715,33 @@ bool FrmImage::lock(const char* frmPath)
     _namedKey = artLockNamedFrameData(frmPath);
     if (!_namedKey) return false;
 
-    _data = _namedKey->frameData(0, 0, _width, _height);
-    if (_data == nullptr) {
-        _namedKey = nullptr;
+    _frame = _namedKey->frame(frame, direction);
+    if (_frame == nullptr) {
+        unlock();
         return false;
     }
+
+    _data = reinterpret_cast<unsigned char*>(_frame) + sizeof(ArtFrame);
+    _width = _frame->width;
+    _height = _frame->height;
+    _xOffset = _frame->x;
+    _yOffset = _frame->y;
+
     return true;
 }
 
 bool FrmImage::lock(ObjectType objType, const char* frmRelativePath)
 {
+    return lock(objType, frmRelativePath, 0, 0);
+}
+
+bool FrmImage::lock(ObjectType objType, const char* frmRelativePath, int frame, int direction)
+{
     if (objType < OBJ_TYPE_ITEM || objType >= OBJ_TYPE_COUNT) {
         return false;
     }
     snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objType].name, frmRelativePath);
-    return lock(_art_name);
+    return lock(_art_name, frame, direction);
 }
 
 void FrmImage::unlock()
@@ -1697,9 +1756,12 @@ void FrmImage::resetInternal()
 {
     _namedKey = nullptr;
     _key = nullptr;
+    _frame = nullptr;
     _data = nullptr;
     _width = 0;
     _height = 0;
+    _xOffset = 0;
+    _yOffset = 0;
 }
 
 } // namespace fallout
