@@ -74,6 +74,8 @@ static bool gOptionsWindowGameMouseObjectsWasVisible;
 // 0x663900 optnwin
 static int gOptionsWindow;
 
+static int gPauseWindow = -1;
+
 // 0x663908 winbuf
 static unsigned char* gOptionsWindowBuffer;
 
