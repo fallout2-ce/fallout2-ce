@@ -12,7 +12,6 @@
 #include "color.h"
 #include "combat.h"
 #include "config.h" // For Config, configInit, configFree
-#include "datafile.h"
 #include "dbox.h"
 #include "debug.h"
 #include "game.h"
@@ -205,16 +204,169 @@ const MetaruleInfo kMetarules[] = {
     { "tile_refresh_display", mf_tile_refresh_display, 0, 0 },
     // {"unjam_lock",                mf_unjam_lock,                1, 1, -1, {ARG_OBJECT}},
     { "unwield_slot", mf_unwield_slot, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
-    // {"win_fill_color",            mf_win_fill_color,            0, 5, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
+    { "win_fill_color", mf_win_fill_color, 0, 5, -1, { ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "opcode_exists", mf_opcode_exists, 1, 1 },
 };
 const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
 constexpr int kMetarulesMax = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
+enum class InterfaceWindowLookupResult {
+    Found,
+    Missing,
+    Invalid,
+};
+
+/*
+// Valid window types for get_window_attribute
+#define WINTYPE_INVENTORY    (0) // any inventory window (player/loot/use/barter)
+#define WINTYPE_DIALOG       (1)
+#define WINTYPE_PIPBOY       (2)
+#define WINTYPE_WORLDMAP     (3)
+#define WINTYPE_IFACEBAR     (4) // the interface bar
+#define WINTYPE_CHARACTER    (5)
+#define WINTYPE_SKILLDEX     (6)
+#define WINTYPE_ESCMENU      (7) // escape menu
+#define WINTYPE_AUTOMAP      (8)
+*/
+static InterfaceWindowLookupResult getInterfaceWindowByType(int winType, int& window)
+{
+    switch (winType) {
+    case 0: window = inventoryGetWindow(); break;
+    case 1: window = gameDialogGetWindow(); break;
+    case 2: window = pipboyGetWindow(); break;
+    case 3: window = worldmapGetWindow(); break;
+    case 4: window = windowGetWindow(gInterfaceBarWindow) != nullptr ? gInterfaceBarWindow : -1; break;
+    case 5: window = characterEditorGetWindow(); break;
+    case 6: window = skilldexGetWindow(); break;
+    case 7: window = optionsGetWindow(); break;
+    case 8: window = automapGetWindow(); break;
+    default:
+        window = -1;
+        return InterfaceWindowLookupResult::Invalid;
+    }
+
+    return window != -1 ? InterfaceWindowLookupResult::Found : InterfaceWindowLookupResult::Missing;
+}
+
+static int getCurrentInterfaceWindow()
+{
+    int window = -1;
+    if (GameMode::isInGameMode(GameMode::kInventory)
+        || GameMode::isInGameMode(GameMode::kUseOn)
+        || GameMode::isInGameMode(GameMode::kLoot)
+        || GameMode::isInGameMode(GameMode::kBarter)) {
+        window = inventoryGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kDialog)) {
+        window = gameDialogGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kPipboy)) {
+        window = pipboyGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kWorldmap)) {
+        window = worldmapGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kEditor)) {
+        window = characterEditorGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kSkilldex)) {
+        window = skilldexGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kOptions)) {
+        window = optionsGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kAutomap)) {
+        window = automapGetWindow();
+    } else if (windowGetWindow(gInterfaceBarWindow) != nullptr) {
+        window = gInterfaceBarWindow;
+    }
+
+    return window;
+}
+
+static bool clampWindowFillRect(int windowWidth, int windowHeight, int& x, int& y, int& width, int& height)
+{
+    if (x < 0) {
+        width += x;
+        x = 0;
+    }
+
+    if (y < 0) {
+        height += y;
+        y = 0;
+    }
+
+    if (x >= windowWidth || y >= windowHeight) {
+        width = 0;
+        height = 0;
+        return true;
+    }
+
+    bool truncated = false;
+    if (x + width > windowWidth) {
+        width = windowWidth - x;
+        truncated = true;
+    }
+
+    if (y + height > windowHeight) {
+        height = windowHeight - y;
+        truncated = true;
+    }
+
+    return truncated;
+}
+
+static bool applyWindowFlag(int windowId, int bitFlag, bool enabled)
+{
+    Window* window = windowGetWindow(windowId);
+    if (window == nullptr) {
+        return false;
+    }
+
+    if (enabled) {
+        window->flags |= bitFlag;
+    } else {
+        window->flags &= ~bitFlag;
+    }
+
+    return true;
+}
+
 void mf_art_cache_flush(OpcodeContext& ctx)
 {
     artCacheFlush();
+}
+
+void mf_art_frame_data(OpcodeContext& ctx)
+{
+    int frame = ctx.numArgs() > 1 ? ctx.arg(1).asInt() : 0;
+    int direction = ctx.numArgs() > 2 ? ctx.arg(2).asInt() : 0;
+
+    if (ctx.arg(0).isInt() && ctx.arg(0).asInt() == -1) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    FrmImage image;
+    if (ctx.arg(0).isInt()) {
+        int fid = ctx.arg(0).asInt();
+        if (!image.lock(fid, frame, direction)) {
+            ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
+            ctx.setReturn(-1);
+            return;
+        }
+    } else {
+        const char* path = ctx.stringArg(0);
+        if (!image.lock(path, frame, direction)) {
+            ctx.printError("%s() - cannot load art from file: %s", ctx.name(), path);
+            ctx.setReturn(-1);
+            return;
+        }
+    }
+
+    if (image.getWidth() <= 0 || image.getHeight() <= 0) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    ArrayId arrayId = CreateTempArray(2, 0);
+    SetArray(arrayId, ProgramValue(0), ProgramValue(image.getWidth()), false, ctx.program());
+    SetArray(arrayId, ProgramValue(1), ProgramValue(image.getHeight()), false, ctx.program());
+    ctx.setReturn(ProgramValue(arrayId));
 }
 
 void mf_add_iface_tag(OpcodeContext& ctx)
@@ -384,6 +536,168 @@ void mf_get_text_width(OpcodeContext& ctx)
     ctx.setReturn(fontGetStringWidth(ctx.stringArg(0)));
 }
 
+void mf_get_window_attribute(OpcodeContext& ctx)
+{
+    int attrType = ctx.numArgs() > 1 ? ctx.arg(1).asInt() : 0;
+    int window = -1;
+    InterfaceWindowLookupResult lookup = getInterfaceWindowByType(ctx.arg(0).asInt(), window);
+    if (lookup == InterfaceWindowLookupResult::Missing) {
+        if (attrType != 0) {
+            ctx.printError("%s() - failed to get the interface window.", ctx.name());
+            ctx.setReturn(-1);
+        } else {
+            ctx.setReturn(0);
+        }
+        return;
+    }
+
+    if (lookup == InterfaceWindowLookupResult::Invalid) {
+        ctx.printError("%s() - invalid window type number.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    Rect rect;
+    if (windowGetRect(window, &rect) == -1) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    switch (attrType) {
+    case -1: {
+        ArrayId arrayId = CreateTempArray(-1, 0);
+        SetArray(arrayId, programMakeString(ctx.program(), "left"), ProgramValue(rect.left), false, ctx.program());
+        SetArray(arrayId, programMakeString(ctx.program(), "top"), ProgramValue(rect.top), false, ctx.program());
+        SetArray(arrayId, programMakeString(ctx.program(), "right"), ProgramValue(rect.right), false, ctx.program());
+        SetArray(arrayId, programMakeString(ctx.program(), "bottom"), ProgramValue(rect.bottom), false, ctx.program());
+        ctx.setReturn(ProgramValue(arrayId));
+        break;
+    }
+    case 0: // basically an existence check
+        ctx.setReturn(1);
+        break;
+    case 1:
+        ctx.setReturn(rect.left);
+        break;
+    case 2:
+        ctx.setReturn(rect.top);
+        break;
+    case 3:
+        ctx.setReturn(windowGetWidth(window));
+        break;
+    case 4:
+        ctx.setReturn(windowGetHeight(window));
+        break;
+    case 5:
+        ctx.setReturn(window);
+        break;
+    default:
+        ctx.setReturn(0);
+        break;
+    }
+}
+
+void mf_interface_art_draw(OpcodeContext& ctx)
+{
+    int window = -1;
+    InterfaceWindowLookupResult lookup = getInterfaceWindowByType(ctx.arg(0).asInt() & 0xFF, window);
+    if (lookup != InterfaceWindowLookupResult::Found) {
+        ctx.printError("%s() - the game interface window is not created or invalid window type number.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    int frame = ctx.numArgs() > 4 ? ctx.arg(4).asInt() : 0;
+    int direction = -1;
+    int scaledWidth = -1;
+    int scaledHeight = -1;
+    if (ctx.numArgs() > 5) {
+        int arrayId = ctx.arg(5).asInt();
+        if (ArrayExists(arrayId)) {
+            ProgramValue directionValue = GetArray(arrayId, ProgramValue(0), ctx.program());
+            if (directionValue.isInt()) {
+                direction = directionValue.asInt();
+            }
+
+            ProgramValue widthValue = GetArray(arrayId, ProgramValue(1), ctx.program());
+            if (widthValue.isInt()) {
+                scaledWidth = widthValue.asInt();
+            }
+
+            ProgramValue heightValue = GetArray(arrayId, ProgramValue(2), ctx.program());
+            if (heightValue.isInt()) {
+                scaledHeight = heightValue.asInt();
+            }
+        }
+    }
+
+    if (ctx.arg(1).isInt() && ctx.arg(1).asInt() == -1) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    FrmImage image;
+    int fid = -1;
+    if (ctx.arg(1).isInt()) {
+        fid = ctx.arg(1).asInt();
+        int frameDirection = 0;
+        int lockFid = fid;
+        if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
+            frameDirection = direction >= 0 ? direction : FID_ROTATION(fid);
+            if (direction >= 0) {
+                lockFid = (direction << 28) | (fid & 0x0FFFFFFF);
+            }
+        }
+
+        if (!image.lock(lockFid, frame, frameDirection)) {
+            ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
+            ctx.setReturn(-1);
+            return;
+        }
+    } else {
+        const char* path = ctx.stringArg(1);
+        int frameDirection = direction >= 0 ? direction : 0;
+        if (!image.lock(path, frame, frameDirection)) {
+            ctx.printError("%s() - load art from file: %s", ctx.name(), path);
+            ctx.setReturn(-1);
+            return;
+        }
+    }
+
+    int xOffset = 0;
+    int yOffset = 0;
+    if (ctx.arg(1).isInt() && FID_TYPE(fid) == OBJ_TYPE_CRITTER && direction >= 0) {
+        xOffset = image.getXOffset();
+        yOffset = image.getYOffset();
+    }
+
+    int x = std::max(ctx.arg(2).asInt() + xOffset, 0);
+    int y = std::max(ctx.arg(3).asInt() + yOffset, 0);
+
+    int width = scaledWidth >= 0 ? scaledWidth : image.getWidth();
+    int height = scaledHeight >= 0 ? scaledHeight : image.getHeight();
+    if (x + width > windowGetWidth(window) || y + height > windowGetHeight(window)) {
+        ctx.printError("%s() - attempt to draw beyond window bounds (%d, %d)", ctx.name(), windowGetWidth(window), windowGetHeight(window));
+        ctx.setReturn(-1);
+        return;
+    }
+
+    unsigned char* dest = windowGetBuffer(window) + windowGetWidth(window) * y + x;
+    if (width != image.getWidth() || height != image.getHeight()) {
+        blitBufferToBufferStretchTrans(image.getData(), image.getWidth(), image.getHeight(), image.getWidth(), dest, width, height, windowGetWidth(window));
+    } else {
+        blitBufferToBufferTrans(image.getData(), image.getWidth(), image.getHeight(), image.getWidth(), dest, windowGetWidth(window));
+    }
+
+    if ((ctx.arg(0).asInt() & 0x1000000) == 0) {
+        // refresh if lacking the "dont' refresh" flag
+        Rect rect = { x, y, x + width - 1, y + height - 1 };
+        windowRefreshRect(window, &rect);
+    }
+
+    ctx.setReturn(1);
+}
+
 void mf_intface_redraw(OpcodeContext& ctx)
 {
     if (ctx.numArgs() == 0) {
@@ -413,7 +727,7 @@ void mf_item_weight(OpcodeContext& ctx)
 
 void mf_loot_obj(OpcodeContext& ctx)
 {
-    if (GameMode::isInGameMode(GameMode::kInventory)) {
+    if (GameMode::isInGameMode(GameMode::kLoot)) {
         ctx.setReturn(inventoryGetTargetObject());
     } else {
         ctx.setReturn(nullptr);
