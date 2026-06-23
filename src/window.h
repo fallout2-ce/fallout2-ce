@@ -65,6 +65,7 @@ void _doRightButtonRelease(int btn, int keyCode);
 void _setButtonGFX(int width, int height, unsigned char* normal);
 bool scriptWindowHide();
 bool scriptWindowShow();
+bool scriptWindowHideNamed(const char* name);
 int scriptWindowWidth();
 int scriptWindowHeight();
 bool scriptWindowDraw();
@@ -75,6 +76,7 @@ int scriptWindowCreate(const char* windowName, int x, int y, int width, int heig
 int scriptWindowOutput(const char* string);
 bool scriptWindowGotoXY(int x, int y);
 bool scriptWindowSelectId(int index);
+int scriptWindowGetWindow(int index);
 int scriptWindowSelect(const char* windowName);
 unsigned char* scriptWindowGetBuffer();
 int scriptWindowPush(const char* windowName);
@@ -131,6 +133,7 @@ void _drawScaledBuf(unsigned char* dest, int destWidth, int destHeight, unsigned
 void _fillBuf3x3(unsigned char* src, int srcWidth, int srcHeight, unsigned char* dest, int destWidth, int destHeight);
 
 bool scriptWindowShowNamed(const char* name);
+bool scriptWindowSetNamedFlag(const char* name, int bitFlag, bool enabled);
 
 } // namespace fallout
 

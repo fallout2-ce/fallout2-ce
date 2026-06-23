@@ -896,6 +896,41 @@ void mf_set_outline(OpcodeContext& ctx)
     object->outline = outline;
 }
 
+void mf_set_window_flag(OpcodeContext& ctx)
+{
+    int bitFlag = ctx.arg(1).asInt();
+    switch (bitFlag) {
+    case WINDOW_DONT_MOVE_TOP:
+    case WINDOW_MOVE_ON_TOP:
+    case WINDOW_HIDDEN:
+    case WINDOW_MODAL:
+    case WINDOW_TRANSPARENT:
+        break;
+    default:
+        return;
+    }
+
+    bool enabled = ctx.arg(2).asInt() != 0;
+    if (ctx.arg(0).isString()) {
+        const char* windowName = ctx.stringArg(0);
+        if (!scriptWindowSetNamedFlag(windowName, bitFlag, enabled)) {
+            ctx.printError("%s() - window '%s' is not found.", ctx.name(), windowName);
+        }
+        return;
+    }
+
+    int windowId = ctx.arg(0).asInt();
+    if (windowId <= 0) {
+        windowId = getCurrentInterfaceWindow();
+    }
+
+    if (windowId == -1) {
+        return;
+    }
+
+    applyWindowFlag(windowId, bitFlag, enabled);
+}
+
 void mf_set_unique_id(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
@@ -921,6 +956,52 @@ void mf_show_window(OpcodeContext& ctx)
         if (!scriptWindowShowNamed(windowName)) {
             debugPrint("show_window: window '%s' is not found", windowName);
         }
+    }
+}
+
+void mf_hide_window(OpcodeContext& ctx)
+{
+    if (ctx.numArgs() == 0) {
+        scriptWindowHide();
+    } else {
+        const char* windowName = ctx.stringArg(0);
+        if (!scriptWindowHideNamed(windowName)) {
+            ctx.printError("%s() - window '%s' is not found.", ctx.name(), windowName);
+        }
+    }
+}
+
+void mf_win_fill_color(OpcodeContext& ctx)
+{
+    int window = scriptWindowGetWindow(ctx.program()->windowId);
+    if (window == -1) {
+        ctx.printError("%s() - no created or selected window.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    int windowWidth = windowGetWidth(window);
+    int windowHeight = windowGetHeight(window);
+    if (ctx.numArgs() == 0) {
+        windowFill(window, 0, 0, windowWidth, windowHeight, 0);
+        windowRefresh(window);
+        return;
+    }
+
+    int x = ctx.arg(0).asInt();
+    int y = ctx.arg(1).asInt();
+    int width = ctx.arg(2).asInt();
+    int height = ctx.arg(3).asInt();
+    int color = ctx.arg(4).asInt();
+    bool truncated = clampWindowFillRect(windowWidth, windowHeight, x, y, width, height);
+    if (width > 0 && height > 0) {
+        windowFill(window, x, y, width, height, color);
+        Rect rect = { x, y, x + width - 1, y + height - 1 };
+        windowRefreshRect(window, &rect);
+    }
+
+    if (truncated) {
+        ctx.printError("%s() - the fill area is truncated because it exceeds the current window.", ctx.name());
     }
 }
 
