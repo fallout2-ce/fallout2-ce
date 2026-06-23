@@ -42,6 +42,7 @@
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
+#include "window_manager.h"
 #include "worldmap.h"
 
 namespace fallout {
@@ -897,6 +898,11 @@ static void op_get_mouse_buttons(Program* program)
     // CE: Implementation is slightly different - it does not handle middle
     // mouse button.
     programStackPushInteger(program, mouse_get_last_buttons());
+}
+
+static void op_get_window_under_mouse(Program* program)
+{
+    programStackPushInteger(program, _win_last_button_winID());
 }
 
 // get_screen_width
@@ -1873,6 +1879,7 @@ void sfallOpcodesInit()
     // 0x821e - int  get_mouse_buttons()
     interpreterRegisterOpcode(0x821E, op_get_mouse_buttons);
     // 0x821f - int  get_window_under_mouse()
+    interpreterRegisterOpcode(0x821F, op_get_window_under_mouse);
 
     // 0x8163 - int get_year()
     interpreterRegisterOpcode(0x8163, op_get_year);

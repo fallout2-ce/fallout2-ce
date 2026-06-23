@@ -6,10 +6,13 @@
 #include <string.h>
 #include <string>
 
+#include "automap.h"
 #include "art.h"
+#include "character_editor.h"
 #include "color.h"
 #include "combat.h"
 #include "config.h" // For Config, configInit, configFree
+#include "datafile.h"
 #include "dbox.h"
 #include "debug.h"
 #include "game.h"
@@ -24,9 +27,12 @@
 #include "message.h"
 #include "object.h"
 #include "opcode_context.h"
+#include "options.h"
 #include "platform_compat.h"
+#include "pipboy.h"
 #include "proto_instance.h"
 #include "scripts.h"
+#include "skilldex.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
 #include "sfall_ini.h"
@@ -35,6 +41,7 @@
 #include "text_font.h"
 #include "tile.h"
 #include "window.h"
+#include "window_manager.h"
 #include "worldmap.h"
 
 #include <assert.h>
@@ -44,8 +51,11 @@ namespace fallout {
 static void mf_attack_is_aimed(OpcodeContext& ctx);
 static void mf_car_gas_amount(OpcodeContext& ctx);
 static void mf_combat_data(OpcodeContext& ctx);
+static void mf_create_win(OpcodeContext& ctx);
 static void mf_critter_inven_obj2(OpcodeContext& ctx);
 static void mf_dialog_obj(OpcodeContext& ctx);
+static void mf_dialog_message(OpcodeContext& ctx);
+static void mf_display_stats(OpcodeContext& ctx);
 static void mf_get_combat_free_move(OpcodeContext& ctx);
 static void mf_get_cursor_mode(OpcodeContext& ctx);
 static void mf_get_flags(OpcodeContext& ctx);
@@ -54,12 +64,17 @@ static void mf_get_object_data(OpcodeContext& ctx);
 static void mf_get_outline(OpcodeContext& ctx);
 static void mf_get_sfall_arg_at(OpcodeContext& ctx);
 static void mf_get_text_width(OpcodeContext& ctx);
+static void mf_get_window_attribute(OpcodeContext& ctx);
+static void mf_hide_window(OpcodeContext& ctx);
+static void mf_interface_art_draw(OpcodeContext& ctx);
 static void mf_intface_redraw(OpcodeContext& ctx);
+static void mf_inventory_redraw(OpcodeContext& ctx);
 static void mf_item_weight(OpcodeContext& ctx);
 static void mf_loot_obj(OpcodeContext& ctx);
 static void mf_message_box(OpcodeContext& ctx);
 static void mf_add_extra_msg_file(OpcodeContext& ctx);
 static void mf_add_iface_tag(OpcodeContext& ctx);
+static void mf_art_frame_data(OpcodeContext& ctx);
 static void mf_art_cache_flush(OpcodeContext& ctx);
 static void mf_metarule_exist(OpcodeContext& ctx);
 static void mf_obj_is_openable(OpcodeContext& ctx);
@@ -72,12 +87,14 @@ static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
+static void mf_set_window_flag(OpcodeContext& ctx);
 static void mf_set_unique_id(OpcodeContext& ctx);
 static void mf_show_window(OpcodeContext& ctx);
 static void mf_signal_close_game(OpcodeContext& ctx);
 static void mf_tile_by_position(OpcodeContext& ctx);
 static void mf_tile_refresh_display(OpcodeContext& ctx);
 static void mf_unwield_slot(OpcodeContext& ctx);
+static void mf_win_fill_color(OpcodeContext& ctx);
 static void mf_string_compare(OpcodeContext& ctx);
 static void mf_string_find(OpcodeContext& ctx);
 static void mf_string_to_case(OpcodeContext& ctx);
@@ -93,22 +110,21 @@ const MetaruleInfo kMetarules[] = {
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
     { "art_cache_clear", mf_art_cache_flush, 0, 0 },
-    // {"art_frame_data",            mf_art_frame_data,            1, 3,  0, {ARG_INTSTR, ARG_INT, ARG_INT}},
+    { "art_frame_data", mf_art_frame_data, 1, 3, 0, { ARG_INTSTR, ARG_INT, ARG_INT } },
     { "attack_is_aimed", mf_attack_is_aimed, 0, 0 },
     { "car_gas_amount", mf_car_gas_amount, 0, 0 },
     { "combat_data", mf_combat_data, 0, 0 },
-    // {"create_win",                mf_create_win,                5, 6, -1, {ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
+    { "create_win", mf_create_win, 5, 6, -1, { ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "critter_inven_obj2", mf_critter_inven_obj2, 2, 2, 0, { ARG_OBJECT, ARG_INT } },
-    // {"dialog_message",            mf_dialog_message,            1, 1, -1, {ARG_STRING}},
+    { "dialog_message", mf_dialog_message, 1, 1, -1, { ARG_STRING } },
     { "dialog_obj", mf_dialog_obj, 0, 0 },
-    // {"display_stats",             mf_display_stats,             0, 0}, // refresh
+    { "display_stats", mf_display_stats, 0, 0 }, // refresh
     // {"draw_image",                mf_draw_image,                1, 5, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"draw_image_scaled",         mf_draw_image_scaled,         1, 6, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"exec_map_update_scripts",   mf_exec_map_update_scripts,   0, 0},
     { "floor2", mf_floor2, 1, 1, 0, { ARG_NUMBER } },
     // {"get_can_rest_on_map",       mf_get_rest_on_map,           2, 2, -1, {ARG_INT, ARG_INT}},
     { "get_combat_free_move", mf_get_combat_free_move, 0, 0 },
-    // {"get_current_inven_size",    mf_get_current_inven_size,    1, 1,  0, {ARG_OBJECT}},
     { "get_cursor_mode", mf_get_cursor_mode, 0, 0 },
     { "get_flags", mf_get_flags, 1, 1, 0, { ARG_OBJECT } },
     { "get_ini_config", mf_get_ini_config, 2, 2, 0, { ARG_STRING, ARG_INT } },
@@ -126,18 +142,18 @@ const MetaruleInfo kMetarules[] = {
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
     // {"get_terrain_name",          mf_get_terrain_name,          0, 2, -1, {ARG_INT, ARG_INT}},
     { "get_text_width", mf_get_text_width, 1, 1, 0, { ARG_STRING } },
-    // {"get_window_attribute",      mf_get_window_attribute,      1, 2, -1, {ARG_INT, ARG_INT}},
+    { "get_window_attribute", mf_get_window_attribute, 1, 2, -1, { ARG_INT, ARG_INT } },
     // {"has_fake_perk_npc",         mf_has_fake_perk_npc,         2, 2,  0, {ARG_OBJECT, ARG_STRING}},
     // {"has_fake_trait_npc",        mf_has_fake_trait_npc,        2, 2,  0, {ARG_OBJECT, ARG_STRING}},
-    // {"hide_window",               mf_hide_window,               0, 1, -1, {ARG_STRING}},
-    // {"interface_art_draw",        mf_interface_art_draw,        4, 6, -1, {ARG_INT, ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
+    { "hide_window", mf_hide_window, 0, 1, -1, { ARG_STRING } },
+    { "interface_art_draw", mf_interface_art_draw, 4, 6, -1, { ARG_INT, ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     // {"interface_overlay",         mf_interface_overlay,         2, 6, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"interface_print",           mf_interface_print,           5, 6, -1, {ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"intface_hide",              mf_intface_hide,              0, 0},
     // {"intface_is_hidden",         mf_intface_is_hidden,         0, 0},
     { "intface_redraw", mf_intface_redraw, 0, 1 },
     // {"intface_show",              mf_intface_show,              0, 0},
-    // {"inventory_redraw",          mf_inventory_redraw,          0, 1, -1, {ARG_INT}},
+    { "inventory_redraw", mf_inventory_redraw, 0, 1, -1, { ARG_INT } },
     // {"item_make_explosive",       mf_item_make_explosive,       3, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "item_weight", mf_item_weight, 1, 1, 0, { ARG_OBJECT } },
     // {"lock_is_jammed",            mf_lock_is_jammed,            1, 1,  0, {ARG_OBJECT}},
@@ -177,7 +193,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_town_title",            mf_set_town_title,            2, 2, -1, {ARG_INT, ARG_STRING}},
     { "set_unique_id", mf_set_unique_id, 1, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"set_unjam_locks_time",      mf_set_unjam_locks_time,      1, 1, -1, {ARG_INT}},
-    // {"set_window_flag",           mf_set_window_flag,           3, 3, -1, {ARG_INTSTR, ARG_INT, ARG_INT}},
+    { "set_window_flag", mf_set_window_flag, 3, 3, -1, { ARG_INTSTR, ARG_INT, ARG_INT } },
     { "show_window", mf_show_window, 0, 1, -1, { ARG_STRING } },
     { "signal_close_game", mf_signal_close_game, 0, 0 },
     // {"spatial_radius",            mf_spatial_radius,            1, 1,  0, {ARG_OBJECT}},
@@ -236,6 +252,35 @@ void mf_combat_data(OpcodeContext& ctx)
     }
 }
 
+void mf_create_win(OpcodeContext& ctx)
+{
+    int flags = ctx.numArgs() > 5
+        ? ctx.arg(5).asInt()
+        : WINDOW_MOVE_ON_TOP;
+
+    int color = (flags & WINDOW_TRANSPARENT) != 0 ? 0 : 256;
+    if (scriptWindowCreate(ctx.stringArg(0),
+            ctx.arg(1).asInt(),
+            ctx.arg(2).asInt(),
+            ctx.arg(3).asInt(),
+            ctx.arg(4).asInt(),
+            color,
+            flags)
+        == -1) {
+        ctx.printError("%s() - couldn't create window.", ctx.name());
+        ctx.setReturn(-1);
+    }
+}
+
+void mf_display_stats(OpcodeContext& ctx)
+{
+    if (GameMode::isInGameMode(GameMode::kInventory)) {
+        inventoryDisplayStats();
+    } else if (GameMode::isInGameMode(GameMode::kEditor)) {
+        characterEditorDisplayStats();
+    }
+}
+
 void mf_critter_inven_obj2(OpcodeContext& ctx)
 {
     Object* obj = ctx.arg(0).asObject();
@@ -265,6 +310,14 @@ void mf_dialog_obj(OpcodeContext& ctx)
         ctx.setReturn(gGameDialogSpeaker);
     } else {
         ctx.setReturn(nullptr);
+    }
+}
+
+void mf_dialog_message(OpcodeContext& ctx)
+{
+    if (GameMode::isInGameMode(GameMode::kDialog)
+        && !GameMode::isInGameMode(GameMode::kDialogReview)) {
+        gameDialogRenderSupplementaryMessage(ctx.stringArg(0));
     }
 }
 
@@ -339,6 +392,11 @@ void mf_intface_redraw(OpcodeContext& ctx)
         // TODO: Incomplete.
         programFatalError("mf_intface_redraw: not implemented");
     }
+}
+
+void mf_inventory_redraw(OpcodeContext& ctx)
+{
+    inventoryRedraw(ctx.numArgs() > 0 ? ctx.arg(0).asInt() : -1);
 }
 
 void mf_item_weight(OpcodeContext& ctx)
