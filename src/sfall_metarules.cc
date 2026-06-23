@@ -6,8 +6,8 @@
 #include <string.h>
 #include <string>
 
-#include "automap.h"
 #include "art.h"
+#include "automap.h"
 #include "character_editor.h"
 #include "color.h"
 #include "combat.h"
@@ -27,16 +27,16 @@
 #include "object.h"
 #include "opcode_context.h"
 #include "options.h"
-#include "platform_compat.h"
 #include "pipboy.h"
+#include "platform_compat.h"
 #include "proto_instance.h"
 #include "scripts.h"
-#include "skilldex.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
 #include "sfall_ini.h"
 #include "sfall_opcodes.h"
 #include "sfall_script_hooks.h"
+#include "skilldex.h"
 #include "text_font.h"
 #include "tile.h"
 #include "window.h"
@@ -232,15 +232,33 @@ enum class InterfaceWindowLookupResult {
 static InterfaceWindowLookupResult getInterfaceWindowByType(int winType, int& window)
 {
     switch (winType) {
-    case 0: window = inventoryGetWindow(); break;
-    case 1: window = gameDialogGetWindow(); break;
-    case 2: window = pipboyGetWindow(); break;
-    case 3: window = worldmapGetWindow(); break;
-    case 4: window = windowGetWindow(gInterfaceBarWindow) != nullptr ? gInterfaceBarWindow : -1; break;
-    case 5: window = characterEditorGetWindow(); break;
-    case 6: window = skilldexGetWindow(); break;
-    case 7: window = optionsGetWindow(); break;
-    case 8: window = automapGetWindow(); break;
+    case 0:
+        window = inventoryGetWindow();
+        break;
+    case 1:
+        window = gameDialogGetWindow();
+        break;
+    case 2:
+        window = pipboyGetWindow();
+        break;
+    case 3:
+        window = worldmapGetWindow();
+        break;
+    case 4:
+        window = windowGetWindow(gInterfaceBarWindow) != nullptr ? gInterfaceBarWindow : -1;
+        break;
+    case 5:
+        window = characterEditorGetWindow();
+        break;
+    case 6:
+        window = skilldexGetWindow();
+        break;
+    case 7:
+        window = optionsGetWindow();
+        break;
+    case 8:
+        window = automapGetWindow();
+        break;
     default:
         window = -1;
         return InterfaceWindowLookupResult::Invalid;
