@@ -918,20 +918,6 @@ bool scriptWindowSelectId(int index)
     return true;
 }
 
-int scriptWindowGetWindow(int index)
-{
-    if (index < 0 || index >= MANAGED_WINDOW_COUNT) {
-        return -1;
-    }
-
-    ManagedWindow* managedWindow = &(gManagedWindows[index]);
-    if (managedWindow->window == -1) {
-        return -1;
-    }
-
-    return windowGetWindow(managedWindow->window) != nullptr ? managedWindow->window : -1;
-}
-
 // 0x4B821C
 int scriptWindowSelect(const char* windowName)
 {
