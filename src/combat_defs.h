@@ -103,7 +103,7 @@ typedef struct Attack {
     Object* attacker;
     int hitMode;
     Object* weapon;
-    int attackHitLocation;
+    int attackHitLocation; // UNUSED?
     int attackerDamage;
     int attackerFlags;
     int ammoQuantity;
@@ -114,7 +114,7 @@ typedef struct Attack {
     int defenderDamage;
     int defenderFlags;
     int defenderKnockback;
-    Object* oops;
+    Object* intendedTarget; // mainTarget
     int extrasLength;
     Object* extras[EXPLOSION_TARGET_COUNT];
     int extrasHitLocation[EXPLOSION_TARGET_COUNT];

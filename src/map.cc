@@ -958,7 +958,8 @@ static int mapLoad(File* stream)
         goto err;
     }
 
-    if ((gMapHeader.flags & 1) == 0) {
+    if (!_isLoadingGame()) {
+        // Fix whoHitMe union.  When loading a saved game, combatLoad is responsible for this fix
         _map_fix_critter_combat_data();
     }
 
