@@ -115,6 +115,7 @@ int _SavePrefs(bool save);
 static int preferencesWindowInit();
 static int preferencesWindowFree();
 static void _DoThing(int eventCode);
+static void preferencesMessageListReset();
 
 // 0x48FBD0 row1Ytab
 static const int _row1Ytab[PRIMARY_PREF_COUNT] = {
@@ -230,6 +231,12 @@ static MessageList gPreferencesMessageList;
 
 // 0x663840 optnmesg
 static MessageListItem gPreferencesMessageListItem;
+
+static void preferencesMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
+    messageListFree(&gPreferencesMessageList);
+}
 
 // 0x6638C8 text_delay_back
 static double gPreferencesTextBaseDelay2;
@@ -990,6 +997,7 @@ static int preferencesWindowInit()
     if (!messageListLoad(&gPreferencesMessageList, path)) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
 
     _oldFont = fontGetCurrent();
 
@@ -1001,6 +1009,7 @@ static int preferencesWindowInit()
             while (--i >= 0) {
                 _preferencesFrmImages[i].unlock();
             }
+            preferencesMessageListReset();
             return -1;
         }
     }
@@ -1019,6 +1028,7 @@ static int preferencesWindowInit()
         for (i = 0; i < PREFERENCES_WINDOW_FRM_COUNT; i++) {
             _preferencesFrmImages[i].unlock();
         }
+        preferencesMessageListReset();
         return -1;
     }
 
@@ -1210,7 +1220,7 @@ static int preferencesWindowFree()
 
     fontSetCurrent(_oldFont);
 
-    messageListFree(&gPreferencesMessageList);
+    preferencesMessageListReset();
     touch_set_touchscreen_mode(false);
 
     return 0;

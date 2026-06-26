@@ -43,6 +43,7 @@ typedef enum OptionsWindowFrm {
 static int optionsWindowInit();
 static int optionsWindowFree();
 static void _ShadeScreen(bool preserveWorldState);
+static void optionsMessageListReset();
 
 // 0x48FC0C
 static const int gPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
@@ -84,6 +85,12 @@ static int gOptionsWindowOldFont;
 static bool gOptionsWindowIsoWasEnabled;
 
 static FrmImage _optionsFrmImages[OPTIONS_WINDOW_FRM_COUNT];
+
+static void optionsMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
+    messageListFree(&gPreferencesMessageList);
+}
 
 // 0x48FC50 do_optionsFunc
 int showOptions()
@@ -136,6 +143,7 @@ int showOptions()
             case 502:
                 // PREFERENCES
                 doPreferences(false);
+                messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
                 break;
             case KEY_PLUS:
             case KEY_EQUAL:
@@ -182,6 +190,7 @@ static int optionsWindowInit()
     if (!messageListLoad(&gPreferencesMessageList, path)) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
 
     for (int index = 0; index < OPTIONS_WINDOW_FRM_COUNT; index++) {
         int fid = buildFid(OBJ_TYPE_INTERFACE, gOptionsWindowFrmIds[index], 0, 0, 0);
@@ -190,7 +199,7 @@ static int optionsWindowInit()
                 _optionsFrmImages[index].unlock();
             }
 
-            messageListFree(&gPreferencesMessageList);
+            optionsMessageListReset();
 
             return -1;
         }
@@ -208,7 +217,7 @@ static int optionsWindowInit()
                 _optionsFrmImages[index].unlock();
             }
 
-            messageListFree(&gPreferencesMessageList);
+            optionsMessageListReset();
 
             return -1;
         }
@@ -236,7 +245,7 @@ static int optionsWindowInit()
             _optionsFrmImages[index].unlock();
         }
 
-        messageListFree(&gPreferencesMessageList);
+        optionsMessageListReset();
 
         return -1;
     }
@@ -304,7 +313,7 @@ static int optionsWindowFree()
 {
     windowDestroy(gOptionsWindow);
     fontSetCurrent(gOptionsWindowOldFont);
-    messageListFree(&gPreferencesMessageList);
+    optionsMessageListReset();
 
     for (int index = 0; index < OPTIONS_WINDOW_BUTTONS_COUNT; index++) {
         internal_free(_opbtns[index]);
@@ -365,6 +374,7 @@ int showPause(bool preserveWorldState)
         // FIXME: Leaking graphics.
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &gPreferencesMessageList);
 
     int pauseWindowX = (screenGetWidth() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth()) / 2;
     int pauseWindowY = (screenGetHeight() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight()) / 2;
@@ -383,7 +393,7 @@ int showPause(bool preserveWorldState)
         256,
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (window == -1) {
-        messageListFree(&gPreferencesMessageList);
+        optionsMessageListReset();
 
         debugPrint("\n** Error opening pause window! **\n");
         return -1;
@@ -477,7 +487,7 @@ int showPause(bool preserveWorldState)
     }
 
     windowDestroy(window);
-    messageListFree(&gPreferencesMessageList);
+    optionsMessageListReset();
 
     if (!preserveWorldState) {
         if (gameMouseWasVisible) {
