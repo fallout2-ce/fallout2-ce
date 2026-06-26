@@ -716,6 +716,31 @@ bool scriptWindowHideNamed(const char* windowName)
     return false;
 }
 
+bool scriptWindowSetFlag(int windowId, int bitFlag, bool enabled)
+{
+    Window* window = windowGetWindow(windowId);
+    if (window == nullptr) {
+        return false;
+    }
+
+    if (bitFlag == WINDOW_HIDDEN) {
+        if (enabled) {
+            windowHide(windowId);
+        } else {
+            windowShow(windowId);
+        }
+        return true;
+    }
+
+    if (enabled) {
+        window->flags |= bitFlag;
+    } else {
+        window->flags &= ~bitFlag;
+    }
+
+    return true;
+}
+
 // 0x4B7734
 int scriptWindowWidth()
 {
@@ -2684,19 +2709,8 @@ bool scriptWindowSetNamedFlag(const char* windowName, int bitFlag, bool enabled)
         ManagedWindow* managedWindow = &(gManagedWindows[index]);
         if (managedWindow->window != -1) {
             if (compat_stricmp(managedWindow->name, windowName) == 0) {
-                Window* window = windowGetWindow(managedWindow->window);
-                if (window == nullptr) {
-                    return false;
-                }
-
                 // note: Sfall also updates managedWindow->flags, but that is unused
-                if (enabled) {
-                    window->flags |= bitFlag;
-                } else {
-                    window->flags &= ~bitFlag;
-                }
-
-                return true;
+                return scriptWindowSetFlag(managedWindow->window, bitFlag, enabled);
             }
         }
     }

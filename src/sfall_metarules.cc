@@ -293,18 +293,7 @@ static int getCurrentInterfaceWindow()
 
 static bool applyWindowFlag(int windowId, int bitFlag, bool enabled)
 {
-    Window* window = windowGetWindow(windowId);
-    if (window == nullptr) {
-        return false;
-    }
-
-    if (enabled) {
-        window->flags |= bitFlag;
-    } else {
-        window->flags &= ~bitFlag;
-    }
-
-    return true;
+    return scriptWindowSetFlag(windowId, bitFlag, enabled);
 }
 
 void mf_art_cache_flush(OpcodeContext& ctx)

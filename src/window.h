@@ -132,6 +132,7 @@ void _drawScaledBuf(unsigned char* dest, int destWidth, int destHeight, unsigned
 void _fillBuf3x3(unsigned char* src, int srcWidth, int srcHeight, unsigned char* dest, int destWidth, int destHeight);
 
 bool scriptWindowShowNamed(const char* name);
+bool scriptWindowSetFlag(int windowId, int bitFlag, bool enabled);
 bool scriptWindowSetNamedFlag(const char* name, int bitFlag, bool enabled);
 
 } // namespace fallout

@@ -72,7 +72,7 @@ static unsigned char* _opbtns[OPTIONS_WINDOW_BUTTONS_COUNT];
 static bool gOptionsWindowGameMouseObjectsWasVisible;
 
 // 0x663900 optnwin
-static int gOptionsWindow;
+static int gOptionsWindow = -1;
 
 static int gPauseWindow = -1;
 
