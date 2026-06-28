@@ -663,7 +663,7 @@ static int gCharacterEditorPrimaryStatMinusBtns[7];
 static unsigned char* gCharacterEditorWindowBuffer;
 
 // 0x57060C edit_win
-static int gCharacterEditorWindow;
+static int gCharacterEditorWindow = -1;
 
 // + stats buttons
 //
