@@ -718,6 +718,10 @@ bool scriptWindowHideNamed(const char* windowName)
 
 bool scriptWindowSetFlag(int windowId, int bitFlag, bool enabled)
 {
+    if (!windowIsValidWindowId(windowId) || windowId == 0) {
+        return false;
+    }
+
     Window* window = windowGetWindow(windowId);
     if (window == nullptr) {
         return false;

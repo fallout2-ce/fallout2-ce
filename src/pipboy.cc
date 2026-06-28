@@ -354,7 +354,7 @@ int gPipboyPreviousMouseX;
 int gPipboyPreviousMouseY;
 
 // 0x6644C4 pip_win
-int gPipboyWindow;
+int gPipboyWindow = -1;
 
 // 0x6644F4 holodisk
 int _holodisk;
