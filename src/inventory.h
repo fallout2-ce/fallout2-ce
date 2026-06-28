@@ -62,6 +62,9 @@ int inventoryOpenLooting(Object* looter, Object* target);
 int inventoryOpenStealing(Object* thief, Object* target);
 void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bartererTable, int barterMod);
 int inventorySetTimer(Object* item);
+int inventoryGetWindow();
+void inventoryDisplayStats();
+void inventoryRedraw(int redrawSide);
 Object* inventoryGetTargetObject();
 int inventoryUnwieldSlot(Object* critter, InvenSlot slot);
 

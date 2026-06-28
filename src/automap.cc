@@ -46,6 +46,8 @@ static void _decode_map_data(int elevation);
 static int automapCreate();
 static int _copy_file_data(File* stream1, File* stream2, int length);
 
+static int gAutomapWindow = -1;
+
 typedef enum AutomapFrm {
     AUTOMAP_FRM_BACKGROUND,
     AUTOMAP_FRM_BUTTON_UP,
@@ -326,6 +328,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
     int automapWindowY = (screenGetHeight() - AUTOMAP_WINDOW_HEIGHT) / 2;
     // adding WINDOW_TRANSPARENT and WINDOW_DRAGGABLE_BY_BACKGROUND for testing temporarily
     int window = windowCreate(automapWindowX, automapWindowY, AUTOMAP_WINDOW_WIDTH, AUTOMAP_WINDOW_HEIGHT, color, WINDOW_MODAL | WINDOW_MOVE_ON_TOP | WINDOW_TRANSPARENT | WINDOW_DRAGGABLE_BY_BACKGROUND);
+    gAutomapWindow = window;
 
     int scannerBtn = buttonCreate(window,
         111,
@@ -493,8 +496,14 @@ void automapShow(bool isInGame, bool isUsingScanner)
     }
 
     windowDestroy(window);
+    gAutomapWindow = -1;
     fontSetCurrent(oldFont);
     touch_set_touchscreen_mode(false);
+}
+
+int automapGetWindow()
+{
+    return windowGetWindow(gAutomapWindow) != nullptr ? gAutomapWindow : -1;
 }
 
 // Renders automap in Map window.

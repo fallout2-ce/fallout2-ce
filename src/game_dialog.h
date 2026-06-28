@@ -40,6 +40,7 @@ void gameDialogSetBarterModifier(int modifier);
 int gameDialogBarter(int modifier);
 void gameDialogEndBarter();
 bool gameDialogIsBarterWindowExpanded();
+int gameDialogGetWindow();
 
 } // namespace fallout
 

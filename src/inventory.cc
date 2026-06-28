@@ -352,6 +352,7 @@ static void inventoryNormalLayoutUpdate();
 static bool inventoryBackgroundLoad(FrmImage& image, int col1FrmId, const char* col2Name, int columns);
 static int inventoryChooseColumns(FrmImage& image, int expandedWidth, int col1FrmId, const char* col2Name);
 static void inventoryCreateSlotButtons(int baseKeyCode, int scrollerX, int scrollerY, int columns);
+static bool inventoryGetCurrentWindowType(InventoryWindowType* inventoryWindowTypePtr);
 static int inventoryGetWindowWidth(int inventoryWindowType);
 static int inventoryGetWindowHeight(int inventoryWindowType);
 static void inventoryNormalClampStackOffset();
@@ -594,7 +595,7 @@ static int gInventoryWindowDudeFid;
 static Inventory* _pud;
 
 // 0x59E964 i_wid
-static int gInventoryWindow;
+static int gInventoryWindow = -1;
 
 // item2
 // 0x59E968 i_rhand
@@ -693,6 +694,31 @@ static void inventoryCreateSlotButtons(int baseKeyCode, int scrollerX, int scrol
                 inventoryItemSlotOnMouseExit);
         }
     }
+}
+
+static bool inventoryGetCurrentWindowType(InventoryWindowType* inventoryWindowTypePtr)
+{
+    if (GameMode::isInGameMode(GameMode::kBarter)) {
+        *inventoryWindowTypePtr = INVENTORY_WINDOW_TYPE_TRADE;
+        return true;
+    }
+
+    if (GameMode::isInGameMode(GameMode::kLoot)) {
+        *inventoryWindowTypePtr = INVENTORY_WINDOW_TYPE_LOOT;
+        return true;
+    }
+
+    if (GameMode::isInGameMode(GameMode::kUseOn)) {
+        *inventoryWindowTypePtr = INVENTORY_WINDOW_TYPE_USE_ITEM_ON;
+        return true;
+    }
+
+    if (GameMode::isInGameMode(GameMode::kInventory)) {
+        *inventoryWindowTypePtr = INVENTORY_WINDOW_TYPE_NORMAL;
+        return true;
+    }
+
+    return false;
 }
 
 static int inventoryGetWindowWidth(int inventoryWindowType)
@@ -957,8 +983,6 @@ void inventoryOpen()
         }
     }
 
-    ScopedGameMode gm(GameMode::kInventory);
-
     if (inventoryCommonInit() == -1) {
         return;
     }
@@ -997,6 +1021,7 @@ void inventoryOpen()
     inventoryRenderSummary();
     _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_NORMAL);
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
+    ScopedGameMode gm(GameMode::kInventory);
 
     for (;;) {
         sharedFpsLimiter.mark();
@@ -2743,8 +2768,6 @@ static void _adjust_fid()
 // 0x4717E4
 void inventoryOpenUseItemOn(Object* targetObj)
 {
-    ScopedGameMode gm(GameMode::kUseOn);
-
     if (inventoryCommonInit() == -1) {
         return;
     }
@@ -2752,6 +2775,7 @@ void inventoryOpenUseItemOn(Object* targetObj)
     bool isoWasEnabled = _setup_inventory(INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
     _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_USE_ITEM_ON);
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
+    ScopedGameMode gm(GameMode::kUseOn);
     for (;;) {
         sharedFpsLimiter.mark();
 
@@ -3088,7 +3112,7 @@ int objectGetCarriedQuantityByPid(Object* object, int pid)
 // Renders character's summary of SPECIAL stats, equipped armor bonuses,
 // and weapon's damage/range.
 //
-// 0x471D5C
+// 0x471D5C display_stats
 static void inventoryRenderSummary()
 {
     int summaryStats[7];
@@ -4350,8 +4374,6 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
-    ScopedGameMode gm(GameMode::kLoot);
-
     if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER) {
         if (critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
             // You can't find anything to take from that.
@@ -4417,6 +4439,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     }
 
     bool isoWasEnabled = _setup_inventory(INVENTORY_WINDOW_TYPE_LOOT);
+    ScopedGameMode gm(GameMode::kLoot);
 
     Object** critters = nullptr;
     int critterCount = 0;
@@ -6338,6 +6361,46 @@ int inventorySetTimer(Object* item)
     return seconds;
 }
 
+int inventoryGetWindow()
+{
+    return windowGetWindow(gInventoryWindow) != nullptr ? gInventoryWindow : -1;
+}
+
+void inventoryDisplayStats()
+{
+    if (windowGetWindow(gInventoryWindow) == nullptr) {
+        return;
+    }
+
+    inventoryRenderSummary();
+    windowRefresh(gInventoryWindow);
+}
+
+void inventoryRedraw(int redrawSide)
+{
+    if (windowGetWindow(gInventoryWindow) == nullptr) {
+        return;
+    }
+
+    InventoryWindowType inventoryWindowType;
+    if (!inventoryGetCurrentWindowType(&inventoryWindowType)) {
+        return;
+    }
+
+    if (redrawSide <= 0) {
+        _stack_offset[_curr_stack] = 0;
+        _display_inventory(0, -1, inventoryWindowType);
+    }
+
+    if (redrawSide != 0
+        && (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT
+            || inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE)) {
+        _target_stack_offset[_target_curr_stack] = 0;
+        _display_target_inventory(0, -1, _target_pud, inventoryWindowType);
+        windowRefresh(gInventoryWindow);
+    }
+}
+
 Object* inventoryGetTargetObject()
 {
     return _target_stack[_target_curr_stack];
@@ -6350,10 +6413,8 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
     }
 
     bool isDude = critter == gDude;
-    bool uiModeActive = GameMode::isInGameMode(GameMode::kInventory)
-        || GameMode::isInGameMode(GameMode::kUseOn)
-        || GameMode::isInGameMode(GameMode::kLoot)
-        || GameMode::isInGameMode(GameMode::kBarter);
+    InventoryWindowType inventoryWindowType;
+    bool uiModeActive = inventoryGetCurrentWindowType(&inventoryWindowType);
     bool update = false;
 
     if (slot != InvenSlot::Armor && !uiModeActive) {
@@ -6441,15 +6502,6 @@ int inventoryUnwieldSlot(Object* critter, InvenSlot slot)
 
     if (!uiModeActive) {
         return 0;
-    }
-
-    InventoryWindowType inventoryWindowType = INVENTORY_WINDOW_TYPE_NORMAL;
-    if (GameMode::isInGameMode(GameMode::kBarter)) {
-        inventoryWindowType = INVENTORY_WINDOW_TYPE_TRADE;
-    } else if (GameMode::isInGameMode(GameMode::kLoot)) {
-        inventoryWindowType = INVENTORY_WINDOW_TYPE_LOOT;
-    } else if (GameMode::isInGameMode(GameMode::kUseOn)) {
-        inventoryWindowType = INVENTORY_WINDOW_TYPE_USE_ITEM_ON;
     }
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {

@@ -158,9 +158,6 @@ static ManagedWindow gManagedWindows[MANAGED_WINDOW_COUNT];
 // 0x672D70 inputFunc
 static WindowInputHandler** gWindowInputHandlers;
 
-// 0x672D74 createWindowFunc
-static ManagedWindowCreateCallback* off_672D74;
-
 // NOTE: This value is never set.
 //
 // 0x672D78 selectWindowFunc
@@ -704,6 +701,50 @@ bool scriptWindowShow()
     return true;
 }
 
+bool scriptWindowHideNamed(const char* windowName)
+{
+    for (int index = 0; index < MANAGED_WINDOW_COUNT; index++) {
+        ManagedWindow* managedWindow = &(gManagedWindows[index]);
+        if (managedWindow->window != -1) {
+            if (compat_stricmp(managedWindow->name, windowName) == 0) {
+                windowHide(managedWindow->window);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool scriptWindowSetFlag(int windowId, int bitFlag, bool enabled)
+{
+    if (!windowIsValidWindowId(windowId) || windowId == 0) {
+        return false;
+    }
+
+    Window* window = windowGetWindow(windowId);
+    if (window == nullptr) {
+        return false;
+    }
+
+    if (bitFlag == WINDOW_HIDDEN) {
+        if (enabled) {
+            windowHide(windowId);
+        } else {
+            windowShow(windowId);
+        }
+        return true;
+    }
+
+    if (enabled) {
+        window->flags |= bitFlag;
+    } else {
+        window->flags &= ~bitFlag;
+    }
+
+    return true;
+}
+
 // 0x4B7734
 int scriptWindowWidth()
 {
@@ -843,9 +884,6 @@ int scriptWindowCreate(const char* windowName, int x, int y, int width, int heig
     managedWindow->buttonsLength = 0;
 
     flags |= WINDOW_MANAGED | WINDOW_USE_DEFAULTS;
-    if (off_672D74 != nullptr) {
-        off_672D74(windowIndex, managedWindow->name, &flags);
-    }
 
     managedWindow->window = windowCreate(x, y, width, height, a6, flags);
     managedWindow->cursorY = 0;
@@ -950,23 +988,30 @@ unsigned char* scriptWindowGetBuffer()
 // 0x4B8330
 int scriptWindowPush(const char* windowName)
 {
-    if (_winTOS >= MANAGED_WINDOW_COUNT) {
-        return -1;
+    int oldCurrentWindowIndex = gCurrentManagedWindowIndex;
+
+    int existingIndex = -1;
+    for (int index = 0; index <= _winTOS; index++) {
+        if (_winStack[index] == oldCurrentWindowIndex) {
+            existingIndex = index;
+            break;
+        }
     }
 
-    int oldCurrentWindowIndex = gCurrentManagedWindowIndex;
+    // CE: check duplicates before checking capacity; removing one frees a stack slot.
+    int newTopIndex = existingIndex == -1 ? _winTOS + 1 : _winTOS;
+    if (newTopIndex >= MANAGED_WINDOW_COUNT) {
+        return -1;
+    }
 
     int windowIndex = scriptWindowSelect(windowName);
     if (windowIndex == -1) {
         return -1;
     }
 
-    // TODO: Check.
-    for (int index = 0; index < _winTOS; index++) {
-        if (_winStack[index] == oldCurrentWindowIndex) {
-            memcpy(&(_winStack[index]), &(_winStack[index + 1]), sizeof(*_winStack) * (_winTOS - index));
-            break;
-        }
+    if (existingIndex != -1) {
+        memmove(&(_winStack[existingIndex]), &(_winStack[existingIndex + 1]), sizeof(*_winStack) * (_winTOS - existingIndex));
+        _winTOS--;
     }
 
     _winTOS++;
@@ -983,8 +1028,14 @@ int _popWindow()
     }
 
     int windowIndex = _winStack[_winTOS];
-    ManagedWindow* managedWindow = &(gManagedWindows[windowIndex]);
     _winTOS--;
+
+    if (windowIndex < 0 || windowIndex >= MANAGED_WINDOW_COUNT) {
+        gCurrentManagedWindowIndex = -1;
+        return -1;
+    }
+
+    ManagedWindow* managedWindow = &(gManagedWindows[windowIndex]);
 
     return scriptWindowSelect(managedWindow->name);
 }
@@ -1745,8 +1796,7 @@ bool scriptWindowAddButtonGfx(const char* buttonName, char* pressedFileName, cha
             }
 
             if (hoverFileName != nullptr) {
-                // TODO: this almost certainly should be hoverFileName
-                unsigned char* hover = datafileRead(normalFileName, &width, &height);
+                unsigned char* hover = datafileRead(hoverFileName, &width, &height);
                 if (hover != nullptr) {
                     if (managedButton->hover == nullptr) {
                         managedButton->hover = (unsigned char*)internal_malloc_safe(managedButton->height * managedButton->width, __FILE__, __LINE__); // "..\\int\\WINDOW.C, 1849
@@ -2650,6 +2700,21 @@ bool scriptWindowShowNamed(const char* windowName)
             if (compat_stricmp(managedWindow->name, windowName) == 0) {
                 windowShow(managedWindow->window);
                 return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool scriptWindowSetNamedFlag(const char* windowName, int bitFlag, bool enabled)
+{
+    for (int index = 0; index < MANAGED_WINDOW_COUNT; index++) {
+        ManagedWindow* managedWindow = &(gManagedWindows[index]);
+        if (managedWindow->window != -1) {
+            if (compat_stricmp(managedWindow->name, windowName) == 0) {
+                // note: Sfall also updates managedWindow->flags, but that is unused
+                return scriptWindowSetFlag(managedWindow->window, bitFlag, enabled);
             }
         }
     }

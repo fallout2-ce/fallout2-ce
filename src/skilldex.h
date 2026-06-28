@@ -17,6 +17,7 @@ typedef enum SkilldexRC {
 } SkilldexRC;
 
 int skilldexOpen();
+int skilldexGetWindow();
 
 } // namespace fallout
 

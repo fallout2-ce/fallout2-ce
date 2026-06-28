@@ -690,6 +690,11 @@ static int wmMaxMapNum = 0;
 // 0x51DE14 wmBkWin
 static int wmBkWin = -1;
 
+int worldmapGetWindow()
+{
+    return windowGetWindow(wmBkWin) != nullptr ? wmBkWin : -1;
+}
+
 // 0x51DE24 wmBkWinBuf
 static unsigned char* wmBkWinBuf = nullptr;
 

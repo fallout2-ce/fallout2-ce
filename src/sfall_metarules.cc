@@ -7,6 +7,8 @@
 #include <string>
 
 #include "art.h"
+#include "automap.h"
+#include "character_editor.h"
 #include "color.h"
 #include "combat.h"
 #include "config.h" // For Config, configInit, configFree
@@ -24,6 +26,8 @@
 #include "message.h"
 #include "object.h"
 #include "opcode_context.h"
+#include "options.h"
+#include "pipboy.h"
 #include "platform_compat.h"
 #include "proto_instance.h"
 #include "scripts.h"
@@ -32,9 +36,11 @@
 #include "sfall_ini.h"
 #include "sfall_opcodes.h"
 #include "sfall_script_hooks.h"
+#include "skilldex.h"
 #include "text_font.h"
 #include "tile.h"
 #include "window.h"
+#include "window_manager.h"
 #include "worldmap.h"
 
 #include <assert.h>
@@ -44,8 +50,11 @@ namespace fallout {
 static void mf_attack_is_aimed(OpcodeContext& ctx);
 static void mf_car_gas_amount(OpcodeContext& ctx);
 static void mf_combat_data(OpcodeContext& ctx);
+static void mf_create_win(OpcodeContext& ctx);
 static void mf_critter_inven_obj2(OpcodeContext& ctx);
 static void mf_dialog_obj(OpcodeContext& ctx);
+static void mf_dialog_message(OpcodeContext& ctx);
+static void mf_display_stats(OpcodeContext& ctx);
 static void mf_get_combat_free_move(OpcodeContext& ctx);
 static void mf_get_cursor_mode(OpcodeContext& ctx);
 static void mf_get_flags(OpcodeContext& ctx);
@@ -54,7 +63,10 @@ static void mf_get_object_data(OpcodeContext& ctx);
 static void mf_get_outline(OpcodeContext& ctx);
 static void mf_get_sfall_arg_at(OpcodeContext& ctx);
 static void mf_get_text_width(OpcodeContext& ctx);
+static void mf_get_window_attribute(OpcodeContext& ctx);
+static void mf_hide_window(OpcodeContext& ctx);
 static void mf_intface_redraw(OpcodeContext& ctx);
+static void mf_inventory_redraw(OpcodeContext& ctx);
 static void mf_item_weight(OpcodeContext& ctx);
 static void mf_loot_obj(OpcodeContext& ctx);
 static void mf_message_box(OpcodeContext& ctx);
@@ -72,6 +84,7 @@ static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
+static void mf_set_window_flag(OpcodeContext& ctx);
 static void mf_set_unique_id(OpcodeContext& ctx);
 static void mf_show_window(OpcodeContext& ctx);
 static void mf_signal_close_game(OpcodeContext& ctx);
@@ -93,15 +106,14 @@ const MetaruleInfo kMetarules[] = {
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
     { "art_cache_clear", mf_art_cache_flush, 0, 0 },
-    // {"art_frame_data",            mf_art_frame_data,            1, 3,  0, {ARG_INTSTR, ARG_INT, ARG_INT}},
     { "attack_is_aimed", mf_attack_is_aimed, 0, 0 },
     { "car_gas_amount", mf_car_gas_amount, 0, 0 },
     { "combat_data", mf_combat_data, 0, 0 },
-    // {"create_win",                mf_create_win,                5, 6, -1, {ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
+    { "create_win", mf_create_win, 5, 6, -1, { ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "critter_inven_obj2", mf_critter_inven_obj2, 2, 2, 0, { ARG_OBJECT, ARG_INT } },
-    // {"dialog_message",            mf_dialog_message,            1, 1, -1, {ARG_STRING}},
+    { "dialog_message", mf_dialog_message, 1, 1, -1, { ARG_STRING } },
     { "dialog_obj", mf_dialog_obj, 0, 0 },
-    // {"display_stats",             mf_display_stats,             0, 0}, // refresh
+    { "display_stats", mf_display_stats, 0, 0 }, // refresh
     // {"draw_image",                mf_draw_image,                1, 5, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"draw_image_scaled",         mf_draw_image_scaled,         1, 6, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"exec_map_update_scripts",   mf_exec_map_update_scripts,   0, 0},
@@ -126,18 +138,17 @@ const MetaruleInfo kMetarules[] = {
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
     // {"get_terrain_name",          mf_get_terrain_name,          0, 2, -1, {ARG_INT, ARG_INT}},
     { "get_text_width", mf_get_text_width, 1, 1, 0, { ARG_STRING } },
-    // {"get_window_attribute",      mf_get_window_attribute,      1, 2, -1, {ARG_INT, ARG_INT}},
+    { "get_window_attribute", mf_get_window_attribute, 1, 2, -1, { ARG_INT, ARG_INT } },
     // {"has_fake_perk_npc",         mf_has_fake_perk_npc,         2, 2,  0, {ARG_OBJECT, ARG_STRING}},
     // {"has_fake_trait_npc",        mf_has_fake_trait_npc,        2, 2,  0, {ARG_OBJECT, ARG_STRING}},
-    // {"hide_window",               mf_hide_window,               0, 1, -1, {ARG_STRING}},
-    // {"interface_art_draw",        mf_interface_art_draw,        4, 6, -1, {ARG_INT, ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
+    { "hide_window", mf_hide_window, 0, 1, -1, { ARG_STRING } },
     // {"interface_overlay",         mf_interface_overlay,         2, 6, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"interface_print",           mf_interface_print,           5, 6, -1, {ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"intface_hide",              mf_intface_hide,              0, 0},
     // {"intface_is_hidden",         mf_intface_is_hidden,         0, 0},
     { "intface_redraw", mf_intface_redraw, 0, 1 },
     // {"intface_show",              mf_intface_show,              0, 0},
-    // {"inventory_redraw",          mf_inventory_redraw,          0, 1, -1, {ARG_INT}},
+    { "inventory_redraw", mf_inventory_redraw, 0, 1, -1, { ARG_INT } },
     // {"item_make_explosive",       mf_item_make_explosive,       3, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "item_weight", mf_item_weight, 1, 1, 0, { ARG_OBJECT } },
     // {"lock_is_jammed",            mf_lock_is_jammed,            1, 1,  0, {ARG_OBJECT}},
@@ -177,7 +188,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_town_title",            mf_set_town_title,            2, 2, -1, {ARG_INT, ARG_STRING}},
     { "set_unique_id", mf_set_unique_id, 1, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"set_unjam_locks_time",      mf_set_unjam_locks_time,      1, 1, -1, {ARG_INT}},
-    // {"set_window_flag",           mf_set_window_flag,           3, 3, -1, {ARG_INTSTR, ARG_INT, ARG_INT}},
+    { "set_window_flag", mf_set_window_flag, 3, 3, -1, { ARG_INTSTR, ARG_INT, ARG_INT } },
     { "show_window", mf_show_window, 0, 1, -1, { ARG_STRING } },
     { "signal_close_game", mf_signal_close_game, 0, 0 },
     // {"spatial_radius",            mf_spatial_radius,            1, 1,  0, {ARG_OBJECT}},
@@ -189,12 +200,101 @@ const MetaruleInfo kMetarules[] = {
     { "tile_refresh_display", mf_tile_refresh_display, 0, 0 },
     // {"unjam_lock",                mf_unjam_lock,                1, 1, -1, {ARG_OBJECT}},
     { "unwield_slot", mf_unwield_slot, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
-    // {"win_fill_color",            mf_win_fill_color,            0, 5, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     { "opcode_exists", mf_opcode_exists, 1, 1 },
 };
 const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
 constexpr int kMetarulesMax = sizeof(kMetarules) / sizeof(kMetarules[0]);
+
+enum class InterfaceWindowLookupResult {
+    Found,
+    Missing,
+    Invalid,
+};
+
+/*
+// Valid window types for get_window_attribute
+#define WINTYPE_INVENTORY    (0) // any inventory window (player/loot/use/barter)
+#define WINTYPE_DIALOG       (1)
+#define WINTYPE_PIPBOY       (2)
+#define WINTYPE_WORLDMAP     (3)
+#define WINTYPE_IFACEBAR     (4) // the interface bar
+#define WINTYPE_CHARACTER    (5)
+#define WINTYPE_SKILLDEX     (6)
+#define WINTYPE_ESCMENU      (7) // escape menu
+#define WINTYPE_AUTOMAP      (8)
+*/
+static InterfaceWindowLookupResult getInterfaceWindowByType(int winType, int& window)
+{
+    switch (winType) {
+    case 0:
+        window = inventoryGetWindow();
+        break;
+    case 1:
+        window = gameDialogGetWindow();
+        break;
+    case 2:
+        window = pipboyGetWindow();
+        break;
+    case 3:
+        window = worldmapGetWindow();
+        break;
+    case 4:
+        window = windowGetWindow(gInterfaceBarWindow) != nullptr ? gInterfaceBarWindow : -1;
+        break;
+    case 5:
+        window = characterEditorGetWindow();
+        break;
+    case 6:
+        window = skilldexGetWindow();
+        break;
+    case 7:
+        window = optionsGetWindow();
+        break;
+    case 8:
+        window = automapGetWindow();
+        break;
+    default:
+        window = -1;
+        return InterfaceWindowLookupResult::Invalid;
+    }
+
+    return window != -1 ? InterfaceWindowLookupResult::Found : InterfaceWindowLookupResult::Missing;
+}
+
+static int getCurrentInterfaceWindow()
+{
+    int window = -1;
+    if (GameMode::isInGameMode(GameMode::kInventory)
+        || GameMode::isInGameMode(GameMode::kUseOn)
+        || GameMode::isInGameMode(GameMode::kLoot)
+        || GameMode::isInGameMode(GameMode::kBarter)) {
+        window = inventoryGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kDialog)) {
+        window = gameDialogGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kPipboy)) {
+        window = pipboyGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kWorldmap)) {
+        window = worldmapGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kEditor)) {
+        window = characterEditorGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kSkilldex)) {
+        window = skilldexGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kOptions)) {
+        window = optionsGetWindow();
+    } else if (GameMode::isInGameMode(GameMode::kAutomap)) {
+        window = automapGetWindow();
+    } else if (windowGetWindow(gInterfaceBarWindow) != nullptr) {
+        window = gInterfaceBarWindow;
+    }
+
+    return window;
+}
+
+static bool applyWindowFlag(int windowId, int bitFlag, bool enabled)
+{
+    return scriptWindowSetFlag(windowId, bitFlag, enabled);
+}
 
 void mf_art_cache_flush(OpcodeContext& ctx)
 {
@@ -236,6 +336,35 @@ void mf_combat_data(OpcodeContext& ctx)
     }
 }
 
+void mf_create_win(OpcodeContext& ctx)
+{
+    int flags = ctx.numArgs() > 5
+        ? ctx.arg(5).asInt()
+        : WINDOW_MOVE_ON_TOP;
+
+    int color = (flags & WINDOW_TRANSPARENT) != 0 ? 0 : 256;
+    if (scriptWindowCreate(ctx.stringArg(0),
+            ctx.arg(1).asInt(),
+            ctx.arg(2).asInt(),
+            ctx.arg(3).asInt(),
+            ctx.arg(4).asInt(),
+            color,
+            flags)
+        == -1) {
+        ctx.printError("%s() - couldn't create window.", ctx.name());
+        ctx.setReturn(-1);
+    }
+}
+
+void mf_display_stats(OpcodeContext& ctx)
+{
+    if (GameMode::isInGameMode(GameMode::kInventory)) {
+        inventoryDisplayStats();
+    } else if (GameMode::isInGameMode(GameMode::kEditor)) {
+        characterEditorDisplayStats();
+    }
+}
+
 void mf_critter_inven_obj2(OpcodeContext& ctx)
 {
     Object* obj = ctx.arg(0).asObject();
@@ -265,6 +394,14 @@ void mf_dialog_obj(OpcodeContext& ctx)
         ctx.setReturn(gGameDialogSpeaker);
     } else {
         ctx.setReturn(nullptr);
+    }
+}
+
+void mf_dialog_message(OpcodeContext& ctx)
+{
+    if (GameMode::isInGameMode(GameMode::kDialog)
+        && !GameMode::isInGameMode(GameMode::kDialogReview)) {
+        gameDialogRenderSupplementaryMessage(ctx.stringArg(0));
     }
 }
 
@@ -331,6 +468,67 @@ void mf_get_text_width(OpcodeContext& ctx)
     ctx.setReturn(fontGetStringWidth(ctx.stringArg(0)));
 }
 
+void mf_get_window_attribute(OpcodeContext& ctx)
+{
+    int attrType = ctx.numArgs() > 1 ? ctx.arg(1).asInt() : 0;
+    int window = -1;
+    InterfaceWindowLookupResult lookup = getInterfaceWindowByType(ctx.arg(0).asInt(), window);
+    if (lookup == InterfaceWindowLookupResult::Missing) {
+        if (attrType != 0) {
+            ctx.printError("%s() - failed to get the interface window.", ctx.name());
+            ctx.setReturn(-1);
+        } else {
+            ctx.setReturn(0);
+        }
+        return;
+    }
+
+    if (lookup == InterfaceWindowLookupResult::Invalid) {
+        ctx.printError("%s() - invalid window type number.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    Rect rect;
+    if (windowGetRect(window, &rect) == -1) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    switch (attrType) {
+    case -1: {
+        ArrayId arrayId = CreateTempArray(-1, 0);
+        SetArray(arrayId, programMakeString(ctx.program(), "left"), ProgramValue(rect.left), false, ctx.program());
+        SetArray(arrayId, programMakeString(ctx.program(), "top"), ProgramValue(rect.top), false, ctx.program());
+        SetArray(arrayId, programMakeString(ctx.program(), "right"), ProgramValue(rect.right), false, ctx.program());
+        SetArray(arrayId, programMakeString(ctx.program(), "bottom"), ProgramValue(rect.bottom), false, ctx.program());
+        ctx.setReturn(ProgramValue(arrayId));
+        break;
+    }
+    case 0: // basically an existence check
+        ctx.setReturn(1);
+        break;
+    case 1:
+        ctx.setReturn(rect.left);
+        break;
+    case 2:
+        ctx.setReturn(rect.top);
+        break;
+    case 3:
+        ctx.setReturn(windowGetWidth(window));
+        break;
+    case 4:
+        ctx.setReturn(windowGetHeight(window));
+        break;
+    case 5:
+        ctx.setReturn(window);
+        break;
+    default:
+        ctx.setReturn(0);
+        break;
+    }
+}
+
 void mf_intface_redraw(OpcodeContext& ctx)
 {
     if (ctx.numArgs() == 0) {
@@ -339,6 +537,11 @@ void mf_intface_redraw(OpcodeContext& ctx)
         // TODO: Incomplete.
         programFatalError("mf_intface_redraw: not implemented");
     }
+}
+
+void mf_inventory_redraw(OpcodeContext& ctx)
+{
+    inventoryRedraw(ctx.numArgs() > 0 ? ctx.arg(0).asInt() : -1);
 }
 
 void mf_item_weight(OpcodeContext& ctx)
@@ -355,7 +558,7 @@ void mf_item_weight(OpcodeContext& ctx)
 
 void mf_loot_obj(OpcodeContext& ctx)
 {
-    if (GameMode::isInGameMode(GameMode::kInventory)) {
+    if (GameMode::isInGameMode(GameMode::kLoot)) {
         ctx.setReturn(inventoryGetTargetObject());
     } else {
         ctx.setReturn(nullptr);
@@ -524,6 +727,41 @@ void mf_set_outline(OpcodeContext& ctx)
     object->outline = outline;
 }
 
+void mf_set_window_flag(OpcodeContext& ctx)
+{
+    int bitFlag = ctx.arg(1).asInt();
+    switch (bitFlag) {
+    case WINDOW_DONT_MOVE_TOP:
+    case WINDOW_MOVE_ON_TOP:
+    case WINDOW_HIDDEN:
+    case WINDOW_MODAL:
+    case WINDOW_TRANSPARENT:
+        break;
+    default:
+        return;
+    }
+
+    bool enabled = ctx.arg(2).asInt() != 0;
+    if (ctx.arg(0).isString()) {
+        const char* windowName = ctx.stringArg(0);
+        if (!scriptWindowSetNamedFlag(windowName, bitFlag, enabled)) {
+            ctx.printError("%s() - window '%s' is not found.", ctx.name(), windowName);
+        }
+        return;
+    }
+
+    int windowId = ctx.arg(0).asInt();
+    if (windowId <= 0) {
+        windowId = getCurrentInterfaceWindow();
+    }
+
+    if (windowId == -1) {
+        return;
+    }
+
+    applyWindowFlag(windowId, bitFlag, enabled);
+}
+
 void mf_set_unique_id(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
@@ -548,6 +786,18 @@ void mf_show_window(OpcodeContext& ctx)
         const char* windowName = ctx.stringArg(0);
         if (!scriptWindowShowNamed(windowName)) {
             debugPrint("show_window: window '%s' is not found", windowName);
+        }
+    }
+}
+
+void mf_hide_window(OpcodeContext& ctx)
+{
+    if (ctx.numArgs() == 0) {
+        scriptWindowHide();
+    } else {
+        const char* windowName = ctx.stringArg(0);
+        if (!scriptWindowHideNamed(windowName)) {
+            ctx.printError("%s() - window '%s' is not found.", ctx.name(), windowName);
         }
     }
 }

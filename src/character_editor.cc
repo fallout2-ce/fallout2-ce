@@ -663,7 +663,7 @@ static int gCharacterEditorPrimaryStatMinusBtns[7];
 static unsigned char* gCharacterEditorWindowBuffer;
 
 // 0x57060C edit_win
-static int gCharacterEditorWindow;
+static int gCharacterEditorWindow = -1;
 
 // + stats buttons
 //
@@ -5678,6 +5678,29 @@ void characterEditorReset()
 {
     gCharacterEditorRemainingCharacterPoints = 5;
     gCharacterEditorLastLevel = 1;
+}
+
+int characterEditorGetWindow()
+{
+    return windowGetWindow(gCharacterEditorWindow) != nullptr ? gCharacterEditorWindow : -1;
+}
+
+void characterEditorDisplayStats()
+{
+    if (windowGetWindow(gCharacterEditorWindow) == nullptr) {
+        return;
+    }
+
+    critterUpdateDerivedStats(gDude);
+    critterAdjustHitPoints(gDude, 0);
+
+    characterEditorDrawSkills(0);
+    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+    characterEditorDrawPcStats();
+    characterEditorDrawDerivedStats();
+    characterEditorDrawFolders();
+    characterEditorDrawCard();
+    windowRefresh(gCharacterEditorWindow);
 }
 
 // level up if needed
