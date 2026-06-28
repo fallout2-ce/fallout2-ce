@@ -1121,14 +1121,9 @@ void _refresh_all(Rect* rect, unsigned char* dest)
 }
 
 // 0x4D7888
-bool windowIsValidWindowId(int win)
-{
-    return win >= 0 && win < MAX_WINDOW_COUNT;
-}
-
 Window* windowGetWindow(int win)
 {
-    if (!windowIsValidWindowId(win)) {
+    if (win == -1) {
         return nullptr;
     }
 
