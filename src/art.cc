@@ -48,6 +48,19 @@ static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 
+// A frame is lain out like [ArtFrame header][pixel bytes][padding].
+// These function return a pointer to the pixel bytes, but must be given a pointer to a frame header,
+// not any ArtFrame pointer.
+static unsigned char* artFrameData(ArtFrame* frame)
+{
+    return reinterpret_cast<unsigned char*>(frame) + sizeof(*frame);
+}
+
+static const unsigned char* artFrameData(const ArtFrame* frame)
+{
+    return reinterpret_cast<const unsigned char*>(frame) + sizeof(*frame);
+}
+
 // 0x5002D8 str2
 static char gDefaultJumpsuitMaleFileName[] = "hmjmps";
 
@@ -518,7 +531,7 @@ unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** 
         frm = artGetFrame(art, frame, direction);
         if (frm != nullptr) {
 
-            return (unsigned char*)frm + sizeof(*frm);
+            return artFrameData(frm);
         }
     }
 
@@ -854,7 +867,7 @@ unsigned char* artGetFrameData(const Art* art, int frame, int direction, int* wi
         *yOffsetPtr = frm->y;
     }
 
-    return reinterpret_cast<unsigned char*>(frm) + sizeof(*frm);
+    return artFrameData(frm);
 }
 
 // 0x419880
@@ -1245,7 +1258,7 @@ static Art* artAllocateSingleFrame(int width, int height, unsigned char** frameD
     frame->x = 0;
     frame->y = 0;
 
-    *frameDataPtr = reinterpret_cast<unsigned char*>(frame) + sizeof(ArtFrame);
+    *frameDataPtr = artFrameData(frame);
     return art;
 }
 
