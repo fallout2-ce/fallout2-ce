@@ -151,6 +151,7 @@ void initSettingsRegistry(bool isMapper)
 
 #define SECT ui
     SETTING_P(main_menu_scale_mode, clamp(0, 2));
+    SETTING(in_game_menu_help);
     SETTING(iface_bar_mode);
     SETTING_P(iface_bar_width, clamp(640, 4320));
     SETTING_P(iface_bar_side_art, clamp(0, 999));

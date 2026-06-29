@@ -89,7 +89,6 @@ namespace fallout {
 static int gameTakeScreenshot(int width, int height, unsigned char* buffer, unsigned char* palette);
 static void gameFreeGlobalVars();
 static bool tryLoadBaseCEModAtPath(const char* path, bool* found, bool* openFailed);
-static void showHelp();
 static int gameDbInit();
 static void showSplash();
 
@@ -1186,12 +1185,21 @@ static void gameFreeGlobalVars()
 }
 
 // 0x443F74
-static void showHelp()
+void showHelp()
 {
     ScopedGameMode gm(GameMode::kHelp);
 
     bool isoWasEnabled = isoDisable();
-    gameMouseObjectsHide();
+    bool gameMouseWasVisible;
+    if (isoWasEnabled) {
+        gameMouseWasVisible = gameMouseObjectsIsVisible();
+    } else {
+        gameMouseWasVisible = false;
+    }
+
+    if (gameMouseWasVisible) {
+        gameMouseObjectsHide();
+    }
 
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
 
@@ -1257,7 +1265,9 @@ static void showHelp()
         colorCycleEnable();
     }
 
-    gameMouseObjectsShow();
+    if (gameMouseWasVisible) {
+        gameMouseObjectsShow();
+    }
 
     if (isoWasEnabled) {
         isoEnable();
