@@ -48,7 +48,7 @@ static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 
-// A frame is lain out like [ArtFrame header][pixel bytes][padding].
+// A frame is laid out like [ArtFrame header][pixel bytes][padding].
 // These functions return a pointer to the pixel bytes, but must be given a pointer to a frame header,
 // not any ArtFrame pointer.
 static unsigned char* artFrameData(ArtFrame* frame)

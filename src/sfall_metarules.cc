@@ -653,6 +653,10 @@ static int drawSfallArtImage(OpcodeContext& ctx, int window, FrmImage& image, in
         return 0;
     }
 
+    // sfall clamps interface_art_draw left/top coordinates instead of clipping
+    // the source image, but for draw_image does not clamp.  It's best to clamp
+    // instead of potentially writing out of bounds, but if we're regularly
+    // calling this with negative x/y we should implement intelligent clipping instead.
     if (x < 0) {
         x = 0;
     }

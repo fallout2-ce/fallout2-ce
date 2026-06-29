@@ -1363,7 +1363,7 @@ bool scriptWindowDisplay(char* fileName, int x, int y, int width, int height)
     return true;
 }
 
-// 0x4B8EF0
+// 0x4B8EF0 windowDisplayBuf
 bool scriptWindowDisplayBuf(unsigned char* src, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight)
 {
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
