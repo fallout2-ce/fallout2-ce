@@ -50,6 +50,7 @@ int showQuitConfirmationDialog();
 int gameLoadGlobalVars();
 int gameShowDeathDialog(const char* message);
 void gameHandleSkilldexResult(int rc);
+void showHelp();
 void* gameGetGlobalPointer(int var);
 int gameSetGlobalPointer(int var, void* value);
 

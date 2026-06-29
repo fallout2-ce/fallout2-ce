@@ -1436,24 +1436,27 @@ static int characterEditorWindowInit()
         str = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 111);
         strcpy(kills, str);
 
+        int tabLabelY = 5;
+        int inactiveTabLabelY = tabLabelY + 1;
+
         // perks selected
         len = fontGetStringWidth(perks);
         fontDrawText(
-            gCharacterEditorFrmCopy[46] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 61 - len / 2,
+            gCharacterEditorFrmCopy[46] + tabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 61 - len / 2,
             perks,
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _colorTable[18979]);
 
         len = fontGetStringWidth(karma);
-        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 159 - len / 2,
+        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED] + inactiveTabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 159 - len / 2,
             karma,
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _colorTable[14723]);
 
         len = fontGetStringWidth(kills);
-        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 257 - len / 2,
+        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED] + inactiveTabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 257 - len / 2,
             kills,
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
@@ -1461,21 +1464,21 @@ static int characterEditorWindowInit()
 
         // karma selected
         len = fontGetStringWidth(perks);
-        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KARMA_FOLDER_SELECTED] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 61 - len / 2,
+        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KARMA_FOLDER_SELECTED] + inactiveTabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 61 - len / 2,
             perks,
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _colorTable[14723]);
 
         len = fontGetStringWidth(karma);
-        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KARMA_FOLDER_SELECTED] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 159 - len / 2,
+        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KARMA_FOLDER_SELECTED] + tabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 159 - len / 2,
             karma,
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _colorTable[18979]);
 
         len = fontGetStringWidth(kills);
-        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KARMA_FOLDER_SELECTED] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 257 - len / 2,
+        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KARMA_FOLDER_SELECTED] + inactiveTabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 257 - len / 2,
             kills,
             _editorFrmImages[46].getWidth(),
             _editorFrmImages[46].getWidth(),
@@ -1483,21 +1486,21 @@ static int characterEditorWindowInit()
 
         // kills selected
         len = fontGetStringWidth(perks);
-        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KILLS_FOLDER_SELECTED] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 61 - len / 2,
+        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KILLS_FOLDER_SELECTED] + inactiveTabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 61 - len / 2,
             perks,
             _editorFrmImages[46].getWidth(),
             _editorFrmImages[46].getWidth(),
             _colorTable[14723]);
 
         len = fontGetStringWidth(karma);
-        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KILLS_FOLDER_SELECTED] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 159 - len / 2,
+        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KILLS_FOLDER_SELECTED] + inactiveTabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 159 - len / 2,
             karma,
             _editorFrmImages[46].getWidth(),
             _editorFrmImages[46].getWidth(),
             _colorTable[14723]);
 
         len = fontGetStringWidth(kills);
-        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KILLS_FOLDER_SELECTED] + 5 * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 257 - len / 2,
+        fontDrawText(gCharacterEditorFrmCopy[EDITOR_GRAPHIC_KILLS_FOLDER_SELECTED] + tabLabelY * _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth() + 257 - len / 2,
             kills,
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),
             _editorFrmImages[EDITOR_GRAPHIC_PERKS_FOLDER_SELECTED].getWidth(),

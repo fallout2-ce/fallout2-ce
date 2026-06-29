@@ -42,6 +42,9 @@ struct UISettings {
     // 2 - aspect-fit background and scale controls to match
     int main_menu_scale_mode = 1;
 
+    // Show the Help option in the in-game options menu.
+    bool in_game_menu_help = true;
+
     // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
     bool iface_bar_mode = false;
 

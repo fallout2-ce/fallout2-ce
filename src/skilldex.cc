@@ -339,7 +339,7 @@ static int skilldexWindowInit()
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_ON].getWidth(),
             _colorTable[18979]);
 
-        fontDrawText(gSkilldexButtonsData[index * 2 + 1] + _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth() * nameY + nameX,
+        fontDrawText(gSkilldexButtonsData[index * 2 + 1] + _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth() * (nameY + 1) + nameX,
             name,
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth(),
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth(),

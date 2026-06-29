@@ -144,13 +144,13 @@ In time this stuff will receive in-game interface, right now you have to do it m
 * Expanded 4-row barter screen
 * Expanded AP bar
 * Party members can loot and barter in place of PC
-* Increased pathfinding nodes 5x for more accurate pathfinding
+* Increased pathfinding nodes 5x for more accurate pathfinding, and use accurate path length for walk vs run
 * Ctrl-click to quickly move items when bartering, looting, or stealing
-* _a_ to select "all" when selecting item quantity
-* _a_ to `Take All` when looting
-* When bartering, caps default to the right amount to balance the trade (if possible)
+* _a_ to select "all" when selecting item quantity, and for `Take All` when looting
+* When bartering, caps default to the right amount to balance the trade
 * Music continues playing between maps
 * Auto open doors
+* Integrated "HELP" menu
 * 44.1 kHz stereo sound/music supported, in .ogg and .wav format as well as legacy .acm
 * Last used save slot is remembered
 * Item/Corpse/Container/Critter highlighting (configure using [mods/sfall-mods.ini](https://github.com/sfall-team/sfall/blob/master/artifacts/config_files/sfall-mods.ini))
