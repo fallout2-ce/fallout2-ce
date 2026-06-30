@@ -372,11 +372,7 @@ static int gGameDialogReactionOrFidget;
 // 0x453FD0 dbg_error
 static void scriptPredefinedError(Program* program, const char* name, int error)
 {
-    char string[260];
-
-    snprintf(string, sizeof(string), "Script Error: %s: op_%s: %s", program->name, name, _dbg_error_strs[error]);
-
-    debugPrint(string);
+    debugPrint("Script Error: %s: op_%s: %s", program->name, name, _dbg_error_strs[error]);
 }
 
 // 0x45400C int_debug
@@ -389,7 +385,7 @@ static void scriptError(const char* format, ...)
     vsnprintf(string, sizeof(string), format, argptr);
     va_end(argptr);
 
-    debugPrint(string);
+    debugPrint("%s", string);
 }
 
 // 0x45404C scripts_tile_is_visible
@@ -532,9 +528,7 @@ static void opOverrideMapStart(Program* program)
     int y = programStackPopInteger(program);
     int x = programStackPopInteger(program);
 
-    char text[60];
-    snprintf(text, sizeof(text), "OVERRIDE_MAP_START: x: %d, y: %d", x, y);
-    debugPrint(text);
+    debugPrint("OVERRIDE_MAP_START: x: %d, y: %d", x, y);
 
     int tile = 200 * y + x;
     int previousTile = gCenterTile;
