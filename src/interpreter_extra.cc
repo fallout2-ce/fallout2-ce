@@ -2534,8 +2534,7 @@ static void opRemoveTimerEvent(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object == nullptr) {
-        // FIXME: Should be op_rm_timer_event.
-        scriptError("\nScript Error: %s: op_add_timer_event: pobj is NULL!", program->name);
+        scriptError("\nScript Error: %s: op_rm_timer_event: pobj is NULL!", program->name);
         return;
     }
 
