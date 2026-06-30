@@ -78,6 +78,11 @@ typedef enum AnimationKind {
     ANIM_KIND_SET_LIGHT_INTENSITY,
 } AnimationKind;
 
+static bool animationKindIsCallback(int kind)
+{
+    return kind == ANIM_KIND_CALLBACK || kind == ANIM_KIND_CALLBACK3;
+}
+
 typedef enum AnimationSequenceFlags {
     // Specifies that the animation sequence has high priority, it cannot be
     // cleared.
@@ -475,7 +480,7 @@ int reg_anim_clear(Object* a1)
         int animationDescriptionIndex;
         for (animationDescriptionIndex = 0; animationDescriptionIndex < animationSequence->length; animationDescriptionIndex++) {
             AnimationDescription* animationDescription = &(animationSequence->animations[animationDescriptionIndex]);
-            if (a1 != animationDescription->owner || animationDescription->kind == ANIM_KIND_CALLBACK) { // ANIM_KIND_CALLBACK3?
+            if (a1 != animationDescription->owner || animationKindIsCallback(animationDescription->kind)) {
                 continue;
             }
 
@@ -589,7 +594,7 @@ static int _check_registry(Object* obj)
         if (animationSequenceIndex != gAnimationSequenceCurrentIndex && animationSequence->step != ANIM_COMPLETE) {
             for (int animationDescriptionIndex = 0; animationDescriptionIndex < animationSequence->length; animationDescriptionIndex++) {
                 AnimationDescription* animationDescription = &(animationSequence->animations[animationDescriptionIndex]);
-                if (obj == animationDescription->owner && animationDescription->kind != ANIM_KIND_CALLBACK) { // ANIM_KIND_CALLBACK3?
+                if (obj == animationDescription->owner && !animationKindIsCallback(animationDescription->kind)) {
                     if ((animationSequence->flags & ANIM_SEQ_INSIGNIFICANT) == 0) {
                         return -1;
                     }
@@ -621,7 +626,7 @@ int animationIsBusy(Object* a1)
                     continue;
                 }
 
-                if (animationDescription->kind == ANIM_KIND_CALLBACK) {
+                if (animationKindIsCallback(animationDescription->kind)) {
                     continue;
                 }
 
@@ -1641,7 +1646,7 @@ static int _anim_set_end(int animationSequenceIndex)
             animationDescription->artCacheKey = nullptr;
         }
 
-        if (animationDescription->kind != ANIM_KIND_CALLBACK && animationDescription->kind != ANIM_KIND_CALLBACK3) {
+        if (!animationKindIsCallback(animationDescription->kind)) {
             // TODO: Check.
             if (animationDescription->kind != ANIM_KIND_PING) {
                 Object* owner = animationDescription->owner;
@@ -1654,7 +1659,7 @@ static int _anim_set_end(int animationSequenceIndex)
                     for (; j < i; j++) {
                         AnimationDescription* ad = &(animationSequence->animations[j]);
                         if (owner == ad->owner) {
-                            if (ad->kind != ANIM_KIND_CALLBACK && ad->kind != ANIM_KIND_CALLBACK3) {
+                            if (!animationKindIsCallback(ad->kind)) {
                                 break;
                             }
                         }
