@@ -471,7 +471,7 @@ static void opGiveExpPoints(Program* program)
     int xp = programStackPopInteger(program);
 
     if (pcAddExperience(xp) != 0) {
-        scriptError("\nScript Error: %s: op_give_exp_points: stat_pc_set failed");
+        scriptError("\nScript Error: %s: op_give_exp_points: stat_pc_set failed", program->name);
     }
 }
 
@@ -547,7 +547,7 @@ static void opOverrideMapStart(Program* program)
             scriptError("\nError: %s: obj_move_to_tile failed in override_map_start!", program->name);
 
             if (objectSetLocation(gDude, previousTile, elevation, nullptr) != 0) {
-                scriptError("\nError: %s: obj_move_to_tile RECOVERY Also failed!");
+                scriptError("\nError: %s: obj_move_to_tile RECOVERY Also failed!", program->name);
                 exit(1);
             }
         }
@@ -2534,8 +2534,7 @@ static void opRemoveTimerEvent(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object == nullptr) {
-        // FIXME: Should be op_rm_timer_event.
-        scriptError("\nScript Error: %s: op_add_timer_event: pobj is NULL!");
+        scriptError("\nScript Error: %s: op_rm_timer_event: pobj is NULL!", program->name);
         return;
     }
 
