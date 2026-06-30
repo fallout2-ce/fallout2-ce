@@ -1981,24 +1981,24 @@ static void _display_inventory_info(Object* item, int quantity, unsigned char* d
     char formattedText[12];
 
     // NOTE: Original code is slightly different and probably used goto.
-    int disaplyQuantity = 0;
+    int displayQuantity = 0;
     if (itemGetType(item) == ITEM_TYPE_AMMO) {
-        disaplyQuantity = ammoGetCapacity(item) * (quantity - 1);
+        displayQuantity = ammoGetCapacity(item) * (quantity - 1);
         if (!isDragged) {
-            disaplyQuantity += ammoGetQuantity(item);
+            displayQuantity += ammoGetQuantity(item);
         }
     } else {
         if (quantity > 1) {
-            disaplyQuantity = quantity;
+            displayQuantity = quantity;
             if (isDragged) {
                 // Note: can display "x1" during drag, which is otherwise not possible.
-                disaplyQuantity -= 1;
+                displayQuantity -= 1;
             }
         }
     }
 
-    if (disaplyQuantity > 0) {
-        snprintf(formattedText, sizeof(formattedText), "x%d", std::clamp(disaplyQuantity, 0, 99999));
+    if (displayQuantity > 0) {
+        snprintf(formattedText, sizeof(formattedText), "x%d", std::clamp(displayQuantity, 0, 99999));
         fontDrawText(dest, formattedText, 80, pitch, _colorTable[32767]);
     }
 
