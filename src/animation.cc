@@ -1,5 +1,8 @@
 #include "animation.h"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
 #include <stdio.h>
 #include <string.h>
 
@@ -472,7 +475,7 @@ int reg_anim_clear(Object* a1)
         int animationDescriptionIndex;
         for (animationDescriptionIndex = 0; animationDescriptionIndex < animationSequence->length; animationDescriptionIndex++) {
             AnimationDescription* animationDescription = &(animationSequence->animations[animationDescriptionIndex]);
-            if (a1 != animationDescription->owner || animationDescription->kind == 11) {
+            if (a1 != animationDescription->owner || animationDescription->kind == ANIM_KIND_CALLBACK) { // ANIM_KIND_CALLBACK3?
                 continue;
             }
 
@@ -586,7 +589,7 @@ static int _check_registry(Object* obj)
         if (animationSequenceIndex != gAnimationSequenceCurrentIndex && animationSequence->step != ANIM_COMPLETE) {
             for (int animationDescriptionIndex = 0; animationDescriptionIndex < animationSequence->length; animationDescriptionIndex++) {
                 AnimationDescription* animationDescription = &(animationSequence->animations[animationDescriptionIndex]);
-                if (obj == animationDescription->owner && animationDescription->kind != 11) {
+                if (obj == animationDescription->owner && animationDescription->kind != ANIM_KIND_CALLBACK) { // ANIM_KIND_CALLBACK3?
                     if ((animationSequence->flags & ANIM_SEQ_INSIGNIFICANT) == 0) {
                         return -1;
                     }
@@ -1608,12 +1611,25 @@ static int _anim_set_end(int animationSequenceIndex)
         }
     }
 
+    std::array<Object*, ANIMATION_DESCRIPTION_LIST_CAPACITY> destroyedOwners = {};
+    std::size_t destroyedOwnersLength = 0;
+    auto ownerWasDestroyed = [&destroyedOwners, &destroyedOwnersLength](Object* owner) {
+        return std::find(destroyedOwners.begin(), destroyedOwners.begin() + destroyedOwnersLength, owner) != destroyedOwners.begin() + destroyedOwnersLength;
+    };
+
     for (i = 0; i < animationSequence->length; i++) {
         animationDescription = &(animationSequence->animations[i]);
         if (animationDescription->kind == ANIM_KIND_HIDE && ((i < animationSequence->animationIndex) || (animationDescription->extendedFlags & ANIMATION_SEQUENCE_FORCED))) {
+            Object* owner = animationDescription->owner;
+            if (ownerWasDestroyed(owner)) {
+                continue;
+            }
+
+            destroyedOwners[destroyedOwnersLength++] = owner;
+
             Rect rect;
-            int elevation = animationDescription->owner->elevation;
-            objectDestroy(animationDescription->owner, &rect);
+            int elevation = owner->elevation;
+            objectDestroy(owner, &rect);
             tileWindowRefreshRect(&rect, elevation);
         }
     }
@@ -1622,12 +1638,17 @@ static int _anim_set_end(int animationSequenceIndex)
         animationDescription = &(animationSequence->animations[i]);
         if (animationDescription->artCacheKey) {
             artUnlock(animationDescription->artCacheKey);
+            animationDescription->artCacheKey = nullptr;
         }
 
-        if (animationDescription->kind != 11 && animationDescription->kind != 12) {
+        if (animationDescription->kind != ANIM_KIND_CALLBACK && animationDescription->kind != ANIM_KIND_CALLBACK3) {
             // TODO: Check.
             if (animationDescription->kind != ANIM_KIND_PING) {
                 Object* owner = animationDescription->owner;
+                if (ownerWasDestroyed(owner)) {
+                    continue;
+                }
+
                 if (FID_TYPE(owner->fid) == OBJ_TYPE_CRITTER) {
                     int j = 0;
                     for (; j < i; j++) {
