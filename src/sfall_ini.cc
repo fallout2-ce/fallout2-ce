@@ -30,6 +30,23 @@ static constexpr const char* kSystemConfigFileNames[] = {
 
 static char basePath[COMPAT_MAX_PATH];
 
+// Sfall-style INI paths can be prefixed with ".\", "./", "\" or "/".
+// Strip those prefixes when comparing special file names.
+static const char* sfall_strip_ini_path_prefix(const char* iniFileName)
+{
+    const char* fileName = iniFileName;
+
+    if (fileName[0] == '.' && (fileName[1] == '\\' || fileName[1] == '/')) {
+        fileName += 2;
+    }
+
+    if (fileName[0] == '\\' || fileName[0] == '/') {
+        fileName++;
+    }
+
+    return fileName;
+}
+
 // Parses "fileName|section|key" triplet into parts. `fileName` and `section`
 // chunks are copied into appropriate variables. Returns the pointer to `key`,
 // or `nullptr` on any error.
@@ -67,6 +84,8 @@ static const char* parse_ini_triplet(const char* triplet, char* fileName, char* 
 // Returns `true` if given `fileName` is a special system .ini file name.
 static bool is_system_file_name(const char* fileName)
 {
+    fileName = sfall_strip_ini_path_prefix(fileName);
+
     for (auto& systemFileName : kSystemConfigFileNames) {
         if (compat_stricmp(systemFileName, fileName) == 0) {
             return true;
@@ -74,6 +93,31 @@ static bool is_system_file_name(const char* fileName)
     }
 
     return false;
+}
+
+// Sfall treats non-system INI file names as game-root-relative, even when the
+// script passes a leading backslash like "\mods\foo.ini".
+static void sfall_build_relative_ini_path(const char* iniFileName, char* path, size_t size)
+{
+    if (is_system_file_name(iniFileName)) {
+        snprintf(path, size, "%s", sfall_strip_ini_path_prefix(iniFileName));
+        return;
+    }
+
+    const char* fileName = sfall_strip_ini_path_prefix(iniFileName);
+
+    snprintf(path, size, ".\\%s", fileName);
+}
+
+static std::string sfall_normalize_ini_cache_key(const char* iniFileName)
+{
+    const char* fileName = sfall_strip_ini_path_prefix(iniFileName);
+
+    if (is_system_file_name(fileName)) {
+        return fileName;
+    }
+
+    return std::string(".\\") + fileName;
 }
 
 // Reads the INI file into `config`, trying the base directory first for
@@ -88,7 +132,9 @@ static bool sfall_read_named_ini(const char* iniFileName, Config* config)
         }
     }
 
-    return configRead(config, iniFileName, false);
+    char path[COMPAT_MAX_PATH];
+    sfall_build_relative_ini_path(iniFileName, path, sizeof(path));
+    return configRead(config, path, false);
 }
 
 void sfall_ini_set_base_path(const char* path)
@@ -139,7 +185,9 @@ static Config* sfall_get_ini_config(const char* iniFileName)
         return nullptr;
     }
 
-    auto cacheHit = iniConfigCache.find(iniFileName);
+    std::string cacheKey = sfall_normalize_ini_cache_key(iniFileName);
+
+    auto cacheHit = iniConfigCache.find(cacheKey);
     if (cacheHit != iniConfigCache.end()) {
         return cacheHit->second.get();
     }
@@ -147,11 +195,11 @@ static Config* sfall_get_ini_config(const char* iniFileName)
     CachedConfigPtr config(new Config());
     if (!configInit(config.get()) || !sfall_read_named_ini(iniFileName, config.get())) {
         // Negative cache: remember that this file could not be read.
-        iniConfigCache.emplace(iniFileName, nullptr);
+        iniConfigCache.emplace(std::move(cacheKey), nullptr);
         return nullptr;
     }
 
-    return iniConfigCache.emplace(iniFileName, std::move(config)).first->second.get();
+    return iniConfigCache.emplace(std::move(cacheKey), std::move(config)).first->second.get();
 }
 
 // Returns `false` on triplet parse or config initialization error.
@@ -238,11 +286,13 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
         return false;
     }
 
+    std::string cacheKey = sfall_normalize_ini_cache_key(fileName);
+
     // Invalidate cached data so subsequent reads pick up the new value. The
     // persistent array is left for game reset to free (it holds nested sub-array
     // IDs and may still be referenced by a script).
-    iniConfigCache.erase(fileName);
-    iniConfigArrayCache.erase(fileName);
+    iniConfigCache.erase(cacheKey);
+    iniConfigArrayCache.erase(cacheKey);
 
     ScopedConfig config;
     if (!config) {
@@ -262,7 +312,7 @@ bool sfall_ini_set_string(const char* triplet, const char* value)
         // There was no base path set, requested file is a system config, or
         // non-system config file was not found the base path - attempt to load
         // from current working directory.
-        strcpy(path, fileName);
+        sfall_build_relative_ini_path(fileName, path, sizeof(path));
         loaded = configRead(config.get(), path, false);
     }
 
@@ -417,7 +467,8 @@ void mf_get_ini_config(OpcodeContext& ctx)
 
     // Return the cached array if it still exists; otherwise drop the stale entry and rebuild.
     auto& arrayCache = isDb ? iniConfigArrayCacheDat : iniConfigArrayCache;
-    auto cacheHit = arrayCache.find(fileName);
+    std::string cacheKey = isDb ? fileName : sfall_normalize_ini_cache_key(fileName);
+    auto cacheHit = arrayCache.find(cacheKey);
     if (cacheHit != arrayCache.end()) {
         if (ArrayExists(cacheHit->second)) {
             ctx.setReturn(cacheHit->second);
@@ -446,7 +497,7 @@ void mf_get_ini_config(OpcodeContext& ctx)
         arrayId = sfall_build_config_array(config, ctx.program());
     }
 
-    arrayCache.emplace(fileName, arrayId);
+    arrayCache.emplace(std::move(cacheKey), arrayId);
     ctx.setReturn(arrayId);
 }
 
