@@ -66,8 +66,9 @@ Available commands:
 1. `./<BUILD_DIR>/ce-dat-tool <archive.dat> list [pattern]`
 2. `ce-dat-tool <archive.dat> info [pattern]`
 3. `ce-dat-tool <archive.dat> extract [--lower] <output-dir> [pattern]`
-4. `ce-dat-tool <archive.dat> cat <entry>`
-5. `ce-dat-tool create <input-dir> <archive.dat>`
+4. `ce-dat-tool <archive.dat> extract [--lower] (--file-list|--files-from) <list-file> <output-dir>`
+5. `ce-dat-tool <archive.dat> cat <entry>`
+6. `ce-dat-tool create <input-dir> <archive.dat>`
 
 Use `--lower` with `extract` when you want every extracted file and directory name forced to lowercase.
 For example:
