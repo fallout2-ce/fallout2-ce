@@ -1046,12 +1046,7 @@ bool _art_fid_valid(int fid)
 
 int artResolveCritterFid(int fid)
 {
-    if (FID_TYPE(fid) != OBJ_TYPE_CRITTER || FID_ANIM_TYPE(fid) != ANIM_STAND) {
-        return fid;
-    }
-
-    int weaponAnimationCode = FID_WEAPON_CODE(fid);
-    if (weaponAnimationCode == WEAPON_ANIMATION_NONE) {
+    if (FID_TYPE(fid) != OBJ_TYPE_CRITTER) {
         return fid;
     }
 
@@ -1059,26 +1054,54 @@ int artResolveCritterFid(int fid)
         return fid;
     }
 
+    // Generic render-time fallback only: do not change object state, ownership,
+    // or saved FIDs when a requested critter FRM is missing.
     int frmId = fid & 0xFFF;
-    int rotation = FID_ROTATION(fid) + 1;
+    int anim = FID_ANIM_TYPE(fid);
+    int weaponAnimationCode = FID_WEAPON_CODE(fid);
+    int rotation = FID_ROTATION(fid);
 
-    int fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_STAND, WEAPON_ANIMATION_NONE, rotation);
-    if (artExists(fallbackFid)) {
+    int fallbackFid;
+    if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
+        fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, anim, WEAPON_ANIMATION_NONE, rotation);
+        if (fallbackFid != fid && artExists(fallbackFid)) {
+            return fallbackFid;
+        }
+    }
+
+    if (anim != ANIM_STAND) {
+        fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_STAND, weaponAnimationCode, rotation);
+        if (fallbackFid != fid && artExists(fallbackFid)) {
+            return fallbackFid;
+        }
+    }
+
+    fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_STAND, WEAPON_ANIMATION_NONE, rotation);
+    if (fallbackFid != fid && artExists(fallbackFid)) {
         return fallbackFid;
     }
 
-    fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_WALK, weaponAnimationCode, rotation);
-    if (artExists(fallbackFid)) {
-        return fallbackFid;
+    if (anim != ANIM_WALK) {
+        fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_WALK, weaponAnimationCode, rotation);
+        if (fallbackFid != fid && artExists(fallbackFid)) {
+            return fallbackFid;
+        }
     }
 
     fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_WALK, WEAPON_ANIMATION_NONE, rotation);
-    if (artExists(fallbackFid)) {
+    if (fallbackFid != fid && artExists(fallbackFid)) {
         return fallbackFid;
     }
 
-    fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_RUNNING, weaponAnimationCode, rotation);
-    if (artExists(fallbackFid)) {
+    if (anim != ANIM_RUNNING) {
+        fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_RUNNING, weaponAnimationCode, rotation);
+        if (fallbackFid != fid && artExists(fallbackFid)) {
+            return fallbackFid;
+        }
+    }
+
+    fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_RUNNING, WEAPON_ANIMATION_NONE, rotation);
+    if (fallbackFid != fid && artExists(fallbackFid)) {
         return fallbackFid;
     }
 

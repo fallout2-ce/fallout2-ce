@@ -1,6 +1,8 @@
 #include "hero_appearance.h"
 
+#include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "art.h"
@@ -20,6 +22,7 @@
 #include "platform_compat.h"
 #include "proto.h"
 #include "sfall_global_vars.h"
+#include "settings.h"
 #include "stat.h"
 #include "svga.h"
 #include "text_font.h"
@@ -34,6 +37,7 @@ namespace {
 constexpr char kRaceGlobalKey[] = "HAp_Race";
 constexpr char kStyleGlobalKey[] = "HApStyle";
 constexpr int kMaxSelectorValue = 99;
+constexpr int kMaxHeroAppearanceEntries = 128;
 constexpr int kMaxMountedPaths = 4;
 constexpr int kSelectWindowWidth = 380;
 constexpr int kSelectWindowHeight = 236;
@@ -56,14 +60,256 @@ int gHeroAppearanceStyle = 0;
 char gMountedPaths[kMaxMountedPaths][COMPAT_MAX_PATH];
 int gMountedPathsLength = 0;
 
+typedef enum HeroAppearanceFallback {
+    HERO_APPEARANCE_FALLBACK_SAFE,
+    HERO_APPEARANCE_FALLBACK_NONE,
+} HeroAppearanceFallback;
+
+typedef struct HeroAppearanceEntry {
+    char displayName[64];
+    int race;
+    int style;
+    char model[13];
+    char maleModel[13];
+    char femaleModel[13];
+    int baseCritterArtId;
+    bool selectable;
+    bool packageBacked;
+    bool requireCompleteCoverage;
+    HeroAppearanceFallback fallback;
+    char coverage[24];
+    char mappingBasis[24];
+} HeroAppearanceEntry;
+
+HeroAppearanceEntry gHeroAppearanceEntries[kMaxHeroAppearanceEntries];
+int gHeroAppearanceEntriesLength = 0;
+
 typedef struct HeroAppearancePreviewMount {
     char paths[2][COMPAT_MAX_PATH];
     int pathsLength;
 } HeroAppearancePreviewMount;
 
+void heroAppearanceCopyString(char* dest, size_t size, const char* value)
+{
+    if (dest == nullptr || size == 0) {
+        return;
+    }
+
+    snprintf(dest, size, "%s", value != nullptr ? value : "");
+}
+
+char* heroAppearanceTrim(char* string)
+{
+    if (string == nullptr) {
+        return nullptr;
+    }
+
+    while (isspace(static_cast<unsigned char>(*string))) {
+        string++;
+    }
+
+    char* end = string + strlen(string);
+    while (end > string && isspace(static_cast<unsigned char>(end[-1]))) {
+        end--;
+    }
+
+    *end = '\0';
+    return string;
+}
+
 bool heroAppearanceIsValidSelectorValue(int value)
 {
     return value >= 0 && value <= kMaxSelectorValue;
+}
+
+const char* heroAppearanceFallbackName(HeroAppearanceFallback fallback)
+{
+    switch (fallback) {
+    case HERO_APPEARANCE_FALLBACK_SAFE:
+        return "safe";
+    case HERO_APPEARANCE_FALLBACK_NONE:
+        return "none";
+    }
+
+    return "safe";
+}
+
+HeroAppearanceFallback heroAppearanceParseFallback(const char* value)
+{
+    if (value != nullptr && compat_stricmp(value, "none") == 0) {
+        return HERO_APPEARANCE_FALLBACK_NONE;
+    }
+
+    return HERO_APPEARANCE_FALLBACK_SAFE;
+}
+
+void heroAppearanceEntryInit(HeroAppearanceEntry* entry, const char* displayName, int race, int style)
+{
+    memset(entry, 0, sizeof(*entry));
+
+    heroAppearanceCopyString(entry->displayName, sizeof(entry->displayName), displayName);
+    entry->race = race;
+    entry->style = style;
+    entry->baseCritterArtId = -1;
+    entry->selectable = true;
+    entry->packageBacked = race != 0 || style != 0;
+    entry->requireCompleteCoverage = true;
+    entry->fallback = HERO_APPEARANCE_FALLBACK_SAFE;
+    heroAppearanceCopyString(entry->coverage, sizeof(entry->coverage), "player");
+    heroAppearanceCopyString(entry->mappingBasis, sizeof(entry->mappingBasis), entry->packageBacked ? "package" : "native");
+}
+
+int heroAppearanceFindEntryIndex(int race, int style)
+{
+    for (int index = 0; index < gHeroAppearanceEntriesLength; index++) {
+        if (gHeroAppearanceEntries[index].race == race && gHeroAppearanceEntries[index].style == style) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+HeroAppearanceEntry* heroAppearanceFindEntry(int race, int style)
+{
+    int index = heroAppearanceFindEntryIndex(race, style);
+    return index != -1 ? &(gHeroAppearanceEntries[index]) : nullptr;
+}
+
+bool heroAppearanceAddOrUpdateEntry(const HeroAppearanceEntry* source)
+{
+    if (source == nullptr
+        || !heroAppearanceIsValidSelectorValue(source->race)
+        || !heroAppearanceIsValidSelectorValue(source->style)) {
+        return false;
+    }
+
+    int index = heroAppearanceFindEntryIndex(source->race, source->style);
+    if (index == -1) {
+        if (gHeroAppearanceEntriesLength >= kMaxHeroAppearanceEntries) {
+            return false;
+        }
+
+        index = gHeroAppearanceEntriesLength++;
+    }
+
+    gHeroAppearanceEntries[index] = *source;
+    return true;
+}
+
+void heroAppearanceAddNativeRegistryEntry()
+{
+    HeroAppearanceEntry entry;
+    heroAppearanceEntryInit(&entry, "Native", 0, 0);
+    entry.packageBacked = false;
+    entry.requireCompleteCoverage = false;
+    heroAppearanceCopyString(entry.mappingBasis, sizeof(entry.mappingBasis), "native");
+    heroAppearanceAddOrUpdateEntry(&entry);
+}
+
+void heroAppearanceReadRegistryConfigEntry(const char* entryId)
+{
+    if (entryId == nullptr || entryId[0] == '\0') {
+        return;
+    }
+
+    char section[96];
+    snprintf(section, sizeof(section), "appearance:%s", entryId);
+
+    int race = -1;
+    int style = -1;
+    if (!configGetInt(&gContentConfig, section, "race", &race)
+        || !configGetInt(&gContentConfig, section, "style", &style)
+        || !heroAppearanceIsValidSelectorValue(race)
+        || !heroAppearanceIsValidSelectorValue(style)) {
+        return;
+    }
+
+    char* value = nullptr;
+    configGetString(&gContentConfig, section, "name", &value, entryId);
+
+    HeroAppearanceEntry entry;
+    heroAppearanceEntryInit(&entry, value, race, style);
+
+    configGetBool(&gContentConfig, section, "selectable", &entry.selectable, true);
+    configGetBool(&gContentConfig, section, "package_backed", &entry.packageBacked, entry.packageBacked);
+    configGetBool(&gContentConfig, section, "package", &entry.packageBacked, entry.packageBacked);
+    configGetBool(&gContentConfig, section, "required_animation_coverage", &entry.requireCompleteCoverage, true);
+
+    configGetInt(&gContentConfig, section, "base_art", &entry.baseCritterArtId, -1);
+    configGetInt(&gContentConfig, section, "base_critter_art", &entry.baseCritterArtId, entry.baseCritterArtId);
+
+    configGetString(&gContentConfig, section, "model", &value, "");
+    heroAppearanceCopyString(entry.model, sizeof(entry.model), value);
+    heroAppearanceCopyString(entry.maleModel, sizeof(entry.maleModel), value);
+    heroAppearanceCopyString(entry.femaleModel, sizeof(entry.femaleModel), value);
+
+    configGetString(&gContentConfig, section, "male_model", &value, entry.maleModel);
+    heroAppearanceCopyString(entry.maleModel, sizeof(entry.maleModel), value);
+
+    configGetString(&gContentConfig, section, "female_model", &value, entry.femaleModel);
+    heroAppearanceCopyString(entry.femaleModel, sizeof(entry.femaleModel), value);
+
+    configGetString(&gContentConfig, section, "coverage", &value, entry.coverage);
+    heroAppearanceCopyString(entry.coverage, sizeof(entry.coverage), value);
+
+    configGetString(&gContentConfig, section, "fallback", &value, heroAppearanceFallbackName(entry.fallback));
+    entry.fallback = heroAppearanceParseFallback(value);
+
+    const char* defaultMapping = entry.packageBacked ? "package" : (entry.baseCritterArtId >= 0 || entry.model[0] != '\0' ? "model" : "native");
+    configGetString(&gContentConfig, section, "mapping", &value, defaultMapping);
+    heroAppearanceCopyString(entry.mappingBasis, sizeof(entry.mappingBasis), value);
+
+    heroAppearanceAddOrUpdateEntry(&entry);
+}
+
+void heroAppearanceReadRegistryConfig()
+{
+    char* entries = nullptr;
+    configGetString(&gContentConfig, CONTENT_CONFIG_APPEARANCE_SECTION, "entries", &entries, "");
+    if (entries == nullptr || entries[0] == '\0') {
+        return;
+    }
+
+    char temp[1024];
+    heroAppearanceCopyString(temp, sizeof(temp), entries);
+
+    char* cursor = temp;
+    while (cursor != nullptr && *cursor != '\0') {
+        char* next = strpbrk(cursor, ",;");
+        if (next != nullptr) {
+            *next = '\0';
+            next++;
+        }
+
+        char* entryId = heroAppearanceTrim(cursor);
+        heroAppearanceReadRegistryConfigEntry(entryId);
+        cursor = next;
+    }
+}
+
+void heroAppearanceBuildRegistry()
+{
+    gHeroAppearanceEntriesLength = 0;
+    heroAppearanceAddNativeRegistryEntry();
+    heroAppearanceReadRegistryConfig();
+}
+
+void heroAppearanceAddDiscoveredPackageEntry(int race, int style)
+{
+    if (heroAppearanceFindEntryIndex(race, style) != -1) {
+        return;
+    }
+
+    char displayName[64];
+    snprintf(displayName, sizeof(displayName), "Package r%02d s%02d", race, style);
+
+    HeroAppearanceEntry entry;
+    heroAppearanceEntryInit(&entry, displayName, race, style);
+    entry.packageBacked = race != 0 || style != 0;
+    heroAppearanceCopyString(entry.coverage, sizeof(entry.coverage), "package");
+    heroAppearanceCopyString(entry.mappingBasis, sizeof(entry.mappingBasis), "package");
+    heroAppearanceAddOrUpdateEntry(&entry);
 }
 
 bool heroAppearanceIsMountedPath(const char* path)
@@ -148,6 +394,158 @@ bool heroAppearancePackageAvailableForDude(int race, int style)
     }
 
     return heroAppearancePackageAvailableForGender(race, style, genderCode);
+}
+
+void heroAppearanceDiscoverPackagesForSelector(bool isStyle, int fixedRace)
+{
+    if (isStyle) {
+        for (int style = 0; style <= kMaxSelectorValue; style++) {
+            if (heroAppearancePackageAvailableForDude(fixedRace, style)) {
+                heroAppearanceAddDiscoveredPackageEntry(fixedRace, style);
+            }
+        }
+    } else {
+        for (int race = 0; race <= kMaxSelectorValue; race++) {
+            if (heroAppearancePackageAvailableForDude(race, 0)) {
+                heroAppearanceAddDiscoveredPackageEntry(race, 0);
+            }
+        }
+    }
+}
+
+bool heroAppearanceEntryIsNative(const HeroAppearanceEntry* entry)
+{
+    return entry != nullptr && entry->race == 0 && entry->style == 0;
+}
+
+const char* heroAppearanceEntryGetModelForDude(const HeroAppearanceEntry* entry)
+{
+    if (entry == nullptr) {
+        return nullptr;
+    }
+
+    char genderCode;
+    if (heroAppearanceGetDudeGenderCode(&genderCode)) {
+        const char* genderModel = genderCode == 'f' ? entry->femaleModel : entry->maleModel;
+        if (genderModel[0] != '\0') {
+            return genderModel;
+        }
+    }
+
+    if (entry->model[0] != '\0') {
+        return entry->model;
+    }
+
+    if (entry->maleModel[0] != '\0') {
+        return entry->maleModel;
+    }
+
+    if (entry->femaleModel[0] != '\0') {
+        return entry->femaleModel;
+    }
+
+    return nullptr;
+}
+
+int heroAppearanceEntryResolveBaseCritterArtId(const HeroAppearanceEntry* entry)
+{
+    if (entry == nullptr) {
+        return -1;
+    }
+
+    if (entry->baseCritterArtId >= 0) {
+        return entry->baseCritterArtId;
+    }
+
+    const char* model = heroAppearanceEntryGetModelForDude(entry);
+    if (model == nullptr || model[0] == '\0') {
+        return -1;
+    }
+
+    return artListIndex(OBJ_TYPE_CRITTER, model);
+}
+
+bool heroAppearanceEntryHasModelMapping(const HeroAppearanceEntry* entry)
+{
+    return heroAppearanceEntryResolveBaseCritterArtId(entry) >= 0;
+}
+
+bool heroAppearanceEntryAvailableForDude(const HeroAppearanceEntry* entry)
+{
+    if (entry == nullptr || !entry->selectable) {
+        return false;
+    }
+
+    if (heroAppearanceEntryIsNative(entry)) {
+        return true;
+    }
+
+    if (entry->packageBacked && !heroAppearancePackageAvailableForDude(entry->race, entry->style)) {
+        return false;
+    }
+
+    if (!entry->packageBacked) {
+        return heroAppearanceEntryHasModelMapping(entry);
+    }
+
+    return true;
+}
+
+bool heroAppearanceEntryMatchesSelector(const HeroAppearanceEntry* entry, bool isStyle, int fixedRace)
+{
+    if (!heroAppearanceEntryAvailableForDude(entry)) {
+        return false;
+    }
+
+    if (isStyle) {
+        return entry->race == fixedRace;
+    }
+
+    return entry->style == 0;
+}
+
+const HeroAppearanceEntry* heroAppearanceGetSelectedEntry()
+{
+    return heroAppearanceFindEntry(gHeroAppearanceRace, gHeroAppearanceStyle);
+}
+
+int heroAppearanceSelectWindowFindEntryIndex(bool isStyle, int fixedRace, int race, int style)
+{
+    for (int index = 0; index < gHeroAppearanceEntriesLength; index++) {
+        const HeroAppearanceEntry* entry = &(gHeroAppearanceEntries[index]);
+        if (entry->race == race
+            && entry->style == style
+            && heroAppearanceEntryMatchesSelector(entry, isStyle, fixedRace)) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+int heroAppearanceSelectWindowFirstEntryIndex(bool isStyle, int fixedRace)
+{
+    for (int index = 0; index < gHeroAppearanceEntriesLength; index++) {
+        if (heroAppearanceEntryMatchesSelector(&(gHeroAppearanceEntries[index]), isStyle, fixedRace)) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+int heroAppearanceSelectWindowNextEntryIndex(bool isStyle, int fixedRace, int selectedIndex, int direction)
+{
+    int index = selectedIndex + direction;
+    while (index >= 0 && index < gHeroAppearanceEntriesLength) {
+        if (heroAppearanceEntryMatchesSelector(&(gHeroAppearanceEntries[index]), isStyle, fixedRace)) {
+            return index;
+        }
+
+        index += direction;
+    }
+
+    return -1;
 }
 
 void heroAppearancePreviewMountInit(HeroAppearancePreviewMount* mount)
@@ -280,6 +678,15 @@ void heroAppearanceRefreshMounts()
         return;
     }
 
+    const HeroAppearanceEntry* entry = heroAppearanceGetSelectedEntry();
+    if (entry != nullptr && !entry->packageBacked) {
+        return;
+    }
+
+    if (gHeroAppearanceRace == 0 && gHeroAppearanceStyle == 0) {
+        return;
+    }
+
     bool mounted = false;
     char genderCode;
     if (heroAppearanceGetDudeGenderCode(&genderCode)) {
@@ -290,7 +697,7 @@ void heroAppearanceRefreshMounts()
         mounted = mountedMale || mountedFemale;
     }
 
-    if (!mounted && (gHeroAppearanceRace != 0 || gHeroAppearanceStyle != 0)) {
+    if (!mounted) {
         debugPrint("Hero Appearance package not found for race %d style %d.\n", gHeroAppearanceRace, gHeroAppearanceStyle);
     }
 }
@@ -327,9 +734,9 @@ void heroAppearanceReadGlobals()
     }
 }
 
-int heroAppearanceSelectWindowBuildPreviewFid(int race, int style)
+int heroAppearanceSelectWindowBuildPreviewFid(const HeroAppearanceEntry* entry)
 {
-    if (gDude == nullptr) {
+    if (gDude == nullptr || entry == nullptr) {
         return -1;
     }
 
@@ -339,7 +746,14 @@ int heroAppearanceSelectWindowBuildPreviewFid(int race, int style)
         return -1;
     }
 
-    if (race != 0 || style != 0) {
+    if (!heroAppearanceEntryIsNative(entry) && !entry->packageBacked) {
+        int modelFrmId = heroAppearanceEntryResolveBaseCritterArtId(entry);
+        if (modelFrmId < 0 || modelFrmId > 0xFFF) {
+            return -1;
+        }
+
+        frmId = modelFrmId;
+    } else if (!heroAppearanceEntryIsNative(entry)) {
         int offset = artGetHeroAppearanceCritterArtOffset();
         if (offset <= 0) {
             return -1;
@@ -351,10 +765,10 @@ int heroAppearanceSelectWindowBuildPreviewFid(int race, int style)
         }
     }
 
-    return buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_STAND, 0, ROTATION_SW);
+    return artResolveCritterFid(buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_STAND, 0, ROTATION_SW));
 }
 
-void heroAppearanceSelectWindowDrawPreview(int win, int race, int style)
+void heroAppearanceSelectWindowDrawPreview(int win, const HeroAppearanceEntry* entry)
 {
     windowFill(win,
         kSelectWindowPreviewX,
@@ -371,8 +785,15 @@ void heroAppearanceSelectWindowDrawPreview(int win, int race, int style)
 
     bool previewDrawn = false;
     HeroAppearancePreviewMount mount;
-    if (heroAppearancePreviewMount(&mount, race, style)) {
-        int fid = heroAppearanceSelectWindowBuildPreviewFid(race, style);
+    heroAppearancePreviewMountInit(&mount);
+
+    bool mounted = entry != nullptr && !entry->packageBacked;
+    if (entry != nullptr && entry->packageBacked) {
+        mounted = heroAppearancePreviewMount(&mount, entry->race, entry->style);
+    }
+
+    if (mounted) {
+        int fid = heroAppearanceSelectWindowBuildPreviewFid(entry);
         if (fid != -1 && artExists(fid)) {
             unsigned char* windowBuffer = windowGetBuffer(win);
             int pitch = windowGetWidth(win);
@@ -384,7 +805,9 @@ void heroAppearanceSelectWindowDrawPreview(int win, int race, int style)
             previewDrawn = true;
         }
     }
-    heroAppearancePreviewUnmount(&mount);
+    if (entry != nullptr && entry->packageBacked) {
+        heroAppearancePreviewUnmount(&mount);
+    }
 
     if (!previewDrawn) {
         const char* text = "No preview";
@@ -416,16 +839,21 @@ void heroAppearanceSelectWindowDrawStatic(int win, bool isStyle)
     fontSetCurrent(oldFont);
 }
 
-void heroAppearanceSelectWindowDrawValue(int win, bool isStyle, int race, int style, const char* status)
+void heroAppearanceSelectWindowDrawValue(int win, bool isStyle, const HeroAppearanceEntry* entry, const char* status)
 {
     int oldFont = fontGetCurrent();
     fontSetCurrent(101);
 
     windowFill(win, 18, 36, kSelectWindowWidth - 36, 132, _colorTable[_GNW_wcolor[0]]);
-    heroAppearanceSelectWindowDrawPreview(win, race, style);
+    heroAppearanceSelectWindowDrawPreview(win, entry);
 
     char valueText[80];
-    snprintf(valueText, sizeof(valueText), "%s %02d", isStyle ? "Style" : "Race", isStyle ? style : race);
+    if (entry != nullptr) {
+        snprintf(valueText, sizeof(valueText), "%s %02d", isStyle ? "Style" : "Race", isStyle ? entry->style : entry->race);
+    } else {
+        snprintf(valueText, sizeof(valueText), "No appearances");
+    }
+
     windowDrawText(win,
         valueText,
         kSelectWindowWidth - kSelectWindowDetailsX - 24,
@@ -433,48 +861,35 @@ void heroAppearanceSelectWindowDrawValue(int win, bool isStyle, int race, int st
         kSelectWindowDetailsY,
         _colorTable[_GNW_wcolor[3]]);
 
-    char packageText[80];
-    snprintf(packageText, sizeof(packageText), "Package r%02d s%02d", race, style);
-    windowDrawText(win,
-        packageText,
-        kSelectWindowWidth - kSelectWindowDetailsX - 24,
-        kSelectWindowDetailsX,
-        kSelectWindowDetailsY + 20,
-        _colorTable[_GNW_wcolor[3]]);
+    if (entry != nullptr) {
+        windowDrawText(win,
+            entry->displayName,
+            kSelectWindowWidth - kSelectWindowDetailsX - 24,
+            kSelectWindowDetailsX,
+            kSelectWindowDetailsY + 20,
+            _colorTable[_GNW_wcolor[3]]);
+
+        char mappingText[96];
+        snprintf(mappingText, sizeof(mappingText), "%s, fallback %s", entry->mappingBasis, heroAppearanceFallbackName(entry->fallback));
+        windowDrawText(win,
+            mappingText,
+            kSelectWindowWidth - kSelectWindowDetailsX - 24,
+            kSelectWindowDetailsX,
+            kSelectWindowDetailsY + 40,
+            _colorTable[_GNW_wcolor[3]]);
+    }
 
     if (status != nullptr && status[0] != '\0') {
         windowDrawText(win,
             status,
             kSelectWindowWidth - kSelectWindowDetailsX - 24,
             kSelectWindowDetailsX,
-            kSelectWindowDetailsY + 46,
+            kSelectWindowDetailsY + 64,
             _colorTable[31744]);
     }
 
     fontSetCurrent(oldFont);
     windowRefresh(win);
-}
-
-bool heroAppearanceSelectWindowCanUseValue(bool isStyle, int fixedRace, int value)
-{
-    if (!heroAppearanceIsValidSelectorValue(value)) {
-        return false;
-    }
-
-    int race = isStyle ? fixedRace : value;
-    int style = isStyle ? value : 0;
-    return heroAppearancePackageAvailableForDude(race, style);
-}
-
-void heroAppearanceSelectWindowDisplayValues(bool isStyle, int fixedRace, int value, int* race, int* style)
-{
-    if (isStyle) {
-        *race = fixedRace;
-        *style = value;
-    } else {
-        *race = value;
-        *style = 0;
-    }
 }
 
 } // namespace
@@ -492,7 +907,11 @@ void heroAppearanceInit()
     gHeroAppearanceStyle = 0;
 
     configGetBool(&gContentConfig, CONTENT_CONFIG_APPEARANCE_SECTION, "hero_appearance", &gHeroAppearanceEnabled, false);
+    if (!gHeroAppearanceEnabled) {
+        gHeroAppearanceEnabled = settings.qol.enable_hero_appearance_mod;
+    }
 
+    heroAppearanceBuildRegistry();
     heroAppearanceReadGlobals();
     heroAppearanceRefreshMounts();
 }
@@ -522,6 +941,7 @@ void heroAppearanceExit()
     gHeroAppearanceEnabled = false;
     gHeroAppearanceRace = 0;
     gHeroAppearanceStyle = 0;
+    gHeroAppearanceEntriesLength = 0;
 }
 
 void heroAppearanceRefreshDudeArt()
@@ -562,7 +982,16 @@ bool heroAppearanceIsEnabled()
 
 bool heroAppearanceIsActive()
 {
-    return gHeroAppearanceEnabled && (gHeroAppearanceRace != 0 || gHeroAppearanceStyle != 0) && gMountedPathsLength > 0;
+    if (!gHeroAppearanceEnabled || (gHeroAppearanceRace == 0 && gHeroAppearanceStyle == 0)) {
+        return false;
+    }
+
+    const HeroAppearanceEntry* entry = heroAppearanceGetSelectedEntry();
+    if (entry != nullptr && !entry->packageBacked) {
+        return heroAppearanceEntryHasModelMapping(entry);
+    }
+
+    return gMountedPathsLength > 0;
 }
 
 int heroAppearanceGetRace()
@@ -613,6 +1042,15 @@ bool heroAppearanceSetStyle(int style)
     return true;
 }
 
+bool heroAppearanceSetDudeModel(int gender, const char* model)
+{
+    if (gender < 0 || gender >= GENDER_COUNT || model == nullptr || model[0] == '\0') {
+        return false;
+    }
+
+    return artSetDudeDefaultModel(gender, model) == 0;
+}
+
 bool heroAppearanceSelectWindow(int raceStyleFlag)
 {
     heroAppearanceInit();
@@ -624,9 +1062,17 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
     bool isStyle = raceStyleFlag != 0;
     int originalRace = gHeroAppearanceRace;
     int originalStyle = gHeroAppearanceStyle;
-    int selectedValue = isStyle ? originalStyle : originalRace;
-    if (!heroAppearanceSelectWindowCanUseValue(isStyle, originalRace, selectedValue)) {
-        selectedValue = 0;
+
+    heroAppearanceBuildRegistry();
+    heroAppearanceDiscoverPackagesForSelector(isStyle, originalRace);
+
+    int selectedIndex = heroAppearanceSelectWindowFindEntryIndex(isStyle, originalRace, originalRace, isStyle ? originalStyle : 0);
+    if (selectedIndex == -1) {
+        selectedIndex = heroAppearanceSelectWindowFirstEntryIndex(isStyle, originalRace);
+    }
+
+    if (selectedIndex == -1) {
+        return false;
     }
 
     int winX = (screenGetWidth() - kSelectWindowWidth) / 2;
@@ -658,10 +1104,7 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
     char status[96];
     status[0] = '\0';
 
-    int displayRace;
-    int displayStyle;
-    heroAppearanceSelectWindowDisplayValues(isStyle, originalRace, selectedValue, &displayRace, &displayStyle);
-    heroAppearanceSelectWindowDrawValue(win, isStyle, displayRace, displayStyle, status);
+    heroAppearanceSelectWindowDrawValue(win, isStyle, &(gHeroAppearanceEntries[selectedIndex]), status);
 
     bool accepted = false;
 
@@ -683,21 +1126,15 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
         }
 
         if (direction != 0) {
-            int candidateValue = selectedValue + direction;
-            while (heroAppearanceIsValidSelectorValue(candidateValue)
-                && !heroAppearanceSelectWindowCanUseValue(isStyle, originalRace, candidateValue)) {
-                candidateValue += direction;
-            }
-
-            if (heroAppearanceIsValidSelectorValue(candidateValue)) {
-                selectedValue = candidateValue;
+            int candidateIndex = heroAppearanceSelectWindowNextEntryIndex(isStyle, originalRace, selectedIndex, direction);
+            if (candidateIndex != -1) {
+                selectedIndex = candidateIndex;
                 status[0] = '\0';
             } else {
-                snprintf(status, sizeof(status), "No more packages found.");
+                snprintf(status, sizeof(status), "No more appearances found.");
             }
 
-            heroAppearanceSelectWindowDisplayValues(isStyle, originalRace, selectedValue, &displayRace, &displayStyle);
-            heroAppearanceSelectWindowDrawValue(win, isStyle, displayRace, displayStyle, status);
+            heroAppearanceSelectWindowDrawValue(win, isStyle, &(gHeroAppearanceEntries[selectedIndex]), status);
         }
 
         renderPresent();
@@ -715,24 +1152,26 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
         return true;
     }
 
+    const HeroAppearanceEntry* selectedEntry = &(gHeroAppearanceEntries[selectedIndex]);
+
     bool changed = false;
     if (isStyle) {
-        if (!heroAppearanceSetStyle(selectedValue)) {
+        if (!heroAppearanceSetStyle(selectedEntry->style)) {
             return false;
         }
-        changed = selectedValue != originalStyle;
+        changed = selectedEntry->style != originalStyle;
     } else {
-        if (!heroAppearanceSetRace(selectedValue)) {
+        if (!heroAppearanceSetRace(selectedEntry->race)) {
             return false;
         }
 
-        if (selectedValue != originalRace) {
+        if (selectedEntry->race != originalRace) {
             if (!heroAppearanceSetStyle(0)) {
                 return false;
             }
         }
 
-        changed = selectedValue != originalRace;
+        changed = selectedEntry->race != originalRace;
     }
 
     if (changed) {
@@ -742,10 +1181,21 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
     return true;
 }
 
-int heroAppearanceApplyCritterArtOffset(int fid)
+int heroAppearanceResolvePlayerFid(int fid)
 {
     if (!heroAppearanceIsActive()) {
         return fid;
+    }
+
+    const HeroAppearanceEntry* entry = heroAppearanceGetSelectedEntry();
+    if (entry != nullptr && !entry->packageBacked) {
+        int frmId = heroAppearanceEntryResolveBaseCritterArtId(entry);
+        if (frmId < 0 || frmId > 0xFFF || FID_TYPE(fid) != OBJ_TYPE_CRITTER) {
+            return fid;
+        }
+
+        int resolvedFid = (fid & ~0xFFF) | frmId;
+        return entry->fallback == HERO_APPEARANCE_FALLBACK_SAFE ? artResolveCritterFid(resolvedFid) : resolvedFid;
     }
 
     int offset = artGetHeroAppearanceCritterArtOffset();
@@ -763,7 +1213,13 @@ int heroAppearanceApplyCritterArtOffset(int fid)
         return fid;
     }
 
-    return (fid & ~0xFFF) | heroFrmId;
+    int resolvedFid = (fid & ~0xFFF) | heroFrmId;
+    return entry == nullptr || entry->fallback == HERO_APPEARANCE_FALLBACK_SAFE ? artResolveCritterFid(resolvedFid) : resolvedFid;
+}
+
+int heroAppearanceApplyCritterArtOffset(int fid)
+{
+    return heroAppearanceResolvePlayerFid(fid);
 }
 
 int heroAppearanceRemoveCritterArtOffset(int fid)

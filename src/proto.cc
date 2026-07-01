@@ -873,7 +873,7 @@ int _proto_dude_update_gender()
         }
 
         int fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, weaponAnimationCode, 0);
-        fid = heroAppearanceApplyCritterArtOffset(fid);
+        fid = heroAppearanceResolvePlayerFid(fid);
         objectSetFid(gDude, fid, nullptr);
     }
 

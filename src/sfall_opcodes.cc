@@ -937,7 +937,7 @@ static void op_set_dude_model(Program* program, int gender, const char* opcodeNa
         return;
     }
 
-    if (artSetDudeDefaultModel(gender, model) != 0) {
+    if (!heroAppearanceSetDudeModel(gender, model)) {
         programPrintError("%s: critter art model '%s' was not found", opcodeName, model);
     }
 }

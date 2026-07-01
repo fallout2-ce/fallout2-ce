@@ -1113,7 +1113,7 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
 
     int fid = buildFid(OBJ_TYPE_CRITTER, inventoryFid, anim, animationCode, rotation);
     if (critter == gDude) {
-        fid = heroAppearanceApplyCritterArtOffset(fid);
+        fid = heroAppearanceResolvePlayerFid(fid);
     }
 
     return fid;
