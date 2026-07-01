@@ -47,9 +47,17 @@ std::string normalizeDatPath(std::string path)
     return path;
 }
 
-bool normalizeAndComparePath(const std::string& a, const std::string& b)
+std::string normalizeDatPathKey(std::string path)
 {
-    return compat_stricmp(normalizeDatPath(a).c_str(), normalizeDatPath(b).c_str()) == 0;
+    for (char& ch : path) {
+        if (ch == '/') {
+            ch = '\\';
+        } else {
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        }
+    }
+
+    return path;
 }
 
 bool readBe32(FILE* stream, int* value)
@@ -539,14 +547,30 @@ private:
 
 const DatArchiveEntry* DatArchive::findEntry(const std::string& path) const
 {
-    std::string normalizedPath = normalizeDatPath(path);
-    for (const DatArchiveEntry& entry : entries()) {
-        if (normalizeAndComparePath(entry.path, normalizedPath)) {
-            return &entry;
-        }
+    ensureEntryLookup();
+
+    auto it = entryLookup_.find(normalizeDatPathKey(path));
+    if (it != entryLookup_.end()) {
+        return it->second;
     }
 
     return nullptr;
+}
+
+void DatArchive::ensureEntryLookup() const
+{
+    if (entryLookupInitialized_) {
+        return;
+    }
+
+    const std::vector<DatArchiveEntry>& archiveEntries = entries();
+    entryLookup_.reserve(archiveEntries.size());
+
+    for (const DatArchiveEntry& entry : entries()) {
+        entryLookup_.emplace(normalizeDatPathKey(entry.path), &entry);
+    }
+
+    entryLookupInitialized_ = true;
 }
 
 std::vector<const DatArchiveEntry*> DatArchive::findEntries(const std::string& pattern) const
