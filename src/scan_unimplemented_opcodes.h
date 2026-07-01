@@ -162,6 +162,18 @@ int get_offset_request_argument_count(unsigned int opcodeIndex)
         return 3;
     case 0x1d5: // call_offset_v3
         return 4;
+    case 0x1d6: // call_offset_v4
+        return 5;
+    case 0x1d7: // call_offset_r0
+        return 1;
+    case 0x1d8: // call_offset_r1
+        return 2;
+    case 0x1d9: // call_offset_r2
+        return 3;
+    case 0x1da: // call_offset_r3
+        return 4;
+    case 0x1db: // call_offset_r4
+        return 5;
     default:
         return 0;
     }
@@ -174,6 +186,11 @@ bool offset_request_returns_value(unsigned int opcodeIndex)
     case 0x157: // read_short
     case 0x158: // read_int
     case 0x159: // read_string
+    case 0x1d7: // call_offset_r0
+    case 0x1d8: // call_offset_r1
+    case 0x1d9: // call_offset_r2
+    case 0x1da: // call_offset_r3
+    case 0x1db: // call_offset_r4
         return true;
     default:
         return false;
