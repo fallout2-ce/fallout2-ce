@@ -448,6 +448,8 @@ int dfileWriteChar(int ch, DFile* stream)
 {
     assert(stream); // "stream", "dfile.c", 437
 
+    // not implemented
+
     return -1;
 }
 
@@ -458,6 +460,8 @@ int dfileWriteString(const char* string, DFile* stream)
 {
     assert(string); // "s", "dfile.c", 448
     assert(stream); // "stream", "dfile.c", 449
+
+    // not implemented
 
     return -1;
 }
@@ -520,6 +524,8 @@ size_t dfileWrite(const void* ptr, size_t size, size_t count, DFile* stream)
 {
     assert(ptr); // "ptr", "dfile.c", 538
     assert(stream); // "stream", "dfile.c", 539
+
+    // not implemented
 
     return count - 1;
 }
