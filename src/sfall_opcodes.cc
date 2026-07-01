@@ -35,7 +35,6 @@
 #include "sfall_arrays.h"
 #include "sfall_global_scripts.h"
 #include "sfall_global_vars.h"
-#include "sfall_file_system.h"
 #include "sfall_ini.h"
 #include "sfall_kb_helpers.h"
 #include "sfall_lists.h"
@@ -988,39 +987,6 @@ static void op_set_hero_style(Program* program)
     }
 
     op_refresh_pc_art(program);
-}
-
-static void op_fs_copy(Program* program)
-{
-    const char* arg2 = programStackPopString(program);
-    const char* arg1 = programStackPopString(program);
-
-    int fileId = sfallFileSystemCopy(arg1, arg2);
-    if (fileId == -1) {
-        fileId = sfallFileSystemCopy(arg2, arg1);
-    }
-
-    programStackPushInteger(program, fileId);
-}
-
-static void op_fs_write_short(Program* program)
-{
-    int data = programStackPopInteger(program);
-    int id = programStackPopInteger(program);
-    sfallFileSystemWriteShort(id, data);
-}
-
-static void op_fs_read_short(Program* program)
-{
-    int id = programStackPopInteger(program);
-    programStackPushInteger(program, sfallFileSystemReadShort(id));
-}
-
-static void op_fs_seek(Program* program)
-{
-    int pos = programStackPopInteger(program);
-    int id = programStackPopInteger(program);
-    sfallFileSystemSeek(id, pos);
 }
 
 // create_message_window
@@ -2212,25 +2178,21 @@ void sfallOpcodesInit()
 
     // 0x81f7 - int   fs_create(string path, int size)
     // 0x81f8 - int   fs_copy(string path, string source)
-    interpreterRegisterOpcode(0x81F8, op_fs_copy);
     // 0x81f9 - int   fs_find(string path)
     // 0x81fa - void  fs_write_byte(int id, int data)
     // 0x81fb - void  fs_write_short(int id, int data)
-    interpreterRegisterOpcode(0x81FB, op_fs_write_short);
     // 0x81fc - void  fs_write_int(int id, int data)
     // 0x81fd - void  fs_write_float(int id, int data)
     // 0x81fe - void  fs_write_string(int id, string data)
     // 0x8208 - void  fs_write_bstring(int id, string data)
     // 0x8209 - int   fs_read_byte(int id)
     // 0x820a - int   fs_read_short(int id)
-    interpreterRegisterOpcode(0x820A, op_fs_read_short);
     // 0x820b - int   fs_read_int(int id)
     // 0x820c - float fs_read_float(int id)
     // 0x81ff - void  fs_delete(int id)
     // 0x8200 - int   fs_size(int id)
     // 0x8201 - int   fs_pos(int id)
     // 0x8202 - void  fs_seek(int id, int pos)
-    interpreterRegisterOpcode(0x8202, op_fs_seek);
     // 0x8203 - void  fs_resize(int id, int size)
 
     // 0x8204 - int  get_proto_data(int pid, int offset)

@@ -30,10 +30,10 @@ procedure start begin
         call assertEquals("opcode_exists OP_NOOP", opcode_exists(OP_NOOP), 1);
         call assertEquals("opcode_exists OP_SET_DM_MODEL", opcode_exists(OP_SET_DM_MODEL), 1);
         call assertEquals("opcode_exists OP_SET_DF_MODEL", opcode_exists(OP_SET_DF_MODEL), 1);
-        call assertEquals("opcode_exists OP_FS_COPY", opcode_exists(OP_FS_COPY), 1);
-        call assertEquals("opcode_exists OP_FS_WRITE_SHORT", opcode_exists(OP_FS_WRITE_SHORT), 1);
-        call assertEquals("opcode_exists OP_FS_SEEK", opcode_exists(OP_FS_SEEK), 1);
-        call assertEquals("opcode_exists OP_FS_READ_SHORT", opcode_exists(OP_FS_READ_SHORT), 1);
+        call assertEquals("opcode_exists OP_FS_COPY", opcode_exists(OP_FS_COPY), 0);
+        call assertEquals("opcode_exists OP_FS_WRITE_SHORT", opcode_exists(OP_FS_WRITE_SHORT), 0);
+        call assertEquals("opcode_exists OP_FS_SEEK", opcode_exists(OP_FS_SEEK), 0);
+        call assertEquals("opcode_exists OP_FS_READ_SHORT", opcode_exists(OP_FS_READ_SHORT), 0);
         call assertEquals("opcode_exists OP_HERO_SELECT_WIN", opcode_exists(OP_HERO_SELECT_WIN), 1);
         call assertEquals("opcode_exists OP_SET_HERO_RACE", opcode_exists(OP_SET_HERO_RACE), 1);
         call assertEquals("opcode_exists OP_SET_HERO_STYLE", opcode_exists(OP_SET_HERO_STYLE), 1);

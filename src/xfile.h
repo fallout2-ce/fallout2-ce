@@ -14,10 +14,7 @@ typedef enum XFileType {
     XFILE_TYPE_FILE,
     XFILE_TYPE_DFILE,
     XFILE_TYPE_GZFILE,
-    XFILE_TYPE_SFALL_VIRTUAL_FILE,
 } XFileType;
-
-struct SfallVirtualFileStream;
 
 // A universal database of files.
 typedef struct XBase {
@@ -43,7 +40,6 @@ typedef struct XFile {
         FILE* file;
         DFile* dfile;
         gzFile gzfile;
-        SfallVirtualFileStream* sfallVirtualFile;
     };
 } XFile;
 

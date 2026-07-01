@@ -293,8 +293,6 @@ set(FALLOUT_PLATFORM_SOURCES
     "src/sfall_global_vars.h"
     "src/sfall_global_scripts.cc"
     "src/sfall_global_scripts.h"
-    "src/sfall_file_system.cc"
-    "src/sfall_file_system.h"
     "src/sfall_ini.cc"
     "src/sfall_ini.h"
     "src/sfall_kb_helpers.cc"

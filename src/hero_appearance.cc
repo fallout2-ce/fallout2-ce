@@ -20,6 +20,7 @@
 #include "platform_compat.h"
 #include "proto.h"
 #include "sfall_global_vars.h"
+#include "stat.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -121,6 +122,34 @@ bool heroAppearancePackageAvailable(int race, int style)
         || heroAppearancePackageAvailableForGender(race, style, 'f');
 }
 
+bool heroAppearanceGetDudeGenderCode(char* genderCode)
+{
+    if (gDude == nullptr) {
+        return false;
+    }
+
+    *genderCode = critterGetStat(gDude, STAT_GENDER) == GENDER_FEMALE ? 'f' : 'm';
+    return true;
+}
+
+bool heroAppearancePackageAvailableForDude(int race, int style)
+{
+    if (!heroAppearanceIsValidSelectorValue(race) || !heroAppearanceIsValidSelectorValue(style)) {
+        return false;
+    }
+
+    if (race == 0 && style == 0) {
+        return true;
+    }
+
+    char genderCode;
+    if (!heroAppearanceGetDudeGenderCode(&genderCode)) {
+        return heroAppearancePackageAvailable(race, style);
+    }
+
+    return heroAppearancePackageAvailableForGender(race, style, genderCode);
+}
+
 void heroAppearancePreviewMountInit(HeroAppearancePreviewMount* mount)
 {
     mount->pathsLength = 0;
@@ -174,14 +203,21 @@ bool heroAppearancePreviewMount(HeroAppearancePreviewMount* mount, int race, int
         return true;
     }
 
-    bool mountedMale = heroAppearancePreviewMountOne(mount, race, style, 'm');
-    bool mountedFemale = heroAppearancePreviewMountOne(mount, race, style, 'f');
+    bool mounted = false;
+    char genderCode;
+    if (heroAppearanceGetDudeGenderCode(&genderCode)) {
+        mounted = heroAppearancePreviewMountOne(mount, race, style, genderCode);
+    } else {
+        bool mountedMale = heroAppearancePreviewMountOne(mount, race, style, 'm');
+        bool mountedFemale = heroAppearancePreviewMountOne(mount, race, style, 'f');
+        mounted = mountedMale || mountedFemale;
+    }
 
     if (mount->pathsLength > 0) {
         artCacheFlush();
     }
 
-    return mountedMale || mountedFemale;
+    return mounted;
 }
 
 void heroAppearancePreviewUnmount(HeroAppearancePreviewMount* mount)
@@ -244,10 +280,17 @@ void heroAppearanceRefreshMounts()
         return;
     }
 
-    bool mountedMale = heroAppearanceMountOne('m');
-    bool mountedFemale = heroAppearanceMountOne('f');
+    bool mounted = false;
+    char genderCode;
+    if (heroAppearanceGetDudeGenderCode(&genderCode)) {
+        mounted = heroAppearanceMountOne(genderCode);
+    } else {
+        bool mountedMale = heroAppearanceMountOne('m');
+        bool mountedFemale = heroAppearanceMountOne('f');
+        mounted = mountedMale || mountedFemale;
+    }
 
-    if (!mountedMale && !mountedFemale && (gHeroAppearanceRace != 0 || gHeroAppearanceStyle != 0)) {
+    if (!mounted && (gHeroAppearanceRace != 0 || gHeroAppearanceStyle != 0)) {
         debugPrint("Hero Appearance package not found for race %d style %d.\n", gHeroAppearanceRace, gHeroAppearanceStyle);
     }
 }
@@ -420,7 +463,7 @@ bool heroAppearanceSelectWindowCanUseValue(bool isStyle, int fixedRace, int valu
 
     int race = isStyle ? fixedRace : value;
     int style = isStyle ? value : 0;
-    return heroAppearancePackageAvailable(race, style);
+    return heroAppearancePackageAvailableForDude(race, style);
 }
 
 void heroAppearanceSelectWindowDisplayValues(bool isStyle, int fixedRace, int value, int* race, int* style)
@@ -519,7 +562,7 @@ bool heroAppearanceIsEnabled()
 
 bool heroAppearanceIsActive()
 {
-    return gHeroAppearanceEnabled && (gHeroAppearanceRace != 0 || gHeroAppearanceStyle != 0);
+    return gHeroAppearanceEnabled && (gHeroAppearanceRace != 0 || gHeroAppearanceStyle != 0) && gMountedPathsLength > 0;
 }
 
 int heroAppearanceGetRace()
@@ -582,6 +625,9 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
     int originalRace = gHeroAppearanceRace;
     int originalStyle = gHeroAppearanceStyle;
     int selectedValue = isStyle ? originalStyle : originalRace;
+    if (!heroAppearanceSelectWindowCanUseValue(isStyle, originalRace, selectedValue)) {
+        selectedValue = 0;
+    }
 
     int winX = (screenGetWidth() - kSelectWindowWidth) / 2;
     int winY = (screenGetHeight() - kSelectWindowHeight) / 2;
@@ -638,14 +684,16 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
 
         if (direction != 0) {
             int candidateValue = selectedValue + direction;
-            if (heroAppearanceSelectWindowCanUseValue(isStyle, originalRace, candidateValue)) {
+            while (heroAppearanceIsValidSelectorValue(candidateValue)
+                && !heroAppearanceSelectWindowCanUseValue(isStyle, originalRace, candidateValue)) {
+                candidateValue += direction;
+            }
+
+            if (heroAppearanceIsValidSelectorValue(candidateValue)) {
                 selectedValue = candidateValue;
                 status[0] = '\0';
-            } else if (heroAppearanceIsValidSelectorValue(candidateValue)) {
-                int candidateRace;
-                int candidateStyle;
-                heroAppearanceSelectWindowDisplayValues(isStyle, originalRace, candidateValue, &candidateRace, &candidateStyle);
-                snprintf(status, sizeof(status), "No package found for r%02d s%02d.", candidateRace, candidateStyle);
+            } else {
+                snprintf(status, sizeof(status), "No more packages found.");
             }
 
             heroAppearanceSelectWindowDisplayValues(isStyle, originalRace, selectedValue, &displayRace, &displayStyle);
