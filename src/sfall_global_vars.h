@@ -6,6 +6,7 @@
 namespace fallout {
 
 bool sfall_gl_vars_init();
+bool sfall_gl_vars_is_initialized();
 void sfall_gl_vars_reset();
 void sfall_gl_vars_exit();
 bool sfall_gl_vars_save(File* stream);

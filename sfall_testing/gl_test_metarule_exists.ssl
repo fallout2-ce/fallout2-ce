@@ -15,10 +15,28 @@ procedure start begin
         #define opcode_exists(opcode) sfall_func1("opcode_exists", opcode)
         #define OP_GET_UPTIME 0x81B3
         #define OP_NOOP 0x8000
+        #define OP_SET_DM_MODEL 0x8175
+        #define OP_SET_DF_MODEL 0x8176
+        #define OP_FS_COPY 0x81F8
+        #define OP_FS_WRITE_SHORT 0x81FB
+        #define OP_FS_SEEK 0x8202
+        #define OP_FS_READ_SHORT 0x820A
+        #define OP_HERO_SELECT_WIN 0x8213
+        #define OP_SET_HERO_RACE 0x8214
+        #define OP_SET_HERO_STYLE 0x8215
         #define OP_WRITE_INT 0x81D1
 
         call assertEquals("opcode_exists OP_GET_UPTIME", opcode_exists(OP_GET_UPTIME), 1);
         call assertEquals("opcode_exists OP_NOOP", opcode_exists(OP_NOOP), 1);
+        call assertEquals("opcode_exists OP_SET_DM_MODEL", opcode_exists(OP_SET_DM_MODEL), 1);
+        call assertEquals("opcode_exists OP_SET_DF_MODEL", opcode_exists(OP_SET_DF_MODEL), 1);
+        call assertEquals("opcode_exists OP_FS_COPY", opcode_exists(OP_FS_COPY), 1);
+        call assertEquals("opcode_exists OP_FS_WRITE_SHORT", opcode_exists(OP_FS_WRITE_SHORT), 1);
+        call assertEquals("opcode_exists OP_FS_SEEK", opcode_exists(OP_FS_SEEK), 1);
+        call assertEquals("opcode_exists OP_FS_READ_SHORT", opcode_exists(OP_FS_READ_SHORT), 1);
+        call assertEquals("opcode_exists OP_HERO_SELECT_WIN", opcode_exists(OP_HERO_SELECT_WIN), 1);
+        call assertEquals("opcode_exists OP_SET_HERO_RACE", opcode_exists(OP_SET_HERO_RACE), 1);
+        call assertEquals("opcode_exists OP_SET_HERO_STYLE", opcode_exists(OP_SET_HERO_STYLE), 1);
         // Probably will never be implemented on fallout2-ce
         call assertEquals("opcode_exists OP_WRITE_INT", opcode_exists(OP_WRITE_INT), 0);
         call assertEquals("opcode_exists 0xFFFF", opcode_exists(0xFFFF), 0);

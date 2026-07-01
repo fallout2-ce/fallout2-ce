@@ -6,6 +6,7 @@
 namespace fallout {
 
 #define CONTENT_CONFIG_START_SECTION "start"
+#define CONTENT_CONFIG_APPEARANCE_SECTION "appearance"
 #define CONTENT_CONFIG_KARMA_SECTION "karma"
 #define CONTENT_CONFIG_ITEMS_SECTION "items"
 #define CONTENT_CONFIG_DIALOG_SECTION "dialog"

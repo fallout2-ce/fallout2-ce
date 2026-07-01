@@ -51,7 +51,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Graphics | graphics_funcs_available<br>force_graphics_refresh<br>get_screen_width<br>get_screen_height<br>set_palette | implemented: only get_screen_width, get_screen_height | - |
 | Shaders | load_shader<br>free_shader<br>activate_shader<br>deactivate_shader<br>set/get_shader_* | 🚫 | likely will not implement direct compatibility
 | Perks and traits | set_perk_image<br>set_perk_*<br>set_pyromaniac_mod<br>apply_heaveho_fix<br>set_swiftlearner_mod<br>has/set_fake_perk<br>has/set_fake_trait<br>set_selectable_perk<br>set_perkbox_title<br>show/hide_real_perks<br>perk_add_mode<br>clear_selectable_perks<br>add/remove_trait<br>seq_perk_freq | not implemented | - |
-| Virtual file system | fs_create<br>fs_copy<br>fs_find<br>fs_read/write_*<br>fs_delete<br>fs_size<br>fs_pos<br>fs_seek<br>fs_resize | 🚫 | Open an issue if you have a use case for these |
+| Virtual file system | fs_create<br>fs_copy<br>fs_find<br>fs_read/write_*<br>fs_delete<br>fs_size<br>fs_pos<br>fs_seek<br>fs_resize | implemented: fs_copy, fs_write_short, fs_read_short, fs_seek | `fs_copy` creates an in-memory override backed by CE's normal file lookup. `fs_write_short` writes a big-endian 16-bit value into that virtual file. Direct disk writes and the remaining file opcodes are not implemented. |
 | Combat / Knockback | set_weapon_knockback<br>set_target_knockback<br>set_attacker_knockback<br>remove_weapon_knockback<br>remove_target_knockback<br>remove_attacker_knockback | not implemented | - |
 | Maps and encounters | in_world_map<br>force_encounter<br>force_encounter_with_flags<br>set_map_time_multi<br>get/set_map_enter_position<br>exec_map_update_scripts<br>get/set_terrain_name<br>set_town_title<br>get/set_can_rest_on_map<br>set_rest_heal_time<br>set_rest_mode<br>set_worldmap_heal_time | implemented: in_world_map, force_encounter, force_encounter_with_flags, set_map_time_multi | - |
 | Maps and encounters / Worldmap | get_world_map_x/y_pos<br>set_world_map_pos | ✅ | - |
@@ -63,7 +63,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Lists | list_begin<br>list_next<br>list_end<br>list_as_array<br>party_member_list | ✅ | - |
 | Explosions | set_attack_explosion_pattern<br>set_attack_explosion_art<br>set_attack_explosion_radius<br>set_attack_is_explosion_fire<br>set_explosion_radius<br>set_dynamite_damage<br>set_plastic_damage<br>get_explosion_damage<br>set_explosion_max_targets<br>item_make_explosive | ✅ except item_make_explosive | - |
 | Animations | reg_anim_combat_check<br>reg_anim_destroy<br>reg_anim_animate_and_hide<br>reg_anim_light<br>reg_anim_change_fid<br>reg_anim_take_out<br>reg_anim_turn_towards<br>reg_anim_callback<br>reg_anim_animate_and_move | ✅ except reg_anim_callback | - |
-| Art and appearance | art_exists<br>refresh_pc_art<br>art_cache_clear<br>set_hero_race<br>set_hero_style | implemented: art_exists, refresh_pc_art, art_cache_clear | - |
+| Art and appearance | art_exists<br>refresh_pc_art<br>art_cache_clear<br>set_hero_race<br>set_hero_style | implemented: art_exists, refresh_pc_art, art_cache_clear, set_hero_race, set_hero_style | `[appearance] hero_appearance` enables the Hero Appearance loader/art-list foundation and migrates from sfall `EnableHeroAppearanceMod`. `set_hero_race` and `set_hero_style` update race/style globals, refresh mounted appearance packages, and reapply selected PC art. |
 | Tiles and paths | get_tile_fid<br>tile_under_cursor<br>tile_light<br>tile_get_objs<br>tile_refresh_display<br>obj_blocking_tile<br>tile_by_position<br>get_tile_ground_fid<br>get_tile_roof_fid<br>obj_blocking_line<br>path_find_to<br>objects_in_radius | ✅ | - |
 | Utility | sprintf<br>typeof<br>atoi<br>atof | ✅ | - |
 | Utility / Strings | string_split<br>substr<br>strlen<br>charcode<br>get_string_pointer<br>string_find<br>string_find_from<br>string_format<br>string_format_array<br>string_replace<br>string_to_case<br>string_compare | ✅ | `get_string_pointer` is deprecated and intentionally omitted. |
@@ -86,7 +86,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Other / Game management | set_movie_path<br>stop/resume_game<br>mark_movie_played<br>game_loaded<br>get_game_mode<br>get_uptime<br>signal_close_game | implemented: game_loaded, get_game_mode, get_uptime, signal_close_game | - |
 | Gameplay tweaks | set_pickpocket_max<br>set_hit_chance_max<br>set_xp_mod<br>set_critter_hit_chance_mod<br>set_base_hit_chance_mod<br>set_hp_per_level_mod<br>gdialog_get_barter_mod<br>get/set_unspent_ap_bonus<br>get/set_unspent_ap_perk_bonus<br>set_base_pickpocket_mod<br>set_critter_pickpocket_mod<br>get/set_inven_ap_cost<br>set_drugs_data<br>get_kill_counter<br>mod_kill_counter<br>set_pipboy_available | implemented: gdialog_get_barter_mod, get/set_unspent_ap{_perk}_bonus, get/set_inven_ap_cost | - |
 | NPCs | inc_npc_level<br>get_npc_level<br>npc_engine_level_up | not implemented | - |
-| Hero Appearange | set_dm/df_model<br>hero_select_win | not implemented | - |
+| Hero Appearance | set_dm/df_model<br>hero_select_win | implemented: set_dm_model, set_df_model, hero_select_win | Model opcodes update the default male/female dude model slots used by `refresh_pc_art`. `hero_select_win` opens a native race/style selector when `[appearance] hero_appearance` is enabled; it commits on Done/Enter, cancels on Esc, checks available `appearance\h{m|f}r##s##` packages, and previews highlighted critter art. The sfall character-screen tab integration is not cloned. |
 | Events | add_g_timer_event<br>remove_timer_event<br>create_spatial<br>spatial_radius | not implemented | - |
 | Other | get_year<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>get_light_level<br>message_str_game<br>sneak_success<br>unwield_slot<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br> | ✅ except get/set_viewport_x/y, sneak_success  | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. |
 
@@ -116,7 +116,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | WithinPerception | `HOOK_WITHINPERCEPTION` | ✅ | - |
 | InventoryMove | `HOOK_INVENTORYMOVE` | ✅ | - |
 | InvenWield | `HOOK_INVENWIELD` | ✅ | - |
-| AdjustFID | `HOOK_ADJUSTFID` | ✅ | Second hook arg currently matches the first because CE has no internal FID modifiers like Hero Appearance. |
+| AdjustFID | `HOOK_ADJUSTFID` | ✅ | Hero Appearance FID offsetting is handled in the player art refresh/save paths; hook behavior is otherwise unchanged. |
 | CombatTurn | `HOOK_COMBATTURN` | ✅ | - |
 | StdProcedure | `HOOK_STDPROCEDURE` | ✅ | - |
 | StdProcedureEnd | `HOOK_STDPROCEDURE_END` | ✅ | - |

@@ -13,6 +13,7 @@
 
 #include "debug.h"
 #include "file_find.h"
+#include "sfall_file_system.h"
 
 namespace fallout {
 
@@ -50,6 +51,10 @@ int xfileClose(XFile* stream)
     int rc;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        sfallFileStreamClose(stream->sfallVirtualFile);
+        rc = 0;
+        break;
     case XFILE_TYPE_DFILE:
         rc = dfileClose(stream->dfile);
         break;
@@ -80,6 +85,12 @@ XFile* xfileOpen(const char* filePath, const char* mode)
     }
 
     memset(stream, 0, sizeof(*stream));
+
+    stream->sfallVirtualFile = sfallFileStreamOpen(filePath, mode);
+    if (stream->sfallVirtualFile != nullptr) {
+        stream->type = XFILE_TYPE_SFALL_VIRTUAL_FILE;
+        return stream;
+    }
 
     // NOTE: Compiled code uses different lengths.
     char drive[COMPAT_MAX_DRIVE];
@@ -185,6 +196,9 @@ int xfilePrintFormattedArgs(XFile* stream, const char* format, va_list args)
     int rc;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        rc = -1;
+        break;
     case XFILE_TYPE_DFILE:
         rc = dfilePrintFormattedArgs(stream->dfile, format, args);
         break;
@@ -207,6 +221,9 @@ int xfileReadChar(XFile* stream)
     int ch;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        ch = sfallFileStreamReadChar(stream->sfallVirtualFile);
+        break;
     case XFILE_TYPE_DFILE:
         ch = dfileReadChar(stream->dfile);
         break;
@@ -231,6 +248,9 @@ char* xfileReadString(char* string, int size, XFile* stream)
     char* result;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        result = sfallFileStreamReadString(string, size, stream->sfallVirtualFile);
+        break;
     case XFILE_TYPE_DFILE:
         result = dfileReadString(string, size, stream->dfile);
         break;
@@ -253,6 +273,9 @@ int xfileWriteChar(int ch, XFile* stream)
     int rc;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        rc = EOF;
+        break;
     case XFILE_TYPE_DFILE:
         rc = dfileWriteChar(ch, stream->dfile);
         break;
@@ -276,6 +299,9 @@ int xfileWriteString(const char* string, XFile* stream)
     int rc;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        rc = EOF;
+        break;
     case XFILE_TYPE_DFILE:
         rc = dfileWriteString(string, stream->dfile);
         break;
@@ -299,6 +325,9 @@ size_t xfileRead(void* ptr, size_t size, size_t count, XFile* stream)
     size_t elementsRead;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        elementsRead = sfallFileStreamRead(ptr, size, count, stream->sfallVirtualFile);
+        break;
     case XFILE_TYPE_DFILE:
         elementsRead = dfileRead(ptr, size, count, stream->dfile);
         break;
@@ -327,6 +356,9 @@ size_t xfileWrite(const void* ptr, size_t size, size_t count, XFile* stream)
     size_t elementsWritten;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        elementsWritten = 0;
+        break;
     case XFILE_TYPE_DFILE:
         elementsWritten = dfileWrite(ptr, size, count, stream->dfile);
         break;
@@ -354,6 +386,9 @@ int xfileSeek(XFile* stream, long offset, int origin)
     int result;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        result = sfallFileStreamSeek(stream->sfallVirtualFile, offset, origin);
+        break;
     case XFILE_TYPE_DFILE:
         result = dfileSeek(stream->dfile, offset, origin);
         break;
@@ -376,6 +411,9 @@ long xfileTell(XFile* stream)
     long pos;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        pos = sfallFileStreamTell(stream->sfallVirtualFile);
+        break;
     case XFILE_TYPE_DFILE:
         pos = dfileTell(stream->dfile);
         break;
@@ -396,6 +434,9 @@ void xfileRewind(XFile* stream)
     assert(stream); // "stream", "xfile.c", 608
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        sfallFileStreamRewind(stream->sfallVirtualFile);
+        break;
     case XFILE_TYPE_DFILE:
         dfileRewind(stream->dfile);
         break;
@@ -416,6 +457,9 @@ int xfileEof(XFile* stream)
     int rc;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        rc = sfallFileStreamEof(stream->sfallVirtualFile);
+        break;
     case XFILE_TYPE_DFILE:
         rc = dfileEof(stream->dfile);
         break;
@@ -438,6 +482,9 @@ long xfileGetSize(XFile* stream)
     long fileSize;
 
     switch (stream->type) {
+    case XFILE_TYPE_SFALL_VIRTUAL_FILE:
+        fileSize = sfallFileStreamGetSize(stream->sfallVirtualFile);
+        break;
     case XFILE_TYPE_DFILE:
         fileSize = dfileGetSize(stream->dfile);
         break;
@@ -563,6 +610,42 @@ bool xbaseOpen(const char* path)
     free(xbase->path);
     free(xbase);
     return false; // return false to trigger messages on game load
+}
+
+bool xbaseClose(const char* path)
+{
+    if (path == nullptr || path[0] == '\0') {
+        return false;
+    }
+
+    XBase* curr = gXbaseHead;
+    XBase* prev = nullptr;
+    while (curr != nullptr) {
+        if (compat_stricmp(path, curr->path) == 0) {
+            break;
+        }
+
+        prev = curr;
+        curr = curr->next;
+    }
+
+    if (curr == nullptr) {
+        return false;
+    }
+
+    if (prev != nullptr) {
+        prev->next = curr->next;
+    } else {
+        gXbaseHead = curr->next;
+    }
+
+    if (curr->isDbase) {
+        dbaseClose(curr->dbase);
+    }
+
+    free(curr->path);
+    free(curr);
+    return true;
 }
 
 bool xbaseIsValidDirectory(const char* path)

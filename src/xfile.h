@@ -14,7 +14,10 @@ typedef enum XFileType {
     XFILE_TYPE_FILE,
     XFILE_TYPE_DFILE,
     XFILE_TYPE_GZFILE,
+    XFILE_TYPE_SFALL_VIRTUAL_FILE,
 } XFileType;
+
+struct SfallVirtualFileStream;
 
 // A universal database of files.
 typedef struct XBase {
@@ -40,6 +43,7 @@ typedef struct XFile {
         FILE* file;
         DFile* dfile;
         gzFile gzfile;
+        SfallVirtualFileStream* sfallVirtualFile;
     };
 } XFile;
 
@@ -65,6 +69,7 @@ int xfileEof(XFile* stream);
 long xfileGetSize(XFile* stream);
 bool xbaseReopenAll(char* paths);
 bool xbaseOpen(const char* path);
+bool xbaseClose(const char* path);
 
 // Returns true if path is currently mounted as a directory-based VFS xbase
 // (comparison ignores case and a trailing path separator).
