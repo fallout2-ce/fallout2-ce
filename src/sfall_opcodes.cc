@@ -14,6 +14,7 @@
 #include "debug.h"
 #include "game.h"
 #include "game_dialog.h"
+#include "hero_appearance.h"
 #include "input.h"
 #include "interface.h"
 #include "interpreter.h"
@@ -923,37 +924,69 @@ static void op_get_light_level(Program* program)
     programStackPushInteger(program, lightGetAmbientIntensity());
 }
 
-// note: might need to be updated when Hero Appearance is implemented
-static void op_refresh_pc_art(Program* program)
+static void op_set_dude_model(Program* program, int gender, const char* opcodeName)
 {
-    if (gDude == nullptr) {
+    const char* model = programStackPopString(program);
+    if (model == nullptr) {
+        programPrintError("%s: model name is missing", opcodeName);
         return;
     }
 
-    Rect rect;
-    objectGetRect(gDude, &rect);
+    if (strlen(model) > 64) {
+        programPrintError("%s: model name exceeds 64 characters", opcodeName);
+        return;
+    }
 
-    int anim = FID_ANIM_TYPE(gDude->fid);
-    int rotation = FID_ROTATION(gDude->fid);
+    if (!heroAppearanceSetDudeModel(gender, model)) {
+        programPrintError("%s: critter art model '%s' was not found", opcodeName, model);
+    }
+}
 
-    _proto_dude_update_gender();
+static void op_set_dm_model(Program* program)
+{
+    op_set_dude_model(program, GENDER_MALE, "set_dm_model");
+}
 
-    int fid = inventoryComputeCritterFid(gDude,
-        gDude->pid,
-        critterGetItem2(gDude),
-        critterGetItem1(gDude),
-        critterGetArmor(gDude),
-        interfaceGetCurrentHand(),
-        anim,
-        rotation);
+static void op_set_df_model(Program* program)
+{
+    op_set_dude_model(program, GENDER_FEMALE, "set_df_model");
+}
 
-    // CE: When changing gender, the refreshed rect can be smaller than the original one,
-    // which can leave a momentary ghost.  We union with old rect to avoid that.
-    Rect newRect;
-    objectSetFid(gDude, fid, nullptr);
-    objectGetRect(gDude, &newRect);
-    rectUnion(&rect, &newRect, &rect);
-    tileWindowRefreshRect(&rect, gDude->elevation);
+static void op_refresh_pc_art(Program* program)
+{
+    (void)program;
+
+    heroAppearanceRefreshDudeArt();
+}
+
+static void op_hero_select_win(Program* program)
+{
+    int raceStyleFlag = programStackPopInteger(program);
+    if (!heroAppearanceSelectWindow(raceStyleFlag)) {
+        programPrintError("hero_select_win: Hero Appearance is disabled or no selectable appearances are available");
+    }
+}
+
+static void op_set_hero_race(Program* program)
+{
+    int race = programStackPopInteger(program);
+    if (!heroAppearanceSetRace(race)) {
+        programPrintError("set_hero_race: invalid race %d or Hero Appearance is disabled", race);
+        return;
+    }
+
+    op_refresh_pc_art(program);
+}
+
+static void op_set_hero_style(Program* program)
+{
+    int style = programStackPopInteger(program);
+    if (!heroAppearanceSetStyle(style)) {
+        programPrintError("set_hero_style: invalid style %d or Hero Appearance is disabled", style);
+        return;
+    }
+
+    op_refresh_pc_art(program);
 }
 
 // create_message_window
@@ -1925,7 +1958,9 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8174, op_get_world_map_y_pos);
 
     // 0x8175 - void set_dm_model(string name)
+    interpreterRegisterOpcode(0x8175, op_set_dm_model);
     // 0x8176 - void set_df_model(string name)
+    interpreterRegisterOpcode(0x8176, op_set_df_model);
     // 0x8177 - void set_movie_path(string filename, int movieid)
 
     // 0x8178 - void set_perk_image(int perkID, int value)
@@ -2187,8 +2222,11 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8212, op_get_version_patch);
 
     // 0x8213 - void hero_select_win(int)
-    // 0x8214 - void set_hero_race(int style)
+    interpreterRegisterOpcode(0x8213, op_hero_select_win);
+    // 0x8214 - void set_hero_race(int race)
+    interpreterRegisterOpcode(0x8214, op_set_hero_race);
     // 0x8215 - void set_hero_style(int style)
+    interpreterRegisterOpcode(0x8215, op_set_hero_style);
 
     // 0x8216 - void set_critter_burst_disable(object critter, int disable)
     interpreterRegisterOpcode(0x8216, op_set_critter_burst_disable);

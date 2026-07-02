@@ -180,6 +180,8 @@ namespace {
         { kSfallMisc, "FemaleStartModel", CONTENT_CONFIG_START_SECTION, "model_female", "hfprim" },
         { kSfallMisc, "FemaleDefaultModel", CONTENT_CONFIG_START_SECTION, "model_female_default", "hfjmps" },
         { kSfallMisc, "PipBoyAvailableAtGameStart", CONTENT_CONFIG_START_SECTION, "pipboy", "0" },
+        // [appearance]
+        { kSfallMisc, "EnableHeroAppearanceMod", CONTENT_CONFIG_APPEARANCE_SECTION, "hero_appearance", "0" },
         // [karma]
         { kSfallMisc, "KarmaFRMs", CONTENT_CONFIG_KARMA_SECTION, "frms" },
         { kSfallMisc, "KarmaPoints", CONTENT_CONFIG_KARMA_SECTION, "points" },

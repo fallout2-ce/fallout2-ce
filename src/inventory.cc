@@ -24,6 +24,7 @@
 #include "game_dialog.h"
 #include "game_mouse.h"
 #include "game_sound.h"
+#include "hero_appearance.h"
 #include "input.h"
 #include "interface.h"
 #include "interpreter_extra.h"
@@ -1110,7 +1111,12 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
         }
     }
 
-    return buildFid(OBJ_TYPE_CRITTER, inventoryFid, anim, animationCode, rotation);
+    int fid = buildFid(OBJ_TYPE_CRITTER, inventoryFid, anim, animationCode, rotation);
+    if (critter == gDude) {
+        fid = heroAppearanceResolvePlayerFid(fid);
+    }
+
+    return fid;
 }
 
 // inventory_msg_init

@@ -20,6 +20,7 @@
 #include "game_movie.h"
 #include "game_sound.h"
 #include "geometry.h"
+#include "input.h"
 #include "interface.h"
 #include "item.h"
 #include "light.h"
@@ -100,6 +101,8 @@ typedef enum Metarule3 {
     METARULE3_CAR_OUT_OF_FUEL = 110,
     // probably returns city index
     METARULE3_MAP_GET_LOAD_AREA = 111,
+    // sfall extension: clear queued keyboard input before opening modal script UI.
+    METARULE3_CLEAR_KEYBOARD_BUFFER = 201,
 } Metarule3;
 
 typedef enum CritterTrait {
@@ -2060,6 +2063,9 @@ static void opMetarule3(Program* program)
         break;
     case METARULE3_MAP_GET_LOAD_AREA:
         result.integerValue = mapGetLoadedAreaId();
+        break;
+    case METARULE3_CLEAR_KEYBOARD_BUFFER:
+        inputEventQueueReset();
         break;
     }
 

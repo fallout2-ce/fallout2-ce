@@ -13,6 +13,7 @@
 #include "debug.h"
 #include "draw.h"
 #include "game.h"
+#include "hero_appearance.h"
 #include "memory.h"
 #include "proto.h"
 #include "settings.h"
@@ -46,6 +47,8 @@ static int artReadFrameData(unsigned char* data, File* stream, int count, int* p
 static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
+static bool artMaybeExtendCritterListForHeroAppearance();
+static int artNormalizeHeroAppearanceCritterIndex(int index);
 
 // 0x5002D8 str2
 static char gDefaultJumpsuitMaleFileName[] = "hmjmps";
@@ -134,6 +137,8 @@ static int* _anon_alias;
 // artCritterFidShouldRunData
 // 0x56CAF0 artCritterFidShouldRunData
 static int* gArtCritterFidShoudRunData;
+static int gHeroAppearanceCritterArtOffset = 0;
+static constexpr int kMaxCritterArtEntries = 0x1000;
 
 static std::unordered_map<std::string, std::shared_ptr<NamedCacheEntry>> gNamedArtCache;
 constexpr int kNamedCacheMaxBytes = 32 * 1024 * 1024; // 32MB soft limit
@@ -154,6 +159,9 @@ int artInit()
         return -1;
     }
 
+    gHeroAppearanceCritterArtOffset = 0;
+    heroAppearanceInit();
+
     const char* language = settings.system.language.c_str();
     if (compat_stricmp(language, ENGLISH) != 0) {
         strcpy(gArtLanguage, language);
@@ -170,6 +178,12 @@ int artInit()
             cacheFree(&gArtCache);
             return -1;
         }
+    }
+
+    if (!artMaybeExtendCritterListForHeroAppearance()) {
+        debugPrint("Hero Appearance critter art list extension failed in art_init\n");
+        cacheFree(&gArtCache);
+        return -1;
     }
 
     _anon_alias = (int*)internal_malloc(sizeof(*_anon_alias) * gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength);
@@ -189,6 +203,7 @@ int artInit()
     }
 
     for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
+        _anon_alias[critterIndex] = -1;
         gArtCritterFidShoudRunData[critterIndex] = 0;
     }
 
@@ -232,7 +247,11 @@ int artInit()
         critterFileNames += 13;
     }
 
-    for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
+    int critterBaseFileNamesLength = gHeroAppearanceCritterArtOffset != 0
+        ? gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength - gHeroAppearanceCritterArtOffset
+        : gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength;
+
+    for (int critterIndex = 0; critterIndex < critterBaseFileNamesLength; critterIndex++) {
         if (!fileReadString(string, sizeof(string), stream)) {
             break;
         }
@@ -250,6 +269,13 @@ int artInit()
         } else {
             _anon_alias[critterIndex] = _art_vault_guy_num;
             gArtCritterFidShoudRunData[critterIndex] = 1;
+        }
+    }
+
+    if (gHeroAppearanceCritterArtOffset != 0) {
+        for (int critterIndex = 0; critterIndex < critterBaseFileNamesLength; critterIndex++) {
+            _anon_alias[critterIndex + gHeroAppearanceCritterArtOffset] = _anon_alias[critterIndex] + gHeroAppearanceCritterArtOffset;
+            gArtCritterFidShoudRunData[critterIndex + gHeroAppearanceCritterArtOffset] = gArtCritterFidShoudRunData[critterIndex];
         }
     }
 
@@ -332,6 +358,7 @@ void artReset()
 void artExit()
 {
     cacheFree(&gArtCache);
+    heroAppearanceExit();
 
     internal_free(_anon_alias);
     internal_free(gArtCritterFidShoudRunData);
@@ -345,6 +372,62 @@ void artExit()
     }
 
     internal_free(gHeadDescriptions);
+}
+
+static bool artMaybeExtendCritterListForHeroAppearance()
+{
+    if (!heroAppearanceIsEnabled()) {
+        return true;
+    }
+
+    ArtListDescription* critterList = &(gArtListDescriptions[OBJ_TYPE_CRITTER]);
+    int baseLength = critterList->fileNamesLength;
+    if (baseLength <= 0) {
+        return true;
+    }
+
+    if (baseLength > kMaxCritterArtEntries / 2) {
+        debugPrint("Hero Appearance disabled: critter art list has %d entries, which exceeds the 12-bit FID limit.\n", baseLength);
+        return false;
+    }
+
+    int offset = kMaxCritterArtEntries - baseLength;
+    int extendedLength = offset + baseLength;
+
+    char* fileNames = (char*)internal_malloc(13 * extendedLength);
+    if (fileNames == nullptr) {
+        return false;
+    }
+
+    memset(fileNames, 0, 13 * extendedLength);
+    memcpy(fileNames, critterList->fileNames, 13 * baseLength);
+
+    for (int index = 0; index < baseLength; index++) {
+        char* src = critterList->fileNames + index * 13;
+        char* dest = fileNames + (index + offset) * 13;
+        dest[0] = '_';
+        strncpy(dest + 1, src, 11);
+        dest[12] = '\0';
+    }
+
+    internal_free(critterList->fileNames);
+    critterList->fileNames = fileNames;
+    critterList->fileNamesLength = extendedLength;
+    gHeroAppearanceCritterArtOffset = offset;
+
+    debugPrint("Hero Appearance critter art list shadow range starts at %d for %d base entries.\n", offset, baseLength);
+    return true;
+}
+
+static int artNormalizeHeroAppearanceCritterIndex(int index)
+{
+    if (gHeroAppearanceCritterArtOffset > 0
+        && index >= gHeroAppearanceCritterArtOffset
+        && index < gHeroAppearanceCritterArtOffset * 2) {
+        return index - gHeroAppearanceCritterArtOffset;
+    }
+
+    return index;
 }
 
 // 0x418F1C
@@ -460,6 +543,7 @@ int artListIndex(int objectType, const char* name)
 {
     if (objectType < 0 || objectType >= OBJ_TYPE_COUNT) return -1;
     if (gArtListDescriptions[objectType].fileNames == nullptr) return -1;
+    if (name == nullptr) return -1;
 
     char upperName[13] = { 0 };
     strncpy(upperName, name, 12);
@@ -488,6 +572,21 @@ int artListIndex(int objectType, const char* name)
     }
 
     return -1;
+}
+
+int artSetDudeDefaultModel(int gender, const char* name)
+{
+    if (gender < 0 || gender >= GENDER_COUNT || name == nullptr || *name == '\0') {
+        return -1;
+    }
+
+    int frmId = artListIndex(OBJ_TYPE_CRITTER, name);
+    if (frmId == -1) {
+        return -1;
+    }
+
+    _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][gender] = frmId;
+    return 0;
 }
 
 // 0x419160
@@ -575,7 +674,7 @@ int artCopyFileName(int objectType, int id, char* dest)
 
     ptr = &(gArtListDescriptions[objectType]);
 
-    if (id >= ptr->fileNamesLength) {
+    if (id < 0 || id >= ptr->fileNamesLength || ptr->fileNames[id * 13] == '\0') {
         return -1;
     }
 
@@ -682,6 +781,9 @@ char* artBuildFilePath(int fid)
     }
 
     int fileNameOffset = frmId * 13;
+    if (gArtListDescriptions[objectType].fileNames[fileNameOffset] == '\0') {
+        return nullptr;
+    }
 
     if (objectType == OBJ_TYPE_CRITTER) {
         char critterWeaponCode;
@@ -913,8 +1015,9 @@ bool artExists(int fid)
 
     char* filePath = artBuildFilePath(fid);
     if (filePath != nullptr) {
-        int fileSize;
-        if (dbGetFileSize(filePath, &fileSize) != -1) {
+        File* stream = fileOpen(filePath, "rb");
+        if (stream != nullptr) {
+            fileClose(stream);
             result = true;
         }
     }
@@ -931,8 +1034,9 @@ bool _art_fid_valid(int fid)
 
     char* filePath = artBuildFilePath(fid);
     if (filePath != nullptr) {
-        int fileSize;
-        if (dbGetFileSize(filePath, &fileSize) != -1) {
+        File* stream = fileOpen(filePath, "rb");
+        if (stream != nullptr) {
+            fileClose(stream);
             result = true;
         }
     }
@@ -940,9 +1044,81 @@ bool _art_fid_valid(int fid)
     return result;
 }
 
+int artResolveCritterFid(int fid)
+{
+    if (FID_TYPE(fid) != OBJ_TYPE_CRITTER) {
+        return fid;
+    }
+
+    if (artExists(fid)) {
+        return fid;
+    }
+
+    // Generic render-time fallback only: do not change object state, ownership,
+    // or saved FIDs when a requested critter FRM is missing.
+    int frmId = fid & 0xFFF;
+    int anim = FID_ANIM_TYPE(fid);
+    int weaponAnimationCode = FID_WEAPON_CODE(fid);
+    int rotation = FID_ROTATION(fid);
+
+    int fallbackFid;
+    if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
+        fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, anim, WEAPON_ANIMATION_NONE, rotation);
+        if (fallbackFid != fid && artExists(fallbackFid)) {
+            return fallbackFid;
+        }
+    }
+
+    if (anim != ANIM_STAND) {
+        fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_STAND, weaponAnimationCode, rotation);
+        if (fallbackFid != fid && artExists(fallbackFid)) {
+            return fallbackFid;
+        }
+    }
+
+    fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_STAND, WEAPON_ANIMATION_NONE, rotation);
+    if (fallbackFid != fid && artExists(fallbackFid)) {
+        return fallbackFid;
+    }
+
+    if (anim != ANIM_WALK) {
+        fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_WALK, weaponAnimationCode, rotation);
+        if (fallbackFid != fid && artExists(fallbackFid)) {
+            return fallbackFid;
+        }
+    }
+
+    fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_WALK, WEAPON_ANIMATION_NONE, rotation);
+    if (fallbackFid != fid && artExists(fallbackFid)) {
+        return fallbackFid;
+    }
+
+    if (anim != ANIM_RUNNING) {
+        fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_RUNNING, weaponAnimationCode, rotation);
+        if (fallbackFid != fid && artExists(fallbackFid)) {
+            return fallbackFid;
+        }
+    }
+
+    fallbackFid = buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_RUNNING, WEAPON_ANIMATION_NONE, rotation);
+    if (fallbackFid != fid && artExists(fallbackFid)) {
+        return fallbackFid;
+    }
+
+    return fid;
+}
+
 // 0x419998
 int _art_alias_num(int index)
 {
+    index = artNormalizeHeroAppearanceCritterIndex(index);
+    if (index < 0
+        || index >= gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength
+        || gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames[index * 13] == '\0'
+        || _anon_alias[index] < 0) {
+        return -1;
+    }
+
     return _anon_alias[index];
 }
 
@@ -950,7 +1126,12 @@ int _art_alias_num(int index)
 int artCritterFidShouldRun(int fid)
 {
     if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
-        return gArtCritterFidShoudRunData[fid & 0xFFF];
+        int frmId = fid & 0xFFF;
+        if (frmId >= 0
+            && frmId < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength
+            && gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames[frmId * 13] != '\0') {
+            return gArtCritterFidShoudRunData[frmId];
+        }
     }
 
     return 0;
@@ -962,6 +1143,14 @@ int artAliasFid(int fid)
     int type = FID_TYPE(fid);
     int anim = FID_ANIM_TYPE(fid);
     if (type == OBJ_TYPE_CRITTER) {
+        int frmId = fid & 0xFFF;
+        if (frmId < 0
+            || frmId >= gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength
+            || gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames[frmId * 13] == '\0'
+            || _anon_alias[frmId] < 0) {
+            return -1;
+        }
+
         if (anim == ANIM_ELECTRIFY
             || anim == ANIM_BURNED_TO_NOTHING
             || anim == ANIM_ELECTRIFIED_TO_NOTHING
@@ -973,11 +1162,16 @@ int artAliasFid(int fid)
             // NOTE: Original code is slightly different. It uses many mutually
             // mirrored bitwise operators. Probably result of some macros for
             // getting/setting individual bits on fid.
-            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | (_anon_alias[fid & 0xFFF] & 0xFFF);
+            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | (_anon_alias[frmId] & 0xFFF);
         }
     }
 
     return -1;
+}
+
+int artGetHeroAppearanceCritterArtOffset()
+{
+    return gHeroAppearanceCritterArtOffset;
 }
 
 static bool artGetLocalizedPath(const char* basePath, const char** outPath)

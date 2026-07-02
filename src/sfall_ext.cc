@@ -6,6 +6,7 @@
 
 #include "db.h"
 #include "debug.h"
+#include "hero_appearance.h"
 #include "platform_compat.h"
 #include "scripts.h"
 #include "sfall_arrays.h"
@@ -139,6 +140,9 @@ bool sfallLoadGameData(File* stream)
         debugPrint("LOADSAVE (SFALL): ** Error loading global vars **\n");
         return false;
     }
+
+    heroAppearanceRefresh();
+    heroAppearanceRefreshDudeArt();
 
     int32_t nextObjectId;
     if (fileReadInt32(stream, &nextObjectId) == -1) {

@@ -127,8 +127,6 @@ static struct SfallOpcodeInfo opcodeInfoArray[] = {
     { 0x163, "get_year" },
     { 0x16c, "key_pressed" },
     { 0x171, "force_encounter" },
-    { 0x175, "set_dm_model" },
-    { 0x176, "set_df_model" },
     { 0x177, "set_movie_path" },
     { 0x189, "set_perk_name" },
     { 0x18a, "set_perk_desc" },
@@ -175,6 +173,7 @@ static struct SfallOpcodeInfo opcodeInfoArray[] = {
     { 0x1f3, "remove_script" },
     { 0x1f4, "set_script" },
     { 0x1f5, "get_script" },
+    // Keep fs_* virtual-file opcodes listed until real handlers exist so opcode_exists reports them unavailable.
     { 0x1f7, "fs_create" },
     { 0x1f8, "fs_copy" },
     { 0x1f9, "fs_find" },

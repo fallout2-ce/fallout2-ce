@@ -151,6 +151,7 @@ struct QolSettings {
     bool auto_open_doors = false;
     bool party_trade_from_menu = true;
     bool party_loot_and_barter = false;
+    bool enable_hero_appearance_mod = false;
 };
 
 struct MapperSettings {

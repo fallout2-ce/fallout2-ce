@@ -229,6 +229,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(auto_open_doors);
     SETTING(party_trade_from_menu);
     SETTING(party_loot_and_barter);
+    SETTING(enable_hero_appearance_mod);
 #undef SECT
 
     if (isMapper) {

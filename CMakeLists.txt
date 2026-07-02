@@ -132,6 +132,8 @@ set(FALLOUT_ENGINE_SOURCES
     "src/graph_lib.h"
     "src/heap.cc"
     "src/heap.h"
+    "src/hero_appearance.cc"
+    "src/hero_appearance.h"
     "src/input.cc"
     "src/input.h"
     "src/interface.cc"

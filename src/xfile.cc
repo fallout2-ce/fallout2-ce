@@ -565,6 +565,42 @@ bool xbaseOpen(const char* path)
     return false; // return false to trigger messages on game load
 }
 
+bool xbaseClose(const char* path)
+{
+    if (path == nullptr || path[0] == '\0') {
+        return false;
+    }
+
+    XBase* curr = gXbaseHead;
+    XBase* prev = nullptr;
+    while (curr != nullptr) {
+        if (compat_stricmp(path, curr->path) == 0) {
+            break;
+        }
+
+        prev = curr;
+        curr = curr->next;
+    }
+
+    if (curr == nullptr) {
+        return false;
+    }
+
+    if (prev != nullptr) {
+        prev->next = curr->next;
+    } else {
+        gXbaseHead = curr->next;
+    }
+
+    if (curr->isDbase) {
+        dbaseClose(curr->dbase);
+    }
+
+    free(curr->path);
+    free(curr);
+    return true;
+}
+
 bool xbaseIsValidDirectory(const char* path)
 {
     if (path == nullptr || path[0] == '\0') {

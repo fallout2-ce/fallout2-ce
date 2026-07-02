@@ -15,6 +15,7 @@
 #include "draw.h"
 #include "game.h"
 #include "game_mouse.h"
+#include "hero_appearance.h"
 #include "item.h"
 #include "light.h"
 #include "map.h"
@@ -60,6 +61,7 @@ static void objectDrawOutline(Object* object, Rect* rect);
 static void _obj_render_object(Object* object, Rect* rect, int light);
 static int _obj_preload_sort(const void* a1, const void* a2);
 static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData);
+static Art* objectLockFrameArt(Object* object, CacheEntry** cacheEntryPtr, int* framePtr);
 
 // 0x5195F8 objInitialized
 static bool gObjectsInitialized = false;
@@ -477,6 +479,34 @@ int objectRead(Object* obj, File* stream)
     }
 
     return 0;
+}
+
+static Art* objectLockFrameArt(Object* object, CacheEntry** cacheEntryPtr, int* framePtr)
+{
+    int fid = object->fid;
+    Art* art = artLock(fid, cacheEntryPtr);
+    if (art == nullptr) {
+        int fallbackFid = artResolveCritterFid(fid);
+        if (fallbackFid != fid) {
+            fid = fallbackFid;
+            art = artLock(fid, cacheEntryPtr);
+        }
+    }
+
+    if (art == nullptr) {
+        return nullptr;
+    }
+
+    int frame = object->frame;
+    if (frame < 0 || frame >= artGetFrameCount(art)) {
+        frame = 0;
+    }
+
+    if (framePtr != nullptr) {
+        *framePtr = frame;
+    }
+
+    return art;
 }
 
 // 0x488CE4 obj_load
@@ -1335,9 +1365,10 @@ int _obj_move(Object* a1, int a2, int a3, int elevation, Rect* a5)
     CacheEntry* cacheHandle;
     int width;
     int height;
-    Art* art = artLock(a1->fid, &cacheHandle);
+    int frame;
+    Art* art = objectLockFrameArt(a1, &cacheHandle, &frame);
     if (art != nullptr) {
-        artGetSize(art, a1->frame, a1->rotation, &width, &height);
+        artGetSize(art, frame, a1->rotation, &width, &height);
         a1->sx = a2 - width / 2;
         a1->sy = a3 - (height - 1);
         artUnlock(cacheHandle);
@@ -1565,7 +1596,7 @@ int objectSetFrame(Object* obj, int frame, Rect* rect)
         return -1;
     }
 
-    art = artLock(obj->fid, &cache_entry);
+    art = objectLockFrameArt(obj, &cache_entry, nullptr);
     if (art == nullptr) {
         return -1;
     }
@@ -1602,7 +1633,7 @@ int objectSetNextFrame(Object* obj, Rect* dirtyRect)
         return -1;
     }
 
-    art = artLock(obj->fid, &cache_entry);
+    art = objectLockFrameArt(obj, &cache_entry, nullptr);
     if (art == nullptr) {
         return -1;
     }
@@ -1646,7 +1677,7 @@ int objectSetPrevFrame(Object* obj, Rect* dirtyRect)
         return -1;
     }
 
-    art = artLock(obj->fid, &cache_entry);
+    art = objectLockFrameArt(obj, &cache_entry, nullptr);
     if (art == nullptr) {
         return -1;
     }
@@ -2341,7 +2372,8 @@ void objectGetRect(Object* obj, Rect* rect)
     }
 
     CacheEntry* artHandle;
-    Art* art = artLock(obj->fid, &artHandle);
+    int frame;
+    Art* art = objectLockFrameArt(obj, &artHandle, &frame);
     if (art == nullptr) {
         rect->left = 0;
         rect->top = 0;
@@ -2352,7 +2384,7 @@ void objectGetRect(Object* obj, Rect* rect)
 
     int width;
     int height;
-    artGetSize(art, obj->frame, obj->rotation, &width, &height);
+    artGetSize(art, frame, obj->rotation, &width, &height);
 
     if (obj->tile == -1) {
         rect->left = obj->sx;
@@ -2939,11 +2971,12 @@ int _obj_intersects_with(Object* object, int x, int y)
 
     if (object == gEgg || (object->flags & OBJECT_HIDDEN) == 0) {
         CacheEntry* handle;
-        Art* art = artLock(object->fid, &handle);
+        int frame;
+        Art* art = objectLockFrameArt(object, &handle, &frame);
         if (art != nullptr) {
             int width;
             int height;
-            artGetSize(art, object->frame, object->rotation, &width, &height);
+            artGetSize(art, frame, object->rotation, &width, &height);
 
             int minX;
             int minY;
@@ -2975,7 +3008,7 @@ int _obj_intersects_with(Object* object, int x, int y)
             }
 
             if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-                unsigned char* data = artGetFrameData(art, object->frame, object->rotation);
+                unsigned char* data = artGetFrameData(art, frame, object->rotation);
                 if (data != nullptr) {
                     if (data[width * (y - minY) + x - minX] != 0) {
                         flags |= 0x01;
@@ -3645,13 +3678,16 @@ static int _obj_load_obj(File* stream, Object** objectPtr, int elevation, Object
 int _obj_save_dude(File* stream)
 {
     int field_78 = gDude->sid;
+    int fid = gDude->fid;
 
     gDude->flags &= ~OBJECT_NO_SAVE;
     gDude->sid = -1;
+    gDude->fid = heroAppearanceRemoveCritterArtOffset(gDude->fid);
 
     int rc = _obj_save_obj(stream, gDude);
 
     gDude->sid = field_78;
+    gDude->fid = fid;
     gDude->flags |= OBJECT_NO_SAVE;
 
     if (fileWriteInt32(stream, gCenterTile) == -1) {
@@ -4669,14 +4705,15 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
 static void objectDrawOutline(Object* object, Rect* rect)
 {
     CacheEntry* cacheEntry;
-    Art* art = artLock(object->fid, &cacheEntry);
+    int frame;
+    Art* art = objectLockFrameArt(object, &cacheEntry, &frame);
     if (art == nullptr) {
         return;
     }
 
     int frameWidth = 0;
     int frameHeight = 0;
-    artGetSize(art, object->frame, object->rotation, &frameWidth, &frameHeight);
+    artGetSize(art, frame, object->rotation, &frameWidth, &frameHeight);
 
     Rect v49;
     v49.left = 0;
@@ -4685,7 +4722,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
 
     // FIXME: I'm not sure why it ignores frameHeight and makes separate call
     // to obtain height.
-    int v8 = artGetHeight(art, object->frame, object->rotation);
+    int v8 = artGetHeight(art, frame, object->rotation);
     v49.bottom = v8 - 1;
 
     Rect objectRect;
@@ -4732,7 +4769,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
         v49.right = v49.left + (objectRect.right - objectRect.left);
         v49.bottom = v49.top + (objectRect.bottom - objectRect.top);
 
-        unsigned char* src = artGetFrameData(art, object->frame, object->rotation);
+        unsigned char* src = artGetFrameData(art, frame, object->rotation);
 
         unsigned char* dest = gObjectsWindowBuffer + gObjectsWindowPitch * object->sy + object->sx;
         int destStep = gObjectsWindowPitch - frameWidth;
@@ -4926,13 +4963,14 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
     }
 
     CacheEntry* cacheEntry;
-    Art* art = artLock(object->fid, &cacheEntry);
+    int frame;
+    Art* art = objectLockFrameArt(object, &cacheEntry, &frame);
     if (art == nullptr) {
         return;
     }
 
-    int frameWidth = artGetWidth(art, object->frame, object->rotation);
-    int frameHeight = artGetHeight(art, object->frame, object->rotation);
+    int frameWidth = artGetWidth(art, frame, object->rotation);
+    int frameHeight = artGetHeight(art, frame, object->rotation);
 
     Rect objectRect;
     if (object->tile == -1) {
@@ -4967,7 +5005,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
         return;
     }
 
-    unsigned char* src = artGetFrameData(art, object->frame, object->rotation);
+    unsigned char* src = artGetFrameData(art, frame, object->rotation);
     unsigned char* src2 = src;
     int v50 = objectRect.left - object->sx;
     int v49 = objectRect.top - object->sy;

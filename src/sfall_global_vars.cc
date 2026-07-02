@@ -37,6 +37,11 @@ bool sfall_gl_vars_init()
     return true;
 }
 
+bool sfall_gl_vars_is_initialized()
+{
+    return sfall_gl_vars_state != nullptr;
+}
+
 void sfall_gl_vars_reset()
 {
     sfall_gl_vars_state->vars.clear();
