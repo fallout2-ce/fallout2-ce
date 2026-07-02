@@ -3495,6 +3495,7 @@ void _combat(CombatStartData* csd)
             gameUiEnable();
             gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
         } else {
+            // CE: start Goris animation before iface animations to reduce wait time
             for (int index = 0; index < _list_total; index++) {
                 Object* critter = _combat_list[index];
                 if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter) && !_isLoadingGame()) {

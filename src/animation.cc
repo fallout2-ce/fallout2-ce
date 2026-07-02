@@ -3346,13 +3346,6 @@ static unsigned int animationComputeTicksPerFrame(Object* object, int fid)
         }
     }
 
-    if (object != nullptr
-        && object->pid == PROTO_ID_GORIS
-        && FID_ANIM_TYPE(fid) == ANIM_UP_STAIRS_RIGHT) {
-        // Scale Goris (dis)robe animation by animation speed setting
-        fps = std::max(static_cast<int>(fps * settings.ui.anim_speed), 1);
-    }
-
     return std::max(1000 / fps, 1);
 }
 
