@@ -1039,6 +1039,14 @@ void _GNW95_process_message()
             case SDL_WINDOWEVENT_SIZE_CHANGED:
                 handleWindowSizeChanged();
                 break;
+            case SDL_WINDOWEVENT_RESTORED:
+                // Make sure the window is brought back to the foreground when
+                // it is un-minimized; some window managers leave it behind.
+                SDL_RaiseWindow(gSdlWindow);
+                gProgramIsActive = true;
+                windowRefreshAll(&_scr_size);
+                audioEngineResume();
+                break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
                 gProgramIsActive = true;
                 windowRefreshAll(&_scr_size);
