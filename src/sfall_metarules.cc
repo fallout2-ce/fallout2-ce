@@ -764,19 +764,15 @@ static void mf_interface_art_draw(OpcodeContext& ctx)
     if (ctx.numArgs() > 5) {
         int arrayId = ctx.arg(5).asInt();
         if (ArrayExists(arrayId)) {
-            ProgramValue directionValue = GetArray(arrayId, ProgramValue(0), ctx.program());
-            if (directionValue.isInt()) {
-                direction = directionValue.asInt();
+            direction = GetArray(arrayId, ProgramValue(0), ctx.program()).asInt();
+
+            int arrayLength = LenArray(arrayId);
+            if (arrayLength > 1) {
+                scaledWidth = GetArray(arrayId, ProgramValue(1), ctx.program()).asInt();
             }
 
-            ProgramValue widthValue = GetArray(arrayId, ProgramValue(1), ctx.program());
-            if (widthValue.isInt()) {
-                scaledWidth = widthValue.asInt();
-            }
-
-            ProgramValue heightValue = GetArray(arrayId, ProgramValue(2), ctx.program());
-            if (heightValue.isInt()) {
-                scaledHeight = heightValue.asInt();
+            if (arrayLength > 2) {
+                scaledHeight = GetArray(arrayId, ProgramValue(2), ctx.program()).asInt();
             }
         }
     }
@@ -1090,6 +1086,11 @@ void mf_win_fill_color(OpcodeContext& ctx)
     if (ctx.numArgs() == 0) {
         windowFill(window, 0, 0, windowWidth, windowHeight, 0);
         windowRefresh(window);
+        return;
+    }
+
+    if (ctx.numArgs() != 5) {
+        ctx.printError("%s() - invalid number of arguments (%d), must be 0 or 5.", ctx.name(), ctx.numArgs());
         return;
     }
 

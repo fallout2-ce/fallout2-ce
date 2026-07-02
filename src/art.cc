@@ -1226,6 +1226,10 @@ static Art* artAllocateSingleFrame(int width, int height, unsigned char** frameD
         return nullptr;
     }
 
+    if (pixelCount > static_cast<size_t>(INT_MAX) - sizeof(ArtFrame)) {
+        return nullptr;
+    }
+
     Art header = {};
     header.version = 4;
     header.framesPerSecond = 10;
@@ -1233,7 +1237,7 @@ static Art* artAllocateSingleFrame(int width, int height, unsigned char** frameD
     header.frameCount = 1;
     // FRM dataSize excludes in-memory alignment padding; artGetDataSize adds
     // the padding needed by artGetFrame's adjusted frame offsets.
-    header.dataSize = sizeof(ArtFrame) + static_cast<int>(pixelCount);
+    header.dataSize = static_cast<int>(sizeof(ArtFrame) + pixelCount);
 
     int currentPadding = paddingForSize(sizeof(Art));
     for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
