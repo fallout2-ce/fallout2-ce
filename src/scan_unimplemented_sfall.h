@@ -173,6 +173,7 @@ static struct SfallOpcodeInfo opcodeInfoArray[] = {
     { 0x1f3, "remove_script" },
     { 0x1f4, "set_script" },
     { 0x1f5, "get_script" },
+    // Keep fs_* virtual-file opcodes listed until real handlers exist so opcode_exists reports them unavailable.
     { 0x1f7, "fs_create" },
     { 0x1f8, "fs_copy" },
     { 0x1f9, "fs_find" },
@@ -197,7 +198,6 @@ static struct SfallOpcodeInfo opcodeInfoArray[] = {
     { 0x20d, "list_begin" },
     { 0x20e, "list_next" },
     { 0x20f, "list_end" },
-    { 0x213, "hero_select_win" },
     { 0x216, "set_critter_burst_disable" },
     { 0x217, "get_weapon_ammo_pid" },
     { 0x218, "set_weapon_ammo_pid" },

@@ -14,6 +14,7 @@ int heroAppearanceGetStyle();
 bool heroAppearanceSetRace(int race);
 bool heroAppearanceSetStyle(int style);
 bool heroAppearanceSetDudeModel(int gender, const char* model);
+bool heroAppearanceSelectWindow(int raceStyleFlag);
 bool heroAppearanceSelectWindowForCharacterCreation(int raceStyleFlag, bool* acceptedPtr);
 // CE-native Hero Appearance remap for player/dude art. Callers should gate this
 // to gDude so selected appearances do not affect arbitrary NPCs.

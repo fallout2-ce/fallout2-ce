@@ -73,9 +73,12 @@ namespace fallout {
 #define CANCEL_BTN_Y 454
 
 #define APPEARANCE_BTN_X 244
-#define APPEARANCE_BTN_Y 454
-#define APPEARANCE_LABEL_X 263
-#define APPEARANCE_LABEL_Y 454
+#define APPEARANCE_BTN_Y 457
+#define APPEARANCE_PLATE_X 236
+#define APPEARANCE_PLATE_Y 453
+#define APPEARANCE_PLATE_WIDTH 92
+#define APPEARANCE_LABEL_RIGHT_PADDING 8
+#define APPEARANCE_LABEL_Y 457
 #define APPEARANCE_BTN_CODE 571
 
 #define NAME_BTN_CODE 517
@@ -258,6 +261,7 @@ static void _PrintName(unsigned char* buf, int pitch);
 static int characterEditorEditAge();
 static void characterEditorEditGender();
 static void characterEditorShowHeroAppearancePicker();
+static void characterEditorDrawDonePlate(int x, int y, int width);
 static void characterEditorAdjustPrimaryStat(int eventCode);
 static int characterEditorShowOptions();
 static bool characterFileExists(const char* fname);
@@ -1430,7 +1434,10 @@ static int characterEditorWindowInit()
         fontDrawText(gCharacterEditorWindowBuffer + (454 * 640) + 363, str, 640, 640, _colorTable[18979]);
 
         if (heroAppearanceIsEnabled()) {
-            fontDrawText(gCharacterEditorWindowBuffer + (EDITOR_WINDOW_WIDTH * APPEARANCE_LABEL_Y) + APPEARANCE_LABEL_X, "APPEAR", EDITOR_WINDOW_WIDTH, EDITOR_WINDOW_WIDTH, _colorTable[18979]);
+            const char* appearanceLabel = "VISUAL";
+            const int appearanceLabelX = APPEARANCE_PLATE_X + APPEARANCE_PLATE_WIDTH - fontGetStringWidth(appearanceLabel) - APPEARANCE_LABEL_RIGHT_PADDING;
+            characterEditorDrawDonePlate(APPEARANCE_PLATE_X, APPEARANCE_PLATE_Y, APPEARANCE_PLATE_WIDTH);
+            fontDrawText(gCharacterEditorWindowBuffer + (EDITOR_WINDOW_WIDTH * APPEARANCE_LABEL_Y) + appearanceLabelX, appearanceLabel, EDITOR_WINDOW_WIDTH, EDITOR_WINDOW_WIDTH, _colorTable[18979]);
         }
 
         // OPTIONAL TRAITS
@@ -1871,6 +1878,55 @@ static int characterEditorWindowInit()
     indicatorBarHide();
 
     return 0;
+}
+
+static void characterEditorDrawDonePlate(int x, int y, int width)
+{
+    const int sourceWidth = _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getWidth();
+    const int sourceHeight = _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getHeight();
+    const unsigned char* source = _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getData();
+
+    if (width >= sourceWidth) {
+        blitBufferToBufferTrans(
+            source,
+            sourceWidth,
+            sourceHeight,
+            sourceWidth,
+            gCharacterEditorWindowBuffer + (EDITOR_WINDOW_WIDTH * y) + x,
+            EDITOR_WINDOW_WIDTH);
+        return;
+    }
+
+    const int capWidth = 12;
+    const int leftWidth = std::min(capWidth, width / 2);
+    const int rightWidth = std::min(capWidth, width - leftWidth);
+    const int middleWidth = width - leftWidth - rightWidth;
+
+    blitBufferToBufferTrans(
+        source,
+        leftWidth,
+        sourceHeight,
+        sourceWidth,
+        gCharacterEditorWindowBuffer + (EDITOR_WINDOW_WIDTH * y) + x,
+        EDITOR_WINDOW_WIDTH);
+
+    if (middleWidth > 0) {
+        blitBufferToBufferTrans(
+            source + leftWidth,
+            middleWidth,
+            sourceHeight,
+            sourceWidth,
+            gCharacterEditorWindowBuffer + (EDITOR_WINDOW_WIDTH * y) + x + leftWidth,
+            EDITOR_WINDOW_WIDTH);
+    }
+
+    blitBufferToBufferTrans(
+        source + sourceWidth - rightWidth,
+        rightWidth,
+        sourceHeight,
+        sourceWidth,
+        gCharacterEditorWindowBuffer + (EDITOR_WINDOW_WIDTH * y) + x + leftWidth + middleWidth,
+        EDITOR_WINDOW_WIDTH);
 }
 
 // 0x433AA8 CharEditEnd
