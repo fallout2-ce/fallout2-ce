@@ -307,8 +307,14 @@ size_t xfileRead(void* ptr, size_t size, size_t count, XFile* stream)
         // [fread] returns number of elements read, but [gzwrite] have no such
         // concept, it works with bytes, and returns number of bytes read.
         // Depending on the [size] and [count] parameters this function can
-        // return wrong result.
-        elementsRead = gzread(stream->gzfile, ptr, size * count);
+        // return wrong result.  We attempt to fix this roughly here.
+        // In practice unlikely to matter since GZFILE type isn't used.
+        if (size == 0 || count == 0) {
+            elementsRead = 0;
+        } else {
+            int bytesRead = gzread(stream->gzfile, ptr, size * count);
+            elementsRead = bytesRead > 0 ? static_cast<size_t>(bytesRead) / size : 0;
+        }
         break;
     default:
         elementsRead = fread(ptr, size, count, stream->file);

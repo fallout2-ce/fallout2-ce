@@ -316,9 +316,10 @@ int fileReadUInt16(File* stream, unsigned short* valuePtr)
 // 0x4C614C db_freadInt
 int fileReadInt32(File* stream, int* valuePtr)
 {
-    int value;
+    int value = 0;
 
-    if (xfileRead(&value, 4, 1, stream) == -1) {
+    // SFALL: return error on short read
+    if (xfileRead(&value, sizeof(value), 1, stream) != 1) {
         return -1;
     }
 
