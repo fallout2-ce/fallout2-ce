@@ -113,6 +113,19 @@ void registerSetting(const char* section, const char* key, T& variable, P postPr
             } });
 }
 
+static void registerBoolSettingWithFallback(const char* section, const char* key, const char* fallbackKey, bool& variable)
+{
+    settingsRegistry.push_back(
+        { [&, section, key, fallbackKey]() {
+             settingsRead(section, fallbackKey, variable);
+             settingsRead(section, key, variable);
+         },
+            [&, section, key, fallbackKey](bool onlyAdd) {
+                if (onlyAdd && (settingsKeyExists(section, key) || settingsKeyExists(section, fallbackKey))) return;
+                settingsWrite(section, key, variable);
+            } });
+}
+
 // SECT must be defined to the settings sub-struct name, which equals the config section string.
 #define XSTR(x) #x
 #define STR(x) XSTR(x)
@@ -156,6 +169,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING_P(iface_bar_width, clamp(640, 4320));
     SETTING_P(iface_bar_side_art, clamp(0, 999));
     SETTING(iface_bar_sides_ori);
+    registerBoolSettingWithFallback(STR(SECT), "ALTERNATE_AMMO_METRE", "alternate_ammo_meter", settings.ui.alternate_ammo_metre);
     SETTING_P(splash_screen_size, clamp(0, 2));
     SETTING(movie_aspect_fit);
     SETTING(edg_support);
