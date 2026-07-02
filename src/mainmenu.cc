@@ -472,9 +472,12 @@ static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOf
         buttonNormalData = mainMenuButtonNormalFrmImage.getData();
         buttonPressedData = mainMenuButtonPressedFrmImage.getData();
     } else {
-        mainMenuScaledButtonData.assign(buttonWidth * buttonHeight * 2, 0);
+        const auto scaledButtonPixels = static_cast<std::vector<unsigned char>::size_type>(buttonWidth)
+            * static_cast<std::vector<unsigned char>::size_type>(buttonHeight);
+
+        mainMenuScaledButtonData.assign(scaledButtonPixels * 2, 0);
         buttonNormalData = mainMenuScaledButtonData.data();
-        buttonPressedData = buttonNormalData + buttonWidth * buttonHeight;
+        buttonPressedData = buttonNormalData + scaledButtonPixels;
 
         blitBuffer2DScaledTrans(mainMenuButtonNormalFrmImage.getBuffer(), Buffer2D(buttonNormalData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
         blitBuffer2DScaledTrans(mainMenuButtonPressedFrmImage.getBuffer(), Buffer2D(buttonPressedData, buttonWidth, buttonHeight), 0, 0, buttonWidth, buttonHeight);
