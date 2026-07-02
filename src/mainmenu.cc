@@ -115,6 +115,7 @@ static int gMainMenuButtons[MAIN_MENU_BUTTON_COUNT];
 static bool gMainMenuWindowHidden;
 static int gMainMenuOverlayCount = 0;
 static bool gMainMenuOverlayBackgroundEnabled = false;
+static int gMainMenuFallbackSubscreenWindow = -1;
 
 static FrmImage mainMenuBackgroundFrmImage;
 static FrmImage mainMenuButtonPanelFrmImage;
@@ -122,6 +123,8 @@ static FrmImage mainMenuButtonNormalFrmImage;
 static FrmImage mainMenuButtonPressedFrmImage;
 static std::vector<unsigned char> mainMenuScaledButtonData;
 static std::vector<unsigned char> mainMenuOverlayDimmedBackup;
+static void mainMenuCreateFallbackSubscreenBackdrop();
+static void mainMenuDestroyFallbackSubscreenBackdrop();
 static void mainMenuSetButtonsEnabled(bool enabled);
 static void mainMenuApplyOverlayDim();
 static void mainMenuRemoveOverlayDim();
@@ -168,9 +171,11 @@ static void mainMenuDrawBackground(const MainMenuLayout& layout);
 static MainMenuOffsets mainMenuReadOffsets(const MainMenuLayout& layout);
 static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffsets& offsets);
 static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y);
+static MainMenuPoint mainMenuTransformLabelPoint(const MainMenuLayout& layout, int x, int y);
 static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int width, int height);
 static int mainMenuScaleX(const MainMenuLayout& layout, int value);
 static int mainMenuScaleY(const MainMenuLayout& layout, int value);
+static int mainMenuScaleControl(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value);
 static int mainMenuGetAnchoredRightX(const MainMenuLayout& layout, int rightMargin, int width);
 static bool mainMenuShouldEnableOverlayBackground(const MainMenuLayout& layout);
@@ -355,6 +360,20 @@ static MainMenuPoint mainMenuTransformPoint(const MainMenuLayout& layout, int x,
     };
 }
 
+static MainMenuPoint mainMenuTransformLabelPoint(const MainMenuLayout& layout, int x, int y)
+{
+    if (!layout.scaleControls) {
+        return mainMenuTransformPoint(layout, x, y);
+    }
+
+    return {
+        layout.backgroundX
+            + mainMenuScaleX(layout, MAIN_MENU_PANEL_OFFSET_X)
+            + mainMenuScaleControl(layout, x - MAIN_MENU_PANEL_OFFSET_X),
+        layout.backgroundY + mainMenuScaleY(layout, y),
+    };
+}
+
 static MainMenuSize mainMenuTransformSize(const MainMenuLayout& layout, int width, int height)
 {
     return {
@@ -371,6 +390,11 @@ static int mainMenuScaleX(const MainMenuLayout& layout, int value)
 static int mainMenuScaleY(const MainMenuLayout& layout, int value)
 {
     return static_cast<int>(lround(value * layout.scaleY));
+}
+
+static int mainMenuScaleControl(const MainMenuLayout& layout, int value)
+{
+    return static_cast<int>(lround(value * layout.scale));
 }
 
 static int mainMenuGetAnchoredY(const MainMenuLayout& layout, int value)
@@ -498,7 +522,7 @@ static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMen
         }
 
         int len = fontGetStringWidth(msg.text);
-        MainMenuPoint labelPosition = mainMenuTransformPoint(layout, MAIN_MENU_BUTTON_LABEL_X, MAIN_MENU_BUTTON_LABEL_Y + index * MAIN_MENU_BUTTON_Y_STEP);
+        MainMenuPoint labelPosition = mainMenuTransformLabelPoint(layout, MAIN_MENU_BUTTON_LABEL_X, MAIN_MENU_BUTTON_LABEL_Y + index * MAIN_MENU_BUTTON_Y_STEP);
         if (!layout.scaleControls) {
             fontDrawText(gMainMenuWindowBuffer + (labelPosition.y + offsets.menuY) * layout.screenWidth + labelPosition.x + offsets.menuX - (len / 2),
                 msg.text,
@@ -588,6 +612,7 @@ void mainMenuWindowFree()
 
     mainMenuScaledButtonData.clear();
     mainMenuOverlayDimmedBackup.clear();
+    mainMenuDestroyFallbackSubscreenBackdrop();
     mainMenuButtonPanelFrmImage.unlock();
     mainMenuButtonPressedFrmImage.unlock();
     mainMenuButtonNormalFrmImage.unlock();
@@ -603,6 +628,7 @@ void mainMenuWindowFree()
     gMainMenuWindowHidden = true;
     gMainMenuOverlayCount = 0;
     gMainMenuOverlayBackgroundEnabled = false;
+    gMainMenuFallbackSubscreenWindow = -1;
 }
 
 // 0x481A00 main_menu_hide
@@ -714,12 +740,15 @@ void mainMenuBeginSubscreen()
     }
 
     mainMenuWindowHide(true);
+    mainMenuCreateFallbackSubscreenBackdrop();
 }
 
 void mainMenuCancelSubscreen()
 {
     if (mainMenuWindowIsOverlayActive()) {
         mainMenuWindowLeaveOverlay();
+    } else {
+        mainMenuDestroyFallbackSubscreenBackdrop();
     }
 }
 
@@ -729,6 +758,7 @@ void mainMenuFinishSubscreen()
         mainMenuWindowHide(false);
     }
 
+    mainMenuDestroyFallbackSubscreenBackdrop();
     mainMenuWindowFree();
 }
 
@@ -879,6 +909,32 @@ static int main_menu_fatal_error()
 static void main_menu_play_sound(const char* fileName)
 {
     soundPlayFile(fileName);
+}
+
+static void mainMenuCreateFallbackSubscreenBackdrop()
+{
+    if (gMainMenuFallbackSubscreenWindow != -1) {
+        return;
+    }
+
+    gMainMenuFallbackSubscreenWindow = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MODAL);
+    if (gMainMenuFallbackSubscreenWindow == -1) {
+        debugPrint("MAIN MENU: failed to create fallback subscreen backdrop\n");
+        return;
+    }
+
+    windowRefresh(gMainMenuFallbackSubscreenWindow);
+    renderPresent();
+}
+
+static void mainMenuDestroyFallbackSubscreenBackdrop()
+{
+    if (gMainMenuFallbackSubscreenWindow == -1) {
+        return;
+    }
+
+    windowDestroy(gMainMenuFallbackSubscreenWindow);
+    gMainMenuFallbackSubscreenWindow = -1;
 }
 
 static void mainMenuSetButtonsEnabled(bool enabled)

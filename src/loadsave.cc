@@ -1104,14 +1104,16 @@ int lsgLoadGame(int mode)
         windowRefresh(gLoadSaveWindow);
         renderPresent();
         if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
-            colorPaletteLoad("color.pal");
-            paletteFadeTo(_cmap);
+            mainMenuShowSubscreen(true);
         }
         soundPlayFile("iisxxxx1");
         strcpy(_str0, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 106));
         strcpy(_str1, getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, 107));
         snprintf(_str2, sizeof(_str2), "\"%s\\\"", "SAVEGAME");
         showDialogBox(_str0, body, 2, 169, 116, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
+        if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
+            mainMenuRestoreAfterSubscreen(true);
+        }
         lsgWindowFree(windowType);
         return -1;
     }
