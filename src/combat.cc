@@ -109,7 +109,7 @@ static void combatAttemptEnd();
 static int _combat_input();
 static void _combat_set_move_all();
 static int combatTurnHooked(Object* obj, bool reloadedDuringCombat);
-static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFid);
+static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFrmId);
 static void waitForGorisAnimation(Object* critter);
 static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
@@ -3362,12 +3362,12 @@ static int combatTurnHooked(Object* obj, bool reloadedDuringCombat)
     return combatTurnHookResult;
 }
 
-static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFid)
+static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFrmId)
 {
     reg_anim_clear(critter);
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
     animationRegisterAnimate(critter, ANIM_UP_STAIRS_RIGHT, -1);
-    animationRegisterSetFid(critter, critterBuildGorisFid(critter, baseFid), -1);
+    animationRegisterSetFid(critter, critterBuildGorisFid(critter, baseFrmId), -1);
     reg_anim_end();
 }
 
