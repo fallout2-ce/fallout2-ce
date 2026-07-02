@@ -111,6 +111,14 @@ constexpr int kCustomIndicatorMaxCount = kCustomIndicatorMaxTag - kCustomIndicat
 constexpr int kCustomIndicatorDefaultCount = 5;
 constexpr int kCustomIndicatorTextLength = 19;
 constexpr int kCustomIndicatorTextBufferSize = kCustomIndicatorTextLength + 1;
+constexpr int kAmmoBarLeft = 463;
+constexpr int kAmmoBarTop = 26;
+constexpr int kAmmoBarMaxRatio = 70;
+constexpr int kAmmoAlternateMetreWidth = 5;
+constexpr unsigned char kAmmoAlternateMetreBorderColor = 0;
+constexpr unsigned char kAmmoAlternateMetreEmptyColor = 14;
+constexpr unsigned char kAmmoAlternateMetreFillColor = 196;
+constexpr unsigned char kAmmoAlternateMetreFillShadeColor = 14;
 
 struct CustomIndicatorDescription {
     bool isActive;
@@ -131,6 +139,8 @@ static int endTurnButtonFree();
 static int endCombatButtonInit();
 static int endCombatButtonFree();
 static void interfaceUpdateAmmoBar(int x, int ratio);
+static void interfaceUpdateAlternateAmmoMetre(int x, int ratio);
+static void interfaceUpdateAlternateAmmoMetreRow(unsigned char* dest, bool filled);
 static int _intface_item_reload();
 static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor);
 static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse);
@@ -1444,7 +1454,7 @@ int _intface_update_ammo_lights()
         }
     }
 
-    interfaceUpdateAmmoBar(463 + gInterfaceBarContentOffset, ratio);
+    interfaceUpdateAmmoBar(kAmmoBarLeft + gInterfaceBarContentOffset, ratio);
 
     return 0;
 }
@@ -2051,6 +2061,11 @@ static int endCombatButtonFree()
 // 0x460AA0 intface_draw_ammo_lights
 static void interfaceUpdateAmmoBar(int x, int ratio)
 {
+    if (settings.ui.alternate_ammo_metre) {
+        interfaceUpdateAlternateAmmoMetre(x, ratio);
+        return;
+    }
+
     if ((ratio & 1) != 0) {
         ratio -= 1;
     }
@@ -2080,6 +2095,42 @@ static void interfaceUpdateAmmoBar(int x, int ratio)
         rect.bottom = 26 + 70;
         windowRefreshRect(gInterfaceBarWindow, &rect);
     }
+}
+
+static void interfaceUpdateAlternateAmmoMetre(int x, int ratio)
+{
+    if ((ratio & 1) != 0) {
+        ratio -= 1;
+    }
+
+    unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoBarTop + x;
+    int firstActiveRow = kAmmoBarMaxRatio - ratio;
+
+    for (int row = 0; row <= kAmmoBarMaxRatio; row++) {
+        bool filled = row < kAmmoBarMaxRatio
+            && row >= firstActiveRow
+            && ((row - firstActiveRow) & 1) == 0;
+        interfaceUpdateAlternateAmmoMetreRow(dest, filled);
+        dest += gInterfaceBarWidth;
+    }
+
+    if (!gInterfaceBarInitialized) {
+        Rect rect;
+        rect.left = x;
+        rect.top = kAmmoBarTop;
+        rect.right = x + kAmmoAlternateMetreWidth - 1;
+        rect.bottom = kAmmoBarTop + kAmmoBarMaxRatio;
+        windowRefreshRect(gInterfaceBarWindow, &rect);
+    }
+}
+
+static void interfaceUpdateAlternateAmmoMetreRow(unsigned char* dest, bool filled)
+{
+    dest[0] = kAmmoAlternateMetreBorderColor;
+    dest[1] = filled ? kAmmoAlternateMetreFillColor : kAmmoAlternateMetreEmptyColor;
+    dest[2] = filled ? kAmmoAlternateMetreFillColor : kAmmoAlternateMetreEmptyColor;
+    dest[3] = filled ? kAmmoAlternateMetreFillShadeColor : kAmmoAlternateMetreEmptyColor;
+    dest[4] = kAmmoAlternateMetreBorderColor;
 }
 
 // 0x460B20 intface_item_reload
