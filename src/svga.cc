@@ -24,6 +24,10 @@ namespace fallout {
 
 static bool createRenderer(int width, int height);
 static void destroyRenderer();
+static void pumpPendingEvents();
+
+static constexpr int kMaxStartupEventPumpPasses = 10;
+static constexpr Uint32 kStartupEventPumpIntervalMs = 250;
 
 // screen rect
 Rect _scr_size;
@@ -127,15 +131,6 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
         return -1;
     }
 
-    // macOS seems to require dequeuing NSApp events in order for window to
-    // become visible. There is no concrete number of calls required to make
-    // it happen. Sadly there is no particular event to watch for because SDL
-    // marks window as shown immediately after creation (see
-    // `SDL_FinishWindowCreation`).
-    for (int i = 0; i < 10; i++) {
-        SDL_PumpEvents();
-    }
-
     _scr_size.left = 0;
     _scr_size.top = 0;
     _scr_size.right = width - 1;
@@ -161,7 +156,7 @@ int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
     if (gSdlWindow == nullptr) {
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
-        Uint32 windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI;
+        Uint32 windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN;
 
         if (fullscreen) {
             windowFlags |= SDL_WINDOW_FULLSCREEN;
@@ -346,6 +341,72 @@ bool screenIsFullscreen()
 {
     Uint32 flags = SDL_GetWindowFlags(gSdlWindow);
     return (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) != 0;
+}
+
+void screenShowWindow()
+{
+    if (gSdlWindow == nullptr) {
+        return;
+    }
+
+    // The window is created hidden and mapped here, once a render surface
+    // exists, so the splash screen and the rest of startup are visible. The
+    // remaining long init keeps the window manager happy via periodic
+    // pumpStartupEvents() calls; otherwise a slow init (e.g. under tracing
+    // parents like Valgrind) could let some WMs iconify the window before the
+    // main loop runs.
+    SDL_ShowWindow(gSdlWindow);
+    SDL_RaiseWindow(gSdlWindow);
+
+    pumpPendingEvents();
+}
+
+void pumpStartupEvents()
+{
+    if (gSdlWindow == nullptr) {
+        return;
+    }
+
+    // Throttled so it can be called liberally between subsystem inits without
+    // overhead. Servicing the event queue periodically keeps the window
+    // manager from treating the (now visible) window as unresponsive during the
+    // long startup sequence. most easily triggered under tracing parents like
+    // Valgrind that slow startup dramatically.
+    static Uint32 lastPump = 0;
+    Uint32 now = SDL_GetTicks();
+    if (now - lastPump < kStartupEventPumpIntervalMs) {
+        return;
+    }
+    lastPump = now;
+
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            exit(EXIT_SUCCESS);
+        }
+    }
+}
+
+static void pumpPendingEvents()
+{
+    // macOS seems to require dequeuing NSApp events in order for the window to
+    // become visible. SDL marks the window as shown immediately after creation
+    // (see `SDL_FinishWindowCreation`), so drain pending startup events instead
+    // of waiting for a reliable SDL_WINDOWEVENT_SHOWN signal.
+    for (int pass = 0; pass < kMaxStartupEventPumpPasses; pass++) {
+        SDL_PumpEvents();
+
+        SDL_Event event;
+        if (!SDL_PollEvent(&event)) {
+            break;
+        }
+
+        do {
+            if (event.type == SDL_QUIT) {
+                exit(EXIT_SUCCESS);
+            }
+        } while (SDL_PollEvent(&event));
+    }
 }
 
 static bool createRenderer(int width, int height)

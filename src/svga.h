@@ -43,6 +43,8 @@ void _GNW95_zero_vid_mem();
 int screenGetWidth();
 int screenGetHeight();
 int screenGetVisibleHeight();
+void screenShowWindow();
+void pumpStartupEvents();
 void handleWindowSizeChanged();
 void renderPresent();
 bool screenIsFullscreen();
