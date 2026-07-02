@@ -34,7 +34,7 @@ procedure start begin
         call assertEquals("opcode_exists OP_FS_WRITE_SHORT", opcode_exists(OP_FS_WRITE_SHORT), 0);
         call assertEquals("opcode_exists OP_FS_SEEK", opcode_exists(OP_FS_SEEK), 0);
         call assertEquals("opcode_exists OP_FS_READ_SHORT", opcode_exists(OP_FS_READ_SHORT), 0);
-        call assertEquals("opcode_exists OP_HERO_SELECT_WIN", opcode_exists(OP_HERO_SELECT_WIN), 1);
+        call assertEquals("opcode_exists OP_HERO_SELECT_WIN", opcode_exists(OP_HERO_SELECT_WIN), 0);
         call assertEquals("opcode_exists OP_SET_HERO_RACE", opcode_exists(OP_SET_HERO_RACE), 1);
         call assertEquals("opcode_exists OP_SET_HERO_STYLE", opcode_exists(OP_SET_HERO_STYLE), 1);
         // Probably will never be implemented on fallout2-ce

@@ -11,11 +11,13 @@
 #include "config.h"
 #include "content_config.h"
 #include "debug.h"
+#include "draw.h"
 #include "game_mouse.h"
 #include "interface.h"
 #include "inventory.h"
 #include "input.h"
 #include "kb.h"
+#include "memory.h"
 #include "mouse.h"
 #include "obj_types.h"
 #include "object.h"
@@ -47,11 +49,20 @@ constexpr int kSelectWindowPreviousEvent = 502;
 constexpr int kSelectWindowNextEvent = 503;
 constexpr int kSelectWindowPreviewX = 24;
 constexpr int kSelectWindowPreviewY = 42;
-constexpr int kSelectWindowPreviewWidth = 112;
-constexpr int kSelectWindowPreviewHeight = 124;
-constexpr int kSelectWindowDetailsX = 154;
-constexpr int kSelectWindowDetailsY = 56;
+constexpr int kSelectWindowPreviewWidth = 128;
+constexpr int kSelectWindowPreviewHeight = 132;
+constexpr int kSelectWindowDetailsX = 166;
+constexpr int kSelectWindowDetailsY = 54;
 constexpr int kSelectWindowButtonY = 196;
+constexpr int kSelectWindowButtonHeight = 24;
+constexpr int kSelectWindowButtonGap = 10;
+constexpr int kSelectWindowButtonWidth = 70;
+constexpr int kSelectWindowCancelButtonWidth = 78;
+constexpr int kSelectWindowFirstButtonX = 31;
+constexpr int kSelectWindowDetailsPanelX = 158;
+constexpr int kSelectWindowDetailsPanelY = 42;
+constexpr int kSelectWindowDetailsPanelWidth = 198;
+constexpr int kSelectWindowDetailsPanelHeight = 132;
 
 bool gHeroAppearanceInitialized = false;
 bool gHeroAppearanceEnabled = false;
@@ -88,6 +99,12 @@ typedef struct HeroAppearancePreviewMount {
     char paths[2][COMPAT_MAX_PATH];
     int pathsLength;
 } HeroAppearancePreviewMount;
+
+typedef struct HeroAppearanceSelectButton {
+    int id;
+    unsigned char* normal;
+    unsigned char* pressed;
+} HeroAppearanceSelectButton;
 
 void heroAppearanceCopyString(char* dest, size_t size, const char* value)
 {
@@ -768,20 +785,273 @@ int heroAppearanceSelectWindowBuildPreviewFid(const HeroAppearanceEntry* entry)
     return artResolveCritterFid(buildFid(OBJ_TYPE_CRITTER, frmId, ANIM_STAND, 0, ROTATION_SW));
 }
 
+int heroAppearanceColorRgb(int red, int green, int blue)
+{
+    return _colorTable[(red << 10) | (green << 5) | blue];
+}
+
+int heroAppearanceColorWindowBackground()
+{
+    return heroAppearanceColorRgb(4, 4, 4);
+}
+
+int heroAppearanceColorPanelBackground()
+{
+    return heroAppearanceColorRgb(7, 7, 7);
+}
+
+int heroAppearanceColorPanelBackgroundLight()
+{
+    return heroAppearanceColorRgb(11, 11, 10);
+}
+
+int heroAppearanceColorFrameLight()
+{
+    return heroAppearanceColorRgb(15, 15, 14);
+}
+
+int heroAppearanceColorFrameDark()
+{
+    return heroAppearanceColorRgb(2, 2, 2);
+}
+
+int heroAppearanceColorDivider()
+{
+    return heroAppearanceColorRgb(10, 10, 9);
+}
+
+int heroAppearanceColorTextGreen()
+{
+    return _colorTable[992];
+}
+
+int heroAppearanceColorTextGreenDim()
+{
+    return heroAppearanceColorRgb(0, 22, 0);
+}
+
+int heroAppearanceColorTextNeutral()
+{
+    return heroAppearanceColorRgb(13, 13, 12);
+}
+
+void heroAppearanceFillPanelRect(int win, int x, int y, int width, int height, int color)
+{
+    windowFill(win, x, y, width, height, color);
+}
+
+void heroAppearanceSelectWindowDrawText(int win, const char* text, int x, int y, int maxWidth, int color)
+{
+    unsigned char* windowBuffer = windowGetBuffer(win);
+    int pitch = windowGetWidth(win);
+    fontDrawText(windowBuffer + pitch * y + x, text, maxWidth, pitch, color);
+}
+
+void heroAppearanceSelectWindowDrawInsetPanel(int win, int x, int y, int width, int height)
+{
+    int right = x + width - 1;
+    int bottom = y + height - 1;
+    int light = heroAppearanceColorFrameLight();
+    int dark = heroAppearanceColorFrameDark();
+
+    heroAppearanceFillPanelRect(win, x, y, width, height, heroAppearanceColorPanelBackground());
+    windowDrawRect(win, x, y, right, bottom, heroAppearanceColorWindowBackground());
+    windowDrawLine(win, x + 1, y + 1, right - 1, y + 1, dark);
+    windowDrawLine(win, x + 1, y + 1, x + 1, bottom - 1, dark);
+    windowDrawLine(win, x + 1, bottom - 1, right - 1, bottom - 1, light);
+    windowDrawLine(win, right - 1, y + 1, right - 1, bottom - 1, light);
+}
+
+void heroAppearanceSelectWindowDrawRaisedFrame(int win, int x, int y, int width, int height)
+{
+    int right = x + width - 1;
+    int bottom = y + height - 1;
+    int light = heroAppearanceColorFrameLight();
+    int dark = heroAppearanceColorFrameDark();
+
+    windowDrawRect(win, x, y, right, bottom, heroAppearanceColorWindowBackground());
+    windowDrawLine(win, x + 1, y + 1, right - 1, y + 1, light);
+    windowDrawLine(win, x + 1, y + 1, x + 1, bottom - 1, light);
+    windowDrawLine(win, x + 1, bottom - 1, right - 1, bottom - 1, dark);
+    windowDrawLine(win, right - 1, y + 1, right - 1, bottom - 1, dark);
+}
+
+void heroAppearanceSelectWindowDrawButtonImage(unsigned char* buffer, int width, int height, const char* title, bool pressed)
+{
+    int backgroundColor = pressed ? heroAppearanceColorPanelBackground() : heroAppearanceColorPanelBackgroundLight();
+    int light = heroAppearanceColorFrameLight();
+    int dark = heroAppearanceColorFrameDark();
+
+    bufferFill(buffer, width, height, width, backgroundColor);
+    bufferDrawRect(buffer, width, 0, 0, width - 1, height - 1, heroAppearanceColorWindowBackground());
+    bufferDrawRectShadowed(buffer,
+        width,
+        1,
+        1,
+        width - 2,
+        height - 2,
+        pressed ? dark : light,
+        pressed ? light : dark);
+    bufferDrawRectShadowed(buffer,
+        width,
+        2,
+        2,
+        width - 3,
+        height - 3,
+        pressed ? dark : light,
+        pressed ? light : dark);
+
+    int oldFont = fontGetCurrent();
+    fontSetCurrent(101);
+
+    int textWidth = fontGetStringWidth(title);
+    int textX = (width - textWidth) / 2;
+    if (textX < 4) {
+        textX = 4;
+    }
+
+    int textY = (height - fontGetLineHeight()) / 2;
+    if (pressed) {
+        textX += 1;
+        textY += 1;
+    }
+
+    fontDrawText(buffer + width * textY + textX,
+        title,
+        width - textX - 4,
+        width,
+        (pressed ? heroAppearanceColorTextGreenDim() : heroAppearanceColorTextGreen()) | FONT_SHADOW);
+
+    fontSetCurrent(oldFont);
+}
+
+void heroAppearanceSelectButtonInit(HeroAppearanceSelectButton* button)
+{
+    button->id = -1;
+    button->normal = nullptr;
+    button->pressed = nullptr;
+}
+
+void heroAppearanceSelectButtonDestroy(HeroAppearanceSelectButton* button)
+{
+    if (button->id != -1) {
+        buttonDestroy(button->id);
+        button->id = -1;
+    }
+
+    if (button->normal != nullptr) {
+        internal_free(button->normal);
+        button->normal = nullptr;
+    }
+
+    if (button->pressed != nullptr) {
+        internal_free(button->pressed);
+        button->pressed = nullptr;
+    }
+}
+
+void heroAppearanceSelectWindowCreateButton(int win, int x, int y, int width, const char* title, int eventCode, HeroAppearanceSelectButton* button)
+{
+    heroAppearanceSelectButtonInit(button);
+
+    int size = width * kSelectWindowButtonHeight;
+    button->normal = (unsigned char*)internal_malloc(size);
+    if (button->normal == nullptr) {
+        return;
+    }
+
+    button->pressed = (unsigned char*)internal_malloc(size);
+    if (button->pressed == nullptr) {
+        internal_free(button->normal);
+        button->normal = nullptr;
+        return;
+    }
+
+    heroAppearanceSelectWindowDrawButtonImage(button->normal, width, kSelectWindowButtonHeight, title, false);
+    heroAppearanceSelectWindowDrawButtonImage(button->pressed, width, kSelectWindowButtonHeight, title, true);
+
+    button->id = buttonCreate(win,
+        x,
+        y,
+        width,
+        kSelectWindowButtonHeight,
+        -1,
+        -1,
+        -1,
+        eventCode,
+        button->normal,
+        button->pressed,
+        nullptr,
+        0);
+
+    if (button->id == -1) {
+        heroAppearanceSelectButtonDestroy(button);
+    }
+}
+
+bool heroAppearanceSelectWindowDrawPreviewFid(int win, int fid)
+{
+    CacheEntry* handle = nullptr;
+    int frameWidth = 0;
+    int frameHeight = 0;
+    unsigned char* frameData = artLockFrameDataReturningSize(fid, &handle, &frameWidth, &frameHeight);
+    if (frameData == nullptr || frameWidth <= 0 || frameHeight <= 0) {
+        if (handle != nullptr) {
+            artUnlock(handle);
+        }
+        return false;
+    }
+
+    int maxWidth = kSelectWindowPreviewWidth - 12;
+    int maxHeight = kSelectWindowPreviewHeight - 10;
+    int targetWidth = frameWidth * 3 / 2;
+    int targetHeight = frameHeight * 3 / 2;
+
+    if (targetWidth <= 0 || targetHeight <= 0) {
+        targetWidth = frameWidth;
+        targetHeight = frameHeight;
+    }
+
+    if (targetWidth > maxWidth || targetHeight > maxHeight) {
+        if (targetWidth * maxHeight > targetHeight * maxWidth) {
+            targetHeight = targetHeight * maxWidth / targetWidth;
+            targetWidth = maxWidth;
+        } else {
+            targetWidth = targetWidth * maxHeight / targetHeight;
+            targetHeight = maxHeight;
+        }
+    }
+
+    if (targetWidth < 1) {
+        targetWidth = 1;
+    }
+
+    if (targetHeight < 1) {
+        targetHeight = 1;
+    }
+
+    int dstX = kSelectWindowPreviewX + (kSelectWindowPreviewWidth - targetWidth) / 2;
+    int dstY = kSelectWindowPreviewY + (kSelectWindowPreviewHeight - targetHeight) / 2;
+
+    unsigned char* windowBuffer = windowGetBuffer(win);
+    blitBuffer2DScaledTrans(ConstBuffer2D(frameData, frameWidth, frameHeight),
+        Buffer2D(windowBuffer, windowGetWidth(win), windowGetHeight(win)),
+        dstX,
+        dstY,
+        targetWidth,
+        targetHeight);
+
+    artUnlock(handle);
+    return true;
+}
+
 void heroAppearanceSelectWindowDrawPreview(int win, const HeroAppearanceEntry* entry)
 {
-    windowFill(win,
+    heroAppearanceSelectWindowDrawInsetPanel(win,
         kSelectWindowPreviewX,
         kSelectWindowPreviewY,
         kSelectWindowPreviewWidth,
-        kSelectWindowPreviewHeight,
-        _colorTable[_GNW_wcolor[0]]);
-    windowDrawRect(win,
-        kSelectWindowPreviewX,
-        kSelectWindowPreviewY,
-        kSelectWindowPreviewX + kSelectWindowPreviewWidth - 1,
-        kSelectWindowPreviewY + kSelectWindowPreviewHeight - 1,
-        _colorTable[_GNW_wcolor[2]]);
+        kSelectWindowPreviewHeight);
 
     bool previewDrawn = false;
     HeroAppearancePreviewMount mount;
@@ -794,15 +1064,8 @@ void heroAppearanceSelectWindowDrawPreview(int win, const HeroAppearanceEntry* e
 
     if (mounted) {
         int fid = heroAppearanceSelectWindowBuildPreviewFid(entry);
-        if (fid != -1 && artExists(fid)) {
-            unsigned char* windowBuffer = windowGetBuffer(win);
-            int pitch = windowGetWidth(win);
-            artRender(fid,
-                windowBuffer + pitch * (kSelectWindowPreviewY + 2) + kSelectWindowPreviewX + 2,
-                kSelectWindowPreviewWidth - 4,
-                kSelectWindowPreviewHeight - 4,
-                pitch);
-            previewDrawn = true;
+        if (fid != -1) {
+            previewDrawn = heroAppearanceSelectWindowDrawPreviewFid(win, fid);
         }
     }
     if (entry != nullptr && entry->packageBacked) {
@@ -810,81 +1073,153 @@ void heroAppearanceSelectWindowDrawPreview(int win, const HeroAppearanceEntry* e
     }
 
     if (!previewDrawn) {
-        const char* text = "No preview";
+        const char* text = "NO PREVIEW";
         int textX = kSelectWindowPreviewX + (kSelectWindowPreviewWidth - fontGetStringWidth(text)) / 2;
         int textY = kSelectWindowPreviewY + (kSelectWindowPreviewHeight - fontGetLineHeight()) / 2;
-        windowDrawText(win, text, kSelectWindowPreviewWidth - 8, textX, textY, _colorTable[_GNW_wcolor[3]]);
+        heroAppearanceSelectWindowDrawText(win,
+            text,
+            textX,
+            textY,
+            kSelectWindowPreviewWidth - 8,
+            heroAppearanceColorTextGreen());
     }
 }
 
 void heroAppearanceSelectWindowDrawStatic(int win, bool isStyle)
 {
     int oldFont = fontGetCurrent();
-    fontSetCurrent(101);
 
-    windowFill(win, 0, 0, kSelectWindowWidth, kSelectWindowHeight, _colorTable[_GNW_wcolor[0]]);
-    windowDrawBorder(win);
+    heroAppearanceFillPanelRect(win,
+        0,
+        0,
+        kSelectWindowWidth,
+        kSelectWindowHeight,
+        heroAppearanceColorWindowBackground());
+    heroAppearanceSelectWindowDrawRaisedFrame(win, 4, 4, kSelectWindowWidth - 8, kSelectWindowHeight - 8);
 
-    const char* title = isStyle ? "Hero Style" : "Hero Race";
+    fontSetCurrent(103);
+
+    const char* title = isStyle ? "HERO STYLE" : "HERO RACE";
     int titleX = (kSelectWindowWidth - fontGetStringWidth(title)) / 2;
-    windowDrawText(win, title, kSelectWindowWidth - 24, titleX, 14, _colorTable[_GNW_wcolor[4]]);
+    heroAppearanceSelectWindowDrawText(win,
+        title,
+        titleX,
+        14,
+        kSelectWindowWidth - titleX - 12,
+        heroAppearanceColorTextGreen() | FONT_SHADOW);
 
-    const char* hint = "Select with Prev/Next, Done saves, Esc cancels.";
-    int hintX = (kSelectWindowWidth - fontGetStringWidth(hint)) / 2;
-    if (hintX < 12) {
-        hintX = 12;
-    }
-    windowDrawText(win, hint, kSelectWindowWidth - 24, hintX, 174, _colorTable[_GNW_wcolor[3]]);
+    windowDrawLine(win, 18, 35, kSelectWindowWidth - 19, 35, heroAppearanceColorFrameDark());
+    windowDrawLine(win, 18, 36, kSelectWindowWidth - 19, 36, heroAppearanceColorDivider());
+
+    heroAppearanceSelectWindowDrawInsetPanel(win,
+        kSelectWindowPreviewX,
+        kSelectWindowPreviewY,
+        kSelectWindowPreviewWidth,
+        kSelectWindowPreviewHeight);
+    heroAppearanceSelectWindowDrawInsetPanel(win,
+        kSelectWindowDetailsPanelX,
+        kSelectWindowDetailsPanelY,
+        kSelectWindowDetailsPanelWidth,
+        kSelectWindowDetailsPanelHeight);
+
+    windowDrawLine(win, 18, 184, kSelectWindowWidth - 19, 184, heroAppearanceColorFrameDark());
+    windowDrawLine(win, 18, 185, kSelectWindowWidth - 19, 185, heroAppearanceColorDivider());
 
     fontSetCurrent(oldFont);
 }
 
-void heroAppearanceSelectWindowDrawValue(int win, bool isStyle, const HeroAppearanceEntry* entry, const char* status)
+void heroAppearanceSelectWindowDrawValue(int win, bool isStyle, const HeroAppearanceEntry* entry, const char* status, bool debugInfo)
 {
     int oldFont = fontGetCurrent();
     fontSetCurrent(101);
 
-    windowFill(win, 18, 36, kSelectWindowWidth - 36, 132, _colorTable[_GNW_wcolor[0]]);
     heroAppearanceSelectWindowDrawPreview(win, entry);
+    heroAppearanceSelectWindowDrawInsetPanel(win,
+        kSelectWindowDetailsPanelX,
+        kSelectWindowDetailsPanelY,
+        kSelectWindowDetailsPanelWidth,
+        kSelectWindowDetailsPanelHeight);
 
     char valueText[80];
     if (entry != nullptr) {
-        snprintf(valueText, sizeof(valueText), "%s %02d", isStyle ? "Style" : "Race", isStyle ? entry->style : entry->race);
+        snprintf(valueText, sizeof(valueText), "%s", entry->displayName);
     } else {
-        snprintf(valueText, sizeof(valueText), "No appearances");
+        snprintf(valueText, sizeof(valueText), "No selectable appearance");
     }
 
-    windowDrawText(win,
+    heroAppearanceSelectWindowDrawText(win,
         valueText,
-        kSelectWindowWidth - kSelectWindowDetailsX - 24,
         kSelectWindowDetailsX,
         kSelectWindowDetailsY,
-        _colorTable[_GNW_wcolor[3]]);
+        kSelectWindowWidth - kSelectWindowDetailsX - 24,
+        heroAppearanceColorTextGreen() | FONT_SHADOW);
+
+    windowDrawLine(win,
+        kSelectWindowDetailsX,
+        kSelectWindowDetailsY + 16,
+        kSelectWindowDetailsX + 166,
+        kSelectWindowDetailsY + 16,
+        heroAppearanceColorDivider());
+
+    char lineText[128];
+    if (entry != nullptr) {
+        if (debugInfo) {
+            snprintf(lineText, sizeof(lineText), "Race %02d Style %02d", entry->race, entry->style);
+        } else {
+            snprintf(lineText, sizeof(lineText), "%s %d", isStyle ? "Style" : "Race", isStyle ? entry->style : entry->race);
+        }
+    } else {
+        snprintf(lineText, sizeof(lineText), "%s selector", isStyle ? "Style" : "Race");
+    }
+    heroAppearanceSelectWindowDrawText(win,
+        lineText,
+        kSelectWindowDetailsX,
+        kSelectWindowDetailsY + 22,
+        kSelectWindowWidth - kSelectWindowDetailsX - 24,
+        heroAppearanceColorTextGreen());
 
     if (entry != nullptr) {
-        windowDrawText(win,
-            entry->displayName,
-            kSelectWindowWidth - kSelectWindowDetailsX - 24,
-            kSelectWindowDetailsX,
-            kSelectWindowDetailsY + 20,
-            _colorTable[_GNW_wcolor[3]]);
+        if (debugInfo) {
+            snprintf(lineText, sizeof(lineText), "Model %s", entry->model[0] != '\0' ? entry->model : "package");
+            heroAppearanceSelectWindowDrawText(win,
+                lineText,
+                kSelectWindowDetailsX,
+                kSelectWindowDetailsY + 40,
+                kSelectWindowWidth - kSelectWindowDetailsX - 24,
+                heroAppearanceColorTextGreenDim());
 
-        char mappingText[96];
-        snprintf(mappingText, sizeof(mappingText), "%s, fallback %s", entry->mappingBasis, heroAppearanceFallbackName(entry->fallback));
-        windowDrawText(win,
-            mappingText,
-            kSelectWindowWidth - kSelectWindowDetailsX - 24,
-            kSelectWindowDetailsX,
-            kSelectWindowDetailsY + 40,
-            _colorTable[_GNW_wcolor[3]]);
+            snprintf(lineText, sizeof(lineText), "%s", entry->mappingBasis);
+            heroAppearanceSelectWindowDrawText(win,
+                lineText,
+                kSelectWindowDetailsX,
+                kSelectWindowDetailsY + 58,
+                kSelectWindowWidth - kSelectWindowDetailsX - 24,
+                heroAppearanceColorTextNeutral());
+
+            snprintf(lineText, sizeof(lineText), "Fallback %s", heroAppearanceFallbackName(entry->fallback));
+            heroAppearanceSelectWindowDrawText(win,
+                lineText,
+                kSelectWindowDetailsX,
+                kSelectWindowDetailsY + 76,
+                kSelectWindowWidth - kSelectWindowDetailsX - 24,
+                heroAppearanceColorTextNeutral());
+        } else {
+            snprintf(lineText, sizeof(lineText), "%s", entry->coverage);
+            heroAppearanceSelectWindowDrawText(win,
+                lineText,
+                kSelectWindowDetailsX,
+                kSelectWindowDetailsY + 42,
+                kSelectWindowWidth - kSelectWindowDetailsX - 24,
+                heroAppearanceColorTextGreenDim());
+        }
     }
 
     if (status != nullptr && status[0] != '\0') {
-        windowDrawText(win,
+        heroAppearanceSelectWindowDrawText(win,
             status,
-            kSelectWindowWidth - kSelectWindowDetailsX - 24,
             kSelectWindowDetailsX,
             kSelectWindowDetailsY + 64,
+            kSelectWindowWidth - kSelectWindowDetailsX - 24,
             _colorTable[31744]);
     }
 
@@ -1051,9 +1386,13 @@ bool heroAppearanceSetDudeModel(int gender, const char* model)
     return artSetDudeDefaultModel(gender, model) == 0;
 }
 
-bool heroAppearanceSelectWindow(int raceStyleFlag)
+static bool heroAppearanceSelectWindowInternal(int raceStyleFlag, bool* acceptedPtr, bool refreshDudeArt)
 {
     heroAppearanceInit();
+
+    if (acceptedPtr != nullptr) {
+        *acceptedPtr = false;
+    }
 
     if (!gHeroAppearanceEnabled) {
         return false;
@@ -1070,14 +1409,13 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
     if (selectedIndex == -1) {
         selectedIndex = heroAppearanceSelectWindowFirstEntryIndex(isStyle, originalRace);
     }
-
     if (selectedIndex == -1) {
         return false;
     }
 
     int winX = (screenGetWidth() - kSelectWindowWidth) / 2;
     int winY = (screenGetHeight() - kSelectWindowHeight) / 2;
-    int win = windowCreate(winX, winY, kSelectWindowWidth, kSelectWindowHeight, _colorTable[_GNW_wcolor[0]], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(winX, winY, kSelectWindowWidth, kSelectWindowHeight, heroAppearanceColorWindowBackground(), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         return false;
     }
@@ -1090,21 +1428,24 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
     int oldMouseCursor = gameMouseGetCursor();
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
-    int oldFont = fontGetCurrent();
-    fontSetCurrent(101);
-
     heroAppearanceSelectWindowDrawStatic(win, isStyle);
-    _win_register_text_button(win, 46, kSelectWindowButtonY, -1, -1, -1, kSelectWindowPreviousEvent, "Prev", 0);
-    _win_register_text_button(win, 116, kSelectWindowButtonY, -1, -1, -1, kSelectWindowNextEvent, "Next", 0);
-    _win_register_text_button(win, 222, kSelectWindowButtonY, -1, -1, -1, kSelectWindowDoneEvent, "Done", 0);
-    _win_register_text_button(win, 294, kSelectWindowButtonY, -1, -1, -1, kSelectWindowCancelEvent, "Cancel", 0);
 
-    fontSetCurrent(oldFont);
+    HeroAppearanceSelectButton buttons[4];
+    int buttonX = kSelectWindowFirstButtonX;
+    heroAppearanceSelectWindowCreateButton(win, buttonX, kSelectWindowButtonY, kSelectWindowButtonWidth, "PREV", kSelectWindowPreviousEvent, &(buttons[0]));
+    buttonX += kSelectWindowButtonWidth + kSelectWindowButtonGap;
+    heroAppearanceSelectWindowCreateButton(win, buttonX, kSelectWindowButtonY, kSelectWindowButtonWidth, "NEXT", kSelectWindowNextEvent, &(buttons[1]));
+    buttonX += kSelectWindowButtonWidth + kSelectWindowButtonGap;
+    heroAppearanceSelectWindowCreateButton(win, buttonX, kSelectWindowButtonY, kSelectWindowButtonWidth, "DONE", kSelectWindowDoneEvent, &(buttons[2]));
+    buttonX += kSelectWindowButtonWidth + kSelectWindowButtonGap;
+    const char* cancelButtonTitle = isStyle && !refreshDudeArt ? "BACK" : "CANCEL";
+    heroAppearanceSelectWindowCreateButton(win, buttonX, kSelectWindowButtonY, kSelectWindowCancelButtonWidth, cancelButtonTitle, kSelectWindowCancelEvent, &(buttons[3]));
 
     char status[96];
     status[0] = '\0';
 
-    heroAppearanceSelectWindowDrawValue(win, isStyle, &(gHeroAppearanceEntries[selectedIndex]), status);
+    bool debugInfo = false;
+    heroAppearanceSelectWindowDrawValue(win, isStyle, &(gHeroAppearanceEntries[selectedIndex]), status, debugInfo);
 
     bool accepted = false;
 
@@ -1123,6 +1464,9 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
             break;
         } else if (keyCode == kSelectWindowCancelEvent || keyCode == KEY_ESCAPE) {
             break;
+        } else if (keyCode == KEY_UPPERCASE_D || keyCode == KEY_LOWERCASE_D) {
+            debugInfo = !debugInfo;
+            heroAppearanceSelectWindowDrawValue(win, isStyle, &(gHeroAppearanceEntries[selectedIndex]), status, debugInfo);
         }
 
         if (direction != 0) {
@@ -1134,11 +1478,15 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
                 snprintf(status, sizeof(status), "No more appearances found.");
             }
 
-            heroAppearanceSelectWindowDrawValue(win, isStyle, &(gHeroAppearanceEntries[selectedIndex]), status);
+            heroAppearanceSelectWindowDrawValue(win, isStyle, &(gHeroAppearanceEntries[selectedIndex]), status, debugInfo);
         }
 
         renderPresent();
         sharedFpsLimiter.throttle();
+    }
+
+    for (int index = 0; index < 4; index++) {
+        heroAppearanceSelectButtonDestroy(&(buttons[index]));
     }
 
     windowDestroy(win);
@@ -1165,20 +1513,29 @@ bool heroAppearanceSelectWindow(int raceStyleFlag)
             return false;
         }
 
-        if (selectedEntry->race != originalRace) {
-            if (!heroAppearanceSetStyle(0)) {
+        if (selectedEntry->style != originalStyle || selectedEntry->race != originalRace) {
+            if (!heroAppearanceSetStyle(selectedEntry->style)) {
                 return false;
             }
         }
 
-        changed = selectedEntry->race != originalRace;
+        changed = selectedEntry->race != originalRace || selectedEntry->style != originalStyle;
     }
 
-    if (changed) {
+    if (changed && refreshDudeArt) {
         heroAppearanceRefreshDudeArt();
     }
 
+    if (acceptedPtr != nullptr) {
+        *acceptedPtr = true;
+    }
+
     return true;
+}
+
+bool heroAppearanceSelectWindowForCharacterCreation(int raceStyleFlag, bool* acceptedPtr)
+{
+    return heroAppearanceSelectWindowInternal(raceStyleFlag, acceptedPtr, false);
 }
 
 int heroAppearanceResolvePlayerFid(int fid)

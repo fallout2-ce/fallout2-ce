@@ -24,6 +24,7 @@
 #include "game_sound.h"
 #include "geometry.h"
 #include "graph_lib.h"
+#include "hero_appearance.h"
 #include "input.h"
 #include "interface.h"
 #include "item.h"
@@ -70,6 +71,12 @@ namespace fallout {
 
 #define CANCEL_BTN_X 571
 #define CANCEL_BTN_Y 454
+
+#define APPEARANCE_BTN_X 244
+#define APPEARANCE_BTN_Y 454
+#define APPEARANCE_LABEL_X 263
+#define APPEARANCE_LABEL_Y 454
+#define APPEARANCE_BTN_CODE 571
 
 #define NAME_BTN_CODE 517
 #define AGE_BTN_CODE 519
@@ -250,6 +257,7 @@ static int characterEditorEditName();
 static void _PrintName(unsigned char* buf, int pitch);
 static int characterEditorEditAge();
 static void characterEditorEditGender();
+static void characterEditorShowHeroAppearancePicker();
 static void characterEditorAdjustPrimaryStat(int eventCode);
 static int characterEditorShowOptions();
 static bool characterFileExists(const char* fname);
@@ -572,6 +580,9 @@ static char gCharacterEditorFolderCardString[256];
 
 // 0x56FC60 skillsav
 static int gCharacterEditorSkillsBackup[SKILL_COUNT];
+
+static int gCharacterEditorHeroAppearanceRaceBackup;
+static int gCharacterEditorHeroAppearanceStyleBackup;
 
 // 0x56FCA8 editor_message_file
 static MessageList gCharacterEditorMessageList;
@@ -933,6 +944,9 @@ int characterEditorShow(bool isCreationMode)
             windowRefresh(gCharacterEditorWindow);
         } else if (gCharacterEditorIsCreationMode && (keyCode == 520 || keyCode == KEY_UPPERCASE_S || keyCode == KEY_LOWERCASE_S)) {
             characterEditorEditGender();
+            windowRefresh(gCharacterEditorWindow);
+        } else if (gCharacterEditorIsCreationMode && heroAppearanceIsEnabled() && (keyCode == APPEARANCE_BTN_CODE || keyCode == KEY_UPPERCASE_H || keyCode == KEY_LOWERCASE_H)) {
+            characterEditorShowHeroAppearancePicker();
             windowRefresh(gCharacterEditorWindow);
         } else if (gCharacterEditorIsCreationMode && (keyCode >= 503 && keyCode < 517)) {
             characterEditorAdjustPrimaryStat(keyCode);
@@ -1415,6 +1429,10 @@ static int characterEditorWindowInit()
         str = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 101);
         fontDrawText(gCharacterEditorWindowBuffer + (454 * 640) + 363, str, 640, 640, _colorTable[18979]);
 
+        if (heroAppearanceIsEnabled()) {
+            fontDrawText(gCharacterEditorWindowBuffer + (EDITOR_WINDOW_WIDTH * APPEARANCE_LABEL_Y) + APPEARANCE_LABEL_X, "APPEAR", EDITOR_WINDOW_WIDTH, EDITOR_WINDOW_WIDTH, _colorTable[18979]);
+        }
+
         // OPTIONAL TRAITS
         str = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 139);
         fontDrawText(gCharacterEditorWindowBuffer + (326 * 640) + 52, str, 640, 640, _colorTable[18979]);
@@ -1774,6 +1792,26 @@ static int characterEditorWindowInit()
 
     characterEditorRegisterInfoAreas();
     soundContinueAll();
+
+    if (gCharacterEditorIsCreationMode && heroAppearanceIsEnabled()) {
+        btn = buttonCreate(
+            gCharacterEditorWindow,
+            APPEARANCE_BTN_X,
+            APPEARANCE_BTN_Y,
+            _editorFrmImages[EDITOR_GRAPHIC_LITTLE_RED_BUTTON_UP].getWidth(),
+            _editorFrmImages[EDITOR_GRAPHIC_LILTTLE_RED_BUTTON_DOWN].getHeight(),
+            -1,
+            -1,
+            -1,
+            APPEARANCE_BTN_CODE,
+            _editorFrmImages[EDITOR_GRAPHIC_LITTLE_RED_BUTTON_UP].getData(),
+            _editorFrmImages[EDITOR_GRAPHIC_LILTTLE_RED_BUTTON_DOWN].getData(),
+            nullptr,
+            BUTTON_FLAG_TRANSPARENT);
+        if (btn != -1) {
+            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+        }
+    }
 
     btn = buttonCreate(
         gCharacterEditorWindow,
@@ -3713,6 +3751,34 @@ static void characterEditorEditGender()
     windowDestroy(win);
 }
 
+static void characterEditorShowHeroAppearancePicker()
+{
+    int originalRace = heroAppearanceGetRace();
+    int originalStyle = heroAppearanceGetStyle();
+
+    // Treat race/style as a small wizard: Back from style returns to race, while
+    // Cancel from race exits and restores the appearance from before opening it.
+    while (true) {
+        bool raceAccepted = false;
+        if (!heroAppearanceSelectWindowForCharacterCreation(0, &raceAccepted) || !raceAccepted) {
+            heroAppearanceSetRace(originalRace);
+            heroAppearanceSetStyle(originalStyle);
+            return;
+        }
+
+        bool styleAccepted = false;
+        if (!heroAppearanceSelectWindowForCharacterCreation(1, &styleAccepted)) {
+            heroAppearanceSetRace(originalRace);
+            heroAppearanceSetStyle(originalStyle);
+            return;
+        }
+
+        if (styleAccepted) {
+            return;
+        }
+    }
+}
+
 // 0x4379BC StatButton
 static void characterEditorAdjustPrimaryStat(int eventCode)
 {
@@ -4838,6 +4904,9 @@ static void characterEditorSavePlayer()
     for (int skill = 0; skill < SKILL_COUNT; skill++) {
         gCharacterEditorSkillsBackup[skill] = skillGetValue(gDude, skill);
     }
+
+    gCharacterEditorHeroAppearanceRaceBackup = heroAppearanceGetRace();
+    gCharacterEditorHeroAppearanceStyleBackup = heroAppearanceGetStyle();
 }
 
 // copy editor to character
@@ -4898,6 +4967,17 @@ static void characterEditorRestorePlayer()
 
     cur_hp = critterGetHitPoints(gDude);
     critterAdjustHitPoints(gDude, gCharacterEditorHitPointsBackup - cur_hp);
+
+    // Hero Appearance stores race/style in sfall globals, outside the proto data
+    // snapshot above, so character creation cancel restores them explicitly.
+    if (heroAppearanceIsEnabled()) {
+        int currentRace = heroAppearanceGetRace();
+        int currentStyle = heroAppearanceGetStyle();
+        if (currentRace != gCharacterEditorHeroAppearanceRaceBackup || currentStyle != gCharacterEditorHeroAppearanceStyleBackup) {
+            heroAppearanceSetRace(gCharacterEditorHeroAppearanceRaceBackup);
+            heroAppearanceSetStyle(gCharacterEditorHeroAppearanceStyleBackup);
+        }
+    }
 }
 
 // 0x43A9CC itostndn

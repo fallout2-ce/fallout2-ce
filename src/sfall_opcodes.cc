@@ -970,14 +970,6 @@ static void op_set_hero_race(Program* program)
     op_refresh_pc_art(program);
 }
 
-static void op_hero_select_win(Program* program)
-{
-    int raceStyleFlag = programStackPopInteger(program);
-    if (!heroAppearanceSelectWindow(raceStyleFlag)) {
-        programPrintError("hero_select_win: Hero Appearance is disabled or selector window could not be opened");
-    }
-}
-
 static void op_set_hero_style(Program* program)
 {
     int style = programStackPopInteger(program);
@@ -2222,7 +2214,6 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8212, op_get_version_patch);
 
     // 0x8213 - void hero_select_win(int)
-    interpreterRegisterOpcode(0x8213, op_hero_select_win);
     // 0x8214 - void set_hero_race(int race)
     interpreterRegisterOpcode(0x8214, op_set_hero_race);
     // 0x8215 - void set_hero_style(int style)

@@ -197,6 +197,7 @@ static struct SfallOpcodeInfo opcodeInfoArray[] = {
     { 0x20d, "list_begin" },
     { 0x20e, "list_next" },
     { 0x20f, "list_end" },
+    { 0x213, "hero_select_win" },
     { 0x216, "set_critter_burst_disable" },
     { 0x217, "get_weapon_ammo_pid" },
     { 0x218, "set_weapon_ammo_pid" },
