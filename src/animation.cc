@@ -1,5 +1,6 @@
 #include "animation.h"
 
+#include <algorithm>
 #include <stdio.h>
 #include <string.h>
 
@@ -3345,7 +3346,7 @@ static unsigned int animationComputeTicksPerFrame(Object* object, int fid)
         }
     }
 
-    return 1000 / fps;
+    return std::max(1000 / fps, 1);
 }
 
 int animationRegisterSetLightIntensity(Object* owner, int lightDistance, int lightIntensity, int delay)

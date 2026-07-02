@@ -109,6 +109,8 @@ static void combatAttemptEnd();
 static int _combat_input();
 static void _combat_set_move_all();
 static int combatTurnHooked(Object* obj, bool reloadedDuringCombat);
+static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFrmId);
+static void waitForGorisAnimation(Object* critter);
 static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
@@ -2591,7 +2593,7 @@ static void _combat_begin(Object* attacker)
         // NOTE: Uninline.
         _combatInitAIInfoList();
 
-        Object* v1 = nullptr;
+        Object* goris = nullptr;
         for (int index = 0; index < _list_total; index++) {
             Object* critter = _combat_list[index];
             CritterCombatData* combatData = &(critter->data.critter.combat);
@@ -2606,10 +2608,8 @@ static void _combat_begin(Object* attacker)
 
             scriptSetObjects(critter->sid, nullptr, nullptr);
             scriptSetFixedParam(critter->sid, 0);
-            if (critter->pid == 0x1000098) {
-                if (!critterIsDead(critter)) {
-                    v1 = critter;
-                }
+            if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter)) {
+                goris = critter;
             }
         }
 
@@ -2619,28 +2619,16 @@ static void _combat_begin(Object* attacker)
         gameUiDisable(0);
         gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
         _combat_ending_guy = nullptr;
+        if (goris != nullptr && !_isLoadingGame()) {
+            queueGorisCombatBeginEndAnimation(goris, kGorisCombatBaseFid);
+        }
         _combat_begin_extra(attacker);
         _caiTeamCombatInit(_combat_list, _list_total);
         interfaceBarEndButtonsShow(true);
-        _gmouse_enable_scrolling();
-
-        if (v1 != nullptr && !_isLoadingGame()) {
-            int fid = buildFid(FID_TYPE(v1->fid),
-                100,
-                FID_ANIM_TYPE(v1->fid),
-                (v1->fid & 0xF000) >> 12,
-                FID_ROTATION(v1->fid));
-
-            reg_anim_clear(v1);
-            reg_anim_begin(ANIMATION_REQUEST_RESERVED);
-            animationRegisterAnimate(v1, ANIM_UP_STAIRS_RIGHT, -1);
-            animationRegisterSetFid(v1, fid, -1);
-            reg_anim_end();
-
-            while (animationIsBusy(v1)) {
-                _process_bk();
-            }
+        if (goris != nullptr && !_isLoadingGame()) {
+            waitForGorisAnimation(goris);
         }
+        _gmouse_enable_scrolling();
         sfallOnCombatStart();
     }
 }
@@ -2793,21 +2781,8 @@ static void _combat_over()
         scriptSetObjects(critter->sid, nullptr, nullptr);
         scriptSetFixedParam(critter->sid, 0);
 
-        if (critter->pid == 0x1000098 && !critterIsDead(critter) && !_isLoadingGame()) {
-            int fid = buildFid(FID_TYPE(critter->fid),
-                99,
-                FID_ANIM_TYPE(critter->fid),
-                (critter->fid & 0xF000) >> 12,
-                FID_ROTATION(critter->fid));
-            reg_anim_clear(critter);
-            reg_anim_begin(ANIMATION_REQUEST_RESERVED);
-            animationRegisterAnimate(critter, ANIM_UP_STAIRS_RIGHT, -1);
-            animationRegisterSetFid(critter, fid, -1);
-            reg_anim_end();
-
-            while (animationIsBusy(critter)) {
-                _process_bk();
-            }
+        if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter) && !_isLoadingGame()) {
+            waitForGorisAnimation(critter);
         }
     }
 
@@ -3387,6 +3362,25 @@ static int combatTurnHooked(Object* obj, bool reloadedDuringCombat)
     return combatTurnHookResult;
 }
 
+static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFrmId)
+{
+    reg_anim_clear(critter);
+    reg_anim_begin(ANIMATION_REQUEST_RESERVED);
+    animationRegisterAnimate(critter, ANIM_UP_STAIRS_RIGHT, -1);
+    animationRegisterSetFid(critter, critterBuildGorisFid(critter, baseFrmId), -1);
+    reg_anim_end();
+}
+
+static void waitForGorisAnimation(Object* critter)
+{
+    while (animationIsBusy(critter)) {
+        sharedFpsLimiter.mark();
+        _process_bk();
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
 // 0x422C60
 static bool _combat_should_end()
 {
@@ -3501,6 +3495,18 @@ void _combat(CombatStartData* csd)
             gameUiEnable();
             gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
         } else {
+            // CE: start Goris animation before iface animations to reduce wait time
+            for (int index = 0; index < _list_total; index++) {
+                Object* critter = _combat_list[index];
+                if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter) && !_isLoadingGame()) {
+                    if (animationIsBusy(critter)) {
+                        waitForGorisAnimation(critter);
+                    }
+
+                    queueGorisCombatBeginEndAnimation(critter, kGorisRobeBaseFid);
+                    break;
+                }
+            }
             _gmouse_disable_scrolling();
             interfaceBarEndButtonsHide(true);
             _gmouse_enable_scrolling();

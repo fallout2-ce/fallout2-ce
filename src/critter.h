@@ -13,6 +13,9 @@ typedef enum DudeState {
     DUDE_STATE_ADDICTED = 4,
 } DudeState;
 
+const int kGorisCombatBaseFid = 100;
+const int kGorisRobeBaseFid = 99;
+
 int critterInit();
 void critterReset();
 void critterExit();
@@ -51,6 +54,7 @@ bool critterIsDead(Object* critter);
 bool critterIsCrippled(Object* critter);
 bool critterIsProne(Object* critter);
 int critterGetBodyType(Object* critter);
+int critterBuildGorisFid(Object* critter, int frmId);
 int gcdLoad(const char* path);
 int protoCritterDataRead(File* stream, CritterProtoData* critterData);
 int gcdSave(const char* path);
