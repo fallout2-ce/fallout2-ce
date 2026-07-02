@@ -105,12 +105,42 @@ typedef struct InterfaceItemState {
     int itemFid;
 } InterfaceItemState;
 
+typedef struct InterfaceAmmoCounterState {
+    bool visible;
+    int current;
+    int maximum;
+    int iconCount;
+} InterfaceAmmoCounterState;
+
+typedef enum InterfaceAmmoCounterMode {
+    INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR = 0,
+    INTERFACE_AMMO_COUNTER_MODE_NUMERIC = 1,
+    INTERFACE_AMMO_COUNTER_MODE_HRP_BAR = 2,
+    INTERFACE_AMMO_COUNTER_MODE_HIDDEN = 3,
+    INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR_NUMERIC = 4,
+    INTERFACE_AMMO_COUNTER_MODE_HRP_BAR_NUMERIC = 5,
+} InterfaceAmmoCounterMode;
+
 constexpr int kCustomIndicatorMinTag = 5;
 constexpr int kCustomIndicatorMaxTag = 126;
 constexpr int kCustomIndicatorMaxCount = kCustomIndicatorMaxTag - kCustomIndicatorMinTag + 1;
 constexpr int kCustomIndicatorDefaultCount = 5;
 constexpr int kCustomIndicatorTextLength = 19;
 constexpr int kCustomIndicatorTextBufferSize = kCustomIndicatorTextLength + 1;
+constexpr int kAmmoCounterLeft = 459;
+constexpr int kAmmoCounterTop = 8;
+constexpr int kAmmoCounterWidth = 58;
+constexpr int kAmmoCounterHeight = 13;
+constexpr int kAmmoCounterBulletWidth = 6;
+constexpr int kAmmoCounterBulletHeight = 3;
+constexpr int kAmmoCounterBulletGap = 2;
+constexpr int kAmmoCounterBulletClusterGap = 0;
+constexpr int kAmmoBarLeft = 463;
+constexpr int kAmmoBarTop = 26;
+constexpr int kAmmoStockBarWidth = 1;
+constexpr int kAmmoHrpBarWidth = 2;
+constexpr int kAmmoBarBackgroundWidth = kAmmoHrpBarWidth;
+constexpr int kAmmoBarHeight = 71;
 
 struct CustomIndicatorDescription {
     bool isActive;
@@ -130,7 +160,25 @@ static int endTurnButtonInit();
 static int endTurnButtonFree();
 static int endCombatButtonInit();
 static int endCombatButtonFree();
-static void interfaceUpdateAmmoBar(int x, int ratio);
+static void interfaceAmmoCounterSettingsInit();
+static void interfaceAmmoCounterCaptureBackground();
+static Rect interfaceAmmoCounterGetRect();
+static Rect interfaceAmmoBarGetRect(int width);
+static bool interfaceAmmoCounterShouldDrawAmmoBar();
+static bool interfaceAmmoCounterShouldDrawNumeric();
+static int interfaceAmmoCounterGetAmmoBarWidth();
+static InterfaceAmmoCounterState interfaceGetAmmoCounterState();
+static int interfaceAmmoCounterGetIconCount(InterfaceItemState* itemState);
+static int interfaceAmmoCounterGetIconCountForHitMode(InterfaceItemState* itemState, int hitMode);
+static int interfaceAmmoCounterGetFallbackIconCount(InterfaceItemState* itemState);
+static void interfaceUpdateAmmoBar(int x, int ratio, int width);
+static void interfaceRenderAmmoCounter();
+static void interfaceAmmoCounterRestoreBackground(const Rect& rect);
+static void interfaceAmmoBarRestoreBackground(const Rect& rect);
+static void interfaceAmmoCounterDrawBulletGlyph(const Rect& rect, int x, int y);
+static void interfaceAmmoCounterGetBulletGroupSize(int iconCount, int* widthPtr, int* heightPtr);
+static void interfaceAmmoCounterDrawBulletGroup(const Rect& rect, int x, int y, int iconCount);
+static void interfaceAmmoCounterDrawText(const Rect& rect, int current, int maximum, int iconCount);
 static int _intface_item_reload();
 static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor);
 static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse);
@@ -345,6 +393,13 @@ static Art* gCustomInterfaceBarBackground = nullptr;
 
 static int gInterfaceSidePanelsLeadingWindow = -1;
 static int gInterfaceSidePanelsTrailingWindow = -1;
+static InterfaceAmmoCounterMode gInterfaceAmmoCounterMode = INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR;
+static int gInterfaceAmmoGlyphCountByHand[HAND_COUNT] = { 1, 1 };
+static Object* gInterfaceAmmoGlyphWeaponByHand[HAND_COUNT] = { nullptr, nullptr };
+static unsigned char gInterfaceAmmoCounterBackground[kAmmoCounterWidth * kAmmoCounterHeight];
+static unsigned char gInterfaceAmmoBarBackground[kAmmoBarBackgroundWidth * kAmmoBarHeight];
+static bool gInterfaceAmmoCounterBackgroundValid = false;
+static bool gInterfaceAmmoBarBackgroundValid = false;
 
 static Buffer2D interfaceWindowBuf2D()
 {
@@ -366,6 +421,7 @@ int interfaceInit()
         return -1;
     }
 
+    interfaceAmmoCounterSettingsInit();
     customInterfaceBarInit();
 
     gInterfaceBarEndButtonsRect = { 580 + gInterfaceBarContentOffset, 38, 637 + gInterfaceBarContentOffset, 96 };
@@ -403,6 +459,7 @@ int interfaceInit()
     }
 
     extendedApBarInitToWindow();
+    interfaceAmmoCounterCaptureBackground();
 
     fid = buildFid(OBJ_TYPE_INTERFACE, 47, 0, 0, 0);
     if (!_inventoryButtonNormalFrmImage.lock(fid)) {
@@ -670,6 +727,9 @@ void interfaceFree()
     quickToolbarFree();
 
     if (gInterfaceBarWindow != -1) {
+        gInterfaceAmmoCounterBackgroundValid = false;
+        gInterfaceAmmoBarBackgroundValid = false;
+
         // SFALL
         sidePanelsExit();
 
@@ -864,6 +924,7 @@ void interfaceBarShow()
             interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
             interfaceRenderHitPoints(false);
             interfaceRenderArmorClass(false);
+            interfaceRenderAmmoCounter();
             windowShow(gInterfaceBarWindow);
             sidePanelsShow();
             gInterfaceBarHidden = false;
@@ -934,6 +995,7 @@ void interfaceBarRefresh()
         interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
         interfaceRenderHitPoints(false);
         interfaceRenderArmorClass(false);
+        interfaceRenderAmmoCounter();
         indicatorBarRefresh();
         windowRefresh(gInterfaceBarWindow);
     }
@@ -1444,7 +1506,20 @@ int _intface_update_ammo_lights()
         }
     }
 
-    interfaceUpdateAmmoBar(463 + gInterfaceBarContentOffset, ratio);
+    if (interfaceAmmoCounterShouldDrawAmmoBar()) {
+        interfaceUpdateAmmoBar(kAmmoBarLeft + gInterfaceBarContentOffset, ratio, interfaceAmmoCounterGetAmmoBarWidth());
+    } else {
+        Rect ammoBarRect = interfaceAmmoBarGetRect(kAmmoBarBackgroundWidth);
+        interfaceAmmoBarRestoreBackground(ammoBarRect);
+
+        if (!gInterfaceBarInitialized) {
+            windowRefreshRect(gInterfaceBarWindow, &ammoBarRect);
+        }
+    }
+
+    if (interfaceAmmoCounterShouldDrawNumeric()) {
+        interfaceRenderAmmoCounter();
+    }
 
     return 0;
 }
@@ -1617,6 +1692,11 @@ static int intface_init_items()
     // checked for -1, so I have no explanation for this.
     gInterfaceItemStates[HAND_LEFT].item = (Object*)-1;
     gInterfaceItemStates[HAND_RIGHT].item = (Object*)-1;
+
+    for (int hand = 0; hand < HAND_COUNT; hand++) {
+        gInterfaceAmmoGlyphCountByHand[hand] = 1;
+        gInterfaceAmmoGlyphWeaponByHand[hand] = nullptr;
+    }
 
     return 0;
 }
@@ -2048,38 +2128,446 @@ static int endCombatButtonFree()
     return 0;
 }
 
+static void interfaceAmmoCounterSettingsInit()
+{
+    gInterfaceAmmoCounterMode = INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR;
+
+    Config config;
+    if (configInit(&config)) {
+        if (configRead(&config, "f2_res.ini", false)) {
+            int mode;
+            if (configGetInt(&config, "IFACE", "IFACE_AMMO_COUNTER", &mode)) {
+                switch (mode) {
+                case INTERFACE_AMMO_COUNTER_MODE_NUMERIC:
+                    gInterfaceAmmoCounterMode = INTERFACE_AMMO_COUNTER_MODE_NUMERIC;
+                    break;
+                case INTERFACE_AMMO_COUNTER_MODE_HRP_BAR:
+                    gInterfaceAmmoCounterMode = INTERFACE_AMMO_COUNTER_MODE_HRP_BAR;
+                    break;
+                case INTERFACE_AMMO_COUNTER_MODE_HIDDEN:
+                    gInterfaceAmmoCounterMode = INTERFACE_AMMO_COUNTER_MODE_HIDDEN;
+                    break;
+                case INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR_NUMERIC:
+                    gInterfaceAmmoCounterMode = INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR_NUMERIC;
+                    break;
+                case INTERFACE_AMMO_COUNTER_MODE_HRP_BAR_NUMERIC:
+                    gInterfaceAmmoCounterMode = INTERFACE_AMMO_COUNTER_MODE_HRP_BAR_NUMERIC;
+                    break;
+                default:
+                    gInterfaceAmmoCounterMode = INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR;
+                    break;
+                }
+            }
+        }
+
+        configFree(&config);
+    }
+}
+
+static Rect interfaceAmmoCounterGetRect()
+{
+    return { kAmmoCounterLeft + gInterfaceBarContentOffset,
+        kAmmoCounterTop,
+        kAmmoCounterLeft + gInterfaceBarContentOffset + kAmmoCounterWidth - 1,
+        kAmmoCounterTop + kAmmoCounterHeight - 1 };
+}
+
+static Rect interfaceAmmoBarGetRect(int width)
+{
+    return { kAmmoBarLeft + gInterfaceBarContentOffset,
+        kAmmoBarTop,
+        kAmmoBarLeft + gInterfaceBarContentOffset + width - 1,
+        kAmmoBarTop + kAmmoBarHeight - 1 };
+}
+
+static bool interfaceAmmoCounterShouldDrawAmmoBar()
+{
+    return gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR
+        || gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_HRP_BAR
+        || gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR_NUMERIC
+        || gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_HRP_BAR_NUMERIC;
+}
+
+static bool interfaceAmmoCounterShouldDrawNumeric()
+{
+    return gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_NUMERIC
+        || gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_STOCK_BAR_NUMERIC
+        || gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_HRP_BAR_NUMERIC;
+}
+
+static int interfaceAmmoCounterGetAmmoBarWidth()
+{
+    if (gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_HRP_BAR
+        || gInterfaceAmmoCounterMode == INTERFACE_AMMO_COUNTER_MODE_HRP_BAR_NUMERIC) {
+        return kAmmoHrpBarWidth;
+    }
+
+    return kAmmoStockBarWidth;
+}
+
+static void interfaceAmmoCounterCaptureBackground()
+{
+    if (gInterfaceWindowBuffer == nullptr) {
+        gInterfaceAmmoCounterBackgroundValid = false;
+        gInterfaceAmmoBarBackgroundValid = false;
+        return;
+    }
+
+    Rect counterRect = interfaceAmmoCounterGetRect();
+    blitBufferToBuffer(gInterfaceWindowBuffer + counterRect.top * gInterfaceBarWidth + counterRect.left,
+        kAmmoCounterWidth,
+        kAmmoCounterHeight,
+        gInterfaceBarWidth,
+        gInterfaceAmmoCounterBackground,
+        kAmmoCounterWidth);
+    gInterfaceAmmoCounterBackgroundValid = true;
+
+    Rect ammoBarRect = interfaceAmmoBarGetRect(kAmmoBarBackgroundWidth);
+    blitBufferToBuffer(gInterfaceWindowBuffer + ammoBarRect.top * gInterfaceBarWidth + ammoBarRect.left,
+        kAmmoBarBackgroundWidth,
+        kAmmoBarHeight,
+        gInterfaceBarWidth,
+        gInterfaceAmmoBarBackground,
+        kAmmoBarBackgroundWidth);
+    gInterfaceAmmoBarBackgroundValid = true;
+}
+
+static InterfaceAmmoCounterState interfaceGetAmmoCounterState()
+{
+    InterfaceAmmoCounterState state = { false, 0, 0, 0 };
+    InterfaceItemState* itemState = &(gInterfaceItemStates[gInterfaceCurrentHand]);
+    if (itemState == nullptr || itemState->item == nullptr || itemState->item == (Object*)-1 || itemState->isWeapon == 0 || itemGetType(itemState->item) != ITEM_TYPE_WEAPON) {
+        return state;
+    }
+
+    state.maximum = ammoGetCapacity(itemState->item);
+    if (state.maximum <= 0) {
+        state.maximum = 0;
+        return state;
+    }
+
+    state.current = std::max(ammoGetQuantity(itemState->item), 0);
+    state.iconCount = interfaceAmmoCounterGetIconCount(itemState);
+    state.visible = true;
+    return state;
+}
+
+static int interfaceAmmoCounterGetIconCount(InterfaceItemState* itemState)
+{
+    if (itemState == nullptr || itemState->item == nullptr || itemState->item == (Object*)-1) {
+        return 0;
+    }
+
+    int hand = gInterfaceCurrentHand;
+    if (hand < 0 || hand >= HAND_COUNT) {
+        return interfaceAmmoCounterGetFallbackIconCount(itemState);
+    }
+
+    int hitMode = -1;
+    switch (itemState->action) {
+    case INTERFACE_ITEM_ACTION_PRIMARY:
+    case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
+        hitMode = itemState->primaryHitMode;
+        break;
+    case INTERFACE_ITEM_ACTION_SECONDARY:
+    case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
+        hitMode = itemState->secondaryHitMode;
+        break;
+    case INTERFACE_ITEM_ACTION_RELOAD:
+        if (gInterfaceAmmoGlyphWeaponByHand[hand] == itemState->item && gInterfaceAmmoGlyphCountByHand[hand] > 0) {
+            return gInterfaceAmmoGlyphCountByHand[hand];
+        }
+
+        return interfaceAmmoCounterGetFallbackIconCount(itemState);
+    default:
+        return interfaceAmmoCounterGetFallbackIconCount(itemState);
+    }
+
+    int iconCount = interfaceAmmoCounterGetIconCountForHitMode(itemState, hitMode);
+    if (iconCount > 0) {
+        gInterfaceAmmoGlyphWeaponByHand[hand] = itemState->item;
+        gInterfaceAmmoGlyphCountByHand[hand] = iconCount;
+    }
+
+    return iconCount;
+}
+
+static int interfaceAmmoCounterGetIconCountForHitMode(InterfaceItemState* itemState, int hitMode)
+{
+    if (itemState == nullptr || itemState->item == nullptr || itemState->item == (Object*)-1) {
+        return 0;
+    }
+
+    if (hitMode < 0 || hitMode >= HIT_MODE_COUNT) {
+        return 0;
+    }
+
+    int attackType = weaponGetAttackTypeForHitMode(itemState->item, hitMode);
+    if (attackType == ATTACK_TYPE_NONE) {
+        return 0;
+    }
+
+    int anim = critterGetAnimationForHitMode(gDude, hitMode);
+    switch (anim) {
+    case ANIM_FIRE_SINGLE:
+        return 1;
+    case ANIM_FIRE_BURST:
+        return 3;
+    case ANIM_FIRE_CONTINUOUS:
+        return 5;
+    default:
+        if (attackType == ATTACK_TYPE_RANGED) {
+            return 1;
+        }
+        return 0;
+    }
+}
+
+static int interfaceAmmoCounterGetFallbackIconCount(InterfaceItemState* itemState)
+{
+    if (itemState == nullptr || itemState->item == nullptr || itemState->item == (Object*)-1) {
+        return 0;
+    }
+
+    int secondaryIconCount = interfaceAmmoCounterGetIconCountForHitMode(itemState, itemState->secondaryHitMode);
+    if (secondaryIconCount == 3 || secondaryIconCount == 5) {
+        return secondaryIconCount;
+    }
+
+    int primaryIconCount = interfaceAmmoCounterGetIconCountForHitMode(itemState, itemState->primaryHitMode);
+    if (primaryIconCount > 0) {
+        return primaryIconCount;
+    }
+
+    if (secondaryIconCount > 0) {
+        return secondaryIconCount;
+    }
+
+    if (weaponGetAttackTypeForHitMode(itemState->item, itemState->primaryHitMode) == ATTACK_TYPE_RANGED
+        || weaponGetAttackTypeForHitMode(itemState->item, itemState->secondaryHitMode) == ATTACK_TYPE_RANGED) {
+        return 1;
+    }
+
+    return 0;
+}
+
 // 0x460AA0 intface_draw_ammo_lights
-static void interfaceUpdateAmmoBar(int x, int ratio)
+static void interfaceUpdateAmmoBar(int x, int ratio, int width)
 {
     if ((ratio & 1) != 0) {
         ratio -= 1;
     }
 
-    unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * 26 + x;
+    unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoBarTop + x;
 
     for (int index = 70; index > ratio; index--) {
-        *dest = 14;
+        for (int column = 0; column < width; column++) {
+            dest[column] = 14;
+        }
         dest += gInterfaceBarWidth;
     }
 
     while (ratio > 0) {
-        *dest = 196;
+        for (int column = 0; column < width; column++) {
+            dest[column] = 196;
+        }
         dest += gInterfaceBarWidth;
 
-        *dest = 14;
+        for (int column = 0; column < width; column++) {
+            dest[column] = 14;
+        }
         dest += gInterfaceBarWidth;
 
         ratio -= 2;
     }
 
     if (!gInterfaceBarInitialized) {
-        Rect rect;
-        rect.left = x;
-        rect.top = 26;
-        rect.right = x + 1;
-        rect.bottom = 26 + 70;
+        Rect rect = interfaceAmmoBarGetRect(width);
         windowRefreshRect(gInterfaceBarWindow, &rect);
     }
+}
+
+static void interfaceRenderAmmoCounter()
+{
+    if (!interfaceAmmoCounterShouldDrawNumeric() || gInterfaceBarWindow == -1) {
+        return;
+    }
+
+    Rect counterRect = interfaceAmmoCounterGetRect();
+    interfaceAmmoCounterRestoreBackground(counterRect);
+
+    InterfaceAmmoCounterState state = interfaceGetAmmoCounterState();
+    if (state.visible) {
+        interfaceAmmoCounterDrawText(counterRect, state.current, state.maximum, state.iconCount);
+    }
+
+    if (!gInterfaceBarInitialized) {
+        Rect refreshRect = counterRect;
+        windowRefreshRect(gInterfaceBarWindow, &refreshRect);
+    }
+}
+
+static void interfaceAmmoCounterRestoreBackground(const Rect& rect)
+{
+    if (!gInterfaceAmmoCounterBackgroundValid || gInterfaceWindowBuffer == nullptr) {
+        return;
+    }
+
+    blitBufferToBuffer(gInterfaceAmmoCounterBackground,
+        kAmmoCounterWidth,
+        kAmmoCounterHeight,
+        kAmmoCounterWidth,
+        gInterfaceWindowBuffer + rect.top * gInterfaceBarWidth + rect.left,
+        gInterfaceBarWidth);
+}
+
+static void interfaceAmmoBarRestoreBackground(const Rect& rect)
+{
+    if (!gInterfaceAmmoBarBackgroundValid || gInterfaceWindowBuffer == nullptr) {
+        return;
+    }
+
+    blitBufferToBuffer(gInterfaceAmmoBarBackground,
+        kAmmoBarBackgroundWidth,
+        kAmmoBarHeight,
+        kAmmoBarBackgroundWidth,
+        gInterfaceWindowBuffer + rect.top * gInterfaceBarWidth + rect.left,
+        gInterfaceBarWidth);
+}
+
+static void interfaceAmmoCounterDrawBulletGlyph(const Rect& rect, int x, int y)
+{
+    static constexpr unsigned char glyph[kAmmoCounterBulletHeight][kAmmoCounterBulletWidth] = {
+        { 1, 1, 1, 1, 1, 0 },
+        { 4, 3, 3, 3, 2, 1 },
+        { 1, 1, 1, 1, 1, 0 },
+    };
+
+    const int outlineColor = _colorTable[0];
+    const int darkBrassColor = intensityColorTable[_colorTable[32328]][56];
+    const int brassColor = intensityColorTable[_colorTable[32328]][80];
+    const int tipColor = intensityColorTable[_colorTable[32328]][96];
+
+    for (int row = 0; row < kAmmoCounterBulletHeight; row++) {
+        int destY = y + row;
+        if (destY < rect.top || destY > rect.bottom) {
+            continue;
+        }
+
+        for (int column = 0; column < kAmmoCounterBulletWidth; column++) {
+            int destX = x + column;
+            if (destX < rect.left || destX > rect.right) {
+                continue;
+            }
+
+            int color = 0;
+            switch (glyph[row][column]) {
+            case 1:
+                color = outlineColor;
+                break;
+            case 2:
+                color = darkBrassColor;
+                break;
+            case 3:
+                color = brassColor;
+                break;
+            case 4:
+                color = tipColor;
+                break;
+            default:
+                continue;
+            }
+
+            gInterfaceWindowBuffer[gInterfaceBarWidth * destY + destX] = color;
+        }
+    }
+}
+
+static void interfaceAmmoCounterGetBulletGroupSize(int iconCount, int* widthPtr, int* heightPtr)
+{
+    int width = 0;
+    int height = 0;
+
+    if (iconCount == 1) {
+        width = kAmmoCounterBulletWidth;
+        height = kAmmoCounterBulletHeight;
+    } else if (iconCount == 3) {
+        width = kAmmoCounterBulletWidth;
+        height = kAmmoCounterBulletHeight * 3 + kAmmoCounterBulletClusterGap * 2;
+    } else if (iconCount == 5) {
+        width = kAmmoCounterBulletWidth * 2 + kAmmoCounterBulletClusterGap;
+        height = kAmmoCounterBulletHeight * 3 + kAmmoCounterBulletClusterGap * 2;
+    }
+
+    if (widthPtr != nullptr) {
+        *widthPtr = width;
+    }
+
+    if (heightPtr != nullptr) {
+        *heightPtr = height;
+    }
+}
+
+static void interfaceAmmoCounterDrawBulletGroup(const Rect& rect, int x, int y, int iconCount)
+{
+    if (iconCount == 1) {
+        interfaceAmmoCounterDrawBulletGlyph(rect, x, y);
+        return;
+    }
+
+    if (iconCount == 3 || iconCount == 5) {
+        int rowStep = kAmmoCounterBulletHeight + kAmmoCounterBulletClusterGap;
+        for (int index = 0; index < 3; index++) {
+            interfaceAmmoCounterDrawBulletGlyph(rect, x, y + rowStep * index);
+        }
+
+        if (iconCount == 5) {
+            int secondColumnX = x + kAmmoCounterBulletWidth + kAmmoCounterBulletClusterGap;
+            int secondColumnY = y + (kAmmoCounterBulletHeight + kAmmoCounterBulletClusterGap) / 2;
+            for (int index = 0; index < 2; index++) {
+                interfaceAmmoCounterDrawBulletGlyph(rect, secondColumnX, secondColumnY + rowStep * index);
+            }
+        }
+    }
+}
+
+static void interfaceAmmoCounterDrawText(const Rect& rect, int current, int maximum, int iconCount)
+{
+    char text[16];
+    snprintf(text, sizeof(text), "%d/%d", std::clamp(current, 0, 999), std::clamp(maximum, 0, 999));
+
+    int oldFont = fontGetCurrent();
+    fontSetCurrent(101);
+
+    int textWidth = fontGetStringWidth(text);
+    int rectWidth = rectGetWidth(&rect);
+    int bulletGroupWidth;
+    int bulletGroupHeight;
+    interfaceAmmoCounterGetBulletGroupSize(iconCount, &bulletGroupWidth, &bulletGroupHeight);
+
+    bool drawBullet = bulletGroupWidth > 0 && textWidth + kAmmoCounterBulletGap + bulletGroupWidth <= rectWidth;
+    int groupWidth = textWidth + (drawBullet ? kAmmoCounterBulletGap + bulletGroupWidth : 0);
+    int groupX = rect.left + std::max((rectWidth - groupWidth) / 2, 0);
+    int textX = groupX + (drawBullet ? bulletGroupWidth + kAmmoCounterBulletGap : 0);
+    int textY = rect.top + std::max((rectGetHeight(&rect) - fontGetLineHeight()) / 2, 0);
+    int maxDrawWidth = rect.right - textX + 1;
+
+    if (maxDrawWidth > 0) {
+        const int shadowColor = _colorTable[0];
+        const int textColor = intensityColorTable[_colorTable[992]][80];
+        if (drawBullet) {
+            int bulletY = rect.top + std::max((rectGetHeight(&rect) - bulletGroupHeight) / 2, 0);
+            interfaceAmmoCounterDrawBulletGroup(rect, groupX, bulletY, iconCount);
+        }
+
+        int shadowMaxDrawWidth = maxDrawWidth - 1;
+        if (shadowMaxDrawWidth > 0) {
+            fontDrawText(gInterfaceWindowBuffer + gInterfaceBarWidth * (textY + 1) + textX + 1, text, shadowMaxDrawWidth, gInterfaceBarWidth, shadowColor);
+        }
+        fontDrawText(gInterfaceWindowBuffer + gInterfaceBarWidth * textY + textX, text, maxDrawWidth, gInterfaceBarWidth, textColor);
+    }
+
+    fontSetCurrent(oldFont);
 }
 
 // 0x460B20 intface_item_reload
