@@ -55,6 +55,8 @@ static void mf_critter_inven_obj2(OpcodeContext& ctx);
 static void mf_dialog_obj(OpcodeContext& ctx);
 static void mf_dialog_message(OpcodeContext& ctx);
 static void mf_display_stats(OpcodeContext& ctx);
+static void mf_draw_image(OpcodeContext& ctx);
+static void mf_draw_image_scaled(OpcodeContext& ctx);
 static void mf_get_combat_free_move(OpcodeContext& ctx);
 static void mf_get_cursor_mode(OpcodeContext& ctx);
 static void mf_get_flags(OpcodeContext& ctx);
@@ -65,6 +67,7 @@ static void mf_get_sfall_arg_at(OpcodeContext& ctx);
 static void mf_get_text_width(OpcodeContext& ctx);
 static void mf_get_window_attribute(OpcodeContext& ctx);
 static void mf_hide_window(OpcodeContext& ctx);
+static void mf_interface_art_draw(OpcodeContext& ctx);
 static void mf_intface_redraw(OpcodeContext& ctx);
 static void mf_inventory_redraw(OpcodeContext& ctx);
 static void mf_item_weight(OpcodeContext& ctx);
@@ -72,6 +75,7 @@ static void mf_loot_obj(OpcodeContext& ctx);
 static void mf_message_box(OpcodeContext& ctx);
 static void mf_add_extra_msg_file(OpcodeContext& ctx);
 static void mf_add_iface_tag(OpcodeContext& ctx);
+static void mf_art_frame_data(OpcodeContext& ctx);
 static void mf_art_cache_flush(OpcodeContext& ctx);
 static void mf_metarule_exist(OpcodeContext& ctx);
 static void mf_obj_is_openable(OpcodeContext& ctx);
@@ -91,6 +95,7 @@ static void mf_signal_close_game(OpcodeContext& ctx);
 static void mf_tile_by_position(OpcodeContext& ctx);
 static void mf_tile_refresh_display(OpcodeContext& ctx);
 static void mf_unwield_slot(OpcodeContext& ctx);
+static void mf_win_fill_color(OpcodeContext& ctx);
 static void mf_string_compare(OpcodeContext& ctx);
 static void mf_string_find(OpcodeContext& ctx);
 static void mf_string_to_case(OpcodeContext& ctx);
@@ -106,6 +111,7 @@ const MetaruleInfo kMetarules[] = {
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
     { "art_cache_clear", mf_art_cache_flush, 0, 0 },
+    { "art_frame_data", mf_art_frame_data, 1, 3, 0, { ARG_INTSTR, ARG_INT, ARG_INT } },
     { "attack_is_aimed", mf_attack_is_aimed, 0, 0 },
     { "car_gas_amount", mf_car_gas_amount, 0, 0 },
     { "combat_data", mf_combat_data, 0, 0 },
@@ -114,8 +120,8 @@ const MetaruleInfo kMetarules[] = {
     { "dialog_message", mf_dialog_message, 1, 1, -1, { ARG_STRING } },
     { "dialog_obj", mf_dialog_obj, 0, 0 },
     { "display_stats", mf_display_stats, 0, 0 }, // refresh
-    // {"draw_image",                mf_draw_image,                1, 5, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
-    // {"draw_image_scaled",         mf_draw_image_scaled,         1, 6, -1, {ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
+    { "draw_image", mf_draw_image, 1, 5, -1, { ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
+    { "draw_image_scaled", mf_draw_image_scaled, 1, 6, -1, { ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     // {"exec_map_update_scripts",   mf_exec_map_update_scripts,   0, 0},
     { "floor2", mf_floor2, 1, 1, 0, { ARG_NUMBER } },
     // {"get_can_rest_on_map",       mf_get_rest_on_map,           2, 2, -1, {ARG_INT, ARG_INT}},
@@ -142,6 +148,7 @@ const MetaruleInfo kMetarules[] = {
     // {"has_fake_perk_npc",         mf_has_fake_perk_npc,         2, 2,  0, {ARG_OBJECT, ARG_STRING}},
     // {"has_fake_trait_npc",        mf_has_fake_trait_npc,        2, 2,  0, {ARG_OBJECT, ARG_STRING}},
     { "hide_window", mf_hide_window, 0, 1, -1, { ARG_STRING } },
+    { "interface_art_draw", mf_interface_art_draw, 4, 6, -1, { ARG_INT, ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     // {"interface_overlay",         mf_interface_overlay,         2, 6, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"interface_print",           mf_interface_print,           5, 6, -1, {ARG_STRING, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"intface_hide",              mf_intface_hide,              0, 0},
@@ -200,6 +207,7 @@ const MetaruleInfo kMetarules[] = {
     { "tile_refresh_display", mf_tile_refresh_display, 0, 0 },
     // {"unjam_lock",                mf_unjam_lock,                1, 1, -1, {ARG_OBJECT}},
     { "unwield_slot", mf_unwield_slot, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
+    { "win_fill_color", mf_win_fill_color, 0, 5, -1, { ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "opcode_exists", mf_opcode_exists, 1, 1 },
 };
 const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
@@ -291,6 +299,38 @@ static int getCurrentInterfaceWindow()
     return window;
 }
 
+static bool clampWindowFillRect(int windowWidth, int windowHeight, int& x, int& y, int& width, int& height)
+{
+    if (x < 0) {
+        width += x;
+        x = 0;
+    }
+
+    if (y < 0) {
+        height += y;
+        y = 0;
+    }
+
+    if (x >= windowWidth || y >= windowHeight) {
+        width = 0;
+        height = 0;
+        return true;
+    }
+
+    bool truncated = false;
+    if (x + width > windowWidth) {
+        width = windowWidth - x;
+        truncated = true;
+    }
+
+    if (y + height > windowHeight) {
+        height = windowHeight - y;
+        truncated = true;
+    }
+
+    return truncated;
+}
+
 static bool applyWindowFlag(int windowId, int bitFlag, bool enabled)
 {
     return scriptWindowSetFlag(windowId, bitFlag, enabled);
@@ -299,6 +339,44 @@ static bool applyWindowFlag(int windowId, int bitFlag, bool enabled)
 void mf_art_cache_flush(OpcodeContext& ctx)
 {
     artCacheFlush();
+}
+
+void mf_art_frame_data(OpcodeContext& ctx)
+{
+    int frame = ctx.numArgs() > 1 ? ctx.arg(1).asInt() : 0;
+    int direction = ctx.numArgs() > 2 ? ctx.arg(2).asInt() : 0;
+
+    if (ctx.arg(0).isInt() && ctx.arg(0).asInt() == -1) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    FrmImage image;
+    if (ctx.arg(0).isInt()) {
+        int fid = ctx.arg(0).asInt();
+        if (!image.lock(fid, frame, direction)) {
+            ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
+            ctx.setReturn(-1);
+            return;
+        }
+    } else {
+        const char* path = ctx.stringArg(0);
+        if (!image.lock(path, frame, direction)) {
+            ctx.printError("%s() - cannot load art from file: %s", ctx.name(), path);
+            ctx.setReturn(-1);
+            return;
+        }
+    }
+
+    if (image.getWidth() <= 0 || image.getHeight() <= 0) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    ArrayId arrayId = CreateTempArray(2, 0);
+    SetArray(arrayId, ProgramValue(0), ProgramValue(image.getWidth()), false, ctx.program());
+    SetArray(arrayId, ProgramValue(1), ProgramValue(image.getHeight()), false, ctx.program());
+    ctx.setReturn(ProgramValue(arrayId));
 }
 
 void mf_add_iface_tag(OpcodeContext& ctx)
@@ -527,6 +605,198 @@ void mf_get_window_attribute(OpcodeContext& ctx)
         ctx.setReturn(0);
         break;
     }
+}
+
+static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, int direction, FrmImage& image, int& fid)
+{
+    if (ctx.arg(artArg).isInt() && ctx.arg(artArg).asInt() == -1) {
+        return false;
+    }
+
+    if (ctx.arg(artArg).isInt()) {
+        fid = ctx.arg(artArg).asInt();
+        int frameDirection = 0;
+        int lockFid = fid;
+        if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
+            frameDirection = direction >= 0 ? direction : FID_ROTATION(fid);
+            if (direction >= 0) {
+                lockFid = (direction << 28) | (fid & 0x0FFFFFFF);
+            }
+        }
+
+        if (!image.lock(lockFid, frame, frameDirection)) {
+            ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
+            return false;
+        }
+    } else {
+        const char* path = ctx.stringArg(artArg);
+        int frameDirection = direction >= 0 ? direction : 0;
+        if (!image.lock(path, frame, frameDirection)) {
+            ctx.printError("%s() - cannot load art from file: %s", ctx.name(), path);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static int drawSfallArtImage(OpcodeContext& ctx, int window, FrmImage& image, int x, int y, int width, int height, bool transparent, bool refresh)
+{
+    int windowWidth = windowGetWidth(window);
+    int windowHeight = windowGetHeight(window);
+    if (windowWidth <= 0 || windowHeight <= 0 || windowGetBuffer(window) == nullptr) {
+        ctx.printError("%s() - no created or selected window.", ctx.name());
+        return 0;
+    }
+
+    if (width <= 0 || height <= 0) {
+        return 0;
+    }
+
+    // sfall clamps interface_art_draw left/top coordinates instead of clipping
+    // the source image, but for draw_image does not clamp.  It's best to clamp
+    // instead of potentially writing out of bounds, but if we're regularly
+    // calling this with negative x/y we should implement intelligent clipping instead.
+    if (x < 0) {
+        x = 0;
+    }
+
+    if (y < 0) {
+        y = 0;
+    }
+
+    if (x + width > windowWidth || y + height > windowHeight) {
+        ctx.printError("%s() - attempt to draw beyond window bounds (%d, %d)", ctx.name(), windowWidth, windowHeight);
+        return -1;
+    }
+
+    unsigned char* dest = windowGetBuffer(window) + windowWidth * y + x;
+    if (width != image.getWidth() || height != image.getHeight()) {
+        if (transparent) {
+            blitBufferToBufferStretchTrans(image.getData(), image.getWidth(), image.getHeight(), image.getWidth(), dest, width, height, windowWidth);
+        } else {
+            blitBufferToBufferStretch(image.getData(), image.getWidth(), image.getHeight(), image.getWidth(), dest, width, height, windowWidth);
+        }
+    } else if (transparent) {
+        blitBufferToBufferTrans(image.getData(), image.getWidth(), image.getHeight(), image.getWidth(), dest, windowWidth);
+    } else {
+        blitBufferToBuffer(image.getData(), image.getWidth(), image.getHeight(), image.getWidth(), dest, windowWidth);
+    }
+
+    if (refresh) {
+        Rect rect = { x, y, x + width - 1, y + height - 1 };
+        windowRefreshRect(window, &rect);
+    }
+
+    return 1;
+}
+
+static int drawSfallImageToScriptWindow(OpcodeContext& ctx, bool scaled)
+{
+    int window = scriptWindowGetWindow(ctx.program()->windowId);
+    if (window == -1) {
+        ctx.printError("%s() - no created or selected window.", ctx.name());
+        return 0;
+    }
+
+    int frame = ctx.numArgs() > 1 ? ctx.arg(1).asInt() : 0;
+
+    FrmImage image;
+    int fid = -1;
+    if (!loadSfallArtImage(ctx, 0, frame, -1, image, fid)) {
+        return -1;
+    }
+
+    if (scaled && ctx.numArgs() < 3) {
+        return drawSfallArtImage(ctx, window, image, 0, 0, windowGetWidth(window), windowGetHeight(window), false, true);
+    }
+
+    int x = ctx.numArgs() > 2 ? ctx.arg(2).asInt() : 0;
+    int y = ctx.numArgs() > 3 ? ctx.arg(3).asInt() : 0;
+    int width = image.getWidth();
+    int height = image.getHeight();
+    bool transparent = true;
+
+    if (scaled) {
+        if (ctx.numArgs() > 4) {
+            width = ctx.arg(4).asInt();
+            height = ctx.numArgs() > 5 ? ctx.arg(5).asInt() : -1;
+        }
+
+        if (width <= -1 && height > 0) {
+            width = height * image.getWidth() / image.getHeight();
+        } else if (height <= -1 && width > 0) {
+            height = width * image.getHeight() / image.getWidth();
+        }
+    } else {
+        x += image.getXOffset();
+        y += image.getYOffset();
+        transparent = ctx.numArgs() > 4 ? ctx.arg(4).asInt() == 0 : true;
+    }
+
+    return drawSfallArtImage(ctx, window, image, x, y, width, height, transparent, true);
+}
+
+static void mf_draw_image(OpcodeContext& ctx)
+{
+    ctx.setReturn(drawSfallImageToScriptWindow(ctx, false));
+}
+
+static void mf_draw_image_scaled(OpcodeContext& ctx)
+{
+    ctx.setReturn(drawSfallImageToScriptWindow(ctx, true));
+}
+
+static void mf_interface_art_draw(OpcodeContext& ctx)
+{
+    int window = -1;
+    InterfaceWindowLookupResult lookup = getInterfaceWindowByType(ctx.arg(0).asInt() & 0xFF, window);
+    if (lookup != InterfaceWindowLookupResult::Found) {
+        ctx.printError("%s() - the game interface window is not created or invalid window type number.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    int frame = ctx.numArgs() > 4 ? ctx.arg(4).asInt() : 0;
+    int direction = -1;
+    int scaledWidth = -1;
+    int scaledHeight = -1;
+    if (ctx.numArgs() > 5) {
+        int arrayId = ctx.arg(5).asInt();
+        if (ArrayExists(arrayId)) {
+            direction = GetArray(arrayId, ProgramValue(0), ctx.program()).asInt();
+
+            int arrayLength = LenArray(arrayId);
+            if (arrayLength > 1) {
+                scaledWidth = GetArray(arrayId, ProgramValue(1), ctx.program()).asInt();
+            }
+
+            if (arrayLength > 2) {
+                scaledHeight = GetArray(arrayId, ProgramValue(2), ctx.program()).asInt();
+            }
+        }
+    }
+
+    FrmImage image;
+    int fid = -1;
+    if (!loadSfallArtImage(ctx, 1, frame, direction, image, fid)) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    int xOffset = 0;
+    int yOffset = 0;
+    if (ctx.arg(1).isInt() && FID_TYPE(fid) == OBJ_TYPE_CRITTER && direction >= 0) {
+        xOffset = image.getXOffset();
+        yOffset = image.getYOffset();
+    }
+
+    int x = std::max(ctx.arg(2).asInt() + xOffset, 0);
+    int y = std::max(ctx.arg(3).asInt() + yOffset, 0);
+
+    int width = scaledWidth >= 0 ? scaledWidth : image.getWidth();
+    int height = scaledHeight >= 0 ? scaledHeight : image.getHeight();
+    ctx.setReturn(drawSfallArtImage(ctx, window, image, x, y, width, height, true, (ctx.arg(0).asInt() & 0x1000000) == 0));
 }
 
 void mf_intface_redraw(OpcodeContext& ctx)
@@ -799,6 +1069,45 @@ void mf_hide_window(OpcodeContext& ctx)
         if (!scriptWindowHideNamed(windowName)) {
             ctx.printError("%s() - window '%s' is not found.", ctx.name(), windowName);
         }
+    }
+}
+
+void mf_win_fill_color(OpcodeContext& ctx)
+{
+    int window = scriptWindowGetWindow(ctx.program()->windowId);
+    if (window == -1) {
+        ctx.printError("%s() - no created or selected window.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    int windowWidth = windowGetWidth(window);
+    int windowHeight = windowGetHeight(window);
+    if (ctx.numArgs() == 0) {
+        windowFill(window, 0, 0, windowWidth, windowHeight, 0);
+        windowRefresh(window);
+        return;
+    }
+
+    if (ctx.numArgs() != 5) {
+        ctx.printError("%s() - invalid number of arguments (%d), must be 0 or 5.", ctx.name(), ctx.numArgs());
+        return;
+    }
+
+    int x = ctx.arg(0).asInt();
+    int y = ctx.arg(1).asInt();
+    int width = ctx.arg(2).asInt();
+    int height = ctx.arg(3).asInt();
+    int color = ctx.arg(4).asInt();
+    bool truncated = clampWindowFillRect(windowWidth, windowHeight, x, y, width, height);
+    if (width > 0 && height > 0) {
+        windowFill(window, x, y, width, height, color);
+        Rect rect = { x, y, x + width - 1, y + height - 1 };
+        windowRefreshRect(window, &rect);
+    }
+
+    if (truncated) {
+        ctx.printError("%s() - the fill area is truncated because it exceeds the current window.", ctx.name());
     }
 }
 

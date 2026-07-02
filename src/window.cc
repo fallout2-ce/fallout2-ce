@@ -947,6 +947,20 @@ bool scriptWindowSelectId(int index)
     return true;
 }
 
+int scriptWindowGetWindow(int index)
+{
+    if (index < 0 || index >= MANAGED_WINDOW_COUNT) {
+        return -1;
+    }
+
+    ManagedWindow* managedWindow = &(gManagedWindows[index]);
+    if (managedWindow->window == -1) {
+        return -1;
+    }
+
+    return windowGetWindow(managedWindow->window) != nullptr ? managedWindow->window : -1;
+}
+
 // 0x4B821C
 int scriptWindowSelect(const char* windowName)
 {
@@ -1349,7 +1363,7 @@ bool scriptWindowDisplay(char* fileName, int x, int y, int width, int height)
     return true;
 }
 
-// 0x4B8EF0
+// 0x4B8EF0 windowDisplayBuf
 bool scriptWindowDisplayBuf(unsigned char* src, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight)
 {
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);

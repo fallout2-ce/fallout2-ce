@@ -76,6 +76,7 @@ int scriptWindowCreate(const char* windowName, int x, int y, int width, int heig
 int scriptWindowOutput(const char* string);
 bool scriptWindowGotoXY(int x, int y);
 bool scriptWindowSelectId(int index);
+int scriptWindowGetWindow(int index);
 int scriptWindowSelect(const char* windowName);
 unsigned char* scriptWindowGetBuffer();
 int scriptWindowPush(const char* windowName);
