@@ -1544,7 +1544,7 @@ int _partyMemberIncLevels()
         snprintf(str, sizeof(str), text, name);
         displayMonitorAddMessage(str);
 
-        debugPrint(str);
+        debugPrint("%s", str);
 
         // Individual message
         msg.num = 9000 + 10 * memberIndex + levelUpInfo->level - 1;
