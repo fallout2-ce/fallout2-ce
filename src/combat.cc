@@ -161,7 +161,7 @@ int _combatNumTurns = 0;
 static int combatTurnHookResult = 0;
 
 // 0x510944 combat_state
-unsigned int gCombatState = COMBAT_STATE_0x02;
+unsigned int gCombatState = COMBAT_STATE_PLAYER_TURN;
 
 // 0x510948 aiInfoList
 static CombatAiInfo* _aiInfoList = nullptr;
@@ -2011,7 +2011,7 @@ int combatInit()
     _list_total = 0;
     _gcsd = nullptr;
     _combat_call_display = 0;
-    gCombatState = COMBAT_STATE_0x02;
+    gCombatState = COMBAT_STATE_PLAYER_TURN;
 
     max_action_points = critterGetStat(gDude, STAT_MAXIMUM_ACTION_POINTS);
 
@@ -2060,7 +2060,7 @@ void combatReset()
     _list_total = 0;
     _gcsd = nullptr;
     _combat_call_display = 0;
-    gCombatState = COMBAT_STATE_0x02;
+    gCombatState = COMBAT_STATE_PLAYER_TURN;
 
     max_action_points = critterGetStat(gDude, STAT_MAXIMUM_ACTION_POINTS);
 
@@ -2613,7 +2613,7 @@ static void _combat_begin(Object* attacker)
             }
         }
 
-        gCombatState |= COMBAT_STATE_0x01;
+        gCombatState |= COMBAT_STATE_IN_COMBAT;
 
         tileWindowRefresh();
         gameUiDisable(0);
@@ -2828,8 +2828,8 @@ static void _combat_over()
 
     _combat_exps = 0;
 
-    gCombatState &= ~(COMBAT_STATE_0x01 | COMBAT_STATE_0x02);
-    gCombatState |= COMBAT_STATE_0x02;
+    gCombatState &= ~(COMBAT_STATE_IN_COMBAT | COMBAT_STATE_PLAYER_TURN);
+    gCombatState |= COMBAT_STATE_PLAYER_TURN;
 
     if (_list_total != 0) {
         objectListFree(_combat_list);
@@ -3136,7 +3136,7 @@ static void combatAttemptEnd()
         }
     }
 
-    gCombatState |= COMBAT_STATE_0x08;
+    gCombatState |= COMBAT_STATE_EXIT_REQUESTED;
     _caiTeamCombatExit();
 }
 
@@ -3158,10 +3158,10 @@ static int _combat_input()
 {
     ScopedGameMode gm(GameMode::kPlayerTurn);
 
-    while ((gCombatState & COMBAT_STATE_0x02) != 0) {
+    while ((gCombatState & COMBAT_STATE_PLAYER_TURN) != 0) {
         sharedFpsLimiter.mark();
 
-        if ((gCombatState & COMBAT_STATE_0x08) != 0) {
+        if ((gCombatState & COMBAT_STATE_EXIT_REQUESTED) != 0) {
             break;
         }
 
@@ -3211,8 +3211,8 @@ static int _combat_input()
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     }
 
-    if ((gCombatState & COMBAT_STATE_0x08) != 0) {
-        gCombatState &= ~COMBAT_STATE_0x08;
+    if ((gCombatState & COMBAT_STATE_EXIT_REQUESTED) != 0) {
+        gCombatState &= ~COMBAT_STATE_EXIT_REQUESTED;
         return -1;
     }
 
@@ -3294,7 +3294,7 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
                 }
 
                 if (!reloadedDuringCombat) {
-                    gCombatState |= 0x02;
+                    gCombatState |= COMBAT_STATE_PLAYER_TURN;
                 }
 
                 interfaceBarEndButtonsRenderGreenLights();
@@ -3434,7 +3434,7 @@ void _combat(CombatStartData* csd)
     if (csd == nullptr
         || (csd->attacker == nullptr || csd->attacker->elevation == gElevation)
         || (csd->defender == nullptr || csd->defender->elevation == gElevation)) {
-        bool wasInCombat = (gCombatState & 0x01) != 0;
+        bool wasInCombat = (gCombatState & COMBAT_STATE_IN_COMBAT) != 0;
 
         _combat_begin(nullptr);
 
@@ -5792,7 +5792,7 @@ void _combat_attack_this(Object* target)
         return;
     }
 
-    if ((gCombatState & 0x02) == 0) {
+    if ((gCombatState & COMBAT_STATE_PLAYER_TURN) == 0) {
         return;
     }
 
@@ -5930,7 +5930,7 @@ void _combat_outline_off()
     int v5;
     Object** v9;
 
-    if (gCombatState & 1) {
+    if ((gCombatState & COMBAT_STATE_IN_COMBAT) != 0) {
         for (i = 0; i < _list_total; i++) {
             objectDisableOutline(_combat_list[i], nullptr);
         }
