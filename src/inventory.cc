@@ -1,6 +1,7 @@
 #include "inventory.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -62,6 +63,8 @@ namespace fallout {
 #define INVENTORY_TRADE_WINDOW_HEIGHT 180
 
 constexpr int kTradeSlotCount = 3;
+constexpr int kInventoryLootCompanionSlotWidth = 106;
+constexpr int kInventoryLootCompanionSlotHeight = 77;
 
 #define INVENTORY_LARGE_SLOT_WIDTH 90
 #define INVENTORY_LARGE_SLOT_HEIGHT 61
@@ -192,6 +195,8 @@ constexpr int kTradeSlotCount = 3;
 #define INVENTORY_HAND_RIGHT_KEY 2600
 #define INVENTORY_HAND_LEFT_KEY 2601
 #define INVENTORY_ARMOR_KEY 2602
+#define INVENTORY_LOOT_COMPANION_WEAPON_KEY 2603
+#define INVENTORY_LOOT_COMPANION_ARMOR_KEY 2604
 
 typedef enum InventoryArrowFrm {
     INVENTORY_ARROW_FRM_LEFT_ARROW_UP,
@@ -304,6 +309,9 @@ typedef struct InventoryLootLayout {
     int doneButtonX;
     int prevCritterButtonX;
     int nextCritterButtonX;
+    int companionSlotX;
+    int companionArmorSlotY;
+    int companionWeaponSlotY;
 } InventoryLootLayout;
 
 typedef struct InventoryScroller {
@@ -391,9 +399,19 @@ static void inventoryLootLayoutUpdate();
 static int inventoryLootGetSlotX(bool targetInventory, int slotIndex);
 static int inventoryLootGetSlotY(int slotIndex);
 static bool inventoryLootMouseHitTestScroller(bool targetInventory);
+static void inventoryLootRenderCompanionSlots();
+static void inventoryLootHandleCompanionSlotPickup(int keyCode);
+static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, bool fromLeftPane, bool* attemptedPtr);
+static bool inventoryLootTryUnequipCompanionItem(InvenSlot slot);
+static bool inventoryLootTryMoveCompanionItemToLeftPane(InvenSlot slot, Object* item);
+static int inventoryLootBuildTargetDisplayFid();
+static int inventoryLootGetTargetDisplayFid();
+static void inventoryLootSetTarget(Object* target, Object* hiddenBox);
+static void inventoryLootRefreshAfterTargetChange();
+static int inventoryWrapIndex(int index, int count, int direction);
 static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int scrollStep);
 static int inventoryGetCenteredWindowY(int windowHeight);
-static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index);
+static void inventoryDisplayLootPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index);
 
 // 0x46E6D0 stats_array0
 static const int gSummaryStats[7] = {
@@ -435,6 +453,7 @@ static InventoryLootLayout inventoryLootLayout;
 
 static FrmImage inventoryFrmImage;
 static FrmImage inventoryLootFrmImage;
+static FrmImage inventoryLootCompanionSlotFrmImage;
 
 // 0x519058 inven_dude
 static Object* _inven_dude = nullptr;
@@ -474,6 +493,9 @@ static int gSecondaryInventoryScrollUpButton = -1;
 
 // 0x5190F0 loot_scroll_dn_bid
 static int gSecondaryInventoryScrollDownButton = -1;
+
+static int inventoryLootCompanionWeaponButton = -1;
+static int inventoryLootCompanionArmorButton = -1;
 
 // 0x5190F4 ticker
 static unsigned int gInventoryWindowDudeRotationTimestamp = 0;
@@ -651,6 +673,8 @@ static int gInventoryBarterBackgroundWindow;
 // Weight of equipped items stripped from the left/right loot-pane critter.
 // Non-zero only while inventoryOpenLooting is active.
 static int inventoryLootRightEquippedWeight = 0;
+static CritterEquipped* inventoryLootTargetEquipped = nullptr; // stripped equipment of companion being "looted"
+static Object* inventoryLootBaseTarget = nullptr;
 
 static FrmImage _inventoryFrmImages[INVENTORY_FRM_COUNT];
 static FrmImage _moveFrmImages[8];
@@ -845,6 +869,9 @@ static void inventoryLootApplyLayout(int columns)
     int critterBtnCenterX = inventoryLootLayout.rightBodyViewX + INVENTORY_BODY_VIEW_WIDTH / 2;
     inventoryLootLayout.prevCritterButtonX = critterBtnCenterX - 20;
     inventoryLootLayout.nextCritterButtonX = critterBtnCenterX;
+    inventoryLootLayout.companionSlotX = inventoryLootLayout.rightBodyViewX - 25;
+    inventoryLootLayout.companionArmorSlotY = 158;
+    inventoryLootLayout.companionWeaponSlotY = 240;
 }
 
 static void inventoryNormalLayoutUpdate()
@@ -1028,6 +1055,463 @@ static void inventoryScrollerHandleInput(const InventoryScroller& scroller, int 
         inventoryScrollerScroll(scroller, 1);
     }
 }
+
+static bool inventoryLootHasCompanionSlots()
+{
+    return inventoryLootLayout.columns == 2
+        && _gIsSteal
+        && _target_curr_stack == 0
+        && inventoryLootTargetEquipped != nullptr
+        && inventoryLootBaseTarget != nullptr
+        && _target_stack[0] == inventoryLootBaseTarget
+        && PID_TYPE(inventoryLootBaseTarget->pid) == OBJ_TYPE_CRITTER
+        && objectIsPartyMember(inventoryLootBaseTarget);
+}
+
+static bool inventoryLootCanEquipCompanionWeapon(Object* weapon)
+{
+    int damageFlags = inventoryLootBaseTarget->data.critter.combat.results;
+    bool canUse = (damageFlags & DAM_CRIP_ARM_ANY) != DAM_CRIP_ARM_ANY;
+    if (canUse && (damageFlags & DAM_CRIP_ARM_ANY) != 0 && weaponIsTwoHanded(weapon)) {
+        canUse = false;
+    }
+
+    if (canUse) {
+        int rotation = inventoryLootBaseTarget->rotation + 1;
+        int animationCode = weaponGetAnimationCode(weapon);
+        int weaponAnimationCode = weaponGetAnimationForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+        int fid = buildFid(OBJ_TYPE_CRITTER,
+            inventoryLootBaseTarget->fid & 0xFFF,
+            weaponAnimationCode,
+            animationCode,
+            rotation);
+        if (!artExists(fid)) {
+            canUse = false;
+        }
+    }
+
+    return scriptHooks_CanUseWeapon(canUse, inventoryLootBaseTarget, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+}
+
+static Object** inventoryLootGetCompanionSlotItemSlot(InvenSlot slot)
+{
+    assert (inventoryLootHasCompanionSlots());
+
+    switch (slot) {
+    case InvenSlot::RightHand:
+        return &(inventoryLootTargetEquipped->rightHand);
+    case InvenSlot::Armor:
+        return &(inventoryLootTargetEquipped->armor);
+    default:
+        return nullptr;
+    }
+}
+
+static Object* inventoryLootGetCritterItemInSlot(Object* critter, InvenSlot slot)
+{
+    switch (slot) {
+    case InvenSlot::RightHand:
+        return critterGetItem2(critter);
+    case InvenSlot::Armor:
+        return critterGetArmor(critter);
+    default:
+        return nullptr;
+    }
+}
+
+static Object* inventoryLootGetCompanionSlotItem(InvenSlot slot)
+{
+    Object** itemSlot = inventoryLootGetCompanionSlotItemSlot(slot);
+    return itemSlot != nullptr ? *itemSlot : nullptr;
+}
+
+static Rect inventoryLootGetCompanionSlotRect(InvenSlot slot)
+{
+    Rect rect {};
+
+    switch (slot) {
+    case InvenSlot::RightHand:
+        rect.left = inventoryLootLayout.companionSlotX;
+        rect.top = inventoryLootLayout.companionWeaponSlotY;
+        break;
+    case InvenSlot::Armor:
+        rect.left = inventoryLootLayout.companionSlotX;
+        rect.top = inventoryLootLayout.companionArmorSlotY;
+        break;
+    default:
+        return rect;
+    }
+
+    rect.bottom = rect.top + kInventoryLootCompanionSlotHeight - 1;
+    rect.right = rect.left + kInventoryLootCompanionSlotWidth - 1;
+    return rect;
+}
+
+static bool inventoryLootEquippedContainsItem(const CritterEquipped& equipped, Object* item)
+{
+    return item != nullptr
+        && (equipped.leftHand == item
+            || equipped.rightHand == item
+            || equipped.armor == item);
+}
+
+static void inventoryLootRestoreUnexpectedEquippedItem(Object* critter, Object* item, const CritterEquipped& expected)
+{
+    if (item == nullptr || inventoryLootEquippedContainsItem(expected, item)) {
+        return;
+    }
+
+    item->flags &= ~OBJECT_EQUIPPED;
+    itemAdd(critter, item, 1);
+}
+
+static void inventoryLootRestoreExpectedEquippedState(const CritterEquipped& expected, int expectedFid)
+{
+    Object* actualArmor = critterGetArmor(inventoryLootBaseTarget);
+    CritterEquipped actual = critterStripEquipped(inventoryLootBaseTarget);
+    inventoryLootRestoreUnexpectedEquippedItem(inventoryLootBaseTarget, actual.leftHand, expected);
+    if (actual.rightHand != actual.leftHand) {
+        inventoryLootRestoreUnexpectedEquippedItem(inventoryLootBaseTarget, actual.rightHand, expected);
+    }
+    inventoryLootRestoreUnexpectedEquippedItem(inventoryLootBaseTarget, actual.armor, expected);
+
+    if (actualArmor != expected.armor) {
+        adjustCritterStatsOnArmorChange(inventoryLootBaseTarget, actualArmor, expected.armor);
+    }
+
+    CritterEquipped restored = expected;
+    critterRestoreEquipped(inventoryLootBaseTarget, restored);
+
+    if (inventoryLootBaseTarget->fid != expectedFid) {
+        objectSetFid(inventoryLootBaseTarget, expectedFid, nullptr);
+    }
+}
+
+static void inventoryLootRenderCompanionSlots()
+{
+    if (!inventoryLootHasCompanionSlots()) {
+        return;
+    }
+
+    unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
+    int pitch = inventoryLootLayout.windowWidth;
+
+    unsigned char* backgroundData = inventoryLootFrmImage.getData();
+    int backgroundWidth = inventoryLootFrmImage.getWidth();
+    if (backgroundData != nullptr) {
+        int clearX = inventoryLootLayout.companionSlotX;
+        int clearY = inventoryLootLayout.companionArmorSlotY;
+        int clearWidth = kInventoryLootCompanionSlotWidth;
+        int clearHeight = inventoryLootLayout.companionWeaponSlotY + kInventoryLootCompanionSlotHeight - clearY;
+        blitBufferToBuffer(backgroundData + backgroundWidth * clearY + clearX,
+            clearWidth,
+            clearHeight,
+            backgroundWidth,
+            windowBuffer + pitch * clearY + clearX,
+            pitch);
+    }
+
+    Rect armorRect = inventoryLootGetCompanionSlotRect(InvenSlot::Armor);
+    Rect weaponRect = inventoryLootGetCompanionSlotRect(InvenSlot::RightHand);
+    if (inventoryLootCompanionSlotFrmImage.isLocked()) {
+        blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData(),
+            kInventoryLootCompanionSlotWidth,
+            kInventoryLootCompanionSlotHeight,
+            kInventoryLootCompanionSlotWidth,
+            windowBuffer + pitch * armorRect.top + armorRect.left,
+            pitch);
+        blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData(),
+            kInventoryLootCompanionSlotWidth,
+            kInventoryLootCompanionSlotHeight,
+            kInventoryLootCompanionSlotWidth,
+            windowBuffer + pitch * weaponRect.top + weaponRect.left,
+            pitch);
+    } else {
+        bufferDrawRect(windowBuffer, pitch, armorRect.left, armorRect.top, armorRect.right, armorRect.bottom, _colorTable[992]);
+        bufferDrawRect(windowBuffer, pitch, weaponRect.left, weaponRect.top, weaponRect.right, weaponRect.bottom, _colorTable[992]);
+    }
+
+    Object* armor = inventoryLootGetCompanionSlotItem(InvenSlot::Armor);
+    if (armor != nullptr) {
+        int itemX = armorRect.left + (kInventoryLootCompanionSlotWidth - INVENTORY_LARGE_SLOT_WIDTH) / 2;
+        int itemY = armorRect.top + (kInventoryLootCompanionSlotHeight - INVENTORY_LARGE_SLOT_HEIGHT) / 2;
+        artRender(itemGetInventoryFid(armor),
+            windowBuffer + pitch * itemY + itemX,
+            INVENTORY_LARGE_SLOT_WIDTH,
+            INVENTORY_LARGE_SLOT_HEIGHT,
+            pitch);
+    }
+
+    Object* weapon = inventoryLootGetCompanionSlotItem(InvenSlot::RightHand);
+    if (weapon != nullptr) {
+        int itemX = weaponRect.left + (kInventoryLootCompanionSlotWidth - INVENTORY_LARGE_SLOT_WIDTH) / 2;
+        int itemY = weaponRect.top + (kInventoryLootCompanionSlotHeight - INVENTORY_LARGE_SLOT_HEIGHT) / 2;
+        artRender(itemGetInventoryFid(weapon),
+            windowBuffer + pitch * itemY + itemX,
+            INVENTORY_LARGE_SLOT_WIDTH,
+            INVENTORY_LARGE_SLOT_HEIGHT,
+            pitch);
+    }
+}
+
+static int inventoryLootBuildTargetDisplayFid()
+{
+    int weaponAnimationCode = 0;
+    Object* rightHandItem = inventoryLootTargetEquipped->rightHand;
+    if (rightHandItem != nullptr && itemGetType(rightHandItem) == ITEM_TYPE_WEAPON) {
+        weaponAnimationCode = weaponGetAnimationCode(rightHandItem);
+    }
+
+    return buildFid(FID_TYPE(inventoryLootBaseTarget->fid),
+        inventoryLootBaseTarget->fid & 0xFFF,
+        0,
+        weaponAnimationCode,
+        0);
+}
+
+static int inventoryLootGetTargetDisplayFid()
+{
+    if (!inventoryLootHasCompanionSlots()) {
+        return _target_stack[_target_curr_stack]->fid;
+    }
+
+    return inventoryLootBuildTargetDisplayFid();
+}
+
+static void inventoryLootSetTarget(Object* target, Object* hiddenBox)
+{
+    assert(target != nullptr);
+    assert(hiddenBox != nullptr);
+
+    if (inventoryLootBaseTarget != nullptr && inventoryLootBaseTarget != target) {
+        if (inventoryLootTargetEquipped != nullptr) {
+            critterRestoreEquipped(inventoryLootBaseTarget, *inventoryLootTargetEquipped);
+        }
+        itemMoveAll(hiddenBox, inventoryLootBaseTarget);
+    }
+
+    itemMoveAllHidden(target, hiddenBox);
+    if (inventoryLootTargetEquipped != nullptr) {
+        *inventoryLootTargetEquipped = critterStripEquipped(target);
+        inventoryLootRightEquippedWeight = inventoryLootTargetEquipped->weight;
+    }
+
+    inventoryLootBaseTarget = target;
+    _target_pud = &(target->data.inventory);
+    _target_curr_stack = 0;
+    _target_stack[0] = target;
+    _target_stack_offset[0] = 0;
+    gInventoryWindowDudeRotationTimestamp = 0;
+}
+
+static void inventoryLootRefreshAfterTargetChange()
+{
+    _display_target_inventory(0, -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
+    _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
+    _display_body(inventoryLootGetTargetDisplayFid(), INVENTORY_WINDOW_TYPE_LOOT);
+}
+
+static int inventoryWrapIndex(int index, int count, int direction)
+{
+    assert(count > 0);
+    return (index + direction + count) % count;
+}
+static bool inventoryLootRefreshTargetEquippedAfterAction()
+{
+    if (!inventoryLootHasCompanionSlots()) {
+        return false;
+    }
+
+    *inventoryLootTargetEquipped = critterStripEquipped(inventoryLootBaseTarget);
+    inventoryLootRightEquippedWeight = inventoryLootTargetEquipped->weight;
+    gInventoryWindowDudeRotationTimestamp = 0;
+    return true;
+}
+
+static int inventoryLootUnequipArmorFunc(Object* critter)
+{
+    Object* armor = critterGetArmor(critter);
+    if (armor == nullptr) {
+        return -1;
+    }
+
+    if (!scriptHooks_InvenWield(critter, armor, InvenSlot::Armor, 0, 0)) {
+        return -1;
+    }
+
+    armor->flags &= ~OBJECT_WORN;
+    adjustCritterStatsOnArmorChange(critter, armor, nullptr);
+    return 0;
+}
+
+static bool inventoryLootTryUnequipCompanionItem(InvenSlot slot)
+{
+    assert(inventoryLootHasCompanionSlots());
+
+    Object* item = inventoryLootGetCompanionSlotItem(slot);
+    if (item == nullptr) {
+        return false;
+    }
+
+    critterRestoreEquipped(inventoryLootBaseTarget, *inventoryLootTargetEquipped);
+
+    int rc = -1;
+    if (slot == InvenSlot::RightHand) {
+        rc = inventoryUnequipFunc(inventoryLootBaseTarget, HAND_RIGHT, false);
+    } else if (slot == InvenSlot::Armor) {
+        rc = inventoryLootUnequipArmorFunc(inventoryLootBaseTarget);
+    }
+
+    if (rc == 0) {
+        Object* unequippedItem = inventoryFindById(inventoryLootBaseTarget, item->id);
+        if (unequippedItem != nullptr) {
+            // fix stacking
+            itemRemove(inventoryLootBaseTarget, unequippedItem, 1);
+            itemAdd(inventoryLootBaseTarget, unequippedItem, 1);
+        }
+    }
+
+    inventoryLootRefreshTargetEquippedAfterAction();
+    return rc == 0;
+}
+
+static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, bool fromLeftPane, bool* attemptedPtr)
+{
+    if (attemptedPtr != nullptr) {
+        *attemptedPtr = false;
+    }
+
+    if (!inventoryLootHasCompanionSlots() || item == nullptr) {
+        return false;
+    }
+
+    InvenSlot companionSlot;
+    if (itemGetType(item) == ITEM_TYPE_WEAPON) {
+        companionSlot = InvenSlot::RightHand;
+    } else if (itemGetType(item) == ITEM_TYPE_ARMOR) {
+        companionSlot = InvenSlot::Armor;
+    } else {
+        return false;
+    }
+
+    Rect rect = inventoryLootGetCompanionSlotRect(companionSlot);
+    if (!immediate && !mouseHitTestInWindow(gInventoryWindow, rect.left, rect.top, rect.right + 1, rect.bottom + 1)) {
+        return false;
+    }
+
+    if (companionSlot == InvenSlot::RightHand && !inventoryLootCanEquipCompanionWeapon(item)) {
+        displayMonitorAddMessage("I can't use that."); // TODO: translate
+        return false;
+    }
+    if (companionSlot == InvenSlot::Armor && !companionPidCanEquipArmor(inventoryLootBaseTarget->pid)) {
+        displayMonitorAddMessage("I can't use that."); // TODO: translate
+        return false;
+    }
+
+    if (attemptedPtr != nullptr) {
+        *attemptedPtr = true;
+    }
+
+    Object* currentItem = inventoryLootGetCompanionSlotItem(companionSlot);
+
+    CritterEquipped previousEquipped = *inventoryLootTargetEquipped;
+    int previousFid = inventoryLootBaseTarget->fid;
+    critterRestoreEquipped(inventoryLootBaseTarget, *inventoryLootTargetEquipped);
+
+    // direct equip from left pane (pc inventory) -> move to target
+    if (fromLeftPane && itemMove(_inven_dude, inventoryLootBaseTarget, item, 1) != 0) {
+        inventoryLootRestoreExpectedEquippedState(previousEquipped, previousFid);
+        inventoryLootRefreshTargetEquippedAfterAction();
+        return false;
+    }
+
+    // equip from target's inventory
+    int rc = inventoryEquipFunc(inventoryLootBaseTarget, item, HAND_RIGHT, false);
+    bool exactItemEquipped = rc == 0 && inventoryLootGetCritterItemInSlot(inventoryLootBaseTarget, companionSlot) == item;
+
+    if (rc != 0 || !exactItemEquipped) {
+        // hook canceled the equip
+        inventoryLootRestoreExpectedEquippedState(previousEquipped, previousFid);
+        if (fromLeftPane) {
+            itemMove(inventoryLootBaseTarget, _inven_dude, item, 1);
+        }
+    }
+
+    inventoryLootRefreshTargetEquippedAfterAction();
+    return rc == 0 && exactItemEquipped;
+}
+
+static bool inventoryLootTryMoveCompanionItemToLeftPane(InvenSlot slot, Object* item)
+{
+    if (!inventoryLootHasCompanionSlots() || item == nullptr) {
+        return false;
+    }
+
+    if (!inventoryLootTryUnequipCompanionItem(slot)) {
+        return false;
+    }
+
+    Object* movedItem = inventoryFindById(inventoryLootBaseTarget, item->id);
+    if (movedItem == nullptr) {
+        return false;
+    }
+
+    if (itemMove(inventoryLootBaseTarget, _inven_dude, movedItem, 1) == 0) {
+        return true;
+    }
+
+    inventoryDisplayMessage(25); // You cannot pick that up. You are at your maximum weight capacity.
+    return false;
+}
+
+static void inventoryLootHandleCompanionSlotPickup(InvenSlot slot)
+{
+    Object* item = inventoryLootGetCompanionSlotItem(slot);
+    if (item == nullptr) {
+        return;
+    }
+
+    Rect rect = inventoryLootGetCompanionSlotRect(slot);
+    unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
+    if (inventoryLootCompanionSlotFrmImage.isLocked()) {
+        // refresh from companion slot image (can remove if we bake into the bg)
+        blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData(),
+            kInventoryLootCompanionSlotWidth,
+            kInventoryLootCompanionSlotHeight,
+            kInventoryLootCompanionSlotWidth,
+            windowBuffer + inventoryLootLayout.windowWidth * rect.top + rect.left,
+            inventoryLootLayout.windowWidth);
+        windowRefreshRect(gInventoryWindow, &rect);
+    } else {
+        unsigned char* backgroundData = inventoryLootFrmImage.getData();
+        int backgroundWidth = inventoryLootFrmImage.getWidth();
+        if (backgroundData != nullptr) {
+            blitBufferToBuffer(backgroundData + backgroundWidth * rect.top + rect.left,
+                kInventoryLootCompanionSlotWidth,
+                kInventoryLootCompanionSlotHeight,
+                backgroundWidth,
+                windowBuffer + inventoryLootLayout.windowWidth * rect.top + rect.left,
+                inventoryLootLayout.windowWidth);
+        }
+        windowRefreshRect(gInventoryWindow, &rect);
+    }
+
+    bool immediate = _ctrl_pressed();
+    _drag_item_loop(item, immediate);
+
+    if (!immediate && inventoryLootMouseHitTestScroller(false)) {
+        inventoryLootTryMoveCompanionItemToLeftPane(slot, item);
+    } else if (immediate || inventoryLootMouseHitTestScroller(true)) {
+        inventoryLootTryUnequipCompanionItem(slot);
+    }
+
+    _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
+    _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
+    _display_body(inventoryLootGetTargetDisplayFid(), INVENTORY_WINDOW_TYPE_LOOT);
+    windowRefresh(gInventoryWindow);
+    inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
+}
+
 static int inventoryComputeAlignedMaxOffset(int length, int visibleSlots, int scrollStep)
 {
     int maxOffset = length - visibleSlots;
@@ -1295,6 +1779,8 @@ static bool _setup_inventory(int inventoryWindowType)
     _pud = &(_inven_dude->data.inventory);
     _stack[0] = _inven_dude;
     bool isNormalWindow = inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL;
+    inventoryLootCompanionWeaponButton = -1;
+    inventoryLootCompanionArmorButton = -1;
 
     if (inventoryWindowType <= INVENTORY_WINDOW_TYPE_LOOT) {
         if (isNormalWindow) {
@@ -1370,6 +1856,25 @@ static bool _setup_inventory(int inventoryWindowType)
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
         inventoryCreateSlotButtons(1000, inventoryLootLayout.leftScrollerX, inventoryLootLayout.leftScrollerY, inventoryLootLayout.columns);
         inventoryCreateSlotButtons(2000, inventoryLootLayout.rightScrollerX, inventoryLootLayout.rightScrollerY, inventoryLootLayout.columns);
+        if (inventoryLootLayout.columns == 2) {
+            inventoryLootCompanionSlotFrmImage.lock(OBJ_TYPE_INTERFACE, "slot.png");
+            inventoryLootCompanionArmorButton = buttonCreateSlot(gInventoryWindow,
+                inventoryLootLayout.companionSlotX,
+                inventoryLootLayout.companionArmorSlotY,
+                kInventoryLootCompanionSlotWidth,
+                kInventoryLootCompanionSlotHeight,
+                INVENTORY_LOOT_COMPANION_ARMOR_KEY,
+                inventoryItemSlotOnMouseEnter,
+                inventoryItemSlotOnMouseExit);
+            inventoryLootCompanionWeaponButton = buttonCreateSlot(gInventoryWindow,
+                inventoryLootLayout.companionSlotX,
+                inventoryLootLayout.companionWeaponSlotY,
+                kInventoryLootCompanionSlotWidth,
+                kInventoryLootCompanionSlotHeight,
+                INVENTORY_LOOT_COMPANION_WEAPON_KEY,
+                inventoryItemSlotOnMouseEnter,
+                inventoryItemSlotOnMouseExit);
+        }
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
         int y1 = INVENTORY_TRADE_SCROLLER_Y;
         int y2 = INVENTORY_TRADE_INNER_SCROLLER_Y;
@@ -1591,6 +2096,10 @@ static bool _setup_inventory(int inventoryWindowType)
     gInventoryRightHandItem = nullptr;
     gInventoryArmor = nullptr;
     gInventoryLeftHandItem = nullptr;
+    inventoryLootCompanionWeaponButton = -1;
+    inventoryLootCompanionArmorButton = -1;
+    inventoryLootTargetEquipped = nullptr;
+    inventoryLootBaseTarget = nullptr;
 
     for (int index = 0; index < _pud->length; index++) {
         InventoryItem* inventoryItem = &(_pud->items[index]);
@@ -1669,6 +2178,7 @@ static void _exit_inventory(bool shouldEnableIso)
     windowDestroy(gInventoryWindow);
     inventoryFrmImage.unlock();
     inventoryLootFrmImage.unlock();
+    inventoryLootCompanionSlotFrmImage.unlock();
 
     _gmouse_enable();
     touch_set_touchscreen_mode(false);
@@ -1714,7 +2224,7 @@ static void _exit_inventory(bool shouldEnableIso)
     }
 }
 
-// 0x46FDF4
+// 0x46FDF4 display_inventory
 static void _display_inventory(int stackOffset, int dragSlotIndex, int inventoryWindowType)
 {
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
@@ -1967,6 +2477,7 @@ static void _display_target_inventory(int stackOffset, int dragSlotIndex, Invent
     // CE: Show items weight.
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
         inventoryLootRenderPaneWeight(windowBuffer, pitch, true, _target_stack[_target_curr_stack], inventoryLootRightEquippedWeight);
+        inventoryLootRenderCompanionSlots();
     }
 }
 
@@ -2005,7 +2516,7 @@ static void _display_inventory_info(Object* item, int quantity, unsigned char* d
     fontSetCurrent(oldFont);
 }
 
-// 0x470650
+// 0x470650 display_body displays both left and right character portraits
 static void _display_body(int fid, int inventoryWindowType)
 {
     if (getTicksSince(gInventoryWindowDudeRotationTimestamp) < INVENTORY_NORMAL_WINDOW_PC_ROTATION_DELAY) {
@@ -2024,7 +2535,9 @@ static void _display_body(int fid, int inventoryWindowType)
         rotations[1] = ROTATION_SE;
     } else {
         rotations[0] = ROTATION_SW;
-        rotations[1] = _target_stack[_target_curr_stack]->rotation;
+        rotations[1] = inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT && inventoryLootHasCompanionSlots()
+            ? ROTATION_SW
+            : _target_stack[_target_curr_stack]->rotation;
     }
 
     int fids[2] = {
@@ -2034,6 +2547,9 @@ static void _display_body(int fid, int inventoryWindowType)
 
     for (int index = 0; index < 2; index += 1) {
         int fid = fids[index];
+        if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT && index == 1) {
+            fid = inventoryLootGetTargetDisplayFid();
+        }
         if (fid == -1) {
             continue;
         }
@@ -2055,11 +2571,7 @@ static void _display_body(int fid, int inventoryWindowType)
 
         int framePitch = artGetWidth(art, frame, rotation);
         int frameWidth = std::min(framePitch, INVENTORY_BODY_VIEW_WIDTH);
-
-        int frameHeight = artGetHeight(art, frame, rotation);
-        if (frameHeight > INVENTORY_BODY_VIEW_HEIGHT) {
-            frameHeight = INVENTORY_BODY_VIEW_HEIGHT;
-        }
+        int frameHeight = std::min(artGetHeight(art, frame, rotation), INVENTORY_BODY_VIEW_HEIGHT);
 
         int win;
         Rect rect;
@@ -2093,7 +2605,7 @@ static void _display_body(int fid, int inventoryWindowType)
                 windowBuffer + windowPitch * (rect.top + (INVENTORY_BODY_VIEW_HEIGHT - frameHeight) / 2) + (INVENTORY_BODY_VIEW_WIDTH - frameWidth) / 2 + rect.left,
                 windowPitch);
 
-            inventoryDisplayLeftPaneCompanionName(windowBuffer, windowPitch, rect, index);
+            inventoryDisplayLootPaneCompanionName(windowBuffer, windowPitch, rect, index);
 
             win = gInventoryBarterBackgroundWindow;
         } else {
@@ -2150,7 +2662,7 @@ static void _display_body(int fid, int inventoryWindowType)
                 windowPitch);
 
             if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
-                inventoryDisplayLeftPaneCompanionName(windowBuffer, windowPitch, rect, index);
+                inventoryDisplayLootPaneCompanionName(windowBuffer, windowPitch, rect, index);
             }
 
             win = gInventoryWindow;
@@ -3584,6 +4096,16 @@ static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSl
     int quantity = 0;
 
     switch (keyCode) {
+    case INVENTORY_LOOT_COMPANION_WEAPON_KEY:
+        itemSlot = inventoryLootGetCompanionSlotItemSlot(InvenSlot::RightHand);
+        owner = inventoryLootBaseTarget;
+        item = itemSlot != nullptr ? *itemSlot : nullptr;
+        break;
+    case INVENTORY_LOOT_COMPANION_ARMOR_KEY:
+        itemSlot = inventoryLootGetCompanionSlotItemSlot(InvenSlot::Armor);
+        owner = inventoryLootBaseTarget;
+        item = itemSlot != nullptr ? *itemSlot : nullptr;
+        break;
     case INVENTORY_HAND_RIGHT_KEY:
         itemSlot = &gInventoryRightHandItem;
         owner = _stack[0];
@@ -3679,13 +4201,24 @@ static void inventoryDrawCenteredText(unsigned char* buffer, int pitch, int widt
     fontSetCurrent(oldFont);
 }
 
-static void inventoryDisplayLeftPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index)
+static void inventoryDisplayLootPaneCompanionName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index)
 {
-    if (index != 0 || _stack[0] == gDude) {
+    Object* critter = nullptr;
+    if (index == 0) {
+        if (_stack[0] != gDude) {
+            critter = _stack[0];
+        }
+    } else if (index == 1) {
+        if (inventoryLootBaseTarget != nullptr && objectIsPartyMember(inventoryLootBaseTarget)) {
+            critter = inventoryLootBaseTarget;
+        }
+    }
+
+    if (critter == nullptr) {
         return;
     }
 
-    const char* name = critterGetName(_stack[0]);
+    const char* name = critterGetName(critter);
     if (name == nullptr) {
         return;
     }
@@ -4227,6 +4760,8 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
+    ScopedGameMode gm(GameMode::kLoot);
+
     if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
         inventoryDisplayMessage(50); // You can't find anything to take from that.
         return 0;
@@ -4263,26 +4798,32 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
-    _target_pud = &(target->data.inventory);
-    _target_curr_stack = 0;
-    _target_stack_offset[0] = 0;
-    _target_stack[0] = target;
-
     Object* hiddenBox = nullptr;
     if (objectCreateWithFidPid(&hiddenBox, -1, PROTO_ID_JESSE_CONTAINER) == -1) {
         return 0;
     }
-
-    itemMoveAllHidden(target, hiddenBox);
-
-    CritterEquipped stealTargetEquipped;
-    if (_gIsSteal) {
-        stealTargetEquipped = critterStripEquipped(target);
-        inventoryLootRightEquippedWeight = stealTargetEquipped.weight;
-    }
+    CritterEquipped stealTargetEquipped {};
 
     bool isoWasEnabled = _setup_inventory(INVENTORY_WINDOW_TYPE_LOOT);
-    ScopedGameMode gm(GameMode::kLoot);
+    inventoryLootTargetEquipped = _gIsSteal ? &stealTargetEquipped : nullptr;
+    inventoryLootBaseTarget = nullptr;
+    inventoryLootSetTarget(target, hiddenBox);
+
+    auto makeButton =  [&](int x, int y, int keyCode) {
+        int upFrmId = INVENTORY_ARROW_FRM_LEFT_ARROW_UP;
+        int downFrmId = INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN;
+        if (keyCode == KEY_ARROW_RIGHT || keyCode == KEY_PAGE_DOWN) {
+            upFrmId = INVENTORY_ARROW_FRM_RIGHT_ARROW_UP;
+            downFrmId = INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN;
+        }
+        int btn = buttonCreateWithFrm(gInventoryWindow,
+            x, y, -1, -1, -1, keyCode,
+            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[upFrmId]),
+            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[downFrmId]));
+        if (btn != -1) {
+            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
+        }
+    };
 
     Object** critters = nullptr;
     int critterCount = 0;
@@ -4310,23 +4851,8 @@ int inventoryOpenLooting(Object* looter, Object* target)
             }
 
             if (critterCount > 1) {
-                int btn = buttonCreateWithFrm(gInventoryWindow,
-                    inventoryLootLayout.prevCritterButtonX, INVENTORY_LOOT_CRITTER_TOGGLE_Y,
-                    -1, -1, KEY_PAGE_UP, -1,
-                    FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_UP]),
-                    FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN]));
-                if (btn != -1) {
-                    buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-                }
-
-                btn = buttonCreateWithFrm(gInventoryWindow,
-                    inventoryLootLayout.nextCritterButtonX, INVENTORY_LOOT_CRITTER_TOGGLE_Y,
-                    -1, -1, KEY_PAGE_DOWN, -1,
-                    FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP]),
-                    FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN]));
-                if (btn != -1) {
-                    buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-                }
+                makeButton(inventoryLootLayout.prevCritterButtonX, INVENTORY_LOOT_CRITTER_TOGGLE_Y, KEY_PAGE_UP);
+                makeButton(inventoryLootLayout.nextCritterButtonX, INVENTORY_LOOT_CRITTER_TOGGLE_Y, KEY_PAGE_DOWN);
 
                 for (int index = 0; index < critterCount; index++) {
                     if (target == critters[index]) {
@@ -4337,41 +4863,46 @@ int inventoryOpenLooting(Object* looter, Object* target)
         }
     }
 
-    // Party member navigation: left/right arrows below the left (player) avatar
-    // switch whose inventory is shown on the left pane.  It works when looting,
-    // or "stealing" from a companion (which is just quick looting)
+    // Party member navigation: in normal looting left-side arrows and Left/Right
+    // switch whose inventory is shown on the left pane. In companion quick-loot,
+    // Left/Right instead cycles the active right-side companion target.
     Object* const playerObj = _inven_dude;
     int savedDudeFid = gInventoryWindowDudeFid;
-    std::vector<Object*> partyTargets = { _inven_dude };
-    if (settings.qol.party_loot_and_barter && (!_gIsSteal || objectIsPartyMember(target))) {
+    bool switchActiveCompanion = settings.qol.party_loot_and_barter
+        && _gIsSteal
+        && objectIsPartyMember(target);
+    std::vector<Object*> partyTargets;
+    if (switchActiveCompanion) {
+        for (Object* pm : get_all_party_members_objects(false)) {
+            if (pm != _inven_dude) {
+                partyTargets.push_back(pm);
+            }
+        }
+    } else if (settings.qol.party_loot_and_barter && (!_gIsSteal || objectIsPartyMember(target))) {
+        partyTargets.push_back(_inven_dude);
         for (Object* pm : get_all_party_members_objects(false)) {
             if (pm != gDude && pm != target) {
                 partyTargets.push_back(pm);
             }
         }
     }
-    int partyTargetIndex = 0;
 
-    if (partyTargets.size() > 1) {
+    int partyTargetIndex = 0;
+    for (int index = 0; index < partyTargets.size(); index++) {
+        if ((switchActiveCompanion ? target : _inven_dude) == partyTargets[index]) {
+            partyTargetIndex = index;
+            break;
+        }
+    }
+
+    if (switchActiveCompanion && partyTargets.size() > 1) {
+        makeButton(inventoryLootLayout.prevCritterButtonX, INVENTORY_LOOT_CRITTER_TOGGLE_Y, KEY_ARROW_LEFT);
+        makeButton(inventoryLootLayout.nextCritterButtonX, INVENTORY_LOOT_CRITTER_TOGGLE_Y, KEY_ARROW_RIGHT);
+    } else if (partyTargets.size() > 1) {
         const int btnCenterX = inventoryLootLayout.leftBodyViewX + INVENTORY_BODY_VIEW_WIDTH / 2;
 
-        int btn = buttonCreateWithFrm(gInventoryWindow,
-            btnCenterX - 20, INVENTORY_LOOT_CRITTER_TOGGLE_Y,
-            -1, -1, KEY_ARROW_LEFT, -1,
-            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_UP]),
-            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN]));
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
-
-        btn = buttonCreateWithFrm(gInventoryWindow,
-            btnCenterX, INVENTORY_LOOT_CRITTER_TOGGLE_Y,
-            -1, -1, KEY_ARROW_RIGHT, -1,
-            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_RIGHT_ARROW_UP]),
-            FrmId(OBJ_TYPE_INTERFACE, gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_RIGHT_ARROW_DOWN]));
-        if (btn != -1) {
-            buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
-        }
+        makeButton(btnCenterX - 20, INVENTORY_LOOT_CRITTER_TOGGLE_Y, KEY_ARROW_LEFT);
+        makeButton(btnCenterX, INVENTORY_LOOT_CRITTER_TOGGLE_Y, KEY_ARROW_RIGHT);
     }
 
     _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
@@ -4463,47 +4994,39 @@ int inventoryOpenLooting(Object* looter, Object* target)
             // change selected companion
         } else if (keyCode == KEY_ARROW_LEFT) {
             if (partyTargets.size() > 1) {
-                partyTargetIndex = (partyTargetIndex > 0) ? partyTargetIndex - 1 : (int)partyTargets.size() - 1;
-                inventorySetLeftPaneCritter(partyTargets[partyTargetIndex], target, INVENTORY_WINDOW_TYPE_LOOT);
+                partyTargetIndex = inventoryWrapIndex(partyTargetIndex, partyTargets.size(), -1);
+                if (switchActiveCompanion) {
+                    target = partyTargets[partyTargetIndex];
+                    inventoryLootSetTarget(target, hiddenBox);
+                    inventoryLootRefreshAfterTargetChange();
+                } else {
+                    inventorySetLeftPaneCritter(partyTargets[partyTargetIndex], target, INVENTORY_WINDOW_TYPE_LOOT);
+                }
             }
         } else if (keyCode == KEY_ARROW_RIGHT) {
             if (partyTargets.size() > 1) {
-                partyTargetIndex = (partyTargetIndex < (int)partyTargets.size() - 1) ? partyTargetIndex + 1 : 0;
-                inventorySetLeftPaneCritter(partyTargets[partyTargetIndex], target, INVENTORY_WINDOW_TYPE_LOOT);
+                partyTargetIndex = inventoryWrapIndex(partyTargetIndex, partyTargets.size(), 1);
+                if (switchActiveCompanion) {
+                    target = partyTargets[partyTargetIndex];
+                    inventoryLootSetTarget(target, hiddenBox);
+                    inventoryLootRefreshAfterTargetChange();
+                } else {
+                    inventorySetLeftPaneCritter(partyTargets[partyTargetIndex], target, INVENTORY_WINDOW_TYPE_LOOT);
+                }
             }
         } else if (keyCode == KEY_PAGE_UP) {
             if (critterCount != 0) {
-                if (critterIndex > 0) {
-                    critterIndex -= 1;
-                } else {
-                    critterIndex = critterCount - 1;
-                }
-
+                critterIndex = inventoryWrapIndex(critterIndex, critterCount, -1);
                 target = critters[critterIndex];
-                _target_pud = &(target->data.inventory);
-                _target_stack[0] = target;
-                _target_curr_stack = 0;
-                _target_stack_offset[0] = 0;
-                _display_target_inventory(0, -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
-                _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
-                _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
+                inventoryLootSetTarget(target, hiddenBox);
+                inventoryLootRefreshAfterTargetChange();
             }
         } else if (keyCode == KEY_PAGE_DOWN) {
             if (critterCount != 0) {
-                if (critterIndex < critterCount - 1) {
-                    critterIndex += 1;
-                } else {
-                    critterIndex = 0;
-                }
-
+                critterIndex = inventoryWrapIndex(critterIndex, critterCount, 1);
                 target = critters[critterIndex];
-                _target_pud = &(target->data.inventory);
-                _target_stack[0] = target;
-                _target_curr_stack = 0;
-                _target_stack_offset[0] = 0;
-                _display_target_inventory(0, -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
-                _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
-                _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
+                inventoryLootSetTarget(target, hiddenBox);
+                inventoryLootRefreshAfterTargetChange();
             }
         } else if (keyCode >= 2500 && keyCode <= 2501) {
             _container_exit(keyCode, INVENTORY_WINDOW_TYPE_LOOT);
@@ -4539,6 +5062,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
 
                             _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
                             _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
+                            _display_body(inventoryLootGetTargetDisplayFid(), INVENTORY_WINDOW_TYPE_LOOT);
                         }
 
                         keyCode = -1;
@@ -4564,7 +5088,14 @@ int inventoryOpenLooting(Object* looter, Object* target)
 
                             _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_LOOT);
                             _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_LOOT);
+                            _display_body(inventoryLootGetTargetDisplayFid(), INVENTORY_WINDOW_TYPE_LOOT);
                         }
+                    }
+                } else if (keyCode == INVENTORY_LOOT_COMPANION_WEAPON_KEY || keyCode == INVENTORY_LOOT_COMPANION_ARMOR_KEY) {
+                    if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
+                        inventoryWindowOpenContextMenu(keyCode, INVENTORY_WINDOW_TYPE_LOOT);
+                    } else {
+                        inventoryLootHandleCompanionSlotPickup(keyCode == INVENTORY_LOOT_COMPANION_WEAPON_KEY ? InvenSlot::RightHand : InvenSlot::Armor);
                     }
                 }
             }
@@ -4607,6 +5138,8 @@ int inventoryOpenLooting(Object* looter, Object* target)
     }
 
     inventoryLootRightEquippedWeight = 0;
+    inventoryLootTargetEquipped = nullptr;
+    inventoryLootBaseTarget = nullptr;
     gInventoryWindowDudeFid = savedDudeFid;
 
     _exit_inventory(isoWasEnabled);
@@ -4707,7 +5240,10 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
     InventoryMoveResult result = INVENTORY_MOVE_RESULT_FAILED;
 
     if (isPlanting) {
-        if (immediate || inventoryLootMouseHitTestScroller(true)) {
+        bool attemptedCompanionEquip = false;
+        if (!immediate && inventoryLootTryEquipCompanionItem(item, false, true, &attemptedCompanionEquip)) {
+            result = INVENTORY_MOVE_RESULT_SUCCESS;
+        } else if (!attemptedCompanionEquip && (immediate || inventoryLootMouseHitTestScroller(true))) {
             int quantityToMove = quantity;
             if (quantity > 1 && !immediate) {
                 quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
@@ -4734,7 +5270,10 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
             }
         }
     } else {
-        if (immediate || inventoryLootMouseHitTestScroller(false)) {
+        bool attemptedCompanionEquip = false;
+        if (inventoryLootTryEquipCompanionItem(item, immediate, false, &attemptedCompanionEquip)) {
+            result = INVENTORY_MOVE_RESULT_SUCCESS;
+        } else if (!attemptedCompanionEquip && (immediate || inventoryLootMouseHitTestScroller(false))) {
             int quantityToMove = quantity;
             if (quantity > 1 && !immediate) {
                 quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);

@@ -509,19 +509,19 @@ static int _item_move_func(Object* source, Object* target, Object* item, int qua
     return 0;
 }
 
-// 0x47769C
+// 0x47769C item_move
 int itemMove(Object* from, Object* to, Object* item, int quantity)
 {
     return _item_move_func(from, to, item, quantity, false);
 }
 
-// 0x4776A4
+// 0x4776A4 item_move_force
 int itemMoveForce(Object* from, Object* to, Object* item, int quantity)
 {
     return _item_move_func(from, to, item, quantity, true);
 }
 
-// 0x4776AC
+// 0x4776AC item_move_all
 void itemMoveAll(Object* from, Object* to)
 {
     Inventory* inventory = &(from->data.inventory);
@@ -532,7 +532,7 @@ void itemMoveAll(Object* from, Object* to)
     }
 }
 
-// 0x4776E0
+// 0x4776E0 item_move_all_hidden
 int itemMoveAllHidden(Object* from, Object* to)
 {
     Inventory* inventory = &(from->data.inventory);
@@ -549,7 +549,7 @@ int itemMoveAllHidden(Object* from, Object* to)
     return 0;
 }
 
-// 0x477770
+// 0x477770 item_destroy_all_hidden
 int itemDestroyAllHidden(Object* owner)
 {
     Inventory* inventory = &(owner->data.inventory);

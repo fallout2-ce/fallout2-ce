@@ -894,6 +894,11 @@ bool objectIsPartyMember(Object* object)
     return isPartyMember;
 }
 
+bool companionPidCanEquipArmor(int pid)
+{
+    return pid != 0x10000A1; // Marcus
+}
+
 // Returns number of active critters in the party.
 //
 // 0x495010 getPartyMemberCount
