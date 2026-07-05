@@ -896,7 +896,12 @@ bool objectIsPartyMember(Object* object)
 
 bool companionPidCanEquipArmor(int pid)
 {
-    return pid != 0x10000A1; // Marcus
+    Proto* proto;
+    if (protoGetProto(pid, &proto) == -1) {
+        return false;
+    }
+
+    return proto->critter.data.bodyType == BODY_TYPE_BIPED && pid != PROTO_ID_MARCUS;
 }
 
 // Returns number of active critters in the party.
