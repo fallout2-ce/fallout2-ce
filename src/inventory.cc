@@ -1095,7 +1095,7 @@ static bool inventoryLootCanEquipCompanionWeapon(Object* weapon)
 
 static Object** inventoryLootGetCompanionSlotItemSlot(InvenSlot slot)
 {
-    assert (inventoryLootHasCompanionSlots());
+    assert(inventoryLootHasCompanionSlots());
 
     switch (slot) {
     case InvenSlot::RightHand:
@@ -4809,7 +4809,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     inventoryLootBaseTarget = nullptr;
     inventoryLootSetTarget(target, hiddenBox);
 
-    auto makeButton =  [&](int x, int y, int keyCode) {
+    auto makeButton = [&](int x, int y, int keyCode) {
         int upFrmId = INVENTORY_ARROW_FRM_LEFT_ARROW_UP;
         int downFrmId = INVENTORY_ARROW_FRM_LEFT_ARROW_DOWN;
         if (keyCode == KEY_ARROW_RIGHT || keyCode == KEY_PAGE_DOWN) {
