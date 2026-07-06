@@ -1401,10 +1401,10 @@ static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, boo
 
     if (companionSlot == InvenSlot::RightHand) {
         if (!scriptHooks_CanUseWeapon(
-            critterCanUseWeapon(inventoryLootBaseTarget, item, HIT_MODE_RIGHT_WEAPON_PRIMARY),
-            inventoryLootBaseTarget,
-            item,
-            HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
+                critterCanUseWeapon(inventoryLootBaseTarget, item, HIT_MODE_RIGHT_WEAPON_PRIMARY),
+                inventoryLootBaseTarget,
+                item,
+                HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
             displayMonitorAddMessage("I can't use that."); // TODO: translate
             return false;
         }
