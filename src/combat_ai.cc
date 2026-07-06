@@ -2012,26 +2012,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
 // 0x4298EC
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode)
 {
-    bool result = true;
-
-    int damageFlags = critter->data.critter.combat.results;
-    if ((damageFlags & DAM_CRIP_ARM_LEFT) != 0 && (damageFlags & DAM_CRIP_ARM_RIGHT) != 0) {
-        result = false;
-    }
-
-    if (result && (damageFlags & DAM_CRIP_ARM_ANY) != 0 && weaponIsTwoHanded(weapon)) {
-        result = false;
-    }
-
-    if (result) {
-        int rotation = critter->rotation + 1;
-        int animationCode = weaponGetAnimationCode(weapon);
-        int weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
-        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);
-        if (!artExists(fid)) {
-            result = false;
-        }
-    }
+    bool result = critterCanUseWeapon(critter, weapon, hitMode);
 
     AiPacket* ai = aiGetPacket(critter);
     if (result) {

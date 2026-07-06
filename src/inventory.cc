@@ -1,7 +1,6 @@
 #include "inventory.h"
 
 #include <assert.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -64,7 +63,8 @@ namespace fallout {
 
 constexpr int kTradeSlotCount = 3;
 constexpr int kInventoryLootCompanionSlotWidth = 106;
-constexpr int kInventoryLootCompanionSlotHeight = 77;
+constexpr int kInventoryLootCompanionSlotHeight = 69;
+constexpr int kInventoryLootCompanionSlotImageHeight = 139;
 
 #define INVENTORY_LARGE_SLOT_WIDTH 90
 #define INVENTORY_LARGE_SLOT_HEIGHT 61
@@ -311,7 +311,6 @@ typedef struct InventoryLootLayout {
     int nextCritterButtonX;
     int companionSlotX;
     int companionArmorSlotY;
-    int companionWeaponSlotY;
 } InventoryLootLayout;
 
 typedef struct InventoryScroller {
@@ -400,7 +399,8 @@ static int inventoryLootGetSlotX(bool targetInventory, int slotIndex);
 static int inventoryLootGetSlotY(int slotIndex);
 static bool inventoryLootMouseHitTestScroller(bool targetInventory);
 static void inventoryLootRenderCompanionSlots();
-static void inventoryLootHandleCompanionSlotPickup(int keyCode);
+static void inventoryLootCreateCompanionSlotButtons();
+static void inventoryLootHandleCompanionSlotPickup(InvenSlot slot);
 static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, bool fromLeftPane, bool* attemptedPtr);
 static bool inventoryLootTryUnequipCompanionItem(InvenSlot slot);
 static bool inventoryLootTryMoveCompanionItemToLeftPane(InvenSlot slot, Object* item);
@@ -869,9 +869,8 @@ static void inventoryLootApplyLayout(int columns)
     int critterBtnCenterX = inventoryLootLayout.rightBodyViewX + INVENTORY_BODY_VIEW_WIDTH / 2;
     inventoryLootLayout.prevCritterButtonX = critterBtnCenterX - 20;
     inventoryLootLayout.nextCritterButtonX = critterBtnCenterX;
-    inventoryLootLayout.companionSlotX = inventoryLootLayout.rightBodyViewX - 25;
-    inventoryLootLayout.companionArmorSlotY = 158;
-    inventoryLootLayout.companionWeaponSlotY = 240;
+    inventoryLootLayout.companionSlotX = inventoryLootLayout.rightBodyViewX - 22;
+    inventoryLootLayout.companionArmorSlotY = 181;
 }
 
 static void inventoryNormalLayoutUpdate()
@@ -1068,31 +1067,6 @@ static bool inventoryLootHasCompanionSlots()
         && objectIsPartyMember(inventoryLootBaseTarget);
 }
 
-static bool inventoryLootCanEquipCompanionWeapon(Object* weapon)
-{
-    int damageFlags = inventoryLootBaseTarget->data.critter.combat.results;
-    bool canUse = (damageFlags & DAM_CRIP_ARM_ANY) != DAM_CRIP_ARM_ANY;
-    if (canUse && (damageFlags & DAM_CRIP_ARM_ANY) != 0 && weaponIsTwoHanded(weapon)) {
-        canUse = false;
-    }
-
-    if (canUse) {
-        int rotation = inventoryLootBaseTarget->rotation + 1;
-        int animationCode = weaponGetAnimationCode(weapon);
-        int weaponAnimationCode = weaponGetAnimationForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
-        int fid = buildFid(OBJ_TYPE_CRITTER,
-            inventoryLootBaseTarget->fid & 0xFFF,
-            weaponAnimationCode,
-            animationCode,
-            rotation);
-        if (!artExists(fid)) {
-            canUse = false;
-        }
-    }
-
-    return scriptHooks_CanUseWeapon(canUse, inventoryLootBaseTarget, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
-}
-
 static Object** inventoryLootGetCompanionSlotItemSlot(InvenSlot slot)
 {
     assert(inventoryLootHasCompanionSlots());
@@ -1125,6 +1099,11 @@ static Object* inventoryLootGetCompanionSlotItem(InvenSlot slot)
     return itemSlot != nullptr ? *itemSlot : nullptr;
 }
 
+static int inventoryLootGetCompanionSlotImageSourceY(InvenSlot slot)
+{
+    return slot == InvenSlot::RightHand ? kInventoryLootCompanionSlotHeight : 0;
+}
+
 static Rect inventoryLootGetCompanionSlotRect(InvenSlot slot)
 {
     Rect rect {};
@@ -1132,7 +1111,7 @@ static Rect inventoryLootGetCompanionSlotRect(InvenSlot slot)
     switch (slot) {
     case InvenSlot::RightHand:
         rect.left = inventoryLootLayout.companionSlotX;
-        rect.top = inventoryLootLayout.companionWeaponSlotY;
+        rect.top = inventoryLootLayout.companionArmorSlotY + kInventoryLootCompanionSlotHeight;
         break;
     case InvenSlot::Armor:
         rect.left = inventoryLootLayout.companionSlotX;
@@ -1202,7 +1181,7 @@ static void inventoryLootRenderCompanionSlots()
         int clearX = inventoryLootLayout.companionSlotX;
         int clearY = inventoryLootLayout.companionArmorSlotY;
         int clearWidth = kInventoryLootCompanionSlotWidth;
-        int clearHeight = inventoryLootLayout.companionWeaponSlotY + kInventoryLootCompanionSlotHeight - clearY;
+        int clearHeight = kInventoryLootCompanionSlotImageHeight;
         blitBufferToBuffer(backgroundData + backgroundWidth * clearY + clearX,
             clearWidth,
             clearHeight,
@@ -1216,15 +1195,9 @@ static void inventoryLootRenderCompanionSlots()
     if (inventoryLootCompanionSlotFrmImage.isLocked()) {
         blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData(),
             kInventoryLootCompanionSlotWidth,
-            kInventoryLootCompanionSlotHeight,
+            kInventoryLootCompanionSlotImageHeight,
             kInventoryLootCompanionSlotWidth,
             windowBuffer + pitch * armorRect.top + armorRect.left,
-            pitch);
-        blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData(),
-            kInventoryLootCompanionSlotWidth,
-            kInventoryLootCompanionSlotHeight,
-            kInventoryLootCompanionSlotWidth,
-            windowBuffer + pitch * weaponRect.top + weaponRect.left,
             pitch);
     } else {
         bufferDrawRect(windowBuffer, pitch, armorRect.left, armorRect.top, armorRect.right, armorRect.bottom, _colorTable[992]);
@@ -1234,7 +1207,7 @@ static void inventoryLootRenderCompanionSlots()
     Object* armor = inventoryLootGetCompanionSlotItem(InvenSlot::Armor);
     if (armor != nullptr) {
         int itemX = armorRect.left + (kInventoryLootCompanionSlotWidth - INVENTORY_LARGE_SLOT_WIDTH) / 2;
-        int itemY = armorRect.top + (kInventoryLootCompanionSlotHeight - INVENTORY_LARGE_SLOT_HEIGHT) / 2;
+        int itemY = armorRect.top + (kInventoryLootCompanionSlotHeight - INVENTORY_LARGE_SLOT_HEIGHT) / 2 + 3;
         artRender(itemGetInventoryFid(armor),
             windowBuffer + pitch * itemY + itemX,
             INVENTORY_LARGE_SLOT_WIDTH,
@@ -1245,13 +1218,38 @@ static void inventoryLootRenderCompanionSlots()
     Object* weapon = inventoryLootGetCompanionSlotItem(InvenSlot::RightHand);
     if (weapon != nullptr) {
         int itemX = weaponRect.left + (kInventoryLootCompanionSlotWidth - INVENTORY_LARGE_SLOT_WIDTH) / 2;
-        int itemY = weaponRect.top + (kInventoryLootCompanionSlotHeight - INVENTORY_LARGE_SLOT_HEIGHT) / 2;
+        int itemY = weaponRect.top + (kInventoryLootCompanionSlotHeight - INVENTORY_LARGE_SLOT_HEIGHT) / 2 - 3;
         artRender(itemGetInventoryFid(weapon),
             windowBuffer + pitch * itemY + itemX,
             INVENTORY_LARGE_SLOT_WIDTH,
             INVENTORY_LARGE_SLOT_HEIGHT,
             pitch);
     }
+}
+
+static void inventoryLootCreateCompanionSlotButtons()
+{
+    if (!inventoryLootHasCompanionSlots()) {
+        return;
+    }
+
+    inventoryLootCompanionSlotFrmImage.lock(OBJ_TYPE_INTERFACE, "slot.png");
+    inventoryLootCompanionArmorButton = buttonCreateSlot(gInventoryWindow,
+        inventoryLootLayout.companionSlotX,
+        inventoryLootLayout.companionArmorSlotY,
+        kInventoryLootCompanionSlotWidth,
+        kInventoryLootCompanionSlotHeight,
+        INVENTORY_LOOT_COMPANION_ARMOR_KEY,
+        inventoryItemSlotOnMouseEnter,
+        inventoryItemSlotOnMouseExit);
+    inventoryLootCompanionWeaponButton = buttonCreateSlot(gInventoryWindow,
+        inventoryLootLayout.companionSlotX,
+        inventoryLootLayout.companionArmorSlotY + kInventoryLootCompanionSlotHeight,
+        kInventoryLootCompanionSlotWidth,
+        kInventoryLootCompanionSlotHeight,
+        INVENTORY_LOOT_COMPANION_WEAPON_KEY,
+        inventoryItemSlotOnMouseEnter,
+        inventoryItemSlotOnMouseExit);
 }
 
 static int inventoryLootBuildTargetDisplayFid()
@@ -1399,11 +1397,16 @@ static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, boo
         return false;
     }
 
-    if (companionSlot == InvenSlot::RightHand && !inventoryLootCanEquipCompanionWeapon(item)) {
-        displayMonitorAddMessage("I can't use that."); // TODO: translate
-        return false;
-    }
-    if (companionSlot == InvenSlot::Armor && !companionPidCanEquipArmor(inventoryLootBaseTarget->pid)) {
+    if (companionSlot == InvenSlot::RightHand) {
+        if (!scriptHooks_CanUseWeapon(
+            critterCanUseWeapon(inventoryLootBaseTarget, item, HIT_MODE_RIGHT_WEAPON_PRIMARY),
+            inventoryLootBaseTarget,
+            item,
+            HIT_MODE_RIGHT_WEAPON_PRIMARY)) {
+            displayMonitorAddMessage("I can't use that."); // TODO: translate
+            return false;
+        }
+    } else if (companionSlot == InvenSlot::Armor && !partyMemberPidCanEquipArmor(inventoryLootBaseTarget->pid)) {
         displayMonitorAddMessage("I can't use that."); // TODO: translate
         return false;
     }
@@ -1475,7 +1478,7 @@ static void inventoryLootHandleCompanionSlotPickup(InvenSlot slot)
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
     if (inventoryLootCompanionSlotFrmImage.isLocked()) {
         // refresh from companion slot image (can remove if we bake into the bg)
-        blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData(),
+        blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData() + kInventoryLootCompanionSlotWidth * inventoryLootGetCompanionSlotImageSourceY(slot),
             kInventoryLootCompanionSlotWidth,
             kInventoryLootCompanionSlotHeight,
             kInventoryLootCompanionSlotWidth,
@@ -1856,25 +1859,6 @@ static bool _setup_inventory(int inventoryWindowType)
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
         inventoryCreateSlotButtons(1000, inventoryLootLayout.leftScrollerX, inventoryLootLayout.leftScrollerY, inventoryLootLayout.columns);
         inventoryCreateSlotButtons(2000, inventoryLootLayout.rightScrollerX, inventoryLootLayout.rightScrollerY, inventoryLootLayout.columns);
-        if (inventoryLootLayout.columns == 2) {
-            inventoryLootCompanionSlotFrmImage.lock(OBJ_TYPE_INTERFACE, "slot.png");
-            inventoryLootCompanionArmorButton = buttonCreateSlot(gInventoryWindow,
-                inventoryLootLayout.companionSlotX,
-                inventoryLootLayout.companionArmorSlotY,
-                kInventoryLootCompanionSlotWidth,
-                kInventoryLootCompanionSlotHeight,
-                INVENTORY_LOOT_COMPANION_ARMOR_KEY,
-                inventoryItemSlotOnMouseEnter,
-                inventoryItemSlotOnMouseExit);
-            inventoryLootCompanionWeaponButton = buttonCreateSlot(gInventoryWindow,
-                inventoryLootLayout.companionSlotX,
-                inventoryLootLayout.companionWeaponSlotY,
-                kInventoryLootCompanionSlotWidth,
-                kInventoryLootCompanionSlotHeight,
-                INVENTORY_LOOT_COMPANION_WEAPON_KEY,
-                inventoryItemSlotOnMouseEnter,
-                inventoryItemSlotOnMouseExit);
-        }
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
         int y1 = INVENTORY_TRADE_SCROLLER_Y;
         int y2 = INVENTORY_TRADE_INNER_SCROLLER_Y;
@@ -4808,6 +4792,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     inventoryLootTargetEquipped = _gIsSteal ? &stealTargetEquipped : nullptr;
     inventoryLootBaseTarget = nullptr;
     inventoryLootSetTarget(target, hiddenBox);
+    inventoryLootCreateCompanionSlotButtons();
 
     auto makeButton = [&](int x, int y, int keyCode) {
         int upFrmId = INVENTORY_ARROW_FRM_LEFT_ARROW_UP;

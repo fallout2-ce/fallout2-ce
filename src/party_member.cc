@@ -894,7 +894,7 @@ bool objectIsPartyMember(Object* object)
     return isPartyMember;
 }
 
-bool companionPidCanEquipArmor(int pid)
+bool partyMemberPidCanEquipArmor(int pid)
 {
     Proto* proto;
     if (protoGetProto(pid, &proto) == -1) {
