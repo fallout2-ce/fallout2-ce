@@ -1077,6 +1077,7 @@ static Object** inventoryLootGetCompanionSlotItemSlot(InvenSlot slot)
     case InvenSlot::Armor:
         return &(inventoryLootTargetEquipped->armor);
     default:
+        assert(false);
         return nullptr;
     }
 }
@@ -1089,14 +1090,14 @@ static Object* inventoryLootGetCritterItemInSlot(Object* critter, InvenSlot slot
     case InvenSlot::Armor:
         return critterGetArmor(critter);
     default:
+        assert(false);
         return nullptr;
     }
 }
 
 static Object* inventoryLootGetCompanionSlotItem(InvenSlot slot)
 {
-    Object** itemSlot = inventoryLootGetCompanionSlotItemSlot(slot);
-    return itemSlot != nullptr ? *itemSlot : nullptr;
+    return *inventoryLootGetCompanionSlotItemSlot(slot);
 }
 
 static int inventoryLootGetCompanionSlotImageSourceY(InvenSlot slot)
@@ -1118,6 +1119,7 @@ static Rect inventoryLootGetCompanionSlotRect(InvenSlot slot)
         rect.top = inventoryLootLayout.companionArmorSlotY;
         break;
     default:
+        assert(false);
         return rect;
     }
 
@@ -1168,9 +1170,7 @@ static void inventoryLootRestoreExpectedEquippedState(const CritterEquipped& exp
 
 static void inventoryLootRenderCompanionSlots()
 {
-    if (!inventoryLootHasCompanionSlots()) {
-        return;
-    }
+    assert(inventoryLootHasCompanionSlots());
 
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
     int pitch = inventoryLootLayout.windowWidth;
@@ -1233,7 +1233,12 @@ static void inventoryLootCreateCompanionSlotButtons()
         return;
     }
 
-    inventoryLootCompanionSlotFrmImage.lock(OBJ_TYPE_INTERFACE, "slot.png");
+    bool slotImageLoaded = inventoryLootCompanionSlotFrmImage.lock(OBJ_TYPE_INTERFACE, "slot.png");
+    assert(slotImageLoaded);
+    if (!slotImageLoaded) {
+        return;
+    }
+
     inventoryLootCompanionArmorButton = buttonCreateSlot(gInventoryWindow,
         inventoryLootLayout.companionSlotX,
         inventoryLootLayout.companionArmorSlotY,
@@ -1314,16 +1319,13 @@ static int inventoryWrapIndex(int index, int count, int direction)
     assert(count > 0);
     return (index + direction + count) % count;
 }
-static bool inventoryLootRefreshTargetEquippedAfterAction()
+static void inventoryLootRefreshTargetEquippedAfterAction()
 {
-    if (!inventoryLootHasCompanionSlots()) {
-        return false;
-    }
+    assert(inventoryLootHasCompanionSlots());
 
     *inventoryLootTargetEquipped = critterStripEquipped(inventoryLootBaseTarget);
     inventoryLootRightEquippedWeight = inventoryLootTargetEquipped->weight;
     gInventoryWindowDudeRotationTimestamp = 0;
-    return true;
 }
 
 static int inventoryLootUnequipArmorFunc(Object* critter)
@@ -1415,8 +1417,6 @@ static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, boo
         *attemptedPtr = true;
     }
 
-    Object* currentItem = inventoryLootGetCompanionSlotItem(companionSlot);
-
     CritterEquipped previousEquipped = *inventoryLootTargetEquipped;
     int previousFid = inventoryLootBaseTarget->fid;
     critterRestoreEquipped(inventoryLootBaseTarget, *inventoryLootTargetEquipped);
@@ -1476,28 +1476,14 @@ static void inventoryLootHandleCompanionSlotPickup(InvenSlot slot)
 
     Rect rect = inventoryLootGetCompanionSlotRect(slot);
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
-    if (inventoryLootCompanionSlotFrmImage.isLocked()) {
-        // refresh from companion slot image (can remove if we bake into the bg)
-        blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData() + kInventoryLootCompanionSlotWidth * inventoryLootGetCompanionSlotImageSourceY(slot),
-            kInventoryLootCompanionSlotWidth,
-            kInventoryLootCompanionSlotHeight,
-            kInventoryLootCompanionSlotWidth,
-            windowBuffer + inventoryLootLayout.windowWidth * rect.top + rect.left,
-            inventoryLootLayout.windowWidth);
-        windowRefreshRect(gInventoryWindow, &rect);
-    } else {
-        unsigned char* backgroundData = inventoryLootFrmImage.getData();
-        int backgroundWidth = inventoryLootFrmImage.getWidth();
-        if (backgroundData != nullptr) {
-            blitBufferToBuffer(backgroundData + backgroundWidth * rect.top + rect.left,
-                kInventoryLootCompanionSlotWidth,
-                kInventoryLootCompanionSlotHeight,
-                backgroundWidth,
-                windowBuffer + inventoryLootLayout.windowWidth * rect.top + rect.left,
-                inventoryLootLayout.windowWidth);
-        }
-        windowRefreshRect(gInventoryWindow, &rect);
-    }
+    assert(inventoryLootCompanionSlotFrmImage.isLocked());
+    blitBufferToBuffer(inventoryLootCompanionSlotFrmImage.getData() + kInventoryLootCompanionSlotWidth * inventoryLootGetCompanionSlotImageSourceY(slot),
+        kInventoryLootCompanionSlotWidth,
+        kInventoryLootCompanionSlotHeight,
+        kInventoryLootCompanionSlotWidth,
+        windowBuffer + inventoryLootLayout.windowWidth * rect.top + rect.left,
+        inventoryLootLayout.windowWidth);
+    windowRefreshRect(gInventoryWindow, &rect);
 
     bool immediate = _ctrl_pressed();
     _drag_item_loop(item, immediate);
@@ -2461,7 +2447,9 @@ static void _display_target_inventory(int stackOffset, int dragSlotIndex, Invent
     // CE: Show items weight.
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT) {
         inventoryLootRenderPaneWeight(windowBuffer, pitch, true, _target_stack[_target_curr_stack], inventoryLootRightEquippedWeight);
-        inventoryLootRenderCompanionSlots();
+        if (inventoryLootHasCompanionSlots()) {
+            inventoryLootRenderCompanionSlots();
+        }
     }
 }
 
@@ -4083,12 +4071,12 @@ static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSl
     case INVENTORY_LOOT_COMPANION_WEAPON_KEY:
         itemSlot = inventoryLootGetCompanionSlotItemSlot(InvenSlot::RightHand);
         owner = inventoryLootBaseTarget;
-        item = itemSlot != nullptr ? *itemSlot : nullptr;
+        item = *itemSlot;
         break;
     case INVENTORY_LOOT_COMPANION_ARMOR_KEY:
         itemSlot = inventoryLootGetCompanionSlotItemSlot(InvenSlot::Armor);
         owner = inventoryLootBaseTarget;
-        item = itemSlot != nullptr ? *itemSlot : nullptr;
+        item = *itemSlot;
         break;
     case INVENTORY_HAND_RIGHT_KEY:
         itemSlot = &gInventoryRightHandItem;
