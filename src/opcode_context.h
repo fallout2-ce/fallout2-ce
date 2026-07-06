@@ -29,6 +29,7 @@ public:
     void setReturn(const ProgramValue& value);
     void setReturn(std::nullptr_t);
     void setReturn(int value);
+    void setReturn(unsigned int value);
     void setReturn(const char* value);
 
     void pushReturnValue() const;

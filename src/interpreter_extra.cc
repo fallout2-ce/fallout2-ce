@@ -151,7 +151,7 @@ typedef enum OpRegAnimFunc {
 static void scriptPredefinedError(Program* program, const char* name, int error);
 static void scriptError(const char* format, ...);
 static int tileIsVisible(int tile);
-static int _correctFidForRemovedItem(Object* critter, Object* item, int flags);
+int correctFidForRemovedItem(Object* critter, Object* item, int flags);
 static void opGiveExpPoints(Program* program);
 static void opScrReturn(Program* program);
 static void opPlaySfx(Program* program);
@@ -407,7 +407,7 @@ static int tileIsVisible(int tile)
 }
 
 // 0x45409C correctFidForRemovedItem
-static int _correctFidForRemovedItem(Object* critter, Object* item, int flags)
+int correctFidForRemovedItem(Object* critter, Object* item, int flags)
 {
     InvenSlot invenSlot = InvenSlot::Armor;
     if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
@@ -471,7 +471,7 @@ static void opGiveExpPoints(Program* program)
     int xp = programStackPopInteger(program);
 
     if (pcAddExperience(xp) != 0) {
-        scriptError("\nScript Error: %s: op_give_exp_points: stat_pc_set failed");
+        scriptError("\nScript Error: %s: op_give_exp_points: stat_pc_set failed", program->name);
     }
 }
 
@@ -547,7 +547,7 @@ static void opOverrideMapStart(Program* program)
             scriptError("\nError: %s: obj_move_to_tile failed in override_map_start!", program->name);
 
             if (objectSetLocation(gDude, previousTile, elevation, nullptr) != 0) {
-                scriptError("\nError: %s: obj_move_to_tile RECOVERY Also failed!");
+                scriptError("\nError: %s: obj_move_to_tile RECOVERY Also failed!", program->name);
                 exit(1);
             }
         }
@@ -1683,7 +1683,7 @@ static void opRemoveObjectFromInventory(Program* program)
         tileWindowRefreshRect(&rect, item->elevation);
 
         if (updateFlags) {
-            _correctFidForRemovedItem(owner, item, flags);
+            correctFidForRemovedItem(owner, item, flags);
         }
     }
 }
@@ -2534,8 +2534,7 @@ static void opRemoveTimerEvent(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object == nullptr) {
-        // FIXME: Should be op_rm_timer_event.
-        scriptError("\nScript Error: %s: op_add_timer_event: pobj is NULL!");
+        scriptError("\nScript Error: %s: op_rm_timer_event: pobj is NULL!", program->name);
         return;
     }
 
@@ -4327,7 +4326,7 @@ static void opCritterModifySkill(Program* program)
         scriptPredefinedError(program, "critter_mod_skill", SCRIPT_ERROR_OBJECT_IS_NULL);
     }
 
-    programStackPushInteger(program, 0);
+    // CE: remove returnval, which ssl compiler doesn't expect
 }
 
 // sfx_build_char_name
@@ -4641,7 +4640,7 @@ static void opMoveObjectInventoryToObject(Program* program)
             flags |= OBJECT_IN_RIGHT_HAND;
         }
 
-        _correctFidForRemovedItem(object1, oldWeapon, flags);
+        correctFidForRemovedItem(object1, oldWeapon, flags);
     }
 
     itemMoveAll(object1, object2);

@@ -18,9 +18,6 @@ extern unsigned char e_num[4][19 * 26];
 int mapper_main(int argc, char** argv);
 void print_toolbar_name(int object_type);
 int mapper_inven_unwield(Object* obj, int right_hand);
-void mapperShowTimedMsg(const char* msg);
-bool mapperYesNoDialog(const char* msg);
-
 } // namespace fallout
 
 #endif /* FALLOUT_MAPPER_MAPPER_H_ */

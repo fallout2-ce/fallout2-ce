@@ -30,6 +30,7 @@ ArrayId CreateArray(int len, unsigned int flags);
 ArrayId CreateTempArray(int len, unsigned int flags);
 ProgramValue GetArrayKey(ArrayId arrayId, int index, Program* program);
 int LenArray(ArrayId arrayId);
+bool ArrayExists(ArrayId arrayId);
 ProgramValue GetArray(ArrayId arrayId, const ProgramValue& key, Program* program);
 void SetArray(ArrayId arrayId, const ProgramValue& key, const ProgramValue& val, bool allowUnset, Program* program);
 void FreeArray(ArrayId arrayId);

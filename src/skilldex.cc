@@ -95,7 +95,7 @@ static MessageList gSkilldexMessageList;
 static MessageListItem gSkilldexMessageListItem;
 
 // 0x668140 skldxwin
-static int gSkilldexWindow;
+static int gSkilldexWindow = -1;
 
 // 0x668144 winbuf_2
 static unsigned char* gSkilldexWindowBuffer;
@@ -145,6 +145,11 @@ int skilldexOpen()
     skilldexWindowFree();
 
     return rc;
+}
+
+int skilldexGetWindow()
+{
+    return windowGetWindow(gSkilldexWindow) != nullptr ? gSkilldexWindow : -1;
 }
 
 // 0x4AC054 skilldex_start
@@ -334,7 +339,7 @@ static int skilldexWindowInit()
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_ON].getWidth(),
             _colorTable[18979]);
 
-        fontDrawText(gSkilldexButtonsData[index * 2 + 1] + _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth() * nameY + nameX,
+        fontDrawText(gSkilldexButtonsData[index * 2 + 1] + _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth() * (nameY + 1) + nameX,
             name,
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth(),
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth(),

@@ -3111,7 +3111,7 @@ static void interpreterPrintStats()
             int total = 0;
 
             if (program->dynamicStrings != nullptr) {
-                debugPrint("Program %s\n");
+                debugPrint("Program %s\n", program->name);
 
                 unsigned char* heap = program->dynamicStrings + sizeof(int);
                 while (*(unsigned short*)heap != 0x8000) {

@@ -56,6 +56,26 @@ int fontManagerAdd(FontManager* fontManager);
 int fontGetCurrent();
 void fontSetCurrent(int font);
 
+class ScopedFont {
+public:
+    ScopedFont(int font)
+        : _previousFont(fontGetCurrent())
+    {
+        fontSetCurrent(font);
+    }
+
+    ~ScopedFont()
+    {
+        fontSetCurrent(_previousFont);
+    }
+
+    ScopedFont(const ScopedFont&) = delete;
+    ScopedFont& operator=(const ScopedFont&) = delete;
+
+private:
+    int _previousFont;
+};
+
 } // namespace fallout
 
 #endif /* TEXT_FONT_H */

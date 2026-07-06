@@ -72,8 +72,14 @@ void OpcodeContext::setReturn(int value)
     setReturn(ProgramValue(value));
 }
 
+void OpcodeContext::setReturn(unsigned int value)
+{
+    setReturn(ProgramValue(value));
+}
+
 void OpcodeContext::setReturn(const char* value)
 {
+    // TODO: don't clutter dynamic string buffer with temporary values, use static buffer like sfall's ScriptExtender::gTextBuffer
     ProgramValue programValue;
     programValue.opcode = VALUE_TYPE_DYNAMIC_STRING;
     programValue.integerValue = programPushString(_program, value);
@@ -87,6 +93,7 @@ void OpcodeContext::pushReturnValue() const
     programStackPushValue(_program, _returnValue);
 }
 
+// TODO: remove or make useful by handling common format structure
 void OpcodeContext::printError(const char* format, ...) const
 {
     va_list args;

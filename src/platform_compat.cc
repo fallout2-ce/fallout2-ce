@@ -1,10 +1,12 @@
 #include "platform_compat.h"
+#include <filesystem>
 
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #else
 #include <dirent.h>
 #include <sys/stat.h>
@@ -14,6 +16,19 @@
 #include <SDL.h>
 
 namespace fallout {
+
+static bool compatIsPathSeparator(char ch)
+{
+    return ch == '/' || ch == '\\';
+}
+
+static void compat_prepare_native_path(char* nativePath, const char* path)
+{
+    strncpy(nativePath, path, COMPAT_MAX_PATH - 1);
+    nativePath[COMPAT_MAX_PATH - 1] = '\0';
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+}
 
 int compat_stricmp(const char* string1, const char* string2)
 {
@@ -92,9 +107,7 @@ long compat_tell(int fd)
 long compat_filelength(const char* path)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     return std::filesystem::file_size(nativePath);
 }
 
@@ -102,9 +115,7 @@ int compat_mkdir(const char* path)
 {
     std::error_code ec;
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     std::filesystem::create_directory(nativePath, ec);
     return ec.value();
 }
@@ -113,19 +124,22 @@ int compat_mkdir_recursive(const char* path)
 {
     std::error_code ec;
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     std::filesystem::create_directories(nativePath, ec);
     return ec.value();
+}
+
+bool compat_is_dir(const char* path)
+{
+    char nativePath[COMPAT_MAX_PATH];
+    compat_prepare_native_path(nativePath, path);
+    return std::filesystem::is_directory(nativePath);
 }
 
 bool compat_file_exists(const char* filePath)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, filePath);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, filePath);
     return std::filesystem::exists(nativePath);
 }
 
@@ -137,18 +151,14 @@ unsigned int compat_timeGetTime()
 FILE* compat_fopen(const char* path, const char* mode)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     return fopen(nativePath, mode);
 }
 
 gzFile compat_gzopen(const char* path, const char* mode)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     return gzopen(nativePath, mode);
 }
 
@@ -186,9 +196,7 @@ int compat_remove(const char* path)
 {
     std::error_code err;
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     std::filesystem::remove(nativePath, err);
     return err.value();
 }
@@ -198,14 +206,10 @@ int compat_rename(const char* oldFileName, const char* newFileName)
     std::error_code err;
 
     char nativeOldFileName[COMPAT_MAX_PATH];
-    strcpy(nativeOldFileName, oldFileName);
-    compat_windows_path_to_native(nativeOldFileName);
-    compat_resolve_path(nativeOldFileName);
+    compat_prepare_native_path(nativeOldFileName, oldFileName);
 
     char nativeNewFileName[COMPAT_MAX_PATH];
-    strcpy(nativeNewFileName, newFileName);
-    compat_windows_path_to_native(nativeNewFileName);
-    compat_resolve_path(nativeNewFileName);
+    compat_prepare_native_path(nativeNewFileName, newFileName);
 
     std::filesystem::rename(nativeOldFileName, nativeNewFileName, err);
     return err.value();
@@ -281,9 +285,7 @@ void compat_resolve_path(char* path)
 int compat_access(const char* path, int mode)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
     std::filesystem::perms targetPrms = static_cast<std::filesystem::perms>(mode);
     std::filesystem::perms fsPrms = std::filesystem::status(nativePath).permissions();
     return targetPrms == fsPrms;

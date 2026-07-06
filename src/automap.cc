@@ -46,6 +46,8 @@ static void _decode_map_data(int elevation);
 static int automapCreate();
 static int _copy_file_data(File* stream1, File* stream2, int length);
 
+static int gAutomapWindow = -1;
+
 typedef enum AutomapFrm {
     AUTOMAP_FRM_BACKGROUND,
     AUTOMAP_FRM_BUTTON_UP,
@@ -326,6 +328,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
     int automapWindowY = (screenGetHeight() - AUTOMAP_WINDOW_HEIGHT) / 2;
     // adding WINDOW_TRANSPARENT and WINDOW_DRAGGABLE_BY_BACKGROUND for testing temporarily
     int window = windowCreate(automapWindowX, automapWindowY, AUTOMAP_WINDOW_WIDTH, AUTOMAP_WINDOW_HEIGHT, color, WINDOW_MODAL | WINDOW_MOVE_ON_TOP | WINDOW_TRANSPARENT | WINDOW_DRAGGABLE_BY_BACKGROUND);
+    gAutomapWindow = window;
 
     int scannerBtn = buttonCreate(window,
         111,
@@ -493,8 +496,14 @@ void automapShow(bool isInGame, bool isUsingScanner)
     }
 
     windowDestroy(window);
+    gAutomapWindow = -1;
     fontSetCurrent(oldFont);
     touch_set_touchscreen_mode(false);
+}
+
+int automapGetWindow()
+{
+    return windowGetWindow(gAutomapWindow) != nullptr ? gAutomapWindow : -1;
 }
 
 // Renders automap in Map window.
@@ -534,13 +543,13 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
                     continue;
                 }
 
-                if (object->pid == PROTO_ID_0x2000031) {
+                if (object->pid == PROTO_ID_EXIT_GRID_MAP_MARKER) {
                     objectColor = _colorTable[32328];
                 } else if (objectType == OBJ_TYPE_WALL) {
                     objectColor = _colorTable[992];
                 } else if (objectType == OBJ_TYPE_SCENERY
                     && (flags & AUTOMAP_WTH_HIGH_DETAILS) != 0
-                    && object->pid != PROTO_ID_0x2000158) {
+                    && object->pid != PROTO_ID_BLOCK_HEX_AUTO_INVISO) {
                     objectColor = _colorTable[480];
                 } else if (object == gDude) {
                     objectColor = _colorTable[31744];
@@ -1081,7 +1090,7 @@ static void _decode_map_data(int elevation)
             int contentType;
 
             int objectType = FID_TYPE(object->fid);
-            if (objectType == OBJ_TYPE_SCENERY && object->pid != PROTO_ID_0x2000158) {
+            if (objectType == OBJ_TYPE_SCENERY && object->pid != PROTO_ID_BLOCK_HEX_AUTO_INVISO) {
                 contentType = 2;
             } else if (objectType == OBJ_TYPE_WALL) {
                 contentType = 1;

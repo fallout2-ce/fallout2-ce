@@ -287,6 +287,21 @@ static int gTileWindowWidth;
 // 0x66BE34 tile_center_tile
 int gCenterTile;
 
+// Optional mapper overlay drawn over the iso view each refresh (edge editor). Null when unused.
+static TileMapperOverlayProc* gTileMapperOverlayProc = nullptr;
+
+void tileSetMapperOverlayProc(TileMapperOverlayProc* proc)
+{
+    gTileMapperOverlayProc = proc;
+}
+
+void tileMapperOverlayRender(unsigned char* buffer, int pitch, int elevation, const Rect* clip)
+{
+    if (gTileMapperOverlayProc != nullptr) {
+        gTileMapperOverlayProc(buffer, pitch, elevation, clip);
+    }
+}
+
 // 0x4B0C40 tile_init
 int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, int hexGridWidth, int hexGridHeight, unsigned char* buf, int windowWidth, int windowHeight, int windowPitch, TileWindowRefreshProc* windowRefreshProc)
 {
@@ -454,7 +469,7 @@ int tileInit(TileData** squareGrid, int squareGridWidth, int squareGridHeight, i
 
     tileSetCenter(hexGridWidth * (hexGridHeight / 2) + hexGridWidth / 2, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
 
-    if (compat_stricmp(settings.system.executable.c_str(), "mapper") == 0) {
+    if (settings.system.executableIsMapper()) {
         gTileWindowRefreshElevationProc = tileRefreshMapper;
     }
 
@@ -543,30 +558,16 @@ int tileSetCenter(int tile, int flags)
         return -1;
     }
 
-    bool boundaryModsSet = false;
-    if (mapEdgeIsLoaded() && !settings.ui.ignore_map_edges) {
-        bool isScroll = flags == 0;
-        if (!isScroll) {
-            // Forced positioning (teleport, initial load, etc.): clamp to edge boundary.
-            tile = mapEdgeSelectZoneAndClamp(tile, gElevation);
-            if (!tileIsValid(tile)) return -1;
-        } else if (mapEdgeZoneIsSelected()) {
-            // Normal scroll: block if tile is outside boundary (matching sfall CheckBorder).
-            // Clamping here would move the center slightly and cause mapScroll's buffer
-            // copy to produce visual artifacts; blocking preserves the current view.
-            if (!mapEdgeTileInBounds(tile)) {
-                return -1;
-            }
-            // Tile is in bounds; set sub-tile boundary mods if tile is on the edge.
-            // If the tile is exactly on a boundary edge, force a full redraw
-            // (matching sfall's CheckBorder returning 1 → modeFlags |= 1).
-            if (mapEdgeSetBoundaryMods(tile)) {
-                boundaryModsSet = true;
-                flags |= TILE_SET_CENTER_REFRESH_WINDOW;
-            }
-        }
+    const bool edgeActive = mapEdgeIsEnabled();
+    const bool isScroll = flags == 0;
+
+    if (edgeActive && !isScroll) {
+        // Forced positioning (teleport, load): clamp to edge boundary.
+        tile = mapEdgeSelectZoneAndClamp(tile, gElevation);
+        if (!tileIsValid(tile)) return -1;
     }
 
+    bool boundaryModsSet = false;
     if ((flags & TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
         if (gTileScrollLimitingEnabled) {
             int tileScreenX;
@@ -588,9 +589,21 @@ int tileSetCenter(int tile, int flags)
             }
         }
 
-        // Scroll-blocker object check only runs when no EDG is loaded.
-        // EDG clamping above already enforces the boundary.
-        if ((!mapEdgeIsLoaded() || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
+        // Must run after scroll limiting: mapEdgeSetBoundaryMods mutates the persistent
+        // alignment mods, so a scroll the limiter rejects must not touch them.
+        if (edgeActive && isScroll && mapEdgeZoneIsSelected()) {
+            // Block instead of clamp: clamping would shift the center and make
+            // mapScroll's buffer copy produce artifacts.
+            if (!mapEdgeTileInBounds(tile)) {
+                return -1;
+            }
+            // On a boundary edge: set sub-tile mods and force a full redraw.
+            if (mapEdgeSetBoundaryMods(tile)) {
+                boundaryModsSet = true;
+                flags |= TILE_SET_CENTER_REFRESH_WINDOW;
+            }
+        } else if ((!edgeActive || !mapEdgeZoneIsSelected()) && gTileScrollBlockingEnabled) {
+            // Object scroll-blocker only applies when EDG isn't enforcing the boundary.
             if (_obj_scroll_blocking_at(tile, gElevation) == 0) {
                 return -1;
             }
@@ -711,6 +724,8 @@ static void tileRefreshMapper(Rect* rect, int elevation)
     if (!hasVisArea) {
         tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
+
+    tileMapperOverlayRender(gTileWindowBuffer, gTileWindowPitch, elevation, &rectToUpdate);
 
     gTileWindowRefreshProc(&rectToUpdate);
 }
@@ -1530,7 +1545,7 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
 // Port of sfall HRP ViewMap::square_obj_render
 void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop)
 {
-    if (!mapEdgeHasSquareRect(elevation)) {
+    if (!mapEdgeIsEnabled() || !mapEdgeHasSquareRect(elevation)) {
         return;
     }
 

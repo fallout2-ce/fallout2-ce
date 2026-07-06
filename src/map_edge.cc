@@ -6,12 +6,12 @@
 #include "map.h"
 #include "map_defs.h"
 #include "platform_compat.h"
+#include "settings.h"
 #include "svga.h"
 #include "tile.h"
 #include "window_manager.h"
 
 #include <cassert>
-#include <memory>
 
 namespace fallout {
 
@@ -19,8 +19,9 @@ namespace fallout {
 constexpr int kTileWidth = 32;
 constexpr int kTileHeight = 24;
 
-static std::unique_ptr<EdgeZone> edgeZones[ELEVATION_COUNT];
+static EdgeElevationData edgeData[ELEVATION_COUNT];
 static bool edgeDataLoaded = false;
+static bool mapperMode = false;
 static bool edgeVersion2 = false;
 static EdgeZone* currentEdgeZone = nullptr;
 
@@ -152,30 +153,62 @@ static void calcEdgeData(EdgeZone* zone)
 // none contains it.
 static EdgeZone* findZoneByPixel(int px, int py, int elevation)
 {
-    EdgeZone* zone = edgeZones[elevation].get();
-    if (zone == nullptr) {
+    std::vector<EdgeZone>& zones = edgeData[elevation].zones;
+    if (zones.empty()) {
         return nullptr;
     }
 
-    // Multi-edge: advance while target is outside current zone.
+    // Multi-edge: advance while target is outside current zone, stopping at the last.
     // width/height in original are half-window values (winHalfWidth-1, winHalfHeight+1),
     // so window size cancels out of the condition — only pixelRect ± small constants remain.
     constexpr int kZoneMarginY = 2;
 
-    while (zone->next != nullptr) {
+    size_t index = 0;
+    while (index + 1 < zones.size()) {
+        const EdgeZone& zone = zones[index];
         // Point is inside current zone.
-        if (px < zone->pixelRect.left && px > zone->pixelRect.right
-            && py > zone->pixelRect.top - kZoneMarginY && py < zone->pixelRect.bottom - kZoneMarginY) {
+        if (px < zone.pixelRect.left && px > zone.pixelRect.right
+            && py > zone.pixelRect.top - kZoneMarginY && py < zone.pixelRect.bottom - kZoneMarginY) {
             break;
         }
-        zone = zone->next.get();
+        index++;
     }
 
-    return zone;
+    return &zones[index];
 }
 
-// Load EDG file, populate edgeZones, and compute pixel-space fields.
-// EDG files use big-endian byte order (like all Fallout 2 files).
+// Build the "<name>.EDG" name.
+static void buildEdgeFileName(const char* mapName, char* outPath, size_t outSize)
+{
+    char fname[COMPAT_MAX_FNAME];
+    compat_splitpath(mapName, nullptr, nullptr, fname, nullptr);
+    snprintf(outPath, outSize, "%s.EDG", fname);
+}
+
+// Unpacks the EDG clip-sides bitfield (per-elevation in v2).
+static EdgeZone::ClipSides unpackClipSides(int raw)
+{
+    EdgeZone::ClipSides clip;
+    clip.bottom = (raw & 1) != 0;
+    clip.right = ((raw >> 8) & 1) != 0;
+    clip.top = ((raw >> 16) & 1) != 0;
+    clip.left = ((raw >> 24) & 1) != 0;
+    return clip;
+}
+
+// Packs clip-sides into the EDG bitfield (inverse of unpackClipSides).
+static int packClipSides(const EdgeZone::ClipSides& clip)
+{
+    int value = 0;
+    if (clip.bottom) value |= 1;
+    if (clip.right) value |= 1 << 8;
+    if (clip.top) value |= 1 << 16;
+    if (clip.left) value |= 1 << 24;
+    return value;
+}
+
+// Parse an EDG stream into edgeData / edgeVersion2 (big-endian byte order), computing
+// the runtime pixel-space fields for each zone.
 static bool mapEdgeLoadFromStream(File* stream)
 {
     int magic;
@@ -192,27 +225,23 @@ static bool mapEdgeLoadFromStream(File* stream)
     int levelIndicator = 0;
 
     for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
-        int sqLeft = SQUARE_GRID_WIDTH - 1, sqTop = 0, sqRight = 0, sqBottom = SQUARE_GRID_HEIGHT - 1;
-        int sqClipData = 0;
+        EdgeElevationData& data = edgeData[elev];
+        data.squareRect = { SQUARE_GRID_WIDTH - 1, 0, 0, SQUARE_GRID_HEIGHT - 1 };
+        data.clipSides = {};
 
         if (edgeVersion2) {
             int sqRect[4];
-            if (fileReadInt32List(stream, sqRect, 4) == -1
-                || fileReadInt32(stream, &sqClipData) == -1) {
+            int sqClipData;
+            if (fileReadInt32List(stream, sqRect, 4) == -1 || fileReadInt32(stream, &sqClipData) == -1) {
                 return false;
             }
-            sqLeft = sqRect[0];
-            sqTop = sqRect[1];
-            sqRight = sqRect[2];
-            sqBottom = sqRect[3];
+            data.squareRect = { sqRect[0], sqRect[1], sqRect[2], sqRect[3] };
+            data.clipSides = unpackClipSides(sqClipData);
         }
 
         if (levelIndicator != elev) {
             continue; // no tileRect data for this elevation
         }
-
-        auto tail = &edgeZones[elev];
-        bool isFirstZone = true;
 
         while (true) {
             int tileRect[4];
@@ -220,29 +249,11 @@ static bool mapEdgeLoadFromStream(File* stream)
                 return elev == ELEVATION_COUNT - 1;
             }
 
-            auto zone = std::make_unique<EdgeZone>();
             // File stores RECT order: [0]=left, [1]=top, [2]=right, [3]=bottom.
-            zone->tileRect.left = tileRect[0];
-            zone->tileRect.top = tileRect[1];
-            zone->tileRect.right = tileRect[2];
-            zone->tileRect.bottom = tileRect[3];
-
-            zone->squareRect.left = sqLeft;
-            zone->squareRect.top = sqTop;
-            zone->squareRect.right = sqRight;
-            zone->squareRect.bottom = sqBottom;
-            int rawClip = isFirstZone ? sqClipData : 0;
-            zone->clipSides.bottom = (rawClip & 1) != 0;
-            zone->clipSides.right = ((rawClip >> 8) & 1) != 0;
-            zone->clipSides.top = ((rawClip >> 16) & 1) != 0;
-            zone->clipSides.left = ((rawClip >> 24) & 1) != 0;
-            zone->next = nullptr;
-
-            calcEdgeData(zone.get());
-
-            *tail = std::move(zone);
-            tail = &(*tail)->next;
-            isFirstZone = false;
+            EdgeZone zone {};
+            zone.tileRect = { tileRect[0], tileRect[1], tileRect[2], tileRect[3] };
+            calcEdgeData(&zone);
+            data.zones.push_back(zone);
 
             if (fileReadInt32(stream, &levelIndicator) == -1) {
                 return elev == ELEVATION_COUNT - 1;
@@ -261,11 +272,9 @@ void mapEdgeLoad(const char* mapName)
 {
     mapEdgeFree();
 
-    char fname[COMPAT_MAX_FNAME];
-    compat_splitpath(mapName, nullptr, nullptr, fname, nullptr);
-
-    char edgPath[COMPAT_MAX_PATH];
-    snprintf(edgPath, sizeof(edgPath), "MAPS\\%s.EDG", fname);
+    char edgName[COMPAT_MAX_PATH];
+    buildEdgeFileName(mapName, edgName, sizeof(edgName));
+    const char* edgPath = mapBuildPath(edgName);
 
     File* stream = fileOpen(edgPath, "rb");
     if (stream == nullptr) {
@@ -284,10 +293,84 @@ void mapEdgeLoad(const char* mapName)
     }
 }
 
+// Index of the next elevation (>= from) that has zones, or ELEVATION_COUNT if none.
+// Used as the level indicator that advances the loader past empty elevations.
+static int nextElevationWithZones(int from)
+{
+    for (int elev = from; elev < ELEVATION_COUNT; elev++) {
+        if (!edgeData[elev].zones.empty()) {
+            return elev;
+        }
+    }
+    return ELEVATION_COUNT;
+}
+
+// Writes edgeData to an EDG stream, mirroring mapEdgeLoadFromStream's byte layout.
+static bool writeEdgStream(File* stream)
+{
+    if (fileWriteInt32(stream, 'EDGE') == -1) return false;
+    if (fileWriteInt32(stream, edgeVersion2 ? 2 : 1) == -1) return false;
+    if (fileWriteInt32(stream, 0) == -1) return false; // reserved
+
+    for (int elev = 0; elev < ELEVATION_COUNT; elev++) {
+        const EdgeElevationData& data = edgeData[elev];
+
+        if (edgeVersion2) {
+            int sqRect[4] = { data.squareRect.left, data.squareRect.top, data.squareRect.right, data.squareRect.bottom };
+            if (fileWriteInt32List(stream, sqRect, 4) == -1) return false;
+            if (fileWriteInt32(stream, packClipSides(data.clipSides)) == -1) return false;
+        }
+
+        const int zoneCount = static_cast<int>(data.zones.size());
+        for (int i = 0; i < zoneCount; i++) {
+            const Rect& r = data.zones[i].tileRect;
+            int tileRect[4] = { r.left, r.top, r.right, r.bottom };
+            if (fileWriteInt32List(stream, tileRect, 4) == -1) return false;
+
+            // Level indicator: same elevation while more zones follow, otherwise the
+            // index of the next elevation that has zones (so the loader advances to it).
+            int levelIndicator = (i + 1 < zoneCount) ? elev : nextElevationWithZones(elev + 1);
+            if (fileWriteInt32(stream, levelIndicator) == -1) return false;
+        }
+    }
+
+    return true;
+}
+
+void mapEdgeSave(const char* mapName)
+{
+    int totalZones = 0;
+    for (const EdgeElevationData& data : edgeData) {
+        totalZones += static_cast<int>(data.zones.size());
+    }
+    if (totalZones == 0) {
+        return; // nothing to write
+    }
+
+    char edgName[COMPAT_MAX_PATH];
+    buildEdgeFileName(mapName, edgName, sizeof(edgName));
+    const char* edgPath = mapBuildSavePath(edgName);
+
+    File* stream = fileOpen(edgPath, "wb");
+    if (stream == nullptr) {
+        debugPrint("mapEdgeSave: unable to open %s for writing\n", edgPath);
+        return;
+    }
+
+    bool ok = writeEdgStream(stream);
+    fileClose(stream);
+    debugPrint("mapEdgeSave: %s %s\n", ok ? "wrote" : "error writing", edgPath);
+}
+
+EdgeElevationData& mapEdgeGetElevationData(int elevation)
+{
+    return edgeData[elevation];
+}
+
 void mapEdgeFree()
 {
-    for (auto& gEdgeZone : edgeZones) {
-        gEdgeZone.reset();
+    for (auto& data : edgeData) {
+        data = EdgeElevationData {};
     }
     edgeDataLoaded = false;
     currentEdgeZone = nullptr;
@@ -301,6 +384,27 @@ void mapEdgeFree()
 bool mapEdgeIsLoaded()
 {
     return edgeDataLoaded;
+}
+
+void mapEdgeSetMapperMode(bool enabled)
+{
+    mapperMode = enabled;
+}
+
+bool mapEdgeIsMapperMode()
+{
+    return mapperMode;
+}
+
+bool mapEdgeIsEnabled()
+{
+    // Enforced when data is loaded, we're not editing in the mapper, and the user enabled it.
+    return edgeDataLoaded && !mapperMode && settings.ui.edg_support && !settings.ui.ignore_map_edges;
+}
+
+void mapEdgeUpgradeToVersion2()
+{
+    edgeVersion2 = true;
 }
 
 bool mapEdgeZoneIsSelected()
@@ -393,36 +497,32 @@ int mapEdgeGetTileYAlignment() { return currentTileYAlignment; }
 
 bool mapEdgeHasSquareRect(int elevation)
 {
-    const auto& zone = edgeZones[elevation];
-    return edgeVersion2 && zone != nullptr && zone->squareRect.left >= 0;
+    const EdgeElevationData& data = edgeData[elevation];
+    return edgeVersion2 && !data.zones.empty() && data.squareRect.left >= 0;
 }
 
 void mapEdgeGetSquareRect(int elevation, Rect* outRect)
 {
-    const auto& zone = edgeZones[elevation];
-    *outRect = zone->squareRect;
+    *outRect = edgeData[elevation].squareRect;
 }
 
 EdgeZone::ClipSides mapEdgeGetClipSides(int elevation)
 {
-    const auto& zone = edgeZones[elevation];
-    return zone ? zone->clipSides : EdgeZone::ClipSides {};
+    return edgeData[elevation].clipSides;
 }
 
 void mapEdgeRecalc()
 {
-    for (auto& gEdgeZone : edgeZones) {
-        const auto* zone = &gEdgeZone;
-        while (zone != nullptr) {
-            calcEdgeData(zone->get());
-            zone = &zone->get()->next;
+    for (auto& data : edgeData) {
+        for (auto& zone : data.zones) {
+            calcEdgeData(&zone);
         }
     }
 }
 
 bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
 {
-    if (!edgeDataLoaded) return false;
+    if (!mapEdgeIsEnabled()) return false;
 
     int px, py;
     tileToPixelOffset(gCenterTile, px, py);
@@ -453,7 +553,7 @@ bool mapEdgeComputeVisibleArea(int elevation, Rect* outRect)
 
 bool mapEdgeIsOverClippedArea(int screenX, int screenY)
 {
-    if (!edgeDataLoaded) return false;
+    if (!mapEdgeIsEnabled()) return false;
 
     if (screenX >= gMapVisibleArea.left && screenX <= gMapVisibleArea.right && screenY >= gMapVisibleArea.top && screenY < gMapVisibleArea.bottom) return false;
 

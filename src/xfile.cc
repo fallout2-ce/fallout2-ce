@@ -11,6 +11,7 @@
 #include <unistd.h>
 #endif
 
+#include "debug.h"
 #include "file_find.h"
 
 namespace fallout {
@@ -306,8 +307,14 @@ size_t xfileRead(void* ptr, size_t size, size_t count, XFile* stream)
         // [fread] returns number of elements read, but [gzwrite] have no such
         // concept, it works with bytes, and returns number of bytes read.
         // Depending on the [size] and [count] parameters this function can
-        // return wrong result.
-        elementsRead = gzread(stream->gzfile, ptr, size * count);
+        // return wrong result.  We attempt to fix this roughly here.
+        // In practice unlikely to matter since GZFILE type isn't used.
+        if (size == 0 || count == 0) {
+            elementsRead = 0;
+        } else {
+            int bytesRead = gzread(stream->gzfile, ptr, size * count);
+            elementsRead = bytesRead > 0 ? static_cast<size_t>(bytesRead) / size : 0;
+        }
         break;
     default:
         elementsRead = fread(ptr, size, count, stream->file);
@@ -521,7 +528,8 @@ bool xbaseOpen(const char* path)
         return false;
     }
 
-    DBase* dbase = dbaseOpen(path);
+    int dbaseErrorFlags = 0;
+    DBase* dbase = dbaseOpen(path, &dbaseErrorFlags);
     if (dbase != nullptr) {
         xbase->isDbase = true;
         xbase->dbase = dbase;
@@ -530,24 +538,64 @@ bool xbaseOpen(const char* path)
         return true;
     }
 
-    char workingDirectory[COMPAT_MAX_PATH];
-    if (getcwd(workingDirectory, COMPAT_MAX_PATH) == nullptr) {
-        free(xbase->path);
-        free(xbase);
-        return false;
+    if (dbaseErrorFlags != 0) {
+        if (dbaseErrorFlags & DBASE_ERROR_EMPTY) {
+            debugPrint("[xfile] %s: empty archive\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_ZIP64) {
+            debugPrint("[xfile] %s: ZIP64 format (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_MULTI_DISK) {
+            debugPrint("[xfile] %s: multi-disk ZIP (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_ENCRYPTED) {
+            debugPrint("[xfile] %s: encrypted entries (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_DESCRIPTORS) {
+            debugPrint("[xfile] %s: data descriptors (unsupported)\n", path);
+        }
+        if (dbaseErrorFlags & DBASE_ERROR_UNSUPPORTED_METHOD) {
+            debugPrint("[xfile] %s: unsupported compression method(s)\n", path);
+        }
     }
 
-    if (chdir(path) == 0) {
-        chdir(workingDirectory);
+    if (compat_is_dir(path)) {
         xbase->next = gXbaseHead;
         gXbaseHead = xbase;
         return true;
     }
 
-    // Cleanup if chdir(path) failed
+    // Cleanup on failure.
     free(xbase->path);
     free(xbase);
     return false; // return false to trigger messages on game load
+}
+
+bool xbaseIsValidDirectory(const char* path)
+{
+    if (path == nullptr || path[0] == '\0') {
+        return false;
+    }
+
+    auto trimmedLength = [](const char* p) {
+        size_t len = strlen(p);
+        while (len > 0 && (p[len - 1] == '\\' || p[len - 1] == '/')) {
+            len--;
+        }
+        return len;
+    };
+
+    size_t targetLen = trimmedLength(path);
+    for (XBase* curr = gXbaseHead; curr != nullptr; curr = curr->next) {
+        if (curr->isDbase || curr->path == nullptr) {
+            continue;
+        }
+        size_t currLen = trimmedLength(curr->path);
+        if (currLen == targetLen && compat_strnicmp(curr->path, path, targetLen) == 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // 0x4DFB3C xenumfiles

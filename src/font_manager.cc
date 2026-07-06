@@ -1,10 +1,14 @@
 #include "font_manager.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "color.h"
 #include "db.h"
+#include "debug.h"
 #include "memory_manager.h"
 #include "settings.h"
 
@@ -44,6 +48,8 @@ static void interfaceFontByteSwapUInt32(unsigned int* value);
 static void interfaceFontByteSwapInt32(int* value);
 static void interfaceFontByteSwapUInt16(unsigned short* value);
 static void interfaceFontByteSwapInt16(short* value);
+static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, const char* string, int color, float scale);
+static int interfaceFontGetScaledWidthImpl(const char* string, int color, float scale);
 
 // 0x518680 gFMInit
 static bool gInterfaceFontsInitialized = false;
@@ -112,6 +118,24 @@ void interfaceFontsExit()
             internal_free_safe(gInterfaceFontDescriptors[font].data, __FILE__, __LINE__); // FONTMGR.C, 124
         }
     }
+}
+
+void interfaceFontDrawTextScaled2D(const Buffer2D& dest, int x, int y, const char* string, int color, float scale)
+{
+    if (!gInterfaceFontsInitialized || dest.data == nullptr || string == nullptr || *string == '\0') {
+        return;
+    }
+
+    interfaceFontDrawScaledImpl(dest, x, y, string, color, std::max(scale, 0.01f));
+}
+
+int interfaceFontGetStringWidthScaled(const char* string, int color, float scale)
+{
+    if (!gInterfaceFontsInitialized || string == nullptr || *string == '\0') {
+        return 0;
+    }
+
+    return interfaceFontGetScaledWidthImpl(string, color, std::max(scale, 0.01f));
 }
 
 // 0x441D20 FMLoadFont
@@ -407,6 +431,84 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
     }
 
     _freeColorBlendTable(color & 0xFF);
+}
+
+static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, const char* string, int color, float scale)
+{
+    if ((color & FONT_SHADOW) != 0) {
+        color &= ~FONT_SHADOW;
+        interfaceFontDrawScaledImpl(dest, x + 1, y + 1, string, (color & ~0xFF) | _colorTable[0], scale);
+    }
+
+    if ((color & (FONT_MONO | FONT_UNDERLINE)) != 0) {
+        debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
+    }
+
+    unsigned char* palette = _getColorBlendTable(color & 0xFF);
+
+    float cursorX = static_cast<float>(x);
+    while (*string != '\0') {
+        unsigned char ch = static_cast<unsigned char>(*string++);
+
+        int characterWidth = ch == ' '
+            ? gCurrentInterfaceFontDescriptor->wordSpacing
+            : gCurrentInterfaceFontDescriptor->glyphs[ch].width;
+
+        int advance = characterWidth + gCurrentInterfaceFontDescriptor->letterSpacing;
+        int glyphX = static_cast<int>(lround(cursorX));
+
+        InterfaceFontGlyph* glyph = &(gCurrentInterfaceFontDescriptor->glyphs[ch]);
+        if (glyph->width > 0 && glyph->height > 0) {
+            unsigned char* glyphData = gCurrentInterfaceFontDescriptor->data + glyph->offset;
+            int scaledGlyphWidth = std::max(1, static_cast<int>(lround(glyph->width * scale)));
+            int scaledGlyphHeight = std::max(1, static_cast<int>(lround(glyph->height * scale)));
+            int glyphY = y + std::max(0, static_cast<int>(lround((gCurrentInterfaceFontDescriptor->maxHeight - glyph->height) * scale)));
+
+            int destLeft = std::max(glyphX, 0);
+            int destTop = std::max(glyphY, 0);
+            int destRight = std::min(glyphX + scaledGlyphWidth, dest.width);
+            int destBottom = std::min(glyphY + scaledGlyphHeight, dest.height);
+
+            for (int destY = destTop; destY < destBottom; destY++) {
+                int scaledY = destY - glyphY;
+                int srcY = std::clamp(static_cast<int>(scaledY / scale), 0, glyph->height - 1);
+
+                for (int destX = destLeft; destX < destRight; destX++) {
+                    int scaledX = destX - glyphX;
+                    int srcX = std::clamp(static_cast<int>(scaledX / scale), 0, glyph->width - 1);
+                    unsigned char byte = glyphData[srcY * glyph->width + srcX];
+                    unsigned char* pixel = dest.data + destY * dest.width + destX;
+                    *pixel = palette[(byte << 8) + *pixel];
+                }
+            }
+        }
+
+        cursorX += advance * scale;
+        if (static_cast<int>(lround(cursorX)) >= dest.width) {
+            break;
+        }
+    }
+
+    _freeColorBlendTable(color & 0xFF);
+}
+
+static int interfaceFontGetScaledWidthImpl(const char* string, int color, float scale)
+{
+    if ((color & (FONT_MONO | FONT_UNDERLINE)) != 0) {
+        debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
+    }
+
+    float width = 0.0f;
+    while (*string != '\0') {
+        unsigned char ch = static_cast<unsigned char>(*string++);
+        int characterWidth = ch == ' '
+            ? gCurrentInterfaceFontDescriptor->wordSpacing
+            : gCurrentInterfaceFontDescriptor->glyphs[ch].width;
+        int advance = characterWidth + gCurrentInterfaceFontDescriptor->letterSpacing;
+        width += advance * scale;
+    }
+
+    return std::max(0, static_cast<int>(lround(width)));
 }
 
 // NOTE: Inlined.

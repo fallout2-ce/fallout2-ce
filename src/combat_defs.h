@@ -13,9 +13,9 @@
 namespace fallout {
 
 typedef enum CombatState {
-    COMBAT_STATE_0x01 = 0x01,
-    COMBAT_STATE_0x02 = 0x02,
-    COMBAT_STATE_0x08 = 0x08,
+    COMBAT_STATE_IN_COMBAT = 0x01,
+    COMBAT_STATE_PLAYER_TURN = 0x02,
+    COMBAT_STATE_EXIT_REQUESTED = 0x08,
 } CombatState;
 
 typedef enum HitMode {
@@ -103,7 +103,7 @@ typedef struct Attack {
     Object* attacker;
     int hitMode;
     Object* weapon;
-    int attackHitLocation;
+    int attackHitLocation; // UNUSED?
     int attackerDamage;
     int attackerFlags;
     int ammoQuantity;
@@ -114,7 +114,7 @@ typedef struct Attack {
     int defenderDamage;
     int defenderFlags;
     int defenderKnockback;
-    Object* oops;
+    Object* intendedTarget; // mainTarget
     int extrasLength;
     Object* extras[EXPLOSION_TARGET_COUNT];
     int extrasHitLocation[EXPLOSION_TARGET_COUNT];

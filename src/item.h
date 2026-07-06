@@ -17,8 +17,8 @@ typedef enum AttackType {
 } AttackType;
 
 typedef enum HealingItem {
-    HEALING_ITEM_STIMPACK,
-    HEALING_ITEM_SUPER_STIMPACK,
+    HEALING_ITEM_STIMPAK,
+    HEALING_ITEM_SUPER_STIMPAK,
     HEALING_ITEM_HEALING_POWDER,
     HEALING_ITEM_COUNT,
 } HealingItem;

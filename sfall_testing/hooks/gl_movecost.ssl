@@ -1,0 +1,70 @@
+#include "sfall.h"
+#include "dik.h"
+
+variable movecost_mode := 0;
+
+procedure movecost_mode_name(variable mode) begin
+    variable name := "unknown";
+
+    if (mode == 0) then name := "engine";
+    else if (mode == 1) then name := "plus_per_hex";
+    else if (mode == 2) then name := "double";
+
+    return name;
+end
+
+procedure cycle_movecost_mode begin
+    if (movecost_mode == 0) then movecost_mode := 1;
+    else if (movecost_mode == 1) then movecost_mode := 2;
+    else movecost_mode := 0;
+
+    display_msg(string_format1("movecost mode=%s", movecost_mode_name(movecost_mode)));
+end
+
+procedure movecost_handler begin
+    variable
+        args := get_sfall_args,
+        critter := args[0],
+        distance := args[1],
+        defaultCost := args[2],
+        modeName := movecost_mode_name(movecost_mode),
+        newCost := defaultCost;
+
+    if (critter != dude_obj) then return;
+
+    display_msg(string_format3("movecost dist=%d default=%d mode=%s",
+        distance,
+        defaultCost,
+        modeName));
+
+    if (movecost_mode == 1) then begin
+        newCost := defaultCost + distance;
+    end else if (movecost_mode == 2) then begin
+        newCost := defaultCost * 2;
+    end else begin
+        return;
+    end
+
+    set_sfall_return(newCost);
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_M) then return;
+
+    call cycle_movecost_mode;
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("movecost manual test ready: enter combat, hover a tile, then move");
+    display_msg("press M to cycle hook override: engine -> plus_per_hex -> double");
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_MOVECOST, movecost_handler);
+end

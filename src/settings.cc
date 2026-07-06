@@ -11,6 +11,8 @@
 
 namespace fallout {
 
+bool SystemSettings::executableIsMapper() const { return compat_stricmp(executable.c_str(), "mapper") == 0; }
+
 struct SettingDescriptor {
     std::function<void()> read;
     std::function<void(bool onlyAdd)> write;
@@ -148,11 +150,14 @@ void initSettingsRegistry(bool isMapper)
 #undef SECT
 
 #define SECT ui
+    SETTING_P(main_menu_scale_mode, clamp(0, 2));
+    SETTING(in_game_menu_help);
     SETTING(iface_bar_mode);
     SETTING_P(iface_bar_width, clamp(640, 4320));
     SETTING_P(iface_bar_side_art, clamp(0, 999));
     SETTING(iface_bar_sides_ori);
     SETTING_P(splash_screen_size, clamp(0, 2));
+    SETTING(movie_aspect_fit);
     SETTING(edg_support);
     SETTING(ignore_map_edges);
     SETTING(quick_toolbar_visible);

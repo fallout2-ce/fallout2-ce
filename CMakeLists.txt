@@ -47,8 +47,6 @@ set(FALLOUT_ENGINE_SOURCES
     "src/animation.h"
     "src/art.cc"
     "src/art.h"
-    "src/audio_file.cc"
-    "src/audio_file.h"
     "src/audio.cc"
     "src/audio.h"
     "src/automap.cc"
@@ -616,6 +614,8 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
     target_sources(mapper-ce PUBLIC
         ${FALLOUT_ENGINE_SOURCES}
         ${FALLOUT_PLATFORM_SOURCES}
+        "src/mapper/map_edge_setup.cc"
+        "src/mapper/map_edge_setup.h"
         "src/mapper/map_func.cc"
         "src/mapper/map_func.h"
         "src/mapper/mapper.cc"
@@ -628,6 +628,8 @@ if((NOT ANDROID) AND (NOT IOS) AND (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten"))
         "src/mapper/mp_scrpt.h"
         "src/mapper/mp_targt.cc"
         "src/mapper/mp_targt.h"
+        "src/mapper/mp_utils.cc"
+        "src/mapper/mp_utils.h"
         "src/mapper/mp_text.cc"
         "src/mapper/mp_text.h"
     )

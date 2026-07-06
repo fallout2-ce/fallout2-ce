@@ -1,11 +1,13 @@
 #include "sfall_ext.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <string>
 
 #include "db.h"
 #include "debug.h"
 #include "platform_compat.h"
+#include "scripts.h"
 #include "sfall_arrays.h"
 #include "sfall_global_vars.h"
 
@@ -103,10 +105,15 @@ bool sfallSaveGameData(File* stream)
         return false;
     }
 
-    // Write zeros for CE-unimplemented fields: nextObjectId, addedYears,
-    // fakeTraitsCount, fakePerksCount, fakeSelectablePerksCount
-    int zero = 0;
-    for (int i = 0; i < 5; i++) {
+    if (fileWriteInt32(stream, scriptsGetUniqueObjectIdCounter()) == -1) {
+        debugPrint("LOADSAVE (SFALL): ** Error saving next object id **\n");
+        return false;
+    }
+
+    // Write zeros for CE-unimplemented fields: addedYears, fakeTraitsCount,
+    // fakePerksCount, fakeSelectablePerksCount
+    int32_t zero = 0;
+    for (int32_t i = 0; i < 4; i++) {
         if (fileWrite(&zero, sizeof(zero), 1, stream) != 1) {
             debugPrint("LOADSAVE (SFALL): ** Error saving stub fields **\n");
             return false;
@@ -133,11 +140,20 @@ bool sfallLoadGameData(File* stream)
         return false;
     }
 
-    // Skip sections CE doesn't implement: nextObjectId, addedYears,
-    // fakeTraitsCount, fakePerksCount, fakeSelectablePerksCount
-    int ignored;
-    for (int i = 0; i < 5; i++) {
-        if (fileRead(&ignored, sizeof(ignored), 1, stream) != 1) return true; // old save, stop gracefully
+    int32_t nextObjectId;
+    if (fileReadInt32(stream, &nextObjectId) == -1) {
+        scriptsRestoreUniqueObjectIdCounter(OBJECT_ID_UNIQUE_START);
+        return true; // old save, stop gracefully
+    }
+
+    // Skip sections CE doesn't implement: addedYears, fakeTraitsCount,
+    // fakePerksCount, fakeSelectablePerksCount
+    int32_t ignored;
+    for (int32_t i = 0; i < 4; i++) {
+        if (fileRead(&ignored, sizeof(ignored), 1, stream) != 1) {
+            scriptsRestoreUniqueObjectIdCounter(nextObjectId);
+            return true; // old save, stop gracefully
+        }
     }
 
     if (!sfallArraysLoad(stream)) {
@@ -145,6 +161,8 @@ bool sfallLoadGameData(File* stream)
         debugPrint("LOADSAVE (SFALL): ** Error loading arrays **\n");
         return false;
     }
+
+    scriptsRestoreUniqueObjectIdCounter(nextObjectId);
 
     return true;
 }

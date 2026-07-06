@@ -16,6 +16,7 @@
 #include "message.h"
 #include "mouse.h"
 #include "preferences.h"
+#include "settings.h"
 #include "svga.h"
 #include "text_font.h"
 #include "tile.h"
@@ -23,7 +24,12 @@
 
 namespace fallout {
 
-#define OPTIONS_WINDOW_BUTTONS_COUNT (10)
+#define OPTIONS_MENU_BUTTON_SAVE 500
+#define OPTIONS_MENU_BUTTON_LOAD 501
+#define OPTIONS_MENU_BUTTON_PREFERENCES 502
+#define OPTIONS_MENU_BUTTON_EXIT 503
+#define OPTIONS_MENU_BUTTON_DONE 504
+#define OPTIONS_MENU_BUTTON_HELP 505
 
 typedef enum PauseWindowFrm {
     PAUSE_WINDOW_FRM_BACKGROUND,
@@ -42,10 +48,17 @@ typedef enum OptionsWindowFrm {
 
 static int optionsWindowInit();
 static int optionsWindowFree();
+static void optionsWindowCleanup(bool restoreWorldState);
 static void _ShadeScreen(bool preserveWorldState);
 
+struct OptionsMenuButtonSpec {
+    int eventCode;
+    int labelMessageId;
+    bool isCeMessage;
+};
+
 // 0x48FC0C
-static const int gPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
+static const int pauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
     208, // charwin.frm - character editor
     209, // donebox.frm - character editor
     8, // lilredup.frm - little red button up
@@ -53,37 +66,52 @@ static const int gPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
 };
 
 // 0x5197C0 opgrphs
-static const int gOptionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
+static const int optionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
     220, // opbase.frm - character editor
     222, // opbtnon.frm - character editor
     221, // opbtnoff.frm - character editor
 };
 
 // 0x6637E8 optn_msgfl
-static MessageList gPreferencesMessageList;
+static MessageList preferencesMessageList;
+static MessageList ceOptionsMessageList;
+static bool optionsMenuHelpEnabled = false;
 
 // 0x663840 optnmesg
-static MessageListItem gPreferencesMessageListItem;
-
-// 0x663878 opbtns
-static unsigned char* _opbtns[OPTIONS_WINDOW_BUTTONS_COUNT];
+static MessageListItem preferencesMessageListItem;
 
 // 0x6638FC mouse_3d_was_on
-static bool gOptionsWindowGameMouseObjectsWasVisible;
+static bool optionsWindowGameMouseObjectsWasVisible;
+static bool optionsWindowCursorWasHidden;
 
 // 0x663900 optnwin
-static int gOptionsWindow;
+static int optionsWindow = -1;
+static int pauseWindow = -1;
 
 // 0x663908 winbuf
-static unsigned char* gOptionsWindowBuffer;
+static unsigned char* optionsWindowBuffer;
 
 // 0x66398C fontsave_3
-static int gOptionsWindowOldFont;
+static int optionsWindowOldFont;
 
 // 0x663994 bk_enable_4
-static bool gOptionsWindowIsoWasEnabled;
+static bool optionsWindowIsoWasEnabled;
 
 static FrmImage _optionsFrmImages[OPTIONS_WINDOW_FRM_COUNT];
+
+static const OptionsMenuButtonSpec optionsMenuButtonSpecs[] = {
+    { OPTIONS_MENU_BUTTON_SAVE, 0, false },
+    { OPTIONS_MENU_BUTTON_LOAD, 1, false },
+    { OPTIONS_MENU_BUTTON_PREFERENCES, 2, false },
+    { OPTIONS_MENU_BUTTON_HELP, 0, true },
+    { OPTIONS_MENU_BUTTON_EXIT, 3, false },
+    { OPTIONS_MENU_BUTTON_DONE, 4, false },
+};
+
+static constexpr int optionsWindowButtonCount = (sizeof(optionsMenuButtonSpecs) / sizeof(optionsMenuButtonSpecs[0])) * 2;
+
+// 0x663878 opbtns
+static unsigned char* _opbtns[optionsWindowButtonCount];
 
 // 0x48FC50 do_optionsFunc
 int showOptions()
@@ -103,7 +131,7 @@ int showOptions()
 
         int keyCode = inputGetInput();
 
-        if (keyCode == KEY_ESCAPE || keyCode == 504 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
+        if (keyCode == KEY_ESCAPE || keyCode == OPTIONS_MENU_BUTTON_DONE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             rc = 0;
         } else {
             switch (keyCode) {
@@ -117,14 +145,14 @@ int showOptions()
                 break;
             case KEY_UPPERCASE_S:
             case KEY_LOWERCASE_S:
-            case 500:
+            case OPTIONS_MENU_BUTTON_SAVE:
                 if (lsgSaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                     rc = 1;
                 }
                 break;
             case KEY_UPPERCASE_L:
             case KEY_LOWERCASE_L:
-            case 501:
+            case OPTIONS_MENU_BUTTON_LOAD:
                 if (lsgLoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                     rc = 1;
                 }
@@ -133,9 +161,20 @@ int showOptions()
             case KEY_LOWERCASE_P:
                 soundPlayFile("ib1p1xx1");
                 // FALLTHROUGH
-            case 502:
+            case OPTIONS_MENU_BUTTON_PREFERENCES:
                 // PREFERENCES
                 doPreferences(false);
+                break;
+            case KEY_UPPERCASE_H:
+            case KEY_LOWERCASE_H:
+            case OPTIONS_MENU_BUTTON_HELP:
+                if (optionsMenuHelpEnabled) {
+                    soundPlayFile("ib1p1xx1");
+                    showHelp();
+                    gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+                    mouseShowCursor();
+                    windowRefresh(optionsWindow);
+                }
                 break;
             case KEY_PLUS:
             case KEY_EQUAL:
@@ -153,7 +192,7 @@ int showOptions()
             case KEY_CTRL_Q:
             case KEY_CTRL_X:
             case KEY_F10:
-            case 503:
+            case OPTIONS_MENU_BUTTON_EXIT:
                 showQuitConfirmationDialog();
                 break;
             }
@@ -171,108 +210,118 @@ int showOptions()
 // 0x48FE14 OptnStart
 static int optionsWindowInit()
 {
-    gOptionsWindowOldFont = fontGetCurrent();
+    int optionsWindowX = 0;
+    int optionsWindowY = 0;
+    int buttonY = 0;
+    int buttonBufferIndex = 0;
+    char path[COMPAT_MAX_PATH];
 
-    if (!messageListInit(&gPreferencesMessageList)) {
-        return -1;
+    optionsWindowOldFont = fontGetCurrent();
+    optionsWindow = -1;
+    for (int index = 0; index < optionsWindowButtonCount; index++) {
+        _opbtns[index] = nullptr;
     }
 
-    char path[COMPAT_MAX_PATH];
+    messageListInit(&preferencesMessageList);
+    messageListInit(&ceOptionsMessageList);
+
     snprintf(path, sizeof(path), "%s%s", asc_5186C8, "options.msg");
-    if (!messageListLoad(&gPreferencesMessageList, path)) {
-        return -1;
+    if (!messageListLoad(&preferencesMessageList, path)) {
+        goto err;
+    }
+
+    optionsMenuHelpEnabled = settings.ui.in_game_menu_help;
+    if (optionsMenuHelpEnabled) {
+        if (!messageListLoad(&ceOptionsMessageList, "game\\ce.msg")) {
+            optionsMenuHelpEnabled = false;
+        }
     }
 
     for (int index = 0; index < OPTIONS_WINDOW_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gOptionsWindowFrmIds[index], 0, 0, 0);
-        if (!_optionsFrmImages[index].lock(fid)) {
-            while (--index >= 0) {
-                _optionsFrmImages[index].unlock();
+        bool loaded = false;
+        if (index == OPTIONS_WINDOW_FRM_BACKGROUND && optionsMenuHelpEnabled) {
+            loaded = _optionsFrmImages[index].lock(FrmId(OBJ_TYPE_INTERFACE, "opbase_help.png"));
+            if (!loaded) {
+                optionsMenuHelpEnabled = false;
             }
+        }
 
-            messageListFree(&gPreferencesMessageList);
+        if (!loaded) {
+            int fid = buildFid(OBJ_TYPE_INTERFACE, optionsWindowFrmIds[index], 0, 0, 0);
+            loaded = _optionsFrmImages[index].lock(fid);
+        }
 
-            return -1;
+        if (!loaded) {
+            goto err;
         }
     }
 
-    int cycle = 0;
-    for (int index = 0; index < OPTIONS_WINDOW_BUTTONS_COUNT; index++) {
+    for (int index = 0; index < optionsWindowButtonCount; index++) {
         _opbtns[index] = (unsigned char*)internal_malloc(_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight() + 1024);
         if (_opbtns[index] == nullptr) {
-            while (--index >= 0) {
-                internal_free(_opbtns[index]);
-            }
-
-            for (int index = 0; index < OPTIONS_WINDOW_FRM_COUNT; index++) {
-                _optionsFrmImages[index].unlock();
-            }
-
-            messageListFree(&gPreferencesMessageList);
-
-            return -1;
+            goto err;
         }
 
-        cycle = cycle ^ 1;
-
-        memcpy(_opbtns[index], _optionsFrmImages[cycle + 1].getData(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight());
+        int buttonFrmIndex = (index % 2 == 0) ? OPTIONS_WINDOW_FRM_BUTTON_OFF : OPTIONS_WINDOW_FRM_BUTTON_ON;
+        memcpy(_opbtns[index], _optionsFrmImages[buttonFrmIndex].getData(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight());
     }
 
-    int optionsWindowX = (screenGetWidth() - _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getWidth()) / 2;
-    int optionsWindowY = (screenGetHeight() - _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getHeight()) / 2 - 60;
-    gOptionsWindow = windowCreate(optionsWindowX,
+    optionsWindowX = (screenGetWidth() - _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getWidth()) / 2;
+    optionsWindowY = (screenGetHeight() - _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getHeight()) / 2 - 60;
+    optionsWindow = windowCreate(optionsWindowX,
         optionsWindowY,
         _optionsFrmImages[0].getWidth(),
         _optionsFrmImages[0].getHeight(),
         256,
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
 
-    if (gOptionsWindow == -1) {
-        for (int index = 0; index < OPTIONS_WINDOW_BUTTONS_COUNT; index++) {
-            internal_free(_opbtns[index]);
-        }
-
-        for (int index = 0; index < OPTIONS_WINDOW_FRM_COUNT; index++) {
-            _optionsFrmImages[index].unlock();
-        }
-
-        messageListFree(&gPreferencesMessageList);
-
-        return -1;
+    if (optionsWindow == -1) {
+        goto err;
     }
 
-    gOptionsWindowIsoWasEnabled = isoDisable();
+    optionsWindowIsoWasEnabled = isoDisable();
 
-    gOptionsWindowGameMouseObjectsWasVisible = gameMouseObjectsIsVisible();
-    if (gOptionsWindowGameMouseObjectsWasVisible) {
+    optionsWindowGameMouseObjectsWasVisible = gameMouseObjectsIsVisible();
+    if (optionsWindowGameMouseObjectsWasVisible) {
         gameMouseObjectsHide();
     }
 
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+    optionsWindowCursorWasHidden = cursorIsHidden();
+    if (optionsWindowCursorWasHidden) {
+        mouseShowCursor();
+    }
 
-    gOptionsWindowBuffer = windowGetBuffer(gOptionsWindow);
-    memcpy(gOptionsWindowBuffer, _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getData(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getWidth() * _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getHeight());
+    optionsWindowBuffer = windowGetBuffer(optionsWindow);
+    memcpy(optionsWindowBuffer, _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getData(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getWidth() * _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getHeight());
 
     fontSetCurrent(103);
 
-    int textY = (_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight() - fontGetLineHeight()) / 2 + 1;
-    int buttonY = 17;
+    buttonY = 17;
 
-    for (int index = 0; index < OPTIONS_WINDOW_BUTTONS_COUNT; index += 2) {
-        char text[128];
+    buttonBufferIndex = 0;
+    for (const OptionsMenuButtonSpec& buttonSpec : optionsMenuButtonSpecs) {
+        if (buttonSpec.eventCode == OPTIONS_MENU_BUTTON_HELP && !optionsMenuHelpEnabled) {
+            continue;
+        }
 
-        const char* msg = getmsg(&gPreferencesMessageList, &gPreferencesMessageListItem, index / 2);
-        strcpy(text, msg);
+        const char* msg = "ERROR";
+        if (buttonSpec.isCeMessage) {
+            msg = getmsg(&ceOptionsMessageList, &preferencesMessageListItem, buttonSpec.labelMessageId);
+        } else {
+            msg = getmsg(&preferencesMessageList, &preferencesMessageListItem, buttonSpec.labelMessageId);
+        }
 
-        int textX = (_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() - fontGetStringWidth(text)) / 2;
+        int textX = (_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() - fontGetStringWidth(msg)) / 2;
         if (textX < 0) {
             textX = 0;
         }
+        int textY = (_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight() - fontGetLineHeight()) / 2 + 1;
 
-        fontDrawText(_opbtns[index] + _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * textY + textX, text, _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _colorTable[18979]);
-        fontDrawText(_opbtns[index + 1] + _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * textY + textX, text, _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _colorTable[14723]);
+        fontDrawText(_opbtns[buttonBufferIndex] + _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * textY + textX, msg, _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _colorTable[18979]);
+        fontDrawText(_opbtns[buttonBufferIndex + 1] + _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * (textY + 1) + textX, msg, _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _colorTable[14723]);
 
-        int btn = buttonCreate(gOptionsWindow,
+        int btn = buttonCreate(optionsWindow,
             13,
             buttonY,
             _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(),
@@ -280,9 +329,9 @@ static int optionsWindowInit()
             -1,
             -1,
             -1,
-            index / 2 + 500,
-            _opbtns[index],
-            _opbtns[index + 1],
+            buttonSpec.eventCode,
+            _opbtns[buttonBufferIndex],
+            _opbtns[buttonBufferIndex + 1],
             nullptr,
             BUTTON_FLAG_TRANSPARENT);
         if (btn != -1) {
@@ -290,41 +339,68 @@ static int optionsWindowInit()
         }
 
         buttonY += _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight() + 3;
+        buttonBufferIndex += 2;
     }
 
     fontSetCurrent(101);
 
-    windowRefresh(gOptionsWindow);
+    windowRefresh(optionsWindow);
 
     return 0;
+
+err:
+    optionsWindowCleanup(false);
+
+    return -1;
 }
 
 // 0x490244 OptnEnd
 static int optionsWindowFree()
 {
-    windowDestroy(gOptionsWindow);
-    fontSetCurrent(gOptionsWindowOldFont);
-    messageListFree(&gPreferencesMessageList);
+    fontSetCurrent(optionsWindowOldFont);
+    optionsWindowCleanup(true);
 
-    for (int index = 0; index < OPTIONS_WINDOW_BUTTONS_COUNT; index++) {
-        internal_free(_opbtns[index]);
+    return 0;
+}
+
+static void optionsWindowCleanup(bool restoreWorldState)
+{
+    if (optionsWindow != -1) {
+        windowDestroy(optionsWindow);
+        optionsWindow = -1;
+    }
+
+    messageListFree(&ceOptionsMessageList);
+    messageListFree(&preferencesMessageList);
+
+    for (int index = 0; index < optionsWindowButtonCount; index++) {
+        if (_opbtns[index] != nullptr) {
+            internal_free(_opbtns[index]);
+            _opbtns[index] = nullptr;
+        }
     }
 
     for (int index = 0; index < OPTIONS_WINDOW_FRM_COUNT; index++) {
         _optionsFrmImages[index].unlock();
     }
 
-    if (gOptionsWindowGameMouseObjectsWasVisible) {
+    if (!restoreWorldState) {
+        return;
+    }
+
+    if (optionsWindowGameMouseObjectsWasVisible) {
         gameMouseObjectsShow();
     }
 
-    if (gOptionsWindowIsoWasEnabled) {
+    if (optionsWindowIsoWasEnabled) {
         isoEnable();
     }
 
-    touch_set_touchscreen_mode(false);
+    if (optionsWindowCursorWasHidden) {
+        mouseHideCursor();
+    }
 
-    return 0;
+    touch_set_touchscreen_mode(false);
 }
 
 // 0x4902B0 PauseWindow
@@ -333,7 +409,7 @@ int showPause(bool preserveWorldState)
 {
     bool gameMouseWasVisible;
     if (!preserveWorldState) {
-        gOptionsWindowIsoWasEnabled = isoDisable();
+        optionsWindowIsoWasEnabled = isoDisable();
         colorCycleDisable();
 
         gameMouseWasVisible = gameMouseObjectsIsVisible();
@@ -347,21 +423,21 @@ int showPause(bool preserveWorldState)
 
     FrmImage frmImages[PAUSE_WINDOW_FRM_COUNT];
     for (int index = 0; index < PAUSE_WINDOW_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gPauseWindowFrmIds[index], 0, 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, pauseWindowFrmIds[index], 0, 0, 0);
         if (!frmImages[index].lock(fid)) {
             debugPrint("\n** Error loading pause window graphics! **\n");
             return -1;
         }
     }
 
-    if (!messageListInit(&gPreferencesMessageList)) {
+    if (!messageListInit(&preferencesMessageList)) {
         // FIXME: Leaking graphics.
         return -1;
     }
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s%s", asc_5186C8, "options.msg");
-    if (!messageListLoad(&gPreferencesMessageList, path)) {
+    if (!messageListLoad(&preferencesMessageList, path)) {
         // FIXME: Leaking graphics.
         return -1;
     }
@@ -383,11 +459,13 @@ int showPause(bool preserveWorldState)
         256,
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (window == -1) {
-        messageListFree(&gPreferencesMessageList);
+        messageListFree(&preferencesMessageList);
 
         debugPrint("\n** Error opening pause window! **\n");
         return -1;
     }
+
+    pauseWindow = window;
 
     unsigned char* windowBuffer = windowGetBuffer(window);
     memcpy(windowBuffer,
@@ -401,12 +479,12 @@ int showPause(bool preserveWorldState)
         windowBuffer + frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth() * 42 + 13,
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth());
 
-    gOptionsWindowOldFont = fontGetCurrent();
+    optionsWindowOldFont = fontGetCurrent();
     fontSetCurrent(103);
 
     char* messageItemText;
 
-    messageItemText = getmsg(&gPreferencesMessageList, &gPreferencesMessageListItem, 300);
+    messageItemText = getmsg(&preferencesMessageList, &preferencesMessageListItem, 300);
     fontDrawText(windowBuffer + frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth() * 45 + 52,
         messageItemText,
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth(),
@@ -415,7 +493,7 @@ int showPause(bool preserveWorldState)
 
     fontSetCurrent(104);
 
-    messageItemText = getmsg(&gPreferencesMessageList, &gPreferencesMessageListItem, 301);
+    messageItemText = getmsg(&preferencesMessageList, &preferencesMessageListItem, 301);
     strcpy(path, messageItemText);
 
     int length = fontGetStringWidth(path);
@@ -477,14 +555,15 @@ int showPause(bool preserveWorldState)
     }
 
     windowDestroy(window);
-    messageListFree(&gPreferencesMessageList);
+    pauseWindow = -1;
+    messageListFree(&preferencesMessageList);
 
     if (!preserveWorldState) {
         if (gameMouseWasVisible) {
             gameMouseObjectsShow();
         }
 
-        if (gOptionsWindowIsoWasEnabled) {
+        if (optionsWindowIsoWasEnabled) {
             isoEnable();
         }
 
@@ -493,7 +572,7 @@ int showPause(bool preserveWorldState)
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
     }
 
-    fontSetCurrent(gOptionsWindowOldFont);
+    fontSetCurrent(optionsWindowOldFont);
 
     return 0;
 }
@@ -527,6 +606,19 @@ int _init_options_menu()
     grayscalePaletteUpdate(0, 255);
 
     return 0;
+}
+
+int optionsGetWindow()
+{
+    if (windowGetWindow(optionsWindow) != nullptr) {
+        return optionsWindow;
+    }
+
+    if (windowGetWindow(pauseWindow) != nullptr) {
+        return pauseWindow;
+    }
+
+    return -1;
 }
 
 } // namespace fallout

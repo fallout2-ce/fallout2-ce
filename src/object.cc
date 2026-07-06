@@ -9,6 +9,7 @@
 #include "art.h"
 #include "color.h"
 #include "combat.h"
+#include "combat_ai.h"
 #include "critter.h"
 #include "debug.h"
 #include "draw.h"
@@ -58,6 +59,7 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect);
 static void objectDrawOutline(Object* object, Rect* rect);
 static void _obj_render_object(Object* object, Rect* rect, int light);
 static int _obj_preload_sort(const void* a1, const void* a2);
+static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData);
 
 // 0x5195F8 objInitialized
 static bool gObjectsInitialized = false;
@@ -221,6 +223,23 @@ static int _cd_order[9] = {
     0,
     0,
 };
+
+static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData)
+{
+    Object* whoHitMe = combatData->whoHitMe;
+    if (whoHitMe == (Object*)-1) {
+        whoHitMe = nullptr;
+    }
+
+    // Match sfall: only preserve whoHitMe in active combat saves.
+    if (!isInCombat() || combatData->maneuver == CRITTER_MANEUVER_NONE) {
+        combatData->whoHitMeCid = -1;
+        return whoHitMe;
+    }
+
+    combatData->whoHitMeCid = whoHitMe != nullptr ? whoHitMe->cid : -1;
+    return whoHitMe;
+}
 
 // 0x6391D0 light_blocked
 static int _light_blocked[6][36];
@@ -706,14 +725,7 @@ int objectSaveAll(File* stream)
                 Object* whoHitMe = nullptr;
                 if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
                     combatData = &(object->data.critter.combat);
-                    whoHitMe = combatData->whoHitMe;
-                    if (whoHitMe != nullptr) {
-                        if (combatData->whoHitMeCid != -1) {
-                            combatData->whoHitMeCid = whoHitMe->cid;
-                        }
-                    } else {
-                        combatData->whoHitMeCid = -1;
-                    }
+                    whoHitMe = objectPrepareWhoHitMeForSave(combatData);
                 }
 
                 if (objectWrite(object, stream) == -1) {
@@ -2666,15 +2678,19 @@ int objectGetDistanceBetweenTiles(Object* object1, int tile1, Object* object2, i
 
 bool objectWithinWalkDistance(Object* critter, Object* target)
 {
-    int walkDistance = settings.qol.use_walk_distance;
-    if (objectGetDistanceBetween(critter, target) >= walkDistance) {
-        return false;
-    }
     if (critter == nullptr || target == nullptr) {
         return false;
     }
+    int walkDistanceLimit = settings.qol.use_walk_distance + 2;
+    int distance = objectGetDistanceBetween(critter, target);
+    if (distance <= 1) {
+        return true;
+    }
+    if (distance >= walkDistanceLimit) {
+        return false;
+    }
 
-    return _make_path(critter, critter->tile, target->tile, nullptr, 0) < walkDistance;
+    return _make_path(critter, critter->tile, target->tile, nullptr, 0) < walkDistanceLimit;
 }
 
 // 0x48BC38 obj_create_list
@@ -3523,14 +3539,7 @@ static int _obj_save_obj(File* stream, Object* object)
     Object* whoHitMe = nullptr;
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         combatData = &(object->data.critter.combat);
-        whoHitMe = combatData->whoHitMe;
-        if (whoHitMe != nullptr) {
-            if (combatData->whoHitMeCid != -1) {
-                combatData->whoHitMeCid = whoHitMe->cid;
-            }
-        } else {
-            combatData->whoHitMeCid = -1;
-        }
+        whoHitMe = objectPrepareWhoHitMeForSave(combatData);
     }
 
     if (objectWrite(object, stream) == -1) {
@@ -3933,6 +3942,8 @@ static int _obj_remove(ObjectListNode* a1, ObjectListNode* a2)
         scriptExecProc(a1->obj->sid, SCRIPT_PROC_DESTROY);
         scriptRemove(a1->obj->sid);
     }
+
+    aiRemoveBurstDisabled(a1->obj);
 
     if (a1 != a2) {
         if (a2 != nullptr) {

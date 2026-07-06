@@ -44,6 +44,7 @@ struct Options {
     std::string archivePath;
     std::string command;
     std::vector<std::string> args;
+    std::string extractFileListPath;
     bool lowerExtractedPaths = false;
 };
 
@@ -103,6 +104,21 @@ std::string toLowerAscii(std::string value)
     }
 
     return value;
+}
+
+std::string trimAsciiWhitespace(std::string_view value)
+{
+    const auto isNotSpace = [](char ch) {
+        return !std::isspace(static_cast<unsigned char>(ch));
+    };
+
+    const auto start = std::find_if(value.begin(), value.end(), isNotSpace);
+    if (start == value.end()) {
+        return {};
+    }
+
+    const auto end = std::find_if(value.rbegin(), value.rend(), isNotSpace).base();
+    return std::string(start, end);
 }
 
 bool isAbsoluteOutputPath(const std::string& path)
@@ -789,12 +805,14 @@ void printUsage(std::ostream& stream)
         << "  ce-dat-tool <archive.dat> list [pattern]\n"
         << "  ce-dat-tool <archive.dat> info [pattern]\n"
         << "  ce-dat-tool <archive.dat> extract [--lower] <output-dir> [pattern]\n"
+        << "  ce-dat-tool <archive.dat> extract [--lower] (--file-list|--files-from) <list-file> <output-dir>\n"
         << "  ce-dat-tool <archive.dat> cat <entry>\n"
         << "\n"
         << "Notes:\n"
         << "  - Create preserves input path casing and stores Windows-style archive paths.\n"
         << "  - Create compresses entries only when zlib output is smaller.\n"
         << "  - Patterns use the same Windows-style wildcard matching as the game.\n"
+        << "  - File lists contain one archive path per line. Empty lines are ignored.\n"
         << "  - Archive paths are case-insensitive and should use backslashes internally.\n";
 }
 
@@ -819,11 +837,23 @@ bool parseOptions(int argc, char** argv, Options* options)
     }
 
     if (options->command == "extract") {
-        auto lowerIt = std::find(options->args.begin(), options->args.end(), "--lower");
-        if (lowerIt != options->args.end()) {
-            options->lowerExtractedPaths = true;
-            options->args.erase(lowerIt);
+        std::vector<std::string> args;
+        for (size_t index = 0; index < options->args.size(); index++) {
+            const std::string& arg = options->args[index];
+            if (arg == "--lower") {
+                options->lowerExtractedPaths = true;
+            } else if (arg == "--file-list" || arg == "--files-from") {
+                if (index + 1 >= options->args.size()) {
+                    return false;
+                }
+
+                options->extractFileListPath = options->args[index + 1];
+                index++;
+            } else {
+                args.push_back(arg);
+            }
         }
+        options->args = std::move(args);
     }
 
     return true;
@@ -897,6 +927,37 @@ int listCommand(const DatArchive& archive, const std::string& pattern)
     return 0;
 }
 
+bool readExtractFileList(const std::string& fileListPath, std::vector<std::string>* paths)
+{
+    std::ifstream input(fileListPath);
+    if (!input.is_open()) {
+        std::cerr << "Failed to open file list: " << fileListPath << "\n";
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(input, line)) {
+        std::string path = trimAsciiWhitespace(line);
+        if (path.empty()) {
+            continue;
+        }
+
+        paths->push_back(normalizeDatPath(std::move(path)));
+    }
+
+    if (!input.eof()) {
+        std::cerr << "Failed while reading file list: " << fileListPath << "\n";
+        return false;
+    }
+
+    if (paths->empty()) {
+        std::cerr << "File list is empty: " << fileListPath << "\n";
+        return false;
+    }
+
+    return true;
+}
+
 int infoCommand(const DatArchive& archive, const std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -954,7 +1015,7 @@ int infoCommand(const DatArchive& archive, const std::vector<std::string>& args)
     return 0;
 }
 
-int extractCommand(const DatArchive& archive, const std::vector<std::string>& args, bool lowerExtractedPaths)
+int extractCommand(const DatArchive& archive, const std::vector<std::string>& args, bool lowerExtractedPaths, const std::string& fileListPath)
 {
     if (args.empty()) {
         std::cerr << "extract requires an output directory\n";
@@ -963,7 +1024,12 @@ int extractCommand(const DatArchive& archive, const std::vector<std::string>& ar
 
     std::string outputDir = args[0];
     std::string pattern = "*";
-    if (args.size() >= 2) {
+    if (!fileListPath.empty() && args.size() >= 2) {
+        std::cerr << "extract cannot use both --file-list and a pattern\n";
+        return 1;
+    }
+
+    if (fileListPath.empty() && args.size() >= 2) {
         pattern = normalizeDatPath(args[1]);
     }
 
@@ -972,10 +1038,28 @@ int extractCommand(const DatArchive& archive, const std::vector<std::string>& ar
         return 1;
     }
 
-    const std::vector<const DatArchiveEntry*> matches = archive.findEntries(pattern);
-    if (matches.empty()) {
-        std::cerr << "No entries matched pattern: " << pattern << "\n";
-        return 1;
+    std::vector<const DatArchiveEntry*> matches;
+    if (!fileListPath.empty()) {
+        std::vector<std::string> fileListPaths;
+        if (!readExtractFileList(fileListPath, &fileListPaths)) {
+            return 1;
+        }
+
+        for (const std::string& entryPath : fileListPaths) {
+            const DatArchiveEntry* entry = archive.findEntry(entryPath);
+            if (entry == nullptr) {
+                std::cerr << "Entry not found: " << entryPath << "\n";
+                return 1;
+            }
+
+            matches.push_back(entry);
+        }
+    } else {
+        matches = archive.findEntries(pattern);
+        if (matches.empty()) {
+            std::cerr << "No entries matched pattern: " << pattern << "\n";
+            return 1;
+        }
     }
 
     int extracted = 0;
@@ -1065,7 +1149,7 @@ int run(const Options& options)
     } else if (options.command == "info") {
         rc = infoCommand(*archive, options.args);
     } else if (options.command == "extract") {
-        rc = extractCommand(*archive, options.args, options.lowerExtractedPaths);
+        rc = extractCommand(*archive, options.args, options.lowerExtractedPaths, options.extractFileListPath);
     } else if (options.command == "cat") {
         rc = catCommand(*archive, options.args);
     } else {

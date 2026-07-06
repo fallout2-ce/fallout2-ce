@@ -109,6 +109,8 @@ static void combatAttemptEnd();
 static int _combat_input();
 static void _combat_set_move_all();
 static int combatTurnHooked(Object* obj, bool reloadedDuringCombat);
+static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFrmId);
+static void waitForGorisAnimation(Object* critter);
 static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
@@ -161,7 +163,7 @@ int _combatNumTurns = 0;
 static int combatTurnHookResult = 0;
 
 // 0x510944 combat_state
-unsigned int gCombatState = COMBAT_STATE_0x02;
+unsigned int gCombatState = COMBAT_STATE_PLAYER_TURN;
 
 // 0x510948 aiInfoList
 static CombatAiInfo* _aiInfoList = nullptr;
@@ -2011,7 +2013,7 @@ int combatInit()
     _list_total = 0;
     _gcsd = nullptr;
     _combat_call_display = 0;
-    gCombatState = COMBAT_STATE_0x02;
+    gCombatState = COMBAT_STATE_PLAYER_TURN;
 
     max_action_points = critterGetStat(gDude, STAT_MAXIMUM_ACTION_POINTS);
 
@@ -2060,7 +2062,7 @@ void combatReset()
     _list_total = 0;
     _gcsd = nullptr;
     _combat_call_display = 0;
-    gCombatState = COMBAT_STATE_0x02;
+    gCombatState = COMBAT_STATE_PLAYER_TURN;
 
     max_action_points = critterGetStat(gDude, STAT_MAXIMUM_ACTION_POINTS);
 
@@ -2591,7 +2593,7 @@ static void _combat_begin(Object* attacker)
         // NOTE: Uninline.
         _combatInitAIInfoList();
 
-        Object* v1 = nullptr;
+        Object* goris = nullptr;
         for (int index = 0; index < _list_total; index++) {
             Object* critter = _combat_list[index];
             CritterCombatData* combatData = &(critter->data.critter.combat);
@@ -2606,41 +2608,27 @@ static void _combat_begin(Object* attacker)
 
             scriptSetObjects(critter->sid, nullptr, nullptr);
             scriptSetFixedParam(critter->sid, 0);
-            if (critter->pid == 0x1000098) {
-                if (!critterIsDead(critter)) {
-                    v1 = critter;
-                }
+            if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter)) {
+                goris = critter;
             }
         }
 
-        gCombatState |= COMBAT_STATE_0x01;
+        gCombatState |= COMBAT_STATE_IN_COMBAT;
 
         tileWindowRefresh();
         gameUiDisable(0);
         gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
         _combat_ending_guy = nullptr;
+        if (goris != nullptr && !_isLoadingGame()) {
+            queueGorisCombatBeginEndAnimation(goris, kGorisCombatBaseFid);
+        }
         _combat_begin_extra(attacker);
         _caiTeamCombatInit(_combat_list, _list_total);
         interfaceBarEndButtonsShow(true);
-        _gmouse_enable_scrolling();
-
-        if (v1 != nullptr && !_isLoadingGame()) {
-            int fid = buildFid(FID_TYPE(v1->fid),
-                100,
-                FID_ANIM_TYPE(v1->fid),
-                (v1->fid & 0xF000) >> 12,
-                FID_ROTATION(v1->fid));
-
-            reg_anim_clear(v1);
-            reg_anim_begin(ANIMATION_REQUEST_RESERVED);
-            animationRegisterAnimate(v1, ANIM_UP_STAIRS_RIGHT, -1);
-            animationRegisterSetFid(v1, fid, -1);
-            reg_anim_end();
-
-            while (animationIsBusy(v1)) {
-                _process_bk();
-            }
+        if (goris != nullptr && !_isLoadingGame()) {
+            waitForGorisAnimation(goris);
         }
+        _gmouse_enable_scrolling();
         sfallOnCombatStart();
     }
 }
@@ -2793,21 +2781,8 @@ static void _combat_over()
         scriptSetObjects(critter->sid, nullptr, nullptr);
         scriptSetFixedParam(critter->sid, 0);
 
-        if (critter->pid == 0x1000098 && !critterIsDead(critter) && !_isLoadingGame()) {
-            int fid = buildFid(FID_TYPE(critter->fid),
-                99,
-                FID_ANIM_TYPE(critter->fid),
-                (critter->fid & 0xF000) >> 12,
-                FID_ROTATION(critter->fid));
-            reg_anim_clear(critter);
-            reg_anim_begin(ANIMATION_REQUEST_RESERVED);
-            animationRegisterAnimate(critter, ANIM_UP_STAIRS_RIGHT, -1);
-            animationRegisterSetFid(critter, fid, -1);
-            reg_anim_end();
-
-            while (animationIsBusy(critter)) {
-                _process_bk();
-            }
+        if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter) && !_isLoadingGame()) {
+            waitForGorisAnimation(critter);
         }
     }
 
@@ -2828,8 +2803,8 @@ static void _combat_over()
 
     _combat_exps = 0;
 
-    gCombatState &= ~(COMBAT_STATE_0x01 | COMBAT_STATE_0x02);
-    gCombatState |= COMBAT_STATE_0x02;
+    gCombatState &= ~(COMBAT_STATE_IN_COMBAT | COMBAT_STATE_PLAYER_TURN);
+    gCombatState |= COMBAT_STATE_PLAYER_TURN;
 
     if (_list_total != 0) {
         objectListFree(_combat_list);
@@ -3136,7 +3111,7 @@ static void combatAttemptEnd()
         }
     }
 
-    gCombatState |= COMBAT_STATE_0x08;
+    gCombatState |= COMBAT_STATE_EXIT_REQUESTED;
     _caiTeamCombatExit();
 }
 
@@ -3158,10 +3133,10 @@ static int _combat_input()
 {
     ScopedGameMode gm(GameMode::kPlayerTurn);
 
-    while ((gCombatState & COMBAT_STATE_0x02) != 0) {
+    while ((gCombatState & COMBAT_STATE_PLAYER_TURN) != 0) {
         sharedFpsLimiter.mark();
 
-        if ((gCombatState & COMBAT_STATE_0x08) != 0) {
+        if ((gCombatState & COMBAT_STATE_EXIT_REQUESTED) != 0) {
             break;
         }
 
@@ -3211,8 +3186,8 @@ static int _combat_input()
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
     }
 
-    if ((gCombatState & COMBAT_STATE_0x08) != 0) {
-        gCombatState &= ~COMBAT_STATE_0x08;
+    if ((gCombatState & COMBAT_STATE_EXIT_REQUESTED) != 0) {
+        gCombatState &= ~COMBAT_STATE_EXIT_REQUESTED;
         return -1;
     }
 
@@ -3294,7 +3269,7 @@ static int _combat_turn(Object* obj, bool reloadedDuringCombat)
                 }
 
                 if (!reloadedDuringCombat) {
-                    gCombatState |= 0x02;
+                    gCombatState |= COMBAT_STATE_PLAYER_TURN;
                 }
 
                 interfaceBarEndButtonsRenderGreenLights();
@@ -3387,6 +3362,25 @@ static int combatTurnHooked(Object* obj, bool reloadedDuringCombat)
     return combatTurnHookResult;
 }
 
+static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFrmId)
+{
+    reg_anim_clear(critter);
+    reg_anim_begin(ANIMATION_REQUEST_RESERVED);
+    animationRegisterAnimate(critter, ANIM_UP_STAIRS_RIGHT, -1);
+    animationRegisterSetFid(critter, critterBuildGorisFid(critter, baseFrmId), -1);
+    reg_anim_end();
+}
+
+static void waitForGorisAnimation(Object* critter)
+{
+    while (animationIsBusy(critter)) {
+        sharedFpsLimiter.mark();
+        _process_bk();
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+}
+
 // 0x422C60
 static bool _combat_should_end()
 {
@@ -3434,7 +3428,7 @@ void _combat(CombatStartData* csd)
     if (csd == nullptr
         || (csd->attacker == nullptr || csd->attacker->elevation == gElevation)
         || (csd->defender == nullptr || csd->defender->elevation == gElevation)) {
-        bool wasInCombat = (gCombatState & 0x01) != 0;
+        bool wasInCombat = (gCombatState & COMBAT_STATE_IN_COMBAT) != 0;
 
         _combat_begin(nullptr);
 
@@ -3501,6 +3495,18 @@ void _combat(CombatStartData* csd)
             gameUiEnable();
             gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
         } else {
+            // CE: start Goris animation before iface animations to reduce wait time
+            for (int index = 0; index < _list_total; index++) {
+                Object* critter = _combat_list[index];
+                if (critter->pid == PROTO_ID_GORIS && !critterIsDead(critter) && !_isLoadingGame()) {
+                    if (animationIsBusy(critter)) {
+                        waitForGorisAnimation(critter);
+                    }
+
+                    queueGorisCombatBeginEndAnimation(critter, kGorisRobeBaseFid);
+                    break;
+                }
+            }
             _gmouse_disable_scrolling();
             interfaceBarEndButtonsHide(true);
             _gmouse_enable_scrolling();
@@ -3537,7 +3543,7 @@ void attackInit(Attack* attack, Object* attacker, Object* defender, int hitMode,
     attack->defenderFlags = 0;
     attack->defenderKnockback = 0;
     attack->extrasLength = 0;
-    attack->oops = defender;
+    attack->intendedTarget = defender;
 }
 
 // 0x422F3C
@@ -4336,7 +4342,7 @@ static int attackComputeCriticalFailure(Attack* attack)
             int rounds = attackType == ATTACK_TYPE_RANGED ? attack->ammoQuantity : 1;
             attackComputeDamage(attack, rounds, 2);
         } else {
-            attack->defender = attack->oops;
+            attack->defender = attack->intendedTarget;
         }
 
         if (attack->defender != nullptr) {
@@ -4758,31 +4764,28 @@ void _apply_damage(Attack* attack, bool animated)
 {
     Object* attacker = attack->attacker;
     bool attackerIsCritter = attacker != nullptr && FID_TYPE(attacker->fid) == OBJ_TYPE_CRITTER;
-    bool v5 = attack->defender != attack->oops;
+    bool hitUnintendedTarget = attack->defender != attack->intendedTarget;
 
     if (attackerIsCritter && (attacker->data.critter.combat.results & DAM_DEAD) == 0) {
         _set_new_results(attacker, attack->attackerFlags);
-        // TODO: Not sure about "attack->defender == attack->oops".
-        _damage_object(attacker, attack->attackerDamage, animated, attack->defender == attack->oops, attacker);
+        _damage_object(attacker, attack->attackerDamage, animated, hitUnintendedTarget, attacker);
     }
 
-    Object* v7 = attack->oops;
-    if (v7 != nullptr && v7 != attack->defender) {
-        _combatai_notify_onlookers(v7);
+    // bystanders might flee
+    if (attack->intendedTarget != nullptr && hitUnintendedTarget) {
+        _combatai_notify_onlookers(attack->intendedTarget);
     }
 
     Object* defender = attack->defender;
     bool defenderIsCritter = defender != nullptr && FID_TYPE(defender->fid) == OBJ_TYPE_CRITTER;
 
-    if (!defenderIsCritter && !v5) {
-        bool v9 = objectIsPartyMember(attack->defender) && objectIsPartyMember(attack->attacker) ? false : true;
-        if (v9) {
-            if (defender != nullptr) {
-                if (defender->sid != -1) {
-                    scriptSetFixedParam(defender->sid, attack->attackerDamage);
-                    scriptSetObjects(defender->sid, attack->attacker, attack->weapon);
-                    scriptExecProc(defender->sid, SCRIPT_PROC_DAMAGE);
-                }
+    if (!defenderIsCritter && !hitUnintendedTarget) {
+        bool shouldRunDamageProc = !objectIsPartyMember(attack->defender) || !objectIsPartyMember(attack->attacker);
+        if (shouldRunDamageProc) {
+            if (defender != nullptr && defender->sid != -1) {
+                scriptSetFixedParam(defender->sid, attack->attackerDamage);
+                scriptSetObjects(defender->sid, attack->attacker, attack->weapon);
+                scriptExecProc(defender->sid, SCRIPT_PROC_DAMAGE);
             }
         }
     }
@@ -4790,24 +4793,17 @@ void _apply_damage(Attack* attack, bool animated)
     if (defenderIsCritter && (defender->data.critter.combat.results & DAM_DEAD) == 0) {
         _set_new_results(defender, attack->defenderFlags);
 
-        if (defenderIsCritter) {
-            if (defenderIsCritter) {
-                if ((defender->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
-                    if (!v5 || defender != gDude) {
-                        critterSetWhoHitMe(defender, attack->attacker);
-                    }
-                } else if (defender == attack->oops || defender->data.critter.combat.team != attack->attacker->data.critter.combat.team) {
-                    _combatai_check_retaliation(defender, attack->attacker);
-                }
+        if ((defender->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
+            if (!hitUnintendedTarget || defender != gDude) {
+                critterSetWhoHitMe(defender, attack->attacker);
             }
+        } else if (attackerIsCritter && (defender == attack->intendedTarget || defender->data.critter.combat.team != attack->attacker->data.critter.combat.team)) {
+            _combatai_check_retaliation(defender, attack->attacker);
         }
 
         scriptSetObjects(defender->sid, attack->attacker, attack->weapon);
-        _damage_object(defender, attack->defenderDamage, animated, attack->defender != attack->oops, attacker);
-
-        if (defenderIsCritter) {
-            _combatai_notify_onlookers(defender);
-        }
+        _damage_object(defender, attack->defenderDamage, animated, hitUnintendedTarget, attacker);
+        _combatai_notify_onlookers(defender);
 
         if (attack->defenderDamage >= 0 && (attack->attackerFlags & DAM_HIT) != 0) {
             scriptSetObjects(attack->attacker->sid, nullptr, attack->defender);
@@ -4824,14 +4820,13 @@ void _apply_damage(Attack* attack, bool animated)
             if (defenderIsCritter) {
                 if ((obj->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0) {
                     critterSetWhoHitMe(obj, attack->attacker);
-                } else if (obj->data.critter.combat.team != attack->attacker->data.critter.combat.team) {
+                } else if (attackerIsCritter && obj->data.critter.combat.team != attack->attacker->data.critter.combat.team) {
                     _combatai_check_retaliation(obj, attack->attacker);
                 }
             }
 
             scriptSetObjects(obj->sid, attack->attacker, attack->weapon);
-            // TODO: Not sure about defender == oops.
-            _damage_object(obj, attack->extrasDamage[index], animated, attack->defender == attack->oops, attack->attacker);
+            _damage_object(obj, attack->extrasDamage[index], animated, hitUnintendedTarget, attack->attacker);
             _combatai_notify_onlookers(obj);
 
             if (attack->extrasDamage[index] >= 0) {
@@ -4900,18 +4895,18 @@ static void _set_new_results(Object* critter, int flags)
     }
 }
 
-// 0x425020
-static void _damage_object(Object* a1, int damage, bool animated, int a4, Object* a5)
+// 0x425020 damage_object
+static void _damage_object(Object* target, int damage, bool animated, int hitUnintendedTarget, Object* damageSource)
 {
-    if (a1 == nullptr) {
+    if (target == nullptr) {
         return;
     }
 
-    if (FID_TYPE(a1->fid) != OBJ_TYPE_CRITTER) {
+    if (FID_TYPE(target->fid) != OBJ_TYPE_CRITTER) {
         return;
     }
 
-    if (critterFlagCheck(a1->pid, CRITTER_INVULNERABLE)) {
+    if (critterFlagCheck(target->pid, CRITTER_INVULNERABLE)) {
         return;
     }
 
@@ -4919,50 +4914,50 @@ static void _damage_object(Object* a1, int damage, bool animated, int a4, Object
         return;
     }
 
-    critterAdjustHitPoints(a1, -damage);
+    critterAdjustHitPoints(target, -damage);
 
-    if (a1 == gDude) {
+    if (target == gDude) {
         interfaceRenderHitPoints(animated);
     }
 
-    a1->data.critter.combat.damageLastTurn += damage;
+    target->data.critter.combat.damageLastTurn += damage;
 
-    if (!a4) {
+    if (!hitUnintendedTarget) {
         // TODO: Not sure about this one.
-        if (!objectIsPartyMember(a1) || !objectIsPartyMember(a5)) {
-            scriptSetFixedParam(a1->sid, damage);
-            scriptExecProc(a1->sid, SCRIPT_PROC_DAMAGE);
+        if (!objectIsPartyMember(target) || !objectIsPartyMember(damageSource)) {
+            scriptSetFixedParam(target->sid, damage);
+            scriptExecProc(target->sid, SCRIPT_PROC_DAMAGE);
         }
     }
 
-    if ((a1->data.critter.combat.results & DAM_DEAD) != 0) {
-        scriptSetObjects(a1->sid, a1->data.critter.combat.whoHitMe, nullptr);
-        scriptExecProc(a1->sid, SCRIPT_PROC_DESTROY);
-        itemDestroyAllHidden(a1);
+    if ((target->data.critter.combat.results & DAM_DEAD) != 0) {
+        scriptSetObjects(target->sid, target->data.critter.combat.whoHitMe, nullptr);
+        scriptExecProc(target->sid, SCRIPT_PROC_DESTROY);
+        itemDestroyAllHidden(target);
 
-        if (a1 != gDude) {
-            Object* whoHitMe = a1->data.critter.combat.whoHitMe;
+        if (target != gDude) {
+            Object* whoHitMe = target->data.critter.combat.whoHitMe;
             if (whoHitMe == gDude || (whoHitMe != nullptr && whoHitMe->data.critter.combat.team == gDude->data.critter.combat.team)) {
                 bool scriptOverrides = false;
                 Script* scr;
-                if (scriptGetScript(a1->sid, &scr) != -1) {
+                if (scriptGetScript(target->sid, &scr) != -1) {
                     scriptOverrides = scr->scriptOverrides;
                 }
 
                 if (!scriptOverrides) {
-                    _combat_exps += critterGetExp(a1);
-                    killsIncByType(critterGetKillType(a1));
+                    _combat_exps += critterGetExp(target);
+                    killsIncByType(critterGetKillType(target));
                 }
             }
         }
 
-        if (a1->sid != -1) {
-            scriptRemove(a1->sid);
-            a1->sid = -1;
+        if (target->sid != -1) {
+            scriptRemove(target->sid);
+            target->sid = -1;
         }
 
-        partyMemberRemove(a1);
-        scriptHooks_OnDeath(a1);
+        partyMemberRemove(target);
+        scriptHooks_OnDeath(target);
     }
 }
 
@@ -5034,11 +5029,11 @@ void _combat_display(Attack* attack)
 
     char text[280];
     if (attack->defender != nullptr
-        && attack->oops != nullptr
-        && attack->defender != attack->oops
+        && attack->intendedTarget != nullptr
+        && attack->defender != attack->intendedTarget
         && (attack->attackerFlags & DAM_HIT) != 0) {
         if (FID_TYPE(attack->defender->fid) == OBJ_TYPE_CRITTER) {
-            if (attack->oops == gDude) {
+            if (attack->intendedTarget == gDude) {
                 // 608 (male) - Oops! %s was hit instead of you!
                 // 708 (female) - Oops! %s was hit instead of you!
                 messageListItem.num = baseMessageId + 8;
@@ -5048,7 +5043,7 @@ void _combat_display(Attack* attack)
             } else {
                 // 509 (male) - Oops! %s were hit instead of %s!
                 // 559 (female) - Oops! %s were hit instead of %s!
-                const char* name = objectGetName(attack->oops);
+                const char* name = objectGetName(attack->intendedTarget);
                 messageListItem.num = baseMessageId + 9;
                 if (messageListGetItem(&gCombatMessageList, &messageListItem)) {
                     snprintf(text, sizeof(text), messageListItem.text, mainCritterName, name);
@@ -5803,7 +5798,7 @@ void _combat_attack_this(Object* target)
         return;
     }
 
-    if ((gCombatState & 0x02) == 0) {
+    if ((gCombatState & COMBAT_STATE_PLAYER_TURN) == 0) {
         return;
     }
 
@@ -5941,7 +5936,7 @@ void _combat_outline_off()
     int v5;
     Object** v9;
 
-    if (gCombatState & 1) {
+    if ((gCombatState & COMBAT_STATE_IN_COMBAT) != 0) {
         for (i = 0; i < _list_total; i++) {
             objectDisableOutline(_combat_list[i], nullptr);
         }

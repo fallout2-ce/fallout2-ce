@@ -18,6 +18,7 @@
 #include "kb.h"
 #include "map.h"
 #include "mapper/mapper.h"
+#include "mapper/mp_utils.h"
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"

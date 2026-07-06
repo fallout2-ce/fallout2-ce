@@ -1,5 +1,6 @@
 #include "critter.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -1022,6 +1023,15 @@ int critterGetBodyType(Object* critter)
     return proto->critter.data.bodyType;
 }
 
+int critterBuildGorisFid(Object* critter, int frmId)
+{
+    assert(critter != nullptr && critter->pid == PROTO_ID_GORIS);
+
+    // Goris needs the live critter FID preserved exactly as-is except for the
+    // base FRM id swap between robe and claw body art.
+    return (critter->fid & ~0xFFF) | (frmId & 0xFFF);
+}
+
 // 0x42DE58 pc_load_data
 int gcdLoad(const char* path)
 {
@@ -1359,13 +1369,16 @@ int critterGetMovementPointCostAdjustedForCrippledLegs(Object* critter, int dist
     }
 
     int flags = critter->data.critter.combat.results;
+    int actionPoints = 0;
     if ((flags & DAM_CRIP_LEG_LEFT) != 0 && (flags & DAM_CRIP_LEG_RIGHT) != 0) {
-        return 8 * distance;
+        actionPoints = 8 * distance;
     } else if ((flags & DAM_CRIP_LEG_ANY) != 0) {
-        return 4 * distance;
+        actionPoints = 4 * distance;
     } else {
-        return distance;
+        actionPoints = distance;
     }
+
+    return scriptHooks_MoveCost(critter, distance, actionPoints);
 }
 
 // 0x42E66C critterIsOverloaded

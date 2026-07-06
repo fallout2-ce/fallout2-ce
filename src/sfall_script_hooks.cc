@@ -299,6 +299,40 @@ int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType)
 }
 
 /*
+Runs when retrieving the damage rating of the used weapon. (Which may be fists.)
+
+int     arg0 - The default minimum damage after engine bonuses are applied
+int     arg1 - The default maximum damage after engine bonuses are applied
+Item    arg2 - The weapon used (0 if unarmed)
+Critter arg3 - The critter doing the attacking
+int     arg4 - The type of attack (see ATKTYPE_* constants)
+int     arg5 - 1 if this is an attack using a melee weapon, 0 otherwise
+
+int     ret0 - Either the damage to be used, if ret1 isn't given, or the new minimum damage if it is
+int     ret1 - The new maximum damage
+*/
+void scriptHooks_ItemDamage(Object* weapon, Object* critter, int hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr)
+{
+    assert(critter != nullptr);
+    assert(minDamagePtr != nullptr);
+    assert(maxDamagePtr != nullptr);
+
+    ScriptHookCall hook(HOOK_ITEMDAMAGE, 2, { *minDamagePtr, *maxDamagePtr, weapon, critter, hitMode, isMeleeWeaponAttack ? 1 : 0 });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return;
+    }
+
+    *minDamagePtr = hook.getReturnValueAt(0).asInt();
+    if (hook.numReturnValues() > 1) {
+        *maxDamagePtr = hook.getReturnValueAt(1).asInt();
+    } else {
+        *maxDamagePtr = *minDamagePtr;
+    }
+}
+
+/*
 Runs when calculating ammo cost for a weapon.
 
 Item    arg0 - The weapon
@@ -533,6 +567,35 @@ int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int action
         return actionPoints;
     }
 
+    return hook.getReturnValueAt(0).asInt();
+}
+
+/*
+Runs when calculating the AP cost of movement.
+
+The engine calls this both for full-path AP previews and for per-hex AP
+deduction during movement animation. In practice, arg1 may therefore be the
+full path length or 1, depending on the caller. Non-linear overrides can make
+the UI preview diverge from the AP actually spent.
+
+Critter arg0 - The critter doing the moving
+int     arg1 - The number of hexes being moved
+int     arg2 - The original AP cost
+
+int     ret0 - The new AP cost
+*/
+int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints)
+{
+    if (scriptHooks[HOOK_MOVECOST].empty()) {
+        return actionPoints;
+    }
+
+    ScriptHookCall hook(HOOK_MOVECOST, 1, { critter, distance, actionPoints });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return actionPoints;
+    }
     return hook.getReturnValueAt(0).asInt();
 }
 
@@ -959,9 +1022,9 @@ int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid)
 
     int     ret0 - overrides hard-coded handler (-1 = use engine handler) (NOT RECOMMENDED)
 */
-bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove)
+bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove, bool filterInactiveHand)
 {
-    if (!isWield) {
+    if (filterInactiveHand && !isWield) {
         // Sfall: NPCs only ever expose the active (right) hand here.
         if (slot == InvenSlot::LeftHand && critter != gDude) {
             return true;

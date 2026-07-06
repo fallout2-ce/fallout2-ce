@@ -79,7 +79,7 @@ Attack* combat_get_data();
 
 static inline bool isInCombat()
 {
-    return (gCombatState & COMBAT_STATE_0x01) != 0;
+    return (gCombatState & COMBAT_STATE_IN_COMBAT) != 0;
 }
 
 static inline bool isUnarmedHitMode(int hitMode)

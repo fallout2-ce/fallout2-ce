@@ -13,7 +13,7 @@ namespace fallout {
 
 constexpr size_t DIK_MAP_COUNT = 256;
 
-/// Maps DirectInput DIK constants to SDL scancodes.
+// Maps DirectInput DIK constants to SDL scancodes.
 static constexpr SDL_Scancode kDiks[DIK_MAP_COUNT] = {
     SDL_SCANCODE_UNKNOWN,
     SDL_SCANCODE_ESCAPE, // DIK_ESCAPE
@@ -276,13 +276,13 @@ static constexpr SDL_Scancode kDiks[DIK_MAP_COUNT] = {
 static std::unordered_map<SDL_Scancode, int> kScanCodeToDik;
 static std::deque<std::pair<SDL_Scancode, bool>> syntheticKeyEvents;
 
-/// Translates Sfall key code (DIK or VK constant) to SDL scancode.
+// Translates Sfall key code (DIK or VK constant) to SDL scancode.
 static SDL_Scancode get_scancode_from_key(int key)
 {
     return kDiks[key & 0xFF];
 }
 
-/// Translates SDL scancode into DIK key constant, used by sfall.
+// Translates SDL scancode into DIK key constant, used by sfall.
 static int get_key_from_scancode(SDL_Scancode scanCode)
 {
     if (kScanCodeToDik.empty()) {

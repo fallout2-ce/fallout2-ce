@@ -24,6 +24,8 @@ namespace fallout {
 // 365 * 24 * 60 * 60 * 10
 #define GAME_TIME_TICKS_PER_YEAR (315360000)
 
+constexpr int OBJECT_ID_UNIQUE_START = 0x0FFFFFFF;
+
 typedef enum ScriptRequests {
     SCRIPT_REQUEST_COMBAT = 0x01,
     SCRIPT_REQUEST_TOWN_MAP = 0x02,
@@ -162,6 +164,13 @@ int gameTimeEventProcess(Object* obj, void* data);
 int _scriptsCheckGameEvents(int* moviePtr, int window);
 int mapUpdateEventProcess(Object* obj, void* data);
 int scriptsNewObjectId();
+bool scriptsIsUniqueObjectId(int objectId);
+int scriptsNewUniqueObjectId();
+int scriptsSetUniqueObjectId(Object* object);
+void scriptsSyncObjectId(Object* object);
+int scriptsGetUniqueObjectIdCounter();
+void scriptsResetUniqueObjectIdCounter();
+void scriptsRestoreUniqueObjectIdCounter(int savedCounter);
 int scriptGetSid(Program* program);
 Object* scriptGetSelf(Program* program);
 int scriptSetObjects(int sid, Object* source, Object* target);

@@ -322,7 +322,7 @@ bool colorPaletteLoad(const char* path)
     // NOTE: Uninline.
     fileRead(_colorTable, 0x8000, 1, stream);
 
-    unsigned int type;
+    unsigned int type = 0;
     // NOTE: Uninline.
     fileRead(&type, sizeof(type), 1, stream);
 

@@ -1,11 +1,15 @@
 #include "draw.h"
 
+#include <algorithm>
 #include <string.h>
 
 #include "color.h"
 #include "svga.h"
 
 namespace fallout {
+
+static void blitBuffer2DScaledImpl(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight, bool transparent);
+static int scaledCeilDiv(int value, int numerator, int denominator);
 
 // 0x4D2FC0
 void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y2, int color)
@@ -268,6 +272,87 @@ void blitBuffer2D(ConstBuffer2D src, int srcX, int srcY, int width, int height,
         dst.data + dstY * dst.width + dstX, dst.width,
         src.data + srcY * src.width + srcX, src.width,
         width, height);
+}
+
+void blitBuffer2DScaled(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
+{
+    blitBuffer2DScaled(src, 0, 0, src.width, src.height, dst, dstX, dstY, dstWidth, dstHeight);
+}
+
+void blitBuffer2DScaled(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
+{
+    blitBuffer2DScaledImpl(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY, dstWidth, dstHeight, false);
+}
+
+void blitBuffer2DScaledTrans(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
+{
+    blitBuffer2DScaledTrans(src, 0, 0, src.width, src.height, dst, dstX, dstY, dstWidth, dstHeight);
+}
+
+void blitBuffer2DScaledTrans(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
+{
+    blitBuffer2DScaledImpl(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY, dstWidth, dstHeight, true);
+}
+
+void bufferFill2D(Buffer2D dst, int value)
+{
+    if (!dst || dst.width <= 0 || dst.height <= 0) {
+        return;
+    }
+
+    bufferFill(dst.data, dst.width, dst.height, dst.width, value);
+}
+
+static void blitBuffer2DScaledImpl(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight, bool transparent)
+{
+    if (!src || !dst || src.width <= 0 || src.height <= 0 || srcWidth <= 0 || srcHeight <= 0 || dstWidth <= 0 || dstHeight <= 0) {
+        return;
+    }
+
+    int clippedSrcLeft = std::max(srcX, 0);
+    int clippedSrcTop = std::max(srcY, 0);
+    int clippedSrcRight = std::min(srcX + srcWidth, src.width);
+    int clippedSrcBottom = std::min(srcY + srcHeight, src.height);
+    if (clippedSrcLeft >= clippedSrcRight || clippedSrcTop >= clippedSrcBottom) {
+        return;
+    }
+
+    int left = dstX + scaledCeilDiv(clippedSrcLeft - srcX, dstWidth, srcWidth);
+    int top = dstY + scaledCeilDiv(clippedSrcTop - srcY, dstHeight, srcHeight);
+    int right = dstX + scaledCeilDiv(clippedSrcRight - srcX, dstWidth, srcWidth);
+    int bottom = dstY + scaledCeilDiv(clippedSrcBottom - srcY, dstHeight, srcHeight);
+
+    left = std::max(left, 0);
+    top = std::max(top, 0);
+    right = std::min(right, dst.width);
+    bottom = std::min(bottom, dst.height);
+    if (left >= right || top >= bottom) {
+        return;
+    }
+
+    for (int destY = top; destY < bottom; destY++) {
+        int sourceY = srcY + ((destY - dstY) * srcHeight) / dstHeight;
+        sourceY = std::clamp(sourceY, srcY, srcY + srcHeight - 1);
+
+        unsigned char* destRow = dst.data + destY * dst.width;
+        const unsigned char* srcRow = src.data + sourceY * src.width;
+        for (int destX = left; destX < right; destX++) {
+            int sourceX = srcX + ((destX - dstX) * srcWidth) / dstWidth;
+            sourceX = std::clamp(sourceX, srcX, srcX + srcWidth - 1);
+
+            unsigned char value = srcRow[sourceX];
+            if (!transparent || value != 0) {
+                destRow[destX] = value;
+            }
+        }
+    }
+}
+
+static int scaledCeilDiv(int value, int numerator, int denominator)
+{
+    return static_cast<int>((static_cast<int64_t>(value) * numerator + denominator - 1) / denominator);
 }
 
 // 0x4D387C

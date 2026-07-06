@@ -26,6 +26,7 @@ namespace {
 
     static bool gameConfigHasKey(Config* config, const char* section, const char* key);
     static bool gameConfigNeedsF2ResMigration(Config* gameConfig);
+    static bool gameConfigMigrateMainMenuScaleModeKey(Config* legacyConfig, Config* gameConfig);
     static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry);
     static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig);
 
@@ -39,6 +40,7 @@ namespace {
         { "IFACE", "IFACE_BAR_SIDES_ORI", GAME_CONFIG_UI_KEY, GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY },
         { "MAPS", "IGNORE_MAP_EDGES", GAME_CONFIG_UI_KEY, GAME_CONFIG_IGNORE_MAP_EDGES_KEY },
         { "STATIC_SCREENS", "SPLASH_SCRN_SIZE", GAME_CONFIG_UI_KEY, GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY },
+        { "MOVIES", "MOVIE_SIZE", GAME_CONFIG_UI_KEY, GAME_CONFIG_MOVIE_ASPECT_FIT_KEY },
     };
 
     static bool gameConfigHasKey(Config* config, const char* section, const char* key)
@@ -70,6 +72,29 @@ namespace {
         return configSetString(gameConfig, entry.targetSection, entry.targetKey, value);
     }
 
+    static bool gameConfigMigrateMainMenuScaleModeKey(Config* legacyConfig, Config* gameConfig)
+    {
+        assert(legacyConfig != nullptr && gameConfig != nullptr);
+
+        if (gameConfigHasKey(gameConfig, GAME_CONFIG_UI_KEY, GAME_CONFIG_MAIN_MENU_SCALE_MODE_KEY)) {
+            return false;
+        }
+
+        int scaleMode;
+        if (!configGetInt(legacyConfig, "MAINMENU", "MAIN_MENU_SIZE", &scaleMode)) {
+            return false;
+        }
+
+        bool legacyScaleButtonsAndText = false;
+        if (configGetBool(legacyConfig, "MAINMENU", "SCALE_BUTTONS_AND_TEXT_MENU", &legacyScaleButtonsAndText)
+            && legacyScaleButtonsAndText
+            && scaleMode != 0) {
+            scaleMode = 2;
+        }
+
+        return configSetInt(gameConfig, GAME_CONFIG_UI_KEY, GAME_CONFIG_MAIN_MENU_SCALE_MODE_KEY, scaleMode);
+    }
+
     static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig)
     {
         assert(legacyConfig != nullptr && gameConfig != nullptr);
@@ -85,7 +110,6 @@ namespace {
 
         return configSetInt(gameConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, value + 1);
     }
-
 } // namespace
 
 // Migrate settings F2_RES.INI to fallout2.cfg
@@ -118,6 +142,10 @@ bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConf
             if (gameConfigMigrateStringKey(&legacyConfig, gameConfig, entry)) {
                 migrated = true;
             }
+        }
+
+        if (gameConfigMigrateMainMenuScaleModeKey(&legacyConfig, gameConfig)) {
+            migrated = true;
         }
 
         if (gameConfigMigrateScaleKey(&legacyConfig, gameConfig)) {
@@ -283,8 +311,8 @@ void contentConfigTryMigrateFromSfall(const char* contentConfigPath)
         debugPrint("Failed to migrate from ddraw.ini: no master_patches is set.\n");
         return;
     }
-    if (compat_file_exists(masterPatches.c_str())) {
-        // Master patches is pointing to a file instead of a folder. This shouldn't normally happen, so don't migrate in this case.
+    if (!compat_is_dir(masterPatches.c_str())) {
+        // master_patches must point to an existing folder. Don't migrate when it's missing or not a directory.
         return;
     }
     char contentCfgPath[COMPAT_MAX_PATH];

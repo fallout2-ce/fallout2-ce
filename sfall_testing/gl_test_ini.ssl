@@ -65,6 +65,12 @@ procedure ini_test_suite begin
     call assertEquals("TC7 get_ini_sections size", len_array(result_array), 3);
     call assertTrue("TC7 get_ini_sections", scan_array(result_array, "TestMisc") >= 0);
 
+    // get_ini_config
+    result_array := get_ini_config_db("config\\config_from_db.cfg");
+    call assertEquals("TC8 get_ini_config_db size", len_array(result_array), 2);
+    call assertTrue("TC8 get_ini_config ValidSection", result_array.ValidSection != 0);
+    call assertEquals("TC8 get_ini_config_db ValidValue", result_array.ValidSection.ValidKey, "ValidValue");
+
     call report_test_results("ini");
 end
 

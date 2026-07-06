@@ -65,6 +65,10 @@ int xfileEof(XFile* stream);
 long xfileGetSize(XFile* stream);
 bool xbaseReopenAll(char* paths);
 bool xbaseOpen(const char* path);
+
+// Returns true if path is currently mounted as a directory-based VFS xbase
+// (comparison ignores case and a trailing path separator).
+bool xbaseIsValidDirectory(const char* path);
 bool xlistInit(const char* pattern, XList* xlist);
 void xlistFree(XList* xlist);
 

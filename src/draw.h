@@ -43,6 +43,20 @@ void blitBuffer2D(ConstBuffer2D src, Buffer2D dst, int dstX = 0, int dstY = 0);
 // dst at (dstX, dstY). Clips to both src and dst bounds.
 void blitBuffer2D(ConstBuffer2D src, int srcX, int srcY, int width, int height,
     Buffer2D dst, int dstX = 0, int dstY = 0);
+// Scales src to the destination rectangle using nearest-neighbor sampling.
+// Clips to dst bounds; no-op if fully outside.
+void blitBuffer2DScaled(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight);
+// Scales a source sub-rect to the destination rectangle using nearest-neighbor sampling.
+// Clips to both src and dst bounds; no-op if fully outside.
+void blitBuffer2DScaled(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight);
+// Same as blitBuffer2DScaled, but treats zero-valued source pixels as transparent.
+void blitBuffer2DScaledTrans(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight);
+// Same as blitBuffer2DScaled with a source sub-rect, but treats zero-valued source pixels as transparent.
+void blitBuffer2DScaledTrans(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight);
+// Fills the entire buffer with a single palette index.
+void bufferFill2D(Buffer2D dst, int value);
 
 void bufferDrawLine(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int color);
 void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int color);

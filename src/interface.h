@@ -66,6 +66,12 @@ int indicatorBarRefresh();
 bool indicatorBarShow();
 bool indicatorBarHide();
 bool interface_get_current_attack_mode(int* hit_mode);
+int interfaceTagAdd();
+int interfaceTagGetMax();
+bool interfaceTagShow(int tag);
+bool interfaceTagHide(int tag);
+bool interfaceTagIsActive(int tag);
+void interfaceTagSetText(int tag, const char* text, int color);
 
 unsigned char* customInterfaceBarGetBackgroundImageData();
 

@@ -24,6 +24,8 @@ struct SystemSettings {
     int free_space = 20480;
     int times_run = 0;
     std::string screenshots_format = "png";
+
+    bool executableIsMapper() const;
 };
 
 struct ScreenSettings {
@@ -34,6 +36,15 @@ struct ScreenSettings {
 };
 
 struct UISettings {
+    // Main menu background scaling mode.
+    // 0 - native size
+    // 1 - aspect-fit background only
+    // 2 - aspect-fit background and scale controls to match
+    int main_menu_scale_mode = 1;
+
+    // Show the Help option in the in-game options menu.
+    bool in_game_menu_help = true;
+
     // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
     bool iface_bar_mode = false;
 
@@ -55,6 +66,9 @@ struct UISettings {
     bool expand_barter_window = false;
 
     int splash_screen_size = 0;
+
+    // Whether to scale movies to fit the screen while preserving aspect ratio.
+    bool movie_aspect_fit = true;
 
     // Whether to load EDG files (HRP format) when loading maps. If loaded, they override default edge clipping and scroll blocking behavior.
     bool edg_support = true;
@@ -133,7 +147,7 @@ struct DebugSettings {
 };
 
 struct QolSettings {
-    int use_walk_distance = 5;
+    int use_walk_distance = 3;
     bool auto_open_doors = false;
     bool party_trade_from_menu = true;
     bool party_loot_and_barter = false;
@@ -156,8 +170,7 @@ struct MapperSettings {
     // CE: switch between vanilla grid item picker and simpler list-based one.
     bool use_grid_item_picker = true;
     // CE: change mapper path for saving various data.
-    // TODO: use
-    std::string dev_path = R"(\fallout\cd\)";
+    std::string dev_path;
 };
 
 struct Settings {

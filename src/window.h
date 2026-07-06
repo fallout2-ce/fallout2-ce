@@ -65,6 +65,7 @@ void _doRightButtonRelease(int btn, int keyCode);
 void _setButtonGFX(int width, int height, unsigned char* normal);
 bool scriptWindowHide();
 bool scriptWindowShow();
+bool scriptWindowHideNamed(const char* name);
 int scriptWindowWidth();
 int scriptWindowHeight();
 bool scriptWindowDraw();
@@ -75,6 +76,7 @@ int scriptWindowCreate(const char* windowName, int x, int y, int width, int heig
 int scriptWindowOutput(const char* string);
 bool scriptWindowGotoXY(int x, int y);
 bool scriptWindowSelectId(int index);
+int scriptWindowGetWindow(int index);
 int scriptWindowSelect(const char* windowName);
 unsigned char* scriptWindowGetBuffer();
 int scriptWindowPush(const char* windowName);
@@ -128,10 +130,11 @@ bool scriptWindowPlayMovieRect(char* filePath, int x, int y, int w, int h);
 void scriptWindowStopMovie();
 void _drawScaled(unsigned char* dest, int destWidth, int destHeight, int destPitch, unsigned char* src, int srcWidth, int srcHeight, int srcPitch);
 void _drawScaledBuf(unsigned char* dest, int destWidth, int destHeight, unsigned char* src, int srcWidth, int srcHeight);
-void _alphaBltBuf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* alphaWindowBuffer, unsigned char* alphaBuffer, unsigned char* dest, int destPitch);
 void _fillBuf3x3(unsigned char* src, int srcWidth, int srcHeight, unsigned char* dest, int destWidth, int destHeight);
 
 bool scriptWindowShowNamed(const char* name);
+bool scriptWindowSetFlag(int windowId, int bitFlag, bool enabled);
+bool scriptWindowSetNamedFlag(const char* name, int bitFlag, bool enabled);
 
 } // namespace fallout
 
