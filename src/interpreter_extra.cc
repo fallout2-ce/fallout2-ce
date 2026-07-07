@@ -333,9 +333,6 @@ static void opCritterStopAttacking(Program* program);
 static void opTileGetObjectWithPid(Program* program);
 static void opGetObjectName(Program* program);
 static void opGetPcStat(Program* program);
-static void opFileSystemCreate(Program* program);
-static void opFileSystemCopy(Program* program);
-static void opFileSystemFind(Program* program);
 
 // 0x504B0C aCritter
 static char _aCritter[] = "<Critter>";
@@ -4893,32 +4890,6 @@ static void opGetPcStat(Program* program)
     programStackPushInteger(program, value);
 }
 
-// op_fs_copy
-static void opFileSystemCopy(Program* program)
-{
-    char* source = programStackPopString(program);
-    char* path = programStackPopString(program);
-    scriptPredefinedError(program, "fs_copy", SCRIPT_ERROR_NOT_IMPLEMENTED);
-    programStackPushInteger(program, -1);
-}
-
-// op_fs_find
-static void opFileSystemFind(Program* program)
-{
-    char* path = programStackPopString(program);
-    scriptPredefinedError(program, "fs_find", SCRIPT_ERROR_NOT_IMPLEMENTED);
-    programStackPushInteger(program, -1);
-}
-
-// op_fs_create
-static void opFileSystemCreate(Program* program)
-{
-    int size = programStackPopInteger(program);
-    char* path = programStackPopString(program);
-    scriptPredefinedError(program, "fs_create", SCRIPT_ERROR_NOT_IMPLEMENTED);
-    programStackPushInteger(program, -1);
-}
-
 // 0x45CDD4
 void _intExtraClose_()
 {
@@ -5109,9 +5080,6 @@ void _initIntExtra()
     interpreterRegisterOpcode(0x8153, opTerminateCombat); // op_terminate_combat
     interpreterRegisterOpcode(0x8154, opDebugMessage); // op_debug_msg
     interpreterRegisterOpcode(0x8155, opCritterStopAttacking); // op_critter_stop_attacking
-    interpreterRegisterOpcode(0x81f7, opFileSystemCreate); // op_fs_create
-    interpreterRegisterOpcode(0x81f8, opFileSystemCopy); // op_fs_copy
-    interpreterRegisterOpcode(0x81f9, opFileSystemFind); // op_fs_find
 
     sfallOpcodesInit();
 }
