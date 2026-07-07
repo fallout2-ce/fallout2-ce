@@ -4896,8 +4896,8 @@ static void opGetPcStat(Program* program)
 // op_fs_copy
 static void opFileSystemCopy(Program* program)
 {
-    char * source = programStackPopString(program);
-    char * path = programStackPopString(program);
+    char* source = programStackPopString(program);
+    char* path = programStackPopString(program);
     scriptPredefinedError(program, "fs_copy", SCRIPT_ERROR_NOT_IMPLEMENTED);
     programStackPushInteger(program, -1);
 }
@@ -4905,7 +4905,7 @@ static void opFileSystemCopy(Program* program)
 // op_fs_find
 static void opFileSystemFind(Program* program)
 {
-    char * path = programStackPopString(program);
+    char* path = programStackPopString(program);
     scriptPredefinedError(program, "fs_find", SCRIPT_ERROR_NOT_IMPLEMENTED);
     programStackPushInteger(program, -1);
 }
@@ -4914,7 +4914,7 @@ static void opFileSystemFind(Program* program)
 static void opFileSystemCreate(Program* program)
 {
     int size = programStackPopInteger(program);
-    char * path = programStackPopString(program);
+    char* path = programStackPopString(program);
     scriptPredefinedError(program, "fs_create", SCRIPT_ERROR_NOT_IMPLEMENTED);
     programStackPushInteger(program, -1);
 }
