@@ -1878,7 +1878,7 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
     }
 
     memset(gGameMouseActionMenuFrmData, 0, gGameMouseActionMenuFrmDataSize);
-    blitBufferToBuffer(arrowData, arrowWidth, arrowHeight, arrowWidth, arrowFrmDest, gGameMouseActionPickFrmWidth);
+    blitBufferToBuffer(arrowData, arrowWidth, arrowHeight, arrowWidth, arrowFrmDest, gGameMouseActionMenuFrmWidth);
 
     unsigned char* dest = menuItemFrmDest;
     for (int index = 0; index < menuItemsLength; index++) {
