@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <limits.h>
 #include <string.h>
 
 #include "debug.h"
@@ -1015,7 +1017,7 @@ static int heapMoveableExtentsCompareBySize(const void* leftPtr, const void* rig
 // 0x453BC4 heap_build_free_list
 static bool heapBuildFreeBlocksList(Heap* heap)
 {
-    if (heap == nullptr || heap->data == nullptr) {
+    if (heap == nullptr || heap->data == nullptr || heap->size <= 0) {
         debugPrint("Heap Error: Invalid heap during build free list.\n");
         return false;
     }
@@ -1037,7 +1039,12 @@ static bool heapBuildFreeBlocksList(Heap* heap)
     int blocksLength = heap->moveableBlocks + heap->freeBlocks + heap->lockedBlocks;
 
     unsigned char* ptr = heap->data;
-    unsigned char* heapEnd = heap->data + heap->size;
+    uintptr_t heapStartAddress = reinterpret_cast<uintptr_t>(heap->data);
+    uintptr_t heapEndAddress = heapStartAddress + static_cast<uintptr_t>(heap->size);
+    if (heapEndAddress < heapStartAddress) {
+        debugPrint("Heap ERROR: heap address range overflow during free list build: data=%p size=%d\n", heap->data, heap->size);
+        return false;
+    }
 
     int freeBlockIndex = 0;
     while (blocksLength != 0) {
@@ -1045,40 +1052,56 @@ static bool heapBuildFreeBlocksList(Heap* heap)
             break;
         }
 
-        if (ptr == nullptr || ptr + sizeof(HeapBlockHeader) > heapEnd) {
-            debugPrint("Heap ERROR: invalid heap block pointer during free list build: ptr=%p heapEnd=%p blocksLength=%d freeBlocks=%d moveableBlocks=%d lockedBlocks=%d\n", ptr, heapEnd, blocksLength, heap->freeBlocks, heap->moveableBlocks, heap->lockedBlocks);
+        uintptr_t ptrAddress = reinterpret_cast<uintptr_t>(ptr);
+        if (ptrAddress < heapStartAddress || ptrAddress > heapEndAddress || heapEndAddress - ptrAddress < HEAP_BLOCK_HEADER_SIZE) {
+            debugPrint("Heap ERROR: invalid heap block pointer during free list build: ptr=%p heapEnd=%p blocksLength=%d freeBlocks=%d moveableBlocks=%d lockedBlocks=%d\n", ptr, reinterpret_cast<void*>(heapEndAddress), blocksLength, heap->freeBlocks, heap->moveableBlocks, heap->lockedBlocks);
+            return false;
         }
 
         HeapBlockHeader* blockHeader = (HeapBlockHeader*)ptr;
-        if (blockHeader->size < 0 || ptr + blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE > heapEnd) {
-            debugPrint("Heap ERROR: invalid block size during free list build: ptr=%p size=%d heapEnd=%p\n", ptr, blockHeader->size, heapEnd);
-        }
         if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
             debugPrint("Heap ERROR: bad block header guard during free list build: ptr=%p guard=%08X\n", ptr, blockHeader->guard);
+            return false;
+        }
+        if (blockHeader->size < 0 || heapEndAddress - ptrAddress < HEAP_BLOCK_OVERHEAD_SIZE || static_cast<uintptr_t>(blockHeader->size) > heapEndAddress - ptrAddress - HEAP_BLOCK_OVERHEAD_SIZE) {
+            debugPrint("Heap ERROR: invalid block size during free list build: ptr=%p size=%d heapEnd=%p\n", ptr, blockHeader->size, reinterpret_cast<void*>(heapEndAddress));
+            return false;
         }
 
+        uintptr_t blockExtentSize = static_cast<uintptr_t>(blockHeader->size) + HEAP_BLOCK_OVERHEAD_SIZE;
         if (blockHeader->state == HEAP_BLOCK_STATE_FREE) {
             // Join consecutive free blocks if any.
             while (blocksLength > 1) {
                 // Grab next block and check if's a free block.
-                unsigned char* nextBlockPtr = ptr + blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
-                if (nextBlockPtr + sizeof(HeapBlockHeader) > heapEnd) {
-                    debugPrint("Heap ERROR: next block pointer out of range during free list join: nextPtr=%p heapEnd=%p\n", nextBlockPtr, heapEnd);
+                uintptr_t nextBlockAddress = ptrAddress + blockExtentSize;
+                if (nextBlockAddress < heapStartAddress || nextBlockAddress > heapEndAddress || heapEndAddress - nextBlockAddress < HEAP_BLOCK_HEADER_SIZE) {
+                    debugPrint("Heap ERROR: next block pointer out of range during free list join: nextPtr=%p heapEnd=%p\n", reinterpret_cast<void*>(nextBlockAddress), reinterpret_cast<void*>(heapEndAddress));
+                    return false;
                 }
+                unsigned char* nextBlockPtr = reinterpret_cast<unsigned char*>(nextBlockAddress);
                 HeapBlockHeader* nextBlockHeader = (HeapBlockHeader*)nextBlockPtr;
-                if (nextBlockHeader->size < 0 || nextBlockPtr + nextBlockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE > heapEnd) {
-                    debugPrint("Heap ERROR: invalid next block size during free list join: nextPtr=%p size=%d heapEnd=%p\n", nextBlockPtr, nextBlockHeader->size, heapEnd);
-                }
                 if (nextBlockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
                     debugPrint("Heap ERROR: bad next block header guard during free list join: nextPtr=%p guard=%08X\n", nextBlockPtr, nextBlockHeader->guard);
+                    return false;
+                }
+                if (nextBlockHeader->size < 0 || heapEndAddress - nextBlockAddress < HEAP_BLOCK_OVERHEAD_SIZE || static_cast<uintptr_t>(nextBlockHeader->size) > heapEndAddress - nextBlockAddress - HEAP_BLOCK_OVERHEAD_SIZE) {
+                    debugPrint("Heap ERROR: invalid next block size during free list join: nextPtr=%p size=%d heapEnd=%p\n", nextBlockPtr, nextBlockHeader->size, reinterpret_cast<void*>(heapEndAddress));
+                    return false;
                 }
                 if (nextBlockHeader->state != HEAP_BLOCK_STATE_FREE) {
                     break;
                 }
 
+                long long joinedSize = static_cast<long long>(blockHeader->size) + nextBlockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
+                if (joinedSize > INT_MAX) {
+                    debugPrint("Heap ERROR: joined free block size overflow during free list join: ptr=%p size=%d nextSize=%d\n", ptr, blockHeader->size, nextBlockHeader->size);
+                    return false;
+                }
+
                 // Accumulate it's size plus size of the overhead in the main
                 // block.
-                blockHeader->size += nextBlockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
+                blockHeader->size = static_cast<int>(joinedSize);
+                blockExtentSize = static_cast<uintptr_t>(blockHeader->size) + HEAP_BLOCK_OVERHEAD_SIZE;
 
                 // Update heap stats, the free size increased because we've just
                 // remove overhead for one block.
@@ -1092,7 +1115,8 @@ static bool heapBuildFreeBlocksList(Heap* heap)
         }
 
         // Move pointer to the header of the next block.
-        ptr += blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
+        ptrAddress += blockExtentSize;
+        ptr = reinterpret_cast<unsigned char*>(ptrAddress);
 
         blocksLength--;
     }

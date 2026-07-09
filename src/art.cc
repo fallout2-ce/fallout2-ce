@@ -1460,15 +1460,18 @@ int artRead(const char* path, unsigned char* data)
 
     int totalAllocSize = artGetDataSize(art);
     int fileSize = fileGetSize(stream);
-    if (totalAllocSize < 0) {
-        debugPrint("ART ERROR: artRead computed negative totalAllocSize %d for %s\n", totalAllocSize, path);
+    if (totalAllocSize <= 0) {
+        debugPrint("ART ERROR: artRead computed invalid totalAllocSize %d for %s\n", totalAllocSize, path);
+        fileClose(stream);
+        return -5;
     } else if (totalAllocSize > 0x400000) {
         debugPrint("ART INFO: artRead totalAllocSize %d for %s\n", totalAllocSize, path);
     }
     if (fileSize >= 0) {
         debugPrint("ART READ: %s header dataSize=%d totalAlloc=%d fileSize=%d frames=%d\n", path, art->dataSize, totalAllocSize, fileSize, art->frameCount);
-        if (totalAllocSize > fileSize * 3) {
-            debugPrint("ART WARNING: totalAllocSize (%d) > fileSize*3 (%d) for %s\n", totalAllocSize, fileSize * 3, path);
+        long long fileSizeLimit = static_cast<long long>(fileSize) * 3;
+        if (static_cast<long long>(totalAllocSize) > fileSizeLimit) {
+            debugPrint("ART WARNING: totalAllocSize (%d) > fileSize*3 (%lld) for %s\n", totalAllocSize, fileSizeLimit, path);
         }
     }
 
@@ -1481,16 +1484,13 @@ int artRead(const char* path, unsigned char* data)
         if (index == 0 || art->dataOffsets[index - 1] != art->dataOffsets[index]) {
             art->padding[index] += previousPadding;
             currentPadding += previousPadding;
-            unsigned char* frameDataPtr = data + sizeof(Art) + art->dataOffsets[index] + art->padding[index];
-            size_t frameDataBufferSize = static_cast<size_t>((data + totalAllocSize) - frameDataPtr);
-            if (frameDataBufferSize > static_cast<size_t>(INT_MAX)) {
-                frameDataBufferSize = static_cast<size_t>(INT_MAX);
-            }
-            if (frameDataPtr < data || frameDataPtr >= data + totalAllocSize) {
-                debugPrint("ART ERROR: invalid frame data destination for %s at rotation %d: ptr=%p base=%p size=%d\n", path, index, frameDataPtr, data, totalAllocSize);
+            long long frameDataOffset = static_cast<long long>(sizeof(Art)) + art->dataOffsets[index] + art->padding[index];
+            if (frameDataOffset < 0 || frameDataOffset >= totalAllocSize) {
+                debugPrint("ART ERROR: invalid frame data destination for %s at rotation %d: offset=%lld base=%p size=%d\n", path, index, frameDataOffset, data, totalAllocSize);
                 fileClose(stream);
                 return -5;
             }
+            unsigned char* frameDataPtr = data + frameDataOffset;
             if (artReadFrameData(frameDataPtr, stream, art->frameCount, &previousPadding) != 0) {
                 fileClose(stream);
                 return -5;
