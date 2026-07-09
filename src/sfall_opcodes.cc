@@ -1809,6 +1809,29 @@ static void op_set_sfall_return(Program* program)
     hookCall->addReturnValueFromScript(value);
 }
 
+static void op_fs_copy(Program* program)
+{
+    char* source = programStackPopString(program);
+    char* path = programStackPopString(program);
+    programPrintError("fs_copy: not implemented!");
+    programStackPushInteger(program, -1);
+}
+
+static void op_fs_find(Program* program)
+{
+    char* path = programStackPopString(program);
+    programPrintError("fs_find: not implemented!");
+    programStackPushInteger(program, -1);
+}
+
+static void op_fs_create(Program* program)
+{
+    int size = programStackPopInteger(program);
+    char* path = programStackPopString(program);
+    programPrintError("fs_create: not implemented!");
+    programStackPushInteger(program, -1);
+}
+
 // Note: opcodes should pop arguments off the stack in reverse order
 void sfallOpcodesInit()
 {
@@ -2142,8 +2165,11 @@ void sfallOpcodesInit()
     // 0x81f6 - int nb_create_char() // deprecated; do not implement
 
     // 0x81f7 - int   fs_create(string path, int size)
+    interpreterRegisterOpcode(0x81f7, op_fs_create);
     // 0x81f8 - int   fs_copy(string path, string source)
+    interpreterRegisterOpcode(0x81f8, op_fs_copy);
     // 0x81f9 - int   fs_find(string path)
+    interpreterRegisterOpcode(0x81f9, op_fs_find);
     // 0x81fa - void  fs_write_byte(int id, int data)
     // 0x81fb - void  fs_write_short(int id, int data)
     // 0x81fc - void  fs_write_int(int id, int data)
