@@ -222,10 +222,21 @@ static bool cacheFetchEntryForKey(Cache* cache, int key, int* indexPtr)
     do {
         int size;
         if (cache->sizeProc(key, &size) != 0) {
+            debugPrint("Cache ERROR: sizeProc failed for key %d\n", key);
             break;
         }
 
+        if (size < 0) {
+            debugPrint("Cache ERROR: invalid size %d for key %d\n", size, key);
+            break;
+        }
+
+        if (size > 0x10000) {
+            debugPrint("Cache INFO: key %d requested large allocation size %d\n", key, size);
+        }
+
         if (!cacheEnsureSize(cache, size)) {
+            debugPrint("Cache INFO: cacheEnsureSize failed for key %d size %d\n", key, size);
             break;
         }
 

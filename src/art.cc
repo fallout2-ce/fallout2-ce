@@ -1010,10 +1010,21 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             Art art;
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
+                if (*sizePtr < 0) {
+                    debugPrint("ART ERROR: fid %d returned negative data size %d\n", fid, *sizePtr);
+                } else if (*sizePtr > 0x10000) {
+                    debugPrint("ART INFO: fid %d has large data size %d\n", fid, *sizePtr);
+                }
                 result = 0;
+            } else {
+                debugPrint("ART ERROR: artReadHeader failed for fid %d path %s\n", fid, artFilePath);
             }
             fileClose(stream);
+        } else {
+            debugPrint("ART ERROR: could not open file for fid %d path %s\n", fid, artFilePath);
         }
+    } else {
+        debugPrint("ART ERROR: could not build path for fid %d\n", fid);
     }
 
     return result;
@@ -1031,19 +1042,32 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
         if (artGetLocalizedPath(artFileName, &localizedPath)) {
             if (artRead(localizedPath, data) == 0) {
                 loaded = true;
+            } else {
+                debugPrint("ART INFO: artRead localized failed for fid %d path %s\n", fid, localizedPath);
             }
         }
 
         if (!loaded) {
             if (artRead(artFileName, data) == 0) {
                 loaded = true;
+            } else {
+                debugPrint("ART INFO: artRead fallback failed for fid %d path %s\n", fid, artFileName);
             }
         }
 
         if (loaded) {
             *sizePtr = artGetDataSize((Art*)data);
+            if (*sizePtr < 0) {
+                debugPrint("ART ERROR: fid %d read data returned negative size %d\n", fid, *sizePtr);
+            } else if (*sizePtr > 0x10000) {
+                debugPrint("ART INFO: fid %d read large data size %d\n", fid, *sizePtr);
+            }
             result = 0;
+        } else {
+            debugPrint("ART ERROR: failed to load ART data for fid %d\n", fid);
         }
+    } else {
+        debugPrint("ART ERROR: could not build path for fid %d\n", fid);
     }
 
     return result;
@@ -1126,6 +1150,22 @@ static int artReadHeader(Art* art, File* stream)
     // CE: Fix malformed `frm` files with `dataSize` set to 0 in Nevada.
     if (art->dataSize == 0) {
         art->dataSize = fileGetSize(stream);
+    }
+
+    if (art->frameCount < 0 || art->frameCount > 1000) {
+        debugPrint("ART WARNING: suspicious frameCount %d in header\n", art->frameCount);
+    }
+
+    if (art->dataSize < 0) {
+        debugPrint("ART WARNING: negative dataSize %d in header\n", art->dataSize);
+    } else if (art->dataSize > 0x200000) {
+        debugPrint("ART INFO: large dataSize %d in header\n", art->dataSize);
+    }
+
+    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        if (art->dataOffsets[rotation] < 0) {
+            debugPrint("ART WARNING: negative dataOffset[%d] %d in header\n", rotation, art->dataOffsets[rotation]);
+        }
     }
 
     return 0;
@@ -1418,6 +1458,20 @@ int artRead(const char* path, unsigned char* data)
         return -3;
     }
 
+    int totalAllocSize = artGetDataSize(art);
+    int fileSize = fileGetSize(stream);
+    if (totalAllocSize < 0) {
+        debugPrint("ART ERROR: artRead computed negative totalAllocSize %d for %s\n", totalAllocSize, path);
+    } else if (totalAllocSize > 0x400000) {
+        debugPrint("ART INFO: artRead totalAllocSize %d for %s\n", totalAllocSize, path);
+    }
+    if (fileSize >= 0) {
+        debugPrint("ART READ: %s header dataSize=%d totalAlloc=%d fileSize=%d frames=%d\n", path, art->dataSize, totalAllocSize, fileSize, art->frameCount);
+        if (totalAllocSize > fileSize * 3) {
+            debugPrint("ART WARNING: totalAllocSize (%d) > fileSize*3 (%d) for %s\n", totalAllocSize, fileSize * 3, path);
+        }
+    }
+
     int currentPadding = paddingForSize(sizeof(Art));
     int previousPadding = 0;
 
@@ -1427,7 +1481,17 @@ int artRead(const char* path, unsigned char* data)
         if (index == 0 || art->dataOffsets[index - 1] != art->dataOffsets[index]) {
             art->padding[index] += previousPadding;
             currentPadding += previousPadding;
-            if (artReadFrameData(data + sizeof(Art) + art->dataOffsets[index] + art->padding[index], stream, art->frameCount, &previousPadding) != 0) {
+            unsigned char* frameDataPtr = data + sizeof(Art) + art->dataOffsets[index] + art->padding[index];
+            size_t frameDataBufferSize = static_cast<size_t>((data + totalAllocSize) - frameDataPtr);
+            if (frameDataBufferSize > static_cast<size_t>(INT_MAX)) {
+                frameDataBufferSize = static_cast<size_t>(INT_MAX);
+            }
+            if (frameDataPtr < data || frameDataPtr >= data + totalAllocSize) {
+                debugPrint("ART ERROR: invalid frame data destination for %s at rotation %d: ptr=%p base=%p size=%d\n", path, index, frameDataPtr, data, totalAllocSize);
+                fileClose(stream);
+                return -5;
+            }
+            if (artReadFrameData(frameDataPtr, stream, art->frameCount, &previousPadding) != 0) {
                 fileClose(stream);
                 return -5;
             }
