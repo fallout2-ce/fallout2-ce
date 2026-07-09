@@ -1446,6 +1446,23 @@ int artRead(const char* path, unsigned char* data)
         return -3;
     }
 
+    int totalAllocSize = artGetDataSize(art);
+    int fileSize = fileGetSize(stream);
+    if (totalAllocSize <= 0) {
+        debugPrint("ART ERROR: artRead computed invalid totalAllocSize %d for %s\n", totalAllocSize, path);
+        fileClose(stream);
+        return -5;
+    } else if (totalAllocSize > 0x400000) {
+        debugPrint("ART INFO: artRead totalAllocSize %d for %s\n", totalAllocSize, path);
+    }
+    if (fileSize >= 0) {
+        debugPrint("ART READ: %s header dataSize=%d totalAlloc=%d fileSize=%d frames=%d\n", path, art->dataSize, totalAllocSize, fileSize, art->frameCount);
+        long long fileSizeLimit = static_cast<long long>(fileSize) * 3;
+        if (static_cast<long long>(totalAllocSize) > fileSizeLimit) {
+            debugPrint("ART WARNING: totalAllocSize (%d) > fileSize*3 (%lld) for %s\n", totalAllocSize, fileSizeLimit, path);
+        }
+    }
+
     int currentPadding = paddingForSize(sizeof(Art));
     int previousPadding = 0;
 
