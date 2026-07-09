@@ -307,11 +307,12 @@ bool heapBlockAllocate(Heap* heap, int* handleIndexPtr, int size, int disallowSy
     int blockSize;
     HeapHandle* handle;
 
-    size += 4 - size % 4;
-
     if (heap == nullptr || handleIndexPtr == nullptr || size == 0) {
         goto err;
     }
+
+    // Keep subsequent block headers aligned when callers request odd-sized payloads.
+    size = (size + 3) & ~3;
 
     if (disallowSystemAllocation != 0 && disallowSystemAllocation != 1) {
         disallowSystemAllocation = 0;
@@ -429,7 +430,17 @@ bool heapBlockDeallocate(Heap* heap, int* handleIndexPtr)
 
     int handleIndex = *handleIndexPtr;
 
+    if (heap->handles == nullptr || handleIndex < 0 || handleIndex >= heap->handlesLength) {
+        debugPrint("Heap Error: Invalid handle during deallocate.\n");
+        debugPrint("Heap Error: Could not deallocate block.\n");
+        return false;
+    }
+
     HeapHandle* handle = &(heap->handles[handleIndex]);
+    if (handle->data == nullptr) {
+        debugPrint("Heap Error: Null handle data detected during deallocate.\n");
+        return false;
+    }
 
     HeapBlockHeader* blockHeader = (HeapBlockHeader*)handle->data;
     if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
@@ -493,12 +504,22 @@ bool heapBlockDeallocate(Heap* heap, int* handleIndexPtr)
 // 0x452DE0 heap_lock
 bool heapLock(Heap* heap, int handleIndex, unsigned char** bufferPtr)
 {
-    if (heap == nullptr) {
+    if (heap == nullptr || bufferPtr == nullptr) {
         debugPrint("Heap Error: Could not lock block");
         return false;
     }
 
+    if (heap->handles == nullptr || handleIndex < 0 || handleIndex >= heap->handlesLength) {
+        debugPrint("Heap Error: Invalid handle during lock.\n");
+        debugPrint("Heap Error: Could not lock block.\n");
+        return false;
+    }
+
     HeapHandle* handle = &(heap->handles[handleIndex]);
+    if (handle->data == nullptr) {
+        debugPrint("Heap Error: Null handle data detected during lock.\n");
+        return false;
+    }
 
     HeapBlockHeader* blockHeader = (HeapBlockHeader*)handle->data;
     if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
@@ -559,7 +580,17 @@ bool heapUnlock(Heap* heap, int handleIndex)
         return false;
     }
 
+    if (heap->handles == nullptr || handleIndex < 0 || handleIndex >= heap->handlesLength) {
+        debugPrint("Heap Error: Invalid handle during unlock.\n");
+        debugPrint("Heap Error: Could not unlock block.\n");
+        return false;
+    }
+
     HeapHandle* handle = &(heap->handles[handleIndex]);
+    if (handle->data == nullptr) {
+        debugPrint("Heap Error: Null handle data detected during unlock.\n");
+        return false;
+    }
 
     HeapBlockHeader* blockHeader = (HeapBlockHeader*)handle->data;
     if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
@@ -984,6 +1015,11 @@ static int heapMoveableExtentsCompareBySize(const void* leftPtr, const void* rig
 // 0x453BC4 heap_build_free_list
 static bool heapBuildFreeBlocksList(Heap* heap)
 {
+    if (heap == nullptr || heap->data == nullptr) {
+        debugPrint("Heap Error: Invalid heap during build free list.\n");
+        return false;
+    }
+
     if (heap->freeBlocks == 0) {
         return false;
     }
@@ -1053,6 +1089,11 @@ static int heapBlockCompareBySize(const void* leftPtr, const void* rightPtr)
 // 0x453CD0 heap_build_moveable_list
 static bool heapBuildMoveableExtentsList(Heap* heap, int* moveableExtentsLengthPtr, int* maxBlocksLengthPtr)
 {
+    if (heap == nullptr || heap->data == nullptr || moveableExtentsLengthPtr == nullptr || maxBlocksLengthPtr == nullptr) {
+        debugPrint("Heap Error: Invalid heap state during build moveable list.\n");
+        return false;
+    }
+
     // Calculate max number of extents. It's only possible when every
     // free or moveable block is followed by locked block.
     int maxExtentsCount = heap->moveableBlocks + heap->freeBlocks;
