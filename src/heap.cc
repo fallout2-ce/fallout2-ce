@@ -1037,6 +1037,7 @@ static bool heapBuildFreeBlocksList(Heap* heap)
     int blocksLength = heap->moveableBlocks + heap->freeBlocks + heap->lockedBlocks;
 
     unsigned char* ptr = heap->data;
+    unsigned char* heapEnd = heap->data + heap->size;
 
     int freeBlockIndex = 0;
     while (blocksLength != 0) {
@@ -1044,12 +1045,33 @@ static bool heapBuildFreeBlocksList(Heap* heap)
             break;
         }
 
+        if (ptr == nullptr || ptr + sizeof(HeapBlockHeader) > heapEnd) {
+            debugPrint("Heap ERROR: invalid heap block pointer during free list build: ptr=%p heapEnd=%p blocksLength=%d freeBlocks=%d moveableBlocks=%d lockedBlocks=%d\n", ptr, heapEnd, blocksLength, heap->freeBlocks, heap->moveableBlocks, heap->lockedBlocks);
+        }
+
         HeapBlockHeader* blockHeader = (HeapBlockHeader*)ptr;
+        if (blockHeader->size < 0 || ptr + blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE > heapEnd) {
+            debugPrint("Heap ERROR: invalid block size during free list build: ptr=%p size=%d heapEnd=%p\n", ptr, blockHeader->size, heapEnd);
+        }
+        if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
+            debugPrint("Heap ERROR: bad block header guard during free list build: ptr=%p guard=%08X\n", ptr, blockHeader->guard);
+        }
+
         if (blockHeader->state == HEAP_BLOCK_STATE_FREE) {
             // Join consecutive free blocks if any.
             while (blocksLength > 1) {
                 // Grab next block and check if's a free block.
-                HeapBlockHeader* nextBlockHeader = (HeapBlockHeader*)(ptr + blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE);
+                unsigned char* nextBlockPtr = ptr + blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
+                if (nextBlockPtr + sizeof(HeapBlockHeader) > heapEnd) {
+                    debugPrint("Heap ERROR: next block pointer out of range during free list join: nextPtr=%p heapEnd=%p\n", nextBlockPtr, heapEnd);
+                }
+                HeapBlockHeader* nextBlockHeader = (HeapBlockHeader*)nextBlockPtr;
+                if (nextBlockHeader->size < 0 || nextBlockPtr + nextBlockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE > heapEnd) {
+                    debugPrint("Heap ERROR: invalid next block size during free list join: nextPtr=%p size=%d heapEnd=%p\n", nextBlockPtr, nextBlockHeader->size, heapEnd);
+                }
+                if (nextBlockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
+                    debugPrint("Heap ERROR: bad next block header guard during free list join: nextPtr=%p guard=%08X\n", nextBlockPtr, nextBlockHeader->guard);
+                }
                 if (nextBlockHeader->state != HEAP_BLOCK_STATE_FREE) {
                     break;
                 }
