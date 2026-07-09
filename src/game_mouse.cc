@@ -1883,7 +1883,7 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
     unsigned char* dest = menuItemFrmDest;
     for (int index = 0; index < menuItemsLength; index++) {
         unsigned char* data = artGetFrameData(menuItemFrms[index], 0, 0);
-        blitBufferToBuffer(data, menuItemWidth, menuItemHeight, menuItemWidth, dest, gGameMouseActionPickFrmWidth);
+        blitBufferToBuffer(data, menuItemWidth, menuItemHeight, menuItemWidth, dest, gGameMouseActionMenuFrmWidth);
         dest += gGameMouseActionMenuFrmWidth * menuItemHeight;
     }
 
