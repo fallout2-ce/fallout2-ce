@@ -1,6 +1,7 @@
 #include "object.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
@@ -4726,6 +4727,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
 
     rectIntersection(&v32, &gObjectsWindowRect, &v32);
 
+    Rect unclippedObjectRect = objectRect;
+
     if (rectIntersection(&objectRect, &v32, &objectRect) == 0) {
         v49.left += objectRect.left - object->sx;
         v49.top += objectRect.top - object->sy;
@@ -4736,6 +4739,55 @@ static void objectDrawOutline(Object* object, Rect* rect)
 
         unsigned char* dest = gObjectsWindowBuffer + gObjectsWindowPitch * object->sy + object->sx;
         int destStep = gObjectsWindowPitch - frameWidth;
+        uintptr_t objectsWindowBufferStart = (uintptr_t)gObjectsWindowBuffer;
+        uintptr_t objectsWindowBufferEnd = objectsWindowBufferStart + gObjectsWindowBufferSize;
+        static int outlineBoundsLogCount = 0;
+        bool outlineBoundsLogged = false;
+        auto canWriteOutlinePixel = [&](unsigned char* ptr, const char* operation, int x, int y) {
+            uintptr_t address = (uintptr_t)ptr;
+            if (address >= objectsWindowBufferStart && address < objectsWindowBufferEnd) {
+                return true;
+            }
+
+            if (!outlineBoundsLogged && outlineBoundsLogCount < 20) {
+                debugPrint("Object outline write out of bounds: op=%s ptr=%p offset=%lld buffer=%p size=%d pitch=%d object=%p pid=%d fid=%d tile=%d sx=%d sy=%d frame=%d rotation=%d frameSize=%dx%d outline=0x%X objectRect=[%d,%d,%d,%d] clippedRect=[%d,%d,%d,%d] sourceRect=[%d,%d,%d,%d] sourceXY=%d,%d.\n",
+                    operation,
+                    (void*)ptr,
+                    (long long)((intptr_t)address - (intptr_t)objectsWindowBufferStart),
+                    (void*)gObjectsWindowBuffer,
+                    gObjectsWindowBufferSize,
+                    gObjectsWindowPitch,
+                    (void*)object,
+                    object->pid,
+                    object->fid,
+                    object->tile,
+                    object->sx,
+                    object->sy,
+                    object->frame,
+                    object->rotation,
+                    frameWidth,
+                    frameHeight,
+                    object->outline,
+                    unclippedObjectRect.left,
+                    unclippedObjectRect.top,
+                    unclippedObjectRect.right,
+                    unclippedObjectRect.bottom,
+                    objectRect.left,
+                    objectRect.top,
+                    objectRect.right,
+                    objectRect.bottom,
+                    v49.left,
+                    v49.top,
+                    v49.right,
+                    v49.bottom,
+                    x,
+                    y);
+                outlineBoundsLogged = true;
+                outlineBoundsLogCount++;
+            }
+
+            return false;
+        };
 
         unsigned char color;
         unsigned char* v47 = nullptr;
@@ -4815,24 +4867,29 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 v22 = dest14 - gObjectsWindowBuffer;
                 if (*src15 != 0 && cycle) {
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom && v22 > 0 && v22 % gObjectsWindowPitch != 0) {
-                        unsigned char v20;
-                        if (v53 != 0) {
-                            v20 = v48[(v47[v54] << 8) + *(dest14 - 1)];
-                        } else {
-                            v20 = v54;
+                        unsigned char* target = dest14 - 1;
+                        if (canWriteOutlinePixel(target, "horizontal-before", x, y)) {
+                            unsigned char v20;
+                            if (v53 != 0) {
+                                v20 = v48[(v47[v54] << 8) + *target];
+                            } else {
+                                v20 = v54;
+                            }
+                            *target = v20;
                         }
-                        *(dest14 - 1) = v20;
                     }
                     cycle = false;
                 } else if (*src15 == 0 && !cycle) {
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        int v21;
-                        if (v53 != 0) {
-                            v21 = v48[(v47[v54] << 8) + *dest14];
-                        } else {
-                            v21 = v54;
+                        if (canWriteOutlinePixel(dest14, "horizontal-after", x, y)) {
+                            int v21;
+                            if (v53 != 0) {
+                                v21 = v48[(v47[v54] << 8) + *dest14];
+                            } else {
+                                v21 = v54;
+                            }
+                            *dest14 = v21 & 0xFF;
                         }
-                        *dest14 = v21 & 0xFF;
                     }
                     cycle = true;
                 }
@@ -4844,10 +4901,12 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 if (v22 < gObjectsWindowBufferSize) {
                     int v23 = frameWidth - 1;
                     if (v23 >= v49.left && v23 <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        if (v53 != 0) {
-                            *dest14 = v48[(v47[v54] << 8) + *dest14];
-                        } else {
-                            *dest14 = v54;
+                        if (canWriteOutlinePixel(dest14, "horizontal-end", v23, y)) {
+                            if (v53 != 0) {
+                                *dest14 = v48[(v47[v54] << 8) + *dest14];
+                            } else {
+                                *dest14 = v54;
+                            }
                         }
                     }
                 }
@@ -4875,7 +4934,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 if (*src27 != 0 && cycle) {
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
                         unsigned char* v29 = dest27 - gObjectsWindowPitch;
-                        if (v29 >= gObjectsWindowBuffer) {
+                        if (canWriteOutlinePixel(v29, "vertical-before", x, y - 1)) {
                             if (v53) {
                                 *v29 = v48[(v47[v28] << 8) + *v29];
                             } else {
@@ -4886,10 +4945,12 @@ static void objectDrawOutline(Object* object, Rect* rect)
                     cycle = false;
                 } else if (*src27 == 0 && !cycle) {
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        if (v53) {
-                            *dest27 = v48[(v47[v28] << 8) + *dest27];
-                        } else {
-                            *dest27 = v28;
+                        if (canWriteOutlinePixel(dest27, "vertical-after", x, y)) {
+                            if (v53) {
+                                *dest27 = v48[(v47[v28] << 8) + *dest27];
+                            } else {
+                                *dest27 = v28;
+                            }
                         }
                     }
                     cycle = true;
@@ -4903,10 +4964,12 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 if (dest27 - gObjectsWindowBuffer < gObjectsWindowBufferSize) {
                     int y = frameHeight - 1;
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        if (v53) {
-                            *dest27 = v48[(v47[v28] << 8) + *dest27];
-                        } else {
-                            *dest27 = v28;
+                        if (canWriteOutlinePixel(dest27, "vertical-end", x, y)) {
+                            if (v53) {
+                                *dest27 = v48[(v47[v28] << 8) + *dest27];
+                            } else {
+                                *dest27 = v28;
+                            }
                         }
                     }
                 }
