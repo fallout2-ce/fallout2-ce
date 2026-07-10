@@ -1311,7 +1311,7 @@ static bool tryUnequipPartyItem(InvenSlot slot)
 
 static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
 {
-    if (!hasPartySlots() || item == nullptr) {
+    if (!hasPartySlots() || !partySlotFrmImage.isLocked() || item == nullptr) {
         return false;
     }
 
