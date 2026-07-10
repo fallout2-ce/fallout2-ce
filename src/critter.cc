@@ -8,6 +8,7 @@
 #include "art.h"
 #include "character_editor.h"
 #include "combat.h"
+#include "combat_defs.h"
 #include "debug.h"
 #include "display_monitor.h"
 #include "endgame.h"
@@ -1021,6 +1022,30 @@ int critterGetBodyType(Object* critter)
     Proto* proto;
     protoGetProto(critter->pid, &proto);
     return proto->critter.data.bodyType;
+}
+
+bool critterCanUseWeapon(Object* critter, Object* weapon, int hitMode)
+{
+    if (critter == nullptr || weapon == nullptr || itemGetType(weapon) != ITEM_TYPE_WEAPON) {
+        return false;
+    }
+
+    int damageFlags = critter->data.critter.combat.results;
+    if ((damageFlags & DAM_CRIP_ARM_ANY) == DAM_CRIP_ARM_ANY) {
+        // both limbs are crippled
+        return false;
+    }
+
+    if ((damageFlags & DAM_CRIP_ARM_ANY) != 0 && weaponIsTwoHanded(weapon)) {
+        return false;
+    }
+
+    // verify art exists
+    int rotation = critter->rotation + 1;
+    int animationCode = weaponGetAnimationCode(weapon);
+    int weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
+    int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);
+    return artExists(fid);
 }
 
 int critterBuildGorisFid(Object* critter, int frmId)

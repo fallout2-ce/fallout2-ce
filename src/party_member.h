@@ -29,6 +29,7 @@ int _partyMemberRestingHeal(int hours);
 Object* partyMemberFindByPid(int pid);
 bool _isPotentialPartyMember(Object* object);
 bool objectIsPartyMember(Object* object);
+bool partyMemberPidCanEquipArmor(int pid);
 int _getPartyMemberCount();
 int _partyMemberPrepItemSaveAll();
 int partyMemberGetBestSkill(Object* object);

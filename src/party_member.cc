@@ -894,6 +894,16 @@ bool objectIsPartyMember(Object* object)
     return isPartyMember;
 }
 
+bool partyMemberPidCanEquipArmor(int pid)
+{
+    Proto* proto;
+    if (protoGetProto(pid, &proto) == -1) {
+        return false;
+    }
+
+    return proto->critter.data.bodyType == BODY_TYPE_BIPED && pid != PROTO_ID_MARCUS;
+}
+
 // Returns number of active critters in the party.
 //
 // 0x495010 getPartyMemberCount
