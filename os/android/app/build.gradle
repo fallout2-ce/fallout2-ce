@@ -89,6 +89,7 @@ def assertSdlJavaBindingsMatch = { String variantName ->
 
 android {
     compileSdk 32
+    ndkVersion "27.3.13750724"
 
     defaultConfig {
         applicationId 'com.alexbatalov.fallout2ce'
