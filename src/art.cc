@@ -1036,6 +1036,9 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             Art art;
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
+                if (*sizePtr < 0) {
+                    debugPrint("ART ERROR: fid %d returned negative data size %d\n", fid, *sizePtr);
+                }
                 result = 0;
             }
             fileClose(stream);
@@ -1068,6 +1071,9 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
 
         if (loaded) {
             *sizePtr = artGetDataSize((Art*)data);
+            if (*sizePtr < 0) {
+                debugPrint("ART ERROR: fid %d read data returned negative size %d\n", fid, *sizePtr);
+            }
             result = 0;
         }
     }
@@ -1154,6 +1160,20 @@ static int artReadHeader(Art* art, File* stream)
     // CE: Fix malformed `frm` files with `dataSize` set to 0 in Nevada.
     if (art->dataSize == 0) {
         art->dataSize = fileGetSize(stream);
+    }
+
+    if (art->frameCount < 0) {
+        debugPrint("ART WARNING: negative frameCount %d in header\n", art->frameCount);
+    }
+
+    if (art->dataSize < 0) {
+        debugPrint("ART WARNING: negative dataSize %d in header\n", art->dataSize);
+    }
+
+    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        if (art->dataOffsets[rotation] < 0) {
+            debugPrint("ART WARNING: negative dataOffset[%d] %d in header\n", rotation, art->dataOffsets[rotation]);
+        }
     }
 
     return 0;
@@ -1447,20 +1467,10 @@ int artRead(const char* path, unsigned char* data)
     }
 
     int totalAllocSize = artGetDataSize(art);
-    int fileSize = fileGetSize(stream);
     if (totalAllocSize <= 0) {
         debugPrint("ART ERROR: artRead computed invalid totalAllocSize %d for %s\n", totalAllocSize, path);
         fileClose(stream);
         return -5;
-    } else if (totalAllocSize > 0x400000) {
-        debugPrint("ART INFO: artRead totalAllocSize %d for %s\n", totalAllocSize, path);
-    }
-    if (fileSize >= 0) {
-        debugPrint("ART READ: %s header dataSize=%d totalAlloc=%d fileSize=%d frames=%d\n", path, art->dataSize, totalAllocSize, fileSize, art->frameCount);
-        long long fileSizeLimit = static_cast<long long>(fileSize) * 3;
-        if (static_cast<long long>(totalAllocSize) > fileSizeLimit) {
-            debugPrint("ART WARNING: totalAllocSize (%d) > fileSize*3 (%lld) for %s\n", totalAllocSize, fileSizeLimit, path);
-        }
     }
 
     int currentPadding = paddingForSize(sizeof(Art));
