@@ -47,6 +47,7 @@ static int artReadFrameData(unsigned char* data, File* stream, int count, int* p
 static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
+static char artGetCritterWeaponCode(int weaponType);
 
 // A frame is laid out like [ArtFrame header][pixel bytes][padding].
 // These functions return a pointer to the pixel bytes, but must be given a pointer to a frame header,
@@ -583,7 +584,7 @@ int _art_get_code(int animation, int weaponType, char* weaponCodePtr, char* anim
             return -1;
         }
 
-        *weaponCodePtr = 'd' + (weaponType - 1);
+        *weaponCodePtr = artGetCritterWeaponCode(weaponType);
         return 0;
     } else if (animation == ANIM_PRONE_TO_STANDING) {
         *animationCodePtr = 'h';
@@ -625,7 +626,7 @@ int _art_get_code(int animation, int weaponType, char* weaponCodePtr, char* anim
             *weaponCodePtr = 'a';
             *animationCodePtr = 'n';
         } else {
-            *weaponCodePtr = 'd' + (weaponType - 1);
+            *weaponCodePtr = artGetCritterWeaponCode(weaponType);
             *animationCodePtr = 'e';
         }
         return 0;
@@ -633,12 +634,30 @@ int _art_get_code(int animation, int weaponType, char* weaponCodePtr, char* anim
 
     *animationCodePtr = 'a' + animation;
     if (animation <= ANIM_WALK && weaponType > 0) {
-        *weaponCodePtr = 'd' + (weaponType - 1);
+        *weaponCodePtr = artGetCritterWeaponCode(weaponType);
         return 0;
     }
     *weaponCodePtr = 'a';
 
     return 0;
+}
+
+static char artGetCritterWeaponCode(int weaponType)
+{
+    switch (weaponType) {
+    case WEAPON_ANIMATION_SFALL_S:
+        return 's';
+    case WEAPON_ANIMATION_SFALL_O:
+        return 'o';
+    case WEAPON_ANIMATION_SFALL_P:
+        return 'p';
+    case WEAPON_ANIMATION_SFALL_Q:
+        return 'q';
+    case WEAPON_ANIMATION_SFALL_T:
+        return 't';
+    default:
+        return 'd' + (weaponType - 1);
+    }
 }
 
 // 0x419428
@@ -957,9 +976,11 @@ int artAliasFid(int fid)
     int anim = FID_ANIM_TYPE(fid);
     if (type == OBJ_TYPE_CRITTER) {
         if (anim == ANIM_ELECTRIFY
+            || anim == ANIM_CHARRED_BODY
             || anim == ANIM_BURNED_TO_NOTHING
             || anim == ANIM_ELECTRIFIED_TO_NOTHING
             || anim == ANIM_ELECTRIFY_SF
+            || anim == ANIM_CHARRED_BODY_SF
             || anim == ANIM_BURNED_TO_NOTHING_SF
             || anim == ANIM_ELECTRIFIED_TO_NOTHING_SF
             || anim == ANIM_FIRE_DANCE
