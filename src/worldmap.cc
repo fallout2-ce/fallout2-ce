@@ -1230,7 +1230,7 @@ int wmWorldMap_load(File* stream)
             EntranceInfo* entrance = nullptr;
             EntranceInfo dummyEntrance = {};
 
-            if (areaIdx < wmMaxAreaNum) {
+            if (areaIdx < wmMaxAreaNum && entranceIdx < ENTRANCE_LIST_CAPACITY) {
                 entrance = &(city->entrances[entranceIdx]);
             } else {
                 entrance = &dummyEntrance;
