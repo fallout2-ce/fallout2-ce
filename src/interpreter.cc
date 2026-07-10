@@ -2806,9 +2806,11 @@ void programExecuteProcedureAsync(Program* program, int procedureIndex)
             if (externalProcedureArgumentCount == 0) {
             } else {
                 _interpretOutput("External procedure cannot take arguments in interrupt context");
+                return;
             }
         } else {
             _interpretOutput("External procedure %s not found\n", procedureIdentifier);
+            return;
         }
 
         // NOTE: Uninline.
