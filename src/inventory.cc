@@ -1081,19 +1081,6 @@ static Object** getPartySlotItemPtr(InvenSlot slot)
     }
 }
 
-static Object* getCritterItemInSlot(Object* critter, InvenSlot slot)
-{
-    switch (slot) {
-    case InvenSlot::RightHand:
-        return critterGetItem2(critter);
-    case InvenSlot::Armor:
-        return critterGetArmor(critter);
-    default:
-        assert(false);
-        return nullptr;
-    }
-}
-
 static Object* getPartySlotItem(InvenSlot slot)
 {
     Object** itemSlot = getPartySlotItemPtr(slot);
@@ -1121,38 +1108,6 @@ static Rect getPartySlotRect(InvenSlot slot)
     rect.bottom = rect.top + kPartySlotHeight - 1;
     rect.right = rect.left + kPartySlotWidth - 1;
     return rect;
-}
-
-static void restoreUnexpectedEquippedItem(Object* critter, Object* item, const CritterEquipped& expected)
-{
-    if (item == nullptr || expected.leftHand == item || expected.rightHand == item || expected.armor == item) {
-        return;
-    }
-
-    item->flags &= ~OBJECT_EQUIPPED;
-    itemAdd(critter, item, 1);
-}
-
-static void restoreExpectedEquippedState(const CritterEquipped& expected, int expectedFid)
-{
-    Object* actualArmor = critterGetArmor(partyBaseTarget);
-    CritterEquipped actual = critterStripEquipped(partyBaseTarget);
-    restoreUnexpectedEquippedItem(partyBaseTarget, actual.leftHand, expected);
-    if (actual.rightHand != actual.leftHand) {
-        restoreUnexpectedEquippedItem(partyBaseTarget, actual.rightHand, expected);
-    }
-    restoreUnexpectedEquippedItem(partyBaseTarget, actual.armor, expected);
-
-    if (actualArmor != expected.armor) {
-        adjustCritterStatsOnArmorChange(partyBaseTarget, actualArmor, expected.armor);
-    }
-
-    CritterEquipped restored = expected;
-    critterRestoreEquipped(partyBaseTarget, restored);
-
-    if (partyBaseTarget->fid != expectedFid) {
-        objectSetFid(partyBaseTarget, expectedFid, nullptr);
-    }
 }
 
 static void renderPartySlots()
@@ -1388,31 +1343,22 @@ static bool tryEquipPartyItem(Object* item, bool fromLeftPane)
         return false;
     }
 
-    CritterEquipped previousEquipped = *partyTargetEquipped;
-    int previousFid = partyBaseTarget->fid;
     critterRestoreEquipped(partyBaseTarget, *partyTargetEquipped);
 
-    // direct equip from left pane (pc inventory) -> move to target
+    // move from player -> party member
     if (fromLeftPane && itemMove(_inven_dude, partyBaseTarget, item, 1) != 0) {
-        restoreExpectedEquippedState(previousEquipped, previousFid);
         refreshPartyEquippedAfterAction();
         return false;
     }
 
     // equip from target's inventory
     int rc = inventoryEquipFunc(partyBaseTarget, item, HAND_RIGHT, false);
-    bool exactItemEquipped = rc == 0 && getCritterItemInSlot(partyBaseTarget, partySlot) == item;
-
-    if (rc != 0 || !exactItemEquipped) {
-        // hook canceled the equip
-        restoreExpectedEquippedState(previousEquipped, previousFid);
-        if (fromLeftPane) {
-            itemMove(partyBaseTarget, _inven_dude, item, 1);
-        }
+    if (rc != 0 && fromLeftPane) {
+        itemMove(partyBaseTarget, _inven_dude, item, 1);
     }
 
     refreshPartyEquippedAfterAction();
-    return rc == 0 && exactItemEquipped;
+    return rc == 0;
 }
 
 static bool tryMovePartyItemToLeftPane(InvenSlot slot, Object* item)
