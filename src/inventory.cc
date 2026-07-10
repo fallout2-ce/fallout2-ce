@@ -1119,21 +1119,6 @@ static void renderPartySlots()
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
     int pitch = inventoryLootLayout.windowWidth;
 
-    unsigned char* backgroundData = inventoryLootFrmImage.getData();
-    int backgroundWidth = inventoryLootFrmImage.getWidth();
-    if (backgroundData != nullptr) {
-        int clearX = inventoryLootLayout.partySlotX;
-        int clearY = inventoryLootLayout.partyArmorSlotY;
-        int clearWidth = kPartySlotWidth;
-        int clearHeight = kPartySlotImageHeight;
-        blitBufferToBuffer(backgroundData + backgroundWidth * clearY + clearX,
-            clearWidth,
-            clearHeight,
-            backgroundWidth,
-            windowBuffer + pitch * clearY + clearX,
-            pitch);
-    }
-
     Rect armorRect = getPartySlotRect(InvenSlot::Armor);
     Rect weaponRect = getPartySlotRect(InvenSlot::RightHand);
     blitBufferToBuffer(partySlotFrmImage.getData(),
