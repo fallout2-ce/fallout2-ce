@@ -17,12 +17,56 @@
 #include <string.h>
 #include <string>
 #include <sys/stat.h>
+#include <vector>
 
 std::map<fallout::opcode_t, std::set<std::string>> unknown_opcodes;
 std::map<std::string, std::set<std::string>> sus_strings;
 std::map<int, std::set<std::string>> unknown_hooks;
+std::map<fallout::opcode_t, std::map<std::string, std::set<std::string>>> offset_requests;
 
 int checked_files = 0;
+
+// right now registered hooks aren't all implemented, so this is a shortcut to list
+// hooks that are implemented
+bool is_implemented_hook(int hookId)
+{
+    switch (hookId) {
+    case 0: // HOOK_TOHIT
+    case 1: // HOOK_AFTERHITROLL
+    case 2: // HOOK_CALCAPCOST
+    case 4: // HOOK_DEATHANIM2
+    case 5: // HOOK_COMBATDAMAGE
+    case 6: // HOOK_ONDEATH
+    case 8: // HOOK_USEOBJON
+    case 9: // HOOK_REMOVEINVENOBJ
+    case 10: // HOOK_BARTERPRICE
+    case 11: // HOOK_MOVECOST
+    case 16: // HOOK_ITEMDAMAGE
+    case 17: // HOOK_AMMOCOST
+    case 18: // HOOK_USEOBJ
+    case 19: // HOOK_KEYPRESS
+    case 20: // HOOK_MOUSECLICK
+    case 21: // HOOK_USESKILL
+    case 22: // HOOK_STEAL
+    case 23: // HOOK_WITHINPERCEPTION
+    case 24: // HOOK_INVENTORYMOVE
+    case 25: // HOOK_INVENWIELD
+    case 26: // HOOK_ADJUSTFID
+    case 27: // HOOK_COMBATTURN
+    case 30: // HOOK_RESTTIMER
+    case 31: // HOOK_GAMEMODECHANGE
+    case 33: // HOOK_EXPLOSIVETIMER
+    case 34: // HOOK_DESCRIPTIONOBJ
+    case 35: // HOOK_USESKILLON
+    case 40: // HOOK_STDPROCEDURE
+    case 41: // HOOK_STDPROCEDURE_END
+    case 43: // HOOK_ENCOUNTER
+    case 48: // HOOK_CANUSEWEAPON
+        return true;
+    default:
+        return false;
+    }
+}
 
 std::string get_hook_name(int hookId)
 {
@@ -99,6 +143,343 @@ std::string get_hook_name(int hookId)
     return std::string(hook_names[hookId]);
 }
 
+int get_offset_request_argument_count(unsigned int opcodeIndex)
+{
+    switch (opcodeIndex) {
+    case 0x156: // read_byte
+    case 0x157: // read_short
+    case 0x158: // read_int
+    case 0x159: // read_string
+    case 0x1d2: // call_offset_v0
+        return 1;
+    case 0x1cf: // write_byte
+    case 0x1d0: // write_short
+    case 0x1d1: // write_int
+    case 0x1d3: // call_offset_v1
+    case 0x21b: // write_string
+        return 2;
+    case 0x1d4: // call_offset_v2
+        return 3;
+    case 0x1d5: // call_offset_v3
+        return 4;
+    case 0x1d6: // call_offset_v4
+        return 5;
+    case 0x1d7: // call_offset_r0
+        return 1;
+    case 0x1d8: // call_offset_r1
+        return 2;
+    case 0x1d9: // call_offset_r2
+        return 3;
+    case 0x1da: // call_offset_r3
+        return 4;
+    case 0x1db: // call_offset_r4
+        return 5;
+    default:
+        return 0;
+    }
+}
+
+bool offset_request_returns_value(unsigned int opcodeIndex)
+{
+    switch (opcodeIndex) {
+    case 0x156: // read_byte
+    case 0x157: // read_short
+    case 0x158: // read_int
+    case 0x159: // read_string
+    case 0x1d7: // call_offset_r0
+    case 0x1d8: // call_offset_r1
+    case 0x1d9: // call_offset_r2
+    case 0x1da: // call_offset_r3
+    case 0x1db: // call_offset_r4
+        return true;
+    default:
+        return false;
+    }
+}
+
+std::string offset_request_value_to_string(int value)
+{
+    return toHexString(static_cast<unsigned int>(value)) + " (" + std::to_string(value) + ")";
+}
+
+struct ScannedStackValue {
+    bool isKnownInt = false;
+    int value = 0;
+};
+
+ScannedStackValue unknownStackValue()
+{
+    return ScannedStackValue {};
+}
+
+ScannedStackValue knownIntStackValue(int value)
+{
+    ScannedStackValue stackValue;
+    stackValue.isKnownInt = true;
+    stackValue.value = value;
+    return stackValue;
+}
+
+void pop_scanned_stack_values(std::vector<ScannedStackValue>& stack, int count)
+{
+    if (count <= 0) {
+        return;
+    }
+
+    if (stack.size() < static_cast<size_t>(count)) {
+        stack.clear();
+        return;
+    }
+
+    stack.resize(stack.size() - static_cast<size_t>(count));
+}
+
+void push_unknown_stack_value(std::vector<ScannedStackValue>& stack)
+{
+    stack.push_back(unknownStackValue());
+}
+
+void simulate_unary_stack_operation(std::vector<ScannedStackValue>& stack, ScannedStackValue (*op)(ScannedStackValue))
+{
+    if (stack.empty()) {
+        push_unknown_stack_value(stack);
+        return;
+    }
+
+    auto value = stack.back();
+    stack.pop_back();
+    stack.push_back(op(value));
+}
+
+void simulate_binary_stack_operation(std::vector<ScannedStackValue>& stack, ScannedStackValue (*op)(ScannedStackValue, ScannedStackValue))
+{
+    if (stack.size() < 2) {
+        stack.clear();
+        push_unknown_stack_value(stack);
+        return;
+    }
+
+    const auto right = stack.back();
+    stack.pop_back();
+    const auto left = stack.back();
+    stack.pop_back();
+    stack.push_back(op(left, right));
+}
+
+ScannedStackValue stack_add(ScannedStackValue left, ScannedStackValue right)
+{
+    if (left.isKnownInt && right.isKnownInt) {
+        return knownIntStackValue(left.value + right.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_subtract(ScannedStackValue left, ScannedStackValue right)
+{
+    if (left.isKnownInt && right.isKnownInt) {
+        return knownIntStackValue(left.value - right.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_multiply(ScannedStackValue left, ScannedStackValue right)
+{
+    if (left.isKnownInt && right.isKnownInt) {
+        return knownIntStackValue(left.value * right.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_divide(ScannedStackValue left, ScannedStackValue right)
+{
+    if (left.isKnownInt && right.isKnownInt && right.value != 0) {
+        return knownIntStackValue(left.value / right.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_modulo(ScannedStackValue left, ScannedStackValue right)
+{
+    if (left.isKnownInt && right.isKnownInt && right.value != 0) {
+        return knownIntStackValue(left.value % right.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_bitwise_and(ScannedStackValue left, ScannedStackValue right)
+{
+    if (left.isKnownInt && right.isKnownInt) {
+        return knownIntStackValue(left.value & right.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_bitwise_or(ScannedStackValue left, ScannedStackValue right)
+{
+    if (left.isKnownInt && right.isKnownInt) {
+        return knownIntStackValue(left.value | right.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_bitwise_xor(ScannedStackValue left, ScannedStackValue right)
+{
+    if (left.isKnownInt && right.isKnownInt) {
+        return knownIntStackValue(left.value ^ right.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_negate(ScannedStackValue value)
+{
+    if (value.isKnownInt) {
+        return knownIntStackValue(-value.value);
+    }
+    return unknownStackValue();
+}
+
+ScannedStackValue stack_bitwise_not(ScannedStackValue value)
+{
+    if (value.isKnownInt) {
+        return knownIntStackValue(~value.value);
+    }
+    return unknownStackValue();
+}
+
+void simulate_scanned_stack_opcode(
+    std::vector<ScannedStackValue>& stack,
+    fallout::opcode_t opcode,
+    unsigned char* data,
+    size_t opcodePos)
+{
+    const unsigned int opcodeIndex = opcode & 0x3FF;
+
+    const int offsetArgCount = get_offset_request_argument_count(opcodeIndex);
+    if (offsetArgCount > 0) {
+        pop_scanned_stack_values(stack, offsetArgCount);
+        if (offset_request_returns_value(opcodeIndex)) {
+            push_unknown_stack_value(stack);
+        }
+        return;
+    }
+
+    switch (opcode) {
+    case VALUE_TYPE_INT:
+        stack.push_back(knownIntStackValue(fallout::stackReadInt32(data, opcodePos + 2)));
+        break;
+    case VALUE_TYPE_FLOAT:
+    case VALUE_TYPE_STRING:
+    case VALUE_TYPE_DYNAMIC_STRING:
+    case VALUE_TYPE_PTR:
+        push_unknown_stack_value(stack);
+        break;
+    case fallout::OPCODE_FETCH:
+    case fallout::OPCODE_FETCH_GLOBAL:
+    case fallout::OPCODE_FETCH_EXTERNAL:
+        pop_scanned_stack_values(stack, 1);
+        push_unknown_stack_value(stack);
+        break;
+    case fallout::OPCODE_STORE:
+    case fallout::OPCODE_STORE_GLOBAL:
+    case fallout::OPCODE_STORE_EXTERNAL:
+        pop_scanned_stack_values(stack, 2);
+        break;
+    case fallout::OPCODE_POP:
+        pop_scanned_stack_values(stack, 1);
+        break;
+    case fallout::OPCODE_DUP:
+        if (!stack.empty()) {
+            stack.push_back(stack.back());
+        }
+        break;
+    case fallout::OPCODE_SWAP:
+        if (stack.size() >= 2) {
+            std::iter_swap(stack.end() - 1, stack.end() - 2);
+        } else {
+            stack.clear();
+        }
+        break;
+    case fallout::OPCODE_ADD:
+        simulate_binary_stack_operation(stack, stack_add);
+        break;
+    case fallout::OPCODE_SUB:
+        simulate_binary_stack_operation(stack, stack_subtract);
+        break;
+    case fallout::OPCODE_MUL:
+        simulate_binary_stack_operation(stack, stack_multiply);
+        break;
+    case fallout::OPCODE_DIV:
+        simulate_binary_stack_operation(stack, stack_divide);
+        break;
+    case fallout::OPCODE_MOD:
+        simulate_binary_stack_operation(stack, stack_modulo);
+        break;
+    case fallout::OPCODE_BITWISE_AND:
+        simulate_binary_stack_operation(stack, stack_bitwise_and);
+        break;
+    case fallout::OPCODE_BITWISE_OR:
+        simulate_binary_stack_operation(stack, stack_bitwise_or);
+        break;
+    case fallout::OPCODE_BITWISE_XOR:
+        simulate_binary_stack_operation(stack, stack_bitwise_xor);
+        break;
+    case fallout::OPCODE_BITWISE_NOT:
+        simulate_unary_stack_operation(stack, stack_bitwise_not);
+        break;
+    case fallout::OPCODE_NEGATE:
+        simulate_unary_stack_operation(stack, stack_negate);
+        break;
+    case fallout::OPCODE_EQUAL:
+    case fallout::OPCODE_NOT_EQUAL:
+    case fallout::OPCODE_LESS_THAN_EQUAL:
+    case fallout::OPCODE_GREATER_THAN_EQUAL:
+    case fallout::OPCODE_LESS_THAN:
+    case fallout::OPCODE_GREATER_THAN:
+    case fallout::OPCODE_AND:
+    case fallout::OPCODE_OR:
+        pop_scanned_stack_values(stack, 2);
+        push_unknown_stack_value(stack);
+        break;
+    case fallout::OPCODE_NOT:
+    case fallout::OPCODE_FLOOR:
+        pop_scanned_stack_values(stack, 1);
+        push_unknown_stack_value(stack);
+        break;
+    case fallout::OPCODE_CALL:
+        pop_scanned_stack_values(stack, 1);
+        push_unknown_stack_value(stack);
+        break;
+    case fallout::OPCODE_CALL_AT:
+    case fallout::OPCODE_CALL_WHEN:
+    case fallout::OPCODE_SPAWN:
+    case fallout::OPCODE_FORK:
+    case fallout::OPCODE_EXEC:
+        stack.clear();
+        break;
+    default:
+        break;
+    }
+}
+
+void track_offset_request(std::string fName, fallout::opcode_t opcode, const std::vector<ScannedStackValue>& stack)
+{
+    const unsigned int opcodeIndex = opcode & 0x3FF;
+    const int argCount = get_offset_request_argument_count(opcodeIndex);
+    if (argCount == 0) {
+        return;
+    }
+
+    std::string offset = "<dynamic>";
+    if (stack.size() >= static_cast<size_t>(argCount)) {
+        const auto& firstArg = stack[stack.size() - static_cast<size_t>(argCount)];
+        if (firstArg.isKnownInt) {
+            offset = offset_request_value_to_string(firstArg.value);
+        }
+    }
+
+    offset_requests[opcode][offset].insert(fName);
+}
+
 void check_int_data(
     std::string fName,
     unsigned char* data,
@@ -106,8 +487,9 @@ void check_int_data(
     size_t end_pos)
 {
     size_t i = start_pos;
-    bool isPreviousPush = false;
+    std::vector<ScannedStackValue> stack;
     while (i < end_pos) {
+        const size_t opcodePos = i;
         auto opcode = fallout::stackReadInt16(data, i);
         if (!((opcode >> 8) & 0x80)) {
             printf("ERROR: Wrong opcode %x in file %s at pos=0x%lx\n", opcode, fName.c_str(), i);
@@ -120,11 +502,14 @@ void check_int_data(
             set.insert(fName);
         };
 
+        track_offset_request(fName, opcode, stack);
+
         if (opcodeIndex == 0x207) { // register_hook
             if (i >= 6 && fallout::stackReadInt16(data, i - 6) == 0xC001) {
-                auto hookProcIndex = fallout::stackReadInt32(data, i - 6 + 2);
-                // All hooks are unknown atm
-                unknown_hooks[hookProcIndex].insert(fName);
+                auto hookId = fallout::stackReadInt32(data, i - 6 + 2);
+                if (!is_implemented_hook(hookId)) {
+                    unknown_hooks[hookId].insert(fName);
+                }
             } else {
                 printf("ERROR: Unknown usage of register_hook in file %s at pos=0x%lx\n", fName.c_str(), i);
                 exit(1);
@@ -132,9 +517,10 @@ void check_int_data(
         } else if (opcodeIndex == 0x262 || opcodeIndex == 0x27d) { // register_hook_proc / register_hook_proc_spec
             if (
                 i >= 6 * 2 && fallout::stackReadInt16(data, i - 6) == 0xC001 && fallout::stackReadInt16(data, i - 6 * 2) == 0xC001) {
-                auto hookProcIndex = fallout::stackReadInt32(data, i - 6 * 2 + 2);
-                // All hooks are unknown atm
-                unknown_hooks[hookProcIndex].insert(fName);
+                auto hookId = fallout::stackReadInt32(data, i - 6 * 2 + 2);
+                if (!is_implemented_hook(hookId)) {
+                    unknown_hooks[hookId].insert(fName);
+                }
             } else {
                 printf("ERROR: Unknown usage of register_hook_proc in file %s at pos=0x%lx\n", fName.c_str(), i);
                 exit(1);
@@ -147,10 +533,9 @@ void check_int_data(
 
         if (opcodeIndex == (fallout::OPCODE_PUSH & 0x3FF)) {
             i += 4;
-            isPreviousPush = true;
-        } else {
-            isPreviousPush = false;
         }
+
+        simulate_scanned_stack_opcode(stack, opcode, data, opcodePos);
     }
 };
 
@@ -336,6 +721,7 @@ void checkScriptsOpcodes()
     unknown_opcodes.clear();
     sus_strings.clear();
     unknown_hooks.clear();
+    offset_requests.clear();
 
     checked_files = 0;
 
@@ -357,6 +743,21 @@ void checkScriptsOpcodes()
             }
             nameSet = std::move(updatedNames);
         }
+        for (auto& [opcode, offsetSet] : offset_requests) {
+            for (auto& [offset, nameSet] : offsetSet) {
+                std::set<std::string> updatedNames;
+                for (const auto& name : nameSet) {
+                    std::string trimmed = name;
+
+                    if (trimmed.rfind(folderName, 0) == 0) { // prefix match
+                        trimmed.erase(0, folderName.length());
+                    }
+
+                    updatedNames.insert(std::move(trimmed));
+                }
+                nameSet = std::move(updatedNames);
+            }
+        }
         for (auto& [opcode, nameSet] : sus_strings) {
             std::set<std::string> updatedNames;
             for (const auto& name : nameSet) {
@@ -372,7 +773,7 @@ void checkScriptsOpcodes()
         }
     }
 
-    if (unknown_opcodes.size() == 0 && sus_strings.size() == 0 && unknown_hooks.size() == 0) {
+    if (unknown_opcodes.size() == 0 && sus_strings.size() == 0 && unknown_hooks.size() == 0 && offset_requests.size() == 0) {
         printf("Everything is ok, all opcodes are known and no sus strings. Checked %i files\n", checked_files);
     } else {
         printf("\n\nChecked %i files and found those:\n", checked_files);
@@ -401,6 +802,17 @@ void checkScriptsOpcodes()
                 printf("  - %s\n", fName.c_str());
             }
         }
+        for (const auto& [opcode, offsets] : offset_requests) {
+            printf("OFFSET %s (0x%x - 0x%x - %i):\n",
+                get_opcode_name(opcode).c_str(),
+                opcode, opcode & 0x3FF, opcode & 0x3FF);
+            for (const auto& [offset, files] : offsets) {
+                printf("  %s:\n", offset.c_str());
+                for (auto fName : files) {
+                    printf("    - %s\n", fName.c_str());
+                }
+            }
+        }
 
         printf("\nSame but per-file:\n");
         // TODO: Sort
@@ -413,6 +825,17 @@ void checkScriptsOpcodes()
                     + " (" + toHexString(opcode) + ")";
 
                 files[fName].insert(oss);
+            }
+        }
+        for (const auto& [opcode, offsets] : offset_requests) {
+            for (const auto& [offset, offsetFiles] : offsets) {
+                for (auto fName : offsetFiles) {
+                    std::string oss = "OFFSET " + get_opcode_name(opcode) + " " + offset
+                        + " " + toHexString(opcode & 0x3FF)
+                        + " (" + toHexString(opcode) + ")";
+
+                    files[fName].insert(oss);
+                }
             }
         }
         for (auto iter : sus_strings) {
