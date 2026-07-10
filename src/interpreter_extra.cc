@@ -977,7 +977,7 @@ static void opDestroyObject(Program* program)
     Object* owner = objectGetOwner(object);
     if (owner != nullptr) {
         int quantity = itemGetQuantity(owner, object);
-        itemRemove(owner, object, quantity);
+        itemRemoveWithReason(owner, object, quantity, RemoveInventoryObjectHookReason::ItemDestroyed);
 
         if (owner == gDude) {
             bool animated = !gameUiIsDisabled();
@@ -1672,7 +1672,7 @@ static void opRemoveObjectFromInventory(Program* program)
         updateFlags = true;
     }
 
-    if (itemRemove(owner, item, 1) == 0) {
+    if (itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::ItemRemoved) == 0) {
         Rect rect;
         _obj_connect(item, 1, 0, &rect);
         tileWindowRefreshRect(&rect, item->elevation);
@@ -3677,7 +3677,7 @@ static void opRemoveMultipleObjectsFromInventory(Program* program)
     }
 
     if (quantity != 0) {
-        if (itemRemove(owner, item, quantity) == 0) {
+        if (itemRemoveWithReason(owner, item, quantity, RemoveInventoryObjectHookReason::ItemRemovedMulti) == 0) {
             Rect updatedRect;
             _obj_connect(item, 1, 0, &updatedRect);
             if (itemWasEquipped) {
@@ -4495,7 +4495,7 @@ static void opDestroyMultipleObjects(Program* program)
             quantityToDestroy = quantity;
         }
 
-        itemRemove(owner, object, quantityToDestroy);
+        itemRemoveWithReason(owner, object, quantityToDestroy, RemoveInventoryObjectHookReason::ItemDestroyMulti);
 
         if (owner == gDude) {
             bool animated = !gameUiIsDisabled();

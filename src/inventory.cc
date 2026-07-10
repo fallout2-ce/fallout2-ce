@@ -1986,15 +1986,15 @@ static bool _setup_inventory(int inventoryWindowType)
     }
 
     if (gInventoryLeftHandItem != nullptr) {
-        itemRemove(_inven_dude, gInventoryLeftHandItem, 1);
+        itemRemoveWithReason(_inven_dude, gInventoryLeftHandItem, 1, RemoveInventoryObjectHookReason::LeftHandEquipped);
     }
 
     if (gInventoryRightHandItem != nullptr && gInventoryRightHandItem != gInventoryLeftHandItem) {
-        itemRemove(_inven_dude, gInventoryRightHandItem, 1);
+        itemRemoveWithReason(_inven_dude, gInventoryRightHandItem, 1, RemoveInventoryObjectHookReason::RightHandEquipped);
     }
 
     if (gInventoryArmor != nullptr) {
-        itemRemove(_inven_dude, gInventoryArmor, 1);
+        itemRemoveWithReason(_inven_dude, gInventoryArmor, 1, RemoveInventoryObjectHookReason::ArmorEquipped);
     }
 
     _adjust_fid();
@@ -2873,7 +2873,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
 
             int itemAddResult = 0;
             if (itemIndex != -1) {
-                itemRemove(_inven_dude, item, 1);
+                itemRemoveWithReason(_inven_dude, item, 1, RemoveInventoryObjectHookReason::EquipArmor);
             }
 
             if (gInventoryArmor != nullptr) {
@@ -2955,7 +2955,7 @@ static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourc
             *sourceSlot = *targetSlot;
         } else {
             if (itemIndex != -1) {
-                itemRemove(_inven_dude, sourceItem, 1);
+                itemRemoveWithReason(_inven_dude, sourceItem, 1, RemoveInventoryObjectHookReason::EquipWeapon);
             }
 
             Object* existingItem = *targetSlot;
@@ -2986,7 +2986,7 @@ static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourc
     *targetSlot = sourceItem;
 
     if (itemIndex != -1) {
-        itemRemove(_inven_dude, sourceItem, 1);
+        itemRemoveWithReason(_inven_dude, sourceItem, 1, RemoveInventoryObjectHookReason::EquipWeapon);
     }
 }
 
@@ -3235,15 +3235,15 @@ CritterEquipped critterStripEquipped(Object* critter)
     }
     if (equipped.leftHand != nullptr) {
         equipped.weight += itemGetWeight(equipped.leftHand);
-        itemRemove(critter, equipped.leftHand, 1);
+        itemRemoveWithReason(critter, equipped.leftHand, 1, RemoveInventoryObjectHookReason::LeftHandEquipped);
     }
     if (equipped.rightHand != nullptr && equipped.rightHand != equipped.leftHand) {
         equipped.weight += itemGetWeight(equipped.rightHand);
-        itemRemove(critter, equipped.rightHand, 1);
+        itemRemoveWithReason(critter, equipped.rightHand, 1, RemoveInventoryObjectHookReason::RightHandEquipped);
     }
     if (equipped.armor != nullptr) {
         equipped.weight += itemGetWeight(equipped.armor);
-        itemRemove(critter, equipped.armor, 1);
+        itemRemoveWithReason(critter, equipped.armor, 1, RemoveInventoryObjectHookReason::ArmorEquipped);
     }
     return equipped;
 }
@@ -4487,7 +4487,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                         objectDrop(owner, item);
                     }
                 } else {
-                    if (itemRemove(owner, item, quantity - 1) == 0) {
+                    if (itemRemoveWithReason(owner, item, quantity - 1, RemoveInventoryObjectHookReason::InventoryDropCaps) == 0) {
                         Object* item2;
                         if (_inven_from_button(keyCode, &item2, &itemSlot, &owner) != 0) {
                             if (scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item2, nullptr)) {
@@ -4543,7 +4543,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 if (itemSlot != nullptr) {
                     *itemSlot = nullptr;
                 } else {
-                    itemRemove(owner, item, 1);
+                    itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::ConsumeDrug);
                 }
 
                 _obj_connect(item, gDude->tile, gDude->elevation, nullptr);
@@ -4554,7 +4554,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
         case ITEM_TYPE_WEAPON:
         case ITEM_TYPE_MISC:
             if (itemSlot == nullptr) {
-                itemRemove(owner, item, 1);
+                itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::UseObj);
             }
 
             UseItemResultCode useResult;
@@ -4580,7 +4580,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
         break;
     case GAME_MOUSE_ACTION_MENU_ITEM_UNLOAD:
         if (itemSlot == nullptr) {
-            itemRemove(owner, item, 1);
+            itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::UnloadWeapon);
         }
 
         for (;;) {
@@ -5584,18 +5584,18 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
 
     Object* armor = critterGetArmor(barterer);
     if (armor != nullptr) {
-        itemRemove(barterer, armor, 1);
+        itemRemoveWithReason(barterer, armor, 1, RemoveInventoryObjectHookReason::BarterArmor);
     }
 
     Object* item1 = nullptr;
     Object* item2 = critterGetItem2(barterer);
     if (item2 != nullptr) {
-        itemRemove(barterer, item2, 1);
+        itemRemoveWithReason(barterer, item2, 1, RemoveInventoryObjectHookReason::BarterWeapon);
     } else {
         if (!gGameDialogSpeakerIsPartyMember) {
             item1 = inventoryFindByType(barterer, ITEM_TYPE_WEAPON, nullptr);
             if (item1 != nullptr) {
-                itemRemove(barterer, item1, 1);
+                itemRemoveWithReason(barterer, item1, 1, RemoveInventoryObjectHookReason::BarterWeapon);
             }
         }
     }
@@ -5988,7 +5988,7 @@ static int _drop_into_container(Object* container, Object* item, int sourceIndex
     }
 
     if (sourceIndex != -1) {
-        if (itemRemove(_inven_dude, item, quantityToMove) == -1) {
+        if (itemRemoveWithReason(_inven_dude, item, quantityToMove, RemoveInventoryObjectHookReason::DropIntoContainer, container) == -1) {
             return -1;
         }
     }
@@ -6045,7 +6045,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
 
     Object* sourceItem = ammo;
     bool isReloaded = false;
-    int rc = itemRemove(_inven_dude, weapon, 1);
+    int rc = itemRemoveQuietly(_inven_dude, weapon, 1);
     for (int index = 0; index < quantityToMove; index++) {
         int rcReload = weaponReload(weapon, sourceItem);
         if (rcReload == 0) {

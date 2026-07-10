@@ -1146,7 +1146,7 @@ UseItemResultCode objectUseItem(Object* userObj, Object* item)
         Object* root = objectGetOwner(item);
         if (root != nullptr) {
             int flags = item->flags & OBJECT_IN_ANY_HAND;
-            itemRemove(root, item, 1);
+            itemRemoveWithReason(root, item, 1, RemoveInventoryObjectHookReason::UseObj);
             Object* replacementItem = itemReplace(root, item, flags);
             if (root == gDude) {
                 int leftItemAction;
@@ -1395,7 +1395,7 @@ UseItemResultCode objectUseItemOn(Object* user, Object* targetObj, Object* item)
     if (rc == USE_ITEM_RESULT_REMOVE) {
         if (user != nullptr) {
             int flags = item->flags & OBJECT_IN_ANY_HAND;
-            itemRemove(user, item, 1);
+            itemRemoveWithReason(user, item, 1, RemoveInventoryObjectHookReason::UseDrugOn);
 
             Object* replacedItem = itemReplace(user, item, flags);
 

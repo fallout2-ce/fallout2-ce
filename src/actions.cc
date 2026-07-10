@@ -773,7 +773,7 @@ int _action_ranged(Attack* attack, int anim)
                     int rightItemAction;
                     interfaceGetItemActions(&leftItemAction, &rightItemAction);
 
-                    itemRemove(attack->attacker, weapon, 1);
+                    itemRemoveWithReason(attack->attacker, weapon, 1, RemoveInventoryObjectHookReason::Throw);
                     replacedWeapon = itemReplace(attack->attacker, weapon, weaponFlags & OBJECT_IN_ANY_HAND);
                     objectSetFid(projectile, projectileProto->fid, nullptr);
                     _cAIPrepWeaponItem(attack->attacker, weapon);
