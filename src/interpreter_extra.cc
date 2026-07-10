@@ -382,7 +382,9 @@ static void scriptError(const char* format, ...)
 
     va_list argptr;
     va_start(argptr, format);
-    vsnprintf(string, sizeof(string), format, argptr);
+    if (vsnprintf(string, sizeof(string), format, argptr) < 0) {
+        string[0] = '\0';
+    }
     va_end(argptr);
 
     debugPrint("%s", string);
@@ -1014,8 +1016,7 @@ static void opDisplayMsg(Program* program)
     displayMonitorAddMessage(string);
 
     if (settings.debug.show_script_messages) {
-        debugPrint("\n");
-        debugPrint(string);
+        debugPrint("\n%s", string);
     }
 }
 
@@ -4814,11 +4815,8 @@ static void opDebugMessage(Program* program)
 {
     char* string = programStackPopString(program);
 
-    if (string != nullptr) {
-        if (settings.debug.show_script_messages) {
-            debugPrint("\n");
-            debugPrint(string);
-        }
+    if (string != nullptr && settings.debug.show_script_messages) {
+        debugPrint("\n%s", string);
     }
 }
 

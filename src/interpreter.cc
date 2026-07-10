@@ -227,6 +227,9 @@ int _interpretOutput(const char* format, ...)
     va_start(args, format);
     const int rc = vsnprintf(string, sizeof(string), format, args);
     va_end(args);
+    if (rc < 0) {
+        string[0] = '\0';
+    }
 
     debugPrint("%s", string);
 
@@ -258,7 +261,10 @@ static char* programGetCurrentProcedureName(Program* program)
 static void programPrintError(const char* format, va_list args)
 {
     char string[260];
-    vsnprintf(string, sizeof(string), format, args);
+    if (vsnprintf(string, sizeof(string), format, args) < 0) {
+        string[0] = '\0';
+    }
+
     debugPrint("\nError during execution: %s\n", string);
 
     if (gInterpreterCurrentProgram == nullptr) {
