@@ -49,10 +49,9 @@ void datafileRemapPixelsRgb8(uint8_t* data, uint8_t* palette, int width, int hei
 
     indexedPalette[0] = 0;
     for (int index = 1; index < INDEXED_PALETTE_MAX; index++) {
-        // TODO: Check.
-        int r = palette[index * 3 + 2] >> 3;
+        int r = palette[index * 3] >> 3;
         int g = palette[index * 3 + 1] >> 3;
-        int b = palette[index * 3] >> 3;
+        int b = palette[index * 3 + 2] >> 3;
         int colorTableIndex = (r << 10) | (g << 5) | b;
         indexedPalette[index] = _colorTable[colorTableIndex];
     }
@@ -72,10 +71,9 @@ void datafileRemapPixelsRgb6(uint8_t* data, uint8_t* palette, int width, int hei
 
     indexedPalette[0] = 0;
     for (int index = 1; index < INDEXED_PALETTE_MAX; index++) {
-        // TODO: Check.
-        int r = palette[index * 3 + 2] >> 1;
+        int r = palette[index * 3] >> 1;
         int g = palette[index * 3 + 1] >> 1;
-        int b = palette[index * 3] >> 1;
+        int b = palette[index * 3 + 2] >> 1;
         int colorTableIndex = (r << 10) | (g << 5) | b;
         indexedPalette[index] = _colorTable[colorTableIndex];
     }
