@@ -401,7 +401,7 @@ static bool inventoryLootMouseHitTestScroller(bool targetInventory);
 static void inventoryLootRenderCompanionSlots();
 static void inventoryLootCreateCompanionSlotButtons();
 static void inventoryLootHandleCompanionSlotPickup(InvenSlot slot);
-static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, bool fromLeftPane, bool* attemptedPtr);
+static bool inventoryLootTryEquipCompanionItem(Object* item, bool fromLeftPane);
 static bool inventoryLootTryUnequipCompanionItem(InvenSlot slot);
 static bool inventoryLootTryMoveCompanionItemToLeftPane(InvenSlot slot, Object* item);
 static int inventoryLootBuildTargetDisplayFid();
@@ -1069,7 +1069,9 @@ static bool inventoryLootHasCompanionSlots()
 
 static Object** inventoryLootGetCompanionSlotItemSlot(InvenSlot slot)
 {
-    assert(inventoryLootHasCompanionSlots());
+    if (!inventoryLootHasCompanionSlots()) {
+        return nullptr;
+    }
 
     switch (slot) {
     case InvenSlot::RightHand:
@@ -1097,7 +1099,8 @@ static Object* inventoryLootGetCritterItemInSlot(Object* critter, InvenSlot slot
 
 static Object* inventoryLootGetCompanionSlotItem(InvenSlot slot)
 {
-    return *inventoryLootGetCompanionSlotItemSlot(slot);
+    Object** itemSlot = inventoryLootGetCompanionSlotItemSlot(slot);
+    return itemSlot != nullptr ? *itemSlot : nullptr;
 }
 
 static int inventoryLootGetCompanionSlotImageSourceY(InvenSlot slot)
@@ -1375,12 +1378,8 @@ static bool inventoryLootTryUnequipCompanionItem(InvenSlot slot)
     return rc == 0;
 }
 
-static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, bool fromLeftPane, bool* attemptedPtr)
+static bool inventoryLootTryEquipCompanionItem(Object* item, bool fromLeftPane)
 {
-    if (attemptedPtr != nullptr) {
-        *attemptedPtr = false;
-    }
-
     if (!inventoryLootHasCompanionSlots() || item == nullptr) {
         return false;
     }
@@ -1395,7 +1394,7 @@ static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, boo
     }
 
     Rect rect = inventoryLootGetCompanionSlotRect(companionSlot);
-    if (!immediate && !mouseHitTestInWindow(gInventoryWindow, rect.left, rect.top, rect.right + 1, rect.bottom + 1)) {
+    if (!mouseHitTestInWindow(gInventoryWindow, rect.left, rect.top, rect.right + 1, rect.bottom + 1)) {
         return false;
     }
 
@@ -1411,10 +1410,6 @@ static bool inventoryLootTryEquipCompanionItem(Object* item, bool immediate, boo
     } else if (companionSlot == InvenSlot::Armor && !partyMemberPidCanEquipArmor(inventoryLootBaseTarget->pid)) {
         displayMonitorAddMessage("I can't use that."); // TODO: translate
         return false;
-    }
-
-    if (attemptedPtr != nullptr) {
-        *attemptedPtr = true;
     }
 
     CritterEquipped previousEquipped = *inventoryLootTargetEquipped;
@@ -4071,12 +4066,12 @@ static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSl
     case INVENTORY_LOOT_COMPANION_WEAPON_KEY:
         itemSlot = inventoryLootGetCompanionSlotItemSlot(InvenSlot::RightHand);
         owner = inventoryLootBaseTarget;
-        item = *itemSlot;
+        item = itemSlot != nullptr ? *itemSlot : nullptr;
         break;
     case INVENTORY_LOOT_COMPANION_ARMOR_KEY:
         itemSlot = inventoryLootGetCompanionSlotItemSlot(InvenSlot::Armor);
         owner = inventoryLootBaseTarget;
-        item = *itemSlot;
+        item = itemSlot != nullptr ? *itemSlot : nullptr;
         break;
     case INVENTORY_HAND_RIGHT_KEY:
         itemSlot = &gInventoryRightHandItem;
@@ -4181,7 +4176,7 @@ static void inventoryDisplayLootPaneCompanionName(unsigned char* windowBuffer, i
             critter = _stack[0];
         }
     } else if (index == 1) {
-        if (inventoryLootBaseTarget != nullptr && objectIsPartyMember(inventoryLootBaseTarget)) {
+        if (inventoryLootHasCompanionSlots()) {
             critter = inventoryLootBaseTarget;
         }
     }
@@ -5064,7 +5059,8 @@ int inventoryOpenLooting(Object* looter, Object* target)
                             _display_body(inventoryLootGetTargetDisplayFid(), INVENTORY_WINDOW_TYPE_LOOT);
                         }
                     }
-                } else if (keyCode == INVENTORY_LOOT_COMPANION_WEAPON_KEY || keyCode == INVENTORY_LOOT_COMPANION_ARMOR_KEY) {
+                } else if ((keyCode == INVENTORY_LOOT_COMPANION_WEAPON_KEY || keyCode == INVENTORY_LOOT_COMPANION_ARMOR_KEY)
+                    && inventoryLootHasCompanionSlots()) {
                     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
                         inventoryWindowOpenContextMenu(keyCode, INVENTORY_WINDOW_TYPE_LOOT);
                     } else {
@@ -5213,10 +5209,9 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
     InventoryMoveResult result = INVENTORY_MOVE_RESULT_FAILED;
 
     if (isPlanting) {
-        bool attemptedCompanionEquip = false;
-        if (!immediate && inventoryLootTryEquipCompanionItem(item, false, true, &attemptedCompanionEquip)) {
+        if (!immediate && inventoryLootTryEquipCompanionItem(item, true)) {
             result = INVENTORY_MOVE_RESULT_SUCCESS;
-        } else if (!attemptedCompanionEquip && (immediate || inventoryLootMouseHitTestScroller(true))) {
+        } else if (immediate || inventoryLootMouseHitTestScroller(true)) {
             int quantityToMove = quantity;
             if (quantity > 1 && !immediate) {
                 quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
@@ -5243,10 +5238,9 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
             }
         }
     } else {
-        bool attemptedCompanionEquip = false;
-        if (inventoryLootTryEquipCompanionItem(item, immediate, false, &attemptedCompanionEquip)) {
+        if (!immediate && inventoryLootTryEquipCompanionItem(item, false)) {
             result = INVENTORY_MOVE_RESULT_SUCCESS;
-        } else if (!attemptedCompanionEquip && (immediate || inventoryLootMouseHitTestScroller(false))) {
+        } else if (immediate || inventoryLootMouseHitTestScroller(false)) {
             int quantityToMove = quantity;
             if (quantity > 1 && !immediate) {
                 quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, item, quantity);
