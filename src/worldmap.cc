@@ -1213,6 +1213,7 @@ int wmWorldMap_load(File* stream)
         if (areaIdx < wmMaxAreaNum) {
             city = &(wmAreaInfoList[areaIdx]);
         } else {
+            debugPrint("[WARNING] Reading extra city info [%d] into empty buffer\n", areaIdx);
             city = &dummyCity;
         }
 
@@ -1233,6 +1234,7 @@ int wmWorldMap_load(File* stream)
             if (areaIdx < wmMaxAreaNum && entranceIdx < ENTRANCE_LIST_CAPACITY) {
                 entrance = &(city->entrances[entranceIdx]);
             } else {
+                debugPrint("[WARNING] Reading extra entrance info [%d] into empty buffer\n", entranceIdx);
                 entrance = &dummyEntrance;
             }
 
