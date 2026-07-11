@@ -313,7 +313,7 @@ void opTokenize(Program* program)
             }
 
             temp = (char*)internal_calloc_safe(1, length + 1, __FILE__, __LINE__); // "..\\int\\INTLIB.C, 230
-            strncpy(temp, start, length);
+            strncpy(temp, start + 1, length);
             programStackPushString(program, temp);
         } else {
             programStackPushInteger(program, 0);
