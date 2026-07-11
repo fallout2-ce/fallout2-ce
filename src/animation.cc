@@ -40,9 +40,13 @@
 
 namespace fallout {
 
-#define ANIMATION_SEQUENCE_LIST_CAPACITY 32
+// sfall exposes this as [Misc] AnimationsAtOnceLimit. Keep CE aligned with
+// sfall's default 64 total / 52 non-reserved slots for now; this can become
+// configurable later.
+#define ANIMATION_SEQUENCE_LIST_CAPACITY 64
 #define ANIMATION_DESCRIPTION_LIST_CAPACITY 55
-#define ANIMATION_SAD_LIST_CAPACITY 24
+#define ANIMATION_SAD_LIST_CAPACITY 64
+#define ANIMATION_NON_RESERVED_LIST_CAPACITY 52
 
 #define ANIMATION_SEQUENCE_FORCED 0x01
 
@@ -341,7 +345,7 @@ static AnimationSad gAnimationSads[ANIMATION_SAD_LIST_CAPACITY];
 static PathNode gClosedPathNodeList[PATH_NODE_CAPACITY];
 
 // 0x54CC14 anim_set
-static AnimationSequence gAnimationSequences[32];
+static AnimationSequence gAnimationSequences[ANIMATION_SEQUENCE_LIST_CAPACITY];
 
 // 0x561814 seen_tile
 static unsigned char gPathfinderProcessedTiles[5000];
@@ -445,7 +449,7 @@ static int _anim_free_slot(int requestOptions)
         }
 
         return -1;
-    } else if ((requestOptions & ANIMATION_REQUEST_RESERVED) != 0 || v2 < 20) {
+    } else if ((requestOptions & ANIMATION_REQUEST_RESERVED) != 0 || v2 < ANIMATION_NON_RESERVED_LIST_CAPACITY) {
         return v1;
     }
 
