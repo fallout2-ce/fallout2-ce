@@ -3924,7 +3924,7 @@ void partyMemberControlWindowHandleEvents()
                 dialogMode = GAME_DIALOG_MODE_TALK;
                 return;
             } else if (keyCode == KEY_LOWERCASE_A) {
-                if (gGameDialogSpeaker->pid != 0x10000A1) {
+                if (partyMemberPidCanEquipArmor(gGameDialogSpeaker->pid)) {
                     Object* armor = _ai_search_inven_armor(gGameDialogSpeaker);
                     if (armor != nullptr) {
                         inventoryEquip(gGameDialogSpeaker, armor, 0);
