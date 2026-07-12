@@ -380,14 +380,14 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
             int crippledMsgIdOffset = critterIsCrippled(target) ? -2 : 0;
             int healthLevel;
 
-            const int maxiumHitPoints = critterGetStat(target, STAT_MAXIMUM_HIT_POINTS);
+            const int maximumHitPoints = critterGetStat(target, STAT_MAXIMUM_HIT_POINTS);
             const int currentHitPoints = critterGetStat(target, STAT_CURRENT_HIT_POINTS);
-            if (currentHitPoints <= 0 || critterIsDead(target)) {
+            if (maximumHitPoints <= 0 || currentHitPoints <= 0 || critterIsDead(target)) {
                 healthLevel = 0;
-            } else if (currentHitPoints == maxiumHitPoints) {
+            } else if (currentHitPoints == maximumHitPoints) {
                 healthLevel = 4;
             } else {
-                healthLevel = (currentHitPoints * 3) / maxiumHitPoints + 1;
+                healthLevel = (currentHitPoints * 3) / maximumHitPoints + 1;
             }
 
             MessageListItem hpMessageListItem;
