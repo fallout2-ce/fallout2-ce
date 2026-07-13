@@ -953,7 +953,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
         }
     } else {
         // container proto doesn't include maximum weight, only maximum size so
-        // just show current weight for the sake of consistency what values are reported 
+        // just show current weight for the sake of consistency what values are reported
         // to the player on left/right pane of the loot dialog
         snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
     }
