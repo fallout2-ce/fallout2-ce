@@ -1836,7 +1836,6 @@ static void op_set_hero_style(Program* program)
 {
     int style = programStackPopInteger(program);
     programPrintError("set_hero_style: not implemented!");
-    programStackPushInteger(program, 0);
 }
 
 static void op_set_hero_race(Program* program)
