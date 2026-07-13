@@ -53,41 +53,7 @@ static constexpr int kChemUseAlwaysChance = 100;
 static constexpr int kRandomDrugPickingArraySize = 3;
 static std::unordered_set<Object*> burstDisabledCritters;
 
-typedef struct AiMessageRange {
-    int start;
-    int end;
-} AiMessageRange;
-
-typedef struct AiPacket {
-    char* name;
-    int packet_num;
-    int max_dist;
-    int min_to_hit;
-    int min_hp;
-    int aggression;
-    int hurt_too_much;
-    int secondary_freq;
-    int called_freq;
-    int font;
-    int color;
-    int outline_color;
-    int chance;
-    AiMessageRange run;
-    AiMessageRange move;
-    AiMessageRange attack;
-    AiMessageRange miss;
-    AiMessageRange hit[HIT_LOCATION_SPECIFIC_COUNT];
-    int area_attack_mode;
-    int run_away_mode;
-    int best_weapon;
-    int distance;
-    int attack_who;
-    int chem_use;
-    int chem_primary_desire[AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT];
-    int disposition;
-    char* body_type;
-    char* general_type;
-} AiPacket;
+static_assert(AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT == sizeof(AiPacket::chem_primary_desire) / sizeof(AiPacket::chem_primary_desire[0]));
 
 typedef struct AiRetargetData {
     Object* source;
@@ -108,7 +74,6 @@ static int _cai_match_str_to_list(const char* str, const char** list, int count,
 static void aiPacketInit(AiPacket* ai);
 static int aiPacketRead(File* stream, AiPacket* ai);
 static int aiPacketWrite(File* stream, AiPacket* ai);
-static AiPacket* aiGetPacket(Object* obj);
 static AiPacket* aiGetPacketByNum(int aiPacketNum);
 static int _ai_magic_hands(Object* a1, Object* a2, int num);
 static int _ai_check_drugs(Object* critter);
@@ -738,7 +703,7 @@ char* combat_ai_name(int packet_num)
 // Get ai from object
 //
 // 0x4280B4
-static AiPacket* aiGetPacket(Object* obj)
+AiPacket* aiGetPacket(Object* obj)
 {
     // NOTE: Uninline.
     AiPacket* ai = aiGetPacketByNum(obj->data.critter.combat.aiPacket);

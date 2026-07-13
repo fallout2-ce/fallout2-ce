@@ -11,6 +11,7 @@
 #include "character_editor.h"
 #include "color.h"
 #include "combat.h"
+#include "combat_ai.h"
 #include "config.h" // For Config, configInit, configFree
 #include "dbox.h"
 #include "debug.h"
@@ -181,9 +182,11 @@ Attack* activeAttackData(const ProgramValue& value)
     return nullptr;
 }
 
-ProgramValue getAttackData(Attack* attack, AttackDataField field)
+ProgramValue getAttackData(Attack* attack, AttackDataField field, bool& handled)
 {
     assert(attack != nullptr);
+
+    handled = true;
 
     switch (field) {
     case AttackDataField::Source:
@@ -252,7 +255,8 @@ ProgramValue getAttackData(Attack* attack, AttackDataField field)
     case AttackDataField::KnockbackValue6:
         return ProgramValue(attack->extrasKnockback[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::KnockbackValue1))]);
     default:
-        programFatalError("get_object_data: unsupported attack data offset %d", static_cast<int>(field));
+        handled = false;
+        return ProgramValue(0);
     }
 }
 
@@ -526,19 +530,21 @@ ProgramValue getOtherObjectData(Object* object, ObjectDataField field)
     }
 }
 
-ProgramValue getObjectData(Object* object, ObjectDataField field)
+ProgramValue getObjectData(Object* object, ObjectDataField field, bool& handled)
 {
     assert(object != nullptr);
 
-    bool handled = false;
+    handled = false;
     ProgramValue value = getCommonObjectData(object, field, handled);
     if (handled) {
         return value;
     }
 
     if (!isKnownObjectDataField(field)) {
-        programFatalError("get_object_data: unsupported object data offset %d", static_cast<int>(field));
+        return ProgramValue(0);
     }
+
+    handled = true;
 
     switch (PID_TYPE(object->pid)) {
     case OBJ_TYPE_CRITTER:
@@ -769,6 +775,7 @@ static void mf_get_combat_free_move(OpcodeContext& ctx);
 static void mf_get_cursor_mode(OpcodeContext& ctx);
 static void mf_get_flags(OpcodeContext& ctx);
 static void mf_get_inven_ap_cost(OpcodeContext& ctx);
+static void mf_get_object_ai_data(OpcodeContext& ctx);
 static void mf_get_object_data(OpcodeContext& ctx);
 static void mf_get_outline(OpcodeContext& ctx);
 static void mf_get_sfall_arg_at(OpcodeContext& ctx);
@@ -845,7 +852,7 @@ const MetaruleInfo kMetarules[] = {
     { "get_inven_ap_cost", mf_get_inven_ap_cost, 0, 0 },
     // {"get_map_enter_position",    mf_get_map_enter_position,    0, 0},
     // {"get_metarule_table",        mf_get_metarule_table,        0, 0},
-    // {"get_object_ai_data",        mf_get_object_ai_data,        2, 2, -1, {ARG_OBJECT, ARG_INT}},
+    { "get_object_ai_data", mf_get_object_ai_data, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
     { "get_object_data", mf_get_object_data, 2, 2, 0, { ARG_OBJECT, ARG_INT } },
     { "get_outline", mf_get_outline, 1, 1, 0, { ARG_OBJECT } },
     { "get_sfall_arg_at", mf_get_sfall_arg_at, 1, 1, 0, { ARG_INT } },
@@ -1236,13 +1243,85 @@ void mf_get_sfall_arg_at(OpcodeContext& ctx)
     ctx.setReturn(result);
 }
 
+void mf_get_object_ai_data(OpcodeContext& ctx)
+{
+    Object* object = ctx.arg(0).asObject();
+    const int aiParam = ctx.arg(1).asInt();
+
+    ProgramValue result(-1);
+    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+        ctx.setReturn(result);
+        return;
+    }
+
+    AiPacket* ai = aiGetPacket(object);
+    if (ai == nullptr) {
+        ctx.setReturn(result);
+        return;
+    }
+
+    switch (aiParam) {
+    case 0:
+        result = ProgramValue(ai->aggression);
+        break;
+    case 1:
+        result = ProgramValue(ai->area_attack_mode);
+        break;
+    case 2:
+        result = ProgramValue(ai->attack_who);
+        break;
+    case 3:
+        result = ProgramValue(ai->best_weapon);
+        break;
+    case 4:
+        result = ProgramValue(ai->chem_use);
+        break;
+    case 5:
+        result = ProgramValue(ai->disposition);
+        break;
+    case 6:
+        result = ProgramValue(ai->distance);
+        break;
+    case 7:
+        result = ProgramValue(ai->max_dist);
+        break;
+    case 8:
+        result = ProgramValue(ai->min_hp);
+        break;
+    case 9:
+        result = ProgramValue(ai->min_to_hit);
+        break;
+    case 10:
+        result = ProgramValue(ai->hurt_too_much);
+        break;
+    case 11:
+        result = ProgramValue(ai->run_away_mode);
+        break;
+    case 12:
+        result = ProgramValue(ai->secondary_freq);
+        break;
+    case 13:
+        result = ProgramValue(ai->called_freq);
+        break;
+    case 14: {
+        ArrayId arrayId = CreateTempArray(3, 0);
+        SetArray(arrayId, ProgramValue(0), ProgramValue(ai->chem_primary_desire[0]), false, ctx.program());
+        SetArray(arrayId, ProgramValue(1), ProgramValue(ai->chem_primary_desire[1]), false, ctx.program());
+        SetArray(arrayId, ProgramValue(2), ProgramValue(ai->chem_primary_desire[2]), false, ctx.program());
+        result = ProgramValue(arrayId);
+        break;
+    }
+    default:
+        ctx.printError("%s() - invalid aiParam number.", ctx.name());
+        break;
+    }
+
+    ctx.setReturn(result);
+}
+
 void mf_get_object_data(OpcodeContext& ctx)
 {
     const ProgramValue& dataPtr = ctx.arg(0);
-    if (dataPtr.isInt() && dataPtr.integerValue == 0) {
-        ctx.setReturn(0);
-        return;
-    }
 
     const int offset = ctx.arg(1).asInt();
     Attack* attack = activeAttackData(dataPtr);
@@ -1251,27 +1330,30 @@ void mf_get_object_data(OpcodeContext& ctx)
             ctx.printError("%s() - attack data is only available in combat.", ctx.name());
             ctx.setReturn(0);
         } else {
-            ctx.setReturn(getAttackData(attack, static_cast<AttackDataField>(offset)));
+            bool handled = false;
+            ProgramValue result = getAttackData(attack, static_cast<AttackDataField>(offset), handled);
+            if (!handled) {
+                ctx.printError("%s() - unsupported offset.", ctx.name());
+            }
+            ctx.setReturn(result);
         }
         return;
     }
 
     Object* object = dataPtr.asObject();
-    if (object == nullptr) {
-        ctx.setReturn(0);
-        return;
+
+    bool handled = false;
+    ProgramValue result = getObjectData(object, static_cast<ObjectDataField>(offset), handled);
+    if (!handled) {
+        ctx.printError("%s() - unsupported offset.", ctx.name());
     }
 
-    ctx.setReturn(getObjectData(object, static_cast<ObjectDataField>(offset)));
+    ctx.setReturn(result);
 }
 
 void mf_set_object_data(OpcodeContext& ctx)
 {
     const ProgramValue& dataPtr = ctx.arg(0);
-    if (dataPtr.isInt() && dataPtr.integerValue == 0) {
-        ctx.setReturn(-1);
-        return;
-    }
 
     const int offset = ctx.arg(1).asInt();
     bool changed = false;
