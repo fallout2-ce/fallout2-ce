@@ -1,0 +1,96 @@
+#include "sfall.h"
+#include "dik.h"
+#include "define_lite.h"
+#include "define_extra.h"
+#include "../test_utils.h"
+
+#define DAMAGE_TARGET_OVERRIDE 13
+#define DAMAGE_SOURCE_OVERRIDE 7
+#define FLAGS_SOURCE_OVERRIDE DAM_HIT
+#define KNOCKBACK_OVERRIDE 2
+#define TEST_LIGHT_DISTANCE 3
+#define TEST_LIGHT_INTENSITY 0x10000
+
+variable object_data_attack_hook_seen := false;
+variable object_data_attack_reported := false;
+
+procedure object_data_roundtrip_test begin
+    variable old_light_distance := get_object_data(dude_obj, OBJ_DATA_LIGHT_DISTANCE);
+    variable old_light_intensity := get_object_data(dude_obj, OBJ_DATA_LIGHT_INTENSITY);
+
+    set_object_data(dude_obj, OBJ_DATA_LIGHT_DISTANCE, TEST_LIGHT_DISTANCE);
+    set_object_data(dude_obj, OBJ_DATA_LIGHT_INTENSITY, TEST_LIGHT_INTENSITY);
+
+    call assertEquals("object light distance set", get_object_data(dude_obj, OBJ_DATA_LIGHT_DISTANCE), TEST_LIGHT_DISTANCE);
+    call assertEquals("object light intensity set", get_object_data(dude_obj, OBJ_DATA_LIGHT_INTENSITY), TEST_LIGHT_INTENSITY);
+
+    set_object_data(dude_obj, OBJ_DATA_LIGHT_DISTANCE, old_light_distance);
+    set_object_data(dude_obj, OBJ_DATA_LIGHT_INTENSITY, old_light_intensity);
+
+    call assertEquals("object light distance restored", get_object_data(dude_obj, OBJ_DATA_LIGHT_DISTANCE), old_light_distance);
+    call assertEquals("object light intensity restored", get_object_data(dude_obj, OBJ_DATA_LIGHT_INTENSITY), old_light_intensity);
+end
+
+procedure report_object_data_attack_results begin
+    if (object_data_attack_reported) then return;
+    object_data_attack_reported := true;
+
+    call report_test_results("object_data_attack");
+end
+
+procedure combatdamage_handler begin
+    variable target := get_sfall_arg_at(0);
+    variable attacker := get_sfall_arg_at(1);
+    variable attack_data := get_sfall_arg_at(12);
+
+    object_data_attack_hook_seen := true;
+
+    call assertTrue("attack data pointer exists", attack_data != 0);
+    call assertEquals("attack source matches hook attacker", get_object_data(attack_data, C_ATTACK_SOURCE), attacker);
+    call assertEquals("attack target matches hook target", get_object_data(attack_data, C_ATTACK_TARGET), target);
+    call assertEquals("combat_data returns same attack data", combat_data, attack_data);
+
+    set_object_data(attack_data, C_ATTACK_DAMAGE_TARGET, DAMAGE_TARGET_OVERRIDE);
+    set_object_data(attack_data, C_ATTACK_DAMAGE_SOURCE, DAMAGE_SOURCE_OVERRIDE);
+    set_object_data(attack_data, C_ATTACK_FLAGS_SOURCE, FLAGS_SOURCE_OVERRIDE);
+    set_object_data(attack_data, C_ATTACK_KNOCKBACK_VALUE, KNOCKBACK_OVERRIDE);
+
+    call assertEquals("attack target damage set", get_object_data(attack_data, C_ATTACK_DAMAGE_TARGET), DAMAGE_TARGET_OVERRIDE);
+    call assertEquals("attack source damage set", get_object_data(attack_data, C_ATTACK_DAMAGE_SOURCE), DAMAGE_SOURCE_OVERRIDE);
+    call assertEquals("attack source flags set", get_object_data(attack_data, C_ATTACK_FLAGS_SOURCE), FLAGS_SOURCE_OVERRIDE);
+    call assertEquals("attack knockback set", get_object_data(attack_data, C_ATTACK_KNOCKBACK_VALUE), KNOCKBACK_OVERRIDE);
+
+    set_sfall_return(DAMAGE_TARGET_OVERRIDE);
+    set_sfall_return(DAMAGE_SOURCE_OVERRIDE);
+    set_sfall_return(get_object_data(attack_data, C_ATTACK_FLAGS_TARGET));
+    set_sfall_return(FLAGS_SOURCE_OVERRIDE);
+    set_sfall_return(KNOCKBACK_OVERRIDE);
+
+    call report_object_data_attack_results();
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+    if (key != DIK_J) then return;
+
+    if (not object_data_attack_hook_seen) then begin
+        display_msg("object_data_attack: enter combat and hit something to trigger HOOK_COMBATDAMAGE.");
+    end else begin
+        call report_object_data_attack_results();
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("Testing get/set_object_data object fields...");
+    call object_data_roundtrip_test();
+
+    display_msg("object_data_attack ready: enter combat and hit something. Press J to repeat instructions.");
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_COMBATDAMAGE, combatdamage_handler);
+end
