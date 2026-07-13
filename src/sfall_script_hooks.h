@@ -228,6 +228,7 @@ public:
 
     ProgramValue getArgAt(int idx) const;
     ProgramValue getReturnValueAt(int idx) const;
+    HookType hookType() const;
 
 private:
     static std::vector<ScriptHookCall*> _callStack;

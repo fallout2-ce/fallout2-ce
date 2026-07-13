@@ -91,6 +91,7 @@ int ScriptHookCall::numArgs() const { return _numArgs; }
 int ScriptHookCall::maxReturnValues() const { return _maxRetVals; }
 int ScriptHookCall::numReturnValues() const { return _numRetVals; }
 int ScriptHookCall::numScriptReturnValues() const { return _scriptRetVals; }
+HookType ScriptHookCall::hookType() const { return _hookType; }
 
 void ScriptHookCall::call()
 {

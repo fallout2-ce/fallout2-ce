@@ -50,6 +50,7 @@ namespace fallout {
 
 namespace {
 
+// these were real struct offsets in vanilla; now we use them as an enum of field ids
 enum class ObjectDataField : int {
     Id = 0x00,
     TileNum = 0x04,
@@ -66,6 +67,7 @@ enum class ObjectDataField : int {
     DamageFlags = 0x44,
     DamageLastTurn = 0x48,
     WhoHitMe = 0x54,
+    CritterHp = 0x58,
     Pid = 0x64,
     Cid = 0x68,
     LightDistance = 0x6C,
@@ -74,13 +76,682 @@ enum class ObjectDataField : int {
     ScriptIndex = 0x80,
 };
 
-static_assert(offsetof(Object, id) == 0x00);
-static_assert(offsetof(Object, tile) == 0x04);
-static_assert(offsetof(Object, frame) == 0x18);
-static_assert(offsetof(Object, rotation) == 0x1C);
-static_assert(offsetof(Object, fid) == 0x20);
-static_assert(offsetof(Object, flags) == 0x24);
-static_assert(offsetof(Object, elevation) == 0x28);
+enum class AttackDataField : int {
+    Source = 0x00,
+    HitMode = 0x04,
+    Weapon = 0x08,
+    Unused = 0x0C,
+    DamageSource = 0x10,
+    FlagsSource = 0x14,
+    Rounds = 0x18,
+    Message = 0x1C,
+    Target = 0x20,
+    BodyPart = 0x28,
+    DamageTarget = 0x2C,
+    FlagsTarget = 0x30,
+    KnockbackValue = 0x34,
+    MainTarget = 0x38,
+    AroundNumber = 0x3C,
+    Target1 = 0x40,
+    Target2 = 0x44,
+    Target3 = 0x48,
+    Target4 = 0x4C,
+    Target5 = 0x50,
+    Target6 = 0x54,
+    BodyPart1 = 0x58,
+    BodyPart2 = 0x5C,
+    BodyPart3 = 0x60,
+    BodyPart4 = 0x64,
+    BodyPart5 = 0x68,
+    BodyPart6 = 0x6C,
+    DamageTarget1 = 0x70,
+    DamageTarget2 = 0x74,
+    DamageTarget3 = 0x78,
+    DamageTarget4 = 0x7C,
+    DamageTarget5 = 0x80,
+    DamageTarget6 = 0x84,
+    FlagsTarget1 = 0x88,
+    FlagsTarget2 = 0x8C,
+    FlagsTarget3 = 0x90,
+    FlagsTarget4 = 0x94,
+    FlagsTarget5 = 0x98,
+    FlagsTarget6 = 0x9C,
+    KnockbackValue1 = 0xA0,
+    KnockbackValue2 = 0xA4,
+    KnockbackValue3 = 0xA8,
+    KnockbackValue4 = 0xAC,
+    KnockbackValue5 = 0xB0,
+    KnockbackValue6 = 0xB4,
+};
+
+// this applies to Attack* arrays
+int fieldArrayIndex(int offset, int firstOffset)
+{
+    const int index = (offset - firstOffset) / 4;
+    assert(index >= 0 && index < EXPLOSION_TARGET_COUNT);
+    return index;
+}
+
+bool intDataValue(const ProgramValue& value, int& out)
+{
+    if (!value.isInt() && !value.isFloat()) {
+        return false;
+    }
+
+    out = value.asInt();
+    return true;
+}
+
+bool objectDataValue(const ProgramValue& value, Object*& out)
+{
+    if (value.isInt() && value.integerValue == 0) {
+        out = nullptr;
+        return true;
+    }
+
+    if (!value.isPointer()) {
+        return false;
+    }
+
+    out = static_cast<Object*>(value.pointerValue);
+    return true;
+}
+
+// activeAttackData returns Attack* iff it matches pointer passed in.
+Attack* activeAttackData(const ProgramValue& value)
+{
+    if (!value.isPointer() || value.pointerValue == nullptr) {
+        return nullptr;
+    }
+
+    const auto hookCall = ScriptHookCall::current();
+    if (hookCall != nullptr
+        && hookCall->hookType() == HOOK_COMBATDAMAGE
+        && hookCall->numArgs() > 12) {
+        ProgramValue attackArg = hookCall->getArgAt(12);
+        if (attackArg.isPointer() && attackArg.pointerValue == value.pointerValue) {
+            return static_cast<Attack*>(value.pointerValue);
+        }
+    }
+
+    if (value.pointerValue == combat_get_data()) {
+        return combat_get_data();
+    }
+
+    return nullptr;
+}
+
+ProgramValue getAttackData(Attack* attack, AttackDataField field)
+{
+    assert(attack != nullptr);
+
+    switch (field) {
+    case AttackDataField::Source:
+        return ProgramValue(attack->attacker);
+    case AttackDataField::HitMode:
+        return ProgramValue(attack->hitMode);
+    case AttackDataField::Weapon:
+        return ProgramValue(attack->weapon);
+    case AttackDataField::Unused:
+        return ProgramValue(attack->attackHitLocation);
+    case AttackDataField::DamageSource:
+        return ProgramValue(attack->attackerDamage);
+    case AttackDataField::FlagsSource:
+        return ProgramValue(attack->attackerFlags);
+    case AttackDataField::Rounds:
+        return ProgramValue(attack->ammoQuantity);
+    case AttackDataField::Message:
+        return ProgramValue(attack->criticalMessageId);
+    case AttackDataField::Target:
+        return ProgramValue(attack->defender);
+    case AttackDataField::BodyPart:
+        return ProgramValue(attack->defenderHitLocation);
+    case AttackDataField::DamageTarget:
+        return ProgramValue(attack->defenderDamage);
+    case AttackDataField::FlagsTarget:
+        return ProgramValue(attack->defenderFlags);
+    case AttackDataField::KnockbackValue:
+        return ProgramValue(attack->defenderKnockback);
+    case AttackDataField::MainTarget:
+        return ProgramValue(attack->intendedTarget);
+    case AttackDataField::AroundNumber:
+        return ProgramValue(attack->extrasLength);
+    case AttackDataField::Target1:
+    case AttackDataField::Target2:
+    case AttackDataField::Target3:
+    case AttackDataField::Target4:
+    case AttackDataField::Target5:
+    case AttackDataField::Target6:
+        return ProgramValue(attack->extras[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::Target1))]);
+    case AttackDataField::BodyPart1:
+    case AttackDataField::BodyPart2:
+    case AttackDataField::BodyPart3:
+    case AttackDataField::BodyPart4:
+    case AttackDataField::BodyPart5:
+    case AttackDataField::BodyPart6:
+        return ProgramValue(attack->extrasHitLocation[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::BodyPart1))]);
+    case AttackDataField::DamageTarget1:
+    case AttackDataField::DamageTarget2:
+    case AttackDataField::DamageTarget3:
+    case AttackDataField::DamageTarget4:
+    case AttackDataField::DamageTarget5:
+    case AttackDataField::DamageTarget6:
+        return ProgramValue(attack->extrasDamage[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::DamageTarget1))]);
+    case AttackDataField::FlagsTarget1:
+    case AttackDataField::FlagsTarget2:
+    case AttackDataField::FlagsTarget3:
+    case AttackDataField::FlagsTarget4:
+    case AttackDataField::FlagsTarget5:
+    case AttackDataField::FlagsTarget6:
+        return ProgramValue(attack->extrasFlags[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::FlagsTarget1))]);
+    case AttackDataField::KnockbackValue1:
+    case AttackDataField::KnockbackValue2:
+    case AttackDataField::KnockbackValue3:
+    case AttackDataField::KnockbackValue4:
+    case AttackDataField::KnockbackValue5:
+    case AttackDataField::KnockbackValue6:
+        return ProgramValue(attack->extrasKnockback[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::KnockbackValue1))]);
+    default:
+        programFatalError("get_object_data: unsupported attack data offset %d", static_cast<int>(field));
+    }
+}
+
+bool setAttackData(Attack* attack, AttackDataField field, const ProgramValue& data)
+{
+    assert(attack != nullptr);
+
+    int intValue = 0;
+    Object* objectValue = nullptr;
+
+    switch (field) {
+    case AttackDataField::Source:
+        if (!objectDataValue(data, objectValue)) return false;
+        attack->attacker = objectValue;
+        return true;
+    case AttackDataField::HitMode:
+        if (!intDataValue(data, intValue)) return false;
+        attack->hitMode = intValue;
+        return true;
+    case AttackDataField::Weapon:
+        if (!objectDataValue(data, objectValue)) return false;
+        attack->weapon = objectValue;
+        return true;
+    case AttackDataField::Unused:
+        if (!intDataValue(data, intValue)) return false;
+        attack->attackHitLocation = intValue;
+        return true;
+    case AttackDataField::DamageSource:
+        if (!intDataValue(data, intValue)) return false;
+        attack->attackerDamage = intValue;
+        return true;
+    case AttackDataField::FlagsSource:
+        if (!intDataValue(data, intValue)) return false;
+        attack->attackerFlags = intValue;
+        return true;
+    case AttackDataField::Rounds:
+        if (!intDataValue(data, intValue)) return false;
+        attack->ammoQuantity = intValue;
+        return true;
+    case AttackDataField::Message:
+        if (!intDataValue(data, intValue)) return false;
+        attack->criticalMessageId = intValue;
+        return true;
+    case AttackDataField::Target:
+        if (!objectDataValue(data, objectValue)) return false;
+        attack->defender = objectValue;
+        return true;
+    case AttackDataField::BodyPart:
+        if (!intDataValue(data, intValue)) return false;
+        attack->defenderHitLocation = intValue;
+        return true;
+    case AttackDataField::DamageTarget:
+        if (!intDataValue(data, intValue)) return false;
+        attack->defenderDamage = intValue;
+        return true;
+    case AttackDataField::FlagsTarget:
+        if (!intDataValue(data, intValue)) return false;
+        attack->defenderFlags = intValue;
+        return true;
+    case AttackDataField::KnockbackValue:
+        if (!intDataValue(data, intValue)) return false;
+        attack->defenderKnockback = intValue;
+        return true;
+    case AttackDataField::MainTarget:
+        if (!objectDataValue(data, objectValue)) return false;
+        attack->intendedTarget = objectValue;
+        return true;
+    case AttackDataField::AroundNumber:
+        if (!intDataValue(data, intValue)) return false;
+        if (intValue < 0 || intValue > EXPLOSION_TARGET_COUNT) return false;
+        attack->extrasLength = intValue;
+        return true;
+    case AttackDataField::Target1:
+    case AttackDataField::Target2:
+    case AttackDataField::Target3:
+    case AttackDataField::Target4:
+    case AttackDataField::Target5:
+    case AttackDataField::Target6:
+        if (!objectDataValue(data, objectValue)) return false;
+        attack->extras[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::Target1))] = objectValue;
+        return true;
+    case AttackDataField::BodyPart1:
+    case AttackDataField::BodyPart2:
+    case AttackDataField::BodyPart3:
+    case AttackDataField::BodyPart4:
+    case AttackDataField::BodyPart5:
+    case AttackDataField::BodyPart6:
+        if (!intDataValue(data, intValue)) return false;
+        attack->extrasHitLocation[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::BodyPart1))] = intValue;
+        return true;
+    case AttackDataField::DamageTarget1:
+    case AttackDataField::DamageTarget2:
+    case AttackDataField::DamageTarget3:
+    case AttackDataField::DamageTarget4:
+    case AttackDataField::DamageTarget5:
+    case AttackDataField::DamageTarget6:
+        if (!intDataValue(data, intValue)) return false;
+        attack->extrasDamage[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::DamageTarget1))] = intValue;
+        return true;
+    case AttackDataField::FlagsTarget1:
+    case AttackDataField::FlagsTarget2:
+    case AttackDataField::FlagsTarget3:
+    case AttackDataField::FlagsTarget4:
+    case AttackDataField::FlagsTarget5:
+    case AttackDataField::FlagsTarget6:
+        if (!intDataValue(data, intValue)) return false;
+        attack->extrasFlags[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::FlagsTarget1))] = intValue;
+        return true;
+    case AttackDataField::KnockbackValue1:
+    case AttackDataField::KnockbackValue2:
+    case AttackDataField::KnockbackValue3:
+    case AttackDataField::KnockbackValue4:
+    case AttackDataField::KnockbackValue5:
+    case AttackDataField::KnockbackValue6:
+        if (!intDataValue(data, intValue)) return false;
+        attack->extrasKnockback[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::KnockbackValue1))] = intValue;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool isKnownObjectDataField(ObjectDataField field)
+{
+    switch (field) {
+    case ObjectDataField::Id:
+    case ObjectDataField::TileNum:
+    case ObjectDataField::CurrFrm:
+    case ObjectDataField::Rotation:
+    case ObjectDataField::Fid:
+    case ObjectDataField::Flags:
+    case ObjectDataField::Elevation:
+    case ObjectDataField::Inventory:
+    case ObjectDataField::MiscFlags:
+    case ObjectDataField::CurCharges:
+    case ObjectDataField::CurActionPoint:
+    case ObjectDataField::DamageFlags:
+    case ObjectDataField::DamageLastTurn:
+    case ObjectDataField::WhoHitMe:
+    case ObjectDataField::CritterHp:
+    case ObjectDataField::Pid:
+    case ObjectDataField::Cid:
+    case ObjectDataField::LightDistance:
+    case ObjectDataField::LightIntensity:
+    case ObjectDataField::Sid:
+    case ObjectDataField::ScriptIndex:
+        return true;
+    default:
+        return false;
+    }
+}
+
+ProgramValue getCommonObjectData(Object* object, ObjectDataField field, bool& handled)
+{
+    assert(object != nullptr);
+
+    handled = true;
+
+    switch (field) {
+    case ObjectDataField::Id:
+        return ProgramValue(object->id);
+    case ObjectDataField::TileNum:
+        return ProgramValue(object->tile);
+    case ObjectDataField::CurrFrm:
+        return ProgramValue(object->frame);
+    case ObjectDataField::Rotation:
+        return ProgramValue(object->rotation);
+    case ObjectDataField::Fid:
+        return ProgramValue(object->fid);
+    case ObjectDataField::Flags:
+        return ProgramValue(object->flags);
+    case ObjectDataField::Elevation:
+        return ProgramValue(object->elevation);
+    case ObjectDataField::Inventory:
+        return ProgramValue(object->data.inventory.length);
+    case ObjectDataField::Pid:
+        return ProgramValue(object->pid);
+    case ObjectDataField::Cid:
+        return ProgramValue(object->cid);
+    case ObjectDataField::LightDistance:
+        return ProgramValue(object->lightDistance);
+    case ObjectDataField::LightIntensity:
+        return ProgramValue(object->lightIntensity);
+    case ObjectDataField::Sid:
+        return ProgramValue(object->sid);
+    case ObjectDataField::ScriptIndex:
+        return ProgramValue(object->scriptIndex);
+    default:
+        handled = false;
+        return ProgramValue(0);
+    }
+}
+
+ProgramValue getCritterObjectData(Object* object, ObjectDataField field)
+{
+    assert(object != nullptr);
+
+    switch (field) {
+    case ObjectDataField::MiscFlags:
+        return ProgramValue(object->data.critter.reaction);
+    case ObjectDataField::CurCharges:
+        return ProgramValue(object->data.critter.combat.maneuver);
+    case ObjectDataField::CurActionPoint:
+        return ProgramValue(object->data.critter.combat.ap);
+    case ObjectDataField::DamageFlags:
+        return ProgramValue(object->data.critter.combat.results);
+    case ObjectDataField::DamageLastTurn:
+        return ProgramValue(object->data.critter.combat.damageLastTurn);
+    case ObjectDataField::WhoHitMe:
+        return ProgramValue(object->data.critter.combat.whoHitMe);
+    case ObjectDataField::CritterHp:
+        return ProgramValue(object->data.critter.hp);
+    default:
+        return ProgramValue(0);
+    }
+}
+
+ProgramValue getItemObjectData(Object* object, ObjectDataField field)
+{
+    assert(object != nullptr);
+
+    switch (field) {
+    case ObjectDataField::MiscFlags:
+        return ProgramValue(object->data.flags);
+    case ObjectDataField::CurCharges:
+        switch (itemGetType(object)) {
+        case ITEM_TYPE_WEAPON:
+            return ProgramValue(object->data.item.weapon.ammoQuantity);
+        case ITEM_TYPE_AMMO:
+            return ProgramValue(object->data.item.ammo.quantity);
+        case ITEM_TYPE_MISC:
+            return ProgramValue(object->data.item.misc.charges);
+        case ITEM_TYPE_KEY:
+            return ProgramValue(object->data.item.key.keyCode);
+        default:
+            return ProgramValue(0);
+        }
+    case ObjectDataField::CurActionPoint:
+        if (itemGetType(object) == ITEM_TYPE_WEAPON) {
+            return ProgramValue(object->data.item.weapon.ammoTypePid);
+        }
+        return ProgramValue(0);
+    default:
+        return ProgramValue(0);
+    }
+}
+
+ProgramValue getSceneryObjectData(Object* object, ObjectDataField field)
+{
+    assert(object != nullptr);
+
+    switch (field) {
+    case ObjectDataField::MiscFlags:
+        return ProgramValue(object->data.flags);
+    case ObjectDataField::CurCharges:
+        return ProgramValue(object->data.scenery.door.openFlags);
+    default:
+        return ProgramValue(0);
+    }
+}
+
+ProgramValue getOtherObjectData(Object* object, ObjectDataField field)
+{
+    assert(object != nullptr);
+
+    switch (field) {
+    case ObjectDataField::MiscFlags:
+        return ProgramValue(object->data.flags);
+    default:
+        return ProgramValue(0);
+    }
+}
+
+ProgramValue getObjectData(Object* object, ObjectDataField field)
+{
+    assert(object != nullptr);
+
+    bool handled = false;
+    ProgramValue value = getCommonObjectData(object, field, handled);
+    if (handled) {
+        return value;
+    }
+
+    if (!isKnownObjectDataField(field)) {
+        programFatalError("get_object_data: unsupported object data offset %d", static_cast<int>(field));
+    }
+
+    switch (PID_TYPE(object->pid)) {
+    case OBJ_TYPE_CRITTER:
+        return getCritterObjectData(object, field);
+    case OBJ_TYPE_ITEM:
+        return getItemObjectData(object, field);
+    case OBJ_TYPE_SCENERY:
+        return getSceneryObjectData(object, field);
+    default:
+        return getOtherObjectData(object, field);
+    }
+}
+
+bool setCommonObjectData(Object* object, ObjectDataField field, const ProgramValue& data, bool& handled)
+{
+    assert(object != nullptr);
+
+    int intValue = 0;
+    handled = true;
+
+    switch (field) {
+    case ObjectDataField::Id:
+        if (!intDataValue(data, intValue)) return false;
+        object->id = intValue;
+        scriptsSyncObjectId(object);
+        return true;
+    case ObjectDataField::TileNum:
+        if (!intDataValue(data, intValue)) return false;
+        return objectSetLocation(object, intValue, object->elevation, nullptr) == 0;
+    case ObjectDataField::CurrFrm:
+        if (!intDataValue(data, intValue)) return false;
+        return objectSetFrame(object, intValue, nullptr) == 0;
+    case ObjectDataField::Rotation:
+        if (!intDataValue(data, intValue)) return false;
+        return objectSetRotation(object, intValue, nullptr) == 0;
+    case ObjectDataField::Fid:
+        if (!intDataValue(data, intValue)) return false;
+        return objectSetFid(object, intValue, nullptr) == 0;
+    case ObjectDataField::Flags:
+        if (!intDataValue(data, intValue)) return false;
+        object->flags = intValue;
+        return true;
+    case ObjectDataField::Elevation:
+        if (!intDataValue(data, intValue)) return false;
+        return objectSetLocation(object, object->tile, intValue, nullptr) == 0;
+    case ObjectDataField::Inventory:
+        return false;
+    case ObjectDataField::Pid:
+        if (!intDataValue(data, intValue)) return false;
+        object->pid = intValue;
+        return true;
+    case ObjectDataField::Cid:
+        if (!intDataValue(data, intValue)) return false;
+        object->cid = intValue;
+        return true;
+    case ObjectDataField::LightDistance:
+        if (!intDataValue(data, intValue)) return false;
+        return objectSetLight(object, intValue, object->lightIntensity, nullptr) == 0;
+    case ObjectDataField::LightIntensity:
+        if (!intDataValue(data, intValue)) return false;
+        return objectSetLight(object, object->lightDistance, intValue, nullptr) == 0;
+    case ObjectDataField::Sid:
+        if (!intDataValue(data, intValue)) return false;
+        object->sid = intValue;
+        scriptsSyncObjectId(object);
+        return true;
+    case ObjectDataField::ScriptIndex:
+        if (!intDataValue(data, intValue)) return false;
+        object->scriptIndex = intValue;
+        return true;
+    default:
+        handled = false;
+        return false;
+    }
+}
+
+bool setCritterObjectData(Object* object, ObjectDataField field, const ProgramValue& data)
+{
+    assert(object != nullptr);
+
+    int intValue = 0;
+    Object* objectValue = nullptr;
+
+    switch (field) {
+    case ObjectDataField::MiscFlags:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.critter.reaction = intValue;
+        return true;
+    case ObjectDataField::CurCharges:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.critter.combat.maneuver = intValue;
+        return true;
+    case ObjectDataField::CurActionPoint:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.critter.combat.ap = intValue;
+        return true;
+    case ObjectDataField::DamageFlags:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.critter.combat.results = intValue;
+        return true;
+    case ObjectDataField::DamageLastTurn:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.critter.combat.damageLastTurn = intValue;
+        return true;
+    case ObjectDataField::WhoHitMe:
+        if (!objectDataValue(data, objectValue)) return false;
+        object->data.critter.combat.whoHitMe = objectValue;
+        return true;
+    case ObjectDataField::CritterHp:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.critter.hp = intValue;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool setItemObjectData(Object* object, ObjectDataField field, const ProgramValue& data)
+{
+    assert(object != nullptr);
+
+    int intValue = 0;
+
+    switch (field) {
+    case ObjectDataField::MiscFlags:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.flags = intValue;
+        return true;
+    case ObjectDataField::CurCharges:
+        if (!intDataValue(data, intValue)) return false;
+        switch (itemGetType(object)) {
+        case ITEM_TYPE_WEAPON:
+            object->data.item.weapon.ammoQuantity = intValue;
+            return true;
+        case ITEM_TYPE_AMMO:
+            object->data.item.ammo.quantity = intValue;
+            return true;
+        case ITEM_TYPE_MISC:
+            object->data.item.misc.charges = intValue;
+            return true;
+        case ITEM_TYPE_KEY:
+            object->data.item.key.keyCode = intValue;
+            return true;
+        default:
+            return false;
+        }
+    case ObjectDataField::CurActionPoint:
+        if (!intDataValue(data, intValue)) return false;
+        if (itemGetType(object) != ITEM_TYPE_WEAPON) return false;
+        object->data.item.weapon.ammoTypePid = intValue;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool setSceneryObjectData(Object* object, ObjectDataField field, const ProgramValue& data)
+{
+    assert(object != nullptr);
+
+    int intValue = 0;
+
+    switch (field) {
+    case ObjectDataField::MiscFlags:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.flags = intValue;
+        return true;
+    case ObjectDataField::CurCharges:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.scenery.door.openFlags = intValue;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool setOtherObjectData(Object* object, ObjectDataField field, const ProgramValue& data)
+{
+    assert(object != nullptr);
+
+    int intValue = 0;
+
+    switch (field) {
+    case ObjectDataField::MiscFlags:
+        if (!intDataValue(data, intValue)) return false;
+        object->data.flags = intValue;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool setObjectData(Object* object, ObjectDataField field, const ProgramValue& data)
+{
+    assert(object != nullptr);
+
+    bool handled = false;
+    bool changed = setCommonObjectData(object, field, data, handled);
+    if (handled) {
+        return changed;
+    }
+
+    switch (PID_TYPE(object->pid)) {
+    case OBJ_TYPE_CRITTER:
+        return setCritterObjectData(object, field, data);
+    case OBJ_TYPE_ITEM:
+        return setItemObjectData(object, field, data);
+    case OBJ_TYPE_SCENERY:
+        return setSceneryObjectData(object, field, data);
+    default:
+        return setOtherObjectData(object, field, data);
+    }
+}
 
 } // namespace
 
@@ -125,6 +796,7 @@ static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
+static void mf_set_object_data(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
 static void mf_set_window_flag(OpcodeContext& ctx);
 static void mf_set_unique_id(OpcodeContext& ctx);
@@ -221,7 +893,7 @@ const MetaruleInfo kMetarules[] = {
     { "set_iface_tag_text", mf_set_iface_tag_text, 3, 3, -1, { ARG_INT, ARG_STRING, ARG_INT } },
     { "set_ini_setting", mf_set_ini_setting, 2, 2, -1, { ARG_STRING, ARG_INTSTR } },
     // {"set_map_enter_position",    mf_set_map_enter_position,    3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
-    // {"set_object_data",           mf_set_object_data,           3, 3, -1, {ARG_OBJECT, ARG_INT, ARG_INT}},
+    { "set_object_data", mf_set_object_data, 3, 3, -1, { ARG_OBJECT, ARG_INT, ARG_ANY } },
     { "set_outline", mf_set_outline, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"set_quest_failure_value",   mf_set_quest_failure_value,   2, 2, -1, {ARG_INT, ARG_INT}},
     // {"set_rest_heal_time",        mf_set_rest_heal_time,        1, 1, -1, {ARG_INT}},
@@ -566,152 +1238,62 @@ void mf_get_sfall_arg_at(OpcodeContext& ctx)
 
 void mf_get_object_data(OpcodeContext& ctx)
 {
-    Object* ptr = ctx.arg(0).asObject();
-    if (ptr == nullptr) {
+    const ProgramValue& dataPtr = ctx.arg(0);
+    if (dataPtr.isInt() && dataPtr.integerValue == 0) {
         ctx.setReturn(0);
         return;
     }
 
-    // Finding: CE's native 64-bit Object layout matches the classic offsets up
-    // through 0x28, but diverges after that due to the wider in-memory
-    // representation (notably ObjectData and pointer-sized fields). Sfall
-    // scripts expect the original 32-bit offsets, so this handler must map
-    // offsets semantically instead of reading raw memory.
-    ObjectDataField field = static_cast<ObjectDataField>(ctx.arg(1).asInt());
-    int value = 0;
-
-    switch (field) {
-    case ObjectDataField::Id:
-        value = ptr->id;
-        break;
-    case ObjectDataField::TileNum:
-        value = ptr->tile;
-        break;
-    case ObjectDataField::CurrFrm:
-        value = ptr->frame;
-        break;
-    case ObjectDataField::Rotation:
-        value = ptr->rotation;
-        break;
-    case ObjectDataField::Fid:
-        value = ptr->fid;
-        break;
-    case ObjectDataField::Flags:
-        value = ptr->flags;
-        break;
-    case ObjectDataField::Elevation:
-        value = ptr->elevation;
-        break;
-    case ObjectDataField::Inventory:
-        // 0x2C is the embedded Inventory struct in the original layout; scripts
-        // generally read its first word, which is the inventory length.
-        value = ptr->data.inventory.length;
-        break;
-    case ObjectDataField::MiscFlags:
-        // This offset is not a generic object field. In the original/sfall
-        // layout 0x38 aliases critter reaction/combat data with item/scenery
-        // subtype data, so only non-critters expose "misc flags" here.
-        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
-            value = ptr->data.critter.reaction;
+    const int offset = ctx.arg(1).asInt();
+    Attack* attack = activeAttackData(dataPtr);
+    if (attack != nullptr) {
+        if (!isInCombat()) {
+            ctx.printError("%s() - attack data is only available in combat.", ctx.name());
+            ctx.setReturn(0);
         } else {
-            value = ptr->data.flags;
+            ctx.setReturn(getAttackData(attack, static_cast<AttackDataField>(offset)));
         }
-        break;
-    case ObjectDataField::CurCharges:
-        // Not 1:1 for every object kind. For items this is charges/key code; for
-        // critters the same offset is combat state.
-        switch (PID_TYPE(ptr->pid)) {
-        case OBJ_TYPE_CRITTER:
-            value = ptr->data.critter.combat.maneuver;
-            break;
-        case OBJ_TYPE_ITEM:
-            switch (itemGetType(ptr)) {
-            case ITEM_TYPE_WEAPON:
-                value = ptr->data.item.weapon.ammoQuantity;
-                break;
-            case ITEM_TYPE_AMMO:
-                value = ptr->data.item.ammo.quantity;
-                break;
-            case ITEM_TYPE_MISC:
-                value = ptr->data.item.misc.charges;
-                break;
-            case ITEM_TYPE_KEY:
-                value = ptr->data.item.key.keyCode;
-                break;
-            default:
-                // No exact 1:1 field for this item subtype at 0x3C.
-                value = 0;
-                break;
-            }
-            break;
-        case OBJ_TYPE_SCENERY:
-            value = ptr->data.scenery.door.openFlags;
-            break;
-        default:
-            // No exact 1:1 field for this object type at 0x3C.
-            value = 0;
-            break;
-        }
-        break;
-    case ObjectDataField::CurActionPoint:
-        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
-            value = ptr->data.critter.combat.ap;
-        } else if (PID_TYPE(ptr->pid) == OBJ_TYPE_ITEM && itemGetType(ptr) == ITEM_TYPE_WEAPON) {
-            value = ptr->data.item.weapon.ammoTypePid;
-        } else {
-            // No exact 1:1 field for this object type at 0x40.
-            value = 0;
-        }
-        break;
-    case ObjectDataField::DamageFlags:
-        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
-            value = ptr->data.critter.combat.results;
-        } else {
-            // No exact 1:1 field for this object type at 0x44.
-            value = 0;
-        }
-        break;
-    case ObjectDataField::DamageLastTurn:
-        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
-            value = ptr->data.critter.combat.damageLastTurn;
-        } else {
-            // No exact 1:1 field for this object type at 0x48.
-            value = 0;
-        }
-        break;
-    case ObjectDataField::WhoHitMe:
-        if (PID_TYPE(ptr->pid) == OBJ_TYPE_CRITTER) {
-            value = reinterpret_cast<intptr_t>(ptr->data.critter.combat.whoHitMe);
-        } else {
-            // No exact 1:1 field for this object type at 0x54.
-            value = 0;
-        }
-        break;
-    case ObjectDataField::Pid:
-        value = ptr->pid;
-        break;
-    case ObjectDataField::Cid:
-        value = ptr->cid;
-        break;
-    case ObjectDataField::LightDistance:
-        value = ptr->lightDistance;
-        break;
-    case ObjectDataField::LightIntensity:
-        value = ptr->lightIntensity;
-        break;
-    case ObjectDataField::Sid:
-        value = ptr->sid;
-        break;
-    case ObjectDataField::ScriptIndex:
-        value = ptr->scriptIndex;
-        break;
-    default:
-        // CE intentionally whitelists the common sfall object fields here
-        // instead of exposing arbitrary raw offsets.
-        programFatalError("mf_get_object_data: unsupported offset %d", ctx.arg(1).asInt());
+        return;
     }
 
-    ctx.setReturn(value);
+    Object* object = dataPtr.asObject();
+    if (object == nullptr) {
+        ctx.setReturn(0);
+        return;
+    }
+
+    ctx.setReturn(getObjectData(object, static_cast<ObjectDataField>(offset)));
+}
+
+void mf_set_object_data(OpcodeContext& ctx)
+{
+    const ProgramValue& dataPtr = ctx.arg(0);
+    if (dataPtr.isInt() && dataPtr.integerValue == 0) {
+        ctx.setReturn(-1);
+        return;
+    }
+
+    const int offset = ctx.arg(1).asInt();
+    bool changed = false;
+
+    // If the pointer matches an active attack, we know it is an Attack*.  Otherwise, it is Object*
+    Attack* attack = activeAttackData(dataPtr);
+    if (attack != nullptr) {
+        if (!isInCombat()) {
+            ctx.printError("%s() - attack data is only available in combat.", ctx.name());
+            ctx.setReturn(-1);
+            return;
+        }
+        changed = setAttackData(attack, static_cast<AttackDataField>(offset), ctx.arg(2));
+    } else {
+        Object* object = dataPtr.asObject();
+        changed = object != nullptr && setObjectData(object, static_cast<ObjectDataField>(offset), ctx.arg(2));
+    }
+
+    if (!changed) {
+        ctx.printError("%s() - unsupported offset or value type.", ctx.name());
+        ctx.setReturn(-1);
+    }
 }
 
 void mf_get_text_width(OpcodeContext& ctx)
