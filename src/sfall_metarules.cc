@@ -1304,10 +1304,11 @@ void mf_get_object_ai_data(OpcodeContext& ctx)
         result = ProgramValue(ai->called_freq);
         break;
     case 14: {
-        ArrayId arrayId = CreateTempArray(3, 0);
-        SetArray(arrayId, ProgramValue(0), ProgramValue(ai->chem_primary_desire[0]), false, ctx.program());
-        SetArray(arrayId, ProgramValue(1), ProgramValue(ai->chem_primary_desire[1]), false, ctx.program());
-        SetArray(arrayId, ProgramValue(2), ProgramValue(ai->chem_primary_desire[2]), false, ctx.program());
+        constexpr int chemPrimaryDesireCount = sizeof(ai->chem_primary_desire) / sizeof(ai->chem_primary_desire[0]);
+        ArrayId arrayId = CreateTempArray(chemPrimaryDesireCount, 0);
+        for (int index = 0; index < chemPrimaryDesireCount; index++) {
+            SetArray(arrayId, ProgramValue(index), ProgramValue(ai->chem_primary_desire[index]), false, ctx.program());
+        }
         result = ProgramValue(arrayId);
         break;
     }
