@@ -35,14 +35,8 @@
 
 namespace fallout {
 
-// SFALL: Enable party members with level 6 protos to reach level 6.
-// CE: There are several party members who have 6 pids, but for unknown reason
-// the original code cap was 5. This fix affects:
-// - Dogmeat
-// - Goris
-// - Sulik
-// - Vik
-#define PARTY_MEMBER_MAX_LEVEL 6
+// SFALL: Increase the maximum party member level from vanilla's 5 to 10.
+#define PARTY_MEMBER_MAX_LEVEL 10
 
 typedef struct PartyMemberDescription {
     bool areaAttackMode[AREA_ATTACK_MODE_COUNT];
@@ -1539,13 +1533,16 @@ int _partyMemberIncLevels()
             continue;
         }
 
-        levelUpInfo->level++;
-        if (levelMod != 0) {
-            levelUpInfo->isEarly = 1;
+        int stagePid = memberDescription->level_pids[levelUpInfo->level];
+        int nextLevel = levelUpInfo->level + 1;
+
+        if (_partyMemberCopyLevelInfo(obj, stagePid) == -1) {
+            return -1;
         }
 
-        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[levelUpInfo->level]) == -1) {
-            return -1;
+        levelUpInfo->level = nextLevel;
+        if (levelMod != 0) {
+            levelUpInfo->isEarly = 1;
         }
 
         name = critterGetName(obj);
@@ -1577,6 +1574,11 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
     }
 
     if (stagePid == -1) {
+        return -1;
+    }
+
+    if (PID_TYPE(stagePid) != OBJ_TYPE_CRITTER) {
+        debugPrint("\npartyMemberCopyLevelInfo: stage pid %d is not a critter", stagePid);
         return -1;
     }
 
