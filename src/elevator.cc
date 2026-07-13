@@ -469,12 +469,14 @@ int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tileP
     elevatorWindowFree();
     touch_set_touchscreen_mode(false);
 
-    if (keyCode != KEY_ESCAPE) {
-        const ElevatorDescription* description = &(elevatorDescription[keyCode]);
-        *mapPtr = description->map;
-        *elevationPtr = description->elevation;
-        *tilePtr = description->tile;
+    if (keyCode == KEY_ESCAPE) {
+        return -1;
     }
+
+    const ElevatorDescription* description = &(elevatorDescription[keyCode]);
+    *mapPtr = description->map;
+    *elevationPtr = description->elevation;
+    *tilePtr = description->tile;
 
     return 0;
 }

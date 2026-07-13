@@ -1000,6 +1000,10 @@ static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
         return -1;
     }
 
+    if (tile == -1) {
+        return -1;
+    }
+
     automapSaveCurrent();
 
     if (map == gMapHeader.index) {
