@@ -83,6 +83,7 @@ static void mf_obj_under_cursor(OpcodeContext& ctx);
 static void mf_objects_in_radius(OpcodeContext& ctx);
 static void mf_opcode_exists(OpcodeContext& ctx);
 static void mf_outlined_object(OpcodeContext& ctx);
+static void mf_real_dude_obj(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
@@ -167,7 +168,7 @@ const MetaruleInfo kMetarules[] = {
     { "obj_under_cursor", mf_obj_under_cursor, 2, 2, 0, { ARG_INT, ARG_INT } },
     { "objects_in_radius", mf_objects_in_radius, 3, 4, 0, { ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "outlined_object", mf_outlined_object, 0, 0 },
-    // {"real_dude_obj",             mf_real_dude_obj,             0, 0},
+    { "real_dude_obj", mf_real_dude_obj, 0, 0 },
     { "reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, { ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT } },
     // {"remove_timer_event",        mf_remove_timer_event,        0, 1, -1, {ARG_INT}},
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
@@ -948,6 +949,11 @@ static void mf_objects_in_radius(OpcodeContext& ctx)
 void mf_outlined_object(OpcodeContext& ctx)
 {
     ctx.setReturn(gmouse_get_outlined_object());
+}
+
+void mf_real_dude_obj(OpcodeContext& ctx)
+{
+    ctx.setReturn(gDude);
 }
 
 void mf_set_combat_free_move(OpcodeContext& ctx)
