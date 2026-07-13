@@ -943,19 +943,18 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
     }
 
     int color = _colorTable[992];
+    int inventoryWeight = objectGetInventoryWeight(object);
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
-        int currentWeight = objectGetInventoryWeight(object) + extraWeight;
+        int currentWeight = inventoryWeight + extraWeight;
         int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
         snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
         if (currentWeight > maxWeight) {
             color = _colorTable[31744];
         }
-    } else if (targetPane && PID_TYPE(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
-        int currentSize = containerGetTotalSize(object);
-        int maxSize = containerGetMaxSize(object);
-        snprintf(formattedText, sizeof(formattedText), "%d/%d", currentSize, maxSize);
     } else {
-        int inventoryWeight = objectGetInventoryWeight(object);
+        // container proto doesn't include maximum weight, only maximum size so
+        // just show current weight for the sake of consistency what values are reported 
+        // to the player on left/right pane of the loot dialog
         snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
     }
 
