@@ -1832,6 +1832,18 @@ static void op_fs_create(Program* program)
     programStackPushInteger(program, -1);
 }
 
+static void op_set_hero_style(Program* program)
+{
+    int style = programStackPopInteger(program);
+    programPrintError("set_hero_style: not implemented!");
+}
+
+static void op_set_hero_race(Program* program)
+{
+    int race = programStackPopInteger(program);
+    programPrintError("set_hero_race: not implemented!");
+}
+
 // Note: opcodes should pop arguments off the stack in reverse order
 void sfallOpcodesInit()
 {
@@ -2214,7 +2226,9 @@ void sfallOpcodesInit()
 
     // 0x8213 - void hero_select_win(int)
     // 0x8214 - void set_hero_race(int style)
+    interpreterRegisterOpcode(0x8214, op_set_hero_race);
     // 0x8215 - void set_hero_style(int style)
+    interpreterRegisterOpcode(0x8215, op_set_hero_style);
 
     // 0x8216 - void set_critter_burst_disable(object critter, int disable)
     interpreterRegisterOpcode(0x8216, op_set_critter_burst_disable);
