@@ -1705,6 +1705,10 @@ static int _PrintAMelevList(int selectedMap)
     int totalEntries = 0;
     int elevationsListSize = 0;
     const int maxEntriesPerPage = PIPBOY_AUTOMAP_SUB_LINES;
+    int mapCount = std::min(wmMapMaxCount(), AUTOMAP_MAP_COUNT);
+    if (_amcty_indx < 0 || _amcty_indx >= mapCount) {
+        return 0;
+    }
 
     // First pass: Count total valid entries
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
@@ -1713,7 +1717,6 @@ static int _PrintAMelevList(int selectedMap)
         }
     }
 
-    int mapCount = wmMapMaxCount();
     for (int map = 0; map < mapCount; map++) {
         if (map == _amcty_indx || _get_map_idx_same(_amcty_indx, map) == -1) {
             continue;
@@ -1827,7 +1830,7 @@ static int _PrintAMList(int selectedLocation)
 
     int count = 0;
 
-    int mapCount = wmMapMaxCount();
+    int mapCount = std::min(wmMapMaxCount(), AUTOMAP_MAP_COUNT);
     for (int map = 0; map < mapCount; map++) {
         int elevation;
         for (elevation = 0; elevation < ELEVATION_COUNT; elevation++) {

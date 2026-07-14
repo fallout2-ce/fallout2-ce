@@ -48,6 +48,11 @@ static int _copy_file_data(File* stream1, File* stream2, int length);
 
 static int gAutomapWindow = -1;
 
+static bool automapEntryIsValid(int map, int elevation)
+{
+    return map >= 0 && map < AUTOMAP_MAP_COUNT && elevationIsValid(elevation);
+}
+
 typedef enum AutomapFrm {
     AUTOMAP_FRM_BACKGROUND,
     AUTOMAP_FRM_BUTTON_UP,
@@ -293,6 +298,10 @@ int automapSave(File* stream)
 // 0x41B8B4 automapDisplayMap
 int _automapDisplayMap(int map)
 {
+    if (map < 0 || map >= AUTOMAP_MAP_COUNT) {
+        return -1;
+    }
+
     return _displayMapList[map];
 }
 
@@ -696,6 +705,9 @@ int automapSaveCurrent()
 {
     int map = mapGetCurrentMap();
     int elevation = gElevation;
+    if (!automapEntryIsValid(map, elevation)) {
+        return 0;
+    }
 
     int entryOffset = gAutomapHeader.offsets[map][elevation];
     if (entryOffset < 0) {
@@ -941,6 +953,9 @@ err:
 static int automapLoadEntry(int map, int elevation)
 {
     gAutomapEntry.compressedData = nullptr;
+    if (!automapEntryIsValid(map, elevation)) {
+        return -1;
+    }
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "%s\\%s", "MAPS", AUTOMAP_DB);
