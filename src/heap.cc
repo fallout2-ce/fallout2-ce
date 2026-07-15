@@ -1,5 +1,7 @@
 #include "heap.h"
 
+#include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -307,11 +309,12 @@ bool heapBlockAllocate(Heap* heap, int* handleIndexPtr, int size, int disallowSy
     int blockSize;
     HeapHandle* handle;
 
-    size += 4 - size % 4;
-
     if (heap == nullptr || handleIndexPtr == nullptr || size == 0) {
         goto err;
     }
+
+    // Keep subsequent block headers aligned when callers request odd-sized payloads.
+    size = (size + 3) & ~3;
 
     if (disallowSystemAllocation != 0 && disallowSystemAllocation != 1) {
         disallowSystemAllocation = 0;
@@ -429,7 +432,17 @@ bool heapBlockDeallocate(Heap* heap, int* handleIndexPtr)
 
     int handleIndex = *handleIndexPtr;
 
+    if (heap->handles == nullptr || handleIndex < 0 || handleIndex >= heap->handlesLength) {
+        debugPrint("Heap Error: Invalid handle during deallocate.\n");
+        debugPrint("Heap Error: Could not deallocate block.\n");
+        return false;
+    }
+
     HeapHandle* handle = &(heap->handles[handleIndex]);
+    if (handle->data == nullptr) {
+        debugPrint("Heap Error: Null handle data detected during deallocate.\n");
+        return false;
+    }
 
     HeapBlockHeader* blockHeader = (HeapBlockHeader*)handle->data;
     if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
@@ -493,12 +506,22 @@ bool heapBlockDeallocate(Heap* heap, int* handleIndexPtr)
 // 0x452DE0 heap_lock
 bool heapLock(Heap* heap, int handleIndex, unsigned char** bufferPtr)
 {
-    if (heap == nullptr) {
+    if (heap == nullptr || bufferPtr == nullptr) {
         debugPrint("Heap Error: Could not lock block");
         return false;
     }
 
+    if (heap->handles == nullptr || handleIndex < 0 || handleIndex >= heap->handlesLength) {
+        debugPrint("Heap Error: Invalid handle during lock.\n");
+        debugPrint("Heap Error: Could not lock block.\n");
+        return false;
+    }
+
     HeapHandle* handle = &(heap->handles[handleIndex]);
+    if (handle->data == nullptr) {
+        debugPrint("Heap Error: Null handle data detected during lock.\n");
+        return false;
+    }
 
     HeapBlockHeader* blockHeader = (HeapBlockHeader*)handle->data;
     if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
@@ -559,7 +582,17 @@ bool heapUnlock(Heap* heap, int handleIndex)
         return false;
     }
 
+    if (heap->handles == nullptr || handleIndex < 0 || handleIndex >= heap->handlesLength) {
+        debugPrint("Heap Error: Invalid handle during unlock.\n");
+        debugPrint("Heap Error: Could not unlock block.\n");
+        return false;
+    }
+
     HeapHandle* handle = &(heap->handles[handleIndex]);
+    if (handle->data == nullptr) {
+        debugPrint("Heap Error: Null handle data detected during unlock.\n");
+        return false;
+    }
 
     HeapBlockHeader* blockHeader = (HeapBlockHeader*)handle->data;
     if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
@@ -984,6 +1017,11 @@ static int heapMoveableExtentsCompareBySize(const void* leftPtr, const void* rig
 // 0x453BC4 heap_build_free_list
 static bool heapBuildFreeBlocksList(Heap* heap)
 {
+    if (heap == nullptr || heap->data == nullptr || heap->size <= 0) {
+        debugPrint("Heap Error: Invalid heap during build free list.\n");
+        return false;
+    }
+
     if (heap->freeBlocks == 0) {
         return false;
     }
@@ -1001,6 +1039,12 @@ static bool heapBuildFreeBlocksList(Heap* heap)
     int blocksLength = heap->moveableBlocks + heap->freeBlocks + heap->lockedBlocks;
 
     unsigned char* ptr = heap->data;
+    uintptr_t heapStartAddress = reinterpret_cast<uintptr_t>(heap->data);
+    uintptr_t heapEndAddress = heapStartAddress + static_cast<uintptr_t>(heap->size);
+    if (heapEndAddress < heapStartAddress) {
+        debugPrint("Heap ERROR: heap address range overflow during free list build: data=%p size=%d\n", heap->data, heap->size);
+        return false;
+    }
 
     int freeBlockIndex = 0;
     while (blocksLength != 0) {
@@ -1008,19 +1052,56 @@ static bool heapBuildFreeBlocksList(Heap* heap)
             break;
         }
 
+        uintptr_t ptrAddress = reinterpret_cast<uintptr_t>(ptr);
+        if (ptrAddress < heapStartAddress || ptrAddress > heapEndAddress || heapEndAddress - ptrAddress < HEAP_BLOCK_HEADER_SIZE) {
+            debugPrint("Heap ERROR: invalid heap block pointer during free list build: ptr=%p heapEnd=%p blocksLength=%d freeBlocks=%d moveableBlocks=%d lockedBlocks=%d\n", ptr, reinterpret_cast<void*>(heapEndAddress), blocksLength, heap->freeBlocks, heap->moveableBlocks, heap->lockedBlocks);
+            return false;
+        }
+
         HeapBlockHeader* blockHeader = (HeapBlockHeader*)ptr;
+        if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
+            debugPrint("Heap ERROR: bad block header guard during free list build: ptr=%p guard=%08X\n", ptr, blockHeader->guard);
+            return false;
+        }
+        if (blockHeader->size < 0 || heapEndAddress - ptrAddress < HEAP_BLOCK_OVERHEAD_SIZE || static_cast<uintptr_t>(blockHeader->size) > heapEndAddress - ptrAddress - HEAP_BLOCK_OVERHEAD_SIZE) {
+            debugPrint("Heap ERROR: invalid block size during free list build: ptr=%p size=%d heapEnd=%p\n", ptr, blockHeader->size, reinterpret_cast<void*>(heapEndAddress));
+            return false;
+        }
+
+        uintptr_t blockExtentSize = static_cast<uintptr_t>(blockHeader->size) + HEAP_BLOCK_OVERHEAD_SIZE;
         if (blockHeader->state == HEAP_BLOCK_STATE_FREE) {
             // Join consecutive free blocks if any.
             while (blocksLength > 1) {
                 // Grab next block and check if's a free block.
-                HeapBlockHeader* nextBlockHeader = (HeapBlockHeader*)(ptr + blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE);
+                uintptr_t nextBlockAddress = ptrAddress + blockExtentSize;
+                if (nextBlockAddress < heapStartAddress || nextBlockAddress > heapEndAddress || heapEndAddress - nextBlockAddress < HEAP_BLOCK_HEADER_SIZE) {
+                    debugPrint("Heap ERROR: next block pointer out of range during free list join: nextPtr=%p heapEnd=%p\n", reinterpret_cast<void*>(nextBlockAddress), reinterpret_cast<void*>(heapEndAddress));
+                    return false;
+                }
+                unsigned char* nextBlockPtr = reinterpret_cast<unsigned char*>(nextBlockAddress);
+                HeapBlockHeader* nextBlockHeader = (HeapBlockHeader*)nextBlockPtr;
+                if (nextBlockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
+                    debugPrint("Heap ERROR: bad next block header guard during free list join: nextPtr=%p guard=%08X\n", nextBlockPtr, nextBlockHeader->guard);
+                    return false;
+                }
+                if (nextBlockHeader->size < 0 || heapEndAddress - nextBlockAddress < HEAP_BLOCK_OVERHEAD_SIZE || static_cast<uintptr_t>(nextBlockHeader->size) > heapEndAddress - nextBlockAddress - HEAP_BLOCK_OVERHEAD_SIZE) {
+                    debugPrint("Heap ERROR: invalid next block size during free list join: nextPtr=%p size=%d heapEnd=%p\n", nextBlockPtr, nextBlockHeader->size, reinterpret_cast<void*>(heapEndAddress));
+                    return false;
+                }
                 if (nextBlockHeader->state != HEAP_BLOCK_STATE_FREE) {
                     break;
                 }
 
+                long long joinedSize = static_cast<long long>(blockHeader->size) + nextBlockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
+                if (joinedSize > INT_MAX) {
+                    debugPrint("Heap ERROR: joined free block size overflow during free list join: ptr=%p size=%d nextSize=%d\n", ptr, blockHeader->size, nextBlockHeader->size);
+                    return false;
+                }
+
                 // Accumulate it's size plus size of the overhead in the main
                 // block.
-                blockHeader->size += nextBlockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
+                blockHeader->size = static_cast<int>(joinedSize);
+                blockExtentSize = static_cast<uintptr_t>(blockHeader->size) + HEAP_BLOCK_OVERHEAD_SIZE;
 
                 // Update heap stats, the free size increased because we've just
                 // remove overhead for one block.
@@ -1034,7 +1115,8 @@ static bool heapBuildFreeBlocksList(Heap* heap)
         }
 
         // Move pointer to the header of the next block.
-        ptr += blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
+        ptrAddress += blockExtentSize;
+        ptr = reinterpret_cast<unsigned char*>(ptrAddress);
 
         blocksLength--;
     }
@@ -1053,6 +1135,11 @@ static int heapBlockCompareBySize(const void* leftPtr, const void* rightPtr)
 // 0x453CD0 heap_build_moveable_list
 static bool heapBuildMoveableExtentsList(Heap* heap, int* moveableExtentsLengthPtr, int* maxBlocksLengthPtr)
 {
+    if (heap == nullptr || heap->data == nullptr || moveableExtentsLengthPtr == nullptr || maxBlocksLengthPtr == nullptr) {
+        debugPrint("Heap Error: Invalid heap state during build moveable list.\n");
+        return false;
+    }
+
     // Calculate max number of extents. It's only possible when every
     // free or moveable block is followed by locked block.
     int maxExtentsCount = heap->moveableBlocks + heap->freeBlocks;
@@ -1137,10 +1224,22 @@ static bool heapBuildMoveableExtentsList(Heap* heap, int* moveableExtentsLengthP
 // 0x452FC4 heap_validate
 bool heapValidate(Heap* heap)
 {
-    debugPrint("Validating heap...\n");
+    if (heap == nullptr || heap->data == nullptr || heap->size <= 0) {
+        debugPrint("Heap ERROR: invalid heap during validate: heap=%p data=%p size=%d\n",
+            heap,
+            heap != nullptr ? heap->data : nullptr,
+            heap != nullptr ? heap->size : 0);
+        return false;
+    }
 
     int blocksCount = heap->freeBlocks + heap->moveableBlocks + heap->lockedBlocks;
     unsigned char* ptr = heap->data;
+    uintptr_t heapStartAddress = reinterpret_cast<uintptr_t>(heap->data);
+    uintptr_t heapEndAddress = heapStartAddress + static_cast<uintptr_t>(heap->size);
+    if (heapEndAddress < heapStartAddress) {
+        debugPrint("Heap ERROR: heap address range overflow during validate: data=%p size=%d\n", heap->data, heap->size);
+        return false;
+    }
 
     int freeBlocks = 0;
     int freeSize = 0;
@@ -1150,15 +1249,52 @@ bool heapValidate(Heap* heap)
     int lockedSize = 0;
 
     for (int index = 0; index < blocksCount; index++) {
+        uintptr_t ptrAddress = reinterpret_cast<uintptr_t>(ptr);
+        if (ptrAddress < heapStartAddress || ptrAddress > heapEndAddress || heapEndAddress - ptrAddress < HEAP_BLOCK_HEADER_SIZE) {
+            debugPrint("Heap ERROR: invalid heap block pointer during validate: index=%d ptr=%p heapEnd=%p blocks=%d freeBlocks=%d moveableBlocks=%d lockedBlocks=%d\n",
+                index,
+                ptr,
+                reinterpret_cast<void*>(heapEndAddress),
+                blocksCount,
+                heap->freeBlocks,
+                heap->moveableBlocks,
+                heap->lockedBlocks);
+            return false;
+        }
+
         HeapBlockHeader* blockHeader = (HeapBlockHeader*)ptr;
         if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
-            debugPrint("Bad guard begin detected during validate.\n");
+            debugPrint("Heap ERROR: bad block header guard during validate: index=%d ptr=%p guard=%08X size=%d state=%u handle=%d\n",
+                index,
+                ptr,
+                blockHeader->guard,
+                blockHeader->size,
+                blockHeader->state,
+                blockHeader->handle_index);
+            return false;
+        }
+
+        if (blockHeader->size < 0 || heapEndAddress - ptrAddress < HEAP_BLOCK_OVERHEAD_SIZE || static_cast<uintptr_t>(blockHeader->size) > heapEndAddress - ptrAddress - HEAP_BLOCK_OVERHEAD_SIZE) {
+            debugPrint("Heap ERROR: invalid block size during validate: index=%d ptr=%p size=%d state=%u handle=%d heapEnd=%p\n",
+                index,
+                ptr,
+                blockHeader->size,
+                blockHeader->state,
+                blockHeader->handle_index,
+                reinterpret_cast<void*>(heapEndAddress));
             return false;
         }
 
         HeapBlockFooter* blockFooter = (HeapBlockFooter*)(ptr + blockHeader->size + HEAP_BLOCK_HEADER_SIZE);
         if (blockFooter->guard != HEAP_BLOCK_FOOTER_GUARD) {
-            debugPrint("Bad guard end detected during validate.\n");
+            debugPrint("Heap ERROR: bad block footer guard during validate: index=%d ptr=%p footer=%p guard=%08X size=%d state=%u handle=%d\n",
+                index,
+                ptr,
+                blockFooter,
+                blockFooter->guard,
+                blockHeader->size,
+                blockHeader->state,
+                blockHeader->handle_index);
             return false;
         }
 
@@ -1171,15 +1307,32 @@ bool heapValidate(Heap* heap)
         } else if (blockHeader->state == HEAP_BLOCK_STATE_LOCKED) {
             lockedBlocks++;
             lockedSize += blockHeader->size;
+        } else {
+            debugPrint("Heap ERROR: invalid block state during validate: index=%d ptr=%p size=%d state=%u handle=%d\n",
+                index,
+                ptr,
+                blockHeader->size,
+                blockHeader->state,
+                blockHeader->handle_index);
+            return false;
         }
 
-        if (index != blocksCount - 1) {
-            ptr += blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
-            if (ptr > (heap->data + heap->size)) {
-                debugPrint("Ran off end of heap during validate!\n");
-                return false;
-            }
+        ptr += blockHeader->size + HEAP_BLOCK_OVERHEAD_SIZE;
+        if (reinterpret_cast<uintptr_t>(ptr) > heapEndAddress) {
+            debugPrint("Heap ERROR: ran off end of heap during validate: index=%d nextPtr=%p heapEnd=%p\n",
+                index,
+                ptr,
+                reinterpret_cast<void*>(heapEndAddress));
+            return false;
         }
+    }
+
+    if (reinterpret_cast<uintptr_t>(ptr) != heapEndAddress) {
+        debugPrint("Heap ERROR: block traversal did not end at heap boundary: ptr=%p heapEnd=%p blocks=%d\n",
+            ptr,
+            reinterpret_cast<void*>(heapEndAddress),
+            blocksCount);
+        return false;
     }
 
     if (freeBlocks != heap->freeBlocks) {
@@ -1212,23 +1365,42 @@ bool heapValidate(Heap* heap)
         return false;
     }
 
-    debugPrint("Heap is O.K.\n");
-
     int systemBlocks = 0;
     int systemSize = 0;
 
     for (int handleIndex = 0; handleIndex < heap->handlesLength; handleIndex++) {
         HeapHandle* handle = &(heap->handles[handleIndex]);
         if (handle->state != HEAP_HANDLE_STATE_INVALID && (handle->state & HEAP_BLOCK_STATE_SYSTEM) != 0) {
+            if (handle->data == nullptr) {
+                debugPrint("Heap ERROR: null system handle data during validate: handle=%d state=%u\n", handleIndex, handle->state);
+                return false;
+            }
+
             HeapBlockHeader* blockHeader = (HeapBlockHeader*)handle->data;
             if (blockHeader->guard != HEAP_BLOCK_HEADER_GUARD) {
-                debugPrint("Bad guard begin detected in system block during validate.\n");
+                debugPrint("Heap ERROR: bad system block header guard during validate: handle=%d ptr=%p guard=%08X\n",
+                    handleIndex,
+                    handle->data,
+                    blockHeader->guard);
+                return false;
+            }
+
+            if (blockHeader->size < 0) {
+                debugPrint("Heap ERROR: invalid system block size during validate: handle=%d ptr=%p size=%d\n",
+                    handleIndex,
+                    handle->data,
+                    blockHeader->size);
                 return false;
             }
 
             HeapBlockFooter* blockFooter = (HeapBlockFooter*)(handle->data + blockHeader->size + HEAP_BLOCK_HEADER_SIZE);
             if (blockFooter->guard != HEAP_BLOCK_FOOTER_GUARD) {
-                debugPrint("Bad guard end detected in system block during validate.\n");
+                debugPrint("Heap ERROR: bad system block footer guard during validate: handle=%d ptr=%p footer=%p guard=%08X size=%d\n",
+                    handleIndex,
+                    handle->data,
+                    blockFooter,
+                    blockFooter->guard,
+                    blockHeader->size);
                 return false;
             }
 

@@ -1031,10 +1031,21 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             Art art;
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
+                if (*sizePtr < 0) {
+                    debugPrint("ART ERROR: fid %d path %s returned negative data size %d\n", fid, artFilePath, *sizePtr);
+                } else if (*sizePtr > 0x10000) {
+                    debugPrint("ART INFO: fid %d path %s has large data size %d\n", fid, artFilePath, *sizePtr);
+                }
                 result = 0;
+            } else {
+                debugPrint("ART ERROR: artReadHeader failed for fid %d path %s\n", fid, artFilePath);
             }
             fileClose(stream);
+        } else {
+            debugPrint("ART ERROR: could not open file for fid %d path %s\n", fid, artFilePath);
         }
+    } else {
+        debugPrint("ART ERROR: could not build path for fid %d\n", fid);
     }
 
     return result;
@@ -1052,19 +1063,32 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
         if (artGetLocalizedPath(artFileName, &localizedPath)) {
             if (artRead(localizedPath, data) == 0) {
                 loaded = true;
+            } else {
+                debugPrint("ART INFO: artRead localized failed for fid %d path %s\n", fid, localizedPath);
             }
         }
 
         if (!loaded) {
             if (artRead(artFileName, data) == 0) {
                 loaded = true;
+            } else {
+                debugPrint("ART INFO: artRead fallback failed for fid %d path %s\n", fid, artFileName);
             }
         }
 
         if (loaded) {
             *sizePtr = artGetDataSize((Art*)data);
+            if (*sizePtr < 0) {
+                debugPrint("ART ERROR: fid %d path %s read data returned negative size %d\n", fid, artFileName, *sizePtr);
+            } else if (*sizePtr > 0x10000) {
+                debugPrint("ART INFO: fid %d path %s read large data size %d\n", fid, artFileName, *sizePtr);
+            }
             result = 0;
+        } else {
+            debugPrint("ART ERROR: failed to load ART data for fid %d path %s\n", fid, artFileName);
         }
+    } else {
+        debugPrint("ART ERROR: could not build path for fid %d\n", fid);
     }
 
     return result;
@@ -1147,6 +1171,20 @@ static int artReadHeader(Art* art, File* stream)
     // CE: Fix malformed `frm` files with `dataSize` set to 0 in Nevada.
     if (art->dataSize == 0) {
         art->dataSize = fileGetSize(stream);
+    }
+
+    if (art->frameCount < 0) {
+        debugPrint("ART WARNING: negative frameCount %d in header\n", art->frameCount);
+    }
+
+    if (art->dataSize < 0) {
+        debugPrint("ART WARNING: negative dataSize %d in header\n", art->dataSize);
+    }
+
+    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        if (art->dataOffsets[rotation] < 0) {
+            debugPrint("ART WARNING: negative dataOffset[%d] %d in header\n", rotation, art->dataOffsets[rotation]);
+        }
     }
 
     return 0;
@@ -1439,6 +1477,13 @@ int artRead(const char* path, unsigned char* data)
         return -3;
     }
 
+    int totalAllocSize = artGetDataSize(art);
+    if (totalAllocSize <= 0) {
+        debugPrint("ART ERROR: artRead computed invalid totalAllocSize %d for %s\n", totalAllocSize, path);
+        fileClose(stream);
+        return -5;
+    }
+
     int currentPadding = paddingForSize(sizeof(Art));
     int previousPadding = 0;
 
@@ -1448,7 +1493,14 @@ int artRead(const char* path, unsigned char* data)
         if (index == 0 || art->dataOffsets[index - 1] != art->dataOffsets[index]) {
             art->padding[index] += previousPadding;
             currentPadding += previousPadding;
-            if (artReadFrameData(data + sizeof(Art) + art->dataOffsets[index] + art->padding[index], stream, art->frameCount, &previousPadding) != 0) {
+            long long frameDataOffset = static_cast<long long>(sizeof(Art)) + art->dataOffsets[index] + art->padding[index];
+            if (frameDataOffset < 0 || frameDataOffset >= totalAllocSize) {
+                debugPrint("ART ERROR: invalid frame data destination for %s at rotation %d: offset=%lld base=%p size=%d\n", path, index, frameDataOffset, data, totalAllocSize);
+                fileClose(stream);
+                return -5;
+            }
+            unsigned char* frameDataPtr = data + frameDataOffset;
+            if (artReadFrameData(frameDataPtr, stream, art->frameCount, &previousPadding) != 0) {
                 fileClose(stream);
                 return -5;
             }

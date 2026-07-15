@@ -24,6 +24,7 @@ static bool cacheEntryInit(CacheEntry* cacheEntry);
 static bool cacheEntryFree(Cache* cache, CacheEntry* cacheEntry);
 static bool cacheClean(Cache* cache);
 static bool cacheResetStatistics(Cache* cache);
+static bool cacheValidateHeap(Cache* cache, const char* operation, int key, int size, int heapHandleIndex, const void* data);
 static bool cacheEnsureSize(Cache* cache, int size);
 static bool cacheSweep(Cache* cache);
 static bool cacheSetCapacity(Cache* cache, int newCapacity);
@@ -222,10 +223,21 @@ static bool cacheFetchEntryForKey(Cache* cache, int key, int* indexPtr)
     do {
         int size;
         if (cache->sizeProc(key, &size) != 0) {
+            debugPrint("Cache ERROR: sizeProc failed for key %d\n", key);
             break;
         }
 
+        if (size < 0) {
+            debugPrint("Cache ERROR: invalid size %d for key %d\n", size, key);
+            break;
+        }
+
+        if (size > 0x10000) {
+            debugPrint("Cache INFO: key %d requested large allocation size %d\n", key, size);
+        }
+
         if (!cacheEnsureSize(cache, size)) {
+            debugPrint("Cache INFO: cacheEnsureSize failed for key %d size %d\n", key, size);
             break;
         }
 
@@ -262,8 +274,17 @@ static bool cacheFetchEntryForKey(Cache* cache, int key, int* indexPtr)
             break;
         }
 
+        bool locked = false;
         do {
             if (!heapLock(&(cache->heap), cacheEntry->heapHandleIndex, &(cacheEntry->data))) {
+                break;
+            }
+
+            locked = true;
+            int requestedSize = size;
+            int allocatedSize = (requestedSize + 3) & ~3;
+
+            if (!cacheValidateHeap(cache, "after lock before read", key, size, cacheEntry->heapHandleIndex, cacheEntry->data)) {
                 break;
             }
 
@@ -271,7 +292,27 @@ static bool cacheFetchEntryForKey(Cache* cache, int key, int* indexPtr)
                 break;
             }
 
+            if (!cacheValidateHeap(cache, "after read before unlock", key, size, cacheEntry->heapHandleIndex, cacheEntry->data)) {
+                break;
+            }
+
+            if (size < 0 || size > allocatedSize) {
+                debugPrint("Cache ERROR: readProc returned invalid size for key %d: requested=%d allocated=%d returned=%d handle=%d data=%p\n",
+                    key,
+                    requestedSize,
+                    allocatedSize,
+                    size,
+                    cacheEntry->heapHandleIndex,
+                    cacheEntry->data);
+                break;
+            }
+
             heapUnlock(&(cache->heap), cacheEntry->heapHandleIndex);
+            locked = false;
+
+            if (!cacheValidateHeap(cache, "after unlock", key, size, cacheEntry->heapHandleIndex, cacheEntry->data)) {
+                break;
+            }
 
             cacheEntry->size = size;
             cacheEntry->key = key;
@@ -298,7 +339,9 @@ static bool cacheFetchEntryForKey(Cache* cache, int key, int* indexPtr)
             return true;
         } while (0);
 
-        heapUnlock(&(cache->heap), cacheEntry->heapHandleIndex);
+        if (locked) {
+            heapUnlock(&(cache->heap), cacheEntry->heapHandleIndex);
+        }
     } while (0);
 
     // NOTE: Uninline.
@@ -356,9 +399,9 @@ static int cacheFindIndexForKey(Cache* cache, int key, int* indexPtr)
         }
 
         if (cmp > 0) {
-            l = l + 1;
+            l = mid + 1;
         } else {
-            r = r - 1;
+            r = mid - 1;
         }
     } while (r >= l);
 
@@ -381,6 +424,7 @@ static bool cacheEntryInit(CacheEntry* cacheEntry)
     cacheEntry->hits = 0;
     cacheEntry->flags = 0;
     cacheEntry->mru = 0;
+    cacheEntry->heapHandleIndex = -1;
     return true;
 }
 
@@ -389,8 +433,10 @@ static bool cacheEntryInit(CacheEntry* cacheEntry)
 // 0x420740 cache_destroy_item
 static bool cacheEntryFree(Cache* cache, CacheEntry* cacheEntry)
 {
-    if (cacheEntry->data != nullptr) {
+    if (cacheEntry->heapHandleIndex != -1) {
         heapBlockDeallocate(&(cache->heap), &(cacheEntry->heapHandleIndex));
+        cacheEntry->heapHandleIndex = -1;
+        cacheEntry->data = nullptr;
     }
 
     internal_free(cacheEntry);
@@ -443,6 +489,24 @@ static bool cacheResetStatistics(Cache* cache)
     // FIXME: Obviously leak `entries`.
 
     return true;
+}
+
+static bool cacheValidateHeap(Cache* cache, const char* operation, int key, int size, int heapHandleIndex, const void* data)
+{
+    if (heapValidate(&(cache->heap))) {
+        return true;
+    }
+
+    debugPrint("Cache ERROR: heap validation failed %s: key=%d size=%d handle=%d data=%p cacheSize=%d maxSize=%d entries=%d\n",
+        operation,
+        key,
+        size,
+        heapHandleIndex,
+        data,
+        cache->size,
+        cache->maxSize,
+        cache->entriesLength);
+    return false;
 }
 
 // Prepare cache for storing new entry with the specified size.
