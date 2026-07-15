@@ -937,7 +937,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
     int threshold = settings.ui.loot_weight_indicator_threshold;
 
     MessageListItem messageListItem;
-    
+
     if (showFull) {
         // Wt.
         messageListItem.num = 30;
@@ -996,14 +996,13 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
         if (showCompact) {
             // there's no maximum weight on the container
             snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
-        } else {        
+        } else {
             snprintf(formattedText, sizeof(formattedText), "%s %d (%d%%)", messageListItem.text, inventoryWeight, sizePercentage);
         }
     } else {
         if (showCompact) {
             snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
-        }
-        else {
+        } else {
             snprintf(formattedText, sizeof(formattedText), "%s %d", messageListItem.text, inventoryWeight);
         }
     }
