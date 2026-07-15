@@ -1190,14 +1190,16 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         mouseGetPosition(&updatedMouseX, &updatedMouseY);
 
                         if (abs(updatedMouseY - newMouseY) > 10) {
+                            int nextActionIndex;
                             if (newMouseY >= updatedMouseY) {
-                                actionIndex -= 1;
+                                nextActionIndex = actionIndex - 1;
                             } else {
-                                actionIndex += 1;
+                                nextActionIndex = actionIndex + 1;
                             }
 
-                            if (gameMouseHighlightActionMenuItemAtIndex(actionIndex) == 0) {
+                            if (gameMouseHighlightActionMenuItemAtIndex(nextActionIndex) == 0) {
                                 tileWindowRefreshRect(&cursorRect, gElevation);
+                                actionIndex = nextActionIndex;
                             }
                             newMouseY = updatedMouseY;
                         }
