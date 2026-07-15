@@ -607,14 +607,8 @@ namespace {
             if (!intDataValue(data, intValue)) return false;
             return objectSetLight(object, object->lightDistance, intValue, nullptr) == 0;
         case ObjectDataField::Sid:
-            if (!intDataValue(data, intValue)) return false;
-            object->sid = intValue;
-            scriptsSyncObjectId(object);
-            return true;
         case ObjectDataField::ScriptIndex:
-            if (!intDataValue(data, intValue)) return false;
-            object->scriptIndex = intValue;
-            return true;
+            return false;
         default:
             handled = false;
             return false;
