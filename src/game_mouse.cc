@@ -1,6 +1,7 @@
 #include "game_mouse.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -17,6 +18,7 @@
 #include "combat.h"
 #include "content_config.h"
 #include "critter.h"
+#include "debug.h"
 #include "draw.h"
 #include "game.h"
 #include "game_sound.h"
@@ -1842,6 +1844,85 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
     int menuItemWidth = artGetWidth(menuItemFrms[0], 0, 0);
     int menuItemHeight = artGetHeight(menuItemFrms[0], 0, 0);
 
+    auto unlockActionMenuArt = [&]() {
+        artUnlock(arrowFrmHandle);
+
+        for (int index = 0; index < menuItemsLength; index++) {
+            artUnlock(menuItemFrmHandles[index]);
+        }
+    };
+
+    auto blitFitsActionMenuFrame = [&](const char* label, unsigned char* dest, int blitWidth, int blitHeight) {
+        if (gGameMouseActionMenuFrmData == nullptr || gGameMouseActionMenuFrmWidth <= 0 || gGameMouseActionMenuFrmHeight <= 0 || gGameMouseActionMenuFrmDataSize <= 0) {
+            debugPrint("Action menu ERROR: invalid frame buffer before %s blit: data=%p width=%d height=%d size=%d\n",
+                label,
+                gGameMouseActionMenuFrmData,
+                gGameMouseActionMenuFrmWidth,
+                gGameMouseActionMenuFrmHeight,
+                gGameMouseActionMenuFrmDataSize);
+            return false;
+        }
+
+        if (dest == nullptr || blitWidth <= 0 || blitHeight <= 0 || blitWidth > gGameMouseActionMenuFrmWidth) {
+            debugPrint("Action menu ERROR: invalid %s blit args: dest=%p size=%dx%d frame=%dx%d\n",
+                label,
+                dest,
+                blitWidth,
+                blitHeight,
+                gGameMouseActionMenuFrmWidth,
+                gGameMouseActionMenuFrmHeight);
+            return false;
+        }
+
+        intptr_t offset = reinterpret_cast<intptr_t>(dest) - reinterpret_cast<intptr_t>(gGameMouseActionMenuFrmData);
+        if (offset < 0 || offset >= gGameMouseActionMenuFrmDataSize) {
+            debugPrint("Action menu ERROR: %s blit destination out of frame: offset=%lld frameSize=%d mouse=%d,%d menuItems=%d screen=%dx%d\n",
+                label,
+                static_cast<long long>(offset),
+                gGameMouseActionMenuFrmDataSize,
+                x,
+                y,
+                menuItemsLength,
+                width,
+                height);
+            return false;
+        }
+
+        int destX = static_cast<int>(offset % gGameMouseActionMenuFrmWidth);
+        int destY = static_cast<int>(offset / gGameMouseActionMenuFrmWidth);
+        if (destX + blitWidth > gGameMouseActionMenuFrmWidth || destY + blitHeight > gGameMouseActionMenuFrmHeight) {
+            debugPrint("Action menu ERROR: %s blit would overflow frame: dest=%d,%d size=%dx%d frame=%dx%d mouse=%d,%d menuItems=%d screen=%dx%d\n",
+                label,
+                destX,
+                destY,
+                blitWidth,
+                blitHeight,
+                gGameMouseActionMenuFrmWidth,
+                gGameMouseActionMenuFrmHeight,
+                x,
+                y,
+                menuItemsLength,
+                width,
+                height);
+            return false;
+        }
+
+        return true;
+    };
+
+    if (arrowWidth + menuItemWidth > gGameMouseActionMenuFrmWidth || std::max(arrowHeight, menuItemsLength * menuItemHeight) > gGameMouseActionMenuFrmHeight) {
+        debugPrint("Action menu ERROR: menu art does not fit frame: arrow=%dx%d item=%dx%d items=%d frame=%dx%d\n",
+            arrowWidth,
+            arrowHeight,
+            menuItemWidth,
+            menuItemHeight,
+            menuItemsLength,
+            gGameMouseActionMenuFrmWidth,
+            gGameMouseActionMenuFrmHeight);
+        unlockActionMenuArt();
+        return -1;
+    }
+
     _gmouse_3d_menu_frame_hot_x = 0;
     _gmouse_3d_menu_frame_hot_y = 0;
 
@@ -1850,6 +1931,23 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
 
     int maxY = y + menuItemsLength * menuItemHeight - 1;
     int shiftY = maxY - height + 2;
+    int maxArrowShiftY = gGameMouseActionMenuFrmHeight - arrowHeight;
+    if (shiftY > maxArrowShiftY) {
+        debugPrint("Action menu INFO: clamping arrow shift: requested=%d max=%d mouse=%d,%d menuItems=%d screen=%dx%d frame=%dx%d arrow=%dx%d\n",
+            shiftY,
+            maxArrowShiftY,
+            x,
+            y,
+            menuItemsLength,
+            width,
+            height,
+            gGameMouseActionMenuFrmWidth,
+            gGameMouseActionMenuFrmHeight,
+            arrowWidth,
+            arrowHeight);
+        shiftY = maxArrowShiftY;
+    }
+
     unsigned char* arrowFrmDest = gGameMouseActionMenuFrmData;
     unsigned char* menuItemFrmDest = arrowFrmDest;
 
@@ -1867,6 +1965,13 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
         artUnlock(arrowFrmHandle);
         fid = buildFid(OBJ_TYPE_INTERFACE, 285, 0, 0, 0);
         arrowFrm = artLock(fid, &arrowFrmHandle);
+        if (arrowFrm == nullptr) {
+            for (int index = 0; index < menuItemsLength; index++) {
+                artUnlock(menuItemFrmHandles[index]);
+            }
+            return -1;
+        }
+
         arrowData = artGetFrameData(arrowFrm, 0, 0);
         arrowFrmDest += menuItemWidth;
 
@@ -1880,20 +1985,26 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
     }
 
     memset(gGameMouseActionMenuFrmData, 0, gGameMouseActionMenuFrmDataSize);
+    if (!blitFitsActionMenuFrame("arrow", arrowFrmDest, arrowWidth, arrowHeight)) {
+        unlockActionMenuArt();
+        return -1;
+    }
+
     blitBufferToBuffer(arrowData, arrowWidth, arrowHeight, arrowWidth, arrowFrmDest, gGameMouseActionMenuFrmWidth);
 
     unsigned char* dest = menuItemFrmDest;
     for (int index = 0; index < menuItemsLength; index++) {
         unsigned char* data = artGetFrameData(menuItemFrms[index], 0, 0);
+        if (!blitFitsActionMenuFrame("item", dest, menuItemWidth, menuItemHeight)) {
+            unlockActionMenuArt();
+            return -1;
+        }
+
         blitBufferToBuffer(data, menuItemWidth, menuItemHeight, menuItemWidth, dest, gGameMouseActionMenuFrmWidth);
         dest += gGameMouseActionMenuFrmWidth * menuItemHeight;
     }
 
-    artUnlock(arrowFrmHandle);
-
-    for (int index = 0; index < menuItemsLength; index++) {
-        artUnlock(menuItemFrmHandles[index]);
-    }
+    unlockActionMenuArt();
 
     memcpy(gGameMouseActionMenuItems, menuItems, sizeof(*gGameMouseActionMenuItems) * menuItemsLength);
     gGameMouseActionMenuItemsLength = menuItemsLength;

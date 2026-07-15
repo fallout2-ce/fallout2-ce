@@ -1032,7 +1032,9 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
                 if (*sizePtr < 0) {
-                    debugPrint("ART ERROR: fid %d returned negative data size %d\n", fid, *sizePtr);
+                    debugPrint("ART ERROR: fid %d path %s returned negative data size %d\n", fid, artFilePath, *sizePtr);
+                } else if (*sizePtr > 0x10000) {
+                    debugPrint("ART INFO: fid %d path %s has large data size %d\n", fid, artFilePath, *sizePtr);
                 }
                 result = 0;
             } else {
@@ -1077,11 +1079,13 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
         if (loaded) {
             *sizePtr = artGetDataSize((Art*)data);
             if (*sizePtr < 0) {
-                debugPrint("ART ERROR: fid %d read data returned negative size %d\n", fid, *sizePtr);
+                debugPrint("ART ERROR: fid %d path %s read data returned negative size %d\n", fid, artFileName, *sizePtr);
+            } else if (*sizePtr > 0x10000) {
+                debugPrint("ART INFO: fid %d path %s read large data size %d\n", fid, artFileName, *sizePtr);
             }
             result = 0;
         } else {
-            debugPrint("ART ERROR: failed to load ART data for fid %d\n", fid);
+            debugPrint("ART ERROR: failed to load ART data for fid %d path %s\n", fid, artFileName);
         }
     } else {
         debugPrint("ART ERROR: could not build path for fid %d\n", fid);
