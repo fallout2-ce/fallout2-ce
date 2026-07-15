@@ -94,6 +94,16 @@ struct UISettings {
     bool enable_high_resolution_stencil = true;
     // Maximum number of columns in inventory and loot windows
     int inventory_columns = 1;
+
+    // 0 - No indicator, vanilla
+    // 1 - Compact weight indicator
+    // 2 - Full weight indicator, works with inventory_columns > 1
+    int loot_weight_indicator = 0;
+
+    // 0   - Alaways visibles
+    // XX  - Visible when carry weight reaches XX percent
+    // 100 - Visible when fully loaded
+    int loot_weight_indicator_threshold = 0;
 };
 
 // These are settings handled by preferences UI and saved in save games.

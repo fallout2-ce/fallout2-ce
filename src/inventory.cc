@@ -925,7 +925,29 @@ static bool inventoryLootMouseHitTestScroller(bool targetInventory)
 
 static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object, int extraWeight)
 {
-    char formattedText[20];
+    int loot_weight_indicator = settings.ui.loot_weight_indicator;
+
+    bool showFull = loot_weight_indicator == 2 && settings.ui.inventory_columns > 1;
+    bool showCompact = loot_weight_indicator == 1 || (loot_weight_indicator == 2 && settings.ui.inventory_columns < 2);
+
+    if (!showFull && !showCompact) {
+        return;
+    }
+
+    int threshold = settings.ui.loot_weight_indicator_threshold;
+
+    MessageListItem messageListItem;
+    
+    if (showFull) {
+        // Wt.
+        messageListItem.num = 30;
+        if (!messageListGetItem(&gInventoryMessageList, &messageListItem)) {
+            showCompact = true;
+            showFull = false;
+        }
+    }
+
+    char formattedText[30];
     formattedText[0] = '\0';
 
     int oldFont = fontGetCurrent();
@@ -947,20 +969,50 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         int currentWeight = inventoryWeight + extraWeight;
         int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
-        snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
+        int weightPercentage = (int)ceil(currentWeight * 100 / (float)maxWeight);
+
+        if (weightPercentage < threshold) {
+            return;
+        }
+
+        if (showCompact) {
+            snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
+        } else {
+            snprintf(formattedText, sizeof(formattedText), "%s %d/%d (%d%%)", messageListItem.text, currentWeight, maxWeight, weightPercentage);
+        }
+
         if (currentWeight > maxWeight) {
             color = _colorTable[31744];
         }
+    } else if (targetPane && PID_TYPE(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
+        int currentSize = containerGetTotalSize(object);
+        int maxSize = containerGetMaxSize(object);
+        int sizePercentage = (int)ceil(currentSize * 100 / (float)maxSize);
+
+        if (sizePercentage < threshold) {
+            return;
+        }
+
+        if (showCompact) {
+            // there's no maximum weight on the container
+            snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
+        } else {        
+            snprintf(formattedText, sizeof(formattedText), "%s %d (%d%%)", messageListItem.text, inventoryWeight, sizePercentage);
+        }
     } else {
-        // container proto doesn't include maximum weight, only maximum size so
-        // just show current weight for the sake of consistency what values are reported
-        // to the player on left/right pane of the loot dialog
-        snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
+        if (showCompact) {
+            snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
+        }
+        else {
+            snprintf(formattedText, sizeof(formattedText), "%s %d", messageListItem.text, inventoryWeight);
+        }
     }
 
-    int x = targetPane ? inventoryLootLayout.rightScrollerX : inventoryLootLayout.leftScrollerX;
-    int y = (targetPane ? inventoryLootLayout.rightScrollerY : inventoryLootLayout.leftScrollerY) + inventoryLootLayout.scrollerHeight + 2;
-    inventoryDrawCenteredText(windowBuffer, pitch, inventoryLootLayout.scrollerWidth, x, y, formattedText, color);
+    if (strlen(formattedText) > 0) {
+        int x = targetPane ? inventoryLootLayout.rightScrollerX : inventoryLootLayout.leftScrollerX;
+        int y = (targetPane ? inventoryLootLayout.rightScrollerY : inventoryLootLayout.leftScrollerY) + inventoryLootLayout.scrollerHeight + 2;
+        inventoryDrawCenteredText(windowBuffer, pitch, inventoryLootLayout.scrollerWidth, x, y, formattedText, color);
+    }
 
     fontSetCurrent(oldFont);
 }
