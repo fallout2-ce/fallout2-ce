@@ -1285,7 +1285,7 @@ static bool tryUnequipPartyItem(InvenSlot slot)
         Object* unequippedItem = inventoryFindById(partyBaseTarget, item->id);
         if (unequippedItem != nullptr) {
             // fix stacking
-            itemRemove(partyBaseTarget, unequippedItem, 1);
+            itemRemoveQuietly(partyBaseTarget, unequippedItem, 1);
             itemAdd(partyBaseTarget, unequippedItem, 1);
         }
     }
@@ -5988,7 +5988,7 @@ static int _drop_into_container(Object* container, Object* item, int sourceIndex
     }
 
     if (sourceIndex != -1) {
-        if (itemRemoveWithReason(_inven_dude, item, quantityToMove, RemoveInventoryObjectHookReason::DropIntoContainer, container) == -1) {
+        if (itemRemoveWithReason(_inven_dude, item, quantityToMove, RemoveInventoryObjectHookReason::DropIntoContainer) == -1) {
             return -1;
         }
     }

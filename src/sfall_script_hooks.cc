@@ -878,7 +878,7 @@ Runs when an object is removed from a container or critter's inventory for any r
 Obj     arg0 - the owner that the object is being removed from
 Item    arg1 - the item that is being removed
 int     arg2 - the number of items to remove
-int     arg3 - The reason the object is being removed (see RMOBJ_* constants)
+int     arg3 - The reason the object is being removed (RemoveInventoryObjectHookReason / RMOBJ_* constants)
 Obj     arg4 - The destination object when the item is moved to another object, 0 otherwise
 */
 void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity, RemoveInventoryObjectHookReason reason, Object* target)

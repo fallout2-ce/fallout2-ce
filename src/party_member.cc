@@ -1595,7 +1595,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
 
     Object* armor = critterGetArmor(critter);
     adjustCritterStatsOnArmorChange(critter, armor, nullptr);
-    itemRemove(critter, armor, 1);
+    itemRemoveQuietly(critter, armor, 1);
 
     int maxHp = critterGetStat(critter, STAT_MAXIMUM_HIT_POINTS);
     critterAdjustHitPoints(critter, maxHp);
