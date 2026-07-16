@@ -3526,6 +3526,25 @@ void _combatai_check_retaliation(Object* a1, Object* a2)
     }
 }
 
+static int adjustPerceptionDistanceForDudeSneak(int maxDistance, Object* target)
+{
+    if (target != gDude) {
+        return maxDistance;
+    }
+
+    if (dudeIsSneaking()) {
+        int sneak = skillGetValue(gDude, SKILL_SNEAK);
+        maxDistance /= 4;
+        if (sneak > 120) {
+            maxDistance -= 1;
+        }
+    } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
+        maxDistance = maxDistance * 2 / 3;
+    }
+
+    return maxDistance;
+}
+
 // 0x42BA04
 PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, PerceptionType type)
 {
@@ -3535,23 +3554,13 @@ PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, Per
 
     int distance = objectGetDistanceBetween(target, critter);
     int perception = critterGetStat(critter, STAT_PERCEPTION);
-    int sneak = skillGetValue(target, SKILL_SNEAK);
     if (_can_see(critter, target)) {
         int maxDistance = perception * 5;
         if ((target->flags & OBJECT_TRANS_GLASS) != 0) {
             maxDistance /= 2;
         }
 
-        if (target == gDude) {
-            if (dudeIsSneaking()) {
-                maxDistance /= 4;
-                if (sneak > 120) {
-                    maxDistance -= 1;
-                }
-            } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
-                maxDistance = maxDistance * 2 / 3;
-            }
-        }
+        maxDistance = adjustPerceptionDistanceForDudeSneak(maxDistance, target);
 
         if (distance <= maxDistance) {
             return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
@@ -3565,16 +3574,7 @@ PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, Per
         maxDistance = perception;
     }
 
-    if (target == gDude) {
-        if (dudeIsSneaking()) {
-            maxDistance /= 4;
-            if (sneak > 120) {
-                maxDistance -= 1;
-            }
-        } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
-            maxDistance = maxDistance * 2 / 3;
-        }
-    }
+    maxDistance = adjustPerceptionDistanceForDudeSneak(maxDistance, target);
 
     if (distance <= maxDistance) {
         return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
