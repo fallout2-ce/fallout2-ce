@@ -927,10 +927,11 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
 {
     int loot_weight_indicator = settings.ui.loot_weight_indicator;
 
-    bool showLabel = settings.ui.inventory_columns > 1;;
+    bool showLabel = settings.ui.inventory_columns > 1;
+    ;
     bool showBoth = loot_weight_indicator == 3 && showLabel;
     bool showPercent = loot_weight_indicator == 2;
-    bool showPrecise = loot_weight_indicator == 1 || (loot_weight_indicator == 3 && !showLabel) ;
+    bool showPrecise = loot_weight_indicator == 1 || (loot_weight_indicator == 3 && !showLabel);
 
     if (!showBoth && !showPrecise && !showPercent) {
         return;
@@ -991,8 +992,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             } else {
                 snprintf(formattedText, sizeof(formattedText), "%d%%", weightPercentage);
             }
-        }
-        else if (showBoth) {
+        } else if (showBoth) {
             snprintf(formattedText, sizeof(formattedText), "%s %d/%d (%d%%)", messageListItem.text, currentWeight, maxWeight, weightPercentage);
         }
 
