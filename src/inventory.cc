@@ -927,10 +927,12 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
 {
     int loot_weight_indicator = settings.ui.loot_weight_indicator;
 
-    bool showFull = loot_weight_indicator == 2 && settings.ui.inventory_columns > 1;
-    bool showCompact = loot_weight_indicator == 1 || (loot_weight_indicator == 2 && settings.ui.inventory_columns < 2);
+    bool showLabel = settings.ui.inventory_columns > 1;;
+    bool showBoth = loot_weight_indicator == 3 && showLabel;
+    bool showPercent = loot_weight_indicator == 2;
+    bool showPrecise = loot_weight_indicator == 1 || (loot_weight_indicator == 3 && !showLabel) ;
 
-    if (!showFull && !showCompact) {
+    if (!showBoth && !showPrecise && !showPercent) {
         return;
     }
 
@@ -938,12 +940,14 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
 
     MessageListItem messageListItem;
 
-    if (showFull) {
+    if (showLabel) {
         // Wt.
         messageListItem.num = 30;
         if (!messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-            showCompact = true;
-            showFull = false;
+            showPrecise = true;
+            showBoth = false;
+            showPercent = false;
+            showLabel = false;
         }
     }
 
@@ -975,9 +979,20 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             return;
         }
 
-        if (showCompact) {
-            snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
-        } else {
+        if (showPrecise) {
+            if (showLabel) {
+                snprintf(formattedText, sizeof(formattedText), "%s %d/%d", messageListItem.text, currentWeight, maxWeight);
+            } else {
+                snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
+            }
+        } else if (showPercent) {
+            if (showLabel) {
+                snprintf(formattedText, sizeof(formattedText), "%s %d%%", messageListItem.text, weightPercentage);
+            } else {
+                snprintf(formattedText, sizeof(formattedText), "%d%%", weightPercentage);
+            }
+        }
+        else if (showBoth) {
             snprintf(formattedText, sizeof(formattedText), "%s %d/%d (%d%%)", messageListItem.text, currentWeight, maxWeight, weightPercentage);
         }
 
@@ -993,17 +1008,28 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             return;
         }
 
-        if (showCompact) {
-            // there's no maximum weight on the container
-            snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
-        } else {
+        if (showPrecise) {
+            if (showLabel) {
+                // there's no maximum weight on the container
+                snprintf(formattedText, sizeof(formattedText), "%s %d", messageListItem.text, inventoryWeight);
+            } else {
+                // there's no maximum weight on the container
+                snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
+            }
+        } else if (showPercent) {
+            if (showLabel) {
+                snprintf(formattedText, sizeof(formattedText), "%s %d%%", messageListItem.text, sizePercentage);
+            } else {
+                snprintf(formattedText, sizeof(formattedText), "%d%%", sizePercentage);
+            }
+        } else if (showBoth) {
             snprintf(formattedText, sizeof(formattedText), "%s %d (%d%%)", messageListItem.text, inventoryWeight, sizePercentage);
         }
     } else {
-        if (showCompact) {
-            snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
-        } else {
+        if (showLabel) {
             snprintf(formattedText, sizeof(formattedText), "%s %d", messageListItem.text, inventoryWeight);
+        } else {
+            snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
         }
     }
 

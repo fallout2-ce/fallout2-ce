@@ -96,8 +96,9 @@ struct UISettings {
     int inventory_columns = 1;
 
     // 0 - No indicator, vanilla
-    // 1 - Compact weight indicator
-    // 2 - Full weight indicator, works with inventory_columns > 1
+    // 1 - Precise weight indicator
+    // 2 - Percentage weight indicator
+    // 3 - Precise & Percentage, works with inventory_columns > 1 only
     int loot_weight_indicator = 0;
 
     // 0   - Alaways visibles
