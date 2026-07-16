@@ -473,10 +473,12 @@ int elevatorSelectLevel(int elevator, int* mapPtr, int* elevationPtr, int* tileP
     elevatorWindowFree();
     touch_set_touchscreen_mode(false);
 
-    const ElevatorDescription* description = &(elevatorDescription[keyCode]);
-    *mapPtr = description->map;
-    *elevationPtr = description->elevation;
-    *tilePtr = description->tile;
+    if (keyCode >= 0) {
+        const ElevatorDescription* description = &(elevatorDescription[keyCode]);
+        *mapPtr = description->map;
+        *elevationPtr = description->elevation;
+        *tilePtr = description->tile;
+    }
 
     return 0;
 }
@@ -657,7 +659,7 @@ static int elevatorGetLevelFromEscKey(int elevator, int map)
             return index;
         }
     }
-    return 0;
+    return -1;
 }
 
 void elevatorsInit()
