@@ -613,8 +613,9 @@ int tileSetCenter(int tile, int flags)
     int tile_x = gHexGridWidth - 1 - tile % gHexGridWidth;
     int tile_y = tile / gHexGridWidth;
 
-    // Global tile borders are always checked, unless scroll blocking is disabled.
-    if (gTileBorderInitialized && gTileScrollBlockingEnabled) {
+    // Legacy global borders are for maps without EDG data. EDG maps use their
+    // own boundary/clamp logic above, which can validly land on this border.
+    if ((!edgeActive || !mapEdgeZoneIsSelected()) && gTileBorderInitialized && gTileScrollBlockingEnabled) {
         if (tile_x <= gTileBorderMinX || tile_x >= gTileBorderMaxX || tile_y <= gTileBorderMinY || tile_y >= gTileBorderMaxY) {
             return -1;
         }
