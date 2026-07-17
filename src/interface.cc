@@ -114,19 +114,18 @@ constexpr int kCustomIndicatorTextBufferSize = kCustomIndicatorTextLength + 1;
 constexpr int kAmmoBarLeft = 463;
 constexpr int kAmmoBarTop = 26;
 constexpr int kAmmoBarMaxRatio = 70;
-constexpr int kAmmoAlternateMetreWidth = 4;
-constexpr int kAmmoAlternateMetreLeftOffset = 0;
-constexpr int kAmmoAlternateMetreTopBorder = kAmmoBarTop - 1;
-constexpr int kAmmoAlternateMetreMaxSegmentCount = 12;
-constexpr unsigned char kAmmoAlternateMetreLeftBorderColor = 11;
-constexpr unsigned char kAmmoAlternateMetreTopBorderColor = 15;
-constexpr unsigned char kAmmoAlternateMetreBottomBorderColor = 10;
-constexpr unsigned char kAmmoAlternateMetreEmptyDarkColor = 13;
-constexpr unsigned char kAmmoAlternateMetreEmptyLightColor = 15;
-constexpr unsigned char kAmmoAlternateMetreFillColor = 196;
-constexpr unsigned char kAmmoAlternateMetreFillShadeColor = 75;
+constexpr int kAmmoAlternateMeterWidth = 4;
+constexpr int kAmmoAlternateMeterTopBorder = kAmmoBarTop - 1;
+constexpr int kAmmoAlternateMeterMaxSegmentCount = 12;
+constexpr unsigned char kAmmoAlternateMeterLeftBorderColor = 11;
+constexpr unsigned char kAmmoAlternateMeterTopBorderColor = 15;
+constexpr unsigned char kAmmoAlternateMeterBottomBorderColor = 10;
+constexpr unsigned char kAmmoAlternateMeterEmptyDarkColor = 13;
+constexpr unsigned char kAmmoAlternateMeterEmptyLightColor = 15;
+constexpr unsigned char kAmmoAlternateMeterFillColor = 196;
+constexpr unsigned char kAmmoAlternateMeterFillShadeColor = 75;
 
-enum class AmmoMetreDividerStyle {
+enum class AmmoMeterDividerStyle {
     None,
     Dark,
     Light,
@@ -153,13 +152,11 @@ static int endCombatButtonFree();
 static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoPerShot);
 static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState);
 static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode);
-static void interfaceUpdateAlternateAmmoMetre(int x, int ratio, int ammoCapacity, int ammoPerShot);
-static void interfaceRestoreAlternateAmmoMetreBackground(int x);
-static void interfaceRefreshAlternateAmmoMetre(int x);
-static void interfaceUpdateAlternateAmmoMetreBorderRow(unsigned char* dest, unsigned char color);
-static void interfaceUpdateAlternateAmmoMetreRow(unsigned char* dest, bool filled, bool lowerHalf);
-static AmmoMetreDividerStyle interfaceAlternateAmmoMetreGetDividerStyle(int row, int ammoCapacity, int ammoPerShot);
-static void interfaceUpdateAlternateAmmoMetreDividerRow(unsigned char* dest, AmmoMetreDividerStyle style);
+static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity, int ammoPerShot);
+static void interfaceRestoreAlternateAmmoMeterBackground(int x);
+static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool filled, bool lowerHalf);
+static AmmoMeterDividerStyle interfaceAlternateAmmoMeterGetDividerStyle(int row, int ammoCapacity, int ammoPerShot);
+static void interfaceUpdateAlternateAmmoMeterDividerRow(unsigned char* dest, AmmoMeterDividerStyle style);
 static int _intface_item_reload();
 static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor);
 static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse);
@@ -2086,13 +2083,7 @@ static int endCombatButtonFree()
 static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoPerShot)
 {
     if (settings.ui.alternate_ammo_meter) {
-        int alternateX = x + kAmmoAlternateMetreLeftOffset;
-        interfaceRestoreAlternateAmmoMetreBackground(alternateX);
-        if (ammoCapacity <= 0) {
-            interfaceRefreshAlternateAmmoMetre(alternateX);
-        } else {
-            interfaceUpdateAlternateAmmoMetre(alternateX, ratio, ammoCapacity, ammoPerShot);
-        }
+        interfaceUpdateAlternateAmmoMeter(x, ratio, ammoCapacity, ammoPerShot);
         return;
     }
 
@@ -2161,46 +2152,49 @@ static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode)
     return 0;
 }
 
-static void interfaceUpdateAlternateAmmoMetre(int x, int ratio, int ammoCapacity, int ammoPerShot)
+static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity, int ammoPerShot)
 {
-    if ((ratio & 1) != 0) {
-        ratio -= 1;
-    }
+    interfaceRestoreAlternateAmmoMeterBackground(x);
 
-    unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoAlternateMetreTopBorder + x;
-    interfaceUpdateAlternateAmmoMetreBorderRow(dest, kAmmoAlternateMetreTopBorderColor);
-    dest += gInterfaceBarWidth;
-
-    int firstActiveRow = kAmmoBarMaxRatio - ratio;
-
-    for (int row = 0; row < kAmmoBarMaxRatio; row++) {
-        bool filled = row < kAmmoBarMaxRatio
-            && row >= firstActiveRow;
-        AmmoMetreDividerStyle dividerStyle = interfaceAlternateAmmoMetreGetDividerStyle(row, ammoCapacity, ammoPerShot);
-        if (dividerStyle != AmmoMetreDividerStyle::None) {
-            interfaceUpdateAlternateAmmoMetreDividerRow(dest, dividerStyle);
-        } else {
-            bool lowerHalf = filled
-                ? ((row - firstActiveRow) & 1) != 0
-                : (row & 1) != 0;
-            interfaceUpdateAlternateAmmoMetreRow(dest, filled, lowerHalf);
+    if (ammoCapacity > 0) {
+        if ((ratio & 1) != 0) {
+            ratio -= 1;
         }
-        dest += gInterfaceBarWidth;
-    }
 
-    interfaceUpdateAlternateAmmoMetreBorderRow(dest, kAmmoAlternateMetreBottomBorderColor);
+        unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoAlternateMeterTopBorder + x;
+        std::fill_n(dest, kAmmoAlternateMeterWidth, kAmmoAlternateMeterTopBorderColor);
+        dest += gInterfaceBarWidth;
+
+        int firstActiveRow = kAmmoBarMaxRatio - ratio;
+
+        for (int row = 0; row < kAmmoBarMaxRatio; row++) {
+            bool filled = row >= firstActiveRow;
+            AmmoMeterDividerStyle dividerStyle = interfaceAlternateAmmoMeterGetDividerStyle(row, ammoCapacity, ammoPerShot);
+            if (dividerStyle != AmmoMeterDividerStyle::None) {
+                interfaceUpdateAlternateAmmoMeterDividerRow(dest, dividerStyle);
+            } else {
+                bool lowerHalf = filled
+                    ? ((row - firstActiveRow) & 1) != 0
+                    : (row & 1) != 0;
+                interfaceUpdateAlternateAmmoMeterRow(dest, filled, lowerHalf);
+            }
+            dest += gInterfaceBarWidth;
+        }
+
+        std::fill_n(dest, kAmmoAlternateMeterWidth, kAmmoAlternateMeterBottomBorderColor);
+    }
 
     if (!gInterfaceBarInitialized) {
         Rect rect;
         rect.left = x;
-        rect.top = kAmmoAlternateMetreTopBorder;
-        rect.right = x + kAmmoAlternateMetreWidth - 1;
+        rect.top = kAmmoAlternateMeterTopBorder;
+        rect.right = x + kAmmoAlternateMeterWidth - 1;
         rect.bottom = kAmmoBarTop + kAmmoBarMaxRatio;
         windowRefreshRect(gInterfaceBarWindow, &rect);
     }
 }
 
-static void interfaceRestoreAlternateAmmoMetreBackground(int x)
+static void interfaceRestoreAlternateAmmoMeterBackground(int x)
 {
     unsigned char* src = nullptr;
     FrmImage backgroundFrmImage;
@@ -2215,65 +2209,46 @@ static void interfaceRestoreAlternateAmmoMetreBackground(int x)
     }
 
     int height = kAmmoBarMaxRatio + 2;
-    blitBufferToBuffer(src + gInterfaceBarWidth * kAmmoAlternateMetreTopBorder + x,
-        kAmmoAlternateMetreWidth,
+    blitBufferToBuffer(src + gInterfaceBarWidth * kAmmoAlternateMeterTopBorder + x,
+        kAmmoAlternateMeterWidth,
         height,
         gInterfaceBarWidth,
-        gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoAlternateMetreTopBorder + x,
+        gInterfaceWindowBuffer + gInterfaceBarWidth * kAmmoAlternateMeterTopBorder + x,
         gInterfaceBarWidth);
 }
 
-static void interfaceRefreshAlternateAmmoMetre(int x)
+static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool filled, bool lowerHalf)
 {
-    if (!gInterfaceBarInitialized) {
-        Rect rect;
-        rect.left = x;
-        rect.top = kAmmoAlternateMetreTopBorder;
-        rect.right = x + kAmmoAlternateMetreWidth - 1;
-        rect.bottom = kAmmoBarTop + kAmmoBarMaxRatio;
-        windowRefreshRect(gInterfaceBarWindow, &rect);
-    }
-}
-
-static void interfaceUpdateAlternateAmmoMetreBorderRow(unsigned char* dest, unsigned char color)
-{
-    for (int index = 0; index < kAmmoAlternateMetreWidth; index++) {
-        dest[index] = color;
-    }
-}
-
-static void interfaceUpdateAlternateAmmoMetreRow(unsigned char* dest, bool filled, bool lowerHalf)
-{
-    dest[0] = kAmmoAlternateMetreLeftBorderColor;
+    dest[0] = kAmmoAlternateMeterLeftBorderColor;
 
     if (filled) {
-        unsigned char color = lowerHalf ? kAmmoAlternateMetreFillShadeColor : kAmmoAlternateMetreFillColor;
+        unsigned char color = lowerHalf ? kAmmoAlternateMeterFillShadeColor : kAmmoAlternateMeterFillColor;
         dest[1] = color;
         dest[2] = color;
-        dest[3] = kAmmoAlternateMetreFillShadeColor;
+        dest[3] = kAmmoAlternateMeterFillShadeColor;
     } else {
-        unsigned char color = lowerHalf ? kAmmoAlternateMetreEmptyLightColor : kAmmoAlternateMetreEmptyDarkColor;
+        unsigned char color = lowerHalf ? kAmmoAlternateMeterEmptyLightColor : kAmmoAlternateMeterEmptyDarkColor;
         dest[1] = color;
         dest[2] = color;
-        dest[3] = kAmmoAlternateMetreEmptyLightColor;
+        dest[3] = kAmmoAlternateMeterEmptyLightColor;
     }
 }
 
-static AmmoMetreDividerStyle interfaceAlternateAmmoMetreGetDividerStyle(int row, int ammoCapacity, int ammoPerShot)
+static AmmoMeterDividerStyle interfaceAlternateAmmoMeterGetDividerStyle(int row, int ammoCapacity, int ammoPerShot)
 {
     if (ammoCapacity <= 0 || ammoPerShot <= 0 || ammoPerShot >= ammoCapacity) {
-        return AmmoMetreDividerStyle::None;
+        return AmmoMeterDividerStyle::None;
     }
 
     int segmentCount = (ammoCapacity + ammoPerShot - 1) / ammoPerShot;
-    if (segmentCount <= 1 || segmentCount > kAmmoAlternateMetreMaxSegmentCount) {
-        return AmmoMetreDividerStyle::None;
+    if (segmentCount <= 1 || segmentCount > kAmmoAlternateMeterMaxSegmentCount) {
+        return AmmoMeterDividerStyle::None;
     }
 
     constexpr int dividerHeight = 2;
     int segmentRows = kAmmoBarMaxRatio - dividerHeight * (segmentCount - 1);
     if (segmentRows < segmentCount) {
-        return AmmoMetreDividerStyle::None;
+        return AmmoMeterDividerStyle::None;
     }
 
     int baseSegmentHeight = segmentRows / segmentCount;
@@ -2284,31 +2259,31 @@ static AmmoMetreDividerStyle interfaceAlternateAmmoMetreGetDividerStyle(int row,
         dividerRow += baseSegmentHeight + (segmentIndex < extraRows ? 1 : 0);
 
         if (row == dividerRow) {
-            return AmmoMetreDividerStyle::Dark;
+            return AmmoMeterDividerStyle::Dark;
         }
 
         if (row == dividerRow + 1) {
-            return AmmoMetreDividerStyle::Light;
+            return AmmoMeterDividerStyle::Light;
         }
 
         dividerRow += dividerHeight;
     }
 
-    return AmmoMetreDividerStyle::None;
+    return AmmoMeterDividerStyle::None;
 }
 
-static void interfaceUpdateAlternateAmmoMetreDividerRow(unsigned char* dest, AmmoMetreDividerStyle style)
+static void interfaceUpdateAlternateAmmoMeterDividerRow(unsigned char* dest, AmmoMeterDividerStyle style)
 {
-    dest[0] = kAmmoAlternateMetreLeftBorderColor;
+    dest[0] = kAmmoAlternateMeterLeftBorderColor;
 
-    if (style == AmmoMetreDividerStyle::Dark) {
-        dest[1] = kAmmoAlternateMetreLeftBorderColor;
-        dest[2] = kAmmoAlternateMetreEmptyDarkColor;
-        dest[3] = kAmmoAlternateMetreEmptyLightColor;
+    if (style == AmmoMeterDividerStyle::Dark) {
+        dest[1] = kAmmoAlternateMeterLeftBorderColor;
+        dest[2] = kAmmoAlternateMeterEmptyDarkColor;
+        dest[3] = kAmmoAlternateMeterEmptyLightColor;
     } else {
-        dest[1] = kAmmoAlternateMetreEmptyLightColor;
-        dest[2] = kAmmoAlternateMetreEmptyLightColor;
-        dest[3] = kAmmoAlternateMetreEmptyLightColor;
+        dest[1] = kAmmoAlternateMeterEmptyLightColor;
+        dest[2] = kAmmoAlternateMeterEmptyLightColor;
+        dest[3] = kAmmoAlternateMeterEmptyLightColor;
     }
 }
 
