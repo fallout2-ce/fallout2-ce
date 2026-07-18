@@ -1,6 +1,7 @@
 #include "game_sound.h"
 
 #include <algorithm>
+#include <cctype>
 #include <stdio.h>
 #include <string.h>
 
@@ -1751,7 +1752,7 @@ int gameSoundFindBackgroundSoundPath(char* dest, const char* src)
             // lowercase fallback
             std::string src_lower(src);
             std::transform(src_lower.begin(), src_lower.end(), src_lower.begin(), [](unsigned char c) {
-                return std::tolower(c);
+                return tolower(c);
             });
 
             size_t len_lower = src_lower.size() + strlen(extension);
