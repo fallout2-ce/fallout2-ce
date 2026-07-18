@@ -1,5 +1,6 @@
 #include "game_sound.h"
 
+#include <algorithm>
 #include <stdio.h>
 #include <string.h>
 
@@ -1741,6 +1742,27 @@ int gameSoundFindBackgroundSoundPath(char* dest, const char* src)
 
             snprintf(path, sizeof(path), "%s%s%s", basePath, src, extension);
             int fileSize;
+            if (dbGetFileSize(path, &fileSize) == 0) {
+                strncpy(dest, path, COMPAT_MAX_PATH);
+                dest[COMPAT_MAX_PATH] = '\0';
+                return 0;
+            }
+
+            // lowercase fallback
+            std::string src_lower(src);
+            std::transform(src_lower.begin(), src_lower.end(), src_lower.begin(), [](unsigned char c) {
+                return std::tolower(c);
+            });
+
+            size_t len_lower = src_lower.size() + strlen(extension);
+            if (strlen(basePath) + len_lower > COMPAT_MAX_PATH) {
+                if (gGameSoundDebugEnabled) {
+                    debugPrint("lowercase fallback: Full background path too long.\n");
+                }
+                return -1;
+            }
+
+            snprintf(path, sizeof(path), "%s%s%s", basePath, src_lower.c_str(), extension);
             if (dbGetFileSize(path, &fileSize) == 0) {
                 strncpy(dest, path, COMPAT_MAX_PATH);
                 dest[COMPAT_MAX_PATH] = '\0';
