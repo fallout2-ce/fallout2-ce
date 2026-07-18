@@ -245,6 +245,7 @@ jobs:
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
           cp out/build/linux-${{ matrix.arch }}-debug/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
+          cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
 
       - name: Upload
@@ -295,6 +296,7 @@ jobs:
           mkdir -p out/dist/fallout2-ce-linux-armhf
           cp build/fallout2-ce out/dist/fallout2-ce-linux-armhf/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-armhf/ce.dat
+          cp files/fallout2.cfg out/dist/fallout2-ce-linux-armhf/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-armhf.tar.gz -C out/dist fallout2-ce-linux-armhf
 
       - name: Upload
@@ -336,6 +338,7 @@ jobs:
           mkdir -p out/dist/fallout2-ce-linux-arm64
           cp build/fallout2-ce out/dist/fallout2-ce-linux-arm64/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-arm64/ce.dat
+          cp files/fallout2.cfg out/dist/fallout2-ce-linux-arm64/EXAMPLE_fallout2.cfg
           tar -czvf out/dist/fallout2-ce-linux-arm64.tar.gz -C out/dist fallout2-ce-linux-arm64
 
       - name: Upload

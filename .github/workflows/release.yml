@@ -213,6 +213,7 @@ jobs:
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
           cp build/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
+          cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
           gh release upload ${{ github.event.release.tag_name }} fallout2-ce-linux-${{ matrix.arch }}.tar.gz
           rm fallout2-ce-linux-${{ matrix.arch }}.tar.gz
