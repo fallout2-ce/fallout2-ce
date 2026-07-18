@@ -118,6 +118,7 @@ constexpr int kAmmoBarMaxRatio = 70;
 constexpr int kAmmoAlternateMeterWidth = 4;
 constexpr int kAmmoAlternateMeterTopBorder = kAmmoBarTop - 1;
 constexpr int kAmmoAlternateMeterMaxSegmentCount = 12;
+constexpr int kAmmoAlternateMeterMaxSingleShotSegmentCount = 6;
 constexpr unsigned char kAmmoAlternateMeterLeftBorderColor = 11;
 constexpr unsigned char kAmmoAlternateMeterTopBorderColor = 15;
 constexpr unsigned char kAmmoAlternateMeterBottomBorderColor = 10;
@@ -151,8 +152,8 @@ static int endTurnButtonFree();
 static int endCombatButtonInit();
 static int endCombatButtonFree();
 static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoPerShot);
-static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState);
-static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode);
+static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState, int ammoCapacity);
+static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode, int ammoCapacity);
 static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity, int ammoPerShot);
 static void interfaceRestoreAlternateAmmoMeterBackground(int x);
 static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool filled, bool lowerHalf);
@@ -1464,7 +1465,7 @@ int _intface_update_ammo_lights()
         if (maximum > 0) {
             int current = ammoGetQuantity(p->item);
             ratio = std::clamp(static_cast<int>(static_cast<long long>(current) * kAmmoBarMaxRatio / maximum), 0, kAmmoBarMaxRatio);
-            ammoPerShot = interfaceGetActiveWeaponAmmoPerShot(p);
+            ammoPerShot = settings.ui.alternate_ammo_meter != 0 ? interfaceGetActiveWeaponAmmoPerShot(p, maximum) : 0;
         }
     } else {
         if (itemGetType(p->item) == ITEM_TYPE_MISC) {
@@ -2091,7 +2092,7 @@ static int endCombatButtonFree()
 // 0x460AA0 intface_draw_ammo_lights
 static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoPerShot)
 {
-    if (settings.ui.alternate_ammo_meter) {
+    if (settings.ui.alternate_ammo_meter != 0) {
         interfaceUpdateAlternateAmmoMeter(x, ratio, ammoCapacity, ammoPerShot);
         return;
     }
@@ -2127,7 +2128,7 @@ static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoP
     }
 }
 
-static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState)
+static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState, int ammoCapacity)
 {
     int hitMode = -1;
     switch (itemState->action) {
@@ -2144,10 +2145,10 @@ static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemSta
         break;
     }
 
-    return interfaceGetWeaponAmmoPerShot(itemState->item, hitMode);
+    return interfaceGetWeaponAmmoPerShot(itemState->item, hitMode, ammoCapacity);
 }
 
-static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode)
+static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode, int ammoCapacity)
 {
     if (weapon == nullptr || hitMode == -1) {
         return 0;
@@ -2156,6 +2157,15 @@ static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode)
     int anim = weaponGetAnimationForHitMode(weapon, hitMode);
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
         return std::max(weaponGetBurstRounds(weapon), 1);
+    }
+
+    if (settings.ui.alternate_ammo_meter == 2 && anim == ANIM_FIRE_SINGLE) {
+        int ammoPerShot = 1;
+        if (weaponComputeAmmoCost(weapon, &ammoPerShot) == -1) {
+            ammoPerShot = 1;
+        }
+        ammoPerShot = std::max(ammoPerShot, 1);
+        return (ammoCapacity + ammoPerShot - 1) / ammoPerShot <= kAmmoAlternateMeterMaxSingleShotSegmentCount ? ammoPerShot : 0;
     }
 
     return 0;
