@@ -153,6 +153,8 @@ In time this stuff will receive in-game interface, right now you have to do it m
 * Integrated "HELP" menu
 * 44.1 kHz stereo sound/music supported, in .ogg and .wav format as well as legacy .acm
 * Last used save slot is remembered
+* You can cancel elevator floor selection using ESC
+* Spiffy ammo meter with burst-mode segmentation
 * Item/Corpse/Container/Critter highlighting (configure using [mods/sfall-mods.ini](https://github.com/sfall-team/sfall/blob/master/artifacts/config_files/sfall-mods.ini))
 
 ## Contributing
