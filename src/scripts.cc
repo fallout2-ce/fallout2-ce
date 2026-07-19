@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <vector>
 
 #include "actions.h"
 #include "animation.h"
@@ -1375,11 +1376,16 @@ int scriptExecProc(int sid, int proc)
 
     programExecuteProcedure(program, procedureIndex);
 
+    Script* executedScript;
+    const bool wasRemoved = scriptGetScript(sid, &executedScript) == -1;
+
     // HOOK_STDPROCEDURE_END
     scriptHooks_StdProcedure(proc, self, source, target, fixedParam, true);
 
-    script->source = nullptr;
-    script->action = 0;
+    if (!wasRemoved) {
+        executedScript->source = nullptr;
+        executedScript->action = 0;
+    }
 
     return 0;
 }
@@ -2591,10 +2597,10 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 
     int builtTile = builtTileCreate(tile, elevation);
 
+    std::vector<int> spatialScriptIds;
     for (Script* script = scriptGetFirstSpatialScript(elevation); script != nullptr; script = scriptGetNextSpatialScript()) {
         if (builtTile == script->sp.built_tile) {
-            // NOTE: Uninline.
-            scriptSetObjects(script->sid, object, nullptr);
+            spatialScriptIds.push_back(script->sid);
         } else {
             if (script->sp.radius == 0) {
                 continue;
@@ -2605,11 +2611,19 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
                 continue;
             }
 
-            // NOTE: Uninline.
-            scriptSetObjects(script->sid, object, nullptr);
+            spatialScriptIds.push_back(script->sid);
+        }
+    }
+
+    for (int sid : spatialScriptIds) {
+        Script* script;
+        if (scriptGetScript(sid, &script) == -1) {
+            continue;
         }
 
-        scriptExecProc(script->sid, SCRIPT_PROC_SPATIAL);
+        // NOTE: Uninline.
+        scriptSetObjects(sid, object, nullptr);
+        scriptExecProc(sid, SCRIPT_PROC_SPATIAL);
     }
 
     gSpatialsEnabled = true;

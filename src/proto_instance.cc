@@ -45,6 +45,7 @@ static UseItemResultCode _obj_use_power_on_car(Object* ammo);
 static UseItemResultCode _obj_use_misc_item(Object* item);
 static int _protinstTestDroppedExplosive(Object* explosiveItem);
 static UseItemResultCode _protinst_default_use_item(Object* user, Object* targetObj, Object* item);
+static int scriptExecProcWithObjects(int sid, Object* source, Object* target, int proc);
 static int useLadderDown(Object* user, Object* ladder);
 static int useLadderUp(Object* user, Object* ladder);
 static int useStairs(Object* user, Object* stairs);
@@ -60,6 +61,19 @@ static bool objectIsJammed(Object* obj);
 //
 //  0x49A990
 static MessageListItem stru_49A990;
+
+static int scriptExecProcWithObjects(int sid, Object* source, Object* target, int proc)
+{
+    scriptSetObjects(sid, source, target);
+    scriptExecProc(sid, proc);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) == -1) {
+        return -1;
+    }
+
+    return script->scriptOverrides;
+}
 
 // 0x49A9A0
 int objectGetSid(Object* object, int* sidPtr)
@@ -195,15 +209,12 @@ int objectLookAtFunc(Object* critter, Object* target, void (*fn)(const char* str
     bool scriptOverrides = false;
 
     if (target->sid != -1) {
-        scriptSetObjects(target->sid, critter, target);
-        scriptExecProc(target->sid, SCRIPT_PROC_LOOK_AT);
-
-        Script* script;
-        if (scriptGetScript(target->sid, &script) == -1) {
+        int scriptProcResult = scriptExecProcWithObjects(target->sid, critter, target, SCRIPT_PROC_LOOK_AT);
+        if (scriptProcResult == -1) {
             return -1;
         }
 
-        scriptOverrides = script->scriptOverrides;
+        scriptOverrides = scriptProcResult != 0;
     }
 
     if (!scriptOverrides) {
@@ -253,15 +264,12 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
 
     bool scriptOverrides = false;
     if (target->sid != -1) {
-        scriptSetObjects(target->sid, critter, target);
-        scriptExecProc(target->sid, SCRIPT_PROC_DESCRIPTION);
-
-        Script* script;
-        if (scriptGetScript(target->sid, &script) == -1) {
+        int scriptProcResult = scriptExecProcWithObjects(target->sid, critter, target, SCRIPT_PROC_DESCRIPTION);
+        if (scriptProcResult == -1) {
             return -1;
         }
 
-        scriptOverrides = script->scriptOverrides;
+        scriptOverrides = scriptProcResult != 0;
     }
 
     if (!scriptOverrides) {
@@ -575,15 +583,12 @@ int objectPickup(Object* critter, Object* item)
     }
 
     if (item->sid != -1) {
-        scriptSetObjects(item->sid, critter, item);
-        scriptExecProc(item->sid, SCRIPT_PROC_PICKUP);
-
-        Script* script;
-        if (scriptGetScript(item->sid, &script) == -1) {
+        int scriptProcResult = scriptExecProcWithObjects(item->sid, critter, item, SCRIPT_PROC_PICKUP);
+        if (scriptProcResult == -1) {
             return -1;
         }
 
-        overriden = script->scriptOverrides;
+        overriden = scriptProcResult != 0;
     }
 
     if (!overriden) {
@@ -695,15 +700,12 @@ int objectDrop(Object* invenObj, Object* itemObj)
 
     bool scriptOverrides = false;
     if (invenObj->sid != -1) {
-        scriptSetObjects(invenObj->sid, itemObj, nullptr);
-        scriptExecProc(invenObj->sid, SCRIPT_PROC_IS_DROPPING);
-
-        Script* scr;
-        if (scriptGetScript(invenObj->sid, &scr) == -1) {
+        int scriptProcResult = scriptExecProcWithObjects(invenObj->sid, itemObj, nullptr, SCRIPT_PROC_IS_DROPPING);
+        if (scriptProcResult == -1) {
             return -1;
         }
 
-        scriptOverrides = scr->scriptOverrides;
+        scriptOverrides = scriptProcResult != 0;
     }
 
     if (scriptOverrides) {
@@ -711,15 +713,12 @@ int objectDrop(Object* invenObj, Object* itemObj)
     }
 
     if (itemObj->sid != -1) {
-        scriptSetObjects(itemObj->sid, invenObj, itemObj);
-        scriptExecProc(itemObj->sid, SCRIPT_PROC_DROP);
-
-        Script* scr;
-        if (scriptGetScript(itemObj->sid, &scr) == -1) {
+        int scriptProcResult = scriptExecProcWithObjects(itemObj->sid, invenObj, itemObj, SCRIPT_PROC_DROP);
+        if (scriptProcResult == -1) {
             return -1;
         }
 
-        scriptOverrides = scr->scriptOverrides;
+        scriptOverrides = scriptProcResult != 0;
     }
 
     if (scriptOverrides) {
@@ -868,16 +867,11 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
 // 0x49BC60
 static UseItemResultCode _obj_use_radio(Object* item)
 {
-    Script* scr;
-
     if (item->sid == -1) {
         return USE_ITEM_RESULT_ERROR;
     }
 
-    scriptSetObjects(item->sid, gDude, item);
-    scriptExecProc(item->sid, SCRIPT_PROC_USE);
-
-    if (scriptGetScript(item->sid, &scr) == -1) {
+    if (scriptExecProcWithObjects(item->sid, gDude, item, SCRIPT_PROC_USE) == -1) {
         return USE_ITEM_RESULT_ERROR;
     }
 
@@ -1021,11 +1015,7 @@ static UseItemResultCode _obj_use_misc_item(Object* item)
             return USE_ITEM_RESULT_REMOVE;
         }
 
-        scriptSetObjects(item->sid, gDude, item);
-        scriptExecProc(item->sid, SCRIPT_PROC_USE);
-
-        Script* scr;
-        if (scriptGetScript(item->sid, &scr) == -1) {
+        if (scriptExecProcWithObjects(item->sid, gDude, item, SCRIPT_PROC_USE) == -1) {
             return USE_ITEM_RESULT_ERROR;
         }
 
@@ -1308,8 +1298,8 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
     }
 
     if (skill == -1) {
-        // store the item script id as there's no guarantee item is not deallocated within the script
         const int itemSid = item->sid;
+        const int targetSid = targetObj->sid;
 
         if (itemSid != -1) {
             Script* itemScript;
@@ -1327,18 +1317,16 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
             }
         }
 
-        // store the target object script id as there's no guarantee target object is not deallocated within the script
-        const int targetObjectSid = targetObj->sid;
-        if (targetObjectSid == -1) {
+        if (targetSid == -1) {
             return _protinst_default_use_item(critter, targetObj, item);
         }
 
         Script* targetScript;
 
-        scriptSetObjects(targetObjectSid, critter, item);
-        scriptExecProc(targetObjectSid, SCRIPT_PROC_USE_OBJ_ON);
+        scriptSetObjects(targetSid, critter, item);
+        scriptExecProc(targetSid, SCRIPT_PROC_USE_OBJ_ON);
 
-        if (scriptGetScript(targetObjectSid, &targetScript) == -1) {
+        if (scriptGetScript(targetSid, &targetScript) == -1) {
             return USE_ITEM_RESULT_ERROR;
         }
 
@@ -1485,15 +1473,12 @@ int objectUse(Object* user, Object* targetObj)
     bool scriptOverrides = false;
 
     if (targetObj->sid != -1) {
-        scriptSetObjects(targetObj->sid, user, targetObj);
-        scriptExecProc(targetObj->sid, SCRIPT_PROC_USE);
-
-        Script* script;
-        if (scriptGetScript(targetObj->sid, &script) == -1) {
+        int scriptProcResult = scriptExecProcWithObjects(targetObj->sid, user, targetObj, SCRIPT_PROC_USE);
+        if (scriptProcResult == -1) {
             return -1;
         }
 
-        scriptOverrides = script->scriptOverrides;
+        scriptOverrides = scriptProcResult != 0;
     }
 
     if (!scriptOverrides) {
@@ -1745,15 +1730,12 @@ int objectUseDoor(Object* user, Object* door, bool animateOnly)
 
     bool scriptOverrides = false;
     if (door->sid != -1) {
-        scriptSetObjects(door->sid, user, door);
-        scriptExecProc(door->sid, SCRIPT_PROC_USE);
-
-        Script* script;
-        if (scriptGetScript(door->sid, &script) == -1) {
+        int scriptProcResult = scriptExecProcWithObjects(door->sid, user, door, SCRIPT_PROC_USE);
+        if (scriptProcResult == -1) {
             return -1;
         }
 
-        scriptOverrides = script->scriptOverrides;
+        scriptOverrides = scriptProcResult != 0;
     }
 
     if (!scriptOverrides) {
@@ -1850,15 +1832,12 @@ int objectUseContainer(Object* critter, Object* item)
 
     bool overriden = false;
     if (item->sid != -1) {
-        scriptSetObjects(item->sid, critter, item);
-        scriptExecProc(item->sid, SCRIPT_PROC_USE);
-
-        Script* script;
-        if (scriptGetScript(item->sid, &script) == -1) {
+        int scriptProcResult = scriptExecProcWithObjects(item->sid, critter, item, SCRIPT_PROC_USE);
+        if (scriptProcResult == -1) {
             return -1;
         }
 
-        overriden = script->scriptOverrides;
+        overriden = scriptProcResult != 0;
     }
 
     if (overriden) {
@@ -1918,12 +1897,13 @@ int objectUseSkillOn(Object* source, Object* target, int skill)
 
     bool scriptOverrides = false;
     if (target->sid != -1) {
-        scriptSetObjects(target->sid, source, target);
-        scriptSetActionBeingUsed(target->sid, skill);
-        scriptExecProc(target->sid, SCRIPT_PROC_USE_SKILL_ON);
+        int targetSid = target->sid;
+        scriptSetObjects(targetSid, source, target);
+        scriptSetActionBeingUsed(targetSid, skill);
+        scriptExecProc(targetSid, SCRIPT_PROC_USE_SKILL_ON);
 
         Script* script;
-        if (scriptGetScript(target->sid, &script) == -1) {
+        if (scriptGetScript(targetSid, &script) == -1) {
             return -1;
         }
 
