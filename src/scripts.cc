@@ -1377,15 +1377,21 @@ int scriptExecProc(int sid, int proc)
     programExecuteProcedure(program, procedureIndex);
 
     Script* executedScript;
-    const bool wasRemoved = scriptGetScript(sid, &executedScript) == -1;
+    if (scriptGetScript(sid, &executedScript) == -1) {
+        // if the script was removed during excecution, it (and the object) might be gone, so we shouldn't try to clean up
+        // or call HOOK_STDPROCEDURE_END
+        return 0;
+    }
 
     // HOOK_STDPROCEDURE_END
     scriptHooks_StdProcedure(proc, self, source, target, fixedParam, true);
 
-    if (!wasRemoved) {
-        executedScript->source = nullptr;
-        executedScript->action = 0;
+    if (scriptGetScript(sid, &executedScript) == -1) {
+        return 0;
     }
+
+    executedScript->source = nullptr;
+    executedScript->action = 0;
 
     return 0;
 }
