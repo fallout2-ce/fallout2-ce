@@ -1,6 +1,6 @@
 # Fallout 2 Community Engine
 
-Fallout 2 Community Engine is a fully working re-implementation of the Fallout 2 engine, optimized for a hassle-free experience on multiple platforms, including Mac, iOS, Android, and Linux.  It provides high resolution support, quality-of-life improvements, and dozens upon dozens of bug fixes.
+Fallout 2 Community Engine is a fully working re-implementation of the Fallout 2 engine, optimized for a hassle-free experience on multiple platforms, including Windows, Mac, iOS, Android, and Linux.  It provides high resolution support, quality-of-life improvements, and dozens upon dozens of bug fixes.
 
 This is a fork of the original Fallout2: CE project, which is no longer getting regular updates.
 
