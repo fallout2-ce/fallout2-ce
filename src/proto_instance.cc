@@ -62,10 +62,13 @@ static bool objectIsJammed(Object* obj);
 //  0x49A990
 static MessageListItem stru_49A990;
 
+// set script objects and return scriptOverrides value (if the script still exists)
 static int scriptExecProcWithObjects(int sid, Object* source, Object* target, int proc)
 {
     scriptSetObjects(sid, source, target);
     scriptExecProc(sid, proc);
+
+    // subtle: some script delete themselves (and the object) during execution, so we handle them carefully afterward
 
     Script* script;
     if (scriptGetScript(sid, &script) == -1) {
@@ -1299,8 +1302,6 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
 
     if (skill == -1) {
         const int itemSid = item->sid;
-        const int targetSid = targetObj->sid;
-
         if (itemSid != -1) {
             Script* itemScript;
 
@@ -1317,6 +1318,7 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
             }
         }
 
+        const int targetSid = targetObj->sid;
         if (targetSid == -1) {
             return _protinst_default_use_item(critter, targetObj, item);
         }
