@@ -1483,13 +1483,14 @@ int objectUse(Object* user, Object* targetObj)
     }
 
     bool scriptOverrides = false;
+    int targetObjSid = targetObj->sid;
 
-    if (targetObj->sid != -1) {
-        scriptSetObjects(targetObj->sid, user, targetObj);
-        scriptExecProc(targetObj->sid, SCRIPT_PROC_USE);
+    if (targetObjSid != -1) {
+        scriptSetObjects(targetObjSid, user, targetObj);
+        scriptExecProc(targetObjSid, SCRIPT_PROC_USE);
 
         Script* script;
-        if (scriptGetScript(targetObj->sid, &script) == -1) {
+        if (scriptGetScript(targetObjSid, &script) == -1) {
             return -1;
         }
 
