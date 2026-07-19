@@ -38,6 +38,12 @@ The following settings were moved into [`fallout2.cfg`](files/fallout2.cfg) inst
 | `Misc` | `UseWalkDistance` | `qol` | `use_walk_distance` |
 | `Misc` | `AutoOpenDoors` | `qol` | `auto_open_doors` |
 
+The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/config/game.cfg):
+
+| ddraw.ini section | ddraw.ini key | game.cfg section | game.cfg key |
+| --- | --- | --- | --- |
+| `Misc` | `StartGDialogFix` | `dialog` | `start_gdialog_fix` |
+
 ## Opcodes / Metarules
 
 See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/) for documentation on specific functions.

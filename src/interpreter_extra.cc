@@ -10,6 +10,7 @@
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
+#include "content_config.h"
 #include "critter.h"
 #include "debug.h"
 #include "dialog.h"
@@ -1924,8 +1925,12 @@ static void opStartGameDialog(Program* program)
     gameDialogSetBackground(backgroundId);
     gGameDialogReactionOrFidget = reactionLevel;
 
-    if (gGameDialogHeadFid != -1) {
-        int npcReactionValue = reactionGetValue(gGameDialogSpeaker);
+    // SFALL: Use the start_gdialog target instead of the current dialog target,
+    // which can be null outside talk_p_proc.
+    bool startGameDialogFix = false;
+    configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "start_gdialog_fix", &startGameDialogFix);
+    if (gGameDialogHeadFid != -1 && (!startGameDialogFix || reactionLevel == -1)) {
+        int npcReactionValue = reactionGetValue(obj);
         int npcReactionType = reactionTranslateValue(npcReactionValue);
         switch (npcReactionType) {
         case NPC_REACTION_BAD:
