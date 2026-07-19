@@ -12,7 +12,7 @@ Fallout2: CE has broad (though not total) compatibility with [Sfall](https://git
 
 You *must* own the game to play. Purchase your copy on [GOG](https://www.gog.com/game/fallout_2), [Epic Games](https://store.epicgames.com/p/fallout-2) or [Steam](https://store.steampowered.com/app/38410).
 
-Download CE from the link above, then extract the archive into your game folder.  Launch Fallout2.exe (or equivalent to play). CE has a lot of enhancements that require configuration.  See [Configuration](#Configuration) to see examples.
+Download CE from the link above, then extract the archive into your game folder. Launch Fallout2.exe (or equivalent) to play. CE has a lot of enhancements that require configuration. See [Configuration](#Configuration) for examples.
 
 For detailed instructions on how to play on Mac, Linux, iOS, or Android, see the [Platform-specific instructions](#platform-specific-installation).
 
@@ -56,7 +56,7 @@ For detailed instructions on how to play on Mac, Linux, iOS, or Android, see the
   </tr>
 </table>
 
-There's also dozens small things that just work a little better than they did in the original.  Better pathfinding, fewer graphics glitches, less finicky weapon stacking, and much more.
+There are also dozens of small things that just work a little better than they did in the original.  Better pathfinding, fewer graphics glitches, less finicky weapon stacking, and much more.
 
 ## Configuration
 
@@ -74,10 +74,10 @@ windowed=1 ; 0 = fullscreen
 scale=2 ; 1 = original scale, 2 = 2x scale, etc. (e.g. at scale 2 and screen resolution 1920x1080, in-game resolution will be 960x540, thus every pixel is twice as wide and tall)
 
 [ui]
-; Maximum number of columns shown in the main inventory and loot/steal windows(valid range: 1..2)
+; Maximum number of columns shown in the main inventory and loot/steal windows (valid range: 1..2)
 inventory_columns=2
 
-;Set to 1 to expand the barter/trade window vertically, adding a 4th item slot per side (requires ce.dat)
+; Set to 1 to expand the barter/trade window vertically, adding a 4th item slot per side (requires ce.dat)
 expand_barter_window=1
 
 [qol]
@@ -93,7 +93,7 @@ party_loot_and_barter=1
 - **Tablets**: Set these values to logical resolution of your device, for example iPad Pro 11 is 1668x2388 (pixels), but it's logical resolution is 834x1194 (points).
 - **Mobile phones**: Set height to 480, calculate width according to your device screen (aspect) ratio, for example Samsung S21 is 20:9 device, so the width should be 480 * 20 / 9 = 1067.
 
-In time this stuff will receive in-game interface, right now you have to do it manually. To see all currently working fallout2.cfg settings, just run the game once and quit. It will be automatically updated with defaults for every supported setting.
+In time this stuff will receive an in-game interface, right now you have to do it manually. To see all currently working fallout2.cfg settings, just run the game once and quit. It will be automatically updated with defaults for every supported setting.
 *Note*: Use of the IFACE_BAR settings requires the `f2_res.dat` file, which contains graphical assets. Various versions are available, but one compatible with the above settings can be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/main/files/f2_res.dat)
 
 ## Platform-specific installation
