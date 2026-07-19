@@ -3593,6 +3593,10 @@ bool isWithinPerception(Object* watcher, Object* target)
 // 0x42BB34
 static int aiMessageListInit()
 {
+    if (gCombatAiMessageList.entries != nullptr || gCombatAiMessageList.entries_num > 0) {
+        messageListFree(&gCombatAiMessageList);
+    }
+
     if (!messageListInit(&gCombatAiMessageList)) {
         return -1;
     }
