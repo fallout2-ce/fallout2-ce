@@ -286,6 +286,7 @@ jobs:
           sudo apt install libsdl2-dev zlib1g-dev
 
       - name: Configure (armhf)
+        if: matrix.arch == 'armhf'
         run: |
           cmake \
             -B build \
@@ -297,6 +298,7 @@ jobs:
             # EOL
 
       - name: Configure (arm64)
+        if: matrix.arch == 'arm64'
         run: cmake -B build -D CMAKE_BUILD_TYPE=Debug -D FALLOUT_VENDORED=OFF
 
       - name: Build
