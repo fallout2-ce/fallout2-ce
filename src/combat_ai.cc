@@ -3593,7 +3593,12 @@ bool isWithinPerception(Object* watcher, Object* target)
 // 0x42BB34
 static int aiMessageListInit()
 {
-    if (gCombatAiMessageList.entries != nullptr || gCombatAiMessageList.entries_num > 0) {
+    // Prevent chronic memory leak on preference/language filter reloads.
+    // If gCombatAiMessageList was already populated from a previous init cascade,
+    // we must deeply free its entries before re-initializing the layout,
+    // otherwise the subsequent load will overwrite active pointers and isolate strings in the heap.
+    if (gCombatAiMessageList.entries != nullptr && gCombatAiMessageList.entries_num > 0) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_COMBAT_AI, nullptr);
         messageListFree(&gCombatAiMessageList);
     }
 
