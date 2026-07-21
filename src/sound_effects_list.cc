@@ -68,11 +68,6 @@ bool soundEffectsListIsValidTag(int tag)
 // 0x4A98F4 sfxl_init
 int soundEffectsListInit(const char* soundEffectsPath, int compression, int debugLevel)
 {
-    char path[COMPAT_MAX_PATH];
-
-    // TODO: What for?
-    // memcpy(path, byte_4A97E0, 0xFF);
-
     gSoundEffectsListDebugLevel = debugLevel;
     _sfxl_compression = compression;
     gSoundEffectsListEntriesLength = 0;
@@ -83,86 +78,20 @@ int soundEffectsListInit(const char* soundEffectsPath, int compression, int debu
     }
 
     gSoundEffectsListPathLength = strlen(gSoundEffectsListPath);
-
-    if (gSoundEffectsListPathLength == 0 || soundEffectsPath[gSoundEffectsListPathLength - 1] == '\\') {
-        snprintf(path, sizeof(path), "%sSNDLIST.LST", soundEffectsPath);
-    } else {
-        snprintf(path, sizeof(path), "%s\\SNDLIST.LST", soundEffectsPath);
+    int err = soundEffectsListPopulateFileNames();
+    if (err != SFXL_OK) {
+        internal_free(gSoundEffectsListPath);
+        return err;
     }
 
-    File* stream = fileOpen(path, "rt");
-    if (stream != nullptr) {
-        fileReadString(path, 255, stream);
-        gSoundEffectsListEntriesLength = atoi(path);
-
-        gSoundEffectsListEntries = (SoundEffectsListEntry*)internal_malloc(sizeof(*gSoundEffectsListEntries) * gSoundEffectsListEntriesLength);
-        for (int index = 0; index < gSoundEffectsListEntriesLength; index++) {
-            SoundEffectsListEntry* entry = &(gSoundEffectsListEntries[index]);
-
-            fileReadString(path, 255, stream);
-
-            // Remove trailing newline.
-            *(path + strlen(path) - 1) = '\0';
-            entry->name = internal_strdup(path);
-
-            fileReadString(path, 255, stream);
-            entry->dataSize = atoi(path);
-
-            fileReadString(path, 255, stream);
-            entry->fileSize = atoi(path);
-
-            fileReadString(path, 255, stream);
-            entry->tag = atoi(path);
-        }
-
-        fileClose(stream);
-
-        debugPrint("Reading SNDLIST.LST Sound FX Count: %d", gSoundEffectsListEntriesLength);
-    } else {
-        int err;
-
-        err = soundEffectsListPopulateFileNames();
-        if (err != SFXL_OK) {
-            internal_free(gSoundEffectsListPath);
-            return err;
-        }
-
-        err = soundEffectsListPopulateFileSizes();
-        if (err != SFXL_OK) {
-            soundEffectsListClear();
-            internal_free(gSoundEffectsListPath);
-            return err;
-        }
-
-        // NOTE: For unknown reason tag generation functionality is missing.
-        // You won't be able to produce the same SNDLIST.LST as the game have.
-        // All tags will be 0 (see [soundEffectsListPopulateFileNames]).
-        //
-        // On the other hand, tags read from the SNDLIST.LST are not used in
-        // the game. Instead tag is automatically determined from entry's
-        // index (see [soundEffectsListGetTag]).
-
-        // NOTE: Uninline.
-        soundEffectsListSort();
-
-        File* stream = fileOpen(path, "wt");
-        if (stream != nullptr) {
-            filePrintFormatted(stream, "%d\n", gSoundEffectsListEntriesLength);
-
-            for (int index = 0; index < gSoundEffectsListEntriesLength; index++) {
-                SoundEffectsListEntry* entry = &(gSoundEffectsListEntries[index]);
-
-                filePrintFormatted(stream, "%s\n", entry->name);
-                filePrintFormatted(stream, "%d\n", entry->dataSize);
-                filePrintFormatted(stream, "%d\n", entry->fileSize);
-                filePrintFormatted(stream, "%d\n", entry->tag);
-            }
-
-            fileClose(stream);
-        } else {
-            debugPrint("SFXLIST: Can't open file for write %s\n", path);
-        }
+    err = soundEffectsListPopulateFileSizes();
+    if (err != SFXL_OK) {
+        soundEffectsListClear();
+        internal_free(gSoundEffectsListPath);
+        return err;
     }
+
+    soundEffectsListSort();
 
     gSoundEffectsListInitialized = true;
 
@@ -385,7 +314,7 @@ static int soundEffectsListCopyFileNames(char** fileNameList)
 static int soundEffectsListPopulateFileSizes()
 {
 
-    char* path = (char*)internal_malloc(gSoundEffectsListPathLength + 13);
+    char* path = (char*)internal_malloc(gSoundEffectsListPathLength + COMPAT_MAX_PATH);
     if (path == nullptr) {
         return SFXL_ERR;
     }
