@@ -1707,12 +1707,15 @@ void mf_add_extra_msg_file(OpcodeContext& ctx)
 
 void mf_opcode_exists(OpcodeContext& ctx)
 {
+    constexpr int kOpcodeStart = 0x8000;
+
     int opcode = ctx.arg(0).asInt();
-    int opcodeIndex = opcode & 0x3FFF;
-    if (opcodeIndex < 0 || opcodeIndex >= OPCODE_MAX_COUNT) {
+    if (opcode < kOpcodeStart || opcode >= kOpcodeStart + OPCODE_MAX_COUNT) {
         ctx.setReturn(0);
         return;
     }
+
+    int opcodeIndex = opcode - kOpcodeStart;
     auto opcodeHandler = gInterpreterOpcodeHandlers[opcodeIndex];
     int opcodeExists = opcodeHandler != nullptr ? 1 : 0;
     ctx.setReturn(opcodeExists);
