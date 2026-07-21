@@ -74,13 +74,15 @@ enum HitMode : int {
 };
 
 // Overload the prefix increment: ++val
-inline HitMode& operator++(HitMode& e) {
+inline HitMode& operator++(HitMode& e)
+{
     e = static_cast<HitMode>(static_cast<int>(e) + 1);
     return e;
 }
 
 // Overload the postfix increment: val++
-inline HitMode operator++(HitMode& e, int) {
+inline HitMode operator++(HitMode& e, int)
+{
     HitMode result = e;
     ++e;
     return result;
@@ -101,13 +103,15 @@ enum HitLocation : int {
 };
 
 // Overload the prefix increment: ++val
-inline HitLocation& operator++(HitLocation& e) {
+inline HitLocation& operator++(HitLocation& e)
+{
     e = static_cast<HitLocation>(static_cast<int>(e) + 1);
     return e;
 }
 
 // Overload the postfix increment: val++
-inline HitLocation operator++(HitLocation& e, int) {
+inline HitLocation operator++(HitLocation& e, int)
+{
     HitLocation result = e;
     ++e;
     return result;
@@ -161,15 +165,16 @@ enum CriticalHitDescriptionDataMember : int {
     CRIT_DATA_MEMBER_COUNT = 7,
 };
 
-
 // Overload the prefix increment: ++val
-inline CriticalHitDescriptionDataMember& operator++(CriticalHitDescriptionDataMember& e) {
+inline CriticalHitDescriptionDataMember& operator++(CriticalHitDescriptionDataMember& e)
+{
     e = static_cast<CriticalHitDescriptionDataMember>(static_cast<int>(e) + 1);
     return e;
 }
 
 // Overload the postfix increment: val++
-inline CriticalHitDescriptionDataMember operator++(CriticalHitDescriptionDataMember& e, int) {
+inline CriticalHitDescriptionDataMember operator++(CriticalHitDescriptionDataMember& e, int)
+{
     CriticalHitDescriptionDataMember result = e;
     ++e;
     return result;

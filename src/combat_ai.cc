@@ -2661,7 +2661,7 @@ static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode h
                 }
 
                 if (critterGetStat(attacker, STAT_INTELLIGENCE) >= intelligenceRequired) {
-                    hitLocation = static_cast<HitLocation>(randomBetween(HIT_LOCATION_HEAD, HIT_LOCATION_SPECIFIC_COUNT));                 
+                    hitLocation = static_cast<HitLocation>(randomBetween(HIT_LOCATION_HEAD, HIT_LOCATION_SPECIFIC_COUNT));
                     int chanceToHit = _determine_to_hit(attacker, defender, hitLocation, hitMode);
                     if (chanceToHit < ai->min_to_hit) {
                         hitLocation = HIT_LOCATION_TORSO;
