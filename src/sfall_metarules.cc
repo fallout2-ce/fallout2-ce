@@ -919,7 +919,7 @@ const MetaruleInfo kMetarules[] = {
     // {"unjam_lock",                mf_unjam_lock,                1, 1, -1, {ARG_OBJECT}},
     { "unwield_slot", mf_unwield_slot, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
     { "win_fill_color", mf_win_fill_color, 0, 5, -1, { ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
-    { "opcode_exists", mf_opcode_exists, 1, 1 },
+    { "opcode_exists", mf_opcode_exists, 1, 1, 0, { ARG_INT } },
 };
 const std::size_t kMetarulesCount = sizeof(kMetarules) / sizeof(kMetarules[0]);
 
@@ -1707,7 +1707,7 @@ void mf_add_extra_msg_file(OpcodeContext& ctx)
 
 void mf_opcode_exists(OpcodeContext& ctx)
 {
-    constexpr int kOpcodeStart = 0x8000;
+    constexpr int kOpcodeStart = RAW_VALUE_TYPE_OPCODE; // 0x8000
 
     int opcode = ctx.arg(0).asInt();
     if (opcode < kOpcodeStart || opcode >= kOpcodeStart + OPCODE_MAX_COUNT) {
