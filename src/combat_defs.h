@@ -18,7 +18,8 @@ typedef enum CombatState {
     COMBAT_STATE_EXIT_REQUESTED = 0x08,
 } CombatState;
 
-typedef enum HitMode {
+enum HitMode : int {
+    HIT_MODE_INVALID = -1,
     HIT_MODE_LEFT_WEAPON_PRIMARY = 0,
     HIT_MODE_LEFT_WEAPON_SECONDARY = 1,
     HIT_MODE_RIGHT_WEAPON_PRIMARY = 2,
@@ -70,21 +71,47 @@ typedef enum HitMode {
     LAST_ADVANCED_KICK_HIT_MODE = HIT_MODE_PIERCING_KICK,
     FIRST_ADVANCED_UNARMED_HIT_MODE = FIRST_ADVANCED_PUNCH_HIT_MODE,
     LAST_ADVANCED_UNARMED_HIT_MODE = LAST_ADVANCED_KICK_HIT_MODE,
-} HitMode;
+};
 
-typedef enum HitLocation {
-    HIT_LOCATION_HEAD,
-    HIT_LOCATION_LEFT_ARM,
-    HIT_LOCATION_RIGHT_ARM,
-    HIT_LOCATION_TORSO,
-    HIT_LOCATION_RIGHT_LEG,
-    HIT_LOCATION_LEFT_LEG,
-    HIT_LOCATION_EYES,
-    HIT_LOCATION_GROIN,
-    HIT_LOCATION_UNCALLED,
-    HIT_LOCATION_COUNT,
+// Overload the prefix increment: ++val
+inline HitMode& operator++(HitMode& e) {
+    e = static_cast<HitMode>(static_cast<int>(e) + 1);
+    return e;
+}
+
+// Overload the postfix increment: val++
+inline HitMode operator++(HitMode& e, int) {
+    HitMode result = e;
+    ++e;
+    return result;
+}
+
+enum HitLocation : int {
+    HIT_LOCATION_HEAD = 0,
+    HIT_LOCATION_LEFT_ARM = 1,
+    HIT_LOCATION_RIGHT_ARM = 2,
+    HIT_LOCATION_TORSO = 3,
+    HIT_LOCATION_RIGHT_LEG = 4,
+    HIT_LOCATION_LEFT_LEG = 5,
+    HIT_LOCATION_EYES = 6,
+    HIT_LOCATION_GROIN = 7,
+    HIT_LOCATION_UNCALLED = 8,
+    HIT_LOCATION_COUNT = 9,
     HIT_LOCATION_SPECIFIC_COUNT = HIT_LOCATION_COUNT - 1,
-} HitLocation;
+};
+
+// Overload the prefix increment: ++val
+inline HitLocation& operator++(HitLocation& e) {
+    e = static_cast<HitLocation>(static_cast<int>(e) + 1);
+    return e;
+}
+
+// Overload the postfix increment: val++
+inline HitLocation operator++(HitLocation& e, int) {
+    HitLocation result = e;
+    ++e;
+    return result;
+}
 
 typedef struct CombatStartData {
     Object* attacker;
@@ -101,16 +128,16 @@ typedef struct CombatStartData {
 
 typedef struct Attack {
     Object* attacker;
-    int hitMode;
+    HitMode hitMode;
     Object* weapon;
-    int attackHitLocation; // UNUSED?
+    HitLocation attackHitLocation; // UNUSED?
     int attackerDamage;
     int attackerFlags;
     int ammoQuantity;
     int criticalMessageId;
     Object* defender;
     int tile;
-    int defenderHitLocation;
+    HitLocation defenderHitLocation;
     int defenderDamage;
     int defenderFlags;
     int defenderKnockback;
@@ -123,16 +150,30 @@ typedef struct Attack {
     int extrasKnockback[EXPLOSION_TARGET_COUNT];
 } Attack;
 
-typedef enum CriticalHitDescriptionDataMember {
-    CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER,
-    CRIT_DATA_MEMBER_FLAGS,
-    CRIT_DATA_MEMBER_MASSIVE_CRITICAL_STAT,
-    CRIT_DATA_MEMBER_MASSIVE_CRITICAL_STAT_MODIFIER,
-    CRIT_DATA_MEMBER_MASSIVE_CRITICAL_FLAGS,
-    CRIT_DATA_MEMBER_MESSAGE_ID,
-    CRIT_DATA_MEMBER_MASSIVE_CRITICAL_MESSAGE_ID,
-    CRIT_DATA_MEMBER_COUNT,
-} CriticalHitDescriptionDataMember;
+enum CriticalHitDescriptionDataMember : int {
+    CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER = 0,
+    CRIT_DATA_MEMBER_FLAGS = 1,
+    CRIT_DATA_MEMBER_MASSIVE_CRITICAL_STAT = 2,
+    CRIT_DATA_MEMBER_MASSIVE_CRITICAL_STAT_MODIFIER = 3,
+    CRIT_DATA_MEMBER_MASSIVE_CRITICAL_FLAGS = 4,
+    CRIT_DATA_MEMBER_MESSAGE_ID = 5,
+    CRIT_DATA_MEMBER_MASSIVE_CRITICAL_MESSAGE_ID = 6,
+    CRIT_DATA_MEMBER_COUNT = 7,
+};
+
+
+// Overload the prefix increment: ++val
+inline CriticalHitDescriptionDataMember& operator++(CriticalHitDescriptionDataMember& e) {
+    e = static_cast<CriticalHitDescriptionDataMember>(static_cast<int>(e) + 1);
+    return e;
+}
+
+// Overload the postfix increment: val++
+inline CriticalHitDescriptionDataMember operator++(CriticalHitDescriptionDataMember& e, int) {
+    CriticalHitDescriptionDataMember result = e;
+    ++e;
+    return result;
+}
 
 // Provides metadata about critical hit effect.
 typedef union CriticalHitDescription {
@@ -160,7 +201,7 @@ typedef union CriticalHitDescription {
     int values[CRIT_DATA_MEMBER_COUNT];
 } CriticalHitDescription;
 
-typedef enum CombatBadShot {
+enum CombatBadShot : int {
     COMBAT_BAD_SHOT_OK = 0,
     COMBAT_BAD_SHOT_NO_AMMO = 1,
     COMBAT_BAD_SHOT_OUT_OF_RANGE = 2,
@@ -169,7 +210,7 @@ typedef enum CombatBadShot {
     COMBAT_BAD_SHOT_AIM_BLOCKED = 5,
     COMBAT_BAD_SHOT_ARM_CRIPPLED = 6,
     COMBAT_BAD_SHOT_BOTH_ARMS_CRIPPLED = 7,
-} CombatBadShot;
+};
 
 } // namespace fallout
 

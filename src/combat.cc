@@ -93,7 +93,7 @@ typedef struct DamageCalculationContext {
     int difficultyDamagePercent;
 } DamageCalculationContext;
 
-static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weapon, int hitMode, Object* defender, int* safeDistancePtr, Object* attackerFriend);
+static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weapon, HitMode hitMode, Object* defender, int* safeDistancePtr, Object* attackerFriend);
 static void _combatInitAIInfoList();
 static int aiInfoCopy(int srcIndex, int destIndex);
 static int _combatAIInfoSetLastMove(Object* object, int move);
@@ -122,7 +122,7 @@ static int attackComputeCriticalHit(Attack* a1);
 static int _attackFindInvalidFlags(Object* a1, Object* a2);
 static int attackComputeCriticalFailure(Attack* attack);
 static void _do_random_cripple(int* flagsPtr);
-static int attackDetermineToHit(Object* attacker, int tile, Object* defender, int hitLocation, int hitMode, bool useDistance);
+static int attackDetermineToHit(Object* attacker, int tile, Object* defender, HitLocation hitLocation, HitMode hitMode, bool useDistance);
 static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMult);
 static void _check_for_death(Object* a1, int a2, int* a3);
 static void _set_new_results(Object* a1, int a2);
@@ -131,11 +131,11 @@ static void combatCopyDamageAmountDescription(char* dest, size_t size, Object* c
 static void combatAddDamageFlagsDescription(char* a1, int flags, Object* a3);
 static void _combat_standup(Object* a1);
 static void _print_tohit(unsigned char* dest, int dest_pitch, int a3);
-static char* hitLocationGetName(Object* critter, int hitLocation);
+static char* hitLocationGetName(Object* critter, HitLocation hitLocation);
 static void _draw_loc_off(int a1, int a2);
 static void _draw_loc_on_(int a1, int a2);
 static void _draw_loc_(int eventCode, int color);
-static int calledShotSelectHitLocation(Object* critter, int* hitLocation, int hitMode);
+static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation, HitMode hitMode);
 
 static void criticalsInit();
 static void criticalsReset();
@@ -145,7 +145,7 @@ static int burstModComputeRounds(int totalRounds, int* centerRoundsPtr, int* lef
 static void unarmedInit();
 static void unarmedInitVanilla();
 static void unarmedInitCustom();
-static int unarmedGetHitModeInRange(int firstHitMode, int lastHitMode, bool isSecondary);
+static HitMode unarmedGetHitModeInRange(HitMode firstHitMode, HitMode lastHitMode, bool isSecondary);
 static void damageModInit();
 static void damageModCalculateGlovz(DamageCalculationContext* context);
 static int damageModGlovzDivRound(int dividend, int divisor);
@@ -1899,7 +1899,7 @@ static const int _call_ty[4] = {
 };
 
 // 0x51803C hit_loc_left
-static const int _hit_loc_left[4] = {
+static const HitLocation _hit_loc_left[4] = {
     HIT_LOCATION_HEAD,
     HIT_LOCATION_EYES,
     HIT_LOCATION_RIGHT_ARM,
@@ -1907,7 +1907,7 @@ static const int _hit_loc_left[4] = {
 };
 
 // 0x51804C hit_loc_right
-static const int _hit_loc_right[4] = {
+static const HitLocation _hit_loc_right[4] = {
     HIT_LOCATION_TORSO,
     HIT_LOCATION_GROIN,
     HIT_LOCATION_LEFT_ARM,
@@ -2297,13 +2297,13 @@ int combatSave(File* stream)
 }
 
 // 0x4213E8
-bool _combat_safety_invalidate_weapon(Object* attacker, Object* weapon, int hitMode, Object* defender, int* safeDistancePtr)
+bool _combat_safety_invalidate_weapon(Object* attacker, Object* weapon, HitMode hitMode, Object* defender, int* safeDistancePtr)
 {
     return _combat_safety_invalidate_weapon_func(attacker, weapon, hitMode, defender, safeDistancePtr, nullptr);
 }
 
 // 0x4213FC
-static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weapon, int hitMode, Object* defender, int* safeDistancePtr, Object* attackerFriend)
+static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weapon, HitMode hitMode, Object* defender, int* safeDistancePtr, Object* attackerFriend)
 {
     if (safeDistancePtr != nullptr) {
         *safeDistancePtr = 0;
@@ -2680,7 +2680,7 @@ static void _combat_begin_extra(Object* attacker)
         _combat_update_critter_outline_for_los(_combat_list[index], 0);
     }
 
-    attackInit(&_main_ctd, attacker, nullptr, 4, 3);
+    attackInit(&_main_ctd, attacker, nullptr, HIT_MODE_PUNCH, HIT_LOCATION_TORSO);
 
     _combat_turn_obj = attacker;
 
@@ -3566,7 +3566,7 @@ void _combat(CombatStartData* csd)
 }
 
 // 0x422EC4
-void attackInit(Attack* attack, Object* attacker, Object* defender, int hitMode, int hitLocation)
+void attackInit(Attack* attack, Object* attacker, Object* defender, HitMode hitMode, HitLocation hitLocation)
 {
     attack->attacker = attacker;
     attack->hitMode = hitMode;
@@ -3587,7 +3587,7 @@ void attackInit(Attack* attack, Object* attacker, Object* defender, int hitMode,
 }
 
 // 0x422F3C
-int _combat_attack(Object* attacker, Object* defender, int hitMode, int hitLocation)
+int _combat_attack(Object* attacker, Object* defender, HitMode hitMode, HitLocation hitLocation)
 {
     if (attacker != gDude && hitMode == HIT_MODE_PUNCH && randomBetween(1, 4) == 1) {
         int fid = buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_KICK_LEG, (attacker->fid & 0xF000) >> 12, FID_ROTATION(attacker->fid));
@@ -4415,26 +4415,26 @@ static void _do_random_cripple(int* flagsPtr)
 }
 
 // 0x42436C
-int _determine_to_hit(Object* attacker, Object* defender, int hitLocation, int hitMode)
+int _determine_to_hit(Object* attacker, Object* defender, HitLocation hitLocation, HitMode hitMode)
 {
     return attackDetermineToHit(attacker, attacker->tile, defender, hitLocation, hitMode, true);
 }
 
 // 0x424380
-int _determine_to_hit_no_range(Object* attacker, Object* defender, int hitLocation, int hitMode, unsigned char* a5)
+int _determine_to_hit_no_range(Object* attacker, Object* defender, HitLocation hitLocation, HitMode hitMode, unsigned char* a5)
 {
     return attackDetermineToHit(attacker, attacker->tile, defender, hitLocation, hitMode, false);
 }
 
 // 0x424394
-int _determine_to_hit_from_tile(Object* attacker, int tile, Object* defender, int hitLocation, int hitMode)
+int _determine_to_hit_from_tile(Object* attacker, int tile, Object* defender, HitLocation hitLocation, HitMode hitMode)
 {
     return attackDetermineToHit(attacker, tile, defender, hitLocation, hitMode, true);
 }
 
 // determine_to_hit
 // 0x4243A8
-static int attackDetermineToHit(Object* attacker, int tile, Object* defender, int hitLocation, int hitMode, bool useDistance)
+static int attackDetermineToHit(Object* attacker, int tile, Object* defender, HitLocation hitLocation, HitMode hitMode, bool useDistance)
 {
     Object* weapon = critterGetWeaponForHitMode(attacker, hitMode);
 
@@ -5553,7 +5553,7 @@ static void _print_tohit(unsigned char* dest, int destPitch, int accuracy)
 }
 
 // 0x42612C
-static char* hitLocationGetName(Object* critter, int hitLocation)
+static char* hitLocationGetName(Object* critter, HitLocation hitLocation)
 {
     MessageListItem messageListItem;
     messageListItem.num = 1000 + 10 * _art_alias_num(critter->fid & 0xFFF) + hitLocation;
@@ -5592,7 +5592,7 @@ static void _draw_loc_(int eventCode, int color)
 }
 
 // 0x426218
-static int calledShotSelectHitLocation(Object* critter, int* hitLocation, int hitMode)
+static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation, HitMode hitMode)
 {
     *hitLocation = HIT_LOCATION_TORSO;
 
@@ -5760,7 +5760,7 @@ static int calledShotSelectHitLocation(Object* critter, int* hitLocation, int hi
 
 // check for possibility of performing attacking
 // 0x426614
-int _combat_check_bad_shot(Object* attacker, Object* defender, int hitMode, bool aiming)
+CombatBadShot _combat_check_bad_shot(Object* attacker, Object* defender, HitMode hitMode, bool aiming)
 {
     int range = 1;
     int tile = -1;
@@ -5816,7 +5816,7 @@ int _combat_check_bad_shot(Object* attacker, Object* defender, int hitMode, bool
 // 0x426744
 bool _combat_to_hit(Object* target, int* accuracy)
 {
-    int hitMode;
+    HitMode hitMode;
     bool aiming;
     if (interfaceGetCurrentHitMode(&hitMode, &aiming) == -1) {
         return false;
@@ -5842,7 +5842,7 @@ void _combat_attack_this(Object* target)
         return;
     }
 
-    int hitMode;
+    HitMode hitMode;
     bool aiming;
     if (interfaceGetCurrentHitMode(&hitMode, &aiming) == -1) {
         return;
@@ -5853,7 +5853,7 @@ void _combat_attack_this(Object* target)
     char formattedText[80];
     const char* sfx;
 
-    int rc = _combat_check_bad_shot(gDude, target, hitMode, aiming);
+    CombatBadShot rc = _combat_check_bad_shot(gDude, target, hitMode, aiming);
     switch (rc) {
     case COMBAT_BAD_SHOT_NO_AMMO:
         item = critterGetWeaponForHitMode(gDude, hitMode);
@@ -5925,7 +5925,7 @@ void _combat_attack_this(Object* target)
         debugPrint("Bad called shot value %d\n", aiming);
     }
 
-    int hitLocation;
+    HitLocation hitLocation;
     if (calledShotSelectHitLocation(target, &hitLocation, hitMode) != -1) {
         _combat_attack(gDude, target, hitMode, hitLocation);
     }
@@ -6303,13 +6303,13 @@ static void criticalsInit()
 
                     // Read original kill types (19) plus one for the player.
                     for (int killType = 0; killType < KILL_TYPE_COUNT + 1; killType++) {
-                        for (int hitLocation = 0; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
+                        for (HitLocation hitLocation = HIT_LOCATION_HEAD; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
                             for (int effect = 0; effect < CRTICIAL_EFFECT_COUNT; effect++) {
                                 snprintf(sectionKey, sizeof(sectionKey), "c_%02d_%d_%d", killType, hitLocation, effect);
 
                                 // Update player kill type if needed.
                                 int newKillType = killType == KILL_TYPE_COUNT ? SFALL_KILL_TYPE_COUNT : killType;
-                                for (int dataMember = 0; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
+                                for (CriticalHitDescriptionDataMember dataMember = CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
                                     int value = criticalsGetValue(newKillType, hitLocation, effect, dataMember);
                                     if (configGetInt(&criticalsConfig, sectionKey, gCritDataMemberKeys[dataMember], &value)) {
                                         criticalsSetValue(newKillType, hitLocation, effect, dataMember, value);
@@ -6333,7 +6333,7 @@ static void criticalsInit()
                             continue;
                         }
 
-                        for (int hitLocation = 0; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
+                        for (HitLocation hitLocation = HIT_LOCATION_HEAD; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
                             if (enabled < 2) {
                                 bool hitLocationChanged = false;
 
@@ -6348,7 +6348,7 @@ static void criticalsInit()
                             snprintf(hitLocationSectionKey, sizeof(hitLocationSectionKey), "c_%02d_%d", killType, hitLocation);
 
                             for (int effect = 0; effect < CRTICIAL_EFFECT_COUNT; effect++) {
-                                for (int dataMember = 0; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
+                                for (CriticalHitDescriptionDataMember dataMember = CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
                                     int value = criticalsGetValue(killType, hitLocation, effect, dataMember);
                                     snprintf(key, sizeof(key), "e%d_%s", effect, gCritDataMemberKeys[dataMember]);
                                     if (configGetInt(&criticalsConfig, hitLocationSectionKey, key, &value)) {
@@ -6380,7 +6380,7 @@ static void criticalsExit()
     criticalsReset();
 }
 
-int criticalsGetValue(int killType, int hitLocation, int effect, int dataMember)
+int criticalsGetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember)
 {
     if (killType == SFALL_KILL_TYPE_COUNT) {
         return gPlayerCriticalHitTable[hitLocation][effect].values[dataMember];
@@ -6389,7 +6389,7 @@ int criticalsGetValue(int killType, int hitLocation, int effect, int dataMember)
     }
 }
 
-void criticalsSetValue(int killType, int hitLocation, int effect, int dataMember, int value)
+void criticalsSetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember, int value)
 {
     if (killType == SFALL_KILL_TYPE_COUNT) {
         gPlayerCriticalHitTable[hitLocation][effect].values[dataMember] = value;
@@ -6398,7 +6398,7 @@ void criticalsSetValue(int killType, int hitLocation, int effect, int dataMember
     }
 }
 
-void criticalsResetValue(int killType, int hitLocation, int effect, int dataMember)
+void criticalsResetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember)
 {
     if (killType == SFALL_KILL_TYPE_COUNT) {
         gPlayerCriticalHitTable[hitLocation][effect].values[dataMember] = gBasePlayerCriticalHitTable[hitLocation][effect].values[dataMember];
@@ -6649,7 +6649,7 @@ static void unarmedInitCustom()
             char section[4];
             char statKey[6];
 
-            for (int hitMode = 0; hitMode < HIT_MODE_COUNT; hitMode++) {
+            for (HitMode hitMode = HIT_MODE_LEFT_WEAPON_PRIMARY; hitMode < HIT_MODE_COUNT; hitMode++) {
                 if (!isUnarmedHitMode(hitMode)) {
                     continue;
                 }
@@ -6678,7 +6678,7 @@ static void unarmedInitCustom()
     }
 }
 
-int unarmedGetDamage(int hitMode, int* minDamagePtr, int* maxDamagePtr)
+int unarmedGetDamage(HitMode hitMode, int* minDamagePtr, int* maxDamagePtr)
 {
     UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[hitMode]);
     *minDamagePtr = hitDescription->minDamage;
@@ -6686,45 +6686,45 @@ int unarmedGetDamage(int hitMode, int* minDamagePtr, int* maxDamagePtr)
     return hitDescription->bonusDamage;
 }
 
-int unarmedGetBonusCriticalChance(int hitMode)
+int unarmedGetBonusCriticalChance(HitMode hitMode)
 {
     UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[hitMode]);
     return hitDescription->bonusCriticalChance;
 }
 
-int unarmedGetActionPointCost(int hitMode)
+int unarmedGetActionPointCost(HitMode hitMode)
 {
     UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[hitMode]);
     return hitDescription->actionPointCost;
 }
 
-bool unarmedIsPenetrating(int hitMode)
+bool unarmedIsPenetrating(HitMode hitMode)
 {
     UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[hitMode]);
     return hitDescription->isPenetrate;
 }
 
-int unarmedGetPunchHitMode(bool isSecondary)
+HitMode unarmedGetPunchHitMode(bool isSecondary)
 {
-    int hitMode = unarmedGetHitModeInRange(FIRST_ADVANCED_PUNCH_HIT_MODE, LAST_ADVANCED_PUNCH_HIT_MODE, isSecondary);
-    if (hitMode == -1) {
+    HitMode hitMode = unarmedGetHitModeInRange(FIRST_ADVANCED_PUNCH_HIT_MODE, LAST_ADVANCED_PUNCH_HIT_MODE, isSecondary);
+    if (hitMode == HIT_MODE_INVALID) {
         hitMode = HIT_MODE_PUNCH;
     }
     return hitMode;
 }
 
-int unarmedGetKickHitMode(bool isSecondary)
+HitMode unarmedGetKickHitMode(bool isSecondary)
 {
-    int hitMode = unarmedGetHitModeInRange(FIRST_ADVANCED_KICK_HIT_MODE, LAST_ADVANCED_KICK_HIT_MODE, isSecondary);
-    if (hitMode == -1) {
+    HitMode hitMode = unarmedGetHitModeInRange(FIRST_ADVANCED_KICK_HIT_MODE, LAST_ADVANCED_KICK_HIT_MODE, isSecondary);
+    if (hitMode == HIT_MODE_INVALID) {
         hitMode = HIT_MODE_KICK;
     }
     return hitMode;
 }
 
-static int unarmedGetHitModeInRange(int firstHitMode, int lastHitMode, bool isSecondary)
+static HitMode unarmedGetHitModeInRange(HitMode firstHitMode, HitMode lastHitMode, bool isSecondary)
 {
-    int hitMode = -1;
+    HitMode hitMode = HIT_MODE_INVALID;
 
     int unarmed = skillGetValue(gDude, SKILL_UNARMED);
     int level = pcGetStat(PC_STAT_LEVEL);
@@ -6733,7 +6733,7 @@ static int unarmedGetHitModeInRange(int firstHitMode, int lastHitMode, bool isSe
         stats[stat] = critterGetStat(gDude, stat);
     }
 
-    for (int candidateHitMode = firstHitMode; candidateHitMode <= lastHitMode; candidateHitMode++) {
+    for (HitMode candidateHitMode = firstHitMode; candidateHitMode <= lastHitMode; candidateHitMode++) {
         UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[candidateHitMode]);
         if (isSecondary != hitDescription->isSecondary) {
             continue;
@@ -6940,26 +6940,26 @@ static void damageModCalculateYaam(DamageCalculationContext* context)
     }
 }
 
-int combat_get_hit_location_penalty(int hit_location)
+int combat_get_hit_location_penalty(HitLocation hitLocation)
 {
-    if (hit_location >= 0 && hit_location < HIT_LOCATION_COUNT) {
-        return hit_location_penalty[hit_location];
+    if (hitLocation >= 0 && hitLocation < HIT_LOCATION_COUNT) {
+        return hit_location_penalty[hitLocation];
     } else {
         return 0;
     }
 }
 
-void combat_set_hit_location_penalty(int hit_location, int penalty)
+void combat_set_hit_location_penalty(HitLocation hitLocation, int penalty)
 {
-    if (hit_location >= 0 && hit_location < HIT_LOCATION_COUNT) {
-        hit_location_penalty[hit_location] = penalty;
+    if (hitLocation >= 0 && hitLocation < HIT_LOCATION_COUNT) {
+        hit_location_penalty[hitLocation] = penalty;
     }
 }
 
 void combat_reset_hit_location_penalty()
 {
-    for (int hit_location = 0; hit_location < HIT_LOCATION_COUNT; hit_location++) {
-        hit_location_penalty[hit_location] = hit_location_penalty_default[hit_location];
+    for (int hitLocation = 0; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
+        hit_location_penalty[hitLocation] = hit_location_penalty_default[hitLocation];
     }
 }
 

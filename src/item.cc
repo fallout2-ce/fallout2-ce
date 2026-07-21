@@ -1029,7 +1029,7 @@ bool dudeIsWeaponDisabled(Object* weapon)
         }
     }
 
-    return !scriptHooks_CanUseWeapon(canUse, gDude, weapon, -1);
+    return !scriptHooks_CanUseWeapon(canUse, gDude, weapon, HIT_MODE_INVALID);
 }
 
 // 0x477FB0
@@ -1046,7 +1046,7 @@ int itemGetInventoryFid(Object* item)
 }
 
 // 0x477FF8
-Object* critterGetWeaponForHitMode(Object* critter, int hitMode)
+Object* critterGetWeaponForHitMode(Object* critter, HitMode hitMode)
 {
     switch (hitMode) {
     case HIT_MODE_LEFT_WEAPON_PRIMARY:
@@ -1063,7 +1063,7 @@ Object* critterGetWeaponForHitMode(Object* critter, int hitMode)
 }
 
 // 0x478040
-int itemGetActionPointCost(Object* obj, int hitMode, bool aiming)
+int itemGetActionPointCost(Object* obj, HitMode hitMode, bool aiming)
 {
     if (obj == nullptr) {
         return 0;
@@ -1194,7 +1194,7 @@ bool itemIsHidden(Object* item)
 }
 
 // 0x478280
-int weaponGetAttackTypeForHitMode(Object* weapon, int hitMode)
+int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return ATTACK_TYPE_UNARMED;
@@ -1214,7 +1214,7 @@ int weaponGetAttackTypeForHitMode(Object* weapon, int hitMode)
 }
 
 // 0x4782CC
-int weaponGetSkillForHitMode(Object* weapon, int hitMode)
+int weaponGetSkillForHitMode(Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return SKILL_UNARMED;
@@ -1249,7 +1249,7 @@ int weaponGetSkillForHitMode(Object* weapon, int hitMode)
 // Returns skill value when critter is about to perform hitMode.
 //
 // 0x478370
-int weaponGetSkillValue(Object* critter, int hitMode)
+int weaponGetSkillValue(Object* critter, HitMode hitMode)
 {
     if (critter == nullptr) {
         return 0;
@@ -1290,7 +1290,7 @@ int weaponGetDamageMinMax(Object* weapon, int* minDamagePtr, int* maxDamagePtr)
 }
 
 // 0x478448
-int weaponGetDamage(Object* critter, int hitMode)
+int weaponGetDamage(Object* critter, HitMode hitMode)
 {
     if (critter == nullptr) {
         return 0;
@@ -1378,7 +1378,7 @@ int weaponIsTwoHanded(Object* weapon)
 }
 
 // 0x4785DC
-int critterGetAnimationForHitMode(Object* critter, int hitMode)
+int critterGetAnimationForHitMode(Object* critter, HitMode hitMode)
 {
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
@@ -1386,7 +1386,7 @@ int critterGetAnimationForHitMode(Object* critter, int hitMode)
 }
 
 // 0x47860C
-int weaponGetAnimationForHitMode(Object* weapon, int hitMode)
+int weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode)
 {
     if (hitMode == HIT_MODE_KICK || (hitMode >= FIRST_ADVANCED_KICK_HIT_MODE && hitMode <= LAST_ADVANCED_KICK_HIT_MODE)) {
         return ANIM_KICK_LEG;
@@ -1653,7 +1653,7 @@ int weaponReload(Object* weapon, Object* ammo)
 }
 
 // 0x478A1C
-int weaponGetRange(Object* critter, int hitMode)
+int weaponGetRange(Object* critter, HitMode hitMode)
 {
     int range;
     int effectiveStrength;
@@ -1702,7 +1702,7 @@ int weaponGetRange(Object* critter, int hitMode)
 // Returns action points required for hit mode.
 //
 // 0x478B24
-int weaponGetActionPointCost(Object* critter, int hitMode, bool aiming)
+int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming)
 {
     int actionPoints;
 
@@ -1884,7 +1884,7 @@ char weaponGetSoundId(Object* weapon)
 }
 
 // 0x478E5C
-bool critterCanAim(Object* critter, int hitMode)
+bool critterCanAim(Object* critter, HitMode hitMode)
 {
     if (critter == gDude && traitIsSelected(TRAIT_FAST_SHOT)) {
         return false;
@@ -2027,7 +2027,7 @@ int weaponComputeAmmoCost(const Object* obj, int* ammoQty)
 
 // Returns whether the weapon has enough loaded ammo to perform at least one
 // shot/bullet for the selected hit mode.
-bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
+bool weaponHasAmmoForAttack(const Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return false;
@@ -2083,7 +2083,7 @@ bool weaponIsGrenade(Object* weapon)
 }
 
 // 0x47910C
-int weaponGetDamageRadius(Object* weapon, int hitMode)
+int weaponGetDamageRadius(Object* weapon, HitMode hitMode)
 {
     int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
     int anim = weaponGetAnimationForHitMode(weapon, hitMode);

@@ -3445,17 +3445,17 @@ static void inventoryRenderSummary()
         gInventoryRightHandItem,
     };
 
-    const int hitModes[2] = {
+    const HitMode hitModes[2] = {
         HIT_MODE_LEFT_WEAPON_PRIMARY,
         HIT_MODE_RIGHT_WEAPON_PRIMARY,
     };
 
-    const int secondaryHitModes[2] = {
+    const HitMode secondaryHitModes[2] = {
         HIT_MODE_LEFT_WEAPON_SECONDARY,
         HIT_MODE_RIGHT_WEAPON_SECONDARY,
     };
 
-    const int unarmedHitModes[2] = {
+    const HitMode unarmedHitModes[2] = {
         HIT_MODE_PUNCH,
         HIT_MODE_KICK,
     };
@@ -3480,7 +3480,7 @@ static void inventoryRenderSummary()
             if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
                 // SFALL: Display the actual damage values of unarmed attacks.
                 // CE: Implementation is different.
-                int hitMode = unarmedHitModes[index];
+                HitMode hitMode = unarmedHitModes[index];
                 if (_stack[0] == gDude) {
                     int actions[2];
                     interfaceGetItemActions(&(actions[0]), &(actions[1]));
@@ -3533,7 +3533,7 @@ static void inventoryRenderSummary()
         }
 
         // SFALL: Fix displaying secondary mode weapon range.
-        int hitMode = hitModes[index];
+        HitMode hitMode = hitModes[index];
         if (_stack[0] == gDude) {
             int actions[2];
             interfaceGetItemActions(&(actions[0]), &(actions[1]));

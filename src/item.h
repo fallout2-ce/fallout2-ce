@@ -1,6 +1,7 @@
 #ifndef ITEM_H
 #define ITEM_H
 
+#include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
 #include "proto_instance.h"
@@ -52,21 +53,21 @@ int objectGetCost(Object* obj);
 int objectGetInventoryWeight(Object* obj);
 bool dudeIsWeaponDisabled(Object* weapon);
 int itemGetInventoryFid(Object* obj);
-Object* critterGetWeaponForHitMode(Object* critter, int hitMode);
-int itemGetActionPointCost(Object* obj, int hitMode, bool aiming);
+Object* critterGetWeaponForHitMode(Object* critter, HitMode hitMode);
+int itemGetActionPointCost(Object* obj, HitMode hitMode, bool aiming);
 int itemGetQuantity(Object* obj, Object* item);
 int itemIsQueued(Object* obj);
 Object* itemReplace(Object* owner, Object* itemToReplace, int flags);
 bool itemIsHidden(Object* obj);
-int weaponGetAttackTypeForHitMode(Object* weapon, int hitMode);
-int weaponGetSkillForHitMode(Object* weapon, int hitMode);
-int weaponGetSkillValue(Object* critter, int hitMode);
+int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode);
+int weaponGetSkillForHitMode(Object* weapon, HitMode hitMode);
+int weaponGetSkillValue(Object* critter, HitMode hitMode);
 int weaponGetDamageMinMax(Object* weapon, int* minDamagePtr, int* maxDamagePtr);
-int weaponGetDamage(Object* critter, int hitMode);
+int weaponGetDamage(Object* critter, HitMode hitMode);
 int weaponGetDamageType(Object* critter, Object* weapon);
 int weaponIsTwoHanded(Object* weapon);
-int critterGetAnimationForHitMode(Object* critter, int hitMode);
-int weaponGetAnimationForHitMode(Object* weapon, int hitMode);
+int critterGetAnimationForHitMode(Object* critter, HitMode hitMode);
+int weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode);
 int ammoGetCapacity(Object* ammoOrWeapon);
 int ammoGetQuantity(Object* ammoOrWeapon);
 int ammoGetCaliber(Object* ammoOrWeapon);
@@ -74,8 +75,8 @@ void ammoSetQuantity(Object* ammoOrWeapon, int quantity);
 int weaponAttemptReload(Object* critter, Object* weapon);
 bool weaponCanBeReloadedWith(Object* weapon, Object* ammo);
 int weaponReload(Object* weapon, Object* ammo);
-int weaponGetRange(Object* critter, int hitMode);
-int weaponGetActionPointCost(Object* critter, int hitMode, bool aiming);
+int weaponGetRange(Object* critter, HitMode hitMode);
+int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming);
 int weaponGetMinStrengthRequired(Object* weapon);
 int weaponGetCriticalFailureType(Object* weapon);
 int weaponGetPerk(Object* weapon);
@@ -84,15 +85,15 @@ int weaponGetAnimationCode(Object* weapon);
 int weaponGetProjectilePid(Object* weapon);
 int weaponGetAmmoTypePid(Object* weapon);
 char weaponGetSoundId(Object* weapon);
-bool critterCanAim(Object* critter, int hitMode);
+bool critterCanAim(Object* critter, HitMode hitMode);
 int weaponCanBeUnloaded(Object* weapon);
 Object* weaponUnload(Object* weapon);
 int weaponGetPrimaryActionPointCost(Object* weapon);
 int weaponGetSecondaryActionPointCost(Object* weapon);
 int weaponComputeAmmoCost(const Object* obj, int* ammoQty);
-bool weaponHasAmmoForAttack(const Object* weapon, int hitMode);
+bool weaponHasAmmoForAttack(const Object* weapon, HitMode hitMode);
 bool weaponIsGrenade(Object* weapon);
-int weaponGetDamageRadius(Object* weapon, int hitMode);
+int weaponGetDamageRadius(Object* weapon, HitMode hitMode);
 int weaponGetGrenadeExplosionRadius(Object* weapon);
 int weaponGetRocketExplosionRadius(Object* weapon);
 int weaponGetAmmoArmorClassModifier(Object* weapon);
