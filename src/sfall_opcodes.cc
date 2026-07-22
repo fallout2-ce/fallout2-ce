@@ -431,7 +431,7 @@ static void op_set_car_current_town(Program* program)
 // get_bodypart_hit_modifier
 static void op_get_bodypart_hit_modifier(Program* program)
 {
-    HitLocation hitLocation = static_cast<HitLocation>(programStackPopInteger(program));
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
     programStackPushInteger(program, combat_get_hit_location_penalty(hitLocation));
 }
 
@@ -439,16 +439,16 @@ static void op_get_bodypart_hit_modifier(Program* program)
 static void op_set_bodypart_hit_modifier(Program* program)
 {
     int penalty = programStackPopInteger(program);
-    HitLocation hitLocation = static_cast<HitLocation>(programStackPopInteger(program));
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
     combat_set_hit_location_penalty(hitLocation, penalty);
 }
 
-static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember)
+static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, int killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember)
 {
     if (killType < 0 || killType > SFALL_KILL_TYPE_COUNT
-        || hitLocation < 0 || hitLocation >= HIT_LOCATION_COUNT
+        || !hitLocationIsValid(hitLocation)
         || effect < 0 || effect >= CRTICIAL_EFFECT_COUNT
-        || dataMember < 0 || dataMember >= CRIT_DATA_MEMBER_COUNT) {
+        || !criticalHitDataMemberIsValid(dataMember)) {
         programPrintError("%s: argument values out of range", opcodeName);
         return false;
     }
@@ -459,9 +459,9 @@ static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, 
 static void op_set_critical_table(Program* program)
 {
     int value = programStackPopInteger(program);
-    CriticalHitDescriptionDataMember dataMember = static_cast<CriticalHitDescriptionDataMember>(programStackPopInteger(program));
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
     int effect = programStackPopInteger(program);
-    HitLocation hitLocation = static_cast<HitLocation>(programStackPopInteger(program));
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
     int killType = programStackPopInteger(program);
 
     if (!criticalTableArgsAreValid(program, "set_critical_table", killType, hitLocation, effect, dataMember)) {
@@ -473,9 +473,9 @@ static void op_set_critical_table(Program* program)
 
 static void op_get_critical_table(Program* program)
 {
-    CriticalHitDescriptionDataMember dataMember = static_cast<CriticalHitDescriptionDataMember>(programStackPopInteger(program));
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
     int effect = programStackPopInteger(program);
-    HitLocation hitLocation = static_cast<HitLocation>(programStackPopInteger(program));
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
     int killType = programStackPopInteger(program);
 
     if (!criticalTableArgsAreValid(program, "get_critical_table", killType, hitLocation, effect, dataMember)) {
@@ -488,9 +488,9 @@ static void op_get_critical_table(Program* program)
 
 static void op_reset_critical_table(Program* program)
 {
-    CriticalHitDescriptionDataMember dataMember = static_cast<CriticalHitDescriptionDataMember>(programStackPopInteger(program));
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
     int effect = programStackPopInteger(program);
-    HitLocation hitLocation = static_cast<HitLocation>(programStackPopInteger(program));
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
     int killType = programStackPopInteger(program);
 
     if (!criticalTableArgsAreValid(program, "reset_critical_table", killType, hitLocation, effect, dataMember)) {

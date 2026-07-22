@@ -4385,7 +4385,7 @@ static void opSfxBuildItemName(Program* program)
 static void opSfxBuildWeaponName(Program* program)
 {
     Object* target = static_cast<Object*>(programStackPopPointer(program));
-    HitMode hitMode = static_cast<HitMode>(programStackPopInteger(program));
+    HitMode hitMode = programStackPopEnum<HitMode>(program);
     Object* weapon = static_cast<Object*>(programStackPopPointer(program));
     int weaponSfxType = programStackPopInteger(program);
 

@@ -73,18 +73,15 @@ enum HitMode : int {
     LAST_ADVANCED_UNARMED_HIT_MODE = LAST_ADVANCED_KICK_HIT_MODE,
 };
 
-// Overload the prefix increment: ++val
-inline HitMode& operator++(HitMode& e)
+inline static bool hitModeIsValid(int hitMode)
 {
-    e = static_cast<HitMode>(static_cast<int>(e) + 1);
-    return e;
+    return hitMode >= HIT_MODE_LEFT_WEAPON_PRIMARY && hitMode < HIT_MODE_COUNT;
 }
 
-// Overload the postfix increment: val++
 inline HitMode operator++(HitMode& e, int)
 {
     HitMode result = e;
-    ++e;
+    e = static_cast<HitMode>(static_cast<int>(e) + 1);
     return result;
 }
 
@@ -102,18 +99,15 @@ enum HitLocation : int {
     HIT_LOCATION_SPECIFIC_COUNT = HIT_LOCATION_COUNT - 1,
 };
 
-// Overload the prefix increment: ++val
-inline HitLocation& operator++(HitLocation& e)
+inline static bool hitLocationIsValid(int hitLocation)
 {
-    e = static_cast<HitLocation>(static_cast<int>(e) + 1);
-    return e;
+    return hitLocation >= HIT_LOCATION_HEAD && hitLocation < HIT_LOCATION_COUNT;
 }
 
-// Overload the postfix increment: val++
 inline HitLocation operator++(HitLocation& e, int)
 {
     HitLocation result = e;
-    ++e;
+    e = static_cast<HitLocation>(static_cast<int>(e) + 1);
     return result;
 }
 
@@ -154,7 +148,7 @@ typedef struct Attack {
     int extrasKnockback[EXPLOSION_TARGET_COUNT];
 } Attack;
 
-enum CriticalHitDescriptionDataMember : int {
+enum CriticalHitDataMember : int {
     CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER = 0,
     CRIT_DATA_MEMBER_FLAGS = 1,
     CRIT_DATA_MEMBER_MASSIVE_CRITICAL_STAT = 2,
@@ -165,18 +159,15 @@ enum CriticalHitDescriptionDataMember : int {
     CRIT_DATA_MEMBER_COUNT = 7,
 };
 
-// Overload the prefix increment: ++val
-inline CriticalHitDescriptionDataMember& operator++(CriticalHitDescriptionDataMember& e)
+inline static bool criticalHitDataMemberIsValid(int criticalHitDataMember)
 {
-    e = static_cast<CriticalHitDescriptionDataMember>(static_cast<int>(e) + 1);
-    return e;
+    return criticalHitDataMember >= CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER && criticalHitDataMember < CRIT_DATA_MEMBER_COUNT;
 }
 
-// Overload the postfix increment: val++
-inline CriticalHitDescriptionDataMember operator++(CriticalHitDescriptionDataMember& e, int)
+inline CriticalHitDataMember operator++(CriticalHitDataMember& e, int)
 {
-    CriticalHitDescriptionDataMember result = e;
-    ++e;
+    CriticalHitDataMember result = e;
+    e = static_cast<CriticalHitDataMember>(static_cast<int>(e) + 1);
     return result;
 }
 
@@ -215,7 +206,13 @@ enum CombatBadShot : int {
     COMBAT_BAD_SHOT_AIM_BLOCKED = 5,
     COMBAT_BAD_SHOT_ARM_CRIPPLED = 6,
     COMBAT_BAD_SHOT_BOTH_ARMS_CRIPPLED = 7,
+    COMBAT_BAD_SHOT_COUNT = 8,
 };
+
+inline static bool combatBadShotIsValid(int combatBadShot)
+{
+    return combatBadShot >= COMBAT_BAD_SHOT_OK && combatBadShot < COMBAT_BAD_SHOT_COUNT;
+}
 
 } // namespace fallout
 

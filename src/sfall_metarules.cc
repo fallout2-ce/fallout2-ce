@@ -273,7 +273,9 @@ namespace {
             attack->attacker = objectValue;
             return true;
         case AttackDataField::HitMode:
-            if (!intDataValue(data, intValue)) return false;
+            if (!intDataValue(data, intValue) || !hitModeIsValid(intValue)) { 
+                return false;
+            }
             attack->hitMode = static_cast<HitMode>(intValue);
             return true;
         case AttackDataField::Weapon:
@@ -281,7 +283,9 @@ namespace {
             attack->weapon = objectValue;
             return true;
         case AttackDataField::Unused:
-            if (!intDataValue(data, intValue)) return false;
+            if (!intDataValue(data, intValue) || !hitLocationIsValid(intValue)) { 
+                return false; 
+            }
             attack->attackHitLocation = static_cast<HitLocation>(intValue);
             return true;
         case AttackDataField::DamageSource:
@@ -305,7 +309,9 @@ namespace {
             attack->defender = objectValue;
             return true;
         case AttackDataField::BodyPart:
-            if (!intDataValue(data, intValue)) return false;
+            if (!intDataValue(data, intValue) || !hitLocationIsValid(intValue)) { 
+                return false; 
+            }
             attack->defenderHitLocation = static_cast<HitLocation>(intValue);
             return true;
         case AttackDataField::DamageTarget:

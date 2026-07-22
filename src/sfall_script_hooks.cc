@@ -698,7 +698,7 @@ int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation
 
     if (hook.numReturnValues() > 1) {
         HitLocation hitLocationOverride = static_cast<HitLocation>(hook.getReturnValueAt(1).asInt());
-        if (hitLocationOverride >= HIT_LOCATION_HEAD && hitLocationOverride < HIT_LOCATION_COUNT) {
+        if (hitLocationIsValid(hitLocationOverride)) {
             *hitLocationPtr = hitLocationOverride;
         } else {
             debugPrint("HOOK_AFTERHITROLL: ignoring invalid hit location override %d", hitLocationOverride);

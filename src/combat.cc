@@ -6309,7 +6309,7 @@ static void criticalsInit()
 
                                 // Update player kill type if needed.
                                 int newKillType = killType == KILL_TYPE_COUNT ? SFALL_KILL_TYPE_COUNT : killType;
-                                for (CriticalHitDescriptionDataMember dataMember = CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
+                                for (CriticalHitDataMember dataMember = CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
                                     int value = criticalsGetValue(newKillType, hitLocation, effect, dataMember);
                                     if (configGetInt(&criticalsConfig, sectionKey, gCritDataMemberKeys[dataMember], &value)) {
                                         criticalsSetValue(newKillType, hitLocation, effect, dataMember, value);
@@ -6348,7 +6348,7 @@ static void criticalsInit()
                             snprintf(hitLocationSectionKey, sizeof(hitLocationSectionKey), "c_%02d_%d", killType, hitLocation);
 
                             for (int effect = 0; effect < CRTICIAL_EFFECT_COUNT; effect++) {
-                                for (CriticalHitDescriptionDataMember dataMember = CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
+                                for (CriticalHitDataMember dataMember = CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
                                     int value = criticalsGetValue(killType, hitLocation, effect, dataMember);
                                     snprintf(key, sizeof(key), "e%d_%s", effect, gCritDataMemberKeys[dataMember]);
                                     if (configGetInt(&criticalsConfig, hitLocationSectionKey, key, &value)) {
@@ -6380,7 +6380,7 @@ static void criticalsExit()
     criticalsReset();
 }
 
-int criticalsGetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember)
+int criticalsGetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember)
 {
     if (killType == SFALL_KILL_TYPE_COUNT) {
         return gPlayerCriticalHitTable[hitLocation][effect].values[dataMember];
@@ -6389,7 +6389,7 @@ int criticalsGetValue(int killType, HitLocation hitLocation, int effect, Critica
     }
 }
 
-void criticalsSetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember, int value)
+void criticalsSetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember, int value)
 {
     if (killType == SFALL_KILL_TYPE_COUNT) {
         gPlayerCriticalHitTable[hitLocation][effect].values[dataMember] = value;
@@ -6398,7 +6398,7 @@ void criticalsSetValue(int killType, HitLocation hitLocation, int effect, Critic
     }
 }
 
-void criticalsResetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember)
+void criticalsResetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember)
 {
     if (killType == SFALL_KILL_TYPE_COUNT) {
         gPlayerCriticalHitTable[hitLocation][effect].values[dataMember] = gBasePlayerCriticalHitTable[hitLocation][effect].values[dataMember];
@@ -6942,23 +6942,23 @@ static void damageModCalculateYaam(DamageCalculationContext* context)
 
 int combat_get_hit_location_penalty(HitLocation hitLocation)
 {
-    if (hitLocation >= 0 && hitLocation < HIT_LOCATION_COUNT) {
+    if (hitLocationIsValid(hitLocation)) {
         return hit_location_penalty[hitLocation];
-    } else {
-        return 0;
     }
+
+    return 0;
 }
 
 void combat_set_hit_location_penalty(HitLocation hitLocation, int penalty)
 {
-    if (hitLocation >= 0 && hitLocation < HIT_LOCATION_COUNT) {
+    if (hitLocationIsValid(hitLocation)) {
         hit_location_penalty[hitLocation] = penalty;
     }
 }
 
 void combat_reset_hit_location_penalty()
 {
-    for (int hitLocation = 0; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
+    for (HitLocation hitLocation = HIT_LOCATION_HEAD; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
         hit_location_penalty[hitLocation] = hit_location_penalty_default[hitLocation];
     }
 }

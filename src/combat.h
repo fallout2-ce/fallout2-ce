@@ -59,9 +59,9 @@ void _combat_delete_critter(Object* obj);
 void _combatKillCritterOutsideCombat(Object* critter_obj, char* msg);
 
 int combatGetTargetHighlight();
-int criticalsGetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember);
-void criticalsSetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember, int value);
-void criticalsResetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDescriptionDataMember dataMember);
+int criticalsGetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember);
+void criticalsSetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember, int value);
+void criticalsResetValue(int killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember);
 bool criticalsNoTimeLimits();
 int unarmedGetDamage(HitMode hitMode, int* minDamagePtr, int* maxDamagePtr);
 int unarmedGetBonusCriticalChance(HitMode hitMode);
