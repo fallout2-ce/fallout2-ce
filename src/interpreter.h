@@ -260,8 +260,7 @@ template <>
 inline HitMode programStackPopEnum(Program* program)
 {
     int hitMode = programStackPopInteger(program);
-    if (!hitModeIsValid(hitMode))
-    {
+    if (!hitModeIsValid(hitMode)) {
         programPrintError("invalid hit mode %d", hitMode);
     }
 
@@ -272,8 +271,7 @@ template <>
 inline HitLocation programStackPopEnum(Program* program)
 {
     int hitLocation = programStackPopInteger(program);
-    if (!hitLocationIsValid(hitLocation))
-    {
+    if (!hitLocationIsValid(hitLocation)) {
         programPrintError("invalid hit location %d", hitLocation);
     }
 
@@ -284,8 +282,7 @@ template <>
 inline CriticalHitDataMember programStackPopEnum(Program* program)
 {
     int criticalHitDataMember = programStackPopInteger(program);
-    if (!criticalHitDataMemberIsValid(criticalHitDataMember))
-    {
+    if (!criticalHitDataMemberIsValid(criticalHitDataMember)) {
         programPrintError("invalid critical hit data member %d", criticalHitDataMember);
     }
 
@@ -296,8 +293,7 @@ template <>
 inline CombatBadShot programStackPopEnum(Program* program)
 {
     int combatBadShot = programStackPopInteger(program);
-    if (!combatBadShotIsValid(combatBadShot))
-    {
+    if (!combatBadShotIsValid(combatBadShot)) {
         programPrintError("invalid combat bad shot %d", combatBadShot);
     }
 
