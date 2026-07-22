@@ -45,7 +45,7 @@ static UseItemResultCode _obj_use_power_on_car(Object* ammo);
 static UseItemResultCode _obj_use_misc_item(Object* item);
 static int _protinstTestDroppedExplosive(Object* explosiveItem);
 static UseItemResultCode _protinst_default_use_item(Object* user, Object* targetObj, Object* item);
-static int scriptExecProcWithObjects(int sid, Object* source, Object* target, int proc);
+static int scriptExecProcWithObjects(int sid, Object* source, Object* target, ScriptProc proc);
 static int useLadderDown(Object* user, Object* ladder);
 static int useLadderUp(Object* user, Object* ladder);
 static int useStairs(Object* user, Object* stairs);
@@ -63,12 +63,12 @@ static bool objectIsJammed(Object* obj);
 static MessageListItem stru_49A990;
 
 // set script objects and return scriptOverrides value (if the script still exists)
-static int scriptExecProcWithObjects(int sid, Object* source, Object* target, int proc)
+static int scriptExecProcWithObjects(int sid, Object* source, Object* target, ScriptProc proc)
 {
     scriptSetObjects(sid, source, target);
     scriptExecProc(sid, proc);
 
-    // subtle: some script delete themselves (and the object) during execution, so we handle them carefully afterward
+    // subtle: some scripts delete themselves (and the object) during execution, so we handle them carefully afterward
 
     Script* script;
     if (scriptGetScript(sid, &script) == -1) {

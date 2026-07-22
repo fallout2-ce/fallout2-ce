@@ -1378,7 +1378,7 @@ int scriptExecProc(int sid, int proc)
 
     Script* executedScript;
     if (scriptGetScript(sid, &executedScript) == -1) {
-        // if the script was removed during excecution, it (and the object) might be gone, so we shouldn't try to clean up
+        // if the script was removed during execution, it (and the object) might be gone, so we shouldn't try to clean up
         // or call HOOK_STDPROCEDURE_END
         return 0;
     }
@@ -2605,9 +2605,7 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 
     std::vector<int> spatialScriptIds;
     for (Script* script = scriptGetFirstSpatialScript(elevation); script != nullptr; script = scriptGetNextSpatialScript()) {
-        if (builtTile == script->sp.built_tile) {
-            spatialScriptIds.push_back(script->sid);
-        } else {
+        if (builtTile != script->sp.built_tile) {
             if (script->sp.radius == 0) {
                 continue;
             }
@@ -2616,9 +2614,9 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
             if (distance > script->sp.radius) {
                 continue;
             }
-
-            spatialScriptIds.push_back(script->sid);
         }
+
+        spatialScriptIds.push_back(script->sid);
     }
 
     for (int sid : spatialScriptIds) {
@@ -2641,6 +2639,7 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 // 0x4A677C
 int scriptsExecStartProc()
 {
+    // note: this could do weird things if scripts/object are deleted while running these procs
     for (int scriptListIndex = 0; scriptListIndex < SCRIPT_TYPE_COUNT; scriptListIndex++) {
         ScriptList* scriptList = &(gScriptLists[scriptListIndex]);
         ScriptListExtent* extent = scriptList->head;
