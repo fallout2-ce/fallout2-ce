@@ -7,6 +7,8 @@
 
 namespace fallout {
 
+enum class RemoveInventoryObjectHookReason;
+
 typedef enum AttackType {
     ATTACK_TYPE_NONE,
     ATTACK_TYPE_UNARMED,
@@ -31,6 +33,8 @@ int itemsSave(File* stream);
 int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity);
 int itemAdd(Object* owner, Object* itemToAdd, int quantity);
 int itemRemove(Object* owner, Object* itemToRemove, int quantity);
+int itemRemoveWithReason(Object* owner, Object* itemToRemove, int quantity, RemoveInventoryObjectHookReason reason, Object* target = nullptr);
+int itemRemoveQuietly(Object* owner, Object* itemToRemove, int quantity);
 int itemMove(Object* from, Object* to, Object* item, int quantity);
 int itemMoveForce(Object* from, Object* to, Object* item, int quantity);
 void itemMoveAll(Object* from, Object* to);

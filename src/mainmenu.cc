@@ -361,7 +361,7 @@ static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOf
     //        0x010000 - change the color for version string only
     //        0x020000 - underline text (only for the version string)
     //        0x040000 - monospace font (only for the version string)
-    int fontSettings = _colorTable[21091];
+    int fontSettings = COLOR_YELLOW_2;
     int fontSettingsSFall = 0;
     configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", &fontSettingsSFall, 0);
     if (fontSettingsSFall && !(fontSettingsSFall & 0x010000)) {
@@ -446,7 +446,7 @@ static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOf
 static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
 {
     MessageListItem msg;
-    int fontSettings = _colorTable[21091];
+    int fontSettings = COLOR_YELLOW_2;
     int fontSettingsSFall = 0;
     configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "big_font_color", &fontSettingsSFall, 0);
     if (fontSettingsSFall) {

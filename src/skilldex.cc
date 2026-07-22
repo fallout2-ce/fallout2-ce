@@ -269,7 +269,7 @@ static int skilldexWindowInit()
         title,
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth(),
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth(),
-        _colorTable[18979]);
+        COLOR_DARK_YELLOW);
 
     // Render skill values.
     int valueY = 48;
@@ -337,13 +337,13 @@ static int skilldexWindowInit()
             name,
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_ON].getWidth(),
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_ON].getWidth(),
-            _colorTable[18979]);
+            COLOR_DARK_YELLOW);
 
         fontDrawText(gSkilldexButtonsData[index * 2 + 1] + _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth() * (nameY + 1) + nameX,
             name,
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth(),
             _skilldexFrmImages[SKILLDEX_FRM_BUTTON_OFF].getWidth(),
-            _colorTable[14723]);
+            COLOR_DARK_YELLOW_2);
 
         int btn = buttonCreate(gSkilldexWindow,
             15,
@@ -371,7 +371,7 @@ static int skilldexWindowInit()
         cancel,
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth(),
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth(),
-        _colorTable[18979]);
+        COLOR_DARK_YELLOW);
 
     int cancelBtn = buttonCreate(gSkilldexWindow,
         48,

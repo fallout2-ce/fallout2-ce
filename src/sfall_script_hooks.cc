@@ -91,6 +91,7 @@ int ScriptHookCall::numArgs() const { return _numArgs; }
 int ScriptHookCall::maxReturnValues() const { return _maxRetVals; }
 int ScriptHookCall::numReturnValues() const { return _numRetVals; }
 int ScriptHookCall::numScriptReturnValues() const { return _scriptRetVals; }
+HookType ScriptHookCall::hookType() const { return _hookType; }
 
 void ScriptHookCall::call()
 {
@@ -870,6 +871,20 @@ int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed)
         return -1;
 
     return hook.getReturnValueAt(0).asInt();
+}
+
+/*
+Runs when an object is removed from a container or critter's inventory for any reason.
+
+Obj     arg0 - the owner that the object is being removed from
+Item    arg1 - the item that is being removed
+int     arg2 - the number of items to remove
+int     arg3 - The reason the object is being removed (RemoveInventoryObjectHookReason / RMOBJ_* constants)
+Obj     arg4 - The destination object when the item is moved to another object, 0 otherwise
+*/
+void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity, RemoveInventoryObjectHookReason reason, Object* target)
+{
+    ScriptHookCall(HOOK_REMOVEINVENOBJ, 0, { owner, item, quantity, static_cast<int>(reason), target }).call();
 }
 
 /*

@@ -54,6 +54,9 @@ bool critterIsDead(Object* critter);
 bool critterIsCrippled(Object* critter);
 bool critterIsProne(Object* critter);
 int critterGetBodyType(Object* critter);
+// Checks physical/art capability only. Callers that expose weapon usability
+// decisions must still call scriptHooks_CanUseWeapon with the final result.
+bool critterCanUseWeapon(Object* critter, Object* weapon, int hitMode);
 int critterBuildGorisFid(Object* critter, int frmId);
 int gcdLoad(const char* path);
 int protoCritterDataRead(File* stream, CritterProtoData* critterData);

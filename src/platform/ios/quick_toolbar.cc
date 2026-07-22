@@ -80,8 +80,8 @@ namespace {
     // yellow of the belt's HUD text so it doesn't compete with the interface.
     void paintPanelButton(unsigned char* buffer, int pitch, int x, int y, int w, int h, const char* label)
     {
-        unsigned char panel = intensityColorTable[_colorTable[32767]][8];
-        unsigned char border = intensityColorTable[_colorTable[32767]][28];
+        unsigned char panel = intensityColorTable[COLOR_WHITE][8];
+        unsigned char border = intensityColorTable[COLOR_WHITE][28];
 
         fillRect(buffer, pitch, x, y, w, h, panel);
         fillRect(buffer, pitch, x, y, w, 1, border);
@@ -89,7 +89,7 @@ namespace {
         fillRect(buffer, pitch, x, y, 1, h, border);
         fillRect(buffer, pitch, x + w - 1, y, 1, h, border);
 
-        drawCenteredLabel(buffer, pitch, x, y, w, h, label, intensityColorTable[_colorTable[32747]][48]);
+        drawCenteredLabel(buffer, pitch, x, y, w, h, label, intensityColorTable[COLOR_LIGHT_YELLOW][48]);
     }
 
     void paintAll()
@@ -99,7 +99,7 @@ namespace {
             return;
         }
 
-        fillRect(buffer, kToolbarWidth, 0, 0, kToolbarWidth, kToolbarHeight, _colorTable[0]);
+        fillRect(buffer, kToolbarWidth, 0, 0, kToolbarWidth, kToolbarHeight, COLOR_BLACK);
 
         int oldFont = fontGetCurrent();
         fontSetCurrent(101);
@@ -120,7 +120,7 @@ namespace {
         gToolbarX = (screenGetWidth() - kToolbarWidth) / 2;
         gToolbarY = screenGetHeight() - INTERFACE_BAR_HEIGHT - kToolbarHeight - kToolbarBottomMargin;
 
-        gToolbarWindow = windowCreate(gToolbarX, gToolbarY, kToolbarWidth, kToolbarHeight, _colorTable[0], WINDOW_HIDDEN | WINDOW_TRANSPARENT);
+        gToolbarWindow = windowCreate(gToolbarX, gToolbarY, kToolbarWidth, kToolbarHeight, COLOR_BLACK, WINDOW_HIDDEN | WINDOW_TRANSPARENT);
         if (gToolbarWindow == -1) {
             return;
         }

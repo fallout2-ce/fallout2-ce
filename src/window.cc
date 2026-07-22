@@ -240,7 +240,7 @@ void scriptWindowResetTextAttributes()
     scriptWindowSetTextColor(1.0, 1.0, 1.0);
 
     // NOTE: Uninline.
-    scriptWindowSetTextFlags(0x2000000 | 0x10000);
+    scriptWindowSetTextFlags(DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_SHADOWED);
 }
 
 // 0x4B6160
@@ -647,25 +647,25 @@ void _doRightButtonRelease(int btn, int keyCode)
 void _setButtonGFX(int width, int height, unsigned char* normal, unsigned char* pressed)
 {
     if (normal != nullptr) {
-        bufferFill(normal, width, height, width, _colorTable[0]);
-        bufferFill(normal + width + 1, width - 2, height - 2, width, intensityColorTable[_colorTable[32767]][89]);
-        bufferDrawLine(normal, width, 1, 1, width - 2, 1, _colorTable[32767]);
-        bufferDrawLine(normal, width, 2, 2, width - 3, 2, _colorTable[32767]);
-        bufferDrawLine(normal, width, 1, height - 2, width - 2, height - 2, intensityColorTable[_colorTable[32767]][44]);
-        bufferDrawLine(normal, width, 2, height - 3, width - 3, height - 3, intensityColorTable[_colorTable[32767]][44]);
-        bufferDrawLine(normal, width, width - 2, 1, width - 3, 2, intensityColorTable[_colorTable[32767]][89]);
-        bufferDrawLine(normal, width, 1, 2, 1, height - 3, _colorTable[32767]);
-        bufferDrawLine(normal, width, 2, 3, 2, height - 4, _colorTable[32767]);
-        bufferDrawLine(normal, width, width - 2, 2, width - 2, height - 3, intensityColorTable[_colorTable[32767]][44]);
-        bufferDrawLine(normal, width, width - 3, 3, width - 3, height - 4, intensityColorTable[_colorTable[32767]][44]);
-        bufferDrawLine(normal, width, 1, height - 2, 2, height - 3, intensityColorTable[_colorTable[32767]][89]);
+        bufferFill(normal, width, height, width, COLOR_BLACK);
+        bufferFill(normal + width + 1, width - 2, height - 2, width, intensityColorTable[COLOR_WHITE][89]);
+        bufferDrawLine(normal, width, 1, 1, width - 2, 1, COLOR_WHITE);
+        bufferDrawLine(normal, width, 2, 2, width - 3, 2, COLOR_WHITE);
+        bufferDrawLine(normal, width, 1, height - 2, width - 2, height - 2, intensityColorTable[COLOR_WHITE][44]);
+        bufferDrawLine(normal, width, 2, height - 3, width - 3, height - 3, intensityColorTable[COLOR_WHITE][44]);
+        bufferDrawLine(normal, width, width - 2, 1, width - 3, 2, intensityColorTable[COLOR_WHITE][89]);
+        bufferDrawLine(normal, width, 1, 2, 1, height - 3, COLOR_WHITE);
+        bufferDrawLine(normal, width, 2, 3, 2, height - 4, COLOR_WHITE);
+        bufferDrawLine(normal, width, width - 2, 2, width - 2, height - 3, intensityColorTable[COLOR_WHITE][44]);
+        bufferDrawLine(normal, width, width - 3, 3, width - 3, height - 4, intensityColorTable[COLOR_WHITE][44]);
+        bufferDrawLine(normal, width, 1, height - 2, 2, height - 3, intensityColorTable[COLOR_WHITE][89]);
     }
 
     if (pressed != nullptr) {
-        bufferFill(pressed, width, height, width, _colorTable[0]);
-        bufferFill(pressed + width + 1, width - 2, height - 2, width, intensityColorTable[_colorTable[32767]][89]);
-        bufferDrawLine(pressed, width, 1, 1, width - 2, 1, _colorTable[32767] + 44);
-        bufferDrawLine(pressed, width, 1, 1, 1, height - 2, _colorTable[32767] + 44);
+        bufferFill(pressed, width, height, width, COLOR_BLACK);
+        bufferFill(pressed + width + 1, width - 2, height - 2, width, intensityColorTable[COLOR_WHITE][89]);
+        bufferDrawLine(pressed, width, 1, 1, width - 2, 1, COLOR_WHITE + 44);
+        bufferDrawLine(pressed, width, 1, 1, 1, height - 2, COLOR_WHITE + 44);
     }
 }
 
@@ -1076,7 +1076,7 @@ void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY
         return;
     }
 
-    if ((flags & FONT_SHADOW) != 0) {
+    if ((flags & DRAW_TEXT_FLAG_SHADOWED) != 0) {
         stringWidth++;
         stringHeight++;
     }
@@ -1113,7 +1113,7 @@ void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY
         stringHeight = windowGetHeight(win) - y;
     }
 
-    if ((flags & 0x2000000) != 0) {
+    if ((flags & DRAW_TEXT_FLAG_NO_BG) != 0) {
         blitBufferToBufferTrans(backgroundBufferPtr, width, stringHeight, stringWidth, windowGetBuffer(win) + windowGetWidth(win) * y + x, windowGetWidth(win));
     } else {
         blitBufferToBuffer(backgroundBufferPtr, width, stringHeight, stringWidth, windowGetBuffer(win) + windowGetWidth(win) * y + x, windowGetWidth(win));
@@ -1250,7 +1250,7 @@ bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment)
     int height = windowGetHeight(managedWindow->window);
     int x = managedWindow->cursorX;
     int y = managedWindow->cursorY;
-    int flags = scriptWindowGetTextColor() | 0x2000000;
+    int flags = scriptWindowGetTextColor() | DRAW_TEXT_FLAG_NO_BG;
     windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
 
     return true;
@@ -1264,7 +1264,7 @@ bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height
     }
 
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
-    int flags = scriptWindowGetTextColor() | 0x2000000;
+    int flags = scriptWindowGetTextColor() | DRAW_TEXT_FLAG_NO_BG;
     windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
 
     return true;

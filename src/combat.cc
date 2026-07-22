@@ -2221,36 +2221,76 @@ int combatLoad(File* stream)
     return 0;
 }
 
+static bool _combatShouldSaveObject(Object* obj)
+{
+    if (obj == nullptr) return false;
+    if (obj == gDude) return true;
+    if (objectIsPartyMember(obj)) return true;
+    return (obj->flags & OBJECT_NO_SAVE) == 0;
+}
+
 // 0x421244
 int combatSave(File* stream)
 {
     if (fileWriteInt32(stream, gCombatState) == -1) return -1;
-
     if (!isInCombat()) return 0;
 
     if (fileWriteInt32(stream, _combat_turn_running) == -1) return -1;
     if (fileWriteInt32(stream, _combat_free_move) == -1) return -1;
     if (fileWriteInt32(stream, _combat_exps) == -1) return -1;
-    if (fileWriteInt32(stream, _list_com) == -1) return -1;
-    if (fileWriteInt32(stream, _list_noncom) == -1) return -1;
-    if (fileWriteInt32(stream, _list_total) == -1) return -1;
+
+    int valid_total = 0;
+    int valid_noncom = 0;
+    int valid_com = 0;
+
+    for (int index = 0; index < _list_com; index++) {
+        if (_combatShouldSaveObject(_combat_list[index])) {
+            valid_com++;
+            valid_total++;
+        }
+    }
+    for (int index = _list_com; index < _list_total; index++) {
+        if (_combatShouldSaveObject(_combat_list[index])) {
+            valid_noncom++;
+            valid_total++;
+        }
+    }
+
+    if (fileWriteInt32(stream, valid_com) == -1) return -1;
+    if (fileWriteInt32(stream, valid_noncom) == -1) return -1;
+    if (fileWriteInt32(stream, valid_total) == -1) return -1;
     if (fileWriteInt32(stream, gDude->cid) == -1) return -1;
 
-    for (int index = 0; index < _list_total; index++) {
-        if (fileWriteInt32(stream, _combat_list[index]->cid) == -1) return -1;
-    }
-
-    if (_aiInfoList == nullptr) {
-        return -1;
-    }
+    if (_aiInfoList == nullptr) return -1;
 
     for (int index = 0; index < _list_total; index++) {
+        Object* obj = _combat_list[index];
+        if (_combatShouldSaveObject(obj)) {
+            if (fileWriteInt32(stream, obj->cid) == -1) return -1;
+        }
+    }
+
+    for (int index = 0; index < _list_total; index++) {
+        Object* obj = _combat_list[index];
+        if (!_combatShouldSaveObject(obj)) continue;
+
+        int friendlyId = -1;
+        int targetId = -1;
+        int itemId = -1;
+        int lastMove = 0;
+
         CombatAiInfo* aiInfo = &(_aiInfoList[index]);
 
-        if (fileWriteInt32(stream, aiInfo->friendlyDead != nullptr ? aiInfo->friendlyDead->id : -1) == -1) return -1;
-        if (fileWriteInt32(stream, aiInfo->lastTarget != nullptr ? aiInfo->lastTarget->id : -1) == -1) return -1;
-        if (fileWriteInt32(stream, aiInfo->lastItem != nullptr ? aiInfo->lastItem->id : -1) == -1) return -1;
-        if (fileWriteInt32(stream, aiInfo->lastMove) == -1) return -1;
+        friendlyId = _combatShouldSaveObject(aiInfo->friendlyDead) ? aiInfo->friendlyDead->id : -1;
+        targetId = _combatShouldSaveObject(aiInfo->lastTarget) ? aiInfo->lastTarget->id : -1;
+
+        itemId = aiInfo->lastItem != nullptr ? aiInfo->lastItem->id : -1;
+        lastMove = aiInfo->lastMove;
+
+        if (fileWriteInt32(stream, friendlyId) == -1) return -1;
+        if (fileWriteInt32(stream, targetId) == -1) return -1;
+        if (fileWriteInt32(stream, itemId) == -1) return -1;
+        if (fileWriteInt32(stream, lastMove) == -1) return -1;
     }
 
     return 0;
@@ -5527,19 +5567,19 @@ static char* hitLocationGetName(Object* critter, int hitLocation)
 // 0x4261B4
 static void _draw_loc_off(int a1, int a2)
 {
-    _draw_loc_(a2, _colorTable[992]);
+    _draw_loc_(a2, COLOR_GREEN);
 }
 
 // 0x4261C0
 static void _draw_loc_on_(int a1, int a2)
 {
-    _draw_loc_(a2, _colorTable[31744]);
+    _draw_loc_(a2, COLOR_RED);
 }
 
 // 0x4261CC
 static void _draw_loc_(int eventCode, int color)
 {
-    color |= 0x3000000;
+    color |= (DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG);
 
     if (eventCode >= 4) {
         char* name = hitLocationGetName(gCalledShotCritter, _hit_loc_right[eventCode - 4]);
@@ -5578,7 +5618,7 @@ static int calledShotSelectHitLocation(Object* critter, int* hitLocation, int hi
         calledShotWindowY,
         CALLED_SHOT_WINDOW_WIDTH,
         CALLED_SHOT_WINDOW_HEIGHT,
-        _colorTable[0],
+        COLOR_BLACK,
         WINDOW_MODAL);
     if (gCalledShotWindow == -1) {
         return -1;
@@ -5655,14 +5695,14 @@ static int calledShotSelectHitLocation(Object* critter, int* hitLocation, int hi
 
         btn = buttonCreate(gCalledShotWindow, 33, _call_ty[index] - 90, 128, 20, index, index, -1, index, nullptr, nullptr, nullptr, 0);
         buttonSetMouseCallbacks(btn, _draw_loc_on_, _draw_loc_off, nullptr, nullptr);
-        _draw_loc_(index, _colorTable[992]);
+        _draw_loc_(index, COLOR_GREEN);
 
         probability = _determine_to_hit(gDude, critter, _hit_loc_right[index], hitMode);
         _print_tohit(windowBuffer + CALLED_SHOT_WINDOW_WIDTH * (_call_ty[index] - 86) + 453, CALLED_SHOT_WINDOW_WIDTH, probability);
 
         btn = buttonCreate(gCalledShotWindow, 341, _call_ty[index] - 90, 128, 20, index + 4, index + 4, -1, index + 4, nullptr, nullptr, nullptr, 0);
         buttonSetMouseCallbacks(btn, _draw_loc_on_, _draw_loc_off, nullptr, nullptr);
-        _draw_loc_(index + 4, _colorTable[992]);
+        _draw_loc_(index + 4, COLOR_GREEN);
     }
 
     windowRefresh(gCalledShotWindow);

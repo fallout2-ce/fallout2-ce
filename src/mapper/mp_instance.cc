@@ -116,17 +116,17 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, int* pObjType, int* pObj
 
     // Title
     int titleWidth = fontGetStringWidth(title);
-    windowDrawText(win, title, titleWidth, (kWinWidth - titleWidth) / 2, 18, _colorTable[32767] | FONT_SHADOW);
+    windowDrawText(win, title, titleWidth, (kWinWidth - titleWidth) / 2, 18, COLOR_WHITE | DRAW_TEXT_FLAG_SHADOWED);
 
     // Object type name
     const char* typeName = artGetObjectTypeName(*pObjType);
     int typeNameWidth = fontGetStringWidth(typeName);
-    windowDrawText(win, typeName, typeNameWidth, (kWinWidth - typeNameWidth) / 2, 28, _colorTable[21140] | FONT_SHADOW);
+    windowDrawText(win, typeName, typeNameWidth, (kWinWidth - typeNameWidth) / 2, 28, COLOR_LIGHT_GREY | DRAW_TEXT_FLAG_SHADOWED);
 
     // Name button + value
     _win_register_text_button(win, 10, 44, -1, -1, -1, kInstKeyName, "Name", 0);
     const char* objName = objectGetName(obj);
-    windowDrawText(win, objName, 130, 90, 48, _colorTable[32747] | FONT_SHADOW);
+    windowDrawText(win, objName, 130, 90, 48, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
 
     // Flags button
     _win_register_text_button(win, 10, 65, -1, -1, -1, kInstKeyFlags, "Flags", 0);
@@ -145,8 +145,8 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, int* pObjType, int* pObj
     // Art rendering area bounds
     *pBufOff = 13420;
     unsigned char* buf = windowGetBuffer(win);
-    bufferDrawRect(buf + 12899, kWinWidth, 0, 0, 65, 49, _colorTable[0]);
-    bufferFill(buf + *pBufOff, kArtWidth, kArtHeight, kWinWidth, _colorTable[21]);
+    bufferDrawRect(buf + 12899, kWinWidth, 0, 0, 65, 49, COLOR_BLACK);
+    bufferFill(buf + *pBufOff, kArtWidth, kArtHeight, kWinWidth, COLOR_BLUE_2);
     artRender(obj->fid, buf + *pBufOff, kArtWidth, kArtHeight, kWinWidth);
 
     // Script section
@@ -155,18 +155,18 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, int* pObjType, int* pObj
 
     char scriptName[64];
     scriptName[0] = '\0';
-    int scriptColor = _colorTable[32747];
+    int scriptColor = COLOR_LIGHT_YELLOW;
 
     Script* script;
     if (scriptGetScript(obj->sid, &script) != -1) {
         if (scriptsGetFileName(script->index, scriptName, sizeof(scriptName)) == -1) {
             strcpy(scriptName, "Error: Bad script index!");
-            scriptColor = _colorTable[31744];
+            scriptColor = COLOR_RED;
         }
     } else {
         strcpy(scriptName, "None");
     }
-    windowDrawText(win, scriptName, 130, 100, scriptY + 4, scriptColor | FONT_SHADOW);
+    windowDrawText(win, scriptName, 130, 100, scriptY + 4, scriptColor | DRAW_TEXT_FLAG_SHADOWED);
 
     // Done button
     y += 26;
@@ -257,7 +257,7 @@ static bool regModFlagsDialog(int* flags, int objectType)
             50,
             kValX,
             yPos + 4,
-            flagValues[i] ? (_colorTable[32747] | FONT_SHADOW) : (_colorTable[992] | FONT_SHADOW));
+            flagValues[i] ? (COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED) : (COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED));
 
         yPos += kItemH;
     }
@@ -297,7 +297,7 @@ static bool regModFlagsDialog(int* flags, int objectType)
 
             flagValues[i] = !flagValues[i];
             int rowY = 21 + vi * kItemH;
-            int valColor = flagValues[i] ? (_colorTable[32747] | FONT_SHADOW) : (_colorTable[992] | FONT_SHADOW);
+            int valColor = flagValues[i] ? (COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED) : (COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
 
             unsigned char* buf = windowGetBuffer(win);
             int pitch = windowGetWidth(win);
@@ -376,7 +376,7 @@ static void selectNewScript(Object* obj, int scriptType, int winId, int scriptNa
     } else {
         strcpy(scriptName, "None");
     }
-    windowDrawText(winId, scriptName, 130, 90, scriptNameY, _colorTable[32747] | FONT_SHADOW);
+    windowDrawText(winId, scriptName, 130, 90, scriptNameY, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     windowRefresh(winId);
 }
 
@@ -436,7 +436,7 @@ static int protoInstAddToInven(int pid, int count)
     objectSetLocation(newObj, 0, 0, nullptr);
 
     if (itemAdd(proto_inst_who_obj, newObj, count) != 0) {
-        win_timed_msg("Error adding obj to critter!", _colorTable[32747] | FONT_SHADOW);
+        win_timed_msg("Error adding obj to critter!", COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
         return 0;
     }
 
@@ -481,7 +481,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
         count++;
     }
 
-    int selection = _win_list_select("Pick item to add", names, count, nullptr, 80, 200, _colorTable[32747] | FONT_SHADOW);
+    int selection = _win_list_select("Pick item to add", names, count, nullptr, 80, 200, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
     if (selection != -1) {
         int quantity = 1;
         win_get_num_i(&quantity, 1, 32000, false, "How many?", 100, 100);
@@ -520,14 +520,14 @@ static int protoInstCritterEdit(Object* obj)
         _win_register_text_button(winId, 10, kAiY, -1, -1, -1, kInstKeyAiPacket, "AI Packet", 0);
         const char* aiName = combat_ai_name(obj->data.critter.combat.aiPacket);
         if (aiName == nullptr) aiName = "<Error>";
-        windowDrawText(winId, aiName, 80, 100, kAiY + 4, _colorTable[32747] | FONT_SHADOW);
+        windowDrawText(winId, aiName, 80, 100, kAiY + 4, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
 
         // Team Num
         constexpr int kTeamY = kAiY;
         _win_register_text_button(winId, 240, kTeamY, -1, -1, -1, kInstKeyTeamNum, "Team Num", 0);
         char teamStr[16];
         snprintf(teamStr, sizeof(teamStr), "%d", obj->data.critter.combat.team);
-        windowDrawText(winId, teamStr, 80, 320, kTeamY + 4, _colorTable[32747] | FONT_SHADOW);
+        windowDrawText(winId, teamStr, 80, 320, kTeamY + 4, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
 
         windowRefresh(winId);
 
@@ -561,14 +561,14 @@ static int protoInstCritterEdit(Object* obj)
                 proto_pick_ai_packet(&obj->data.critter.combat.aiPacket);
                 const char* newAiName = combat_ai_name(obj->data.critter.combat.aiPacket);
                 if (newAiName == nullptr) newAiName = "<Error>";
-                windowDrawText(winId, newAiName, 80, 100, kAiY + 4, _colorTable[32747] | FONT_SHADOW);
+                windowDrawText(winId, newAiName, 80, 100, kAiY + 4, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
                 needRedraw = true;
             } else if (key == kInstKeyTeamNum) {
                 int team = obj->data.critter.combat.team;
                 if (win_get_num_i(&team, 0, 32000, false, "Team Num", 100, 100) != -1) {
                     obj->data.critter.combat.team = static_cast<char>(team);
                     snprintf(teamStr, sizeof(teamStr), "%d", obj->data.critter.combat.team);
-                    windowDrawText(winId, teamStr, 80, 240, kTeamY + 4, _colorTable[32747] | FONT_SHADOW);
+                    windowDrawText(winId, teamStr, 80, 240, kTeamY + 4, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
                     needRedraw = true;
                 }
             } else if (key == kInstKeyClearInven) {

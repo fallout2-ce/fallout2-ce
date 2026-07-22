@@ -35,14 +35,8 @@
 
 namespace fallout {
 
-// SFALL: Enable party members with level 6 protos to reach level 6.
-// CE: There are several party members who have 6 pids, but for unknown reason
-// the original code cap was 5. This fix affects:
-// - Dogmeat
-// - Goris
-// - Sulik
-// - Vik
-#define PARTY_MEMBER_MAX_LEVEL 6
+// SFALL: Increase the maximum party member level from vanilla's 5 to 10.
+#define PARTY_MEMBER_MAX_LEVEL 10
 
 typedef struct PartyMemberDescription {
     bool areaAttackMode[AREA_ATTACK_MODE_COUNT];
@@ -894,6 +888,16 @@ bool objectIsPartyMember(Object* object)
     return isPartyMember;
 }
 
+bool partyMemberPidCanEquipArmor(int pid)
+{
+    Proto* proto;
+    if (protoGetProto(pid, &proto) == -1) {
+        return false;
+    }
+
+    return proto->critter.data.bodyType == BODY_TYPE_BIPED && pid != PROTO_ID_MARCUS;
+}
+
 // Returns number of active critters in the party.
 //
 // 0x495010 getPartyMemberCount
@@ -1529,13 +1533,16 @@ int _partyMemberIncLevels()
             continue;
         }
 
-        levelUpInfo->level++;
-        if (levelMod != 0) {
-            levelUpInfo->isEarly = 1;
+        int stagePid = memberDescription->level_pids[levelUpInfo->level];
+        int nextLevel = levelUpInfo->level + 1;
+
+        if (_partyMemberCopyLevelInfo(obj, stagePid) == -1) {
+            return -1;
         }
 
-        if (_partyMemberCopyLevelInfo(obj, memberDescription->level_pids[levelUpInfo->level]) == -1) {
-            return -1;
+        levelUpInfo->level = nextLevel;
+        if (levelMod != 0) {
+            levelUpInfo->isEarly = 1;
         }
 
         name = critterGetName(obj);
@@ -1544,14 +1551,14 @@ int _partyMemberIncLevels()
         snprintf(str, sizeof(str), text, name);
         displayMonitorAddMessage(str);
 
-        debugPrint(str);
+        debugPrint("%s", str);
 
         // Individual message
         msg.num = 9000 + 10 * memberIndex + levelUpInfo->level - 1;
         if (messageListGetItem(&gMiscMessageList, &msg)) {
             name = critterGetName(obj);
             snprintf(str, sizeof(str), msg.text, name);
-            textObjectAdd(obj, str, 101, _colorTable[0x7FFF], _colorTable[0], &levelUpMessageRect);
+            textObjectAdd(obj, str, 101, COLOR_WHITE, COLOR_BLACK, &levelUpMessageRect);
             tileWindowRefreshRect(&levelUpMessageRect, obj->elevation);
         }
     }
@@ -1570,6 +1577,11 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
         return -1;
     }
 
+    if (PID_TYPE(stagePid) != OBJ_TYPE_CRITTER) {
+        debugPrint("\npartyMemberCopyLevelInfo: stage pid %d is not a critter", stagePid);
+        return -1;
+    }
+
     Proto* proto;
     if (protoGetProto(critter->pid, &proto) == -1) {
         return -1;
@@ -1585,7 +1597,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
 
     Object* armor = critterGetArmor(critter);
     adjustCritterStatsOnArmorChange(critter, armor, nullptr);
-    itemRemove(critter, armor, 1);
+    itemRemoveQuietly(critter, armor, 1);
 
     int maxHp = critterGetStat(critter, STAT_MAXIMUM_HIT_POINTS);
     critterAdjustHitPoints(critter, maxHp);

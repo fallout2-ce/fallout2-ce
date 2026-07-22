@@ -170,7 +170,7 @@ int falloutMain(int argc, char** argv)
                 break;
             case MAIN_MENU_LOAD_GAME:
                 if (1) {
-                    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+                    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
                     mainMenuWindowHide(true);
                     mainMenuWindowFree();
 
@@ -322,7 +322,7 @@ static int _main_load_new(char* mapFileName)
     objectShow(gDude, nullptr);
     mouseHideCursor();
 
-    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     windowRefresh(win);
 
     colorPaletteLoad("color.pal");
@@ -477,7 +477,7 @@ static void showDeath()
                         bufferFill(p - 602, 564, fontGetLineHeight() * count + 2, 640, 0);
                         p += 40;
                         for (int index = 0; index < count; index++) {
-                            fontDrawText(p, text + beginnings[index], 560, 640, _colorTable[32767]);
+                            fontDrawText(p, text + beginnings[index], 560, 640, COLOR_WHITE);
                             p += 640 * fontGetLineHeight();
                         }
                     }

@@ -53,41 +53,7 @@ static constexpr int kChemUseAlwaysChance = 100;
 static constexpr int kRandomDrugPickingArraySize = 3;
 static std::unordered_set<Object*> burstDisabledCritters;
 
-typedef struct AiMessageRange {
-    int start;
-    int end;
-} AiMessageRange;
-
-typedef struct AiPacket {
-    char* name;
-    int packet_num;
-    int max_dist;
-    int min_to_hit;
-    int min_hp;
-    int aggression;
-    int hurt_too_much;
-    int secondary_freq;
-    int called_freq;
-    int font;
-    int color;
-    int outline_color;
-    int chance;
-    AiMessageRange run;
-    AiMessageRange move;
-    AiMessageRange attack;
-    AiMessageRange miss;
-    AiMessageRange hit[HIT_LOCATION_SPECIFIC_COUNT];
-    int area_attack_mode;
-    int run_away_mode;
-    int best_weapon;
-    int distance;
-    int attack_who;
-    int chem_use;
-    int chem_primary_desire[AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT];
-    int disposition;
-    char* body_type;
-    char* general_type;
-} AiPacket;
+static_assert(AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT == sizeof(AiPacket::chem_primary_desire) / sizeof(AiPacket::chem_primary_desire[0]));
 
 typedef struct AiRetargetData {
     Object* source;
@@ -108,7 +74,6 @@ static int _cai_match_str_to_list(const char* str, const char** list, int count,
 static void aiPacketInit(AiPacket* ai);
 static int aiPacketRead(File* stream, AiPacket* ai);
 static int aiPacketWrite(File* stream, AiPacket* ai);
-static AiPacket* aiGetPacket(Object* obj);
 static AiPacket* aiGetPacketByNum(int aiPacketNum);
 static int _ai_magic_hands(Object* a1, Object* a2, int num);
 static int _ai_check_drugs(Object* critter);
@@ -738,7 +703,7 @@ char* combat_ai_name(int packet_num)
 // Get ai from object
 //
 // 0x4280B4
-static AiPacket* aiGetPacket(Object* obj)
+AiPacket* aiGetPacket(Object* obj)
 {
     // NOTE: Uninline.
     AiPacket* ai = aiGetPacketByNum(obj->data.critter.combat.aiPacket);
@@ -1046,7 +1011,7 @@ static int _ai_check_drugs(Object* critter)
 
             int drugPid = drug->pid;
             if (itemIsHealing(drugPid)) {
-                if (itemRemove(critter, drug, 1) == 0) {
+                if (itemRemoveWithReason(critter, drug, 1, RemoveInventoryObjectHookReason::AIUseDrugOn) == 0) {
                     if (drugItemTakeDrug(critter, drug) == -1) {
                         itemAdd(critter, drug, 1);
                     } else {
@@ -1143,7 +1108,7 @@ static int _ai_check_drugs(Object* critter)
                     availableDrugs[index] = availableDrugs[*availableDrugsCountPtr - 1];
                     *availableDrugsCountPtr -= 1;
 
-                    if (itemRemove(critter, drug, 1) == 0) {
+                    if (itemRemoveWithReason(critter, drug, 1, RemoveInventoryObjectHookReason::AIUseDrugOn) == 0) {
                         if (drugItemTakeDrug(critter, drug) == -1) {
                             itemAdd(critter, drug, 1);
                         } else {
@@ -1188,7 +1153,7 @@ static int _ai_check_drugs(Object* critter)
                 break;
             }
 
-            if (itemRemove(critter, lastItem, 1) == 0) {
+            if (itemRemoveWithReason(critter, lastItem, 1, RemoveInventoryObjectHookReason::AIUseDrugOn) == 0) {
                 if (drugItemTakeDrug(critter, lastItem) == -1) {
                     itemAdd(critter, lastItem, 1);
                 } else {
@@ -2012,26 +1977,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
 // 0x4298EC
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode)
 {
-    bool result = true;
-
-    int damageFlags = critter->data.critter.combat.results;
-    if ((damageFlags & DAM_CRIP_ARM_LEFT) != 0 && (damageFlags & DAM_CRIP_ARM_RIGHT) != 0) {
-        result = false;
-    }
-
-    if (result && (damageFlags & DAM_CRIP_ARM_ANY) != 0 && weaponIsTwoHanded(weapon)) {
-        result = false;
-    }
-
-    if (result) {
-        int rotation = critter->rotation + 1;
-        int animationCode = weaponGetAnimationCode(weapon);
-        int weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
-        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);
-        if (!artExists(fid)) {
-            result = false;
-        }
-    }
+    bool result = critterCanUseWeapon(critter, weapon, hitMode);
 
     AiPacket* ai = aiGetPacket(critter);
     if (result) {
@@ -3580,6 +3526,25 @@ void _combatai_check_retaliation(Object* a1, Object* a2)
     }
 }
 
+static int adjustPerceptionDistanceForDudeSneak(int maxDistance, Object* target)
+{
+    if (target != gDude) {
+        return maxDistance;
+    }
+
+    if (dudeIsSneaking()) {
+        int sneak = skillGetValue(gDude, SKILL_SNEAK);
+        maxDistance /= 4;
+        if (sneak > 120) {
+            maxDistance -= 1;
+        }
+    } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
+        maxDistance = maxDistance * 2 / 3;
+    }
+
+    return maxDistance;
+}
+
 // 0x42BA04
 PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, PerceptionType type)
 {
@@ -3589,23 +3554,13 @@ PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, Per
 
     int distance = objectGetDistanceBetween(target, critter);
     int perception = critterGetStat(critter, STAT_PERCEPTION);
-    int sneak = skillGetValue(target, SKILL_SNEAK);
     if (_can_see(critter, target)) {
         int maxDistance = perception * 5;
         if ((target->flags & OBJECT_TRANS_GLASS) != 0) {
             maxDistance /= 2;
         }
 
-        if (target == gDude) {
-            if (dudeIsSneaking()) {
-                maxDistance /= 4;
-                if (sneak > 120) {
-                    maxDistance -= 1;
-                }
-            } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
-                maxDistance = maxDistance * 2 / 3;
-            }
-        }
+        maxDistance = adjustPerceptionDistanceForDudeSneak(maxDistance, target);
 
         if (distance <= maxDistance) {
             return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
@@ -3619,16 +3574,7 @@ PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, Per
         maxDistance = perception;
     }
 
-    if (target == gDude) {
-        if (dudeIsSneaking()) {
-            maxDistance /= 4;
-            if (sneak > 120) {
-                maxDistance -= 1;
-            }
-        } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
-            maxDistance = maxDistance * 2 / 3;
-        }
-    }
+    maxDistance = adjustPerceptionDistanceForDudeSneak(maxDistance, target);
 
     if (distance <= maxDistance) {
         return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
@@ -3647,6 +3593,15 @@ bool isWithinPerception(Object* watcher, Object* target)
 // 0x42BB34
 static int aiMessageListInit()
 {
+    // Prevent chronic memory leak on preference/language filter reloads.
+    // If gCombatAiMessageList was already populated from a previous init cascade,
+    // we must deeply free its entries before re-initializing the layout,
+    // otherwise the subsequent load will overwrite active pointers and isolate strings in the heap.
+    if (gCombatAiMessageList.entries != nullptr && gCombatAiMessageList.entries_num > 0) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_COMBAT_AI, nullptr);
+        messageListFree(&gCombatAiMessageList);
+    }
+
     if (!messageListInit(&gCombatAiMessageList)) {
         return -1;
     }

@@ -38,6 +38,12 @@ The following settings were moved into [`fallout2.cfg`](files/fallout2.cfg) inst
 | `Misc` | `UseWalkDistance` | `qol` | `use_walk_distance` |
 | `Misc` | `AutoOpenDoors` | `qol` | `auto_open_doors` |
 
+The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/config/game.cfg):
+
+| ddraw.ini section | ddraw.ini key | game.cfg section | game.cfg key |
+| --- | --- | --- | --- |
+| `Misc` | `StartGDialogFix` | `dialog` | `start_gdialog_fix` |
+
 ## Opcodes / Metarules
 
 See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/) for documentation on specific functions.
@@ -82,7 +88,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Interface / Cursor | get/set_cursor_mode | ✅ | - |
 | Locks | lock_is_jammed<br>unjam_lock<br>set_unjam_locks_time | not implemented | - |
 | INI settings | get_ini_setting<br>get_ini_string<br>get_ini_section<br>get_ini_sections<br>get_ini_config<br>get_ini_config_db<br>set_ini_setting | ✅ | `modified_ini` is intentionally omitted as deprecated. |
-| Objects and scripts | set_self<br>set_dude_obj<br>real_dude_obj<br>remove_script<br>get/set_script<br>obj_is_carrying_obj<br>loot_obj<br>dialog_obj<br>obj_under_cursor<br>get/set_object_data<br>get/set_flags<br>set_unique_id<br>set_scr_name<br>obj_is_openable<br>get/set_proto_data<br>get_object_ai_data | implemented: set_self, get/set/remove_script, obj_is_carrying_obj, loot_obj, dialog_obj, obj_under_cursor, get_object_data, get_flags, set_flags, set_unique_id, obj_is_openable, get_proto_data, set_proto_data | - |
+| Objects and scripts | set_self<br>set_dude_obj<br>real_dude_obj<br>remove_script<br>get/set_script<br>obj_is_carrying_obj<br>loot_obj<br>dialog_obj<br>obj_under_cursor<br>get/set_object_data<br>get/set_flags<br>set_unique_id<br>set_scr_name<br>obj_is_openable<br>get/set_proto_data<br>get_object_ai_data | ✅ except set_dude_obj, set_scr_name | `get/set_object_data` maps supported object and `C_ATTACK_*` offsets instead of exposing arbitrary raw memory offsets. |
 | Other / Game management | set_movie_path<br>stop/resume_game<br>mark_movie_played<br>game_loaded<br>get_game_mode<br>get_uptime<br>signal_close_game | implemented: game_loaded, get_game_mode, get_uptime, signal_close_game | - |
 | Gameplay tweaks | set_pickpocket_max<br>set_hit_chance_max<br>set_xp_mod<br>set_critter_hit_chance_mod<br>set_base_hit_chance_mod<br>set_hp_per_level_mod<br>gdialog_get_barter_mod<br>get/set_unspent_ap_bonus<br>get/set_unspent_ap_perk_bonus<br>set_base_pickpocket_mod<br>set_critter_pickpocket_mod<br>get/set_inven_ap_cost<br>set_drugs_data<br>get_kill_counter<br>mod_kill_counter<br>set_pipboy_available | implemented: gdialog_get_barter_mod, get/set_unspent_ap{_perk}_bonus, get/set_inven_ap_cost | - |
 | NPCs | inc_npc_level<br>get_npc_level<br>npc_engine_level_up | not implemented | - |
@@ -104,7 +110,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | FindTarget | `HOOK_FINDTARGET` | 🚫 | (maybe) |
 | UseObjOn | `HOOK_USEOBJON` | ✅ | - |
 | UseObj | `HOOK_USEOBJ` | ✅ | CE notes an sfall-matching inconsistency around return code `2` behavior between interface contexts. |
-| RemoveInvenObj | `HOOK_REMOVEINVENOBJ` | 🚫 | - |
+| RemoveInvenObj | `HOOK_REMOVEINVENOBJ` | ✅ | - |
 | BarterPrice | `HOOK_BARTERPRICE` | ✅ | - |
 | ItemDamage | `HOOK_ITEMDAMAGE` | ✅ | - |
 | MoveCost | `HOOK_MOVECOST` | ✅ | - |

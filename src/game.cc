@@ -688,7 +688,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
                 MessageListItem messageListItem;
                 char title[128];
                 strcpy(title, getmsg(&gMiscMessageList, &messageListItem, 7));
-                showDialogBox(title, nullptr, 0, 192, 116, _colorTable[32328], nullptr, _colorTable[32328], 0);
+                showDialogBox(title, nullptr, 0, 192, 116, COLOR_AMBER, nullptr, COLOR_AMBER, 0);
             } else {
                 soundPlayFile("ib1p1xx1");
                 pipboyOpen(PIPBOY_OPEN_INTENT_UNSPECIFIED);
@@ -718,7 +718,7 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
                 MessageListItem messageListItem;
                 char title[128];
                 strcpy(title, getmsg(&gMiscMessageList, &messageListItem, 7));
-                showDialogBox(title, nullptr, 0, 192, 116, _colorTable[32328], nullptr, _colorTable[32328], 0);
+                showDialogBox(title, nullptr, 0, 192, 116, COLOR_AMBER, nullptr, COLOR_AMBER, 0);
             } else {
                 soundPlayFile("ib1p1xx1");
                 pipboyOpen(PIPBOY_OPEN_INTENT_REST);
@@ -1231,7 +1231,7 @@ void showHelp()
                     screenGetWidth(),
                     screenGetHeight(),
                     screenGetWidth(),
-                    intensityColorTable[_colorTable[0]][0]);
+                    intensityColorTable[COLOR_BLACK][0]);
 
                 windowShow(overlay);
                 windowShow(win);
@@ -1304,7 +1304,7 @@ int showQuitConfirmationDialog()
     MessageListItem messageListItem;
     messageListItem.num = 0;
     if (messageListGetItem(&gMiscMessageList, &messageListItem)) {
-        rc = showDialogBox(messageListItem.text, nullptr, 0, 169, 117, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_YES_NO);
+        rc = showDialogBox(messageListItem.text, nullptr, 0, 169, 117, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_YES_NO);
         if (rc != 0) {
             _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
         }
@@ -1606,7 +1606,7 @@ int gameShowDeathDialog(const char* message)
     GameQuitRequest oldUserWantsToQuit = _game_user_wants_to_quit;
     _game_user_wants_to_quit = GAME_QUIT_REQUEST_NONE;
 
-    int rc = showDialogBox(message, nullptr, 0, 169, 117, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE);
+    int rc = showDialogBox(message, nullptr, 0, 169, 117, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
     _game_user_wants_to_quit = oldUserWantsToQuit;
 

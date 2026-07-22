@@ -46,6 +46,7 @@ namespace fallout {
 
 static int _item_load_(File* stream);
 static void _item_compact(int inventoryItemIndex, Inventory* inventory);
+static int itemRemoveInternal(Object* owner, Object* itemToRemove, int quantity, RemoveInventoryObjectHookReason reason, Object* target, bool runHook = true);
 static int _item_move_func(Object* source, Object* target, Object* item, int quantity, bool force);
 static bool _item_identical(Object* item1, Object* item2);
 static int stealthBoyTurnOn(Object* object);
@@ -400,6 +401,21 @@ int itemAdd(Object* owner, Object* itemToAdd, int quantity)
 // 0x477490
 int itemRemove(Object* owner, Object* itemToRemove, int quantity)
 {
+    return itemRemoveInternal(owner, itemToRemove, quantity, RemoveInventoryObjectHookReason::ItemRemovedInventory, nullptr);
+}
+
+int itemRemoveWithReason(Object* owner, Object* itemToRemove, int quantity, RemoveInventoryObjectHookReason reason, Object* target)
+{
+    return itemRemoveInternal(owner, itemToRemove, quantity, reason, target);
+}
+
+int itemRemoveQuietly(Object* owner, Object* itemToRemove, int quantity)
+{
+    return itemRemoveInternal(owner, itemToRemove, quantity, RemoveInventoryObjectHookReason::ItemRemovedInventory, nullptr, false);
+}
+
+static int itemRemoveInternal(Object* owner, Object* itemToRemove, int quantity, RemoveInventoryObjectHookReason reason, Object* target, bool runHook)
+{
     Inventory* inventory = &(owner->data.inventory);
     Object* item1 = critterGetItem1(owner);
     Object* item2 = critterGetItem2(owner);
@@ -412,7 +428,7 @@ int itemRemove(Object* owner, Object* itemToRemove, int quantity)
         }
 
         if (itemGetType(inventoryItem->item) == ITEM_TYPE_CONTAINER) {
-            if (itemRemove(inventoryItem->item, itemToRemove, quantity) == 0) {
+            if (itemRemoveInternal(inventoryItem->item, itemToRemove, quantity, RemoveInventoryObjectHookReason::SubContainer, nullptr, runHook) == 0) {
                 return 0;
             }
         }
@@ -425,6 +441,10 @@ int itemRemove(Object* owner, Object* itemToRemove, int quantity)
     InventoryItem* inventoryItem = &(inventory->items[index]);
     if (inventoryItem->quantity < quantity) {
         return -1;
+    }
+
+    if (runHook) {
+        scriptHooks_RemoveInventoryObject(owner, itemToRemove, quantity, reason, target);
     }
 
     if (inventoryItem->quantity == quantity) {
@@ -477,7 +497,7 @@ static void _item_compact(int inventoryItemIndex, Inventory* inventory)
 // 0x477608
 static int _item_move_func(Object* source, Object* target, Object* item, int quantity, bool force)
 {
-    if (itemRemove(source, item, quantity) == -1) {
+    if (itemRemoveWithReason(source, item, quantity, RemoveInventoryObjectHookReason::ItemMove, target) == -1) {
         return -1;
     }
 
@@ -509,19 +529,19 @@ static int _item_move_func(Object* source, Object* target, Object* item, int qua
     return 0;
 }
 
-// 0x47769C
+// 0x47769C item_move
 int itemMove(Object* from, Object* to, Object* item, int quantity)
 {
     return _item_move_func(from, to, item, quantity, false);
 }
 
-// 0x4776A4
+// 0x4776A4 item_move_force
 int itemMoveForce(Object* from, Object* to, Object* item, int quantity)
 {
     return _item_move_func(from, to, item, quantity, true);
 }
 
-// 0x4776AC
+// 0x4776AC item_move_all
 void itemMoveAll(Object* from, Object* to)
 {
     Inventory* inventory = &(from->data.inventory);
@@ -532,7 +552,7 @@ void itemMoveAll(Object* from, Object* to)
     }
 }
 
-// 0x4776E0
+// 0x4776E0 item_move_all_hidden
 int itemMoveAllHidden(Object* from, Object* to)
 {
     Inventory* inventory = &(from->data.inventory);
@@ -549,7 +569,7 @@ int itemMoveAllHidden(Object* from, Object* to)
     return 0;
 }
 
-// 0x477770
+// 0x477770 item_destroy_all_hidden
 int itemDestroyAllHidden(Object* owner)
 {
     Inventory* inventory = &(owner->data.inventory);
@@ -557,7 +577,7 @@ int itemDestroyAllHidden(Object* owner)
         InventoryItem* inventoryItem = &(inventory->items[index]);
         // NOTE: Uninline.
         if (itemIsHidden(inventoryItem->item)) {
-            itemRemove(owner, inventoryItem->item, 1);
+            itemRemoveWithReason(owner, inventoryItem->item, 1, RemoveInventoryObjectHookReason::ItemDestroyed);
             objectDestroy(inventoryItem->item);
         } else {
             index++;
@@ -1134,7 +1154,7 @@ Object* itemReplace(Object* owner, Object* itemToReplace, int flags)
         InventoryItem* inventoryItem = &(inventory->items[index]);
         if (_item_identical(inventoryItem->item, itemToReplace)) {
             Object* item = inventoryItem->item;
-            if (itemRemove(owner, item, 1) == 0) {
+            if (itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::ItemReplace) == 0) {
                 item->flags |= flags;
                 if (itemAdd(owner, item, 1) == 0) {
                     return item;

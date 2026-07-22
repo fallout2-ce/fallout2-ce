@@ -376,7 +376,7 @@ int interfaceInit()
     int interfaceBarWindowX = (screenGetWidth() - gInterfaceBarWidth) / 2;
     int interfaceBarWindowY = screenGetHeight() - INTERFACE_BAR_HEIGHT;
 
-    gInterfaceBarWindow = windowCreate(interfaceBarWindowX, interfaceBarWindowY, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT, _colorTable[0], WINDOW_HIDDEN);
+    gInterfaceBarWindow = windowCreate(interfaceBarWindowX, interfaceBarWindowY, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT, COLOR_BLACK, WINDOW_HIDDEN);
     if (gInterfaceBarWindow == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -2298,7 +2298,7 @@ static int indicatorBarInit()
         char text[1024];
         strcpy(text, getmsg(&messageList, &messageListItem, indicator->title));
 
-        int color = indicator->isBad ? _colorTable[31744] : _colorTable[992];
+        int color = indicator->isBad ? COLOR_RED : COLOR_GREEN;
         indicatorBarRenderBox(indicator->data, text, color);
     }
 
@@ -2438,7 +2438,7 @@ int indicatorBarRefresh()
                 screenGetHeight() - INTERFACE_BAR_HEIGHT - INDICATOR_BOX_HEIGHT,
                 (INDICATOR_BOX_WIDTH - INDICATOR_BOX_CONNECTOR_WIDTH) * count,
                 INDICATOR_BOX_HEIGHT,
-                _colorTable[0],
+                COLOR_BLACK,
                 0);
             indicatorBarRender(count);
             windowRefresh(gIndicatorBarWindow);
@@ -2562,22 +2562,22 @@ static int indicatorBarGetVisibleSlotCount()
 static int indicatorBarTextColor(int color)
 {
     switch (color) {
-    case 1: // red
-        return _colorTable[31744];
-    case 2: // white
-        return _colorTable[32767];
-    case 3: // yellow
-        return _colorTable[32328];
-    case 4: // dark red
-        return _colorTable[23624];
-    case 5: // blue
-        return _colorTable[31];
-    case 6: // pink
-        return _colorTable[31775];
-    case 7: // dull pink
-        return _colorTable[31215];
-    default: // (also 0) green
-        return _colorTable[992];
+    case 1:
+        return COLOR_RED;
+    case 2:
+        return COLOR_WHITE;
+    case 3:
+        return COLOR_AMBER;
+    case 4:
+        return COLOR_DARK_RED;
+    case 5:
+        return COLOR_BLUE;
+    case 6:
+        return COLOR_MAGENTA;
+    case 7:
+        return COLOR_LIGHT_PINK_2;
+    default:
+        return COLOR_GREEN;
     }
 }
 

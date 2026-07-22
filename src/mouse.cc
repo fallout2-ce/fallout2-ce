@@ -179,13 +179,13 @@ static void mousePrepareDefaultCursor()
     for (int index = 0; index < 64; index++) {
         switch (gMouseDefaultCursor[index]) {
         case 0:
-            gMouseDefaultCursor[index] = _colorTable[0];
+            gMouseDefaultCursor[index] = COLOR_BLACK;
             break;
         case 1:
-            gMouseDefaultCursor[index] = _colorTable[8456];
+            gMouseDefaultCursor[index] = COLOR_DARK_GREY;
             break;
         case 15:
-            gMouseDefaultCursor[index] = _colorTable[32767];
+            gMouseDefaultCursor[index] = COLOR_WHITE;
             break;
         }
     }
@@ -203,7 +203,7 @@ int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int ho
 
     if (frame == nullptr) {
         // NOTE: Original code looks tail recursion optimization.
-        return mouseSetFrame(gMouseDefaultCursor, MOUSE_DEFAULT_CURSOR_WIDTH, MOUSE_DEFAULT_CURSOR_HEIGHT, MOUSE_DEFAULT_CURSOR_WIDTH, 1, 1, _colorTable[0]);
+        return mouseSetFrame(gMouseDefaultCursor, MOUSE_DEFAULT_CURSOR_WIDTH, MOUSE_DEFAULT_CURSOR_HEIGHT, MOUSE_DEFAULT_CURSOR_WIDTH, 1, 1, COLOR_BLACK);
     }
 
     bool cursorWasHidden = gCursorIsHidden;

@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "memory_manager.h"
 #include "settings.h"
+#include "window_manager.h"
 
 // The maximum number of interface fonts.
 #define INTERFACE_FONT_MAX (16)
@@ -365,17 +366,17 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
         return;
     }
 
-    if ((color & FONT_SHADOW) != 0) {
-        color &= ~FONT_SHADOW;
+    if ((color & DRAW_TEXT_FLAG_SHADOWED) != 0) {
+        color &= ~DRAW_TEXT_FLAG_SHADOWED;
         // NOTE: Other font options preserved. This is different from text font
         // shadows.
-        interfaceFontDrawImpl(buf + pitch + 1, string, length, pitch, (color & ~0xFF) | _colorTable[0]);
+        interfaceFontDrawImpl(buf + pitch + 1, string, length, pitch, (color & ~0xFF) | COLOR_BLACK);
     }
 
     unsigned char* palette = _getColorBlendTable(color & 0xFF);
 
     int monospacedCharacterWidth;
-    if ((color & FONT_MONO) != 0) {
+    if ((color & DRAW_TEXT_FLAG_MONOSPACED) != 0) {
         // NOTE: Uninline.
         monospacedCharacterWidth = interfaceFontGetMonospacedCharacterWidthImpl();
     }
@@ -392,7 +393,7 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
         }
 
         unsigned char* end;
-        if ((color & FONT_MONO) != 0) {
+        if ((color & DRAW_TEXT_FLAG_MONOSPACED) != 0) {
             end = ptr + monospacedCharacterWidth;
             ptr += (monospacedCharacterWidth - characterWidth - gCurrentInterfaceFontDescriptor->letterSpacing) / 2;
         } else {
@@ -422,7 +423,7 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
         ptr = end;
     }
 
-    if ((color & FONT_UNDERLINE) != 0) {
+    if ((color & DRAW_TEXT_FLAG_UNDERLINED) != 0) {
         int length = ptr - buf;
         unsigned char* underlinePtr = buf + pitch * (gCurrentInterfaceFontDescriptor->maxHeight - 1);
         for (int index = 0; index < length; index++) {
@@ -435,12 +436,12 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
 
 static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, const char* string, int color, float scale)
 {
-    if ((color & FONT_SHADOW) != 0) {
-        color &= ~FONT_SHADOW;
-        interfaceFontDrawScaledImpl(dest, x + 1, y + 1, string, (color & ~0xFF) | _colorTable[0], scale);
+    if ((color & DRAW_TEXT_FLAG_SHADOWED) != 0) {
+        color &= ~DRAW_TEXT_FLAG_SHADOWED;
+        interfaceFontDrawScaledImpl(dest, x + 1, y + 1, string, (color & ~0xFF) | COLOR_BLACK, scale);
     }
 
-    if ((color & (FONT_MONO | FONT_UNDERLINE)) != 0) {
+    if ((color & (DRAW_TEXT_FLAG_MONOSPACED | DRAW_TEXT_FLAG_UNDERLINED)) != 0) {
         debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
     }
 
@@ -494,7 +495,7 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
 
 static int interfaceFontGetScaledWidthImpl(const char* string, int color, float scale)
 {
-    if ((color & (FONT_MONO | FONT_UNDERLINE)) != 0) {
+    if ((color & (DRAW_TEXT_FLAG_MONOSPACED | DRAW_TEXT_FLAG_UNDERLINED)) != 0) {
         debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
     }
 
