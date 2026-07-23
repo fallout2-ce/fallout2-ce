@@ -175,6 +175,8 @@ namespace {
     constexpr SfallMigrationEntry kSfallMigrationEntries[] = {
         // [start]
         { kSfallMisc, "StartingMap", CONTENT_CONFIG_START_SECTION, "map", "" },
+        { kSfallMisc, "StartXPos", CONTENT_CONFIG_START_SECTION, "worldmap_x", "-1" },
+        { kSfallMisc, "StartYPos", CONTENT_CONFIG_START_SECTION, "worldmap_y", "-1" },
         { kSfallMisc, "MaleStartModel", CONTENT_CONFIG_START_SECTION, "model_male", "hmwarr" },
         { kSfallMisc, "MaleDefaultModel", CONTENT_CONFIG_START_SECTION, "model_male_default", "hmjmps" },
         { kSfallMisc, "FemaleStartModel", CONTENT_CONFIG_START_SECTION, "model_female", "hfprim" },

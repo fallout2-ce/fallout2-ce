@@ -285,6 +285,8 @@ int wmMatchAreaContainingMapIdx(int mapIdx, int* areaIdxPtr);
 int wmTeleportToArea(int areaIdx);
 
 // CE
+bool wmStartWorldPosIsConfigured();
+void wmSetPartyCurArea(int areaIdx);
 void wmSetPartyWorldPos(int x, int y);
 void wmCarSetCurrentArea(int area);
 void wmForceEncounter(int map, unsigned int flags);
