@@ -14,6 +14,7 @@
 #include "debug.h"
 #include "game.h"
 #include "game_dialog.h"
+#include "game_movie.h"
 #include "input.h"
 #include "interface.h"
 #include "interpreter.h"
@@ -209,6 +210,28 @@ static void op_get_year(Program* program)
     int year;
     gameTimeGetDate(nullptr, nullptr, &year);
     programStackPushInteger(program, year);
+}
+
+static void op_set_movie_path(Program* program)
+{
+    int movie = programStackPopInteger(program);
+    const char* fileName = programStackPopString(program);
+    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || fileName == nullptr) {
+        return;
+    }
+
+    if (strlen(fileName) > 64) {
+        programPrintError("set_movie_path: filename exceeds 64 characters");
+        return;
+    }
+
+    gameMovieSetPath(movie, fileName);
+}
+
+static void op_mark_movie_played(Program* program)
+{
+    int movie = programStackPopInteger(program);
+    gameMovieMarkSeen(movie);
 }
 
 // game_loaded
@@ -1965,6 +1988,7 @@ void sfallOpcodesInit()
     // 0x8175 - void set_dm_model(string name)
     // 0x8176 - void set_df_model(string name)
     // 0x8177 - void set_movie_path(string filename, int movieid)
+    interpreterRegisterOpcode(0x8177, op_set_movie_path);
 
     // 0x8178 - void set_perk_image(int perkID, int value)
     // 0x8179 - void set_perk_ranks(int perkID, int value)
@@ -2295,6 +2319,7 @@ void sfallOpcodesInit()
     // 0x823f - void disable_aimed_shots(int pid)
 
     // 0x8240 - void mark_movie_played(int id)
+    interpreterRegisterOpcode(0x8240, op_mark_movie_played);
 
     // 0x8248 - object get_last_target(object critter)
     // 0x8249 - object get_last_attacker(object critter)

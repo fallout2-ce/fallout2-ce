@@ -1948,7 +1948,7 @@ static void pipboyHandleVideoArchive(int a1)
             }
         }
 
-        if (movie <= MOVIE_COUNT) {
+        if (movie < MOVIE_COUNT) {
             gameMoviePlay(movie, GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC);
         } else {
             debugPrint("\n ** Selected movie not found in list! **\n");

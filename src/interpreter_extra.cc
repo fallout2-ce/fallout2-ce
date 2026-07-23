@@ -3619,6 +3619,10 @@ static void opPlayGameMovie(Program* program)
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     int movie = programStackPopInteger(program);
+    int movieFlags = GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC;
+    if (movie >= 0 && movie < MOVIE_COUNT) {
+        movieFlags = flags[movie];
+    }
 
     // CE: Disable map updates. Needed to stop animation of objects (dude in
     // particular) when playing movies (the problem can be seen as visual
@@ -3627,7 +3631,7 @@ static void opPlayGameMovie(Program* program)
 
     gameDialogDisable();
 
-    if (gameMoviePlay(movie, flags[movie]) == -1) {
+    if (gameMoviePlay(movie, movieFlags) == -1) {
         debugPrint("\nError playing movie %d!", movie);
     }
 

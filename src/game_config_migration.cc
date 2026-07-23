@@ -7,6 +7,7 @@
 #include "content_config.h"
 #include "debug.h"
 #include "game_config.h"
+#include "game_movie.h"
 #include "platform_compat.h"
 #include "settings.h"
 #include "sfall_config.h"
@@ -243,6 +244,58 @@ namespace {
         { kSfallMisc, "ExtraGameMsgFileList", CONTENT_CONFIG_TEXT_SECTION, "extra_msg_file_list" },
     };
 
+    constexpr const char* kSfallDefaultMovies[MOVIE_COUNT] = {
+        "iplogo.mve",
+        "intro.mve",
+        "elder.mve",
+        "vsuit.mve",
+        "afailed.mve",
+        "adestroy.mve",
+        "car.mve",
+        "cartucci.mve",
+        "timeout.mve",
+        "tanker.mve",
+        "enclave.mve",
+        "derrick.mve",
+        "artimer1.mve",
+        "artimer2.mve",
+        "artimer3.mve",
+        "artimer4.mve",
+        "credits.mve",
+    };
+
+    static bool contentConfigMigrateSfallMovieOverrides(Config* sfallConfig, Config* migratedConfig)
+    {
+        assert(sfallConfig != nullptr && migratedConfig != nullptr);
+
+        bool migrated = false;
+        for (int index = 0; index < GAME_MOVIE_MAX_COUNT; index++) {
+            char sfallKey[16];
+            snprintf(sfallKey, sizeof(sfallKey), "Movie%d", index + 1);
+
+            char* value;
+            if (!configGetString(sfallConfig, kSfallMisc, sfallKey, &value) || value[0] == '\0') {
+                continue;
+            }
+
+            if (index < MOVIE_COUNT && strcmp(value, kSfallDefaultMovies[index]) == 0) {
+                continue;
+            }
+
+            char targetKey[16];
+            snprintf(targetKey, sizeof(targetKey), "movie%d", index + 1);
+
+            if (gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, targetKey)) {
+                continue;
+            }
+
+            configSetString(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, targetKey, value);
+            migrated = true;
+        }
+
+        return migrated;
+    }
+
 } // anonymous namespace
 
 // Migrate sfall settings from ddraw.ini to game.cfg.
@@ -287,6 +340,10 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
             configSetString(&migratedConfig, entry.targetSection, entry.targetKey, value);
             migrated = true;
         }
+    }
+
+    if (contentConfigMigrateSfallMovieOverrides(sfallConfig, &migratedConfig)) {
+        migrated = true;
     }
 
     if (migrated) {

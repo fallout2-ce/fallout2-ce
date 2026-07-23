@@ -1,9 +1,13 @@
 #include "game_movie.h"
 
+#include <array>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <string>
 
 #include "color.h"
+#include "content_config.h"
 #include "cycle.h"
 #include "debug.h"
 #include "game.h"
@@ -24,12 +28,16 @@
 namespace fallout {
 
 static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath);
+static bool gameMovieFindFilePath(char* movieFilePath, size_t movieFilePathSize, const char* movieFileName);
+static bool gameMovieFindFilePathInDir(char* movieFilePath, size_t movieFilePathSize, const char* dir, const char* movieFileName);
+static void gameMovieInitFileNames();
+static void gameMovieLoadConfigFileNames();
 
 // 0x50352A
 static const float flt_50352A = 0.032258064f;
 
 // 0x518DA0 movie_list
-static const char* gMovieFileNames[MOVIE_COUNT] = {
+static const char* gMovieDefaultFileNames[MOVIE_COUNT] = {
     "iplogo.mve",
     "intro.mve",
     "elder.mve",
@@ -48,6 +56,8 @@ static const char* gMovieFileNames[MOVIE_COUNT] = {
     "artimer4.mve",
     "credits.mve",
 };
+
+static std::array<std::string, GAME_MOVIE_MAX_COUNT> gMovieFileNames;
 
 // 0x518DE4 subtitlePalList
 static const char* gMoviePaletteFilePaths[MOVIE_COUNT] = {
@@ -95,6 +105,9 @@ int gameMoviesInit()
 
     movieSetBuildSubtitleFilePathProc(gameMovieBuildSubtitlesFilePath);
 
+    gameMovieInitFileNames();
+    gameMovieLoadConfigFileNames();
+
     memset(gGameMoviesSeen, 0, sizeof(gGameMoviesSeen));
 
     gGameMovieIsPlaying = false;
@@ -136,28 +149,24 @@ int gameMoviesSave(File* stream)
 // 0x44E690 gmovie_play
 int gameMoviePlay(int movie, int flags)
 {
+    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || gMovieFileNames[movie].empty()) {
+        debugPrint("\ngmovie_play() - Error: Invalid movie %d\n", movie);
+        return -1;
+    }
+
     gGameMovieIsPlaying = true;
 
-    const char* movieFileName = gMovieFileNames[movie];
+    const char* movieFileName = gMovieFileNames[movie].c_str();
     debugPrint("\nPlaying movie: %s\n", movieFileName);
 
     const char* language = settings.system.language.c_str();
     char movieFilePath[COMPAT_MAX_PATH];
-    int movieFileSize;
     bool movieFound = false;
 
-    if (compat_stricmp(language, ENGLISH) != 0) {
-        snprintf(movieFilePath, sizeof(movieFilePath), "art\\%s\\cuts\\%s", language, gMovieFileNames[movie]);
-        movieFound = dbGetFileSize(movieFilePath, &movieFileSize) == 0;
-    }
+    movieFound = gameMovieFindFilePath(movieFilePath, sizeof(movieFilePath), movieFileName);
 
     if (!movieFound) {
-        snprintf(movieFilePath, sizeof(movieFilePath), "art\\cuts\\%s", gMovieFileNames[movie]);
-        movieFound = dbGetFileSize(movieFilePath, &movieFileSize) == 0;
-    }
-
-    if (!movieFound) {
-        debugPrint("\ngmovie_play() - Error: Unable to open %s\n", gMovieFileNames[movie]);
+        debugPrint("\ngmovie_play() - Error: Unable to open %s\n", movieFileName);
         gGameMovieIsPlaying = false;
         return -1;
     }
@@ -205,7 +214,7 @@ int gameMoviePlay(int movie, int flags)
     int oldFont;
     if (subtitlesEnabled) {
         const char* subtitlesPaletteFilePath;
-        if (gMoviePaletteFilePaths[movie] != nullptr) {
+        if (movie < MOVIE_COUNT && gMoviePaletteFilePaths[movie] != nullptr) {
             subtitlesPaletteFilePath = gMoviePaletteFilePaths[movie];
         } else {
             subtitlesPaletteFilePath = "art\\cuts\\subtitle.pal";
@@ -264,7 +273,7 @@ int gameMoviePlay(int movie, int flags)
     _movieUpdate();
     paletteSetEntries(gPaletteBlack);
 
-    gGameMoviesSeen[movie] = 1;
+    gameMovieMarkSeen(movie);
 
     colorCycleEnable();
 
@@ -308,6 +317,23 @@ int gameMoviePlay(int movie, int flags)
     return 0;
 }
 
+bool gameMovieSetPath(int movie, const char* fileName)
+{
+    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || fileName == nullptr) {
+        return false;
+    }
+
+    gMovieFileNames[movie] = fileName;
+    return true;
+}
+
+void gameMovieMarkSeen(int movie)
+{
+    if (movie >= 0 && movie < MOVIE_COUNT) {
+        gGameMoviesSeen[movie] = 1;
+    }
+}
+
 // 0x44EAE4 gmPaletteFinish
 void gameMovieFadeOut()
 {
@@ -320,6 +346,10 @@ void gameMovieFadeOut()
 // 0x44EB04 gmovie_has_been_played
 bool gameMovieIsSeen(int movie)
 {
+    if (movie < 0 || movie >= MOVIE_COUNT) {
+        return false;
+    }
+
     return gGameMoviesSeen[movie] == 1;
 }
 
@@ -349,6 +379,62 @@ static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath)
     strcpy(gGameMovieSubtitlesFilePath + strlen(gGameMovieSubtitlesFilePath), ".SVE");
 
     return gGameMovieSubtitlesFilePath;
+}
+
+static bool gameMovieFindFilePath(char* movieFilePath, size_t movieFilePathSize, const char* movieFileName)
+{
+    assert(movieFilePath != nullptr);
+    assert(movieFileName != nullptr);
+
+    const char* language = settings.system.language.c_str();
+    if (compat_stricmp(language, ENGLISH) != 0) {
+        char localizedDir[COMPAT_MAX_PATH];
+        snprintf(localizedDir, sizeof(localizedDir), "art\\%s\\cuts", language);
+        if (gameMovieFindFilePathInDir(movieFilePath, movieFilePathSize, localizedDir, movieFileName)) {
+            return true;
+        }
+    }
+
+    return gameMovieFindFilePathInDir(movieFilePath, movieFilePathSize, "art\\cuts", movieFileName);
+}
+
+static bool gameMovieFindFilePathInDir(char* movieFilePath, size_t movieFilePathSize, const char* dir, const char* movieFileName)
+{
+    char localMovieFilePath[COMPAT_MAX_PATH];
+    snprintf(localMovieFilePath, sizeof(localMovieFilePath), ".\\%s\\%s", dir, movieFileName);
+    if (compat_file_exists(localMovieFilePath)) {
+        snprintf(movieFilePath, movieFilePathSize, "%s\\%s", dir, movieFileName);
+        return true;
+    }
+
+    snprintf(movieFilePath, movieFilePathSize, "%s\\%s", dir, movieFileName);
+
+    int movieFileSize;
+    return dbGetFileSize(movieFilePath, &movieFileSize) == 0;
+}
+
+static void gameMovieInitFileNames()
+{
+    for (auto& fileName : gMovieFileNames) {
+        fileName.clear();
+    }
+
+    for (int index = 0; index < MOVIE_COUNT; index++) {
+        gMovieFileNames[index] = gMovieDefaultFileNames[index];
+    }
+}
+
+static void gameMovieLoadConfigFileNames()
+{
+    char key[16];
+    for (int index = 0; index < GAME_MOVIE_MAX_COUNT; index++) {
+        snprintf(key, sizeof(key), "movie%d", index + 1);
+
+        char* fileName;
+        if (configGetString(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, key, &fileName) && fileName[0] != '\0') {
+            gameMovieSetPath(index, fileName);
+        }
+    }
 }
 
 } // namespace fallout
