@@ -536,23 +536,11 @@ void movieSetPaletteProc(MovieSetPaletteProc* proc)
 // 0x48731C openFile
 static File* movieOpen(char* filePath)
 {
-    char looseFilePath[COMPAT_MAX_PATH];
-    snprintf(looseFilePath, sizeof(looseFilePath), ".\\%s", filePath);
-
-    if (compat_file_exists(looseFilePath)) {
-        gMovieFileStream = fileOpen(looseFilePath, "rb");
-        if (gMovieFileStream != nullptr) {
-            debugPrint("Movie file path: %s\n", looseFilePath);
-            return gMovieFileStream;
-        }
-    }
-
     gMovieFileStream = fileOpen(filePath, "rb");
     if (gMovieFileStream == nullptr) {
         debugPrint("Couldn't find movie file %s\n", filePath);
         return nullptr;
     }
-    debugPrint("Movie file path: %s\n", filePath);
     return gMovieFileStream;
 }
 

@@ -31,13 +31,14 @@ static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath);
 static bool gameMovieFindFilePath(char* movieFilePath, size_t movieFilePathSize, const char* movieFileName);
 static bool gameMovieFindFilePathInDir(char* movieFilePath, size_t movieFilePathSize, const char* dir, const char* movieFileName);
 static void gameMovieInitFileNames();
+static bool gameMovieIsValidFileName(const char* fileName);
 static void gameMovieLoadConfigFileNames();
 
 // 0x50352A
 static const float flt_50352A = 0.032258064f;
 
 // 0x518DA0 movie_list
-static const char* gMovieDefaultFileNames[MOVIE_COUNT] = {
+static const char* movieDefaultFileNames[MOVIE_COUNT] = {
     "iplogo.mve",
     "intro.mve",
     "elder.mve",
@@ -57,7 +58,7 @@ static const char* gMovieDefaultFileNames[MOVIE_COUNT] = {
     "credits.mve",
 };
 
-static std::array<std::string, GAME_MOVIE_MAX_COUNT> gMovieFileNames;
+static std::array<std::string, GAME_MOVIE_MAX_COUNT> movieFileNames;
 
 // 0x518DE4 subtitlePalList
 static const char* gMoviePaletteFilePaths[MOVIE_COUNT] = {
@@ -149,17 +150,16 @@ int gameMoviesSave(File* stream)
 // 0x44E690 gmovie_play
 int gameMoviePlay(int movie, int flags)
 {
-    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || gMovieFileNames[movie].empty()) {
+    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || movieFileNames[movie].empty()) {
         debugPrint("\ngmovie_play() - Error: Invalid movie %d\n", movie);
         return -1;
     }
 
     gGameMovieIsPlaying = true;
 
-    const char* movieFileName = gMovieFileNames[movie].c_str();
+    const char* movieFileName = movieFileNames[movie].c_str();
     debugPrint("\nPlaying movie: %s\n", movieFileName);
 
-    const char* language = settings.system.language.c_str();
     char movieFilePath[COMPAT_MAX_PATH];
     bool movieFound = false;
 
@@ -317,13 +317,22 @@ int gameMoviePlay(int movie, int flags)
     return 0;
 }
 
+const char* gameMovieGetDefaultFileName(int movie)
+{
+    if (movie < 0 || movie >= MOVIE_COUNT) {
+        return nullptr;
+    }
+
+    return movieDefaultFileNames[movie];
+}
+
 bool gameMovieSetPath(int movie, const char* fileName)
 {
-    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || fileName == nullptr) {
+    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || !gameMovieIsValidFileName(fileName)) {
         return false;
     }
 
-    gMovieFileNames[movie] = fileName;
+    movieFileNames[movie] = fileName;
     return true;
 }
 
@@ -400,13 +409,6 @@ static bool gameMovieFindFilePath(char* movieFilePath, size_t movieFilePathSize,
 
 static bool gameMovieFindFilePathInDir(char* movieFilePath, size_t movieFilePathSize, const char* dir, const char* movieFileName)
 {
-    char localMovieFilePath[COMPAT_MAX_PATH];
-    snprintf(localMovieFilePath, sizeof(localMovieFilePath), ".\\%s\\%s", dir, movieFileName);
-    if (compat_file_exists(localMovieFilePath)) {
-        snprintf(movieFilePath, movieFilePathSize, "%s\\%s", dir, movieFileName);
-        return true;
-    }
-
     snprintf(movieFilePath, movieFilePathSize, "%s\\%s", dir, movieFileName);
 
     int movieFileSize;
@@ -415,13 +417,20 @@ static bool gameMovieFindFilePathInDir(char* movieFilePath, size_t movieFilePath
 
 static void gameMovieInitFileNames()
 {
-    for (auto& fileName : gMovieFileNames) {
+    for (auto& fileName : movieFileNames) {
         fileName.clear();
     }
 
     for (int index = 0; index < MOVIE_COUNT; index++) {
-        gMovieFileNames[index] = gMovieDefaultFileNames[index];
+        movieFileNames[index] = movieDefaultFileNames[index];
     }
+}
+
+static bool gameMovieIsValidFileName(const char* fileName)
+{
+    return fileName != nullptr
+        && fileName[0] != '\0'
+        && strpbrk(fileName, "\\/:") == nullptr;
 }
 
 static void gameMovieLoadConfigFileNames()

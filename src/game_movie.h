@@ -40,6 +40,7 @@ void gameMoviesReset();
 int gameMoviesLoad(File* stream);
 int gameMoviesSave(File* stream);
 int gameMoviePlay(int movie, int flags);
+const char* gameMovieGetDefaultFileName(int movie);
 bool gameMovieSetPath(int movie, const char* fileName);
 void gameMovieMarkSeen(int movie);
 void gameMovieFadeOut();

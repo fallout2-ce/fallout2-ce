@@ -244,26 +244,6 @@ namespace {
         { kSfallMisc, "ExtraGameMsgFileList", CONTENT_CONFIG_TEXT_SECTION, "extra_msg_file_list" },
     };
 
-    constexpr const char* kSfallDefaultMovies[MOVIE_COUNT] = {
-        "iplogo.mve",
-        "intro.mve",
-        "elder.mve",
-        "vsuit.mve",
-        "afailed.mve",
-        "adestroy.mve",
-        "car.mve",
-        "cartucci.mve",
-        "timeout.mve",
-        "tanker.mve",
-        "enclave.mve",
-        "derrick.mve",
-        "artimer1.mve",
-        "artimer2.mve",
-        "artimer3.mve",
-        "artimer4.mve",
-        "credits.mve",
-    };
-
     static bool contentConfigMigrateSfallMovieOverrides(Config* sfallConfig, Config* migratedConfig)
     {
         assert(sfallConfig != nullptr && migratedConfig != nullptr);
@@ -278,7 +258,8 @@ namespace {
                 continue;
             }
 
-            if (index < MOVIE_COUNT && strcmp(value, kSfallDefaultMovies[index]) == 0) {
+            const char* defaultFileName = gameMovieGetDefaultFileName(index);
+            if (defaultFileName != nullptr && strcmp(value, defaultFileName) == 0) {
                 continue;
             }
 

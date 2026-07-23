@@ -217,6 +217,7 @@ static void op_set_movie_path(Program* program)
     int movie = programStackPopInteger(program);
     const char* fileName = programStackPopString(program);
     if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || fileName == nullptr) {
+        programPrintError("set_movie_path: invalid argument");
         return;
     }
 
@@ -225,7 +226,9 @@ static void op_set_movie_path(Program* program)
         return;
     }
 
-    gameMovieSetPath(movie, fileName);
+    if (!gameMovieSetPath(movie, fileName)) {
+        programPrintError("set_movie_path: invalid filename");
+    }
 }
 
 static void op_mark_movie_played(Program* program)
