@@ -1436,6 +1436,11 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
             if (elevation == elev) {
                 if (FID_TYPE(obj->fid) == OBJ_TYPE_MISC) {
                     if (isExitGridPid(obj->pid)) {
+                        if ((obj->flags & OBJECT_HIDDEN) != 0) {
+                            objectListNode = objectListNode->next;
+                            continue;
+                        }
+
                         ObjectData* data = &(obj->data);
 
                         MapTransition transition;
