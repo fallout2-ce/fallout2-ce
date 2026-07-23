@@ -229,14 +229,8 @@ enum CombatBadShot : int {
     COMBAT_BAD_SHOT_ALREADY_DEAD = 4,
     COMBAT_BAD_SHOT_AIM_BLOCKED = 5,
     COMBAT_BAD_SHOT_ARM_CRIPPLED = 6,
-    COMBAT_BAD_SHOT_BOTH_ARMS_CRIPPLED = 7,
-    COMBAT_BAD_SHOT_COUNT = 8,
+    COMBAT_BAD_SHOT_BOTH_ARMS_CRIPPLED = 7
 };
-
-inline static bool combatBadShotIsValid(int combatBadShot)
-{
-    return combatBadShot >= COMBAT_BAD_SHOT_OK && combatBadShot < COMBAT_BAD_SHOT_COUNT;
-}
 
 } // namespace fallout
 

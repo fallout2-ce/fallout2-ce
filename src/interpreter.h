@@ -289,17 +289,6 @@ inline CriticalHitDataMember programStackPopEnum(Program* program)
     return static_cast<CriticalHitDataMember>(criticalHitDataMember);
 }
 
-template <>
-inline CombatBadShot programStackPopEnum(Program* program)
-{
-    int combatBadShot = programStackPopInteger(program);
-    if (!combatBadShotIsValid(combatBadShot)) {
-        programPrintError("invalid combat bad shot %d", combatBadShot);
-    }
-
-    return static_cast<CombatBadShot>(combatBadShot);
-}
-
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
 void programReturnStackPushInteger(Program* program, int value);
 void programReturnStackPushPointer(Program* program, void* value);
