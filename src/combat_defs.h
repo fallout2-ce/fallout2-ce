@@ -19,21 +19,25 @@ enum CombatState : unsigned int {
     COMBAT_STATE_EXIT_REQUESTED = 0x08,
 };
 
-inline fallout::CombatState& operator&=(fallout::CombatState& lhs, unsigned int rhs) {
+inline fallout::CombatState& operator&=(fallout::CombatState& lhs, unsigned int rhs)
+{
     lhs = static_cast<fallout::CombatState>(static_cast<unsigned int>(lhs) & rhs);
     return lhs;
 }
 
-inline constexpr CombatState operator~(CombatState rhs) {
+inline constexpr CombatState operator~(CombatState rhs)
+{
     return static_cast<CombatState>(~static_cast<unsigned int>(rhs));
 }
 
-inline CombatState& operator&=(CombatState& lhs, CombatState rhs) {
+inline CombatState& operator&=(CombatState& lhs, CombatState rhs)
+{
     lhs = static_cast<CombatState>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
     return lhs;
 }
 
-inline CombatState& operator|=(CombatState& lhs, CombatState rhs) {
+inline CombatState& operator|=(CombatState& lhs, CombatState rhs)
+{
     lhs = static_cast<CombatState>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
     return lhs;
 }
