@@ -683,13 +683,16 @@ static bool configParseLine(Config* config, char* string)
         }
     }
 
-    char key[260];
-    char value[260];
+    char* key = (char*) malloc(strlen(string) + 1);
+    char* value = (char*) malloc(strlen(string) + 1);
     if (!configParseKeyValue(string, key, value)) {
         return false;
     }
 
-    return configSetString(config, gConfigLastSectionKey, key, value);
+    bool ret = configSetString(config, gConfigLastSectionKey, key, value);
+    free(key);
+    free(value);
+    return ret;
 }
 
 // Splits "key=value" pair from [string] and copy appropriate parts into [key]
