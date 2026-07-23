@@ -4689,15 +4689,18 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
     }
 
     // SFALL: Damage mod.
-    DamageCalculationContext context;
+    DamageCalculationContext context = {};
     context.attack = attack;
     context.damagePtr = damagePtr;
+    context.ammoQuantity = numRounds;
     context.damageResistance = damageResistance;
     context.damageThreshold = damageThreshold;
     context.damageBonus = damageBonus;
     context.baseDamageMult = baseDamageMult;
     context.difficultyDamagePercent = difficultyDamagePercent;
 
+    // SFALL: HOOK_SUBCOMBATDAMAGE would fit here when no built-in damage
+    // formula is selected. In sfall, DamageFormula 1/2/5 bypasses that hook.
     if (gDamageCalculationType == DAMAGE_CALCULATION_TYPE_GLOVZ || gDamageCalculationType == DAMAGE_CALCULATION_TYPE_GLOVZ_WITH_DAMAGE_MULTIPLIER_TWEAK) {
         damageModCalculateGlovz(&context);
     } else if (gDamageCalculationType == DAMAGE_CALCULATION_TYPE_YAAM) {
@@ -6859,7 +6862,7 @@ static void damageModCalculateGlovz(DamageCalculationContext* context)
         if (gDamageCalculationType == DAMAGE_CALCULATION_TYPE_GLOVZ_WITH_DAMAGE_MULTIPLIER_TWEAK) {
             damage += damageModGlovzDivRound(damage * context->baseDamageMult * 25, 100);
         } else {
-            damage += damage * context->baseDamageMult / 2;
+            damage = damage * context->baseDamageMult / 2;
         }
 
         if (damage > 0) {
@@ -6932,10 +6935,10 @@ static void damageModCalculateYaam(DamageCalculationContext* context)
         damage *= context->difficultyDamagePercent;
         damage /= 100;
 
-        damage -= damage * damageResistance / 100;
+        damage -= damage * calculatedDamageResistance / 100;
 
         if (damage > 0) {
-            context->damagePtr += damage;
+            *context->damagePtr += damage;
         }
     }
 }
