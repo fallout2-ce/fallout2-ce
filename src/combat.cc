@@ -163,7 +163,7 @@ int _combatNumTurns = 0;
 static int combatTurnHookResult = 0;
 
 // 0x510944 combat_state
-unsigned int gCombatState = COMBAT_STATE_PLAYER_TURN;
+CombatState gCombatState = COMBAT_STATE_PLAYER_TURN;
 
 // 0x510948 aiInfoList
 static CombatAiInfo* _aiInfoList = nullptr;
@@ -2103,7 +2103,7 @@ int _find_cid(int a1, int cid, Object** critterList, int critterListLength)
 // 0x420E4C
 int combatLoad(File* stream)
 {
-    if (fileReadUInt32(stream, &gCombatState) == -1) return -1;
+    if (fileReadUInt32(stream, reinterpret_cast<unsigned int*>(&gCombatState)) == -1) return -1;
 
     if (!isInCombat()) {
         Object* obj = objectFindFirst();
@@ -2874,7 +2874,7 @@ static void _combat_over()
 void _combat_over_from_load()
 {
     _combat_over();
-    gCombatState = 0;
+    gCombatState = COMBAT_STATE_OUT_COMBAT;
     _combat_end_due_to_load = 1;
 }
 
@@ -3468,7 +3468,7 @@ void _combat(CombatStartData* csd)
     if (csd == nullptr
         || (csd->attacker == nullptr || csd->attacker->elevation == gElevation)
         || (csd->defender == nullptr || csd->defender->elevation == gElevation)) {
-        bool wasInCombat = (gCombatState & COMBAT_STATE_IN_COMBAT) != 0;
+        bool wasInCombat = isInCombat();
 
         _combat_begin(nullptr);
 
@@ -5976,7 +5976,7 @@ void _combat_outline_off()
     int v5;
     Object** v9;
 
-    if ((gCombatState & COMBAT_STATE_IN_COMBAT) != 0) {
+    if (isInCombat()) {
         for (i = 0; i < _list_total; i++) {
             objectDisableOutline(_combat_list[i], nullptr);
         }

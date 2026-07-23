@@ -12,11 +12,31 @@
 
 namespace fallout {
 
-typedef enum CombatState {
+enum CombatState : unsigned int {
+    COMBAT_STATE_OUT_COMBAT = 0x00,
     COMBAT_STATE_IN_COMBAT = 0x01,
     COMBAT_STATE_PLAYER_TURN = 0x02,
     COMBAT_STATE_EXIT_REQUESTED = 0x08,
-} CombatState;
+};
+
+inline fallout::CombatState& operator&=(fallout::CombatState& lhs, unsigned int rhs) {
+    lhs = static_cast<fallout::CombatState>(static_cast<unsigned int>(lhs) & rhs);
+    return lhs;
+}
+
+inline constexpr CombatState operator~(CombatState rhs) {
+    return static_cast<CombatState>(~static_cast<unsigned int>(rhs));
+}
+
+inline CombatState& operator&=(CombatState& lhs, CombatState rhs) {
+    lhs = static_cast<CombatState>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
+inline CombatState& operator|=(CombatState& lhs, CombatState rhs) {
+    lhs = static_cast<CombatState>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+    return lhs;
+}
 
 enum HitMode : int {
     HIT_MODE_INVALID = -1,

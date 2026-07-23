@@ -9,7 +9,7 @@
 namespace fallout {
 
 extern int _combatNumTurns;
-extern unsigned int gCombatState;
+extern CombatState gCombatState;
 
 extern int _combat_free_move;
 
