@@ -292,7 +292,7 @@ static int gMovieTimerArtimer4;
 
 // Returns game time in ticks (1/10 second).
 //
-// 0x4A3330
+// 0x4A3330 game_time
 unsigned int gameTimeGetTime()
 {
     return gGameTime;
@@ -340,8 +340,7 @@ void gameTimeGetDate(int* monthPtr, int* dayPtr, int* yearPtr)
 // - 3:00 P.M. -> 1500
 // - 11:59 P.M. -> 2359
 //
-// game_time_hour
-// 0x4A33C8
+// 0x4A33C8 game_time_hour
 int gameTimeGetHour()
 {
     return 100 * ((gGameTime / 600) / 60 % 24) + (gGameTime / 600) % 60;
@@ -371,7 +370,7 @@ void gameTimeSetTime(unsigned int time)
     gGameTime = time;
 }
 
-// 0x4A34CC
+// 0x4A34CC inc_game_time
 void gameTimeAddTicks(int ticks)
 {
     gGameTime += ticks;
@@ -390,14 +389,14 @@ void gameTimeAddTicks(int ticks)
     }
 }
 
-// 0x4A3518
+// 0x4A3518 inc_game_time_in_seconds
 void gameTimeAddSeconds(int seconds)
 {
     // NOTE: Uninline.
     gameTimeAddTicks(seconds * 10);
 }
 
-// 0x4A3570
+// 0x4A3570 gtime_q_add
 int gameTimeScheduleUpdateEvent()
 {
     // ticks until midnight
@@ -415,7 +414,7 @@ int gameTimeScheduleUpdateEvent()
     return 0;
 }
 
-// 0x4A3620
+// 0x4A3620 gtime_q_process
 int gameTimeEventProcess(Object* obj, void* data)
 {
     int movie_index;
@@ -517,7 +516,7 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
     return 0;
 }
 
-// 0x4A382C
+// 0x4A382C src_map_q_process
 int mapUpdateEventProcess(Object* obj, void* data)
 {
     scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_UPDATE);
@@ -535,8 +534,7 @@ int mapUpdateEventProcess(Object* obj, void* data)
     return -1;
 }
 
-// new_obj_id
-// 0x4A386C
+// 0x4A386C new_obj_id
 int scriptsNewObjectId()
 {
     Object* ptr;
@@ -625,7 +623,7 @@ void scriptsSyncObjectId(Object* object)
     }
 }
 
-// 0x4A390C
+// 0x4A390C src_find_sid_from_program
 int scriptGetSid(Program* program)
 {
     for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
@@ -696,7 +694,7 @@ Object* scriptGetSelf(Program* program)
     return object;
 }
 
-// 0x4A3B0C
+// 0x4A3B0C scr_set_objs
 int scriptSetObjects(int sid, Object* source, Object* target)
 {
     Script* script;
@@ -710,7 +708,7 @@ int scriptSetObjects(int sid, Object* source, Object* target)
     return 0;
 }
 
-// 0x4A3B34
+// 0x4A3B34 src_set_ext_param
 void scriptSetFixedParam(int sid, int value)
 {
     Script* script;
@@ -719,7 +717,7 @@ void scriptSetFixedParam(int sid, int value)
     }
 }
 
-// 0x4A3B54
+// 0x4A3B54 scr_set_action_param
 int scriptSetActionBeingUsed(int sid, int value)
 {
     Script* scr;
@@ -733,7 +731,7 @@ int scriptSetActionBeingUsed(int sid, int value)
     return 0;
 }
 
-// 0x4A3B74
+// 0x4A3B74 loadProgram
 static Program* scriptsCreateProgramByName(const char* name)
 {
     char path[COMPAT_MAX_PATH];
@@ -2620,13 +2618,10 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
     }
 
     for (int sid : spatialScriptIds) {
-        Script* script;
-        if (scriptGetScript(sid, &script) == -1) {
+        // NOTE: Uninline.
+        if (scriptSetObjects(sid, object, nullptr) == -1) {
             continue;
         }
-
-        // NOTE: Uninline.
-        scriptSetObjects(sid, object, nullptr);
         scriptExecProc(sid, SCRIPT_PROC_SPATIAL);
     }
 
