@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <vector>
 
 #include "actions.h"
 #include "animation.h"
@@ -291,7 +292,7 @@ static int gMovieTimerArtimer4;
 
 // Returns game time in ticks (1/10 second).
 //
-// 0x4A3330
+// 0x4A3330 game_time
 unsigned int gameTimeGetTime()
 {
     return gGameTime;
@@ -339,8 +340,7 @@ void gameTimeGetDate(int* monthPtr, int* dayPtr, int* yearPtr)
 // - 3:00 P.M. -> 1500
 // - 11:59 P.M. -> 2359
 //
-// game_time_hour
-// 0x4A33C8
+// 0x4A33C8 game_time_hour
 int gameTimeGetHour()
 {
     return 100 * ((gGameTime / 600) / 60 % 24) + (gGameTime / 600) % 60;
@@ -370,7 +370,7 @@ void gameTimeSetTime(unsigned int time)
     gGameTime = time;
 }
 
-// 0x4A34CC
+// 0x4A34CC inc_game_time
 void gameTimeAddTicks(int ticks)
 {
     gGameTime += ticks;
@@ -389,14 +389,14 @@ void gameTimeAddTicks(int ticks)
     }
 }
 
-// 0x4A3518
+// 0x4A3518 inc_game_time_in_seconds
 void gameTimeAddSeconds(int seconds)
 {
     // NOTE: Uninline.
     gameTimeAddTicks(seconds * 10);
 }
 
-// 0x4A3570
+// 0x4A3570 gtime_q_add
 int gameTimeScheduleUpdateEvent()
 {
     // ticks until midnight
@@ -414,7 +414,7 @@ int gameTimeScheduleUpdateEvent()
     return 0;
 }
 
-// 0x4A3620
+// 0x4A3620 gtime_q_process
 int gameTimeEventProcess(Object* obj, void* data)
 {
     int movie_index;
@@ -516,7 +516,7 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
     return 0;
 }
 
-// 0x4A382C
+// 0x4A382C src_map_q_process
 int mapUpdateEventProcess(Object* obj, void* data)
 {
     scriptsExecMapUpdateScripts(SCRIPT_PROC_MAP_UPDATE);
@@ -534,8 +534,7 @@ int mapUpdateEventProcess(Object* obj, void* data)
     return -1;
 }
 
-// new_obj_id
-// 0x4A386C
+// 0x4A386C new_obj_id
 int scriptsNewObjectId()
 {
     Object* ptr;
@@ -624,7 +623,7 @@ void scriptsSyncObjectId(Object* object)
     }
 }
 
-// 0x4A390C
+// 0x4A390C src_find_sid_from_program
 int scriptGetSid(Program* program)
 {
     for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
@@ -695,7 +694,7 @@ Object* scriptGetSelf(Program* program)
     return object;
 }
 
-// 0x4A3B0C
+// 0x4A3B0C scr_set_objs
 int scriptSetObjects(int sid, Object* source, Object* target)
 {
     Script* script;
@@ -709,7 +708,7 @@ int scriptSetObjects(int sid, Object* source, Object* target)
     return 0;
 }
 
-// 0x4A3B34
+// 0x4A3B34 src_set_ext_param
 void scriptSetFixedParam(int sid, int value)
 {
     Script* script;
@@ -718,7 +717,7 @@ void scriptSetFixedParam(int sid, int value)
     }
 }
 
-// 0x4A3B54
+// 0x4A3B54 scr_set_action_param
 int scriptSetActionBeingUsed(int sid, int value)
 {
     Script* scr;
@@ -732,7 +731,7 @@ int scriptSetActionBeingUsed(int sid, int value)
     return 0;
 }
 
-// 0x4A3B74
+// 0x4A3B74 loadProgram
 static Program* scriptsCreateProgramByName(const char* name)
 {
     char path[COMPAT_MAX_PATH];
@@ -1375,11 +1374,22 @@ int scriptExecProc(int sid, int proc)
 
     programExecuteProcedure(program, procedureIndex);
 
+    Script* executedScript;
+    if (scriptGetScript(sid, &executedScript) == -1) {
+        // if the script was removed during execution, it (and the object) might be gone, so we shouldn't try to clean up
+        // or call HOOK_STDPROCEDURE_END
+        return 0;
+    }
+
     // HOOK_STDPROCEDURE_END
     scriptHooks_StdProcedure(proc, self, source, target, fixedParam, true);
 
-    script->source = nullptr;
-    script->action = 0;
+    if (scriptGetScript(sid, &executedScript) == -1) {
+        return 0;
+    }
+
+    executedScript->source = nullptr;
+    executedScript->action = 0;
 
     return 0;
 }
@@ -2598,11 +2608,9 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 
     int builtTile = builtTileCreate(tile, elevation);
 
+    std::vector<int> spatialScriptIds;
     for (Script* script = scriptGetFirstSpatialScript(elevation); script != nullptr; script = scriptGetNextSpatialScript()) {
-        if (builtTile == script->sp.built_tile) {
-            // NOTE: Uninline.
-            scriptSetObjects(script->sid, object, nullptr);
-        } else {
+        if (builtTile != script->sp.built_tile) {
             if (script->sp.radius == 0) {
                 continue;
             }
@@ -2611,12 +2619,17 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
             if (distance > script->sp.radius) {
                 continue;
             }
-
-            // NOTE: Uninline.
-            scriptSetObjects(script->sid, object, nullptr);
         }
 
-        scriptExecProc(script->sid, SCRIPT_PROC_SPATIAL);
+        spatialScriptIds.push_back(script->sid);
+    }
+
+    for (int sid : spatialScriptIds) {
+        // NOTE: Uninline.
+        if (scriptSetObjects(sid, object, nullptr) == -1) {
+            continue;
+        }
+        scriptExecProc(sid, SCRIPT_PROC_SPATIAL);
     }
 
     gSpatialsEnabled = true;
@@ -2628,6 +2641,7 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 // 0x4A677C
 int scriptsExecStartProc()
 {
+    // note: this could do weird things if scripts/object are deleted while running these procs
     for (int scriptListIndex = 0; scriptListIndex < SCRIPT_TYPE_COUNT; scriptListIndex++) {
         ScriptList* scriptList = &(gScriptLists[scriptListIndex]);
         ScriptListExtent* extent = scriptList->head;
