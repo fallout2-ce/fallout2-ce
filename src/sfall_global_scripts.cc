@@ -37,7 +37,7 @@ static GlobalScriptsState* state = nullptr;
 static bool sfall_gl_scr_is_game_script(const char* fileName)
 {
     for (int index = 0; index < scriptsGetListLength(); index++) {
-        char gameScriptFileName[20];
+        char gameScriptFileName[100];
         if (scriptsGetFileName(index, gameScriptFileName, sizeof(gameScriptFileName)) == -1) {
             continue;
         }
