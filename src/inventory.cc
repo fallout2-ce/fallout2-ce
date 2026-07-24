@@ -4631,8 +4631,6 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
-    ScopedGameMode gm(GameMode::kLoot);
-
     if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
         inventoryDisplayMessage(50); // You can't find anything to take from that.
         return 0;
@@ -4782,6 +4780,9 @@ int inventoryOpenLooting(Object* looter, Object* target)
     gInventoryWindowDudeRotationTimestamp = 0;
     _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
+
+    // Trigger game mode change _after_ window and loot_obj are set up
+    ScopedGameMode gm(GameMode::kLoot);
 
     bool isCaughtStealing = false;
     int stealingXp = 0;
