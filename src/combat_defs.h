@@ -28,7 +28,6 @@ inline CriticalEffect operator++(CriticalEffect& e, int)
     return result;
 }
 
-
 inline static bool criticalEffectIsValid(int effect)
 {
     return effect >= CRITICAL_EFFECT_FIRST && effect < CRITICAL_EFFECT_COUNT;

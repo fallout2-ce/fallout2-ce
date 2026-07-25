@@ -2475,7 +2475,7 @@ static void characterEditorDrawPrimaryStat(int stat, bool animate, int previousV
     if (stat == RENDER_ALL_STATS) {
         // NOTE: Original code is different, looks like tail recursion
         // optimization.
-        for (stat = EDITOR_FIRST_PRIMARY_STAT ; stat <= EDITOR_LAST_PRIMARY_STAT; stat++) {
+        for (stat = EDITOR_FIRST_PRIMARY_STAT; stat <= EDITOR_LAST_PRIMARY_STAT; stat++) {
             characterEditorDrawPrimaryStat(stat, 0, 0);
         }
         return;

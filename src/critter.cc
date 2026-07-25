@@ -773,7 +773,7 @@ char* killTypeGetName(KillType killType)
         MessageListItem messageListItem;
         return getmsg(&gProtoMessageList, &messageListItem, 1450 + killType);
     }
-    
+
     return empty;
 }
 
