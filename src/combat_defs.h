@@ -5,12 +5,34 @@
 
 #define EXPLOSION_TARGET_COUNT (6)
 
-#define CRTICIAL_EFFECT_COUNT (6)
-
 #define WEAPON_CRITICAL_FAILURE_TYPE_COUNT (7)
 #define WEAPON_CRITICAL_FAILURE_EFFECT_COUNT (5)
 
 namespace fallout {
+
+enum CriticalEffect : int {
+    CRITICAL_EFFECT_1 = 0,
+    CRITICAL_EFFECT_2 = 1,
+    CRITICAL_EFFECT_3 = 2,
+    CRITICAL_EFFECT_4 = 3,
+    CRITICAL_EFFECT_5 = 4,
+    CRITICAL_EFFECT_6 = 5,
+    CRITICAL_EFFECT_COUNT = 6,
+    CRITICAL_EFFECT_FIRST = CRITICAL_EFFECT_1
+};
+
+inline CriticalEffect operator++(CriticalEffect& e, int)
+{
+    CriticalEffect result = e;
+    e = static_cast<CriticalEffect>(static_cast<int>(e) + 1);
+    return result;
+}
+
+
+inline static bool criticalEffectIsValid(int effect)
+{
+    return effect >= CRITICAL_EFFECT_FIRST && effect < CRITICAL_EFFECT_COUNT;
+}
 
 enum CombatState : unsigned int {
     COMBAT_STATE_OUT_COMBAT = 0x00,
@@ -95,11 +117,12 @@ enum HitMode : int {
     LAST_ADVANCED_KICK_HIT_MODE = HIT_MODE_PIERCING_KICK,
     FIRST_ADVANCED_UNARMED_HIT_MODE = FIRST_ADVANCED_PUNCH_HIT_MODE,
     LAST_ADVANCED_UNARMED_HIT_MODE = LAST_ADVANCED_KICK_HIT_MODE,
+    HIT_MODE_FIRST = HIT_MODE_LEFT_WEAPON_PRIMARY,
 };
 
 inline static bool hitModeIsValid(int hitMode)
 {
-    return hitMode >= HIT_MODE_LEFT_WEAPON_PRIMARY && hitMode < HIT_MODE_COUNT;
+    return hitMode >= HIT_MODE_FIRST && hitMode < HIT_MODE_COUNT;
 }
 
 inline HitMode operator++(HitMode& e, int)
@@ -121,11 +144,12 @@ enum HitLocation : int {
     HIT_LOCATION_UNCALLED = 8,
     HIT_LOCATION_COUNT = 9,
     HIT_LOCATION_SPECIFIC_COUNT = HIT_LOCATION_COUNT - 1,
+    HIT_LOCATION_FIRST = HIT_LOCATION_HEAD,
 };
 
 inline static bool hitLocationIsValid(int hitLocation)
 {
-    return hitLocation >= HIT_LOCATION_HEAD && hitLocation < HIT_LOCATION_COUNT;
+    return hitLocation >= HIT_LOCATION_FIRST && hitLocation < HIT_LOCATION_COUNT;
 }
 
 inline HitLocation operator++(HitLocation& e, int)
@@ -181,11 +205,12 @@ enum CriticalHitDataMember : int {
     CRIT_DATA_MEMBER_MESSAGE_ID = 5,
     CRIT_DATA_MEMBER_MASSIVE_CRITICAL_MESSAGE_ID = 6,
     CRIT_DATA_MEMBER_COUNT = 7,
+    CRIT_DATA_MEMBER_FIRST = CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER,
 };
 
 inline static bool criticalHitDataMemberIsValid(int criticalHitDataMember)
 {
-    return criticalHitDataMember >= CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER && criticalHitDataMember < CRIT_DATA_MEMBER_COUNT;
+    return criticalHitDataMember >= CRIT_DATA_MEMBER_FIRST && criticalHitDataMember < CRIT_DATA_MEMBER_COUNT;
 }
 
 inline CriticalHitDataMember operator++(CriticalHitDataMember& e, int)

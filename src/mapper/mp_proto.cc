@@ -553,16 +553,15 @@ int proto_critter_flags_modify(int pid)
 // 0x497520
 int mp_pick_kill_type()
 {
-    char* names[KILL_TYPE_COUNT];
-    int index;
+    char* names[KILL_TYPE_DEFAULT_COUNT];
 
-    for (index = 0; index < KILL_TYPE_COUNT; index++) {
-        names[index] = killTypeGetName(index);
+    for (KillType killType = KILL_TYPE_FIRST; killType < KILL_TYPE_DEFAULT_COUNT; killType++) {
+        names[killType] = killTypeGetName(killType);
     }
 
     return _win_list_select("Kill Type",
         names,
-        KILL_TYPE_COUNT,
+        KILL_TYPE_DEFAULT_COUNT,
         nullptr,
         50,
         100,

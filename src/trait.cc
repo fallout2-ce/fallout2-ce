@@ -281,7 +281,7 @@ int traitGetStatModifier(int stat)
 // Returns skill modifier depending on selected traits.
 //
 // 0x4B40FC trait_adjust_skill
-int traitGetSkillModifier(int skill)
+int traitGetSkillModifier(Skill skill)
 {
     int modifier = 0;
 

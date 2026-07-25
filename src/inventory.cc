@@ -3004,7 +3004,7 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 
     int damageResistanceStat = STAT_DAMAGE_RESISTANCE;
     int damageThresholdStat = STAT_DAMAGE_THRESHOLD;
-    for (int damageType = 0; damageType < DAMAGE_TYPE_COUNT; damageType += 1) {
+    for (DamageType damageType = DAMAGE_TYPE_FIRST; damageType < DAMAGE_TYPE_COUNT; damageType++) {
         int damageResistanceBonus = critterGetBonusStat(critter, damageResistanceStat);
         int oldArmorDamageResistance = armorGetDamageResistance(oldArmor, damageType);
         int newArmorDamageResistance = armorGetDamageResistance(newArmor, damageType);

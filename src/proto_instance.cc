@@ -775,7 +775,7 @@ static UseItemResultCode _obj_use_book(Object* book)
     MessageListItem messageListItem;
 
     int messageId = -1;
-    int skill;
+    Skill skill;
 
     // SFALL
     if (!booksGetInfo(book->pid, &messageId, &skill)) {
@@ -1278,7 +1278,7 @@ UseItemResultCode objectUseItemOnInternal(Object* critter, Object* targetObj, Ob
 
     int messageId = -1;
     int skillBonus = 0;
-    int skill = -1;
+    Skill skill = SKILL_INVALID;
 
     switch (item->pid) {
     case PROTO_ID_DOCTORS_BAG:
@@ -1898,7 +1898,7 @@ int objectUseContainer(Object* critter, Object* item)
 }
 
 // 0x49D078
-int objectUseSkillOn(Object* source, Object* target, int skill)
+int objectUseSkillOn(Object* source, Object* target, Skill skill)
 {
     if (objectIsJammed(target)) {
         if (source == gDude) {

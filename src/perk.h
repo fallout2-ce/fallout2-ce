@@ -4,6 +4,7 @@
 #include "db.h"
 #include "obj_types.h"
 #include "perk_defs.h"
+#include "skill_defs.h"
 
 namespace fallout {
 
@@ -22,7 +23,7 @@ char* perkGetDescription(int perk);
 int perkGetFrmId(int perk);
 void perkAddEffect(Object* critter, int perk);
 void perkRemoveEffect(Object* critter, int perk);
-int perkGetSkillModifier(Object* critter, int skill);
+int perkGetSkillModifier(Object* critter, Skill skill);
 
 // Returns true if perk is valid.
 static inline bool perkIsValid(int perk)

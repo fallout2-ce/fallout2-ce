@@ -126,8 +126,16 @@ enum {
     EDITOR_DERIVED_STAT_COUNT,
 };
 
-enum {
+enum Editor : int {
     EDITOR_FIRST_PRIMARY_STAT,
+    EDITOR_LAST_PRIMARY_STAT = EDITOR_FIRST_PRIMARY_STAT + PRIMARY_STAT_COUNT - 1,
+    EDITOR_LEVEL = 7,
+    EDITOR_EXPERIENCE = 8,
+    EDITOR_NEXT_LEVEL = 9,
+    EDITOR_PERK_KARMA_KILLS = 10,
+    EDITOR_PERKS = 40,
+    EDITOR_KILLS = 41,
+    EDITOR_KARMA = 42,
     EDITOR_HIT_POINTS = 43,
     EDITOR_POISONED,
     EDITOR_RADIATED,
@@ -137,13 +145,30 @@ enum {
     EDITOR_CRIPPLED_RIGHT_LEG,
     EDITOR_CRIPPLED_LEFT_LEG,
     EDITOR_FIRST_DERIVED_STAT,
+    EDITOR_LAST_DERIVED_STAT = EDITOR_FIRST_DERIVED_STAT + EDITOR_DERIVED_STAT_COUNT - 1,
     EDITOR_FIRST_SKILL = EDITOR_FIRST_DERIVED_STAT + EDITOR_DERIVED_STAT_COUNT,
+    EDITOR_LAST_SKILL = EDITOR_FIRST_SKILL + SKILL_COUNT - 1,
     EDITOR_TAG_SKILL = EDITOR_FIRST_SKILL + SKILL_COUNT,
     EDITOR_SKILLS,
     EDITOR_OPTIONAL_TRAITS,
     EDITOR_FIRST_TRAIT,
+    EDITOR_LAST_TRAIT = EDITOR_FIRST_TRAIT + TRAIT_COUNT - 1,
     EDITOR_BUTTONS_COUNT = EDITOR_FIRST_TRAIT + TRAIT_COUNT,
 };
+
+inline Editor operator++(Editor& e, int)
+{
+    Editor result = e;
+    e = static_cast<Editor>(static_cast<int>(e) + 1);
+    return result;
+}
+
+inline Editor operator--(Editor& e, int)
+{
+    Editor result = e;
+    e = static_cast<Editor>(static_cast<int>(e) - 1);
+    return result;
+}
 
 enum {
     EDITOR_GRAPHIC_BIG_NUMBERS,
@@ -226,7 +251,7 @@ typedef struct PerkDialogOption {
 // TODO: Field order is probably wrong.
 typedef struct KillInfo {
     const char* name;
-    int killTypeId;
+    KillType killType;
     int kills;
 } KillInfo;
 
@@ -265,7 +290,7 @@ static int characterEditorDrawCardWithOptions(int graphicId, const char* name, c
 static void characterEditorHandleFolderButtonPressed();
 static void characterEditorHandleInfoButtonPressed(int eventCode);
 static void characterEditorHandleAdjustSkillButtonPressed(int a1);
-static void characterEditorToggleTaggedSkill(int skill);
+static void characterEditorToggleTaggedSkill(Skill skill);
 static void characterEditorDrawOptionalTraits();
 static void characterEditorToggleOptionalTrait(int trait);
 static void characterEditorDrawKarmaFolder();
@@ -465,7 +490,7 @@ static const int gCharacterEditorDerivedStatsMap[EDITOR_DERIVED_STAT_COUNT] = {
 static char byte_431D93[64];
 
 // 0x431DD4
-static const int dword_431DD4[7] = {
+static const int gPowerOfTen[7] = {
     1000000,
     100000,
     10000,
@@ -494,7 +519,7 @@ static const double dbl_5019BE = 14.4;
 static bool gCharacterEditorIsoWasEnabled = false;
 
 // 0x51852C skill_cursor
-static int gCharacterEditorCurrentSkill = 0;
+static Skill gCharacterEditorCurrentSkill = SKILL_SMALL_GUNS;
 
 // 0x518534 slider_y
 static int gCharacterEditorSkillValueAdjustmentSliderY = 27;
@@ -708,7 +733,7 @@ static int gCharacterEditorMouseY; // mouse y
 static int gCharacterEditorMouseX; // mouse x
 
 // 0x5707D0 info_line
-static int characterEditorSelectedItem;
+static Editor characterEditorSelectedItem;
 
 // 0x5707D4 folder
 static int characterEditorWindowSelectedFolder;
@@ -747,7 +772,7 @@ static int gCharacterEditorCardFrmId;
 static bool gCharacterEditorIsCreationMode;
 
 // 0x5709D4 tag_skill_back
-static int gCharacterEditorTaggedSkillsBackup[NUM_TAGGED_SKILLS];
+static Skill gCharacterEditorTaggedSkillsBackup[NUM_TAGGED_SKILLS];
 
 // 0x5709F0 trait_back
 static int gCharacterEditorOptionalTraitsBackup[3];
@@ -767,7 +792,7 @@ static int gCharacterEditorTempTraits[3];
 static int gCharacterEditorTaggedSkillCount;
 
 // 0x570A14 temp_tag_skill
-static int gCharacterEditorTempTaggedSkills[NUM_TAGGED_SKILLS];
+static Skill gCharacterEditorTempTaggedSkills[NUM_TAGGED_SKILLS];
 
 // 0x570A28 free_perk_back
 static char gCharacterEditorHasFreePerkBackup;
@@ -947,37 +972,37 @@ int characterEditorShow(bool isCreationMode)
         } else {
             switch (keyCode) {
             case KEY_TAB:
-                if (characterEditorSelectedItem >= 0 && characterEditorSelectedItem < 7) {
-                    characterEditorSelectedItem = gCharacterEditorIsCreationMode ? 82 : 7;
-                } else if (characterEditorSelectedItem >= 7 && characterEditorSelectedItem < 9) {
+                if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
+                    characterEditorSelectedItem = gCharacterEditorIsCreationMode ? EDITOR_FIRST_TRAIT : EDITOR_LEVEL;
+                } else if (characterEditorSelectedItem >= EDITOR_LEVEL && characterEditorSelectedItem < EDITOR_NEXT_LEVEL) {
                     if (gCharacterEditorIsCreationMode) {
-                        characterEditorSelectedItem = 82;
+                        characterEditorSelectedItem = EDITOR_FIRST_TRAIT;
                     } else {
-                        characterEditorSelectedItem = 10;
-                        characterEditorWindowSelectedFolder = 0;
+                        characterEditorSelectedItem = EDITOR_PERK_KARMA_KILLS;
+                        characterEditorWindowSelectedFolder = EDITOR_FOLDER_PERKS;
                     }
-                } else if (characterEditorSelectedItem >= 10 && characterEditorSelectedItem < 43) {
+                } else if (characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) {
                     switch (characterEditorWindowSelectedFolder) {
                     case EDITOR_FOLDER_PERKS:
-                        characterEditorSelectedItem = 10;
+                        characterEditorSelectedItem = EDITOR_PERK_KARMA_KILLS;
                         characterEditorWindowSelectedFolder = EDITOR_FOLDER_KARMA;
                         break;
                     case EDITOR_FOLDER_KARMA:
-                        characterEditorSelectedItem = 10;
+                        characterEditorSelectedItem = EDITOR_PERK_KARMA_KILLS;
                         characterEditorWindowSelectedFolder = EDITOR_FOLDER_KILLS;
                         break;
                     case EDITOR_FOLDER_KILLS:
-                        characterEditorSelectedItem = 43;
+                        characterEditorSelectedItem = EDITOR_HIT_POINTS;
                         break;
                     }
-                } else if (characterEditorSelectedItem >= 43 && characterEditorSelectedItem < 51) {
-                    characterEditorSelectedItem = 51;
-                } else if (characterEditorSelectedItem >= 51 && characterEditorSelectedItem < 61) {
-                    characterEditorSelectedItem = 61;
-                } else if (characterEditorSelectedItem >= 61 && characterEditorSelectedItem < 82) {
-                    characterEditorSelectedItem = 0;
-                } else if (characterEditorSelectedItem >= 82 && characterEditorSelectedItem < 98) {
-                    characterEditorSelectedItem = 43;
+                } else if (characterEditorSelectedItem >= EDITOR_HIT_POINTS && characterEditorSelectedItem <= EDITOR_CRIPPLED_LEFT_LEG) {
+                    characterEditorSelectedItem = EDITOR_FIRST_DERIVED_STAT;
+                } else if (characterEditorSelectedItem >= EDITOR_FIRST_DERIVED_STAT && characterEditorSelectedItem <= EDITOR_LAST_DERIVED_STAT) {
+                    characterEditorSelectedItem = EDITOR_FIRST_SKILL;
+                } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem < EDITOR_FIRST_TRAIT) {
+                    characterEditorSelectedItem = EDITOR_FIRST_PRIMARY_STAT;
+                } else if (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT) {
+                    characterEditorSelectedItem = EDITOR_HIT_POINTS;
                 }
                 characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
                 characterEditorDrawOptionalTraits();
@@ -991,22 +1016,22 @@ int characterEditorShow(bool isCreationMode)
             case KEY_ARROW_LEFT:
             case KEY_MINUS:
             case KEY_UPPERCASE_J:
-                if (characterEditorSelectedItem >= 0 && characterEditorSelectedItem < 7) {
+                if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
                     if (gCharacterEditorIsCreationMode) {
                         _win_button_press_and_release(gCharacterEditorPrimaryStatMinusBtns[characterEditorSelectedItem]);
                         windowRefresh(gCharacterEditorWindow);
                     }
-                } else if (characterEditorSelectedItem >= 61 && characterEditorSelectedItem < 79) {
+                } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
                     if (gCharacterEditorIsCreationMode) {
-                        _win_button_press_and_release(gCharacterEditorTagSkillBtns[characterEditorSelectedItem - 61]);
+                        _win_button_press_and_release(gCharacterEditorTagSkillBtns[characterEditorSelectedItem - EDITOR_FIRST_SKILL]);
                         windowRefresh(gCharacterEditorWindow);
                     } else {
                         characterEditorHandleAdjustSkillButtonPressed(keyCode);
                         windowRefresh(gCharacterEditorWindow);
                     }
-                } else if (characterEditorSelectedItem >= 82 && characterEditorSelectedItem < 98) {
+                } else if (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT) {
                     if (gCharacterEditorIsCreationMode) {
-                        _win_button_press_and_release(gCharacterEditorOptionalTraitBtns[characterEditorSelectedItem - 82]);
+                        _win_button_press_and_release(gCharacterEditorOptionalTraitBtns[characterEditorSelectedItem - EDITOR_FIRST_TRAIT]);
                         windowRefresh(gCharacterEditorWindow);
                     }
                 }
@@ -1014,29 +1039,29 @@ int characterEditorShow(bool isCreationMode)
             case KEY_ARROW_RIGHT:
             case KEY_PLUS:
             case KEY_UPPERCASE_N:
-                if (characterEditorSelectedItem >= 0 && characterEditorSelectedItem < 7) {
+                if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
                     if (gCharacterEditorIsCreationMode) {
                         _win_button_press_and_release(gCharacterEditorPrimaryStatPlusBtns[characterEditorSelectedItem]);
                         windowRefresh(gCharacterEditorWindow);
                     }
-                } else if (characterEditorSelectedItem >= 61 && characterEditorSelectedItem < 79) {
+                } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
                     if (gCharacterEditorIsCreationMode) {
-                        _win_button_press_and_release(gCharacterEditorTagSkillBtns[characterEditorSelectedItem - 61]);
+                        _win_button_press_and_release(gCharacterEditorTagSkillBtns[characterEditorSelectedItem - EDITOR_FIRST_SKILL]);
                         windowRefresh(gCharacterEditorWindow);
                     } else {
                         characterEditorHandleAdjustSkillButtonPressed(keyCode);
                         windowRefresh(gCharacterEditorWindow);
                     }
-                } else if (characterEditorSelectedItem >= 82 && characterEditorSelectedItem < 98) {
+                } else if (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT) {
                     if (gCharacterEditorIsCreationMode) {
-                        _win_button_press_and_release(gCharacterEditorOptionalTraitBtns[characterEditorSelectedItem - 82]);
+                        _win_button_press_and_release(gCharacterEditorOptionalTraitBtns[characterEditorSelectedItem - EDITOR_FIRST_TRAIT]);
                         windowRefresh(gCharacterEditorWindow);
                     }
                 }
                 break;
             case KEY_ARROW_UP:
-                if (characterEditorSelectedItem >= 10 && characterEditorSelectedItem < 43) {
-                    if (characterEditorSelectedItem == 10) {
+                if (characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) {
+                    if (characterEditorSelectedItem == EDITOR_PERK_KARMA_KILLS) {
                         if (gCharacterEditorFolderViewTopLine > 0) {
                             characterEditorFolderViewScroll(-1);
                             characterEditorSelectedItem--;
@@ -1052,31 +1077,31 @@ int characterEditorShow(bool isCreationMode)
                     windowRefresh(gCharacterEditorWindow);
                 } else {
                     switch (characterEditorSelectedItem) {
-                    case 0:
-                        characterEditorSelectedItem = 6;
+                    case EDITOR_FIRST_PRIMARY_STAT:
+                        characterEditorSelectedItem = EDITOR_LAST_PRIMARY_STAT;
                         break;
-                    case 7:
-                        characterEditorSelectedItem = 9;
+                    case EDITOR_LEVEL:
+                        characterEditorSelectedItem = EDITOR_NEXT_LEVEL;
                         break;
-                    case 43:
-                        characterEditorSelectedItem = 50;
+                    case EDITOR_HIT_POINTS:
+                        characterEditorSelectedItem = EDITOR_CRIPPLED_LEFT_LEG;
                         break;
-                    case 51:
-                        characterEditorSelectedItem = 60;
+                    case EDITOR_FIRST_DERIVED_STAT:
+                        characterEditorSelectedItem = EDITOR_LAST_DERIVED_STAT;
                         break;
-                    case 61:
-                        characterEditorSelectedItem = 78;
+                    case EDITOR_FIRST_SKILL:
+                        characterEditorSelectedItem = EDITOR_LAST_SKILL;
                         break;
-                    case 82:
-                        characterEditorSelectedItem = 97;
+                    case EDITOR_FIRST_TRAIT:
+                        characterEditorSelectedItem = EDITOR_LAST_TRAIT;
                         break;
                     default:
-                        characterEditorSelectedItem -= 1;
+                        characterEditorSelectedItem--;
                         break;
                     }
 
-                    if (characterEditorSelectedItem >= 61 && characterEditorSelectedItem < 79) {
-                        gCharacterEditorCurrentSkill = characterEditorSelectedItem - 61;
+                    if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
+                        gCharacterEditorCurrentSkill = static_cast<Skill>(characterEditorSelectedItem - EDITOR_FIRST_SKILL);
                     }
 
                     characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
@@ -1090,9 +1115,9 @@ int characterEditorShow(bool isCreationMode)
                 }
                 break;
             case KEY_ARROW_DOWN:
-                if (characterEditorSelectedItem >= 10 && characterEditorSelectedItem < 43) {
-                    if (characterEditorSelectedItem - 10 < gCharacterEditorFolderViewCurrentLine - gCharacterEditorFolderViewTopLine) {
-                        if (characterEditorSelectedItem - 10 == gCharacterEditorFolderViewMaxLines - 1) {
+                if (characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) {
+                    if (characterEditorSelectedItem - EDITOR_PERK_KARMA_KILLS < gCharacterEditorFolderViewCurrentLine - gCharacterEditorFolderViewTopLine) {
+                        if (characterEditorSelectedItem - EDITOR_PERK_KARMA_KILLS == gCharacterEditorFolderViewMaxLines - 1) {
                             characterEditorFolderViewScroll(1);
                         }
 
@@ -1105,31 +1130,31 @@ int characterEditorShow(bool isCreationMode)
                     windowRefresh(gCharacterEditorWindow);
                 } else {
                     switch (characterEditorSelectedItem) {
-                    case 6:
-                        characterEditorSelectedItem = 0;
+                    case EDITOR_LAST_PRIMARY_STAT:
+                        characterEditorSelectedItem = EDITOR_FIRST_PRIMARY_STAT;
                         break;
-                    case 9:
-                        characterEditorSelectedItem = 7;
+                    case EDITOR_NEXT_LEVEL:
+                        characterEditorSelectedItem = EDITOR_LEVEL;
                         break;
-                    case 50:
-                        characterEditorSelectedItem = 43;
+                    case EDITOR_CRIPPLED_LEFT_LEG:
+                        characterEditorSelectedItem = EDITOR_HIT_POINTS;
                         break;
-                    case 60:
-                        characterEditorSelectedItem = 51;
+                    case EDITOR_LAST_DERIVED_STAT:
+                        characterEditorSelectedItem = EDITOR_FIRST_DERIVED_STAT;
                         break;
-                    case 78:
-                        characterEditorSelectedItem = 61;
+                    case EDITOR_LAST_SKILL:
+                        characterEditorSelectedItem = EDITOR_FIRST_SKILL;
                         break;
-                    case 97:
-                        characterEditorSelectedItem = 82;
+                    case EDITOR_LAST_TRAIT:
+                        characterEditorSelectedItem = EDITOR_FIRST_TRAIT;
                         break;
                     default:
-                        characterEditorSelectedItem += 1;
+                        characterEditorSelectedItem++;
                         break;
                     }
 
-                    if (characterEditorSelectedItem >= 61 && characterEditorSelectedItem < 79) {
-                        gCharacterEditorCurrentSkill = characterEditorSelectedItem - 61;
+                    if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
+                        gCharacterEditorCurrentSkill = static_cast<Skill>(characterEditorSelectedItem - EDITOR_FIRST_SKILL);
                     }
 
                     characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
@@ -1161,7 +1186,7 @@ int characterEditorShow(bool isCreationMode)
                 break;
             default:
                 if (gCharacterEditorIsCreationMode && (keyCode >= 536 && keyCode < 554)) {
-                    characterEditorToggleTaggedSkill(keyCode - 536);
+                    characterEditorToggleTaggedSkill(static_cast<Skill>(keyCode - 536));
                     windowRefresh(gCharacterEditorWindow);
                 } else if (gCharacterEditorIsCreationMode && (keyCode >= 555 && keyCode < 571)) {
                     characterEditorToggleOptionalTrait(keyCode - 555);
@@ -1888,7 +1913,7 @@ static void characterEditorWindowFree()
     if (gCharacterEditorIsCreationMode) {
         skillsSetTagged(gCharacterEditorTempTaggedSkills, 3);
         traitsSetSelected(gCharacterEditorTempTraits[0], gCharacterEditorTempTraits[1]);
-        characterEditorSelectedItem = 0;
+        characterEditorSelectedItem = EDITOR_FIRST_PRIMARY_STAT;
         critterAdjustHitPoints(gDude, 1000);
     }
 
@@ -1901,8 +1926,8 @@ void characterEditorInit()
 {
     int i;
 
-    characterEditorSelectedItem = 0;
-    gCharacterEditorCurrentSkill = 0;
+    characterEditorSelectedItem = EDITOR_FIRST_PRIMARY_STAT;
+    gCharacterEditorCurrentSkill = SKILL_SMALL_GUNS;
     gCharacterEditorSkillValueAdjustmentSliderY = 27;
     gCharacterEditorHasFreePerk = 0;
     characterEditorWindowSelectedFolder = EDITOR_FOLDER_PERKS;
@@ -2199,20 +2224,18 @@ static int characterEditorKillsCompare(const void* a1, const void* a2)
 // 0x4344A4 ListKills
 static int characterEditorDrawKillsFolder()
 {
-    int i;
-    int killsCount;
-    KillInfo kills[19];
+    KillInfo kills[KILL_TYPE_DEFAULT_COUNT];
     int usedKills = 0;
     bool hasContent = false;
 
     characterEditorFolderViewClear();
 
-    for (i = 0; i < KILL_TYPE_COUNT; i++) {
-        killsCount = killsGetByType(i);
+    for (KillType killType = KILL_TYPE_FIRST; killType < KILL_TYPE_DEFAULT_COUNT; killType++) {
+        int killsCount = killsGetByType(killType);
         if (killsCount != 0) {
             KillInfo* killInfo = &(kills[usedKills]);
-            killInfo->name = killTypeGetName(i);
-            killInfo->killTypeId = i;
+            killInfo->name = killTypeGetName(killType);
+            killInfo->killType = killType;
             killInfo->kills = killsCount;
             usedKills++;
         }
@@ -2221,13 +2244,13 @@ static int characterEditorDrawKillsFolder()
     if (usedKills != 0) {
         qsort(kills, usedKills, sizeof(*kills), characterEditorKillsCompare);
 
-        for (i = 0; i < usedKills; i++) {
+        for (int i = 0; i < usedKills; i++) {
             KillInfo* killInfo = &(kills[i]);
             if (characterEditorFolderViewDrawKillsEntry(killInfo->name, killInfo->kills)) {
                 gCharacterEditorFolderCardFrmId = 46;
                 gCharacterEditorFolderCardTitle = gCharacterEditorFolderCardString;
                 gCharacterEditorFolderCardSubtitle = nullptr;
-                gCharacterEditorFolderCardDescription = killTypeGetDescription(kills[i].killTypeId);
+                gCharacterEditorFolderCardDescription = killTypeGetDescription(kills[i].killType);
                 snprintf(gCharacterEditorFolderCardString, sizeof(gCharacterEditorFolderCardString), "%s %s", killInfo->name, getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 126));
                 hasContent = true;
             }
@@ -2384,7 +2407,7 @@ static void characterEditorDrawPcStats()
 
     // LEVEL
     y = 280;
-    if (characterEditorSelectedItem != 7) {
+    if (characterEditorSelectedItem != EDITOR_LEVEL) {
         color = COLOR_GREEN;
     } else {
         color = COLOR_LIGHT_YELLOW;
@@ -2398,7 +2421,7 @@ static void characterEditorDrawPcStats()
 
     // EXPERIENCE
     y += fontGetLineHeight() + 1;
-    if (characterEditorSelectedItem != 8) {
+    if (characterEditorSelectedItem != EDITOR_EXPERIENCE) {
         color = COLOR_GREEN;
     } else {
         color = COLOR_LIGHT_YELLOW;
@@ -2412,7 +2435,7 @@ static void characterEditorDrawPcStats()
 
     // EXP NEEDED TO NEXT LEVEL
     y += fontGetLineHeight() + 1;
-    if (characterEditorSelectedItem != 9) {
+    if (characterEditorSelectedItem != EDITOR_NEXT_LEVEL) {
         color = COLOR_GREEN;
     } else {
         color = COLOR_LIGHT_YELLOW;
@@ -2452,7 +2475,7 @@ static void characterEditorDrawPrimaryStat(int stat, bool animate, int previousV
     if (stat == RENDER_ALL_STATS) {
         // NOTE: Original code is different, looks like tail recursion
         // optimization.
-        for (stat = 0; stat < 7; stat++) {
+        for (stat = EDITOR_FIRST_PRIMARY_STAT ; stat <= EDITOR_LAST_PRIMARY_STAT; stat++) {
             characterEditorDrawPrimaryStat(stat, 0, 0);
         }
         return;
@@ -2926,16 +2949,15 @@ static void characterEditorDrawDerivedStats()
 // 0x436154 ListSkills
 static void characterEditorDrawSkills(int a1)
 {
-    int selectedSkill = -1;
+    Skill selectedSkill = SKILL_INVALID;
     const char* str;
-    int i;
     int color;
     int y;
     int value;
     char valueString[32];
 
-    if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem < 79) {
-        selectedSkill = characterEditorSelectedItem - EDITOR_FIRST_SKILL;
+    if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
+        selectedSkill = static_cast<Skill>(characterEditorSelectedItem - EDITOR_FIRST_SKILL);
     }
 
     if (!gCharacterEditorIsCreationMode && a1 == 0) {
@@ -2978,25 +3000,25 @@ static void characterEditorDrawSkills(int a1)
     fontSetCurrent(101);
 
     y = 27;
-    for (i = 0; i < SKILL_COUNT; i++) {
-        if (i == selectedSkill) {
-            if (i != gCharacterEditorTempTaggedSkills[0] && i != gCharacterEditorTempTaggedSkills[1] && i != gCharacterEditorTempTaggedSkills[2] && i != gCharacterEditorTempTaggedSkills[3]) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
+        if (skill == selectedSkill) {
+            if (skill != gCharacterEditorTempTaggedSkills[0] && skill != gCharacterEditorTempTaggedSkills[1] && skill != gCharacterEditorTempTaggedSkills[2] && skill != gCharacterEditorTempTaggedSkills[3]) {
                 color = COLOR_LIGHT_YELLOW;
             } else {
                 color = COLOR_WHITE;
             }
         } else {
-            if (i != gCharacterEditorTempTaggedSkills[0] && i != gCharacterEditorTempTaggedSkills[1] && i != gCharacterEditorTempTaggedSkills[2] && i != gCharacterEditorTempTaggedSkills[3]) {
+            if (skill != gCharacterEditorTempTaggedSkills[0] && skill != gCharacterEditorTempTaggedSkills[1] && skill != gCharacterEditorTempTaggedSkills[2] && skill != gCharacterEditorTempTaggedSkills[3]) {
                 color = COLOR_GREEN;
             } else {
                 color = COLOR_LIGHT_GREY;
             }
         }
 
-        str = skillGetName(i);
+        str = skillGetName(skill);
         fontDrawText(gCharacterEditorWindowBuffer + 640 * y + 380, str, 640, 640, color);
 
-        value = skillGetValue(gDude, i);
+        value = skillGetValue(gDude, skill);
         snprintf(valueString, sizeof(valueString), "%d%%", value);
 
         fontDrawText(gCharacterEditorWindowBuffer + 640 * y + 573, valueString, 640, 640, color);
@@ -3063,21 +3085,21 @@ static void characterEditorDrawCard()
     char* title;
     char* description;
 
-    if (characterEditorSelectedItem < 0 || characterEditorSelectedItem >= 98) {
+    if (characterEditorSelectedItem < EDITOR_FIRST_PRIMARY_STAT || characterEditorSelectedItem > EDITOR_LAST_TRAIT) {
         return;
     }
 
     blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (640 * 267) + 345, 277, 170, 640, gCharacterEditorWindowBuffer + (267 * 640) + 345, 640);
 
-    if (characterEditorSelectedItem >= 0 && characterEditorSelectedItem < 7) {
+    if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
         description = statGetDescription(characterEditorSelectedItem);
         title = statGetName(characterEditorSelectedItem);
         graphicId = statGetFrmId(characterEditorSelectedItem);
         characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
-    } else if (characterEditorSelectedItem >= 7 && characterEditorSelectedItem < 10) {
+    } else if (characterEditorSelectedItem >= EDITOR_LEVEL && characterEditorSelectedItem <= EDITOR_NEXT_LEVEL) {
         if (gCharacterEditorIsCreationMode) {
             switch (characterEditorSelectedItem) {
-            case 7:
+            case EDITOR_LEVEL:
                 // Character Points
                 description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 121);
                 title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 120);
@@ -3086,17 +3108,17 @@ static void characterEditorDrawCard()
             }
         } else {
             switch (characterEditorSelectedItem) {
-            case 7:
+            case EDITOR_LEVEL:
                 description = pcStatGetDescription(PC_STAT_LEVEL);
                 title = pcStatGetName(PC_STAT_LEVEL);
                 characterEditorDrawCardWithOptions(7, title, nullptr, description);
                 break;
-            case 8:
+            case EDITOR_EXPERIENCE:
                 description = pcStatGetDescription(PC_STAT_EXPERIENCE);
                 title = pcStatGetName(PC_STAT_EXPERIENCE);
                 characterEditorDrawCardWithOptions(8, title, nullptr, description);
                 break;
-            case 9:
+            case EDITOR_NEXT_LEVEL:
                 // Next Level
                 description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 123);
                 title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 122);
@@ -3104,9 +3126,9 @@ static void characterEditorDrawCard()
                 break;
             }
         }
-    } else if ((characterEditorSelectedItem >= 10 && characterEditorSelectedItem < 43) || (characterEditorSelectedItem >= 82 && characterEditorSelectedItem < 98)) {
+    } else if ((characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) || (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT)) {
         characterEditorDrawCardWithOptions(gCharacterEditorFolderCardFrmId, gCharacterEditorFolderCardTitle, gCharacterEditorFolderCardSubtitle, gCharacterEditorFolderCardDescription);
-    } else if (characterEditorSelectedItem >= 43 && characterEditorSelectedItem < 51) {
+    } else if (characterEditorSelectedItem >= EDITOR_HIT_POINTS && characterEditorSelectedItem <= EDITOR_CRIPPLED_LEFT_LEG) {
         switch (characterEditorSelectedItem) {
         case EDITOR_HIT_POINTS:
             description = statGetDescription(STAT_MAXIMUM_HIT_POINTS);
@@ -3150,15 +3172,15 @@ static void characterEditorDrawCard()
             characterEditorDrawCardWithOptions(17, title, nullptr, description);
             break;
         }
-    } else if (characterEditorSelectedItem >= EDITOR_FIRST_DERIVED_STAT && characterEditorSelectedItem < 61) {
-        int derivedStatIndex = characterEditorSelectedItem - 51;
+    } else if (characterEditorSelectedItem >= EDITOR_FIRST_DERIVED_STAT && characterEditorSelectedItem <= EDITOR_LAST_DERIVED_STAT) {
+        int derivedStatIndex = characterEditorSelectedItem - EDITOR_FIRST_DERIVED_STAT;
         int stat = gCharacterEditorDerivedStatsMap[derivedStatIndex];
         description = statGetDescription(stat);
         title = statGetName(stat);
         graphicId = gCharacterEditorDerivedStatFrmIds[derivedStatIndex];
         characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
-    } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem < 79) {
-        int skill = characterEditorSelectedItem - 61;
+    } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
+        Skill skill = static_cast<Skill>(characterEditorSelectedItem - EDITOR_FIRST_SKILL);
         const char* attributesDescription = skillGetAttributes(skill);
 
         char formatted[150]; // TODO: Size is probably wrong.
@@ -3170,7 +3192,7 @@ static void characterEditorDrawCard()
         title = skillGetName(skill);
         description = skillGetDescription(skill);
         characterEditorDrawCardWithOptions(graphicId, title, formatted, description);
-    } else if (characterEditorSelectedItem >= 79 && characterEditorSelectedItem < 82) {
+    } else if (characterEditorSelectedItem >= EDITOR_TAG_SKILL && characterEditorSelectedItem < EDITOR_FIRST_TRAIT) {
         switch (characterEditorSelectedItem) {
         case EDITOR_TAG_SKILL:
             if (gCharacterEditorIsCreationMode) {
@@ -3759,7 +3781,7 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
                 critterUpdateDerivedStats(gDude);
                 characterEditorDrawDerivedStats();
                 characterEditorDrawSkills(0);
-                characterEditorSelectedItem = decrementingStat;
+                characterEditorSelectedItem = static_cast<Editor>(decrementingStat);
             } else {
                 int previousValue = critterGetBaseStatWithTraitModifier(gDude, incrementingStat);
                 previousValue += critterGetBonusStat(gDude, incrementingStat);
@@ -3774,7 +3796,7 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
                 critterUpdateDerivedStats(gDude);
                 characterEditorDrawDerivedStats();
                 characterEditorDrawSkills(0);
-                characterEditorSelectedItem = incrementingStat;
+                characterEditorSelectedItem = static_cast<Editor>(incrementingStat);
             }
 
             windowRefresh(gCharacterEditorWindow);
@@ -4642,8 +4664,8 @@ static int characterPrintToFile(const char* fileName)
     snprintf(title1, sizeof(title1), "%s\n", getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 653));
     fileWriteString(title1, stream);
 
-    int killType = 0;
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    KillType killType = KILL_TYPE_MAN;
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         snprintf(title1, sizeof(title1), "%s ", skillGetName(skill));
 
         // NOTE: Uninline.
@@ -4651,7 +4673,7 @@ static int characterPrintToFile(const char* fileName)
 
         bool hasKillType = false;
 
-        for (; killType < KILL_TYPE_COUNT; killType++) {
+        for (; killType < KILL_TYPE_DEFAULT_COUNT; killType++) {
             int killsCount = killsGetByType(killType);
             if (killsCount > 0) {
                 snprintf(title2, sizeof(title2), "%s ", killTypeGetName(killType));
@@ -4766,10 +4788,10 @@ static char* _AddDots(char* string, int length)
 // 0x43A4BC ResetScreen
 static void characterEditorResetScreen()
 {
-    characterEditorSelectedItem = 0;
-    gCharacterEditorCurrentSkill = 0;
+    characterEditorSelectedItem = EDITOR_FIRST_PRIMARY_STAT;
+    gCharacterEditorCurrentSkill = SKILL_SMALL_GUNS;
     gCharacterEditorSkillValueAdjustmentSliderY = 27;
-    characterEditorWindowSelectedFolder = 0;
+    characterEditorWindowSelectedFolder = EDITOR_FOLDER_PERKS;
 
     if (gCharacterEditorIsCreationMode) {
         characterEditorDrawBigNumber(126, 282, 0, gCharacterEditorRemainingCharacterPoints, 0, gCharacterEditorWindow);
@@ -4783,7 +4805,7 @@ static void characterEditorResetScreen()
     characterEditorDrawGender();
     characterEditorDrawOptionalTraits();
     characterEditorDrawSkills(0);
-    characterEditorDrawPrimaryStat(7, 0, 0);
+    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
     characterEditorDrawDerivedStats();
     characterEditorDrawCard();
     windowRefresh(gCharacterEditorWindow);
@@ -4835,7 +4857,7 @@ static void characterEditorSavePlayer()
 
     traitsGetSelected(&(gCharacterEditorOptionalTraitsBackup[0]), &(gCharacterEditorOptionalTraitsBackup[1]));
 
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         gCharacterEditorSkillsBackup[skill] = skillGetValue(gDude, skill);
     }
 }
@@ -4903,8 +4925,8 @@ static void characterEditorRestorePlayer()
 // 0x43A9CC itostndn
 static char* _itostndn(int value, char* dest)
 {
-    int v16[7];
-    memcpy(v16, dword_431DD4, sizeof(v16));
+    int powerOfTen[7];
+    memcpy(powerOfTen, gPowerOfTen, sizeof(powerOfTen));
 
     char* savedDest = dest;
 
@@ -4913,7 +4935,7 @@ static char* _itostndn(int value, char* dest)
 
         bool v3 = false;
         for (int index = 0; index < 7; index++) {
-            int v18 = value / v16[index];
+            int v18 = value / powerOfTen[index];
             if (v18 > 0 || v3) {
                 char temp[64]; // TODO: Size is probably wrong.
                 compat_itoa(v18, temp, 10);
@@ -4921,7 +4943,7 @@ static char* _itostndn(int value, char* dest)
 
                 v3 = true;
 
-                value -= v16[index] * v18;
+                value -= powerOfTen[index] * v18;
 
                 if (index == 0 || index == 3) {
                     strcat(dest, ",");
@@ -5024,13 +5046,13 @@ static void characterEditorHandleFolderButtonPressed()
     soundPlayFile("ib3p1xx1");
 
     if (gCharacterEditorMouseX >= 208) {
-        characterEditorSelectedItem = 41;
+        characterEditorSelectedItem = EDITOR_KILLS;
         characterEditorWindowSelectedFolder = EDITOR_FOLDER_KILLS;
     } else if (gCharacterEditorMouseX > 110) {
-        characterEditorSelectedItem = 42;
+        characterEditorSelectedItem = EDITOR_KARMA;
         characterEditorWindowSelectedFolder = EDITOR_FOLDER_KARMA;
     } else {
-        characterEditorSelectedItem = 40;
+        characterEditorSelectedItem = EDITOR_PERKS;
         characterEditorWindowSelectedFolder = EDITOR_FOLDER_PERKS;
     }
 
@@ -5048,7 +5070,7 @@ static void characterEditorHandleInfoButtonPressed(int eventCode)
         if (1) {
             // TODO: Original code is slightly different.
             double mouseY = gCharacterEditorMouseY;
-            for (int index = 0; index < 7; index++) {
+            for (Editor index = EDITOR_FIRST_PRIMARY_STAT; index <= EDITOR_LAST_PRIMARY_STAT; index++) {
                 double buttonTop = gCharacterEditorPrimaryStatY[index];
                 double buttonBottom = gCharacterEditorPrimaryStatY[index] + 22;
                 double allowance = 5.0 - index * 0.25;
@@ -5061,14 +5083,14 @@ static void characterEditorHandleInfoButtonPressed(int eventCode)
         break;
     case 526:
         if (gCharacterEditorIsCreationMode) {
-            characterEditorSelectedItem = 7;
+            characterEditorSelectedItem = EDITOR_LEVEL;
         } else {
             int offset = gCharacterEditorMouseY - 280;
             if (offset < 0) {
                 offset = 0;
             }
 
-            characterEditorSelectedItem = offset / 10 + 7;
+            characterEditorSelectedItem = static_cast<Editor>(offset / 10 + EDITOR_LEVEL);
         }
         break;
     case 527:
@@ -5078,7 +5100,7 @@ static void characterEditorHandleInfoButtonPressed(int eventCode)
             if (offset < 0) {
                 offset = 0;
             }
-            characterEditorSelectedItem = offset / (fontGetLineHeight() + 1) + 10;
+            characterEditorSelectedItem = static_cast<Editor>(offset / (fontGetLineHeight() + 1) + EDITOR_PERK_KARMA_KILLS);
         }
         break;
     case 528:
@@ -5088,7 +5110,7 @@ static void characterEditorHandleInfoButtonPressed(int eventCode)
                 offset = 0;
             }
 
-            characterEditorSelectedItem = offset / 13 + 43;
+            characterEditorSelectedItem = static_cast<Editor>(offset / 13 + EDITOR_HIT_POINTS);
         }
         break;
     case 529: {
@@ -5097,11 +5119,11 @@ static void characterEditorHandleInfoButtonPressed(int eventCode)
             offset = 0;
         }
 
-        characterEditorSelectedItem = offset / 13 + 51;
+        characterEditorSelectedItem = static_cast<Editor>(offset / 13 + EDITOR_FIRST_DERIVED_STAT);
         break;
     }
     case 530:
-        characterEditorSelectedItem = 80;
+        characterEditorSelectedItem = EDITOR_SKILLS;
         break;
     case 531:
         if (1) {
@@ -5110,19 +5132,19 @@ static void characterEditorHandleInfoButtonPressed(int eventCode)
                 offset = 0;
             }
 
-            gCharacterEditorCurrentSkill = (int)(offset * 0.092307694);
-            if (gCharacterEditorCurrentSkill >= 18) {
-                gCharacterEditorCurrentSkill = 17;
+            gCharacterEditorCurrentSkill = static_cast<Skill>((int)(offset * 0.092307694));
+            if (gCharacterEditorCurrentSkill >= SKILL_COUNT) {
+                gCharacterEditorCurrentSkill = SKILL_OUTDOORSMAN;
             }
 
-            characterEditorSelectedItem = gCharacterEditorCurrentSkill + 61;
+            characterEditorSelectedItem = static_cast<Editor>(gCharacterEditorCurrentSkill + EDITOR_FIRST_SKILL);
         }
         break;
     case 532:
-        characterEditorSelectedItem = 79;
+        characterEditorSelectedItem = EDITOR_TAG_SKILL;
         break;
     case 533:
-        characterEditorSelectedItem = 81;
+        characterEditorSelectedItem = EDITOR_OPTIONAL_TRAITS;
         break;
     case 534:
         if (1) {
@@ -5145,9 +5167,9 @@ static void characterEditorHandleInfoButtonPressed(int eventCode)
                 index = 7;
             }
 
-            characterEditorSelectedItem = index + 82;
+            characterEditorSelectedItem = static_cast<Editor>(index + EDITOR_FIRST_TRAIT);
             if (gCharacterEditorMouseX >= 169) {
-                characterEditorSelectedItem += 8;
+                characterEditorSelectedItem = static_cast<Editor>(characterEditorSelectedItem + 8);
             }
         }
         break;
@@ -5260,7 +5282,7 @@ static void characterEditorHandleAdjustSkillButtonPressed(int keyCode)
                 }
             }
 
-            characterEditorSelectedItem = gCharacterEditorCurrentSkill + 61;
+            characterEditorSelectedItem = static_cast<Editor>(gCharacterEditorCurrentSkill + EDITOR_FIRST_SKILL);
             characterEditorDrawCard();
             characterEditorDrawSkills(1);
 
@@ -5296,13 +5318,13 @@ static void characterEditorHandleAdjustSkillButtonPressed(int keyCode)
 }
 
 // 0x43B67C TagSkillSelect
-static void characterEditorToggleTaggedSkill(int skill)
+static void characterEditorToggleTaggedSkill(Skill skill)
 {
     int insertionIndex;
 
     insertionIndex = 0;
-    for (int index = 3; index >= 0; index--) {
-        if (gCharacterEditorTempTaggedSkills[index] != -1) {
+    for (int index = NUM_TAGGED_SKILLS - 1; index >= 0; index--) {
+        if (gCharacterEditorTempTaggedSkills[index] != SKILL_INVALID) {
             break;
         }
         insertionIndex++;
@@ -5318,18 +5340,18 @@ static void characterEditorToggleTaggedSkill(int skill)
         if (skill == gCharacterEditorTempTaggedSkills[0]) {
             gCharacterEditorTempTaggedSkills[0] = gCharacterEditorTempTaggedSkills[1];
             gCharacterEditorTempTaggedSkills[1] = gCharacterEditorTempTaggedSkills[2];
-            gCharacterEditorTempTaggedSkills[2] = -1;
+            gCharacterEditorTempTaggedSkills[2] = SKILL_INVALID;
         } else if (skill == gCharacterEditorTempTaggedSkills[1]) {
             gCharacterEditorTempTaggedSkills[1] = gCharacterEditorTempTaggedSkills[2];
-            gCharacterEditorTempTaggedSkills[2] = -1;
+            gCharacterEditorTempTaggedSkills[2] = SKILL_INVALID;
         } else {
-            gCharacterEditorTempTaggedSkills[2] = -1;
+            gCharacterEditorTempTaggedSkills[2] = SKILL_INVALID;
         }
     } else {
         if (gCharacterEditorTaggedSkillCount > 0) {
             insertionIndex = 0;
-            for (int index = 0; index < 3; index++) {
-                if (gCharacterEditorTempTaggedSkills[index] == -1) {
+            for (int index = 0; index < NUM_TAGGED_SKILLS - 1; index++) {
+                if (gCharacterEditorTempTaggedSkills[index] == SKILL_INVALID) {
                     break;
                 }
                 insertionIndex++;
@@ -5350,7 +5372,7 @@ static void characterEditorToggleTaggedSkill(int skill)
     }
 
     insertionIndex = 0;
-    for (int index = 3; index >= 0; index--) {
+    for (int index = NUM_TAGGED_SKILLS - 1; index >= 0; index--) {
         if (gCharacterEditorTempTaggedSkills[index] != -1) {
             break;
         }
@@ -5363,7 +5385,7 @@ static void characterEditorToggleTaggedSkill(int skill)
 
     gCharacterEditorTaggedSkillCount = insertionIndex;
 
-    characterEditorSelectedItem = skill + 61;
+    characterEditorSelectedItem = static_cast<Editor>(skill + EDITOR_FIRST_SKILL);
     characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
     characterEditorDrawDerivedStats();
     characterEditorDrawSkills(2);
@@ -5385,8 +5407,8 @@ static void characterEditorDrawOptionalTraits()
         return;
     }
 
-    if (characterEditorSelectedItem >= 82 && characterEditorSelectedItem < 98) {
-        v0 = characterEditorSelectedItem - 82;
+    if (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT) {
+        v0 = characterEditorSelectedItem - EDITOR_FIRST_TRAIT;
     }
 
     blitBufferToBuffer(_editorBackgroundFrmImage.getData() + 640 * 353 + 47, 245, 100, 640, gCharacterEditorWindowBuffer + 640 * 353 + 47, 640);
@@ -5489,7 +5511,7 @@ static void characterEditorToggleOptionalTrait(int trait)
         gCharacterEditorTempTraitCount++;
     }
 
-    characterEditorSelectedItem = trait + EDITOR_FIRST_TRAIT;
+    characterEditorSelectedItem = static_cast<Editor>(trait + EDITOR_FIRST_TRAIT);
 
     characterEditorDrawOptionalTraits();
     characterEditorDrawSkills(0);
@@ -5755,7 +5777,7 @@ static int characterEditorUpdateLevel()
     }
 
     if (gCharacterEditorHasFreePerk != 0) {
-        characterEditorWindowSelectedFolder = 0;
+        characterEditorWindowSelectedFolder = EDITOR_FOLDER_PERKS;
         characterEditorDrawFolders();
         windowRefresh(gCharacterEditorWindow);
 
@@ -6491,8 +6513,9 @@ static void perkDialogRefreshSkills()
     perkDialogDrawSkills();
 
     char* name = gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].name;
-    char* description = skillGetDescription(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
-    int frmId = skillGetFrmId(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
+    Skill skill = static_cast<Skill>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
+    char* description = skillGetDescription(skill);
+    int frmId = skillGetFrmId(skill);
     perkDialogDrawCard(frmId, name, nullptr, description);
 
     windowRefresh(gPerkDialogWindow);
@@ -6528,7 +6551,7 @@ static bool perkDialogHandleTagPerk()
         return false;
     }
 
-    gCharacterEditorTempTaggedSkills[3] = gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value;
+    gCharacterEditorTempTaggedSkills[NUM_TAGGED_SKILLS - 1] = static_cast<Skill>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
     skillsSetTagged(gCharacterEditorTempTaggedSkills, NUM_TAGGED_SKILLS);
 
     return true;
@@ -6551,7 +6574,7 @@ static void perkDialogDrawSkills()
     int y = 43;
     int yStep = fontGetLineHeight() + 2;
 
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         if (skill != gCharacterEditorTempTaggedSkills[0] && skill != gCharacterEditorTempTaggedSkills[1] && skill != gCharacterEditorTempTaggedSkills[2] && skill != gCharacterEditorTempTaggedSkills[3]) {
             gPerkDialogOptionList[gPerkDialogOptionCount].value = skill;
             gPerkDialogOptionList[gPerkDialogOptionCount].name = skillGetName(skill);
@@ -6845,14 +6868,14 @@ static void characterEditorFolderViewScroll(int direction)
     if (direction >= 0) {
         if (gCharacterEditorFolderViewMaxLines + gCharacterEditorFolderViewTopLine <= gCharacterEditorFolderViewCurrentLine) {
             gCharacterEditorFolderViewTopLine++;
-            if (characterEditorSelectedItem >= 10 && characterEditorSelectedItem < 43 && characterEditorSelectedItem != 10) {
+            if (characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS && characterEditorSelectedItem != EDITOR_PERK_KARMA_KILLS) {
                 characterEditorSelectedItem--;
             }
         }
     } else {
         if (gCharacterEditorFolderViewTopLine > 0) {
             gCharacterEditorFolderViewTopLine--;
-            if (characterEditorSelectedItem >= 10 && characterEditorSelectedItem < 43 && gCharacterEditorFolderViewMaxLines + 9 > characterEditorSelectedItem) {
+            if (characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS && gCharacterEditorFolderViewMaxLines + 9 > characterEditorSelectedItem) {
                 characterEditorSelectedItem++;
             }
         }
@@ -6861,7 +6884,7 @@ static void characterEditorFolderViewScroll(int direction)
     *v1 = gCharacterEditorFolderViewTopLine;
     characterEditorDrawFolders();
 
-    if (characterEditorSelectedItem >= 10 && characterEditorSelectedItem < 43) {
+    if (characterEditorSelectedItem >= EDITOR_PERK_KARMA_KILLS && characterEditorSelectedItem < EDITOR_HIT_POINTS) {
         blitBufferToBuffer(
             _editorBackgroundFrmImage.getData() + 640 * 267 + 345,
             277,
@@ -6886,19 +6909,19 @@ static void characterEditorFolderViewClear()
     gCharacterEditorFolderViewMaxLines = 9;
     gCharacterEditorFolderViewOffsetY = v0 + 1;
 
-    if (characterEditorSelectedItem < 10 || characterEditorSelectedItem >= 43)
+    if (characterEditorSelectedItem < EDITOR_PERK_KARMA_KILLS || characterEditorSelectedItem >= EDITOR_HIT_POINTS)
         gCharacterEditorFolderViewHighlightedLine = -1;
     else
-        gCharacterEditorFolderViewHighlightedLine = characterEditorSelectedItem - 10;
+        gCharacterEditorFolderViewHighlightedLine = characterEditorSelectedItem - EDITOR_PERK_KARMA_KILLS;
 
-    if (characterEditorWindowSelectedFolder < 1) {
+    if (characterEditorWindowSelectedFolder < EDITOR_FOLDER_KARMA) {
         if (characterEditorWindowSelectedFolder)
             return;
 
         gCharacterEditorFolderViewTopLine = gCharacterEditorPerkFolderTopLine;
-    } else if (characterEditorWindowSelectedFolder == 1) {
+    } else if (characterEditorWindowSelectedFolder == EDITOR_FOLDER_KARMA) {
         gCharacterEditorFolderViewTopLine = gCharacterEditorKarmaFolderTopLine;
-    } else if (characterEditorWindowSelectedFolder == 2) {
+    } else if (characterEditorWindowSelectedFolder == EDITOR_FOLDER_PERKS) {
         gCharacterEditorFolderViewTopLine = gCharacterEditorKillsFolderTopLine;
     }
 }

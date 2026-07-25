@@ -80,7 +80,7 @@ static int _critterClearObjDrugs(Object* obj, void* data);
 static char _aCorpse[] = "corpse";
 
 // 0x501494
-static char byte_501494[] = "";
+static char empty[] = "";
 
 // 0x51833C name_critter
 static char* _name_critter = _aCorpse;
@@ -152,7 +152,7 @@ static char gDudeName[DUDE_NAME_MAX_LENGTH];
 static int _sneak_working;
 
 // 0x56D780 pc_kill_counts
-static int gKillsByType[KILL_TYPE_COUNT];
+static int gKillsByType[KILL_TYPE_DEFAULT_COUNT];
 
 // Something with radiation.
 //
@@ -679,15 +679,15 @@ int radiationEventWrite(File* stream, void* data)
 }
 
 // 0x42D82C critter_get_base_damage_type
-int critterGetDamageType(Object* obj)
+DamageType critterGetDamageType(Object* obj)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
-        return 0;
+        return DAMAGE_TYPE_NORMAL;
     }
 
     Proto* proto;
     if (protoGetProto(obj->pid, &proto) == -1) {
-        return 0;
+        return DAMAGE_TYPE_NORMAL;
     }
 
     return proto->critter.data.damageType;
@@ -703,9 +703,9 @@ static int critter_kill_count_clear()
 }
 
 // 0x42D878 critter_kill_count_inc
-int killsIncByType(int killType)
+int killsIncByType(KillType killType)
 {
-    if (killType != -1 && killType < KILL_TYPE_COUNT) {
+    if (killTypeIsValid(killType)) {
         gKillsByType[killType]++;
         return 0;
     }
@@ -714,9 +714,9 @@ int killsIncByType(int killType)
 }
 
 // 0x42D8A8 critter_kill_count
-int killsGetByType(int killType)
+int killsGetByType(KillType killType)
 {
-    if (killType != -1 && killType < KILL_TYPE_COUNT) {
+    if (killTypeIsValid(killType)) {
         return gKillsByType[killType];
     }
 
@@ -726,7 +726,7 @@ int killsGetByType(int killType)
 // 0x42D8C0 critter_kill_count_load
 int killsLoad(File* stream)
 {
-    if (fileReadInt32List(stream, gKillsByType, KILL_TYPE_COUNT) == -1) {
+    if (fileReadInt32List(stream, gKillsByType, KILL_TYPE_DEFAULT_COUNT) == -1) {
         fileClose(stream);
         return -1;
     }
@@ -737,7 +737,7 @@ int killsLoad(File* stream)
 // 0x42D8F0 critter_kill_count_save
 int killsSave(File* stream)
 {
-    if (fileWriteInt32List(stream, gKillsByType, KILL_TYPE_COUNT) == -1) {
+    if (fileWriteInt32List(stream, gKillsByType, KILL_TYPE_DEFAULT_COUNT) == -1) {
         fileClose(stream);
         return -1;
     }
@@ -746,7 +746,7 @@ int killsSave(File* stream)
 }
 
 // 0x42D920 critter_kill_count_type
-int critterGetKillType(Object* obj)
+KillType critterGetKillType(Object* obj)
 {
     if (obj == gDude) {
         int gender = critterGetStat(obj, STAT_GENDER);
@@ -757,7 +757,7 @@ int critterGetKillType(Object* obj)
     }
 
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
-        return -1;
+        return KILL_TYPE_INVALID;
     }
 
     Proto* proto;
@@ -767,33 +767,25 @@ int critterGetKillType(Object* obj)
 }
 
 // 0x42D974 critter_kill_name
-char* killTypeGetName(int killType)
+char* killTypeGetName(KillType killType)
 {
-    if (killType != -1 && killType < KILL_TYPE_COUNT) {
-        if (killType >= 0 && killType < KILL_TYPE_COUNT) {
-            MessageListItem messageListItem;
-            return getmsg(&gProtoMessageList, &messageListItem, 1450 + killType);
-        } else {
-            return nullptr;
-        }
-    } else {
-        return byte_501494;
+    if (killTypeIsValid(killType)) {
+        MessageListItem messageListItem;
+        return getmsg(&gProtoMessageList, &messageListItem, 1450 + killType);
     }
+    
+    return empty;
 }
 
 // 0x42D9B4 critter_kill_info
-char* killTypeGetDescription(int killType)
+char* killTypeGetDescription(KillType killType)
 {
-    if (killType != -1 && killType < KILL_TYPE_COUNT) {
-        if (killType >= 0 && killType < KILL_TYPE_COUNT) {
-            MessageListItem messageListItem;
-            return getmsg(&gProtoMessageList, &messageListItem, 1469 + killType);
-        } else {
-            return nullptr;
-        }
-    } else {
-        return byte_501494;
+    if (killTypeIsValid(killType)) {
+        MessageListItem messageListItem;
+        return getmsg(&gProtoMessageList, &messageListItem, 1469 + killType);
     }
+
+    return empty;
 }
 
 // 0x42D9F4 critter_heal_hours
@@ -1008,15 +1000,15 @@ bool critterIsProne(Object* critter)
 
 // critter_body_type
 // 0x42DDC4 critter_body_type
-int critterGetBodyType(Object* critter)
+BodyType critterGetBodyType(Object* critter)
 {
     if (critter == nullptr) {
         debugPrint("\nError: critter_body_type: pobj was NULL!");
-        return 0;
+        return BODY_TYPE_BIPED;
     }
 
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
-        return 0;
+        return BODY_TYPE_BIPED;
     }
 
     Proto* proto;
@@ -1091,9 +1083,9 @@ int gcdLoad(const char* path)
     }
 
     proto->critter.data.baseStats[STAT_DAMAGE_RESISTANCE_EMP] = 100;
-    proto->critter.data.bodyType = 0;
+    proto->critter.data.bodyType = BODY_TYPE_BIPED;
     proto->critter.data.experience = 0;
-    proto->critter.data.killType = 0;
+    proto->critter.data.killType = KILL_TYPE_MAN;
 
     fileClose(stream);
     return 0;
@@ -1105,10 +1097,10 @@ int protoCritterDataRead(File* stream, CritterProtoData* critterData)
     if (fileReadInt32(stream, &(critterData->flags)) == -1) return -1;
     if (fileReadInt32List(stream, critterData->baseStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileReadInt32List(stream, critterData->bonusStats, SAVEABLE_STAT_COUNT) == -1) return -1;
-    if (fileReadInt32List(stream, critterData->skills, SKILL_COUNT) == -1) return -1;
-    if (fileReadInt32(stream, &(critterData->bodyType)) == -1) return -1;
+    if (fileReadInt32List(stream, reinterpret_cast<int*>(critterData->skills), SKILL_COUNT) == -1) return -1;
+    if (fileReadInt32(stream, reinterpret_cast<int*>(&(critterData->bodyType))) == -1) return -1;
     if (fileReadInt32(stream, &(critterData->experience)) == -1) return -1;
-    if (fileReadInt32(stream, &(critterData->killType)) == -1) return -1;
+    if (fileReadInt32(stream, reinterpret_cast<int*>(&(critterData->killType))) == -1) return -1;
 
     // NOTE: For unknown reason damage type is not present in two protos: Sentry
     // Bot and Weak Brahmin. These two protos are 412 bytes, not 416.
@@ -1122,7 +1114,7 @@ int protoCritterDataRead(File* stream, CritterProtoData* critterData)
     //
     // Regardless of the reason, damage type is considered optional by original
     // code as seen at 0x42E01B.
-    if (fileReadInt32(stream, &(critterData->damageType)) == -1) {
+    if (fileReadInt32(stream, reinterpret_cast<int*>(&(critterData->damageType))) == -1) {
         critterData->damageType = DAMAGE_TYPE_NORMAL;
     }
 
@@ -1172,7 +1164,7 @@ int protoCritterDataWrite(File* stream, CritterProtoData* critterData)
     if (fileWriteInt32(stream, critterData->flags) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->baseStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->bonusStats, SAVEABLE_STAT_COUNT) == -1) return -1;
-    if (fileWriteInt32List(stream, critterData->skills, SKILL_COUNT) == -1) return -1;
+    if (fileWriteInt32List(stream, reinterpret_cast<int*>(critterData->skills), SKILL_COUNT) == -1) return -1;
     if (fileWriteInt32(stream, critterData->bodyType) == -1) return -1;
     if (fileWriteInt32(stream, critterData->experience) == -1) return -1;
     if (fileWriteInt32(stream, critterData->killType) == -1) return -1;

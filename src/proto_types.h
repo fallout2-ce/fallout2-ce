@@ -1,6 +1,8 @@
 #ifndef PROTO_TYPES_H
 #define PROTO_TYPES_H
 
+#include "skill_defs.h"
+
 namespace fallout {
 
 // Number of prototypes in prototype extent.
@@ -54,7 +56,7 @@ enum {
     MATERIAL_TYPE_COUNT,
 };
 
-enum {
+enum DamageType : int {
     DAMAGE_TYPE_NORMAL,
     DAMAGE_TYPE_LASER,
     DAMAGE_TYPE_FIRE,
@@ -63,7 +65,20 @@ enum {
     DAMAGE_TYPE_EMP,
     DAMAGE_TYPE_EXPLOSION,
     DAMAGE_TYPE_COUNT,
+    DAMAGE_TYPE_FIRST = DAMAGE_TYPE_NORMAL,
 };
+
+inline DamageType operator++(DamageType& e, int)
+{
+    DamageType result = e;
+    e = static_cast<DamageType>(static_cast<int>(e) + 1);
+    return result;
+}
+
+inline static bool damageTypeIsValid(int damageType)
+{
+    return damageType >= DAMAGE_TYPE_FIRST && damageType < DAMAGE_TYPE_COUNT;
+}
 
 enum {
     CALIBER_TYPE_NONE,
@@ -88,20 +103,37 @@ enum {
     CALIBER_TYPE_COUNT,
 };
 
-enum {
+enum RaceType : int {
     RACE_TYPE_CAUCASIAN,
     RACE_TYPE_AFRICAN,
     RACE_TYPE_COUNT,
+    RACE_TYPE_FIRST = RACE_TYPE_CAUCASIAN,
 };
 
-enum {
+inline RaceType operator++(RaceType& e, int)
+{
+    RaceType result = e;
+    e = static_cast<RaceType>(static_cast<int>(e) + 1);
+    return result;
+}
+
+enum BodyType : int {
     BODY_TYPE_BIPED,
     BODY_TYPE_QUADRUPED,
     BODY_TYPE_ROBOTIC,
     BODY_TYPE_COUNT,
+    BODY_TYPE_FIRST = BODY_TYPE_BIPED,
 };
 
-enum {
+inline BodyType operator++(BodyType& e, int)
+{
+    BodyType result = e;
+    e = static_cast<BodyType>(static_cast<int>(e) + 1);
+    return result;
+}
+
+enum KillType : int {
+    KILL_TYPE_INVALID = -1,
     KILL_TYPE_MAN,
     KILL_TYPE_WOMAN,
     KILL_TYPE_CHILD,
@@ -121,13 +153,33 @@ enum {
     KILL_TYPE_ALIEN,
     KILL_TYPE_GIANT_ANT,
     KILL_TYPE_BIG_BAD_BOSS,
-    KILL_TYPE_COUNT,
+    KILL_TYPE_DEFAULT_COUNT = 19,
 
     // Sfall has the option to treat kill type numbers as shorts, thus doubling
     // number of kill types it can deal with without breaking backwards
     // compatibility.
-    SFALL_KILL_TYPE_COUNT = KILL_TYPE_COUNT * 2,
+    KILL_TYPE_OVERRIDE_COUNT = KILL_TYPE_DEFAULT_COUNT * 2,
+    KILL_TYPE_PLAYER = KILL_TYPE_OVERRIDE_COUNT,
+    KILL_TYPE_FIRST = KILL_TYPE_MAN,
 };
+
+inline KillType operator++(KillType& e, int)
+{
+    KillType result = e;
+    e = static_cast<KillType>(static_cast<int>(e) + 1);
+    return result;
+}
+
+inline static bool killTypeIsValid(int killType)
+{
+    return killType >= KILL_TYPE_FIRST && killType < KILL_TYPE_DEFAULT_COUNT;
+}
+
+inline static bool killTypeOverrideIsValid(int killType)
+{
+    return killType >= KILL_TYPE_FIRST && killType < KILL_TYPE_OVERRIDE_COUNT;
+}
+
 
 enum {
     PROTO_ID_POWER_ARMOR = 3,
@@ -280,7 +332,7 @@ typedef struct {
     int animationCode; // d.animation_code
     int minDamage; // d.min_damage
     int maxDamage; // d.max_damage
-    int damageType; // d.dt
+    DamageType damageType; // d.dt
     int maxRange1; // d.max_range1
     int maxRange2; // d.max_range2
     int projectilePid; // d.proj_pid
@@ -359,12 +411,12 @@ typedef struct CritterProtoData {
     int flags; // d.flags
     int baseStats[35]; // d.stat_base
     int bonusStats[35]; // d.stat_bonus
-    int skills[18]; // d.stat_points
-    int bodyType; // d.body
+    int skills[SKILL_COUNT]; // d.stat_points
+    BodyType bodyType; // d.body
     int experience;
-    int killType;
+    KillType killType;
     // Looks like this is the "native" damage type when critter is unarmed.
-    int damageType;
+    DamageType damageType;
 } CritterProtoData;
 
 typedef struct CritterProto {

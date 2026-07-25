@@ -5,6 +5,8 @@
 #include "db.h"
 #include "obj_types.h"
 #include "proto_instance.h"
+#include "proto_types.h"
+#include "skill_defs.h"
 
 namespace fallout {
 
@@ -60,11 +62,11 @@ int itemIsQueued(Object* obj);
 Object* itemReplace(Object* owner, Object* itemToReplace, int flags);
 bool itemIsHidden(Object* obj);
 int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode);
-int weaponGetSkillForHitMode(Object* weapon, HitMode hitMode);
+Skill weaponGetSkillForHitMode(Object* weapon, HitMode hitMode);
 int weaponGetSkillValue(Object* critter, HitMode hitMode);
 int weaponGetDamageMinMax(Object* weapon, int* minDamagePtr, int* maxDamagePtr);
 int weaponGetDamage(Object* critter, HitMode hitMode);
-int weaponGetDamageType(Object* critter, Object* weapon);
+DamageType weaponGetDamageType(Object* critter, Object* weapon);
 int weaponIsTwoHanded(Object* weapon);
 int critterGetAnimationForHitMode(Object* critter, HitMode hitMode);
 int weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode);
@@ -101,8 +103,8 @@ int weaponGetAmmoDamageResistanceModifier(Object* weapon);
 int weaponGetAmmoDamageMultiplier(Object* weapon);
 int weaponGetAmmoDamageDivisor(Object* weapon);
 int armorGetArmorClass(Object* armor);
-int armorGetDamageResistance(Object* armor, int damageType);
-int armorGetDamageThreshold(Object* armor, int damageType);
+int armorGetDamageResistance(Object* armor, DamageType damageType);
+int armorGetDamageThreshold(Object* armor, DamageType damageType);
 int armorGetPerk(Object* armor);
 int armorGetMaleFid(Object* armor);
 int armorGetFemaleFid(Object* armor);
@@ -139,7 +141,7 @@ int itemCapsAdjust(Object* obj, int amount);
 int itemGetMoney(Object* obj);
 int itemSetMoney(Object* obj, int amount);
 
-bool booksGetInfo(int bookPid, int* messageIdPtr, int* skillPtr);
+bool booksGetInfo(int bookPid, int* messageIdPtr, Skill* skillPtr);
 bool explosionEmitsLight();
 void weaponSetGrenadeExplosionRadius(int value);
 void weaponSetRocketExplosionRadius(int value);
@@ -155,8 +157,8 @@ void explosionSetPattern(int startRotation, int endRotation);
 int explosionGetFrm();
 void explosionSetFrm(int frm);
 void explosionSetRadius(int radius);
-int explosionGetDamageType();
-void explosionSetDamageType(int damageType);
+DamageType explosionGetDamageType();
+void explosionSetDamageType(DamageType damageType);
 int explosionGetMaxTargets();
 void explosionSetMaxTargets(int maxTargets);
 bool itemIsHealing(int pid);

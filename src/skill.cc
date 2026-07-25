@@ -51,8 +51,8 @@ typedef struct SkillDescription {
     int gainXpFromSkillPenalty;
 } SkillDescription;
 
-static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int skillBonus);
-static int skillGetFreeUsageSlot(int skill);
+static void _show_skill_use_messages(Object* obj, Skill skill, Object* target, int successCount, int skillBonus);
+static int skillGetFreeUsageSlot(Skill skill);
 static int skill_use_slot_clear();
 
 // Damage flags which can be repaired using "Repair" skill.
@@ -114,7 +114,7 @@ int _gStealSize = 0;
 static int _timesSkillUsed[SKILL_COUNT][SKILLS_MAX_USES_PER_DAY];
 
 // 0x668070 tag_skill
-static int gTaggedSkills[NUM_TAGGED_SKILLS];
+static Skill gTaggedSkills[NUM_TAGGED_SKILLS];
 
 // skill.msg
 //
@@ -135,7 +135,7 @@ int skillsInit()
         return -1;
     }
 
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         MessageListItem messageListItem;
 
         messageListItem.num = 100 + skill;
@@ -155,7 +155,7 @@ int skillsInit()
     }
 
     for (int index = 0; index < NUM_TAGGED_SKILLS; index++) {
-        gTaggedSkills[index] = -1;
+        gTaggedSkills[index] = SKILL_INVALID;
     }
 
     // NOTE: Uninline.
@@ -170,7 +170,7 @@ int skillsInit()
 void skillsReset()
 {
     for (int index = 0; index < NUM_TAGGED_SKILLS; index++) {
-        gTaggedSkills[index] = -1;
+        gTaggedSkills[index] = SKILL_INVALID;
     }
 
     // NOTE: Uninline.
@@ -187,25 +187,25 @@ void skillsExit()
 // 0x4AA488
 int skillsLoad(File* stream)
 {
-    return fileReadInt32List(stream, gTaggedSkills, NUM_TAGGED_SKILLS);
+    return fileReadInt32List(stream, reinterpret_cast<int*>(gTaggedSkills), NUM_TAGGED_SKILLS);
 }
 
 // 0x4AA4A8
 int skillsSave(File* stream)
 {
-    return fileWriteInt32List(stream, gTaggedSkills, NUM_TAGGED_SKILLS);
+    return fileWriteInt32List(stream, reinterpret_cast<int*>(gTaggedSkills), NUM_TAGGED_SKILLS);
 }
 
 // 0x4AA4C8
 void protoCritterDataResetSkills(CritterProtoData* data)
 {
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         data->skills[skill] = 0;
     }
 }
 
 // 0x4AA4E4
-void skillsSetTagged(int* skills, int count)
+void skillsSetTagged(Skill* skills, int count)
 {
     for (int index = 0; index < count; index++) {
         gTaggedSkills[index] = skills[index];
@@ -213,7 +213,7 @@ void skillsSetTagged(int* skills, int count)
 }
 
 // 0x4AA508
-void skillsGetTagged(int* skills, int count)
+void skillsGetTagged(Skill* skills, int count)
 {
     for (int index = 0; index < count; index++) {
         skills[index] = gTaggedSkills[index];
@@ -221,7 +221,7 @@ void skillsGetTagged(int* skills, int count)
 }
 
 // 0x4AA52C
-bool skillIsTagged(int skill)
+bool skillIsTagged(Skill skill)
 {
     return skill == gTaggedSkills[0]
         || skill == gTaggedSkills[1]
@@ -230,7 +230,7 @@ bool skillIsTagged(int skill)
 }
 
 // 0x4AA558
-int skillGetValue(Object* critter, int skill)
+int skillGetValue(Object* critter, Skill skill)
 {
     if (!skillIsValid(skill)) {
         return -5;
@@ -279,13 +279,13 @@ int skillGetValue(Object* critter, int skill)
 }
 
 // 0x4AA654
-int skillGetDefaultValue(int skill)
+int skillGetDefaultValue(Skill skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].defaultValue : -5;
 }
 
 // 0x4AA6BC
-int skillAdd(Object* obj, int skill)
+int skillAdd(Object* obj, Skill skill)
 {
     if (obj != gDude) {
         return -5;
@@ -326,7 +326,7 @@ int skillAdd(Object* obj, int skill)
 }
 
 // 0x4AA7F8
-int skillAddForce(Object* obj, int skill)
+int skillAddForce(Object* obj, Skill skill)
 {
     if (obj != gDude) {
         return -5;
@@ -374,7 +374,7 @@ int skillsGetCost(int skillValue)
 // unspent skill points.
 //
 // 0x4AA8C4
-int skillSub(Object* critter, int skill)
+int skillSub(Object* critter, Skill skill)
 {
     if (critter != gDude) {
         return -5;
@@ -428,7 +428,7 @@ int skillSub(Object* critter, int skill)
 // Decrements specified skill value by one.
 //
 // 0x4AAA34
-int skillSubForce(Object* obj, int skill)
+int skillSubForce(Object* obj, Skill skill)
 {
     Proto* proto;
 
@@ -454,7 +454,7 @@ int skillSubForce(Object* obj, int skill)
 }
 
 // 0x4AAAA4
-int skillRoll(Object* critter, int skill, int modifier, int* howMuch)
+int skillRoll(Object* critter, Skill skill, int modifier, int* howMuch)
 {
     if (!skillIsValid(skill)) {
         return ROLL_FAILURE;
@@ -484,31 +484,31 @@ int skillRoll(Object* critter, int skill, int modifier, int* howMuch)
 }
 
 // 0x4AAB9C
-char* skillGetName(int skill)
+char* skillGetName(Skill skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].name : nullptr;
 }
 
 // 0x4AABC0
-char* skillGetDescription(int skill)
+char* skillGetDescription(Skill skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].description : nullptr;
 }
 
 // 0x4AABE4
-char* skillGetAttributes(int skill)
+char* skillGetAttributes(Skill skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].attributes : nullptr;
 }
 
 // 0x4AAC08
-int skillGetFrmId(int skill)
+int skillGetFrmId(Skill skill)
 {
     return skillIsValid(skill) ? gSkillDescriptions[skill].frmId : 0;
 }
 
 // 0x4AAC2C
-static void _show_skill_use_messages(Object* obj, int skill, Object* target, int successCount, int skillBonus)
+static void _show_skill_use_messages(Object* obj, Skill skill, Object* target, int successCount, int skillBonus)
 {
     if (obj != gDude) {
         return;
@@ -548,7 +548,7 @@ static void _show_skill_use_messages(Object* obj, int skill, Object* target, int
 
 // skill_use
 // 0x4AAD08
-int skillUse(Object* obj, Object* target, int skill, int skillBonus)
+int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
 {
     int hookResult = scriptHooks_UseSkill(obj, target, skill, skillBonus);
     if (hookResult != -1) {
@@ -1140,7 +1140,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
 }
 
 // 0x4ABDEC
-int skillGetGameDifficultyModifier(int skill)
+int skillGetGameDifficultyModifier(Skill skill)
 {
     switch (skill) {
     case SKILL_FIRST_AID:
@@ -1155,14 +1155,12 @@ int skillGetGameDifficultyModifier(int skill)
     case SKILL_BARTER:
     case SKILL_GAMBLING:
     case SKILL_OUTDOORSMAN:
-        if (1) {
-            int gameDifficulty = settings.preferences.game_difficulty;
+        int gameDifficulty = settings.preferences.game_difficulty;
 
-            if (gameDifficulty == GAME_DIFFICULTY_HARD) {
-                return -10;
-            } else if (gameDifficulty == GAME_DIFFICULTY_EASY) {
-                return 20;
-            }
+        if (gameDifficulty == GAME_DIFFICULTY_HARD) {
+            return -10;
+        } else if (gameDifficulty == GAME_DIFFICULTY_EASY) {
+            return 20;
         }
         break;
     }
@@ -1171,7 +1169,7 @@ int skillGetGameDifficultyModifier(int skill)
 }
 
 // 0x4ABE44
-static int skillGetFreeUsageSlot(int skill)
+static int skillGetFreeUsageSlot(Skill skill)
 {
     for (int slot = 0; slot < SKILLS_MAX_USES_PER_DAY; slot++) {
         if (_timesSkillUsed[skill][slot] == 0) {
@@ -1189,7 +1187,7 @@ static int skillGetFreeUsageSlot(int skill)
 }
 
 // 0x4ABEB8
-int skillUpdateLastUse(int skill)
+int skillUpdateLastUse(Skill skill)
 {
     int slot = skillGetFreeUsageSlot(skill);
     if (slot == -1) {
