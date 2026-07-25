@@ -779,6 +779,7 @@ static void mf_get_object_ai_data(OpcodeContext& ctx);
 static void mf_get_object_data(OpcodeContext& ctx);
 static void mf_get_outline(OpcodeContext& ctx);
 static void mf_get_sfall_arg_at(OpcodeContext& ctx);
+static void mf_get_terrain_name(OpcodeContext& ctx);
 static void mf_get_text_width(OpcodeContext& ctx);
 static void mf_get_window_attribute(OpcodeContext& ctx);
 static void mf_hide_window(OpcodeContext& ctx);
@@ -805,6 +806,7 @@ static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_object_data(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
+static void mf_set_terrain_name(OpcodeContext& ctx);
 static void mf_set_window_flag(OpcodeContext& ctx);
 static void mf_set_unique_id(OpcodeContext& ctx);
 static void mf_show_window(OpcodeContext& ctx);
@@ -859,7 +861,7 @@ const MetaruleInfo kMetarules[] = {
     // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
-    // {"get_terrain_name",          mf_get_terrain_name,          0, 2, -1, {ARG_INT, ARG_INT}},
+    { "get_terrain_name", mf_get_terrain_name, 0, 2, -1, { ARG_INT, ARG_INT } },
     { "get_text_width", mf_get_text_width, 1, 1, 0, { ARG_STRING } },
     { "get_window_attribute", mf_get_window_attribute, 1, 2, -1, { ARG_INT, ARG_INT } },
     // {"has_fake_perk_npc",         mf_has_fake_perk_npc,         2, 2,  0, {ARG_OBJECT, ARG_STRING}},
@@ -908,7 +910,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_rest_mode",             mf_set_rest_mode,             1, 1, -1, {ARG_INT}},
     // {"set_scr_name",              mf_set_scr_name,              0, 1, -1, {ARG_STRING}},
     // {"set_selectable_perk_npc",   mf_set_selectable_perk_npc,   5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
-    // {"set_terrain_name",          mf_set_terrain_name,          3, 3, -1, {ARG_INT, ARG_INT, ARG_STRING}},
+    { "set_terrain_name", mf_set_terrain_name, 3, 3, -1, { ARG_INT, ARG_INT, ARG_STRING } },
     // {"set_town_title",            mf_set_town_title,            2, 2, -1, {ARG_INT, ARG_STRING}},
     { "set_unique_id", mf_set_unique_id, 1, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"set_unjam_locks_time",      mf_set_unjam_locks_time,      1, 1, -1, {ARG_INT}},
@@ -1982,6 +1984,40 @@ void mf_unwield_slot(OpcodeContext& ctx)
     if (inventoryUnwieldSlot(critter, static_cast<InvenSlot>(slot)) == -1) {
         ctx.setReturn(-1);
     }
+}
+
+static const char* invalidSubtilePos = "%s() - invalid x/y coordinates for the sub-tile.";
+
+static void mf_get_terrain_name(OpcodeContext& ctx)
+{
+    if (ctx.numArgs() < 2) {
+        ctx.setReturn(wmGetCurrentTerrainName());
+        return;
+    }
+
+    int x = ctx.arg(0).asInt();
+    int y = ctx.arg(1).asInt();
+
+    if (!wmTerrainNameIsValidSubtile(x, y)) {
+        ctx.printError(invalidSubtilePos, ctx.name());
+        ctx.setReturn("Error");
+        return;
+    }
+
+    ctx.setReturn(wmGetTerrainName(x, y));
+}
+
+static void mf_set_terrain_name(OpcodeContext& ctx)
+{
+    int x = ctx.arg(0).asInt();
+    int y = ctx.arg(1).asInt();
+
+    if (!wmTerrainNameIsValidSubtile(x, y)) {
+        ctx.printError(invalidSubtilePos, ctx.name());
+        return;
+    }
+
+    wmSetTerrainName(x, y, ctx.stringArg(2));
 }
 
 void mf_tile_by_position(OpcodeContext& ctx)
