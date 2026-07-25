@@ -91,6 +91,7 @@ int ScriptHookCall::numArgs() const { return _numArgs; }
 int ScriptHookCall::maxReturnValues() const { return _maxRetVals; }
 int ScriptHookCall::numReturnValues() const { return _numRetVals; }
 int ScriptHookCall::numScriptReturnValues() const { return _scriptRetVals; }
+HookType ScriptHookCall::hookType() const { return _hookType; }
 
 void ScriptHookCall::call()
 {
@@ -311,7 +312,7 @@ int     arg5 - 1 if this is an attack using a melee weapon, 0 otherwise
 int     ret0 - Either the damage to be used, if ret1 isn't given, or the new minimum damage if it is
 int     ret1 - The new maximum damage
 */
-void scriptHooks_ItemDamage(Object* weapon, Object* critter, int hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr)
+void scriptHooks_ItemDamage(Object* weapon, Object* critter, HitMode hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr)
 {
     assert(critter != nullptr);
     assert(minDamagePtr != nullptr);
@@ -558,7 +559,7 @@ Item    arg4 - The weapon for which the cost is calculated. If it is 0, the
 
 int     ret0 - The new AP cost
 */
-int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int actionPoints, Object* weapon)
+int scriptHooks_CalcApCost(Object* critter, HitMode hitMode, bool aiming, int actionPoints, Object* weapon)
 {
     ScriptHookCall hook(HOOK_CALCAPCOST, 1, { critter, hitMode, aiming ? 1 : 0, actionPoints, weapon });
     hook.call();
@@ -644,7 +645,7 @@ int     arg7 - The raw hit chance before applying the cap
 
 int     ret0 - The new hit chance. The value is limited to the range of -99 to 999
 */
-int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance)
+int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, HitMode hitMode, HitLocation hitLocation, int hitChance, int hitChanceUncapped, bool useDistance)
 {
     ScriptHookCall hook(HOOK_TOHIT, 1,
         { hitChance,
@@ -677,7 +678,7 @@ int     ret0 - Override the hit/miss
 int     ret1 - Override the targeted bodypart
 Critter ret2 - Override the target of the attack
 */
-int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLocationPtr, int hitChance, int roll)
+int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, int roll)
 {
     assert(defenderPtr != nullptr && hitLocationPtr != nullptr);
 
@@ -696,8 +697,8 @@ int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLoc
     }
 
     if (hook.numReturnValues() > 1) {
-        int hitLocationOverride = hook.getReturnValueAt(1).asInt();
-        if (hitLocationOverride >= 0 && hitLocationOverride < HIT_LOCATION_COUNT) {
+        HitLocation hitLocationOverride = static_cast<HitLocation>(hook.getReturnValueAt(1).asInt());
+        if (hitLocationIsValid(hitLocationOverride)) {
             *hitLocationPtr = hitLocationOverride;
         } else {
             debugPrint("HOOK_AFTERHITROLL: ignoring invalid hit location override %d", hitLocationOverride);
@@ -870,6 +871,20 @@ int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed)
         return -1;
 
     return hook.getReturnValueAt(0).asInt();
+}
+
+/*
+Runs when an object is removed from a container or critter's inventory for any reason.
+
+Obj     arg0 - the owner that the object is being removed from
+Item    arg1 - the item that is being removed
+int     arg2 - the number of items to remove
+int     arg3 - The reason the object is being removed (RemoveInventoryObjectHookReason / RMOBJ_* constants)
+Obj     arg4 - The destination object when the item is moved to another object, 0 otherwise
+*/
+void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity, RemoveInventoryObjectHookReason reason, Object* target)
+{
+    ScriptHookCall(HOOK_REMOVEINVENOBJ, 0, { owner, item, quantity, static_cast<int>(reason), target }).call();
 }
 
 /*
@@ -1062,7 +1077,7 @@ bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int i
 
     int     ret0 - overrides the result of engine function
 */
-bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, int hitMode)
+bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, HitMode hitMode)
 {
     ScriptHookCall hook(HOOK_CANUSEWEAPON, 1, { critter, weapon, hitMode, result ? 1 : 0 });
     hook.call();

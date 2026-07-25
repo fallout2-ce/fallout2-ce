@@ -228,6 +228,7 @@ public:
 
     ProgramValue getArgAt(int idx) const;
     ProgramValue getReturnValueAt(int idx) const;
+    HookType hookType() const;
 
 private:
     static std::vector<ScriptHookCall*> _callStack;
@@ -270,6 +271,34 @@ enum AmmoCostHookType {
     AMMO_COST_HOOK_BURST_SHOT = 3,
 };
 
+enum class RemoveInventoryObjectHookReason {
+    ItemRemovedInventory = 4831349,
+    ItemRemoved = 4548572,
+    ItemRemovedMulti = 4563866,
+    ItemDestroyed = 4543215,
+    ItemDestroyMulti = 4571599,
+    ItemMove = 4683293,
+    ItemReplace = 4686256,
+    ConsumeDrug = 4666772,
+    UseObj = 4666865,
+    EquipArmor = 4658121,
+    EquipWeapon = 4658675,
+    UnloadWeapon = 4667030,
+    UseDrugOn = 4834866,
+    StealView = 4668206,
+    ArmorEquipped = 4651961,
+    LeftHandEquipped = 4651899,
+    RightHandEquipped = 4651934,
+    ReplaceWeapon = 4658526,
+    Throw = 4266040,
+    SubContainer = 4683191,
+    AIUseDrugOn = 4359920,
+    BarterArmor = 4675656,
+    BarterWeapon = 4675722,
+    InventoryDropCaps = 4667295,
+    DropIntoContainer = 4678833,
+};
+
 enum class EncounterHookEventType {
     RandomEncounter = 0,
     LocalMapEnter = 1,
@@ -283,7 +312,7 @@ enum class EncounterHookResult {
 
 bool scriptHooksRegister(Program* program, HookType hookType, int procedureIndex);
 bool scriptHooks_StdProcedure(int procedureNumber, Object* self, Object* source, Object* target, int fixedParam, bool after);
-void scriptHooks_ItemDamage(Object* weapon, Object* critter, int hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr);
+void scriptHooks_ItemDamage(Object* weapon, Object* critter, HitMode hitMode, bool isMeleeWeaponAttack, int* minDamagePtr, int* maxDamagePtr);
 int scriptHooks_AmmoCost(Object* weapon, int rounds, int ammoCost, AmmoCostHookType hookType);
 int scriptHooks_Steal(Object* thief, Object* target, Object* item, bool isPlanting, int quantity, int* xpOverride);
 
@@ -301,21 +330,22 @@ bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
 bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);
 void scriptHooks_CombatTurnCombatEnd(Object* critter);
 PerceptionResult scriptHooks_WithinPerception(Object* watcher, Object* target, PerceptionType type, PerceptionResult result);
-int scriptHooks_CalcApCost(Object* critter, int hitMode, bool aiming, int actionPoints, Object* weapon);
+int scriptHooks_CalcApCost(Object* critter, HitMode hitMode, bool aiming, int actionPoints, Object* weapon);
 int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints);
-int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, int hitMode, int hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
-int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, int* hitLocationPtr, int hitChance, int roll);
+int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, HitMode hitMode, HitLocation hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
+int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, int roll);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
 UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, int skill);
 int scriptHooks_UseSkill(Object* user, Object* target, int skill, int skillBonus);
 int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
+void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity, RemoveInventoryObjectHookReason reason, Object* target);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
 
 int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid);
 bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove, bool filterInactiveHand = true);
-bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, int hitMode);
+bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, HitMode hitMode);
 
 } // namespace fallout
 

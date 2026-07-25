@@ -787,24 +787,24 @@ void gameMouseRefresh()
 
                         if (pointedObjectIsCritter) {
                             if (pointedObject->data.critter.combat.team != 0) {
-                                color = _colorTable[32767];
+                                color = COLOR_WHITE;
                             } else {
-                                color = _colorTable[32495];
+                                color = COLOR_LIGHT_ORANGE;
                             }
                         } else {
-                            color = _colorTable[17969];
+                            color = COLOR_GREY;
                         }
                     } else {
                         snprintf(formattedAccuracy, sizeof(formattedAccuracy), " %c ", 'X');
 
                         if (pointedObjectIsCritter) {
                             if (pointedObject->data.critter.combat.team != 0) {
-                                color = _colorTable[31744];
+                                color = COLOR_RED;
                             } else {
-                                color = _colorTable[18161];
+                                color = COLOR_SAGE_GREEN;
                             }
                         } else {
-                            color = _colorTable[32239];
+                            color = COLOR_LIGHT_PINK;
                         }
                     }
 
@@ -839,22 +839,22 @@ void gameMouseRefresh()
         if (distance != 0) {
             if (!isInCombat()) {
                 formattedActionPoints[0] = '\0';
-                color = _colorTable[31744];
+                color = COLOR_RED;
             } else {
                 int actionPointsMax = critterGetMovementPointCostAdjustedForCrippledLegs(gDude, distance);
                 int actionPointsRequired = std::max(0, actionPointsMax - _combat_free_move);
 
                 if (actionPointsRequired <= gDude->data.critter.combat.ap) {
                     snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%d", actionPointsRequired);
-                    color = _colorTable[32767];
+                    color = COLOR_WHITE;
                 } else {
                     snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
-                    color = _colorTable[31744];
+                    color = COLOR_RED;
                 }
             }
         } else {
             snprintf(formattedActionPoints, sizeof(formattedActionPoints), "%c", 'X');
-            color = _colorTable[31744];
+            color = COLOR_RED;
         }
 
         if (gameMouseRenderActionPoints(formattedActionPoints, color) == 0) {
@@ -1062,7 +1062,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                 Object* weapon;
                 if (interfaceGetActiveItem(&weapon) != -1) {
                     if (isInCombat()) {
-                        int hitMode = interfaceGetCurrentHand()
+                        HitMode hitMode = interfaceGetCurrentHand()
                             ? HIT_MODE_RIGHT_WEAPON_PRIMARY
                             : HIT_MODE_LEFT_WEAPON_PRIMARY;
 
@@ -1190,14 +1190,16 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         mouseGetPosition(&updatedMouseX, &updatedMouseY);
 
                         if (abs(updatedMouseY - newMouseY) > 10) {
+                            int nextActionIndex;
                             if (newMouseY >= updatedMouseY) {
-                                actionIndex -= 1;
+                                nextActionIndex = actionIndex - 1;
                             } else {
-                                actionIndex += 1;
+                                nextActionIndex = actionIndex + 1;
                             }
 
-                            if (gameMouseHighlightActionMenuItemAtIndex(actionIndex) == 0) {
+                            if (gameMouseHighlightActionMenuItemAtIndex(nextActionIndex) == 0) {
                                 tileWindowRefreshRect(&cursorRect, gElevation);
+                                actionIndex = nextActionIndex;
                             }
                             newMouseY = updatedMouseY;
                         }
@@ -1975,7 +1977,7 @@ int gameMouseRenderAccuracy(const char* string, int color)
         gGameMouseActionHitFrmWidth - crosshairFrmWidth,
         gGameMouseActionHitFrmHeight,
         gGameMouseActionHitFrmWidth,
-        _colorTable[0]);
+        COLOR_BLACK);
 
     fontSetCurrent(oldFont);
 
@@ -1999,7 +2001,7 @@ int gameMouseRenderActionPoints(const char* string, int color)
     int length = fontGetStringWidth(string);
     fontDrawText(gGameMouseHexCursorFrmData + gGameMouseHexCursorFrmWidth * (gGameMouseHexCursorHeight - fontGetLineHeight()) / 2 + (gGameMouseHexCursorFrmWidth - length) / 2, string, gGameMouseHexCursorFrmWidth, gGameMouseHexCursorFrmWidth, color);
 
-    bufferOutline(gGameMouseHexCursorFrmData, gGameMouseHexCursorFrmWidth, gGameMouseHexCursorHeight, gGameMouseHexCursorFrmWidth, _colorTable[0]);
+    bufferOutline(gGameMouseHexCursorFrmData, gGameMouseHexCursorFrmWidth, gGameMouseHexCursorHeight, gGameMouseHexCursorFrmWidth, COLOR_BLACK);
 
     fontSetCurrent(oldFont);
 

@@ -966,7 +966,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             pitch);
     }
 
-    int color = _colorTable[32767];
+    int color = COLOR_WHITE;
     int inventoryWeight = objectGetInventoryWeight(object);
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         int currentWeight = inventoryWeight + extraWeight;
@@ -984,7 +984,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
         }
 
         if (currentWeight > maxWeight) {
-            color = _colorTable[31744];
+            color = COLOR_RED;
         }
     } else if (targetPane && PID_TYPE(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
         int currentSize = containerGetTotalSize(object);
@@ -1336,7 +1336,7 @@ static bool tryUnequipPartyItem(InvenSlot slot)
         Object* unequippedItem = inventoryFindById(partyBaseTarget, item->id);
         if (unequippedItem != nullptr) {
             // fix stacking
-            itemRemove(partyBaseTarget, unequippedItem, 1);
+            itemRemoveQuietly(partyBaseTarget, unequippedItem, 1);
             itemAdd(partyBaseTarget, unequippedItem, 1);
         }
     }
@@ -2037,15 +2037,15 @@ static bool _setup_inventory(int inventoryWindowType)
     }
 
     if (gInventoryLeftHandItem != nullptr) {
-        itemRemove(_inven_dude, gInventoryLeftHandItem, 1);
+        itemRemoveWithReason(_inven_dude, gInventoryLeftHandItem, 1, RemoveInventoryObjectHookReason::LeftHandEquipped);
     }
 
     if (gInventoryRightHandItem != nullptr && gInventoryRightHandItem != gInventoryLeftHandItem) {
-        itemRemove(_inven_dude, gInventoryRightHandItem, 1);
+        itemRemoveWithReason(_inven_dude, gInventoryRightHandItem, 1, RemoveInventoryObjectHookReason::RightHandEquipped);
     }
 
     if (gInventoryArmor != nullptr) {
-        itemRemove(_inven_dude, gInventoryArmor, 1);
+        itemRemoveWithReason(_inven_dude, gInventoryArmor, 1, RemoveInventoryObjectHookReason::ArmorEquipped);
     }
 
     _adjust_fid();
@@ -2432,7 +2432,7 @@ static void _display_inventory_info(Object* item, int quantity, unsigned char* d
 
     if (displayQuantity > 0) {
         snprintf(formattedText, sizeof(formattedText), "x%d", std::clamp(displayQuantity, 0, 99999));
-        fontDrawText(dest, formattedText, 80, pitch, _colorTable[32767]);
+        fontDrawText(dest, formattedText, 80, pitch, COLOR_WHITE);
     }
 
     fontSetCurrent(oldFont);
@@ -2924,7 +2924,7 @@ static void _inven_pickup(int buttonCode, int indexOffset)
 
             int itemAddResult = 0;
             if (itemIndex != -1) {
-                itemRemove(_inven_dude, item, 1);
+                itemRemoveWithReason(_inven_dude, item, 1, RemoveInventoryObjectHookReason::EquipArmor);
             }
 
             if (gInventoryArmor != nullptr) {
@@ -3006,7 +3006,7 @@ static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourc
             *sourceSlot = *targetSlot;
         } else {
             if (itemIndex != -1) {
-                itemRemove(_inven_dude, sourceItem, 1);
+                itemRemoveWithReason(_inven_dude, sourceItem, 1, RemoveInventoryObjectHookReason::EquipWeapon);
             }
 
             Object* existingItem = *targetSlot;
@@ -3037,7 +3037,7 @@ static void _switch_hand(Object* sourceItem, Object** targetSlot, Object** sourc
     *targetSlot = sourceItem;
 
     if (itemIndex != -1) {
-        itemRemove(_inven_dude, sourceItem, 1);
+        itemRemoveWithReason(_inven_dude, sourceItem, 1, RemoveInventoryObjectHookReason::EquipWeapon);
     }
 }
 
@@ -3286,15 +3286,15 @@ CritterEquipped critterStripEquipped(Object* critter)
     }
     if (equipped.leftHand != nullptr) {
         equipped.weight += itemGetWeight(equipped.leftHand);
-        itemRemove(critter, equipped.leftHand, 1);
+        itemRemoveWithReason(critter, equipped.leftHand, 1, RemoveInventoryObjectHookReason::LeftHandEquipped);
     }
     if (equipped.rightHand != nullptr && equipped.rightHand != equipped.leftHand) {
         equipped.weight += itemGetWeight(equipped.rightHand);
-        itemRemove(critter, equipped.rightHand, 1);
+        itemRemoveWithReason(critter, equipped.rightHand, 1, RemoveInventoryObjectHookReason::RightHandEquipped);
     }
     if (equipped.armor != nullptr) {
         equipped.weight += itemGetWeight(equipped.armor);
-        itemRemove(critter, equipped.armor, 1);
+        itemRemoveWithReason(critter, equipped.armor, 1, RemoveInventoryObjectHookReason::ArmorEquipped);
     }
     return equipped;
 }
@@ -3439,7 +3439,7 @@ static void inventoryRenderSummary()
 
     // Render character name.
     const char* critterName = critterGetName(_stack[0]);
-    fontDrawText(windowBuffer + pitch * INVENTORY_SUMMARY_Y + summaryX, critterName, 80, pitch, _colorTable[992]);
+    fontDrawText(windowBuffer + pitch * INVENTORY_SUMMARY_Y + summaryX, critterName, 80, pitch, COLOR_GREEN);
 
     bufferDrawLine(windowBuffer,
         pitch,
@@ -3447,7 +3447,7 @@ static void inventoryRenderSummary()
         3 * fontGetLineHeight() / 2 + INVENTORY_SUMMARY_Y,
         summaryMaxX,
         3 * fontGetLineHeight() / 2 + INVENTORY_SUMMARY_Y,
-        _colorTable[992]);
+        COLOR_GREEN);
 
     MessageListItem messageListItem;
 
@@ -3455,12 +3455,12 @@ static void inventoryRenderSummary()
     for (int stat = 0; stat < PRIMARY_STAT_COUNT; stat++) {
         messageListItem.num = stat;
         if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-            fontDrawText(windowBuffer + offset, messageListItem.text, 80, pitch, _colorTable[992]);
+            fontDrawText(windowBuffer + offset, messageListItem.text, 80, pitch, COLOR_GREEN);
         }
 
         int value = critterGetStat(_stack[0], stat);
         snprintf(formattedText, sizeof(formattedText), "%d", value);
-        fontDrawText(windowBuffer + offset + 24, formattedText, 80, pitch, _colorTable[992]);
+        fontDrawText(windowBuffer + offset + 24, formattedText, 80, pitch, COLOR_GREEN);
 
         offset += pitch * fontGetLineHeight();
     }
@@ -3470,7 +3470,7 @@ static void inventoryRenderSummary()
     for (int index = 0; index < 7; index += 1) {
         messageListItem.num = 7 + index;
         if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-            fontDrawText(windowBuffer + offset + 40, messageListItem.text, 80, pitch, _colorTable[992]);
+            fontDrawText(windowBuffer + offset + 40, messageListItem.text, 80, pitch, COLOR_GREEN);
         }
 
         if (summaryStats2[index] == -1) {
@@ -3483,30 +3483,30 @@ static void inventoryRenderSummary()
             snprintf(formattedText, sizeof(formattedText), format, value1, value2);
         }
 
-        fontDrawText(windowBuffer + offset + 104, formattedText, 80, pitch, _colorTable[992]);
+        fontDrawText(windowBuffer + offset + 104, formattedText, 80, pitch, COLOR_GREEN);
 
         offset += pitch * fontGetLineHeight();
     }
 
-    bufferDrawLine(windowBuffer, pitch, summaryX, 18 * fontGetLineHeight() / 2 + 48, summaryMaxX, 18 * fontGetLineHeight() / 2 + 48, _colorTable[992]);
-    bufferDrawLine(windowBuffer, pitch, summaryX, 26 * fontGetLineHeight() / 2 + 48, summaryMaxX, 26 * fontGetLineHeight() / 2 + 48, _colorTable[992]);
+    bufferDrawLine(windowBuffer, pitch, summaryX, 18 * fontGetLineHeight() / 2 + 48, summaryMaxX, 18 * fontGetLineHeight() / 2 + 48, COLOR_GREEN);
+    bufferDrawLine(windowBuffer, pitch, summaryX, 26 * fontGetLineHeight() / 2 + 48, summaryMaxX, 26 * fontGetLineHeight() / 2 + 48, COLOR_GREEN);
 
     Object* itemsInHands[2] = {
         gInventoryLeftHandItem,
         gInventoryRightHandItem,
     };
 
-    const int hitModes[2] = {
+    const HitMode hitModes[2] = {
         HIT_MODE_LEFT_WEAPON_PRIMARY,
         HIT_MODE_RIGHT_WEAPON_PRIMARY,
     };
 
-    const int secondaryHitModes[2] = {
+    const HitMode secondaryHitModes[2] = {
         HIT_MODE_LEFT_WEAPON_SECONDARY,
         HIT_MODE_RIGHT_WEAPON_SECONDARY,
     };
 
-    const int unarmedHitModes[2] = {
+    const HitMode unarmedHitModes[2] = {
         HIT_MODE_PUNCH,
         HIT_MODE_KICK,
     };
@@ -3521,7 +3521,7 @@ static void inventoryRenderSummary()
             // No item
             messageListItem.num = 14;
             if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                fontDrawText(windowBuffer + offset, messageListItem.text, 120, pitch, _colorTable[992]);
+                fontDrawText(windowBuffer + offset, messageListItem.text, 120, pitch, COLOR_GREEN);
             }
 
             offset += pitch * fontGetLineHeight();
@@ -3531,7 +3531,7 @@ static void inventoryRenderSummary()
             if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
                 // SFALL: Display the actual damage values of unarmed attacks.
                 // CE: Implementation is different.
-                int hitMode = unarmedHitModes[index];
+                HitMode hitMode = unarmedHitModes[index];
                 if (_stack[0] == gDude) {
                     int actions[2];
                     interfaceGetItemActions(&(actions[0]), &(actions[1]));
@@ -3558,14 +3558,14 @@ static void inventoryRenderSummary()
                     bonusDamage + meleeDamage + maxDamage);
             }
 
-            fontDrawText(windowBuffer + offset, formattedText, 120, pitch, _colorTable[992]);
+            fontDrawText(windowBuffer + offset, formattedText, 120, pitch, COLOR_GREEN);
 
             offset += 3 * pitch * fontGetLineHeight();
             continue;
         }
 
         const char* itemName = itemGetName(item);
-        fontDrawText(windowBuffer + offset, itemName, 140, pitch, _colorTable[992]);
+        fontDrawText(windowBuffer + offset, itemName, 140, pitch, COLOR_GREEN);
 
         offset += pitch * fontGetLineHeight();
 
@@ -3575,7 +3575,7 @@ static void inventoryRenderSummary()
                 // (Not worn)
                 messageListItem.num = 18;
                 if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                    fontDrawText(windowBuffer + offset, messageListItem.text, 120, pitch, _colorTable[992]);
+                    fontDrawText(windowBuffer + offset, messageListItem.text, 120, pitch, COLOR_GREEN);
                 }
             }
 
@@ -3584,7 +3584,7 @@ static void inventoryRenderSummary()
         }
 
         // SFALL: Fix displaying secondary mode weapon range.
-        int hitMode = hitModes[index];
+        HitMode hitMode = hitModes[index];
         if (_stack[0] == gDude) {
             int actions[2];
             interfaceGetItemActions(&(actions[0]), &(actions[1]));
@@ -3655,7 +3655,7 @@ static void inventoryRenderSummary()
                 }
             }
 
-            fontDrawText(windowBuffer + offset, formattedText, 140, pitch, _colorTable[992]);
+            fontDrawText(windowBuffer + offset, formattedText, 140, pitch, COLOR_GREEN);
         }
 
         offset += pitch * fontGetLineHeight();
@@ -3685,7 +3685,7 @@ static void inventoryRenderSummary()
                 snprintf(formattedText, sizeof(formattedText), "%s %d/%d", messageListItem.text, quantity, capacity);
             }
 
-            fontDrawText(windowBuffer + offset, formattedText, 140, pitch, _colorTable[992]);
+            fontDrawText(windowBuffer + offset, formattedText, 140, pitch, COLOR_GREEN);
         }
 
         offset += 2 * pitch * fontGetLineHeight();
@@ -3699,9 +3699,9 @@ static void inventoryRenderSummary()
             int inventoryWeight = objectGetInventoryWeight(_stack[0]);
             snprintf(formattedText, sizeof(formattedText), "%s %d/%d", messageListItem.text, inventoryWeight, carryWeight);
 
-            int color = _colorTable[992];
+            int color = COLOR_GREEN;
             if (critterIsEncumbered(_stack[0])) {
-                color = _colorTable[31744];
+                color = COLOR_RED;
             }
 
             fontDrawText(windowBuffer + offset + 15, formattedText, 120, pitch, color);
@@ -3709,7 +3709,7 @@ static void inventoryRenderSummary()
             int inventoryWeight = objectGetInventoryWeight(_stack[0]);
             snprintf(formattedText, sizeof(formattedText), "%s %d", messageListItem.text, inventoryWeight);
 
-            fontDrawText(windowBuffer + offset + 30, formattedText, 80, pitch, _colorTable[992]);
+            fontDrawText(windowBuffer + offset + 30, formattedText, 80, pitch, COLOR_GREEN);
         }
     }
 
@@ -4150,7 +4150,7 @@ static void displayLootPanePartyName(unsigned char* windowBuffer, int windowPitc
     int nameY = rect.bottom - fontGetLineHeight();
     fontSetCurrent(oldFont);
 
-    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, _colorTable[32767]);
+    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, COLOR_WHITE);
 }
 
 // Displays item description.
@@ -4193,7 +4193,7 @@ static void inventoryRenderItemDescription(const char* string)
                 // This was the last line containing very long word. Text
                 // drawing routine will silently truncate it after reaching
                 // desired length.
-                fontDrawText(windowBuffer + pitch * _inven_display_msg_line * fontGetLineHeight(), c, 152, pitch, _colorTable[992]);
+                fontDrawText(windowBuffer + pitch * _inven_display_msg_line * fontGetLineHeight(), c, 152, pitch, COLOR_GREEN);
                 goto end;
             }
 
@@ -4234,7 +4234,7 @@ static void inventoryRenderItemDescription(const char* string)
             goto end;
         }
 
-        fontDrawText(windowBuffer + pitch * _inven_display_msg_line * fontGetLineHeight(), c, 152, pitch, _colorTable[992]);
+        fontDrawText(windowBuffer + pitch * _inven_display_msg_line * fontGetLineHeight(), c, 152, pitch, COLOR_GREEN);
 
         if (space != nullptr) {
             c = space + 1;
@@ -4295,7 +4295,7 @@ static void inventoryExamineItem(Object* critter, Object* item)
         (_inven_display_msg_line - 1) * lineHeight + lineHeight / 2 + 49,
         summaryMaxX,
         (_inven_display_msg_line - 1) * lineHeight + lineHeight / 2 + 49,
-        _colorTable[992]);
+        COLOR_GREEN);
 
     // Examine item.
     objectExamineFunc(critter, item, inventoryRenderItemDescription);
@@ -4538,7 +4538,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                         objectDrop(owner, item);
                     }
                 } else {
-                    if (itemRemove(owner, item, quantity - 1) == 0) {
+                    if (itemRemoveWithReason(owner, item, quantity - 1, RemoveInventoryObjectHookReason::InventoryDropCaps) == 0) {
                         Object* item2;
                         if (_inven_from_button(keyCode, &item2, &itemSlot, &owner) != 0) {
                             if (scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_GROUND, item2, nullptr)) {
@@ -4594,7 +4594,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
                 if (itemSlot != nullptr) {
                     *itemSlot = nullptr;
                 } else {
-                    itemRemove(owner, item, 1);
+                    itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::ConsumeDrug);
                 }
 
                 _obj_connect(item, gDude->tile, gDude->elevation, nullptr);
@@ -4605,7 +4605,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
         case ITEM_TYPE_WEAPON:
         case ITEM_TYPE_MISC:
             if (itemSlot == nullptr) {
-                itemRemove(owner, item, 1);
+                itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::UseObj);
             }
 
             UseItemResultCode useResult;
@@ -4631,7 +4631,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
         break;
     case GAME_MOUSE_ACTION_MENU_ITEM_UNLOAD:
         if (itemSlot == nullptr) {
-            itemRemove(owner, item, 1);
+            itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::UnloadWeapon);
         }
 
         for (;;) {
@@ -4681,8 +4681,6 @@ int inventoryOpenLooting(Object* looter, Object* target)
     if (looter != _inven_dude) {
         return 0;
     }
-
-    ScopedGameMode gm(GameMode::kLoot);
 
     if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
         inventoryDisplayMessage(50); // You can't find anything to take from that.
@@ -4834,6 +4832,9 @@ int inventoryOpenLooting(Object* looter, Object* target)
     _display_body(target->fid, INVENTORY_WINDOW_TYPE_LOOT);
     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
 
+    // Trigger game mode change _after_ window and loot_obj are set up
+    ScopedGameMode gm(GameMode::kLoot);
+
     bool isCaughtStealing = false;
     int stealingXp = 0;
     int stealingXpBonus = 10;
@@ -4909,7 +4910,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
                     // Sorry, you cannot carry that much.
                     messageListItem.num = 31;
                     if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
-                        showDialogBox(messageListItem.text, nullptr, 0, 169, 117, _colorTable[32328], nullptr, _colorTable[32328], 0);
+                        showDialogBox(messageListItem.text, nullptr, 0, 169, 117, COLOR_AMBER, nullptr, COLOR_AMBER, 0);
                     }
                 }
             }
@@ -5565,7 +5566,7 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
             snprintf(formattedText, sizeof(formattedText), "$%d", offerValue);
         }
 
-        fontDrawText(windowBuffer + INVENTORY_TRADE_WINDOW_WIDTH * (INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_LEFT_SCROLLER_Y_PAD) + INVENTORY_TRADE_INNER_LEFT_SCROLLER_X_PAD, formattedText, 80, INVENTORY_TRADE_WINDOW_WIDTH, _colorTable[32767]);
+        fontDrawText(windowBuffer + INVENTORY_TRADE_WINDOW_WIDTH * (INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_LEFT_SCROLLER_Y_PAD) + INVENTORY_TRADE_INNER_LEFT_SCROLLER_X_PAD, formattedText, 80, INVENTORY_TRADE_WINDOW_WIDTH, COLOR_WHITE);
 
         Rect rect;
         rect.left = INVENTORY_TRADE_INNER_LEFT_SCROLLER_X_PAD;
@@ -5602,7 +5603,7 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
             snprintf(formattedText, sizeof(formattedText), "$%d", requestValue);
         }
 
-        fontDrawText(windowBuffer + INVENTORY_TRADE_WINDOW_WIDTH * (INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_RIGHT_SCROLLER_Y_PAD) + INVENTORY_TRADE_INNER_RIGHT_SCROLLER_X_PAD, formattedText, 80, INVENTORY_TRADE_WINDOW_WIDTH, _colorTable[32767]);
+        fontDrawText(windowBuffer + INVENTORY_TRADE_WINDOW_WIDTH * (INVENTORY_SLOT_HEIGHT * gInventorySlotsCount + INVENTORY_TRADE_INNER_RIGHT_SCROLLER_Y_PAD) + INVENTORY_TRADE_INNER_RIGHT_SCROLLER_X_PAD, formattedText, 80, INVENTORY_TRADE_WINDOW_WIDTH, COLOR_WHITE);
 
         Rect rect;
         rect.left = INVENTORY_TRADE_INNER_RIGHT_SCROLLER_X_PAD;
@@ -5635,18 +5636,18 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
 
     Object* armor = critterGetArmor(barterer);
     if (armor != nullptr) {
-        itemRemove(barterer, armor, 1);
+        itemRemoveWithReason(barterer, armor, 1, RemoveInventoryObjectHookReason::BarterArmor);
     }
 
     Object* item1 = nullptr;
     Object* item2 = critterGetItem2(barterer);
     if (item2 != nullptr) {
-        itemRemove(barterer, item2, 1);
+        itemRemoveWithReason(barterer, item2, 1, RemoveInventoryObjectHookReason::BarterWeapon);
     } else {
         if (!gGameDialogSpeakerIsPartyMember) {
             item1 = inventoryFindByType(barterer, ITEM_TYPE_WEAPON, nullptr);
             if (item1 != nullptr) {
-                itemRemove(barterer, item1, 1);
+                itemRemoveWithReason(barterer, item1, 1, RemoveInventoryObjectHookReason::BarterWeapon);
             }
         }
     }
@@ -6039,7 +6040,7 @@ static int _drop_into_container(Object* container, Object* item, int sourceIndex
     }
 
     if (sourceIndex != -1) {
-        if (itemRemove(_inven_dude, item, quantityToMove) == -1) {
+        if (itemRemoveWithReason(_inven_dude, item, quantityToMove, RemoveInventoryObjectHookReason::DropIntoContainer) == -1) {
             return -1;
         }
     }
@@ -6096,7 +6097,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
 
     Object* sourceItem = ammo;
     bool isReloaded = false;
-    int rc = itemRemove(_inven_dude, weapon, 1);
+    int rc = itemRemoveQuietly(_inven_dude, weapon, 1);
     for (int index = 0; index < quantityToMove; index++) {
         int rcReload = weaponReload(weapon, sourceItem);
         if (rcReload == 0) {
@@ -6383,14 +6384,14 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         messageListItem.num = 21;
         if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
             int length = fontGetStringWidth(messageListItem.text);
-            fontDrawText(windowBuffer + windowDescription->width * 9 + (windowDescription->width - length) / 2, messageListItem.text, 200, windowDescription->width, _colorTable[21091]);
+            fontDrawText(windowBuffer + windowDescription->width * 9 + (windowDescription->width - length) / 2, messageListItem.text, 200, windowDescription->width, COLOR_YELLOW_2);
         }
     } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_SET_TIMER) {
         // SET TIMER
         messageListItem.num = 23;
         if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
             int length = fontGetStringWidth(messageListItem.text);
-            fontDrawText(windowBuffer + windowDescription->width * 9 + (windowDescription->width - length) / 2, messageListItem.text, 200, windowDescription->width, _colorTable[21091]);
+            fontDrawText(windowBuffer + windowDescription->width * 9 + (windowDescription->width - length) / 2, messageListItem.text, 200, windowDescription->width, COLOR_YELLOW_2);
         }
 
         // Timer overlay
@@ -6445,8 +6446,8 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
                 int length = fontGetStringWidth(messageListItem.text);
 
                 // TODO: Where is y? Is it hardcoded in to 376?
-                fontDrawText(_moveFrmImages[6].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, _colorTable[21091]);
-                fontDrawText(_moveFrmImages[7].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, _colorTable[18977]);
+                fontDrawText(_moveFrmImages[6].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, COLOR_YELLOW_2);
+                fontDrawText(_moveFrmImages[7].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, COLOR_DARK_YELLOW_4);
 
                 btn = buttonCreate(_mt_wid,
                     120, 80, 94, 33, -1, -1, -1, 5000,

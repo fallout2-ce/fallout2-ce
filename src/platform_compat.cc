@@ -393,6 +393,15 @@ void compat_resolve_path(char* path)
     }
 
     while (dir != nullptr) {
+        while (*pch == '/') {
+            pch++;
+        }
+
+        if (*pch == '\0') {
+            closedir(dir);
+            break;
+        }
+
         char* sep = strchr(pch, '/');
         size_t length;
         if (sep != nullptr) {

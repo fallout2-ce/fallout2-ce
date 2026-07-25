@@ -34,6 +34,22 @@ struct GlobalScriptsState {
 
 static GlobalScriptsState* state = nullptr;
 
+static bool sfall_gl_scr_is_game_script(const char* fileName)
+{
+    for (int index = 0; index < scriptsGetListLength(); index++) {
+        char gameScriptFileName[100];
+        if (scriptsGetFileName(index, gameScriptFileName, sizeof(gameScriptFileName)) == -1) {
+            continue;
+        }
+
+        if (compat_stricmp(fileName, gameScriptFileName) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool sfall_gl_scr_init()
 {
     state = new (std::nothrow) GlobalScriptsState();
@@ -48,6 +64,10 @@ bool sfall_gl_scr_init()
     int filesLength = fileNameListInit(scriptPath, &files);
     if (filesLength != 0) {
         for (int index = 0; index < filesLength; index++) {
+            if (sfall_gl_scr_is_game_script(files[index])) {
+                continue;
+            }
+
             char path[COMPAT_MAX_PATH];
             snprintf(path, sizeof(path), "%s\\%s", dir, files[index]);
             state->paths.push_back(std::string { path });

@@ -26,6 +26,42 @@ extern const char* gRunAwayModeKeys[RUN_AWAY_MODE_COUNT];
 extern const char* gDispositionKeys[DISPOSITION_COUNT];
 extern const char* gHurtTooMuchKeys[HURT_COUNT];
 
+struct AiMessageRange {
+    int start;
+    int end;
+};
+
+struct AiPacket {
+    char* name;
+    int packet_num;
+    int max_dist;
+    int min_to_hit;
+    int min_hp;
+    int aggression;
+    int hurt_too_much;
+    int secondary_freq;
+    int called_freq;
+    int font;
+    int color;
+    int outline_color;
+    int chance;
+    AiMessageRange run;
+    AiMessageRange move;
+    AiMessageRange attack;
+    AiMessageRange miss;
+    AiMessageRange hit[HIT_LOCATION_SPECIFIC_COUNT];
+    int area_attack_mode;
+    int run_away_mode;
+    int best_weapon;
+    int distance;
+    int attack_who;
+    int chem_use;
+    int chem_primary_desire[3];
+    int disposition;
+    char* body_type;
+    char* general_type;
+};
+
 int aiInit();
 void aiReset();
 int aiExit();
@@ -39,6 +75,7 @@ int aiGetBestWeapon(Object* obj);
 int aiGetDistance(Object* obj);
 int aiGetAttackWho(Object* obj);
 int aiGetChemUse(Object* obj);
+AiPacket* aiGetPacket(Object* obj);
 int aiSetAreaAttackMode(Object* critter, int areaAttackMode);
 int aiSetRunAwayMode(Object* obj, int run_away_mode);
 int aiSetBestWeapon(Object* critter, int bestWeapon);

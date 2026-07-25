@@ -286,7 +286,7 @@ static int endgameEndingHandleContinuePlaying()
     MessageListItem messageListItem;
     messageListItem.num = 30;
     if (messageListGetItem(&gMiscMessageList, &messageListItem)) {
-        rc = showDialogBox(messageListItem.text, nullptr, 0, 169, 117, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_YES_NO);
+        rc = showDialogBox(messageListItem.text, nullptr, 0, 169, 117, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_YES_NO);
         if (rc == 0) {
             _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
         }
@@ -321,7 +321,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         int width = artGetWidth(background, 0, 0);
         int height = artGetHeight(background, 0, 0);
         unsigned char* backgroundData = artGetFrameData(background, 0, 0);
-        bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, _colorTable[0]);
+        bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
         endgameEndingLoadPalette(6, 327);
 
         // CE: Update overlay.
@@ -435,7 +435,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         artUnlock(backgroundHandle);
 
         paletteFadeTo(gPaletteBlack);
-        bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, _colorTable[0]);
+        bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
         windowRefresh(gEndgameEndingSlideshowWindow);
     }
 
@@ -571,7 +571,7 @@ static int endgameEndingSlideshowWindowInit()
 
     // CE: Every slide has a separate color palette which is incompatible with
     // main color palette. Setup overlay to hide everything.
-    gEndgameEndingOverlay = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), _colorTable[0], WINDOW_MOVE_ON_TOP);
+    gEndgameEndingOverlay = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_BLACK, WINDOW_MOVE_ON_TOP);
     if (gEndgameEndingOverlay == -1) {
         return -1;
     }
@@ -582,7 +582,7 @@ static int endgameEndingSlideshowWindowInit()
         windowEndgameEndingY,
         ENDGAME_ENDING_WINDOW_WIDTH,
         ENDGAME_ENDING_WINDOW_HEIGHT,
-        _colorTable[0],
+        COLOR_BLACK,
         WINDOW_MOVE_ON_TOP);
     if (gEndgameEndingSlideshowWindow == -1) {
         return -1;
@@ -848,8 +848,8 @@ static void endgameEndingRefreshSubtitles()
 
         int width = fontGetStringWidth(beginning);
         int x = (640 - width) / 2;
-        bufferFill(gEndgameEndingSlideshowWindowBuffer + 640 * y + x, width, height, 640, _colorTable[0]);
-        fontDrawText(gEndgameEndingSlideshowWindowBuffer + 640 * y + x, beginning, width, 640, _colorTable[32767]);
+        bufferFill(gEndgameEndingSlideshowWindowBuffer + 640 * y + x, width, height, 640, COLOR_BLACK);
+        fontDrawText(gEndgameEndingSlideshowWindowBuffer + 640 * y + x, beginning, width, 640, COLOR_WHITE);
 
         *ending = c;
 
@@ -1240,7 +1240,7 @@ void endgameEndingUpdateOverlay()
         windowGetWidth(gEndgameEndingOverlay),
         windowGetHeight(gEndgameEndingOverlay),
         windowGetWidth(gEndgameEndingOverlay),
-        intensityColorTable[_colorTable[0]][0]);
+        intensityColorTable[COLOR_BLACK][0]);
     windowRefresh(gEndgameEndingOverlay);
 }
 

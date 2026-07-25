@@ -253,6 +253,42 @@ int programStackPopInteger(Program* program);
 char* programStackPopString(Program* program);
 void* programStackPopPointer(Program* program);
 
+template <typename T>
+T programStackPopEnum(Program* program);
+
+template <>
+inline HitMode programStackPopEnum(Program* program)
+{
+    int hitMode = programStackPopInteger(program);
+    if (!hitModeIsValid(hitMode)) {
+        programPrintError("invalid hit mode %d", hitMode);
+    }
+
+    return static_cast<HitMode>(hitMode);
+}
+
+template <>
+inline HitLocation programStackPopEnum(Program* program)
+{
+    int hitLocation = programStackPopInteger(program);
+    if (!hitLocationIsValid(hitLocation)) {
+        programPrintError("invalid hit location %d", hitLocation);
+    }
+
+    return static_cast<HitLocation>(hitLocation);
+}
+
+template <>
+inline CriticalHitDataMember programStackPopEnum(Program* program)
+{
+    int criticalHitDataMember = programStackPopInteger(program);
+    if (!criticalHitDataMemberIsValid(criticalHitDataMember)) {
+        programPrintError("invalid critical hit data member %d", criticalHitDataMember);
+    }
+
+    return static_cast<CriticalHitDataMember>(criticalHitDataMember);
+}
+
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
 void programReturnStackPushInteger(Program* program, int value);
 void programReturnStackPushPointer(Program* program, void* value);

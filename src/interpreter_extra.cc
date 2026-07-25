@@ -10,6 +10,7 @@
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
+#include "content_config.h"
 #include "critter.h"
 #include "debug.h"
 #include "dialog.h"
@@ -977,7 +978,7 @@ static void opDestroyObject(Program* program)
     Object* owner = objectGetOwner(object);
     if (owner != nullptr) {
         int quantity = itemGetQuantity(owner, object);
-        itemRemove(owner, object, quantity);
+        itemRemoveWithReason(owner, object, quantity, RemoveInventoryObjectHookReason::ItemDestroyed);
 
         if (owner == gDude) {
             bool animated = !gameUiIsDisabled();
@@ -1672,7 +1673,7 @@ static void opRemoveObjectFromInventory(Program* program)
         updateFlags = true;
     }
 
-    if (itemRemove(owner, item, 1) == 0) {
+    if (itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::ItemRemoved) == 0) {
         Rect rect;
         _obj_connect(item, 1, 0, &rect);
         tileWindowRefreshRect(&rect, item->elevation);
@@ -1924,8 +1925,12 @@ static void opStartGameDialog(Program* program)
     gameDialogSetBackground(backgroundId);
     gGameDialogReactionOrFidget = reactionLevel;
 
-    if (gGameDialogHeadFid != -1) {
-        int npcReactionValue = reactionGetValue(gGameDialogSpeaker);
+    // SFALL: Use the start_gdialog target instead of the current dialog target,
+    // which can be null outside talk_p_proc.
+    bool startGameDialogFix = false;
+    configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "start_gdialog_fix", &startGameDialogFix);
+    if (gGameDialogHeadFid != -1 && (!startGameDialogFix || reactionLevel == -1)) {
+        int npcReactionValue = reactionGetValue(obj);
         int npcReactionType = reactionTranslateValue(npcReactionValue);
         switch (npcReactionType) {
         case NPC_REACTION_BAD:
@@ -3124,8 +3129,8 @@ static void opFloatMessage(Program* program)
     }
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    int color = _colorTable[32747];
-    int backgroundColor = _colorTable[0];
+    int color = COLOR_LIGHT_YELLOW;
+    int backgroundColor = COLOR_BLACK;
     int font = 101;
 
     if (obj == nullptr) {
@@ -3153,43 +3158,43 @@ static void opFloatMessage(Program* program)
 
     switch (floatingMessageType) {
     case FLOATING_MESSAGE_TYPE_WARNING:
-        color = _colorTable[31744];
-        backgroundColor = _colorTable[0];
+        color = COLOR_RED;
+        backgroundColor = COLOR_BLACK;
         font = 103;
         tileSetCenter(gDude->tile, TILE_SET_CENTER_REFRESH_WINDOW);
         break;
     case FLOATING_MESSAGE_TYPE_NORMAL:
     case FLOATING_MESSAGE_TYPE_YELLOW:
-        color = _colorTable[32747];
+        color = COLOR_LIGHT_YELLOW;
         break;
     case FLOATING_MESSAGE_TYPE_BLACK:
     case FLOATING_MESSAGE_TYPE_PURPLE:
     case FLOATING_MESSAGE_TYPE_GREY:
-        color = _colorTable[10570];
+        color = COLOR_DARK_GREY_2;
         break;
     case FLOATING_MESSAGE_TYPE_RED:
-        color = _colorTable[31744];
+        color = COLOR_RED;
         break;
     case FLOATING_MESSAGE_TYPE_GREEN:
-        color = _colorTable[992];
+        color = COLOR_GREEN;
         break;
     case FLOATING_MESSAGE_TYPE_BLUE:
-        color = _colorTable[31];
+        color = COLOR_BLUE;
         break;
     case FLOATING_MESSAGE_TYPE_NEAR_WHITE:
-        color = _colorTable[21140];
+        color = COLOR_LIGHT_GREY;
         break;
     case FLOATING_MESSAGE_TYPE_LIGHT_RED:
-        color = _colorTable[32074];
+        color = COLOR_LIGHT_RED;
         break;
     case FLOATING_MESSAGE_TYPE_WHITE:
-        color = _colorTable[32767];
+        color = COLOR_WHITE;
         break;
     case FLOATING_MESSAGE_TYPE_DARK_GREY:
-        color = _colorTable[8456];
+        color = COLOR_DARK_GREY;
         break;
     case FLOATING_MESSAGE_TYPE_LIGHT_GREY:
-        color = _colorTable[15855];
+        color = COLOR_GREY_2;
         break;
     }
 
@@ -3677,7 +3682,7 @@ static void opRemoveMultipleObjectsFromInventory(Program* program)
     }
 
     if (quantity != 0) {
-        if (itemRemove(owner, item, quantity) == 0) {
+        if (itemRemoveWithReason(owner, item, quantity, RemoveInventoryObjectHookReason::ItemRemovedMulti) == 0) {
             Rect updatedRect;
             _obj_connect(item, 1, 0, &updatedRect);
             if (itemWasEquipped) {
@@ -4380,7 +4385,7 @@ static void opSfxBuildItemName(Program* program)
 static void opSfxBuildWeaponName(Program* program)
 {
     Object* target = static_cast<Object*>(programStackPopPointer(program));
-    int hitMode = programStackPopInteger(program);
+    HitMode hitMode = programStackPopEnum<HitMode>(program);
     Object* weapon = static_cast<Object*>(programStackPopPointer(program));
     int weaponSfxType = programStackPopInteger(program);
 
@@ -4495,7 +4500,7 @@ static void opDestroyMultipleObjects(Program* program)
             quantityToDestroy = quantity;
         }
 
-        itemRemove(owner, object, quantityToDestroy);
+        itemRemoveWithReason(owner, object, quantityToDestroy, RemoveInventoryObjectHookReason::ItemDestroyMulti);
 
         if (owner == gDude) {
             bool animated = !gameUiIsDisabled();

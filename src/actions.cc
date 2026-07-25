@@ -773,7 +773,7 @@ int _action_ranged(Attack* attack, int anim)
                     int rightItemAction;
                     interfaceGetItemActions(&leftItemAction, &rightItemAction);
 
-                    itemRemove(attack->attacker, weapon, 1);
+                    itemRemoveWithReason(attack->attacker, weapon, 1, RemoveInventoryObjectHookReason::Throw);
                     replacedWeapon = itemReplace(attack->attacker, weapon, weaponFlags & OBJECT_IN_ANY_HAND);
                     objectSetFid(projectile, projectileProto->fid, nullptr);
                     _cAIPrepWeaponItem(attack->attacker, weapon);
@@ -1477,7 +1477,7 @@ int actionUseSkill(Object* user, Object* target, int skill)
             char* msg = skillsGetGenericResponse(partyMember, isDude);
 
             Rect rect;
-            if (textObjectAdd(partyMember, msg, 101, _colorTable[32747], _colorTable[0], &rect) == 0) {
+            if (textObjectAdd(partyMember, msg, 101, COLOR_LIGHT_YELLOW, COLOR_BLACK, &rect) == 0) {
                 tileWindowRefreshRect(&rect, gElevation);
             }
 

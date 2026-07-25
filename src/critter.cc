@@ -1024,7 +1024,7 @@ int critterGetBodyType(Object* critter)
     return proto->critter.data.bodyType;
 }
 
-bool critterCanUseWeapon(Object* critter, Object* weapon, int hitMode)
+bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
 {
     if (critter == nullptr || weapon == nullptr || itemGetType(weapon) != ITEM_TYPE_WEAPON) {
         return false;

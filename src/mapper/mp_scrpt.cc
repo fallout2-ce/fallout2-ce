@@ -385,7 +385,7 @@ static void scr_label_object(Object* obj, const char* scriptName)
         if (dot) *dot = '\0';
     }
 
-    textObjectAdd(obj, nameBuf, 101, _colorTable[32747], _colorTable[0], &rect);
+    textObjectAdd(obj, nameBuf, 101, COLOR_LIGHT_YELLOW, COLOR_BLACK, &rect);
     tileWindowRefreshRect(&rect, gElevation);
 }
 

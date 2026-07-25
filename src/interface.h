@@ -1,6 +1,7 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
 
@@ -49,7 +50,7 @@ void interfaceBarRefresh();
 void interfaceRenderHitPoints(bool animate);
 void interfaceRenderArmorClass(bool animate);
 void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints);
-int interfaceGetCurrentHitMode(int* hitMode, bool* aiming);
+int interfaceGetCurrentHitMode(HitMode* hitMode, bool* aiming);
 int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction);
 int interfaceBarSwapHands(bool animated);
 int interfaceGetItemActions(int* leftItemAction, int* rightItemAction);
@@ -65,7 +66,7 @@ void interfaceBarEndButtonsRenderRedLights();
 int indicatorBarRefresh();
 bool indicatorBarShow();
 bool indicatorBarHide();
-bool interface_get_current_attack_mode(int* hit_mode);
+bool interface_get_current_attack_mode(HitMode* hitMode);
 int interfaceTagAdd();
 int interfaceTagGetMax();
 bool interfaceTagShow(int tag);

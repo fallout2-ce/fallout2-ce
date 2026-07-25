@@ -82,7 +82,7 @@ void place_entrance_hex()
                 if (tileSetCenter(tile, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS) == 0) {
                     mapSetEnteringLocation(gElevation, tile, rotation);
                 } else {
-                    win_timed_msg("ERROR: Entrance out of range!", _colorTable[32747] | FONT_SHADOW);
+                    win_timed_msg("ERROR: Entrance out of range!", COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
                 }
             }
         }
@@ -123,7 +123,7 @@ void pick_region(Rect* rect)
         if (x != temp.right || y != temp.bottom) {
             erase_rect(rect);
             sort_rect(rect, &temp);
-            draw_rect(rect, _colorTable[32747]);
+            draw_rect(rect, COLOR_LIGHT_YELLOW);
         }
         renderPresent();
         sharedFpsLimiter.throttle();
@@ -264,7 +264,7 @@ void map_load_dialog()
     char** fileList;
     int count = fileNameListInit("maps\\*.map", &fileList);
     if (count == -1) {
-        win_timed_msg("No maps found!", _colorTable[32747] | FONT_SHADOW);
+        win_timed_msg("No maps found!", COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
         return;
     }
 
@@ -418,7 +418,7 @@ int pickToolbar(int topY)
         items[i] = names[i];
     }
 
-    return _win_pull_down(items, kTypeCount, 0, topY, _colorTable[32747] | FONT_SHADOW);
+    return _win_pull_down(items, kTypeCount, 0, topY, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
 }
 
 // place_object_
@@ -765,7 +765,7 @@ void copyObject(int filterType)
                     || filterType != -1 && FID_TYPE(obj->fid) != filterType) continue;
 
                 if (mpCopyCount >= kMaxCopyEntries) {
-                    _win_msg("Too many objects in region!", 80, 80, _colorTable[31744]);
+                    _win_msg("Too many objects in region!", 80, 80, COLOR_RED);
                     return;
                 }
 
@@ -780,7 +780,7 @@ void copyObject(int filterType)
     }
 
     if (mpCopyCount == 0) {
-        _win_msg("Nothing selected.", 80, 80, _colorTable[31744]);
+        _win_msg("Nothing selected.", 80, 80, COLOR_RED);
         return;
     }
 
@@ -866,11 +866,11 @@ void copyTile()
     int srcTiles[kMaxTiles];
     int srcCount = squares_in_rect(&region, gElevation, srcTiles, kMaxTiles);
     if (srcCount == 0) {
-        win_timed_msg("No tiles in area.", _colorTable[31744] | FONT_SHADOW);
+        win_timed_msg("No tiles in area.", COLOR_RED | DRAW_TEXT_FLAG_SHADOWED);
         return;
     }
     if (srcCount == kMaxTiles) {
-        win_timed_msg("Too many tiles in region!", _colorTable[31744] | FONT_SHADOW);
+        win_timed_msg("Too many tiles in region!", COLOR_RED | DRAW_TEXT_FLAG_SHADOWED);
         return;
     }
 

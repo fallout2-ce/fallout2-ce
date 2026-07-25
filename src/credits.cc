@@ -52,15 +52,15 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
     colorPaletteLoad("color.pal");
 
     if (useReversedStyle) {
-        gCreditsWindowTitleColor = _colorTable[18917];
+        gCreditsWindowTitleColor = COLOR_DARK_YELLOW_3;
         gCreditsWindowNameFont = 103;
         gCreditsWindowTitleFont = 104;
-        gCreditsWindowNameColor = _colorTable[13673];
+        gCreditsWindowNameColor = COLOR_DULL_BROWN;
     } else {
-        gCreditsWindowTitleColor = _colorTable[13673];
+        gCreditsWindowTitleColor = COLOR_DULL_BROWN;
         gCreditsWindowNameFont = 104;
         gCreditsWindowTitleFont = 103;
-        gCreditsWindowNameColor = _colorTable[18917];
+        gCreditsWindowNameColor = COLOR_DARK_YELLOW_3;
     }
 
     soundContinueAll();
@@ -81,7 +81,7 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
 
             int windowWidth = screenGetWidth();
             int windowHeight = screenGetHeight();
-            int window = windowCreate(0, 0, windowWidth, windowHeight, _colorTable[0], 20);
+            int window = windowCreate(0, 0, windowWidth, windowHeight, COLOR_BLACK, 20);
             soundContinueAll();
             if (window != -1) {
                 unsigned char* windowBuffer = windowGetBuffer(window);
@@ -90,7 +90,7 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
                     if (backgroundBuffer) {
                         soundContinueAll();
 
-                        memset(backgroundBuffer, _colorTable[0], windowWidth * windowHeight);
+                        memset(backgroundBuffer, COLOR_BLACK, windowWidth * windowHeight);
 
                         if (backgroundFid != -1) {
                             FrmImage backgroundFrmImage;
@@ -267,7 +267,7 @@ static bool creditsFileParseNextLine(char* dest, int* font, int* color)
             pch = string + 1;
         } else if (string[0] == '#') {
             *font = gCreditsWindowNameFont;
-            *color = _colorTable[17969];
+            *color = COLOR_GREY;
             pch = string + 1;
         } else {
             *font = gCreditsWindowNameFont;

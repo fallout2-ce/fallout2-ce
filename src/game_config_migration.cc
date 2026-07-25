@@ -186,6 +186,7 @@ namespace {
         // [dialog]
         { kSfallMisc, "DialogueFix", CONTENT_CONFIG_DIALOG_SECTION, "no_exit_hotkey", "1" },
         { kSfallMisc, "DialogGenderWords", CONTENT_CONFIG_DIALOG_SECTION, "gender_words", "0" },
+        { kSfallMisc, "StartGDialogFix", CONTENT_CONFIG_DIALOG_SECTION, "start_gdialog_fix", "0" },
         // [main_menu]
         { kSfallMisc, "VersionString", CONTENT_CONFIG_MAIN_MENU_SECTION, "version_string" },
         { kSfallMisc, "MainMenuFontColour", CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", "0" },

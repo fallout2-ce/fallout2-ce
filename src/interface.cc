@@ -99,8 +99,8 @@ typedef struct InterfaceItemState {
     Object* item;
     unsigned char isDisabled;
     unsigned char isWeapon;
-    int primaryHitMode;
-    int secondaryHitMode;
+    HitMode primaryHitMode;
+    HitMode secondaryHitMode;
     int action;
     int itemFid;
 } InterfaceItemState;
@@ -376,7 +376,7 @@ int interfaceInit()
     int interfaceBarWindowX = (screenGetWidth() - gInterfaceBarWidth) / 2;
     int interfaceBarWindowY = screenGetHeight() - INTERFACE_BAR_HEIGHT;
 
-    gInterfaceBarWindow = windowCreate(interfaceBarWindowX, interfaceBarWindowY, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT, _colorTable[0], WINDOW_HIDDEN);
+    gInterfaceBarWindow = windowCreate(interfaceBarWindowX, interfaceBarWindowY, gInterfaceBarWidth, INTERFACE_BAR_HEIGHT, COLOR_BLACK, WINDOW_HIDDEN);
     if (gInterfaceBarWindow == -1) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -1086,7 +1086,7 @@ void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
 }
 
 // 0x45EF6C intface_get_attack
-int interfaceGetCurrentHitMode(int* hitMode, bool* aiming)
+int interfaceGetCurrentHitMode(HitMode* hitMode, bool* aiming)
 {
     if (gInterfaceBarWindow == -1) {
         return -1;
@@ -1350,7 +1350,7 @@ void _intface_use_item()
     if (ptr->isWeapon != 0) {
         if (ptr->action == INTERFACE_ITEM_ACTION_RELOAD) {
             if (isInCombat()) {
-                int hitMode = gInterfaceCurrentHand == HAND_LEFT
+                HitMode hitMode = gInterfaceCurrentHand == HAND_LEFT
                     ? HIT_MODE_LEFT_WEAPON_RELOAD
                     : HIT_MODE_RIGHT_WEAPON_RELOAD;
 
@@ -1668,7 +1668,7 @@ static int interfaceBarRefreshMainAction()
         } else {
             int primaryFid = -1;
             int bullseyeFid = -1;
-            int hitMode = -1;
+            HitMode hitMode = HIT_MODE_INVALID;
 
             // NOTE: This value is decremented at 0x45FEAC, probably to build
             // jump table.
@@ -2298,7 +2298,7 @@ static int indicatorBarInit()
         char text[1024];
         strcpy(text, getmsg(&messageList, &messageListItem, indicator->title));
 
-        int color = indicator->isBad ? _colorTable[31744] : _colorTable[992];
+        int color = indicator->isBad ? COLOR_RED : COLOR_GREEN;
         indicatorBarRenderBox(indicator->data, text, color);
     }
 
@@ -2438,7 +2438,7 @@ int indicatorBarRefresh()
                 screenGetHeight() - INTERFACE_BAR_HEIGHT - INDICATOR_BOX_HEIGHT,
                 (INDICATOR_BOX_WIDTH - INDICATOR_BOX_CONNECTOR_WIDTH) * count,
                 INDICATOR_BOX_HEIGHT,
-                _colorTable[0],
+                COLOR_BLACK,
                 0);
             indicatorBarRender(count);
             windowRefresh(gIndicatorBarWindow);
@@ -2562,22 +2562,22 @@ static int indicatorBarGetVisibleSlotCount()
 static int indicatorBarTextColor(int color)
 {
     switch (color) {
-    case 1: // red
-        return _colorTable[31744];
-    case 2: // white
-        return _colorTable[32767];
-    case 3: // yellow
-        return _colorTable[32328];
-    case 4: // dark red
-        return _colorTable[23624];
-    case 5: // blue
-        return _colorTable[31];
-    case 6: // pink
-        return _colorTable[31775];
-    case 7: // dull pink
-        return _colorTable[31215];
-    default: // (also 0) green
-        return _colorTable[992];
+    case 1:
+        return COLOR_RED;
+    case 2:
+        return COLOR_WHITE;
+    case 3:
+        return COLOR_AMBER;
+    case 4:
+        return COLOR_DARK_RED;
+    case 5:
+        return COLOR_BLUE;
+    case 6:
+        return COLOR_MAGENTA;
+    case 7:
+        return COLOR_LIGHT_PINK_2;
+    default:
+        return COLOR_GREEN;
     }
 }
 
@@ -2943,7 +2943,7 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
 // modes, the default is `punch`).
 //
 // 0x45EF6C intface_get_attack
-bool interface_get_current_attack_mode(int* hit_mode)
+bool interface_get_current_attack_mode(HitMode* hitMode)
 {
     if (gInterfaceBarWindow == -1) {
         return false;
@@ -2952,19 +2952,19 @@ bool interface_get_current_attack_mode(int* hit_mode)
     switch (gInterfaceItemStates[gInterfaceCurrentHand].action) {
     case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
     case INTERFACE_ITEM_ACTION_PRIMARY:
-        *hit_mode = gInterfaceItemStates[gInterfaceCurrentHand].primaryHitMode;
+        *hitMode = gInterfaceItemStates[gInterfaceCurrentHand].primaryHitMode;
         break;
     case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
     case INTERFACE_ITEM_ACTION_SECONDARY:
-        *hit_mode = gInterfaceItemStates[gInterfaceCurrentHand].secondaryHitMode;
+        *hitMode = gInterfaceItemStates[gInterfaceCurrentHand].secondaryHitMode;
         break;
     case INTERFACE_ITEM_ACTION_RELOAD:
-        *hit_mode = gInterfaceCurrentHand == HAND_LEFT
+        *hitMode = gInterfaceCurrentHand == HAND_LEFT
             ? HIT_MODE_LEFT_WEAPON_RELOAD
             : HIT_MODE_RIGHT_WEAPON_RELOAD;
         break;
     default:
-        *hit_mode = HIT_MODE_PUNCH;
+        *hitMode = HIT_MODE_PUNCH;
         break;
     }
 

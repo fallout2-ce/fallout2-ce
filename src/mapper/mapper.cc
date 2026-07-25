@@ -778,10 +778,10 @@ static void mapperValidateDevPath()
 
 static void initMenuBar(const int screenWidth)
 {
-    int foregroundColor = _colorTable[20052];
-    int backgroundColor = _colorTable[8456];
+    int foregroundColor = COLOR_LIGHT_GREY_2;
+    int backgroundColor = COLOR_DARK_GREY;
 
-    menu_bar = windowCreate(0, 0, screenWidth, 16, _colorTable[0], WINDOW_HIDDEN);
+    menu_bar = windowCreate(0, 0, screenWidth, 16, COLOR_BLACK, WINDOW_HIDDEN);
     _win_register_menu_bar(menu_bar, 0, 0, screenWidth, 16, foregroundColor, backgroundColor);
     _win_register_menu_pulldown(menu_bar, 8, "FILE", kBtnMenuHeaderFile, 8, menu_names[0], foregroundColor, backgroundColor);
     _win_register_menu_pulldown(menu_bar, 40, "TOOLS", kBtnMenuHeaderTools, 21, menu_names[1], foregroundColor, backgroundColor);
@@ -2309,11 +2309,11 @@ void print_toolbar_name(int object_type)
         96,
         19,
         _scr_size.right - _scr_size.left + 1,
-        _colorTable[21140]);
+        COLOR_LIGHT_GREY);
 
     sprintf(name, "%s", artGetObjectTypeName(object_type));
     name[0] = static_cast<char>(toupper(name[0]));
-    windowDrawText(tool_win, name, 0, 7, 7, _colorTable[32747] | DRAW_TEXT_FLAG_NO_BG);
+    windowDrawText(tool_win, name, 0, 7, 7, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG);
     windowRefreshRect(tool_win, &rect);
 }
 

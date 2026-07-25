@@ -1366,7 +1366,7 @@ char* gameSoundBuildInterfaceName(const char* a1)
 
 // sfx_build_weapon_name
 // 0x451760
-char* sfxBuildWeaponName(int effectType, Object* weapon, int hitMode, Object* target)
+char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object* target)
 {
     int soundVariant;
     char weaponSoundCode;

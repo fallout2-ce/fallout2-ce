@@ -70,6 +70,7 @@ jobs:
           mkdir -p out/dist/fallout2-ce-android
           cp os/android/app/build/outputs/apk/release/app-release.apk out/dist/fallout2-ce-android/fallout2-ce-android.apk
           cp out/dist/ce.dat out/dist/fallout2-ce-android/ce.dat
+          cp files/fallout2.cfg out/dist/fallout2-ce-android/EXAMPLE_fallout2.cfg
           cd out/dist
           zip -r fallout2-ce-android.zip fallout2-ce-android
           gh release upload ${{ github.event.release.tag_name }} fallout2-ce-android.zip
@@ -130,6 +131,7 @@ jobs:
           mkdir -p out/dist/fallout2-ce-ios
           cp build/fallout2-ce.ipa out/dist/fallout2-ce-ios/fallout2-ce-ios.ipa
           cp out/dist/ce.dat out/dist/fallout2-ce-ios/ce.dat
+          cp files/fallout2.cfg out/dist/fallout2-ce-ios/EXAMPLE_fallout2.cfg
           cd out/dist
           zip -r fallout2-ce-ios.zip fallout2-ce-ios
           gh release upload ${{ github.event.release.tag_name }} fallout2-ce-ios.zip
@@ -211,6 +213,7 @@ jobs:
           mkdir -p out/dist/fallout2-ce-linux-${{ matrix.arch }}
           cp build/fallout2-ce out/dist/fallout2-ce-linux-${{ matrix.arch }}/fallout2-ce
           cp out/dist/ce.dat out/dist/fallout2-ce-linux-${{ matrix.arch }}/ce.dat
+          cp files/fallout2.cfg out/dist/fallout2-ce-linux-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           tar -czvf fallout2-ce-linux-${{ matrix.arch }}.tar.gz -C out/dist fallout2-ce-linux-${{ matrix.arch }}
           gh release upload ${{ github.event.release.tag_name }} fallout2-ce-linux-${{ matrix.arch }}.tar.gz
           rm fallout2-ce-linux-${{ matrix.arch }}.tar.gz
@@ -341,6 +344,7 @@ jobs:
           mkdir -p out/dist/fallout2-ce-windows-${{ matrix.arch }}
           cp out/build/windows-${{ matrix.arch }}/RelWithDebInfo/fallout2-ce.exe out/dist/fallout2-ce-windows-${{ matrix.arch }}/fallout2-ce.exe
           cp out/dist/ce.dat out/dist/fallout2-ce-windows-${{ matrix.arch }}/ce.dat
+          cp files/fallout2.cfg out/dist/fallout2-ce-windows-${{ matrix.arch }}/EXAMPLE_fallout2.cfg
           cd out/dist
           7z a fallout2-ce-windows-${{ matrix.arch }}.zip fallout2-ce-windows-${{ matrix.arch }}
           gh release upload ${{ github.event.release.tag_name }} fallout2-ce-windows-${{ matrix.arch }}.zip

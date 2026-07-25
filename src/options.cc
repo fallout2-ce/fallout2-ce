@@ -318,8 +318,8 @@ static int optionsWindowInit()
         }
         int textY = (_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight() - fontGetLineHeight()) / 2 + 1;
 
-        fontDrawText(_opbtns[buttonBufferIndex] + _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * textY + textX, msg, _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _colorTable[18979]);
-        fontDrawText(_opbtns[buttonBufferIndex + 1] + _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * (textY + 1) + textX, msg, _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _colorTable[14723]);
+        fontDrawText(_opbtns[buttonBufferIndex] + _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * textY + textX, msg, _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), COLOR_DARK_YELLOW);
+        fontDrawText(_opbtns[buttonBufferIndex + 1] + _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * (textY + 1) + textX, msg, _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth(), COLOR_DARK_YELLOW_2);
 
         int btn = buttonCreate(optionsWindow,
             13,
@@ -489,7 +489,7 @@ int showPause(bool preserveWorldState)
         messageItemText,
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth(),
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth(),
-        _colorTable[18979]);
+        COLOR_DARK_YELLOW);
 
     fontSetCurrent(104);
 
@@ -501,7 +501,7 @@ int showPause(bool preserveWorldState)
         path,
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth(),
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth(),
-        _colorTable[18979]);
+        COLOR_DARK_YELLOW);
 
     int doneBtn = buttonCreate(window,
         26,

@@ -65,7 +65,8 @@ struct UISettings {
     // Expands barter/trade window vertically, adding a 4th item slot per side.
     bool expand_barter_window = false;
 
-    int splash_screen_size = 0;
+    // Scales the splash screen to fit the screen
+    int splash_screen_size = 1;
 
     // Whether to scale movies to fit the screen while preserving aspect ratio.
     bool movie_aspect_fit = true;

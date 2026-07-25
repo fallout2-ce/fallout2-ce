@@ -1558,7 +1558,7 @@ int _partyMemberIncLevels()
         if (messageListGetItem(&gMiscMessageList, &msg)) {
             name = critterGetName(obj);
             snprintf(str, sizeof(str), msg.text, name);
-            textObjectAdd(obj, str, 101, _colorTable[0x7FFF], _colorTable[0], &levelUpMessageRect);
+            textObjectAdd(obj, str, 101, COLOR_WHITE, COLOR_BLACK, &levelUpMessageRect);
             tileWindowRefreshRect(&levelUpMessageRect, obj->elevation);
         }
     }
@@ -1597,7 +1597,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
 
     Object* armor = critterGetArmor(critter);
     adjustCritterStatsOnArmorChange(critter, armor, nullptr);
-    itemRemove(critter, armor, 1);
+    itemRemoveQuietly(critter, armor, 1);
 
     int maxHp = critterGetStat(critter, STAT_MAXIMUM_HIT_POINTS);
     critterAdjustHitPoints(critter, maxHp);

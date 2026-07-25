@@ -257,7 +257,7 @@ void opSelectFileList(Program* program)
             nullptr,
             320 - fontGetStringWidth(title) / 2,
             200,
-            _colorTable[0x7FFF] | 0x10000);
+            COLOR_WHITE | DRAW_TEXT_FLAG_SHADOWED);
 
         if (selectedIndex != -1) {
             programStackPushString(program, fileList[selectedIndex]);
@@ -762,7 +762,7 @@ void opCreateWin(Program* program)
     width = (width * windowGetXres() + 639) / 640;
     height = (height * windowGetYres() + 479) / 480;
 
-    if (scriptWindowCreate(windowName, x, y, width, height, _colorTable[0], 0) == -1) {
+    if (scriptWindowCreate(windowName, x, y, width, height, COLOR_BLACK, 0) == -1) {
         programFatalError("Couldn't create window.");
     }
 }

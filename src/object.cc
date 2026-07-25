@@ -3509,11 +3509,11 @@ static void _obj_blend_table_init()
     _glassGrayTable[0] = 0;
     _commonGrayTable[0] = 0;
 
-    _wallBlendTable = _getColorBlendTable(_colorTable[25439]);
-    _glassBlendTable = _getColorBlendTable(_colorTable[10239]);
-    _steamBlendTable = _getColorBlendTable(_colorTable[32767]);
-    _energyBlendTable = _getColorBlendTable(_colorTable[30689]);
-    _redBlendTable = _getColorBlendTable(_colorTable[31744]);
+    _wallBlendTable = _getColorBlendTable(COLOR_PALE_BLUE);
+    _glassBlendTable = _getColorBlendTable(COLOR_CYAN);
+    _steamBlendTable = _getColorBlendTable(COLOR_WHITE);
+    _energyBlendTable = _getColorBlendTable(COLOR_YELLOW_GREEN);
+    _redBlendTable = _getColorBlendTable(COLOR_RED);
 }
 
 // NOTE: Inlined.
@@ -3521,11 +3521,11 @@ static void _obj_blend_table_init()
 // 0x48D2E8 obj_blend_table_exit
 static void _obj_blend_table_exit()
 {
-    _freeColorBlendTable(_colorTable[25439]);
-    _freeColorBlendTable(_colorTable[10239]);
-    _freeColorBlendTable(_colorTable[32767]);
-    _freeColorBlendTable(_colorTable[30689]);
-    _freeColorBlendTable(_colorTable[31744]);
+    _freeColorBlendTable(COLOR_PALE_BLUE);
+    _freeColorBlendTable(COLOR_CYAN);
+    _freeColorBlendTable(COLOR_WHITE);
+    _freeColorBlendTable(COLOR_YELLOW_GREEN);
+    _freeColorBlendTable(COLOR_RED);
 }
 
 // 0x48D348 obj_save_obj
@@ -4753,7 +4753,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
             v44 = frameHeight / 5;
             break;
         case OUTLINE_TYPE_2:
-            color = _colorTable[31744];
+            color = COLOR_RED;
             v44 = 0;
             if (v53 != 0) {
                 v47 = _commonGrayTable;
@@ -4761,7 +4761,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
             }
             break;
         case OUTLINE_TYPE_4:
-            color = _colorTable[15855];
+            color = COLOR_GREY_2;
             v44 = 0;
             if (v53 != 0) {
                 v47 = _commonGrayTable;
@@ -4776,7 +4776,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
             break;
         case OUTLINE_TYPE_ITEM:
             v44 = 0;
-            color = _colorTable[30632];
+            color = COLOR_LIGHT_GOLD_2;
             if (v53 != 0) {
                 v47 = _commonGrayTable;
                 v48 = _redBlendTable;
@@ -4789,7 +4789,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
             v44 = frameHeight;
             break;
         default:
-            color = _colorTable[31775];
+            color = COLOR_MAGENTA;
             v53 = 0;
             v44 = 0;
             break;

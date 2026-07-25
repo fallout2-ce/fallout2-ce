@@ -31,10 +31,6 @@ typedef struct FontManager {
     FontManagerGetMonospacedCharacterWidth* getMonospacedCharacterWidthProc;
 } FontManager;
 
-#define FONT_SHADOW (0x10000)
-#define FONT_UNDERLINE (0x20000)
-#define FONT_MONO (0x40000)
-
 extern FontManager gTextFontManager;
 extern int gCurrentFont;
 extern int gFontManagersCount;

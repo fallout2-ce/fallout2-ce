@@ -29,7 +29,6 @@ void skillsGetTagged(int* skills, int count);
 bool skillIsTagged(int skill);
 int skillGetValue(Object* critter, int skill);
 int skillGetDefaultValue(int skill);
-int skillGetBaseValue(Object* critter, int skill);
 int skillAdd(Object* critter, int skill);
 int skillAddForce(Object* critter, int skill);
 int skillsGetCost(int skillValue);

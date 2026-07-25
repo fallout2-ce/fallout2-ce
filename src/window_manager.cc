@@ -491,7 +491,7 @@ void windowDrawBorder(int win)
     _lighten_buf(window->buffer + window->width - 5, 5, window->height, window->width);
     _lighten_buf(window->buffer + window->width * (window->height - 5) + 5, window->width - 10, 5, window->width);
 
-    bufferDrawRect(window->buffer, window->width, 0, 0, window->width - 1, window->height - 1, _colorTable[0]);
+    bufferDrawRect(window->buffer, window->width, 0, 0, window->width - 1, window->height - 1, COLOR_BLACK);
 
     bufferDrawRectShadowed(window->buffer, window->width, 1, 1, window->width - 2, window->height - 2, _colorTable[_GNW_wcolor[1]], _colorTable[_GNW_wcolor[2]]);
     bufferDrawRectShadowed(window->buffer, window->width, 5, 5, window->width - 6, window->height - 6, _colorTable[_GNW_wcolor[2]], _colorTable[_GNW_wcolor[1]]);
@@ -1493,7 +1493,7 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
 
     _lighten_buf(normal, buttonWidth, buttonHeight, buttonWidth);
 
-    fontDrawText(normal + buttonWidth * 3 + 8, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]] | FONT_SHADOW);
+    fontDrawText(normal + buttonWidth * 3 + 8, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]] | DRAW_TEXT_FLAG_SHADOWED);
     bufferDrawRectShadowed(normal,
         buttonWidth,
         2,
@@ -1510,9 +1510,9 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
         buttonHeight - 2,
         _colorTable[_GNW_wcolor[1]],
         _colorTable[_GNW_wcolor[2]]);
-    bufferDrawRect(normal, buttonWidth, 0, 0, buttonWidth - 1, buttonHeight - 1, _colorTable[0]);
+    bufferDrawRect(normal, buttonWidth, 0, 0, buttonWidth - 1, buttonHeight - 1, COLOR_BLACK);
 
-    fontDrawText(pressed + buttonWidth * 4 + 9, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]] | FONT_SHADOW);
+    fontDrawText(pressed + buttonWidth * 4 + 9, title, buttonWidth, buttonWidth, _colorTable[_GNW_wcolor[3]] | DRAW_TEXT_FLAG_SHADOWED);
     bufferDrawRectShadowed(pressed,
         buttonWidth,
         2,
@@ -1529,7 +1529,7 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
         buttonHeight - 2,
         _colorTable[_GNW_wcolor[2]],
         _colorTable[_GNW_wcolor[1]]);
-    bufferDrawRect(pressed, buttonWidth, 0, 0, buttonWidth - 1, buttonHeight - 1, _colorTable[0]);
+    bufferDrawRect(pressed, buttonWidth, 0, 0, buttonWidth - 1, buttonHeight - 1, COLOR_BLACK);
 
     Button* button = buttonCreateInternal(win,
         x,

@@ -53,41 +53,7 @@ static constexpr int kChemUseAlwaysChance = 100;
 static constexpr int kRandomDrugPickingArraySize = 3;
 static std::unordered_set<Object*> burstDisabledCritters;
 
-typedef struct AiMessageRange {
-    int start;
-    int end;
-} AiMessageRange;
-
-typedef struct AiPacket {
-    char* name;
-    int packet_num;
-    int max_dist;
-    int min_to_hit;
-    int min_hp;
-    int aggression;
-    int hurt_too_much;
-    int secondary_freq;
-    int called_freq;
-    int font;
-    int color;
-    int outline_color;
-    int chance;
-    AiMessageRange run;
-    AiMessageRange move;
-    AiMessageRange attack;
-    AiMessageRange miss;
-    AiMessageRange hit[HIT_LOCATION_SPECIFIC_COUNT];
-    int area_attack_mode;
-    int run_away_mode;
-    int best_weapon;
-    int distance;
-    int attack_who;
-    int chem_use;
-    int chem_primary_desire[AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT];
-    int disposition;
-    char* body_type;
-    char* general_type;
-} AiPacket;
+static_assert(AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT == sizeof(AiPacket::chem_primary_desire) / sizeof(AiPacket::chem_primary_desire[0]));
 
 typedef struct AiRetargetData {
     Object* source;
@@ -108,7 +74,6 @@ static int _cai_match_str_to_list(const char* str, const char** list, int count,
 static void aiPacketInit(AiPacket* ai);
 static int aiPacketRead(File* stream, AiPacket* ai);
 static int aiPacketWrite(File* stream, AiPacket* ai);
-static AiPacket* aiGetPacket(Object* obj);
 static AiPacket* aiGetPacketByNum(int aiPacketNum);
 static int _ai_magic_hands(Object* a1, Object* a2, int num);
 static int _ai_check_drugs(Object* critter);
@@ -128,19 +93,19 @@ static Object* _ai_danger_source(Object* a1);
 static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr);
 static bool _caiHasWeapPrefType(AiPacket* ai, int attackType);
 static Object* _ai_best_weapon(Object* a1, Object* a2, Object* a3, Object* a4);
-static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode);
+static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode);
 static bool aiCanUseItem(Object* obj, Object* a2);
 static Object* _ai_search_environ(Object* critter, int itemType);
 static Object* _ai_retrieve_object(Object* critter, Object* item);
-static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender);
+static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender);
 static int _ai_move_steps_closer(Object* a1, Object* a2, int actionPoints, bool taunt);
 static int _ai_move_closer(Object* a1, Object* a2, bool taunt);
 static int _cai_retargetTileFromFriendlyFire(Object* source, Object* target, int* tilePtr);
 static int _cai_retargetTileFromFriendlyFireSubFunc(AiRetargetData* aiRetargetData, int tile);
 static bool _cai_attackWouldIntersect(Object* attacker, Object* defender, Object* attackerFriend, int tile, int* distance);
-static int _ai_switch_weapons(Object* a1, int* hitMode, Object** weapon, Object* a4);
-static int _ai_called_shot(Object* attacker, Object* defender, int hitMode);
-static int _ai_attack(Object* attacker, Object* defender, int hitMode);
+static int _ai_switch_weapons(Object* a1, HitMode* hitMode, Object** weapon, Object* a4);
+static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode hitMode);
+static int _ai_attack(Object* attacker, Object* defender, HitMode hitMode);
 static int _ai_try_attack(Object* a1, Object* a2);
 static int _cai_get_min_hp(AiPacket* ai);
 static int _ai_print_msg(Object* critter, int type);
@@ -738,7 +703,7 @@ char* combat_ai_name(int packet_num)
 // Get ai from object
 //
 // 0x4280B4
-static AiPacket* aiGetPacket(Object* obj)
+AiPacket* aiGetPacket(Object* obj)
 {
     // NOTE: Uninline.
     AiPacket* ai = aiGetPacketByNum(obj->data.critter.combat.aiPacket);
@@ -1046,7 +1011,7 @@ static int _ai_check_drugs(Object* critter)
 
             int drugPid = drug->pid;
             if (itemIsHealing(drugPid)) {
-                if (itemRemove(critter, drug, 1) == 0) {
+                if (itemRemoveWithReason(critter, drug, 1, RemoveInventoryObjectHookReason::AIUseDrugOn) == 0) {
                     if (drugItemTakeDrug(critter, drug) == -1) {
                         itemAdd(critter, drug, 1);
                     } else {
@@ -1143,7 +1108,7 @@ static int _ai_check_drugs(Object* critter)
                     availableDrugs[index] = availableDrugs[*availableDrugsCountPtr - 1];
                     *availableDrugsCountPtr -= 1;
 
-                    if (itemRemove(critter, drug, 1) == 0) {
+                    if (itemRemoveWithReason(critter, drug, 1, RemoveInventoryObjectHookReason::AIUseDrugOn) == 0) {
                         if (drugItemTakeDrug(critter, drug) == -1) {
                             itemAdd(critter, drug, 1);
                         } else {
@@ -1188,7 +1153,7 @@ static int _ai_check_drugs(Object* critter)
                 break;
             }
 
-            if (itemRemove(critter, lastItem, 1) == 0) {
+            if (itemRemoveWithReason(critter, lastItem, 1, RemoveInventoryObjectHookReason::AIUseDrugOn) == 0) {
                 if (drugItemTakeDrug(critter, lastItem) == -1) {
                     itemAdd(critter, lastItem, 1);
                 } else {
@@ -1654,7 +1619,7 @@ static Object* _ai_danger_source(Object* a1)
                             // Check if we can attack it. No ammo and out of
                             // range are ok results, since we can reload weapon
                             // move closer if necessary.
-                            int badShot = _combat_check_bad_shot(a1, critter, HIT_MODE_RIGHT_WEAPON_PRIMARY, false);
+                            CombatBadShot badShot = _combat_check_bad_shot(a1, critter, HIT_MODE_RIGHT_WEAPON_PRIMARY, false);
                             if (badShot != COMBAT_BAD_SHOT_OK
                                 && badShot != COMBAT_BAD_SHOT_NO_AMMO
                                 && badShot != COMBAT_BAD_SHOT_OUT_OF_RANGE) {
@@ -2010,7 +1975,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
 }
 
 // 0x4298EC
-static bool _ai_can_use_weapon(Object* critter, Object* weapon, int hitMode)
+static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode)
 {
     bool result = critterCanUseWeapon(critter, weapon, hitMode);
 
@@ -2295,7 +2260,7 @@ static Object* _ai_retrieve_object(Object* critter, Object* item)
 }
 
 // 0x429DB4
-static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender)
+static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender)
 {
     if (weapon == nullptr) {
         return HIT_MODE_PUNCH;
@@ -2337,19 +2302,19 @@ static int _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender)
             break;
         case AREA_ATTACK_MODE_BE_SURE:
             if (_determine_to_hit(attacker, defender, HIT_LOCATION_TORSO, HIT_MODE_RIGHT_WEAPON_SECONDARY) >= 85
-                && !_combat_safety_invalidate_weapon(attacker, weapon, 3, defender, nullptr)) {
+                && !_combat_safety_invalidate_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY, defender, nullptr)) {
                 useSecondaryMode = true;
             }
             break;
         case AREA_ATTACK_MODE_BE_CAREFUL:
             if (_determine_to_hit(attacker, defender, HIT_LOCATION_TORSO, HIT_MODE_RIGHT_WEAPON_SECONDARY) >= 50
-                && !_combat_safety_invalidate_weapon(attacker, weapon, 3, defender, nullptr)) {
+                && !_combat_safety_invalidate_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY, defender, nullptr)) {
                 useSecondaryMode = true;
             }
             break;
         case AREA_ATTACK_MODE_BE_ABSOLUTELY_SURE:
             if (_determine_to_hit(attacker, defender, HIT_LOCATION_TORSO, HIT_MODE_RIGHT_WEAPON_SECONDARY) >= 95
-                && !_combat_safety_invalidate_weapon(attacker, weapon, 3, defender, nullptr)) {
+                && !_combat_safety_invalidate_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY, defender, nullptr)) {
                 useSecondaryMode = true;
             }
             break;
@@ -2609,7 +2574,7 @@ static int _cai_retargetTileFromFriendlyFireSubFunc(AiRetargetData* aiRetargetDa
 // 0x42A518
 static bool _cai_attackWouldIntersect(Object* attacker, Object* defender, Object* attackerFriend, int tile, int* distance)
 {
-    int hitMode = HIT_MODE_RIGHT_WEAPON_PRIMARY;
+    HitMode hitMode = HIT_MODE_RIGHT_WEAPON_PRIMARY;
     bool aiming = false;
     if (attacker == gDude) {
         interfaceGetCurrentHitMode(&hitMode, &aiming);
@@ -2636,7 +2601,7 @@ static bool _cai_attackWouldIntersect(Object* attacker, Object* defender, Object
 }
 
 // 0x42A5B8
-static int _ai_switch_weapons(Object* attacker, int* hitMode, Object** weapon, Object* defender)
+static int _ai_switch_weapons(Object* attacker, HitMode* hitMode, Object** weapon, Object* defender)
 {
     *weapon = nullptr;
     *hitMode = HIT_MODE_PUNCH;
@@ -2674,9 +2639,9 @@ static int _ai_switch_weapons(Object* attacker, int* hitMode, Object** weapon, O
 }
 
 // 0x42A670
-static int _ai_called_shot(Object* attacker, Object* defender, int hitMode)
+static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode hitMode)
 {
-    int hitLocation = HIT_LOCATION_TORSO;
+    HitLocation hitLocation = HIT_LOCATION_TORSO;
 
     if (weaponGetActionPointCost(attacker, hitMode, true) <= attacker->data.critter.combat.ap) {
         if (critterCanAim(attacker, hitMode)) {
@@ -2696,8 +2661,8 @@ static int _ai_called_shot(Object* attacker, Object* defender, int hitMode)
                 }
 
                 if (critterGetStat(attacker, STAT_INTELLIGENCE) >= intelligenceRequired) {
-                    hitLocation = randomBetween(0, HIT_LOCATION_SPECIFIC_COUNT);
-                    int chanceToHit = _determine_to_hit(attacker, defender, hitMode, hitLocation);
+                    hitLocation = static_cast<HitLocation>(randomBetween(HIT_LOCATION_HEAD, HIT_LOCATION_SPECIFIC_COUNT));
+                    int chanceToHit = _determine_to_hit(attacker, defender, hitLocation, hitMode);
                     if (chanceToHit < ai->min_to_hit) {
                         hitLocation = HIT_LOCATION_TORSO;
                     }
@@ -2710,7 +2675,7 @@ static int _ai_called_shot(Object* attacker, Object* defender, int hitMode)
 }
 
 // 0x42A748
-static int _ai_attack(Object* attacker, Object* defender, int hitMode)
+static int _ai_attack(Object* attacker, Object* defender, HitMode hitMode)
 {
     if (attacker->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) {
         return -1;
@@ -2721,7 +2686,7 @@ static int _ai_attack(Object* attacker, Object* defender, int hitMode)
     reg_anim_end();
     _combat_turn_run();
 
-    int hitLocation = _ai_called_shot(attacker, defender, hitMode);
+    HitLocation hitLocation = _ai_called_shot(attacker, defender, hitMode);
     if (_combat_attack(attacker, defender, hitMode, hitLocation)) {
         return -1;
     }
@@ -2744,7 +2709,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
         weapon = nullptr;
     }
 
-    int hitMode = _ai_pick_hit_mode(attacker, weapon, defender);
+    HitMode hitMode = _ai_pick_hit_mode(attacker, weapon, defender);
     int minToHit = aiGetPacket(attacker)->min_to_hit;
 
     int actionPoints = attacker->data.critter.combat.ap;
@@ -2771,7 +2736,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
             break;
         }
 
-        int reason = _combat_check_bad_shot(attacker, defender, hitMode, false);
+        CombatBadShot reason = _combat_check_bad_shot(attacker, defender, hitMode, false);
         if (reason == COMBAT_BAD_SHOT_NO_AMMO) {
             // If the secondary attack (for example, burst fire) does not have enough ammo,
             // try the primary attack, which may have a lower ammo cost.
@@ -2856,9 +2821,6 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                 }
             }
         } else if (reason == COMBAT_BAD_SHOT_NOT_ENOUGH_AP || reason == COMBAT_BAD_SHOT_ARM_CRIPPLED || reason == COMBAT_BAD_SHOT_BOTH_ARMS_CRIPPLED) {
-            // 3 - not enough action points
-            // 6 - crippled one arm for two-handed weapon
-            // 7 - both hands crippled
             if (_ai_switch_weapons(attacker, &hitMode, &weapon, defender) == -1) {
                 return -1;
             }
@@ -3561,6 +3523,25 @@ void _combatai_check_retaliation(Object* a1, Object* a2)
     }
 }
 
+static int adjustPerceptionDistanceForDudeSneak(int maxDistance, Object* target)
+{
+    if (target != gDude) {
+        return maxDistance;
+    }
+
+    if (dudeIsSneaking()) {
+        int sneak = skillGetValue(gDude, SKILL_SNEAK);
+        maxDistance /= 4;
+        if (sneak > 120) {
+            maxDistance -= 1;
+        }
+    } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
+        maxDistance = maxDistance * 2 / 3;
+    }
+
+    return maxDistance;
+}
+
 // 0x42BA04
 PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, PerceptionType type)
 {
@@ -3570,23 +3551,13 @@ PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, Per
 
     int distance = objectGetDistanceBetween(target, critter);
     int perception = critterGetStat(critter, STAT_PERCEPTION);
-    int sneak = skillGetValue(target, SKILL_SNEAK);
     if (_can_see(critter, target)) {
         int maxDistance = perception * 5;
         if ((target->flags & OBJECT_TRANS_GLASS) != 0) {
             maxDistance /= 2;
         }
 
-        if (target == gDude) {
-            if (dudeIsSneaking()) {
-                maxDistance /= 4;
-                if (sneak > 120) {
-                    maxDistance -= 1;
-                }
-            } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
-                maxDistance = maxDistance * 2 / 3;
-            }
-        }
+        maxDistance = adjustPerceptionDistanceForDudeSneak(maxDistance, target);
 
         if (distance <= maxDistance) {
             return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
@@ -3600,16 +3571,7 @@ PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, Per
         maxDistance = perception;
     }
 
-    if (target == gDude) {
-        if (dudeIsSneaking()) {
-            maxDistance /= 4;
-            if (sneak > 120) {
-                maxDistance -= 1;
-            }
-        } else if (dudeHasState(DUDE_STATE_SNEAKING)) {
-            maxDistance = maxDistance * 2 / 3;
-        }
-    }
+    maxDistance = adjustPerceptionDistanceForDudeSneak(maxDistance, target);
 
     if (distance <= maxDistance) {
         return scriptHooks_WithinPerception(critter, target, type, PERCEPTION_IN_RANGE);
@@ -3628,6 +3590,15 @@ bool isWithinPerception(Object* watcher, Object* target)
 // 0x42BB34
 static int aiMessageListInit()
 {
+    // Prevent chronic memory leak on preference/language filter reloads.
+    // If gCombatAiMessageList was already populated from a previous init cascade,
+    // we must deeply free its entries before re-initializing the layout,
+    // otherwise the subsequent load will overwrite active pointers and isolate strings in the heap.
+    if (gCombatAiMessageList.entries != nullptr && gCombatAiMessageList.entries_num > 0) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_COMBAT_AI, nullptr);
+        messageListFree(&gCombatAiMessageList);
+    }
+
     if (!messageListInit(&gCombatAiMessageList)) {
         return -1;
     }

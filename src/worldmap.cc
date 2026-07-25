@@ -7,6 +7,9 @@
 #include <string.h>
 
 #include <algorithm>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "animation.h"
 #include "art.h"
@@ -472,6 +475,8 @@ void wmSetScriptWorldMapMulti(float value)
     gScriptWorldMapMulti = value;
 }
 
+static std::vector<std::pair<int, std::string>> wmTerrainNameOverrides;
+
 static void wmSetFlags(int* flagsPtr, int flag, int value);
 static int wmGenDataInit();
 static int wmGenDataReset();
@@ -822,6 +827,80 @@ static WmGenData wmGenData;
 // 0x672FB0 wmMsgFile
 static MessageList wmMsgFile;
 
+static bool wmSubtileCoordsValid(int x, int y)
+{
+    if (wmNumHorizontalTiles <= 0 || wmMaxTileNum <= 0) {
+        return false;
+    }
+
+    return x >= 0
+        && x < SUBTILE_GRID_WIDTH * wmNumHorizontalTiles
+        && y >= 0
+        && y < SUBTILE_GRID_HEIGHT * (wmMaxTileNum / wmNumHorizontalTiles);
+}
+
+static int wmSubtileNameOverrideKey(int x, int y)
+{
+    return x + y * (wmNumHorizontalTiles * SUBTILE_GRID_WIDTH);
+}
+
+static const char* wmGetTerrainNameOverride(int x, int y)
+{
+    if (wmTerrainNameOverrides.empty()) {
+        return nullptr;
+    }
+
+    const int key = wmSubtileNameOverrideKey(x, y);
+    auto it = std::find_if(wmTerrainNameOverrides.crbegin(), wmTerrainNameOverrides.crend(),
+        [key](const std::pair<int, std::string>& terrainNameOverride) {
+            return terrainNameOverride.first == key;
+        });
+
+    return it != wmTerrainNameOverrides.crend() ? it->second.c_str() : nullptr;
+}
+
+bool wmTerrainNameIsValidSubtile(int x, int y)
+{
+    return wmSubtileCoordsValid(x, y);
+}
+
+void wmSetTerrainName(int x, int y, const char* name)
+{
+    assert(wmSubtileCoordsValid(x, y));
+    assert(name != nullptr);
+
+    wmTerrainNameOverrides.emplace_back(wmSubtileNameOverrideKey(x, y), name);
+}
+
+const char* wmGetTerrainName(int x, int y)
+{
+    assert(wmSubtileCoordsValid(x, y));
+
+    const char* override = wmGetTerrainNameOverride(x, y);
+    if (override != nullptr) {
+        return override;
+    }
+
+    SubtileInfo* subtile;
+    if (wmFindCurSubTileFromPos(x * WM_SUBTILE_SIZE, y * WM_SUBTILE_SIZE, &subtile) == -1) {
+        return "Error";
+    }
+
+    MessageListItem messageListItem;
+    return getmsg(&wmMsgFile, &messageListItem, 1000 + subtile->terrain);
+}
+
+const char* wmGetCurrentTerrainName()
+{
+    int x = wmGenData.worldPosX / WM_SUBTILE_SIZE;
+    int y = wmGenData.worldPosY / WM_SUBTILE_SIZE;
+    if (!wmSubtileCoordsValid(x, y)) {
+        return "Error";
+    }
+
+    return wmGetTerrainName(x, y);
+}
+
 // 0x672FB8 wmFreqValues
 static int wmFreqValues[6];
 
@@ -902,7 +981,7 @@ int wmWorldMap_init()
 
     wmGenData.viewportMaxX = WM_TILE_WIDTH * wmNumHorizontalTiles - WM_VIEW_WIDTH;
     wmGenData.viewportMaxY = WM_TILE_HEIGHT * (wmMaxTileNum / wmNumHorizontalTiles) - WM_VIEW_HEIGHT;
-    circleBlendTable = _getColorBlendTable(_colorTable[992]);
+    circleBlendTable = _getColorBlendTable(COLOR_GREEN);
 
     wmMarkSubTileRadiusVisited(wmGenData.worldPosX, wmGenData.worldPosY);
     wmWorldMapSaveTempData();
@@ -975,6 +1054,7 @@ static int wmGenDataInit()
 
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = 0;
+    wmTerrainNameOverrides.clear();
 
     return 0;
 }
@@ -1028,6 +1108,7 @@ static int wmGenDataReset()
 
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = 0;
+    wmTerrainNameOverrides.clear();
 
     return 0;
 }
@@ -1035,6 +1116,8 @@ static int wmGenDataReset()
 // 0x4BCE00 wmWorldMap_exit
 void wmWorldMap_exit()
 {
+    wmTerrainNameOverrides.clear();
+
     if (wmTerrainTypeList != nullptr) {
         internal_free(wmTerrainTypeList);
         wmTerrainTypeList = nullptr;
@@ -1076,7 +1159,7 @@ void wmWorldMap_exit()
     wmMaxMapNum = 0;
 
     if (circleBlendTable != nullptr) {
-        _freeColorBlendTable(_colorTable[992]);
+        _freeColorBlendTable(COLOR_GREEN);
         circleBlendTable = nullptr;
     }
 
@@ -1207,7 +1290,15 @@ int wmWorldMap_load(File* stream)
     }
 
     for (int areaIdx = 0; areaIdx < numCities; areaIdx++) {
-        CityInfo* city = &(wmAreaInfoList[areaIdx]);
+        CityInfo* city = nullptr;
+        CityInfo dummyCity = {};
+
+        if (areaIdx < wmMaxAreaNum) {
+            city = &(wmAreaInfoList[areaIdx]);
+        } else {
+            debugPrint("[WARNING] Reading extra city info [%d] into empty buffer\n", areaIdx);
+            city = &dummyCity;
+        }
 
         if (fileReadInt32(stream, &(city->x)) == -1) return -1;
         if (fileReadInt32(stream, &(city->y)) == -1) return -1;
@@ -1220,7 +1311,15 @@ int wmWorldMap_load(File* stream)
         }
 
         for (int entranceIdx = 0; entranceIdx < entranceCount; entranceIdx++) {
-            EntranceInfo* entrance = &(city->entrances[entranceIdx]);
+            EntranceInfo* entrance = nullptr;
+            EntranceInfo dummyEntrance = {};
+
+            if (areaIdx < wmMaxAreaNum && entranceIdx < ENTRANCE_LIST_CAPACITY) {
+                entrance = &(city->entrances[entranceIdx]);
+            } else {
+                debugPrint("[WARNING] Reading extra entrance info [%d] into empty buffer\n", entranceIdx);
+                entrance = &dummyEntrance;
+            }
 
             if (fileReadInt32(stream, &(entrance->state)) == -1) {
                 return -1;
@@ -3323,7 +3422,7 @@ static int wmWorldMapFunc(int a1)
                            WM_TOWN_LIST_X + WM_TOWN_LIST_WIDTH,
                            WM_TOWN_LIST_Y + WM_TOWN_LIST_HEIGHT)) {
                 if (wheelY != 0) {
-                    wmInterfaceScrollTabsStart(wheelY > 0 ? WM_TOWN_LIST_SLOT_HEIGHT : -WM_TOWN_LIST_SLOT_HEIGHT);
+                    wmInterfaceScrollTabsStart(wheelY > 0 ? -WM_TOWN_LIST_SLOT_HEIGHT : WM_TOWN_LIST_SLOT_HEIGHT);
                 }
             }
         }
@@ -3598,7 +3697,7 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
 
         title = getmsg(&wmMsgFile, &messageListItem, 2999);
         body = getmsg(&wmMsgFile, &messageListItem, 3000 + 50 * wmGenData.encounterTableId + wmGenData.encounterEntryId);
-        if (showDialogBox(title, &body, 1, 169, 116, _colorTable[32328], nullptr, _colorTable[32328], DIALOG_BOX_LARGE | DIALOG_BOX_YES_NO) == 0) {
+        if (showDialogBox(title, &body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE | DIALOG_BOX_YES_NO) == 0) {
             wmClearRandomEncounterState();
             return 0;
         }
@@ -4585,7 +4684,7 @@ static int wmInterfaceInit()
         0,
         windowGetWidth(gIsoWindow),
         windowGetHeight(gIsoWindow),
-        _colorTable[0]);
+        COLOR_BLACK);
     windowRefresh(gIsoWindow);
 
     // CE: Stop all animations.
@@ -4593,7 +4692,7 @@ static int wmInterfaceInit()
 
     int worldmapWindowX = (screenGetWidth() - WM_WINDOW_WIDTH) / 2;
     int worldmapWindowY = (screenGetHeight() - WM_WINDOW_HEIGHT) / 2;
-    wmBkWin = windowCreate(worldmapWindowX, worldmapWindowY, WM_WINDOW_WIDTH, WM_WINDOW_HEIGHT, _colorTable[0], WINDOW_MOVE_ON_TOP);
+    wmBkWin = windowCreate(worldmapWindowX, worldmapWindowY, WM_WINDOW_WIDTH, WM_WINDOW_HEIGHT, COLOR_BLACK, WINDOW_MOVE_ON_TOP);
     if (wmBkWin == -1) {
         return -1;
     }
@@ -5611,7 +5710,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
         fontDrawText(
             wmOverlayOffscreenBuf + textDrawAbsY * WM_OVERLAY_BUFFER_SIZE + textDrawAbsX,
             name, textWidth, WM_OVERLAY_BUFFER_SIZE,
-            _colorTable[992] | FONT_SHADOW);
+            COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
     }
 
     // 5. Final Blit to Screen (dest buffer)
@@ -5680,7 +5779,7 @@ static int wmInterfaceDrawCircleOverlay(CityInfo* city, CitySizeDescription* cit
             name,
             width,
             WM_WINDOW_WIDTH,
-            _colorTable[992] | FONT_SHADOW);
+            COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
     }
 
     return 0;
@@ -5739,7 +5838,7 @@ static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, i
         unsigned char* dest = wmBkWinBuf + WM_WINDOW_WIDTH * destY + destX;
         switch (subtileInfo->state) {
         case SUBTILE_STATE_UNKNOWN:
-            bufferFill(dest, width, height, WM_WINDOW_WIDTH, _colorTable[0]);
+            bufferFill(dest, width, height, WM_WINDOW_WIDTH, COLOR_BLACK);
             break;
         case SUBTILE_STATE_KNOWN:
             wmInterfaceDrawSubTileRectFogged(dest, width, height, WM_WINDOW_WIDTH);
@@ -6284,7 +6383,7 @@ static int wmTownMapRefresh()
                     width,
                     wmGenData.hotspotNormalFrmImage.getWidth() / 2 + entrance->x - width / 2,
                     wmGenData.hotspotNormalFrmImage.getHeight() + entrance->y + 4,
-                    _colorTable[992] | 0x2000000 | FONT_SHADOW);
+                    COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_SHADOWED);
             }
         }
     }
