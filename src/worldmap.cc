@@ -6225,9 +6225,10 @@ int wmGetPartyCurArea(int* areaIdxPtr)
 
 bool wmStartWorldPosIsConfigured()
 {
-    int value;
-    return wmGetStartWorldPosConfigValue("worldmap_x", &value)
-        || wmGetStartWorldPosConfigValue("worldmap_y", &value);
+    int x;
+    int y;
+    return wmGetStartWorldPosConfigValue("worldmap_x", &x)
+        && wmGetStartWorldPosConfigValue("worldmap_y", &y);
 }
 
 // 0x4C47D8 wmMarkAllSubTiles
