@@ -18,6 +18,8 @@ namespace fallout {
 namespace {
 
 #define F2_RES_CONFIG_FILE_NAME "f2_res.ini"
+#define F2_RES_MAIN_MENU_BUTTON_X 30
+#define F2_RES_MAIN_MENU_BUTTON_Y 19
 
     struct F2ResMigrationEntry {
         const char* legacySection;
@@ -31,6 +33,7 @@ namespace {
     static bool gameConfigMigrateMainMenuScaleModeKey(Config* legacyConfig, Config* gameConfig);
     static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry);
     static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig);
+    static bool contentConfigMigrateF2ResMainMenuPanelOffsetKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey, int baseValue, int defaultValue);
 
     static constexpr F2ResMigrationEntry kF2ResMigrationEntries[] = {
         { "MAIN", "SCR_WIDTH", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY },
@@ -112,6 +115,27 @@ namespace {
         }
 
         return configSetInt(gameConfig, GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_SCALE_KEY, value + 1);
+    }
+
+    static bool contentConfigMigrateF2ResMainMenuPanelOffsetKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey, int baseValue, int defaultValue)
+    {
+        assert(legacyConfig != nullptr && contentConfig != nullptr);
+
+        if (gameConfigHasKey(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey)) {
+            return false;
+        }
+
+        int value;
+        if (!configGetInt(legacyConfig, "MAINMENU", legacyKey, &value)) {
+            return false;
+        }
+
+        value += baseValue;
+        if (value == defaultValue) {
+            return false;
+        }
+
+        return configSetInt(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey, value);
     }
 } // namespace
 
@@ -401,6 +425,82 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
 
     configFree(&migratedConfig);
     return migrated;
+}
+
+static bool contentConfigEnsureDirectory(const char* contentConfigFilePath)
+{
+    char drive[COMPAT_MAX_DRIVE];
+    char dirPart[COMPAT_MAX_DIR];
+    char pathWithoutFile[COMPAT_MAX_PATH];
+    compat_splitpath(contentConfigFilePath, drive, dirPart, nullptr, nullptr);
+    compat_makepath(pathWithoutFile, drive, dirPart, nullptr, nullptr);
+    return compat_mkdir_recursive(pathWithoutFile) == 0;
+}
+
+static bool contentConfigMigrateFromF2Res(Config* legacyConfig, const char* contentConfigFilePath)
+{
+    assert(legacyConfig != nullptr && contentConfigFilePath != nullptr);
+
+    Config migratedConfig;
+    if (!configInit(&migratedConfig)) {
+        return false;
+    }
+
+    configRead(&migratedConfig, contentConfigFilePath, false);
+
+    bool migrated = false;
+    if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_X", "main_menu_panel_offset_x", F2_RES_MAIN_MENU_BUTTON_X, 16)) {
+        migrated = true;
+    }
+    if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_Y", "main_menu_panel_offset_y", F2_RES_MAIN_MENU_BUTTON_Y, 15)) {
+        migrated = true;
+    }
+
+    if (migrated) {
+        if (contentConfigEnsureDirectory(contentConfigFilePath)) {
+            if (!configWriteEx(&migratedConfig, contentConfigFilePath, CONFIG_RETAIN_ALL)) {
+                debugPrint("Failed to write migrated settings to %s!\n", contentConfigFilePath);
+            }
+        } else {
+            debugPrint("Failed to create directory for migrated settings at %s!\n", contentConfigFilePath);
+        }
+    }
+
+    configFree(&migratedConfig);
+    return migrated;
+}
+
+void contentConfigTryMigrateFromF2Res(const char* contentConfigPath)
+{
+    const auto& masterPatches = settings.system.master_patches_path;
+    if (masterPatches.empty()) {
+        debugPrint("Failed to migrate from f2_res.ini: no master_patches is set.\n");
+        return;
+    }
+    if (!compat_is_dir(masterPatches.c_str())) {
+        return;
+    }
+
+    char f2ResFilePath[COMPAT_MAX_PATH];
+    char drive[COMPAT_MAX_DRIVE];
+    char dir[COMPAT_MAX_DIR];
+    compat_splitpath(gGameConfigFilePath, drive, dir, nullptr, nullptr);
+    compat_makepath(f2ResFilePath, drive, dir, F2_RES_CONFIG_FILE_NAME, nullptr);
+
+    Config legacyConfig;
+    if (!configInit(&legacyConfig)) {
+        return;
+    }
+
+    if (configRead(&legacyConfig, f2ResFilePath, false)) {
+        char contentCfgPath[COMPAT_MAX_PATH];
+        snprintf(contentCfgPath, sizeof(contentCfgPath), "%s\\%s", masterPatches.c_str(), contentConfigPath);
+        if (contentConfigMigrateFromF2Res(&legacyConfig, contentCfgPath)) {
+            debugPrint("Migrated settings from f2_res.ini to game.cfg.\n");
+        }
+    }
+
+    configFree(&legacyConfig);
 }
 
 void contentConfigTryMigrateFromSfall(const char* contentConfigPath)
