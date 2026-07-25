@@ -898,21 +898,7 @@ const char* wmGetCurrentTerrainName()
         return "Error";
     }
 
-    const char* override = wmGetTerrainNameOverride(x, y);
-    if (override != nullptr) {
-        return override;
-    }
-
-    if (wmGenData.currentSubtile == nullptr) {
-        wmPartyFindCurSubTile();
-    }
-
-    if (wmGenData.currentSubtile == nullptr) {
-        return "Error";
-    }
-
-    MessageListItem messageListItem;
-    return getmsg(&wmMsgFile, &messageListItem, 1000 + wmGenData.currentSubtile->terrain);
+    return wmGetTerrainName(x, y);
 }
 
 // 0x672FB8 wmFreqValues

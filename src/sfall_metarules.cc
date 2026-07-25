@@ -1990,8 +1990,14 @@ static const char* invalidSubtilePos = "%s() - invalid x/y coordinates for the s
 
 static void mf_get_terrain_name(OpcodeContext& ctx)
 {
-    if (ctx.numArgs() < 2) {
+    if (ctx.numArgs() == 0) {
         ctx.setReturn(wmGetCurrentTerrainName());
+        return;
+    }
+
+    if (ctx.numArgs() == 1) {
+        ctx.printError("%s() - invalid number of arguments (%d), must be 0 or 2.", ctx.name(), ctx.numArgs());
+        ctx.setReturn(ctx.metaruleInfo()->errorReturn);
         return;
     }
 
