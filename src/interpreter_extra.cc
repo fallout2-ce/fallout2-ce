@@ -4715,7 +4715,7 @@ static void opGetRotationToTile(Program* program)
     int tile2;
     if (value2.isInt()) {
         tile2 = value2.integerValue;
-    } else if (value2.isPointer()) {
+    } else if (value2.isPointer() && value2.pointerValue != nullptr) {
         tile2 = static_cast<Object*>(value2.pointerValue)->tile;
     } else {
         programFatalError("script error: %s: invalid arg 2 to rotation_to_tile", program->name);
@@ -4724,7 +4724,7 @@ static void opGetRotationToTile(Program* program)
     int tile1;
     if (value1.isInt()) {
         tile1 = value1.integerValue;
-    } else if (value1.isPointer()) {
+    } else if (value1.isPointer() && value1.pointerValue != nullptr) {
         tile1 = static_cast<Object*>(value1.pointerValue)->tile;
     } else {
         programFatalError("script error: %s: invalid arg 1 to rotation_to_tile", program->name);
