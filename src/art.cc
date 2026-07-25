@@ -1442,8 +1442,30 @@ int artRead(const char* path, unsigned char* data)
     int currentPadding = paddingForSize(sizeof(Art));
     int previousPadding = 0;
 
+    // CE: `dataOffsets` comes straight from the file header and is never
+    // validated. Some third-party art (notably Fallout 1.5: Resurrection)
+    // carries rotation offsets pointing past the end of the payload, which
+    // makes both the write below and the addressing in `artGetFrame` land
+    // outside the buffer allocated from `artGetDataSize`.
+    // There is no earlier rotation to fall back on for the first one, so a
+    // broken offset there means the file cannot be read at all. Art carrying
+    // no frames writes nothing and stays harmless, so leave it alone.
+    if (art->frameCount > 0 && (art->dataOffsets[0] < 0 || art->dataOffsets[0] >= art->dataSize)) {
+        fileClose(stream);
+        return -5;
+    }
+
     for (int index = 0; index < ROTATION_COUNT; index++) {
         art->padding[index] = currentPadding;
+
+        // CE: Alias an out-of-range rotation to the previous one instead of
+        // leaving a dangling offset behind, so that every later lookup stays
+        // within the buffer.
+        if (index != 0 && (art->dataOffsets[index] < 0 || art->dataOffsets[index] >= art->dataSize)) {
+            art->dataOffsets[index] = art->dataOffsets[index - 1];
+            art->padding[index] = art->padding[index - 1];
+            continue;
+        }
 
         if (index == 0 || art->dataOffsets[index - 1] != art->dataOffsets[index]) {
             art->padding[index] += previousPadding;
