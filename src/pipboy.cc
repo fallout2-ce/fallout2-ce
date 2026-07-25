@@ -501,12 +501,13 @@ int pipboyOpen(int intent)
         return 0;
     }
 
-    ScopedGameMode gm(GameMode::kPipboy);
-
     intent = pipboyWindowInit(intent);
     if (intent == -1) {
         return -1;
     }
+
+    ScopedGameMode gm(GameMode::kPipboy);
+    windowRefresh(gPipboyWindow);
 
     touch_set_touchscreen_mode(true);
 
