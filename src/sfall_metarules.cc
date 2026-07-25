@@ -958,7 +958,7 @@ static InterfaceWindowLookupResult getInterfaceWindowByType(int winType, int& wi
         window = inventoryGetWindow();
         break;
     case 1:
-        window = gameDialogGetWindow();
+        window = gameDialogGetBackgroundWindow();
         break;
     case 2:
         window = pipboyGetWindow();
