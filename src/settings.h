@@ -100,7 +100,7 @@ struct UISettings {
     // 2 - Detailed indicator, works with inventory_columns > 1 only
     int loot_weight_indicator = 1;
 
-    // 0   - Alaways visibles
+    // 0   - Always visible
     // XX  - Visible when carry weight reaches XX percent
     // 100 - Visible when fully loaded
     int loot_weight_indicator_threshold = 0;
