@@ -1669,6 +1669,8 @@ FrmImage::FrmImage(FrmImage&& other) noexcept
     , _height(other._height)
     , _xOffset(other._xOffset)
     , _yOffset(other._yOffset)
+    , _rotationXOffset(other._rotationXOffset)
+    , _rotationYOffset(other._rotationYOffset)
 {
     other.resetInternal();
 }
@@ -1684,6 +1686,8 @@ FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
         _height = other._height;
         _xOffset = other._xOffset;
         _yOffset = other._yOffset;
+        _rotationXOffset = other._rotationXOffset;
+        _rotationYOffset = other._rotationYOffset;
 
         other.resetInternal();
     }
@@ -1785,6 +1789,8 @@ void FrmImage::resetInternal()
     _height = 0;
     _xOffset = 0;
     _yOffset = 0;
+    _rotationXOffset = 0;
+    _rotationYOffset = 0;
 }
 
 bool FrmImage::setFrame(const Art* art, int frame, int direction)
@@ -1794,6 +1800,8 @@ bool FrmImage::setFrame(const Art* art, int frame, int direction)
         return false;
     }
 
+    _rotationXOffset = art->xOffsets[direction];
+    _rotationYOffset = art->yOffsets[direction];
     _data = data;
     return true;
 }

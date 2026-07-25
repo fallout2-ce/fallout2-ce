@@ -1569,6 +1569,8 @@ static int drawSfallImageToScriptWindow(OpcodeContext& ctx, bool scaled)
             height = width * image.getHeight() / image.getWidth();
         }
     } else {
+        x += image.getRotationXOffset();
+        y += image.getRotationYOffset();
         x += image.getXOffset();
         y += image.getYOffset();
         transparent = ctx.numArgs() > 4 ? ctx.arg(4).asInt() == 0 : true;
