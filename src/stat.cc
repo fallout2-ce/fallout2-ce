@@ -1,11 +1,14 @@
 #include "stat.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 
 #include "art.h"
 #include "combat.h"
+#include "content_config.h"
 #include "critter.h"
 #include "display_monitor.h"
 #include "game.h"
@@ -100,6 +103,12 @@ static int gPcStatValues[PC_STAT_COUNT];
 
 static int unspentApBonus = 4;
 static int unspentApPerkBonus = 4;
+static int xpTable[PC_LEVEL_MAX];
+static int xpTableThresholds = 0;
+static constexpr size_t kExperienceTableConfigMaxLength = 2048;
+
+static void pcExperienceTableInit();
+static int pcGetMaxLevel();
 
 // 0x4AED70
 int statsInit()
@@ -108,6 +117,7 @@ int statsInit()
 
     // NOTE: Uninline.
     pcStatsReset();
+    pcExperienceTableInit();
 
     if (!messageListInit(&gStatsMessageList)) {
         return -1;
@@ -651,7 +661,8 @@ int pcSetStat(int pcStat, int value)
         return -2;
     }
 
-    if (value > gPcStatDescriptions[pcStat].maximumValue) {
+    int maximumValue = pcStat == PC_STAT_LEVEL ? pcGetMaxLevel() : gPcStatDescriptions[pcStat].maximumValue;
+    if (value > maximumValue) {
         return -3;
     }
 
@@ -679,6 +690,47 @@ void pcStatsReset()
     }
 }
 
+static void pcExperienceTableInit()
+{
+    xpTable[0] = 0;
+    xpTableThresholds = 0;
+
+    char* value;
+    if (!configGetString(&gContentConfig, CONTENT_CONFIG_STATS_SECTION, "xp_table", &value) || value[0] == '\0') {
+        return;
+    }
+
+    char temp[kExperienceTableConfigMaxLength];
+    strncpy(temp, value, sizeof(temp) - 1);
+    temp[sizeof(temp) - 1] = '\0';
+
+    char* cursor = temp;
+    while (xpTableThresholds < PC_LEVEL_MAX - 1) {
+        char* comma = strchr(cursor, ',');
+        if (comma != nullptr) {
+            *comma = '\0';
+        }
+
+        xpTableThresholds++;
+        xpTable[xpTableThresholds] = atoi(cursor);
+
+        if (comma == nullptr) {
+            break;
+        }
+
+        cursor = comma + 1;
+    }
+}
+
+static int pcGetMaxLevel()
+{
+    if (xpTableThresholds == 0) {
+        return PC_LEVEL_MAX;
+    }
+
+    return xpTableThresholds + 1;
+}
+
 // Returns experience to reach next level.
 //
 // 0x4AF9A0
@@ -692,6 +744,14 @@ int pcGetExperienceForNextLevel()
 // 0x4AF9A8
 int pcGetExperienceForLevel(int level)
 {
+    if (xpTableThresholds != 0) {
+        if (level < 1 || level > pcGetMaxLevel()) {
+            return -1;
+        }
+
+        return xpTable[level - 1];
+    }
+
     if (level >= PC_LEVEL_MAX) {
         return -1;
     }
@@ -777,7 +837,7 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
 
     gPcStatValues[PC_STAT_EXPERIENCE] = newXp;
 
-    while (gPcStatValues[PC_STAT_LEVEL] < PC_LEVEL_MAX) {
+    while (gPcStatValues[PC_STAT_LEVEL] < pcGetMaxLevel()) {
         if (newXp < pcGetExperienceForNextLevel()) {
             break;
         }
@@ -835,12 +895,25 @@ int pcSetExperience(int xp)
     int oldLevel = gPcStatValues[PC_STAT_LEVEL];
     gPcStatValues[PC_STAT_EXPERIENCE] = xp;
 
-    int level = 1;
-    do {
-        level += 1;
-    } while (xp >= pcGetExperienceForLevel(level) && level < PC_LEVEL_MAX);
+    int newLevel = 1;
+    if (xpTableThresholds != 0) {
+        int maxLevel = pcGetMaxLevel();
+        while (newLevel < maxLevel) {
+            int nextLevelXp = pcGetExperienceForLevel(newLevel + 1);
+            if (nextLevelXp == -1 || xp < nextLevelXp) {
+                break;
+            }
 
-    int newLevel = level - 1;
+            newLevel++;
+        }
+    } else {
+        int level = 1;
+        do {
+            level += 1;
+        } while (xp >= pcGetExperienceForLevel(level) && level < PC_LEVEL_MAX);
+
+        newLevel = level - 1;
+    }
 
     pcSetStat(PC_STAT_LEVEL, newLevel);
     dudeDisableState(DUDE_STATE_LEVEL_UP_AVAILABLE);
