@@ -305,8 +305,13 @@ static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffset
         return;
     }
 
+    int panelOffsetX = MAIN_MENU_PANEL_OFFSET_X;
+    int panelOffsetY = MAIN_MENU_PANEL_OFFSET_Y;
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "main_menu_panel_offset_x", &panelOffsetX, MAIN_MENU_PANEL_OFFSET_X);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "main_menu_panel_offset_y", &panelOffsetY, MAIN_MENU_PANEL_OFFSET_Y);
+
     Size panelSize = mainMenuTransformSize(layout, mainMenuButtonPanelFrmImage.getWidth(), mainMenuButtonPanelFrmImage.getHeight());
-    Point panelOrigin = mainMenuTransformPoint(layout, MAIN_MENU_PANEL_OFFSET_X, MAIN_MENU_PANEL_OFFSET_Y);
+    Point panelOrigin = mainMenuTransformPoint(layout, panelOffsetX, panelOffsetY);
 
     blitBuffer2DScaledTrans(mainMenuButtonPanelFrmImage.getBuffer(),
         Buffer2D(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight),

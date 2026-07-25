@@ -15,8 +15,9 @@ void contentConfigInit()
         return;
     }
 
-    // Try to migrate some settings from sfall.
+    // Try to migrate some settings from legacy config files.
     contentConfigTryMigrateFromSfall(kConfigPatchPath);
+    contentConfigTryMigrateFromF2Res(kConfigPatchPath);
 
     if (!configInit(&gContentConfig)) {
         return;
