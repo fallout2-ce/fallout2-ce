@@ -289,6 +289,10 @@ void wmSetPartyWorldPos(int x, int y);
 void wmCarSetCurrentArea(int area);
 void wmForceEncounter(int map, unsigned int flags);
 void wmSetScriptWorldMapMulti(float value);
+bool wmTerrainNameIsValidSubtile(int x, int y);
+void wmSetTerrainName(int x, int y, const char* name);
+const char* wmGetTerrainName(int x, int y);
+const char* wmGetCurrentTerrainName();
 int worldmapGetWindow();
 
 } // namespace fallout
