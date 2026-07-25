@@ -114,6 +114,10 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | BarterPrice | `HOOK_BARTERPRICE` | ✅ | - |
 | ItemDamage | `HOOK_ITEMDAMAGE` | ✅ | - |
 | MoveCost | `HOOK_MOVECOST` | ✅ | - |
+| HexMoveBlocking | `HOOK_HEXMOVEBLOCKING` | 🚫 | Deprecated in sfall; see below |
+| HexAIBlocking | `HOOK_HEXAIBLOCKING` | 🚫 | Deprecated in sfall; see below |
+| HexShootBlocking | `HOOK_HEXSHOOTBLOCKING` | 🚫 | Deprecated in sfall; see below |
+| HexSightBlocking | `HOOK_HEXSIGHTBLOCKING` | 🚫 | Deprecated in sfall; see below |
 | AmmoCost | `HOOK_AMMOCOST` | ✅ | Requires `check_weapon_ammo_cost=1` if you want pre-attack ammo validation to respect per-shot/per-round overrides. |
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | ✅ | - |
@@ -146,3 +150,16 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | BestWeapon | `HOOK_BESTWEAPON` | 🚫 | - |
 | CanUseWeapon | `HOOK_CANUSEWEAPON` | ✅ | - |
 | BuildSfxWeapon | `HOOK_BUILDSFXWEAPON` | 🚫 | - |
+
+### The hex-blocking hooks
+
+`HOOK_HEXMOVEBLOCKING`, `HOOK_HEXAIBLOCKING`, `HOOK_HEXSHOOTBLOCKING` and
+`HOOK_HEXSIGHTBLOCKING` are deprecated by sfall itself, which warns that they "can become
+very CPU-intensive and you should avoid using them", that they are "not thoroughly
+supported in sfall", and that they "may be removed in future versions". CE marks them
+obsolete in `sfall_script_hooks.h` for the same reason, so they are unlikely to be
+implemented.
+
+Sfall points at `obj_blocking_tile`, `obj_blocking_line` and `path_find_to` instead — all
+three are supported in CE — and suggests `HOOK_MOVECOST` for reacting to NPC movement,
+which is supported as well.
