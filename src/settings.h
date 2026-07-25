@@ -100,10 +100,10 @@ struct UISettings {
     // 2 - Detailed indicator, works with inventory_columns > 1 only
     int loot_weight_indicator = 1;
 
-    // 0   - Always visible
-    // XX  - Visible when carry weight reaches XX percent
-    // 100 - Visible when fully loaded
-    int loot_weight_indicator_threshold = 0;
+    // 0   - Container indicator is always visible
+    // XX  - Container indicator is visible when size reaches XX percent
+    // 100 - Container indicator is visible when fully loaded
+    int loot_container_size_indicator_threshold = 50;
 };
 
 // These are settings handled by preferences UI and saved in save games.

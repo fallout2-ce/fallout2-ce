@@ -173,7 +173,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(expand_barter_window);
     SETTING_P(inventory_columns, clamp(1, 2));
     SETTING_P(loot_weight_indicator, clamp(0, 2));
-    SETTING_P(loot_weight_indicator_threshold, clamp(0, 100));
+    SETTING_P(loot_container_size_indicator_threshold, clamp(0, 100));
 #undef SECT
 
 #define SECT preferences

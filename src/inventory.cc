@@ -935,7 +935,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
         return;
     }
 
-    int threshold = settings.ui.loot_weight_indicator_threshold;
+    int containerSizeThreshold = settings.ui.loot_container_size_indicator_threshold;
 
     // Wt.
     MessageListItem messageListItem;
@@ -966,16 +966,12 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             pitch);
     }
 
-    int color = _colorTable[992];
+    int color = _colorTable[32767];
     int inventoryWeight = objectGetInventoryWeight(object);
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         int currentWeight = inventoryWeight + extraWeight;
         int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
-        int weightPercentage = (int)ceil(currentWeight * 100 / (float)maxWeight);
-
-        if (weightPercentage < threshold) {
-            return;
-        }
+        int weightPercentage = maxWeight < 1 ? 0 : (int)ceil(currentWeight * 100 / (float)maxWeight);
 
         if (showSimple) {
             if (showLabel) {
@@ -993,9 +989,9 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
     } else if (targetPane && PID_TYPE(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
         int currentSize = containerGetTotalSize(object);
         int maxSize = containerGetMaxSize(object);
-        int sizePercentage = (int)ceil(currentSize * 100 / (float)maxSize);
+        int sizePercentage = maxSize < 1 ? 0 : (int)ceil(currentSize * 100 / (float)maxSize);
 
-        if (sizePercentage < threshold) {
+        if (sizePercentage < containerSizeThreshold) {
             return;
         }
 
@@ -4151,10 +4147,10 @@ static void displayLootPanePartyName(unsigned char* windowBuffer, int windowPitc
 
     int oldFont = fontGetCurrent();
     fontSetCurrent(101);
-    int nameY = rect.bottom - fontGetLineHeight() - 2;
+    int nameY = rect.bottom - fontGetLineHeight();
     fontSetCurrent(oldFont);
 
-    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, _colorTable[992]);
+    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, _colorTable[32767]);
 }
 
 // Displays item description.
