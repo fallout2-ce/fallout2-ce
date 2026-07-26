@@ -11,6 +11,7 @@ namespace fallout {
 #define CONTENT_CONFIG_MAPS_SECTION "maps"
 #define CONTENT_CONFIG_DIALOG_SECTION "dialog"
 #define CONTENT_CONFIG_MAIN_MENU_SECTION "main_menu"
+#define CONTENT_CONFIG_SOUND_SECTION "sound"
 #define CONTENT_CONFIG_MOVIES_SECTION "movies"
 #define CONTENT_CONFIG_COMBAT_SECTION "combat"
 #define CONTENT_CONFIG_EXPLOSIONS_SECTION "explosions"

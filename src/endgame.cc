@@ -239,7 +239,7 @@ void endgamePlayMovie()
     _endgame_maybe_done = 0;
     tickersAdd(_endgame_movie_bk_process);
     backgroundSoundSetEndCallback(_endgame_movie_callback);
-    backgroundSoundLoad("akiss", GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
+    backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music0", "akiss"), GSOUND_LIMIT_AFTER, GSOUND_STREAM, GSOUND_NO_LOOP);
     inputPauseForTocks(3000);
 
     // NOTE: Result is ignored. I guess there was some kind of switch for male
@@ -882,7 +882,7 @@ static void _endgame_movie_callback()
 static void _endgame_movie_bk_process()
 {
     if (_endgame_maybe_done) {
-        backgroundSoundLoad("10labone", GSOUND_LIMIT_BEFORE, GSOUND_STREAM, GSOUND_LOOP);
+        backgroundSoundLoad(gameSoundGetMusicOverride("endgame_movie_music1", "10labone"), GSOUND_LIMIT_BEFORE, GSOUND_STREAM, GSOUND_LOOP);
         backgroundSoundSetEndCallback(nullptr);
         tickersRemove(_endgame_movie_bk_process);
     }
