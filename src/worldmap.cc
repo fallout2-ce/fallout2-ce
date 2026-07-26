@@ -958,7 +958,7 @@ static unsigned int wmForceEncounterFlags = 0;
 static int worldmapTrailMarkers;
 static TrailMarkerState trailMarkerState = {};
 
-static const int worldmapTrailMarkerColor = 134;
+static const unsigned char worldmapTrailMarkerColor = 134;
 static const TrailMarkerStyle worldmapTrailMarkerStyles[TRAIL_MARKER_STYLE_COUNT] = {
     { 1, 2 },
     { 2, 1 },
