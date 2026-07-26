@@ -774,13 +774,11 @@ typedef struct {
 } TrailDot;
 
 typedef struct TrailMarkerState {
-    bool wasWalking;
-    bool hasLastPosition;
-    int lastX;
-    int lastY;
+    bool hasPattern;
     int dotCount;
     TrailDot dots[MAX_TRAIL_LENGTH];
-    int patternCounter;
+    int remainingDots;
+    int remainingSpacing;
 } TrailMarkerState;
 
 // 0x51DE94 wmLabelList
@@ -976,14 +974,39 @@ static void wmAddTrailDot(TrailDot* trailDots, int* trailDotCount, int x, int y)
     }
 }
 
+static void wmAddTrailMarker(int terrainId, int x, int y)
+{
+    int styleIndex = std::clamp(terrainId, 0, TRAIL_MARKER_STYLE_COUNT - 1);
+    const TrailMarkerStyle* style = &(worldmapTrailMarkerStyles[styleIndex]);
+
+    if (!trailMarkerState.hasPattern) {
+        trailMarkerState.hasPattern = true;
+        trailMarkerState.remainingDots = style->length;
+        trailMarkerState.remainingSpacing = style->spacing;
+    } else {
+        trailMarkerState.remainingDots = std::min(trailMarkerState.remainingDots, style->length);
+        trailMarkerState.remainingSpacing = std::min(trailMarkerState.remainingSpacing, style->spacing);
+    }
+
+    if (trailMarkerState.remainingDots <= 0 && trailMarkerState.remainingSpacing > 0) {
+        trailMarkerState.remainingSpacing--;
+        if (trailMarkerState.remainingSpacing == 0) {
+            trailMarkerState.remainingDots = style->length;
+        }
+        return;
+    }
+
+    trailMarkerState.remainingDots--;
+    trailMarkerState.remainingSpacing = style->spacing;
+    wmAddTrailDot(trailMarkerState.dots, &(trailMarkerState.dotCount), x, y);
+}
+
 static void wmResetTrailMarkers()
 {
-    trailMarkerState.wasWalking = false;
-    trailMarkerState.hasLastPosition = false;
-    trailMarkerState.lastX = 0;
-    trailMarkerState.lastY = 0;
+    trailMarkerState.hasPattern = false;
     trailMarkerState.dotCount = 0;
-    trailMarkerState.patternCounter = 0;
+    trailMarkerState.remainingDots = 0;
+    trailMarkerState.remainingSpacing = 0;
 }
 
 static inline bool cityIsValid(int city)
@@ -4630,6 +4653,12 @@ static void wmPartyWalkingStep()
                 false);
         }
 
+        if (worldmapTrailMarkers) {
+            SubtileInfo* markerSubtile;
+            wmFindCurSubTileFromPos(wmGenData.worldPosX, wmGenData.worldPosY, &markerSubtile);
+            wmAddTrailMarker(markerSubtile->terrain, wmGenData.worldPosX, wmGenData.worldPosY);
+        }
+
         wmGenData.walkDistance -= 1;
         if (wmGenData.walkDistance == 0) {
             wmGenData.walkDestinationY = 0;
@@ -5957,56 +5986,8 @@ static int wmDrawCursorStopped()
 
     if (worldmapTrailMarkers) {
         // Clear the trail when player stops - needs to be done when reloading map too
-        if (trailMarkerState.wasWalking && !isWalkingNow) {
+        if (!isWalkingNow) {
             wmResetTrailMarkers();
-        }
-        trailMarkerState.wasWalking = isWalkingNow;
-
-        if (isWalkingNow) {
-            if (!trailMarkerState.hasLastPosition) {
-                trailMarkerState.lastX = wmGenData.worldPosX;
-                trailMarkerState.lastY = wmGenData.worldPosY;
-                trailMarkerState.hasLastPosition = true;
-            }
-
-            if (wmGenData.worldPosX != trailMarkerState.lastX || wmGenData.worldPosY != trailMarkerState.lastY) {
-                // Match sfall: TravelMarkerStyles are indexed by terrain type id
-                // from worldmap.txt, not by the terrain encounter difficulty.
-                wmPartyFindCurSubTile();
-                int terrainId = 0;
-                if (wmGenData.currentSubtile) {
-                    terrainId = wmGenData.currentSubtile->terrain;
-                }
-
-                int styleIndex = std::clamp(terrainId, 0, TRAIL_MARKER_STYLE_COUNT - 1);
-                const TrailMarkerStyle* style = &(worldmapTrailMarkerStyles[styleIndex]);
-                int cycle = style->length + style->spacing;
-
-                int dx = wmGenData.worldPosX - trailMarkerState.lastX;
-                int dy = wmGenData.worldPosY - trailMarkerState.lastY;
-                int steps = std::max(abs(dx), abs(dy));
-                int previousX = trailMarkerState.lastX;
-                int previousY = trailMarkerState.lastY;
-
-                for (int step = 1; step <= steps; step++) {
-                    int x = trailMarkerState.lastX + dx * step / steps;
-                    int y = trailMarkerState.lastY + dy * step / steps;
-                    if (x == previousX && y == previousY) {
-                        continue;
-                    }
-
-                    previousX = x;
-                    previousY = y;
-                    trailMarkerState.patternCounter++;
-
-                    if (((trailMarkerState.patternCounter - 1) % cycle) < style->length) {
-                        wmAddTrailDot(trailMarkerState.dots, &(trailMarkerState.dotCount), x, y);
-                    }
-                }
-
-                trailMarkerState.lastX = wmGenData.worldPosX;
-                trailMarkerState.lastY = wmGenData.worldPosY;
-            }
         }
 
         // Render the trail dots
