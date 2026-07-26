@@ -1154,7 +1154,7 @@ int skillGetGameDifficultyModifier(Skill skill)
     case SKILL_SPEECH:
     case SKILL_BARTER:
     case SKILL_GAMBLING:
-    case SKILL_OUTDOORSMAN:
+    case SKILL_OUTDOORSMAN: {
         int gameDifficulty = settings.preferences.game_difficulty;
 
         if (gameDifficulty == GAME_DIFFICULTY_HARD) {
@@ -1162,10 +1162,10 @@ int skillGetGameDifficultyModifier(Skill skill)
         } else if (gameDifficulty == GAME_DIFFICULTY_EASY) {
             return 20;
         }
-        break;
     }
-
-    return 0;
+    default:
+        return 0;
+    }
 }
 
 // 0x4ABE44

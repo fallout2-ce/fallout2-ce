@@ -3105,6 +3105,8 @@ static void characterEditorDrawCard()
                 title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 120);
                 characterEditorDrawCardWithOptions(7, title, nullptr, description);
                 break;
+            default:
+                break;
             }
         } else {
             switch (characterEditorSelectedItem) {
@@ -3123,6 +3125,8 @@ static void characterEditorDrawCard()
                 description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 123);
                 title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 122);
                 characterEditorDrawCardWithOptions(9, title, nullptr, description);
+                break;
+            default:
                 break;
             }
         }
@@ -3171,6 +3175,8 @@ static void characterEditorDrawCard()
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 318);
             characterEditorDrawCardWithOptions(17, title, nullptr, description);
             break;
+        default:
+            break;
         }
     } else if (characterEditorSelectedItem >= EDITOR_FIRST_DERIVED_STAT && characterEditorSelectedItem <= EDITOR_LAST_DERIVED_STAT) {
         int derivedStatIndex = characterEditorSelectedItem - EDITOR_FIRST_DERIVED_STAT;
@@ -3218,6 +3224,8 @@ static void characterEditorDrawCard()
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 147);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 146);
             characterEditorDrawCardWithOptions(27, title, nullptr, description);
+            break;
+        default:
             break;
         }
     }

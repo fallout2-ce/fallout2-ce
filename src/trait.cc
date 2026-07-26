@@ -305,6 +305,8 @@ int traitGetSkillModifier(Skill skill)
         case SKILL_BARTER:
             modifier += 15;
             break;
+        default:
+            break;
         }
     }
 

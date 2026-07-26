@@ -1049,17 +1049,17 @@ int itemGetInventoryFid(Object* item)
 Object* critterGetWeaponForHitMode(Object* critter, HitMode hitMode)
 {
     switch (hitMode) {
-    case HIT_MODE_LEFT_WEAPON_PRIMARY:
-    case HIT_MODE_LEFT_WEAPON_SECONDARY:
-    case HIT_MODE_LEFT_WEAPON_RELOAD:
-        return critterGetItem1(critter);
-    case HIT_MODE_RIGHT_WEAPON_PRIMARY:
-    case HIT_MODE_RIGHT_WEAPON_SECONDARY:
-    case HIT_MODE_RIGHT_WEAPON_RELOAD:
-        return critterGetItem2(critter);
+        case HIT_MODE_LEFT_WEAPON_PRIMARY:
+        case HIT_MODE_LEFT_WEAPON_SECONDARY:
+        case HIT_MODE_LEFT_WEAPON_RELOAD:
+            return critterGetItem1(critter);
+        case HIT_MODE_RIGHT_WEAPON_PRIMARY:
+        case HIT_MODE_RIGHT_WEAPON_SECONDARY:
+        case HIT_MODE_RIGHT_WEAPON_RELOAD:
+            return critterGetItem2(critter);
+        default:
+            return nullptr;
     }
-
-    return nullptr;
 }
 
 // 0x478040

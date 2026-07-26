@@ -5900,6 +5900,8 @@ void _combat_attack_this(Object* target)
             displayMonitorAddMessage(messageListItem.text);
         }
         return;
+    default:
+        break;
     }
 
     if (!isInCombat()) {

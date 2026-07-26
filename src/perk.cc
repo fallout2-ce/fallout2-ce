@@ -727,6 +727,8 @@ int perkGetSkillModifier(Object* critter, Skill skill)
         }
 
         break;
+    default:
+        break;
     }
 
     return modifier;
