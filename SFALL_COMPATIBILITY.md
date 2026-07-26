@@ -56,6 +56,7 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | `Sound` | `EndGameMovieMusic0` | `sound` | `endgame_movie_music0` |
 | `Sound` | `EndGameMovieMusic1` | `sound` | `endgame_movie_music1` |
 | `Sound` | `MapLoadingSound` | `sound` | `map_loading_sound` |
+| `Interface` | `WorldMapTerrainInfo` | `worldmap` | `terrain_info` |
 
 ## Opcodes / Metarules
 

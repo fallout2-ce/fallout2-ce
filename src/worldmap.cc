@@ -563,6 +563,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
 static void wmInterfaceDrawSubTileRectFogged(unsigned char* dest, int width, int height, int pitch);
 static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, int x, int y, int a6);
 static int wmDrawCursorStopped();
+static void wmInterfaceDrawTerrainInfo();
 static bool wmCursorIsVisible();
 static int wmGetAreaName(CityInfo* city, char* name);
 static void wmMarkAllSubTiles(int state);
@@ -958,6 +959,8 @@ static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
 static int worldmapTrailMarkers;
+static bool worldmapTerrainInfo;
+static bool wmTerrainInfoIsVisible;
 static TrailMarkerState trailMarkerState = {};
 
 static const unsigned char worldmapTrailMarkerColor = 134;
@@ -1064,6 +1067,7 @@ int wmWorldMap_init()
     // SFALL
     configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix, true);
     configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", &worldmapTrailMarkers, 0);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "terrain_info", &worldmapTerrainInfo, false);
 
     // CE: City size fids should be initialized during startup. They are used
     // during |wmTeleportToArea| to calculate worldmap position when jumping
@@ -3280,6 +3284,7 @@ static int wmWorldMapFunc(int a1)
     unsigned int partyHealTime = 0;
     int map = -1;
     int rc = 0;
+    wmTerrainInfoIsVisible = false;
 
     while (true) {
         sharedFpsLimiter.mark();
@@ -3297,6 +3302,17 @@ static int wmWorldMapFunc(int a1)
 
         int worldX = wmWorldOffsetX + mouseX - WM_VIEW_X;
         int worldY = wmWorldOffsetY + mouseY - WM_VIEW_Y;
+
+        bool terrainInfoIsVisible = worldmapTerrainInfo
+            && !wmGenData.isWalking
+            && wmGenData.currentAreaId == -1
+            && mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, WM_VIEW_WIDTH + WM_VIEW_X, WM_VIEW_HEIGHT + WM_VIEW_Y)
+            && abs(wmGenData.worldPosX - worldX) < 8
+            && abs(wmGenData.worldPosY - worldY) < 6;
+        if (terrainInfoIsVisible != wmTerrainInfoIsVisible) {
+            wmTerrainInfoIsVisible = terrainInfoIsVisible;
+            wmInterfaceRefresh();
+        }
 
         if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
             showQuitConfirmationDialog();
@@ -6079,7 +6095,31 @@ static int wmDrawCursorStopped()
         }
     }
 
+    wmInterfaceDrawTerrainInfo();
+
     return 0;
+}
+
+static void wmInterfaceDrawTerrainInfo()
+{
+    if (!wmTerrainInfoIsVisible || !wmCursorIsVisible()) {
+        return;
+    }
+
+    const char* text = wmGetCurrentTerrainName();
+    int textWidth = std::min(fontGetStringWidth(text), 200);
+    int textX = WM_VIEW_X + wmGenData.worldPosX - wmWorldOffsetX - textWidth / 2;
+    textX = std::clamp(textX, WM_VIEW_X, WM_VIEW_X + WM_VIEW_WIDTH - textWidth);
+
+    int textY = WM_VIEW_Y + wmGenData.worldPosY - wmWorldOffsetY - 17;
+    textY = std::clamp(textY, WM_VIEW_Y, WM_VIEW_Y + WM_VIEW_HEIGHT - fontGetLineHeight());
+
+    fontDrawText(
+        wmBkWinBuf + WM_WINDOW_WIDTH * textY + textX,
+        text,
+        textWidth,
+        WM_WINDOW_WIDTH,
+        COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
 }
 
 // 0x4C4490 wmCursorIsVisible
