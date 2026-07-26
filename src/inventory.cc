@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <utility>
 
@@ -971,7 +972,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         int currentWeight = inventoryWeight + extraWeight;
         int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
-        int weightPercentage = maxWeight < 1 ? 0 : (int)ceil(currentWeight * 100 / (float)maxWeight);
+        int weightPercentage = maxWeight < 1 ? 0 : (int)std::ceil(currentWeight * 100 / (float)maxWeight);
 
         if (showSimple) {
             if (showLabel) {
@@ -989,7 +990,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
     } else if (targetPane && PID_TYPE(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
         int currentSize = containerGetTotalSize(object);
         int maxSize = containerGetMaxSize(object);
-        int sizePercentage = maxSize < 1 ? 0 : (int)ceil(currentSize * 100 / (float)maxSize);
+        int sizePercentage = maxSize < 1 ? 0 : (int)std::ceil(currentSize * 100 / (float)maxSize);
 
         if (sizePercentage < containerSizeThreshold) {
             fontSetCurrent(oldFont);
