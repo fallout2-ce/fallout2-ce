@@ -480,6 +480,10 @@ static std::vector<std::pair<int, std::string>> wmTerrainNameOverrides;
 static void wmSetFlags(int* flagsPtr, int flag, int value);
 static int wmGenDataInit();
 static int wmGenDataReset();
+static void wmGenDataSetStartWorldPos();
+static bool wmGetStartWorldMapConfigValue(const char* key, int* valuePtr);
+static void wmGenDataClampWorldPosToBounds();
+static void wmSetStartWorldView();
 static int wmWorldMapSaveTempData();
 static int wmWorldMapLoadTempData();
 static int wmConfigInit();
@@ -979,8 +983,11 @@ int wmWorldMap_init()
         return -1;
     }
 
+    wmGenDataClampWorldPosToBounds();
+
     wmGenData.viewportMaxX = WM_TILE_WIDTH * wmNumHorizontalTiles - WM_VIEW_WIDTH;
     wmGenData.viewportMaxY = WM_TILE_HEIGHT * (wmMaxTileNum / wmNumHorizontalTiles) - WM_VIEW_HEIGHT;
+    wmSetStartWorldView();
     circleBlendTable = _getColorBlendTable(COLOR_GREEN);
 
     wmMarkSubTileRadiusVisited(wmGenData.worldPosX, wmGenData.worldPosY);
@@ -1009,8 +1016,7 @@ static int wmGenDataInit()
 {
     gDidMeetFrankHorrigan = false;
     wmGenData.currentAreaId = -1;
-    wmGenData.worldPosX = 173;
-    wmGenData.worldPosY = 122;
+    wmGenDataSetStartWorldPos();
     wmGenData.currentSubtile = nullptr;
     wmGenData.dword_672E18 = 0;
     wmGenData.isWalking = false;
@@ -1076,8 +1082,8 @@ static int wmGenDataReset()
     wmGenData.encounterIconIsVisible = false;
     mousePressed = false;
     wmGenData.currentAreaId = -1;
-    wmGenData.worldPosX = 173;
-    wmGenData.worldPosY = 122;
+    wmGenDataSetStartWorldPos();
+    wmGenDataClampWorldPosToBounds();
     wmGenData.walkDestinationX = -1;
     wmGenData.walkDestinationY = -1;
     wmGenData.encounterMapId = -1;
@@ -1111,6 +1117,70 @@ static int wmGenDataReset()
     wmTerrainNameOverrides.clear();
 
     return 0;
+}
+
+static void wmGenDataSetStartWorldPos()
+{
+    wmGenData.worldPosX = 173;
+    wmGenData.worldPosY = 122;
+
+    int value;
+    if (wmGetStartWorldMapConfigValue("worldmap_x", &value)) {
+        wmGenData.worldPosX = value;
+    }
+
+    if (wmGetStartWorldMapConfigValue("worldmap_y", &value)) {
+        wmGenData.worldPosY = value;
+    }
+}
+
+static bool wmGetStartWorldMapConfigValue(const char* key, int* valuePtr)
+{
+    assert(key != nullptr);
+    assert(valuePtr != nullptr);
+
+    int value;
+    if (!configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, key, &value)) {
+        return false;
+    }
+
+    if (value == -1) {
+        return false;
+    }
+
+    *valuePtr = std::max(value, 0);
+    return true;
+}
+
+static void wmGenDataClampWorldPosToBounds()
+{
+    if (wmNumHorizontalTiles <= 0 || wmMaxTileNum <= 0) {
+        return;
+    }
+
+    int worldMaxX = WM_TILE_WIDTH * wmNumHorizontalTiles;
+    int worldMaxY = WM_TILE_HEIGHT * (wmMaxTileNum / wmNumHorizontalTiles);
+    if (worldMaxX <= 0 || worldMaxY <= 0) {
+        return;
+    }
+
+    wmGenData.worldPosX = std::clamp(wmGenData.worldPosX, 0, worldMaxX - 1);
+    wmGenData.worldPosY = std::clamp(wmGenData.worldPosY, 0, worldMaxY - 1);
+}
+
+static void wmSetStartWorldView()
+{
+    wmWorldOffsetX = 0;
+    wmWorldOffsetY = 0;
+
+    int value;
+    if (wmGetStartWorldMapConfigValue("worldmap_view_x", &value)) {
+        wmWorldOffsetX = std::clamp(value, 0, std::max(wmGenData.viewportMaxX, 0));
+    }
+
+    if (wmGetStartWorldMapConfigValue("worldmap_view_y", &value)) {
+        wmWorldOffsetY = std::clamp(value, 0, std::max(wmGenData.viewportMaxY, 0));
+    }
 }
 
 // 0x4BCE00 wmWorldMap_exit
@@ -1177,6 +1247,7 @@ int wmWorldMap_reset()
     gGameTimeIncRemainder = 0.0;
 
     wmWorldMapLoadTempData();
+    wmSetStartWorldView();
     wmMarkAllSubTiles(0);
 
     return wmGenDataReset();
@@ -6170,6 +6241,14 @@ int wmGetPartyCurArea(int* areaIdxPtr)
     return -1;
 }
 
+bool wmStartWorldPosIsConfigured()
+{
+    int x;
+    int y;
+    return wmGetStartWorldMapConfigValue("worldmap_x", &x)
+        || wmGetStartWorldMapConfigValue("worldmap_y", &y);
+}
+
 // 0x4C47D8 wmMarkAllSubTiles
 static void wmMarkAllSubTiles(int state)
 {
@@ -7085,6 +7164,18 @@ void wmSetPartyWorldPos(int x, int y)
 {
     wmGenData.worldPosX = x;
     wmGenData.worldPosY = y;
+}
+
+void wmSetPartyCurArea(int areaIdx)
+{
+    wmGenData.currentAreaId = cityIsValid(areaIdx) ? areaIdx : -1;
+}
+
+void wmClearPartyWalking()
+{
+    wmGenData.walkDestinationX = 0;
+    wmGenData.walkDestinationY = 0;
+    wmGenData.isWalking = false;
 }
 
 void wmCarSetCurrentArea(int area)

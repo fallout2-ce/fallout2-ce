@@ -42,6 +42,11 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 
 | ddraw.ini section | ddraw.ini key | game.cfg section | game.cfg key |
 | --- | --- | --- | --- |
+| `Misc` | `StartingMap` | `start` | `map` |
+| `Misc` | `StartXPos` | `start` | `worldmap_x` |
+| `Misc` | `StartYPos` | `start` | `worldmap_y` |
+| `Misc` | `ViewXPos` | `start` | `worldmap_view_x` |
+| `Misc` | `ViewYPos` | `start` | `worldmap_view_y` |
 | `Misc` | `StartGDialogFix` | `dialog` | `start_gdialog_fix` |
 
 ## Opcodes / Metarules
