@@ -1231,14 +1231,14 @@ static int _map_age_dead_critters()
         if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
             // replace the dead critter bodies by the blood pool stain
             if (replaceDeadCritter(obj) == -1) {
-                debugPrint("\n%s: Could not replace dead body by the blood stain for the critter %d with pid %d.",__func__, obj->id, obj->pid);
+                debugPrint("\n%s: Could not replace dead body by the blood stain for the critter %d with pid %d.", __func__, obj->id, obj->pid);
                 rc = -1;
                 break;
-    }
+            }
 
             // drop the critter owned items on top of the blood stain only when successuffly replaced
-                if (!critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
-                    itemDropAll(obj, obj->tile);
+            if (!critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
+                itemDropAll(obj, obj->tile);
             }
         }
 
@@ -1251,7 +1251,8 @@ static int _map_age_dead_critters()
     return rc;
 }
 
-static int replaceDeadCritter(Object* critter) {
+static int replaceDeadCritter(Object* critter)
+{
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
         return -1;
     }
@@ -1260,29 +1261,28 @@ static int replaceDeadCritter(Object* critter) {
     if (objectCreateWithPid(&blood, PROTO_ID_BLOOD) == -1) {
         return -1;
     }
-    
+
     if (objectSetLocation(blood, critter->tile, critter->elevation, nullptr) == -1) {
         return -1;
-            }
+    }
 
-            Proto* proto;
+    Proto* proto;
     if (protoGetProto(critter->pid, &proto) == -1) {
         return -1;
     }
 
-            int frame = randomBetween(0, 3);
-            if ((proto->critter.flags & CRITTER_FLAT)) {
-                frame += 6;
-            } else {
+    int frame = randomBetween(0, 3);
+    if ((proto->critter.flags & CRITTER_FLAT)) {
+        frame += 6;
+    } else {
         KillType killType = critterGetKillType(critter);
         if (killType != KILL_TYPE_RAT && killType != KILL_TYPE_MANTIS) {
-                    frame += 3;
-                }
-            }
+            frame += 3;
+        }
+    }
 
     return objectSetFrame(blood, frame, nullptr);
-        }
-
+}
 
 // 0x48358C
 int mapGetLoadedAreaId()
