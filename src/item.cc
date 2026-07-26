@@ -173,6 +173,7 @@ static Object* _wd_obj;
 static int _wd_gvar;
 
 static std::vector<BookDescription> gBooks;
+static int fastShotFixMode;
 static bool gExplosionEmitsLight;
 static int gGrenadeExplosionRadius;
 static int gRocketExplosionRadius;
@@ -209,6 +210,7 @@ int itemsInit()
     booksInit();
     explosionsInit();
     healingItemsInit();
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "fast_shot_fix", &fastShotFixMode, 0);
 
     return 0;
 }
@@ -1738,14 +1740,6 @@ int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming)
                 // NOTE: Uninline.
                 actionPoints = weaponGetSecondaryActionPointCost(weapon);
             }
-
-            if (critter == gDude) {
-                if (traitIsSelected(TRAIT_FAST_SHOT)) {
-                    if (weaponGetRange(critter, hitMode) > 2) {
-                        actionPoints--;
-                    }
-                }
-            }
         } else {
             actionPoints = 3;
         }
@@ -1753,6 +1747,23 @@ int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming)
 
     if (critter == gDude) {
         int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+
+        if (traitIsSelected(TRAIT_FAST_SHOT)) {
+            bool reduceActionPointCost;
+            if (fastShotFixMode > 2) {
+                // Fallout 1 behavior: all weapon attacks, but not unarmed.
+                reduceActionPointCost = weapon != nullptr;
+            } else if (fastShotFixMode == 2) {
+                reduceActionPointCost = true;
+            } else {
+                reduceActionPointCost = (attackType == ATTACK_TYPE_THROW || attackType == ATTACK_TYPE_RANGED)
+                    && weaponGetRange(critter, hitMode) >= 2;
+            }
+
+            if (reduceActionPointCost) {
+                actionPoints -= 1;
+            }
+        }
 
         if (perkHasRank(gDude, PERK_BONUS_HTH_ATTACKS)) {
             if (attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) {
@@ -1887,7 +1898,16 @@ char weaponGetSoundId(Object* weapon)
 bool critterCanAim(Object* critter, HitMode hitMode)
 {
     if (critter == gDude && traitIsSelected(TRAIT_FAST_SHOT)) {
-        return false;
+        if (fastShotFixMode != 1) {
+            return false;
+        }
+
+        Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
+        int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+        if ((attackType == ATTACK_TYPE_THROW || attackType == ATTACK_TYPE_RANGED)
+            && weaponGetRange(critter, hitMode) >= 2) {
+            return false;
+        }
     }
 
     // NOTE: Uninline.

@@ -48,6 +48,7 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | `Misc` | `ViewXPos` | `start` | `worldmap_view_x` |
 | `Misc` | `ViewYPos` | `start` | `worldmap_view_y` |
 | `Misc` | `StartGDialogFix` | `dialog` | `start_gdialog_fix` |
+| `Misc` | `FastShotFix` | `combat` | `fast_shot_fix` |
 
 ## Opcodes / Metarules
 
