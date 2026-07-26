@@ -992,6 +992,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
         int sizePercentage = maxSize < 1 ? 0 : (int)ceil(currentSize * 100 / (float)maxSize);
 
         if (sizePercentage < containerSizeThreshold) {
+            fontSetCurrent(oldFont);
             return;
         }
 
