@@ -927,7 +927,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
 {
     int loot_weight_indicator = settings.ui.loot_weight_indicator;
 
-    bool showLabel = settings.ui.inventory_columns > 1;
+    bool showLabel = inventoryLootLayout.columns > 1;
     bool showDetailed = loot_weight_indicator == 2 && showLabel;
     bool showSimple = loot_weight_indicator == 1 || (loot_weight_indicator == 2 && !showLabel);
 
