@@ -338,6 +338,7 @@ static int _main_load_new(char* mapFileName)
     if (wmMatchAreaContainingMapIdx(gMapHeader.index, &areaIdx) == 0) {
         if (wmStartWorldPosIsConfigured()) {
             wmSetPartyCurArea(areaIdx);
+            wmClearPartyWalking();
         } else {
             wmTeleportToArea(areaIdx);
         }

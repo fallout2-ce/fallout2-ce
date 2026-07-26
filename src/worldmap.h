@@ -287,6 +287,7 @@ int wmTeleportToArea(int areaIdx);
 // CE
 bool wmStartWorldPosIsConfigured();
 void wmSetPartyCurArea(int areaIdx);
+void wmClearPartyWalking();
 void wmSetPartyWorldPos(int x, int y);
 void wmCarSetCurrentArea(int area);
 void wmForceEncounter(int map, unsigned int flags);
