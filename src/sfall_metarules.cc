@@ -1841,7 +1841,7 @@ void mf_set_window_flag(OpcodeContext& ctx)
 
     int windowId = ctx.arg(0).asInt();
     if (windowId <= 0) {
-        windowId = gInterfaceBarWindow;
+        windowId = inventoryGetWindow();
     }
 
     if (windowId == -1 || windowGetWindow(windowId) == nullptr) {
