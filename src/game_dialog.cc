@@ -3500,6 +3500,11 @@ int gameDialogGetWindow()
     return windowGetWindow(gGameDialogWindow) != nullptr ? gGameDialogWindow : -1;
 }
 
+int gameDialogGetBackgroundWindow()
+{
+    return windowGetWindow(gGameDialogBackgroundWindow) != nullptr ? gGameDialogBackgroundWindow : -1;
+}
+
 // 0x448660 gdialog_barter_cleanup_tables
 void gameDialogBarterCleanupTables()
 {

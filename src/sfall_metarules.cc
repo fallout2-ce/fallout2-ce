@@ -958,7 +958,7 @@ static InterfaceWindowLookupResult getInterfaceWindowByType(int winType, int& wi
         window = inventoryGetWindow();
         break;
     case 1:
-        window = gameDialogGetWindow();
+        window = gameDialogGetBackgroundWindow();
         break;
     case 2:
         window = pipboyGetWindow();
@@ -987,35 +987,6 @@ static InterfaceWindowLookupResult getInterfaceWindowByType(int winType, int& wi
     }
 
     return window != -1 ? InterfaceWindowLookupResult::Found : InterfaceWindowLookupResult::Missing;
-}
-
-static int getCurrentInterfaceWindow()
-{
-    int window = -1;
-    if (GameMode::isInGameMode(GameMode::kInventory)
-        || GameMode::isInGameMode(GameMode::kUseOn)
-        || GameMode::isInGameMode(GameMode::kLoot)
-        || GameMode::isInGameMode(GameMode::kBarter)) {
-        window = inventoryGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kDialog)) {
-        window = gameDialogGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kPipboy)) {
-        window = pipboyGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kWorldmap)) {
-        window = worldmapGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kEditor)) {
-        window = characterEditorGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kSkilldex)) {
-        window = skilldexGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kOptions)) {
-        window = optionsGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kAutomap)) {
-        window = automapGetWindow();
-    } else if (windowGetWindow(gInterfaceBarWindow) != nullptr) {
-        window = gInterfaceBarWindow;
-    }
-
-    return window;
 }
 
 static bool clampWindowFillRect(int windowWidth, int windowHeight, int& x, int& y, int& width, int& height)
@@ -1870,10 +1841,10 @@ void mf_set_window_flag(OpcodeContext& ctx)
 
     int windowId = ctx.arg(0).asInt();
     if (windowId <= 0) {
-        windowId = getCurrentInterfaceWindow();
+        windowId = inventoryGetWindow();
     }
 
-    if (windowId == -1) {
+    if (windowId == -1 || windowGetWindow(windowId) == nullptr) {
         return;
     }
 

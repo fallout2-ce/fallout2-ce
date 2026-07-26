@@ -978,7 +978,7 @@ static int mapLoad(File* stream)
     }
 
     lightSetAmbientIntensity(LIGHT_INTENSITY_MAX, false);
-    objectSetLocation(gDude, gCenterTile, gElevation, nullptr);
+    objectSetLocation(gDude, gEnteringTile, gElevation, nullptr);
     objectSetRotation(gDude, gEnteringRotation, nullptr);
     gMapHeader.index = wmMapMatchNameToIdx(gMapHeader.name);
 
