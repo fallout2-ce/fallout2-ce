@@ -219,8 +219,6 @@ public:
     int getHeight() const { return _height; }
     int getXOffset() const { return _xOffset; }
     int getYOffset() const { return _yOffset; }
-    int getRotationXOffset() const { return _rotationXOffset; }
-    int getRotationYOffset() const { return _rotationYOffset; }
     // Returns FRM frame data if locked, nullptr otherwise.
     unsigned char* getData() const { return _data; }
 
@@ -237,8 +235,6 @@ private:
     int _height = 0;
     int _xOffset = 0;
     int _yOffset = 0;
-    int _rotationXOffset = 0;
-    int _rotationYOffset = 0;
 };
 
 } // namespace fallout
