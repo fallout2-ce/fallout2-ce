@@ -1789,11 +1789,13 @@ void FrmImage::resetInternal()
 
 bool FrmImage::setFrame(const Art* art, int frame, int direction)
 {
-    unsigned char* data = artGetFrameData(art, frame, direction, &_width, &_height, &_xOffset, &_yOffset);
+    unsigned char* data = artGetFrameData(art, frame, direction, &_width, &_height, nullptr, nullptr);
     if (data == nullptr) {
         return false;
     }
 
+    _xOffset = art->xOffsets[direction];
+    _yOffset = art->yOffsets[direction];
     _data = data;
     return true;
 }
