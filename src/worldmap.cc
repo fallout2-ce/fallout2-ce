@@ -3306,6 +3306,7 @@ static int wmWorldMapFunc(int a1)
         bool terrainInfoIsVisible = worldmapTerrainInfo
             && !wmGenData.isWalking
             && wmGenData.currentAreaId == -1
+            && wmCursorIsVisible()
             && mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, WM_VIEW_WIDTH + WM_VIEW_X, WM_VIEW_HEIGHT + WM_VIEW_Y)
             && abs(wmGenData.worldPosX - worldX) < 8
             && abs(wmGenData.worldPosY - worldY) < 6;
