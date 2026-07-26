@@ -544,6 +544,7 @@ static bool wmGameTimeIncrement(int ticksToAdd);
 static int wmGrabTileWalkMask(int tileIdx);
 static bool wmWorldPosInvalid(int x, int y);
 static void wmPartyInitWalking(int x, int y);
+static bool wmTravelTickDue(unsigned int now);
 static void wmPartyWalkingStep();
 static void wmInterfaceScrollTabsStart(int delta);
 static void wmInterfaceScrollTabsStop();
@@ -986,6 +987,8 @@ static FrmImage _townFrmImage;
 static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
+static int worldmapTravelDelay;
+static unsigned int wmLastTravelTick;
 static int worldmapTrailMarkers;
 static bool worldmapTerrainInfo;
 static bool wmTerrainInfoIsVisible;
@@ -1094,6 +1097,8 @@ int wmWorldMap_init()
 
     // SFALL
     configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix, true);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", &worldmapTravelDelay, 0);
+    worldmapTravelDelay = std::clamp(worldmapTravelDelay, 0, 150);
     configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", &worldmapTrailMarkers, 0);
     configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "terrain_info", &worldmapTerrainInfo, false);
 
@@ -3319,6 +3324,7 @@ static int wmWorldMapFunc(int a1)
     int map = -1;
     int rc = 0;
     wmResetTerrainInfo();
+    wmLastTravelTick = getTicks();
 
     while (true) {
         sharedFpsLimiter.mark();
@@ -3362,7 +3368,7 @@ static int wmWorldMapFunc(int a1)
 
         int mouseEvent = mouseGetEvent();
 
-        if (wmGenData.isWalking) {
+        if (wmGenData.isWalking && wmTravelTickDue(now)) {
             wmPartyWalkingStep();
 
             if (wmGenData.isInCar) {
@@ -4671,6 +4677,7 @@ static void wmPartyInitWalking(int x, int y)
     wmGenData.walkDestinationY = y;
     wmGenData.currentAreaId = -1;
     wmGenData.isWalking = true;
+    wmLastTravelTick = getTicks();
 
     int dx = abs(x - wmGenData.worldPosX);
     int dy = abs(y - wmGenData.worldPosY);
@@ -4708,6 +4715,25 @@ static void wmPartyInitWalking(int x, int y)
     if (!wmCursorIsVisible()) {
         wmInterfaceCenterOnParty();
     }
+}
+
+static bool wmTravelTickDue(unsigned int now)
+{
+    if (worldmapTravelDelay == 0) {
+        return true;
+    }
+
+    if (getTicksBetween(now, wmLastTravelTick) < worldmapTravelDelay) {
+        return false;
+    }
+
+    wmLastTravelTick += worldmapTravelDelay;
+    if (getTicksBetween(now, wmLastTravelTick) >= worldmapTravelDelay) {
+        // Drop accumulated ticks after a stall instead of advancing in bursts.
+        wmLastTravelTick = now;
+    }
+
+    return true;
 }
 
 // 0x4C1F90 wmPartyWalkingStep

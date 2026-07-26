@@ -57,6 +57,10 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | `Sound` | `EndGameMovieMusic1` | `sound` | `endgame_movie_music1` |
 | `Sound` | `MapLoadingSound` | `sound` | `map_loading_sound` |
 | `Interface` | `WorldMapTerrainInfo` | `worldmap` | `terrain_info` |
+| `Misc` | `WorldMapFPSPatch` + `WorldMapDelay2` | `worldmap` | `travel_delay` |
+
+Unlike sfall, `travel_delay` throttles only world-map travel simulation. Input,
+rendering, and world-map scripts continue at the normal frame rate.
 
 ## Opcodes / Metarules
 
