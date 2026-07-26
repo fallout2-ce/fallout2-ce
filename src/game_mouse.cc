@@ -1002,13 +1002,13 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
             if (targetObj != nullptr) {
                 switch (FID_TYPE(targetObj->fid)) {
                 case OBJ_TYPE_MISC: {
-                        // if the targetObj is misc object like blood it allows to pickup outlined items behind
-                        Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
-                        if (itemObj == nullptr || !itemObj->outline) {
-                            break;
-                        }
+                    // if the targetObj is misc object like blood it allows to pickup outlined items behind
+                    Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
+                    if (itemObj == nullptr || !itemObj->outline) {
+                        break;
+                    }
 
-                        targetObj = itemObj;
+                    targetObj = itemObj;
                 }
                 case OBJ_TYPE_ITEM:
                     actionPickUp(gDude, targetObj);
