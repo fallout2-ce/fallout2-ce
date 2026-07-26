@@ -5381,7 +5381,7 @@ static void characterEditorToggleTaggedSkill(Skill skill)
 
     insertionIndex = 0;
     for (int index = NUM_TAGGED_SKILLS - 1; index >= 0; index--) {
-        if (gCharacterEditorTempTaggedSkills[index] != -1) {
+        if (gCharacterEditorTempTaggedSkills[index] != SKILL_INVALID) {
             break;
         }
         insertionIndex++;
@@ -6922,14 +6922,14 @@ static void characterEditorFolderViewClear()
     else
         gCharacterEditorFolderViewHighlightedLine = characterEditorSelectedItem - EDITOR_PERK_KARMA_KILLS;
 
-    if (characterEditorWindowSelectedFolder < EDITOR_FOLDER_KARMA) {
+    if (characterEditorWindowSelectedFolder <= EDITOR_FOLDER_PERKS) {
         if (characterEditorWindowSelectedFolder)
             return;
 
         gCharacterEditorFolderViewTopLine = gCharacterEditorPerkFolderTopLine;
     } else if (characterEditorWindowSelectedFolder == EDITOR_FOLDER_KARMA) {
         gCharacterEditorFolderViewTopLine = gCharacterEditorKarmaFolderTopLine;
-    } else if (characterEditorWindowSelectedFolder == EDITOR_FOLDER_PERKS) {
+    } else if (characterEditorWindowSelectedFolder == EDITOR_FOLDER_KILLS) {
         gCharacterEditorFolderViewTopLine = gCharacterEditorKillsFolderTopLine;
     }
 }

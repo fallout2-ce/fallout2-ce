@@ -177,7 +177,8 @@ inline static bool killTypeIsValid(int killType)
 
 inline static bool killTypeOverrideIsValid(int killType)
 {
-    return killType >= KILL_TYPE_FIRST && killType < KILL_TYPE_OVERRIDE_COUNT;
+    // killTypeOverrideIsValid evaluates player's kill type as valid even though KILL_TYPE_PLAYER equals KILL_TYPE_OVERRIDE_COUNT
+    return killType >= KILL_TYPE_FIRST && killType <= KILL_TYPE_OVERRIDE_COUNT;
 }
 
 enum {
