@@ -101,6 +101,11 @@ static char* gStatValueDescriptions[PRIMARY_STAT_RANGE];
 // 0x6681AC curr_pc_stat
 static int gPcStatValues[PC_STAT_COUNT];
 
+static int pcStatMaximums[SAVEABLE_STAT_COUNT];
+static int pcStatMinimums[SAVEABLE_STAT_COUNT];
+static int npcStatMaximums[SAVEABLE_STAT_COUNT];
+static int npcStatMinimums[SAVEABLE_STAT_COUNT];
+
 static int unspentApBonus = 4;
 static int unspentApPerkBonus = 4;
 static int xpTable[PC_LEVEL_MAX];
@@ -132,10 +137,16 @@ static bool pcExperienceTableParseToken(std::string_view token, int* value)
     return result.ec == std::errc() && result.ptr == token.data() + token.size();
 }
 
+static void statResetBounds();
+static int statGetMaximum(Object* critter, Stat stat);
+static int statGetMinimum(Object* critter, Stat stat);
+
 // 0x4AED70
 int statsInit()
 {
     MessageListItem messageListItem;
+
+    statResetBounds();
 
     // NOTE: Uninline.
     pcStatsReset();
@@ -176,6 +187,7 @@ int statsReset()
 {
     // NOTE: Uninline.
     pcStatsReset();
+    statResetBounds();
     statResetUnspentApBonuses();
 
     return 0;
@@ -238,6 +250,72 @@ void statSetUnspentApPerkBonus(int multiplier)
 int statGetUnspentApPerkBonus()
 {
     return unspentApPerkBonus;
+}
+
+static void statResetBounds()
+{
+    for (int stat = 0; stat < SAVEABLE_STAT_COUNT; stat++) {
+        pcStatMaximums[stat] = gStatDescriptions[stat].maximumValue;
+        pcStatMinimums[stat] = gStatDescriptions[stat].minimumValue;
+        npcStatMaximums[stat] = gStatDescriptions[stat].maximumValue;
+        npcStatMinimums[stat] = gStatDescriptions[stat].minimumValue;
+    }
+}
+
+static int statGetMaximum(Object* critter, Stat stat)
+{
+    return critter == gDude ? pcStatMaximums[stat] : npcStatMaximums[stat];
+}
+
+static int statGetMinimum(Object* critter, Stat stat)
+{
+    return critter == gDude ? pcStatMinimums[stat] : npcStatMinimums[stat];
+}
+
+int statGetConfiguredMaximum(Stat stat, bool npc)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        return npc ? npcStatMaximums[stat] : pcStatMaximums[stat];
+    }
+
+    return 0;
+}
+
+int statGetConfiguredMinimum(Stat stat, bool npc)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        return npc ? npcStatMinimums[stat] : pcStatMinimums[stat];
+    }
+
+    return 0;
+}
+
+void statSetPcMaximum(Stat stat, int maximum)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        pcStatMaximums[stat] = maximum;
+    }
+}
+
+void statSetPcMinimum(Stat stat, int minimum)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        pcStatMinimums[stat] = minimum;
+    }
+}
+
+void statSetNpcMaximum(Stat stat, int maximum)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        npcStatMaximums[stat] = maximum;
+    }
+}
+
+void statSetNpcMinimum(Stat stat, int minimum)
+{
+    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+        npcStatMinimums[stat] = minimum;
+    }
 }
 
 // 0x4AEF48
@@ -433,7 +511,15 @@ int critterGetStat(Object* critter, Stat stat)
             }
         }
 
-        value = std::clamp(value, gStatDescriptions[stat].minimumValue, gStatDescriptions[stat].maximumValue);
+        int minimum = statGetMinimum(critter, stat);
+        if (value < minimum) {
+            value = minimum;
+        } else {
+            int maximum = statGetMaximum(critter, stat);
+            if (value > maximum) {
+                value = maximum;
+            }
+        }
     } else {
         switch (stat) {
         case STAT_CURRENT_HIT_POINTS:
@@ -521,11 +607,11 @@ int critterSetBaseStat(Object* critter, Stat stat, int value)
             value -= traitGetStatModifier(stat);
         }
 
-        if (value < gStatDescriptions[stat].minimumValue) {
+        if (value < statGetMinimum(critter, stat)) {
             return -2;
         }
 
-        if (value > gStatDescriptions[stat].maximumValue) {
+        if (value > statGetMaximum(critter, stat)) {
             return -3;
         }
 

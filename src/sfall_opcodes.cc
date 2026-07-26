@@ -167,6 +167,50 @@ static void op_set_skill_max(Program* program)
     skillSetMaximum(programStackPopInteger(program));
 }
 
+static void op_set_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMaximum(stat, maximum);
+    statSetNpcMaximum(stat, maximum);
+}
+
+static void op_set_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMinimum(stat, minimum);
+    statSetNpcMinimum(stat, minimum);
+}
+
+static void op_set_pc_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMaximum(stat, maximum);
+}
+
+static void op_set_pc_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMinimum(stat, minimum);
+}
+
+static void op_set_npc_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetNpcMaximum(stat, maximum);
+}
+
+static void op_set_npc_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetNpcMinimum(stat, minimum);
+}
+
 // get_pc_base_stat
 static void op_get_pc_base_stat(Program* program)
 {
@@ -1931,11 +1975,17 @@ void sfallOpcodesInit()
     // 0x8246 - void mod_skill_points_per_level(int value)
 
     // 0x81b4 - void set_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B4, op_set_stat_max);
     // 0x81b5 - void set_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B5, op_set_stat_min);
     // 0x81b7 - void set_pc_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B7, op_set_pc_stat_max);
     // 0x81b8 - void set_pc_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B8, op_set_pc_stat_min);
     // 0x81b9 - void set_npc_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B9, op_set_npc_stat_max);
     // 0x81ba - void set_npc_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81BA, op_set_npc_stat_min);
 
     // 0x816b - int  input_funcs_available() // deprecated; do not implement
     // 0x816c - int  key_pressed(int dxScancode)

@@ -38,6 +38,7 @@
 #include "sfall_opcodes.h"
 #include "sfall_script_hooks.h"
 #include "skilldex.h"
+#include "stat.h"
 #include "text_font.h"
 #include "tile.h"
 #include "window.h"
@@ -779,6 +780,8 @@ static void mf_get_object_ai_data(OpcodeContext& ctx);
 static void mf_get_object_data(OpcodeContext& ctx);
 static void mf_get_outline(OpcodeContext& ctx);
 static void mf_get_sfall_arg_at(OpcodeContext& ctx);
+static void mf_get_stat_max(OpcodeContext& ctx);
+static void mf_get_stat_min(OpcodeContext& ctx);
 static void mf_get_terrain_name(OpcodeContext& ctx);
 static void mf_get_text_width(OpcodeContext& ctx);
 static void mf_get_window_attribute(OpcodeContext& ctx);
@@ -861,8 +864,8 @@ const MetaruleInfo kMetarules[] = {
     { "get_object_data", mf_get_object_data, 2, 2, 0, { ARG_OBJECT, ARG_INT } },
     { "get_outline", mf_get_outline, 1, 1, 0, { ARG_OBJECT } },
     { "get_sfall_arg_at", mf_get_sfall_arg_at, 1, 1, 0, { ARG_INT } },
-    // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
-    // {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
+    { "get_stat_max", mf_get_stat_max, 1, 2, 0, { ARG_INT, ARG_INT } },
+    { "get_stat_min", mf_get_stat_min, 1, 2, 0, { ARG_INT, ARG_INT } },
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
     { "get_terrain_name", mf_get_terrain_name, 0, 2, -1, { ARG_INT, ARG_INT } },
     { "get_text_width", mf_get_text_width, 1, 1, 0, { ARG_STRING } },
@@ -1223,6 +1226,20 @@ void mf_get_sfall_arg_at(OpcodeContext& ctx)
         }
     }
     ctx.setReturn(result);
+}
+
+void mf_get_stat_max(OpcodeContext& ctx)
+{
+    Stat stat = static_cast<Stat>(ctx.arg(0).asInt());
+    const bool npc = ctx.numArgs() > 1 && ctx.arg(1).asInt() != 0;
+    ctx.setReturn(statGetConfiguredMaximum(stat, npc));
+}
+
+void mf_get_stat_min(OpcodeContext& ctx)
+{
+    Stat stat = static_cast<Stat>(ctx.arg(0).asInt());
+    const bool npc = ctx.numArgs() > 1 && ctx.arg(1).asInt() != 0;
+    ctx.setReturn(statGetConfiguredMinimum(stat, npc));
 }
 
 void mf_get_object_ai_data(OpcodeContext& ctx)
