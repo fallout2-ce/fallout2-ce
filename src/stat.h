@@ -33,23 +33,18 @@ void critterUpdateDerivedStats(Object* critter);
 char* statGetName(Stat stat);
 char* statGetDescription(Stat stat);
 char* statGetValueDescription(int value);
-int pcGetStat(int pcStat);
-int pcSetStat(int pcStat, int value);
+int pcGetStat(PcStat pcStat);
+int pcSetStat(PcStat pcStat, int value);
 void pcStatsReset();
 int pcGetExperienceForNextLevel();
 int pcGetExperienceForLevel(int level);
-char* pcStatGetName(int pcStat);
-char* pcStatGetDescription(int pcStat);
+char* pcStatGetName(PcStat pcStat);
+char* pcStatGetDescription(PcStat pcStat);
 int statGetFrmId(Stat stat);
 int statRoll(Object* critter, Stat stat, int modifier, int* howMuch);
 int pcAddExperience(int xp, int* xpGained = nullptr);
 int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained = nullptr);
 int pcSetExperience(int xp);
-
-static inline bool pcStatIsValid(int pcStat)
-{
-    return pcStat >= 0 && pcStat < PC_STAT_COUNT;
-}
 
 } // namespace fallout
 

@@ -85,14 +85,27 @@ inline Stat operator++(Stat& e, int)
 }
 
 // Special stats that are only relevant to player character.
-typedef enum PcStat {
+enum PcStat : int {
     PC_STAT_UNSPENT_SKILL_POINTS,
     PC_STAT_LEVEL,
     PC_STAT_EXPERIENCE,
     PC_STAT_REPUTATION,
     PC_STAT_KARMA,
     PC_STAT_COUNT,
-} PcStat;
+    PC_STAT_FIRST = PC_STAT_UNSPENT_SKILL_POINTS
+};
+
+inline bool pcStatIsValid(int pcStat)
+{
+    return pcStat >= PC_STAT_FIRST && pcStat < PC_STAT_COUNT;
+}
+
+inline PcStat operator++(PcStat& e, int)
+{
+    PcStat result = e;
+    e = static_cast<PcStat>(static_cast<int>(e) + 1);
+    return result;
+}
 
 } // namespace fallout
 

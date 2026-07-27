@@ -125,12 +125,12 @@ int statsInit()
         gStatDescriptions[stat].description = getmsg(&gStatsMessageList, &messageListItem, 200 + stat);
     }
 
-    for (int pcStat = 0; pcStat < PC_STAT_COUNT; pcStat++) {
+    for (PcStat pcStat = PC_STAT_FIRST; pcStat < PC_STAT_COUNT; pcStat++) {
         gPcStatDescriptions[pcStat].name = getmsg(&gStatsMessageList, &messageListItem, 400 + pcStat);
         gPcStatDescriptions[pcStat].description = getmsg(&gStatsMessageList, &messageListItem, 500 + pcStat);
     }
 
-    for (int index = 0; index < PRIMARY_STAT_RANGE; index++) {
+    for (int index = PRIMARY_STAT_MIN - 1; index < PRIMARY_STAT_RANGE; index++) {
         gStatValueDescriptions[index] = getmsg(&gStatsMessageList, &messageListItem, 301 + index);
     }
 
@@ -215,7 +215,7 @@ int critterGetStat(Object* critter, Stat stat)
         return 0;
     }
     int value;
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         value = critterGetBaseStatWithTraitModifier(critter, stat);
         value += critterGetBonusStat(critter, stat);
 
@@ -547,7 +547,7 @@ int critterSetBonusStat(Object* critter, Stat stat, int value)
         return -5;
     }
 
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         Proto* proto;
         protoGetProto(critter->pid, &proto);
         proto->critter.data.bonusStats[stat] = value;
@@ -633,13 +633,13 @@ char* statGetValueDescription(int value)
 }
 
 // 0x4AF8FC
-int pcGetStat(int pcStat)
+int pcGetStat(PcStat pcStat)
 {
     return pcStatIsValid(pcStat) ? gPcStatValues[pcStat] : 0;
 }
 
 // 0x4AF910
-int pcSetStat(int pcStat, int value)
+int pcSetStat(PcStat pcStat, int value)
 {
     int result;
 
@@ -674,7 +674,7 @@ int pcSetStat(int pcStat, int value)
 // 0x4AF980
 void pcStatsReset()
 {
-    for (int pcStat = 0; pcStat < PC_STAT_COUNT; pcStat++) {
+    for (PcStat pcStat = PC_STAT_FIRST; pcStat < PC_STAT_COUNT; pcStat++) {
         gPcStatValues[pcStat] = gPcStatDescriptions[pcStat].defaultValue;
     }
 }
@@ -705,15 +705,15 @@ int pcGetExperienceForLevel(int level)
 }
 
 // 0x4AF9F4
-char* pcStatGetName(int pcStat)
+char* pcStatGetName(PcStat pcStat)
 {
-    return pcStat >= 0 && pcStat < PC_STAT_COUNT ? gPcStatDescriptions[pcStat].name : nullptr;
+    return pcStatIsValid(pcStat) ? gPcStatDescriptions[pcStat].name : nullptr;
 }
 
 // 0x4AFA14
-char* pcStatGetDescription(int pcStat)
+char* pcStatGetDescription(PcStat pcStat)
 {
-    return pcStat >= 0 && pcStat < PC_STAT_COUNT ? gPcStatDescriptions[pcStat].description : nullptr;
+    return pcStatIsValid(pcStat) ? gPcStatDescriptions[pcStat].description : nullptr;
 }
 
 // 0x4AFA34

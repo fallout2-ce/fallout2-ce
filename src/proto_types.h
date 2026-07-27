@@ -411,8 +411,8 @@ typedef struct ItemProto {
 
 typedef struct CritterProtoData {
     int flags; // d.flags
-    int baseStats[35]; // d.stat_base
-    int bonusStats[35]; // d.stat_bonus
+    int baseStats[SAVEABLE_STAT_COUNT]; // d.stat_base
+    int bonusStats[SAVEABLE_STAT_COUNT]; // d.stat_bonus
     int skills[SKILL_COUNT]; // d.stat_points
     BodyType bodyType; // d.body
     int experience;

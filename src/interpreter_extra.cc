@@ -4887,9 +4887,9 @@ static void opGetObjectName(Program* program)
 // 0x45CD64 op_get_pc_stat
 static void opGetPcStat(Program* program)
 {
-    int data = programStackPopInteger(program);
+    PcStat pcStat = programStackPopEnum<PcStat>(program);
 
-    int value = pcGetStat(data);
+    int value = pcGetStat(pcStat);
     programStackPushInteger(program, value);
 }
 

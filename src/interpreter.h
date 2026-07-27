@@ -335,6 +335,17 @@ inline Stat programStackPopEnum(Program* program)
     return static_cast<Stat>(stat);
 }
 
+template <>
+inline PcStat programStackPopEnum(Program* program)
+{
+    int pcStat = programStackPopInteger(program);
+    if (!pcStatIsValid(pcStat)) {
+        programPrintError("invalid pc stat %d", pcStat);
+    }
+
+    return static_cast<PcStat>(pcStat);
+}
+
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
 void programReturnStackPushInteger(Program* program, int value);
 void programReturnStackPushPointer(Program* program, void* value);
