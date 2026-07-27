@@ -275,6 +275,8 @@ int critterGetStat(Object* critter, Stat stat)
         case STAT_AGE:
             value += gameTimeGetTime() / GAME_TIME_TICKS_PER_YEAR;
             break;
+        default:
+            break;
         }
 
         if (critter == gDude) {
@@ -394,6 +396,8 @@ int critterGetStat(Object* critter, Stat stat)
                     value += 10;
                 }
                 break;
+            default:
+                break;
             }
         }
 
@@ -440,18 +444,18 @@ int critterGetBaseStat(Object* critter, Stat stat)
     if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         protoGetProto(critter->pid, &proto);
         return proto->critter.data.baseStats[stat];
-    } else {
-        switch (stat) {
-        case STAT_CURRENT_HIT_POINTS:
-            return critterGetHitPoints(critter);
-        case STAT_CURRENT_POISON_LEVEL:
-            return critterGetPoison(critter);
-        case STAT_CURRENT_RADIATION_LEVEL:
-            return critterGetRadiation(critter);
-        }
     }
 
-    return 0;
+    switch (stat) {
+    case STAT_CURRENT_HIT_POINTS:
+        return critterGetHitPoints(critter);
+    case STAT_CURRENT_POISON_LEVEL:
+        return critterGetPoison(critter);
+    case STAT_CURRENT_RADIATION_LEVEL:
+        return critterGetRadiation(critter);
+    default:
+        return 0;
+    }
 }
 
 // 0x4AF474
@@ -510,10 +514,10 @@ int critterSetBaseStat(Object* critter, Stat stat, int value)
         return critterAdjustPoison(critter, value - critterGetPoison(critter));
     case STAT_CURRENT_RADIATION_LEVEL:
         return critterAdjustRadiation(critter, value - critterGetRadiation(critter));
+    default:
+        // Should be unreachable
+        return 0;
     }
-
-    // Should be unreachable
-    return 0;
 }
 
 // 0x4AF5D4
@@ -557,19 +561,19 @@ int critterSetBonusStat(Object* critter, Stat stat, int value)
         }
 
         return 0;
-    } else {
-        switch (stat) {
-        case STAT_CURRENT_HIT_POINTS:
-            return critterAdjustHitPoints(critter, value);
-        case STAT_CURRENT_POISON_LEVEL:
-            return critterAdjustPoison(critter, value);
-        case STAT_CURRENT_RADIATION_LEVEL:
-            return critterAdjustRadiation(critter, value);
-        }
     }
 
-    // Should be unreachable
-    return -1;
+    switch (stat) {
+    case STAT_CURRENT_HIT_POINTS:
+        return critterAdjustHitPoints(critter, value);
+    case STAT_CURRENT_POISON_LEVEL:
+        return critterAdjustPoison(critter, value);
+    case STAT_CURRENT_RADIATION_LEVEL:
+        return critterAdjustRadiation(critter, value);
+    default:
+        // Should be unreachable
+        return -1;
+    }
 }
 
 // 0x4AF6CC

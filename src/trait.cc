@@ -273,6 +273,8 @@ int traitGetStatModifier(Stat stat)
             modifier -= critterGetBaseStat(gDude, STAT_POISON_RESISTANCE);
         }
         break;
+    default:
+        break;
     }
 
     return modifier;
