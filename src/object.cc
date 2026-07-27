@@ -2881,7 +2881,8 @@ void _intensity_mask_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight,
     }
 }
 
-bool objectIsOutlined(Object* obj) {
+bool objectIsOutlined(Object* obj)
+{
     return obj != nullptr && (obj->outline & OUTLINE_TYPE_MASK) != 0 && (obj->outline & OUTLINE_DISABLED) == 0;
 }
 
