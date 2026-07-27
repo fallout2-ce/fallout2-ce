@@ -8,6 +8,7 @@ namespace fallout {
 #define CONTENT_CONFIG_START_SECTION "start"
 #define CONTENT_CONFIG_KARMA_SECTION "karma"
 #define CONTENT_CONFIG_ITEMS_SECTION "items"
+#define CONTENT_CONFIG_MAPS_SECTION "maps"
 #define CONTENT_CONFIG_DIALOG_SECTION "dialog"
 #define CONTENT_CONFIG_MAIN_MENU_SECTION "main_menu"
 #define CONTENT_CONFIG_MOVIES_SECTION "movies"
