@@ -1004,21 +1004,20 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                 case OBJ_TYPE_WALL:
                 case OBJ_TYPE_SCENERY:
                 case OBJ_TYPE_MISC: {
-                    if (_obj_action_can_use(targetObj)) {
-                        _action_use_an_object(gDude, targetObj);
-                        break;
-                    } 
-                    if (objectExamine(gDude, targetObj) == -1) {
-                        objectLookAt(gDude, targetObj);
-                    }
-
                     // if the targetObj is wall/scenery/misc object then it allows to pickup outlined items potentially behind
                     Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
                     if (!objectIsOutlined(itemObj)) {
+                        if (_obj_action_can_use(targetObj)) {
+                            _action_use_an_object(gDude, targetObj);
+                        } 
                         break;
                     }
 
                     targetObj = itemObj;
+
+                    if (objectExamine(gDude, targetObj) == -1) {
+                        objectLookAt(gDude, targetObj);
+                    }
                 }
                 // FALLTHROUGH
                 case OBJ_TYPE_ITEM:
