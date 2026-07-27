@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <utility>
 
@@ -925,7 +926,31 @@ static bool inventoryLootMouseHitTestScroller(bool targetInventory)
 
 static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch, bool targetPane, Object* object, int extraWeight)
 {
-    char formattedText[20];
+    int loot_weight_indicator = settings.ui.loot_weight_indicator;
+
+    bool showLabel = inventoryLootLayout.columns > 1;
+    bool showDetailed = loot_weight_indicator == 2 && showLabel;
+    bool showSimple = loot_weight_indicator == 1 || (loot_weight_indicator == 2 && !showLabel);
+
+    if (!showDetailed && !showSimple) {
+        return;
+    }
+
+    int containerSizeThreshold = settings.ui.loot_container_size_indicator_threshold;
+
+    // Wt.
+    MessageListItem messageListItem;
+    messageListItem.num = 30;
+
+    if (showLabel) {
+        if (!messageListGetItem(&gInventoryMessageList, &messageListItem)) {
+            showSimple = true;
+            showDetailed = false;
+            showLabel = false;
+        }
+    }
+
+    char formattedText[30];
     formattedText[0] = '\0';
 
     int oldFont = fontGetCurrent();
@@ -942,26 +967,54 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             pitch);
     }
 
-    int color = COLOR_GREEN;
+    int color = COLOR_WHITE;
+    int inventoryWeight = objectGetInventoryWeight(object);
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
-        int currentWeight = objectGetInventoryWeight(object) + extraWeight;
+        int currentWeight = inventoryWeight + extraWeight;
         int maxWeight = critterGetStat(object, STAT_CARRY_WEIGHT);
-        snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
+        int weightPercentage = maxWeight < 1 ? 0 : (int)std::ceil(currentWeight * 100 / (float)maxWeight);
+
+        if (showSimple) {
+            if (showLabel) {
+                snprintf(formattedText, sizeof(formattedText), "%s %d/%d", messageListItem.text, currentWeight, maxWeight);
+            } else {
+                snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
+            }
+        } else if (showDetailed) {
+            snprintf(formattedText, sizeof(formattedText), "%s %d/%d (%d%%)", messageListItem.text, currentWeight, maxWeight, weightPercentage);
+        }
+
         if (currentWeight > maxWeight) {
             color = COLOR_RED;
         }
     } else if (targetPane && PID_TYPE(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
         int currentSize = containerGetTotalSize(object);
         int maxSize = containerGetMaxSize(object);
-        snprintf(formattedText, sizeof(formattedText), "%d/%d", currentSize, maxSize);
+        int sizePercentage = maxSize < 1 ? 0 : (int)std::ceil(currentSize * 100 / (float)maxSize);
+
+        if (sizePercentage < containerSizeThreshold) {
+            fontSetCurrent(oldFont);
+            return;
+        }
+
+        if (showSimple) {
+            snprintf(formattedText, sizeof(formattedText), "%d%%", sizePercentage);
+        } else if (showDetailed) {
+            snprintf(formattedText, sizeof(formattedText), "%s %d (%d%%)", messageListItem.text, inventoryWeight, sizePercentage);
+        }
     } else {
-        int inventoryWeight = objectGetInventoryWeight(object);
-        snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
+        if (showLabel) {
+            snprintf(formattedText, sizeof(formattedText), "%s %d", messageListItem.text, inventoryWeight);
+        } else {
+            snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
+        }
     }
 
-    int x = targetPane ? inventoryLootLayout.rightScrollerX : inventoryLootLayout.leftScrollerX;
-    int y = (targetPane ? inventoryLootLayout.rightScrollerY : inventoryLootLayout.leftScrollerY) + inventoryLootLayout.scrollerHeight + 2;
-    inventoryDrawCenteredText(windowBuffer, pitch, inventoryLootLayout.scrollerWidth, x, y, formattedText, color);
+    if (strlen(formattedText) > 0) {
+        int x = targetPane ? inventoryLootLayout.rightScrollerX : inventoryLootLayout.leftScrollerX;
+        int y = (targetPane ? inventoryLootLayout.rightScrollerY : inventoryLootLayout.leftScrollerY) + inventoryLootLayout.scrollerHeight + 2;
+        inventoryDrawCenteredText(windowBuffer, pitch, inventoryLootLayout.scrollerWidth, x, y, formattedText, color);
+    }
 
     fontSetCurrent(oldFont);
 }
@@ -3004,7 +3057,7 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 
     int damageResistanceStat = STAT_DAMAGE_RESISTANCE;
     int damageThresholdStat = STAT_DAMAGE_THRESHOLD;
-    for (int damageType = 0; damageType < DAMAGE_TYPE_COUNT; damageType += 1) {
+    for (DamageType damageType = DAMAGE_TYPE_FIRST; damageType < DAMAGE_TYPE_COUNT; damageType++) {
         int damageResistanceBonus = critterGetBonusStat(critter, damageResistanceStat);
         int oldArmorDamageResistance = armorGetDamageResistance(oldArmor, damageType);
         int newArmorDamageResistance = armorGetDamageResistance(newArmor, damageType);
@@ -4096,10 +4149,10 @@ static void displayLootPanePartyName(unsigned char* windowBuffer, int windowPitc
 
     int oldFont = fontGetCurrent();
     fontSetCurrent(101);
-    int nameY = rect.bottom - fontGetLineHeight() - 2;
+    int nameY = rect.bottom - fontGetLineHeight();
     fontSetCurrent(oldFont);
 
-    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, COLOR_GREEN);
+    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, COLOR_WHITE);
 }
 
 // Displays item description.

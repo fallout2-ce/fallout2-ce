@@ -4,6 +4,7 @@
 #include "interpreter.h"
 #include "interpreter_extra.h"
 #include "scripts.h"
+#include "skill_defs.h"
 
 #include <initializer_list>
 #include <memory>
@@ -335,8 +336,8 @@ int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, HitMode hitMode, HitLocation hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, int roll);
 void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
-UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, int skill);
-int scriptHooks_UseSkill(Object* user, Object* target, int skill, int skillBonus);
+UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, Skill skill);
+int scriptHooks_UseSkill(Object* user, Object* target, Skill skill, int skillBonus);
 int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
 void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity, RemoveInventoryObjectHookReason reason, Object* target);

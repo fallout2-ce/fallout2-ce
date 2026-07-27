@@ -753,7 +753,7 @@ int     arg2 - skill being used
 int     ret0 - a new critter to override the user critter. Pass -1 to cancel the skill use, pass 0 to skip this return value
 int     ret1 - pass 1 to allow the skill to be used in combat
 */
-UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, int skill)
+UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, Skill skill)
 {
     assert(userPtr != nullptr);
     assert(*userPtr != nullptr);
@@ -807,7 +807,7 @@ int     arg3 - skill bonus from items such as first aid kits
 
 int     ret0 - overrides hard-coded handler (-1 - use engine handler, any other value - override)
 */
-int scriptHooks_UseSkill(Object* user, Object* target, int skill, int skillBonus)
+int scriptHooks_UseSkill(Object* user, Object* target, Skill skill, int skillBonus)
 {
     ScriptHookCall hook(HOOK_USESKILL, 1, { user, target, skill, skillBonus });
     hook.call();

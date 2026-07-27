@@ -175,11 +175,17 @@ namespace {
     constexpr SfallMigrationEntry kSfallMigrationEntries[] = {
         // [start]
         { kSfallMisc, "StartingMap", CONTENT_CONFIG_START_SECTION, "map", "" },
+        { kSfallMisc, "StartXPos", CONTENT_CONFIG_START_SECTION, "worldmap_x", "-1" },
+        { kSfallMisc, "StartYPos", CONTENT_CONFIG_START_SECTION, "worldmap_y", "-1" },
+        { kSfallMisc, "ViewXPos", CONTENT_CONFIG_START_SECTION, "worldmap_view_x", "-1" },
+        { kSfallMisc, "ViewYPos", CONTENT_CONFIG_START_SECTION, "worldmap_view_y", "-1" },
         { kSfallMisc, "MaleStartModel", CONTENT_CONFIG_START_SECTION, "model_male", "hmwarr" },
         { kSfallMisc, "MaleDefaultModel", CONTENT_CONFIG_START_SECTION, "model_male_default", "hmjmps" },
         { kSfallMisc, "FemaleStartModel", CONTENT_CONFIG_START_SECTION, "model_female", "hfprim" },
         { kSfallMisc, "FemaleDefaultModel", CONTENT_CONFIG_START_SECTION, "model_female_default", "hfjmps" },
         { kSfallMisc, "PipBoyAvailableAtGameStart", CONTENT_CONFIG_START_SECTION, "pipboy", "0" },
+        // [maps]
+        { kSfallMisc, "DisableSpecialMapIDs", CONTENT_CONFIG_MAPS_SECTION, "disable_special_map_ids", "0" },
         // [karma]
         { kSfallMisc, "KarmaFRMs", CONTENT_CONFIG_KARMA_SECTION, "frms" },
         { kSfallMisc, "KarmaPoints", CONTENT_CONFIG_KARMA_SECTION, "points" },

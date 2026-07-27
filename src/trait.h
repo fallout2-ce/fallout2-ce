@@ -2,6 +2,7 @@
 #define TRAIT_H
 
 #include "db.h"
+#include "skill_defs.h"
 #include "trait_defs.h"
 
 namespace fallout {
@@ -18,7 +19,7 @@ char* traitGetDescription(int trait);
 int traitGetFrmId(int trait);
 bool traitIsSelected(int trait);
 int traitGetStatModifier(int stat);
-int traitGetSkillModifier(int skill);
+int traitGetSkillModifier(Skill skill);
 
 } // namespace fallout
 

@@ -1134,9 +1134,9 @@ static int _partyMemberClearItemList()
 // Returns best skill of the specified party member.
 //
 // 0x495520 partyMemberSkill
-int partyMemberGetBestSkill(Object* object)
+Skill partyMemberGetBestSkill(Object* object)
 {
-    int bestSkill = SKILL_SMALL_GUNS;
+    Skill bestSkill = SKILL_SMALL_GUNS;
 
     if (object == nullptr) {
         return bestSkill;
@@ -1147,7 +1147,7 @@ int partyMemberGetBestSkill(Object* object)
     }
 
     int bestValue = 0;
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         int value = skillGetValue(object, skill);
         if (value > bestValue) {
             bestSkill = skill;
@@ -1161,7 +1161,7 @@ int partyMemberGetBestSkill(Object* object)
 // Returns party member with highest skill level.
 //
 // 0x495560 partyMemberWithHighestSkill
-Object* partyMemberGetBestInSkill(int skill)
+Object* partyMemberGetBestInSkill(Skill skill)
 {
     int bestValue = 0;
     Object* bestPartyMember = nullptr;
@@ -1183,7 +1183,7 @@ Object* partyMemberGetBestInSkill(int skill)
 // Returns highest skill level in party.
 //
 // 0x4955C8 partyMemberHighestSkillLevel
-int partyGetBestSkillValue(int skill)
+int partyGetBestSkillValue(Skill skill)
 {
     int bestValue = 0;
 
@@ -1610,7 +1610,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
         proto->critter.data.bonusStats[stat] = stageProto->critter.data.bonusStats[stat];
     }
 
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         proto->critter.data.skills[skill] = stageProto->critter.data.skills[skill];
     }
 

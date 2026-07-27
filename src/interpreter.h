@@ -3,6 +3,7 @@
 
 #include "combat_defs.h"
 #include "object.h"
+#include "proto_types.h"
 #include <setjmp.h>
 
 #include <vector>
@@ -287,6 +288,39 @@ inline CriticalHitDataMember programStackPopEnum(Program* program)
     }
 
     return static_cast<CriticalHitDataMember>(criticalHitDataMember);
+}
+
+template <>
+inline CriticalEffect programStackPopEnum(Program* program)
+{
+    int effect = programStackPopInteger(program);
+    if (!criticalEffectIsValid(effect)) {
+        programPrintError("invalid critical effect %d", effect);
+    }
+
+    return static_cast<CriticalEffect>(effect);
+}
+
+template <>
+inline KillType programStackPopEnum(Program* program)
+{
+    int killType = programStackPopInteger(program);
+    if (!killTypeOverrideIsValid(killType)) {
+        programPrintError("invalid kill type %d", killType);
+    }
+
+    return static_cast<KillType>(killType);
+}
+
+template <>
+inline Skill programStackPopEnum(Program* program)
+{
+    int skill = programStackPopInteger(program);
+    if (!skillIsValid(skill)) {
+        programPrintError("invalid skill %d", skill);
+    }
+
+    return static_cast<Skill>(skill);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

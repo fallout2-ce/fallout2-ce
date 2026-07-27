@@ -339,7 +339,7 @@ static bool perkCanAdd(Object* critter, int perk)
                     req1Fulfilled = false;
                 }
             } else {
-                if (skillGetValue(critter, param1) >= -value1) {
+                if (skillGetValue(critter, static_cast<Skill>(param1)) >= -value1) {
                     req1Fulfilled = false;
                 }
             }
@@ -349,7 +349,7 @@ static bool perkCanAdd(Object* critter, int perk)
                     req1Fulfilled = false;
                 }
             } else {
-                if (skillGetValue(critter, param1) < value1) {
+                if (skillGetValue(critter, static_cast<Skill>(param1)) < value1) {
                     req1Fulfilled = false;
                 }
             }
@@ -385,7 +385,7 @@ static bool perkCanAdd(Object* critter, int perk)
                     return false;
                 }
             } else {
-                if (skillGetValue(critter, param2) >= -value2) {
+                if (skillGetValue(critter, static_cast<Skill>(param2)) >= -value2) {
                     return false;
                 }
             }
@@ -395,7 +395,7 @@ static bool perkCanAdd(Object* critter, int perk)
                     return false;
                 }
             } else {
-                if (skillGetValue(critter, param2) < value2) {
+                if (skillGetValue(critter, static_cast<Skill>(param2)) < value2) {
                     return false;
                 }
             }
@@ -625,7 +625,7 @@ void perkRemoveEffect(Object* critter, int perk)
 // Returns modifier to specified skill accounting for perks.
 //
 // 0x496DD0 perk_adjust_skill
-int perkGetSkillModifier(Object* critter, int skill)
+int perkGetSkillModifier(Object* critter, Skill skill)
 {
     int modifier = 0;
 
@@ -726,6 +726,8 @@ int perkGetSkillModifier(Object* critter, int skill)
             modifier += 25;
         }
 
+        break;
+    default:
         break;
     }
 

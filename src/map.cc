@@ -12,6 +12,7 @@
 #include "character_editor.h"
 #include "color.h"
 #include "combat.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "debug.h"
@@ -138,6 +139,7 @@ static TileData _square_data[ELEVATION_COUNT];
 
 // 0x631D28 map_state
 static MapTransition gMapTransition;
+static bool disableSpecialMapIds;
 
 // 0x631D38 map_display_rect
 static Rect gIsoWindowRect;
@@ -288,6 +290,8 @@ void isoExit()
 // 0x481FB4
 void mapInit()
 {
+    configGetBool(&gContentConfig, CONTENT_CONFIG_MAPS_SECTION, "disable_special_map_ids", &disableSpecialMapIds, false);
+
     if (settings.system.executableIsMapper()) {
         _map_scroll_refresh = isoWindowRefreshRectMapper;
     }
@@ -979,7 +983,7 @@ static int mapLoad(File* stream)
     }
 
     lightSetAmbientIntensity(LIGHT_INTENSITY_MAX, false);
-    objectSetLocation(gDude, gCenterTile, gElevation, nullptr);
+    objectSetLocation(gDude, gEnteringTile, gElevation, nullptr);
     objectSetRotation(gDude, gEnteringRotation, nullptr);
     gMapHeader.index = wmMapMatchNameToIdx(gMapHeader.name);
 
@@ -1351,7 +1355,8 @@ int mapHandleTransition()
             }
 
             if (gMapTransition.tile != -1 && gMapTransition.tile != 0
-                && gMapHeader.index != MAP_MODOC_BEDNBREAKFAST && gMapHeader.index != MAP_THE_SQUAT_A
+                && (disableSpecialMapIds
+                    || (gMapHeader.index != MAP_MODOC_BEDNBREAKFAST && gMapHeader.index != MAP_THE_SQUAT_A))
                 && elevationIsValid(gMapTransition.elevation)) {
                 objectSetLocation(gDude, gMapTransition.tile, gMapTransition.elevation, nullptr);
                 mapSetElevation(gMapTransition.elevation);
