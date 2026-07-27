@@ -704,10 +704,19 @@ void gameMouseRefresh()
                     int primaryAction = -1;
 
                     switch (FID_TYPE(pointedObject->fid)) {
+                    case OBJ_TYPE_SCENERY:                      
+                    case OBJ_TYPE_WALL:
                     case OBJ_TYPE_MISC: {
-                        // if the pointedObject is misc object like blood it finds possible outlined item object behind it
+                        if (_obj_action_can_use(pointedObject)) {
+                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
+                            break;
+                        }
+
+                        primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
+                    
+                        // if the pointedObject is scenery/wall/misc object then it finds possible outlined item object behind it
                         Object* itemObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
-                        if (!objectIsOutlined(itemObject)) {
+                        if (itemObject == nullptr) {
                             break;
                         }
                         pointedObject = itemObject;
@@ -741,16 +750,6 @@ void gameMouseRefresh()
                                 }
                             }
                         }
-                        break;
-                    case OBJ_TYPE_SCENERY:
-                        if (!_obj_action_can_use(pointedObject)) {
-                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
-                        } else {
-                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
-                        }
-                        break;
-                    case OBJ_TYPE_WALL:
-                        primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
                         break;
                     }
 
@@ -1002,8 +1001,18 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
             Object* targetObj = gameMouseGetObjectUnderCursor(-1, true, gElevation);
             if (targetObj != nullptr) {
                 switch (FID_TYPE(targetObj->fid)) {
+                case OBJ_TYPE_WALL:
+                case OBJ_TYPE_SCENERY:
                 case OBJ_TYPE_MISC: {
-                    // if the targetObj is misc object like blood it allows to pickup outlined items behind
+                    if (_obj_action_can_use(targetObj)) {
+                        _action_use_an_object(gDude, targetObj);
+                        break;
+                    } 
+                    if (objectExamine(gDude, targetObj) == -1) {
+                        objectLookAt(gDude, targetObj);
+                    }
+
+                    // if the targetObj is wall/scenery/misc object then it allows to pickup outlined items potentially behind
                     Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
                     if (!objectIsOutlined(itemObj)) {
                         break;
@@ -1035,20 +1044,6 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         } else {
                             actionLootCritter(gDude, targetObj);
                         }
-                    }
-                    break;
-                case OBJ_TYPE_SCENERY:
-                    if (_obj_action_can_use(targetObj)) {
-                        _action_use_an_object(gDude, targetObj);
-                    } else {
-                        if (objectExamine(gDude, targetObj) == -1) {
-                            objectLookAt(gDude, targetObj);
-                        }
-                    }
-                    break;
-                case OBJ_TYPE_WALL:
-                    if (objectExamine(gDude, targetObj) == -1) {
-                        objectLookAt(gDude, targetObj);
                     }
                     break;
                 }
