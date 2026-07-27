@@ -707,11 +707,12 @@ void gameMouseRefresh()
                     case OBJ_TYPE_MISC: {
                         // if the pointedObject is misc object like blood it finds possible outlined item object behind it
                         Object* itemObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
-                        if (itemObject == nullptr || !itemObject->outline) {
+                        if (!objectIsOutlined(itemObject)) {
                             break;
                         }
                         pointedObject = itemObject;
                     }
+                    // FALLTHROUGH
                     case OBJ_TYPE_ITEM:
                         primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                         if (gGameMouseItemHighlightEnabled) {
@@ -1004,12 +1005,13 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                 case OBJ_TYPE_MISC: {
                     // if the targetObj is misc object like blood it allows to pickup outlined items behind
                     Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
-                    if (itemObj == nullptr || !itemObj->outline) {
+                    if (!objectIsOutlined(itemObj)) {
                         break;
                     }
 
                     targetObj = itemObj;
                 }
+                // FALLTHROUGH
                 case OBJ_TYPE_ITEM:
                     actionPickUp(gDude, targetObj);
                     break;
