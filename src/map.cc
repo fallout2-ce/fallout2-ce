@@ -1236,7 +1236,7 @@ static int _map_age_dead_critters()
                 break;
             }
 
-            // drop the critter owned items on top of the blood stain only when successuffly replaced
+            // drop the critter owned items on top of the blood stain only when successfully replaced
             if (!critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
                 itemDropAll(obj, obj->tile);
             }
