@@ -107,7 +107,7 @@ static const int gRadiationEnduranceModifiers[RADIATION_LEVEL_COUNT] = {
 // [RADIATION_EFFECT_PRIMARY_STAT_COUNT] for more info.
 //
 // 0x518358 rad_stat
-static const int gRadiationEffectStats[RADIATION_EFFECT_COUNT] = {
+static const Stat gRadiationEffectStats[RADIATION_EFFECT_COUNT] = {
     STAT_STRENGTH,
     STAT_PERCEPTION,
     STAT_ENDURANCE,

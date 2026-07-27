@@ -120,7 +120,7 @@ int statsInit()
         return -1;
     }
 
-    for (int stat = 0; stat < STAT_COUNT; stat++) {
+    for (Stat stat = STAT_FIRST; stat < STAT_COUNT; stat++) {
         gStatDescriptions[stat].name = getmsg(&gStatsMessageList, &messageListItem, 100 + stat);
         gStatDescriptions[stat].description = getmsg(&gStatsMessageList, &messageListItem, 200 + stat);
     }
@@ -209,7 +209,7 @@ int statGetUnspentApPerkBonus()
 }
 
 // 0x4AEF48
-int critterGetStat(Object* critter, int stat)
+int critterGetStat(Object* critter, Stat stat)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
         return 0;
@@ -421,7 +421,7 @@ int critterGetStat(Object* critter, int stat)
 // Returns base stat value (accounting for traits if critter is dude).
 //
 // 0x4AF3E0
-int critterGetBaseStatWithTraitModifier(Object* critter, int stat)
+int critterGetBaseStatWithTraitModifier(Object* critter, Stat stat)
 {
     int value = critterGetBaseStat(critter, stat);
 
@@ -433,11 +433,11 @@ int critterGetBaseStatWithTraitModifier(Object* critter, int stat)
 }
 
 // 0x4AF408
-int critterGetBaseStat(Object* critter, int stat)
+int critterGetBaseStat(Object* critter, Stat stat)
 {
     Proto* proto;
 
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         protoGetProto(critter->pid, &proto);
         return proto->critter.data.baseStats[stat];
     } else {
@@ -455,9 +455,9 @@ int critterGetBaseStat(Object* critter, int stat)
 }
 
 // 0x4AF474
-int critterGetBonusStat(Object* critter, int stat)
+int critterGetBonusStat(Object* critter, Stat stat)
 {
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         Proto* proto;
         protoGetProto(critter->pid, &proto);
         return proto->critter.data.bonusStats[stat];
@@ -467,7 +467,7 @@ int critterGetBonusStat(Object* critter, int stat)
 }
 
 // 0x4AF4BC
-int critterSetBaseStat(Object* critter, int stat, int value)
+int critterSetBaseStat(Object* critter, Stat stat, int value)
 {
     Proto* proto;
 
@@ -475,7 +475,7 @@ int critterSetBaseStat(Object* critter, int stat, int value)
         return -5;
     }
 
-    if (stat >= 0 && stat < SAVEABLE_STAT_COUNT) {
+    if (stat >= STAT_FIRST && stat < SAVEABLE_STAT_COUNT) {
         if (stat > STAT_LUCK && stat <= STAT_POISON_RESISTANCE) {
             // Cannot change base value of derived stats.
             return -1;
@@ -517,7 +517,7 @@ int critterSetBaseStat(Object* critter, int stat, int value)
 }
 
 // 0x4AF5D4
-int critterIncBaseStat(Object* critter, int stat)
+int critterIncBaseStat(Object* critter, Stat stat)
 {
     int value = critterGetBaseStat(critter, stat);
 
@@ -529,7 +529,7 @@ int critterIncBaseStat(Object* critter, int stat)
 }
 
 // 0x4AF608
-int critterDecBaseStat(Object* critter, int stat)
+int critterDecBaseStat(Object* critter, Stat stat)
 {
     int value = critterGetBaseStat(critter, stat);
 
@@ -541,7 +541,7 @@ int critterDecBaseStat(Object* critter, int stat)
 }
 
 // 0x4AF63C
-int critterSetBonusStat(Object* critter, int stat, int value)
+int critterSetBonusStat(Object* critter, Stat stat, int value)
 {
     if (!statIsValid(stat)) {
         return -5;
@@ -575,7 +575,7 @@ int critterSetBonusStat(Object* critter, int stat, int value)
 // 0x4AF6CC
 void protoCritterDataResetStats(CritterProtoData* data)
 {
-    for (int stat = 0; stat < SAVEABLE_STAT_COUNT; stat++) {
+    for (Stat stat = STAT_FIRST; stat < SAVEABLE_STAT_COUNT; stat++) {
         data->baseStats[stat] = gStatDescriptions[stat].defaultValue;
         data->bonusStats[stat] = 0;
     }
@@ -609,13 +609,13 @@ void critterUpdateDerivedStats(Object* critter)
 }
 
 // 0x4AF854
-char* statGetName(int stat)
+char* statGetName(Stat stat)
 {
     return statIsValid(stat) ? gStatDescriptions[stat].name : nullptr;
 }
 
 // 0x4AF898
-char* statGetDescription(int stat)
+char* statGetDescription(Stat stat)
 {
     return statIsValid(stat) ? gStatDescriptions[stat].description : nullptr;
 }
@@ -717,7 +717,7 @@ char* pcStatGetDescription(int pcStat)
 }
 
 // 0x4AFA34
-int statGetFrmId(int stat)
+int statGetFrmId(Stat stat)
 {
     return statIsValid(stat) ? gStatDescriptions[stat].frmId : 0;
 }
@@ -736,7 +736,7 @@ int statGetFrmId(int stat)
 // `NULL` if you're not interested in this value.
 //
 // 0x4AFA78
-int statRoll(Object* critter, int stat, int modifier, int* howMuch)
+int statRoll(Object* critter, Stat stat, int modifier, int* howMuch)
 {
     int value = critterGetStat(critter, stat) + modifier;
     int chance = randomBetween(PRIMARY_STAT_MIN, PRIMARY_STAT_MAX);

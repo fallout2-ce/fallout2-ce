@@ -2,6 +2,7 @@
 #define PROTO_TYPES_H
 
 #include "skill_defs.h"
+#include "stat_defs.h"
 
 namespace fallout {
 
@@ -318,7 +319,7 @@ typedef struct {
 } ProtoItemContainerData;
 
 typedef struct {
-    int stat[3]; // d.stat
+    Stat stat[3]; // d.stat
     int amount[3]; // d.amount
     int duration1; // d.duration1
     int amount1[3]; // d.amount1

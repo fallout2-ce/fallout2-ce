@@ -638,7 +638,7 @@ static void opSkillContest(Program* program)
 static void opDoCheck(Program* program)
 {
     int mod = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     int roll = 0;
@@ -1292,7 +1292,7 @@ static void opGetItemType(Program* program)
 // 0x455C10 op_get_critter_stat
 static void opGetCritterStat(Program* program)
 {
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     int value = -1;
@@ -1313,7 +1313,7 @@ static void opGetCritterStat(Program* program)
 static void opSetCritterStat(Program* program)
 {
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     int result = 0;

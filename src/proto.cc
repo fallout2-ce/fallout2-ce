@@ -419,8 +419,8 @@ int proto_item_subdata_init(Proto* proto, int type)
         break;
     case ITEM_TYPE_DRUG:
         proto->item.data.drug.stat[0] = STAT_STRENGTH;
-        proto->item.data.drug.stat[1] = -1;
-        proto->item.data.drug.stat[2] = -1;
+        proto->item.data.drug.stat[1] = STAT_INVALID;
+        proto->item.data.drug.stat[2] = STAT_INVALID;
         proto->item.data.drug.amount[0] = 0;
         proto->item.data.drug.amount[1] = 0;
         proto->item.data.drug.amount[2] = 0;
@@ -1388,9 +1388,9 @@ int protoInit()
     _mp_critter_stats_list = _aDrugStatSpecia;
     _critter_stats_list = _critter_stats_list_strs;
     _critter_stats_list_None = _aNone_1;
-    for (i = 0; i < STAT_COUNT; i++) {
-        _critter_stats_list_strs[i] = statGetName(i);
-        if (_critter_stats_list_strs[i] == nullptr) {
+    for (Stat stat = STAT_FIRST; stat < STAT_COUNT; stat++) {
+        _critter_stats_list_strs[stat] = statGetName(stat);
+        if (_critter_stats_list_strs[stat] == nullptr) {
             debugPrint("\nError: Finding stat names!");
             return -1;
         }
@@ -1566,9 +1566,9 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
 
         return 0;
     case ITEM_TYPE_DRUG:
-        if (fileReadInt32(stream, &(item_data->drug.stat[0])) == -1) return -1;
-        if (fileReadInt32(stream, &(item_data->drug.stat[1])) == -1) return -1;
-        if (fileReadInt32(stream, &(item_data->drug.stat[2])) == -1) return -1;
+        if (fileReadInt32(stream, reinterpret_cast<int*>(&(item_data->drug.stat[0]))) == -1) return -1;
+        if (fileReadInt32(stream, reinterpret_cast<int*>(&(item_data->drug.stat[1]))) == -1) return -1;
+        if (fileReadInt32(stream, reinterpret_cast<int*>(&(item_data->drug.stat[2]))) == -1) return -1;
         if (fileReadInt32List(stream, item_data->drug.amount, 3) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->drug.duration1)) == -1) return -1;
         if (fileReadInt32List(stream, item_data->drug.amount1, 3) == -1) return -1;

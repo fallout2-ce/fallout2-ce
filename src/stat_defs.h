@@ -19,7 +19,8 @@ namespace fallout {
 #define PC_LEVEL_MAX 99
 
 // Available stats.
-typedef enum Stat {
+enum Stat : int {
+    STAT_INVALID = -1,
     STAT_STRENGTH,
     STAT_PERCEPTION,
     STAT_ENDURANCE,
@@ -59,6 +60,7 @@ typedef enum Stat {
     STAT_CURRENT_POISON_LEVEL,
     STAT_CURRENT_RADIATION_LEVEL,
     STAT_COUNT,
+    STAT_FIRST = STAT_STRENGTH,
 
     // Number of primary stats.
     PRIMARY_STAT_COUNT = 7,
@@ -68,9 +70,19 @@ typedef enum Stat {
 
     // Number of saveable stats (i.e. excluding CURRENT pseudostats).
     SAVEABLE_STAT_COUNT = 35,
-} Stat;
+};
 
-#define STAT_INVALID -1
+inline bool statIsValid(int stat)
+{
+    return stat >= STAT_FIRST && stat < STAT_COUNT;
+}
+
+inline Stat operator++(Stat& e, int)
+{
+    Stat result = e;
+    e = static_cast<Stat>(static_cast<int>(e) + 1);
+    return result;
+}
 
 // Special stats that are only relevant to player character.
 typedef enum PcStat {

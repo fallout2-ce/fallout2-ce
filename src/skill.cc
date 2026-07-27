@@ -44,8 +44,8 @@ typedef struct SkillDescription {
     int frmId;
     int defaultValue;
     int statModifier;
-    int stat1;
-    int stat2;
+    Stat stat1;
+    Stat stat2;
     int baseValueMult;
     int experience;
     int gainXpFromSkillPenalty;

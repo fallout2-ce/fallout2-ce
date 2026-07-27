@@ -50,8 +50,6 @@
 
 namespace fallout {
 
-#define RENDER_ALL_STATS 7
-
 #define EDITOR_WINDOW_WIDTH 640
 #define EDITOR_WINDOW_HEIGHT 480
 
@@ -264,7 +262,7 @@ static int characterEditorKillsCompare(const void* a1, const void* a2);
 static int characterEditorDrawKillsFolder();
 static void characterEditorDrawBigNumber(int x, int y, int flags, int value, int previousValue, int windowHandle);
 static void characterEditorDrawPcStats();
-static void characterEditorDrawPrimaryStat(int stat, bool animate, int previousValue);
+static void characterEditorDrawPrimaryStat(Stat stat, bool animate, int previousValue);
 static void characterEditorDrawGender();
 static void characterEditorDrawAge();
 static void characterEditorDrawName();
@@ -473,7 +471,7 @@ static const int gCharacterEditorPrimaryStatY[7] = {
 // NOTE: the type is originally short
 //
 // 0x431D6
-static const int gCharacterEditorDerivedStatsMap[EDITOR_DERIVED_STAT_COUNT] = {
+static const Stat gCharacterEditorDerivedStatsMap[EDITOR_DERIVED_STAT_COUNT] = {
     STAT_ARMOR_CLASS,
     STAT_MAXIMUM_ACTION_POINTS,
     STAT_CARRY_WEIGHT,
@@ -841,7 +839,7 @@ int characterEditorShow(bool isCreationMode)
             critterUpdateDerivedStats(gDude);
             characterEditorDrawOptionalTraits();
             characterEditorDrawSkills(0);
-            characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+            characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
             characterEditorDrawDerivedStats();
             characterEditorDrawCard();
         }
@@ -1004,7 +1002,7 @@ int characterEditorShow(bool isCreationMode)
                 } else if (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT) {
                     characterEditorSelectedItem = EDITOR_HIT_POINTS;
                 }
-                characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+                characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
                 characterEditorDrawOptionalTraits();
                 characterEditorDrawSkills(0);
                 characterEditorDrawPcStats();
@@ -1104,7 +1102,7 @@ int characterEditorShow(bool isCreationMode)
                         gCharacterEditorCurrentSkill = static_cast<Skill>(characterEditorSelectedItem - EDITOR_FIRST_SKILL);
                     }
 
-                    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+                    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
                     characterEditorDrawOptionalTraits();
                     characterEditorDrawSkills(0);
                     characterEditorDrawPcStats();
@@ -1157,7 +1155,7 @@ int characterEditorShow(bool isCreationMode)
                         gCharacterEditorCurrentSkill = static_cast<Skill>(characterEditorSelectedItem - EDITOR_FIRST_SKILL);
                     }
 
-                    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+                    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
                     characterEditorDrawOptionalTraits();
                     characterEditorDrawSkills(0);
                     characterEditorDrawPcStats();
@@ -1553,7 +1551,7 @@ static int characterEditorWindowInit()
     str = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 100);
     fontDrawText(gCharacterEditorWindowBuffer + (EDITOR_WINDOW_WIDTH * DONE_BTN_Y) + DONE_BTN_X, str, EDITOR_WINDOW_WIDTH, EDITOR_WINDOW_WIDTH, COLOR_DARK_YELLOW);
 
-    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
     characterEditorDrawDerivedStats();
 
     if (!gCharacterEditorIsCreationMode) {
@@ -2461,7 +2459,7 @@ static void characterEditorDrawPcStats()
 }
 
 // 0x434B38 PrintBasicStat
-static void characterEditorDrawPrimaryStat(int stat, bool animate, int previousValue)
+static void characterEditorDrawPrimaryStat(Stat stat, bool animate, int previousValue)
 {
     int off;
     int color;
@@ -2472,16 +2470,16 @@ static void characterEditorDrawPrimaryStat(int stat, bool animate, int previousV
 
     fontSetCurrent(101);
 
-    if (stat == RENDER_ALL_STATS) {
+    if (stat == PRIMARY_STAT_COUNT) {
         // NOTE: Original code is different, looks like tail recursion
         // optimization.
-        for (stat = EDITOR_FIRST_PRIMARY_STAT; stat <= EDITOR_LAST_PRIMARY_STAT; stat++) {
+        for (stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
             characterEditorDrawPrimaryStat(stat, 0, 0);
         }
         return;
     }
 
-    if (characterEditorSelectedItem == stat) {
+    if (characterEditorSelectedItem == static_cast<Editor>(stat)) {
         color = COLOR_LIGHT_YELLOW;
     } else {
         color = COLOR_GREEN;
@@ -3092,9 +3090,9 @@ static void characterEditorDrawCard()
     blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (640 * 267) + 345, 277, 170, 640, gCharacterEditorWindowBuffer + (267 * 640) + 345, 640);
 
     if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
-        description = statGetDescription(characterEditorSelectedItem);
-        title = statGetName(characterEditorSelectedItem);
-        graphicId = statGetFrmId(characterEditorSelectedItem);
+        description = statGetDescription(static_cast<Stat>(characterEditorSelectedItem));
+        title = statGetName(static_cast<Stat>(characterEditorSelectedItem));
+        graphicId = statGetFrmId(static_cast<Stat>(characterEditorSelectedItem));
         characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
     } else if (characterEditorSelectedItem >= EDITOR_LEVEL && characterEditorSelectedItem <= EDITOR_NEXT_LEVEL) {
         if (gCharacterEditorIsCreationMode) {
@@ -3180,7 +3178,7 @@ static void characterEditorDrawCard()
         }
     } else if (characterEditorSelectedItem >= EDITOR_FIRST_DERIVED_STAT && characterEditorSelectedItem <= EDITOR_LAST_DERIVED_STAT) {
         int derivedStatIndex = characterEditorSelectedItem - EDITOR_FIRST_DERIVED_STAT;
-        int stat = gCharacterEditorDerivedStatsMap[derivedStatIndex];
+        Stat stat = gCharacterEditorDerivedStatsMap[derivedStatIndex];
         description = statGetDescription(stat);
         title = statGetName(stat);
         graphicId = gCharacterEditorDerivedStatFrmIds[derivedStatIndex];
@@ -3510,7 +3508,7 @@ static int characterEditorEditAge()
 
         if (flags == ANIMATE) {
             characterEditorDrawAge();
-            characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+            characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
             characterEditorDrawDerivedStats();
             windowRefresh(gCharacterEditorWindow);
             windowRefresh(win);
@@ -3559,7 +3557,7 @@ static int characterEditorEditAge()
                     characterEditorDrawBigNumber(55, 10, flags, age, previousAge, win);
                     if (flags == ANIMATE) {
                         characterEditorDrawAge();
-                        characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+                        characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
                         characterEditorDrawDerivedStats();
                         windowRefresh(gCharacterEditorWindow);
                         windowRefresh(win);
@@ -3592,7 +3590,7 @@ static int characterEditorEditAge()
 
     critterSetBaseStat(gDude, STAT_AGE, savedAge);
     characterEditorDrawAge();
-    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
     characterEditorDrawDerivedStats();
     windowRefresh(gCharacterEditorWindow);
     windowRefresh(win);
@@ -3707,7 +3705,7 @@ static void characterEditorEditGender()
 
         if (eventCode == KEY_ESCAPE || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
             critterSetBaseStat(gDude, STAT_GENDER, savedGender);
-            characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+            characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
             characterEditorDrawDerivedStats();
             windowRefresh(gCharacterEditorWindow);
             break;
@@ -3726,7 +3724,7 @@ static void characterEditorEditGender()
         case 502:
             // TODO: Original code is slightly different.
             critterSetBaseStat(gDude, STAT_GENDER, eventCode - 501);
-            characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+            characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
             characterEditorDrawDerivedStats();
             break;
         }
@@ -3754,8 +3752,8 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
         return;
     }
 
-    int incrementingStat = eventCode - 503;
-    int decrementingStat = eventCode - 510;
+    Stat incrementingStat = static_cast<Stat>(eventCode - 503);
+    Stat decrementingStat = static_cast<Stat>(eventCode - 510);
 
     int v11 = 0;
 
@@ -4078,7 +4076,7 @@ static int characterEditorShowOptions()
                         if (gcdLoad(string4) == 0) {
                             critterUpdateDerivedStats(gDude);
                             pcStatsReset();
-                            for (int stat = 0; stat < SAVEABLE_STAT_COUNT; stat++) {
+                            for (Stat stat = STAT_FIRST; stat < SAVEABLE_STAT_COUNT; stat++) {
                                 critterSetBonusStat(gDude, stat, 0);
                             }
                             perksReset();
@@ -4813,7 +4811,7 @@ static void characterEditorResetScreen()
     characterEditorDrawGender();
     characterEditorDrawOptionalTraits();
     characterEditorDrawSkills(0);
-    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
     characterEditorDrawDerivedStats();
     characterEditorDrawCard();
     windowRefresh(gCharacterEditorWindow);
@@ -5183,7 +5181,7 @@ static void characterEditorHandleInfoButtonPressed(int eventCode)
         break;
     }
 
-    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
     characterEditorDrawOptionalTraits();
     characterEditorDrawSkills(0);
     characterEditorDrawPcStats();
@@ -5394,7 +5392,7 @@ static void characterEditorToggleTaggedSkill(Skill skill)
     gCharacterEditorTaggedSkillCount = insertionIndex;
 
     characterEditorSelectedItem = static_cast<Editor>(skill + EDITOR_FIRST_SKILL);
-    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
     characterEditorDrawDerivedStats();
     characterEditorDrawSkills(2);
     characterEditorDrawCard();
@@ -5525,7 +5523,7 @@ static void characterEditorToggleOptionalTrait(int trait)
     characterEditorDrawSkills(0);
     critterUpdateDerivedStats(gDude);
     characterEditorDrawBigNumber(126, 282, 0, gCharacterEditorRemainingCharacterPoints, 0, gCharacterEditorWindow);
-    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, false, 0);
+    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, false, 0);
     characterEditorDrawDerivedStats();
     characterEditorDrawCard();
     windowRefresh(gCharacterEditorWindow);
@@ -5728,7 +5726,7 @@ void characterEditorDisplayStats()
     critterAdjustHitPoints(gDude, 0);
 
     characterEditorDrawSkills(0);
-    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
     characterEditorDrawPcStats();
     characterEditorDrawDerivedStats();
     characterEditorDrawFolders();
@@ -6020,7 +6018,7 @@ static int perkDialogShow()
     }
 
     characterEditorDrawSkills(0);
-    characterEditorDrawPrimaryStat(RENDER_ALL_STATS, 0, 0);
+    characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
     characterEditorDrawPcStats();
     characterEditorDrawDerivedStats();
     characterEditorDrawFolders();
@@ -6802,10 +6800,10 @@ static void _pop_perks()
 // 0x43DF50 is_supper_bonus
 static int _is_supper_bonus()
 {
-    for (int stat = 0; stat < 7; stat++) {
-        int v1 = critterGetBaseStatWithTraitModifier(gDude, stat);
-        int v2 = critterGetBonusStat(gDude, stat);
-        if (v1 + v2 > 10) {
+    for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
+        int baseStat = critterGetBaseStatWithTraitModifier(gDude, stat);
+        int bonusStat = critterGetBonusStat(gDude, stat);
+        if (baseStat + bonusStat > 10) {
             return 1;
         }
     }
