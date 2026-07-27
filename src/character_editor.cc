@@ -104,13 +104,13 @@ namespace fallout {
 #define TOWN_REPUTATION_COUNT 19
 #define ADDICTION_REPUTATION_COUNT 8
 
-typedef enum EditorFolder {
+enum EditorFolder : int {
     EDITOR_FOLDER_PERKS,
     EDITOR_FOLDER_KARMA,
     EDITOR_FOLDER_KILLS,
-} EditorFolder;
+};
 
-enum {
+enum EditorDerivedStat : int {
     EDITOR_DERIVED_STAT_ARMOR_CLASS,
     EDITOR_DERIVED_STAT_ACTION_POINTS,
     EDITOR_DERIVED_STAT_CARRY_WEIGHT,
@@ -168,7 +168,7 @@ inline Editor operator--(Editor& e, int)
     return result;
 }
 
-enum {
+enum EditorGraphics : int {
     EDITOR_GRAPHIC_BIG_NUMBERS,
     EDITOR_GRAPHIC_AGE_MASK,
     EDITOR_GRAPHIC_AGE_OFF,
@@ -734,7 +734,7 @@ static int gCharacterEditorMouseX; // mouse x
 static Editor characterEditorSelectedItem;
 
 // 0x5707D4 folder
-static int characterEditorWindowSelectedFolder;
+static EditorFolder characterEditorWindowSelectedFolder;
 
 // 0x5707D8 frstc_draw1
 static bool gCharacterEditorCardDrawn;
