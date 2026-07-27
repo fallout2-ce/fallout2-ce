@@ -1390,7 +1390,7 @@ char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object
         soundVariant = 1;
     }
 
-    int damageType = weaponGetDamageType(nullptr, weapon);
+    DamageType damageType = weaponGetDamageType(nullptr, weapon);
 
     // SFALL
     if (effectTypeCode != 'H' || target == nullptr || damageType == explosionGetDamageType() || damageType == DAMAGE_TYPE_PLASMA || damageType == DAMAGE_TYPE_EMP) {

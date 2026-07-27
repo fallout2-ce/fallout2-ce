@@ -443,11 +443,11 @@ static void op_set_bodypart_hit_modifier(Program* program)
     combat_set_hit_location_penalty(hitLocation, penalty);
 }
 
-static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, int killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember)
+static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, KillType killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember)
 {
-    if (killType < 0 || killType > SFALL_KILL_TYPE_COUNT
+    if (!killTypeOverrideIsValid(killType)
         || !hitLocationIsValid(hitLocation)
-        || effect < 0 || effect >= CRTICIAL_EFFECT_COUNT
+        || !criticalEffectIsValid(effect)
         || !criticalHitDataMemberIsValid(dataMember)) {
         programPrintError("%s: argument values out of range", opcodeName);
         return false;
@@ -460,9 +460,9 @@ static void op_set_critical_table(Program* program)
 {
     int value = programStackPopInteger(program);
     CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
-    int effect = programStackPopInteger(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
     HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
-    int killType = programStackPopInteger(program);
+    KillType killType = programStackPopEnum<KillType>(program);
 
     if (!criticalTableArgsAreValid(program, "set_critical_table", killType, hitLocation, effect, dataMember)) {
         return;
@@ -474,9 +474,9 @@ static void op_set_critical_table(Program* program)
 static void op_get_critical_table(Program* program)
 {
     CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
-    int effect = programStackPopInteger(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
     HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
-    int killType = programStackPopInteger(program);
+    KillType killType = programStackPopEnum<KillType>(program);
 
     if (!criticalTableArgsAreValid(program, "get_critical_table", killType, hitLocation, effect, dataMember)) {
         programStackPushInteger(program, 0);
@@ -489,9 +489,9 @@ static void op_get_critical_table(Program* program)
 static void op_reset_critical_table(Program* program)
 {
     CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
-    int effect = programStackPopInteger(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
     HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
-    int killType = programStackPopInteger(program);
+    KillType killType = programStackPopEnum<KillType>(program);
 
     if (!criticalTableArgsAreValid(program, "reset_critical_table", killType, hitLocation, effect, dataMember)) {
         return;
@@ -1183,7 +1183,10 @@ static void op_explosions_metarule(Program* program)
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_DMGTYPE:
-        explosionSetDamageType(param1);
+        if (!damageTypeIsValid(param1)) {
+            debugPrint("\n%s: explosions_metarule: EXPL_FORCE_EXPLOSION_DMGTYPE invalid damage type %d", program->name, param1);
+        }
+        explosionSetDamageType(static_cast<DamageType>(param1));
         programStackPushInteger(program, 0);
         break;
     case EXPL_STATIC_EXPLOSION_RADIUS:
@@ -1889,8 +1892,8 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8160, op_get_critter_base_stat);
     // 0x8161 - int  get_critter_extra_stat(object, int StatID)
     interpreterRegisterOpcode(0x8161, op_get_critter_extra_stat);
-    // 0x8242 - void set_critter_skill_points(int critter, int skill, int value)
-    // 0x8243 - int  get_critter_skill_points(int critter, int skill)
+    // 0x8242 - void set_critter_skill_points(int critter, Skill skill, int value)
+    // 0x8243 - int  get_critter_skill_points(int critter, Skill skill)
     // 0x8244 - void set_available_skill_points(int value)
     // 0x8245 - int  get_available_skill_points()
     // 0x8246 - void mod_skill_points_per_level(int value)

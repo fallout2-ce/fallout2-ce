@@ -6,6 +6,7 @@
 #include "db.h"
 #include "obj_types.h"
 #include "sfall_script_hooks.h"
+#include "skill_defs.h"
 
 namespace fallout {
 

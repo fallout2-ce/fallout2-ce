@@ -66,7 +66,7 @@ static bool dudeIsAddicted(int drugPid);
 static void booksInit();
 static void booksInitVanilla();
 static void booksInitCustom();
-static void booksAdd(int bookPid, int messageId, int skill);
+static void booksAdd(int bookPid, int messageId, Skill skill);
 static void booksExit();
 
 static void explosionsInit();
@@ -84,7 +84,7 @@ typedef struct DrugDescription {
 typedef struct BookDescription {
     int bookPid;
     int messageId;
-    int skill;
+    Skill skill;
 } BookDescription;
 
 typedef struct ExplosiveDescription {
@@ -100,8 +100,8 @@ static char _aItem_1[] = "<item>";
 // Maps weapon extended flags to skill.
 //
 // 0x519160 attack_skill
-static const int _attack_skill[9] = {
-    -1,
+static const Skill _attack_skill[9] = {
+    SKILL_INVALID,
     SKILL_UNARMED,
     SKILL_UNARMED,
     SKILL_MELEE_WEAPONS,
@@ -185,7 +185,7 @@ static int gExplosionStartRotation;
 static int gExplosionEndRotation;
 static int gExplosionFrm;
 static int gExplosionRadius;
-static int gExplosionDamageType;
+static DamageType gExplosionDamageType;
 static int gExplosionMaxTargets;
 static int gHealingItemPids[HEALING_ITEM_COUNT];
 
@@ -1057,9 +1057,9 @@ Object* critterGetWeaponForHitMode(Object* critter, HitMode hitMode)
     case HIT_MODE_RIGHT_WEAPON_SECONDARY:
     case HIT_MODE_RIGHT_WEAPON_RELOAD:
         return critterGetItem2(critter);
+    default:
+        return nullptr;
     }
-
-    return nullptr;
 }
 
 // 0x478040
@@ -1214,7 +1214,7 @@ int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode)
 }
 
 // 0x4782CC
-int weaponGetSkillForHitMode(Object* weapon, HitMode hitMode)
+Skill weaponGetSkillForHitMode(Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return SKILL_UNARMED;
@@ -1230,10 +1230,10 @@ int weaponGetSkillForHitMode(Object* weapon, HitMode hitMode)
         index = (proto->item.extendedFlags & 0xF0) >> 4;
     }
 
-    int skill = _attack_skill[index];
+    Skill skill = _attack_skill[index];
 
     if (skill == SKILL_SMALL_GUNS) {
-        int damageType = weaponGetDamageType(nullptr, weapon);
+        DamageType damageType = weaponGetDamageType(nullptr, weapon);
         if (damageType == DAMAGE_TYPE_LASER || damageType == DAMAGE_TYPE_PLASMA || damageType == DAMAGE_TYPE_ELECTRICAL) {
             skill = SKILL_ENERGY_WEAPONS;
         } else {
@@ -1255,7 +1255,7 @@ int weaponGetSkillValue(Object* critter, HitMode hitMode)
         return 0;
     }
 
-    int skill;
+    Skill skill;
 
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
@@ -1346,7 +1346,7 @@ int weaponGetDamage(Object* critter, HitMode hitMode)
 }
 
 // 0x478570
-int weaponGetDamageType(Object* critter, Object* weapon)
+DamageType weaponGetDamageType(Object* critter, Object* weapon)
 {
     Proto* proto;
 
@@ -1360,7 +1360,7 @@ int weaponGetDamageType(Object* critter, Object* weapon)
         return critterGetDamageType(critter);
     }
 
-    return 0;
+    return DAMAGE_TYPE_NORMAL;
 }
 
 // 0x478598
@@ -1898,7 +1898,7 @@ bool critterCanAim(Object* critter, HitMode hitMode)
 
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
-    int damageType = weaponGetDamageType(critter, weapon);
+    DamageType damageType = weaponGetDamageType(critter, weapon);
 
     return damageType != DAMAGE_TYPE_EXPLOSION
         && damageType != DAMAGE_TYPE_FIRE
@@ -2078,7 +2078,7 @@ bool weaponHasAmmoForAttack(const Object* weapon, HitMode hitMode)
 // 0x4790E8
 bool weaponIsGrenade(Object* weapon)
 {
-    int damageType = weaponGetDamageType(nullptr, weapon);
+    DamageType damageType = weaponGetDamageType(nullptr, weapon);
     return damageType == DAMAGE_TYPE_EXPLOSION || damageType == DAMAGE_TYPE_PLASMA || damageType == DAMAGE_TYPE_EMP;
 }
 
@@ -2087,7 +2087,7 @@ int weaponGetDamageRadius(Object* weapon, HitMode hitMode)
 {
     int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
     int anim = weaponGetAnimationForHitMode(weapon, hitMode);
-    int damageType = weaponGetDamageType(nullptr, weapon);
+    DamageType damageType = weaponGetDamageType(nullptr, weapon);
 
     int radius = 0;
     if (attackType == ATTACK_TYPE_RANGED) {
@@ -2209,7 +2209,7 @@ int armorGetArmorClass(Object* armor)
 }
 
 // 0x479318
-int armorGetDamageResistance(Object* armor, int damageType)
+int armorGetDamageResistance(Object* armor, DamageType damageType)
 {
     if (armor == nullptr) {
         return 0;
@@ -2222,7 +2222,7 @@ int armorGetDamageResistance(Object* armor, int damageType)
 }
 
 // 0x479338
-int armorGetDamageThreshold(Object* armor, int damageType)
+int armorGetDamageThreshold(Object* armor, DamageType damageType)
 {
     if (armor == nullptr) {
         return 0;
@@ -3450,8 +3450,8 @@ static void booksInitCustom()
                     int messageId;
                     if (!configGetInt(&booksConfig, sectionKey, "TextID", &messageId)) continue;
 
-                    int skill;
-                    if (!configGetInt(&booksConfig, sectionKey, "Skill", &skill)) continue;
+                    Skill skill;
+                    if (!configGetInt(&booksConfig, sectionKey, "Skill", reinterpret_cast<int*>(&skill))) continue;
 
                     booksAdd(bookPid, messageId, skill);
                 }
@@ -3462,7 +3462,7 @@ static void booksInitCustom()
     }
 }
 
-static void booksAdd(int bookPid, int messageId, int skill)
+static void booksAdd(int bookPid, int messageId, Skill skill)
 {
     BookDescription bookDescription;
     bookDescription.bookPid = bookPid;
@@ -3471,7 +3471,7 @@ static void booksAdd(int bookPid, int messageId, int skill)
     gBooks.emplace_back(std::move(bookDescription));
 }
 
-bool booksGetInfo(int bookPid, int* messageIdPtr, int* skillPtr)
+bool booksGetInfo(int bookPid, int* messageIdPtr, Skill* skillPtr)
 {
     for (auto& bookDescription : gBooks) {
         if (bookDescription.bookPid == bookPid) {
@@ -3674,12 +3674,12 @@ void explosionSetRadius(int radius)
     gExplosionRadius = radius;
 }
 
-int explosionGetDamageType()
+DamageType explosionGetDamageType()
 {
     return gExplosionDamageType;
 }
 
-void explosionSetDamageType(int damageType)
+void explosionSetDamageType(DamageType damageType)
 {
     gExplosionDamageType = damageType;
 }
