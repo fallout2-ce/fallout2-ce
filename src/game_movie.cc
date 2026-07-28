@@ -381,7 +381,7 @@ static char* gameMovieBuildSubtitlesFilePath(char* movieFilePath)
     snprintf(gGameMovieSubtitlesFilePath, sizeof(gGameMovieSubtitlesFilePath), "text\\%s\\cuts\\%s", settings.system.language.c_str(), path);
 
     char* pch = strrchr(gGameMovieSubtitlesFilePath, '.');
-    if (*pch != '\0') {
+    if (pch != nullptr) {
         *pch = '\0';
     }
 
