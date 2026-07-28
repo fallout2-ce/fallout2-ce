@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -476,6 +477,7 @@ void wmSetScriptWorldMapMulti(float value)
 }
 
 static std::vector<std::pair<int, std::string>> wmTerrainNameOverrides;
+static std::unordered_map<int, std::string> wmTownTitleOverrides;
 
 static void wmSetFlags(int* flagsPtr, int flag, int value);
 static int wmGenDataInit();
@@ -564,6 +566,7 @@ static void wmInterfaceDrawSubTileRectFogged(unsigned char* dest, int width, int
 static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, int x, int y, int a6);
 static int wmDrawCursorStopped();
 static void wmInterfaceDrawTerrainInfo();
+static const char* wmGetHotspotText();
 static bool wmCursorIsVisible();
 static int wmGetAreaName(CityInfo* city, char* name);
 static void wmMarkAllSubTiles(int state);
@@ -920,6 +923,19 @@ const char* wmGetCurrentTerrainName()
     return wmGetTerrainName(x, y);
 }
 
+void wmSetTownTitle(int areaIdx, const char* title)
+{
+    assert(title != nullptr);
+
+    wmTownTitleOverrides[areaIdx] = title;
+}
+
+static const char* wmGetTownTitle(int areaIdx)
+{
+    auto it = wmTownTitleOverrides.find(areaIdx);
+    return it != wmTownTitleOverrides.end() ? it->second.c_str() : nullptr;
+}
+
 // 0x672FB8 wmFreqValues
 static int wmFreqValues[6];
 
@@ -1134,6 +1150,7 @@ static int wmGenDataInit()
     wmForceEncounterFlags = 0;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
+    wmTownTitleOverrides.clear();
 
     return 0;
 }
@@ -1261,6 +1278,7 @@ static void wmSetStartWorldView()
 void wmWorldMap_exit()
 {
     wmTerrainNameOverrides.clear();
+    wmTownTitleOverrides.clear();
 
     if (wmTerrainTypeList != nullptr) {
         internal_free(wmTerrainTypeList);
@@ -3303,13 +3321,13 @@ static int wmWorldMapFunc(int a1)
         int worldX = wmWorldOffsetX + mouseX - WM_VIEW_X;
         int worldY = wmWorldOffsetY + mouseY - WM_VIEW_Y;
 
-        bool terrainInfoIsVisible = worldmapTerrainInfo
+        bool terrainInfoIsVisible = (worldmapTerrainInfo || !wmTownTitleOverrides.empty())
             && !wmGenData.isWalking
-            && wmGenData.currentAreaId == -1
             && wmCursorIsVisible()
             && mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, WM_VIEW_WIDTH + WM_VIEW_X, WM_VIEW_HEIGHT + WM_VIEW_Y)
             && abs(wmGenData.worldPosX - worldX) < 8
-            && abs(wmGenData.worldPosY - worldY) < 6;
+            && abs(wmGenData.worldPosY - worldY) < 6
+            && wmGetHotspotText() != nullptr;
         if (terrainInfoIsVisible != wmTerrainInfoIsVisible) {
             wmTerrainInfoIsVisible = terrainInfoIsVisible;
             wmInterfaceRefresh();
@@ -6107,7 +6125,11 @@ static void wmInterfaceDrawTerrainInfo()
         return;
     }
 
-    const char* text = wmGetCurrentTerrainName();
+    const char* text = wmGetHotspotText();
+    if (text == nullptr) {
+        return;
+    }
+
     int textWidth = std::min(fontGetStringWidth(text), 200);
     int textX = WM_VIEW_X + wmGenData.worldPosX - wmWorldOffsetX - textWidth / 2;
     textX = std::clamp(textX, WM_VIEW_X, WM_VIEW_X + WM_VIEW_WIDTH - textWidth);
@@ -6121,6 +6143,15 @@ static void wmInterfaceDrawTerrainInfo()
         textWidth,
         WM_WINDOW_WIDTH,
         COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
+}
+
+static const char* wmGetHotspotText()
+{
+    if (wmGenData.currentAreaId != -1) {
+        return wmGetTownTitle(wmGenData.currentAreaId);
+    }
+
+    return worldmapTerrainInfo ? wmGetCurrentTerrainName() : nullptr;
 }
 
 // 0x4C4490 wmCursorIsVisible

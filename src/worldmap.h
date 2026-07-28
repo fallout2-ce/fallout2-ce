@@ -296,6 +296,7 @@ bool wmTerrainNameIsValidSubtile(int x, int y);
 void wmSetTerrainName(int x, int y, const char* name);
 const char* wmGetTerrainName(int x, int y);
 const char* wmGetCurrentTerrainName();
+void wmSetTownTitle(int areaIdx, const char* title);
 int worldmapGetWindow();
 
 } // namespace fallout
