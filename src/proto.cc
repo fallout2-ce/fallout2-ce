@@ -1566,9 +1566,9 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
 
         return 0;
     case ITEM_TYPE_DRUG:
-        if (fileReadInt32(stream, reinterpret_cast<int*>(&(item_data->drug.stat[0]))) == -1) return -1;
-        if (fileReadInt32(stream, reinterpret_cast<int*>(&(item_data->drug.stat[1]))) == -1) return -1;
-        if (fileReadInt32(stream, reinterpret_cast<int*>(&(item_data->drug.stat[2]))) == -1) return -1;
+        if (fileReadInt32Enum<Stat>(stream, &(item_data->drug.stat[0])) == -1) return -1;
+        if (fileReadInt32Enum<Stat>(stream, &(item_data->drug.stat[1])) == -1) return -1;
+        if (fileReadInt32Enum<Stat>(stream, &(item_data->drug.stat[2])) == -1) return -1;
         if (fileReadInt32List(stream, item_data->drug.amount, 3) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->drug.duration1)) == -1) return -1;
         if (fileReadInt32List(stream, item_data->drug.amount1, 3) == -1) return -1;
@@ -1583,7 +1583,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
         if (fileReadInt32(stream, &(item_data->weapon.animationCode)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.minDamage)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.maxDamage)) == -1) return -1;
-        if (fileReadInt32(stream, reinterpret_cast<int*>(&(item_data->weapon.damageType))) == -1) return -1;
+        if (fileReadInt32Enum<DamageType>(stream, &(item_data->weapon.damageType)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.maxRange1)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.maxRange2)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.projectilePid)) == -1) return -1;

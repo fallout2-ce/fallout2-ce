@@ -42,6 +42,29 @@ bool configGetString(Config* config, const char* sectionKey, const char* key, ch
 bool configSetString(Config* config, const char* sectionKey, const char* key, const char* value);
 bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, unsigned char base = 0);
 bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, int defaultValue, unsigned char base = 0);
+
+template <typename T>
+inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, unsigned char base = 0) {
+    int temp = 0;
+    bool result = configGetInt(config, sectionKey, key, &temp, base);
+    if (result) {
+        *valuePtr = static_cast<T>(temp);
+    }
+
+    return result;
+}
+
+template <typename T>
+inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, T defaultValue, unsigned char base = 0) {
+    int temp = 0;
+    bool result = configGetInt(config, sectionKey, key, &temp, static_cast<int>(defaultValue), base);
+    if (result) {
+        *valuePtr = static_cast<T>(temp);
+    }
+
+    return result;
+}
+
 bool configGetIntList(Config* config, const char* section, const char* key, int* arr, int count);
 bool configSetInt(Config* config, const char* sectionKey, const char* key, int value);
 bool configRead(Config* config, const char* filePath, bool isDb);

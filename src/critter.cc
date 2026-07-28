@@ -1097,10 +1097,10 @@ int protoCritterDataRead(File* stream, CritterProtoData* critterData)
     if (fileReadInt32(stream, &(critterData->flags)) == -1) return -1;
     if (fileReadInt32List(stream, critterData->baseStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileReadInt32List(stream, critterData->bonusStats, SAVEABLE_STAT_COUNT) == -1) return -1;
-    if (fileReadInt32List(stream, reinterpret_cast<int*>(critterData->skills), SKILL_COUNT) == -1) return -1;
-    if (fileReadInt32(stream, reinterpret_cast<int*>(&(critterData->bodyType))) == -1) return -1;
+    if (fileReadInt32List(stream, critterData->skills, SKILL_COUNT) == -1) return -1;
+    if (fileReadInt32Enum<BodyType>(stream, &(critterData->bodyType)) == -1) return -1;
     if (fileReadInt32(stream, &(critterData->experience)) == -1) return -1;
-    if (fileReadInt32(stream, reinterpret_cast<int*>(&(critterData->killType))) == -1) return -1;
+    if (fileReadInt32Enum<KillType>(stream, &(critterData->killType)) == -1) return -1;
 
     // NOTE: For unknown reason damage type is not present in two protos: Sentry
     // Bot and Weak Brahmin. These two protos are 412 bytes, not 416.
@@ -1114,7 +1114,7 @@ int protoCritterDataRead(File* stream, CritterProtoData* critterData)
     //
     // Regardless of the reason, damage type is considered optional by original
     // code as seen at 0x42E01B.
-    if (fileReadInt32(stream, reinterpret_cast<int*>(&(critterData->damageType))) == -1) {
+    if (fileReadInt32Enum<DamageType>(stream, &(critterData->damageType)) == -1) {
         critterData->damageType = DAMAGE_TYPE_NORMAL;
     }
 
@@ -1164,7 +1164,7 @@ int protoCritterDataWrite(File* stream, CritterProtoData* critterData)
     if (fileWriteInt32(stream, critterData->flags) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->baseStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->bonusStats, SAVEABLE_STAT_COUNT) == -1) return -1;
-    if (fileWriteInt32List(stream, reinterpret_cast<int*>(critterData->skills), SKILL_COUNT) == -1) return -1;
+    if (fileWriteInt32List(stream, critterData->skills, SKILL_COUNT) == -1) return -1;
     if (fileWriteInt32(stream, critterData->bodyType) == -1) return -1;
     if (fileWriteInt32(stream, critterData->experience) == -1) return -1;
     if (fileWriteInt32(stream, critterData->killType) == -1) return -1;

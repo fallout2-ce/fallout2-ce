@@ -3008,7 +3008,7 @@ int drugEffectEventRead(File* stream, void** dataPtr)
         return -1;
     }
 
-    if (fileReadInt32List(stream, reinterpret_cast<int*>(drugEffectEvent->stats), 3) == -1) goto err;
+    if (fileReadInt32EnumList<Stat>(stream, drugEffectEvent->stats, 3) == -1) goto err;
     if (fileReadInt32List(stream, drugEffectEvent->modifiers, 3) == -1) goto err;
 
     *dataPtr = drugEffectEvent;
@@ -3025,7 +3025,7 @@ int drugEffectEventWrite(File* stream, void* data)
 {
     DrugEffectEvent* drugEffectEvent = (DrugEffectEvent*)data;
 
-    if (fileWriteInt32List(stream, reinterpret_cast<int*>(drugEffectEvent->stats), 3) == -1) return -1;
+    if (fileWriteInt32EnumList<Stat>(stream, drugEffectEvent->stats, 3) == -1) return -1;
     if (fileWriteInt32List(stream, drugEffectEvent->modifiers, 3) == -1) return -1;
 
     return 0;
@@ -3451,7 +3451,7 @@ static void booksInitCustom()
                     if (!configGetInt(&booksConfig, sectionKey, "TextID", &messageId)) continue;
 
                     Skill skill;
-                    if (!configGetInt(&booksConfig, sectionKey, "Skill", reinterpret_cast<int*>(&skill))) continue;
+                    if (!configGetEnum<Skill>(&booksConfig, sectionKey, "Skill", &skill)) continue;
 
                     booksAdd(bookPid, messageId, skill);
                 }
