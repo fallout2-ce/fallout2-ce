@@ -427,6 +427,7 @@ void gameReset()
     gameMouseReset();
     protoReset();
     _scr_reset();
+    gameFreeGlobalVars();
     gameLoadGlobalVars();
     scriptsReset();
     wmWorldMap_reset();
