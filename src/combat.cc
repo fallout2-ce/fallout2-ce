@@ -2221,14 +2221,6 @@ int combatLoad(File* stream)
     return 0;
 }
 
-static bool _combatShouldSaveObject(Object* obj)
-{
-    if (obj == nullptr) return false;
-    if (obj == gDude) return true;
-    if (objectIsPartyMember(obj)) return true;
-    return (obj->flags & OBJECT_NO_SAVE) == 0;
-}
-
 // 0x421244
 int combatSave(File* stream)
 {
@@ -2244,13 +2236,13 @@ int combatSave(File* stream)
     int valid_com = 0;
 
     for (int index = 0; index < _list_com; index++) {
-        if (_combatShouldSaveObject(_combat_list[index])) {
+        if (objectIsSavable(_combat_list[index])) {
             valid_com++;
             valid_total++;
         }
     }
     for (int index = _list_com; index < _list_total; index++) {
-        if (_combatShouldSaveObject(_combat_list[index])) {
+        if (objectIsSavable(_combat_list[index])) {
             valid_noncom++;
             valid_total++;
         }
@@ -2265,14 +2257,14 @@ int combatSave(File* stream)
 
     for (int index = 0; index < _list_total; index++) {
         Object* obj = _combat_list[index];
-        if (_combatShouldSaveObject(obj)) {
+        if (objectIsSavable(obj)) {
             if (fileWriteInt32(stream, obj->cid) == -1) return -1;
         }
     }
 
     for (int index = 0; index < _list_total; index++) {
         Object* obj = _combat_list[index];
-        if (!_combatShouldSaveObject(obj)) continue;
+        if (!objectIsSavable(obj)) continue;
 
         int friendlyId = -1;
         int targetId = -1;
@@ -2281,8 +2273,8 @@ int combatSave(File* stream)
 
         CombatAiInfo* aiInfo = &(_aiInfoList[index]);
 
-        friendlyId = _combatShouldSaveObject(aiInfo->friendlyDead) ? aiInfo->friendlyDead->id : -1;
-        targetId = _combatShouldSaveObject(aiInfo->lastTarget) ? aiInfo->lastTarget->id : -1;
+        friendlyId = objectIsSavable(aiInfo->friendlyDead) ? aiInfo->friendlyDead->id : -1;
+        targetId = objectIsSavable(aiInfo->lastTarget) ? aiInfo->lastTarget->id : -1;
 
         itemId = aiInfo->lastItem != nullptr ? aiInfo->lastItem->id : -1;
         lastMove = aiInfo->lastMove;

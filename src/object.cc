@@ -233,7 +233,10 @@ static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData)
         return whoHitMe;
     }
 
-    combatData->whoHitMeCid = whoHitMe != nullptr ? whoHitMe->cid : -1;
+    // NOTE: We only clear the cid for non-savable objects to prevent stale
+    // references in the save file. We must NOT nullify `whoHitMe` itself,
+    // otherwise the current combat AI logic will break.
+    combatData->whoHitMeCid = objectIsSavable(whoHitMe) ? whoHitMe->cid : -1;
     return whoHitMe;
 }
 
@@ -471,6 +474,15 @@ int objectRead(Object* obj, File* stream)
     }
 
     return 0;
+}
+
+bool objectIsSavable(Object* obj)
+{
+    if (obj == nullptr) return false;
+    if (obj == gDude) return true;
+    if (objectIsPartyMember(obj)) return true;
+
+    return (obj->flags & OBJECT_NO_SAVE) == 0;
 }
 
 // 0x488CE4 obj_load
