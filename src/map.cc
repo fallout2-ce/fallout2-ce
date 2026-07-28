@@ -867,7 +867,10 @@ static int mapLoad(File* stream)
         if (backgoundSoundIsPlaying()) {
             // Use the sfall sound path so the map-loading ambience does not depend
             // on the native background music loader.
-            mapLoadSoundId = scriptSoundPlay("sound\\music\\WIND2.ACM", SCRIPT_SOUND_MODE_LOOP);
+            const char* mapLoadingSound = gameSoundGetMusicOverride("map_loading_sound", "wind2");
+            char mapLoadingSoundPath[COMPAT_MAX_PATH];
+            snprintf(mapLoadingSoundPath, sizeof(mapLoadingSoundPath), "sound\\music\\%s.ACM", mapLoadingSound);
+            mapLoadSoundId = scriptSoundPlay(mapLoadingSoundPath, SCRIPT_SOUND_MODE_LOOP);
         }
     }
     isoDisable();

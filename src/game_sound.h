@@ -79,6 +79,7 @@ int _gsound_background_volume_get_set(int volume);
 void backgroundSoundSetEndCallback(SoundEndCallback* callback);
 int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode);
+const char* gameSoundGetMusicOverride(const char* key, const char* defaultValue);
 void backgroundSoundDelete();
 void backgroundSoundRestart(GameSoundReadLimitMode readLimitMode);
 void backgroundSoundPause();

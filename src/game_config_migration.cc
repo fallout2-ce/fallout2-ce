@@ -162,6 +162,7 @@ namespace {
 
     constexpr char kSfallMisc[] = "Misc";
     constexpr char kSfallInterface[] = "Interface";
+    constexpr char kSfallSound[] = "Sound";
 
     struct SfallMigrationEntry {
         const char* sfallSection;
@@ -202,6 +203,13 @@ namespace {
         { kSfallMisc, "MainMenuOffsetY", CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", "0" },
         { kSfallMisc, "MainMenuCreditsOffsetX", CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_x", "0" },
         { kSfallMisc, "MainMenuCreditsOffsetY", CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_y", "0" },
+        // [sound]
+        { kSfallSound, "MainMenuMusic", CONTENT_CONFIG_SOUND_SECTION, "main_menu_music", "07desert" },
+        { kSfallSound, "WorldMapMusic", CONTENT_CONFIG_SOUND_SECTION, "worldmap_music", "23world" },
+        { kSfallSound, "WorldMapCarMusic", CONTENT_CONFIG_SOUND_SECTION, "worldmap_car_music", "20car" },
+        { kSfallSound, "EndGameMovieMusic0", CONTENT_CONFIG_SOUND_SECTION, "endgame_movie_music0", "akiss" },
+        { kSfallSound, "EndGameMovieMusic1", CONTENT_CONFIG_SOUND_SECTION, "endgame_movie_music1", "10labone" },
+        { kSfallSound, "MapLoadingSound", CONTENT_CONFIG_SOUND_SECTION, "map_loading_sound", "wind2" },
         // [movies]
         { kSfallMisc, "MovieTimer_artimer1", CONTENT_CONFIG_MOVIES_SECTION, "artimer1", "90" },
         { kSfallMisc, "MovieTimer_artimer2", CONTENT_CONFIG_MOVIES_SECTION, "artimer2", "180" },

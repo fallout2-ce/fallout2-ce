@@ -50,6 +50,12 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | `Misc` | `StartGDialogFix` | `dialog` | `start_gdialog_fix` |
 | `Misc` | `DisableSpecialMapIDs` | `maps` | `disable_special_map_ids` |
 | `Misc` | `Movie1` - `Movie32` | `movies` | `movie1` - `movie32` |
+| `Sound` | `MainMenuMusic` | `sound` | `main_menu_music` |
+| `Sound` | `WorldMapMusic` | `sound` | `worldmap_music` |
+| `Sound` | `WorldMapCarMusic` | `sound` | `worldmap_car_music` |
+| `Sound` | `EndGameMovieMusic0` | `sound` | `endgame_movie_music0` |
+| `Sound` | `EndGameMovieMusic1` | `sound` | `endgame_movie_music1` |
+| `Sound` | `MapLoadingSound` | `sound` | `map_loading_sound` |
 
 ## Opcodes / Metarules
 

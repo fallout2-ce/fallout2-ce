@@ -4738,7 +4738,9 @@ static int wmInterfaceInit()
 
     _map_save_in_game(true);
 
-    const char* backgroundSoundFileName = wmGenData.isInCar ? "20car" : "23world";
+    const char* backgroundSoundFileName = gameSoundGetMusicOverride(
+        wmGenData.isInCar ? "worldmap_car_music" : "worldmap_music",
+        wmGenData.isInCar ? "20car" : "23world");
     _gsound_background_play_level_music(backgroundSoundFileName, GSOUND_LIMIT_AFTER);
 
     // CE: Hide entire interface, not just indicator bar, and disable tile
