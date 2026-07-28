@@ -704,7 +704,7 @@ void gameMouseRefresh()
                     int primaryAction = -1;
                     int objectType = FID_TYPE(pointedObject->fid);
                     switch (objectType) {
-                    case OBJ_TYPE_SCENERY:                      
+                    case OBJ_TYPE_SCENERY:
                     case OBJ_TYPE_WALL:
                     case OBJ_TYPE_MISC: {
                         // if the pointedObject is scenery/wall/misc object then it finds possible outlined item object behind it
@@ -715,7 +715,7 @@ void gameMouseRefresh()
                             primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                             break;
                         }
-                    
+
                         bool canBeShootOrSeenThroughObject = (pointedObject->flags & OBJECT_SHOOT_THRU) != 0 || (pointedObject->flags & OBJECT_LIGHT_THRU) != 0;
 
                         if (itemObject == nullptr || (!itemIsOutlined && objectType == OBJ_TYPE_WALL && !canBeShootOrSeenThroughObject)) {
@@ -1013,7 +1013,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         if (_obj_action_can_use(targetObj)) {
                             _action_use_an_object(gDude, targetObj);
                             break;
-                        } 
+                        }
 
                         if (objectExamine(gDude, targetObj) == -1) {
                             objectLookAt(gDude, targetObj);
