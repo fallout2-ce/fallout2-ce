@@ -44,7 +44,8 @@ bool configGetInt(Config* config, const char* sectionKey, const char* key, int* 
 bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, int defaultValue, unsigned char base = 0);
 
 template <typename T>
-inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, unsigned char base = 0) {
+inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, unsigned char base = 0)
+{
     int temp = 0;
     bool result = configGetInt(config, sectionKey, key, &temp, base);
     if (result) {
@@ -55,7 +56,8 @@ inline bool configGetEnum(Config* config, const char* sectionKey, const char* ke
 }
 
 template <typename T>
-inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, T defaultValue, unsigned char base = 0) {
+inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, T defaultValue, unsigned char base = 0)
+{
     int temp = 0;
     bool result = configGetInt(config, sectionKey, key, &temp, static_cast<int>(defaultValue), base);
     if (result) {

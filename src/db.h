@@ -40,7 +40,8 @@ int fileReadUInt16(File* stream, unsigned short* valuePtr);
 int fileReadInt32(File* stream, int* valuePtr);
 
 template <typename T>
-inline int fileReadInt32Enum(File* stream, T* valuePtr) {
+inline int fileReadInt32Enum(File* stream, T* valuePtr)
+{
     int temp = 0;
 
     int result = fileReadInt32(stream, &temp);
@@ -76,7 +77,8 @@ int fileWriteUInt16(File* stream, unsigned short value);
 int fileWriteInt32(File* stream, int value);
 
 template <typename T>
-inline int fileWriteInt32Enum(File* stream, T value) {
+inline int fileWriteInt32Enum(File* stream, T value)
+{
     return fileWriteInt32(stream, static_cast<int>(value));
 }
 
@@ -104,13 +106,14 @@ int fileReadUInt16List(File* stream, unsigned short* arr, int count);
 int fileReadInt32List(File* stream, int* arr, int count);
 
 template <typename T>
-inline int fileReadInt32EnumList(File* stream, T* arr, int count) {
+inline int fileReadInt32EnumList(File* stream, T* arr, int count)
+{
     if (count <= 0) {
         return 0;
     }
-    
-    if (arr == nullptr) { 
-        return -1; 
+
+    if (arr == nullptr) {
+        return -1;
     }
 
     int result = 0;
@@ -144,13 +147,14 @@ int fileWriteUInt16List(File* stream, unsigned short* arr, int count);
 int fileWriteInt32List(File* stream, int* arr, int count);
 
 template <typename T>
-inline int fileWriteInt32EnumList(File* stream, T* arr, int count) {
+inline int fileWriteInt32EnumList(File* stream, T* arr, int count)
+{
     if (count <= 0) {
         return 0;
     }
-    
-    if (arr == nullptr) { 
-        return -1; 
+
+    if (arr == nullptr) {
+        return -1;
     }
 
     int result = 0;
