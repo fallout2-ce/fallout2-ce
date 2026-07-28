@@ -240,7 +240,7 @@ int characterSelectorOpen()
         case 500:
             gCurrentPremadeCharacter--;
             if (gCurrentPremadeCharacter < PREMADE_CHARACTER_FIRST) {
-                gCurrentPremadeCharacter--;
+                gCurrentPremadeCharacter = static_cast<PremadeCharacter>(gPremadeCharacterCount - 1);
             }
 
             characterSelectorWindowRefresh();
