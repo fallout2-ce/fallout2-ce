@@ -105,7 +105,7 @@ int falloutMain(int argc, char** argv)
         bool done = false;
         while (!done) {
             keyboardReset();
-            _gsound_background_play_level_music("07desert", GSOUND_LIMIT_BEFORE);
+            _gsound_background_play_level_music(gameSoundGetMusicOverride("main_menu_music", "07desert"), GSOUND_LIMIT_BEFORE);
             mainMenuWindowUnhide(true);
 
             mouseShowCursor();
@@ -331,6 +331,19 @@ static int _main_load_new(char* mapFileName)
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
     mouseShowCursor();
     mapLoadByName(mapFileName);
+
+    // SFALL: Fix the starting position of the player's marker on the world map
+    // when starting a new game with a custom starting map.
+    int areaIdx;
+    if (wmMatchAreaContainingMapIdx(gMapHeader.index, &areaIdx) == 0) {
+        if (wmStartWorldPosIsConfigured()) {
+            wmSetPartyCurArea(areaIdx);
+            wmClearPartyWalking();
+        } else {
+            wmTeleportToArea(areaIdx);
+        }
+    }
+
     wmMapMusicStart();
     paletteFadeTo(gPaletteWhite);
     windowDestroy(win);

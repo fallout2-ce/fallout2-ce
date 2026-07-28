@@ -97,7 +97,7 @@ static int _compute_explosion_damage(int min, int max, Object* defender, int* kn
 static int _can_talk_to(Object* obj, Object* critter);
 static int _talk_to(Object* _, Object* critter);
 static int _report_dmg(Attack* attack, Object* _);
-static int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, int damageType);
+static int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, DamageType damageType);
 
 static int hideProjectile(void* _, void* projectile);
 
@@ -200,7 +200,7 @@ int pickDeathAnim(Object* attacker, Object* defender, Object* weapon, int damage
     int normalViolenceLevelDamageThreshold = 15;
     int maximumBloodViolenceLevelDamageThreshold = 45;
 
-    int damageType = weaponGetDamageType(attacker, weapon);
+    DamageType damageType = weaponGetDamageType(attacker, weapon);
 
     if (weapon != nullptr && weapon->pid == PROTO_ID_MOLOTOV_COCKTAIL) {
         normalViolenceLevelDamageThreshold = 5;
@@ -729,7 +729,7 @@ int _action_ranged(Attack* attack, int anim)
 
     weaponGetRange(attack->attacker, attack->hitMode);
 
-    int damageType = weaponGetDamageType(attack->attacker, attack->weapon);
+    DamageType damageType = weaponGetDamageType(attack->attacker, attack->weapon);
 
     tileGetTileInDirection(attack->attacker->tile, attack->attacker->rotation, 1);
 
@@ -1306,7 +1306,7 @@ int actionLootCritter(Object* critter, Object* target)
 }
 
 // 0x4124E0
-int _action_skill_use(int skill)
+int _action_skill_use(Skill skill)
 {
     if (skill == SKILL_SNEAK) {
         reg_anim_clear(gDude);
@@ -1336,7 +1336,7 @@ static int _action_use_skill_in_combat_error(Object* critter)
 
 // skill_use
 // 0x41255C
-int actionUseSkill(Object* user, Object* target, int skill)
+int actionUseSkill(Object* user, Object* target, Skill skill)
 {
     UseSkillOnHookResult hookResult = scriptHooks_UseSkillOn(&user, target, skill);
     if (!hookResult.shouldContinue) {
@@ -1907,7 +1907,7 @@ int _talk_to(Object* _, Object* critter)
 }
 
 // 0x413494
-void actionDamage(int tile, int elevation, int minDamage, int maxDamage, int damageType, bool animated, bool bypassArmor)
+void actionDamage(int tile, int elevation, int minDamage, int maxDamage, DamageType damageType, bool animated, bool bypassArmor)
 {
     Attack* attack = (Attack*)internal_malloc(sizeof(*attack));
     if (attack == nullptr) {
@@ -1988,7 +1988,7 @@ int _report_dmg(Attack* attack, Object* _)
 // Calculate damage by applying threshold and resistances.
 //
 // 0x413660
-int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, int damageType)
+int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, DamageType damageType)
 {
     if (!critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
         knockbackDistancePtr = nullptr;

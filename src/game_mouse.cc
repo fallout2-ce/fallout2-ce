@@ -264,7 +264,7 @@ static int gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
 };
 
 // 0x518D68 gmouse_skill_table
-static const int gGameMouseModeSkills[GAME_MOUSE_MODE_SKILL_COUNT] = {
+static const Skill gGameMouseModeSkills[GAME_MOUSE_MODE_SKILL_COUNT] = {
     SKILL_FIRST_AID,
     SKILL_DOCTOR,
     SKILL_LOCKPICK,
@@ -1275,7 +1275,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         break;
                     case GAME_MOUSE_ACTION_MENU_ITEM_USE_SKILL:
                         if (1) {
-                            int skill = -1;
+                            Skill skill = SKILL_INVALID;
 
                             int rc = skilldexOpen();
                             switch (rc) {
@@ -1305,7 +1305,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                                 break;
                             }
 
-                            if (skill != -1) {
+                            if (skill != SKILL_INVALID) {
                                 actionUseSkill(gDude, targetObj, skill);
                             }
                         }

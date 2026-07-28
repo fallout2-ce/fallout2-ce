@@ -698,6 +698,9 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
     if (a1->vars != nullptr) {
         script->localVarsOffset = mapAllocLocalVars(script->localVarsCount);
         memcpy(gMapLocalVars + script->localVarsOffset, a1->vars, sizeof(int) * script->localVarsCount);
+
+        internal_free(a1->vars);
+        a1->vars = nullptr;
     }
 
     return 0;
@@ -706,21 +709,21 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
 // 0x494BBC partyMemberLoad
 int partyMembersLoad(File* stream)
 {
+    int result = -1;
+
     int* partyMemberObjectIds = (int*)internal_malloc(sizeof(*partyMemberObjectIds) * (gPartyMemberDescriptionsLength + 20));
     if (partyMemberObjectIds == nullptr) {
         return -1;
     }
 
-    // FIXME: partyMemberObjectIds is never free'd in this function, obviously memory leak.
-
-    if (fileReadInt32(stream, &gPartyMembersLength) == -1) return -1;
-    if (fileReadInt32(stream, &_partyMemberItemCount) == -1) return -1;
+    if (fileReadInt32(stream, &gPartyMembersLength) == -1) goto cleanup;
+    if (fileReadInt32(stream, &_partyMemberItemCount) == -1) goto cleanup;
 
     gPartyMembers->object = gDude;
 
     if (gPartyMembersLength != 0) {
         for (int index = 1; index < gPartyMembersLength; index++) {
-            if (fileReadInt32(stream, &(partyMemberObjectIds[index])) == -1) return -1;
+            if (fileReadInt32(stream, &(partyMemberObjectIds[index])) == -1) goto cleanup;
         }
 
         for (int index = 1; index < gPartyMembersLength; index++) {
@@ -750,7 +753,7 @@ int partyMembersLoad(File* stream)
         }
 
         if (_partyMemberUnPrepSave() == -1) {
-            return -1;
+            goto cleanup;
         }
     }
 
@@ -759,12 +762,16 @@ int partyMembersLoad(File* stream)
     for (int index = 1; index < gPartyMemberDescriptionsLength; index++) {
         PartyMemberLevelUpInfo* levelUpInfo = &(_partyMemberLevelUpInfoList[index]);
 
-        if (fileReadInt32(stream, &(levelUpInfo->level)) == -1) return -1;
-        if (fileReadInt32(stream, &(levelUpInfo->numLevelUps)) == -1) return -1;
-        if (fileReadInt32(stream, &(levelUpInfo->isEarly)) == -1) return -1;
+        if (fileReadInt32(stream, &(levelUpInfo->level)) == -1) goto cleanup;
+        if (fileReadInt32(stream, &(levelUpInfo->numLevelUps)) == -1) goto cleanup;
+        if (fileReadInt32(stream, &(levelUpInfo->isEarly)) == -1) goto cleanup;
     }
 
-    return 0;
+    result = 0;
+
+cleanup:
+    internal_free(partyMemberObjectIds);
+    return result;
 }
 
 // 0x494D7C partyMemberClear
@@ -1134,9 +1141,9 @@ static int _partyMemberClearItemList()
 // Returns best skill of the specified party member.
 //
 // 0x495520 partyMemberSkill
-int partyMemberGetBestSkill(Object* object)
+Skill partyMemberGetBestSkill(Object* object)
 {
-    int bestSkill = SKILL_SMALL_GUNS;
+    Skill bestSkill = SKILL_SMALL_GUNS;
 
     if (object == nullptr) {
         return bestSkill;
@@ -1147,7 +1154,7 @@ int partyMemberGetBestSkill(Object* object)
     }
 
     int bestValue = 0;
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         int value = skillGetValue(object, skill);
         if (value > bestValue) {
             bestSkill = skill;
@@ -1161,7 +1168,7 @@ int partyMemberGetBestSkill(Object* object)
 // Returns party member with highest skill level.
 //
 // 0x495560 partyMemberWithHighestSkill
-Object* partyMemberGetBestInSkill(int skill)
+Object* partyMemberGetBestInSkill(Skill skill)
 {
     int bestValue = 0;
     Object* bestPartyMember = nullptr;
@@ -1183,7 +1190,7 @@ Object* partyMemberGetBestInSkill(int skill)
 // Returns highest skill level in party.
 //
 // 0x4955C8 partyMemberHighestSkillLevel
-int partyGetBestSkillValue(int skill)
+int partyGetBestSkillValue(Skill skill)
 {
     int bestValue = 0;
 
@@ -1610,7 +1617,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
         proto->critter.data.bonusStats[stat] = stageProto->critter.data.bonusStats[stat];
     }
 
-    for (int skill = 0; skill < SKILL_COUNT; skill++) {
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
         proto->critter.data.skills[skill] = stageProto->critter.data.skills[skill];
     }
 

@@ -73,7 +73,7 @@ static const int gSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
 // Maps Skilldex options into skills.
 //
 // 0x51D458 sklxref
-static const int gSkilldexSkills[SKILLDEX_SKILL_COUNT] = {
+static const Skill gSkilldexSkills[SKILLDEX_SKILL_COUNT] = {
     SKILL_SNEAK,
     SKILL_LOCKPICK,
     SKILL_STEAL,

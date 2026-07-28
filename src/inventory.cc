@@ -930,7 +930,8 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
 
     bool showLabel = inventoryLootLayout.columns > 1;
     bool showDetailed = loot_weight_indicator == 2 && showLabel;
-    bool showSimple = loot_weight_indicator == 1 || (loot_weight_indicator == 2 && !showLabel);
+    bool showSize = loot_weight_indicator == 3;
+    bool showSimple = loot_weight_indicator == 1 || (loot_weight_indicator == 2 && !showLabel) || showSize;
 
     if (!showDetailed && !showSimple) {
         return;
@@ -967,7 +968,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             pitch);
     }
 
-    int color = COLOR_WHITE;
+    int color = COLOR_GREEN;
     int inventoryWeight = objectGetInventoryWeight(object);
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         int currentWeight = inventoryWeight + extraWeight;
@@ -975,7 +976,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
         int weightPercentage = maxWeight < 1 ? 0 : (int)std::ceil(currentWeight * 100 / (float)maxWeight);
 
         if (showSimple) {
-            if (showLabel) {
+            if (showLabel && !showSize) {
                 snprintf(formattedText, sizeof(formattedText), "%s %d/%d", messageListItem.text, currentWeight, maxWeight);
             } else {
                 snprintf(formattedText, sizeof(formattedText), "%d/%d", currentWeight, maxWeight);
@@ -997,13 +998,15 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             return;
         }
 
-        if (showSimple) {
+        if (showSize) {
+            snprintf(formattedText, sizeof(formattedText), "%d/%d", currentSize, maxSize);
+        } else if (showSimple) {
             snprintf(formattedText, sizeof(formattedText), "%d%%", sizePercentage);
         } else if (showDetailed) {
             snprintf(formattedText, sizeof(formattedText), "%s %d (%d%%)", messageListItem.text, inventoryWeight, sizePercentage);
         }
     } else {
-        if (showLabel) {
+        if (showLabel && !showSize) {
             snprintf(formattedText, sizeof(formattedText), "%s %d", messageListItem.text, inventoryWeight);
         } else {
             snprintf(formattedText, sizeof(formattedText), "%d", inventoryWeight);
@@ -3057,7 +3060,7 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 
     int damageResistanceStat = STAT_DAMAGE_RESISTANCE;
     int damageThresholdStat = STAT_DAMAGE_THRESHOLD;
-    for (int damageType = 0; damageType < DAMAGE_TYPE_COUNT; damageType += 1) {
+    for (DamageType damageType = DAMAGE_TYPE_FIRST; damageType < DAMAGE_TYPE_COUNT; damageType++) {
         int damageResistanceBonus = critterGetBonusStat(critter, damageResistanceStat);
         int oldArmorDamageResistance = armorGetDamageResistance(oldArmor, damageType);
         int newArmorDamageResistance = armorGetDamageResistance(newArmor, damageType);
@@ -4152,7 +4155,7 @@ static void displayLootPanePartyName(unsigned char* windowBuffer, int windowPitc
     int nameY = rect.bottom - fontGetLineHeight();
     fontSetCurrent(oldFont);
 
-    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, COLOR_WHITE);
+    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, COLOR_GREEN);
 }
 
 // Displays item description.

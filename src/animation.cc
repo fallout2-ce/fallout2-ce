@@ -1736,7 +1736,7 @@ static bool canUseDoor(Object* critter, Object* door)
         return false;
     }
 
-    int bodyType = critterGetBodyType(critter);
+    BodyType bodyType = critterGetBodyType(critter);
     if (bodyType != BODY_TYPE_BIPED && bodyType != BODY_TYPE_ROBOTIC) {
         return false;
     }

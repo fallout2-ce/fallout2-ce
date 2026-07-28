@@ -99,6 +99,7 @@ struct UISettings {
     // 0 - No indicator, vanilla
     // 1 - Simple indicator
     // 2 - Detailed indicator, works with inventory_columns > 1 only
+    // 3 - Size indicator for containers
     int loot_weight_indicator = 1;
 
     // 0   - Container indicator is always visible

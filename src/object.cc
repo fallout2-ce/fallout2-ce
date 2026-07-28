@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <vector>
 
 #include "animation.h"
 #include "art.h"
@@ -93,11 +94,6 @@ static int* _offsetModTable = nullptr;
 
 // 0x519620 renderTable
 static ObjectListNode** _renderTable = nullptr;
-
-// Number of objects in _outlinedObjects.
-//
-// 0x519624 outlineCount
-static int _outlineCount = 0;
 
 // Contains objects that are not bounded to tiles.
 //
@@ -237,7 +233,10 @@ static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData)
         return whoHitMe;
     }
 
-    combatData->whoHitMeCid = whoHitMe != nullptr ? whoHitMe->cid : -1;
+    // NOTE: We only clear the cid for non-savable objects to prevent stale
+    // references in the save file. We must NOT nullify `whoHitMe` itself,
+    // otherwise the current combat AI logic will break.
+    combatData->whoHitMeCid = objectIsSavable(whoHitMe) ? whoHitMe->cid : -1;
     return whoHitMe;
 }
 
@@ -251,9 +250,7 @@ static int _light_offsets[2][6][36];
 static Rect gObjectsWindowRect;
 
 // Likely outlined objects on the screen.
-//
-// 0x639C00 outlinedObjects
-static Object* _outlinedObjects[100];
+static std::vector<Object*> outlinedObjects;
 
 // 0x639D90 updateAreaPixelBounds
 static Rect gObjectsUpdateAreaPixelBounds;
@@ -477,6 +474,15 @@ int objectRead(Object* obj, File* stream)
     }
 
     return 0;
+}
+
+bool objectIsSavable(Object* obj)
+{
+    if (obj == nullptr) return false;
+    if (obj == gDude) return true;
+    if (objectIsPartyMember(obj)) return true;
+
+    return (obj->flags & OBJECT_NO_SAVE) == 0;
 }
 
 // 0x488CE4 obj_load
@@ -791,7 +797,7 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
     int updateAreaHexHeight = (maxY - minY + 1) / 12;
     int parity = gCenterTile & 1;
 
-    _outlineCount = 0;
+    outlinedObjects.clear();
 
     int renderCount = 0;
     for (int i = 0; i < gObjectsUpdateAreaHexSize; i++) {
@@ -821,8 +827,8 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
                     if ((objectListNode->obj->flags & OBJECT_HIDDEN) == 0) {
                         _obj_render_object(objectListNode->obj, &updatedRect, lightIntensity);
 
-                        if (objectIsOutlined(objectListNode->obj) && _outlineCount < 100) {
-                            _outlinedObjects[_outlineCount++] = objectListNode->obj;
+                        if (objectIsOutlined(objectListNode->obj)) {
+                            outlinedObjects.push_back(objectListNode->obj);
                         }
                     }
                 }
@@ -857,8 +863,8 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
                 if ((objectListNode->obj->flags & OBJECT_HIDDEN) == 0) {
                     _obj_render_object(object, &updatedRect, lightIntensity);
 
-                    if (objectIsOutlined(objectListNode->obj) && _outlineCount < 100) {
-                        _outlinedObjects[_outlineCount++] = objectListNode->obj;
+                    if (objectIsOutlined(objectListNode->obj)) {
+                        outlinedObjects.push_back(objectListNode->obj);
                     }
                 }
             }
@@ -882,8 +888,8 @@ void _obj_render_post_roof(Rect* rect, int elevation)
         return;
     }
 
-    for (int index = 0; index < _outlineCount; index++) {
-        objectDrawOutline(_outlinedObjects[index], &updatedRect);
+    for (Object* object : outlinedObjects) {
+        objectDrawOutline(object, &updatedRect);
     }
 
     textObjectsRenderInRect(&updatedRect);
@@ -1432,6 +1438,11 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
             if (elevation == elev) {
                 if (FID_TYPE(obj->fid) == OBJ_TYPE_MISC) {
                     if (isExitGridPid(obj->pid)) {
+                        if ((obj->flags & OBJECT_HIDDEN) != 0) {
+                            objectListNode = objectListNode->next;
+                            continue;
+                        }
+
                         ObjectData* data = &(obj->data);
 
                         MapTransition transition;

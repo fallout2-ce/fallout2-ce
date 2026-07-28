@@ -33,11 +33,16 @@ typedef enum GameMovie {
     MOVIE_COUNT,
 } GameMovie;
 
+constexpr int GAME_MOVIE_MAX_COUNT = 32;
+
 int gameMoviesInit();
 void gameMoviesReset();
 int gameMoviesLoad(File* stream);
 int gameMoviesSave(File* stream);
 int gameMoviePlay(int movie, int flags);
+const char* gameMovieGetDefaultFileName(int movie);
+bool gameMovieSetPath(int movie, const char* fileName);
+void gameMovieMarkSeen(int movie);
 void gameMovieFadeOut();
 bool gameMovieIsSeen(int movie);
 bool gameMovieIsPlaying();

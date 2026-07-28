@@ -610,7 +610,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
     if (fileReadInt32(stream, &(ai->miss.start)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->miss.end)) == -1) return -1;
 
-    for (int index = 0; index < HIT_LOCATION_SPECIFIC_COUNT; index++) {
+    for (int index = HIT_LOCATION_FIRST; index < HIT_LOCATION_SPECIFIC_COUNT; index++) {
         AiMessageRange* range = &(ai->hit[index]);
         if (fileReadInt32(stream, &(range->start)) == -1) return -1;
         if (fileReadInt32(stream, &(range->end)) == -1) return -1;
@@ -654,7 +654,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
     if (fileWriteInt32(stream, ai->miss.start) == -1) return -1;
     if (fileWriteInt32(stream, ai->miss.end) == -1) return -1;
 
-    for (int index = 0; index < HIT_LOCATION_SPECIFIC_COUNT; index++) {
+    for (int index = HIT_LOCATION_FIRST; index < HIT_LOCATION_SPECIFIC_COUNT; index++) {
         AiMessageRange* range = &(ai->hit[index]);
         if (fileWriteInt32(stream, range->start) == -1) return -1;
         if (fileWriteInt32(stream, range->end) == -1) return -1;
@@ -1981,7 +1981,7 @@ static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode)
 
     AiPacket* ai = aiGetPacket(critter);
     if (result) {
-        int skill = weaponGetSkillForHitMode(weapon, hitMode);
+        Skill skill = weaponGetSkillForHitMode(weapon, hitMode);
         if (skillGetValue(critter, skill) < ai->min_to_hit) {
             result = false;
         }
@@ -1998,7 +1998,7 @@ static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode)
 // 0x4299A0
 Object* _ai_search_inven_weap(Object* critter, bool checkRequiredActionPoints, Object* defender)
 {
-    int bodyType = critterGetBodyType(critter);
+    BodyType bodyType = critterGetBodyType(critter);
     if (bodyType != BODY_TYPE_BIPED
         && bodyType != BODY_TYPE_ROBOTIC
         && critter->pid != PROTO_ID_GORIS) {
@@ -2062,7 +2062,7 @@ Object* _ai_search_inven_armor(Object* critter)
     if (armor != nullptr) {
         armorScore = armorGetArmorClass(armor);
 
-        for (int damageType = 0; damageType < DAMAGE_TYPE_COUNT; damageType++) {
+        for (DamageType damageType = DAMAGE_TYPE_FIRST; damageType < DAMAGE_TYPE_COUNT; damageType++) {
             armorScore += armorGetDamageResistance(armor, damageType);
             armorScore += armorGetDamageThreshold(armor, damageType);
         }
@@ -2081,7 +2081,7 @@ Object* _ai_search_inven_armor(Object* critter)
 
         if (armor != candidate) {
             int candidateScore = armorGetArmorClass(candidate);
-            for (int damageType = 0; damageType < DAMAGE_TYPE_COUNT; damageType++) {
+            for (DamageType damageType = DAMAGE_TYPE_FIRST; damageType < DAMAGE_TYPE_COUNT; damageType++) {
                 candidateScore += armorGetDamageResistance(candidate, damageType);
                 candidateScore += armorGetDamageThreshold(candidate, damageType);
             }
@@ -2128,7 +2128,7 @@ static bool aiCanUseItem(Object* critter, Object* item)
         return false;
     }
 
-    int killType = critterGetKillType(critter);
+    KillType killType = critterGetKillType(critter);
     if (killType != KILL_TYPE_MAN
         && killType != KILL_TYPE_WOMAN
         && killType != KILL_TYPE_SUPER_MUTANT
@@ -2661,7 +2661,7 @@ static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode h
                 }
 
                 if (critterGetStat(attacker, STAT_INTELLIGENCE) >= intelligenceRequired) {
-                    hitLocation = static_cast<HitLocation>(randomBetween(HIT_LOCATION_HEAD, HIT_LOCATION_SPECIFIC_COUNT));
+                    hitLocation = static_cast<HitLocation>(randomBetween(HIT_LOCATION_FIRST, HIT_LOCATION_SPECIFIC_COUNT));
                     int chanceToHit = _determine_to_hit(attacker, defender, hitLocation, hitMode);
                     if (chanceToHit < ai->min_to_hit) {
                         hitLocation = HIT_LOCATION_TORSO;
