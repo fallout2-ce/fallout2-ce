@@ -765,11 +765,25 @@ static const int wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
 };
 
 #define MAX_TRAIL_LENGTH 1000
+#define TRAIL_MARKER_STYLE_COUNT 4
+
+typedef struct TrailMarkerStyle {
+    int length;
+    int spacing;
+} TrailMarkerStyle;
 
 typedef struct {
     int x;
     int y;
 } TrailDot;
+
+typedef struct TrailMarkerState {
+    bool hasPattern;
+    int dotCount;
+    TrailDot dots[MAX_TRAIL_LENGTH];
+    int remainingDots;
+    int remainingSpacing;
+} TrailMarkerState;
 
 // 0x51DE94 wmLabelList
 static int* wmLabelList = nullptr;
@@ -944,6 +958,60 @@ static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
 static int worldmapTrailMarkers;
+static TrailMarkerState trailMarkerState = {};
+
+static const unsigned char worldmapTrailMarkerColor = 134;
+static const TrailMarkerStyle worldmapTrailMarkerStyles[TRAIL_MARKER_STYLE_COUNT] = {
+    { 1, 2 },
+    { 2, 1 },
+    { 1, 3 },
+    { 1, 2 },
+};
+
+static void wmAddTrailDot(TrailDot* trailDots, int* trailDotCount, int x, int y)
+{
+    if (*trailDotCount < MAX_TRAIL_LENGTH) {
+        trailDots[(*trailDotCount)++] = { x, y };
+    } else {
+        memmove(trailDots, trailDots + 1, sizeof(TrailDot) * (MAX_TRAIL_LENGTH - 1));
+        trailDots[MAX_TRAIL_LENGTH - 1] = { x, y };
+    }
+}
+
+static void wmAddTrailMarker(int terrainId, int x, int y)
+{
+    int styleIndex = std::clamp(terrainId, 0, TRAIL_MARKER_STYLE_COUNT - 1);
+    const TrailMarkerStyle* style = &(worldmapTrailMarkerStyles[styleIndex]);
+
+    if (!trailMarkerState.hasPattern) {
+        trailMarkerState.hasPattern = true;
+        trailMarkerState.remainingDots = style->length;
+        trailMarkerState.remainingSpacing = style->spacing;
+    } else {
+        trailMarkerState.remainingDots = std::min(trailMarkerState.remainingDots, style->length);
+        trailMarkerState.remainingSpacing = std::min(trailMarkerState.remainingSpacing, style->spacing);
+    }
+
+    if (trailMarkerState.remainingDots <= 0 && trailMarkerState.remainingSpacing > 0) {
+        trailMarkerState.remainingSpacing--;
+        if (trailMarkerState.remainingSpacing == 0) {
+            trailMarkerState.remainingDots = style->length;
+        }
+        return;
+    }
+
+    trailMarkerState.remainingDots--;
+    trailMarkerState.remainingSpacing = style->spacing;
+    wmAddTrailDot(trailMarkerState.dots, &(trailMarkerState.dotCount), x, y);
+}
+
+static void wmResetTrailMarkers()
+{
+    trailMarkerState.hasPattern = false;
+    trailMarkerState.dotCount = 0;
+    trailMarkerState.remainingDots = 0;
+    trailMarkerState.remainingSpacing = 0;
+}
 
 static inline bool cityIsValid(int city)
 {
@@ -1061,6 +1129,7 @@ static int wmGenDataInit()
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = 0;
     wmTerrainNameOverrides.clear();
+    wmResetTrailMarkers();
 
     return 0;
 }
@@ -1115,6 +1184,7 @@ static int wmGenDataReset()
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = 0;
     wmTerrainNameOverrides.clear();
+    wmResetTrailMarkers();
 
     return 0;
 }
@@ -1339,6 +1409,8 @@ int wmWorldMap_save(File* stream)
 // 0x4BD28C wmWorldMap_load
 int wmWorldMap_load(File* stream)
 {
+    wmResetTrailMarkers();
+
     if (fileReadBool(stream, &gDidMeetFrankHorrigan) == -1) return -1;
     if (fileReadInt32(stream, &(wmGenData.currentAreaId)) == -1) return -1;
     if (fileReadInt32(stream, &(wmGenData.worldPosX)) == -1) return -1;
@@ -3190,6 +3262,8 @@ static int wmWorldMapFunc(int a1)
 {
     ScopedGameMode gm(GameMode::kWorldmap);
 
+    wmResetTrailMarkers();
+
     wmFadeOut();
 
     if (wmInterfaceInit() == -1) {
@@ -4650,6 +4724,12 @@ static void wmPartyWalkingStep()
                 false);
         }
 
+        if (worldmapTrailMarkers) {
+            SubtileInfo* markerSubtile;
+            wmFindCurSubTileFromPos(wmGenData.worldPosX, wmGenData.worldPosY, &markerSubtile);
+            wmAddTrailMarker(markerSubtile->terrain, wmGenData.worldPosX, wmGenData.worldPosY);
+        }
+
         wmGenData.walkDistance -= 1;
         if (wmGenData.walkDistance == 0) {
             wmGenData.walkDestinationY = 0;
@@ -5978,70 +6058,23 @@ static int wmDrawCursorStopped()
     // Dotted Trail logic
 
     if (worldmapTrailMarkers) {
-        static bool wasWalking = false;
-        static uint32_t lastTrailDropTick = 0;
-        const int baseCooldown = 25; // base time between potential dot drops
-        static int trailDotCount = 0;
-        static TrailDot trailDots[MAX_TRAIL_LENGTH];
-        static int patternCounter = 0;
-
         // Clear the trail when player stops - needs to be done when reloading map too
-        if (wasWalking && !isWalkingNow) {
-            trailDotCount = 0;
-        }
-        wasWalking = isWalkingNow;
-
-        if (isWalkingNow) {
-            uint32_t now = getTicks();
-            if (now - lastTrailDropTick >= baseCooldown) {
-                lastTrailDropTick = now;
-                patternCounter++;
-
-                // Figure out current terrain difficulty
-                wmPartyFindCurSubTile();
-                int difficulty = 1;
-                if (wmGenData.currentSubtile) {
-                    Terrain* t = &wmTerrainTypeList[wmGenData.currentSubtile->terrain];
-                    difficulty = t->difficulty;
-                    if (difficulty < 1) difficulty = 1;
-                }
-
-                // Decide whether to drop on this step, based on terrain (difficulty)
-                bool shouldDrop;
-                if (difficulty >= 4) {
-                    shouldDrop = (patternCounter % 4) != 0; // Drop 3 out of every 4 steps --- used?
-                } else if (difficulty == 3) {
-                    shouldDrop = (patternCounter % 3) != 0; // Drop 2 out of every 3
-                } else if (difficulty == 2) {
-                    shouldDrop = (patternCounter % 2) == 0; // Drop every other step
-                } else {
-                    shouldDrop = (patternCounter % 3) == 0; // Drop only once every 3 steps
-                }
-
-                if (shouldDrop) {
-                    int cx = wmGenData.worldPosX;
-                    int cy = wmGenData.worldPosY;
-                    if (trailDotCount < MAX_TRAIL_LENGTH) {
-                        trailDots[trailDotCount++] = { cx, cy };
-                    } else {
-                        // shift left, add more dots
-                        memmove(trailDots, trailDots + 1, sizeof(TrailDot) * (MAX_TRAIL_LENGTH - 1));
-                        trailDots[MAX_TRAIL_LENGTH - 1] = { cx, cy };
-                    }
-                }
-            }
+        if (!isWalkingNow) {
+            wmResetTrailMarkers();
         }
 
         // Render the trail dots
-        for (int i = 0; i < trailDotCount; i++) {
-            int x = trailDots[i].x;
-            int y = trailDots[i].y;
+        for (int i = 0; i < trailMarkerState.dotCount; i++) {
+            int x = trailMarkerState.dots[i].x;
+            int y = trailMarkerState.dots[i].y;
             if (x >= wmWorldOffsetX && x < wmWorldOffsetX + WM_VIEW_WIDTH
                 && y >= wmWorldOffsetY && y < wmWorldOffsetY + WM_VIEW_HEIGHT) {
+                int screenY = WM_VIEW_Y - wmWorldOffsetY + y;
+                int screenX = WM_VIEW_X - wmWorldOffsetX + x;
                 unsigned char* dst = wmBkWinBuf
-                    + WM_WINDOW_WIDTH * (WM_VIEW_Y - wmWorldOffsetY + y)
-                    + (WM_VIEW_X - wmWorldOffsetX + x);
-                *dst = 136; // bright-red palette index? - not matching perfectly, what palette is being used?
+                    + WM_WINDOW_WIDTH * screenY
+                    + screenX;
+                *dst = worldmapTrailMarkerColor;
             }
         }
     }
