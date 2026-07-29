@@ -366,7 +366,7 @@ void sfall_kb_clear_synthetic_key_events()
 
 int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
 {
-    if (!gGameLoaded) return SDL_SCANCODE_UNKNOWN;
+    if (!gGameLoaded) return -1;
 
     ScriptHookCall hook(HOOK_KEYPRESS, 1, {
                                               pressed ? 1 : 0, get_key_from_scancode(static_cast<SDL_Scancode>(sdlScanCode)),
@@ -375,7 +375,7 @@ int sfall_kb_handle_key_pressed(int sdlScanCode, bool pressed)
     hook.call();
 
     if (hook.numReturnValues() <= 0) {
-        return SDL_SCANCODE_UNKNOWN;
+        return -1;
     }
 
     int overrideDxCode = hook.getReturnValueAt(0).asInt();

@@ -1023,7 +1023,10 @@ void _GNW95_process_message()
             if (!keyboardIsDisabled()) {
                 if (!e.key.repeat && !syntheticSfallKey) {
                     int keyOverride = sfall_kb_handle_key_pressed(keyboardData.key, keyboardData.down);
-                    if (keyOverride != SDL_SCANCODE_UNKNOWN) {
+                    if (keyOverride == SDL_SCANCODE_UNKNOWN) {
+                        break;
+                    }
+                    if (keyOverride != -1) {
                         keyboardData.key = keyOverride;
                     }
                 }

@@ -1670,6 +1670,12 @@ void GameMode::exitGameMode(int gameMode)
     }
 }
 
+// remove game mode without triggering hooks
+void GameMode::exitGameModeQuietly(int gameMode)
+{
+    currentGameMode &= ~gameMode;
+}
+
 bool GameMode::isInGameMode(int gameMode)
 {
     return (currentGameMode & gameMode) != 0;
