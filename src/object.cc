@@ -827,7 +827,7 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
                     if ((objectListNode->obj->flags & OBJECT_HIDDEN) == 0) {
                         _obj_render_object(objectListNode->obj, &updatedRect, lightIntensity);
 
-                        if (objectIsOutlined(objectListNode->obj)) {
+                        if (objectHasVisibleOutline(objectListNode->obj)) {
                             outlinedObjects.push_back(objectListNode->obj);
                         }
                     }
@@ -863,7 +863,7 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
                 if ((objectListNode->obj->flags & OBJECT_HIDDEN) == 0) {
                     _obj_render_object(object, &updatedRect, lightIntensity);
 
-                    if (objectIsOutlined(objectListNode->obj)) {
+                    if (objectHasVisibleOutline(objectListNode->obj)) {
                         outlinedObjects.push_back(objectListNode->obj);
                     }
                 }
@@ -1888,7 +1888,7 @@ int objectHide(Object* object, Rect* rect)
 
     object->flags |= OBJECT_HIDDEN;
 
-    if (objectIsOutlined(object)) {
+    if (objectHasOutline(object)) {
         object->outline |= OUTLINE_DISABLED;
     }
 
@@ -1926,7 +1926,7 @@ int objectDisableOutline(Object* object, Rect* rect)
         return -1;
     }
 
-    if (objectIsOutlined(object)) {
+    if (objectHasOutline(object)) {
         object->outline |= OUTLINE_DISABLED;
     }
 
@@ -2342,7 +2342,7 @@ void objectGetRect(Object* obj, Rect* rect)
         return;
     }
 
-    bool isOutlined = objectIsOutlined(obj);
+    bool isOutlined = objectHasOutline(obj);
 
     CacheEntry* artHandle;
     Art* art = artLock(obj->fid, &artHandle);
@@ -2892,11 +2892,6 @@ void _intensity_mask_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight,
     }
 }
 
-bool objectIsOutlined(Object* obj)
-{
-    return obj != nullptr && (obj->outline & OUTLINE_TYPE_MASK) != 0 && (obj->outline & OUTLINE_DISABLED) == 0;
-}
-
 // 0x48C2B4 obj_outline_object
 int objectSetOutline(Object* obj, int outlineType, Rect* rect)
 {
@@ -2904,7 +2899,7 @@ int objectSetOutline(Object* obj, int outlineType, Rect* rect)
         return -1;
     }
 
-    if (objectIsOutlined(obj)) {
+    if (objectHasOutline(obj)) {
         return -1;
     }
 
