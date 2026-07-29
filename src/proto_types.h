@@ -69,7 +69,8 @@ enum DamageType : int {
     DAMAGE_TYPE_FIRST = DAMAGE_TYPE_NORMAL,
 };
 
-inline Stat operator+(Stat lhs, DamageType rhs) {
+inline Stat operator+(Stat lhs, DamageType rhs)
+{
     return static_cast<Stat>(static_cast<int>(lhs) + static_cast<int>(rhs));
 }
 
