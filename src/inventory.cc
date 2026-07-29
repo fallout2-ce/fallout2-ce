@@ -415,7 +415,7 @@ static int inventoryGetCenteredWindowY(int windowHeight);
 static void displayLootPanePartyName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index);
 
 // 0x46E6D0 stats_array0
-static const int gSummaryStats[7] = {
+static const Stat gSummaryStats[7] = {
     STAT_CURRENT_HIT_POINTS,
     STAT_ARMOR_CLASS,
     STAT_DAMAGE_THRESHOLD,
@@ -426,9 +426,9 @@ static const int gSummaryStats[7] = {
 };
 
 // 0x46E6EC stats_array1
-static const int gSummaryStats2[7] = {
+static const Stat gSummaryStats2[7] = {
     STAT_MAXIMUM_HIT_POINTS,
-    -1,
+    STAT_INVALID,
     STAT_DAMAGE_RESISTANCE,
     STAT_DAMAGE_RESISTANCE_LASER,
     STAT_DAMAGE_RESISTANCE_FIRE,
@@ -3475,7 +3475,7 @@ static void inventoryRenderSummary()
             fontDrawText(windowBuffer + offset + 40, messageListItem.text, 80, pitch, COLOR_GREEN);
         }
 
-        if (summaryStats2[index] == -1) {
+        if (summaryStats2[index] == STAT_INVALID) {
             int value = critterGetStat(_stack[0], summaryStats[index]);
             snprintf(formattedText, sizeof(formattedText), "   %d", value);
         } else {
