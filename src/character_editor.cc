@@ -3753,19 +3753,9 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
         return;
     }
 
-    int incrementingStatRaw = eventCode - 503;
-    int decrementingStatRaw = eventCode - 510;
-
-    if (!statIsValid(incrementingStatRaw)) {
-        debugPrint("\n%s: Invalid incrementing Stat value %d", __func__, incrementingStatRaw);
-    }
-
-    if (!statIsValid(decrementingStatRaw)) {
-        debugPrint("\n%s: Invalid decrementing Stat value %d", __func__, decrementingStatRaw);
-    }
-
-    Stat incrementingStat = static_cast<Stat>(incrementingStatRaw);
-    Stat decrementingStat = static_cast<Stat>(decrementingStatRaw);
+    // TODO: check as it can result in negative decrementingStat values
+    Stat incrementingStat = static_cast<Stat>(eventCode - 503);
+    Stat decrementingStat = static_cast<Stat>(eventCode - 510);
 
     int v11 = 0;
 
