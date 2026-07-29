@@ -1994,9 +1994,9 @@ int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr
         knockbackDistancePtr = nullptr;
     }
 
-    int damage = randomBetween(min, max) - critterGetStat(obj, static_cast<Stat>(STAT_DAMAGE_THRESHOLD + damageType));
+    int damage = randomBetween(min, max) - critterGetStat(obj, STAT_DAMAGE_THRESHOLD + damageType);
     if (damage > 0) {
-        damage -= critterGetStat(obj, static_cast<Stat>(STAT_DAMAGE_RESISTANCE + damageType)) * damage / 100;
+        damage -= critterGetStat(obj, STAT_DAMAGE_RESISTANCE + damageType) * damage / 100;
     }
 
     if (damage < 0) {

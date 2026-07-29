@@ -3090,9 +3090,10 @@ static void characterEditorDrawCard()
     blitBufferToBuffer(_editorBackgroundFrmImage.getData() + (640 * 267) + 345, 277, 170, 640, gCharacterEditorWindowBuffer + (267 * 640) + 345, 640);
 
     if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
-        description = statGetDescription(static_cast<Stat>(characterEditorSelectedItem));
-        title = statGetName(static_cast<Stat>(characterEditorSelectedItem));
-        graphicId = statGetFrmId(static_cast<Stat>(characterEditorSelectedItem));
+        Stat characterEditorSelectedItemStat = static_cast<Stat>(characterEditorSelectedItem);
+        description = statGetDescription(characterEditorSelectedItemStat);
+        title = statGetName(characterEditorSelectedItemStat);
+        graphicId = statGetFrmId(characterEditorSelectedItemStat);
         characterEditorDrawCardWithOptions(graphicId, title, nullptr, description);
     } else if (characterEditorSelectedItem >= EDITOR_LEVEL && characterEditorSelectedItem <= EDITOR_NEXT_LEVEL) {
         if (gCharacterEditorIsCreationMode) {
@@ -3752,8 +3753,19 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
         return;
     }
 
-    Stat incrementingStat = static_cast<Stat>(eventCode - 503);
-    Stat decrementingStat = static_cast<Stat>(eventCode - 510);
+    int incrementingStatRaw = eventCode - 503;
+    int decrementingStatRaw = eventCode - 510;
+
+    if (!statIsValid(incrementingStatRaw)) {
+        debugPrint("\n%s: Invalid incrementing Stat value %d", __func__, incrementingStatRaw);
+    }
+
+    if (!statIsValid(decrementingStatRaw)) {
+        debugPrint("\n%s: Invalid decrementing Stat value %d", __func__, decrementingStatRaw);
+    }
+
+    Stat incrementingStat = static_cast<Stat>(incrementingStatRaw);
+    Stat decrementingStat = static_cast<Stat>(decrementingStatRaw);
 
     int v11 = 0;
 

@@ -2343,8 +2343,8 @@ static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weap
                 && !critterIsDead(candidate)) {
                 int v14 = objectGetDistanceBetween(defender, candidate);
                 if (v14 < damageRadius && candidate != candidate->data.critter.combat.whoHitMe) {
-                    int damageThreshold = critterGetStat(candidate, static_cast<Stat>(STAT_DAMAGE_THRESHOLD + damageType));
-                    int damageResistance = critterGetStat(candidate, static_cast<Stat>(STAT_DAMAGE_RESISTANCE + damageType));
+                    int damageThreshold = critterGetStat(candidate, STAT_DAMAGE_THRESHOLD + damageType);
+                    int damageResistance = critterGetStat(candidate, STAT_DAMAGE_RESISTANCE + damageType);
                     if (damageResistance * (maxDamage - damageThreshold) / 100 > 0) {
                         return true;
                     }
@@ -2393,8 +2393,8 @@ static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weap
             && candidate != defender
             && !critterIsDead(candidate)
             && candidate != candidate->data.critter.combat.whoHitMe) {
-            int damageThreshold = critterGetStat(candidate, static_cast<Stat>(STAT_DAMAGE_THRESHOLD + damageType));
-            int damageResistance = critterGetStat(candidate, static_cast<Stat>(STAT_DAMAGE_RESISTANCE + damageType));
+            int damageThreshold = critterGetStat(candidate, STAT_DAMAGE_THRESHOLD + damageType);
+            int damageResistance = critterGetStat(candidate, STAT_DAMAGE_RESISTANCE + damageType);
             if (damageResistance * (maxDamage - damageThreshold) / 100 > 0) {
                 return true;
             }
@@ -4651,8 +4651,8 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
     }
 
     DamageType damageType = weaponGetDamageType(attack->attacker, attack->weapon);
-    int damageThreshold = critterGetStat(critter, static_cast<Stat>(STAT_DAMAGE_THRESHOLD + damageType));
-    int damageResistance = critterGetStat(critter, static_cast<Stat>(STAT_DAMAGE_RESISTANCE + damageType));
+    int damageThreshold = critterGetStat(critter, STAT_DAMAGE_THRESHOLD + damageType);
+    int damageResistance = critterGetStat(critter, STAT_DAMAGE_RESISTANCE + damageType);
 
     if ((*flagsPtr & DAM_BYPASS) != 0 && damageType != DAMAGE_TYPE_EMP) {
         damageThreshold = 20 * damageThreshold / 100;
