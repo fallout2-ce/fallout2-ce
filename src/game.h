@@ -82,6 +82,7 @@ public:
 
     static void enterGameMode(int gameMode);
     static void exitGameMode(int gameMode);
+    static void exitGameModeQuietly(int gameMode);
     static bool isInGameMode(int gameMode);
     static int getCurrentGameMode() { return currentGameMode; }
 

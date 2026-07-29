@@ -18,6 +18,11 @@ static constexpr int kGlobalScriptBusyFlags = PROGRAM_FLAG_FATAL_ERROR
     | PROGRAM_FLAG_CHILD_CALL
     | PROGRAM_FLAG_CHILD_SPAWN;
 
+// sfall runs global script procs directly. CE keeps globals outside the normal
+// program list, so pending callbacks are resumed here; use a large bounded burst
+// to avoid stretching UI callbacks over multiple frames.
+static constexpr int kGlobalScriptContinuationBurstSize = 100;
+
 struct GlobalScript {
     Program* program = nullptr;
     int procs[SCRIPT_PROC_COUNT] = { 0 };
@@ -236,8 +241,9 @@ bool sfall_gl_scr_is_loaded(Program* program)
 
 void sfall_gl_scr_update(int burstSize)
 {
+    int globalScriptBurstSize = std::max(burstSize, kGlobalScriptContinuationBurstSize);
     for (auto& scr : state->globalScripts) {
-        programInterpret(scr.program, burstSize);
+        programInterpret(scr.program, globalScriptBurstSize);
     }
 }
 
