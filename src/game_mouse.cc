@@ -702,8 +702,34 @@ void gameMouseRefresh()
                 Object* pointedObject = gameMouseGetObjectUnderCursor(-1, true, gElevation);
                 if (pointedObject != nullptr) {
                     int primaryAction = -1;
+                    int objectType = FID_TYPE(pointedObject->fid);
+                    switch (objectType) {
+                    case OBJ_TYPE_SCENERY:
+                    case OBJ_TYPE_WALL:
+                    case OBJ_TYPE_MISC: {
+                        // if the pointedObject is OBJ_TYPE_SCENERY/OBJ_TYPE_WALL/OBJ_TYPE_MISC object then try to find possible itemObject behind it
+                        // this must be in sync with the switch/case in _gmouse_handle_event
+                        Object* itemObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
+                        bool itemIsOutlined = objectHasVisibleOutline(itemObject);
 
-                    switch (FID_TYPE(pointedObject->fid)) {
+                        // filter out potential itemObject behind usable scenery which is not outlined already
+                        if (!itemIsOutlined && _obj_action_can_use(pointedObject)) {
+                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
+                            break;
+                        }
+
+                        bool canBeShootOrSeenThroughObject = (pointedObject->flags & OBJECT_SHOOT_THRU) != 0 || (pointedObject->flags & OBJECT_LIGHT_THRU) != 0;
+
+                        // filter out not found itemObject and itemObject behind the blocking walls which is not outlined already
+                        if (itemObject == nullptr || (!itemIsOutlined && objectType == OBJ_TYPE_WALL && !canBeShootOrSeenThroughObject)) {
+                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
+                            break;
+                        }
+
+                        // intentionally fall trough the OBJ_TYPE_ITEM to enforce auto outlining of the itemObject and changing the mouse action menu
+                        pointedObject = itemObject;
+                    }
+                    // FALLTHROUGH
                     case OBJ_TYPE_ITEM:
                         primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                         if (gGameMouseItemHighlightEnabled) {
@@ -732,16 +758,6 @@ void gameMouseRefresh()
                                 }
                             }
                         }
-                        break;
-                    case OBJ_TYPE_SCENERY:
-                        if (!_obj_action_can_use(pointedObject)) {
-                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
-                        } else {
-                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
-                        }
-                        break;
-                    case OBJ_TYPE_WALL:
-                        primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
                         break;
                     }
 
@@ -993,6 +1009,28 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
             Object* targetObj = gameMouseGetObjectUnderCursor(-1, true, gElevation);
             if (targetObj != nullptr) {
                 switch (FID_TYPE(targetObj->fid)) {
+                case OBJ_TYPE_WALL:
+                case OBJ_TYPE_SCENERY:
+                case OBJ_TYPE_MISC: {
+                    // if the targetObj is OBJ_TYPE_SCENERY/OBJ_TYPE_WALL/OBJ_TYPE_MISC object then it allows to pickup outlined itemObj potentially behind it
+                    // this must be in sync with the switch/case in gameMouseRefresh
+                    Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
+                    if (!objectHasVisibleOutline(itemObj)) {
+                        if (_obj_action_can_use(targetObj)) {
+                            _action_use_an_object(gDude, targetObj);
+                            break;
+                        }
+
+                        if (objectExamine(gDude, targetObj) == -1) {
+                            objectLookAt(gDude, targetObj);
+                        }
+                        break;
+                    }
+
+                    // intentionally fall through the OBJ_TYPE_ITEM to enforce actionPickUp
+                    targetObj = itemObj;
+                }
+                // FALLTHROUGH
                 case OBJ_TYPE_ITEM:
                     actionPickUp(gDude, targetObj);
                     break;
@@ -1016,20 +1054,6 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         } else {
                             actionLootCritter(gDude, targetObj);
                         }
-                    }
-                    break;
-                case OBJ_TYPE_SCENERY:
-                    if (_obj_action_can_use(targetObj)) {
-                        _action_use_an_object(gDude, targetObj);
-                    } else {
-                        if (objectExamine(gDude, targetObj) == -1) {
-                            objectLookAt(gDude, targetObj);
-                        }
-                    }
-                    break;
-                case OBJ_TYPE_WALL:
-                    if (objectExamine(gDude, targetObj) == -1) {
-                        objectLookAt(gDude, targetObj);
                     }
                     break;
                 }
