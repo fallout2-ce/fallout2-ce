@@ -729,6 +729,8 @@ unsigned char* circleBlendTable = nullptr;
 // 0x51DE38 wmInterfaceWasInitialized
 static int wmInterfaceWasInitialized = 0;
 
+static int carInterfaceArtFrmId = 433;
+
 // 0x51DE3C wmEncOpStrs
 static const char* wmEncOpStrs[ENCOUNTER_SITUATION_COUNT] = {
     "nothing",
@@ -5123,7 +5125,7 @@ static int wmInterfaceInit()
 
     if (wmGenData.isInCar) {
         // wmcarmve.frm - worldmap car movie
-        fid = buildFid(OBJ_TYPE_INTERFACE, 433, 0, 0, 0);
+        fid = buildFid(OBJ_TYPE_INTERFACE, carInterfaceArtFrmId, 0, 0, 0);
         wmGenData.carImageFrm = artLock(fid, &(wmGenData.carImageFrmHandle));
         if (wmGenData.carImageFrm == nullptr) {
             return -1;
@@ -6671,6 +6673,33 @@ int wmCarFillGas(int amount)
 int wmCarGasAmount()
 {
     return wmGenData.carFuel;
+}
+
+void wmSetCarInterfaceArt(int artIndex)
+{
+    carInterfaceArtFrmId = artIndex;
+
+    if (wmGenData.carImageFrm == nullptr) {
+        return;
+    }
+
+    CacheEntry* handle = INVALID_CACHE_ENTRY;
+    int fid = buildFid(OBJ_TYPE_INTERFACE, carInterfaceArtFrmId, 0, 0, 0);
+    Art* art = artLock(fid, &handle);
+    if (art == nullptr) {
+        return;
+    }
+
+    artUnlock(wmGenData.carImageFrmHandle);
+    wmGenData.carImageFrmHandle = handle;
+    wmGenData.carImageFrm = art;
+    wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm, 0, 0);
+    wmGenData.carImageFrmHeight = artGetHeight(wmGenData.carImageFrm, 0, 0);
+
+    int frameCount = artGetFrameCount(wmGenData.carImageFrm);
+    if (frameCount <= 0 || wmGenData.carImageCurrentFrameIndex >= frameCount) {
+        wmGenData.carImageCurrentFrameIndex = 0;
+    }
 }
 
 // 0x4C4E7C wmCarIsOutOfGas

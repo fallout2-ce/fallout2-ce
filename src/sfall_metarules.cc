@@ -801,6 +801,7 @@ static void mf_opcode_exists(OpcodeContext& ctx);
 static void mf_outlined_object(OpcodeContext& ctx);
 static void mf_real_dude_obj(OpcodeContext& ctx);
 static void mf_remove_wm_town_names(OpcodeContext& ctx);
+static void mf_set_car_intface_art(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
@@ -894,7 +895,7 @@ const MetaruleInfo kMetarules[] = {
     // {"remove_timer_event",        mf_remove_timer_event,        0, 1, -1, {ARG_INT}},
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"set_can_rest_on_map",       mf_set_rest_on_map,           3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
-    // {"set_car_intface_art",       mf_set_car_intface_art,       1, 1, -1, {ARG_INT}},
+    { "set_car_intface_art", mf_set_car_intface_art, 1, 1, -1, { ARG_INT } },
     { "set_combat_free_move", mf_set_combat_free_move, 1, 1, -1, { ARG_INT } },
     { "set_cursor_mode", mf_set_cursor_mode, 1, 1, -1, { ARG_INT } },
     // {"set_drugs_data",            mf_set_drugs_data,            3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
@@ -1096,6 +1097,11 @@ void mf_attack_is_aimed(OpcodeContext& ctx)
 void mf_car_gas_amount(OpcodeContext& ctx)
 {
     ctx.setReturn(wmCarGasAmount());
+}
+
+void mf_set_car_intface_art(OpcodeContext& ctx)
+{
+    wmSetCarInterfaceArt(ctx.arg(0).asInt());
 }
 
 void mf_combat_data(OpcodeContext& ctx)
