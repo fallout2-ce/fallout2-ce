@@ -31,7 +31,9 @@ bool quickToolbarHandleTap(int x, int y);
 
 #else
 
-inline void quickToolbarInit() { }
+inline void quickToolbarInit()
+{
+}
 inline void quickToolbarFree() { }
 inline void quickToolbarShow() { }
 inline void quickToolbarHide() { }

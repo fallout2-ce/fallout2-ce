@@ -190,7 +190,7 @@ docker run --rm -v $(pwd):/src emscripten/emsdk:3.1.74 sh -c 'git config --globa
 
 ## Contributing
 
-For build instructions and contributor notes, see [CONTRIBUTING.md](CONTRIBUTING.md).
+For build instructions and contributor notes, see [CONTRIBUTING.md](CONTRIBUTING.md). To optionally format staged C++ files on commit: `git config --local core.hooksPath .githooks` (once per clone).
 
 Integrating Sfall goodies is the top priority. Quality of life updates are OK too.  In any case open up an issue with your suggestion or to notify other people that something is being worked on.
 

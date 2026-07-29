@@ -29,12 +29,12 @@ enum ObjectType {
     OBJ_TYPE_COUNT,
 };
 
-#define FID_TYPE(value) ((value) & 0xF000000) >> 24
+#define FID_TYPE(value) ((value)&0xF000000) >> 24
 #define PID_TYPE(value) (value) >> 24
 #define SID_TYPE(value) (value) >> 24
 
-#define FID_WEAPON_CODE(fid) (((fid) & 0xF000) >> 12)
-#define FID_ROTATION(fid) (((fid) & 0x70000000) >> 28)
+#define FID_WEAPON_CODE(fid) (((fid)&0xF000) >> 12)
+#define FID_ROTATION(fid) (((fid)&0x70000000) >> 28)
 
 typedef enum OutlineType {
     OUTLINE_TYPE_HOSTILE = 1,
