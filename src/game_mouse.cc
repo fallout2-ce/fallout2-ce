@@ -1026,7 +1026,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         }
                         break;
                     }
-                    
+
                     // intentionally fall through the OBJ_TYPE_ITEM to enforce actionPickUp
                     targetObj = itemObj;
                 }

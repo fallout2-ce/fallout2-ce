@@ -104,11 +104,13 @@ void _obj_fix_violence_settings(int* fid);
 Object* objectTypedFindById(int id, int type);
 bool isExitGridAt(int tile, int elevation);
 
-inline bool objectHasOutline(Object* obj) {
+inline bool objectHasOutline(Object* obj)
+{
     return obj != nullptr && (obj->outline & OUTLINE_TYPE_MASK) != 0;
 }
 
-inline bool objectHasVisibleOutline(Object* obj) {
+inline bool objectHasVisibleOutline(Object* obj)
+{
     return objectHasOutline(obj) && (obj->outline & OUTLINE_DISABLED) == 0;
 }
 
