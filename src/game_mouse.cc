@@ -713,7 +713,7 @@ void gameMouseRefresh()
                         bool itemIsOutlined = objectHasVisibleOutline(itemObject);
 
                         // filter out potential itemObject behind usable scenery which is not outlined already
-                        if (!itemIsOutlined && _obj_action_can_use(pointedObject)) {
+                        if (!itemIsOutlined && objectType == OBJ_TYPE_SCENERY && _obj_action_can_use(pointedObject)) {
                             primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                             break;
                         }
@@ -721,6 +721,10 @@ void gameMouseRefresh()
                         bool canBeShootOrSeenThroughObject = (pointedObject->flags & OBJECT_SHOOT_THRU) != 0 || (pointedObject->flags & OBJECT_LIGHT_THRU) != 0;
 
                         // filter out not found itemObject and itemObject behind the blocking walls which is not outlined already
+                        if (objectType == OBJ_TYPE_MISC && itemObject == nullptr) {
+                            break;
+                        }
+
                         if (itemObject == nullptr || (!itemIsOutlined && objectType == OBJ_TYPE_WALL && !canBeShootOrSeenThroughObject)) {
                             primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
                             break;
@@ -1016,12 +1020,13 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     // this must be in sync with the switch/case in gameMouseRefresh
                     Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
                     if (!objectHasVisibleOutline(itemObj)) {
-                        if (_obj_action_can_use(targetObj)) {
+                        int objectType = FID_TYPE(targetObj->fid);
+                        if (objectType == OBJ_TYPE_SCENERY && _obj_action_can_use(targetObj)) {
                             _action_use_an_object(gDude, targetObj);
                             break;
                         }
 
-                        if (objectExamine(gDude, targetObj) == -1) {
+                        if (objectType != OBJ_TYPE_MISC && objectExamine(gDude, targetObj) == -1) {
                             objectLookAt(gDude, targetObj);
                         }
                         break;
