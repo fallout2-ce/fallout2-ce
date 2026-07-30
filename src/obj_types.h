@@ -12,6 +12,7 @@ typedef enum Rotation {
     ROTATION_W, // 4
     ROTATION_NW, // 5
     ROTATION_COUNT,
+    ROTATION_FIRST = ROTATION_NE,
 } Rotation;
 
 enum ObjectType {
