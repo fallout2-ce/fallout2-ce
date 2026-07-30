@@ -4,6 +4,7 @@
 #include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
+#include "perk_defs.h"
 #include "proto_instance.h"
 #include "proto_types.h"
 #include "skill_defs.h"
@@ -105,7 +106,7 @@ int weaponGetAmmoDamageDivisor(Object* weapon);
 int armorGetArmorClass(Object* armor);
 int armorGetDamageResistance(Object* armor, DamageType damageType);
 int armorGetDamageThreshold(Object* armor, DamageType damageType);
-int armorGetPerk(Object* armor);
+Perk armorGetPerk(Object* armor);
 int armorGetMaleFid(Object* armor);
 int armorGetFemaleFid(Object* armor);
 int miscItemGetMaxCharges(Object* miscItem);

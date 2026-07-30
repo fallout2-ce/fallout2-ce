@@ -1,6 +1,7 @@
 #ifndef PROTO_TYPES_H
 #define PROTO_TYPES_H
 
+#include "perk_defs.h"
 #include "skill_defs.h"
 #include "stat_defs.h"
 
@@ -313,7 +314,7 @@ typedef struct {
     int armorClass; // d.ac
     int damageResistance[7]; // d.dam_resist
     int damageThreshold[7]; // d.dam_thresh
-    int perk; // d.perk
+    Perk perk; // d.perk
     int maleFid; // d.male_fid
     int femaleFid; // d.female_fid
 } ProtoItemArmorData;
@@ -331,7 +332,7 @@ typedef struct {
     int duration2; // d.duration2
     int amount2[3]; // d.amount2
     int addictionChance; // d.addiction_chance
-    int withdrawalEffect; // d.withdrawal_effect
+    Perk withdrawalEffect; // d.withdrawal_effect
     int withdrawalOnset; // d.withdrawal_onset
 } ProtoItemDrugData;
 
@@ -347,7 +348,7 @@ typedef struct {
     int actionPointCost1; // d.mp_cost1
     int actionPointCost2; // d.mp_cost2
     int criticalFailureType; // d.crit_fail_table
-    int perk; // d.perk
+    Perk perk; // d.perk
     int rounds; // d.rounds
     int caliber; // d.caliber
     int ammoTypePid; // d.ammo_type_pid

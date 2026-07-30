@@ -3077,12 +3077,12 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 
     if (objectIsPartyMember(critter)) {
         if (oldArmor != nullptr) {
-            int perk = armorGetPerk(oldArmor);
+            Perk perk = armorGetPerk(oldArmor);
             perkRemoveEffect(critter, perk);
         }
 
         if (newArmor != nullptr) {
-            int perk = armorGetPerk(newArmor);
+            Perk perk = armorGetPerk(newArmor);
             perkAddEffect(critter, perk);
         }
     }

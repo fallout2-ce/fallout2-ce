@@ -2126,7 +2126,6 @@ static void characterEditorDrawPerksFolder()
 {
     const char* string;
     char perkName[80];
-    int perk;
     int perkLevel;
     bool hasContent = false;
 
@@ -2168,7 +2167,8 @@ static void characterEditorDrawPerksFolder()
         }
     }
 
-    for (perk = 0; perk < PERK_COUNT; perk++) {
+    Perk perk;
+    for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
         if (perkGetRank(gDude, perk) != 0) {
             break;
         }
@@ -2179,7 +2179,7 @@ static void characterEditorDrawPerksFolder()
         string = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 109);
         characterEditorFolderViewDrawHeading(string);
 
-        for (perk = 0; perk < PERK_COUNT; perk++) {
+        for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
             perkLevel = perkGetRank(gDude, perk);
             if (perkLevel != 0) {
                 string = perkGetName(perk);
@@ -4538,7 +4538,7 @@ static int characterPrintToFile(const char* fileName)
         }
     }
 
-    int perk = 0;
+    Perk perk = PERK_FIRST;
     for (; perk < PERK_COUNT; perk++) {
         if (perkGetRank(gDude, perk) != 0) {
             break;
@@ -4550,7 +4550,7 @@ static int characterPrintToFile(const char* fileName)
         snprintf(title1, sizeof(title1), "%s\n", getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 651));
         fileWriteString(title1, stream);
 
-        for (perk = 0; perk < PERK_COUNT; perk++) {
+        for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
             int rank = perkGetRank(gDude, perk);
             if (rank != 0) {
                 if (rank == 1) {
@@ -4853,7 +4853,7 @@ static void characterEditorSavePlayer()
     strncpy(gCharacterEditorNameBackup, critterGetName(gDude), 32);
 
     gCharacterEditorLastLevelBackup = gCharacterEditorLastLevel;
-    for (int perk = 0; perk < PERK_COUNT; perk++) {
+    for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
         gCharacterEditorPerksBackup[perk] = perkGetRank(gDude, perk);
     }
 
@@ -5761,7 +5761,7 @@ static int characterEditorUpdateLevel()
             pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, sp);
 
             int selectedPerksCount = 0;
-            for (int perk = 0; perk < PERK_COUNT; perk++) {
+            for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
                 if (perkGetRank(gDude, perk) != 0) {
                     selectedPerksCount += 1;
                     if (selectedPerksCount >= 37) {
@@ -5819,7 +5819,7 @@ static void perkDialogRefreshPerks()
     perkDialogDrawPerks();
 
     // NOTE: Original code is slightly different, but basically does the same thing.
-    int perk = gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value;
+    Perk perk = static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
     int perkFrmId = perkGetFrmId(perk);
     char* perkName = perkGetName(perk);
     char* perkDescription = perkGetDescription(perk);
@@ -5972,7 +5972,7 @@ static int perkDialogShow()
     int count = perkDialogDrawPerks();
 
     // NOTE: Original code is slightly different, but does the same thing.
-    int perk = gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value;
+    Perk perk = static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
     int perkFrmId = perkGetFrmId(perk);
     char* perkName = perkGetName(perk);
     char* perkDescription = perkGetDescription(perk);
@@ -5991,7 +5991,7 @@ static int perkDialogShow()
     int rc = perkDialogHandleInput(count, perkDialogRefreshPerks);
 
     if (rc == 1) {
-        if (perkAdd(gDude, gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value) == -1) {
+        if (perkAdd(gDude, static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value)) == -1) {
             debugPrint("\n*** Unable to add perk! ***\n");
             rc = 2;
         }
@@ -6325,13 +6325,13 @@ static int perkDialogDrawPerks()
 
     fontSetCurrent(101);
 
-    int perks[PERK_COUNT];
+    Perk perks[PERK_COUNT];
     int count = perkGetAvailablePerks(gDude, perks);
     if (count == 0) {
         return 0;
     }
 
-    for (int perk = 0; perk < PERK_COUNT; perk++) {
+    for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
         gPerkDialogOptionList[perk].value = 0;
         gPerkDialogOptionList[perk].name = nullptr;
     }
@@ -6360,11 +6360,14 @@ static int perkDialogDrawPerks()
             color = COLOR_GREEN;
         }
 
-        fontDrawText(gPerkDialogWindowBuffer + PERK_WINDOW_WIDTH * y + 45, gPerkDialogOptionList[index].name, PERK_WINDOW_WIDTH, PERK_WINDOW_WIDTH, color);
+        PerkDialogOption option = gPerkDialogOptionList[index];
 
-        if (perkGetRank(gDude, gPerkDialogOptionList[index].value) != 0) {
+        fontDrawText(gPerkDialogWindowBuffer + PERK_WINDOW_WIDTH * y + 45, option.name, PERK_WINDOW_WIDTH, PERK_WINDOW_WIDTH, color);
+
+        Perk perk = static_cast<Perk>(option.value);
+        if (perkGetRank(gDude, perk) != 0) {
             char rankString[256];
-            snprintf(rankString, sizeof(rankString), "(%d)", perkGetRank(gDude, gPerkDialogOptionList[index].value));
+            snprintf(rankString, sizeof(rankString), "(%d)", perkGetRank(gDude, perk));
             fontDrawText(gPerkDialogWindowBuffer + PERK_WINDOW_WIDTH * y + 207, rankString, PERK_WINDOW_WIDTH, PERK_WINDOW_WIDTH, color);
         }
 
@@ -6777,7 +6780,7 @@ static int perkDialogDrawCard(int frmId, const char* name, const char* rank, cha
 // 0x43DEBC pop_perks
 static void _pop_perks()
 {
-    for (int perk = 0; perk < PERK_COUNT; perk++) {
+    for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
         for (;;) {
             int rank = perkGetRank(gDude, perk);
             if (rank <= gCharacterEditorPerksBackup[perk]) {
@@ -6788,7 +6791,7 @@ static void _pop_perks()
         }
     }
 
-    for (int i = 0; i < PERK_COUNT; i++) {
+    for (Perk i = PERK_FIRST; i < PERK_COUNT; i++) {
         for (;;) {
             int rank = perkGetRank(gDude, i);
             if (rank >= gCharacterEditorPerksBackup[i]) {

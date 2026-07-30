@@ -54,10 +54,10 @@ static int stealthBoyTurnOff(Object* critter, Object* item);
 static int _insert_drug_effect(Object* critter, Object* item, int duration, Stat* stats, int* mods);
 static void _perform_drug_effect(Object* critter, Stat* stats, int* mods, bool isImmediate);
 static bool _drug_effect_allowed(Object* critter, int pid);
-static int _insert_withdrawal(Object* obj, int active, int duration, int perk, int pid);
+static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, int pid);
 static int _item_wd_clear_all(Object* obj, void* data);
-static void performWithdrawalStart(Object* obj, int perk, int pid);
-static void performWithdrawalEnd(Object* obj, int perk);
+static void performWithdrawalStart(Object* obj, Perk perk, int pid);
+static void performWithdrawalEnd(Object* obj, Perk perk);
 static int drugGetAddictionGvarByPid(int drugPid);
 static void dudeSetAddiction(int drugPid);
 static void dudeClearAddiction(int drugPid);
@@ -2235,10 +2235,10 @@ int armorGetDamageThreshold(Object* armor, DamageType damageType)
 }
 
 // 0x479358
-int armorGetPerk(Object* armor)
+Perk armorGetPerk(Object* armor)
 {
     if (armor == nullptr) {
-        return -1;
+        return PERK_INVALID;
     }
 
     Proto* proto;
@@ -3032,7 +3032,7 @@ int drugEffectEventWrite(File* stream, void* data)
 }
 
 // 0x47A290
-static int _insert_withdrawal(Object* obj, int active, int duration, int perk, int pid)
+static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, int pid)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)internal_malloc(sizeof(*withdrawalEvent));
     if (withdrawalEvent == nullptr) {
@@ -3130,7 +3130,7 @@ int withdrawalEventRead(File* stream, void** dataPtr)
 
     if (fileReadInt32(stream, &(withdrawalEvent->active)) == -1) goto err;
     if (fileReadInt32(stream, &(withdrawalEvent->pid)) == -1) goto err;
-    if (fileReadInt32(stream, &(withdrawalEvent->perk)) == -1) goto err;
+    if (fileReadInt32Enum<Perk>(stream, &(withdrawalEvent->perk)) == -1) goto err;
 
     *dataPtr = withdrawalEvent;
     return 0;
@@ -3155,7 +3155,7 @@ int withdrawalEventWrite(File* stream, void* data)
 
 // perform_withdrawal_start
 // 0x47A4C4
-static void performWithdrawalStart(Object* obj, int perk, int pid)
+static void performWithdrawalStart(Object* obj, Perk perk, int pid)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_start: Was called on non-critter!");
@@ -3189,7 +3189,7 @@ static void performWithdrawalStart(Object* obj, int perk, int pid)
 
 // perform_withdrawal_end
 // 0x47A558
-static void performWithdrawalEnd(Object* obj, int perk)
+static void performWithdrawalEnd(Object* obj, Perk perk)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_end: Was called on non-critter!");

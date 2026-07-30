@@ -2578,7 +2578,7 @@ static void opHasTrait(Program* program)
         switch (type) {
         case CRITTER_TRAIT_PERK:
             if (param < PERK_COUNT) {
-                result = perkGetRank(object, param);
+                result = perkGetRank(object, static_cast<Perk>(param));
             } else {
                 scriptError("\nScript Error: %s: op_has_trait: Perk out of range", program->name);
             }
@@ -2878,16 +2878,17 @@ static void opCritterAddTrait(Program* program)
             case CRITTER_TRAIT_PERK:
                 if (1) {
                     char* critterName = critterGetName(object);
-                    char* perkName = perkGetName(param);
+                    Perk perk = static_cast<Perk>(param);
+                    char* perkName = perkGetName(perk);
                     debugPrint("\nintextra::critter_add_trait: Adding Perk %s to %s", perkName, critterName);
 
                     if (value > 0) {
-                        if (perkAddForce(object, param) != 0) {
+                        if (perkAddForce(object, perk) != 0) {
                             scriptError("\nScript Error: %s: op_critter_add_trait: perk_add_force failed", program->name);
                             debugPrint("Perk: %d", param);
                         }
                     } else {
-                        if (perkRemove(object, param) != 0) {
+                        if (perkRemove(object, perk) != 0) {
                             // FIXME: typo in debug message, should be perk_sub
                             scriptError("\nScript Error: %s: op_critter_add_trait: per_sub failed", program->name);
                             debugPrint("Perk: %d", param);
@@ -2950,10 +2951,12 @@ static void opCritterRemoveTrait(Program* program)
 
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         switch (kind) {
-        case CRITTER_TRAIT_PERK:
-            while (perkGetRank(object, param) > 0) {
-                if (perkRemove(object, param) != 0) {
-                    scriptError("\nScript Error: op_critter_rm_trait: perk_sub failed");
+        case CRITTER_TRAIT_PERK: {
+                Perk perk = static_cast<Perk>(param);
+                while (perkGetRank(object, perk) > 0) {
+                    if (perkRemove(object, perk) != 0) {
+                        scriptError("\nScript Error: op_critter_rm_trait: perk_sub failed");
+                    }
                 }
             }
             break;

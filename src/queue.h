@@ -3,6 +3,7 @@
 
 #include "db.h"
 #include "obj_types.h"
+#include "perk_defs.h"
 #include "stat_defs.h"
 
 namespace fallout {
@@ -34,7 +35,7 @@ typedef struct DrugEffectEvent {
 typedef struct WithdrawalEvent {
     int active; // 0 == end withdrawal, 1 == start withdrawal
     int pid;
-    int perk;
+    Perk perk;
 } WithdrawalEvent;
 
 typedef struct ScriptEvent {

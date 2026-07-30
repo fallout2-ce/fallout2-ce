@@ -408,7 +408,7 @@ int proto_item_subdata_init(Proto* proto, int type)
             proto->item.data.armor.damageThreshold[damageType] = 0;
         }
 
-        proto->item.data.armor.perk = -1;
+        proto->item.data.armor.perk = PERK_INVALID;
         proto->item.data.armor.maleFid = -1;
         proto->item.data.armor.femaleFid = -1;
         break;
@@ -433,7 +433,7 @@ int proto_item_subdata_init(Proto* proto, int type)
         proto->item.data.drug.amount2[1] = 0;
         proto->item.data.drug.amount2[2] = 0;
         proto->item.data.drug.addictionChance = 0;
-        proto->item.data.drug.withdrawalEffect = 0;
+        proto->item.data.drug.withdrawalEffect = PERK_FIRST;
         proto->item.data.drug.withdrawalOnset = 0;
         proto->item.extendedFlags |= PROTO_EXT_FLAG_CAN_USE_ON;
         break;
@@ -449,7 +449,7 @@ int proto_item_subdata_init(Proto* proto, int type)
         proto->item.data.weapon.actionPointCost1 = 0;
         proto->item.data.weapon.actionPointCost2 = 0;
         proto->item.data.weapon.criticalFailureType = 0;
-        proto->item.data.weapon.perk = -1;
+        proto->item.data.weapon.perk = PERK_INVALID;
         proto->item.data.weapon.rounds = 0;
         proto->item.data.weapon.caliber = 0;
         proto->item.data.weapon.ammoTypePid = -1;
@@ -1398,9 +1398,9 @@ int protoInit()
 
     _mp_perk_code_None = _aNone_1;
     _perk_code_strs = _mp_perk_code_strs;
-    for (i = 0; i < PERK_COUNT; i++) {
-        _mp_perk_code_strs[i] = perkGetName(i);
-        if (_mp_perk_code_strs[i] == nullptr) {
+    for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
+        _mp_perk_code_strs[perk] = perkGetName(perk);
+        if (_mp_perk_code_strs[perk] == nullptr) {
             debugPrint("\nError: Finding perk names!");
             return -1;
         }
@@ -1555,7 +1555,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
         if (fileReadInt32(stream, &(item_data->armor.armorClass)) == -1) return -1;
         if (fileReadInt32List(stream, item_data->armor.damageResistance, 7) == -1) return -1;
         if (fileReadInt32List(stream, item_data->armor.damageThreshold, 7) == -1) return -1;
-        if (fileReadInt32(stream, &(item_data->armor.perk)) == -1) return -1;
+        if (fileReadInt32Enum<Perk>(stream, &(item_data->armor.perk)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->armor.maleFid)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->armor.femaleFid)) == -1) return -1;
 
@@ -1575,7 +1575,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
         if (fileReadInt32(stream, &(item_data->drug.duration2)) == -1) return -1;
         if (fileReadInt32List(stream, item_data->drug.amount2, 3) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->drug.addictionChance)) == -1) return -1;
-        if (fileReadInt32(stream, &(item_data->drug.withdrawalEffect)) == -1) return -1;
+        if (fileReadInt32Enum<Perk>(stream, &(item_data->drug.withdrawalEffect)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->drug.withdrawalOnset)) == -1) return -1;
 
         return 0;
@@ -1591,7 +1591,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
         if (fileReadInt32(stream, &(item_data->weapon.actionPointCost1)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.actionPointCost2)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.criticalFailureType)) == -1) return -1;
-        if (fileReadInt32(stream, &(item_data->weapon.perk)) == -1) return -1;
+        if (fileReadInt32Enum<Perk>(stream, &(item_data->weapon.perk)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.rounds)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.caliber)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.ammoTypePid)) == -1) return -1;
