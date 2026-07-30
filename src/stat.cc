@@ -1,10 +1,12 @@
 #include "stat.h"
 
+#include <charconv>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
+#include <string_view>
 
 #include "art.h"
 #include "combat.h"
@@ -105,10 +107,31 @@ static int unspentApBonus = 4;
 static int unspentApPerkBonus = 4;
 static int xpTable[PC_LEVEL_MAX];
 static int xpTableThresholds = 0;
-static constexpr size_t kExperienceTableConfigMaxLength = 2048;
 
 static void pcExperienceTableInit();
 static int pcGetMaxLevel();
+
+static std::string_view pcExperienceTableTrimToken(std::string_view token)
+{
+    size_t first = token.find_first_not_of(" \t\r\n");
+    if (first == std::string_view::npos) {
+        return {};
+    }
+
+    size_t last = token.find_last_not_of(" \t\r\n");
+    return token.substr(first, last - first + 1);
+}
+
+static bool pcExperienceTableParseToken(std::string_view token, int* value)
+{
+    token = pcExperienceTableTrimToken(token);
+    if (token.empty()) {
+        return false;
+    }
+
+    auto result = std::from_chars(token.data(), token.data() + token.size(), *value);
+    return result.ec == std::errc() && result.ptr == token.data() + token.size();
+}
 
 // 0x4AED70
 int statsInit()
@@ -700,25 +723,25 @@ static void pcExperienceTableInit()
         return;
     }
 
-    char temp[kExperienceTableConfigMaxLength];
-    strncpy(temp, value, sizeof(temp) - 1);
-    temp[sizeof(temp) - 1] = '\0';
+    std::string_view remaining(value);
 
-    char* cursor = temp;
-    while (xpTableThresholds < PC_LEVEL_MAX - 1) {
-        char* comma = strchr(cursor, ',');
-        if (comma != nullptr) {
-            *comma = '\0';
+    while (!remaining.empty() && xpTableThresholds < PC_LEVEL_MAX - 1) {
+        size_t comma = remaining.find(',');
+        std::string_view token = comma == std::string_view::npos
+            ? remaining
+            : remaining.substr(0, comma);
+
+        int xp;
+        if (pcExperienceTableParseToken(token, &xp)) {
+            xpTableThresholds++;
+            xpTable[xpTableThresholds] = xp;
         }
 
-        xpTableThresholds++;
-        xpTable[xpTableThresholds] = atoi(cursor);
-
-        if (comma == nullptr) {
+        if (comma == std::string_view::npos) {
             break;
         }
 
-        cursor = comma + 1;
+        remaining.remove_prefix(comma + 1);
     }
 }
 

@@ -320,6 +320,10 @@ static bool perkCanAdd(Object* critter, int perk)
         if (pcGetStat(PC_STAT_LEVEL) < perkDescription->minLevel) {
             return false;
         }
+
+        if (perk == PERK_HERE_AND_NOW && pcGetExperienceForLevel(pcGetStat(PC_STAT_LEVEL) + 1) == -1) {
+            return false;
+        }
     }
 
     bool req1Fulfilled = true;
