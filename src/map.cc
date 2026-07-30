@@ -12,6 +12,7 @@
 #include "character_editor.h"
 #include "color.h"
 #include "combat.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "debug.h"
@@ -54,6 +55,7 @@ static int _map_age_dead_critters();
 static void _map_fix_critter_combat_data();
 static int _map_save_file(File* stream);
 int _map_save(bool isInGame);
+static int replaceDeadCritter(Object* critter);
 static void mapMakeMapsDirectory();
 static void isoWindowRefreshRect(Rect* rect);
 static void isoWindowRefreshRectGame(Rect* rect);
@@ -137,6 +139,7 @@ static TileData _square_data[ELEVATION_COUNT];
 
 // 0x631D28 map_state
 static MapTransition gMapTransition;
+static bool disableSpecialMapIds;
 
 // 0x631D38 map_display_rect
 static Rect gIsoWindowRect;
@@ -287,6 +290,8 @@ void isoExit()
 // 0x481FB4
 void mapInit()
 {
+    configGetBool(&gContentConfig, CONTENT_CONFIG_MAPS_SECTION, "disable_special_map_ids", &disableSpecialMapIds, false);
+
     if (settings.system.executableIsMapper()) {
         _map_scroll_refresh = isoWindowRefreshRectMapper;
     }
@@ -862,7 +867,10 @@ static int mapLoad(File* stream)
         if (backgoundSoundIsPlaying()) {
             // Use the sfall sound path so the map-loading ambience does not depend
             // on the native background music loader.
-            mapLoadSoundId = scriptSoundPlay("sound\\music\\WIND2.ACM", SCRIPT_SOUND_MODE_LOOP);
+            const char* mapLoadingSound = gameSoundGetMusicOverride("map_loading_sound", "wind2");
+            char mapLoadingSoundPath[COMPAT_MAX_PATH];
+            snprintf(mapLoadingSoundPath, sizeof(mapLoadingSoundPath), "sound\\music\\%s.ACM", mapLoadingSound);
+            mapLoadSoundId = scriptSoundPlay(mapLoadingSoundPath, SCRIPT_SOUND_MODE_LOOP);
         }
     }
     isoDisable();
@@ -978,7 +986,7 @@ static int mapLoad(File* stream)
     }
 
     lightSetAmbientIntensity(LIGHT_INTENSITY_MAX, false);
-    objectSetLocation(gDude, gCenterTile, gElevation, nullptr);
+    objectSetLocation(gDude, gEnteringTile, gElevation, nullptr);
     objectSetRotation(gDude, gEnteringRotation, nullptr);
     gMapHeader.index = wmMapMatchNameToIdx(gMapHeader.name);
 
@@ -1228,32 +1236,17 @@ static int _map_age_dead_critters()
     for (int index = 0; index < count; index++) {
         Object* obj = objects[index];
         if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
-            if (!critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
-                itemDropAll(obj, obj->tile);
-            }
-
-            Object* blood;
-            if (objectCreateWithPid(&blood, 0x5000004) == -1) {
+            // replace the dead critter bodies by the blood pool stain
+            if (replaceDeadCritter(obj) == -1) {
+                debugPrint("\n%s: Could not replace dead body by the blood stain for the critter %d with pid %d.", __func__, obj->id, obj->pid);
                 rc = -1;
                 break;
             }
 
-            objectSetLocation(blood, obj->tile, obj->elevation, nullptr);
-
-            Proto* proto;
-            protoGetProto(obj->pid, &proto);
-
-            int frame = randomBetween(0, 3);
-            if ((proto->critter.flags & CRITTER_FLAT)) {
-                frame += 6;
-            } else {
-                if (critterGetKillType(obj) != KILL_TYPE_RAT
-                    && critterGetKillType(obj) != KILL_TYPE_MANTIS) {
-                    frame += 3;
-                }
+            // drop the critter owned items on top of the blood stain only when successfully replaced
+            if (!critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
+                itemDropAll(obj, obj->tile);
             }
-
-            objectSetFrame(blood, frame, nullptr);
         }
 
         reg_anim_clear(obj);
@@ -1263,6 +1256,39 @@ static int _map_age_dead_critters()
     internal_free(objects);
 
     return rc;
+}
+
+static int replaceDeadCritter(Object* critter)
+{
+    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+        return -1;
+    }
+
+    Object* blood;
+    if (objectCreateWithPid(&blood, PROTO_ID_BLOOD) == -1) {
+        return -1;
+    }
+
+    if (objectSetLocation(blood, critter->tile, critter->elevation, nullptr) == -1) {
+        return -1;
+    }
+
+    Proto* proto;
+    if (protoGetProto(critter->pid, &proto) == -1) {
+        return -1;
+    }
+
+    int frame = randomBetween(0, 3);
+    if ((proto->critter.flags & CRITTER_FLAT)) {
+        frame += 6;
+    } else {
+        KillType killType = critterGetKillType(critter);
+        if (killType != KILL_TYPE_RAT && killType != KILL_TYPE_MANTIS) {
+            frame += 3;
+        }
+    }
+
+    return objectSetFrame(blood, frame, nullptr);
 }
 
 // 0x48358C
@@ -1332,7 +1358,8 @@ int mapHandleTransition()
             }
 
             if (gMapTransition.tile != -1 && gMapTransition.tile != 0
-                && gMapHeader.index != MAP_MODOC_BEDNBREAKFAST && gMapHeader.index != MAP_THE_SQUAT_A
+                && (disableSpecialMapIds
+                    || (gMapHeader.index != MAP_MODOC_BEDNBREAKFAST && gMapHeader.index != MAP_THE_SQUAT_A))
                 && elevationIsValid(gMapTransition.elevation)) {
                 objectSetLocation(gDude, gMapTransition.tile, gMapTransition.elevation, nullptr);
                 mapSetElevation(gMapTransition.elevation);

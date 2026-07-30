@@ -17,7 +17,7 @@
 
 namespace fallout {
 
-#define CONFIG_FILE_MAX_LINE_LENGTH (1024)
+#define CONFIG_FILE_MAX_LINE_LENGTH (2048)
 
 // The initial number of sections (or key-value) pairs in the config.
 #define CONFIG_INITIAL_CAPACITY (10)
@@ -32,9 +32,10 @@ struct CaseInsensitiveLess {
 typedef std::set<std::string, CaseInsensitiveLess> StringSet;
 
 static bool configParseLine(Config* config, char* string);
-static bool configParseKeyValue(char* string, char* key, char* value);
+static bool configParseKeyValue(char* string, std::string& key, std::string& value);
 static bool configEnsureSectionExists(Config* config, const char* sectionKey);
 static bool configTrimString(char* string);
+static std::string configGetTrimmedString(const char* string);
 
 static bool configWriteDb(Config* config, const char* filePath);
 static bool configWriteStandard(Config* config, const char* filePath);
@@ -120,10 +121,10 @@ bool configParseCommandLineArguments(Config* config, int argc, char** argv)
 
         *pch = '\0';
 
-        char key[260];
-        char value[260];
+        std::string key;
+        std::string value;
         if (configParseKeyValue(pch + 1, key, value)) {
-            if (!configSetString(config, sectionKey, key, value)) {
+            if (!configSetString(config, sectionKey, key.c_str(), value.c_str())) {
                 *pch = ']';
                 return false;
             }
@@ -683,13 +684,13 @@ static bool configParseLine(Config* config, char* string)
         }
     }
 
-    char key[260];
-    char value[260];
+    std::string key;
+    std::string value;
     if (!configParseKeyValue(string, key, value)) {
         return false;
     }
 
-    return configSetString(config, gConfigLastSectionKey, key, value);
+    return configSetString(config, gConfigLastSectionKey, key.c_str(), value.c_str());
 }
 
 // Splits "key=value" pair from [string] and copy appropriate parts into [key]
@@ -698,9 +699,9 @@ static bool configParseLine(Config* config, char* string)
 // Both key and value are trimmed.
 //
 // 0x42C594
-static bool configParseKeyValue(char* string, char* key, char* value)
+static bool configParseKeyValue(char* string, std::string& key, std::string& value)
 {
-    if (string == nullptr || key == nullptr || value == nullptr) {
+    if (string == nullptr) {
         return false;
     }
 
@@ -712,13 +713,10 @@ static bool configParseKeyValue(char* string, char* key, char* value)
 
     *pch = '\0';
 
-    strcpy(key, string);
-    strcpy(value, pch + 1);
+    key = configGetTrimmedString(string);
+    value = configGetTrimmedString(pch + 1);
 
     *pch = '=';
-
-    configTrimString(key);
-    configTrimString(value);
 
     return true;
 }
@@ -789,6 +787,25 @@ static bool configTrimString(char* string)
     memmove(string, pch, length + 1);
 
     return true;
+}
+
+static std::string configGetTrimmedString(const char* string)
+{
+    if (string == nullptr) {
+        return std::string();
+    }
+
+    const char* start = string;
+    while (isspace(static_cast<unsigned char>(*start))) {
+        start++;
+    }
+
+    const char* end = start + strlen(start);
+    while (end > start && isspace(static_cast<unsigned char>(*(end - 1)))) {
+        end--;
+    }
+
+    return std::string(start, end);
 }
 
 // 0x42C718

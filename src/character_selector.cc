@@ -827,7 +827,7 @@ static bool characterSelectorWindowRenderStats()
     y += vh; // blank line
 
     // SKILLS
-    int skills[DEFAULT_TAGGED_SKILLS];
+    Skill skills[DEFAULT_TAGGED_SKILLS];
     skillsGetTagged(skills, DEFAULT_TAGGED_SKILLS);
 
     for (int index = 0; index < DEFAULT_TAGGED_SKILLS; index++) {

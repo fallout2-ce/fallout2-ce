@@ -560,7 +560,7 @@ static void opOverrideMapStart(Program* program)
 // 0x454568 op_has_skill
 static void opHasSkill(Program* program)
 {
-    int skill = programStackPopInteger(program);
+    Skill skill = programStackPopEnum<Skill>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     int result = 0;
@@ -579,7 +579,7 @@ static void opHasSkill(Program* program)
 // 0x454634 op_using_skill
 static void opUsingSkill(Program* program)
 {
-    int skill = programStackPopInteger(program);
+    Skill skill = programStackPopEnum<Skill>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     // NOTE: In the original source code this value is left uninitialized, that
@@ -599,7 +599,7 @@ static void opUsingSkill(Program* program)
 static void opRollVsSkill(Program* program)
 {
     int modifier = programStackPopInteger(program);
-    int skill = programStackPopInteger(program);
+    Skill skill = programStackPopEnum<Skill>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     int roll = ROLL_CRITICAL_FAILURE;
@@ -1536,7 +1536,7 @@ static void opGetTileInDirection(Program* program)
     int tile = -1;
 
     if (origin != -1) {
-        if (rotation < ROTATION_COUNT) {
+        if (rotation >= ROTATION_FIRST && rotation < ROTATION_COUNT) {
             if (distance != 0) {
                 tile = tileGetTileInDirection(origin, rotation, distance);
                 if (tile < -1) {
@@ -1994,7 +1994,10 @@ static void opMetarule3(Program* program)
         result.integerValue = wmSubTileMarkRadiusVisited(param1.integerValue, param2.integerValue, param3.integerValue);
         break;
     case METARULE3_GET_KILL_COUNT:
-        result.integerValue = killsGetByType(param1.integerValue);
+        if (!killTypeOverrideIsValid(param1.integerValue)) {
+            debugPrint("\n%s: metarule3: GET_KILL_COUNT invalid kill type %d", program->name, param1.integerValue);
+        }
+        result.integerValue = killsGetByType(static_cast<KillType>(param1.integerValue));
         break;
     case METARULE3_MARK_MAP_ENTRANCE:
         result.integerValue = wmMapMarkMapEntranceState(param1.integerValue, param2.integerValue, param3.integerValue);
@@ -2501,7 +2504,7 @@ static void opCritterDamage(Program* program)
 
     bool animate = (damageTypeWithFlags & 0x200) == 0;
     bool bypassArmor = (damageTypeWithFlags & 0x100) != 0;
-    int damageType = damageTypeWithFlags & ~(0x100 | 0x200);
+    DamageType damageType = static_cast<DamageType>(damageTypeWithFlags & ~(0x100 | 0x200));
     actionDamage(object->tile, object->elevation, amount, amount, damageType, animate, bypassArmor);
 
     program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
@@ -3250,7 +3253,10 @@ static void opMetarule(Program* program)
         result = wmCarFillGas(param.integerValue);
         break;
     case METARULE_SKILL_CHECK_TAG:
-        result = skillIsTagged(param.integerValue);
+        if (!skillIsValid(param.integerValue)) {
+            debugPrint("\n%s: metarule: SKILL_CHECK_TAG invalid skill %d", program->name, param.integerValue);
+        }
+        result = skillIsTagged(static_cast<Skill>(param.integerValue));
         break;
     case METARULE_DROP_ALL_INVEN:
         if (1) {
@@ -3613,6 +3619,10 @@ static void opPlayGameMovie(Program* program)
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     int movie = programStackPopInteger(program);
+    int movieFlags = GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC;
+    if (movie >= 0 && movie < MOVIE_COUNT) {
+        movieFlags = flags[movie];
+    }
 
     // CE: Disable map updates. Needed to stop animation of objects (dude in
     // particular) when playing movies (the problem can be seen as visual
@@ -3621,7 +3631,7 @@ static void opPlayGameMovie(Program* program)
 
     gameDialogDisable();
 
-    if (gameMoviePlay(movie, flags[movie]) == -1) {
+    if (gameMoviePlay(movie, movieFlags) == -1) {
         debugPrint("\nError playing movie %d!", movie);
     }
 
@@ -4284,7 +4294,7 @@ static void opRegAnimPlaySfx(Program* program)
 static void opCritterModifySkill(Program* program)
 {
     int points = programStackPopInteger(program);
-    int skill = programStackPopInteger(program);
+    Skill skill = programStackPopEnum<Skill>(program);
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
     if (critter != nullptr && points != 0) {
@@ -4385,7 +4395,7 @@ static void opSfxBuildItemName(Program* program)
 static void opSfxBuildWeaponName(Program* program)
 {
     Object* target = static_cast<Object*>(programStackPopPointer(program));
-    int hitMode = programStackPopInteger(program);
+    HitMode hitMode = programStackPopEnum<HitMode>(program);
     Object* weapon = static_cast<Object*>(programStackPopPointer(program));
     int weaponSfxType = programStackPopInteger(program);
 

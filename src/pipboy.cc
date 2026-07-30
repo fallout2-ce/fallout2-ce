@@ -501,12 +501,13 @@ int pipboyOpen(int intent)
         return 0;
     }
 
-    ScopedGameMode gm(GameMode::kPipboy);
-
     intent = pipboyWindowInit(intent);
     if (intent == -1) {
         return -1;
     }
+
+    ScopedGameMode gm(GameMode::kPipboy);
+    windowRefresh(gPipboyWindow);
 
     touch_set_touchscreen_mode(true);
 
@@ -1947,7 +1948,7 @@ static void pipboyHandleVideoArchive(int a1)
             }
         }
 
-        if (movie <= MOVIE_COUNT) {
+        if (movie < MOVIE_COUNT) {
             gameMoviePlay(movie, GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC);
         } else {
             debugPrint("\n ** Selected movie not found in list! **\n");

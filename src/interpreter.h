@@ -3,6 +3,7 @@
 
 #include "combat_defs.h"
 #include "object.h"
+#include "proto_types.h"
 #include <setjmp.h>
 
 #include <vector>
@@ -252,6 +253,75 @@ ProgramValue programStackPopValue(Program* program);
 int programStackPopInteger(Program* program);
 char* programStackPopString(Program* program);
 void* programStackPopPointer(Program* program);
+
+template <typename T>
+T programStackPopEnum(Program* program);
+
+template <>
+inline HitMode programStackPopEnum(Program* program)
+{
+    int hitMode = programStackPopInteger(program);
+    if (!hitModeIsValid(hitMode)) {
+        programPrintError("invalid hit mode %d", hitMode);
+    }
+
+    return static_cast<HitMode>(hitMode);
+}
+
+template <>
+inline HitLocation programStackPopEnum(Program* program)
+{
+    int hitLocation = programStackPopInteger(program);
+    if (!hitLocationIsValid(hitLocation)) {
+        programPrintError("invalid hit location %d", hitLocation);
+    }
+
+    return static_cast<HitLocation>(hitLocation);
+}
+
+template <>
+inline CriticalHitDataMember programStackPopEnum(Program* program)
+{
+    int criticalHitDataMember = programStackPopInteger(program);
+    if (!criticalHitDataMemberIsValid(criticalHitDataMember)) {
+        programPrintError("invalid critical hit data member %d", criticalHitDataMember);
+    }
+
+    return static_cast<CriticalHitDataMember>(criticalHitDataMember);
+}
+
+template <>
+inline CriticalEffect programStackPopEnum(Program* program)
+{
+    int effect = programStackPopInteger(program);
+    if (!criticalEffectIsValid(effect)) {
+        programPrintError("invalid critical effect %d", effect);
+    }
+
+    return static_cast<CriticalEffect>(effect);
+}
+
+template <>
+inline KillType programStackPopEnum(Program* program)
+{
+    int killType = programStackPopInteger(program);
+    if (!killTypeOverrideIsValid(killType)) {
+        programPrintError("invalid kill type %d", killType);
+    }
+
+    return static_cast<KillType>(killType);
+}
+
+template <>
+inline Skill programStackPopEnum(Program* program)
+{
+    int skill = programStackPopInteger(program);
+    if (!skillIsValid(skill)) {
+        programPrintError("invalid skill %d", skill);
+    }
+
+    return static_cast<Skill>(skill);
+}
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
 void programReturnStackPushInteger(Program* program, int value);

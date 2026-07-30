@@ -2026,7 +2026,7 @@ int gameDialogProcessUI()
             if (dialogSwitchMode == GAME_DIALOG_MODE_BARTER_ACTIVE) {
                 dialogMode = GAME_DIALOG_MODE_BARTER;
 
-                GameMode::exitGameMode(GameMode::kSpecial);
+                GameMode::exitGameModeQuietly(GameMode::kSpecial);
 
                 barterProcessUI(gGameDialogWindow, gGameDialogSpeaker, gGameDialogPlayerTableObj, gGameDialogBartererTableObj, gGameDialogBarterModifier);
                 gameDialogBarterCleanupTables();
@@ -3500,6 +3500,11 @@ int gameDialogGetWindow()
     return windowGetWindow(gGameDialogWindow) != nullptr ? gGameDialogWindow : -1;
 }
 
+int gameDialogGetBackgroundWindow()
+{
+    return windowGetWindow(gGameDialogBackgroundWindow) != nullptr ? gGameDialogBackgroundWindow : -1;
+}
+
 // 0x448660 gdialog_barter_cleanup_tables
 void gameDialogBarterCleanupTables()
 {
@@ -3784,7 +3789,7 @@ void partyMemberControlWindowUpdate()
     fontDrawText(windowBuffer + windowWidth * 96 + 240, formattedText, 115, windowWidth, COLOR_GREEN);
 
     // Render best skill.
-    int bestSkill = partyMemberGetBestSkill(gGameDialogSpeaker);
+    Skill bestSkill = partyMemberGetBestSkill(gGameDialogSpeaker);
     text = skillGetName(bestSkill);
     snprintf(formattedText, sizeof(formattedText), "%s", text);
     fontDrawText(windowBuffer + windowWidth * 113 + 240, formattedText, 115, windowWidth, COLOR_GREEN);

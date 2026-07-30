@@ -66,7 +66,7 @@ static bool dudeIsAddicted(int drugPid);
 static void booksInit();
 static void booksInitVanilla();
 static void booksInitCustom();
-static void booksAdd(int bookPid, int messageId, int skill);
+static void booksAdd(int bookPid, int messageId, Skill skill);
 static void booksExit();
 
 static void explosionsInit();
@@ -84,7 +84,7 @@ typedef struct DrugDescription {
 typedef struct BookDescription {
     int bookPid;
     int messageId;
-    int skill;
+    Skill skill;
 } BookDescription;
 
 typedef struct ExplosiveDescription {
@@ -100,8 +100,8 @@ static char _aItem_1[] = "<item>";
 // Maps weapon extended flags to skill.
 //
 // 0x519160 attack_skill
-static const int _attack_skill[9] = {
-    -1,
+static const Skill _attack_skill[9] = {
+    SKILL_INVALID,
     SKILL_UNARMED,
     SKILL_UNARMED,
     SKILL_MELEE_WEAPONS,
@@ -185,7 +185,7 @@ static int gExplosionStartRotation;
 static int gExplosionEndRotation;
 static int gExplosionFrm;
 static int gExplosionRadius;
-static int gExplosionDamageType;
+static DamageType gExplosionDamageType;
 static int gExplosionMaxTargets;
 static int gHealingItemPids[HEALING_ITEM_COUNT];
 
@@ -1029,7 +1029,7 @@ bool dudeIsWeaponDisabled(Object* weapon)
         }
     }
 
-    return !scriptHooks_CanUseWeapon(canUse, gDude, weapon, -1);
+    return !scriptHooks_CanUseWeapon(canUse, gDude, weapon, HIT_MODE_INVALID);
 }
 
 // 0x477FB0
@@ -1046,7 +1046,7 @@ int itemGetInventoryFid(Object* item)
 }
 
 // 0x477FF8
-Object* critterGetWeaponForHitMode(Object* critter, int hitMode)
+Object* critterGetWeaponForHitMode(Object* critter, HitMode hitMode)
 {
     switch (hitMode) {
     case HIT_MODE_LEFT_WEAPON_PRIMARY:
@@ -1057,13 +1057,13 @@ Object* critterGetWeaponForHitMode(Object* critter, int hitMode)
     case HIT_MODE_RIGHT_WEAPON_SECONDARY:
     case HIT_MODE_RIGHT_WEAPON_RELOAD:
         return critterGetItem2(critter);
+    default:
+        return nullptr;
     }
-
-    return nullptr;
 }
 
 // 0x478040
-int itemGetActionPointCost(Object* obj, int hitMode, bool aiming)
+int itemGetActionPointCost(Object* obj, HitMode hitMode, bool aiming)
 {
     if (obj == nullptr) {
         return 0;
@@ -1194,7 +1194,7 @@ bool itemIsHidden(Object* item)
 }
 
 // 0x478280
-int weaponGetAttackTypeForHitMode(Object* weapon, int hitMode)
+int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return ATTACK_TYPE_UNARMED;
@@ -1214,7 +1214,7 @@ int weaponGetAttackTypeForHitMode(Object* weapon, int hitMode)
 }
 
 // 0x4782CC
-int weaponGetSkillForHitMode(Object* weapon, int hitMode)
+Skill weaponGetSkillForHitMode(Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return SKILL_UNARMED;
@@ -1230,10 +1230,10 @@ int weaponGetSkillForHitMode(Object* weapon, int hitMode)
         index = (proto->item.extendedFlags & 0xF0) >> 4;
     }
 
-    int skill = _attack_skill[index];
+    Skill skill = _attack_skill[index];
 
     if (skill == SKILL_SMALL_GUNS) {
-        int damageType = weaponGetDamageType(nullptr, weapon);
+        DamageType damageType = weaponGetDamageType(nullptr, weapon);
         if (damageType == DAMAGE_TYPE_LASER || damageType == DAMAGE_TYPE_PLASMA || damageType == DAMAGE_TYPE_ELECTRICAL) {
             skill = SKILL_ENERGY_WEAPONS;
         } else {
@@ -1249,13 +1249,13 @@ int weaponGetSkillForHitMode(Object* weapon, int hitMode)
 // Returns skill value when critter is about to perform hitMode.
 //
 // 0x478370
-int weaponGetSkillValue(Object* critter, int hitMode)
+int weaponGetSkillValue(Object* critter, HitMode hitMode)
 {
     if (critter == nullptr) {
         return 0;
     }
 
-    int skill;
+    Skill skill;
 
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
@@ -1290,7 +1290,7 @@ int weaponGetDamageMinMax(Object* weapon, int* minDamagePtr, int* maxDamagePtr)
 }
 
 // 0x478448
-int weaponGetDamage(Object* critter, int hitMode)
+int weaponGetDamage(Object* critter, HitMode hitMode)
 {
     if (critter == nullptr) {
         return 0;
@@ -1346,7 +1346,7 @@ int weaponGetDamage(Object* critter, int hitMode)
 }
 
 // 0x478570
-int weaponGetDamageType(Object* critter, Object* weapon)
+DamageType weaponGetDamageType(Object* critter, Object* weapon)
 {
     Proto* proto;
 
@@ -1360,7 +1360,7 @@ int weaponGetDamageType(Object* critter, Object* weapon)
         return critterGetDamageType(critter);
     }
 
-    return 0;
+    return DAMAGE_TYPE_NORMAL;
 }
 
 // 0x478598
@@ -1378,7 +1378,7 @@ int weaponIsTwoHanded(Object* weapon)
 }
 
 // 0x4785DC
-int critterGetAnimationForHitMode(Object* critter, int hitMode)
+int critterGetAnimationForHitMode(Object* critter, HitMode hitMode)
 {
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
@@ -1386,7 +1386,7 @@ int critterGetAnimationForHitMode(Object* critter, int hitMode)
 }
 
 // 0x47860C
-int weaponGetAnimationForHitMode(Object* weapon, int hitMode)
+int weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode)
 {
     if (hitMode == HIT_MODE_KICK || (hitMode >= FIRST_ADVANCED_KICK_HIT_MODE && hitMode <= LAST_ADVANCED_KICK_HIT_MODE)) {
         return ANIM_KICK_LEG;
@@ -1653,7 +1653,7 @@ int weaponReload(Object* weapon, Object* ammo)
 }
 
 // 0x478A1C
-int weaponGetRange(Object* critter, int hitMode)
+int weaponGetRange(Object* critter, HitMode hitMode)
 {
     int range;
     int effectiveStrength;
@@ -1702,7 +1702,7 @@ int weaponGetRange(Object* critter, int hitMode)
 // Returns action points required for hit mode.
 //
 // 0x478B24
-int weaponGetActionPointCost(Object* critter, int hitMode, bool aiming)
+int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming)
 {
     int actionPoints;
 
@@ -1884,7 +1884,7 @@ char weaponGetSoundId(Object* weapon)
 }
 
 // 0x478E5C
-bool critterCanAim(Object* critter, int hitMode)
+bool critterCanAim(Object* critter, HitMode hitMode)
 {
     if (critter == gDude && traitIsSelected(TRAIT_FAST_SHOT)) {
         return false;
@@ -1898,7 +1898,7 @@ bool critterCanAim(Object* critter, int hitMode)
 
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
-    int damageType = weaponGetDamageType(critter, weapon);
+    DamageType damageType = weaponGetDamageType(critter, weapon);
 
     return damageType != DAMAGE_TYPE_EXPLOSION
         && damageType != DAMAGE_TYPE_FIRE
@@ -2027,7 +2027,7 @@ int weaponComputeAmmoCost(const Object* obj, int* ammoQty)
 
 // Returns whether the weapon has enough loaded ammo to perform at least one
 // shot/bullet for the selected hit mode.
-bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
+bool weaponHasAmmoForAttack(const Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return false;
@@ -2078,16 +2078,16 @@ bool weaponHasAmmoForAttack(const Object* weapon, int hitMode)
 // 0x4790E8
 bool weaponIsGrenade(Object* weapon)
 {
-    int damageType = weaponGetDamageType(nullptr, weapon);
+    DamageType damageType = weaponGetDamageType(nullptr, weapon);
     return damageType == DAMAGE_TYPE_EXPLOSION || damageType == DAMAGE_TYPE_PLASMA || damageType == DAMAGE_TYPE_EMP;
 }
 
 // 0x47910C
-int weaponGetDamageRadius(Object* weapon, int hitMode)
+int weaponGetDamageRadius(Object* weapon, HitMode hitMode)
 {
     int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
     int anim = weaponGetAnimationForHitMode(weapon, hitMode);
-    int damageType = weaponGetDamageType(nullptr, weapon);
+    DamageType damageType = weaponGetDamageType(nullptr, weapon);
 
     int radius = 0;
     if (attackType == ATTACK_TYPE_RANGED) {
@@ -2209,7 +2209,7 @@ int armorGetArmorClass(Object* armor)
 }
 
 // 0x479318
-int armorGetDamageResistance(Object* armor, int damageType)
+int armorGetDamageResistance(Object* armor, DamageType damageType)
 {
     if (armor == nullptr) {
         return 0;
@@ -2222,7 +2222,7 @@ int armorGetDamageResistance(Object* armor, int damageType)
 }
 
 // 0x479338
-int armorGetDamageThreshold(Object* armor, int damageType)
+int armorGetDamageThreshold(Object* armor, DamageType damageType)
 {
     if (armor == nullptr) {
         return 0;
@@ -3450,8 +3450,8 @@ static void booksInitCustom()
                     int messageId;
                     if (!configGetInt(&booksConfig, sectionKey, "TextID", &messageId)) continue;
 
-                    int skill;
-                    if (!configGetInt(&booksConfig, sectionKey, "Skill", &skill)) continue;
+                    Skill skill;
+                    if (!configGetInt(&booksConfig, sectionKey, "Skill", reinterpret_cast<int*>(&skill))) continue;
 
                     booksAdd(bookPid, messageId, skill);
                 }
@@ -3462,7 +3462,7 @@ static void booksInitCustom()
     }
 }
 
-static void booksAdd(int bookPid, int messageId, int skill)
+static void booksAdd(int bookPid, int messageId, Skill skill)
 {
     BookDescription bookDescription;
     bookDescription.bookPid = bookPid;
@@ -3471,7 +3471,7 @@ static void booksAdd(int bookPid, int messageId, int skill)
     gBooks.emplace_back(std::move(bookDescription));
 }
 
-bool booksGetInfo(int bookPid, int* messageIdPtr, int* skillPtr)
+bool booksGetInfo(int bookPid, int* messageIdPtr, Skill* skillPtr)
 {
     for (auto& bookDescription : gBooks) {
         if (bookDescription.bookPid == bookPid) {
@@ -3674,12 +3674,12 @@ void explosionSetRadius(int radius)
     gExplosionRadius = radius;
 }
 
-int explosionGetDamageType()
+DamageType explosionGetDamageType()
 {
     return gExplosionDamageType;
 }
 
-void explosionSetDamageType(int damageType)
+void explosionSetDamageType(DamageType damageType)
 {
     gExplosionDamageType = damageType;
 }

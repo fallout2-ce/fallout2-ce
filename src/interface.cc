@@ -99,8 +99,8 @@ typedef struct InterfaceItemState {
     Object* item;
     unsigned char isDisabled;
     unsigned char isWeapon;
-    int primaryHitMode;
-    int secondaryHitMode;
+    HitMode primaryHitMode;
+    HitMode secondaryHitMode;
     int action;
     int itemFid;
 } InterfaceItemState;
@@ -1086,7 +1086,7 @@ void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints)
 }
 
 // 0x45EF6C intface_get_attack
-int interfaceGetCurrentHitMode(int* hitMode, bool* aiming)
+int interfaceGetCurrentHitMode(HitMode* hitMode, bool* aiming)
 {
     if (gInterfaceBarWindow == -1) {
         return -1;
@@ -1350,7 +1350,7 @@ void _intface_use_item()
     if (ptr->isWeapon != 0) {
         if (ptr->action == INTERFACE_ITEM_ACTION_RELOAD) {
             if (isInCombat()) {
-                int hitMode = gInterfaceCurrentHand == HAND_LEFT
+                HitMode hitMode = gInterfaceCurrentHand == HAND_LEFT
                     ? HIT_MODE_LEFT_WEAPON_RELOAD
                     : HIT_MODE_RIGHT_WEAPON_RELOAD;
 
@@ -1668,7 +1668,7 @@ static int interfaceBarRefreshMainAction()
         } else {
             int primaryFid = -1;
             int bullseyeFid = -1;
-            int hitMode = -1;
+            HitMode hitMode = HIT_MODE_INVALID;
 
             // NOTE: This value is decremented at 0x45FEAC, probably to build
             // jump table.
@@ -2943,7 +2943,7 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
 // modes, the default is `punch`).
 //
 // 0x45EF6C intface_get_attack
-bool interface_get_current_attack_mode(int* hit_mode)
+bool interface_get_current_attack_mode(HitMode* hitMode)
 {
     if (gInterfaceBarWindow == -1) {
         return false;
@@ -2952,19 +2952,19 @@ bool interface_get_current_attack_mode(int* hit_mode)
     switch (gInterfaceItemStates[gInterfaceCurrentHand].action) {
     case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
     case INTERFACE_ITEM_ACTION_PRIMARY:
-        *hit_mode = gInterfaceItemStates[gInterfaceCurrentHand].primaryHitMode;
+        *hitMode = gInterfaceItemStates[gInterfaceCurrentHand].primaryHitMode;
         break;
     case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
     case INTERFACE_ITEM_ACTION_SECONDARY:
-        *hit_mode = gInterfaceItemStates[gInterfaceCurrentHand].secondaryHitMode;
+        *hitMode = gInterfaceItemStates[gInterfaceCurrentHand].secondaryHitMode;
         break;
     case INTERFACE_ITEM_ACTION_RELOAD:
-        *hit_mode = gInterfaceCurrentHand == HAND_LEFT
+        *hitMode = gInterfaceCurrentHand == HAND_LEFT
             ? HIT_MODE_LEFT_WEAPON_RELOAD
             : HIT_MODE_RIGHT_WEAPON_RELOAD;
         break;
     default:
-        *hit_mode = HIT_MODE_PUNCH;
+        *hitMode = HIT_MODE_PUNCH;
         break;
     }
 

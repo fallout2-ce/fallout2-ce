@@ -1,6 +1,7 @@
 #ifndef GAME_SOUND_H
 #define GAME_SOUND_H
 
+#include "combat_defs.h"
 #include "obj_types.h"
 #include "sound.h"
 
@@ -78,6 +79,7 @@ int _gsound_background_volume_get_set(int volume);
 void backgroundSoundSetEndCallback(SoundEndCallback* callback);
 int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMode, GameSoundStorageType storageType, GameSoundLoopingMode loopingMode);
 int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode);
+const char* gameSoundGetMusicOverride(const char* key, const char* defaultValue);
 void backgroundSoundDelete();
 void backgroundSoundRestart(GameSoundReadLimitMode readLimitMode);
 void backgroundSoundPause();
@@ -102,7 +104,7 @@ int _gsound_compute_relative_volume(Object* obj);
 char* sfxBuildCharName(Object* object, int anim, int weaponAnimationCode);
 char* gameSoundBuildAmbientSoundEffectName(const char* name);
 char* gameSoundBuildInterfaceName(const char* name);
-char* sfxBuildWeaponName(int effectType, Object* weapon, int hitMode, Object* target);
+char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object* target);
 char* sfxBuildSceneryName(int actionType, int action, const char* name);
 char* sfxBuildOpenName(Object* object, int action);
 void _gsound_red_butt_press(int btn, int keyCode);

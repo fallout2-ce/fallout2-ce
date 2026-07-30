@@ -264,7 +264,7 @@ static int gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
 };
 
 // 0x518D68 gmouse_skill_table
-static const int gGameMouseModeSkills[GAME_MOUSE_MODE_SKILL_COUNT] = {
+static const Skill gGameMouseModeSkills[GAME_MOUSE_MODE_SKILL_COUNT] = {
     SKILL_FIRST_AID,
     SKILL_DOCTOR,
     SKILL_LOCKPICK,
@@ -702,8 +702,41 @@ void gameMouseRefresh()
                 Object* pointedObject = gameMouseGetObjectUnderCursor(-1, true, gElevation);
                 if (pointedObject != nullptr) {
                     int primaryAction = -1;
+                    int objectType = FID_TYPE(pointedObject->fid);
+                    switch (objectType) {
+                    case OBJ_TYPE_SCENERY:
+                    case OBJ_TYPE_WALL:
+                    case OBJ_TYPE_MISC: {
+                        // if the pointedObject is OBJ_TYPE_SCENERY/OBJ_TYPE_WALL/OBJ_TYPE_MISC object then try to find possible itemObject behind it
+                        // this must be in sync with the switch/case in _gmouse_handle_event
+                        Object* itemObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
 
-                    switch (FID_TYPE(pointedObject->fid)) {
+                        if (itemObject == nullptr && objectType == OBJ_TYPE_MISC) {
+                            break;
+                        }
+
+                        bool itemIsOutlined = objectHasVisibleOutline(itemObject);
+
+                        if (!itemIsOutlined) {
+                            // filter out potential itemObject behind usable scenery which is not outlined already
+                            if (objectType == OBJ_TYPE_SCENERY && _obj_action_can_use(pointedObject)) {
+                                primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
+                                break;
+                            }
+
+                            bool canBeShootOrSeenThroughObject = (pointedObject->flags & (OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU)) != 0;
+
+                            // filter out not found itemObject and itemObject behind the blocking walls which is not outlined already
+                            if (itemObject == nullptr || (objectType == OBJ_TYPE_WALL && !canBeShootOrSeenThroughObject)) {
+                                primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
+                                break;
+                            }
+                        }
+
+                        // intentionally fall trough the OBJ_TYPE_ITEM to enforce auto outlining of the itemObject and changing the mouse action menu
+                        pointedObject = itemObject;
+                    }
+                    // FALLTHROUGH
                     case OBJ_TYPE_ITEM:
                         primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                         if (gGameMouseItemHighlightEnabled) {
@@ -732,16 +765,6 @@ void gameMouseRefresh()
                                 }
                             }
                         }
-                        break;
-                    case OBJ_TYPE_SCENERY:
-                        if (!_obj_action_can_use(pointedObject)) {
-                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
-                        } else {
-                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
-                        }
-                        break;
-                    case OBJ_TYPE_WALL:
-                        primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
                         break;
                     }
 
@@ -992,7 +1015,30 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         if (gGameMouseMode == GAME_MOUSE_MODE_ARROW) {
             Object* targetObj = gameMouseGetObjectUnderCursor(-1, true, gElevation);
             if (targetObj != nullptr) {
-                switch (FID_TYPE(targetObj->fid)) {
+                int objectType = FID_TYPE(targetObj->fid);
+                switch (objectType) {
+                case OBJ_TYPE_WALL:
+                case OBJ_TYPE_SCENERY:
+                case OBJ_TYPE_MISC: {
+                    // if the targetObj is OBJ_TYPE_SCENERY/OBJ_TYPE_WALL/OBJ_TYPE_MISC object then it allows to pickup outlined itemObj potentially behind it
+                    // this must be in sync with the switch/case in gameMouseRefresh
+                    Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
+                    if (!objectHasVisibleOutline(itemObj)) {
+                        if (objectType == OBJ_TYPE_SCENERY && _obj_action_can_use(targetObj)) {
+                            _action_use_an_object(gDude, targetObj);
+                            break;
+                        }
+
+                        if (objectType != OBJ_TYPE_MISC && objectExamine(gDude, targetObj) == -1) {
+                            objectLookAt(gDude, targetObj);
+                        }
+                        break;
+                    }
+
+                    // intentionally fall through the OBJ_TYPE_ITEM to enforce actionPickUp
+                    targetObj = itemObj;
+                }
+                // FALLTHROUGH
                 case OBJ_TYPE_ITEM:
                     actionPickUp(gDude, targetObj);
                     break;
@@ -1016,20 +1062,6 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         } else {
                             actionLootCritter(gDude, targetObj);
                         }
-                    }
-                    break;
-                case OBJ_TYPE_SCENERY:
-                    if (_obj_action_can_use(targetObj)) {
-                        _action_use_an_object(gDude, targetObj);
-                    } else {
-                        if (objectExamine(gDude, targetObj) == -1) {
-                            objectLookAt(gDude, targetObj);
-                        }
-                    }
-                    break;
-                case OBJ_TYPE_WALL:
-                    if (objectExamine(gDude, targetObj) == -1) {
-                        objectLookAt(gDude, targetObj);
                     }
                     break;
                 }
@@ -1062,7 +1094,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                 Object* weapon;
                 if (interfaceGetActiveItem(&weapon) != -1) {
                     if (isInCombat()) {
-                        int hitMode = interfaceGetCurrentHand()
+                        HitMode hitMode = interfaceGetCurrentHand()
                             ? HIT_MODE_RIGHT_WEAPON_PRIMARY
                             : HIT_MODE_LEFT_WEAPON_PRIMARY;
 
@@ -1258,7 +1290,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         break;
                     case GAME_MOUSE_ACTION_MENU_ITEM_USE_SKILL:
                         if (1) {
-                            int skill = -1;
+                            Skill skill = SKILL_INVALID;
 
                             int rc = skilldexOpen();
                             switch (rc) {
@@ -1288,7 +1320,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                                 break;
                             }
 
-                            if (skill != -1) {
+                            if (skill != SKILL_INVALID) {
                                 actionUseSkill(gDude, targetObj, skill);
                             }
                         }

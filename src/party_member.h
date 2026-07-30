@@ -6,6 +6,7 @@
 #include "db.h"
 #include "obj_types.h"
 #include "scripts.h"
+#include "skill_defs.h"
 
 namespace fallout {
 
@@ -32,9 +33,9 @@ bool objectIsPartyMember(Object* object);
 bool partyMemberPidCanEquipArmor(int pid);
 int _getPartyMemberCount();
 int _partyMemberPrepItemSaveAll();
-int partyMemberGetBestSkill(Object* object);
-Object* partyMemberGetBestInSkill(int skill);
-int partyGetBestSkillValue(int skill);
+Skill partyMemberGetBestSkill(Object* object);
+Object* partyMemberGetBestInSkill(Skill skill);
+int partyGetBestSkillValue(Skill skill);
 void _partyMemberSaveProtos();
 bool partyMemberSupportsDisposition(Object* object, int disposition);
 bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode);

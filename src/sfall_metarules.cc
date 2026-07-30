@@ -273,16 +273,20 @@ namespace {
             attack->attacker = objectValue;
             return true;
         case AttackDataField::HitMode:
-            if (!intDataValue(data, intValue)) return false;
-            attack->hitMode = intValue;
+            if (!intDataValue(data, intValue) || !hitModeIsValid(intValue)) {
+                return false;
+            }
+            attack->hitMode = static_cast<HitMode>(intValue);
             return true;
         case AttackDataField::Weapon:
             if (!objectDataValue(data, objectValue)) return false;
             attack->weapon = objectValue;
             return true;
         case AttackDataField::Unused:
-            if (!intDataValue(data, intValue)) return false;
-            attack->attackHitLocation = intValue;
+            if (!intDataValue(data, intValue) || !hitLocationIsValid(intValue)) {
+                return false;
+            }
+            attack->attackHitLocation = static_cast<HitLocation>(intValue);
             return true;
         case AttackDataField::DamageSource:
             if (!intDataValue(data, intValue)) return false;
@@ -305,8 +309,10 @@ namespace {
             attack->defender = objectValue;
             return true;
         case AttackDataField::BodyPart:
-            if (!intDataValue(data, intValue)) return false;
-            attack->defenderHitLocation = intValue;
+            if (!intDataValue(data, intValue) || !hitLocationIsValid(intValue)) {
+                return false;
+            }
+            attack->defenderHitLocation = static_cast<HitLocation>(intValue);
             return true;
         case AttackDataField::DamageTarget:
             if (!intDataValue(data, intValue)) return false;
@@ -773,6 +779,7 @@ static void mf_get_object_ai_data(OpcodeContext& ctx);
 static void mf_get_object_data(OpcodeContext& ctx);
 static void mf_get_outline(OpcodeContext& ctx);
 static void mf_get_sfall_arg_at(OpcodeContext& ctx);
+static void mf_get_terrain_name(OpcodeContext& ctx);
 static void mf_get_text_width(OpcodeContext& ctx);
 static void mf_get_window_attribute(OpcodeContext& ctx);
 static void mf_hide_window(OpcodeContext& ctx);
@@ -793,12 +800,15 @@ static void mf_objects_in_radius(OpcodeContext& ctx);
 static void mf_opcode_exists(OpcodeContext& ctx);
 static void mf_outlined_object(OpcodeContext& ctx);
 static void mf_real_dude_obj(OpcodeContext& ctx);
+static void mf_remove_wm_town_names(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_object_data(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
+static void mf_set_terrain_name(OpcodeContext& ctx);
+static void mf_set_town_title(OpcodeContext& ctx);
 static void mf_set_window_flag(OpcodeContext& ctx);
 static void mf_set_unique_id(OpcodeContext& ctx);
 static void mf_show_window(OpcodeContext& ctx);
@@ -853,7 +863,7 @@ const MetaruleInfo kMetarules[] = {
     // {"get_stat_max",              mf_get_stat_max,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_stat_min",              mf_get_stat_min,              1, 2,  0, {ARG_INT, ARG_INT}},
     // {"get_string_pointer",        mf_get_string_pointer,        1, 1,  0, {ARG_STRING}}, // note: deprecated; do not implement
-    // {"get_terrain_name",          mf_get_terrain_name,          0, 2, -1, {ARG_INT, ARG_INT}},
+    { "get_terrain_name", mf_get_terrain_name, 0, 2, -1, { ARG_INT, ARG_INT } },
     { "get_text_width", mf_get_text_width, 1, 1, 0, { ARG_STRING } },
     { "get_window_attribute", mf_get_window_attribute, 1, 2, -1, { ARG_INT, ARG_INT } },
     // {"has_fake_perk_npc",         mf_has_fake_perk_npc,         2, 2,  0, {ARG_OBJECT, ARG_STRING}},
@@ -879,6 +889,7 @@ const MetaruleInfo kMetarules[] = {
     { "objects_in_radius", mf_objects_in_radius, 3, 4, 0, { ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "outlined_object", mf_outlined_object, 0, 0 },
     { "real_dude_obj", mf_real_dude_obj, 0, 0 },
+    { "remove_wm_town_names", mf_remove_wm_town_names, 1, 1, -1, { ARG_INT } },
     { "reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, { ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT } },
     // {"remove_timer_event",        mf_remove_timer_event,        0, 1, -1, {ARG_INT}},
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
@@ -902,8 +913,8 @@ const MetaruleInfo kMetarules[] = {
     // {"set_rest_mode",             mf_set_rest_mode,             1, 1, -1, {ARG_INT}},
     // {"set_scr_name",              mf_set_scr_name,              0, 1, -1, {ARG_STRING}},
     // {"set_selectable_perk_npc",   mf_set_selectable_perk_npc,   5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
-    // {"set_terrain_name",          mf_set_terrain_name,          3, 3, -1, {ARG_INT, ARG_INT, ARG_STRING}},
-    // {"set_town_title",            mf_set_town_title,            2, 2, -1, {ARG_INT, ARG_STRING}},
+    { "set_terrain_name", mf_set_terrain_name, 3, 3, -1, { ARG_INT, ARG_INT, ARG_STRING } },
+    { "set_town_title", mf_set_town_title, 2, 2, -1, { ARG_INT, ARG_STRING } },
     { "set_unique_id", mf_set_unique_id, 1, 2, -1, { ARG_OBJECT, ARG_INT } },
     // {"set_unjam_locks_time",      mf_set_unjam_locks_time,      1, 1, -1, {ARG_INT}},
     { "set_window_flag", mf_set_window_flag, 3, 3, -1, { ARG_INTSTR, ARG_INT, ARG_INT } },
@@ -950,7 +961,7 @@ static InterfaceWindowLookupResult getInterfaceWindowByType(int winType, int& wi
         window = inventoryGetWindow();
         break;
     case 1:
-        window = gameDialogGetWindow();
+        window = gameDialogGetBackgroundWindow();
         break;
     case 2:
         window = pipboyGetWindow();
@@ -979,35 +990,6 @@ static InterfaceWindowLookupResult getInterfaceWindowByType(int winType, int& wi
     }
 
     return window != -1 ? InterfaceWindowLookupResult::Found : InterfaceWindowLookupResult::Missing;
-}
-
-static int getCurrentInterfaceWindow()
-{
-    int window = -1;
-    if (GameMode::isInGameMode(GameMode::kInventory)
-        || GameMode::isInGameMode(GameMode::kUseOn)
-        || GameMode::isInGameMode(GameMode::kLoot)
-        || GameMode::isInGameMode(GameMode::kBarter)) {
-        window = inventoryGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kDialog)) {
-        window = gameDialogGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kPipboy)) {
-        window = pipboyGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kWorldmap)) {
-        window = worldmapGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kEditor)) {
-        window = characterEditorGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kSkilldex)) {
-        window = skilldexGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kOptions)) {
-        window = optionsGetWindow();
-    } else if (GameMode::isInGameMode(GameMode::kAutomap)) {
-        window = automapGetWindow();
-    } else if (windowGetWindow(gInterfaceBarWindow) != nullptr) {
-        window = gInterfaceBarWindow;
-    }
-
-    return window;
 }
 
 static bool clampWindowFillRect(int windowWidth, int windowHeight, int& x, int& y, int& width, int& height)
@@ -1101,7 +1083,7 @@ void mf_add_iface_tag(OpcodeContext& ctx)
 
 void mf_attack_is_aimed(OpcodeContext& ctx)
 {
-    int hitMode;
+    HitMode hitMode;
     bool aiming;
 
     if (interfaceGetCurrentHitMode(&hitMode, &aiming) == -1) {
@@ -1862,10 +1844,10 @@ void mf_set_window_flag(OpcodeContext& ctx)
 
     int windowId = ctx.arg(0).asInt();
     if (windowId <= 0) {
-        windowId = getCurrentInterfaceWindow();
+        windowId = inventoryGetWindow();
     }
 
-    if (windowId == -1) {
+    if (windowId == -1 || windowGetWindow(windowId) == nullptr) {
         return;
     }
 
@@ -1976,6 +1958,56 @@ void mf_unwield_slot(OpcodeContext& ctx)
     if (inventoryUnwieldSlot(critter, static_cast<InvenSlot>(slot)) == -1) {
         ctx.setReturn(-1);
     }
+}
+
+static const char* invalidSubtilePos = "%s() - invalid x/y coordinates for the sub-tile.";
+
+static void mf_get_terrain_name(OpcodeContext& ctx)
+{
+    if (ctx.numArgs() == 0) {
+        ctx.setReturn(wmGetCurrentTerrainName());
+        return;
+    }
+
+    if (ctx.numArgs() == 1) {
+        ctx.printError("%s() - invalid number of arguments (%d), must be 0 or 2.", ctx.name(), ctx.numArgs());
+        ctx.setReturn(ctx.metaruleInfo()->errorReturn);
+        return;
+    }
+
+    int x = ctx.arg(0).asInt();
+    int y = ctx.arg(1).asInt();
+
+    if (!wmTerrainNameIsValidSubtile(x, y)) {
+        ctx.printError(invalidSubtilePos, ctx.name());
+        ctx.setReturn("Error");
+        return;
+    }
+
+    ctx.setReturn(wmGetTerrainName(x, y));
+}
+
+static void mf_set_terrain_name(OpcodeContext& ctx)
+{
+    int x = ctx.arg(0).asInt();
+    int y = ctx.arg(1).asInt();
+
+    if (!wmTerrainNameIsValidSubtile(x, y)) {
+        ctx.printError(invalidSubtilePos, ctx.name());
+        return;
+    }
+
+    wmSetTerrainName(x, y, ctx.stringArg(2));
+}
+
+static void mf_set_town_title(OpcodeContext& ctx)
+{
+    wmSetTownTitle(ctx.arg(0).asInt(), ctx.stringArg(1));
+}
+
+static void mf_remove_wm_town_names(OpcodeContext& ctx)
+{
+    wmRemoveTownNames(ctx.arg(0).asInt() != 0);
 }
 
 void mf_tile_by_position(OpcodeContext& ctx)

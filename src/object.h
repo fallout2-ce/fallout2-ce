@@ -25,6 +25,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch);
 void objectsReset();
 void objectsExit();
 int objectRead(Object* obj, File* stream);
+bool objectIsSavable(Object* obj);
 int objectLoadAll(File* stream);
 int objectSaveAll(File* stream);
 void _obj_render_pre_roof(Rect* rect, int elevation);
@@ -102,6 +103,16 @@ void _obj_fix_violence_settings(int* fid);
 
 Object* objectTypedFindById(int id, int type);
 bool isExitGridAt(int tile, int elevation);
+
+inline bool objectHasOutline(Object* obj)
+{
+    return obj != nullptr && (obj->outline & OUTLINE_TYPE_MASK) != 0;
+}
+
+inline bool objectHasVisibleOutline(Object* obj)
+{
+    return objectHasOutline(obj) && (obj->outline & OUTLINE_DISABLED) == 0;
+}
 
 // RAII wrapper for Object*.
 class UniqueObject {

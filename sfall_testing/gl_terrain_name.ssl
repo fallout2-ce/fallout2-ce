@@ -1,0 +1,31 @@
+#include "test_utils.h"
+#include "sfall.h"
+
+procedure start begin
+    variable defaultName;
+
+    display_msg("Testing terrain name metarules...");
+
+    call assertEquals("get metarule exists", metarule_exist("get_terrain_name"), 1);
+    call assertEquals("set metarule exists", metarule_exist("set_terrain_name"), 1);
+    call assertEquals("set town title metarule exists", metarule_exist("set_town_title"), 1);
+    call assertEquals("remove town names metarule exists", metarule_exist("remove_wm_town_names"), 1);
+
+    defaultName := get_terrain_name(0, 0);
+    call assertNotEquals("default terrain name is not error", defaultName, "Error");
+    call assertNotEquals("default terrain name is not empty", defaultName, "");
+
+    set_terrain_name(0, 0, "CE Terrain Override");
+    call assertEquals("terrain override is returned", get_terrain_name(0, 0), "CE Terrain Override");
+
+    set_terrain_name(0, 0, "CE Terrain Override 2");
+    call assertEquals("latest terrain override wins", get_terrain_name(0, 0), "CE Terrain Override 2");
+    remove_wm_town_names(true);
+    remove_wm_town_names(false);
+    call assertEquals("one argument get returns error", sfall_func1("get_terrain_name", 0), -1);
+    call assertEquals("invalid get returns error", get_terrain_name(-1, 0), "Error");
+    call assertNotEquals("current terrain name is available", get_current_terrain_name, "Error");
+
+    call report_test_results("terrain_name");
+    signal_close_game;
+end

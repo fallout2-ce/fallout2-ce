@@ -18,6 +18,11 @@ static constexpr int kGlobalScriptBusyFlags = PROGRAM_FLAG_FATAL_ERROR
     | PROGRAM_FLAG_CHILD_CALL
     | PROGRAM_FLAG_CHILD_SPAWN;
 
+// sfall runs global script procs directly. CE keeps globals outside the normal
+// program list, so pending callbacks are resumed here; use a large bounded burst
+// to avoid stretching UI callbacks over multiple frames.
+static constexpr int kGlobalScriptContinuationBurstSize = 100;
+
 struct GlobalScript {
     Program* program = nullptr;
     int procs[SCRIPT_PROC_COUNT] = { 0 };
@@ -34,6 +39,22 @@ struct GlobalScriptsState {
 
 static GlobalScriptsState* state = nullptr;
 
+static bool sfall_gl_scr_is_game_script(const char* fileName)
+{
+    for (int index = 0; index < scriptsGetListLength(); index++) {
+        char gameScriptFileName[100];
+        if (scriptsGetFileName(index, gameScriptFileName, sizeof(gameScriptFileName)) == -1) {
+            continue;
+        }
+
+        if (compat_stricmp(fileName, gameScriptFileName) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool sfall_gl_scr_init()
 {
     state = new (std::nothrow) GlobalScriptsState();
@@ -48,6 +69,10 @@ bool sfall_gl_scr_init()
     int filesLength = fileNameListInit(scriptPath, &files);
     if (filesLength != 0) {
         for (int index = 0; index < filesLength; index++) {
+            if (sfall_gl_scr_is_game_script(files[index])) {
+                continue;
+            }
+
             char path[COMPAT_MAX_PATH];
             snprintf(path, sizeof(path), "%s\\%s", dir, files[index]);
             state->paths.push_back(std::string { path });
@@ -216,8 +241,9 @@ bool sfall_gl_scr_is_loaded(Program* program)
 
 void sfall_gl_scr_update(int burstSize)
 {
+    int globalScriptBurstSize = std::max(burstSize, kGlobalScriptContinuationBurstSize);
     for (auto& scr : state->globalScripts) {
-        programInterpret(scr.program, burstSize);
+        programInterpret(scr.program, globalScriptBurstSize);
     }
 }
 

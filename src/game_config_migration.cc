@@ -7,6 +7,7 @@
 #include "content_config.h"
 #include "debug.h"
 #include "game_config.h"
+#include "game_movie.h"
 #include "platform_compat.h"
 #include "settings.h"
 #include "sfall_config.h"
@@ -161,6 +162,7 @@ namespace {
 
     constexpr char kSfallMisc[] = "Misc";
     constexpr char kSfallInterface[] = "Interface";
+    constexpr char kSfallSound[] = "Sound";
 
     struct SfallMigrationEntry {
         const char* sfallSection;
@@ -175,11 +177,17 @@ namespace {
     constexpr SfallMigrationEntry kSfallMigrationEntries[] = {
         // [start]
         { kSfallMisc, "StartingMap", CONTENT_CONFIG_START_SECTION, "map", "" },
+        { kSfallMisc, "StartXPos", CONTENT_CONFIG_START_SECTION, "worldmap_x", "-1" },
+        { kSfallMisc, "StartYPos", CONTENT_CONFIG_START_SECTION, "worldmap_y", "-1" },
+        { kSfallMisc, "ViewXPos", CONTENT_CONFIG_START_SECTION, "worldmap_view_x", "-1" },
+        { kSfallMisc, "ViewYPos", CONTENT_CONFIG_START_SECTION, "worldmap_view_y", "-1" },
         { kSfallMisc, "MaleStartModel", CONTENT_CONFIG_START_SECTION, "model_male", "hmwarr" },
         { kSfallMisc, "MaleDefaultModel", CONTENT_CONFIG_START_SECTION, "model_male_default", "hmjmps" },
         { kSfallMisc, "FemaleStartModel", CONTENT_CONFIG_START_SECTION, "model_female", "hfprim" },
         { kSfallMisc, "FemaleDefaultModel", CONTENT_CONFIG_START_SECTION, "model_female_default", "hfjmps" },
         { kSfallMisc, "PipBoyAvailableAtGameStart", CONTENT_CONFIG_START_SECTION, "pipboy", "0" },
+        // [maps]
+        { kSfallMisc, "DisableSpecialMapIDs", CONTENT_CONFIG_MAPS_SECTION, "disable_special_map_ids", "0" },
         // [karma]
         { kSfallMisc, "KarmaFRMs", CONTENT_CONFIG_KARMA_SECTION, "frms" },
         { kSfallMisc, "KarmaPoints", CONTENT_CONFIG_KARMA_SECTION, "points" },
@@ -195,6 +203,13 @@ namespace {
         { kSfallMisc, "MainMenuOffsetY", CONTENT_CONFIG_MAIN_MENU_SECTION, "offset_y", "0" },
         { kSfallMisc, "MainMenuCreditsOffsetX", CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_x", "0" },
         { kSfallMisc, "MainMenuCreditsOffsetY", CONTENT_CONFIG_MAIN_MENU_SECTION, "credits_offset_y", "0" },
+        // [sound]
+        { kSfallSound, "MainMenuMusic", CONTENT_CONFIG_SOUND_SECTION, "main_menu_music", "07desert" },
+        { kSfallSound, "WorldMapMusic", CONTENT_CONFIG_SOUND_SECTION, "worldmap_music", "23world" },
+        { kSfallSound, "WorldMapCarMusic", CONTENT_CONFIG_SOUND_SECTION, "worldmap_car_music", "20car" },
+        { kSfallSound, "EndGameMovieMusic0", CONTENT_CONFIG_SOUND_SECTION, "endgame_movie_music0", "akiss" },
+        { kSfallSound, "EndGameMovieMusic1", CONTENT_CONFIG_SOUND_SECTION, "endgame_movie_music1", "10labone" },
+        { kSfallSound, "MapLoadingSound", CONTENT_CONFIG_SOUND_SECTION, "map_loading_sound", "wind2" },
         // [movies]
         { kSfallMisc, "MovieTimer_artimer1", CONTENT_CONFIG_MOVIES_SECTION, "artimer1", "90" },
         { kSfallMisc, "MovieTimer_artimer2", CONTENT_CONFIG_MOVIES_SECTION, "artimer2", "180" },
@@ -230,12 +245,46 @@ namespace {
         { kSfallMisc, "DisableHorrigan", CONTENT_CONFIG_WORLDMAP_SECTION, "disable_horrigan", "0" },
         { kSfallMisc, "CityRepsList", CONTENT_CONFIG_WORLDMAP_SECTION, "city_reputation_list" },
         { kSfallInterface, "WorldMapTravelMarkers", CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", "0" },
+        { kSfallInterface, "WorldMapTerrainInfo", CONTENT_CONFIG_WORLDMAP_SECTION, "terrain_info", "0" },
         // [characters]
         { kSfallMisc, "PremadePaths", CONTENT_CONFIG_CHARACTERS_SECTION, "premade_paths" },
         { kSfallMisc, "PremadeFIDs", CONTENT_CONFIG_CHARACTERS_SECTION, "premade_fids" },
         // [text]
         { kSfallMisc, "ExtraGameMsgFileList", CONTENT_CONFIG_TEXT_SECTION, "extra_msg_file_list" },
     };
+
+    static bool contentConfigMigrateSfallMovieOverrides(Config* sfallConfig, Config* migratedConfig)
+    {
+        assert(sfallConfig != nullptr && migratedConfig != nullptr);
+
+        bool migrated = false;
+        for (int index = 0; index < GAME_MOVIE_MAX_COUNT; index++) {
+            char sfallKey[16];
+            snprintf(sfallKey, sizeof(sfallKey), "Movie%d", index + 1);
+
+            char* value;
+            if (!configGetString(sfallConfig, kSfallMisc, sfallKey, &value) || value[0] == '\0') {
+                continue;
+            }
+
+            const char* defaultFileName = gameMovieGetDefaultFileName(index);
+            if (defaultFileName != nullptr && strcmp(value, defaultFileName) == 0) {
+                continue;
+            }
+
+            char targetKey[16];
+            snprintf(targetKey, sizeof(targetKey), "movie%d", index + 1);
+
+            if (gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, targetKey)) {
+                continue;
+            }
+
+            configSetString(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, targetKey, value);
+            migrated = true;
+        }
+
+        return migrated;
+    }
 
 } // anonymous namespace
 
@@ -281,6 +330,10 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
             configSetString(&migratedConfig, entry.targetSection, entry.targetKey, value);
             migrated = true;
         }
+    }
+
+    if (contentConfigMigrateSfallMovieOverrides(sfallConfig, &migratedConfig)) {
+        migrated = true;
     }
 
     if (migrated) {

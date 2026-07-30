@@ -99,11 +99,11 @@ static CritterProto gDudeProto = {
     0,
     { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 18, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 23, 0 },
     { 0 },
-    { 0 },
+    { SKILL_SMALL_GUNS },
+    BODY_TYPE_BIPED,
     0,
-    0,
-    0,
-    0,
+    KILL_TYPE_MAN,
+    DAMAGE_TYPE_NORMAL,
     -1,
     0,
     0,
@@ -399,15 +399,13 @@ int proto_item_init(Proto* proto, int pid)
 // 0x49EBFC proto_item_subdata_init
 int proto_item_subdata_init(Proto* proto, int type)
 {
-    int index;
-
     switch (type) {
     case ITEM_TYPE_ARMOR:
         proto->item.data.armor.armorClass = 0;
 
-        for (index = 0; index < DAMAGE_TYPE_COUNT; index++) {
-            proto->item.data.armor.damageResistance[index] = 0;
-            proto->item.data.armor.damageThreshold[index] = 0;
+        for (DamageType damageType = DAMAGE_TYPE_FIRST; damageType < DAMAGE_TYPE_COUNT; damageType++) {
+            proto->item.data.armor.damageResistance[damageType] = 0;
+            proto->item.data.armor.damageThreshold[damageType] = 0;
         }
 
         proto->item.data.armor.perk = -1;
@@ -443,7 +441,7 @@ int proto_item_subdata_init(Proto* proto, int type)
         proto->item.data.weapon.animationCode = 0;
         proto->item.data.weapon.minDamage = 0;
         proto->item.data.weapon.maxDamage = 0;
-        proto->item.data.weapon.damageType = 0;
+        proto->item.data.weapon.damageType = DAMAGE_TYPE_NORMAL;
         proto->item.data.weapon.maxRange1 = 0;
         proto->item.data.weapon.maxRange2 = 0;
         proto->item.data.weapon.projectilePid = -1;
@@ -497,7 +495,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.extendedFlags = PROTO_EXT_FLAG_LOOK | PROTO_EXT_FLAG_CAN_TALK_TO;
     proto->critter.sid = -1;
     proto->critter.data.flags = 0;
-    proto->critter.data.bodyType = 0;
+    proto->critter.data.bodyType = BODY_TYPE_BIPED;
     proto->critter.headFid = -1;
     proto->critter.aiPacket = 1;
     if (!artExists(proto->fid)) {
@@ -506,8 +504,8 @@ int proto_critter_init(Proto* proto, int pid)
 
     CritterProtoData* data = &(proto->critter.data);
     data->experience = 60;
-    data->killType = 0;
-    data->damageType = 0;
+    data->killType = KILL_TYPE_MAN;
+    data->damageType = DAMAGE_TYPE_NORMAL;
     protoCritterDataResetStats(data);
     protoCritterDataResetSkills(data);
 
@@ -909,10 +907,10 @@ int _proto_dude_init(const char* path)
     }
 
     proto->critter.data.baseStats[STAT_DAMAGE_RESISTANCE_EMP] = 100;
-    proto->critter.data.bodyType = 0;
+    proto->critter.data.bodyType = BODY_TYPE_BIPED;
     proto->critter.data.experience = 0;
-    proto->critter.data.killType = 0;
-    proto->critter.data.damageType = 0;
+    proto->critter.data.killType = KILL_TYPE_MAN;
+    proto->critter.data.damageType = DAMAGE_TYPE_NORMAL;
 
     _proto_dude_update_gender();
     inventoryResetDude();
@@ -1438,8 +1436,8 @@ int protoInit()
     }
 
     // damage code types
-    for (i = 0; i < DAMAGE_TYPE_COUNT; i++) {
-        gDamageTypeNames[i] = getmsg(&gProtoMessageList, &messageListItem, 250 + i);
+    for (DamageType damageType = DAMAGE_TYPE_FIRST; damageType < DAMAGE_TYPE_COUNT; damageType++) {
+        gDamageTypeNames[damageType] = getmsg(&gProtoMessageList, &messageListItem, 250 + damageType);
     }
 
     // caliber types
@@ -1448,13 +1446,13 @@ int protoInit()
     }
 
     // race types
-    for (i = 0; i < RACE_TYPE_COUNT; i++) {
-        gRaceTypeNames[i] = getmsg(&gProtoMessageList, &messageListItem, 350 + i);
+    for (RaceType raceType = RACE_TYPE_FIRST; raceType < RACE_TYPE_COUNT; raceType++) {
+        gRaceTypeNames[raceType] = getmsg(&gProtoMessageList, &messageListItem, 350 + raceType);
     }
 
     // body types
-    for (i = 0; i < BODY_TYPE_COUNT; i++) {
-        gBodyTypeNames[i] = getmsg(&gProtoMessageList, &messageListItem, 400 + i);
+    for (BodyType bodyType = BODY_TYPE_FIRST; bodyType < BODY_TYPE_COUNT; bodyType++) {
+        gBodyTypeNames[bodyType] = getmsg(&gProtoMessageList, &messageListItem, 400 + bodyType);
     }
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_PROTO, &gProtoMessageList);
@@ -1585,7 +1583,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
         if (fileReadInt32(stream, &(item_data->weapon.animationCode)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.minDamage)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.maxDamage)) == -1) return -1;
-        if (fileReadInt32(stream, &(item_data->weapon.damageType)) == -1) return -1;
+        if (fileReadInt32(stream, reinterpret_cast<int*>(&(item_data->weapon.damageType))) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.maxRange1)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.maxRange2)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.projectilePid)) == -1) return -1;

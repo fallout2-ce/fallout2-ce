@@ -427,6 +427,7 @@ void gameReset()
     gameMouseReset();
     protoReset();
     _scr_reset();
+    gameFreeGlobalVars();
     gameLoadGlobalVars();
     scriptsReset();
     wmWorldMap_reset();
@@ -1667,6 +1668,12 @@ void GameMode::exitGameMode(int gameMode)
     if (currentGameMode != previousGameMode) {
         sfallOnGameModeChange(0, previousGameMode);
     }
+}
+
+// remove game mode without triggering hooks
+void GameMode::exitGameModeQuietly(int gameMode)
+{
+    currentGameMode &= ~gameMode;
 }
 
 bool GameMode::isInGameMode(int gameMode)

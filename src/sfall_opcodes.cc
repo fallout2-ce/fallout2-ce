@@ -14,6 +14,7 @@
 #include "debug.h"
 #include "game.h"
 #include "game_dialog.h"
+#include "game_movie.h"
 #include "input.h"
 #include "interface.h"
 #include "interpreter.h"
@@ -209,6 +210,31 @@ static void op_get_year(Program* program)
     int year;
     gameTimeGetDate(nullptr, nullptr, &year);
     programStackPushInteger(program, year);
+}
+
+static void op_set_movie_path(Program* program)
+{
+    int movie = programStackPopInteger(program);
+    const char* fileName = programStackPopString(program);
+    if (movie < 0 || movie >= GAME_MOVIE_MAX_COUNT || fileName == nullptr) {
+        programPrintError("set_movie_path: invalid argument");
+        return;
+    }
+
+    if (strlen(fileName) > 64) {
+        programPrintError("set_movie_path: filename exceeds 64 characters");
+        return;
+    }
+
+    if (!gameMovieSetPath(movie, fileName)) {
+        programPrintError("set_movie_path: invalid filename");
+    }
+}
+
+static void op_mark_movie_played(Program* program)
+{
+    int movie = programStackPopInteger(program);
+    gameMovieMarkSeen(movie);
 }
 
 // game_loaded
@@ -431,24 +457,24 @@ static void op_set_car_current_town(Program* program)
 // get_bodypart_hit_modifier
 static void op_get_bodypart_hit_modifier(Program* program)
 {
-    int hit_location = programStackPopInteger(program);
-    programStackPushInteger(program, combat_get_hit_location_penalty(hit_location));
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    programStackPushInteger(program, combat_get_hit_location_penalty(hitLocation));
 }
 
 // set_bodypart_hit_modifier
 static void op_set_bodypart_hit_modifier(Program* program)
 {
     int penalty = programStackPopInteger(program);
-    int hit_location = programStackPopInteger(program);
-    combat_set_hit_location_penalty(hit_location, penalty);
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    combat_set_hit_location_penalty(hitLocation, penalty);
 }
 
-static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, int killType, int hitLocation, int effect, int dataMember)
+static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, KillType killType, HitLocation hitLocation, int effect, CriticalHitDataMember dataMember)
 {
-    if (killType < 0 || killType > SFALL_KILL_TYPE_COUNT
-        || hitLocation < 0 || hitLocation >= HIT_LOCATION_COUNT
-        || effect < 0 || effect >= CRTICIAL_EFFECT_COUNT
-        || dataMember < 0 || dataMember >= CRIT_DATA_MEMBER_COUNT) {
+    if (!killTypeOverrideIsValid(killType)
+        || !hitLocationIsValid(hitLocation)
+        || !criticalEffectIsValid(effect)
+        || !criticalHitDataMemberIsValid(dataMember)) {
         programPrintError("%s: argument values out of range", opcodeName);
         return false;
     }
@@ -459,10 +485,10 @@ static bool criticalTableArgsAreValid(Program* program, const char* opcodeName, 
 static void op_set_critical_table(Program* program)
 {
     int value = programStackPopInteger(program);
-    int dataMember = programStackPopInteger(program);
-    int effect = programStackPopInteger(program);
-    int hitLocation = programStackPopInteger(program);
-    int killType = programStackPopInteger(program);
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    KillType killType = programStackPopEnum<KillType>(program);
 
     if (!criticalTableArgsAreValid(program, "set_critical_table", killType, hitLocation, effect, dataMember)) {
         return;
@@ -473,10 +499,10 @@ static void op_set_critical_table(Program* program)
 
 static void op_get_critical_table(Program* program)
 {
-    int dataMember = programStackPopInteger(program);
-    int effect = programStackPopInteger(program);
-    int hitLocation = programStackPopInteger(program);
-    int killType = programStackPopInteger(program);
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    KillType killType = programStackPopEnum<KillType>(program);
 
     if (!criticalTableArgsAreValid(program, "get_critical_table", killType, hitLocation, effect, dataMember)) {
         programStackPushInteger(program, 0);
@@ -488,10 +514,10 @@ static void op_get_critical_table(Program* program)
 
 static void op_reset_critical_table(Program* program)
 {
-    int dataMember = programStackPopInteger(program);
-    int effect = programStackPopInteger(program);
-    int hitLocation = programStackPopInteger(program);
-    int killType = programStackPopInteger(program);
+    CriticalHitDataMember dataMember = programStackPopEnum<CriticalHitDataMember>(program);
+    CriticalEffect effect = programStackPopEnum<CriticalEffect>(program);
+    HitLocation hitLocation = programStackPopEnum<HitLocation>(program);
+    KillType killType = programStackPopEnum<KillType>(program);
 
     if (!criticalTableArgsAreValid(program, "reset_critical_table", killType, hitLocation, effect, dataMember)) {
         return;
@@ -1000,7 +1026,7 @@ static void op_create_message_window(Program* program)
 // get_attack_type
 static void op_get_attack_type(Program* program)
 {
-    int hit_mode;
+    HitMode hit_mode;
     if (interface_get_current_attack_mode(&hit_mode)) {
         programStackPushInteger(program, hit_mode);
     } else {
@@ -1183,7 +1209,10 @@ static void op_explosions_metarule(Program* program)
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_DMGTYPE:
-        explosionSetDamageType(param1);
+        if (!damageTypeIsValid(param1)) {
+            debugPrint("\n%s: explosions_metarule: EXPL_FORCE_EXPLOSION_DMGTYPE invalid damage type %d", program->name, param1);
+        }
+        explosionSetDamageType(static_cast<DamageType>(param1));
         programStackPushInteger(program, 0);
         break;
     case EXPL_STATIC_EXPLOSION_RADIUS:
@@ -1889,8 +1918,8 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8160, op_get_critter_base_stat);
     // 0x8161 - int  get_critter_extra_stat(object, int StatID)
     interpreterRegisterOpcode(0x8161, op_get_critter_extra_stat);
-    // 0x8242 - void set_critter_skill_points(int critter, int skill, int value)
-    // 0x8243 - int  get_critter_skill_points(int critter, int skill)
+    // 0x8242 - void set_critter_skill_points(int critter, Skill skill, int value)
+    // 0x8243 - int  get_critter_skill_points(int critter, Skill skill)
     // 0x8244 - void set_available_skill_points(int value)
     // 0x8245 - int  get_available_skill_points()
     // 0x8246 - void mod_skill_points_per_level(int value)
@@ -1962,6 +1991,7 @@ void sfallOpcodesInit()
     // 0x8175 - void set_dm_model(string name)
     // 0x8176 - void set_df_model(string name)
     // 0x8177 - void set_movie_path(string filename, int movieid)
+    interpreterRegisterOpcode(0x8177, op_set_movie_path);
 
     // 0x8178 - void set_perk_image(int perkID, int value)
     // 0x8179 - void set_perk_ranks(int perkID, int value)
@@ -2292,6 +2322,7 @@ void sfallOpcodesInit()
     // 0x823f - void disable_aimed_shots(int pid)
 
     // 0x8240 - void mark_movie_played(int id)
+    interpreterRegisterOpcode(0x8240, op_mark_movie_played);
 
     // 0x8248 - object get_last_target(object critter)
     // 0x8249 - object get_last_attacker(object critter)
