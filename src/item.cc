@@ -130,7 +130,7 @@ static const int _attack_anim[9] = {
 // Maps weapon extended flags to weapon class
 //
 // 0x5191A8 attack_subtype
-static const int _attack_subtype[9] = {
+static const AttackType _attack_subtype[9] = {
     ATTACK_TYPE_NONE, // 0 // None
     ATTACK_TYPE_UNARMED, // 1 // Punch // Brass Knuckles, Power First
     ATTACK_TYPE_UNARMED, // 2 // Kick?
@@ -1194,7 +1194,7 @@ bool itemIsHidden(Object* item)
 }
 
 // 0x478280
-int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode)
+AttackType weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return ATTACK_TYPE_UNARMED;
@@ -1309,7 +1309,7 @@ int weaponGetDamage(Object* critter, HitMode hitMode)
         // NOTE: Uninline.
         weaponGetDamageMinMax(weapon, &minDamage, &maxDamage);
 
-        int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+        AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
         if (attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) {
             meleeDamage = critterGetStat(critter, STAT_MELEE_DAMAGE);
             isMeleeWeaponAttack = attackType == ATTACK_TYPE_MELEE;
@@ -1752,7 +1752,7 @@ int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming)
     }
 
     if (critter == gDude) {
-        int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+        AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
 
         if (perkHasRank(gDude, PERK_BONUS_HTH_ATTACKS)) {
             if (attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) {
@@ -2085,7 +2085,7 @@ bool weaponIsGrenade(Object* weapon)
 // 0x47910C
 int weaponGetDamageRadius(Object* weapon, HitMode hitMode)
 {
-    int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+    AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
     int anim = weaponGetAnimationForHitMode(weapon, hitMode);
     DamageType damageType = weaponGetDamageType(nullptr, weapon);
 

@@ -3948,7 +3948,7 @@ static int attackCompute(Attack* attack)
         attack->defenderHitLocation = HIT_LOCATION_TORSO;
     }
 
-    int attackType = weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode);
+    AttackType attackType = weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode);
     int roundsHitMainTarget = 1;
     int damageMultiplier = 2;
     int roundsFired = 1;
@@ -4309,7 +4309,7 @@ static int attackComputeCriticalFailure(Attack* attack)
         }
     }
 
-    int attackType = weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode);
+    AttackType attackType = weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode);
     int criticalFailureTableIndex = weaponGetCriticalFailureType(attack->weapon);
     if (criticalFailureTableIndex == -1) {
         criticalFailureTableIndex = 0;
@@ -4442,7 +4442,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
     } else {
         toHit = weaponGetSkillValue(attacker, hitMode);
 
-        int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+        AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
         if (attackType == ATTACK_TYPE_RANGED || attackType == ATTACK_TYPE_THROW) {
             isRangedWeapon = true;
 
@@ -5789,7 +5789,7 @@ CombatBadShot _combat_check_bad_shot(Object* attacker, Object* defender, HitMode
         return COMBAT_BAD_SHOT_OUT_OF_RANGE;
     }
 
-    int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+    AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
 
     if (ammoGetCapacity(weapon) > 0) {
         if (!weaponHasAmmoForAttack(weapon, hitMode)) {

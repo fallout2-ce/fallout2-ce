@@ -13,14 +13,16 @@ namespace fallout {
 
 enum class RemoveInventoryObjectHookReason;
 
-typedef enum AttackType {
+enum AttackType : int {
+    ATTACK_TYPE_INVALID = -1,
     ATTACK_TYPE_NONE,
     ATTACK_TYPE_UNARMED,
     ATTACK_TYPE_MELEE,
     ATTACK_TYPE_THROW,
     ATTACK_TYPE_RANGED,
     ATTACK_TYPE_COUNT,
-} AttackType;
+    ATTACK_TYPE_FIRST = ATTACK_TYPE_NONE
+};
 
 typedef enum HealingItem {
     HEALING_ITEM_STIMPAK,
@@ -62,7 +64,7 @@ int itemGetQuantity(Object* obj, Object* item);
 int itemIsQueued(Object* obj);
 Object* itemReplace(Object* owner, Object* itemToReplace, int flags);
 bool itemIsHidden(Object* obj);
-int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode);
+AttackType weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode);
 Skill weaponGetSkillForHitMode(Object* weapon, HitMode hitMode);
 int weaponGetSkillValue(Object* critter, HitMode hitMode);
 int weaponGetDamageMinMax(Object* weapon, int* minDamagePtr, int* maxDamagePtr);

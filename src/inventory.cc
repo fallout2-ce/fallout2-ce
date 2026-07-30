@@ -3610,7 +3610,7 @@ static void inventoryRenderSummary()
 
         // CE: Fix displaying secondary mode weapon damage (affects throwable
         // melee weapons - knifes, spears, etc.).
-        int attackType = weaponGetAttackTypeForHitMode(item, hitMode);
+        AttackType attackType = weaponGetAttackTypeForHitMode(item, hitMode);
 
         formattedText[0] = '\0';
 
