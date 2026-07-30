@@ -145,6 +145,9 @@ jobs:
     runs-on: macos-15
     needs: [ce-dat]
 
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '10.15'
+
     steps:
       - name: Clone
         uses: actions/checkout@v4
