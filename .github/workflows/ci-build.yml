@@ -145,6 +145,9 @@ jobs:
     runs-on: macos-15
     needs: [ce-dat]
 
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "13"
+
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -332,6 +335,7 @@ jobs:
 
     env:
       MACOSX_DEPLOYMENT_TARGET: "10.15"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.15"
 
     steps:
       - name: Clone
@@ -346,16 +350,6 @@ jobs:
       - name: Configure
         run: |
           cmake --preset macos
-
-      - name: Print deployment target
-        run: |
-          grep CMAKE_OSX_DEPLOYMENT_TARGET build/CMakeCache.txt || true
-
-      - name: Print Xcode build settings
-        run: |
-          xcodebuild \
-            -project build/fallout2-ce.xcodeproj \
-            -showBuildSettings | grep MACOSX_DEPLOYMENT_TARGET || true
 
       - name: Build
         run: |
