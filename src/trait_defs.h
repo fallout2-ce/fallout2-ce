@@ -7,7 +7,8 @@ namespace fallout {
 #define TRAITS_MAX_SELECTED_COUNT 2
 
 // Available traits.
-typedef enum Trait {
+enum Trait : int {
+    TRAIT_INVALID = -1,
     TRAIT_FAST_METABOLISM,
     TRAIT_BRUISER,
     TRAIT_SMALL_FRAME,
@@ -25,7 +26,21 @@ typedef enum Trait {
     TRAIT_SKILLED,
     TRAIT_GIFTED,
     TRAIT_COUNT,
-} Trait;
+    TRAIT_FIRST = TRAIT_FAST_METABOLISM
+};
+
+
+inline bool traitIsValid(int trait)
+{
+    return trait >= TRAIT_FIRST && trait < TRAIT_COUNT;
+}
+
+inline Trait operator++(Trait& e, int)
+{
+    Trait result = e;
+    e = static_cast<Trait>(static_cast<int>(e) + 1);
+    return result;
+}
 
 } // namespace fallout
 

@@ -2121,7 +2121,7 @@ void sfallOpcodesInit()
     // 0x81c2 - int has_fake_trait(string name)
     // 0x81c3 - void perk_add_mode(int type)
     // 0x81c4 - void clear_selectable_perks()
-    // 0x8225 - void remove_trait(int traitID)
+    // 0x8225 - void remove_trait(Trait trait)
 
     // 0x81cb - void set_pyromaniac_mod(int bonus)
     // 0x81cc - void apply_heaveho_fix()

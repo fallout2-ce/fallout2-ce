@@ -290,7 +290,7 @@ static void characterEditorHandleInfoButtonPressed(int eventCode);
 static void characterEditorHandleAdjustSkillButtonPressed(int a1);
 static void characterEditorToggleTaggedSkill(Skill skill);
 static void characterEditorDrawOptionalTraits();
-static void characterEditorToggleOptionalTrait(int trait);
+static void characterEditorToggleOptionalTrait(Trait trait);
 static void characterEditorDrawKarmaFolder();
 static int characterEditorUpdateLevel();
 static void perkDialogRefreshPerks();
@@ -773,7 +773,7 @@ static bool gCharacterEditorIsCreationMode;
 static Skill gCharacterEditorTaggedSkillsBackup[NUM_TAGGED_SKILLS];
 
 // 0x5709F0 trait_back
-static int gCharacterEditorOptionalTraitsBackup[3];
+static Trait gCharacterEditorOptionalTraitsBackup[3];
 
 // current index for selecting new trait
 //
@@ -784,7 +784,7 @@ static int gCharacterEditorTempTraitCount;
 static int gPerkDialogOptionCount;
 
 // 0x570A04 temp_trait
-static int gCharacterEditorTempTraits[3];
+static Trait gCharacterEditorTempTraits[3];
 
 // 0x570A10 tagskill_count
 static int gCharacterEditorTaggedSkillCount;
@@ -1187,7 +1187,7 @@ int characterEditorShow(bool isCreationMode)
                     characterEditorToggleTaggedSkill(static_cast<Skill>(keyCode - 536));
                     windowRefresh(gCharacterEditorWindow);
                 } else if (gCharacterEditorIsCreationMode && (keyCode >= 555 && keyCode < 571)) {
-                    characterEditorToggleOptionalTrait(keyCode - 555);
+                    characterEditorToggleOptionalTrait(static_cast<Trait>(keyCode - 555));
                     windowRefresh(gCharacterEditorWindow);
                 } else {
                     if (keyCode == 390) {
@@ -1930,9 +1930,9 @@ void characterEditorInit()
     gCharacterEditorHasFreePerk = 0;
     characterEditorWindowSelectedFolder = EDITOR_FOLDER_PERKS;
 
-    for (i = 0; i < 2; i++) {
-        gCharacterEditorTempTraits[i] = -1;
-        gCharacterEditorOptionalTraitsBackup[i] = -1;
+    for (i = 0; i < TRAITS_MAX_SELECTED_COUNT; i++) {
+        gCharacterEditorTempTraits[i] = TRAIT_INVALID;
+        gCharacterEditorOptionalTraitsBackup[i] = TRAIT_INVALID;
     }
 
     gCharacterEditorRemainingCharacterPoints = 5;
@@ -5404,8 +5404,7 @@ static void characterEditorToggleTaggedSkill(Skill skill)
 // 0x43B8A8 ListTraits
 static void characterEditorDrawOptionalTraits()
 {
-    int v0 = -1;
-    int i;
+    Trait selectedTrait = TRAIT_INVALID;
     int color;
     const char* traitName;
     double step;
@@ -5416,7 +5415,7 @@ static void characterEditorDrawOptionalTraits()
     }
 
     if (characterEditorSelectedItem >= EDITOR_FIRST_TRAIT && characterEditorSelectedItem <= EDITOR_LAST_TRAIT) {
-        v0 = characterEditorSelectedItem - EDITOR_FIRST_TRAIT;
+        selectedTrait = static_cast<Trait>(characterEditorSelectedItem - EDITOR_FIRST_TRAIT);
     }
 
     blitBufferToBuffer(_editorBackgroundFrmImage.getData() + 640 * 353 + 47, 245, 100, 640, gCharacterEditorWindowBuffer + 640 * 353 + 47, 640);
@@ -5427,67 +5426,67 @@ static void characterEditorDrawOptionalTraits()
 
     step = fontGetLineHeight() + 3 + 0.56;
     y = 353;
-    for (i = 0; i < 8; i++) {
-        if (i == v0) {
-            if (i != gCharacterEditorTempTraits[0] && i != gCharacterEditorTempTraits[1]) {
+    for (Trait trait = TRAIT_FIRST; trait < TRAIT_BLOODY_MESS; trait++) {
+        if (trait == selectedTrait) {
+            if (trait != gCharacterEditorTempTraits[0] && trait != gCharacterEditorTempTraits[1]) {
                 color = COLOR_LIGHT_YELLOW;
             } else {
                 color = COLOR_WHITE;
             }
 
-            gCharacterEditorFolderCardFrmId = traitGetFrmId(i);
-            gCharacterEditorFolderCardTitle = traitGetName(i);
+            gCharacterEditorFolderCardFrmId = traitGetFrmId(trait);
+            gCharacterEditorFolderCardTitle = traitGetName(trait);
             gCharacterEditorFolderCardSubtitle = nullptr;
-            gCharacterEditorFolderCardDescription = traitGetDescription(i);
+            gCharacterEditorFolderCardDescription = traitGetDescription(trait);
         } else {
-            if (i != gCharacterEditorTempTraits[0] && i != gCharacterEditorTempTraits[1]) {
+            if (trait != gCharacterEditorTempTraits[0] && trait != gCharacterEditorTempTraits[1]) {
                 color = COLOR_GREEN;
             } else {
                 color = COLOR_LIGHT_GREY;
             }
         }
 
-        traitName = traitGetName(i);
+        traitName = traitGetName(trait);
         fontDrawText(gCharacterEditorWindowBuffer + 640 * (int)y + 47, traitName, 640, 640, color);
         y += step;
     }
 
     y = 353;
-    for (i = 8; i < 16; i++) {
-        if (i == v0) {
-            if (i != gCharacterEditorTempTraits[0] && i != gCharacterEditorTempTraits[1]) {
+    for (Trait trait = TRAIT_BLOODY_MESS; trait < TRAIT_COUNT; trait++) {
+        if (trait == selectedTrait) {
+            if (trait != gCharacterEditorTempTraits[0] && trait != gCharacterEditorTempTraits[1]) {
                 color = COLOR_LIGHT_YELLOW;
             } else {
                 color = COLOR_WHITE;
             }
 
-            gCharacterEditorFolderCardFrmId = traitGetFrmId(i);
-            gCharacterEditorFolderCardTitle = traitGetName(i);
+            gCharacterEditorFolderCardFrmId = traitGetFrmId(trait);
+            gCharacterEditorFolderCardTitle = traitGetName(trait);
             gCharacterEditorFolderCardSubtitle = nullptr;
-            gCharacterEditorFolderCardDescription = traitGetDescription(i);
+            gCharacterEditorFolderCardDescription = traitGetDescription(trait);
         } else {
-            if (i != gCharacterEditorTempTraits[0] && i != gCharacterEditorTempTraits[1]) {
+            if (trait != gCharacterEditorTempTraits[0] && trait != gCharacterEditorTempTraits[1]) {
                 color = COLOR_GREEN;
             } else {
                 color = COLOR_LIGHT_GREY;
             }
         }
 
-        traitName = traitGetName(i);
+        traitName = traitGetName(trait);
         fontDrawText(gCharacterEditorWindowBuffer + 640 * (int)y + 199, traitName, 640, 640, color);
         y += step;
     }
 }
 
 // 0x43BB0C TraitSelect
-static void characterEditorToggleOptionalTrait(int trait)
+static void characterEditorToggleOptionalTrait(Trait trait)
 {
     if (trait == gCharacterEditorTempTraits[0] || trait == gCharacterEditorTempTraits[1]) {
         if (trait == gCharacterEditorTempTraits[0]) {
             gCharacterEditorTempTraits[0] = gCharacterEditorTempTraits[1];
-            gCharacterEditorTempTraits[1] = -1;
+            gCharacterEditorTempTraits[1] = TRAIT_INVALID;
         } else {
-            gCharacterEditorTempTraits[1] = -1;
+            gCharacterEditorTempTraits[1] = TRAIT_INVALID;
         }
     } else {
         if (gCharacterEditorTempTraitCount == 0) {
@@ -5513,7 +5512,7 @@ static void characterEditorToggleOptionalTrait(int trait)
 
     gCharacterEditorTempTraitCount = 0;
     for (int index = 1; index != 0; index--) {
-        if (gCharacterEditorTempTraits[index] != -1) {
+        if (gCharacterEditorTempTraits[index] != TRAIT_INVALID) {
             break;
         }
         gCharacterEditorTempTraitCount++;
@@ -6387,9 +6386,11 @@ static void perkDialogRefreshTraits()
 
     perkDialogDrawTraits(gPerkDialogOptionCount);
 
-    char* traitName = gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].name;
-    char* tratDescription = traitGetDescription(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
-    int frmId = traitGetFrmId(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
+    PerkDialogOption option = gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine];
+    char* traitName = option.name;
+    Trait trait = static_cast<Trait>(option.value);
+    char* tratDescription = traitGetDescription(trait);
+    int frmId = traitGetFrmId(trait);
     perkDialogDrawCard(frmId, traitName, nullptr, tratDescription);
 
     windowRefresh(gPerkDialogWindow);
@@ -6438,22 +6439,22 @@ static bool perkDialogHandleMutatePerk()
         if (rc == 1) {
             if (gPerkDialogCurrentLine == 0) {
                 if (gCharacterEditorTempTraitCount == 1) {
-                    gCharacterEditorTempTraits[0] = -1;
-                    gCharacterEditorTempTraits[1] = -1;
+                    gCharacterEditorTempTraits[0] = TRAIT_INVALID;
+                    gCharacterEditorTempTraits[1] = TRAIT_INVALID;
                 } else {
                     if (gPerkDialogOptionList[0].value == gCharacterEditorTempTraits[0]) {
                         gCharacterEditorTempTraits[0] = gCharacterEditorTempTraits[1];
-                        gCharacterEditorTempTraits[1] = -1;
+                        gCharacterEditorTempTraits[1] = TRAIT_INVALID;
                     } else {
-                        gCharacterEditorTempTraits[1] = -1;
+                        gCharacterEditorTempTraits[1] = TRAIT_INVALID;
                     }
                 }
             } else {
                 if (gPerkDialogOptionList[0].value == gCharacterEditorTempTraits[0]) {
-                    gCharacterEditorTempTraits[1] = -1;
+                    gCharacterEditorTempTraits[1] = TRAIT_INVALID;
                 } else {
                     gCharacterEditorTempTraits[0] = gCharacterEditorTempTraits[1];
-                    gCharacterEditorTempTraits[1] = -1;
+                    gCharacterEditorTempTraits[1] = TRAIT_INVALID;
                 }
             }
         } else {
@@ -6488,11 +6489,13 @@ static bool perkDialogHandleMutatePerk()
 
         int rc = perkDialogHandleInput(count, perkDialogRefreshTraits);
         if (rc == 1) {
+            PerkDialogOption option = gPerkDialogOptionList[gPerkDialogCurrentLine + gPerkDialogTopLine];
+            Trait trait = static_cast<Trait>(option.value);
             if (gCharacterEditorTempTraitCount != 0) {
-                gCharacterEditorTempTraits[1] = gPerkDialogOptionList[gPerkDialogCurrentLine + gPerkDialogTopLine].value;
+                gCharacterEditorTempTraits[1] = trait;
             } else {
-                gCharacterEditorTempTraits[0] = gPerkDialogOptionList[gPerkDialogCurrentLine + gPerkDialogTopLine].value;
-                gCharacterEditorTempTraits[1] = -1;
+                gCharacterEditorTempTraits[0] = trait;
+                gCharacterEditorTempTraits[1] = TRAIT_INVALID;
             }
 
             traitsSetSelected(gCharacterEditorTempTraits[0], gCharacterEditorTempTraits[1]);
@@ -6622,7 +6625,7 @@ static int perkDialogDrawTraits(int a1)
 
     if (a1 != 0) {
         int count = 0;
-        for (int trait = 0; trait < TRAIT_COUNT; trait++) {
+        for (Trait trait = TRAIT_FIRST; trait < TRAIT_COUNT; trait++) {
             if (trait != gCharacterEditorOptionalTraitsBackup[0] && trait != gCharacterEditorOptionalTraitsBackup[1]) {
                 gPerkDialogOptionList[count].value = trait;
                 gPerkDialogOptionList[count].name = traitGetName(trait);

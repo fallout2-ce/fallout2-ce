@@ -32,7 +32,7 @@ static MessageList gTraitsMessageList;
 // List of selected traits.
 //
 // 0x66BE40 pc_trait
-static int gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
+static Trait gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
 
 // 0x51DB84 trait_data
 static TraitDescription gTraitDescriptions[TRAIT_COUNT] = {
@@ -68,7 +68,7 @@ int traitsInit()
         return -1;
     }
 
-    for (int trait = 0; trait < TRAIT_COUNT; trait++) {
+    for (Trait trait = TRAIT_FIRST; trait < TRAIT_COUNT; trait++) {
         MessageListItem messageListItem;
 
         messageListItem.num = 100 + trait;
@@ -94,7 +94,7 @@ int traitsInit()
 void traitsReset()
 {
     for (int index = 0; index < TRAITS_MAX_SELECTED_COUNT; index++) {
-        gSelectedTraits[index] = -1;
+        gSelectedTraits[index] = TRAIT_INVALID;
     }
 }
 
@@ -110,7 +110,7 @@ void traitsExit()
 // 0x4B3B08 trait_load
 int traitsLoad(File* stream)
 {
-    return fileReadInt32List(stream, gSelectedTraits, TRAITS_MAX_SELECTED_COUNT);
+    return fileReadInt32EnumList<Trait>(stream, gSelectedTraits, TRAITS_MAX_SELECTED_COUNT);
 }
 
 // Saves trait system state to save game.
@@ -118,13 +118,13 @@ int traitsLoad(File* stream)
 // 0x4B3B28 trait_save
 int traitsSave(File* stream)
 {
-    return fileWriteInt32List(stream, gSelectedTraits, TRAITS_MAX_SELECTED_COUNT);
+    return fileWriteInt32EnumList<Trait>(stream, gSelectedTraits, TRAITS_MAX_SELECTED_COUNT);
 }
 
 // Sets selected traits.
 //
 // 0x4B3B48 trait_set
-void traitsSetSelected(int trait1, int trait2)
+void traitsSetSelected(Trait trait1, Trait trait2)
 {
     gSelectedTraits[0] = trait1;
     gSelectedTraits[1] = trait2;
@@ -133,7 +133,7 @@ void traitsSetSelected(int trait1, int trait2)
 // Returns selected traits.
 //
 // 0x4B3B54 trait_get
-void traitsGetSelected(int* trait1, int* trait2)
+void traitsGetSelected(Trait* trait1, Trait* trait2)
 {
     *trait1 = gSelectedTraits[0];
     *trait2 = gSelectedTraits[1];
@@ -143,33 +143,33 @@ void traitsGetSelected(int* trait1, int* trait2)
 // out of range.
 //
 // 0x4B3B68 trait_name
-char* traitGetName(int trait)
+char* traitGetName(Trait trait)
 {
-    return trait >= 0 && trait < TRAIT_COUNT ? gTraitDescriptions[trait].name : nullptr;
+    return traitIsValid(trait) ? gTraitDescriptions[trait].name : nullptr;
 }
 
 // Returns a description of the specified trait, or `NULL` if the specified
 // trait is out of range.
 //
 // 0x4B3B88 trait_description
-char* traitGetDescription(int trait)
+char* traitGetDescription(Trait trait)
 {
-    return trait >= 0 && trait < TRAIT_COUNT ? gTraitDescriptions[trait].description : nullptr;
+    return traitIsValid(trait) ? gTraitDescriptions[trait].description : nullptr;
 }
 
 // Return an art ID of the specified trait, or `0` if the specified trait is
 // out of range.
 //
 // 0x4B3BA8 trait_pic
-int traitGetFrmId(int trait)
+int traitGetFrmId(Trait trait)
 {
-    return trait >= 0 && trait < TRAIT_COUNT ? gTraitDescriptions[trait].frmId : 0;
+    return traitIsValid(trait) ? gTraitDescriptions[trait].frmId : 0;
 }
 
 // Returns `true` if the specified trait is selected.
 //
 // 0x4B3BC8 trait_level
-bool traitIsSelected(int trait)
+bool traitIsSelected(Trait trait)
 {
     return gSelectedTraits[0] == trait || gSelectedTraits[1] == trait;
 }
