@@ -4,6 +4,7 @@
 #include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
+#include "inventory.h"
 
 namespace fallout {
 
@@ -56,7 +57,7 @@ int interfaceBarSwapHands(bool animated);
 int interfaceGetItemActions(int* leftItemAction, int* rightItemAction);
 int interfaceCycleItemAction();
 void _intface_use_item();
-int interfaceGetCurrentHand();
+Hand interfaceGetCurrentHand();
 int interfaceGetActiveItem(Object** itemPtr);
 int _intface_update_ammo_lights();
 void interfaceBarEndButtonsShow(bool animated);

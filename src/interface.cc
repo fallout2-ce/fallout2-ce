@@ -23,6 +23,7 @@
 #include "game_sound.h"
 #include "geometry.h"
 #include "input.h"
+#include "inventory.h"
 #include "item.h"
 #include "kb.h"
 #include "memory.h"
@@ -196,7 +197,7 @@ static int gCharacterButton = -1;
 static int gSingleAttackButton = -1;
 
 // 0x518F78 itemCurrentItem
-static int gInterfaceCurrentHand = HAND_LEFT;
+static Hand gInterfaceCurrentHand = HAND_LEFT;
 
 // 0x518F7C itemButtonRect
 static Rect gInterfaceBarMainActionRect;
@@ -661,7 +662,7 @@ void interfaceReset()
     // NOTE: Uninline a seemingly inlined routine.
     indicatorBarReset();
 
-    gInterfaceCurrentHand = 0;
+    gInterfaceCurrentHand = HAND_LEFT;
 }
 
 // 0x45E440 intface_exit
@@ -775,8 +776,8 @@ int interfaceLoad(File* stream)
     bool interfaceBarHidden;
     if (fileReadBool(stream, &interfaceBarHidden) == -1) return -1;
 
-    int interfaceCurrentHand;
-    if (fileReadInt32(stream, &interfaceCurrentHand) == -1) return -1;
+    Hand interfaceCurrentHand;
+    if (fileReadInt32Enum<Hand>(stream, &interfaceCurrentHand) == -1) return -1;
 
     bool interfaceBarEndButtonsIsVisible;
     if (fileReadBool(stream, &interfaceBarEndButtonsIsVisible) == -1) return -1;
@@ -830,7 +831,7 @@ int interfaceSave(File* stream)
 
     if (fileWriteBool(stream, gInterfaceBarEnabled) == -1) return -1;
     if (fileWriteBool(stream, gInterfaceBarHidden) == -1) return -1;
-    if (fileWriteInt32(stream, gInterfaceCurrentHand) == -1) return -1;
+    if (fileWriteInt32Enum<Hand>(stream, gInterfaceCurrentHand) == -1) return -1;
     if (fileWriteBool(stream, gInterfaceBarEndButtonsIsVisible) == -1) return -1;
 
     return 0;
@@ -1249,7 +1250,7 @@ int interfaceBarSwapHands(bool animated)
         return -1;
     }
 
-    gInterfaceCurrentHand = 1 - gInterfaceCurrentHand;
+    gInterfaceCurrentHand = static_cast<Hand>(1 - gInterfaceCurrentHand);
 
     if (animated) {
         Object* item = gInterfaceItemStates[gInterfaceCurrentHand].item;
@@ -1400,7 +1401,7 @@ void _intface_use_item()
 }
 
 // 0x45F7FC intface_is_item_right_hand
-int interfaceGetCurrentHand()
+Hand interfaceGetCurrentHand()
 {
     return gInterfaceCurrentHand;
 }

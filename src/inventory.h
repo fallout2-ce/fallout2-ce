@@ -13,13 +13,13 @@ enum class InvenSlot : int;
 // Extra slots per scroller added by the expanded barter/trade window.
 constexpr int kExpandedBarterExtraSlots = 1;
 
-typedef enum Hand {
+enum Hand : int {
     // Item1 (Punch)
     HAND_LEFT,
     // Item2 (Kick)
     HAND_RIGHT,
     HAND_COUNT,
-} Hand;
+};
 
 typedef void InventoryPrintItemDescriptionHandler(const char* string);
 
@@ -30,7 +30,7 @@ int inventoryGetInvenApCost();
 void inventorySetInvenApCost(int cost);
 void inventoryResetInvenApCost();
 void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* newArmor);
-int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, int activeHand, int anim, int rotation);
+int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, int anim, int rotation);
 void inventoryOpenUseItemOn(Object* targetObj);
 Object* critterGetItem2(Object* critter);
 Object* critterGetItem1(Object* critter);
