@@ -146,7 +146,7 @@ jobs:
     needs: [ce-dat]
 
     env:
-      MACOSX_DEPLOYMENT_TARGET: "13"
+      IPHONEOS_DEPLOYMENT_TARGET: 13.0
 
     steps:
       - name: Clone
@@ -334,8 +334,7 @@ jobs:
     runs-on: macos-15
 
     env:
-      MACOSX_DEPLOYMENT_TARGET: "10.15"
-      CMAKE_OSX_DEPLOYMENT_TARGET: "10.15"
+      MACOSX_DEPLOYMENT_TARGET: 10.15
 
     steps:
       - name: Clone
