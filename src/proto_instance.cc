@@ -919,7 +919,7 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
                 roll = skillRoll(gDude, SKILL_TRAPS, 0, nullptr);
             }
 
-            int eventType;
+            EventType eventType;
             switch (roll) {
             case ROLL_CRITICAL_FAILURE:
                 delay = 0;
