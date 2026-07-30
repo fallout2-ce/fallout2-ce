@@ -934,7 +934,12 @@ void wmSetTownTitle(int areaIdx, const char* title)
 
 void wmRemoveTownNames(bool state)
 {
+    if (wmTownNamesHidden == state) {
+        return;
+    }
+
     wmTownNamesHidden = state;
+    wmInterfaceRefresh();
 }
 
 static const char* wmGetTownTitle(int areaIdx)
