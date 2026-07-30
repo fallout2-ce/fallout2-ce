@@ -478,6 +478,7 @@ void wmSetScriptWorldMapMulti(float value)
 
 static std::vector<std::pair<int, std::string>> wmTerrainNameOverrides;
 static std::unordered_map<int, std::string> wmTownTitleOverrides;
+static bool wmTownNamesHidden;
 
 static void wmSetFlags(int* flagsPtr, int flag, int value);
 static int wmGenDataInit();
@@ -568,6 +569,7 @@ static int wmDrawCursorStopped();
 static void wmInterfaceDrawTerrainInfo();
 static const char* wmGetHotspotText();
 static bool wmCursorIsVisible();
+static void wmResetTerrainInfo();
 static int wmGetAreaName(CityInfo* city, char* name);
 static void wmMarkAllSubTiles(int state);
 static int wmTownMapFunc(int* mapIdxPtr);
@@ -930,6 +932,11 @@ void wmSetTownTitle(int areaIdx, const char* title)
     wmTownTitleOverrides[areaIdx] = title;
 }
 
+void wmRemoveTownNames(bool state)
+{
+    wmTownNamesHidden = state;
+}
+
 static const char* wmGetTownTitle(int areaIdx)
 {
     auto it = wmTownTitleOverrides.find(areaIdx);
@@ -1151,6 +1158,7 @@ static int wmGenDataInit()
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     wmTownTitleOverrides.clear();
+    wmTownNamesHidden = false;
 
     return 0;
 }
@@ -1279,6 +1287,7 @@ void wmWorldMap_exit()
 {
     wmTerrainNameOverrides.clear();
     wmTownTitleOverrides.clear();
+    wmResetTerrainInfo();
 
     if (wmTerrainTypeList != nullptr) {
         internal_free(wmTerrainTypeList);
@@ -1334,6 +1343,7 @@ int wmWorldMap_reset()
 {
     wmWorldOffsetX = 0;
     wmWorldOffsetY = 0;
+    wmResetTerrainInfo();
 
     // CE: Fix Pathfinder perk.
     gGameTimeIncRemainder = 0.0;
@@ -1432,6 +1442,7 @@ int wmWorldMap_save(File* stream)
 int wmWorldMap_load(File* stream)
 {
     wmResetTrailMarkers();
+    wmResetTerrainInfo();
 
     if (fileReadBool(stream, &gDidMeetFrankHorrigan) == -1) return -1;
     if (fileReadInt32(stream, &(wmGenData.currentAreaId)) == -1) return -1;
@@ -3302,7 +3313,7 @@ static int wmWorldMapFunc(int a1)
     unsigned int partyHealTime = 0;
     int map = -1;
     int rc = 0;
-    wmTerrainInfoIsVisible = false;
+    wmResetTerrainInfo();
 
     while (true) {
         sharedFpsLimiter.mark();
@@ -5795,18 +5806,20 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
 {
     MessageListItem messageListItem;
     char name[CITY_NAME_SIZE];
-    if (wmAreaIsKnown(city->areaId)) {
-        wmGetAreaName(city, name);
-    } else {
-        strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), CITY_NAME_SIZE - 1);
-        name[CITY_NAME_SIZE - 1] = '\0';
+    if (!wmTownNamesHidden) {
+        if (wmAreaIsKnown(city->areaId)) {
+            wmGetAreaName(city, name);
+        } else {
+            strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), CITY_NAME_SIZE - 1);
+            name[CITY_NAME_SIZE - 1] = '\0';
+        }
     }
 
     // Basic dimensions
     int circleWidth = citySizeDescription->frmImage.getWidth();
     int circleHeight = citySizeDescription->frmImage.getHeight();
-    int textWidth = fontGetStringWidth(name);
-    int textHeight = fontGetLineHeight();
+    int textWidth = wmTownNamesHidden ? 0 : fontGetStringWidth(name);
+    int textHeight = wmTownNamesHidden ? 0 : fontGetLineHeight();
     const int spacing = 3;
 
     // 1. Relative Ideal Positions (Origin at 0,0 for circle's top-left)
@@ -5818,7 +5831,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
     int contentMaxXRel = std::max(circleWidth, xTextRel + textWidth);
 
     int contentActualWidth = contentMaxXRel - contentMinXRel;
-    int contentActualHeight = circleHeight + spacing + textHeight;
+    int contentActualHeight = circleHeight + (wmTownNamesHidden ? 0 : spacing + textHeight);
 
     // Viewport boundaries
     int viewportLeft = WM_VIEW_X;
@@ -5894,7 +5907,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
     }
 
     // Draw text onto offscreen buffer
-    if (textDrawAbsX >= 0 && textDrawAbsY >= 0 && textDrawAbsX + textWidth <= WM_OVERLAY_BUFFER_SIZE && textDrawAbsY + textHeight <= WM_OVERLAY_BUFFER_SIZE) {
+    if (!wmTownNamesHidden && textDrawAbsX >= 0 && textDrawAbsY >= 0 && textDrawAbsX + textWidth <= WM_OVERLAY_BUFFER_SIZE && textDrawAbsY + textHeight <= WM_OVERLAY_BUFFER_SIZE) {
         fontDrawText(
             wmOverlayOffscreenBuf + textDrawAbsY * WM_OVERLAY_BUFFER_SIZE + textDrawAbsX,
             name, textWidth, WM_OVERLAY_BUFFER_SIZE,
@@ -5952,7 +5965,7 @@ static int wmInterfaceDrawCircleOverlay(CityInfo* city, CitySizeDescription* cit
     // CE: Slightly increase whitespace between cirle and city name.
     int nameY = y + citySizeDescription->frmImage.getHeight() + 3;
     int maxY = 464 - fontGetLineHeight();
-    if (nameY < maxY) {
+    if (!wmTownNamesHidden && nameY < maxY) {
         MessageListItem messageListItem;
         char name[40];
         if (wmAreaIsKnown(city->areaId)) {
@@ -6044,7 +6057,7 @@ static int wmDrawCursorStopped()
     int width;
     int height;
 
-    bool isWalkingNow = (wmGenData.walkDestinationX != 0 || wmGenData.walkDestinationY != 0);
+    bool isWalkingNow = wmGenData.walkDestinationX > 0 || wmGenData.walkDestinationY > 0;
 
     if (isWalkingNow) {
         // moving cursor
@@ -6161,6 +6174,11 @@ static bool wmCursorIsVisible()
         && wmGenData.worldPosY >= wmWorldOffsetY
         && wmGenData.worldPosX < wmWorldOffsetX + WM_VIEW_WIDTH
         && wmGenData.worldPosY < wmWorldOffsetY + WM_VIEW_HEIGHT;
+}
+
+static void wmResetTerrainInfo()
+{
+    wmTerrainInfoIsVisible = false;
 }
 
 // NOTE: Inlined.

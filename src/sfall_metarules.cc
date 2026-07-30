@@ -800,6 +800,7 @@ static void mf_objects_in_radius(OpcodeContext& ctx);
 static void mf_opcode_exists(OpcodeContext& ctx);
 static void mf_outlined_object(OpcodeContext& ctx);
 static void mf_real_dude_obj(OpcodeContext& ctx);
+static void mf_remove_wm_town_names(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
@@ -888,6 +889,7 @@ const MetaruleInfo kMetarules[] = {
     { "objects_in_radius", mf_objects_in_radius, 3, 4, 0, { ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "outlined_object", mf_outlined_object, 0, 0 },
     { "real_dude_obj", mf_real_dude_obj, 0, 0 },
+    { "remove_wm_town_names", mf_remove_wm_town_names, 1, 1, -1, { ARG_INT } },
     { "reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, { ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT } },
     // {"remove_timer_event",        mf_remove_timer_event,        0, 1, -1, {ARG_INT}},
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
@@ -2001,6 +2003,11 @@ static void mf_set_terrain_name(OpcodeContext& ctx)
 static void mf_set_town_title(OpcodeContext& ctx)
 {
     wmSetTownTitle(ctx.arg(0).asInt(), ctx.stringArg(1));
+}
+
+static void mf_remove_wm_town_names(OpcodeContext& ctx)
+{
+    wmRemoveTownNames(ctx.arg(0).asInt() != 0);
 }
 
 void mf_tile_by_position(OpcodeContext& ctx)

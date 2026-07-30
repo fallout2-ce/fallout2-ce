@@ -297,6 +297,7 @@ void wmSetTerrainName(int x, int y, const char* name);
 const char* wmGetTerrainName(int x, int y);
 const char* wmGetCurrentTerrainName();
 void wmSetTownTitle(int areaIdx, const char* title);
+void wmRemoveTownNames(bool state);
 int worldmapGetWindow();
 
 } // namespace fallout
