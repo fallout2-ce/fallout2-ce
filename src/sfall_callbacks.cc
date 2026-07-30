@@ -58,8 +58,8 @@ void sfallOnAfterGameStarted()
     // Refresh item art after load, which calls the CALCAPCOST hook if present to
     // display the correct AP cost.
     if (gInterfaceBarWindow != -1) {
-        int leftItemAction;
-        int rightItemAction;
+        InterfaceItemAction leftItemAction;
+        InterfaceItemAction rightItemAction;
         interfaceGetItemActions(&leftItemAction, &rightItemAction);
         interfaceUpdateItems(false, leftItemAction, rightItemAction);
     }

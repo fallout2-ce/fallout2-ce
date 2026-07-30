@@ -20,7 +20,7 @@ namespace fallout {
 // Minimum poison amount to display POISONED indicator.
 #define POISON_INDICATOR_THRESHOLD 0
 
-typedef enum InterfaceItemAction {
+enum InterfaceItemAction : int {
     INTERFACE_ITEM_ACTION_DEFAULT = -1,
     INTERFACE_ITEM_ACTION_USE,
     INTERFACE_ITEM_ACTION_PRIMARY,
@@ -29,7 +29,15 @@ typedef enum InterfaceItemAction {
     INTERFACE_ITEM_ACTION_SECONDARY_AIMING,
     INTERFACE_ITEM_ACTION_RELOAD,
     INTERFACE_ITEM_ACTION_COUNT,
-} InterfaceItemAction;
+};
+
+
+inline InterfaceItemAction operator++(InterfaceItemAction& e, int)
+{
+    InterfaceItemAction result = e;
+    e = static_cast<InterfaceItemAction>(static_cast<int>(e) + 1);
+    return result;
+}
 
 extern int gInterfaceBarWindow;
 extern bool gInterfaceBarMode;
@@ -52,9 +60,9 @@ void interfaceRenderHitPoints(bool animate);
 void interfaceRenderArmorClass(bool animate);
 void interfaceRenderActionPoints(int actionPointsLeft, int bonusActionPoints);
 int interfaceGetCurrentHitMode(HitMode* hitMode, bool* aiming);
-int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction);
+int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, InterfaceItemAction rightItemAction);
 int interfaceBarSwapHands(bool animated);
-int interfaceGetItemActions(int* leftItemAction, int* rightItemAction);
+int interfaceGetItemActions(InterfaceItemAction* leftItemAction, InterfaceItemAction* rightItemAction);
 int interfaceCycleItemAction();
 void _intface_use_item();
 Hand interfaceGetCurrentHand();

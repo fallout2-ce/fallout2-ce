@@ -3538,7 +3538,7 @@ static void inventoryRenderSummary()
                 // CE: Implementation is different.
                 HitMode hitMode = unarmedHitModes[index];
                 if (_stack[0] == gDude) {
-                    int actions[2];
+                    InterfaceItemAction actions[2];
                     interfaceGetItemActions(&(actions[0]), &(actions[1]));
 
                     bool isSecondary = actions[index] == INTERFACE_ITEM_ACTION_SECONDARY
@@ -3591,7 +3591,7 @@ static void inventoryRenderSummary()
         // SFALL: Fix displaying secondary mode weapon range.
         HitMode hitMode = hitModes[index];
         if (_stack[0] == gDude) {
-            int actions[2];
+            InterfaceItemAction actions[2];
             interfaceGetItemActions(&(actions[0]), &(actions[1]));
 
             bool isSecondary = actions[index] == INTERFACE_ITEM_ACTION_SECONDARY

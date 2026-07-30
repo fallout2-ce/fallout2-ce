@@ -4028,8 +4028,8 @@ static void opCritterInjure(Program* program)
 
     if (critter == gDude) {
         if ((flags & DAM_CRIP_ARM_ANY) != 0) {
-            int leftItemAction;
-            int rightItemAction;
+            InterfaceItemAction leftItemAction;
+            InterfaceItemAction rightItemAction;
             interfaceGetItemActions(&leftItemAction, &rightItemAction);
             interfaceUpdateItems(true, leftItemAction, rightItemAction);
         }
@@ -4325,8 +4325,8 @@ static void opCritterModifySkill(Program* program)
                 // TODO: Checking for critter is dude twice probably means this
                 // is inlined function.
                 if (critter == gDude) {
-                    int leftItemAction;
-                    int rightItemAction;
+                    InterfaceItemAction leftItemAction;
+                    InterfaceItemAction rightItemAction;
                     interfaceGetItemActions(&leftItemAction, &rightItemAction);
                     interfaceUpdateItems(false, leftItemAction, rightItemAction);
                 }

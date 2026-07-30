@@ -102,7 +102,7 @@ typedef struct InterfaceItemState {
     unsigned char isWeapon;
     HitMode primaryHitMode;
     HitMode secondaryHitMode;
-    int action;
+    InterfaceItemAction action;
     int itemFid;
 } InterfaceItemState;
 
@@ -1108,13 +1108,13 @@ int interfaceGetCurrentHitMode(HitMode* hitMode, bool* aiming)
     case INTERFACE_ITEM_ACTION_SECONDARY:
         *hitMode = gInterfaceItemStates[gInterfaceCurrentHand].secondaryHitMode;
         return 0;
+    default:
+        return -1;
     }
-
-    return -1;
 }
 
 // 0x45EFEC intface_update_items
-int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
+int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, InterfaceItemAction rightItemAction)
 {
     if (isoIsDisabled()) {
         animated = false;
@@ -1135,7 +1135,7 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
         }
     } else {
         Object* oldItem = leftItemState->item;
-        int oldAction = leftItemState->action;
+        InterfaceItemAction oldAction = leftItemState->action;
 
         leftItemState->item = item1;
 
@@ -1184,7 +1184,7 @@ int interfaceUpdateItems(bool animated, int leftItemAction, int rightItemAction)
         }
     } else {
         Object* oldItem = rightItemState->item;
-        int oldAction = rightItemState->action;
+        InterfaceItemAction oldAction = rightItemState->action;
 
         rightItemState->item = item2;
 
@@ -1275,7 +1275,7 @@ int interfaceBarSwapHands(bool animated)
 }
 
 // 0x45F4B4 intface_get_item_states
-int interfaceGetItemActions(int* leftItemAction, int* rightItemAction)
+int interfaceGetItemActions(InterfaceItemAction* leftItemAction, InterfaceItemAction* rightItemAction)
 {
     *leftItemAction = gInterfaceItemStates[HAND_LEFT].action;
     *rightItemAction = gInterfaceItemStates[HAND_RIGHT].action;
@@ -1291,7 +1291,7 @@ int interfaceCycleItemAction()
 
     InterfaceItemState* itemState = &(gInterfaceItemStates[gInterfaceCurrentHand]);
 
-    int oldAction = itemState->action;
+    InterfaceItemAction oldAction = itemState->action;
     if (itemState->isWeapon != 0) {
         bool done = false;
         while (!done) {
@@ -1327,6 +1327,8 @@ int interfaceCycleItemAction()
                 break;
             case INTERFACE_ITEM_ACTION_COUNT:
                 itemState->action = INTERFACE_ITEM_ACTION_USE;
+                break;
+            default:
                 break;
             }
         }
@@ -1689,6 +1691,8 @@ static int interfaceBarRefreshMainAction()
             case INTERFACE_ITEM_ACTION_RELOAD:
                 actionPoints = itemGetActionPointCost(gDude, gInterfaceCurrentHand == HAND_LEFT ? HIT_MODE_LEFT_WEAPON_RELOAD : HIT_MODE_RIGHT_WEAPON_RELOAD, false);
                 primaryFid = buildFid(OBJ_TYPE_INTERFACE, 291, 0, 0, 0);
+                break;
+            default:
                 break;
             }
 

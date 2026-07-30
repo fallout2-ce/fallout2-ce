@@ -769,8 +769,8 @@ int _action_ranged(Attack* attack, int anim)
                     weaponFid = weapon->fid;
                     int weaponFlags = weapon->flags;
 
-                    int leftItemAction;
-                    int rightItemAction;
+                    InterfaceItemAction leftItemAction;
+                    InterfaceItemAction rightItemAction;
                     interfaceGetItemActions(&leftItemAction, &rightItemAction);
 
                     itemRemoveWithReason(attack->attacker, weapon, 1, RemoveInventoryObjectHookReason::Throw);

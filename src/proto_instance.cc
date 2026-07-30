@@ -1142,8 +1142,8 @@ UseItemResultCode objectUseItem(Object* userObj, Object* item)
             itemRemoveWithReason(root, item, 1, RemoveInventoryObjectHookReason::UseObj);
             Object* replacementItem = itemReplace(root, item, flags);
             if (root == gDude) {
-                int leftItemAction;
-                int rightItemAction;
+                InterfaceItemAction leftItemAction;
+                InterfaceItemAction rightItemAction;
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
                 if (replacementItem == nullptr) {
                     if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
@@ -1387,8 +1387,8 @@ UseItemResultCode objectUseItemOn(Object* user, Object* targetObj, Object* item)
             // following code is on par with |_obj_use_item| which does not
             // crash.
             if (user == gDude) {
-                int leftItemAction;
-                int rightItemAction;
+                InterfaceItemAction leftItemAction;
+                InterfaceItemAction rightItemAction;
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
 
                 if (replacedItem == nullptr) {

@@ -2820,8 +2820,8 @@ static void _combat_over()
 
     tileWindowRefresh();
 
-    int leftItemAction;
-    int rightItemAction;
+    InterfaceItemAction leftItemAction;
+    InterfaceItemAction rightItemAction;
     interfaceGetItemActions(&leftItemAction, &rightItemAction);
     interfaceUpdateItems(true, leftItemAction, rightItemAction);
 
@@ -4921,8 +4921,8 @@ static void _set_new_results(Object* critter, int flags)
     if (critter == gDude && (flags & DAM_CRIP_ARM_ANY) != 0) {
         critter->data.critter.combat.results |= flags & (DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN | DAM_CRIP | DAM_DEAD | DAM_LOSE_TURN);
 
-        int leftItemAction;
-        int rightItemAction;
+        InterfaceItemAction leftItemAction;
+        InterfaceItemAction rightItemAction;
         interfaceGetItemActions(&leftItemAction, &rightItemAction);
         interfaceUpdateItems(true, leftItemAction, rightItemAction);
     } else {
