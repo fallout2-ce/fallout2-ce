@@ -19,6 +19,10 @@ procedure keypress_handler begin
         give_exp_points(1000);
         call print_status("Granted 1000 XP.");
     end
+    if (key == DIK_K) then begin
+        give_exp_points(10000);
+        call print_status("Granted 10000 XP.");
+    end
 end
 
 procedure start begin
