@@ -710,24 +710,27 @@ void gameMouseRefresh()
                         // if the pointedObject is OBJ_TYPE_SCENERY/OBJ_TYPE_WALL/OBJ_TYPE_MISC object then try to find possible itemObject behind it
                         // this must be in sync with the switch/case in _gmouse_handle_event
                         Object* itemObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
+
+                        if (itemObject == nullptr && objectType == OBJ_TYPE_MISC) {
+                            break;
+                        }
+
                         bool itemIsOutlined = objectHasVisibleOutline(itemObject);
 
-                        // filter out potential itemObject behind usable scenery which is not outlined already
-                        if (!itemIsOutlined && objectType == OBJ_TYPE_SCENERY && _obj_action_can_use(pointedObject)) {
-                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
-                            break;
-                        }
+                        if (!itemIsOutlined) {
+                            // filter out potential itemObject behind usable scenery which is not outlined already
+                            if (objectType == OBJ_TYPE_SCENERY && _obj_action_can_use(pointedObject)) {
+                                primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_USE;
+                                break;
+                            }
 
-                        bool canBeShootOrSeenThroughObject = (pointedObject->flags & OBJECT_SHOOT_THRU) != 0 || (pointedObject->flags & OBJECT_LIGHT_THRU) != 0;
+                            bool canBeShootOrSeenThroughObject = (pointedObject->flags & (OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU)) != 0;
 
-                        // filter out not found itemObject and itemObject behind the blocking walls which is not outlined already
-                        if (objectType == OBJ_TYPE_MISC && itemObject == nullptr) {
-                            break;
-                        }
-
-                        if (itemObject == nullptr || (!itemIsOutlined && objectType == OBJ_TYPE_WALL && !canBeShootOrSeenThroughObject)) {
-                            primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
-                            break;
+                            // filter out not found itemObject and itemObject behind the blocking walls which is not outlined already
+                            if (itemObject == nullptr || (objectType == OBJ_TYPE_WALL && !canBeShootOrSeenThroughObject)) {
+                                primaryAction = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
+                                break;
+                            }
                         }
 
                         // intentionally fall trough the OBJ_TYPE_ITEM to enforce auto outlining of the itemObject and changing the mouse action menu
