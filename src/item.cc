@@ -3703,7 +3703,7 @@ static void healingItemsInit()
 
 bool itemIsHealing(int pid)
 {
-    for (int index = 0; index < HEALING_ITEM_COUNT; index++) {
+    for (HealingItem index = HEALING_ITEM_FIRST; index < HEALING_ITEM_COUNT; index++) {
         if (gHealingItemPids[index] == pid) {
             return true;
         }

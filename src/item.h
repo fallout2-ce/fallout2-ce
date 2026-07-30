@@ -24,12 +24,20 @@ enum AttackType : int {
     ATTACK_TYPE_FIRST = ATTACK_TYPE_NONE
 };
 
-typedef enum HealingItem {
+enum HealingItem : int {
     HEALING_ITEM_STIMPAK,
     HEALING_ITEM_SUPER_STIMPAK,
     HEALING_ITEM_HEALING_POWDER,
     HEALING_ITEM_COUNT,
-} HealingItem;
+    HEALING_ITEM_FIRST = HEALING_ITEM_STIMPAK
+};
+
+inline HealingItem operator++(HealingItem& e, int)
+{
+    HealingItem result = e;
+    e = static_cast<HealingItem>(static_cast<int>(e) + 1);
+    return result;
+}
 
 int itemsInit();
 void itemsReset();
