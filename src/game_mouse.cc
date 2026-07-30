@@ -1012,7 +1012,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         if (gGameMouseMode == GAME_MOUSE_MODE_ARROW) {
             Object* targetObj = gameMouseGetObjectUnderCursor(-1, true, gElevation);
             if (targetObj != nullptr) {
-                switch (FID_TYPE(targetObj->fid)) {
+                int objectType = FID_TYPE(targetObj->fid);
+                switch (objectType) {
                 case OBJ_TYPE_WALL:
                 case OBJ_TYPE_SCENERY:
                 case OBJ_TYPE_MISC: {
@@ -1020,7 +1021,6 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     // this must be in sync with the switch/case in gameMouseRefresh
                     Object* itemObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_ITEM, true, gElevation);
                     if (!objectHasVisibleOutline(itemObj)) {
-                        int objectType = FID_TYPE(targetObj->fid);
                         if (objectType == OBJ_TYPE_SCENERY && _obj_action_can_use(targetObj)) {
                             _action_use_an_object(gDude, targetObj);
                             break;
