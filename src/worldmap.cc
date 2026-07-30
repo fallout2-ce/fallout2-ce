@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -476,6 +477,8 @@ void wmSetScriptWorldMapMulti(float value)
 }
 
 static std::vector<std::pair<int, std::string>> wmTerrainNameOverrides;
+static std::unordered_map<int, std::string> wmTownTitleOverrides;
+static bool wmTownNamesHidden;
 
 static void wmSetFlags(int* flagsPtr, int flag, int value);
 static int wmGenDataInit();
@@ -563,7 +566,10 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
 static void wmInterfaceDrawSubTileRectFogged(unsigned char* dest, int width, int height, int pitch);
 static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, int x, int y, int a6);
 static int wmDrawCursorStopped();
+static void wmInterfaceDrawTerrainInfo();
+static const char* wmGetHotspotText();
 static bool wmCursorIsVisible();
+static void wmResetTerrainInfo();
 static int wmGetAreaName(CityInfo* city, char* name);
 static void wmMarkAllSubTiles(int state);
 static int wmTownMapFunc(int* mapIdxPtr);
@@ -919,6 +925,29 @@ const char* wmGetCurrentTerrainName()
     return wmGetTerrainName(x, y);
 }
 
+void wmSetTownTitle(int areaIdx, const char* title)
+{
+    assert(title != nullptr);
+
+    wmTownTitleOverrides[areaIdx] = title;
+}
+
+void wmRemoveTownNames(bool state)
+{
+    if (wmTownNamesHidden == state) {
+        return;
+    }
+
+    wmTownNamesHidden = state;
+    wmInterfaceRefresh();
+}
+
+static const char* wmGetTownTitle(int areaIdx)
+{
+    auto it = wmTownTitleOverrides.find(areaIdx);
+    return it != wmTownTitleOverrides.end() ? it->second.c_str() : nullptr;
+}
+
 // 0x672FB8 wmFreqValues
 static int wmFreqValues[6];
 
@@ -958,6 +987,8 @@ static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
 static int worldmapTrailMarkers;
+static bool worldmapTerrainInfo;
+static bool wmTerrainInfoIsVisible;
 static TrailMarkerState trailMarkerState = {};
 
 static const unsigned char worldmapTrailMarkerColor = 134;
@@ -1064,6 +1095,7 @@ int wmWorldMap_init()
     // SFALL
     configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix, true);
     configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", &worldmapTrailMarkers, 0);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "terrain_info", &worldmapTerrainInfo, false);
 
     // CE: City size fids should be initialized during startup. They are used
     // during |wmTeleportToArea| to calculate worldmap position when jumping
@@ -1130,6 +1162,8 @@ static int wmGenDataInit()
     wmForceEncounterFlags = 0;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
+    wmTownTitleOverrides.clear();
+    wmTownNamesHidden = false;
 
     return 0;
 }
@@ -1257,6 +1291,8 @@ static void wmSetStartWorldView()
 void wmWorldMap_exit()
 {
     wmTerrainNameOverrides.clear();
+    wmTownTitleOverrides.clear();
+    wmResetTerrainInfo();
 
     if (wmTerrainTypeList != nullptr) {
         internal_free(wmTerrainTypeList);
@@ -1312,6 +1348,7 @@ int wmWorldMap_reset()
 {
     wmWorldOffsetX = 0;
     wmWorldOffsetY = 0;
+    wmResetTerrainInfo();
 
     // CE: Fix Pathfinder perk.
     gGameTimeIncRemainder = 0.0;
@@ -1410,6 +1447,7 @@ int wmWorldMap_save(File* stream)
 int wmWorldMap_load(File* stream)
 {
     wmResetTrailMarkers();
+    wmResetTerrainInfo();
 
     if (fileReadBool(stream, &gDidMeetFrankHorrigan) == -1) return -1;
     if (fileReadInt32(stream, &(wmGenData.currentAreaId)) == -1) return -1;
@@ -3280,6 +3318,7 @@ static int wmWorldMapFunc(int a1)
     unsigned int partyHealTime = 0;
     int map = -1;
     int rc = 0;
+    wmResetTerrainInfo();
 
     while (true) {
         sharedFpsLimiter.mark();
@@ -3297,6 +3336,18 @@ static int wmWorldMapFunc(int a1)
 
         int worldX = wmWorldOffsetX + mouseX - WM_VIEW_X;
         int worldY = wmWorldOffsetY + mouseY - WM_VIEW_Y;
+
+        bool terrainInfoIsVisible = (worldmapTerrainInfo || !wmTownTitleOverrides.empty())
+            && !wmGenData.isWalking
+            && wmCursorIsVisible()
+            && mouseHitTestInWindow(wmBkWin, WM_VIEW_X, WM_VIEW_Y, WM_VIEW_WIDTH + WM_VIEW_X, WM_VIEW_HEIGHT + WM_VIEW_Y)
+            && abs(wmGenData.worldPosX - worldX) < 8
+            && abs(wmGenData.worldPosY - worldY) < 6
+            && wmGetHotspotText() != nullptr;
+        if (terrainInfoIsVisible != wmTerrainInfoIsVisible) {
+            wmTerrainInfoIsVisible = terrainInfoIsVisible;
+            wmInterfaceRefresh();
+        }
 
         if (keyCode == KEY_CTRL_Q || keyCode == KEY_CTRL_X || keyCode == KEY_F10) {
             showQuitConfirmationDialog();
@@ -5760,18 +5811,20 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
 {
     MessageListItem messageListItem;
     char name[CITY_NAME_SIZE];
-    if (wmAreaIsKnown(city->areaId)) {
-        wmGetAreaName(city, name);
-    } else {
-        strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), CITY_NAME_SIZE - 1);
-        name[CITY_NAME_SIZE - 1] = '\0';
+    if (!wmTownNamesHidden) {
+        if (wmAreaIsKnown(city->areaId)) {
+            wmGetAreaName(city, name);
+        } else {
+            strncpy(name, getmsg(&wmMsgFile, &messageListItem, 1004), CITY_NAME_SIZE - 1);
+            name[CITY_NAME_SIZE - 1] = '\0';
+        }
     }
 
     // Basic dimensions
     int circleWidth = citySizeDescription->frmImage.getWidth();
     int circleHeight = citySizeDescription->frmImage.getHeight();
-    int textWidth = fontGetStringWidth(name);
-    int textHeight = fontGetLineHeight();
+    int textWidth = wmTownNamesHidden ? 0 : fontGetStringWidth(name);
+    int textHeight = wmTownNamesHidden ? 0 : fontGetLineHeight();
     const int spacing = 3;
 
     // 1. Relative Ideal Positions (Origin at 0,0 for circle's top-left)
@@ -5783,7 +5836,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
     int contentMaxXRel = std::max(circleWidth, xTextRel + textWidth);
 
     int contentActualWidth = contentMaxXRel - contentMinXRel;
-    int contentActualHeight = circleHeight + spacing + textHeight;
+    int contentActualHeight = circleHeight + (wmTownNamesHidden ? 0 : spacing + textHeight);
 
     // Viewport boundaries
     int viewportLeft = WM_VIEW_X;
@@ -5859,7 +5912,7 @@ static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription*
     }
 
     // Draw text onto offscreen buffer
-    if (textDrawAbsX >= 0 && textDrawAbsY >= 0 && textDrawAbsX + textWidth <= WM_OVERLAY_BUFFER_SIZE && textDrawAbsY + textHeight <= WM_OVERLAY_BUFFER_SIZE) {
+    if (!wmTownNamesHidden && textDrawAbsX >= 0 && textDrawAbsY >= 0 && textDrawAbsX + textWidth <= WM_OVERLAY_BUFFER_SIZE && textDrawAbsY + textHeight <= WM_OVERLAY_BUFFER_SIZE) {
         fontDrawText(
             wmOverlayOffscreenBuf + textDrawAbsY * WM_OVERLAY_BUFFER_SIZE + textDrawAbsX,
             name, textWidth, WM_OVERLAY_BUFFER_SIZE,
@@ -5917,7 +5970,7 @@ static int wmInterfaceDrawCircleOverlay(CityInfo* city, CitySizeDescription* cit
     // CE: Slightly increase whitespace between cirle and city name.
     int nameY = y + citySizeDescription->frmImage.getHeight() + 3;
     int maxY = 464 - fontGetLineHeight();
-    if (nameY < maxY) {
+    if (!wmTownNamesHidden && nameY < maxY) {
         MessageListItem messageListItem;
         char name[40];
         if (wmAreaIsKnown(city->areaId)) {
@@ -6009,7 +6062,7 @@ static int wmDrawCursorStopped()
     int width;
     int height;
 
-    bool isWalkingNow = (wmGenData.walkDestinationX != 0 || wmGenData.walkDestinationY != 0);
+    bool isWalkingNow = wmGenData.walkDestinationX > 0 || wmGenData.walkDestinationY > 0;
 
     if (isWalkingNow) {
         // moving cursor
@@ -6079,7 +6132,44 @@ static int wmDrawCursorStopped()
         }
     }
 
+    wmInterfaceDrawTerrainInfo();
+
     return 0;
+}
+
+static void wmInterfaceDrawTerrainInfo()
+{
+    if (!wmTerrainInfoIsVisible || !wmCursorIsVisible()) {
+        return;
+    }
+
+    const char* text = wmGetHotspotText();
+    if (text == nullptr) {
+        return;
+    }
+
+    int textWidth = std::min(fontGetStringWidth(text), 200);
+    int textX = WM_VIEW_X + wmGenData.worldPosX - wmWorldOffsetX - textWidth / 2;
+    textX = std::clamp(textX, WM_VIEW_X, WM_VIEW_X + WM_VIEW_WIDTH - textWidth);
+
+    int textY = WM_VIEW_Y + wmGenData.worldPosY - wmWorldOffsetY - 17;
+    textY = std::clamp(textY, WM_VIEW_Y, WM_VIEW_Y + WM_VIEW_HEIGHT - fontGetLineHeight());
+
+    fontDrawText(
+        wmBkWinBuf + WM_WINDOW_WIDTH * textY + textX,
+        text,
+        textWidth,
+        WM_WINDOW_WIDTH,
+        COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
+}
+
+static const char* wmGetHotspotText()
+{
+    if (wmGenData.currentAreaId != -1) {
+        return wmGetTownTitle(wmGenData.currentAreaId);
+    }
+
+    return worldmapTerrainInfo ? wmGetCurrentTerrainName() : nullptr;
 }
 
 // 0x4C4490 wmCursorIsVisible
@@ -6089,6 +6179,11 @@ static bool wmCursorIsVisible()
         && wmGenData.worldPosY >= wmWorldOffsetY
         && wmGenData.worldPosX < wmWorldOffsetX + WM_VIEW_WIDTH
         && wmGenData.worldPosY < wmWorldOffsetY + WM_VIEW_HEIGHT;
+}
+
+static void wmResetTerrainInfo()
+{
+    wmTerrainInfoIsVisible = false;
 }
 
 // NOTE: Inlined.
