@@ -177,7 +177,7 @@ bool traitIsSelected(int trait)
 // Returns stat modifier depending on selected traits.
 //
 // 0x4B3C7C trait_adjust_stat
-int traitGetStatModifier(int stat)
+int traitGetStatModifier(Stat stat)
 {
     int modifier = 0;
 
@@ -272,6 +272,8 @@ int traitGetStatModifier(int stat)
         if (traitIsSelected(TRAIT_FAST_METABOLISM)) {
             modifier -= critterGetBaseStat(gDude, STAT_POISON_RESISTANCE);
         }
+        break;
+    default:
         break;
     }
 

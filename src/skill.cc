@@ -44,8 +44,8 @@ typedef struct SkillDescription {
     int frmId;
     int defaultValue;
     int statModifier;
-    int stat1;
-    int stat2;
+    Stat stat1;
+    Stat stat2;
     int baseValueMult;
     int experience;
     int gainXpFromSkillPenalty;
@@ -187,13 +187,13 @@ void skillsExit()
 // 0x4AA488
 int skillsLoad(File* stream)
 {
-    return fileReadInt32List(stream, reinterpret_cast<int*>(gTaggedSkills), NUM_TAGGED_SKILLS);
+    return fileReadInt32EnumList<Skill>(stream, gTaggedSkills, NUM_TAGGED_SKILLS);
 }
 
 // 0x4AA4A8
 int skillsSave(File* stream)
 {
-    return fileWriteInt32List(stream, reinterpret_cast<int*>(gTaggedSkills), NUM_TAGGED_SKILLS);
+    return fileWriteInt32EnumList<Skill>(stream, gTaggedSkills, NUM_TAGGED_SKILLS);
 }
 
 // 0x4AA4C8
