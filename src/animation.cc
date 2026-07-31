@@ -50,7 +50,7 @@ namespace fallout {
 
 #define ANIMATION_SEQUENCE_FORCED 0x01
 
-typedef enum AnimationKind {
+enum AnimationKind : int {
     ANIM_KIND_MOVE_TO_OBJECT = 0,
     ANIM_KIND_MOVE_TO_TILE = 1,
     ANIM_KIND_MOVE_TO_TILE_STRAIGHT = 2,
@@ -80,9 +80,9 @@ typedef enum AnimationKind {
     // New animation to update both light distance and intensity. Required to
     // impement Sfall's explosion light effects without resorting to hackery.
     ANIM_KIND_SET_LIGHT_INTENSITY,
-} AnimationKind;
+};
 
-static bool animationKindIsCallback(int kind)
+static bool animationKindIsCallback(AnimationKind kind)
 {
     return kind == ANIM_KIND_CALLBACK || kind == ANIM_KIND_CALLBACK3;
 }
@@ -152,7 +152,7 @@ typedef enum AnimationSadFlags {
 } AnimationSadFlags;
 
 typedef struct AnimationDescription {
-    int kind;
+    AnimationKind kind;
     union {
         Object* owner;
 
