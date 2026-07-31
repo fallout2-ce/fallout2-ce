@@ -2905,7 +2905,18 @@ void programExecuteProcedure(Program* program, int procedureIndex)
 static void doEvents()
 {
     ProgramListNode* programListNode;
-    unsigned int time;
+
+    programListNode = gInterpreterProgramListHead;
+
+    while (programListNode != nullptr) {
+        programProcessProcedureEvents(programListNode->program);
+
+        programListNode = programListNode->next;
+    }
+}
+
+void programProcessProcedureEvents(Program* program)
+{
     int procedureCount;
     int procedureIndex;
     unsigned char* procedurePtr;
@@ -2919,49 +2930,43 @@ static void doEvents()
         return;
     }
 
-    programListNode = gInterpreterProgramListHead;
-    time = getInterpreterTime();
+    unsigned int time = getInterpreterTime();
+    procedureCount = stackReadInt32(program->procedures, 0);
 
-    while (programListNode != nullptr) {
-        procedureCount = stackReadInt32(programListNode->program->procedures, 0);
+    procedurePtr = program->procedures + 4;
+    for (procedureIndex = 0; procedureIndex < procedureCount; procedureIndex++) {
+        procedureFlags = stackReadInt32(procedurePtr, offsetof(Procedure, flags));
+        if ((procedureFlags & PROCEDURE_FLAG_CONDITIONAL) != 0) {
+            memcpy(env, program, sizeof(env));
+            oldProgramFlags = program->flags;
+            oldInstructionPointer = program->instructionPointer;
 
-        procedurePtr = programListNode->program->procedures + 4;
-        for (procedureIndex = 0; procedureIndex < procedureCount; procedureIndex++) {
-            procedureFlags = stackReadInt32(procedurePtr, offsetof(Procedure, flags));
-            if ((procedureFlags & PROCEDURE_FLAG_CONDITIONAL) != 0) {
-                memcpy(env, programListNode->program, sizeof(env));
-                oldProgramFlags = programListNode->program->flags;
-                oldInstructionPointer = programListNode->program->instructionPointer;
+            program->flags = 0;
+            program->instructionPointer = stackReadInt32(procedurePtr, offsetof(Procedure, conditionOffset));
+            programInterpret(program, -1);
 
-                programListNode->program->flags = 0;
-                programListNode->program->instructionPointer = stackReadInt32(procedurePtr, offsetof(Procedure, conditionOffset));
-                programInterpret(programListNode->program, -1);
+            if ((program->flags & PROGRAM_FLAG_FATAL_ERROR) == 0) {
+                data = programStackPopInteger(program);
 
-                if ((programListNode->program->flags & PROGRAM_FLAG_FATAL_ERROR) == 0) {
-                    data = programStackPopInteger(programListNode->program);
+                program->flags = oldProgramFlags;
+                program->instructionPointer = oldInstructionPointer;
 
-                    programListNode->program->flags = oldProgramFlags;
-                    programListNode->program->instructionPointer = oldInstructionPointer;
-
-                    if (data != 0) {
-                        // NOTE: Uninline.
-                        stackWriteInt32(0, procedurePtr, offsetof(Procedure, flags));
-                        programExecuteProcedureAsync(programListNode->program, procedureIndex);
-                    }
-                }
-
-                memcpy(programListNode->program, env, sizeof(env));
-            } else if ((procedureFlags & PROCEDURE_FLAG_TIMED) != 0) {
-                if ((unsigned int)stackReadInt32(procedurePtr, offsetof(Procedure, time)) < time) {
+                if (data != 0) {
                     // NOTE: Uninline.
                     stackWriteInt32(0, procedurePtr, offsetof(Procedure, flags));
-                    programExecuteProcedureAsync(programListNode->program, procedureIndex);
+                    programExecuteProcedureAsync(program, procedureIndex);
                 }
             }
-            procedurePtr += sizeof(Procedure);
-        }
 
-        programListNode = programListNode->next;
+            memcpy(program, env, sizeof(env));
+        } else if ((procedureFlags & PROCEDURE_FLAG_TIMED) != 0) {
+            if ((unsigned int)stackReadInt32(procedurePtr, offsetof(Procedure, time)) < time) {
+                // NOTE: Uninline.
+                stackWriteInt32(0, procedurePtr, offsetof(Procedure, flags));
+                programExecuteProcedureAsync(program, procedureIndex);
+            }
+        }
+        procedurePtr += sizeof(Procedure);
     }
 }
 
@@ -3034,10 +3039,8 @@ void _updatePrograms()
     // CE: Implementation is different. Sfall inserts global scripts into
     // program list upon creation, so engine does not diffirentiate between
     // global and normal scripts. Global scripts in CE are not part of program
-    // list, so we need a separate call to continue execution (usually
-    // non-critical calls scheduled from managed windows). One more thing to
-    // note is that global scripts in CE cannot handle conditional/timed procs
-    // (which are not used anyway).
+    // list, so we need a separate call to continue execution and process
+    // delayed/conditional proc calls.
     sfall_gl_scr_update(interpreterCpuBurstSize);
 
     ProgramListNode* curr = gInterpreterProgramListHead;
