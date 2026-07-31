@@ -415,7 +415,7 @@ static int inventoryGetCenteredWindowY(int windowHeight);
 static void displayLootPanePartyName(unsigned char* windowBuffer, int windowPitch, const Rect& rect, int index);
 
 // 0x46E6D0 stats_array0
-static const int gSummaryStats[7] = {
+static const Stat gSummaryStats[7] = {
     STAT_CURRENT_HIT_POINTS,
     STAT_ARMOR_CLASS,
     STAT_DAMAGE_THRESHOLD,
@@ -426,9 +426,9 @@ static const int gSummaryStats[7] = {
 };
 
 // 0x46E6EC stats_array1
-static const int gSummaryStats2[7] = {
+static const Stat gSummaryStats2[7] = {
     STAT_MAXIMUM_HIT_POINTS,
-    -1,
+    STAT_INVALID,
     STAT_DAMAGE_RESISTANCE,
     STAT_DAMAGE_RESISTANCE_LASER,
     STAT_DAMAGE_RESISTANCE_FIRE,
@@ -3058,8 +3058,8 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
     int newArmorClass = armorGetArmorClass(newArmor);
     critterSetBonusStat(critter, STAT_ARMOR_CLASS, armorClassBonus - oldArmorClass + newArmorClass);
 
-    int damageResistanceStat = STAT_DAMAGE_RESISTANCE;
-    int damageThresholdStat = STAT_DAMAGE_THRESHOLD;
+    Stat damageResistanceStat = STAT_DAMAGE_RESISTANCE;
+    Stat damageThresholdStat = STAT_DAMAGE_THRESHOLD;
     for (DamageType damageType = DAMAGE_TYPE_FIRST; damageType < DAMAGE_TYPE_COUNT; damageType++) {
         int damageResistanceBonus = critterGetBonusStat(critter, damageResistanceStat);
         int oldArmorDamageResistance = armorGetDamageResistance(oldArmor, damageType);
@@ -3071,8 +3071,8 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
         int newArmorDamageThreshold = armorGetDamageThreshold(newArmor, damageType);
         critterSetBonusStat(critter, damageThresholdStat, damageThresholdBonus - oldArmorDamageThreshold + newArmorDamageThreshold);
 
-        damageResistanceStat += 1;
-        damageThresholdStat += 1;
+        damageResistanceStat++;
+        damageThresholdStat++;
     }
 
     if (objectIsPartyMember(critter)) {
@@ -3415,10 +3415,10 @@ int objectGetCarriedQuantityByPid(Object* object, int pid)
 // 0x471D5C display_stats
 static void inventoryRenderSummary()
 {
-    int summaryStats[7];
+    Stat summaryStats[7];
     memcpy(summaryStats, gSummaryStats, sizeof(summaryStats));
 
-    int summaryStats2[7];
+    Stat summaryStats2[7];
     memcpy(summaryStats2, gSummaryStats2, sizeof(summaryStats2));
 
     char formattedText[80];
@@ -3457,7 +3457,7 @@ static void inventoryRenderSummary()
     MessageListItem messageListItem;
 
     int offset = pitch * 2 * fontGetLineHeight() + pitch * INVENTORY_SUMMARY_Y + summaryX;
-    for (int stat = 0; stat < PRIMARY_STAT_COUNT; stat++) {
+    for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
         messageListItem.num = stat;
         if (messageListGetItem(&gInventoryMessageList, &messageListItem)) {
             fontDrawText(windowBuffer + offset, messageListItem.text, 80, pitch, COLOR_GREEN);
@@ -3478,7 +3478,7 @@ static void inventoryRenderSummary()
             fontDrawText(windowBuffer + offset + 40, messageListItem.text, 80, pitch, COLOR_GREEN);
         }
 
-        if (summaryStats2[index] == -1) {
+        if (summaryStats2[index] == STAT_INVALID) {
             int value = critterGetStat(_stack[0], summaryStats[index]);
             snprintf(formattedText, sizeof(formattedText), "   %d", value);
         } else {

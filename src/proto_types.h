@@ -2,6 +2,7 @@
 #define PROTO_TYPES_H
 
 #include "skill_defs.h"
+#include "stat_defs.h"
 
 namespace fallout {
 
@@ -67,6 +68,11 @@ enum DamageType : int {
     DAMAGE_TYPE_COUNT,
     DAMAGE_TYPE_FIRST = DAMAGE_TYPE_NORMAL,
 };
+
+inline Stat operator+(Stat lhs, DamageType rhs)
+{
+    return static_cast<Stat>(static_cast<int>(lhs) + static_cast<int>(rhs));
+}
 
 inline DamageType operator++(DamageType& e, int)
 {
@@ -318,7 +324,7 @@ typedef struct {
 } ProtoItemContainerData;
 
 typedef struct {
-    int stat[3]; // d.stat
+    Stat stat[3]; // d.stat
     int amount[3]; // d.amount
     int duration1; // d.duration1
     int amount1[3]; // d.amount1
@@ -410,8 +416,8 @@ typedef struct ItemProto {
 
 typedef struct CritterProtoData {
     int flags; // d.flags
-    int baseStats[35]; // d.stat_base
-    int bonusStats[35]; // d.stat_bonus
+    int baseStats[SAVEABLE_STAT_COUNT]; // d.stat_base
+    int bonusStats[SAVEABLE_STAT_COUNT]; // d.stat_bonus
     int skills[SKILL_COUNT]; // d.stat_points
     BodyType bodyType; // d.body
     int experience;

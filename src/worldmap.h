@@ -273,6 +273,7 @@ void wmTownMap();
 int wmCarUseGas(int amount);
 int wmCarFillGas(int amount);
 int wmCarGasAmount();
+void wmSetCarInterfaceArt(int artIndex);
 bool wmCarIsOutOfGas();
 int wmCarCurrentArea();
 int wmCarGiveToParty();

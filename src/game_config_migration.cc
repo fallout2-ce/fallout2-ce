@@ -251,6 +251,8 @@ namespace {
         { kSfallMisc, "PremadeFIDs", CONTENT_CONFIG_CHARACTERS_SECTION, "premade_fids" },
         // [text]
         { kSfallMisc, "ExtraGameMsgFileList", CONTENT_CONFIG_TEXT_SECTION, "extra_msg_file_list" },
+        // [stats]
+        { kSfallMisc, "XPTable", CONTENT_CONFIG_STATS_SECTION, "xp_table" },
     };
 
     static bool contentConfigMigrateSfallMovieOverrides(Config* sfallConfig, Config* migratedConfig)

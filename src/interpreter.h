@@ -4,6 +4,7 @@
 #include "combat_defs.h"
 #include "object.h"
 #include "proto_types.h"
+#include "stat_defs.h"
 #include <setjmp.h>
 
 #include <vector>
@@ -321,6 +322,28 @@ inline Skill programStackPopEnum(Program* program)
     }
 
     return static_cast<Skill>(skill);
+}
+
+template <>
+inline Stat programStackPopEnum(Program* program)
+{
+    int stat = programStackPopInteger(program);
+    if (!statIsValid(stat)) {
+        programPrintError("invalid stat %d", stat);
+    }
+
+    return static_cast<Stat>(stat);
+}
+
+template <>
+inline PcStat programStackPopEnum(Program* program)
+{
+    int pcStat = programStackPopInteger(program);
+    if (!pcStatIsValid(pcStat)) {
+        programPrintError("invalid pc stat %d", pcStat);
+    }
+
+    return static_cast<PcStat>(pcStat);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

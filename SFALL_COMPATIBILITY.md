@@ -48,6 +48,7 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | `Misc` | `ViewXPos` | `start` | `worldmap_view_x` |
 | `Misc` | `ViewYPos` | `start` | `worldmap_view_y` |
 | `Misc` | `StartGDialogFix` | `dialog` | `start_gdialog_fix` |
+| `Misc` | `XPTable` | `stats` | `xp_table` |
 | `Misc` | `DisableSpecialMapIDs` | `maps` | `disable_special_map_ids` |
 | `Misc` | `Movie1` - `Movie32` | `movies` | `movie1` - `movie32` |
 | `Sound` | `MainMenuMusic` | `sound` | `main_menu_music` |
@@ -94,7 +95,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Perks and traits / NPC perks | set_fake_perk_npc<br>set_fake_trait_npc<br>set_selectable_perk_npc<br>has_fake_perk_npc<br>has_fake_trait_npc | not implemented | - |
 | Global scripts / Global script functions | set_global_script_repeat<br>set_global_script_type<br>available_global_script_types | ✅ except available_global_script_types | - |
 | Combat | attack_is_aimed<br>block_combat<br>force_aimed_shots<br>disable_aimed_shots<br>get_attack_type<br>get/set_bodypart_hit_modifier<br>combat_data<br>get/set/reset_critical_table<br>get_last_target<br>get_last_attacker<br>set_critter_burst_disable<br>get/set_critter_current_ap<br>set_spray_settings<br>get/set_combat_free_move | ✅ except block_combat, force_aimed_shots, disable_aimed_shots, get_last_target, get_last_attacker, set_spray_settings | - |
-| Car | set_car_current_town<br>car_gas_amount<br>set_car_intface_art | implemented: all except set_car_intface_art | - |
+| Car | set_car_current_town<br>car_gas_amount<br>set_car_intface_art | ✅ | - |
 | Interface / Windows and images | interface_art_draw<br>interface_print<br>draw_image{_scaled}<br>get_window_under_mouse<br>create_win<br>get_window_attribute<br>message_box<br>set_window_flag<br>win_fill_color<br>interface_overlay<br>dialog_message<br>get_text_width<br>hide_window<br>show_window<br>create_message_window | ✅ except interface_print, interface_overlay | - |
 | Interface / Outline | outlined_object<br>get_outline<br>set_outline | ✅ | - |
 | Interface / Main interface | intface_is_hidden<br>intface_redraw<br>intface_hide<br>intface_show<br>set_quest_failure_value | implemented: only intface_redraw | `intface_redraw` only supports the zero-argument form; the optional-argument path is explicitly unimplemented. |

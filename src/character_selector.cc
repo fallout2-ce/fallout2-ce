@@ -67,12 +67,27 @@ namespace fallout {
 #define CS_WINDOW_SECONDARY_STAT_MID_X (379)
 #define CS_WINDOW_BIO_X (438)
 
-typedef enum PremadeCharacter {
+enum PremadeCharacter : int {
     PREMADE_CHARACTER_NARG,
     PREMADE_CHARACTER_CHITSA,
     PREMADE_CHARACTER_MINGUN,
     PREMADE_CHARACTER_COUNT,
-} PremadeCharacter;
+    PREMADE_CHARACTER_FIRST = PREMADE_CHARACTER_NARG
+};
+
+inline PremadeCharacter operator++(PremadeCharacter& e, int)
+{
+    PremadeCharacter result = e;
+    e = static_cast<PremadeCharacter>(static_cast<int>(e) + 1);
+    return result;
+}
+
+inline PremadeCharacter operator--(PremadeCharacter& e, int)
+{
+    PremadeCharacter result = e;
+    e = static_cast<PremadeCharacter>(static_cast<int>(e) - 1);
+    return result;
+}
 
 typedef struct PremadeCharacterDescription {
     char fileName[20];
@@ -91,7 +106,7 @@ static bool characterSelectorWindowFatalError(bool result);
 static void premadeCharactersLocalizePath(char* path);
 
 // 0x51C84C premade_index
-static int gCurrentPremadeCharacter = PREMADE_CHARACTER_NARG;
+static PremadeCharacter gCurrentPremadeCharacter = PREMADE_CHARACTER_NARG;
 
 // 0x51C850 premade_characters
 static PremadeCharacterDescription gPremadeCharacterDescriptions[PREMADE_CHARACTER_COUNT] = {
@@ -223,9 +238,9 @@ int characterSelectorOpen()
             soundPlayFile("ib2p1xx1");
             // FALLTHROUGH
         case 500:
-            gCurrentPremadeCharacter -= 1;
-            if (gCurrentPremadeCharacter < 0) {
-                gCurrentPremadeCharacter = gPremadeCharacterCount - 1;
+            gCurrentPremadeCharacter--;
+            if (gCurrentPremadeCharacter < PREMADE_CHARACTER_FIRST) {
+                gCurrentPremadeCharacter = static_cast<PremadeCharacter>(gPremadeCharacterCount - 1);
             }
 
             characterSelectorWindowRefresh();
@@ -234,9 +249,9 @@ int characterSelectorOpen()
             soundPlayFile("ib2p1xx1");
             // FALLTHROUGH
         case 501:
-            gCurrentPremadeCharacter += 1;
+            gCurrentPremadeCharacter++;
             if (gCurrentPremadeCharacter >= gPremadeCharacterCount) {
-                gCurrentPremadeCharacter = 0;
+                gCurrentPremadeCharacter = PREMADE_CHARACTER_FIRST;
             }
 
             characterSelectorWindowRefresh();

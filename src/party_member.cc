@@ -1609,11 +1609,11 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
     int maxHp = critterGetStat(critter, STAT_MAXIMUM_HIT_POINTS);
     critterAdjustHitPoints(critter, maxHp);
 
-    for (int stat = 0; stat < SPECIAL_STAT_COUNT; stat++) {
+    for (Stat stat = STAT_FIRST; stat < SPECIAL_STAT_COUNT; stat++) {
         proto->critter.data.baseStats[stat] = stageProto->critter.data.baseStats[stat];
     }
 
-    for (int stat = 0; stat < SPECIAL_STAT_COUNT; stat++) {
+    for (Stat stat = STAT_FIRST; stat < SPECIAL_STAT_COUNT; stat++) {
         proto->critter.data.bonusStats[stat] = stageProto->critter.data.bonusStats[stat];
     }
 

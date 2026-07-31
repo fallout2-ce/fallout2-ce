@@ -3,6 +3,7 @@
 
 #include "db.h"
 #include "obj_types.h"
+#include "stat_defs.h"
 
 namespace fallout {
 
@@ -26,7 +27,7 @@ typedef enum EventType {
 
 typedef struct DrugEffectEvent {
     int drugPid;
-    int stats[3];
+    Stat stats[3];
     int modifiers[3];
 } DrugEffectEvent;
 

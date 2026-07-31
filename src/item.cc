@@ -51,8 +51,8 @@ static int _item_move_func(Object* source, Object* target, Object* item, int qua
 static bool _item_identical(Object* item1, Object* item2);
 static int stealthBoyTurnOn(Object* object);
 static int stealthBoyTurnOff(Object* critter, Object* item);
-static int _insert_drug_effect(Object* critter, Object* item, int duration, int* stats, int* mods);
-static void _perform_drug_effect(Object* critter, int* stats, int* mods, bool isImmediate);
+static int _insert_drug_effect(Object* critter, Object* item, int duration, Stat* stats, int* mods);
+static void _perform_drug_effect(Object* critter, Stat* stats, int* mods, bool isImmediate);
 static bool _drug_effect_allowed(Object* critter, int pid);
 static int _insert_withdrawal(Object* obj, int active, int duration, int perk, int pid);
 static int _item_wd_clear_all(Object* obj, void* data);
@@ -2706,7 +2706,7 @@ int ammoGetDamageDivisor(Object* armor)
 // [duration] is in minutes
 //
 // 0x479B44
-static int _insert_drug_effect(Object* critter, Object* item, int duration, int* stats, int* mods)
+static int _insert_drug_effect(Object* critter, Object* item, int duration, Stat* stats, int* mods)
 {
     int index;
     for (index = 0; index < 3; index++) {
@@ -2747,7 +2747,7 @@ static int _insert_drug_effect(Object* critter, Object* item, int duration, int*
 }
 
 // 0x479C20
-static void _perform_drug_effect(Object* critter, int* stats, int* mods, bool isImmediate)
+static void _perform_drug_effect(Object* critter, Stat* stats, int* mods, bool isImmediate)
 {
     MessageListItem messageListItem;
     const char* name;
@@ -2766,8 +2766,8 @@ static void _perform_drug_effect(Object* critter, int* stats, int* mods, bool is
     for (int index = startIndex; index < 3; index++) {
         int oldStatBonus;
         int statBonus;
-        int stat = stats[index];
-        if (stat == -1) {
+        Stat stat = stats[index];
+        if (stat == STAT_INVALID) {
             continue;
         }
 
@@ -3008,7 +3008,7 @@ int drugEffectEventRead(File* stream, void** dataPtr)
         return -1;
     }
 
-    if (fileReadInt32List(stream, drugEffectEvent->stats, 3) == -1) goto err;
+    if (fileReadInt32EnumList<Stat>(stream, drugEffectEvent->stats, 3) == -1) goto err;
     if (fileReadInt32List(stream, drugEffectEvent->modifiers, 3) == -1) goto err;
 
     *dataPtr = drugEffectEvent;
@@ -3025,7 +3025,7 @@ int drugEffectEventWrite(File* stream, void* data)
 {
     DrugEffectEvent* drugEffectEvent = (DrugEffectEvent*)data;
 
-    if (fileWriteInt32List(stream, drugEffectEvent->stats, 3) == -1) return -1;
+    if (fileWriteInt32EnumList<Stat>(stream, drugEffectEvent->stats, 3) == -1) return -1;
     if (fileWriteInt32List(stream, drugEffectEvent->modifiers, 3) == -1) return -1;
 
     return 0;
@@ -3451,7 +3451,7 @@ static void booksInitCustom()
                     if (!configGetInt(&booksConfig, sectionKey, "TextID", &messageId)) continue;
 
                     Skill skill;
-                    if (!configGetInt(&booksConfig, sectionKey, "Skill", reinterpret_cast<int*>(&skill))) continue;
+                    if (!configGetEnum<Skill>(&booksConfig, sectionKey, "Skill", &skill)) continue;
 
                     booksAdd(bookPid, messageId, skill);
                 }

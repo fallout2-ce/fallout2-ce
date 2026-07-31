@@ -124,7 +124,7 @@ static void op_set_pc_base_stat(Program* program)
     // dude's proto, without calling |critterSetBaseStat|. This function has
     // important call to update derived stats, which is not present in Sfall.
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     critterSetBaseStat(gDude, stat, value);
 }
 
@@ -134,7 +134,7 @@ static void op_set_critter_base_stat(Program* program)
     // dude's proto, without calling |critterSetBaseStat|. This function has
     // important call to update derived stats, which is not present in Sfall.
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     critterSetBaseStat(obj, stat, value);
 }
@@ -146,7 +146,7 @@ static void op_set_pc_bonus_stat(Program* program)
     // dude's proto, without calling |critterSetBonusStat|. This function has
     // important call to update derived stats, which is not present in Sfall.
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     critterSetBonusStat(gDude, stat, value);
 }
 
@@ -156,7 +156,7 @@ static void op_set_critter_extra_stat(Program* program)
     // dude's proto, without calling |critterSetBonusStat|. This function has
     // important call to update derived stats, which is not present in Sfall.
     int value = programStackPopInteger(program);
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     critterSetBonusStat(obj, stat, value);
 }
@@ -167,7 +167,7 @@ static void op_get_pc_base_stat(Program* program)
     // CE: Implementation is different. Sfall obtains value directly from
     // dude's proto. This can have unforeseen consequences when dealing with
     // current stats.
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     programStackPushInteger(program, critterGetBaseStat(gDude, stat));
 }
 
@@ -176,7 +176,7 @@ static void op_get_critter_base_stat(Program* program)
     // CE: Implementation is different. Sfall obtains value directly from
     // dude's proto. This can have unforeseen consequences when dealing with
     // current stats.
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     programStackPushInteger(program, critterGetBaseStat(obj, stat));
 }
@@ -184,14 +184,14 @@ static void op_get_critter_base_stat(Program* program)
 // get_pc_extra_stat
 static void op_get_pc_bonus_stat(Program* program)
 {
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     int value = critterGetBonusStat(gDude, stat);
     programStackPushInteger(program, value);
 }
 
 static void op_get_critter_extra_stat(Program* program)
 {
-    int stat = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     int value = critterGetBonusStat(obj, stat);
     programStackPushInteger(program, value);
@@ -1901,22 +1901,22 @@ void sfallOpcodesInit()
     // ^ 0x81da - int   call_offset_r3(int address, int arg1, int arg2, int arg3)
     // ^ 0x81db - int   call_offset_r4(int address, int arg1, int arg2, int arg3, int arg4)
 
-    // 0x815a - void set_pc_base_stat(int StatID, int value)
+    // 0x815a - void set_pc_base_stat(Stat stat, int value)
     interpreterRegisterOpcode(0x815A, op_set_pc_base_stat);
-    // 0x815b - void set_pc_extra_stat(int StatID, int value)
+    // 0x815b - void set_pc_extra_stat(Stat stat, int value)
     interpreterRegisterOpcode(0x815B, op_set_pc_bonus_stat);
-    // 0x815c - int  get_pc_base_stat(int StatID)
+    // 0x815c - int  get_pc_base_stat(Stat stat)
     interpreterRegisterOpcode(0x815C, op_get_pc_base_stat);
-    // 0x815d - int  get_pc_extra_stat(int StatID)
+    // 0x815d - int  get_pc_extra_stat(Stat stat)
     interpreterRegisterOpcode(0x815D, op_get_pc_bonus_stat);
 
-    // 0x815e - void set_critter_base_stat(object, int StatID, int value)
+    // 0x815e - void set_critter_base_stat(object, Stat stat, int value)
     interpreterRegisterOpcode(0x815E, op_set_critter_base_stat);
-    // 0x815f - void set_critter_extra_stat(object, int StatID, int value)
+    // 0x815f - void set_critter_extra_stat(object, Stat stat, int value)
     interpreterRegisterOpcode(0x815F, op_set_critter_extra_stat);
-    // 0x8160 - int  get_critter_base_stat(object, int StatID)
+    // 0x8160 - int  get_critter_base_stat(object, Stat stat)
     interpreterRegisterOpcode(0x8160, op_get_critter_base_stat);
-    // 0x8161 - int  get_critter_extra_stat(object, int StatID)
+    // 0x8161 - int  get_critter_extra_stat(object, Stat stat)
     interpreterRegisterOpcode(0x8161, op_get_critter_extra_stat);
     // 0x8242 - void set_critter_skill_points(int critter, Skill skill, int value)
     // 0x8243 - int  get_critter_skill_points(int critter, Skill skill)
@@ -1924,12 +1924,12 @@ void sfallOpcodesInit()
     // 0x8245 - int  get_available_skill_points()
     // 0x8246 - void mod_skill_points_per_level(int value)
 
-    // 0x81b4 - void set_stat_max(int stat, int value)
-    // 0x81b5 - void set_stat_min(int stat, int value)
-    // 0x81b7 - void set_pc_stat_max(int stat, int value)
-    // 0x81b8 - void set_pc_stat_min(int stat, int value)
-    // 0x81b9 - void set_npc_stat_max(int stat, int value)
-    // 0x81ba - void set_npc_stat_min(int stat, int value)
+    // 0x81b4 - void set_stat_max(Stat stat, int value)
+    // 0x81b5 - void set_stat_min(Stat stat, int value)
+    // 0x81b7 - void set_pc_stat_max(Stat stat, int value)
+    // 0x81b8 - void set_pc_stat_min(Stat stat, int value)
+    // 0x81b9 - void set_npc_stat_max(Stat stat, int value)
+    // 0x81ba - void set_npc_stat_min(Stat stat, int value)
 
     // 0x816b - int  input_funcs_available() // deprecated; do not implement
     // 0x816c - int  key_pressed(int dxScancode)

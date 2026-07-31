@@ -2,6 +2,7 @@
 #define COMBAT_DEFS_H
 
 #include "obj_types.h"
+#include "stat_defs.h"
 
 #define EXPLOSION_TARGET_COUNT (6)
 
@@ -229,7 +230,7 @@ typedef union CriticalHitDescription {
 
         // Stat to check to upgrade this critical hit to massive critical hit or
         // -1 if there is no massive critical hit.
-        int massiveCriticalStat;
+        Stat massiveCriticalStat;
 
         // Bonus/penalty to massive critical stat.
         int massiveCriticalStatModifier;
