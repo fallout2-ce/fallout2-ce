@@ -2,8 +2,6 @@
 
 #include <charconv>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <algorithm>
 #include <string_view>
@@ -110,6 +108,7 @@ static int xpTableThresholds = 0;
 
 static void pcExperienceTableInit();
 static int pcGetMaxLevel();
+static int pcGetLevelForExperience(int xp);
 
 static std::string_view pcExperienceTableTrimToken(std::string_view token)
 {
@@ -754,6 +753,22 @@ static int pcGetMaxLevel()
     return xpTableThresholds + 1;
 }
 
+static int pcGetLevelForExperience(int xp)
+{
+    int level = 1;
+    int maxLevel = pcGetMaxLevel();
+    while (level < maxLevel) {
+        int nextLevelXp = pcGetExperienceForLevel(level + 1);
+        if (nextLevelXp == -1 || xp < nextLevelXp) {
+            break;
+        }
+
+        level++;
+    }
+
+    return level;
+}
+
 // Returns experience to reach next level.
 //
 // 0x4AF9A0
@@ -767,16 +782,12 @@ int pcGetExperienceForNextLevel()
 // 0x4AF9A8
 int pcGetExperienceForLevel(int level)
 {
-    if (xpTableThresholds != 0) {
-        if (level < 1 || level > pcGetMaxLevel()) {
-            return -1;
-        }
-
-        return xpTable[level - 1];
+    if (level < 1 || level > pcGetMaxLevel()) {
+        return -1;
     }
 
-    if (level >= PC_LEVEL_MAX) {
-        return -1;
+    if (xpTableThresholds != 0) {
+        return xpTable[level - 1];
     }
 
     int halfLevel = level / 2;
@@ -918,25 +929,7 @@ int pcSetExperience(int xp)
     int oldLevel = gPcStatValues[PC_STAT_LEVEL];
     gPcStatValues[PC_STAT_EXPERIENCE] = xp;
 
-    int newLevel = 1;
-    if (xpTableThresholds != 0) {
-        int maxLevel = pcGetMaxLevel();
-        while (newLevel < maxLevel) {
-            int nextLevelXp = pcGetExperienceForLevel(newLevel + 1);
-            if (nextLevelXp == -1 || xp < nextLevelXp) {
-                break;
-            }
-
-            newLevel++;
-        }
-    } else {
-        int level = 1;
-        do {
-            level += 1;
-        } while (xp >= pcGetExperienceForLevel(level) && level < PC_LEVEL_MAX);
-
-        newLevel = level - 1;
-    }
+    int newLevel = pcGetLevelForExperience(xp);
 
     pcSetStat(PC_STAT_LEVEL, newLevel);
     dudeDisableState(DUDE_STATE_LEVEL_UP_AVAILABLE);

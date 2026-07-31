@@ -184,7 +184,7 @@ static PerkRankData* gPartyMemberPerkRanks = nullptr;
 // perk.
 //
 // 0x51C124 hereAndNowExps
-static int gHereAndNowBonusExperience = 0;
+static int hereAndNowBonusExperience = 0;
 
 // perk.msg
 //
@@ -578,9 +578,10 @@ void perkAddEffect(Object* critter, int perk)
         ranksData->ranks[PERK_HERE_AND_NOW] -= 1;
 
         int level = pcGetStat(PC_STAT_LEVEL);
+        int nextLevelExperience = pcGetExperienceForLevel(level + 1);
 
-        gHereAndNowBonusExperience = pcGetExperienceForLevel(level + 1) - pcGetStat(PC_STAT_EXPERIENCE);
-        pcAddExperienceWithOptions(gHereAndNowBonusExperience, false);
+        hereAndNowBonusExperience = nextLevelExperience >= 0 ? nextLevelExperience - pcGetStat(PC_STAT_EXPERIENCE) : 0;
+        pcAddExperienceWithOptions(hereAndNowBonusExperience, false);
 
         ranksData->ranks[PERK_HERE_AND_NOW] += 1;
     }
@@ -615,7 +616,7 @@ void perkRemoveEffect(Object* critter, int perk)
 
     if (perk == PERK_HERE_AND_NOW) {
         int xp = pcGetStat(PC_STAT_EXPERIENCE);
-        pcSetStat(PC_STAT_EXPERIENCE, xp - gHereAndNowBonusExperience);
+        pcSetStat(PC_STAT_EXPERIENCE, xp - hereAndNowBonusExperience);
     }
 
     if (perkDescription->maxRank == -1) {
