@@ -31,7 +31,6 @@ enum InterfaceItemAction : int {
     INTERFACE_ITEM_ACTION_COUNT,
 };
 
-
 inline InterfaceItemAction operator++(InterfaceItemAction& e, int)
 {
     InterfaceItemAction result = e;

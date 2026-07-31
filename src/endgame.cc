@@ -18,6 +18,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "game_sound.h"
+#include "game_vars.h"
 #include "input.h"
 #include "map.h"
 #include "memory.h"
@@ -44,7 +45,7 @@ namespace fallout {
 #define ENDGAME_ENDING_WINDOW_HEIGHT 480
 
 typedef struct EndgameDeathEnding {
-    int gvar;
+    GameGlobalVar gvar;
     int value;
     int worldAreaKnown;
     int worldAreaNotKnown;
@@ -58,7 +59,7 @@ typedef struct EndgameDeathEnding {
 } EndgameDeathEnding;
 
 typedef struct EndgameEnding {
-    int gvar;
+    GameGlobalVar gvar;
     int value;
     int art_num;
     char voiceOverBaseName[12];
@@ -926,7 +927,7 @@ static int endgameEndingInit()
             continue;
         }
 
-        entry.gvar = atoi(tok);
+        entry.gvar = static_cast<GameGlobalVar>(atoi(tok));
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {
@@ -1031,7 +1032,7 @@ int endgameDeathEndingInit()
             continue;
         }
 
-        entry.gvar = atoi(tok);
+        entry.gvar = static_cast<GameGlobalVar>(atoi(tok));
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {

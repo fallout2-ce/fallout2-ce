@@ -4506,7 +4506,7 @@ static bool wmEvalConditional(EncounterCondition* condition, int* critterCountPt
         matches = true;
         switch (conditionEntry->type) {
         case ENCOUNTER_CONDITION_TYPE_GLOBAL:
-            value = gameGetGlobalVar(conditionEntry->param);
+            value = gameGetGlobalVar(static_cast<GameGlobalVar>(conditionEntry->param));
             if (!wmEvalSubConditional(value, conditionEntry->conditionalOperator, conditionEntry->value)) {
                 matches = false;
             }

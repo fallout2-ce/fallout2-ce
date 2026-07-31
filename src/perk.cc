@@ -335,7 +335,7 @@ static bool perkCanAdd(Object* critter, Perk perk)
         int value1 = perkDescription->value1;
         if (value1 < 0) {
             if (isVariable) {
-                if (gameGetGlobalVar(param1) >= value1) {
+                if (gameGetGlobalVar(static_cast<GameGlobalVar>(param1)) >= value1) {
                     req1Fulfilled = false;
                 }
             } else {
@@ -345,7 +345,7 @@ static bool perkCanAdd(Object* critter, Perk perk)
             }
         } else {
             if (isVariable) {
-                if (gameGetGlobalVar(param1) < value1) {
+                if (gameGetGlobalVar(static_cast<GameGlobalVar>(param1)) < value1) {
                     req1Fulfilled = false;
                 }
             } else {
@@ -381,7 +381,7 @@ static bool perkCanAdd(Object* critter, Perk perk)
         int value2 = perkDescription->value2;
         if (value2 < 0) {
             if (isVariable) {
-                if (gameGetGlobalVar(param2) >= value2) {
+                if (gameGetGlobalVar(static_cast<GameGlobalVar>(param2)) >= value2) {
                     return false;
                 }
             } else {
@@ -391,7 +391,7 @@ static bool perkCanAdd(Object* critter, Perk perk)
             }
         } else {
             if (isVariable) {
-                if (gameGetGlobalVar(param2) < value2) {
+                if (gameGetGlobalVar(static_cast<GameGlobalVar>(param2)) < value2) {
                     return false;
                 }
             } else {

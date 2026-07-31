@@ -2,6 +2,7 @@
 #define INTERPRETER_H
 
 #include "combat_defs.h"
+#include "game.h"
 #include "object.h"
 #include "proto_types.h"
 #include "stat_defs.h"
@@ -344,6 +345,17 @@ inline PcStat programStackPopEnum(Program* program)
     }
 
     return static_cast<PcStat>(pcStat);
+}
+
+template <>
+inline GameGlobalVar programStackPopEnum(Program* program)
+{
+    int var = programStackPopInteger(program);
+    if (!globalVariableIsValid(var)) {
+        programPrintError("invalid global variable %d", var);
+    }
+
+    return static_cast<GameGlobalVar>(var);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

@@ -39,8 +39,8 @@ int gameHandleKey(int eventCode, bool isInCombatMode);
 void gameUiDisable(int allowScrolling);
 void gameUiEnable();
 bool gameUiIsDisabled();
-int gameGetGlobalVar(int var);
-int gameSetGlobalVar(int var, int value);
+int gameGetGlobalVar(GameGlobalVar var);
+int gameSetGlobalVar(GameGlobalVar var, int value);
 int globalVarsRead(const char* path, const char* section, int* variablesListLengthPtr, int** variablesListPtr);
 int gameGetState();
 int gameRequestState(int newGameState);
@@ -51,8 +51,13 @@ int gameLoadGlobalVars();
 int gameShowDeathDialog(const char* message);
 void gameHandleSkilldexResult(int rc);
 void showHelp();
-void* gameGetGlobalPointer(int var);
-int gameSetGlobalPointer(int var, void* value);
+void* gameGetGlobalPointer(GameGlobalVar var);
+int gameSetGlobalPointer(GameGlobalVar var, void* value);
+
+inline bool globalVariableIsValid(int var)
+{
+    return var >= 0 && var < gGameGlobalVarsLength;
+}
 
 class GameMode {
 public:
