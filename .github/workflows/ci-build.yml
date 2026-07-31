@@ -145,9 +145,6 @@ jobs:
     runs-on: macos-15
     needs: [ce-dat]
 
-    env:
-      IPHONEOS_DEPLOYMENT_TARGET: 13.0
-
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -332,9 +329,6 @@ jobs:
     name: macOS
 
     runs-on: macos-15
-
-    env:
-      MACOSX_DEPLOYMENT_TARGET: 10.15
 
     steps:
       - name: Clone
