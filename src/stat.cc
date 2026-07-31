@@ -1,11 +1,14 @@
 #include "stat.h"
 
+#include <charconv>
 #include <stdio.h>
 
 #include <algorithm>
+#include <string_view>
 
 #include "art.h"
 #include "combat.h"
+#include "content_config.h"
 #include "critter.h"
 #include "display_monitor.h"
 #include "game.h"
@@ -100,6 +103,34 @@ static int gPcStatValues[PC_STAT_COUNT];
 
 static int unspentApBonus = 4;
 static int unspentApPerkBonus = 4;
+static int xpTable[PC_LEVEL_MAX];
+static int xpTableThresholds = 0;
+
+static void pcExperienceTableInit();
+static int pcGetMaxLevel();
+static int pcGetLevelForExperience(int xp);
+
+static std::string_view pcExperienceTableTrimToken(std::string_view token)
+{
+    size_t first = token.find_first_not_of(" \t\r\n");
+    if (first == std::string_view::npos) {
+        return {};
+    }
+
+    size_t last = token.find_last_not_of(" \t\r\n");
+    return token.substr(first, last - first + 1);
+}
+
+static bool pcExperienceTableParseToken(std::string_view token, int* value)
+{
+    token = pcExperienceTableTrimToken(token);
+    if (token.empty()) {
+        return false;
+    }
+
+    auto result = std::from_chars(token.data(), token.data() + token.size(), *value);
+    return result.ec == std::errc() && result.ptr == token.data() + token.size();
+}
 
 // 0x4AED70
 int statsInit()
@@ -108,6 +139,7 @@ int statsInit()
 
     // NOTE: Uninline.
     pcStatsReset();
+    pcExperienceTableInit();
 
     if (!messageListInit(&gStatsMessageList)) {
         return -1;
@@ -655,7 +687,8 @@ int pcSetStat(PcStat pcStat, int value)
         return -2;
     }
 
-    if (value > gPcStatDescriptions[pcStat].maximumValue) {
+    int maximumValue = pcStat == PC_STAT_LEVEL ? pcGetMaxLevel() : gPcStatDescriptions[pcStat].maximumValue;
+    if (value > maximumValue) {
         return -3;
     }
 
@@ -683,6 +716,63 @@ void pcStatsReset()
     }
 }
 
+static void pcExperienceTableInit()
+{
+    xpTable[0] = 0;
+    xpTableThresholds = 0;
+
+    char* value;
+    if (!configGetString(&gContentConfig, CONTENT_CONFIG_STATS_SECTION, "xp_table", &value) || value[0] == '\0') {
+        return;
+    }
+
+    std::string_view remaining(value);
+
+    while (!remaining.empty() && xpTableThresholds < PC_LEVEL_MAX - 1) {
+        size_t comma = remaining.find(',');
+        std::string_view token = comma == std::string_view::npos
+            ? remaining
+            : remaining.substr(0, comma);
+
+        int xp;
+        if (pcExperienceTableParseToken(token, &xp)) {
+            xpTableThresholds++;
+            xpTable[xpTableThresholds] = xp;
+        }
+
+        if (comma == std::string_view::npos) {
+            break;
+        }
+
+        remaining.remove_prefix(comma + 1);
+    }
+}
+
+static int pcGetMaxLevel()
+{
+    if (xpTableThresholds == 0) {
+        return PC_LEVEL_MAX;
+    }
+
+    return xpTableThresholds + 1;
+}
+
+static int pcGetLevelForExperience(int xp)
+{
+    int level = 1;
+    int maxLevel = pcGetMaxLevel();
+    while (level < maxLevel) {
+        int nextLevelXp = pcGetExperienceForLevel(level + 1);
+        if (nextLevelXp == -1 || xp < nextLevelXp) {
+            break;
+        }
+
+        level++;
+    }
+
+    return level;
+}
+
 // Returns experience to reach next level.
 //
 // 0x4AF9A0
@@ -696,8 +786,12 @@ int pcGetExperienceForNextLevel()
 // 0x4AF9A8
 int pcGetExperienceForLevel(int level)
 {
-    if (level >= PC_LEVEL_MAX) {
+    if (level < 1 || level > pcGetMaxLevel()) {
         return -1;
+    }
+
+    if (xpTableThresholds != 0) {
+        return xpTable[level - 1];
     }
 
     int halfLevel = level / 2;
@@ -781,7 +875,7 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
 
     gPcStatValues[PC_STAT_EXPERIENCE] = newXp;
 
-    while (gPcStatValues[PC_STAT_LEVEL] < PC_LEVEL_MAX) {
+    while (gPcStatValues[PC_STAT_LEVEL] < pcGetMaxLevel()) {
         if (newXp < pcGetExperienceForNextLevel()) {
             break;
         }
@@ -839,12 +933,7 @@ int pcSetExperience(int xp)
     int oldLevel = gPcStatValues[PC_STAT_LEVEL];
     gPcStatValues[PC_STAT_EXPERIENCE] = xp;
 
-    int level = 1;
-    do {
-        level += 1;
-    } while (xp >= pcGetExperienceForLevel(level) && level < PC_LEVEL_MAX);
-
-    int newLevel = level - 1;
+    int newLevel = pcGetLevelForExperience(xp);
 
     pcSetStat(PC_STAT_LEVEL, newLevel);
     dudeDisableState(DUDE_STATE_LEVEL_UP_AVAILABLE);

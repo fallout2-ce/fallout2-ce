@@ -13,6 +13,7 @@ namespace fallout {
 #define CONTENT_CONFIG_MAIN_MENU_SECTION "main_menu"
 #define CONTENT_CONFIG_SOUND_SECTION "sound"
 #define CONTENT_CONFIG_MOVIES_SECTION "movies"
+#define CONTENT_CONFIG_STATS_SECTION "stats"
 #define CONTENT_CONFIG_COMBAT_SECTION "combat"
 #define CONTENT_CONFIG_EXPLOSIONS_SECTION "explosions"
 #define CONTENT_CONFIG_SKILLDEX_SECTION "skilldex"
