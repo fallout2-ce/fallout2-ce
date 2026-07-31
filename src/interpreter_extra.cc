@@ -2749,7 +2749,7 @@ static void opGetCritterState(Program* program)
         if (critterIsActive(critter)) {
             state = CRITTER_STATE_NORMAL;
 
-            int anim = FID_ANIM_TYPE(critter->fid);
+            AnimationType anim = FID_ANIM_TYPE<AnimationType>(critter->fid);
             if (anim >= ANIM_FALL_BACK_SF && anim <= ANIM_FALL_FRONT_SF) {
                 state = CRITTER_STATE_PRONE;
             }
@@ -4349,7 +4349,7 @@ static void opCritterModifySkill(Program* program)
 static void opSfxBuildCharName(Program* program)
 {
     int extra = programStackPopInteger(program);
-    int anim = programStackPopInteger(program);
+    AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     if (obj != nullptr) {

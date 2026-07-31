@@ -98,7 +98,24 @@ inline bool animationTypeIsValid(int anim)
     return anim >=0 && anim < ANIM_COUNT;    
 }
 
-#define FID_ANIM_TYPE(value) ((value) & 0xFF0000) >> 16
+inline int FID_ANIM_TYPE(int fid)
+{
+    return (fid & 0xFF0000) >> 16;
+}
+
+template <typename T>
+T FID_ANIM_TYPE(int fid);
+
+template <>
+inline AnimationType FID_ANIM_TYPE(int fid)
+{
+    int anim = FID_ANIM_TYPE(fid);
+    if (!animationTypeIsValid(anim)) {
+        return ANIM_INVALID;
+    }
+
+    return static_cast<AnimationType>(anim);
+}
 
 // Signature of animation callback accepting 2 parameters.
 typedef int(AnimationCallback)(void* a1, void* a2);

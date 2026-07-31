@@ -5170,7 +5170,7 @@ void _obj_fix_violence_settings(int* fid)
         break;
     }
 
-    int anim = FID_ANIM_TYPE(*fid);
+    AnimationType anim = FID_ANIM_TYPE<AnimationType>(*fid);
     if (anim >= start && anim <= end) {
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF

@@ -1,6 +1,7 @@
 #ifndef GAME_SOUND_H
 #define GAME_SOUND_H
 
+#include "animation.h"
 #include "combat_defs.h"
 #include "obj_types.h"
 #include "sound.h"
@@ -101,7 +102,7 @@ void soundEffectDelete(Sound* sound);
 int _gsnd_anim_sound(Sound* sound, void* objectPtr);
 int soundEffectPlay(Sound* sound);
 int _gsound_compute_relative_volume(Object* obj);
-char* sfxBuildCharName(Object* object, int anim, int weaponAnimationCode);
+char* sfxBuildCharName(Object* object, AnimationType anim, int weaponAnimationCode);
 char* gameSoundBuildAmbientSoundEffectName(const char* name);
 char* gameSoundBuildInterfaceName(const char* name);
 char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object* target);
