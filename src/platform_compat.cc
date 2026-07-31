@@ -1,7 +1,7 @@
 #include "platform_compat.h"
 #include <filesystem>
 
-#ifndef  _WIN32
+#ifndef _WIN32
 #include <dirent.h>
 #endif
 
