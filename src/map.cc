@@ -405,7 +405,7 @@ int mapSetElevation(int elevation)
 }
 
 // 0x482220
-int mapSetGlobalVar(GameGlobalVar var, ProgramValue& value)
+int mapSetGlobalVar(int var, ProgramValue& value)
 {
     if (var < 0 || var >= gMapGlobalVarsLength) {
         debugPrint("ERROR: attempt to reference map var out of range: %d", var);
@@ -424,7 +424,7 @@ int mapSetGlobalVar(GameGlobalVar var, ProgramValue& value)
 }
 
 // 0x482250
-int mapGetGlobalVar(GameGlobalVar var, ProgramValue& value)
+int mapGetGlobalVar(int var, ProgramValue& value)
 {
     if (var < 0 || var >= gMapGlobalVarsLength) {
         debugPrint("ERROR: attempt to reference map var out of range: %d", var);

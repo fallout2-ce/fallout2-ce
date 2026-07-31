@@ -1176,10 +1176,10 @@ static void opSetLocalVar(Program* program)
 // 0x455858 op_map_var
 static void opGetMapVar(Program* program)
 {
-    GameGlobalVar variable = programStackPopEnum<GameGlobalVar>(program);
+    int data = programStackPopInteger(program);
 
     ProgramValue value;
-    if (mapGetGlobalVar(variable, value) == -1) {
+    if (mapGetGlobalVar(data, value) == -1) {
         value.opcode = VALUE_TYPE_INT;
         value.integerValue = -1;
     }
@@ -1192,7 +1192,7 @@ static void opGetMapVar(Program* program)
 static void opSetMapVar(Program* program)
 {
     ProgramValue value = programStackPopValue(program);
-    GameGlobalVar variable = programStackPopEnum<GameGlobalVar>(program);
+    int variable = programStackPopInteger(program);
 
     mapSetGlobalVar(variable, value);
 }

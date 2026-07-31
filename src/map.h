@@ -3,7 +3,6 @@
 
 #include "combat_defs.h"
 #include "db.h"
-#include "game_vars.h"
 #include "geometry.h"
 #include "interpreter.h"
 #include "map_defs.h"
@@ -89,8 +88,8 @@ void isoEnable();
 bool isoDisable();
 bool isoIsDisabled();
 int mapSetElevation(int elevation);
-int mapSetGlobalVar(GameGlobalVar var, ProgramValue& value);
-int mapGetGlobalVar(GameGlobalVar var, ProgramValue& value);
+int mapSetGlobalVar(int var, ProgramValue& value);
+int mapGetGlobalVar(int var, ProgramValue& value);
 int mapSetLocalVar(int var, ProgramValue& value);
 int mapGetLocalVar(int var, ProgramValue& value);
 int mapAllocLocalVars(int numNewVars);
