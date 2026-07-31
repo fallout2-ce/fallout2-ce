@@ -6133,7 +6133,7 @@ void _combatKillCritterOutsideCombat(Object* critter_obj, char* msg)
     if (critter_obj != gDude) {
         displayMonitorAddMessage(msg);
         scriptExecProc(critter_obj->sid, SCRIPT_PROC_DESTROY);
-        critterKill(critter_obj, -1, 1);
+        critterKill(critter_obj, ANIM_INVALID, 1);
     }
 }
 

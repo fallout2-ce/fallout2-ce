@@ -1,6 +1,7 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
+#include "animation.h"
 #include "combat_defs.h"
 #include "game.h"
 #include "object.h"
@@ -356,6 +357,17 @@ inline GameGlobalVar programStackPopEnum(Program* program)
     }
 
     return static_cast<GameGlobalVar>(var);
+}
+
+template <>
+inline AnimationType programStackPopEnum(Program* program)
+{
+    int anim = programStackPopInteger(program);
+    if (!animationTypeIsValid(anim)) {
+        programPrintError("invalid animation type %d", anim);
+    }
+
+    return static_cast<AnimationType>(anim);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

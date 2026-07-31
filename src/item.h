@@ -1,6 +1,7 @@
 #ifndef ITEM_H
 #define ITEM_H
 
+#include "animation.h"
 #include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
@@ -79,8 +80,8 @@ int weaponGetDamageMinMax(Object* weapon, int* minDamagePtr, int* maxDamagePtr);
 int weaponGetDamage(Object* critter, HitMode hitMode);
 DamageType weaponGetDamageType(Object* critter, Object* weapon);
 int weaponIsTwoHanded(Object* weapon);
-int critterGetAnimationForHitMode(Object* critter, HitMode hitMode);
-int weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode);
+AnimationType critterGetAnimationForHitMode(Object* critter, HitMode hitMode);
+AnimationType weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode);
 int ammoGetCapacity(Object* ammoOrWeapon);
 int ammoGetQuantity(Object* ammoOrWeapon);
 int ammoGetCaliber(Object* ammoOrWeapon);

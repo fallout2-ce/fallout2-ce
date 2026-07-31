@@ -19,7 +19,8 @@ typedef enum AnimationRequestOptions {
 // Change positions: 36-37
 // Weapon: 38-47
 // Single-frame death animations (the last frame of knockdown and death animations): 48-63
-typedef enum AnimationType {
+enum AnimationType : int {
+    ANIM_INVALID = -1,
     ANIM_STAND = 0,
     ANIM_WALK = 1,
     ANIM_JUMP_BEGIN = 2,
@@ -90,7 +91,12 @@ typedef enum AnimationType {
     LAST_KNOCKDOWN_AND_DEATH_ANIM = ANIM_FALL_FRONT_BLOOD,
     FIRST_SF_DEATH_ANIM = ANIM_FALL_BACK_SF,
     LAST_SF_DEATH_ANIM = ANIM_FALL_FRONT_BLOOD_SF,
-} AnimationType;
+};
+
+inline bool animationTypeIsValid(int anim)
+{
+    return anim >=0 && anim < ANIM_COUNT;    
+}
 
 #define FID_ANIM_TYPE(value) ((value) & 0xFF0000) >> 16
 
@@ -124,11 +130,11 @@ int animationRegisterMoveToObject(Object* owner, Object* destination, int action
 int animationRegisterRunToObject(Object* owner, Object* destination, int actionPoints, int delay);
 int animationRegisterMoveToTile(Object* owner, int tile, int elevation, int actionPoints, int delay);
 int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actionPoints, int delay);
-int animationRegisterMoveToTileStraight(Object* object, int tile, int elevation, int anim, int delay);
-int animationRegisterMoveToTileStraightAndWaitForComplete(Object* owner, int tile, int elev, int anim, int delay);
-int animationRegisterAnimate(Object* owner, int anim, int delay);
-int animationRegisterAnimateReversed(Object* owner, int anim, int delay);
-int animationRegisterAnimateAndHide(Object* owner, int anim, int delay);
+int animationRegisterMoveToTileStraight(Object* object, int tile, int elevation, AnimationType anim, int delay);
+int animationRegisterMoveToTileStraightAndWaitForComplete(Object* owner, int tile, int elev, AnimationType anim, int delay);
+int animationRegisterAnimate(Object* owner, AnimationType anim, int delay);
+int animationRegisterAnimateReversed(Object* owner, AnimationType anim, int delay);
+int animationRegisterAnimateAndHide(Object* owner, AnimationType anim, int delay);
 int animationRegisterRotateToTile(Object* owner, int tile);
 int animationRegisterRotateClockwise(Object* owner);
 int animationRegisterRotateCounterClockwise(Object* owner);
@@ -144,7 +150,7 @@ int animationRegisterTakeOutWeapon(Object* owner, int weaponAnimationCode, int d
 int animationRegisterSetLightDistance(Object* owner, int lightDistance, int delay);
 int animationRegisterToggleOutline(Object* object, bool outline, int delay);
 int animationRegisterPlaySoundEffect(Object* owner, const char* soundEffectName, int delay);
-int animationRegisterAnimateForever(Object* owner, int anim, int delay);
+int animationRegisterAnimateForever(Object* owner, AnimationType anim, int delay);
 int animationRegisterPing(int flags, int delay);
 int _make_path(Object* object, int from, int to, unsigned char* rotations, int requireEmptyDest);
 int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotations, int requireEmptyDest, PathBuilderCallback* callback);

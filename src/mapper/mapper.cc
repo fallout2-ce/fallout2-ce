@@ -1998,7 +1998,7 @@ void edit_mapper()
         // --- 'k' — Kill critter ---
         case kBtnKill:
             if (!map_entered && _screen_obj != nullptr && PID_TYPE(_screen_obj->pid) == OBJ_TYPE_CRITTER) {
-                critterKill(_screen_obj, 0x3F, true);
+                critterKill(_screen_obj, ANIM_FALL_FRONT_BLOOD_SF, true);
             }
             break;
 

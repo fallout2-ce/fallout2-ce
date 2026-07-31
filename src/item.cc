@@ -115,7 +115,7 @@ static const Skill _attack_skill[9] = {
 // A map of item's extendedFlags to animation.
 //
 // 0x519184 attack_anim
-static const int _attack_anim[9] = {
+static const AnimationType _attack_anim[9] = {
     ANIM_STAND,
     ANIM_THROW_PUNCH,
     ANIM_KICK_LEG,
@@ -1378,7 +1378,7 @@ int weaponIsTwoHanded(Object* weapon)
 }
 
 // 0x4785DC
-int critterGetAnimationForHitMode(Object* critter, HitMode hitMode)
+AnimationType critterGetAnimationForHitMode(Object* critter, HitMode hitMode)
 {
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
@@ -1386,7 +1386,7 @@ int critterGetAnimationForHitMode(Object* critter, HitMode hitMode)
 }
 
 // 0x47860C
-int weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode)
+AnimationType weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode)
 {
     if (hitMode == HIT_MODE_KICK || (hitMode >= FIRST_ADVANCED_KICK_HIT_MODE && hitMode <= LAST_ADVANCED_KICK_HIT_MODE)) {
         return ANIM_KICK_LEG;

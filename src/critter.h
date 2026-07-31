@@ -1,6 +1,7 @@
 #ifndef CRITTER_H
 #define CRITTER_H
 
+#include "animation.h"
 #include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
@@ -48,7 +49,7 @@ KillType critterGetKillType(Object* critter);
 char* killTypeGetName(KillType killType);
 char* killTypeGetDescription(KillType killType);
 int critterHealByHours(Object* obj, int hours);
-void critterKill(Object* critter, int anim, bool refreshRect);
+void critterKill(Object* critter, AnimationType anim, bool refreshRect);
 int critterGetExp(Object* critter);
 bool critterIsActive(Object* critter);
 bool critterIsDead(Object* critter);

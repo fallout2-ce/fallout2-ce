@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "animation.h"
 #include "db.h"
 #include "debug.h"
 #include "game.h"
@@ -725,7 +726,7 @@ int     arg4 - The death anim id calculated by Fallout
 
 int     ret0 - The death anim id to override with
 */
-void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim)
+void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, AnimationType* anim)
 {
     ScriptHookCall hook(HOOK_DEATHANIM2, 1,
         { weapon != nullptr ? weapon->pid : -1,
@@ -737,7 +738,7 @@ void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, i
     hook.call();
 
     if (hook.numReturnValues() > 0) {
-        *anim = hook.getReturnValueAt(0).asInt();
+        *anim = static_cast<AnimationType>(hook.getReturnValueAt(0).asInt());
     }
 }
 

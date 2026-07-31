@@ -226,7 +226,7 @@ static void opGetGameTime(Program* program);
 static void opGetGameTimeInSeconds(Program* program);
 static void opGetObjectElevation(Program* program);
 static void opKillCritter(Program* program);
-static int _correctDeath(Object* critter, int anim, bool forceBack);
+static AnimationType _correctDeath(Object* critter, AnimationType anim, bool forceBack);
 static void opKillCritterType(Program* program);
 static void opCritterDamage(Program* program);
 static void opAddTimerEvent(Program* program);
@@ -2310,7 +2310,7 @@ static void opGetObjectElevation(Program* program)
 // 0x457AD4 op_kill_critter
 static void opKillCritter(Program* program)
 {
-    int deathFrame = programStackPopInteger(program);
+    AnimationType deathFrame = programStackPopEnum<AnimationType>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object == nullptr) {
@@ -2339,7 +2339,7 @@ static void opKillCritter(Program* program)
 }
 
 // [forceBack] is to force fall back animation, otherwise it's fall front if it's present
-static int _correctDeath(Object* critter, int anim, bool forceBack)
+static AnimationType _correctDeath(Object* critter, AnimationType anim, bool forceBack)
 {
     if (anim >= ANIM_BIG_HOLE_SF && anim <= ANIM_FALL_FRONT_BLOOD_SF) {
         bool useStandardDeath = false;
@@ -2374,7 +2374,7 @@ static int _correctDeath(Object* critter, int anim, bool forceBack)
 static void opKillCritterType(Program* program)
 {
     // 0x518ED0
-    static const int ftList[] = {
+    static const AnimationType ftList[] = {
         ANIM_FALL_BACK_BLOOD_SF,
         ANIM_BIG_HOLE_SF,
         ANIM_CHARRED_BODY_SF,
@@ -2388,7 +2388,7 @@ static void opKillCritterType(Program* program)
         ANIM_FALL_FRONT_BLOOD_SF,
     };
 
-    int deathFrame = programStackPopInteger(program);
+    AnimationType deathFrame = programStackPopEnum<AnimationType>(program);
     int pid = programStackPopInteger(program);
 
     if (_isLoadingGame()) {
@@ -2419,7 +2419,7 @@ static void opKillCritterType(Program* program)
                     _combat_delete_critter(obj);
                     if (deathFrame == 1) {
                         // Pick next animation from the |ftList|.
-                        int anim = _correctDeath(obj, ftList[ftIndex], true);
+                        AnimationType anim = _correctDeath(obj, ftList[ftIndex], true);
 
                         // SFALL: Fix for incorrect death animation.
                         // CE: The fix is slightly different. Sfall passes
@@ -2435,6 +2435,8 @@ static void opKillCritterType(Program* program)
                             break;
                         case ANIM_FALL_FRONT:
                             anim = ANIM_FALL_FRONT_SF;
+                            break;
+                        default:
                             break;
                         }
 
@@ -3373,7 +3375,7 @@ static void opMetarule(Program* program)
 static void opAnim(Program* program)
 {
     ProgramValue frameValue = programStackPopValue(program);
-    int anim = programStackPopInteger(program);
+    AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     // CE: There is a bug in the `animate_rotation` macro in the user-space
@@ -3495,7 +3497,7 @@ static void opRegAnimFunc(Program* program)
 static void opRegAnimAnimate(Program* program)
 {
     int delay = programStackPopInteger(program);
-    int anim = programStackPopInteger(program);
+    AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (!animationCheckCombatMode()) {
@@ -3514,7 +3516,7 @@ static void opRegAnimAnimate(Program* program)
 static void opRegAnimAnimateReverse(Program* program)
 {
     int delay = programStackPopInteger(program);
-    int anim = programStackPopInteger(program);
+    AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (!animationCheckCombatMode()) {
@@ -3992,7 +3994,7 @@ static void opPartyRemove(Program* program)
 // 0x45ADDC op_reg_anim_animate_forever
 static void opRegAnimAnimateForever(Program* program)
 {
-    int anim = programStackPopInteger(program);
+    AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     if (!animationCheckCombatMode()) {
