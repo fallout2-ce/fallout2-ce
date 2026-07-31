@@ -82,7 +82,7 @@ inline DamageType operator++(DamageType& e, int)
     return result;
 }
 
-inline static bool damageTypeIsValid(int damageType)
+inline bool damageTypeIsValid(int damageType)
 {
     return damageType >= DAMAGE_TYPE_FIRST && damageType < DAMAGE_TYPE_COUNT;
 }
@@ -177,12 +177,12 @@ inline KillType operator++(KillType& e, int)
     return result;
 }
 
-inline static bool killTypeIsValid(int killType)
+inline bool killTypeIsValid(int killType)
 {
     return killType >= KILL_TYPE_FIRST && killType < KILL_TYPE_DEFAULT_COUNT;
 }
 
-inline static bool killTypeOverrideIsValid(int killType)
+inline bool killTypeOverrideIsValid(int killType)
 {
     // killTypeOverrideIsValid evaluates player's kill type as valid even though KILL_TYPE_PLAYER equals KILL_TYPE_OVERRIDE_COUNT
     return killType >= KILL_TYPE_FIRST && killType <= KILL_TYPE_OVERRIDE_COUNT;
