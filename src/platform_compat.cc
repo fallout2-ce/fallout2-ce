@@ -1,26 +1,13 @@
 #include "platform_compat.h"
 #include <filesystem>
 
-#ifdef _WIN32
-#include <direct.h>
-#include <io.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#else
+#ifndef  _WIN32
 #include <dirent.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #endif
 
 #include <SDL.h>
 
 namespace fallout {
-
-static bool compatIsPathSeparator(char ch)
-{
-    return ch == '/' || ch == '\\';
-}
 
 static void compat_prepare_native_path(char* nativePath, const char* path)
 {
