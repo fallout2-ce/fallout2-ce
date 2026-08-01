@@ -230,6 +230,12 @@ typedef enum WorldmapArrowFrm {
     WORLDMAP_ARROW_FRM_COUNT,
 } WorldmapArrowFrm;
 
+enum class RestModeFlag {
+    Disabled = 0x01,
+    Strict = 0x02,
+    NoHealing = 0x04,
+};
+
 typedef enum CitySize {
     CITY_SIZE_SMALL,
     CITY_SIZE_MEDIUM,
@@ -598,6 +604,8 @@ static const int _can_rest_here[ELEVATION_COUNT] = {
     MAP_CAN_REST_ELEVATION_1,
     MAP_CAN_REST_ELEVATION_2,
 };
+
+static int wmRestMode = 0;
 
 // 0x4BC86C
 static const int gDayPartEncounterFrequencyModifiers[DAY_PART_COUNT] = {
@@ -1176,6 +1184,7 @@ static int wmGenDataInit()
     wmTownTitleOverrides.clear();
     wmTownNamesHidden = false;
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
+    wmRestMode = 0;
 
     return 0;
 }
@@ -1232,6 +1241,7 @@ static int wmGenDataReset()
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
+    wmRestMode = 0;
 
     return 0;
 }
@@ -3184,6 +3194,26 @@ bool wmMapCanRestHere(int elevation)
     MapInfo* map = &(wmMapInfoList[gMapHeader.index]);
 
     return (map->flags & flags[elevation]) != 0;
+}
+
+void wmSetRestMode(int mode)
+{
+    wmRestMode = mode & (static_cast<int>(RestModeFlag::Disabled) | static_cast<int>(RestModeFlag::Strict) | static_cast<int>(RestModeFlag::NoHealing));
+}
+
+bool wmRestModeIsDisabled()
+{
+    return (wmRestMode & static_cast<int>(RestModeFlag::Disabled)) != 0;
+}
+
+bool wmRestModeIsStrict()
+{
+    return (wmRestMode & static_cast<int>(RestModeFlag::Strict)) != 0;
+}
+
+bool wmRestModeNoHealing()
+{
+    return (wmRestMode & static_cast<int>(RestModeFlag::NoHealing)) != 0;
 }
 
 // 0x4BFAFC wmMapPipboyActive

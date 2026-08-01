@@ -811,6 +811,7 @@ static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_object_data(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
+static void mf_set_rest_mode(OpcodeContext& ctx);
 static void mf_set_terrain_name(OpcodeContext& ctx);
 static void mf_set_town_title(OpcodeContext& ctx);
 static void mf_set_window_flag(OpcodeContext& ctx);
@@ -914,7 +915,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_quest_failure_value",   mf_set_quest_failure_value,   2, 2, -1, {ARG_INT, ARG_INT}},
     // {"set_rest_heal_time",        mf_set_rest_heal_time,        1, 1, -1, {ARG_INT}},
     // {"set_worldmap_heal_time",    mf_set_worldmap_heal_time,    1, 1, -1, {ARG_INT}},
-    // {"set_rest_mode",             mf_set_rest_mode,             1, 1, -1, {ARG_INT}},
+    { "set_rest_mode", mf_set_rest_mode, 1, 1, -1, { ARG_INT } },
     // {"set_scr_name",              mf_set_scr_name,              0, 1, -1, {ARG_STRING}},
     // {"set_selectable_perk_npc",   mf_set_selectable_perk_npc,   5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     { "set_terrain_name", mf_set_terrain_name, 3, 3, -1, { ARG_INT, ARG_INT, ARG_STRING } },
@@ -2031,6 +2032,11 @@ static void mf_set_town_title(OpcodeContext& ctx)
 static void mf_remove_wm_town_names(OpcodeContext& ctx)
 {
     wmRemoveTownNames(ctx.arg(0).asInt() != 0);
+}
+
+static void mf_set_rest_mode(OpcodeContext& ctx)
+{
+    wmSetRestMode(ctx.arg(0).asInt());
 }
 
 void mf_tile_by_position(OpcodeContext& ctx)
