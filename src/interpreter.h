@@ -237,6 +237,7 @@ void programInterpret(Program* program, int numInstructions);
 void programExecuteProcedureAsync(Program* program, int procedureIndex);
 int programFindProcedure(Program* prg, const char* name);
 void programExecuteProcedure(Program* program, int procedureIndex);
+void programProcessProcedureEvents(Program* program);
 void programListNodeCreate(Program* program);
 void runProgram(Program* program);
 Program* runScript(char* name);
