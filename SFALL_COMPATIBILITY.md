@@ -71,7 +71,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | --- | --- | --- | --- |
 | Direct memory access| read_byte,short,int,string<br>write_byte,short,int,string<br>call_offset_vX | 🚫 | Not possible.  Open an issue if you need functionality not covered by other opcodes. |
 | Stats | get/set_pc_base_stat<br>get/set_pc_extra_stat<br>get/set_critter_base_stat<br>get/set_critter_extra_stat | ✅ | CE uses engine stat helpers here instead of sfall's direct proto-field behavior, so derived-stat update behavior can differ. |
-| Stats / Alter min/max | get/set_stat_min/max<br>set_pc_stat_min/max<br>set_npc_stat_min/max | not implemented | - |
+| Stats / Alter min/max | get/set_stat_min/max<br>set_pc_stat_min/max<br>set_npc_stat_min/max | ✅ | - |
 | Skills | set_skill_max | ✅ | - |
 | Skills | get/set_critter_skill_points<br>get/set_available_skill_points<br>set_critter_skill_mod<br>set_base_skill_mod<br>mod_skill_points_per_level | not implemented | - |
 | Graphics | graphics_funcs_available<br>force_graphics_refresh<br>get_screen_width<br>get_screen_height<br>set_palette | implemented: only get_screen_width, get_screen_height | - |
