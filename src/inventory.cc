@@ -1505,7 +1505,7 @@ void inventorySetDude(Object* obj, int pid)
 }
 
 // TODO(CE): move to more generic location
-int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, int anim, int rotation)
+int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, int rotation)
 {
     if (FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
         return critter->fid;
@@ -3097,7 +3097,7 @@ static void _adjust_fid()
         gInventoryLeftHandItem,
         gInventoryArmor,
         interfaceGetCurrentHand(),
-        0,
+        ANIM_STAND,
         0);
     gInventoryWindowDudeFid = scriptHooks_AdjustFid(fid, fid);
 }

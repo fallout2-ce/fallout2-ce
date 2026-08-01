@@ -959,7 +959,7 @@ static void op_refresh_pc_art(Program* program)
     Rect rect;
     objectGetRect(gDude, &rect);
 
-    int anim = FID_ANIM_TYPE(gDude->fid);
+    AnimationType anim = FID_ANIM_TYPE<AnimationType>(gDude->fid);
     int rotation = FID_ROTATION(gDude->fid);
 
     _proto_dude_update_gender();

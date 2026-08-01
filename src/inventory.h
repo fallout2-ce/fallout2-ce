@@ -1,6 +1,7 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
 
+#include "animation.h"
 #include "obj_types.h"
 
 namespace fallout {
@@ -30,7 +31,7 @@ int inventoryGetInvenApCost();
 void inventorySetInvenApCost(int cost);
 void inventoryResetInvenApCost();
 void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* newArmor);
-int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, int anim, int rotation);
+int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, int rotation);
 void inventoryOpenUseItemOn(Object* targetObj);
 Object* critterGetItem2(Object* critter);
 Object* critterGetItem1(Object* critter);
