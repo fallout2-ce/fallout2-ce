@@ -3899,7 +3899,7 @@ void partyMemberControlWindowHandleEvents()
             }
 
             if (keyCode == KEY_LOWERCASE_W) {
-                inventoryUnequip(gGameDialogSpeaker, 1);
+                inventoryUnequip(gGameDialogSpeaker, HAND_RIGHT);
 
                 Object* weapon = _ai_search_inven_weap(gGameDialogSpeaker, 0, nullptr);
                 if (weapon != nullptr) {
@@ -3932,7 +3932,7 @@ void partyMemberControlWindowHandleEvents()
                 if (partyMemberPidCanEquipArmor(gGameDialogSpeaker->pid)) {
                     Object* armor = _ai_search_inven_armor(gGameDialogSpeaker);
                     if (armor != nullptr) {
-                        inventoryEquip(gGameDialogSpeaker, armor, 0);
+                        inventoryEquip(gGameDialogSpeaker, armor, HAND_LEFT);
                     }
                 }
 

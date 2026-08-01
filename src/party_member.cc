@@ -1600,7 +1600,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
     }
 
     Object* item2 = critterGetItem2(critter);
-    inventoryUnequipFunc(critter, 1, 0);
+    inventoryUnequipFunc(critter, HAND_RIGHT, 0);
 
     Object* armor = critterGetArmor(critter);
     adjustCritterStatsOnArmorChange(critter, armor, nullptr);
@@ -1625,7 +1625,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
 
     if (armor != nullptr) {
         itemAdd(critter, armor, 1);
-        inventoryEquip(critter, armor, 0);
+        inventoryEquip(critter, armor, HAND_LEFT);
     }
 
     if (item2 != nullptr) {

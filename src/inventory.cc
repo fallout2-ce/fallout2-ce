@@ -3801,13 +3801,13 @@ Object* inventoryItemByIndex(Object* obj, int index)
 
 // inven_wield
 // 0x472758
-int inventoryEquip(Object* critter, Object* item, int hand)
+int inventoryEquip(Object* critter, Object* item, Hand hand)
 {
     return inventoryEquipFunc(critter, item, hand, true);
 }
 
 // 0x472768
-int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animate)
+int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool animate)
 {
     int itemType = itemGetType(item);
 
@@ -3852,7 +3852,7 @@ int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animat
             adjustCritterStatsOnArmorChange(critter, armor, item);
         }
     } else {
-        int hand;
+        Hand hand;
         if (critter == gDude) {
             hand = interfaceGetCurrentHand();
         } else {
@@ -3957,13 +3957,13 @@ int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animat
 
 // inven_unwield
 // 0x472A54
-int inventoryUnequip(Object* critter_obj, int hand)
+int inventoryUnequip(Object* critter_obj, Hand hand)
 {
     return inventoryUnequipFunc(critter_obj, hand, true);
 }
 
 // 0x472A64
-int inventoryUnequipFunc(Object* critter, int hand, bool animate)
+int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 {
     int activeHand;
     Object* item;

@@ -52,13 +52,13 @@ Object* inventoryFindById(Object* obj, int id);
 Object* inventoryItemByIndex(Object* obj, int index);
 // Makes critter equip a given item in a given hand slot with an animation.
 // 0 - left hand, 1 - right hand. If item is armor, hand value is ignored.
-int inventoryEquip(Object* critter, Object* item, int hand);
+int inventoryEquip(Object* critter, Object* item, Hand hand);
 // Same as inven_wield but allows to wield item without animation.
-int inventoryEquipFunc(Object* critter, Object* item, int hand, bool animate);
+int inventoryEquipFunc(Object* critter, Object* item, Hand hand, bool animate);
 // Makes critter unequip an item in a given hand slot with an animation.
-int inventoryUnequip(Object* critter, int hand);
+int inventoryUnequip(Object* critter, Hand hand);
 // Same as inven_unwield but allows to unwield item without animation.
-int inventoryUnequipFunc(Object* critter, int hand, bool animate);
+int inventoryUnequipFunc(Object* critter, Hand hand, bool animate);
 int inventoryOpenLooting(Object* looter, Object* target);
 int inventoryOpenStealing(Object* thief, Object* target);
 void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bartererTable, int barterMod);

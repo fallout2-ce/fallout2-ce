@@ -2813,7 +2813,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                     _gsound_play_sfx_file_volume(sfx, volume);
                     _ai_magic_hands(attacker, weapon, 5001);
 
-                    if (inventoryUnequip(attacker, 1) == 0) {
+                    if (inventoryUnequip(attacker, HAND_RIGHT) == 0) {
                         _combat_turn_run();
                     }
 

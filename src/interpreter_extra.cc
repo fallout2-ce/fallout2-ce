@@ -1707,7 +1707,7 @@ static void opWieldItem(Program* program)
         return;
     }
 
-    int hand = HAND_RIGHT;
+    Hand hand = HAND_RIGHT;
 
     bool shouldAdjustArmorClass = false;
     Object* oldArmor = nullptr;
@@ -3277,7 +3277,7 @@ static void opMetarule(Program* program)
         if (1) {
             Object* object = static_cast<Object*>(param.pointerValue);
 
-            int hand = HAND_RIGHT;
+            Hand hand = HAND_RIGHT;
             if (object == gDude) {
                 if (interfaceGetCurrentHand() == HAND_LEFT) {
                     hand = HAND_LEFT;
@@ -4074,7 +4074,7 @@ static void opGetRunningBurningGuy(Program* program)
 static void _op_inven_unwield(Program* program)
 {
     Object* obj;
-    int hand;
+    Hand hand;
 
     obj = scriptGetSelf(program);
     hand = HAND_RIGHT;
