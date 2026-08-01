@@ -444,11 +444,11 @@ int correctFidForRemovedItem(Object* critter, Object* item, int flags)
         }
 
         if (weaponCode == 0) {
-            newFid = buildFid(FID_TYPE(fid), fid & 0xFFF, FID_ANIM_TYPE(fid), 0, FID_ROTATION(fid));
+            newFid = buildFid(FID_TYPE(fid), fid & 0xFFF, animationTypeFromFid(fid), 0, FID_ROTATION(fid));
         }
     } else {
         if (critter == gDude) {
-            newFid = buildFid(FID_TYPE(fid), _art_vault_guy_num, FID_ANIM_TYPE(fid), weaponCode, FID_ROTATION(fid));
+            newFid = buildFid(FID_TYPE(fid), _art_vault_guy_num, animationTypeFromFid(fid), weaponCode, FID_ROTATION(fid));
         }
 
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
@@ -2043,7 +2043,7 @@ static void opMetarule3(Program* program)
 
             int fid = buildFid(FID_TYPE(obj->fid),
                 frmId,
-                FID_ANIM_TYPE(obj->fid),
+                animationTypeFromFid(obj->fid),
                 (obj->fid & 0xF000) >> 12,
                 FID_ROTATION(obj->fid));
 
@@ -2404,7 +2404,7 @@ static void opKillCritterType(Program* program)
 
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
-        if (FID_ANIM_TYPE<AnimationType>(obj->fid) < ANIM_FALL_BACK_SF) {
+        if (animationTypeFromFid(obj->fid) < ANIM_FALL_BACK_SF) {
             if ((obj->flags & OBJECT_HIDDEN) == 0 && obj->pid == pid && !critterIsDead(obj)) {
                 if (obj == previousObj || count > 200) {
                     scriptPredefinedError(program, "kill_critter_type", SCRIPT_ERROR_FOLLOWS);
@@ -2749,7 +2749,7 @@ static void opGetCritterState(Program* program)
         if (critterIsActive(critter)) {
             state = CRITTER_STATE_NORMAL;
 
-            AnimationType anim = FID_ANIM_TYPE<AnimationType>(critter->fid);
+            AnimationType anim = animationTypeFromFid(critter->fid);
             if (anim >= ANIM_FALL_BACK_SF && anim <= ANIM_FALL_FRONT_SF) {
                 state = CRITTER_STATE_PRONE;
             }

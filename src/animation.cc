@@ -2506,7 +2506,7 @@ static int animateMoveObjectToTileStraight(Object* obj, int tile, int elevation,
 
     int v15;
     if (FID_TYPE(obj->fid) == OBJ_TYPE_CRITTER) {
-        if (FID_ANIM_TYPE<AnimationType>(obj->fid) == ANIM_JUMP_BEGIN)
+        if (animationTypeFromFid(obj->fid) == ANIM_JUMP_BEGIN)
             v15 = 16;
         else
             v15 = 4;
@@ -3123,7 +3123,7 @@ void _dude_fidget()
             break;
         }
 
-        if ((object->flags & OBJECT_HIDDEN) == 0 && FID_TYPE(object->fid) == OBJ_TYPE_CRITTER && FID_ANIM_TYPE<AnimationType>(object->fid) == ANIM_STAND && !critterIsDead(object)) {
+        if ((object->flags & OBJECT_HIDDEN) == 0 && FID_TYPE(object->fid) == OBJ_TYPE_CRITTER && animationTypeFromFid(object->fid) == ANIM_STAND && !critterIsDead(object)) {
             Rect rect;
             objectGetRect(object, &rect);
 
@@ -3224,7 +3224,7 @@ void _dude_stand(Object* obj, int rotation, int fid)
 
     if (fid == -1) {
         AnimationType anim;
-        if (FID_ANIM_TYPE<AnimationType>(obj->fid) == ANIM_FIRE_DANCE) {
+        if (animationTypeFromFid(obj->fid) == ANIM_FIRE_DANCE) {
             anim = ANIM_FIRE_DANCE;
         } else {
             anim = ANIM_STAND;
@@ -3254,7 +3254,7 @@ void _dude_standup(Object* a1)
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
     AnimationType anim;
-    if (FID_ANIM_TYPE<AnimationType>(a1->fid) == ANIM_FALL_BACK) {
+    if (animationTypeFromFid(a1->fid) == ANIM_FALL_BACK) {
         anim = ANIM_BACK_TO_STANDING;
     } else {
         anim = ANIM_PRONE_TO_STANDING;
@@ -3305,7 +3305,7 @@ static int _anim_hide(Object* object, int animationSequenceIndex)
 // 0x418660
 static int _anim_change_fid(Object* obj, int animationSequenceIndex, int fid)
 {
-    if (FID_ANIM_TYPE(fid)) {
+    if (animationTypeFromFid(fid)) {
         Rect dirtyRect;
         Rect tempRect;
 
@@ -3368,7 +3368,7 @@ static unsigned int animationComputeTicksPerFrame(Object* object, int fid)
     }
 
     if (isInCombat()) {
-        if (FID_ANIM_TYPE<AnimationType>(fid) == ANIM_WALK) {
+        if (animationTypeFromFid(fid) == ANIM_WALK) {
             if (object != gDude || settings.preferences.player_speedup) {
                 fps += settings.preferences.combat_speed;
             }

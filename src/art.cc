@@ -674,7 +674,7 @@ char* artBuildFilePath(int fid)
     *_art_name = '\0';
 
     int frmId = baseFid & 0xFFF;
-    AnimationType animType = FID_ANIM_TYPE<AnimationType>(baseFid);
+    AnimationType animType = animationTypeFromFid(baseFid);
     int weaponCode = (baseFid & 0xF000) >> 12;
     int objectType = FID_TYPE(baseFid);
 
@@ -973,7 +973,7 @@ int artCritterFidShouldRun(int fid)
 int artAliasFid(int fid)
 {
     int type = FID_TYPE(fid);
-    AnimationType anim = FID_ANIM_TYPE<AnimationType>(fid);
+    AnimationType anim = animationTypeFromFid(fid);
     if (type == OBJ_TYPE_CRITTER) {
         if (anim == ANIM_ELECTRIFY
             || anim == ANIM_CHARRED_BODY

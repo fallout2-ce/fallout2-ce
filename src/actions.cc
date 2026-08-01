@@ -317,7 +317,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
         knockbackDistance = 0;
     }
 
-    AnimationType anim = FID_ANIM_TYPE<AnimationType>(defender->fid);
+    AnimationType anim = animationTypeFromFid(defender->fid);
     if (!critterIsProne(defender)) {
         if ((flags & DAM_DEAD) != 0) {
             anim = pickDeathAnim(attacker, defender, weapon, damage, attackerAnimation, hitFromFront);
@@ -1019,7 +1019,7 @@ int _is_next_to(Object* obj1, Object* obj2)
 int _action_climb_ladder(Object* critter, Object* ladder)
 {
     if (critter == gDude) {
-        AnimationType anim = FID_ANIM_TYPE<AnimationType>(gDude->fid);
+        AnimationType anim = animationTypeFromFid(gDude->fid);
         if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
             reg_anim_clear(gDude);
         }
@@ -1090,7 +1090,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
 
     if (sceneryType != SCENERY_TYPE_LADDER_UP || item != nullptr) {
         if (user == gDude) {
-            AnimationType anim = FID_ANIM_TYPE<AnimationType>(gDude->fid);
+            AnimationType anim = animationTypeFromFid(gDude->fid);
             if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
                 reg_anim_clear(gDude);
             }
@@ -1176,7 +1176,7 @@ int actionPickUp(Object* critter, Object* item)
     }
 
     if (critter == gDude) {
-        AnimationType animationCode = FID_ANIM_TYPE<AnimationType>(gDude->fid);
+        AnimationType animationCode = animationTypeFromFid(gDude->fid);
         if (animationCode == ANIM_WALK || animationCode == ANIM_RUNNING) {
             reg_anim_clear(gDude);
         }
@@ -1279,7 +1279,7 @@ int actionLootCritter(Object* critter, Object* target)
     }
 
     if (critter == gDude) {
-        AnimationType anim = FID_ANIM_TYPE<AnimationType>(gDude->fid);
+        AnimationType anim = animationTypeFromFid(gDude->fid);
         if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
             reg_anim_clear(gDude);
         }
@@ -1456,7 +1456,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
 
         if (partyMember != nullptr) {
             performer = partyMember;
-            AnimationType anim = FID_ANIM_TYPE<AnimationType>(partyMember->fid);
+            AnimationType anim = animationTypeFromFid(partyMember->fid);
             if (anim != ANIM_WALK && anim != ANIM_RUNNING) {
                 if (anim != ANIM_STAND) {
                     performer = gDude;
@@ -1487,7 +1487,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
         }
 
         if (partyMember == nullptr) {
-            AnimationType anim = FID_ANIM_TYPE<AnimationType>(performer->fid);
+            AnimationType anim = animationTypeFromFid(performer->fid);
             if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
                 reg_anim_clear(performer);
             }
@@ -1858,7 +1858,7 @@ int actionTalk(Object* obj, Object* critter)
         return -1;
     }
 
-    AnimationType anim = FID_ANIM_TYPE<AnimationType>(gDude->fid);
+    AnimationType anim = animationTypeFromFid(gDude->fid);
     if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
         reg_anim_clear(gDude);
     }

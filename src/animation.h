@@ -98,18 +98,9 @@ inline bool animationTypeIsValid(int anim)
     return anim >=0 && anim < ANIM_COUNT;    
 }
 
-inline int FID_ANIM_TYPE(int fid)
+inline AnimationType animationTypeFromFid(int fid)
 {
-    return (fid & 0xFF0000) >> 16;
-}
-
-template <typename T>
-T FID_ANIM_TYPE(int fid);
-
-template <>
-inline AnimationType FID_ANIM_TYPE(int fid)
-{
-    int anim = FID_ANIM_TYPE(fid);
+    int anim = (fid & 0xFF0000) >> 16;
     if (!animationTypeIsValid(anim)) {
         return ANIM_INVALID;
     }
