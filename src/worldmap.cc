@@ -994,6 +994,7 @@ static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
 static int worldmapTravelDelay;
+static int worldmapEncounterRate;
 static unsigned int wmLastTravelTick;
 static int worldmapTrailMarkers;
 static bool worldmapTerrainInfo;
@@ -1105,6 +1106,8 @@ int wmWorldMap_init()
     configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix, true);
     configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", &worldmapTravelDelay, 0);
     worldmapTravelDelay = std::clamp(worldmapTravelDelay, 0, 150);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "encounter_rate", &worldmapEncounterRate, 0);
+    worldmapEncounterRate = std::max(worldmapEncounterRate, 0);
     configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", &worldmapTrailMarkers, 0);
     configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "terrain_info", &worldmapTerrainInfo, false);
 
@@ -3377,6 +3380,11 @@ static int wmWorldMapFunc(int a1)
         int mouseEvent = mouseGetEvent();
 
         if (wmGenData.isWalking && wmTravelTickDue(now)) {
+            if (worldmapEncounterRate > 0) {
+                // sfall reuses wmLastRndTime as a travel-update counter in fixed-rate mode.
+                wmLastRndTime++;
+            }
+
             wmPartyWalkingStep();
 
             if (wmGenData.isInCar) {
@@ -3696,12 +3704,20 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
     assert(mapToLoadPtr != nullptr);
     *mapToLoadPtr = -1;
 
-    unsigned int now = getTicks();
-    if (getTicksBetween(now, wmLastRndTime) < 1500) {
-        return 0;
-    }
+    if (worldmapEncounterRate > 0) {
+        if (wmLastRndTime < static_cast<unsigned int>(worldmapEncounterRate)) {
+            return 0;
+        }
 
-    wmLastRndTime = now;
+        wmLastRndTime = 0;
+    } else {
+        unsigned int now = getTicks();
+        if (getTicksBetween(now, wmLastRndTime) < 1500) {
+            return 0;
+        }
+
+        wmLastRndTime = now;
+    }
 
     if (abs(wmGenData.oldWorldPosX - wmGenData.worldPosX) < 3) {
         return 0;
@@ -4893,7 +4909,7 @@ static int wmInterfaceInit()
 {
     int fid;
 
-    wmLastRndTime = getTicks();
+    wmLastRndTime = worldmapEncounterRate > 0 ? 0 : getTicks();
 
     // SFALL: Fix default worldmap font.
     // CE: This setting affects only city names. In Sfall it's configurable via

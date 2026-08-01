@@ -59,9 +59,14 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | `Sound` | `MapLoadingSound` | `sound` | `map_loading_sound` |
 | `Interface` | `WorldMapTerrainInfo` | `worldmap` | `terrain_info` |
 | `Misc` | `WorldMapFPSPatch` + `WorldMapDelay2` | `worldmap` | `travel_delay` |
+| `Misc` | `WorldMapEncounterFix` + `WorldMapEncounterRate` | `worldmap` | `encounter_rate` |
 
 Unlike sfall, `travel_delay` throttles only world-map travel simulation. Input,
 rendering, and world-map scripts continue at the normal frame rate.
+
+CE also migrates a positive non-default `WorldMapEncounterRate` as an explicit
+`encounter_rate` override even when `WorldMapEncounterFix` is disabled. This
+preserves Fallout Et Tu's shipped `WorldMapEncounterRate=30` setting in CE.
 
 ## Opcodes / Metarules
 

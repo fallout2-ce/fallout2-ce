@@ -175,6 +175,27 @@ namespace {
         const char* defaultValue;
     };
 
+    static bool contentConfigMigrateSfallWorldMapEncounterRate(Config* sfallConfig, Config* migratedConfig)
+    {
+        assert(sfallConfig != nullptr && migratedConfig != nullptr);
+
+        bool worldMapEncounterFix = false;
+        bool hasWorldMapEncounterFix = configGetBool(sfallConfig, kSfallMisc, "WorldMapEncounterFix", &worldMapEncounterFix);
+        int encounterRate = 5;
+        bool hasWorldMapEncounterRate = configGetInt(sfallConfig, kSfallMisc, "WorldMapEncounterRate", &encounterRate);
+        if (hasWorldMapEncounterFix && worldMapEncounterFix) {
+            configSetInt(migratedConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "encounter_rate", std::max(encounterRate, 1));
+            return true;
+        }
+
+        if (hasWorldMapEncounterRate && encounterRate > 0 && encounterRate != 5) {
+            configSetInt(migratedConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "encounter_rate", encounterRate);
+            return true;
+        }
+
+        return false;
+    }
+
     constexpr SfallMigrationEntry kSfallMigrationEntries[] = {
         // [start]
         { kSfallMisc, "StartingMap", CONTENT_CONFIG_START_SECTION, "map", "" },
@@ -296,7 +317,8 @@ namespace {
 // Migrate sfall settings from ddraw.ini to game.cfg.
 //
 // Runs once when no local game.cfg exists at contentConfigFilePath.
-// Writes only the settings found in sfallConfig to a new local file.
+// Writes only settings derived from sfallConfig, using sfall defaults where
+// needed to preserve enabled behavior.
 static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* contentConfigFilePath)
 {
     assert(sfallConfig != nullptr && contentConfigFilePath != nullptr);
@@ -320,6 +342,10 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
         configGetInt(sfallConfig, kSfallMisc, "WorldMapDelay2", &travelDelay);
         travelDelay = std::clamp(travelDelay, 1, 150);
         configSetInt(&migratedConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", travelDelay);
+        migrated = true;
+    }
+
+    if (contentConfigMigrateSfallWorldMapEncounterRate(sfallConfig, &migratedConfig)) {
         migrated = true;
     }
 
