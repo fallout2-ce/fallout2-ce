@@ -802,8 +802,17 @@ static UseItemResultCode _obj_use_book(Object* book)
             increase = 150 * increase / 100;
         }
 
+        bool increased = false;
         for (int i = 0; i < increase; i++) {
-            skillAddForce(gDude, skill);
+            if (skillAddForce(gDude, skill) != 0) {
+                break;
+            }
+
+            increased = true;
+        }
+
+        if (!increased) {
+            messageId = 801;
         }
     }
 

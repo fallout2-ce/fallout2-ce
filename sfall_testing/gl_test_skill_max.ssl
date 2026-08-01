@@ -1,0 +1,38 @@
+#include "define_lite.h"
+#include "define_extra.h"
+#include "sfall.h"
+#include "test_utils.h"
+
+procedure start begin
+    variable skill_offset;
+    variable original_points;
+    variable original_value;
+    variable capped_points;
+
+    if (not game_loaded) then return;
+
+    display_msg("Testing set_skill_max...");
+    test_suite_errors := 0;
+
+    skill_offset := PROTO_CR_SKILLS + (SKILL_SMALL_GUNS * 4);
+    original_points := get_proto_data(obj_pid(dude_obj), skill_offset);
+    original_value := has_skill(dude_obj, SKILL_SMALL_GUNS);
+
+    set_skill_max(300);
+    critter_mod_skill(dude_obj, SKILL_SMALL_GUNS, 1000);
+    call assertEquals("skill raised to vanilla cap", has_skill(dude_obj, SKILL_SMALL_GUNS), 300);
+
+    capped_points := get_proto_data(obj_pid(dude_obj), skill_offset);
+    set_skill_max(200);
+    call assertEquals("existing skill clamped to 200", has_skill(dude_obj, SKILL_SMALL_GUNS), 200);
+
+    critter_mod_skill(dude_obj, SKILL_SMALL_GUNS, 1);
+    call assertEquals("skill points unchanged at cap", get_proto_data(obj_pid(dude_obj), skill_offset), capped_points);
+
+    set_skill_max(300);
+    set_proto_data(obj_pid(dude_obj), skill_offset, original_points);
+    call assertEquals("original skill restored", has_skill(dude_obj, SKILL_SMALL_GUNS), original_value);
+
+    call report_test_results("set_skill_max");
+    signal_close_game;
+end

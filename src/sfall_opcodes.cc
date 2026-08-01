@@ -40,6 +40,7 @@
 #include "sfall_lists.h"
 #include "sfall_metarules.h"
 #include "sfall_script_hooks.h"
+#include "skill.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
@@ -159,6 +160,11 @@ static void op_set_critter_extra_stat(Program* program)
     Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     critterSetBonusStat(obj, stat, value);
+}
+
+static void op_set_skill_max(Program* program)
+{
+    skillSetMaximum(programStackPopInteger(program));
 }
 
 // get_pc_base_stat
@@ -2075,6 +2081,7 @@ void sfallOpcodesInit()
     // 0x81a0 - void set_pickpocket_max(int percentage)
     // 0x81a1 - void set_hit_chance_max(int percentage)
     // 0x81a2 - void set_skill_max(int value)
+    interpreterRegisterOpcode(0x81A2, op_set_skill_max);
     // 0x81aa - void set_xp_mod(int percentage)
     // 0x81ab - void set_perk_level_mod(int levels)
 
