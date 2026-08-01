@@ -18,6 +18,7 @@ void sfallOnBeforeGameInit()
 
 void sfallOnGameInit()
 {
+    inventoryResetInvenApCost();
     return;
 }
 
