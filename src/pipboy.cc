@@ -2225,7 +2225,7 @@ static bool pipboyRestSetGameTime(unsigned int newGameTime, RestEventType eventT
 {
     gameTimeSetTime(newGameTime);
 
-    if (healingMinutes > 0 && _Check4Health(healingMinutes)) {
+    if (!wmRestModeNoHealing() && healingMinutes > 0 && _Check4Health(healingMinutes)) {
         _AddHealth();
     }
 
@@ -2386,6 +2386,11 @@ static bool pipboyRest(int hours, int minutes, int duration)
             windowRefresh(gPipboyWindow);
         }
     } else if (duration == PIPBOY_REST_DURATION_UNTIL_HEALED || duration == PIPBOY_REST_DURATION_UNTIL_PARTY_HEALED) {
+        if (wmRestModeNoHealing()) {
+            gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+            return rc;
+        }
+
         int currentHp = critterGetHitPoints(gDude);
         int maxHp = critterGetStat(gDude, STAT_MAXIMUM_HIT_POINTS);
         if (currentHp != maxHp

@@ -1340,9 +1340,17 @@ int critterSetWhoHitMe(Object* critter, Object* hitMe)
 // 0x42E564 critter_can_obj_dude_rest
 bool critterCanDudeRest()
 {
+    if (wmRestModeIsDisabled()) {
+        return false;
+    }
+
     bool mapDisallowsRest = false;
     if (!wmMapCanRestHere(gElevation)) {
         mapDisallowsRest = true;
+    }
+
+    if (mapDisallowsRest && wmRestModeIsStrict()) {
+        return false;
     }
 
     bool result = true;
