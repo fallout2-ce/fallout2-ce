@@ -29,7 +29,6 @@ enum Trait : int {
     TRAIT_FIRST = TRAIT_FAST_METABOLISM
 };
 
-
 inline bool traitIsValid(int trait)
 {
     return trait >= TRAIT_FIRST && trait < TRAIT_COUNT;

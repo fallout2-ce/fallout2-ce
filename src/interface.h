@@ -3,8 +3,8 @@
 
 #include "combat_defs.h"
 #include "db.h"
-#include "obj_types.h"
 #include "inventory.h"
+#include "obj_types.h"
 
 namespace fallout {
 

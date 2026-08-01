@@ -2954,14 +2954,13 @@ static void opCritterRemoveTrait(Program* program)
     if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
         switch (kind) {
         case CRITTER_TRAIT_PERK: {
-                Perk perk = static_cast<Perk>(param);
-                while (perkGetRank(object, perk) > 0) {
-                    if (perkRemove(object, perk) != 0) {
-                        scriptError("\nScript Error: op_critter_rm_trait: perk_sub failed");
-                    }
+            Perk perk = static_cast<Perk>(param);
+            while (perkGetRank(object, perk) > 0) {
+                if (perkRemove(object, perk) != 0) {
+                    scriptError("\nScript Error: op_critter_rm_trait: perk_sub failed");
                 }
             }
-            break;
+        } break;
         default:
             scriptError("\nScript Error: %s: op_critter_rm_trait: Trait out of range", program->name);
             break;

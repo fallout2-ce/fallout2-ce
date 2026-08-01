@@ -95,7 +95,7 @@ enum AnimationType : int {
 
 inline bool animationTypeIsValid(int anim)
 {
-    return anim >=0 && anim < ANIM_COUNT;    
+    return anim >= 0 && anim < ANIM_COUNT;
 }
 
 inline AnimationType animationTypeFromFid(int fid)
