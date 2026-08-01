@@ -2937,7 +2937,7 @@ void programProcessProcedureEvents(Program* program)
     for (procedureIndex = 0; procedureIndex < procedureCount; procedureIndex++) {
         procedureFlags = stackReadInt32(procedurePtr, offsetof(Procedure, flags));
         if ((procedureFlags & PROCEDURE_FLAG_CONDITIONAL) != 0) {
-            memcpy(env, program, sizeof(env));
+            memcpy(env, program->env, sizeof(env));
             oldProgramFlags = program->flags;
             oldInstructionPointer = program->instructionPointer;
 
@@ -2958,7 +2958,7 @@ void programProcessProcedureEvents(Program* program)
                 }
             }
 
-            memcpy(program, env, sizeof(env));
+            memcpy(program->env, env, sizeof(env));
         } else if ((procedureFlags & PROCEDURE_FLAG_TIMED) != 0) {
             if ((unsigned int)stackReadInt32(procedurePtr, offsetof(Procedure, time)) < time) {
                 // NOTE: Uninline.
