@@ -15,6 +15,7 @@
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
+#include "content_config.h"
 #include "critter.h"
 #include "dbox.h"
 #include "debug.h"
@@ -580,12 +581,13 @@ static Object* _stack[10];
 // 0x59E894 mt_wid
 static int _mt_wid;
 
-// Note: Sfall also has InventoryApCost and QuickPocketsApCostReduction settings which we don't look at
 static constexpr int kDefaultInventoryApCost = 4;
-static constexpr int kQuickPocketsApCostReduction = 2;
+static constexpr int kDefaultQuickPocketsApCostReduction = 2;
 
 // Current inventory AP cost
-static int gInventoryApCost = kDefaultInventoryApCost;
+static int inventoryApCost = kDefaultInventoryApCost;
+static int inventoryDefaultApCost = kDefaultInventoryApCost;
+static int quickPocketsApCostReduction = kDefaultQuickPocketsApCostReduction;
 
 // Current barter price modifier, based on gGameDialogBarterModifier, with the reaction-based modifier added (in percent).
 // 0x59E898 barter_mod
@@ -1484,17 +1486,20 @@ int inventoryGetInvenApCost()
         quickPockets = perkGetRank(gDude, PERK_QUICK_POCKETS);
     }
 
-    return std::max(gInventoryApCost - kQuickPocketsApCostReduction * quickPockets, 0);
+    return std::max(inventoryApCost - quickPocketsApCostReduction * quickPockets, 0);
 }
 
 void inventorySetInvenApCost(int cost)
 {
-    gInventoryApCost = cost;
+    inventoryApCost = std::max(cost, 0);
 }
 
 void inventoryResetInvenApCost()
 {
-    gInventoryApCost = kDefaultInventoryApCost;
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "inventory_ap_cost", &inventoryDefaultApCost, kDefaultInventoryApCost);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "quick_pockets_ap_cost_reduction", &quickPocketsApCostReduction, kDefaultQuickPocketsApCostReduction);
+
+    inventoryApCost = inventoryDefaultApCost;
 }
 
 // inven_set_dude
