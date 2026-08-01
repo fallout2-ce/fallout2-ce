@@ -1,5 +1,6 @@
 #include "game_config_migration.h"
 
+#include <algorithm>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -309,6 +310,17 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
     }
 
     bool migrated = false;
+
+    bool worldMapFpsPatch;
+    if (configGetBool(sfallConfig, kSfallMisc, "WorldMapFPSPatch", &worldMapFpsPatch)
+        && worldMapFpsPatch) {
+        int travelDelay = 66;
+        configGetInt(sfallConfig, kSfallMisc, "WorldMapDelay2", &travelDelay);
+        travelDelay = std::clamp(travelDelay, 1, 150);
+        configSetInt(&migratedConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", travelDelay);
+        migrated = true;
+    }
+
     // Migrate start year/month/day only when explicitly set (not the sfall -1 sentinel).
     auto migrateStartInt = [&](const char* sfallKey, const char* targetKey, int defaultValue) {
         int value;
