@@ -864,9 +864,9 @@ int _proto_dude_update_gender()
     _art_vault_guy_num = frmId;
 
     if (critterGetArmor(gDude) == nullptr) {
-        int weaponAnimationCode = 0;
+        WeaponAnimation weaponAnimationCode = WEAPON_ANIMATION_NONE;
         if (critterGetItem2(gDude) != nullptr || critterGetItem1(gDude) != nullptr) {
-            weaponAnimationCode = (gDude->fid & 0xF000) >> 12;
+            weaponAnimationCode = weaponAnimationFromFid(gDude->fid);
         }
 
         int fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, weaponAnimationCode, 0);
