@@ -91,7 +91,7 @@ static Object* _ai_find_nearest_team_in_combat(Object* a1, Object* a2, int flags
 static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHitFriendPtr, Object** whoHitByFriendPtr);
 static Object* _ai_danger_source(Object* a1);
 static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr);
-static bool _caiHasWeapPrefType(AiPacket* ai, int attackType);
+static bool _caiHasWeapPrefType(AiPacket* ai, AttackType attackType);
 static Object* _ai_best_weapon(Object* a1, Object* a2, Object* a3, Object* a4);
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode);
 static bool aiCanUseItem(Object* obj, Object* a2);
@@ -233,16 +233,16 @@ static Object* _attackerTeamObj = nullptr;
 static Object* _targetTeamObj = nullptr;
 
 // 0x518158 weapPrefOrderings
-static const int _weapPrefOrderings[BEST_WEAPON_COUNT + 1][ATTACK_TYPE_COUNT] = {
-    { ATTACK_TYPE_RANGED, ATTACK_TYPE_THROW, ATTACK_TYPE_MELEE, ATTACK_TYPE_UNARMED, 0 },
-    { ATTACK_TYPE_RANGED, ATTACK_TYPE_THROW, ATTACK_TYPE_MELEE, ATTACK_TYPE_UNARMED, 0 }, // BEST_WEAPON_NO_PREF
-    { ATTACK_TYPE_MELEE, 0, 0, 0, 0 }, // BEST_WEAPON_MELEE
-    { ATTACK_TYPE_MELEE, ATTACK_TYPE_RANGED, 0, 0, 0 }, // BEST_WEAPON_MELEE_OVER_RANGED
-    { ATTACK_TYPE_RANGED, ATTACK_TYPE_MELEE, 0, 0, 0 }, // BEST_WEAPON_RANGED_OVER_MELEE
-    { ATTACK_TYPE_RANGED, 0, 0, 0, 0 }, // BEST_WEAPON_RANGED
-    { ATTACK_TYPE_UNARMED, 0, 0, 0, 0 }, // BEST_WEAPON_UNARMED
-    { ATTACK_TYPE_UNARMED, ATTACK_TYPE_THROW, 0, 0, 0 }, // BEST_WEAPON_UNARMED_OVER_THROW
-    { 0, 0, 0, 0, 0 }, // BEST_WEAPON_RANDOM
+static const AttackType _weapPrefOrderings[BEST_WEAPON_COUNT + 1][ATTACK_TYPE_COUNT] = {
+    { ATTACK_TYPE_RANGED, ATTACK_TYPE_THROW, ATTACK_TYPE_MELEE, ATTACK_TYPE_UNARMED, ATTACK_TYPE_NONE },
+    { ATTACK_TYPE_RANGED, ATTACK_TYPE_THROW, ATTACK_TYPE_MELEE, ATTACK_TYPE_UNARMED, ATTACK_TYPE_NONE }, // BEST_WEAPON_NO_PREF
+    { ATTACK_TYPE_MELEE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE }, // BEST_WEAPON_MELEE
+    { ATTACK_TYPE_MELEE, ATTACK_TYPE_RANGED, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE }, // BEST_WEAPON_MELEE_OVER_RANGED
+    { ATTACK_TYPE_RANGED, ATTACK_TYPE_MELEE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE }, // BEST_WEAPON_RANGED_OVER_MELEE
+    { ATTACK_TYPE_RANGED, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE }, // BEST_WEAPON_RANGED
+    { ATTACK_TYPE_UNARMED, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE }, // BEST_WEAPON_UNARMED
+    { ATTACK_TYPE_UNARMED, ATTACK_TYPE_THROW, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE }, // BEST_WEAPON_UNARMED_OVER_THROW
+    { ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE, ATTACK_TYPE_NONE }, // BEST_WEAPON_RANDOM
 };
 
 // 0x518220 old_state
@@ -1806,7 +1806,7 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
 }
 
 // 0x42938C
-static bool _caiHasWeapPrefType(AiPacket* ai, int attackType)
+static bool _caiHasWeapPrefType(AiPacket* ai, AttackType attackType)
 {
     int bestWeapon = ai->best_weapon + 1;
 
@@ -1841,9 +1841,9 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
     Attack attack;
     attackInit(&attack, attacker, defender, HIT_MODE_RIGHT_WEAPON_PRIMARY, HIT_LOCATION_TORSO);
 
-    int attackType1;
+    AttackType attackType1;
     int distance;
-    int attackType2;
+    AttackType attackType2;
     int avgDamage2 = 0;
 
     bool ignoreWeapon2 = false;
@@ -1851,8 +1851,8 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
     // NOTE: weaponClass1 and weaponClass2 both use ESI but they are not
     // initialized. I'm not sure if this is right, but at least it doesn't
     // crash.
-    attackType1 = -1;
-    attackType2 = -1;
+    attackType1 = ATTACK_TYPE_INVALID;
+    attackType2 = ATTACK_TYPE_INVALID;
 
     if (weapon1 != nullptr) {
         attackType1 = weaponGetAttackTypeForHitMode(weapon1, HIT_MODE_RIGHT_WEAPON_PRIMARY);
@@ -1988,7 +1988,7 @@ static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode)
     }
 
     if (result) {
-        int attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+        AttackType attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
         result = _caiHasWeapPrefType(ai, attackType) != 0;
     }
 
@@ -2270,7 +2270,7 @@ static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defen
         return HIT_MODE_PUNCH;
     }
 
-    int attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY);
+    AttackType attackType = weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY);
     int intelligence = critterGetStat(attacker, STAT_INTELLIGENCE);
     if (attackType == ATTACK_TYPE_NONE || !_ai_can_use_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY)) {
         return HIT_MODE_RIGHT_WEAPON_PRIMARY;
@@ -2813,7 +2813,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                     _gsound_play_sfx_file_volume(sfx, volume);
                     _ai_magic_hands(attacker, weapon, 5001);
 
-                    if (inventoryUnequip(attacker, 1) == 0) {
+                    if (inventoryUnequip(attacker, HAND_RIGHT) == 0) {
                         _combat_turn_run();
                     }
 

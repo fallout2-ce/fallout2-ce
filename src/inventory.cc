@@ -1510,7 +1510,7 @@ void inventorySetDude(Object* obj, int pid)
 }
 
 // TODO(CE): move to more generic location
-int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, int activeHand, int anim, int rotation)
+int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, int rotation)
 {
     if (FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
         return critter->fid;
@@ -3082,12 +3082,12 @@ void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* 
 
     if (objectIsPartyMember(critter)) {
         if (oldArmor != nullptr) {
-            int perk = armorGetPerk(oldArmor);
+            Perk perk = armorGetPerk(oldArmor);
             perkRemoveEffect(critter, perk);
         }
 
         if (newArmor != nullptr) {
-            int perk = armorGetPerk(newArmor);
+            Perk perk = armorGetPerk(newArmor);
             perkAddEffect(critter, perk);
         }
     }
@@ -3102,7 +3102,7 @@ static void _adjust_fid()
         gInventoryLeftHandItem,
         gInventoryArmor,
         interfaceGetCurrentHand(),
-        0,
+        ANIM_STAND,
         0);
     gInventoryWindowDudeFid = scriptHooks_AdjustFid(fid, fid);
 }
@@ -3543,7 +3543,7 @@ static void inventoryRenderSummary()
                 // CE: Implementation is different.
                 HitMode hitMode = unarmedHitModes[index];
                 if (_stack[0] == gDude) {
-                    int actions[2];
+                    InterfaceItemAction actions[2];
                     interfaceGetItemActions(&(actions[0]), &(actions[1]));
 
                     bool isSecondary = actions[index] == INTERFACE_ITEM_ACTION_SECONDARY
@@ -3596,7 +3596,7 @@ static void inventoryRenderSummary()
         // SFALL: Fix displaying secondary mode weapon range.
         HitMode hitMode = hitModes[index];
         if (_stack[0] == gDude) {
-            int actions[2];
+            InterfaceItemAction actions[2];
             interfaceGetItemActions(&(actions[0]), &(actions[1]));
 
             bool isSecondary = actions[index] == INTERFACE_ITEM_ACTION_SECONDARY
@@ -3615,7 +3615,7 @@ static void inventoryRenderSummary()
 
         // CE: Fix displaying secondary mode weapon damage (affects throwable
         // melee weapons - knifes, spears, etc.).
-        int attackType = weaponGetAttackTypeForHitMode(item, hitMode);
+        AttackType attackType = weaponGetAttackTypeForHitMode(item, hitMode);
 
         formattedText[0] = '\0';
 
@@ -3806,13 +3806,13 @@ Object* inventoryItemByIndex(Object* obj, int index)
 
 // inven_wield
 // 0x472758
-int inventoryEquip(Object* critter, Object* item, int hand)
+int inventoryEquip(Object* critter, Object* item, Hand hand)
 {
     return inventoryEquipFunc(critter, item, hand, true);
 }
 
 // 0x472768
-int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animate)
+int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool animate)
 {
     int itemType = itemGetType(item);
 
@@ -3857,7 +3857,7 @@ int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animat
             adjustCritterStatsOnArmorChange(critter, armor, item);
         }
     } else {
-        int hand;
+        Hand hand;
         if (critter == gDude) {
             hand = interfaceGetCurrentHand();
         } else {
@@ -3962,13 +3962,13 @@ int inventoryEquipFunc(Object* critter, Object* item, int handIndex, bool animat
 
 // inven_unwield
 // 0x472A54
-int inventoryUnequip(Object* critter_obj, int hand)
+int inventoryUnequip(Object* critter_obj, Hand hand)
 {
     return inventoryUnequipFunc(critter_obj, hand, true);
 }
 
 // 0x472A64
-int inventoryUnequipFunc(Object* critter, int hand, bool animate)
+int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 {
     int activeHand;
     Object* item;
@@ -5226,7 +5226,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != 0) {
-                            targetObj->fid = buildFid(FID_TYPE(targetObj->fid), targetObj->fid & 0xFFF, FID_ANIM_TYPE(targetObj->fid), 0, targetObj->rotation + 1);
+                            targetObj->fid = buildFid(FID_TYPE(targetObj->fid), targetObj->fid & 0xFFF, animationTypeFromFid(targetObj->fid), 0, targetObj->rotation + 1);
                         }
 
                         targetObj->flags &= ~OBJECT_EQUIPPED;

@@ -974,9 +974,9 @@ bool gameUiIsDisabled()
 }
 
 // 0x443C68
-int gameGetGlobalVar(int var)
+int gameGetGlobalVar(GameGlobalVar var)
 {
-    if (var < 0 || var >= gGameGlobalVarsLength) {
+    if (!globalVariableIsValid(var)) {
         debugPrint("ERROR: attempt to reference global var out of range: %d", var);
         return 0;
     }
@@ -985,9 +985,9 @@ int gameGetGlobalVar(int var)
 }
 
 // 0x443C98
-int gameSetGlobalVar(int var, int value)
+int gameSetGlobalVar(GameGlobalVar var, int value)
 {
-    if (var < 0 || var >= gGameGlobalVarsLength) {
+    if (!globalVariableIsValid(var)) {
         debugPrint("ERROR: attempt to reference global var out of range: %d", var);
         return -1;
     }
@@ -1628,9 +1628,9 @@ int gameShowDeathDialog(const char* message)
     return rc;
 }
 
-void* gameGetGlobalPointer(int var)
+void* gameGetGlobalPointer(GameGlobalVar var)
 {
-    if (var < 0 || var >= gGameGlobalVarsLength) {
+    if (!globalVariableIsValid(var)) {
         debugPrint("ERROR: attempt to reference global pointer out of range: %d", var);
         return nullptr;
     }
@@ -1638,9 +1638,9 @@ void* gameGetGlobalPointer(int var)
     return gGameGlobalPointers[var];
 }
 
-int gameSetGlobalPointer(int var, void* value)
+int gameSetGlobalPointer(GameGlobalVar var, void* value)
 {
-    if (var < 0 || var >= gGameGlobalVarsLength) {
+    if (!globalVariableIsValid(var)) {
         debugPrint("ERROR: attempt to reference global var out of range: %d", var);
         return -1;
     }

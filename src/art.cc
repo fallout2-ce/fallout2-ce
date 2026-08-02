@@ -572,7 +572,7 @@ int artCopyFileName(int objectType, int id, char* dest)
 }
 
 // 0x419314
-int _art_get_code(int animation, int weaponType, char* weaponCodePtr, char* animationCodePtr)
+int _art_get_code(AnimationType animation, int weaponType, char* weaponCodePtr, char* animationCodePtr)
 {
     if (weaponType < 0 || weaponType >= WEAPON_ANIMATION_COUNT) {
         return -1;
@@ -674,7 +674,7 @@ char* artBuildFilePath(int fid)
     *_art_name = '\0';
 
     int frmId = baseFid & 0xFFF;
-    int animType = FID_ANIM_TYPE(baseFid);
+    AnimationType animType = animationTypeFromFid(baseFid);
     int weaponCode = (baseFid & 0xF000) >> 12;
     int objectType = FID_TYPE(baseFid);
 
@@ -973,7 +973,7 @@ int artCritterFidShouldRun(int fid)
 int artAliasFid(int fid)
 {
     int type = FID_TYPE(fid);
-    int anim = FID_ANIM_TYPE(fid);
+    AnimationType anim = animationTypeFromFid(fid);
     if (type == OBJ_TYPE_CRITTER) {
         if (anim == ANIM_ELECTRIFY
             || anim == ANIM_CHARRED_BODY

@@ -304,7 +304,7 @@ int critterAdjustHitPoints(Object* critter, int hp)
     critter->data.critter.hp = newHp;
     if (maximumHp >= newHp) {
         if (newHp <= 0 && (critter->data.critter.combat.results & DAM_DEAD) == 0) {
-            critterKill(critter, -1, true);
+            critterKill(critter, ANIM_INVALID, true);
         }
     } else {
         critter->data.critter.hp = maximumHp;
@@ -608,7 +608,7 @@ void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
                 int base = critterGetBaseStatWithTraitModifier(obj, gRadiationEffectStats[effect]);
                 int bonus = critterGetBonusStat(obj, gRadiationEffectStats[effect]);
                 if (base + bonus < PRIMARY_STAT_MIN) {
-                    critterKill(obj, -1, 1);
+                    critterKill(obj, ANIM_INVALID, 1);
                     break;
                 }
             }
@@ -812,7 +812,7 @@ static int _critterClearObjDrugs(Object* obj, void* data)
 }
 
 // 0x42DA64 critter_kill
-void critterKill(Object* critter, int anim, bool refreshRect)
+void critterKill(Object* critter, AnimationType anim, bool refreshRect)
 {
     if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
         return;
@@ -830,7 +830,7 @@ void critterKill(Object* critter, int anim, bool refreshRect)
     bool shouldChangeFid = false;
     int fid;
     if (critterIsProne(critter)) {
-        int current = FID_ANIM_TYPE(critter->fid);
+        AnimationType current = animationTypeFromFid(critter->fid);
         if (current == ANIM_FALL_BACK || current == ANIM_FALL_FRONT) {
             bool back = false;
             if (current == ANIM_FALL_BACK) {
@@ -991,7 +991,7 @@ bool critterIsProne(Object* critter)
         return false;
     }
 
-    int anim = FID_ANIM_TYPE(critter->fid);
+    AnimationType anim = animationTypeFromFid(critter->fid);
 
     return (critter->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN)) != 0
         || (anim >= FIRST_KNOCKDOWN_AND_DEATH_ANIM && anim <= LAST_KNOCKDOWN_AND_DEATH_ANIM)
@@ -1035,7 +1035,7 @@ bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
     // verify art exists
     int rotation = critter->rotation + 1;
     int animationCode = weaponGetAnimationCode(weapon);
-    int weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
+    AnimationType weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
     int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);
     return artExists(fid);
 }

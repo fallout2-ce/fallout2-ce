@@ -1,9 +1,11 @@
 #ifndef ITEM_H
 #define ITEM_H
 
+#include "animation.h"
 #include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
+#include "perk_defs.h"
 #include "proto_instance.h"
 #include "proto_types.h"
 #include "skill_defs.h"
@@ -12,21 +14,31 @@ namespace fallout {
 
 enum class RemoveInventoryObjectHookReason;
 
-typedef enum AttackType {
+enum AttackType : int {
+    ATTACK_TYPE_INVALID = -1,
     ATTACK_TYPE_NONE,
     ATTACK_TYPE_UNARMED,
     ATTACK_TYPE_MELEE,
     ATTACK_TYPE_THROW,
     ATTACK_TYPE_RANGED,
     ATTACK_TYPE_COUNT,
-} AttackType;
+    ATTACK_TYPE_FIRST = ATTACK_TYPE_NONE
+};
 
-typedef enum HealingItem {
+enum HealingItem : int {
     HEALING_ITEM_STIMPAK,
     HEALING_ITEM_SUPER_STIMPAK,
     HEALING_ITEM_HEALING_POWDER,
     HEALING_ITEM_COUNT,
-} HealingItem;
+    HEALING_ITEM_FIRST = HEALING_ITEM_STIMPAK
+};
+
+inline HealingItem operator++(HealingItem& e, int)
+{
+    HealingItem result = e;
+    e = static_cast<HealingItem>(static_cast<int>(e) + 1);
+    return result;
+}
 
 int itemsInit();
 void itemsReset();
@@ -61,15 +73,15 @@ int itemGetQuantity(Object* obj, Object* item);
 int itemIsQueued(Object* obj);
 Object* itemReplace(Object* owner, Object* itemToReplace, int flags);
 bool itemIsHidden(Object* obj);
-int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode);
+AttackType weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode);
 Skill weaponGetSkillForHitMode(Object* weapon, HitMode hitMode);
 int weaponGetSkillValue(Object* critter, HitMode hitMode);
 int weaponGetDamageMinMax(Object* weapon, int* minDamagePtr, int* maxDamagePtr);
 int weaponGetDamage(Object* critter, HitMode hitMode);
 DamageType weaponGetDamageType(Object* critter, Object* weapon);
 int weaponIsTwoHanded(Object* weapon);
-int critterGetAnimationForHitMode(Object* critter, HitMode hitMode);
-int weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode);
+AnimationType critterGetAnimationForHitMode(Object* critter, HitMode hitMode);
+AnimationType weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode);
 int ammoGetCapacity(Object* ammoOrWeapon);
 int ammoGetQuantity(Object* ammoOrWeapon);
 int ammoGetCaliber(Object* ammoOrWeapon);
@@ -105,7 +117,7 @@ int weaponGetAmmoDamageDivisor(Object* weapon);
 int armorGetArmorClass(Object* armor);
 int armorGetDamageResistance(Object* armor, DamageType damageType);
 int armorGetDamageThreshold(Object* armor, DamageType damageType);
-int armorGetPerk(Object* armor);
+Perk armorGetPerk(Object* armor);
 int armorGetMaleFid(Object* armor);
 int armorGetFemaleFid(Object* armor);
 int miscItemGetMaxCharges(Object* miscItem);

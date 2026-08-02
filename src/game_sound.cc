@@ -1325,7 +1325,7 @@ int _gsound_compute_relative_volume(Object* obj)
 
 // sfx_build_char_name
 // 0x451604
-char* sfxBuildCharName(Object* a1, int anim, int extra)
+char* sfxBuildCharName(Object* a1, AnimationType anim, int extra)
 {
     char v7[13];
     char v8;

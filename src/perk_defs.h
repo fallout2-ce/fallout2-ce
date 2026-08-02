@@ -3,7 +3,8 @@
 
 namespace fallout {
 
-typedef enum Perk {
+enum Perk : int {
+    PERK_INVALID = -1,
     PERK_AWARENESS,
     PERK_BONUS_HTH_ATTACKS,
     PERK_BONUS_HTH_DAMAGE,
@@ -124,7 +125,20 @@ typedef enum Perk {
     PERK_WEAPON_ENHANCED_KNOCKOUT,
     PERK_JINXED,
     PERK_COUNT,
-} Perk;
+    PERK_FIRST = PERK_AWARENESS
+};
+
+inline bool perkIsValid(int perk)
+{
+    return perk >= PERK_FIRST && perk < PERK_COUNT;
+}
+
+inline Perk operator++(Perk& e, int)
+{
+    Perk result = e;
+    e = static_cast<Perk>(static_cast<int>(e) + 1);
+    return result;
+}
 
 } // namespace fallout
 

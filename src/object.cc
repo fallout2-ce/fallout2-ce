@@ -458,7 +458,7 @@ int objectRead(Object* obj, File* stream)
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
             if ((obj->fid & 0xFFF) < 33) {
-                obj->fid = buildFid(OBJ_TYPE_MISC, (obj->fid & 0xFFF) + 16, FID_ANIM_TYPE(obj->fid), 0, 0);
+                obj->fid = buildFid(OBJ_TYPE_MISC, (obj->fid & 0xFFF) + 16, animationTypeFromFid(obj->fid), 0, 0);
             }
         }
     } else {
@@ -5170,7 +5170,7 @@ void _obj_fix_violence_settings(int* fid)
         break;
     }
 
-    int anim = FID_ANIM_TYPE(*fid);
+    AnimationType anim = animationTypeFromFid(*fid);
     if (anim >= start && anim <= end) {
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
