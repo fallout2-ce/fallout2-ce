@@ -1671,6 +1671,9 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
                 32);
+            if (gCharacterEditorTagSkillBtns[i] != -1) {
+                buttonSetCallbacks(gCharacterEditorTagSkillBtns[i], _gsound_red_butt_press, nullptr);
+            }
             y += _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getHeight();
         }
 
@@ -1690,6 +1693,9 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
                 32);
+            if (gCharacterEditorOptionalTraitBtns[i] != -1) {
+                buttonSetCallbacks(gCharacterEditorOptionalTraitBtns[i], _gsound_red_butt_press, nullptr);
+            }
             y += _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getHeight() + OPTIONAL_TRAITS_BTN_SPACE;
         }
 
@@ -1709,6 +1715,9 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
                 32);
+            if (gCharacterEditorOptionalTraitBtns[i] != -1) {
+                buttonSetCallbacks(gCharacterEditorOptionalTraitBtns[i], _gsound_red_butt_press, nullptr);
+            }
             y += _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getHeight() + OPTIONAL_TRAITS_BTN_SPACE;
         }
 
