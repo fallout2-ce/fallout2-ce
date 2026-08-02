@@ -1778,6 +1778,8 @@ static int interfaceBarRefreshMainAction()
                 case ANIM_FIRE_CONTINUOUS:
                     id = 40; // burst
                     break;
+                default:
+                    break;
                 }
 
                 primaryFid = buildFid(OBJ_TYPE_INTERFACE, id, 0, 0, 0);
