@@ -40,11 +40,11 @@ namespace fallout {
 
 #define MAX_KNOCKDOWN_DISTANCE 20
 
-typedef enum ScienceRepairTargetType {
+enum ScienceRepairTargetType : int {
     SCIENCE_REPAIR_TARGET_TYPE_DEFAULT,
     SCIENCE_REPAIR_TARGET_TYPE_DUDE,
     SCIENCE_REPAIR_TARGET_TYPE_ANYONE,
-} ScienceRepairTargetType;
+};
 
 // 0x5106D0 action_in_explode
 static bool _action_in_explode = false;
@@ -1413,8 +1413,8 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
 
         // SFALL: Science on critters patch.
         if (1) {
-            int targetType = SCIENCE_REPAIR_TARGET_TYPE_DEFAULT;
-            configGetInt(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "science_on_critters", &targetType, SCIENCE_REPAIR_TARGET_TYPE_DEFAULT);
+            ScienceRepairTargetType targetType = SCIENCE_REPAIR_TARGET_TYPE_DEFAULT;
+            configGetEnum<ScienceRepairTargetType>(&gContentConfig, CONTENT_CONFIG_COMBAT_SECTION, "science_on_critters", &targetType, SCIENCE_REPAIR_TARGET_TYPE_DEFAULT);
             if (targetType == SCIENCE_REPAIR_TARGET_TYPE_DUDE) {
                 if (target == gDude) {
                     break;
