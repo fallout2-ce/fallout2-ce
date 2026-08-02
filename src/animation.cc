@@ -88,6 +88,8 @@ static bool animationKindIsCallback(AnimationKind kind)
 }
 
 typedef enum AnimationSequenceFlags {
+    ANIM_SEQ_NONE = 0x00,
+
     // Specifies that the animation sequence has high priority, it cannot be
     // cleared.
     ANIM_SEQ_PRIORITIZED = 0x01,
@@ -434,11 +436,11 @@ static int _anim_free_slot(AnimationRequestOptions requestOptions)
     int v2 = 0;
     for (int index = 0; index < ANIMATION_SEQUENCE_LIST_CAPACITY; index++) {
         AnimationSequence* animationSequence = &(gAnimationSequences[index]);
-        if (animationSequence->step != ANIM_COMPLETE || (animationSequence->flags & ANIM_SEQ_ACCUMULATING) != ANIMATION_REQUEST_NONE || (animationSequence->flags & ANIM_SEQ_0x20) != 0) {
+        if (animationSequence->step != ANIM_COMPLETE || (animationSequence->flags & ANIM_SEQ_ACCUMULATING) != ANIM_SEQ_NONE || (animationSequence->flags & ANIM_SEQ_0x20) != ANIM_SEQ_NONE) {
             if (!(animationSequence->flags & ANIM_SEQ_RESERVED)) {
                 v2++;
             }
-        } else if (v1 == -1 && ((requestOptions & ANIMATION_REQUEST_PING) == ANIMATION_REQUEST_NONE || (animationSequence->flags & ANIM_SEQ_0x10) == 0)) {
+        } else if (v1 == -1 && ((requestOptions & ANIMATION_REQUEST_PING) == ANIMATION_REQUEST_NONE || (animationSequence->flags & ANIM_SEQ_0x10) == ANIM_SEQ_NONE)) {
             v1 = index;
         }
     }

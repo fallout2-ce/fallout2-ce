@@ -812,14 +812,14 @@ int gameHandleKey(int eventCode, bool isInCombatMode)
         break;
     case KEY_COMMA:
     case KEY_LESS:
-        if (reg_anim_begin(ANIMATION_REQUEST_RESERVED) == ANIMATION_REQUEST_NONE) {
+        if (reg_anim_begin(ANIMATION_REQUEST_RESERVED) == 0) {
             animationRegisterRotateCounterClockwise(gDude);
             reg_anim_end();
         }
         break;
     case KEY_DOT:
     case KEY_GREATER:
-        if (reg_anim_begin(ANIMATION_REQUEST_RESERVED) == ANIMATION_REQUEST_NONE) {
+        if (reg_anim_begin(ANIMATION_REQUEST_RESERVED) == 0) {
             animationRegisterRotateClockwise(gDude);
             reg_anim_end();
         }
