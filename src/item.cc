@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "animation.h"
-#include "art_defs.h"
 #include "art.h"
+#include "art_defs.h"
 #include "automap.h"
 #include "combat.h"
 #include "content_config.h"
