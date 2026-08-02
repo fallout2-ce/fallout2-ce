@@ -680,18 +680,18 @@ static int gCharacterEditorSliderMinusBtn;
 // - stats buttons
 //
 // 0x5705EC stat_bids_minus
-static int gCharacterEditorPrimaryStatMinusBtns[7];
+static int gCharacterEditorPrimaryStatMinusBtns[PRIMARY_STAT_COUNT];
+
+// + stats buttons
+//
+// 0x570610 stat_bids_plus
+static int gCharacterEditorPrimaryStatPlusBtns[PRIMARY_STAT_COUNT];
 
 // 0x570608 win_buf
 static unsigned char* gCharacterEditorWindowBuffer;
 
 // 0x57060C edit_win
 static int gCharacterEditorWindow = -1;
-
-// + stats buttons
-//
-// 0x570610 stat_bids_plus
-static int gCharacterEditorPrimaryStatPlusBtns[7];
 
 // 0x57062C pwin_buf
 static unsigned char* gPerkDialogWindowBuffer;
@@ -957,8 +957,10 @@ int characterEditorShow(bool isCreationMode)
         } else if (gCharacterEditorIsCreationMode && (keyCode == 520 || keyCode == KEY_UPPERCASE_S || keyCode == KEY_LOWERCASE_S)) {
             characterEditorEditGender();
             windowRefresh(gCharacterEditorWindow);
-        } else if (gCharacterEditorIsCreationMode && (keyCode >= 503 && keyCode < 517)) {
+        } else if (gCharacterEditorIsCreationMode && (keyCode >= 503 && keyCode < (503 + (PRIMARY_STAT_COUNT * 2)))) {
+            // mouse button down on +/- buttons for primary stats
             characterEditorAdjustPrimaryStat(keyCode);
+            characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
             windowRefresh(gCharacterEditorWindow);
         } else if ((gCharacterEditorIsCreationMode && (keyCode == 501 || keyCode == KEY_UPPERCASE_O || keyCode == KEY_LOWERCASE_O))
             || (!gCharacterEditorIsCreationMode && (keyCode == 501 || keyCode == KEY_UPPERCASE_P || keyCode == KEY_LOWERCASE_P))) {
@@ -1017,6 +1019,7 @@ int characterEditorShow(bool isCreationMode)
                 if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
                     if (gCharacterEditorIsCreationMode) {
                         _win_button_press_and_release(gCharacterEditorPrimaryStatMinusBtns[characterEditorSelectedItem]);
+                        characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
                         windowRefresh(gCharacterEditorWindow);
                     }
                 } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
@@ -1040,6 +1043,7 @@ int characterEditorShow(bool isCreationMode)
                 if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
                     if (gCharacterEditorIsCreationMode) {
                         _win_button_press_and_release(gCharacterEditorPrimaryStatPlusBtns[characterEditorSelectedItem]);
+                        characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
                         windowRefresh(gCharacterEditorWindow);
                     }
                 } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
@@ -1758,7 +1762,7 @@ static int characterEditorWindowInit()
 
     if (gCharacterEditorIsCreationMode) {
         // +/- buttons for stats
-        for (i = 0; i < 7; i++) {
+        for (i = 0; i < PRIMARY_STAT_COUNT; i++) {
             gCharacterEditorPrimaryStatPlusBtns[i] = buttonCreate(gCharacterEditorWindow,
                 SPECIAL_STATS_BTN_X,
                 gCharacterEditorPrimaryStatY[i],
@@ -1783,7 +1787,7 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_ON].getHeight(),
                 -1,
                 518,
-                510 + i,
+                503 + PRIMARY_STAT_COUNT + i,
                 518,
                 _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_OFF].getData(),
                 _editorFrmImages[EDITOR_GRAPHIC_SLIDER_MINUS_ON].getData(),
@@ -3755,7 +3759,7 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
 
     // TODO: check as it can result in negative decrementingStat values
     Stat incrementingStat = static_cast<Stat>(eventCode - 503);
-    Stat decrementingStat = static_cast<Stat>(eventCode - 510);
+    Stat decrementingStat = static_cast<Stat>(eventCode - (503 + PRIMARY_STAT_COUNT));
 
     int v11 = 0;
 
@@ -3776,7 +3780,7 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
                 }
             }
 
-            if (eventCode >= 510) {
+            if (eventCode >= (503 + PRIMARY_STAT_COUNT)) {
                 int previousValue = critterGetStat(gDude, decrementingStat);
                 if (critterDecBaseStat(gDude, decrementingStat) == 0) {
                     gCharacterEditorRemainingCharacterPoints++;
