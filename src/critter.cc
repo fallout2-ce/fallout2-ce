@@ -27,6 +27,7 @@
 #include "random.h"
 #include "reaction.h"
 #include "scripts.h"
+#include "sfall_object_name.h"
 #include "sfall_script_hooks.h"
 #include "skill.h"
 #include "stat.h"
@@ -239,6 +240,12 @@ char* critterGetName(Object* obj)
 {
     if (obj == gDude) {
         return gDudeName;
+    }
+
+    char* overrideName = sfallObjectNameGet(obj);
+    if (overrideName != nullptr) {
+        _name_critter = overrideName;
+        return overrideName;
     }
 
     if (obj->scriptIndex == -1) {

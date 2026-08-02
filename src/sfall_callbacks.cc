@@ -5,6 +5,7 @@
 #include "interface.h"
 #include "inventory.h"
 #include "script_sound.h"
+#include "sfall_object_name.h"
 #include "sfall_script_hooks.h"
 #include "stat.h"
 #include "worldmap.h"
@@ -37,6 +38,7 @@ void sfallOnGameReset()
 {
     inventoryResetInvenApCost();
     scriptSoundReset();
+    sfallObjectNameReset();
     statResetUnspentApBonuses();
     return;
 }
@@ -93,7 +95,7 @@ void sfallOnCombatEnd()
 
 void sfallOnBeforeMapLoad()
 {
-    return;
+    sfallObjectNameReset();
 }
 
 } // namespace fallout
