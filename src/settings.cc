@@ -146,6 +146,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING_P(resolution_x, clamp(640, 7680));
     SETTING_P(resolution_y, clamp(480, 4320));
     SETTING(windowed);
+    SETTING(mouse_lock);
     SETTING_P(scale, clamp(1, 4));
 #undef SECT
 
