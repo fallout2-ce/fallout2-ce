@@ -1044,11 +1044,13 @@ void _GNW95_process_message()
                 break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
                 gProgramIsActive = true;
+                mouseDeviceInitMode();
                 windowRefreshAll(&_scr_size);
                 audioEngineResume();
                 break;
             case SDL_WINDOWEVENT_FOCUS_LOST:
                 gProgramIsActive = false;
+                mouseDeviceInitMode();
                 audioEnginePause();
                 break;
             }

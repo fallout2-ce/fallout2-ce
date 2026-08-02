@@ -32,6 +32,7 @@ struct ScreenSettings {
     int resolution_x = 640;
     int resolution_y = 480;
     bool windowed = false;
+    bool mouse_lock = false;
     int scale = 1;
 };
 
