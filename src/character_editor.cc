@@ -957,7 +957,7 @@ int characterEditorShow(bool isCreationMode)
         } else if (gCharacterEditorIsCreationMode && (keyCode == 520 || keyCode == KEY_UPPERCASE_S || keyCode == KEY_LOWERCASE_S)) {
             characterEditorEditGender();
             windowRefresh(gCharacterEditorWindow);
-        } else if (gCharacterEditorIsCreationMode && (keyCode >= 503 && keyCode < (503 + (PRIMARY_STAT_COUNT * 2)))) { 
+        } else if (gCharacterEditorIsCreationMode && (keyCode >= 503 && keyCode < (503 + (PRIMARY_STAT_COUNT * 2)))) {
             // mouse button down on +/- buttons for primary stats
             characterEditorAdjustPrimaryStat(keyCode);
             characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
