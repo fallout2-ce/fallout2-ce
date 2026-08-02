@@ -87,6 +87,7 @@ enum AnimationType : int {
     ANIM_FALL_FRONT_BLOOD_SF = 63,
     ANIM_CALLED_SHOT_PIC = 64,
     ANIM_COUNT = 65,
+    ANIM_FIRST = ANIM_STAND,
     FIRST_KNOCKDOWN_AND_DEATH_ANIM = ANIM_FALL_BACK,
     LAST_KNOCKDOWN_AND_DEATH_ANIM = ANIM_FALL_FRONT_BLOOD,
     FIRST_SF_DEATH_ANIM = ANIM_FALL_BACK_SF,
@@ -95,7 +96,7 @@ enum AnimationType : int {
 
 inline bool animationTypeIsValid(int anim)
 {
-    return anim >= 0 && anim < ANIM_COUNT;
+    return anim >= ANIM_FIRST && anim < ANIM_COUNT;
 }
 
 inline AnimationType animationTypeFromFid(int fid)

@@ -1891,7 +1891,7 @@ bool critterCanAim(Object* critter, HitMode hitMode)
     }
 
     // NOTE: Uninline.
-    int anim = critterGetAnimationForHitMode(critter, hitMode);
+    AnimationType anim = critterGetAnimationForHitMode(critter, hitMode);
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
         return false;
     }
@@ -2051,7 +2051,7 @@ bool weaponHasAmmoForAttack(const Object* weapon, HitMode hitMode)
     }
 
     int rounds = 1;
-    int anim = weaponGetAnimationForHitMode(const_cast<Object*>(weapon), hitMode);
+    AnimationType anim = weaponGetAnimationForHitMode(const_cast<Object*>(weapon), hitMode);
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
         rounds = weaponGetBurstRounds(const_cast<Object*>(weapon));
     }
@@ -2086,7 +2086,7 @@ bool weaponIsGrenade(Object* weapon)
 int weaponGetDamageRadius(Object* weapon, HitMode hitMode)
 {
     AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
-    int anim = weaponGetAnimationForHitMode(weapon, hitMode);
+    AnimationType anim = weaponGetAnimationForHitMode(weapon, hitMode);
     DamageType damageType = weaponGetDamageType(nullptr, weapon);
 
     int radius = 0;

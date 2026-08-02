@@ -2493,7 +2493,7 @@ static int animateMoveObjectToTileStraight(Object* obj, int tile, int elevation,
     AnimationSad* sad = &(gAnimationSads[gAnimationCurrentSad]);
     sad->obj = obj;
     sad->flags = flags | ANIM_SAD_STRAIGHT;
-    if (anim == -1) {
+    if (anim == ANIM_INVALID) {
         sad->fid = obj->fid;
         sad->flags |= ANIM_SAD_NO_ANIM;
     } else {
@@ -2535,7 +2535,7 @@ static int _anim_move_on_stairs(Object* obj, int tile, int elevation, AnimationT
     AnimationSad* sad = &(gAnimationSads[gAnimationCurrentSad]);
     sad->flags = ANIM_SAD_STRAIGHT;
     sad->obj = obj;
-    if (anim == -1) {
+    if (anim == ANIM_INVALID) {
         sad->fid = obj->fid;
         sad->flags |= ANIM_SAD_NO_ANIM;
     } else {
@@ -2570,7 +2570,7 @@ static int _check_for_falling(Object* obj, AnimationType anim, int a3)
     AnimationSad* sad = &(gAnimationSads[gAnimationCurrentSad]);
     sad->flags = ANIM_SAD_STRAIGHT;
     sad->obj = obj;
-    if (anim == -1) {
+    if (anim == ANIM_INVALID) {
         sad->fid = obj->fid;
         sad->flags |= ANIM_SAD_NO_ANIM;
     } else {

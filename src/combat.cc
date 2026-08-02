@@ -2356,7 +2356,7 @@ static bool _combat_safety_invalidate_weapon_func(Object* attacker, Object* weap
         return false;
     }
 
-    int anim = weaponGetAnimationForHitMode(weapon, hitMode);
+    AnimationType anim = weaponGetAnimationForHitMode(weapon, hitMode);
     if (anim != ANIM_FIRE_BURST && anim != ANIM_FIRE_CONTINUOUS) {
         return false;
     }

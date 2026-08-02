@@ -82,7 +82,7 @@ static AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* w
 static AnimationType checkDeathAnim(Object* obj, AnimationType anim, int minViolenceLevel, bool hitFromFront);
 static int _internal_destroy(Object* _, Object* toDestroy);
 static void showDamageToObject(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, int knockbackRotation, AnimationType attackerAnimation, Object* attacker, int delay);
-static int _show_death(Object* obj, int anim);
+static int _show_death(Object* obj, AnimationType anim);
 static int showDamageToExtras(Attack* attack);
 static void showDamage(Attack* attack, AnimationType attackerAnimation, int delay);
 static int _action_melee(Attack* attack, AnimationType anim);
@@ -478,14 +478,14 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
 }
 
 // 0x410E24
-int _show_death(Object* obj, int anim)
+int _show_death(Object* obj, AnimationType anim)
 {
     Rect tempRect;
     Rect dirtyRect;
     int fid;
 
     objectGetRect(obj, &dirtyRect);
-    if (anim < 48 && anim > 63) {
+    if (anim < ANIM_FALL_BACK_SF && anim > ANIM_FALL_FRONT_BLOOD_SF) {
         fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, anim + 28, (obj->fid & 0xF000) >> 12, obj->rotation + 1);
         if (objectSetFid(obj, fid, &tempRect) == 0) {
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
@@ -507,7 +507,7 @@ int _show_death(Object* obj, int anim)
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
     }
 
-    if (anim >= 30 && anim <= 31 && !critterFlagCheck(obj->pid, CRITTER_SPECIAL_DEATH) && !critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
+    if (anim >= ANIM_ELECTRIFIED_TO_NOTHING && anim <= ANIM_EXPLODED_TO_NOTHING && !critterFlagCheck(obj->pid, CRITTER_SPECIAL_DEATH) && !critterFlagCheck(obj->pid, CRITTER_NO_DROP)) {
         itemDropAll(obj, obj->tile);
     }
 

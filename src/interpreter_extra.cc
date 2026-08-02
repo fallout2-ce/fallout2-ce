@@ -3374,7 +3374,8 @@ static void opMetarule(Program* program)
 static void opAnim(Program* program)
 {
     ProgramValue frameValue = programStackPopValue(program);
-    AnimationType anim = programStackPopEnum<AnimationType>(program);
+    // Cannot use programStackPopEnum<AnimmationType> here as it would not handle the script anim values 1000 and 1010
+    int animOrInt = programStackPopInteger(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     // CE: There is a bug in the `animate_rotation` macro in the user-space
@@ -3386,7 +3387,7 @@ static void opAnim(Program* program)
     int frame;
     if (frameValue.opcode == VALUE_TYPE_INT) {
         frame = frameValue.integerValue;
-    } else if (anim == 1000 && frameValue.opcode == VALUE_TYPE_PTR) {
+    } else if (animOrInt == 1000 && frameValue.opcode == VALUE_TYPE_PTR) {
         // Force code path below to skip setting rotation.
         frame = ROTATION_COUNT;
     } else {
@@ -3398,7 +3399,8 @@ static void opAnim(Program* program)
         return;
     }
 
-    if (anim < ANIM_COUNT) {
+    if (animationTypeIsValid(animOrInt)) {
+        AnimationType anim = static_cast<AnimationType>(animOrInt);
         CritterCombatData* combatData = nullptr;
         if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
             combatData = &(obj->data.critter.combat);
@@ -3437,18 +3439,18 @@ static void opAnim(Program* program)
         }
 
         reg_anim_end();
-    } else if (anim == 1000) {
+    } else if (animOrInt == 1000) {
         if (frame < ROTATION_COUNT) {
             Rect rect;
             objectSetRotation(obj, frame, &rect);
             tileWindowRefreshRect(&rect, gElevation);
         }
-    } else if (anim == 1010) {
+    } else if (animOrInt == 1010) {
         Rect rect;
         objectSetFrame(obj, frame, &rect);
         tileWindowRefreshRect(&rect, gElevation);
     } else {
-        scriptError("\nScript Error: %s: op_anim: anim out of range", program->name);
+        scriptError("\nScript Error: %s: op_anim: anim out of range %d", program->name, animOrInt);
     }
 }
 
@@ -3500,7 +3502,7 @@ static void opRegAnimAnimate(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (!animationCheckCombatMode()) {
-        if (anim != 20 || object == nullptr || object->pid != 0x100002F || (settings.preferences.violence_level >= 2)) {
+        if (anim != ANIM_FALL_BACK || object == nullptr || object->pid != 0x100002F || (settings.preferences.violence_level >= 2)) {
             if (object != nullptr) {
                 animationRegisterAnimate(object, anim, delay);
             } else {

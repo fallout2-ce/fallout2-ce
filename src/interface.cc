@@ -1706,11 +1706,11 @@ static int interfaceBarRefreshMainAction()
                 }
             }
 
-            if (hitMode != -1) {
+            if (hitMode != HIT_MODE_INVALID) {
                 actionPoints = weaponGetActionPointCost(gDude, hitMode, bullseyeFid != -1);
 
                 int id;
-                int anim = critterGetAnimationForHitMode(gDude, hitMode);
+                AnimationType anim = critterGetAnimationForHitMode(gDude, hitMode);
                 switch (anim) {
                 case ANIM_THROW_PUNCH:
                     switch (hitMode) {
