@@ -1,7 +1,7 @@
 #include "dinput.h"
 
-#include "sfall_kb_helpers.h"
 #include "settings.h"
+#include "sfall_kb_helpers.h"
 #include "svga.h"
 #include "win32.h"
 
