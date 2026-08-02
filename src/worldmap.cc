@@ -6627,8 +6627,8 @@ static int wmTownMapInit()
 static int wmTownMapRefresh()
 {
     blitBufferToBuffer(_townFrmImage.getData(),
-        _townFrmImage.getWidth(),
-        _townFrmImage.getHeight(),
+        std::min(_townFrmImage.getWidth(), WM_VIEW_WIDTH),
+        std::min(_townFrmImage.getHeight(), WM_VIEW_HEIGHT),
         _townFrmImage.getWidth(),
         wmBkWinBuf + WM_WINDOW_WIDTH * WM_VIEW_Y + WM_VIEW_X,
         WM_WINDOW_WIDTH);
