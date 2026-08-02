@@ -45,6 +45,7 @@ set(FALLOUT_ENGINE_SOURCES
     "src/actions.h"
     "src/animation.cc"
     "src/animation.h"
+    "src/art_defs.h"
     "src/art.cc"
     "src/art.h"
     "src/audio.cc"

@@ -7,6 +7,7 @@
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
+#include "art_defs.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -423,28 +424,28 @@ int correctFidForRemovedItem(Object* critter, Object* item, int flags)
     }
 
     int fid = critter->fid;
-    int weaponCode = FID_WEAPON_CODE(fid);
+    WeaponAnimation weaponCode = weaponAnimationFromFid(fid);
     int newFid = -1;
 
     if ((flags & OBJECT_IN_ANY_HAND) != 0) {
         if (critter == gDude) {
             if (interfaceGetCurrentHand() == HAND_RIGHT) {
                 if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
-                    weaponCode = 0;
+                    weaponCode = WEAPON_ANIMATION_NONE;
                 }
             } else {
                 if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
-                    weaponCode = 0;
+                    weaponCode = WEAPON_ANIMATION_NONE;
                 }
             }
         } else {
             if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
-                weaponCode = 0;
+                weaponCode = WEAPON_ANIMATION_NONE;
             }
         }
 
-        if (weaponCode == 0) {
-            newFid = buildFid(FID_TYPE(fid), fid & 0xFFF, animationTypeFromFid(fid), 0, FID_ROTATION(fid));
+        if (weaponCode == WEAPON_ANIMATION_NONE) {
+            newFid = buildFid(FID_TYPE(fid), fid & 0xFFF, animationTypeFromFid(fid), WEAPON_ANIMATION_NONE, FID_ROTATION(fid));
         }
     } else {
         if (critter == gDude) {
@@ -4349,13 +4350,13 @@ static void opCritterModifySkill(Program* program)
 // 0x45B9C4 op_sfx_build_char_name
 static void opSfxBuildCharName(Program* program)
 {
-    int extra = programStackPopInteger(program);
+    WeaponAnimation weaponType = programStackPopEnum<WeaponAnimation>(program);
     AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     if (obj != nullptr) {
         char soundEffectName[16];
-        strcpy(soundEffectName, sfxBuildCharName(obj, anim, extra));
+        strcpy(soundEffectName, sfxBuildCharName(obj, anim, weaponType));
         programStackPushString(program, soundEffectName);
     } else {
         scriptPredefinedError(program, "sfx_build_char_name", SCRIPT_ERROR_OBJECT_IS_NULL);

@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "animation.h"
+#include "art_defs.h"
 #include "content_config.h"
 #include "datafile.h"
 #include "debug.h"
@@ -47,7 +48,7 @@ static int artReadFrameData(unsigned char* data, File* stream, int count, int* p
 static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
-static char artGetCritterWeaponCode(int weaponType);
+static char artGetCritterWeaponCode(WeaponAnimation weaponType);
 
 // A frame is laid out like [ArtFrame header][pixel bytes][padding].
 // These functions return a pointer to the pixel bytes, but must be given a pointer to a frame header,
@@ -572,9 +573,9 @@ int artCopyFileName(int objectType, int id, char* dest)
 }
 
 // 0x419314
-int _art_get_code(AnimationType animation, int weaponType, char* weaponCodePtr, char* animationCodePtr)
+int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr)
 {
-    if (weaponType < 0 || weaponType >= WEAPON_ANIMATION_COUNT) {
+    if (!weaponAnimationIsValid(weaponType)) {
         return -1;
     }
 
@@ -642,7 +643,7 @@ int _art_get_code(AnimationType animation, int weaponType, char* weaponCodePtr, 
     return 0;
 }
 
-static char artGetCritterWeaponCode(int weaponType)
+static char artGetCritterWeaponCode(WeaponAnimation weaponType)
 {
     switch (weaponType) {
     case WEAPON_ANIMATION_SFALL_S:
@@ -675,7 +676,7 @@ char* artBuildFilePath(int fid)
 
     int frmId = baseFid & 0xFFF;
     AnimationType animType = animationTypeFromFid(baseFid);
-    int weaponCode = (baseFid & 0xF000) >> 12;
+    WeaponAnimation weaponCode = weaponAnimationFromFid(baseFid);
     int objectType = FID_TYPE(baseFid);
 
     if (objectType < OBJ_TYPE_ITEM || objectType >= OBJ_TYPE_COUNT) {

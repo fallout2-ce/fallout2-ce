@@ -1,6 +1,7 @@
 #ifndef PROTO_TYPES_H
 #define PROTO_TYPES_H
 
+#include "art_defs.h"
 #include "perk_defs.h"
 #include "skill_defs.h"
 #include "stat_defs.h"
@@ -337,7 +338,7 @@ typedef struct {
 } ProtoItemDrugData;
 
 typedef struct {
-    int animationCode; // d.animation_code
+    WeaponAnimation animationCode; // d.animation_code
     int minDamage; // d.min_damage
     int maxDamage; // d.max_damage
     DamageType damageType; // d.dt

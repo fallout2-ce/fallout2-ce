@@ -438,7 +438,7 @@ int proto_item_subdata_init(Proto* proto, int type)
         proto->item.extendedFlags |= PROTO_EXT_FLAG_CAN_USE_ON;
         break;
     case ITEM_TYPE_WEAPON:
-        proto->item.data.weapon.animationCode = 0;
+        proto->item.data.weapon.animationCode = WEAPON_ANIMATION_NONE;
         proto->item.data.weapon.minDamage = 0;
         proto->item.data.weapon.maxDamage = 0;
         proto->item.data.weapon.damageType = DAMAGE_TYPE_NORMAL;
@@ -1580,7 +1580,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
 
         return 0;
     case ITEM_TYPE_WEAPON:
-        if (fileReadInt32(stream, &(item_data->weapon.animationCode)) == -1) return -1;
+        if (fileReadInt32Enum<WeaponAnimation>(stream, &(item_data->weapon.animationCode)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.minDamage)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.maxDamage)) == -1) return -1;
         if (fileReadInt32Enum<DamageType>(stream, &(item_data->weapon.damageType)) == -1) return -1;

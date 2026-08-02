@@ -5,6 +5,7 @@
 
 #include "animation.h"
 #include "art.h"
+#include "art_defs.h"
 #include "audio.h"
 #include "combat.h"
 #include "content_config.h"
@@ -1325,7 +1326,7 @@ int _gsound_compute_relative_volume(Object* obj)
 
 // sfx_build_char_name
 // 0x451604
-char* sfxBuildCharName(Object* a1, AnimationType anim, int extra)
+char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponType)
 {
     char v7[13];
     char v8;
@@ -1336,23 +1337,23 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, int extra)
     }
 
     if (anim == ANIM_TAKE_OUT) {
-        if (_art_get_code(anim, extra, &v8, &v9) == -1) {
+        if (_art_get_code(anim, weaponType, &v8, &v9) == -1) {
             return nullptr;
         }
     } else {
-        if (_art_get_code(anim, (a1->fid & 0xF000) >> 12, &v8, &v9) == -1) {
+        if (_art_get_code(anim, weaponAnimationFromFid(a1->fid), &v8, &v9) == -1) {
             return nullptr;
         }
     }
 
     // TODO: Check.
     if (anim == ANIM_FALL_FRONT || anim == ANIM_FALL_BACK) {
-        if (extra == CHARACTER_SOUND_EFFECT_PASS_OUT) {
+        if (weaponType == WEAPON_ANIMATION_CLUB) {
             v8 = 'Y';
-        } else if (extra == CHARACTER_SOUND_EFFECT_DIE) {
+        } else if (weaponType == WEAPON_ANIMATION_HAMMER) {
             v8 = 'Z';
         }
-    } else if ((anim == ANIM_THROW_PUNCH || anim == ANIM_KICK_LEG) && extra == CHARACTER_SOUND_EFFECT_CONTACT) {
+    } else if ((anim == ANIM_THROW_PUNCH || anim == ANIM_KICK_LEG) && weaponType == WEAPON_ANIMATION_SPEAR) {
         v8 = 'Z';
     }
 

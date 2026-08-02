@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "animation.h"
+#include "art_defs.h"
 #include "cache.h"
 #include "draw.h"
 #include "memory.h"
@@ -11,63 +12,6 @@
 #include "proto_types.h"
 
 namespace fallout {
-
-typedef enum Head {
-    HEAD_INVALID,
-    HEAD_MARCUS,
-    HEAD_MYRON,
-    HEAD_ELDER,
-    HEAD_LYNETTE,
-    HEAD_HAROLD,
-    HEAD_TANDI,
-    HEAD_COM_OFFICER,
-    HEAD_SULIK,
-    HEAD_PRESIDENT,
-    HEAD_HAKUNIN,
-    HEAD_BOSS,
-    HEAD_DYING_HAKUNIN,
-    HEAD_COUNT,
-} Head;
-
-typedef enum HeadAnimation {
-    HEAD_ANIMATION_VERY_GOOD_REACTION = 0,
-    FIDGET_GOOD = 1,
-    HEAD_ANIMATION_GOOD_TO_NEUTRAL = 2,
-    HEAD_ANIMATION_NEUTRAL_TO_GOOD = 3,
-    FIDGET_NEUTRAL = 4,
-    HEAD_ANIMATION_NEUTRAL_TO_BAD = 5,
-    HEAD_ANIMATION_BAD_TO_NEUTRAL = 6,
-    FIDGET_BAD = 7,
-    HEAD_ANIMATION_VERY_BAD_REACTION = 8,
-    HEAD_ANIMATION_GOOD_PHONEMES = 9,
-    HEAD_ANIMATION_NEUTRAL_PHONEMES = 10,
-    HEAD_ANIMATION_BAD_PHONEMES = 11,
-} HeadAnimation;
-
-typedef enum Background {
-    BACKGROUND_0,
-    BACKGROUND_1,
-    BACKGROUND_2,
-    BACKGROUND_HUB,
-    BACKGROUND_NECROPOLIS,
-    BACKGROUND_BROTHERHOOD,
-    BACKGROUND_MILITARY_BASE,
-    BACKGROUND_JUNK_TOWN,
-    BACKGROUND_CATHEDRAL,
-    BACKGROUND_SHADY_SANDS,
-    BACKGROUND_VAULT,
-    BACKGROUND_MASTER,
-    BACKGROUND_FOLLOWER,
-    BACKGROUND_RAIDERS,
-    BACKGROUND_CAVE,
-    BACKGROUND_ENCLAVE,
-    BACKGROUND_WASTELAND,
-    BACKGROUND_BOSS,
-    BACKGROUND_PRESIDENT,
-    BACKGROUND_TENT,
-    BACKGROUND_ADOBE,
-    BACKGROUND_COUNT,
-} Background;
 
 typedef struct Art {
     int version;
@@ -89,35 +33,6 @@ typedef struct ArtFrame {
     short y;
 } ArtFrame;
 
-typedef enum WeaponAnimation {
-    WEAPON_ANIMATION_NONE,
-    WEAPON_ANIMATION_KNIFE, // d
-    WEAPON_ANIMATION_CLUB, // e
-    WEAPON_ANIMATION_HAMMER, // f
-    WEAPON_ANIMATION_SPEAR, // g
-    WEAPON_ANIMATION_PISTOL, // h
-    WEAPON_ANIMATION_SMG, // i
-    WEAPON_ANIMATION_SHOTGUN, // j
-    WEAPON_ANIMATION_LASER_RIFLE, // k
-    WEAPON_ANIMATION_MINIGUN, // l
-    WEAPON_ANIMATION_LAUNCHER, // m
-    WEAPON_ANIMATION_SFALL_S, // s
-    WEAPON_ANIMATION_SFALL_O, // o
-    WEAPON_ANIMATION_SFALL_P, // p
-    WEAPON_ANIMATION_SFALL_Q, // q
-    WEAPON_ANIMATION_SFALL_T, // t
-    WEAPON_ANIMATION_COUNT,
-} WeaponAnimation;
-
-typedef enum DudeNativeLook {
-    // Hero looks as one the tribals (before finishing Temple of Trails).
-    DUDE_NATIVE_LOOK_TRIBAL,
-
-    // Hero have finished Temple of Trails and received Vault Jumpsuit.
-    DUDE_NATIVE_LOOK_JUMPSUIT,
-    DUDE_NATIVE_LOOK_COUNT,
-} DudeNativeLook;
-
 extern int _art_vault_guy_num;
 extern int _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
 
@@ -137,7 +52,7 @@ unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** 
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
 int artCopyFileName(int objectType, int id, char* dest);
-int _art_get_code(AnimationType animation, int weaponType, char* weaponCodePtr, char* animationCodePtr);
+int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr);
 char* artBuildFilePath(int fid);
 int artGetFramesPerSecond(Art* art);
 int artGetActionFrame(Art* art);

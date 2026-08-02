@@ -3864,8 +3864,8 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             hand = HAND_RIGHT;
         }
 
-        int weaponAnimationCode = weaponGetAnimationCode(item);
-        int hitModeAnimationCode = weaponGetAnimationForHitMode(item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+        WeaponAnimation weaponAnimationCode = weaponGetAnimationCode(item);
+        AnimationType hitModeAnimationCode = weaponGetAnimationForHitMode(item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
         int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
         if (!artExists(fid)) {
             debugPrint("\ninven_wield failed!  ERROR ERROR ERROR!");
@@ -3923,14 +3923,14 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         if (itemGetType(item) == ITEM_TYPE_WEAPON) {
             weaponAnimationCode = weaponGetAnimationCode(item);
         } else {
-            weaponAnimationCode = 0;
+            weaponAnimationCode = WEAPON_ANIMATION_NONE;
         }
 
         if (hand == handIndex) {
-            if ((critter->fid & 0xF000) >> 12 != 0) {
+            if (weaponAnimationFromFid(critter->fid) != WEAPON_ANIMATION_NONE) {
                 if (animate) {
                     if (!isoIsDisabled()) {
-                        const char* soundEffectName = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
+                        const char* soundEffectName = sfxBuildCharName(critter, ANIM_PUT_AWAY, WEAPON_ANIMATION_NONE);
                         animationRegisterPlaySoundEffect(critter, soundEffectName, 0);
                         animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
                     }
@@ -3938,7 +3938,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             }
 
             if (animate && !isoIsDisabled()) {
-                if (weaponAnimationCode != 0) {
+                if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
                     animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
                 } else {
                     int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, 0, 0, critter->rotation + 1);
@@ -3997,11 +3997,11 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
         item->flags &= ~OBJECT_IN_ANY_HAND;
     }
 
-    if (activeHand == hand && ((critter->fid & 0xF000) >> 12) != 0) {
+    if (activeHand == hand && (weaponAnimationFromFid(critter->fid) != WEAPON_ANIMATION_NONE)) {
         if (animate && !isoIsDisabled()) {
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
-            const char* sfx = sfxBuildCharName(critter, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
+            const char* sfx = sfxBuildCharName(critter, ANIM_PUT_AWAY, WEAPON_ANIMATION_NONE);
             animationRegisterPlaySoundEffect(critter, sfx, 0);
 
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);

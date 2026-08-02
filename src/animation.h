@@ -1,6 +1,7 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
+#include "art_defs.h"
 #include "combat_defs.h"
 #include "obj_types.h"
 
@@ -166,7 +167,7 @@ int animationRegisterCallbackForced(void* a1, void* a2, AnimationCallback* proc,
 int animationRegisterSetFlag(Object* object, int flag, int delay);
 int animationRegisterUnsetFlag(Object* object, int flag, int delay);
 int animationRegisterSetFid(Object* owner, int fid, int delay);
-int animationRegisterTakeOutWeapon(Object* owner, int weaponAnimationCode, int delay);
+int animationRegisterTakeOutWeapon(Object* owner, WeaponAnimation weaponAnimationCode, int delay);
 int animationRegisterSetLightDistance(Object* owner, int lightDistance, int delay);
 int animationRegisterToggleOutline(Object* object, bool outline, int delay);
 int animationRegisterPlaySoundEffect(Object* owner, const char* soundEffectName, int delay);

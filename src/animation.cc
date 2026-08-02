@@ -1221,7 +1221,7 @@ int animationRegisterSetFid(Object* owner, int fid, int delay)
 }
 
 // 0x415238
-int animationRegisterTakeOutWeapon(Object* owner, int weaponAnimationCode, int delay)
+int animationRegisterTakeOutWeapon(Object* owner, WeaponAnimation weaponAnimationCode, int delay)
 {
     const char* sfx = sfxBuildCharName(owner, ANIM_TAKE_OUT, weaponAnimationCode);
     if (animationRegisterPlaySoundEffect(owner, sfx, delay) == -1) {
@@ -3158,7 +3158,7 @@ void _dude_fidget()
         }
 
         if (shoudPlaySound) {
-            const char* sfx = sfxBuildCharName(object, ANIM_STAND, CHARACTER_SOUND_EFFECT_UNUSED);
+            const char* sfx = sfxBuildCharName(object, ANIM_STAND, WEAPON_ANIMATION_NONE);
             animationRegisterPlaySoundEffect(object, sfx, 0);
         }
 

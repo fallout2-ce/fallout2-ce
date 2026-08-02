@@ -124,7 +124,7 @@ struct CustomIndicatorDescription {
 
 static int _intface_redraw_items_callback(Object* _, Object* __);
 static int _intface_change_fid_callback(Object* _, Object* __);
-static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeaponAnimationCode, int weaponAnimationCode);
+static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation previousWeaponAnimationCode, WeaponAnimation weaponAnimationCode);
 static int intface_init_items();
 static int interfaceBarRefreshMainAction();
 static int endTurnButtonInit();
@@ -1225,14 +1225,14 @@ int interfaceUpdateItems(bool animated, InterfaceItemAction leftItemAction, Inte
     if (animated) {
         Object* newCurrentItem = gInterfaceItemStates[gInterfaceCurrentHand].item;
         if (newCurrentItem != oldCurrentItem) {
-            int animationCode = 0;
+            WeaponAnimation animationCode = WEAPON_ANIMATION_NONE;
             if (newCurrentItem != nullptr) {
                 if (itemGetType(newCurrentItem) == ITEM_TYPE_WEAPON) {
                     animationCode = weaponGetAnimationCode(newCurrentItem);
                 }
             }
 
-            interfaceBarSwapHandsAnimatePutAwayTakeOutSequence((gDude->fid & 0xF000) >> 12, animationCode);
+            interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(weaponAnimationFromFid(gDude->fid), animationCode);
 
             return 0;
         }
@@ -1254,14 +1254,14 @@ int interfaceBarSwapHands(bool animated)
 
     if (animated) {
         Object* item = gInterfaceItemStates[gInterfaceCurrentHand].item;
-        int animationCode = 0;
+        WeaponAnimation animationCode = WEAPON_ANIMATION_NONE;
         if (item != nullptr) {
             if (itemGetType(item) == ITEM_TYPE_WEAPON) {
                 animationCode = weaponGetAnimationCode(item);
             }
         }
 
-        interfaceBarSwapHandsAnimatePutAwayTakeOutSequence((gDude->fid & 0xF000) >> 12, animationCode);
+        interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(weaponAnimationFromFid(gDude->fid), animationCode);
     } else {
         interfaceBarRefreshMainAction();
     }
@@ -1888,7 +1888,7 @@ static int _intface_change_fid_callback(Object* _, Object* __)
 }
 
 // 0x46066C intface_change_fid_animate
-static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeaponAnimationCode, int weaponAnimationCode)
+static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation previousWeaponAnimationCode, WeaponAnimation weaponAnimationCode)
 {
     gInterfaceBarSwapHandsInProgress = true;
 
@@ -1896,8 +1896,8 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(int previousWeapo
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
     animationRegisterSetLightDistance(gDude, 4, 0);
 
-    if (previousWeaponAnimationCode != 0) {
-        const char* sfx = sfxBuildCharName(gDude, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
+    if (previousWeaponAnimationCode != WEAPON_ANIMATION_NONE) {
+        const char* sfx = sfxBuildCharName(gDude, ANIM_PUT_AWAY, WEAPON_ANIMATION_NONE);
         animationRegisterPlaySoundEffect(gDude, sfx, 0);
         animationRegisterAnimate(gDude, ANIM_PUT_AWAY, 0);
     }
