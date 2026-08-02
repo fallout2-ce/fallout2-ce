@@ -59,14 +59,14 @@ typedef enum Background {
     BACKGROUND_COUNT,
 } Background;
 
-typedef enum DudeNativeLook {
+enum DudeNativeLook : int {
     // Hero looks as one the tribals (before finishing Temple of Trails).
     DUDE_NATIVE_LOOK_TRIBAL,
 
     // Hero have finished Temple of Trails and received Vault Jumpsuit.
     DUDE_NATIVE_LOOK_JUMPSUIT,
     DUDE_NATIVE_LOOK_COUNT,
-} DudeNativeLook;
+};
 
 enum WeaponAnimation : int {
     WEAPON_ANIMATION_INVALID = -1,
