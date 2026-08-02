@@ -3780,7 +3780,7 @@ static void characterEditorAdjustPrimaryStat(int eventCode)
                 }
             }
 
-            if (eventCode >= 510) {
+            if (eventCode >= (503 + PRIMARY_STAT_COUNT)) {
                 int previousValue = critterGetStat(gDude, decrementingStat);
                 if (critterDecBaseStat(gDude, decrementingStat) == 0) {
                     gCharacterEditorRemainingCharacterPoints++;
