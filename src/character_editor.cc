@@ -1675,6 +1675,9 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
                 32);
+            if (gCharacterEditorTagSkillBtns[i] != -1) {
+                buttonSetCallbacks(gCharacterEditorTagSkillBtns[i], _gsound_red_butt_press, nullptr);
+            }
             y += _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getHeight();
         }
 
@@ -1694,6 +1697,9 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
                 32);
+            if (gCharacterEditorOptionalTraitBtns[i] != -1) {
+                buttonSetCallbacks(gCharacterEditorOptionalTraitBtns[i], _gsound_red_butt_press, nullptr);
+            }
             y += _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getHeight() + OPTIONAL_TRAITS_BTN_SPACE;
         }
 
@@ -1713,6 +1719,9 @@ static int characterEditorWindowInit()
                 _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getData(),
                 nullptr,
                 32);
+            if (gCharacterEditorOptionalTraitBtns[i] != -1) {
+                buttonSetCallbacks(gCharacterEditorOptionalTraitBtns[i], _gsound_red_butt_press, nullptr);
+            }
             y += _editorFrmImages[EDITOR_GRAPHIC_TAG_SKILL_BUTTON_ON].getHeight() + OPTIONAL_TRAITS_BTN_SPACE;
         }
 
@@ -3670,7 +3679,7 @@ static void characterEditorEditGender()
         nullptr,
         BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_NO_TOGGLE_OFF | BUTTON_FLAG_CHECK_ON_DOWN | BUTTON_FLAG_CHECKABLE);
     if (btns[0] != -1) {
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, nullptr);
+        buttonSetCallbacks(btns[0], _gsound_red_butt_press, nullptr);
     }
 
     btns[1] = buttonCreate(win,
@@ -3688,7 +3697,7 @@ static void characterEditorEditGender()
         BUTTON_FLAG_TRANSPARENT | BUTTON_FLAG_NO_TOGGLE_OFF | BUTTON_FLAG_CHECK_ON_DOWN | BUTTON_FLAG_CHECKABLE);
     if (btns[1] != -1) {
         _win_group_radio_buttons(2, btns);
-        buttonSetCallbacks(doneBtn, _gsound_red_butt_press, nullptr);
+        buttonSetCallbacks(btns[1], _gsound_red_butt_press, nullptr);
     }
 
     int savedGender = critterGetStat(gDude, STAT_GENDER);
