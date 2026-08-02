@@ -6626,12 +6626,10 @@ static int wmTownMapInit()
 // 0x4C4BD0 wmTownMapRefresh
 static int wmTownMapRefresh()
 {
-    blitBufferToBuffer(_townFrmImage.getData(),
-        _townFrmImage.getWidth(),
-        _townFrmImage.getHeight(),
-        _townFrmImage.getWidth(),
-        wmBkWinBuf + WM_WINDOW_WIDTH * WM_VIEW_Y + WM_VIEW_X,
-        WM_WINDOW_WIDTH);
+    blitBuffer2D(_townFrmImage.getBuffer(),
+        { wmBkWinBuf, WM_WINDOW_WIDTH, WM_WINDOW_HEIGHT },
+        WM_VIEW_X,
+        WM_VIEW_Y);
 
     wmRefreshInterfaceOverlay(false);
 
