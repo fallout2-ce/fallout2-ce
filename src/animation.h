@@ -6,13 +6,24 @@
 
 namespace fallout {
 
-typedef enum AnimationRequestOptions {
+enum AnimationRequestOptions : int {
+    ANIMATION_REQUEST_NONE = 0x00,
     ANIMATION_REQUEST_UNRESERVED = 0x01,
     ANIMATION_REQUEST_RESERVED = 0x02,
     ANIMATION_REQUEST_NO_STAND = 0x04,
     ANIMATION_REQUEST_PING = 0x100,
     ANIMATION_REQUEST_INSIGNIFICANT = 0x200,
-} AnimationRequestOptions;
+};
+
+constexpr inline AnimationRequestOptions operator|(AnimationRequestOptions lhs, AnimationRequestOptions rhs)
+{
+    return static_cast<AnimationRequestOptions>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+inline AnimationRequestOptions& operator|=(AnimationRequestOptions& lhs, AnimationRequestOptions rhs)
+{
+    return lhs = lhs | rhs;
+}
 
 // Basic animations: 0-19
 // Knockdown and death: 20-35
@@ -130,7 +141,7 @@ void animationExit();
 bool animationCheckCombatMode();
 void animationSetCombatCheck(bool enable);
 void animationResetCombatCheck();
-int reg_anim_begin(int a1);
+int reg_anim_begin(AnimationRequestOptions requestOptions);
 int _register_priority(int a1);
 int reg_anim_clear(Object* a1);
 int reg_anim_end();
@@ -160,7 +171,7 @@ int animationRegisterSetLightDistance(Object* owner, int lightDistance, int dela
 int animationRegisterToggleOutline(Object* object, bool outline, int delay);
 int animationRegisterPlaySoundEffect(Object* owner, const char* soundEffectName, int delay);
 int animationRegisterAnimateForever(Object* owner, AnimationType anim, int delay);
-int animationRegisterPing(int flags, int delay);
+int animationRegisterPing(AnimationRequestOptions requestOptions, int delay);
 int _make_path(Object* object, int from, int to, unsigned char* rotations, int requireEmptyDest);
 int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotations, int requireEmptyDest, PathBuilderCallback* callback);
 int _make_straight_path(Object* object, int from, int to, StraightPathNode* straightPathNodeList, Object** obstaclePtr, int a6);

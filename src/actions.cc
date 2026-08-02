@@ -1025,7 +1025,7 @@ int _action_climb_ladder(Object* critter, Object* ladder)
         }
     }
 
-    int animationRequestOptions;
+    AnimationRequestOptions animationRequestOptions;
     int actionPoints;
     if (isInCombat()) {
         animationRequestOptions = ANIMATION_REQUEST_RESERVED;
@@ -1096,7 +1096,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
             }
         }
 
-        int animationRequestOptions;
+        AnimationRequestOptions animationRequestOptions;
         int actionPoints;
         if (isInCombat()) {
             animationRequestOptions = ANIMATION_REQUEST_RESERVED;

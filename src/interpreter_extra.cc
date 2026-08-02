@@ -3481,7 +3481,7 @@ static void opRegAnimFunc(Program* program)
     if (!animationCheckCombatMode()) {
         switch (cmd) {
         case OP_REG_ANIM_FUNC_BEGIN:
-            reg_anim_begin(param.integerValue);
+            reg_anim_begin(static_cast<AnimationRequestOptions>(param.integerValue));
             break;
         case OP_REG_ANIM_FUNC_CLEAR:
             reg_anim_clear(static_cast<Object*>(param.pointerValue));

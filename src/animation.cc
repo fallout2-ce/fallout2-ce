@@ -293,7 +293,7 @@ typedef struct AnimationSad {
 #define SAD_INIT -2000
 #define ANIM_COMPLETE -1000
 
-static int _anim_free_slot(int a1);
+static int _anim_free_slot(AnimationRequestOptions requestOptions);
 static int _anim_preload(Object* object, int fid, CacheEntry** cacheEntryPtr);
 static void _anim_cleanup();
 static int _check_registry(Object* obj);
@@ -390,7 +390,7 @@ void animationExit()
 }
 
 // 0x413AF4
-int reg_anim_begin(int requestOptions)
+int reg_anim_begin(AnimationRequestOptions requestOptions)
 {
     if (gAnimationSequenceCurrentIndex != -1) {
         return -1;
@@ -408,15 +408,15 @@ int reg_anim_begin(int requestOptions)
     AnimationSequence* animationSequence = &(gAnimationSequences[v1]);
     animationSequence->flags |= ANIM_SEQ_ACCUMULATING;
 
-    if ((requestOptions & ANIMATION_REQUEST_RESERVED) != 0) {
+    if ((requestOptions & ANIMATION_REQUEST_RESERVED) != ANIMATION_REQUEST_NONE) {
         animationSequence->flags |= ANIM_SEQ_RESERVED;
     }
 
-    if ((requestOptions & ANIMATION_REQUEST_INSIGNIFICANT) != 0) {
+    if ((requestOptions & ANIMATION_REQUEST_INSIGNIFICANT) != ANIMATION_REQUEST_NONE) {
         animationSequence->flags |= ANIM_SEQ_INSIGNIFICANT;
     }
 
-    if ((requestOptions & ANIMATION_REQUEST_NO_STAND) != 0) {
+    if ((requestOptions & ANIMATION_REQUEST_NO_STAND) != ANIMATION_REQUEST_NONE) {
         animationSequence->flags |= ANIM_SEQ_NO_STAND;
     }
 
@@ -428,28 +428,28 @@ int reg_anim_begin(int requestOptions)
 }
 
 // 0x413B80
-static int _anim_free_slot(int requestOptions)
+static int _anim_free_slot(AnimationRequestOptions requestOptions)
 {
     int v1 = -1;
     int v2 = 0;
     for (int index = 0; index < ANIMATION_SEQUENCE_LIST_CAPACITY; index++) {
         AnimationSequence* animationSequence = &(gAnimationSequences[index]);
-        if (animationSequence->step != ANIM_COMPLETE || (animationSequence->flags & ANIM_SEQ_ACCUMULATING) != 0 || (animationSequence->flags & ANIM_SEQ_0x20) != 0) {
+        if (animationSequence->step != ANIM_COMPLETE || (animationSequence->flags & ANIM_SEQ_ACCUMULATING) != ANIMATION_REQUEST_NONE || (animationSequence->flags & ANIM_SEQ_0x20) != 0) {
             if (!(animationSequence->flags & ANIM_SEQ_RESERVED)) {
                 v2++;
             }
-        } else if (v1 == -1 && ((requestOptions & ANIMATION_REQUEST_PING) == 0 || (animationSequence->flags & ANIM_SEQ_0x10) == 0)) {
+        } else if (v1 == -1 && ((requestOptions & ANIMATION_REQUEST_PING) == ANIMATION_REQUEST_NONE || (animationSequence->flags & ANIM_SEQ_0x10) == 0)) {
             v1 = index;
         }
     }
 
     if (v1 == -1) {
-        if ((requestOptions & ANIMATION_REQUEST_RESERVED) != 0) {
+        if ((requestOptions & ANIMATION_REQUEST_RESERVED) != ANIMATION_REQUEST_NONE) {
             debugPrint("Unable to begin reserved animation!\n");
         }
 
         return -1;
-    } else if ((requestOptions & ANIMATION_REQUEST_RESERVED) != 0 || v2 < ANIMATION_NON_RESERVED_LIST_CAPACITY) {
+    } else if ((requestOptions & ANIMATION_REQUEST_RESERVED) != ANIMATION_REQUEST_NONE || v2 < ANIMATION_NON_RESERVED_LIST_CAPACITY) {
         return v1;
     }
 
@@ -1359,14 +1359,14 @@ int animationRegisterAnimateForever(Object* owner, AnimationType anim, int delay
 }
 
 // 0x415598
-int animationRegisterPing(int flags, int delay)
+int animationRegisterPing(AnimationRequestOptions requestOptions, int delay)
 {
     if (_check_registry(nullptr) == -1) {
         _anim_cleanup();
         return -1;
     }
 
-    int animationSequenceIndex = _anim_free_slot(flags | ANIMATION_REQUEST_PING);
+    int animationSequenceIndex = _anim_free_slot(requestOptions | ANIMATION_REQUEST_PING);
     if (animationSequenceIndex == -1) {
         return -1;
     }
