@@ -1324,9 +1324,14 @@ int _gsound_compute_relative_volume(Object* obj)
     return v3;
 }
 
+char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponType)
+{
+    return sfxBuildCharName(a1, anim, static_cast<CharacterSoundEffect>(weaponType));
+}
+
 // sfx_build_char_name
 // 0x451604
-char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponType)
+char* sfxBuildCharName(Object* a1, AnimationType anim, CharacterSoundEffect extra)
 {
     char v7[13];
     char v8;
@@ -1337,7 +1342,7 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponTyp
     }
 
     if (anim == ANIM_TAKE_OUT) {
-        if (_art_get_code(anim, weaponType, &v8, &v9) == -1) {
+        if (_art_get_code(anim, static_cast<WeaponAnimation>(extra), &v8, &v9) == -1) {
             return nullptr;
         }
     } else {
@@ -1348,12 +1353,12 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponTyp
 
     // TODO: Check.
     if (anim == ANIM_FALL_FRONT || anim == ANIM_FALL_BACK) {
-        if (weaponType == WEAPON_ANIMATION_CLUB) {
+        if (extra == CHARACTER_SOUND_EFFECT_PASS_OUT) {
             v8 = 'Y';
-        } else if (weaponType == WEAPON_ANIMATION_HAMMER) {
+        } else if (extra == CHARACTER_SOUND_EFFECT_DIE) {
             v8 = 'Z';
         }
-    } else if ((anim == ANIM_THROW_PUNCH || anim == ANIM_KICK_LEG) && weaponType == WEAPON_ANIMATION_SPEAR) {
+    } else if ((anim == ANIM_THROW_PUNCH || anim == ANIM_KICK_LEG) && extra == CHARACTER_SOUND_EFFECT_CONTACT) {
         v8 = 'Z';
     }
 

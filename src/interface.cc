@@ -1897,7 +1897,7 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation p
     animationRegisterSetLightDistance(gDude, 4, 0);
 
     if (previousWeaponAnimationCode != WEAPON_ANIMATION_NONE) {
-        const char* sfx = sfxBuildCharName(gDude, ANIM_PUT_AWAY, WEAPON_ANIMATION_NONE);
+        const char* sfx = sfxBuildCharName(gDude, ANIM_PUT_AWAY, CHARACTER_SOUND_EFFECT_UNUSED);
         animationRegisterPlaySoundEffect(gDude, sfx, 0);
         animationRegisterAnimate(gDude, ANIM_PUT_AWAY, 0);
     }
@@ -1910,7 +1910,7 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation p
         animationRegisterSetLightDistance(gDude, item->lightDistance, 0);
     }
 
-    if (weaponAnimationCode != 0) {
+    if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
         animationRegisterTakeOutWeapon(gDude, weaponAnimationCode, -1);
     } else {
         int fid = buildFid(OBJ_TYPE_CRITTER, gDude->fid & 0xFFF, ANIM_STAND, 0, gDude->rotation + 1);

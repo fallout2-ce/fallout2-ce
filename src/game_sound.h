@@ -26,13 +26,13 @@ typedef enum ScenerySoundEffect {
     SCENERY_SOUND_EFFECT_COUNT,
 } ScenerySoundEffect;
 
-typedef enum CharacterSoundEffect {
+enum CharacterSoundEffect : int {
     CHARACTER_SOUND_EFFECT_UNUSED,
     CHARACTER_SOUND_EFFECT_KNOCKDOWN,
     CHARACTER_SOUND_EFFECT_PASS_OUT,
     CHARACTER_SOUND_EFFECT_DIE,
     CHARACTER_SOUND_EFFECT_CONTACT,
-} CharacterSoundEffect;
+};
 
 typedef enum GameSoundReadLimitMode {
     GSOUND_LOAD_NO_PLAY = 10,
@@ -102,6 +102,7 @@ void soundEffectDelete(Sound* sound);
 int _gsnd_anim_sound(Sound* sound, void* objectPtr);
 int soundEffectPlay(Sound* sound);
 int _gsound_compute_relative_volume(Object* obj);
+char* sfxBuildCharName(Object* object, AnimationType anim, CharacterSoundEffect extra);
 char* sfxBuildCharName(Object* object, AnimationType anim, WeaponAnimation weaponType);
 char* gameSoundBuildAmbientSoundEffectName(const char* name);
 char* gameSoundBuildInterfaceName(const char* name);

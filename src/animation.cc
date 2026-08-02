@@ -3160,7 +3160,7 @@ void _dude_fidget()
         }
 
         if (shoudPlaySound) {
-            const char* sfx = sfxBuildCharName(object, ANIM_STAND, WEAPON_ANIMATION_NONE);
+            const char* sfx = sfxBuildCharName(object, ANIM_STAND, CHARACTER_SOUND_EFFECT_UNUSED);
             animationRegisterPlaySoundEffect(object, sfx, 0);
         }
 
