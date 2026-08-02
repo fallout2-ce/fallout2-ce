@@ -2717,8 +2717,8 @@ static int _ai_try_attack(Object* attacker, Object* defender)
     int actionPointsToUse = 0;
     if (weapon != nullptr
         || (critterGetBodyType(defender) == BODY_TYPE_BIPED
-            && ((defender->fid & 0xF000) >> 12 == 0)
-            && artExists(buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_THROW_PUNCH, 0, attacker->rotation + 1)))) {
+            && (weaponAnimationFromFid(defender->fid) == WEAPON_ANIMATION_NONE)
+            && artExists(buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_THROW_PUNCH, WEAPON_ANIMATION_NONE, attacker->rotation + 1)))) {
         // SFALL: Check the safety of weapons based on the selected attack mode
         // instead of always the primary weapon hit mode.
         if (_combat_safety_invalidate_weapon(attacker, weapon, hitMode, defender, &safeDistance)) {

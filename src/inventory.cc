@@ -3850,7 +3850,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         if (critter == gDude) {
             if (!isoIsDisabled()) {
-                int fid = buildFid(OBJ_TYPE_CRITTER, baseFrmId, 0, (critter->fid & 0xF000) >> 12, critter->rotation + 1);
+                int fid = buildFid(OBJ_TYPE_CRITTER, baseFrmId, 0, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 animationRegisterSetFid(critter, fid, 0);
             }
         } else {
