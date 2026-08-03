@@ -1019,7 +1019,6 @@ int characterEditorShow(bool isCreationMode)
                 if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
                     if (gCharacterEditorIsCreationMode) {
                         _win_button_press_and_release(gCharacterEditorPrimaryStatMinusBtns[characterEditorSelectedItem]);
-                        characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
                         windowRefresh(gCharacterEditorWindow);
                     }
                 } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
@@ -1043,7 +1042,6 @@ int characterEditorShow(bool isCreationMode)
                 if (characterEditorSelectedItem >= EDITOR_FIRST_PRIMARY_STAT && characterEditorSelectedItem <= EDITOR_LAST_PRIMARY_STAT) {
                     if (gCharacterEditorIsCreationMode) {
                         _win_button_press_and_release(gCharacterEditorPrimaryStatPlusBtns[characterEditorSelectedItem]);
-                        characterEditorDrawPrimaryStat(PRIMARY_STAT_COUNT, 0, 0);
                         windowRefresh(gCharacterEditorWindow);
                     }
                 } else if (characterEditorSelectedItem >= EDITOR_FIRST_SKILL && characterEditorSelectedItem <= EDITOR_LAST_SKILL) {
