@@ -54,10 +54,10 @@ static int stealthBoyTurnOff(Object* critter, Object* item);
 static int _insert_drug_effect(Object* critter, Object* item, int duration, Stat* stats, int* mods);
 static void _perform_drug_effect(Object* critter, Stat* stats, int* mods, bool isImmediate);
 static bool _drug_effect_allowed(Object* critter, int pid);
-static int _insert_withdrawal(Object* obj, int active, int duration, int perk, int pid);
+static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, int pid);
 static int _item_wd_clear_all(Object* obj, void* data);
-static void performWithdrawalStart(Object* obj, int perk, int pid);
-static void performWithdrawalEnd(Object* obj, int perk);
+static void performWithdrawalStart(Object* obj, Perk perk, int pid);
+static void performWithdrawalEnd(Object* obj, Perk perk);
 static int drugGetAddictionGvarByPid(int drugPid);
 static void dudeSetAddiction(int drugPid);
 static void dudeClearAddiction(int drugPid);
@@ -115,7 +115,7 @@ static const Skill _attack_skill[9] = {
 // A map of item's extendedFlags to animation.
 //
 // 0x519184 attack_anim
-static const int _attack_anim[9] = {
+static const AnimationType _attack_anim[9] = {
     ANIM_STAND,
     ANIM_THROW_PUNCH,
     ANIM_KICK_LEG,
@@ -130,7 +130,7 @@ static const int _attack_anim[9] = {
 // Maps weapon extended flags to weapon class
 //
 // 0x5191A8 attack_subtype
-static const int _attack_subtype[9] = {
+static const AttackType _attack_subtype[9] = {
     ATTACK_TYPE_NONE, // 0 // None
     ATTACK_TYPE_UNARMED, // 1 // Punch // Brass Knuckles, Power First
     ATTACK_TYPE_UNARMED, // 2 // Kick?
@@ -663,9 +663,9 @@ int itemDropAll(Object* critter, int tile)
 
     if (hasEquippedItems) {
         Rect updatedRect;
-        int fid = buildFid(OBJ_TYPE_CRITTER, frmId, FID_ANIM_TYPE(critter->fid), 0, FID_ROTATION(critter->fid));
+        int fid = buildFid(OBJ_TYPE_CRITTER, frmId, animationTypeFromFid(critter->fid), 0, FID_ROTATION(critter->fid));
         objectSetFid(critter, fid, &updatedRect);
-        if (FID_ANIM_TYPE(critter->fid) == ANIM_STAND) {
+        if (animationTypeFromFid(critter->fid) == ANIM_STAND) {
             tileWindowRefreshRect(&updatedRect, gElevation);
         }
     }
@@ -1194,7 +1194,7 @@ bool itemIsHidden(Object* item)
 }
 
 // 0x478280
-int weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode)
+AttackType weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode)
 {
     if (weapon == nullptr) {
         return ATTACK_TYPE_UNARMED;
@@ -1309,7 +1309,7 @@ int weaponGetDamage(Object* critter, HitMode hitMode)
         // NOTE: Uninline.
         weaponGetDamageMinMax(weapon, &minDamage, &maxDamage);
 
-        int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+        AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
         if (attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) {
             meleeDamage = critterGetStat(critter, STAT_MELEE_DAMAGE);
             isMeleeWeaponAttack = attackType == ATTACK_TYPE_MELEE;
@@ -1378,7 +1378,7 @@ int weaponIsTwoHanded(Object* weapon)
 }
 
 // 0x4785DC
-int critterGetAnimationForHitMode(Object* critter, HitMode hitMode)
+AnimationType critterGetAnimationForHitMode(Object* critter, HitMode hitMode)
 {
     // NOTE: Uninline.
     Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
@@ -1386,7 +1386,7 @@ int critterGetAnimationForHitMode(Object* critter, HitMode hitMode)
 }
 
 // 0x47860C
-int weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode)
+AnimationType weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode)
 {
     if (hitMode == HIT_MODE_KICK || (hitMode >= FIRST_ADVANCED_KICK_HIT_MODE && hitMode <= LAST_ADVANCED_KICK_HIT_MODE)) {
         return ANIM_KICK_LEG;
@@ -1752,7 +1752,7 @@ int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming)
     }
 
     if (critter == gDude) {
-        int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+        AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
 
         if (perkHasRank(gDude, PERK_BONUS_HTH_ATTACKS)) {
             if (attackType == ATTACK_TYPE_MELEE || attackType == ATTACK_TYPE_UNARMED) {
@@ -1891,7 +1891,7 @@ bool critterCanAim(Object* critter, HitMode hitMode)
     }
 
     // NOTE: Uninline.
-    int anim = critterGetAnimationForHitMode(critter, hitMode);
+    AnimationType anim = critterGetAnimationForHitMode(critter, hitMode);
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
         return false;
     }
@@ -2051,7 +2051,7 @@ bool weaponHasAmmoForAttack(const Object* weapon, HitMode hitMode)
     }
 
     int rounds = 1;
-    int anim = weaponGetAnimationForHitMode(const_cast<Object*>(weapon), hitMode);
+    AnimationType anim = weaponGetAnimationForHitMode(const_cast<Object*>(weapon), hitMode);
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
         rounds = weaponGetBurstRounds(const_cast<Object*>(weapon));
     }
@@ -2085,8 +2085,8 @@ bool weaponIsGrenade(Object* weapon)
 // 0x47910C
 int weaponGetDamageRadius(Object* weapon, HitMode hitMode)
 {
-    int attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
-    int anim = weaponGetAnimationForHitMode(weapon, hitMode);
+    AttackType attackType = weaponGetAttackTypeForHitMode(weapon, hitMode);
+    AnimationType anim = weaponGetAnimationForHitMode(weapon, hitMode);
     DamageType damageType = weaponGetDamageType(nullptr, weapon);
 
     int radius = 0;
@@ -2235,10 +2235,10 @@ int armorGetDamageThreshold(Object* armor, DamageType damageType)
 }
 
 // 0x479358
-int armorGetPerk(Object* armor)
+Perk armorGetPerk(Object* armor)
 {
     if (armor == nullptr) {
-        return -1;
+        return PERK_INVALID;
     }
 
     Proto* proto;
@@ -3032,7 +3032,7 @@ int drugEffectEventWrite(File* stream, void* data)
 }
 
 // 0x47A290
-static int _insert_withdrawal(Object* obj, int active, int duration, int perk, int pid)
+static int _insert_withdrawal(Object* obj, int active, int duration, Perk perk, int pid)
 {
     WithdrawalEvent* withdrawalEvent = (WithdrawalEvent*)internal_malloc(sizeof(*withdrawalEvent));
     if (withdrawalEvent == nullptr) {
@@ -3130,7 +3130,7 @@ int withdrawalEventRead(File* stream, void** dataPtr)
 
     if (fileReadInt32(stream, &(withdrawalEvent->active)) == -1) goto err;
     if (fileReadInt32(stream, &(withdrawalEvent->pid)) == -1) goto err;
-    if (fileReadInt32(stream, &(withdrawalEvent->perk)) == -1) goto err;
+    if (fileReadInt32Enum<Perk>(stream, &(withdrawalEvent->perk)) == -1) goto err;
 
     *dataPtr = withdrawalEvent;
     return 0;
@@ -3155,7 +3155,7 @@ int withdrawalEventWrite(File* stream, void* data)
 
 // perform_withdrawal_start
 // 0x47A4C4
-static void performWithdrawalStart(Object* obj, int perk, int pid)
+static void performWithdrawalStart(Object* obj, Perk perk, int pid)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_start: Was called on non-critter!");
@@ -3189,7 +3189,7 @@ static void performWithdrawalStart(Object* obj, int perk, int pid)
 
 // perform_withdrawal_end
 // 0x47A558
-static void performWithdrawalEnd(Object* obj, int perk)
+static void performWithdrawalEnd(Object* obj, Perk perk)
 {
     if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_end: Was called on non-critter!");
@@ -3703,7 +3703,7 @@ static void healingItemsInit()
 
 bool itemIsHealing(int pid)
 {
-    for (int index = 0; index < HEALING_ITEM_COUNT; index++) {
+    for (HealingItem index = HEALING_ITEM_FIRST; index < HEALING_ITEM_COUNT; index++) {
         if (gHealingItemPids[index] == pid) {
             return true;
         }

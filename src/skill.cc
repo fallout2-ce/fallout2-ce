@@ -116,6 +116,10 @@ static int _timesSkillUsed[SKILL_COUNT][SKILLS_MAX_USES_PER_DAY];
 // 0x668070 tag_skill
 static Skill gTaggedSkills[NUM_TAGGED_SKILLS];
 
+// sfall's set_skill_max limit. Global scripts restore content-specific values
+// after every game reset.
+static int skillMaximum = 300;
+
 // skill.msg
 //
 // 0x668080 skill_message_file
@@ -169,6 +173,8 @@ int skillsInit()
 // 0x4AA448
 void skillsReset()
 {
+    skillMaximum = 300;
+
     for (int index = 0; index < NUM_TAGGED_SKILLS; index++) {
         gTaggedSkills[index] = SKILL_INVALID;
     }
@@ -271,11 +277,17 @@ int skillGetValue(Object* critter, Skill skill)
         value += skillGetGameDifficultyModifier(skill);
     }
 
-    if (value > 300) {
-        value = 300;
+    if (value > skillMaximum) {
+        value = skillMaximum;
     }
 
     return value;
+}
+
+void skillSetMaximum(int maximum)
+{
+    // Match sfall: out-of-range values restore the vanilla ceiling.
+    skillMaximum = maximum >= 0 && maximum <= 300 ? maximum : 300;
 }
 
 // 0x4AA654
@@ -301,7 +313,7 @@ int skillAdd(Object* obj, Skill skill)
     }
 
     int skillValue = skillGetValue(obj, skill);
-    if (skillValue >= 300) {
+    if (skillValue >= skillMaximum) {
         return -3;
     }
 
@@ -336,7 +348,7 @@ int skillAddForce(Object* obj, Skill skill)
         return -5;
     }
 
-    if (skillGetValue(obj, skill) >= 300) {
+    if (skillGetValue(obj, skill) >= skillMaximum) {
         return -3;
     }
 

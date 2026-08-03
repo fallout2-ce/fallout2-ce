@@ -40,6 +40,7 @@
 #include "sfall_lists.h"
 #include "sfall_metarules.h"
 #include "sfall_script_hooks.h"
+#include "skill.h"
 #include "stat.h"
 #include "svga.h"
 #include "tile.h"
@@ -159,6 +160,55 @@ static void op_set_critter_extra_stat(Program* program)
     Stat stat = programStackPopEnum<Stat>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     critterSetBonusStat(obj, stat, value);
+}
+
+static void op_set_skill_max(Program* program)
+{
+    skillSetMaximum(programStackPopInteger(program));
+}
+
+static void op_set_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMaximum(stat, maximum);
+    statSetNpcMaximum(stat, maximum);
+}
+
+static void op_set_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMinimum(stat, minimum);
+    statSetNpcMinimum(stat, minimum);
+}
+
+static void op_set_pc_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMaximum(stat, maximum);
+}
+
+static void op_set_pc_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetPcMinimum(stat, minimum);
+}
+
+static void op_set_npc_stat_max(Program* program)
+{
+    int maximum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetNpcMaximum(stat, maximum);
+}
+
+static void op_set_npc_stat_min(Program* program)
+{
+    int minimum = programStackPopInteger(program);
+    Stat stat = programStackPopEnum<Stat>(program);
+    statSetNpcMinimum(stat, minimum);
 }
 
 // get_pc_base_stat
@@ -959,7 +1009,7 @@ static void op_refresh_pc_art(Program* program)
     Rect rect;
     objectGetRect(gDude, &rect);
 
-    int anim = FID_ANIM_TYPE(gDude->fid);
+    AnimationType anim = animationTypeFromFid(gDude->fid);
     int rotation = FID_ROTATION(gDude->fid);
 
     _proto_dude_update_gender();
@@ -1925,11 +1975,17 @@ void sfallOpcodesInit()
     // 0x8246 - void mod_skill_points_per_level(int value)
 
     // 0x81b4 - void set_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B4, op_set_stat_max);
     // 0x81b5 - void set_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B5, op_set_stat_min);
     // 0x81b7 - void set_pc_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B7, op_set_pc_stat_max);
     // 0x81b8 - void set_pc_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B8, op_set_pc_stat_min);
     // 0x81b9 - void set_npc_stat_max(Stat stat, int value)
+    interpreterRegisterOpcode(0x81B9, op_set_npc_stat_max);
     // 0x81ba - void set_npc_stat_min(Stat stat, int value)
+    interpreterRegisterOpcode(0x81BA, op_set_npc_stat_min);
 
     // 0x816b - int  input_funcs_available() // deprecated; do not implement
     // 0x816c - int  key_pressed(int dxScancode)
@@ -1993,25 +2049,25 @@ void sfallOpcodesInit()
     // 0x8177 - void set_movie_path(string filename, int movieid)
     interpreterRegisterOpcode(0x8177, op_set_movie_path);
 
-    // 0x8178 - void set_perk_image(int perkID, int value)
-    // 0x8179 - void set_perk_ranks(int perkID, int value)
-    // 0x817a - void set_perk_level(int perkID, int value)
-    // 0x817b - void set_perk_stat(int perkID, int value)
-    // 0x817c - void set_perk_stat_mag(int perkID, int value)
-    // 0x817d - void set_perk_skill1(int perkID, int value)
-    // 0x817e - void set_perk_skill1_mag(int perkID, int value)
-    // 0x817f - void set_perk_type(int perkID, int value)
-    // 0x8180 - void set_perk_skill2(int perkID, int value)
-    // 0x8181 - void set_perk_skill2_mag(int perkID, int value)
-    // 0x8182 - void set_perk_str(int perkID, int value)
-    // 0x8183 - void set_perk_per(int perkID, int value)
-    // 0x8184 - void set_perk_end(int perkID, int value)
-    // 0x8185 - void set_perk_chr(int perkID, int value)
-    // 0x8186 - void set_perk_int(int perkID, int value)
-    // 0x8187 - void set_perk_agl(int perkID, int value)
-    // 0x8188 - void set_perk_lck(int perkID, int value)
-    // 0x8189 - void set_perk_name(int perkID, string value)
-    // 0x818a - void set_perk_desc(int perkID, string value)
+    // 0x8178 - void set_perk_image(Perk perk, int value)
+    // 0x8179 - void set_perk_ranks(Perk perk, int value)
+    // 0x817a - void set_perk_level(Perk perk, int value)
+    // 0x817b - void set_perk_stat(Perk perk, int value)
+    // 0x817c - void set_perk_stat_mag(Perk perk, int value)
+    // 0x817d - void set_perk_skill1(Perk perk, int value)
+    // 0x817e - void set_perk_skill1_mag(Perk perk, int value)
+    // 0x817f - void set_perk_type(Perk perk, int value)
+    // 0x8180 - void set_perk_skill2(Perk perk, int value)
+    // 0x8181 - void set_perk_skill2_mag(Perk perk, int value)
+    // 0x8182 - void set_perk_str(Perk perk, int value)
+    // 0x8183 - void set_perk_per(Perk perk, int value)
+    // 0x8184 - void set_perk_end(Perk perk, int value)
+    // 0x8185 - void set_perk_chr(Perk perk, int value)
+    // 0x8186 - void set_perk_int(Perk perk, int value)
+    // 0x8187 - void set_perk_agl(Perk perk, int value)
+    // 0x8188 - void set_perk_lck(Perk perk, int value)
+    // 0x8189 - void set_perk_name(Perk perk, string value)
+    // 0x818a - void set_perk_desc(Perk perk, string value)
     // 0x8247 - void set_perk_freq(int value)
 
     // 0x818b - void set_pipboy_available(int available)
@@ -2021,7 +2077,7 @@ void sfallOpcodesInit()
 
     // 0x818e - int get_perk_owed()
     // 0x818f - void set_perk_owed(int value)
-    // 0x8190 - int get_perk_available(int perk)
+    // 0x8190 - int get_perk_available(Perk perk)
 
     // 0x8191 - int get_critter_current_ap(object critter)
     interpreterRegisterOpcode(0x8191, op_get_critter_current_ap);
@@ -2075,6 +2131,7 @@ void sfallOpcodesInit()
     // 0x81a0 - void set_pickpocket_max(int percentage)
     // 0x81a1 - void set_hit_chance_max(int percentage)
     // 0x81a2 - void set_skill_max(int value)
+    interpreterRegisterOpcode(0x81A2, op_set_skill_max);
     // 0x81aa - void set_xp_mod(int percentage)
     // 0x81ab - void set_perk_level_mod(int levels)
 
@@ -2121,7 +2178,7 @@ void sfallOpcodesInit()
     // 0x81c2 - int has_fake_trait(string name)
     // 0x81c3 - void perk_add_mode(int type)
     // 0x81c4 - void clear_selectable_perks()
-    // 0x8225 - void remove_trait(int traitID)
+    // 0x8225 - void remove_trait(Trait trait)
 
     // 0x81cb - void set_pyromaniac_mod(int bonus)
     // 0x81cc - void apply_heaveho_fix()

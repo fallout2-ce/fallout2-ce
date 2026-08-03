@@ -862,7 +862,7 @@ static bool characterSelectorWindowRenderStats()
     }
 
     // TRAITS
-    int traits[TRAITS_MAX_SELECTED_COUNT];
+    Trait traits[TRAITS_MAX_SELECTED_COUNT];
     traitsGetSelected(&(traits[0]), &(traits[1]));
 
     for (int index = 0; index < TRAITS_MAX_SELECTED_COUNT; index++) {

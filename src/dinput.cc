@@ -1,7 +1,9 @@
 #include "dinput.h"
 
+#include "settings.h"
 #include "sfall_kb_helpers.h"
 #include "svga.h"
+#include "win32.h"
 
 namespace fallout {
 
@@ -53,8 +55,7 @@ bool mouseDeviceInitMode()
     // "Absolute mode" means cursor position is controlled by the OS, and we read it directly.
     // Mouse sensitivity settings can only apply in relative mode.
 
-    // TODO: add setting for mouse capture (relative mode) in windowed, differentiated from the web version.
-    bool wantsRelativeMode = screenIsFullscreen();
+    bool wantsRelativeMode = gProgramIsActive && (screenIsFullscreen() || settings.screen.mouse_lock);
 
     if (wantsRelativeMode) {
         mouseRelativeMode = true;

@@ -1,8 +1,10 @@
 #ifndef FALLOUT_SFALL_SCRIPT_HOOKS_H_
 #define FALLOUT_SFALL_SCRIPT_HOOKS_H_
 
+#include "animation.h"
 #include "interpreter.h"
 #include "interpreter_extra.h"
+#include "queue.h"
 #include "scripts.h"
 #include "skill_defs.h"
 
@@ -324,7 +326,7 @@ void scriptHooksExit();
 void scriptHooks_GameModeChange(int exit, int previousGameMode);
 bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes);
 void scriptHooks_OnDeath(Object* critter);
-int scriptHooks_ExplosiveTimer(Object* explosive, int delay, int eventType);
+int scriptHooks_ExplosiveTimer(Object* explosive, int delay, EventType eventType);
 EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, int* mapIdPtr, bool isSpecial, int tableId, int entryId);
 bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
@@ -335,7 +337,7 @@ int scriptHooks_CalcApCost(Object* critter, HitMode hitMode, bool aiming, int ac
 int scriptHooks_MoveCost(Object* critter, int distance, int actionPoints);
 int scriptHooks_ToHit(Object* attacker, Object* defender, int tile, HitMode hitMode, HitLocation hitLocation, int hitChance, int hitChanceUncapped, bool useDistance);
 int scriptHooks_AfterHitRoll(Object* attacker, Object** defenderPtr, HitLocation* hitLocationPtr, int hitChance, int roll);
-void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, int* anim);
+void scriptHooks_DeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, AnimationType* anim);
 UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, Skill skill);
 int scriptHooks_UseSkill(Object* user, Object* target, Skill skill, int skillBonus);
 int scriptHooks_UseItem(Object* user, Object* objUsed);

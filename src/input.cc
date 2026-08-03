@@ -5,6 +5,7 @@
 
 #include "audio_engine.h"
 #include "color.h"
+#include "debug.h"
 #include "delay.h"
 #include "dinput.h"
 #include "draw.h"
@@ -1044,11 +1045,15 @@ void _GNW95_process_message()
                 break;
             case SDL_WINDOWEVENT_FOCUS_GAINED:
                 gProgramIsActive = true;
+                if (!mouseDeviceInitMode()) {
+                    debugPrint("Failed to initialize mouse mode on focus gained: %s\n", SDL_GetError());
+                }
                 windowRefreshAll(&_scr_size);
                 audioEngineResume();
                 break;
             case SDL_WINDOWEVENT_FOCUS_LOST:
                 gProgramIsActive = false;
+                mouseDeviceInitMode();
                 audioEnginePause();
                 break;
             }

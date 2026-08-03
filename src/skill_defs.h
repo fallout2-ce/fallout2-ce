@@ -33,7 +33,7 @@ enum Skill : int {
     SKILL_FIRST = SKILL_SMALL_GUNS,
 };
 
-inline static bool skillIsValid(int skill)
+inline bool skillIsValid(int skill)
 {
     return skill >= SKILL_FIRST && skill < SKILL_COUNT;
 }

@@ -27,7 +27,7 @@ void op_reg_anim_destroy(Program* program)
 void op_reg_anim_animate_and_hide(Program* program)
 {
     int delay = programStackPopInteger(program);
-    int anim = programStackPopInteger(program);
+    AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object != nullptr && !animationCheckCombatMode()) {
@@ -107,7 +107,7 @@ void mf_reg_anim_animate_and_move(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
     int tile = ctx.arg(1).asInt();
-    int anim = ctx.arg(2).asInt();
+    AnimationType anim = static_cast<AnimationType>(ctx.arg(2).asInt());
     int delay = ctx.arg(3).asInt();
 
     if (!animationCheckCombatMode()) {

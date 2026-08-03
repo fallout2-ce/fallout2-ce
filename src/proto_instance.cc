@@ -651,7 +651,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
         scriptHooks_InvenWield(critter, item, slot, 0, 1);
         if (slot == InvenSlot::RightHand) {
             if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
+                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, animationTypeFromFid(critter->fid), 0, critter->rotation);
                 objectSetFid(critter, fid, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -659,7 +659,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
             }
         } else if (slot == InvenSlot::LeftHand) {
             if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, FID_ANIM_TYPE(critter->fid), 0, critter->rotation);
+                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, animationTypeFromFid(critter->fid), 0, critter->rotation);
                 objectSetFid(critter, fid, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -674,7 +674,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
                     defaultFid = proto->fid;
                 }
 
-                fid = buildFid(OBJ_TYPE_CRITTER, defaultFid, FID_ANIM_TYPE(critter->fid), (critter->fid & 0xF000) >> 12, critter->rotation);
+                fid = buildFid(OBJ_TYPE_CRITTER, defaultFid, animationTypeFromFid(critter->fid), (critter->fid & 0xF000) >> 12, critter->rotation);
                 objectSetFid(critter, fid, &updatedRect);
                 appearanceUpdateType = 3;
             }
@@ -802,8 +802,17 @@ static UseItemResultCode _obj_use_book(Object* book)
             increase = 150 * increase / 100;
         }
 
+        bool increased = false;
         for (int i = 0; i < increase; i++) {
-            skillAddForce(gDude, skill);
+            if (skillAddForce(gDude, skill) != 0) {
+                break;
+            }
+
+            increased = true;
+        }
+
+        if (!increased) {
+            messageId = 801;
         }
     }
 
@@ -919,7 +928,7 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
                 roll = skillRoll(gDude, SKILL_TRAPS, 0, nullptr);
             }
 
-            int eventType;
+            EventType eventType;
             switch (roll) {
             case ROLL_CRITICAL_FAILURE:
                 delay = 0;
@@ -1142,8 +1151,8 @@ UseItemResultCode objectUseItem(Object* userObj, Object* item)
             itemRemoveWithReason(root, item, 1, RemoveInventoryObjectHookReason::UseObj);
             Object* replacementItem = itemReplace(root, item, flags);
             if (root == gDude) {
-                int leftItemAction;
-                int rightItemAction;
+                InterfaceItemAction leftItemAction;
+                InterfaceItemAction rightItemAction;
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
                 if (replacementItem == nullptr) {
                     if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
@@ -1387,8 +1396,8 @@ UseItemResultCode objectUseItemOn(Object* user, Object* targetObj, Object* item)
             // following code is on par with |_obj_use_item| which does not
             // crash.
             if (user == gDude) {
-                int leftItemAction;
-                int rightItemAction;
+                InterfaceItemAction leftItemAction;
+                InterfaceItemAction rightItemAction;
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
 
                 if (replacedItem == nullptr) {

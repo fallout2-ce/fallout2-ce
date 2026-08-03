@@ -1,7 +1,9 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
+#include "animation.h"
 #include "combat_defs.h"
+#include "game.h"
 #include "object.h"
 #include "proto_types.h"
 #include "stat_defs.h"
@@ -237,6 +239,7 @@ void programInterpret(Program* program, int numInstructions);
 void programExecuteProcedureAsync(Program* program, int procedureIndex);
 int programFindProcedure(Program* prg, const char* name);
 void programExecuteProcedure(Program* program, int procedureIndex);
+void programProcessProcedureEvents(Program* program);
 void programListNodeCreate(Program* program);
 void runProgram(Program* program);
 Program* runScript(char* name);
@@ -344,6 +347,28 @@ inline PcStat programStackPopEnum(Program* program)
     }
 
     return static_cast<PcStat>(pcStat);
+}
+
+template <>
+inline GameGlobalVar programStackPopEnum(Program* program)
+{
+    int var = programStackPopInteger(program);
+    if (!globalVariableIsValid(var)) {
+        programPrintError("invalid global variable %d", var);
+    }
+
+    return static_cast<GameGlobalVar>(var);
+}
+
+template <>
+inline AnimationType programStackPopEnum(Program* program)
+{
+    int anim = programStackPopInteger(program);
+    if (!animationTypeIsValid(anim)) {
+        programPrintError("invalid animation type %d", anim);
+    }
+
+    return static_cast<AnimationType>(anim);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

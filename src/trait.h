@@ -13,12 +13,12 @@ void traitsReset();
 void traitsExit();
 int traitsLoad(File* stream);
 int traitsSave(File* stream);
-void traitsSetSelected(int trait1, int trait2);
-void traitsGetSelected(int* trait1, int* trait2);
-char* traitGetName(int trait);
-char* traitGetDescription(int trait);
-int traitGetFrmId(int trait);
-bool traitIsSelected(int trait);
+void traitsSetSelected(Trait trait1, Trait trait2);
+void traitsGetSelected(Trait* trait1, Trait* trait2);
+char* traitGetName(Trait trait);
+char* traitGetDescription(Trait trait);
+int traitGetFrmId(Trait trait);
+bool traitIsSelected(Trait trait);
 int traitGetStatModifier(Stat stat);
 int traitGetSkillModifier(Skill skill);
 

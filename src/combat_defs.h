@@ -29,7 +29,7 @@ inline CriticalEffect operator++(CriticalEffect& e, int)
     return result;
 }
 
-inline static bool criticalEffectIsValid(int effect)
+inline bool criticalEffectIsValid(int effect)
 {
     return effect >= CRITICAL_EFFECT_FIRST && effect < CRITICAL_EFFECT_COUNT;
 }
@@ -120,7 +120,7 @@ enum HitMode : int {
     HIT_MODE_FIRST = HIT_MODE_LEFT_WEAPON_PRIMARY,
 };
 
-inline static bool hitModeIsValid(int hitMode)
+inline bool hitModeIsValid(int hitMode)
 {
     return hitMode >= HIT_MODE_FIRST && hitMode < HIT_MODE_COUNT;
 }
@@ -147,7 +147,7 @@ enum HitLocation : int {
     HIT_LOCATION_FIRST = HIT_LOCATION_HEAD,
 };
 
-inline static bool hitLocationIsValid(int hitLocation)
+inline bool hitLocationIsValid(int hitLocation)
 {
     return hitLocation >= HIT_LOCATION_FIRST && hitLocation < HIT_LOCATION_COUNT;
 }
@@ -208,7 +208,7 @@ enum CriticalHitDataMember : int {
     CRIT_DATA_MEMBER_FIRST = CRIT_DATA_MEMBER_DAMAGE_MULTIPLIER,
 };
 
-inline static bool criticalHitDataMemberIsValid(int criticalHitDataMember)
+inline bool criticalHitDataMemberIsValid(int criticalHitDataMember)
 {
     return criticalHitDataMember >= CRIT_DATA_MEMBER_FIRST && criticalHitDataMember < CRIT_DATA_MEMBER_COUNT;
 }

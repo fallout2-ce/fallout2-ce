@@ -28,6 +28,7 @@ void skillsSetTagged(Skill* skills, int count);
 void skillsGetTagged(Skill* skills, int count);
 bool skillIsTagged(Skill skill);
 int skillGetValue(Object* critter, Skill skill);
+void skillSetMaximum(int maximum);
 int skillGetDefaultValue(Skill skill);
 int skillAdd(Object* critter, Skill skill);
 int skillAddForce(Object* critter, Skill skill);

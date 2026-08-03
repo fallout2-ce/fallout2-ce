@@ -1,5 +1,6 @@
 #include "game_config_migration.h"
 
+#include <algorithm>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -221,6 +222,8 @@ namespace {
         { kSfallMisc, "RemoveCriticalTimelimits", CONTENT_CONFIG_COMBAT_SECTION, "remove_critical_time_limits", "0" },
         { kSfallMisc, "ScienceOnCritters", CONTENT_CONFIG_COMBAT_SECTION, "science_on_critters", "0" },
         { kSfallMisc, "CheckWeaponAmmoCost", CONTENT_CONFIG_COMBAT_SECTION, "check_weapon_ammo_cost", nullptr },
+        { kSfallMisc, "InventoryApCost", CONTENT_CONFIG_COMBAT_SECTION, "inventory_ap_cost", "4" },
+        { kSfallMisc, "QuickPocketsApCostReduction", CONTENT_CONFIG_COMBAT_SECTION, "quick_pockets_ap_cost_reduction", "2" },
         { kSfallMisc, "ComputeSprayMod", CONTENT_CONFIG_COMBAT_SECTION, "burst_enabled", "0" },
         { kSfallMisc, "ComputeSpray_CenterMult", CONTENT_CONFIG_COMBAT_SECTION, "burst_center_mult", "1" },
         { kSfallMisc, "ComputeSpray_CenterDiv", CONTENT_CONFIG_COMBAT_SECTION, "burst_center_div", "3" },
@@ -309,6 +312,17 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
     }
 
     bool migrated = false;
+
+    bool worldMapFpsPatch;
+    if (configGetBool(sfallConfig, kSfallMisc, "WorldMapFPSPatch", &worldMapFpsPatch)
+        && worldMapFpsPatch) {
+        int travelDelay = 66;
+        configGetInt(sfallConfig, kSfallMisc, "WorldMapDelay2", &travelDelay);
+        travelDelay = std::clamp(travelDelay, 1, 150);
+        configSetInt(&migratedConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", travelDelay);
+        migrated = true;
+    }
+
     // Migrate start year/month/day only when explicitly set (not the sfall -1 sentinel).
     auto migrateStartInt = [&](const char* sfallKey, const char* targetKey, int defaultValue) {
         int value;

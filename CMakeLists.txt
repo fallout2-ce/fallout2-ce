@@ -301,6 +301,8 @@ set(FALLOUT_PLATFORM_SOURCES
     "src/sfall_lists.h"
     "src/sfall_metarules.cc"
     "src/sfall_metarules.h"
+    "src/sfall_object_name.cc"
+    "src/sfall_object_name.h"
     "src/sfall_opcodes.cc"
     "src/sfall_opcodes.h"
     "src/sfall_script_hooks.cc"

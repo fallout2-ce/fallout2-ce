@@ -19,7 +19,7 @@ namespace fallout {
 
 typedef struct QueueListNode {
     unsigned int time;
-    int type;
+    EventType type;
     Object* owner;
     void* data;
     struct QueueListNode* next;
@@ -121,7 +121,7 @@ int queueLoad(File* stream)
             break;
         }
 
-        if (fileReadInt32(stream, &(queueListNode->type)) == -1) {
+        if (fileReadInt32Enum<EventType>(stream, &(queueListNode->type)) == -1) {
             internal_free(queueListNode);
             rc = -1;
             break;
@@ -249,7 +249,7 @@ int queueSave(File* stream)
 }
 
 // 0x4A258C queue_add
-int queueAddEvent(int delay, Object* obj, void* data, int eventType)
+int queueAddEvent(int delay, Object* obj, void* data, EventType eventType)
 {
     QueueListNode* newQueueListNode = (QueueListNode*)internal_malloc(sizeof(QueueListNode));
     if (newQueueListNode == nullptr) {
@@ -310,7 +310,7 @@ int queueRemoveEvents(Object* owner)
 }
 
 // 0x4A264C queue_remove_this
-int queueRemoveEventsByType(Object* owner, int eventType)
+int queueRemoveEventsByType(Object* owner, EventType eventType)
 {
     QueueListNode* queueListNode = gQueueListHead;
     QueueListNode** queueListNodePtr = &gQueueListHead;
@@ -340,7 +340,7 @@ int queueRemoveEventsByType(Object* owner, int eventType)
 // Returns true if there is at least one event of given type scheduled.
 //
 // 0x4A26A8 queue_find
-bool queueHasEvent(Object* owner, int eventType)
+bool queueHasEvent(Object* owner, EventType eventType)
 {
     QueueListNode* queueListEvent = gQueueListHead;
     while (queueListEvent != nullptr) {
@@ -403,7 +403,7 @@ void queueClear()
 }
 
 // 0x4A2790 queue_clear_type
-void queueClearByEventType(int eventType, QueueEventHandler* fn)
+void queueClearByEventType(EventType eventType, QueueEventHandler* fn)
 {
     QueueListNode** ptr = &gQueueListHead;
     QueueListNode* curr = *ptr;
@@ -523,7 +523,7 @@ static int explosionFailureEventProcess(Object* obj, void* data)
 // 0x4A2920 queue_leaving_map
 void _queue_leaving_map()
 {
-    for (int eventType = 0; eventType < EVENT_TYPE_COUNT; eventType++) {
+    for (EventType eventType = EVENT_TYPE_FIRST; eventType < EVENT_TYPE_COUNT; eventType++) {
         EventTypeDescription* eventTypeDescription = &(gEventTypeDescriptions[eventType]);
         if (eventTypeDescription->clearOnMapExit) {
             queueClearByEventType(eventType, eventTypeDescription->mapExitHandlerProc);
@@ -538,7 +538,7 @@ bool queueIsEmpty()
 }
 
 // 0x4A295C queue_find_first
-void* queueFindFirstEvent(Object* owner, int eventType)
+void* queueFindFirstEvent(Object* owner, EventType eventType)
 {
     QueueListNode* queueListNode = gQueueListHead;
     while (queueListNode != nullptr) {
@@ -554,7 +554,7 @@ void* queueFindFirstEvent(Object* owner, int eventType)
 }
 
 // 0x4A2994 queue_find_next
-void* queueFindNextEvent(Object* owner, int eventType)
+void* queueFindNextEvent(Object* owner, EventType eventType)
 {
     if (gLastFoundQueueListNode != nullptr) {
         QueueListNode* queueListNode = gLastFoundQueueListNode->next;

@@ -5,6 +5,7 @@
 #include "interface.h"
 #include "inventory.h"
 #include "script_sound.h"
+#include "sfall_object_name.h"
 #include "sfall_script_hooks.h"
 #include "stat.h"
 #include "worldmap.h"
@@ -18,6 +19,7 @@ void sfallOnBeforeGameInit()
 
 void sfallOnGameInit()
 {
+    inventoryResetInvenApCost();
     return;
 }
 
@@ -36,6 +38,7 @@ void sfallOnGameReset()
 {
     inventoryResetInvenApCost();
     scriptSoundReset();
+    sfallObjectNameReset();
     statResetUnspentApBonuses();
     return;
 }
@@ -58,8 +61,8 @@ void sfallOnAfterGameStarted()
     // Refresh item art after load, which calls the CALCAPCOST hook if present to
     // display the correct AP cost.
     if (gInterfaceBarWindow != -1) {
-        int leftItemAction;
-        int rightItemAction;
+        InterfaceItemAction leftItemAction;
+        InterfaceItemAction rightItemAction;
         interfaceGetItemActions(&leftItemAction, &rightItemAction);
         interfaceUpdateItems(false, leftItemAction, rightItemAction);
     }
@@ -92,7 +95,7 @@ void sfallOnCombatEnd()
 
 void sfallOnBeforeMapLoad()
 {
-    return;
+    sfallObjectNameReset();
 }
 
 } // namespace fallout

@@ -244,6 +244,7 @@ void sfall_gl_scr_update(int burstSize)
     int globalScriptBurstSize = std::max(burstSize, kGlobalScriptContinuationBurstSize);
     for (auto& scr : state->globalScripts) {
         programInterpret(scr.program, globalScriptBurstSize);
+        programProcessProcedureEvents(scr.program);
     }
 }
 

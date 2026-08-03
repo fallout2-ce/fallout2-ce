@@ -230,6 +230,12 @@ typedef enum WorldmapArrowFrm {
     WORLDMAP_ARROW_FRM_COUNT,
 } WorldmapArrowFrm;
 
+enum class RestModeFlag {
+    Disabled = 0x01,
+    Strict = 0x02,
+    NoHealing = 0x04,
+};
+
 typedef enum CitySize {
     CITY_SIZE_SMALL,
     CITY_SIZE_MEDIUM,
@@ -544,6 +550,7 @@ static bool wmGameTimeIncrement(int ticksToAdd);
 static int wmGrabTileWalkMask(int tileIdx);
 static bool wmWorldPosInvalid(int x, int y);
 static void wmPartyInitWalking(int x, int y);
+static bool wmTravelTickDue(unsigned int now);
 static void wmPartyWalkingStep();
 static void wmInterfaceScrollTabsStart(int delta);
 static void wmInterfaceScrollTabsStop();
@@ -597,6 +604,8 @@ static const int _can_rest_here[ELEVATION_COUNT] = {
     MAP_CAN_REST_ELEVATION_1,
     MAP_CAN_REST_ELEVATION_2,
 };
+
+static int wmRestMode = 0;
 
 // 0x4BC86C
 static const int gDayPartEncounterFrequencyModifiers[DAY_PART_COUNT] = {
@@ -992,6 +1001,8 @@ static FrmImage _townFrmImage;
 static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
+static int worldmapTravelDelay;
+static unsigned int wmLastTravelTick;
 static int worldmapTrailMarkers;
 static bool worldmapTerrainInfo;
 static bool wmTerrainInfoIsVisible;
@@ -1100,6 +1111,8 @@ int wmWorldMap_init()
 
     // SFALL
     configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix, true);
+    configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", &worldmapTravelDelay, 0);
+    worldmapTravelDelay = std::clamp(worldmapTravelDelay, 0, 150);
     configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", &worldmapTrailMarkers, 0);
     configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "terrain_info", &worldmapTerrainInfo, false);
 
@@ -1171,6 +1184,7 @@ static int wmGenDataInit()
     wmTownTitleOverrides.clear();
     wmTownNamesHidden = false;
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
+    wmRestMode = 0;
 
     return 0;
 }
@@ -1227,6 +1241,7 @@ static int wmGenDataReset()
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
+    wmRestMode = 0;
 
     return 0;
 }
@@ -3181,6 +3196,26 @@ bool wmMapCanRestHere(int elevation)
     return (map->flags & flags[elevation]) != 0;
 }
 
+void wmSetRestMode(int mode)
+{
+    wmRestMode = mode & (static_cast<int>(RestModeFlag::Disabled) | static_cast<int>(RestModeFlag::Strict) | static_cast<int>(RestModeFlag::NoHealing));
+}
+
+bool wmRestModeIsDisabled()
+{
+    return (wmRestMode & static_cast<int>(RestModeFlag::Disabled)) != 0;
+}
+
+bool wmRestModeIsStrict()
+{
+    return (wmRestMode & static_cast<int>(RestModeFlag::Strict)) != 0;
+}
+
+bool wmRestModeNoHealing()
+{
+    return (wmRestMode & static_cast<int>(RestModeFlag::NoHealing)) != 0;
+}
+
 // 0x4BFAFC wmMapPipboyActive
 bool wmMapPipboyActive()
 {
@@ -3327,6 +3362,7 @@ static int wmWorldMapFunc(int a1)
     int map = -1;
     int rc = 0;
     wmResetTerrainInfo();
+    wmLastTravelTick = getTicks();
 
     while (true) {
         sharedFpsLimiter.mark();
@@ -3370,7 +3406,7 @@ static int wmWorldMapFunc(int a1)
 
         int mouseEvent = mouseGetEvent();
 
-        if (wmGenData.isWalking) {
+        if (wmGenData.isWalking && wmTravelTickDue(now)) {
             wmPartyWalkingStep();
 
             if (wmGenData.isInCar) {
@@ -4514,7 +4550,7 @@ static bool wmEvalConditional(EncounterCondition* condition, int* critterCountPt
         matches = true;
         switch (conditionEntry->type) {
         case ENCOUNTER_CONDITION_TYPE_GLOBAL:
-            value = gameGetGlobalVar(conditionEntry->param);
+            value = gameGetGlobalVar(static_cast<GameGlobalVar>(conditionEntry->param));
             if (!wmEvalSubConditional(value, conditionEntry->conditionalOperator, conditionEntry->value)) {
                 matches = false;
             }
@@ -4679,6 +4715,7 @@ static void wmPartyInitWalking(int x, int y)
     wmGenData.walkDestinationY = y;
     wmGenData.currentAreaId = -1;
     wmGenData.isWalking = true;
+    wmLastTravelTick = getTicks();
 
     int dx = abs(x - wmGenData.worldPosX);
     int dy = abs(y - wmGenData.worldPosY);
@@ -4716,6 +4753,25 @@ static void wmPartyInitWalking(int x, int y)
     if (!wmCursorIsVisible()) {
         wmInterfaceCenterOnParty();
     }
+}
+
+static bool wmTravelTickDue(unsigned int now)
+{
+    if (worldmapTravelDelay == 0) {
+        return true;
+    }
+
+    if (getTicksBetween(now, wmLastTravelTick) < worldmapTravelDelay) {
+        return false;
+    }
+
+    wmLastTravelTick += worldmapTravelDelay;
+    if (getTicksBetween(now, wmLastTravelTick) >= worldmapTravelDelay) {
+        // Drop accumulated ticks after a stall instead of advancing in bursts.
+        wmLastTravelTick = now;
+    }
+
+    return true;
 }
 
 // 0x4C1F90 wmPartyWalkingStep
@@ -6571,8 +6627,8 @@ static int wmTownMapInit()
 static int wmTownMapRefresh()
 {
     blitBufferToBuffer(_townFrmImage.getData(),
-        _townFrmImage.getWidth(),
-        _townFrmImage.getHeight(),
+        std::min(_townFrmImage.getWidth(), WM_VIEW_WIDTH),
+        std::min(_townFrmImage.getHeight(), WM_VIEW_HEIGHT),
         _townFrmImage.getWidth(),
         wmBkWinBuf + WM_WINDOW_WIDTH * WM_VIEW_Y + WM_VIEW_X,
         WM_WINDOW_WIDTH);
