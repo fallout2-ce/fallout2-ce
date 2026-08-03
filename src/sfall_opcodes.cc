@@ -809,12 +809,7 @@ static void op_set_self(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    int sid = scriptGetSid(program);
-
-    Script* scr;
-    if (scriptGetScript(sid, &scr) == 0) {
-        scr->overriddenSelf = obj;
-    }
+    scriptContextSetOverrideSelf(program, obj);
 }
 
 // list_begin

@@ -81,6 +81,31 @@ typedef enum ScriptProc {
     SCRIPT_PROC_COUNT,
 } ScriptProc;
 
+enum class DetachedScriptOwnerKind {
+    GlobalScript,
+};
+
+enum class ScriptContextKind {
+    NormalScript,
+    DetachedProgram,
+};
+
+struct DetachedScriptContext {
+    Program* program = nullptr;
+    DetachedScriptOwnerKind ownerKind = DetachedScriptOwnerKind::GlobalScript;
+    Object* self = nullptr;
+    Object* source = nullptr;
+    Object* target = nullptr;
+    Object* overriddenSelf = nullptr;
+    int overrideConsumeCount = 0;
+    int returnValue = 0;
+    int fixedParam = 0;
+    int action = 0;
+    int actionBeingUsed = -1;
+    int scriptOverrides = 0;
+    int howMuch = 0;
+};
+
 typedef struct Script {
     // scr_id
     int sid;
@@ -150,6 +175,12 @@ typedef struct Script {
     Object* overriddenSelf;
 } Script;
 
+struct ScriptContextRef {
+    ScriptContextKind kind;
+    Script* script = nullptr;
+    DetachedScriptContext* detached = nullptr;
+};
+
 extern const char* gScriptProcNames[SCRIPT_PROC_COUNT];
 
 unsigned int gameTimeGetTime();
@@ -173,6 +204,17 @@ void scriptsResetUniqueObjectIdCounter();
 void scriptsRestoreUniqueObjectIdCounter(int savedCounter);
 int scriptGetSid(Program* program);
 Object* scriptGetSelf(Program* program);
+bool scriptDetachedContextRegister(Program* program, DetachedScriptOwnerKind ownerKind);
+void scriptDetachedContextUnregister(Program* program);
+bool scriptContextResolve(Program* program, ScriptContextRef* out);
+Object* scriptContextGetBaseSelf(Program* program);
+bool scriptContextSetOverrideSelf(Program* program, Object* object);
+bool scriptContextConsumeOverrideSelf(Program* program, Object** objectPtr);
+bool scriptContextSetReturnValue(Program* program, int value);
+int scriptContextTakeReturnValue(Program* program, bool* foundPtr);
+bool scriptContextGetHowMuchRef(Program* program, int** howMuchPtr);
+bool scriptContextGetLocalVar(Program* program, int variable, ProgramValue& value);
+bool scriptContextSetLocalVar(Program* program, int variable, const ProgramValue& value);
 int scriptSetObjects(int sid, Object* source, Object* target);
 void scriptSetFixedParam(int sid, int value);
 int scriptSetActionBeingUsed(int sid, int value);

@@ -108,6 +108,8 @@ void sfall_gl_scr_exec_start_proc()
     for (auto& path : state->paths) {
         Program* program = programCreateByPath(path.c_str());
         if (program != nullptr) {
+            scriptDetachedContextRegister(program, DetachedScriptOwnerKind::GlobalScript);
+
             GlobalScript scr;
             scr.program = program;
 
@@ -129,6 +131,7 @@ void sfall_gl_scr_remove_all()
     tickersRemove(sfall_gl_scr_process_input);
 
     for (auto& scr : state->globalScripts) {
+        scriptDetachedContextUnregister(scr.program);
         programFree(scr.program);
     }
 
