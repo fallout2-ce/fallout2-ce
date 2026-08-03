@@ -87,6 +87,13 @@ enum WeaponAnimation : int {
     WEAPON_ANIMATION_SFALL_Q, // q
     WEAPON_ANIMATION_SFALL_T, // t
     WEAPON_ANIMATION_COUNT,
+
+    // There's mixed usage of WeaponAnimation and CharacterSoundEffect in the code, lets merge those as we any cannot distinguish between them.
+    CHARACTER_SOUND_EFFECT_UNUSED = WEAPON_ANIMATION_NONE,
+    CHARACTER_SOUND_EFFECT_KNOCKDOWN = WEAPON_ANIMATION_KNIFE,
+    CHARACTER_SOUND_EFFECT_PASS_OUT = WEAPON_ANIMATION_CLUB,
+    CHARACTER_SOUND_EFFECT_DIE = WEAPON_ANIMATION_HAMMER,
+    CHARACTER_SOUND_EFFECT_CONTACT = WEAPON_ANIMATION_SPEAR,
 };
 
 inline bool weaponAnimationIsValid(int weaponAnimation)
