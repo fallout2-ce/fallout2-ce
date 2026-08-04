@@ -1413,7 +1413,7 @@ char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object
         materialCode = 'X';
     } else {
         const int type = FID_TYPE(target->fid);
-        int material;
+        MaterialType material;
         switch (type) {
         case OBJ_TYPE_ITEM:
             protoGetProto(target->pid, &proto);
@@ -1428,7 +1428,7 @@ char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object
             material = proto->wall.material;
             break;
         default:
-            material = -1;
+            material = MATERIAL_TYPE_INVALID;
             break;
         }
 

@@ -386,7 +386,7 @@ int proto_item_init(Proto* proto, int pid)
     proto->item.sid = -1;
     proto->item.type = ITEM_TYPE_MISC;
     proto_item_subdata_init(proto, proto->item.type);
-    proto->item.material = 1;
+    proto->item.material = MATERIAL_TYPE_METAL;
     proto->item.size = 1;
     proto->item.weight = 10;
     proto->item.cost = 0;
@@ -951,7 +951,7 @@ int proto_scenery_init(Proto* proto, int pid)
     proto->scenery.sid = -1;
     proto->scenery.type = SCENERY_TYPE_GENERIC;
     proto_scenery_subdata_init(proto, proto->scenery.type);
-    proto->scenery.material = -1;
+    proto->scenery.material = MATERIAL_TYPE_INVALID;
     proto->scenery.soundId = '0';
 
     return 0;
@@ -1004,7 +1004,7 @@ int proto_wall_init(Proto* proto, int pid)
     proto->wall.flags = 0;
     proto->wall.extendedFlags = PROTO_EXT_FLAG_LOOK;
     proto->wall.sid = -1;
-    proto->wall.material = 1;
+    proto->wall.material = MATERIAL_TYPE_METAL;
 
     return 0;
 }
@@ -1023,7 +1023,7 @@ int proto_tile_init(Proto* proto, int pid)
     proto->tile.flags = 0;
     proto->tile.extendedFlags = PROTO_EXT_FLAG_LOOK;
     proto->tile.sid = -1;
-    proto->tile.material = 1;
+    proto->tile.material = MATERIAL_TYPE_METAL;
 
     return 0;
 }
@@ -1421,8 +1421,8 @@ int protoInit()
     _proto_none_str = getmsg(&gProtoMessageList, &messageListItem, 10);
 
     // material type names
-    for (i = 0; i < MATERIAL_TYPE_COUNT; i++) {
-        gMaterialTypeNames[i] = getmsg(&gProtoMessageList, &messageListItem, 100 + i);
+    for (MaterialType materialType = MATERIAL_TYPE_FIRST; materialType < MATERIAL_TYPE_COUNT; materialType++) {
+        gMaterialTypeNames[materialType] = getmsg(&gProtoMessageList, &messageListItem, 100 + materialType);
     }
 
     // item type names
@@ -1672,7 +1672,7 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->item.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->item.sid)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->item.type)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->item.material)) == -1) return -1;
+        if (fileReadInt32Enum<MaterialType>(stream, &(proto->item.material)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->item.size)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->item.weight)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->item.cost)) == -1) return -1;
@@ -1701,7 +1701,7 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->scenery.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->scenery.sid)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->scenery.type)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->scenery.material)) == -1) return -1;
+        if (fileReadInt32Enum<MaterialType>(stream, &(proto->scenery.material)) == -1) return -1;
         if (fileReadUInt8(stream, &(proto->scenery.soundId)) == -1) return -1;
         if (protoSceneryDataRead(&(proto->scenery.data), proto->scenery.type, stream) == -1) return -1;
         return 0;
@@ -1711,14 +1711,14 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->wall.flags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->wall.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->wall.sid)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->wall.material)) == -1) return -1;
+        if (fileReadInt32Enum<MaterialType>(stream, &(proto->wall.material)) == -1) return -1;
 
         return 0;
     case OBJ_TYPE_TILE:
         if (fileReadInt32(stream, &(proto->tile.flags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->tile.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->tile.sid)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->tile.material)) == -1) return -1;
+        if (fileReadInt32Enum<MaterialType>(stream, &(proto->tile.material)) == -1) return -1;
 
         return 0;
     case OBJ_TYPE_MISC:
