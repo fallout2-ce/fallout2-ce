@@ -119,7 +119,7 @@ int _GNW95_init_mode_ex(int width, int height, int bpp)
         height /= scale;
     }
 
-    if (_GNW95_init_window(width, height, !settings.screen.windowed, scale) == -1) {
+    if (_GNW95_init_window(width, height, settings.screen.windowed, scale) == -1) {
         return -1;
     }
 
@@ -156,15 +156,17 @@ int _init_vesa_mode(int width, int height)
 }
 
 // 0x4CAEDC GNW95_init_window
-int _GNW95_init_window(int width, int height, bool fullscreen, int scale)
+int _GNW95_init_window(int width, int height, WindowMode mode, int scale)
 {
     if (gSdlWindow == nullptr) {
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
         Uint32 windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI;
 
-        if (fullscreen) {
+        if (mode == WindowMode::Fullscreen) {
             windowFlags |= SDL_WINDOW_FULLSCREEN;
+        } else if (mode == WindowMode::WindowedFullscreen) {
+            windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
         }
 
         gSdlWindow = SDL_CreateWindow(gProgramWindowTitle, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width * scale, height * scale, windowFlags);
@@ -342,10 +344,11 @@ int screenGetVisibleHeight()
     return screenGetHeight() - windowBottomMargin;
 }
 
-bool screenIsFullscreen()
+// returns true if the game is running in fullscreen mode, false otherwise (including windowed fullscreen mode)
+bool screenIsExclusiveFullscreen()
 {
     Uint32 flags = SDL_GetWindowFlags(gSdlWindow);
-    return (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) != 0;
+    return (flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN;
 }
 
 static bool createRenderer(int width, int height)
