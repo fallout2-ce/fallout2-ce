@@ -19,6 +19,12 @@ extern SDL_Texture* gSdlTexture;
 extern SDL_Surface* gSdlTextureSurface;
 extern FpsLimiter sharedFpsLimiter;
 
+enum class WindowMode : int {
+    Fullscreen = 0,
+    Windowed = 1,
+    WindowedFullscreen = 2,
+};
+
 int _init_mode_320_200();
 int _init_mode_320_400();
 int _init_mode_640_480_16();
@@ -31,7 +37,7 @@ void _get_start_mode_();
 void _zero_vid_mem();
 int _GNW95_init_mode_ex(int width, int height, int bpp);
 int _init_vesa_mode(int width, int height);
-int _GNW95_init_window(int width, int height, bool fullscreen, int scale);
+int _GNW95_init_window(int width, int height, WindowMode mode, int scale);
 int directDrawInit(int width, int height, int bpp);
 void directDrawFree();
 void directDrawSetPaletteInRange(unsigned char* palette, int start, int count);
@@ -45,7 +51,7 @@ int screenGetHeight();
 int screenGetVisibleHeight();
 void handleWindowSizeChanged();
 void renderPresent();
-bool screenIsFullscreen();
+bool screenIsExclusiveFullscreen();
 
 } // namespace fallout
 

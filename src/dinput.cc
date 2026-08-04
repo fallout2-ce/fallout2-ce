@@ -1,5 +1,6 @@
 #include "dinput.h"
 
+#include "debug.h"
 #include "settings.h"
 #include "sfall_kb_helpers.h"
 #include "svga.h"
@@ -23,6 +24,7 @@ bool directInputInit()
     mouseDeviceRefreshWindowMapping();
 
     if (!mouseDeviceInit()) {
+        debugPrint("directInputInit: mouseDeviceInit failed: %s\n", SDL_GetError());
         goto err;
     }
 
@@ -55,7 +57,7 @@ bool mouseDeviceInitMode()
     // "Absolute mode" means cursor position is controlled by the OS, and we read it directly.
     // Mouse sensitivity settings can only apply in relative mode.
 
-    bool wantsRelativeMode = gProgramIsActive && (screenIsFullscreen() || settings.screen.mouse_lock);
+    bool wantsRelativeMode = gProgramIsActive && (screenIsExclusiveFullscreen() || settings.screen.mouse_lock);
 
     if (wantsRelativeMode) {
         mouseRelativeMode = true;

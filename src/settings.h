@@ -4,6 +4,7 @@
 #include <string>
 
 #include "game_config.h"
+#include "svga.h"
 
 namespace fallout {
 
@@ -31,7 +32,7 @@ struct SystemSettings {
 struct ScreenSettings {
     int resolution_x = 640;
     int resolution_y = 480;
-    bool windowed = false;
+    WindowMode windowed = WindowMode::Fullscreen;
     bool mouse_lock = false;
     int scale = 1;
 };
