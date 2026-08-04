@@ -397,7 +397,7 @@ int proto_item_init(Proto* proto, int pid)
 }
 
 // 0x49EBFC proto_item_subdata_init
-int proto_item_subdata_init(Proto* proto, int type)
+int proto_item_subdata_init(Proto* proto, ItemType type)
 {
     switch (type) {
     case ITEM_TYPE_ARMOR:
@@ -471,6 +471,8 @@ int proto_item_subdata_init(Proto* proto, int type)
     case ITEM_TYPE_KEY:
         proto->item.data.key.keyCode = -1;
         proto->item.extendedFlags |= PROTO_EXT_FLAG_CAN_USE_ON;
+        break;
+    default:
         break;
     }
 
@@ -628,6 +630,8 @@ int objectDataRead(Object* obj, File* stream)
                     if (fileReadInt32(stream, &(obj->data.scenery.ladder.destinationBuiltTile)) == -1) return -1;
                 }
                 break;
+            default:
+                break;
             }
 
             break;
@@ -638,6 +642,8 @@ int objectDataRead(Object* obj, File* stream)
                 if (fileReadInt32(stream, &(obj->data.misc.elevation)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.rotation)) == -1) return -1;
             }
+            break;
+        default:
             break;
         }
     }
@@ -682,6 +688,8 @@ int objectDataWrite(Object* obj, File* stream)
                 break;
             case ITEM_TYPE_KEY:
                 if (fileWriteInt32(stream, data->item.key.keyCode) == -1) return -1;
+                break;
+            default:
                 break;
             }
             break;
@@ -765,6 +773,8 @@ static int _proto_update_gen(Object* obj)
         case ITEM_TYPE_KEY:
             data->item.key.keyCode = proto->item.data.key.keyCode;
             break;
+        default:
+            break;
         }
         break;
     case OBJ_TYPE_SCENERY:
@@ -783,6 +793,8 @@ static int _proto_update_gen(Object* obj)
         case SCENERY_TYPE_LADDER_UP:
         case SCENERY_TYPE_LADDER_DOWN:
             data->scenery.ladder.destinationMap = proto->scenery.data.ladder.destinationMap;
+            break;
+        default:
             break;
         }
         break;
@@ -982,6 +994,8 @@ int proto_scenery_subdata_init(Proto* proto, SceneryType type)
     case SCENERY_TYPE_LADDER_DOWN:
         proto->scenery.data.ladder.destinationMap = -1;
         proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
+        break;
+    default:
         break;
     }
 
@@ -1426,8 +1440,8 @@ int protoInit()
     }
 
     // item type names
-    for (i = 0; i < ITEM_TYPE_COUNT; i++) {
-        gItemTypeNames[i] = getmsg(&gProtoMessageList, &messageListItem, 150 + i);
+    for (ItemType itemType = ITEM_TYPE_FIRST; itemType < ITEM_TYPE_COUNT; itemType++) {
+        gItemTypeNames[itemType] = getmsg(&gProtoMessageList, &messageListItem, 150 + itemType);
     }
 
     // scenery type names
@@ -1548,7 +1562,7 @@ static int _proto_header_load()
 }
 
 // 0x4A0AEC proto_read_item_data
-static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
+static int protoItemDataRead(ItemProtoData* item_data, ItemType type, File* stream)
 {
     switch (type) {
     case ITEM_TYPE_ARMOR:
@@ -1618,6 +1632,8 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
         if (fileReadInt32(stream, &(item_data->key.keyCode)) == -1) return -1;
 
         return 0;
+    default:
+        break;
     }
 
     return 0;
@@ -1651,6 +1667,8 @@ static int protoSceneryDataRead(SceneryProtoData* scenery_data, SceneryType type
         if (fileReadInt32(stream, &(scenery_data->generic.genericFlags)) == -1) return -1;
 
         return 0;
+    default:
+        break;
     }
 
     return 0;
@@ -1671,7 +1689,7 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->item.flags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->item.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->item.sid)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->item.type)) == -1) return -1;
+        if (fileReadInt32Enum<ItemType>(stream, &(proto->item.type)) == -1) return -1;
         if (fileReadInt32Enum<MaterialType>(stream, &(proto->item.material)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->item.size)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->item.weight)) == -1) return -1;
@@ -1734,7 +1752,7 @@ static int protoRead(Proto* proto, File* stream)
 }
 
 // 0x4A1390 proto_write_item_data
-static int protoItemDataWrite(ItemProtoData* item_data, int type, File* stream)
+static int protoItemDataWrite(ItemProtoData* item_data, ItemType type, File* stream)
 {
     switch (type) {
     case ITEM_TYPE_ARMOR:
@@ -1804,6 +1822,8 @@ static int protoItemDataWrite(ItemProtoData* item_data, int type, File* stream)
         if (fileWriteInt32(stream, item_data->key.keyCode) == -1) return -1;
 
         return 0;
+    default:
+        break;
     }
 
     return 0;
@@ -1837,6 +1857,8 @@ static int protoSceneryDataWrite(SceneryProtoData* scenery_data, SceneryType typ
         if (fileWriteInt32(stream, scenery_data->generic.genericFlags) == -1) return -1;
 
         return 0;
+    default:
+        break;
     }
 
     return 0;

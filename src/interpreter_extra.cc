@@ -1276,7 +1276,7 @@ static void opGetItemType(Program* program)
 {
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    int itemType = -1;
+    ItemType itemType = ITEM_TYPE_INVALID;
     if (obj != nullptr) {
         if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
             Proto* proto;

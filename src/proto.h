@@ -114,7 +114,7 @@ char* protoGetMessage(int pid, int message);
 char* protoGetName(int pid);
 char* protoGetDescription(int pid);
 int proto_item_init(Proto* proto, int pid);
-int proto_item_subdata_init(Proto* proto, int type);
+int proto_item_subdata_init(Proto* proto, ItemType type);
 int proto_critter_init(Proto* proto, int pid);
 void objectDataReset(Object* obj);
 int objectDataRead(Object* obj, File* stream);

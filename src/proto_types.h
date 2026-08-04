@@ -26,7 +26,8 @@ enum {
     GENDER_COUNT,
 };
 
-enum {
+enum ItemType : int {
+    ITEM_TYPE_INVALID = -1,
     ITEM_TYPE_ARMOR,
     ITEM_TYPE_CONTAINER,
     ITEM_TYPE_DRUG,
@@ -35,7 +36,15 @@ enum {
     ITEM_TYPE_MISC,
     ITEM_TYPE_KEY,
     ITEM_TYPE_COUNT,
+    ITEM_TYPE_FIRST = ITEM_TYPE_ARMOR,
 };
+
+inline ItemType operator++(ItemType& e, int)
+{
+    ItemType result = e;
+    e = static_cast<ItemType>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum SceneryType : int {
     SCENERY_TYPE_DOOR,
@@ -423,7 +432,7 @@ typedef struct ItemProto {
     int flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
-    int type; // type
+    ItemType type; // type
     ItemProtoData data; // d
     MaterialType material; // material
     int size; // size

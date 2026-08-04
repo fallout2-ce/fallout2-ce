@@ -3,6 +3,7 @@
 
 #include "animation.h"
 #include "obj_types.h"
+#include "proto_types.h"
 
 namespace fallout {
 
@@ -47,7 +48,7 @@ CritterEquipped critterStripEquipped(Object* critter);
 void critterRestoreEquipped(Object* critter, CritterEquipped& equipped);
 Object* objectGetCarriedObjectByPid(Object* obj, int pid);
 int objectGetCarriedQuantityByPid(Object* obj, int pid);
-Object* inventoryFindByType(Object* obj, int itemType, int* indexPtr);
+Object* inventoryFindByType(Object* obj, ItemType itemType, int* indexPtr);
 Object* inventoryFindById(Object* obj, int id);
 Object* inventoryItemByIndex(Object* obj, int index);
 // Makes critter equip a given item in a given hand slot with an animation.
