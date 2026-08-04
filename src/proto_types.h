@@ -37,7 +37,7 @@ enum {
     ITEM_TYPE_COUNT,
 };
 
-enum {
+enum SceneryType : int {
     SCENERY_TYPE_DOOR,
     SCENERY_TYPE_STAIRS,
     SCENERY_TYPE_ELEVATOR,
@@ -45,7 +45,15 @@ enum {
     SCENERY_TYPE_LADDER_DOWN,
     SCENERY_TYPE_GENERIC,
     SCENERY_TYPE_COUNT,
+    SCENERY_TYPE_FIRST = SCENERY_TYPE_DOOR,
 };
+
+inline SceneryType operator++(SceneryType& e, int)
+{
+    SceneryType result = e;
+    e = static_cast<SceneryType>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum MaterialType : int {
     MATERIAL_TYPE_INVALID = -1,
@@ -494,7 +502,7 @@ typedef struct SceneryProto {
     int flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
-    int type; // type
+    SceneryType type; // type
     SceneryProtoData data;
     MaterialType material; // material
     int field_30; //

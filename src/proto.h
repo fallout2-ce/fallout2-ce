@@ -123,7 +123,7 @@ int _proto_update_init(Object* obj);
 int _proto_dude_update_gender();
 int _proto_dude_init(const char* path);
 int proto_scenery_init(Proto* proto, int pid);
-int proto_scenery_subdata_init(Proto* proto, int type);
+int proto_scenery_subdata_init(Proto* proto, SceneryType type);
 int proto_wall_init(Proto* proto, int pid);
 int proto_tile_init(Proto* proto, int pid);
 int proto_misc_init(Proto* proto, int pid);

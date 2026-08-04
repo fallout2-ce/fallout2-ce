@@ -29,10 +29,10 @@ static int objectCritterCombatDataWrite(CritterCombatData* data, File* stream);
 static int _proto_update_gen(Object* obj);
 static int _proto_header_load();
 static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream);
-static int protoSceneryDataRead(SceneryProtoData* scenery_data, int type, File* stream);
+static int protoSceneryDataRead(SceneryProtoData* scenery_data, SceneryType type, File* stream);
 static int protoRead(Proto* buf, File* stream);
 static int protoItemDataWrite(ItemProtoData* item_data, int type, File* stream);
-static int protoSceneryDataWrite(SceneryProtoData* scenery_data, int type, File* stream);
+static int protoSceneryDataWrite(SceneryProtoData* scenery_data, SceneryType type, File* stream);
 static int protoWrite(Proto* buf, File* stream);
 static int _proto_load_pid(int pid, Proto** out_proto);
 static int _proto_find_free_subnode(int type, Proto** out_ptr);
@@ -958,7 +958,7 @@ int proto_scenery_init(Proto* proto, int pid)
 }
 
 // 0x49FC74 proto_scenery_subdata_init
-int proto_scenery_subdata_init(Proto* proto, int type)
+int proto_scenery_subdata_init(Proto* proto, SceneryType type)
 {
     switch (type) {
     case SCENERY_TYPE_DOOR:
@@ -1431,8 +1431,8 @@ int protoInit()
     }
 
     // scenery type names
-    for (i = 0; i < SCENERY_TYPE_COUNT; i++) {
-        gSceneryTypeNames[i] = getmsg(&gProtoMessageList, &messageListItem, 200 + i);
+    for (SceneryType sceneryType = SCENERY_TYPE_FIRST; sceneryType < SCENERY_TYPE_COUNT; sceneryType++) {
+        gSceneryTypeNames[sceneryType] = getmsg(&gProtoMessageList, &messageListItem, 200 + sceneryType);
     }
 
     // damage code types
@@ -1624,7 +1624,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
 }
 
 // 0x4A0ED0 proto_read_scenery_data
-static int protoSceneryDataRead(SceneryProtoData* scenery_data, int type, File* stream)
+static int protoSceneryDataRead(SceneryProtoData* scenery_data, SceneryType type, File* stream)
 {
     switch (type) {
     case SCENERY_TYPE_DOOR:
@@ -1700,7 +1700,7 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->scenery.flags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->scenery.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->scenery.sid)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->scenery.type)) == -1) return -1;
+        if (fileReadInt32Enum<SceneryType>(stream, &(proto->scenery.type)) == -1) return -1;
         if (fileReadInt32Enum<MaterialType>(stream, &(proto->scenery.material)) == -1) return -1;
         if (fileReadUInt8(stream, &(proto->scenery.soundId)) == -1) return -1;
         if (protoSceneryDataRead(&(proto->scenery.data), proto->scenery.type, stream) == -1) return -1;
@@ -1810,7 +1810,7 @@ static int protoItemDataWrite(ItemProtoData* item_data, int type, File* stream)
 }
 
 // 0x4A16E4 proto_write_scenery_data
-static int protoSceneryDataWrite(SceneryProtoData* scenery_data, int type, File* stream)
+static int protoSceneryDataWrite(SceneryProtoData* scenery_data, SceneryType type, File* stream)
 {
     switch (type) {
     case SCENERY_TYPE_DOOR:
