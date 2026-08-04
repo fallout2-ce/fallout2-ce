@@ -24,7 +24,7 @@ bool directInputInit()
     mouseDeviceRefreshWindowMapping();
 
     if (!mouseDeviceInit()) {
-        debugPrint("directInputInit: mouseDeviceInit failed\n");
+        debugPrint("directInputInit: mouseDeviceInit failed: %s\n", SDL_GetError());
         goto err;
     }
 
