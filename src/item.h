@@ -2,6 +2,7 @@
 #define ITEM_H
 
 #include "animation.h"
+#include "art_defs.h"
 #include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
@@ -95,7 +96,7 @@ int weaponGetMinStrengthRequired(Object* weapon);
 int weaponGetCriticalFailureType(Object* weapon);
 int weaponGetPerk(Object* weapon);
 int weaponGetBurstRounds(Object* weapon);
-int weaponGetAnimationCode(Object* weapon);
+WeaponAnimation weaponGetAnimationCode(Object* weapon);
 int weaponGetProjectilePid(Object* weapon);
 int weaponGetAmmoTypePid(Object* weapon);
 char weaponGetSoundId(Object* weapon);

@@ -438,7 +438,7 @@ int proto_item_subdata_init(Proto* proto, int type)
         proto->item.extendedFlags |= PROTO_EXT_FLAG_CAN_USE_ON;
         break;
     case ITEM_TYPE_WEAPON:
-        proto->item.data.weapon.animationCode = 0;
+        proto->item.data.weapon.animationCode = WEAPON_ANIMATION_NONE;
         proto->item.data.weapon.minDamage = 0;
         proto->item.data.weapon.maxDamage = 0;
         proto->item.data.weapon.damageType = DAMAGE_TYPE_NORMAL;
@@ -849,7 +849,7 @@ int _proto_dude_update_gender()
         return -1;
     }
 
-    int nativeLook = DUDE_NATIVE_LOOK_TRIBAL;
+    DudeNativeLook nativeLook = DUDE_NATIVE_LOOK_TRIBAL;
     if (gameMovieIsSeen(MOVIE_VSUIT)) {
         nativeLook = DUDE_NATIVE_LOOK_JUMPSUIT;
     }
@@ -864,9 +864,9 @@ int _proto_dude_update_gender()
     _art_vault_guy_num = frmId;
 
     if (critterGetArmor(gDude) == nullptr) {
-        int weaponAnimationCode = 0;
+        WeaponAnimation weaponAnimationCode = WEAPON_ANIMATION_NONE;
         if (critterGetItem2(gDude) != nullptr || critterGetItem1(gDude) != nullptr) {
-            weaponAnimationCode = (gDude->fid & 0xF000) >> 12;
+            weaponAnimationCode = weaponAnimationFromFid(gDude->fid);
         }
 
         int fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, weaponAnimationCode, 0);
@@ -1580,7 +1580,7 @@ static int protoItemDataRead(ItemProtoData* item_data, int type, File* stream)
 
         return 0;
     case ITEM_TYPE_WEAPON:
-        if (fileReadInt32(stream, &(item_data->weapon.animationCode)) == -1) return -1;
+        if (fileReadInt32Enum<WeaponAnimation>(stream, &(item_data->weapon.animationCode)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.minDamage)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.maxDamage)) == -1) return -1;
         if (fileReadInt32Enum<DamageType>(stream, &(item_data->weapon.damageType)) == -1) return -1;

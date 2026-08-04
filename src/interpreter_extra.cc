@@ -7,6 +7,7 @@
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
+#include "art_defs.h"
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
@@ -423,28 +424,28 @@ int correctFidForRemovedItem(Object* critter, Object* item, int flags)
     }
 
     int fid = critter->fid;
-    int weaponCode = FID_WEAPON_CODE(fid);
+    WeaponAnimation weaponCode = weaponAnimationFromFid(fid);
     int newFid = -1;
 
     if ((flags & OBJECT_IN_ANY_HAND) != 0) {
         if (critter == gDude) {
             if (interfaceGetCurrentHand() == HAND_RIGHT) {
                 if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
-                    weaponCode = 0;
+                    weaponCode = WEAPON_ANIMATION_NONE;
                 }
             } else {
                 if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
-                    weaponCode = 0;
+                    weaponCode = WEAPON_ANIMATION_NONE;
                 }
             }
         } else {
             if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
-                weaponCode = 0;
+                weaponCode = WEAPON_ANIMATION_NONE;
             }
         }
 
-        if (weaponCode == 0) {
-            newFid = buildFid(FID_TYPE(fid), fid & 0xFFF, animationTypeFromFid(fid), 0, FID_ROTATION(fid));
+        if (weaponCode == WEAPON_ANIMATION_NONE) {
+            newFid = buildFid(FID_TYPE(fid), fid & 0xFFF, animationTypeFromFid(fid), WEAPON_ANIMATION_NONE, FID_ROTATION(fid));
         }
     } else {
         if (critter == gDude) {
@@ -2044,7 +2045,7 @@ static void opMetarule3(Program* program)
             int fid = buildFid(FID_TYPE(obj->fid),
                 frmId,
                 animationTypeFromFid(obj->fid),
-                (obj->fid & 0xF000) >> 12,
+                weaponAnimationFromFid(obj->fid),
                 FID_ROTATION(obj->fid));
 
             Rect updatedRect;
@@ -2346,7 +2347,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
         if (settings.preferences.violence_level < VIOLENCE_LEVEL_MAXIMUM_BLOOD) {
             useStandardDeath = true;
         } else {
-            int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, (critter->fid & 0xF000) >> 12, critter->rotation + 1);
+            int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             if (!artExists(fid)) {
                 useStandardDeath = true;
             }
@@ -2356,7 +2357,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
             if (forceBack) {
                 anim = ANIM_FALL_BACK;
             } else {
-                int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_FRONT, (critter->fid & 0xF000) >> 12, critter->rotation + 1);
+                int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 if (artExists(fid)) {
                     anim = ANIM_FALL_FRONT;
                 } else {
@@ -3414,7 +3415,7 @@ static void opAnim(Program* program)
         if (frame == 0) { // ANIMATE_FORWARD
             animationRegisterAnimate(obj, anim, 0);
             if (anim >= ANIM_FALL_BACK && anim <= ANIM_FALL_FRONT_BLOOD) {
-                int fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, anim + 28, (obj->fid & 0xF000) >> 12, FID_ROTATION(obj->fid));
+                int fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, anim + 28, weaponAnimationFromFid(obj->fid), FID_ROTATION(obj->fid));
                 animationRegisterSetFid(obj, fid, -1);
             }
 
@@ -3422,13 +3423,13 @@ static void opAnim(Program* program)
                 combatData->results &= ~DAM_KNOCKED_DOWN;
             }
         } else { // ANIMATE_REVERSE == 1
-            int fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, anim, (obj->fid & 0xF000) >> 12, FID_ROTATION(obj->fid));
+            int fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, anim, weaponAnimationFromFid(obj->fid), FID_ROTATION(obj->fid));
             animationRegisterAnimateReversed(obj, anim, 0);
 
             if (anim == ANIM_PRONE_TO_STANDING) {
-                fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_FALL_FRONT_SF, (obj->fid & 0xF000) >> 12, FID_ROTATION(obj->fid));
+                fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(obj->fid), FID_ROTATION(obj->fid));
             } else if (anim == ANIM_BACK_TO_STANDING) {
-                fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_FALL_BACK_SF, (obj->fid & 0xF000) >> 12, FID_ROTATION(obj->fid));
+                fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_FALL_BACK_SF, weaponAnimationFromFid(obj->fid), FID_ROTATION(obj->fid));
             }
 
             if (combatData != nullptr) {
@@ -3481,7 +3482,7 @@ static void opRegAnimFunc(Program* program)
     if (!animationCheckCombatMode()) {
         switch (cmd) {
         case OP_REG_ANIM_FUNC_BEGIN:
-            reg_anim_begin(param.integerValue);
+            reg_anim_begin(static_cast<AnimationRequestOptions>(param.integerValue));
             break;
         case OP_REG_ANIM_FUNC_CLEAR:
             reg_anim_clear(static_cast<Object*>(param.pointerValue));
@@ -4349,13 +4350,13 @@ static void opCritterModifySkill(Program* program)
 // 0x45B9C4 op_sfx_build_char_name
 static void opSfxBuildCharName(Program* program)
 {
-    int extra = programStackPopInteger(program);
+    WeaponAnimation weaponType = programStackPopEnum<WeaponAnimation>(program);
     AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     if (obj != nullptr) {
         char soundEffectName[16];
-        strcpy(soundEffectName, sfxBuildCharName(obj, anim, extra));
+        strcpy(soundEffectName, sfxBuildCharName(obj, anim, weaponType));
         programStackPushString(program, soundEffectName);
     } else {
         scriptPredefinedError(program, "sfx_build_char_name", SCRIPT_ERROR_OBJECT_IS_NULL);

@@ -5,6 +5,7 @@
 
 #include "animation.h"
 #include "art.h"
+#include "art_defs.h"
 #include "audio.h"
 #include "combat.h"
 #include "content_config.h"
@@ -1325,38 +1326,38 @@ int _gsound_compute_relative_volume(Object* obj)
 
 // sfx_build_char_name
 // 0x451604
-char* sfxBuildCharName(Object* a1, AnimationType anim, int extra)
+char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponType)
 {
-    char v7[13];
-    char v8;
-    char v9;
+    char artName[13];
+    char weaponCode;
+    char animationCode;
 
-    if (artCopyFileName(FID_TYPE(a1->fid), a1->fid & 0xFFF, v7) == -1) {
+    if (artCopyFileName(FID_TYPE(a1->fid), a1->fid & 0xFFF, artName) == -1) {
         return nullptr;
     }
 
     if (anim == ANIM_TAKE_OUT) {
-        if (_art_get_code(anim, extra, &v8, &v9) == -1) {
+        if (_art_get_code(anim, weaponType, &weaponCode, &animationCode) == -1) {
             return nullptr;
         }
     } else {
-        if (_art_get_code(anim, (a1->fid & 0xF000) >> 12, &v8, &v9) == -1) {
+        if (_art_get_code(anim, weaponAnimationFromFid(a1->fid), &weaponCode, &animationCode) == -1) {
             return nullptr;
         }
     }
 
     // TODO: Check.
     if (anim == ANIM_FALL_FRONT || anim == ANIM_FALL_BACK) {
-        if (extra == CHARACTER_SOUND_EFFECT_PASS_OUT) {
-            v8 = 'Y';
-        } else if (extra == CHARACTER_SOUND_EFFECT_DIE) {
-            v8 = 'Z';
+        if (weaponType == CHARACTER_SOUND_EFFECT_PASS_OUT) {
+            weaponCode = 'Y';
+        } else if (weaponType == CHARACTER_SOUND_EFFECT_DIE) {
+            weaponCode = 'Z';
         }
-    } else if ((anim == ANIM_THROW_PUNCH || anim == ANIM_KICK_LEG) && extra == CHARACTER_SOUND_EFFECT_CONTACT) {
-        v8 = 'Z';
+    } else if ((anim == ANIM_THROW_PUNCH || anim == ANIM_KICK_LEG) && weaponType == CHARACTER_SOUND_EFFECT_CONTACT) {
+        weaponCode = 'Z';
     }
 
-    snprintf(_sfx_file_name, sizeof(_sfx_file_name), "%s%c%c", v7, v8, v9);
+    snprintf(_sfx_file_name, sizeof(_sfx_file_name), "%s%c%c", artName, weaponCode, animationCode);
     compat_strupr(_sfx_file_name);
     return _sfx_file_name;
 }

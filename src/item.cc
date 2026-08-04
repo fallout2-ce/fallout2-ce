@@ -7,6 +7,7 @@
 
 #include "animation.h"
 #include "art.h"
+#include "art_defs.h"
 #include "automap.h"
 #include "combat.h"
 #include "content_config.h"
@@ -1831,10 +1832,10 @@ int weaponGetBurstRounds(Object* weapon)
 }
 
 // 0x478DA8
-int weaponGetAnimationCode(Object* weapon)
+WeaponAnimation weaponGetAnimationCode(Object* weapon)
 {
     if (weapon == nullptr) {
-        return -1;
+        return WEAPON_ANIMATION_INVALID;
     }
 
     Proto* proto;

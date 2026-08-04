@@ -674,7 +674,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
                     defaultFid = proto->fid;
                 }
 
-                fid = buildFid(OBJ_TYPE_CRITTER, defaultFid, animationTypeFromFid(critter->fid), (critter->fid & 0xF000) >> 12, critter->rotation);
+                fid = buildFid(OBJ_TYPE_CRITTER, defaultFid, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
                 objectSetFid(critter, fid, &updatedRect);
                 appearanceUpdateType = 3;
             }

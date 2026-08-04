@@ -1759,7 +1759,7 @@ static void _map_place_dude_and_mouse()
     if (gDude != nullptr) {
         if (animationTypeFromFid(gDude->fid) != ANIM_STAND) {
             objectSetFrame(gDude, 0, nullptr);
-            gDude->fid = buildFid(OBJ_TYPE_CRITTER, gDude->fid & 0xFFF, ANIM_STAND, (gDude->fid & 0xF000) >> 12, gDude->rotation + 1);
+            gDude->fid = buildFid(OBJ_TYPE_CRITTER, gDude->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(gDude->fid), gDude->rotation + 1);
         }
 
         if (gDude->tile == -1) {
@@ -1799,11 +1799,11 @@ static void _square_reset()
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = (((buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = (((buildFid(OBJ_TYPE_TILE, 1, 0, WEAPON_ANIMATION_NONE, 0) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0) & 0xFFF) | tileFlags;
+                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1, 0, WEAPON_ANIMATION_NONE, 0) & 0xFFF) | tileFlags;
 
                 fid &= ~0xFFFF;
 

@@ -74,7 +74,7 @@ void op_reg_anim_change_fid(Program* program)
 void op_reg_anim_take_out(Program* program)
 {
     int delay = programStackPopInteger(program);
-    int holdFrame = programStackPopInteger(program);
+    WeaponAnimation holdFrame = programStackPopEnum<WeaponAnimation>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object != nullptr && !animationCheckCombatMode()) {
