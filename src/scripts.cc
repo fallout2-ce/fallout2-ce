@@ -721,7 +721,7 @@ void scriptDetachedContextUnregister(Program* program)
 
 bool scriptContextResolve(Program* program, ScriptContextRef* out)
 {
-    if (out == nullptr) {
+    if (program == nullptr || out == nullptr) {
         return false;
     }
 
