@@ -601,7 +601,7 @@ bool messageListFilterBadwords(MessageList* messageList)
     return true;
 }
 
-void messageListFilterGenderWords(MessageList* messageList, int gender)
+void messageListFilterGenderWords(MessageList* messageList, Gender gender)
 {
     if (messageList == nullptr) {
         return;

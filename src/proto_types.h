@@ -20,7 +20,7 @@ namespace fallout {
 // - [protoRemoveSomeList]
 #define PROTO_LIST_MAX_ENTRIES 512
 
-enum {
+enum Gender : int {
     GENDER_MALE,
     GENDER_FEMALE,
     GENDER_COUNT,
