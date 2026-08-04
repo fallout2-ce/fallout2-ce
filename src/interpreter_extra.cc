@@ -1579,7 +1579,11 @@ static void opPickup(Program* program)
 
     Object* self = nullptr;
     if (!scriptContextConsumeOverrideSelf(program, &self)) {
-        self = scriptGetSelf(program);
+        if (context.kind == ScriptContextKind::NormalScript) {
+            self = context.script->target;
+        } else {
+            self = scriptGetSelf(program);
+        }
     }
 
     if (self == nullptr) {
@@ -1608,7 +1612,11 @@ static void opDrop(Program* program)
 
     Object* self = nullptr;
     if (!scriptContextConsumeOverrideSelf(program, &self)) {
-        self = scriptGetSelf(program);
+        if (context.kind == ScriptContextKind::NormalScript) {
+            self = context.script->target;
+        } else {
+            self = scriptGetSelf(program);
+        }
     }
 
     if (self == nullptr) {
@@ -1762,8 +1770,16 @@ static void opUseObject(Program* program)
     }
 
     Object* self = nullptr;
-    if (!scriptContextConsumeOverrideSelf(program, &self)) {
+    Object* actor = nullptr;
+    if (scriptContextConsumeOverrideSelf(program, &self)) {
+        actor = self;
+    } else {
         self = scriptGetSelf(program);
+        if (context.kind == ScriptContextKind::NormalScript) {
+            actor = context.script->target;
+        } else {
+            actor = self;
+        }
     }
 
     if (self == nullptr) {
@@ -1772,7 +1788,12 @@ static void opUseObject(Program* program)
     }
 
     if (PID_TYPE(self->pid) == OBJ_TYPE_CRITTER) {
-        _action_use_an_object(self, object);
+        if (actor == nullptr) {
+            scriptPredefinedError(program, "use_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
+            return;
+        }
+
+        _action_use_an_object(actor, object);
     } else {
         objectUse(self, object);
     }

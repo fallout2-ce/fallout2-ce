@@ -1,0 +1,66 @@
+#include "sfall.h"
+#include "test_utils.h"
+
+#define REG_ANIM_BEGIN 1
+#define REG_ANIM_END 3
+#define ANIMATION_REQUEST_UNRESERVED 1
+
+#define reg_anim_begin() reg_anim_func(REG_ANIM_BEGIN, ANIMATION_REQUEST_UNRESERVED)
+#define reg_anim_end() reg_anim_func(REG_ANIM_END, 0)
+
+variable test_started := false;
+variable callback_default_calls := 0;
+variable callback_zero_calls := 0;
+variable callback_stop_calls := 0;
+variable callback_after_stop_calls := 0;
+
+procedure callback_default begin
+    callback_default_calls += 1;
+    call assertEquals("reg_anim_callback default callback order", callback_zero_calls, 0);
+end
+
+procedure callback_zero begin
+    callback_zero_calls += 1;
+    call assertEquals("reg_anim_callback default return continues", callback_default_calls, 1);
+    scr_return(0);
+end
+
+procedure callback_stop begin
+    callback_stop_calls += 1;
+    scr_return(-1);
+
+    call assertEquals("reg_anim_callback zero return continues", callback_zero_calls, 1);
+    call assertEquals("reg_anim_callback stop callback order", callback_stop_calls, 1);
+    call assertEquals("reg_anim_callback -1 stops before later callback", callback_after_stop_calls, 0);
+
+    call report_test_results("reg_anim_callback");
+    signal_close_game;
+end
+
+procedure callback_after_stop begin
+    callback_after_stop_calls += 1;
+    scr_return(0);
+
+    call assertEquals("reg_anim_callback -1 failed to stop sequence", callback_after_stop_calls, 0);
+    call report_test_results("reg_anim_callback");
+    signal_close_game;
+end
+
+procedure start_callback_test begin
+    test_started := true;
+
+    reg_anim_begin();
+    reg_anim_callback(callback_default);
+    reg_anim_callback(callback_zero);
+    reg_anim_callback(callback_stop);
+    reg_anim_callback(callback_after_stop);
+    reg_anim_end();
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+    if (test_started) then return;
+
+    display_msg("Testing reg_anim_callback...");
+    call start_callback_test();
+end

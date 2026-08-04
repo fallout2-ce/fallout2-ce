@@ -1,0 +1,46 @@
+#include "sfall.h"
+#include "test_utils.h"
+
+#define REG_ANIM_BEGIN 1
+#define REG_ANIM_END 3
+#define ANIMATION_REQUEST_UNRESERVED 1
+
+#define reg_anim_begin() reg_anim_func(REG_ANIM_BEGIN, ANIMATION_REQUEST_UNRESERVED)
+#define reg_anim_end() reg_anim_func(REG_ANIM_END, 0)
+
+variable test_done := false;
+
+procedure start begin
+    if (test_done or not game_loaded) then return;
+    test_done := true;
+
+    display_msg("Testing set_self...");
+
+    variable dude := dude_obj;
+    variable tile := tile_num(dude);
+
+    set_self(dude);
+    call assertEquals("set_self self_obj once", self_obj, dude);
+    call assertTrue("set_self self_obj consumed", self_obj == 0);
+
+    set_self(dude);
+    set_self(dude);
+    call assertEquals("set_self first repeated consume", self_obj, dude);
+    call assertEquals("set_self second repeated consume", self_obj, dude);
+    call assertTrue("set_self repeated consumed", self_obj == 0);
+
+    set_self(dude);
+    set_self(0);
+    call assertTrue("set_self zero clears override", self_obj == 0);
+
+    set_self(dude);
+    animate_stand_obj(0);
+
+    set_self(dude);
+    reg_anim_begin();
+    animate_move_obj_to_tile(dude, tile, 0);
+    reg_anim_end();
+
+    call report_test_results("set_self");
+    //signal_close_game;
+end
