@@ -1932,7 +1932,7 @@ static void opStartGameDialog(Program* program)
     configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "start_gdialog_fix", &startGameDialogFix);
     if (gGameDialogHeadFid != -1 && (!startGameDialogFix || reactionLevel == -1)) {
         int npcReactionValue = reactionGetValue(obj);
-        int npcReactionType = reactionTranslateValue(npcReactionValue);
+        NpcReaction npcReactionType = reactionTranslateValue(npcReactionValue);
         switch (npcReactionType) {
         case NPC_REACTION_BAD:
             gGameDialogReactionOrFidget = FIDGET_BAD;
