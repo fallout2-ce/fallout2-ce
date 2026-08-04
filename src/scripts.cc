@@ -817,31 +817,36 @@ bool scriptContextSetReturnValue(Program* program, int value)
     return true;
 }
 
-int scriptContextTakeReturnValue(Program* program, bool* foundPtr)
+bool scriptContextTakeReturnValue(Program* program, int* valuePtr)
 {
     ScriptContextRef context;
     if (!scriptContextResolve(program, &context)) {
-        if (foundPtr != nullptr) {
-            *foundPtr = false;
-        }
-        return 0;
-    }
-
-    if (foundPtr != nullptr) {
-        *foundPtr = true;
+        return false;
     }
 
     if (context.kind == ScriptContextKind::NormalScript) {
-        return context.script->returnValue;
+        if (valuePtr != nullptr) {
+            *valuePtr = context.script->returnValue;
+        }
+        return true;
     }
 
     int value = context.detached->returnValue;
     context.detached->returnValue = 0;
-    return value;
+    if (valuePtr != nullptr) {
+        *valuePtr = value;
+    }
+    return true;
 }
 
 bool scriptContextGetLocalVar(Program* program, int variable, ProgramValue& value)
 {
+    if (variable < 0) {
+        value.opcode = VALUE_TYPE_INT;
+        value.integerValue = -1;
+        return false;
+    }
+
     Object* overrideSelf = nullptr;
     if (scriptContextConsumeOverrideSelf(program, &overrideSelf)) {
         if (overrideSelf != nullptr && overrideSelf->sid != -1) {
@@ -868,6 +873,10 @@ bool scriptContextGetLocalVar(Program* program, int variable, ProgramValue& valu
 
 bool scriptContextSetLocalVar(Program* program, int variable, const ProgramValue& value)
 {
+    if (variable < 0) {
+        return false;
+    }
+
     Object* overrideSelf = nullptr;
     if (scriptContextConsumeOverrideSelf(program, &overrideSelf)) {
         if (overrideSelf != nullptr && overrideSelf->sid != -1) {
@@ -877,7 +886,7 @@ bool scriptContextSetLocalVar(Program* program, int variable, const ProgramValue
     }
 
     ScriptContextRef context;
-    if (!scriptContextResolve(program, &context) || variable < 0) {
+    if (!scriptContextResolve(program, &context)) {
         return false;
     }
 

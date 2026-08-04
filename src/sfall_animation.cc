@@ -115,8 +115,9 @@ static int regAnimCallbackExecute(void* programPtr, void* procedureIndexPtr)
     scriptContextSetReturnValue(program, 0);
     programExecuteProcedure(program, procedureIndex);
 
-    bool found = false;
-    return scriptContextTakeReturnValue(program, &found);
+    int returnValue = 0;
+    scriptContextTakeReturnValue(program, &returnValue);
+    return returnValue;
 }
 
 void op_reg_anim_callback(Program* program)

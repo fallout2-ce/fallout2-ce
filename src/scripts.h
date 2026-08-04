@@ -200,7 +200,7 @@ bool scriptContextResolve(Program* program, ScriptContextRef* out);
 bool scriptContextSetOverrideSelf(Program* program, Object* object);
 bool scriptContextConsumeOverrideSelf(Program* program, Object** objectPtr);
 bool scriptContextSetReturnValue(Program* program, int value);
-int scriptContextTakeReturnValue(Program* program, bool* foundPtr);
+bool scriptContextTakeReturnValue(Program* program, int* valuePtr);
 bool scriptContextGetLocalVar(Program* program, int variable, ProgramValue& value);
 bool scriptContextSetLocalVar(Program* program, int variable, const ProgramValue& value);
 int scriptSetObjects(int sid, Object* source, Object* target);
