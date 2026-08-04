@@ -600,9 +600,11 @@ static void opRollVsSkill(Program* program)
     int roll = ROLL_CRITICAL_FAILURE;
     if (object != nullptr) {
         if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
-            int* howMuch = nullptr;
-            if (scriptContextGetHowMuchRef(program, &howMuch)) {
-                roll = skillRoll(object, skill, modifier, howMuch);
+            int sid = scriptGetSid(program);
+
+            Script* script;
+            if (scriptGetScript(sid, &script) != -1) {
+                roll = skillRoll(object, skill, modifier, &(script->howMuch));
             }
         }
     } else {
@@ -636,8 +638,10 @@ static void opDoCheck(Program* program)
 
     int roll = 0;
     if (object != nullptr) {
-        int* howMuch = nullptr;
-        if (scriptContextGetHowMuchRef(program, &howMuch)) {
+        int sid = scriptGetSid(program);
+
+        Script* script;
+        if (scriptGetScript(sid, &script) != -1) {
             switch (stat) {
             case STAT_STRENGTH:
             case STAT_PERCEPTION:
@@ -646,7 +650,7 @@ static void opDoCheck(Program* program)
             case STAT_INTELLIGENCE:
             case STAT_AGILITY:
             case STAT_LUCK:
-                roll = statRoll(object, stat, mod, howMuch);
+                roll = statRoll(object, stat, mod, &(script->howMuch));
                 break;
             default:
                 scriptError("\nScript Error: %s: op_do_check: Stat out of range", program->name);
@@ -712,9 +716,11 @@ static void opHowMuch(Program* program)
 
     int result = 0;
 
-    ScriptContextRef context;
-    if (scriptContextResolve(program, &context)) {
-        result = context.kind == ScriptContextKind::NormalScript ? context.script->howMuch : context.detached->howMuch;
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        result = script->howMuch;
     } else {
         scriptPredefinedError(program, "how_much", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -1014,13 +1020,11 @@ static void opDisplayMsg(Program* program)
 // 0x455430 op_script_overrides
 static void opScriptOverrides(Program* program)
 {
-    ScriptContextRef context;
-    if (scriptContextResolve(program, &context)) {
-        if (context.kind == ScriptContextKind::NormalScript) {
-            context.script->scriptOverrides = 1;
-        } else {
-            context.detached->scriptOverrides = 1;
-        }
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        script->scriptOverrides = 1;
     } else {
         scriptPredefinedError(program, "script_overrides", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -1083,9 +1087,11 @@ static void opGetSource(Program* program)
 {
     Object* object = nullptr;
 
-    ScriptContextRef context;
-    if (scriptContextResolve(program, &context)) {
-        object = context.kind == ScriptContextKind::NormalScript ? context.script->source : context.detached->source;
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        object = script->source;
     } else {
         scriptPredefinedError(program, "source_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -1099,9 +1105,11 @@ static void opGetTarget(Program* program)
 {
     Object* object = nullptr;
 
-    ScriptContextRef context;
-    if (scriptContextResolve(program, &context)) {
-        object = context.kind == ScriptContextKind::NormalScript ? context.script->target : context.detached->target;
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        object = script->target;
     } else {
         scriptPredefinedError(program, "target_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -1124,9 +1132,11 @@ static void opGetObjectBeingUsed(Program* program)
 {
     Object* object = nullptr;
 
-    ScriptContextRef context;
-    if (scriptContextResolve(program, &context)) {
-        object = context.kind == ScriptContextKind::NormalScript ? context.script->target : context.detached->target;
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        object = script->target;
     } else {
         scriptPredefinedError(program, "obj_being_used_with", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -1230,9 +1240,11 @@ static void opGetScriptAction(Program* program)
 {
     int action = 0;
 
-    ScriptContextRef context;
-    if (scriptContextResolve(program, &context)) {
-        action = context.kind == ScriptContextKind::NormalScript ? context.script->action : context.detached->action;
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        action = script->action;
     } else {
         scriptPredefinedError(program, "script_action", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -1331,7 +1343,10 @@ static void opAnimateStand(Program* program)
             return;
         }
 
-        object = scriptGetSelf(program);
+        if (!scriptContextConsumeOverrideSelf(program, &object)) {
+            object = scriptGetSelf(program);
+        }
+
         if (object == nullptr) {
             scriptPredefinedError(program, "animate_stand_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
             return;
@@ -1357,7 +1372,10 @@ static void opAnimateStandReverse(Program* program)
             return;
         }
 
-        object = scriptGetSelf(program);
+        if (!scriptContextConsumeOverrideSelf(program, &object)) {
+            object = scriptGetSelf(program);
+        }
+
         if (object == nullptr) {
             scriptPredefinedError(program, "animate_stand_reverse_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
             return;
@@ -1561,7 +1579,7 @@ static void opPickup(Program* program)
 
     Object* self = nullptr;
     if (!scriptContextConsumeOverrideSelf(program, &self)) {
-        self = scriptContextGetBaseSelf(program);
+        self = scriptGetSelf(program);
     }
 
     if (self == nullptr) {
@@ -1590,7 +1608,7 @@ static void opDrop(Program* program)
 
     Object* self = nullptr;
     if (!scriptContextConsumeOverrideSelf(program, &self)) {
-        self = scriptContextGetBaseSelf(program);
+        self = scriptGetSelf(program);
     }
 
     if (self == nullptr) {
@@ -1745,7 +1763,7 @@ static void opUseObject(Program* program)
 
     Object* self = nullptr;
     if (!scriptContextConsumeOverrideSelf(program, &self)) {
-        self = scriptContextGetBaseSelf(program);
+        self = scriptGetSelf(program);
     }
 
     if (self == nullptr) {
@@ -2647,9 +2665,11 @@ static void opGetFixedParam(Program* program)
 {
     int fixedParam = 0;
 
-    ScriptContextRef context;
-    if (scriptContextResolve(program, &context)) {
-        fixedParam = context.kind == ScriptContextKind::NormalScript ? context.script->fixedParam : context.detached->fixedParam;
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        fixedParam = script->fixedParam;
     } else {
         scriptPredefinedError(program, "fixed_param", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -2703,9 +2723,11 @@ static void opGetActionBeingUsed(Program* program)
 {
     int action = -1;
 
-    ScriptContextRef context;
-    if (scriptContextResolve(program, &context)) {
-        action = context.kind == ScriptContextKind::NormalScript ? context.script->actionBeingUsed : context.detached->actionBeingUsed;
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        action = script->actionBeingUsed;
     } else {
         scriptPredefinedError(program, "action_being_used", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -4551,7 +4573,7 @@ static void opUseObjectOnObject(Program* program)
 
     Object* self = nullptr;
     if (!scriptContextConsumeOverrideSelf(program, &self)) {
-        self = scriptContextGetBaseSelf(program);
+        self = scriptGetSelf(program);
     }
 
     if (self == nullptr) {

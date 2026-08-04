@@ -93,17 +93,7 @@ enum class ScriptContextKind {
 struct DetachedScriptContext {
     Program* program = nullptr;
     DetachedScriptOwnerKind ownerKind = DetachedScriptOwnerKind::GlobalScript;
-    Object* self = nullptr;
-    Object* source = nullptr;
-    Object* target = nullptr;
-    Object* overriddenSelf = nullptr;
-    int overrideConsumeCount = 0;
     int returnValue = 0;
-    int fixedParam = 0;
-    int action = 0;
-    int actionBeingUsed = -1;
-    int scriptOverrides = 0;
-    int howMuch = 0;
 };
 
 typedef struct Script {
@@ -207,12 +197,10 @@ Object* scriptGetSelf(Program* program);
 bool scriptDetachedContextRegister(Program* program, DetachedScriptOwnerKind ownerKind);
 void scriptDetachedContextUnregister(Program* program);
 bool scriptContextResolve(Program* program, ScriptContextRef* out);
-Object* scriptContextGetBaseSelf(Program* program);
 bool scriptContextSetOverrideSelf(Program* program, Object* object);
 bool scriptContextConsumeOverrideSelf(Program* program, Object** objectPtr);
 bool scriptContextSetReturnValue(Program* program, int value);
 int scriptContextTakeReturnValue(Program* program, bool* foundPtr);
-bool scriptContextGetHowMuchRef(Program* program, int** howMuchPtr);
 bool scriptContextGetLocalVar(Program* program, int variable, ProgramValue& value);
 bool scriptContextSetLocalVar(Program* program, int variable, const ProgramValue& value);
 int scriptSetObjects(int sid, Object* source, Object* target);

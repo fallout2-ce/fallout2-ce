@@ -2451,6 +2451,7 @@ void sfallOpcodesInit()
     // 0x827d - void register_hook_proc_spec(int hook, procedure proc)
     interpreterRegisterOpcode(0x827d, op_register_hook_proc);
     // 0x827e - void reg_anim_callback(procedure proc)
+    interpreterRegisterOpcode(0x827e, op_reg_anim_callback);
 }
 
 void sfallOpcodesExit()

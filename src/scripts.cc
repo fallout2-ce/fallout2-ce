@@ -120,8 +120,13 @@ static bool gSpatialsEnabled = true;
 // 0x51C6C0 scriptlists
 static ScriptList gScriptLists[SCRIPT_TYPE_COUNT];
 
+struct ScriptSelfOverride {
+    Object* object = nullptr;
+    int consumeCount = 1;
+};
+
 static std::unordered_map<Program*, DetachedScriptContext> detachedScriptContexts;
-static std::unordered_map<Program*, int> normalScriptOverrideConsumeCounts;
+static std::unordered_map<Program*, ScriptSelfOverride> scriptSelfOverrides;
 
 // 0x51C710 script_path_base
 static const char* gScriptsBasePath = "scripts\\";
@@ -653,8 +658,7 @@ Object* scriptGetSelf(Program* program)
 
     Script* script;
     if (scriptGetScript(sid, &script) == -1) {
-        auto it = detachedScriptContexts.find(program);
-        return it != detachedScriptContexts.end() ? it->second.self : nullptr;
+        return nullptr;
     }
 
     if (script->owner != nullptr) {
@@ -716,7 +720,7 @@ bool scriptDetachedContextRegister(Program* program, DetachedScriptOwnerKind own
 void scriptDetachedContextUnregister(Program* program)
 {
     detachedScriptContexts.erase(program);
-    normalScriptOverrideConsumeCounts.erase(program);
+    scriptSelfOverrides.erase(program);
 }
 
 bool scriptContextResolve(Program* program, ScriptContextRef* out)
@@ -746,45 +750,27 @@ bool scriptContextResolve(Program* program, ScriptContextRef* out)
     return false;
 }
 
-Object* scriptContextGetBaseSelf(Program* program)
-{
-    return scriptGetSelf(program);
-}
-
 bool scriptContextSetOverrideSelf(Program* program, Object* object)
 {
-    ScriptContextRef context;
-    if (!scriptContextResolve(program, &context)) {
+    if (program == nullptr) {
         return false;
     }
 
-    if (context.kind == ScriptContextKind::NormalScript) {
-        if (object == nullptr) {
-            context.script->overriddenSelf = nullptr;
-            normalScriptOverrideConsumeCounts.erase(program);
-            return true;
-        }
-
-        if (context.script->overriddenSelf == object) {
-            normalScriptOverrideConsumeCounts[program] = 2;
-        } else {
-            context.script->overriddenSelf = object;
-            normalScriptOverrideConsumeCounts[program] = 1;
-        }
-        return true;
-    }
-
     if (object == nullptr) {
-        context.detached->overriddenSelf = nullptr;
-        context.detached->overrideConsumeCount = 0;
+        scriptSelfOverrides.erase(program);
         return true;
     }
 
-    if (context.detached->overriddenSelf == object) {
-        context.detached->overrideConsumeCount = 2;
+    auto it = scriptSelfOverrides.find(program);
+    if (it != scriptSelfOverrides.end()) {
+        if (it->second.object == object) {
+            it->second.consumeCount = 2;
+        } else {
+            it->second.object = object;
+            it->second.consumeCount = 1;
+        }
     } else {
-        context.detached->overriddenSelf = object;
-        context.detached->overrideConsumeCount = 1;
+        scriptSelfOverrides.emplace(program, ScriptSelfOverride { object, 1 });
     }
 
     return true;
@@ -792,42 +778,24 @@ bool scriptContextSetOverrideSelf(Program* program, Object* object)
 
 bool scriptContextConsumeOverrideSelf(Program* program, Object** objectPtr)
 {
-    ScriptContextRef context;
-    if (!scriptContextResolve(program, &context)) {
+    if (program == nullptr) {
         return false;
     }
 
-    Object* object = context.kind == ScriptContextKind::NormalScript
-        ? context.script->overriddenSelf
-        : context.detached->overriddenSelf;
-    if (object == nullptr) {
+    auto it = scriptSelfOverrides.find(program);
+    if (it == scriptSelfOverrides.end() || it->second.object == nullptr) {
         return false;
     }
 
     if (objectPtr != nullptr) {
-        *objectPtr = object;
+        *objectPtr = it->second.object;
     }
 
-    if (context.kind == ScriptContextKind::NormalScript) {
-        int count = 1;
-        auto it = normalScriptOverrideConsumeCounts.find(program);
-        if (it != normalScriptOverrideConsumeCounts.end()) {
-            count = it->second;
-        }
-
-        count--;
-        if (count <= 0) {
-            context.script->overriddenSelf = nullptr;
-            normalScriptOverrideConsumeCounts.erase(program);
-        } else {
-            normalScriptOverrideConsumeCounts[program] = count;
-        }
+    it->second.consumeCount--;
+    if (it->second.consumeCount <= 0) {
+        scriptSelfOverrides.erase(it);
     } else {
-        context.detached->overrideConsumeCount--;
-        if (context.detached->overrideConsumeCount <= 0) {
-            context.detached->overriddenSelf = nullptr;
-            context.detached->overrideConsumeCount = 0;
-        }
+        assert(it->second.consumeCount == 1);
     }
 
     return true;
@@ -870,22 +838,6 @@ int scriptContextTakeReturnValue(Program* program, bool* foundPtr)
     int value = context.detached->returnValue;
     context.detached->returnValue = 0;
     return value;
-}
-
-bool scriptContextGetHowMuchRef(Program* program, int** howMuchPtr)
-{
-    ScriptContextRef context;
-    if (!scriptContextResolve(program, &context)) {
-        return false;
-    }
-
-    if (howMuchPtr != nullptr) {
-        *howMuchPtr = context.kind == ScriptContextKind::NormalScript
-            ? &(context.script->howMuch)
-            : &(context.detached->howMuch);
-    }
-
-    return true;
 }
 
 bool scriptContextGetLocalVar(Program* program, int variable, ProgramValue& value)
@@ -2348,7 +2300,7 @@ static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent)
         script->owner = nullptr;
         script->source = nullptr;
         script->target = nullptr;
-        normalScriptOverrideConsumeCounts.erase(script->program);
+        scriptSelfOverrides.erase(script->program);
         script->program = nullptr;
         script->flags &= ~SCRIPT_FLAG_LOADED;
     }
@@ -2612,7 +2564,7 @@ int scriptRemove(int sid)
     }
 
     Script* script = &(scriptListExtent->scripts[index]);
-    normalScriptOverrideConsumeCounts.erase(script->program);
+    scriptSelfOverrides.erase(script->program);
     if ((script->flags & SCRIPT_FLAG_NO_SPATIAL) != 0) {
         if (script->program != nullptr) {
             script->program = nullptr;

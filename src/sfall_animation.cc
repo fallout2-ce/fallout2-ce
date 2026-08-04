@@ -6,6 +6,7 @@
 #include "animation.h"
 #include "interpreter.h"
 #include "opcode_context.h"
+#include "scripts.h"
 
 namespace fallout {
 
@@ -101,6 +102,31 @@ void op_reg_anim_turn_towards(Program* program)
 
         animationRegisterRotateToTile(object, tile);
     }
+}
+
+static int regAnimCallbackExecute(void* programPtr, void* procedureIndexPtr)
+{
+    Program* program = static_cast<Program*>(programPtr);
+    int procedureIndex = static_cast<int>(reinterpret_cast<intptr_t>(procedureIndexPtr));
+    if (program == nullptr || procedureIndex < 0 || procedureIndex >= program->procedureCount()) {
+        return -1;
+    }
+
+    scriptContextSetReturnValue(program, 0);
+    programExecuteProcedure(program, procedureIndex);
+
+    bool found = false;
+    return scriptContextTakeReturnValue(program, &found);
+}
+
+void op_reg_anim_callback(Program* program)
+{
+    int procedureIndex = programStackPopInteger(program);
+    if (program == nullptr || procedureIndex < 0 || procedureIndex >= program->procedureCount()) {
+        return;
+    }
+
+    animationRegisterCallback(program, reinterpret_cast<void*>(static_cast<intptr_t>(procedureIndex)), regAnimCallbackExecute, -1);
 }
 
 void mf_reg_anim_animate_and_move(OpcodeContext& ctx)
