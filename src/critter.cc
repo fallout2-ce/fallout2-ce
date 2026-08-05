@@ -756,7 +756,7 @@ int killsSave(File* stream)
 KillType critterGetKillType(Object* obj)
 {
     if (obj == gDude) {
-        int gender = critterGetStat(obj, STAT_GENDER);
+        Gender gender = static_cast<Gender>(critterGetStat(obj, STAT_GENDER));
         if (gender == GENDER_FEMALE) {
             return KILL_TYPE_WOMAN;
         }

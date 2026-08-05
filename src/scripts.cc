@@ -2982,7 +2982,7 @@ static int scriptsGetMessageList(int messageListId, MessageList** messageListPtr
         }
 
         // SFALL: Gender-specific words.
-        int gender = critterGetStat(gDude, STAT_GENDER);
+        Gender gender = static_cast<Gender>(critterGetStat(gDude, STAT_GENDER));
         messageListFilterGenderWords(messageList, gender);
     }
 

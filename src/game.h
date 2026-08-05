@@ -3,6 +3,7 @@
 
 #include "game_vars.h"
 #include "message.h"
+#include "skilldex.h"
 #include "touch.h"
 
 namespace fallout {
@@ -49,7 +50,7 @@ int showQuitConfirmationDialog();
 
 int gameLoadGlobalVars();
 int gameShowDeathDialog(const char* message);
-void gameHandleSkilldexResult(int rc);
+void gameHandleSkilldexResult(SkilldexRC rc);
 void showHelp();
 void* gameGetGlobalPointer(GameGlobalVar var);
 int gameSetGlobalPointer(GameGlobalVar var, void* value);

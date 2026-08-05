@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#include "proto_types.h"
+
 namespace fallout {
 
 #define MESSAGE_LIST_ITEM_TEXT_FILTERED 0x01
@@ -82,7 +84,7 @@ bool _message_make_path(char* dest, size_t size, const char* path);
 char* getmsg(MessageList* msg, MessageListItem* entry, int num);
 bool messageListFilterBadwords(MessageList* messageList);
 
-void messageListFilterGenderWords(MessageList* messageList, int gender);
+void messageListFilterGenderWords(MessageList* messageList, Gender gender);
 
 bool messageListRepositoryInit();
 void messageListRepositoryReset();

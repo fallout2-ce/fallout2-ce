@@ -261,7 +261,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
 
     int parentType = FID_TYPE(owner->fid);
     if (parentType == OBJ_TYPE_ITEM) {
-        int itemType = itemGetType(owner);
+        ItemType itemType = itemGetType(owner);
         if (itemType == ITEM_TYPE_CONTAINER) {
             // NOTE: Uninline.
             int sizeToAdd = itemGetSize(itemToAdd);
@@ -756,7 +756,7 @@ char* itemGetDescription(Object* obj)
 }
 
 // 0x477AFC
-int itemGetType(Object* item)
+ItemType itemGetType(Object* item)
 {
     if (item == nullptr) {
         return ITEM_TYPE_MISC;
@@ -779,7 +779,7 @@ int itemGetType(Object* item)
 // NOTE: Unused.
 //
 // 0x477B4C
-int itemGetMaterial(Object* item)
+MaterialType itemGetMaterial(Object* item)
 {
     Proto* proto;
     protoGetProto(item->pid, &proto);
@@ -816,7 +816,7 @@ int itemGetWeight(Object* item)
         weight = 0;
     }
 
-    int itemType = proto->item.type;
+    ItemType itemType = proto->item.type;
     if (itemType == ITEM_TYPE_ARMOR) {
         switch (proto->pid) {
         case PROTO_ID_POWER_ARMOR:
@@ -899,6 +899,8 @@ int itemGetCost(Object* obj)
             int ammoCapacity = ammoGetCapacity(obj);
             cost /= ammoCapacity;
         }
+        break;
+    default:
         break;
     }
 
@@ -1806,10 +1808,10 @@ int weaponGetCriticalFailureType(Object* weapon)
 }
 
 // 0x478D58
-int weaponGetPerk(Object* weapon)
+Perk weaponGetPerk(Object* weapon)
 {
     if (weapon == nullptr) {
-        return -1;
+        return PERK_INVALID;
     }
 
     Proto* proto;

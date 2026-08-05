@@ -20,13 +20,14 @@ namespace fallout {
 // - [protoRemoveSomeList]
 #define PROTO_LIST_MAX_ENTRIES 512
 
-enum {
+enum Gender : int {
     GENDER_MALE,
     GENDER_FEMALE,
     GENDER_COUNT,
 };
 
-enum {
+enum ItemType : int {
+    ITEM_TYPE_INVALID = -1,
     ITEM_TYPE_ARMOR,
     ITEM_TYPE_CONTAINER,
     ITEM_TYPE_DRUG,
@@ -35,9 +36,17 @@ enum {
     ITEM_TYPE_MISC,
     ITEM_TYPE_KEY,
     ITEM_TYPE_COUNT,
+    ITEM_TYPE_FIRST = ITEM_TYPE_ARMOR,
 };
 
-enum {
+inline ItemType operator++(ItemType& e, int)
+{
+    ItemType result = e;
+    e = static_cast<ItemType>(static_cast<int>(e) + 1);
+    return result;
+}
+
+enum SceneryType : int {
     SCENERY_TYPE_DOOR,
     SCENERY_TYPE_STAIRS,
     SCENERY_TYPE_ELEVATOR,
@@ -45,9 +54,18 @@ enum {
     SCENERY_TYPE_LADDER_DOWN,
     SCENERY_TYPE_GENERIC,
     SCENERY_TYPE_COUNT,
+    SCENERY_TYPE_FIRST = SCENERY_TYPE_DOOR,
 };
 
-enum {
+inline SceneryType operator++(SceneryType& e, int)
+{
+    SceneryType result = e;
+    e = static_cast<SceneryType>(static_cast<int>(e) + 1);
+    return result;
+}
+
+enum MaterialType : int {
+    MATERIAL_TYPE_INVALID = -1,
     MATERIAL_TYPE_GLASS,
     MATERIAL_TYPE_METAL,
     MATERIAL_TYPE_PLASTIC,
@@ -57,7 +75,15 @@ enum {
     MATERIAL_TYPE_CEMENT,
     MATERIAL_TYPE_LEATHER,
     MATERIAL_TYPE_COUNT,
+    MATERIAL_TYPE_FIRST = MATERIAL_TYPE_GLASS
 };
+
+inline MaterialType operator++(MaterialType& e, int)
+{
+    MaterialType result = e;
+    e = static_cast<MaterialType>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum DamageType : int {
     DAMAGE_TYPE_NORMAL,
@@ -406,9 +432,9 @@ typedef struct ItemProto {
     int flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
-    int type; // type
+    ItemType type; // type
     ItemProtoData data; // d
-    int material; // material
+    MaterialType material; // material
     int size; // size
     int weight; // weight
     int cost; // cost
@@ -485,9 +511,9 @@ typedef struct SceneryProto {
     int flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
-    int type; // type
+    SceneryType type; // type
     SceneryProtoData data;
-    int material; // material
+    MaterialType material; // material
     int field_30; //
     unsigned char soundId;
 } SceneryProto;
@@ -501,7 +527,7 @@ typedef struct WallProto {
     int flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
-    int material; // material
+    MaterialType material; // material
 } WallProto;
 
 typedef struct TileProto {
@@ -511,7 +537,7 @@ typedef struct TileProto {
     int flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
-    int material; // material
+    MaterialType material; // material
 } TileProto;
 
 typedef struct MiscProto {

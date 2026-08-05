@@ -15,7 +15,7 @@ int reactionSetValue(Object* critter, int value)
 }
 
 // 0x4A29E8 reaction_to_level
-int reactionTranslateValue(int value)
+NpcReaction reactionTranslateValue(int value)
 {
     if (value > 10) {
         return NPC_REACTION_GOOD;

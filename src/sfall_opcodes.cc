@@ -868,6 +868,8 @@ static void op_get_weapon_ammo_pid(Program* program)
             case ITEM_TYPE_MISC:
                 pid = miscItemGetPowerTypePid(obj);
                 break;
+            default:
+                break;
             }
         }
     }
@@ -894,6 +896,8 @@ static void op_set_weapon_ammo_pid(Program* program)
             case ITEM_TYPE_WEAPON:
                 obj->data.item.weapon.ammoTypePid = ammoTypePid;
                 break;
+            default:
+                break;
             }
         }
     }
@@ -915,6 +919,8 @@ static void op_get_weapon_ammo_count(Program* program)
                 break;
             case ITEM_TYPE_MISC:
                 ammoQuantityOrCharges = miscItemGetCharges(obj);
+                break;
+            default:
                 break;
             }
         }
@@ -939,6 +945,8 @@ static void op_set_weapon_ammo_count(Program* program)
                 break;
             case ITEM_TYPE_MISC:
                 miscItemSetCharges(obj, ammoQuantityOrCharges);
+                break;
+            default:
                 break;
             }
         }

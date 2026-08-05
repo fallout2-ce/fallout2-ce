@@ -2541,14 +2541,13 @@ static void characterEditorDrawPrimaryStat(Stat stat, bool animate, int previous
 // 0x434F18 PrintGender
 static void characterEditorDrawGender()
 {
-    int gender;
     char* str;
     char text[32];
     int x, width;
 
     fontSetCurrent(103);
 
-    gender = critterGetStat(gDude, STAT_GENDER);
+    Gender gender = static_cast<Gender>(critterGetStat(gDude, STAT_GENDER));
     str = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 107 + gender);
 
     strcpy(text, str);

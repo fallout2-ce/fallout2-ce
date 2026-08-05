@@ -95,7 +95,7 @@ static bool _caiHasWeapPrefType(AiPacket* ai, AttackType attackType);
 static Object* _ai_best_weapon(Object* a1, Object* a2, Object* a3, Object* a4);
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode);
 static bool aiCanUseItem(Object* obj, Object* a2);
-static Object* _ai_search_environ(Object* critter, int itemType);
+static Object* _ai_search_environ(Object* critter, ItemType itemType);
 static Object* _ai_retrieve_object(Object* critter, Object* item);
 static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defender);
 static int _ai_move_steps_closer(Object* a1, Object* a2, int actionPoints, bool taunt);
@@ -1869,7 +1869,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
         }
 
         // SFALL: Fix for the incorrect item being checked.
-        if (weaponGetPerk(weapon1) != -1) {
+        if (weaponGetPerk(weapon1) != PERK_INVALID) {
             // SFALL: Lower weapon score multiplier for having perk.
             avgDamage1 *= 2;
         }
@@ -1913,7 +1913,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
             avgDamage2 *= attack.extrasLength + 1;
         }
 
-        if (weaponGetPerk(weapon2) != -1) {
+        if (weaponGetPerk(weapon2) != PERK_INVALID) {
             // SFALL: Lower weapon score multiplier for having perk.
             avgDamage2 *= 2;
         }
@@ -2176,7 +2176,7 @@ static bool aiCanUseItem(Object* critter, Object* item)
 // Find best item type to use?
 //
 // 0x429C18
-static Object* _ai_search_environ(Object* critter, int itemType)
+static Object* _ai_search_environ(Object* critter, ItemType itemType)
 {
     if (critterGetBodyType(critter) != BODY_TYPE_BIPED) {
         return nullptr;
@@ -2220,6 +2220,8 @@ static Object* _ai_search_environ(Object* critter, int itemType)
                 if (aiCanUseItem(critter, item)) {
                     foundItem = item;
                 }
+                break;
+            default:
                 break;
             }
 

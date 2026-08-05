@@ -1292,7 +1292,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         if (1) {
                             Skill skill = SKILL_INVALID;
 
-                            int rc = skilldexOpen();
+                            SkilldexRC rc = skilldexOpen();
                             switch (rc) {
                             case SKILLDEX_RC_SNEAK:
                                 _action_skill_use(SKILL_SNEAK);
@@ -1317,6 +1317,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                                 break;
                             case SKILLDEX_RC_REPAIR:
                                 skill = SKILL_REPAIR;
+                                break;
+                            default:
                                 break;
                             }
 

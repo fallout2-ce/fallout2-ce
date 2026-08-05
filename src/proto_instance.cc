@@ -494,7 +494,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
             fn(formattedText);
         }
     } else if (type == OBJ_TYPE_ITEM) {
-        int itemType = itemGetType(target);
+        ItemType itemType = itemGetType(target);
         if (itemType == ITEM_TYPE_WEAPON) {
             if (ammoGetCaliber(target) != 0) {
                 MessageListItem weaponMessageListItem;
@@ -1258,6 +1258,8 @@ static UseItemResultCode _protinst_default_use_item(Object* user, Object* target
         if (rc == USE_ITEM_RESULT_OK) {
             return USE_ITEM_RESULT_OK;
         }
+        break;
+    default:
         break;
     }
 
