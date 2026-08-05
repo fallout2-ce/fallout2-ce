@@ -3,7 +3,7 @@
 
 namespace fallout {
 
-typedef enum SkilldexRC {
+enum SkilldexRC : int {
     SKILLDEX_RC_ERROR = -1,
     SKILLDEX_RC_CANCELED,
     SKILLDEX_RC_SNEAK,
@@ -14,9 +14,10 @@ typedef enum SkilldexRC {
     SKILLDEX_RC_DOCTOR,
     SKILLDEX_RC_SCIENCE,
     SKILLDEX_RC_REPAIR,
-} SkilldexRC;
+    SKILLDEX_RC_COUNT,
+};
 
-int skilldexOpen();
+SkilldexRC skilldexOpen();
 int skilldexGetWindow();
 
 } // namespace fallout

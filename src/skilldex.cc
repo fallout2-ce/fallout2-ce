@@ -32,7 +32,7 @@ namespace fallout {
 
 #define SKILLDEX_SKILL_BUTTON_BUFFER_COUNT (SKILLDEX_SKILL_COUNT * 2)
 
-typedef enum SkilldexFrm {
+enum SkilldexFrm : int {
     SKILLDEX_FRM_BACKGROUND,
     SKILLDEX_FRM_BUTTON_ON,
     SKILLDEX_FRM_BUTTON_OFF,
@@ -40,9 +40,9 @@ typedef enum SkilldexFrm {
     SKILLDEX_FRM_LITTLE_RED_BUTTON_DOWN,
     SKILLDEX_FRM_BIG_NUMBERS,
     SKILLDEX_FRM_COUNT,
-} SkilldexFrm;
+};
 
-typedef enum SkilldexSkill {
+enum SkilldexSkill : int {
     SKILLDEX_SKILL_SNEAK,
     SKILLDEX_SKILL_LOCKPICK,
     SKILLDEX_SKILL_STEAL,
@@ -52,7 +52,7 @@ typedef enum SkilldexSkill {
     SKILLDEX_SKILL_SCIENCE,
     SKILLDEX_SKILL_REPAIR,
     SKILLDEX_SKILL_COUNT,
-} SkilldexSkill;
+};
 
 static int skilldexWindowInit();
 static void skilldexWindowFree();
@@ -107,38 +107,38 @@ static FrmImage _skilldexFrmImages[SKILLDEX_FRM_COUNT];
 
 // skilldex_select
 // 0x4ABFD0 skilldex_select
-int skilldexOpen()
+SkilldexRC skilldexOpen()
 {
     ScopedGameMode gm(GameMode::kSkilldex);
 
     if (skilldexWindowInit() == -1) {
         debugPrint("\n ** Error loading skilldex dialog data! **\n");
-        return -1;
+        return SKILLDEX_RC_ERROR;
     }
 
     touch_set_touchscreen_mode(true);
 
-    int rc = -1;
-    while (rc == -1) {
+    SkilldexRC rc = SKILLDEX_RC_ERROR;
+    while (rc == SKILLDEX_RC_ERROR) {
         sharedFpsLimiter.mark();
 
         int keyCode = inputGetInput();
 
         // SFALL: Close with 'S'.
         if (keyCode == KEY_ESCAPE || keyCode == KEY_UPPERCASE_S || keyCode == KEY_LOWERCASE_S || keyCode == 500 || _game_user_wants_to_quit != GAME_QUIT_REQUEST_NONE) {
-            rc = 0;
+            rc = SKILLDEX_RC_CANCELED;
         } else if (keyCode == KEY_RETURN) {
             soundPlayFile("ib1p1xx1");
-            rc = 0;
-        } else if (keyCode >= 501 && keyCode <= 509) {
-            rc = keyCode - 500;
+            rc = SKILLDEX_RC_CANCELED;
+        } else if (keyCode > 500 && keyCode <= (500 + SKILLDEX_RC_COUNT)) {
+            rc = static_cast<SkilldexRC>(keyCode - 500);
         }
 
         renderPresent();
         sharedFpsLimiter.throttle();
     }
 
-    if (rc != 0) {
+    if (rc != SKILLDEX_RC_CANCELED) {
         inputBlockForTocks(1000 / 9);
     }
 
