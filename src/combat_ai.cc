@@ -1869,7 +1869,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
         }
 
         // SFALL: Fix for the incorrect item being checked.
-        if (weaponGetPerk(weapon1) != -1) {
+        if (weaponGetPerk(weapon1) != PERK_INVALID) {
             // SFALL: Lower weapon score multiplier for having perk.
             avgDamage1 *= 2;
         }
@@ -1913,7 +1913,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
             avgDamage2 *= attack.extrasLength + 1;
         }
 
-        if (weaponGetPerk(weapon2) != -1) {
+        if (weaponGetPerk(weapon2) != PERK_INVALID) {
             // SFALL: Lower weapon score multiplier for having perk.
             avgDamage2 *= 2;
         }
