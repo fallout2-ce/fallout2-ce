@@ -1633,10 +1633,8 @@ static int protoItemDataRead(ItemProtoData* item_data, ItemType type, File* stre
 
         return 0;
     default:
-        break;
+        return -1;
     }
-
-    return 0;
 }
 
 // 0x4A0ED0 proto_read_scenery_data
@@ -1821,10 +1819,8 @@ static int protoItemDataWrite(ItemProtoData* item_data, ItemType type, File* str
 
         return 0;
     default:
-        break;
+        return -1;
     }
-
-    return 0;
 }
 
 // 0x4A16E4 proto_write_scenery_data
