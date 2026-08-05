@@ -878,6 +878,9 @@ static int mapLoad(File* stream)
     _gmouse_disable_scrolling();
 
     int savedMouseCursorId = gameMouseGetCursor();
+    if (savedMouseCursorId >= MOUSE_CURSOR_SCROLL_NW && savedMouseCursorId <= MOUSE_CURSOR_SCROLL_W_INVALID) {
+        savedMouseCursorId = MOUSE_CURSOR_ARROW; // reset if it was in view scrolling mode
+    }
     gameMouseSetCursor(MOUSE_CURSOR_WAIT_PLANET);
     fileSetReadProgressHandler(gameMouseRefreshImmediately, 32768);
     tileDisable();
