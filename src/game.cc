@@ -171,6 +171,12 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     windowInit(1, flags);
     paletteInit();
 
+    // Map the window now that the render surface exists, so the splash screen
+    // and the rest of startup are visible. Throttled pumpStartupEvents() calls
+    // below keep the window manager from iconifying it during the long init
+    // under slow tracing parents like Valgrind.
+    screenShowWindow();
+
     // SFALL: Execute all code that should be executed ON game init
     sfallOnGameInit();
 
@@ -231,6 +237,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">gsound_init\t");
+    pumpStartupEvents();
 
     movieInit();
     debugPrint(">initMovie\t\t");
@@ -241,6 +248,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">gmovie_init\t");
+    pumpStartupEvents();
 
     if (movieEffectsInit() != 0) {
         debugPrint("Failed on moviefx_init\n");
@@ -255,6 +263,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">iso_init\t");
+    pumpStartupEvents();
 
     if (gameMouseInit() != 0) {
         debugPrint("Failed on gmouse_init\n");
@@ -269,6 +278,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">proto_init\t");
+    pumpStartupEvents();
 
     animationInit();
     debugPrint(">anim_init\t");
@@ -279,6 +289,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">scr_init\t");
+    pumpStartupEvents();
 
     if (gameLoadGlobalVars() != 0) {
         debugPrint("Failed on game_load_info\n");
@@ -300,6 +311,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">wmWorldMap_init\t");
+    pumpStartupEvents();
 
     characterEditorInit();
     debugPrint(">CharEditInit\t");
@@ -317,6 +329,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">gdialog_init\t");
+    pumpStartupEvents();
 
     if (combatInit() != 0) {
         debugPrint("Failed on combat_init\n");
@@ -331,6 +344,7 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     }
 
     debugPrint(">automap_init\t");
+    pumpStartupEvents();
 
     if (!messageListInit(&gMiscMessageList)) {
         debugPrint("Failed on message_init\n");
