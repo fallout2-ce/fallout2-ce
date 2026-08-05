@@ -1668,10 +1668,8 @@ static int protoSceneryDataRead(SceneryProtoData* scenery_data, SceneryType type
 
         return 0;
     default:
-        break;
+        return -1;
     }
-
-    return 0;
 }
 
 // read .pro file
@@ -1858,10 +1856,8 @@ static int protoSceneryDataWrite(SceneryProtoData* scenery_data, SceneryType typ
 
         return 0;
     default:
-        break;
+        return -1;
     }
-
-    return 0;
 }
 
 // 0x4A17B4 proto_write_protoSubNode
