@@ -28,7 +28,7 @@ namespace {
     constexpr int kToolbarHeight = kButtonHeight;
 
     struct SkillEntry {
-        int skilldexRc;
+        SkilldexRC skilldexRc;
         const char* label;
     };
 
