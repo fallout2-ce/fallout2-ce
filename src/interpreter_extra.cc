@@ -481,12 +481,7 @@ static void opScrReturn(Program* program)
 {
     int data = programStackPopInteger(program);
 
-    int sid = scriptGetSid(program);
-
-    Script* script;
-    if (scriptGetScript(sid, &script) != -1) {
-        script->returnValue = data;
-    }
+    scriptContextSetReturnValue(program, data);
 }
 
 // play_sfx
@@ -1079,7 +1074,11 @@ static void opTileContainsObjectWithPid(Program* program)
 // 0x455600 op_self_obj
 static void opGetSelf(Program* program)
 {
-    Object* object = scriptGetSelf(program);
+    Object* object = nullptr;
+    if (!scriptContextConsumeOverrideSelf(program, &object)) {
+        object = scriptGetSelf(program);
+    }
+
     programStackPushPointer(program, object);
 }
 
@@ -1156,8 +1155,7 @@ static void opGetLocalVar(Program* program)
     value.opcode = VALUE_TYPE_INT;
     value.integerValue = -1;
 
-    int sid = scriptGetSid(program);
-    scriptGetLocalVar(sid, data, value);
+    scriptContextGetLocalVar(program, data, value);
 
     programStackPushValue(program, value);
 }
@@ -1169,8 +1167,7 @@ static void opSetLocalVar(Program* program)
     ProgramValue value = programStackPopValue(program);
     int variable = programStackPopInteger(program);
 
-    int sid = scriptGetSid(program);
-    scriptSetLocalVar(sid, variable, value);
+    scriptContextSetLocalVar(program, variable, value);
 }
 
 // map_var
@@ -1341,15 +1338,20 @@ static void opAnimateStand(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
     if (object == nullptr) {
-        int sid = scriptGetSid(program);
-
-        Script* script;
-        if (scriptGetScript(sid, &script) == -1) {
+        ScriptContextRef context;
+        if (!scriptContextResolve(program, &context)) {
             scriptPredefinedError(program, "animate_stand_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
             return;
         }
 
-        object = scriptGetSelf(program);
+        if (!scriptContextConsumeOverrideSelf(program, &object)) {
+            object = scriptGetSelf(program);
+        }
+
+        if (object == nullptr) {
+            scriptPredefinedError(program, "animate_stand_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
+            return;
+        }
     }
 
     if (!animationCheckCombatMode()) {
@@ -1365,15 +1367,20 @@ static void opAnimateStandReverse(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
     if (object == nullptr) {
-        int sid = scriptGetSid(program);
-
-        Script* script;
-        if (scriptGetScript(sid, &script) == -1) {
+        ScriptContextRef context;
+        if (!scriptContextResolve(program, &context)) {
             scriptPredefinedError(program, "animate_stand_reverse_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
             return;
         }
 
-        object = scriptGetSelf(program);
+        if (!scriptContextConsumeOverrideSelf(program, &object)) {
+            object = scriptGetSelf(program);
+        }
+
+        if (object == nullptr) {
+            scriptPredefinedError(program, "animate_stand_reverse_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
+            return;
+        }
     }
 
     if (!animationCheckCombatMode()) {
@@ -1400,10 +1407,8 @@ static void opAnimateMoveObjectToTile(Program* program)
         return;
     }
 
-    int sid = scriptGetSid(program);
-
-    Script* script;
-    if (scriptGetScript(sid, &script) == -1) {
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
         scriptPredefinedError(program, "animate_move_obj_to_tile", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
         return;
     }
@@ -1567,22 +1572,19 @@ static void opPickup(Program* program)
         return;
     }
 
-    int sid = scriptGetSid(program);
-
-    Script* script;
-    if (scriptGetScript(sid, &script) == -1) {
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
         scriptPredefinedError(program, "pickup_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
         return;
     }
 
-    Object* self = script->target;
-
-    // SFALL: Override `self` via `op_set_self`.
-    // CE: Implementation is different. Sfall integrates via `scriptGetSid` by
-    // returning fake script with overridden `self` (and `target` in this case).
-    if (script->overriddenSelf != nullptr) {
-        self = script->overriddenSelf;
-        script->overriddenSelf = nullptr;
+    Object* self = nullptr;
+    if (!scriptContextConsumeOverrideSelf(program, &self)) {
+        if (context.kind == ScriptContextKind::NormalScript) {
+            self = context.script->target;
+        } else {
+            self = scriptGetSelf(program);
+        }
     }
 
     if (self == nullptr) {
@@ -1603,22 +1605,27 @@ static void opDrop(Program* program)
         return;
     }
 
-    int sid = scriptGetSid(program);
-
-    Script* script;
-    if (scriptGetScript(sid, &script) == -1) {
-        // FIXME: Should be SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID.
-        scriptPredefinedError(program, "drop_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
-        return;
-    }
-
-    if (script->target == nullptr) {
-        // FIXME: Should be SCRIPT_ERROR_OBJECT_IS_NULL.
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
         scriptPredefinedError(program, "drop_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
         return;
     }
 
-    objectDrop(script->target, object);
+    Object* self = nullptr;
+    if (!scriptContextConsumeOverrideSelf(program, &self)) {
+        if (context.kind == ScriptContextKind::NormalScript) {
+            self = context.script->target;
+        } else {
+            self = scriptGetSelf(program);
+        }
+    }
+
+    if (self == nullptr) {
+        scriptPredefinedError(program, "drop_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
+        return;
+    }
+
+    objectDrop(self, object);
 }
 
 // add_obj_to_inven
@@ -1757,23 +1764,37 @@ static void opUseObject(Program* program)
         return;
     }
 
-    int sid = scriptGetSid(program);
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
+        scriptPredefinedError(program, "use_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
+        return;
+    }
 
-    Script* script;
-    if (scriptGetScript(sid, &script) == -1) {
-        // FIXME: Should be SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID.
+    Object* self = nullptr;
+    Object* actor = nullptr;
+    if (scriptContextConsumeOverrideSelf(program, &self)) {
+        actor = self;
+    } else {
+        self = scriptGetSelf(program);
+        if (context.kind == ScriptContextKind::NormalScript) {
+            actor = context.script->target;
+        } else {
+            actor = self;
+        }
+    }
+
+    if (self == nullptr) {
         scriptPredefinedError(program, "use_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
         return;
     }
 
-    if (script->target == nullptr) {
-        scriptPredefinedError(program, "use_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
-        return;
-    }
-
-    Object* self = scriptGetSelf(program);
     if (PID_TYPE(self->pid) == OBJ_TYPE_CRITTER) {
-        _action_use_an_object(script->target, object);
+        if (actor == nullptr) {
+            scriptPredefinedError(program, "use_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
+            return;
+        }
+
+        _action_use_an_object(actor, object);
     } else {
         objectUse(self, object);
     }
@@ -2696,14 +2717,11 @@ static void opTileIsVisible(Program* program)
 // 0x458534 op_dialogue_system_enter
 static void opGameDialogSystemEnter(Program* program)
 {
-    int sid = scriptGetSid(program);
-
-    Script* script;
-    if (scriptGetScript(sid, &script) == -1) {
+    Object* self = scriptGetSelf(program);
+    if (self == nullptr) {
         return;
     }
 
-    Object* self = scriptGetSelf(program);
     if (PID_TYPE(self->pid) == OBJ_TYPE_CRITTER) {
         if (!critterIsActive(self)) {
             return;
@@ -4569,22 +4587,20 @@ static void opUseObjectOnObject(Program* program)
         return;
     }
 
-    Script* script;
-    int sid = scriptGetSid(program);
-    if (scriptGetScript(sid, &script) == -1) {
-        // FIXME: Should be SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID.
-        scriptPredefinedError(program, "use_obj_on_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
+        scriptPredefinedError(program, "use_obj_on_obj", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
         return;
     }
 
-    Object* self = scriptGetSelf(program);
+    Object* self = nullptr;
+    if (!scriptContextConsumeOverrideSelf(program, &self)) {
+        self = scriptGetSelf(program);
+    }
 
-    // SFALL: Override `self` via `op_set_self`.
-    // CE: Implementation is different. Sfall integrates via `scriptGetSid` by
-    // returning fake script with overridden `self`.
-    if (script->overriddenSelf != nullptr) {
-        self = script->overriddenSelf;
-        script->overriddenSelf = nullptr;
+    if (self == nullptr) {
+        scriptPredefinedError(program, "use_obj_on_obj", SCRIPT_ERROR_OBJECT_IS_NULL);
+        return;
     }
 
     if (PID_TYPE(self->pid) == OBJ_TYPE_CRITTER) {

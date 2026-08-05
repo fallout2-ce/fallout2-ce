@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unordered_map>
 #include <vector>
 
 #include "actions.h"
@@ -118,6 +119,14 @@ static bool gSpatialsEnabled = true;
 
 // 0x51C6C0 scriptlists
 static ScriptList gScriptLists[SCRIPT_TYPE_COUNT];
+
+struct ScriptSelfOverride {
+    Object* object = nullptr;
+    int consumeCount = 1;
+};
+
+static std::unordered_map<Program*, DetachedScriptContext> detachedScriptContexts;
+static std::unordered_map<Program*, ScriptSelfOverride> scriptSelfOverrides;
 
 // 0x51C710 script_path_base
 static const char* gScriptsBasePath = "scripts\\";
@@ -692,6 +701,202 @@ Object* scriptGetSelf(Program* program)
     }
 
     return object;
+}
+
+bool scriptDetachedContextRegister(Program* program, DetachedScriptOwnerKind ownerKind)
+{
+    if (program == nullptr) {
+        return false;
+    }
+
+    DetachedScriptContext context;
+    context.program = program;
+    context.ownerKind = ownerKind;
+    auto result = detachedScriptContexts.emplace(program, std::move(context));
+    assert(result.second);
+    return result.second;
+}
+
+void scriptDetachedContextUnregister(Program* program)
+{
+    detachedScriptContexts.erase(program);
+    scriptSelfOverrides.erase(program);
+}
+
+bool scriptContextResolve(Program* program, ScriptContextRef* out)
+{
+    if (program == nullptr || out == nullptr) {
+        return false;
+    }
+
+    int sid = scriptGetSid(program);
+
+    Script* script;
+    if (scriptGetScript(sid, &script) != -1) {
+        out->kind = ScriptContextKind::NormalScript;
+        out->script = script;
+        out->detached = nullptr;
+        return true;
+    }
+
+    auto it = detachedScriptContexts.find(program);
+    if (it != detachedScriptContexts.end()) {
+        out->kind = ScriptContextKind::DetachedProgram;
+        out->script = nullptr;
+        out->detached = &(it->second);
+        return true;
+    }
+
+    return false;
+}
+
+bool scriptContextSetOverrideSelf(Program* program, Object* object)
+{
+    if (program == nullptr) {
+        return false;
+    }
+
+    if (object == nullptr) {
+        scriptSelfOverrides.erase(program);
+        return true;
+    }
+
+    auto it = scriptSelfOverrides.find(program);
+    if (it != scriptSelfOverrides.end()) {
+        if (it->second.object == object) {
+            it->second.consumeCount = 2;
+        } else {
+            it->second.object = object;
+            it->second.consumeCount = 1;
+        }
+    } else {
+        scriptSelfOverrides.emplace(program, ScriptSelfOverride { object, 1 });
+    }
+
+    return true;
+}
+
+bool scriptContextConsumeOverrideSelf(Program* program, Object** objectPtr)
+{
+    if (program == nullptr) {
+        return false;
+    }
+
+    auto it = scriptSelfOverrides.find(program);
+    if (it == scriptSelfOverrides.end() || it->second.object == nullptr) {
+        return false;
+    }
+
+    if (objectPtr != nullptr) {
+        *objectPtr = it->second.object;
+    }
+
+    it->second.consumeCount--;
+    if (it->second.consumeCount <= 0) {
+        scriptSelfOverrides.erase(it);
+    } else {
+        assert(it->second.consumeCount == 1);
+    }
+
+    return true;
+}
+
+bool scriptContextSetReturnValue(Program* program, int value)
+{
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
+        return false;
+    }
+
+    if (context.kind == ScriptContextKind::NormalScript) {
+        context.script->returnValue = value;
+    } else {
+        context.detached->returnValue = value;
+    }
+
+    return true;
+}
+
+bool scriptContextTakeReturnValue(Program* program, int* valuePtr)
+{
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
+        return false;
+    }
+
+    if (context.kind == ScriptContextKind::NormalScript) {
+        if (valuePtr != nullptr) {
+            *valuePtr = context.script->returnValue;
+        }
+        return true;
+    }
+
+    int value = context.detached->returnValue;
+    context.detached->returnValue = 0;
+    if (valuePtr != nullptr) {
+        *valuePtr = value;
+    }
+    return true;
+}
+
+bool scriptContextGetLocalVar(Program* program, int variable, ProgramValue& value)
+{
+    if (variable < 0) {
+        value.opcode = VALUE_TYPE_INT;
+        value.integerValue = -1;
+        return false;
+    }
+
+    Object* overrideSelf = nullptr;
+    if (scriptContextConsumeOverrideSelf(program, &overrideSelf)) {
+        if (overrideSelf != nullptr && overrideSelf->sid != -1) {
+            return scriptGetLocalVar(overrideSelf->sid, variable, value) != -1;
+        }
+    }
+
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
+        value.opcode = VALUE_TYPE_INT;
+        value.integerValue = -1;
+        return false;
+    }
+
+    if (context.kind == ScriptContextKind::NormalScript) {
+        int sid = context.script->sid;
+        return scriptGetLocalVar(sid, variable, value) != -1;
+    }
+
+    value.opcode = VALUE_TYPE_INT;
+    value.integerValue = -1;
+    return false;
+}
+
+bool scriptContextSetLocalVar(Program* program, int variable, const ProgramValue& value)
+{
+    if (variable < 0) {
+        return false;
+    }
+
+    Object* overrideSelf = nullptr;
+    if (scriptContextConsumeOverrideSelf(program, &overrideSelf)) {
+        if (overrideSelf != nullptr && overrideSelf->sid != -1) {
+            ProgramValue mutableValue = value;
+            return scriptSetLocalVar(overrideSelf->sid, variable, mutableValue) != -1;
+        }
+    }
+
+    ScriptContextRef context;
+    if (!scriptContextResolve(program, &context)) {
+        return false;
+    }
+
+    if (context.kind == ScriptContextKind::NormalScript) {
+        int sid = context.script->sid;
+        ProgramValue mutableValue = value;
+        return scriptSetLocalVar(sid, variable, mutableValue) != -1;
+    }
+
+    return false;
 }
 
 // 0x4A3B0C scr_set_objs
@@ -2104,6 +2309,7 @@ static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent)
         script->owner = nullptr;
         script->source = nullptr;
         script->target = nullptr;
+        scriptSelfOverrides.erase(script->program);
         script->program = nullptr;
         script->flags &= ~SCRIPT_FLAG_LOADED;
     }
@@ -2367,6 +2573,7 @@ int scriptRemove(int sid)
     }
 
     Script* script = &(scriptListExtent->scripts[index]);
+    scriptSelfOverrides.erase(script->program);
     if ((script->flags & SCRIPT_FLAG_NO_SPATIAL) != 0) {
         if (script->program != nullptr) {
             script->program = nullptr;
