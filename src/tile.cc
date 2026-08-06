@@ -1402,7 +1402,7 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
     tileRect.bottom = y + tileHeight - 1;
 
     if (rectIntersection(&tileRect, rect, &tileRect) == 0) {
-        unsigned char* tileFrmBuffer = artGetFrameData(tileFrm, 0, ROTATION_FIRST);
+        unsigned char* tileFrmBuffer = artGetFrameData(tileFrm);
         tileFrmBuffer += tileWidth * (tileRect.top - y) + (tileRect.left - x);
 
         CacheEntry* eggFrmHandle;
@@ -1472,7 +1472,7 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
                     }
                 }
 
-                unsigned char* eggBuf = artGetFrameData(eggFrm, 0, ROTATION_FIRST);
+                unsigned char* eggBuf = artGetFrameData(eggFrm);
                 _intensity_mask_buf_to_buf(tileFrmBuffer + tileWidth * (intersectedRect.top - tileRect.top) + (intersectedRect.left - tileRect.left),
                     intersectedRect.right - intersectedRect.left + 1,
                     intersectedRect.bottom - intersectedRect.top + 1,
@@ -1614,7 +1614,7 @@ bool _square_roof_intersect(int x, int y, int elevation)
             CacheEntry* handle;
             Art* art = artLock(fid, &handle);
             if (art != nullptr) {
-                unsigned char* data = artGetFrameData(art, 0, ROTATION_FIRST);
+                unsigned char* data = artGetFrameData(art);
                 if (data != nullptr) {
                     int v18;
                     int v17;
@@ -1798,7 +1798,7 @@ static void tileRenderFloor(int fid, int x, int y, Rect* rect)
         }
 
         if (v23 == 9) {
-            unsigned char* buf = artGetFrameData(art, 0, ROTATION_FIRST);
+            unsigned char* buf = artGetFrameData(art);
             _dark_trans_buf_to_buf(buf + frameWidth * v78 + v79, v77, v76, frameWidth, gTileWindowBuffer, x, y, gTileWindowPitch, _verticies[0].intensity);
             goto out;
         }
@@ -1912,7 +1912,7 @@ static void tileRenderFloor(int fid, int x, int y, Rect* rect)
         }
 
         unsigned char* v66 = gTileWindowBuffer + gTileWindowPitch * y + x;
-        unsigned char* v67 = artGetFrameData(art, 0, ROTATION_FIRST) + frameWidth * v78 + v79;
+        unsigned char* v67 = artGetFrameData(art) + frameWidth * v78 + v79;
         int* v68 = &(_intensity_map[160 + 80 * v78]) + v79;
         int v86 = frameWidth - v77;
         int v85 = gTileWindowPitch - v77;

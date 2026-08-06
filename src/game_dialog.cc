@@ -3620,7 +3620,7 @@ int partyMemberControlWindowInit()
 
         int width = artGetWidth(upButtonFrm, 0, ROTATION_NE);
         int height = artGetHeight(upButtonFrm, 0, ROTATION_NE);
-        unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm, 0, ROTATION_NE);
+        unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm);
 
         fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->downFrmId);
         Art* downButtonFrm = artLock(fid, &(buttonData->downFrmHandle));
@@ -3629,7 +3629,7 @@ int partyMemberControlWindowInit()
             return -1;
         }
 
-        unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm, 0, ROTATION_NE);
+        unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm);
 
         fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->disabledFrmId);
         Art* disabledButtonFrm = artLock(fid, &(buttonData->disabledFrmHandle));
@@ -3638,7 +3638,7 @@ int partyMemberControlWindowInit()
             return -1;
         }
 
-        unsigned char* disabledButtonFrmData = artGetFrameData(disabledButtonFrm, 0, ROTATION_NE);
+        unsigned char* disabledButtonFrmData = artGetFrameData(disabledButtonFrm);
 
         dispositionButtonIndex++;
 
@@ -4040,7 +4040,7 @@ int partyMemberCustomizationWindowInit()
 
         int width = artGetWidth(upButtonFrm, 0, ROTATION_NE);
         int height = artGetHeight(upButtonFrm, 0, ROTATION_NE);
-        unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm, 0, ROTATION_NE);
+        unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm);
 
         int downButtonFid = buildFid(OBJ_TYPE_INTERFACE, buttonData->downFrmId);
         Art* downButtonFrm = artLock(downButtonFid, &(buttonData->downFrmHandle));
@@ -4049,7 +4049,7 @@ int partyMemberCustomizationWindowInit()
             return -1;
         }
 
-        unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm, 0, ROTATION_NE);
+        unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm);
 
         optionButton++;
         _gdialog_buttons[optionButton] = buttonCreate(gGameDialogWindow,
@@ -4743,7 +4743,7 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
 
         int width = artGetWidth(headFrm, frame, ROTATION_NE);
         int height = artGetHeight(headFrm, frame, ROTATION_NE);
-        unsigned char* data = artGetFrameData(headFrm, frame, ROTATION_NE);
+        unsigned char* data = artGetFrameData(headFrm, frame);
 
         int rotationOffsetX;
         int rotationOffsetY;

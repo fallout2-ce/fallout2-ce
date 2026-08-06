@@ -6952,7 +6952,7 @@ static int wmRefreshInterfaceOverlay(bool shouldRefreshWindow)
     wmRefreshInterfaceDial(false);
 
     if (wmGenData.isInCar) {
-        unsigned char* data = artGetFrameData(wmGenData.carImageFrm, wmGenData.carImageCurrentFrameIndex, ROTATION_FIRST);
+        unsigned char* data = artGetFrameData(wmGenData.carImageFrm, wmGenData.carImageCurrentFrameIndex);
         if (data == nullptr) {
             return -1;
         }
@@ -7198,7 +7198,7 @@ static int wmFreeTabsLabelList(int** quickDestinationsListPtr, int* quickDestina
 // 0x4C5734 wmRefreshInterfaceDial
 static void wmRefreshInterfaceDial(bool shouldRefreshWindow)
 {
-    unsigned char* data = artGetFrameData(wmGenData.dialFrm, wmGenData.dialFrmCurrentFrameIndex, ROTATION_FIRST);
+    unsigned char* data = artGetFrameData(wmGenData.dialFrm, wmGenData.dialFrmCurrentFrameIndex);
     blitBufferToBufferTrans(data,
         wmGenData.dialFrmWidth,
         wmGenData.dialFrmHeight,

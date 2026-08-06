@@ -5087,7 +5087,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
                         }
                     }
 
-                    unsigned char* mask = artGetFrameData(egg, 0, ROTATION_FIRST);
+                    unsigned char* mask = artGetFrameData(egg);
                     _intensity_mask_buf_to_buf(
                         src + frameWidth * (updatedEggRect.top - objectRect.top) + (updatedEggRect.left - objectRect.left),
                         updatedEggRect.right - updatedEggRect.left + 1,

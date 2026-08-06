@@ -1487,7 +1487,7 @@ void interfaceBarEndButtonsShow(bool animated)
             tickersExecute();
 
             if (getTicksSince(time) >= delay) {
-                unsigned char* src = artGetFrameData(art, frame, ROTATION_FIRST);
+                unsigned char* src = artGetFrameData(art, frame);
                 if (src != nullptr) {
                     blitBufferToBuffer(src, 57, 58, 57, gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset, gInterfaceBarWidth);
                     windowRefreshRect(gInterfaceBarWindow, &gInterfaceBarEndButtonsRect);
@@ -1502,7 +1502,7 @@ void interfaceBarEndButtonsShow(bool animated)
             sharedFpsLimiter.throttle();
         }
     } else {
-        unsigned char* src = artGetFrameData(art, frameCount - 1, ROTATION_FIRST);
+        unsigned char* src = artGetFrameData(art, frameCount - 1);
         blitBufferToBuffer(src, 57, 58, 57, gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset, gInterfaceBarWidth);
         windowRefreshRect(gInterfaceBarWindow, &gInterfaceBarEndButtonsRect);
     }
@@ -1547,7 +1547,7 @@ void interfaceBarEndButtonsHide(bool animated)
             tickersExecute();
 
             if (getTicksSince(time) >= delay) {
-                unsigned char* src = artGetFrameData(art, frame - 1, ROTATION_FIRST);
+                unsigned char* src = artGetFrameData(art, frame - 1);
                 unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset;
                 if (src != nullptr) {
                     blitBufferToBuffer(src, 57, 58, 57, dest, gInterfaceBarWidth);
@@ -1564,7 +1564,7 @@ void interfaceBarEndButtonsHide(bool animated)
         }
     } else {
         unsigned char* dest = gInterfaceWindowBuffer + gInterfaceBarWidth * 38 + 580 + gInterfaceBarContentOffset;
-        unsigned char* src = artGetFrameData(art, 0, ROTATION_FIRST);
+        unsigned char* src = artGetFrameData(art);
         blitBufferToBuffer(src, 57, 58, 57, dest, gInterfaceBarWidth);
         windowRefreshRect(gInterfaceBarWindow, &gInterfaceBarEndButtonsRect);
     }
@@ -2841,7 +2841,7 @@ unsigned char* customInterfaceBarGetBackgroundImageData()
         return nullptr;
     }
 
-    return artGetFrameData(gCustomInterfaceBarBackground, 0, ROTATION_FIRST);
+    return artGetFrameData(gCustomInterfaceBarBackground);
 }
 
 static void sidePanelsInit()
@@ -2915,7 +2915,7 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
         return;
     }
 
-    unsigned char* imageData = artGetFrameData(image, 0, ROTATION_FIRST);
+    unsigned char* imageData = artGetFrameData(image);
 
     int imageWidth = artGetWidth(image, 0, ROTATION_FIRST);
     int imageHeight = artGetHeight(image, 0, ROTATION_FIRST);

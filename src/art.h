@@ -62,7 +62,7 @@ int artGetHeight(Art* art, int frame, Rotation rotation);
 int artGetSize(Art* art, int frame, Rotation rotation, int* out_width, int* out_height);
 int artGetFrameOffsets(const Art* art, int frame, Rotation rotation, int* xPtr, int* yPtr);
 int artGetRotationOffsets(Art* art, Rotation rotation, int* out_offset_x, int* out_offset_y);
-unsigned char* artGetFrameData(Art* art, int frame, Rotation rotation);
+unsigned char* artGetFrameData(Art* art, int frame = 0, Rotation rotation = ROTATION_NE);
 unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int* widthPtr, int* heightPtr, int* xOffsetPtr, int* yOffsetPtr);
 ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
 ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
