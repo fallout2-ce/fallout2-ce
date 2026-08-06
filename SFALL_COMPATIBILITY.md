@@ -116,6 +116,14 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Events | add_g_timer_event<br>remove_timer_event<br>create_spatial<br>spatial_radius | not implemented | - |
 | Other | get_year<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>get_light_level<br>message_str_game<br>sneak_success<br>unwield_slot<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br> | ✅ except get/set_viewport_x/y, sneak_success  | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. |
 
+### CE-only metarules
+
+CE defines several metarules that are not supported in Sfall.  Include [ce.h](files/ce.h) for the #defines.
+
+| Name | Definition |
+| --- | --- |
+| `set_npc_reaction_thresholds(neutral, good)` | Set thresholds for reactions considered "neutral" and "good".  Default -10, 10 |
+
 ## Hooks
 
 | Hook | ID | Compatibility | Notes |
