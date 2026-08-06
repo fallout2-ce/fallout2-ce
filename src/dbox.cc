@@ -201,7 +201,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     }
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, gDialogBoxBackgroundFrmIds[dialogType], 0, 0);
+    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, gDialogBoxBackgroundFrmIds[dialogType]);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         fontSetCurrent(savedFont);
         return -1;
@@ -229,21 +229,21 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonPressedFrmImage;
 
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, 209, 0, 0);
+        int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, 209);
         if (!doneBoxFrmImage.lock(doneBoxFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        int pressedFid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0);
+        int pressedFid = buildFid(OBJ_TYPE_INTERFACE, 9);
         if (!buttonPressedFrmImage.lock(pressedFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        int normalFid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0);
+        int normalFid = buildFid(OBJ_TYPE_INTERFACE, 8);
         if (!buttonNormalFrmImage.lock(normalFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
@@ -346,21 +346,21 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
         } else {
-            int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, 209, 0, 0);
+            int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, 209);
             if (!doneBoxFrmImage.lock(doneBoxFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            int pressedFid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0);
+            int pressedFid = buildFid(OBJ_TYPE_INTERFACE, 9);
             if (!buttonPressedFrmImage.lock(pressedFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            int normalFid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0);
+            int normalFid = buildFid(OBJ_TYPE_INTERFACE, 8);
             if (!buttonNormalFrmImage.lock(normalFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
@@ -588,7 +588,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
 
     for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gLoadFileDialogFrmIds[index], 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, gLoadFileDialogFrmIds[index]);
         if (!frmImages[index].lock(fid)) {
             return -1;
         }
@@ -953,7 +953,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
 
     for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gSaveFileDialogFrmIds[index], 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, gSaveFileDialogFrmIds[index]);
         if (!frmImages[index].lock(fid)) {
             return -1;
         }

@@ -456,7 +456,7 @@ static void showDeath()
 
             // DEATH.FRM
             FrmImage backgroundFrmImage;
-            int fid = buildFid(OBJ_TYPE_INTERFACE, 309, 0, 0);
+            int fid = buildFid(OBJ_TYPE_INTERFACE, 309);
             if (!backgroundFrmImage.lock(fid)) {
                 break;
             }

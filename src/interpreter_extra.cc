@@ -1941,7 +1941,7 @@ static void opStartGameDialog(Program* program)
     }
 
     if (headId != -1) {
-        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, headId, 0, 0);
+        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, headId);
     }
 
     gameDialogSetBackground(backgroundId);
@@ -3341,7 +3341,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (buildFid(OBJ_TYPE_MISC, 10, 0, 0) == object->fid) {
+                if (buildFid(OBJ_TYPE_MISC, 10) == object->fid) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }
@@ -4280,7 +4280,7 @@ static void _op_anim_action_frame(Program* program)
     int actionFrame = 0;
 
     if (object != nullptr) {
-        int fid = buildFid(FID_TYPE(object->fid), object->fid & 0xFFF, anim, 0, object->rotation);
+        int fid = buildFid(FID_TYPE(object->fid), object->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, object->rotation);
         CacheEntry* frmHandle;
         Art* frm = artLock(fid, &frmHandle);
         if (frm != nullptr) {

@@ -187,7 +187,7 @@ AnimationType actionBlood(Object* obj, AnimationType anim, int delay)
 // 0x41060C pick_death
 AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, AnimationType attackerAnimation, bool hitFromFront)
 {
-    if (attacker->fid == buildFid(OBJ_TYPE_MISC, 10, ANIM_STAND, 0)) { // roktxpd.frm
+    if (attacker->fid == buildFid(OBJ_TYPE_MISC, 10)) { // roktxpd.frm
         return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
     if (attacker->pid == PROTO_ID_FORCE_FIELD_NS) { // Forcefield North/South
@@ -456,7 +456,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
     if (weapon != nullptr) {
         if ((flags & DAM_EXPLODE) != 0) {
             animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)objectDrop, -1);
-            fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0);
+            fid = buildFid(OBJ_TYPE_MISC, 10);
             animationRegisterSetFid(weapon, fid, 0);
             animationRegisterAnimateAndHide(weapon, ANIM_STAND, 0);
 
@@ -854,7 +854,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
                             animationRegisterSetFid(projectile, weaponFid, -1);
                         }
 
-                        int explosionFid = buildFid(OBJ_TYPE_MISC, explosionFrmId, 0, 0);
+                        int explosionFid = buildFid(OBJ_TYPE_MISC, explosionFrmId);
                         animationRegisterSetFid(projectile, explosionFid, -1);
 
                         const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_HIT, weapon, attack->hitMode, attack->defender);
@@ -969,7 +969,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
             }
 
             if (!takeOutAnimationRegistered) {
-                int fid = buildFid(OBJ_TYPE_CRITTER, attack->attacker->fid & 0xFFF, ANIM_STAND, 0, attack->attacker->rotation + 1);
+                int fid = buildFid(OBJ_TYPE_CRITTER, attack->attacker->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, attack->attacker->rotation + 1);
                 animationRegisterSetFid(attack->attacker, fid, -1);
             }
         } else {
@@ -1235,7 +1235,7 @@ int actionPickUp(Object* critter, Object* item)
             : ANIM_MAGIC_HANDS_GROUND;
         animationRegisterAnimate(critter, anim, 0);
 
-        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, 0, critter->rotation + 1);
+        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, critter->rotation + 1);
 
         int actionFrame;
         CacheEntry* cacheEntry;
@@ -1511,7 +1511,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
     animationRegisterCallbackForced(performer, target, (AnimationCallback*)_is_next_to, -1);
 
     AnimationType anim = (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && critterIsProne(target)) ? ANIM_MAGIC_HANDS_GROUND : ANIM_MAGIC_HANDS_MIDDLE;
-    int fid = buildFid(OBJ_TYPE_CRITTER, performer->fid & 0xFFF, anim, 0, performer->rotation + 1);
+    int fid = buildFid(OBJ_TYPE_CRITTER, performer->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, performer->rotation + 1);
 
     CacheEntry* artHandle;
     Art* art = artLock(fid, &artHandle);
@@ -1610,7 +1610,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
     }
 
     Object* explosion;
-    int fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0);
+    int fid = buildFid(OBJ_TYPE_MISC, 10);
     if (objectCreateWithFidPid(&explosion, fid, -1) == -1) {
         internal_free(attack);
         return -1;
@@ -1623,7 +1623,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
 
     Object* adjacentExplosions[ROTATION_COUNT];
     for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
-        int fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0);
+        int fid = buildFid(OBJ_TYPE_MISC, 10);
         if (objectCreateWithFidPid(&(adjacentExplosions[rotation]), fid, -1) == -1) {
             while (--rotation >= ROTATION_FIRST) {
                 objectDestroy(adjacentExplosions[rotation], nullptr);

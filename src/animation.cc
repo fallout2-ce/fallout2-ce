@@ -708,7 +708,7 @@ int animationRegisterRunToObject(Object* owner, Object* destination, int actionP
 
     if ((FID_TYPE(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != 0)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
-        || !artExists(buildFid(FID_TYPE(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, 0, owner->rotation + 1))) {
+        || !artExists(buildFid(FID_TYPE(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1))) {
         animationDescription->anim = ANIM_WALK;
     } else {
         animationDescription->anim = ANIM_RUNNING;
@@ -791,7 +791,7 @@ int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actio
 
     if ((FID_TYPE(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != 0)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
-        || !artExists(buildFid(FID_TYPE(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, 0, owner->rotation + 1))) {
+        || !artExists(buildFid(FID_TYPE(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1))) {
         animationDescription->anim = ANIM_WALK;
     } else {
         animationDescription->anim = ANIM_RUNNING;
@@ -3209,7 +3209,7 @@ void _dude_stand(Object* obj, Rotation rotation, int fid)
                 artUnlock(takeOutFrmHandle);
 
                 CacheEntry* standFrmHandle;
-                int standFid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_STAND, 0, obj->rotation + 1);
+                int standFid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, obj->rotation + 1);
                 Art* standFrm = artLock(standFid, &standFrmHandle);
                 if (standFrm != nullptr) {
                     int offsetX;
@@ -3231,7 +3231,7 @@ void _dude_stand(Object* obj, Rotation rotation, int fid)
         } else {
             anim = ANIM_STAND;
         }
-        fid = buildFid(FID_TYPE(obj->fid), (obj->fid & 0xFFF), anim, (obj->fid & 0xF000) >> 12, obj->rotation + 1);
+        fid = buildFid(FID_TYPE(obj->fid), (obj->fid & 0xFFF), anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
     }
 
     Rect temp;
@@ -3347,8 +3347,8 @@ static int _check_gravity(int tile, int elevation)
         tileToScreenXY(tile, &x, &y);
 
         int squareTile = squareTileFromScreenXY(x + 2, y + 8, elevation);
-        int fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[squareTile] & 0xFFF, 0, 0);
-        if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0)) {
+        int fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[squareTile] & 0xFFF);
+        if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
             break;
         }
     }

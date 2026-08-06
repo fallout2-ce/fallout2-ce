@@ -1090,6 +1090,8 @@ static int buildFidInternal(unsigned short frmId, unsigned char weaponCode, unsi
 }
 
 // 0x419C88
+// animType doesn't have to be of AnimationType enum only but also HeadAnimation
+// weaponCode doesn't have to be WeaponAnimation enum only but also Fidget or flags
 int buildFid(int objectType, int frmId, int animType, int weaponCode, Rotation rotation)
 {
     // Always use rotation 0 (NE) for non-critters, for certain critter animations.
@@ -1624,7 +1626,7 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
 }
 
 FrmId::FrmId(ObjectType objType, int frmId)
-    : _fid(buildFid(objType, frmId, 0, 0))
+    : _fid(buildFid(objType, frmId))
 {
     assert(objType >= 0 && objType < OBJ_TYPE_COUNT);
 }

@@ -1218,7 +1218,7 @@ void showHelp()
         unsigned char* windowBuffer = windowGetBuffer(win);
         if (windowBuffer != nullptr) {
             FrmImage backgroundFrmImage;
-            int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 297, 0, 0);
+            int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 297);
             if (backgroundFrmImage.lock(backgroundFid)) {
                 paletteSetEntries(gPaletteBlack);
                 blitBufferToBuffer(backgroundFrmImage.getData(), HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT, HELP_SCREEN_WIDTH, windowBuffer, HELP_SCREEN_WIDTH);

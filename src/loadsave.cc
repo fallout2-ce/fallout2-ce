@@ -1650,7 +1650,7 @@ static int lsgWindowInit(int windowType)
     }
 
     for (int index = 0; index < LOAD_SAVE_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gLoadSaveFrmIds[index], 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, gLoadSaveFrmIds[index]);
         if (!_loadsaveFrmImages[index].lock(fid)) {
             while (--index >= 0) {
                 _loadsaveFrmImages[index].unlock();

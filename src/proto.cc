@@ -375,9 +375,9 @@ int proto_item_init(Proto* proto, int pid)
 
     proto->item.pid = -1;
     proto->item.messageId = 100 * protoNum;
-    proto->item.fid = buildFid(OBJ_TYPE_ITEM, protoNum - 1, 0, 0);
+    proto->item.fid = buildFid(OBJ_TYPE_ITEM, protoNum - 1);
     if (!artExists(proto->item.fid)) {
-        proto->item.fid = buildFid(OBJ_TYPE_ITEM, 0, 0, 0);
+        proto->item.fid = buildFid(OBJ_TYPE_ITEM, 0);
     }
     proto->item.lightDistance = 0;
     proto->item.lightIntensity = 0;
@@ -490,7 +490,7 @@ int proto_critter_init(Proto* proto, int pid)
 
     proto->pid = -1;
     proto->messageId = 100 * num;
-    proto->fid = buildFid(OBJ_TYPE_CRITTER, num - 1, 0, 0);
+    proto->fid = buildFid(OBJ_TYPE_CRITTER, num - 1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
     proto->critter.lightDistance = 0;
     proto->critter.lightIntensity = 0;
     proto->critter.flags = PROTO_FLAG_LIGHT_THRU;
@@ -501,7 +501,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.headFid = -1;
     proto->critter.aiPacket = 1;
     if (!artExists(proto->fid)) {
-        proto->fid = buildFid(OBJ_TYPE_CRITTER, 0, 0, 0);
+        proto->fid = buildFid(OBJ_TYPE_CRITTER, 0, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
     }
 
     CritterProtoData* data = &(proto->critter.data);
@@ -881,11 +881,11 @@ int _proto_dude_update_gender()
             weaponAnimationCode = weaponAnimationFromFid(gDude->fid);
         }
 
-        int fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, weaponAnimationCode, ROTATION_FIRST);
+        int fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
         objectSetFid(gDude, fid, nullptr);
     }
 
-    proto->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, 0, ROTATION_FIRST);
+    proto->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     return 0;
 }
@@ -894,7 +894,7 @@ int _proto_dude_update_gender()
 // 0x49FA64 proto_dude_init
 int _proto_dude_init(const char* path)
 {
-    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, 0, ROTATION_FIRST);
+    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     if (_init_true) {
         _obj_inven_free(&(gDude->data.inventory));
@@ -952,9 +952,9 @@ int proto_scenery_init(Proto* proto, int pid)
 
     proto->scenery.pid = -1;
     proto->scenery.messageId = 100 * num;
-    proto->scenery.fid = buildFid(OBJ_TYPE_SCENERY, num - 1, 0, 0);
+    proto->scenery.fid = buildFid(OBJ_TYPE_SCENERY, num - 1);
     if (!artExists(proto->scenery.fid)) {
-        proto->scenery.fid = buildFid(OBJ_TYPE_SCENERY, 0, 0, 0);
+        proto->scenery.fid = buildFid(OBJ_TYPE_SCENERY, 0);
     }
     proto->scenery.lightDistance = 0;
     proto->scenery.lightIntensity = 0;
@@ -1009,9 +1009,9 @@ int proto_wall_init(Proto* proto, int pid)
 
     proto->wall.pid = -1;
     proto->wall.messageId = 100 * num;
-    proto->wall.fid = buildFid(OBJ_TYPE_WALL, num - 1, 0, 0);
+    proto->wall.fid = buildFid(OBJ_TYPE_WALL, num - 1);
     if (!artExists(proto->wall.fid)) {
-        proto->wall.fid = buildFid(OBJ_TYPE_WALL, 0, 0, 0);
+        proto->wall.fid = buildFid(OBJ_TYPE_WALL, 0);
     }
     proto->wall.lightDistance = 0;
     proto->wall.lightIntensity = 0;
@@ -1030,9 +1030,9 @@ int proto_tile_init(Proto* proto, int pid)
 
     proto->tile.pid = -1;
     proto->tile.messageId = 100 * num;
-    proto->tile.fid = buildFid(OBJ_TYPE_TILE, num - 1, 0, 0);
+    proto->tile.fid = buildFid(OBJ_TYPE_TILE, num - 1);
     if (!artExists(proto->tile.fid)) {
-        proto->tile.fid = buildFid(OBJ_TYPE_TILE, 0, 0, 0);
+        proto->tile.fid = buildFid(OBJ_TYPE_TILE, 0);
     }
     proto->tile.flags = 0;
     proto->tile.extendedFlags = PROTO_EXT_FLAG_LOOK;
@@ -1049,9 +1049,9 @@ int proto_misc_init(Proto* proto, int pid)
 
     proto->misc.pid = -1;
     proto->misc.messageId = 100 * num;
-    proto->misc.fid = buildFid(OBJ_TYPE_MISC, num - 1, 0, 0);
+    proto->misc.fid = buildFid(OBJ_TYPE_MISC, num - 1);
     if (!artExists(proto->misc.fid)) {
-        proto->misc.fid = buildFid(OBJ_TYPE_MISC, 0, 0, 0);
+        proto->misc.fid = buildFid(OBJ_TYPE_MISC, 0);
     }
     proto->misc.lightDistance = 0;
     proto->misc.lightIntensity = 0;
@@ -1364,7 +1364,7 @@ int protoInit()
     proto_critter_init((Proto*)&gDudeProto, 0x1000000);
 
     gDudeProto.pid = 0x1000000;
-    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, 1, 0, 0, ROTATION_FIRST);
+    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, 1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     gDude->pid = 0x1000000;
     gDude->sid = 1;
@@ -1482,7 +1482,7 @@ void protoReset()
     // TODO: Get rid of cast.
     proto_critter_init((Proto*)&gDudeProto, 0x1000000);
     gDudeProto.pid = 0x1000000;
-    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, 1, 0, 0, ROTATION_FIRST);
+    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, 1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     gDude->pid = 0x1000000;
     gDude->sid = -1;

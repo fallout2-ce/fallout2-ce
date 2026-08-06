@@ -226,7 +226,7 @@ void map_toggle_block_obj_viewing(int mode)
             if (fid == -1) {
                 debugPrint("\nError: art_list_index failed in toggle_obj_view");
             } else {
-                fidShowList[i] = buildFid(kBlockViewArtType[i], fid, 0, 0);
+                fidShowList[i] = buildFid(kBlockViewArtType[i], fid);
             }
         }
     }
@@ -456,7 +456,7 @@ void placeTile(int pid, int fid)
     int oldValue = *squarePtr;
 
     if (tileRoofIsVisible()) {
-        int oldRoofFid = buildFid(OBJ_TYPE_TILE, (oldValue >> 16) & 0xFFF, 0, 0);
+        int oldRoofFid = buildFid(OBJ_TYPE_TILE, (oldValue >> 16) & 0xFFF);
         if (oldRoofFid == fid) {
             return;
         }
@@ -471,7 +471,7 @@ void placeTile(int pid, int fid)
         Rect rect = { sx, sy, sx + 80, sy + 36 };
         tileWindowRefreshRect(&rect, gElevation);
     } else {
-        int oldFloorFid = buildFid(OBJ_TYPE_TILE, oldValue & 0xFFF, 0, 0);
+        int oldFloorFid = buildFid(OBJ_TYPE_TILE, oldValue & 0xFFF);
         if (oldFloorFid == fid) {
             return;
         }
@@ -879,7 +879,7 @@ void copyTile()
     int srcDy[kMaxTiles];
     for (int i = 0; i < srcCount; i++) {
         int floorArt = _square[gElevation]->field_0[srcTiles[i]] & 0xFFF;
-        srcFid[i] = buildFid(OBJ_TYPE_TILE, floorArt, 0, 0);
+        srcFid[i] = buildFid(OBJ_TYPE_TILE, floorArt);
 
         int sx, sy;
         squareTileToScreenXY(srcTiles[i], &sx, &sy, gElevation);
@@ -887,7 +887,7 @@ void copyTile()
         srcDy[i] = sy - region.top;
     }
 
-    int blankFid = buildFid(OBJ_TYPE_TILE, 1, 0, 0);
+    int blankFid = buildFid(OBJ_TYPE_TILE, 1);
 
     mp_run_placement_loop([&](int ix, int iy) {
         for (int i = 0; i < srcCount; i++) {
@@ -947,7 +947,7 @@ void eraseObject()
 
                     if (hit != nullptr) {
                         // Don't destroy exit-grid markers (interface art, id=3).
-                        int exitGridFid = buildFid(OBJ_TYPE_INTERFACE, 3, 0, 0);
+                        int exitGridFid = buildFid(OBJ_TYPE_INTERFACE, 3);
                         if (hit->fid != exitGridFid) {
                             Rect rect;
                             int elev = hit->elevation;
@@ -1199,7 +1199,7 @@ void mapper_shift_map_elev()
     // tiles in the source elevation back to "blank" art (id=1).
     memcpy(_square[destElev]->field_0, _square[gElevation]->field_0, 40000);
 
-    int blankFid = buildFid(OBJ_TYPE_TILE, 1, 0, 0);
+    int blankFid = buildFid(OBJ_TYPE_TILE, 1);
 
     // Match the original mapper's tile word format (preserved here even though the rotation
     // bits end up overlapping the low nibble of the art id — same convention as placeTile).
@@ -1222,7 +1222,7 @@ void mapper_shift_map_elev()
         int elevBits = (builtTile >> 26) & 0x7;
         int newBuiltTile = tile | (destElev << 29) | ((elevBits << 26) & 0x1C000000);
 
-        int exitGridFid = buildFid(OBJ_TYPE_INTERFACE, 3, 0, 0);
+        int exitGridFid = buildFid(OBJ_TYPE_INTERFACE, 3);
         Object* exitGrid = objectFindFirstAtLocation(gElevation, tile);
         while (exitGrid != nullptr) {
             if (exitGrid->fid == exitGridFid) {
