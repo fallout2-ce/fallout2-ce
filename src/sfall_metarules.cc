@@ -811,7 +811,7 @@ static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
-static void mf_set_npc_reaction_thresholds(OpcodeContext& ctx);
+static void mf_set_reaction_thresholds(OpcodeContext& ctx);
 static void mf_set_object_data(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
 static void mf_set_party_member_cc_msg_ids(OpcodeContext& ctx);
@@ -915,7 +915,7 @@ const MetaruleInfo kMetarules[] = {
     { "set_iface_tag_text", mf_set_iface_tag_text, 3, 3, -1, { ARG_INT, ARG_STRING, ARG_INT } },
     { "set_ini_setting", mf_set_ini_setting, 2, 2, -1, { ARG_STRING, ARG_INTSTR } },
     // {"set_map_enter_position",    mf_set_map_enter_position,    3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
-    { "set_npc_reaction_thresholds", mf_set_npc_reaction_thresholds, 2, 2, -1, { ARG_INT, ARG_INT } },
+    { "set_reaction_thresholds", mf_set_reaction_thresholds, 2, 2, -1, { ARG_INT, ARG_INT } },
     { "set_object_data", mf_set_object_data, 3, 3, -1, { ARG_OBJECT, ARG_INT, ARG_ANY } },
     { "set_outline", mf_set_outline, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
     { "set_party_member_cc_msg_ids", mf_set_party_member_cc_msg_ids, 3, 3, -1, { ARG_INT, ARG_INT, ARG_INT } },
@@ -1843,7 +1843,7 @@ void mf_set_iface_tag_text(OpcodeContext& ctx)
     }
 }
 
-void mf_set_npc_reaction_thresholds(OpcodeContext& ctx)
+void mf_set_reaction_thresholds(OpcodeContext& ctx)
 {
     int neutralThreshold = ctx.arg(0).asInt();
     int goodThreshold = ctx.arg(1).asInt();
