@@ -326,7 +326,7 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
     // Migrate start date/time only when explicitly set (not the sfall -1 sentinel).
     auto migrateStartInt = [&](const char* sfallKey, const char* targetKey, int defaultValue) {
         int value;
-        if (configGetInt(sfallConfig, kSfallMisc, sfallKey, &value) && value >= 0 && value != defaultValue) {
+        if (configGetInt(sfallConfig, kSfallMisc, sfallKey, &value, 10) && value >= 0 && value != defaultValue) {
             char buf[32];
             snprintf(buf, sizeof(buf), "%d", value);
             configSetString(&migratedConfig, CONTENT_CONFIG_START_SECTION, targetKey, buf);
