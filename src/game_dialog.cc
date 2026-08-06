@@ -3925,12 +3925,12 @@ void partyMemberControlWindowHandleEvents()
                 if (weapon != nullptr) {
                     inventoryEquip(gGameDialogSpeaker, weapon, HAND_RIGHT);
                     aiAttemptWeaponReload(gGameDialogSpeaker, 0);
-
-                    int num = _gdPickAIUpdateMsg(gGameDialogSpeaker);
-                    char* msg = getmsg(&gProtoMessageList, &messageListItem, num);
-                    gameDialogRenderSupplementaryMessage(msg);
-                    partyMemberControlWindowUpdate();
                 }
+
+                int num = _gdPickAIUpdateMsg(gGameDialogSpeaker);
+                char* msg = getmsg(&gProtoMessageList, &messageListItem, num);
+                gameDialogRenderSupplementaryMessage(msg);
+                partyMemberControlWindowUpdate();
             } else if (keyCode == 2098) {
                 aiSetDisposition(gGameDialogSpeaker, 4);
             } else if (keyCode == 2099) {
