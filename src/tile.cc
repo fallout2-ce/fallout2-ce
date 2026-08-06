@@ -1393,7 +1393,7 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
     }
 
     int tileWidth = artGetWidth(tileFrm);
-    int tileHeight = artGetHeight(tileFrm, 0, ROTATION_FIRST);
+    int tileHeight = artGetHeight(tileFrm);
 
     Rect tileRect;
     tileRect.left = x;
@@ -1409,7 +1409,7 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
         Art* eggFrm = artLock(gEgg->fid, &eggFrmHandle);
         if (eggFrm != nullptr) {
             int eggWidth = artGetWidth(eggFrm);
-            int eggHeight = artGetHeight(eggFrm, 0, ROTATION_FIRST);
+            int eggHeight = artGetHeight(eggFrm);
 
             int eggScreenX;
             int eggScreenY;
@@ -1749,7 +1749,7 @@ static void tileRenderFloor(int fid, int x, int y, Rect* rect)
     if (x >= gTileWindowWidth || x > rect->right || y >= gTileWindowHeight || y > rect->bottom) goto out;
 
     frameWidth = artGetWidth(art);
-    frameHeight = artGetHeight(art, 0, ROTATION_FIRST);
+    frameHeight = artGetHeight(art);
 
     if (left < x) {
         v79 = 0;

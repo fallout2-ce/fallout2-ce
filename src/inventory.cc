@@ -2637,7 +2637,7 @@ static int inventoryCommonInit()
         cursorData->frm = frm;
         cursorData->frmData = artGetFrameData(frm);
         cursorData->width = artGetWidth(frm);
-        cursorData->height = artGetHeight(frm, 0, ROTATION_FIRST);
+        cursorData->height = artGetHeight(frm);
         artGetFrameOffsets(frm, 0, ROTATION_FIRST, &(cursorData->offsetX), &(cursorData->offsetY));
     }
 

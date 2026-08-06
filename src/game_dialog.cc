@@ -3619,7 +3619,7 @@ int partyMemberControlWindowInit()
         }
 
         int width = artGetWidth(upButtonFrm);
-        int height = artGetHeight(upButtonFrm, 0, ROTATION_NE);
+        int height = artGetHeight(upButtonFrm);
         unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm);
 
         fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->downFrmId);
@@ -4039,7 +4039,7 @@ int partyMemberCustomizationWindowInit()
         }
 
         int width = artGetWidth(upButtonFrm);
-        int height = artGetHeight(upButtonFrm, 0, ROTATION_NE);
+        int height = artGetHeight(upButtonFrm);
         unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm);
 
         int downButtonFid = buildFid(OBJ_TYPE_INTERFACE, buttonData->downFrmId);
@@ -4742,7 +4742,7 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
         }
 
         int width = artGetWidth(headFrm, frame);
-        int height = artGetHeight(headFrm, frame, ROTATION_NE);
+        int height = artGetHeight(headFrm, frame);
         unsigned char* data = artGetFrameData(headFrm, frame);
 
         int rotationOffsetX;

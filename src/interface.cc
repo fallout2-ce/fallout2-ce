@@ -2918,7 +2918,7 @@ static void sidePanelsDraw(const char* path, int win, bool isLeading)
     unsigned char* imageData = artGetFrameData(image);
 
     int imageWidth = artGetWidth(image);
-    int imageHeight = artGetHeight(image, 0, ROTATION_FIRST);
+    int imageHeight = artGetHeight(image);
 
     int windowWidth = windowGetWidth(win);
     int windowHeight = windowGetHeight(win);

@@ -428,7 +428,7 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
 
     unsigned char* frameData = artGetFrameData(frm);
     int frameWidth = artGetWidth(frm);
-    int frameHeight = artGetHeight(frm, 0, ROTATION_FIRST);
+    int frameHeight = artGetHeight(frm);
 
     int remainingWidth = width - frameWidth;
     int remainingHeight = height - frameHeight;
