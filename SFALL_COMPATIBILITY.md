@@ -123,6 +123,7 @@ CE defines several metarules that are not supported in Sfall.  Include [ce.h](fi
 | Name | Definition |
 | --- | --- |
 | `set_npc_reaction_thresholds(neutral, good)` | Set thresholds for reactions considered "neutral" and "good".  Default -10, 10 |
+| `set_party_member_cc_msg_ids(pid, start_msg_id, end_msg_id)` | Override party-member combat-control update messages for a pid. Picks randomly from the inclusive contiguous range. Default fallback ranges are 670-674 for humans and 677-678 for the hardcoded dog pid list. |
 
 ## Hooks
 
