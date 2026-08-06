@@ -802,7 +802,7 @@ static int _proto_update_gen(Object* obj)
         if (isExitGridPid(obj->pid)) {
             data->misc.tile = -1;
             data->misc.elevation = 0;
-            data->misc.rotation = ROTATION_FIRST;
+            data->misc.rotation = ROTATION_NE;
             data->misc.map = -1;
         }
         break;

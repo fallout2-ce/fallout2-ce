@@ -1387,7 +1387,7 @@ int gameMouseSetCursor(int cursor)
 
     int offsetX;
     int offsetY;
-    artGetRotationOffsets(mouseCursorFrm, ROTATION_FIRST, &offsetX, &offsetY);
+    artGetRotationOffsets(mouseCursorFrm, ROTATION_NE, &offsetX, &offsetY);
 
     offsetX = width / 2 - offsetX;
     offsetY = height - 1 - offsetY;
@@ -2302,11 +2302,11 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
             CacheEntry* hexCursorFrmHandle;
             Art* hexCursorFrm = artLock(gGameMouseHexCursor->fid, &hexCursorFrmHandle);
             if (hexCursorFrm != nullptr) {
-                artGetRotationOffsets(hexCursorFrm, ROTATION_FIRST, &offsetX, &offsetY);
+                artGetRotationOffsets(hexCursorFrm, ROTATION_NE, &offsetX, &offsetY);
 
                 int frameOffsetX;
                 int frameOffsetY;
-                artGetFrameOffsets(hexCursorFrm, 0, ROTATION_FIRST, &frameOffsetX, &frameOffsetY);
+                artGetFrameOffsets(hexCursorFrm, 0, ROTATION_NE, &frameOffsetX, &frameOffsetY);
 
                 offsetX += frameOffsetX;
                 offsetY += frameOffsetY;
@@ -2387,11 +2387,11 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
             CacheEntry* hexCursorFrmHandle;
             Art* hexCursorFrm = artLock(gGameMouseHexCursor->fid, &hexCursorFrmHandle);
             if (hexCursorFrm != nullptr) {
-                artGetRotationOffsets(hexCursorFrm, ROTATION_FIRST, &offsetX, &offsetY);
+                artGetRotationOffsets(hexCursorFrm, ROTATION_NE, &offsetX, &offsetY);
 
                 int frameOffsetX;
                 int frameOffsetY;
-                artGetFrameOffsets(hexCursorFrm, 0, ROTATION_FIRST, &frameOffsetX, &frameOffsetY);
+                artGetFrameOffsets(hexCursorFrm, 0, ROTATION_NE, &frameOffsetX, &frameOffsetY);
 
                 offsetX += frameOffsetX;
                 offsetY += frameOffsetY;

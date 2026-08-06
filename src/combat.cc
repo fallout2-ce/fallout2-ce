@@ -5636,7 +5636,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
         CALLED_SHOT_WINDOW_WIDTH);
 
     FrmImage critterFrm;
-    int critterFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_CALLED_SHOT_PIC, WEAPON_ANIMATION_NONE);
+    int critterFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_CALLED_SHOT_PIC, WEAPON_ANIMATION_NONE, ROTATION_NE);
     if (critterFrm.lock(critterFid)) {
         blitBufferToBuffer(critterFrm.getData(),
             170,

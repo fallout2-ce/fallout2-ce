@@ -243,7 +243,7 @@ char** menu_names[] = {
 };
 
 // 0x559748
-MapTransition mapInfo = { -1, -1, 0, ROTATION_FIRST };
+MapTransition mapInfo = { -1, -1, 0, ROTATION_NE };
 
 // 0x559880
 int max_art_buttons = 7;

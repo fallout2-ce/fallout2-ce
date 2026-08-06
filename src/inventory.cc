@@ -500,7 +500,7 @@ static int gSecondaryInventoryScrollDownButton = -1;
 static unsigned int gInventoryWindowDudeRotationTimestamp = 0;
 
 // 0x5190F8 curr_rot
-static Rotation gInventoryWindowDudeRotation = ROTATION_FIRST;
+static Rotation gInventoryWindowDudeRotation = ROTATION_NE;
 
 // 0x5190FC num
 static const int gInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
@@ -2638,7 +2638,7 @@ static int inventoryCommonInit()
         cursorData->frmData = artGetFrameData(frm);
         cursorData->width = artGetWidth(frm);
         cursorData->height = artGetHeight(frm);
-        artGetFrameOffsets(frm, 0, ROTATION_FIRST, &(cursorData->offsetX), &(cursorData->offsetY));
+        artGetFrameOffsets(frm, 0, ROTATION_NE, &(cursorData->offsetX), &(cursorData->offsetY));
     }
 
     if (index != INVENTORY_WINDOW_CURSOR_COUNT) {
@@ -3103,7 +3103,7 @@ static void _adjust_fid()
         gInventoryArmor,
         interfaceGetCurrentHand(),
         ANIM_STAND,
-        ROTATION_FIRST);
+        ROTATION_NE);
     gInventoryWindowDudeFid = scriptHooks_AdjustFid(fid, fid);
 }
 
@@ -4444,7 +4444,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     int offsetX;
     int offsetY;
-    artGetRotationOffsets(cursorData->frm, ROTATION_FIRST, &offsetX, &offsetY);
+    artGetRotationOffsets(cursorData->frm, ROTATION_NE, &offsetX, &offsetY);
 
     Rect rect;
     rect.left = x - inventoryWindowX - cursorData->width / 2 + offsetX;

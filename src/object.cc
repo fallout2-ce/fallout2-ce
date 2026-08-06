@@ -5032,7 +5032,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 
                 int eggWidth;
                 int eggHeight;
-                artGetSize(egg, 0, ROTATION_FIRST, &eggWidth, &eggHeight);
+                artGetSize(egg, 0, ROTATION_NE, &eggWidth, &eggHeight);
 
                 int eggScreenX;
                 int eggScreenY;

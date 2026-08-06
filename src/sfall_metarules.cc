@@ -1044,7 +1044,7 @@ void mf_art_cache_flush(OpcodeContext& ctx)
 void mf_art_frame_data(OpcodeContext& ctx)
 {
     int frame = ctx.numArgs() > 1 ? ctx.arg(1).asInt() : 0;
-    Rotation rotation = ctx.numArgs() > 2 ? static_cast<Rotation>(ctx.arg(2).asInt()) : ROTATION_FIRST;
+    Rotation rotation = ctx.numArgs() > 2 ? static_cast<Rotation>(ctx.arg(2).asInt()) : ROTATION_NE;
 
     if (ctx.arg(0).isInt() && ctx.arg(0).asInt() == -1) {
         ctx.setReturn(-1);
@@ -1455,11 +1455,11 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotatio
 
     if (ctx.arg(artArg).isInt()) {
         fid = ctx.arg(artArg).asInt();
-        Rotation frameRotation = ROTATION_FIRST;
+        Rotation frameRotation = ROTATION_NE;
         int lockFid = fid;
         if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
-            frameRotation = rotation >= ROTATION_FIRST ? rotation : rotationFromFid(fid);
-            if (rotation >= ROTATION_FIRST) {
+            frameRotation = rotation >= ROTATION_NE ? rotation : rotationFromFid(fid);
+            if (rotation >= ROTATION_NE) {
                 lockFid = (rotation << 28) | (fid & 0x0FFFFFFF);
             }
         }
@@ -1470,7 +1470,7 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotatio
         }
     } else {
         const char* path = ctx.stringArg(artArg);
-        Rotation frameRotation  = rotation >= ROTATION_FIRST ? rotation : ROTATION_FIRST;
+        Rotation frameRotation  = rotation >= ROTATION_NE ? rotation : ROTATION_NE;
         if (!image.lock(path, frame, frameRotation)) {
             ctx.printError("%s() - cannot load art from file: %s", ctx.name(), path);
             return false;

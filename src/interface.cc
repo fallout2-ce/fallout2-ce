@@ -2821,7 +2821,7 @@ static void extendedApBarInitToWindow()
     // Blit extended AP bar art into static window buffer, overwriting pixels from the interface bar FRM.
     if (settings.ui.extend_ap_bar) {
         if (ArtPtr apBarArt { artLoad("art\\intrface\\iface_apbar_e.frm") }) {
-            if (auto apBarFrmBuf = artGetFrameBuffer(apBarArt.get(), 0, ROTATION_FIRST)) {
+            if (auto apBarFrmBuf = artGetFrameBuffer(apBarArt.get(), 0, ROTATION_NE)) {
                 int apBarBgXOffset = apBarXOffset - 23;
                 constexpr int apBarBgYOffset = kApBarYOffset - 4;
 

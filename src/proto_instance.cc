@@ -2288,7 +2288,7 @@ int objectAttemptPlacementPartyMember(Object* obj, int tile, int elevation)
     }
 
     int destinationTile = tile;
-    Rotation rotation = ROTATION_FIRST;
+    Rotation rotation = ROTATION_NE;
     if (!wmEvalTileNumForPlacement(tile)) {
         destinationTile = gDude->tile;
         for (int i = 1; i <= 100; i++) {

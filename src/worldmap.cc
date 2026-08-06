@@ -2921,7 +2921,7 @@ static int wmEntranceSlotInit(EntranceInfo* entrance)
     entrance->map = -1;
     entrance->elevation = 0;
     entrance->tile = 0;
-    entrance->rotation = ROTATION_FIRST;
+    entrance->rotation = ROTATION_NE;
 
     return 0;
 }
@@ -4353,8 +4353,8 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
 static int wmSetupRndNextTileNumInit(Encounter* encounter)
 {
     for (int index = 0; index < 2; index++) {
-        wmRndCenterRotations[index] = ROTATION_FIRST;
-        wmRndTileDirs[index] = ROTATION_FIRST;
+        wmRndCenterRotations[index] = ROTATION_NE;
+        wmRndTileDirs[index] = ROTATION_NE;
         wmRndCenterTiles[index] = -1;
 
         if (index & 1) {
@@ -4390,8 +4390,8 @@ static int wmSetupRndNextTileNumInit(Encounter* encounter)
             wmRndCenterRotations[0] = rsp->rotation;
             wmRndCenterRotations[1] = wmRndCenterRotations[0];
         } else {
-            wmRndCenterRotations[0] = ROTATION_FIRST;
-            wmRndCenterRotations[1] = ROTATION_FIRST;
+            wmRndCenterRotations[0] = ROTATION_NE;
+            wmRndCenterRotations[1] = ROTATION_NE;
 
             wmRndCenterTiles[0] = gDude->tile;
             wmRndCenterTiles[1] = gDude->tile;
@@ -5639,7 +5639,7 @@ static int wmTileGrabArt(int tileIdx)
         return 0;
     }
 
-    tile->data = artLockFrameData(tile->fid, 0, ROTATION_FIRST, &(tile->handle));
+    tile->data = artLockFrameData(tile->fid, 0, ROTATION_NE, &(tile->handle));
     if (tile->data != nullptr) {
         return 0;
     }

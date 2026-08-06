@@ -775,7 +775,7 @@ void mapNewMap()
     tileSetCenter(20100, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     memset(&gMapTransition, 0, sizeof(gMapTransition));
     gMapHeader.enteringElevation = 0;
-    gMapHeader.enteringRotation = ROTATION_FIRST;
+    gMapHeader.enteringRotation = ROTATION_NE;
     gMapHeader.localVariablesCount = 0;
     gMapHeader.version = 20;
     gMapHeader.name[0] = '\0';
