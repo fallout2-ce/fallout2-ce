@@ -41,7 +41,7 @@ inline Rotation operator++(Rotation& e, int)
 
 inline Rotation& operator--(Rotation& e)
 {
-    e = e - 1; 
+    e = e - 1;
     return e;
 }
 

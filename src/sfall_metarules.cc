@@ -1470,7 +1470,7 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotatio
         }
     } else {
         const char* path = ctx.stringArg(artArg);
-        Rotation frameRotation  = rotationIsValid(rotation) ? rotation : ROTATION_NE;
+        Rotation frameRotation = rotationIsValid(rotation) ? rotation : ROTATION_NE;
         if (!image.lock(path, frame, frameRotation)) {
             ctx.printError("%s() - cannot load art from file: %s", ctx.name(), path);
             return false;
