@@ -82,6 +82,7 @@ static const std::string sfall_metarules[] = {
     "set_flags",
     "set_ini_setting",
     "set_map_enter_position",
+    "set_npc_reaction_thresholds",
     "set_object_data",
     "set_outline",
     "set_quest_failure_value",

@@ -13,6 +13,8 @@ enum NpcReaction : int {
 
 int reactionSetValue(Object* critter, int value);
 NpcReaction reactionTranslateValue(int value);
+void reactionSetThresholds(int neutralThreshold, int goodThreshold);
+void reactionResetThresholds();
 int _reaction_influence_();
 int reactionGetValue(Object* critter);
 

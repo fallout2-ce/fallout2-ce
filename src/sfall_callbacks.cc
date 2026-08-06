@@ -4,6 +4,7 @@
 #include "display_monitor.h"
 #include "interface.h"
 #include "inventory.h"
+#include "reaction.h"
 #include "script_sound.h"
 #include "sfall_object_name.h"
 #include "sfall_script_hooks.h"
@@ -37,6 +38,7 @@ void sfallOnGameExit()
 void sfallOnGameReset()
 {
     inventoryResetInvenApCost();
+    reactionResetThresholds();
     scriptSoundReset();
     sfallObjectNameReset();
     statResetUnspentApBonuses();
