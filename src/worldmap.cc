@@ -5053,7 +5053,7 @@ static int wmInterfaceInit()
         return -1;
     }
 
-    wmGenData.dialFrmWidth = artGetWidth(wmGenData.dialFrm, 0, ROTATION_FIRST);
+    wmGenData.dialFrmWidth = artGetWidth(wmGenData.dialFrm);
     wmGenData.dialFrmHeight = artGetHeight(wmGenData.dialFrm, 0, ROTATION_FIRST);
 
     // wmscreen - worldmap overlay screen
@@ -5199,7 +5199,7 @@ static int wmInterfaceInit()
             }
         }
 
-        wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm, 0, ROTATION_FIRST);
+        wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm);
         wmGenData.carImageFrmHeight = artGetHeight(wmGenData.carImageFrm, 0, ROTATION_FIRST);
     }
 
@@ -6756,7 +6756,7 @@ static bool wmLockCarInterfaceArt(int artIndex, Art** artPtr, CacheEntry** handl
         return false;
     }
 
-    int width = artGetWidth(art, 0, ROTATION_FIRST);
+    int width = artGetWidth(art);
     int height = artGetHeight(art, 0, ROTATION_FIRST);
     if (width <= 0 || height <= 0 || WM_WINDOW_CAR_X + width > WM_WINDOW_WIDTH || WM_WINDOW_CAR_Y + height > WM_WINDOW_HEIGHT) {
         artUnlock(handle);
@@ -6791,7 +6791,7 @@ void wmSetCarInterfaceArt(int artIndex)
     artUnlock(wmGenData.carImageFrmHandle);
     wmGenData.carImageFrmHandle = handle;
     wmGenData.carImageFrm = art;
-    wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm, 0, ROTATION_FIRST);
+    wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm);
     wmGenData.carImageFrmHeight = artGetHeight(wmGenData.carImageFrm, 0, ROTATION_FIRST);
 
     int frameCount = artGetFrameCount(wmGenData.carImageFrm);

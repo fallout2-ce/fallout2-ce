@@ -57,7 +57,7 @@ char* artBuildFilePath(int fid);
 int artGetFramesPerSecond(Art* art);
 int artGetActionFrame(Art* art);
 int artGetFrameCount(Art* art);
-int artGetWidth(Art* art, int frame, Rotation rotation);
+int artGetWidth(Art* art, int frame = 0, Rotation rotation = ROTATION_NE);
 int artGetHeight(Art* art, int frame, Rotation rotation);
 int artGetSize(Art* art, int frame, Rotation rotation, int* out_width, int* out_height);
 int artGetFrameOffsets(const Art* art, int frame, Rotation rotation, int* xPtr, int* yPtr);

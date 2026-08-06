@@ -319,7 +319,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
     CacheEntry* backgroundHandle;
     Art* background = artLock(fid, &backgroundHandle);
     if (background != nullptr) {
-        int width = artGetWidth(background, 0, ROTATION_FIRST);
+        int width = artGetWidth(background);
         int height = artGetHeight(background, 0, ROTATION_FIRST);
         unsigned char* backgroundData = artGetFrameData(background);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);

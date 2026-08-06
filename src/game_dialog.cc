@@ -3618,7 +3618,7 @@ int partyMemberControlWindowInit()
             return -1;
         }
 
-        int width = artGetWidth(upButtonFrm, 0, ROTATION_NE);
+        int width = artGetWidth(upButtonFrm);
         int height = artGetHeight(upButtonFrm, 0, ROTATION_NE);
         unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm);
 
@@ -4038,7 +4038,7 @@ int partyMemberCustomizationWindowInit()
             return -1;
         }
 
-        int width = artGetWidth(upButtonFrm, 0, ROTATION_NE);
+        int width = artGetWidth(upButtonFrm);
         int height = artGetHeight(upButtonFrm, 0, ROTATION_NE);
         unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm);
 
@@ -4741,7 +4741,7 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
             debugPrint("\tError getting background data in display...\n");
         }
 
-        int width = artGetWidth(headFrm, frame, ROTATION_NE);
+        int width = artGetWidth(headFrm, frame);
         int height = artGetHeight(headFrm, frame, ROTATION_NE);
         unsigned char* data = artGetFrameData(headFrm, frame);
 

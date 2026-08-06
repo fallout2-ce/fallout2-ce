@@ -1382,7 +1382,7 @@ int gameMouseSetCursor(int cursor)
         return -1;
     }
 
-    int width = artGetWidth(mouseCursorFrm, frame, ROTATION_FIRST);
+    int width = artGetWidth(mouseCursorFrm, frame);
     int height = artGetHeight(mouseCursorFrm, frame, ROTATION_FIRST);
 
     int offsetX;
@@ -1759,11 +1759,11 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
     }
 
     unsigned char* arrowFrmData = artGetFrameData(arrowFrm);
-    int arrowFrmWidth = artGetWidth(arrowFrm, 0, ROTATION_FIRST);
+    int arrowFrmWidth = artGetWidth(arrowFrm);
     int arrowFrmHeight = artGetHeight(arrowFrm, 0, ROTATION_FIRST);
 
     unsigned char* menuItemFrmData = artGetFrameData(menuItemFrm);
-    int menuItemFrmWidth = artGetWidth(menuItemFrm, 0, ROTATION_FIRST);
+    int menuItemFrmWidth = artGetWidth(menuItemFrm);
     int menuItemFrmHeight = artGetHeight(menuItemFrm, 0, ROTATION_FIRST);
 
     unsigned char* arrowFrmDest = gGameMouseActionPickFrmData;
@@ -1870,10 +1870,10 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
         return -1;
     }
 
-    int arrowWidth = artGetWidth(arrowFrm, 0, ROTATION_FIRST);
+    int arrowWidth = artGetWidth(arrowFrm);
     int arrowHeight = artGetHeight(arrowFrm, 0, ROTATION_FIRST);
 
-    int menuItemWidth = artGetWidth(menuItemFrms[0], 0, ROTATION_FIRST);
+    int menuItemWidth = artGetWidth(menuItemFrms[0]);
     int menuItemHeight = artGetHeight(menuItemFrms[0], 0, ROTATION_FIRST);
 
     _gmouse_3d_menu_frame_hot_x = 0;
@@ -1955,7 +1955,7 @@ int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex)
         return -1;
     }
 
-    int width = artGetWidth(art, 0, ROTATION_FIRST);
+    int width = artGetWidth(art);
     int height = artGetHeight(art, 0, ROTATION_FIRST);
     unsigned char* data = artGetFrameData(art);
     blitBufferToBuffer(data, width, height, width, _gmouse_3d_menu_actions_start + gGameMouseActionMenuFrmWidth * height * gGameMouseActionMenuHighlightedItemIndex, gGameMouseActionMenuFrmWidth);
@@ -1988,7 +1988,7 @@ int gameMouseRenderAccuracy(const char* string, int color)
 
     memset(gGameMouseActionHitFrmData, 0, gGameMouseActionHitFrmDataSize);
 
-    int crosshairFrmWidth = artGetWidth(crosshairFrm, 0, ROTATION_FIRST);
+    int crosshairFrmWidth = artGetWidth(crosshairFrm);
     int crosshairFrmHeight = artGetHeight(crosshairFrm, 0, ROTATION_FIRST);
     unsigned char* crosshairFrmData = artGetFrameData(crosshairFrm);
     blitBufferToBuffer(crosshairFrmData,
@@ -2191,27 +2191,27 @@ int gameMouseActionMenuInit()
         goto err;
     }
 
-    gGameMouseActionMenuFrmWidth = artGetWidth(gGameMouseActionMenuFrm, 0, ROTATION_FIRST);
+    gGameMouseActionMenuFrmWidth = artGetWidth(gGameMouseActionMenuFrm);
     gGameMouseActionMenuFrmHeight = artGetHeight(gGameMouseActionMenuFrm, 0, ROTATION_FIRST);
     gGameMouseActionMenuFrmDataSize = gGameMouseActionMenuFrmWidth * gGameMouseActionMenuFrmHeight;
     gGameMouseActionMenuFrmData = artGetFrameData(gGameMouseActionMenuFrm);
 
-    gGameMouseActionPickFrmWidth = artGetWidth(gGameMouseActionPickFrm, 0, ROTATION_FIRST);
+    gGameMouseActionPickFrmWidth = artGetWidth(gGameMouseActionPickFrm);
     gGameMouseActionPickFrmHeight = artGetHeight(gGameMouseActionPickFrm, 0, ROTATION_FIRST);
     gGameMouseActionPickFrmDataSize = gGameMouseActionPickFrmWidth * gGameMouseActionPickFrmHeight;
     gGameMouseActionPickFrmData = artGetFrameData(gGameMouseActionPickFrm);
 
-    gGameMouseActionHitFrmWidth = artGetWidth(gGameMouseActionHitFrm, 0, ROTATION_FIRST);
+    gGameMouseActionHitFrmWidth = artGetWidth(gGameMouseActionHitFrm);
     gGameMouseActionHitFrmHeight = artGetHeight(gGameMouseActionHitFrm, 0, ROTATION_FIRST);
     gGameMouseActionHitFrmDataSize = gGameMouseActionHitFrmWidth * gGameMouseActionHitFrmHeight;
     gGameMouseActionHitFrmData = artGetFrameData(gGameMouseActionHitFrm);
 
-    gGameMouseBouncingCursorFrmWidth = artGetWidth(gGameMouseBouncingCursorFrm, 0, ROTATION_FIRST);
+    gGameMouseBouncingCursorFrmWidth = artGetWidth(gGameMouseBouncingCursorFrm);
     gGameMouseBouncingCursorFrmHeight = artGetHeight(gGameMouseBouncingCursorFrm, 0, ROTATION_FIRST);
     gGameMouseBouncingCursorFrmDataSize = gGameMouseBouncingCursorFrmWidth * gGameMouseBouncingCursorFrmHeight;
     gGameMouseBouncingCursorFrmData = artGetFrameData(gGameMouseBouncingCursorFrm);
 
-    gGameMouseHexCursorFrmWidth = artGetWidth(gGameMouseHexCursorFrm, 0, ROTATION_FIRST);
+    gGameMouseHexCursorFrmWidth = artGetWidth(gGameMouseHexCursorFrm);
     gGameMouseHexCursorHeight = artGetHeight(gGameMouseHexCursorFrm, 0, ROTATION_FIRST);
     gGameMouseHexCursorDataSize = gGameMouseHexCursorFrmWidth * gGameMouseHexCursorHeight;
     gGameMouseHexCursorFrmData = artGetFrameData(gGameMouseHexCursorFrm);
