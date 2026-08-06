@@ -2869,7 +2869,7 @@ static int wmAreaInit()
                 }
 
                 int rotationInt;
-                if (strParseInt(&str, &rotationInt) == -1) {
+                if (strParseInt(&str, &rotationInt) == -1 || !rotationIsValid(rotationInt)) {
                     return -1;
                 }
 

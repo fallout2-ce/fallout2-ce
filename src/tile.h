@@ -19,8 +19,8 @@ typedef void(TileMapperOverlayProc)(unsigned char* buffer, int pitch, int elevat
 void tileSetMapperOverlayProc(TileMapperOverlayProc* proc);
 void tileMapperOverlayRender(unsigned char* buffer, int pitch, int elevation, const Rect* clip);
 
-extern const int _off_tile[6];
-extern const int dword_51D984[6];
+extern const int _off_tile[ROTATION_COUNT];
+extern const int dword_51D984[ROTATION_COUNT];
 extern int gHexGridSize;
 extern int gCenterTile;
 

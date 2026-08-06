@@ -148,7 +148,7 @@ static char kTmpMapName[] = "TMP$MAP#.MAP";
 static char gSavedMapName[16];
 
 // 0x559618
-int rotate_arrows_x_offs[] = {
+int rotate_arrows_x_offs[ROTATION_COUNT] = {
     31,
     38,
     31,
@@ -158,7 +158,7 @@ int rotate_arrows_x_offs[] = {
 };
 
 // 0x559630
-int rotate_arrows_y_offs[] = {
+int rotate_arrows_y_offs[ROTATION_COUNT] = {
     7,
     23,
     37,

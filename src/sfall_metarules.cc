@@ -1458,8 +1458,8 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotatio
         Rotation frameRotation = ROTATION_NE;
         int lockFid = fid;
         if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
-            frameRotation = rotation >= ROTATION_NE ? rotation : rotationFromFid(fid);
-            if (rotation >= ROTATION_NE) {
+            frameRotation = rotationIsValid(rotation) ? rotation : rotationFromFid(fid);
+            if (rotationIsValid(rotation)) {
                 lockFid = (rotation << 28) | (fid & 0x0FFFFFFF);
             }
         }
@@ -1470,7 +1470,7 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotatio
         }
     } else {
         const char* path = ctx.stringArg(artArg);
-        Rotation frameRotation  = rotation >= ROTATION_NE ? rotation : ROTATION_NE;
+        Rotation frameRotation  = rotationIsValid(rotation) ? rotation : ROTATION_NE;
         if (!image.lock(path, frame, frameRotation)) {
             ctx.printError("%s() - cannot load art from file: %s", ctx.name(), path);
             return false;

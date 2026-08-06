@@ -18,10 +18,10 @@ typedef struct Art {
     short framesPerSecond;
     short actionFrame;
     short frameCount;
-    short xOffsets[6];
-    short yOffsets[6];
-    int dataOffsets[6];
-    int padding[6];
+    short xOffsets[ROTATION_COUNT];
+    short yOffsets[ROTATION_COUNT];
+    int dataOffsets[ROTATION_COUNT];
+    int padding[ROTATION_COUNT];
     int dataSize;
 } Art;
 

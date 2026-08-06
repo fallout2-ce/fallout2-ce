@@ -91,7 +91,7 @@ static TileWindowRefreshElevationProc* gTileWindowRefreshElevationProc = tileRef
 static bool gTileEnabled = true;
 
 // 0x51D96C off_tile
-const int _off_tile[6] = {
+const int _off_tile[ROTATION_COUNT] = {
     16,
     32,
     16,
@@ -101,7 +101,7 @@ const int _off_tile[6] = {
 };
 
 // 0x51D984
-const int dword_51D984[6] = {
+const int dword_51D984[ROTATION_COUNT] = {
     -12,
     0,
     12,

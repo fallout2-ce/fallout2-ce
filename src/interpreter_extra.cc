@@ -1542,7 +1542,7 @@ static void opGetTileInDirection(Program* program)
     int tile = -1;
 
     if (origin != -1) {
-        if (rotation >= ROTATION_FIRST && rotation < ROTATION_COUNT) {
+        if (rotationIsValid(rotation)) {
             if (distance != 0) {
                 tile = tileGetTileInDirection(origin, rotation, distance);
                 if (tile < -1) {
