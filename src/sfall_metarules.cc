@@ -814,6 +814,7 @@ static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_npc_reaction_thresholds(OpcodeContext& ctx);
 static void mf_set_object_data(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
+static void mf_set_party_member_cc_msg_ids(OpcodeContext& ctx);
 static void mf_set_rest_mode(OpcodeContext& ctx);
 static void mf_set_scr_name(OpcodeContext& ctx);
 static void mf_set_terrain_name(OpcodeContext& ctx);
@@ -917,6 +918,7 @@ const MetaruleInfo kMetarules[] = {
     { "set_npc_reaction_thresholds", mf_set_npc_reaction_thresholds, 2, 2, -1, { ARG_INT, ARG_INT } },
     { "set_object_data", mf_set_object_data, 3, 3, -1, { ARG_OBJECT, ARG_INT, ARG_ANY } },
     { "set_outline", mf_set_outline, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
+    { "set_party_member_cc_msg_ids", mf_set_party_member_cc_msg_ids, 3, 3, -1, { ARG_INT, ARG_INT, ARG_INT } },
     // {"set_quest_failure_value",   mf_set_quest_failure_value,   2, 2, -1, {ARG_INT, ARG_INT}},
     // {"set_rest_heal_time",        mf_set_rest_heal_time,        1, 1, -1, {ARG_INT}},
     // {"set_worldmap_heal_time",    mf_set_worldmap_heal_time,    1, 1, -1, {ARG_INT}},
@@ -1854,6 +1856,21 @@ void mf_set_outline(OpcodeContext& ctx)
     Object* object = ctx.arg(0).asObject();
     int outline = ctx.arg(1).asInt();
     object->outline = outline;
+}
+
+void mf_set_party_member_cc_msg_ids(OpcodeContext& ctx)
+{
+    int pid = ctx.arg(0).asInt();
+    int startMsgId = ctx.arg(1).asInt();
+    int endMsgId = ctx.arg(2).asInt();
+
+    if (endMsgId < startMsgId) {
+        ctx.printError("%s() - end msg id must be greater than or equal to start msg id.", ctx.name());
+        ctx.setReturn(-1);
+        return;
+    }
+
+    gameDialogSetPartyMemberCcMsgIds(pid, startMsgId, endMsgId);
 }
 
 void mf_set_window_flag(OpcodeContext& ctx)

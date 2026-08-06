@@ -2,6 +2,7 @@
 
 #include "content_config.h"
 #include "display_monitor.h"
+#include "game_dialog.h"
 #include "interface.h"
 #include "inventory.h"
 #include "reaction.h"
@@ -38,6 +39,7 @@ void sfallOnGameExit()
 void sfallOnGameReset()
 {
     inventoryResetInvenApCost();
+    gameDialogResetPartyMemberCcMsgIds();
     reactionResetThresholds();
     scriptSoundReset();
     sfallObjectNameReset();
