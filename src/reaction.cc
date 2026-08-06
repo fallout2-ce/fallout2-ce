@@ -26,16 +26,11 @@ NpcReaction reactionTranslateValue(int value)
 {
     NpcReaction reaction;
 
+    // Original had several redundant thresholds that all mapped to "BAD"
     if (value > goodReactionThreshold) {
         reaction = NPC_REACTION_GOOD;
     } else if (value > neutralReactionThreshold) {
         reaction = NPC_REACTION_NEUTRAL;
-    } else if (value > -25) {
-        reaction = NPC_REACTION_BAD;
-    } else if (value > -50) {
-        reaction = NPC_REACTION_BAD;
-    } else if (value > -75) {
-        reaction = NPC_REACTION_BAD;
     } else {
         reaction = NPC_REACTION_BAD;
     }
@@ -47,9 +42,7 @@ void reactionSetThresholds(int neutralThreshold, int goodThreshold)
     neutralReactionThreshold = neutralThreshold;
     goodReactionThreshold = goodThreshold;
 
-    debugPrint("Reaction: set thresholds neutral=%d good=%d\n",
-        neutralReactionThreshold,
-        goodReactionThreshold);
+    debugPrint("Reaction: set thresholds neutral=%d good=%d\n", neutralThreshold, goodThreshold);
 }
 
 void reactionResetThresholds()
