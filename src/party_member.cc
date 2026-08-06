@@ -796,8 +796,8 @@ void _partyMemberClear()
 // 0x494DD0 partyMemberSyncPosition
 int _partyMemberSyncPosition()
 {
-    int clockwiseRotation = (gDude->rotation + 2) % ROTATION_COUNT;
-    int counterClockwiseRotation = (gDude->rotation + 4) % ROTATION_COUNT;
+    Rotation clockwiseRotation = (gDude->rotation + 2) % ROTATION_COUNT;
+    Rotation counterClockwiseRotation = (gDude->rotation + 4) % ROTATION_COUNT;
 
     int n = 0;
     int distance = 2;
@@ -805,7 +805,7 @@ int _partyMemberSyncPosition()
         PartyMemberListItem* partyMember = &(gPartyMembers[index]);
         Object* partyMemberObj = partyMember->object;
         if ((partyMemberObj->flags & OBJECT_HIDDEN) == 0 && PID_TYPE(partyMemberObj->pid) == OBJ_TYPE_CRITTER) {
-            int rotation;
+            Rotation rotation;
             if ((n % 2) != 0) {
                 rotation = clockwiseRotation;
             } else {

@@ -3,6 +3,7 @@
 
 #include "geometry.h"
 #include "map.h"
+#include "obj_types.h"
 
 namespace fallout {
 
@@ -46,8 +47,8 @@ int squareTileFromTile(int tile);
 int tileDistanceBetween(int tile1, int tile2);
 bool tileIsInFrontOf(int tile1, int tile2);
 bool tileIsToRightOf(int tile1, int tile2);
-int tileGetTileInDirection(int tile, int rotation, int distance);
-int tileGetRotationTo(int tile1, int tile2);
+int tileGetTileInDirection(int tile, Rotation rotation, int distance);
+Rotation tileGetRotationTo(int tile1, int tile2);
 int _tile_num_beyond(int from, int to, int distance);
 bool tileIsEdge(int tile);
 void tileScrollBlockingEnable();

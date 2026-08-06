@@ -436,7 +436,7 @@ int objectRead(Object* obj, File* stream)
     if (fileReadInt32(stream, &(obj->sx)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->sy)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->frame)) == -1) return -1;
-    if (fileReadInt32(stream, &(obj->rotation)) == -1) return -1;
+    if (fileReadInt32Enum<Rotation>(stream, &(obj->rotation)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->fid)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->flags)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->elevation)) == -1) return -1;
@@ -676,7 +676,7 @@ static int objectWrite(Object* obj, File* stream)
     if (fileWriteInt32(stream, obj->sx) == -1) return -1;
     if (fileWriteInt32(stream, obj->sy) == -1) return -1;
     if (fileWriteInt32(stream, obj->frame) == -1) return -1;
-    if (fileWriteInt32(stream, obj->rotation) == -1) return -1;
+    if (fileWriteInt32Enum<Rotation>(stream, obj->rotation) == -1) return -1;
     if (fileWriteInt32(stream, obj->fid) == -1) return -1;
     if (fileWriteInt32(stream, obj->flags) == -1) return -1;
     if (fileWriteInt32(stream, obj->elevation) == -1) return -1;
@@ -1680,7 +1680,7 @@ int objectSetPrevFrame(Object* obj, Rect* dirtyRect)
 }
 
 // 0x48ABD4 obj_set_rotation
-int objectSetRotation(Object* obj, int direction, Rect* dirtyRect)
+int objectSetRotation(Object* obj, Rotation direction, Rect* dirtyRect)
 {
     if (obj == nullptr) {
         return -1;
@@ -1707,7 +1707,7 @@ int objectSetRotation(Object* obj, int direction, Rect* dirtyRect)
 // 0x48AC20 obj_inc_rotation
 int objectRotateClockwise(Object* obj, Rect* dirtyRect)
 {
-    int rotation = obj->rotation + 1;
+    Rotation rotation = obj->rotation + 1;
     if (rotation >= ROTATION_COUNT) {
         rotation = ROTATION_NE;
     }
@@ -1718,7 +1718,7 @@ int objectRotateClockwise(Object* obj, Rect* dirtyRect)
 // 0x48AC38 obj_dec_rotation
 int objectRotateCounterClockwise(Object* obj, Rect* dirtyRect)
 {
-    int rotation = obj->rotation - 1;
+    Rotation rotation = obj->rotation - 1;
     if (rotation < 0) {
         rotation = ROTATION_NW;
     }
@@ -2442,7 +2442,7 @@ Object* _obj_blocking_at(Object* excludeObj, int tile, int elev)
         objectListNode = objectListNode->next;
     }
 
-    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+    for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
         int neighboor = tileGetTileInDirection(tile, rotation, 1);
         if (hexGridTileIsValid(neighboor)) {
             objectListNode = gObjectListHeadByTile[neighboor];
@@ -2493,7 +2493,7 @@ Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, int elev)
         objectListItem = objectListItem->next;
     }
 
-    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+    for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
         int adjacentTile = tileGetTileInDirection(tile, rotation, 1);
         if (!hexGridTileIsValid(adjacentTile)) {
             continue;
@@ -2553,7 +2553,7 @@ Object* _obj_ai_blocking_at(Object* excludeObj, int tile, int elevation)
         objectListNode = objectListNode->next;
     }
 
-    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+    for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
         int candidate = tileGetTileInDirection(tile, rotation, 1);
         if (!hexGridTileIsValid(candidate)) {
             continue;
@@ -3483,7 +3483,7 @@ static void _obj_light_table_init()
 {
     for (int s = 0; s < 2; s++) {
         int v4 = gCenterTile + s;
-        for (int i = 0; i < ROTATION_COUNT; i++) {
+        for (Rotation i = ROTATION_FIRST; i < ROTATION_COUNT; i++) {
             int v15 = 8;
             int* p = _light_offsets[v4 & 1][i];
             for (int j = 0; j < 8; j++) {
@@ -3696,8 +3696,8 @@ int _obj_load_dude(File* stream)
     int newElevation = gDude->elevation;
     gDude->elevation = savedElevation;
 
-    int newRotation = gDude->rotation;
-    gDude->rotation = newRotation;
+    Rotation newRotation = gDude->rotation;
+    gDude->rotation = newRotation; // TODO: should be savedRotation??
 
     scriptsSetDudeScript();
 
@@ -4082,7 +4082,7 @@ static int _obj_adjust_light(Object* obj, int a2, Rect* rect)
 
     for (int index = 0; index < 36; index++) {
         if (obj->lightDistance >= _light_distance[index]) {
-            for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+            for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
                 int v14;
                 int nextRotation = (rotation + 1) % ROTATION_COUNT;
                 int eax;
@@ -5032,7 +5032,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 
                 int eggWidth;
                 int eggHeight;
-                artGetSize(egg, 0, 0, &eggWidth, &eggHeight);
+                artGetSize(egg, 0, ROTATION_FIRST, &eggWidth, &eggHeight);
 
                 int eggScreenX;
                 int eggScreenY;
@@ -5087,7 +5087,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
                         }
                     }
 
-                    unsigned char* mask = artGetFrameData(egg, 0, 0);
+                    unsigned char* mask = artGetFrameData(egg, 0, ROTATION_FIRST);
                     _intensity_mask_buf_to_buf(
                         src + frameWidth * (updatedEggRect.top - objectRect.top) + (updatedEggRect.left - objectRect.left),
                         updatedEggRect.right - updatedEggRect.left + 1,
@@ -5175,7 +5175,7 @@ void _obj_fix_violence_settings(int* fid)
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
             : ANIM_FALL_FRONT_SF;
-        *fid = buildFid(OBJ_TYPE_CRITTER, *fid & 0xFFF, anim, weaponAnimationFromFid(*fid), FID_ROTATION(*fid));
+        *fid = buildFid(OBJ_TYPE_CRITTER, *fid & 0xFFF, anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid));
     }
 
     if (shouldResetViolenceLevel) {

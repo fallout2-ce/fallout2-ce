@@ -1040,7 +1040,7 @@ bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
     }
 
     // verify art exists
-    int rotation = critter->rotation + 1;
+    Rotation rotation = critter->rotation + 1;
     int animationCode = weaponGetAnimationCode(weapon);
     AnimationType weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
     int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);

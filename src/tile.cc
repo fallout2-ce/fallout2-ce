@@ -180,12 +180,12 @@ static UpsideDownTriangle _upside_down_triangles[5] = {
 static int _intensity_map[3280];
 
 // 0x66B564 dir_tile2
-static int _dir_tile2[2][6];
+static int _dir_tile2[2][ROTATION_COUNT];
 
 // Deltas to perform tile calculations in given direction.
 //
 // 0x66B594 dir_tile
-static int _dir_tile[2][6];
+static int _dir_tile[2][ROTATION_COUNT];
 
 // 0x66B5C4 tile_grid_blocked
 static unsigned char _tile_grid_blocked[512];
@@ -962,7 +962,7 @@ bool tileIsToRightOf(int tile1, int tile2)
 
 // tile_num_in_direction
 // 0x4B1A6C tile_num_in_direction
-int tileGetTileInDirection(int tile, int rotation, int distance)
+int tileGetTileInDirection(int tile, Rotation rotation, int distance)
 {
     int newTile = tile;
     for (int index = 0; index < distance; index++) {
@@ -979,7 +979,7 @@ int tileGetTileInDirection(int tile, int rotation, int distance)
 
 // rotation_to_tile
 // 0x4B1ABC tile_dir
-int tileGetRotationTo(int tile1, int tile2)
+Rotation tileGetRotationTo(int tile1, int tile2)
 {
     int x1, y1;
     tileToScreenXY(tile1, &x1, &y1);
@@ -1002,7 +1002,7 @@ int tileGetRotationTo(int tile1, int tile2)
         if (angle >= ROTATION_COUNT) {
             angle = ROTATION_NW;
         }
-        return angle;
+        return static_cast<Rotation>(angle);
     }
 
     return dy < 0 ? ROTATION_NE : ROTATION_SE;
@@ -1392,8 +1392,8 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
         return;
     }
 
-    int tileWidth = artGetWidth(tileFrm, 0, 0);
-    int tileHeight = artGetHeight(tileFrm, 0, 0);
+    int tileWidth = artGetWidth(tileFrm, 0, ROTATION_FIRST);
+    int tileHeight = artGetHeight(tileFrm, 0, ROTATION_FIRST);
 
     Rect tileRect;
     tileRect.left = x;
@@ -1402,14 +1402,14 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
     tileRect.bottom = y + tileHeight - 1;
 
     if (rectIntersection(&tileRect, rect, &tileRect) == 0) {
-        unsigned char* tileFrmBuffer = artGetFrameData(tileFrm, 0, 0);
+        unsigned char* tileFrmBuffer = artGetFrameData(tileFrm, 0, ROTATION_FIRST);
         tileFrmBuffer += tileWidth * (tileRect.top - y) + (tileRect.left - x);
 
         CacheEntry* eggFrmHandle;
         Art* eggFrm = artLock(gEgg->fid, &eggFrmHandle);
         if (eggFrm != nullptr) {
-            int eggWidth = artGetWidth(eggFrm, 0, 0);
-            int eggHeight = artGetHeight(eggFrm, 0, 0);
+            int eggWidth = artGetWidth(eggFrm, 0, ROTATION_FIRST);
+            int eggHeight = artGetHeight(eggFrm, 0, ROTATION_FIRST);
 
             int eggScreenX;
             int eggScreenY;
@@ -1472,7 +1472,7 @@ static void tileRenderRoof(int fid, int x, int y, Rect* rect, int light)
                     }
                 }
 
-                unsigned char* eggBuf = artGetFrameData(eggFrm, 0, 0);
+                unsigned char* eggBuf = artGetFrameData(eggFrm, 0, ROTATION_FIRST);
                 _intensity_mask_buf_to_buf(tileFrmBuffer + tileWidth * (intersectedRect.top - tileRect.top) + (intersectedRect.left - tileRect.left),
                     intersectedRect.right - intersectedRect.left + 1,
                     intersectedRect.bottom - intersectedRect.top + 1,
@@ -1614,13 +1614,13 @@ bool _square_roof_intersect(int x, int y, int elevation)
             CacheEntry* handle;
             Art* art = artLock(fid, &handle);
             if (art != nullptr) {
-                unsigned char* data = artGetFrameData(art, 0, 0);
+                unsigned char* data = artGetFrameData(art, 0, ROTATION_FIRST);
                 if (data != nullptr) {
                     int v18;
                     int v17;
                     squareTileToRoofScreenXY(idx, &v18, &v17, elevation);
 
-                    int width = artGetWidth(art, 0, 0);
+                    int width = artGetWidth(art, 0, ROTATION_FIRST);
                     if (data[width * (y - v17) + x - v18] != 0) {
                         result = true;
                     }
@@ -1748,8 +1748,8 @@ static void tileRenderFloor(int fid, int x, int y, Rect* rect)
 
     if (x >= gTileWindowWidth || x > rect->right || y >= gTileWindowHeight || y > rect->bottom) goto out;
 
-    frameWidth = artGetWidth(art, 0, 0);
-    frameHeight = artGetHeight(art, 0, 0);
+    frameWidth = artGetWidth(art, 0, ROTATION_FIRST);
+    frameHeight = artGetHeight(art, 0, ROTATION_FIRST);
 
     if (left < x) {
         v79 = 0;
@@ -1798,7 +1798,7 @@ static void tileRenderFloor(int fid, int x, int y, Rect* rect)
         }
 
         if (v23 == 9) {
-            unsigned char* buf = artGetFrameData(art, 0, 0);
+            unsigned char* buf = artGetFrameData(art, 0, ROTATION_FIRST);
             _dark_trans_buf_to_buf(buf + frameWidth * v78 + v79, v77, v76, frameWidth, gTileWindowBuffer, x, y, gTileWindowPitch, _verticies[0].intensity);
             goto out;
         }
@@ -1912,7 +1912,7 @@ static void tileRenderFloor(int fid, int x, int y, Rect* rect)
         }
 
         unsigned char* v66 = gTileWindowBuffer + gTileWindowPitch * y + x;
-        unsigned char* v67 = artGetFrameData(art, 0, 0) + frameWidth * v78 + v79;
+        unsigned char* v67 = artGetFrameData(art, 0, ROTATION_FIRST) + frameWidth * v78 + v79;
         int* v68 = &(_intensity_map[160 + 80 * v78]) + v79;
         int v86 = frameWidth - v77;
         int v85 = gTileWindowPitch - v77;

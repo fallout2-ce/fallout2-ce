@@ -1189,7 +1189,7 @@ static void _ai_run_away(Object* a1, Object* a2)
     if (distance < ai->max_dist) {
         combatData->maneuver |= CRITTER_MANUEVER_FLEEING;
 
-        int rotation = tileGetRotationTo(a2->tile, a1->tile);
+        Rotation rotation = tileGetRotationTo(a2->tile, a1->tile);
 
         int destination;
         int actionPoints = combatData->ap;
@@ -1236,7 +1236,7 @@ static int _ai_move_away(Object* a1, Object* a2, int a3)
             actionPoints = a3;
         }
 
-        int rotation = tileGetRotationTo(a2->tile, a1->tile);
+        Rotation rotation = tileGetRotationTo(a2->tile, a1->tile);
 
         int destination;
         int actionPointsLeft = actionPoints;
@@ -2884,7 +2884,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                         int tile = attacker->tile;
                         int index;
                         for (index = 0; index < actionPoints; index++) {
-                            tile = tileGetTileInDirection(tile, rotations[index], 1);
+                            tile = tileGetTileInDirection(tile, static_cast<Rotation>(rotations[index]), 1);
 
                             actionPointsToUse++;
 

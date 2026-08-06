@@ -48,7 +48,7 @@ int artGetFidgetCount(int headFid);
 void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
 Art* artLock(int fid, CacheEntry** cache_entry);
-unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** out_cache_entry);
+unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
 int artCopyFileName(int objectType, int id, char* dest);
@@ -57,15 +57,15 @@ char* artBuildFilePath(int fid);
 int artGetFramesPerSecond(Art* art);
 int artGetActionFrame(Art* art);
 int artGetFrameCount(Art* art);
-int artGetWidth(Art* art, int frame, int direction);
-int artGetHeight(Art* art, int frame, int direction);
-int artGetSize(Art* art, int frame, int direction, int* out_width, int* out_height);
-int artGetFrameOffsets(const Art* art, int frame, int direction, int* xPtr, int* yPtr);
-int artGetRotationOffsets(Art* art, int rotation, int* out_offset_x, int* out_offset_y);
-unsigned char* artGetFrameData(Art* art, int frame, int direction);
-unsigned char* artGetFrameData(const Art* art, int frame, int direction, int* widthPtr, int* heightPtr, int* xOffsetPtr, int* yOffsetPtr);
-ArtFrame* artGetFrame(const Art* art, int frame, int direction);
-ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, int direction);
+int artGetWidth(Art* art, int frame, Rotation rotation);
+int artGetHeight(Art* art, int frame, Rotation rotation);
+int artGetSize(Art* art, int frame, Rotation rotation, int* out_width, int* out_height);
+int artGetFrameOffsets(const Art* art, int frame, Rotation rotation, int* xPtr, int* yPtr);
+int artGetRotationOffsets(Art* art, Rotation rotation, int* out_offset_x, int* out_offset_y);
+unsigned char* artGetFrameData(Art* art, int frame, Rotation rotation);
+unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int* widthPtr, int* heightPtr, int* xOffsetPtr, int* yOffsetPtr);
+ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
+ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
 bool artExists(int fid);
 bool _art_fid_valid(int fid);
 int _art_alias_num(int index);
@@ -122,13 +122,13 @@ public:
 
     bool isLocked() const { return _key != nullptr || _namedKey; }
     bool lock(const FrmId& frmId);
-    bool lock(const FrmId& frmId, int frame, int direction);
+    bool lock(const FrmId& frmId, int frame, Rotation rotation);
     bool lock(unsigned int fid);
-    bool lock(unsigned int fid, int frame, int direction);
+    bool lock(unsigned int fid, int frame, Rotation rotation);
     bool lock(const char* frmPath);
-    bool lock(const char* frmPath, int frame, int direction);
+    bool lock(const char* frmPath, int frame, Rotation rotation);
     bool lock(ObjectType objType, const char* frmRelativePath);
-    bool lock(ObjectType objType, const char* frmRelativePath, int frame, int direction);
+    bool lock(ObjectType objType, const char* frmRelativePath, int frame, Rotation rotation);
     void unlock();
 
     int getWidth() const { return _width; }
@@ -142,7 +142,7 @@ public:
 
 private:
     void resetInternal();
-    bool setFrame(const Art* art, int frame, int direction);
+    bool setFrame(const Art* art, int frame, Rotation rotation);
 
     std::shared_ptr<NamedCacheEntry> _namedKey;
     CacheEntry* _key = nullptr;

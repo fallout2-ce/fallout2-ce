@@ -250,7 +250,7 @@ typedef struct EntranceInfo {
     int map;
     int elevation;
     int tile;
-    int rotation;
+    Rotation rotation;
 } EntranceInfo;
 
 typedef struct CityInfo {
@@ -276,7 +276,7 @@ typedef struct MapAmbientSoundEffectInfo {
 typedef struct MapStartPointInfo {
     int elevation;
     int tile;
-    int rotation;
+    Rotation rotation;
 } MapStartPointInfo;
 
 typedef struct MapInfo {
@@ -834,13 +834,13 @@ static char* wmRemapSfxList[2] = {
 };
 
 // 0x672DB8 wmRndTileDirs
-static int wmRndTileDirs[2];
+static Rotation wmRndTileDirs[2];
 
 // 0x672DC0 wmRndCenterTiles
 static int wmRndCenterTiles[2];
 
 // 0x672DC8 wmRndCenterRotations
-static int wmRndCenterRotations[2];
+static Rotation wmRndCenterRotations[2];
 
 // 0x672DD0 wmRndRotOffsets
 static int wmRndRotOffsets[2];
@@ -2868,9 +2868,12 @@ static int wmAreaInit()
                     return -1;
                 }
 
-                if (strParseInt(&str, &(entrance->rotation)) == -1) {
+                int rotationInt;
+                if (strParseInt(&str, &rotationInt) == -1) {
                     return -1;
                 }
+
+                entrance->rotation = static_cast<Rotation>(rotationInt);
 
                 city->entrancesLength++;
             }
@@ -2918,7 +2921,7 @@ static int wmEntranceSlotInit(EntranceInfo* entrance)
     entrance->map = -1;
     entrance->elevation = 0;
     entrance->tile = 0;
-    entrance->rotation = 0;
+    entrance->rotation = ROTATION_FIRST;
 
     return 0;
 }
@@ -3110,7 +3113,7 @@ static int wmRStartSlotInit(MapStartPointInfo* rsp)
 {
     rsp->elevation = 0;
     rsp->tile = -1;
-    rsp->rotation = -1;
+    rsp->rotation = ROTATION_INVALID;
 
     return 0;
 }
@@ -4300,8 +4303,8 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
                 objectAttemptPlacement(object, tile, 0, 0);
             }
 
-            int direction = tileGetRotationTo(tile, gDude->tile);
-            objectSetRotation(object, direction, nullptr);
+            Rotation rotation = tileGetRotationTo(tile, gDude->tile);
+            objectSetRotation(object, rotation, nullptr);
 
             for (int itemIndex = 0; itemIndex < encounterEntry->itemsLength; itemIndex++) {
                 EncounterItem* encounterItem = &(encounterEntry->items[itemIndex]);
@@ -4350,8 +4353,8 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
 static int wmSetupRndNextTileNumInit(Encounter* encounter)
 {
     for (int index = 0; index < 2; index++) {
-        wmRndCenterRotations[index] = 0;
-        wmRndTileDirs[index] = 0;
+        wmRndCenterRotations[index] = ROTATION_FIRST;
+        wmRndTileDirs[index] = ROTATION_FIRST;
         wmRndCenterTiles[index] = -1;
 
         if (index & 1) {
@@ -4366,7 +4369,7 @@ static int wmSetupRndNextTileNumInit(Encounter* encounter)
     switch (encounter->position) {
     case ENCOUNTER_FORMATION_TYPE_SURROUNDING:
         wmRndCenterTiles[0] = gDude->tile;
-        wmRndTileDirs[0] = randomBetween(0, ROTATION_COUNT - 1);
+        wmRndTileDirs[0] = static_cast<Rotation>(randomBetween(ROTATION_FIRST, ROTATION_LAST));
 
         wmRndOriginalCenterTile = wmRndCenterTiles[0];
 
@@ -4387,8 +4390,8 @@ static int wmSetupRndNextTileNumInit(Encounter* encounter)
             wmRndCenterRotations[0] = rsp->rotation;
             wmRndCenterRotations[1] = wmRndCenterRotations[0];
         } else {
-            wmRndCenterRotations[0] = 0;
-            wmRndCenterRotations[1] = 0;
+            wmRndCenterRotations[0] = ROTATION_FIRST;
+            wmRndCenterRotations[1] = ROTATION_FIRST;
 
             wmRndCenterTiles[0] = gDude->tile;
             wmRndCenterTiles[1] = gDude->tile;
@@ -4442,19 +4445,20 @@ static int wmSetupRndNextTileNum(Encounter* encounter, EncounterEntry* encounter
                 origin = tileGetTileInDirection(gDude->tile, wmRndTileDirs[0], distance);
             }
 
-            if (++wmRndTileDirs[0] >= ROTATION_COUNT) {
-                wmRndTileDirs[0] = 0;
+            wmRndTileDirs[0]++;
+            if (wmRndTileDirs[0] >= ROTATION_COUNT) {
+                wmRndTileDirs[0] = ROTATION_FIRST;
             }
 
             int randomizedDistance = randomBetween(0, distance / 2);
-            int randomizedRotation = randomBetween(0, ROTATION_COUNT - 1);
+            Rotation randomizedRotation = static_cast<Rotation>(randomBetween(ROTATION_FIRST, ROTATION_LAST));
             tile = tileGetTileInDirection(origin, (randomizedRotation + wmRndTileDirs[0]) % ROTATION_COUNT, randomizedDistance);
             break;
         }
         case ENCOUNTER_FORMATION_TYPE_STRAIGHT_LINE:
             tile = wmRndCenterTiles[wmRndIndex];
             if (wmRndCallCount != 0) {
-                int rotation = (wmRndRotOffsets[wmRndIndex] + wmRndTileDirs[wmRndIndex]) % ROTATION_COUNT;
+                Rotation rotation = (wmRndTileDirs[wmRndIndex] + wmRndRotOffsets[wmRndIndex]) % ROTATION_COUNT;
                 int origin = tileGetTileInDirection(wmRndCenterTiles[wmRndIndex], rotation, encounter->spacing);
                 tile = tileGetTileInDirection(origin, (rotation + wmRndRotOffsets[wmRndIndex]) % ROTATION_COUNT, encounter->spacing);
                 wmRndCenterTiles[wmRndIndex] = tile;
@@ -4464,7 +4468,7 @@ static int wmSetupRndNextTileNum(Encounter* encounter, EncounterEntry* encounter
         case ENCOUNTER_FORMATION_TYPE_DOUBLE_LINE:
             tile = wmRndCenterTiles[wmRndIndex];
             if (wmRndCallCount != 0) {
-                int rotation = (wmRndRotOffsets[wmRndIndex] + wmRndTileDirs[wmRndIndex]) % ROTATION_COUNT;
+                Rotation rotation = (wmRndTileDirs[wmRndIndex] + wmRndRotOffsets[wmRndIndex]) % ROTATION_COUNT;
                 int origin = tileGetTileInDirection(wmRndCenterTiles[wmRndIndex], rotation, encounter->spacing);
                 tile = tileGetTileInDirection(origin, (rotation + wmRndRotOffsets[wmRndIndex]) % ROTATION_COUNT, encounter->spacing);
                 wmRndCenterTiles[wmRndIndex] = tile;
@@ -4474,7 +4478,7 @@ static int wmSetupRndNextTileNum(Encounter* encounter, EncounterEntry* encounter
         case ENCOUNTER_FORMATION_TYPE_WEDGE:
             tile = wmRndCenterTiles[wmRndIndex];
             if (wmRndCallCount != 0) {
-                tile = tileGetTileInDirection(wmRndCenterTiles[wmRndIndex], (wmRndRotOffsets[wmRndIndex] + wmRndTileDirs[wmRndIndex]) % ROTATION_COUNT, encounter->spacing);
+                tile = tileGetTileInDirection(wmRndCenterTiles[wmRndIndex], (wmRndTileDirs[wmRndIndex] + wmRndRotOffsets[wmRndIndex]) % ROTATION_COUNT, encounter->spacing);
                 wmRndCenterTiles[wmRndIndex] = tile;
                 wmRndIndex = 1 - wmRndIndex;
             }
@@ -5049,8 +5053,8 @@ static int wmInterfaceInit()
         return -1;
     }
 
-    wmGenData.dialFrmWidth = artGetWidth(wmGenData.dialFrm, 0, 0);
-    wmGenData.dialFrmHeight = artGetHeight(wmGenData.dialFrm, 0, 0);
+    wmGenData.dialFrmWidth = artGetWidth(wmGenData.dialFrm, 0, ROTATION_FIRST);
+    wmGenData.dialFrmHeight = artGetHeight(wmGenData.dialFrm, 0, ROTATION_FIRST);
 
     // wmscreen - worldmap overlay screen
     fid = buildFid(OBJ_TYPE_INTERFACE, 363, 0, 0, 0);
@@ -5195,8 +5199,8 @@ static int wmInterfaceInit()
             }
         }
 
-        wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm, 0, 0);
-        wmGenData.carImageFrmHeight = artGetHeight(wmGenData.carImageFrm, 0, 0);
+        wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm, 0, ROTATION_FIRST);
+        wmGenData.carImageFrmHeight = artGetHeight(wmGenData.carImageFrm, 0, ROTATION_FIRST);
     }
 
     tickersAdd(wmMouseBkProc);
@@ -5635,7 +5639,7 @@ static int wmTileGrabArt(int tileIdx)
         return 0;
     }
 
-    tile->data = artLockFrameData(tile->fid, 0, 0, &(tile->handle));
+    tile->data = artLockFrameData(tile->fid, 0, ROTATION_FIRST, &(tile->handle));
     if (tile->data != nullptr) {
         return 0;
     }
@@ -6752,8 +6756,8 @@ static bool wmLockCarInterfaceArt(int artIndex, Art** artPtr, CacheEntry** handl
         return false;
     }
 
-    int width = artGetWidth(art, 0, 0);
-    int height = artGetHeight(art, 0, 0);
+    int width = artGetWidth(art, 0, ROTATION_FIRST);
+    int height = artGetHeight(art, 0, ROTATION_FIRST);
     if (width <= 0 || height <= 0 || WM_WINDOW_CAR_X + width > WM_WINDOW_WIDTH || WM_WINDOW_CAR_Y + height > WM_WINDOW_HEIGHT) {
         artUnlock(handle);
         return false;
@@ -6787,8 +6791,8 @@ void wmSetCarInterfaceArt(int artIndex)
     artUnlock(wmGenData.carImageFrmHandle);
     wmGenData.carImageFrmHandle = handle;
     wmGenData.carImageFrm = art;
-    wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm, 0, 0);
-    wmGenData.carImageFrmHeight = artGetHeight(wmGenData.carImageFrm, 0, 0);
+    wmGenData.carImageFrmWidth = artGetWidth(wmGenData.carImageFrm, 0, ROTATION_FIRST);
+    wmGenData.carImageFrmHeight = artGetHeight(wmGenData.carImageFrm, 0, ROTATION_FIRST);
 
     int frameCount = artGetFrameCount(wmGenData.carImageFrm);
     if (frameCount <= 0 || wmGenData.carImageCurrentFrameIndex >= frameCount) {
@@ -6948,7 +6952,7 @@ static int wmRefreshInterfaceOverlay(bool shouldRefreshWindow)
     wmRefreshInterfaceDial(false);
 
     if (wmGenData.isInCar) {
-        unsigned char* data = artGetFrameData(wmGenData.carImageFrm, wmGenData.carImageCurrentFrameIndex, 0);
+        unsigned char* data = artGetFrameData(wmGenData.carImageFrm, wmGenData.carImageCurrentFrameIndex, ROTATION_FIRST);
         if (data == nullptr) {
             return -1;
         }
@@ -7194,7 +7198,7 @@ static int wmFreeTabsLabelList(int** quickDestinationsListPtr, int* quickDestina
 // 0x4C5734 wmRefreshInterfaceDial
 static void wmRefreshInterfaceDial(bool shouldRefreshWindow)
 {
-    unsigned char* data = artGetFrameData(wmGenData.dialFrm, wmGenData.dialFrmCurrentFrameIndex, 0);
+    unsigned char* data = artGetFrameData(wmGenData.dialFrm, wmGenData.dialFrmCurrentFrameIndex, ROTATION_FIRST);
     blitBufferToBufferTrans(data,
         wmGenData.dialFrmWidth,
         wmGenData.dialFrmHeight,

@@ -1013,7 +1013,7 @@ static void op_refresh_pc_art(Program* program)
     objectGetRect(gDude, &rect);
 
     AnimationType anim = animationTypeFromFid(gDude->fid);
-    int rotation = FID_ROTATION(gDude->fid);
+    Rotation rotation = rotationFromFid(gDude->fid);
 
     _proto_dude_update_gender();
 
@@ -1247,9 +1247,9 @@ static void op_explosions_metarule(Program* program)
     switch (metarule) {
     case EXPL_FORCE_EXPLOSION_PATTERN:
         if (param1 != 0) {
-            explosionSetPattern(2, 4);
+            explosionSetPattern(ROTATION_SE, ROTATION_W);
         } else {
-            explosionSetPattern(0, 6);
+            explosionSetPattern(ROTATION_FIRST, ROTATION_COUNT);
         }
         programStackPushInteger(program, 0);
         break;

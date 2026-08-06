@@ -500,7 +500,7 @@ static int gSecondaryInventoryScrollDownButton = -1;
 static unsigned int gInventoryWindowDudeRotationTimestamp = 0;
 
 // 0x5190F8 curr_rot
-static int gInventoryWindowDudeRotation = 0;
+static Rotation gInventoryWindowDudeRotation = ROTATION_FIRST;
 
 // 0x5190FC num
 static const int gInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
@@ -684,7 +684,7 @@ static bool inventoryBackgroundLoad(FrmImage& image, int col1FrmId, const char* 
     image.unlock();
 
     if (columns == 1) {
-        return image.lock(buildFid(OBJ_TYPE_INTERFACE, col1FrmId, 0, 0, 0));
+        return image.lock(buildFid(OBJ_TYPE_INTERFACE, col1FrmId, 0, 0, ROTATION_FIRST));
     }
 
     if (columns == 2) {
@@ -740,7 +740,7 @@ static ConstBuffer2D inventoryGetBackgroundBuffer(int inventoryWindowType, int f
             windowGetHeight(gInventoryBarterBackgroundWindow) };
     }
 
-    if (fallbackImage.lock(buildFid(OBJ_TYPE_INTERFACE, fallbackFrmId, 0, 0, 0))) {
+    if (fallbackImage.lock(buildFid(OBJ_TYPE_INTERFACE, fallbackFrmId, 0, 0, ROTATION_FIRST))) {
         return fallbackImage.getBuffer();
     }
 
@@ -1510,7 +1510,7 @@ void inventorySetDude(Object* obj, int pid)
 }
 
 // TODO(CE): move to more generic location
-int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, int rotation)
+int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation)
 {
     if (FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
         return critter->fid;
@@ -2455,13 +2455,13 @@ static void _display_body(int fid, int inventoryWindowType)
         return;
     }
 
-    gInventoryWindowDudeRotation += 1;
+    gInventoryWindowDudeRotation = gInventoryWindowDudeRotation + 1;
 
     if (gInventoryWindowDudeRotation == ROTATION_COUNT) {
-        gInventoryWindowDudeRotation = 0;
+        gInventoryWindowDudeRotation = ROTATION_FIRST;
     }
 
-    int rotations[2];
+    Rotation rotations[2];
     if (fid == -1) {
         rotations[0] = gInventoryWindowDudeRotation;
         rotations[1] = ROTATION_SE;
@@ -2497,7 +2497,7 @@ static void _display_body(int fid, int inventoryWindowType)
             frame = artGetFrameCount(art) - 1;
         }
 
-        int rotation = rotations[index];
+        Rotation rotation = rotations[index];
 
         unsigned char* frameData = artGetFrameData(art, frame, rotation);
 
@@ -2635,10 +2635,10 @@ static int inventoryCommonInit()
         }
 
         cursorData->frm = frm;
-        cursorData->frmData = artGetFrameData(frm, 0, 0);
-        cursorData->width = artGetWidth(frm, 0, 0);
-        cursorData->height = artGetHeight(frm, 0, 0);
-        artGetFrameOffsets(frm, 0, 0, &(cursorData->offsetX), &(cursorData->offsetY));
+        cursorData->frmData = artGetFrameData(frm, 0, ROTATION_FIRST);
+        cursorData->width = artGetWidth(frm, 0, ROTATION_FIRST);
+        cursorData->height = artGetHeight(frm, 0, ROTATION_FIRST);
+        artGetFrameOffsets(frm, 0, ROTATION_FIRST, &(cursorData->offsetX), &(cursorData->offsetY));
     }
 
     if (index != INVENTORY_WINDOW_CURSOR_COUNT) {
@@ -3103,7 +3103,7 @@ static void _adjust_fid()
         gInventoryArmor,
         interfaceGetCurrentHand(),
         ANIM_STAND,
-        0);
+        ROTATION_FIRST);
     gInventoryWindowDudeFid = scriptHooks_AdjustFid(fid, fid);
 }
 
@@ -4444,7 +4444,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     int offsetX;
     int offsetY;
-    artGetRotationOffsets(cursorData->frm, 0, &offsetX, &offsetY);
+    artGetRotationOffsets(cursorData->frm, ROTATION_FIRST, &offsetX, &offsetY);
 
     Rect rect;
     rect.left = x - inventoryWindowX - cursorData->width / 2 + offsetX;

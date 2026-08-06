@@ -426,9 +426,9 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
         return;
     }
 
-    unsigned char* frameData = artGetFrameData(frm, 0, 0);
-    int frameWidth = artGetWidth(frm, 0, 0);
-    int frameHeight = artGetHeight(frm, 0, 0);
+    unsigned char* frameData = artGetFrameData(frm, 0, ROTATION_FIRST);
+    int frameWidth = artGetWidth(frm, 0, ROTATION_FIRST);
+    int frameHeight = artGetHeight(frm, 0, ROTATION_FIRST);
 
     int remainingWidth = width - frameWidth;
     int remainingHeight = height - frameHeight;
@@ -519,7 +519,7 @@ Art* artLock(int fid, CacheEntry** handlePtr)
 }
 
 // 0x419188
-unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** handlePtr)
+unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** handlePtr)
 {
     Art* art;
     ArtFrame* frm;
@@ -530,7 +530,7 @@ unsigned char* artLockFrameData(int fid, int frame, int direction, CacheEntry** 
     }
 
     if (art != nullptr) {
-        frm = artGetFrame(art, frame, direction);
+        frm = artGetFrame(art, frame, rotation);
         if (frm != nullptr) {
 
             return artFrameData(frm);
@@ -665,7 +665,7 @@ static char artGetCritterWeaponCode(WeaponAnimation weaponType)
 char* artBuildFilePath(int fid)
 {
     int baseFid = fid;
-    int rotation = FID_ROTATION(fid);
+    Rotation rotation = rotationFromFid(fid);
 
     int aliasFid = artAliasFid(fid);
     if (aliasFid != -1) {
@@ -785,11 +785,11 @@ int artGetFrameCount(Art* art)
 }
 
 // 0x4197A0
-int artGetWidth(Art* art, int frame, int direction)
+int artGetWidth(Art* art, int frame, Rotation rotation)
 {
     ArtFrame* frm;
 
-    frm = artGetFrame(art, frame, direction);
+    frm = artGetFrame(art, frame, rotation);
     if (frm == nullptr) {
         return -1;
     }
@@ -798,11 +798,11 @@ int artGetWidth(Art* art, int frame, int direction)
 }
 
 // 0x4197B8
-int artGetHeight(Art* art, int frame, int direction)
+int artGetHeight(Art* art, int frame, Rotation rotation)
 {
     ArtFrame* frm;
 
-    frm = artGetFrame(art, frame, direction);
+    frm = artGetFrame(art, frame, rotation);
     if (frm == nullptr) {
         return -1;
     }
@@ -811,11 +811,11 @@ int artGetHeight(Art* art, int frame, int direction)
 }
 
 // 0x4197D4
-int artGetSize(Art* art, int frame, int direction, int* widthPtr, int* heightPtr)
+int artGetSize(Art* art, int frame, Rotation rotation, int* widthPtr, int* heightPtr)
 {
     ArtFrame* frm;
 
-    frm = artGetFrame(art, frame, direction);
+    frm = artGetFrame(art, frame, rotation);
     if (frm == nullptr) {
         if (widthPtr != nullptr) {
             *widthPtr = 0;
@@ -840,13 +840,13 @@ int artGetSize(Art* art, int frame, int direction, int* widthPtr, int* heightPtr
 }
 
 // 0x419820
-int artGetFrameOffsets(const Art* art, int frame, int direction, int* xPtr, int* yPtr)
+int artGetFrameOffsets(const Art* art, int frame, Rotation rotation, int* xPtr, int* yPtr)
 {
-    return artGetFrameData(art, frame, direction, nullptr, nullptr, xPtr, yPtr) != nullptr ? 0 : -1;
+    return artGetFrameData(art, frame, rotation, nullptr, nullptr, xPtr, yPtr) != nullptr ? 0 : -1;
 }
 
 // 0x41984C
-int artGetRotationOffsets(Art* art, int rotation, int* xPtr, int* yPtr)
+int artGetRotationOffsets(Art* art, Rotation rotation, int* xPtr, int* yPtr)
 {
     if (art == nullptr) {
         return -1;
@@ -859,14 +859,14 @@ int artGetRotationOffsets(Art* art, int rotation, int* xPtr, int* yPtr)
 }
 
 // 0x419870
-unsigned char* artGetFrameData(Art* art, int frame, int direction)
+unsigned char* artGetFrameData(Art* art, int frame, Rotation rotation)
 {
-    return artGetFrameData(art, frame, direction, nullptr, nullptr, nullptr, nullptr);
+    return artGetFrameData(art, frame, rotation, nullptr, nullptr, nullptr, nullptr);
 }
 
-unsigned char* artGetFrameData(const Art* art, int frame, int direction, int* widthPtr, int* heightPtr, int* xOffsetPtr, int* yOffsetPtr)
+unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int* widthPtr, int* heightPtr, int* xOffsetPtr, int* yOffsetPtr)
 {
-    ArtFrame* frm = artGetFrame(art, frame, direction);
+    ArtFrame* frm = artGetFrame(art, frame, rotation);
     if (frm == nullptr) {
         return nullptr;
     }
@@ -891,7 +891,7 @@ unsigned char* artGetFrameData(const Art* art, int frame, int direction, int* wi
 }
 
 // 0x419880
-ArtFrame* artGetFrame(const Art* art, int frame, int rotation)
+ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation)
 {
     if (rotation < 0 || rotation >= 6) {
         return nullptr;
@@ -912,11 +912,11 @@ ArtFrame* artGetFrame(const Art* art, int frame, int rotation)
     return frm;
 }
 
-ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, int direction)
+ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation)
 {
     int width = 0;
     int height = 0;
-    unsigned char* data = artGetFrameData(art, frame, direction, &width, &height, nullptr, nullptr);
+    unsigned char* data = artGetFrameData(art, frame, rotation, &width, &height, nullptr, nullptr);
     return { data, width, height };
 }
 
@@ -1262,7 +1262,7 @@ static Art* artAllocateSingleFrame(int width, int height, unsigned char** frameD
     header.dataSize = static_cast<int>(sizeof(ArtFrame) + pixelCount);
 
     int currentPadding = paddingForSize(sizeof(Art));
-    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+    for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
         header.dataOffsets[rotation] = 0;
         header.padding[rotation] = currentPadding;
     }
@@ -1693,28 +1693,28 @@ FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
 
 bool FrmImage::lock(const FrmId& frmId)
 {
-    return lock(frmId, 0, 0);
+    return lock(frmId, 0, ROTATION_NE);
 }
 
-bool FrmImage::lock(const FrmId& frmId, int frame, int direction)
+bool FrmImage::lock(const FrmId& frmId, int frame, Rotation rotation)
 {
     if (frmId.fid() >= 0) {
-        return lock(frmId.fid(), frame, direction);
+        return lock(frmId.fid(), frame, rotation);
     }
     if (frmId.filePath() != nullptr) {
         return frmId.hasObjectType()
-            ? lock(frmId.objectType(), frmId.filePath(), frame, direction)
-            : lock(frmId.filePath(), frame, direction);
+            ? lock(frmId.objectType(), frmId.filePath(), frame, rotation)
+            : lock(frmId.filePath(), frame, rotation);
     }
     return false;
 }
 
 bool FrmImage::lock(unsigned int fid)
 {
-    return lock(fid, 0, 0);
+    return lock(fid, 0, ROTATION_NE);
 }
 
-bool FrmImage::lock(unsigned int fid, int frame, int direction)
+bool FrmImage::lock(unsigned int fid, int frame, Rotation rotation)
 {
     if (isLocked()) {
         return false;
@@ -1725,7 +1725,7 @@ bool FrmImage::lock(unsigned int fid, int frame, int direction)
         return false;
     }
 
-    if (!setFrame(art, frame, direction)) {
+    if (!setFrame(art, frame, rotation)) {
         unlock();
         return false;
     }
@@ -1735,10 +1735,10 @@ bool FrmImage::lock(unsigned int fid, int frame, int direction)
 
 bool FrmImage::lock(const char* frmPath)
 {
-    return lock(frmPath, 0, 0);
+    return lock(frmPath, 0, ROTATION_NE);
 }
 
-bool FrmImage::lock(const char* frmPath, int frame, int direction)
+bool FrmImage::lock(const char* frmPath, int frame, Rotation direction)
 {
     if (isLocked()) {
         return false;
@@ -1757,16 +1757,16 @@ bool FrmImage::lock(const char* frmPath, int frame, int direction)
 
 bool FrmImage::lock(ObjectType objType, const char* frmRelativePath)
 {
-    return lock(objType, frmRelativePath, 0, 0);
+    return lock(objType, frmRelativePath, 0, ROTATION_NE);
 }
 
-bool FrmImage::lock(ObjectType objType, const char* frmRelativePath, int frame, int direction)
+bool FrmImage::lock(ObjectType objType, const char* frmRelativePath, int frame, Rotation rotation)
 {
     if (objType < OBJ_TYPE_ITEM || objType >= OBJ_TYPE_COUNT) {
         return false;
     }
     snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objType].name, frmRelativePath);
-    return lock(_art_name, frame, direction);
+    return lock(_art_name, frame, rotation);
 }
 
 void FrmImage::unlock()
@@ -1788,15 +1788,15 @@ void FrmImage::resetInternal()
     _yOffset = 0;
 }
 
-bool FrmImage::setFrame(const Art* art, int frame, int direction)
+bool FrmImage::setFrame(const Art* art, int frame, Rotation rotation)
 {
-    unsigned char* data = artGetFrameData(art, frame, direction, &_width, &_height, nullptr, nullptr);
+    unsigned char* data = artGetFrameData(art, frame, rotation, &_width, &_height, nullptr, nullptr);
     if (data == nullptr) {
         return false;
     }
 
-    _xOffset = art->xOffsets[direction];
-    _yOffset = art->yOffsets[direction];
+    _xOffset = art->xOffsets[rotation];
+    _yOffset = art->yOffsets[rotation];
     _data = data;
     return true;
 }

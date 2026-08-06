@@ -3618,9 +3618,9 @@ int partyMemberControlWindowInit()
             return -1;
         }
 
-        int width = artGetWidth(upButtonFrm, 0, 0);
-        int height = artGetHeight(upButtonFrm, 0, 0);
-        unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm, 0, 0);
+        int width = artGetWidth(upButtonFrm, 0, ROTATION_NE);
+        int height = artGetHeight(upButtonFrm, 0, ROTATION_NE);
+        unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm, 0, ROTATION_NE);
 
         fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->downFrmId, 0, 0, 0);
         Art* downButtonFrm = artLock(fid, &(buttonData->downFrmHandle));
@@ -3629,16 +3629,16 @@ int partyMemberControlWindowInit()
             return -1;
         }
 
-        unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm, 0, 0);
+        unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm, 0, ROTATION_NE);
 
-        fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->disabledFrmId, 0, 0, 0);
+        fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->disabledFrmId, 0, 0, ROTATION_NE);
         Art* disabledButtonFrm = artLock(fid, &(buttonData->disabledFrmHandle));
         if (disabledButtonFrm == nullptr) {
             partyMemberControlWindowFree();
             return -1;
         }
 
-        unsigned char* disabledButtonFrmData = artGetFrameData(disabledButtonFrm, 0, 0);
+        unsigned char* disabledButtonFrmData = artGetFrameData(disabledButtonFrm, 0, ROTATION_NE);
 
         dispositionButtonIndex++;
 
@@ -4038,9 +4038,9 @@ int partyMemberCustomizationWindowInit()
             return -1;
         }
 
-        int width = artGetWidth(upButtonFrm, 0, 0);
-        int height = artGetHeight(upButtonFrm, 0, 0);
-        unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm, 0, 0);
+        int width = artGetWidth(upButtonFrm, 0, ROTATION_NE);
+        int height = artGetHeight(upButtonFrm, 0, ROTATION_NE);
+        unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm, 0, ROTATION_NE);
 
         int downButtonFid = buildFid(OBJ_TYPE_INTERFACE, buttonData->downFrmId, 0, 0, 0);
         Art* downButtonFrm = artLock(downButtonFid, &(buttonData->downFrmHandle));
@@ -4049,7 +4049,7 @@ int partyMemberCustomizationWindowInit()
             return -1;
         }
 
-        unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm, 0, 0);
+        unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm, 0, ROTATION_NE);
 
         optionButton++;
         _gdialog_buttons[optionButton] = buttonCreate(gGameDialogWindow,
@@ -4741,17 +4741,17 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
             debugPrint("\tError getting background data in display...\n");
         }
 
-        int width = artGetWidth(headFrm, frame, 0);
-        int height = artGetHeight(headFrm, frame, 0);
-        unsigned char* data = artGetFrameData(headFrm, frame, 0);
+        int width = artGetWidth(headFrm, frame, ROTATION_NE);
+        int height = artGetHeight(headFrm, frame, ROTATION_NE);
+        unsigned char* data = artGetFrameData(headFrm, frame, ROTATION_NE);
 
         int rotationOffsetX;
         int rotationOffsetY;
-        artGetRotationOffsets(headFrm, 0, &rotationOffsetX, &rotationOffsetY);
+        artGetRotationOffsets(headFrm, ROTATION_NE, &rotationOffsetX, &rotationOffsetY);
 
         int frameOffsetX;
         int frameOffsetY;
-        artGetFrameOffsets(headFrm, frame, 0, &frameOffsetX, &frameOffsetY);
+        artGetFrameOffsets(headFrm, frame, ROTATION_NE, &frameOffsetX, &frameOffsetY);
         (void)frameOffsetY;
 
         _totalHotx += frameOffsetX;

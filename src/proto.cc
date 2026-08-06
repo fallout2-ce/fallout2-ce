@@ -640,7 +640,7 @@ int objectDataRead(Object* obj, File* stream)
                 if (fileReadInt32(stream, &(obj->data.misc.map)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.tile)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.elevation)) == -1) return -1;
-                if (fileReadInt32(stream, &(obj->data.misc.rotation)) == -1) return -1;
+                if (fileReadInt32Enum<Rotation>(stream, &(obj->data.misc.rotation)) == -1) return -1;
             }
             break;
         default:
@@ -725,7 +725,7 @@ int objectDataWrite(Object* obj, File* stream)
                 if (fileWriteInt32(stream, data->misc.map) == -1) return -1;
                 if (fileWriteInt32(stream, data->misc.tile) == -1) return -1;
                 if (fileWriteInt32(stream, data->misc.elevation) == -1) return -1;
-                if (fileWriteInt32(stream, data->misc.rotation) == -1) return -1;
+                if (fileWriteInt32Enum<Rotation>(stream, data->misc.rotation) == -1) return -1;
             }
             break;
         default:
@@ -802,7 +802,7 @@ static int _proto_update_gen(Object* obj)
         if (isExitGridPid(obj->pid)) {
             data->misc.tile = -1;
             data->misc.elevation = 0;
-            data->misc.rotation = 0;
+            data->misc.rotation = ROTATION_FIRST;
             data->misc.map = -1;
         }
         break;
