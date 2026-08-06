@@ -3672,7 +3672,7 @@ int _obj_load_dude(File* stream)
 {
     int savedTile = gDude->tile;
     int savedElevation = gDude->elevation;
-    int savedRotation = gDude->rotation;
+    Rotation savedRotation = gDude->rotation;
     int savedOid = gDude->id;
 
     scriptsClearDudeScript();
@@ -3697,7 +3697,7 @@ int _obj_load_dude(File* stream)
     gDude->elevation = savedElevation;
 
     Rotation newRotation = gDude->rotation;
-    gDude->rotation = newRotation; // TODO: should be savedRotation??
+    gDude->rotation = savedRotation;
 
     scriptsSetDudeScript();
 
