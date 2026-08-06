@@ -290,9 +290,18 @@ static bool gBackgroundProcessTimeInitialized;
 // 0x667750 tempStr1
 static char gDebugScriptFileName[20];
 
+static constexpr int startTimeToTicks(int time)
+{
+    return ((time / 100) * 60 + time % 100) * 600;
+}
+
+static constexpr int kDefaultStartTime = 824;
+static constexpr int kDefaultStartTimeTicks = startTimeToTicks(kDefaultStartTime);
+
 static int gStartYear;
 static int gStartMonth;
 static int gStartDay;
+static int gStartTimeTicks;
 
 static int gMovieTimerArtimer1;
 static int gMovieTimerArtimer2;
@@ -1819,6 +1828,15 @@ int scriptsInit()
     configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "year", &gStartYear, 2241);
     configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "month", &gStartMonth, 6);
     configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "day", &gStartDay, 24);
+    int startTime;
+    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "time", &startTime, kDefaultStartTime, 10);
+    int startTimeHour = startTime / 100;
+    int startTimeMinute = startTime % 100;
+    if (startTimeHour < 0 || startTimeHour > 23 || startTimeMinute < 0 || startTimeMinute > 59) {
+        gStartTimeTicks = kDefaultStartTimeTicks;
+    } else {
+        gStartTimeTicks = startTimeToTicks(startTime);
+    }
 
     configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer1", &gMovieTimerArtimer1, 90);
     configGetInt(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "artimer2", &gMovieTimerArtimer2, 180);
@@ -1871,7 +1889,7 @@ int _scr_game_init()
     gGameModeEnabled = 1;
     gGameTime = 1;
     scriptsResetUniqueObjectIdCounter();
-    gameTimeSetTime(302400);
+    gameTimeSetTime(gStartTimeTicks);
     tickersAdd(_doBkProcesses);
 
     if (scriptsSetDudeScript() == -1) {
