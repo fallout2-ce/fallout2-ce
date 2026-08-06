@@ -1024,7 +1024,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        int fid = buildFid(OBJ_TYPE_MISC, 12, 0, 0, 0);
+        int fid = buildFid(OBJ_TYPE_MISC, 12, 0, 0);
         objectCreateWithFidPid(&object, fid, -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
@@ -1448,13 +1448,13 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             int fid;
 
-            fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[tile] & 0xFFF, 0, 0, 0);
-            if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+            fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[tile] & 0xFFF, 0, 0);
+            if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0)) {
                 break;
             }
 
-            fid = buildFid(OBJ_TYPE_TILE, (_square[elevation]->field_0[tile] >> 16) & 0xFFF, 0, 0, 0);
-            if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+            fid = buildFid(OBJ_TYPE_TILE, (_square[elevation]->field_0[tile] >> 16) & 0xFFF, 0, 0);
+            if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0)) {
                 break;
             }
         }
@@ -1802,11 +1802,11 @@ static void _square_reset()
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = (((buildFid(OBJ_TYPE_TILE, 1, 0, WEAPON_ANIMATION_NONE, 0) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = (((buildFid(OBJ_TYPE_TILE, 1, 0, WEAPON_ANIMATION_NONE) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1, 0, WEAPON_ANIMATION_NONE, 0) & 0xFFF) | tileFlags;
+                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1, 0, WEAPON_ANIMATION_NONE) & 0xFFF) | tileFlags;
 
                 fid &= ~0xFFFF;
 

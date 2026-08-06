@@ -351,7 +351,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    dudeFid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, 0, 0);
+    dudeFid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, 0, ROTATION_FIRST);
     objectCreateWithFidPid(&gDude, dudeFid, 0x1000000);
 
     gDude->flags |= OBJECT_NO_REMOVE;
@@ -365,7 +365,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
         exit(1);
     }
 
-    eggFid = buildFid(OBJ_TYPE_INTERFACE, 2, 0, 0, 0);
+    eggFid = buildFid(OBJ_TYPE_INTERFACE, 2, 0, 0);
     objectCreateWithFidPid(&gEgg, eggFid, -1);
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
@@ -458,7 +458,7 @@ int objectRead(Object* obj, File* stream)
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
             if ((obj->fid & 0xFFF) < 33) {
-                obj->fid = buildFid(OBJ_TYPE_MISC, (obj->fid & 0xFFF) + 16, animationTypeFromFid(obj->fid), 0, 0);
+                obj->fid = buildFid(OBJ_TYPE_MISC, (obj->fid & 0xFFF) + 16, animationTypeFromFid(obj->fid), 0);
             }
         }
     } else {
@@ -1469,12 +1469,12 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->field_0[roofX + 100 * roofY];
-            int currentSquareFid = buildFid(OBJ_TYPE_TILE, (currentSquare >> 16) & 0xFFF, 0, 0, 0);
+            int currentSquareFid = buildFid(OBJ_TYPE_TILE, (currentSquare >> 16) & 0xFFF, 0, 0);
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            bool isEmpty = buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0) == currentSquareFid;
+            bool isEmpty = buildFid(OBJ_TYPE_TILE, 1, 0, 0) == currentSquareFid;
 
             if (isEmpty != _obj_last_is_empty || (((currentSquare >> 16) & 0xF000) >> 12) != (((previousSquare >> 16) & 0xF000) >> 12)) {
                 if (!_obj_last_is_empty) {
@@ -1526,8 +1526,8 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    int fid = buildFid(OBJ_TYPE_TILE, (_square[gDude->elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16) & 0xFFF, 0, 0, 0);
-    if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+    int fid = buildFid(OBJ_TYPE_TILE, (_square[gDude->elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16) & 0xFFF, 0, 0);
+    if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0)) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
     return 0;
@@ -3249,7 +3249,7 @@ void _obj_preload_art_cache(int flags)
 
     for (int i = 0; i < 4096; i++) {
         if (arr[i] != 0) {
-            int fid = buildFid(OBJ_TYPE_TILE, i, 0, 0, 0);
+            int fid = buildFid(OBJ_TYPE_TILE, i, 0, 0);
             if (artLock(fid, &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }

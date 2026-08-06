@@ -1321,8 +1321,8 @@ void tileRenderRoofsInRect(Rect* rect, int elevation)
             int frmId = gTileSquares[elevation]->field_0[squareTile];
             frmId >>= 16;
             if ((((frmId & 0xF000) >> 12) & 0x01) == 0) {
-                int fid = buildFid(OBJ_TYPE_TILE, frmId & 0xFFF, 0, 0, 0);
-                if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+                int fid = buildFid(OBJ_TYPE_TILE, frmId & 0xFFF, 0, 0);
+                if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0)) {
                     int screenX;
                     int screenY;
                     squareTileToRoofScreenXY(squareTile, &screenX, &screenY, elevation);
@@ -1351,7 +1351,7 @@ static void roof_fill_off_process_task(std::stack<roof_fill_task>& tasks_stack, 
     int roof = (squareTile >> 16) & 0xFFFF;
 
     int id = roof & 0xFFF;
-    if (buildFid(OBJ_TYPE_TILE, id, 0, 0, 0) != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+    if (buildFid(OBJ_TYPE_TILE, id, 0, 0) != buildFid(OBJ_TYPE_TILE, 1, 0, 0)) {
         int flag = (roof & 0xF000) >> 12;
 
         if (on ? ((flag & 0x01) != 0) : ((flag & 0x03) == 0)) {
@@ -1535,7 +1535,7 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
                 int tileScreenX;
                 int tileScreenY;
                 squareTileToScreenXY(squareTile, &tileScreenX, &tileScreenY, elevation);
-                int fid = buildFid(OBJ_TYPE_TILE, frmId & 0xFFF, 0, 0, 0);
+                int fid = buildFid(OBJ_TYPE_TILE, frmId & 0xFFF, 0, 0);
                 tileRenderFloor(fid, tileScreenX, tileScreenY, rect);
             }
         }
@@ -1573,7 +1573,7 @@ void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop)
     bool drawRight = clipSides.right == drawOnTop;
     bool drawBottom = clipSides.bottom == drawOnTop;
 
-    const int kEdgeFid = buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0);
+    const int kEdgeFid = buildFid(OBJ_TYPE_TILE, 1, 0, 0);
     int baseSquareTile = gSquareGridWidth * minY;
 
     for (int y = minY; y < maxY; y++) {
@@ -1607,10 +1607,10 @@ bool _square_roof_intersect(int x, int y, int elevation)
     TileData* ptr = gTileSquares[elevation];
     int idx = gSquareGridWidth * tileY + tileX;
     int upper = ptr->field_0[gSquareGridWidth * tileY + tileX] >> 16;
-    int fid = buildFid(OBJ_TYPE_TILE, upper & 0xFFF, 0, 0, 0);
-    if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+    int fid = buildFid(OBJ_TYPE_TILE, upper & 0xFFF, 0, 0);
+    if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0)) {
         if ((((upper & 0xF000) >> 12) & 1) == 0) {
-            int fid = buildFid(OBJ_TYPE_TILE, upper & 0xFFF, 0, 0, 0);
+            int fid = buildFid(OBJ_TYPE_TILE, upper & 0xFFF, 0, 0);
             CacheEntry* handle;
             Art* art = artLock(fid, &handle);
             if (art != nullptr) {

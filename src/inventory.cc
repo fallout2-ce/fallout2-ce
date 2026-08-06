@@ -1246,7 +1246,7 @@ static int buildPartyDisplayFid()
         weaponAnimationCode = weaponGetAnimationCode(rightHandItem);
     }
 
-    return buildFid(FID_TYPE(partyBaseTarget->fid), partyBaseTarget->fid & 0xFFF, 0, weaponAnimationCode, 0);
+    return buildFid(FID_TYPE(partyBaseTarget->fid), partyBaseTarget->fid & 0xFFF, 0, weaponAnimationCode, ROTATION_FIRST);
 }
 
 static int getTargetDisplayFid()
@@ -1772,7 +1772,7 @@ static bool _setup_inventory(int inventoryWindowType)
             blitBuffer2D(inventoryLootFrmImage.getBuffer(), destBuf);
         } else {
             FrmImage backgroundFrmImage;
-            if (backgroundFrmImage.lock(buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0, 0))) {
+            if (backgroundFrmImage.lock(buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0))) {
                 blitBuffer2D(backgroundFrmImage.getBuffer(), destBuf);
             }
         }
@@ -2203,7 +2203,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
         pitch = INVENTORY_USE_ON_WINDOW_WIDTH;
 
         FrmImage backgroundFrmImage;
-        int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 113, 0, 0, 0);
+        int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 113, 0, 0);
         if (backgroundFrmImage.lock(backgroundFid)) {
             // Clear scroll view background.
             blitBufferToBuffer(backgroundFrmImage.getData() + pitch * INVENTORY_SCROLLER_Y + INVENTORY_SCROLLER_X,
@@ -2523,7 +2523,7 @@ static void _display_body(int fid, int inventoryWindowType)
             rect.bottom = rect.top + INVENTORY_BODY_VIEW_HEIGHT - 1;
 
             FrmImage backgroundFrmImage;
-            int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, gGameDialogSpeakerIsPartyMember ? 420 : 111, 0, 0, 0);
+            int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, gGameDialogSpeakerIsPartyMember ? 420 : 111, 0, 0);
             if (backgroundFrmImage.lock(backgroundFid)) {
                 blitBufferToBuffer(backgroundFrmImage.getData() + rect.top * 640 + rect.left,
                     INVENTORY_BODY_VIEW_WIDTH,
@@ -2628,7 +2628,7 @@ static int inventoryCommonInit()
     for (index = 0; index < INVENTORY_WINDOW_CURSOR_COUNT; index++) {
         InventoryCursorData* cursorData = &(gInventoryCursorData[index]);
 
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gInventoryWindowCursorFrmIds[index], 0, 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, gInventoryWindowCursorFrmIds[index], 0, 0);
         Art* frm = artLock(fid, &(cursorData->frmHandle));
         if (frm == nullptr) {
             break;
@@ -3370,7 +3370,7 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
         }
     }
 
-    gInventoryWindowDudeFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, 0, animationCode, 0);
+    gInventoryWindowDudeFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, 0, animationCode, ROTATION_FIRST);
     gInventoryWindowDudeRotationTimestamp = 0;
     _display_inventory(0, -1, inventoryWindowType);
     _display_body(target->fid, inventoryWindowType);
@@ -6151,7 +6151,7 @@ static void _draw_amount(int value, int inventoryWindowType)
 {
     // BIGNUM.frm
     FrmImage numbersFrmImage;
-    int numbersFid = buildFid(OBJ_TYPE_INTERFACE, 170, 0, 0, 0);
+    int numbersFid = buildFid(OBJ_TYPE_INTERFACE, 170, 0, 0);
     if (!numbersFrmImage.lock(numbersFid)) {
         return;
     }
@@ -6380,7 +6380,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
     unsigned char* windowBuffer = windowGetBuffer(_mt_wid);
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0, 0);
+    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, windowDescription->frmId, 0, 0);
     if (backgroundFrmImage.lock(backgroundFid)) {
         blitBufferToBuffer(backgroundFrmImage.getData(),
             windowDescription->width,
@@ -6408,7 +6408,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
         // Timer overlay
         FrmImage overlayFrmImage;
-        int overlayFid = buildFid(OBJ_TYPE_INTERFACE, 306, 0, 0, 0);
+        int overlayFid = buildFid(OBJ_TYPE_INTERFACE, 306, 0, 0);
         if (overlayFrmImage.lock(overlayFid)) {
             blitBufferToBuffer(overlayFrmImage.getData(),
                 105, 81, 105,
@@ -6445,10 +6445,10 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         148, 128, -1, KEY_ESCAPE, FrmId(OBJ_TYPE_INTERFACE, 8), FrmId(OBJ_TYPE_INTERFACE, 9));
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
-        fid = buildFid(OBJ_TYPE_INTERFACE, 307, 0, 0, 0);
+        fid = buildFid(OBJ_TYPE_INTERFACE, 307, 0, 0);
         _moveFrmImages[6].lock(fid);
 
-        fid = buildFid(OBJ_TYPE_INTERFACE, 308, 0, 0, 0);
+        fid = buildFid(OBJ_TYPE_INTERFACE, 308, 0, 0);
         _moveFrmImages[7].lock(fid);
 
         if (_moveFrmImages[6].isLocked() && _moveFrmImages[7].isLocked()) {

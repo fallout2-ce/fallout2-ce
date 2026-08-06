@@ -1941,7 +1941,7 @@ static void opStartGameDialog(Program* program)
     }
 
     if (headId != -1) {
-        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, headId, 0, 0, 0);
+        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, headId, 0, 0);
     }
 
     gameDialogSetBackground(backgroundId);
@@ -3341,7 +3341,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0) == object->fid) {
+                if (buildFid(OBJ_TYPE_MISC, 10, 0, 0) == object->fid) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }

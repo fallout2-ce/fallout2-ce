@@ -593,7 +593,7 @@ static int protoInstCritterEdit(Object* obj)
                 if (rightHandItem != nullptr && itemGetType(rightHandItem) == ITEM_TYPE_WEAPON) {
                     animCode = weaponGetAnimationCode(rightHandItem);
                 }
-                obj->fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, obj->frame + 1, animCode, 0);
+                obj->fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, obj->frame + 1, animCode, ROTATION_FIRST);
                 tileWindowRefresh();
 
                 break;

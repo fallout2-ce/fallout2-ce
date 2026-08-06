@@ -645,7 +645,7 @@ static int pipboyWindowInit(int intent)
 
     int index;
     for (index = 0; index < PIPBOY_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gPipboyFrmIds[index], 0, 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, gPipboyFrmIds[index], 0, 0);
         if (!_pipboyFrmImages[index].lock(fid)) {
             break;
         }

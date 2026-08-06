@@ -1090,7 +1090,7 @@ static int buildFidInternal(unsigned short frmId, unsigned char weaponCode, unsi
 }
 
 // 0x419C88
-int buildFid(int objectType, int frmId, int animType, int weaponCode, int rotation)
+int buildFid(int objectType, int frmId, int animType, int weaponCode, Rotation rotation)
 {
     // Always use rotation 0 (NE) for non-critters, for certain critter animations.
     // For other critter animations, check if art for the given rotation exists, if not try rotation 1 (E) and if that also doesn't exist, then default to 0 (NE).
@@ -1624,7 +1624,7 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
 }
 
 FrmId::FrmId(ObjectType objType, int frmId)
-    : _fid(buildFid(objType, frmId, 0, 0, 0))
+    : _fid(buildFid(objType, frmId, 0, 0))
 {
     assert(objType >= 0 && objType < OBJ_TYPE_COUNT);
 }
