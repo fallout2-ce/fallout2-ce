@@ -774,6 +774,7 @@ static void mf_dialog_message(OpcodeContext& ctx);
 static void mf_display_stats(OpcodeContext& ctx);
 static void mf_draw_image(OpcodeContext& ctx);
 static void mf_draw_image_scaled(OpcodeContext& ctx);
+static void mf_encounter_detection(OpcodeContext& ctx);
 static void mf_get_combat_free_move(OpcodeContext& ctx);
 static void mf_get_cursor_mode(OpcodeContext& ctx);
 static void mf_get_flags(OpcodeContext& ctx);
@@ -853,6 +854,7 @@ const MetaruleInfo kMetarules[] = {
     { "display_stats", mf_display_stats, 0, 0 }, // refresh
     { "draw_image", mf_draw_image, 1, 5, -1, { ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
     { "draw_image_scaled", mf_draw_image_scaled, 1, 6, -1, { ARG_INTSTR, ARG_INT, ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
+    { "encounter_detection", mf_encounter_detection, 1, 1, -1, { ARG_INT } },
     // {"exec_map_update_scripts",   mf_exec_map_update_scripts,   0, 0},
     { "floor2", mf_floor2, 1, 1, 0, { ARG_NUMBER } },
     // {"get_can_rest_on_map",       mf_get_rest_on_map,           2, 2, -1, {ARG_INT, ARG_INT}},
@@ -2062,6 +2064,11 @@ static void mf_set_town_title(OpcodeContext& ctx)
 static void mf_remove_wm_town_names(OpcodeContext& ctx)
 {
     wmRemoveTownNames(ctx.arg(0).asInt() != 0);
+}
+
+static void mf_encounter_detection(OpcodeContext& ctx)
+{
+    wmSetEncounterDetection(ctx.arg(0).asInt() != 0);
 }
 
 static void mf_set_rest_mode(OpcodeContext& ctx)

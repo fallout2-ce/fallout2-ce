@@ -1001,6 +1001,7 @@ static FrmImage _townFrmImage;
 static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
+static bool wmEncounterDetectionEnabled = true;
 static int worldmapTravelDelay;
 static unsigned int wmLastTravelTick;
 static int worldmapTrailMarkers;
@@ -1179,6 +1180,7 @@ static int wmGenDataInit()
 
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = 0;
+    wmEncounterDetectionEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     wmTownTitleOverrides.clear();
@@ -1238,6 +1240,7 @@ static int wmGenDataReset()
 
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = 0;
+    wmEncounterDetectionEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
@@ -3201,6 +3204,11 @@ void wmSetRestMode(int mode)
     wmRestMode = mode & (static_cast<int>(RestModeFlag::Disabled) | static_cast<int>(RestModeFlag::Strict) | static_cast<int>(RestModeFlag::NoHealing));
 }
 
+void wmSetEncounterDetection(bool enabled)
+{
+    wmEncounterDetectionEnabled = enabled;
+}
+
 bool wmRestModeIsDisabled()
 {
     return (wmRestMode & static_cast<int>(RestModeFlag::Disabled)) != 0;
@@ -3880,50 +3888,52 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
     }
 
     bool randomEncounterIsDetected = false;
-    if (frequency > chance) {
-        int outdoorsman = partyGetBestSkillValue(SKILL_OUTDOORSMAN);
-        Object* scanner = objectGetCarriedObjectByPid(gDude, PROTO_ID_MOTION_SENSOR);
-        if (scanner != nullptr) {
-            if (gDude == scanner->owner) {
-                outdoorsman += 20;
-            }
-        }
-
-        if (outdoorsman > 95) {
-            outdoorsman = 95;
-        }
-
-        TileInfo* tile;
-        // NOTE: Uninline.
-        wmFindCurTileFromPos(wmGenData.worldPosX, wmGenData.worldPosY, &tile);
-        debugPrint("\nEncounter Difficulty Mod: %d", tile->encounterDifficultyModifier);
-
-        outdoorsman += tile->encounterDifficultyModifier;
-
-        if (randomBetween(1, 100) < outdoorsman) {
-            randomEncounterIsDetected = true;
-
-            int xp = 100 - outdoorsman;
-            if (xp > 0) {
-                // SFALL: Display actual xp received.
-                debugPrint("WorldMap: Giving Player [%d] Experience For Catching Rnd Encounter!", xp);
-
-                int xpGained;
-                pcAddExperience(xp, &xpGained);
-
-                MessageListItem messageListItem;
-                char* text = getmsg(&gMiscMessageList, &messageListItem, 8500);
-                if (strlen(text) < 110) {
-                    char formattedText[120];
-                    snprintf(formattedText, sizeof(formattedText), text, xpGained);
-                    displayMonitorAddMessage(formattedText);
-                } else {
-                    debugPrint("WorldMap: Error: Rnd Encounter string too long!");
+    if (wmEncounterDetectionEnabled) {
+        if (frequency > chance) {
+            int outdoorsman = partyGetBestSkillValue(SKILL_OUTDOORSMAN);
+            Object* scanner = objectGetCarriedObjectByPid(gDude, PROTO_ID_MOTION_SENSOR);
+            if (scanner != nullptr) {
+                if (gDude == scanner->owner) {
+                    outdoorsman += 20;
                 }
             }
+
+            if (outdoorsman > 95) {
+                outdoorsman = 95;
+            }
+
+            TileInfo* tile;
+            // NOTE: Uninline.
+            wmFindCurTileFromPos(wmGenData.worldPosX, wmGenData.worldPosY, &tile);
+            debugPrint("\nEncounter Difficulty Mod: %d", tile->encounterDifficultyModifier);
+
+            outdoorsman += tile->encounterDifficultyModifier;
+
+            if (randomBetween(1, 100) < outdoorsman) {
+                randomEncounterIsDetected = true;
+
+                int xp = 100 - outdoorsman;
+                if (xp > 0) {
+                    // SFALL: Display actual xp received.
+                    debugPrint("WorldMap: Giving Player [%d] Experience For Catching Rnd Encounter!", xp);
+
+                    int xpGained;
+                    pcAddExperience(xp, &xpGained);
+
+                    MessageListItem messageListItem;
+                    char* text = getmsg(&gMiscMessageList, &messageListItem, 8500);
+                    if (strlen(text) < 110) {
+                        char formattedText[120];
+                        snprintf(formattedText, sizeof(formattedText), text, xpGained);
+                        displayMonitorAddMessage(formattedText);
+                    } else {
+                        debugPrint("WorldMap: Error: Rnd Encounter string too long!");
+                    }
+                }
+            }
+        } else {
+            randomEncounterIsDetected = true;
         }
-    } else {
-        randomEncounterIsDetected = true;
     }
 
     wmGenData.oldWorldPosX = wmGenData.worldPosX;
