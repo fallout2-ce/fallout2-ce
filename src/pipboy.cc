@@ -1,6 +1,7 @@
 #include "pipboy.h"
 
 #include <algorithm>
+#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -147,6 +148,15 @@ typedef enum PipboyRestDuration {
     PIPBOY_REST_DURATION_COUNT_WITHOUT_PARTY = PIPBOY_REST_DURATION_COUNT - 1,
 } PipboyRestDuration;
 
+static constexpr int PIPBOY_REST_DURATION_WAKE_HOUR_COUNT = PIPBOY_REST_DURATION_UNTIL_MIDNIGHT - PIPBOY_REST_DURATION_UNTIL_MORNING + 1;
+static constexpr int kDefaultPipboyRestDurationWakeHours[PIPBOY_REST_DURATION_WAKE_HOUR_COUNT] = {
+    8,
+    12,
+    18,
+    0,
+};
+static constexpr int kDefaultPipboyRestDurationBaseMessageId = 302;
+
 typedef enum PipboyFrm {
     PIPBOY_FRM_LITTLE_RED_BUTTON_UP,
     PIPBOY_FRM_LITTLE_RED_BUTTON_DOWN,
@@ -231,6 +241,8 @@ static bool pipboyRest(int hours, int minutes, int kind);
 static bool _Check4Health(int minutes);
 static bool _AddHealth();
 static void _ClacTime(int* hours, int* minutes, int wakeUpHour);
+static int pipboyRestOptionWakeHour(int restOption);
+static void pipboyRestOptionsReset();
 static int pipboyRenderScreensaver();
 static int questInit();
 static void questFree();
@@ -277,6 +289,9 @@ int gHolodisksCount = 0;
 //
 // 0x51C138 currentAlarmTypeCount
 int gPipboyRestOptionsCount = PIPBOY_REST_DURATION_COUNT;
+
+static int pipboyRestDurationBaseMessageId = kDefaultPipboyRestDurationBaseMessageId;
+static int pipboyRestDurationWakeHours[PIPBOY_REST_DURATION_WAKE_HOUR_COUNT];
 
 // 0x51C13C bk_enable_5
 bool gPipboyWindowIsoWasEnabled = false;
@@ -879,12 +894,14 @@ static void _pip_init_()
 // pip_init
 void pipboyInit()
 {
+    pipboyRestOptionsReset();
     _pip_init_();
 }
 
 // NOTE: Uncollapsed 0x497918.
 void pipboyReset()
 {
+    pipboyRestOptionsReset();
     _pip_init_();
 }
 
@@ -2066,19 +2083,19 @@ static void pipboyHandleAlarmClock(int eventCode)
             pipboyRest(duration - 1, 0, 0);
             break;
         case PIPBOY_REST_DURATION_UNTIL_MORNING:
-            _ClacTime(&hours, &minutes, 8);
+            _ClacTime(&hours, &minutes, pipboyRestOptionWakeHour(duration));
             pipboyRest(hours, minutes, 0);
             break;
         case PIPBOY_REST_DURATION_UNTIL_NOON:
-            _ClacTime(&hours, &minutes, 12);
+            _ClacTime(&hours, &minutes, pipboyRestOptionWakeHour(duration));
             pipboyRest(hours, minutes, 0);
             break;
         case PIPBOY_REST_DURATION_UNTIL_EVENING:
-            _ClacTime(&hours, &minutes, 18);
+            _ClacTime(&hours, &minutes, pipboyRestOptionWakeHour(duration));
             pipboyRest(hours, minutes, 0);
             break;
         case PIPBOY_REST_DURATION_UNTIL_MIDNIGHT:
-            _ClacTime(&hours, &minutes, 0);
+            _ClacTime(&hours, &minutes, pipboyRestOptionWakeHour(duration));
             if (pipboyRest(hours, minutes, 0) == 0) {
                 pipboyDrawNumber(0, 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
             }
@@ -2128,7 +2145,7 @@ static void pipboyWindowRenderRestOptions(int a1)
         // 302 - Rest for ten minutes
         // ...
         // 315 - Rest until party is healed
-        text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, 302 + option - 1);
+        text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, pipboyRestDurationBaseMessageId + option - 1);
         int color = option == a1 ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
 
         pipboyDrawText(text, 0, color);
@@ -2514,6 +2531,44 @@ static void _ClacTime(int* hours, int* minutes, int wakeUpHour)
     } else {
         *hours = 24;
     }
+}
+
+bool pipboyRestOptionMsgsSetBase(int baseMessageId)
+{
+    if (baseMessageId <= 0) {
+        return false;
+    }
+
+    pipboyRestDurationBaseMessageId = baseMessageId;
+    return true;
+}
+
+bool pipboyRestOptionSet(int restOption, int value)
+{
+    if (restOption < PIPBOY_REST_DURATION_UNTIL_MORNING || restOption > PIPBOY_REST_DURATION_UNTIL_MIDNIGHT) {
+        return false;
+    }
+
+    if (value < 0 || value > 23) {
+        return false;
+    }
+
+    pipboyRestDurationWakeHours[restOption - PIPBOY_REST_DURATION_UNTIL_MORNING] = value;
+    return true;
+}
+
+static int pipboyRestOptionWakeHour(int restOption)
+{
+    assert(restOption >= PIPBOY_REST_DURATION_UNTIL_MORNING);
+    assert(restOption <= PIPBOY_REST_DURATION_UNTIL_MIDNIGHT);
+
+    return pipboyRestDurationWakeHours[restOption - PIPBOY_REST_DURATION_UNTIL_MORNING];
+}
+
+static void pipboyRestOptionsReset()
+{
+    pipboyRestDurationBaseMessageId = kDefaultPipboyRestDurationBaseMessageId;
+    std::copy(kDefaultPipboyRestDurationWakeHours, kDefaultPipboyRestDurationWakeHours + PIPBOY_REST_DURATION_WAKE_HOUR_COUNT, pipboyRestDurationWakeHours);
 }
 
 // 0x49A0C8

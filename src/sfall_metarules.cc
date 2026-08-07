@@ -807,6 +807,7 @@ static void mf_opcode_exists(OpcodeContext& ctx);
 static void mf_outlined_object(OpcodeContext& ctx);
 static void mf_real_dude_obj(OpcodeContext& ctx);
 static void mf_remove_wm_town_names(OpcodeContext& ctx);
+static void mf_rest_option_msgs(OpcodeContext& ctx);
 static void mf_set_car_intface_art(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
@@ -817,6 +818,7 @@ static void mf_set_object_data(OpcodeContext& ctx);
 static void mf_set_outline(OpcodeContext& ctx);
 static void mf_set_party_member_cc_msg_ids(OpcodeContext& ctx);
 static void mf_set_rest_mode(OpcodeContext& ctx);
+static void mf_set_rest_option(OpcodeContext& ctx);
 static void mf_set_scr_name(OpcodeContext& ctx);
 static void mf_set_terrain_name(OpcodeContext& ctx);
 static void mf_set_town_title(OpcodeContext& ctx);
@@ -902,6 +904,7 @@ const MetaruleInfo kMetarules[] = {
     { "outlined_object", mf_outlined_object, 0, 0 },
     { "real_dude_obj", mf_real_dude_obj, 0, 0 },
     { "remove_wm_town_names", mf_remove_wm_town_names, 1, 1, -1, { ARG_INT } },
+    { "rest_option_msgs", mf_rest_option_msgs, 1, 1, -1, { ARG_INT } },
     { "reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, { ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT } },
     // {"remove_timer_event",        mf_remove_timer_event,        0, 1, -1, {ARG_INT}},
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
@@ -925,6 +928,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_rest_heal_time",        mf_set_rest_heal_time,        1, 1, -1, {ARG_INT}},
     // {"set_worldmap_heal_time",    mf_set_worldmap_heal_time,    1, 1, -1, {ARG_INT}},
     { "set_rest_mode", mf_set_rest_mode, 1, 1, -1, { ARG_INT } },
+    { "set_rest_option", mf_set_rest_option, 2, 2, -1, { ARG_INT, ARG_INT } },
     { "set_scr_name", mf_set_scr_name, 0, 1, -1, { ARG_STRING } },
     // {"set_selectable_perk_npc",   mf_set_selectable_perk_npc,   5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     { "set_terrain_name", mf_set_terrain_name, 3, 3, -1, { ARG_INT, ARG_INT, ARG_STRING } },
@@ -2066,6 +2070,15 @@ static void mf_remove_wm_town_names(OpcodeContext& ctx)
     wmRemoveTownNames(ctx.arg(0).asInt() != 0);
 }
 
+static void mf_rest_option_msgs(OpcodeContext& ctx)
+{
+    int baseMessageId = ctx.arg(0).asInt();
+
+    if (!pipboyRestOptionMsgsSetBase(baseMessageId)) {
+        ctx.printError("%s() - invalid base message id (%d).", ctx.name(), baseMessageId);
+    }
+}
+
 static void mf_encounter_detection(OpcodeContext& ctx)
 {
     wmSetEncounterDetection(ctx.arg(0).asInt() != 0);
@@ -2074,6 +2087,16 @@ static void mf_encounter_detection(OpcodeContext& ctx)
 static void mf_set_rest_mode(OpcodeContext& ctx)
 {
     wmSetRestMode(ctx.arg(0).asInt());
+}
+
+static void mf_set_rest_option(OpcodeContext& ctx)
+{
+    int restOption = ctx.arg(0).asInt();
+    int value = ctx.arg(1).asInt();
+
+    if (!pipboyRestOptionSet(restOption, value)) {
+        ctx.printError("%s() - invalid rest option (%d) or wake hour (%d).", ctx.name(), restOption, value);
+    }
 }
 
 static void mf_set_scr_name(OpcodeContext& ctx)
