@@ -129,7 +129,11 @@
             "name": "macos",
             "inherits": [
                 "darwin-base"
-            ]
+            ],
+            "cacheVariables": {
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15",
+                "CMAKE_OSX_ARCHITECTURES": "x86_64;arm64"
+            }
         },
         {
             "name": "ios",
@@ -137,7 +141,8 @@
                 "darwin-base"
             ],
             "cacheVariables": {
-                "CMAKE_SYSTEM_NAME": "iOS"
+                "CMAKE_SYSTEM_NAME": "iOS",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "13"            
             }
         },
         {
