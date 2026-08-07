@@ -696,7 +696,7 @@ char* artBuildFilePath(int fid)
             return nullptr;
         }
         if (rotation > ROTATION_NE) {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.fr%c", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode, rotation + '0' - 1);
+            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.fr%c", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode, rotation + ('0' - 1));
         } else {
             snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode);
         }
