@@ -17,6 +17,8 @@ void pipboyReset();
 int pipboySave(File* stream);
 int pipboyLoad(File* stream);
 int pipboyGetWindow();
+bool pipboyRestOptionMsgsSetBase(int baseMessageId);
+bool pipboyRestOptionSet(int restOption, int value);
 
 extern MessageList gPipboyMessageList;
 int pipboyMessageListInit();
