@@ -53,10 +53,6 @@ inline bool rotationIsValid(int rotation)
 inline Rotation rotationFromFid(int fid)
 {
     int rotation = (fid & 0x70000000) >> 28;
-    if (!rotationIsValid(rotation)) {
-        return ROTATION_INVALID;
-    }
-
     return static_cast<Rotation>(rotation);
 }
 

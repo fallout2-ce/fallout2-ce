@@ -104,10 +104,6 @@ inline bool weaponAnimationIsValid(int weaponAnimation)
 inline WeaponAnimation weaponAnimationFromFid(int fid)
 {
     int anim = (fid & 0xF000) >> 12;
-    if (!weaponAnimationIsValid(anim)) {
-        return WEAPON_ANIMATION_INVALID;
-    }
-
     return static_cast<WeaponAnimation>(anim);
 }
 

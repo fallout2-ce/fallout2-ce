@@ -114,10 +114,6 @@ inline bool animationTypeIsValid(int anim)
 inline AnimationType animationTypeFromFid(int fid)
 {
     int anim = (fid & 0xFF0000) >> 16;
-    if (!animationTypeIsValid(anim)) {
-        return ANIM_INVALID;
-    }
-
     return static_cast<AnimationType>(anim);
 }
 
