@@ -22,6 +22,7 @@ static const std::string sfall_metarules[] = {
     "display_stats",
     "draw_image",
     "draw_image_scaled",
+    "encounter_detection",
     "exec_map_update_scripts",
     "floor2",
     "get_can_rest_on_map",
