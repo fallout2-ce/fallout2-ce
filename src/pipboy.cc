@@ -2083,24 +2083,17 @@ static void pipboyHandleAlarmClock(int eventCode)
             pipboyRest(duration - 1, 0, 0);
             break;
         case PIPBOY_REST_DURATION_UNTIL_MORNING:
-            _ClacTime(&hours, &minutes, pipboyRestOptionWakeHour(duration));
-            pipboyRest(hours, minutes, 0);
-            break;
         case PIPBOY_REST_DURATION_UNTIL_NOON:
-            _ClacTime(&hours, &minutes, pipboyRestOptionWakeHour(duration));
-            pipboyRest(hours, minutes, 0);
-            break;
         case PIPBOY_REST_DURATION_UNTIL_EVENING:
-            _ClacTime(&hours, &minutes, pipboyRestOptionWakeHour(duration));
-            pipboyRest(hours, minutes, 0);
-            break;
-        case PIPBOY_REST_DURATION_UNTIL_MIDNIGHT:
-            _ClacTime(&hours, &minutes, pipboyRestOptionWakeHour(duration));
-            if (pipboyRest(hours, minutes, 0) == 0) {
+        case PIPBOY_REST_DURATION_UNTIL_MIDNIGHT: {
+            int wakeUpHour = pipboyRestOptionWakeHour(duration);
+            _ClacTime(&hours, &minutes, wakeUpHour);
+            if (pipboyRest(hours, minutes, 0) == 0 && wakeUpHour == 0) {
                 pipboyDrawNumber(0, 4, PIPBOY_WINDOW_TIME_X, PIPBOY_WINDOW_TIME_Y);
+                windowRefresh(gPipboyWindow);
             }
-            windowRefresh(gPipboyWindow);
             break;
+        }
         case PIPBOY_REST_DURATION_UNTIL_HEALED:
         case PIPBOY_REST_DURATION_UNTIL_PARTY_HEALED:
             pipboyRest(0, 0, duration);
