@@ -1680,25 +1680,25 @@ int objectSetPrevFrame(Object* obj, Rect* dirtyRect)
 }
 
 // 0x48ABD4 obj_set_rotation
-int objectSetRotation(Object* obj, Rotation direction, Rect* dirtyRect)
+int objectSetRotation(Object* obj, Rotation rotation, Rect* dirtyRect)
 {
     if (obj == nullptr) {
         return -1;
     }
 
-    if (direction >= ROTATION_COUNT) {
+    if (!rotationIsValid(rotation)) {
         return -1;
     }
 
     if (dirtyRect != nullptr) {
         objectGetRect(obj, dirtyRect);
-        obj->rotation = direction;
+        obj->rotation = rotation;
 
         Rect newRect;
         objectGetRect(obj, &newRect);
         rectUnion(dirtyRect, &newRect, dirtyRect);
     } else {
-        obj->rotation = direction;
+        obj->rotation = rotation;
     }
 
     return 0;

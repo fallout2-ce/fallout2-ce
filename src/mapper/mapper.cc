@@ -1824,7 +1824,7 @@ void edit_mapper()
             Object* obj = _screen_obj ? _screen_obj : gGameMouseBouncingCursor;
             if (obj != nullptr) {
                 Rect rect;
-                Rotation newRot = (keyCode == kBtnRotateRight) ? (obj->rotation + 1) % 6 : (obj->rotation + 5) % 6;
+                Rotation newRot = (keyCode == kBtnRotateRight) ? (obj->rotation + 1) % ROTATION_COUNT : (obj->rotation + ROTATION_LAST) % ROTATION_COUNT;
                 objectSetRotation(obj, newRot, &rect);
                 tileWindowRefreshRect(&rect, gElevation);
                 rotation = obj->rotation;

@@ -695,8 +695,8 @@ char* artBuildFilePath(int fid)
         if (_art_get_code(animType, weaponCode, &critterWeaponCode, &critterAnimationCode) == -1) {
             return nullptr;
         }
-        if (rotation != 0) {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.fr%c", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode, rotation + 47);
+        if (rotation > ROTATION_NE) {
+            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.fr%c", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode, rotation + '0' - 1);
         } else {
             snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode);
         }
@@ -893,7 +893,7 @@ unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int
 // 0x419880
 ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation)
 {
-    if (rotation < 0 || rotation >= 6) {
+    if (!rotationIsValid(rotation)) {
         return nullptr;
     }
 
