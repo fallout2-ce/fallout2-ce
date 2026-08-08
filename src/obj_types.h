@@ -88,13 +88,13 @@ inline bool objectTypeIsValid(int type)
 
 inline ObjectType objectTypeFromFid(int fid)
 {
-    int objectType = ((fid) & 0xF000000) >> 24;
+    int objectType = (fid & 0xF000000) >> 24;
     return static_cast<ObjectType>(objectType);
 }
 
 inline ObjectType objectTypeFromPid(int pid)
 {
-    int objectType = (pid) >> 24;
+    int objectType = pid >> 24;
     return static_cast<ObjectType>(objectType);
 }
 
