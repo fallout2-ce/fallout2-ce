@@ -177,7 +177,7 @@ int artInit()
     }
 
     bool critterDbSelected = false;
-    for (int objectType = 0; objectType < OBJ_TYPE_COUNT; objectType++) {
+    for (ObjectType objectType = OBJ_TYPE_FIRST; objectType < OBJ_TYPE_COUNT; objectType++) {
         gArtListDescriptions[objectType].flags = 0;
         snprintf(path, sizeof(path), "%s%s%s\\%s.lst", _cd_path_base, "art\\", gArtListDescriptions[objectType].name, gArtListDescriptions[objectType].name);
 
@@ -352,7 +352,7 @@ void artExit()
     internal_free(_anon_alias);
     internal_free(gArtCritterFidShoudRunData);
 
-    for (int index = 0; index < OBJ_TYPE_COUNT; index++) {
+    for (ObjectType index = OBJ_TYPE_FIRST; index < OBJ_TYPE_COUNT; index++) {
         internal_free(gArtListDescriptions[index].fileNames);
         gArtListDescriptions[index].fileNames = nullptr;
 
@@ -366,19 +366,19 @@ void artExit()
 // 0x418F1C
 char* artGetObjectTypeName(ObjectType objectType)
 {
-    return objectType >= OBJ_TYPE_ITEM && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].name : nullptr;
+    return objectTypeIsValid(objectType) ? gArtListDescriptions[objectType].name : nullptr;
 }
 
 // 0x418F34
 int artIsObjectTypeHidden(ObjectType objectType)
 {
-    return objectType >= OBJ_TYPE_ITEM && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].flags & 1 : 0;
+    return objectTypeIsValid(objectType) ? gArtListDescriptions[objectType].flags & 1 : 0;
 }
 
 // 0x409DF0
 void artToggleObjectTypeHidden(ObjectType objectType)
 {
-    if (objectType >= 0 && objectType < OBJ_TYPE_COUNT) {
+    if (objectTypeIsValid(objectType)) {
         gArtListDescriptions[objectType].flags ^= 1;
     }
 }
@@ -474,7 +474,7 @@ int art_list_str(int fid, char* name)
 
 int artListIndex(ObjectType objectType, const char* name)
 {
-    if (objectType < 0 || objectType >= OBJ_TYPE_COUNT) return -1;
+    if (!objectTypeIsValid(objectType)) return -1;
     if (gArtListDescriptions[objectType].fileNames == nullptr) return -1;
 
     char upperName[13] = { 0 };
@@ -557,7 +557,7 @@ int artCopyFileName(int objectType, int id, char* dest)
 {
     ArtListDescription* ptr;
 
-    if (objectType < OBJ_TYPE_ITEM || objectType >= OBJ_TYPE_COUNT) {
+    if (!objectTypeIsValid(objectType)) {
         return -1;
     }
 
@@ -679,7 +679,7 @@ char* artBuildFilePath(int fid)
     WeaponAnimation weaponCode = weaponAnimationFromFid(baseFid);
     ObjectType objectType = objectTypeFromFid(baseFid);
 
-    if (objectType < OBJ_TYPE_ITEM || objectType >= OBJ_TYPE_COUNT) {
+    if (!objectTypeIsValid(objectType)) {
         return nullptr;
     }
 
@@ -1628,14 +1628,14 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
 FrmId::FrmId(ObjectType objType, int frmId)
     : _fid(buildFid(objType, frmId))
 {
-    assert(objType >= 0 && objType < OBJ_TYPE_COUNT);
+    assert(objectTypeIsValid(objType));
 }
 
 FrmId::FrmId(ObjectType objType, const char* path)
     : _objectType(objType)
     , _path(path)
 {
-    assert(objType >= 0 && objType < OBJ_TYPE_COUNT);
+    assert(objectTypeIsValid(objType));
 }
 
 FrmId::FrmId(const char* path)
@@ -1764,7 +1764,7 @@ bool FrmImage::lock(ObjectType objType, const char* frmRelativePath)
 
 bool FrmImage::lock(ObjectType objType, const char* frmRelativePath, int frame, Rotation rotation)
 {
-    if (objType < OBJ_TYPE_ITEM || objType >= OBJ_TYPE_COUNT) {
+    if (!objectTypeIsValid(objType)) {
         return false;
     }
     snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objType].name, frmRelativePath);

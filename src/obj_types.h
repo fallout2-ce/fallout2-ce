@@ -81,6 +81,11 @@ inline ObjectType operator++(ObjectType& e, int)
     return result;
 }
 
+inline bool objectTypeIsValid(int type)
+{
+    return type >= OBJ_TYPE_FIRST && type < OBJ_TYPE_COUNT;
+}
+
 inline ObjectType objectTypeFromFid(int fid)
 {
     int objectType = ((fid) & 0xF000000) >> 24;

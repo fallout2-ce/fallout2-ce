@@ -250,7 +250,7 @@ int _proto_list_str(int pid, char* proto_path)
 // 0x49E984 proto_size
 size_t proto_size(ObjectType type)
 {
-    return type >= 0 && type < OBJ_TYPE_COUNT ? _proto_sizes[type] : 0;
+    return objectTypeIsValid(type) ? _proto_sizes[type] : 0;
 }
 
 // 0x49E99C proto_action_can_use

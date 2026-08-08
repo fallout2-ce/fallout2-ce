@@ -94,7 +94,7 @@ public:
     explicit FrmId(const char* path);
 
     int fid() const { return _fid; }
-    bool hasObjectType() const { return _objectType >= 0 && _objectType < OBJ_TYPE_COUNT; }
+    bool hasObjectType() const { return objectTypeIsValid(_objectType); }
     ObjectType objectType() const;
     const char* filePath() const { return _path; }
 
