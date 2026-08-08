@@ -220,6 +220,10 @@ static Object* _scrQueueTestObj = nullptr;
 // 0x51C7EC scrQueueTestValue
 static int _scrQueueTestValue = 0;
 
+static int scriptQueueRemoveSid = -1;
+static int scriptQueueRemoveFixedParam = 0;
+static bool scriptQueueRemoveUseFixedParam = false;
+
 // 0x51C7F0 err_str
 static char* gErrorString = gScriptsErrorText;
 
@@ -732,6 +736,17 @@ void scriptDetachedContextUnregister(Program* program)
     scriptSelfOverrides.erase(program);
 }
 
+bool scriptDetachedContextSetFixedParam(Program* program, int fixedParam)
+{
+    auto it = detachedScriptContexts.find(program);
+    if (it == detachedScriptContexts.end()) {
+        return false;
+    }
+
+    it->second.fixedParam = fixedParam;
+    return true;
+}
+
 bool scriptContextResolve(Program* program, ScriptContextRef* out)
 {
     if (program == nullptr || out == nullptr) {
@@ -1084,6 +1099,20 @@ int _scrQueueRemoveFixed(Object* obj, void* data)
     return obj == _scrQueueTestObj && scriptEvent->fixedParam == _scrQueueTestValue;
 }
 
+static int scriptQueueRemoveBySid(Object* /*obj*/, void* data)
+{
+    ScriptEvent* scriptEvent = (ScriptEvent*)data;
+    if (scriptEvent->sid != scriptQueueRemoveSid) {
+        return 0;
+    }
+
+    if (scriptQueueRemoveUseFixedParam && scriptEvent->fixedParam != scriptQueueRemoveFixedParam) {
+        return 0;
+    }
+
+    return 1;
+}
+
 // 0x4A3E60
 int scriptAddTimerEvent(int sid, int delay, int param)
 {
@@ -1105,6 +1134,38 @@ int scriptAddTimerEvent(int sid, int delay, int param)
         internal_free(scriptEvent);
         return -1;
     }
+
+    return 0;
+}
+
+int scriptRemoveTimerEvents(int sid, int fixedParam)
+{
+    Script* script;
+    if (scriptGetScript(sid, &script) == -1) {
+        return -1;
+    }
+
+    scriptQueueRemoveSid = sid;
+    scriptQueueRemoveFixedParam = fixedParam;
+    scriptQueueRemoveUseFixedParam = true;
+    queueClearByEventType(EVENT_TYPE_SCRIPT, scriptQueueRemoveBySid);
+    scriptQueueRemoveSid = -1;
+    scriptQueueRemoveUseFixedParam = false;
+
+    return 0;
+}
+
+int scriptRemoveAllTimerEvents(int sid)
+{
+    Script* script;
+    if (scriptGetScript(sid, &script) == -1) {
+        return -1;
+    }
+
+    scriptQueueRemoveSid = sid;
+    scriptQueueRemoveUseFixedParam = false;
+    queueClearByEventType(EVENT_TYPE_SCRIPT, scriptQueueRemoveBySid);
+    scriptQueueRemoveSid = -1;
 
     return 0;
 }
@@ -2514,6 +2575,61 @@ int scriptAdd(int* sidPtr, int scriptType)
     scriptListExtent->length++;
 
     return 0;
+}
+
+Object* scriptCreateSpatial(int scriptIndex, int tile, int elevation, int radius)
+{
+    if (!scriptsIsValidScriptIndex(scriptIndex) || !hexGridTileIsValid(tile) || elevation < 0 || elevation >= ELEVATION_COUNT) {
+        return nullptr;
+    }
+
+    int sid;
+    if (scriptAdd(&sid, SCRIPT_TYPE_SPATIAL) == -1) {
+        return nullptr;
+    }
+
+    Script* script;
+    if (scriptGetScript(sid, &script) == -1) {
+        scriptRemove(sid);
+        return nullptr;
+    }
+
+    script->index = scriptIndex;
+    script->sp.built_tile = builtTileCreate(tile, elevation);
+    script->sp.radius = radius;
+    _scr_find_str_run_info(scriptIndex & 0xFFFFFF, &(script->field_50), sid);
+
+    scriptExecProc(sid, SCRIPT_PROC_START);
+
+    if (scriptGetScript(sid, &script) == -1) {
+        return nullptr;
+    }
+
+    if (script->program == nullptr) {
+        scriptRemove(sid);
+        return nullptr;
+    }
+
+    Object* obj = scriptGetSelf(script->program);
+    if (obj != nullptr) {
+        obj->scriptIndex = scriptIndex;
+    }
+
+    return obj;
+}
+
+int scriptGetSpatialRadius(Object* obj)
+{
+    if (obj == nullptr || obj->sid == -1) {
+        return 0;
+    }
+
+    Script* script;
+    if (scriptGetScript(obj->sid, &script) == -1 || SID_TYPE(script->sid) != SCRIPT_TYPE_SPATIAL) {
+        return 0;
+    }
+
+    return script->sp.radius;
 }
 
 // scr_remove_local_vars
