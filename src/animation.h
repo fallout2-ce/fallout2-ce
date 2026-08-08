@@ -114,10 +114,6 @@ inline bool animationTypeIsValid(int anim)
 inline AnimationType animationTypeFromFid(int fid)
 {
     int anim = (fid & 0xFF0000) >> 16;
-    if (!animationTypeIsValid(anim)) {
-        return ANIM_INVALID;
-    }
-
     return static_cast<AnimationType>(anim);
 }
 
@@ -182,7 +178,7 @@ int _check_move(int* actionPointsPtr);
 int _dude_move(int actionPoints);
 int _dude_run(int actionPoints);
 void _dude_fidget();
-void _dude_stand(Object* obj, int rotation, int fid);
+void _dude_stand(Object* obj, Rotation rotation, int fid);
 void _dude_standup(Object* a1);
 void animationStop();
 

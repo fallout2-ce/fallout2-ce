@@ -262,7 +262,7 @@ typedef struct PathNode {
     int tile;
     int from;
     // actual type is likely char
-    int rotation;
+    Rotation rotation;
     int estimate;
     int cost;
 } PathNode;
@@ -708,7 +708,7 @@ int animationRegisterRunToObject(Object* owner, Object* destination, int actionP
 
     if ((FID_TYPE(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != 0)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
-        || !artExists(buildFid(FID_TYPE(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, 0, owner->rotation + 1))) {
+        || !artExists(buildFid(FID_TYPE(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1))) {
         animationDescription->anim = ANIM_WALK;
     } else {
         animationDescription->anim = ANIM_RUNNING;
@@ -791,7 +791,7 @@ int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actio
 
     if ((FID_TYPE(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != 0)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
-        || !artExists(buildFid(FID_TYPE(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, 0, owner->rotation + 1))) {
+        || !artExists(buildFid(FID_TYPE(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1))) {
         animationDescription->anim = ANIM_WALK;
     } else {
         animationDescription->anim = ANIM_RUNNING;
@@ -1452,7 +1452,7 @@ static int animationRunSequence(int animationSequenceIndex)
             break;
         case ANIM_KIND_ROTATE_TO_TILE:
             if (!critterIsProne(animationDescription->owner)) {
-                int rotation = tileGetRotationTo(animationDescription->owner->tile, animationDescription->tile);
+                Rotation rotation = tileGetRotationTo(animationDescription->owner->tile, animationDescription->tile);
                 _dude_stand(animationDescription->owner, rotation, -1);
             }
             _anim_set_continue(animationSequenceIndex, 0);
@@ -1796,7 +1796,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
 
     gOpenPathNodeList[0].tile = from;
     gOpenPathNodeList[0].from = -1;
-    gOpenPathNodeList[0].rotation = 0;
+    gOpenPathNodeList[0].rotation = ROTATION_FIRST;
     gOpenPathNodeList[0].estimate = _tile_idistance(from, to);
     gOpenPathNodeList[0].cost = 0;
 
@@ -1853,7 +1853,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
             return 0;
         }
 
-        for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
             int tile = tileGetTileInDirection(temp.tile, rotation, 1);
             int bit = 1 << (tile & 7);
             if ((gPathfinderProcessedTiles[tile / 8] & bit) != 0) {
@@ -2229,10 +2229,10 @@ static int animateMoveObjectToObject(Object* from, Object* to, int actionPoints,
         _anim_set_continue(animationSequenceIndex, 0);
     }
 
-    sad->targetTile = tileGetTileInDirection(to->tile, sad->rotations[isMultihex ? sad->length + 1 : sad->length], 1);
+    sad->targetTile = tileGetTileInDirection(to->tile, static_cast<Rotation>(sad->rotations[isMultihex ? sad->length + 1 : sad->length]), 1);
 
     if (isMultihex) {
-        sad->targetTile = tileGetTileInDirection(sad->targetTile, sad->rotations[sad->length], 1);
+        sad->targetTile = tileGetTileInDirection(sad->targetTile, static_cast<Rotation>(sad->rotations[sad->length]), 1);
     }
 
     if (actionPoints != -1 && actionPoints < sad->length) {
@@ -2437,7 +2437,7 @@ static int animateMoveObjectToTile(Object* obj, int tile, int elev, int actionPo
             _anim_set_continue(animationSequenceIndex, 0);
         }
 
-        sad->targetTile = tileGetTileInDirection(tile, sad->rotations[sad->length], 1);
+        sad->targetTile = tileGetTileInDirection(tile, static_cast<Rotation>(sad->rotations[sad->length]), 1);
         if (actionPoints != -1 && actionPoints < sad->length) {
             sad->length = actionPoints;
         }
@@ -2608,7 +2608,7 @@ static void _object_move(int index)
         objectSetFrame(object, 0, &tempRect);
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
-        objectSetRotation(object, sad->rotations[0], &tempRect);
+        objectSetRotation(object, static_cast<Rotation>(sad->rotations[0]), &tempRect);
         rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
         int fid = buildFid(FID_TYPE(object->fid), object->fid & 0xFFF, sad->anim, weaponAnimationFromFid(object->fid), object->rotation + 1);
@@ -2636,7 +2636,7 @@ static void _object_move(int index)
     _obj_offset(object, frameX, frameY, &tempRect);
     rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
-    int rotation = sad->rotations[sad->step];
+    Rotation rotation = static_cast<Rotation>(sad->rotations[sad->step]);
     int y = dword_51D984[rotation];
     int x = _off_tile[rotation];
     if ((x > 0 && x <= object->x) || (x < 0 && x >= object->x) || (y > 0 && y <= object->y) || (y < 0 && y >= object->y)) {
@@ -2655,7 +2655,7 @@ static void _object_move(int index)
                     objectSetFrame(object, 0, &tempRect);
                     rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
-                    objectSetRotation(object, sad->rotations[0], &tempRect);
+                    objectSetRotation(object, static_cast<Rotation>(sad->rotations[0]), &tempRect);
                     rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
                     sad->step = 0;
@@ -2699,7 +2699,7 @@ static void _object_move(int index)
             if (sad->step == sad->length || cannotMove) {
                 sad->step = ANIM_COMPLETE;
             } else {
-                objectSetRotation(object, sad->rotations[sad->step], &tempRect);
+                objectSetRotation(object, static_cast<Rotation>(sad->rotations[sad->step]), &tempRect);
                 rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
                 _obj_offset(object, x, y, &tempRect);
@@ -3182,7 +3182,7 @@ void _dude_fidget()
 }
 
 // 0x418378
-void _dude_stand(Object* obj, int rotation, int fid)
+void _dude_stand(Object* obj, Rotation rotation, int fid)
 {
     Rect rect;
 
@@ -3209,7 +3209,7 @@ void _dude_stand(Object* obj, int rotation, int fid)
                 artUnlock(takeOutFrmHandle);
 
                 CacheEntry* standFrmHandle;
-                int standFid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_STAND, 0, obj->rotation + 1);
+                int standFid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, obj->rotation + 1);
                 Art* standFrm = artLock(standFid, &standFrmHandle);
                 if (standFrm != nullptr) {
                     int offsetX;
@@ -3231,7 +3231,7 @@ void _dude_stand(Object* obj, int rotation, int fid)
         } else {
             anim = ANIM_STAND;
         }
-        fid = buildFid(FID_TYPE(obj->fid), (obj->fid & 0xFFF), anim, (obj->fid & 0xF000) >> 12, obj->rotation + 1);
+        fid = buildFid(FID_TYPE(obj->fid), (obj->fid & 0xFFF), anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
     }
 
     Rect temp;
@@ -3271,7 +3271,7 @@ void _dude_standup(Object* a1)
 static int actionRotate(Object* obj, int delta, int animationSequenceIndex)
 {
     if (!critterIsProne(obj)) {
-        int rotation = obj->rotation + delta;
+        Rotation rotation = obj->rotation + delta;
         if (rotation >= ROTATION_COUNT) {
             rotation = ROTATION_NE;
         } else if (rotation < 0) {
@@ -3347,8 +3347,8 @@ static int _check_gravity(int tile, int elevation)
         tileToScreenXY(tile, &x, &y);
 
         int squareTile = squareTileFromScreenXY(x + 2, y + 8, elevation);
-        int fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[squareTile] & 0xFFF, 0, 0, 0);
-        if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+        int fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[squareTile] & 0xFFF);
+        if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
             break;
         }
     }

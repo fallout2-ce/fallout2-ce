@@ -102,7 +102,7 @@ static int gEnteringElevation = 0;
 static int gEnteringTile = -1;
 
 // 0x519560 mapEntranceRotation
-static int gEnteringRotation = ROTATION_NE;
+static Rotation gEnteringRotation = ROTATION_NE;
 
 // 0x519564 map_script_id
 int gMapSid = -1;
@@ -245,7 +245,7 @@ int isoInit()
     mapMakeMapsDirectory();
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, -1);
+    mapSetEnteringLocation(-1, -1, ROTATION_INVALID);
 
     return 0;
 }
@@ -266,7 +266,7 @@ void isoReset()
     interfaceReset();
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, -1);
+    mapSetEnteringLocation(-1, -1, ROTATION_INVALID);
 }
 
 // 0x481F48
@@ -502,7 +502,7 @@ int mapAllocLocalVars(const int numNewVars)
 }
 
 // 0x48234C
-void mapSetStart(int tile, int elevation, int rotation)
+void mapSetStart(int tile, int elevation, Rotation rotation)
 {
     gMapHeader.enteringTile = tile;
     gMapHeader.enteringElevation = elevation;
@@ -759,11 +759,11 @@ const char* mapBuildSavePath(const char* name)
 }
 
 // 0x482924
-int mapSetEnteringLocation(int elevation, int tile_num, int orientation)
+int mapSetEnteringLocation(int elevation, int tile_num, Rotation rotation)
 {
     gEnteringElevation = elevation;
     gEnteringTile = tile_num;
-    gEnteringRotation = orientation;
+    gEnteringRotation = rotation;
     return 0;
 }
 
@@ -775,7 +775,7 @@ void mapNewMap()
     tileSetCenter(20100, TILE_SET_CENTER_FLAG_IGNORE_SCROLL_RESTRICTIONS);
     memset(&gMapTransition, 0, sizeof(gMapTransition));
     gMapHeader.enteringElevation = 0;
-    gMapHeader.enteringRotation = 0;
+    gMapHeader.enteringRotation = ROTATION_NE;
     gMapHeader.localVariablesCount = 0;
     gMapHeader.version = 20;
     gMapHeader.name[0] = '\0';
@@ -1024,7 +1024,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        int fid = buildFid(OBJ_TYPE_MISC, 12, 0, 0, 0);
+        int fid = buildFid(OBJ_TYPE_MISC, 12);
         objectCreateWithFidPid(&object, fid, -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
@@ -1111,7 +1111,7 @@ err:
     gameMouseSetCursor(savedMouseCursorId);
 
     // NOTE: Uninline.
-    mapSetEnteringLocation(-1, -1, -1);
+    mapSetEnteringLocation(-1, -1, ROTATION_INVALID);
 
     tile_hires_stencil_on_map_load();
 
@@ -1448,13 +1448,13 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             int fid;
 
-            fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[tile] & 0xFFF, 0, 0, 0);
-            if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+            fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[tile] & 0xFFF);
+            if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
                 break;
             }
 
-            fid = buildFid(OBJ_TYPE_TILE, (_square[elevation]->field_0[tile] >> 16) & 0xFFF, 0, 0, 0);
-            if (fid != buildFid(OBJ_TYPE_TILE, 1, 0, 0, 0)) {
+            fid = buildFid(OBJ_TYPE_TILE, (_square[elevation]->field_0[tile] >> 16) & 0xFFF);
+            if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
                 break;
             }
         }
@@ -1802,11 +1802,11 @@ static void _square_reset()
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = (((buildFid(OBJ_TYPE_TILE, 1, 0, WEAPON_ANIMATION_NONE, 0) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = (((buildFid(OBJ_TYPE_TILE, 1) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1, 0, WEAPON_ANIMATION_NONE, 0) & 0xFFF) | tileFlags;
+                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1) & 0xFFF) | tileFlags;
 
                 fid &= ~0xFFFF;
 
@@ -1860,7 +1860,7 @@ static int mapHeaderWrite(MapHeader* ptr, File* stream)
     if (fileWriteFixedLengthString(stream, ptr->name, 16) == -1) return -1;
     if (fileWriteInt32(stream, ptr->enteringTile) == -1) return -1;
     if (fileWriteInt32(stream, ptr->enteringElevation) == -1) return -1;
-    if (fileWriteInt32(stream, ptr->enteringRotation) == -1) return -1;
+    if (fileWriteInt32Enum<Rotation>(stream, ptr->enteringRotation) == -1) return -1;
     if (fileWriteInt32(stream, ptr->localVariablesCount) == -1) return -1;
     if (fileWriteInt32(stream, ptr->scriptIndex) == -1) return -1;
     if (fileWriteInt32(stream, ptr->flags) == -1) return -1;
@@ -1880,7 +1880,7 @@ static int mapHeaderRead(MapHeader* ptr, File* stream)
     if (fileReadFixedLengthString(stream, ptr->name, 16) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->enteringTile)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->enteringElevation)) == -1) return -1;
-    if (fileReadInt32(stream, &(ptr->enteringRotation)) == -1) return -1;
+    if (fileReadInt32Enum<Rotation>(stream, &(ptr->enteringRotation)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->localVariablesCount)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->scriptIndex)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->flags)) == -1) return -1;

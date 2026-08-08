@@ -201,19 +201,19 @@ static bool mainMenuLoadArt()
     }
 
     if (!mainMenuBackgroundFrmImage.isLocked()) {
-        int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 140, 0, 0, 0);
+        int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 140);
         if (!mainMenuBackgroundFrmImage.lock(backgroundFid)) {
             debugPrint("MAINMENU: failed to load vanilla mainmenu.frm\n");
             return false;
         }
     }
 
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 299, 0, 0, 0);
+    int fid = buildFid(OBJ_TYPE_INTERFACE, 299);
     if (!mainMenuButtonNormalFrmImage.lock(fid)) {
         return false;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 300, 0, 0, 0);
+    fid = buildFid(OBJ_TYPE_INTERFACE, 300);
     if (!mainMenuButtonPressedFrmImage.lock(fid)) {
         return false;
     }

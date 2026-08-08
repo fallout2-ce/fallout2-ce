@@ -315,7 +315,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
 
     FrmImage frmImages[AUTOMAP_FRM_COUNT];
     for (int index = 0; index < AUTOMAP_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, frmIds[index], 0, 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, frmIds[index]);
         if (!frmImages[index].lock(fid)) {
             return;
         }

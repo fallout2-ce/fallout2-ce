@@ -9,7 +9,7 @@
 
 namespace fallout {
 
-extern int rotation;
+extern Rotation rotation;
 
 int _action_attack(Attack* attack);
 int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item);

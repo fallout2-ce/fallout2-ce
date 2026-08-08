@@ -43,7 +43,7 @@ int objectSetFid(Object* obj, int fid, Rect* rect);
 int objectSetFrame(Object* obj, int frame, Rect* rect);
 int objectSetNextFrame(Object* obj, Rect* rect);
 int objectSetPrevFrame(Object* obj, Rect* rect);
-int objectSetRotation(Object* obj, int direction, Rect* rect);
+int objectSetRotation(Object* obj, Rotation rotation, Rect* rect);
 int objectRotateClockwise(Object* obj, Rect* rect);
 int objectRotateCounterClockwise(Object* obj, Rect* rect);
 void _obj_rebuild_all_light();

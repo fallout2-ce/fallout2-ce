@@ -182,8 +182,8 @@ static int gDynamiteMaxDamage;
 static int gPlasticExplosiveMinDamage;
 static int gPlasticExplosiveMaxDamage;
 static std::vector<ExplosiveDescription> gExplosives;
-static int gExplosionStartRotation;
-static int gExplosionEndRotation;
+static Rotation gExplosionStartRotation;
+static Rotation gExplosionEndRotation;
 static int gExplosionFrm;
 static int gExplosionRadius;
 static DamageType gExplosionDamageType;
@@ -664,7 +664,7 @@ int itemDropAll(Object* critter, int tile)
 
     if (hasEquippedItems) {
         Rect updatedRect;
-        int fid = buildFid(OBJ_TYPE_CRITTER, frmId, animationTypeFromFid(critter->fid), 0, FID_ROTATION(critter->fid));
+        int fid = buildFid(OBJ_TYPE_CRITTER, frmId, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
         objectSetFid(critter, fid, &updatedRect);
         if (animationTypeFromFid(critter->fid) == ANIM_STAND) {
             tileWindowRefreshRect(&updatedRect, gElevation);
@@ -3642,7 +3642,7 @@ bool explosiveGetDamage(int pid, int* minDamagePtr, int* maxDamagePtr)
 
 void explosionSettingsReset()
 {
-    gExplosionStartRotation = 0;
+    gExplosionStartRotation = ROTATION_FIRST;
     gExplosionEndRotation = ROTATION_COUNT;
     gExplosionFrm = -1;
     gExplosionRadius = -1;
@@ -3650,13 +3650,13 @@ void explosionSettingsReset()
     gExplosionMaxTargets = 6;
 }
 
-void explosionGetPattern(int* startRotationPtr, int* endRotationPtr)
+void explosionGetPattern(Rotation* startRotationPtr, Rotation* endRotationPtr)
 {
     *startRotationPtr = gExplosionStartRotation;
     *endRotationPtr = gExplosionEndRotation;
 }
 
-void explosionSetPattern(int startRotation, int endRotation)
+void explosionSetPattern(Rotation startRotation, Rotation endRotation)
 {
     gExplosionStartRotation = startRotation;
     gExplosionEndRotation = endRotation;

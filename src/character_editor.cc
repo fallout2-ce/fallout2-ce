@@ -1310,7 +1310,7 @@ static int characterEditorWindowInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, (gCharacterEditorIsCreationMode ? 169 : 177), 0, 0, 0);
+    fid = buildFid(OBJ_TYPE_INTERFACE, (gCharacterEditorIsCreationMode ? 169 : 177));
     if (!_editorBackgroundFrmImage.lock(fid)) {
         messageListFree(&gCharacterEditorMessageList);
         return -1;
@@ -1333,7 +1333,7 @@ static int characterEditorWindowInit()
     soundContinueAll();
 
     for (i = 0; i < EDITOR_GRAPHIC_COUNT; i++) {
-        fid = buildFid(OBJ_TYPE_INTERFACE, gCharacterEditorFrmIds[i], 0, 0, 0);
+        fid = buildFid(OBJ_TYPE_INTERFACE, gCharacterEditorFrmIds[i]);
         if (!_editorFrmImages[i].lock(fid)) {
             break;
         }
@@ -4979,7 +4979,7 @@ static char* _itostndn(int value, char* dest)
 static int characterEditorDrawCardWithOptions(int graphicId, const char* name, const char* attributes, char* description)
 {
     FrmImage frmImage;
-    int fid = buildFid(OBJ_TYPE_SKILLDEX, graphicId, 0, 0, 0);
+    int fid = buildFid(OBJ_TYPE_SKILLDEX, graphicId);
     if (!frmImage.lock(fid)) {
         return -1;
     }
@@ -5856,7 +5856,7 @@ static int perkDialogShow()
     gPerkDialogCardTitle[0] = '\0';
     gPerkDialogCardDrawn = false;
 
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 86, 0, 0, 0);
+    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 86);
     if (!_perkDialogBackgroundFrmImage.lock(backgroundFid)) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
@@ -6697,7 +6697,7 @@ static int perkDialogOptionCompare(const void* a1, const void* a2)
 static int perkDialogDrawCard(int frmId, const char* name, const char* rank, char* description)
 {
     FrmImage frmImage;
-    int fid = buildFid(OBJ_TYPE_SKILLDEX, frmId, 0, 0, 0);
+    int fid = buildFid(OBJ_TYPE_SKILLDEX, frmId);
     if (!frmImage.lock(fid)) {
         return -1;
     }

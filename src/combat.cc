@@ -3582,7 +3582,7 @@ void attackInit(Attack* attack, Object* attacker, Object* defender, HitMode hitM
 int _combat_attack(Object* attacker, Object* defender, HitMode hitMode, HitLocation hitLocation)
 {
     if (attacker != gDude && hitMode == HIT_MODE_PUNCH && randomBetween(1, 4) == 1) {
-        int fid = buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_KICK_LEG, weaponAnimationFromFid(attacker->fid), FID_ROTATION(attacker->fid));
+        int fid = buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_KICK_LEG, weaponAnimationFromFid(attacker->fid), rotationFromFid(attacker->fid));
         if (artExists(fid)) {
             hitMode = HIT_MODE_KICK;
         }
@@ -3659,7 +3659,7 @@ int _combat_attack(Object* attacker, Object* defender, HitMode hitMode, HitLocat
 // 0x423104
 int _combat_bullet_start(const Object* attacker, const Object* target)
 {
-    int rotation = tileGetRotationTo(attacker->tile, target->tile);
+    Rotation rotation = tileGetRotationTo(attacker->tile, target->tile);
     return tileGetTileInDirection(attacker->tile, rotation, 1);
 }
 
@@ -3882,7 +3882,7 @@ static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTarget
         centerTile = attack->defender->tile;
     }
 
-    int rotation = tileGetRotationTo(centerTile, attack->attacker->tile);
+    Rotation rotation = tileGetRotationTo(centerTile, attack->attacker->tile);
 
     int leftTile = tileGetTileInDirection(centerTile, (rotation + 1) % ROTATION_COUNT, 1);
     int leftEndTile = _tile_num_beyond(attack->attacker->tile, leftTile, range);
@@ -4063,7 +4063,7 @@ static int attackCompute(Attack* attack)
                     throwDistance = 1;
                 }
 
-                int rotation = randomBetween(0, 5);
+                Rotation rotation = static_cast<Rotation>(randomBetween(ROTATION_FIRST, ROTATION_LAST));
                 tile = tileGetTileInDirection(attack->defender->tile, rotation, throwDistance);
             } else {
                 tile = _tile_num_beyond(attack->attacker->tile, attack->defender->tile, range);
@@ -4131,7 +4131,7 @@ void _compute_explosion_on_extras(Attack* attack, bool isFromAttacker, bool isGr
 
     int ringTileIdx;
     int radius = 0;
-    int rotation = 0;
+    Rotation rotation = ROTATION_FIRST;
     int tile = -1;
     int ringFirstTile = explosionTile;
 
@@ -4142,7 +4142,7 @@ void _compute_explosion_on_extras(Attack* attack, bool isFromAttacker, bool isGr
         if (radius != 0 && (tile == -1 || (tile = tileGetTileInDirection(tile, rotation, 1)) != ringFirstTile)) {
             ringTileIdx++;
             if (ringTileIdx % radius == 0) { // the larger the radius, the slower we rotate
-                rotation += 1;
+                rotation = rotation + 1;
                 if (rotation == ROTATION_COUNT) {
                     rotation = ROTATION_NE;
                 }
@@ -5533,7 +5533,7 @@ static void _combat_standup(Object* a1)
 static void _print_tohit(unsigned char* dest, int destPitch, int accuracy)
 {
     FrmImage numbersFrmImage;
-    int numbersFid = buildFid(OBJ_TYPE_INTERFACE, 82, 0, 0, 0);
+    int numbersFid = buildFid(OBJ_TYPE_INTERFACE, 82);
     if (!numbersFrmImage.lock(numbersFid)) {
         return;
     }
@@ -5622,7 +5622,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
     unsigned char* windowBuffer = windowGetBuffer(gCalledShotWindow);
 
     FrmImage backgroundFrm;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 118, 0, 0, 0);
+    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 118);
     if (!backgroundFrm.lock(backgroundFid)) {
         windowDestroy(gCalledShotWindow);
         return -1;
@@ -5636,7 +5636,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
         CALLED_SHOT_WINDOW_WIDTH);
 
     FrmImage critterFrm;
-    int critterFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_CALLED_SHOT_PIC, 0, 0);
+    int critterFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_CALLED_SHOT_PIC, WEAPON_ANIMATION_NONE, ROTATION_NE);
     if (critterFrm.lock(critterFid)) {
         blitBufferToBuffer(critterFrm.getData(),
             170,
@@ -5647,14 +5647,14 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
     }
 
     FrmImage cancelButtonNormalFrmImage;
-    int cancelButtonNormalFid = buildFid(OBJ_TYPE_INTERFACE, 8, 0, 0, 0);
+    int cancelButtonNormalFid = buildFid(OBJ_TYPE_INTERFACE, 8);
     if (!cancelButtonNormalFrmImage.lock(cancelButtonNormalFid)) {
         windowDestroy(gCalledShotWindow);
         return -1;
     }
 
     FrmImage cancelButtonPressedFrmImage;
-    int cancelButtonPressedFid = buildFid(OBJ_TYPE_INTERFACE, 9, 0, 0, 0);
+    int cancelButtonPressedFid = buildFid(OBJ_TYPE_INTERFACE, 9);
     if (!cancelButtonPressedFrmImage.lock(cancelButtonPressedFid)) {
         windowDestroy(gCalledShotWindow);
         return -1;
@@ -6046,7 +6046,7 @@ bool _combat_is_shot_blocked(Object* sourceObj, int from, int to, Object* target
                 // This bug does not cause any noticeable error in the function.
                 current = obstacle->tile;
                 if (current != to) {
-                    int rotation = tileGetRotationTo(current, to);
+                    Rotation rotation = tileGetRotationTo(current, to);
                     current = tileGetTileInDirection(current, rotation, 1);
                 }
             } else {

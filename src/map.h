@@ -33,7 +33,7 @@ typedef struct MapHeader {
     int enteringElevation;
 
     // map_ent_rot
-    int enteringRotation;
+    Rotation enteringRotation;
 
     // map_num_loc_vars
     int localVariablesCount;
@@ -62,7 +62,7 @@ typedef struct MapTransition {
     int map;
     int elevation;
     int tile;
-    int rotation;
+    Rotation rotation;
 } MapTransition;
 
 typedef void IsoWindowRefreshProc(Rect* rect);
@@ -93,7 +93,7 @@ int mapGetGlobalVar(int var, ProgramValue& value);
 int mapSetLocalVar(int var, ProgramValue& value);
 int mapGetLocalVar(int var, ProgramValue& value);
 int mapAllocLocalVars(int numNewVars);
-void mapSetStart(int tile, int elevation, int rotation);
+void mapSetStart(int tile, int elevation, Rotation rotation);
 char* mapGetName(int map_num, int elev);
 bool mapAreSameArea(int map_num1, int map_num2);
 int _get_map_idx_same(int map_num1, int map_num2);
@@ -101,7 +101,7 @@ char* mapGetCityName(int map_num);
 char* mapDescriptionById(int map_index);
 int mapGetCurrentMap();
 int mapScroll(int dx, int dy);
-int mapSetEnteringLocation(int elevation, int tile, int rotation);
+int mapSetEnteringLocation(int elevation, int tile, Rotation rotation);
 void mapNewMap();
 int mapLoadByName(char* fileName);
 int mapLoadById(int map_index);

@@ -3,6 +3,7 @@
 
 #include "geometry.h"
 #include "map.h"
+#include "obj_types.h"
 
 namespace fallout {
 
@@ -18,8 +19,8 @@ typedef void(TileMapperOverlayProc)(unsigned char* buffer, int pitch, int elevat
 void tileSetMapperOverlayProc(TileMapperOverlayProc* proc);
 void tileMapperOverlayRender(unsigned char* buffer, int pitch, int elevation, const Rect* clip);
 
-extern const int _off_tile[6];
-extern const int dword_51D984[6];
+extern const int _off_tile[ROTATION_COUNT];
+extern const int dword_51D984[ROTATION_COUNT];
 extern int gHexGridSize;
 extern int gCenterTile;
 
@@ -46,8 +47,8 @@ int squareTileFromTile(int tile);
 int tileDistanceBetween(int tile1, int tile2);
 bool tileIsInFrontOf(int tile1, int tile2);
 bool tileIsToRightOf(int tile1, int tile2);
-int tileGetTileInDirection(int tile, int rotation, int distance);
-int tileGetRotationTo(int tile1, int tile2);
+int tileGetTileInDirection(int tile, Rotation rotation, int distance);
+Rotation tileGetRotationTo(int tile1, int tile2);
 int _tile_num_beyond(int from, int to, int distance);
 bool tileIsEdge(int tile);
 void tileScrollBlockingEnable();

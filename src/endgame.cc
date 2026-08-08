@@ -222,7 +222,7 @@ void endgamePlaySlideshow()
             if (ending->art_num == 327) {
                 endgameEndingRenderPanningScene(ending->direction, ending->voiceOverBaseName);
             } else {
-                int fid = buildFid(OBJ_TYPE_INTERFACE, ending->art_num, 0, 0, 0);
+                int fid = buildFid(OBJ_TYPE_INTERFACE, ending->art_num);
                 endgameEndingRenderStaticScene(fid, ending->voiceOverBaseName);
             }
         }
@@ -314,14 +314,14 @@ static int endgameEndingHandleContinuePlaying()
 // 0x43FBDC endgame_pan_desert
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 327, 0, 0, 0);
+    int fid = buildFid(OBJ_TYPE_INTERFACE, 327);
 
     CacheEntry* backgroundHandle;
     Art* background = artLock(fid, &backgroundHandle);
     if (background != nullptr) {
-        int width = artGetWidth(background, 0, 0);
-        int height = artGetHeight(background, 0, 0);
-        unsigned char* backgroundData = artGetFrameData(background, 0, 0);
+        int width = artGetWidth(background);
+        int height = artGetHeight(background);
+        unsigned char* backgroundData = artGetFrameData(background);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
         endgameEndingLoadPalette(6, 327);
 
@@ -459,7 +459,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
         return;
     }
 
-    unsigned char* backgroundData = artGetFrameData(background, 0, 0);
+    unsigned char* backgroundData = artGetFrameData(background);
     if (backgroundData != nullptr) {
         blitBufferToBuffer(backgroundData, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH);
         windowRefresh(gEndgameEndingSlideshowWindow);

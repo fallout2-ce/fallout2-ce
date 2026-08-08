@@ -148,7 +148,7 @@ static char kTmpMapName[] = "TMP$MAP#.MAP";
 static char gSavedMapName[16];
 
 // 0x559618
-int rotate_arrows_x_offs[] = {
+int rotate_arrows_x_offs[ROTATION_COUNT] = {
     31,
     38,
     31,
@@ -158,7 +158,7 @@ int rotate_arrows_x_offs[] = {
 };
 
 // 0x559630
-int rotate_arrows_y_offs[] = {
+int rotate_arrows_y_offs[ROTATION_COUNT] = {
     7,
     23,
     37,
@@ -243,7 +243,7 @@ char** menu_names[] = {
 };
 
 // 0x559748
-MapTransition mapInfo = { -1, -1, 0, 0 };
+MapTransition mapInfo = { -1, -1, 0, ROTATION_NE };
 
 // 0x559880
 int max_art_buttons = 7;
@@ -1365,7 +1365,7 @@ void edit_mapper()
                             // create new highlight
                             update_high_obj_name(_screen_obj);
 
-                            int hfid = buildFid(OBJ_TYPE_INTERFACE, 1, 0, 0, 0);
+                            int hfid = buildFid(OBJ_TYPE_INTERFACE, 1);
                             Object* hlObj;
                             if (objectCreateWithFidPid(&hlObj, hfid, -1) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
@@ -1658,7 +1658,7 @@ void edit_mapper()
             if (win_get_num_i(&val, -2, 255, false, "Exit Grid Dest Map", 100, 100) != -1) mapInfo.map = val;
             if (win_get_num_i(&val, -1, 40000, false, "Exit Grid Dest Tile #", 100, 100) != -1) mapInfo.tile = val;
             if (win_get_num_i(&val, 0, 3, false, "Exit Grid Dest Elevation", 100, 100) != -1) mapInfo.elevation = val;
-            if (win_get_num_i(&val, 0, 6, false, "Exit Grid Dest Rotation", 100, 100) != -1) mapInfo.rotation = val;
+            if (win_get_num_i(&val, ROTATION_FIRST, ROTATION_COUNT, false, "Exit Grid Dest Rotation", 100, 100) != -1) mapInfo.rotation = static_cast<Rotation>(val);
             break;
         }
         case kBtnMarkExitGrids:
@@ -1824,7 +1824,7 @@ void edit_mapper()
             Object* obj = _screen_obj ? _screen_obj : gGameMouseBouncingCursor;
             if (obj != nullptr) {
                 Rect rect;
-                int newRot = (keyCode == kBtnRotateRight) ? (obj->rotation + 1) % 6 : (obj->rotation + 5) % 6;
+                Rotation newRot = (keyCode == kBtnRotateRight) ? (obj->rotation + 1) % ROTATION_COUNT : (obj->rotation + ROTATION_LAST) % ROTATION_COUNT;
                 objectSetRotation(obj, newRot, &rect);
                 tileWindowRefreshRect(&rect, gElevation);
                 rotation = obj->rotation;
@@ -2098,9 +2098,9 @@ void edit_mapper()
             if (!map_entered) {
                 Object* targetObj = _screen_obj ? _screen_obj : gGameMouseBouncingCursor;
                 if (targetObj != nullptr) {
-                    rotation = 0;
+                    rotation = ROTATION_NE;
                     Rect rect;
-                    objectSetRotation(targetObj, 0, &rect);
+                    objectSetRotation(targetObj, rotation, &rect);
                     tileWindowRefreshRect(&rect, targetObj->elevation);
                     mapper_refresh_rotation();
                 }
@@ -2112,9 +2112,9 @@ void edit_mapper()
             if (!map_entered) {
                 Object* targetObj = _screen_obj ? _screen_obj : gGameMouseBouncingCursor;
                 if (targetObj != nullptr) {
-                    rotation = 3;
+                    rotation = ROTATION_SW;
                     Rect rect;
-                    objectSetRotation(targetObj, 3, &rect);
+                    objectSetRotation(targetObj, rotation, &rect);
                     tileWindowRefreshRect(&rect, targetObj->elevation);
                     mapper_refresh_rotation();
                 }
@@ -2525,7 +2525,7 @@ void update_art(int type, int offset)
     for (int i = offset; i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
         int fid;
         if (settings.mapper.use_art_not_protos) {
-            fid = buildFid(type, i, 0, 0, 0);
+            fid = buildFid(type, i);
         } else {
             Proto* proto;
             int pid = toolbar_proto(type, i);
@@ -2605,7 +2605,7 @@ static int mapperPickTile(int* outOffset)
     } else {
         tileFid = packedTile & 0xFFF;
     }
-    int artFid = buildFid(OBJ_TYPE_TILE, tileFid, 0, 0, 0);
+    int artFid = buildFid(OBJ_TYPE_TILE, tileFid);
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;
@@ -2674,7 +2674,7 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, 0, 0, FID_ROTATION(obj->fid));
+    fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
     animationRegisterSetFid(obj, fid, 0);
 
     return reg_anim_end();
@@ -2758,13 +2758,13 @@ static void mapper_enter_play_mode(Object** pHlObj1)
 
     objectSetLocation(gDude, savedCenterTile, gElevation, nullptr);
 
-    objectSetRotation(gDude, 0, nullptr);
+    objectSetRotation(gDude, ROTATION_NE, nullptr);
 
     objectShow(gDude, nullptr);
 
     _proto_dude_init("premade\\blank.gcd");
 
-    gDude->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, 0, 0, 0);
+    gDude->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     _scr_game_init();
 

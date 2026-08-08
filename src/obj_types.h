@@ -4,7 +4,8 @@
 namespace fallout {
 
 // Rotation
-typedef enum Rotation {
+enum Rotation : int {
+    ROTATION_INVALID = -1,
     ROTATION_NE, // 0
     ROTATION_E, // 1
     ROTATION_SE, // 2
@@ -13,7 +14,47 @@ typedef enum Rotation {
     ROTATION_NW, // 5
     ROTATION_COUNT,
     ROTATION_FIRST = ROTATION_NE,
-} Rotation;
+    ROTATION_LAST = ROTATION_NW,
+};
+
+inline Rotation operator+(Rotation lhs, int rhs)
+{
+    return static_cast<Rotation>(static_cast<int>(lhs) + rhs);
+}
+
+inline Rotation operator-(Rotation lhs, int rhs)
+{
+    return static_cast<Rotation>(static_cast<int>(lhs) - rhs);
+}
+
+inline Rotation operator%(Rotation lhs, int rhs)
+{
+    return static_cast<Rotation>(static_cast<int>(lhs) % rhs);
+}
+
+inline Rotation operator++(Rotation& e, int)
+{
+    Rotation result = e;
+    e = e + 1;
+    return result;
+}
+
+inline Rotation& operator--(Rotation& e)
+{
+    e = e - 1;
+    return e;
+}
+
+inline bool rotationIsValid(int rotation)
+{
+    return rotation >= ROTATION_FIRST && rotation < ROTATION_COUNT;
+}
+
+inline Rotation rotationFromFid(int fid)
+{
+    int rotation = (fid & 0x70000000) >> 28;
+    return static_cast<Rotation>(rotation);
+}
 
 enum ObjectType {
     OBJ_TYPE_ITEM,
@@ -33,8 +74,6 @@ enum ObjectType {
 #define FID_TYPE(value) ((value) & 0xF000000) >> 24
 #define PID_TYPE(value) (value) >> 24
 #define SID_TYPE(value) (value) >> 24
-
-#define FID_ROTATION(fid) (((fid) & 0x70000000) >> 28)
 
 typedef enum OutlineType {
     OUTLINE_TYPE_HOSTILE = 1,
@@ -248,7 +287,7 @@ typedef struct MiscObjectData {
     int map;
     int tile;
     int elevation;
-    int rotation;
+    Rotation rotation;
 } MiscObjectData;
 
 // TODO: use C-style inheritance for different ObjectData variants instead of unions within unions.
@@ -275,7 +314,7 @@ typedef struct Object {
     int sx; // obj_sx
     int sy; // obj_sy
     int frame; // obj_cur_frm
-    int rotation; // obj_cur_rot
+    Rotation rotation; // obj_cur_rot
     int fid; // obj_fid
     int flags; // obj_flags
     int elevation; // obj_elev
@@ -311,9 +350,9 @@ static inline int builtTileGetElevation(int builtTile)
     return (builtTile & BUILT_TILE_ELEVATION_MASK) >> BUILT_TILE_ELEVATION_SHIFT;
 }
 
-static inline int builtTileGetRotation(int builtTile)
+static inline Rotation builtTileGetRotation(int builtTile)
 {
-    return (builtTile & BUILT_TILE_ROTATION_MASK) >> BUILT_TILE_ROTATION_SHIFT;
+    return static_cast<Rotation>((builtTile & BUILT_TILE_ROTATION_MASK) >> BUILT_TILE_ROTATION_SHIFT);
 }
 
 static inline int builtTileCreate(int tile, int elevation)

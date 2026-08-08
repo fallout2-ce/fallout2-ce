@@ -50,7 +50,7 @@ enum ScienceRepairTargetType : int {
 static bool _action_in_explode = false;
 
 // 0x5106D4 rotation
-int rotation;
+Rotation rotation;
 
 // 0x5106E0 death_2
 static const AnimationType gNormalDeathAnimations[DAMAGE_TYPE_COUNT] = {
@@ -76,12 +76,12 @@ static const AnimationType gMaximumBloodDeathAnimations[DAMAGE_TYPE_COUNT] = {
 
 // Note: some of these are callbacks that always take two Object*, but may not use them.
 // Ignored parameters are marked with underscores.
-static int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, int rotation, int delay);
+static int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, Rotation rotation, int delay);
 static AnimationType actionBlood(Object* obj, AnimationType anim, int delay);
 static AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, AnimationType attackerAnimation, bool hitFromFront);
 static AnimationType checkDeathAnim(Object* obj, AnimationType anim, int minViolenceLevel, bool hitFromFront);
 static int _internal_destroy(Object* _, Object* toDestroy);
-static void showDamageToObject(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, int knockbackRotation, AnimationType attackerAnimation, Object* attacker, int delay);
+static void showDamageToObject(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, Rotation knockbackRotation, AnimationType attackerAnimation, Object* attacker, int delay);
 static int _show_death(Object* obj, AnimationType anim);
 static int showDamageToExtras(Attack* attack);
 static void showDamage(Attack* attack, AnimationType attackerAnimation, int delay);
@@ -102,7 +102,7 @@ static int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDist
 static int hideProjectile(void* _, void* projectile);
 
 // 0x410468
-int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, int rotation, int delay)
+int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, Rotation rotation, int delay)
 {
     if (critterFlagCheck(obj->pid, CRITTER_NO_KNOCKBACK)) {
         return -1;
@@ -187,7 +187,7 @@ AnimationType actionBlood(Object* obj, AnimationType anim, int delay)
 // 0x41060C pick_death
 AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, AnimationType attackerAnimation, bool hitFromFront)
 {
-    if (attacker->fid == buildFid(OBJ_TYPE_MISC, 10, ANIM_STAND, 0, 0)) { // roktxpd.frm
+    if (attacker->fid == buildFid(OBJ_TYPE_MISC, 10)) { // roktxpd.frm
         return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
     if (attacker->pid == PROTO_ID_FORCE_FIELD_NS) { // Forcefield North/South
@@ -308,7 +308,7 @@ int _internal_destroy(Object* _, Object* toDestroy)
 // TODO: Check very carefully, lots of conditions and jumps.
 //
 // 0x4108D0 show_damage_to_object
-void showDamageToObject(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, int knockbackRotation, AnimationType attackerAnimation, Object* attacker, int delay)
+void showDamageToObject(Object* defender, int damage, int flags, Object* weapon, bool hitFromFront, int knockbackDistance, Rotation knockbackRotation, AnimationType attackerAnimation, Object* attacker, int delay)
 {
     int fid;
     const char* sfx_name;
@@ -371,12 +371,12 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
                     }
 
                     int randomDistance = randomBetween(2, 5);
-                    int randomRotation = randomBetween(0, 5);
+                    Rotation randomRotation = static_cast<Rotation>(randomBetween(ROTATION_FIRST, ROTATION_LAST));
 
                     // CE: Fix to prevent critters (including player) to cross
                     // an exit grid as a result of fire dance animation. See
                     // `actionKnockdown` for notes.
-                    int rotation = randomRotation;
+                    Rotation rotation = randomRotation;
                     int distance = randomDistance;
                     while (true) {
                         int tile = tileGetTileInDirection(defender->tile, (rotation + randomRotation) % ROTATION_COUNT, distance);
@@ -456,7 +456,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
     if (weapon != nullptr) {
         if ((flags & DAM_EXPLODE) != 0) {
             animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)objectDrop, -1);
-            fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0);
+            fid = buildFid(OBJ_TYPE_MISC, 10);
             animationRegisterSetFid(weapon, fid, 0);
             animationRegisterAnimateAndHide(weapon, ANIM_STAND, 0);
 
@@ -529,7 +529,7 @@ int showDamageToExtras(Attack* attack)
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
             _register_priority(1);
             AnimationType attackerAnimation = critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
-            int knockbackRotation = tileGetRotationTo(attack->attacker->tile, obj->tile);
+            Rotation knockbackRotation = tileGetRotationTo(attack->attacker->tile, obj->tile);
             showDamageToObject(obj, attack->extrasDamage[index], attack->extrasFlags[index], attack->weapon, hitFromFront, attack->extrasKnockback[index], knockbackRotation, attackerAnimation, attack->attacker, 0);
             reg_anim_end();
         }
@@ -541,7 +541,7 @@ int showDamageToExtras(Attack* attack)
 // Shows animation to attacker, in case of critical failure, backwash, etc.
 static void showDamageToAttacker(Attack* attack, AnimationType attackerAnimation)
 {
-    showDamageToObject(attack->attacker, attack->attackerDamage, attack->attackerFlags, attack->weapon, true, 0, 0, attackerAnimation, attack->attacker, -1);
+    showDamageToObject(attack->attacker, attack->attackerDamage, attack->attackerFlags, attack->weapon, true, 0, ROTATION_NE, attackerAnimation, attack->attacker, -1);
 }
 
 // Animates damage to defender (or attacker, in some cases) as a result of a given attack.
@@ -567,7 +567,7 @@ void showDamage(Attack* attack, AnimationType attackerAnimation, int delay)
             bool hitFromFront = _is_hit_from_front(attack->attacker, attack->defender);
 
             if (FID_TYPE(attack->defender->fid) == OBJ_TYPE_CRITTER) {
-                int knockbackRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
+                Rotation knockbackRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
                 AnimationType attackerAnimForShow = attack->attacker->fid == FRAME_ID_FORCE_FIELD_NS
                     ? attackerAnimation
                     : critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
@@ -705,7 +705,7 @@ int _action_melee(Attack* attack, AnimationType anim)
 int _action_ranged(Attack* attack, AnimationType anim)
 {
     Object* adjacentObjects[ROTATION_COUNT];
-    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+    for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
         adjacentObjects[rotation] = nullptr;
     }
 
@@ -805,7 +805,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
                 int projectileOrigin = _combat_bullet_start(attack->attacker, attack->defender);
                 objectSetLocation(projectile, projectileOrigin, attack->attacker->elevation, nullptr);
 
-                int projectileRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
+                Rotation projectileRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
                 objectSetRotation(projectile, projectileRotation, nullptr);
 
                 animationRegisterUnsetFlag(projectile, OBJECT_HIDDEN, delay);
@@ -854,7 +854,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
                             animationRegisterSetFid(projectile, weaponFid, -1);
                         }
 
-                        int explosionFid = buildFid(OBJ_TYPE_MISC, explosionFrmId, 0, 0, 0);
+                        int explosionFid = buildFid(OBJ_TYPE_MISC, explosionFrmId);
                         animationRegisterSetFid(projectile, explosionFid, -1);
 
                         const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_HIT, weapon, attack->hitMode, attack->defender);
@@ -872,11 +872,11 @@ int _action_ranged(Attack* attack, AnimationType anim)
                         }
 
                         // SFALL
-                        int startRotation;
-                        int endRotation;
+                        Rotation startRotation;
+                        Rotation endRotation;
                         explosionGetPattern(&startRotation, &endRotation);
 
-                        for (int rotation = startRotation; rotation < endRotation; rotation++) {
+                        for (Rotation rotation = startRotation; rotation < endRotation; rotation++) {
                             if (objectCreateWithFidPid(&(adjacentObjects[rotation]), explosionFid, -1) != -1) {
                                 objectHide(adjacentObjects[rotation], nullptr);
 
@@ -951,7 +951,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
         animationRegisterSetFid(projectile, weaponFid, -1);
     }
 
-    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+    for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
         if (adjacentObjects[rotation] != nullptr) {
             animationRegisterHideObjectForced(adjacentObjects[rotation]);
         }
@@ -969,7 +969,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
             }
 
             if (!takeOutAnimationRegistered) {
-                int fid = buildFid(OBJ_TYPE_CRITTER, attack->attacker->fid & 0xFFF, ANIM_STAND, 0, attack->attacker->rotation + 1);
+                int fid = buildFid(OBJ_TYPE_CRITTER, attack->attacker->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, attack->attacker->rotation + 1);
                 animationRegisterSetFid(attack->attacker, fid, -1);
             }
         } else {
@@ -983,7 +983,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
             objectDestroy(projectile, nullptr);
         }
 
-        for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
             if (adjacentObjects[rotation] != nullptr) {
                 objectDestroy(adjacentObjects[rotation], nullptr);
             }
@@ -1235,7 +1235,7 @@ int actionPickUp(Object* critter, Object* item)
             : ANIM_MAGIC_HANDS_GROUND;
         animationRegisterAnimate(critter, anim, 0);
 
-        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, 0, critter->rotation + 1);
+        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, critter->rotation + 1);
 
         int actionFrame;
         CacheEntry* cacheEntry;
@@ -1511,7 +1511,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
     animationRegisterCallbackForced(performer, target, (AnimationCallback*)_is_next_to, -1);
 
     AnimationType anim = (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && critterIsProne(target)) ? ANIM_MAGIC_HANDS_GROUND : ANIM_MAGIC_HANDS_MIDDLE;
-    int fid = buildFid(OBJ_TYPE_CRITTER, performer->fid & 0xFFF, anim, 0, performer->rotation + 1);
+    int fid = buildFid(OBJ_TYPE_CRITTER, performer->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, performer->rotation + 1);
 
     CacheEntry* artHandle;
     Art* art = artLock(fid, &artHandle);
@@ -1556,7 +1556,7 @@ bool _can_see(Object* source, Object* target)
 AnimationType pickFallAnim(Object* obj, AnimationType anim)
 {
     int i;
-    int rotation;
+    Rotation rotation;
     int tile_num;
     int fid;
 
@@ -1610,7 +1610,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
     }
 
     Object* explosion;
-    int fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0);
+    int fid = buildFid(OBJ_TYPE_MISC, 10);
     if (objectCreateWithFidPid(&explosion, fid, -1) == -1) {
         internal_free(attack);
         return -1;
@@ -1622,10 +1622,10 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
     objectSetLocation(explosion, tile, elevation, nullptr);
 
     Object* adjacentExplosions[ROTATION_COUNT];
-    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
-        int fid = buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0);
+    for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
+        int fid = buildFid(OBJ_TYPE_MISC, 10);
         if (objectCreateWithFidPid(&(adjacentExplosions[rotation]), fid, -1) == -1) {
-            while (--rotation >= 0) {
+            while (--rotation >= ROTATION_FIRST) {
                 objectDestroy(adjacentExplosions[rotation], nullptr);
             }
 
@@ -1685,7 +1685,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
         animationRegisterAnimateAndHide(explosion, ANIM_STAND, 0);
         showDamage(attack, ANIM_STAND, 1);
 
-        for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
             animationRegisterUnsetFlag(adjacentExplosions[rotation], OBJECT_HIDDEN, 0);
             animationRegisterAnimateAndHide(adjacentExplosions[rotation], ANIM_STAND, 0);
         }
@@ -1693,7 +1693,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
         animationRegisterCallbackForced(explosion, nullptr, (AnimationCallback*)_combat_explode_scenery, -1);
         animationRegisterHideObjectForced(explosion);
 
-        for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
             animationRegisterHideObjectForced(adjacentExplosions[rotation]);
         }
 
@@ -1704,7 +1704,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
 
             objectDestroy(explosion, nullptr);
 
-            for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+            for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
                 objectDestroy(adjacentExplosions[rotation], nullptr);
             }
 
@@ -1734,7 +1734,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
 
         objectDestroy(explosion, nullptr);
 
-        for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
             objectDestroy(adjacentExplosions[rotation], nullptr);
         }
     }
@@ -2079,7 +2079,7 @@ int actionPush(Object* obj, Object* target)
         }
     }
 
-    int rotation = tileGetRotationTo(obj->tile, target->tile);
+    Rotation rotation = tileGetRotationTo(obj->tile, target->tile);
     int tile;
     do {
         tile = tileGetTileInDirection(target->tile, rotation, 1);

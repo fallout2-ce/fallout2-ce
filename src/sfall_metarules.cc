@@ -588,7 +588,7 @@ namespace {
             return objectSetFrame(object, intValue, nullptr) == 0;
         case ObjectDataField::Rotation:
             if (!intDataValue(data, intValue)) return false;
-            return objectSetRotation(object, intValue, nullptr) == 0;
+            return objectSetRotation(object, static_cast<Rotation>(intValue), nullptr) == 0;
         case ObjectDataField::Fid:
             if (!intDataValue(data, intValue)) return false;
             return objectSetFid(object, intValue, nullptr) == 0;
@@ -1055,7 +1055,7 @@ void mf_art_cache_flush(OpcodeContext& ctx)
 void mf_art_frame_data(OpcodeContext& ctx)
 {
     int frame = ctx.numArgs() > 1 ? ctx.arg(1).asInt() : 0;
-    int direction = ctx.numArgs() > 2 ? ctx.arg(2).asInt() : 0;
+    Rotation rotation = ctx.numArgs() > 2 ? static_cast<Rotation>(ctx.arg(2).asInt()) : ROTATION_NE;
 
     if (ctx.arg(0).isInt() && ctx.arg(0).asInt() == -1) {
         ctx.setReturn(-1);
@@ -1065,14 +1065,14 @@ void mf_art_frame_data(OpcodeContext& ctx)
     FrmImage image;
     if (ctx.arg(0).isInt()) {
         int fid = ctx.arg(0).asInt();
-        if (!image.lock(fid, frame, direction)) {
+        if (!image.lock(fid, frame, rotation)) {
             ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
             ctx.setReturn(-1);
             return;
         }
     } else {
         const char* path = ctx.stringArg(0);
-        if (!image.lock(path, frame, direction)) {
+        if (!image.lock(path, frame, rotation)) {
             ctx.printError("%s() - cannot load art from file: %s", ctx.name(), path);
             ctx.setReturn(-1);
             return;
@@ -1458,7 +1458,7 @@ void mf_get_window_attribute(OpcodeContext& ctx)
     }
 }
 
-static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, int direction, FrmImage& image, int& fid)
+static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotation rotation, FrmImage& image, int& fid)
 {
     if (ctx.arg(artArg).isInt() && ctx.arg(artArg).asInt() == -1) {
         return false;
@@ -1466,23 +1466,23 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, int dir
 
     if (ctx.arg(artArg).isInt()) {
         fid = ctx.arg(artArg).asInt();
-        int frameDirection = 0;
+        Rotation frameRotation = ROTATION_NE;
         int lockFid = fid;
         if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
-            frameDirection = direction >= 0 ? direction : FID_ROTATION(fid);
-            if (direction >= 0) {
-                lockFid = (direction << 28) | (fid & 0x0FFFFFFF);
+            frameRotation = rotationIsValid(rotation) ? rotation : rotationFromFid(fid);
+            if (rotationIsValid(rotation)) {
+                lockFid = (rotation << 28) | (fid & 0x0FFFFFFF);
             }
         }
 
-        if (!image.lock(lockFid, frame, frameDirection)) {
+        if (!image.lock(lockFid, frame, frameRotation)) {
             ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
             return false;
         }
     } else {
         const char* path = ctx.stringArg(artArg);
-        int frameDirection = direction >= 0 ? direction : 0;
-        if (!image.lock(path, frame, frameDirection)) {
+        Rotation frameRotation = rotationIsValid(rotation) ? rotation : ROTATION_NE;
+        if (!image.lock(path, frame, frameRotation)) {
             ctx.printError("%s() - cannot load art from file: %s", ctx.name(), path);
             return false;
         }
@@ -1554,7 +1554,7 @@ static int drawSfallImageToScriptWindow(OpcodeContext& ctx, bool scaled)
 
     FrmImage image;
     int fid = -1;
-    if (!loadSfallArtImage(ctx, 0, frame, -1, image, fid)) {
+    if (!loadSfallArtImage(ctx, 0, frame, ROTATION_INVALID, image, fid)) {
         return -1;
     }
 
@@ -1609,13 +1609,13 @@ static void mf_interface_art_draw(OpcodeContext& ctx)
     }
 
     int frame = ctx.numArgs() > 4 ? ctx.arg(4).asInt() : 0;
-    int direction = -1;
+    Rotation rotation = ROTATION_INVALID;
     int scaledWidth = -1;
     int scaledHeight = -1;
     if (ctx.numArgs() > 5) {
         int arrayId = ctx.arg(5).asInt();
         if (ArrayExists(arrayId)) {
-            direction = GetArray(arrayId, ProgramValue(0), ctx.program()).asInt();
+            rotation = static_cast<Rotation>(GetArray(arrayId, ProgramValue(0), ctx.program()).asInt());
 
             int arrayLength = LenArray(arrayId);
             if (arrayLength > 1) {
@@ -1630,14 +1630,14 @@ static void mf_interface_art_draw(OpcodeContext& ctx)
 
     FrmImage image;
     int fid = -1;
-    if (!loadSfallArtImage(ctx, 1, frame, direction, image, fid)) {
+    if (!loadSfallArtImage(ctx, 1, frame, rotation, image, fid)) {
         ctx.setReturn(-1);
         return;
     }
 
     int xOffset = 0;
     int yOffset = 0;
-    if (ctx.arg(1).isInt() && FID_TYPE(fid) == OBJ_TYPE_CRITTER && direction >= 0) {
+    if (ctx.arg(1).isInt() && FID_TYPE(fid) == OBJ_TYPE_CRITTER && rotation >= ROTATION_FIRST) {
         xOffset = image.getXOffset();
         yOffset = image.getYOffset();
     }

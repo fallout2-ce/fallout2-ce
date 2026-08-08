@@ -651,7 +651,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
         scriptHooks_InvenWield(critter, item, slot, 0, 1);
         if (slot == InvenSlot::RightHand) {
             if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, animationTypeFromFid(critter->fid), 0, critter->rotation);
+                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
                 objectSetFid(critter, fid, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -659,7 +659,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
             }
         } else if (slot == InvenSlot::LeftHand) {
             if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, animationTypeFromFid(critter->fid), 0, critter->rotation);
+                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
                 objectSetFid(critter, fid, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -2237,7 +2237,7 @@ int objectAttemptPlacement(Object* obj, int tile, int elevation, int radius)
                 break;
             }
 
-            for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+            for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
                 newTile = tileGetTileInDirection(tile, rotation, dist);
                 if (_obj_blocking_at(nullptr, newTile, elevation) == nullptr
                     && dist > 1
@@ -2251,7 +2251,7 @@ int objectAttemptPlacement(Object* obj, int tile, int elevation, int radius)
 
         // If location is too far (or not found at all), find any free adjacent tile, regardless if it's reachable or not.
         if (radius != 1 && dist > radius + 2) {
-            for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+            for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
                 int candidate = tileGetTileInDirection(tile, rotation, 1);
                 if (_obj_blocking_at(nullptr, candidate, elevation) == nullptr) {
                     newTile = candidate;
@@ -2288,7 +2288,7 @@ int objectAttemptPlacementPartyMember(Object* obj, int tile, int elevation)
     }
 
     int destinationTile = tile;
-    int rotation = 0;
+    Rotation rotation = ROTATION_NE;
     if (!wmEvalTileNumForPlacement(tile)) {
         destinationTile = gDude->tile;
         for (int i = 1; i <= 100; i++) {

@@ -445,11 +445,11 @@ int correctFidForRemovedItem(Object* critter, Object* item, int flags)
         }
 
         if (weaponCode == WEAPON_ANIMATION_NONE) {
-            newFid = buildFid(FID_TYPE(fid), fid & 0xFFF, animationTypeFromFid(fid), WEAPON_ANIMATION_NONE, FID_ROTATION(fid));
+            newFid = buildFid(FID_TYPE(fid), fid & 0xFFF, animationTypeFromFid(fid), WEAPON_ANIMATION_NONE, rotationFromFid(fid));
         }
     } else {
         if (critter == gDude) {
-            newFid = buildFid(FID_TYPE(fid), _art_vault_guy_num, animationTypeFromFid(fid), weaponCode, FID_ROTATION(fid));
+            newFid = buildFid(FID_TYPE(fid), _art_vault_guy_num, animationTypeFromFid(fid), weaponCode, rotationFromFid(fid));
         }
 
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
@@ -497,7 +497,7 @@ static void opPlaySfx(Program* program)
 // 0x454314 op_set_map_start
 static void opSetMapStart(Program* program)
 {
-    int rotation = programStackPopInteger(program);
+    Rotation rotation = programStackPopEnum<Rotation>(program);
     int elevation = programStackPopInteger(program);
     int y = programStackPopInteger(program);
     int x = programStackPopInteger(program);
@@ -522,7 +522,7 @@ static void opOverrideMapStart(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
-    int rotation = programStackPopInteger(program);
+    Rotation rotation = programStackPopEnum<Rotation>(program);
     int elevation = programStackPopInteger(program);
     int y = programStackPopInteger(program);
     int x = programStackPopInteger(program);
@@ -1536,13 +1536,13 @@ static void opGetObjectTile(Program* program)
 static void opGetTileInDirection(Program* program)
 {
     int distance = programStackPopInteger(program);
-    int rotation = programStackPopInteger(program);
+    Rotation rotation = programStackPopEnum<Rotation>(program);
     int origin = programStackPopInteger(program);
 
     int tile = -1;
 
     if (origin != -1) {
-        if (rotation >= ROTATION_FIRST && rotation < ROTATION_COUNT) {
+        if (rotationIsValid(rotation)) {
             if (distance != 0) {
                 tile = tileGetTileInDirection(origin, rotation, distance);
                 if (tile < -1) {
@@ -1941,7 +1941,7 @@ static void opStartGameDialog(Program* program)
     }
 
     if (headId != -1) {
-        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, headId, 0, 0, 0);
+        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, headId);
     }
 
     gameDialogSetBackground(backgroundId);
@@ -2067,7 +2067,7 @@ static void opMetarule3(Program* program)
                 frmId,
                 animationTypeFromFid(obj->fid),
                 weaponAnimationFromFid(obj->fid),
-                FID_ROTATION(obj->fid));
+                rotationFromFid(obj->fid));
 
             Rect updatedRect;
             objectSetFid(obj, fid, &updatedRect);
@@ -2188,7 +2188,7 @@ static void opLoadMap(Program* program)
         transition.map = mapIndex;
         transition.elevation = -1;
         transition.tile = -1;
-        transition.rotation = -1;
+        transition.rotation = ROTATION_INVALID;
         mapSetTransition(&transition);
     }
 }
@@ -3341,7 +3341,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (buildFid(OBJ_TYPE_MISC, 10, 0, 0, 0) == object->fid) {
+                if (buildFid(OBJ_TYPE_MISC, 10) == object->fid) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }
@@ -3433,7 +3433,7 @@ static void opAnim(Program* program)
         if (frame == 0) { // ANIMATE_FORWARD
             animationRegisterAnimate(obj, anim, 0);
             if (anim >= ANIM_FALL_BACK && anim <= ANIM_FALL_FRONT_BLOOD) {
-                int fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, anim + 28, weaponAnimationFromFid(obj->fid), FID_ROTATION(obj->fid));
+                int fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, anim + 28, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
                 animationRegisterSetFid(obj, fid, -1);
             }
 
@@ -3441,13 +3441,13 @@ static void opAnim(Program* program)
                 combatData->results &= ~DAM_KNOCKED_DOWN;
             }
         } else { // ANIMATE_REVERSE == 1
-            int fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, anim, weaponAnimationFromFid(obj->fid), FID_ROTATION(obj->fid));
+            int fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, anim, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             animationRegisterAnimateReversed(obj, anim, 0);
 
             if (anim == ANIM_PRONE_TO_STANDING) {
-                fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(obj->fid), FID_ROTATION(obj->fid));
+                fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             } else if (anim == ANIM_BACK_TO_STANDING) {
-                fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_FALL_BACK_SF, weaponAnimationFromFid(obj->fid), FID_ROTATION(obj->fid));
+                fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_FALL_BACK_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             }
 
             if (combatData != nullptr) {
@@ -3461,7 +3461,7 @@ static void opAnim(Program* program)
     } else if (animOrInt == 1000) {
         if (frame < ROTATION_COUNT) {
             Rect rect;
-            objectSetRotation(obj, frame, &rect);
+            objectSetRotation(obj, static_cast<Rotation>(frame), &rect);
             tileWindowRefreshRect(&rect, gElevation);
         }
     } else if (animOrInt == 1010) {
@@ -4280,7 +4280,7 @@ static void _op_anim_action_frame(Program* program)
     int actionFrame = 0;
 
     if (object != nullptr) {
-        int fid = buildFid(FID_TYPE(object->fid), object->fid & 0xFFF, anim, 0, object->rotation);
+        int fid = buildFid(FID_TYPE(object->fid), object->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, object->rotation);
         CacheEntry* frmHandle;
         Art* frm = artLock(fid, &frmHandle);
         if (frm != nullptr) {
@@ -4740,7 +4740,7 @@ static void opGetRotationToTile(Program* program)
     int tile2 = programStackPopInteger(program);
     int tile1 = programStackPopInteger(program);
 
-    int rotation = tileGetRotationTo(tile1, tile2);
+    Rotation rotation = tileGetRotationTo(tile1, tile2);
     programStackPushInteger(program, rotation);
 }
 

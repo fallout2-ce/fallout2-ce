@@ -382,6 +382,17 @@ inline WeaponAnimation programStackPopEnum(Program* program)
     return static_cast<WeaponAnimation>(anim);
 }
 
+template <>
+inline Rotation programStackPopEnum(Program* program)
+{
+    int rotation = programStackPopInteger(program);
+    if (!rotationIsValid(rotation)) {
+        programPrintError("invalid rotation %d", rotation);
+    }
+
+    return static_cast<Rotation>(rotation);
+}
+
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
 void programReturnStackPushInteger(Program* program, int value);
 void programReturnStackPushPointer(Program* program, void* value);

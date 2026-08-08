@@ -497,7 +497,7 @@ static int elevatorWindowInit(int elevator)
 
     int index;
     for (index = 0; index < ELEVATOR_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gElevatorFrmIds[index], 0, 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, gElevatorFrmIds[index]);
         if (!_elevatorFrmImages[index].lock(fid)) {
             break;
         }
@@ -520,10 +520,10 @@ static int elevatorWindowInit(int elevator)
     const ElevatorBackground* elevatorBackground = &(gElevatorBackgrounds[elevator]);
     bool backgroundsLoaded = true;
 
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, elevatorBackground->backgroundFrmId, 0, 0, 0);
+    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, elevatorBackground->backgroundFrmId);
     if (_elevatorBackgroundFrmImage.lock(backgroundFid)) {
         if (elevatorBackground->panelFrmId != -1) {
-            int panelFid = buildFid(OBJ_TYPE_INTERFACE, elevatorBackground->panelFrmId, 0, 0, 0);
+            int panelFid = buildFid(OBJ_TYPE_INTERFACE, elevatorBackground->panelFrmId);
             if (!_elevatorPanelFrmImage.lock(panelFid)) {
                 backgroundsLoaded = false;
             }

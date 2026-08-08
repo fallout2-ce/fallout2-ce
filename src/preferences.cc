@@ -996,7 +996,7 @@ static int preferencesWindowInit()
     _SaveSettings();
 
     for (i = 0; i < PREFERENCES_WINDOW_FRM_COUNT; i++) {
-        fid = buildFid(OBJ_TYPE_INTERFACE, gPreferencesWindowFrmIds[i], 0, 0, 0);
+        fid = buildFid(OBJ_TYPE_INTERFACE, gPreferencesWindowFrmIds[i]);
         if (!_preferencesFrmImages[i].lock(fid)) {
             while (--i >= 0) {
                 _preferencesFrmImages[i].unlock();
