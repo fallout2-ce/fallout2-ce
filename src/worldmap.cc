@@ -1002,6 +1002,7 @@ static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static unsigned int wmForceEncounterFlags = 0;
 static bool wmEncounterDetectionEnabled = true;
+static bool wmEncounterIntrosEnabled = true;
 static int worldmapTravelDelay;
 static unsigned int wmLastTravelTick;
 static int worldmapTrailMarkers;
@@ -1181,6 +1182,7 @@ static int wmGenDataInit()
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = 0;
     wmEncounterDetectionEnabled = true;
+    wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     wmTownTitleOverrides.clear();
@@ -1241,6 +1243,7 @@ static int wmGenDataReset()
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = 0;
     wmEncounterDetectionEnabled = true;
+    wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
@@ -3212,6 +3215,11 @@ void wmSetEncounterDetection(bool enabled)
     wmEncounterDetectionEnabled = enabled;
 }
 
+void wmSetEncounterIntros(bool enabled)
+{
+    wmEncounterIntrosEnabled = enabled;
+}
+
 bool wmRestModeIsDisabled()
 {
     return (wmRestMode & static_cast<int>(RestModeFlag::Disabled)) != 0;
@@ -4124,13 +4132,15 @@ int wmSetupRandomEncounter()
     EncounterTable* encounterTable = &(wmEncounterTableList[wmGenData.encounterTableId]);
     EncounterTableEntry* encounterTableEntry = &(encounterTable->entries[wmGenData.encounterEntryId]);
 
-    // SFALL: Display encounter description in one line.
-    char formattedText[512];
-    snprintf(formattedText, sizeof(formattedText),
-        "%s %s",
-        getmsg(&wmMsgFile, &messageListItem, 2998),
-        getmsg(&wmMsgFile, &messageListItem, 3000 + 50 * wmGenData.encounterTableId + wmGenData.encounterEntryId));
-    displayMonitorAddMessage(formattedText);
+    if (wmEncounterIntrosEnabled) {
+        // SFALL: Display encounter description in one line.
+        char formattedText[512];
+        snprintf(formattedText, sizeof(formattedText),
+            "%s %s",
+            getmsg(&wmMsgFile, &messageListItem, 2998),
+            getmsg(&wmMsgFile, &messageListItem, 3000 + 50 * wmGenData.encounterTableId + wmGenData.encounterEntryId));
+        displayMonitorAddMessage(formattedText);
+    }
 
     int gameDifficulty = settings.preferences.game_difficulty;
     switch (encounterTableEntry->scenery) {
