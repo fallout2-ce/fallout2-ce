@@ -301,7 +301,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
 
     char formattedText[260];
 
-    int type = objectTypeFromPid(target->pid);
+    ObjectType type = objectTypeFromPid(target->pid);
     if (type == OBJ_TYPE_CRITTER) {
         if (target != gDude && perkGetRank(gDude, PERK_AWARENESS) && !critterIsDead(target)) {
             MessageListItem hpMessageListItem;
