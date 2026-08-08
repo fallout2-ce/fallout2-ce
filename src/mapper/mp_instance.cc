@@ -59,8 +59,8 @@ static int protoInstSceneryEdit(Object* obj);
 static int protoInstWallEdit(Object* obj);
 static int protoInstTileEdit(Object* obj);
 static void protoInstMiscEdit(Object* obj);
-static int protoInstSetupEdit(int* pWinId, Object* obj, int* pObjType, int* pObjProtoOff, int* pBufOff, const char* title);
-static bool regModFlagsDialog(int* flags, int objectType);
+static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, int* pObjProtoOff, int* pBufOff, const char* title);
+static bool regModFlagsDialog(int* flags, ObjectType objectType);
 static int regModInstFlags(Object* obj);
 
 // proto_inst_edit_
@@ -68,7 +68,7 @@ void protoInstEdit(Object* obj)
 {
     if (obj == nullptr) return;
 
-    switch (PID_TYPE(obj->pid)) {
+    switch (objectTypeFromPid(obj->pid)) {
     case OBJ_TYPE_ITEM:
         protoInstItemEdit(obj);
         break;
@@ -87,11 +87,13 @@ void protoInstEdit(Object* obj)
     case OBJ_TYPE_MISC:
         protoInstMiscEdit(obj);
         break;
+    default:
+        break;
     }
 }
 
 // proto_inst_setup_edit_
-static int protoInstSetupEdit(int* pWinId, Object* obj, int* pObjType, int* pObjProtoOff, int* pBufOff, const char* title)
+static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, int* pObjProtoOff, int* pBufOff, const char* title)
 {
     Proto* proto;
     if (protoGetProto(obj->pid, &proto) == -1) {
@@ -109,7 +111,7 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, int* pObjType, int* pObj
     if (win == -1) return -1;
 
     *pWinId = win;
-    *pObjType = PID_TYPE(obj->pid);
+    *pObjType = objectTypeFromPid(obj->pid);
     *pObjProtoOff = 0;
 
     windowDrawBorder(win);
@@ -179,7 +181,7 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, int* pObjType, int* pObj
 // reg_mod_flags_
 // Original single-column vertical flag editor matching vanilla reg_mod_flags_ layout.
 // Flags are stored in *flags as a 32-bit ObjectFlags bitfield (obj->flags).
-static bool regModFlagsDialog(int* flags, int objectType)
+static bool regModFlagsDialog(int* flags, ObjectType objectType)
 {
     constexpr int kDlgWidth = 220;
     constexpr int kDlgHeight = 380;
@@ -321,7 +323,7 @@ static int regModInstFlags(Object* obj)
 {
     int flags = obj->flags;
     int oldFlat = flags & OBJECT_FLAT;
-    int objectType = PID_TYPE(obj->pid);
+    ObjectType objectType = objectTypeFromPid(obj->pid);
 
     if (regModFlagsDialog(&flags, objectType)) {
         bool flatChanged = ((oldFlat != 0) != ((flags & OBJECT_FLAT) != 0));
@@ -384,7 +386,7 @@ static void selectNewScript(Object* obj, int scriptType, int winId, int scriptNa
 static int protoInstItemEdit(Object* obj)
 {
     int winId;
-    int objType;
+    ObjectType objType;
     int objProtoOff;
     int bufOff;
 
@@ -447,7 +449,7 @@ static int protoInstAddToInven(int pid, int count)
 // proto_choose_pid_inven_fid
 static int protoInstChoosePidInvenFid(Proto* proto)
 {
-    if (PID_TYPE(proto->pid) != 0) return -1;
+    if (objectTypeFromPid(proto->pid) != OBJ_TYPE_ITEM) return -1;
     if (proto->item.inventoryFid == -1) return proto->fid;
     return proto->item.inventoryFid;
 }
@@ -473,7 +475,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     for (int pid = 0x00000001; count < kMaxItems; pid++) {
         Proto* proto;
         if (protoGetProto(pid, &proto) == -1) break;
-        if (PID_TYPE(pid) != OBJ_TYPE_ITEM) continue;
+        if (objectTypeFromPid(pid) != OBJ_TYPE_ITEM) continue;
 
         names[count] = static_cast<char*>(internal_malloc(64));
         snprintf(names[count], 64, "%s", protoGetName(pid));
@@ -500,7 +502,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
 static int protoInstCritterEdit(Object* obj)
 {
     int winId;
-    int objType;
+    ObjectType objType;
     int objProtoOff;
     int bufOff;
 
@@ -593,7 +595,7 @@ static int protoInstCritterEdit(Object* obj)
                 if (rightHandItem != nullptr && itemGetType(rightHandItem) == ITEM_TYPE_WEAPON) {
                     animCode = weaponGetAnimationCode(rightHandItem);
                 }
-                obj->fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, obj->frame + 1, animCode, ROTATION_NE);
+                obj->fid = buildFid(objectTypeFromFid(obj->fid), obj->fid & 0xFFF, obj->frame + 1, animCode, ROTATION_NE);
                 tileWindowRefresh();
 
                 break;
@@ -609,7 +611,7 @@ static int protoInstCritterEdit(Object* obj)
 static int protoInstWallEdit(Object* obj)
 {
     int winId;
-    int objType;
+    ObjectType objType;
     int objProtoOff;
     int bufOff;
 
@@ -644,7 +646,7 @@ static int protoInstWallEdit(Object* obj)
 static int protoInstTileEdit(Object* obj)
 {
     int winId;
-    int objType;
+    ObjectType objType;
     int objProtoOff;
     int bufOff;
 
@@ -677,7 +679,7 @@ static int protoInstTileEdit(Object* obj)
 static void protoInstMiscEdit(Object* obj)
 {
     int winId;
-    int objType;
+    ObjectType objType;
     int objProtoOff;
     int bufOff;
 
@@ -710,7 +712,7 @@ static void protoInstMiscEdit(Object* obj)
 static int protoInstSceneryEdit(Object* obj)
 {
     int winId;
-    int objType;
+    ObjectType objType;
     int objProtoOff;
     int bufOff;
 

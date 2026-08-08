@@ -364,7 +364,7 @@ static void op_get_critter_current_ap(Program* program)
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
     int actionPoints = 0;
-    if (critter != nullptr && FID_TYPE(critter->fid) == OBJ_TYPE_CRITTER) {
+    if (critter != nullptr && objectTypeFromFid(critter->fid) == OBJ_TYPE_CRITTER) {
         actionPoints = critter->data.critter.combat.ap;
     }
 
@@ -376,7 +376,7 @@ static void op_set_critter_current_ap(Program* program)
     int actionPoints = programStackPopInteger(program);
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
-    if (critter == nullptr || FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (critter == nullptr || objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
         programPrintError("set_critter_current_ap: expected critter object");
         return;
     }
@@ -396,7 +396,7 @@ static void op_set_critter_burst_disable(Program* program)
     int disable = programStackPopInteger(program);
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
-    if (critter == nullptr || FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (critter == nullptr || objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
         programPrintError("set_critter_burst_disable: expected critter object");
         return;
     }
@@ -730,7 +730,7 @@ static void op_set_script(Program* program)
         obj->scriptIndex = -1;
     }
 
-    int scriptType = (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
+    int scriptType = (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) ? SCRIPT_TYPE_CRITTER : SCRIPT_TYPE_ITEM;
     if (objectSetScript(obj, scriptType, scriptIndex) == -1) {
         obj->sid = -1;
         obj->scriptIndex = -1;
@@ -771,7 +771,7 @@ static void op_get_proto_data(Program* program)
 
     // CE: Make sure the requested offset is within memory bounds and is
     // properly aligned.
-    if (offset + sizeof(int) > proto_size(PID_TYPE(pid)) || offset % sizeof(int) != 0) {
+    if (offset + sizeof(int) > proto_size(objectTypeFromPid(pid)) || offset % sizeof(int) != 0) {
         programPrintError("get_proto_data: bad offset %d", offset);
         programStackPushInteger(program, -1);
         return;
@@ -796,7 +796,7 @@ static void op_set_proto_data(Program* program)
 
     // CE: Make sure the requested offset is within memory bounds and is
     // properly aligned.
-    if (offset + sizeof(int) > proto_size(PID_TYPE(pid)) || offset % sizeof(int) != 0) {
+    if (offset + sizeof(int) > proto_size(objectTypeFromPid(pid)) || offset % sizeof(int) != 0) {
         programPrintError("set_proto_data: bad offset %d", offset);
         return;
     }
@@ -860,7 +860,7 @@ static void op_get_weapon_ammo_pid(Program* program)
 
     int pid = -1;
     if (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
             switch (itemGetType(obj)) {
             case ITEM_TYPE_WEAPON:
                 pid = weaponGetAmmoTypePid(obj);
@@ -891,7 +891,7 @@ static void op_set_weapon_ammo_pid(Program* program)
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
     if (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
             switch (itemGetType(obj)) {
             case ITEM_TYPE_WEAPON:
                 obj->data.item.weapon.ammoTypePid = ammoTypePid;
@@ -911,7 +911,7 @@ static void op_get_weapon_ammo_count(Program* program)
     // CE: Implementation is different.
     int ammoQuantityOrCharges = 0;
     if (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
             switch (itemGetType(obj)) {
             case ITEM_TYPE_AMMO:
             case ITEM_TYPE_WEAPON:
@@ -937,7 +937,7 @@ static void op_set_weapon_ammo_count(Program* program)
 
     // CE: Implementation is different.
     if (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM) {
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM) {
             switch (itemGetType(obj)) {
             case ITEM_TYPE_AMMO:
             case ITEM_TYPE_WEAPON:
@@ -1596,7 +1596,7 @@ static void op_make_path(Program* program)
     }
 
     // sfall only requires an empty destination tile when the source object is a critter.
-    int requireEmptyDest = PID_TYPE(object->pid) == OBJ_TYPE_CRITTER;
+    int requireEmptyDest = objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER;
 
     // XXX: pathfinderFindPath does not accept a destination buffer length. Use the
     // same capacity as the engine's AnimationSad::rotations storage so this

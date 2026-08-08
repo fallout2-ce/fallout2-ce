@@ -259,7 +259,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
         return -1;
     }
 
-    int parentType = FID_TYPE(owner->fid);
+    ObjectType parentType = objectTypeFromFid(owner->fid);
     if (parentType == OBJ_TYPE_ITEM) {
         ItemType itemType = itemGetType(owner);
         if (itemType == ITEM_TYPE_CONTAINER) {
@@ -275,7 +275,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
 
             Object* containerOwner = objectGetOwner(owner);
             if (containerOwner != nullptr) {
-                if (FID_TYPE(containerOwner->fid) == OBJ_TYPE_CRITTER) {
+                if (objectTypeFromFid(containerOwner->fid) == OBJ_TYPE_CRITTER) {
                     int weightToAdd = itemGetWeight(itemToAdd);
                     weightToAdd *= quantity;
 
@@ -762,7 +762,7 @@ ItemType itemGetType(Object* item)
         return ITEM_TYPE_MISC;
     }
 
-    if (PID_TYPE(item->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(item->pid) != OBJ_TYPE_ITEM) {
         return ITEM_TYPE_MISC;
     }
 
@@ -942,7 +942,7 @@ int objectGetCost(Object* obj)
         }
     }
 
-    if (FID_TYPE(obj->fid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
         Object* item2 = critterGetItem2(obj);
         if (item2 != nullptr && (item2->flags & OBJECT_IN_RIGHT_HAND) == 0) {
             cost += itemGetCost(item2);
@@ -980,7 +980,7 @@ int objectGetInventoryWeight(Object* obj)
         weight += itemGetWeight(item) * inventoryItem->quantity;
     }
 
-    if (FID_TYPE(obj->fid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
         Object* item2 = critterGetItem2(obj);
         if (item2 != nullptr) {
             if ((item2->flags & OBJECT_IN_RIGHT_HAND) == 0) {
@@ -1184,7 +1184,7 @@ Object* itemReplace(Object* owner, Object* itemToReplace, int flags)
 // 0x478244
 bool itemIsHidden(Object* item)
 {
-    if (PID_TYPE(item->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(item->pid) != OBJ_TYPE_ITEM) {
         return false;
     }
 
@@ -2990,7 +2990,7 @@ int drugEffectEventProcess(Object* obj, void* data)
         return 0;
     }
 
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
         return 0;
     }
 
@@ -3160,7 +3160,7 @@ int withdrawalEventWrite(File* stream, void* data)
 // 0x47A4C4
 static void performWithdrawalStart(Object* obj, Perk perk, int pid)
 {
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_start: Was called on non-critter!");
         return;
     }
@@ -3194,7 +3194,7 @@ static void performWithdrawalStart(Object* obj, Perk perk, int pid)
 // 0x47A558
 static void performWithdrawalEnd(Object* obj, Perk perk)
 {
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_end: Was called on non-critter!");
         return;
     }

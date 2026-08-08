@@ -80,7 +80,7 @@ Object* _obj_sight_blocking_at(Object* excludeObj, int tile_num, int elev);
 int objectGetDistanceBetween(Object* object1, Object* object2);
 int objectGetDistanceBetweenTiles(Object* object1, int tile1, Object* object2, int tile2);
 bool objectWithinWalkDistance(Object* critter, Object* target);
-int objectListCreate(int tile, int elevation, int objectType, Object*** objectsPtr);
+int objectListCreate(int tile, int elevation, ObjectType objectType, Object*** objectsPtr);
 void objectListFree(Object** objects);
 void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, unsigned char* a9, unsigned char* a10);
 void _dark_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light);
@@ -89,7 +89,7 @@ void _intensity_mask_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight,
 int objectSetOutline(Object* obj, int a2, Rect* rect);
 int objectClearOutline(Object* obj, Rect* rect);
 int _obj_intersects_with(Object* object, int x, int y);
-int _obj_create_intersect_list(int x, int y, int elevation, int objectType, ObjectWithFlags** entriesPtr);
+int _obj_create_intersect_list(int x, int y, int elevation, ObjectType objectType, ObjectWithFlags** entriesPtr);
 void _obj_delete_intersect_list(ObjectWithFlags** a1);
 void obj_set_seen(int tile);
 void _obj_clear_seen();
@@ -101,7 +101,7 @@ int _obj_save_dude(File* stream);
 int _obj_load_dude(File* stream);
 void _obj_fix_violence_settings(int* fid);
 
-Object* objectTypedFindById(int id, int type);
+Object* objectTypedFindById(int id, ObjectType type);
 bool isExitGridAt(int tile, int elevation);
 
 inline bool objectHasOutline(Object* obj)

@@ -41,9 +41,9 @@ extern Cache gArtCache;
 int artInit();
 void artReset();
 void artExit();
-char* artGetObjectTypeName(int objectType);
-int artIsObjectTypeHidden(int objectType);
-void artToggleObjectTypeHidden(int objectType);
+char* artGetObjectTypeName(ObjectType objectType);
+int artIsObjectTypeHidden(ObjectType objectType);
+void artToggleObjectTypeHidden(ObjectType objectType);
 int artGetFidgetCount(int headFid);
 void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
@@ -71,8 +71,8 @@ bool _art_fid_valid(int fid);
 int _art_alias_num(int index);
 int artCritterFidShouldRun(int fid);
 int artAliasFid(int fid);
-int buildFid(int objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
-int artListIndex(int objectType, const char* name);
+int buildFid(ObjectType objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
+int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);
 int artWrite(const char* path, unsigned char* data);
@@ -94,7 +94,7 @@ public:
     explicit FrmId(const char* path);
 
     int fid() const { return _fid; }
-    bool hasObjectType() const { return _objectType >= 0 && _objectType < OBJ_TYPE_COUNT; }
+    bool hasObjectType() const { return objectTypeIsValid(_objectType); }
     ObjectType objectType() const;
     const char* filePath() const { return _path; }
 

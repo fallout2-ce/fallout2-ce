@@ -1183,7 +1183,7 @@ static void scriptsCloseNearbyElevatorDoors()
     Object* elevatorDoors = objectFindFirstAtElevation(gDude->elevation);
     while (elevatorDoors != nullptr) {
         int pid = elevatorDoors->pid;
-        if (PID_TYPE(pid) == OBJ_TYPE_SCENERY
+        if (objectTypeFromPid(pid) == OBJ_TYPE_SCENERY
             && (pid == PROTO_ID_BROTHERHOOD_DOOR || pid == PROTO_ID_ELEVATOR_DOOR || pid == PROTO_ID_ELEVATOR_DOOR_ALT)
             && tileDistanceBetween(elevatorDoors->tile, gDude->tile) <= 4) {
             break;
@@ -3038,7 +3038,7 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
         return nullptr;
     }
 
-    if (FID_TYPE(gGameDialogHeadFid) != OBJ_TYPE_HEAD) {
+    if (objectTypeFromFid(gGameDialogHeadFid) != OBJ_TYPE_HEAD) {
         shouldStartSpeech = 0;
     }
 

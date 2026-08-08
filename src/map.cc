@@ -1178,7 +1178,7 @@ static int _map_age_dead_critters()
 
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER
             && obj != gDude
             && !objectIsPartyMember(obj)
             && !critterIsDead(obj)) {
@@ -1205,7 +1205,7 @@ static int _map_age_dead_critters()
 
     obj = objectFindFirst();
     while (obj != nullptr) {
-        int type = PID_TYPE(obj->pid);
+        ObjectType type = objectTypeFromPid(obj->pid);
         if (type == OBJ_TYPE_CRITTER) {
             if (obj != gDude && critterIsDead(obj)) {
                 if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(obj->pid, CRITTER_NO_HEAL)) {
@@ -1238,7 +1238,7 @@ static int _map_age_dead_critters()
     int rc = 0;
     for (int index = 0; index < count; index++) {
         Object* obj = objects[index];
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
             // replace the dead critter bodies by the blood pool stain
             if (replaceDeadCritter(obj) == -1) {
                 debugPrint("\n%s: Could not replace dead body by the blood stain for the critter %d with pid %d.", __func__, obj->id, obj->pid);
@@ -1263,7 +1263,7 @@ static int _map_age_dead_critters()
 
 static int replaceDeadCritter(Object* critter)
 {
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         return -1;
     }
 
@@ -1394,7 +1394,7 @@ static void _map_fix_critter_combat_data()
             continue;
         }
 
-        if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
             continue;
         }
 

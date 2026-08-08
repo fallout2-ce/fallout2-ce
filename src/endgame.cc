@@ -464,7 +464,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
         blitBufferToBuffer(backgroundData, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH);
         windowRefresh(gEndgameEndingSlideshowWindow);
 
-        endgameEndingLoadPalette(FID_TYPE(fid), fid & 0xFFF);
+        endgameEndingLoadPalette(objectTypeFromFid(fid), fid & 0xFFF);
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
