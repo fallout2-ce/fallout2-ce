@@ -1566,14 +1566,14 @@ int _map_save_in_game(bool isLeavingMap)
         strcpy(gMapHeader.name, name);
 
         automapSaveCurrent();
+    }
 
-        if (isLeavingMap) {
-            gMapHeader.name[0] = '\0';
-            _obj_remove_all();
-            _proto_remove_all();
-            _square_reset();
-            gameTimeScheduleUpdateEvent();
-        }
+    if (isLeavingMap) {
+        gMapHeader.name[0] = '\0';
+        _obj_remove_all();
+        _proto_remove_all();
+        _square_reset();
+        gameTimeScheduleUpdateEvent();
     }
 
     return 0;
