@@ -2549,7 +2549,7 @@ int objectIsDoor(Object* object)
         return false;
     }
 
-    if (PID_TYPE(object->pid) != OBJ_TYPE_SCENERY) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_SCENERY) {
         return false;
     }
 

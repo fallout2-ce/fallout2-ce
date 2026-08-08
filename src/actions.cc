@@ -1350,7 +1350,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (PID_TYPE(target->pid) != OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER) {
             return -1;
         }
         break;
@@ -1360,7 +1360,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (PID_TYPE(target->pid) != OBJ_TYPE_ITEM && PID_TYPE(target->pid) != OBJ_TYPE_SCENERY) {
+        if (objectTypeFromPid(target->pid) != OBJ_TYPE_ITEM && objectTypeFromPid(target->pid) != OBJ_TYPE_SCENERY) {
             return -1;
         }
 
@@ -1371,7 +1371,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (PID_TYPE(target->pid) != OBJ_TYPE_ITEM && PID_TYPE(target->pid) != OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(target->pid) != OBJ_TYPE_ITEM && objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER) {
             return -1;
         }
 
@@ -1386,7 +1386,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (PID_TYPE(target->pid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(target->pid) == OBJ_TYPE_CRITTER) {
             return -1;
         }
 
@@ -1398,7 +1398,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
             return _action_use_skill_in_combat_error(user);
         }
 
-        if (PID_TYPE(target->pid) != OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER) {
             break;
         }
 

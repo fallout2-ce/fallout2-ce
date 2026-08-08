@@ -1114,7 +1114,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         catchRoll = ROLL_SUCCESS;
     } else {
         int catchChance;
-        if (PID_TYPE(target->pid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(target->pid) == OBJ_TYPE_CRITTER) {
             catchChance = skillGetValue(target, SKILL_STEAL) - stealModifier;
         } else {
             catchChance = 30 - stealModifier;

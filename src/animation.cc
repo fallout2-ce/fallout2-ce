@@ -1783,7 +1783,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
 
     bool isCritter = false;
     int critterType = 0;
-    if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
         isCritter = true;
         critterType = critterGetKillType(object);
     }

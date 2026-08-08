@@ -68,7 +68,7 @@ void protoInstEdit(Object* obj)
 {
     if (obj == nullptr) return;
 
-    switch (PID_TYPE(obj->pid)) {
+    switch (objectTypeFromPid(obj->pid)) {
     case OBJ_TYPE_ITEM:
         protoInstItemEdit(obj);
         break;
@@ -109,7 +109,7 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, int* pObjType, int* pObj
     if (win == -1) return -1;
 
     *pWinId = win;
-    *pObjType = PID_TYPE(obj->pid);
+    *pObjType = objectTypeFromPid(obj->pid);
     *pObjProtoOff = 0;
 
     windowDrawBorder(win);
@@ -321,7 +321,7 @@ static int regModInstFlags(Object* obj)
 {
     int flags = obj->flags;
     int oldFlat = flags & OBJECT_FLAT;
-    int objectType = PID_TYPE(obj->pid);
+    int objectType = objectTypeFromPid(obj->pid);
 
     if (regModFlagsDialog(&flags, objectType)) {
         bool flatChanged = ((oldFlat != 0) != ((flags & OBJECT_FLAT) != 0));
@@ -447,7 +447,7 @@ static int protoInstAddToInven(int pid, int count)
 // proto_choose_pid_inven_fid
 static int protoInstChoosePidInvenFid(Proto* proto)
 {
-    if (PID_TYPE(proto->pid) != 0) return -1;
+    if (objectTypeFromPid(proto->pid) != 0) return -1;
     if (proto->item.inventoryFid == -1) return proto->fid;
     return proto->item.inventoryFid;
 }
@@ -473,7 +473,7 @@ static void protoInstChooseItemsForInvenList(Object* obj)
     for (int pid = 0x00000001; count < kMaxItems; pid++) {
         Proto* proto;
         if (protoGetProto(pid, &proto) == -1) break;
-        if (PID_TYPE(pid) != OBJ_TYPE_ITEM) continue;
+        if (objectTypeFromPid(pid) != OBJ_TYPE_ITEM) continue;
 
         names[count] = static_cast<char*>(internal_malloc(64));
         snprintf(names[count], 64, "%s", protoGetName(pid));

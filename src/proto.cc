@@ -191,7 +191,7 @@ void proto_make_path(char* path, int pid)
     strcpy(path, _cd_path_base);
     strcat(path, _proto_path_base);
     if (pid != -1) {
-        strcat(path, artGetObjectTypeName(PID_TYPE(pid)));
+        strcat(path, artGetObjectTypeName(objectTypeFromPid(pid)));
     }
 }
 
@@ -211,7 +211,7 @@ int _proto_list_str(int pid, char* proto_path)
     char path[COMPAT_MAX_PATH];
     proto_make_path(path, pid);
     strcat(path, "\\");
-    strcat(path, artGetObjectTypeName(PID_TYPE(pid)));
+    strcat(path, artGetObjectTypeName(objectTypeFromPid(pid)));
     strcat(path, ".lst");
 
     File* stream = fileOpen(path, "rt");
@@ -265,7 +265,7 @@ bool _proto_action_can_use(int pid)
         return true;
     }
 
-    if (PID_TYPE(pid) == OBJ_TYPE_ITEM && proto->item.type == ITEM_TYPE_CONTAINER) {
+    if (objectTypeFromPid(pid) == OBJ_TYPE_ITEM && proto->item.type == ITEM_TYPE_CONTAINER) {
         return true;
     }
 
@@ -284,7 +284,7 @@ bool _proto_action_can_use_on(int pid)
         return true;
     }
 
-    if (PID_TYPE(pid) == OBJ_TYPE_ITEM && proto->item.type == ITEM_TYPE_DRUG) {
+    if (objectTypeFromPid(pid) == OBJ_TYPE_ITEM && proto->item.type == ITEM_TYPE_DRUG) {
         return true;
     }
 
@@ -299,7 +299,7 @@ bool _proto_action_can_talk_to(int pid)
         return false;
     }
 
-    if (PID_TYPE(pid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(pid) == OBJ_TYPE_CRITTER) {
         return true;
     }
 
@@ -315,7 +315,7 @@ bool _proto_action_can_talk_to(int pid)
 // 0x49EA5C proto_action_can_pickup
 int _proto_action_can_pickup(int pid)
 {
-    if (PID_TYPE(pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(pid) != OBJ_TYPE_ITEM) {
         return false;
     }
 
@@ -339,7 +339,7 @@ char* protoGetMessage(int pid, int message)
     Proto* proto;
     if (protoGetProto(pid, &proto) != -1) {
         if (proto->messageId != -1) {
-            MessageList* messageList = &(_proto_msg_files[PID_TYPE(pid)]);
+            MessageList* messageList = &(_proto_msg_files[objectTypeFromPid(pid)]);
 
             MessageListItem messageListItem;
             messageListItem.num = proto->messageId + message;
@@ -562,7 +562,7 @@ int objectDataRead(Object* obj, File* stream)
     // CE: Original code reads inventory items pointer which is meaningless.
     if (fileReadInt32(stream, &temp) == -1) return -1;
 
-    if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
         if (fileReadInt32(stream, &(obj->data.critter.reaction)) == -1) return -1;
         if (objectCritterCombatDataRead(&(obj->data.critter.combat), stream) == -1) return -1;
         if (fileReadInt32(stream, &(obj->data.critter.hp)) == -1) return -1;
@@ -576,7 +576,7 @@ int objectDataRead(Object* obj, File* stream)
             obj->data.flags = 0;
         }
 
-        switch (PID_TYPE(obj->pid)) {
+        switch (objectTypeFromPid(obj->pid)) {
         case OBJ_TYPE_ITEM:
             if (protoGetProto(obj->pid, &proto) == -1) return -1;
 
@@ -662,7 +662,7 @@ int objectDataWrite(Object* obj, File* stream)
     // CE: Original code writes inventory items pointer, which is meaningless.
     if (fileWriteInt32(stream, 0) == -1) return -1;
 
-    if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
         if (fileWriteInt32(stream, data->flags) == -1) return -1;
         if (objectCritterCombatDataWrite(&(obj->data.critter.combat), stream) == -1) return -1;
         if (fileWriteInt32(stream, data->critter.hp) == -1) return -1;
@@ -671,7 +671,7 @@ int objectDataWrite(Object* obj, File* stream)
     } else {
         if (fileWriteInt32(stream, data->flags) == -1) return -1;
 
-        switch (PID_TYPE(obj->pid)) {
+        switch (objectTypeFromPid(obj->pid)) {
         case OBJ_TYPE_ITEM:
             if (protoGetProto(obj->pid, &proto) == -1) return -1;
 
@@ -754,7 +754,7 @@ static int _proto_update_gen(Object* obj)
         return -1;
     }
 
-    switch (PID_TYPE(obj->pid)) {
+    switch (objectTypeFromPid(obj->pid)) {
     case OBJ_TYPE_ITEM:
         switch (proto->item.type) {
         case ITEM_TYPE_CONTAINER:
@@ -830,7 +830,7 @@ int _proto_update_init(Object* obj)
 
     memset(&(obj->data), 0, sizeof(ObjectData));
 
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
         return _proto_update_gen(obj);
     }
 
@@ -1069,8 +1069,8 @@ int proto_copy_proto(int srcPid, int dstPid)
     Proto* src;
     Proto* dst;
 
-    srcType = PID_TYPE(srcPid);
-    dstType = PID_TYPE(dstPid);
+    srcType = objectTypeFromPid(srcPid);
+    dstType = objectTypeFromPid(dstPid);
     if (srcType != dstType) {
         return -1;
     }
@@ -1096,7 +1096,7 @@ bool proto_is_subtype(Proto* proto, int subtype)
         return true;
     }
 
-    switch (PID_TYPE(proto->pid)) {
+    switch (objectTypeFromPid(proto->pid)) {
     case OBJ_TYPE_ITEM:
         return proto->item.type == subtype;
     case OBJ_TYPE_SCENERY:
@@ -1115,7 +1115,7 @@ int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
         return -1;
     }
 
-    switch (PID_TYPE(pid)) {
+    switch (objectTypeFromPid(pid)) {
     case OBJ_TYPE_ITEM:
         switch (member) {
         case ITEM_DATA_MEMBER_PID:
@@ -1678,7 +1678,7 @@ static int protoRead(Proto* proto, File* stream)
     if (fileReadInt32(stream, &(proto->messageId)) == -1) return -1;
     if (fileReadInt32(stream, &(proto->fid)) == -1) return -1;
 
-    switch (PID_TYPE(proto->pid)) {
+    switch (objectTypeFromPid(proto->pid)) {
     case OBJ_TYPE_ITEM:
         if (fileReadInt32(stream, &(proto->item.lightDistance)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->item.lightIntensity)) == -1) return -1;
@@ -1863,7 +1863,7 @@ static int protoWrite(Proto* proto, File* stream)
     if (fileWriteInt32(stream, proto->messageId) == -1) return -1;
     if (fileWriteInt32(stream, proto->fid) == -1) return -1;
 
-    switch (PID_TYPE(proto->pid)) {
+    switch (objectTypeFromPid(proto->pid)) {
     case OBJ_TYPE_ITEM:
         if (fileWriteInt32(stream, proto->item.lightDistance) == -1) return -1;
         if (_db_fwriteLong(stream, proto->item.lightIntensity) == -1) return -1;
@@ -1974,7 +1974,7 @@ static int _proto_load_pid(int pid, Proto** protoPtr)
         return -1;
     }
 
-    if (_proto_find_free_subnode(PID_TYPE(pid), protoPtr) == -1) {
+    if (_proto_find_free_subnode(objectTypeFromPid(pid), protoPtr) == -1) {
         fileClose(stream);
         return -1;
     }
@@ -2147,7 +2147,7 @@ int protoGetProto(int pid, Proto** protoPtr)
         return 0;
     }
 
-    ProtoList* protoList = &(_protoLists[PID_TYPE(pid)]);
+    ProtoList* protoList = &(_protoLists[objectTypeFromPid(pid)]);
     ProtoListExtent* protoListExtent = protoList->head;
     while (protoListExtent != nullptr) {
         for (int index = 0; index < protoListExtent->length; index++) {
@@ -2162,7 +2162,7 @@ int protoGetProto(int pid, Proto** protoPtr)
 
     if (protoList->head != nullptr && protoList->tail != nullptr) {
         if (PROTO_LIST_EXTENT_SIZE * protoList->length - (PROTO_LIST_EXTENT_SIZE - protoList->tail->length) > PROTO_LIST_MAX_ENTRIES) {
-            _proto_remove_some_list(PID_TYPE(pid));
+            _proto_remove_some_list(objectTypeFromPid(pid));
         }
     }
 

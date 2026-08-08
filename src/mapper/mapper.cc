@@ -1302,7 +1302,7 @@ void edit_mapper()
                         windowGetHeight(gIsoWindow) - 1 - kToolbarReservedHeight)) {
                     if (tool_active != -1) {
                         if (selectedPid != -1) {
-                            if (PID_TYPE(selectedPid) == OBJ_TYPE_TILE) {
+                            if (objectTypeFromPid(selectedPid) == OBJ_TYPE_TILE) {
                                 placeTile(selectedPid, gGameMouseBouncingCursor->fid);
                             } else {
                                 placeObject(selectedPid, gGameMouseBouncingCursor->fid);
@@ -1344,7 +1344,7 @@ void edit_mapper()
                         mapper_mark_exit_grid();
                     } else if (tool_active != -1) {
                         if (selectedPid != -1) {
-                            if (PID_TYPE(selectedPid) == OBJ_TYPE_TILE) {
+                            if (objectTypeFromPid(selectedPid) == OBJ_TYPE_TILE) {
                                 placeTile(selectedPid, gGameMouseBouncingCursor->fid);
                             } else {
                                 placeObject(selectedPid, gGameMouseBouncingCursor->fid);
@@ -1913,7 +1913,7 @@ void edit_mapper()
                 } else if (_screen_obj != nullptr) {
                     int protoOffset;
                     if (mapperPickObject(_screen_obj, &protoOffset) != -1) {
-                        int objType = PID_TYPE(_screen_obj->pid);
+                        int objType = objectTypeFromPid(_screen_obj->pid);
                         currentType = objType;
                         scrollOffset = protoOffset;
                         toolbarSetObjectType(currentType, currentType, scrollOffset, &hl_obj1);
@@ -1997,7 +1997,7 @@ void edit_mapper()
 
         // --- 'k' — Kill critter ---
         case kBtnKill:
-            if (!map_entered && _screen_obj != nullptr && PID_TYPE(_screen_obj->pid) == OBJ_TYPE_CRITTER) {
+            if (!map_entered && _screen_obj != nullptr && objectTypeFromPid(_screen_obj->pid) == OBJ_TYPE_CRITTER) {
                 critterKill(_screen_obj, ANIM_FALL_FRONT_BLOOD_SF, true);
             }
             break;
@@ -2356,7 +2356,7 @@ void update_toolname(int* pid, int type, int id)
         kToolNameY1,
         260);
 
-    switch (PID_TYPE(proto->pid)) {
+    switch (objectTypeFromPid(proto->pid)) {
     case OBJ_TYPE_ITEM:
         windowDrawText(tool_win,
             gItemTypeNames[proto->item.type],
@@ -2565,7 +2565,7 @@ static int mapperPickObject(Object* obj, int* outOffset)
         return -1;
     }
 
-    int type = PID_TYPE(obj->pid);
+    int type = objectTypeFromPid(obj->pid);
     int maxId = proto_max_id(type);
     constexpr int kScrollOffset = 10;
 

@@ -2108,7 +2108,7 @@ int combatLoad(File* stream)
     if (!isInCombat()) {
         Object* obj = objectFindFirst();
         while (obj != nullptr) {
-            if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
+            if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
                 if (obj->data.critter.combat.whoHitMeCid == -1) {
                     obj->data.critter.combat.whoHitMe = nullptr;
                 }
@@ -2698,7 +2698,7 @@ static void _combat_update_critters_in_los(bool a1)
 // 0x421D50
 void _combat_update_critter_outline_for_los(Object* critter, bool a2)
 {
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -4212,7 +4212,7 @@ static int attackComputeCriticalHit(Attack* attack)
         return 2;
     }
 
-    if (defender != nullptr && PID_TYPE(defender->pid) != OBJ_TYPE_CRITTER) {
+    if (defender != nullptr && objectTypeFromPid(defender->pid) != OBJ_TYPE_CRITTER) {
         return 2;
     }
 
@@ -4282,7 +4282,7 @@ static int _attackFindInvalidFlags(Object* critter, Object* item)
 {
     int flags = 0;
 
-    if (critter != nullptr && PID_TYPE(critter->pid) == OBJ_TYPE_CRITTER && critterFlagCheck(critter->pid, CRITTER_NO_DROP)) {
+    if (critter != nullptr && objectTypeFromPid(critter->pid) == OBJ_TYPE_CRITTER && critterFlagCheck(critter->pid, CRITTER_NO_DROP)) {
         flags |= DAM_DROP;
     }
 
@@ -4755,7 +4755,7 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
     if (knockbackDistancePtr != nullptr
         && (critter->flags & OBJECT_MULTIHEX) == 0
         && (damageType == DAMAGE_TYPE_EXPLOSION || attack->weapon == nullptr || weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode) == ATTACK_TYPE_MELEE)
-        && PID_TYPE(critter->pid) == OBJ_TYPE_CRITTER
+        && objectTypeFromPid(critter->pid) == OBJ_TYPE_CRITTER
         && !critterFlagCheck(critter->pid, CRITTER_NO_KNOCKBACK)) {
         bool shouldKnockback = true;
         bool hasStonewall = false;
@@ -4879,7 +4879,7 @@ void _apply_damage(Attack* attack, bool animated)
 static void _check_for_death(Object* object, int damage, int* flags)
 {
     if (object == nullptr || !critterFlagCheck(object->pid, CRITTER_INVULNERABLE)) {
-        if (object == nullptr || PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+        if (object == nullptr || objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
             if (damage > 0) {
                 if (critterGetHitPoints(object) - damage <= 0) {
                     *flags |= DAM_DEAD;
@@ -4904,7 +4904,7 @@ static void _set_new_results(Object* critter, int flags)
         return;
     }
 
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -5596,7 +5596,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
         return 0;
     }
 
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         return 0;
     }
 

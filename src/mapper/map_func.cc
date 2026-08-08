@@ -650,7 +650,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
     bool gatePassed = useArtNotProtos
         || existing == nullptr
         || srcObj == nullptr
-        || PID_TYPE(srcObj->pid) == OBJ_TYPE_TILE
+        || objectTypeFromPid(srcObj->pid) == OBJ_TYPE_TILE
         || protoGetProto(srcObj->pid, &proto) == -1
         || (proto != nullptr && (proto->flags & 0x10) != 0);
 
@@ -931,7 +931,7 @@ void eraseObject()
                          obj != nullptr;
                          obj = objectFindNextAtElevation()) {
                         if (obj == gDude) continue;
-                        if (PID_TYPE(obj->pid) == OBJ_TYPE_INTERFACE) continue;
+                        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_INTERFACE) continue;
                         if ((obj->flags & OBJECT_HIDDEN) != 0) continue;
                         if (obj == gGameMouseBouncingCursor) continue;
                         if (obj == gGameMouseHexCursor) continue;

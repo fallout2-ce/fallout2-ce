@@ -555,7 +555,7 @@ namespace {
 
         handled = true;
 
-        switch (PID_TYPE(object->pid)) {
+        switch (objectTypeFromPid(object->pid)) {
         case OBJ_TYPE_CRITTER:
             return getCritterObjectData(object, field);
         case OBJ_TYPE_ITEM:
@@ -750,7 +750,7 @@ namespace {
             return changed;
         }
 
-        switch (PID_TYPE(object->pid)) {
+        switch (objectTypeFromPid(object->pid)) {
         case OBJ_TYPE_CRITTER:
             return setCritterObjectData(object, field, data);
         case OBJ_TYPE_ITEM:
@@ -1262,7 +1262,7 @@ void mf_get_object_ai_data(OpcodeContext& ctx)
     const int aiParam = ctx.arg(1).asInt();
 
     ProgramValue result(-1);
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         ctx.setReturn(result);
         return;
     }
@@ -1668,7 +1668,7 @@ void mf_inventory_redraw(OpcodeContext& ctx)
 void mf_item_weight(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
-    if (PID_TYPE(object->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_ITEM) {
         ctx.printError("%s() - expected item object.", ctx.name());
         ctx.setReturn(0);
         return;
@@ -1781,7 +1781,7 @@ static void mf_objects_in_radius(OpcodeContext& ctx)
     int endTile;
     for (int tile = objectsInRadiusFirstTile(sourceTile, radius, &endTile); tile < endTile; tile++) {
         for (Object* object = objectFindFirstAtLocation(elevation, tile); object != nullptr; object = objectFindNextAtLocation()) {
-            if (type != -1 && (object->pid == -1 || PID_TYPE(object->pid) != type)) {
+            if (type != -1 && (object->pid == -1 || objectTypeFromPid(object->pid) != type)) {
                 continue;
             }
 
@@ -2009,7 +2009,7 @@ void mf_unwield_slot(OpcodeContext& ctx)
         return;
     }
 
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         ctx.printError("%s() - the object is not a critter.", ctx.name());
         ctx.setReturn(-1);
         return;

@@ -762,7 +762,7 @@ ItemType itemGetType(Object* item)
         return ITEM_TYPE_MISC;
     }
 
-    if (PID_TYPE(item->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(item->pid) != OBJ_TYPE_ITEM) {
         return ITEM_TYPE_MISC;
     }
 
@@ -1184,7 +1184,7 @@ Object* itemReplace(Object* owner, Object* itemToReplace, int flags)
 // 0x478244
 bool itemIsHidden(Object* item)
 {
-    if (PID_TYPE(item->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(item->pid) != OBJ_TYPE_ITEM) {
         return false;
     }
 
@@ -2990,7 +2990,7 @@ int drugEffectEventProcess(Object* obj, void* data)
         return 0;
     }
 
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
         return 0;
     }
 
@@ -3160,7 +3160,7 @@ int withdrawalEventWrite(File* stream, void* data)
 // 0x47A4C4
 static void performWithdrawalStart(Object* obj, Perk perk, int pid)
 {
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_start: Was called on non-critter!");
         return;
     }
@@ -3194,7 +3194,7 @@ static void performWithdrawalStart(Object* obj, Perk perk, int pid)
 // 0x47A558
 static void performWithdrawalEnd(Object* obj, Perk perk)
 {
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perform_withdrawal_end: Was called on non-critter!");
         return;
     }
