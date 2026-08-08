@@ -115,6 +115,7 @@ int _SavePrefs(bool save);
 static int preferencesWindowInit();
 static int preferencesWindowFree();
 static void _DoThing(int eventCode);
+static int preferencesGetRangeOptionLabelX(int optionIndex, int valuesCount, const char* text);
 
 // 0x48FBD0 row1Ytab
 static const int _row1Ytab[PRIMARY_PREF_COUNT] = {
@@ -563,6 +564,46 @@ static void _JustUpdate_()
 }
 
 // 0x491A68 UpdateThing
+static int preferencesGetRangeOptionLabelX(int optionIndex, int valuesCount, const char* text)
+{
+    switch (optionIndex) {
+    case 0:
+        // 0x4926AA
+        // TODO: Incomplete.
+        return 384;
+    case 1:
+        // 0x4926F3
+        switch (valuesCount) {
+        case 2:
+            return 624 - fontGetStringWidth(text);
+        case 3:
+            // This code path does not use floating-point arithmetic.
+            return 504 - fontGetStringWidth(text) / 2 - 2;
+        case 4:
+            // Uses floating-point arithmetic.
+            return 444 + fontGetStringWidth(text) / 2 - 8;
+        default:
+            return 624 - fontGetStringWidth(text);
+        }
+    case 2:
+        // 0x492766
+        switch (valuesCount) {
+        case 3:
+            return 624 - fontGetStringWidth(text);
+        case 4:
+            // Uses floating-point arithmetic.
+            return 564 - fontGetStringWidth(text) - 4;
+        default:
+            return 624 - fontGetStringWidth(text);
+        }
+    case 3:
+        // 0x49279E
+    default:
+        return 624 - fontGetStringWidth(text);
+    }
+}
+
+// 0x491A68 UpdateThing
 static void _UpdateThing(int index)
 {
     fontSetCurrent(101);
@@ -727,46 +768,7 @@ static void _UpdateThing(int index)
         for (int optionIndex = 0; optionIndex < meta->valuesCount; optionIndex++) {
             const char* str = getmsg(&gPreferencesMessageList, &gPreferencesMessageListItem, meta->labelIds[optionIndex]);
 
-            int x;
-            switch (optionIndex) {
-            case 0:
-                // 0x4926AA
-                x = 384;
-                // TODO: Incomplete.
-                break;
-            case 1:
-                // 0x4926F3
-                switch (meta->valuesCount) {
-                case 2:
-                    x = 624 - fontGetStringWidth(str);
-                    break;
-                case 3:
-                    // This code path does not use floating-point arithmetic
-                    x = 504 - fontGetStringWidth(str) / 2 - 2;
-                    break;
-                case 4:
-                    // Uses floating-point arithmetic
-                    x = 444 + fontGetStringWidth(str) / 2 - 8;
-                    break;
-                }
-                break;
-            case 2:
-                // 0x492766
-                switch (meta->valuesCount) {
-                case 3:
-                    x = 624 - fontGetStringWidth(str);
-                    break;
-                case 4:
-                    // Uses floating-point arithmetic
-                    x = 564 - fontGetStringWidth(str) - 4;
-                    break;
-                }
-                break;
-            case 3:
-                // 0x49279E
-                x = 624 - fontGetStringWidth(str);
-                break;
-            }
+            int x = preferencesGetRangeOptionLabelX(optionIndex, meta->valuesCount, str);
             fontDrawText(gPreferencesWindowBuffer + 640 * (meta->knobY - 12) + x, str, 640, 640, COLOR_DARK_YELLOW);
         }
     } else {
@@ -1538,46 +1540,7 @@ static void _DoThing(int eventCode)
                 for (int optionIndex = 0; optionIndex < meta->valuesCount; optionIndex++) {
                     const char* str = getmsg(&gPreferencesMessageList, &gPreferencesMessageListItem, meta->labelIds[optionIndex]);
 
-                    int x;
-                    switch (optionIndex) {
-                    case 0:
-                        // 0x4926AA
-                        x = 384;
-                        // TODO: Incomplete.
-                        break;
-                    case 1:
-                        // 0x4926F3
-                        switch (meta->valuesCount) {
-                        case 2:
-                            x = 624 - fontGetStringWidth(str);
-                            break;
-                        case 3:
-                            // This code path does not use floating-point arithmetic
-                            x = 504 - fontGetStringWidth(str) / 2 - 2;
-                            break;
-                        case 4:
-                            // Uses floating-point arithmetic
-                            x = 444 + fontGetStringWidth(str) / 2 - 8;
-                            break;
-                        }
-                        break;
-                    case 2:
-                        // 0x492766
-                        switch (meta->valuesCount) {
-                        case 3:
-                            x = 624 - fontGetStringWidth(str);
-                            break;
-                        case 4:
-                            // Uses floating-point arithmetic
-                            x = 564 - fontGetStringWidth(str) - 4;
-                            break;
-                        }
-                        break;
-                    case 3:
-                        // 0x49279E
-                        x = 624 - fontGetStringWidth(str);
-                        break;
-                    }
+                    int x = preferencesGetRangeOptionLabelX(optionIndex, meta->valuesCount, str);
                     fontDrawText(gPreferencesWindowBuffer + PREFERENCES_WINDOW_WIDTH * (meta->knobY - 12) + x, str, PREFERENCES_WINDOW_WIDTH, PREFERENCES_WINDOW_WIDTH, COLOR_DARK_YELLOW);
                 }
             } else {

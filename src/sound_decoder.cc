@@ -865,8 +865,8 @@ static void untransform_subband0(unsigned char* a1, unsigned char* a2, int a3, i
         while (v32 != 0) {
             int* v19 = (int*)a2;
 
-            int v20;
-            int v22;
+            int v20 = 0;
+            int v22 = 0;
             if (v30 & 0x01) {
 
             } else {
