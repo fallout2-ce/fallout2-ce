@@ -2333,9 +2333,29 @@ static void scriptListExtentClearRuntimeState(ScriptListExtent* scriptExtent)
     }
 }
 
+static void scriptListsFreeAll()
+{
+    for (int index = 0; index < SCRIPT_TYPE_COUNT; index++) {
+        ScriptList* scriptList = &(gScriptLists[index]);
+        ScriptListExtent* current = scriptList->head;
+
+        while (current != nullptr) {
+            ScriptListExtent* next = current->next;
+            internal_free(current);
+            current = next;
+        }
+
+        scriptList->head = nullptr;
+        scriptList->tail = nullptr;
+        scriptList->length = 0;
+    }
+}
+
 // 0x4A5C50
 int scriptLoadAll(File* stream)
 {
+    scriptListsFreeAll();
+
     for (int index = 0; index < SCRIPT_TYPE_COUNT; index++) {
         ScriptList* scriptList = &(gScriptLists[index]);
 
