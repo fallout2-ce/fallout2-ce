@@ -576,10 +576,11 @@ int itemDestroyAllHidden(Object* owner)
     Inventory* inventory = &(owner->data.inventory);
     for (int index = 0; index < inventory->length;) {
         InventoryItem* inventoryItem = &(inventory->items[index]);
+        Object* item = inventoryItem->item;
         // NOTE: Uninline.
-        if (itemIsHidden(inventoryItem->item)) {
-            itemRemoveWithReason(owner, inventoryItem->item, 1, RemoveInventoryObjectHookReason::ItemDestroyed);
-            objectDestroy(inventoryItem->item);
+        if (itemIsHidden(item)) {
+            itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::ItemDestroyed);
+            objectDestroy(item);
         } else {
             index++;
         }
