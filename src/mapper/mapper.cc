@@ -2638,7 +2638,7 @@ void handle_new_map(ObjectType* type, int* offset)
         rectGetWidth(&_scr_size));
     windowRefreshRect(tool_win, &rect);
 
-    if (*type < OBJ_TYPE_FIRST || *type > OBJ_TYPE_PROTO_COUNT) {
+    if (*type < OBJ_TYPE_FIRST || *type >= OBJ_TYPE_PROTO_COUNT) {
         *type = OBJ_TYPE_TILE;
     }
 

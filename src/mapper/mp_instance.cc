@@ -449,7 +449,7 @@ static int protoInstAddToInven(int pid, int count)
 // proto_choose_pid_inven_fid
 static int protoInstChoosePidInvenFid(Proto* proto)
 {
-    if (objectTypeFromPid(proto->pid) != 0) return -1;
+    if (objectTypeFromPid(proto->pid) != OBJ_TYPE_ITEM) return -1;
     if (proto->item.inventoryFid == -1) return proto->fid;
     return proto->item.inventoryFid;
 }
