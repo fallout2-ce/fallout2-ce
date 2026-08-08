@@ -1463,7 +1463,7 @@ int checkSceneryUseActionPointCost(Object* obj, Object* _)
 // 0x49C740
 int objectUse(Object* user, Object* targetObj)
 {
-    int type = objectTypeFromFid(targetObj->fid);
+    ObjectType type = objectTypeFromFid(targetObj->fid);
     if (user == gDude) {
         if (type != OBJ_TYPE_SCENERY) {
             return -1;

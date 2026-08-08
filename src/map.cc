@@ -1205,7 +1205,7 @@ static int _map_age_dead_critters()
 
     obj = objectFindFirst();
     while (obj != nullptr) {
-        int type = objectTypeFromPid(obj->pid);
+        ObjectType type = objectTypeFromPid(obj->pid);
         if (type == OBJ_TYPE_CRITTER) {
             if (obj != gDude && critterIsDead(obj)) {
                 if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(obj->pid, CRITTER_NO_HEAL)) {

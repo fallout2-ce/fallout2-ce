@@ -364,19 +364,19 @@ void artExit()
 }
 
 // 0x418F1C
-char* artGetObjectTypeName(int objectType)
+char* artGetObjectTypeName(ObjectType objectType)
 {
     return objectType >= OBJ_TYPE_ITEM && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].name : nullptr;
 }
 
 // 0x418F34
-int artIsObjectTypeHidden(int objectType)
+int artIsObjectTypeHidden(ObjectType objectType)
 {
     return objectType >= OBJ_TYPE_ITEM && objectType < OBJ_TYPE_COUNT ? gArtListDescriptions[objectType].flags & 1 : 0;
 }
 
 // 0x409DF0
-void artToggleObjectTypeHidden(int objectType)
+void artToggleObjectTypeHidden(ObjectType objectType)
 {
     if (objectType >= 0 && objectType < OBJ_TYPE_COUNT) {
         gArtListDescriptions[objectType].flags ^= 1;
@@ -472,7 +472,7 @@ int art_list_str(int fid, char* name)
     return -1;
 }
 
-int artListIndex(int objectType, const char* name)
+int artListIndex(ObjectType objectType, const char* name)
 {
     if (objectType < 0 || objectType >= OBJ_TYPE_COUNT) return -1;
     if (gArtListDescriptions[objectType].fileNames == nullptr) return -1;
@@ -677,7 +677,7 @@ char* artBuildFilePath(int fid)
     int frmId = baseFid & 0xFFF;
     AnimationType animType = animationTypeFromFid(baseFid);
     WeaponAnimation weaponCode = weaponAnimationFromFid(baseFid);
-    int objectType = objectTypeFromFid(baseFid);
+    ObjectType objectType = objectTypeFromFid(baseFid);
 
     if (objectType < OBJ_TYPE_ITEM || objectType >= OBJ_TYPE_COUNT) {
         return nullptr;
@@ -973,7 +973,7 @@ int artCritterFidShouldRun(int fid)
 // 0x4199D4
 int artAliasFid(int fid)
 {
-    int type = objectTypeFromFid(fid);
+    ObjectType type = objectTypeFromFid(fid);
     AnimationType anim = animationTypeFromFid(fid);
     if (type == OBJ_TYPE_CRITTER) {
         if (anim == ANIM_ELECTRIFY
@@ -1092,7 +1092,7 @@ static int buildFidInternal(unsigned short frmId, unsigned char weaponCode, unsi
 // 0x419C88
 // animType doesn't have to be of AnimationType enum only but also HeadAnimation
 // weaponCode doesn't have to be WeaponAnimation enum only but also Fidget or flags
-int buildFid(int objectType, int frmId, int animType, int weaponCode, Rotation rotation)
+int buildFid(ObjectType objectType, int frmId, int animType, int weaponCode, Rotation rotation)
 {
     // Always use rotation 0 (NE) for non-critters, for certain critter animations.
     // For other critter animations, check if art for the given rotation exists, if not try rotation 1 (E) and if that also doesn't exist, then default to 0 (NE).

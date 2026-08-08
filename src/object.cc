@@ -241,10 +241,10 @@ static Object* objectPrepareWhoHitMeForSave(CritterCombatData* combatData)
 }
 
 // 0x6391D0 light_blocked
-static int _light_blocked[6][36];
+static int _light_blocked[ROTATION_COUNT][36];
 
 // 0x639530 light_offsets
-static int _light_offsets[2][6][36];
+static int _light_offsets[2][ROTATION_COUNT][36];
 
 // 0x639BF0 buf_rect
 static Rect gObjectsWindowRect;
@@ -462,11 +462,11 @@ int objectRead(Object* obj, File* stream)
             }
         }
     } else {
-        if (PID_TYPE(obj->pid) == 0 && !(gMapHeader.flags & 0x01)) {
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM && !(gMapHeader.flags & 0x01)) {
             _object_fix_weapon_ammo(obj);
         }
 
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_ITEM
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM
             && itemGetType(obj) == ITEM_TYPE_WEAPON
             && obj->data.item.weapon.ammoQuantity < 0) {
             obj->data.item.weapon.ammoQuantity = 0;
@@ -573,7 +573,7 @@ static int objectLoadAllInternal(File* stream)
 
             _obj_insert(objectListNode);
 
-            if ((objectListNode->obj->flags & OBJECT_NO_REMOVE) && PID_TYPE(objectListNode->obj->pid) == OBJ_TYPE_CRITTER && objectListNode->obj->pid != 18000) {
+            if ((objectListNode->obj->flags & OBJECT_NO_REMOVE) && objectTypeFromPid(objectListNode->obj->pid) == OBJ_TYPE_CRITTER && objectListNode->obj->pid != 18000) {
                 objectListNode->obj->flags &= ~OBJECT_NO_REMOVE;
             }
 
@@ -625,7 +625,7 @@ static int objectLoadAllInternal(File* stream)
 // 0x48911C object_fix_weapon_ammo
 static void _object_fix_weapon_ammo(Object* obj)
 {
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_ITEM) {
         return;
     }
 
@@ -647,7 +647,7 @@ static void _object_fix_weapon_ammo(Object* obj)
             obj->data.item.weapon.ammoQuantity = proto->item.data.weapon.ammoCapacity;
         }
     } else {
-        if (PID_TYPE(obj->pid) == OBJ_TYPE_MISC) {
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_MISC) {
             // FIXME: looks like this code in unreachable
             charges = obj->data.item.misc.charges;
             if (charges == 0xCCCCCCCC) {
@@ -729,7 +729,7 @@ int objectSaveAll(File* stream)
 
                 CritterCombatData* combatData = nullptr;
                 Object* whoHitMe = nullptr;
-                if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+                if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
                     combatData = &(object->data.critter.combat);
                     whoHitMe = objectPrepareWhoHitMeForSave(combatData);
                 }
@@ -738,7 +738,7 @@ int objectSaveAll(File* stream)
                     return -1;
                 }
 
-                if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+                if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
                     combatData->whoHitMe = whoHitMe;
                 }
 
@@ -930,7 +930,7 @@ int objectCreateWithFidPid(Object** objectPtr, int fid, int pid)
     objectListNode->obj->pid = pid;
     objectListNode->obj->id = scriptsNewObjectId();
 
-    if (pid == -1 || PID_TYPE(pid) == OBJ_TYPE_TILE) {
+    if (pid == -1 || objectTypeFromPid(pid) == OBJ_TYPE_TILE) {
         Inventory* inventory = &(objectListNode->obj->data.inventory);
         inventory->length = 0;
         inventory->items = nullptr;
@@ -1515,7 +1515,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
             }
         }
     } else {
-        if (elevation != _obj_last_elev && PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
+        if (elevation != _obj_last_elev && objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
             _combat_delete_critter(obj);
         }
     }
@@ -2072,13 +2072,13 @@ bool _obj_action_can_use(Object* obj)
 // 0x48B278 obj_action_can_talk_to
 bool _obj_action_can_talk_to(Object* obj)
 {
-    return _proto_action_can_talk_to(obj->pid) && (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) && critterIsActive(obj);
+    return _proto_action_can_talk_to(obj->pid) && (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) && critterIsActive(obj);
 }
 
 // 0x48B2A8 obj_portal_is_walk_thru
 bool _obj_portal_is_walk_thru(Object* obj)
 {
-    if (PID_TYPE(obj->pid) != OBJ_TYPE_SCENERY) {
+    if (objectTypeFromPid(obj->pid) != OBJ_TYPE_SCENERY) {
         return false;
     }
 
@@ -2420,7 +2420,6 @@ Object* _obj_blocking_at(Object* excludeObj, int tile, int elev)
 {
     ObjectListNode* objectListNode;
     Object* obj;
-    int type;
 
     if (!hexGridTileIsValid(tile)) {
         return nullptr;
@@ -2431,7 +2430,7 @@ Object* _obj_blocking_at(Object* excludeObj, int tile, int elev)
         obj = objectListNode->obj;
         if (obj->elevation == elev) {
             if ((obj->flags & OBJECT_HIDDEN) == 0 && (obj->flags & OBJECT_NO_BLOCK) == 0 && obj != excludeObj) {
-                type = objectTypeFromFid(obj->fid);
+                ObjectType type = objectTypeFromFid(obj->fid);
                 if (type == OBJ_TYPE_CRITTER
                     || type == OBJ_TYPE_SCENERY
                     || type == OBJ_TYPE_WALL) {
@@ -2451,7 +2450,7 @@ Object* _obj_blocking_at(Object* excludeObj, int tile, int elev)
                 if ((obj->flags & OBJECT_MULTIHEX) != 0) {
                     if (obj->elevation == elev) {
                         if ((obj->flags & OBJECT_HIDDEN) == 0 && (obj->flags & OBJECT_NO_BLOCK) == 0 && obj != excludeObj) {
-                            type = objectTypeFromFid(obj->fid);
+                            ObjectType type = objectTypeFromFid(obj->fid);
                             if (type == OBJ_TYPE_CRITTER
                                 || type == OBJ_TYPE_SCENERY
                                 || type == OBJ_TYPE_WALL) {
@@ -2481,7 +2480,7 @@ Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, int elev)
         if (candidate->elevation == elev) {
             unsigned int flags = candidate->flags;
             if ((flags & OBJECT_HIDDEN) == 0 && ((flags & OBJECT_NO_BLOCK) == 0 || (flags & OBJECT_SHOOT_THRU) == 0) && candidate != excludeObj) {
-                int type = objectTypeFromFid(candidate->fid);
+                ObjectType type = objectTypeFromFid(candidate->fid);
                 // SFALL: Fix to prevent corpses from blocking line of fire.
                 if ((type == OBJ_TYPE_CRITTER && !critterIsDead(candidate))
                     || type == OBJ_TYPE_SCENERY
@@ -2506,7 +2505,7 @@ Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, int elev)
             if ((flags & OBJECT_MULTIHEX) != 0) {
                 if (candidate->elevation == elev) {
                     if ((flags & OBJECT_HIDDEN) == 0 && (flags & OBJECT_NO_BLOCK) == 0 && candidate != excludeObj) {
-                        int type = objectTypeFromFid(candidate->fid);
+                        ObjectType type = objectTypeFromFid(candidate->fid);
                         // SFALL: Fix to prevent corpses from blocking line of
                         // fire.
                         if ((type == OBJ_TYPE_CRITTER && !critterIsDead(candidate))
@@ -2538,7 +2537,7 @@ Object* _obj_ai_blocking_at(Object* excludeObj, int tile, int elevation)
             if ((object->flags & OBJECT_HIDDEN) == 0
                 && (object->flags & OBJECT_NO_BLOCK) == 0
                 && object != excludeObj) {
-                int objectType = objectTypeFromFid(object->fid);
+                ObjectType objectType = objectTypeFromFid(object->fid);
                 if (objectType == OBJ_TYPE_CRITTER
                     || objectType == OBJ_TYPE_SCENERY
                     || objectType == OBJ_TYPE_WALL) {
@@ -2567,7 +2566,7 @@ Object* _obj_ai_blocking_at(Object* excludeObj, int tile, int elevation)
                     if ((object->flags & OBJECT_HIDDEN) == 0
                         && (object->flags & OBJECT_NO_BLOCK) == 0
                         && object != excludeObj) {
-                        int objectType = objectTypeFromFid(object->fid);
+                        ObjectType objectType = objectTypeFromFid(object->fid);
                         if (objectType == OBJ_TYPE_CRITTER
                             || objectType == OBJ_TYPE_SCENERY
                             || objectType == OBJ_TYPE_WALL) {
@@ -2621,7 +2620,7 @@ Object* _obj_sight_blocking_at(Object* excludeObj, int tile, int elevation)
             && (object->flags & OBJECT_HIDDEN) == 0
             && (object->flags & OBJECT_LIGHT_THRU) == 0
             && object != excludeObj) {
-            int objectType = objectTypeFromFid(object->fid);
+            ObjectType objectType = objectTypeFromFid(object->fid);
             if (objectType == OBJ_TYPE_SCENERY || objectType == OBJ_TYPE_WALL) {
                 return object;
             }
@@ -2698,7 +2697,7 @@ bool objectWithinWalkDistance(Object* critter, Object* target)
 }
 
 // 0x48BC38 obj_create_list
-int objectListCreate(int tile, int elevation, int objectType, Object*** objectListPtr)
+int objectListCreate(int tile, int elevation, ObjectType objectType, Object*** objectListPtr)
 {
     if (objectListPtr == nullptr) {
         return -1;
@@ -2990,7 +2989,7 @@ int _obj_intersects_with(Object* object, int x, int y)
                                 flags |= 0x02;
                             }
                         } else {
-                            int type = objectTypeFromFid(object->fid);
+                            ObjectType type = objectTypeFromFid(object->fid);
                             if (type == OBJ_TYPE_SCENERY || type == OBJ_TYPE_WALL) {
                                 Proto* proto;
                                 protoGetProto(object->pid, &proto);
@@ -3028,7 +3027,7 @@ int _obj_intersects_with(Object* object, int x, int y)
 }
 
 // 0x48C5C4 obj_create_intersect_list
-int _obj_create_intersect_list(int x, int y, int elevation, int objectType, ObjectWithFlags** entriesPtr)
+int _obj_create_intersect_list(int x, int y, int elevation, ObjectType objectType, ObjectWithFlags** entriesPtr)
 {
     int upperLeftTile = tileFromScreenXY(x - 320, y - 240, true);
     *entriesPtr = nullptr;
@@ -3054,7 +3053,7 @@ int _obj_create_intersect_list(int x, int y, int elevation, int objectType, Obje
                 }
 
                 if (object->elevation == elevation
-                    && (objectType == -1 || objectTypeFromFid(object->fid) == objectType)
+                    && (objectType == OBJ_TYPE_INVALID || objectTypeFromFid(object->fid) == objectType)
                     && object != gEgg) {
                     int flags = _obj_intersects_with(object, x, y);
                     if (flags != 0) {
@@ -3162,7 +3161,7 @@ void _obj_process_seen()
 // 0x48C8E4 object_name
 char* objectGetName(Object* obj)
 {
-    int objectType = objectTypeFromFid(obj->fid);
+    ObjectType objectType = objectTypeFromFid(obj->fid);
     switch (objectType) {
     case OBJ_TYPE_ITEM:
         return itemGetName(obj);
@@ -3225,7 +3224,7 @@ void _obj_preload_art_cache(int flags)
     int v12 = gObjectFidsLength;
 
     if (objectTypeFromFid(gObjectFids[v12 - 1]) == OBJ_TYPE_WALL) {
-        int objectType = OBJ_TYPE_ITEM;
+        ObjectType objectType = OBJ_TYPE_ITEM;
         do {
             v11--;
             objectType = objectTypeFromFid(gObjectFids[v12 - 1]);
@@ -3541,7 +3540,7 @@ static int _obj_save_obj(File* stream, Object* object)
 
     CritterCombatData* combatData = nullptr;
     Object* whoHitMe = nullptr;
-    if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
         combatData = &(object->data.critter.combat);
         whoHitMe = objectPrepareWhoHitMeForSave(combatData);
     }
@@ -3550,7 +3549,7 @@ static int _obj_save_obj(File* stream, Object* object)
         return -1;
     }
 
-    if (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
         combatData->whoHitMe = whoHitMe;
     }
 
@@ -4924,7 +4923,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
 // 0x48F1B0 obj_render_object
 static void _obj_render_object(Object* object, Rect* rect, int light)
 {
-    int type = objectTypeFromFid(object->fid);
+    ObjectType type = objectTypeFromFid(object->fid);
     if (artIsObjectTypeHidden(type)) {
         return;
     }
@@ -5211,11 +5210,11 @@ static int _obj_preload_sort(const void* a1, const void* a2)
     return cmp;
 }
 
-Object* objectTypedFindById(int id, int type)
+Object* objectTypedFindById(int id, ObjectType type)
 {
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
-        if (obj->id == id && PID_TYPE(obj->pid) == type) {
+        if (obj->id == id && objectTypeFromPid(obj->pid) == type) {
             return obj;
         }
         obj = objectFindNext();

@@ -259,7 +259,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
         return -1;
     }
 
-    int parentType = objectTypeFromFid(owner->fid);
+    ObjectType parentType = objectTypeFromFid(owner->fid);
     if (parentType == OBJ_TYPE_ITEM) {
         ItemType itemType = itemGetType(owner);
         if (itemType == ITEM_TYPE_CONTAINER) {

@@ -57,6 +57,7 @@ inline Rotation rotationFromFid(int fid)
 }
 
 enum ObjectType : int {
+    OBJ_TYPE_INVALID = -1,
     OBJ_TYPE_ITEM,
     OBJ_TYPE_CRITTER,
     OBJ_TYPE_SCENERY,
@@ -69,7 +70,16 @@ enum ObjectType : int {
     OBJ_TYPE_BACKGROUND,
     OBJ_TYPE_SKILLDEX,
     OBJ_TYPE_COUNT,
+    OBJ_TYPE_PROTO_COUNT = OBJ_TYPE_INTERFACE,
+    OBJ_TYPE_FIRST = OBJ_TYPE_ITEM
 };
+
+inline ObjectType operator++(ObjectType& e, int)
+{
+    ObjectType result = e;
+    e = static_cast<ObjectType>(static_cast<int>(e) + 1);
+    return result;
+}
 
 inline ObjectType objectTypeFromFid(int fid)
 {
@@ -77,7 +87,12 @@ inline ObjectType objectTypeFromFid(int fid)
     return static_cast<ObjectType>(objectType);
 }
 
-#define PID_TYPE(value) (value) >> 24
+inline ObjectType objectTypeFromPid(int pid)
+{
+    int objectType = (pid) >> 24;
+    return static_cast<ObjectType>(objectType);
+}
+
 #define SID_TYPE(value) (value) >> 24
 
 typedef enum OutlineType {

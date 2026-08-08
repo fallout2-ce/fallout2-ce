@@ -1078,7 +1078,7 @@ int _action_climb_ladder(Object* critter, Object* ladder)
 int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
 {
     Proto* proto = nullptr;
-    int type = objectTypeFromFid(targetObj->fid);
+    ObjectType type = objectTypeFromFid(targetObj->fid);
     int sceneryType = -1;
     if (type == OBJ_TYPE_SCENERY) {
         if (protoGetProto(targetObj->pid, &proto) == -1) {
@@ -1132,7 +1132,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
         }
 
         AnimationType anim;
-        int objectType = objectTypeFromFid(targetObj->fid);
+        ObjectType objectType = objectTypeFromFid(targetObj->fid);
         if (objectType == OBJ_TYPE_CRITTER && critterIsProne(targetObj)) {
             anim = ANIM_MAGIC_HANDS_GROUND;
         } else if (objectType == OBJ_TYPE_SCENERY && (proto->scenery.extendedFlags & PROTO_EXT_FLAG_MAGIC_HANDS_GROUND) != 0) {

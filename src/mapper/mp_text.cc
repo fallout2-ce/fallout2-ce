@@ -14,7 +14,7 @@ namespace fallout {
 // 0x49DAC4
 int proto_build_all_texts()
 {
-    for (int type = OBJ_TYPE_ITEM; type <= OBJ_TYPE_MISC; type++) {
+    for (ObjectType type = OBJ_TYPE_ITEM; type <= OBJ_TYPE_MISC; type++) {
         if (inputGetInput() == KEY_ESCAPE) {
             win_timed_msg("BUILD all Protos has been aborted!", COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
             return 0;

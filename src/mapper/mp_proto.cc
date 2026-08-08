@@ -607,14 +607,14 @@ int proto_pick_ai_packet(int* value)
 }
 
 // 0x49B778
-int proto_build_all_type(int type)
+int proto_build_all_type(ObjectType type)
 {
     // TODO: Incomplete.
     (void)type;
     return 0;
 }
 
-int proto_build_all_type_binary(int type)
+int proto_build_all_type_binary(ObjectType type)
 {
     // TODO: rebuild binary proto list for given object type.
     (void)type;
@@ -692,7 +692,7 @@ static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, p
 }
 
 // proto_choose_multi_pids_func
-int protoChooseMultiPids(int pidType, protoChooseFidCallback fidFunc, protoChooseAddCallback addFunc)
+int protoChooseMultiPids(ObjectType pidType, protoChooseFidCallback fidFunc, protoChooseAddCallback addFunc)
 {
     constexpr int kGridCols = 4;
     constexpr int kGridRows = 4;

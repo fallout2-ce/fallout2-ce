@@ -699,10 +699,10 @@ void gameMouseRefresh()
                 _gmouse_3d_last_move_time = v3;
                 _gmouse_3d_hover_test = true;
 
-                Object* pointedObject = gameMouseGetObjectUnderCursor(-1, true, gElevation);
+                Object* pointedObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
                 if (pointedObject != nullptr) {
                     int primaryAction = -1;
-                    int objectType = objectTypeFromFid(pointedObject->fid);
+                    ObjectType objectType = objectTypeFromFid(pointedObject->fid);
                     switch (objectType) {
                     case OBJ_TYPE_SCENERY:
                     case OBJ_TYPE_WALL:
@@ -787,7 +787,7 @@ void gameMouseRefresh()
             } else if (gGameMouseMode == GAME_MOUSE_MODE_CROSSHAIR) {
                 Object* pointedObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_CRITTER, false, gElevation);
                 if (pointedObject == nullptr) {
-                    pointedObject = gameMouseGetObjectUnderCursor(-1, false, gElevation);
+                    pointedObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, false, gElevation);
                     if (!objectIsDoor(pointedObject)) {
                         pointedObject = nullptr;
                     }
@@ -1013,9 +1013,9 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         }
 
         if (gGameMouseMode == GAME_MOUSE_MODE_ARROW) {
-            Object* targetObj = gameMouseGetObjectUnderCursor(-1, true, gElevation);
+            Object* targetObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
             if (targetObj != nullptr) {
-                int objectType = objectTypeFromFid(targetObj->fid);
+                ObjectType objectType = objectTypeFromFid(targetObj->fid);
                 switch (objectType) {
                 case OBJ_TYPE_WALL:
                 case OBJ_TYPE_SCENERY:
@@ -1072,7 +1072,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         if (gGameMouseMode == GAME_MOUSE_MODE_CROSSHAIR) {
             Object* targetObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_CRITTER, false, gElevation);
             if (targetObj == nullptr) {
-                targetObj = gameMouseGetObjectUnderCursor(-1, false, gElevation);
+                targetObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, false, gElevation);
                 if (!objectIsDoor(targetObj)) {
                     targetObj = nullptr;
                 }
@@ -1089,7 +1089,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         }
 
         if (gGameMouseMode == GAME_MOUSE_MODE_USE_CROSSHAIR) {
-            Object* object = gameMouseGetObjectUnderCursor(-1, true, gElevation);
+            Object* object = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
             if (object != nullptr) {
                 Object* weapon;
                 if (interfaceGetActiveItem(&weapon) != -1) {
@@ -1127,7 +1127,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
             || gGameMouseMode == GAME_MOUSE_MODE_USE_TRAPS
             || gGameMouseMode == GAME_MOUSE_MODE_USE_SCIENCE
             || gGameMouseMode == GAME_MOUSE_MODE_USE_REPAIR) {
-            Object* object = gameMouseGetObjectUnderCursor(-1, true, gElevation);
+            Object* object = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
             if (object == nullptr || actionUseSkill(gDude, object, gGameMouseModeSkills[gGameMouseMode - FIRST_GAME_MOUSE_MODE_SKILL]) != -1) {
                 gameMouseSetCursor(MOUSE_CURSOR_NONE);
                 gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
@@ -1137,7 +1137,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
     }
 
     if ((mouseState & MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT) == MOUSE_EVENT_LEFT_BUTTON_DOWN_REPEAT && gGameMouseMode == GAME_MOUSE_MODE_ARROW) {
-        Object* targetObj = gameMouseGetObjectUnderCursor(-1, true, gElevation);
+        Object* targetObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
         if (targetObj != nullptr) {
             int actionMenuItemsCount = 0;
             int actionMenuItems[GAME_MOUSE_ACTION_MENU_ITEM_COUNT - 1];
@@ -1699,7 +1699,7 @@ bool gameMouseObjectsIsVisible()
 }
 
 // 0x44CEC4 object_under_mouse
-Object* gameMouseGetObjectUnderCursor(int objectType, bool includeDude, int elevation)
+Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, int elevation)
 {
     int mouseX;
     int mouseY;

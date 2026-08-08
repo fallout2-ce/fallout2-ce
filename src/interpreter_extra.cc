@@ -1259,7 +1259,7 @@ static void opGetObjectType(Program* program)
 {
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
-    int objectType = -1;
+    ObjectType objectType = OBJ_TYPE_INVALID;
     if (object != nullptr) {
         objectType = objectTypeFromFid(object->fid);
     }

@@ -1745,7 +1745,7 @@ void mf_obj_under_cursor(OpcodeContext& ctx)
     int onlyCritter = ctx.arg(0).asInt();
     int includeDude = ctx.arg(1).asInt();
 
-    Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : -1, includeDude, gElevation);
+    Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : OBJ_TYPE_INVALID, includeDude, gElevation);
 
     ctx.setReturn(object);
 }

@@ -5978,7 +5978,7 @@ void _combat_outline_off()
             objectDisableOutline(_combat_list[i], nullptr);
         }
     } else {
-        v5 = objectListCreate(-1, gElevation, 1, &v9);
+        v5 = objectListCreate(-1, gElevation, OBJ_TYPE_CRITTER, &v9);
         for (i = 0; i < v5; i++) {
             objectDisableOutline(v9[i], nullptr);
             objectClearOutline(v9[i], nullptr);
