@@ -1,7 +1,7 @@
 #include "sfall_callbacks.h"
 
-#include "content_config.h"
 #include "combat.h"
+#include "content_config.h"
 #include "display_monitor.h"
 #include "game_dialog.h"
 #include "interface.h"
