@@ -113,6 +113,7 @@ void pick_region(Rect* rect)
     temp.top = y;
     temp.right = x;
     temp.bottom = y;
+    *rect = temp;
 
     while ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) == 0) {
         sharedFpsLimiter.mark();
@@ -122,6 +123,8 @@ void pick_region(Rect* rect)
 
         if (x != temp.right || y != temp.bottom) {
             erase_rect(rect);
+            temp.right = x;
+            temp.bottom = y;
             sort_rect(rect, &temp);
             draw_rect(rect, COLOR_LIGHT_YELLOW);
         }
@@ -181,7 +184,11 @@ void draw_rect(Rect* rect, unsigned char color)
 // 0x4843A0
 void erase_rect(Rect* rect)
 {
-    Rect r = *rect;
+    Rect r;
+    r.left = rect->left;
+    r.top = rect->top;
+    r.right = rect->right;
+    r.bottom = rect->bottom;
 
     r.bottom = rect->top;
     windowRefreshAll(&r);
@@ -192,6 +199,7 @@ void erase_rect(Rect* rect)
 
     r.left = rect->left;
     r.top = rect->bottom;
+    r.right = rect->right;
     windowRefreshAll(&r);
 
     r.top = rect->top;

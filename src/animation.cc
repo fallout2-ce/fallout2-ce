@@ -2899,8 +2899,8 @@ void _object_animate()
             }
 
             if ((sad->flags & ANIM_SAD_FOREVER) != 0 || object->frame != 0) {
-                int x;
-                int y;
+                int x = 0;
+                int y = 0;
 
                 CacheEntry* cacheHandle;
                 Art* art = artLock(object->fid, &cacheHandle);

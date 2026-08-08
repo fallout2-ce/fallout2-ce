@@ -1425,6 +1425,13 @@ static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
     // Pagination logic
     int maxEntriesPerPage = PIPBOY_STATUS_QUEST_LINES;
     totalPages = (gPipboyQuestLocationsCount + maxEntriesPerPage - 1) / maxEntriesPerPage;
+    if (gPipboyQuestLocationsCount == 0) {
+        gPipboyWindowQuestsCurrentPageCount = 0;
+        renderPagination(_view_page_quest, totalPages);
+        renderNavigationButtons(_view_page_quest, totalPages, false);
+        return;
+    }
+
     int startIndex = _view_page_quest * maxEntriesPerPage;
     int endIndex = startIndex + maxEntriesPerPage;
 

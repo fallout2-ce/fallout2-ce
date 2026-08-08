@@ -3879,8 +3879,8 @@ static int characterEditorShowOptions()
         fontSetCurrent(103);
 
         int err = 0;
-        unsigned char* down[5];
-        unsigned char* up[5];
+        unsigned char* down[5] = {};
+        unsigned char* up[5] = {};
         int size = width * height;
         int y = 17;
         int index;

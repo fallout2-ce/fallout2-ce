@@ -1501,6 +1501,10 @@ static void opAdd(Program* program)
             strings[0] = (char*)internal_malloc_safe(80, __FILE__, __LINE__);
             snprintf(strings[0], 80, "%p", value[0].pointerValue);
             break;
+        default:
+            strings[0] = (char*)internal_malloc_safe(1, __FILE__, __LINE__);
+            strings[0][0] = '\0';
+            break;
         }
 
         tempString = (char*)internal_malloc_safe(strlen(strings[1]) + strlen(strings[0]) + 1, __FILE__, __LINE__); // "..\\int\\INTRPRET.C", 1015
