@@ -87,6 +87,8 @@ void protoInstEdit(Object* obj)
     case OBJ_TYPE_MISC:
         protoInstMiscEdit(obj);
         break;
+    default:
+        break;
     }
 }
 

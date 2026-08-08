@@ -1969,6 +1969,8 @@ static bool _obj_is_lockable(Object* obj)
             return true;
         }
         break;
+    default:
+        break;
     }
 
     return false;
@@ -1987,9 +1989,9 @@ bool objectIsLocked(Object* obj)
         return data->flags & CONTAINER_FLAG_LOCKED;
     case OBJ_TYPE_SCENERY:
         return data->scenery.door.openFlags & DOOR_FLAG_LOCKED;
+    default:
+        return false;
     }
-
-    return false;
 }
 
 // 0x49D20C
@@ -2027,9 +2029,9 @@ int objectUnlock(Object* object)
     case OBJ_TYPE_SCENERY:
         object->data.scenery.door.openFlags &= ~OBJ_LOCKED;
         return 0;
+    default:
+        return -1;
     }
-
-    return -1;
 }
 
 // 0x49D294
@@ -2055,6 +2057,8 @@ bool objectIsOpenable(Object* obj)
         if (proto->scenery.type == SCENERY_TYPE_DOOR) {
             couldBeOpenable = true;
         }
+        break;
+    default:
         break;
     }
 
@@ -2178,6 +2182,8 @@ int objectJamLock(Object* obj)
     case OBJ_TYPE_SCENERY:
         data->scenery.door.openFlags |= DOOR_FLAG_JAMMGED;
         break;
+    default:
+        break;
     }
 
     return 0;
@@ -2197,6 +2203,8 @@ int objectUnjamLock(Object* obj)
         break;
     case OBJ_TYPE_SCENERY:
         data->scenery.door.openFlags &= ~DOOR_FLAG_JAMMGED;
+        break;
+    default:
         break;
     }
 

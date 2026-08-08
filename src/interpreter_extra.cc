@@ -909,6 +909,8 @@ static void opCreateObject(Program* program)
         case OBJ_TYPE_SCENERY:
             scriptType = SCRIPT_TYPE_ITEM;
             break;
+        default:
+            break;
         }
 
         if (object->sid != -1) {

@@ -1099,9 +1099,9 @@ bool proto_is_subtype(Proto* proto, int subtype)
         return proto->item.type == subtype;
     case OBJ_TYPE_SCENERY:
         return proto->scenery.type == subtype;
+    default:
+        return false;
     }
-
-    return false;
 }
 
 // proto_data_member
@@ -1332,6 +1332,8 @@ int protoGetDataMember(int pid, int member, ProtoDataMemberValue* value)
             debugPrint("\n\tError: Unimp'd data member in member in proto_data_member!");
             break;
         }
+        break;
+    default:
         break;
     }
 
@@ -1735,9 +1737,9 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->misc.extendedFlags)) == -1) return -1;
 
         return 0;
+    default:
+        return -1;
     }
-
-    return -1;
 }
 
 // 0x4A1390 proto_write_item_data
@@ -1918,9 +1920,9 @@ static int protoWrite(Proto* proto, File* stream)
         if (fileWriteInt32(stream, proto->misc.extendedFlags) == -1) return -1;
 
         return 0;
+    default:
+        return -1;
     }
-
-    return -1;
 }
 
 // 0x4A1B30 proto_save_pid

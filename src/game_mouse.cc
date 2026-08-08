@@ -766,6 +766,8 @@ void gameMouseRefresh()
                             }
                         }
                         break;
+                    default:
+                        break;
                     }
 
                     if (primaryAction != -1) {
@@ -1064,6 +1066,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         }
                     }
                     break;
+                default:
+                    break;
                 }
             }
             return;
@@ -1195,6 +1199,8 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_INVENTORY;
                 }
                 actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_CANCEL;
+                break;
+            default:
                 break;
             }
 
