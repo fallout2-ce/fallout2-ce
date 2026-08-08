@@ -407,7 +407,7 @@ static void optionsWindowCleanup(bool restoreWorldState)
 // preserveWorldState is always false
 int showPause(bool preserveWorldState)
 {
-    bool gameMouseWasVisible;
+    bool gameMouseWasVisible = false;
     if (!preserveWorldState) {
         optionsWindowIsoWasEnabled = isoDisable();
         colorCycleDisable();

@@ -1191,7 +1191,7 @@ static void _ai_run_away(Object* a1, Object* a2)
 
         int rotation = tileGetRotationTo(a2->tile, a1->tile);
 
-        int destination;
+        int destination = a1->tile;
         int actionPoints = combatData->ap;
         for (; actionPoints > 0; actionPoints -= 1) {
             destination = tileGetTileInDirection(a1->tile, rotation, actionPoints);
@@ -1238,7 +1238,7 @@ static int _ai_move_away(Object* a1, Object* a2, int a3)
 
         int rotation = tileGetRotationTo(a2->tile, a1->tile);
 
-        int destination;
+        int destination = a1->tile;
         int actionPointsLeft = actionPoints;
         for (; actionPointsLeft > 0; actionPointsLeft -= 1) {
             destination = tileGetTileInDirection(a1->tile, rotation, actionPointsLeft);
@@ -1257,7 +1257,7 @@ static int _ai_move_away(Object* a1, Object* a2, int a3)
             }
         }
 
-        if (actionPoints > 0) {
+        if (actionPointsLeft > 0) {
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
             animationRegisterMoveToTile(a1, destination, a1->elevation, actionPoints, 0);
             if (reg_anim_end() == 0) {
@@ -1842,7 +1842,7 @@ static Object* _ai_best_weapon(Object* attacker, Object* weapon1, Object* weapon
     attackInit(&attack, attacker, defender, HIT_MODE_RIGHT_WEAPON_PRIMARY, HIT_LOCATION_TORSO);
 
     AttackType attackType1;
-    int distance;
+    int distance = 0;
     AttackType attackType2;
     int avgDamage2 = 0;
 
@@ -2649,7 +2649,7 @@ static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode h
         if (critterCanAim(attacker, hitMode)) {
             AiPacket* ai = aiGetPacket(attacker);
             if (randomBetween(1, ai->called_freq) == 1) {
-                int intelligenceRequired;
+                int intelligenceRequired = 5;
                 switch (settings.preferences.combat_difficulty) {
                 case COMBAT_DIFFICULTY_EASY:
                     intelligenceRequired = 7;

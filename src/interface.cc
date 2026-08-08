@@ -1709,7 +1709,7 @@ static int interfaceBarRefreshMainAction()
             if (hitMode != HIT_MODE_INVALID) {
                 actionPoints = weaponGetActionPointCost(gDude, hitMode, bullseyeFid != -1);
 
-                int id;
+                int id = -1;
                 AnimationType anim = critterGetAnimationForHitMode(gDude, hitMode);
                 switch (anim) {
                 case ANIM_THROW_PUNCH:
@@ -1782,7 +1782,9 @@ static int interfaceBarRefreshMainAction()
                     break;
                 }
 
-                primaryFid = buildFid(OBJ_TYPE_INTERFACE, id, 0, 0, 0);
+                if (id != -1) {
+                    primaryFid = buildFid(OBJ_TYPE_INTERFACE, id, 0, 0, 0);
+                }
             }
 
             if (primaryFid != -1) {
