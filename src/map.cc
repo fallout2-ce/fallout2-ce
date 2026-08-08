@@ -923,7 +923,9 @@ static int mapLoad(File* stream)
 
     _obj_remove_all();
     // Sfall: reset protos on map load
-    _proto_remove_all();
+    if (!settings.system.executableIsMapper()) {
+        _proto_remove_all();
+    }
 
     if (gMapHeader.globalVariablesCount < 0) {
         gMapHeader.globalVariablesCount = 0;
