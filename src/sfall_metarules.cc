@@ -35,6 +35,7 @@
 #include "scripts.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h" // For CreateTempArray, SetArray
+#include "sfall_global_scripts.h"
 #include "sfall_ini.h"
 #include "sfall_object_name.h"
 #include "sfall_opcodes.h"
@@ -796,6 +797,7 @@ static void mf_item_weight(OpcodeContext& ctx);
 static void mf_loot_obj(OpcodeContext& ctx);
 static void mf_message_box(OpcodeContext& ctx);
 static void mf_add_extra_msg_file(OpcodeContext& ctx);
+static void mf_add_g_timer_event(OpcodeContext& ctx);
 static void mf_add_iface_tag(OpcodeContext& ctx);
 static void mf_art_frame_data(OpcodeContext& ctx);
 static void mf_art_cache_flush(OpcodeContext& ctx);
@@ -806,6 +808,7 @@ static void mf_objects_in_radius(OpcodeContext& ctx);
 static void mf_opcode_exists(OpcodeContext& ctx);
 static void mf_outlined_object(OpcodeContext& ctx);
 static void mf_real_dude_obj(OpcodeContext& ctx);
+static void mf_remove_timer_event(OpcodeContext& ctx);
 static void mf_remove_wm_town_names(OpcodeContext& ctx);
 static void mf_rest_option_msgs(OpcodeContext& ctx);
 static void mf_set_car_intface_art(OpcodeContext& ctx);
@@ -826,6 +829,7 @@ static void mf_set_window_flag(OpcodeContext& ctx);
 static void mf_set_unique_id(OpcodeContext& ctx);
 static void mf_show_window(OpcodeContext& ctx);
 static void mf_signal_close_game(OpcodeContext& ctx);
+static void mf_spatial_radius(OpcodeContext& ctx);
 static void mf_tile_by_position(OpcodeContext& ctx);
 static void mf_tile_refresh_display(OpcodeContext& ctx);
 static void mf_unwield_slot(OpcodeContext& ctx);
@@ -841,8 +845,8 @@ static void mf_floor2(OpcodeContext& ctx);
 // TODO: reduce duplication further once this context is shared with opcode handlers too.
 const MetaruleInfo kMetarules[] = {
     { "add_extra_msg_file", mf_add_extra_msg_file, 1, 2, -1, { ARG_STRING, ARG_INT } },
+    { "add_g_timer_event", mf_add_g_timer_event, 2, 2, -1, { ARG_INT, ARG_INT } },
     { "add_iface_tag", mf_add_iface_tag, 0, 0 },
-    // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
     { "art_cache_clear", mf_art_cache_flush, 0, 0 },
     { "art_frame_data", mf_art_frame_data, 1, 3, 0, { ARG_INTSTR, ARG_INT, ARG_INT } },
@@ -906,7 +910,7 @@ const MetaruleInfo kMetarules[] = {
     { "remove_wm_town_names", mf_remove_wm_town_names, 1, 1, -1, { ARG_INT } },
     { "rest_option_msgs", mf_rest_option_msgs, 1, 1, -1, { ARG_INT } },
     { "reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, { ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT } },
-    // {"remove_timer_event",        mf_remove_timer_event,        0, 1, -1, {ARG_INT}},
+    { "remove_timer_event", mf_remove_timer_event, 0, 1, -1, { ARG_INT } },
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
     // {"set_can_rest_on_map",       mf_set_rest_on_map,           3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
     { "set_car_intface_art", mf_set_car_intface_art, 1, 1, -1, { ARG_INT } },
@@ -938,7 +942,7 @@ const MetaruleInfo kMetarules[] = {
     { "set_window_flag", mf_set_window_flag, 3, 3, -1, { ARG_INTSTR, ARG_INT, ARG_INT } },
     { "show_window", mf_show_window, 0, 1, -1, { ARG_STRING } },
     { "signal_close_game", mf_signal_close_game, 0, 0 },
-    // {"spatial_radius",            mf_spatial_radius,            1, 1,  0, {ARG_OBJECT}},
+    { "spatial_radius", mf_spatial_radius, 1, 1, 0, { ARG_OBJECT } },
     { "string_compare", mf_string_compare, 2, 3, 0, { ARG_STRING, ARG_STRING, ARG_INT } },
     { "string_find", mf_string_find, 2, 3, -1, { ARG_STRING, ARG_STRING, ARG_INT } },
     { "string_format", mf_string_format, 2, 8, 0, { ARG_STRING, ARG_ANY, ARG_ANY, ARG_ANY, ARG_ANY, ARG_ANY, ARG_ANY, ARG_ANY } },
@@ -1738,6 +1742,49 @@ void mf_opcode_exists(OpcodeContext& ctx)
     auto opcodeHandler = gInterpreterOpcodeHandlers[opcodeIndex];
     int opcodeExists = opcodeHandler != nullptr ? 1 : 0;
     ctx.setReturn(opcodeExists);
+}
+
+void mf_add_g_timer_event(OpcodeContext& ctx)
+{
+    if (sfall_gl_scr_add_timer_event(ctx.program(), ctx.arg(0).asInt(), ctx.arg(1).asInt())) {
+        return;
+    }
+
+    int sid = scriptGetSid(ctx.program());
+    if (sid == -1) {
+        return;
+    }
+
+    scriptAddTimerEvent(sid, ctx.arg(0).asInt(), ctx.arg(1).asInt());
+}
+
+void mf_remove_timer_event(OpcodeContext& ctx)
+{
+    if (ctx.numArgs() > 0) {
+        if (sfall_gl_scr_remove_timer_events(ctx.program(), ctx.arg(0).asInt())) {
+            return;
+        }
+    } else {
+        if (sfall_gl_scr_remove_all_timer_events(ctx.program())) {
+            return;
+        }
+    }
+
+    int sid = scriptGetSid(ctx.program());
+    if (sid == -1) {
+        return;
+    }
+
+    if (ctx.numArgs() > 0) {
+        scriptRemoveTimerEvents(sid, ctx.arg(0).asInt());
+    } else {
+        scriptRemoveAllTimerEvents(sid);
+    }
+}
+
+void mf_spatial_radius(OpcodeContext& ctx)
+{
+    ctx.setReturn(scriptGetSpatialRadius(ctx.arg(0).asObject()));
 }
 
 void mf_obj_under_cursor(OpcodeContext& ctx)

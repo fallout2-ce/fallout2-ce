@@ -1547,6 +1547,30 @@ static void op_obj_blocking_at(Program* program)
     programStackPushPointer(program, obstacle);
 }
 
+// create_spatial
+static void op_create_spatial(Program* program)
+{
+    int radius = programStackPopInteger(program);
+    int elevation = programStackPopInteger(program);
+    int tile = programStackPopInteger(program);
+    int scriptIndex = programStackPopInteger(program);
+
+    if (scriptIndex == 0) {
+        programPrintError("create_spatial: invalid script index number %d.", scriptIndex);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    scriptIndex--;
+    if (!scriptsIsValidScriptIndex(scriptIndex)) {
+        programPrintError("create_spatial: invalid script index (engine) number %d.", scriptIndex);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    programStackPushPointer(program, scriptCreateSpatial(scriptIndex, tile, elevation, radius));
+}
+
 // tile_light
 static void op_tile_light(Program* program)
 {
@@ -2432,6 +2456,7 @@ void sfallOpcodesInit()
     // 0x8272 - array path_find_to(object objFrom, int tileTo, int blockingType)
     interpreterRegisterOpcode(0x8272, op_make_path);
     // 0x8273 - object create_spatial(int scriptID, int tile, int elevation, int radius)
+    interpreterRegisterOpcode(0x8273, op_create_spatial);
     // 0x8274 - int art_exists(int artFID)
     interpreterRegisterOpcode(0x8274, op_art_exists);
     // 0x8275 - int obj_is_carrying_obj(object invenObj, object itemObj)

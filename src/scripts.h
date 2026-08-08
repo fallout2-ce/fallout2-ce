@@ -94,6 +94,7 @@ struct DetachedScriptContext {
     Program* program = nullptr;
     DetachedScriptOwnerKind ownerKind = DetachedScriptOwnerKind::GlobalScript;
     int returnValue = 0;
+    int fixedParam = 0;
 };
 
 typedef struct Script {
@@ -196,6 +197,7 @@ int scriptGetSid(Program* program);
 Object* scriptGetSelf(Program* program);
 bool scriptDetachedContextRegister(Program* program, DetachedScriptOwnerKind ownerKind);
 void scriptDetachedContextUnregister(Program* program);
+bool scriptDetachedContextSetFixedParam(Program* program, int fixedParam);
 bool scriptContextResolve(Program* program, ScriptContextRef* out);
 bool scriptContextSetOverrideSelf(Program* program, Object* object);
 bool scriptContextConsumeOverrideSelf(Program* program, Object** objectPtr);
@@ -209,6 +211,8 @@ int scriptSetActionBeingUsed(int sid, int value);
 void _scrSetQueueTestVals(Object* obj, int value);
 int _scrQueueRemoveFixed(Object* obj, void* data);
 int scriptAddTimerEvent(int sid, int delay, int param);
+int scriptRemoveTimerEvents(int sid, int fixedParam);
+int scriptRemoveAllTimerEvents(int sid);
 int scriptEventWrite(File* stream, void* data);
 int scriptEventRead(File* stream, void** dataPtr);
 int scriptEventProcess(Object* obj, void* data);
@@ -249,6 +253,8 @@ int scriptSaveAll(File* stream);
 int scriptLoadAll(File* stream);
 int scriptGetScript(int sid, Script** script);
 int scriptAdd(int* sidPtr, int scriptType);
+Object* scriptCreateSpatial(int scriptIndex, int tile, int elevation, int radius);
+int scriptGetSpatialRadius(Object* obj);
 int scriptsGetFileName(int scriptIndex, char* name, size_t size);
 int scriptsGetListLength();
 bool scriptsIsValidScriptIndex(int scriptIndex);
