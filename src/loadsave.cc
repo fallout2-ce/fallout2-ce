@@ -32,6 +32,7 @@
 #include "interface.h"
 #include "item.h"
 #include "kb.h"
+#include "mainmenu.h"
 #include "map.h"
 #include "memory.h"
 #include "message.h"
@@ -1208,8 +1209,7 @@ int lsgLoadGame(int mode)
     windowRefresh(gLoadSaveWindow);
     renderPresent();
     if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU) {
-        colorPaletteLoad("color.pal");
-        paletteFadeTo(_cmap);
+        mainMenuShowSubscreen(true);
     }
     _dbleclkcntr = 24;
 
@@ -1558,7 +1558,7 @@ int lsgLoadGame(int mode)
     }
 
     if (mode == LOAD_SAVE_MODE_FROM_MAIN_MENU && rc == 0) {
-        paletteFadeTo(gPaletteBlack);
+        mainMenuRestoreAfterSubscreen(true);
     }
 
     lsgWindowFree(mode == LOAD_SAVE_MODE_FROM_MAIN_MENU

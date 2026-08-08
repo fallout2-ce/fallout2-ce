@@ -47,6 +47,9 @@ struct UISettings {
     // Show the Help option in the in-game options menu.
     bool in_game_menu_help = true;
 
+    // Whether to keep the main menu visible behind 640x480 main-menu subwindows
+    // like load, options, and new game when the effective menu background is larger.
+    bool main_menu_overlay_subscreens = true;
     // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
     bool iface_bar_mode = false;
 
