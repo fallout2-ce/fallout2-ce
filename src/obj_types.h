@@ -56,7 +56,7 @@ inline Rotation rotationFromFid(int fid)
     return static_cast<Rotation>(rotation);
 }
 
-enum ObjectType {
+enum ObjectType : int {
     OBJ_TYPE_ITEM,
     OBJ_TYPE_CRITTER,
     OBJ_TYPE_SCENERY,
@@ -71,7 +71,12 @@ enum ObjectType {
     OBJ_TYPE_COUNT,
 };
 
-#define FID_TYPE(value) ((value) & 0xF000000) >> 24
+inline ObjectType objectTypeFromFid(int fid)
+{
+    int objectType = ((fid) & 0xF000000) >> 24;
+    return static_cast<ObjectType>(objectType);
+}
+
 #define PID_TYPE(value) (value) >> 24
 #define SID_TYPE(value) (value) >> 24
 

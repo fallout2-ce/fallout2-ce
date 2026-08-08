@@ -1082,7 +1082,7 @@ SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* it
         // -4% per item size
         stealModifier -= 4 * itemGetSize(item);
 
-        if (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromFid(target->fid) == OBJ_TYPE_CRITTER) {
             // check facing: -25% if face to face
             if (_is_hit_from_front(thief, target)) {
                 stealModifier -= 25;

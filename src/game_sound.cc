@@ -1125,7 +1125,7 @@ Sound* soundEffectLoad(const char* name, Object* object)
     }
 
     if (object != nullptr) {
-        if (FID_TYPE(object->fid) == OBJ_TYPE_CRITTER && (name[0] == 'H' || name[0] == 'N')) {
+        if (objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER && (name[0] == 'H' || name[0] == 'N')) {
             char v9 = name[1];
             if (v9 == 'A' || v9 == 'F' || v9 == 'M') {
                 if (v9 == 'A') {
@@ -1294,7 +1294,7 @@ int _gsound_compute_relative_volume(Object* obj)
     v3 = 0x7FFF;
 
     if (obj) {
-        type = FID_TYPE(obj->fid);
+        type = objectTypeFromFid(obj->fid);
         if (type == 0 || type == 1 || type == 2) {
             v7 = objectGetOwner(obj);
             if (!v7) {
@@ -1332,7 +1332,7 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponTyp
     char weaponCode;
     char animationCode;
 
-    if (artCopyFileName(FID_TYPE(a1->fid), a1->fid & 0xFFF, artName) == -1) {
+    if (artCopyFileName(objectTypeFromFid(a1->fid), a1->fid & 0xFFF, artName) == -1) {
         return nullptr;
     }
 
@@ -1412,7 +1412,7 @@ char* sfxBuildWeaponName(int effectType, Object* weapon, HitMode hitMode, Object
     if (effectTypeCode != 'H' || target == nullptr || damageType == explosionGetDamageType() || damageType == DAMAGE_TYPE_PLASMA || damageType == DAMAGE_TYPE_EMP) {
         materialCode = 'X';
     } else {
-        const int type = FID_TYPE(target->fid);
+        const int type = objectTypeFromFid(target->fid);
         MaterialType material;
         switch (type) {
         case OBJ_TYPE_ITEM:
@@ -1474,7 +1474,7 @@ char* sfxBuildSceneryName(int actionType, int action, const char* name)
 // 0x4518D
 char* sfxBuildOpenName(Object* object, int action)
 {
-    if (FID_TYPE(object->fid) == OBJ_TYPE_SCENERY) {
+    if (objectTypeFromFid(object->fid) == OBJ_TYPE_SCENERY) {
         char scenerySoundId;
         Proto* proto;
         if (protoGetProto(object->pid, &proto) != -1) {

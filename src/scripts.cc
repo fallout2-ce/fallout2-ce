@@ -3038,7 +3038,7 @@ char* _scr_get_msg_str_speech(int messageListId, int messageId, int shouldStartS
         return nullptr;
     }
 
-    if (FID_TYPE(gGameDialogHeadFid) != OBJ_TYPE_HEAD) {
+    if (objectTypeFromFid(gGameDialogHeadFid) != OBJ_TYPE_HEAD) {
         shouldStartSpeech = 0;
     }
 

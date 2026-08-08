@@ -386,7 +386,7 @@ void artToggleObjectTypeHidden(int objectType)
 // 0x418F7C
 int artGetFidgetCount(int headFid)
 {
-    if (FID_TYPE(headFid) != OBJ_TYPE_HEAD) {
+    if (objectTypeFromFid(headFid) != OBJ_TYPE_HEAD) {
         return 0;
     }
 
@@ -677,7 +677,7 @@ char* artBuildFilePath(int fid)
     int frmId = baseFid & 0xFFF;
     AnimationType animType = animationTypeFromFid(baseFid);
     WeaponAnimation weaponCode = weaponAnimationFromFid(baseFid);
-    int objectType = FID_TYPE(baseFid);
+    int objectType = objectTypeFromFid(baseFid);
 
     if (objectType < OBJ_TYPE_ITEM || objectType >= OBJ_TYPE_COUNT) {
         return nullptr;
@@ -963,7 +963,7 @@ int _art_alias_num(int index)
 // 0x4199AC
 int artCritterFidShouldRun(int fid)
 {
-    if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
         return gArtCritterFidShoudRunData[fid & 0xFFF];
     }
 
@@ -973,7 +973,7 @@ int artCritterFidShouldRun(int fid)
 // 0x4199D4
 int artAliasFid(int fid)
 {
-    int type = FID_TYPE(fid);
+    int type = objectTypeFromFid(fid);
     AnimationType anim = animationTypeFromFid(fid);
     if (type == OBJ_TYPE_CRITTER) {
         if (anim == ANIM_ELECTRIFY

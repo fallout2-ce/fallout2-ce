@@ -523,7 +523,7 @@ int showDamageToExtras(Attack* attack)
 {
     for (int index = 0; index < attack->extrasLength; index++) {
         Object* obj = attack->extras[index];
-        if (FID_TYPE(obj->fid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
             // NOTE: Uninline.
             bool hitFromFront = _is_hit_from_front(attack->attacker, obj);
             reg_anim_begin(ANIMATION_REQUEST_RESERVED);
@@ -551,7 +551,7 @@ void showDamage(Attack* attack, AnimationType attackerAnimation, int delay)
 {
     for (int index = 0; index < attack->extrasLength; index++) {
         Object* object = attack->extras[index];
-        if (FID_TYPE(object->fid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER) {
             animationRegisterPing(ANIMATION_REQUEST_RESERVED, delay);
             delay = 0;
         }
@@ -566,7 +566,7 @@ void showDamage(Attack* attack, AnimationType attackerAnimation, int delay)
             // NOTE: Uninline.
             bool hitFromFront = _is_hit_from_front(attack->attacker, attack->defender);
 
-            if (FID_TYPE(attack->defender->fid) == OBJ_TYPE_CRITTER) {
+            if (objectTypeFromFid(attack->defender->fid) == OBJ_TYPE_CRITTER) {
                 Rotation knockbackRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
                 AnimationType attackerAnimForShow = attack->attacker->fid == FRAME_ID_FORCE_FIELD_NS
                     ? attackerAnimation
@@ -1078,7 +1078,7 @@ int _action_climb_ladder(Object* critter, Object* ladder)
 int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
 {
     Proto* proto = nullptr;
-    int type = FID_TYPE(targetObj->fid);
+    int type = objectTypeFromFid(targetObj->fid);
     int sceneryType = -1;
     if (type == OBJ_TYPE_SCENERY) {
         if (protoGetProto(targetObj->pid, &proto) == -1) {
@@ -1132,7 +1132,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
         }
 
         AnimationType anim;
-        int objectType = FID_TYPE(targetObj->fid);
+        int objectType = objectTypeFromFid(targetObj->fid);
         if (objectType == OBJ_TYPE_CRITTER && critterIsProne(targetObj)) {
             anim = ANIM_MAGIC_HANDS_GROUND;
         } else if (objectType == OBJ_TYPE_SCENERY && (proto->scenery.extendedFlags & PROTO_EXT_FLAG_MAGIC_HANDS_GROUND) != 0) {
@@ -1171,7 +1171,7 @@ int _action_use_an_object(Object* user, Object* targetObj)
 // 0x412134
 int actionPickUp(Object* critter, Object* item)
 {
-    if (FID_TYPE(item->fid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromFid(item->fid) != OBJ_TYPE_ITEM) {
         return -1;
     }
 
@@ -1215,7 +1215,7 @@ int actionPickUp(Object* critter, Object* item)
         }
 
         char sfx[16];
-        if (artCopyFileName(FID_TYPE(item->fid), item->fid & 0xFFF, sfx) == 0) {
+        if (artCopyFileName(objectTypeFromFid(item->fid), item->fid & 0xFFF, sfx) == 0) {
             // NOTE: looks like they copy sfx one more time, what for?
             animationRegisterPlaySoundEffect(item, sfx, actionFrame);
         }
@@ -1269,7 +1269,7 @@ int actionPickUp(Object* critter, Object* item)
 // 0x4123E8 was _action_loot_container
 int actionLootCritter(Object* critter, Object* target)
 {
-    if (FID_TYPE(target->fid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(target->fid) != OBJ_TYPE_CRITTER) {
         return -1;
     }
 
@@ -1510,7 +1510,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
 
     animationRegisterCallbackForced(performer, target, (AnimationCallback*)_is_next_to, -1);
 
-    AnimationType anim = (FID_TYPE(target->fid) == OBJ_TYPE_CRITTER && critterIsProne(target)) ? ANIM_MAGIC_HANDS_GROUND : ANIM_MAGIC_HANDS_MIDDLE;
+    AnimationType anim = (objectTypeFromFid(target->fid) == OBJ_TYPE_CRITTER && critterIsProne(target)) ? ANIM_MAGIC_HANDS_GROUND : ANIM_MAGIC_HANDS_MIDDLE;
     int fid = buildFid(OBJ_TYPE_CRITTER, performer->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, performer->rotation + 1);
 
     CacheEntry* artHandle;
@@ -1643,7 +1643,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
 
     Object* critter = _obj_blocking_at(nullptr, tile, elevation);
     if (critter != nullptr) {
-        if (FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER || (critter->data.critter.combat.results & DAM_DEAD) != 0) {
+        if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER || (critter->data.critter.combat.results & DAM_DEAD) != 0) {
             critter = nullptr;
         }
     }
@@ -1854,7 +1854,7 @@ int actionTalk(Object* obj, Object* critter)
         return -1;
     }
 
-    if (FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
         return -1;
     }
 
@@ -2015,7 +2015,7 @@ int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr
 bool actionCheckPush(Object* obj, Object* target)
 {
     // Cannot push anything but critters.
-    if (FID_TYPE(target->fid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(target->fid) != OBJ_TYPE_CRITTER) {
         return false;
     }
 

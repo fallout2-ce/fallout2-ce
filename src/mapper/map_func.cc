@@ -718,7 +718,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
         }
     }
 
-    int newType = FID_TYPE(newFid);
+    int newType = objectTypeFromFid(newFid);
     if (newType == OBJ_TYPE_CRITTER || newType == OBJ_TYPE_MISC) {
         objectSetRotation(copy, rotation, nullptr);
     }
@@ -762,7 +762,7 @@ void copyObject(int filterType)
                     || obj == gGameMouseBouncingCursor
                     || obj == gGameMouseHexCursor
                     || (obj->flags & OBJECT_HIDDEN) != 0
-                    || filterType != -1 && FID_TYPE(obj->fid) != filterType) continue;
+                    || filterType != -1 && objectTypeFromFid(obj->fid) != filterType) continue;
 
                 if (mpCopyCount >= kMaxCopyEntries) {
                     _win_msg("Too many objects in region!", 80, 80, COLOR_RED);

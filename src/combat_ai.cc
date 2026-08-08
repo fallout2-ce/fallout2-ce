@@ -874,7 +874,7 @@ bool aiIsBurstDisabled(Object* critter)
 
 void aiSetBurstDisabled(Object* critter, bool disable)
 {
-    if (critter == nullptr || FID_TYPE(critter->fid) != OBJ_TYPE_CRITTER || critter == gDude) {
+    if (critter == nullptr || objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER || critter == gDude) {
         return;
     }
 
@@ -3487,7 +3487,7 @@ static int _combatai_rating(Object* obj)
         return 0;
     }
 
-    if (FID_TYPE(obj->fid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(obj->fid) != OBJ_TYPE_CRITTER) {
         return 0;
     }
 

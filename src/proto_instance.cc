@@ -200,7 +200,7 @@ int objectLookAtFunc(Object* critter, Object* target, void (*fn)(const char* str
         return -1;
     }
 
-    if (FID_TYPE(target->fid) == OBJ_TYPE_TILE) {
+    if (objectTypeFromFid(target->fid) == OBJ_TYPE_TILE) {
         return -1;
     }
 
@@ -261,7 +261,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
         return -1;
     }
 
-    if (FID_TYPE(target->fid) == OBJ_TYPE_TILE) {
+    if (objectTypeFromFid(target->fid) == OBJ_TYPE_TILE) {
         return -1;
     }
 
@@ -1463,7 +1463,7 @@ int checkSceneryUseActionPointCost(Object* obj, Object* _)
 // 0x49C740
 int objectUse(Object* user, Object* targetObj)
 {
-    int type = FID_TYPE(targetObj->fid);
+    int type = objectTypeFromFid(targetObj->fid);
     if (user == gDude) {
         if (type != OBJ_TYPE_SCENERY) {
             return -1;
@@ -1812,7 +1812,7 @@ int objectUseDoor(Object* user, Object* door, bool animateOnly)
 // 0x49CE7C
 int objectUseContainer(Object* critter, Object* item)
 {
-    if (FID_TYPE(item->fid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromFid(item->fid) != OBJ_TYPE_ITEM) {
         return -1;
     }
 

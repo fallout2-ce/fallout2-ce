@@ -1313,7 +1313,7 @@ int knockoutClear(Object* obj, void* data)
 
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
 
-    int fid = buildFid(FID_TYPE(obj->fid), obj->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    int fid = buildFid(objectTypeFromFid(obj->fid), obj->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
     objectSetFid(obj, fid, nullptr);
 
     return 0;
@@ -1328,7 +1328,7 @@ int critterSetWhoHitMe(Object* critter, Object* hitMe)
         return -1;
     }
 
-    if (hitMe != nullptr && FID_TYPE(hitMe->fid) != OBJ_TYPE_CRITTER) {
+    if (hitMe != nullptr && objectTypeFromFid(hitMe->fid) != OBJ_TYPE_CRITTER) {
         return -1;
     }
 

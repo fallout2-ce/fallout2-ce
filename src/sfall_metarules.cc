@@ -1468,7 +1468,7 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotatio
         fid = ctx.arg(artArg).asInt();
         Rotation frameRotation = ROTATION_NE;
         int lockFid = fid;
-        if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
             frameRotation = rotationIsValid(rotation) ? rotation : rotationFromFid(fid);
             if (rotationIsValid(rotation)) {
                 lockFid = (rotation << 28) | (fid & 0x0FFFFFFF);
@@ -1637,7 +1637,7 @@ static void mf_interface_art_draw(OpcodeContext& ctx)
 
     int xOffset = 0;
     int yOffset = 0;
-    if (ctx.arg(1).isInt() && FID_TYPE(fid) == OBJ_TYPE_CRITTER && rotation >= ROTATION_FIRST) {
+    if (ctx.arg(1).isInt() && objectTypeFromFid(fid) == OBJ_TYPE_CRITTER && rotation >= ROTATION_FIRST) {
         xOffset = image.getXOffset();
         yOffset = image.getYOffset();
     }
