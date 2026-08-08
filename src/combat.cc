@@ -191,6 +191,8 @@ static int hit_location_penalty_default[HIT_LOCATION_COUNT] = {
 
 static int hit_location_penalty[HIT_LOCATION_COUNT];
 
+static bool fo1HitChance = false;
+
 // Critical hit tables for every kill type.
 //
 // 0x510978 crit_succ_eff
@@ -4480,7 +4482,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
             }
 
             if (distanceMod >= minEffectiveDist) {
-                int perceptionBonus = attacker == gDude
+                int perceptionBonus = attacker == gDude && !fo1HitChance
                     ? perceptionBonusMult * (perception - 2)
                     : perceptionBonusMult * perception;
 
@@ -6958,6 +6960,16 @@ void combat_reset_hit_location_penalty()
     for (HitLocation hitLocation = HIT_LOCATION_FIRST; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
         hit_location_penalty[hitLocation] = hit_location_penalty_default[hitLocation];
     }
+}
+
+void combatSetFo1HitChance(bool enabled)
+{
+    fo1HitChance = enabled;
+}
+
+void combatResetFo1HitChance()
+{
+    fo1HitChance = false;
 }
 
 Attack* combat_get_data()

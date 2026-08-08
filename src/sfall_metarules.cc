@@ -811,6 +811,7 @@ static void mf_rest_option_msgs(OpcodeContext& ctx);
 static void mf_set_car_intface_art(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
+static void mf_set_fo1_hit_chance(OpcodeContext& ctx);
 static void mf_set_flags(OpcodeContext& ctx);
 static void mf_set_iface_tag_text(OpcodeContext& ctx);
 static void mf_set_reaction_thresholds(OpcodeContext& ctx);
@@ -917,6 +918,7 @@ const MetaruleInfo kMetarules[] = {
     // {"set_fake_perk_npc",         mf_set_fake_perk_npc,         5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     // {"set_fake_trait_npc",        mf_set_fake_trait_npc,        5, 5, -1, {ARG_OBJECT, ARG_STRING, ARG_INT, ARG_INT, ARG_STRING}},
     { "set_flags", mf_set_flags, 2, 2, -1, { ARG_OBJECT, ARG_INT } },
+    { "set_fo1_hit_chance", mf_set_fo1_hit_chance, 1, 1, -1, { ARG_INT } },
     { "set_iface_tag_text", mf_set_iface_tag_text, 3, 3, -1, { ARG_INT, ARG_STRING, ARG_INT } },
     { "set_ini_setting", mf_set_ini_setting, 2, 2, -1, { ARG_STRING, ARG_INTSTR } },
     // {"set_map_enter_position",    mf_set_map_enter_position,    3, 3, -1, {ARG_INT, ARG_INT, ARG_INT}},
@@ -1827,6 +1829,11 @@ void mf_set_cursor_mode(OpcodeContext& ctx)
 {
     int mode = ctx.arg(0).asInt();
     gameMouseSetMode(mode);
+}
+
+void mf_set_fo1_hit_chance(OpcodeContext& ctx)
+{
+    combatSetFo1HitChance(ctx.arg(0).asInt() != 0);
 }
 
 void mf_set_flags(OpcodeContext& ctx)

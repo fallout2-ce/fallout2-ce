@@ -75,6 +75,8 @@ bool damageModGetDisplayBonusDamage();
 int combat_get_hit_location_penalty(HitLocation hitLocation);
 void combat_set_hit_location_penalty(HitLocation hitLocation, int penalty);
 void combat_reset_hit_location_penalty();
+void combatSetFo1HitChance(bool enabled);
+void combatResetFo1HitChance();
 Attack* combat_get_data();
 
 static inline bool isInCombat()
