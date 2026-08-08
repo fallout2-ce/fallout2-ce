@@ -35,6 +35,8 @@ namespace fallout {
 
 #define SKILLS_MAX_USES_PER_DAY (3)
 #define SKILLS_MAX_COST_LEVEL (512)
+#define SKILLS_MIN_RAW_POINTS (-128)
+#define SKILLS_MIN_VALUE (-999)
 
 #define REPAIRABLE_DAMAGE_FLAGS_LENGTH (5)
 #define HEALABLE_DAMAGE_FLAGS_LENGTH (5)
@@ -106,7 +108,7 @@ static SkillDescription gSkillDescriptions[SKILL_COUNT] = {
     { nullptr, nullptr, nullptr, 45, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
 };
 
-static const SkillDescription gDefaultSkillDescriptions[SKILL_COUNT] = {
+static const SkillDescription defaultSkillDescriptions[SKILL_COUNT] = {
     { nullptr, nullptr, nullptr, 28, 5, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
     { nullptr, nullptr, nullptr, 29, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
     { nullptr, nullptr, nullptr, 30, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
@@ -127,12 +129,12 @@ static const SkillDescription gDefaultSkillDescriptions[SKILL_COUNT] = {
     { nullptr, nullptr, nullptr, 45, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
 };
 
-static double gSkillStatMultipliers[SKILL_COUNT][PRIMARY_STAT_COUNT];
-static int gSkillCosts[SKILL_COUNT][SKILLS_MAX_COST_LEVEL];
-static int gTagSkillBonus = 20;
-static bool gTagPerkAppliesInitialBonus = false;
-static bool gTagSkillsDoublePointBonusDisabled = false;
-static bool gSkillCostsBasedOnPoints = false;
+static double skillStatMultipliers[SKILL_COUNT][PRIMARY_STAT_COUNT];
+static int skillCosts[SKILL_COUNT][SKILLS_MAX_COST_LEVEL];
+static int tagSkillBonus = 20;
+static bool tagPerkAppliesInitialBonus = false;
+static bool tagSkillsDoublePointBonusDisabled = false;
+static bool skillCostsBasedOnPoints = false;
 
 // 0x51D430 gIsSteal
 int _gIsSteal = 0;
@@ -167,33 +169,33 @@ static void skillsInitDefaults()
         char* description = gSkillDescriptions[skill].description;
         char* attributes = gSkillDescriptions[skill].attributes;
 
-        gSkillDescriptions[skill] = gDefaultSkillDescriptions[skill];
+        gSkillDescriptions[skill] = defaultSkillDescriptions[skill];
         gSkillDescriptions[skill].name = name;
         gSkillDescriptions[skill].description = description;
         gSkillDescriptions[skill].attributes = attributes;
 
         for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
-            gSkillStatMultipliers[skill][stat] = 0.0;
+            skillStatMultipliers[skill][stat] = 0.0;
         }
 
         SkillDescription* skillDescription = &(gSkillDescriptions[skill]);
         if (skillDescription->stat1 != STAT_INVALID) {
-            gSkillStatMultipliers[skill][skillDescription->stat1] = skillDescription->statModifier;
+            skillStatMultipliers[skill][skillDescription->stat1] = skillDescription->statModifier;
         }
 
         if (skillDescription->stat2 != STAT_INVALID) {
-            gSkillStatMultipliers[skill][skillDescription->stat2] = skillDescription->statModifier;
+            skillStatMultipliers[skill][skillDescription->stat2] = skillDescription->statModifier;
         }
 
         for (int level = 0; level < SKILLS_MAX_COST_LEVEL; level++) {
-            gSkillCosts[skill][level] = skillsGetCost(level);
+            skillCosts[skill][level] = skillsGetCost(level);
         }
     }
 
-    gTagSkillBonus = 20;
-    gTagPerkAppliesInitialBonus = false;
-    gTagSkillsDoublePointBonusDisabled = false;
-    gSkillCostsBasedOnPoints = false;
+    tagSkillBonus = 20;
+    tagPerkAppliesInitialBonus = false;
+    tagSkillsDoublePointBonusDisabled = false;
+    skillCostsBasedOnPoints = false;
 }
 
 static Stat skillStatFromConfigLetter(char ch)
@@ -239,19 +241,19 @@ static void skillsLoadCustomConfig()
         return;
     }
 
-    int tagSkillBonus = 0;
-    if (configGetInt(config.get(), "Skills", "TagSkillBonus", &tagSkillBonus) && tagSkillBonus >= 0 && tagSkillBonus <= 100) {
-        gTagSkillBonus = tagSkillBonus;
+    int configuredTagSkillBonus = 0;
+    if (configGetInt(config.get(), "Skills", "TagSkillBonus", &configuredTagSkillBonus) && configuredTagSkillBonus >= 0 && configuredTagSkillBonus <= 100) {
+        tagSkillBonus = configuredTagSkillBonus;
     }
 
     int tagSkillMode = 0;
     configGetInt(config.get(), "Skills", "TagSkillMode", &tagSkillMode, 0);
-    gTagPerkAppliesInitialBonus = (tagSkillMode & 1) != 0;
-    gTagSkillsDoublePointBonusDisabled = (tagSkillMode & 2) != 0;
+    tagPerkAppliesInitialBonus = (tagSkillMode & 1) != 0;
+    tagSkillsDoublePointBonusDisabled = (tagSkillMode & 2) != 0;
 
     int basedOnPoints = 0;
     configGetInt(config.get(), "Skills", "BasedOnPoints", &basedOnPoints, 0);
-    gSkillCostsBasedOnPoints = basedOnPoints != 0;
+    skillCostsBasedOnPoints = basedOnPoints != 0;
 
     char key[32];
     for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
@@ -298,7 +300,7 @@ static void skillsLoadCustomCosts(Config* config, Skill skill, const char* key)
         if (token[0] != '\0') {
             int next = atoi(token);
             while (upto < next && upto < SKILLS_MAX_COST_LEVEL) {
-                gSkillCosts[skill][upto++] = price;
+                skillCosts[skill][upto++] = price;
             }
             price++;
         }
@@ -306,7 +308,7 @@ static void skillsLoadCustomCosts(Config* config, Skill skill, const char* key)
     }
 
     while (upto < SKILLS_MAX_COST_LEVEL) {
-        gSkillCosts[skill][upto++] = price;
+        skillCosts[skill][upto++] = price;
     }
 }
 
@@ -318,7 +320,7 @@ static void skillsLoadCustomFormula(Config* config, Skill skill, const char* key
     }
 
     for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
-        gSkillStatMultipliers[skill][stat] = 0.0;
+        skillStatMultipliers[skill][stat] = 0.0;
     }
 
     gSkillDescriptions[skill].statModifier = 0;
@@ -334,7 +336,7 @@ static void skillsLoadCustomFormula(Config* config, Skill skill, const char* key
         if (strlen(token) >= 2) {
             Stat stat = skillStatFromConfigLetter(token[0]);
             if (stat != STAT_INVALID) {
-                gSkillStatMultipliers[skill][stat] = atof(token + 1);
+                skillStatMultipliers[skill][stat] = atof(token + 1);
                 if (gSkillDescriptions[skill].stat1 == STAT_INVALID) {
                     gSkillDescriptions[skill].stat1 = stat;
                 } else if (gSkillDescriptions[skill].stat2 == STAT_INVALID) {
@@ -476,26 +478,26 @@ int skillGetValue(Object* critter, Skill skill)
     }
 
     int baseValue = proto->critter.data.skills[skill];
-
+    int rawSkillPoints = baseValue;
     if (baseValue < 0) {
-        return baseValue;
+        baseValue = 0;
     }
 
     SkillDescription* skillDescription = &(gSkillDescriptions[skill]);
 
     double value = skillDescription->defaultValue + baseValue * skillDescription->baseValueMult;
     for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
-        value += critterGetStat(critter, stat) * gSkillStatMultipliers[skill][stat];
+        value += critterGetStat(critter, stat) * skillStatMultipliers[skill][stat];
     }
 
     if (critter == gDude) {
         if (skillIsTagged(skill)) {
-            if (!gTagSkillsDoublePointBonusDisabled) {
+            if (!tagSkillsDoublePointBonusDisabled) {
                 value += baseValue * skillDescription->baseValueMult;
             }
 
-            if (gTagPerkAppliesInitialBonus || !perkGetRank(critter, PERK_TAG) || skill != gTaggedSkills[3]) {
-                value += gTagSkillBonus;
+            if (tagPerkAppliesInitialBonus || !perkGetRank(critter, PERK_TAG) || skill != gTaggedSkills[3]) {
+                value += tagSkillBonus;
             }
         }
 
@@ -504,7 +506,26 @@ int skillGetValue(Object* critter, Skill skill)
         value += skillGetGameDifficultyModifier(skill);
     }
 
+    if (rawSkillPoints < 0) {
+        if (rawSkillPoints < SKILLS_MIN_RAW_POINTS) {
+            rawSkillPoints = SKILLS_MIN_RAW_POINTS;
+        }
+
+        rawSkillPoints *= skillDescription->baseValueMult;
+        if (skillIsTagged(skill)) {
+            rawSkillPoints *= 2;
+        }
+
+        value += rawSkillPoints;
+    }
+
     int integerValue = static_cast<int>(value);
+    if (rawSkillPoints < 0 && integerValue < 0) {
+        if (integerValue < SKILLS_MIN_VALUE) {
+            integerValue = SKILLS_MIN_VALUE;
+        }
+    }
+
     if (integerValue > skillMaximum) {
         integerValue = skillMaximum;
     }
@@ -552,7 +573,7 @@ int skillAdd(Object* obj, Skill skill)
 
     // NOTE: Uninline.
     int costValue = skillValue;
-    if (gSkillCostsBasedOnPoints) {
+    if (skillCostsBasedOnPoints) {
         costValue = proto->critter.data.skills[skill];
     }
 
@@ -628,7 +649,7 @@ static int skillGetCost(Skill skill, int skillValue)
         costIndex = SKILLS_MAX_COST_LEVEL - 1;
     }
 
-    return gSkillCosts[skill][costIndex];
+    return skillCosts[skill][costIndex];
 }
 
 // Decrements specified skill value by one, returning appropriate amount as
@@ -658,7 +679,7 @@ int skillSub(Object* critter, Skill skill)
 
     // NOTE: Uninline.
     int costValue;
-    if (gSkillCostsBasedOnPoints) {
+    if (skillCostsBasedOnPoints) {
         costValue = proto->critter.data.skills[skill] - 1;
     } else {
         proto->critter.data.skills[skill] -= 1;
