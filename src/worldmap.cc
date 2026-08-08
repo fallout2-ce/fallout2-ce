@@ -608,20 +608,20 @@ static const int _can_rest_here[ELEVATION_COUNT] = {
 static int wmRestMode = 0;
 
 // 0x4BC86C
-static const int gDayPartEncounterFrequencyModifiers[DAY_PART_COUNT] = {
+static const int dayPartEncounterFrequencyModifiers[DAY_PART_COUNT] = {
     40,
     30,
     0,
 };
 
 // 0x4BC878
-static const char* gWorldmapEncDefaultMsg[2] = {
+static const char* worldmapEncDefaultMsg[2] = {
     "You detect something up ahead.",
     "Do you wish to encounter it?",
 };
 
 // 0x4BC880
-static MessageListItem gWorldmapMessageListItem;
+static MessageListItem worldmapMessageListItem;
 
 // 0x50EE44 aCricket
 static char _aCricket[] = "cricket";
@@ -994,8 +994,8 @@ static int wmMaxEncBaseTypes;
 // 0x67303C wmMaxEncounterInfoTables
 static int wmMaxEncounterInfoTables;
 
-static bool gTownMapHotkeysFix;
-static double gGameTimeIncRemainder = 0.0;
+static bool townMapHotkeysFix;
+static double gameTimeIncRemainder = 0.0;
 static FrmImage _backgroundFrmImage;
 static FrmImage _townFrmImage;
 static bool wmFaded = false;
@@ -1112,7 +1112,7 @@ int wmWorldMap_init()
     wmWorldMapSaveTempData();
 
     // SFALL
-    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &gTownMapHotkeysFix, true);
+    configGetBool(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "town_map_hotkeys_fix", &townMapHotkeysFix, true);
     configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", &worldmapTravelDelay, 0);
     worldmapTravelDelay = std::clamp(worldmapTravelDelay, 0, 150);
     configGetInt(&gContentConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "trail_markers", &worldmapTrailMarkers, 0);
@@ -1380,7 +1380,7 @@ int wmWorldMap_reset()
     wmResetTerrainInfo();
 
     // CE: Fix Pathfinder perk.
-    gGameTimeIncRemainder = 0.0;
+    gameTimeIncRemainder = 0.0;
 
     wmWorldMapLoadTempData();
     wmSetStartWorldView();
@@ -3893,7 +3893,7 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
         int modifiers[DAY_PART_COUNT];
 
         // NOTE: I'm not sure why they're copied.
-        memcpy(modifiers, gDayPartEncounterFrequencyModifiers, sizeof(gDayPartEncounterFrequencyModifiers));
+        memcpy(modifiers, dayPartEncounterFrequencyModifiers, sizeof(dayPartEncounterFrequencyModifiers));
 
         frequency -= modifiers[dayPart];
     }
@@ -3953,8 +3953,8 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
     if (randomEncounterIsDetected) {
         MessageListItem messageListItem;
 
-        const char* title = gWorldmapEncDefaultMsg[0];
-        const char* body = gWorldmapEncDefaultMsg[1];
+        const char* title = worldmapEncDefaultMsg[0];
+        const char* body = worldmapEncDefaultMsg[1];
 
         title = getmsg(&wmMsgFile, &messageListItem, 2999);
         body = getmsg(&wmMsgFile, &messageListItem, 3000 + 50 * wmGenData.encounterTableId + wmGenData.encounterEntryId);
@@ -4647,8 +4647,8 @@ static bool wmGameTimeIncrement(int ticksToAdd)
 
     // SFALL: Fix Pathfinder perk.
     int pathfinderRank = perkGetRank(gDude, PERK_PATHFINDER);
-    double newTicks = static_cast<double>(ticksToAdd) * (1.0 - static_cast<double>(pathfinderRank) * 0.25) * gScriptWorldMapMulti + gGameTimeIncRemainder;
-    gGameTimeIncRemainder = modf(newTicks, &newTicks);
+    double newTicks = static_cast<double>(ticksToAdd) * (1.0 - static_cast<double>(pathfinderRank) * 0.25) * gScriptWorldMapMulti + gameTimeIncRemainder;
+    gameTimeIncRemainder = modf(newTicks, &newTicks);
     ticksToAdd = static_cast<int>(newTicks);
 
     while (ticksToAdd != 0) {
@@ -6527,7 +6527,7 @@ static int wmTownMapFunc(int* mapIdxPtr)
 
                 // SFALL: Prevent using number keys to enter unvisited areas on
                 // a town map.
-                if (gTownMapHotkeysFix) {
+                if (townMapHotkeysFix) {
                     if (entrance->state == 0 || entrance->x == -1 || entrance->y == -1) {
                         continue;
                     }
@@ -6838,7 +6838,7 @@ int wmCarCurrentArea()
 int wmCarGiveToParty()
 {
     MessageListItem messageListItem;
-    memcpy(&messageListItem, &gWorldmapMessageListItem, sizeof(MessageListItem));
+    memcpy(&messageListItem, &worldmapMessageListItem, sizeof(MessageListItem));
 
     if (wmGenData.carFuel <= 0) {
         // The car is out of power.

@@ -26,6 +26,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "settings.h"
+#include "sfall_config.h"
 #include "sfall_script_hooks.h"
 #include "stat.h"
 #include "trait.h"
@@ -33,6 +34,7 @@
 namespace fallout {
 
 #define SKILLS_MAX_USES_PER_DAY (3)
+#define SKILLS_MAX_COST_LEVEL (512)
 
 #define REPAIRABLE_DAMAGE_FLAGS_LENGTH (5)
 #define HEALABLE_DAMAGE_FLAGS_LENGTH (5)
@@ -52,6 +54,11 @@ typedef struct SkillDescription {
 } SkillDescription;
 
 static void _show_skill_use_messages(Object* obj, Skill skill, Object* target, int successCount, int skillBonus);
+static void skillsInitDefaults();
+static void skillsLoadCustomConfig();
+static void skillsLoadCustomCosts(Config* config, Skill skill, const char* key);
+static void skillsLoadCustomFormula(Config* config, Skill skill, const char* key);
+static int skillGetCost(Skill skill, int skillValue);
 static int skillGetFreeUsageSlot(Skill skill);
 static int skill_use_slot_clear();
 
@@ -99,6 +106,34 @@ static SkillDescription gSkillDescriptions[SKILL_COUNT] = {
     { nullptr, nullptr, nullptr, 45, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
 };
 
+static const SkillDescription gDefaultSkillDescriptions[SKILL_COUNT] = {
+    { nullptr, nullptr, nullptr, 28, 5, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 29, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 30, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 31, 30, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 32, 20, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 33, 0, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 34, 0, 2, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 25, 0 },
+    { nullptr, nullptr, nullptr, 35, 5, 1, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 50, 0 },
+    { nullptr, nullptr, nullptr, 36, 5, 3, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 37, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, 38, 0, 3, STAT_AGILITY, STAT_INVALID, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, 39, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, 40, 0, 4, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 41, 0, 3, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 42, 0, 5, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 43, 0, 4, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 44, 0, 5, STAT_LUCK, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, 45, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
+};
+
+static double gSkillStatMultipliers[SKILL_COUNT][PRIMARY_STAT_COUNT];
+static int gSkillCosts[SKILL_COUNT][SKILLS_MAX_COST_LEVEL];
+static int gTagSkillBonus = 20;
+static bool gTagPerkAppliesInitialBonus = false;
+static bool gTagSkillsDoublePointBonusDisabled = false;
+static bool gSkillCostsBasedOnPoints = false;
+
 // 0x51D430 gIsSteal
 int _gIsSteal = 0;
 
@@ -125,9 +160,199 @@ static int skillMaximum = 300;
 // 0x668080 skill_message_file
 static MessageList gSkillsMessageList;
 
+static void skillsInitDefaults()
+{
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
+        char* name = gSkillDescriptions[skill].name;
+        char* description = gSkillDescriptions[skill].description;
+        char* attributes = gSkillDescriptions[skill].attributes;
+
+        gSkillDescriptions[skill] = gDefaultSkillDescriptions[skill];
+        gSkillDescriptions[skill].name = name;
+        gSkillDescriptions[skill].description = description;
+        gSkillDescriptions[skill].attributes = attributes;
+
+        for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
+            gSkillStatMultipliers[skill][stat] = 0.0;
+        }
+
+        SkillDescription* skillDescription = &(gSkillDescriptions[skill]);
+        if (skillDescription->stat1 != STAT_INVALID) {
+            gSkillStatMultipliers[skill][skillDescription->stat1] = skillDescription->statModifier;
+        }
+
+        if (skillDescription->stat2 != STAT_INVALID) {
+            gSkillStatMultipliers[skill][skillDescription->stat2] = skillDescription->statModifier;
+        }
+
+        for (int level = 0; level < SKILLS_MAX_COST_LEVEL; level++) {
+            gSkillCosts[skill][level] = skillsGetCost(level);
+        }
+    }
+
+    gTagSkillBonus = 20;
+    gTagPerkAppliesInitialBonus = false;
+    gTagSkillsDoublePointBonusDisabled = false;
+    gSkillCostsBasedOnPoints = false;
+}
+
+static Stat skillStatFromConfigLetter(char ch)
+{
+    switch (ch) {
+    case 's':
+    case 'S':
+        return STAT_STRENGTH;
+    case 'p':
+    case 'P':
+        return STAT_PERCEPTION;
+    case 'e':
+    case 'E':
+        return STAT_ENDURANCE;
+    case 'c':
+    case 'C':
+        return STAT_CHARISMA;
+    case 'i':
+    case 'I':
+        return STAT_INTELLIGENCE;
+    case 'a':
+    case 'A':
+        return STAT_AGILITY;
+    case 'l':
+    case 'L':
+        return STAT_LUCK;
+    default:
+        return STAT_INVALID;
+    }
+}
+
+static void skillsLoadCustomConfig()
+{
+    char* skillsFile = nullptr;
+    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_SKILLS_FILE_KEY, &skillsFile);
+    if (skillsFile == nullptr || skillsFile[0] == '\0') {
+        return;
+    }
+
+    ScopedConfig config { skillsFile, false };
+    if (!config) {
+        debugPrint("Skills config %s not found.\n", skillsFile);
+        return;
+    }
+
+    int tagSkillBonus = 0;
+    if (configGetInt(config.get(), "Skills", "TagSkillBonus", &tagSkillBonus) && tagSkillBonus >= 0 && tagSkillBonus <= 100) {
+        gTagSkillBonus = tagSkillBonus;
+    }
+
+    int tagSkillMode = 0;
+    configGetInt(config.get(), "Skills", "TagSkillMode", &tagSkillMode, 0);
+    gTagPerkAppliesInitialBonus = (tagSkillMode & 1) != 0;
+    gTagSkillsDoublePointBonusDisabled = (tagSkillMode & 2) != 0;
+
+    int basedOnPoints = 0;
+    configGetInt(config.get(), "Skills", "BasedOnPoints", &basedOnPoints, 0);
+    gSkillCostsBasedOnPoints = basedOnPoints != 0;
+
+    char key[32];
+    for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
+        snprintf(key, sizeof(key), "Skill%d", skill);
+        skillsLoadCustomFormula(config.get(), skill, key);
+
+        snprintf(key, sizeof(key), "SkillCost%d", skill);
+        skillsLoadCustomCosts(config.get(), skill, key);
+
+        snprintf(key, sizeof(key), "SkillBase%d", skill);
+        configGetInt(config.get(), "Skills", key, &(gSkillDescriptions[skill].defaultValue), gSkillDescriptions[skill].defaultValue);
+
+        int skillMulti = 0;
+        snprintf(key, sizeof(key), "SkillMulti%d", skill);
+        if (configGetInt(config.get(), "Skills", key, &skillMulti)) {
+            if (skillMulti < 1) {
+                skillMulti = 1;
+            } else if (skillMulti > 10) {
+                skillMulti = 10;
+            }
+            gSkillDescriptions[skill].baseValueMult = skillMulti;
+        }
+
+        snprintf(key, sizeof(key), "SkillImage%d", skill);
+        configGetInt(config.get(), "Skills", key, &(gSkillDescriptions[skill].frmId), gSkillDescriptions[skill].frmId);
+    }
+}
+
+static void skillsLoadCustomCosts(Config* config, Skill skill, const char* key)
+{
+    char* string = nullptr;
+    if (!configGetString(config, "Skills", key, &string) || string == nullptr) {
+        return;
+    }
+
+    char buffer[512];
+    strncpy(buffer, string, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+
+    int upto = 0;
+    int price = 1;
+    char* token = strtok(buffer, "|");
+    while (token != nullptr && upto < SKILLS_MAX_COST_LEVEL) {
+        if (token[0] != '\0') {
+            int next = atoi(token);
+            while (upto < next && upto < SKILLS_MAX_COST_LEVEL) {
+                gSkillCosts[skill][upto++] = price;
+            }
+            price++;
+        }
+        token = strtok(nullptr, "|");
+    }
+
+    while (upto < SKILLS_MAX_COST_LEVEL) {
+        gSkillCosts[skill][upto++] = price;
+    }
+}
+
+static void skillsLoadCustomFormula(Config* config, Skill skill, const char* key)
+{
+    char* string = nullptr;
+    if (!configGetString(config, "Skills", key, &string) || string == nullptr) {
+        return;
+    }
+
+    for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
+        gSkillStatMultipliers[skill][stat] = 0.0;
+    }
+
+    gSkillDescriptions[skill].statModifier = 0;
+    gSkillDescriptions[skill].stat1 = STAT_INVALID;
+    gSkillDescriptions[skill].stat2 = STAT_INVALID;
+
+    char buffer[64];
+    strncpy(buffer, string, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+
+    char* token = strtok(buffer, "|");
+    while (token != nullptr) {
+        if (strlen(token) >= 2) {
+            Stat stat = skillStatFromConfigLetter(token[0]);
+            if (stat != STAT_INVALID) {
+                gSkillStatMultipliers[skill][stat] = atof(token + 1);
+                if (gSkillDescriptions[skill].stat1 == STAT_INVALID) {
+                    gSkillDescriptions[skill].stat1 = stat;
+                } else if (gSkillDescriptions[skill].stat2 == STAT_INVALID) {
+                    gSkillDescriptions[skill].stat2 = stat;
+                }
+            } else {
+                debugPrint("Warning: Invalid SPECIAL stat '%c' in Skills config key %s.\n", token[0], key);
+            }
+        }
+        token = strtok(nullptr, "|");
+    }
+}
+
 // 0x4AA318
 int skillsInit()
 {
+    skillsInitDefaults();
+
     if (!messageListInit(&gSkillsMessageList)) {
         return -1;
     }
@@ -157,6 +382,8 @@ int skillsInit()
             gSkillDescriptions[skill].attributes = messageListItem.text;
         }
     }
+
+    skillsLoadCustomConfig();
 
     for (int index = 0; index < NUM_TAGGED_SKILLS; index++) {
         gTaggedSkills[index] = SKILL_INVALID;
@@ -256,19 +483,19 @@ int skillGetValue(Object* critter, Skill skill)
 
     SkillDescription* skillDescription = &(gSkillDescriptions[skill]);
 
-    int statValueSum = critterGetStat(critter, skillDescription->stat1);
-    if (skillDescription->stat2 != -1) {
-        statValueSum += critterGetStat(critter, skillDescription->stat2);
+    double value = skillDescription->defaultValue + baseValue * skillDescription->baseValueMult;
+    for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
+        value += critterGetStat(critter, stat) * gSkillStatMultipliers[skill][stat];
     }
-
-    int value = skillDescription->defaultValue + skillDescription->statModifier * statValueSum + baseValue * skillDescription->baseValueMult;
 
     if (critter == gDude) {
         if (skillIsTagged(skill)) {
-            value += baseValue * skillDescription->baseValueMult;
+            if (!gTagSkillsDoublePointBonusDisabled) {
+                value += baseValue * skillDescription->baseValueMult;
+            }
 
-            if (!perkGetRank(critter, PERK_TAG) || skill != gTaggedSkills[3]) {
-                value += 20;
+            if (gTagPerkAppliesInitialBonus || !perkGetRank(critter, PERK_TAG) || skill != gTaggedSkills[3]) {
+                value += gTagSkillBonus;
             }
         }
 
@@ -277,11 +504,12 @@ int skillGetValue(Object* critter, Skill skill)
         value += skillGetGameDifficultyModifier(skill);
     }
 
-    if (value > skillMaximum) {
-        value = skillMaximum;
+    int integerValue = static_cast<int>(value);
+    if (integerValue > skillMaximum) {
+        integerValue = skillMaximum;
     }
 
-    return value;
+    return integerValue;
 }
 
 void skillSetMaximum(int maximum)
@@ -323,7 +551,12 @@ int skillAdd(Object* obj, Skill skill)
     }
 
     // NOTE: Uninline.
-    int requiredSp = skillsGetCost(skillValue);
+    int costValue = skillValue;
+    if (gSkillCostsBasedOnPoints) {
+        costValue = proto->critter.data.skills[skill];
+    }
+
+    int requiredSp = skillGetCost(skill, costValue);
 
     if (unspentSp < requiredSp) {
         return -4;
@@ -382,6 +615,22 @@ int skillsGetCost(int skillValue)
     }
 }
 
+static int skillGetCost(Skill skill, int skillValue)
+{
+    if (!skillIsValid(skill)) {
+        return skillsGetCost(skillValue);
+    }
+
+    int costIndex = skillValue;
+    if (costIndex < 0) {
+        costIndex = 0;
+    } else if (costIndex >= SKILLS_MAX_COST_LEVEL) {
+        costIndex = SKILLS_MAX_COST_LEVEL - 1;
+    }
+
+    return gSkillCosts[skill][costIndex];
+}
+
 // Decrements specified skill value by one, returning appropriate amount as
 // unspent skill points.
 //
@@ -409,7 +658,12 @@ int skillSub(Object* critter, Skill skill)
     }
 
     // NOTE: Uninline.
-    int requiredSp = skillsGetCost(skillValue);
+    int costValue = skillValue;
+    if (gSkillCostsBasedOnPoints) {
+        costValue = proto->critter.data.skills[skill] - 1;
+    }
+
+    int requiredSp = skillGetCost(skill, costValue);
 
     int newUnspentSp = unspentSp + requiredSp;
     int rc = pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, newUnspentSp);
@@ -420,8 +674,8 @@ int skillSub(Object* critter, Skill skill)
     proto->critter.data.skills[skill] -= 1;
 
     if (skillIsTagged(skill)) {
-        int oldSkillCost = skillsGetCost(skillValue);
-        int newSkillCost = skillsGetCost(skillGetValue(critter, skill));
+        int oldSkillCost = skillGetCost(skill, costValue);
+        int newSkillCost = skillGetCost(skill, gSkillCostsBasedOnPoints ? proto->critter.data.skills[skill] : skillGetValue(critter, skill));
         if (oldSkillCost != newSkillCost) {
             rc = pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, newUnspentSp - 1);
             if (rc != 0) {
