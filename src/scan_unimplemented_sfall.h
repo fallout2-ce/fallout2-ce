@@ -81,6 +81,7 @@ static const std::string sfall_metarules[] = {
     "set_fake_perk_npc",
     "set_fake_trait_npc",
     "set_flags",
+    "set_fo1_hit_chance",
     "set_ini_setting",
     "set_map_enter_position",
     "set_reaction_thresholds",

@@ -1,5 +1,6 @@
 #include "sfall_callbacks.h"
 
+#include "combat.h"
 #include "content_config.h"
 #include "display_monitor.h"
 #include "game_dialog.h"
@@ -39,6 +40,7 @@ void sfallOnGameExit()
 void sfallOnGameReset()
 {
     inventoryResetInvenApCost();
+    combatResetFo1HitChance();
     gameDialogResetPartyMemberCcMsgIds();
     reactionResetThresholds();
     scriptSoundReset();
