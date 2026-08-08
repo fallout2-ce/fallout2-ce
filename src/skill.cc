@@ -646,7 +646,6 @@ int skillSub(Object* critter, Skill skill)
     }
 
     int unspentSp = pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS);
-    int skillValue = skillGetValue(critter, skill) - 1;
 
     Proto* proto;
     if (protoGetProto(critter->pid, &proto) == -1) {
@@ -658,9 +657,13 @@ int skillSub(Object* critter, Skill skill)
     }
 
     // NOTE: Uninline.
-    int costValue = skillValue;
+    int costValue;
     if (gSkillCostsBasedOnPoints) {
         costValue = proto->critter.data.skills[skill] - 1;
+    } else {
+        proto->critter.data.skills[skill] -= 1;
+        costValue = skillGetValue(critter, skill);
+        proto->critter.data.skills[skill] += 1;
     }
 
     int requiredSp = skillGetCost(skill, costValue);
@@ -672,17 +675,6 @@ int skillSub(Object* critter, Skill skill)
     }
 
     proto->critter.data.skills[skill] -= 1;
-
-    if (skillIsTagged(skill)) {
-        int oldSkillCost = skillGetCost(skill, costValue);
-        int newSkillCost = skillGetCost(skill, gSkillCostsBasedOnPoints ? proto->critter.data.skills[skill] : skillGetValue(critter, skill));
-        if (oldSkillCost != newSkillCost) {
-            rc = pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, newUnspentSp - 1);
-            if (rc != 0) {
-                return rc;
-            }
-        }
-    }
 
     if (proto->critter.data.skills[skill] < 0) {
         proto->critter.data.skills[skill] = 0;
