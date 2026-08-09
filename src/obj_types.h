@@ -307,12 +307,39 @@ inline CritterFlags& operator|=(CritterFlags& lhs, CritterFlags rhs)
 #define CONTAINER_FLAG_LOCKED 0x02000000
 #define DOOR_FLAG_LOCKED 0x02000000
 
-typedef enum CritterManeuver {
+enum CritterManeuver : int {
     CRITTER_MANEUVER_NONE = 0,
     CRITTER_MANEUVER_ENGAGING = 0x01,
     CRITTER_MANEUVER_DISENGAGING = 0x02,
     CRITTER_MANUEVER_FLEEING = 0x04,
-} CritterManeuver;
+};
+
+constexpr inline CritterManeuver operator&(CritterManeuver lhs, CritterManeuver rhs)
+{
+    return static_cast<CritterManeuver>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline CritterManeuver operator|(CritterManeuver lhs, CritterManeuver rhs)
+{
+    return static_cast<CritterManeuver>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline CritterManeuver operator~(CritterManeuver rhs)
+{
+    return static_cast<CritterManeuver>(~static_cast<int>(rhs));
+}
+
+inline CritterManeuver& operator&=(CritterManeuver& lhs, CritterManeuver rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline CritterManeuver& operator|=(CritterManeuver& lhs, CritterManeuver rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef enum Dam {
     DAM_KNOCKED_OUT = 0x01,
@@ -386,7 +413,7 @@ typedef union ItemObjectData {
 } ItemObjectData;
 
 typedef struct CritterCombatData {
-    int maneuver; // obj_pud.combat_data.maneuver
+    CritterManeuver maneuver; // obj_pud.combat_data.maneuver
     int ap; // obj_pud.combat_data.curr_mp
     int results; // obj_pud.combat_data.results
     int damageLastTurn; // obj_pud.combat_data.damage_last_turn

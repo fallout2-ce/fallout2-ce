@@ -1871,7 +1871,7 @@ static void opAttackComplex(Program* program)
         return;
     }
 
-    if ((target->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != 0) {
+    if ((target->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE) {
         debugPrint("\n   But target is AFRAID");
         program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
         return;
@@ -1884,7 +1884,7 @@ static void opAttackComplex(Program* program)
 
     if (isInCombat()) {
         CritterCombatData* combatData = &(self->data.critter.combat);
-        if ((combatData->maneuver & CRITTER_MANEUVER_ENGAGING) == 0) {
+        if ((combatData->maneuver & CRITTER_MANEUVER_ENGAGING) == CRITTER_MANEUVER_NONE) {
             combatData->maneuver |= CRITTER_MANEUVER_ENGAGING;
             combatData->whoHitMe = target;
         }
@@ -4483,14 +4483,14 @@ static void opAttackSetup(Program* program)
             return;
         }
 
-        if ((defender->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != 0) {
+        if ((defender->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE) {
             debugPrint("\n   But target is AFRAID");
             program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
             return;
         }
 
         if (isInCombat()) {
-            if ((attacker->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == 0) {
+            if ((attacker->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == CRITTER_MANEUVER_NONE) {
                 attacker->data.critter.combat.maneuver |= CRITTER_MANEUVER_ENGAGING;
                 attacker->data.critter.combat.whoHitMe = defender;
             }
@@ -4806,7 +4806,7 @@ static void opCritterIsFleeing(Program* program)
 
     bool fleeing = false;
     if (obj != nullptr) {
-        fleeing = (obj->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != 0;
+        fleeing = (obj->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE;
     } else {
         scriptPredefinedError(program, "critter_is_fleeing", SCRIPT_ERROR_OBJECT_IS_NULL);
     }

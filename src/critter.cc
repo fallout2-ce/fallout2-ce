@@ -1488,7 +1488,7 @@ bool critterIsEncumbered(Object* critter)
 bool critterIsFleeing(Object* critter)
 {
     return critter != nullptr
-        ? (critter->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != 0
+        ? (critter->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE
         : false;
 }
 

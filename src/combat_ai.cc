@@ -2679,7 +2679,7 @@ static HitLocation _ai_called_shot(Object* attacker, Object* defender, HitMode h
 // 0x42A748
 static int _ai_attack(Object* attacker, Object* defender, HitMode hitMode)
 {
-    if (attacker->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) {
+    if ((attacker->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE) {
         return -1;
     }
 
@@ -3218,15 +3218,15 @@ bool _combatai_want_to_join(Object* a1)
         scriptExecProc(a1->sid, SCRIPT_PROC_COMBAT);
     }
 
-    if ((a1->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) != 0) {
+    if ((a1->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) != CRITTER_MANEUVER_NONE) {
         return true;
     }
 
-    if ((a1->data.critter.combat.maneuver & CRITTER_MANEUVER_DISENGAGING) != 0) {
+    if ((a1->data.critter.combat.maneuver & CRITTER_MANEUVER_DISENGAGING) != CRITTER_MANEUVER_NONE) {
         return false;
     }
 
-    if ((a1->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != 0) {
+    if ((a1->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE) {
         return false;
     }
 
@@ -3242,15 +3242,15 @@ bool _combatai_want_to_stop(Object* a1)
 {
     _process_bk();
 
-    if ((a1->data.critter.combat.maneuver & CRITTER_MANEUVER_DISENGAGING) != 0) {
+    if ((a1->data.critter.combat.maneuver & CRITTER_MANEUVER_DISENGAGING) != CRITTER_MANEUVER_NONE) {
         return true;
     }
 
-    if ((a1->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) != 0) {
+    if ((a1->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) != CRITTER_MANEUVER_NONE) {
         return true;
     }
 
-    if ((a1->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != 0) {
+    if ((a1->data.critter.combat.maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE) {
         return true;
     }
 
@@ -3658,7 +3658,7 @@ void _combatai_notify_onlookers(Object* a1)
 {
     for (int index = 0; index < _curr_crit_num; index++) {
         Object* obj = _curr_crit_list[index];
-        if ((obj->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == 0) {
+        if ((obj->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == CRITTER_MANEUVER_NONE) {
             if (isWithinPerception(obj, a1)) {
                 obj->data.critter.combat.maneuver |= CRITTER_MANEUVER_ENGAGING;
                 if ((a1->data.critter.combat.results & DAM_DEAD) != 0) {
@@ -3679,7 +3679,7 @@ void _combatai_notify_friends(Object* a1)
 
     for (int index = 0; index < _curr_crit_num; index++) {
         Object* obj = _curr_crit_list[index];
-        if ((obj->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == 0 && team == obj->data.critter.combat.team) {
+        if ((obj->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == CRITTER_MANEUVER_NONE && team == obj->data.critter.combat.team) {
             if (isWithinPerception(obj, a1)) {
                 obj->data.critter.combat.maneuver |= CRITTER_MANEUVER_ENGAGING;
             }

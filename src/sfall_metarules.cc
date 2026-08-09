@@ -638,7 +638,7 @@ namespace {
             return true;
         case ObjectDataField::CurCharges:
             if (!intDataValue(data, intValue)) return false;
-            object->data.critter.combat.maneuver = intValue;
+            object->data.critter.combat.maneuver = static_cast<CritterManeuver>(intValue);
             return true;
         case ObjectDataField::CurActionPoint:
             if (!intDataValue(data, intValue)) return false;

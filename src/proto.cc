@@ -526,7 +526,7 @@ void objectDataReset(Object* obj)
 static int objectCritterCombatDataRead(CritterCombatData* data, File* stream)
 {
     if (fileReadInt32(stream, &(data->damageLastTurn)) == -1) return -1;
-    if (fileReadInt32(stream, &(data->maneuver)) == -1) return -1;
+    if (fileReadInt32Enum<CritterManeuver>(stream, &(data->maneuver)) == -1) return -1;
     if (fileReadInt32(stream, &(data->ap)) == -1) return -1;
     if (fileReadInt32(stream, &(data->results)) == -1) return -1;
     if (fileReadInt32(stream, &(data->aiPacket)) == -1) return -1;
@@ -540,7 +540,7 @@ static int objectCritterCombatDataRead(CritterCombatData* data, File* stream)
 static int objectCritterCombatDataWrite(CritterCombatData* data, File* stream)
 {
     if (fileWriteInt32(stream, data->damageLastTurn) == -1) return -1;
-    if (fileWriteInt32(stream, data->maneuver) == -1) return -1;
+    if (fileWriteInt32Enum<CritterManeuver>(stream, data->maneuver) == -1) return -1;
     if (fileWriteInt32(stream, data->ap) == -1) return -1;
     if (fileWriteInt32(stream, data->results) == -1) return -1;
     if (fileWriteInt32(stream, data->aiPacket) == -1) return -1;
