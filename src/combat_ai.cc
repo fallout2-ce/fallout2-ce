@@ -2396,7 +2396,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
     Object* initialTarget = target;
 
     bool shouldUnhide;
-    if ((target->flags & OBJECT_MULTIHEX) != 0) {
+    if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
         shouldUnhide = true;
         target->flags |= OBJECT_HIDDEN;
     } else {
@@ -2413,7 +2413,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
             }
 
             target = _moveBlockObj;
-            if ((target->flags & OBJECT_MULTIHEX) != 0) {
+            if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
                 shouldUnhide = true;
                 target->flags |= OBJECT_HIDDEN;
             } else {
@@ -2432,13 +2432,13 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
     }
 
     if (actionPoints >= critterGetStat(critter, STAT_MAXIMUM_ACTION_POINTS) / 2 && artCritterFidShouldRun(critter->fid)) {
-        if ((target->flags & OBJECT_MULTIHEX) != 0) {
+        if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
             animationRegisterRunToObject(critter, target, actionPoints, 0);
         } else {
             animationRegisterRunToTile(critter, tile, critter->elevation, actionPoints, 0);
         }
     } else {
-        if ((target->flags & OBJECT_MULTIHEX) != 0) {
+        if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
             animationRegisterMoveToObject(critter, target, actionPoints, 0);
         } else {
             animationRegisterMoveToTile(critter, tile, critter->elevation, actionPoints, 0);
@@ -3196,7 +3196,7 @@ bool _combatai_want_to_join(Object* a1)
 {
     _process_bk();
 
-    if ((a1->flags & OBJECT_HIDDEN) != 0) {
+    if ((a1->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
         return false;
     }
 
@@ -3555,7 +3555,7 @@ PerceptionResult isWithinPerceptionDetailed(Object* critter, Object* target, Per
     int perception = critterGetStat(critter, STAT_PERCEPTION);
     if (_can_see(critter, target)) {
         int maxDistance = perception * 5;
-        if ((target->flags & OBJECT_TRANS_GLASS) != 0) {
+        if ((target->flags & OBJECT_TRANS_GLASS) != OBJECT_NONE) {
             maxDistance /= 2;
         }
 

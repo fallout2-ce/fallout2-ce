@@ -1539,7 +1539,7 @@ static void op_obj_blocking_at(Program* program)
     Object* obstacle = func(nullptr, tile, elevation);
     if (obstacle != nullptr) {
         if (type == BLOCKING_TYPE_SHOOT) {
-            if ((obstacle->flags & OBJECT_SHOOT_THRU) != 0) {
+            if ((obstacle->flags & OBJECT_SHOOT_THRU) != OBJECT_NONE) {
                 obstacle = nullptr;
             }
         }

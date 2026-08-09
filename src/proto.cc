@@ -927,11 +927,11 @@ int _proto_dude_init(const char* path)
     _proto_dude_update_gender();
     inventoryResetDude();
 
-    if ((gDude->flags & OBJECT_FLAT) != 0) {
+    if ((gDude->flags & OBJECT_FLAT) != OBJECT_NONE) {
         _obj_toggle_flat(gDude, nullptr);
     }
 
-    if ((gDude->flags & OBJECT_NO_BLOCK) != 0) {
+    if ((gDude->flags & OBJECT_NO_BLOCK) != OBJECT_NONE) {
         gDude->flags &= ~OBJECT_NO_BLOCK;
     }
 

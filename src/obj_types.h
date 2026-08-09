@@ -152,7 +152,9 @@ inline OutlineType& operator|=(OutlineType& lhs, unsigned int rhs)
 }
 
 enum ObjectFlags : unsigned int {
+    OBJECT_NONE = 0x00,
     OBJECT_HIDDEN = 0x01,
+    OBJECT_0X02 = 0x02,
 
     // Specifies that the object should not be saved to the savegame file.
     //
@@ -197,6 +199,45 @@ enum ObjectFlags : unsigned int {
     OBJECT_FLAG_0xFC000 = OBJECT_TRANS_ENERGY | OBJECT_TRANS_STEAM | OBJECT_TRANS_GLASS | OBJECT_TRANS_WALL | OBJECT_TRANS_NONE | OBJECT_TRANS_RED,
     OBJECT_OPEN_DOOR = OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_BLOCK,
 };
+
+constexpr inline ObjectFlags operator&(ObjectFlags lhs, ObjectFlags rhs)
+{
+    return static_cast<ObjectFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ObjectFlags operator|(ObjectFlags lhs, ObjectFlags rhs)
+{
+    return static_cast<ObjectFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ObjectFlags operator~(ObjectFlags rhs)
+{
+    return static_cast<ObjectFlags>(~static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ObjectFlags operator^(ObjectFlags lhs, ObjectFlags rhs)
+{
+    return static_cast<ObjectFlags>(static_cast<unsigned int>(lhs) ^ static_cast<unsigned int>(rhs));
+}
+
+
+inline ObjectFlags& operator&=(ObjectFlags& lhs, ObjectFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline ObjectFlags& operator|=(ObjectFlags& lhs, ObjectFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+inline ObjectFlags& operator^=(ObjectFlags& lhs, ObjectFlags rhs)
+{
+    lhs = lhs ^ rhs;
+    return lhs;
+}
 
 typedef enum CritterFlags {
     CRITTER_BARTER = 0x02,
@@ -379,7 +420,7 @@ typedef struct Object {
     int frame; // obj_cur_frm
     Rotation rotation; // obj_cur_rot
     int fid; // obj_fid
-    int flags; // obj_flags
+    ObjectFlags flags; // obj_flags
     int elevation; // obj_elev
     ObjectData data;
     int pid; // obj_pid

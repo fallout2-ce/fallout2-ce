@@ -594,7 +594,7 @@ namespace {
             return objectSetFid(object, intValue, nullptr) == 0;
         case ObjectDataField::Flags:
             if (!intDataValue(data, intValue)) return false;
-            object->flags = intValue;
+            object->flags = static_cast<ObjectFlags>(intValue);
             return true;
         case ObjectDataField::Elevation:
             if (!intDataValue(data, intValue)) return false;
@@ -1789,7 +1789,7 @@ static void mf_objects_in_radius(OpcodeContext& ctx)
                 continue;
             }
 
-            int extraRange = (object->flags & OBJECT_MULTIHEX) != 0 ? 1 : 0;
+            int extraRange = (object->flags & OBJECT_MULTIHEX) != OBJECT_NONE ? 1 : 0;
             if (tileDistanceBetween(sourceTile, object->tile) > radius + extraRange) {
                 continue;
             }
@@ -1841,7 +1841,7 @@ void mf_set_fo1_hit_chance(OpcodeContext& ctx)
 void mf_set_flags(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
-    int flags = ctx.arg(1).asInt();
+    ObjectFlags flags = static_cast<ObjectFlags>(ctx.arg(1).asInt());
 
     object->flags = flags;
 }

@@ -60,7 +60,7 @@ static int protoInstWallEdit(Object* obj);
 static int protoInstTileEdit(Object* obj);
 static void protoInstMiscEdit(Object* obj);
 static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, int* pObjProtoOff, int* pBufOff, const char* title);
-static bool regModFlagsDialog(int* flags, ObjectType objectType);
+static bool regModFlagsDialog(ObjectFlags* flags, ObjectType objectType);
 static int regModInstFlags(Object* obj);
 
 // proto_inst_edit_
@@ -181,7 +181,7 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, in
 // reg_mod_flags_
 // Original single-column vertical flag editor matching vanilla reg_mod_flags_ layout.
 // Flags are stored in *flags as a 32-bit ObjectFlags bitfield (obj->flags).
-static bool regModFlagsDialog(int* flags, ObjectType objectType)
+static bool regModFlagsDialog(ObjectFlags* flags, ObjectType objectType)
 {
     constexpr int kDlgWidth = 220;
     constexpr int kDlgHeight = 380;
@@ -277,10 +277,10 @@ static bool regModFlagsDialog(int* flags, ObjectType objectType)
 
         if (key == KEY_ESCAPE || key == KEY_RETURN) {
             // Write back only the flags that were visible (prevents stomping unrelated bits)
-            int preserved = *flags;
+            ObjectFlags preserved = *flags;
             for (int vi = 0; vi < visibleCount; vi++) {
                 int i = visibleIndex[vi];
-                int bit = btnDefs[i].bit;
+                ObjectFlags bit = static_cast<ObjectFlags>(btnDefs[i].bit);
                 if (bit != -1) {
                     if (flagValues[i])
                         preserved |= bit;
@@ -321,8 +321,8 @@ static bool regModFlagsDialog(int* flags, ObjectType objectType)
 // Flat uses _obj_toggle_flat for proper side effects; all others are applied via bit ops.
 static int regModInstFlags(Object* obj)
 {
-    int flags = obj->flags;
-    int oldFlat = flags & OBJECT_FLAT;
+    ObjectFlags flags = obj->flags;
+    ObjectFlags oldFlat = flags & OBJECT_FLAT;
     ObjectType objectType = objectTypeFromPid(obj->pid);
 
     if (regModFlagsDialog(&flags, objectType)) {

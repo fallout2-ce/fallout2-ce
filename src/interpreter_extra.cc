@@ -1667,16 +1667,16 @@ static void opRemoveObjectFromInventory(Program* program)
     bool updateFlags = false;
     int flags = 0;
 
-    if ((item->flags & OBJECT_EQUIPPED) != 0) {
-        if ((item->flags & OBJECT_IN_LEFT_HAND) != 0) {
+    if ((item->flags & OBJECT_EQUIPPED) != OBJECT_NONE) {
+        if ((item->flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
             flags |= OBJECT_IN_LEFT_HAND;
         }
 
-        if ((item->flags & OBJECT_IN_RIGHT_HAND) != 0) {
+        if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
             flags |= OBJECT_IN_RIGHT_HAND;
         }
 
-        if ((item->flags & OBJECT_WORN) != 0) {
+        if ((item->flags & OBJECT_WORN) != OBJECT_NONE) {
             flags |= OBJECT_WORN;
         }
 
@@ -1859,13 +1859,13 @@ static void opAttackComplex(Program* program)
         return;
     }
 
-    if (!critterIsActive(self) || (self->flags & OBJECT_HIDDEN) != 0) {
+    if (!critterIsActive(self) || (self->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
         debugPrint("\n   But is already Inactive (Dead/Stunned/Invisible)");
         program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
         return;
     }
 
-    if (!critterIsActive(target) || (target->flags & OBJECT_HIDDEN) != 0) {
+    if (!critterIsActive(target) || (target->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
         debugPrint("\n   But target is already dead or invisible");
         program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
         return;
@@ -2127,7 +2127,7 @@ static void opSetObjectVisibility(Program* program)
     }
 
     if (invisible != 0) {
-        if ((obj->flags & OBJECT_HIDDEN) == 0) {
+        if ((obj->flags & OBJECT_HIDDEN) == OBJECT_NONE) {
             if (isInCombat()) {
                 objectDisableOutline(obj, nullptr);
                 objectClearOutline(obj, nullptr);
@@ -2143,7 +2143,7 @@ static void opSetObjectVisibility(Program* program)
             }
         }
     } else {
-        if ((obj->flags & OBJECT_HIDDEN) != 0) {
+        if ((obj->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
             if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
                 obj->flags &= ~OBJECT_NO_BLOCK;
             }
@@ -2625,7 +2625,7 @@ static void opHasTrait(Program* program)
                 result = object->rotation;
                 break;
             case CRITTER_TRAIT_OBJECT_IS_INVISIBLE:
-                result = (object->flags & OBJECT_HIDDEN) == 0;
+                result = (object->flags & OBJECT_HIDDEN) == OBJECT_NONE;
                 break;
             case CRITTER_TRAIT_OBJECT_GET_INVENTORY_WEIGHT:
                 result = objectGetInventoryWeight(object);
@@ -3711,7 +3711,7 @@ static void opRemoveMultipleObjectsFromInventory(Program* program)
         return;
     }
 
-    bool itemWasEquipped = (item->flags & OBJECT_EQUIPPED) != 0;
+    bool itemWasEquipped = (item->flags & OBJECT_EQUIPPED) != OBJECT_NONE;
 
     int quantity = itemGetQuantity(owner, item);
     if (quantity > quantityToRemove) {
@@ -4471,13 +4471,13 @@ static void opAttackSetup(Program* program)
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
 
     if (attacker != nullptr) {
-        if (!critterIsActive(attacker) || (attacker->flags & OBJECT_HIDDEN) != 0) {
+        if (!critterIsActive(attacker) || (attacker->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
             debugPrint("\n   But is already dead or invisible");
             program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
             return;
         }
 
-        if (!critterIsActive(defender) || (defender->flags & OBJECT_HIDDEN) != 0) {
+        if (!critterIsActive(defender) || (defender->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
             debugPrint("\n   But target is already dead or invisible");
             program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
             return;
@@ -4667,11 +4667,11 @@ static void opMoveObjectInventoryToObject(Program* program)
         // Sfall's op_move_obj_inven_to_obj HOOK_INVENWIELD path passes
         // InvenSlot::Armor unconditionally for NPC weapons in this case.
         int flags = 0;
-        if ((oldWeapon->flags & OBJECT_IN_LEFT_HAND) != 0) {
+        if ((oldWeapon->flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
             flags |= OBJECT_IN_LEFT_HAND;
         }
 
-        if ((oldWeapon->flags & OBJECT_IN_RIGHT_HAND) != 0) {
+        if ((oldWeapon->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
             flags |= OBJECT_IN_RIGHT_HAND;
         }
 

@@ -2740,7 +2740,7 @@ void _combat_update_critter_outline_for_los(Object* critter, bool enableOutline)
     } else {
         int distanceBetween = objectGetDistanceBetween(gDude, critter);
         int dudePerceptionModifier = critterGetStat(gDude, STAT_PERCEPTION) * 5;
-        if ((critter->flags & OBJECT_TRANS_GLASS) != 0) {
+        if ((critter->flags & OBJECT_TRANS_GLASS) != OBJECT_NONE) {
             dudePerceptionModifier /= 2;
         }
 
@@ -3669,7 +3669,7 @@ static bool _check_ranged_miss(Attack* attack)
         while (curr != to) {
             _make_straight_path_func(attack->attacker, curr, to, nullptr, &critter, 32, _obj_shoot_blocking_at);
             if (critter != nullptr) {
-                if ((critter->flags & OBJECT_SHOOT_THRU) == 0) {
+                if ((critter->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE) {
                     if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
                         roll = ROLL_SUCCESS;
                         break;
@@ -3699,7 +3699,7 @@ static bool _check_ranged_miss(Attack* attack)
 
     attack->defenderHitLocation = HIT_LOCATION_TORSO;
 
-    if (roll < ROLL_SUCCESS || critter == nullptr || (critter->flags & OBJECT_SHOOT_THRU) == 0) {
+    if (roll < ROLL_SUCCESS || critter == nullptr || (critter->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE) {
         return false;
     }
 
@@ -4072,7 +4072,7 @@ static int attackCompute(Attack* attack)
                 accidentalTarget = _obj_blocking_at(nullptr, attack->tile, attack->defender->elevation);
             }
 
-            if (accidentalTarget != nullptr && (accidentalTarget->flags & OBJECT_SHOOT_THRU) == 0) {
+            if (accidentalTarget != nullptr && (accidentalTarget->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE) {
                 attack->attackerFlags |= DAM_HIT;
                 attack->defender = accidentalTarget;
                 attackComputeDamage(attack, 1, 2);
@@ -4163,7 +4163,7 @@ void _compute_explosion_on_extras(Attack* attack, bool isFromAttacker, bool isGr
         if (obstacle != nullptr
             && objectTypeFromFid(obstacle->fid) == OBJ_TYPE_CRITTER
             && (obstacle->data.critter.combat.results & DAM_DEAD) == 0
-            && (obstacle->flags & OBJECT_SHOOT_THRU) == 0
+            && (obstacle->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE
             && !_combat_is_shot_blocked(obstacle, obstacle->tile, explosionTile, nullptr, nullptr)) {
             if (obstacle == attack->attacker) {
                 attack->attackerFlags &= ~DAM_HIT;
@@ -4548,7 +4548,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
         toHit += hit_location_penalty[hitLocation] / 2;
     }
 
-    if (defender != nullptr && (defender->flags & OBJECT_MULTIHEX) != 0) {
+    if (defender != nullptr && (defender->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
         toHit += 15;
     }
 
@@ -4746,7 +4746,7 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
     }
 
     if (knockbackDistancePtr != nullptr
-        && (critter->flags & OBJECT_MULTIHEX) == 0
+        && (critter->flags & OBJECT_MULTIHEX) == OBJECT_NONE
         && (damageType == DAMAGE_TYPE_EXPLOSION || attack->weapon == nullptr || weaponGetAttackTypeForHitMode(attack->weapon, attack->hitMode) == ATTACK_TYPE_MELEE)
         && objectTypeFromPid(critter->pid) == OBJ_TYPE_CRITTER
         && !critterFlagCheck(critter->pid, CRITTER_NO_KNOCKBACK)) {
@@ -6028,13 +6028,13 @@ bool _combat_is_shot_blocked(Object* sourceObj, int from, int to, Object* target
                 if ((obstacle->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_DOWN | DAM_KNOCKED_OUT)) == 0) {
                     *numCrittersOnLof += 1;
 
-                    if ((obstacle->flags & OBJECT_MULTIHEX) != 0) {
+                    if ((obstacle->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
                         *numCrittersOnLof += 1;
                     }
                 }
             }
 
-            if ((obstacle->flags & OBJECT_MULTIHEX) != 0) {
+            if ((obstacle->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
                 // SFALL: Fix obtaining the next tile from a multihex object.
                 // This bug does not cause any noticeable error in the function.
                 current = obstacle->tile;

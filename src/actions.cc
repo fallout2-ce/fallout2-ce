@@ -766,7 +766,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
                 if (anim == ANIM_THROW_ANIM) {
                     projectile = weapon;
                     weaponFid = weapon->fid;
-                    int weaponFlags = weapon->flags;
+                    ObjectFlags weaponFlags = weapon->flags;
 
                     InterfaceItemAction leftItemAction;
                     InterfaceItemAction rightItemAction;
@@ -1839,7 +1839,7 @@ int _compute_explosion_damage(int min, int max, Object* defender, int* knockback
     }
 
     if (knockbackDistancePtr != nullptr) {
-        if ((defender->flags & OBJECT_MULTIHEX) == 0) {
+        if ((defender->flags & OBJECT_MULTIHEX) == OBJECT_NONE) {
             *knockbackDistancePtr = damage / 10;
         }
     }
@@ -2003,7 +2003,7 @@ int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr
     }
 
     if (knockbackDistancePtr != nullptr) {
-        if ((obj->flags & OBJECT_MULTIHEX) == 0 && damageType != DAMAGE_TYPE_ELECTRICAL) {
+        if ((obj->flags & OBJECT_MULTIHEX) == OBJECT_NONE && damageType != DAMAGE_TYPE_ELECTRICAL) {
             *knockbackDistancePtr = damage / 10;
         }
     }
