@@ -1783,7 +1783,7 @@ static void op_create_spatial(Program* program)
     int tile = programStackPopInteger(program);
     int scriptIndex = programStackPopInteger(program);
 
-    if (scriptIndex == 0) {
+    if (scriptIndex <= 0) {
         programPrintError("create_spatial: invalid script index number %d.", scriptIndex);
         programStackPushPointer(program, nullptr);
         return;
@@ -1796,7 +1796,24 @@ static void op_create_spatial(Program* program)
         return;
     }
 
-    programStackPushPointer(program, scriptCreateSpatial(scriptIndex, tile, elevation, radius));
+    if (!hexGridTileIsValid(tile)) {
+        programPrintError("create_spatial: invalid tile number %d.", tile);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    if (elevation < 0 || elevation >= ELEVATION_COUNT) {
+        programPrintError("create_spatial: invalid elevation number %d.", elevation);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    Object* spatial = scriptCreateSpatial(scriptIndex, tile, elevation, radius);
+    if (spatial == nullptr) {
+        programPrintError("create_spatial: failed to create spatial script.");
+    }
+
+    programStackPushPointer(program, spatial);
 }
 
 // tile_light
