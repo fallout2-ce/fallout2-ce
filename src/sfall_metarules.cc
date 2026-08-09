@@ -1869,7 +1869,7 @@ void mf_set_reaction_thresholds(OpcodeContext& ctx)
 void mf_set_outline(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
-    int outline = ctx.arg(1).asInt();
+    OutlineType outline = static_cast<OutlineType>(ctx.arg(1).asInt());
     object->outline = outline;
 }
 

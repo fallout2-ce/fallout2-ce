@@ -2076,7 +2076,7 @@ int gameMouseObjectsInit()
         return -1;
     }
 
-    if (objectSetOutline(gGameMouseHexCursor, OUTLINE_PALETTED | OUTLINE_TYPE_2, nullptr) != 0) {
+    if (objectSetOutline(gGameMouseHexCursor, OUTLINE_TYPE_SAME_TEAM | OUTLINE_PALETTED, nullptr) != 0) {
         return -1;
     }
 

@@ -448,7 +448,7 @@ int objectRead(Object* obj, File* stream)
     if (fileReadInt32(stream, &(obj->sid)) == -1) return -1;
     if (fileReadInt32(stream, &(obj->scriptIndex)) == -1) return -1;
 
-    obj->outline = 0;
+    obj->outline = OUTLINE_TYPE_NONE;
     obj->owner = nullptr;
 
     if (objectDataRead(obj, stream) != 0) {
@@ -554,7 +554,7 @@ static int objectLoadAllInternal(File* stream)
                 return -1;
             }
 
-            objectListNode->obj->outline = 0;
+            objectListNode->obj->outline = OUTLINE_TYPE_NONE;
             gObjectFids[gObjectFidsLength++] = objectListNode->obj->fid;
 
             if (objectListNode->obj->sid != -1) {
@@ -684,7 +684,7 @@ static int objectWrite(Object* obj, File* stream)
     if (fileWriteInt32(stream, obj->cid) == -1) return -1;
     if (fileWriteInt32(stream, obj->lightDistance) == -1) return -1;
     if (fileWriteInt32(stream, obj->lightIntensity) == -1) return -1;
-    if (fileWriteInt32(stream, obj->outline) == -1) return -1;
+    if (fileWriteInt32Enum<OutlineType>(stream, obj->outline) == -1) return -1;
     if (fileWriteInt32(stream, obj->sid) == -1) return -1;
     if (fileWriteInt32(stream, obj->scriptIndex) == -1) return -1;
     if (objectDataWrite(obj, stream) == -1) return -1;
@@ -1417,8 +1417,8 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 
     if (isInCombat()) {
         if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
-            bool v8 = obj->outline != 0 && (obj->outline & OUTLINE_DISABLED) == 0;
-            _combat_update_critter_outline_for_los(obj, v8);
+            bool enableOutline = obj->outline != OUTLINE_TYPE_NONE && (obj->outline & OUTLINE_DISABLED) == OUTLINE_TYPE_NONE;
+            _combat_update_critter_outline_for_los(obj, enableOutline);
         }
     }
 
@@ -2892,7 +2892,7 @@ void _intensity_mask_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight,
 }
 
 // 0x48C2B4 obj_outline_object
-int objectSetOutline(Object* obj, int outlineType, Rect* rect)
+int objectSetOutline(Object* obj, OutlineType outlineType, Rect* rect)
 {
     if (obj == nullptr) {
         return -1;
@@ -2930,7 +2930,7 @@ int objectClearOutline(Object* object, Rect* rect)
         objectGetRect(object, rect);
     }
 
-    object->outline = 0;
+    object->outline = OUTLINE_TYPE_NONE;
 
     return 0;
 }
@@ -3756,7 +3756,7 @@ static int objectAllocate(Object** objectPtr)
     object->id = -1;
     object->tile = -1;
     object->cid = -1;
-    object->outline = 0;
+    object->outline = OUTLINE_TYPE_NONE;
     object->pid = -1;
     object->sid = -1;
     object->owner = nullptr;
@@ -4744,7 +4744,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
         unsigned char* v47 = nullptr;
         unsigned char* v48 = nullptr;
         int v53 = object->outline & OUTLINE_PALETTED;
-        int outlineType = object->outline & OUTLINE_TYPE_MASK;
+        OutlineType outlineType = object->outline & OUTLINE_TYPE_MAX;
         int v43;
         int v44;
 
@@ -4755,7 +4755,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
             v43 = 5;
             v44 = frameHeight / 5;
             break;
-        case OUTLINE_TYPE_2:
+        case OUTLINE_TYPE_SAME_TEAM:
             color = COLOR_RED;
             v44 = 0;
             if (v53 != 0) {
@@ -4763,7 +4763,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 v48 = _redBlendTable;
             }
             break;
-        case OUTLINE_TYPE_4:
+        case OUTLINE_TYPE_BODY:
             color = COLOR_GREY_2;
             v44 = 0;
             if (v53 != 0) {
@@ -4785,7 +4785,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 v48 = _redBlendTable;
             }
             break;
-        case OUTLINE_TYPE_32:
+        case OUTLINE_TYPE_BLOCKED:
             color = 61;
             v53 = 0;
             v43 = 1;

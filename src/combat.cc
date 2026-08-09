@@ -99,7 +99,7 @@ static int aiInfoCopy(int srcIndex, int destIndex);
 static int _combatAIInfoSetLastMove(Object* object, int move);
 static void _combat_begin(Object* attacker);
 static void _combat_begin_extra(Object* attacker);
-static void _combat_update_critters_in_los(bool a1);
+static void _combat_update_critters_in_los(bool enableOutline);
 static void _combat_over();
 static bool _combat_add_noncoms();
 static int _compare_faster(const void* critter1Ptr, const void* critter2Ptr);
@@ -2686,19 +2686,19 @@ static void _combat_begin_extra(Object* attacker)
 // NOTE: Inlined.
 //
 // 0x421D18
-static void _combat_update_critters_in_los(bool a1)
+static void _combat_update_critters_in_los(bool enableOutline)
 {
     int index;
 
     for (index = 0; index < _list_total; index++) {
-        _combat_update_critter_outline_for_los(_combat_list[index], a1);
+        _combat_update_critter_outline_for_los(_combat_list[index], enableOutline);
     }
 }
 
 // Something with outlining.
 //
 // 0x421D50
-void _combat_update_critter_outline_for_los(Object* critter, bool a2)
+void _combat_update_critter_outline_for_los(Object* critter, bool enableOutline)
 {
     if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         return;
@@ -2712,68 +2712,59 @@ void _combat_update_critter_outline_for_los(Object* critter, bool a2)
         return;
     }
 
-    bool v5 = false;
     if (!_combat_is_shot_blocked(gDude, gDude->tile, critter->tile, critter, nullptr)) {
-        v5 = true;
-    }
-
-    if (v5) {
-        int outlineType = critter->outline & OUTLINE_TYPE_MASK;
+        OutlineType outlineType = critter->outline & OUTLINE_TYPE_MAX;
         if (outlineType != OUTLINE_TYPE_HOSTILE && outlineType != OUTLINE_TYPE_FRIENDLY) {
-            int newOutlineType = gDude->data.critter.combat.team == critter->data.critter.combat.team
+            OutlineType newOutlineType = gDude->data.critter.combat.team == critter->data.critter.combat.team
                 ? OUTLINE_TYPE_FRIENDLY
                 : OUTLINE_TYPE_HOSTILE;
             objectDisableOutline(critter, nullptr);
             objectClearOutline(critter, nullptr);
             objectSetOutline(critter, newOutlineType, nullptr);
-            if (a2) {
+            if (enableOutline) {
                 objectEnableOutline(critter, nullptr);
             } else {
                 objectDisableOutline(critter, nullptr);
             }
         } else {
-            if (critter->outline != 0 && (critter->outline & OUTLINE_DISABLED) == 0) {
-                if (!a2) {
+            if (critter->outline != OUTLINE_TYPE_NONE && (critter->outline & OUTLINE_DISABLED) == OUTLINE_TYPE_NONE) {
+                if (!enableOutline) {
                     objectDisableOutline(critter, nullptr);
                 }
             } else {
-                if (a2) {
+                if (enableOutline) {
                     objectEnableOutline(critter, nullptr);
                 }
             }
         }
     } else {
-        int v7 = objectGetDistanceBetween(gDude, critter);
-        int v8 = critterGetStat(gDude, STAT_PERCEPTION) * 5;
+        int distanceBetween = objectGetDistanceBetween(gDude, critter);
+        int dudePerceptionModifier = critterGetStat(gDude, STAT_PERCEPTION) * 5;
         if ((critter->flags & OBJECT_TRANS_GLASS) != 0) {
-            v8 /= 2;
+            dudePerceptionModifier /= 2;
         }
 
-        if (v7 <= v8) {
-            v5 = true;
-        }
-
-        int outlineType = critter->outline & OUTLINE_TYPE_MASK;
-        if (outlineType != OUTLINE_TYPE_32) {
+        OutlineType outlineType = critter->outline & OUTLINE_TYPE_MAX;
+        if (outlineType != OUTLINE_TYPE_BLOCKED) {
             objectDisableOutline(critter, nullptr);
             objectClearOutline(critter, nullptr);
 
-            if (v5) {
-                objectSetOutline(critter, OUTLINE_TYPE_32, nullptr);
+            if (distanceBetween <= dudePerceptionModifier) {
+                objectSetOutline(critter, OUTLINE_TYPE_BLOCKED, nullptr);
 
-                if (a2) {
+                if (enableOutline) {
                     objectEnableOutline(critter, nullptr);
                 } else {
                     objectDisableOutline(critter, nullptr);
                 }
             }
         } else {
-            if (critter->outline != 0 && (critter->outline & OUTLINE_DISABLED) == 0) {
-                if (!a2) {
+            if (critter->outline != OUTLINE_TYPE_NONE && (critter->outline & OUTLINE_DISABLED) == OUTLINE_TYPE_NONE) {
+                if (!enableOutline) {
                     objectDisableOutline(critter, nullptr);
                 }
             } else {
-                if (a2) {
+                if (enableOutline) {
                     objectEnableOutline(critter, nullptr);
                 }
             }

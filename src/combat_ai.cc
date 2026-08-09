@@ -3283,13 +3283,13 @@ int critterSetTeam(Object* obj, int team)
     aiInfoSetLastTarget(obj, nullptr);
 
     if (isInCombat()) {
-        bool outlineWasEnabled = obj->outline != 0 && (obj->outline & OUTLINE_DISABLED) == 0;
+        bool outlineWasEnabled = obj->outline != OUTLINE_TYPE_NONE && (obj->outline & OUTLINE_DISABLED) == OUTLINE_TYPE_NONE;
 
         objectClearOutline(obj, nullptr);
 
-        int outlineType;
+        OutlineType outlineType;
         if (obj->data.critter.combat.team == gDude->data.critter.combat.team) {
-            outlineType = OUTLINE_TYPE_2;
+            outlineType = OUTLINE_TYPE_SAME_TEAM;
         } else {
             outlineType = OUTLINE_TYPE_HOSTILE;
         }

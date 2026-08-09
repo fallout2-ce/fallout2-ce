@@ -100,14 +100,56 @@ inline ObjectType objectTypeFromPid(int pid)
 
 #define SID_TYPE(value) (value) >> 24
 
-typedef enum OutlineType {
-    OUTLINE_TYPE_HOSTILE = 1,
-    OUTLINE_TYPE_2 = 2,
-    OUTLINE_TYPE_4 = 4,
-    OUTLINE_TYPE_FRIENDLY = 8,
-    OUTLINE_TYPE_ITEM = 16,
-    OUTLINE_TYPE_32 = 32,
-} OutlineType;
+enum OutlineType : int {
+    OUTLINE_TYPE_NONE = 0x00,
+    OUTLINE_TYPE_HOSTILE = 0x01,
+    OUTLINE_TYPE_SAME_TEAM = 0x02,
+    OUTLINE_TYPE_BODY = 0x04,
+    OUTLINE_TYPE_FRIENDLY = 0x08,
+    OUTLINE_TYPE_ITEM = 0x10,
+    OUTLINE_TYPE_BLOCKED = 0x20,
+    OUTLINE_TYPE_MAX = 0xFFFFFF
+};
+
+#define OUTLINE_PALETTED 0x40000000
+#define OUTLINE_DISABLED 0x80000000
+
+constexpr inline OutlineType operator&(OutlineType lhs, OutlineType rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline OutlineType operator&(OutlineType lhs, unsigned int rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) & rhs);
+}
+
+constexpr inline OutlineType operator&(OutlineType lhs, int rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) & rhs);
+}
+
+constexpr inline OutlineType operator|(OutlineType lhs, int rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) | rhs);
+}
+
+constexpr inline OutlineType operator|(OutlineType lhs, unsigned int rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) | rhs);
+}
+
+inline OutlineType& operator&=(OutlineType& lhs, unsigned int rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline OutlineType& operator|=(OutlineType& lhs, unsigned int rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 enum ObjectFlags : unsigned int {
     OBJECT_HIDDEN = 0x01,
@@ -171,10 +213,6 @@ typedef enum CritterFlags {
 } CritterFlags;
 
 #define CRITTER_RADIATED 0x02
-
-#define OUTLINE_TYPE_MASK 0xFFFFFF
-#define OUTLINE_PALETTED 0x40000000
-#define OUTLINE_DISABLED 0x80000000
 
 // These two values are the same but stored in different fields.
 #define CONTAINER_FLAG_JAMMED 0x04000000
@@ -348,7 +386,7 @@ typedef struct Object {
     int cid; // obj_cid
     int lightDistance; // obj_light_distance
     int lightIntensity; // obj_light_intensity
-    int outline; // obj_outline
+    OutlineType outline; // obj_outline
     int sid; // obj_sid
     Object* owner;
     int scriptIndex; // TODO: remove
