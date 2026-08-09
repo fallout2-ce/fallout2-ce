@@ -247,8 +247,11 @@ void endgamePlayMovie()
 
     endgamePlayConfiguredMovie();
 
-    char* creditsFilePath;
-    configGetString(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_credits_file", &creditsFilePath, "credits.txt");
+    const char* creditsFilePath = "credits.txt";
+    char* configuredCreditsFilePath;
+    if (configGetString(&gContentConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_credits_file", &configuredCreditsFilePath)) {
+        creditsFilePath = configuredCreditsFilePath;
+    }
     if (creditsFilePath[0] != '\0') {
         creditsOpen(creditsFilePath, -1, false);
     }
@@ -282,7 +285,7 @@ static void endgamePlayConfiguredMovie()
     }
 
     if (movie >= 0 && movie < GAME_MOVIE_MAX_COUNT) {
-        gameMoviePlay(movie, GAME_MOVIE_FADE_IN | GAME_MOVIE_FADE_OUT | GAME_MOVIE_PAUSE_MUSIC);
+        gameMoviePlay(movie, GAME_MOVIE_FADE_IN | GAME_MOVIE_PAUSE_MUSIC);
     }
 }
 

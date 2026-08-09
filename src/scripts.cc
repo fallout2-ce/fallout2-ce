@@ -1296,9 +1296,7 @@ int scriptsHandleRequests()
         gameDialogEnter(gScriptsRequestedDialogWith, 0);
     }
 
-    if ((gScriptsRequests & SCRIPT_REQUEST_ENDGAME) != 0) {
-        gScriptsRequests &= ~SCRIPT_REQUEST_ENDGAME;
-        endgamePlaySlideshow();
+    if (scriptsHandlePendingEndgameSlideshow()) {
         if (endgameShouldPlayMovieAfterSlideshow()) {
             endgamePlayMovie();
         }
@@ -1317,6 +1315,17 @@ int scriptsHandleRequests()
     DeleteAllTempArrays();
 
     return 0;
+}
+
+bool scriptsHandlePendingEndgameSlideshow()
+{
+    if ((gScriptsRequests & SCRIPT_REQUEST_ENDGAME) == 0) {
+        return false;
+    }
+
+    gScriptsRequests &= ~SCRIPT_REQUEST_ENDGAME;
+    endgamePlaySlideshow();
+    return true;
 }
 
 // 0x4A43A0
