@@ -25,6 +25,7 @@
 #include "memory.h"
 #include "message.h"
 #include "mouse.h"
+#include "obj_types.h"
 #include "object.h"
 #include "party_member.h"
 #include "proto.h"
@@ -1722,58 +1723,60 @@ static void op_charcode(Program* program)
     }
 }
 
-static void op_show_iface_tag(fallout::Program* program)
+static void op_show_iface_tag(Program* program)
 {
-    int tag = fallout::programStackPopInteger(program);
+    int tag = programStackPopInteger(program);
 
-    switch (tag) {
-    case DudeState::DUDE_STATE_SNEAKING:
-    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
-    case DudeState::DUDE_STATE_ADDICTED:
-        dudeEnableState(tag);
-        break;
-    default:
-        interfaceTagShow(tag);
+    if (dudeStateIsValid(tag)) {
+        DudeState state = static_cast<DudeState>(tag);
+        switch (state) {
+        case DUDE_STATE_SNEAKING:
+        case DUDE_STATE_LEVEL_UP_AVAILABLE:
+        case DUDE_STATE_ADDICTED:
+            dudeEnableState(state);
+            return;
+        default:
+            programPrintError("unsupported tag %d", tag);
+            return;
+        }
     }
+
+    interfaceTagShow(tag);
 }
 
-static void op_hide_iface_tag(fallout::Program* program)
+static void op_hide_iface_tag(Program* program)
 {
-    int tag = fallout::programStackPopInteger(program);
+    int tag = programStackPopInteger(program);
 
-    switch (tag) {
-    case DudeState::DUDE_STATE_SNEAKING:
-    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
-    case DudeState::DUDE_STATE_ADDICTED:
-        dudeDisableState(tag);
-        break;
-    default:
-        interfaceTagHide(tag);
+    if (dudeStateIsValid(tag)) {
+        DudeState state = static_cast<DudeState>(tag);
+        switch (state) {
+        case DUDE_STATE_SNEAKING:
+        case DUDE_STATE_LEVEL_UP_AVAILABLE:
+        case DUDE_STATE_ADDICTED:
+            dudeDisableState(state);
+            return;
+        default:
+            programPrintError("unsupported tag %d", tag);
+            return;
+        }
     }
+
+    interfaceTagHide(tag);
 }
 
-static void op_is_iface_tag_active(fallout::Program* program)
+static void op_is_iface_tag_active(Program* program)
 {
-    int tag = fallout::programStackPopInteger(program);
+    int tag = programStackPopInteger(program);
     bool isActive = false;
 
-    switch (tag) {
-    case DudeState::DUDE_STATE_SNEAKING:
-    case DudeState::DUDE_STATE_LEVEL_UP_AVAILABLE:
-    case DudeState::DUDE_STATE_ADDICTED:
-        isActive = fallout::dudeHasState(tag);
-        break;
-    case 1: // POISONED
-        isActive = critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD;
-        break;
-    case 2: // RADIATED
-        isActive = critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
-        break;
-    default:
+    if (dudeStateIsValid(tag)) {
+        isActive = dudeHasState(static_cast<DudeState>(tag));
+    } else {
         isActive = interfaceTagIsActive(tag);
     }
 
-    fallout::programStackPushInteger(program, isActive ? 1 : 0);
+    programStackPushInteger(program, isActive ? 1 : 0);
 }
 
 // TODO: move opcodes into several files

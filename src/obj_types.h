@@ -239,6 +239,21 @@ inline ObjectFlags& operator^=(ObjectFlags& lhs, ObjectFlags rhs)
     return lhs;
 }
 
+enum DudeState : int {
+    DUDE_STATE_SNEAKING = 0,
+    DUDE_STATE_POISONED = 1,
+    DUDE_STATE_RADIATED = 2,
+    DUDE_STATE_LEVEL_UP_AVAILABLE = 3,
+    DUDE_STATE_ADDICTED = 4,
+    DUDE_STATE_COUNT = 5,
+    DUDE_STATE_FIRST = DUDE_STATE_SNEAKING
+};
+
+inline bool dudeStateIsValid(int state)
+{
+    return state >= DUDE_STATE_FIRST && state < DUDE_STATE_COUNT;
+}
+
 typedef enum CritterFlags {
     CRITTER_BARTER = 0x02,
     CRITTER_NO_STEAL = 0x20,

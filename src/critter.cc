@@ -19,6 +19,7 @@
 #include "map.h"
 #include "memory.h"
 #include "message.h"
+#include "obj_types.h"
 #include "object.h"
 #include "party_member.h"
 #include "platform_compat.h"
@@ -1181,10 +1182,21 @@ int protoCritterDataWrite(File* stream, CritterProtoData* critterData)
 }
 
 // 0x42E220 pc_flag_off
-void dudeDisableState(int state)
+void dudeDisableState(DudeState state)
 {
+    switch (state) {
+    case DUDE_STATE_SNEAKING:
+    case DUDE_STATE_LEVEL_UP_AVAILABLE:
+    case DUDE_STATE_ADDICTED:
+        break;
+    default: 
+        return;
+    }
+
     Proto* proto;
-    protoGetProto(gDude->pid, &proto);
+    if (protoGetProto(gDude->pid, &proto) == -1) {
+        return;
+    }
 
     proto->critter.data.flags &= ~(1 << state);
 
@@ -1196,10 +1208,21 @@ void dudeDisableState(int state)
 }
 
 // 0x42E26C pc_flag_on
-void dudeEnableState(int state)
+void dudeEnableState(DudeState state)
 {
+    switch (state) {
+    case DUDE_STATE_SNEAKING:
+    case DUDE_STATE_LEVEL_UP_AVAILABLE:
+    case DUDE_STATE_ADDICTED:
+        break;
+    default: 
+        return;
+    }
+
     Proto* proto;
-    protoGetProto(gDude->pid, &proto);
+    if (protoGetProto(gDude->pid, &proto) == -1) {
+        return;
+    }
 
     proto->critter.data.flags |= (1 << state);
 
@@ -1211,8 +1234,12 @@ void dudeEnableState(int state)
 }
 
 // 0x42E2B0 pc_flag_toggle
-void dudeToggleState(int state)
+void dudeToggleState(DudeState state)
 {
+    if (!dudeStateIsValid(state)) {
+        return;
+    }
+
     // NOTE: Uninline.
     if (dudeHasState(state)) {
         dudeDisableState(state);
@@ -1222,10 +1249,26 @@ void dudeToggleState(int state)
 }
 
 // 0x42E2F8 is_pc_flag
-bool dudeHasState(int state)
+bool dudeHasState(DudeState state)
 {
+    if (!dudeStateIsValid(state)) {
+        return false;
+    }
+
+    switch (state) {
+    case DUDE_STATE_POISONED:
+        return critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD;
+    case DUDE_STATE_RADIATED:
+        return critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
+    default: 
+        break;
+    }
+
     Proto* proto;
-    protoGetProto(gDude->pid, &proto);
+    if (protoGetProto(gDude->pid, &proto) == -1) {
+        return false;
+    }
+
     return (proto->critter.data.flags & (1 << state)) != 0;
 }
 
