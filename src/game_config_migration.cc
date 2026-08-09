@@ -291,6 +291,34 @@ namespace {
         return migrated;
     }
 
+    static bool contentConfigMigrateSfallFallout1MovieBehavior(Config* sfallConfig, Config* migratedConfig)
+    {
+        assert(sfallConfig != nullptr && migratedConfig != nullptr);
+
+        bool enabled = false;
+        if (!configGetBool(sfallConfig, kSfallMisc, "Fallout1Behavior", &enabled) || !enabled) {
+            return false;
+        }
+
+        bool migrated = false;
+        if (!gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_play_after_slideshow")) {
+            configSetInt(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_play_after_slideshow", 0);
+            migrated = true;
+        }
+
+        if (!gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_movie_male")) {
+            configSetInt(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_movie_male", 10);
+            migrated = true;
+        }
+
+        if (!gameConfigHasKey(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_movie_female")) {
+            configSetInt(migratedConfig, CONTENT_CONFIG_MOVIES_SECTION, "endgame_movie_female", 11);
+            migrated = true;
+        }
+
+        return migrated;
+    }
+
 } // anonymous namespace
 
 // Migrate sfall settings from ddraw.ini to game.cfg.
@@ -350,6 +378,10 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
     }
 
     if (contentConfigMigrateSfallMovieOverrides(sfallConfig, &migratedConfig)) {
+        migrated = true;
+    }
+
+    if (contentConfigMigrateSfallFallout1MovieBehavior(sfallConfig, &migratedConfig)) {
         migrated = true;
     }
 

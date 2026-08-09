@@ -56,6 +56,9 @@ static int main_loadgame_new();
 static void main_unload_new();
 static void mainParseCommandLineArguments(int argc, char** argv);
 static bool mainTryParseDevLoadGameSlot(const char* value, int* slotPtr);
+static void mainHandleDevEndgameRequests();
+static void mainRequestDevEndgameIfNeeded();
+static void mainRunDevEndgameMovieIfNeeded();
 static void mainLoop();
 static void showDeath();
 static void _main_death_voiceover_callback();
@@ -75,6 +78,8 @@ static bool _main_show_death_scene = false;
 static bool _main_death_voiceover_done;
 
 static int commandLineDevLoadGameSlot = -1;
+static bool commandLineDevEndgame = false;
+static bool commandLineDevEndgameMovie = false;
 
 // 0x48099C
 int falloutMain(int argc, char** argv)
@@ -150,6 +155,7 @@ int falloutMain(int argc, char** argv)
                     sfallOnAfterGameStarted();
                     gGameLoaded = true;
 
+                    mainHandleDevEndgameRequests();
                     mainLoop();
                     paletteFadeTo(gPaletteWhite);
 
@@ -186,6 +192,7 @@ int falloutMain(int argc, char** argv)
                     } else if (loadGameRc != 0) {
                         windowDestroy(win);
                         win = -1;
+                        mainHandleDevEndgameRequests();
                         mainLoop();
                         paletteFadeTo(gPaletteWhite);
                     }
@@ -273,6 +280,10 @@ static void mainParseCommandLineArguments(int argc, char** argv)
             } else {
                 debugPrint("MAIN: invalid --dev-load-game value '%s'\n", argv[arg] + devLoadGamePrefixLength);
             }
+        } else if (strcmp(argv[arg], "--dev-endgame") == 0) {
+            commandLineDevEndgame = true;
+        } else if (strcmp(argv[arg], "--dev-endgame-movie") == 0) {
+            commandLineDevEndgameMovie = true;
         }
     }
 }
@@ -291,6 +302,40 @@ static bool mainTryParseDevLoadGameSlot(const char* value, int* slotPtr)
 
     *slotPtr = static_cast<int>(slotNumber - 1);
     return true;
+}
+
+static void mainHandleDevEndgameRequests()
+{
+    if (commandLineDevEndgame && commandLineDevEndgameMovie) {
+        commandLineDevEndgame = false;
+        commandLineDevEndgameMovie = false;
+        endgamePlaySlideshow();
+        endgamePlayMovie();
+        return;
+    }
+
+    mainRequestDevEndgameIfNeeded();
+    mainRunDevEndgameMovieIfNeeded();
+}
+
+static void mainRequestDevEndgameIfNeeded()
+{
+    if (!commandLineDevEndgame) {
+        return;
+    }
+
+    commandLineDevEndgame = false;
+    scriptsRequestEndgame();
+}
+
+static void mainRunDevEndgameMovieIfNeeded()
+{
+    if (!commandLineDevEndgameMovie) {
+        return;
+    }
+
+    commandLineDevEndgameMovie = false;
+    endgamePlayMovie();
 }
 
 // NOTE: Inlined.

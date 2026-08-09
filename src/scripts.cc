@@ -1299,7 +1299,9 @@ int scriptsHandleRequests()
     if ((gScriptsRequests & SCRIPT_REQUEST_ENDGAME) != 0) {
         gScriptsRequests &= ~SCRIPT_REQUEST_ENDGAME;
         endgamePlaySlideshow();
-        endgamePlayMovie();
+        if (endgameShouldPlayMovieAfterSlideshow()) {
+            endgamePlayMovie();
+        }
     }
 
     if ((gScriptsRequests & SCRIPT_REQUEST_LOOTING) != 0) {
