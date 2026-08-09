@@ -804,7 +804,7 @@ int _partyMemberSyncPosition()
     for (int index = 1; index < gPartyMembersLength; index++) {
         PartyMemberListItem* partyMember = &(gPartyMembers[index]);
         Object* partyMemberObj = partyMember->object;
-        if ((partyMemberObj->flags & OBJECT_HIDDEN) == 0 && objectTypeFromPid(partyMemberObj->pid) == OBJ_TYPE_CRITTER) {
+        if ((partyMemberObj->flags & OBJECT_HIDDEN) == OBJECT_NONE && objectTypeFromPid(partyMemberObj->pid) == OBJ_TYPE_CRITTER) {
             Rotation rotation;
             if ((n % 2) != 0) {
                 rotation = clockwiseRotation;
@@ -1681,7 +1681,7 @@ int partyGetMaxWoundToHealByRest()
 
         if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) continue;
         if (critterIsDead(object)) continue;
-        if ((object->flags & OBJECT_HIDDEN) != 0) continue;
+        if ((object->flags & OBJECT_HIDDEN) != OBJECT_NONE) continue;
         if (critterGetKillType(object) == KILL_TYPE_ROBOT) continue;
 
         int currentHp = critterGetHitPoints(object);

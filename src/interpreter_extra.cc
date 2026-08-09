@@ -2429,7 +2429,7 @@ static void opKillCritterType(Program* program)
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
         if (animationTypeFromFid(obj->fid) < ANIM_FALL_BACK_SF) {
-            if ((obj->flags & OBJECT_HIDDEN) == 0 && obj->pid == pid && !critterIsDead(obj)) {
+            if ((obj->flags & OBJECT_HIDDEN) == OBJECT_NONE && obj->pid == pid && !critterIsDead(obj)) {
                 if (obj == previousObj || count > 200) {
                     scriptPredefinedError(program, "kill_critter_type", SCRIPT_ERROR_FOLLOWS);
                     debugPrint(" Infinite loop destroying critters!");

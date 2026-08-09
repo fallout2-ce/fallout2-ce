@@ -482,7 +482,7 @@ bool objectIsSavable(Object* obj)
     if (obj == gDude) return true;
     if (objectIsPartyMember(obj)) return true;
 
-    return (obj->flags & OBJECT_NO_SAVE) == 0;
+    return (obj->flags & OBJECT_NO_SAVE) == OBJECT_NONE;
 }
 
 // 0x488CE4 obj_load
