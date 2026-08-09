@@ -1172,10 +1172,10 @@ int protoCritterDataWrite(File* stream, CritterProtoData* critterData)
     if (fileWriteInt32List(stream, critterData->baseStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->bonusStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->skills, SKILL_COUNT) == -1) return -1;
-    if (fileWriteInt32(stream, critterData->bodyType) == -1) return -1;
+    if (fileWriteInt32Enum<BodyType>(stream, critterData->bodyType) == -1) return -1;
     if (fileWriteInt32(stream, critterData->experience) == -1) return -1;
-    if (fileWriteInt32(stream, critterData->killType) == -1) return -1;
-    if (fileWriteInt32(stream, critterData->damageType) == -1) return -1;
+    if (fileWriteInt32Enum<KillType>(stream, critterData->killType) == -1) return -1;
+    if (fileWriteInt32Enum<DamageType>(stream, critterData->damageType) == -1) return -1;
 
     return 0;
 }
