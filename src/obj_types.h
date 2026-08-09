@@ -220,7 +220,6 @@ constexpr inline ObjectFlags operator^(ObjectFlags lhs, ObjectFlags rhs)
     return static_cast<ObjectFlags>(static_cast<unsigned int>(lhs) ^ static_cast<unsigned int>(rhs));
 }
 
-
 inline ObjectFlags& operator&=(ObjectFlags& lhs, ObjectFlags rhs)
 {
     lhs = lhs & rhs;
@@ -254,7 +253,13 @@ inline bool dudeStateIsValid(int state)
     return state >= DUDE_STATE_FIRST && state < DUDE_STATE_COUNT;
 }
 
-typedef enum CritterFlags {
+enum CritterFlags : int {
+    CRITTER_NONE = 0x00,
+    // CRITTER_DUDE_XXX are valid only for PC
+    CRITTER_DUDE_SNEAKING = 0x01,
+    CRITTER_DUDE_RADIATED = 0x02,
+    CRITTER_DUDE_LEVEL_UP_AVAILABLE = 0x08,
+    CRITTER_DUDE_ADDICTED = 0x10,
     CRITTER_BARTER = 0x02,
     CRITTER_NO_STEAL = 0x20,
     CRITTER_NO_DROP = 0x40,
@@ -266,9 +271,34 @@ typedef enum CritterFlags {
     CRITTER_SPECIAL_DEATH = 0x1000,
     CRITTER_LONG_LIMBS = 0x2000,
     CRITTER_NO_KNOCKBACK = 0x4000,
-} CritterFlags;
+};
 
-#define CRITTER_RADIATED 0x02
+constexpr inline CritterFlags operator&(CritterFlags lhs, CritterFlags rhs)
+{
+    return static_cast<CritterFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline CritterFlags operator|(CritterFlags lhs, CritterFlags rhs)
+{
+    return static_cast<CritterFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline CritterFlags operator~(CritterFlags rhs)
+{
+    return static_cast<CritterFlags>(~static_cast<int>(rhs));
+}
+
+inline CritterFlags& operator&=(CritterFlags& lhs, CritterFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline CritterFlags& operator|=(CritterFlags& lhs, CritterFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 // These two values are the same but stored in different fields.
 #define CONTAINER_FLAG_JAMMED 0x04000000

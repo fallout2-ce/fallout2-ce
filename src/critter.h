@@ -72,9 +72,9 @@ bool critterCanDudeRest();
 int critterGetMovementPointCostAdjustedForCrippledLegs(Object* critter, int distance);
 bool critterIsEncumbered(Object* critter);
 bool critterIsFleeing(Object* critter);
-bool critterFlagCheck(int pid, int flag);
-void critterFlagSet(int pid, int flag);
-void critterFlagUnset(int pid, int flag);
+bool critterFlagCheck(int pid, CritterFlags flag);
+void critterFlagSet(int pid, CritterFlags flag);
+void critterFlagUnset(int pid, CritterFlags flag);
 
 } // namespace fallout
 

@@ -96,7 +96,7 @@ static CritterProto gDudeProto = {
     0x20000000,
     0,
     -1,
-    0,
+    CRITTER_NONE,
     { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 18, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 23, 0 },
     { 0 },
     { SKILL_SMALL_GUNS },
@@ -496,7 +496,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.flags = PROTO_FLAG_LIGHT_THRU;
     proto->critter.extendedFlags = PROTO_EXT_FLAG_LOOK | PROTO_EXT_FLAG_CAN_TALK_TO;
     proto->critter.sid = -1;
-    proto->critter.data.flags = 0;
+    proto->critter.data.flags = CRITTER_NONE;
     proto->critter.data.bodyType = BODY_TYPE_BIPED;
     proto->critter.headFid = -1;
     proto->critter.aiPacket = 1;

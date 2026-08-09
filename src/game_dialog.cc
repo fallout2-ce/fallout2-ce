@@ -3876,7 +3876,7 @@ int _gdCanBarter()
         return 1;
     }
 
-    if (proto->critter.data.flags & CRITTER_BARTER) {
+    if ((proto->critter.data.flags & CRITTER_BARTER) != CRITTER_NONE) {
         return 1;
     }
 
@@ -4483,7 +4483,7 @@ void gameDialogBarterButtonUpMouseUp(int btn, int keyCode)
 
     Proto* proto;
     protoGetProto(gGameDialogSpeaker->pid, &proto);
-    if (proto->critter.data.flags & CRITTER_BARTER) {
+    if ((proto->critter.data.flags & CRITTER_BARTER) != CRITTER_NONE) {
         if (gGameDialogLipSyncStarted) {
             if (soundIsPlaying(gLipsData.sound)) {
                 gameDialogEndLips();

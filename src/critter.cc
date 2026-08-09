@@ -436,7 +436,7 @@ int critterAdjustRadiation(Object* obj, int amount)
     }
 
     if (amount > 0) {
-        proto->critter.data.flags |= CRITTER_RADIATED;
+        proto->critter.data.flags |= CRITTER_DUDE_RADIATED;
     }
 
     if (amount > 0) {
@@ -504,7 +504,7 @@ int critterCheckRadiationEvent(Object* obj)
 
     Proto* proto;
     protoGetProto(obj->pid, &proto);
-    if ((proto->critter.data.flags & CRITTER_RADIATED) == 0) {
+    if ((proto->critter.data.flags & CRITTER_DUDE_RADIATED) == CRITTER_NONE) {
         return 0;
     }
 
@@ -545,7 +545,7 @@ int critterCheckRadiationEvent(Object* obj)
         queueAddEvent(GAME_TIME_TICKS_PER_HOUR * randomBetween(4, 18), obj, radiationEvent, EVENT_TYPE_RADIATION);
     }
 
-    proto->critter.data.flags &= ~CRITTER_RADIATED;
+    proto->critter.data.flags &= ~CRITTER_DUDE_RADIATED;
 
     return 0;
 }
@@ -1102,7 +1102,7 @@ int gcdLoad(const char* path)
 // 0x42DF70 critter_read_data
 int protoCritterDataRead(File* stream, CritterProtoData* critterData)
 {
-    if (fileReadInt32(stream, &(critterData->flags)) == -1) return -1;
+    if (fileReadInt32Enum<CritterFlags>(stream, &(critterData->flags)) == -1) return -1;
     if (fileReadInt32List(stream, critterData->baseStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileReadInt32List(stream, critterData->bonusStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileReadInt32List(stream, critterData->skills, SKILL_COUNT) == -1) return -1;
@@ -1169,7 +1169,7 @@ int gcdSave(const char* path)
 // 0x42E174 critter_write_data
 int protoCritterDataWrite(File* stream, CritterProtoData* critterData)
 {
-    if (fileWriteInt32(stream, critterData->flags) == -1) return -1;
+    if (fileWriteInt32Enum<CritterFlags>(stream, critterData->flags) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->baseStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->bonusStats, SAVEABLE_STAT_COUNT) == -1) return -1;
     if (fileWriteInt32List(stream, critterData->skills, SKILL_COUNT) == -1) return -1;
@@ -1184,10 +1184,16 @@ int protoCritterDataWrite(File* stream, CritterProtoData* critterData)
 // 0x42E220 pc_flag_off
 void dudeDisableState(DudeState state)
 {
+    CritterFlags flags;
     switch (state) {
     case DUDE_STATE_SNEAKING:
+        flags = CRITTER_DUDE_SNEAKING;
+        break;
     case DUDE_STATE_LEVEL_UP_AVAILABLE:
+        flags = CRITTER_DUDE_LEVEL_UP_AVAILABLE;
+        break;
     case DUDE_STATE_ADDICTED:
+        flags = CRITTER_DUDE_ADDICTED;
         break;
     default: 
         return;
@@ -1198,7 +1204,7 @@ void dudeDisableState(DudeState state)
         return;
     }
 
-    proto->critter.data.flags &= ~(1 << state);
+    proto->critter.data.flags &= ~flags;
 
     if (state == DUDE_STATE_SNEAKING) {
         queueRemoveEventsByType(gDude, EVENT_TYPE_SNEAK);
@@ -1210,10 +1216,16 @@ void dudeDisableState(DudeState state)
 // 0x42E26C pc_flag_on
 void dudeEnableState(DudeState state)
 {
+    CritterFlags flags;
     switch (state) {
     case DUDE_STATE_SNEAKING:
+        flags = CRITTER_DUDE_SNEAKING;
+        break;
     case DUDE_STATE_LEVEL_UP_AVAILABLE:
+        flags = CRITTER_DUDE_LEVEL_UP_AVAILABLE;
+        break;
     case DUDE_STATE_ADDICTED:
+        flags = CRITTER_DUDE_ADDICTED;
         break;
     default: 
         return;
@@ -1224,7 +1236,7 @@ void dudeEnableState(DudeState state)
         return;
     }
 
-    proto->critter.data.flags |= (1 << state);
+    proto->critter.data.flags |= flags;
 
     if (state == DUDE_STATE_SNEAKING) {
         sneakEventProcess(nullptr, nullptr);
@@ -1255,12 +1267,20 @@ bool dudeHasState(DudeState state)
         return false;
     }
 
+    CritterFlags flags;
     switch (state) {
     case DUDE_STATE_POISONED:
         return critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD;
     case DUDE_STATE_RADIATED:
         return critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD;
-    default: 
+    case DUDE_STATE_SNEAKING:
+        flags = CRITTER_DUDE_SNEAKING;
+        break;
+    case DUDE_STATE_LEVEL_UP_AVAILABLE:
+        flags = CRITTER_DUDE_LEVEL_UP_AVAILABLE;
+        break;
+    case DUDE_STATE_ADDICTED:
+        flags = CRITTER_DUDE_ADDICTED;
         break;
     }
 
@@ -1269,7 +1289,7 @@ bool dudeHasState(DudeState state)
         return false;
     }
 
-    return (proto->critter.data.flags & (1 << state)) != 0;
+    return (proto->critter.data.flags & flags) != CRITTER_NONE;
 }
 
 // 0x42E32C critter_sneak_check
@@ -1475,7 +1495,7 @@ bool critterIsFleeing(Object* critter)
 // Checks proto critter flag.
 //
 // 0x42E6AC critter_flag_check
-bool critterFlagCheck(int pid, int flag)
+bool critterFlagCheck(int pid, CritterFlags flag)
 {
     if (pid == -1) {
         return false;
@@ -1486,15 +1506,16 @@ bool critterFlagCheck(int pid, int flag)
     }
 
     Proto* proto;
-    protoGetProto(pid, &proto);
-    return (proto->critter.data.flags & flag) != 0;
+    if (protoGetProto(pid, &proto) == -1) {
+        return false;
+    }
+
+    return (proto->critter.data.flags & flag) != CRITTER_NONE;
 }
 
 // 0x42E6F0 critter_flag_set
-void critterFlagSet(int pid, int flag)
+void critterFlagSet(int pid, CritterFlags flag)
 {
-    Proto* proto;
-
     if (pid == -1) {
         return;
     }
@@ -1503,16 +1524,17 @@ void critterFlagSet(int pid, int flag)
         return;
     }
 
-    protoGetProto(pid, &proto);
+    Proto* proto;
+    if (protoGetProto(pid, &proto) == -1) {
+        return;
+    }
 
     proto->critter.data.flags |= flag;
 }
 
 // 0x42E71C critter_flag_unset
-void critterFlagUnset(int pid, int flag)
+void critterFlagUnset(int pid, CritterFlags flag)
 {
-    Proto* proto;
-
     if (pid == -1) {
         return;
     }
@@ -1521,7 +1543,10 @@ void critterFlagUnset(int pid, int flag)
         return;
     }
 
-    protoGetProto(pid, &proto);
+    Proto* proto;
+    if (protoGetProto(pid, &proto) == -1) {
+        return;
+    }
 
     proto->critter.data.flags &= ~flag;
 }
