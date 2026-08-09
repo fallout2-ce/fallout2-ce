@@ -15,6 +15,7 @@ namespace fallout {
 #define SFALL_CONFIG_OVERRIDE_CRITICALS_FILE_KEY "OverrideCriticalFile"
 #define SFALL_CONFIG_BOOKS_FILE_KEY "BooksFile"
 #define SFALL_CONFIG_ELEVATORS_FILE_KEY "ElevatorsFile"
+#define SFALL_CONFIG_SKILLS_FILE_KEY "SkillsFile"
 #define SFALL_CONFIG_UNARMED_FILE_KEY "UnarmedFile"
 #define SFALL_CONFIG_INI_CONFIG_FOLDER "IniConfigFolder"
 #define SFALL_CONFIG_CONFIG_FILE "ConfigFile"
