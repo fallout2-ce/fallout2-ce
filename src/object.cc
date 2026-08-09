@@ -4978,7 +4978,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
     int objectWidth = objectRect.right - objectRect.left + 1;
     int objectHeight = objectRect.bottom - objectRect.top + 1;
 
-    if (type == 6) {
+    if (type == OBJ_TYPE_INTERFACE) {
         blitBufferToBufferTrans(src,
             objectWidth,
             objectHeight,
@@ -4989,7 +4989,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
         return;
     }
 
-    if (type == 2 || type == 3) {
+    if (type == OBJ_TYPE_SCENERY || type == OBJ_TYPE_WALL) {
         if ((gDude->flags & OBJECT_HIDDEN) == OBJECT_NONE && (object->flags & OBJECT_FLAG_0xFC000) == OBJECT_NONE) {
             Proto* proto;
             protoGetProto(object->pid, &proto);
