@@ -105,7 +105,7 @@ extern char* gItemTypeNames[ITEM_TYPE_COUNT];
 
 void proto_make_path(char* path, int pid);
 int _proto_list_str(int pid, char* proto_path);
-size_t proto_size(int type);
+size_t proto_size(ObjectType type);
 bool _proto_action_can_use(int pid);
 bool _proto_action_can_use_on(int pid);
 bool _proto_action_can_talk_to(int pid);
@@ -134,11 +134,11 @@ int protoInit();
 void protoReset();
 void protoExit();
 int _proto_save_pid(int pid);
-int proto_new(int* pid, int type);
+int proto_new(int* pid, ObjectType type);
 void _proto_remove_all();
 int protoGetProto(int pid, Proto** protoPtr);
 int _ResetPlayer();
-int proto_max_id(int type);
+int proto_max_id(ObjectType type);
 
 static bool isExitGridPid(int pid)
 {

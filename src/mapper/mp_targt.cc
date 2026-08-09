@@ -70,7 +70,7 @@ void target_make_path(char* path, int pid)
     }
 
     if (pid != -1) {
-        strcat(path, artGetObjectTypeName(PID_TYPE(pid)));
+        strcat(path, artGetObjectTypeName(objectTypeFromPid(pid)));
     }
 }
 

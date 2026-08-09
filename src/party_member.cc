@@ -564,7 +564,7 @@ static int _partyMemberPrepLoadInstance(PartyMemberListItem* a1)
         return 0;
     }
 
-    if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
         obj->data.critter.combat.whoHitMe = nullptr;
     }
 
@@ -611,7 +611,7 @@ static int _partyMemberPrepLoadInstance(PartyMemberListItem* a1)
 
     scriptRemove(script->sid);
 
-    if (PID_TYPE(obj->pid) == OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
         _dude_stand(obj, obj->rotation, -1);
     }
 
@@ -666,7 +666,7 @@ static int _partyMemberRecoverLoadInstance(PartyMemberListItem* a1)
     }
 
     int scriptType = SCRIPT_TYPE_CRITTER;
-    if (PID_TYPE(a1->object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(a1->object->pid) != OBJ_TYPE_CRITTER) {
         scriptType = SCRIPT_TYPE_ITEM;
     }
 
@@ -804,7 +804,7 @@ int _partyMemberSyncPosition()
     for (int index = 1; index < gPartyMembersLength; index++) {
         PartyMemberListItem* partyMember = &(gPartyMembers[index]);
         Object* partyMemberObj = partyMember->object;
-        if ((partyMemberObj->flags & OBJECT_HIDDEN) == 0 && PID_TYPE(partyMemberObj->pid) == OBJ_TYPE_CRITTER) {
+        if ((partyMemberObj->flags & OBJECT_HIDDEN) == 0 && objectTypeFromPid(partyMemberObj->pid) == OBJ_TYPE_CRITTER) {
             Rotation rotation;
             if ((n % 2) != 0) {
                 rotation = clockwiseRotation;
@@ -835,7 +835,7 @@ int _partyMemberRestingHeal(int hours)
 
     for (int index = 0; index < gPartyMembersLength; index++) {
         PartyMemberListItem* partyMember = &(gPartyMembers[index]);
-        if (PID_TYPE(partyMember->object->pid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(partyMember->object->pid) == OBJ_TYPE_CRITTER) {
             int healingRate = critterGetStat(partyMember->object, STAT_HEALING_RATE);
             critterAdjustHitPoints(partyMember->object, healingTicks * healingRate);
         }
@@ -915,7 +915,7 @@ int _getPartyMemberCount()
     for (int index = 1; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
 
-        if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER || critterIsDead(object) || (object->flags & OBJECT_HIDDEN) != 0) {
+        if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER || critterIsDead(object) || (object->flags & OBJECT_HIDDEN) != 0) {
             count--;
         }
     }
@@ -1149,7 +1149,7 @@ Skill partyMemberGetBestSkill(Object* object)
         return bestSkill;
     }
 
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         return bestSkill;
     }
 
@@ -1175,7 +1175,7 @@ Object* partyMemberGetBestInSkill(Skill skill)
 
     for (int index = 0; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
-        if ((object->flags & OBJECT_HIDDEN) == 0 && PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+        if ((object->flags & OBJECT_HIDDEN) == 0 && objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
             int value = skillGetValue(object, skill);
             if (value > bestValue) {
                 bestValue = value;
@@ -1196,7 +1196,7 @@ int partyGetBestSkillValue(Skill skill)
 
     for (int index = 0; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
-        if ((object->flags & OBJECT_HIDDEN) == 0 && PID_TYPE(object->pid) == OBJ_TYPE_CRITTER) {
+        if ((object->flags & OBJECT_HIDDEN) == 0 && objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
             int value = skillGetValue(object, skill);
             if (value > bestValue) {
                 bestValue = value;
@@ -1306,7 +1306,7 @@ bool partyMemberSupportsDisposition(Object* critter, int disposition)
         return false;
     }
 
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         return false;
     }
 
@@ -1329,7 +1329,7 @@ bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode)
         return false;
     }
 
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         return false;
     }
 
@@ -1352,7 +1352,7 @@ bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
         return false;
     }
 
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         return false;
     }
 
@@ -1375,7 +1375,7 @@ bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
         return false;
     }
 
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         return false;
     }
 
@@ -1398,7 +1398,7 @@ bool partyMemberSupportsDistance(Object* object, int distanceMode)
         return false;
     }
 
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         return false;
     }
 
@@ -1421,7 +1421,7 @@ bool partyMemberSupportsAttackWho(Object* object, int attackWho)
         return false;
     }
 
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         return false;
     }
 
@@ -1444,7 +1444,7 @@ bool partyMemberSupportsChemUse(Object* object, int chemUse)
         return false;
     }
 
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         return false;
     }
 
@@ -1488,7 +1488,7 @@ int _partyMemberIncLevels()
             continue;
         }
 
-        if (PID_TYPE(obj->pid) != OBJ_TYPE_CRITTER) {
+        if (objectTypeFromPid(obj->pid) != OBJ_TYPE_CRITTER) {
             continue;
         }
 
@@ -1584,7 +1584,7 @@ static int _partyMemberCopyLevelInfo(Object* critter, int stagePid)
         return -1;
     }
 
-    if (PID_TYPE(stagePid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(stagePid) != OBJ_TYPE_CRITTER) {
         debugPrint("\npartyMemberCopyLevelInfo: stage pid %d is not a critter", stagePid);
         return -1;
     }
@@ -1652,7 +1652,7 @@ bool partyIsAnyoneCanBeHealedByRest()
         PartyMemberListItem* ptr = &(gPartyMembers[index]);
         Object* object = ptr->object;
 
-        if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) continue;
+        if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) continue;
         if (critterIsDead(object)) continue;
         if ((object->flags & OBJECT_HIDDEN) != 0) continue;
         if (critterGetKillType(object) == KILL_TYPE_ROBOT) continue;
@@ -1679,7 +1679,7 @@ int partyGetMaxWoundToHealByRest()
         PartyMemberListItem* ptr = &(gPartyMembers[index]);
         Object* object = ptr->object;
 
-        if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) continue;
+        if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) continue;
         if (critterIsDead(object)) continue;
         if ((object->flags & OBJECT_HIDDEN) != 0) continue;
         if (critterGetKillType(object) == KILL_TYPE_ROBOT) continue;
@@ -1704,7 +1704,7 @@ std::vector<Object*> get_all_party_members_objects(bool include_hidden)
     for (int index = 0; index < gPartyMembersLength; index++) {
         auto object = gPartyMembers[index].object;
         if (include_hidden
-            || (PID_TYPE(object->pid) == OBJ_TYPE_CRITTER
+            || (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER
                 && !critterIsDead(object)
                 && (object->flags & OBJECT_HIDDEN) == 0)) {
             value.push_back(object);

@@ -555,7 +555,7 @@ namespace {
 
         handled = true;
 
-        switch (PID_TYPE(object->pid)) {
+        switch (objectTypeFromPid(object->pid)) {
         case OBJ_TYPE_CRITTER:
             return getCritterObjectData(object, field);
         case OBJ_TYPE_ITEM:
@@ -750,7 +750,7 @@ namespace {
             return changed;
         }
 
-        switch (PID_TYPE(object->pid)) {
+        switch (objectTypeFromPid(object->pid)) {
         case OBJ_TYPE_CRITTER:
             return setCritterObjectData(object, field, data);
         case OBJ_TYPE_ITEM:
@@ -1266,7 +1266,7 @@ void mf_get_object_ai_data(OpcodeContext& ctx)
     const int aiParam = ctx.arg(1).asInt();
 
     ProgramValue result(-1);
-    if (PID_TYPE(object->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) {
         ctx.setReturn(result);
         return;
     }
@@ -1472,7 +1472,7 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotatio
         fid = ctx.arg(artArg).asInt();
         Rotation frameRotation = ROTATION_NE;
         int lockFid = fid;
-        if (FID_TYPE(fid) == OBJ_TYPE_CRITTER) {
+        if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
             frameRotation = rotationIsValid(rotation) ? rotation : rotationFromFid(fid);
             if (rotationIsValid(rotation)) {
                 lockFid = (rotation << 28) | (fid & 0x0FFFFFFF);
@@ -1641,7 +1641,7 @@ static void mf_interface_art_draw(OpcodeContext& ctx)
 
     int xOffset = 0;
     int yOffset = 0;
-    if (ctx.arg(1).isInt() && FID_TYPE(fid) == OBJ_TYPE_CRITTER && rotation >= ROTATION_FIRST) {
+    if (ctx.arg(1).isInt() && objectTypeFromFid(fid) == OBJ_TYPE_CRITTER && rotation >= ROTATION_FIRST) {
         xOffset = image.getXOffset();
         yOffset = image.getYOffset();
     }
@@ -1672,7 +1672,7 @@ void mf_inventory_redraw(OpcodeContext& ctx)
 void mf_item_weight(OpcodeContext& ctx)
 {
     Object* object = ctx.arg(0).asObject();
-    if (PID_TYPE(object->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(object->pid) != OBJ_TYPE_ITEM) {
         ctx.printError("%s() - expected item object.", ctx.name());
         ctx.setReturn(0);
         return;
@@ -1749,7 +1749,7 @@ void mf_obj_under_cursor(OpcodeContext& ctx)
     int onlyCritter = ctx.arg(0).asInt();
     int includeDude = ctx.arg(1).asInt();
 
-    Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : -1, includeDude, gElevation);
+    Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : OBJ_TYPE_INVALID, includeDude, gElevation);
 
     ctx.setReturn(object);
 }
@@ -1785,7 +1785,7 @@ static void mf_objects_in_radius(OpcodeContext& ctx)
     int endTile;
     for (int tile = objectsInRadiusFirstTile(sourceTile, radius, &endTile); tile < endTile; tile++) {
         for (Object* object = objectFindFirstAtLocation(elevation, tile); object != nullptr; object = objectFindNextAtLocation()) {
-            if (type != -1 && (object->pid == -1 || PID_TYPE(object->pid) != type)) {
+            if (type != -1 && (object->pid == -1 || objectTypeFromPid(object->pid) != type)) {
                 continue;
             }
 
@@ -2018,7 +2018,7 @@ void mf_unwield_slot(OpcodeContext& ctx)
         return;
     }
 
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         ctx.printError("%s() - the object is not a critter.", ctx.name());
         ctx.setReturn(-1);
         return;

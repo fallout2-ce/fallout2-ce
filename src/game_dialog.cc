@@ -788,7 +788,7 @@ void gameDialogEnter(Object* speaker, int mode)
         return;
     }
 
-    if (PID_TYPE(speaker->pid) != OBJ_TYPE_ITEM && SID_TYPE(speaker->sid) != SCRIPT_TYPE_SPATIAL) {
+    if (objectTypeFromPid(speaker->pid) != OBJ_TYPE_ITEM && SID_TYPE(speaker->sid) != SCRIPT_TYPE_SPATIAL) {
         MessageListItem messageListItem;
 
         int rc = _action_can_talk_to(gDude, speaker);
@@ -996,7 +996,7 @@ int _gdialogInitFromScript(int headFid, int reaction)
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
     textObjectsReset();
 
-    if (PID_TYPE(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
         _tile_scroll_to(gGameDialogSpeaker->tile, 2);
     }
 
@@ -1047,7 +1047,7 @@ int _gdialogExitFromScript()
     dialogReviewEntriesClear();
     tickersRemove(gameDialogTicker);
 
-    if (PID_TYPE(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
+    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_ITEM) {
         gameDialogRestoreCenterTile();
     }
 
@@ -3775,7 +3775,7 @@ void partyMemberControlWindowUpdate()
 
     // Render preview.
     CacheEntry* previewHandle;
-    int previewFid = buildFid(FID_TYPE(gGameDialogSpeaker->fid), gGameDialogSpeaker->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(gGameDialogSpeaker->fid), ROTATION_SW);
+    int previewFid = buildFid(objectTypeFromFid(gGameDialogSpeaker->fid), gGameDialogSpeaker->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(gGameDialogSpeaker->fid), ROTATION_SW);
     Art* preview = artLock(previewFid, &previewHandle);
     if (preview != nullptr) {
         int width = artGetWidth(preview, 0, ROTATION_SW);
@@ -3867,7 +3867,7 @@ void gameDialogResetPartyMemberCcMsgIds()
 // 0x449330
 int _gdCanBarter()
 {
-    if (PID_TYPE(gGameDialogSpeaker->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_CRITTER) {
         return 1;
     }
 
@@ -4472,7 +4472,7 @@ void _gdCustomUpdateSetting(int option, int value)
 // 0x44A52C
 void gameDialogBarterButtonUpMouseUp(int btn, int keyCode)
 {
-    if (PID_TYPE(gGameDialogSpeaker->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(gGameDialogSpeaker->pid) != OBJ_TYPE_CRITTER) {
         return;
     }
 

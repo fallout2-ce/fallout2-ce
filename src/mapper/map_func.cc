@@ -40,7 +40,7 @@ static bool block_obj_view_on = false;
 static int fidShowList[9] = { 0 };
 static int blockedFidCache[9] = { 0 };
 
-constexpr int kBlockViewArtType[9] = { 2, 2, 2, 2, 3, 3, 5, 5, 2 };
+constexpr ObjectType kBlockViewArtType[9] = { OBJ_TYPE_SCENERY, OBJ_TYPE_SCENERY, OBJ_TYPE_SCENERY, OBJ_TYPE_SCENERY, OBJ_TYPE_WALL, OBJ_TYPE_WALL, OBJ_TYPE_MISC, OBJ_TYPE_MISC, OBJ_TYPE_SCENERY };
 constexpr const char* kBlockViewListName[9] = {
     "block2", "block3", "block4", "block5",
     "block2", "block3", "scrblk", "trnblk", "blkexit"
@@ -200,7 +200,7 @@ void erase_rect(Rect* rect)
 }
 
 // 0x484400
-int toolbar_proto(int type, int id)
+int toolbar_proto(ObjectType type, int id)
 {
     if (id < proto_max_id(type)) {
         return (type << 24) | id;
@@ -405,20 +405,19 @@ int pickHex()
 
 //
 // pick_toolbar
-int pickToolbar(int topY)
+ObjectType pickToolbar(int topY)
 {
-    constexpr int kTypeCount = 6;
-    char names[kTypeCount][20];
-    char* items[kTypeCount];
+    char names[OBJ_TYPE_PROTO_COUNT][20];
+    char* items[OBJ_TYPE_PROTO_COUNT];
 
-    for (int i = 0; i < kTypeCount; i++) {
+    for (ObjectType i = OBJ_TYPE_FIRST; i < OBJ_TYPE_PROTO_COUNT; i++) {
         snprintf(names[i], sizeof(names[i]), " %s", artGetObjectTypeName(i));
         // Original mapper highlights the type's first letter as a hotkey by uppercasing it.
         names[i][1] = toupper(names[i][1]);
         items[i] = names[i];
     }
 
-    return _win_pull_down(items, kTypeCount, 0, topY, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED);
+    return static_cast<ObjectType>(_win_pull_down(items, OBJ_TYPE_PROTO_COUNT, 0, topY, COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED));
 }
 
 // place_object_
@@ -650,7 +649,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
     bool gatePassed = useArtNotProtos
         || existing == nullptr
         || srcObj == nullptr
-        || PID_TYPE(srcObj->pid) == OBJ_TYPE_TILE
+        || objectTypeFromPid(srcObj->pid) == OBJ_TYPE_TILE
         || protoGetProto(srcObj->pid, &proto) == -1
         || (proto != nullptr && (proto->flags & 0x10) != 0);
 
@@ -718,7 +717,7 @@ static void copy_object_to_tile_pobj(int srcFid, int dstTile, Object* srcObj, bo
         }
     }
 
-    int newType = FID_TYPE(newFid);
+    ObjectType newType = objectTypeFromFid(newFid);
     if (newType == OBJ_TYPE_CRITTER || newType == OBJ_TYPE_MISC) {
         objectSetRotation(copy, rotation, nullptr);
     }
@@ -762,7 +761,7 @@ void copyObject(int filterType)
                     || obj == gGameMouseBouncingCursor
                     || obj == gGameMouseHexCursor
                     || (obj->flags & OBJECT_HIDDEN) != 0
-                    || filterType != -1 && FID_TYPE(obj->fid) != filterType) continue;
+                    || filterType != -1 && objectTypeFromFid(obj->fid) != filterType) continue;
 
                 if (mpCopyCount >= kMaxCopyEntries) {
                     _win_msg("Too many objects in region!", 80, 80, COLOR_RED);
@@ -931,7 +930,7 @@ void eraseObject()
                          obj != nullptr;
                          obj = objectFindNextAtElevation()) {
                         if (obj == gDude) continue;
-                        if (PID_TYPE(obj->pid) == OBJ_TYPE_INTERFACE) continue;
+                        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_INTERFACE) continue;
                         if ((obj->flags & OBJECT_HIDDEN) != 0) continue;
                         if (obj == gGameMouseBouncingCursor) continue;
                         if (obj == gGameMouseHexCursor) continue;

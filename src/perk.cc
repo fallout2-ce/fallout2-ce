@@ -557,7 +557,7 @@ int perkGetFrmId(Perk perk)
 // 0x496BFC perk_add_effect
 void perkAddEffect(Object* critter, Perk perk)
 {
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perk_add_effect: Was called on non-critter!");
         return;
     }
@@ -598,7 +598,7 @@ void perkAddEffect(Object* critter, Perk perk)
 // 0x496CE0 perk_remove_effect
 void perkRemoveEffect(Object* critter, Perk perk)
 {
-    if (PID_TYPE(critter->pid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         debugPrint("\nERROR: perk_remove_effect: Was called on non-critter!");
         return;
     }
