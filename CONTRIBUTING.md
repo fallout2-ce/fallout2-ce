@@ -12,6 +12,14 @@ The project uses CMake, so building mostly comes down to picking the right prese
 
 - `--scan-unimplemented` - do an analysis of opcodes and hooks used by loaded mods
 - `--dev-load-game=1` - load the given save game automatically (useful for LLM automation)
+- `--dev-endgame` - after a new or loaded game starts, trigger the normal `endgame_slideshow` request
+- `--dev-endgame-movie` - after a new or loaded game starts, run the `endgame_movie` sequence directly
+
+For Fallout 1/Fo1in2-style endings, use both endgame flags to mirror the script flow:
+
+```sh
+./Fallout\ II\ Community\ Edition.app/Contents/MacOS/Fallout\ II\ Community\ Edition --dev-load-game=1 --dev-endgame --dev-endgame-movie
+```
 
 ### macOS
 

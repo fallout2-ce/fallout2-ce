@@ -4697,6 +4697,7 @@ static void opMoveObjectInventoryToObject(Program* program)
 static void opEndgameMovie(Program* program)
 {
     program->flags |= PROGRAM_FLAG_CHILD_CALL;
+    scriptsHandlePendingEndgameSlideshow();
     endgamePlayMovie();
     program->flags &= ~PROGRAM_FLAG_CHILD_CALL;
 }

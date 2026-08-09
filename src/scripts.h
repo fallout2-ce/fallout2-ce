@@ -214,6 +214,7 @@ int scriptEventRead(File* stream, void** dataPtr);
 int scriptEventProcess(Object* obj, void* data);
 int _scripts_clear_combat_requests(Script* script);
 int scriptsHandleRequests();
+bool scriptsHandlePendingEndgameSlideshow();
 int _scripts_check_state_in_combat();
 int scriptsRequestCombat(CombatStartData* combat);
 void _scripts_request_combat_locked(CombatStartData* combat);

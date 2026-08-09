@@ -51,6 +51,7 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | `Misc` | `XPTable` | `stats` | `xp_table` |
 | `Misc` | `DisableSpecialMapIDs` | `maps` | `disable_special_map_ids` |
 | `Misc` | `Movie1` - `Movie32` | `movies` | `movie1` - `movie32` |
+| `Misc` | `Fallout1Behavior` movie behavior | `movies` | `endgame_play_after_slideshow`, `endgame_movie_male`, `endgame_movie_female` |
 | `Sound` | `MainMenuMusic` | `sound` | `main_menu_music` |
 | `Sound` | `WorldMapMusic` | `sound` | `worldmap_music` |
 | `Sound` | `WorldMapCarMusic` | `sound` | `worldmap_car_music` |
@@ -62,6 +63,11 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 
 Unlike sfall, `travel_delay` throttles only world-map travel simulation. Input,
 rendering, and world-map scripts continue at the normal frame rate.
+
+CE does not provide a single `Fallout1Behavior` compatibility switch. The movie
+portion can be configured directly: set `endgame_play_after_slideshow=0`,
+`endgame_movie_male=10`, and `endgame_movie_female=11` for the sfall Fallout 1
+movie sequence. Time-limit and item-weight behavior are separate features.
 
 ## Opcodes / Metarules
 
