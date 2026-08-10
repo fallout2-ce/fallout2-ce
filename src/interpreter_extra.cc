@@ -1665,7 +1665,7 @@ static void opRemoveObjectFromInventory(Program* program)
     }
 
     bool updateFlags = false;
-    int flags = 0;
+    ObjectFlags flags = OBJECT_NONE;
 
     if ((item->flags & OBJECT_EQUIPPED) != OBJECT_NONE) {
         if ((item->flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
@@ -4666,7 +4666,7 @@ static void opMoveObjectInventoryToObject(Program* program)
         // CE intentionally reports the NPC weapon's actual hand slot here.
         // Sfall's op_move_obj_inven_to_obj HOOK_INVENWIELD path passes
         // InvenSlot::Armor unconditionally for NPC weapons in this case.
-        int flags = 0;
+        ObjectFlags flags = OBJECT_NONE;
         if ((oldWeapon->flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
             flags |= OBJECT_IN_LEFT_HAND;
         }
