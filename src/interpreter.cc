@@ -1258,6 +1258,19 @@ static void opConditionalOperatorGreaterThanEquals(Program* program)
             assert(false && "Should be unreachable");
         }
         break;
+    case VALUE_TYPE_PTR:
+        switch (value[0].opcode) {
+        case VALUE_TYPE_INT:
+            if (value[0].integerValue != 0) {
+                assert(false && "Should be unreachable");
+            }
+            // allows PTR >= 0 comparison, which always returns true (old RPU support)
+            result = true;
+            break;
+        default:
+            assert(false && "Should be unreachable");
+        }
+        break;
     default:
         assert(false && "Should be unreachable");
     }
