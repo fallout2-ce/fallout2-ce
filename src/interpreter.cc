@@ -1262,13 +1262,14 @@ static void opConditionalOperatorGreaterThanEquals(Program* program)
         switch (value[0].opcode) {
         case VALUE_TYPE_INT:
             if (value[0].integerValue != 0) {
-                assert(false && "Should be unreachable");
+                programFatalError("Invalid pointer comparison: >= only supports comparison to 0.");
             }
-            // allows PTR >= 0 comparison, which always returns true (old RPU support)
+            // allows PTR >= 0 comparison, which always returns true (old RPU support).
+            // This is basically a shortcut for "does variable contain a pointer type".
             result = true;
             break;
         default:
-            assert(false && "Should be unreachable");
+            programFatalError("Invalid pointer comparison: >= only supports comparison to 0.");
         }
         break;
     default:
