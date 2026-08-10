@@ -1175,7 +1175,7 @@ static int _ai_check_drugs(Object* critter)
     return 0;
 }
 
-// 0x428868
+// 0x428868 ai_run_away
 static void _ai_run_away(Object* a1, Object* a2)
 {
     if (a2 == nullptr) {
@@ -1223,7 +1223,7 @@ static void _ai_run_away(Object* a1, Object* a2)
     }
 }
 
-// 0x42899C
+// 0x42899C ai_move_away
 static int _ai_move_away(Object* a1, Object* a2, int a3)
 {
     if (aiGetPacket(a1)->distance == DISTANCE_STAY) {

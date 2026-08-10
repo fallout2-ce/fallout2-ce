@@ -568,6 +568,7 @@ bool mouseManagerSetMousePointer(char* fileName)
     string[0] = '\0';
     fileReadString(string, sizeof(string) - 1, stream);
     if (string[0] == '\0') {
+        fileClose(stream);
         return false;
     }
 
@@ -578,15 +579,19 @@ bool mouseManagerSetMousePointer(char* fileName)
     } else {
         // NOTE: Uninline.
         char* sep = strchr(string, ' ');
-        if (sep != nullptr) {
-            return 0;
+        if (sep == nullptr) {
+            fileClose(stream);
+            return false;
         }
 
         *sep = '\0';
 
         int v3;
         int v4;
-        sscanf(sep + 1, "%d %d", &v3, &v4);
+        if (sscanf(sep + 1, "%d %d", &v3, &v4) != 2) {
+            fileClose(stream);
+            return false;
+        }
 
         fileClose(stream);
 
