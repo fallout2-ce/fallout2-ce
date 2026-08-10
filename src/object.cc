@@ -2479,7 +2479,7 @@ Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, int elev)
         Object* candidate = objectListItem->obj;
         if (candidate->elevation == elev) {
             unsigned int flags = candidate->flags;
-            if ((flags & OBJECT_HIDDEN) == 0 && ((flags & OBJECT_NO_BLOCK) == 0 || (flags & OBJECT_SHOOT_THRU) == 0) && candidate != excludeObj) {
+            if ((flags & OBJECT_HIDDEN) == OBJECT_NONE && ((flags & OBJECT_NO_BLOCK) == OBJECT_NONE || (flags & OBJECT_SHOOT_THRU) == OBJECT_NONE) && candidate != excludeObj) {
                 ObjectType type = objectTypeFromFid(candidate->fid);
                 // SFALL: Fix to prevent corpses from blocking line of fire.
                 if ((type == OBJ_TYPE_CRITTER && !critterIsDead(candidate))
@@ -2502,9 +2502,9 @@ Object* _obj_shoot_blocking_at(Object* excludeObj, int tile, int elev)
         while (objectListItem != nullptr) {
             Object* candidate = objectListItem->obj;
             unsigned int flags = candidate->flags;
-            if ((flags & OBJECT_MULTIHEX) != 0) {
+            if ((flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
                 if (candidate->elevation == elev) {
-                    if ((flags & OBJECT_HIDDEN) == 0 && (flags & OBJECT_NO_BLOCK) == 0 && candidate != excludeObj) {
+                    if ((flags & OBJECT_HIDDEN) == OBJECT_NONE && (flags & OBJECT_NO_BLOCK) == OBJECT_NONE && candidate != excludeObj) {
                         ObjectType type = objectTypeFromFid(candidate->fid);
                         // SFALL: Fix to prevent corpses from blocking line of
                         // fire.

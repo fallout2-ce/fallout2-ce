@@ -1155,9 +1155,9 @@ UseItemResultCode objectUseItem(Object* userObj, Object* item)
                 InterfaceItemAction rightItemAction;
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
                 if (replacementItem == nullptr) {
-                    if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
+                    if ((flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
-                    } else if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
+                    } else if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                         rightItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
                     } else {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
@@ -1403,9 +1403,9 @@ UseItemResultCode objectUseItemOn(Object* user, Object* targetObj, Object* item)
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
 
                 if (replacedItem == nullptr) {
-                    if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
+                    if ((flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
-                    } else if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
+                    } else if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                         rightItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
                     } else {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;

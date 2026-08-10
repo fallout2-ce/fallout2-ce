@@ -326,7 +326,7 @@ static int regModInstFlags(Object* obj)
     ObjectType objectType = objectTypeFromPid(obj->pid);
 
     if (regModFlagsDialog(&flags, objectType)) {
-        bool flatChanged = ((oldFlat != 0) != ((flags & OBJECT_FLAT) != 0));
+        bool flatChanged = ((oldFlat != OBJECT_NONE) != ((flags & OBJECT_FLAT) != OBJECT_NONE));
         obj->flags = flags;
 
         if (flatChanged) {

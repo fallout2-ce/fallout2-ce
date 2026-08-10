@@ -153,7 +153,7 @@ typedef enum OpRegAnimFunc {
 static void scriptPredefinedError(Program* program, const char* name, int error);
 static void scriptError(const char* format, ...);
 static int tileIsVisible(int tile);
-int correctFidForRemovedItem(Object* critter, Object* item, int flags);
+int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags);
 static void opGiveExpPoints(Program* program);
 static void opScrReturn(Program* program);
 static void opPlaySfx(Program* program);
@@ -407,12 +407,12 @@ static int tileIsVisible(int tile)
 }
 
 // 0x45409C correctFidForRemovedItem
-int correctFidForRemovedItem(Object* critter, Object* item, int flags)
+int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
 {
     InvenSlot invenSlot = InvenSlot::Armor;
-    if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
+    if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
         invenSlot = InvenSlot::RightHand;
-    } else if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
+    } else if ((flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
         invenSlot = InvenSlot::LeftHand;
     }
 
@@ -427,19 +427,19 @@ int correctFidForRemovedItem(Object* critter, Object* item, int flags)
     WeaponAnimation weaponCode = weaponAnimationFromFid(fid);
     int newFid = -1;
 
-    if ((flags & OBJECT_IN_ANY_HAND) != 0) {
+    if ((flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
         if (critter == gDude) {
             if (interfaceGetCurrentHand() == HAND_RIGHT) {
-                if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
+                if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                     weaponCode = WEAPON_ANIMATION_NONE;
                 }
             } else {
-                if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
+                if ((flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
                     weaponCode = WEAPON_ANIMATION_NONE;
                 }
             }
         } else {
-            if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
+            if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                 weaponCode = WEAPON_ANIMATION_NONE;
             }
         }

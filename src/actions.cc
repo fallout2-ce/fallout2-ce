@@ -779,9 +779,9 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
                     if (attack->attacker == gDude) {
                         if (replacedWeapon == nullptr) {
-                            if ((weaponFlags & OBJECT_IN_LEFT_HAND) != 0) {
+                            if ((weaponFlags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
                                 leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
-                            } else if ((weaponFlags & OBJECT_IN_RIGHT_HAND) != 0) {
+                            } else if ((weaponFlags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                                 rightItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
                             }
                         }
