@@ -1282,6 +1282,8 @@ bool dudeHasState(DudeState state)
     case DUDE_STATE_ADDICTED:
         flags = CRITTER_DUDE_ADDICTED;
         break;
+    default:
+        return false;
     }
 
     Proto* proto;
