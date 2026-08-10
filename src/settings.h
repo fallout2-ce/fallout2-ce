@@ -17,7 +17,7 @@ struct SystemSettings {
     std::string language = ENGLISH;
     int scroll_lock = 0;
     bool interrupt_walk = true;
-    int art_cache_size = 8;
+    int art_cache_size = 32;
     bool color_cycling = true;
     int cycle_speed_factor = 1;
     bool hashing = true;

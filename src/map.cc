@@ -899,7 +899,6 @@ static int mapLoad(File* stream)
 
     gMapSid = -1;
 
-    int previousMapIndex = gMapHeader.index;
     const char* error = nullptr;
 
     error = "Invalid file handle";
@@ -993,11 +992,6 @@ static int mapLoad(File* stream)
     objectSetLocation(gDude, gEnteringTile, gElevation, nullptr);
     objectSetRotation(gDude, gEnteringRotation, nullptr);
     gMapHeader.index = wmMapMatchNameToIdx(gMapHeader.name);
-
-    if (previousMapIndex != gMapHeader.index) {
-        debugPrint("[map.cc]: flushing art cache before loading new map\n");
-        artCacheFlush();
-    }
 
     if ((gMapHeader.flags & 1) == 0) {
         char path[COMPAT_MAX_PATH];

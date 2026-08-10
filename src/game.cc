@@ -420,6 +420,7 @@ void gameReset()
     aiReset();
     inventoryResetDude();
     gameSoundReset();
+    artCacheFlush();
     _movieStop();
     movieEffectsReset();
     gameMoviesReset();
