@@ -2348,6 +2348,7 @@ static void scriptListsFreeAll()
         scriptList->head = nullptr;
         scriptList->tail = nullptr;
         scriptList->length = 0;
+        scriptList->nextScriptId = 0;
     }
 
     gScriptsEnumerationScriptIndex = 0;
@@ -2382,6 +2383,8 @@ int scriptLoadAll(File* stream)
                 goto cleanup;
             }
 
+            extent->next = nullptr;
+
             scriptList->head = extent;
             scriptList->tail = extent;
 
@@ -2391,14 +2394,14 @@ int scriptLoadAll(File* stream)
 
             scriptListExtentClearRuntimeState(extent);
 
-            extent->next = nullptr;
-
             ScriptListExtent* prevExtent = extent;
             for (int extentIndex = 1; extentIndex < scriptList->length; extentIndex++) {
                 ScriptListExtent* extent = (ScriptListExtent*)internal_malloc(sizeof(*extent));
                 if (extent == nullptr) {
                     goto cleanup;
                 }
+
+                extent->next = nullptr;
 
                 if (scriptListExtentRead(extent, stream) != 0) {
                     goto cleanup;
@@ -2407,7 +2410,6 @@ int scriptLoadAll(File* stream)
                 scriptListExtentClearRuntimeState(extent);
 
                 prevExtent->next = extent;
-                extent->next = nullptr;
                 prevExtent = extent;
             }
 
