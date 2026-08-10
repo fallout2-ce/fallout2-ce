@@ -936,7 +936,7 @@ void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult)
         });
 
     hook.call();
- 
+
     int numRets = hook.numReturnValues();
 
     if (numRets > 0) {
@@ -946,15 +946,15 @@ void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult)
     if (numRets > 1) {
         attack->attackerDamage = hook.getReturnValueAt(1).asInt();
     }
-    
+
     if (numRets > 2) {
         attack->defenderFlags = static_cast<Dam>(hook.getReturnValueAt(2).asInt());
     }
-    
+
     if (numRets > 3) {
         attack->attackerFlags = static_cast<Dam>(hook.getReturnValueAt(3).asInt());
     }
-    
+
     if (numRets > 4) {
         attack->defenderKnockback = hook.getReturnValueAt(4).asInt();
     }

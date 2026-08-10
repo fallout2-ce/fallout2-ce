@@ -1195,7 +1195,7 @@ void dudeDisableState(DudeState state)
     case DUDE_STATE_ADDICTED:
         flags = CRITTER_DUDE_ADDICTED;
         break;
-    default: 
+    default:
         return;
     }
 
@@ -1227,7 +1227,7 @@ void dudeEnableState(DudeState state)
     case DUDE_STATE_ADDICTED:
         flags = CRITTER_DUDE_ADDICTED;
         break;
-    default: 
+    default:
         return;
     }
 
