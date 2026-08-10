@@ -341,7 +341,8 @@ inline CritterManeuver& operator|=(CritterManeuver& lhs, CritterManeuver rhs)
     return lhs;
 }
 
-typedef enum Dam {
+enum Dam : int {
+    DAM_NONE = 0x00,
     DAM_KNOCKED_OUT = 0x01,
     DAM_KNOCKED_DOWN = 0x02,
     DAM_CRIP_LEG_LEFT = 0x04,
@@ -369,7 +370,34 @@ typedef enum Dam {
     DAM_CRIP_LEG_ANY = DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT,
     DAM_CRIP_ARM_ANY = DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
     DAM_CRIP = DAM_CRIP_LEG_ANY | DAM_CRIP_ARM_ANY | DAM_BLIND,
-} Dam;
+};
+
+constexpr inline Dam operator&(Dam lhs, Dam rhs)
+{
+    return static_cast<Dam>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline Dam operator|(Dam lhs, Dam rhs)
+{
+    return static_cast<Dam>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline Dam operator~(Dam rhs)
+{
+    return static_cast<Dam>(~static_cast<int>(rhs));
+}
+
+inline Dam& operator&=(Dam& lhs, Dam rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline Dam& operator|=(Dam& lhs, Dam rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 #define OBJ_LOCKED 0x02000000
 #define OBJ_JAMMED 0x04000000
@@ -415,7 +443,7 @@ typedef union ItemObjectData {
 typedef struct CritterCombatData {
     CritterManeuver maneuver; // obj_pud.combat_data.maneuver
     int ap; // obj_pud.combat_data.curr_mp
-    int results; // obj_pud.combat_data.results
+    Dam results; // obj_pud.combat_data.results
     int damageLastTurn; // obj_pud.combat_data.damage_last_turn
     int aiPacket; // obj_pud.combat_data.ai_packet
     int team; // obj_pud.combat_data.team_num

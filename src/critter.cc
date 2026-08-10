@@ -311,7 +311,7 @@ int critterAdjustHitPoints(Object* critter, int hp)
 
     critter->data.critter.hp = newHp;
     if (maximumHp >= newHp) {
-        if (newHp <= 0 && (critter->data.critter.combat.results & DAM_DEAD) == 0) {
+        if (newHp <= 0 && (critter->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
             critterKill(critter, ANIM_INVALID, true);
         }
     } else {
@@ -609,7 +609,7 @@ void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
 
     // SFALL: Prevent death when removing radiation effects.
     if (!isHealing) {
-        if ((obj->data.critter.combat.results & DAM_DEAD) == 0) {
+        if ((obj->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
             // Loop thru effects affecting primary stats. If any of the primary stat
             // dropped below minimal value, kill it.
             for (int effect = 0; effect < RADIATION_EFFECT_PRIMARY_STAT_COUNT; effect++) {
@@ -623,7 +623,7 @@ void radiationProcess(Object* obj, int radiationLevel, bool isHealing)
         }
     }
 
-    if ((obj->data.critter.combat.results & DAM_DEAD) != 0) {
+    if ((obj->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
         if (obj == gDude) {
             // You have died from radiation sickness.
             messageListItem.num = 1006;
@@ -949,7 +949,7 @@ bool critterIsActive(Object* critter)
         return false;
     }
 
-    return (critter->data.critter.combat.results & DAM_DEAD) == 0;
+    return (critter->data.critter.combat.results & DAM_DEAD) == DAM_NONE;
 }
 
 // 0x42DD18 critter_is_dead
@@ -967,7 +967,7 @@ bool critterIsDead(Object* critter)
         return true;
     }
 
-    if ((critter->data.critter.combat.results & DAM_DEAD) != 0) {
+    if ((critter->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
         return true;
     }
 
@@ -985,7 +985,7 @@ bool critterIsCrippled(Object* critter)
         return false;
     }
 
-    return (critter->data.critter.combat.results & DAM_CRIP) != 0;
+    return (critter->data.critter.combat.results & DAM_CRIP) != DAM_NONE;
 }
 
 // 0x42DD80 critter_is_prone
@@ -1036,7 +1036,7 @@ bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
         return false;
     }
 
-    if ((damageFlags & DAM_CRIP_ARM_ANY) != 0 && weaponIsTwoHanded(weapon)) {
+    if ((damageFlags & DAM_CRIP_ARM_ANY) != DAM_NONE && weaponIsTwoHanded(weapon)) {
         return false;
     }
 
@@ -1347,7 +1347,7 @@ bool dudeIsSneaking()
 // 0x42E424 critter_wake_up
 int knockoutEventProcess(Object* obj, void* data)
 {
-    if ((obj->data.critter.combat.results & DAM_DEAD) != 0) {
+    if ((obj->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
         return 0;
     }
 
@@ -1370,7 +1370,7 @@ int knockoutClear(Object* obj, void* data)
         return 0;
     }
 
-    if ((obj->data.critter.combat.results & DAM_DEAD) != 0) {
+    if ((obj->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
         return 0;
     }
 
@@ -1431,7 +1431,7 @@ bool critterCanDudeRest()
     // TODO: Check conditions in this loop.
     for (int index = 0; index < critterListLength; index++) {
         Object* critter = critterList[index];
-        if ((critter->data.critter.combat.results & DAM_DEAD) != 0) {
+        if ((critter->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
             continue;
         }
 
@@ -1465,9 +1465,9 @@ int critterGetMovementPointCostAdjustedForCrippledLegs(Object* critter, int dist
 
     int flags = critter->data.critter.combat.results;
     int actionPoints = 0;
-    if ((flags & DAM_CRIP_LEG_LEFT) != 0 && (flags & DAM_CRIP_LEG_RIGHT) != 0) {
+    if ((flags & DAM_CRIP_LEG_LEFT) != DAM_NONE && (flags & DAM_CRIP_LEG_RIGHT) != DAM_NONE) {
         actionPoints = 8 * distance;
-    } else if ((flags & DAM_CRIP_LEG_ANY) != 0) {
+    } else if ((flags & DAM_CRIP_LEG_ANY) != DAM_NONE) {
         actionPoints = 4 * distance;
     } else {
         actionPoints = distance;

@@ -1021,14 +1021,14 @@ bool dudeIsWeaponDisabled(Object* weapon)
     bool canUse = true;
 
     int flags = gDude->data.critter.combat.results;
-    if ((flags & DAM_CRIP_ARM_LEFT) != 0 && (flags & DAM_CRIP_ARM_RIGHT) != 0) {
+    if ((flags & DAM_CRIP_ARM_LEFT) != DAM_NONE && (flags & DAM_CRIP_ARM_RIGHT) != DAM_NONE) {
         canUse = false;
     }
 
     // NOTE: Uninline.
     bool isTwoHanded = weaponIsTwoHanded(weapon);
     if (canUse && isTwoHanded) {
-        if ((flags & DAM_CRIP_ARM_LEFT) != 0 || (flags & DAM_CRIP_ARM_RIGHT) != 0) {
+        if ((flags & DAM_CRIP_ARM_LEFT) != DAM_NONE || (flags & DAM_CRIP_ARM_RIGHT) != DAM_NONE) {
             canUse = false;
         }
     }

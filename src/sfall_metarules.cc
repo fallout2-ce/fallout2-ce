@@ -297,7 +297,7 @@ namespace {
             return true;
         case AttackDataField::FlagsSource:
             if (!intDataValue(data, intValue)) return false;
-            attack->attackerFlags = intValue;
+            attack->attackerFlags = static_cast<Dam>(intValue);
             return true;
         case AttackDataField::Rounds:
             if (!intDataValue(data, intValue)) return false;
@@ -323,7 +323,7 @@ namespace {
             return true;
         case AttackDataField::FlagsTarget:
             if (!intDataValue(data, intValue)) return false;
-            attack->defenderFlags = intValue;
+            attack->defenderFlags = static_cast<Dam>(intValue);
             return true;
         case AttackDataField::KnockbackValue:
             if (!intDataValue(data, intValue)) return false;
@@ -372,7 +372,7 @@ namespace {
         case AttackDataField::FlagsTarget5:
         case AttackDataField::FlagsTarget6:
             if (!intDataValue(data, intValue)) return false;
-            attack->extrasFlags[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::FlagsTarget1))] = intValue;
+            attack->extrasFlags[fieldArrayIndex(static_cast<int>(field), static_cast<int>(AttackDataField::FlagsTarget1))] = static_cast<Dam>(intValue);
             return true;
         case AttackDataField::KnockbackValue1:
         case AttackDataField::KnockbackValue2:
@@ -646,7 +646,7 @@ namespace {
             return true;
         case ObjectDataField::DamageFlags:
             if (!intDataValue(data, intValue)) return false;
-            object->data.critter.combat.results = intValue;
+            object->data.critter.combat.results = static_cast<Dam>(intValue);
             return true;
         case ObjectDataField::DamageLastTurn:
             if (!intDataValue(data, intValue)) return false;

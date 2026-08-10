@@ -1418,7 +1418,7 @@ static Object* _ai_find_nearest_team(Object* a1, Object* a2, int flags)
     for (int index = 0; index < _curr_crit_num; index++) {
         Object* obj = _curr_crit_list[index];
         if (a1 != obj
-            && (obj->data.critter.combat.results & DAM_DEAD) == 0
+            && (obj->data.critter.combat.results & DAM_DEAD) == DAM_NONE
             && (((flags & 0x02) && team != obj->data.critter.combat.team)
                 || ((flags & 0x01) && team == obj->data.critter.combat.team))) {
             return obj;
@@ -1447,7 +1447,7 @@ static Object* _ai_find_nearest_team_in_combat(Object* a1, Object* a2, int flags
     for (int index = 0; index < _curr_crit_num; index++) {
         Object* obj = _curr_crit_list[index];
         if (obj != a1
-            && (obj->data.critter.combat.results & DAM_DEAD) == 0
+            && (obj->data.critter.combat.results & DAM_DEAD) == DAM_NONE
             && (((flags & 0x02) != 0 && team != obj->data.critter.combat.team)
                 || ((flags & 0x01) != 0 && team == obj->data.critter.combat.team))) {
             if (obj->data.critter.combat.whoHitMe != nullptr) {
@@ -1490,7 +1490,7 @@ static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHi
         Object* candidate = _curr_crit_list[index];
         if (candidate != critter) {
             if (whoHitMePtr != nullptr && *whoHitMePtr == nullptr) {
-                if ((candidate->data.critter.combat.results & DAM_DEAD) == 0
+                if ((candidate->data.critter.combat.results & DAM_DEAD) == DAM_NONE
                     && candidate->data.critter.combat.whoHitMe == critter) {
                     foundTargetCount++;
                     *whoHitMePtr = candidate;
@@ -1504,7 +1504,7 @@ static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHi
                     if (whoHitCandidate != nullptr
                         && whoHitCandidate != critter
                         && team != whoHitCandidate->data.critter.combat.team
-                        && (whoHitCandidate->data.critter.combat.results & DAM_DEAD) == 0) {
+                        && (whoHitCandidate->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
                         foundTargetCount++;
                         *whoHitFriendPtr = whoHitCandidate;
                         continue;
@@ -1514,7 +1514,7 @@ static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHi
 
             if (whoHitByFriendPtr != nullptr && *whoHitByFriendPtr == nullptr) {
                 if (candidate->data.critter.combat.team != team
-                    && (candidate->data.critter.combat.results & DAM_DEAD) == 0) {
+                    && (candidate->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
                     Object* whoHitCandidate = candidate->data.critter.combat.whoHitMe;
                     if (whoHitCandidate != nullptr
                         && whoHitCandidate->data.critter.combat.team == team) {
@@ -1658,7 +1658,7 @@ static Object* _ai_danger_source(Object* a1)
     if (whoHitMe == nullptr || a1 == whoHitMe) {
         targets[0] = nullptr;
     } else {
-        if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == 0) {
+        if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
             if (attackWho == ATTACK_WHO_WHOMEVER || attackWho == -1) {
                 return whoHitMe;
             }
@@ -2504,7 +2504,7 @@ static int _cai_retargetTileFromFriendlyFire(Object* source, Object* target, int
 
     for (int index = 0; index < _curr_crit_num; index++) {
         Object* obj = _curr_crit_list[index];
-        if ((obj->data.critter.combat.results & DAM_DEAD) == 0
+        if ((obj->data.critter.combat.results & DAM_DEAD) == DAM_NONE
             && obj->data.critter.combat.team == aiRetargetData.sourceTeam
             && aiInfoGetLastTarget(obj) == aiRetargetData.target
             && obj != aiRetargetData.source) {
@@ -3126,7 +3126,7 @@ void _combat_ai(Object* a1, Object* a2)
     }
 
     if (a2 != nullptr
-        && (a2->data.critter.combat.results & DAM_DEAD) == 0
+        && (a2->data.critter.combat.results & DAM_DEAD) == DAM_NONE
         && a1->data.critter.combat.ap != 0
         && objectGetDistanceBetween(a1, a2) > ai->max_dist) {
         Object* friendlyDead = aiInfoGetFriendlyDead(a1);
@@ -3144,7 +3144,7 @@ void _combat_ai(Object* a1, Object* a2)
     if (a2 == nullptr && !objectIsPartyMember(a1)) {
         Object* whoHitMe = combatData->whoHitMe;
         if (whoHitMe != nullptr) {
-            if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == 0 && combatData->damageLastTurn > 0) {
+            if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE && combatData->damageLastTurn > 0) {
                 Object* friendlyDead = aiInfoGetFriendlyDead(a1);
                 if (friendlyDead != nullptr) {
                     _ai_move_away(a1, friendlyDead, 10);
@@ -3246,7 +3246,7 @@ bool _combatai_want_to_stop(Object* a1)
         return true;
     }
 
-    if ((a1->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) != CRITTER_MANEUVER_NONE) {
+    if ((a1->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) != DAM_NONE) {
         return true;
     }
 
@@ -3661,7 +3661,7 @@ void _combatai_notify_onlookers(Object* a1)
         if ((obj->data.critter.combat.maneuver & CRITTER_MANEUVER_ENGAGING) == CRITTER_MANEUVER_NONE) {
             if (isWithinPerception(obj, a1)) {
                 obj->data.critter.combat.maneuver |= CRITTER_MANEUVER_ENGAGING;
-                if ((a1->data.critter.combat.results & DAM_DEAD) != 0) {
+                if ((a1->data.critter.combat.results & DAM_DEAD) != DAM_NONE) {
                     if (!isWithinPerception(obj, a1->data.critter.combat.whoHitMe)) {
                         debugPrint("\nSomebody Died and I don't know why!  Run!!!");
                         aiInfoSetFriendlyDead(obj, a1);

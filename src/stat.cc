@@ -331,7 +331,7 @@ int critterGetStat(Object* critter, Stat stat)
 
         switch (stat) {
         case STAT_PERCEPTION:
-            if ((critter->data.critter.combat.results & DAM_BLIND) != 0) {
+            if ((critter->data.critter.combat.results & DAM_BLIND) != DAM_NONE) {
                 value -= 5;
             }
             break;

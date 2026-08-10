@@ -936,18 +936,27 @@ void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult)
         });
 
     hook.call();
-
-    int* fields[] = {
-        &attack->defenderDamage,
-        &attack->attackerDamage,
-        &attack->defenderFlags,
-        &attack->attackerFlags,
-        &attack->defenderKnockback
-    };
-
+ 
     int numRets = hook.numReturnValues();
-    for (int i = 0; i < numRets; i++) {
-        *fields[i] = hook.getReturnValueAt(i).asInt();
+
+    if (numRets > 0) {
+        attack->defenderDamage = hook.getReturnValueAt(0).asInt();
+    }
+
+    if (numRets > 1) {
+        attack->attackerDamage = hook.getReturnValueAt(1).asInt();
+    }
+    
+    if (numRets > 2) {
+        attack->defenderFlags = static_cast<Dam>(hook.getReturnValueAt(2).asInt());
+    }
+    
+    if (numRets > 3) {
+        attack->attackerFlags = static_cast<Dam>(hook.getReturnValueAt(3).asInt());
+    }
+    
+    if (numRets > 4) {
+        attack->defenderKnockback = hook.getReturnValueAt(4).asInt();
     }
 }
 

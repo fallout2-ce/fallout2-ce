@@ -1903,8 +1903,8 @@ static void opAttackComplex(Program* program)
         // are applied to defender because of the bug in 0x422F3C?
         if (data[1] == data[0]) {
             combat.overrideAttackResults = 1;
-            combat.targetResults = data[0];
-            combat.attackerResults = data[1];
+            combat.targetResults = static_cast<Dam>(data[0]);
+            combat.attackerResults = static_cast<Dam>(data[1]);
         } else {
             combat.overrideAttackResults = 0;
         }
@@ -4032,7 +4032,7 @@ static void opRegAnimAnimateForever(Program* program)
 // 0x45AE8C op_critter_injure
 static void opCritterInjure(Program* program)
 {
-    int flags = programStackPopInteger(program);
+    Dam flags = static_cast<Dam>(programStackPopInteger(program));
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
     if (critter == nullptr) {
@@ -4040,7 +4040,7 @@ static void opCritterInjure(Program* program)
         return;
     }
 
-    bool reverse = (flags & DAM_PERFORM_REVERSE) != 0;
+    bool reverse = (flags & DAM_PERFORM_REVERSE) != DAM_NONE;
 
     flags &= DAM_CRIP;
 
@@ -4051,7 +4051,7 @@ static void opCritterInjure(Program* program)
     }
 
     if (critter == gDude) {
-        if ((flags & DAM_CRIP_ARM_ANY) != 0) {
+        if ((flags & DAM_CRIP_ARM_ANY) != DAM_NONE) {
             InterfaceItemAction leftItemAction;
             InterfaceItemAction rightItemAction;
             interfaceGetItemActions(&leftItemAction, &rightItemAction);

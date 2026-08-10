@@ -545,7 +545,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
             if (objectType == OBJ_TYPE_CRITTER
                 && (object->flags & OBJECT_HIDDEN) == OBJECT_NONE
                 && (flags & AUTOMAP_WITH_SCANNER) != 0
-                && (object->data.critter.combat.results & DAM_DEAD) == 0) {
+                && (object->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
                 objectColor = COLOR_RED;
             } else {
                 if ((object->flags & OBJECT_SEEN) == OBJECT_NONE) {
