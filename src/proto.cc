@@ -451,13 +451,13 @@ int proto_item_subdata_init(Proto* proto, ItemType type)
         proto->item.data.weapon.criticalFailureType = 0;
         proto->item.data.weapon.perk = PERK_INVALID;
         proto->item.data.weapon.rounds = 0;
-        proto->item.data.weapon.caliber = 0;
+        proto->item.data.weapon.caliber = CALIBER_TYPE_NONE;
         proto->item.data.weapon.ammoTypePid = -1;
         proto->item.data.weapon.ammoCapacity = 0;
         proto->item.data.weapon.soundCode = 0;
         break;
     case ITEM_TYPE_AMMO:
-        proto->item.data.ammo.caliber = 0;
+        proto->item.data.ammo.caliber = CALIBER_TYPE_NONE;
         proto->item.data.ammo.quantity = 20;
         proto->item.data.ammo.armorClassModifier = 0;
         proto->item.data.ammo.damageResistanceModifier = 0;
@@ -1454,8 +1454,8 @@ int protoInit()
     }
 
     // caliber types
-    for (int i = 0; i < CALIBER_TYPE_COUNT; i++) {
-        gCaliberTypeNames[i] = getmsg(&gProtoMessageList, &messageListItem, 300 + i);
+    for (CaliberType caliberType = CALIBER_TYPE_FIRST; caliberType < CALIBER_TYPE_COUNT; caliberType++) {
+        gCaliberTypeNames[caliberType] = getmsg(&gProtoMessageList, &messageListItem, 300 + caliberType);
     }
 
     // race types
@@ -1602,14 +1602,14 @@ static int protoItemDataRead(ItemProtoData* item_data, ItemType type, File* stre
         if (fileReadInt32(stream, &(item_data->weapon.criticalFailureType)) == -1) return -1;
         if (fileReadInt32Enum<Perk>(stream, &(item_data->weapon.perk)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.rounds)) == -1) return -1;
-        if (fileReadInt32(stream, &(item_data->weapon.caliber)) == -1) return -1;
+        if (fileReadInt32Enum<CaliberType>(stream, &(item_data->weapon.caliber)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.ammoTypePid)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->weapon.ammoCapacity)) == -1) return -1;
         if (fileReadUInt8(stream, &(item_data->weapon.soundCode)) == -1) return -1;
 
         return 0;
     case ITEM_TYPE_AMMO:
-        if (fileReadInt32(stream, &(item_data->ammo.caliber)) == -1) return -1;
+        if (fileReadInt32Enum<CaliberType>(stream, &(item_data->ammo.caliber)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->ammo.quantity)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->ammo.armorClassModifier)) == -1) return -1;
         if (fileReadInt32(stream, &(item_data->ammo.damageResistanceModifier)) == -1) return -1;
@@ -1750,7 +1750,7 @@ static int protoItemDataWrite(ItemProtoData* item_data, ItemType type, File* str
         if (fileWriteInt32(stream, item_data->armor.armorClass) == -1) return -1;
         if (fileWriteInt32List(stream, item_data->armor.damageResistance, 7) == -1) return -1;
         if (fileWriteInt32List(stream, item_data->armor.damageThreshold, 7) == -1) return -1;
-        if (fileWriteInt32(stream, item_data->armor.perk) == -1) return -1;
+        if (fileWriteInt32Enum<Perk>(stream, item_data->armor.perk) == -1) return -1;
         if (fileWriteInt32(stream, item_data->armor.maleFid) == -1) return -1;
         if (fileWriteInt32(stream, item_data->armor.femaleFid) == -1) return -1;
 
@@ -1761,9 +1761,9 @@ static int protoItemDataWrite(ItemProtoData* item_data, ItemType type, File* str
 
         return 0;
     case ITEM_TYPE_DRUG:
-        if (fileWriteInt32(stream, item_data->drug.stat[0]) == -1) return -1;
-        if (fileWriteInt32(stream, item_data->drug.stat[1]) == -1) return -1;
-        if (fileWriteInt32(stream, item_data->drug.stat[2]) == -1) return -1;
+        if (fileWriteInt32Enum<Stat>(stream, item_data->drug.stat[0]) == -1) return -1;
+        if (fileWriteInt32Enum<Stat>(stream, item_data->drug.stat[1]) == -1) return -1;
+        if (fileWriteInt32Enum<Stat>(stream, item_data->drug.stat[2]) == -1) return -1;
         if (fileWriteInt32List(stream, item_data->drug.amount, 3) == -1) return -1;
         if (fileWriteInt32(stream, item_data->drug.duration1) == -1) return -1;
         if (fileWriteInt32List(stream, item_data->drug.amount1, 3) == -1) return -1;
@@ -1775,7 +1775,7 @@ static int protoItemDataWrite(ItemProtoData* item_data, ItemType type, File* str
 
         return 0;
     case ITEM_TYPE_WEAPON:
-        if (fileWriteInt32(stream, item_data->weapon.animationCode) == -1) return -1;
+        if (fileWriteInt32Enum<WeaponAnimation>(stream, item_data->weapon.animationCode) == -1) return -1;
         if (fileWriteInt32(stream, item_data->weapon.maxDamage) == -1) return -1;
         if (fileWriteInt32(stream, item_data->weapon.minDamage) == -1) return -1;
         if (fileWriteInt32(stream, item_data->weapon.damageType) == -1) return -1;
@@ -1788,14 +1788,14 @@ static int protoItemDataWrite(ItemProtoData* item_data, ItemType type, File* str
         if (fileWriteInt32(stream, item_data->weapon.criticalFailureType) == -1) return -1;
         if (fileWriteInt32(stream, item_data->weapon.perk) == -1) return -1;
         if (fileWriteInt32(stream, item_data->weapon.rounds) == -1) return -1;
-        if (fileWriteInt32(stream, item_data->weapon.caliber) == -1) return -1;
+        if (fileWriteInt32Enum<CaliberType>(stream, item_data->weapon.caliber) == -1) return -1;
         if (fileWriteInt32(stream, item_data->weapon.ammoTypePid) == -1) return -1;
         if (fileWriteInt32(stream, item_data->weapon.ammoCapacity) == -1) return -1;
         if (fileWriteUInt8(stream, item_data->weapon.soundCode) == -1) return -1;
 
         return 0;
     case ITEM_TYPE_AMMO:
-        if (fileWriteInt32(stream, item_data->ammo.caliber) == -1) return -1;
+        if (fileWriteInt32Enum<CaliberType>(stream, item_data->ammo.caliber) == -1) return -1;
         if (fileWriteInt32(stream, item_data->ammo.quantity) == -1) return -1;
         if (fileWriteInt32(stream, item_data->ammo.armorClassModifier) == -1) return -1;
         if (fileWriteInt32(stream, item_data->ammo.damageResistanceModifier) == -1) return -1;

@@ -85,7 +85,7 @@ AnimationType critterGetAnimationForHitMode(Object* critter, HitMode hitMode);
 AnimationType weaponGetAnimationForHitMode(Object* weapon, HitMode hitMode);
 int ammoGetCapacity(Object* ammoOrWeapon);
 int ammoGetQuantity(Object* ammoOrWeapon);
-int ammoGetCaliber(Object* ammoOrWeapon);
+CaliberType ammoGetCaliber(Object* ammoOrWeapon);
 void ammoSetQuantity(Object* ammoOrWeapon, int quantity);
 int weaponAttemptReload(Object* critter, Object* weapon);
 bool weaponCanBeReloadedWith(Object* weapon, Object* ammo);

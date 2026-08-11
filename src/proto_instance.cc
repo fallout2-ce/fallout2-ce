@@ -328,7 +328,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
             if (item2 != nullptr) {
                 MessageListItem weaponMessageListItem;
 
-                if (ammoGetCaliber(item2) != 0) {
+                if (ammoGetCaliber(item2) != CALIBER_TYPE_NONE) {
                     weaponMessageListItem.num = 547; // and is wielding a %s with %d/%d shots of %s.
                 } else {
                     weaponMessageListItem.num = 546; // and is wielding a %s.
@@ -342,7 +342,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
                 char format[80];
                 snprintf(format, sizeof(format), "%s%s", hpMessageListItem.text, weaponMessageListItem.text);
 
-                if (ammoGetCaliber(item2) != 0) {
+                if (ammoGetCaliber(item2) != CALIBER_TYPE_NONE) {
                     const int ammoTypePid = weaponGetAmmoTypePid(item2);
                     const char* ammoName = protoGetName(ammoTypePid);
                     const int ammoCapacity = ammoGetCapacity(item2);
@@ -496,7 +496,7 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
     } else if (type == OBJ_TYPE_ITEM) {
         ItemType itemType = itemGetType(target);
         if (itemType == ITEM_TYPE_WEAPON) {
-            if (ammoGetCaliber(target) != 0) {
+            if (ammoGetCaliber(target) != CALIBER_TYPE_NONE) {
                 MessageListItem weaponMessageListItem;
                 weaponMessageListItem.num = 526;
 

@@ -115,7 +115,7 @@ inline bool damageTypeIsValid(int damageType)
     return damageType >= DAMAGE_TYPE_FIRST && damageType < DAMAGE_TYPE_COUNT;
 }
 
-enum {
+enum CaliberType : int {
     CALIBER_TYPE_NONE,
     CALIBER_TYPE_ROCKET,
     CALIBER_TYPE_FLAMETHROWER_FUEL,
@@ -136,7 +136,15 @@ enum {
     CALIBER_TYPE_NH_NEEDLER,
     CALIBER_TYPE_7_62,
     CALIBER_TYPE_COUNT,
+    CALIBER_TYPE_FIRST = CALIBER_TYPE_NONE
 };
+
+inline CaliberType operator++(CaliberType& e, int)
+{
+    CaliberType result = e;
+    e = static_cast<CaliberType>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum RaceType : int {
     RACE_TYPE_CAUCASIAN,
@@ -378,14 +386,14 @@ typedef struct {
     int criticalFailureType; // d.crit_fail_table
     Perk perk; // d.perk
     int rounds; // d.rounds
-    int caliber; // d.caliber
+    CaliberType caliber; // d.caliber
     int ammoTypePid; // d.ammo_type_pid
     int ammoCapacity; // d.max_ammo
     unsigned char soundCode; // d.sound_id
 } ProtoItemWeaponData;
 
 typedef struct {
-    int caliber; // d.caliber
+    CaliberType caliber; // d.caliber
     int quantity; // d.quantity
     int armorClassModifier; // d.ac_adjust
     int damageResistanceModifier; // d.dr_adjust

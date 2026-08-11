@@ -1451,19 +1451,19 @@ int ammoGetQuantity(Object* ammoOrWeapon)
 }
 
 // 0x4786C8
-int ammoGetCaliber(Object* ammoOrWeapon)
+CaliberType ammoGetCaliber(Object* ammoOrWeapon)
 {
     Proto* proto;
 
     if (ammoOrWeapon == nullptr) {
-        return 0;
+        return CALIBER_TYPE_NONE;
     }
 
     protoGetProto(ammoOrWeapon->pid, &proto);
 
     if (proto->item.type != ITEM_TYPE_AMMO) {
         if (protoGetProto(ammoOrWeapon->data.item.weapon.ammoTypePid, &proto) == -1) {
-            return 0;
+            return CALIBER_TYPE_NONE;
         }
     }
 
