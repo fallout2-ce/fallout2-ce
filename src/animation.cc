@@ -88,7 +88,7 @@ static bool animationKindIsCallback(AnimationKind kind)
     return kind == ANIM_KIND_CALLBACK || kind == ANIM_KIND_CALLBACK3;
 }
 
-typedef enum AnimationSequenceFlags {
+enum AnimationSequenceFlags : unsigned int {
     ANIM_SEQ_NONE = 0x00,
 
     // Specifies that the animation sequence has high priority, it cannot be
@@ -121,7 +121,29 @@ typedef enum AnimationSequenceFlags {
     // Specifies that the animation sequence should not return to ANIM_STAND
     // when it's completed.
     ANIM_SEQ_NO_STAND = 0x80,
-} AnimationSequenceFlags;
+};
+
+constexpr inline AnimationSequenceFlags operator|(AnimationSequenceFlags lhs, AnimationSequenceFlags rhs)
+{
+    return static_cast<AnimationSequenceFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline AnimationSequenceFlags operator~(AnimationSequenceFlags rhs)
+{
+    return static_cast<AnimationSequenceFlags>(~static_cast<unsigned int>(rhs));
+}
+
+inline AnimationSequenceFlags& operator&=(AnimationSequenceFlags& lhs, AnimationSequenceFlags rhs)
+{
+    lhs = static_cast<AnimationSequenceFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
+inline AnimationSequenceFlags& operator|=(AnimationSequenceFlags& lhs, AnimationSequenceFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef enum AnimationSadFlags {
     // Specifies that the animation should play from end to start.
@@ -237,7 +259,7 @@ typedef struct AnimationSequence {
     int animationIndex;
     // Number of scheduled animations in [animations] array.
     int length;
-    unsigned int flags;
+    AnimationSequenceFlags flags;
     AnimationDescription animations[ANIMATION_DESCRIPTION_LIST_CAPACITY];
 } AnimationSequence;
 
@@ -381,7 +403,7 @@ void animationReset()
 
     for (int index = 0; index < ANIMATION_SEQUENCE_LIST_CAPACITY; index++) {
         gAnimationSequences[index].step = ANIM_COMPLETE;
-        gAnimationSequences[index].flags = 0;
+        gAnimationSequences[index].flags = ANIM_SEQ_NONE;
     }
 }
 
@@ -1716,7 +1738,7 @@ static int _anim_set_end(int animationSequenceIndex)
     if (_anim_in_bk) {
         animationSequence->flags = ANIM_SEQ_0x20;
     } else {
-        animationSequence->flags = 0;
+        animationSequence->flags = ANIM_SEQ_NONE;
     }
 
     return 0;
@@ -2979,7 +3001,7 @@ static void _object_anim_compact()
     for (int index = 0; index < ANIMATION_SEQUENCE_LIST_CAPACITY; index++) {
         AnimationSequence* animationSequence = &(gAnimationSequences[index]);
         if ((animationSequence->flags & ANIM_SEQ_0x20) != 0) {
-            animationSequence->flags = 0;
+            animationSequence->flags = ANIM_SEQ_NONE;
         }
     }
 
