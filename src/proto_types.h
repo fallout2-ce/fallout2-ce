@@ -328,7 +328,9 @@ constexpr inline ProtoFlags operator|(ProtoFlags lhs, ProtoFlags rhs)
     return static_cast<ProtoFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
 }
 
-typedef enum ItemProtoExtendedFlags {
+enum ProtoExtendedFlags : unsigned int {
+    PROTO_EXT_FLAG_NONE = 0x0000,
+
     // NOTE: `extendedFlags` packs non-boolean weapon data into the low
     // nibbles (`0x0F` and `0xF0`) for attack mode metadata.
 
@@ -355,7 +357,18 @@ typedef enum ItemProtoExtendedFlags {
     PROTO_EXT_FLAG_SOUTH_CORNER = 0x20000000,
     PROTO_EXT_FLAG_EAST_CORNER = 0x40000000,
     PROTO_EXT_FLAG_WEST_CORNER = 0x80000000,
-} ItemProtoExtendedFlags;
+};
+
+constexpr inline ProtoExtendedFlags operator|(ProtoExtendedFlags lhs, ProtoExtendedFlags rhs)
+{
+    return static_cast<ProtoExtendedFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+inline ProtoExtendedFlags& operator|=(ProtoExtendedFlags& lhs, ProtoExtendedFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 typedef struct {
     int armorClass; // d.ac
@@ -450,7 +463,7 @@ typedef struct ItemProto {
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
     ProtoFlags flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     ItemType type; // type
     ItemProtoData data; // d
@@ -481,7 +494,7 @@ typedef struct CritterProto {
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
     ProtoFlags flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     CritterProtoData data; // d
     int headFid; // head_fid
@@ -529,7 +542,7 @@ typedef struct SceneryProto {
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
     ProtoFlags flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     SceneryType type; // type
     SceneryProtoData data;
@@ -545,7 +558,7 @@ typedef struct WallProto {
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
     ProtoFlags flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     MaterialType material; // material
 } WallProto;
@@ -555,7 +568,7 @@ typedef struct TileProto {
     int messageId; // message_num
     int fid; // fid
     ProtoFlags flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     MaterialType material; // material
 } TileProto;
@@ -567,7 +580,7 @@ typedef struct MiscProto {
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
     ProtoFlags flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoExtendedFlags extendedFlags; // flags_ext
 } MiscProto;
 
 typedef union Proto {
@@ -580,7 +593,7 @@ typedef union Proto {
         int lightDistance;
         int lightIntensity;
         ProtoFlags flags;
-        int extendedFlags;
+        ProtoExtendedFlags extendedFlags;
         int sid;
     };
     ItemProto item;

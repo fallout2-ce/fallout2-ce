@@ -94,7 +94,7 @@ static CritterProto gDudeProto = {
     0,
     0,
     PROTO_FLAG_LIGHT_THRU,
-    0,
+    PROTO_EXT_FLAG_NONE,
     -1,
     CRITTER_NONE,
     { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 18, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 23, 0 },
@@ -261,7 +261,7 @@ bool _proto_action_can_use(int pid)
         return false;
     }
 
-    if ((proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_USE) != 0) {
+    if ((proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_USE) != PROTO_EXT_FLAG_NONE) {
         return true;
     }
 
@@ -280,7 +280,7 @@ bool _proto_action_can_use_on(int pid)
         return false;
     }
 
-    if ((proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_USE_ON) != 0) {
+    if ((proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_USE_ON) != PROTO_EXT_FLAG_NONE) {
         return true;
     }
 
@@ -303,7 +303,7 @@ bool _proto_action_can_talk_to(int pid)
         return true;
     }
 
-    if (proto->critter.extendedFlags & PROTO_EXT_FLAG_CAN_TALK_TO) {
+    if ((proto->critter.extendedFlags & PROTO_EXT_FLAG_CAN_TALK_TO) != PROTO_EXT_FLAG_NONE) {
         return true;
     }
 
@@ -325,7 +325,7 @@ int _proto_action_can_pickup(int pid)
     }
 
     if (proto->item.type == ITEM_TYPE_CONTAINER) {
-        return (proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_PICK_UP) != 0;
+        return (proto->item.extendedFlags & PROTO_EXT_FLAG_CAN_PICK_UP) != PROTO_EXT_FLAG_NONE;
     }
 
     return true;
@@ -1056,7 +1056,7 @@ int proto_misc_init(Proto* proto, int pid)
     proto->misc.lightDistance = 0;
     proto->misc.lightIntensity = 0;
     proto->misc.flags = PROTO_FLAG_NONE;
-    proto->misc.extendedFlags = 0;
+    proto->misc.extendedFlags = PROTO_EXT_FLAG_NONE;
 
     return 0;
 }
@@ -1678,7 +1678,7 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->item.lightDistance)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->item.lightIntensity)) == -1) return -1;
         if (fileReadUInt32Enum<ProtoFlags>(stream, &(proto->item.flags)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->item.extendedFlags)) == -1) return -1;
+        if (fileReadUInt32Enum<ProtoExtendedFlags>(stream, &(proto->item.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->item.sid)) == -1) return -1;
         if (fileReadInt32Enum<ItemType>(stream, &(proto->item.type)) == -1) return -1;
         if (fileReadInt32Enum<MaterialType>(stream, &(proto->item.material)) == -1) return -1;
@@ -1694,7 +1694,7 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->critter.lightDistance)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->critter.lightIntensity)) == -1) return -1;
         if (fileReadUInt32Enum<ProtoFlags>(stream, &(proto->critter.flags)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->critter.extendedFlags)) == -1) return -1;
+        if (fileReadUInt32Enum<ProtoExtendedFlags>(stream, &(proto->critter.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->critter.sid)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->critter.headFid)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->critter.aiPacket)) == -1) return -1;
@@ -1707,7 +1707,7 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->scenery.lightDistance)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->scenery.lightIntensity)) == -1) return -1;
         if (fileReadUInt32Enum<ProtoFlags>(stream, &(proto->scenery.flags)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->scenery.extendedFlags)) == -1) return -1;
+        if (fileReadUInt32Enum<ProtoExtendedFlags>(stream, &(proto->scenery.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->scenery.sid)) == -1) return -1;
         if (fileReadInt32Enum<SceneryType>(stream, &(proto->scenery.type)) == -1) return -1;
         if (fileReadInt32Enum<MaterialType>(stream, &(proto->scenery.material)) == -1) return -1;
@@ -1718,14 +1718,14 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->wall.lightDistance)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->wall.lightIntensity)) == -1) return -1;
         if (fileReadUInt32Enum<ProtoFlags>(stream, &(proto->wall.flags)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->wall.extendedFlags)) == -1) return -1;
+        if (fileReadUInt32Enum<ProtoExtendedFlags>(stream, &(proto->wall.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->wall.sid)) == -1) return -1;
         if (fileReadInt32Enum<MaterialType>(stream, &(proto->wall.material)) == -1) return -1;
 
         return 0;
     case OBJ_TYPE_TILE:
         if (fileReadUInt32Enum<ProtoFlags>(stream, &(proto->tile.flags)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->tile.extendedFlags)) == -1) return -1;
+        if (fileReadUInt32Enum<ProtoExtendedFlags>(stream, &(proto->tile.extendedFlags)) == -1) return -1;
         if (fileReadInt32(stream, &(proto->tile.sid)) == -1) return -1;
         if (fileReadInt32Enum<MaterialType>(stream, &(proto->tile.material)) == -1) return -1;
 
@@ -1734,7 +1734,7 @@ static int protoRead(Proto* proto, File* stream)
         if (fileReadInt32(stream, &(proto->misc.lightDistance)) == -1) return -1;
         if (_db_freadInt(stream, &(proto->misc.lightIntensity)) == -1) return -1;
         if (fileReadUInt32Enum<ProtoFlags>(stream, &(proto->misc.flags)) == -1) return -1;
-        if (fileReadInt32(stream, &(proto->misc.extendedFlags)) == -1) return -1;
+        if (fileReadUInt32Enum<ProtoExtendedFlags>(stream, &(proto->misc.extendedFlags)) == -1) return -1;
 
         return 0;
     default:
@@ -1862,8 +1862,8 @@ static int protoWrite(Proto* proto, File* stream)
     case OBJ_TYPE_ITEM:
         if (fileWriteInt32(stream, proto->item.lightDistance) == -1) return -1;
         if (_db_fwriteLong(stream, proto->item.lightIntensity) == -1) return -1;
-        if (fileWriteInt32(stream, proto->item.flags) == -1) return -1;
-        if (fileWriteInt32(stream, proto->item.extendedFlags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoFlags>(stream, proto->item.flags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoExtendedFlags>(stream, proto->item.extendedFlags) == -1) return -1;
         if (fileWriteInt32(stream, proto->item.sid) == -1) return -1;
         if (fileWriteInt32(stream, proto->item.type) == -1) return -1;
         if (fileWriteInt32(stream, proto->item.material) == -1) return -1;
@@ -1878,8 +1878,8 @@ static int protoWrite(Proto* proto, File* stream)
     case OBJ_TYPE_CRITTER:
         if (fileWriteInt32(stream, proto->critter.lightDistance) == -1) return -1;
         if (_db_fwriteLong(stream, proto->critter.lightIntensity) == -1) return -1;
-        if (fileWriteInt32(stream, proto->critter.flags) == -1) return -1;
-        if (fileWriteInt32(stream, proto->critter.extendedFlags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoFlags>(stream, proto->critter.flags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoExtendedFlags>(stream, proto->critter.extendedFlags) == -1) return -1;
         if (fileWriteInt32(stream, proto->critter.sid) == -1) return -1;
         if (fileWriteInt32(stream, proto->critter.headFid) == -1) return -1;
         if (fileWriteInt32(stream, proto->critter.aiPacket) == -1) return -1;
@@ -1890,8 +1890,8 @@ static int protoWrite(Proto* proto, File* stream)
     case OBJ_TYPE_SCENERY:
         if (fileWriteInt32(stream, proto->scenery.lightDistance) == -1) return -1;
         if (_db_fwriteLong(stream, proto->scenery.lightIntensity) == -1) return -1;
-        if (fileWriteInt32(stream, proto->scenery.flags) == -1) return -1;
-        if (fileWriteInt32(stream, proto->scenery.extendedFlags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoFlags>(stream, proto->scenery.flags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoExtendedFlags>(stream, proto->scenery.extendedFlags) == -1) return -1;
         if (fileWriteInt32(stream, proto->scenery.sid) == -1) return -1;
         if (fileWriteInt32(stream, proto->scenery.type) == -1) return -1;
         if (fileWriteInt32(stream, proto->scenery.material) == -1) return -1;
@@ -1900,15 +1900,15 @@ static int protoWrite(Proto* proto, File* stream)
     case OBJ_TYPE_WALL:
         if (fileWriteInt32(stream, proto->wall.lightDistance) == -1) return -1;
         if (_db_fwriteLong(stream, proto->wall.lightIntensity) == -1) return -1;
-        if (fileWriteInt32(stream, proto->wall.flags) == -1) return -1;
-        if (fileWriteInt32(stream, proto->wall.extendedFlags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoFlags>(stream, proto->wall.flags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoExtendedFlags>(stream, proto->wall.extendedFlags) == -1) return -1;
         if (fileWriteInt32(stream, proto->wall.sid) == -1) return -1;
         if (fileWriteInt32(stream, proto->wall.material) == -1) return -1;
 
         return 0;
     case OBJ_TYPE_TILE:
-        if (fileWriteInt32(stream, proto->tile.flags) == -1) return -1;
-        if (fileWriteInt32(stream, proto->tile.extendedFlags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoFlags>(stream, proto->tile.flags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoExtendedFlags>(stream, proto->tile.extendedFlags) == -1) return -1;
         if (fileWriteInt32(stream, proto->tile.sid) == -1) return -1;
         if (fileWriteInt32(stream, proto->tile.material) == -1) return -1;
 
@@ -1916,8 +1916,8 @@ static int protoWrite(Proto* proto, File* stream)
     case OBJ_TYPE_MISC:
         if (fileWriteInt32(stream, proto->misc.lightDistance) == -1) return -1;
         if (_db_fwriteLong(stream, proto->misc.lightIntensity) == -1) return -1;
-        if (fileWriteInt32(stream, proto->misc.flags) == -1) return -1;
-        if (fileWriteInt32(stream, proto->misc.extendedFlags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoFlags>(stream, proto->misc.flags) == -1) return -1;
+        if (fileWriteUInt32Enum<ProtoExtendedFlags>(stream, proto->misc.extendedFlags) == -1) return -1;
 
         return 0;
     default:
