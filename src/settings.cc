@@ -149,7 +149,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(language);
     SETTING(scroll_lock);
     SETTING(interrupt_walk);
-    SETTING(art_cache_size);
+    SETTING_P(art_cache_size, clamp(8, 512));
     SETTING(color_cycling);
     SETTING(cycle_speed_factor);
     SETTING(hashing);
