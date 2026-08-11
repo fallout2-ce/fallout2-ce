@@ -370,6 +370,12 @@ inline ProtoExtendedFlags& operator|=(ProtoExtendedFlags& lhs, ProtoExtendedFlag
     return lhs;
 }
 
+inline ProtoExtendedFlags& operator^=(ProtoExtendedFlags& lhs, ProtoExtendedFlags rhs)
+{
+    lhs = static_cast<ProtoExtendedFlags>(static_cast<unsigned int>(lhs) ^ static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
 typedef struct {
     int armorClass; // d.ac
     int damageResistance[7]; // d.dam_resist
