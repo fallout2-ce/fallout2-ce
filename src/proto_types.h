@@ -301,7 +301,8 @@ enum {
 // FID of one of the Force Field sceneries. Used as a marker for special hidden "attacker" object created by `critter_dmg` opcode handler.
 #define FRAME_ID_FORCE_FIELD_NS 0x20001F5
 
-typedef enum ProtoFlags {
+enum ProtoFlags : unsigned int {
+    PROTO_FLAG_NONE = 0x00,
     PROTO_FLAG_FLAT = 0x08,
     PROTO_FLAG_NO_BLOCK = 0x10,
     PROTO_FLAG_MULTIHEX = 0x800,
@@ -315,7 +316,17 @@ typedef enum ProtoFlags {
     PROTO_FLAG_WALL_TRANS_END = 0x10000000,
     PROTO_FLAG_LIGHT_THRU = 0x20000000,
     PROTO_FLAG_SHOOT_THRU = 0x80000000,
-} ProtoFlags;
+};
+
+constexpr inline ProtoFlags operator&(ProtoFlags lhs, ProtoFlags rhs)
+{
+    return static_cast<ProtoFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ProtoFlags operator|(ProtoFlags lhs, ProtoFlags rhs)
+{
+    return static_cast<ProtoFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
 
 typedef enum ItemProtoExtendedFlags {
     // NOTE: `extendedFlags` packs non-boolean weapon data into the low
@@ -438,7 +449,7 @@ typedef struct ItemProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
+    ProtoFlags flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
     ItemType type; // type
@@ -469,7 +480,7 @@ typedef struct CritterProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
+    ProtoFlags flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
     CritterProtoData data; // d
@@ -517,7 +528,7 @@ typedef struct SceneryProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
+    ProtoFlags flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
     SceneryType type; // type
@@ -533,7 +544,7 @@ typedef struct WallProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
+    ProtoFlags flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
     MaterialType material; // material
@@ -543,7 +554,7 @@ typedef struct TileProto {
     int pid; // id
     int messageId; // message_num
     int fid; // fid
-    int flags; // flags
+    ProtoFlags flags; // flags
     int extendedFlags; // flags_ext
     int sid; // sid
     MaterialType material; // material
@@ -555,7 +566,7 @@ typedef struct MiscProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
+    ProtoFlags flags; // flags
     int extendedFlags; // flags_ext
 } MiscProto;
 
@@ -568,7 +579,7 @@ typedef union Proto {
         // TODO: Move to NonTile props?
         int lightDistance;
         int lightIntensity;
-        int flags;
+        ProtoFlags flags;
         int extendedFlags;
         int sid;
     };

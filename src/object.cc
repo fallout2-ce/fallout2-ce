@@ -946,47 +946,47 @@ int objectCreateWithFidPid(Object** objectPtr, int fid, int pid)
 
     objectSetLight(objectListNode->obj, proto->lightDistance, proto->lightIntensity, nullptr);
 
-    if ((proto->flags & PROTO_FLAG_FLAT) != 0) {
+    if ((proto->flags & PROTO_FLAG_FLAT) != PROTO_FLAG_NONE) {
         _obj_toggle_flat(objectListNode->obj, nullptr);
     }
 
-    if ((proto->flags & PROTO_FLAG_NO_BLOCK) != 0) {
+    if ((proto->flags & PROTO_FLAG_NO_BLOCK) != PROTO_FLAG_NONE) {
         objectListNode->obj->flags |= OBJECT_NO_BLOCK;
     }
 
-    if ((proto->flags & PROTO_FLAG_MULTIHEX) != 0) {
+    if ((proto->flags & PROTO_FLAG_MULTIHEX) != PROTO_FLAG_NONE) {
         objectListNode->obj->flags |= OBJECT_MULTIHEX;
     }
 
-    if ((proto->flags & PROTO_FLAG_TRANS_NONE) != 0) {
+    if ((proto->flags & PROTO_FLAG_TRANS_NONE) != PROTO_FLAG_NONE) {
         objectListNode->obj->flags |= OBJECT_TRANS_NONE;
     } else {
-        if ((proto->flags & PROTO_FLAG_TRANS_WALL) != 0) {
+        if ((proto->flags & PROTO_FLAG_TRANS_WALL) != PROTO_FLAG_NONE) {
             objectListNode->obj->flags |= OBJECT_TRANS_WALL;
-        } else if ((proto->flags & PROTO_FLAG_TRANS_GLASS) != 0) {
+        } else if ((proto->flags & PROTO_FLAG_TRANS_GLASS) != PROTO_FLAG_NONE) {
             objectListNode->obj->flags |= OBJECT_TRANS_GLASS;
-        } else if ((proto->flags & PROTO_FLAG_TRANS_STEAM) != 0) {
+        } else if ((proto->flags & PROTO_FLAG_TRANS_STEAM) != PROTO_FLAG_NONE) {
             objectListNode->obj->flags |= OBJECT_TRANS_STEAM;
-        } else if ((proto->flags & PROTO_FLAG_TRANS_ENERGY) != 0) {
+        } else if ((proto->flags & PROTO_FLAG_TRANS_ENERGY) != PROTO_FLAG_NONE) {
             objectListNode->obj->flags |= OBJECT_TRANS_ENERGY;
-        } else if ((proto->flags & PROTO_FLAG_TRANS_RED) != 0) {
+        } else if ((proto->flags & PROTO_FLAG_TRANS_RED) != PROTO_FLAG_NONE) {
             objectListNode->obj->flags |= OBJECT_TRANS_RED;
         }
     }
 
-    if ((proto->flags & PROTO_FLAG_LIGHT_THRU) != 0) {
+    if ((proto->flags & PROTO_FLAG_LIGHT_THRU) != PROTO_FLAG_NONE) {
         objectListNode->obj->flags |= OBJECT_LIGHT_THRU;
     }
 
-    if ((proto->flags & PROTO_FLAG_SHOOT_THRU) != 0) {
+    if ((proto->flags & PROTO_FLAG_SHOOT_THRU) != PROTO_FLAG_NONE) {
         objectListNode->obj->flags |= OBJECT_SHOOT_THRU;
     }
 
-    if ((proto->flags & PROTO_FLAG_WALL_TRANS_END) != 0) {
+    if ((proto->flags & PROTO_FLAG_WALL_TRANS_END) != PROTO_FLAG_NONE) {
         objectListNode->obj->flags |= OBJECT_WALL_TRANS_END;
     }
 
-    if ((proto->flags & PROTO_FLAG_NO_HIGHLIGHT) != 0) {
+    if ((proto->flags & PROTO_FLAG_NO_HIGHLIGHT) != PROTO_FLAG_NONE) {
         objectListNode->obj->flags |= OBJECT_NO_HIGHLIGHT;
     }
 
