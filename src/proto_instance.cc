@@ -850,7 +850,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
         return USE_ITEM_RESULT_ERROR;
     }
 
-    if ((flare->flags & OBJECT_QUEUED) != 0) {
+    if ((flare->flags & OBJECT_QUEUED) != OBJECT_NONE) {
         if (critter == gDude) {
             // The flare is already lit.
             messageListItem.num = 588;
@@ -901,7 +901,7 @@ static UseItemResultCode _obj_use_explosive(Object* explosive)
         return USE_ITEM_RESULT_ERROR;
     }
 
-    if ((explosive->flags & OBJECT_QUEUED) != 0) {
+    if ((explosive->flags & OBJECT_QUEUED) != OBJECT_NONE) {
         // The timer is already ticking.
         messageListItem.num = 590;
         if (messageListGetItem(&gProtoMessageList, &messageListItem)) {
@@ -1147,7 +1147,7 @@ UseItemResultCode objectUseItem(Object* userObj, Object* item)
     if (rc == USE_ITEM_RESULT_REMOVE || rc == USE_ITEM_RESULT_DROP) {
         Object* root = objectGetOwner(item);
         if (root != nullptr) {
-            int flags = item->flags & OBJECT_IN_ANY_HAND;
+            ObjectFlags flags = item->flags & OBJECT_IN_ANY_HAND;
             itemRemoveWithReason(root, item, 1, RemoveInventoryObjectHookReason::UseObj);
             Object* replacementItem = itemReplace(root, item, flags);
             if (root == gDude) {
@@ -1155,9 +1155,9 @@ UseItemResultCode objectUseItem(Object* userObj, Object* item)
                 InterfaceItemAction rightItemAction;
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
                 if (replacementItem == nullptr) {
-                    if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
+                    if ((flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
-                    } else if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
+                    } else if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                         rightItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
                     } else {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
@@ -1389,7 +1389,7 @@ UseItemResultCode objectUseItemOn(Object* user, Object* targetObj, Object* item)
 
     if (rc == USE_ITEM_RESULT_REMOVE) {
         if (user != nullptr) {
-            int flags = item->flags & OBJECT_IN_ANY_HAND;
+            ObjectFlags flags = item->flags & OBJECT_IN_ANY_HAND;
             itemRemoveWithReason(user, item, 1, RemoveInventoryObjectHookReason::UseDrugOn);
 
             Object* replacedItem = itemReplace(user, item, flags);
@@ -1403,9 +1403,9 @@ UseItemResultCode objectUseItemOn(Object* user, Object* targetObj, Object* item)
                 interfaceGetItemActions(&leftItemAction, &rightItemAction);
 
                 if (replacedItem == nullptr) {
-                    if ((flags & OBJECT_IN_LEFT_HAND) != 0) {
+                    if ((flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
-                    } else if ((flags & OBJECT_IN_RIGHT_HAND) != 0) {
+                    } else if ((flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                         rightItemAction = INTERFACE_ITEM_ACTION_DEFAULT;
                     } else {
                         leftItemAction = INTERFACE_ITEM_ACTION_DEFAULT;

@@ -23,6 +23,7 @@
 #include "kb.h"
 #include "map.h"
 #include "mouse.h"
+#include "obj_types.h"
 #include "object.h"
 #include "party_member.h"
 #include "perk.h"
@@ -203,7 +204,7 @@ typedef struct AnimationDescription {
     union {
         // - ANIM_KIND_SET_FLAG
         // - ANIM_KIND_UNSET_FLAG
-        unsigned int objectFlag;
+        ObjectFlags objectFlag;
 
         // - ANIM_KIND_HIDE
         // - ANIM_KIND_CALLBACK
@@ -706,7 +707,7 @@ int animationRegisterRunToObject(Object* owner, Object* destination, int actionP
     animationDescription->owner = owner;
     animationDescription->destination = destination;
 
-    if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != 0)
+    if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
         || !artExists(buildFid(objectTypeFromFid(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1))) {
         animationDescription->anim = ANIM_WALK;
@@ -789,7 +790,7 @@ int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actio
     animationDescription->tile = tile;
     animationDescription->elevation = elevation;
 
-    if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != 0)
+    if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
         || !artExists(buildFid(objectTypeFromFid(owner->fid), owner->fid & 0xFFF, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1))) {
         animationDescription->anim = ANIM_WALK;
@@ -1151,7 +1152,7 @@ int animationRegisterCallbackForced(void* a1, void* a2, AnimationCallback* proc,
 // OR), but a one particular flag.
 //
 // 0x415034
-int animationRegisterSetFlag(Object* object, int flag, int delay)
+int animationRegisterSetFlag(Object* object, ObjectFlags flag, int delay)
 {
     if (_check_registry(object) == -1) {
         _anim_cleanup();
@@ -1176,7 +1177,7 @@ int animationRegisterSetFlag(Object* object, int flag, int delay)
 // OR), but a one particular flag.
 //
 // 0x4150A8
-int animationRegisterUnsetFlag(Object* object, int flag, int delay)
+int animationRegisterUnsetFlag(Object* object, ObjectFlags flag, int delay)
 {
     if (_check_registry(object) == -1) {
         _anim_cleanup();
@@ -2019,7 +2020,7 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
     if (obstaclePtr != nullptr) {
         Object* obstacle = callback(obj, from, obj->elevation);
         if (obstacle != nullptr) {
-            if (obstacle != *obstaclePtr && (a6 != 32 || (obstacle->flags & OBJECT_SHOOT_THRU) == 0)) {
+            if (obstacle != *obstaclePtr && (a6 != 32 || (obstacle->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE)) {
                 *obstaclePtr = obstacle;
                 return 0;
             }
@@ -2113,7 +2114,7 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
                 if (obstaclePtr != nullptr) {
                     Object* obstacle = callback(obj, tile, obj->elevation);
                     if (obstacle != nullptr) {
-                        if (obstacle != *obstaclePtr && (a6 != 32 || (obstacle->flags & OBJECT_SHOOT_THRU) == 0)) {
+                        if (obstacle != *obstaclePtr && (a6 != 32 || (obstacle->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE)) {
                             *obstaclePtr = obstacle;
                             break;
                         }
@@ -2166,7 +2167,7 @@ int _make_straight_path_func(Object* obj, int from, int to, StraightPathNode* st
                 if (obstaclePtr != nullptr) {
                     Object* obstacle = callback(obj, tile, obj->elevation);
                     if (obstacle != nullptr) {
-                        if (obstacle != *obstaclePtr && (a6 != 32 || (obstacle->flags & OBJECT_SHOOT_THRU) == 0)) {
+                        if (obstacle != *obstaclePtr && (a6 != 32 || (obstacle->flags & OBJECT_SHOOT_THRU) == OBJECT_NONE)) {
                             *obstaclePtr = obstacle;
                             break;
                         }
@@ -3107,7 +3108,7 @@ void _dude_fidget()
         return;
     }
 
-    if ((gDude->flags & OBJECT_HIDDEN) != 0) {
+    if ((gDude->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
         return;
     }
 
@@ -3125,7 +3126,7 @@ void _dude_fidget()
             break;
         }
 
-        if ((object->flags & OBJECT_HIDDEN) == 0 && objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER && animationTypeFromFid(object->fid) == ANIM_STAND && !critterIsDead(object)) {
+        if ((object->flags & OBJECT_HIDDEN) == OBJECT_NONE && objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER && animationTypeFromFid(object->fid) == ANIM_STAND && !critterIsDead(object)) {
             Rect rect;
             objectGetRect(object, &rect);
 

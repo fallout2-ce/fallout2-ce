@@ -168,8 +168,8 @@ typedef struct CombatStartData {
     int minDamage;
     int maxDamage;
     int overrideAttackResults;
-    int attackerResults;
-    int targetResults;
+    Dam attackerResults;
+    Dam targetResults;
 } CombatStartData;
 
 typedef struct Attack {
@@ -178,21 +178,21 @@ typedef struct Attack {
     Object* weapon;
     HitLocation attackHitLocation; // UNUSED?
     int attackerDamage;
-    int attackerFlags;
+    Dam attackerFlags;
     int ammoQuantity;
     int criticalMessageId;
     Object* defender;
     int tile;
     HitLocation defenderHitLocation;
     int defenderDamage;
-    int defenderFlags;
+    Dam defenderFlags;
     int defenderKnockback;
     Object* intendedTarget; // mainTarget
     int extrasLength;
     Object* extras[EXPLOSION_TARGET_COUNT];
     int extrasHitLocation[EXPLOSION_TARGET_COUNT];
     int extrasDamage[EXPLOSION_TARGET_COUNT];
-    int extrasFlags[EXPLOSION_TARGET_COUNT];
+    Dam extrasFlags[EXPLOSION_TARGET_COUNT];
     int extrasKnockback[EXPLOSION_TARGET_COUNT];
 } Attack;
 
@@ -226,7 +226,7 @@ typedef union CriticalHitDescription {
         int damageMultiplier;
 
         // Damage flags that will be applied to defender.
-        int flags;
+        Dam flags;
 
         // Stat to check to upgrade this critical hit to massive critical hit or
         // -1 if there is no massive critical hit.
@@ -236,7 +236,7 @@ typedef union CriticalHitDescription {
         int massiveCriticalStatModifier;
 
         // Additional damage flags if this critical hit become massive critical.
-        int massiveCriticalFlags;
+        Dam massiveCriticalFlags;
 
         int messageId;
         int massiveCriticalMessageId;

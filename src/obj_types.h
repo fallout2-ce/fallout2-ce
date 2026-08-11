@@ -100,17 +100,61 @@ inline ObjectType objectTypeFromPid(int pid)
 
 #define SID_TYPE(value) (value) >> 24
 
-typedef enum OutlineType {
-    OUTLINE_TYPE_HOSTILE = 1,
-    OUTLINE_TYPE_2 = 2,
-    OUTLINE_TYPE_4 = 4,
-    OUTLINE_TYPE_FRIENDLY = 8,
-    OUTLINE_TYPE_ITEM = 16,
-    OUTLINE_TYPE_32 = 32,
-} OutlineType;
+enum OutlineType : int {
+    OUTLINE_TYPE_NONE = 0x00,
+    OUTLINE_TYPE_HOSTILE = 0x01,
+    OUTLINE_TYPE_SAME_TEAM = 0x02,
+    OUTLINE_TYPE_BODY = 0x04,
+    OUTLINE_TYPE_FRIENDLY = 0x08,
+    OUTLINE_TYPE_ITEM = 0x10,
+    OUTLINE_TYPE_BLOCKED = 0x20,
+    OUTLINE_TYPE_MAX = 0xFFFFFF
+};
+
+#define OUTLINE_PALETTED 0x40000000
+#define OUTLINE_DISABLED 0x80000000
+
+constexpr inline OutlineType operator&(OutlineType lhs, OutlineType rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline OutlineType operator&(OutlineType lhs, unsigned int rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) & rhs);
+}
+
+constexpr inline OutlineType operator&(OutlineType lhs, int rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) & rhs);
+}
+
+constexpr inline OutlineType operator|(OutlineType lhs, int rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) | rhs);
+}
+
+constexpr inline OutlineType operator|(OutlineType lhs, unsigned int rhs)
+{
+    return static_cast<OutlineType>(static_cast<int>(lhs) | rhs);
+}
+
+inline OutlineType& operator&=(OutlineType& lhs, unsigned int rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline OutlineType& operator|=(OutlineType& lhs, unsigned int rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 enum ObjectFlags : unsigned int {
+    OBJECT_NONE = 0x00,
     OBJECT_HIDDEN = 0x01,
+    OBJECT_0X02 = 0x02,
 
     // Specifies that the object should not be saved to the savegame file.
     //
@@ -156,7 +200,66 @@ enum ObjectFlags : unsigned int {
     OBJECT_OPEN_DOOR = OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_BLOCK,
 };
 
-typedef enum CritterFlags {
+constexpr inline ObjectFlags operator&(ObjectFlags lhs, ObjectFlags rhs)
+{
+    return static_cast<ObjectFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ObjectFlags operator|(ObjectFlags lhs, ObjectFlags rhs)
+{
+    return static_cast<ObjectFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ObjectFlags operator~(ObjectFlags rhs)
+{
+    return static_cast<ObjectFlags>(~static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ObjectFlags operator^(ObjectFlags lhs, ObjectFlags rhs)
+{
+    return static_cast<ObjectFlags>(static_cast<unsigned int>(lhs) ^ static_cast<unsigned int>(rhs));
+}
+
+inline ObjectFlags& operator&=(ObjectFlags& lhs, ObjectFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline ObjectFlags& operator|=(ObjectFlags& lhs, ObjectFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+inline ObjectFlags& operator^=(ObjectFlags& lhs, ObjectFlags rhs)
+{
+    lhs = lhs ^ rhs;
+    return lhs;
+}
+
+enum DudeState : int {
+    DUDE_STATE_SNEAKING = 0,
+    DUDE_STATE_POISONED = 1,
+    DUDE_STATE_RADIATED = 2,
+    DUDE_STATE_LEVEL_UP_AVAILABLE = 3,
+    DUDE_STATE_ADDICTED = 4,
+    DUDE_STATE_COUNT = 5,
+    DUDE_STATE_FIRST = DUDE_STATE_SNEAKING
+};
+
+inline bool dudeStateIsValid(int state)
+{
+    return state >= DUDE_STATE_FIRST && state < DUDE_STATE_COUNT;
+}
+
+enum CritterFlags : int {
+    CRITTER_NONE = 0x00,
+    // CRITTER_DUDE_XXX are valid only for PC
+    CRITTER_DUDE_SNEAKING = 0x01,
+    CRITTER_DUDE_RADIATED = 0x02,
+    CRITTER_DUDE_LEVEL_UP_AVAILABLE = 0x08,
+    CRITTER_DUDE_ADDICTED = 0x10,
     CRITTER_BARTER = 0x02,
     CRITTER_NO_STEAL = 0x20,
     CRITTER_NO_DROP = 0x40,
@@ -168,13 +271,34 @@ typedef enum CritterFlags {
     CRITTER_SPECIAL_DEATH = 0x1000,
     CRITTER_LONG_LIMBS = 0x2000,
     CRITTER_NO_KNOCKBACK = 0x4000,
-} CritterFlags;
+};
 
-#define CRITTER_RADIATED 0x02
+constexpr inline CritterFlags operator&(CritterFlags lhs, CritterFlags rhs)
+{
+    return static_cast<CritterFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
 
-#define OUTLINE_TYPE_MASK 0xFFFFFF
-#define OUTLINE_PALETTED 0x40000000
-#define OUTLINE_DISABLED 0x80000000
+constexpr inline CritterFlags operator|(CritterFlags lhs, CritterFlags rhs)
+{
+    return static_cast<CritterFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline CritterFlags operator~(CritterFlags rhs)
+{
+    return static_cast<CritterFlags>(~static_cast<int>(rhs));
+}
+
+inline CritterFlags& operator&=(CritterFlags& lhs, CritterFlags rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline CritterFlags& operator|=(CritterFlags& lhs, CritterFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 // These two values are the same but stored in different fields.
 #define CONTAINER_FLAG_JAMMED 0x04000000
@@ -183,14 +307,42 @@ typedef enum CritterFlags {
 #define CONTAINER_FLAG_LOCKED 0x02000000
 #define DOOR_FLAG_LOCKED 0x02000000
 
-typedef enum CritterManeuver {
+enum CritterManeuver : int {
     CRITTER_MANEUVER_NONE = 0,
     CRITTER_MANEUVER_ENGAGING = 0x01,
     CRITTER_MANEUVER_DISENGAGING = 0x02,
     CRITTER_MANUEVER_FLEEING = 0x04,
-} CritterManeuver;
+};
 
-typedef enum Dam {
+constexpr inline CritterManeuver operator&(CritterManeuver lhs, CritterManeuver rhs)
+{
+    return static_cast<CritterManeuver>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline CritterManeuver operator|(CritterManeuver lhs, CritterManeuver rhs)
+{
+    return static_cast<CritterManeuver>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline CritterManeuver operator~(CritterManeuver rhs)
+{
+    return static_cast<CritterManeuver>(~static_cast<int>(rhs));
+}
+
+inline CritterManeuver& operator&=(CritterManeuver& lhs, CritterManeuver rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline CritterManeuver& operator|=(CritterManeuver& lhs, CritterManeuver rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+enum Dam : int {
+    DAM_NONE = 0x00,
     DAM_KNOCKED_OUT = 0x01,
     DAM_KNOCKED_DOWN = 0x02,
     DAM_CRIP_LEG_LEFT = 0x04,
@@ -218,7 +370,34 @@ typedef enum Dam {
     DAM_CRIP_LEG_ANY = DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT,
     DAM_CRIP_ARM_ANY = DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
     DAM_CRIP = DAM_CRIP_LEG_ANY | DAM_CRIP_ARM_ANY | DAM_BLIND,
-} Dam;
+};
+
+constexpr inline Dam operator&(Dam lhs, Dam rhs)
+{
+    return static_cast<Dam>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline Dam operator|(Dam lhs, Dam rhs)
+{
+    return static_cast<Dam>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline Dam operator~(Dam rhs)
+{
+    return static_cast<Dam>(~static_cast<int>(rhs));
+}
+
+inline Dam& operator&=(Dam& lhs, Dam rhs)
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+inline Dam& operator|=(Dam& lhs, Dam rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
 
 #define OBJ_LOCKED 0x02000000
 #define OBJ_JAMMED 0x04000000
@@ -262,9 +441,9 @@ typedef union ItemObjectData {
 } ItemObjectData;
 
 typedef struct CritterCombatData {
-    int maneuver; // obj_pud.combat_data.maneuver
+    CritterManeuver maneuver; // obj_pud.combat_data.maneuver
     int ap; // obj_pud.combat_data.curr_mp
-    int results; // obj_pud.combat_data.results
+    Dam results; // obj_pud.combat_data.results
     int damageLastTurn; // obj_pud.combat_data.damage_last_turn
     int aiPacket; // obj_pud.combat_data.ai_packet
     int team; // obj_pud.combat_data.team_num
@@ -341,14 +520,14 @@ typedef struct Object {
     int frame; // obj_cur_frm
     Rotation rotation; // obj_cur_rot
     int fid; // obj_fid
-    int flags; // obj_flags
+    ObjectFlags flags; // obj_flags
     int elevation; // obj_elev
     ObjectData data;
     int pid; // obj_pid
     int cid; // obj_cid
     int lightDistance; // obj_light_distance
     int lightIntensity; // obj_light_intensity
-    int outline; // obj_outline
+    OutlineType outline; // obj_outline
     int sid; // obj_sid
     Object* owner;
     int scriptIndex; // TODO: remove

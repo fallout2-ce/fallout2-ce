@@ -2034,14 +2034,14 @@ static bool _setup_inventory(int inventoryWindowType)
     for (int index = 0; index < _pud->length; index++) {
         InventoryItem* inventoryItem = &(_pud->items[index]);
         Object* item = inventoryItem->item;
-        if ((item->flags & OBJECT_IN_LEFT_HAND) != 0) {
-            if ((item->flags & OBJECT_IN_RIGHT_HAND) != 0) {
+        if ((item->flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
+            if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                 gInventoryRightHandItem = item;
             }
             gInventoryLeftHandItem = item;
-        } else if ((item->flags & OBJECT_IN_RIGHT_HAND) != 0) {
+        } else if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
             gInventoryRightHandItem = item;
-        } else if ((item->flags & OBJECT_WORN) != 0) {
+        } else if ((item->flags & OBJECT_WORN) != OBJECT_NONE) {
             gInventoryArmor = item;
         }
     }
@@ -3283,14 +3283,14 @@ CritterEquipped critterStripEquipped(Object* critter)
     Inventory* inv = &critter->data.inventory;
     for (int i = 0; i < inv->length; i++) {
         Object* item = inv->items[i].item;
-        if ((item->flags & OBJECT_IN_LEFT_HAND) != 0) {
-            if ((item->flags & OBJECT_IN_RIGHT_HAND) != 0) {
+        if ((item->flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
+            if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                 equipped.rightHand = item;
             }
             equipped.leftHand = item;
-        } else if ((item->flags & OBJECT_IN_RIGHT_HAND) != 0) {
+        } else if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
             equipped.rightHand = item;
-        } else if ((item->flags & OBJECT_WORN) != 0) {
+        } else if ((item->flags & OBJECT_WORN) != OBJECT_NONE) {
             equipped.armor = item;
         }
     }
@@ -5227,7 +5227,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
-                        if ((item->flags & OBJECT_IN_RIGHT_HAND) != 0) {
+                        if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
                             targetObj->fid = buildFid(objectTypeFromFid(targetObj->fid), targetObj->fid & 0xFFF, animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1);
                         }
 

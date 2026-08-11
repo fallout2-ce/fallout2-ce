@@ -96,7 +96,7 @@ static CritterProto gDudeProto = {
     0x20000000,
     0,
     -1,
-    0,
+    CRITTER_NONE,
     { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 18, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 23, 0 },
     { 0 },
     { SKILL_SMALL_GUNS },
@@ -496,7 +496,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.flags = PROTO_FLAG_LIGHT_THRU;
     proto->critter.extendedFlags = PROTO_EXT_FLAG_LOOK | PROTO_EXT_FLAG_CAN_TALK_TO;
     proto->critter.sid = -1;
-    proto->critter.data.flags = 0;
+    proto->critter.data.flags = CRITTER_NONE;
     proto->critter.data.bodyType = BODY_TYPE_BIPED;
     proto->critter.headFid = -1;
     proto->critter.aiPacket = 1;
@@ -526,9 +526,9 @@ void objectDataReset(Object* obj)
 static int objectCritterCombatDataRead(CritterCombatData* data, File* stream)
 {
     if (fileReadInt32(stream, &(data->damageLastTurn)) == -1) return -1;
-    if (fileReadInt32(stream, &(data->maneuver)) == -1) return -1;
+    if (fileReadInt32Enum<CritterManeuver>(stream, &(data->maneuver)) == -1) return -1;
     if (fileReadInt32(stream, &(data->ap)) == -1) return -1;
-    if (fileReadInt32(stream, &(data->results)) == -1) return -1;
+    if (fileReadInt32Enum<Dam>(stream, &(data->results)) == -1) return -1;
     if (fileReadInt32(stream, &(data->aiPacket)) == -1) return -1;
     if (fileReadInt32(stream, &(data->team)) == -1) return -1;
     if (fileReadInt32(stream, &(data->whoHitMeCid)) == -1) return -1;
@@ -540,9 +540,9 @@ static int objectCritterCombatDataRead(CritterCombatData* data, File* stream)
 static int objectCritterCombatDataWrite(CritterCombatData* data, File* stream)
 {
     if (fileWriteInt32(stream, data->damageLastTurn) == -1) return -1;
-    if (fileWriteInt32(stream, data->maneuver) == -1) return -1;
+    if (fileWriteInt32Enum<CritterManeuver>(stream, data->maneuver) == -1) return -1;
     if (fileWriteInt32(stream, data->ap) == -1) return -1;
-    if (fileWriteInt32(stream, data->results) == -1) return -1;
+    if (fileWriteInt32Enum<Dam>(stream, data->results) == -1) return -1;
     if (fileWriteInt32(stream, data->aiPacket) == -1) return -1;
     if (fileWriteInt32(stream, data->team) == -1) return -1;
     if (fileWriteInt32(stream, data->whoHitMeCid) == -1) return -1;
@@ -927,11 +927,11 @@ int _proto_dude_init(const char* path)
     _proto_dude_update_gender();
     inventoryResetDude();
 
-    if ((gDude->flags & OBJECT_FLAT) != 0) {
+    if ((gDude->flags & OBJECT_FLAT) != OBJECT_NONE) {
         _obj_toggle_flat(gDude, nullptr);
     }
 
-    if ((gDude->flags & OBJECT_NO_BLOCK) != 0) {
+    if ((gDude->flags & OBJECT_NO_BLOCK) != OBJECT_NONE) {
         gDude->flags &= ~OBJECT_NO_BLOCK;
     }
 

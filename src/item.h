@@ -72,7 +72,7 @@ Object* critterGetWeaponForHitMode(Object* critter, HitMode hitMode);
 int itemGetActionPointCost(Object* obj, HitMode hitMode, bool aiming);
 int itemGetQuantity(Object* obj, Object* item);
 int itemIsQueued(Object* obj);
-Object* itemReplace(Object* owner, Object* itemToReplace, int flags);
+Object* itemReplace(Object* owner, Object* itemToReplace, ObjectFlags flags);
 bool itemIsHidden(Object* obj);
 AttackType weaponGetAttackTypeForHitMode(Object* weapon, HitMode hitMode);
 Skill weaponGetSkillForHitMode(Object* weapon, HitMode hitMode);

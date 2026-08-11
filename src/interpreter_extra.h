@@ -14,7 +14,7 @@ enum class InvenSlot : int {
 
 constexpr int kInvenSlotInvCount = -2;
 
-int correctFidForRemovedItem(Object* critter, Object* item, int flags);
+int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags);
 
 void _intExtraClose_();
 void _initIntExtra();

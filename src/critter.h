@@ -9,12 +9,6 @@
 
 namespace fallout {
 
-typedef enum DudeState {
-    DUDE_STATE_SNEAKING = 0,
-    DUDE_STATE_LEVEL_UP_AVAILABLE = 3,
-    DUDE_STATE_ADDICTED = 4,
-} DudeState;
-
 const int kGorisCombatBaseFid = 100;
 const int kGorisRobeBaseFid = 99;
 
@@ -64,10 +58,10 @@ int gcdLoad(const char* path);
 int protoCritterDataRead(File* stream, CritterProtoData* critterData);
 int gcdSave(const char* path);
 int protoCritterDataWrite(File* stream, CritterProtoData* critterData);
-void dudeDisableState(int state);
-void dudeEnableState(int state);
-void dudeToggleState(int state);
-bool dudeHasState(int state);
+void dudeDisableState(DudeState state);
+void dudeEnableState(DudeState state);
+void dudeToggleState(DudeState state);
+bool dudeHasState(DudeState state);
 int sneakEventProcess(Object* obj, void* data);
 int critterDisableSneak(Object* obj, void* data);
 bool dudeIsSneaking();
@@ -78,9 +72,9 @@ bool critterCanDudeRest();
 int critterGetMovementPointCostAdjustedForCrippledLegs(Object* critter, int distance);
 bool critterIsEncumbered(Object* critter);
 bool critterIsFleeing(Object* critter);
-bool critterFlagCheck(int pid, int flag);
-void critterFlagSet(int pid, int flag);
-void critterFlagUnset(int pid, int flag);
+bool critterFlagCheck(int pid, CritterFlags flag);
+void critterFlagSet(int pid, CritterFlags flag);
+void critterFlagUnset(int pid, CritterFlags flag);
 
 } // namespace fallout
 

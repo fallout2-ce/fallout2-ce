@@ -106,7 +106,7 @@ typedef struct InterfaceItemState {
     int itemFid;
 } InterfaceItemState;
 
-constexpr int kCustomIndicatorMinTag = 5;
+constexpr int kCustomIndicatorMinTag = DUDE_STATE_COUNT;
 constexpr int kCustomIndicatorMaxTag = 126;
 constexpr int kCustomIndicatorMaxCount = kCustomIndicatorMaxTag - kCustomIndicatorMinTag + 1;
 constexpr int kCustomIndicatorDefaultCount = 5;
@@ -2407,13 +2407,13 @@ int indicatorBarRefresh()
             }
         }
 
-        if (critterGetPoison(gDude) > POISON_INDICATOR_THRESHOLD) {
+        if (dudeHasState(DUDE_STATE_POISONED)) {
             if (indicatorBarAdd(INDICATOR_POISONED)) {
                 ++count;
             }
         }
 
-        if (critterGetRadiation(gDude) > RADATION_INDICATOR_THRESHOLD) {
+        if (dudeHasState(DUDE_STATE_RADIATED)) {
             if (indicatorBarAdd(INDICATOR_RADIATED)) {
                 ++count;
             }

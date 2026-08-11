@@ -804,7 +804,7 @@ int _partyMemberSyncPosition()
     for (int index = 1; index < gPartyMembersLength; index++) {
         PartyMemberListItem* partyMember = &(gPartyMembers[index]);
         Object* partyMemberObj = partyMember->object;
-        if ((partyMemberObj->flags & OBJECT_HIDDEN) == 0 && objectTypeFromPid(partyMemberObj->pid) == OBJ_TYPE_CRITTER) {
+        if ((partyMemberObj->flags & OBJECT_HIDDEN) == OBJECT_NONE && objectTypeFromPid(partyMemberObj->pid) == OBJ_TYPE_CRITTER) {
             Rotation rotation;
             if ((n % 2) != 0) {
                 rotation = clockwiseRotation;
@@ -915,7 +915,7 @@ int _getPartyMemberCount()
     for (int index = 1; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
 
-        if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER || critterIsDead(object) || (object->flags & OBJECT_HIDDEN) != 0) {
+        if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER || critterIsDead(object) || (object->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
             count--;
         }
     }
@@ -1175,7 +1175,7 @@ Object* partyMemberGetBestInSkill(Skill skill)
 
     for (int index = 0; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
-        if ((object->flags & OBJECT_HIDDEN) == 0 && objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+        if ((object->flags & OBJECT_HIDDEN) == OBJECT_NONE && objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
             int value = skillGetValue(object, skill);
             if (value > bestValue) {
                 bestValue = value;
@@ -1196,7 +1196,7 @@ int partyGetBestSkillValue(Skill skill)
 
     for (int index = 0; index < gPartyMembersLength; index++) {
         Object* object = gPartyMembers[index].object;
-        if ((object->flags & OBJECT_HIDDEN) == 0 && objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
+        if ((object->flags & OBJECT_HIDDEN) == OBJECT_NONE && objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
             int value = skillGetValue(object, skill);
             if (value > bestValue) {
                 bestValue = value;
@@ -1654,7 +1654,7 @@ bool partyIsAnyoneCanBeHealedByRest()
 
         if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) continue;
         if (critterIsDead(object)) continue;
-        if ((object->flags & OBJECT_HIDDEN) != 0) continue;
+        if ((object->flags & OBJECT_HIDDEN) != OBJECT_NONE) continue;
         if (critterGetKillType(object) == KILL_TYPE_ROBOT) continue;
 
         int currentHp = critterGetHitPoints(object);
@@ -1681,7 +1681,7 @@ int partyGetMaxWoundToHealByRest()
 
         if (objectTypeFromPid(object->pid) != OBJ_TYPE_CRITTER) continue;
         if (critterIsDead(object)) continue;
-        if ((object->flags & OBJECT_HIDDEN) != 0) continue;
+        if ((object->flags & OBJECT_HIDDEN) != OBJECT_NONE) continue;
         if (critterGetKillType(object) == KILL_TYPE_ROBOT) continue;
 
         int currentHp = critterGetHitPoints(object);
@@ -1706,7 +1706,7 @@ std::vector<Object*> get_all_party_members_objects(bool include_hidden)
         if (include_hidden
             || (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER
                 && !critterIsDead(object)
-                && (object->flags & OBJECT_HIDDEN) == 0)) {
+                && (object->flags & OBJECT_HIDDEN) == OBJECT_NONE)) {
             value.push_back(object);
         }
     }

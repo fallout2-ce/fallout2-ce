@@ -304,7 +304,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
                 return -5;
             }
 
-            if ((proto->critter.data.flags & CRITTER_BARTER) == 0) {
+            if ((proto->critter.data.flags & CRITTER_BARTER) == CRITTER_NONE) {
                 return -5;
             }
         }
@@ -353,7 +353,7 @@ int itemAdd(Object* owner, Object* itemToAdd, int quantity)
         inventory->items[inventory->length].quantity = quantity;
 
         if (itemToAdd->pid == PROTO_ID_STEALTH_BOY_II) {
-            if ((itemToAdd->flags & OBJECT_IN_ANY_HAND) != 0) {
+            if ((itemToAdd->flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
                 // NOTE: Uninline.
                 stealthBoyTurnOn(owner);
             }
@@ -613,19 +613,19 @@ int itemDropAll(Object* critter, int tile)
 
             item->data.item.misc.charges = inventoryItem->quantity;
         } else {
-            if ((item->flags & OBJECT_EQUIPPED) != 0) {
+            if ((item->flags & OBJECT_EQUIPPED) != OBJECT_NONE) {
                 hasEquippedItems = true;
                 InvenSlot invenSlot = InvenSlot::RightHand;
 
-                if ((item->flags & OBJECT_WORN) != 0) {
+                if ((item->flags & OBJECT_WORN) != OBJECT_NONE) {
                     invenSlot = InvenSlot::Armor;
-                } else if ((item->flags & OBJECT_IN_LEFT_HAND) != 0) {
+                } else if ((item->flags & OBJECT_IN_LEFT_HAND) != OBJECT_NONE) {
                     invenSlot = InvenSlot::LeftHand;
                 }
 
                 scriptHooks_InvenWield(critter, item, invenSlot, 0, 1);
 
-                if ((item->flags & OBJECT_WORN) != 0) {
+                if ((item->flags & OBJECT_WORN) != OBJECT_NONE) {
                     Proto* proto;
                     if (protoGetProto(critter->pid, &proto) == -1) {
                         return -1;
@@ -697,11 +697,11 @@ static bool _item_identical(Object* item1, Object* item2)
         return false;
     }
 
-    if ((item1->flags & (OBJECT_EQUIPPED | OBJECT_QUEUED)) != 0) {
+    if ((item1->flags & (OBJECT_EQUIPPED | OBJECT_QUEUED)) != OBJECT_NONE) {
         return false;
     }
 
-    if ((item2->flags & (OBJECT_EQUIPPED | OBJECT_QUEUED)) != 0) {
+    if ((item2->flags & (OBJECT_EQUIPPED | OBJECT_QUEUED)) != OBJECT_NONE) {
         return false;
     }
 
@@ -945,17 +945,17 @@ int objectGetCost(Object* obj)
 
     if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
         Object* item2 = critterGetItem2(obj);
-        if (item2 != nullptr && (item2->flags & OBJECT_IN_RIGHT_HAND) == 0) {
+        if (item2 != nullptr && (item2->flags & OBJECT_IN_RIGHT_HAND) == OBJECT_NONE) {
             cost += itemGetCost(item2);
         }
 
         Object* item1 = critterGetItem1(obj);
-        if (item1 != nullptr && (item1->flags & OBJECT_IN_LEFT_HAND) == 0) {
+        if (item1 != nullptr && (item1->flags & OBJECT_IN_LEFT_HAND) == OBJECT_NONE) {
             cost += itemGetCost(item1);
         }
 
         Object* armor = critterGetArmor(obj);
-        if (armor != nullptr && (armor->flags & OBJECT_WORN) == 0) {
+        if (armor != nullptr && (armor->flags & OBJECT_WORN) == OBJECT_NONE) {
             cost += itemGetCost(armor);
         }
     }
@@ -984,21 +984,21 @@ int objectGetInventoryWeight(Object* obj)
     if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
         Object* item2 = critterGetItem2(obj);
         if (item2 != nullptr) {
-            if ((item2->flags & OBJECT_IN_RIGHT_HAND) == 0) {
+            if ((item2->flags & OBJECT_IN_RIGHT_HAND) == OBJECT_NONE) {
                 weight += itemGetWeight(item2);
             }
         }
 
         Object* item1 = critterGetItem1(obj);
         if (item1 != nullptr) {
-            if ((item1->flags & OBJECT_IN_LEFT_HAND) == 0) {
+            if ((item1->flags & OBJECT_IN_LEFT_HAND) == OBJECT_NONE) {
                 weight += itemGetWeight(item1);
             }
         }
 
         Object* armor = critterGetArmor(obj);
         if (armor != nullptr) {
-            if ((armor->flags & OBJECT_WORN) == 0) {
+            if ((armor->flags & OBJECT_WORN) == OBJECT_NONE) {
                 weight += itemGetWeight(armor);
             }
         }
@@ -1020,15 +1020,15 @@ bool dudeIsWeaponDisabled(Object* weapon)
 
     bool canUse = true;
 
-    int flags = gDude->data.critter.combat.results;
-    if ((flags & DAM_CRIP_ARM_LEFT) != 0 && (flags & DAM_CRIP_ARM_RIGHT) != 0) {
+    Dam flags = gDude->data.critter.combat.results;
+    if ((flags & DAM_CRIP_ARM_LEFT) != DAM_NONE && (flags & DAM_CRIP_ARM_RIGHT) != DAM_NONE) {
         canUse = false;
     }
 
     // NOTE: Uninline.
     bool isTwoHanded = weaponIsTwoHanded(weapon);
     if (canUse && isTwoHanded) {
-        if ((flags & DAM_CRIP_ARM_LEFT) != 0 || (flags & DAM_CRIP_ARM_RIGHT) != 0) {
+        if ((flags & DAM_CRIP_ARM_LEFT) != DAM_NONE || (flags & DAM_CRIP_ARM_RIGHT) != DAM_NONE) {
             canUse = false;
         }
     }
@@ -1121,14 +1121,14 @@ int itemIsQueued(Object* obj)
         return false;
     }
 
-    if ((obj->flags & OBJECT_QUEUED) != 0) {
+    if ((obj->flags & OBJECT_QUEUED) != OBJECT_NONE) {
         return true;
     }
 
     Inventory* inventory = &(obj->data.inventory);
     for (int index = 0; index < inventory->length; index++) {
         InventoryItem* inventoryItem = &(inventory->items[index]);
-        if ((inventoryItem->item->flags & OBJECT_QUEUED) != 0) {
+        if ((inventoryItem->item->flags & OBJECT_QUEUED) != OBJECT_NONE) {
             return true;
         }
 
@@ -1143,7 +1143,7 @@ int itemIsQueued(Object* obj)
 }
 
 // 0x478154
-Object* itemReplace(Object* owner, Object* itemToReplace, int flags)
+Object* itemReplace(Object* owner, Object* itemToReplace, ObjectFlags flags)
 {
     if (owner == nullptr) {
         return nullptr;
@@ -2574,7 +2574,7 @@ int miscItemTurnOffFromQueue(Object* obj, void* data)
 // 0x479960
 static int stealthBoyTurnOn(Object* object)
 {
-    if ((object->flags & OBJECT_TRANS_GLASS) != 0) {
+    if ((object->flags & OBJECT_TRANS_GLASS) != OBJECT_NONE) {
         return -1;
     }
 
@@ -2600,7 +2600,7 @@ static int stealthBoyTurnOff(Object* critter, Object* item)
         return -1;
     }
 
-    if ((critter->flags & OBJECT_TRANS_GLASS) == 0) {
+    if ((critter->flags & OBJECT_TRANS_GLASS) == OBJECT_NONE) {
         return -1;
     }
 

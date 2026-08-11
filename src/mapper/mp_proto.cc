@@ -68,7 +68,7 @@ bool can_modify_protos = false;
 static int subwin = -1;
 
 // 0x559C6C
-static int critFlagList[CRITTER_FLAG_COUNT] = {
+static CritterFlags critFlagList[CRITTER_FLAG_COUNT] = {
     CRITTER_NO_STEAL,
     CRITTER_NO_DROP,
     CRITTER_NO_LIMBS,

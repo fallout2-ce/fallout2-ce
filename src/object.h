@@ -10,7 +10,7 @@
 namespace fallout {
 
 typedef struct ObjectWithFlags {
-    int flags;
+    ObjectFlags flags;
     Object* object;
 } ObjectWithFlags;
 
@@ -86,9 +86,9 @@ void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeig
 void _dark_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light);
 void _dark_translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light, unsigned char* a10, unsigned char* a11);
 void _intensity_mask_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destPitch, unsigned char* mask, int maskPitch, int light);
-int objectSetOutline(Object* obj, int a2, Rect* rect);
+int objectSetOutline(Object* obj, OutlineType outlineType, Rect* rect);
 int objectClearOutline(Object* obj, Rect* rect);
-int _obj_intersects_with(Object* object, int x, int y);
+ObjectFlags _obj_intersects_with(Object* object, int x, int y);
 int _obj_create_intersect_list(int x, int y, int elevation, ObjectType objectType, ObjectWithFlags** entriesPtr);
 void _obj_delete_intersect_list(ObjectWithFlags** a1);
 void obj_set_seen(int tile);
@@ -106,12 +106,12 @@ bool isExitGridAt(int tile, int elevation);
 
 inline bool objectHasOutline(Object* obj)
 {
-    return obj != nullptr && (obj->outline & OUTLINE_TYPE_MASK) != 0;
+    return obj != nullptr && (obj->outline & OUTLINE_TYPE_MAX) != OUTLINE_TYPE_NONE;
 }
 
 inline bool objectHasVisibleOutline(Object* obj)
 {
-    return objectHasOutline(obj) && (obj->outline & OUTLINE_DISABLED) == 0;
+    return objectHasOutline(obj) && (obj->outline & OUTLINE_DISABLED) == OUTLINE_TYPE_NONE;
 }
 
 // RAII wrapper for Object*.

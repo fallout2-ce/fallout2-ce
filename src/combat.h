@@ -29,7 +29,7 @@ Object* aiInfoGetLastTarget(Object* obj);
 int aiInfoSetLastTarget(Object* a1, Object* a2);
 Object* aiInfoGetLastItem(Object* obj);
 int aiInfoSetLastItem(Object* obj, Object* a2);
-void _combat_update_critter_outline_for_los(Object* critter, bool a2);
+void _combat_update_critter_outline_for_los(Object* critter, bool enableOutline);
 void _combat_over_from_load();
 void _combat_give_exps(int exp_points);
 void _combat_turn_run();

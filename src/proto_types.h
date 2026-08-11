@@ -2,6 +2,7 @@
 #define PROTO_TYPES_H
 
 #include "art_defs.h"
+#include "obj_types.h"
 #include "perk_defs.h"
 #include "skill_defs.h"
 #include "stat_defs.h"
@@ -443,7 +444,7 @@ typedef struct ItemProto {
 } ItemProto;
 
 typedef struct CritterProtoData {
-    int flags; // d.flags
+    CritterFlags flags; // d.flags
     int baseStats[SAVEABLE_STAT_COUNT]; // d.stat_base
     int bonusStats[SAVEABLE_STAT_COUNT]; // d.stat_bonus
     int skills[SKILL_COUNT]; // d.stat_points

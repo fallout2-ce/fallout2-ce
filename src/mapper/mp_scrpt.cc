@@ -137,7 +137,7 @@ void map_scr_toggle_hexes()
 
                 Object* obj;
                 if (objectCreateWithFidPid(&obj, markerFid, -1) != -1) {
-                    obj->flags |= 4;
+                    obj->flags |= OBJECT_NO_SAVE;
                     Rect rect;
                     _obj_toggle_flat(obj, &rect);
                     objectSetLocation(obj,
