@@ -420,7 +420,13 @@ void gameReset()
     aiReset();
     inventoryResetDude();
     gameSoundReset();
-    artCacheFlush();
+
+    // Flush the art cache during game loads if the target map differs from the current one.
+    // This prevents memory fragmentation and avoids heavy eviction loops on the art heap.
+    if (_isLoadingGame() && gMapHeader.index != mapIdBeingLoaded()) {
+        artCacheFlush();
+    }
+
     _movieStop();
     movieEffectsReset();
     gameMoviesReset();
