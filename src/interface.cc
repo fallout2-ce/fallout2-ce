@@ -106,7 +106,7 @@ typedef struct InterfaceItemState {
     int itemFid;
 } InterfaceItemState;
 
-constexpr int kCustomIndicatorMinTag = 5;
+constexpr int kCustomIndicatorMinTag = DUDE_STATE_COUNT;
 constexpr int kCustomIndicatorMaxTag = 126;
 constexpr int kCustomIndicatorMaxCount = kCustomIndicatorMaxTag - kCustomIndicatorMinTag + 1;
 constexpr int kCustomIndicatorDefaultCount = 5;
