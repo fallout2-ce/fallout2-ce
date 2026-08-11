@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "art.h"
+#include "automap.h"
 #include "color.h"
 #include "config.h"
 #include "dbox.h"
@@ -37,7 +38,7 @@ namespace fallout {
 #define AUTOMAP_PIPBOY_VIEW_X (238)
 #define AUTOMAP_PIPBOY_VIEW_Y (105)
 
-static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, int flags);
+static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, AutomapFlags flags);
 static int automapSaveEntry(File* stream);
 static int automapLoadEntry(int map, int elevation);
 static int automapSaveHeader(File* stream);
@@ -53,14 +54,14 @@ static bool automapEntryIsValid(int map, int elevation)
     return map >= 0 && map < AUTOMAP_MAP_COUNT && elevationIsValid(elevation);
 }
 
-typedef enum AutomapFrm {
+enum AutomapFrm : int {
     AUTOMAP_FRM_BACKGROUND,
     AUTOMAP_FRM_BUTTON_UP,
     AUTOMAP_FRM_BUTTON_DOWN,
     AUTOMAP_FRM_SWITCH_UP,
     AUTOMAP_FRM_SWITCH_DOWN,
     AUTOMAP_FRM_COUNT,
-} AutomapFrm;
+};
 
 typedef struct AutomapEntry {
     int dataSize;
@@ -250,7 +251,7 @@ static const int gAutomapFrmIds[AUTOMAP_FRM_COUNT] = {
 };
 
 // 0x5108C4 autoflags
-static int gAutomapFlags = 0;
+static AutomapFlags gAutomapFlags = AUTOMAP_NONE;
 
 // 0x56CB18 amdbhead
 static AutomapHeader gAutomapHeader;
@@ -262,7 +263,7 @@ static AutomapEntry gAutomapEntry;
 // 0x41B7F4 automap_init
 int automapInit()
 {
-    gAutomapFlags = 0;
+    gAutomapFlags = AUTOMAP_NONE;
     automapCreate();
     return 0;
 }
@@ -270,7 +271,7 @@ int automapInit()
 // 0x41B808 automap_reset
 int automapReset()
 {
-    gAutomapFlags = 0;
+    gAutomapFlags = AUTOMAP_NONE;
     automapCreate();
     return 0;
 }
@@ -286,13 +287,13 @@ void automapExit()
 // 0x41B87C automap_load
 int automapLoad(File* stream)
 {
-    return fileReadInt32(stream, &gAutomapFlags);
+    return fileReadInt32Enum<AutomapFlags>(stream, &gAutomapFlags);
 }
 
 // 0x41B898 automap_save
 int automapSave(File* stream)
 {
-    return fileWriteInt32(stream, gAutomapFlags);
+    return fileWriteInt32Enum<AutomapFlags>(stream, gAutomapFlags);
 }
 
 // 0x41B8B4 automapDisplayMap
@@ -518,10 +519,10 @@ int automapGetWindow()
 // Renders automap in Map window.
 //
 // 0x41BD1C draw_top_down_map
-static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, int flags)
+static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, AutomapFlags flags)
 {
     int color;
-    if ((flags & AUTOMAP_IN_GAME) != 0) {
+    if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
         color = COLOR_DARK_GREY;
     } else {
         color = COLOR_SAND;
@@ -541,10 +542,10 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         ObjectType objectType = objectTypeFromFid(object->fid);
         unsigned char objectColor;
 
-        if ((flags & AUTOMAP_IN_GAME) != 0) {
+        if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
             if (objectType == OBJ_TYPE_CRITTER
                 && (object->flags & OBJECT_HIDDEN) == OBJECT_NONE
-                && (flags & AUTOMAP_WITH_SCANNER) != 0
+                && (flags & AUTOMAP_WITH_SCANNER) != AUTOMAP_NONE
                 && (object->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
                 objectColor = COLOR_RED;
             } else {
@@ -557,7 +558,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
                 } else if (objectType == OBJ_TYPE_WALL) {
                     objectColor = COLOR_GREEN;
                 } else if (objectType == OBJ_TYPE_SCENERY
-                    && (flags & AUTOMAP_WTH_HIGH_DETAILS) != 0
+                    && (flags & AUTOMAP_WTH_HIGH_DETAILS) != AUTOMAP_NONE
                     && object->pid != PROTO_ID_BLOCK_HEX_AUTO_INVISO) {
                     objectColor = COLOR_DARK_GREEN;
                 } else if (object == gDude) {
@@ -569,7 +570,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         }
 
         int pixelOffset = -2 * (object->tile % 200) - 10 + AUTOMAP_WINDOW_WIDTH * (2 * (object->tile / 200) + 9) - 60;
-        if ((flags & AUTOMAP_IN_GAME) == 0) {
+        if ((flags & AUTOMAP_IN_GAME) == AUTOMAP_NONE) {
             switch (objectType) {
             case OBJ_TYPE_ITEM:
                 objectColor = COLOR_LIGHT_BLUE;
@@ -593,7 +594,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
 
         if (objectColor != COLOR_BLACK) {
             unsigned char* pixel = windowBuffer + pixelOffset;
-            if ((flags & AUTOMAP_IN_GAME) != 0) {
+            if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
                 if (*pixel != COLOR_GREEN || objectColor != COLOR_DARK_GREEN) {
                     pixel[0] = objectColor;
                     pixel[1] = objectColor;
@@ -619,7 +620,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
     }
 
     int textColor;
-    if ((flags & AUTOMAP_IN_GAME) != 0) {
+    if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
         textColor = COLOR_GREEN;
     } else {
         textColor = COLOR_DARK_BROWN;
