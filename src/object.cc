@@ -2995,7 +2995,7 @@ ObjectFlags _obj_intersects_with(Object* object, int x, int y)
                                 protoGetProto(object->pid, &proto);
 
                                 bool v20;
-                                int extendedFlags = proto->scenery.extendedFlags;
+                                ProtoExtendedFlags extendedFlags = proto->scenery.extendedFlags;
                                 if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != PROTO_EXT_FLAG_NONE || (extendedFlags & PROTO_EXT_FLAG_WEST_CORNER) != PROTO_EXT_FLAG_NONE) {
                                     v20 = tileIsInFrontOf(object->tile, gDude->tile);
                                 } else if ((extendedFlags & PROTO_EXT_FLAG_NORTH_CORNER) != PROTO_EXT_FLAG_NONE) {
@@ -4995,7 +4995,7 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
             protoGetProto(object->pid, &proto);
 
             bool v17;
-            int extendedFlags = proto->critter.extendedFlags;
+            ProtoExtendedFlags extendedFlags = proto->critter.extendedFlags;
             if ((extendedFlags & PROTO_EXT_FLAG_HIDDEN) != PROTO_EXT_FLAG_NONE || (extendedFlags & PROTO_EXT_FLAG_WEST_CORNER) != PROTO_EXT_FLAG_NONE) {
                 // TODO: Verify this visibility branch against the original logic.
                 v17 = tileIsInFrontOf(object->tile, gDude->tile);
