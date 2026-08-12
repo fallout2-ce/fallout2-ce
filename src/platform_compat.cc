@@ -47,12 +47,13 @@ typedef struct CompatDirectoryCacheEntry {
     std::unordered_map<std::string, std::string> entries;
 } CompatDirectoryCacheEntry;
 
+static constexpr size_t kCompatDirectoryEntryCacheMaxSize = 1024;
 static std::unordered_map<std::string, CompatDirectoryCacheEntry> compatDirectoryEntryCache;
 
 static std::string compatLowercase(std::string value)
 {
     for (char& ch : value) {
-        ch = static_cast<char>(SDL_tolower(ch));
+        ch = static_cast<char>(SDL_tolower(static_cast<unsigned char>(ch)));
     }
     return value;
 }
@@ -72,6 +73,10 @@ static const CompatDirectoryCacheEntry* compatDirectoryEntryCacheGet(const std::
     DIR* dir = opendir(directoryPath.c_str());
     if (dir == nullptr) {
         return nullptr;
+    }
+
+    if (compatDirectoryEntryCache.size() >= kCompatDirectoryEntryCacheMaxSize) {
+        compatDirectoryEntryCache.clear();
     }
 
     auto inserted = compatDirectoryEntryCache.emplace(directoryPath, CompatDirectoryCacheEntry());
@@ -284,10 +289,14 @@ int compat_mkdir(const char* path)
     compat_prepare_native_path(nativePath, path);
 
 #ifdef _WIN32
-    return mkdir(nativePath);
+    int rc = mkdir(nativePath);
 #else
-    return mkdir(nativePath, 0755);
+    int rc = mkdir(nativePath, 0755);
 #endif
+    if (rc == 0) {
+        compatDirectoryEntryCacheClear();
+    }
+    return rc;
 }
 
 int compat_mkdir_recursive(const char* path)
@@ -367,24 +376,34 @@ unsigned int compat_timeGetTime()
 
 FILE* compat_fopen(const char* path, const char* mode)
 {
-    if (compatFileModeMayWrite(mode)) {
+    bool mayWrite = compatFileModeMayWrite(mode);
+    if (mayWrite) {
         compatDirectoryEntryCacheClear();
     }
 
     char nativePath[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativePath, path);
-    return fopen(nativePath, mode);
+    FILE* stream = fopen(nativePath, mode);
+    if (mayWrite && stream != nullptr) {
+        compatDirectoryEntryCacheClear();
+    }
+    return stream;
 }
 
 gzFile compat_gzopen(const char* path, const char* mode)
 {
-    if (compatFileModeMayWrite(mode)) {
+    bool mayWrite = compatFileModeMayWrite(mode);
+    if (mayWrite) {
         compatDirectoryEntryCacheClear();
     }
 
     char nativePath[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativePath, path);
-    return gzopen(nativePath, mode);
+    gzFile stream = gzopen(nativePath, mode);
+    if (mayWrite && stream != nullptr) {
+        compatDirectoryEntryCacheClear();
+    }
+    return stream;
 }
 
 char* compat_fgets(char* buffer, int maxCount, FILE* stream)
@@ -423,7 +442,11 @@ int compat_remove(const char* path)
 
     char nativePath[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativePath, path);
-    return remove(nativePath);
+    int rc = remove(nativePath);
+    if (rc == 0) {
+        compatDirectoryEntryCacheClear();
+    }
+    return rc;
 }
 
 int compat_rename(const char* oldFileName, const char* newFileName)
@@ -436,7 +459,11 @@ int compat_rename(const char* oldFileName, const char* newFileName)
     char nativeNewFileName[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativeNewFileName, newFileName);
 
-    return rename(nativeOldFileName, nativeNewFileName);
+    int rc = rename(nativeOldFileName, nativeNewFileName);
+    if (rc == 0) {
+        compatDirectoryEntryCacheClear();
+    }
+    return rc;
 }
 
 void compat_windows_path_to_native(char* path)
