@@ -38,7 +38,7 @@ Skill partyMemberGetBestSkill(Object* object);
 Object* partyMemberGetBestInSkill(Skill skill);
 int partyGetBestSkillValue(Skill skill);
 void _partyMemberSaveProtos();
-bool partyMemberSupportsDisposition(Object* object, int disposition);
+bool partyMemberSupportsDisposition(Object* object, Disposition disposition);
 bool partyMemberSupportsAreaAttackMode(Object* object, AreaAttackMode areaAttackMode);
 bool partyMemberSupportsRunAwayMode(Object* object, RunAwayMode runAwayMode);
 bool partyMemberSupportsBestWeapon(Object* object, BestWeapon bestWeapon);

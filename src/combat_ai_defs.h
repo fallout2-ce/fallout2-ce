@@ -119,7 +119,8 @@ inline bool chemUseIsValid(int chemUse)
     return chemUse >= CHEM_USE_FIRST && chemUse < CHEM_USE_COUNT;
 }
 
-typedef enum Disposition {
+enum Disposition : int {
+    DISPOSITION_INVALID = -1,
     DISPOSITION_NONE,
     DISPOSITION_CUSTOM,
     DISPOSITION_COWARD,
@@ -127,7 +128,13 @@ typedef enum Disposition {
     DISPOSITION_AGGRESSIVE,
     DISPOSITION_BERKSERK,
     DISPOSITION_COUNT,
-} Disposition;
+    DISPOSITION_FIRST = DISPOSITION_NONE
+};
+
+inline bool dispositionIsValid(int disposition)
+{
+    return disposition >= DISPOSITION_FIRST && disposition < DISPOSITION_COUNT;
+}
 
 typedef enum HurtTooMuch {
     HURT_BLIND,

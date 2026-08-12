@@ -327,7 +327,7 @@ static void aiPacketInit(AiPacket* ai)
         ai->chem_primary_desire[index] = -1;
     }
 
-    ai->disposition = -1;
+    ai->disposition = DISPOSITION_INVALID;
 }
 
 // ai_init
@@ -455,8 +455,10 @@ int aiInit()
         configGetIntList(&config, sectionEntry->key, "chem_primary_desire", ai->chem_primary_desire, AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT);
 
         if (configGetString(&config, sectionEntry->key, "disposition", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gDispositionKeys, DISPOSITION_COUNT, &(ai->disposition));
-            ai->disposition--;
+            int disposition_temp;
+            _cai_match_str_to_list(stringValue, gDispositionKeys, DISPOSITION_COUNT, &disposition_temp);
+            disposition_temp--;
+            ai->disposition = static_cast<Disposition>(disposition_temp);
         }
 
         if (configGetString(&config, sectionEntry->key, "body_type", &stringValue)) {
@@ -905,10 +907,10 @@ void aiRemoveBurstDisabled(Object* critter)
 }
 
 // 0x428340
-int aiGetDisposition(Object* obj)
+Disposition aiGetDisposition(Object* obj)
 {
     if (obj == nullptr) {
-        return 0;
+        return DISPOSITION_NONE;
     }
 
     AiPacket* ai = aiGetPacket(obj);
@@ -916,13 +918,13 @@ int aiGetDisposition(Object* obj)
 }
 
 // 0x428354
-int aiSetDisposition(Object* obj, int disposition)
+int aiSetDisposition(Object* obj, Disposition disposition)
 {
     if (obj == nullptr) {
         return -1;
     }
 
-    if (disposition == -1 || disposition >= 5) {
+    if (!dispositionIsValid(disposition)  || disposition == DISPOSITION_BERKSERK) {
         return -1;
     }
 

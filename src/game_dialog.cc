@@ -3666,7 +3666,7 @@ int partyMemberControlWindowInit()
         _win_register_button_disable(_gdialog_buttons[dispositionButtonIndex], disabledButtonFrmData, disabledButtonFrmData, disabledButtonFrmData);
         buttonSetCallbacks(_gdialog_buttons[dispositionButtonIndex], _gsound_med_butt_press, _gsound_med_butt_release);
 
-        if (!partyMemberSupportsDisposition(gGameDialogSpeaker, buttonData->value)) {
+        if (!partyMemberSupportsDisposition(gGameDialogSpeaker, static_cast<Disposition>(buttonData->value))) {
             buttonDisable(_gdialog_buttons[dispositionButtonIndex]);
         }
     }
@@ -3932,18 +3932,18 @@ void partyMemberControlWindowHandleEvents()
                 gameDialogRenderSupplementaryMessage(msg);
                 partyMemberControlWindowUpdate();
             } else if (keyCode == 2098) {
-                aiSetDisposition(gGameDialogSpeaker, 4);
+                aiSetDisposition(gGameDialogSpeaker, DISPOSITION_AGGRESSIVE);
             } else if (keyCode == 2099) {
-                aiSetDisposition(gGameDialogSpeaker, 0);
+                aiSetDisposition(gGameDialogSpeaker, DISPOSITION_NONE);
                 dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
                 dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION;
                 done = true;
             } else if (keyCode == 2102) {
-                aiSetDisposition(gGameDialogSpeaker, 2);
+                aiSetDisposition(gGameDialogSpeaker, DISPOSITION_COWARD);
             } else if (keyCode == 2103) {
-                aiSetDisposition(gGameDialogSpeaker, 3);
+                aiSetDisposition(gGameDialogSpeaker, DISPOSITION_DEFENSIVE);
             } else if (keyCode == 2111) {
-                aiSetDisposition(gGameDialogSpeaker, 1);
+                aiSetDisposition(gGameDialogSpeaker, DISPOSITION_CUSTOM);
             } else if (keyCode == KEY_ESCAPE) {
                 dialogSwitchMode = GAME_DIALOG_MODE_TALK;
                 dialogMode = GAME_DIALOG_MODE_TALK;
@@ -3972,7 +3972,7 @@ void partyMemberControlWindowHandleEvents()
                 // it's slightly smaller than the button itself).
                 if ((mouseGetEvent() & MOUSE_EVENT_LEFT_BUTTON_UP) != 0) {
                     if (mouseHitTestInWindow(gGameDialogWindow, 438, 156, 438 + 109, 156 + 28)) {
-                        aiSetDisposition(gGameDialogSpeaker, 0);
+                        aiSetDisposition(gGameDialogSpeaker, DISPOSITION_NONE);
                         dialogMode = GAME_DIALOG_MODE_PARTY_CUSTOMIZATION;
                         dialogSwitchMode = GAME_DIALOG_MODE_SWITCH_TO_PARTY_CUSTOMIZATION;
                         done = true;

@@ -347,7 +347,7 @@ static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescri
         partyMemberDescription->chemUse[index] = 0;
     }
 
-    for (int index = 0; index < DISPOSITION_COUNT; index++) {
+    for (int index = DISPOSITION_FIRST; index < DISPOSITION_COUNT; index++) {
         partyMemberDescription->disposition[index] = 0;
     }
 
@@ -1303,7 +1303,7 @@ void _partyMemberSaveProtos()
 }
 
 // 0x4958B0 partyMemberHasAIDisposition
-bool partyMemberSupportsDisposition(Object* critter, int disposition)
+bool partyMemberSupportsDisposition(Object* critter, Disposition disposition)
 {
     if (critter == nullptr) {
         return false;
@@ -1313,7 +1313,7 @@ bool partyMemberSupportsDisposition(Object* critter, int disposition)
         return false;
     }
 
-    if (disposition == -1 || disposition > 5) {
+    if (!dispositionIsValid(disposition)) {
         return false;
     }
 
