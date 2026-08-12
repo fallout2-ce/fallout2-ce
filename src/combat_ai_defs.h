@@ -86,14 +86,21 @@ inline bool distanceModeIsValid(int distanceMode)
     return distanceMode >= DISTANCE_FIRST && distanceMode < DISTANCE_COUNT;
 }
 
-typedef enum AttackWho {
+enum AttackWho : int {
+    ATTACK_WHO_INVALID = -1,
     ATTACK_WHO_WHOMEVER_ATTACKING_ME,
     ATTACK_WHO_STRONGEST,
     ATTACK_WHO_WEAKEST,
     ATTACK_WHO_WHOMEVER,
     ATTACK_WHO_CLOSEST,
     ATTACK_WHO_COUNT,
-} AttackWho;
+    ATTACK_WHO_FIRST = ATTACK_WHO_WHOMEVER_ATTACKING_ME
+};
+
+inline bool attackWhoIsValid(int attackWho)
+{
+    return attackWho >= ATTACK_WHO_FIRST && attackWho < ATTACK_WHO_COUNT;
+}
 
 typedef enum ChemUse {
     CHEM_USE_CLEAN,

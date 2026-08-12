@@ -339,7 +339,7 @@ static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescri
         partyMemberDescription->distanceMode[index] = 0;
     }
 
-    for (int index = 0; index < ATTACK_WHO_COUNT; index++) {
+    for (int index = ATTACK_WHO_FIRST; index < ATTACK_WHO_COUNT; index++) {
         partyMemberDescription->attackWho[index] = 0;
     }
 
@@ -1418,7 +1418,7 @@ bool partyMemberSupportsDistance(Object* object, DistanceMode distanceMode)
 }
 
 // 0x495AA0 partyMemberHasAIAttackWhoValue
-bool partyMemberSupportsAttackWho(Object* object, int attackWho)
+bool partyMemberSupportsAttackWho(Object* object, AttackWho attackWho)
 {
     if (object == nullptr) {
         return false;
@@ -1428,7 +1428,7 @@ bool partyMemberSupportsAttackWho(Object* object, int attackWho)
         return false;
     }
 
-    if (attackWho >= ATTACK_WHO_COUNT) {
+    if (!attackWhoIsValid(attackWho)) {
         return false;
     }
 

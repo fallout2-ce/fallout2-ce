@@ -4270,7 +4270,7 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
                 enabled = partyMemberSupportsDistance(gGameDialogSpeaker, static_cast<DistanceMode>(ptr->value));
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
-                enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, ptr->value);
+                enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, static_cast<AttackWho>(ptr->value));
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
                 enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, ptr->value);
@@ -4415,7 +4415,7 @@ int _gdCustomSelect(int option)
                                         enabled = partyMemberSupportsDistance(gGameDialogSpeaker, static_cast<DistanceMode>(ptr->value));
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
-                                        enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, ptr->value);
+                                        enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, static_cast<AttackWho>(ptr->value));
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
                                         enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, ptr->value);
@@ -4461,7 +4461,7 @@ void _gdCustomUpdateSetting(int option, int value)
         aiSetDistance(gGameDialogSpeaker, static_cast<DistanceMode>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
-        aiSetAttackWho(gGameDialogSpeaker, value);
+        aiSetAttackWho(gGameDialogSpeaker, static_cast<AttackWho>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
         aiSetChemUse(gGameDialogSpeaker, value);

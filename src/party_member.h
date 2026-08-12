@@ -43,7 +43,7 @@ bool partyMemberSupportsAreaAttackMode(Object* object, AreaAttackMode areaAttack
 bool partyMemberSupportsRunAwayMode(Object* object, RunAwayMode runAwayMode);
 bool partyMemberSupportsBestWeapon(Object* object, BestWeapon bestWeapon);
 bool partyMemberSupportsDistance(Object* object, DistanceMode distanceMode);
-bool partyMemberSupportsAttackWho(Object* object, int attackWho);
+bool partyMemberSupportsAttackWho(Object* object, AttackWho attackWho);
 bool partyMemberSupportsChemUse(Object* object, int chemUse);
 int _partyMemberIncLevels();
 bool partyIsAnyoneCanBeHealedByRest();
