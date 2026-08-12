@@ -1,6 +1,8 @@
 #ifndef COMBAT_AI_DEFS_H
 #define COMBAT_AI_DEFS_H
 
+#include "obj_types.h"
+
 namespace fallout {
 
 enum AreaAttackMode : int {
@@ -131,6 +133,13 @@ enum Disposition : int {
     DISPOSITION_FIRST = DISPOSITION_NONE
 };
 
+inline Disposition operator--(Disposition& e, int)
+{
+    Disposition result = e;
+    e = static_cast<Disposition>(static_cast<int>(e) - 1);
+    return result;
+}
+
 inline bool dispositionIsValid(int disposition)
 {
     return disposition >= DISPOSITION_FIRST && disposition < DISPOSITION_COUNT;
@@ -144,6 +153,12 @@ enum HurtTooMuch : int {
     HURT_COUNT,
     HURT_FIRST = HURT_BLIND
 };
+
+inline HurtTooMuch& operator|=(HurtTooMuch& lhs, Dam rhs)
+{
+    lhs = static_cast<HurtTooMuch>(static_cast<int>(lhs) | static_cast<int>(rhs));
+    return lhs;
+}
 
 } // namespace fallout
 

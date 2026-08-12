@@ -67,7 +67,7 @@ typedef struct AiRetargetData {
     int sourceIntelligence;
 } AiRetargetData;
 
-static void _parse_hurt_str(char* str, int* out_value);
+static void _parse_hurt_str(char* str, HurtTooMuch* valuePtr);
 static int _cai_match_str_to_list(const char* str, const char** list, int count, int* out_value);
 static void aiPacketInit(AiPacket* ai);
 static int aiPacketRead(File* stream, AiPacket* ai);
@@ -204,12 +204,12 @@ const char* gHurtTooMuchKeys[HURT_COUNT] = {
 // hurt_too_much
 //
 // 0x518124 rmatchHurtVals
-static const int _rmatchHurtVals[5] = {
+static const Dam _rmatchHurtVals[HURT_COUNT + 1] = {
     DAM_BLIND,
     DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT | DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
     DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT,
     DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
-    0,
+    DAM_NONE,
 };
 
 // Hit points in percent to choose run away mode.
@@ -264,9 +264,9 @@ static Object** _curr_crit_list;
 static char _attack_str[AI_MESSAGE_SIZE];
 
 // parse hurt_too_much
-static void _parse_hurt_str(char* str, int* valuePtr)
+static void _parse_hurt_str(char* str, HurtTooMuch* valuePtr)
 {
-    *valuePtr = 0;
+    *valuePtr = HURT_BLIND;
 
     str = compat_strlwr(str);
     while (*str) {
@@ -309,6 +309,15 @@ static int _cai_match_str_to_list(const char* str, const char** list, int count,
     }
 
     return 0;
+}
+
+template <typename T>
+inline int _cai_match_str_to_list_enum(const char* str, const char** list, int count, T* valuePtr)
+{
+    int temp;
+    int result = _cai_match_str_to_list(str, list, count, &temp);
+    *valuePtr = static_cast<T>(temp);
+    return result;
 }
 
 // 0x426FE0
@@ -374,9 +383,7 @@ int aiInit()
         if (!configGetInt(&config, sectionEntry->key, "aggression", &(ai->aggression))) goto err;
 
         if (configGetString(&config, sectionEntry->key, "hurt_too_much", &stringValue)) {
-            int hurt_too_much_temp;
-            _parse_hurt_str(stringValue, &hurt_too_much_temp);
-            ai->hurt_too_much = static_cast<HurtTooMuch>(hurt_too_much_temp);
+            _parse_hurt_str(stringValue, &(ai->hurt_too_much));
         }
 
         if (!configGetInt(&config, sectionEntry->key, "secondary_freq", &(ai->secondary_freq))) goto err;
@@ -413,54 +420,39 @@ int aiInit()
         ai->hit[HIT_LOCATION_GROIN].end++;
 
         if (configGetString(&config, sectionEntry->key, "area_attack_mode", &stringValue)) {
-            int area_attack_mode_temp;
-            _cai_match_str_to_list(stringValue, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT, &area_attack_mode_temp);
-            ai->area_attack_mode = static_cast<AreaAttackMode>(area_attack_mode_temp);
+            _cai_match_str_to_list_enum<AreaAttackMode>(stringValue, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT, &(ai->area_attack_mode));
         } else {
             ai->area_attack_mode = AREA_ATTACK_MODE_INVALID;
         }
 
         if (configGetString(&config, sectionEntry->key, "run_away_mode", &stringValue)) {
-            int run_away_mode_temp;
-            _cai_match_str_to_list(stringValue, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT, &run_away_mode_temp);
-            ai->run_away_mode = static_cast<RunAwayMode>(run_away_mode_temp);
-
+            _cai_match_str_to_list_enum<RunAwayMode>(stringValue, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT, &(ai->run_away_mode));
             if (ai->run_away_mode >= RUN_AWAY_MODE_FIRST) {
                 ai->run_away_mode--;
             }
         }
 
         if (configGetString(&config, sectionEntry->key, "best_weapon", &stringValue)) {
-            int best_weapon_temp;
-            _cai_match_str_to_list(stringValue, gBestWeaponKeys, BEST_WEAPON_COUNT, &best_weapon_temp);
-            ai->best_weapon = static_cast<BestWeapon>(best_weapon_temp);
+            _cai_match_str_to_list_enum<BestWeapon>(stringValue, gBestWeaponKeys, BEST_WEAPON_COUNT, &(ai->best_weapon));
         }
 
         if (configGetString(&config, sectionEntry->key, "distance", &stringValue)) {
-            int distance_mode_temp;
-            _cai_match_str_to_list(stringValue, gDistanceModeKeys, DISTANCE_COUNT, &distance_mode_temp);
-            ai->distance = static_cast<DistanceMode>(distance_mode_temp);
+            _cai_match_str_to_list_enum<DistanceMode>(stringValue, gDistanceModeKeys, DISTANCE_COUNT, &(ai->distance));
         }
 
         if (configGetString(&config, sectionEntry->key, "attack_who", &stringValue)) {
-            int attack_who_temp;
-            _cai_match_str_to_list(stringValue, gAttackWhoKeys, ATTACK_WHO_COUNT, &attack_who_temp);
-            ai->attack_who = static_cast<AttackWho>(attack_who_temp);
+            _cai_match_str_to_list_enum<AttackWho>(stringValue, gAttackWhoKeys, ATTACK_WHO_COUNT, &(ai->attack_who));
         }
 
         if (configGetString(&config, sectionEntry->key, "chem_use", &stringValue)) {
-            int chem_use_temp;
-            _cai_match_str_to_list(stringValue, gChemUseKeys, CHEM_USE_COUNT, &chem_use_temp);
-            ai->chem_use = static_cast<ChemUse>(chem_use_temp);
+            _cai_match_str_to_list_enum<ChemUse>(stringValue, gChemUseKeys, CHEM_USE_COUNT, &(ai->chem_use));
         }
 
         configGetIntList(&config, sectionEntry->key, "chem_primary_desire", ai->chem_primary_desire, AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT);
 
         if (configGetString(&config, sectionEntry->key, "disposition", &stringValue)) {
-            int disposition_temp;
-            _cai_match_str_to_list(stringValue, gDispositionKeys, DISPOSITION_COUNT, &disposition_temp);
-            disposition_temp--;
-            ai->disposition = static_cast<Disposition>(disposition_temp);
+            _cai_match_str_to_list_enum<Disposition>(stringValue, gDispositionKeys, DISPOSITION_COUNT, &(ai->disposition));
+            ai->disposition--;
         }
 
         if (configGetString(&config, sectionEntry->key, "body_type", &stringValue)) {
