@@ -803,7 +803,7 @@ int aiSetAreaAttackMode(Object* critter, AreaAttackMode areaAttackMode)
 // 0x428248
 int aiSetRunAwayMode(Object* obj, RunAwayMode runAwayMode)
 {
-    if (!runAwayModeIsValid(runAwayMode) || runAwayMode == RUN_AWAY_MODE_NEVER) {
+    if (runAwayMode >= (RUN_AWAY_MODE_COUNT -1)) {
         return -1;
     }
 
@@ -918,7 +918,7 @@ int aiSetDisposition(Object* obj, Disposition disposition)
         return -1;
     }
 
-    if (!dispositionIsValid(disposition)  || disposition == DISPOSITION_BERKSERK) {
+    if (!dispositionIsValid(disposition)  || disposition >= (DISPOSITION_COUNT - 1)) {
         return -1;
     }
 
@@ -3075,7 +3075,7 @@ static int _cai_get_min_hp(AiPacket* ai)
     }
 
     RunAwayMode run_away_mode = ai->run_away_mode;
-    if (runAwayModeIsValid(run_away_mode) && run_away_mode != RUN_AWAY_MODE_NEVER) {
+    if (runAwayModeIsValid(run_away_mode)) {
         return _hp_run_away_value[run_away_mode];
     } else if (run_away_mode == RUN_AWAY_MODE_INVALID) {
         return ai->min_hp;
