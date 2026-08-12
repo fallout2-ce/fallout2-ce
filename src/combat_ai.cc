@@ -1545,7 +1545,7 @@ static Object* _ai_danger_source(Object* a1)
     }
 
     bool ignoreFleeingCritters = false;
-
+    AttackWho attackWho;
     Object* targets[4];
     targets[0] = nullptr;
 
@@ -1569,7 +1569,7 @@ static Object* _ai_danger_source(Object* a1)
             ignoreFleeingCritters = false;
         }
 
-        AttackWho attackWho = aiGetAttackWho(a1);
+        attackWho = aiGetAttackWho(a1);
         switch (attackWho) {
         case ATTACK_WHO_WHOMEVER_ATTACKING_ME:
             if (1) {
@@ -1656,7 +1656,7 @@ static Object* _ai_danger_source(Object* a1)
             break;
         }
     } else {
-        attackWho = -1;
+        attackWho = ATTACK_WHO_INVALID;
     }
 
     Object* whoHitMe = a1->data.critter.combat.whoHitMe;
@@ -1664,7 +1664,7 @@ static Object* _ai_danger_source(Object* a1)
         targets[0] = nullptr;
     } else {
         if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
-            if (attackWho == ATTACK_WHO_WHOMEVER || attackWho == -1) {
+            if (attackWho == ATTACK_WHO_WHOMEVER || attackWho == ATTACK_WHO_INVALID) {
                 return whoHitMe;
             }
         } else {
