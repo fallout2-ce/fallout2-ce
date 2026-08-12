@@ -1110,6 +1110,9 @@ static int _partyMemberItemRecover(PartyMemberListItem* a1)
     if (a1->vars != nullptr) {
         script->localVarsOffset = mapAllocLocalVars(script->localVarsCount);
         memcpy(gMapLocalVars + script->localVarsOffset, a1->vars, sizeof(int) * script->localVarsCount);
+
+        internal_free(a1->vars);
+        a1->vars = nullptr;
     }
 
     return 0;
