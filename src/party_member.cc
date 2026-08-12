@@ -327,7 +327,7 @@ static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescri
         partyMemberDescription->areaAttackMode[index] = 0;
     }
 
-    for (int index = 0; index < RUN_AWAY_MODE_COUNT; index++) {
+    for (int index = RUN_AWAY_MODE_FIRST; index < RUN_AWAY_MODE_COUNT; index++) {
         partyMemberDescription->runAwayMode[index] = 0;
     }
 

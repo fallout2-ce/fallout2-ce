@@ -19,7 +19,8 @@ inline bool areaAttackModeIsValid(int areaAttackMode)
     return areaAttackMode >= AREA_ATTACK_MODE_FIRST && areaAttackMode < AREA_ATTACK_MODE_COUNT;
 }
 
-typedef enum RunAwayMode {
+enum RunAwayMode : int {
+    RUN_AWAY_MODE_INVALID = -1,
     RUN_AWAY_MODE_NONE,
     RUN_AWAY_MODE_COWARD,
     RUN_AWAY_MODE_FINGER_HURTS,
@@ -28,7 +29,27 @@ typedef enum RunAwayMode {
     RUN_AWAY_MODE_TOURNIQUET,
     RUN_AWAY_MODE_NEVER,
     RUN_AWAY_MODE_COUNT,
-} RunAwayMode;
+    RUN_AWAY_MODE_FIRST = RUN_AWAY_MODE_NONE
+};
+
+inline RunAwayMode operator++(RunAwayMode& e, int)
+{
+    RunAwayMode result = e;
+    e = static_cast<RunAwayMode>(static_cast<int>(e) + 1);
+    return result;
+}
+
+inline RunAwayMode operator--(RunAwayMode& e, int)
+{
+    RunAwayMode result = e;
+    e = static_cast<RunAwayMode>(static_cast<int>(e) - 1);
+    return result;
+}
+
+inline bool runAwayModeIsValid(int runAwayMode)
+{
+    return runAwayMode >= RUN_AWAY_MODE_FIRST && runAwayMode < RUN_AWAY_MODE_COUNT;
+}
 
 typedef enum BestWeapon {
     BEST_WEAPON_NO_PREF,

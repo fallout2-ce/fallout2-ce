@@ -4452,7 +4452,7 @@ void _gdCustomUpdateSetting(int option, int value)
         aiSetAreaAttackMode(gGameDialogSpeaker, static_cast<AreaAttackMode>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
-        aiSetRunAwayMode(gGameDialogSpeaker, value);
+        aiSetRunAwayMode(gGameDialogSpeaker, static_cast<RunAwayMode>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_BEST_WEAPON:
         aiSetBestWeapon(gGameDialogSpeaker, value);

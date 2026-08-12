@@ -217,7 +217,7 @@ static const int _rmatchHurtVals[5] = {
 // Hit points in percent to choose run away mode.
 //
 // 0x518138 hp_run_away_value
-static const int _hp_run_away_value[6] = {
+static const int _hp_run_away_value[RUN_AWAY_MODE_COUNT - 1] = {
     0,
     25,
     40,
@@ -319,7 +319,7 @@ static void aiPacketInit(AiPacket* ai)
     ai->name = nullptr;
 
     ai->area_attack_mode = AREA_ATTACK_MODE_INVALID;
-    ai->run_away_mode = -1;
+    ai->run_away_mode = RUN_AWAY_MODE_INVALID;
     ai->best_weapon = -1;
     ai->distance = -1;
     ai->attack_who = -1;
@@ -421,9 +421,11 @@ int aiInit()
         }
 
         if (configGetString(&config, sectionEntry->key, "run_away_mode", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT, &(ai->run_away_mode));
+            int run_away_mode_temp;
+            _cai_match_str_to_list(stringValue, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT, &run_away_mode_temp);
+            ai->run_away_mode = static_cast<RunAwayMode>(run_away_mode_temp);
 
-            if (ai->run_away_mode >= 0) {
+            if (ai->run_away_mode >= RUN_AWAY_MODE_FIRST) {
                 ai->run_away_mode--;
             }
         }
@@ -623,7 +625,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
     if (fileReadInt32(stream, &(ai->distance)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->attack_who)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->chem_use)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->run_away_mode)) == -1) return -1;
+    if (fileReadInt32Enum<RunAwayMode>(stream, &(ai->run_away_mode)) == -1) return -1;
 
     for (int index = 0; index < AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT; index++) {
         if (fileReadInt32(stream, &(ai->chem_primary_desire[index])) == -1) return -1;
@@ -667,7 +669,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
     if (fileWriteInt32(stream, ai->distance) == -1) return -1;
     if (fileWriteInt32(stream, ai->attack_who) == -1) return -1;
     if (fileWriteInt32(stream, ai->chem_use) == -1) return -1;
-    if (fileWriteInt32(stream, ai->run_away_mode) == -1) return -1;
+    if (fileWriteInt32Enum<RunAwayMode>(stream, ai->run_away_mode) == -1) return -1;
 
     for (int index = 0; index < AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT; index++) {
         // TODO: Check, probably writes chem_primary_desire[0] three times,
@@ -737,9 +739,9 @@ AreaAttackMode aiGetAreaAttackMode(Object* obj)
 }
 
 // 0x428190
-int aiGetRunAwayMode(Object* obj)
+RunAwayMode aiGetRunAwayMode(Object* obj)
 {
-    int runAwayMode = -1;
+    RunAwayMode runAwayMode = RUN_AWAY_MODE_INVALID;
 
     AiPacket* ai = aiGetPacket(obj);
     if (ai->run_away_mode != -1) {
@@ -747,7 +749,7 @@ int aiGetRunAwayMode(Object* obj)
     }
 
     int hpRatio = 100 * ai->min_hp / critterGetStat(obj, STAT_MAXIMUM_HIT_POINTS);
-    for (int index = 0; index < 6; index++) {
+    for (RunAwayMode index = RUN_AWAY_MODE_FIRST; index < RUN_AWAY_MODE_NEVER; index++) {
         if (hpRatio >= _hp_run_away_value[index]) {
             runAwayMode = index;
         }
@@ -797,9 +799,9 @@ int aiSetAreaAttackMode(Object* critter, AreaAttackMode areaAttackMode)
 }
 
 // 0x428248
-int aiSetRunAwayMode(Object* obj, int runAwayMode)
+int aiSetRunAwayMode(Object* obj, RunAwayMode runAwayMode)
 {
-    if (runAwayMode >= 6) {
+    if (!runAwayModeIsValid(runAwayMode) || runAwayMode == RUN_AWAY_MODE_NEVER) {
         return -1;
     }
 
@@ -3071,10 +3073,10 @@ static int _cai_get_min_hp(AiPacket* ai)
         return 0;
     }
 
-    int run_away_mode = ai->run_away_mode;
-    if (run_away_mode >= 0 && run_away_mode < RUN_AWAY_MODE_COUNT) {
+    RunAwayMode run_away_mode = ai->run_away_mode;
+    if (runAwayModeIsValid(run_away_mode) && run_away_mode != RUN_AWAY_MODE_NEVER) {
         return _hp_run_away_value[run_away_mode];
-    } else if (run_away_mode == -1) {
+    } else if (run_away_mode == RUN_AWAY_MODE_INVALID) {
         return ai->min_hp;
     }
 
