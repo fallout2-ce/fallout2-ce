@@ -1,7 +1,6 @@
 #ifndef PLATFORM_COMPAT_H
 #define PLATFORM_COMPAT_H
 
-#include <stddef.h>
 #include <stdio.h>
 
 #include <zlib.h>
@@ -30,7 +29,7 @@ char* compat_itoa(int value, char* buffer, int radix);
 void compat_splitpath(const char* path, char* drive, char* dir, char* fname, char* ext);
 void compat_makepath(char* path, const char* drive, const char* dir, const char* fname, const char* ext);
 long compat_tell(int fileHandle);
-long compat_filelength(int fd);
+long compat_filelength(const char* path);
 int compat_mkdir(const char* path);
 int compat_mkdir_recursive(const char* path);
 bool compat_is_dir(const char* path);

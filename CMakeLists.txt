@@ -5,12 +5,14 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(EXECUTABLE_NAME fallout2-ce)
 
 if(APPLE)
-    if(IOS)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "12" CACHE STRING "")
-        set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "")
-    else()
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "")
-        set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "")
+    if(IOS AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "13")
+        message(FATAL_ERROR 
+            "IOS 13 is the lowest supported version."
+            "Current value: ${CMAKE_OSX_DEPLOYMENT_TARGET}")
+    elseif(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.15")
+        message(FATAL_ERROR 
+            "MacOS 10.15 (Catalina) is the lowest supported version."
+            "Current value: ${CMAKE_OSX_DEPLOYMENT_TARGET}")
     endif()
 endif()
 
