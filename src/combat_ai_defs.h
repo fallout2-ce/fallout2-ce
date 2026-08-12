@@ -51,7 +51,8 @@ inline bool runAwayModeIsValid(int runAwayMode)
     return runAwayMode >= RUN_AWAY_MODE_FIRST && runAwayMode < RUN_AWAY_MODE_COUNT;
 }
 
-typedef enum BestWeapon {
+enum BestWeapon : int {
+    BEST_WEAPON_INVALID = -1,
     BEST_WEAPON_NO_PREF,
     BEST_WEAPON_MELEE,
     BEST_WEAPON_MELEE_OVER_RANGED,
@@ -61,7 +62,13 @@ typedef enum BestWeapon {
     BEST_WEAPON_UNARMED_OVER_THROW,
     BEST_WEAPON_RANDOM,
     BEST_WEAPON_COUNT,
-} BestWeapon;
+    BEST_WEAPON_FIRST = BEST_WEAPON_NO_PREF
+};
+
+inline bool bestWeaponIsValid(int bestWeapon)
+{
+    return bestWeapon >= BEST_WEAPON_FIRST && bestWeapon < BEST_WEAPON_COUNT;
+}
 
 typedef enum DistanceMode {
     DISTANCE_STAY_CLOSE,

@@ -331,7 +331,7 @@ static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescri
         partyMemberDescription->runAwayMode[index] = 0;
     }
 
-    for (int index = 0; index < BEST_WEAPON_COUNT; index++) {
+    for (int index = BEST_WEAPON_FIRST; index < BEST_WEAPON_COUNT; index++) {
         partyMemberDescription->bestWeapon[index] = 0;
     }
 
@@ -1382,7 +1382,7 @@ bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
         return false;
     }
 
-    if (bestWeapon >= BEST_WEAPON_COUNT) {
+    if (!bestWeaponIsValid(bestWeapon)) {
         return false;
     }
 

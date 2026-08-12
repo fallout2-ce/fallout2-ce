@@ -4455,7 +4455,7 @@ void _gdCustomUpdateSetting(int option, int value)
         aiSetRunAwayMode(gGameDialogSpeaker, static_cast<RunAwayMode>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_BEST_WEAPON:
-        aiSetBestWeapon(gGameDialogSpeaker, value);
+        aiSetBestWeapon(gGameDialogSpeaker, static_cast<BestWeapon>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_DISTANCE:
         aiSetDistance(gGameDialogSpeaker, value);

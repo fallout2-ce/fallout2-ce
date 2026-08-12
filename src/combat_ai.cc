@@ -320,7 +320,7 @@ static void aiPacketInit(AiPacket* ai)
 
     ai->area_attack_mode = AREA_ATTACK_MODE_INVALID;
     ai->run_away_mode = RUN_AWAY_MODE_INVALID;
-    ai->best_weapon = -1;
+    ai->best_weapon = BEST_WEAPON_INVALID;
     ai->distance = -1;
     ai->attack_who = -1;
     ai->chem_use = -1;
@@ -431,7 +431,9 @@ int aiInit()
         }
 
         if (configGetString(&config, sectionEntry->key, "best_weapon", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gBestWeaponKeys, BEST_WEAPON_COUNT, &(ai->best_weapon));
+            int best_weapon_temp;
+            _cai_match_str_to_list(stringValue, gBestWeaponKeys, BEST_WEAPON_COUNT, &best_weapon_temp);
+            ai->best_weapon = static_cast<BestWeapon>(best_weapon_temp);
         }
 
         if (configGetString(&config, sectionEntry->key, "distance", &stringValue)) {
@@ -621,7 +623,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
     }
 
     if (fileReadInt32Enum<AreaAttackMode>(stream, &(ai->area_attack_mode)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->best_weapon)) == -1) return -1;
+    if (fileReadInt32Enum<BestWeapon>(stream, &(ai->best_weapon)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->distance)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->attack_who)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->chem_use)) == -1) return -1;
@@ -665,7 +667,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
     }
 
     if (fileWriteInt32Enum<AreaAttackMode>(stream, ai->area_attack_mode) == -1) return -1;
-    if (fileWriteInt32(stream, ai->best_weapon) == -1) return -1;
+    if (fileWriteInt32Enum<BestWeapon>(stream, ai->best_weapon) == -1) return -1;
     if (fileWriteInt32(stream, ai->distance) == -1) return -1;
     if (fileWriteInt32(stream, ai->attack_who) == -1) return -1;
     if (fileWriteInt32(stream, ai->chem_use) == -1) return -1;
@@ -759,7 +761,7 @@ RunAwayMode aiGetRunAwayMode(Object* obj)
 }
 
 // 0x4281FC
-int aiGetBestWeapon(Object* obj)
+BestWeapon aiGetBestWeapon(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->best_weapon;
@@ -820,9 +822,9 @@ int aiSetRunAwayMode(Object* obj, RunAwayMode runAwayMode)
 }
 
 // 0x4282D0
-int aiSetBestWeapon(Object* critter, int bestWeapon)
+int aiSetBestWeapon(Object* critter, BestWeapon bestWeapon)
 {
-    if (bestWeapon >= BEST_WEAPON_COUNT) {
+    if (!bestWeaponIsValid(bestWeapon)) {
         return -1;
     }
 
