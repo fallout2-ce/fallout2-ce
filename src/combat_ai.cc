@@ -746,7 +746,7 @@ RunAwayMode aiGetRunAwayMode(Object* obj)
     RunAwayMode runAwayMode = RUN_AWAY_MODE_INVALID;
 
     AiPacket* ai = aiGetPacket(obj);
-    if (ai->run_away_mode != -1) {
+    if (ai->run_away_mode != RUN_AWAY_MODE_INVALID) {
         return ai->run_away_mode;
     }
 

@@ -160,7 +160,14 @@ typedef struct GameDialogButtonData {
 
 typedef struct PartyMemberOptionSetting {
     int messageId;
-    int value;
+    union {
+        AreaAttackMode areaAttackMode;
+        RunAwayMode runAwayMode;
+        BestWeapon bestWeapon;
+        DistanceMode distanceMode;
+        AttackWho attackWho;
+        ChemUse chemUse;
+    };
 } PartyMemberOptionSetting;
 
 typedef enum PartyMemberCustomizationOption {
@@ -486,52 +493,53 @@ static GameDialogButtonData gGameDialogDispositionButtonsData[5] = {
 // 0x5189E4 custom_settings
 static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT][6] = {
     {
-        { 100, AREA_ATTACK_MODE_ALWAYS }, // Always!
-        { 101, AREA_ATTACK_MODE_SOMETIMES }, // Sometimes, don't worry about hitting me
-        { 102, AREA_ATTACK_MODE_BE_SURE }, // Be sure you won't hit me
-        { 103, AREA_ATTACK_MODE_BE_CAREFUL }, // Be careful not to hit me
-        { 104, AREA_ATTACK_MODE_BE_ABSOLUTELY_SURE }, // Be absolutely sure you won't hit me
-        { -1, 0 },
+        { 100, .areaAttackMode = AREA_ATTACK_MODE_ALWAYS }, // Always!
+        { 101, .areaAttackMode = AREA_ATTACK_MODE_SOMETIMES }, // Sometimes, don't worry about hitting me
+        { 102, .areaAttackMode = AREA_ATTACK_MODE_BE_SURE }, // Be sure you won't hit me
+        { 103, .areaAttackMode = AREA_ATTACK_MODE_BE_CAREFUL }, // Be careful not to hit me
+        { 104, .areaAttackMode = AREA_ATTACK_MODE_BE_ABSOLUTELY_SURE }, // Be absolutely sure you won't hit me
+        { -1,  .areaAttackMode = AREA_ATTACK_MODE_FIRST },
     },
     {
-        { 200, RUN_AWAY_MODE_COWARD - 1 }, // Abject coward
-        { 201, RUN_AWAY_MODE_FINGER_HURTS - 1 }, // Your finger hurts
-        { 202, RUN_AWAY_MODE_BLEEDING - 1 }, // You're bleeding a bit
-        { 203, RUN_AWAY_MODE_NOT_FEELING_GOOD - 1 }, // Not feeling good
-        { 204, RUN_AWAY_MODE_TOURNIQUET - 1 }, // You need a tourniquet
-        { 205, RUN_AWAY_MODE_NEVER - 1 }, // Never!
+        // runAwayMode values are shifted by one here by purpose
+        { 200, .runAwayMode = RUN_AWAY_MODE_NONE }, // Abject coward
+        { 201, .runAwayMode = RUN_AWAY_MODE_COWARD }, // Your finger hurts
+        { 202, .runAwayMode = RUN_AWAY_MODE_FINGER_HURTS}, // You're bleeding a bit
+        { 203, .runAwayMode = RUN_AWAY_MODE_BLEEDING}, // Not feeling good
+        { 204, .runAwayMode = RUN_AWAY_MODE_NOT_FEELING_GOOD}, // You need a tourniquet
+        { 205, .runAwayMode = RUN_AWAY_MODE_TOURNIQUET}, // Never!
     },
     {
-        { 300, BEST_WEAPON_NO_PREF }, // None
-        { 301, BEST_WEAPON_MELEE }, // Melee
-        { 302, BEST_WEAPON_MELEE_OVER_RANGED }, // Melee then ranged
-        { 303, BEST_WEAPON_RANGED_OVER_MELEE }, // Ranged then melee
-        { 304, BEST_WEAPON_RANGED }, // Ranged
-        { 305, BEST_WEAPON_UNARMED }, // Unarmed
+        { 300, .bestWeapon = BEST_WEAPON_NO_PREF }, // None
+        { 301, .bestWeapon = BEST_WEAPON_MELEE }, // Melee
+        { 302, .bestWeapon = BEST_WEAPON_MELEE_OVER_RANGED }, // Melee then ranged
+        { 303, .bestWeapon = BEST_WEAPON_RANGED_OVER_MELEE }, // Ranged then melee
+        { 304, .bestWeapon = BEST_WEAPON_RANGED }, // Ranged
+        { 305, .bestWeapon = BEST_WEAPON_UNARMED }, // Unarmed
     },
     {
-        { 400, DISTANCE_STAY_CLOSE }, // Stay close to me
-        { 401, DISTANCE_CHARGE }, // Charge!
-        { 402, DISTANCE_SNIPE }, // Snipe the enemy
-        { 403, DISTANCE_ON_YOUR_OWN }, // On your own
-        { 404, DISTANCE_STAY }, // Say where you are
-        { -1, 0 },
+        { 400, .distanceMode = DISTANCE_STAY_CLOSE }, // Stay close to me
+        { 401, .distanceMode = DISTANCE_CHARGE }, // Charge!
+        { 402, .distanceMode = DISTANCE_SNIPE }, // Snipe the enemy
+        { 403, .distanceMode = DISTANCE_ON_YOUR_OWN }, // On your own
+        { 404, .distanceMode = DISTANCE_STAY }, // Say where you are
+        { -1,  .distanceMode = DISTANCE_FIRST },
     },
     {
-        { 500, ATTACK_WHO_WHOMEVER_ATTACKING_ME }, // Whomever is attacking me
-        { 501, ATTACK_WHO_STRONGEST }, // The strongest
-        { 502, ATTACK_WHO_WEAKEST }, // The weakest
-        { 503, ATTACK_WHO_WHOMEVER }, // Whomever you want
-        { 504, ATTACK_WHO_CLOSEST }, // Whoever is closest
-        { -1, 0 },
+        { 500, .attackWho = ATTACK_WHO_WHOMEVER_ATTACKING_ME }, // Whomever is attacking me
+        { 501, .attackWho = ATTACK_WHO_STRONGEST }, // The strongest
+        { 502, .attackWho = ATTACK_WHO_WEAKEST }, // The weakest
+        { 503, .attackWho = ATTACK_WHO_WHOMEVER }, // Whomever you want
+        { 504, .attackWho = ATTACK_WHO_CLOSEST }, // Whoever is closest
+        { -1,  .attackWho = ATTACK_WHO_FIRST },
     },
     {
-        { 600, CHEM_USE_CLEAN }, // I'm clean
-        { 601, CHEM_USE_STIMS_WHEN_HURT_LITTLE }, // Stimpaks when hurt a bit
-        { 602, CHEM_USE_STIMS_WHEN_HURT_LOTS }, // Stimpaks when hurt a lot
-        { 603, CHEM_USE_SOMETIMES }, // Any drug some of the time
-        { 604, CHEM_USE_ANYTIME }, // Any drug any time
-        { -1, 0 },
+        { 600, .chemUse = CHEM_USE_CLEAN }, // I'm clean
+        { 601, .chemUse = CHEM_USE_STIMS_WHEN_HURT_LITTLE }, // Stimpaks when hurt a bit
+        { 602, .chemUse = CHEM_USE_STIMS_WHEN_HURT_LOTS }, // Stimpaks when hurt a lot
+        { 603, .chemUse = CHEM_USE_SOMETIMES }, // Any drug some of the time
+        { 604, .chemUse = CHEM_USE_ANYTIME }, // Any drug any time
+        { -1,  .chemUse = CHEM_USE_FIRST },
     },
 };
 
@@ -4258,22 +4266,22 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
             bool enabled = false;
             switch (type) {
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
-                enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, static_cast<AreaAttackMode>(ptr->value));
+                enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, ptr->areaAttackMode);
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
-                enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, static_cast<RunAwayMode>(ptr->value));
+                enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, ptr->runAwayMode);
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_BEST_WEAPON:
-                enabled = partyMemberSupportsBestWeapon(gGameDialogSpeaker, static_cast<BestWeapon>(ptr->value));
+                enabled = partyMemberSupportsBestWeapon(gGameDialogSpeaker, ptr->bestWeapon);
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_DISTANCE:
-                enabled = partyMemberSupportsDistance(gGameDialogSpeaker, static_cast<DistanceMode>(ptr->value));
+                enabled = partyMemberSupportsDistance(gGameDialogSpeaker, ptr->distanceMode);
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
-                enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, static_cast<AttackWho>(ptr->value));
+                enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, ptr->attackWho);
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
-                enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, static_cast<ChemUse>(ptr->value));
+                enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, ptr->chemUse);
                 break;
             }
 
@@ -4371,7 +4379,28 @@ int _gdCustomSelect(int option)
             if (keyCode == KEY_RETURN || keyCode == 500) {
                 PartyMemberOptionSetting* ptr = &(_custom_settings[option][value]);
                 _custom_current_selected[option] = value;
-                _gdCustomUpdateSetting(option, ptr->value);
+                
+                switch (option) {
+                case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
+                    aiSetAreaAttackMode(gGameDialogSpeaker, ptr->areaAttackMode);
+                    break;
+                case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
+                    aiSetRunAwayMode(gGameDialogSpeaker, ptr->runAwayMode);
+                    break;
+                case PARTY_MEMBER_CUSTOMIZATION_OPTION_BEST_WEAPON:
+                    aiSetBestWeapon(gGameDialogSpeaker, ptr->bestWeapon);
+                    break;
+                case PARTY_MEMBER_CUSTOMIZATION_OPTION_DISTANCE:
+                    aiSetDistance(gGameDialogSpeaker, ptr->distanceMode);
+                    break;
+                case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
+                    aiSetAttackWho(gGameDialogSpeaker, ptr->attackWho);
+                    break;
+                case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
+                    aiSetChemUse(gGameDialogSpeaker, ptr->chemUse);
+                    break;
+                }
+
                 if (keyCode != 500) {
                     soundPlayFile("ib1p1xx1");
                 }
@@ -4403,22 +4432,22 @@ int _gdCustomSelect(int option)
                                     bool enabled = false;
                                     switch (option) {
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
-                                        enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, static_cast<AreaAttackMode>(ptr->value));
+                                        enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, ptr->areaAttackMode);
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
-                                        enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, static_cast<RunAwayMode>(ptr->value));
+                                        enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, ptr->runAwayMode);
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_BEST_WEAPON:
-                                        enabled = partyMemberSupportsBestWeapon(gGameDialogSpeaker, static_cast<BestWeapon>(ptr->value));
+                                        enabled = partyMemberSupportsBestWeapon(gGameDialogSpeaker, ptr->bestWeapon);
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_DISTANCE:
-                                        enabled = partyMemberSupportsDistance(gGameDialogSpeaker, static_cast<DistanceMode>(ptr->value));
+                                        enabled = partyMemberSupportsDistance(gGameDialogSpeaker, ptr->distanceMode);
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
-                                        enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, static_cast<AttackWho>(ptr->value));
+                                        enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, ptr->attackWho);
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
-                                        enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, static_cast<ChemUse>(ptr->value));
+                                        enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, ptr->chemUse);
                                         break;
                                     }
 
