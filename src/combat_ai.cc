@@ -555,7 +555,7 @@ int aiLoad(File* stream)
             }
 
             AiPacket* ai = aiGetPacketByNum(proto->critter.aiPacket);
-            if (ai->disposition == 0) {
+            if (ai->disposition == DISPOSITION_NONE) {
                 aiPacketRead(stream, ai);
             }
         }
@@ -576,7 +576,7 @@ int aiSave(File* stream)
             }
 
             AiPacket* ai = aiGetPacketByNum(proto->critter.aiPacket);
-            if (ai->disposition == 0) {
+            if (ai->disposition == DISPOSITION_NONE) {
                 aiPacketWrite(stream, ai);
             }
         }
@@ -1545,13 +1545,12 @@ static Object* _ai_danger_source(Object* a1)
     }
 
     bool ignoreFleeingCritters = false;
-    int attackWho;
 
     Object* targets[4];
     targets[0] = nullptr;
 
     if (objectIsPartyMember(a1)) {
-        int disposition = aiGetDisposition(a1);
+        Disposition disposition = aiGetDisposition(a1);
 
         switch (disposition + 1) {
         case DISPOSITION_CUSTOM:
@@ -1570,7 +1569,7 @@ static Object* _ai_danger_source(Object* a1)
             ignoreFleeingCritters = false;
         }
 
-        attackWho = aiGetAttackWho(a1);
+        AttackWho attackWho = aiGetAttackWho(a1);
         switch (attackWho) {
         case ATTACK_WHO_WHOMEVER_ATTACKING_ME:
             if (1) {
@@ -2373,7 +2372,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         return -1;
     }
 
-    int distance = aiGetDistance(critter);
+    DistanceMode distance = aiGetDistance(critter);
     if (distance == DISTANCE_STAY) {
         return -1;
     }
@@ -3099,7 +3098,7 @@ void _combat_ai(Object* a1, Object* a2)
 
     AiPacket* ai = aiGetPacket(a1);
     int hpRatio = _cai_get_min_hp(ai);
-    if (ai->run_away_mode != -1) {
+    if (ai->run_away_mode != RUN_AWAY_MODE_INVALID) {
         int v7 = critterGetStat(a1, STAT_MAXIMUM_HIT_POINTS) * hpRatio / 100;
         int minimumHitPoints = critterGetStat(a1, STAT_MAXIMUM_HIT_POINTS) - v7;
         int currentHitPoints = critterGetStat(a1, STAT_CURRENT_HIT_POINTS);
@@ -3179,8 +3178,8 @@ void _combat_ai(Object* a1, Object* a2)
         nearestTeammate = gDude;
         if (objectIsPartyMember(a1)) {
             // NOTE: Uninline
-            int distance = aiGetDistance(a1);
-            if (distance != -1) {
+            DistanceMode distance = aiGetDistance(a1);
+            if (distance != DISTANCE_INVALID) {
                 maxTeammateDistance = aiPartyMemberDistances[distance];
             }
         }

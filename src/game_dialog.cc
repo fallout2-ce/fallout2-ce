@@ -3681,7 +3681,7 @@ int partyMemberControlWindowInit()
 
     _win_group_radio_buttons(5, &(_gdialog_buttons[_control_buttons_start]));
 
-    int disposition = aiGetDisposition(gGameDialogSpeaker);
+    Disposition disposition = aiGetDisposition(gGameDialogSpeaker);
     _win_set_button_rest_state(_gdialog_buttons[_control_buttons_start + 4 - disposition], 1, 0);
 
     partyMemberControlWindowUpdate();
