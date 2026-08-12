@@ -335,7 +335,7 @@ static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescri
         partyMemberDescription->bestWeapon[index] = 0;
     }
 
-    for (int index = 0; index < DISTANCE_COUNT; index++) {
+    for (int index = DISTANCE_FIRST; index < DISTANCE_COUNT; index++) {
         partyMemberDescription->distanceMode[index] = 0;
     }
 
@@ -1349,7 +1349,7 @@ bool partyMemberSupportsAreaAttackMode(Object* object, AreaAttackMode areaAttack
 }
 
 // 0x495980 partyMemberHasAIRunAwayValue
-bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
+bool partyMemberSupportsRunAwayMode(Object* object, RunAwayMode runAwayMode)
 {
     if (object == nullptr) {
         return false;
@@ -1359,7 +1359,7 @@ bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
         return false;
     }
 
-    if (runAwayMode >= RUN_AWAY_MODE_COUNT) {
+    if (!runAwayModeIsValid(runAwayMode)) {
         return false;
     }
 
@@ -1372,7 +1372,7 @@ bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
 }
 
 // 0x4959E0 partyMemberHasAIWeaponPrefValue
-bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
+bool partyMemberSupportsBestWeapon(Object* object, BestWeapon bestWeapon)
 {
     if (object == nullptr) {
         return false;
@@ -1395,7 +1395,7 @@ bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
 }
 
 // 0x495A40 partyMemberHasAIDistancePrefValue
-bool partyMemberSupportsDistance(Object* object, int distanceMode)
+bool partyMemberSupportsDistance(Object* object, DistanceMode distanceMode)
 {
     if (object == nullptr) {
         return false;
@@ -1405,7 +1405,7 @@ bool partyMemberSupportsDistance(Object* object, int distanceMode)
         return false;
     }
 
-    if (distanceMode >= DISTANCE_COUNT) {
+    if (!distanceModeIsValid(distanceMode)) {
         return false;
     }
 

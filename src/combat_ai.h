@@ -32,6 +32,8 @@ struct AiMessageRange {
     int end;
 };
 
+#define AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT (3)
+
 struct AiPacket {
     char* name;
     int packet_num;
@@ -54,10 +56,10 @@ struct AiPacket {
     AreaAttackMode area_attack_mode;
     RunAwayMode run_away_mode;
     BestWeapon best_weapon;
-    int distance;
+    DistanceMode distance;
     int attack_who;
     int chem_use;
-    int chem_primary_desire[3];
+    int chem_primary_desire[AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT];
     int disposition;
     char* body_type;
     char* general_type;
@@ -73,14 +75,14 @@ char* combat_ai_name(int packet_num);
 AreaAttackMode aiGetAreaAttackMode(Object* obj);
 RunAwayMode aiGetRunAwayMode(Object* obj);
 BestWeapon aiGetBestWeapon(Object* obj);
-int aiGetDistance(Object* obj);
+DistanceMode aiGetDistance(Object* obj);
 int aiGetAttackWho(Object* obj);
 int aiGetChemUse(Object* obj);
 AiPacket* aiGetPacket(Object* obj);
 int aiSetAreaAttackMode(Object* critter, AreaAttackMode areaAttackMode);
 int aiSetRunAwayMode(Object* obj, RunAwayMode run_away_mode);
 int aiSetBestWeapon(Object* critter, BestWeapon bestWeapon);
-int aiSetDistance(Object* critter, int distance);
+int aiSetDistance(Object* critter, DistanceMode distance);
 int aiSetAttackWho(Object* critter, int attackWho);
 int aiSetChemUse(Object* critter, int chemUse);
 bool aiIsBurstDisabled(Object* critter);

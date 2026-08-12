@@ -4261,13 +4261,13 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
                 enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, static_cast<AreaAttackMode>(ptr->value));
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
-                enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, ptr->value);
+                enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, static_cast<RunAwayMode>(ptr->value));
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_BEST_WEAPON:
-                enabled = partyMemberSupportsBestWeapon(gGameDialogSpeaker, ptr->value);
+                enabled = partyMemberSupportsBestWeapon(gGameDialogSpeaker, static_cast<BestWeapon>(ptr->value));
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_DISTANCE:
-                enabled = partyMemberSupportsDistance(gGameDialogSpeaker, ptr->value);
+                enabled = partyMemberSupportsDistance(gGameDialogSpeaker, static_cast<DistanceMode>(ptr->value));
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
                 enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, ptr->value);
@@ -4406,13 +4406,13 @@ int _gdCustomSelect(int option)
                                         enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, static_cast<AreaAttackMode>(ptr->value));
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
-                                        enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, ptr->value);
+                                        enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, static_cast<RunAwayMode>(ptr->value));
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_BEST_WEAPON:
-                                        enabled = partyMemberSupportsBestWeapon(gGameDialogSpeaker, ptr->value);
+                                        enabled = partyMemberSupportsBestWeapon(gGameDialogSpeaker, static_cast<BestWeapon>(ptr->value));
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_DISTANCE:
-                                        enabled = partyMemberSupportsDistance(gGameDialogSpeaker, ptr->value);
+                                        enabled = partyMemberSupportsDistance(gGameDialogSpeaker, static_cast<DistanceMode>(ptr->value));
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
                                         enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, ptr->value);
@@ -4458,7 +4458,7 @@ void _gdCustomUpdateSetting(int option, int value)
         aiSetBestWeapon(gGameDialogSpeaker, static_cast<BestWeapon>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_DISTANCE:
-        aiSetDistance(gGameDialogSpeaker, value);
+        aiSetDistance(gGameDialogSpeaker, static_cast<DistanceMode>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_ATTACK_WHO:
         aiSetAttackWho(gGameDialogSpeaker, value);

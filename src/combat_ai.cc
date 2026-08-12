@@ -38,8 +38,6 @@
 
 namespace fallout {
 
-#define AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT (3)
-
 #define AI_MESSAGE_SIZE 260
 
 static constexpr int kChemUseStimsWhenHurtLittleHpRatio = 60;
@@ -321,7 +319,7 @@ static void aiPacketInit(AiPacket* ai)
     ai->area_attack_mode = AREA_ATTACK_MODE_INVALID;
     ai->run_away_mode = RUN_AWAY_MODE_INVALID;
     ai->best_weapon = BEST_WEAPON_INVALID;
-    ai->distance = -1;
+    ai->distance = DISTANCE_INVALID;
     ai->attack_who = -1;
     ai->chem_use = -1;
 
@@ -437,7 +435,9 @@ int aiInit()
         }
 
         if (configGetString(&config, sectionEntry->key, "distance", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gDistanceModeKeys, DISTANCE_COUNT, &(ai->distance));
+            int distance_mode_temp;
+            _cai_match_str_to_list(stringValue, gDistanceModeKeys, DISTANCE_COUNT, &distance_mode_temp);
+            ai->distance = static_cast<DistanceMode>(distance_mode_temp);
         }
 
         if (configGetString(&config, sectionEntry->key, "attack_who", &stringValue)) {
@@ -624,7 +624,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
 
     if (fileReadInt32Enum<AreaAttackMode>(stream, &(ai->area_attack_mode)) == -1) return -1;
     if (fileReadInt32Enum<BestWeapon>(stream, &(ai->best_weapon)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->distance)) == -1) return -1;
+    if (fileReadInt32Enum<DistanceMode>(stream, &(ai->distance)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->attack_who)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->chem_use)) == -1) return -1;
     if (fileReadInt32Enum<RunAwayMode>(stream, &(ai->run_away_mode)) == -1) return -1;
@@ -668,7 +668,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
 
     if (fileWriteInt32Enum<AreaAttackMode>(stream, ai->area_attack_mode) == -1) return -1;
     if (fileWriteInt32Enum<BestWeapon>(stream, ai->best_weapon) == -1) return -1;
-    if (fileWriteInt32(stream, ai->distance) == -1) return -1;
+    if (fileWriteInt32Enum<DistanceMode>(stream, ai->distance) == -1) return -1;
     if (fileWriteInt32(stream, ai->attack_who) == -1) return -1;
     if (fileWriteInt32(stream, ai->chem_use) == -1) return -1;
     if (fileWriteInt32Enum<RunAwayMode>(stream, ai->run_away_mode) == -1) return -1;
@@ -768,7 +768,7 @@ BestWeapon aiGetBestWeapon(Object* obj)
 }
 
 // 0x428208
-int aiGetDistance(Object* obj)
+DistanceMode aiGetDistance(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->distance;
@@ -834,9 +834,9 @@ int aiSetBestWeapon(Object* critter, BestWeapon bestWeapon)
 }
 
 // 0x4282EC
-int aiSetDistance(Object* critter, int distance)
+int aiSetDistance(Object* critter, DistanceMode distance)
 {
-    if (distance >= DISTANCE_COUNT) {
+    if (!distanceModeIsValid(distance)) {
         return -1;
     }
 

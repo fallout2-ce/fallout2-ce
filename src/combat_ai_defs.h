@@ -70,14 +70,21 @@ inline bool bestWeaponIsValid(int bestWeapon)
     return bestWeapon >= BEST_WEAPON_FIRST && bestWeapon < BEST_WEAPON_COUNT;
 }
 
-typedef enum DistanceMode {
+enum DistanceMode : int {
+    DISTANCE_INVALID = -1,
     DISTANCE_STAY_CLOSE,
     DISTANCE_CHARGE,
     DISTANCE_SNIPE,
     DISTANCE_ON_YOUR_OWN,
     DISTANCE_STAY,
     DISTANCE_COUNT,
-} DistanceMode;
+    DISTANCE_FIRST = DISTANCE_STAY_CLOSE
+};
+
+inline bool distanceModeIsValid(int distanceMode)
+{
+    return distanceMode >= DISTANCE_FIRST && distanceMode < DISTANCE_COUNT;
+}
 
 typedef enum AttackWho {
     ATTACK_WHO_WHOMEVER_ATTACKING_ME,
