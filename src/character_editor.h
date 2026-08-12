@@ -1,6 +1,8 @@
 #ifndef CHARACTER_EDITOR_H
 #define CHARACTER_EDITOR_H
 
+#include <vector>
+
 #include "db.h"
 
 namespace fallout {
@@ -30,6 +32,9 @@ int characterEditorGetPerkOwed();
 void characterEditorSetPerkOwed(int value);
 void characterEditorHandleLevelUp(int level);
 int characterEditorGetPerkSelectionLevel();
+const std::vector<int>& characterEditorGetOwedPerkLevels();
+bool characterEditorSetOwedPerkLevels(const std::vector<int>& levels);
+void characterEditorMigrateLegacyPerkSelectionState();
 
 } // namespace fallout
 

@@ -313,6 +313,8 @@ static int perkDialogOptionCompare(const void* a1, const void* a2);
 static int perkDialogDrawCard(int frmId, const char* name, const char* rank, char* description);
 static void _pop_perks();
 static int characterEditorGetLevelsPerPerk();
+static int characterEditorGetLegacyPerkSelectionLevel();
+static void characterEditorConsumeOwedPerk();
 static void characterEditorGrantPerkAtLevel(int level);
 static int _is_supper_bonus();
 static int characterEditorFolderViewInit();
@@ -804,9 +806,15 @@ static Skill gCharacterEditorTempTaggedSkills[NUM_TAGGED_SKILLS];
 
 // 0x570A28 free_perk_back
 static unsigned char gCharacterEditorHasFreePerkBackup;
+static std::vector<int> characterEditorOwedPerkLevelsBackup;
+static bool characterEditorOwedPerkLevelsInitializedBackup;
 
 // 0x570A29 free_perk
 static unsigned char gCharacterEditorHasFreePerk; // count of owed perks
+
+// Character levels at which the currently owed perks were earned.
+static std::vector<int> characterEditorOwedPerkLevels;
+static bool characterEditorOwedPerkLevelsInitialized;
 
 // 0x570A2A first_skill_list
 static unsigned char gCharacterEditorIsSkillsFirstDraw;
@@ -1950,6 +1958,8 @@ void characterEditorInit()
     gCharacterEditorCurrentSkill = SKILL_SMALL_GUNS;
     gCharacterEditorSkillValueAdjustmentSliderY = 27;
     gCharacterEditorHasFreePerk = 0;
+    characterEditorOwedPerkLevels.clear();
+    characterEditorOwedPerkLevelsInitialized = false;
     characterEditorWindowSelectedFolder = EDITOR_FOLDER_PERKS;
 
     for (i = 0; i < TRAITS_MAX_SELECTED_COUNT; i++) {
@@ -4879,6 +4889,8 @@ static void characterEditorSavePlayer()
     }
 
     gCharacterEditorHasFreePerkBackup = gCharacterEditorHasFreePerk;
+    characterEditorOwedPerkLevelsBackup = characterEditorOwedPerkLevels;
+    characterEditorOwedPerkLevelsInitializedBackup = characterEditorOwedPerkLevelsInitialized;
 
     gCharacterEditorUnspentSkillPointsBackup = pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS);
 
@@ -4910,6 +4922,8 @@ static void characterEditorRestorePlayer()
 
     gCharacterEditorLastLevel = gCharacterEditorLastLevelBackup;
     gCharacterEditorHasFreePerk = gCharacterEditorHasFreePerkBackup;
+    characterEditorOwedPerkLevels = characterEditorOwedPerkLevelsBackup;
+    characterEditorOwedPerkLevelsInitialized = characterEditorOwedPerkLevelsInitializedBackup;
 
     pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, gCharacterEditorUnspentSkillPointsBackup);
 
@@ -5741,9 +5755,15 @@ int characterEditorGetPerkOwed()
 void characterEditorSetPerkOwed(int value)
 {
     unsigned int maskedValue = static_cast<unsigned int>(value) & 0xFF;
-    if (maskedValue <= kMaxPerkOwed) {
-        gCharacterEditorHasFreePerk = maskedValue;
+    if (maskedValue > kMaxPerkOwed) {
+        return;
     }
+
+    if (characterEditorOwedPerkLevelsInitialized) {
+        characterEditorOwedPerkLevels.resize(maskedValue, pcGetStat(PC_STAT_LEVEL));
+    }
+
+    gCharacterEditorHasFreePerk = maskedValue;
 }
 
 // External interface: called when level up occurs
@@ -5752,7 +5772,7 @@ void characterEditorHandleLevelUp(int level)
     characterEditorGrantPerkAtLevel(level);
 }
 
-// compute the character level that the next perk selection should use
+// Compute the character level that the next perk selection should use.
 int characterEditorGetPerkSelectionLevel()
 {
     int currentLevel = pcGetStat(PC_STAT_LEVEL);
@@ -5760,6 +5780,75 @@ int characterEditorGetPerkSelectionLevel()
         return currentLevel;
     }
 
+    if (!characterEditorOwedPerkLevelsInitialized) {
+        characterEditorMigrateLegacyPerkSelectionState();
+    }
+
+    if (characterEditorOwedPerkLevels.empty()) {
+        return currentLevel;
+    }
+
+    return std::min(characterEditorOwedPerkLevels.front(), currentLevel);
+}
+
+const std::vector<int>& characterEditorGetOwedPerkLevels()
+{
+    if (!characterEditorOwedPerkLevelsInitialized) {
+        characterEditorMigrateLegacyPerkSelectionState();
+    }
+
+    return characterEditorOwedPerkLevels;
+}
+
+bool characterEditorSetOwedPerkLevels(const std::vector<int>& levels)
+{
+    if (levels.size() > kMaxPerkOwed
+        || levels.size() != static_cast<size_t>(characterEditorGetPerkOwed())) {
+        return false;
+    }
+
+    int previousLevel = 0;
+    for (int level : levels) {
+        if (level <= 0 || level > PC_LEVEL_MAX || level < previousLevel) {
+            return false;
+        }
+
+        previousLevel = level;
+    }
+
+    characterEditorOwedPerkLevels = levels;
+    characterEditorOwedPerkLevelsInitialized = true;
+    return true;
+}
+
+void characterEditorMigrateLegacyPerkSelectionState()
+{
+    if (characterEditorOwedPerkLevelsInitialized) {
+        return;
+    }
+
+    characterEditorOwedPerkLevels.clear();
+    characterEditorOwedPerkLevelsInitialized = true;
+
+    int owed = characterEditorGetPerkOwed();
+    if (owed == 0) {
+        return;
+    }
+
+    int currentLevel = pcGetStat(PC_STAT_LEVEL);
+    int levelsPerPerk = characterEditorGetLevelsPerPerk();
+    int selectionLevel = characterEditorGetLegacyPerkSelectionLevel();
+
+    for (int index = 0; index < owed; index++) {
+        characterEditorOwedPerkLevels.push_back(selectionLevel);
+        int nextLevel = (selectionLevel / levelsPerPerk + 1) * levelsPerPerk;
+        selectionLevel = std::min(nextLevel, currentLevel);
+    }
+}
+
+static int characterEditorGetLegacyPerkSelectionLevel()
+{
+    int currentLevel = pcGetStat(PC_STAT_LEVEL);
     int owed = characterEditorGetPerkOwed();
     if (owed <= 1) {
         // If a single perk is owed, use the current level. This prevents odd effects in
@@ -5801,12 +5890,27 @@ int characterEditorGetPerkSelectionLevel()
     return selectionLevel;
 }
 
+static void characterEditorConsumeOwedPerk()
+{
+    if (!characterEditorOwedPerkLevelsInitialized) {
+        characterEditorMigrateLegacyPerkSelectionState();
+    }
+
+    assert(characterEditorGetPerkOwed() > 0);
+    assert(!characterEditorOwedPerkLevels.empty());
+
+    characterEditorOwedPerkLevels.erase(characterEditorOwedPerkLevels.begin());
+    characterEditorSetPerkOwed(characterEditorGetPerkOwed() - 1);
+}
+
 // 0x43C20C editor_reset
 void characterEditorReset()
 {
     gCharacterEditorRemainingCharacterPoints = 5;
     gCharacterEditorLastLevel = 1;
-    characterEditorSetPerkOwed(0);
+    gCharacterEditorHasFreePerk = 0;
+    characterEditorOwedPerkLevels.clear();
+    characterEditorOwedPerkLevelsInitialized = true;
 }
 
 static int characterEditorGetLevelsPerPerk()
@@ -5835,13 +5939,21 @@ static void characterEditorGrantPerkAtLevel(int level)
         }
     }
 
+    if (!characterEditorOwedPerkLevelsInitialized) {
+        characterEditorMigrateLegacyPerkSelectionState();
+    }
+
     switch (settings.gameplay.perk_carryover) {
     case PERK_CARRY_OVER_MODE_OFF:
-        characterEditorSetPerkOwed(1);
+        gCharacterEditorHasFreePerk = 1;
+        characterEditorOwedPerkLevels.assign(1, level);
         break;
     case PERK_CARRY_OVER_MODE_ON:
     case PERK_CARRY_OVER_MODE_SFALL:
-        characterEditorSetPerkOwed(characterEditorGetPerkOwed() + 1);
+        if (characterEditorGetPerkOwed() < kMaxPerkOwed) {
+            gCharacterEditorHasFreePerk += 1;
+            characterEditorOwedPerkLevels.push_back(level);
+        }
         break;
     }
 }
@@ -6123,9 +6235,9 @@ static int perkDialogShow()
     windowRefresh(gPerkDialogWindow);
 
     int rc = perkDialogHandleInput(count, perkDialogRefreshPerks);
+    int selectionLevel = characterEditorGetPerkSelectionLevel();
 
     if (rc == 1) {
-        int selectionLevel = characterEditorGetPerkSelectionLevel();
         if (perkAddAtLevel(gDude, static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value), selectionLevel) == -1) {
             debugPrint("\n*** Unable to add perk! ***\n");
             rc = 2;
@@ -6135,7 +6247,7 @@ static int perkDialogShow()
     rc &= 1;
 
     if (rc != 0) {
-        characterEditorSetPerkOwed(characterEditorGetPerkOwed() - 1);
+        characterEditorConsumeOwedPerk();
         if (perkGetRank(gDude, PERK_TAG) != 0 && previousPerkRanks[PERK_TAG] == 0) {
             if (!perkDialogHandleTagPerk()) {
                 perkRemove(gDude, PERK_TAG);
