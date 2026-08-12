@@ -102,7 +102,8 @@ inline bool attackWhoIsValid(int attackWho)
     return attackWho >= ATTACK_WHO_FIRST && attackWho < ATTACK_WHO_COUNT;
 }
 
-typedef enum ChemUse {
+enum ChemUse : int {
+    CHEM_USE_INVALID = -1,
     CHEM_USE_CLEAN,
     CHEM_USE_STIMS_WHEN_HURT_LITTLE,
     CHEM_USE_STIMS_WHEN_HURT_LOTS,
@@ -110,7 +111,13 @@ typedef enum ChemUse {
     CHEM_USE_ANYTIME,
     CHEM_USE_ALWAYS,
     CHEM_USE_COUNT,
-} ChemUse;
+    CHEM_USE_FIRST = CHEM_USE_CLEAN
+};
+
+inline bool chemUseIsValid(int chemUse)
+{
+    return chemUse >= CHEM_USE_FIRST && chemUse < CHEM_USE_COUNT;
+}
 
 typedef enum Disposition {
     DISPOSITION_NONE,

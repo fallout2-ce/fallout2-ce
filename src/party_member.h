@@ -44,7 +44,7 @@ bool partyMemberSupportsRunAwayMode(Object* object, RunAwayMode runAwayMode);
 bool partyMemberSupportsBestWeapon(Object* object, BestWeapon bestWeapon);
 bool partyMemberSupportsDistance(Object* object, DistanceMode distanceMode);
 bool partyMemberSupportsAttackWho(Object* object, AttackWho attackWho);
-bool partyMemberSupportsChemUse(Object* object, int chemUse);
+bool partyMemberSupportsChemUse(Object* object, ChemUse chemUse);
 int _partyMemberIncLevels();
 bool partyIsAnyoneCanBeHealedByRest();
 int partyGetMaxWoundToHealByRest();

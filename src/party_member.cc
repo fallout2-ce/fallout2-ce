@@ -343,7 +343,7 @@ static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescri
         partyMemberDescription->attackWho[index] = 0;
     }
 
-    for (int index = 0; index < CHEM_USE_COUNT; index++) {
+    for (int index = CHEM_USE_FIRST; index < CHEM_USE_COUNT; index++) {
         partyMemberDescription->chemUse[index] = 0;
     }
 
@@ -1441,7 +1441,7 @@ bool partyMemberSupportsAttackWho(Object* object, AttackWho attackWho)
 }
 
 // 0x495B00 partyMemberHasAIChemUseValue
-bool partyMemberSupportsChemUse(Object* object, int chemUse)
+bool partyMemberSupportsChemUse(Object* object, ChemUse chemUse)
 {
     if (object == nullptr) {
         return false;
@@ -1451,7 +1451,7 @@ bool partyMemberSupportsChemUse(Object* object, int chemUse)
         return false;
     }
 
-    if (chemUse >= CHEM_USE_COUNT) {
+    if (!chemUseIsValid(chemUse)) {
         return false;
     }
 

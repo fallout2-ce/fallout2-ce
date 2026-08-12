@@ -4273,7 +4273,7 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
                 enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, static_cast<AttackWho>(ptr->value));
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
-                enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, ptr->value);
+                enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, static_cast<ChemUse>(ptr->value));
                 break;
             }
 
@@ -4418,7 +4418,7 @@ int _gdCustomSelect(int option)
                                         enabled = partyMemberSupportsAttackWho(gGameDialogSpeaker, static_cast<AttackWho>(ptr->value));
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
-                                        enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, ptr->value);
+                                        enabled = partyMemberSupportsChemUse(gGameDialogSpeaker, static_cast<ChemUse>(ptr->value));
                                         break;
                                     }
 
@@ -4464,7 +4464,7 @@ void _gdCustomUpdateSetting(int option, int value)
         aiSetAttackWho(gGameDialogSpeaker, static_cast<AttackWho>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_CHEM_USE:
-        aiSetChemUse(gGameDialogSpeaker, value);
+        aiSetChemUse(gGameDialogSpeaker, static_cast<ChemUse>(value));
         break;
     }
 }
