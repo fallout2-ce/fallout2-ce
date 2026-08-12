@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "combat_ai_defs.h"
 #include "db.h"
 #include "obj_types.h"
 #include "scripts.h"
@@ -38,7 +39,7 @@ Object* partyMemberGetBestInSkill(Skill skill);
 int partyGetBestSkillValue(Skill skill);
 void _partyMemberSaveProtos();
 bool partyMemberSupportsDisposition(Object* object, int disposition);
-bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode);
+bool partyMemberSupportsAreaAttackMode(Object* object, AreaAttackMode areaAttackMode);
 bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode);
 bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon);
 bool partyMemberSupportsDistance(Object* object, int distanceMode);

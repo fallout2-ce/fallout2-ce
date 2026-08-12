@@ -323,7 +323,7 @@ static int partyMemberGetDescription(Object* object, PartyMemberDescription** pa
 // 0x49425C partyMemberAISlotInit
 static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescription)
 {
-    for (int index = 0; index < AREA_ATTACK_MODE_COUNT; index++) {
+    for (int index = AREA_ATTACK_MODE_FIRST; index < AREA_ATTACK_MODE_COUNT; index++) {
         partyMemberDescription->areaAttackMode[index] = 0;
     }
 
@@ -1326,7 +1326,7 @@ bool partyMemberSupportsDisposition(Object* critter, int disposition)
 }
 
 // 0x495920 partyMemberHasAIBurstValue
-bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode)
+bool partyMemberSupportsAreaAttackMode(Object* object, AreaAttackMode areaAttackMode)
 {
     if (object == nullptr) {
         return false;
@@ -1336,7 +1336,7 @@ bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode)
         return false;
     }
 
-    if (areaAttackMode >= AREA_ATTACK_MODE_COUNT) {
+    if (!areaAttackModeIsValid(areaAttackMode)) {
         return false;
     }
 

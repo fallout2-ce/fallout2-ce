@@ -3,14 +3,21 @@
 
 namespace fallout {
 
-typedef enum AreaAttackMode {
+enum AreaAttackMode : int {
+    AREA_ATTACK_MODE_INVALID = -1,
     AREA_ATTACK_MODE_ALWAYS,
     AREA_ATTACK_MODE_SOMETIMES,
     AREA_ATTACK_MODE_BE_SURE,
     AREA_ATTACK_MODE_BE_CAREFUL,
     AREA_ATTACK_MODE_BE_ABSOLUTELY_SURE,
     AREA_ATTACK_MODE_COUNT,
-} AreaAttackMode;
+    AREA_ATTACK_MODE_FIRST = AREA_ATTACK_MODE_ALWAYS
+};
+
+inline bool areaAttackModeIsValid(int areaAttackMode)
+{
+    return areaAttackMode >= AREA_ATTACK_MODE_FIRST && areaAttackMode < AREA_ATTACK_MODE_COUNT;
+}
 
 typedef enum RunAwayMode {
     RUN_AWAY_MODE_NONE,

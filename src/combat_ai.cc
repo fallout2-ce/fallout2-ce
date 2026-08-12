@@ -318,7 +318,7 @@ static void aiPacketInit(AiPacket* ai)
 {
     ai->name = nullptr;
 
-    ai->area_attack_mode = -1;
+    ai->area_attack_mode = AREA_ATTACK_MODE_INVALID;
     ai->run_away_mode = -1;
     ai->best_weapon = -1;
     ai->distance = -1;
@@ -413,9 +413,11 @@ int aiInit()
         ai->hit[HIT_LOCATION_GROIN].end++;
 
         if (configGetString(&config, sectionEntry->key, "area_attack_mode", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT, &(ai->area_attack_mode));
+            int area_attack_mode_temp;
+            _cai_match_str_to_list(stringValue, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT, &area_attack_mode_temp);
+            ai->area_attack_mode = static_cast<AreaAttackMode>(area_attack_mode_temp);
         } else {
-            ai->area_attack_mode = -1;
+            ai->area_attack_mode = AREA_ATTACK_MODE_INVALID;
         }
 
         if (configGetString(&config, sectionEntry->key, "run_away_mode", &stringValue)) {
@@ -616,7 +618,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
         if (fileReadInt32(stream, &(range->end)) == -1) return -1;
     }
 
-    if (fileReadInt32(stream, &(ai->area_attack_mode)) == -1) return -1;
+    if (fileReadInt32Enum<AreaAttackMode>(stream, &(ai->area_attack_mode)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->best_weapon)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->distance)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->attack_who)) == -1) return -1;
@@ -660,7 +662,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
         if (fileWriteInt32(stream, range->end) == -1) return -1;
     }
 
-    if (fileWriteInt32(stream, ai->area_attack_mode) == -1) return -1;
+    if (fileWriteInt32Enum<AreaAttackMode>(stream, ai->area_attack_mode) == -1) return -1;
     if (fileWriteInt32(stream, ai->best_weapon) == -1) return -1;
     if (fileWriteInt32(stream, ai->distance) == -1) return -1;
     if (fileWriteInt32(stream, ai->attack_who) == -1) return -1;
@@ -728,7 +730,7 @@ static AiPacket* aiGetPacketByNum(int aiPacketId)
 }
 
 // 0x428184
-int aiGetAreaAttackMode(Object* obj)
+AreaAttackMode aiGetAreaAttackMode(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->area_attack_mode;
@@ -783,9 +785,9 @@ int aiGetChemUse(Object* obj)
 }
 
 // 0x42822C
-int aiSetAreaAttackMode(Object* critter, int areaAttackMode)
+int aiSetAreaAttackMode(Object* critter, AreaAttackMode areaAttackMode)
 {
-    if (areaAttackMode >= AREA_ATTACK_MODE_COUNT) {
+    if (!areaAttackModeIsValid(areaAttackMode)) {
         return -1;
     }
 

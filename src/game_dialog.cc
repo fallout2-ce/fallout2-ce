@@ -4258,7 +4258,7 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
             bool enabled = false;
             switch (type) {
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
-                enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, ptr->value);
+                enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, static_cast<AreaAttackMode>(ptr->value));
                 break;
             case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
                 enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, ptr->value);
@@ -4403,7 +4403,7 @@ int _gdCustomSelect(int option)
                                     bool enabled = false;
                                     switch (option) {
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
-                                        enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, ptr->value);
+                                        enabled = partyMemberSupportsAreaAttackMode(gGameDialogSpeaker, static_cast<AreaAttackMode>(ptr->value));
                                         break;
                                     case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
                                         enabled = partyMemberSupportsRunAwayMode(gGameDialogSpeaker, ptr->value);
@@ -4449,7 +4449,7 @@ void _gdCustomUpdateSetting(int option, int value)
 {
     switch (option) {
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
-        aiSetAreaAttackMode(gGameDialogSpeaker, value);
+        aiSetAreaAttackMode(gGameDialogSpeaker, static_cast<AreaAttackMode>(value));
         break;
     case PARTY_MEMBER_CUSTOMIZATION_OPTION_RUN_AWAY_MODE:
         aiSetRunAwayMode(gGameDialogSpeaker, value);
