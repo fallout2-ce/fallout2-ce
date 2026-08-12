@@ -136,13 +136,14 @@ inline bool dispositionIsValid(int disposition)
     return disposition >= DISPOSITION_FIRST && disposition < DISPOSITION_COUNT;
 }
 
-typedef enum HurtTooMuch {
+enum HurtTooMuch : int {
     HURT_BLIND,
     HURT_CRIPPLED,
     HURT_CRIPPLED_LEGS,
     HURT_CRIPPLED_ARMS,
     HURT_COUNT,
-} HurtTooMuch;
+    HURT_FIRST = HURT_BLIND
+};
 
 } // namespace fallout
 

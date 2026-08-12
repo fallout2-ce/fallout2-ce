@@ -41,7 +41,7 @@ struct AiPacket {
     int min_to_hit;
     int min_hp;
     int aggression;
-    int hurt_too_much;
+    HurtTooMuch hurt_too_much;
     int secondary_freq;
     int called_freq;
     int font;

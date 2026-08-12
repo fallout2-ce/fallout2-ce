@@ -277,7 +277,7 @@ static void _parse_hurt_str(char* str, int* valuePtr)
         str[delimeterPos] = '\0';
 
         int index;
-        for (index = 0; index < HURT_COUNT; index++) {
+        for (index = HURT_FIRST; index < HURT_COUNT; index++) {
             if (strcmp(str, gHurtTooMuchKeys[index]) == 0) {
                 *valuePtr |= _rmatchHurtVals[index];
                 break;
@@ -374,7 +374,9 @@ int aiInit()
         if (!configGetInt(&config, sectionEntry->key, "aggression", &(ai->aggression))) goto err;
 
         if (configGetString(&config, sectionEntry->key, "hurt_too_much", &stringValue)) {
-            _parse_hurt_str(stringValue, &(ai->hurt_too_much));
+            int hurt_too_much_temp;
+            _parse_hurt_str(stringValue, &hurt_too_much_temp);
+            ai->hurt_too_much = static_cast<HurtTooMuch>(hurt_too_much_temp);
         }
 
         if (!configGetInt(&config, sectionEntry->key, "secondary_freq", &(ai->secondary_freq))) goto err;
@@ -606,7 +608,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
     if (fileReadInt32(stream, &(ai->min_to_hit)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->min_hp)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->aggression)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->hurt_too_much)) == -1) return -1;
+    if (fileReadInt32Enum<HurtTooMuch>(stream, &(ai->hurt_too_much)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->secondary_freq)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->called_freq)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->font)) == -1) return -1;
@@ -650,7 +652,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
     if (fileWriteInt32(stream, ai->min_to_hit) == -1) return -1;
     if (fileWriteInt32(stream, ai->min_hp) == -1) return -1;
     if (fileWriteInt32(stream, ai->aggression) == -1) return -1;
-    if (fileWriteInt32(stream, ai->hurt_too_much) == -1) return -1;
+    if (fileWriteInt32Enum<HurtTooMuch>(stream, ai->hurt_too_much) == -1) return -1;
     if (fileWriteInt32(stream, ai->secondary_freq) == -1) return -1;
     if (fileWriteInt32(stream, ai->called_freq) == -1) return -1;
     if (fileWriteInt32(stream, ai->font) == -1) return -1;
