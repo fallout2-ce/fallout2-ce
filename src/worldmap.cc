@@ -3364,15 +3364,11 @@ static int wmWorldMapFunc(int a1)
 
     wmResetTrailMarkers();
 
-    wmFadeOut();
-
     if (wmInterfaceInit() == -1) {
         wmInterfaceExit();
-        wmFadeReset();
         return -1;
     }
 
-    wmFadeIn();
     touch_set_touchscreen_mode(false);
 
     wmMatchWorldPosToArea(wmGenData.worldPosX, wmGenData.worldPosY, &(wmGenData.currentAreaId));
@@ -3520,7 +3516,6 @@ static int wmWorldMapFunc(int a1)
                             }
                         }
 
-                        wmFadeOut();
                         mapLoadById(mapToLoad);
                     }
                     break;
@@ -3583,7 +3578,6 @@ static int wmWorldMapFunc(int a1)
                             }
                         }
 
-                        wmFadeOut();
                         mapLoadById(map);
                         break;
                     }
@@ -3623,7 +3617,6 @@ static int wmWorldMapFunc(int a1)
                             wmGenData.currentCarAreaId = wmGenData.currentAreaId;
                         }
 
-                        wmFadeOut();
                         mapLoadById(map);
                     }
                 }
@@ -3778,7 +3771,6 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
                 wmMatchAreaContainingMapIdx(MAP_IN_GAME_MOVIE1, &(wmGenData.currentCarAreaId));
             }
 
-            wmFadeOut();
             mapLoadById(MAP_IN_GAME_MOVIE1);
             return 1;
         }
