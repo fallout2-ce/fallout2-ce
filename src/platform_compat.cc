@@ -2,6 +2,9 @@
 
 #include <string.h>
 
+#include <string>
+#include <unordered_map>
+
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
@@ -33,6 +36,62 @@ static bool compatIsPathSeparator(char ch)
 {
     return ch == '/' || ch == '\\';
 }
+
+static bool compatFileModeMayWrite(const char* mode)
+{
+    return mode != nullptr && (strchr(mode, 'w') != nullptr || strchr(mode, 'a') != nullptr || strchr(mode, '+') != nullptr);
+}
+
+#ifndef _WIN32
+typedef struct CompatDirectoryCacheEntry {
+    std::unordered_map<std::string, std::string> entries;
+} CompatDirectoryCacheEntry;
+
+static std::unordered_map<std::string, CompatDirectoryCacheEntry> compatDirectoryEntryCache;
+
+static std::string compatLowercase(std::string value)
+{
+    for (char& ch : value) {
+        ch = static_cast<char>(SDL_tolower(ch));
+    }
+    return value;
+}
+
+static void compatDirectoryEntryCacheClear()
+{
+    compatDirectoryEntryCache.clear();
+}
+
+static const CompatDirectoryCacheEntry* compatDirectoryEntryCacheGet(const std::string& directoryPath)
+{
+    auto existing = compatDirectoryEntryCache.find(directoryPath);
+    if (existing != compatDirectoryEntryCache.end()) {
+        return &(existing->second);
+    }
+
+    DIR* dir = opendir(directoryPath.c_str());
+    if (dir == nullptr) {
+        return nullptr;
+    }
+
+    auto inserted = compatDirectoryEntryCache.emplace(directoryPath, CompatDirectoryCacheEntry());
+    CompatDirectoryCacheEntry& cacheEntry = inserted.first->second;
+
+    struct dirent* entry = readdir(dir);
+    while (entry != nullptr) {
+        cacheEntry.entries.emplace(compatLowercase(entry->d_name), entry->d_name);
+        entry = readdir(dir);
+    }
+
+    closedir(dir);
+
+    return &cacheEntry;
+}
+#else
+static void compatDirectoryEntryCacheClear()
+{
+}
+#endif
 
 static void compat_prepare_native_path(char* nativePath, const char* path)
 {
@@ -219,6 +278,8 @@ long compat_filelength(int fd)
 
 int compat_mkdir(const char* path)
 {
+    compatDirectoryEntryCacheClear();
+
     char nativePath[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativePath, path);
 
@@ -306,6 +367,10 @@ unsigned int compat_timeGetTime()
 
 FILE* compat_fopen(const char* path, const char* mode)
 {
+    if (compatFileModeMayWrite(mode)) {
+        compatDirectoryEntryCacheClear();
+    }
+
     char nativePath[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativePath, path);
     return fopen(nativePath, mode);
@@ -313,6 +378,10 @@ FILE* compat_fopen(const char* path, const char* mode)
 
 gzFile compat_gzopen(const char* path, const char* mode)
 {
+    if (compatFileModeMayWrite(mode)) {
+        compatDirectoryEntryCacheClear();
+    }
+
     char nativePath[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativePath, path);
     return gzopen(nativePath, mode);
@@ -350,6 +419,8 @@ char* compat_gzgets(gzFile stream, char* buffer, int maxCount)
 
 int compat_remove(const char* path)
 {
+    compatDirectoryEntryCacheClear();
+
     char nativePath[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativePath, path);
     return remove(nativePath);
@@ -357,6 +428,8 @@ int compat_remove(const char* path)
 
 int compat_rename(const char* oldFileName, const char* newFileName)
 {
+    compatDirectoryEntryCacheClear();
+
     char nativeOldFileName[COMPAT_MAX_PATH];
     compat_prepare_native_path(nativeOldFileName, oldFileName);
 
@@ -383,22 +456,20 @@ void compat_resolve_path(char* path)
 {
 #ifndef _WIN32
     char* pch = path;
-
-    DIR* dir;
+    std::string directoryPath;
     if (pch[0] == '/') {
-        dir = opendir("/");
+        directoryPath = "/";
         pch++;
     } else {
-        dir = opendir(".");
+        directoryPath = ".";
     }
 
-    while (dir != nullptr) {
+    while (true) {
         while (*pch == '/') {
             pch++;
         }
 
         if (*pch == '\0') {
-            closedir(dir);
             break;
         }
 
@@ -410,31 +481,25 @@ void compat_resolve_path(char* path)
             length = strlen(pch);
         }
 
-        bool found = false;
-
-        struct dirent* entry = readdir(dir);
-        while (entry != nullptr) {
-            if (strlen(entry->d_name) == length && compat_strnicmp(pch, entry->d_name, length) == 0) {
-                strncpy(pch, entry->d_name, length);
-                found = true;
-                break;
-            }
-            entry = readdir(dir);
-        }
-
-        closedir(dir);
-        dir = nullptr;
-
-        if (!found) {
+        const CompatDirectoryCacheEntry* directoryCacheEntry = compatDirectoryEntryCacheGet(directoryPath);
+        if (directoryCacheEntry == nullptr) {
             break;
         }
+
+        std::string component(pch, length);
+        auto cacheEntry = directoryCacheEntry->entries.find(compatLowercase(component));
+        if (cacheEntry == directoryCacheEntry->entries.end()) {
+            break;
+        }
+
+        strncpy(pch, cacheEntry->second.c_str(), length);
 
         if (sep == nullptr) {
             break;
         }
 
         *sep = '\0';
-        dir = opendir(path);
+        directoryPath = path;
         *sep = '/';
 
         pch = sep + 1;

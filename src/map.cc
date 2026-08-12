@@ -72,6 +72,8 @@ static void _square_reset();
 static int _square_load(File* stream, int flags);
 static int mapHeaderWrite(MapHeader* ptr, File* stream);
 static int mapHeaderRead(MapHeader* ptr, File* stream);
+static void mapLoadTimerStart();
+static void mapLoadTimerFinish(const char* fileName, int rc);
 
 // 0x50B058
 static char byte_50B058[] = "";
@@ -164,6 +166,9 @@ int gIsoWindow;
 
 // 0x631E50 scratchStr
 static char _scratchStr[40];
+
+static int mapLoadTimerDepth = 0;
+static unsigned int mapLoadStartTime = 0;
 
 // CE: Basically the same problem described in |gMapLocalPointers|, but this
 // time Olympus folks use global map variables to store objects (looks like
@@ -797,6 +802,8 @@ void mapNewMap()
 // 0x482A68 map_load
 int mapLoadByName(char* fileName)
 {
+    mapLoadTimerStart();
+
     int rc;
 
     compat_strupr(fileName);
@@ -836,7 +843,34 @@ int mapLoadByName(char* fileName)
         }
     }
 
+    mapLoadTimerFinish(fileName, rc);
+
     return rc;
+}
+
+static void mapLoadTimerStart()
+{
+    if (mapLoadTimerDepth == 0) {
+        mapLoadStartTime = compat_timeGetTime();
+    }
+
+    mapLoadTimerDepth++;
+}
+
+static void mapLoadTimerFinish(const char* fileName, int rc)
+{
+    assert(mapLoadTimerDepth > 0);
+
+    mapLoadTimerDepth--;
+    if (mapLoadTimerDepth != 0) {
+        return;
+    }
+
+    unsigned int elapsed = getTicksBetween(compat_timeGetTime(), mapLoadStartTime);
+    debugPrint("\nMAP LOAD: %s rc=%d total=%ums",
+        fileName != nullptr ? fileName : "<null>",
+        rc,
+        elapsed);
 }
 
 // 0x482B34
