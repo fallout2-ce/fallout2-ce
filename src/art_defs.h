@@ -47,7 +47,8 @@ inline HeadFidget headFidgetFromFid(int fid)
     return static_cast<HeadFidget>(fidget);
 }
 
-typedef enum Background {
+enum Background : int {
+    BACKGROUND_INVALID = -1,
     BACKGROUND_0,
     BACKGROUND_1,
     BACKGROUND_2,
@@ -69,8 +70,12 @@ typedef enum Background {
     BACKGROUND_PRESIDENT,
     BACKGROUND_TENT,
     BACKGROUND_ADOBE,
-    BACKGROUND_COUNT,
-} Background;
+};
+
+inline bool backgroundIsValid(int background)
+{
+    return background > BACKGROUND_INVALID;
+}
 
 enum DudeNativeLook : int {
     // Hero looks as one the tribals (before finishing Temple of Trails).

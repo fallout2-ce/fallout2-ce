@@ -22,7 +22,7 @@ int gameDialogEnable();
 int gameDialogDisable();
 int _gdialogInitFromScript(int headFid, HeadFidget reaction);
 int _gdialogExitFromScript();
-void gameDialogSetBackground(int background);
+void gameDialogSetBackground(Background background);
 void gameDialogRenderSupplementaryMessage(const char* msg);
 int _gdialogStart();
 int _gdialogSayMessage();

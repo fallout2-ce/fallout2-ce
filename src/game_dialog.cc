@@ -216,7 +216,7 @@ static CacheEntry* gGameDialogFidgetFrmHandle = nullptr;
 static Art* gGameDialogFidgetFrm = nullptr;
 
 // 0x518700 backgroundIndex
-static int gGameDialogBackground = 2;
+static Background gGameDialogBackground = BACKGROUND_2;
 
 // 0x518704 lipsFID
 static int _lipsFID = 0;
@@ -1118,9 +1118,9 @@ int _gdialogExitFromScript()
 }
 
 // 0x445438
-void gameDialogSetBackground(int background)
+void gameDialogSetBackground(Background background)
 {
-    if (background != -1) {
+    if (backgroundIsValid(background)) {
         gGameDialogBackground = background;
     }
 }
