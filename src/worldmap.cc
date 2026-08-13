@@ -4171,7 +4171,7 @@ int wmSetupRandomEncounter()
         }
 
         if (critterCount != 0) {
-            Object* critter;
+            Object* critter = nullptr;
             if (wmSetupCritterObjs(encounterTableSubEntry->encounterIndex, &critter, critterCount) == -1) {
                 scriptsRequestWorldMap();
                 return -1;
@@ -5681,7 +5681,7 @@ static int wmInterfaceRefresh()
     while (y < WM_VIEW_HEIGHT) {
         x = 0;
         int v23 = 0;
-        int height;
+        int height = WM_TILE_HEIGHT;
         while (x < WM_VIEW_WIDTH) {
             if (wmTileGrabArt(v0) == -1) {
                 return -1;
@@ -5744,7 +5744,7 @@ static int wmInterfaceRefresh()
     while (v30 < WM_VIEW_HEIGHT) {
         int v24 = 0;
         int v33 = 0;
-        int v29;
+        int v29 = WM_TILE_HEIGHT;
         while (v33 < WM_VIEW_WIDTH) {
             int v31 = WM_TILE_WIDTH;
             if (v33 == 0) {

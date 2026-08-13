@@ -808,7 +808,7 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
                 ? gObjectListHeadByTile[tile]
                 : nullptr;
 
-            int lightIntensity;
+            int lightIntensity = ambientIntensity;
             if (objectListNode != nullptr) {
                 // NOTE: Calls `lightGetTileIntensity` twice.
                 lightIntensity = std::max(ambientIntensity, lightGetTileIntensity(elevation, objectListNode->obj->tile));
@@ -845,7 +845,7 @@ void _obj_render_pre_roof(Rect* rect, int elevation)
     tileRenderEdgeBlackSquares(&updatedRect, elevation, false);
 
     for (int i = 0; i < renderCount; i++) {
-        int lightIntensity;
+        int lightIntensity = ambientIntensity;
 
         ObjectListNode* objectListNode = _renderTable[i];
         if (objectListNode != nullptr) {
@@ -3676,8 +3676,16 @@ int _obj_load_dude(File* stream)
 
     scriptsClearDudeScript();
 
-    Object* temp;
+    Object* temp = nullptr;
     int rc = _obj_load_obj(stream, &temp, -1, nullptr);
+    if (rc == -1 || temp == nullptr) {
+        gDude->tile = savedTile;
+        gDude->elevation = savedElevation;
+        gDude->rotation = savedRotation;
+        gDude->id = savedOid;
+        scriptsSetDudeScript();
+        return -1;
+    }
 
     memcpy(gDude, temp, sizeof(*gDude));
 
@@ -4745,7 +4753,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
         unsigned char* v48 = nullptr;
         int v53 = object->outline & OUTLINE_PALETTED;
         OutlineType outlineType = object->outline & OUTLINE_TYPE_MAX;
-        int v43;
+        int v43 = 0;
         int v44;
 
         switch (outlineType) {
