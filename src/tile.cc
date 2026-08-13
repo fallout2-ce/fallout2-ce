@@ -661,10 +661,7 @@ bool checkRectNeedsClear(const Rect* rect, bool hasVisArea, const Rect* visArea)
         return true;
     }
 
-    return (rect->left < visArea->left ||
-            rect->right > visArea->right ||
-            rect->top < visArea->top ||
-            rect->bottom > visArea->bottom);
+    return (rect->left < visArea->left || rect->right > visArea->right || rect->top < visArea->top || rect->bottom > visArea->bottom);
 }
 
 // TODO: these two functions are exact copies of isoWindowRefreshRect*. gTileWindowBuffer == gIsoWindowBuffer, these are the same window!
