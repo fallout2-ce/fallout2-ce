@@ -20,7 +20,7 @@ void _gdialogSystemEnter();
 void gameDialogStartLips(const char* audioFileName);
 int gameDialogEnable();
 int gameDialogDisable();
-int _gdialogInitFromScript(int headFid, int reaction);
+int _gdialogInitFromScript(int headFid, HeadFidget reaction);
 int _gdialogExitFromScript();
 void gameDialogSetBackground(int background);
 void gameDialogRenderSupplementaryMessage(const char* msg);

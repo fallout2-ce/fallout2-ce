@@ -1971,7 +1971,7 @@ static void opStartGameDialog(Program* program)
 
     gGameDialogSid = scriptGetSid(program);
     gGameDialogSpeaker = scriptGetSelf(program);
-    _gdialogInitFromScript(gGameDialogHeadFid, gGameDialogReactionOrFidget);
+    _gdialogInitFromScript(gGameDialogHeadFid, static_cast<HeadFidget>(gGameDialogReactionOrFidget));
 }
 
 // end_dialogue

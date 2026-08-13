@@ -593,7 +593,7 @@ static int _oldFont;
 static unsigned int gGameDialogFidgetLastUpdateTimestamp;
 
 // 0x58F4D0 fidgetAnim
-static int gGameDialogFidgetReaction;
+static HeadFidget gGameDialogFidgetReaction;
 
 // 0x58F4D4 dialogBlock
 static Program* gDialogReplyProgram;
@@ -669,7 +669,7 @@ static void gameDialogRenderReply();
 static void _gdProcessUpdate();
 static int _gdCreateHeadWindow();
 static void _gdDestroyHeadWindow();
-static void _gdSetupFidget(int headFid, int reaction);
+static void _gdSetupFidget(int headFid, HeadFidget reaction);
 static void gameDialogWaitForFidgetToComplete();
 static void _gdPlayTransition(int animation);
 static void _reply_arrow_up(int btn, int keyCode);
@@ -965,7 +965,7 @@ int gameDialogDisable()
 }
 
 // 0x44510C
-int _gdialogInitFromScript(int headFid, int reaction)
+int _gdialogInitFromScript(int headFid, HeadFidget reaction)
 {
     if (dialogMode == GAME_DIALOG_MODE_TALK) {
         return -1;
@@ -2597,7 +2597,7 @@ void _gdDestroyHeadWindow()
 }
 
 // 0x447300
-void _gdSetupFidget(int headFrmId, int reaction)
+void _gdSetupFidget(int headFrmId, HeadFidget reaction)
 {
     gGameDialogFidgetFrmCurrentFrame = 0;
 
@@ -2605,7 +2605,7 @@ void _gdSetupFidget(int headFrmId, int reaction)
         gGameDialogFidgetFid = -1;
         gGameDialogFidgetFrm = nullptr;
         gGameDialogFidgetFrmHandle = INVALID_CACHE_ENTRY;
-        gGameDialogFidgetReaction = -1;
+        gGameDialogFidgetReaction = FIDGET_INVALID;
         gGameDialogFidgetUpdateDelay = 0;
         gGameDialogFidgetLastUpdateTimestamp = 0;
         gameDialogRenderTalkingHead(nullptr, 0);
@@ -3023,7 +3023,7 @@ void gameDialogTicker()
             _can_start_new_fidget = false;
             _dialogue_seconds_since_last_input += _tocksWaiting / 1000;
             _tocksWaiting = 1000 * (randomBetween(0, 3) + 4);
-            _gdSetupFidget(gGameDialogFidgetFid & 0xFFF, (gGameDialogFidgetFid & 0xFF0000) >> 16);
+            _gdSetupFidget(gGameDialogFidgetFid & 0xFFF, headFidgetFromFid(gGameDialogFidgetFid));
         }
         return;
     }

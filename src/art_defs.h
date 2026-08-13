@@ -19,20 +19,33 @@ typedef enum Head {
     HEAD_COUNT,
 } Head;
 
-typedef enum HeadAnimation {
+enum HeadAnimation : int {
     HEAD_ANIMATION_VERY_GOOD_REACTION = 0,
-    FIDGET_GOOD = 1,
+    HEAD_ANIMATION_GOOD = 1,
     HEAD_ANIMATION_GOOD_TO_NEUTRAL = 2,
     HEAD_ANIMATION_NEUTRAL_TO_GOOD = 3,
-    FIDGET_NEUTRAL = 4,
+    HEAD_ANIMATION_NEUTRAL = 4,
     HEAD_ANIMATION_NEUTRAL_TO_BAD = 5,
     HEAD_ANIMATION_BAD_TO_NEUTRAL = 6,
-    FIDGET_BAD = 7,
+    HEAD_ANIMATION_BAD = 7,
     HEAD_ANIMATION_VERY_BAD_REACTION = 8,
     HEAD_ANIMATION_GOOD_PHONEMES = 9,
     HEAD_ANIMATION_NEUTRAL_PHONEMES = 10,
     HEAD_ANIMATION_BAD_PHONEMES = 11,
-} HeadAnimation;
+};
+
+enum HeadFidget : int {
+    FIDGET_INVALID = -1,
+    FIDGET_GOOD = 1,
+    FIDGET_NEUTRAL = 4,
+    FIDGET_BAD = 7,
+};
+
+inline HeadFidget headFidgetFromFid(int fid)
+{
+    int fidget = (fid & 0xFF0000) >> 16;
+    return static_cast<HeadFidget>(fidget);
+}
 
 typedef enum Background {
     BACKGROUND_0,
