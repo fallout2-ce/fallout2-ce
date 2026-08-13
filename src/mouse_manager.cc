@@ -246,6 +246,8 @@ void mouseManagerUpdate()
 
     if (gMouseManagerCurrentAnimatedData == nullptr) {
         debugPrint("Animating == 1 but curAnim == 0\n");
+        gMouseManagerIsAnimating = false;
+        return;
     }
 
     if (gMouseManagerTimeProvider() >= gMouseManagerCurrentAnimatedData->field_1C) {

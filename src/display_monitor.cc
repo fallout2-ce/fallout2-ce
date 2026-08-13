@@ -263,7 +263,7 @@ void displayMonitorAddMessage(const char* str)
     // TODO: Refactor these two loops.
     char* splitPos = nullptr;
     while (true) {
-        while (fontGetStringWidth(mutableStr) < DISPLAY_MONITOR_WIDTH - _max_disp - knobWidth) {
+        while (fontGetStringWidth(mutableStr) <= DISPLAY_MONITOR_WIDTH - _max_disp - knobWidth) {
             char* temp = gDisplayMonitorLines[_disp_start];
             int length;
             if (knob != '\0') {

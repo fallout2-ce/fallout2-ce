@@ -193,11 +193,11 @@ static void randomSeedPrerandomInternal(int seed)
         num = 1;
     }
 
-    for (int index = 40; index > 0; index--) {
+    for (int index = 39; index >= 0; index--) {
         num = 16807 * (num % 127773) - 2836 * (num / 127773);
 
         if (num < 0) {
-            num &= INT_MAX;
+            num += INT_MAX;
         }
 
         if (index < 32) {

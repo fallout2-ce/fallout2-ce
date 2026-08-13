@@ -604,7 +604,7 @@ int _dialogSetScrollUp(int a1, int a2, char* a3, char* a4, char* a5, char* a6, i
     if (off_56DBEC != nullptr) {
         internal_free_safe(off_56DBEC, __FILE__, __LINE__); // "..\\int\\DIALOG.C", 2756
     }
-    off_56DBEC = a5;
+    off_56DBEC = a6;
 
     dword_56DBDC = a7;
 

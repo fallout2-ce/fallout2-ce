@@ -87,7 +87,7 @@ int traitsInit()
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_TRAIT, &gTraitsMessageList);
 
-    return true;
+    return 0;
 }
 
 // 0x4B3ADC trait_reset
