@@ -678,7 +678,7 @@ static void tileRefreshMapper(Rect* rect, int elevation)
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
 
     // HRP EdgeClipping: when clipped, clear only if CheckRect; otherwise always clear.
-    if (!hasVisArea || checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea)) {
+    if (checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea)) {
         bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
             rectGetWidth(&rectToUpdate),
             rectGetHeight(&rectToUpdate),
@@ -718,7 +718,7 @@ static void tileRefreshGame(Rect* rect, int elevation)
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
 
     // HRP EdgeClipping: when clipped, clear only if CheckRect; otherwise always clear.
-    if (!hasVisArea || checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea)) {
+    if (checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea)) {
         bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
             rectGetWidth(&rectToUpdate),
             rectGetHeight(&rectToUpdate),
