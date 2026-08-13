@@ -398,7 +398,7 @@ int artGetFidgetCount(int headFid)
 
     HeadDescription* headDescription = &(gHeadDescriptions[head]);
 
-    int fidget = (headFid & 0xFF0000) >> 16;
+    HeadFidget fidget = headFidgetFromFid(headFid);
     switch (fidget) {
     case FIDGET_GOOD:
         return headDescription->goodFidgetCount;
