@@ -67,7 +67,7 @@ typedef struct AiRetargetData {
     int sourceIntelligence;
 } AiRetargetData;
 
-static void _parse_hurt_str(char* str, HurtTooMuch* valuePtr);
+static void _parse_hurt_str(char* str, Dam* valuePtr);
 static int _cai_match_str_to_list(const char* str, const char** list, int count, int* out_value);
 static void aiPacketInit(AiPacket* ai);
 static int aiPacketRead(File* stream, AiPacket* ai);
@@ -264,7 +264,7 @@ static Object** _curr_crit_list;
 static char _attack_str[AI_MESSAGE_SIZE];
 
 // parse hurt_too_much
-static void _parse_hurt_str(char* str, HurtTooMuch* valuePtr)
+static void _parse_hurt_str(char* str, Dam* valuePtr)
 {
     *valuePtr = HURT_BLIND;
 

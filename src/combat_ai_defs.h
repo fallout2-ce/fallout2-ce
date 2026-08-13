@@ -155,12 +155,6 @@ enum HurtTooMuch : int {
     HURT_FIRST = HURT_BLIND
 };
 
-inline HurtTooMuch& operator|=(HurtTooMuch& lhs, Dam rhs)
-{
-    lhs = static_cast<HurtTooMuch>(static_cast<int>(lhs) | static_cast<int>(rhs));
-    return lhs;
-}
-
 } // namespace fallout
 
 #endif /* COMBAT_AI_DEFS_H */
