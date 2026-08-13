@@ -115,7 +115,7 @@ inline bool damageTypeIsValid(int damageType)
     return damageType >= DAMAGE_TYPE_FIRST && damageType < DAMAGE_TYPE_COUNT;
 }
 
-enum {
+enum CaliberType : int {
     CALIBER_TYPE_NONE,
     CALIBER_TYPE_ROCKET,
     CALIBER_TYPE_FLAMETHROWER_FUEL,
@@ -136,7 +136,15 @@ enum {
     CALIBER_TYPE_NH_NEEDLER,
     CALIBER_TYPE_7_62,
     CALIBER_TYPE_COUNT,
+    CALIBER_TYPE_FIRST = CALIBER_TYPE_NONE
 };
+
+inline CaliberType operator++(CaliberType& e, int)
+{
+    CaliberType result = e;
+    e = static_cast<CaliberType>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum RaceType : int {
     RACE_TYPE_CAUCASIAN,
@@ -293,7 +301,8 @@ enum {
 // FID of one of the Force Field sceneries. Used as a marker for special hidden "attacker" object created by `critter_dmg` opcode handler.
 #define FRAME_ID_FORCE_FIELD_NS 0x20001F5
 
-typedef enum ProtoFlags {
+enum ProtoFlags : unsigned int {
+    PROTO_FLAG_NONE = 0x00,
     PROTO_FLAG_FLAT = 0x08,
     PROTO_FLAG_NO_BLOCK = 0x10,
     PROTO_FLAG_MULTIHEX = 0x800,
@@ -307,9 +316,21 @@ typedef enum ProtoFlags {
     PROTO_FLAG_WALL_TRANS_END = 0x10000000,
     PROTO_FLAG_LIGHT_THRU = 0x20000000,
     PROTO_FLAG_SHOOT_THRU = 0x80000000,
-} ProtoFlags;
+};
 
-typedef enum ItemProtoExtendedFlags {
+constexpr inline ProtoFlags operator&(ProtoFlags lhs, ProtoFlags rhs)
+{
+    return static_cast<ProtoFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ProtoFlags operator|(ProtoFlags lhs, ProtoFlags rhs)
+{
+    return static_cast<ProtoFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+enum ProtoExtendedFlags : unsigned int {
+    PROTO_EXT_FLAG_NONE = 0x0000,
+
     // NOTE: `extendedFlags` packs non-boolean weapon data into the low
     // nibbles (`0x0F` and `0xF0`) for attack mode metadata.
 
@@ -336,7 +357,24 @@ typedef enum ItemProtoExtendedFlags {
     PROTO_EXT_FLAG_SOUTH_CORNER = 0x20000000,
     PROTO_EXT_FLAG_EAST_CORNER = 0x40000000,
     PROTO_EXT_FLAG_WEST_CORNER = 0x80000000,
-} ItemProtoExtendedFlags;
+};
+
+constexpr inline ProtoExtendedFlags operator|(ProtoExtendedFlags lhs, ProtoExtendedFlags rhs)
+{
+    return static_cast<ProtoExtendedFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+inline ProtoExtendedFlags& operator|=(ProtoExtendedFlags& lhs, ProtoExtendedFlags rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+inline ProtoExtendedFlags& operator^=(ProtoExtendedFlags& lhs, ProtoExtendedFlags rhs)
+{
+    lhs = static_cast<ProtoExtendedFlags>(static_cast<unsigned int>(lhs) ^ static_cast<unsigned int>(rhs));
+    return lhs;
+}
 
 typedef struct {
     int armorClass; // d.ac
@@ -378,14 +416,14 @@ typedef struct {
     int criticalFailureType; // d.crit_fail_table
     Perk perk; // d.perk
     int rounds; // d.rounds
-    int caliber; // d.caliber
+    CaliberType caliber; // d.caliber
     int ammoTypePid; // d.ammo_type_pid
     int ammoCapacity; // d.max_ammo
     unsigned char soundCode; // d.sound_id
 } ProtoItemWeaponData;
 
 typedef struct {
-    int caliber; // d.caliber
+    CaliberType caliber; // d.caliber
     int quantity; // d.quantity
     int armorClassModifier; // d.ac_adjust
     int damageResistanceModifier; // d.dr_adjust
@@ -430,8 +468,8 @@ typedef struct ItemProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoFlags flags; // flags
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     ItemType type; // type
     ItemProtoData data; // d
@@ -461,8 +499,8 @@ typedef struct CritterProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoFlags flags; // flags
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     CritterProtoData data; // d
     int headFid; // head_fid
@@ -509,8 +547,8 @@ typedef struct SceneryProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoFlags flags; // flags
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     SceneryType type; // type
     SceneryProtoData data;
@@ -525,8 +563,8 @@ typedef struct WallProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoFlags flags; // flags
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     MaterialType material; // material
 } WallProto;
@@ -535,8 +573,8 @@ typedef struct TileProto {
     int pid; // id
     int messageId; // message_num
     int fid; // fid
-    int flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoFlags flags; // flags
+    ProtoExtendedFlags extendedFlags; // flags_ext
     int sid; // sid
     MaterialType material; // material
 } TileProto;
@@ -547,8 +585,8 @@ typedef struct MiscProto {
     int fid; // fid
     int lightDistance; // light_distance
     int lightIntensity; // light_intensity
-    int flags; // flags
-    int extendedFlags; // flags_ext
+    ProtoFlags flags; // flags
+    ProtoExtendedFlags extendedFlags; // flags_ext
 } MiscProto;
 
 typedef union Proto {
@@ -560,8 +598,8 @@ typedef union Proto {
         // TODO: Move to NonTile props?
         int lightDistance;
         int lightIntensity;
-        int flags;
-        int extendedFlags;
+        ProtoFlags flags;
+        ProtoExtendedFlags extendedFlags;
         int sid;
     };
     ItemProto item;

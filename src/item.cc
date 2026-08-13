@@ -1194,7 +1194,7 @@ bool itemIsHidden(Object* item)
         return false;
     }
 
-    return (proto->item.extendedFlags & PROTO_EXT_FLAG_HIDDEN) != 0;
+    return (proto->item.extendedFlags & PROTO_EXT_FLAG_HIDDEN) != PROTO_EXT_FLAG_NONE;
 }
 
 // 0x478280
@@ -1241,7 +1241,7 @@ Skill weaponGetSkillForHitMode(Object* weapon, HitMode hitMode)
         if (damageType == DAMAGE_TYPE_LASER || damageType == DAMAGE_TYPE_PLASMA || damageType == DAMAGE_TYPE_ELECTRICAL) {
             skill = SKILL_ENERGY_WEAPONS;
         } else {
-            if ((proto->item.extendedFlags & PROTO_EXT_FLAG_BIG_GUN) != 0) {
+            if ((proto->item.extendedFlags & PROTO_EXT_FLAG_BIG_GUN) != PROTO_EXT_FLAG_NONE) {
                 skill = SKILL_BIG_GUNS;
             }
         }
@@ -1378,7 +1378,7 @@ int weaponIsTwoHanded(Object* weapon)
 
     protoGetProto(weapon->pid, &proto);
 
-    return (proto->item.extendedFlags & PROTO_EXT_FLAG_IS_TWO_HANDED) != 0;
+    return (proto->item.extendedFlags & PROTO_EXT_FLAG_IS_TWO_HANDED) != PROTO_EXT_FLAG_NONE;
 }
 
 // 0x4785DC
@@ -1451,19 +1451,19 @@ int ammoGetQuantity(Object* ammoOrWeapon)
 }
 
 // 0x4786C8
-int ammoGetCaliber(Object* ammoOrWeapon)
+CaliberType ammoGetCaliber(Object* ammoOrWeapon)
 {
     Proto* proto;
 
     if (ammoOrWeapon == nullptr) {
-        return 0;
+        return CALIBER_TYPE_NONE;
     }
 
     protoGetProto(ammoOrWeapon->pid, &proto);
 
     if (proto->item.type != ITEM_TYPE_AMMO) {
         if (protoGetProto(ammoOrWeapon->data.item.weapon.ammoTypePid, &proto) == -1) {
-            return 0;
+            return CALIBER_TYPE_NONE;
         }
     }
 
