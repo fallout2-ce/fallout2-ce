@@ -452,7 +452,9 @@ int aiInit()
 
         if (configGetString(&config, sectionEntry->key, "disposition", &stringValue)) {
             _cai_match_str_to_list_enum<Disposition>(stringValue, gDispositionKeys, DISPOSITION_COUNT, &(ai->disposition));
-            ai->disposition--;
+            if (ai->disposition >= DISPOSITION_FIRST) {
+                ai->disposition--;
+            }
         }
 
         if (configGetString(&config, sectionEntry->key, "body_type", &stringValue)) {
@@ -751,7 +753,7 @@ RunAwayMode aiGetRunAwayMode(Object* obj)
     }
 
     int hpRatio = 100 * ai->min_hp / critterGetStat(obj, STAT_MAXIMUM_HIT_POINTS);
-    for (RunAwayMode index = RUN_AWAY_MODE_FIRST; index < RUN_AWAY_MODE_NEVER; index++) {
+    for (RunAwayMode index = RUN_AWAY_MODE_FIRST; index < RUN_AWAY_MODE_LAST; index++) {
         if (hpRatio >= _hp_run_away_value[index]) {
             runAwayMode = index;
         }
@@ -803,7 +805,7 @@ int aiSetAreaAttackMode(Object* critter, AreaAttackMode areaAttackMode)
 // 0x428248
 int aiSetRunAwayMode(Object* obj, RunAwayMode runAwayMode)
 {
-    if (runAwayMode >= (RUN_AWAY_MODE_COUNT - 1)) {
+    if (!runAwayModeIsValid(runAwayMode) || runAwayMode == RUN_AWAY_MODE_LAST) {
         return -1;
     }
 
@@ -3081,7 +3083,7 @@ static int _cai_get_min_hp(AiPacket* ai)
     }
 
     RunAwayMode run_away_mode = ai->run_away_mode;
-    if (runAwayModeIsValid(run_away_mode)) {
+    if (runAwayModeIsValid(run_away_mode) && run_away_mode != RUN_AWAY_MODE_LAST) {
         return _hp_run_away_value[run_away_mode];
     } else if (run_away_mode == RUN_AWAY_MODE_INVALID) {
         return ai->min_hp;

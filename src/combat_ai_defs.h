@@ -31,7 +31,8 @@ enum RunAwayMode : int {
     RUN_AWAY_MODE_TOURNIQUET,
     RUN_AWAY_MODE_NEVER,
     RUN_AWAY_MODE_COUNT,
-    RUN_AWAY_MODE_FIRST = RUN_AWAY_MODE_NONE
+    RUN_AWAY_MODE_FIRST = RUN_AWAY_MODE_NONE,
+    RUN_AWAY_MODE_LAST = RUN_AWAY_MODE_NEVER
 };
 
 inline RunAwayMode operator++(RunAwayMode& e, int)
