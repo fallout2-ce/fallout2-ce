@@ -3048,7 +3048,7 @@ static void opCritterGetInventoryObject(Program* program)
     int type = programStackPopInteger(program);
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
-    if (objectTypeFromPid(critter->pid) == OBJ_TYPE_CRITTER) {
+    if (critter != nullptr && objectTypeFromPid(critter->pid) == OBJ_TYPE_CRITTER) {
         if (type == kInvenSlotInvCount) {
             programStackPushInteger(program, critter->data.inventory.length);
             return;

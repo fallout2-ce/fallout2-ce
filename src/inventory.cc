@@ -4979,7 +4979,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
                     inventorySetCursor(INVENTORY_WINDOW_CURSOR_HAND);
                 }
             } else if ((mouseEvent & MOUSE_EVENT_LEFT_BUTTON_DOWN) != 0) {
-                if (keyCode >= 1000 && keyCode <= 1000 + gInventorySlotsCount) {
+                if (keyCode >= 1000 && keyCode < 1000 + gInventorySlotsCount) {
                     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
                         inventoryWindowOpenContextMenu(keyCode, INVENTORY_WINDOW_TYPE_LOOT);
                     } else {
@@ -5005,7 +5005,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
 
                         keyCode = -1;
                     }
-                } else if (keyCode >= 2000 && keyCode <= 2000 + gInventorySlotsCount) {
+                } else if (keyCode >= 2000 && keyCode < 2000 + gInventorySlotsCount) {
                     if (gInventoryCursor == INVENTORY_WINDOW_CURSOR_ARROW) {
                         inventoryWindowOpenContextMenu(keyCode, INVENTORY_WINDOW_TYPE_LOOT);
                     } else {

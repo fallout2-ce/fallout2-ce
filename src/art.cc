@@ -308,7 +308,7 @@ int artInit()
             sep1 = string;
         }
 
-        char* sep2 = strchr(sep1, ',');
+        char* sep2 = strchr(sep1 + 1, ',');
         if (sep2 != nullptr) {
             *sep2 = '\0';
         } else {
@@ -317,7 +317,7 @@ int artInit()
 
         gHeadDescriptions[headIndex].goodFidgetCount = atoi(sep1 + 1);
 
-        char* sep3 = strchr(sep2, ',');
+        char* sep3 = strchr(sep2 + 1, ',');
         if (sep3 != nullptr) {
             *sep3 = '\0';
         } else {
