@@ -10,13 +10,13 @@
 
 namespace fallout {
 
-typedef enum AiMessageType {
+enum AiMessageType : int {
     AI_MESSAGE_TYPE_RUN,
     AI_MESSAGE_TYPE_MOVE,
     AI_MESSAGE_TYPE_ATTACK,
     AI_MESSAGE_TYPE_MISS,
     AI_MESSAGE_TYPE_HIT,
-} AiMessageType;
+};
 
 extern const char* gAreaAttackModeKeys[AREA_ATTACK_MODE_COUNT];
 extern const char* gAttackWhoKeys[ATTACK_WHO_COUNT];
@@ -105,7 +105,7 @@ bool _combatai_want_to_join(Object* a1);
 bool _combatai_want_to_stop(Object* a1);
 int critterSetTeam(Object* obj, int team);
 int critterSetAiPacket(Object* object, int aiPacket);
-int _combatai_msg(Object* critter, Attack* attack, int type, int delay);
+int _combatai_msg(Object* critter, Attack* attack, AiMessageType type, int delay);
 Object* _combat_ai_random_target(Attack* attack);
 void _combatai_check_retaliation(Object* a1, Object* a2);
 // Use this when the caller needs hook-specific context or must distinguish

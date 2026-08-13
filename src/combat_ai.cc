@@ -3334,7 +3334,7 @@ int critterSetAiPacket(Object* object, int aiPacket)
 
 // combatai_msg
 // 0x42B634
-int _combatai_msg(Object* critter, Attack* attack, int type, int delay)
+int _combatai_msg(Object* critter, Attack* attack, AiMessageType type, int delay)
 {
     if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         return -1;
