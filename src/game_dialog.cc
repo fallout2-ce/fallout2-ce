@@ -498,16 +498,16 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
         { 102, .areaAttackMode = AREA_ATTACK_MODE_BE_SURE }, // Be sure you won't hit me
         { 103, .areaAttackMode = AREA_ATTACK_MODE_BE_CAREFUL }, // Be careful not to hit me
         { 104, .areaAttackMode = AREA_ATTACK_MODE_BE_ABSOLUTELY_SURE }, // Be absolutely sure you won't hit me
-        { -1,  .areaAttackMode = AREA_ATTACK_MODE_FIRST },
+        { -1, .areaAttackMode = AREA_ATTACK_MODE_FIRST },
     },
     {
         // runAwayMode values are shifted by one here by purpose
         { 200, .runAwayMode = RUN_AWAY_MODE_NONE }, // Abject coward
         { 201, .runAwayMode = RUN_AWAY_MODE_COWARD }, // Your finger hurts
-        { 202, .runAwayMode = RUN_AWAY_MODE_FINGER_HURTS}, // You're bleeding a bit
-        { 203, .runAwayMode = RUN_AWAY_MODE_BLEEDING}, // Not feeling good
-        { 204, .runAwayMode = RUN_AWAY_MODE_NOT_FEELING_GOOD}, // You need a tourniquet
-        { 205, .runAwayMode = RUN_AWAY_MODE_TOURNIQUET}, // Never!
+        { 202, .runAwayMode = RUN_AWAY_MODE_FINGER_HURTS }, // You're bleeding a bit
+        { 203, .runAwayMode = RUN_AWAY_MODE_BLEEDING }, // Not feeling good
+        { 204, .runAwayMode = RUN_AWAY_MODE_NOT_FEELING_GOOD }, // You need a tourniquet
+        { 205, .runAwayMode = RUN_AWAY_MODE_TOURNIQUET }, // Never!
     },
     {
         { 300, .bestWeapon = BEST_WEAPON_NO_PREF }, // None
@@ -523,7 +523,7 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
         { 402, .distanceMode = DISTANCE_SNIPE }, // Snipe the enemy
         { 403, .distanceMode = DISTANCE_ON_YOUR_OWN }, // On your own
         { 404, .distanceMode = DISTANCE_STAY }, // Say where you are
-        { -1,  .distanceMode = DISTANCE_FIRST },
+        { -1, .distanceMode = DISTANCE_FIRST },
     },
     {
         { 500, .attackWho = ATTACK_WHO_WHOMEVER_ATTACKING_ME }, // Whomever is attacking me
@@ -531,7 +531,7 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
         { 502, .attackWho = ATTACK_WHO_WEAKEST }, // The weakest
         { 503, .attackWho = ATTACK_WHO_WHOMEVER }, // Whomever you want
         { 504, .attackWho = ATTACK_WHO_CLOSEST }, // Whoever is closest
-        { -1,  .attackWho = ATTACK_WHO_FIRST },
+        { -1, .attackWho = ATTACK_WHO_FIRST },
     },
     {
         { 600, .chemUse = CHEM_USE_CLEAN }, // I'm clean
@@ -539,7 +539,7 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
         { 602, .chemUse = CHEM_USE_STIMS_WHEN_HURT_LOTS }, // Stimpaks when hurt a lot
         { 603, .chemUse = CHEM_USE_SOMETIMES }, // Any drug some of the time
         { 604, .chemUse = CHEM_USE_ANYTIME }, // Any drug any time
-        { -1,  .chemUse = CHEM_USE_FIRST },
+        { -1, .chemUse = CHEM_USE_FIRST },
     },
 };
 
@@ -4379,7 +4379,7 @@ int _gdCustomSelect(int option)
             if (keyCode == KEY_RETURN || keyCode == 500) {
                 PartyMemberOptionSetting* ptr = &(_custom_settings[option][value]);
                 _custom_current_selected[option] = value;
-                
+
                 switch (option) {
                 case PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE:
                     aiSetAreaAttackMode(gGameDialogSpeaker, ptr->areaAttackMode);

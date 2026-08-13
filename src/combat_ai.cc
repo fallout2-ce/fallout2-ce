@@ -803,7 +803,7 @@ int aiSetAreaAttackMode(Object* critter, AreaAttackMode areaAttackMode)
 // 0x428248
 int aiSetRunAwayMode(Object* obj, RunAwayMode runAwayMode)
 {
-    if (runAwayMode >= (RUN_AWAY_MODE_COUNT -1)) {
+    if (runAwayMode >= (RUN_AWAY_MODE_COUNT - 1)) {
         return -1;
     }
 
@@ -918,7 +918,7 @@ int aiSetDisposition(Object* obj, Disposition disposition)
         return -1;
     }
 
-    if (!dispositionIsValid(disposition)  || disposition >= (DISPOSITION_COUNT - 1)) {
+    if (!dispositionIsValid(disposition) || disposition >= (DISPOSITION_COUNT - 1)) {
         return -1;
     }
 
