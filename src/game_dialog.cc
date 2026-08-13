@@ -158,7 +158,7 @@ typedef struct GameDialogButtonData {
     int value;
 } GameDialogButtonData;
 
-typedef struct PartyMemberOptionSetting {
+struct PartyMemberOptionSetting {
     int messageId;
     union {
         AreaAttackMode areaAttackMode;
@@ -168,7 +168,14 @@ typedef struct PartyMemberOptionSetting {
         AttackWho attackWho;
         ChemUse chemUse;
     };
-} PartyMemberOptionSetting;
+
+    PartyMemberOptionSetting(int messageId, AreaAttackMode areaAttackMode) : messageId(messageId), areaAttackMode(areaAttackMode) {}
+    PartyMemberOptionSetting(int messageId, RunAwayMode runAwayMode) : messageId(messageId), runAwayMode(runAwayMode) {}
+    PartyMemberOptionSetting(int messageId, BestWeapon areaAtbestWeaponackMode) : messageId(messageId), bestWeapon(bestWeapon) {}
+    PartyMemberOptionSetting(int messageId, DistanceMode distanceMode) : messageId(messageId), distanceMode(distanceMode) {}
+    PartyMemberOptionSetting(int messageId, AttackWho attackWho) : messageId(messageId), attackWho(attackWho) {}
+    PartyMemberOptionSetting(int messageId, ChemUse chemUse) : messageId(messageId), chemUse(chemUse) {}
+};
 
 typedef enum PartyMemberCustomizationOption {
     PARTY_MEMBER_CUSTOMIZATION_OPTION_AREA_ATTACK_MODE,
@@ -493,53 +500,53 @@ static GameDialogButtonData gGameDialogDispositionButtonsData[5] = {
 // 0x5189E4 custom_settings
 static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT][6] = {
     {
-        { .messageId = 100, .areaAttackMode = AREA_ATTACK_MODE_ALWAYS }, // Always!
-        { .messageId = 101, .areaAttackMode = AREA_ATTACK_MODE_SOMETIMES }, // Sometimes, don't worry about hitting me
-        { .messageId = 102, .areaAttackMode = AREA_ATTACK_MODE_BE_SURE }, // Be sure you won't hit me
-        { .messageId = 103, .areaAttackMode = AREA_ATTACK_MODE_BE_CAREFUL }, // Be careful not to hit me
-        { .messageId = 104, .areaAttackMode = AREA_ATTACK_MODE_BE_ABSOLUTELY_SURE }, // Be absolutely sure you won't hit me
-        { .messageId = -1, .areaAttackMode = AREA_ATTACK_MODE_FIRST },
+        PartyMemberOptionSetting(100, AREA_ATTACK_MODE_ALWAYS), // Always!
+        PartyMemberOptionSetting(101, AREA_ATTACK_MODE_SOMETIMES), // Sometimes, don't worry about hitting me
+        PartyMemberOptionSetting(102, AREA_ATTACK_MODE_BE_SURE), // Be sure you won't hit me
+        PartyMemberOptionSetting(103, AREA_ATTACK_MODE_BE_CAREFUL), // Be careful not to hit me
+        PartyMemberOptionSetting(104, AREA_ATTACK_MODE_BE_ABSOLUTELY_SURE), // Be absolutely sure you won't hit me
+        PartyMemberOptionSetting(-1,  AREA_ATTACK_MODE_FIRST),
     },
     {
         // runAwayMode values are shifted by one here by purpose
-        { .messageId = 200, .runAwayMode = RUN_AWAY_MODE_NONE }, // Abject coward
-        { .messageId = 201, .runAwayMode = RUN_AWAY_MODE_COWARD }, // Your finger hurts
-        { .messageId = 202, .runAwayMode = RUN_AWAY_MODE_FINGER_HURTS }, // You're bleeding a bit
-        { .messageId = 203, .runAwayMode = RUN_AWAY_MODE_BLEEDING }, // Not feeling good
-        { .messageId = 204, .runAwayMode = RUN_AWAY_MODE_NOT_FEELING_GOOD }, // You need a tourniquet
-        { .messageId = 205, .runAwayMode = RUN_AWAY_MODE_TOURNIQUET }, // Never!
+        PartyMemberOptionSetting(200, RUN_AWAY_MODE_NONE), // Abject coward
+        PartyMemberOptionSetting(201, RUN_AWAY_MODE_COWARD), // Your finger hurts
+        PartyMemberOptionSetting(202, RUN_AWAY_MODE_FINGER_HURTS), // You're bleeding a bit
+        PartyMemberOptionSetting(203, RUN_AWAY_MODE_BLEEDING), // Not feeling good
+        PartyMemberOptionSetting(204, RUN_AWAY_MODE_NOT_FEELING_GOOD), // You need a tourniquet
+        PartyMemberOptionSetting(205, RUN_AWAY_MODE_TOURNIQUET), // Never!
     },
     {
-        { .messageId = 300, .bestWeapon = BEST_WEAPON_NO_PREF }, // None
-        { .messageId = 301, .bestWeapon = BEST_WEAPON_MELEE }, // Melee
-        { .messageId = 302, .bestWeapon = BEST_WEAPON_MELEE_OVER_RANGED }, // Melee then ranged
-        { .messageId = 303, .bestWeapon = BEST_WEAPON_RANGED_OVER_MELEE }, // Ranged then melee
-        { .messageId = 304, .bestWeapon = BEST_WEAPON_RANGED }, // Ranged
-        { .messageId = 305, .bestWeapon = BEST_WEAPON_UNARMED }, // Unarmed
+        PartyMemberOptionSetting(300, BEST_WEAPON_NO_PREF), // None
+        PartyMemberOptionSetting(301, BEST_WEAPON_MELEE), // Melee
+        PartyMemberOptionSetting(302, BEST_WEAPON_MELEE_OVER_RANGED), // Melee then ranged
+        PartyMemberOptionSetting(303, BEST_WEAPON_RANGED_OVER_MELEE), // Ranged then melee
+        PartyMemberOptionSetting(304, BEST_WEAPON_RANGED), // Ranged
+        PartyMemberOptionSetting(305, BEST_WEAPON_UNARMED), // Unarmed
     },
     {
-        { .messageId = 400, .distanceMode = DISTANCE_STAY_CLOSE }, // Stay close to me
-        { .messageId = 401, .distanceMode = DISTANCE_CHARGE }, // Charge!
-        { .messageId = 402, .distanceMode = DISTANCE_SNIPE }, // Snipe the enemy
-        { .messageId = 403, .distanceMode = DISTANCE_ON_YOUR_OWN }, // On your own
-        { .messageId = 404, .distanceMode = DISTANCE_STAY }, // Say where you are
-        { .messageId = -1, .distanceMode = DISTANCE_FIRST },
+        PartyMemberOptionSetting(400, DISTANCE_STAY_CLOSE), // Stay close to me
+        PartyMemberOptionSetting(401, DISTANCE_CHARGE), // Charge!
+        PartyMemberOptionSetting(402, DISTANCE_SNIPE), // Snipe the enemy
+        PartyMemberOptionSetting(403, DISTANCE_ON_YOUR_OWN), // On your own
+        PartyMemberOptionSetting(404, DISTANCE_STAY), // Say where you are
+        PartyMemberOptionSetting(-1,  DISTANCE_FIRST),
     },
     {
-        { .messageId = 500, .attackWho = ATTACK_WHO_WHOMEVER_ATTACKING_ME }, // Whomever is attacking me
-        { .messageId = 501, .attackWho = ATTACK_WHO_STRONGEST }, // The strongest
-        { .messageId = 502, .attackWho = ATTACK_WHO_WEAKEST }, // The weakest
-        { .messageId = 503, .attackWho = ATTACK_WHO_WHOMEVER }, // Whomever you want
-        { .messageId = 504, .attackWho = ATTACK_WHO_CLOSEST }, // Whoever is closest
-        { .messageId = -1, .attackWho = ATTACK_WHO_FIRST },
+        PartyMemberOptionSetting(500, ATTACK_WHO_WHOMEVER_ATTACKING_ME), // Whomever is attacking me
+        PartyMemberOptionSetting(501, ATTACK_WHO_STRONGEST), // The strongest
+        PartyMemberOptionSetting(502, ATTACK_WHO_WEAKEST), // The weakest
+        PartyMemberOptionSetting(503, ATTACK_WHO_WHOMEVER), // Whomever you want
+        PartyMemberOptionSetting(504, ATTACK_WHO_CLOSEST), // Whoever is closest
+        PartyMemberOptionSetting(-1,  ATTACK_WHO_FIRST),
     },
     {
-        { .messageId = 600, .chemUse = CHEM_USE_CLEAN }, // I'm clean
-        { .messageId = 601, .chemUse = CHEM_USE_STIMS_WHEN_HURT_LITTLE }, // Stimpaks when hurt a bit
-        { .messageId = 602, .chemUse = CHEM_USE_STIMS_WHEN_HURT_LOTS }, // Stimpaks when hurt a lot
-        { .messageId = 603, .chemUse = CHEM_USE_SOMETIMES }, // Any drug some of the time
-        { .messageId = 604, .chemUse = CHEM_USE_ANYTIME }, // Any drug any time
-        { .messageId = -1, .chemUse = CHEM_USE_FIRST },
+        PartyMemberOptionSetting(600, CHEM_USE_CLEAN), // I'm clean
+        PartyMemberOptionSetting(601, CHEM_USE_STIMS_WHEN_HURT_LITTLE), // Stimpaks when hurt a bit
+        PartyMemberOptionSetting(602, CHEM_USE_STIMS_WHEN_HURT_LOTS), // Stimpaks when hurt a lot
+        PartyMemberOptionSetting(603, CHEM_USE_SOMETIMES), // Any drug some of the time
+        PartyMemberOptionSetting(604, CHEM_USE_ANYTIME), // Any drug any time
+        PartyMemberOptionSetting(-1,  CHEM_USE_FIRST),
     },
 };
 
