@@ -404,6 +404,7 @@ int mapSetElevation(int elevation)
         gameMouseObjectsShow();
     }
 
+    windowRefresh(gIsoWindow);
     tile_hires_stencil_on_center_tile_or_elevation_change();
 
     return 0;
