@@ -411,6 +411,7 @@ int mouseManagerSetFrame(char* fileName, int a2)
 
     gMouseManagerCurrentCacheEntryIndex = mouseManagerInsertCacheEntry(reinterpret_cast<void**>(&animatedData), MOUSE_MANAGER_MOUSE_TYPE_ANIMATED, datafileGetPalette(), fileName);
     strncpy(gMouseManagerCache[gMouseManagerCurrentCacheEntryIndex].field_32C, fileName, 31);
+    gMouseManagerCache[gMouseManagerCurrentCacheEntryIndex].field_32C[31] = '\0';
 
     gMouseManagerCurrentAnimatedData = animatedData;
     gMouseManagerCurrentPalette = gMouseManagerCache[gMouseManagerCurrentCacheEntryIndex].palette;
@@ -567,7 +568,10 @@ bool mouseManagerSetMousePointer(char* fileName)
         rc = mouseManagerSetMouseShape(string, v3, v4);
     }
 
-    strncpy(gMouseManagerCache[gMouseManagerCurrentCacheEntryIndex].field_32C, fileName, 31);
+    if (rc) {
+        strncpy(gMouseManagerCache[gMouseManagerCurrentCacheEntryIndex].field_32C, fileName, 31);
+        gMouseManagerCache[gMouseManagerCurrentCacheEntryIndex].field_32C[31] = '\0';
+    }
 
     return rc;
 }
