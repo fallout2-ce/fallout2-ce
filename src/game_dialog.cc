@@ -445,7 +445,7 @@ static int _head_phoneme_lookup[PHONEME_COUNT] = {
 };
 
 // 0x518900 phone_anim
-static int _phone_anim = 0;
+static HeadAnimation _phone_anim = HEAD_ANIMATION_VERY_GOOD_REACTION;
 
 // 0x518904 loop_cnt
 static int _loop_cnt = -1;
@@ -671,7 +671,7 @@ static int _gdCreateHeadWindow();
 static void _gdDestroyHeadWindow();
 static void _gdSetupFidget(int headFid, HeadFidget reaction);
 static void gameDialogWaitForFidgetToComplete();
-static void _gdPlayTransition(int animation);
+static void _gdPlayTransition(HeadAnimation animation);
 static void _reply_arrow_up(int btn, int keyCode);
 static void _reply_arrow_down(int btn, int keyCode);
 static void _reply_arrow_restore(int btn, int keyCode);
@@ -2615,7 +2615,7 @@ void _gdSetupFidget(int headFrmId, HeadFidget reaction)
         return;
     }
 
-    int anim = HEAD_ANIMATION_NEUTRAL_PHONEMES;
+    HeadAnimation anim = HEAD_ANIMATION_NEUTRAL_PHONEMES;
     switch (reaction) {
     case FIDGET_GOOD:
         anim = HEAD_ANIMATION_GOOD_PHONEMES;
@@ -2736,7 +2736,7 @@ void gameDialogWaitForFidgetToComplete()
 }
 
 // 0x447614
-void _gdPlayTransition(int anim)
+void _gdPlayTransition(HeadAnimation anim)
 {
     if (gGameDialogFidgetFrm == nullptr) {
         return;
