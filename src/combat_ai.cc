@@ -266,7 +266,7 @@ static char _attack_str[AI_MESSAGE_SIZE];
 // parse hurt_too_much
 static void _parse_hurt_str(char* str, Dam* valuePtr)
 {
-    *valuePtr = HURT_BLIND;
+    *valuePtr = DAM_NONE;
 
     str = compat_strlwr(str);
     while (*str) {
@@ -602,7 +602,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
     if (fileReadInt32(stream, &(ai->min_to_hit)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->min_hp)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->aggression)) == -1) return -1;
-    if (fileReadInt32Enum<HurtTooMuch>(stream, &(ai->hurt_too_much)) == -1) return -1;
+    if (fileReadInt32Enum<Dam>(stream, &(ai->hurt_too_much)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->secondary_freq)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->called_freq)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->font)) == -1) return -1;
@@ -646,7 +646,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
     if (fileWriteInt32(stream, ai->min_to_hit) == -1) return -1;
     if (fileWriteInt32(stream, ai->min_hp) == -1) return -1;
     if (fileWriteInt32(stream, ai->aggression) == -1) return -1;
-    if (fileWriteInt32Enum<HurtTooMuch>(stream, ai->hurt_too_much) == -1) return -1;
+    if (fileWriteInt32Enum<Dam>(stream, ai->hurt_too_much) == -1) return -1;
     if (fileWriteInt32(stream, ai->secondary_freq) == -1) return -1;
     if (fileWriteInt32(stream, ai->called_freq) == -1) return -1;
     if (fileWriteInt32(stream, ai->font) == -1) return -1;
@@ -3115,8 +3115,8 @@ void _combat_ai(Object* a1, Object* a2)
     }
 
     CritterCombatData* combatData = &(a1->data.critter.combat);
-    if ((combatData->maneuver & CRITTER_MANUEVER_FLEEING) != 0
-        || (combatData->results & ai->hurt_too_much) != 0
+    if ((combatData->maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE
+        || (combatData->results & ai->hurt_too_much) != DAM_NONE
         || critterGetStat(a1, STAT_CURRENT_HIT_POINTS) < ai->min_hp) {
         debugPrint("%s: FLEEING: I'm Hurt!", critterGetName(a1));
         _ai_run_away(a1, a2);
