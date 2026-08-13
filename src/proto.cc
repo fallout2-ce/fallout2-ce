@@ -500,6 +500,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.data.bodyType = BODY_TYPE_BIPED;
     proto->critter.headFid = -1;
     proto->critter.aiPacket = 1;
+    proto->critter.team = 0;
     if (!artExists(proto->fid)) {
         proto->fid = buildFid(OBJ_TYPE_CRITTER, 0, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
     }
@@ -942,7 +943,7 @@ int _proto_dude_init(const char* path)
         debugPrint("\n ** Error in proto_dude_init()! **\n");
     }
 
-    return 0;
+    return _retval;
 }
 
 // 0x49FBBC proto_scenery_init

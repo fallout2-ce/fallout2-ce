@@ -1301,7 +1301,7 @@ void soundDeleteInternal(Sound* sound)
 
     if (sound->soundBuffer != -1) {
         // NOTE: Uninline.
-        if (!soundIsPlaying(sound)) {
+        if (soundIsPlaying(sound)) {
             soundStop(sound);
         }
 
@@ -1505,6 +1505,8 @@ void _fadeSounds()
 
     fadeSound = _fadeHead;
     while (fadeSound != nullptr) {
+        FadeSound* next = fadeSound->next;
+
         if ((fadeSound->currentVolume > fadeSound->targetVolume || fadeSound->currentVolume + fadeSound->deltaVolume < fadeSound->targetVolume) && (fadeSound->currentVolume < fadeSound->targetVolume || fadeSound->currentVolume + fadeSound->deltaVolume > fadeSound->targetVolume)) {
             fadeSound->currentVolume += fadeSound->deltaVolume;
             soundSetVolume(fadeSound->sound, fadeSound->currentVolume);
@@ -1530,6 +1532,8 @@ void _fadeSounds()
 
             _removeFadeSound(fadeSound);
         }
+
+        fadeSound = next;
     }
 
     if (_fadeHead == nullptr) {

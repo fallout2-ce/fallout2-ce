@@ -2400,7 +2400,7 @@ int _win_group_check_buttons(int buttonCount, int* btns, int maxChecked, RadioBu
         return -1;
     }
 
-    if (buttonCount >= BUTTON_GROUP_BUTTON_LIST_CAPACITY) {
+    if (buttonCount > BUTTON_GROUP_BUTTON_LIST_CAPACITY) {
         return -1;
     }
 

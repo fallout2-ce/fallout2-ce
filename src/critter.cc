@@ -890,7 +890,9 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
 
     if (!critterFlagCheck(critter->pid, CRITTER_FLAT)) {
         critter->flags |= OBJECT_NO_BLOCK;
-        _obj_toggle_flat(critter, &tempRect);
+        if ((critter->flags & OBJECT_FLAT) == OBJECT_NONE) {
+            _obj_toggle_flat(critter, &tempRect);
+        }
     }
 
     // NOTE: using uninitialized updatedRect/tempRect if fid was not set.
