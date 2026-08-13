@@ -169,12 +169,36 @@ struct PartyMemberOptionSetting {
         ChemUse chemUse;
     };
 
-    PartyMemberOptionSetting(int messageId, AreaAttackMode areaAttackMode) : messageId(messageId), areaAttackMode(areaAttackMode) {}
-    PartyMemberOptionSetting(int messageId, RunAwayMode runAwayMode) : messageId(messageId), runAwayMode(runAwayMode) {}
-    PartyMemberOptionSetting(int messageId, BestWeapon areaAtbestWeaponackMode) : messageId(messageId), bestWeapon(bestWeapon) {}
-    PartyMemberOptionSetting(int messageId, DistanceMode distanceMode) : messageId(messageId), distanceMode(distanceMode) {}
-    PartyMemberOptionSetting(int messageId, AttackWho attackWho) : messageId(messageId), attackWho(attackWho) {}
-    PartyMemberOptionSetting(int messageId, ChemUse chemUse) : messageId(messageId), chemUse(chemUse) {}
+    PartyMemberOptionSetting(int messageId, AreaAttackMode areaAttackMode)
+        : messageId(messageId)
+        , areaAttackMode(areaAttackMode)
+    {
+    }
+    PartyMemberOptionSetting(int messageId, RunAwayMode runAwayMode)
+        : messageId(messageId)
+        , runAwayMode(runAwayMode)
+    {
+    }
+    PartyMemberOptionSetting(int messageId, BestWeapon areaAtbestWeaponackMode)
+        : messageId(messageId)
+        , bestWeapon(bestWeapon)
+    {
+    }
+    PartyMemberOptionSetting(int messageId, DistanceMode distanceMode)
+        : messageId(messageId)
+        , distanceMode(distanceMode)
+    {
+    }
+    PartyMemberOptionSetting(int messageId, AttackWho attackWho)
+        : messageId(messageId)
+        , attackWho(attackWho)
+    {
+    }
+    PartyMemberOptionSetting(int messageId, ChemUse chemUse)
+        : messageId(messageId)
+        , chemUse(chemUse)
+    {
+    }
 };
 
 typedef enum PartyMemberCustomizationOption {
@@ -505,7 +529,7 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
         PartyMemberOptionSetting(102, AREA_ATTACK_MODE_BE_SURE), // Be sure you won't hit me
         PartyMemberOptionSetting(103, AREA_ATTACK_MODE_BE_CAREFUL), // Be careful not to hit me
         PartyMemberOptionSetting(104, AREA_ATTACK_MODE_BE_ABSOLUTELY_SURE), // Be absolutely sure you won't hit me
-        PartyMemberOptionSetting(-1,  AREA_ATTACK_MODE_FIRST),
+        PartyMemberOptionSetting(-1, AREA_ATTACK_MODE_FIRST),
     },
     {
         // runAwayMode values are shifted by one here by purpose
@@ -530,7 +554,7 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
         PartyMemberOptionSetting(402, DISTANCE_SNIPE), // Snipe the enemy
         PartyMemberOptionSetting(403, DISTANCE_ON_YOUR_OWN), // On your own
         PartyMemberOptionSetting(404, DISTANCE_STAY), // Say where you are
-        PartyMemberOptionSetting(-1,  DISTANCE_FIRST),
+        PartyMemberOptionSetting(-1, DISTANCE_FIRST),
     },
     {
         PartyMemberOptionSetting(500, ATTACK_WHO_WHOMEVER_ATTACKING_ME), // Whomever is attacking me
@@ -538,7 +562,7 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
         PartyMemberOptionSetting(502, ATTACK_WHO_WEAKEST), // The weakest
         PartyMemberOptionSetting(503, ATTACK_WHO_WHOMEVER), // Whomever you want
         PartyMemberOptionSetting(504, ATTACK_WHO_CLOSEST), // Whoever is closest
-        PartyMemberOptionSetting(-1,  ATTACK_WHO_FIRST),
+        PartyMemberOptionSetting(-1, ATTACK_WHO_FIRST),
     },
     {
         PartyMemberOptionSetting(600, CHEM_USE_CLEAN), // I'm clean
@@ -546,7 +570,7 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
         PartyMemberOptionSetting(602, CHEM_USE_STIMS_WHEN_HURT_LOTS), // Stimpaks when hurt a lot
         PartyMemberOptionSetting(603, CHEM_USE_SOMETIMES), // Any drug some of the time
         PartyMemberOptionSetting(604, CHEM_USE_ANYTIME), // Any drug any time
-        PartyMemberOptionSetting(-1,  CHEM_USE_FIRST),
+        PartyMemberOptionSetting(-1, CHEM_USE_FIRST),
     },
 };
 
