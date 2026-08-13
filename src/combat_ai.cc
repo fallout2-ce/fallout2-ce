@@ -1004,6 +1004,8 @@ static int _ai_check_drugs(Object* critter)
         case CHEM_USE_ALWAYS:
             chemUseChance = kChemUseAlwaysChance;
             break;
+        default:
+            break;
         }
 
         int minHp = critterGetStat(critter, STAT_MAXIMUM_HIT_POINTS) * hpRatio / 100;
@@ -2167,6 +2169,8 @@ static bool aiCanUseItem(Object* critter, Object* item)
     case CHEM_USE_STIMS_WHEN_HURT_LOTS:
         hpRatio = kChemUseStimsWhenHurtLotsHpRatio;
         break;
+    default:
+        break;
     }
 
     int currentHp = critterGetStat(critter, STAT_CURRENT_HIT_POINTS);
@@ -2324,6 +2328,8 @@ static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defen
                 && !_combat_safety_invalidate_weapon(attacker, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY, defender, nullptr)) {
                 useSecondaryMode = true;
             }
+            break;
+        default:
             break;
         }
     } else {
