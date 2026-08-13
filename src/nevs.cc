@@ -195,11 +195,11 @@ void _nevs_update()
 
     gNevsHits = 0;
 
-    for (int index = 0; index < NEVS_COUNT; index++) {
-        if (gNevs == nullptr) {
-            continue;
-        }
+    if (gNevs == nullptr) {
+        return;
+    }
 
+    for (int index = 0; index < NEVS_COUNT; index++) {
         Nevs* nevs = &(gNevs[index]);
         if (nevs->used
             && ((nevs->program != nullptr && nevs->proc != 0) || nevs->callbackProc != nullptr)

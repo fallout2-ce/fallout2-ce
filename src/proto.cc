@@ -895,6 +895,8 @@ int _proto_dude_update_gender()
 // 0x49FA64 proto_dude_init
 int _proto_dude_init(const char* path)
 {
+    _retval = 0;
+
     gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     if (_init_true) {
