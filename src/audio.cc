@@ -42,12 +42,12 @@ typedef struct Audio {
     int position;
 } Audio;
 
-typedef enum AudioOpenMode {
+enum AudioOpenMode : int {
     AUDIO_OPEN_MODE_RAW = 0,
     AUDIO_OPEN_MODE_COMPRESSED = 1, // ACM
     AUDIO_OPEN_MODE_WAV = 2,
     AUDIO_OPEN_MODE_OGG = 3,
-} AudioOpenMode;
+};
 
 static bool defaultCompressionFunc(char* filePath);
 static int audioSoundDecoderReadHandler(void* data, void* buf, unsigned int size);
