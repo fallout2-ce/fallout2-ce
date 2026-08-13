@@ -1383,7 +1383,7 @@ void _intface_use_item()
         gameMouseSetMode(GAME_MOUSE_MODE_USE_CROSSHAIR);
     } else if (_obj_action_can_use(ptr->item)) {
         if (isInCombat()) {
-            int actionPointsRequired = itemGetActionPointCost(gDude, ptr->secondaryHitMode, false);
+            int actionPointsRequired = itemGetActionPointCost(gDude, ptr->primaryHitMode, false);
             if (actionPointsRequired <= gDude->data.critter.combat.ap) {
                 objectUseItem(gDude, ptr->item);
                 interfaceUpdateItems(false, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);

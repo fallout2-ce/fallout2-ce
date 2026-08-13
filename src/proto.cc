@@ -792,7 +792,7 @@ static int _proto_update_gen(Object* obj)
             break;
         case SCENERY_TYPE_LADDER_UP:
         case SCENERY_TYPE_LADDER_DOWN:
-            data->scenery.ladder.destinationMap = proto->scenery.data.ladder.destinationMap;
+            data->scenery.ladder.destinationBuiltTile = proto->scenery.data.ladder.destinationBuiltTile;
             break;
         default:
             break;
@@ -988,11 +988,11 @@ int proto_scenery_subdata_init(Proto* proto, SceneryType type)
         proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case SCENERY_TYPE_LADDER_UP:
-        proto->scenery.data.ladder.destinationMap = -1;
+        proto->scenery.data.ladder.destinationBuiltTile = -1;
         proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case SCENERY_TYPE_LADDER_DOWN:
-        proto->scenery.data.ladder.destinationMap = -1;
+        proto->scenery.data.ladder.destinationBuiltTile = -1;
         proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     default:
@@ -1653,7 +1653,7 @@ static int protoSceneryDataRead(SceneryProtoData* scenery_data, SceneryType type
         return 0;
     case SCENERY_TYPE_LADDER_UP:
     case SCENERY_TYPE_LADDER_DOWN:
-        if (fileReadInt32(stream, &(scenery_data->ladder.destinationMap)) == -1) return -1;
+        if (fileReadInt32(stream, &(scenery_data->ladder.destinationBuiltTile)) == -1) return -1;
 
         return 0;
     case SCENERY_TYPE_GENERIC:
@@ -1839,7 +1839,7 @@ static int protoSceneryDataWrite(SceneryProtoData* scenery_data, SceneryType typ
         return 0;
     case SCENERY_TYPE_LADDER_UP:
     case SCENERY_TYPE_LADDER_DOWN:
-        if (fileWriteInt32(stream, scenery_data->ladder.destinationMap) == -1) return -1;
+        if (fileWriteInt32(stream, scenery_data->ladder.destinationBuiltTile) == -1) return -1;
 
         return 0;
     case SCENERY_TYPE_GENERIC:
@@ -1897,6 +1897,8 @@ static int protoWrite(Proto* proto, File* stream)
         if (fileWriteInt32(stream, proto->scenery.material) == -1) return -1;
         if (fileWriteUInt8(stream, proto->scenery.soundId) == -1) return -1;
         if (protoSceneryDataWrite(&(proto->scenery.data), proto->scenery.type, stream) == -1) return -1;
+
+        return 0;
     case OBJ_TYPE_WALL:
         if (fileWriteInt32(stream, proto->wall.lightDistance) == -1) return -1;
         if (_db_fwriteLong(stream, proto->wall.lightIntensity) == -1) return -1;
