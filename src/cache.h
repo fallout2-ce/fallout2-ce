@@ -9,11 +9,30 @@ namespace fallout {
 
 #define INVALID_CACHE_ENTRY ((CacheEntry*)-1)
 
-typedef enum CacheEntryFlags {
+enum CacheEntryFlags : unsigned int {
+    CACHE_ENTRY_NONE = 0x00,
+
     // Specifies that cache entry has no references as should be evicted during
     // the next sweep operation.
     CACHE_ENTRY_MARKED_FOR_EVICTION = 0x01,
-} CacheEntryFlags;
+};
+
+constexpr inline CacheEntryFlags operator~(CacheEntryFlags rhs)
+{
+    return static_cast<CacheEntryFlags>(~static_cast<unsigned int>(rhs));
+}
+
+inline CacheEntryFlags& operator&=(CacheEntryFlags& lhs, CacheEntryFlags rhs)
+{
+    lhs = static_cast<CacheEntryFlags>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
+inline CacheEntryFlags& operator|=(CacheEntryFlags& lhs, CacheEntryFlags rhs)
+{
+    lhs = static_cast<CacheEntryFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+    return lhs;
+}
 
 typedef int CacheSizeProc(int key, int* sizePtr);
 typedef int CacheReadProc(int key, int* sizePtr, unsigned char* buffer);
@@ -29,7 +48,7 @@ typedef struct CacheEntry {
     // lifetime.
     unsigned int hits;
 
-    unsigned int flags;
+    CacheEntryFlags flags;
 
     // The most recent hit in terms of cache hit counter. Used to track most
     // recently used entries in eviction strategy.
