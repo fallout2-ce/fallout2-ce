@@ -1919,8 +1919,8 @@ static void opAttackComplex(Program* program)
 // 0x456DF0 op_start_gdialog
 static void opStartGameDialog(Program* program)
 {
-    Background background = static_cast<Background>(programStackPopInteger(program)); // no valiadation here as called often with -1
-    Head head = static_cast<Head>(programStackPopInteger(program)); // no valiadation here as called often with -1
+    Background background = static_cast<Background>(programStackPopInteger(program)); // no validation here as called often with -1
+    Head head = static_cast<Head>(programStackPopInteger(program)); // no validation here as called often with -1
     int reactionLevel = programStackPopInteger(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     programStackPopInteger(program);
