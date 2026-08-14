@@ -40,14 +40,15 @@ bool configGetString(Config* config, const char* sectionKey, const char* key, ch
 // No copy is performed. The returned pointer may refer either to an internal string or to defaultValue; it must be treated as read-only, and callers must ensure defaultValue remains valid for the duration of use.
 bool configGetString(Config* config, const char* sectionKey, const char* key, char** valuePtr, const char* defaultValue);
 bool configSetString(Config* config, const char* sectionKey, const char* key, const char* value);
-bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, unsigned char base = 0);
-bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, int defaultValue, unsigned char base = 0);
+bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr);
+bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, int defaultValue);
+bool configGetIntBase(Config* config, const char* sectionKey, const char* key, int* valuePtr, int defaultValue, int base);
 
 template <typename T>
-inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, unsigned char base = 0)
+inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr)
 {
     int temp = 0;
-    bool result = configGetInt(config, sectionKey, key, &temp, base);
+    bool result = configGetInt(config, sectionKey, key, &temp);
     if (result) {
         *valuePtr = static_cast<T>(temp);
     }
@@ -56,10 +57,10 @@ inline bool configGetEnum(Config* config, const char* sectionKey, const char* ke
 }
 
 template <typename T>
-inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, T defaultValue, unsigned char base = 0)
+inline bool configGetEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr, T defaultValue)
 {
     int temp = 0;
-    bool result = configGetInt(config, sectionKey, key, &temp, static_cast<int>(defaultValue), base);
+    bool result = configGetInt(config, sectionKey, key, &temp, static_cast<int>(defaultValue));
     if (result) {
         *valuePtr = static_cast<T>(temp);
     }
