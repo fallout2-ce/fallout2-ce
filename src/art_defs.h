@@ -2,8 +2,9 @@
 #define ART_DEFS_H
 namespace fallout {
 
-typedef enum Head {
-    HEAD_INVALID,
+enum Head : int {
+    HEAD_INVALID = -1,
+    HEAD_NONE,
     HEAD_MARCUS,
     HEAD_MYRON,
     HEAD_ELDER,
@@ -16,8 +17,18 @@ typedef enum Head {
     HEAD_HAKUNIN,
     HEAD_BOSS,
     HEAD_DYING_HAKUNIN,
-    HEAD_COUNT,
-} Head;
+};
+
+inline bool headIsValid(int head)
+{
+    return head >= HEAD_NONE;
+}
+
+inline Head headFromFid(int fid)
+{
+    int head = fid & 0xFFF;
+    return static_cast<Head>(head);
+}
 
 enum HeadAnimation : int {
     HEAD_ANIMATION_VERY_GOOD_REACTION = 0,
@@ -74,7 +85,7 @@ enum Background : int {
 
 inline bool backgroundIsValid(int background)
 {
-    return background > BACKGROUND_INVALID;
+    return background >= BACKGROUND_0;
 }
 
 enum DudeNativeLook : int {
