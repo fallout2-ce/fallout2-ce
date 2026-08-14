@@ -406,8 +406,9 @@ int artGetFidgetCount(int headFid)
         return headDescription->neutralFidgetCount;
     case FIDGET_BAD:
         return headDescription->badFidgetCount;
+    default:
+        return 0;
     }
-    return 0;
 }
 
 // 0x418FFC

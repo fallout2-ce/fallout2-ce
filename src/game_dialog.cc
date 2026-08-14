@@ -2615,13 +2615,16 @@ void _gdSetupFidget(Head head, HeadFidget reaction)
         return;
     }
 
-    HeadAnimation anim = HEAD_ANIMATION_NEUTRAL_PHONEMES;
+    HeadAnimation anim;
     switch (reaction) {
     case FIDGET_GOOD:
         anim = HEAD_ANIMATION_GOOD_PHONEMES;
         break;
     case FIDGET_BAD:
         anim = HEAD_ANIMATION_BAD_PHONEMES;
+        break;
+    default:
+        anim = HEAD_ANIMATION_NEUTRAL_PHONEMES;
         break;
     }
 
@@ -3072,6 +3075,8 @@ void _talk_to_critter_reacts(int reaction)
             _gdPlayTransition(HEAD_ANIMATION_BAD_TO_NEUTRAL);
             _gdSetupFidget(headFromFid(gGameDialogHeadFid), FIDGET_NEUTRAL);
             break;
+        default:
+            break;
         }
         break;
     case GAME_DIALOG_REACTION_NEUTRAL:
@@ -3089,6 +3094,8 @@ void _talk_to_critter_reacts(int reaction)
         case FIDGET_BAD:
             _gdPlayTransition(HEAD_ANIMATION_VERY_BAD_REACTION);
             _gdSetupFidget(headFromFid(gGameDialogHeadFid), FIDGET_BAD);
+            break;
+        default:
             break;
         }
         break;
