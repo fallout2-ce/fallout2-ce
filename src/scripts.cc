@@ -1567,9 +1567,16 @@ int scriptExecProc(int sid, int proc)
         // NOTE: Uninline.
         runProgram(program);
         programInterpret(program, -1);
+
+        // Some objects destroy themselves in their start procedure, which runs when the script is initialized above.
+        // In that case, the script is in an invalid state to run the proc beelow.
+        if ((program->flags & (PROGRAM_FLAG_FATAL_ERROR | PROGRAM_FLAG_CHILD_CALL | PROGRAM_FLAG_CHILD_SPAWN)) != 0) {
+            return 0;
+        }
     }
 
     // CE: Fix for the start procedure not being called correctly if the required standard script procedure is missing.
+    // TODO: vanilla cached this before interpreting the program
     int procedureIndex = script->procs[proc];
     if (procedureIndex == 0) {
         // Fixme: hook receives `proc` which is wrong in this context
@@ -2910,17 +2917,26 @@ bool scriptsExecSpatialProc(Object* object, int tile, int elevation)
 // 0x4A677C
 int scriptsExecStartProc()
 {
-    // note: this could do weird things if scripts/object are deleted while running these procs
+    std::vector<int> sidList;
     for (int scriptListIndex = 0; scriptListIndex < SCRIPT_TYPE_COUNT; scriptListIndex++) {
         ScriptList* scriptList = &(gScriptLists[scriptListIndex]);
         ScriptListExtent* extent = scriptList->head;
         while (extent != nullptr) {
             for (int scriptIndex = 0; scriptIndex < extent->length; scriptIndex++) {
                 Script* script = &(extent->scripts[scriptIndex]);
-                scriptExecProc(script->sid, SCRIPT_PROC_START);
+                sidList.push_back(script->sid);
             }
             extent = extent->next;
         }
+    }
+
+    for (int sid : sidList) {
+        Script* script;
+        if (scriptGetScript(sid, &script) == -1) {
+            continue;
+        }
+
+        scriptExecProc(sid, SCRIPT_PROC_START);
     }
 
     return 0;
