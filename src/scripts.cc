@@ -1568,12 +1568,15 @@ int scriptExecProc(int sid, int proc)
         runProgram(program);
         programInterpret(program, -1);
 
+        // Some objects destroy themselves in their start procedure, which runs when the script is initialized above.
+        // In that case, the script is in an invalid state to run the proc beelow.
         if ((program->flags & (PROGRAM_FLAG_FATAL_ERROR | PROGRAM_FLAG_CHILD_CALL | PROGRAM_FLAG_CHILD_SPAWN)) != 0) {
             return 0;
         }
     }
 
     // CE: Fix for the start procedure not being called correctly if the required standard script procedure is missing.
+    // TODO: vanilla cached this before interpreting the program
     int procedureIndex = script->procs[proc];
     if (procedureIndex == 0) {
         // Fixme: hook receives `proc` which is wrong in this context
