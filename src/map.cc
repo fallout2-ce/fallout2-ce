@@ -404,13 +404,13 @@ int mapSetElevation(int elevation)
         gameMouseObjectsShow();
     }
 
-    // Makes sure buffer is updated
+    tile_hires_stencil_on_center_tile_or_elevation_change();
+
+    // Makes sure buffer is updated.
     tileWindowRefresh();
 
-    // force a redraw (in case new elevation isn't scrollable)
+    // Force a redraw in case new elevation isn't scrollable.
     windowRefresh(gIsoWindow);
-
-    tile_hires_stencil_on_center_tile_or_elevation_change();
 
     return 0;
 }
