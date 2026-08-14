@@ -4780,8 +4780,8 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
         if (data != nullptr) {
             int destWidth = GAME_DIALOG_WINDOW_WIDTH;
             int destOffset = destWidth * (200 - height) + rotationOffsetX + (388 - width) / 2;
-            if (destOffset + width * rotationOffsetY > 0) {
-                destOffset += width * rotationOffsetY;
+            if (destOffset + destWidth * rotationOffsetY > 0) {
+                destOffset += destWidth * rotationOffsetY;
             }
 
             blitBufferToBufferTrans(

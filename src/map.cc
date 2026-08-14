@@ -1225,10 +1225,10 @@ static int _map_age_dead_critters()
     }
 
     int agingType;
-    if (hoursSinceLastVisit > 6 * 24) {
-        agingType = 1;
-    } else if (hoursSinceLastVisit > 14 * 24) {
+    if (hoursSinceLastVisit > 21 * 24) {
         agingType = 2;
+    } else if (hoursSinceLastVisit > 14 * 24) {
+        agingType = 1;
     } else {
         return 0;
     }
@@ -1242,7 +1242,7 @@ static int _map_age_dead_critters()
         ObjectType type = objectTypeFromPid(obj->pid);
         if (type == OBJ_TYPE_CRITTER) {
             if (obj != gDude && critterIsDead(obj)) {
-                if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(obj->pid, CRITTER_NO_HEAL)) {
+                if (critterGetKillType(obj) != KILL_TYPE_ROBOT && !critterFlagCheck(obj->pid, CRITTER_NO_AGE)) {
                     objects[count++] = obj;
 
                     if (count >= capacity) {
@@ -1255,7 +1255,7 @@ static int _map_age_dead_critters()
                     }
                 }
             }
-        } else if (agingType == 2 && type == OBJ_TYPE_MISC && obj->pid == 0x500000B) {
+        } else if (agingType == 2 && type == OBJ_TYPE_MISC && obj->fid == 0x500000B) {
             objects[count++] = obj;
             if (count >= capacity) {
                 capacity *= 2;
@@ -1310,13 +1310,8 @@ static int replaceDeadCritter(Object* critter)
         return -1;
     }
 
-    Proto* proto;
-    if (protoGetProto(critter->pid, &proto) == -1) {
-        return -1;
-    }
-
     int frame = randomBetween(0, 3);
-    if ((proto->critter.flags & CRITTER_FLAT)) {
+    if ((critter->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
         frame += 6;
     } else {
         KillType killType = critterGetKillType(critter);
@@ -1409,7 +1404,7 @@ int mapHandleTransition()
 
             memset(&gMapTransition, 0, sizeof(gMapTransition));
 
-            int city;
+            int city = -1;
             wmMatchAreaContainingMapIdx(gMapHeader.index, &city);
             if (wmTeleportToArea(city) == -1) {
                 debugPrint("\nError: couldn't make jump on worldmap for map jump!");

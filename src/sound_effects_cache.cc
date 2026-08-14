@@ -75,7 +75,7 @@ int soundEffectsCacheInit(int cacheSize, const char* effectsPath)
 {
     gSoundEffectsCacheDebugLevel = settings.sound.debug_sfxc;
 
-    if (cacheSize <= SOUND_EFFECTS_CACHE_MIN_SIZE) {
+    if (cacheSize < SOUND_EFFECTS_CACHE_MIN_SIZE) {
         return -1;
     }
 
@@ -397,7 +397,7 @@ static void soundEffectsCacheFreeHandles()
     if (_sfxc_files_open) {
         for (int index = 0; index < SOUND_EFFECTS_MAX_COUNT; index++) {
             SoundEffect* soundEffect = &(gSoundEffects[index]);
-            if (!soundEffect->used) {
+            if (soundEffect->used) {
                 soundEffectsCacheFileClose(index);
             }
         }

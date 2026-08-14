@@ -164,9 +164,8 @@ int lipsStart()
             break;
         }
 
-        v2++;
-
         gLipsCurrentPhoneme = gLipsData.phonemes[v2];
+        v2++;
     }
 
     int speechVolume = speechGetVolume();
@@ -179,7 +178,7 @@ int lipsStart()
         _head_marker_current = 0;
 
         soundStop(gLipsData.sound);
-        gLipsData.flags |= ~(LIPS_FLAG_0x01 | LIPS_FLAG_0x02);
+        gLipsData.flags &= ~(LIPS_FLAG_0x01 | LIPS_FLAG_0x02);
     }
 
     return 0;

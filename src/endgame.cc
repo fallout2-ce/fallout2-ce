@@ -536,7 +536,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
                 break;
             }
 
-            if (getTicksSince(referenceTime) > delay) {
+            if (getTicksSince(referenceTime) >= delay) {
                 break;
             }
 

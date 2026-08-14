@@ -524,7 +524,7 @@ typedef struct {
 } SceneryProtoElevatorData;
 
 typedef struct {
-    int destinationMap; // destination map
+    int destinationBuiltTile; // destination built tile
 } SceneryProtoLadderData;
 
 typedef struct {

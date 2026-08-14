@@ -597,7 +597,9 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
             if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
                 if (*pixel != COLOR_GREEN || objectColor != COLOR_DARK_GREEN) {
                     pixel[0] = objectColor;
-                    pixel[1] = objectColor;
+                    if (pixel[1] != COLOR_GREEN || objectColor != COLOR_DARK_GREEN) {
+                        pixel[1] = objectColor;
+                    }
                 }
 
                 if (object == gDude) {

@@ -93,6 +93,8 @@ void movieEffectsExit()
     _inside_fade = false;
 
     memset(_source_palette, 0, sizeof(_source_palette));
+
+    gMovieEffectsInitialized = false;
 }
 
 // 0x487D7C moviefx_start

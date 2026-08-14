@@ -1138,7 +1138,7 @@ static int _MVE_sndAdd(unsigned char* dest, unsigned char** src_ptr, int a3, int
     }
 
     if (!_snd_buf) {
-        memcpy(dest, src_ptr, a3);
+        memcpy(dest, *src_ptr, a3);
         *src_ptr += a3;
         return a4;
     }
@@ -1268,7 +1268,7 @@ static void palMakeSynthPalette(int a1, int a2, int a3, int a4, int a5, int a6)
         for (j = 0; j < a6; j++) {
             pal_tbl[3 * a4 + 3 * j] = 0;
             pal_tbl[3 * a4 + 3 * j + 1] = (63 * i) / (a5 - 1);
-            pal_tbl[3 * a1 + 3 * j + 2] = 5 * ((63 * j) / (a6 - 1)) / 8;
+            pal_tbl[3 * a4 + 3 * j + 2] = 5 * ((63 * j) / (a6 - 1)) / 8;
         }
     }
 }

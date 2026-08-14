@@ -682,7 +682,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         nullptr,
         BUTTON_FLAG_TRANSPARENT);
     if (scrollUpBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
+        buttonSetCallbacks(scrollUpBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
     int scrollDownButton = buttonCreate(win,
@@ -698,8 +698,8 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getData(),
         nullptr,
         BUTTON_FLAG_TRANSPARENT);
-    if (scrollUpBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
+    if (scrollDownButton != -1) {
+        buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
     buttonCreate(
@@ -1047,7 +1047,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         nullptr,
         BUTTON_FLAG_TRANSPARENT);
     if (scrollUpBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
+        buttonSetCallbacks(scrollUpBtn, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
     int scrollDownButton = buttonCreate(win,
@@ -1063,8 +1063,8 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         frmImages[FILE_DIALOG_FRM_SCROLL_DOWN_ARROW_PRESSED].getData(),
         nullptr,
         BUTTON_FLAG_TRANSPARENT);
-    if (scrollUpBtn != -1) {
-        buttonSetCallbacks(cancelBtn, _gsound_red_butt_press, _gsound_red_butt_release);
+    if (scrollDownButton != -1) {
+        buttonSetCallbacks(scrollDownButton, _gsound_red_butt_press, _gsound_red_butt_release);
     }
 
     buttonCreate(

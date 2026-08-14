@@ -195,6 +195,10 @@ void _nevs_update()
 
     gNevsHits = 0;
 
+    if (gNevs == nullptr) {
+        return;
+    }
+
     for (int index = 0; index < NEVS_COUNT; index++) {
         Nevs* nevs = &(gNevs[index]);
         if (nevs->used

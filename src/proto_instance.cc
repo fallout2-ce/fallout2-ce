@@ -861,7 +861,7 @@ static UseItemResultCode _obj_use_flare(Object* critter, Object* flare)
     } else {
         if (critter == gDude) {
             // You light the flare.
-            messageListItem.num = 588;
+            messageListItem.num = 587;
             if (messageListGetItem(&gProtoMessageList, &messageListItem)) {
                 displayMonitorAddMessage(messageListItem.text);
             }
@@ -2296,7 +2296,7 @@ int objectAttemptPlacementPartyMember(Object* obj, int tile, int elevation)
     }
 
     int destinationTile = tile;
-    Rotation rotation = ROTATION_NE;
+    Rotation rotation = ROTATION_NW;
     if (!wmEvalTileNumForPlacement(tile)) {
         destinationTile = gDude->tile;
         for (int i = 1; i <= 100; i++) {
