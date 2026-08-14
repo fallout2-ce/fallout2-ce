@@ -10,13 +10,13 @@
 
 namespace fallout {
 
-typedef enum AiMessageType {
+enum AiMessageType : int {
     AI_MESSAGE_TYPE_RUN,
     AI_MESSAGE_TYPE_MOVE,
     AI_MESSAGE_TYPE_ATTACK,
     AI_MESSAGE_TYPE_MISS,
     AI_MESSAGE_TYPE_HIT,
-} AiMessageType;
+};
 
 extern const char* gAreaAttackModeKeys[AREA_ATTACK_MODE_COUNT];
 extern const char* gAttackWhoKeys[ATTACK_WHO_COUNT];
@@ -32,6 +32,8 @@ struct AiMessageRange {
     int end;
 };
 
+#define AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT (3)
+
 struct AiPacket {
     char* name;
     int packet_num;
@@ -39,7 +41,7 @@ struct AiPacket {
     int min_to_hit;
     int min_hp;
     int aggression;
-    int hurt_too_much;
+    Dam hurt_too_much;
     int secondary_freq;
     int called_freq;
     int font;
@@ -51,14 +53,14 @@ struct AiPacket {
     AiMessageRange attack;
     AiMessageRange miss;
     AiMessageRange hit[HIT_LOCATION_SPECIFIC_COUNT];
-    int area_attack_mode;
-    int run_away_mode;
-    int best_weapon;
-    int distance;
-    int attack_who;
-    int chem_use;
-    int chem_primary_desire[3];
-    int disposition;
+    AreaAttackMode area_attack_mode;
+    RunAwayMode run_away_mode;
+    BestWeapon best_weapon;
+    DistanceMode distance;
+    AttackWho attack_who;
+    ChemUse chem_use;
+    int chem_primary_desire[AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT];
+    Disposition disposition;
     char* body_type;
     char* general_type;
 };
@@ -70,24 +72,24 @@ int aiLoad(File* stream);
 int aiSave(File* stream);
 int combat_ai_num();
 char* combat_ai_name(int packet_num);
-int aiGetAreaAttackMode(Object* obj);
-int aiGetRunAwayMode(Object* obj);
-int aiGetBestWeapon(Object* obj);
-int aiGetDistance(Object* obj);
-int aiGetAttackWho(Object* obj);
-int aiGetChemUse(Object* obj);
+AreaAttackMode aiGetAreaAttackMode(Object* obj);
+RunAwayMode aiGetRunAwayMode(Object* obj);
+BestWeapon aiGetBestWeapon(Object* obj);
+DistanceMode aiGetDistance(Object* obj);
+AttackWho aiGetAttackWho(Object* obj);
+ChemUse aiGetChemUse(Object* obj);
 AiPacket* aiGetPacket(Object* obj);
-int aiSetAreaAttackMode(Object* critter, int areaAttackMode);
-int aiSetRunAwayMode(Object* obj, int run_away_mode);
-int aiSetBestWeapon(Object* critter, int bestWeapon);
-int aiSetDistance(Object* critter, int distance);
-int aiSetAttackWho(Object* critter, int attackWho);
-int aiSetChemUse(Object* critter, int chemUse);
+int aiSetAreaAttackMode(Object* critter, AreaAttackMode areaAttackMode);
+int aiSetRunAwayMode(Object* obj, RunAwayMode run_away_mode);
+int aiSetBestWeapon(Object* critter, BestWeapon bestWeapon);
+int aiSetDistance(Object* critter, DistanceMode distance);
+int aiSetAttackWho(Object* critter, AttackWho attackWho);
+int aiSetChemUse(Object* critter, ChemUse chemUse);
 bool aiIsBurstDisabled(Object* critter);
 void aiSetBurstDisabled(Object* critter, bool disable);
 void aiRemoveBurstDisabled(Object* critter);
-int aiGetDisposition(Object* obj);
-int aiSetDisposition(Object* obj, int a2);
+Disposition aiGetDisposition(Object* obj);
+int aiSetDisposition(Object* obj, Disposition disposition);
 int _caiSetupTeamCombat(Object* attackerTeam, Object* defenderTeam);
 int _caiTeamCombatInit(Object** crittersList, int crittersListLength);
 void _caiTeamCombatExit();
@@ -103,7 +105,7 @@ bool _combatai_want_to_join(Object* a1);
 bool _combatai_want_to_stop(Object* a1);
 int critterSetTeam(Object* obj, int team);
 int critterSetAiPacket(Object* object, int aiPacket);
-int _combatai_msg(Object* critter, Attack* attack, int type, int delay);
+int _combatai_msg(Object* critter, Attack* attack, AiMessageType type, int delay);
 Object* _combat_ai_random_target(Attack* attack);
 void _combatai_check_retaliation(Object* a1, Object* a2);
 // Use this when the caller needs hook-specific context or must distinguish

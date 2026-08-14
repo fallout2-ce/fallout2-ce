@@ -38,8 +38,6 @@
 
 namespace fallout {
 
-#define AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT (3)
-
 #define AI_MESSAGE_SIZE 260
 
 static constexpr int kChemUseStimsWhenHurtLittleHpRatio = 60;
@@ -69,7 +67,7 @@ typedef struct AiRetargetData {
     int sourceIntelligence;
 } AiRetargetData;
 
-static void _parse_hurt_str(char* str, int* out_value);
+static void _parse_hurt_str(char* str, Dam* valuePtr);
 static int _cai_match_str_to_list(const char* str, const char** list, int count, int* out_value);
 static void aiPacketInit(AiPacket* ai);
 static int aiPacketRead(File* stream, AiPacket* ai);
@@ -206,18 +204,18 @@ const char* gHurtTooMuchKeys[HURT_COUNT] = {
 // hurt_too_much
 //
 // 0x518124 rmatchHurtVals
-static const int _rmatchHurtVals[5] = {
+static const Dam _rmatchHurtVals[HURT_COUNT + 1] = {
     DAM_BLIND,
     DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT | DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
     DAM_CRIP_LEG_LEFT | DAM_CRIP_LEG_RIGHT,
     DAM_CRIP_ARM_LEFT | DAM_CRIP_ARM_RIGHT,
-    0,
+    DAM_NONE,
 };
 
 // Hit points in percent to choose run away mode.
 //
 // 0x518138 hp_run_away_value
-static const int _hp_run_away_value[6] = {
+static const int _hp_run_away_value[RUN_AWAY_MODE_COUNT - 1] = {
     0,
     25,
     40,
@@ -266,9 +264,9 @@ static Object** _curr_crit_list;
 static char _attack_str[AI_MESSAGE_SIZE];
 
 // parse hurt_too_much
-static void _parse_hurt_str(char* str, int* valuePtr)
+static void _parse_hurt_str(char* str, Dam* valuePtr)
 {
-    *valuePtr = 0;
+    *valuePtr = DAM_NONE;
 
     str = compat_strlwr(str);
     while (*str) {
@@ -279,7 +277,7 @@ static void _parse_hurt_str(char* str, int* valuePtr)
         str[delimeterPos] = '\0';
 
         int index;
-        for (index = 0; index < HURT_COUNT; index++) {
+        for (index = HURT_FIRST; index < HURT_COUNT; index++) {
             if (strcmp(str, gHurtTooMuchKeys[index]) == 0) {
                 *valuePtr |= _rmatchHurtVals[index];
                 break;
@@ -313,23 +311,32 @@ static int _cai_match_str_to_list(const char* str, const char** list, int count,
     return 0;
 }
 
+template <typename T>
+inline int _cai_match_str_to_list_enum(const char* str, const char** list, int count, T* valuePtr)
+{
+    int temp;
+    int result = _cai_match_str_to_list(str, list, count, &temp);
+    *valuePtr = static_cast<T>(temp);
+    return result;
+}
+
 // 0x426FE0
 static void aiPacketInit(AiPacket* ai)
 {
     ai->name = nullptr;
 
-    ai->area_attack_mode = -1;
-    ai->run_away_mode = -1;
-    ai->best_weapon = -1;
-    ai->distance = -1;
-    ai->attack_who = -1;
-    ai->chem_use = -1;
+    ai->area_attack_mode = AREA_ATTACK_MODE_INVALID;
+    ai->run_away_mode = RUN_AWAY_MODE_INVALID;
+    ai->best_weapon = BEST_WEAPON_INVALID;
+    ai->distance = DISTANCE_INVALID;
+    ai->attack_who = ATTACK_WHO_INVALID;
+    ai->chem_use = CHEM_USE_INVALID;
 
     for (int index = 0; index < AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT; index++) {
         ai->chem_primary_desire[index] = -1;
     }
 
-    ai->disposition = -1;
+    ai->disposition = DISPOSITION_INVALID;
 }
 
 // ai_init
@@ -413,40 +420,41 @@ int aiInit()
         ai->hit[HIT_LOCATION_GROIN].end++;
 
         if (configGetString(&config, sectionEntry->key, "area_attack_mode", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT, &(ai->area_attack_mode));
+            _cai_match_str_to_list_enum<AreaAttackMode>(stringValue, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT, &(ai->area_attack_mode));
         } else {
-            ai->area_attack_mode = -1;
+            ai->area_attack_mode = AREA_ATTACK_MODE_INVALID;
         }
 
         if (configGetString(&config, sectionEntry->key, "run_away_mode", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT, &(ai->run_away_mode));
-
-            if (ai->run_away_mode >= 0) {
+            _cai_match_str_to_list_enum<RunAwayMode>(stringValue, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT, &(ai->run_away_mode));
+            if (ai->run_away_mode >= RUN_AWAY_MODE_FIRST) {
                 ai->run_away_mode--;
             }
         }
 
         if (configGetString(&config, sectionEntry->key, "best_weapon", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gBestWeaponKeys, BEST_WEAPON_COUNT, &(ai->best_weapon));
+            _cai_match_str_to_list_enum<BestWeapon>(stringValue, gBestWeaponKeys, BEST_WEAPON_COUNT, &(ai->best_weapon));
         }
 
         if (configGetString(&config, sectionEntry->key, "distance", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gDistanceModeKeys, DISTANCE_COUNT, &(ai->distance));
+            _cai_match_str_to_list_enum<DistanceMode>(stringValue, gDistanceModeKeys, DISTANCE_COUNT, &(ai->distance));
         }
 
         if (configGetString(&config, sectionEntry->key, "attack_who", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gAttackWhoKeys, ATTACK_WHO_COUNT, &(ai->attack_who));
+            _cai_match_str_to_list_enum<AttackWho>(stringValue, gAttackWhoKeys, ATTACK_WHO_COUNT, &(ai->attack_who));
         }
 
         if (configGetString(&config, sectionEntry->key, "chem_use", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gChemUseKeys, CHEM_USE_COUNT, &(ai->chem_use));
+            _cai_match_str_to_list_enum<ChemUse>(stringValue, gChemUseKeys, CHEM_USE_COUNT, &(ai->chem_use));
         }
 
         configGetIntList(&config, sectionEntry->key, "chem_primary_desire", ai->chem_primary_desire, AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT);
 
         if (configGetString(&config, sectionEntry->key, "disposition", &stringValue)) {
-            _cai_match_str_to_list(stringValue, gDispositionKeys, DISPOSITION_COUNT, &(ai->disposition));
-            ai->disposition--;
+            _cai_match_str_to_list_enum<Disposition>(stringValue, gDispositionKeys, DISPOSITION_COUNT, &(ai->disposition));
+            if (ai->disposition >= DISPOSITION_FIRST) {
+                ai->disposition--;
+            }
         }
 
         if (configGetString(&config, sectionEntry->key, "body_type", &stringValue)) {
@@ -549,7 +557,7 @@ int aiLoad(File* stream)
             }
 
             AiPacket* ai = aiGetPacketByNum(proto->critter.aiPacket);
-            if (ai->disposition == 0) {
+            if (ai->disposition == DISPOSITION_NONE) {
                 aiPacketRead(stream, ai);
             }
         }
@@ -570,7 +578,7 @@ int aiSave(File* stream)
             }
 
             AiPacket* ai = aiGetPacketByNum(proto->critter.aiPacket);
-            if (ai->disposition == 0) {
+            if (ai->disposition == DISPOSITION_NONE) {
                 aiPacketWrite(stream, ai);
             }
         }
@@ -594,7 +602,7 @@ static int aiPacketRead(File* stream, AiPacket* ai)
     if (fileReadInt32(stream, &(ai->min_to_hit)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->min_hp)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->aggression)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->hurt_too_much)) == -1) return -1;
+    if (fileReadInt32Enum<Dam>(stream, &(ai->hurt_too_much)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->secondary_freq)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->called_freq)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->font)) == -1) return -1;
@@ -616,12 +624,12 @@ static int aiPacketRead(File* stream, AiPacket* ai)
         if (fileReadInt32(stream, &(range->end)) == -1) return -1;
     }
 
-    if (fileReadInt32(stream, &(ai->area_attack_mode)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->best_weapon)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->distance)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->attack_who)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->chem_use)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->run_away_mode)) == -1) return -1;
+    if (fileReadInt32Enum<AreaAttackMode>(stream, &(ai->area_attack_mode)) == -1) return -1;
+    if (fileReadInt32Enum<BestWeapon>(stream, &(ai->best_weapon)) == -1) return -1;
+    if (fileReadInt32Enum<DistanceMode>(stream, &(ai->distance)) == -1) return -1;
+    if (fileReadInt32Enum<AttackWho>(stream, &(ai->attack_who)) == -1) return -1;
+    if (fileReadInt32Enum<ChemUse>(stream, &(ai->chem_use)) == -1) return -1;
+    if (fileReadInt32Enum<RunAwayMode>(stream, &(ai->run_away_mode)) == -1) return -1;
 
     for (int index = 0; index < AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT; index++) {
         if (fileReadInt32(stream, &(ai->chem_primary_desire[index])) == -1) return -1;
@@ -638,7 +646,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
     if (fileWriteInt32(stream, ai->min_to_hit) == -1) return -1;
     if (fileWriteInt32(stream, ai->min_hp) == -1) return -1;
     if (fileWriteInt32(stream, ai->aggression) == -1) return -1;
-    if (fileWriteInt32(stream, ai->hurt_too_much) == -1) return -1;
+    if (fileWriteInt32Enum<Dam>(stream, ai->hurt_too_much) == -1) return -1;
     if (fileWriteInt32(stream, ai->secondary_freq) == -1) return -1;
     if (fileWriteInt32(stream, ai->called_freq) == -1) return -1;
     if (fileWriteInt32(stream, ai->font) == -1) return -1;
@@ -660,12 +668,12 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
         if (fileWriteInt32(stream, range->end) == -1) return -1;
     }
 
-    if (fileWriteInt32(stream, ai->area_attack_mode) == -1) return -1;
-    if (fileWriteInt32(stream, ai->best_weapon) == -1) return -1;
-    if (fileWriteInt32(stream, ai->distance) == -1) return -1;
-    if (fileWriteInt32(stream, ai->attack_who) == -1) return -1;
-    if (fileWriteInt32(stream, ai->chem_use) == -1) return -1;
-    if (fileWriteInt32(stream, ai->run_away_mode) == -1) return -1;
+    if (fileWriteInt32Enum<AreaAttackMode>(stream, ai->area_attack_mode) == -1) return -1;
+    if (fileWriteInt32Enum<BestWeapon>(stream, ai->best_weapon) == -1) return -1;
+    if (fileWriteInt32Enum<DistanceMode>(stream, ai->distance) == -1) return -1;
+    if (fileWriteInt32Enum<AttackWho>(stream, ai->attack_who) == -1) return -1;
+    if (fileWriteInt32Enum<ChemUse>(stream, ai->chem_use) == -1) return -1;
+    if (fileWriteInt32Enum<RunAwayMode>(stream, ai->run_away_mode) == -1) return -1;
 
     for (int index = 0; index < AI_PACKET_CHEM_PRIMARY_DESIRE_COUNT; index++) {
         // TODO: Check, probably writes chem_primary_desire[0] three times,
@@ -728,24 +736,24 @@ static AiPacket* aiGetPacketByNum(int aiPacketId)
 }
 
 // 0x428184
-int aiGetAreaAttackMode(Object* obj)
+AreaAttackMode aiGetAreaAttackMode(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->area_attack_mode;
 }
 
 // 0x428190
-int aiGetRunAwayMode(Object* obj)
+RunAwayMode aiGetRunAwayMode(Object* obj)
 {
-    int runAwayMode = -1;
+    RunAwayMode runAwayMode = RUN_AWAY_MODE_INVALID;
 
     AiPacket* ai = aiGetPacket(obj);
-    if (ai->run_away_mode != -1) {
+    if (ai->run_away_mode != RUN_AWAY_MODE_INVALID) {
         return ai->run_away_mode;
     }
 
     int hpRatio = 100 * ai->min_hp / critterGetStat(obj, STAT_MAXIMUM_HIT_POINTS);
-    for (int index = 0; index < 6; index++) {
+    for (RunAwayMode index = RUN_AWAY_MODE_FIRST; index < RUN_AWAY_MODE_LAST; index++) {
         if (hpRatio >= _hp_run_away_value[index]) {
             runAwayMode = index;
         }
@@ -755,37 +763,37 @@ int aiGetRunAwayMode(Object* obj)
 }
 
 // 0x4281FC
-int aiGetBestWeapon(Object* obj)
+BestWeapon aiGetBestWeapon(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->best_weapon;
 }
 
 // 0x428208
-int aiGetDistance(Object* obj)
+DistanceMode aiGetDistance(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->distance;
 }
 
 // 0x428214
-int aiGetAttackWho(Object* obj)
+AttackWho aiGetAttackWho(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->attack_who;
 }
 
 // 0x428220
-int aiGetChemUse(Object* obj)
+ChemUse aiGetChemUse(Object* obj)
 {
     AiPacket* ai = aiGetPacket(obj);
     return ai->chem_use;
 }
 
 // 0x42822C
-int aiSetAreaAttackMode(Object* critter, int areaAttackMode)
+int aiSetAreaAttackMode(Object* critter, AreaAttackMode areaAttackMode)
 {
-    if (areaAttackMode >= AREA_ATTACK_MODE_COUNT) {
+    if (!areaAttackModeIsValid(areaAttackMode)) {
         return -1;
     }
 
@@ -795,9 +803,9 @@ int aiSetAreaAttackMode(Object* critter, int areaAttackMode)
 }
 
 // 0x428248
-int aiSetRunAwayMode(Object* obj, int runAwayMode)
+int aiSetRunAwayMode(Object* obj, RunAwayMode runAwayMode)
 {
-    if (runAwayMode >= 6) {
+    if (!runAwayModeIsValid(runAwayMode) || runAwayMode == RUN_AWAY_MODE_LAST) {
         return -1;
     }
 
@@ -816,9 +824,9 @@ int aiSetRunAwayMode(Object* obj, int runAwayMode)
 }
 
 // 0x4282D0
-int aiSetBestWeapon(Object* critter, int bestWeapon)
+int aiSetBestWeapon(Object* critter, BestWeapon bestWeapon)
 {
-    if (bestWeapon >= BEST_WEAPON_COUNT) {
+    if (!bestWeaponIsValid(bestWeapon)) {
         return -1;
     }
 
@@ -828,9 +836,9 @@ int aiSetBestWeapon(Object* critter, int bestWeapon)
 }
 
 // 0x4282EC
-int aiSetDistance(Object* critter, int distance)
+int aiSetDistance(Object* critter, DistanceMode distance)
 {
-    if (distance >= DISTANCE_COUNT) {
+    if (!distanceModeIsValid(distance)) {
         return -1;
     }
 
@@ -840,9 +848,9 @@ int aiSetDistance(Object* critter, int distance)
 }
 
 // 0x428308
-int aiSetAttackWho(Object* critter, int attackWho)
+int aiSetAttackWho(Object* critter, AttackWho attackWho)
 {
-    if (attackWho >= ATTACK_WHO_COUNT) {
+    if (!attackWhoIsValid(attackWho)) {
         return -1;
     }
 
@@ -852,9 +860,9 @@ int aiSetAttackWho(Object* critter, int attackWho)
 }
 
 // 0x428324
-int aiSetChemUse(Object* critter, int chemUse)
+int aiSetChemUse(Object* critter, ChemUse chemUse)
 {
-    if (chemUse >= CHEM_USE_COUNT) {
+    if (!chemUseIsValid(chemUse)) {
         return -1;
     }
 
@@ -895,10 +903,10 @@ void aiRemoveBurstDisabled(Object* critter)
 }
 
 // 0x428340
-int aiGetDisposition(Object* obj)
+Disposition aiGetDisposition(Object* obj)
 {
     if (obj == nullptr) {
-        return 0;
+        return DISPOSITION_NONE;
     }
 
     AiPacket* ai = aiGetPacket(obj);
@@ -906,13 +914,13 @@ int aiGetDisposition(Object* obj)
 }
 
 // 0x428354
-int aiSetDisposition(Object* obj, int disposition)
+int aiSetDisposition(Object* obj, Disposition disposition)
 {
     if (obj == nullptr) {
         return -1;
     }
 
-    if (disposition == -1 || disposition >= 5) {
+    if (!dispositionIsValid(disposition) || disposition >= (DISPOSITION_COUNT - 1)) {
         return -1;
     }
 
@@ -997,6 +1005,8 @@ static int _ai_check_drugs(Object* critter)
             break;
         case CHEM_USE_ALWAYS:
             chemUseChance = kChemUseAlwaysChance;
+            break;
+        default:
             break;
         }
 
@@ -1539,13 +1549,12 @@ static Object* _ai_danger_source(Object* a1)
     }
 
     bool ignoreFleeingCritters = false;
-    int attackWho;
-
+    AttackWho attackWho;
     Object* targets[4];
     targets[0] = nullptr;
 
     if (objectIsPartyMember(a1)) {
-        int disposition = aiGetDisposition(a1);
+        Disposition disposition = aiGetDisposition(a1);
 
         switch (disposition + 1) {
         case DISPOSITION_CUSTOM:
@@ -1651,7 +1660,7 @@ static Object* _ai_danger_source(Object* a1)
             break;
         }
     } else {
-        attackWho = -1;
+        attackWho = ATTACK_WHO_INVALID;
     }
 
     Object* whoHitMe = a1->data.critter.combat.whoHitMe;
@@ -1659,7 +1668,7 @@ static Object* _ai_danger_source(Object* a1)
         targets[0] = nullptr;
     } else {
         if ((whoHitMe->data.critter.combat.results & DAM_DEAD) == DAM_NONE) {
-            if (attackWho == ATTACK_WHO_WHOMEVER || attackWho == -1) {
+            if (attackWho == ATTACK_WHO_WHOMEVER || attackWho == ATTACK_WHO_INVALID) {
                 return whoHitMe;
             }
         } else {
@@ -2162,6 +2171,8 @@ static bool aiCanUseItem(Object* critter, Object* item)
     case CHEM_USE_STIMS_WHEN_HURT_LOTS:
         hpRatio = kChemUseStimsWhenHurtLotsHpRatio;
         break;
+    default:
+        break;
     }
 
     int currentHp = critterGetStat(critter, STAT_CURRENT_HIT_POINTS);
@@ -2320,6 +2331,8 @@ static HitMode _ai_pick_hit_mode(Object* attacker, Object* weapon, Object* defen
                 useSecondaryMode = true;
             }
             break;
+        default:
+            break;
         }
     } else {
         if (intelligence < 6 || objectGetDistanceBetween(attacker, defender) < 10) {
@@ -2367,7 +2380,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         return -1;
     }
 
-    int distance = aiGetDistance(critter);
+    DistanceMode distance = aiGetDistance(critter);
     if (distance == DISTANCE_STAY) {
         return -1;
     }
@@ -3069,10 +3082,10 @@ static int _cai_get_min_hp(AiPacket* ai)
         return 0;
     }
 
-    int run_away_mode = ai->run_away_mode;
-    if (run_away_mode >= 0 && run_away_mode < RUN_AWAY_MODE_COUNT) {
+    RunAwayMode run_away_mode = ai->run_away_mode;
+    if (runAwayModeIsValid(run_away_mode) && run_away_mode != RUN_AWAY_MODE_LAST) {
         return _hp_run_away_value[run_away_mode];
-    } else if (run_away_mode == -1) {
+    } else if (run_away_mode == RUN_AWAY_MODE_INVALID) {
         return ai->min_hp;
     }
 
@@ -3093,7 +3106,7 @@ void _combat_ai(Object* a1, Object* a2)
 
     AiPacket* ai = aiGetPacket(a1);
     int hpRatio = _cai_get_min_hp(ai);
-    if (ai->run_away_mode != -1) {
+    if (ai->run_away_mode != RUN_AWAY_MODE_INVALID) {
         int v7 = critterGetStat(a1, STAT_MAXIMUM_HIT_POINTS) * hpRatio / 100;
         int minimumHitPoints = critterGetStat(a1, STAT_MAXIMUM_HIT_POINTS) - v7;
         int currentHitPoints = critterGetStat(a1, STAT_CURRENT_HIT_POINTS);
@@ -3102,8 +3115,8 @@ void _combat_ai(Object* a1, Object* a2)
     }
 
     CritterCombatData* combatData = &(a1->data.critter.combat);
-    if ((combatData->maneuver & CRITTER_MANUEVER_FLEEING) != 0
-        || (combatData->results & ai->hurt_too_much) != 0
+    if ((combatData->maneuver & CRITTER_MANUEVER_FLEEING) != CRITTER_MANEUVER_NONE
+        || (combatData->results & ai->hurt_too_much) != DAM_NONE
         || critterGetStat(a1, STAT_CURRENT_HIT_POINTS) < ai->min_hp) {
         debugPrint("%s: FLEEING: I'm Hurt!", critterGetName(a1));
         _ai_run_away(a1, a2);
@@ -3173,8 +3186,8 @@ void _combat_ai(Object* a1, Object* a2)
         nearestTeammate = gDude;
         if (objectIsPartyMember(a1)) {
             // NOTE: Uninline
-            int distance = aiGetDistance(a1);
-            if (distance != -1) {
+            DistanceMode distance = aiGetDistance(a1);
+            if (distance != DISTANCE_INVALID) {
                 maxTeammateDistance = aiPartyMemberDistances[distance];
             }
         }
@@ -3329,7 +3342,7 @@ int critterSetAiPacket(Object* object, int aiPacket)
 
 // combatai_msg
 // 0x42B634
-int _combatai_msg(Object* critter, Attack* attack, int type, int delay)
+int _combatai_msg(Object* critter, Attack* attack, AiMessageType type, int delay)
 {
     if (objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
         return -1;

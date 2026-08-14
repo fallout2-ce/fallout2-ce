@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "combat_ai_defs.h"
 #include "db.h"
 #include "obj_types.h"
 #include "scripts.h"
@@ -37,13 +38,13 @@ Skill partyMemberGetBestSkill(Object* object);
 Object* partyMemberGetBestInSkill(Skill skill);
 int partyGetBestSkillValue(Skill skill);
 void _partyMemberSaveProtos();
-bool partyMemberSupportsDisposition(Object* object, int disposition);
-bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode);
-bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode);
-bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon);
-bool partyMemberSupportsDistance(Object* object, int distanceMode);
-bool partyMemberSupportsAttackWho(Object* object, int attackWho);
-bool partyMemberSupportsChemUse(Object* object, int chemUse);
+bool partyMemberSupportsDisposition(Object* object, Disposition disposition);
+bool partyMemberSupportsAreaAttackMode(Object* object, AreaAttackMode areaAttackMode);
+bool partyMemberSupportsRunAwayMode(Object* object, RunAwayMode runAwayMode);
+bool partyMemberSupportsBestWeapon(Object* object, BestWeapon bestWeapon);
+bool partyMemberSupportsDistance(Object* object, DistanceMode distanceMode);
+bool partyMemberSupportsAttackWho(Object* object, AttackWho attackWho);
+bool partyMemberSupportsChemUse(Object* object, ChemUse chemUse);
 int _partyMemberIncLevels();
 bool partyIsAnyoneCanBeHealedByRest();
 int partyGetMaxWoundToHealByRest();

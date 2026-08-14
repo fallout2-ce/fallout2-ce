@@ -323,31 +323,31 @@ static int partyMemberGetDescription(Object* object, PartyMemberDescription** pa
 // 0x49425C partyMemberAISlotInit
 static void partyMemberDescriptionInit(PartyMemberDescription* partyMemberDescription)
 {
-    for (int index = 0; index < AREA_ATTACK_MODE_COUNT; index++) {
+    for (int index = AREA_ATTACK_MODE_FIRST; index < AREA_ATTACK_MODE_COUNT; index++) {
         partyMemberDescription->areaAttackMode[index] = 0;
     }
 
-    for (int index = 0; index < RUN_AWAY_MODE_COUNT; index++) {
+    for (int index = RUN_AWAY_MODE_FIRST; index < RUN_AWAY_MODE_COUNT; index++) {
         partyMemberDescription->runAwayMode[index] = 0;
     }
 
-    for (int index = 0; index < BEST_WEAPON_COUNT; index++) {
+    for (int index = BEST_WEAPON_FIRST; index < BEST_WEAPON_COUNT; index++) {
         partyMemberDescription->bestWeapon[index] = 0;
     }
 
-    for (int index = 0; index < DISTANCE_COUNT; index++) {
+    for (int index = DISTANCE_FIRST; index < DISTANCE_COUNT; index++) {
         partyMemberDescription->distanceMode[index] = 0;
     }
 
-    for (int index = 0; index < ATTACK_WHO_COUNT; index++) {
+    for (int index = ATTACK_WHO_FIRST; index < ATTACK_WHO_COUNT; index++) {
         partyMemberDescription->attackWho[index] = 0;
     }
 
-    for (int index = 0; index < CHEM_USE_COUNT; index++) {
+    for (int index = CHEM_USE_FIRST; index < CHEM_USE_COUNT; index++) {
         partyMemberDescription->chemUse[index] = 0;
     }
 
-    for (int index = 0; index < DISPOSITION_COUNT; index++) {
+    for (int index = DISPOSITION_FIRST; index < DISPOSITION_COUNT; index++) {
         partyMemberDescription->disposition[index] = 0;
     }
 
@@ -1307,7 +1307,7 @@ void _partyMemberSaveProtos()
 }
 
 // 0x4958B0 partyMemberHasAIDisposition
-bool partyMemberSupportsDisposition(Object* critter, int disposition)
+bool partyMemberSupportsDisposition(Object* critter, Disposition disposition)
 {
     if (critter == nullptr) {
         return false;
@@ -1317,7 +1317,7 @@ bool partyMemberSupportsDisposition(Object* critter, int disposition)
         return false;
     }
 
-    if (disposition == -1 || disposition > 5) {
+    if (!dispositionIsValid(disposition)) {
         return false;
     }
 
@@ -1330,7 +1330,7 @@ bool partyMemberSupportsDisposition(Object* critter, int disposition)
 }
 
 // 0x495920 partyMemberHasAIBurstValue
-bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode)
+bool partyMemberSupportsAreaAttackMode(Object* object, AreaAttackMode areaAttackMode)
 {
     if (object == nullptr) {
         return false;
@@ -1340,7 +1340,7 @@ bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode)
         return false;
     }
 
-    if (areaAttackMode >= AREA_ATTACK_MODE_COUNT) {
+    if (!areaAttackModeIsValid(areaAttackMode)) {
         return false;
     }
 
@@ -1353,7 +1353,7 @@ bool partyMemberSupportsAreaAttackMode(Object* object, int areaAttackMode)
 }
 
 // 0x495980 partyMemberHasAIRunAwayValue
-bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
+bool partyMemberSupportsRunAwayMode(Object* object, RunAwayMode runAwayMode)
 {
     if (object == nullptr) {
         return false;
@@ -1363,7 +1363,7 @@ bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
         return false;
     }
 
-    if (runAwayMode >= RUN_AWAY_MODE_COUNT) {
+    if (!runAwayModeIsValid(runAwayMode)) {
         return false;
     }
 
@@ -1376,7 +1376,7 @@ bool partyMemberSupportsRunAwayMode(Object* object, int runAwayMode)
 }
 
 // 0x4959E0 partyMemberHasAIWeaponPrefValue
-bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
+bool partyMemberSupportsBestWeapon(Object* object, BestWeapon bestWeapon)
 {
     if (object == nullptr) {
         return false;
@@ -1386,7 +1386,7 @@ bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
         return false;
     }
 
-    if (bestWeapon >= BEST_WEAPON_COUNT) {
+    if (!bestWeaponIsValid(bestWeapon)) {
         return false;
     }
 
@@ -1399,7 +1399,7 @@ bool partyMemberSupportsBestWeapon(Object* object, int bestWeapon)
 }
 
 // 0x495A40 partyMemberHasAIDistancePrefValue
-bool partyMemberSupportsDistance(Object* object, int distanceMode)
+bool partyMemberSupportsDistance(Object* object, DistanceMode distanceMode)
 {
     if (object == nullptr) {
         return false;
@@ -1409,7 +1409,7 @@ bool partyMemberSupportsDistance(Object* object, int distanceMode)
         return false;
     }
 
-    if (distanceMode >= DISTANCE_COUNT) {
+    if (!distanceModeIsValid(distanceMode)) {
         return false;
     }
 
@@ -1422,7 +1422,7 @@ bool partyMemberSupportsDistance(Object* object, int distanceMode)
 }
 
 // 0x495AA0 partyMemberHasAIAttackWhoValue
-bool partyMemberSupportsAttackWho(Object* object, int attackWho)
+bool partyMemberSupportsAttackWho(Object* object, AttackWho attackWho)
 {
     if (object == nullptr) {
         return false;
@@ -1432,7 +1432,7 @@ bool partyMemberSupportsAttackWho(Object* object, int attackWho)
         return false;
     }
 
-    if (attackWho >= ATTACK_WHO_COUNT) {
+    if (!attackWhoIsValid(attackWho)) {
         return false;
     }
 
@@ -1445,7 +1445,7 @@ bool partyMemberSupportsAttackWho(Object* object, int attackWho)
 }
 
 // 0x495B00 partyMemberHasAIChemUseValue
-bool partyMemberSupportsChemUse(Object* object, int chemUse)
+bool partyMemberSupportsChemUse(Object* object, ChemUse chemUse)
 {
     if (object == nullptr) {
         return false;
@@ -1455,7 +1455,7 @@ bool partyMemberSupportsChemUse(Object* object, int chemUse)
         return false;
     }
 
-    if (chemUse >= CHEM_USE_COUNT) {
+    if (!chemUseIsValid(chemUse)) {
         return false;
     }
 
