@@ -390,7 +390,7 @@ int artGetFidgetCount(int headFid)
         return 0;
     }
 
-    int head = headFid & 0xFFF;
+    Head head = headFromFid(headFid);
 
     if (head > gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
         return 0;
@@ -400,6 +400,8 @@ int artGetFidgetCount(int headFid)
 
     HeadFidget fidget = headFidgetFromFid(headFid);
     switch (fidget) {
+    case FIDGET_INVALID:
+        return -1;
     case FIDGET_GOOD:
         return headDescription->goodFidgetCount;
     case FIDGET_NEUTRAL:
