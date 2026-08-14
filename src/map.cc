@@ -406,9 +406,6 @@ int mapSetElevation(int elevation)
 
     tile_hires_stencil_on_center_tile_or_elevation_change();
 
-    // Makes sure buffer is updated.
-    tileWindowRefresh();
-
     // Force a redraw in case new elevation isn't scrollable.
     windowRefresh(gIsoWindow);
 
