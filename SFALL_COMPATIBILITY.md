@@ -43,6 +43,10 @@ The following settings were moved into [`<DAT>/config/game.cfg`](files/ce.dat/co
 | ddraw.ini section | ddraw.ini key | game.cfg section | game.cfg key |
 | --- | --- | --- | --- |
 | `Misc` | `StartingMap` | `start` | `map` |
+| `Misc` | `StartYear` | `start` | `year` |
+| `Misc` | `StartMonth` | `start` | `month` |
+| `Misc` | `StartDay` | `start` | `day` |
+| `Misc` | `StartTime` | `start` | `time` |
 | `Misc` | `StartXPos` | `start` | `worldmap_x` |
 | `Misc` | `StartYPos` | `start` | `worldmap_y` |
 | `Misc` | `ViewXPos` | `start` | `worldmap_view_x` |

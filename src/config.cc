@@ -35,6 +35,7 @@ static bool configParseLine(Config* config, char* string);
 static bool configParseKeyValue(char* string, std::string& key, std::string& value);
 static bool configEnsureSectionExists(Config* config, const char* sectionKey);
 static bool configTrimString(char* string);
+static bool configGetIntImpl(Config* config, const char* sectionKey, const char* key, int* valuePtr, int base);
 static std::string configGetTrimmedString(const char* string);
 
 static bool configWriteDb(Config* config, const char* filePath);
@@ -217,7 +218,12 @@ bool configSetString(Config* config, const char* sectionKey, const char* key, co
 }
 
 // 0x42C05C
-bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, unsigned char base /* = 0 */)
+bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr)
+{
+    return configGetIntImpl(config, sectionKey, key, valuePtr, 0);
+}
+
+static bool configGetIntImpl(Config* config, const char* sectionKey, const char* key, int* valuePtr, int base)
 {
     if (valuePtr == nullptr) {
         return false;
@@ -248,12 +254,17 @@ bool configGetInt(Config* config, const char* sectionKey, const char* key, int* 
     return true;
 }
 
-bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, const int defaultValue, unsigned char base)
+bool configGetInt(Config* config, const char* sectionKey, const char* key, int* valuePtr, const int defaultValue)
+{
+    return configGetIntBase(config, sectionKey, key, valuePtr, defaultValue, 0);
+}
+
+bool configGetIntBase(Config* config, const char* sectionKey, const char* key, int* valuePtr, const int defaultValue, int base)
 {
     if (config == nullptr || sectionKey == nullptr || key == nullptr || valuePtr == nullptr) {
         return false;
     }
-    if (!configGetInt(config, sectionKey, key, valuePtr, base)) {
+    if (!configGetIntImpl(config, sectionKey, key, valuePtr, base)) {
         *valuePtr = defaultValue;
     }
     return true;

@@ -1843,11 +1843,11 @@ int scriptsInit()
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SCRIPT, &gScrMessageList);
 
-    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "year", &gStartYear, 2241);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "month", &gStartMonth, 6);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "day", &gStartDay, 24);
+    configGetIntBase(&gContentConfig, CONTENT_CONFIG_START_SECTION, "year", &gStartYear, 2241, 10);
+    configGetIntBase(&gContentConfig, CONTENT_CONFIG_START_SECTION, "month", &gStartMonth, 6, 10);
+    configGetIntBase(&gContentConfig, CONTENT_CONFIG_START_SECTION, "day", &gStartDay, 24, 10);
     int startTime;
-    configGetInt(&gContentConfig, CONTENT_CONFIG_START_SECTION, "time", &startTime, kDefaultStartTime, 10);
+    configGetIntBase(&gContentConfig, CONTENT_CONFIG_START_SECTION, "time", &startTime, kDefaultStartTime, 10);
     int startTimeHour = startTime / 100;
     int startTimeMinute = startTime % 100;
     if (startTimeHour < 0 || startTimeHour > 23 || startTimeMinute < 0 || startTimeMinute > 59) {
