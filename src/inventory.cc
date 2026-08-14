@@ -146,8 +146,10 @@ constexpr int kPartySlotImageHeight = 139;
 #define INVENTORY_LOOT_LEFT_BODY_VIEW_X 44
 #define INVENTORY_LOOT_LEFT_BODY_VIEW_Y 35
 
-#define INVENTORY_SUMMARY_X 297
-#define INVENTORY_SUMMARY_Y 44
+#define INVENTORY_SUMMARY_X 298
+#define INVENTORY_SUMMARY_Y 45
+#define INVENTORY_SUMMARY_WIDTH 154
+#define INVENTORY_SUMMARY_HEIGHT 190
 #define INVENTORY_SUMMARY_MAX_X 440
 
 #define INVENTORY_WINDOW_WIDTH 499
@@ -3440,8 +3442,8 @@ static void inventoryRenderSummary()
     int backgroundWidth = inventoryFrmImage.getWidth();
     if (backgroundData != nullptr) {
         blitBufferToBuffer(backgroundData + backgroundWidth * INVENTORY_SUMMARY_Y + summaryX,
-            152,
-            188,
+            INVENTORY_SUMMARY_WIDTH,
+            INVENTORY_SUMMARY_HEIGHT,
             backgroundWidth,
             windowBuffer + pitch * INVENTORY_SUMMARY_Y + summaryX,
             pitch);
@@ -4280,8 +4282,8 @@ static void inventoryExamineItem(Object* critter, Object* item)
     int backgroundWidth = inventoryFrmImage.getWidth();
     if (backgroundData != nullptr) {
         blitBufferToBuffer(backgroundData + backgroundWidth * INVENTORY_SUMMARY_Y + summaryX,
-            152,
-            188,
+            INVENTORY_SUMMARY_WIDTH,
+            INVENTORY_SUMMARY_HEIGHT,
             backgroundWidth,
             windowBuffer + pitch * INVENTORY_SUMMARY_Y + summaryX,
             pitch);
