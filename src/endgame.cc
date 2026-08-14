@@ -75,7 +75,7 @@ static void endgameEndingSlideshowWindowFree();
 static void endgameEndingVoiceOverInit(const char* fname);
 static void endgameEndingVoiceOverReset();
 static void endgameEndingVoiceOverFree();
-static void endgameEndingLoadPalette(int type, int id);
+static void endgameEndingLoadPalette(ObjectType type, int id);
 static void _endgame_voiceover_callback();
 static int endgameEndingSubtitlesLoad(const char* filePath);
 static void endgameEndingRefreshSubtitles();
@@ -354,7 +354,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         int height = artGetHeight(background);
         unsigned char* backgroundData = artGetFrameData(background);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
-        endgameEndingLoadPalette(6, 327);
+        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, 327);
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
@@ -769,7 +769,7 @@ static void endgameEndingVoiceOverFree()
 }
 
 // 0x440378 endgame_load_palette
-static void endgameEndingLoadPalette(int type, int id)
+static void endgameEndingLoadPalette(ObjectType type, int id)
 {
     char fileName[13];
     if (artCopyFileName(type, id, fileName) != 0) {

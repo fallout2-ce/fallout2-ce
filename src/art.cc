@@ -553,7 +553,7 @@ int artCacheFlush()
 }
 
 // 0x4192B0
-int artCopyFileName(int objectType, int id, char* dest)
+int artCopyFileName(ObjectType objectType, int id, char* dest)
 {
     ArtListDescription* ptr;
 
