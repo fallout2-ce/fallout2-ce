@@ -1011,7 +1011,7 @@ static FrmImage _backgroundFrmImage;
 static FrmImage _townFrmImage;
 static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
-static unsigned int wmForceEncounterFlags = 0;
+static EncounterFlag wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 static bool wmEncounterDetectionEnabled = true;
 static bool wmEncounterIntrosEnabled = true;
 static int worldmapTravelDelay;
@@ -1191,7 +1191,7 @@ static int wmGenDataInit()
     wmGenData.viewportMaxX = 0;
 
     wmForceEncounterMapId = -1;
-    wmForceEncounterFlags = 0;
+    wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
     wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
@@ -1252,7 +1252,7 @@ static int wmGenDataReset()
     wmMarkSubTileRadiusVisited(wmGenData.worldPosX, wmGenData.worldPosY);
 
     wmForceEncounterMapId = -1;
-    wmForceEncounterFlags = 0;
+    wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
     wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
@@ -3792,24 +3792,24 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
     // for Horrigan encounter (above). This implemenation gives Horrigan
     // encounter a priority.
     if (wmForceEncounterMapId != -1) {
-        if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_CAR) != 0) {
+        if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_CAR) != ENCOUNTER_FLAG_NONE) {
             if (wmGenData.isInCar) {
                 wmMatchAreaContainingMapIdx(wmForceEncounterMapId, &(wmGenData.currentCarAreaId));
             }
         }
 
         // For unknown reason fadeout and blinking icon are mutually exclusive.
-        if ((wmForceEncounterFlags & ENCOUNTER_FLAG_FADEOUT) != 0) {
+        if ((wmForceEncounterFlags & ENCOUNTER_FLAG_FADEOUT) != ENCOUNTER_FLAG_NONE) {
             wmFadeOut();
-        } else if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_ICON) == 0) {
-            bool special = (wmForceEncounterFlags & ENCOUNTER_FLAG_ICON_SP) != 0;
+        } else if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_ICON) == ENCOUNTER_FLAG_NONE) {
+            bool special = (wmForceEncounterFlags & ENCOUNTER_FLAG_ICON_SP) != ENCOUNTER_FLAG_NONE;
             wmBlinkRndEncounterIcon(special);
         }
 
         mapLoadById(wmForceEncounterMapId);
 
         wmForceEncounterMapId = -1;
-        wmForceEncounterFlags = 0;
+        wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 
         return 1;
     }
@@ -7465,9 +7465,9 @@ void wmCarSetCurrentArea(int area)
     wmGenData.currentCarAreaId = area;
 }
 
-void wmForceEncounter(int map, unsigned int flags)
+void wmForceEncounter(int map, EncounterFlag flags)
 {
-    if ((wmForceEncounterFlags & (1 << 31)) != 0) {
+    if ((wmForceEncounterFlags & ENCOUNTER_FLAG_LOCK2) != ENCOUNTER_FLAG_NONE) {
         return;
     }
 
@@ -7475,10 +7475,10 @@ void wmForceEncounter(int map, unsigned int flags)
     wmForceEncounterFlags = flags;
 
     // I don't quite understand the reason why locking needs one more flag.
-    if ((wmForceEncounterFlags & ENCOUNTER_FLAG_LOCK) != 0) {
-        wmForceEncounterFlags |= (1 << 31);
+    if ((wmForceEncounterFlags & ENCOUNTER_FLAG_LOCK) != ENCOUNTER_FLAG_NONE) {
+        wmForceEncounterFlags |= ENCOUNTER_FLAG_LOCK2;
     } else {
-        wmForceEncounterFlags &= ~(1 << 31);
+        wmForceEncounterFlags &= ~ENCOUNTER_FLAG_LOCK2;
     }
 }
 

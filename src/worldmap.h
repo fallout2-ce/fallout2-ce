@@ -254,7 +254,7 @@ typedef enum Map {
     MAP_IN_GAME_MOVIE1 = 149,
 } Map;
 
-enum class RestModeFlag {
+enum class RestModeFlag : int {
     None = 0x00,
     Disabled = 0x01,
     Strict = 0x02,
@@ -271,11 +271,33 @@ constexpr inline RestModeFlag operator|(RestModeFlag lhs, RestModeFlag rhs)
     return static_cast<RestModeFlag>(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
 
-#define ENCOUNTER_FLAG_NO_CAR 0x1
-#define ENCOUNTER_FLAG_LOCK 0x2
-#define ENCOUNTER_FLAG_NO_ICON 0x4
-#define ENCOUNTER_FLAG_ICON_SP 0x8
-#define ENCOUNTER_FLAG_FADEOUT 0x10
+enum EncounterFlag : unsigned int {
+    ENCOUNTER_FLAG_NONE = 0x00,
+    ENCOUNTER_FLAG_NO_CAR = 0x01,
+    ENCOUNTER_FLAG_LOCK = 0x02,
+    ENCOUNTER_FLAG_NO_ICON = 0x04,
+    ENCOUNTER_FLAG_ICON_SP = 0x08,
+    ENCOUNTER_FLAG_FADEOUT = 0x10,
+    ENCOUNTER_FLAG_LOCK2 = 0x80000000
+};
+
+constexpr inline EncounterFlag operator~(EncounterFlag rhs)
+{
+    return static_cast<EncounterFlag>(~static_cast<unsigned int>(rhs));
+}
+
+inline EncounterFlag& operator&=(EncounterFlag& lhs, EncounterFlag rhs)
+{
+    lhs = static_cast<EncounterFlag>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
+inline EncounterFlag& operator|=(EncounterFlag& lhs, EncounterFlag rhs)
+{
+    lhs = static_cast<EncounterFlag>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
 
 extern unsigned char* circleBlendTable;
 extern bool gDidMeetFrankHorrigan;
@@ -339,7 +361,7 @@ void wmSetPartyCurArea(int areaIdx);
 void wmClearPartyWalking();
 void wmSetPartyWorldPos(int x, int y);
 void wmCarSetCurrentArea(int area);
-void wmForceEncounter(int map, unsigned int flags);
+void wmForceEncounter(int map, EncounterFlag flags);
 void wmSetScriptWorldMapMulti(float value);
 bool wmTerrainNameIsValidSubtile(int x, int y);
 void wmSetTerrainName(int x, int y, const char* name);
