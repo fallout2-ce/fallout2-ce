@@ -254,6 +254,23 @@ typedef enum Map {
     MAP_IN_GAME_MOVIE1 = 149,
 } Map;
 
+enum class RestModeFlag {
+    None = 0x00,
+    Disabled = 0x01,
+    Strict = 0x02,
+    NoHealing = 0x04,
+};
+
+constexpr inline RestModeFlag operator&(RestModeFlag lhs, RestModeFlag rhs)
+{
+    return static_cast<RestModeFlag>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline RestModeFlag operator|(RestModeFlag lhs, RestModeFlag rhs)
+{
+    return static_cast<RestModeFlag>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
 #define ENCOUNTER_FLAG_NO_CAR 0x1
 #define ENCOUNTER_FLAG_LOCK 0x2
 #define ENCOUNTER_FLAG_NO_ICON 0x4
@@ -275,7 +292,7 @@ bool wmMapIdxIsSaveable(int mapIdx);
 bool wmMapIsSaveable();
 bool wmMapDeadBodiesAge();
 bool wmMapCanRestHere(int elevation);
-void wmSetRestMode(int mode);
+void wmSetRestMode(RestModeFlag mode);
 void wmSetEncounterDetection(bool enabled);
 void wmSetEncounterIntros(bool enabled);
 bool wmRestModeIsDisabled();
