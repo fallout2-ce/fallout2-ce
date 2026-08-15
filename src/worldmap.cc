@@ -1831,7 +1831,7 @@ static int wmParseEncounterTableIndex(EncounterTableEntry* encounterTableEntry, 
             char* pch = strstr(string, "scenery:");
             if (pch != nullptr) {
                 string = pch + 8;
-                strParseStrFromList(&string, &(encounterTableEntry->scenery), wmSceneryStrs, ENCOUNTER_SCENERY_TYPE_COUNT);
+                strParseStrFromListEnum<EncounterSceneryType>(&string, &(encounterTableEntry->scenery), wmSceneryStrs, ENCOUNTER_SCENERY_TYPE_COUNT);
             }
         }
 
@@ -1922,7 +1922,7 @@ static int wmParseEncounterSubEncStr(EncounterTableEntry* encounterTableEntry, c
         *end = '\0';
 
         if (*string != '\0') {
-            strParseStrFromList(&string, &(encounterTableSubEntry->situation), wmEncOpStrs, ENCOUNTER_SITUATION_COUNT);
+            strParseStrFromListEnum<EncounterSituation>(&string, &(encounterTableSubEntry->situation), wmEncOpStrs, ENCOUNTER_SITUATION_COUNT);
         }
 
         *end = ch;
@@ -2032,7 +2032,7 @@ static int wmReadEncBaseType(char* name, int* valuePtr)
             }
 
             if (configGetString(pConfigCfg, section, "position", &string)) {
-                strParseStrFromList(&string, &(encounter->position), wmFormationStrs, ENCOUNTER_FORMATION_TYPE_COUNT);
+                strParseStrFromListEnum<EncounterFormationType>(&string, &(encounter->position), wmFormationStrs, ENCOUNTER_FORMATION_TYPE_COUNT);
                 strParseIntWithKey(&string, "spacing", &(encounter->spacing), ":");
                 strParseIntWithKey(&string, "distance", &(encounter->distance), ":");
             }
@@ -2312,7 +2312,7 @@ static int wmParseSubTileInfo(TileInfo* tile, int row, int column, char* string)
         return -1;
     }
 
-    if (strParseStrFromList(&string, &(subtile->fill), wmFillStrs, SUBTILE_FILL_COUNT) == -1) {
+    if (strParseStrFromListEnum<SubtileFill>(&string, &(subtile->fill), wmFillStrs, SUBTILE_FILL_COUNT) == -1) {
         return -1;
     }
 
@@ -2835,7 +2835,7 @@ static int wmAreaInit()
             }
 
             if (configGetString(&cfg, section, "lock_state", &str)) {
-                if (strParseStrFromList(&str, &(city->lockState), wmStateStrs, LOCK_STATE_COUNT) == -1) {
+                if (strParseStrFromListEnum<LockState>(&str, &(city->lockState), wmStateStrs, LOCK_STATE_COUNT) == -1) {
                     return -1;
                 }
             }
@@ -2845,7 +2845,7 @@ static int wmAreaInit()
                 exit(1);
             }
 
-            if (strParseStrFromList(&str, &(city->size), wmAreaSizeStrs, CITY_SIZE_COUNT) == -1) {
+            if (strParseStrFromListEnum<CitySize>(&str, &(city->size), wmAreaSizeStrs, CITY_SIZE_COUNT) == -1) {
                 return -1;
             }
 
@@ -2885,7 +2885,7 @@ static int wmAreaInit()
                     return -1;
                 }
 
-                if (strParseInt(&str, &(entrance->rotation)) == -1) {
+                if (strParseEnum<Rotation>(&str, &(entrance->rotation)) == -1) {
                     return -1;
                 }
 

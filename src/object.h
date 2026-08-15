@@ -6,6 +6,7 @@
 #include "inventory.h"
 #include "map_defs.h"
 #include "obj_types.h"
+#include "worldmap.h"
 
 namespace fallout {
 
