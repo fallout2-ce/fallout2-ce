@@ -147,13 +147,13 @@ enum EncounterSceneryType : int {
     ENCOUNTER_SCENERY_TYPE_COUNT,
 };
 
-typedef enum EncounterSituation {
+enum EncounterSituation : int {
     ENCOUNTER_SITUATION_NOTHING,
     ENCOUNTER_SITUATION_AMBUSH,
     ENCOUNTER_SITUATION_FIGHTING,
     ENCOUNTER_SITUATION_AND,
     ENCOUNTER_SITUATION_COUNT,
-} EncounterSituation;
+};
 
 typedef enum EncounterLogicalOperator {
     ENCOUNTER_LOGICAL_OPERATOR_NONE,
@@ -316,7 +316,7 @@ typedef struct EncounterTableSubEntry {
     int minimumCount;
     int maximumCount;
     int encounterIndex;
-    int situation;
+    EncounterSituation situation;
 } EncounterTableSubEntry;
 
 typedef struct EncounterTableEntry {
@@ -1913,7 +1913,10 @@ static int wmParseEncounterSubEncStr(EncounterTableEntry* encounterTableEntry, c
         *end = '\0';
 
         if (*string != '\0') {
-            strParseStrFromList(&string, &(encounterTableSubEntry->situation), wmEncOpStrs, ENCOUNTER_SITUATION_COUNT);
+            int encounterSituation;
+            if (strParseStrFromList(&string, &encounterSituation, wmEncOpStrs, ENCOUNTER_SITUATION_COUNT) != -1) {
+                encounterTableSubEntry->situation = static_cast<EncounterSituation>(encounterSituation);
+            }
         }
 
         *end = ch;
