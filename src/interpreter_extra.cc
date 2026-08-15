@@ -733,20 +733,20 @@ static void opHowMuch(Program* program)
 // 0x454B6C op_mark_area_known
 static void opMarkAreaKnown(Program* program)
 {
-    constexpr int kInvisible = -66;
+    constexpr int kInvisible = ~(0x40 | 0x01);
     int visitedState = programStackPopInteger(program);
-    int areaId = programStackPopInteger(program);
-    int visibleState = programStackPopInteger(program);
+    int id = programStackPopInteger(program);
+    int isMap = programStackPopInteger(program);
 
-    if (visibleState == 0) {
+    if (isMap == 0) {
         if (visitedState == kInvisible) {
-            wmAreaSetVisibleState(areaId, CITY_STATE_UNKNOWN, true);
+            wmAreaSetVisibleState(id, CITY_STATE_UNKNOWN, true);
         } else {
-            wmAreaSetVisibleState(areaId, CITY_STATE_KNOWN, true);
-            wmAreaMarkVisitedState(areaId, visitedState);
+            wmAreaSetVisibleState(id, CITY_STATE_KNOWN, true);
+            wmAreaMarkVisitedState(id, visitedState);
         }
-    } else if (visibleState == 1) {
-        wmMapMarkVisited(areaId);
+    } else if (isMap == 1) {
+        wmMapMarkVisited(id);
     }
 }
 
