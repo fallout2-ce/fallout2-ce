@@ -7,14 +7,40 @@ namespace fallout {
 
 #define CAR_FUEL_MAX (80000)
 
-typedef enum MapFlags {
+enum MapFlags : int {
+    MAP_NONE = 0x00,
     MAP_SAVED = 0x01,
     MAP_DEAD_BODIES_AGE = 0x02,
     MAP_PIPBOY_ACTIVE = 0x04,
     MAP_CAN_REST_ELEVATION_0 = 0x08,
     MAP_CAN_REST_ELEVATION_1 = 0x10,
-    MAP_CAN_REST_ELEVATION_2 = 0x20,
-} MapFlags;
+    MAP_CAN_REST_ELEVATION_2 = 0x20
+};
+
+constexpr inline MapFlags operator&(MapFlags lhs, MapFlags rhs)
+{
+    return static_cast<MapFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline MapFlags operator|(MapFlags lhs, MapFlags rhs)
+{
+    return static_cast<MapFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline MapFlags operator~(MapFlags rhs)
+{
+    return static_cast<MapFlags>(~static_cast<int>(rhs));
+}
+
+inline MapFlags& operator&=(MapFlags& lhs, MapFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+inline MapFlags& operator|=(MapFlags& lhs, MapFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
 
 typedef enum CityState {
     CITY_STATE_UNKNOWN,

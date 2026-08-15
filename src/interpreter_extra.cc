@@ -3250,7 +3250,7 @@ static void opMetarule(Program* program)
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
         break;
     case METARULE_FIRST_RUN:
-        result = (gMapHeader.flags & MAP_SAVED) == 0;
+        result = (gMapHeader.flags & 1) == 0;
         break;
     case METARULE_ELEVATOR:
         scriptsRequestElevator(scriptGetSelf(program), param.integerValue);

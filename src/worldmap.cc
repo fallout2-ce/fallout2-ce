@@ -285,7 +285,7 @@ typedef struct MapInfo {
     int field_2C;
     char mapFileName[40];
     char music[40];
-    int flags;
+    MapFlags flags;
     int ambientSoundEffectsLength;
     MapAmbientSoundEffectInfo ambientSoundEffects[MAP_AMBIENT_SOUND_EFFECTS_CAPACITY];
     int startPointsLength;
@@ -486,7 +486,7 @@ static std::vector<std::pair<int, std::string>> wmTerrainNameOverrides;
 static std::unordered_map<int, std::string> wmTownTitleOverrides;
 static bool wmTownNamesHidden;
 
-static void wmSetFlags(int* flagsPtr, int flag, int value);
+static void wmSetFlags(MapFlags* flagsPtr, MapFlags flag, bool set);
 static int wmGenDataInit();
 static int wmGenDataReset();
 static void wmGenDataSetStartWorldPos();
@@ -599,7 +599,7 @@ static void wmFadeReset();
 static void wmBlinkRndEncounterIcon(bool special);
 
 // 0x4BC860 can_rest_here
-static const int _can_rest_here[ELEVATION_COUNT] = {
+static const MapFlags _can_rest_here[ELEVATION_COUNT] = {
     MAP_CAN_REST_ELEVATION_0,
     MAP_CAN_REST_ELEVATION_1,
     MAP_CAN_REST_ELEVATION_2,
@@ -1069,9 +1069,9 @@ static inline bool cityIsValid(int city)
 }
 
 // 0x4BC890 wmSetFlags
-static void wmSetFlags(int* flagsPtr, int flag, int value)
+static void wmSetFlags(MapFlags* flagsPtr, MapFlags flag, bool set)
 {
-    if (value) {
+    if (set) {
         *flagsPtr |= flag;
     } else {
         *flagsPtr &= ~flag;
@@ -2940,7 +2940,7 @@ static int wmMapSlotInit(MapInfo* map)
     map->field_2C = -1;
     map->mapFileName[0] = '\0';
     map->music[0] = '\0';
-    map->flags = 0x3F;
+    map->flags = MAP_SAVED | MAP_DEAD_BODIES_AGE | MAP_PIPBOY_ACTIVE | MAP_CAN_REST_ELEVATION_0 | MAP_CAN_REST_ELEVATION_1 | MAP_CAN_REST_ELEVATION_2;
     map->ambientSoundEffectsLength = 0;
     map->startPointsLength = 0;
 
@@ -3177,32 +3177,32 @@ int wmMapMatchNameToIdx(char* name)
 // 0x4BFA44 wmMapIdxIsSaveable
 bool wmMapIdxIsSaveable(int mapIdx)
 {
-    return (wmMapInfoList[mapIdx].flags & MAP_SAVED) != 0;
+    return (wmMapInfoList[mapIdx].flags & MAP_SAVED) != MAP_NONE;
 }
 
 // 0x4BFA64 wmMapIsSaveable
 bool wmMapIsSaveable()
 {
-    return (wmMapInfoList[gMapHeader.index].flags & MAP_SAVED) != 0;
+    return (wmMapInfoList[gMapHeader.index].flags & MAP_SAVED) != MAP_NONE;
 }
 
 // 0x4BFA90 wmMapDeadBodiesAge
 bool wmMapDeadBodiesAge()
 {
-    return (wmMapInfoList[gMapHeader.index].flags & MAP_DEAD_BODIES_AGE) != 0;
+    return (wmMapInfoList[gMapHeader.index].flags & MAP_DEAD_BODIES_AGE) != MAP_NONE;
 }
 
 // 0x4BFABC wmMapCanRestHere
 bool wmMapCanRestHere(int elevation)
 {
-    int flags[3];
+    MapFlags flags[3];
 
     // NOTE: I'm not sure why they're copied.
     memcpy(flags, _can_rest_here, sizeof(flags));
 
     MapInfo* map = &(wmMapInfoList[gMapHeader.index]);
 
-    return (map->flags & flags[elevation]) != 0;
+    return (map->flags & flags[elevation]) != MAP_NONE;
 }
 
 void wmSetRestMode(int mode)
@@ -3249,7 +3249,7 @@ int wmMapMarkVisited(int mapIdx)
     }
 
     MapInfo* map = &(wmMapInfoList[mapIdx]);
-    if ((map->flags & MAP_SAVED) == 0) {
+    if ((map->flags & MAP_SAVED) == MAP_NONE) {
         return 0;
     }
 
@@ -3330,7 +3330,7 @@ int wmMapMarkMapEntranceState(int mapIdx, int elevation, int state)
     }
 
     MapInfo* map = &(wmMapInfoList[mapIdx]);
-    if ((map->flags & MAP_SAVED) == 0) {
+    if ((map->flags & MAP_SAVED) == MAP_NONE) {
         return -1;
     }
 
