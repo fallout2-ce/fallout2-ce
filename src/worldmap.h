@@ -321,7 +321,6 @@ inline EncounterFlag& operator|=(EncounterFlag& lhs, EncounterFlag rhs)
     return lhs;
 }
 
-
 extern unsigned char* circleBlendTable;
 extern bool gDidMeetFrankHorrigan;
 

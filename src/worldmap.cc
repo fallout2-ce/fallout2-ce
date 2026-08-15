@@ -2829,7 +2829,7 @@ static int wmAreaInit()
                 showMessageBox("\nwmConfigInit::Error loading areas!");
                 exit(1);
             }
-            
+
             if (strParseStrFromListEnum<CityState>(&str, &(city->state), wmStateStrs, 2) == -1) {
                 return -1;
             }
