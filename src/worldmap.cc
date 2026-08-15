@@ -139,13 +139,13 @@ typedef enum EncounterFrequencyType {
     ENCOUNTER_FREQUENCY_TYPE_COUNT,
 } EncounterFrequencyType;
 
-typedef enum EncounterSceneryType {
+enum EncounterSceneryType : int {
     ENCOUNTER_SCENERY_TYPE_NONE,
     ENCOUNTER_SCENERY_TYPE_LIGHT,
     ENCOUNTER_SCENERY_TYPE_NORMAL,
     ENCOUNTER_SCENERY_TYPE_HEAVY,
     ENCOUNTER_SCENERY_TYPE_COUNT,
-} EncounterSceneryType;
+};
 
 typedef enum EncounterSituation {
     ENCOUNTER_SITUATION_NOTHING,
@@ -322,7 +322,7 @@ typedef struct EncounterTableSubEntry {
 typedef struct EncounterTableEntry {
     int flags;
     int map;
-    int scenery;
+    EncounterSceneryType scenery;
     int chance;
     int counter;
     EncounterCondition condition;
@@ -964,7 +964,7 @@ static const char* wmGetTownTitle(int areaIdx)
 }
 
 // 0x672FB8 wmFreqValues
-static int wmFreqValues[6];
+static int wmFreqValues[ENCOUNTER_FREQUENCY_TYPE_COUNT];
 
 // 0x672FD0 wmRndOriginalCenterTile
 static int wmRndOriginalCenterTile;
@@ -1820,7 +1820,9 @@ static int wmParseEncounterTableIndex(EncounterTableEntry* encounterTableEntry, 
             char* pch = strstr(string, "scenery:");
             if (pch != nullptr) {
                 string = pch + 8;
-                strParseStrFromList(&string, &(encounterTableEntry->scenery), wmSceneryStrs, ENCOUNTER_SCENERY_TYPE_COUNT);
+                int encounterSceneryTemp;
+                strParseStrFromList(&string, &encounterSceneryTemp, wmSceneryStrs, ENCOUNTER_SCENERY_TYPE_COUNT);
+                encounterTableEntry->scenery = static_cast<EncounterSceneryType>(encounterSceneryTemp);
             }
         }
 
