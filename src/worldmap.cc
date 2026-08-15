@@ -188,10 +188,10 @@ inline EncounterConditionalOperator operator++(EncounterConditionalOperator& e, 
     return result;
 }
 
-typedef enum EncounterRatioMode {
+enum EncounterRatioMode : int {
     ENCOUNTER_RATIO_MODE_USE_RATIO,
     ENCOUNTER_RATIO_MODE_SINGLE,
-} EncounterRatioMode;
+};
 
 typedef enum Daytime {
     DAY_PART_MORNING,
@@ -358,7 +358,7 @@ typedef struct EncounterItem {
 typedef struct EncounterEntry {
     char field_0[40];
     int field_28;
-    int ratioMode;
+    EncounterRatioMode ratioMode;
     int ratio;
     int pid;
     int flags;
