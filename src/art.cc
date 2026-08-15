@@ -390,7 +390,7 @@ int artGetFidgetCount(int headFid)
         return 0;
     }
 
-    int head = headFid & 0xFFF;
+    Head head = headFromFid(headFid);
 
     if (head > gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
         return 0;
@@ -398,16 +398,19 @@ int artGetFidgetCount(int headFid)
 
     HeadDescription* headDescription = &(gHeadDescriptions[head]);
 
-    int fidget = (headFid & 0xFF0000) >> 16;
+    HeadFidget fidget = headFidgetFromFid(headFid);
     switch (fidget) {
+    case FIDGET_INVALID:
+        return -1;
     case FIDGET_GOOD:
         return headDescription->goodFidgetCount;
     case FIDGET_NEUTRAL:
         return headDescription->neutralFidgetCount;
     case FIDGET_BAD:
         return headDescription->badFidgetCount;
+    default:
+        return 0;
     }
-    return 0;
 }
 
 // 0x418FFC
@@ -553,7 +556,7 @@ int artCacheFlush()
 }
 
 // 0x4192B0
-int artCopyFileName(int objectType, int id, char* dest)
+int artCopyFileName(ObjectType objectType, int id, char* dest)
 {
     ArtListDescription* ptr;
 

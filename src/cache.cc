@@ -379,7 +379,7 @@ static bool cacheEntryInit(CacheEntry* cacheEntry)
     cacheEntry->data = nullptr;
     cacheEntry->referenceCount = 0;
     cacheEntry->hits = 0;
-    cacheEntry->flags = 0;
+    cacheEntry->flags = CACHE_ENTRY_NONE;
     cacheEntry->mru = 0;
     return true;
 }
@@ -528,7 +528,7 @@ static bool cacheSweep(Cache* cache)
 {
     for (int index = 0; index < cache->entriesLength; index++) {
         CacheEntry* cacheEntry = cache->entries[index];
-        if ((cacheEntry->flags & CACHE_ENTRY_MARKED_FOR_EVICTION) != 0) {
+        if ((cacheEntry->flags & CACHE_ENTRY_MARKED_FOR_EVICTION) != CACHE_ENTRY_NONE) {
             if (cacheEntry->referenceCount != 0) {
                 // Entry was marked for eviction but still has references,
                 // unmark it.

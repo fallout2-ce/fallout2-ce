@@ -254,7 +254,7 @@ static CacheEntry* gGameDialogFidgetFrmHandle = nullptr;
 static Art* gGameDialogFidgetFrm = nullptr;
 
 // 0x518700 backgroundIndex
-static int gGameDialogBackground = 2;
+static Background gGameDialogBackground = BACKGROUND_2;
 
 // 0x518704 lipsFID
 static int _lipsFID = 0;
@@ -483,7 +483,7 @@ static int _head_phoneme_lookup[PHONEME_COUNT] = {
 };
 
 // 0x518900 phone_anim
-static int _phone_anim = 0;
+static HeadAnimation _phone_anim = HEAD_ANIMATION_VERY_GOOD_REACTION;
 
 // 0x518904 loop_cnt
 static int _loop_cnt = -1;
@@ -632,7 +632,7 @@ static int _oldFont;
 static unsigned int gGameDialogFidgetLastUpdateTimestamp;
 
 // 0x58F4D0 fidgetAnim
-static int gGameDialogFidgetReaction;
+static HeadFidget gGameDialogFidgetReaction;
 
 // 0x58F4D4 dialogBlock
 static Program* gDialogReplyProgram;
@@ -708,9 +708,9 @@ static void gameDialogRenderReply();
 static void _gdProcessUpdate();
 static int _gdCreateHeadWindow();
 static void _gdDestroyHeadWindow();
-static void _gdSetupFidget(int headFid, int reaction);
+static void _gdSetupFidget(int headFid, HeadFidget reaction);
 static void gameDialogWaitForFidgetToComplete();
-static void _gdPlayTransition(int animation);
+static void _gdPlayTransition(HeadAnimation animation);
 static void _reply_arrow_up(int btn, int keyCode);
 static void _reply_arrow_down(int btn, int keyCode);
 static void _reply_arrow_restore(int btn, int keyCode);
@@ -963,7 +963,7 @@ void gameDialogStartLips(const char* audioFileName)
     }
 
     char name[16];
-    if (artCopyFileName(OBJ_TYPE_HEAD, gGameDialogHeadFid & 0xFFF, name) == -1) {
+    if (artCopyFileName(OBJ_TYPE_HEAD, headFromFid(gGameDialogHeadFid), name) == -1) {
         return;
     }
 
@@ -1004,7 +1004,7 @@ int gameDialogDisable()
 }
 
 // 0x44510C
-int _gdialogInitFromScript(int headFid, int reaction)
+int _gdialogInitFromScript(int headFid, HeadFidget reaction)
 {
     if (dialogMode == GAME_DIALOG_MODE_TALK) {
         return -1;
@@ -1157,9 +1157,9 @@ int _gdialogExitFromScript()
 }
 
 // 0x445438
-void gameDialogSetBackground(int background)
+void gameDialogSetBackground(Background background)
 {
-    if (background != -1) {
+    if (backgroundIsValid(background)) {
         gGameDialogBackground = background;
     }
 }
@@ -2636,15 +2636,15 @@ void _gdDestroyHeadWindow()
 }
 
 // 0x447300
-void _gdSetupFidget(int headFrmId, int reaction)
+void _gdSetupFidget(int headFid, HeadFidget reaction)
 {
     gGameDialogFidgetFrmCurrentFrame = 0;
 
-    if (headFrmId == -1) {
+    if (headFid == -1) {
         gGameDialogFidgetFid = -1;
         gGameDialogFidgetFrm = nullptr;
         gGameDialogFidgetFrmHandle = INVALID_CACHE_ENTRY;
-        gGameDialogFidgetReaction = -1;
+        gGameDialogFidgetReaction = FIDGET_INVALID;
         gGameDialogFidgetUpdateDelay = 0;
         gGameDialogFidgetLastUpdateTimestamp = 0;
         gameDialogRenderTalkingHead(nullptr, 0);
@@ -2654,13 +2654,16 @@ void _gdSetupFidget(int headFrmId, int reaction)
         return;
     }
 
-    int anim = HEAD_ANIMATION_NEUTRAL_PHONEMES;
+    HeadAnimation anim;
     switch (reaction) {
     case FIDGET_GOOD:
         anim = HEAD_ANIMATION_GOOD_PHONEMES;
         break;
     case FIDGET_BAD:
         anim = HEAD_ANIMATION_BAD_PHONEMES;
+        break;
+    default:
+        anim = HEAD_ANIMATION_NEUTRAL_PHONEMES;
         break;
     }
 
@@ -2677,7 +2680,7 @@ void _gdSetupFidget(int headFrmId, int reaction)
 
     if (_lipsFID == 0) {
         _phone_anim = anim;
-        _lipsFID = buildFid(OBJ_TYPE_HEAD, headFrmId, anim);
+        _lipsFID = buildFid(OBJ_TYPE_HEAD, headFromFid(headFid), anim);
         _lipsFp = artLock(_lipsFID, &_lipsKey);
         if (_lipsFp == nullptr) {
             debugPrint("failure!\n");
@@ -2688,7 +2691,7 @@ void _gdSetupFidget(int headFrmId, int reaction)
         }
     }
 
-    int fid = buildFid(OBJ_TYPE_HEAD, headFrmId, reaction);
+    int fid = buildFid(OBJ_TYPE_HEAD, headFromFid(headFid), reaction);
     int fidgetCount = artGetFidgetCount(fid);
     if (fidgetCount == -1) {
         debugPrint("\tError - No available fidgets for given frame id\n");
@@ -2729,7 +2732,7 @@ void _gdSetupFidget(int headFrmId, int reaction)
         }
     }
 
-    gGameDialogFidgetFid = buildFid(OBJ_TYPE_HEAD, headFrmId, reaction, fidget);
+    gGameDialogFidgetFid = buildFid(OBJ_TYPE_HEAD, headFromFid(headFid), reaction, fidget);
     gGameDialogFidgetFrmCurrentFrame = 0;
     gGameDialogFidgetFrm = artLock(gGameDialogFidgetFid, &gGameDialogFidgetFrmHandle);
     if (gGameDialogFidgetFrm == nullptr) {
@@ -2775,7 +2778,7 @@ void gameDialogWaitForFidgetToComplete()
 }
 
 // 0x447614
-void _gdPlayTransition(int anim)
+void _gdPlayTransition(HeadAnimation anim)
 {
     if (gGameDialogFidgetFrm == nullptr) {
         return;
@@ -2799,7 +2802,7 @@ void _gdPlayTransition(int anim)
     }
 
     CacheEntry* headFrmHandle;
-    int headFid = buildFid(OBJ_TYPE_HEAD, gGameDialogHeadFid, anim);
+    int headFid = buildFid(OBJ_TYPE_HEAD, headFromFid(gGameDialogHeadFid), anim);
     Art* headFrm = artLock(headFid, &headFrmHandle);
     if (headFrm == nullptr) {
         debugPrint("\tError locking transition...\n");
@@ -3062,7 +3065,7 @@ void gameDialogTicker()
             _can_start_new_fidget = false;
             _dialogue_seconds_since_last_input += _tocksWaiting / 1000;
             _tocksWaiting = 1000 * (randomBetween(0, 3) + 4);
-            _gdSetupFidget(gGameDialogFidgetFid & 0xFFF, (gGameDialogFidgetFid & 0xFF0000) >> 16);
+            _gdSetupFidget(gGameDialogFidgetFid, headFidgetFromFid(gGameDialogFidgetFid));
         }
         return;
     }
@@ -3111,6 +3114,8 @@ void _talk_to_critter_reacts(int reaction)
             _gdPlayTransition(HEAD_ANIMATION_BAD_TO_NEUTRAL);
             _gdSetupFidget(gGameDialogHeadFid, FIDGET_NEUTRAL);
             break;
+        default:
+            break;
         }
         break;
     case GAME_DIALOG_REACTION_NEUTRAL:
@@ -3128,6 +3133,8 @@ void _talk_to_critter_reacts(int reaction)
         case FIDGET_BAD:
             _gdPlayTransition(HEAD_ANIMATION_VERY_BAD_REACTION);
             _gdSetupFidget(gGameDialogHeadFid, FIDGET_BAD);
+            break;
+        default:
             break;
         }
         break;

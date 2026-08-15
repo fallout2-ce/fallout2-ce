@@ -2,8 +2,9 @@
 #define ART_DEFS_H
 namespace fallout {
 
-typedef enum Head {
-    HEAD_INVALID,
+enum Head : int {
+    HEAD_INVALID = -1,
+    HEAD_NONE,
     HEAD_MARCUS,
     HEAD_MYRON,
     HEAD_ELDER,
@@ -16,25 +17,49 @@ typedef enum Head {
     HEAD_HAKUNIN,
     HEAD_BOSS,
     HEAD_DYING_HAKUNIN,
-    HEAD_COUNT,
-} Head;
+};
 
-typedef enum HeadAnimation {
+inline bool headIsValid(int head)
+{
+    return head >= HEAD_NONE;
+}
+
+inline Head headFromFid(int fid)
+{
+    int head = fid & 0xFFF;
+    return static_cast<Head>(head);
+}
+
+enum HeadAnimation : int {
     HEAD_ANIMATION_VERY_GOOD_REACTION = 0,
-    FIDGET_GOOD = 1,
+    HEAD_ANIMATION_GOOD = 1,
     HEAD_ANIMATION_GOOD_TO_NEUTRAL = 2,
     HEAD_ANIMATION_NEUTRAL_TO_GOOD = 3,
-    FIDGET_NEUTRAL = 4,
+    HEAD_ANIMATION_NEUTRAL = 4,
     HEAD_ANIMATION_NEUTRAL_TO_BAD = 5,
     HEAD_ANIMATION_BAD_TO_NEUTRAL = 6,
-    FIDGET_BAD = 7,
+    HEAD_ANIMATION_BAD = 7,
     HEAD_ANIMATION_VERY_BAD_REACTION = 8,
     HEAD_ANIMATION_GOOD_PHONEMES = 9,
     HEAD_ANIMATION_NEUTRAL_PHONEMES = 10,
     HEAD_ANIMATION_BAD_PHONEMES = 11,
-} HeadAnimation;
+};
 
-typedef enum Background {
+enum HeadFidget : int {
+    FIDGET_INVALID = -1,
+    FIDGET_GOOD = 1,
+    FIDGET_NEUTRAL = 4,
+    FIDGET_BAD = 7,
+};
+
+inline HeadFidget headFidgetFromFid(int fid)
+{
+    int fidget = (fid & 0xFF0000) >> 16;
+    return static_cast<HeadFidget>(fidget);
+}
+
+enum Background : int {
+    BACKGROUND_INVALID = -1,
     BACKGROUND_0,
     BACKGROUND_1,
     BACKGROUND_2,
@@ -56,8 +81,12 @@ typedef enum Background {
     BACKGROUND_PRESIDENT,
     BACKGROUND_TENT,
     BACKGROUND_ADOBE,
-    BACKGROUND_COUNT,
-} Background;
+};
+
+inline bool backgroundIsValid(int background)
+{
+    return background >= BACKGROUND_0;
+}
 
 enum DudeNativeLook : int {
     // Hero looks as one the tribals (before finishing Temple of Trails).

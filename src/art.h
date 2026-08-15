@@ -51,7 +51,7 @@ Art* artLock(int fid, CacheEntry** cache_entry);
 unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
-int artCopyFileName(int objectType, int id, char* dest);
+int artCopyFileName(ObjectType objectType, int id, char* dest);
 int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr);
 char* artBuildFilePath(int fid);
 int artGetFramesPerSecond(Art* art);

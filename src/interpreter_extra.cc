@@ -1919,8 +1919,8 @@ static void opAttackComplex(Program* program)
 // 0x456DF0 op_start_gdialog
 static void opStartGameDialog(Program* program)
 {
-    int backgroundId = programStackPopInteger(program);
-    int headId = programStackPopInteger(program);
+    Background background = static_cast<Background>(programStackPopInteger(program)); // no validation here as called often with -1
+    Head head = static_cast<Head>(programStackPopInteger(program)); // no validation here as called often with -1
     int reactionLevel = programStackPopInteger(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     programStackPopInteger(program);
@@ -1942,11 +1942,11 @@ static void opStartGameDialog(Program* program)
         }
     }
 
-    if (headId != -1) {
-        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, headId);
+    if (headIsValid(head)) {
+        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, head);
     }
 
-    gameDialogSetBackground(backgroundId);
+    gameDialogSetBackground(background);
     gGameDialogReactionOrFidget = reactionLevel;
 
     // SFALL: Use the start_gdialog target instead of the current dialog target,
@@ -1971,7 +1971,7 @@ static void opStartGameDialog(Program* program)
 
     gGameDialogSid = scriptGetSid(program);
     gGameDialogSpeaker = scriptGetSelf(program);
-    _gdialogInitFromScript(gGameDialogHeadFid, gGameDialogReactionOrFidget);
+    _gdialogInitFromScript(gGameDialogHeadFid, static_cast<HeadFidget>(gGameDialogReactionOrFidget));
 }
 
 // end_dialogue

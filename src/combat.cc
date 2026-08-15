@@ -114,8 +114,8 @@ static void waitForGorisAnimation(Object* critter);
 static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
 static bool _check_ranged_miss(Attack* attack);
-static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim);
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int anim);
+static int _shoot_along_path(Attack* attack, int endTile, int rounds, AnimationType anim);
+static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, AnimationType anim);
 static int attackComputeEnhancedKnockout(Attack* attack);
 static int attackCompute(Attack* attack);
 static int attackComputeCriticalHit(Attack* a1);
@@ -3712,7 +3712,7 @@ static bool _check_ranged_miss(Attack* attack)
 }
 
 // 0x423284
-static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim)
+static int _shoot_along_path(Attack* attack, int endTile, int rounds, AnimationType anim)
 {
     int remainingRounds = rounds;
     int roundsHitMainTarget = 0;
@@ -3786,7 +3786,7 @@ static int _shoot_along_path(Attack* attack, int endTile, int rounds, int anim)
 }
 
 // 0x423488 compute_spray
-static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, int anim)
+static int _compute_spray(Attack* attack, int accuracy, int* roundsHitMainTargetPtr, int* roundsFiredPtr, AnimationType anim)
 {
     *roundsHitMainTargetPtr = 0;
 
@@ -3927,7 +3927,7 @@ static int attackCompute(Attack* attack)
         return -1;
     }
 
-    int anim = critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
+    AnimationType anim = critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
     int accuracy = attackDetermineToHit(attack->attacker, attack->attacker->tile, attack->defender, attack->defenderHitLocation, attack->hitMode, true);
 
     bool isGrenade = false;
