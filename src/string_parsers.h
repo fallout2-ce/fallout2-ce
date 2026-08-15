@@ -5,8 +5,10 @@ namespace fallout {
 
 typedef int(StringParserCallback)(char* string, int* valuePtr);
 
+int strParseInt(char** stringPtr, int* valuePtr);
+
 template <typename T>
-int strParseInt(char** stringPtr, T* valuePtr)
+int strParseEnum(char** stringPtr, T* valuePtr)
 {
     int temp;
     int result = strParseInt(stringPtr, &temp);
@@ -14,10 +16,10 @@ int strParseInt(char** stringPtr, T* valuePtr)
     return result;
 }
 
-int strParseInt(char** stringPtr, int* valuePtr);
+int strParseStrFromList(char** stringPtr, int* valuePtr, const char** list, int count);
 
 template <typename T>
-int strParseStrFromList(char** stringPtr, T* valuePtr, const char** list, int count)
+int strParseStrFromListEnum(char** stringPtr, T* valuePtr, const char** list, int count)
 {
     int temp;
     int result = strParseStrFromList(stringPtr, &temp, list, count);
@@ -25,9 +27,17 @@ int strParseStrFromList(char** stringPtr, T* valuePtr, const char** list, int co
     return result;
 }
 
-int strParseStrFromList(char** stringPtr, int* valuePtr, const char** list, int count);
-
 int strParseStrFromFunc(char** stringPtr, int* valuePtr, StringParserCallback* callback);
+
+template <typename T>
+int strParseStrFromFuncEnum(char** stringPtr, T* valuePtr, StringParserCallback* callback)
+{
+    int temp;
+    int result = strParseStrFromFunc(stringPtr, &temp, callback);
+    *valuePtr = static_cast<T>(temp);
+    return result;
+}
+
 int strParseIntWithKey(char** stringPtr, const char* key, int* valuePtr, const char* delimeter);
 int strParseKeyValue(char** stringPtr, char* key, int* valuePtr, const char* delimeter);
 
