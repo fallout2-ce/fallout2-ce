@@ -119,7 +119,7 @@ namespace fallout {
 #define WM_VIEW_WIDTH (450)
 #define WM_VIEW_HEIGHT (443)
 
-typedef enum EncounterFormationType {
+enum EncounterFormationType : int {
     ENCOUNTER_FORMATION_TYPE_SURROUNDING,
     ENCOUNTER_FORMATION_TYPE_STRAIGHT_LINE,
     ENCOUNTER_FORMATION_TYPE_DOUBLE_LINE,
@@ -127,7 +127,7 @@ typedef enum EncounterFormationType {
     ENCOUNTER_FORMATION_TYPE_CONE,
     ENCOUNTER_FORMATION_TYPE_HUDDLE,
     ENCOUNTER_FORMATION_TYPE_COUNT,
-} EncounterFormationType;
+};
 
 typedef enum EncounterFrequencyType {
     ENCOUNTER_FREQUENCY_TYPE_NONE,
@@ -365,7 +365,7 @@ typedef struct EncounterEntry {
 
 typedef struct Encounter {
     char name[40];
-    int position;
+    EncounterFormationType position;
     int spacing;
     int distance;
     int entriesLength;
@@ -2021,7 +2021,9 @@ static int wmReadEncBaseType(char* name, int* valuePtr)
             }
 
             if (configGetString(pConfigCfg, section, "position", &string)) {
-                strParseStrFromList(&string, &(encounter->position), wmFormationStrs, ENCOUNTER_FORMATION_TYPE_COUNT);
+                int encounterFormationTemp;
+                strParseStrFromList(&string, &encounterFormationTemp, wmFormationStrs, ENCOUNTER_FORMATION_TYPE_COUNT);
+                encounter->position = static_cast<EncounterFormationType>(encounterFormationTemp);
                 strParseIntWithKey(&string, "spacing", &(encounter->spacing), ":");
                 strParseIntWithKey(&string, "distance", &(encounter->distance), ":");
             }
