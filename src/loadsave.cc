@@ -2966,8 +2966,6 @@ static int _SlotMap2Game(File* stream)
             debugPrint("LOADSAVE: returning 7\n");
             return -1;
         }
-
-        renderLoadingScreenCursor();
     }
 
     const char* automapFileName = _strmfe(_str1, "AUTOMAP.DB", "SAV");

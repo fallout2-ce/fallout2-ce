@@ -1759,15 +1759,14 @@ void renderLoadingScreenCursor()
     }
     lastRenderTime = currentTime;
 
-    // Optional: Forcefully sync mouse state from OS if the hardware cursor lag becomes noticeable
-    // int x, y;
-    // SDL_GetMouseState(&x, &y);
-    // gMouseCursorX = x; gMouseCursorY = y;
-
     // 1. Wipe out any partial map rendering by restoring the clean menu background
     restoreLoadingScreenFreeze();
 
     // 2. Leverage original Fallout GNW blitters to draw the animated planet/spinner
+    SDL_PumpEvents();
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    _mouse_set_position(x, y);
     mouseShowCursor();
 
     // 3. Present the compiled frame onto the display

@@ -422,6 +422,7 @@ unsigned char* gLoadingScreenPixelsBackup = nullptr;
 
 void initLoadingScreenFreeze()
 {
+    mouseHideCursor();
     // Calculate the total size of the screen surface buffer
     gLoadingScreenBackupSize = gSdlTextureSurface->pitch * gSdlTextureSurface->h;
 
@@ -450,6 +451,8 @@ void freeLoadingScreenFreeze()
     if (gLoadingScreenPixelsBackup != nullptr) {
         free(gLoadingScreenPixelsBackup);
         gLoadingScreenPixelsBackup = nullptr;
+
+        mouseShowCursor();
     }
 }
 
