@@ -4611,6 +4611,8 @@ static bool wmEvalConditional(EncounterCondition* condition, int* critterCountPt
                 matches = false;
             }
             break;
+        default:
+            break;
         }
 
         if (!matches) {
@@ -5634,6 +5636,8 @@ int wmSubTileMarkRadiusVisited(int x, int y, int radius)
             }
         }
         break;
+    default:
+        break;
     }
 
     return 0;
@@ -6141,6 +6145,8 @@ static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, i
             break;
         case SUBTILE_STATE_KNOWN:
             wmInterfaceDrawSubTileRectFogged(dest, width, height, WM_WINDOW_WIDTH);
+            break;
+        default:
             break;
         }
     }
