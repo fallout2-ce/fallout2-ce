@@ -171,14 +171,22 @@ enum EncounterConditionType : int {
     ENCOUNTER_CONDITION_TYPE_TIME_OF_DAY = 6,
 };
 
-typedef enum EncounterConditionalOperator {
+enum EncounterConditionalOperator : int {
     ENCOUNTER_CONDITIONAL_OPERATOR_NONE,
     ENCOUNTER_CONDITIONAL_OPERATOR_EQUAL,
     ENCOUNTER_CONDITIONAL_OPERATOR_NOT_EQUAL,
     ENCOUNTER_CONDITIONAL_OPERATOR_LESS_THAN,
     ENCOUNTER_CONDITIONAL_OPERATOR_GREATER_THAN,
     ENCOUNTER_CONDITIONAL_OPERATOR_COUNT,
-} EncounterConditionalOperator;
+    ENCOUNTER_CONDITIONAL_OPERATOR_FIRST = ENCOUNTER_CONDITIONAL_OPERATOR_NONE
+};
+
+inline EncounterConditionalOperator operator++(EncounterConditionalOperator& e, int)
+{
+    EncounterConditionalOperator result = e;
+    e = static_cast<EncounterConditionalOperator>(static_cast<int>(e) + 1);
+    return result;
+}
 
 typedef enum EncounterRatioMode {
     ENCOUNTER_RATIO_MODE_USE_RATIO,
@@ -301,7 +309,7 @@ typedef struct Terrain {
 
 typedef struct EncounterConditionEntry {
     EncounterConditionType type;
-    int conditionalOperator;
+    EncounterConditionalOperator conditionalOperator;
     int param;
     int value;
 } EncounterConditionEntry;
@@ -519,8 +527,8 @@ static int wmParseFindTerrainTypeMatch(char* string, int* valuePtr);
 static int wmParseEncounterItemType(char** stringPtr, EncounterItem* encounterItem, int* itemCountPtr, const char* delim);
 static int wmParseItemType(char* string, EncounterItem* encounterItem);
 static int wmParseConditional(char** stringPtr, const char* ifString, EncounterCondition* condition);
-static int wmParseSubConditional(char** stringPtr, const char* ifString, EncounterConditionType* typePtr, int* operatorPtr, int* paramPtr, int* valuePtr);
-static int wmParseConditionalEval(char** stringPtr, int* conditionalOperatorPtr);
+static int wmParseSubConditional(char** stringPtr, const char* ifString, EncounterConditionType* typePtr, EncounterConditionalOperator* operatorPtr, int* paramPtr, int* valuePtr);
+static int wmParseConditionalEval(char** stringPtr, EncounterConditionalOperator* conditionalOperatorPtr);
 static int wmAreaSlotInit(CityInfo* area);
 static int wmAreaInit();
 static int wmParseFindMapIdxMatch(char* string, int* valuePtr);
@@ -2494,7 +2502,7 @@ static int wmParseConditional(char** stringPtr, const char* ifString, EncounterC
 }
 
 // 0x4BEA24 wmParseSubConditional
-static int wmParseSubConditional(char** stringPtr, const char* ifString, EncounterConditionType* typePtr, int* operatorPtr, int* paramPtr, int* valuePtr)
+static int wmParseSubConditional(char** stringPtr, const char* ifString, EncounterConditionType* typePtr, EncounterConditionalOperator* operatorPtr, int* paramPtr, int* valuePtr)
 {
     char* string = *stringPtr;
 
@@ -2692,14 +2700,14 @@ static int wmParseSubConditional(char** stringPtr, const char* ifString, Encount
 }
 
 // 0x4BEEBC wmParseConditionalEval
-static int wmParseConditionalEval(char** stringPtr, int* conditionalOperatorPtr)
+static int wmParseConditionalEval(char** stringPtr, EncounterConditionalOperator* conditionalOperatorPtr)
 {
     char* string = *stringPtr;
 
     *conditionalOperatorPtr = ENCOUNTER_CONDITIONAL_OPERATOR_NONE;
 
-    int index;
-    for (index = 0; index < ENCOUNTER_CONDITIONAL_OPERATOR_COUNT; index++) {
+    EncounterConditionalOperator index;
+    for (index = ENCOUNTER_CONDITIONAL_OPERATOR_FIRST; index < ENCOUNTER_CONDITIONAL_OPERATOR_COUNT; index++) {
         if (strstr(string, wmConditionalOpStrs[index]) == string) {
             break;
         }
