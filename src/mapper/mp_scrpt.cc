@@ -347,7 +347,7 @@ void map_set_script(int scriptIndex)
     obj->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
     objectSetLocation(obj, 1, 0, nullptr);
     obj->sid = gMapSid;
-    scriptSetFixedParam(gMapSid, (gMapHeader.flags & 1) == 0);
+    scriptSetFixedParam(gMapSid, (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE);
     Script* script;
     scriptGetScript(gMapSid, &script);
     script->index = gMapHeader.scriptIndex - 1;

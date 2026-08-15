@@ -42,7 +42,7 @@ typedef struct MapHeader {
     int scriptIndex;
 
     // map_flags
-    int flags;
+    MapHeaderFlags flags;
 
     // map_darkness
     int darkness;

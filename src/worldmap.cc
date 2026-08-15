@@ -4635,9 +4635,9 @@ static bool wmEvalSubConditional(int operand1, EncounterConditionalOperator cond
         return operand1 < operand2;
     case ENCOUNTER_CONDITIONAL_OPERATOR_GREATER_THAN:
         return operand1 > operand2;
+    default:
+        return false;
     }
-
-    return false;
 }
 
 // 0x4C1C50 wmGameTimeIncrement

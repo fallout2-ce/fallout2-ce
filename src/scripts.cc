@@ -2307,7 +2307,7 @@ static int scriptRead(Script* scr, File* stream)
         scr->procs[index] = 0;
     }
 
-    if (!(gMapHeader.flags & 1)) {
+    if (!(gMapHeader.flags & MAP_HEADER_SAVED)) {
         scr->localVarsCount = 0;
     }
 
@@ -2965,7 +2965,7 @@ void scriptsExecMapUpdateScripts(int proc)
 
     int fixedParam = 0;
     if (proc == SCRIPT_PROC_MAP_ENTER) {
-        fixedParam = (gMapHeader.flags & 1) == 0;
+        fixedParam = (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE;
     } else {
         scriptExecProc(gMapSid, proc);
     }

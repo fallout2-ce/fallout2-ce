@@ -96,7 +96,7 @@ void _obj_clear_seen();
 void _obj_process_seen();
 char* objectGetName(Object* obj);
 char* objectGetDescription(Object* obj);
-void _obj_preload_art_cache(int flags);
+void _obj_preload_art_cache(MapHeaderFlags flags);
 int _obj_save_dude(File* stream);
 int _obj_load_dude(File* stream);
 void _obj_fix_violence_settings(int* fid);
