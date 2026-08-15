@@ -1828,9 +1828,7 @@ static int wmParseEncounterTableIndex(EncounterTableEntry* encounterTableEntry, 
             char* pch = strstr(string, "scenery:");
             if (pch != nullptr) {
                 string = pch + 8;
-                int encounterSceneryTemp;
-                strParseStrFromList(&string, &encounterSceneryTemp, wmSceneryStrs, ENCOUNTER_SCENERY_TYPE_COUNT);
-                encounterTableEntry->scenery = static_cast<EncounterSceneryType>(encounterSceneryTemp);
+                strParseStrFromList(&string, &(encounterTableEntry->scenery), wmSceneryStrs, ENCOUNTER_SCENERY_TYPE_COUNT);
             }
         }
 
@@ -1921,10 +1919,7 @@ static int wmParseEncounterSubEncStr(EncounterTableEntry* encounterTableEntry, c
         *end = '\0';
 
         if (*string != '\0') {
-            int encounterSituation;
-            if (strParseStrFromList(&string, &encounterSituation, wmEncOpStrs, ENCOUNTER_SITUATION_COUNT) != -1) {
-                encounterTableSubEntry->situation = static_cast<EncounterSituation>(encounterSituation);
-            }
+            strParseStrFromList(&string, &(encounterTableSubEntry->situation), wmEncOpStrs, ENCOUNTER_SITUATION_COUNT);
         }
 
         *end = ch;
@@ -2034,9 +2029,7 @@ static int wmReadEncBaseType(char* name, int* valuePtr)
             }
 
             if (configGetString(pConfigCfg, section, "position", &string)) {
-                int encounterFormationTemp;
-                strParseStrFromList(&string, &encounterFormationTemp, wmFormationStrs, ENCOUNTER_FORMATION_TYPE_COUNT);
-                encounter->position = static_cast<EncounterFormationType>(encounterFormationTemp);
+                strParseStrFromList(&string, &(encounter->position), wmFormationStrs, ENCOUNTER_FORMATION_TYPE_COUNT);
                 strParseIntWithKey(&string, "spacing", &(encounter->spacing), ":");
                 strParseIntWithKey(&string, "distance", &(encounter->distance), ":");
             }
@@ -2842,12 +2835,9 @@ static int wmAreaInit()
             city->state = static_cast<CityState>(cityStateTemp);
 
             if (configGetString(&cfg, section, "lock_state", &str)) {
-                int lockStateTemp;
-                if (strParseStrFromList(&str, &lockStateTemp, wmStateStrs, 2) == -1) {
+                if (strParseStrFromList(&str, &(city->lockState), wmStateStrs, 2) == -1) {
                     return -1;
                 }
-
-                city->lockState = static_cast<LockState>(lockStateTemp);
             }
 
             if (!configGetString(&cfg, section, "size", &str)) {
@@ -2895,12 +2885,9 @@ static int wmAreaInit()
                     return -1;
                 }
 
-                int rotationInt;
-                if (strParseInt(&str, &rotationInt) == -1) {
+                if (strParseInt(&str, &(entrance->rotation)) == -1) {
                     return -1;
                 }
-
-                entrance->rotation = static_cast<Rotation>(rotationInt);
 
                 city->entrancesLength++;
             }
