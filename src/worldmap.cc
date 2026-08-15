@@ -193,12 +193,12 @@ enum EncounterRatioMode : int {
     ENCOUNTER_RATIO_MODE_SINGLE,
 };
 
-typedef enum Daytime {
+enum Daytime : int {
     DAY_PART_MORNING,
     DAY_PART_AFTERNOON,
     DAY_PART_NIGHT,
     DAY_PART_COUNT,
-} Daytime;
+};
 
 enum LockState : int {
     LOCK_STATE_UNLOCKED,
@@ -3827,7 +3827,7 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
     // NOTE: Uninline.
     wmPartyFindCurSubTile();
 
-    int dayPart;
+    Daytime dayPart;
     int gameTimeHour = gameTimeGetHour();
     // CE: vanilla has gameTimeHour <= 600, so day doesn't start until 6:01
     if (gameTimeHour >= 1800 || gameTimeHour < 600) {
@@ -6948,7 +6948,7 @@ int wmSfxIdxName(int sfxIdx, char** namePtr)
     }
 
     if (remapped != 0) {
-        int dayPart;
+        Daytime dayPart;
 
         int gameTimeHour = gameTimeGetHour();
         if (gameTimeHour <= 600 || gameTimeHour >= 1800) {
