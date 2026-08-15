@@ -2830,12 +2830,9 @@ static int wmAreaInit()
                 exit(1);
             }
             
-            int cityStateTemp;
-            if (strParseStrFromList(&str, &cityStateTemp, wmStateStrs, 2) == -1) {
+            if (strParseStrFromListEnum<CityState>(&str, &(city->state), wmStateStrs, 2) == -1) {
                 return -1;
             }
-
-            city->state = static_cast<CityState>(cityStateTemp);
 
             if (configGetString(&cfg, section, "lock_state", &str)) {
                 if (strParseStrFromList(&str, &(city->lockState), wmStateStrs, LOCK_STATE_COUNT) == -1) {
