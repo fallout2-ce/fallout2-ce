@@ -144,6 +144,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(executable);
     SETTING_PATH(master_dat);
     SETTING_PATH(master_patches);
+    SETTING_PATH(f2_res_dat);
     SETTING_PATH(critter_dat);
     SETTING_PATH(critter_patches);
     SETTING(language);
