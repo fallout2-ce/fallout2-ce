@@ -161,7 +161,7 @@ enum EncounterLogicalOperator : int {
     ENCOUNTER_LOGICAL_OPERATOR_OR,
 };
 
-typedef enum EncounterConditionType {
+enum EncounterConditionType : int {
     ENCOUNTER_CONDITION_TYPE_NONE = 0,
     ENCOUNTER_CONDITION_TYPE_GLOBAL = 1,
     ENCOUNTER_CONDITION_TYPE_NUMBER_OF_CRITTERS = 2,
@@ -169,7 +169,7 @@ typedef enum EncounterConditionType {
     ENCOUNTER_CONDITION_TYPE_PLAYER = 4,
     ENCOUNTER_CONDITION_TYPE_DAYS_PLAYED = 5,
     ENCOUNTER_CONDITION_TYPE_TIME_OF_DAY = 6,
-} EncounterConditionType;
+};
 
 typedef enum EncounterConditionalOperator {
     ENCOUNTER_CONDITIONAL_OPERATOR_NONE,
@@ -300,7 +300,7 @@ typedef struct Terrain {
 } Terrain;
 
 typedef struct EncounterConditionEntry {
-    int type;
+    EncounterConditionType type;
     int conditionalOperator;
     int param;
     int value;
@@ -518,8 +518,8 @@ static int wmParseFindEncounterTypeMatch(char* string, int* valuePtr);
 static int wmParseFindTerrainTypeMatch(char* string, int* valuePtr);
 static int wmParseEncounterItemType(char** stringPtr, EncounterItem* encounterItem, int* itemCountPtr, const char* delim);
 static int wmParseItemType(char* string, EncounterItem* encounterItem);
-static int wmParseConditional(char** stringPtr, const char* a2, EncounterCondition* condition);
-static int wmParseSubConditional(char** stringPtr, const char* a2, int* typePtr, int* operatorPtr, int* paramPtr, int* valuePtr);
+static int wmParseConditional(char** stringPtr, const char* ifString, EncounterCondition* condition);
+static int wmParseSubConditional(char** stringPtr, const char* ifString, EncounterConditionType* typePtr, int* operatorPtr, int* paramPtr, int* valuePtr);
 static int wmParseConditionalEval(char** stringPtr, int* conditionalOperatorPtr);
 static int wmAreaSlotInit(CityInfo* area);
 static int wmAreaInit();
@@ -2463,11 +2463,11 @@ static int wmParseItemType(char* string, EncounterItem* encounterItem)
 }
 
 // 0x4BE988 wmParseConditional
-static int wmParseConditional(char** stringPtr, const char* a2, EncounterCondition* condition)
+static int wmParseConditional(char** stringPtr, const char* ifString, EncounterCondition* condition)
 {
     while (condition->entriesLength < 3) {
         EncounterConditionEntry* conditionEntry = &(condition->entries[condition->entriesLength]);
-        if (wmParseSubConditional(stringPtr, a2, &(conditionEntry->type), &(conditionEntry->conditionalOperator), &(conditionEntry->param), &(conditionEntry->value)) == -1) {
+        if (wmParseSubConditional(stringPtr, ifString, &(conditionEntry->type), &(conditionEntry->conditionalOperator), &(conditionEntry->param), &(conditionEntry->value)) == -1) {
             return -1;
         }
 
@@ -2494,7 +2494,7 @@ static int wmParseConditional(char** stringPtr, const char* a2, EncounterConditi
 }
 
 // 0x4BEA24 wmParseSubConditional
-static int wmParseSubConditional(char** stringPtr, const char* a2, int* typePtr, int* operatorPtr, int* paramPtr, int* valuePtr)
+static int wmParseSubConditional(char** stringPtr, const char* ifString, EncounterConditionType* typePtr, int* operatorPtr, int* paramPtr, int* valuePtr)
 {
     char* string = *stringPtr;
 
@@ -2525,7 +2525,7 @@ static int wmParseSubConditional(char** stringPtr, const char* a2, int* typePtr,
     string[parenPos] = '\0';
 
     bool found = false;
-    if (strstr(string, a2) == string) {
+    if (strstr(string, ifString) == string) {
         found = true;
     }
 
