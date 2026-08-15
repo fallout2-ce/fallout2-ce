@@ -192,10 +192,10 @@ typedef enum Daytime {
     DAY_PART_COUNT,
 } Daytime;
 
-typedef enum LockState {
+enum LockState : int {
     LOCK_STATE_UNLOCKED,
     LOCK_STATE_LOCKED,
-} LockState;
+};
 
 enum SubtileState : int {
     SUBTILE_STATE_UNKNOWN,
@@ -260,7 +260,7 @@ typedef struct CityInfo {
     int y;
     int size;
     CityState state;
-    int lockState;
+    LockState lockState;
     int visitedState;
     int mapFid;
     int labelFid;
@@ -2827,9 +2827,12 @@ static int wmAreaInit()
             city->state = static_cast<CityState>(cityStateTemp);
 
             if (configGetString(&cfg, section, "lock_state", &str)) {
-                if (strParseStrFromList(&str, &(city->lockState), wmStateStrs, 2) == -1) {
+                int lockStateTemp;
+                if (strParseStrFromList(&str, &lockStateTemp, wmStateStrs, 2) == -1) {
                     return -1;
                 }
+
+                city->lockState = static_cast<LockState>(lockStateTemp);
             }
 
             if (!configGetString(&cfg, section, "size", &str)) {
