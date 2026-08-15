@@ -197,11 +197,11 @@ typedef enum LockState {
     LOCK_STATE_LOCKED,
 } LockState;
 
-typedef enum SubtileState {
+enum SubtileState : int {
     SUBTILE_STATE_UNKNOWN,
     SUBTILE_STATE_KNOWN,
     SUBTILE_STATE_VISITED,
-} SubtileState;
+};
 
 typedef enum SubtileFill {
     SUBTILE_FILL_NONE,
@@ -377,7 +377,7 @@ typedef struct SubtileInfo {
     int fill;
     int encounterChance[DAY_PART_COUNT];
     int encounterType;
-    int state;
+    SubtileState state;
 } SubtileInfo;
 
 // A worldmap tile is 7x6 area, thus consisting of 42 individual subtiles.
@@ -562,7 +562,7 @@ static int wmInterfaceScrollPixel(int stepX, int stepY, int dx, int dy, bool* su
 static void wmMouseBkProc();
 static int wmMarkSubTileOffsetVisited(int tile, int subtileX, int subtileY, int offsetX, int offsetY);
 static int wmMarkSubTileOffsetKnown(int tile, int subtileX, int subtileY, int offsetX, int offsetY);
-static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, int subtileState);
+static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, SubtileState subtileState);
 static void wmMarkSubTileRadiusVisited(int x, int y);
 static int wmTileGrabArt(int tileIdx);
 static int wmInterfaceRefresh();
@@ -579,7 +579,7 @@ static const char* wmGetHotspotText();
 static bool wmCursorIsVisible();
 static void wmResetTerrainInfo();
 static int wmGetAreaName(CityInfo* city, char* name);
-static void wmMarkAllSubTiles(int state);
+static void wmMarkAllSubTiles(SubtileState state);
 static int wmTownMapFunc(int* mapIdxPtr);
 static int wmTownMapInit();
 static int wmTownMapRefresh();
@@ -1384,7 +1384,7 @@ int wmWorldMap_reset()
 
     wmWorldMapLoadTempData();
     wmSetStartWorldView();
-    wmMarkAllSubTiles(0);
+    wmMarkAllSubTiles(SUBTILE_STATE_UNKNOWN);
 
     return wmGenDataReset();
 }
@@ -1435,7 +1435,7 @@ int wmWorldMap_save(File* stream)
             for (int row = 0; row < SUBTILE_GRID_WIDTH; row++) {
                 SubtileInfo* subtile = &(tileInfo->subtiles[column][row]);
 
-                if (fileWriteInt32(stream, subtile->state) == -1) return -1;
+                if (fileWriteInt32Enum<SubtileState>(stream, subtile->state) == -1) return -1;
             }
         }
     }
@@ -1550,7 +1550,7 @@ int wmWorldMap_load(File* stream)
             for (int row = 0; row < SUBTILE_GRID_WIDTH; row++) {
                 SubtileInfo* subtile = &(tile->subtiles[column][row]);
 
-                if (fileReadInt32(stream, &(subtile->state)) == -1) return -1;
+                if (fileReadInt32Enum<SubtileState>(stream, &(subtile->state)) == -1) return -1;
             }
         }
     }
@@ -5513,7 +5513,7 @@ static int wmMarkSubTileOffsetKnown(int tile, int subtileX, int subtileY, int of
 }
 
 // 0x4C3434 wmMarkSubTileOffsetVisitedFunc
-static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, int subtileState)
+static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, SubtileState subtileState)
 {
     int actualTile;
     int actualSubtileX;
@@ -6465,7 +6465,7 @@ bool wmStartWorldPosIsConfigured()
 }
 
 // 0x4C47D8 wmMarkAllSubTiles
-static void wmMarkAllSubTiles(int state)
+static void wmMarkAllSubTiles(SubtileState state)
 {
     for (int tileIndex = 0; tileIndex < wmMaxTileNum; tileIndex++) {
         TileInfo* tile = &(wmTileInfoList[tileIndex]);
