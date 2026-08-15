@@ -105,6 +105,8 @@ private:
     int gameMode;
 };
 
+void renderLoadingScreenCursor();
+
 } // namespace fallout
 
 #endif /* GAME_H */

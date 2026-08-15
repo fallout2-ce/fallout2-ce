@@ -1741,4 +1741,37 @@ void gameHandleSkilldexResult(SkilldexRC rc)
     }
 }
 
+void renderLoadingScreenCursor()
+{
+    // Safety check: Exit immediately if the freeze buffer wasn't initialized,
+    // or if the function is accidentally called outside the loading sequence.
+    if (gLoadingScreenPixelsBackup == nullptr || gSdlTextureSurface == nullptr || gSdlTextureSurface->pixels == nullptr) {
+        return;
+    }
+
+    // Frame rate throttling to achieve ~60 FPS for the spinner animation
+    static uint32_t lastRenderTime = 0;
+    uint32_t currentTime = SDL_GetTicks();
+
+    // If less than 16ms passed since the last frame, skip rendering to prevent GPU overhead
+    if (currentTime - lastRenderTime < 16) {
+        return;
+    }
+    lastRenderTime = currentTime;
+
+    // Optional: Forcefully sync mouse state from OS if the hardware cursor lag becomes noticeable
+    // int x, y;
+    // SDL_GetMouseState(&x, &y);
+    // gMouseCursorX = x; gMouseCursorY = y;
+
+    // 1. Wipe out any partial map rendering by restoring the clean menu background
+    restoreLoadingScreenFreeze();
+
+    // 2. Leverage original Fallout GNW blitters to draw the animated planet/spinner
+    mouseShowCursor();
+
+    // 3. Present the compiled frame onto the display
+    renderPresent();
+}
+
 } // namespace fallout

@@ -19,6 +19,18 @@ extern SDL_Texture* gSdlTexture;
 extern SDL_Surface* gSdlTextureSurface;
 extern FpsLimiter sharedFpsLimiter;
 
+// Safely backed up pixels of the interface before heavy loading starts
+extern unsigned char* gLoadingScreenPixelsBackup;
+
+// Allocates memory and takes a deep snapshot of the current screen surface
+void initLoadingScreenFreeze();
+
+// Restores the screen surface back to the clean snapshot state
+void restoreLoadingScreenFreeze();
+
+// Frees the allocated loading screen backup buffer
+void freeLoadingScreenFreeze();
+
 enum class WindowMode : int {
     Fullscreen = 0,
     Windowed = 1,

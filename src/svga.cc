@@ -416,4 +416,41 @@ void renderPresent()
     SDL_RenderPresent(gSdlRenderer);
 }
 
+// Buffer size and raw pixel data for freezing the loading screen
+static int gLoadingScreenBackupSize = 0;
+unsigned char* gLoadingScreenPixelsBackup = nullptr;
+
+void initLoadingScreenFreeze()
+{
+    // Calculate the total size of the screen surface buffer
+    gLoadingScreenBackupSize = gSdlTextureSurface->pitch * gSdlTextureSurface->h;
+
+    if (gLoadingScreenPixelsBackup != nullptr) {
+        free(gLoadingScreenPixelsBackup);
+    }
+
+    // Allocate memory and make a deep copy of clean screen pixels
+    gLoadingScreenPixelsBackup = (unsigned char*)malloc(gLoadingScreenBackupSize);
+    if (gSdlTextureSurface->pixels && gLoadingScreenPixelsBackup) {
+        memcpy(gLoadingScreenPixelsBackup, gSdlTextureSurface->pixels, gLoadingScreenBackupSize);
+    }
+}
+
+void restoreLoadingScreenFreeze()
+{
+    // Completely overwrite any intermediate map loading artifacts
+    // with the original frozen menu pixels before drawing the cursor
+    if (gSdlTextureSurface->pixels && gLoadingScreenPixelsBackup) {
+        memcpy(gSdlTextureSurface->pixels, gLoadingScreenPixelsBackup, gLoadingScreenBackupSize);
+    }
+}
+
+void freeLoadingScreenFreeze()
+{
+    if (gLoadingScreenPixelsBackup != nullptr) {
+        free(gLoadingScreenPixelsBackup);
+        gLoadingScreenPixelsBackup = nullptr;
+    }
+}
+
 } // namespace fallout
