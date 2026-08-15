@@ -167,7 +167,24 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     // it should be initialized early in the process.
     messageListRepositoryInit();
 
-    programWindowSetTitle(windowTitle);
+    const char* programWindowTitle = windowTitle;
+    char versionWindowTitle[256];
+    if (settings.screen.windowed == WindowMode::Windowed) {
+        char* configuredWindowTitle = nullptr;
+        configGetString(&gContentConfig, CONTENT_CONFIG_MISC_SECTION, "window_title", &configuredWindowTitle, "");
+        if (configuredWindowTitle != nullptr && configuredWindowTitle[0] != '\0') {
+            programWindowTitle = configuredWindowTitle;
+        } else {
+            char* versionString = nullptr;
+            configGetString(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "version_string", &versionString, "");
+            if (versionString != nullptr && versionString[0] != '\0') {
+                versionGetVersion(versionWindowTitle, sizeof(versionWindowTitle));
+                programWindowTitle = versionWindowTitle;
+            }
+        }
+    }
+
+    programWindowSetTitle(programWindowTitle);
     windowInit(1, flags);
     paletteInit();
 
