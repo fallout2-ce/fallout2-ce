@@ -12,6 +12,7 @@ struct SystemSettings {
     std::string executable = "game";
     std::string master_dat_path = "master.dat";
     std::string master_patches_path = "data";
+    std::string f2_res_dat_path = "f2_res.dat";
     std::string critter_dat_path = "critter.dat";
     std::string critter_patches_path = "data";
     std::string language = ENGLISH;

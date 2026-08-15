@@ -13,6 +13,7 @@ namespace fallout {
 
 #define GAME_CONFIG_MASTER_DAT_KEY "master_dat"
 #define GAME_CONFIG_MASTER_PATCHES_KEY "master_patches"
+#define GAME_CONFIG_F2_RES_DAT_KEY "f2_res_dat"
 #define GAME_CONFIG_CRITTER_DAT_KEY "critter_dat"
 #define GAME_CONFIG_CRITTER_PATCHES_KEY "critter_patches"
 #define GAME_CONFIG_MUSIC_PATH1_KEY "music_path1"
