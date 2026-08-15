@@ -211,7 +211,7 @@ enum SubtileState : int {
     SUBTILE_STATE_VISITED,
 };
 
-typedef enum SubtileFill {
+enum SubtileFill : int {
     SUBTILE_FILL_NONE,
     SUBTILE_FILL_N,
     SUBTILE_FILL_S,
@@ -222,7 +222,7 @@ typedef enum SubtileFill {
     SUBTILE_FILL_SW,
     SUBTILE_FILL_SE,
     SUBTILE_FILL_COUNT,
-} SubtileFill;
+};
 
 typedef enum WorldMapEncounterFrm {
     WORLD_MAP_ENCOUNTER_FRM_RANDOM_BRIGHT,
@@ -382,7 +382,7 @@ typedef struct Encounter {
 
 typedef struct SubtileInfo {
     int terrain;
-    int fill;
+    SubtileFill fill;
     int encounterChance[DAY_PART_COUNT];
     int encounterType;
     SubtileState state;
