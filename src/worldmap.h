@@ -42,12 +42,11 @@ inline MapFlags& operator|=(MapFlags& lhs, MapFlags rhs)
     return lhs = lhs | rhs;
 }
 
-typedef enum CityState {
+enum CityState : int {
     CITY_STATE_UNKNOWN,
     CITY_STATE_KNOWN,
-    CITY_STATE_VISITED,
-    CITY_STATE_INVISIBLE = -66,
-} CityState;
+    CITY_STATE_VISITED
+};
 
 typedef enum City {
     CITY_ARROYO,
@@ -297,7 +296,7 @@ int wmAreaVisitedState(int areaIdx);
 bool wmMapIsKnown(int mapIdx);
 int wmAreaMarkVisited(int areaIdx);
 bool wmAreaMarkVisitedState(int areaIdx, int state);
-bool wmAreaSetVisibleState(int areaIdx, int state, bool force);
+bool wmAreaSetVisibleState(int areaIdx, CityState state, bool force);
 int wmAreaSetWorldPos(int areaIdx, int x, int y);
 int wmGetPartyWorldPos(int* xPtr, int* yPtr);
 int wmGetPartyCurArea(int* areaIdxPtr);

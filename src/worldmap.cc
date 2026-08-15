@@ -259,7 +259,7 @@ typedef struct CityInfo {
     int x;
     int y;
     int size;
-    int state;
+    CityState state;
     int lockState;
     int visitedState;
     int mapFid;
@@ -1415,7 +1415,7 @@ int wmWorldMap_save(File* stream)
         CityInfo* cityInfo = &(wmAreaInfoList[areaIdx]);
         if (fileWriteInt32(stream, cityInfo->x) == -1) return -1;
         if (fileWriteInt32(stream, cityInfo->y) == -1) return -1;
-        if (fileWriteInt32(stream, cityInfo->state) == -1) return -1;
+        if (fileWriteInt32Enum<CityState>(stream, cityInfo->state) == -1) return -1;
         if (fileWriteInt32(stream, cityInfo->visitedState) == -1) return -1;
         if (fileWriteInt32(stream, cityInfo->entrancesLength) == -1) return -1;
 
@@ -1512,7 +1512,7 @@ int wmWorldMap_load(File* stream)
 
         if (fileReadInt32(stream, &(city->x)) == -1) return -1;
         if (fileReadInt32(stream, &(city->y)) == -1) return -1;
-        if (fileReadInt32(stream, &(city->state)) == -1) return -1;
+        if (fileReadInt32Enum<CityState>(stream, &(city->state)) == -1) return -1;
         if (fileReadInt32(stream, &(city->visitedState)) == -1) return -1;
 
         int entranceCount;
@@ -2818,10 +2818,13 @@ static int wmAreaInit()
                 showMessageBox("\nwmConfigInit::Error loading areas!");
                 exit(1);
             }
-
-            if (strParseStrFromList(&str, &(city->state), wmStateStrs, 2) == -1) {
+            
+            int cityStateTemp;
+            if (strParseStrFromList(&str, &cityStateTemp, wmStateStrs, 2) == -1) {
                 return -1;
             }
+
+            city->state = static_cast<CityState>(cityStateTemp);
 
             if (configGetString(&cfg, section, "lock_state", &str)) {
                 if (strParseStrFromList(&str, &(city->lockState), wmStateStrs, 2) == -1) {
@@ -6387,7 +6390,7 @@ bool wmAreaMarkVisitedState(int areaIdx, int state)
 }
 
 // 0x4C46CC wmAreaSetVisibleState
-bool wmAreaSetVisibleState(int areaIdx, int state, bool force)
+bool wmAreaSetVisibleState(int areaIdx, CityState state, bool force)
 {
     if (!cityIsValid(areaIdx)) {
         return false;
