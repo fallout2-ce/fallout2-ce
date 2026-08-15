@@ -168,6 +168,21 @@ int gameInitWithOptions(const char* windowTitle, bool isMapper, int font, int fl
     messageListRepositoryInit();
 
     programWindowSetTitle(windowTitle);
+
+    const char* visibleWindowTitle = windowTitle;
+    char versionWindowTitle[256];
+    if (settings.screen.windowed == WindowMode::Windowed) {
+        char* configuredWindowTitle = nullptr;
+        configGetString(&gContentConfig, CONTENT_CONFIG_MISC_SECTION, "window_title", &configuredWindowTitle, "");
+        if (configuredWindowTitle != nullptr && configuredWindowTitle[0] != '\0') {
+            visibleWindowTitle = configuredWindowTitle;
+        } else {
+            versionGetVersion(versionWindowTitle, sizeof(versionWindowTitle));
+            visibleWindowTitle = versionWindowTitle;
+        }
+    }
+
+    programWindowSetTitle(visibleWindowTitle);
     windowInit(1, flags);
     paletteInit();
 
