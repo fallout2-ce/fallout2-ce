@@ -655,39 +655,13 @@ int tileSetCenter(int tile, int flags)
     return 0;
 }
 
-// Port of HRP EdgeClipping::CheckRect.
-// Returns true if any corner of the screen-space rect maps to a tile outside the 200x200 grid.
-bool checkRectNeedsClear(const Rect* rect, int elevation)
+bool checkRectNeedsClear(const Rect* rect, bool hasVisArea, const Rect* visArea)
 {
-    (void)elevation;
-
-    int cX, cY;
-    tileToPixelOffset(gCenterTile, cX, cY);
-
-    const int halfW = gTileWindowWidth / 2;
-    const int halfH = gTileWindowHeight / 2;
-
-    // Convert screen-space rect corners to pixel-offset space (HRP formula).
-    // xLeft = (cX + width) - rect->left,  yTop = (cY + rect->top) - height
-    // xRight = (cX + width) - rect->right, yBottom = (cY + rect->bottom) - height
-    struct {
-        int x, y;
-    } corners[4] = {
-        { (cX + halfW) - rect->left, (cY + rect->top) - halfH },
-        { (cX + halfW) - rect->right, (cY + rect->top) - halfH },
-        { (cX + halfW) - rect->left, (cY + rect->bottom) - halfH },
-        { (cX + halfW) - rect->right, (cY + rect->bottom) - halfH }
-    };
-
-    for (int i = 0; i < 4; i++) {
-        int x = corners[i].x;
-        int y = corners[i].y;
-        pixelToTileCoord(x, y);
-        if (x < 0 || x >= HEX_GRID_WIDTH || y < 0 || y >= HEX_GRID_HEIGHT) {
-            return true;
-        }
+    if (!hasVisArea) {
+        return true;
     }
-    return false;
+
+    return (rect->left < visArea->left || rect->right > visArea->right || rect->top < visArea->top || rect->bottom > visArea->bottom);
 }
 
 // TODO: these two functions are exact copies of isoWindowRefreshRect*. gTileWindowBuffer == gIsoWindowBuffer, these are the same window!
@@ -703,8 +677,11 @@ static void tileRefreshMapper(Rect* rect, int elevation)
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
 
+    Rect renderRect = rectToUpdate;
+    bool didClear = checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea);
+
     // HRP EdgeClipping: when clipped, clear only if CheckRect; otherwise always clear.
-    if (!hasVisArea || checkRectNeedsClear(&rectToUpdate, elevation)) {
+    if (didClear) {
         bufferFill(gTileWindowBuffer + gTileWindowPitch * rectToUpdate.top + rectToUpdate.left,
             rectGetWidth(&rectToUpdate),
             rectGetHeight(&rectToUpdate),
@@ -712,23 +689,26 @@ static void tileRefreshMapper(Rect* rect, int elevation)
             0);
     }
 
-    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+    if (hasVisArea && rectIntersection(&renderRect, &visArea, &renderRect) == -1) {
+        if (didClear) {
+            gTileWindowRefreshProc(&rectToUpdate);
+        }
         return;
     }
 
-    tileRenderFloorsInRect(&rectToUpdate, elevation);
-    _grid_render(&rectToUpdate, elevation);
-    _obj_render_pre_roof(&rectToUpdate, elevation);
-    tileRenderRoofsInRect(&rectToUpdate, elevation);
-    _obj_render_post_roof(&rectToUpdate, elevation);
+    tileRenderFloorsInRect(&renderRect, elevation);
+    _grid_render(&renderRect, elevation);
+    _obj_render_pre_roof(&renderRect, elevation);
+    tileRenderRoofsInRect(&renderRect, elevation);
+    _obj_render_post_roof(&renderRect, elevation);
 
     if (!hasVisArea) {
-        tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+        tile_hires_stencil_draw(&renderRect, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 
-    tileMapperOverlayRender(gTileWindowBuffer, gTileWindowPitch, elevation, &rectToUpdate);
+    tileMapperOverlayRender(gTileWindowBuffer, gTileWindowPitch, elevation, &renderRect);
 
-    gTileWindowRefreshProc(&rectToUpdate);
+    gTileWindowRefreshProc(didClear ? &rectToUpdate : &renderRect);
 }
 
 // 0x4B15E8 refresh_game
@@ -743,8 +723,11 @@ static void tileRefreshGame(Rect* rect, int elevation)
     Rect visArea;
     bool hasVisArea = mapEdgeComputeVisibleArea(elevation, &visArea);
 
+    Rect renderRect = rectToUpdate;
+    bool didClear = checkRectNeedsClear(&rectToUpdate, hasVisArea, &visArea);
+
     // HRP EdgeClipping: when clipped, clear only if CheckRect; otherwise always clear.
-    if (!hasVisArea || checkRectNeedsClear(&rectToUpdate, elevation)) {
+    if (didClear) {
         bufferFill(gTileWindowBuffer + rectToUpdate.top * gTileWindowPitch + rectToUpdate.left,
             rectGetWidth(&rectToUpdate),
             rectGetHeight(&rectToUpdate),
@@ -752,20 +735,23 @@ static void tileRefreshGame(Rect* rect, int elevation)
             0);
     }
 
-    if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
+    if (hasVisArea && rectIntersection(&renderRect, &visArea, &renderRect) == -1) {
+        if (didClear) {
+            gTileWindowRefreshProc(&rectToUpdate);
+        }
         return;
     }
 
-    tileRenderFloorsInRect(&rectToUpdate, elevation);
-    _obj_render_pre_roof(&rectToUpdate, elevation);
-    tileRenderRoofsInRect(&rectToUpdate, elevation);
-    _obj_render_post_roof(&rectToUpdate, elevation);
+    tileRenderFloorsInRect(&renderRect, elevation);
+    _obj_render_pre_roof(&renderRect, elevation);
+    tileRenderRoofsInRect(&renderRect, elevation);
+    _obj_render_post_roof(&renderRect, elevation);
 
     if (!hasVisArea) {
-        tile_hires_stencil_draw(&rectToUpdate, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
+        tile_hires_stencil_draw(&renderRect, gTileWindowBuffer, gTileWindowWidth, gTileWindowHeight);
     }
 
-    gTileWindowRefreshProc(&rectToUpdate);
+    gTileWindowRefreshProc(didClear ? &rectToUpdate : &renderRect);
 }
 
 // 0x4B1634 tile_toggle_roof
