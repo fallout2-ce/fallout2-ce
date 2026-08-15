@@ -1759,17 +1759,17 @@ void renderLoadingScreenCursor()
     }
     lastRenderTime = currentTime;
 
-    // 1. Wipe out any partial map rendering by restoring the clean menu background
+    // Wipe out any partial map rendering by restoring the clean menu background
     restoreLoadingScreenFreeze();
 
-    // 2. Leverage original Fallout GNW blitters to draw the animated planet/spinner
+    // Set mouse position
     SDL_PumpEvents();
     int x, y;
     SDL_GetMouseState(&x, &y);
     _mouse_set_position(x, y);
     mouseShowCursor();
 
-    // 3. Present the compiled frame onto the display
+    // Present the compiled frame onto the display
     renderPresent();
 }
 
