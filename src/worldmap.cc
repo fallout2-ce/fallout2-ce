@@ -203,6 +203,7 @@ enum Daytime : int {
 enum LockState : int {
     LOCK_STATE_UNLOCKED,
     LOCK_STATE_LOCKED,
+    LOCK_STATE_COUNT
 };
 
 enum SubtileState : int {
@@ -238,12 +239,20 @@ typedef enum WorldmapArrowFrm {
     WORLDMAP_ARROW_FRM_COUNT,
 } WorldmapArrowFrm;
 
-typedef enum CitySize {
+enum CitySize : int {
     CITY_SIZE_SMALL,
     CITY_SIZE_MEDIUM,
     CITY_SIZE_LARGE,
     CITY_SIZE_COUNT,
-} CitySize;
+    CITY_SIZE_FIRST = CITY_SIZE_SMALL
+};
+
+inline CitySize operator++(CitySize& e, int)
+{
+    CitySize result = e;
+    e = static_cast<CitySize>(static_cast<int>(e) + 1);
+    return result;
+}
 
 typedef struct EntranceInfo {
     int state;
@@ -260,7 +269,7 @@ typedef struct CityInfo {
     int areaId;
     int x;
     int y;
-    int size;
+    CitySize size;
     CityState state;
     LockState lockState;
     int visitedState;
@@ -1124,7 +1133,7 @@ int wmWorldMap_init()
     // during |wmTeleportToArea| to calculate worldmap position when jumping
     // from Temple to Arroyo - before giving a chance to |wmInterfaceInit| to
     // initialize it.
-    for (int citySize = 0; citySize < CITY_SIZE_COUNT; citySize++) {
+    for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
         citySizeDescription->fid = buildFid(OBJ_TYPE_INTERFACE, 336 + citySize);
     }
@@ -2829,7 +2838,7 @@ static int wmAreaInit()
             city->state = static_cast<CityState>(cityStateTemp);
 
             if (configGetString(&cfg, section, "lock_state", &str)) {
-                if (strParseStrFromList(&str, &(city->lockState), wmStateStrs, 2) == -1) {
+                if (strParseStrFromList(&str, &(city->lockState), wmStateStrs, LOCK_STATE_COUNT) == -1) {
                     return -1;
                 }
             }
@@ -2839,7 +2848,7 @@ static int wmAreaInit()
                 exit(1);
             }
 
-            if (strParseStrFromList(&str, &(city->size), wmAreaSizeStrs, 3) == -1) {
+            if (strParseStrFromList(&str, &(city->size), wmAreaSizeStrs, CITY_SIZE_COUNT) == -1) {
                 return -1;
             }
 
@@ -5006,7 +5015,7 @@ static int wmInterfaceInit()
         wmBkWinBuf,
         WM_WINDOW_WIDTH);
 
-    for (int citySize = 0; citySize < CITY_SIZE_COUNT; citySize++) {
+    for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
         if (!citySizeDescription->frmImage.lock(citySizeDescription->fid)) {
             return -1;
@@ -5261,8 +5270,8 @@ static int wmInterfaceExit()
         wmGenData.encounterCursorFrmImages[i].unlock();
     }
 
-    for (i = 0; i < CITY_SIZE_COUNT; i++) {
-        CitySizeDescription* citySizeDescription = &(wmSphereData[i]);
+    for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
+        CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
         citySizeDescription->frmImage.unlock();
     }
 
