@@ -155,11 +155,11 @@ enum EncounterSituation : int {
     ENCOUNTER_SITUATION_COUNT,
 };
 
-typedef enum EncounterLogicalOperator {
+enum EncounterLogicalOperator : int {
     ENCOUNTER_LOGICAL_OPERATOR_NONE,
     ENCOUNTER_LOGICAL_OPERATOR_AND,
     ENCOUNTER_LOGICAL_OPERATOR_OR,
-} EncounterLogicalOperator;
+};
 
 typedef enum EncounterConditionType {
     ENCOUNTER_CONDITION_TYPE_NONE = 0,
@@ -309,7 +309,7 @@ typedef struct EncounterConditionEntry {
 typedef struct EncounterCondition {
     int entriesLength;
     EncounterConditionEntry entries[3];
-    int logicalOperators[2];
+    EncounterLogicalOperator logicalOperators[2];
 } EncounterCondition;
 
 typedef struct EncounterTableSubEntry {
