@@ -556,7 +556,7 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
 static int wmSetupRndNextTileNumInit(Encounter* encounter);
 static int wmSetupRndNextTileNum(Encounter* encounter, EncounterEntry* encounterEntry, int* tilePtr);
 static bool wmEvalConditional(EncounterCondition* encounterCondition, int* critterCountPtr);
-static bool wmEvalSubConditional(int operand1, int condionalOperator, int operand2);
+static bool wmEvalSubConditional(int operand1, EncounterConditionalOperator condionalOperator, int operand2);
 static bool wmGameTimeIncrement(int ticksToAdd);
 static int wmGrabTileWalkMask(int tileIdx);
 static bool wmWorldPosInvalid(int x, int y);
@@ -4624,7 +4624,7 @@ static bool wmEvalConditional(EncounterCondition* condition, int* critterCountPt
 }
 
 // 0x4C1C0C wmEvalSubConditional
-static bool wmEvalSubConditional(int operand1, int condionalOperator, int operand2)
+static bool wmEvalSubConditional(int operand1, EncounterConditionalOperator condionalOperator, int operand2)
 {
     switch (condionalOperator) {
     case ENCOUNTER_CONDITIONAL_OPERATOR_EQUAL:
