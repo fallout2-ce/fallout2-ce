@@ -6,8 +6,8 @@
 
 #include <SDL.h>
 
-#include "config.h"
 #include "color.h"
+#include "config.h"
 #include "dinput.h"
 #include "draw.h"
 #include "game.h"
@@ -463,7 +463,6 @@ void renderFpsCounter()
     rect.w = width;
     rect.h = height;
     SDL_BlitSurface(gSdlSurface, &rect, gSdlTextureSurface, &rect);
-
 }
 
 void renderPresent()
