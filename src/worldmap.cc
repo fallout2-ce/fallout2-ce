@@ -147,7 +147,7 @@ enum EncounterFormationType : int {
     ENCOUNTER_FORMATION_TYPE_COUNT,
 };
 
-typedef enum EncounterFrequencyType {
+enum EncounterFrequencyType : int {
     ENCOUNTER_FREQUENCY_TYPE_NONE,
     ENCOUNTER_FREQUENCY_TYPE_RARE,
     ENCOUNTER_FREQUENCY_TYPE_UNCOMMON,
@@ -155,7 +155,7 @@ typedef enum EncounterFrequencyType {
     ENCOUNTER_FREQUENCY_TYPE_FREQUENT,
     ENCOUNTER_FREQUENCY_TYPE_FORCED,
     ENCOUNTER_FREQUENCY_TYPE_COUNT,
-} EncounterFrequencyType;
+};
 
 enum EncounterSceneryType : int {
     ENCOUNTER_SCENERY_TYPE_NONE,
@@ -216,6 +216,7 @@ enum Daytime : int {
     DAY_PART_AFTERNOON,
     DAY_PART_NIGHT,
     DAY_PART_COUNT,
+    DAY_PART_FIRST = DAY_PART_MORNING
 };
 
 enum LockState : int {
@@ -404,7 +405,7 @@ typedef struct Encounter {
 typedef struct SubtileInfo {
     int terrain;
     SubtileFill fill;
-    int encounterChance[DAY_PART_COUNT];
+    EncounterFrequencyType encounterChance[DAY_PART_COUNT];
     int encounterType;
     SubtileState state;
 } SubtileInfo;
@@ -2334,8 +2335,8 @@ static int wmParseSubTileInfo(TileInfo* tile, int row, int column, char* string)
         return -1;
     }
 
-    for (int index = 0; index < DAY_PART_COUNT; index++) {
-        if (strParseStrFromList(&string, &(subtile->encounterChance[index]), wmFreqStrs, ENCOUNTER_FREQUENCY_TYPE_COUNT) == -1) {
+    for (int index = DAY_PART_FIRST; index < DAY_PART_COUNT; index++) {
+        if (strParseStrFromListEnum<EncounterFrequencyType>(&string, &(subtile->encounterChance[index]), wmFreqStrs, ENCOUNTER_FREQUENCY_TYPE_COUNT) == -1) {
             return -1;
         }
     }
