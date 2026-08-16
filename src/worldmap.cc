@@ -258,7 +258,7 @@ typedef struct EntranceInfo {
     int state;
     int x;
     int y;
-    int map;
+    Map map;
     int elevation;
     int tile;
     Rotation rotation;
@@ -307,7 +307,7 @@ typedef struct Terrain {
     char lookupName[40];
     int difficulty;
     int mapsLength;
-    int maps[20];
+    Map maps[20];
 } Terrain;
 
 typedef struct EncounterConditionEntry {
@@ -332,7 +332,7 @@ typedef struct EncounterTableSubEntry {
 
 typedef struct EncounterTableEntry {
     int flags;
-    int map;
+    Map map;
     EncounterSceneryType scenery;
     int chance;
     int counter;
@@ -345,7 +345,7 @@ typedef struct EncounterTable {
     char lookupName[40];
     int index;
     int mapsLength;
-    int maps[6];
+    Map maps[6];
     int field_48;
     int entriesLength;
     EncounterTableEntry entries[41];
@@ -428,7 +428,7 @@ typedef struct WmGenData {
     int walkWorldPosCrossAxisStepY;
 
     bool encounterIconIsVisible;
-    int encounterMapId;
+    Map encounterMapId;
     int encounterTableId;
     int encounterEntryId;
     int encounterCursorId;
@@ -539,15 +539,15 @@ static int wmEntranceSlotInit(EntranceInfo* entrance);
 static int wmMapSlotInit(MapInfo* map);
 static int wmMapInit();
 static int wmRStartSlotInit(MapStartPointInfo* rsp);
-static int wmMatchEntranceFromMap(int areaIdx, int mapIdx, int* entranceIdxPtr);
-static int wmMatchEntranceElevFromMap(int areaIdx, int mapIdx, int elevation, int* entranceIdxPtr);
-static int wmMatchAreaFromMap(int mapIdx, int* areaIdxPtr);
+static int wmMatchEntranceFromMap(int areaIdx, Map mapIdx, int* entranceIdxPtr);
+static int wmMatchEntranceElevFromMap(int areaIdx, Map mapIdx, int elevation, int* entranceIdxPtr);
+static int wmMatchAreaFromMap(Map mapIdx, int* areaIdxPtr);
 static int wmWorldMapFunc(int a1);
 static int wmInterfaceCenterOnParty();
 static void wmCheckGameEvents();
 static void wmClearRandomEncounterState();
-static bool wmTryMatchAreaContainingMapIdx(int mapIdx, int* areaIdxPtr);
-static int wmRndEncounterOccurred(int* mapToLoadPtr);
+static bool wmTryMatchAreaContainingMapIdx(Map mapIdx, int* areaIdxPtr);
+static int wmRndEncounterOccurred(Map* mapToLoadPtr);
 static int wmPartyFindCurSubTile();
 static int wmFindCurSubTileFromPos(int x, int y, SubtileInfo** subtilePtr);
 static int wmFindCurTileFromPos(int x, int y, TileInfo** tilePtr);
@@ -591,7 +591,7 @@ static bool wmCursorIsVisible();
 static void wmResetTerrainInfo();
 static int wmGetAreaName(CityInfo* city, char* name);
 static void wmMarkAllSubTiles(SubtileState state);
-static int wmTownMapFunc(int* mapIdxPtr);
+static int wmTownMapFunc(Map* mapIdxPtr);
 static int wmTownMapInit();
 static int wmTownMapRefresh();
 static int wmTownMapExit();
@@ -603,7 +603,7 @@ static int wmTabsCompareNames(const void* a1, const void* a2);
 static int wmFreeTabsLabelList(int** quickDestinationsListPtr, int* quickDestinationsLengthPtr);
 static void wmRefreshInterfaceDial(bool shouldRefreshWindow);
 static void wmInterfaceDialSyncTime(bool shouldRefreshWindow);
-static int wmAreaFindFirstValidMap(int* mapIdxPtr);
+static int wmAreaFindFirstValidMap(Map* mapIdxPtr);
 static void wmFadeOut();
 static void wmFadeIn();
 static void wmFadeReset();
@@ -1010,7 +1010,7 @@ static double gameTimeIncRemainder = 0.0;
 static FrmImage _backgroundFrmImage;
 static FrmImage _townFrmImage;
 static bool wmFaded = false;
-static int wmForceEncounterMapId = -1;
+static Map wmForceEncounterMapId = MAP_INVALID;
 static EncounterFlag wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 static bool wmEncounterDetectionEnabled = true;
 static bool wmEncounterIntrosEnabled = true;
@@ -1169,7 +1169,7 @@ static int wmGenDataInit()
     wmGenData.oldWorldPosX = 0;
     wmGenData.oldWorldPosY = 0;
     wmGenData.isInCar = false;
-    wmGenData.currentCarAreaId = -1;
+    wmGenData.currentCarAreaId = CITY_INVALID;
     wmGenData.carFuel = CAR_FUEL_MAX;
     wmGenData.carImageFrmHandle = INVALID_CACHE_ENTRY;
     wmGenData.carImageFrmWidth = 0;
@@ -1190,7 +1190,7 @@ static int wmGenDataInit()
     wmGenData.tabsScrollingDelta = 0;
     wmGenData.viewportMaxX = 0;
 
-    wmForceEncounterMapId = -1;
+    wmForceEncounterMapId = MAP_INVALID;
     wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
     wmEncounterIntrosEnabled = true;
@@ -1225,7 +1225,7 @@ static int wmGenDataReset()
     wmGenDataClampWorldPosToBounds();
     wmGenData.walkDestinationX = -1;
     wmGenData.walkDestinationY = -1;
-    wmGenData.encounterMapId = -1;
+    wmGenData.encounterMapId = MAP_INVALID;
     wmGenData.encounterTableId = -1;
     wmGenData.encounterEntryId = -1;
     wmGenData.encounterCursorId = -1;
@@ -1251,7 +1251,7 @@ static int wmGenDataReset()
 
     wmMarkSubTileRadiusVisited(wmGenData.worldPosX, wmGenData.worldPosY);
 
-    wmForceEncounterMapId = -1;
+    wmForceEncounterMapId = MAP_INVALID;
     wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
     wmEncounterIntrosEnabled = true;
@@ -1414,7 +1414,7 @@ int wmWorldMap_save(File* stream)
     if (fileWriteInt32(stream, wmGenData.worldPosX) == -1) return -1;
     if (fileWriteInt32(stream, wmGenData.worldPosY) == -1) return -1;
     if (fileWriteBool(stream, wmGenData.encounterIconIsVisible) == -1) return -1;
-    if (fileWriteInt32(stream, wmGenData.encounterMapId) == -1) return -1;
+    if (fileWriteInt32Enum<Map>(stream, wmGenData.encounterMapId) == -1) return -1;
     if (fileWriteInt32(stream, wmGenData.encounterTableId) == -1) return -1;
     if (fileWriteInt32(stream, wmGenData.encounterEntryId) == -1) return -1;
     if (fileWriteBool(stream, wmGenData.isInCar) == -1) return -1;
@@ -1494,7 +1494,7 @@ int wmWorldMap_load(File* stream)
     if (fileReadInt32(stream, &(wmGenData.worldPosX)) == -1) return -1;
     if (fileReadInt32(stream, &(wmGenData.worldPosY)) == -1) return -1;
     if (fileReadBool(stream, &(wmGenData.encounterIconIsVisible)) == -1) return -1;
-    if (fileReadInt32(stream, &(wmGenData.encounterMapId)) == -1) return -1;
+    if (fileReadInt32Enum<Map>(stream, &(wmGenData.encounterMapId)) == -1) return -1;
     if (fileReadInt32(stream, &(wmGenData.encounterTableId)) == -1) return -1;
     if (fileReadInt32(stream, &(wmGenData.encounterEntryId)) == -1) return -1;
     if (fileReadBool(stream, &(wmGenData.isInCar)) == -1) return -1;
@@ -1754,7 +1754,7 @@ static int wmReadEncounterType(Config* config, char* lookupName, char* sectionKe
                 break;
             }
 
-            if (strParseStrFromFunc(&str, &(encounterTable->maps[encounterTable->mapsLength]), wmParseFindMapIdxMatch) == -1) {
+            if (strParseStrFromFuncEnum<Map>(&str, &(encounterTable->maps[encounterTable->mapsLength]), wmParseFindMapIdxMatch) == -1) {
                 break;
             }
 
@@ -1819,7 +1819,7 @@ static int wmParseEncounterTableIndex(EncounterTableEntry* encounterTableEntry, 
             char* pch = strstr(string, "map:");
             if (pch != nullptr) {
                 string = pch + 4;
-                strParseStrFromFunc(&string, &(encounterTableEntry->map), wmParseFindMapIdxMatch);
+                strParseStrFromFuncEnum<Map>(&string, &(encounterTableEntry->map), wmParseFindMapIdxMatch);
             }
         }
 
@@ -2139,7 +2139,7 @@ static int wmEncounterSubEncSlotInit(EncounterTableSubEntry* encounterTableSubEn
 static int wmEncounterTypeSlotInit(EncounterTableEntry* encounterTableEntry)
 {
     encounterTableEntry->flags = 0;
-    encounterTableEntry->map = -1;
+    encounterTableEntry->map = MAP_INVALID;
     encounterTableEntry->scenery = ENCOUNTER_SCENERY_TYPE_NORMAL;
     encounterTableEntry->chance = 0;
     encounterTableEntry->counter = -1;
@@ -2288,7 +2288,7 @@ static int wmParseTerrainRndMaps(Config* config, Terrain* terrain)
             break;
         }
 
-        if (strParseStrFromFunc(&string, &(terrain->maps[terrain->mapsLength]), wmParseFindMapIdxMatch) == -1) {
+        if (strParseStrFromFuncEnum<Map>(&string, &(terrain->maps[terrain->mapsLength]), wmParseFindMapIdxMatch) == -1) {
             return -1;
         }
 
@@ -2873,7 +2873,7 @@ static int wmAreaInit()
                     return -1;
                 }
 
-                if (strParseStrFromFunc(&str, &(entrance->map), &wmParseFindMapIdxMatch) == -1) {
+                if (strParseStrFromFuncEnum<Map>(&str, &(entrance->map), &wmParseFindMapIdxMatch) == -1) {
                     return -1;
                 }
 
@@ -2920,7 +2920,7 @@ static int wmParseFindMapIdxMatch(char* string, int* valuePtr)
 
     debugPrint("\nWorldMap Error: Couldn't find match for Map Index!");
 
-    *valuePtr = -1;
+    *valuePtr = MAP_INVALID;
     return -1;
 }
 
@@ -2932,7 +2932,7 @@ static int wmEntranceSlotInit(EntranceInfo* entrance)
     entrance->state = 0;
     entrance->x = 0;
     entrance->y = 0;
-    entrance->map = -1;
+    entrance->map = MAP_INVALID;
     entrance->elevation = 0;
     entrance->tile = 0;
     entrance->rotation = ROTATION_NE;
@@ -2969,7 +2969,7 @@ static int wmMapInit()
     }
 
     if (configRead(&config, "data\\maps.txt", true)) {
-        for (int mapIdx = 0;; mapIdx++) {
+        for (Map mapIdx = MAP_FIRST;; mapIdx++) {
             char section[40];
             snprintf(section, sizeof(section), "Map %03d", mapIdx);
 
@@ -3139,9 +3139,9 @@ int wmMapMaxCount()
 }
 
 // 0x4BF974 wmMapIdxToName
-int wmMapIdxToName(int mapIdx, char* dest, size_t size)
+int wmMapIdxToName(Map mapIdx, char* dest, size_t size)
 {
-    if (mapIdx < 0 || mapIdx >= wmMaxMapNum) {
+    if (!mapIsValid(mapIdx)) {
         dest[0] = '\0';
         return -1;
     }
@@ -3151,7 +3151,7 @@ int wmMapIdxToName(int mapIdx, char* dest, size_t size)
 }
 
 // 0x4BF9BC wmMapMatchNameToIdx
-int wmMapMatchNameToIdx(char* name)
+Map wmMapMatchNameToIdx(char* name)
 {
     compat_strlwr(name);
 
@@ -3166,9 +3166,9 @@ int wmMapMatchNameToIdx(char* name)
         truncated = true;
     }
 
-    int map = -1;
+    Map map = MAP_INVALID;
 
-    for (int index = 0; index < wmMaxMapNum; index++) {
+    for (Map index = MAP_FIRST; index < wmMaxMapNum; index++) {
         if (strcmp(wmMapInfoList[index].mapFileName, name) == 0) {
             map = index;
             break;
@@ -3183,7 +3183,7 @@ int wmMapMatchNameToIdx(char* name)
 }
 
 // 0x4BFA44 wmMapIdxIsSaveable
-bool wmMapIdxIsSaveable(int mapIdx)
+bool wmMapIdxIsSaveable(Map mapIdx)
 {
     return (wmMapInfoList[mapIdx].flags & MAP_SAVED) != MAP_NONE;
 }
@@ -3250,9 +3250,9 @@ bool wmMapPipboyActive()
 }
 
 // 0x4BFB08 wmMapMarkVisited
-int wmMapMarkVisited(int mapIdx)
+int wmMapMarkVisited(Map mapIdx)
 {
-    if (mapIdx < 0 || mapIdx >= wmMaxMapNum) {
+    if (!mapIsValid(mapIdx)) {
         return -1;
     }
 
@@ -3273,7 +3273,7 @@ int wmMapMarkVisited(int mapIdx)
 }
 
 // 0x4BFB64 wmMatchEntranceFromMap
-static int wmMatchEntranceFromMap(int areaIdx, int mapIdx, int* entranceIdxPtr)
+static int wmMatchEntranceFromMap(int areaIdx, Map mapIdx, int* entranceIdxPtr)
 {
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
 
@@ -3291,7 +3291,7 @@ static int wmMatchEntranceFromMap(int areaIdx, int mapIdx, int* entranceIdxPtr)
 }
 
 // 0x4BFBE8 wmMatchEntranceElevFromMap
-static int wmMatchEntranceElevFromMap(int areaIdx, int mapIdx, int elevation, int* entranceIdxPtr)
+static int wmMatchEntranceElevFromMap(int areaIdx, Map mapIdx, int elevation, int* entranceIdxPtr)
 {
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
 
@@ -3310,7 +3310,7 @@ static int wmMatchEntranceElevFromMap(int areaIdx, int mapIdx, int elevation, in
 }
 
 // 0x4BFC7C wmMatchAreaFromMap
-static int wmMatchAreaFromMap(int mapIdx, int* areaIdxPtr)
+static int wmMatchAreaFromMap(Map mapIdx, int* areaIdxPtr)
 {
     for (int areaIdx = 0; areaIdx < wmMaxAreaNum; areaIdx++) {
         CityInfo* city = &(wmAreaInfoList[areaIdx]);
@@ -3331,9 +3331,9 @@ static int wmMatchAreaFromMap(int mapIdx, int* areaIdxPtr)
 // Mark map entrance.
 //
 // 0x4BFD50 wmMapMarkMapEntranceState
-int wmMapMarkMapEntranceState(int mapIdx, int elevation, int state)
+int wmMapMarkMapEntranceState(Map mapIdx, int elevation, int state)
 {
-    if (mapIdx < 0 || mapIdx >= wmMaxMapNum) {
+    if (!mapIsValid(mapIdx)) {
         return -1;
     }
 
@@ -3382,7 +3382,7 @@ static int wmWorldMapFunc(int a1)
     wmMatchWorldPosToArea(wmGenData.worldPosX, wmGenData.worldPosY, &(wmGenData.currentAreaId));
 
     unsigned int partyHealTime = 0;
-    int map = -1;
+    Map map = MAP_INVALID;
     int rc = 0;
     wmResetTerrainInfo();
     wmLastTravelTick = getTicks();
@@ -3514,7 +3514,7 @@ static int wmWorldMapFunc(int a1)
             }
 
             if (wmGenData.isWalking) {
-                int mapToLoad = -1;
+                Map mapToLoad = MAP_INVALID;
                 if (wmRndEncounterOccurred(&mapToLoad)) {
                     if (mapToLoad != -1) {
                         if (wmGenData.isInCar) {
@@ -3569,10 +3569,10 @@ static int wmWorldMapFunc(int a1)
                             city->visitedState = 2;
                         }
                     } else {
-                        map = 0;
+                        map = MAP_FIRST;
                     }
 
-                    if (map != -1) {
+                    if (map != MAP_INVALID) {
                         scriptHooks_Encounter(EncounterHookEventType::LocalMapEnter, &map, false, -1, -1);
                         if (wmGenData.isInCar) {
                             wmGenData.isInCar = false;
@@ -3610,7 +3610,7 @@ static int wmWorldMapFunc(int a1)
                         rc = -1;
                     }
 
-                    if (map != -1) {
+                    if (map != MAP_INVALID) {
                         scriptHooks_Encounter(EncounterHookEventType::LocalMapEnter, &map, false, -1, -1);
                         if (wmGenData.isInCar) {
                             // SFALL: Fix for the car being lost when entering a
@@ -3687,7 +3687,7 @@ static int wmWorldMapFunc(int a1)
             }
         }
 
-        if (map != -1 || rc == -1) {
+        if (map != MAP_INVALID || rc == -1) {
             break;
         }
 
@@ -3741,10 +3741,10 @@ static void wmCheckGameEvents()
 }
 
 // 0x4C0634 wmRndEncounterOccurred
-static int wmRndEncounterOccurred(int* mapToLoadPtr)
+static int wmRndEncounterOccurred(Map* mapToLoadPtr)
 {
     assert(mapToLoadPtr != nullptr);
-    *mapToLoadPtr = -1;
+    *mapToLoadPtr = MAP_INVALID;
 
     unsigned int now = getTicks();
     if (getTicksBetween(now, wmLastRndTime) < 1500) {
@@ -3773,7 +3773,7 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
             // SFALL: Add a flashing icon to the Horrigan encounter.
             wmBlinkRndEncounterIcon(true);
 
-            wmGenData.encounterMapId = -1;
+            wmGenData.encounterMapId = MAP_INVALID;
             gDidMeetFrankHorrigan = true;
             if (wmGenData.isInCar) {
                 wmMatchAreaContainingMapIdx(MAP_IN_GAME_MOVIE1, &(wmGenData.currentCarAreaId));
@@ -3805,7 +3805,7 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
 
         mapLoadById(wmForceEncounterMapId);
 
-        wmForceEncounterMapId = -1;
+        wmForceEncounterMapId = MAP_INVALID;
         wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 
         return 1;
@@ -3850,8 +3850,8 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
 
     EncounterTable* encounterTable = &(wmEncounterTableList[wmGenData.encounterTableId]);
     EncounterTableEntry* encounterTableEntry = &(encounterTable->entries[wmGenData.encounterEntryId]);
-    int encounterMapId = wmGenData.encounterMapId;
-    bool specialEncounter = (encounterTableEntry->flags & ENCOUNTER_ENTRY_SPECIAL) != 0;
+    Map encounterMapId = wmGenData.encounterMapId;
+    bool specialEncounter = (encounterTableEntry->flags & ENCOUNTER_ENTRY_SPECIAL) != ENCOUNTER_ENTRY_NONE;
     switch (scriptHooks_Encounter(EncounterHookEventType::RandomEncounter, &encounterMapId, specialEncounter, wmGenData.encounterTableId, wmGenData.encounterEntryId)) {
     case EncounterHookResult::ContinueTravel:
         wmGenData.oldWorldPosX = wmGenData.worldPosX;
@@ -3971,12 +3971,12 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
 static void wmClearRandomEncounterState()
 {
     wmGenData.encounterIconIsVisible = false;
-    wmGenData.encounterMapId = -1;
+    wmGenData.encounterMapId = MAP_INVALID;
     wmGenData.encounterTableId = -1;
     wmGenData.encounterEntryId = -1;
 }
 
-static bool wmTryMatchAreaContainingMapIdx(int mapIdx, int* areaIdxPtr)
+static bool wmTryMatchAreaContainingMapIdx(Map mapIdx, int* areaIdxPtr)
 {
     assert(areaIdxPtr != nullptr);
 
@@ -4104,7 +4104,7 @@ static int wmRndEncounterPick()
         encounterTableEntry->counter--;
     }
 
-    if (encounterTableEntry->map == -1) {
+    if (encounterTableEntry->map == MAP_INVALID) {
         if (encounterTable->mapsLength <= 0) {
             Terrain* terrain = &(wmTerrainTypeList[wmGenData.currentSubtile->terrain]);
             int randommapIdx = randomBetween(0, terrain->mapsLength - 1);
@@ -5321,7 +5321,7 @@ static int wmInterfaceExit()
     }
 
     wmGenData.encounterIconIsVisible = false;
-    wmGenData.encounterMapId = -1;
+    wmGenData.encounterMapId = MAP_INVALID;
     wmGenData.encounterTableId = -1;
     wmGenData.encounterEntryId = -1;
 
@@ -6343,7 +6343,7 @@ int wmAreaVisitedState(int areaIdx)
 }
 
 // 0x4C45BC wmMapIsKnown
-bool wmMapIsKnown(int mapIdx)
+bool wmMapIsKnown(Map mapIdx)
 {
     int areaIdx;
     if (wmMatchAreaFromMap(mapIdx, &areaIdx) != 0) {
@@ -6496,9 +6496,9 @@ void wmTownMap()
 }
 
 // 0x4C485C wmTownMapFunc
-static int wmTownMapFunc(int* mapIdxPtr)
+static int wmTownMapFunc(Map* mapIdxPtr)
 {
-    *mapIdxPtr = -1;
+    *mapIdxPtr = MAP_INVALID;
 
     if (wmTownMapInit() == -1) {
         wmTownMapExit();
@@ -6858,7 +6858,7 @@ int wmCarGiveToParty()
     MapTransition transition;
     memset(&transition, 0, sizeof(transition));
 
-    transition.map = -2;
+    transition.map = MAP_TRANSITION;
     mapSetTransition(&transition);
 
     CityInfo* city = &(wmAreaInfoList[CITY_CAR_OUT_OF_GAS]);
@@ -6871,8 +6871,8 @@ int wmCarGiveToParty()
 // 0x4C4F28 wmSfxMaxCount
 int wmSfxMaxCount()
 {
-    int mapIdx = mapGetCurrentMap();
-    if (mapIdx < 0 || mapIdx >= wmMaxMapNum) {
+    Map mapIdx = mapGetCurrentMap();
+    if (!mapIsValid(mapIdx)) {
         return -1;
     }
 
@@ -6883,8 +6883,8 @@ int wmSfxMaxCount()
 // 0x4C4F5C wmSfxRollNextIdx
 int wmSfxRollNextIdx()
 {
-    int mapIdx = mapGetCurrentMap();
-    if (mapIdx < 0 || mapIdx >= wmMaxMapNum) {
+    Map mapIdx = mapGetCurrentMap();
+    if (!mapIsValid(mapIdx)) {
         return -1;
     }
 
@@ -6919,8 +6919,8 @@ int wmSfxIdxName(int sfxIdx, char** namePtr)
 
     *namePtr = nullptr;
 
-    int mapIdx = mapGetCurrentMap();
-    if (mapIdx < 0 || mapIdx >= wmMaxMapNum) {
+    Map mapIdx = mapGetCurrentMap();
+    if (!mapIsValid(mapIdx)) {
         return -1;
     }
 
@@ -7259,9 +7259,9 @@ static void wmInterfaceDialSyncTime(bool shouldRefreshWindow)
 }
 
 // 0x4C5804 wmAreaFindFirstValidMap
-static int wmAreaFindFirstValidMap(int* mapIdxPtr)
+static int wmAreaFindFirstValidMap(Map* mapIdxPtr)
 {
-    *mapIdxPtr = -1;
+    *mapIdxPtr = MAP_INVALID;
 
     if (wmGenData.currentAreaId == -1) {
         return -1;
@@ -7291,8 +7291,8 @@ static int wmAreaFindFirstValidMap(int* mapIdxPtr)
 int wmMapMusicStart()
 {
     do {
-        int mapIdx = mapGetCurrentMap();
-        if (mapIdx == -1 || mapIdx >= wmMaxMapNum) {
+        Map mapIdx = mapGetCurrentMap();
+        if (!mapIsValid(mapIdx)) {
             break;
         }
 
@@ -7314,9 +7314,9 @@ int wmMapMusicStart()
 }
 
 // 0x4C5928 wmSetMapMusic
-int wmSetMapMusic(int mapIdx, const char* name)
+int wmSetMapMusic(Map mapIdx, const char* name)
 {
-    if (mapIdx == -1 || mapIdx >= wmMaxMapNum) {
+    if (!mapIsValid(mapIdx)) {
         return -1;
     }
 
@@ -7340,7 +7340,7 @@ int wmSetMapMusic(int mapIdx, const char* name)
 }
 
 // 0x4C59A4 wmMatchAreaContainingMapIdx
-int wmMatchAreaContainingMapIdx(int mapIdx, int* areaIdxPtr)
+int wmMatchAreaContainingMapIdx(Map mapIdx, int* areaIdxPtr)
 {
     *areaIdxPtr = 0;
 
@@ -7468,7 +7468,7 @@ void wmCarSetCurrentArea(int area)
     wmGenData.currentCarAreaId = area;
 }
 
-void wmForceEncounter(int map, EncounterFlag flags)
+void wmForceEncounter(Map map, EncounterFlag flags)
 {
     if ((wmForceEncounterFlags & ENCOUNTER_FLAG_LOCK2) != ENCOUNTER_FLAG_NONE) {
         return;
