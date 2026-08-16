@@ -1093,7 +1093,7 @@ static void wmResetTrailMarkers()
     trailMarkerState.remainingSpacing = 0;
 }
 
-inline bool cityIsValid(int city)
+bool cityIsValid(int city)
 {
     return city >= CITY_FIRST && city < wmMaxAreaNum;
 }
