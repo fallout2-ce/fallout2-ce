@@ -69,10 +69,6 @@ namespace fallout {
 #define SUBTILE_GRID_WIDTH (7)
 #define SUBTILE_GRID_HEIGHT (6)
 
-#define ENCOUNTER_ENTRY_SPECIAL (0x01)
-
-#define ENCOUNTER_SUBINFO_DEAD (0x01)
-
 #define WM_WINDOW_DIAL_X (532)
 #define WM_WINDOW_DIAL_Y (48)
 
@@ -118,6 +114,28 @@ namespace fallout {
 #define WM_VIEW_Y (21)
 #define WM_VIEW_WIDTH (450)
 #define WM_VIEW_HEIGHT (443)
+
+enum EncounterSubInfoFlag : int {
+    ENCOUNTER_SUBINFO_NONE = 0x00,
+    ENCOUNTER_SUBINFO_DEAD = 0x01
+};
+
+inline EncounterSubInfoFlag& operator|=(EncounterSubInfoFlag& lhs, EncounterSubInfoFlag rhs)
+{
+    lhs = static_cast<EncounterSubInfoFlag>(static_cast<int>(lhs) | static_cast<int>(rhs));
+    return lhs;
+}
+
+enum EncounterEntryFlag : int {
+    ENCOUNTER_ENTRY_NONE = 0x00,
+    ENCOUNTER_ENTRY_SPECIAL = 0x01
+};
+
+inline EncounterEntryFlag& operator|=(EncounterEntryFlag& lhs, EncounterEntryFlag rhs)
+{
+    lhs = static_cast<EncounterEntryFlag>(static_cast<int>(lhs) | static_cast<int>(rhs));
+    return lhs;
+}
 
 enum EncounterFormationType : int {
     ENCOUNTER_FORMATION_TYPE_SURROUNDING,
@@ -331,7 +349,7 @@ typedef struct EncounterTableSubEntry {
 } EncounterTableSubEntry;
 
 typedef struct EncounterTableEntry {
-    int flags;
+    EncounterEntryFlag flags;
     Map map;
     EncounterSceneryType scenery;
     int chance;
@@ -364,7 +382,7 @@ typedef struct EncounterEntry {
     EncounterRatioMode ratioMode;
     int ratio;
     int pid;
-    int flags;
+    EncounterSubInfoFlag flags;
     int distance;
     int tile;
     int itemsLength;
@@ -1162,7 +1180,7 @@ static int wmGenDataInit()
     wmGenData.walkWorldPosMainAxisStepY = 0;
     wmGenData.walkWorldPosCrossAxisStepY = 0;
     wmGenData.encounterIconIsVisible = false;
-    wmGenData.encounterMapId = -1;
+    wmGenData.encounterMapId = MAP_INVALID;
     wmGenData.encounterTableId = -1;
     wmGenData.encounterEntryId = -1;
     wmGenData.encounterCursorId = -1;
@@ -2110,7 +2128,7 @@ static int wmEncBaseSubTypeSlotInit(EncounterEntry* encounterEntry)
     encounterEntry->ratioMode = ENCOUNTER_RATIO_MODE_SINGLE;
     encounterEntry->ratio = 100;
     encounterEntry->pid = -1;
-    encounterEntry->flags = 0;
+    encounterEntry->flags = ENCOUNTER_SUBINFO_NONE;
     encounterEntry->distance = 0;
     encounterEntry->tile = -1;
     encounterEntry->itemsLength = 0;
@@ -2138,7 +2156,7 @@ static int wmEncounterSubEncSlotInit(EncounterTableSubEntry* encounterTableSubEn
 // 0x4BE34C wmEncounterTypeSlotInit
 static int wmEncounterTypeSlotInit(EncounterTableEntry* encounterTableEntry)
 {
-    encounterTableEntry->flags = 0;
+    encounterTableEntry->flags = ENCOUNTER_ENTRY_NONE;
     encounterTableEntry->map = MAP_INVALID;
     encounterTableEntry->scenery = ENCOUNTER_SCENERY_TYPE_NORMAL;
     encounterTableEntry->chance = 0;
@@ -3870,7 +3888,7 @@ static int wmRndEncounterOccurred(Map* mapToLoadPtr)
         break;
     }
 
-    if ((encounterTableEntry->flags & ENCOUNTER_ENTRY_SPECIAL) != 0) {
+    if ((encounterTableEntry->flags & ENCOUNTER_ENTRY_SPECIAL) != ENCOUNTER_ENTRY_NONE) {
         if (wmTryMatchAreaContainingMapIdx(wmGenData.encounterMapId, &areaIdx)) {
             CityInfo* city = &(wmAreaInfoList[areaIdx]);
             CitySizeDescription* citySizeDescription = &(wmSphereData[city->size]);
@@ -3887,7 +3905,7 @@ static int wmRndEncounterOccurred(Map* mapToLoadPtr)
     }
 
     // Blinking.
-    wmBlinkRndEncounterIcon((encounterTableEntry->flags & ENCOUNTER_ENTRY_SPECIAL) != 0);
+    wmBlinkRndEncounterIcon((encounterTableEntry->flags & ENCOUNTER_ENTRY_SPECIAL) != ENCOUNTER_ENTRY_NONE);
 
     if (wmGenData.isInCar) {
         int modifiers[DAY_PART_COUNT];
