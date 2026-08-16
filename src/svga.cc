@@ -439,7 +439,7 @@ void initLoadingScreenFreeze()
 
 void restoreLoadingScreenFreeze()
 {
-    // Completely overwrite any intermediate map loading artifacts
+    // Overwrite any intermediate map loading artifacts
     // with the original frozen menu pixels before drawing the cursor
     if (gSdlTextureSurface->pixels && gLoadingScreenPixelsBackup) {
         memcpy(gSdlTextureSurface->pixels, gLoadingScreenPixelsBackup, gLoadingScreenBackupSize);
