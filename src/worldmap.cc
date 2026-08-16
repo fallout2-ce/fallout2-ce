@@ -2929,7 +2929,7 @@ static int wmAreaInit()
 // 0x4BF3E0 wmParseFindMapIdxMatch
 static int wmParseFindMapIdxMatch(char* string, int* valuePtr)
 {
-    for (City index = CITY_FIRST; index < wmMaxMapNum; index++) {
+    for (Map index = MAP_FIRST; index < wmMaxMapNum; index++) {
         MapInfo* map = &(wmMapInfoList[index]);
         if (compat_stricmp(string, map->lookupName) == 0) {
             *valuePtr = index;
