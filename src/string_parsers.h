@@ -25,6 +25,10 @@ int strParseStrFromList(char** stringPtr, int* valuePtr, const char** list, int 
 template <typename T>
 int strParseStrFromListEnum(char** stringPtr, T* valuePtr, const char** list, int count)
 {
+    if (stringPtr == nullptr || *stringPtr == nullptr) {
+        return 0;
+    }
+
     int temp;
     int result = strParseStrFromList(stringPtr, &temp, list, count);
     *valuePtr = static_cast<T>(temp);
@@ -36,6 +40,10 @@ int strParseStrFromFunc(char** stringPtr, int* valuePtr, StringParserCallback* c
 template <typename T>
 int strParseStrFromFuncEnum(char** stringPtr, T* valuePtr, StringParserCallback* callback)
 {
+    if (stringPtr == nullptr || *stringPtr == nullptr) {
+        return 0;
+    }
+
     int temp;
     int result = strParseStrFromFunc(stringPtr, &temp, callback);
     *valuePtr = static_cast<T>(temp);
