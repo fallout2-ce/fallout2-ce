@@ -379,7 +379,7 @@ static int _main_load_new(char* mapFileName)
 
     // SFALL: Fix the starting position of the player's marker on the world map
     // when starting a new game with a custom starting map.
-    int areaIdx;
+    City areaIdx;
     if (wmMatchAreaContainingMapIdx(gMapHeader.index, &areaIdx) == 0) {
         if (wmStartWorldPosIsConfigured()) {
             wmSetPartyCurArea(areaIdx);

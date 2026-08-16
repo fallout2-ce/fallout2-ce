@@ -405,6 +405,17 @@ inline Map programStackPopEnum(Program* program)
     return static_cast<Map>(map);
 }
 
+template <>
+inline City programStackPopEnum(Program* program)
+{
+    int city = programStackPopInteger(program);
+    if (!cityIsValid(city)) {
+        programPrintError("invalid city %d", city);
+    }
+
+    return static_cast<City>(city);
+}
+
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
 void programReturnStackPushInteger(Program* program, int value);
 void programReturnStackPushPointer(Program* program, void* value);

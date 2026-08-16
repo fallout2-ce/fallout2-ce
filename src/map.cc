@@ -551,12 +551,12 @@ bool mapAreSameArea(Map map1, Map map2)
         return false;
     }
 
-    int city1;
+    City city1;
     if (wmMatchAreaContainingMapIdx(map1, &city1) == -1) {
         return false;
     }
 
-    int city2;
+    City city2;
     if (wmMatchAreaContainingMapIdx(map2, &city2) == -1) {
         return false;
     }
@@ -568,12 +568,12 @@ bool mapAreSameArea(Map map1, Map map2)
 // 0x4825CC
 int _get_map_idx_same(Map map1, Map map2)
 {
-    int city1 = -1;
+    City city1 = CITY_INVALID;
     if (wmMatchAreaContainingMapIdx(map1, &city1) == -1) {
         return -1;
     }
 
-    int city2 = -2;
+    City city2 = CITY_INVALID;
     if (wmMatchAreaContainingMapIdx(map2, &city2) == -1) {
         return -1;
     }
@@ -588,7 +588,7 @@ int _get_map_idx_same(Map map1, Map map2)
 // 0x48261C
 char* mapGetCityName(Map map)
 {
-    int city;
+    City city;
     if (wmMatchAreaContainingMapIdx(map, &city) == -1) {
         return _aErrorF2;
     }
@@ -601,7 +601,7 @@ char* mapGetCityName(Map map)
 // 0x48268C
 char* mapDescriptionById(Map map)
 {
-    int city;
+    City city;
     if (wmMatchAreaContainingMapIdx(map, &city) == 0) {
         wmGetAreaIdxName(city, _scratchStr);
     } else {
@@ -1327,9 +1327,9 @@ static int replaceDeadCritter(Object* critter)
 // 0x48358C
 int mapGetLoadedAreaId()
 {
-    int city = -1;
+    City city = CITY_INVALID;
     if (wmMatchAreaContainingMapIdx(gMapHeader.index, &city) == -1) {
-        city = -1;
+        city = CITY_INVALID;
     }
     return city;
 }
@@ -1405,7 +1405,7 @@ int mapHandleTransition()
 
             memset(&gMapTransition, 0, sizeof(gMapTransition));
 
-            int city = -1;
+            City city = CITY_INVALID;
             wmMatchAreaContainingMapIdx(gMapHeader.index, &city);
             if (wmTeleportToArea(city) == -1) {
                 debugPrint("\nError: couldn't make jump on worldmap for map jump!");

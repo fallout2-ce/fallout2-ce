@@ -501,7 +501,7 @@ static void op_get_uptime(Program* program)
 // set_car_current_town
 static void op_set_car_current_town(Program* program)
 {
-    int area = programStackPopInteger(program);
+    City area = programStackPopEnum<City>(program);
     wmCarSetCurrentArea(area);
 }
 

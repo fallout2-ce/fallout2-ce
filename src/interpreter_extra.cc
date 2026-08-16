@@ -742,10 +742,10 @@ static void opMarkAreaKnown(Program* program)
 
     if (isMap == 0) {
         if (visitedState == kInvisible) {
-            wmAreaSetVisibleState(id, CITY_STATE_UNKNOWN, true);
+            wmAreaSetVisibleState(static_cast<City>(id), CITY_STATE_UNKNOWN, true);
         } else {
-            wmAreaSetVisibleState(id, CITY_STATE_KNOWN, true);
-            wmAreaMarkVisitedState(id, visitedState);
+            wmAreaSetVisibleState(static_cast<City>(id), CITY_STATE_KNOWN, true);
+            wmAreaMarkVisitedState(static_cast<City>(id), visitedState);
         }
     } else if (isMap == 1) {
         wmMapMarkVisited(static_cast<Map>(id));
@@ -2201,7 +2201,7 @@ static void opWorldmapCitySetPos(Program* program)
 {
     int y = programStackPopInteger(program);
     int x = programStackPopInteger(program);
-    int city = programStackPopInteger(program);
+    City city = programStackPopEnum<City>(program);
 
     if (wmAreaSetWorldPos(city, x, y) == -1) {
         scriptPredefinedError(program, "wm_area_set_pos", SCRIPT_ERROR_FOLLOWS);
@@ -3260,7 +3260,7 @@ static void opMetarule(Program* program)
         result = _getPartyMemberCount();
         break;
     case METARULE_AREA_KNOWN:
-        result = wmAreaVisitedState(param.integerValue);
+        result = wmAreaVisitedState(static_cast<City>(param.integerValue));
         break;
     case METARULE_WHO_ON_DRUGS:
         result = queueHasEvent(static_cast<Object*>(param.pointerValue), EVENT_TYPE_DRUG);
@@ -3327,8 +3327,12 @@ static void opMetarule(Program* program)
         wmGetPartyWorldPos(nullptr, &result);
         break;
     case METARULE_CURRENT_TOWN:
-        if (wmGetPartyCurArea(&result) == -1) {
+        City city;
+        if (wmGetPartyCurArea(&city) == -1) {
             debugPrint("\nIntextra: Error: metarule: current_town");
+        }
+        else {
+            result = city;
         }
         break;
     case METARULE_LANGUAGE_FILTER:

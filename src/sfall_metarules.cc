@@ -2071,7 +2071,7 @@ static void mf_set_terrain_name(OpcodeContext& ctx)
 
 static void mf_set_town_title(OpcodeContext& ctx)
 {
-    wmSetTownTitle(ctx.arg(0).asInt(), ctx.stringArg(1));
+    wmSetTownTitle(static_cast<City>(ctx.arg(0).asInt()), ctx.stringArg(1));
 }
 
 static void mf_remove_wm_town_names(OpcodeContext& ctx)
