@@ -10,6 +10,10 @@ int strParseInt(char** stringPtr, int* valuePtr);
 template <typename T>
 int strParseEnum(char** stringPtr, T* valuePtr)
 {
+    if (stringPtr == nullptr || *stringPtr == nullptr) {
+        return 0;
+    }
+
     int temp;
     int result = strParseInt(stringPtr, &temp);
     *valuePtr = static_cast<T>(temp);
