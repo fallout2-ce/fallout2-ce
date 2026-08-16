@@ -5885,8 +5885,23 @@ static int wmMatchWorldPosToArea(int x, int y, City* areaIdxPtr)
     int v3 = y + WM_VIEW_Y;
     int v4 = x + WM_VIEW_X;
 
+    CityInfo* carCity = wmAreaInfoList != nullptr && cityIsValid(CITY_CAR_OUT_OF_GAS)
+        ? &(wmAreaInfoList[CITY_CAR_OUT_OF_GAS])
+        : nullptr;
+    if (carCity != nullptr && carCity->state != CITY_STATE_UNKNOWN) {
+        CitySizeDescription* citySizeDescription = &(wmSphereData[carCity->size]);
+        if (v4 >= carCity->x && v3 >= carCity->y && v4 <= carCity->x + citySizeDescription->frmImage.getWidth() && v3 <= carCity->y + citySizeDescription->frmImage.getHeight()) {
+            *areaIdxPtr = CITY_CAR_OUT_OF_GAS;
+            return 0;
+        }
+    }
+
     City index;
     for (index = CITY_FIRST; index < wmMaxAreaNum; index++) {
+        if (index == CITY_CAR_OUT_OF_GAS) {
+            continue;
+        }
+
         CityInfo* city = &(wmAreaInfoList[index]);
         if (city->state) {
             if (v4 >= city->x && v3 >= city->y) {
