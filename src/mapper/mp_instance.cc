@@ -786,7 +786,7 @@ static int protoInstSceneryEdit(Object* obj)
             }
         } else if (key == 'm' && sceneryType != SCENERY_TYPE_GENERIC && sceneryType != SCENERY_TYPE_ELEVATOR) {
             Map destMap = obj->data.scenery.ladder.destinationMap;
-            int destMapTemp;
+            int destMapTemp = static_cast<int>(destMap);
             if (win_get_num_i(&destMapTemp, 0, wmMapMaxCount(), false, "Destination Map", 100, 100) != -1) {
                 destMap = static_cast<Map>(destMapTemp);
                 obj->data.scenery.ladder.destinationMap = destMap;

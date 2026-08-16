@@ -3535,7 +3535,7 @@ static int wmWorldMapFunc(int a1)
             if (wmGenData.isWalking) {
                 Map mapToLoad = MAP_INVALID;
                 if (wmRndEncounterOccurred(&mapToLoad)) {
-                    if (mapToLoad != -1) {
+                    if (mapToLoad != MAP_INVALID) {
                         if (wmGenData.isInCar) {
                             City areaIdx;
                             if (wmTryMatchAreaContainingMapIdx(mapToLoad, &areaIdx)) {
@@ -3782,7 +3782,7 @@ static int wmRndEncounterOccurred(Map* mapToLoadPtr)
 
     City areaIdx;
     wmMatchWorldPosToArea(wmGenData.worldPosX, wmGenData.worldPosY, &areaIdx);
-    if (areaIdx != -1) {
+    if (areaIdx != CITY_INVALID) {
         return 0;
     }
 
