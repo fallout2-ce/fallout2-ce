@@ -3328,8 +3328,7 @@ static void opMetarule(Program* program)
         City city;
         if (wmGetPartyCurArea(&city) == -1) {
             debugPrint("\nIntextra: Error: metarule: current_town");
-        }
-        else {
+        } else {
             result = city;
         }
         break;
