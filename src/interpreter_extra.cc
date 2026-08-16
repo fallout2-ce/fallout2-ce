@@ -734,7 +734,8 @@ static void opHowMuch(Program* program)
 // 0x454B6C op_mark_area_known
 static void opMarkAreaKnown(Program* program)
 {
-    constexpr int kInvisible = ~(0x40 | 0x01);
+    // the value -66 is weird as all the code references to visited state are oscilating in 0, 1, 2
+    constexpr int kInvisible = -66;
     int visitedState = programStackPopInteger(program);
     int id = programStackPopInteger(program);
     int isMap = programStackPopInteger(program);
