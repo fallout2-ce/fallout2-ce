@@ -290,7 +290,7 @@ typedef struct CityInfo {
     CitySize size;
     CityState state;
     LockState lockState;
-    int visitedState;
+    VisitedState visitedState;
     int mapFid;
     int labelFid;
     int entrancesLength;
@@ -1445,7 +1445,7 @@ int wmWorldMap_save(File* stream)
         if (fileWriteInt32(stream, cityInfo->x) == -1) return -1;
         if (fileWriteInt32(stream, cityInfo->y) == -1) return -1;
         if (fileWriteInt32Enum<CityState>(stream, cityInfo->state) == -1) return -1;
-        if (fileWriteInt32(stream, cityInfo->visitedState) == -1) return -1;
+        if (fileWriteInt32Enum<VisitedState>(stream, cityInfo->visitedState) == -1) return -1;
         if (fileWriteInt32(stream, cityInfo->entrancesLength) == -1) return -1;
 
         for (int entranceIdx = 0; entranceIdx < cityInfo->entrancesLength; entranceIdx++) {
@@ -1542,7 +1542,7 @@ int wmWorldMap_load(File* stream)
         if (fileReadInt32(stream, &(city->x)) == -1) return -1;
         if (fileReadInt32(stream, &(city->y)) == -1) return -1;
         if (fileReadInt32Enum<CityState>(stream, &(city->state)) == -1) return -1;
-        if (fileReadInt32(stream, &(city->visitedState)) == -1) return -1;
+        if (fileReadInt32Enum<VisitedState>(stream, &(city->visitedState)) == -1) return -1;
 
         int entranceCount;
         if (fileReadInt32(stream, &(entranceCount)) == -1) {
@@ -2755,7 +2755,7 @@ static int wmAreaSlotInit(CityInfo* area)
     area->size = CITY_SIZE_LARGE;
     area->state = CITY_STATE_UNKNOWN;
     area->lockState = LOCK_STATE_UNLOCKED;
-    area->visitedState = 0;
+    area->visitedState = VisitedState::Unknown;
     area->mapFid = -1;
     area->labelFid = -1;
     area->entrancesLength = 0;
@@ -3485,7 +3485,7 @@ static int wmWorldMapFunc(int a1)
 
                     wmGenData.isInCar = false;
 
-                    if (wmGenData.currentAreaId == -1) {
+                    if (wmGenData.currentAreaId == CITY_INVALID) {
                         wmGenData.currentCarAreaId = CITY_CAR_OUT_OF_GAS;
 
                         CityInfo* city = &(wmAreaInfoList[CITY_CAR_OUT_OF_GAS]);
@@ -3496,7 +3496,7 @@ static int wmWorldMapFunc(int a1)
                         wmAreaSetWorldPos(CITY_CAR_OUT_OF_GAS, worldmapX, worldmapY);
 
                         city->state = CITY_STATE_KNOWN;
-                        city->visitedState = 1;
+                        city->visitedState = VisitedState::Known;
 
                         wmGenData.currentAreaId = CITY_CAR_OUT_OF_GAS;
                     } else {
@@ -3567,9 +3567,9 @@ static int wmWorldMapFunc(int a1)
                 wmInterfaceRefresh();
 
                 if (abs(wmGenData.worldPosX - worldX) < 5 && abs(wmGenData.worldPosY - worldY) < 5) {
-                    if (wmGenData.currentAreaId != -1) {
+                    if (wmGenData.currentAreaId != CITY_INVALID) {
                         CityInfo* city = &(wmAreaInfoList[wmGenData.currentAreaId]);
-                        if (city->visitedState == 2 && city->mapFid != -1) {
+                        if (city->visitedState == VisitedState::Visited && city->mapFid != -1) {
                             if (wmTownMapFunc(&map) == -1) {
                                 rc = -1;
                                 break;
@@ -3584,7 +3584,7 @@ static int wmWorldMapFunc(int a1)
                             // state transition, so a hook that redirects to a
                             // different map still leaves the clicked area marked
                             // visited.
-                            city->visitedState = 2;
+                            city->visitedState = VisitedState::Visited;
                         }
                     } else {
                         map = MAP_FIRST;
@@ -3594,7 +3594,7 @@ static int wmWorldMapFunc(int a1)
                         scriptHooks_Encounter(EncounterHookEventType::LocalMapEnter, &map, false, -1, -1);
                         if (wmGenData.isInCar) {
                             wmGenData.isInCar = false;
-                            if (wmGenData.currentAreaId == -1) {
+                            if (wmGenData.currentAreaId == CITY_INVALID) {
                                 City areaIdx;
                                 if (wmTryMatchAreaContainingMapIdx(map, &areaIdx)) {
                                     wmGenData.currentCarAreaId = areaIdx;
@@ -3621,9 +3621,9 @@ static int wmWorldMapFunc(int a1)
         wmInterfaceScrollTabsUpdate();
 
         if (keyCode == KEY_UPPERCASE_T || keyCode == KEY_LOWERCASE_T) {
-            if (!wmGenData.isWalking && wmGenData.currentAreaId != -1) {
+            if (!wmGenData.isWalking && wmGenData.currentAreaId != CITY_INVALID) {
                 CityInfo* city = &(wmAreaInfoList[wmGenData.currentAreaId]);
-                if (city->visitedState == 2 && city->mapFid != -1) {
+                if (city->visitedState == VisitedState::Visited && city->mapFid != -1) {
                     if (wmTownMapFunc(&map) == -1) {
                         rc = -1;
                     }
@@ -3733,7 +3733,7 @@ int wmCheckGameAreaEvents()
         // NOTE: Uninline.
         wmAreaSetVisibleState(CITY_FAKE_VAULT_13_B, CITY_STATE_KNOWN, true);
 
-        wmAreaMarkVisitedState(CITY_FAKE_VAULT_13_B, 2);
+        wmAreaMarkVisitedState(CITY_FAKE_VAULT_13_B, VisitedState::Visited);
     }
 
     return 0;
@@ -6279,7 +6279,7 @@ static void wmInterfaceDrawTerrainInfo()
 
 static const char* wmGetHotspotText()
 {
-    if (wmGenData.currentAreaId != -1) {
+    if (wmGenData.currentAreaId != CITY_INVALID) {
         return wmGetTownTitle(wmGenData.currentAreaId);
     }
 
@@ -6336,7 +6336,7 @@ bool wmAreaIsKnown(City areaIdx)
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    if (city->visitedState) {
+    if (city->visitedState == VisitedState::Known || city->visitedState == VisitedState::Visited) {
         if (city->state == CITY_STATE_KNOWN) {
             return true;
         }
@@ -6346,18 +6346,18 @@ bool wmAreaIsKnown(City areaIdx)
 }
 
 // 0x4C457C wmAreaVisitedState
-int wmAreaVisitedState(City areaIdx)
+VisitedState wmAreaVisitedState(City areaIdx)
 {
     if (!cityIsValid(areaIdx)) {
-        return 0;
+        return VisitedState::Unknown;
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    if (city->visitedState && city->state == CITY_STATE_KNOWN) {
+    if ((city->visitedState == VisitedState::Known || city->visitedState == VisitedState::Visited) && city->state == CITY_STATE_KNOWN) {
         return city->visitedState;
     }
 
-    return 0;
+    return VisitedState::Unknown;
 }
 
 // 0x4C45BC wmMapIsKnown
@@ -6386,19 +6386,19 @@ bool wmMapIsKnown(Map mapIdx)
 // 0x4C4624 wmAreaMarkVisited
 int wmAreaMarkVisited(City areaIdx)
 {
-    return wmAreaMarkVisitedState(areaIdx, CITY_STATE_VISITED);
+    return wmAreaMarkVisitedState(areaIdx, VisitedState::Visited);
 }
 
 // 0x4C4634 wmAreaMarkVisitedState
-bool wmAreaMarkVisitedState(City areaIdx, int state)
+bool wmAreaMarkVisitedState(City areaIdx, VisitedState state)
 {
     if (!cityIsValid(areaIdx)) {
         return false;
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    int oldVisitedState = city->visitedState;
-    if (city->state == CITY_STATE_KNOWN && state != 0) {
+    VisitedState oldVisitedState = city->visitedState;
+    if (city->state == CITY_STATE_KNOWN && state != VisitedState::Unknown) {
         wmMarkSubTileRadiusVisited(city->x, city->y);
     }
 
@@ -6409,10 +6409,10 @@ bool wmAreaMarkVisitedState(City areaIdx, int state)
         return false;
     }
 
-    if (state == 1) {
+    if (state == VisitedState::Known) {
         subtile->state = SUBTILE_STATE_KNOWN;
-    } else if (state == 2 && oldVisitedState == 0) {
-        city->visitedState = 1;
+    } else if (state == VisitedState::Visited && oldVisitedState == VisitedState::Unknown) {
+        city->visitedState = VisitedState::Known;
     }
 
     return true;
@@ -6523,7 +6523,7 @@ static int wmTownMapFunc(Map* mapIdxPtr)
         return -1;
     }
 
-    if (wmGenData.currentAreaId == -1) {
+    if (wmGenData.currentAreaId == CITY_INVALID) {
         return -1;
     }
 
@@ -6881,7 +6881,7 @@ int wmCarGiveToParty()
 
     CityInfo* city = &(wmAreaInfoList[CITY_CAR_OUT_OF_GAS]);
     city->state = CITY_STATE_UNKNOWN;
-    city->visitedState = 0;
+    city->visitedState = VisitedState::Unknown;
 
     return 0;
 }
@@ -7281,7 +7281,7 @@ static int wmAreaFindFirstValidMap(Map* mapIdxPtr)
 {
     *mapIdxPtr = MAP_INVALID;
 
-    if (wmGenData.currentAreaId == -1) {
+    if (wmGenData.currentAreaId == CITY_INVALID) {
         return -1;
     }
 

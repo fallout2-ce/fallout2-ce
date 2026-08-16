@@ -487,7 +487,7 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
                 adjustRep = true;
                 wmAreaSetVisibleState(CITY_ARROYO, CITY_STATE_UNKNOWN, true);
                 wmAreaSetVisibleState(CITY_DESTROYED_ARROYO, CITY_STATE_KNOWN, true);
-                wmAreaMarkVisitedState(CITY_DESTROYED_ARROYO, CITY_STATE_VISITED);
+                wmAreaMarkVisitedState(CITY_DESTROYED_ARROYO, VisitedState::Visited);
             }
         } else if (day >= gMovieTimerArtimer3 && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
             adjustRep = true;

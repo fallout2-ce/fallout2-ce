@@ -416,6 +416,17 @@ inline City programStackPopEnum(Program* program)
     return static_cast<City>(city);
 }
 
+template <>
+inline VisitedState programStackPopEnum(Program* program)
+{
+    int visited = programStackPopInteger(program);
+    if (!visitedStateIsValid(visited)) {
+        programPrintError("invalid visited state %d", visited);
+    }
+
+    return static_cast<VisitedState>(visited);
+}
+
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);
 void programReturnStackPushInteger(Program* program, int value);
 void programReturnStackPushPointer(Program* program, void* value);

@@ -44,8 +44,7 @@ inline MapFlags& operator|=(MapFlags& lhs, MapFlags rhs)
 
 enum CityState : int {
     CITY_STATE_UNKNOWN,
-    CITY_STATE_KNOWN,
-    CITY_STATE_VISITED
+    CITY_STATE_KNOWN
 };
 
 enum City : int {
@@ -316,6 +315,19 @@ inline EncounterFlag& operator|=(EncounterFlag& lhs, EncounterFlag rhs)
     return lhs;
 }
 
+enum class VisitedState : int {
+    Unknown = 0,
+    Known = 1,
+    Visited = 2,
+    Invisible = -66,
+};
+
+inline bool visitedStateIsValid(int visited)
+{
+    VisitedState state = static_cast<VisitedState>(visited);
+    return state == VisitedState::Unknown || state == VisitedState::Known || state == VisitedState::Visited || state == VisitedState::Invisible;
+}
+
 extern unsigned char* circleBlendTable;
 extern bool gDidMeetFrankHorrigan;
 
@@ -355,10 +367,10 @@ int wmSubTileMarkRadiusVisited(int x, int y, int radius);
 int wmSubTileGetVisitedState(int x, int y, int* statePtr);
 int wmGetAreaIdxName(City areaIdx, char* name);
 bool wmAreaIsKnown(City areaIdx);
-int wmAreaVisitedState(City areaIdx);
+VisitedState wmAreaVisitedState(City areaIdx);
 bool wmMapIsKnown(Map mapIdx);
 int wmAreaMarkVisited(City areaIdx);
-bool wmAreaMarkVisitedState(City areaIdx, int state);
+bool wmAreaMarkVisitedState(City areaIdx, VisitedState state);
 bool wmAreaSetVisibleState(City areaIdx, CityState state, bool force);
 int wmAreaSetWorldPos(City areaIdx, int x, int y);
 int wmGetPartyWorldPos(int* xPtr, int* yPtr);

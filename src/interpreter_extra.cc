@@ -734,14 +734,12 @@ static void opHowMuch(Program* program)
 // 0x454B6C op_mark_area_known
 static void opMarkAreaKnown(Program* program)
 {
-    // the value -66 is weird as all the code references to visited state are oscilating in 0, 1, 2
-    constexpr int kInvisible = -66;
-    int visitedState = programStackPopInteger(program);
+    VisitedState visitedState = programStackPopEnum<VisitedState>(program);
     int id = programStackPopInteger(program);
     int isMap = programStackPopInteger(program);
 
     if (isMap == 0) {
-        if (visitedState == kInvisible) {
+        if (visitedState == VisitedState::Invisible) {
             wmAreaSetVisibleState(static_cast<City>(id), CITY_STATE_UNKNOWN, true);
         } else {
             wmAreaSetVisibleState(static_cast<City>(id), CITY_STATE_KNOWN, true);
@@ -3260,7 +3258,7 @@ static void opMetarule(Program* program)
         result = _getPartyMemberCount();
         break;
     case METARULE_AREA_KNOWN:
-        result = wmAreaVisitedState(static_cast<City>(param.integerValue));
+        result = static_cast<int>(wmAreaVisitedState(static_cast<City>(param.integerValue)));
         break;
     case METARULE_WHO_ON_DRUGS:
         result = queueHasEvent(static_cast<Object*>(param.pointerValue), EVENT_TYPE_DRUG);
