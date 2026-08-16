@@ -20,6 +20,8 @@ namespace {
 #define F2_RES_CONFIG_FILE_NAME "f2_res.ini"
 #define F2_RES_MAIN_MENU_BUTTON_X 30
 #define F2_RES_MAIN_MENU_BUTTON_Y 19
+#define F2_RES_DEFAULT_MAIN_MENU_PANEL_OFFSET_X 16
+#define F2_RES_DEFAULT_MAIN_MENU_PANEL_OFFSET_Y 15
 
     struct F2ResMigrationEntry {
         const char* legacySection;
@@ -468,10 +470,10 @@ static bool contentConfigMigrateFromF2Res(Config* legacyConfig, const char* cont
     configRead(&migratedConfig, contentConfigFilePath, false);
 
     bool migrated = false;
-    if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_X", "main_menu_panel_offset_x", F2_RES_MAIN_MENU_BUTTON_X, 16)) {
+    if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_X", "main_menu_panel_offset_x", F2_RES_MAIN_MENU_BUTTON_X, F2_RES_DEFAULT_MAIN_MENU_PANEL_OFFSET_X)) {
         migrated = true;
     }
-    if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_Y", "main_menu_panel_offset_y", F2_RES_MAIN_MENU_BUTTON_Y, 15)) {
+    if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_Y", "main_menu_panel_offset_y", F2_RES_MAIN_MENU_BUTTON_Y, F2_RES_DEFAULT_MAIN_MENU_PANEL_OFFSET_Y)) {
         migrated = true;
     }
     if (contentConfigMigrateF2ResBoolKey(legacyConfig, &migratedConfig, "SCALE_BUTTONS_AND_TEXT_MENU", "scale_buttons_and_text")) {
@@ -518,7 +520,7 @@ void contentConfigTryMigrateFromF2Res(const char* contentConfigPath)
         char contentCfgPath[COMPAT_MAX_PATH];
         snprintf(contentCfgPath, sizeof(contentCfgPath), "%s\\%s", masterPatches.c_str(), contentConfigPath);
         if (contentConfigMigrateFromF2Res(&legacyConfig, contentCfgPath)) {
-            debugPrint("Migrated settings from f2_res.ini to game.cfg.\n");
+            debugPrint("Migrated settings from f2_res.ini to %s.\n", contentCfgPath);
         }
     }
 
