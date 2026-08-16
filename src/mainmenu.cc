@@ -324,8 +324,8 @@ static void mainMenuDrawPanel(const MainMenuLayout& layout, const MainMenuOffset
 static Point mainMenuTransformPoint(const MainMenuLayout& layout, int x, int y)
 {
     return {
-        layout.backgroundX + (layout.scaleControls ? mainMenuScaleX(layout, x) : x),
-        layout.backgroundY + (layout.scaleControls ? mainMenuScaleY(layout, y) : y),
+        layout.backgroundX + (layout.scaleControls ? static_cast<int>(lround(x * layout.scale)) : x),
+        layout.backgroundY + (layout.scaleControls ? static_cast<int>(lround(y * layout.scale)) : y),
     };
 }
 
