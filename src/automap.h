@@ -3,6 +3,7 @@
 
 #include "db.h"
 #include "map_defs.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -71,12 +72,12 @@ int automapLoad(File* stream);
 int automapSave(File* stream);
 int _automapDisplayMap(int map);
 void automapShow(bool isInGame, bool isUsingScanner);
-int automapRenderInPipboyWindow(int win, int map, int elevation);
+int automapRenderInPipboyWindow(int win, Map map, int elevation);
 int automapSaveCurrent();
 int automapGetHeader(AutomapHeader** automapHeaderPtr);
 int automapGetWindow();
 
-void automapSetDisplayMap(int map, bool available);
+void automapSetDisplayMap(Map map, bool available);
 
 } // namespace fallout
 

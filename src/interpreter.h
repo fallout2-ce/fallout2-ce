@@ -7,6 +7,7 @@
 #include "object.h"
 #include "proto_types.h"
 #include "stat_defs.h"
+#include "worldmap.h"
 #include <setjmp.h>
 
 #include <vector>
@@ -391,6 +392,17 @@ inline Rotation programStackPopEnum(Program* program)
     }
 
     return static_cast<Rotation>(rotation);
+}
+
+template <>
+inline Map programStackPopEnum(Program* program)
+{
+    int map = programStackPopInteger(program);
+    if (!mapIsValid(map)) {
+        programPrintError("invalid map %d", map);
+    }
+
+    return static_cast<Map>(map);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

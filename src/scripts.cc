@@ -1206,7 +1206,7 @@ static void scriptsCloseNearbyElevatorDoors()
 
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
 {
-    int map = gMapHeader.index;
+    Map map = gMapHeader.index;
     int elevation = gScriptsRequestedElevatorLevel;
     int tile = -1;
 

@@ -17,6 +17,7 @@
 #include "random.h"
 #include "scripts.h"
 #include "skill.h"
+#include "worldmap.h"
 
 #include <assert.h>
 
@@ -432,7 +433,7 @@ int     arg4 - encounter index in the table, or -1 if not an encounter
 int     ret0 - overrides the map ID, or pass -1 for event type 0 to cancel the encounter and continue traveling
 int     ret1 - pass 1 to cancel the encounter and load the specified map from the ret0 (only for event type 0)
 */
-EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, int* mapIdPtr, bool isSpecial, int tableId, int entryId)
+EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, Map* mapIdPtr, bool isSpecial, int tableId, int entryId)
 {
     assert(mapIdPtr != nullptr);
 
@@ -449,20 +450,20 @@ EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, int*
         return EncounterHookResult::ContinueEncounter;
     }
 
-    int overrideMapId = hook.getReturnValueAt(0).asInt();
+    Map overrideMapId = static_cast<Map>(hook.getReturnValueAt(0).asInt());
     if (eventType == EncounterHookEventType::LocalMapEnter) {
-        if (overrideMapId >= 0) {
-            *mapIdPtr = overrideMapId;
+        if (mapIsValid(overrideMapId)) {
+            *mapIdPtr = static_cast<Map>(overrideMapId);
         }
         return EncounterHookResult::ContinueEncounter;
     }
 
-    if (overrideMapId < -1) {
-        overrideMapId = -1;
+    if (!mapIsValid(overrideMapId)) {
+        overrideMapId = MAP_INVALID;
     }
     *mapIdPtr = overrideMapId;
 
-    if (overrideMapId < 0) {
+    if (overrideMapId <= MAP_INVALID) {
         return EncounterHookResult::ContinueTravel;
     }
 

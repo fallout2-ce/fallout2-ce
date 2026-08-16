@@ -748,7 +748,7 @@ static void opMarkAreaKnown(Program* program)
             wmAreaMarkVisitedState(id, visitedState);
         }
     } else if (isMap == 1) {
-        wmMapMarkVisited(id);
+        wmMapMarkVisited(static_cast<Map>(id));
     }
 }
 
@@ -2024,7 +2024,7 @@ static void opMetarule3(Program* program)
         result.integerValue = killsGetByType(static_cast<KillType>(param1.integerValue));
         break;
     case METARULE3_MARK_MAP_ENTRANCE:
-        result.integerValue = wmMapMarkMapEntranceState(param1.integerValue, param2.integerValue, param3.integerValue);
+        result.integerValue = wmMapMarkMapEntranceState(static_cast<Map>(param1.integerValue), param2.integerValue, param3.integerValue);
         break;
     case METARULE3_WM_SUBTILE_STATE:
         if (1) {
@@ -2098,7 +2098,7 @@ static void opMetarule3(Program* program)
 static void opSetMapMusic(Program* program)
 {
     char* string = programStackPopString(program);
-    int mapIndex = programStackPopInteger(program);
+    Map mapIndex = programStackPopEnum<Map>(program);
 
     debugPrint("\nset_map_music: %d, %s", mapIndex, string);
     wmSetMapMusic(mapIndex, string);
@@ -2173,15 +2173,15 @@ static void opLoadMap(Program* program)
         }
     }
 
-    int mapIndex = -1;
+    Map mapIndex = MAP_INVALID;
 
     if (mapName != nullptr) {
         gGameGlobalVars[GVAR_LOAD_MAP_INDEX] = param;
         mapIndex = wmMapMatchNameToIdx(mapName);
     } else {
-        if (mapIndexOrName.integerValue >= 0) {
+        if (mapIsValid(mapIndexOrName.integerValue)) {
             gGameGlobalVars[GVAR_LOAD_MAP_INDEX] = param;
-            mapIndex = mapIndexOrName.integerValue;
+            mapIndex = static_cast<Map>(mapIndexOrName.integerValue);
         }
     }
 
@@ -2216,7 +2216,7 @@ static void opSetExitGrids(Program* program)
     int destinationRotation = programStackPopInteger(program);
     int destinationTile = programStackPopInteger(program);
     int destinationElevation = programStackPopInteger(program);
-    int destinationMap = programStackPopInteger(program);
+    Map destinationMap = programStackPopEnum<Map>(program);
     int elevation = programStackPopInteger(program);
 
     Object* object = objectFindFirstAtElevation(elevation);
@@ -2885,7 +2885,7 @@ static void opGetObjectPid(Program* program)
 // 0x458A30 op_cur_map_index
 static void opGetCurrentMap(Program* program)
 {
-    int mapIndex = mapGetCurrentMap();
+    Map mapIndex = mapGetCurrentMap();
     programStackPushInteger(program, mapIndex);
 }
 
@@ -3266,7 +3266,7 @@ static void opMetarule(Program* program)
         result = queueHasEvent(static_cast<Object*>(param.pointerValue), EVENT_TYPE_DRUG);
         break;
     case METARULE_MAP_KNOWN:
-        result = wmMapIsKnown(param.integerValue);
+        result = wmMapIsKnown(static_cast<Map>(param.integerValue));
         break;
     case METARULE_IS_LOADGAME:
         result = _isLoadingGame();

@@ -135,7 +135,7 @@ int gElevation = 0;
 static char* _errMapName = byte_50B058;
 
 // 0x519584 wmMapIdx
-static int _wmMapIdx = -1;
+static Map _wmMapIdx = MAP_INVALID;
 
 // 0x614868 square_data
 static TileData _square_data[ELEVATION_COUNT];
@@ -516,9 +516,9 @@ void mapSetStart(int tile, int elevation, Rotation rotation)
 }
 
 // 0x4824CC
-char* mapGetName(int map, int elevation)
+char* mapGetName(Map map, int elevation)
 {
-    if (map < 0 || map >= wmMapMaxCount()) {
+    if (!mapIsValid(map)) {
         return nullptr;
     }
 
@@ -533,13 +533,13 @@ char* mapGetName(int map, int elevation)
 // TODO: Check, probably returns true if map1 and map2 represents the same city.
 //
 // 0x482528
-bool mapAreSameArea(int map1, int map2)
+bool mapAreSameArea(Map map1, Map map2)
 {
-    if (map1 < 0 || map1 >= wmMapMaxCount()) {
+    if (!mapIsValid(map1)) {
         return false;
     }
 
-    if (map2 < 0 || map2 >= wmMapMaxCount()) {
+    if (!mapIsValid(map2)) {
         return false;
     }
 
@@ -566,7 +566,7 @@ bool mapAreSameArea(int map1, int map2)
 
 // TODO: probably can be replaced with mapAreSameArea
 // 0x4825CC
-int _get_map_idx_same(int map1, int map2)
+int _get_map_idx_same(Map map1, Map map2)
 {
     int city1 = -1;
     if (wmMatchAreaContainingMapIdx(map1, &city1) == -1) {
@@ -586,7 +586,7 @@ int _get_map_idx_same(int map1, int map2)
 }
 
 // 0x48261C
-char* mapGetCityName(int map)
+char* mapGetCityName(Map map)
 {
     int city;
     if (wmMatchAreaContainingMapIdx(map, &city) == -1) {
@@ -599,7 +599,7 @@ char* mapGetCityName(int map)
 }
 
 // 0x48268C
-char* mapDescriptionById(int map)
+char* mapDescriptionById(Map map)
 {
     int city;
     if (wmMatchAreaContainingMapIdx(map, &city) == 0) {
@@ -612,7 +612,7 @@ char* mapDescriptionById(int map)
 }
 
 // 0x4826B8
-int mapGetCurrentMap()
+Map mapGetCurrentMap()
 {
     return gMapHeader.index;
 }
@@ -875,7 +875,7 @@ static void mapLoadTimerFinish(const char* fileName, int rc)
 }
 
 // 0x482B34
-int mapLoadById(int map)
+int mapLoadById(Map map)
 {
     scriptSetFixedParam(gMapSid, map);
 
@@ -1343,8 +1343,8 @@ int mapSetTransition(MapTransition* transition)
 
     memcpy(&gMapTransition, transition, sizeof(gMapTransition));
 
-    if (gMapTransition.map == 0) {
-        gMapTransition.map = -2;
+    if (gMapTransition.map == MAP_FIRST) {
+        gMapTransition.map = MAP_TRANSITION;
     }
 
     if (isInCombat()) {
@@ -1365,7 +1365,7 @@ int mapHandleTransition()
 
     gameMouseSetCursor(MOUSE_CURSOR_NONE);
 
-    if (gMapTransition.map == -1) {
+    if (gMapTransition.map == MAP_INVALID) {
         if (!isInCombat()) {
             animationStop();
             // SFALL: Remove text floaters when moving to the world map
@@ -1373,7 +1373,7 @@ int mapHandleTransition()
             wmTownMap(); // nb this is a world map transition
             memset(&gMapTransition, 0, sizeof(gMapTransition));
         }
-    } else if (gMapTransition.map == -2) {
+    } else if (gMapTransition.map == MAP_TRANSITION) {
         if (!isInCombat()) {
             animationStop();
             // SFALL: Remove text floaters when moving to the world map
@@ -1387,7 +1387,7 @@ int mapHandleTransition()
                 // SFALL: Remove text floaters after moving to another map.
                 textObjectsReset();
 
-                mapLoadById(gMapTransition.map);
+                mapLoadById(static_cast<Map>(gMapTransition.map));
             }
 
             if (gMapTransition.tile != -1 && gMapTransition.tile != 0
@@ -1896,7 +1896,7 @@ static int mapHeaderWrite(MapHeader* ptr, File* stream)
     if (fileWriteInt32Enum<MapHeaderFlags>(stream, ptr->flags) == -1) return -1;
     if (fileWriteInt32(stream, ptr->darkness) == -1) return -1;
     if (fileWriteInt32(stream, ptr->globalVariablesCount) == -1) return -1;
-    if (fileWriteInt32(stream, ptr->index) == -1) return -1;
+    if (fileWriteInt32Enum<Map>(stream, ptr->index) == -1) return -1;
     if (fileWriteUInt32(stream, ptr->lastVisitTime) == -1) return -1;
     if (fileWriteInt32List(stream, ptr->field_3C, 44) == -1) return -1;
 
@@ -1916,7 +1916,7 @@ static int mapHeaderRead(MapHeader* ptr, File* stream)
     if (fileReadInt32Enum<MapHeaderFlags>(stream, &(ptr->flags)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->darkness)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->globalVariablesCount)) == -1) return -1;
-    if (fileReadInt32(stream, &(ptr->index)) == -1) return -1;
+    if (fileReadInt32Enum<Map>(stream, &(ptr->index)) == -1) return -1;
     if (fileReadUInt32(stream, &(ptr->lastVisitTime)) == -1) return -1;
     if (fileReadInt32List(stream, ptr->field_3C, 44) == -1) return -1;
 

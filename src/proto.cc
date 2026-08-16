@@ -609,7 +609,7 @@ int objectDataRead(Object* obj, File* stream)
                 break;
             case SCENERY_TYPE_STAIRS:
                 if (fileReadInt32(stream, &(obj->data.scenery.stairs.destinationBuiltTile)) == -1) return -1;
-                if (fileReadInt32(stream, &(obj->data.scenery.stairs.destinationMap)) == -1) return -1;
+                if (fileReadInt32Enum<Map>(stream, &(obj->data.scenery.stairs.destinationMap)) == -1) return -1;
                 break;
             case SCENERY_TYPE_ELEVATOR:
                 if (fileReadInt32(stream, &(obj->data.scenery.elevator.type)) == -1) return -1;
@@ -619,7 +619,7 @@ int objectDataRead(Object* obj, File* stream)
                 if (gMapHeader.version == 19) {
                     if (fileReadInt32(stream, &(obj->data.scenery.ladder.destinationBuiltTile)) == -1) return -1;
                 } else {
-                    if (fileReadInt32(stream, &(obj->data.scenery.ladder.destinationMap)) == -1) return -1;
+                    if (fileReadInt32Enum<Map>(stream, &(obj->data.scenery.ladder.destinationMap)) == -1) return -1;
                     if (fileReadInt32(stream, &(obj->data.scenery.ladder.destinationBuiltTile)) == -1) return -1;
                 }
                 break;
@@ -627,7 +627,7 @@ int objectDataRead(Object* obj, File* stream)
                 if (gMapHeader.version == 19) {
                     if (fileReadInt32(stream, &(obj->data.scenery.ladder.destinationBuiltTile)) == -1) return -1;
                 } else {
-                    if (fileReadInt32(stream, &(obj->data.scenery.ladder.destinationMap)) == -1) return -1;
+                    if (fileReadInt32Enum<Map>(stream, &(obj->data.scenery.ladder.destinationMap)) == -1) return -1;
                     if (fileReadInt32(stream, &(obj->data.scenery.ladder.destinationBuiltTile)) == -1) return -1;
                 }
                 break;
@@ -638,7 +638,7 @@ int objectDataRead(Object* obj, File* stream)
             break;
         case OBJ_TYPE_MISC:
             if (isExitGridPid(obj->pid)) {
-                if (fileReadInt32(stream, &(obj->data.misc.map)) == -1) return -1;
+                if (fileReadInt32Enum<Map>(stream, &(obj->data.misc.map)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.tile)) == -1) return -1;
                 if (fileReadInt32(stream, &(obj->data.misc.elevation)) == -1) return -1;
                 if (fileReadInt32Enum<Rotation>(stream, &(obj->data.misc.rotation)) == -1) return -1;
@@ -703,18 +703,18 @@ int objectDataWrite(Object* obj, File* stream)
                 break;
             case SCENERY_TYPE_STAIRS:
                 if (fileWriteInt32(stream, data->scenery.stairs.destinationBuiltTile) == -1) return -1;
-                if (fileWriteInt32(stream, data->scenery.stairs.destinationMap) == -1) return -1;
+                if (fileWriteInt32Enum<Map>(stream, data->scenery.stairs.destinationMap) == -1) return -1;
                 break;
             case SCENERY_TYPE_ELEVATOR:
                 if (fileWriteInt32(stream, data->scenery.elevator.type) == -1) return -1;
                 if (fileWriteInt32(stream, data->scenery.elevator.level) == -1) return -1;
                 break;
             case SCENERY_TYPE_LADDER_UP:
-                if (fileWriteInt32(stream, data->scenery.ladder.destinationMap) == -1) return -1;
+                if (fileWriteInt32Enum<Map>(stream, data->scenery.ladder.destinationMap) == -1) return -1;
                 if (fileWriteInt32(stream, data->scenery.ladder.destinationBuiltTile) == -1) return -1;
                 break;
             case SCENERY_TYPE_LADDER_DOWN:
-                if (fileWriteInt32(stream, data->scenery.ladder.destinationMap) == -1) return -1;
+                if (fileWriteInt32Enum<Map>(stream, data->scenery.ladder.destinationMap) == -1) return -1;
                 if (fileWriteInt32(stream, data->scenery.ladder.destinationBuiltTile) == -1) return -1;
                 break;
             default:
@@ -723,7 +723,7 @@ int objectDataWrite(Object* obj, File* stream)
             break;
         case OBJ_TYPE_MISC:
             if (isExitGridPid(obj->pid)) {
-                if (fileWriteInt32(stream, data->misc.map) == -1) return -1;
+                if (fileWriteInt32Enum<Map>(stream, data->misc.map) == -1) return -1;
                 if (fileWriteInt32(stream, data->misc.tile) == -1) return -1;
                 if (fileWriteInt32(stream, data->misc.elevation) == -1) return -1;
                 if (fileWriteInt32Enum<Rotation>(stream, data->misc.rotation) == -1) return -1;
@@ -804,7 +804,7 @@ static int _proto_update_gen(Object* obj)
             data->misc.tile = -1;
             data->misc.elevation = 0;
             data->misc.rotation = ROTATION_NE;
-            data->misc.map = -1;
+            data->misc.map = MAP_INVALID;
         }
         break;
     default:
@@ -982,7 +982,7 @@ int proto_scenery_subdata_init(Proto* proto, SceneryType type)
         break;
     case SCENERY_TYPE_STAIRS:
         proto->scenery.data.stairs.destinationBuiltTile = -1;
-        proto->scenery.data.stairs.destinationMap = -1;
+        proto->scenery.data.stairs.destinationMap = MAP_INVALID;
         proto->scenery.extendedFlags |= PROTO_EXT_FLAG_CAN_USE;
         break;
     case SCENERY_TYPE_ELEVATOR:
@@ -1646,7 +1646,7 @@ static int protoSceneryDataRead(SceneryProtoData* scenery_data, SceneryType type
         return 0;
     case SCENERY_TYPE_STAIRS:
         if (fileReadInt32(stream, &(scenery_data->stairs.destinationBuiltTile)) == -1) return -1;
-        if (fileReadInt32(stream, &(scenery_data->stairs.destinationMap)) == -1) return -1;
+        if (fileReadInt32Enum<Map>(stream, &(scenery_data->stairs.destinationMap)) == -1) return -1;
 
         return 0;
     case SCENERY_TYPE_ELEVATOR:
@@ -1832,7 +1832,7 @@ static int protoSceneryDataWrite(SceneryProtoData* scenery_data, SceneryType typ
         return 0;
     case SCENERY_TYPE_STAIRS:
         if (fileWriteInt32(stream, scenery_data->stairs.destinationBuiltTile) == -1) return -1;
-        if (fileWriteInt32(stream, scenery_data->stairs.destinationMap) == -1) return -1;
+        if (fileWriteInt32Enum<Map>(stream, scenery_data->stairs.destinationMap) == -1) return -1;
 
         return 0;
     case SCENERY_TYPE_ELEVATOR:

@@ -1,6 +1,8 @@
 #ifndef OBJ_TYPES_H
 #define OBJ_TYPES_H
 
+#include "worldmap.h"
+
 namespace fallout {
 
 // Rotation
@@ -466,7 +468,7 @@ typedef struct DoorSceneryData {
 } DoorSceneryData;
 
 typedef struct StairsSceneryData {
-    int destinationMap; // obj_pudg.pudstairs.destMap
+    Map destinationMap; // obj_pudg.pudstairs.destMap
     int destinationBuiltTile; // obj_pudg.pudstairs.destBuiltTile
 } StairsSceneryData;
 
@@ -476,7 +478,7 @@ typedef struct ElevatorSceneryData {
 } ElevatorSceneryData;
 
 typedef struct LadderSceneryData {
-    int destinationMap;
+    Map destinationMap;
     int destinationBuiltTile;
 } LadderSceneryData;
 
@@ -488,7 +490,7 @@ typedef union SceneryObjectData {
 } SceneryObjectData;
 
 typedef struct MiscObjectData {
-    int map;
+    Map map;
     int tile;
     int elevation;
     Rotation rotation;
