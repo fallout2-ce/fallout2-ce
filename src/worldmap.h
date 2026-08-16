@@ -7,29 +7,6 @@ namespace fallout {
 
 #define CAR_FUEL_MAX (80000)
 
-enum MapHeaderFlags : int {
-    MAP_HEADER_NONE = 0x00,
-    MAP_HEADER_SAVED = 0x01,
-    MAP_HEADER_ELEVATION_0 = 0x02,
-    MAP_HEADER_ELEVATION_1 = 0x04,
-    MAP_HEADER_ELEVATION_2 = 0x08
-};
-
-constexpr inline MapHeaderFlags operator~(MapHeaderFlags rhs)
-{
-    return static_cast<MapHeaderFlags>(~static_cast<int>(rhs));
-}
-
-inline MapHeaderFlags& operator&=(MapHeaderFlags& lhs, MapHeaderFlags rhs)
-{
-    return lhs = static_cast<MapHeaderFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
-}
-
-inline MapHeaderFlags& operator|=(MapHeaderFlags& lhs, MapHeaderFlags rhs)
-{
-    return lhs = static_cast<MapHeaderFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
-}
-
 enum MapFlags : int {
     MAP_NONE = 0x00,
     MAP_SAVED = 0x01,

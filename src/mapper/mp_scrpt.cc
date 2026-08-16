@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "geometry.h"
 #include "map.h"
+#include "map_defs.h"
 #include "memory.h"
 #include "mouse.h"
 #include "object.h"

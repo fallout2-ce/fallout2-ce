@@ -28,6 +28,7 @@
 #include "light.h"
 #include "loadsave.h"
 #include "map_edge.h"
+#include "map_defs.h"
 #include "memory.h"
 #include "object.h"
 #include "party_member.h"

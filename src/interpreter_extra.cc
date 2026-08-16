@@ -27,6 +27,7 @@
 #include "light.h"
 #include "loadsave.h"
 #include "map.h"
+#include "map_defs.h"
 #include "object.h"
 #include "palette.h"
 #include "party_member.h"
