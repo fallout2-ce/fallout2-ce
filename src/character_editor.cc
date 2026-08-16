@@ -811,6 +811,7 @@ static bool characterEditorOwedPerkLevelsInitializedBackup;
 
 // 0x570A29 free_perk
 static unsigned char gCharacterEditorHasFreePerk; // count of owed perks
+static int perkFrequencyOverride;
 
 // Character levels at which the currently owed perks were earned.
 static std::vector<int> characterEditorOwedPerkLevels;
@@ -5766,6 +5767,11 @@ void characterEditorSetPerkOwed(int value)
     gCharacterEditorHasFreePerk = maskedValue;
 }
 
+void characterEditorSetPerkFrequency(int value)
+{
+    perkFrequencyOverride = value;
+}
+
 // External interface: called when level up occurs
 void characterEditorHandleLevelUp(int level)
 {
@@ -5909,12 +5915,21 @@ void characterEditorReset()
     gCharacterEditorRemainingCharacterPoints = 5;
     gCharacterEditorLastLevel = 1;
     gCharacterEditorHasFreePerk = 0;
+    perkFrequencyOverride = 0;
     characterEditorOwedPerkLevels.clear();
     characterEditorOwedPerkLevelsInitialized = true;
 }
 
 static int characterEditorGetLevelsPerPerk()
 {
+    if (perkFrequencyOverride > 0) {
+        return perkFrequencyOverride;
+    }
+
+    if (perkFrequencyOverride < 0) {
+        return PC_LEVEL_MAX + 1;
+    }
+
     int progression = 3;
     if (traitIsSelected(TRAIT_SKILLED)) {
         progression += 1;

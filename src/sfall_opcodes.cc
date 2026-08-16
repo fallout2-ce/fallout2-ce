@@ -314,6 +314,12 @@ static void op_set_perk_owed(Program* program)
     characterEditorSetPerkOwed(value);
 }
 
+static void op_set_perk_freq(Program* program)
+{
+    int value = programStackPopInteger(program);
+    characterEditorSetPerkFrequency(value);
+}
+
 // key_pressed
 static void op_key_pressed(Program* program)
 {
@@ -2087,6 +2093,7 @@ void sfallOpcodesInit()
     // 0x8189 - void set_perk_name(Perk perk, string value)
     // 0x818a - void set_perk_desc(Perk perk, string value)
     // 0x8247 - void set_perk_freq(int value)
+    interpreterRegisterOpcode(0x8247, op_set_perk_freq);
 
     // 0x818b - void set_pipboy_available(int available)
 
