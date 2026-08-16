@@ -6262,22 +6262,31 @@ static int perkDialogShow()
     rc &= 1;
 
     if (rc != 0) {
-        characterEditorConsumeOwedPerk();
+        bool perkAccepted = true;
         if (perkGetRank(gDude, PERK_TAG) != 0 && previousPerkRanks[PERK_TAG] == 0) {
             if (!perkDialogHandleTagPerk()) {
                 perkRemove(gDude, PERK_TAG);
+                perkAccepted = false;
             }
         } else if (perkGetRank(gDude, PERK_MUTATE) != 0 && previousPerkRanks[PERK_MUTATE] == 0) {
             if (!perkDialogHandleMutatePerk()) {
                 perkRemove(gDude, PERK_MUTATE);
+                perkAccepted = false;
             }
-        } else if (perkGetRank(gDude, PERK_LIFEGIVER) != previousPerkRanks[PERK_LIFEGIVER]) {
-            int maxHp = critterGetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS);
-            critterSetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS, maxHp + 4);
-            critterAdjustHitPoints(gDude, 4);
-        } else if (perkGetRank(gDude, PERK_EDUCATED) != previousPerkRanks[PERK_EDUCATED]) {
-            int sp = pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS);
-            pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, sp + 2);
+        }
+
+        if (perkAccepted) {
+            characterEditorConsumeOwedPerk();
+            if (perkGetRank(gDude, PERK_LIFEGIVER) != previousPerkRanks[PERK_LIFEGIVER]) {
+                int maxHp = critterGetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS);
+                critterSetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS, maxHp + 4);
+                critterAdjustHitPoints(gDude, 4);
+            } else if (perkGetRank(gDude, PERK_EDUCATED) != previousPerkRanks[PERK_EDUCATED]) {
+                int sp = pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS);
+                pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, sp + 2);
+            }
+        } else {
+            rc = 0;
         }
     }
 
