@@ -50,6 +50,7 @@ int screenGetWidth();
 int screenGetHeight();
 int screenGetVisibleHeight();
 void handleWindowSizeChanged();
+void renderFpsCounter();
 void renderPresent();
 bool screenIsExclusiveFullscreen();
 
