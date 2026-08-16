@@ -1,11 +1,13 @@
 #include "svga.h"
 
 #include <limits.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <SDL.h>
 
 #include "config.h"
+#include "color.h"
 #include "dinput.h"
 #include "draw.h"
 #include "game.h"
@@ -15,6 +17,7 @@
 #include "movie.h"
 #include "scan_unimplemented.h"
 #include "settings.h"
+#include "text_font.h"
 #include "tile.h"
 #include "win32.h"
 #include "window_manager.h"
@@ -404,6 +407,63 @@ void handleWindowSizeChanged()
     destroyRenderer();
     createRenderer(screenGetWidth(), screenGetHeight());
     mouseDeviceRefreshWindowMapping();
+}
+
+void renderFpsCounter()
+{
+    if (!settings.debug.show_fps || gSdlSurface == nullptr || gSdlTextureSurface == nullptr || fontDrawText == nullptr) {
+        return;
+    }
+
+    static unsigned int sampleStartTicks = 0;
+    static int sampleFrames = 0;
+    static double fps = 0.0;
+
+    unsigned int now = SDL_GetTicks();
+    if (sampleStartTicks == 0) {
+        sampleStartTicks = now;
+    }
+
+    sampleFrames++;
+
+    unsigned int elapsed = now - sampleStartTicks;
+    if (elapsed >= 500) {
+        fps = sampleFrames * 1000.0 / elapsed;
+        sampleFrames = 0;
+        sampleStartTicks = now;
+    }
+
+    char text[32];
+    snprintf(text, sizeof(text), "FPS: %.1f", fps);
+
+    ScopedFont font(101);
+
+    constexpr int kPadding = 2;
+    int textWidth = fontGetStringWidth(text);
+    int textHeight = fontGetLineHeight();
+    int width = textWidth + kPadding * 2;
+    int height = textHeight + kPadding * 2;
+
+    if (width > gSdlSurface->w) {
+        width = gSdlSurface->w;
+    }
+
+    if (height > gSdlSurface->h) {
+        height = gSdlSurface->h;
+    }
+
+    bufferFill(static_cast<unsigned char*>(gSdlSurface->pixels), width, height, gSdlSurface->pitch, COLOR_BLACK);
+    if (width > kPadding * 2 && height > kPadding * 2) {
+        fontDrawText(static_cast<unsigned char*>(gSdlSurface->pixels) + gSdlSurface->pitch * kPadding + kPadding, text, width - kPadding * 2, gSdlSurface->pitch, COLOR_LIGHT_GREY);
+    }
+
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = width;
+    rect.h = height;
+    SDL_BlitSurface(gSdlSurface, &rect, gSdlTextureSurface, &rect);
+
 }
 
 void renderPresent()

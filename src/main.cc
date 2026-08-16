@@ -461,6 +461,7 @@ static void mainLoop()
             _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
         }
 
+        renderFpsCounter();
         renderPresent();
         sharedFpsLimiter.throttle();
     }
