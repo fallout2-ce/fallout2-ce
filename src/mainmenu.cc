@@ -245,7 +245,10 @@ static MainMenuLayout mainMenuBuildLayout()
 
     layout.scaleX = layout.backgroundWidth / static_cast<float>(MAIN_MENU_LOGICAL_WIDTH);
     layout.scaleY = layout.backgroundHeight / static_cast<float>(MAIN_MENU_LOGICAL_HEIGHT);
-    layout.scaleControls = layout.art == MenuArt::Vanilla || settings.ui.main_menu_scale_mode >= 2;
+
+    bool scaleButtonsAndText = false;
+    configGetBool(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "scale_buttons_and_text", &scaleButtonsAndText, false);
+    layout.scaleControls = layout.art == MenuArt::Vanilla || settings.ui.main_menu_scale_mode >= 2 || scaleButtonsAndText;
     layout.scale = layout.scaleControls ? layout.scaleY : 1.0f;
     return layout;
 }

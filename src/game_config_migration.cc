@@ -34,6 +34,7 @@ namespace {
     static bool gameConfigMigrateStringKey(Config* legacyConfig, Config* gameConfig, const F2ResMigrationEntry& entry);
     static bool gameConfigMigrateScaleKey(Config* legacyConfig, Config* gameConfig);
     static bool contentConfigMigrateF2ResMainMenuPanelOffsetKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey, int baseValue, int defaultValue);
+    static bool contentConfigMigrateF2ResBoolKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey);
 
     static constexpr F2ResMigrationEntry kF2ResMigrationEntries[] = {
         { "MAIN", "SCR_WIDTH", GAME_CONFIG_SCREEN_KEY, GAME_CONFIG_RESOLUTION_X_KEY },
@@ -136,6 +137,22 @@ namespace {
         }
 
         return configSetInt(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey, value);
+    }
+
+    static bool contentConfigMigrateF2ResBoolKey(Config* legacyConfig, Config* contentConfig, const char* legacyKey, const char* targetKey)
+    {
+        assert(legacyConfig != nullptr && contentConfig != nullptr);
+
+        if (gameConfigHasKey(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey)) {
+            return false;
+        }
+
+        bool value;
+        if (!configGetBool(legacyConfig, "MAINMENU", legacyKey, &value)) {
+            return false;
+        }
+
+        return configSetBool(contentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, targetKey, value);
     }
 } // namespace
 
@@ -434,7 +451,9 @@ static bool contentConfigEnsureDirectory(const char* contentConfigFilePath)
     char pathWithoutFile[COMPAT_MAX_PATH];
     compat_splitpath(contentConfigFilePath, drive, dirPart, nullptr, nullptr);
     compat_makepath(pathWithoutFile, drive, dirPart, nullptr, nullptr);
-    return compat_mkdir_recursive(pathWithoutFile) == 0;
+    return compat_is_dir(pathWithoutFile)
+        || compat_mkdir_recursive(pathWithoutFile) == 0
+        || compat_is_dir(pathWithoutFile);
 }
 
 static bool contentConfigMigrateFromF2Res(Config* legacyConfig, const char* contentConfigFilePath)
@@ -453,6 +472,9 @@ static bool contentConfigMigrateFromF2Res(Config* legacyConfig, const char* cont
         migrated = true;
     }
     if (contentConfigMigrateF2ResMainMenuPanelOffsetKey(legacyConfig, &migratedConfig, "MENU_BG_OFFSET_Y", "main_menu_panel_offset_y", F2_RES_MAIN_MENU_BUTTON_Y, 15)) {
+        migrated = true;
+    }
+    if (contentConfigMigrateF2ResBoolKey(legacyConfig, &migratedConfig, "SCALE_BUTTONS_AND_TEXT_MENU", "scale_buttons_and_text")) {
         migrated = true;
     }
 
