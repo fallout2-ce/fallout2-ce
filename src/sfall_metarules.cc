@@ -2100,7 +2100,7 @@ static void mf_encounter_intros(OpcodeContext& ctx)
 
 static void mf_set_rest_mode(OpcodeContext& ctx)
 {
-    wmSetRestMode(ctx.arg(0).asInt());
+    wmSetRestMode(static_cast<RestModeFlag>(ctx.arg(0).asInt()));
 }
 
 static void mf_set_rest_option(OpcodeContext& ctx)

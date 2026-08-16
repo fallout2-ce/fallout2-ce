@@ -119,7 +119,7 @@ namespace fallout {
 #define WM_VIEW_WIDTH (450)
 #define WM_VIEW_HEIGHT (443)
 
-typedef enum EncounterFormationType {
+enum EncounterFormationType : int {
     ENCOUNTER_FORMATION_TYPE_SURROUNDING,
     ENCOUNTER_FORMATION_TYPE_STRAIGHT_LINE,
     ENCOUNTER_FORMATION_TYPE_DOUBLE_LINE,
@@ -127,7 +127,7 @@ typedef enum EncounterFormationType {
     ENCOUNTER_FORMATION_TYPE_CONE,
     ENCOUNTER_FORMATION_TYPE_HUDDLE,
     ENCOUNTER_FORMATION_TYPE_COUNT,
-} EncounterFormationType;
+};
 
 typedef enum EncounterFrequencyType {
     ENCOUNTER_FREQUENCY_TYPE_NONE,
@@ -139,29 +139,29 @@ typedef enum EncounterFrequencyType {
     ENCOUNTER_FREQUENCY_TYPE_COUNT,
 } EncounterFrequencyType;
 
-typedef enum EncounterSceneryType {
+enum EncounterSceneryType : int {
     ENCOUNTER_SCENERY_TYPE_NONE,
     ENCOUNTER_SCENERY_TYPE_LIGHT,
     ENCOUNTER_SCENERY_TYPE_NORMAL,
     ENCOUNTER_SCENERY_TYPE_HEAVY,
     ENCOUNTER_SCENERY_TYPE_COUNT,
-} EncounterSceneryType;
+};
 
-typedef enum EncounterSituation {
+enum EncounterSituation : int {
     ENCOUNTER_SITUATION_NOTHING,
     ENCOUNTER_SITUATION_AMBUSH,
     ENCOUNTER_SITUATION_FIGHTING,
     ENCOUNTER_SITUATION_AND,
     ENCOUNTER_SITUATION_COUNT,
-} EncounterSituation;
+};
 
-typedef enum EncounterLogicalOperator {
+enum EncounterLogicalOperator : int {
     ENCOUNTER_LOGICAL_OPERATOR_NONE,
     ENCOUNTER_LOGICAL_OPERATOR_AND,
     ENCOUNTER_LOGICAL_OPERATOR_OR,
-} EncounterLogicalOperator;
+};
 
-typedef enum EncounterConditionType {
+enum EncounterConditionType : int {
     ENCOUNTER_CONDITION_TYPE_NONE = 0,
     ENCOUNTER_CONDITION_TYPE_GLOBAL = 1,
     ENCOUNTER_CONDITION_TYPE_NUMBER_OF_CRITTERS = 2,
@@ -169,41 +169,50 @@ typedef enum EncounterConditionType {
     ENCOUNTER_CONDITION_TYPE_PLAYER = 4,
     ENCOUNTER_CONDITION_TYPE_DAYS_PLAYED = 5,
     ENCOUNTER_CONDITION_TYPE_TIME_OF_DAY = 6,
-} EncounterConditionType;
+};
 
-typedef enum EncounterConditionalOperator {
+enum EncounterConditionalOperator : int {
     ENCOUNTER_CONDITIONAL_OPERATOR_NONE,
     ENCOUNTER_CONDITIONAL_OPERATOR_EQUAL,
     ENCOUNTER_CONDITIONAL_OPERATOR_NOT_EQUAL,
     ENCOUNTER_CONDITIONAL_OPERATOR_LESS_THAN,
     ENCOUNTER_CONDITIONAL_OPERATOR_GREATER_THAN,
     ENCOUNTER_CONDITIONAL_OPERATOR_COUNT,
-} EncounterConditionalOperator;
+    ENCOUNTER_CONDITIONAL_OPERATOR_FIRST = ENCOUNTER_CONDITIONAL_OPERATOR_NONE
+};
 
-typedef enum EncounterRatioMode {
+inline EncounterConditionalOperator operator++(EncounterConditionalOperator& e, int)
+{
+    EncounterConditionalOperator result = e;
+    e = static_cast<EncounterConditionalOperator>(static_cast<int>(e) + 1);
+    return result;
+}
+
+enum EncounterRatioMode : int {
     ENCOUNTER_RATIO_MODE_USE_RATIO,
     ENCOUNTER_RATIO_MODE_SINGLE,
-} EncounterRatioMode;
+};
 
-typedef enum Daytime {
+enum Daytime : int {
     DAY_PART_MORNING,
     DAY_PART_AFTERNOON,
     DAY_PART_NIGHT,
     DAY_PART_COUNT,
-} Daytime;
+};
 
-typedef enum LockState {
+enum LockState : int {
     LOCK_STATE_UNLOCKED,
     LOCK_STATE_LOCKED,
-} LockState;
+    LOCK_STATE_COUNT
+};
 
-typedef enum SubtileState {
+enum SubtileState : int {
     SUBTILE_STATE_UNKNOWN,
     SUBTILE_STATE_KNOWN,
     SUBTILE_STATE_VISITED,
-} SubtileState;
+};
 
-typedef enum SubtileFill {
+enum SubtileFill : int {
     SUBTILE_FILL_NONE,
     SUBTILE_FILL_N,
     SUBTILE_FILL_S,
@@ -214,7 +223,7 @@ typedef enum SubtileFill {
     SUBTILE_FILL_SW,
     SUBTILE_FILL_SE,
     SUBTILE_FILL_COUNT,
-} SubtileFill;
+};
 
 typedef enum WorldMapEncounterFrm {
     WORLD_MAP_ENCOUNTER_FRM_RANDOM_BRIGHT,
@@ -230,18 +239,20 @@ typedef enum WorldmapArrowFrm {
     WORLDMAP_ARROW_FRM_COUNT,
 } WorldmapArrowFrm;
 
-enum class RestModeFlag {
-    Disabled = 0x01,
-    Strict = 0x02,
-    NoHealing = 0x04,
-};
-
-typedef enum CitySize {
+enum CitySize : int {
     CITY_SIZE_SMALL,
     CITY_SIZE_MEDIUM,
     CITY_SIZE_LARGE,
     CITY_SIZE_COUNT,
-} CitySize;
+    CITY_SIZE_FIRST = CITY_SIZE_SMALL
+};
+
+inline CitySize operator++(CitySize& e, int)
+{
+    CitySize result = e;
+    e = static_cast<CitySize>(static_cast<int>(e) + 1);
+    return result;
+}
 
 typedef struct EntranceInfo {
     int state;
@@ -258,9 +269,9 @@ typedef struct CityInfo {
     int areaId;
     int x;
     int y;
-    int size;
-    int state;
-    int lockState;
+    CitySize size;
+    CityState state;
+    LockState lockState;
     int visitedState;
     int mapFid;
     int labelFid;
@@ -285,7 +296,7 @@ typedef struct MapInfo {
     int field_2C;
     char mapFileName[40];
     char music[40];
-    int flags;
+    MapFlags flags;
     int ambientSoundEffectsLength;
     MapAmbientSoundEffectInfo ambientSoundEffects[MAP_AMBIENT_SOUND_EFFECTS_CAPACITY];
     int startPointsLength;
@@ -300,8 +311,8 @@ typedef struct Terrain {
 } Terrain;
 
 typedef struct EncounterConditionEntry {
-    int type;
-    int conditionalOperator;
+    EncounterConditionType type;
+    EncounterConditionalOperator conditionalOperator;
     int param;
     int value;
 } EncounterConditionEntry;
@@ -309,20 +320,20 @@ typedef struct EncounterConditionEntry {
 typedef struct EncounterCondition {
     int entriesLength;
     EncounterConditionEntry entries[3];
-    int logicalOperators[2];
+    EncounterLogicalOperator logicalOperators[2];
 } EncounterCondition;
 
 typedef struct EncounterTableSubEntry {
     int minimumCount;
     int maximumCount;
     int encounterIndex;
-    int situation;
+    EncounterSituation situation;
 } EncounterTableSubEntry;
 
 typedef struct EncounterTableEntry {
     int flags;
     int map;
-    int scenery;
+    EncounterSceneryType scenery;
     int chance;
     int counter;
     EncounterCondition condition;
@@ -350,7 +361,7 @@ typedef struct EncounterItem {
 typedef struct EncounterEntry {
     char field_0[40];
     int field_28;
-    int ratioMode;
+    EncounterRatioMode ratioMode;
     int ratio;
     int pid;
     int flags;
@@ -365,7 +376,7 @@ typedef struct EncounterEntry {
 
 typedef struct Encounter {
     char name[40];
-    int position;
+    EncounterFormationType position;
     int spacing;
     int distance;
     int entriesLength;
@@ -374,10 +385,10 @@ typedef struct Encounter {
 
 typedef struct SubtileInfo {
     int terrain;
-    int fill;
+    SubtileFill fill;
     int encounterChance[DAY_PART_COUNT];
     int encounterType;
-    int state;
+    SubtileState state;
 } SubtileInfo;
 
 // A worldmap tile is 7x6 area, thus consisting of 42 individual subtiles.
@@ -486,7 +497,7 @@ static std::vector<std::pair<int, std::string>> wmTerrainNameOverrides;
 static std::unordered_map<int, std::string> wmTownTitleOverrides;
 static bool wmTownNamesHidden;
 
-static void wmSetFlags(int* flagsPtr, int flag, int value);
+static void wmSetFlags(MapFlags* flagsPtr, MapFlags flag, bool set);
 static int wmGenDataInit();
 static int wmGenDataReset();
 static void wmGenDataSetStartWorldPos();
@@ -518,9 +529,9 @@ static int wmParseFindEncounterTypeMatch(char* string, int* valuePtr);
 static int wmParseFindTerrainTypeMatch(char* string, int* valuePtr);
 static int wmParseEncounterItemType(char** stringPtr, EncounterItem* encounterItem, int* itemCountPtr, const char* delim);
 static int wmParseItemType(char* string, EncounterItem* encounterItem);
-static int wmParseConditional(char** stringPtr, const char* a2, EncounterCondition* condition);
-static int wmParseSubConditional(char** stringPtr, const char* a2, int* typePtr, int* operatorPtr, int* paramPtr, int* valuePtr);
-static int wmParseConditionalEval(char** stringPtr, int* conditionalOperatorPtr);
+static int wmParseConditional(char** stringPtr, const char* ifString, EncounterCondition* condition);
+static int wmParseSubConditional(char** stringPtr, const char* ifString, EncounterConditionType* typePtr, EncounterConditionalOperator* operatorPtr, int* paramPtr, int* valuePtr);
+static int wmParseConditionalEval(char** stringPtr, EncounterConditionalOperator* conditionalOperatorPtr);
 static int wmAreaSlotInit(CityInfo* area);
 static int wmAreaInit();
 static int wmParseFindMapIdxMatch(char* string, int* valuePtr);
@@ -545,7 +556,7 @@ static int wmSetupCritterObjs(int encounterIndex, Object** critterPtr, int critt
 static int wmSetupRndNextTileNumInit(Encounter* encounter);
 static int wmSetupRndNextTileNum(Encounter* encounter, EncounterEntry* encounterEntry, int* tilePtr);
 static bool wmEvalConditional(EncounterCondition* encounterCondition, int* critterCountPtr);
-static bool wmEvalSubConditional(int operand1, int condionalOperator, int operand2);
+static bool wmEvalSubConditional(int operand1, EncounterConditionalOperator condionalOperator, int operand2);
 static bool wmGameTimeIncrement(int ticksToAdd);
 static int wmGrabTileWalkMask(int tileIdx);
 static bool wmWorldPosInvalid(int x, int y);
@@ -562,7 +573,7 @@ static int wmInterfaceScrollPixel(int stepX, int stepY, int dx, int dy, bool* su
 static void wmMouseBkProc();
 static int wmMarkSubTileOffsetVisited(int tile, int subtileX, int subtileY, int offsetX, int offsetY);
 static int wmMarkSubTileOffsetKnown(int tile, int subtileX, int subtileY, int offsetX, int offsetY);
-static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, int subtileState);
+static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, SubtileState subtileState);
 static void wmMarkSubTileRadiusVisited(int x, int y);
 static int wmTileGrabArt(int tileIdx);
 static int wmInterfaceRefresh();
@@ -579,7 +590,7 @@ static const char* wmGetHotspotText();
 static bool wmCursorIsVisible();
 static void wmResetTerrainInfo();
 static int wmGetAreaName(CityInfo* city, char* name);
-static void wmMarkAllSubTiles(int state);
+static void wmMarkAllSubTiles(SubtileState state);
 static int wmTownMapFunc(int* mapIdxPtr);
 static int wmTownMapInit();
 static int wmTownMapRefresh();
@@ -599,13 +610,13 @@ static void wmFadeReset();
 static void wmBlinkRndEncounterIcon(bool special);
 
 // 0x4BC860 can_rest_here
-static const int _can_rest_here[ELEVATION_COUNT] = {
+static const MapFlags _can_rest_here[ELEVATION_COUNT] = {
     MAP_CAN_REST_ELEVATION_0,
     MAP_CAN_REST_ELEVATION_1,
     MAP_CAN_REST_ELEVATION_2,
 };
 
-static int wmRestMode = 0;
+static RestModeFlag wmRestMode = RestModeFlag::None;
 
 // 0x4BC86C
 static const int dayPartEncounterFrequencyModifiers[DAY_PART_COUNT] = {
@@ -964,7 +975,7 @@ static const char* wmGetTownTitle(int areaIdx)
 }
 
 // 0x672FB8 wmFreqValues
-static int wmFreqValues[6];
+static int wmFreqValues[ENCOUNTER_FREQUENCY_TYPE_COUNT];
 
 // 0x672FD0 wmRndOriginalCenterTile
 static int wmRndOriginalCenterTile;
@@ -1000,7 +1011,7 @@ static FrmImage _backgroundFrmImage;
 static FrmImage _townFrmImage;
 static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
-static unsigned int wmForceEncounterFlags = 0;
+static EncounterFlag wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 static bool wmEncounterDetectionEnabled = true;
 static bool wmEncounterIntrosEnabled = true;
 static int worldmapTravelDelay;
@@ -1069,9 +1080,9 @@ static inline bool cityIsValid(int city)
 }
 
 // 0x4BC890 wmSetFlags
-static void wmSetFlags(int* flagsPtr, int flag, int value)
+static void wmSetFlags(MapFlags* flagsPtr, MapFlags flag, bool set)
 {
-    if (value) {
+    if (set) {
         *flagsPtr |= flag;
     } else {
         *flagsPtr &= ~flag;
@@ -1122,7 +1133,7 @@ int wmWorldMap_init()
     // during |wmTeleportToArea| to calculate worldmap position when jumping
     // from Temple to Arroyo - before giving a chance to |wmInterfaceInit| to
     // initialize it.
-    for (int citySize = 0; citySize < CITY_SIZE_COUNT; citySize++) {
+    for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
         citySizeDescription->fid = buildFid(OBJ_TYPE_INTERFACE, 336 + citySize);
     }
@@ -1180,7 +1191,7 @@ static int wmGenDataInit()
     wmGenData.viewportMaxX = 0;
 
     wmForceEncounterMapId = -1;
-    wmForceEncounterFlags = 0;
+    wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
     wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
@@ -1188,7 +1199,7 @@ static int wmGenDataInit()
     wmTownTitleOverrides.clear();
     wmTownNamesHidden = false;
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
-    wmRestMode = 0;
+    wmRestMode = RestModeFlag::None;
 
     return 0;
 }
@@ -1241,13 +1252,13 @@ static int wmGenDataReset()
     wmMarkSubTileRadiusVisited(wmGenData.worldPosX, wmGenData.worldPosY);
 
     wmForceEncounterMapId = -1;
-    wmForceEncounterFlags = 0;
+    wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
     wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
-    wmRestMode = 0;
+    wmRestMode = RestModeFlag::None;
 
     return 0;
 }
@@ -1384,7 +1395,7 @@ int wmWorldMap_reset()
 
     wmWorldMapLoadTempData();
     wmSetStartWorldView();
-    wmMarkAllSubTiles(0);
+    wmMarkAllSubTiles(SUBTILE_STATE_UNKNOWN);
 
     return wmGenDataReset();
 }
@@ -1415,7 +1426,7 @@ int wmWorldMap_save(File* stream)
         CityInfo* cityInfo = &(wmAreaInfoList[areaIdx]);
         if (fileWriteInt32(stream, cityInfo->x) == -1) return -1;
         if (fileWriteInt32(stream, cityInfo->y) == -1) return -1;
-        if (fileWriteInt32(stream, cityInfo->state) == -1) return -1;
+        if (fileWriteInt32Enum<CityState>(stream, cityInfo->state) == -1) return -1;
         if (fileWriteInt32(stream, cityInfo->visitedState) == -1) return -1;
         if (fileWriteInt32(stream, cityInfo->entrancesLength) == -1) return -1;
 
@@ -1435,7 +1446,7 @@ int wmWorldMap_save(File* stream)
             for (int row = 0; row < SUBTILE_GRID_WIDTH; row++) {
                 SubtileInfo* subtile = &(tileInfo->subtiles[column][row]);
 
-                if (fileWriteInt32(stream, subtile->state) == -1) return -1;
+                if (fileWriteInt32Enum<SubtileState>(stream, subtile->state) == -1) return -1;
             }
         }
     }
@@ -1512,7 +1523,7 @@ int wmWorldMap_load(File* stream)
 
         if (fileReadInt32(stream, &(city->x)) == -1) return -1;
         if (fileReadInt32(stream, &(city->y)) == -1) return -1;
-        if (fileReadInt32(stream, &(city->state)) == -1) return -1;
+        if (fileReadInt32Enum<CityState>(stream, &(city->state)) == -1) return -1;
         if (fileReadInt32(stream, &(city->visitedState)) == -1) return -1;
 
         int entranceCount;
@@ -1550,7 +1561,7 @@ int wmWorldMap_load(File* stream)
             for (int row = 0; row < SUBTILE_GRID_WIDTH; row++) {
                 SubtileInfo* subtile = &(tile->subtiles[column][row]);
 
-                if (fileReadInt32(stream, &(subtile->state)) == -1) return -1;
+                if (fileReadInt32Enum<SubtileState>(stream, &(subtile->state)) == -1) return -1;
             }
         }
     }
@@ -1820,7 +1831,7 @@ static int wmParseEncounterTableIndex(EncounterTableEntry* encounterTableEntry, 
             char* pch = strstr(string, "scenery:");
             if (pch != nullptr) {
                 string = pch + 8;
-                strParseStrFromList(&string, &(encounterTableEntry->scenery), wmSceneryStrs, ENCOUNTER_SCENERY_TYPE_COUNT);
+                strParseStrFromListEnum<EncounterSceneryType>(&string, &(encounterTableEntry->scenery), wmSceneryStrs, ENCOUNTER_SCENERY_TYPE_COUNT);
             }
         }
 
@@ -1911,7 +1922,7 @@ static int wmParseEncounterSubEncStr(EncounterTableEntry* encounterTableEntry, c
         *end = '\0';
 
         if (*string != '\0') {
-            strParseStrFromList(&string, &(encounterTableSubEntry->situation), wmEncOpStrs, ENCOUNTER_SITUATION_COUNT);
+            strParseStrFromListEnum<EncounterSituation>(&string, &(encounterTableSubEntry->situation), wmEncOpStrs, ENCOUNTER_SITUATION_COUNT);
         }
 
         *end = ch;
@@ -2021,7 +2032,7 @@ static int wmReadEncBaseType(char* name, int* valuePtr)
             }
 
             if (configGetString(pConfigCfg, section, "position", &string)) {
-                strParseStrFromList(&string, &(encounter->position), wmFormationStrs, ENCOUNTER_FORMATION_TYPE_COUNT);
+                strParseStrFromListEnum<EncounterFormationType>(&string, &(encounter->position), wmFormationStrs, ENCOUNTER_FORMATION_TYPE_COUNT);
                 strParseIntWithKey(&string, "spacing", &(encounter->spacing), ":");
                 strParseIntWithKey(&string, "distance", &(encounter->distance), ":");
             }
@@ -2301,7 +2312,7 @@ static int wmParseSubTileInfo(TileInfo* tile, int row, int column, char* string)
         return -1;
     }
 
-    if (strParseStrFromList(&string, &(subtile->fill), wmFillStrs, SUBTILE_FILL_COUNT) == -1) {
+    if (strParseStrFromListEnum<SubtileFill>(&string, &(subtile->fill), wmFillStrs, SUBTILE_FILL_COUNT) == -1) {
         return -1;
     }
 
@@ -2456,11 +2467,11 @@ static int wmParseItemType(char* string, EncounterItem* encounterItem)
 }
 
 // 0x4BE988 wmParseConditional
-static int wmParseConditional(char** stringPtr, const char* a2, EncounterCondition* condition)
+static int wmParseConditional(char** stringPtr, const char* ifString, EncounterCondition* condition)
 {
     while (condition->entriesLength < 3) {
         EncounterConditionEntry* conditionEntry = &(condition->entries[condition->entriesLength]);
-        if (wmParseSubConditional(stringPtr, a2, &(conditionEntry->type), &(conditionEntry->conditionalOperator), &(conditionEntry->param), &(conditionEntry->value)) == -1) {
+        if (wmParseSubConditional(stringPtr, ifString, &(conditionEntry->type), &(conditionEntry->conditionalOperator), &(conditionEntry->param), &(conditionEntry->value)) == -1) {
             return -1;
         }
 
@@ -2487,7 +2498,7 @@ static int wmParseConditional(char** stringPtr, const char* a2, EncounterConditi
 }
 
 // 0x4BEA24 wmParseSubConditional
-static int wmParseSubConditional(char** stringPtr, const char* a2, int* typePtr, int* operatorPtr, int* paramPtr, int* valuePtr)
+static int wmParseSubConditional(char** stringPtr, const char* ifString, EncounterConditionType* typePtr, EncounterConditionalOperator* operatorPtr, int* paramPtr, int* valuePtr)
 {
     char* string = *stringPtr;
 
@@ -2518,7 +2529,7 @@ static int wmParseSubConditional(char** stringPtr, const char* a2, int* typePtr,
     string[parenPos] = '\0';
 
     bool found = false;
-    if (strstr(string, a2) == string) {
+    if (strstr(string, ifString) == string) {
         found = true;
     }
 
@@ -2685,14 +2696,14 @@ static int wmParseSubConditional(char** stringPtr, const char* a2, int* typePtr,
 }
 
 // 0x4BEEBC wmParseConditionalEval
-static int wmParseConditionalEval(char** stringPtr, int* conditionalOperatorPtr)
+static int wmParseConditionalEval(char** stringPtr, EncounterConditionalOperator* conditionalOperatorPtr)
 {
     char* string = *stringPtr;
 
     *conditionalOperatorPtr = ENCOUNTER_CONDITIONAL_OPERATOR_NONE;
 
-    int index;
-    for (index = 0; index < ENCOUNTER_CONDITIONAL_OPERATOR_COUNT; index++) {
+    EncounterConditionalOperator index;
+    for (index = ENCOUNTER_CONDITIONAL_OPERATOR_FIRST; index < ENCOUNTER_CONDITIONAL_OPERATOR_COUNT; index++) {
         if (strstr(string, wmConditionalOpStrs[index]) == string) {
             break;
         }
@@ -2819,12 +2830,12 @@ static int wmAreaInit()
                 exit(1);
             }
 
-            if (strParseStrFromList(&str, &(city->state), wmStateStrs, 2) == -1) {
+            if (strParseStrFromListEnum<CityState>(&str, &(city->state), wmStateStrs, 2) == -1) {
                 return -1;
             }
 
             if (configGetString(&cfg, section, "lock_state", &str)) {
-                if (strParseStrFromList(&str, &(city->lockState), wmStateStrs, 2) == -1) {
+                if (strParseStrFromListEnum<LockState>(&str, &(city->lockState), wmStateStrs, LOCK_STATE_COUNT) == -1) {
                     return -1;
                 }
             }
@@ -2834,7 +2845,7 @@ static int wmAreaInit()
                 exit(1);
             }
 
-            if (strParseStrFromList(&str, &(city->size), wmAreaSizeStrs, 3) == -1) {
+            if (strParseStrFromListEnum<CitySize>(&str, &(city->size), wmAreaSizeStrs, CITY_SIZE_COUNT) == -1) {
                 return -1;
             }
 
@@ -2874,12 +2885,9 @@ static int wmAreaInit()
                     return -1;
                 }
 
-                int rotationInt;
-                if (strParseInt(&str, &rotationInt) == -1) {
+                if (strParseEnum<Rotation>(&str, &(entrance->rotation)) == -1) {
                     return -1;
                 }
-
-                entrance->rotation = static_cast<Rotation>(rotationInt);
 
                 city->entrancesLength++;
             }
@@ -2940,7 +2948,7 @@ static int wmMapSlotInit(MapInfo* map)
     map->field_2C = -1;
     map->mapFileName[0] = '\0';
     map->music[0] = '\0';
-    map->flags = 0x3F;
+    map->flags = MAP_SAVED | MAP_DEAD_BODIES_AGE | MAP_PIPBOY_ACTIVE | MAP_CAN_REST_ELEVATION_0 | MAP_CAN_REST_ELEVATION_1 | MAP_CAN_REST_ELEVATION_2;
     map->ambientSoundEffectsLength = 0;
     map->startPointsLength = 0;
 
@@ -3177,37 +3185,37 @@ int wmMapMatchNameToIdx(char* name)
 // 0x4BFA44 wmMapIdxIsSaveable
 bool wmMapIdxIsSaveable(int mapIdx)
 {
-    return (wmMapInfoList[mapIdx].flags & MAP_SAVED) != 0;
+    return (wmMapInfoList[mapIdx].flags & MAP_SAVED) != MAP_NONE;
 }
 
 // 0x4BFA64 wmMapIsSaveable
 bool wmMapIsSaveable()
 {
-    return (wmMapInfoList[gMapHeader.index].flags & MAP_SAVED) != 0;
+    return (wmMapInfoList[gMapHeader.index].flags & MAP_SAVED) != MAP_NONE;
 }
 
 // 0x4BFA90 wmMapDeadBodiesAge
 bool wmMapDeadBodiesAge()
 {
-    return (wmMapInfoList[gMapHeader.index].flags & MAP_DEAD_BODIES_AGE) != 0;
+    return (wmMapInfoList[gMapHeader.index].flags & MAP_DEAD_BODIES_AGE) != MAP_NONE;
 }
 
 // 0x4BFABC wmMapCanRestHere
 bool wmMapCanRestHere(int elevation)
 {
-    int flags[3];
+    MapFlags flags[3];
 
     // NOTE: I'm not sure why they're copied.
     memcpy(flags, _can_rest_here, sizeof(flags));
 
     MapInfo* map = &(wmMapInfoList[gMapHeader.index]);
 
-    return (map->flags & flags[elevation]) != 0;
+    return (map->flags & flags[elevation]) != MAP_NONE;
 }
 
-void wmSetRestMode(int mode)
+void wmSetRestMode(RestModeFlag mode)
 {
-    wmRestMode = mode & (static_cast<int>(RestModeFlag::Disabled) | static_cast<int>(RestModeFlag::Strict) | static_cast<int>(RestModeFlag::NoHealing));
+    wmRestMode = mode & (RestModeFlag::Disabled | RestModeFlag::Strict | RestModeFlag::NoHealing);
 }
 
 void wmSetEncounterDetection(bool enabled)
@@ -3222,17 +3230,17 @@ void wmSetEncounterIntros(bool enabled)
 
 bool wmRestModeIsDisabled()
 {
-    return (wmRestMode & static_cast<int>(RestModeFlag::Disabled)) != 0;
+    return (wmRestMode & RestModeFlag::Disabled) != RestModeFlag::None;
 }
 
 bool wmRestModeIsStrict()
 {
-    return (wmRestMode & static_cast<int>(RestModeFlag::Strict)) != 0;
+    return (wmRestMode & RestModeFlag::Strict) != RestModeFlag::None;
 }
 
 bool wmRestModeNoHealing()
 {
-    return (wmRestMode & static_cast<int>(RestModeFlag::NoHealing)) != 0;
+    return (wmRestMode & RestModeFlag::NoHealing) != RestModeFlag::None;
 }
 
 // 0x4BFAFC wmMapPipboyActive
@@ -3249,7 +3257,7 @@ int wmMapMarkVisited(int mapIdx)
     }
 
     MapInfo* map = &(wmMapInfoList[mapIdx]);
-    if ((map->flags & MAP_SAVED) == 0) {
+    if ((map->flags & MAP_SAVED) == MAP_NONE) {
         return 0;
     }
 
@@ -3330,7 +3338,7 @@ int wmMapMarkMapEntranceState(int mapIdx, int elevation, int state)
     }
 
     MapInfo* map = &(wmMapInfoList[mapIdx]);
-    if ((map->flags & MAP_SAVED) == 0) {
+    if ((map->flags & MAP_SAVED) == MAP_NONE) {
         return -1;
     }
 
@@ -3781,24 +3789,24 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
     // for Horrigan encounter (above). This implemenation gives Horrigan
     // encounter a priority.
     if (wmForceEncounterMapId != -1) {
-        if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_CAR) != 0) {
+        if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_CAR) != ENCOUNTER_FLAG_NONE) {
             if (wmGenData.isInCar) {
                 wmMatchAreaContainingMapIdx(wmForceEncounterMapId, &(wmGenData.currentCarAreaId));
             }
         }
 
         // For unknown reason fadeout and blinking icon are mutually exclusive.
-        if ((wmForceEncounterFlags & ENCOUNTER_FLAG_FADEOUT) != 0) {
+        if ((wmForceEncounterFlags & ENCOUNTER_FLAG_FADEOUT) != ENCOUNTER_FLAG_NONE) {
             wmFadeOut();
-        } else if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_ICON) == 0) {
-            bool special = (wmForceEncounterFlags & ENCOUNTER_FLAG_ICON_SP) != 0;
+        } else if ((wmForceEncounterFlags & ENCOUNTER_FLAG_NO_ICON) == ENCOUNTER_FLAG_NONE) {
+            bool special = (wmForceEncounterFlags & ENCOUNTER_FLAG_ICON_SP) != ENCOUNTER_FLAG_NONE;
             wmBlinkRndEncounterIcon(special);
         }
 
         mapLoadById(wmForceEncounterMapId);
 
         wmForceEncounterMapId = -1;
-        wmForceEncounterFlags = 0;
+        wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 
         return 1;
     }
@@ -3806,7 +3814,7 @@ static int wmRndEncounterOccurred(int* mapToLoadPtr)
     // NOTE: Uninline.
     wmPartyFindCurSubTile();
 
-    int dayPart;
+    Daytime dayPart;
     int gameTimeHour = gameTimeGetHour();
     // CE: vanilla has gameTimeHour <= 600, so day doesn't start until 6:01
     if (gameTimeHour >= 1800 || gameTimeHour < 600) {
@@ -4600,6 +4608,8 @@ static bool wmEvalConditional(EncounterCondition* condition, int* critterCountPt
                 matches = false;
             }
             break;
+        default:
+            break;
         }
 
         if (!matches) {
@@ -4614,7 +4624,7 @@ static bool wmEvalConditional(EncounterCondition* condition, int* critterCountPt
 }
 
 // 0x4C1C0C wmEvalSubConditional
-static bool wmEvalSubConditional(int operand1, int condionalOperator, int operand2)
+static bool wmEvalSubConditional(int operand1, EncounterConditionalOperator condionalOperator, int operand2)
 {
     switch (condionalOperator) {
     case ENCOUNTER_CONDITIONAL_OPERATOR_EQUAL:
@@ -4625,9 +4635,9 @@ static bool wmEvalSubConditional(int operand1, int condionalOperator, int operan
         return operand1 < operand2;
     case ENCOUNTER_CONDITIONAL_OPERATOR_GREATER_THAN:
         return operand1 > operand2;
+    default:
+        return false;
     }
-
-    return false;
 }
 
 // 0x4C1C50 wmGameTimeIncrement
@@ -5004,7 +5014,7 @@ static int wmInterfaceInit()
         wmBkWinBuf,
         WM_WINDOW_WIDTH);
 
-    for (int citySize = 0; citySize < CITY_SIZE_COUNT; citySize++) {
+    for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
         if (!citySizeDescription->frmImage.lock(citySizeDescription->fid)) {
             return -1;
@@ -5259,8 +5269,8 @@ static int wmInterfaceExit()
         wmGenData.encounterCursorFrmImages[i].unlock();
     }
 
-    for (i = 0; i < CITY_SIZE_COUNT; i++) {
-        CitySizeDescription* citySizeDescription = &(wmSphereData[i]);
+    for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
+        CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
         citySizeDescription->frmImage.unlock();
     }
 
@@ -5510,7 +5520,7 @@ static int wmMarkSubTileOffsetKnown(int tile, int subtileX, int subtileY, int of
 }
 
 // 0x4C3434 wmMarkSubTileOffsetVisitedFunc
-static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, int subtileState)
+static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, SubtileState subtileState)
 {
     int actualTile;
     int actualSubtileX;
@@ -5622,6 +5632,8 @@ int wmSubTileMarkRadiusVisited(int x, int y, int radius)
                 wmMarkSubTileOffsetVisited(tile - 1, subtileX, subtileY, 0, 0);
             }
         }
+        break;
+    default:
         break;
     }
 
@@ -6131,6 +6143,8 @@ static int wmInterfaceDrawSubTileList(TileInfo* tileInfo, int column, int row, i
         case SUBTILE_STATE_KNOWN:
             wmInterfaceDrawSubTileRectFogged(dest, width, height, WM_WINDOW_WIDTH);
             break;
+        default:
+            break;
         }
     }
 
@@ -6387,7 +6401,7 @@ bool wmAreaMarkVisitedState(int areaIdx, int state)
 }
 
 // 0x4C46CC wmAreaSetVisibleState
-bool wmAreaSetVisibleState(int areaIdx, int state, bool force)
+bool wmAreaSetVisibleState(int areaIdx, CityState state, bool force)
 {
     if (!cityIsValid(areaIdx)) {
         return false;
@@ -6462,7 +6476,7 @@ bool wmStartWorldPosIsConfigured()
 }
 
 // 0x4C47D8 wmMarkAllSubTiles
-static void wmMarkAllSubTiles(int state)
+static void wmMarkAllSubTiles(SubtileState state)
 {
     for (int tileIndex = 0; tileIndex < wmMaxTileNum; tileIndex++) {
         TileInfo* tile = &(wmTileInfoList[tileIndex]);
@@ -6927,7 +6941,7 @@ int wmSfxIdxName(int sfxIdx, char** namePtr)
     }
 
     if (remapped != 0) {
-        int dayPart;
+        Daytime dayPart;
 
         int gameTimeHour = gameTimeGetHour();
         if (gameTimeHour <= 600 || gameTimeHour >= 1800) {
@@ -7454,9 +7468,9 @@ void wmCarSetCurrentArea(int area)
     wmGenData.currentCarAreaId = area;
 }
 
-void wmForceEncounter(int map, unsigned int flags)
+void wmForceEncounter(int map, EncounterFlag flags)
 {
-    if ((wmForceEncounterFlags & (1 << 31)) != 0) {
+    if ((wmForceEncounterFlags & ENCOUNTER_FLAG_LOCK2) != ENCOUNTER_FLAG_NONE) {
         return;
     }
 
@@ -7464,10 +7478,10 @@ void wmForceEncounter(int map, unsigned int flags)
     wmForceEncounterFlags = flags;
 
     // I don't quite understand the reason why locking needs one more flag.
-    if ((wmForceEncounterFlags & ENCOUNTER_FLAG_LOCK) != 0) {
-        wmForceEncounterFlags |= (1 << 31);
+    if ((wmForceEncounterFlags & ENCOUNTER_FLAG_LOCK) != ENCOUNTER_FLAG_NONE) {
+        wmForceEncounterFlags |= ENCOUNTER_FLAG_LOCK2;
     } else {
-        wmForceEncounterFlags &= ~(1 << 31);
+        wmForceEncounterFlags &= ~ENCOUNTER_FLAG_LOCK2;
     }
 }
 

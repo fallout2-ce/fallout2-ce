@@ -7,21 +7,46 @@ namespace fallout {
 
 #define CAR_FUEL_MAX (80000)
 
-typedef enum MapFlags {
+enum MapFlags : int {
+    MAP_NONE = 0x00,
     MAP_SAVED = 0x01,
     MAP_DEAD_BODIES_AGE = 0x02,
     MAP_PIPBOY_ACTIVE = 0x04,
     MAP_CAN_REST_ELEVATION_0 = 0x08,
     MAP_CAN_REST_ELEVATION_1 = 0x10,
-    MAP_CAN_REST_ELEVATION_2 = 0x20,
-} MapFlags;
+    MAP_CAN_REST_ELEVATION_2 = 0x20
+};
 
-typedef enum CityState {
+constexpr inline MapFlags operator&(MapFlags lhs, MapFlags rhs)
+{
+    return static_cast<MapFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline MapFlags operator|(MapFlags lhs, MapFlags rhs)
+{
+    return static_cast<MapFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr inline MapFlags operator~(MapFlags rhs)
+{
+    return static_cast<MapFlags>(~static_cast<int>(rhs));
+}
+
+inline MapFlags& operator&=(MapFlags& lhs, MapFlags rhs)
+{
+    return lhs = lhs & rhs;
+}
+
+inline MapFlags& operator|=(MapFlags& lhs, MapFlags rhs)
+{
+    return lhs = lhs | rhs;
+}
+
+enum CityState : int {
     CITY_STATE_UNKNOWN,
     CITY_STATE_KNOWN,
-    CITY_STATE_VISITED,
-    CITY_STATE_INVISIBLE = -66,
-} CityState;
+    CITY_STATE_VISITED
+};
 
 typedef enum City {
     CITY_ARROYO,
@@ -229,11 +254,49 @@ typedef enum Map {
     MAP_IN_GAME_MOVIE1 = 149,
 } Map;
 
-#define ENCOUNTER_FLAG_NO_CAR 0x1
-#define ENCOUNTER_FLAG_LOCK 0x2
-#define ENCOUNTER_FLAG_NO_ICON 0x4
-#define ENCOUNTER_FLAG_ICON_SP 0x8
-#define ENCOUNTER_FLAG_FADEOUT 0x10
+enum class RestModeFlag : int {
+    None = 0x00,
+    Disabled = 0x01,
+    Strict = 0x02,
+    NoHealing = 0x04,
+};
+
+constexpr inline RestModeFlag operator&(RestModeFlag lhs, RestModeFlag rhs)
+{
+    return static_cast<RestModeFlag>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+constexpr inline RestModeFlag operator|(RestModeFlag lhs, RestModeFlag rhs)
+{
+    return static_cast<RestModeFlag>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+enum EncounterFlag : unsigned int {
+    ENCOUNTER_FLAG_NONE = 0x00,
+    ENCOUNTER_FLAG_NO_CAR = 0x01,
+    ENCOUNTER_FLAG_LOCK = 0x02,
+    ENCOUNTER_FLAG_NO_ICON = 0x04,
+    ENCOUNTER_FLAG_ICON_SP = 0x08,
+    ENCOUNTER_FLAG_FADEOUT = 0x10,
+    ENCOUNTER_FLAG_LOCK2 = 0x80000000
+};
+
+constexpr inline EncounterFlag operator~(EncounterFlag rhs)
+{
+    return static_cast<EncounterFlag>(~static_cast<unsigned int>(rhs));
+}
+
+inline EncounterFlag& operator&=(EncounterFlag& lhs, EncounterFlag rhs)
+{
+    lhs = static_cast<EncounterFlag>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
+inline EncounterFlag& operator|=(EncounterFlag& lhs, EncounterFlag rhs)
+{
+    lhs = static_cast<EncounterFlag>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+    return lhs;
+}
 
 extern unsigned char* circleBlendTable;
 extern bool gDidMeetFrankHorrigan;
@@ -250,7 +313,7 @@ bool wmMapIdxIsSaveable(int mapIdx);
 bool wmMapIsSaveable();
 bool wmMapDeadBodiesAge();
 bool wmMapCanRestHere(int elevation);
-void wmSetRestMode(int mode);
+void wmSetRestMode(RestModeFlag mode);
 void wmSetEncounterDetection(bool enabled);
 void wmSetEncounterIntros(bool enabled);
 bool wmRestModeIsDisabled();
@@ -271,7 +334,7 @@ int wmAreaVisitedState(int areaIdx);
 bool wmMapIsKnown(int mapIdx);
 int wmAreaMarkVisited(int areaIdx);
 bool wmAreaMarkVisitedState(int areaIdx, int state);
-bool wmAreaSetVisibleState(int areaIdx, int state, bool force);
+bool wmAreaSetVisibleState(int areaIdx, CityState state, bool force);
 int wmAreaSetWorldPos(int areaIdx, int x, int y);
 int wmGetPartyWorldPos(int* xPtr, int* yPtr);
 int wmGetPartyCurArea(int* areaIdxPtr);
@@ -297,7 +360,7 @@ void wmSetPartyCurArea(int areaIdx);
 void wmClearPartyWalking();
 void wmSetPartyWorldPos(int x, int y);
 void wmCarSetCurrentArea(int area);
-void wmForceEncounter(int map, unsigned int flags);
+void wmForceEncounter(int map, EncounterFlag flags);
 void wmSetScriptWorldMapMulti(float value);
 bool wmTerrainNameIsValidSubtile(int x, int y);
 void wmSetTerrainName(int x, int y, const char* name);

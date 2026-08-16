@@ -27,6 +27,7 @@
 #include "light.h"
 #include "loadsave.h"
 #include "map.h"
+#include "map_defs.h"
 #include "object.h"
 #include "palette.h"
 #include "party_member.h"
@@ -733,22 +734,21 @@ static void opHowMuch(Program* program)
 // 0x454B6C op_mark_area_known
 static void opMarkAreaKnown(Program* program)
 {
-    int data[3];
+    // the value -66 is weird as all the code references to visited state are oscilating in 0, 1, 2
+    constexpr int kInvisible = -66;
+    int visitedState = programStackPopInteger(program);
+    int id = programStackPopInteger(program);
+    int isMap = programStackPopInteger(program);
 
-    for (int arg = 0; arg < 3; arg++) {
-        data[arg] = programStackPopInteger(program);
-    }
-
-    // TODO: Provide meaningful names.
-    if (data[2] == 0) {
-        if (data[0] == CITY_STATE_INVISIBLE) {
-            wmAreaSetVisibleState(data[1], 0, 1);
+    if (isMap == 0) {
+        if (visitedState == kInvisible) {
+            wmAreaSetVisibleState(id, CITY_STATE_UNKNOWN, true);
         } else {
-            wmAreaSetVisibleState(data[1], 1, 1);
-            wmAreaMarkVisitedState(data[1], data[0]);
+            wmAreaSetVisibleState(id, CITY_STATE_KNOWN, true);
+            wmAreaMarkVisitedState(id, visitedState);
         }
-    } else if (data[2] == 1) {
-        wmMapMarkVisited(data[1]);
+    } else if (isMap == 1) {
+        wmMapMarkVisited(id);
     }
 }
 
@@ -3250,7 +3250,7 @@ static void opMetarule(Program* program)
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
         break;
     case METARULE_FIRST_RUN:
-        result = (gMapHeader.flags & MAP_SAVED) == 0;
+        result = (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE;
         break;
     case METARULE_ELEVATOR:
         scriptsRequestElevator(scriptGetSelf(program), param.integerValue);

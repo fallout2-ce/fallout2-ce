@@ -19,6 +19,7 @@
 #include "item.h"
 #include "light.h"
 #include "map.h"
+#include "map_defs.h"
 #include "memory.h"
 #include "party_member.h"
 #include "proto.h"
@@ -462,7 +463,7 @@ int objectRead(Object* obj, File* stream)
             }
         }
     } else {
-        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM && !(gMapHeader.flags & 0x01)) {
+        if (objectTypeFromPid(obj->pid) == OBJ_TYPE_ITEM && !(gMapHeader.flags & MAP_HEADER_SAVED)) {
             _object_fix_weapon_ammo(obj);
         }
 
@@ -3185,7 +3186,7 @@ char* objectGetDescription(Object* obj)
 // Warm objects cache?
 //
 // 0x48C938 obj_preload_art_cache
-void _obj_preload_art_cache(int flags)
+void _obj_preload_art_cache(MapHeaderFlags flags)
 {
     if (gObjectFids == nullptr) {
         return;
@@ -3194,7 +3195,7 @@ void _obj_preload_art_cache(int flags)
     unsigned char arr[4096];
     memset(arr, 0, sizeof(arr));
 
-    if ((flags & 0x02) == 0) {
+    if ((flags & MAP_HEADER_ELEVATION_0) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
             int v3 = _square[0]->field_0[i];
             arr[v3 & 0xFFF] = 1;
@@ -3202,7 +3203,7 @@ void _obj_preload_art_cache(int flags)
         }
     }
 
-    if ((flags & 0x04) == 0) {
+    if ((flags & MAP_HEADER_ELEVATION_1) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
             int v3 = _square[1]->field_0[i];
             arr[v3 & 0xFFF] = 1;
@@ -3210,7 +3211,7 @@ void _obj_preload_art_cache(int flags)
         }
     }
 
-    if ((flags & 0x08) == 0) {
+    if ((flags & MAP_HEADER_ELEVATION_2) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
             int v3 = _square[2]->field_0[i];
             arr[v3 & 0xFFF] = 1;

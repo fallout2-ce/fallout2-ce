@@ -27,6 +27,7 @@
 #include "item.h"
 #include "light.h"
 #include "loadsave.h"
+#include "map_defs.h"
 #include "map_edge.h"
 #include "memory.h"
 #include "object.h"
@@ -69,7 +70,7 @@ static int mapLocalVariablesLoad(File* stream);
 static void _map_place_dude_and_mouse();
 static void square_init();
 static void _square_reset();
-static int _square_load(File* stream, int flags);
+static int _square_load(File* stream, MapHeaderFlags flags);
 static int mapHeaderWrite(MapHeader* ptr, File* stream);
 static int mapHeaderRead(MapHeader* ptr, File* stream);
 static void mapLoadTimerStart();
@@ -85,10 +86,10 @@ static char _aErrorF2[] = "ERROR! F2";
 static IsoWindowRefreshProc* _map_scroll_refresh = isoWindowRefreshRectGame;
 
 // 0x519544 map_data_elev_flags
-static const int _map_data_elev_flags[ELEVATION_COUNT] = {
-    2,
-    4,
-    8,
+static const MapHeaderFlags _map_data_elev_flags[ELEVATION_COUNT] = {
+    MAP_HEADER_ELEVATION_0,
+    MAP_HEADER_ELEVATION_1,
+    MAP_HEADER_ELEVATION_2,
 };
 
 // 0x519550 map_last_scroll_time
@@ -1027,7 +1028,7 @@ static int mapLoad(File* stream)
     objectSetRotation(gDude, gEnteringRotation, nullptr);
     gMapHeader.index = wmMapMatchNameToIdx(gMapHeader.name);
 
-    if ((gMapHeader.flags & 1) == 0) {
+    if ((gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE) {
         char path[COMPAT_MAX_PATH];
         snprintf(path, sizeof(path), "maps\\%s", gMapHeader.name);
 
@@ -1063,7 +1064,7 @@ static int mapLoad(File* stream)
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
         object->sid = gMapSid;
-        scriptSetFixedParam(gMapSid, (gMapHeader.flags & 1) == 0);
+        scriptSetFixedParam(gMapSid, (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE);
 
         Script* script;
         scriptGetScript(gMapSid, &script);
@@ -1524,7 +1525,7 @@ static int _map_save_file(File* stream)
     }
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == 0) {
+        if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
             _db_fwriteLongCount(stream, _square[elevation]->field_0, SQUARE_GRID_SIZE);
         }
     }
@@ -1571,7 +1572,7 @@ int _map_save_in_game(bool isLeavingMap)
         _obj_reset_roof();
     }
 
-    gMapHeader.flags |= 0x01;
+    gMapHeader.flags |= MAP_HEADER_SAVED;
     gMapHeader.lastVisitTime = gameTimeGetTime();
 
     char name[16];
@@ -1848,7 +1849,7 @@ static void _square_reset()
 }
 
 // 0x48431C
-static int _square_load(File* stream, int flags)
+static int _square_load(File* stream, MapHeaderFlags flags)
 {
     int upperTileWord;
     int upperTileFlags;
@@ -1858,7 +1859,7 @@ static int _square_load(File* stream, int flags)
     _square_reset();
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        if ((flags & _map_data_elev_flags[elevation]) == 0) {
+        if ((flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
             int* arr = _square[elevation]->field_0;
             if (_db_freadIntCount(stream, arr, SQUARE_GRID_SIZE) != 0) {
                 return -1;
@@ -1892,7 +1893,7 @@ static int mapHeaderWrite(MapHeader* ptr, File* stream)
     if (fileWriteInt32Enum<Rotation>(stream, ptr->enteringRotation) == -1) return -1;
     if (fileWriteInt32(stream, ptr->localVariablesCount) == -1) return -1;
     if (fileWriteInt32(stream, ptr->scriptIndex) == -1) return -1;
-    if (fileWriteInt32(stream, ptr->flags) == -1) return -1;
+    if (fileWriteInt32Enum<MapHeaderFlags>(stream, ptr->flags) == -1) return -1;
     if (fileWriteInt32(stream, ptr->darkness) == -1) return -1;
     if (fileWriteInt32(stream, ptr->globalVariablesCount) == -1) return -1;
     if (fileWriteInt32(stream, ptr->index) == -1) return -1;
@@ -1912,7 +1913,7 @@ static int mapHeaderRead(MapHeader* ptr, File* stream)
     if (fileReadInt32Enum<Rotation>(stream, &(ptr->enteringRotation)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->localVariablesCount)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->scriptIndex)) == -1) return -1;
-    if (fileReadInt32(stream, &(ptr->flags)) == -1) return -1;
+    if (fileReadInt32Enum<MapHeaderFlags>(stream, &(ptr->flags)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->darkness)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->globalVariablesCount)) == -1) return -1;
     if (fileReadInt32(stream, &(ptr->index)) == -1) return -1;

@@ -25,6 +25,7 @@
 #include "game_mouse.h"
 #include "game_movie.h"
 #include "input.h"
+#include "map_defs.h"
 #include "memory.h"
 #include "message.h"
 #include "object.h"
@@ -484,9 +485,9 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
             movie = MOVIE_ARTIMER4;
             if (!gameMovieIsSeen(MOVIE_ARTIMER4)) {
                 adjustRep = true;
-                wmAreaSetVisibleState(CITY_ARROYO, 0, 1);
-                wmAreaSetVisibleState(CITY_DESTROYED_ARROYO, 1, 1);
-                wmAreaMarkVisitedState(CITY_DESTROYED_ARROYO, 2);
+                wmAreaSetVisibleState(CITY_ARROYO, CITY_STATE_UNKNOWN, true);
+                wmAreaSetVisibleState(CITY_DESTROYED_ARROYO, CITY_STATE_KNOWN, true);
+                wmAreaMarkVisitedState(CITY_DESTROYED_ARROYO, CITY_STATE_VISITED);
             }
         } else if (day >= gMovieTimerArtimer3 && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
             adjustRep = true;
@@ -2307,7 +2308,7 @@ static int scriptRead(Script* scr, File* stream)
         scr->procs[index] = 0;
     }
 
-    if (!(gMapHeader.flags & 1)) {
+    if (!(gMapHeader.flags & MAP_HEADER_SAVED)) {
         scr->localVarsCount = 0;
     }
 
@@ -2965,7 +2966,7 @@ void scriptsExecMapUpdateScripts(int proc)
 
     int fixedParam = 0;
     if (proc == SCRIPT_PROC_MAP_ENTER) {
-        fixedParam = (gMapHeader.flags & 1) == 0;
+        fixedParam = (gMapHeader.flags & MAP_HEADER_SAVED) == MAP_HEADER_NONE;
     } else {
         scriptExecProc(gMapSid, proc);
     }
