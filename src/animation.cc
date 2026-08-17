@@ -1891,6 +1891,7 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
                     // use that adjacent tile as the practical path target.
                     if (v24->tile == to) {
                         to = tile;
+                        tileToScreenXY(to, &toScreenX, &toScreenY);
                     } else if (!canUseDoor(object, v24)) {
                         continue;
                     }

@@ -1843,7 +1843,11 @@ static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode h
     }
 
     if (weaponGetAttackTypeForHitMode(weapon, hitMode) == ATTACK_TYPE_THROW) {
-        int effectiveStrength = critterGetStat(critter, STAT_STRENGTH) + 2 * perkGetRank(critter, PERK_HEAVE_HO);
+        int effectiveStrength = critterGetStat(critter, STAT_STRENGTH);
+        if (critter == gDude || objectIsPartyMember(critter)) {
+            effectiveStrength += 2 * perkGetRank(critter, PERK_HEAVE_HO);
+        }
+
         if (effectiveStrength > PRIMARY_STAT_MAX) {
             effectiveStrength = PRIMARY_STAT_MAX;
         }
