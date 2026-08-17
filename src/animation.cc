@@ -1886,7 +1886,12 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
             if (tile != to) {
                 Object* v24 = callback(object, tile, object->elevation);
                 if (v24 != nullptr) {
-                    if (!canUseDoor(object, v24)) {
+                    // SFALL: Fix pathing to the center tile of multihex
+                    // objects. When the target object blocks an adjacent tile,
+                    // use that adjacent tile as the practical path target.
+                    if (v24->tile == to) {
+                        to = tile;
+                    } else if (!canUseDoor(object, v24)) {
                         continue;
                     }
                 }
