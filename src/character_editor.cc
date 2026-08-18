@@ -2248,7 +2248,6 @@ static void characterEditorDrawPerksFolder()
         }
     }
 
-
     if (!hasContent) {
         gCharacterEditorFolderCardFrmId = 71;
         // Perks
