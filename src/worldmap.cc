@@ -1032,7 +1032,6 @@ static bool wmFaded = false;
 static Map wmForceEncounterMapId = MAP_INVALID;
 static EncounterFlag wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 static bool wmEncounterDetectionEnabled = true;
-static bool wmEncounterIntrosEnabled = true;
 static int worldmapTravelDelay;
 static unsigned int wmLastTravelTick;
 static int worldmapTrailMarkers;
@@ -1212,7 +1211,6 @@ static int wmGenDataInit()
     wmForceEncounterMapId = MAP_INVALID;
     wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
-    wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     wmTownTitleOverrides.clear();
@@ -1273,7 +1271,6 @@ static int wmGenDataReset()
     wmForceEncounterMapId = MAP_INVALID;
     wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
-    wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
@@ -3242,11 +3239,6 @@ void wmSetEncounterDetection(bool enabled)
     wmEncounterDetectionEnabled = enabled;
 }
 
-void wmSetEncounterIntros(bool enabled)
-{
-    wmEncounterIntrosEnabled = enabled;
-}
-
 bool wmRestModeIsDisabled()
 {
     return (wmRestMode & RestModeFlag::Disabled) != RestModeFlag::None;
@@ -3555,6 +3547,7 @@ static int wmWorldMapFunc(int a1)
                 if (!wmGenData.isWalking && !mousePressed && abs(wmGenData.worldPosX - worldX) < 5 && abs(wmGenData.worldPosY - worldY) < 5) {
                     mousePressed = true;
                     wmInterfaceRefresh();
+                    renderFpsCounter();
                     renderPresent();
                 }
             } else {
@@ -3710,6 +3703,7 @@ static int wmWorldMapFunc(int a1)
             break;
         }
 
+        renderFpsCounter();
         renderPresent();
         sharedFpsLimiter.throttle();
     }
@@ -4151,12 +4145,12 @@ int wmSetupRandomEncounter()
     EncounterTable* encounterTable = &(wmEncounterTableList[wmGenData.encounterTableId]);
     EncounterTableEntry* encounterTableEntry = &(encounterTable->entries[wmGenData.encounterEntryId]);
 
-    if (wmEncounterIntrosEnabled) {
-        // SFALL: Display encounter description in one line.
+    char* prefix = getmsg(&wmMsgFile, &messageListItem, 2998);
+    if (prefix[0] != '\0') {
         char formattedText[512];
         snprintf(formattedText, sizeof(formattedText),
             "%s %s",
-            getmsg(&wmMsgFile, &messageListItem, 2998),
+            prefix,
             getmsg(&wmMsgFile, &messageListItem, 3000 + 50 * wmGenData.encounterTableId + wmGenData.encounterEntryId));
         displayMonitorAddMessage(formattedText);
     }
@@ -6608,6 +6602,7 @@ static int wmTownMapFunc(Map* mapIdxPtr)
             }
         }
 
+        renderFpsCounter();
         renderPresent();
         sharedFpsLimiter.throttle();
     }

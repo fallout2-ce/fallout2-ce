@@ -56,6 +56,8 @@ set(FALLOUT_ENGINE_SOURCES
     "src/autorun.h"
     "src/cache.cc"
     "src/cache.h"
+    "src/ce_save_game.cc"
+    "src/ce_save_game.h"
     "src/character_editor.cc"
     "src/character_editor.h"
     "src/character_selector.cc"

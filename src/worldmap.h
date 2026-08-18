@@ -352,7 +352,6 @@ bool wmMapDeadBodiesAge();
 bool wmMapCanRestHere(int elevation);
 void wmSetRestMode(RestModeFlag mode);
 void wmSetEncounterDetection(bool enabled);
-void wmSetEncounterIntros(bool enabled);
 bool wmRestModeIsDisabled();
 bool wmRestModeIsStrict();
 bool wmRestModeNoHealing();

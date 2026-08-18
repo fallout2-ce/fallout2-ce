@@ -82,11 +82,10 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Direct memory access| read_byte,short,int,string<br>write_byte,short,int,string<br>call_offset_vX | 🚫 | Not possible.  Open an issue if you need functionality not covered by other opcodes. |
 | Stats | get/set_pc_base_stat<br>get/set_pc_extra_stat<br>get/set_critter_base_stat<br>get/set_critter_extra_stat | ✅ | CE uses engine stat helpers here instead of sfall's direct proto-field behavior, so derived-stat update behavior can differ. |
 | Stats / Alter min/max | get/set_stat_min/max<br>set_pc_stat_min/max<br>set_npc_stat_min/max | ✅ | - |
-| Skills | set_skill_max | ✅ | - |
-| Skills | get/set_critter_skill_points<br>get/set_available_skill_points<br>set_critter_skill_mod<br>set_base_skill_mod<br>mod_skill_points_per_level | not implemented | - |
+| Skills | set_skill_max<br>get/set_critter_skill_points<br>get/set_available_skill_points<br>set_critter_skill_mod<br>set_base_skill_mod<br>mod_skill_points_per_level | ✅, except set_critter_skill_mod | `set_base_skill_mod` is an old sfall alias for `set_skill_max` and will not be implemented. |
 | Graphics | graphics_funcs_available<br>force_graphics_refresh<br>get_screen_width<br>get_screen_height<br>set_palette | implemented: only get_screen_width, get_screen_height | - |
 | Shaders | load_shader<br>free_shader<br>activate_shader<br>deactivate_shader<br>set/get_shader_* | 🚫 | likely will not implement direct compatibility
-| Perks and traits | set_perk_image<br>set_perk_*<br>set_pyromaniac_mod<br>apply_heaveho_fix<br>set_swiftlearner_mod<br>has/set_fake_perk<br>has/set_fake_trait<br>set_selectable_perk<br>set_perkbox_title<br>show/hide_real_perks<br>perk_add_mode<br>clear_selectable_perks<br>add/remove_trait<br>seq_perk_freq | not implemented | - |
+| Perks and traits | get_perk_owed<br>set_perk_owed<br>set_perk_freq<br>set_perk_image<br>set_perk_*<br>set_pyromaniac_mod<br>apply_heaveho_fix<br>set_swiftlearner_mod<br>has/set_fake_perk<br>has/set_fake_trait<br>set_selectable_perk<br>set_perkbox_title<br>show/hide_real_perks<br>perk_add_mode<br>clear_selectable_perks<br>add/remove_trait<br>seq_perk_freq | implemented: only get_perk_owed, set_perk_owed, set_perk_freq | - |
 | Virtual file system | fs_create<br>fs_copy<br>fs_find<br>fs_read/write_*<br>fs_delete<br>fs_size<br>fs_pos<br>fs_seek<br>fs_resize | 🚫 | Open an issue if you have a use case for these |
 | Combat / Knockback | set_weapon_knockback<br>set_target_knockback<br>set_attacker_knockback<br>remove_weapon_knockback<br>remove_target_knockback<br>remove_attacker_knockback | not implemented | - |
 | Maps and encounters | in_world_map<br>force_encounter{_with_flags}<br>set_map_time_multi<br>get/set_map_enter_position<br>exec_map_update_scripts<br>get/set_terrain_name<br>set_town_title<br>remove_wm_town_names<br>encounter_detection<br>get/set_can_rest_on_map<br>set_rest_heal_time<br>set_rest_mode<br>set_worldmap_heal_time | implemented: in_world_map, force_encounter, force_encounter_with_flags, set_map_time_multi, get_terrain_name, set_terrain_name, set_town_title, remove_wm_town_names, encounter_detection, set_rest_mode | - |
@@ -132,7 +131,6 @@ CE defines several metarules that are not supported in Sfall.  Include [ce.h](fi
 
 | Name | Definition |
 | --- | --- |
-| `encounter_intros(toggle)` | Enable or disable the display-monitor random encounter intro message, for example `You encounter: ...`. This does not affect the separate encounter detection dialog. |
 | `rest_option_msgs(base_msg_id)` | Change the base message id used for Pip-Boy rest option labels. CE reads the rest labels from `base_msg_id` through `base_msg_id + 13`; the default Fallout 2 range is 302-315. |
 | `set_party_member_cc_msg_ids(pid, start_msg_id, end_msg_id)` | Override party-member combat-control update messages for a pid. Picks randomly from the inclusive contiguous range. Default fallback ranges are 670-674 for humans and 677-678 for the hardcoded dog pid list. |
 | `set_rest_option(rest_option, value)` | Change the wake hour for Pip-Boy rest options 8-11: morning, noon, evening, and midnight. `value` is an hour from 0-23. Defaults are 8, 12, 18, and 0. |

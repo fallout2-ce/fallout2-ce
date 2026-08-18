@@ -150,7 +150,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING(language);
     SETTING(scroll_lock);
     SETTING(interrupt_walk);
-    SETTING_P(art_cache_size, clamp(8, 512));
+    SETTING_P(art_cache_size, clamp(16, 512));
     SETTING(color_cycling);
     SETTING(cycle_speed_factor);
     SETTING(hashing);
@@ -194,6 +194,10 @@ void initSettingsRegistry(bool isMapper)
     SETTING_P(loot_container_size_indicator_threshold, clamp(0, 100));
 #undef SECT
 
+#define SECT gameplay
+    SETTING_P(perk_carryover, clamp(PERK_CARRY_OVER_MODE_OFF, PERK_CARRY_OVER_MODE_SFALL));
+#undef SECT
+
 #define SECT preferences
     // Clamping for most of these values is handled in preferences.cc
     SETTING(game_difficulty);
@@ -235,6 +239,7 @@ void initSettingsRegistry(bool isMapper)
 
 #define SECT debug
     SETTING(mode);
+    SETTING(show_fps);
     SETTING(show_tile_num);
     SETTING(show_script_messages);
     SETTING(show_load_info);
