@@ -323,7 +323,7 @@ static void op_set_perk_freq(Program* program)
 static void op_set_available_skill_points(Program* program)
 {
     int value = programStackPopInteger(program);
-    pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, value);
+    pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, std::clamp(value, 0, 99));
 }
 
 static void op_get_available_skill_points(Program* program)
@@ -2061,9 +2061,9 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8160, op_get_critter_base_stat);
     // 0x8161 - int  get_critter_extra_stat(object, Stat stat)
     interpreterRegisterOpcode(0x8161, op_get_critter_extra_stat);
-    // 0x8242 - void set_critter_skill_points(int critter, Skill skill, int value)
+    // 0x8242 - void set_critter_skill_points(object critter, Skill skill, int value)
     interpreterRegisterOpcode(0x8242, op_set_critter_skill_points);
-    // 0x8243 - int  get_critter_skill_points(int critter, Skill skill)
+    // 0x8243 - int  get_critter_skill_points(object critter, Skill skill)
     interpreterRegisterOpcode(0x8243, op_get_critter_skill_points);
     // 0x8244 - void set_available_skill_points(int value)
     interpreterRegisterOpcode(0x8244, op_set_available_skill_points);

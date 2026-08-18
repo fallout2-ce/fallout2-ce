@@ -6025,13 +6025,8 @@ static int characterEditorUpdateLevel()
             sp += traitIsSelected(TRAIT_SKILLED) * 5;
             if (traitIsSelected(TRAIT_GIFTED)) {
                 sp -= 5;
-                if (sp < 0) {
-                    sp = 0;
-                }
             }
-            if (sp > 99) {
-                sp = 99;
-            }
+            sp = std::clamp(sp, 0, 99);
 
             pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, sp);
 
