@@ -8,6 +8,7 @@
 #include "map_defs.h"
 #include "message.h"
 #include "platform_compat.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -51,7 +52,7 @@ typedef struct MapHeader {
     int globalVariablesCount;
 
     // map_number
-    int index;
+    Map index;
 
     // Time in game ticks when PC last visited this map.
     unsigned int lastVisitTime;
@@ -59,7 +60,7 @@ typedef struct MapHeader {
 } MapHeader;
 
 typedef struct MapTransition {
-    int map;
+    Map map;
     int elevation;
     int tile;
     Rotation rotation;
@@ -94,17 +95,17 @@ int mapSetLocalVar(int var, ProgramValue& value);
 int mapGetLocalVar(int var, ProgramValue& value);
 int mapAllocLocalVars(int numNewVars);
 void mapSetStart(int tile, int elevation, Rotation rotation);
-char* mapGetName(int map_num, int elev);
-bool mapAreSameArea(int map_num1, int map_num2);
-int _get_map_idx_same(int map_num1, int map_num2);
-char* mapGetCityName(int map_num);
-char* mapDescriptionById(int map_index);
-int mapGetCurrentMap();
+char* mapGetName(Map map_num, int elev);
+bool mapAreSameArea(Map map_num1, Map map_num2);
+int _get_map_idx_same(Map map_num1, Map map_num2);
+char* mapGetCityName(Map map_num);
+char* mapDescriptionById(Map map_index);
+Map mapGetCurrentMap();
 int mapScroll(int dx, int dy);
 int mapSetEnteringLocation(int elevation, int tile, Rotation rotation);
 void mapNewMap();
 int mapLoadByName(char* fileName);
-int mapLoadById(int map_index);
+int mapLoadById(Map map_index);
 const char* mapBuildPath(const char* name);
 // Resolves a VFS-relative data path (e.g. "MAPS\\ARROYO.MAP") to a writable path, creating its directory.
 // Save root is the validated mapper dev_path when set, otherwise the master patches path.

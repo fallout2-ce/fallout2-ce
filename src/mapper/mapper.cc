@@ -243,7 +243,7 @@ char** menu_names[] = {
 };
 
 // 0x559748
-MapTransition mapInfo = { -1, -1, 0, ROTATION_NE };
+MapTransition mapInfo = { MAP_INVALID, -1, 0, ROTATION_NE };
 
 // 0x559880
 int max_art_buttons = 7;
@@ -1655,7 +1655,7 @@ void edit_mapper()
         case kBtnSetExitGridData: {
             if (map_entered) break;
             int val;
-            if (win_get_num_i(&val, -2, 255, false, "Exit Grid Dest Map", 100, 100) != -1) mapInfo.map = val;
+            if (win_get_num_i(&val, -2, 255, false, "Exit Grid Dest Map", 100, 100) != -1) mapInfo.map = static_cast<Map>(val);
             if (win_get_num_i(&val, -1, 40000, false, "Exit Grid Dest Tile #", 100, 100) != -1) mapInfo.tile = val;
             if (win_get_num_i(&val, 0, 3, false, "Exit Grid Dest Elevation", 100, 100) != -1) mapInfo.elevation = val;
             if (win_get_num_i(&val, ROTATION_FIRST, ROTATION_COUNT, false, "Exit Grid Dest Rotation", 100, 100) != -1) mapInfo.rotation = static_cast<Rotation>(val);

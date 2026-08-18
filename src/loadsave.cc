@@ -140,7 +140,7 @@ typedef struct LoadSaveSlotData {
     short gameYear;
     unsigned int gameTime;
     short elevation;
-    short map;
+    Map map;
     char fileName[16];
 } LoadSaveSlotData;
 
@@ -2173,7 +2173,7 @@ static int lsgSaveHeaderInSlot(int slot)
     }
 
     ptr->map = mapGetCurrentMap();
-    if (fileWriteInt16(_flptr, ptr->map) == -1) {
+    if (fileWriteInt16Enum<Map>(_flptr, ptr->map) == -1) {
         return -1;
     }
 
@@ -2272,7 +2272,7 @@ static int lsgLoadHeaderInSlot(int slot)
         return -1;
     }
 
-    if (fileReadInt16(_flptr, &(ptr->map)) == -1) {
+    if (fileReadInt16Enum<Map>(_flptr, &(ptr->map)) == -1) {
         return -1;
     }
 

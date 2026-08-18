@@ -242,7 +242,7 @@ typedef struct GenericReputationEntry {
 
 typedef struct TownReputationEntry {
     int gvar;
-    int city;
+    City city;
 } TownReputationEntry;
 
 typedef struct PerkDialogOption {
@@ -7607,7 +7607,7 @@ static void customTownReputationInit()
             *sep = '\0';
 
             TownReputationEntry entry;
-            entry.city = atoi(curr);
+            entry.city = static_cast<City>(atoi(curr));
             entry.gvar = atoi(sep + 1);
             gCustomTownReputationEntries.push_back(std::move(entry));
 

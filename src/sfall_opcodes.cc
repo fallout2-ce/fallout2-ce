@@ -406,7 +406,7 @@ static void op_in_world_map(Program* program)
 // force_encounter
 static void op_force_encounter(Program* program)
 {
-    int map = programStackPopInteger(program);
+    Map map = programStackPopEnum<Map>(program);
     wmForceEncounter(map, ENCOUNTER_FLAG_NONE);
 }
 
@@ -588,7 +588,7 @@ static void op_get_uptime(Program* program)
 // set_car_current_town
 static void op_set_car_current_town(Program* program)
 {
-    int area = programStackPopInteger(program);
+    City area = programStackPopEnum<City>(program);
     wmCarSetCurrentArea(area);
 }
 
@@ -1192,7 +1192,7 @@ static void op_stop_sfall_sound(Program* program)
 static void op_force_encounter_with_flags(Program* program)
 {
     EncounterFlag flags = static_cast<EncounterFlag>(programStackPopInteger(program));
-    int map = programStackPopInteger(program);
+    Map map = programStackPopEnum<Map>(program);
     wmForceEncounter(map, flags);
 }
 

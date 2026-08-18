@@ -198,11 +198,11 @@ typedef struct HolidayDescription {
     short textId;
 } HolidayDescription;
 
-typedef struct STRUCT_664350 {
+typedef struct MapDescription {
     char* name;
-    short field_4;
-    short field_6;
-} STRUCT_664350;
+    int mapOrElevation;
+    Map map;
+} MapDescription;
 
 typedef struct PipboyBomb {
     int x;
@@ -326,7 +326,7 @@ MessageListItem gPipboyMessageListItem;
 MessageList gPipboyMessageList = { 0, nullptr };
 
 // 0x664350 sortlist
-STRUCT_664350 _sortlist[24];
+MapDescription _sortlist[24];
 
 // quests.msg
 //
@@ -408,7 +408,7 @@ int gPipboyCurrentLine;
 int _rest_time;
 
 // 0x66451C amcty_indx
-int _amcty_indx;
+Map _amcty_indx;
 
 // current page for holodisk entry pagination
 int _view_page;
@@ -1617,8 +1617,8 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
 static int _qscmp(const void* a1,
     const void* a2)
 {
-    STRUCT_664350* v1 = (STRUCT_664350*)a1;
-    STRUCT_664350* v2 = (STRUCT_664350*)a2;
+    MapDescription* v1 = (MapDescription*)a1;
+    MapDescription* v2 = (MapDescription*)a2;
 
     return strcmp(v1->name, v2->name);
 }
@@ -1680,10 +1680,10 @@ static void pipboyWindowHandleAutomaps(int userInput)
             //_PrintAMList(userInput);
             // windowRefreshRect(gPipboyWindow, & gPipboyWindowContentRect);
             int realIndex = (_view_page_automap_main * PIPBOY_AUTOMAP_LINES) + (userInput - 1); // Adjust for pagination
-            _amcty_indx = _sortlist[realIndex].field_4;
+            _amcty_indx = static_cast<Map>(_sortlist[realIndex].mapOrElevation);
             _map_count = _PrintAMelevList(1);
             pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].field_6, _sortlist[0].field_4);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
             main_sub_mode = 1;
         }
@@ -1703,7 +1703,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
                     _PrintAMelevList(1);
                     _map_count = _PrintAMelevList(1);
                     pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].field_6, _sortlist[0].field_4);
+                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
                     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
                 });
         }
@@ -1711,7 +1711,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
         if (userInput >= 1 && userInput <= _map_count + 3) {
             soundPlayFile("ib1p1xx1");
             _PrintAMelevList(userInput);
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].field_6, _sortlist[userInput - 1].field_4);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, _sortlist[userInput - 1].mapOrElevation);
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
         }
 
@@ -1742,7 +1742,7 @@ static int _PrintAMelevList(int selectedMap)
         }
     }
 
-    for (int map = 0; map < mapCount; map++) {
+    for (Map map = MAP_FIRST; map < mapCount; map++) {
         if (map == _amcty_indx || _get_map_idx_same(_amcty_indx, map) == -1) {
             continue;
         }
@@ -1770,15 +1770,15 @@ static int _PrintAMelevList(int selectedMap)
         if (automapHeader->offsets[_amcty_indx][elevation] > 0) {
             if (currentIndex >= startIndex && currentIndex < endIndex) {
                 _sortlist[elevationsListSize].name = mapGetName(_amcty_indx, elevation);
-                _sortlist[elevationsListSize].field_4 = elevation;
-                _sortlist[elevationsListSize].field_6 = _amcty_indx;
+                _sortlist[elevationsListSize].mapOrElevation = elevation;
+                _sortlist[elevationsListSize].map = _amcty_indx;
                 elevationsListSize++;
             }
             currentIndex++;
         }
     }
 
-    for (int map = 0; map < mapCount && elevationsListSize < maxEntriesPerPage; map++) {
+    for (Map map = MAP_FIRST; map < mapCount && elevationsListSize < maxEntriesPerPage; map++) {
         if (map == _amcty_indx || _get_map_idx_same(_amcty_indx, map) == -1) {
             continue;
         }
@@ -1787,8 +1787,8 @@ static int _PrintAMelevList(int selectedMap)
             if (automapHeader->offsets[map][elevation] > 0) {
                 if (currentIndex >= startIndex && currentIndex < endIndex) {
                     _sortlist[elevationsListSize].name = mapGetName(map, elevation);
-                    _sortlist[elevationsListSize].field_4 = elevation;
-                    _sortlist[elevationsListSize].field_6 = map;
+                    _sortlist[elevationsListSize].mapOrElevation = elevation;
+                    _sortlist[elevationsListSize].map = map;
                     elevationsListSize++;
                 }
                 currentIndex++;
@@ -1856,7 +1856,7 @@ static int _PrintAMList(int selectedLocation)
     int count = 0;
 
     int mapCount = std::min(wmMapMaxCount(), AUTOMAP_MAP_COUNT);
-    for (int map = 0; map < mapCount; map++) {
+    for (Map map = MAP_FIRST; map < mapCount; map++) {
         int elevation;
         for (elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
@@ -1870,7 +1870,7 @@ static int _PrintAMList(int selectedLocation)
             int locationExistsIndex = 0;
             if (count != 0) {
                 for (int index = 0; index < count; index++) {
-                    if (mapAreSameArea(map, _sortlist[index].field_4)) {
+                    if (mapAreSameArea(map, static_cast<Map>(_sortlist[index].mapOrElevation))) {
                         break;
                     }
                     locationExistsIndex++;
@@ -1879,7 +1879,7 @@ static int _PrintAMList(int selectedLocation)
 
             if (locationExistsIndex == count) {
                 _sortlist[count].name = mapGetCityName(map);
-                _sortlist[count].field_4 = map;
+                _sortlist[count].mapOrElevation = map;
                 count++;
             }
         }

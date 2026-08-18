@@ -48,8 +48,8 @@ namespace fallout {
 typedef struct EndgameDeathEnding {
     GameGlobalVar gvar;
     int value;
-    int worldAreaKnown;
-    int worldAreaNotKnown;
+    City worldAreaKnown;
+    City worldAreaNotKnown;
     int min_level;
     int percentage;
     char voiceOverBaseName[16];
@@ -1077,14 +1077,14 @@ int endgameDeathEndingInit()
             continue;
         }
 
-        entry.worldAreaKnown = atoi(tok);
+        entry.worldAreaKnown = static_cast<City>(atoi(tok));
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {
             continue;
         }
 
-        entry.worldAreaNotKnown = atoi(tok);
+        entry.worldAreaNotKnown = static_cast<City>(atoi(tok));
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {
