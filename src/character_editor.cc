@@ -812,6 +812,7 @@ static bool characterEditorOwedPerkLevelsInitializedBackup;
 // 0x570A29 free_perk
 static unsigned char gCharacterEditorHasFreePerk; // count of owed perks
 static int perkFrequencyOverride;
+static int skillPointsPerLevelModifier;
 
 // Character levels at which the currently owed perks were earned.
 static std::vector<int> characterEditorOwedPerkLevels;
@@ -5772,6 +5773,11 @@ void characterEditorSetPerkFrequency(int value)
     perkFrequencyOverride = value;
 }
 
+void characterEditorSetSkillPointsPerLevelModifier(int value)
+{
+    skillPointsPerLevelModifier = std::clamp(value, -100, 100);
+}
+
 // External interface: called when level up occurs
 void characterEditorHandleLevelUp(int level)
 {
@@ -5916,6 +5922,7 @@ void characterEditorReset()
     gCharacterEditorLastLevel = 1;
     gCharacterEditorHasFreePerk = 0;
     perkFrequencyOverride = 0;
+    skillPointsPerLevelModifier = 0;
     characterEditorOwedPerkLevels.clear();
     characterEditorOwedPerkLevelsInitialized = true;
 }
@@ -6012,19 +6019,14 @@ static int characterEditorUpdateLevel()
 
         for (int nextLevel = gCharacterEditorLastLevel + 1; nextLevel <= level; nextLevel++) {
             int sp = pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS);
-            sp += 5;
+            sp += 5 + skillPointsPerLevelModifier;
             sp += critterGetBaseStatWithTraitModifier(gDude, STAT_INTELLIGENCE) * 2;
             sp += perkGetRank(gDude, PERK_EDUCATED) * 2;
             sp += traitIsSelected(TRAIT_SKILLED) * 5;
             if (traitIsSelected(TRAIT_GIFTED)) {
                 sp -= 5;
-                if (sp < 0) {
-                    sp = 0;
-                }
             }
-            if (sp > 99) {
-                sp = 99;
-            }
+            sp = std::clamp(sp, 0, 99);
 
             pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, sp);
 

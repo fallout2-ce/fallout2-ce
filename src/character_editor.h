@@ -31,6 +31,7 @@ void characterEditorDisplayStats();
 int characterEditorGetPerkOwed();
 void characterEditorSetPerkOwed(int value);
 void characterEditorSetPerkFrequency(int value);
+void characterEditorSetSkillPointsPerLevelModifier(int value);
 void characterEditorHandleLevelUp(int level);
 int characterEditorGetPerkSelectionLevel();
 const std::vector<int>& characterEditorGetOwedPerkLevels();
