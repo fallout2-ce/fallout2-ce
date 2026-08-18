@@ -181,56 +181,63 @@ int partyMembersInit()
         if (configGetString(&config, section, "area_attack_mode", &string)) {
             while (*string != '\0') {
                 int areaAttackMode;
-                strParseStrFromList(&string, &areaAttackMode, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT);
-                partyMemberDescription->areaAttackMode[areaAttackMode] = true;
+                if (strParseStrFromList(&string, &areaAttackMode, gAreaAttackModeKeys, AREA_ATTACK_MODE_COUNT) == 0) {
+                    partyMemberDescription->areaAttackMode[areaAttackMode] = true;
+                }
             }
         }
 
         if (configGetString(&config, section, "attack_who", &string)) {
             while (*string != '\0') {
-                int attachWho;
-                strParseStrFromList(&string, &attachWho, gAttackWhoKeys, ATTACK_WHO_COUNT);
-                partyMemberDescription->attackWho[attachWho] = true;
+                int attackWho;
+                if (strParseStrFromList(&string, &attackWho, gAttackWhoKeys, ATTACK_WHO_COUNT) == 0) {
+                    partyMemberDescription->attackWho[attackWho] = true;
+                }
             }
         }
 
         if (configGetString(&config, section, "best_weapon", &string)) {
             while (*string != '\0') {
                 int bestWeapon;
-                strParseStrFromList(&string, &bestWeapon, gBestWeaponKeys, BEST_WEAPON_COUNT);
-                partyMemberDescription->bestWeapon[bestWeapon] = true;
+                if (strParseStrFromList(&string, &bestWeapon, gBestWeaponKeys, BEST_WEAPON_COUNT) == 0) {
+                    partyMemberDescription->bestWeapon[bestWeapon] = true;
+                }
             }
         }
 
         if (configGetString(&config, section, "chem_use", &string)) {
             while (*string != '\0') {
                 int chemUse;
-                strParseStrFromList(&string, &chemUse, gChemUseKeys, CHEM_USE_COUNT);
-                partyMemberDescription->chemUse[chemUse] = true;
+                if (strParseStrFromList(&string, &chemUse, gChemUseKeys, CHEM_USE_COUNT) == 0) {
+                    partyMemberDescription->chemUse[chemUse] = true;
+                }
             }
         }
 
         if (configGetString(&config, section, "distance", &string)) {
             while (*string != '\0') {
                 int distanceMode;
-                strParseStrFromList(&string, &distanceMode, gDistanceModeKeys, DISTANCE_COUNT);
-                partyMemberDescription->distanceMode[distanceMode] = true;
+                if (strParseStrFromList(&string, &distanceMode, gDistanceModeKeys, DISTANCE_COUNT) == 0) {
+                    partyMemberDescription->distanceMode[distanceMode] = true;
+                }
             }
         }
 
         if (configGetString(&config, section, "run_away_mode", &string)) {
             while (*string != '\0') {
                 int runAwayMode;
-                strParseStrFromList(&string, &runAwayMode, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT);
-                partyMemberDescription->runAwayMode[runAwayMode] = true;
+                if (strParseStrFromList(&string, &runAwayMode, gRunAwayModeKeys, RUN_AWAY_MODE_COUNT) == 0) {
+                    partyMemberDescription->runAwayMode[runAwayMode] = true;
+                }
             }
         }
 
         if (configGetString(&config, section, "disposition", &string)) {
             while (*string != '\0') {
                 int disposition;
-                strParseStrFromList(&string, &disposition, gDispositionKeys, DISPOSITION_COUNT);
-                partyMemberDescription->disposition[disposition] = true;
+                if (strParseStrFromList(&string, &disposition, gDispositionKeys, DISPOSITION_COUNT) == 0) {
+                    partyMemberDescription->disposition[disposition] = true;
+                }
             }
         }
 

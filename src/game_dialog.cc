@@ -179,7 +179,7 @@ struct PartyMemberOptionSetting {
         , runAwayMode(runAwayMode)
     {
     }
-    PartyMemberOptionSetting(int messageId, BestWeapon areaAtbestWeaponackMode)
+    PartyMemberOptionSetting(int messageId, BestWeapon bestWeapon)
         : messageId(messageId)
         , bestWeapon(bestWeapon)
     {
