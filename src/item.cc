@@ -1678,13 +1678,14 @@ int weaponGetRange(Object* critter, HitMode hitMode)
         if (weaponGetAttackTypeForHitMode(weapon, hitMode) == ATTACK_TYPE_THROW) {
             effectiveStrength = critterGetStat(critter, STAT_STRENGTH);
             if (critter == gDude || objectIsPartyMember(critter)) {
-                effectiveStrength += 2 * perkGetRank(critter, PERK_HEAVE_HO);
-            }
-
-            // SFALL: Fix for Heave Ho! increasing effective strength above
-            // 10.
-            if (effectiveStrength > PRIMARY_STAT_MAX) {
-                effectiveStrength = PRIMARY_STAT_MAX;
+                // SFALL: Fix for Heave Ho! increasing effective strength above
+                // 10.
+                if (effectiveStrength < PRIMARY_STAT_MAX) {
+                    effectiveStrength += 2 * perkGetRank(critter, PERK_HEAVE_HO);
+                    if (effectiveStrength > PRIMARY_STAT_MAX) {
+                        effectiveStrength = PRIMARY_STAT_MAX;
+                    }
+                }
             }
 
             int maxRange = 3 * effectiveStrength;

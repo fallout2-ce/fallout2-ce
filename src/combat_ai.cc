@@ -1,5 +1,6 @@
 #include "combat_ai.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,7 +93,7 @@ static Object* _ai_danger_source(Object* a1);
 static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr);
 static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode hitMode);
 static bool aiWeaponAttackInRange(Object* critter, Object* weapon, Object* target);
-static int aiTryAttackSwitchFix(Object* attacker, Object* defender, HitMode* hitMode, Object* weapon);
+static int aiTryAttackSwitchFix(Object* attacker, Object* defender, HitMode* hitMode, Object** weaponPtr);
 static bool _caiHasWeapPrefType(AiPacket* ai, AttackType attackType);
 static Object* _ai_best_weapon(Object* a1, Object* a2, Object* a3, Object* a4);
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode);
@@ -1845,11 +1846,12 @@ static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode h
     if (weaponGetAttackTypeForHitMode(weapon, hitMode) == ATTACK_TYPE_THROW) {
         int effectiveStrength = critterGetStat(critter, STAT_STRENGTH);
         if (critter == gDude || objectIsPartyMember(critter)) {
-            effectiveStrength += 2 * perkGetRank(critter, PERK_HEAVE_HO);
-        }
-
-        if (effectiveStrength > PRIMARY_STAT_MAX) {
-            effectiveStrength = PRIMARY_STAT_MAX;
+            if (effectiveStrength < PRIMARY_STAT_MAX) {
+                effectiveStrength += 2 * perkGetRank(critter, PERK_HEAVE_HO);
+                if (effectiveStrength > PRIMARY_STAT_MAX) {
+                    effectiveStrength = PRIMARY_STAT_MAX;
+                }
+            }
         }
 
         int maxRange = 3 * effectiveStrength;
@@ -1875,12 +1877,15 @@ static bool aiWeaponAttackInRange(Object* critter, Object* weapon, Object* targe
     return aiGetWeaponRangeForHitMode(critter, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY) >= distance;
 }
 
-static int aiTryAttackSwitchFix(Object* attacker, Object* defender, HitMode* hitMode, Object* weapon)
+static int aiTryAttackSwitchFix(Object* attacker, Object* defender, HitMode* hitMode, Object** weaponPtr)
 {
     if (attacker->data.critter.combat.ap <= 0) {
         return -1;
     }
 
+    assert(weaponPtr != nullptr);
+
+    Object* weapon = *weaponPtr;
     if (weapon == nullptr) {
         return 1;
     }
@@ -1913,6 +1918,7 @@ static int aiTryAttackSwitchFix(Object* attacker, Object* defender, HitMode* hit
 
     if (!canUseCurrentWeapon || weaponGetRange(attacker, HIT_MODE_PUNCH) >= objectGetDistanceBetween(attacker, defender)) {
         *hitMode = HIT_MODE_PUNCH;
+        *weaponPtr = nullptr;
         return 0;
     }
 
@@ -2941,7 +2947,7 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                 }
             }
         } else if (reason == COMBAT_BAD_SHOT_NOT_ENOUGH_AP || reason == COMBAT_BAD_SHOT_ARM_CRIPPLED || reason == COMBAT_BAD_SHOT_BOTH_ARMS_CRIPPLED) {
-            int switchFixRc = aiTryAttackSwitchFix(attacker, defender, &hitMode, weapon);
+            int switchFixRc = aiTryAttackSwitchFix(attacker, defender, &hitMode, &weapon);
             if (switchFixRc < 0) {
                 return -1;
             }
