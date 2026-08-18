@@ -1013,7 +1013,6 @@ static bool wmFaded = false;
 static int wmForceEncounterMapId = -1;
 static EncounterFlag wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
 static bool wmEncounterDetectionEnabled = true;
-static bool wmEncounterIntrosEnabled = true;
 static int worldmapTravelDelay;
 static unsigned int wmLastTravelTick;
 static int worldmapTrailMarkers;
@@ -1193,7 +1192,6 @@ static int wmGenDataInit()
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
-    wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     wmTownTitleOverrides.clear();
@@ -1254,7 +1252,6 @@ static int wmGenDataReset()
     wmForceEncounterMapId = -1;
     wmForceEncounterFlags = ENCOUNTER_FLAG_NONE;
     wmEncounterDetectionEnabled = true;
-    wmEncounterIntrosEnabled = true;
     wmTerrainNameOverrides.clear();
     wmResetTrailMarkers();
     carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
@@ -3223,11 +3220,6 @@ void wmSetEncounterDetection(bool enabled)
     wmEncounterDetectionEnabled = enabled;
 }
 
-void wmSetEncounterIntros(bool enabled)
-{
-    wmEncounterIntrosEnabled = enabled;
-}
-
 bool wmRestModeIsDisabled()
 {
     return (wmRestMode & RestModeFlag::Disabled) != RestModeFlag::None;
@@ -4134,12 +4126,12 @@ int wmSetupRandomEncounter()
     EncounterTable* encounterTable = &(wmEncounterTableList[wmGenData.encounterTableId]);
     EncounterTableEntry* encounterTableEntry = &(encounterTable->entries[wmGenData.encounterEntryId]);
 
-    if (wmEncounterIntrosEnabled) {
-        // SFALL: Display encounter description in one line.
+    char* prefix = getmsg(&wmMsgFile, &messageListItem, 2998);
+    if (prefix[0] != '\0') {
         char formattedText[512];
         snprintf(formattedText, sizeof(formattedText),
             "%s %s",
-            getmsg(&wmMsgFile, &messageListItem, 2998),
+            prefix,
             getmsg(&wmMsgFile, &messageListItem, 3000 + 50 * wmGenData.encounterTableId + wmGenData.encounterEntryId));
         displayMonitorAddMessage(formattedText);
     }
