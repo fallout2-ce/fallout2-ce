@@ -82,8 +82,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | Direct memory access| read_byte,short,int,string<br>write_byte,short,int,string<br>call_offset_vX | 🚫 | Not possible.  Open an issue if you need functionality not covered by other opcodes. |
 | Stats | get/set_pc_base_stat<br>get/set_pc_extra_stat<br>get/set_critter_base_stat<br>get/set_critter_extra_stat | ✅ | CE uses engine stat helpers here instead of sfall's direct proto-field behavior, so derived-stat update behavior can differ. |
 | Stats / Alter min/max | get/set_stat_min/max<br>set_pc_stat_min/max<br>set_npc_stat_min/max | ✅ | - |
-| Skills | set_skill_max | ✅ | - |
-| Skills | get/set_critter_skill_points<br>get/set_available_skill_points<br>set_critter_skill_mod<br>set_base_skill_mod<br>mod_skill_points_per_level | not implemented | - |
+| Skills | set_skill_max<br>get/set_critter_skill_points<br>get/set_available_skill_points<br>set_critter_skill_mod<br>set_base_skill_mod<br>mod_skill_points_per_level | ✅, except set_critter_skill_mod | `set_base_skill_mod` is an old sfall alias for `set_skill_max` and will not be implemented. |
 | Graphics | graphics_funcs_available<br>force_graphics_refresh<br>get_screen_width<br>get_screen_height<br>set_palette | implemented: only get_screen_width, get_screen_height | - |
 | Shaders | load_shader<br>free_shader<br>activate_shader<br>deactivate_shader<br>set/get_shader_* | 🚫 | likely will not implement direct compatibility
 | Perks and traits | get_perk_owed<br>set_perk_owed<br>set_perk_freq<br>set_perk_image<br>set_perk_*<br>set_pyromaniac_mod<br>apply_heaveho_fix<br>set_swiftlearner_mod<br>has/set_fake_perk<br>has/set_fake_trait<br>set_selectable_perk<br>set_perkbox_title<br>show/hide_real_perks<br>perk_add_mode<br>clear_selectable_perks<br>add/remove_trait<br>seq_perk_freq | implemented: only get_perk_owed, set_perk_owed, set_perk_freq | - |

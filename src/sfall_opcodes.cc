@@ -320,6 +320,75 @@ static void op_set_perk_freq(Program* program)
     characterEditorSetPerkFrequency(value);
 }
 
+static void op_set_available_skill_points(Program* program)
+{
+    int value = programStackPopInteger(program);
+    pcSetStat(PC_STAT_UNSPENT_SKILL_POINTS, value);
+}
+
+static void op_get_available_skill_points(Program* program)
+{
+    programStackPushInteger(program, pcGetStat(PC_STAT_UNSPENT_SKILL_POINTS));
+}
+
+static void op_set_critter_skill_points(Program* program)
+{
+    int value = programStackPopInteger(program);
+    int skill = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (!skillIsValid(skill)) {
+        programPrintError("set_critter_skill_points: invalid skill %d", skill);
+        return;
+    }
+
+    if (critter == nullptr || objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+        programPrintError("set_critter_skill_points: obj is not a critter");
+        return;
+    }
+
+    Proto* proto;
+    if (protoGetProto(critter->pid, &proto) == -1) {
+        programPrintError("set_critter_skill_points: failed to get proto for pid %d", critter->pid);
+        return;
+    }
+
+    proto->critter.data.skills[skill] = value;
+}
+
+static void op_get_critter_skill_points(Program* program)
+{
+    int skill = programStackPopInteger(program);
+    Object* critter = static_cast<Object*>(programStackPopPointer(program));
+
+    if (!skillIsValid(skill)) {
+        programPrintError("get_critter_skill_points: invalid skill %d", skill);
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    if (critter == nullptr || objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+        programPrintError("get_critter_skill_points: obj is not a critter");
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    Proto* proto;
+    if (protoGetProto(critter->pid, &proto) == -1) {
+        programPrintError("get_critter_skill_points: failed to get proto for pid %d", critter->pid);
+        programStackPushInteger(program, 0);
+        return;
+    }
+
+    programStackPushInteger(program, proto->critter.data.skills[skill]);
+}
+
+static void op_mod_skill_points_per_level(Program* program)
+{
+    int value = programStackPopInteger(program);
+    characterEditorSetSkillPointsPerLevelModifier(value);
+}
+
 // key_pressed
 static void op_key_pressed(Program* program)
 {
@@ -1993,10 +2062,15 @@ void sfallOpcodesInit()
     // 0x8161 - int  get_critter_extra_stat(object, Stat stat)
     interpreterRegisterOpcode(0x8161, op_get_critter_extra_stat);
     // 0x8242 - void set_critter_skill_points(int critter, Skill skill, int value)
+    interpreterRegisterOpcode(0x8242, op_set_critter_skill_points);
     // 0x8243 - int  get_critter_skill_points(int critter, Skill skill)
+    interpreterRegisterOpcode(0x8243, op_get_critter_skill_points);
     // 0x8244 - void set_available_skill_points(int value)
+    interpreterRegisterOpcode(0x8244, op_set_available_skill_points);
     // 0x8245 - int  get_available_skill_points()
+    interpreterRegisterOpcode(0x8245, op_get_available_skill_points);
     // 0x8246 - void mod_skill_points_per_level(int value)
+    interpreterRegisterOpcode(0x8246, op_mod_skill_points_per_level);
 
     // 0x81b4 - void set_stat_max(Stat stat, int value)
     interpreterRegisterOpcode(0x81B4, op_set_stat_max);
