@@ -60,6 +60,9 @@ static void skillsInitDefaults();
 static void skillsLoadCustomConfig();
 static void skillsLoadCustomCosts(Config* config, Skill skill, const char* key);
 static void skillsLoadCustomFormula(Config* config, Skill skill, const char* key);
+static int skillsFindTaggedIndex(Skill skill);
+static int skillsFindFreeTaggedIndex();
+static void skillsCompensateTaggedSkillValue(Skill skill, int targetValue);
 static int skillGetCost(Skill skill, int skillValue);
 static int skillGetFreeUsageSlot(Skill skill);
 static int skill_use_slot_clear();
@@ -455,6 +458,51 @@ void skillsGetTagged(Skill* skills, int count)
     }
 }
 
+int skillsAddTagged(Skill skill)
+{
+    if (!skillIsValid(skill)) {
+        return -1;
+    }
+
+    if (skillsFindTaggedIndex(skill) != -1) {
+        return 0;
+    }
+
+    int index = skillsFindFreeTaggedIndex();
+    if (index == -1) {
+        return -2;
+    }
+
+    int targetValue = gDude != nullptr ? skillGetValue(gDude, skill) : 0;
+    gTaggedSkills[index] = skill;
+    skillsCompensateTaggedSkillValue(skill, targetValue);
+
+    return 1;
+}
+
+int skillsRemoveTagged(Skill skill)
+{
+    if (!skillIsValid(skill)) {
+        return -1;
+    }
+
+    int index = skillsFindTaggedIndex(skill);
+    if (index == -1) {
+        return 0;
+    }
+
+    int targetValue = gDude != nullptr ? skillGetValue(gDude, skill) : 0;
+
+    for (int next = index + 1; next < NUM_TAGGED_SKILLS; next++) {
+        gTaggedSkills[next - 1] = gTaggedSkills[next];
+    }
+    gTaggedSkills[NUM_TAGGED_SKILLS - 1] = SKILL_INVALID;
+
+    skillsCompensateTaggedSkillValue(skill, targetValue);
+
+    return 1;
+}
+
 // 0x4AA52C
 bool skillIsTagged(Skill skill)
 {
@@ -531,6 +579,72 @@ int skillGetValue(Object* critter, Skill skill)
     }
 
     return integerValue;
+}
+
+static int skillsFindTaggedIndex(Skill skill)
+{
+    for (int index = 0; index < NUM_TAGGED_SKILLS; index++) {
+        if (gTaggedSkills[index] == skill) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+static int skillsFindFreeTaggedIndex()
+{
+    for (int index = 0; index < NUM_TAGGED_SKILLS; index++) {
+        if (gTaggedSkills[index] == SKILL_INVALID) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+static void skillsCompensateTaggedSkillValue(Skill skill, int targetValue)
+{
+    if (gDude == nullptr) {
+        return;
+    }
+
+    Proto* proto;
+    if (protoGetProto(gDude->pid, &proto) == -1) {
+        return;
+    }
+
+    int& rawSkillPoints = proto->critter.data.skills[skill];
+    int currentValue = skillGetValue(gDude, skill);
+    int bestRawSkillPoints = rawSkillPoints;
+    int bestDelta = abs(currentValue - targetValue);
+    if (bestDelta == 0) {
+        return;
+    }
+
+    int direction = currentValue < targetValue ? 1 : -1;
+    int minRawSkillPoints = SKILLS_MIN_RAW_POINTS;
+    int maxRawSkillPoints = rawSkillPoints;
+    if (direction > 0 && maxRawSkillPoints < SKILLS_MAX_COST_LEVEL - 1) {
+        maxRawSkillPoints = SKILLS_MAX_COST_LEVEL - 1;
+    }
+
+    while (rawSkillPoints + direction >= minRawSkillPoints && rawSkillPoints + direction <= maxRawSkillPoints) {
+        rawSkillPoints += direction;
+
+        int delta = abs(skillGetValue(gDude, skill) - targetValue);
+        if (delta < bestDelta) {
+            bestDelta = delta;
+            bestRawSkillPoints = rawSkillPoints;
+            if (bestDelta == 0) {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    rawSkillPoints = bestRawSkillPoints;
 }
 
 void skillSetMaximum(int maximum)

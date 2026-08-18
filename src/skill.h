@@ -26,6 +26,8 @@ int skillsSave(File* stream);
 void protoCritterDataResetSkills(CritterProtoData* data);
 void skillsSetTagged(Skill* skills, int count);
 void skillsGetTagged(Skill* skills, int count);
+int skillsAddTagged(Skill skill);
+int skillsRemoveTagged(Skill skill);
 bool skillIsTagged(Skill skill);
 int skillGetValue(Object* critter, Skill skill);
 void skillSetMaximum(int maximum);

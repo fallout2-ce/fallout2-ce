@@ -39,6 +39,7 @@
 #include "sfall_object_name.h"
 #include "sfall_opcodes.h"
 #include "sfall_script_hooks.h"
+#include "skill.h"
 #include "skilldex.h"
 #include "stat.h"
 #include "text_font.h"
@@ -797,6 +798,7 @@ static void mf_loot_obj(OpcodeContext& ctx);
 static void mf_message_box(OpcodeContext& ctx);
 static void mf_add_extra_msg_file(OpcodeContext& ctx);
 static void mf_add_iface_tag(OpcodeContext& ctx);
+static void mf_add_tagged_skill(OpcodeContext& ctx);
 static void mf_art_frame_data(OpcodeContext& ctx);
 static void mf_art_cache_flush(OpcodeContext& ctx);
 static void mf_metarule_exist(OpcodeContext& ctx);
@@ -808,6 +810,7 @@ static void mf_outlined_object(OpcodeContext& ctx);
 static void mf_real_dude_obj(OpcodeContext& ctx);
 static void mf_remove_wm_town_names(OpcodeContext& ctx);
 static void mf_rest_option_msgs(OpcodeContext& ctx);
+static void mf_remove_tagged_skill(OpcodeContext& ctx);
 static void mf_set_car_intface_art(OpcodeContext& ctx);
 static void mf_set_combat_free_move(OpcodeContext& ctx);
 static void mf_set_cursor_mode(OpcodeContext& ctx);
@@ -843,6 +846,7 @@ static void mf_floor2(OpcodeContext& ctx);
 const MetaruleInfo kMetarules[] = {
     { "add_extra_msg_file", mf_add_extra_msg_file, 1, 2, -1, { ARG_STRING, ARG_INT } },
     { "add_iface_tag", mf_add_iface_tag, 0, 0 },
+    { "add_tagged_skill", mf_add_tagged_skill, 1, 1, -1, { ARG_INT } },
     // {"add_g_timer_event",         mf_add_g_timer_event,         2, 2, -1, {ARG_INT, ARG_INT}},
     // {"add_trait",                 mf_add_trait,                 1, 1, -1, {ARG_INT}},
     { "art_cache_clear", mf_art_cache_flush, 0, 0 },
@@ -906,6 +910,7 @@ const MetaruleInfo kMetarules[] = {
     { "real_dude_obj", mf_real_dude_obj, 0, 0 },
     { "remove_wm_town_names", mf_remove_wm_town_names, 1, 1, -1, { ARG_INT } },
     { "rest_option_msgs", mf_rest_option_msgs, 1, 1, -1, { ARG_INT } },
+    { "remove_tagged_skill", mf_remove_tagged_skill, 1, 1, -1, { ARG_INT } },
     { "reg_anim_animate_and_move", mf_reg_anim_animate_and_move, 4, 4, -1, { ARG_OBJECT, ARG_INT, ARG_INT, ARG_INT } },
     // {"remove_timer_event",        mf_remove_timer_event,        0, 1, -1, {ARG_INT}},
     // {"set_spray_settings",        mf_set_spray_settings,        4, 4, -1, {ARG_INT, ARG_INT, ARG_INT, ARG_INT}},
@@ -1726,6 +1731,18 @@ void mf_add_extra_msg_file(OpcodeContext& ctx)
     ctx.setReturn(result);
 }
 
+static void mf_add_tagged_skill(OpcodeContext& ctx)
+{
+    int skill = ctx.arg(0).asInt();
+    if (!skillIsValid(skill)) {
+        ctx.printError("%s() - invalid skill %d.", ctx.name(), skill);
+        ctx.setReturn(-1);
+        return;
+    }
+
+    ctx.setReturn(skillsAddTagged(static_cast<Skill>(skill)));
+}
+
 void mf_opcode_exists(OpcodeContext& ctx)
 {
     constexpr int kOpcodeStart = RAW_VALUE_TYPE_OPCODE; // 0x8000
@@ -2084,6 +2101,18 @@ static void mf_rest_option_msgs(OpcodeContext& ctx)
     if (!pipboyRestOptionMsgsSetBase(baseMessageId)) {
         ctx.printError("%s() - invalid base message id (%d).", ctx.name(), baseMessageId);
     }
+}
+
+static void mf_remove_tagged_skill(OpcodeContext& ctx)
+{
+    int skill = ctx.arg(0).asInt();
+    if (!skillIsValid(skill)) {
+        ctx.printError("%s() - invalid skill %d.", ctx.name(), skill);
+        ctx.setReturn(-1);
+        return;
+    }
+
+    ctx.setReturn(skillsRemoveTagged(static_cast<Skill>(skill)));
 }
 
 static void mf_encounter_detection(OpcodeContext& ctx)
