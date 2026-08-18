@@ -1,5 +1,6 @@
 #include "combat_ai.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +25,7 @@
 #include "message.h"
 #include "object.h"
 #include "party_member.h"
+#include "perk.h"
 #include "platform_compat.h"
 #include "proto.h"
 #include "proto_instance.h"
@@ -89,6 +91,9 @@ static Object* _ai_find_nearest_team_in_combat(Object* a1, Object* a2, int flags
 static int aiFindAttackers(Object* critter, Object** whoHitMePtr, Object** whoHitFriendPtr, Object** whoHitByFriendPtr);
 static Object* _ai_danger_source(Object* a1);
 static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr);
+static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode hitMode);
+static bool aiWeaponAttackInRange(Object* critter, Object* weapon, Object* target);
+static int aiTryAttackSwitchFix(Object* attacker, Object* defender, HitMode* hitMode, Object** weaponPtr);
 static bool _caiHasWeapPrefType(AiPacket* ai, AttackType attackType);
 static Object* _ai_best_weapon(Object* a1, Object* a2, Object* a3, Object* a4);
 static bool _ai_can_use_weapon(Object* critter, Object* weapon, HitMode hitMode);
@@ -1555,6 +1560,7 @@ static Object* _ai_danger_source(Object* a1)
 
     if (objectIsPartyMember(a1)) {
         Disposition disposition = aiGetDisposition(a1);
+        DistanceMode distanceMode = aiGetDistance(a1);
 
         switch (disposition + 1) {
         case DISPOSITION_CUSTOM:
@@ -1569,7 +1575,7 @@ static Object* _ai_danger_source(Object* a1)
             break;
         }
 
-        if (ignoreFleeingCritters && aiGetDistance(a1) == DISTANCE_CHARGE) {
+        if (ignoreFleeingCritters && distanceMode == DISTANCE_CHARGE) {
             ignoreFleeingCritters = false;
         }
 
@@ -1612,26 +1618,26 @@ static Object* _ai_danger_source(Object* a1)
                     for (int index = 0; index < _curr_crit_num; index++) {
                         Object* critter = _curr_crit_list[index];
                         if (critter != a1) {
+                            bool deadOrKo = (critter->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0;
+                            bool sameTeam = a1->data.critter.combat.team == critter->data.critter.combat.team;
+                            Object* critterLastTarget = aiInfoGetLastTarget(critter);
+                            bool attacksDude = critterLastTarget == gDude;
                             // Check if it's valid target (same conditions as
                             // above).
-                            if ((critter->data.critter.combat.results & (DAM_DEAD | DAM_KNOCKED_OUT)) != 0
-                                || a1->data.critter.combat.team == critter->data.critter.combat.team
-                                || aiInfoGetLastTarget(critter) != gDude) {
+                            if (deadOrKo
+                                || sameTeam
+                                || !attacksDude) {
                                 continue;
                             }
 
-                            // Make sure critter is reachable.
-                            if (pathfinderFindPath(a1, a1->tile, critter->tile, nullptr, 0, _obj_blocking_at) == 0) {
-                                continue;
-                            }
+                            int path = pathfinderFindPath(a1, a1->tile, critter->tile, nullptr, 0, _obj_blocking_at);
 
-                            // Check if we can attack it. No ammo and out of
-                            // range are ok results, since we can reload weapon
-                            // move closer if necessary.
+                            // SFALL: No ammo is a recoverable result because
+                            // AI can reload after selecting the target.
                             CombatBadShot badShot = _combat_check_bad_shot(a1, critter, HIT_MODE_RIGHT_WEAPON_PRIMARY, false);
-                            if (badShot != COMBAT_BAD_SHOT_OK
-                                && badShot != COMBAT_BAD_SHOT_NO_AMMO
-                                && badShot != COMBAT_BAD_SHOT_OUT_OF_RANGE) {
+                            if (path == 0
+                                && badShot != COMBAT_BAD_SHOT_OK
+                                && badShot != COMBAT_BAD_SHOT_NO_AMMO) {
                                 continue;
                             }
 
@@ -1708,8 +1714,11 @@ static Object* _ai_danger_source(Object* a1)
     for (int index = 0; index < 4; index++) {
         Object* candidate = targets[index];
         if (candidate != nullptr && isWithinPerceptionDetailed(a1, candidate, PERCEPTION_AI_TARGET) != PERCEPTION_OUT_OF_RANGE) {
-            if (pathfinderFindPath(a1, a1->tile, candidate->tile, nullptr, 0, _obj_blocking_at) != 0
-                || _combat_check_bad_shot(a1, candidate, HIT_MODE_RIGHT_WEAPON_PRIMARY, false) == COMBAT_BAD_SHOT_OK) {
+            CombatBadShot badShot = _combat_check_bad_shot(a1, candidate, HIT_MODE_RIGHT_WEAPON_PRIMARY, false);
+            int path = pathfinderFindPath(a1, a1->tile, candidate->tile, nullptr, 0, _obj_blocking_at);
+            if (path != 0
+                || badShot == COMBAT_BAD_SHOT_OK
+                || badShot == COMBAT_BAD_SHOT_NO_AMMO) {
                 return candidate;
             }
             debugPrint("\nai_danger_source: I couldn't get at my target!  Picking alternate!");
@@ -1812,6 +1821,108 @@ static bool aiHaveAmmo(Object* critter, Object* weapon, Object** ammoPtr)
     }
 
     return false;
+}
+
+static int aiGetWeaponRangeForHitMode(Object* critter, Object* weapon, HitMode hitMode)
+{
+    if (weapon == nullptr) {
+        if (critterFlagCheck(critter->pid, CRITTER_LONG_LIMBS)) {
+            return 2;
+        }
+
+        return 1;
+    }
+
+    Proto* proto;
+    protoGetProto(weapon->pid, &proto);
+
+    int range;
+    if (hitMode == HIT_MODE_LEFT_WEAPON_PRIMARY || hitMode == HIT_MODE_RIGHT_WEAPON_PRIMARY) {
+        range = proto->item.data.weapon.maxRange1;
+    } else {
+        range = proto->item.data.weapon.maxRange2;
+    }
+
+    if (weaponGetAttackTypeForHitMode(weapon, hitMode) == ATTACK_TYPE_THROW) {
+        int effectiveStrength = critterGetStat(critter, STAT_STRENGTH);
+        if (critter == gDude || objectIsPartyMember(critter)) {
+            if (effectiveStrength < PRIMARY_STAT_MAX) {
+                effectiveStrength += 2 * perkGetRank(critter, PERK_HEAVE_HO);
+                if (effectiveStrength > PRIMARY_STAT_MAX) {
+                    effectiveStrength = PRIMARY_STAT_MAX;
+                }
+            }
+        }
+
+        int maxRange = 3 * effectiveStrength;
+        if (range >= maxRange) {
+            range = maxRange;
+        }
+    }
+
+    return range;
+}
+
+static bool aiWeaponAttackInRange(Object* critter, Object* weapon, Object* target)
+{
+    int distance = objectGetDistanceBetween(critter, target);
+    if (aiGetWeaponRangeForHitMode(critter, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY) >= distance) {
+        return true;
+    }
+
+    if (weaponGetAttackTypeForHitMode(weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY) == ATTACK_TYPE_NONE) {
+        return false;
+    }
+
+    return aiGetWeaponRangeForHitMode(critter, weapon, HIT_MODE_RIGHT_WEAPON_SECONDARY) >= distance;
+}
+
+static int aiTryAttackSwitchFix(Object* attacker, Object* defender, HitMode* hitMode, Object** weaponPtr)
+{
+    if (attacker->data.critter.combat.ap <= 0) {
+        return -1;
+    }
+
+    assert(weaponPtr != nullptr);
+
+    Object* weapon = *weaponPtr;
+    if (weapon == nullptr) {
+        return 1;
+    }
+
+    HitMode candidateHitMode = _ai_pick_hit_mode(attacker, weapon, defender);
+    if (candidateHitMode != *hitMode && candidateHitMode != HIT_MODE_PUNCH) {
+        int actionPointCost = weaponGetActionPointCost(attacker, candidateHitMode, false);
+        if (actionPointCost <= attacker->data.critter.combat.ap) {
+            *hitMode = candidateHitMode;
+            return 0;
+        }
+    }
+
+    bool canUseCurrentWeapon = _ai_can_use_weapon(attacker, weapon, *hitMode);
+    Object* inventoryWeapon = _ai_search_inven_weap(attacker, true, defender);
+    if (inventoryWeapon != nullptr) {
+        if (!canUseCurrentWeapon) {
+            return 1;
+        }
+
+        AttackType attackType = weaponGetAttackTypeForHitMode(inventoryWeapon, HIT_MODE_RIGHT_WEAPON_PRIMARY);
+        if (attackType == ATTACK_TYPE_UNARMED || attackType == ATTACK_TYPE_MELEE) {
+            if (!aiWeaponAttackInRange(attacker, inventoryWeapon, defender)) {
+                return -1;
+            }
+        }
+
+        return 1;
+    }
+
+    if (!canUseCurrentWeapon || weaponGetRange(attacker, HIT_MODE_PUNCH) >= objectGetDistanceBetween(attacker, defender)) {
+        *hitMode = HIT_MODE_PUNCH;
+        *weaponPtr = nullptr;
+        return 0;
+    }
+
+    return -1;
 }
 
 // 0x42938C
@@ -2836,6 +2947,15 @@ static int _ai_try_attack(Object* attacker, Object* defender)
                 }
             }
         } else if (reason == COMBAT_BAD_SHOT_NOT_ENOUGH_AP || reason == COMBAT_BAD_SHOT_ARM_CRIPPLED || reason == COMBAT_BAD_SHOT_BOTH_ARMS_CRIPPLED) {
+            int switchFixRc = aiTryAttackSwitchFix(attacker, defender, &hitMode, &weapon);
+            if (switchFixRc < 0) {
+                return -1;
+            }
+
+            if (switchFixRc == 0) {
+                continue;
+            }
+
             if (_ai_switch_weapons(attacker, &hitMode, &weapon, defender) == -1) {
                 return -1;
             }
