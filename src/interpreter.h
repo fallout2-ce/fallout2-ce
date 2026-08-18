@@ -398,7 +398,7 @@ template <>
 inline Map programStackPopEnum(Program* program)
 {
     int map = programStackPopInteger(program);
-    
+
     // do not use the mapIsValid here as -1 and -2 might be valid argument from the script perspective
     if (map >= wmMapMaxCount()) {
         programPrintError("invalid map %d", map);
