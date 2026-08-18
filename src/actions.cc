@@ -1039,7 +1039,12 @@ int _action_climb_ladder(Object* critter, Object* ladder)
         animationRequestOptions = ANIMATION_REQUEST_RESERVED;
     }
 
-    animationRequestOptions |= ANIMATION_REQUEST_NO_STAND;
+    int destinationMap = ladder->data.scenery.ladder.destinationMap;
+    int destinationBuiltTile = ladder->data.scenery.ladder.destinationBuiltTile;
+    if (destinationBuiltTile == -1 || (destinationMap != 0 && destinationMap != mapGetCurrentMap())) {
+        animationRequestOptions |= ANIMATION_REQUEST_NO_STAND;
+    }
+
     reg_anim_begin(animationRequestOptions);
 
     // note: distance is checked to ladder tile, but movement is to SE tile, so the walk/run choice
