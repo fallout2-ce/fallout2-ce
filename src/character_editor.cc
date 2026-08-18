@@ -321,6 +321,7 @@ static int characterEditorFolderViewInit();
 static void characterEditorFolderViewScroll(int direction);
 static void characterEditorFolderViewClear();
 static int characterEditorFolderViewDrawHeading(const char* string);
+static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRank, int colorIndex);
 static bool characterEditorFolderViewDrawString(const char* string);
 static bool characterEditorFolderViewDrawKillsEntry(const char* name, int kills);
 static int karmaInit();
@@ -2208,32 +2209,45 @@ static void characterEditorDrawPerksFolder()
         }
     }
 
-    if (perk != PERK_COUNT) {
-        // PERKS
-        string = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 109);
-        characterEditorFolderViewDrawHeading(string);
+    for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
+        perkLevel = perkGetRank(gDude, perk);
+        if (perkLevel != 0) {
+            int maxRank = perkGetMaxRank(perk);
+            bool useProgressBar = settings.ui.perks_progress_bar && (maxRank > 1);
 
-        for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
-            perkLevel = perkGetRank(gDude, perk);
-            if (perkLevel != 0) {
+            if (useProgressBar) {
                 string = perkGetName(perk);
-
+            } else {
                 if (perkLevel == 1) {
-                    snprintf(perkName, sizeof(perkName), "%s", string);
+                    snprintf(perkName, sizeof(perkName), "%s", perkGetName(perk));
                 } else {
-                    snprintf(perkName, sizeof(perkName), "%s (%d)", string, perkLevel);
+                    snprintf(perkName, sizeof(perkName), "%s (%d)", perkGetName(perk), perkLevel);
+                }
+                string = perkName;
+            }
+
+            int currentY = gCharacterEditorFolderViewNextY;
+            int lineIndexToCheck = gCharacterEditorFolderViewCurrentLine - gCharacterEditorFolderViewTopLine;
+
+            if (characterEditorFolderViewDrawString(string)) {
+                gCharacterEditorFolderCardFrmId = perkGetFrmId(perk);
+                gCharacterEditorFolderCardTitle = perkGetName(perk);
+                gCharacterEditorFolderCardSubtitle = nullptr;
+                gCharacterEditorFolderCardDescription = perkGetDescription(perk);
+                hasContent = true;
+            }
+
+            if (useProgressBar) {
+                int finalColor = COLOR_GREEN;
+                if (lineIndexToCheck == gCharacterEditorFolderViewHighlightedLine) {
+                    finalColor = COLOR_LIGHT_YELLOW;
                 }
 
-                if (characterEditorFolderViewDrawString(perkName)) {
-                    gCharacterEditorFolderCardFrmId = perkGetFrmId(perk);
-                    gCharacterEditorFolderCardTitle = perkGetName(perk);
-                    gCharacterEditorFolderCardSubtitle = nullptr;
-                    gCharacterEditorFolderCardDescription = perkGetDescription(perk);
-                    hasContent = true;
-                }
+                characterEditorDrawPerkProgressBar(currentY, perkLevel, maxRank, finalColor);
             }
         }
     }
+
 
     if (!hasContent) {
         gCharacterEditorFolderCardFrmId = 71;
@@ -7278,6 +7292,44 @@ static bool characterEditorFolderViewDrawString(const char* string)
     }
 
     return success;
+}
+
+static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRank, int colorIndex)
+{
+    if (!settings.ui.perks_progress_bar) return;
+
+    int segmentWidth = 4;
+    int segmentHeight = 7;
+    int padding = 2;
+
+    int totalWidth = maxRank * (segmentWidth + padding) - padding;
+
+    // Perks window width = 327, maxSegments (maximum available ranks on any perk) = 3
+    int rightEdgeX = 327 - (segmentWidth * 3) - (padding * 3);
+
+    int startX = rightEdgeX - totalWidth;
+
+    int offsetToCenter = (gCharacterEditorFolderViewOffsetY - segmentHeight) / 2;
+    if (offsetToCenter < 0) offsetToCenter = 0;
+    int targetY = y + offsetToCenter;
+
+    unsigned char inactiveColor = (colorIndex == COLOR_LIGHT_YELLOW) ? COLOR_DARK_YELLOW_3 : COLOR_DARK_GREY_3;
+
+    for (int i = 0; i < maxRank; i++) {
+        int currentSegmentX = startX + (i * (segmentWidth + padding));
+        unsigned char drawColor = (i < currentRank) ? colorIndex : inactiveColor;
+
+        for (int h = 0; h < segmentHeight; h++) {
+            for (int w = 0; w < segmentWidth; w++) {
+                int pixelX = currentSegmentX + w;
+                int pixelY = targetY + h;
+
+                if (pixelX >= 0 && pixelX < 640) {
+                    gCharacterEditorWindowBuffer[pixelY * 640 + pixelX] = drawColor;
+                }
+            }
+        }
+    }
 }
 
 // 0x43E470 folder_print_kill

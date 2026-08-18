@@ -540,6 +540,14 @@ char* perkGetName(Perk perk)
     return gPerkDescriptions[perk].name;
 }
 
+int perkGetMaxRank(Perk perk)
+{
+    if (!perkIsValid(perk)) {
+        return -1;
+    }
+    return gPerkDescriptions[perk].maxRank;
+}
+
 // 0x496BB4 perk_description
 char* perkGetDescription(Perk perk)
 {
