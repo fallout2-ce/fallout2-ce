@@ -49,7 +49,7 @@ typedef struct PerkRankData {
 } PerkRankData;
 
 static PerkRankData* perkGetRankData(Object* critter);
-static bool perkCanAdd(Object* critter, Perk perk);
+static bool perkCanAddAtLevel(Object* critter, Perk perk, int level);
 static void perkResetRanks();
 
 // 0x519DCC perk_data
@@ -299,7 +299,7 @@ static PerkRankData* perkGetRankData(Object* critter)
 }
 
 // 0x49680C perk_can_add
-static bool perkCanAdd(Object* critter, Perk perk)
+static bool perkCanAddAtLevel(Object* critter, Perk perk, int level)
 {
     if (!perkIsValid(perk)) {
         return false;
@@ -317,7 +317,7 @@ static bool perkCanAdd(Object* critter, Perk perk)
     }
 
     if (critter == gDude) {
-        if (pcGetStat(PC_STAT_LEVEL) < perkDescription->minLevel) {
+        if (level < perkDescription->minLevel) {
             return false;
         }
 
@@ -437,11 +437,16 @@ static void perkResetRanks()
 // 0x496A5C perk_add
 int perkAdd(Object* critter, Perk perk)
 {
+    return perkAddAtLevel(critter, perk, pcGetStat(PC_STAT_LEVEL));
+}
+
+int perkAddAtLevel(Object* critter, Perk perk, int level)
+{
     if (!perkIsValid(perk)) {
         return -1;
     }
 
-    if (!perkCanAdd(critter, perk)) {
+    if (!perkCanAddAtLevel(critter, perk, level)) {
         return -1;
     }
 
@@ -502,11 +507,11 @@ int perkRemove(Object* critter, Perk perk)
 // Returns perks available to pick.
 //
 // 0x496B44 perk_make_list
-int perkGetAvailablePerks(Object* critter, Perk* perks)
+int perkGetAvailablePerks(Object* critter, int level, Perk* perks)
 {
     int count = 0;
     for (Perk perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
-        if (perkCanAdd(critter, perk)) {
+        if (perkCanAddAtLevel(critter, perk, level)) {
             perks[count] = perk;
             count++;
         }
