@@ -411,7 +411,7 @@ void handleWindowSizeChanged()
 
 void renderFpsCounter()
 {
-    if (!settings.debug.show_fps || gSdlSurface == nullptr || gSdlTextureSurface == nullptr || fontDrawText == nullptr) {
+    if (!settings.debug.show_fps || gSdlSurface == nullptr || gSdlTextureSurface == nullptr) {
         return;
     }
 
