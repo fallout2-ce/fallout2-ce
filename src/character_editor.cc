@@ -2203,11 +2203,6 @@ static void characterEditorDrawPerksFolder()
     }
 
     Perk perk;
-    for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
-        if (perkGetRank(gDude, perk) != 0) {
-            break;
-        }
-    }
 
     for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
         perkLevel = perkGetRank(gDude, perk);
@@ -2226,10 +2221,12 @@ static void characterEditorDrawPerksFolder()
                 string = perkName;
             }
 
+            // keep Y index before characterEditorFolderViewDrawString
             int currentY = gCharacterEditorFolderViewNextY;
-            int lineIndexToCheck = gCharacterEditorFolderViewCurrentLine - gCharacterEditorFolderViewTopLine;
+            int currentLineIndex = gCharacterEditorFolderViewCurrentLine;
 
-            if (characterEditorFolderViewDrawString(string)) {
+            bool isHighlighted = characterEditorFolderViewDrawString(string);
+            if (isHighlighted) {
                 gCharacterEditorFolderCardFrmId = perkGetFrmId(perk);
                 gCharacterEditorFolderCardTitle = perkGetName(perk);
                 gCharacterEditorFolderCardSubtitle = nullptr;
@@ -2238,12 +2235,17 @@ static void characterEditorDrawPerksFolder()
             }
 
             if (useProgressBar) {
-                int finalColor = COLOR_GREEN;
-                if (lineIndexToCheck == gCharacterEditorFolderViewHighlightedLine) {
-                    finalColor = COLOR_LIGHT_YELLOW;
-                }
+                if (gCharacterEditorFolderViewMaxLines + gCharacterEditorFolderViewTopLine > currentLineIndex) {
+                    if (currentLineIndex >= gCharacterEditorFolderViewTopLine) {
 
-                characterEditorDrawPerkProgressBar(currentY, perkLevel, maxRank, finalColor);
+                        int finalColor = COLOR_GREEN;
+                        if (currentLineIndex - gCharacterEditorFolderViewTopLine == gCharacterEditorFolderViewHighlightedLine) {
+                            finalColor = COLOR_LIGHT_YELLOW;
+                        }
+
+                        characterEditorDrawPerkProgressBar(currentY, perkLevel, maxRank, finalColor);
+                    }
+                }
             }
         }
     }
@@ -7303,8 +7305,11 @@ static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRa
 
     int totalWidth = maxRank * (segmentWidth + padding) - padding;
 
-    // Perks window width = 327, maxSegments (maximum available ranks on any perk) = 3
-    int rightEdgeX = 327 - (segmentWidth * 3) - (padding * 3);
+    // Folder view text is rendered in the [34..314) range.
+    constexpr int kFolderViewLeftX = 34;
+    constexpr int kFolderViewWidth = 280;
+    constexpr int kFolderViewEdgePadding = 5;
+    int rightEdgeX = kFolderViewLeftX + kFolderViewWidth - kFolderViewEdgePadding;
 
     int startX = rightEdgeX - totalWidth;
 
@@ -7323,8 +7328,8 @@ static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRa
                 int pixelX = currentSegmentX + w;
                 int pixelY = targetY + h;
 
-                if (pixelX >= 0 && pixelX < 640) {
-                    gCharacterEditorWindowBuffer[pixelY * 640 + pixelX] = drawColor;
+                if (pixelX >= 0 && pixelX < EDITOR_WINDOW_WIDTH && pixelY >= 0 && pixelY < EDITOR_WINDOW_HEIGHT) {
+                    gCharacterEditorWindowBuffer[pixelY * EDITOR_WINDOW_WIDTH + pixelX] = drawColor;
                 }
             }
         }

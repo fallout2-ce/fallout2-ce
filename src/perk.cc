@@ -543,7 +543,7 @@ char* perkGetName(Perk perk)
 int perkGetMaxRank(Perk perk)
 {
     if (!perkIsValid(perk)) {
-        return -1;
+        return 0;
     }
     return gPerkDescriptions[perk].maxRank;
 }
