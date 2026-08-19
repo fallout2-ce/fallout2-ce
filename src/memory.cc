@@ -180,8 +180,8 @@ static void memoryBlockFreeImpl(void* ptr)
 void mem_check()
 {
     if (gMallocProc == memoryBlockMallocImpl) {
-        debugPrint("Current memory allocated: %6d blocks, %9u bytes total\n", gMemoryBlocksCurrentCount, gMemoryBlocksCurrentSize);
-        debugPrint("Max memory allocated:     %6d blocks, %9u bytes total\n", gMemoryBlockMaximumCount, gMemoryBlocksMaximumSize);
+        debugPrint("Current memory allocated: %6d blocks, %9zu bytes total\n", gMemoryBlocksCurrentCount, gMemoryBlocksCurrentSize);
+        debugPrint("Max memory allocated:     %6d blocks, %9zu bytes total\n", gMemoryBlockMaximumCount, gMemoryBlocksMaximumSize);
     }
 }
 

@@ -860,7 +860,7 @@ static void op_get_proto_data(Program* program)
     // CE: Make sure the requested offset is within memory bounds and is
     // properly aligned.
     if (offset + sizeof(int) > proto_size(objectTypeFromPid(pid)) || offset % sizeof(int) != 0) {
-        programPrintError("get_proto_data: bad offset %d", offset);
+        programPrintError("get_proto_data: bad offset %zu", offset);
         programStackPushInteger(program, -1);
         return;
     }
@@ -885,7 +885,7 @@ static void op_set_proto_data(Program* program)
     // CE: Make sure the requested offset is within memory bounds and is
     // properly aligned.
     if (offset + sizeof(int) > proto_size(objectTypeFromPid(pid)) || offset % sizeof(int) != 0) {
-        programPrintError("set_proto_data: bad offset %d", offset);
+        programPrintError("set_proto_data: bad offset %zu", offset);
         return;
     }
 
