@@ -545,7 +545,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, ColorW
 
     if ((color & 0xFF00) != 0) {
         int colorIndex = (color & COLOR_LAST) - 1;
-        textColor = _colorTable[_GNW_wcolor[colorIndex]] | (color & ~static_cast<DrawTextFlags>(0xFFFF));
+        textColor = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>(color & ~0xFFFF);
     } else {
         textColor = color;
     }

@@ -512,7 +512,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
                 ColorWithFlags textColor;
                 if ((color & 0xFF00) != 0) {
                     int colorIndex = (color & COLOR_LAST) - 1;
-                    textColor = _colorTable[_GNW_wcolor[colorIndex]] | (color & ~static_cast<DrawTextFlags>(0xFFFF));
+                    textColor = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>(color & ~0xFFFF);
                 } else {
                     textColor = color;
                 }
@@ -649,7 +649,7 @@ int win_yes_no(const char* question, int x, int y, ColorWithFlags color)
     ColorWithFlags textColor;
     if ((color & 0xFF00) != 0) {
         int colorIndex = (color & COLOR_LAST) - 1;
-        textColor = _colorTable[_GNW_wcolor[colorIndex]] | (color & ~static_cast<DrawTextFlags>(0xFFFF));
+        textColor = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>(color & ~0xFFFF);
     } else {
         textColor = color;
     }
@@ -737,7 +737,7 @@ int _win_msg(const char* string, int x, int y, ColorWithFlags color)
     ColorWithFlags textColor;
     if ((color & 0xFF00) != 0) {
         int colorIndex = (color & COLOR_LAST) - 1;
-        textColor = _colorTable[_GNW_wcolor[colorIndex]] | (color & static_cast<DrawTextFlags>(~0xFFFF));
+        textColor = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>(color & ~0xFFFF);
     } else {
         textColor = color;
     }

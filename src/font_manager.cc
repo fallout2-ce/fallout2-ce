@@ -369,7 +369,7 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
         color &= ~DRAW_TEXT_FLAG_SHADOWED;
         // NOTE: Other font options preserved. This is different from text font
         // shadows.
-        interfaceFontDrawImpl(buf + pitch + 1, string, length, pitch, COLOR_BLACK | (color & static_cast<DrawTextFlags>(~COLOR_LAST)));
+        interfaceFontDrawImpl(buf + pitch + 1, string, length, pitch, COLOR_BLACK | static_cast<DrawTextFlags>(color & ~0XFF));
     }
 
     Color* palette = _getColorBlendTable(static_cast<Color>(color & COLOR_LAST));
@@ -437,7 +437,7 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
 {
     if ((color & DRAW_TEXT_FLAG_SHADOWED) != DRAW_TEXT_FLAG_NONE) {
         color &= ~DRAW_TEXT_FLAG_SHADOWED;
-        interfaceFontDrawScaledImpl(dest, x + 1, y + 1, string, COLOR_BLACK | (color & static_cast<DrawTextFlags>(~COLOR_LAST)), scale);
+        interfaceFontDrawScaledImpl(dest, x + 1, y + 1, string, COLOR_BLACK | static_cast<DrawTextFlags>(color & ~0XFF), scale);
     }
 
     if ((color & (DRAW_TEXT_FLAG_MONOSPACED | DRAW_TEXT_FLAG_UNDERLINED)) != 0) {
