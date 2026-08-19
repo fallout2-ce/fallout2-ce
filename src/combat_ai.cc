@@ -391,8 +391,8 @@ int aiInit()
         if (!configGetInt(config.get(), sectionEntry->key, "secondary_freq", &(ai->secondary_freq))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "called_freq", &(ai->called_freq))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "font", &(ai->font))) goto err;
-        if (!configGetEnum<ColorWithFlags>(&config, sectionEntry->key, "color", &(ai->color))) goto err;
-        if (!configGetEnum<ColorWithFlags>(&config, sectionEntry->key, "outline_color", &(ai->outline_color))) goto err;
+        if (!configGetEnum<ColorWithFlags>(config.get(), sectionEntry->key, "color", &(ai->color))) goto err;
+        if (!configGetEnum<ColorWithFlags>(config.get(), sectionEntry->key, "outline_color", &(ai->outline_color))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "chance", &(ai->chance))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "run_start", &(ai->run.start))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "run_end", &(ai->run.end))) goto err;
