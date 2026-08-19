@@ -89,8 +89,6 @@ public:
     ScopedConfig(const ScopedConfig&) = delete;
     ScopedConfig& operator=(const ScopedConfig&) = delete;
 
-    bool isInitialized() const;
-
     Config* get();
     const Config* get() const;
 
