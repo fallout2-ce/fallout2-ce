@@ -417,7 +417,7 @@ const char* proto_wall_light_str(int flags)
 void proto_critter_flags_redraw(int win, int pid)
 {
     int index;
-    int color;
+    Color color;
     int x = 110;
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {

@@ -305,7 +305,7 @@ void windowManagerExit(void)
 
 // win_add
 // 0x4D6238
-int windowCreate(int x, int y, int width, int height, int color, int flags)
+int windowCreate(int x, int y, int width, int height, ColorWithFlags color, int flags)
 {
     int topWindowIndex;
     int insertionIndex;
@@ -356,13 +356,13 @@ int windowCreate(int x, int y, int width, int height, int color, int flags)
     window->tx = rand() & 0xFFFE;
     window->ty = rand() & 0xFFFE;
 
-    if (color == 256) {
+    if (color == COLOR_COUNT) {
         if (_GNW_texture == nullptr) {
-            color = _colorTable[_GNW_wcolor[0]];
+            color = _colorTable[_GNW_wcolor[0]] | DRAW_TEXT_FLAG_NONE;
         }
     } else if ((color & 0xFF00) != 0) {
         int colorIndex = (color & COLOR_LAST) - 1;
-        color = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+        color = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>(color & ~0xFFFF);
     }
 
     window->buttonListHead = nullptr;
@@ -498,10 +498,10 @@ void windowDrawBorder(int win)
 }
 
 // 0x4D684C
-void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int flags)
+void windowDrawText(int win, const char* str, int maxWidth, int x, int y, ColorWithFlags color)
 {
     unsigned char* buf;
-    int textColor;
+    ColorWithFlags textColor;
 
     Window* window = windowGetWindow(win);
 
@@ -514,7 +514,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
     }
 
     if (maxWidth == 0) {
-        if (flags & DRAW_TEXT_FLAG_MONOSPACED) {
+        if (color & DRAW_TEXT_FLAG_MONOSPACED) {
             maxWidth = fontGetMonospacedStringWidth(str);
         } else {
             maxWidth = fontGetStringWidth(str);
@@ -522,7 +522,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
     }
 
     if (maxWidth + x > window->width) {
-        if (!(flags & DRAW_TEXT_FLAG_OVERFLOW)) {
+        if (!(color & DRAW_TEXT_FLAG_OVERFLOW)) {
             return;
         }
 
@@ -535,24 +535,24 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
         return;
     }
 
-    if (!(flags & DRAW_TEXT_FLAG_NO_BG)) {
-        if (window->color == 256 && _GNW_texture != nullptr) {
+    if (!(color & DRAW_TEXT_FLAG_NO_BG)) {
+        if (window->color == COLOR_COUNT && _GNW_texture != nullptr) {
             _buf_texture(buf, maxWidth, fontGetLineHeight(), window->width, _GNW_texture, window->tx + x, window->ty + y);
         } else {
             bufferFill(buf, maxWidth, fontGetLineHeight(), window->width, static_cast<Color>(window->color & COLOR_LAST));
         }
     }
 
-    if ((flags & 0xFF00) != 0) {
+    if ((color & 0xFF00) != 0) {
         int colorIndex = (color & COLOR_LAST) - 1;
-        textColor = (flags & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+        textColor = _colorTable[_GNW_wcolor[colorIndex]] | (color & ~static_cast<DrawTextFlags>(0xFFFF));
     } else {
-        textColor = flags;
+        textColor = color;
     }
 
     fontDrawText(buf, str, maxWidth, window->width, textColor);
 
-    if (flags & DRAW_TEXT_FLAG_REFRESH) {
+    if (color & DRAW_TEXT_FLAG_REFRESH) {
         // TODO: Check.
         Rect rect;
         rect.left = window->rect.left + x;
@@ -564,7 +564,7 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
 }
 
 // 0x4D6B24
-void windowDrawLine(int win, int left, int top, int right, int bottom, int color)
+void windowDrawLine(int win, int left, int top, int right, int bottom, ColorWithFlags color)
 {
     Window* window = windowGetWindow(win);
 
@@ -578,14 +578,14 @@ void windowDrawLine(int win, int left, int top, int right, int bottom, int color
 
     if ((color & 0xFF00) != 0) {
         int colorIndex = (color & COLOR_LAST) - 1;
-        color = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+        color = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>((color & ~0xFFFF));
     }
 
     bufferDrawLine(window->buffer, window->width, left, top, right, bottom, static_cast<Color>(color & COLOR_LAST));
 }
 
 // 0x4D6B88
-void windowDrawRect(int win, int left, int top, int right, int bottom, int color)
+void windowDrawRect(int win, int left, int top, int right, int bottom, ColorWithFlags color)
 {
     Window* window = windowGetWindow(win);
 
@@ -598,8 +598,8 @@ void windowDrawRect(int win, int left, int top, int right, int bottom, int color
     }
 
     if ((color & 0xFF00) != 0) {
-        int colorIndex = (color & 0xFF) - 1;
-        color = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+        int colorIndex = (color & COLOR_LAST) - 1;
+        color = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>((color & ~0xFFFF));
     }
 
     if (right < left) {
@@ -618,7 +618,7 @@ void windowDrawRect(int win, int left, int top, int right, int bottom, int color
 }
 
 // 0x4D6CC8
-void windowFill(int win, int x, int y, int width, int height, int color)
+void windowFill(int win, int x, int y, int width, int height, ColorWithFlags color)
 {
     Window* window = windowGetWindow(win);
 
@@ -630,15 +630,15 @@ void windowFill(int win, int x, int y, int width, int height, int color)
         return;
     }
 
-    if (color == 256) {
+    if (color == COLOR_COUNT) {
         if (_GNW_texture != nullptr) {
             _buf_texture(window->buffer + window->width * y + x, width, height, window->width, _GNW_texture, x + window->tx, y + window->ty);
         } else {
-            color = _colorTable[_GNW_wcolor[0]] & 0xFF;
+            color = _colorTable[_GNW_wcolor[0]] | DRAW_TEXT_FLAG_NONE;
         }
     } else if ((color & 0xFF00) != 0) {
-        int colorIndex = (color & 0xFF) - 1;
-        color = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+        int colorIndex = (color & COLOR_LAST) - 1;
+        color = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>(color & ~0xFFFF);
     }
 
     if (color < COLOR_COUNT) {
@@ -1305,7 +1305,7 @@ int _GNW_check_menu_bars(int input)
 }
 
 // 0x4D69DC
-void _win_text(int win, const char* const* fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags)
+void _win_text(int win, const char* const* fileNameList, int fileNameListLength, int maxWidth, int x, int y, ColorWithFlags color)
 {
     Window* window = windowGetWindow(win);
 
@@ -1329,7 +1329,7 @@ void _win_text(int win, const char* const* fileNameList, int fileNameListLength,
     for (int index = 0; index < fileNameListLength; index++) {
         const char* fileName = fileNameList[index];
         if (*fileName != '\0') {
-            windowDrawText(win, fileName, maxWidth, x, y, flags);
+            windowDrawText(win, fileName, maxWidth, x, y, color);
         } else {
             if (maxWidth != 0) {
                 bufferDrawLine(ptr, width, 0, separatorTop, separatorRight, separatorTop, _colorTable[_GNW_wcolor[2]]);
@@ -1487,8 +1487,8 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
     if (window->color == 256 && _GNW_texture != nullptr) {
         // TODO: Incomplete.
     } else {
-        bufferFill(normal, buttonWidth, buttonHeight, buttonWidth, window->color);
-        bufferFill(pressed, buttonWidth, buttonHeight, buttonWidth, window->color);
+        bufferFill(normal, buttonWidth, buttonHeight, buttonWidth, static_cast<Color>(window->color & COLOR_LAST));
+        bufferFill(pressed, buttonWidth, buttonHeight, buttonWidth, static_cast<Color>(window->color & COLOR_LAST));
     }
 
     _lighten_buf(normal, buttonWidth, buttonHeight, buttonWidth);

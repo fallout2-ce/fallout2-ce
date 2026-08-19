@@ -134,7 +134,7 @@ static void _print_tohit(unsigned char* dest, int dest_pitch, int a3);
 static char* hitLocationGetName(Object* critter, HitLocation hitLocation);
 static void _draw_loc_off(int a1, int a2);
 static void _draw_loc_on_(int a1, int a2);
-static void _draw_loc_(int eventCode, int color);
+static void _draw_loc_(int eventCode, Color color);
 static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation, HitMode hitMode);
 
 static void criticalsInit();
@@ -5569,17 +5569,17 @@ static void _draw_loc_on_(int a1, int a2)
 }
 
 // 0x4261CC
-static void _draw_loc_(int eventCode, int color)
+static void _draw_loc_(int eventCode, Color color)
 {
-    color |= (DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG);
+    ColorWithFlags colorWithFlags = color | (DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG);
 
     if (eventCode >= 4) {
         char* name = hitLocationGetName(gCalledShotCritter, _hit_loc_right[eventCode - 4]);
         int width = fontGetStringWidth(name);
-        windowDrawText(gCalledShotWindow, name, 0, 431 - width, _call_ty[eventCode - 4] - 86, color);
+        windowDrawText(gCalledShotWindow, name, 0, 431 - width, _call_ty[eventCode - 4] - 86, colorWithFlags);
     } else {
         char* name = hitLocationGetName(gCalledShotCritter, _hit_loc_left[eventCode]);
-        windowDrawText(gCalledShotWindow, name, 0, 74, _call_ty[eventCode] - 86, color);
+        windowDrawText(gCalledShotWindow, name, 0, 74, _call_ty[eventCode] - 86, colorWithFlags);
     }
 }
 

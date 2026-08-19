@@ -317,8 +317,8 @@ static Object* gGameMousePointedObject;
 
 static void _gmouse_3d_enable_modes();
 static int gameMouseSetBouncingCursorFid(int fid);
-static int gameMouseRenderAccuracy(const char* string, int color);
-static int gameMouseRenderActionPoints(const char* string, int color);
+static int gameMouseRenderAccuracy(const char* string, Color color);
+static int gameMouseRenderActionPoints(const char* string, Color color);
 static int gameMouseObjectsInit();
 static int gameMouseObjectsReset();
 static void gameMouseObjectsFree();
@@ -804,7 +804,7 @@ void gameMouseRefresh()
                         }
                     }
 
-                    int color;
+                    Color color;
                     int accuracy;
                     char formattedAccuracy[8];
                     if (_combat_to_hit(pointedObject, &accuracy)) {
@@ -859,7 +859,7 @@ void gameMouseRefresh()
         }
 
         char formattedActionPoints[8];
-        int color;
+        Color color;
         int distance = _make_path(gDude, gDude->tile, gGameMouseHexCursor->tile, nullptr, 1);
         if (distance != 0) {
             if (!isInCombat()) {
@@ -1983,7 +1983,7 @@ int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex)
 }
 
 // 0x44D774 gmouse_3d_build_to_hit_frame
-int gameMouseRenderAccuracy(const char* string, int color)
+int gameMouseRenderAccuracy(const char* string, Color color)
 {
     CacheEntry* crosshairFrmHandle;
     int fid = buildFid(OBJ_TYPE_INTERFACE, gGameMouseModeFrmIds[GAME_MOUSE_MODE_CROSSHAIR]);
@@ -2027,7 +2027,7 @@ int gameMouseRenderAccuracy(const char* string, int color)
 }
 
 // 0x44D878 gmouse_3d_build_hex_frame
-int gameMouseRenderActionPoints(const char* string, int color)
+int gameMouseRenderActionPoints(const char* string, Color color)
 {
     memset(gGameMouseHexCursorFrmData, 0, gGameMouseHexCursorFrmWidth * gGameMouseHexCursorHeight);
 

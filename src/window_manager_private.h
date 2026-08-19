@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 
+#include "color.h"
 #include "geometry.h"
 
 namespace fallout {
@@ -13,28 +14,33 @@ typedef void(ListSelectionHandler)(const char* const* items, int index);
 
 extern char gProgramWindowTitle[256];
 
-int _win_list_select(const char* title, const char* const* fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, int color);
-int _win_list_select_at(const char* title, const char* const* items, int itemsLength, ListSelectionHandler* callback, int x, int y, int color, int start);
+int _win_list_select(const char* title, const char* const* fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, ColorWithFlags color);
+int _win_list_select_at(const char* title, const char* const* items, int itemsLength, ListSelectionHandler* callback, int x, int y, ColorWithFlags color, int start);
 int _win_get_str(char* dest, int length, const char* title, int x, int y);
-int win_yes_no(const char* question, int x, int y, int color);
-int _win_msg(const char* string, int x, int y, int color);
-int _win_pull_down(char** items, int itemsLength, int x, int y, int color);
-int _create_pull_down(char** stringList, int stringListLength, int x, int y, int foregroundColor, int backgroundColor, Rect* rect);
+int win_yes_no(const char* question, int x, int y, ColorWithFlags color);
+int _win_msg(const char* string, int x, int y, ColorWithFlags color);
+inline int _win_msg(const char* string, int x, int y, Color color)
+{
+    return _win_msg(string, x, y, color | DRAW_TEXT_FLAG_NONE);
+}
+
+int _win_pull_down(char** items, int itemsLength, int x, int y, ColorWithFlags color);
+int _create_pull_down(char** stringList, int stringListLength, int x, int y, ColorWithFlags foregroundColor, ColorWithFlags backgroundColor, Rect* rect);
 int _win_debug(const char* string);
 void _win_debug_delete(int btn, int keyCode);
-int _win_register_menu_bar(int win, int x, int y, int width, int height, int foregroundColor, int backgroundColor);
-int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor);
+int _win_register_menu_bar(int win, int x, int y, int width, int height, ColorWithFlags foregroundColor, ColorWithFlags backgroundColor);
+int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, int itemsLength, char** items, ColorWithFlags foregroundColor, ColorWithFlags backgroundColor);
 void _win_delete_menu_bar(int win);
 int _find_first_letter(int ch, const char* const* stringList, int stringListLength);
 int _win_width_needed(const char* const* fileNameList, int fileNameListLength);
-int _win_input_str(int win, char* dest, int maxLength, int x, int y, int textColor, int backgroundColor);
-int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int foregroundColor, int backgroundColor, MenuBar* menuBar, int pulldownIndex);
+int _win_input_str(int win, char* dest, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor);
+int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorWithFlags foregroundColor, ColorWithFlags backgroundColor, MenuBar* menuBar, int pulldownIndex);
 int _GNW_process_menu(MenuBar* menuBar, int pulldownIndex);
 int win_get_num_i(int* value, int min, int max, bool clear, const char* title, int x, int y);
 size_t _calc_max_field_chars_wcursor(int value1, int value2);
 void _GNW_intr_init();
 void _GNW_intr_exit();
-int win_timed_msg(const char* msg, int color);
+int win_timed_msg(const char* msg, ColorWithFlags color);
 
 } // namespace fallout
 

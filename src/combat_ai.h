@@ -1,6 +1,7 @@
 #ifndef COMBAT_AI_H
 #define COMBAT_AI_H
 
+#include "color.h"
 #include "combat_ai_defs.h"
 #include "combat_defs.h"
 #include "db.h"
@@ -45,8 +46,8 @@ struct AiPacket {
     int secondary_freq;
     int called_freq;
     int font;
-    int color;
-    int outline_color;
+    ColorWithFlags color;
+    ColorWithFlags outline_color;
     int chance;
     AiMessageRange run;
     AiMessageRange move;

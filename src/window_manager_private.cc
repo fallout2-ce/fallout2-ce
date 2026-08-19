@@ -89,13 +89,13 @@ static int _currx;
 char gProgramWindowTitle[256];
 
 // 0x4DA6C0
-int _win_list_select(const char* title, const char* const* fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, int color)
+int _win_list_select(const char* title, const char* const* fileList, int fileListLength, ListSelectionHandler* callback, int x, int y, ColorWithFlags color)
 {
     return _win_list_select_at(title, fileList, fileListLength, callback, x, y, color, 0);
 }
 
 // 0x4DA70C
-int _win_list_select_at(const char* title, const char* const* items, int itemsLength, ListSelectionHandler* callback, int x, int y, int color, int start)
+int _win_list_select_at(const char* title, const char* const* items, int itemsLength, ListSelectionHandler* callback, int x, int y, ColorWithFlags color, int start)
 {
     if (!gWindowSystemInitialized) {
         return -1;
@@ -117,7 +117,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
     int listViewCapacity = 10;
     for (int heightMultiplier = 13; heightMultiplier > 8; heightMultiplier--) {
         windowHeight = heightMultiplier * fontGetLineHeight() + 22;
-        win = windowCreate(x, y, windowWidth, windowHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+        win = windowCreate(x, y, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
         if (win != -1) {
             break;
         }
@@ -158,7 +158,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
         title,
         windowWidth,
         windowWidth,
-        _colorTable[_GNW_wcolor[3]]);
+        _colorTable[_GNW_wcolor[3]] | DRAW_TEXT_FLAG_NONE);
 
     bufferDrawRectShadowed(windowBuffer,
         windowWidth,
@@ -509,10 +509,10 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
                     windowWidth,
                     _colorTable[_GNW_wcolor[0]]);
 
-                int textColor;
+                ColorWithFlags textColor;
                 if ((color & 0xFF00) != 0) {
                     int colorIndex = (color & COLOR_LAST) - 1;
-                    textColor = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+                    textColor = _colorTable[_GNW_wcolor[colorIndex]] | (color & ~static_cast<DrawTextFlags>(0xFFFF));
                 } else {
                     textColor = color;
                 }
@@ -567,7 +567,7 @@ int _win_get_str(char* dest, int length, const char* title, int x, int y)
 
     int windowHeight = 5 * fontGetLineHeight() + 16;
 
-    int win = windowCreate(x, y, windowWidth, windowHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(x, y, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         return -1;
     }
@@ -581,7 +581,7 @@ int _win_get_str(char* dest, int length, const char* title, int x, int y)
         fontGetLineHeight() + 2,
         windowWidth,
         _colorTable[_GNW_wcolor[0]]);
-    fontDrawText(windowBuffer + windowWidth * 8 + 8, title, windowWidth, windowWidth, _colorTable[_GNW_wcolor[4]]);
+    fontDrawText(windowBuffer + windowWidth * 8 + 8, title, windowWidth, windowWidth, _colorTable[_GNW_wcolor[4]] | DRAW_TEXT_FLAG_NONE);
 
     bufferDrawRectShadowed(windowBuffer,
         windowWidth,
@@ -619,7 +619,7 @@ int _win_get_str(char* dest, int length, const char* title, int x, int y)
         length,
         16,
         fontGetLineHeight() + 16,
-        _colorTable[_GNW_wcolor[3]],
+        _colorTable[_GNW_wcolor[3]] | DRAW_TEXT_FLAG_NONE,
         _colorTable[_GNW_wcolor[0]]);
 
     windowDestroy(win);
@@ -628,7 +628,7 @@ int _win_get_str(char* dest, int length, const char* title, int x, int y)
 }
 
 // 0x4DB920
-int win_yes_no(const char* question, int x, int y, int color)
+int win_yes_no(const char* question, int x, int y, ColorWithFlags color)
 {
     if (!gWindowSystemInitialized) {
         return -1;
@@ -637,7 +637,7 @@ int win_yes_no(const char* question, int x, int y, int color)
     int height = 3 * fontGetLineHeight() + 16;
     int width = std::max(fontGetStringWidth(question) + 16, 144) + 16;
 
-    int win = windowCreate(x, y, width, height, 0x100, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(x, y, width, height, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         return -1;
     }
@@ -646,10 +646,10 @@ int win_yes_no(const char* question, int x, int y, int color)
 
     unsigned char* windowBuffer = windowGetWindow(win)->buffer;
 
-    int textColor;
+    ColorWithFlags textColor;
     if ((color & 0xFF00) != 0) {
         int colorIndex = (color & COLOR_LAST) - 1;
-        textColor = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+        textColor = _colorTable[_GNW_wcolor[colorIndex]] | (color & ~static_cast<DrawTextFlags>(0xFFFF));
     } else {
         textColor = color;
     }
@@ -709,7 +709,7 @@ int win_yes_no(const char* question, int x, int y, int color)
 }
 
 // 0x4DBA98
-int _win_msg(const char* string, int x, int y, int color)
+int _win_msg(const char* string, int x, int y, ColorWithFlags color)
 {
     if (!gWindowSystemInitialized) {
         return -1;
@@ -724,7 +724,7 @@ int _win_msg(const char* string, int x, int y, int color)
 
     windowWidth += 16;
 
-    int win = windowCreate(x, y, windowWidth, windowHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(x, y, windowWidth, windowHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         return -1;
     }
@@ -734,10 +734,10 @@ int _win_msg(const char* string, int x, int y, int color)
     Window* window = windowGetWindow(win);
     unsigned char* windowBuffer = window->buffer;
 
-    int textColor;
+    ColorWithFlags textColor;
     if ((color & 0xFF00) != 0) {
         int colorIndex = (color & COLOR_LAST) - 1;
-        textColor = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+        textColor = _colorTable[_GNW_wcolor[colorIndex]] | (color & static_cast<DrawTextFlags>(~0xFFFF));
     } else {
         textColor = color;
     }
@@ -768,23 +768,23 @@ int _win_msg(const char* string, int x, int y, int color)
 }
 
 // 0x4DBBC4
-int _win_pull_down(char** items, int itemsLength, int x, int y, int color)
+int _win_pull_down(char** items, int itemsLength, int x, int y, ColorWithFlags color)
 {
     if (!gWindowSystemInitialized) {
         return -1;
     }
 
     Rect rect;
-    int win = _create_pull_down(items, itemsLength, x, y, color, _colorTable[_GNW_wcolor[0]], &rect);
+    int win = _create_pull_down(items, itemsLength, x, y, color, _colorTable[_GNW_wcolor[0]] | DRAW_TEXT_FLAG_NONE, &rect);
     if (win == -1) {
         return -1;
     }
 
-    return process_pull_down(win, &rect, items, itemsLength, color, _colorTable[_GNW_wcolor[0]], nullptr, -1);
+    return process_pull_down(win, &rect, items, itemsLength, color, _colorTable[_GNW_wcolor[0]] | DRAW_TEXT_FLAG_NONE, nullptr, -1);
 }
 
 // 0x4DBC34
-int _create_pull_down(char** stringList, int stringListLength, int x, int y, int foregroundColor, int backgroundColor, Rect* rect)
+int _create_pull_down(char** stringList, int stringListLength, int x, int y, ColorWithFlags foregroundColor, ColorWithFlags backgroundColor, Rect* rect)
 {
     int windowHeight = stringListLength * fontGetLineHeight() + 16;
     int windowWidth = _win_width_needed(stringList, stringListLength) + 4;
@@ -824,7 +824,7 @@ int _win_debug(const char* string)
     int winWidth = settings.debug.window_width;
     int winHeight = settings.debug.window_height;
     if (_wd == -1) {
-        _wd = windowCreate(80, 80, winWidth, winHeight, 256, WINDOW_MOVE_ON_TOP);
+        _wd = windowCreate(80, 80, winWidth, winHeight, static_cast<ColorWithFlags>(256), WINDOW_MOVE_ON_TOP);
         if (_wd == -1) {
             return -1;
         }
@@ -834,14 +834,14 @@ int _win_debug(const char* string)
         Window* window = windowGetWindow(_wd);
         unsigned char* windowBuffer = window->buffer;
 
-        windowFill(_wd, 8, 8, winWidth - 16, lineHeight, 0x100 | 1);
+        windowFill(_wd, 8, 8, winWidth - 16, lineHeight, static_cast<ColorWithFlags>(0x100 | 1));
 
         windowDrawText(_wd,
             "Debug",
             0,
             (winWidth - fontGetStringWidth("Debug")) / 2,
             8,
-            DRAW_TEXT_FLAG_NO_BG | 0x100 | 4);
+            static_cast<ColorWithFlags>(DRAW_TEXT_FLAG_NO_BG | 0x100 | 4));
 
         bufferDrawRectShadowed(windowBuffer,
             winWidth,
@@ -852,7 +852,7 @@ int _win_debug(const char* string)
             _colorTable[_GNW_wcolor[2]],
             _colorTable[_GNW_wcolor[1]]);
 
-        windowFill(_wd, 9, 26, winWidth - 18, winHeight - 57, 0x100 | 1);
+        windowFill(_wd, 9, 26, winWidth - 18, winHeight - 57, static_cast<ColorWithFlags>(0x100 | 1));
 
         bufferDrawRectShadowed(windowBuffer,
             winWidth,
@@ -913,12 +913,12 @@ int _win_debug(const char* string)
                 windowBuffer + winWidth * 26 + 9,
                 winWidth);
             _curry -= lineHeight;
-            windowFill(_wd, 9, _curry, winWidth - 18, lineHeight, 0x100 | 1);
+            windowFill(_wd, 9, _curry, winWidth - 18, lineHeight, static_cast<ColorWithFlags>(0x100 | 1));
         }
 
         if (*pch != '\n') {
             temp[0] = *pch;
-            windowDrawText(_wd, temp, 0, _currx, _curry, DRAW_TEXT_FLAG_NO_BG | 0x100 | 4);
+            windowDrawText(_wd, temp, 0, _currx, _curry, static_cast<ColorWithFlags>(DRAW_TEXT_FLAG_NO_BG | 0x100 | 4));
             _currx += characterWidth + fontGetLetterSpacing();
         }
 
@@ -941,7 +941,7 @@ void _win_debug_delete(int btn, int keyCode)
 }
 
 // 0x4DC674
-int _win_register_menu_bar(int win, int x, int y, int width, int height, int foregroundColor, int backgroundColor)
+int _win_register_menu_bar(int win, int x, int y, int width, int height, ColorWithFlags foregroundColor, ColorWithFlags backgroundColor)
 {
     Window* window = windowGetWindow(win);
 
@@ -988,7 +988,7 @@ int _win_register_menu_bar(int win, int x, int y, int width, int height, int for
 }
 
 // 0x4DC768
-int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, int itemsLength, char** items, int foregroundColor, int backgroundColor)
+int _win_register_menu_pulldown(int win, int x, const char* title, int keyCode, int itemsLength, char** items, ColorWithFlags foregroundColor, ColorWithFlags backgroundColor)
 {
     Window* window = windowGetWindow(win);
 
@@ -1107,7 +1107,7 @@ int _win_width_needed(const char* const* fileNameList, int fileNameListLength)
 }
 
 // 0x4DCA5C
-int _win_input_str(int win, char* dest, int maxLength, int x, int y, int textColor, int backgroundColor)
+int _win_input_str(int win, char* dest, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor)
 {
     Window* window = windowGetWindow(win);
     unsigned char* buffer = window->buffer + window->width * y + x;
@@ -1259,14 +1259,14 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
     int inputY = fontGetLineHeight();
     int inputHeight = fontGetLineHeight() + 2;
 
-    int win = windowCreate(x, y, width, height, 0x100, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(x, y, width, height, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         return -1;
     }
 
     windowDrawBorder(win);
-    windowFill(win, inputX, inputY + 14, inputWidth, inputHeight, 0x100 | 1);
-    windowDrawText(win, title, width - 16, 8, 8, 0x100 | 5);
+    windowFill(win, inputX, inputY + 14, inputWidth, inputHeight, static_cast<ColorWithFlags>(0x100 | 1));
+    windowDrawText(win, title, width - 16, 8, 8, static_cast<ColorWithFlags>(0x100 | 5));
 
     bufferDrawRectShadowed(windowGetBuffer(win),
         width,
@@ -1313,7 +1313,7 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
             break;
         }
 
-        _win_msg(hint, x - 70, y + 100, 0x100 | 6);
+        _win_msg(hint, x - 70, y + 100, static_cast<ColorWithFlags>(0x100 | 6));
         *value = original;
     }
 
@@ -1323,7 +1323,7 @@ int win_get_num_i(int* value, int min, int max, bool clear, const char* title, i
 }
 
 // 0x4DBD04
-int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int foregroundColor, int backgroundColor, MenuBar* menuBar, int pulldownIndex)
+int process_pull_down(int win, Rect* rect, char** items, int itemsLength, ColorWithFlags foregroundColor, ColorWithFlags backgroundColor, MenuBar* menuBar, int pulldownIndex)
 {
     if (menuBar != nullptr) {
         unsigned char* parentWindowBuffer = windowGetWindow(menuBar->win)->buffer;
@@ -1334,24 +1334,24 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int fo
         int width = pulldown->rect.right - x + 1;
         int height = pulldown->rect.bottom - y + 1;
 
-        int color1 = menuBar->foregroundColor;
+        ColorWithFlags color1 = menuBar->foregroundColor;
         if ((color1 & 0xFF00) != 0) {
             int colorIndex = (color1 & COLOR_LAST) - 1;
-            color1 = (color1 & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+            color1 = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>((color1 & ~0xFFFF));
         }
 
-        int color2 = menuBar->backgroundColor;
+        ColorWithFlags color2 = menuBar->backgroundColor;
         if ((color2 & 0xFF00) != 0) {
-            int colorIndex = (color2 & 0xFF) - 1;
-            color2 = (color2 & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+            int colorIndex = (color2 & COLOR_LAST) - 1;
+            color2 = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>((color2 & ~0xFFFF));
         }
 
         _swap_color_buf(parentWindowBuffer + width * y + x,
             width,
             height,
             windowGetWidth(menuBar->win),
-static_cast<Color>(            color1 & COLOR_LAST),
-            static_cast<Color>(            color2 & COLOR_LAST));
+            static_cast<Color>(color1 & COLOR_LAST),
+            static_cast<Color>(color2 & COLOR_LAST));
         windowRefreshRect(menuBar->win, &(pulldown->rect));
     }
 
@@ -1516,16 +1516,16 @@ static_cast<Color>(            color1 & COLOR_LAST),
         int width = pulldown->rect.right - x + 1;
         int height = pulldown->rect.bottom - y + 1;
 
-        int color1 = menuBar->foregroundColor;
+        ColorWithFlags color1 = menuBar->foregroundColor;
         if ((color1 & 0xFF00) != 0) {
             int colorIndex = (color1 & COLOR_LAST) - 1;
-            color1 = (color1 & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+            color1 = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>((color1 & ~0xFFFF));
         }
 
-        int color2 = menuBar->backgroundColor;
+        ColorWithFlags color2 = menuBar->backgroundColor;
         if ((color2 & 0xFF00) != 0) {
             int colorIndex = (color2 & COLOR_LAST) - 1;
-            color2 = (color2 & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
+            color2 = _colorTable[_GNW_wcolor[colorIndex]] | static_cast<DrawTextFlags>((color2 & ~0xFFFF));
         }
 
         _swap_color_buf(parentWindowBuffer + width * y + x,
@@ -1637,7 +1637,7 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
     string[cursorPos] = '_';
     string[cursorPos + 1] = '\0';
 
-    windowDrawText(win, string, width, x, y, 0x100 | 4);
+    windowDrawText(win, string, width, x, y, static_cast<ColorWithFlags>(0x100 | 4));
 
     Rect rect;
     rect.left = x;
@@ -1667,8 +1667,8 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
                     cursorPos--;
                 }
 
-                windowFill(win, x, y, stringWidth, height, 0x100 | 1);
-                windowDrawText(win, string, width, x, y, 0x100 | 4);
+                windowFill(win, x, y, stringWidth, height, static_cast<ColorWithFlags>(0x100 | 1));
+                windowDrawText(win, string, width, x, y, static_cast<ColorWithFlags>(0x100 | 4));
                 windowRefreshRect(win, &rect);
             }
         } else if (input == KEY_ESCAPE) {
@@ -1681,8 +1681,8 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
                 int stringWidth = fontGetStringWidth(string);
                 string[cursorPos - 1] = '_';
                 string[cursorPos] = '\0';
-                windowFill(win, x, y, stringWidth, height, 0x100 | 1);
-                windowDrawText(win, string, width, x, y, 0x100 | 4);
+                windowFill(win, x, y, stringWidth, height, static_cast<ColorWithFlags>(0x100 | 1));
+                windowDrawText(win, string, width, x, y, static_cast<ColorWithFlags>(0x100 | 4));
                 windowRefreshRect(win, &rect);
 
                 first_press = false;
@@ -1697,8 +1697,8 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
                     string[cursorPos + 2] = '\0';
 
                     int stringWidth = fontGetStringWidth(string);
-                    windowFill(win, x, y, stringWidth, height, 0x100 | 1);
-                    windowDrawText(win, string, width, x, y, 0x100 | 4);
+                    windowFill(win, x, y, stringWidth, height, static_cast<ColorWithFlags>(0x100 | 1));
+                    windowDrawText(win, string, width, x, y, static_cast<ColorWithFlags>(0x100 | 4));
                     windowRefreshRect(win, &rect);
 
                     first_press = false;
@@ -1758,7 +1758,7 @@ void _GNW_intr_exit()
 }
 
 // 0x4DD4C8
-int win_timed_msg(const char* msg, int color)
+int win_timed_msg(const char* msg, ColorWithFlags color)
 {
     if (!gWindowSystemInitialized) {
         return -1;
@@ -1786,7 +1786,7 @@ int win_timed_msg(const char* msg, int color)
         return -1;
     }
 
-    int win = windowCreate(x, y, width, height, 0x100 | 1, WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(x, y, width, height, static_cast<ColorWithFlags>(0x100 | 1), WINDOW_MOVE_ON_TOP);
     windowDrawBorder(win);
     windowDrawText(win, msg, 0, tm_text_x, tm_text_y, color);
 

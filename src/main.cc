@@ -491,7 +491,7 @@ static void showDeath()
         deathWindowY,
         DEATH_WINDOW_WIDTH,
         DEATH_WINDOW_HEIGHT,
-        0,
+        COLOR_FIRST,
         WINDOW_MOVE_ON_TOP);
     if (win != -1) {
         do {

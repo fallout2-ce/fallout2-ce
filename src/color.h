@@ -8,9 +8,55 @@ enum Color : unsigned char {
     COLOR_LAST = 255
 };
 
-constexpr inline Color operator~(Color rhs)
+enum DrawTextFlags : unsigned int {
+    DRAW_TEXT_FLAG_NONE = 0x0000000,
+    DRAW_TEXT_FLAG_SHADOWED = 0x0010000,
+    DRAW_TEXT_FLAG_UNDERLINED = 0x0020000,
+    DRAW_TEXT_FLAG_MONOSPACED = 0x0040000,
+    DRAW_TEXT_FLAG_REFRESH = 0x01000000,
+    DRAW_TEXT_FLAG_NO_BG = 0x02000000,
+    DRAW_TEXT_FLAG_OVERFLOW = 0x04000000,
+};
+
+constexpr inline DrawTextFlags operator|(DrawTextFlags lhs, DrawTextFlags rhs) {
+    return static_cast<DrawTextFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline DrawTextFlags operator~(DrawTextFlags rhs)
 {
-    return static_cast<Color>(~static_cast<unsigned char>(rhs));
+    return static_cast<DrawTextFlags>(~static_cast<unsigned int>(rhs));
+}
+
+enum ColorWithFlags : int {
+    COLOR_INVALID = -1
+};
+
+constexpr inline DrawTextFlags operator&(ColorWithFlags lhs, DrawTextFlags rhs) {
+    return static_cast<DrawTextFlags>(static_cast<int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ColorWithFlags operator|(ColorWithFlags lhs, DrawTextFlags rhs) {
+    return static_cast<ColorWithFlags>(static_cast<int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ColorWithFlags operator&(Color lhs, DrawTextFlags rhs) {
+    return static_cast<ColorWithFlags>(static_cast<unsigned char>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ColorWithFlags operator|(Color lhs, DrawTextFlags rhs) {
+    return static_cast<ColorWithFlags>(static_cast<unsigned char>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+inline ColorWithFlags& operator&=(ColorWithFlags& lhs, DrawTextFlags rhs)
+{
+    lhs = static_cast<ColorWithFlags>(static_cast<int>(lhs) & static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
+inline ColorWithFlags& operator|=(ColorWithFlags& lhs, DrawTextFlags rhs)
+{
+    lhs = static_cast<ColorWithFlags>(static_cast<int>(lhs) | static_cast<unsigned int>(rhs));
+    return lhs;
 }
 
 typedef const char*(ColorFileNameManger)(const char*);

@@ -82,7 +82,7 @@ typedef struct ManagedWindow {
     int buttonsLength;
     int cursorX;
     int cursorY;
-    int field_4C; // probably a color, but unused
+    ColorWithFlags color;
     int field_50; // probably flags, but unused
     float scaleX;
     float scaleY;
@@ -200,7 +200,7 @@ static int _currentTextColorG;
 static int _currentTextColorB;
 
 // 0x672DA8 currentTextFlags
-static int gWidgetTextFlags;
+static DrawTextFlags gWidgetTextFlags;
 
 // Text color (maybe r)
 //
@@ -244,13 +244,13 @@ void scriptWindowResetTextAttributes()
 }
 
 // 0x4B6160
-int scriptWindowGetTextFlags()
+DrawTextFlags scriptWindowGetTextFlags()
 {
     return gWidgetTextFlags;
 }
 
 // 0x4B6168
-int scriptWindowSetTextFlags(int flags)
+int scriptWindowSetTextFlags(DrawTextFlags flags)
 {
     gWidgetTextFlags = flags;
     return 1;
@@ -850,7 +850,7 @@ int scriptWindowScale(const char* windowName, int x, int y, int width, int heigh
 }
 
 // 0x4B7F3C
-int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, int a6, int flags)
+int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, ColorWithFlags color, int flags)
 {
     int windowIndex = -1;
 
@@ -887,10 +887,10 @@ int scriptWindowCreate(const char* windowName, int x, int y, int width, int heig
 
     flags |= WINDOW_MANAGED | WINDOW_USE_DEFAULTS;
 
-    managedWindow->window = windowCreate(x, y, width, height, a6, flags);
+    managedWindow->window = windowCreate(x, y, width, height, color, flags);
     managedWindow->cursorY = 0;
     managedWindow->cursorX = 0;
-    managedWindow->field_4C = a6;
+    managedWindow->color = color;
     managedWindow->field_50 = flags;
 
     return windowIndex;
@@ -908,8 +908,8 @@ int scriptWindowOutput(const char* string)
     int x = (int)(managedWindow->cursorX * managedWindow->scaleX);
     int y = (int)(managedWindow->cursorY * managedWindow->scaleY);
     // NOTE: Uses `add` at 0x4B810E, not bitwise `or`.
-    int flags = scriptWindowGetTextColor() + scriptWindowGetTextFlags();
-    windowDrawText(managedWindow->window, string, 0, x, y, flags);
+    ColorWithFlags color = scriptWindowGetTextColor() | scriptWindowGetTextFlags();
+    windowDrawText(managedWindow->window, string, 0, x, y, color);
 
     return 1;
 }
@@ -1057,7 +1057,7 @@ int _popWindow()
 }
 
 // 0x4B8414
-void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, int flags, int textAlignment)
+void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, ColorWithFlags color, int textAlignment)
 {
     if (y + fontGetLineHeight() > maxY) {
         return;
@@ -1078,14 +1078,14 @@ void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY
         return;
     }
 
-    if ((flags & DRAW_TEXT_FLAG_SHADOWED) != 0) {
+    if ((color & DRAW_TEXT_FLAG_SHADOWED) != 0) {
         stringWidth++;
         stringHeight++;
     }
 
     unsigned char* backgroundBuffer = (unsigned char*)internal_calloc_safe(stringWidth, stringHeight, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 1093
     unsigned char* backgroundBufferPtr = backgroundBuffer;
-    fontDrawText(backgroundBuffer, stringCopy, stringWidth, stringWidth, flags);
+    fontDrawText(backgroundBuffer, stringCopy, stringWidth, stringWidth, color);
 
     switch (textAlignment) {
     case TEXT_ALIGNMENT_LEFT:
@@ -1115,7 +1115,7 @@ void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY
         stringHeight = windowGetHeight(win) - y;
     }
 
-    if ((flags & DRAW_TEXT_FLAG_NO_BG) != 0) {
+    if ((color & DRAW_TEXT_FLAG_NO_BG) != 0) {
         blitBufferToBufferTrans(backgroundBufferPtr, width, stringHeight, stringWidth, windowGetBuffer(win) + windowGetWidth(win) * y + x, windowGetWidth(win));
     } else {
         blitBufferToBuffer(backgroundBufferPtr, width, stringHeight, stringWidth, windowGetBuffer(win) + windowGetWidth(win) * y + x, windowGetWidth(win));
@@ -1215,7 +1215,7 @@ void windowFreeWordList(char** substringList, int substringListLength)
 // Renders multiline string in the specified bounding box.
 //
 // 0x4B8854
-void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment, int spacing)
+void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, int textAlignment, int spacing)
 {
     if (string == nullptr) {
         return;
@@ -1226,7 +1226,7 @@ void windowWrapLineWithSpacing(int win, char* string, int width, int height, int
 
     for (int index = 0; index < substringListLength; index++) {
         int v1 = y + index * (spacing + fontGetLineHeight());
-        windowPrintBuf(win, substringList[index], strlen(substringList[index]), width, height + y, x, v1, flags, textAlignment);
+        windowPrintBuf(win, substringList[index], strlen(substringList[index]), width, height + y, x, v1, color, textAlignment);
     }
 
     windowFreeWordList(substringList, substringListLength);
@@ -1235,9 +1235,9 @@ void windowWrapLineWithSpacing(int win, char* string, int width, int height, int
 // Renders multiline string in the specified bounding box.
 //
 // 0x4B88FC
-void windowWrapLine(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment)
+void windowWrapLine(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, int textAlignment)
 {
-    windowWrapLineWithSpacing(win, string, width, height, x, y, flags, textAlignment, 0);
+    windowWrapLineWithSpacing(win, string, width, height, x, y, color, textAlignment, 0);
 }
 
 // 0x4B8920
@@ -1252,8 +1252,8 @@ bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment)
     int height = windowGetHeight(managedWindow->window);
     int x = managedWindow->cursorX;
     int y = managedWindow->cursorY;
-    int flags = scriptWindowGetTextColor() | DRAW_TEXT_FLAG_NO_BG;
-    windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
+    ColorWithFlags color = scriptWindowGetTextColor() | DRAW_TEXT_FLAG_NO_BG;
+    windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, color, textAlignment, 0);
 
     return true;
 }
@@ -1266,14 +1266,14 @@ bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height
     }
 
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
-    int flags = scriptWindowGetTextColor() | DRAW_TEXT_FLAG_NO_BG;
-    windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, flags, textAlignment, 0);
+    ColorWithFlags color = scriptWindowGetTextColor() | DRAW_TEXT_FLAG_NO_BG;
+    windowWrapLineWithSpacing(managedWindow->window, string, width, height, x, y, color, textAlignment, 0);
 
     return true;
 }
 
 // 0x4B8A60
-bool scriptWindowPrint(char* string, int width, int x, int y, int color)
+bool scriptWindowPrint(char* string, int width, int x, int y, ColorWithFlags color)
 {
     ManagedWindow* managedWindow = &(gManagedWindows[gCurrentManagedWindowIndex]);
     x = (int)(x * managedWindow->scaleX);
@@ -1440,7 +1440,7 @@ void windowInit(int resolution, int flags)
     _currentTextColorB = 0;
     _currentHighlightColorR = 0;
     _currentHighlightColorG = 0;
-    gWidgetTextFlags = 0x2010000;
+    gWidgetTextFlags = DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_SHADOWED;
 
     _yres = _sizes_x[resolution].height; // screen height
     _currentHighlightColorB = 0;
@@ -2003,7 +2003,7 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
                 text,
                 normalImageWidth,
                 normalImageWidth,
-                scriptWindowGetTextColor() + scriptWindowGetTextFlags());
+                scriptWindowGetTextColor() | scriptWindowGetTextFlags());
 
             blitBufferToBufferTrans(buffer,
                 normalImageWidth,
@@ -2051,7 +2051,7 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
                 text,
                 pressedImageWidth,
                 pressedImageWidth,
-                scriptWindowGetTextColor() + scriptWindowGetTextFlags());
+                scriptWindowGetTextColor() | scriptWindowGetTextFlags());
 
             blitBufferToBufferTrans(buffer,
                 pressedImageWidth,

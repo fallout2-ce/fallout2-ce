@@ -9,6 +9,7 @@
 #include "actions.h"
 #include "animation.h"
 #include "art.h"
+#include "color.h"
 #include "combat.h"
 #include "config.h"
 #include "critter.h"
@@ -390,8 +391,8 @@ int aiInit()
         if (!configGetInt(config.get(), sectionEntry->key, "secondary_freq", &(ai->secondary_freq))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "called_freq", &(ai->called_freq))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "font", &(ai->font))) goto err;
-        if (!configGetInt(config.get(), sectionEntry->key, "color", &(ai->color))) goto err;
-        if (!configGetInt(config.get(), sectionEntry->key, "outline_color", &(ai->outline_color))) goto err;
+        if (!configGetEnum<ColorWithFlags>(&config, sectionEntry->key, "color", &(ai->color))) goto err;
+        if (!configGetEnum<ColorWithFlags>(&config, sectionEntry->key, "outline_color", &(ai->outline_color))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "chance", &(ai->chance))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "run_start", &(ai->run.start))) goto err;
         if (!configGetInt(config.get(), sectionEntry->key, "run_end", &(ai->run.end))) goto err;
@@ -603,8 +604,8 @@ static int aiPacketRead(File* stream, AiPacket* ai)
     if (fileReadInt32(stream, &(ai->secondary_freq)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->called_freq)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->font)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->color)) == -1) return -1;
-    if (fileReadInt32(stream, &(ai->outline_color)) == -1) return -1;
+    if (fileReadInt32Enum<ColorWithFlags>(stream, &(ai->color)) == -1) return -1;
+    if (fileReadInt32Enum<ColorWithFlags>(stream, &(ai->outline_color)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->chance)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->run.start)) == -1) return -1;
     if (fileReadInt32(stream, &(ai->run.end)) == -1) return -1;
@@ -647,7 +648,7 @@ static int aiPacketWrite(File* stream, AiPacket* ai)
     if (fileWriteInt32(stream, ai->secondary_freq) == -1) return -1;
     if (fileWriteInt32(stream, ai->called_freq) == -1) return -1;
     if (fileWriteInt32(stream, ai->font) == -1) return -1;
-    if (fileWriteInt32(stream, ai->color) == -1) return -1;
+    if (fileWriteInt32Enum<ColorWithFlags>(stream, ai->color) == -1) return -1;
     if (fileWriteInt32(stream, ai->outline_color) == -1) return -1;
     if (fileWriteInt32(stream, ai->chance) == -1) return -1;
     if (fileWriteInt32(stream, ai->run.start) == -1) return -1;

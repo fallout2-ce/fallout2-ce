@@ -49,14 +49,14 @@ namespace {
     bool gShown = false;
     bool gEnabled = true;
 
-    void fillRect(unsigned char* buffer, int pitch, int x, int y, int w, int h, unsigned char color)
+    void fillRect(unsigned char* buffer, int pitch, int x, int y, int w, int h, Color color)
     {
         for (int row = 0; row < h; row++) {
             memset(buffer + (y + row) * pitch + x, color, static_cast<size_t>(w));
         }
     }
 
-    void drawCenteredLabel(unsigned char* buffer, int pitch, int x, int y, int w, int h, const char* text, unsigned char color)
+    void drawCenteredLabel(unsigned char* buffer, int pitch, int x, int y, int w, int h, const char* text, Color color)
     {
         int textWidth = fontGetStringWidth(text);
         int lineHeight = fontGetLineHeight();
@@ -80,8 +80,8 @@ namespace {
     // yellow of the belt's HUD text so it doesn't compete with the interface.
     void paintPanelButton(unsigned char* buffer, int pitch, int x, int y, int w, int h, const char* label)
     {
-        unsigned char panel = intensityColorTable[COLOR_WHITE][8];
-        unsigned char border = intensityColorTable[COLOR_WHITE][28];
+        Color panel = intensityColorTable[COLOR_WHITE][8];
+        Color border = intensityColorTable[COLOR_WHITE][28];
 
         fillRect(buffer, pitch, x, y, w, h, panel);
         fillRect(buffer, pitch, x, y, w, 1, border);

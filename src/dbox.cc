@@ -148,7 +148,7 @@ static int gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
 };
 
 // 0x41CF20 dialog_out
-int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, int titleColor, const char* secondaryButtonText, int bodyColor, int flags)
+int showDialogBox(const char* title, const char** body, int bodyLength, int x, int y, ColorWithFlags titleColor, const char* secondaryButtonText, ColorWithFlags bodyColor, int flags)
 {
     MessageList messageList;
     MessageListItem messageListItem;
@@ -214,7 +214,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
         y,
         backgroundFrmImage.getWidth(),
         backgroundFrmImage.getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         fontSetCurrent(savedFont);
@@ -600,7 +600,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
     y += (screenGetHeight() - 480) / 2;
-    int win = windowCreate(x, y, backgroundWidth, backgroundHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(x, y, backgroundWidth, backgroundHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         return -1;
     }
@@ -965,7 +965,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     // Maintain original position in original resolution, otherwise center it.
     x += (screenGetWidth() - 640) / 2;
     y += (screenGetHeight() - 480) / 2;
-    int win = windowCreate(x, y, backgroundWidth, backgroundHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(x, y, backgroundWidth, backgroundHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         return -1;
     }

@@ -660,7 +660,7 @@ static void movieRenderSubtitles()
 
         MovieSubtitleListNode* next = gMovieSubtitleHead->next;
 
-        windowFill(gMovieWindow, subtitleX, subtitleY, subtitleW, subtitleHeight, 0);
+        windowFill(gMovieWindow, subtitleX, subtitleY, subtitleW, subtitleHeight, COLOR_FIRST);
 
         int oldFont;
         if (gMovieSubtitlesFont != -1) {

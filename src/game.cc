@@ -1231,11 +1231,11 @@ void showHelp()
 
     // CE: Help screen uses separate color palette which is incompatible with
     // colors in other windows. Setup overlay to hide everything.
-    int overlay = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), 0, WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
+    int overlay = windowCreate(0, 0, screenGetWidth(), screenGetHeight(), COLOR_FIRST, WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
 
     int helpWindowX = (screenGetWidth() - HELP_SCREEN_WIDTH) / 2;
     int helpWindowY = (screenGetHeight() - HELP_SCREEN_HEIGHT) / 2;
-    int win = windowCreate(helpWindowX, helpWindowY, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT, 0, WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(helpWindowX, helpWindowY, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT, COLOR_FIRST, WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
     if (win != -1) {
         unsigned char* windowBuffer = windowGetBuffer(win);
         if (windowBuffer != nullptr) {

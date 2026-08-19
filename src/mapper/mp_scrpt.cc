@@ -175,7 +175,7 @@ static int scr_find_index(const char* name, int count)
 
 int scr_choose(int scriptType)
 {
-    constexpr int kDialogColor = 0x10104;
+    constexpr ColorWithFlags kDialogColor = static_cast<ColorWithFlags>(0x10104);
     static const char* kScriptTypeNames[] = { "s_system", "s_spatial", "s_time", "s_item", "s_critter" };
 
     int count = scriptsGetListLength();
@@ -363,7 +363,7 @@ void map_show_script()
     char info[256];
     snprintf(info, sizeof(info), "Map script SID: %d\nMap name: %s",
         gMapSid, gMapHeader.name);
-    _win_msg(info, 80, 80, 0x10104);
+    _win_msg(info, 80, 80, static_cast<ColorWithFlags>(0x10104));
 }
 
 static void scr_label_object(Object* obj, const char* scriptName)

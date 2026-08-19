@@ -1015,7 +1015,7 @@ static int preferencesWindowInit()
         preferencesWindowY,
         PREFERENCES_WINDOW_WIDTH,
         PREFERENCES_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (gPreferencesWindow == -1) {
         for (i = 0; i < PREFERENCES_WINDOW_FRM_COUNT; i++) {

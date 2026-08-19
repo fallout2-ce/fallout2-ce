@@ -778,8 +778,8 @@ static void mapperValidateDevPath()
 
 static void initMenuBar(const int screenWidth)
 {
-    int foregroundColor = COLOR_LIGHT_GREY_2;
-    int backgroundColor = COLOR_DARK_GREY;
+    ColorWithFlags foregroundColor = COLOR_LIGHT_GREY_2 | DRAW_TEXT_FLAG_NONE;
+    ColorWithFlags backgroundColor = COLOR_DARK_GREY | DRAW_TEXT_FLAG_NONE;
 
     menu_bar = windowCreate(0, 0, screenWidth, 16, COLOR_BLACK, WINDOW_HIDDEN);
     _win_register_menu_bar(menu_bar, 0, 0, screenWidth, 16, foregroundColor, backgroundColor);
@@ -836,7 +836,7 @@ int mapper_edit_init(int argc, char** argv)
         _scr_size.bottom - 99,
         screenWidth,
         100,
-        256,
+        static_cast<ColorWithFlags>(256),
         0);
 
     tool_buf = windowGetBuffer(tool_win);
@@ -1185,11 +1185,11 @@ static int pickHexWithToolLabel(const char* label)
 {
     Rect labelRect = { kToolNameX, kToolNameY2, kToolNameX + kToolNameWidth - 1, kToolNameY2 + 15 };
 
-    windowDrawText(tool_win, label, 118, labelRect.left, labelRect.top, 260);
+    windowDrawText(tool_win, label, 118, labelRect.left, labelRect.top, static_cast<ColorWithFlags>(260));
     windowRefreshRect(tool_win, &labelRect);
 
     int tile = pickHex();
-    windowDrawText(tool_win, "", 120, labelRect.left, labelRect.top, 260);
+    windowDrawText(tool_win, "", 120, labelRect.left, labelRect.top, static_cast<ColorWithFlags>(260));
     windowRefreshRect(tool_win, &labelRect);
     return tile;
 }
@@ -1334,7 +1334,7 @@ void edit_mapper()
                     // Display tile number on toolbar (vanilla: x=7, y=27, maxWidth=260, color=35)
                     char tileNumStr[32];
                     snprintf(tileNumStr, sizeof(tileNumStr), "%d", tile);
-                    windowDrawText(tool_win, tileNumStr, 42, 7, 27, 35);
+                    windowDrawText(tool_win, tileNumStr, 42, 7, 27, static_cast<ColorWithFlags>(35));
                     int textH = fontGetLineHeight();
                     Rect tileNumRect = { 7, 27, 57, 27 + textH };
                     windowRefreshRect(tool_win, &tileNumRect);
@@ -2151,7 +2151,7 @@ void edit_mapper()
         // --- Rebuild proto list for current type ---
         case kBtnRebuildProtoList:
             if (!map_entered && can_modify_protos) {
-                if (win_yes_no("Do you REALLY want to rebuild this list?", 80, 80, 65796) > 0) {
+                if (win_yes_no("Do you REALLY want to rebuild this list?", 80, 80, static_cast<ColorWithFlags>(65796)) > 0) {
                     mapperShowTimedMsg("Please wait.");
                     _proto_remove_all();
                     proto_build_all_type(currentType);
@@ -2332,9 +2332,9 @@ void redraw_toolname()
 // 0x48B278
 void clear_toolname()
 {
-    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY1, 260);
-    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, 260);
-    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, 260);
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY1, static_cast<ColorWithFlags>(260));
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, static_cast<ColorWithFlags>(260));
+    windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, static_cast<ColorWithFlags>(260));
     redraw_toolname();
 }
 
@@ -2354,7 +2354,7 @@ void update_toolname(int* pid, ObjectType type, int id)
         kToolNameWidth,
         kToolNameX,
         kToolNameY1,
-        260);
+        static_cast<ColorWithFlags>(260));
 
     switch (objectTypeFromPid(proto->pid)) {
     case OBJ_TYPE_ITEM:
@@ -2363,7 +2363,7 @@ void update_toolname(int* pid, ObjectType type, int id)
             kToolNameWidth,
             kToolNameX,
             kToolNameY2,
-            260);
+            static_cast<ColorWithFlags>(260));
         break;
     case OBJ_TYPE_CRITTER:
         windowDrawText(tool_win,
@@ -2371,7 +2371,7 @@ void update_toolname(int* pid, ObjectType type, int id)
             kToolNameWidth,
             kToolNameX,
             kToolNameY2,
-            260);
+            static_cast<ColorWithFlags>(260));
         break;
     case OBJ_TYPE_WALL:
         windowDrawText(tool_win,
@@ -2379,7 +2379,7 @@ void update_toolname(int* pid, ObjectType type, int id)
             kToolNameWidth,
             kToolNameX,
             kToolNameY2,
-            260);
+            static_cast<ColorWithFlags>(260));
         break;
     case OBJ_TYPE_TILE:
         windowDrawText(tool_win,
@@ -2387,7 +2387,7 @@ void update_toolname(int* pid, ObjectType type, int id)
             kToolNameWidth,
             kToolNameX,
             kToolNameY2,
-            260);
+            static_cast<ColorWithFlags>(260));
         break;
     case OBJ_TYPE_MISC:
         windowDrawText(tool_win,
@@ -2395,7 +2395,7 @@ void update_toolname(int* pid, ObjectType type, int id)
             kToolNameWidth,
             kToolNameX,
             kToolNameY2,
-            260);
+            static_cast<ColorWithFlags>(260));
         break;
     default:
         windowDrawText(tool_win,
@@ -2403,7 +2403,7 @@ void update_toolname(int* pid, ObjectType type, int id)
             kToolNameWidth,
             kToolNameX,
             kToolNameY2,
-            260);
+            static_cast<ColorWithFlags>(260));
         break;
     }
 
@@ -2412,7 +2412,7 @@ void update_toolname(int* pid, ObjectType type, int id)
         kToolNameWidth,
         kToolNameX,
         kToolNameY3,
-        260);
+        static_cast<ColorWithFlags>(260));
 
     redraw_toolname();
 }
@@ -2423,9 +2423,9 @@ void update_high_obj_name(Object* obj)
     Proto* proto;
 
     if (protoGetProto(obj->pid, &proto) != -1) {
-        windowDrawText(tool_win, protoGetName(obj->pid), kToolNameWidth, kToolNameX, kToolNameY1, 260);
-        windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, 260);
-        windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, 260);
+        windowDrawText(tool_win, protoGetName(obj->pid), kToolNameWidth, kToolNameX, kToolNameY1, static_cast<ColorWithFlags>(260));
+        windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY2, static_cast<ColorWithFlags>(260));
+        windowDrawText(tool_win, "", kToolNameWidth, kToolNameX, kToolNameY3, static_cast<ColorWithFlags>(260));
         redraw_toolname();
     }
 }
@@ -2476,13 +2476,13 @@ void mapper_refresh_rotation()
             kRotationTextY,
             10,
             12,
-            tool_buf[kRotationTextY * (_scr_size.right + 1) + 289]);
+            static_cast<Color>(tool_buf[kRotationTextY * (_scr_size.right + 1) + 289]));
         windowDrawText(tool_win,
             string,
             10,
             292,
             kRotationTextY,
-            0x2010104);
+            static_cast<ColorWithFlags>(0x2010104));
 
         for (index = 0; index < 6; index++) {
             int x = rotate_arrows_x_offs[index] + 269;
@@ -2550,7 +2550,7 @@ void update_art(ObjectType type, int offset)
     // Draw the current scroll offset as a count indicator.
     char text[32];
     sprintf(text, "(%d)", offset);
-    windowDrawText(tool_win, text, 40, 52, 27, 260);
+    windowDrawText(tool_win, text, 40, 52, 27, static_cast<ColorWithFlags>(260));
 
     // Refresh the count text area.
     int text_h = fontGetLineHeight();

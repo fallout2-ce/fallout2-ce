@@ -557,7 +557,7 @@ static int elevatorWindowInit(int elevator)
         elevatorWindowY,
         _elevatorBackgroundFrmImage.getWidth(),
         _elevatorBackgroundFrmImage.getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (gElevatorWindow == -1) {
         _elevatorBackgroundFrmImage.unlock();

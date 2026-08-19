@@ -723,8 +723,8 @@ static void gameDialogTicker();
 // If scrolling down - uses both subWindowFrmData and bgWindowBuf to fill parts of window buffer.
 static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* subWindowFrmData, unsigned char* windowBuf, const unsigned char* bgWindowBuf, int bgWindowHeight, bool instantScrollUp = false);
 static int _text_num_lines(const char* text, int maxWidth);
-static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color);
-static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw);
+static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, ColorWithFlags color);
+static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, ColorWithFlags color, int draw);
 static int gameDialogCreateBarterWindow();
 static void gameDialogDestroyBarterWindow();
 static void gameDialogBarterCleanupTables();
@@ -1484,7 +1484,7 @@ int gameDialogReviewWindowInit(int* win)
         reviewWindowY,
         GAME_DIALOG_REVIEW_WINDOW_WIDTH,
         GAME_DIALOG_REVIEW_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (*win == -1) {
         return -1;
@@ -1905,7 +1905,7 @@ int _gdProcessInit()
         replyWindowY,
         GAME_DIALOG_REPLY_WINDOW_WIDTH,
         GAME_DIALOG_REPLY_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MOVE_ON_TOP);
     if (gGameDialogReplyWindow == -1) {
         goto err;
@@ -1931,7 +1931,7 @@ int _gdProcessInit()
 
     optionsWindowX = bgRect.left + GAME_DIALOG_OPTIONS_WINDOW_X;
     optionsWindowY = bgRect.top + GAME_DIALOG_OPTIONS_WINDOW_Y;
-    gGameDialogOptionsWindow = windowCreate(optionsWindowX, optionsWindowY, GAME_DIALOG_OPTIONS_WINDOW_WIDTH, GAME_DIALOG_OPTIONS_WINDOW_HEIGHT, 256, WINDOW_MOVE_ON_TOP);
+    gGameDialogOptionsWindow = windowCreate(optionsWindowX, optionsWindowY, GAME_DIALOG_OPTIONS_WINDOW_WIDTH, GAME_DIALOG_OPTIONS_WINDOW_HEIGHT, static_cast<ColorWithFlags>(256), WINDOW_MOVE_ON_TOP);
     if (gGameDialogOptionsWindow == -1) {
         goto err_2;
     }
@@ -2016,7 +2016,7 @@ void gameDialogRenderCaps()
         width = 60;
     }
 
-    windowDrawText(gGameDialogWindow, text, width, 38 - width / 2, 36, COLOR_GREEN | DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW);
+    windowDrawText(gGameDialogWindow, text, width, 38 - width / 2, 36, COLOR_GREEN | (DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
 
     fontSetCurrent(oldFont);
 }
@@ -2298,7 +2298,7 @@ void gameDialogOptionOnMouseEnter(int index)
     _optionRect.left = 5;
     _optionRect.right = 388;
 
-    int color = COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG;
+    ColorWithFlags color = COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG;
     if (perkHasRank(gDude, PERK_EMPATHY)) {
         color = COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG;
         switch (dialogOptionEntry->reaction) {
@@ -2342,7 +2342,7 @@ void gameDialogOptionOnMouseExit(int index)
     _optionRect.bottom = dialogOptionEntry->bottom;
     _gDialogRefreshOptionsRect(gGameDialogOptionsWindow, &_optionRect);
 
-    int color = COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG;
+    ColorWithFlags color = COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG;
     if (perkGetRank(gDude, PERK_EMPATHY) != 0) {
         color = COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG;
         switch (dialogOptionEntry->reaction) {
@@ -2432,7 +2432,7 @@ void _gdProcessUpdate()
 
     gameDialogRenderReply();
 
-    int color = COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG;
+    ColorWithFlags color = COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG;
 
     bool hasEmpathy = perkGetRank(gDude, PERK_EMPATHY) != 0;
 
@@ -3259,14 +3259,14 @@ int _text_num_lines(const char* text, int maxWidth)
 // NOTE: Inlined.
 //
 // 0x447F80
-static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color)
+static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, ColorWithFlags color)
 {
     return gameDialogDrawText(buffer, rect, string, textOffset, height, pitch, color, 1);
 }
 
 // display_msg
 // 0x447FA0
-static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw)
+static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, ColorWithFlags color, int draw)
 {
     if (string == nullptr) {
         if (textOffset != nullptr) {
@@ -3459,7 +3459,7 @@ int gameDialogCreateBarterWindow()
         bgRect.top + GAME_DIALOG_WINDOW_HEIGHT - bgOverlapHeight,
         GAME_DIALOG_WINDOW_WIDTH,
         _dialogue_subwin_len,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_DONT_MOVE_TOP | WINDOW_TRANSPARENT));
     if (win.get() == -1) return -1;
 
@@ -3611,7 +3611,7 @@ int partyMemberControlWindowInit()
         controlWindowY,
         GAME_DIALOG_WINDOW_WIDTH,
         _dialogue_subwin_len,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_DONT_MOVE_TOP);
     if (gGameDialogWindow == -1) {
         partyMemberControlWindowFree();
@@ -4066,7 +4066,7 @@ int partyMemberCustomizationWindowInit()
         customizationWindowY,
         GAME_DIALOG_WINDOW_WIDTH,
         _dialogue_subwin_len,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_DONT_MOVE_TOP);
     if (gGameDialogWindow == -1) {
         partyMemberCustomizationWindowFree();
@@ -4323,7 +4323,7 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
                 break;
             }
 
-            int color;
+            Color color;
             if (enabled) {
                 if (index == selectedIndex) {
                     color = COLOR_LIGHT_YELLOW;
@@ -4356,7 +4356,7 @@ int _gdCustomSelect(int option)
 
     int selectWindowX = (screenGetWidth() - backgroundFrmWidth) / 2;
     int selectWindowY = (screenGetHeight() - backgroundFrmHeight) / 2;
-    int win = windowCreate(selectWindowX, selectWindowY, backgroundFrmWidth, backgroundFrmHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(selectWindowX, selectWindowY, backgroundFrmWidth, backgroundFrmHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) return -1;
     UniqueWindow winPtr(win);
 
@@ -4603,7 +4603,7 @@ int _gdialog_window_create()
     const int subWinRelativeY = GAME_DIALOG_WINDOW_HEIGHT - _dialogue_subwin_len;
     windowGetRect(gGameDialogBackgroundWindow, &bgRect);
     int win = windowCreate(bgRect.left, bgRect.top + subWinRelativeY,
-        GAME_DIALOG_WINDOW_WIDTH, _dialogue_subwin_len, 256, WINDOW_DONT_MOVE_TOP);
+        GAME_DIALOG_WINDOW_WIDTH, _dialogue_subwin_len, static_cast<ColorWithFlags>(256), WINDOW_DONT_MOVE_TOP);
     if (win == -1) return -1;
 
     UniqueWindow winPtr(win);
@@ -4700,7 +4700,7 @@ static int talk_to_create_background_window()
         backgroundWindowY,
         GAME_DIALOG_WINDOW_WIDTH,
         GAME_DIALOG_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_DONT_MOVE_TOP | WINDOW_MODAL);
 
     if (gGameDialogBackgroundWindow != -1) {

@@ -323,7 +323,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
         }
     }
 
-    int color;
+    Color color;
     if (isInGame) {
         color = COLOR_DARK_GREY;
         _obj_process_seen();
@@ -522,7 +522,7 @@ int automapGetWindow()
 // 0x41BD1C draw_top_down_map
 static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, AutomapFlags flags)
 {
-    int color;
+    Color color;
     if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
         color = COLOR_DARK_GREY;
     } else {
@@ -622,7 +622,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         }
     }
 
-    int textColor;
+    Color textColor;
     if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
         textColor = COLOR_GREEN;
     } else {
