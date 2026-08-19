@@ -29,6 +29,7 @@ namespace fallout {
 #define GAME_CONFIG_IFACE_BAR_WIDTH_KEY "iface_bar_width"
 #define GAME_CONFIG_IFACE_BAR_SIDE_ART_KEY "iface_bar_side_art"
 #define GAME_CONFIG_IFACE_BAR_SIDES_ORI_KEY "iface_bar_sides_ori"
+#define GAME_CONFIG_IGNORE_SCROLL_LIMIT_KEY "ignore_scroll_limit"
 #define GAME_CONFIG_IGNORE_MAP_EDGES_KEY "ignore_map_edges"
 #define GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY "splash_screen_size"
 #define GAME_CONFIG_MOVIE_ASPECT_FIT_KEY "movie_aspect_fit"

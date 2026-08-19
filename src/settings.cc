@@ -177,6 +177,7 @@ void initSettingsRegistry(bool isMapper)
     SETTING_P(splash_screen_size, clamp(0, 2));
     SETTING(movie_aspect_fit);
     SETTING(edg_support);
+    SETTING(ignore_scroll_limit);
     SETTING(ignore_map_edges);
     SETTING(quick_toolbar_visible);
     SETTING_P(anim_speed, clamp(0.1, 100.0));

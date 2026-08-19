@@ -236,7 +236,9 @@ int isoInit()
     if (!settings.ui.ignore_map_edges) {
         tileScrollBlockingEnable();
     }
-    tileScrollLimitingEnable();
+    if (!settings.ui.ignore_scroll_limit) {
+        tileScrollLimitingEnable();
+    }
 
     if (interfaceInit() != 0) {
         debugPrint("intface_init failed in iso_init\n");
