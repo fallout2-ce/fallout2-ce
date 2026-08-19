@@ -189,6 +189,18 @@ static int gExplosionRadius;
 static DamageType gExplosionDamageType;
 static int gExplosionMaxTargets;
 static int gHealingItemPids[HEALING_ITEM_COUNT];
+static std::vector<int> forcedAimedShotPids;
+static std::vector<int> disabledAimedShotPids;
+
+static void removeAimedShotPid(std::vector<int>& pids, int pid)
+{
+    pids.erase(std::remove(pids.begin(), pids.end(), pid), pids.end());
+}
+
+static bool containsAimedShotPid(const std::vector<int>& pids, int pid)
+{
+    return std::find(pids.begin(), pids.end(), pid) != pids.end();
+}
 
 // 0x4770E0
 int itemsInit()
@@ -218,6 +230,7 @@ int itemsInit()
 void itemsReset()
 {
     // SFALL
+    aimedShotOverridesReset();
     explosionsReset();
 }
 
@@ -1895,20 +1908,51 @@ bool critterCanAim(Object* critter, HitMode hitMode)
         return false;
     }
 
+    Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
+    int pid = weapon != nullptr ? weapon->pid : 0;
+    if (containsAimedShotPid(disabledAimedShotPids, pid)) {
+        return false;
+    }
+
     // NOTE: Uninline.
     AnimationType anim = critterGetAnimationForHitMode(critter, hitMode);
     if (anim == ANIM_FIRE_BURST || anim == ANIM_FIRE_CONTINUOUS) {
         return false;
     }
 
+    if (containsAimedShotPid(forcedAimedShotPids, pid)) {
+        return true;
+    }
+
     // NOTE: Uninline.
-    Object* weapon = critterGetWeaponForHitMode(critter, hitMode);
     DamageType damageType = weaponGetDamageType(critter, weapon);
 
     return damageType != DAMAGE_TYPE_EXPLOSION
         && damageType != DAMAGE_TYPE_FIRE
         && damageType != DAMAGE_TYPE_EMP
         && (damageType != DAMAGE_TYPE_PLASMA || anim != ANIM_THROW_ANIM);
+}
+
+void aimedShotOverridesReset()
+{
+    forcedAimedShotPids.clear();
+    disabledAimedShotPids.clear();
+}
+
+void forceAimedShots(int pid)
+{
+    removeAimedShotPid(disabledAimedShotPids, pid);
+    if (!containsAimedShotPid(forcedAimedShotPids, pid)) {
+        forcedAimedShotPids.push_back(pid);
+    }
+}
+
+void disableAimedShots(int pid)
+{
+    removeAimedShotPid(forcedAimedShotPids, pid);
+    if (!containsAimedShotPid(disabledAimedShotPids, pid)) {
+        disabledAimedShotPids.push_back(pid);
+    }
 }
 
 // 0x478EF4

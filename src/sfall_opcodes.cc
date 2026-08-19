@@ -1175,6 +1175,18 @@ static void op_get_attack_type(Program* program)
     }
 }
 
+static void op_force_aimed_shots(Program* program)
+{
+    int pid = programStackPopInteger(program);
+    forceAimedShots(pid);
+}
+
+static void op_disable_aimed_shots(Program* program)
+{
+    int pid = programStackPopInteger(program);
+    disableAimedShots(pid);
+}
+
 static void op_play_sfall_sound(Program* program)
 {
     int mode = programStackPopInteger(program);
@@ -2477,7 +2489,10 @@ void sfallOpcodesInit()
     // 0x823b - int modified_ini() // deprecated: do not implement
 
     // 0x823e - void force_aimed_shots(int pid)
+    interpreterRegisterOpcode(0x823E, op_force_aimed_shots);
+
     // 0x823f - void disable_aimed_shots(int pid)
+    interpreterRegisterOpcode(0x823F, op_disable_aimed_shots);
 
     // 0x8240 - void mark_movie_played(int id)
     interpreterRegisterOpcode(0x8240, op_mark_movie_played);
