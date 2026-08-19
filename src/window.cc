@@ -257,13 +257,13 @@ int scriptWindowSetTextFlags(int flags)
 }
 
 // 0x4B6174
-unsigned char scriptWindowGetTextColor()
+Color scriptWindowGetTextColor()
 {
     return _colorTable[_currentTextColorB | (_currentTextColorG << 5) | (_currentTextColorR << 10)];
 }
 
 // 0x4B6198
-unsigned char scriptWindowGetHighlightColor()
+Color scriptWindowGetHighlightColor()
 {
     return _colorTable[_currentHighlightColorB | (_currentHighlightColorG << 5) | (_currentHighlightColorR << 10)];
 }
@@ -666,8 +666,8 @@ void _setButtonGFX(int width, int height, unsigned char* normal, unsigned char* 
     if (pressed != nullptr) {
         bufferFill(pressed, width, height, width, COLOR_BLACK);
         bufferFill(pressed + width + 1, width - 2, height - 2, width, intensityColorTable[COLOR_WHITE][89]);
-        bufferDrawLine(pressed, width, 1, 1, width - 2, 1, COLOR_WHITE + 44);
-        bufferDrawLine(pressed, width, 1, 1, 1, height - 2, COLOR_WHITE + 44);
+        bufferDrawLine(pressed, width, 1, 1, width - 2, 1, static_cast<Color>((COLOR_WHITE + 44) & COLOR_LAST));
+        bufferDrawLine(pressed, width, 1, 1, 1, height - 2, static_cast<Color>((COLOR_WHITE + 44) & COLOR_LAST));
     }
 }
 

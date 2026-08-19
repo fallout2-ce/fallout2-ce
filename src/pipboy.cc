@@ -960,7 +960,7 @@ static void pipboyDrawText(const char* text, int flags, int color)
 
     if ((flags & PIPBOY_TEXT_STYLE_STRIKE_THROUGH) != 0) {
         int top = gPipboyCurrentLine * fontGetLineHeight() + 49;
-        bufferDrawLine(gPipboyWindowBuffer, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_CONTENT_VIEW_X + left, top, PIPBOY_WINDOW_CONTENT_VIEW_X + left + length, top, color);
+        bufferDrawLine(gPipboyWindowBuffer, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_CONTENT_VIEW_X + left, top, PIPBOY_WINDOW_CONTENT_VIEW_X + left + length, top, static_cast<Color>(color & COLOR_LAST));
     }
 
     if (gPipboyCurrentLine < gPipboyLinesCount) {

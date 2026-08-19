@@ -1111,7 +1111,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
     unsigned char* fileNameBufferPtr = windowBuffer + backgroundWidth * 190 + 57;
 
-    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, 100);
+    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, static_cast<Color>(100));
     fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, COLOR_GREEN);
 
     windowRefresh(win);
@@ -1144,7 +1144,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         } else if (keyCode == 501 || keyCode == KEY_ESCAPE) {
             rc = 1;
         } else if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && fileNameCopyLength > 0) {
-            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, 100);
+            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, static_cast<Color>(100));
             fileNameCopy[fileNameCopyLength - 1] = ' ';
             fileNameCopy[fileNameCopyLength] = '\0';
             fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, COLOR_GREEN);
@@ -1185,7 +1185,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                     rc = 2;
                 } else {
                     doubleClickSelectedFileIndex = selectedFileIndex;
-                    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, 100);
+                    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, static_cast<Color>(100));
                     strncpy(fileNameCopy, fileList[selectedFileIndex + pageOffset], 16);
 
                     int index;
@@ -1260,7 +1260,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 }
             }
         } else if (_isdoschar(keyCode)) {
-            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, 100);
+            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, static_cast<Color>(100));
 
             fileNameCopy[fileNameCopyLength] = keyCode & 0xFF;
             fileNameCopy[fileNameCopyLength + 1] = ' ';
@@ -1327,7 +1327,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 if (blinkingCounter == 0) {
                     blinkingCounter = 3;
 
-                    int color = blink ? 100 : COLOR_GREEN;
+                    Color color = blink ? static_cast<Color>(100) : COLOR_GREEN;
                     blink = !blink;
 
                     bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, backgroundWidth, color);
@@ -1355,7 +1355,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             if (blinkingCounter == 0) {
                 blinkingCounter = 3;
 
-                int color = blink ? 100 : COLOR_GREEN;
+                Color color = blink ? static_cast<Color>(100) : COLOR_GREEN;
                 blink = !blink;
 
                 bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, backgroundWidth, color);
@@ -1407,14 +1407,14 @@ static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int
 {
     int lineHeight = fontGetLineHeight();
     int y = FILE_DIALOG_FILE_LIST_Y;
-    bufferFill(buffer + y * pitch + FILE_DIALOG_FILE_LIST_X, FILE_DIALOG_FILE_LIST_WIDTH, FILE_DIALOG_FILE_LIST_HEIGHT, pitch, 100);
+    bufferFill(buffer + y * pitch + FILE_DIALOG_FILE_LIST_X, FILE_DIALOG_FILE_LIST_WIDTH, FILE_DIALOG_FILE_LIST_HEIGHT, pitch, static_cast<Color>(100));
     if (fileListLength != 0) {
         if (fileListLength - pageOffset > FILE_DIALOG_LINE_COUNT) {
             fileListLength = FILE_DIALOG_LINE_COUNT;
         }
 
         for (int index = 0; index < fileListLength; index++) {
-            int color = index == selectedIndex ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+            Color color = index == selectedIndex ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
             fontDrawText(buffer + pitch * y + FILE_DIALOG_FILE_LIST_X, fileList[pageOffset + index], FILE_DIALOG_FILE_LIST_WIDTH, pitch, color);
             y += lineHeight;
         }

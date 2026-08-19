@@ -5024,7 +5024,7 @@ static int characterEditorDrawCardWithOptions(int graphicId, const char* name, c
     unsigned char* data = frmImage.getData();
     for (int y = 0; y < frmImage.getHeight(); y++) {
         for (int x = 0; x < frmImage.getWidth(); x++) {
-            if (HighRGB(*data) < 2) {
+            if (HighRGB(static_cast<Color>(*data)) < 2) {
                 extraDescriptionWidth = std::min(extraDescriptionWidth, x);
             }
             data++;
@@ -6983,7 +6983,7 @@ static int perkDialogDrawCard(int frmId, const char* name, const char* rank, cha
     for (int y = 0; y < frmImage.getHeight(); y++) {
         unsigned char* stride = data;
         for (int x = 0; x < frmImage.getWidth(); x++) {
-            if (HighRGB(*stride) < 2) {
+            if (HighRGB(static_cast<Color>(*stride)) < 2) {
                 extraDescriptionWidth = std::min(extraDescriptionWidth, x);
             }
             stride++;

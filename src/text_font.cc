@@ -360,7 +360,7 @@ static void textFontDrawImpl(unsigned char* buf, const char* string, int length,
                     }
 
                     if ((*glyphData & bits) != 0) {
-                        *ptr = color & 0xFF;
+                        *ptr = color & COLOR_LAST;
                     }
 
                     bits >>= 1;
@@ -379,7 +379,7 @@ static void textFontDrawImpl(unsigned char* buf, const char* string, int length,
         int length = ptr - buf;
         unsigned char* underlinePtr = buf + pitch * (gCurrentTextFontDescriptor->lineHeight - 1);
         for (int pix = 0; pix < length; pix++) {
-            *underlinePtr++ = color & 0xFF;
+            *underlinePtr++ = color & COLOR_LAST;
         }
     }
 }

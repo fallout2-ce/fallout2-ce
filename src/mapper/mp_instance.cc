@@ -35,7 +35,7 @@ namespace fallout {
 Object* proto_inst_who_obj = nullptr;
 
 // edit_window_color
-extern int edit_window_color;
+extern Color edit_window_color;
 
 constexpr int kInstMaxLightDistance = 8;
 constexpr int kInstMaxLightPct = 100;

@@ -95,7 +95,7 @@ static int _window_flags;
 static bool _buffering = false;
 
 // 0x6ADF30 bk_color
-static int _bk_color;
+static Color _bk_color;
 
 // 0x6ADF34 video_set
 static VideoSystemInitProc* gVideoSystemInitProc;
@@ -196,7 +196,7 @@ int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitP
             return WINDOW_MANAGER_ERR_NO_MEMORY;
         }
 
-        bufferFill(palette, 768, 1, 768, 0);
+        bufferFill(palette, 768, 1, 768, COLOR_FIRST);
 
         // TODO: Incomplete.
         // _colorBuildColorTable(_getSystemPalette(), palette);
@@ -250,7 +250,7 @@ int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitP
     _GNW_wcolor[5] = 31744;
     gWindowIndexes[0] = 0;
     _GNW_texture = nullptr;
-    _bk_color = 0;
+    _bk_color = COLOR_FIRST;
     _GNW_wcolor[0] = 10570;
     _window_flags = flags;
     _GNW_wcolor[2] = 8456;
@@ -361,7 +361,7 @@ int windowCreate(int x, int y, int width, int height, int color, int flags)
             color = _colorTable[_GNW_wcolor[0]];
         }
     } else if ((color & 0xFF00) != 0) {
-        int colorIndex = (color & 0xFF) - 1;
+        int colorIndex = (color & COLOR_LAST) - 1;
         color = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
     }
 
@@ -539,12 +539,12 @@ void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int fl
         if (window->color == 256 && _GNW_texture != nullptr) {
             _buf_texture(buf, maxWidth, fontGetLineHeight(), window->width, _GNW_texture, window->tx + x, window->ty + y);
         } else {
-            bufferFill(buf, maxWidth, fontGetLineHeight(), window->width, window->color);
+            bufferFill(buf, maxWidth, fontGetLineHeight(), window->width, static_cast<Color>(window->color & COLOR_LAST));
         }
     }
 
     if ((flags & 0xFF00) != 0) {
-        int colorIndex = (flags & 0xFF) - 1;
+        int colorIndex = (color & COLOR_LAST) - 1;
         textColor = (flags & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
     } else {
         textColor = flags;
@@ -577,11 +577,11 @@ void windowDrawLine(int win, int left, int top, int right, int bottom, int color
     }
 
     if ((color & 0xFF00) != 0) {
-        int colorIndex = (color & 0xFF) - 1;
+        int colorIndex = (color & COLOR_LAST) - 1;
         color = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
     }
 
-    bufferDrawLine(window->buffer, window->width, left, top, right, bottom, color);
+    bufferDrawLine(window->buffer, window->width, left, top, right, bottom, static_cast<Color>(color & COLOR_LAST));
 }
 
 // 0x4D6B88
@@ -614,7 +614,7 @@ void windowDrawRect(int win, int left, int top, int right, int bottom, int color
         bottom = tmp;
     }
 
-    bufferDrawRect(window->buffer, window->width, left, top, right, bottom, color);
+    bufferDrawRect(window->buffer, window->width, left, top, right, bottom, static_cast<Color>(color & COLOR_LAST));
 }
 
 // 0x4D6CC8
@@ -641,8 +641,8 @@ void windowFill(int win, int x, int y, int width, int height, int color)
         color = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
     }
 
-    if (color < 256) {
-        bufferFill(window->buffer + window->width * y + x, width, height, window->width, color);
+    if (color < COLOR_COUNT) {
+        bufferFill(window->buffer + window->width * y + x, width, height, window->width, static_cast<Color>(color & COLOR_LAST));
     }
 }
 

@@ -533,7 +533,7 @@ static void showDeath()
                     short count;
                     if (_mainDeathWordWrap(text, 560, beginnings, &count) == 0) {
                         unsigned char* p = windowBuffer + 640 * (480 - fontGetLineHeight() * count - 8);
-                        bufferFill(p - 602, 564, fontGetLineHeight() * count + 2, 640, 0);
+                        bufferFill(p - 602, 564, fontGetLineHeight() * count + 2, 640, COLOR_FIRST);
                         p += 40;
                         for (int index = 0; index < count; index++) {
                             fontDrawText(p, text + beginnings[index], 560, 640, COLOR_WHITE);

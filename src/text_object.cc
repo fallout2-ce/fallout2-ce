@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string.h>
 
+#include "color.h"
 #include "debug.h"
 #include "draw.h"
 #include "input.h"
@@ -255,7 +256,7 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
     }
 
     if (outlineColor != -1) {
-        bufferOutline(textObject->data, textObject->width, textObject->height, textObject->width, outlineColor);
+        bufferOutline(textObject->data, textObject->width, textObject->height, textObject->width, static_cast<Color>(outlineColor & COLOR_LAST));
     }
 
     if (object != nullptr) {

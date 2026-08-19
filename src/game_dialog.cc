@@ -387,10 +387,10 @@ static int gGameDialogOldCenterTile = -1;
 static int gGameDialogOldDudeTile = -1;
 
 // 0x5187E4 light_BlendTable
-static unsigned char* _light_BlendTable = nullptr;
+static Color* _light_BlendTable = nullptr;
 
 // 0x5187E8 dark_BlendTable
-static unsigned char* _dark_BlendTable = nullptr;
+static Color* _dark_BlendTable = nullptr;
 
 // 0x5187EC dialogue_just_started
 static int _dialogue_just_started = 0;
@@ -596,10 +596,10 @@ static int _custom_current_selected[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT];
 static MessageList gCustomMessageList;
 
 // 0x58EAA0 light_GrayTable
-static unsigned char _light_GrayTable[256];
+static Color _light_GrayTable[COLOR_COUNT];
 
 // 0x58EBA0 dark_GrayTable
-static unsigned char _dark_GrayTable[256];
+static Color _dark_GrayTable[COLOR_COUNT];
 
 // 0x58ECA0 backgrndBufs
 static unsigned char* _backgrndBufs[8];
@@ -749,7 +749,7 @@ static void _gdialog_window_destroy();
 static int talk_to_create_background_window();
 static int gameDialogWindowRenderBackground();
 static int _talkToRefreshDialogWindowRect(Rect* rect);
-static void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int x, int y, int destPitch, unsigned char* blendTable, unsigned char* unusedGrayTable);
+static void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int x, int y, int destPitch, Color* blendTable, Color* unusedGrayTable);
 static const char* expandedBarterFrmName();
 static void gameDialogRenderTalkingHead(Art* headFrm, int frame);
 static void gameDialogHighlightsInit();
@@ -4779,7 +4779,7 @@ int _talkToRefreshDialogWindowRect(Rect* rect)
 }
 
 // 0x44AC68
-void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, unsigned char* blendTable, unsigned char* unusedGrayTable)
+void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, Color* blendTable, Color* unusedGrayTable)
 {
     (void)unusedGrayTable;
 
@@ -4792,11 +4792,11 @@ void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, 
         for (int x = 0; x < srcWidth; x++) {
             unsigned char alpha = *src++;
             if (alpha != 0) {
-                alpha = (256 - alpha) >> 4;
+                alpha = (COLOR_COUNT - alpha) >> 4;
             }
 
             unsigned char destColor = *dest;
-            *dest++ = blendTable[256 * alpha + destColor];
+            *dest++ = blendTable[COLOR_COUNT * alpha + destColor];
         }
         src += srcStep;
         dest += destStep;
@@ -4935,16 +4935,17 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
 // 0x44B080
 void gameDialogHighlightsInit()
 {
-    for (int color = 0; color < 256; color++) {
-        int r = (Color2RGB(color) & 0x7C00) >> 10;
-        int g = (Color2RGB(color) & 0x3E0) >> 5;
-        int b = Color2RGB(color) & 0x1F;
-        _light_GrayTable[color] = ((r + 2 * g + 2 * b) / 10) >> 2;
-        _dark_GrayTable[color] = ((r + g + b) / 10) >> 2;
+    for (int color = COLOR_FIRST; color < COLOR_COUNT; color++) {
+        int rgb = Color2RGB(static_cast<Color>(color & COLOR_LAST));
+        int r = (rgb & 0x7C00) >> 10;
+        int g = (rgb & 0x3E0) >> 5;
+        int b = rgb & 0x1F;
+        _light_GrayTable[color] = static_cast<Color>((((r + 2 * g + 2 * b) / 10) >> 2) & COLOR_LAST);
+        _dark_GrayTable[color] = static_cast<Color>((((r + g + b) / 10) >> 2) & COLOR_LAST);
     }
 
-    _light_GrayTable[0] = 0;
-    _dark_GrayTable[0] = 0;
+    _light_GrayTable[0] = COLOR_FIRST;
+    _dark_GrayTable[0] = COLOR_FIRST;
 
     _light_BlendTable = _getColorBlendTable(COLOR_GREY);
     _dark_BlendTable = _getColorBlendTable(COLOR_OLIVE);

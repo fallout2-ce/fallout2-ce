@@ -297,7 +297,7 @@ static void editorResetSquare()
 }
 
 // Clips an axis-aligned line to clip and draws it; skips lines fully outside.
-static void drawClippedHLine(unsigned char* buffer, int pitch, const Rect* clip, int y, int x0, int x1, int color)
+static void drawClippedHLine(unsigned char* buffer, int pitch, const Rect* clip, int y, int x0, int x1, Color color)
 {
     if (y < clip->top || y > clip->bottom) return;
     int left = std::max(std::min(x0, x1), clip->left);
@@ -306,7 +306,7 @@ static void drawClippedHLine(unsigned char* buffer, int pitch, const Rect* clip,
     bufferDrawLine(buffer, pitch, left, y, right, y, color);
 }
 
-static void drawClippedVLine(unsigned char* buffer, int pitch, const Rect* clip, int x, int y0, int y1, int color)
+static void drawClippedVLine(unsigned char* buffer, int pitch, const Rect* clip, int x, int y0, int y1, Color color)
 {
     if (x < clip->left || x > clip->right) return;
     int top = std::max(std::min(y0, y1), clip->top);
@@ -316,7 +316,7 @@ static void drawClippedVLine(unsigned char* buffer, int pitch, const Rect* clip,
 }
 
 // Clips an arbitrary line to clip (Liang-Barsky) and draws it; bufferDrawLine does not clip.
-static void drawClippedLine(unsigned char* buffer, int pitch, const Rect* clip, int x0, int y0, int x1, int y1, int color)
+static void drawClippedLine(unsigned char* buffer, int pitch, const Rect* clip, int x0, int y0, int x1, int y1, Color color)
 {
     float t0 = 0.0f;
     float t1 = 1.0f;
@@ -378,7 +378,7 @@ static Rect tileRectToScreenRect(const Rect& tileRect)
     return Rect { std::min(lx, rx), std::min(ty, by), std::max(lx, rx), std::max(ty, by) };
 }
 
-static void drawScreenRectOutline(unsigned char* buffer, int pitch, const Rect* clip, const Rect& s, int color)
+static void drawScreenRectOutline(unsigned char* buffer, int pitch, const Rect* clip, const Rect& s, Color color)
 {
     drawClippedHLine(buffer, pitch, clip, s.top, s.left, s.right, color);
     drawClippedHLine(buffer, pitch, clip, s.bottom, s.left, s.right, color);
@@ -387,7 +387,7 @@ static void drawScreenRectOutline(unsigned char* buffer, int pitch, const Rect* 
 }
 
 // Display color of a square side: green while moving, else its clip-mode color.
-static int squareSideColor(EdgeSide side)
+static Color squareSideColor(EdgeSide side)
 {
     if (side == moveSide) {
         return _colorTable[kMoveSideColor];
@@ -419,7 +419,7 @@ static void renderOverlay(unsigned char* buffer, int pitch, int elevation, const
         return;
     }
 
-    const int red = _colorTable[kActiveRectColor];
+    const Color red = _colorTable[kActiveRectColor];
 
     if (!active) {
         if (showAllRects) {
@@ -451,7 +451,7 @@ static void renderOverlay(unsigned char* buffer, int pitch, int elevation, const
     drawScreenRectOutline(buffer, pitch, clip, s, red);
 
     if (moveSide != EdgeSide::None) {
-        const int green = _colorTable[kMoveSideColor];
+        const Color green = _colorTable[kMoveSideColor];
         switch (moveSide) {
         case EdgeSide::Left:
             drawClippedVLine(buffer, pitch, clip, s.left, s.top, s.bottom, green);
@@ -630,10 +630,10 @@ void mapEdgeSetupDialog()
     constexpr int kBoxRight = 170;
     constexpr int kBoxBottom = 186;
 
-    const int winBgColor = _colorTable[kWinBgColor];
-    const int textColor = _colorTable[kTextColor];
-    const int rectColor = _colorTable[kActiveRectColor]; // red
-    const int highlightColor = _colorTable[kMoveSideColor]; // green
+    const Color winBgColor = _colorTable[kWinBgColor];
+    const Color textColor = _colorTable[kTextColor];
+    const Color rectColor = _colorTable[kActiveRectColor]; // red
+    const Color highlightColor = _colorTable[kMoveSideColor]; // green
 
     ScopedFont font(1);
 
@@ -727,8 +727,8 @@ void mapEdgeSquareSetupDialog()
     constexpr int kDiagY[4] = { 107, 141, 207, 174 };
     const EdgeSide kDiagSides[4] = { EdgeSide::Top, EdgeSide::Left, EdgeSide::Bottom, EdgeSide::Right };
 
-    const int winBgColor = _colorTable[kWinBgColor];
-    const int textColor = _colorTable[kTextColor];
+    const Color winBgColor = _colorTable[kWinBgColor];
+    const Color textColor = _colorTable[kTextColor];
 
     ScopedFont font(1);
 

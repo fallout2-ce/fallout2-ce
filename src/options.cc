@@ -603,7 +603,7 @@ int _init_options_menu()
 {
     preferencesInit();
 
-    grayscalePaletteUpdate(0, 255);
+    grayscalePaletteUpdate(COLOR_FIRST, COLOR_LAST);
 
     return 0;
 }

@@ -511,7 +511,7 @@ int _win_list_select_at(const char* title, const char* const* items, int itemsLe
 
                 int textColor;
                 if ((color & 0xFF00) != 0) {
-                    int colorIndex = (color & 0xFF) - 1;
+                    int colorIndex = (color & COLOR_LAST) - 1;
                     textColor = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
                 } else {
                     textColor = color;
@@ -648,7 +648,7 @@ int win_yes_no(const char* question, int x, int y, int color)
 
     int textColor;
     if ((color & 0xFF00) != 0) {
-        int colorIndex = (color & 0xFF) - 1;
+        int colorIndex = (color & COLOR_LAST) - 1;
         textColor = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
     } else {
         textColor = color;
@@ -736,7 +736,7 @@ int _win_msg(const char* string, int x, int y, int color)
 
     int textColor;
     if ((color & 0xFF00) != 0) {
-        int colorIndex = (color & 0xFF) - 1;
+        int colorIndex = (color & COLOR_LAST) - 1;
         textColor = (color & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
     } else {
         textColor = color;
@@ -1336,7 +1336,7 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int fo
 
         int color1 = menuBar->foregroundColor;
         if ((color1 & 0xFF00) != 0) {
-            int colorIndex = (color1 & 0xFF) - 1;
+            int colorIndex = (color1 & COLOR_LAST) - 1;
             color1 = (color1 & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
         }
 
@@ -1350,8 +1350,8 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int fo
             width,
             height,
             windowGetWidth(menuBar->win),
-            color1,
-            color2);
+static_cast<Color>(            color1 & COLOR_LAST),
+            static_cast<Color>(            color2 & COLOR_LAST));
         windowRefreshRect(menuBar->win, &(pulldown->rect));
     }
 
@@ -1518,13 +1518,13 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int fo
 
         int color1 = menuBar->foregroundColor;
         if ((color1 & 0xFF00) != 0) {
-            int colorIndex = (color1 & 0xFF) - 1;
+            int colorIndex = (color1 & COLOR_LAST) - 1;
             color1 = (color1 & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
         }
 
         int color2 = menuBar->backgroundColor;
         if ((color2 & 0xFF00) != 0) {
-            int colorIndex = (color2 & 0xFF) - 1;
+            int colorIndex = (color2 & COLOR_LAST) - 1;
             color2 = (color2 & ~0xFFFF) | _colorTable[_GNW_wcolor[colorIndex]];
         }
 
@@ -1532,8 +1532,8 @@ int process_pull_down(int win, Rect* rect, char** items, int itemsLength, int fo
             width,
             height,
             windowGetWidth(menuBar->win),
-            color1,
-            color2);
+            static_cast<Color>(color1 & COLOR_LAST),
+            static_cast<Color>(color2 & COLOR_LAST));
         windowRefreshRect(menuBar->win, &(pulldown->rect));
 
         renderPresent();

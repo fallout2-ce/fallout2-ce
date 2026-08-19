@@ -373,7 +373,7 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
         interfaceFontDrawImpl(buf + pitch + 1, string, length, pitch, (color & ~0xFF) | COLOR_BLACK);
     }
 
-    unsigned char* palette = _getColorBlendTable(color & 0xFF);
+    Color* palette = _getColorBlendTable(static_cast<Color>(color & COLOR_LAST));
 
     int monospacedCharacterWidth;
     if ((color & DRAW_TEXT_FLAG_MONOSPACED) != 0) {
@@ -427,11 +427,11 @@ static void interfaceFontDrawImpl(unsigned char* buf, const char* string, int le
         int length = ptr - buf;
         unsigned char* underlinePtr = buf + pitch * (gCurrentInterfaceFontDescriptor->maxHeight - 1);
         for (int index = 0; index < length; index++) {
-            *underlinePtr++ = color & 0xFF;
+            *underlinePtr++ = color & COLOR_LAST;
         }
     }
 
-    _freeColorBlendTable(color & 0xFF);
+    _freeColorBlendTable(static_cast<Color>(color & COLOR_LAST));
 }
 
 static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, const char* string, int color, float scale)
@@ -445,7 +445,7 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
         debugPrint("FONTMGR: scaled interface font draw ignores unsupported flags\n");
     }
 
-    unsigned char* palette = _getColorBlendTable(color & 0xFF);
+    Color* palette = _getColorBlendTable(static_cast<Color>(color & COLOR_LAST));
 
     float cursorX = static_cast<float>(x);
     while (*string != '\0') {
@@ -490,7 +490,7 @@ static void interfaceFontDrawScaledImpl(const Buffer2D& dest, int x, int y, cons
         }
     }
 
-    _freeColorBlendTable(color & 0xFF);
+    _freeColorBlendTable(static_cast<Color>(color & COLOR_LAST));
 }
 
 static int interfaceFontGetScaledWidthImpl(const char* string, int color, float scale)

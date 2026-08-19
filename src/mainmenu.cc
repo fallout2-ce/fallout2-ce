@@ -256,7 +256,7 @@ static MainMenuLayout mainMenuBuildLayout()
 static void mainMenuDrawBackground(const MainMenuLayout& layout)
 {
     Buffer2D dest(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight);
-    bufferFill2D(dest, 0);
+    bufferFill2D(dest, COLOR_FIRST);
 
     if (layout.backgroundWidth == mainMenuBackgroundFrmImage.getWidth()
         && layout.backgroundHeight == mainMenuBackgroundFrmImage.getHeight()) {

@@ -2334,7 +2334,7 @@ static int _GetSlotList()
 static void _ShowSlotList(int windowType)
 {
     // Clear display area
-    bufferFill(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 87 + 55, 230, 353, LS_WINDOW_WIDTH, gLoadSaveWindowBuffer[LS_WINDOW_WIDTH * 86 + 55] & 0xFF);
+    bufferFill(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 87 + 55, 230, 353, LS_WINDOW_WIDTH, static_cast<Color>(gLoadSaveWindowBuffer[LS_WINDOW_WIDTH * 86 + 55] & COLOR_LAST));
 
     int y = 87;
     int startIndex = _currentSlotPage * slotsPerPage;
@@ -2735,7 +2735,7 @@ static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* de
             blinkCounter = 3;
             blink = !blink;
 
-            int color = blink ? backgroundColor : textColor;
+            Color color = blink ? backgroundColor : (textColor & COLOR_LAST);
             bufferFill(windowBuffer + windowWidth * y + x + fontGetStringWidth(text) - cursorWidth, cursorWidth, lineHeight - 2, windowWidth, color);
             windowRefresh(win);
         }

@@ -267,7 +267,7 @@ static ToolbarInfo toolbar_info[6];
 static int tool_active = -1;
 
 // Color (palette index) used to draw the selection box around the active slot.
-static int toolbar_selection_color = 21;
+static Color toolbar_selection_color = static_cast<Color>(21);
 
 // Highlighted object on screen — used by mapper_destroy_highlight_obj.
 static Object* _screen_obj = nullptr;
@@ -2517,7 +2517,7 @@ void update_art(ObjectType type, int offset)
     // Clear all slot backgrounds.
     unsigned char* p = slot_start;
     for (int i = 0; i < max_art_buttons; i++, p += slot_stride) {
-        bufferFill(p, art_scale_width, art_scale_height, screen_width, 106);
+        bufferFill(p, art_scale_width, art_scale_height, screen_width, static_cast<Color>(106));
     }
 
     // Render thumbnails for visible slots.

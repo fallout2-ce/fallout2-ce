@@ -541,7 +541,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         }
 
         ObjectType objectType = objectTypeFromFid(object->fid);
-        unsigned char objectColor;
+        Color objectColor;
 
         if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
             if (objectType == OBJ_TYPE_CRITTER
@@ -648,9 +648,6 @@ int automapRenderInPipboyWindow(int window, Map map, int elevation)
 {
     unsigned char* windowBuffer = windowGetBuffer(window) + 640 * AUTOMAP_PIPBOY_VIEW_Y + AUTOMAP_PIPBOY_VIEW_X;
 
-    unsigned char wallColor = COLOR_GREEN;
-    unsigned char sceneryColor = COLOR_DARK_GREEN;
-
     gAutomapEntry.data = (unsigned char*)internal_malloc(11024);
     if (gAutomapEntry.data == nullptr) {
         debugPrint("\nAUTOMAP: Error allocating data buffer!\n");
@@ -681,12 +678,12 @@ int automapRenderInPipboyWindow(int window, Map map, int elevation)
 
             switch ((byte & 0xC0) >> 6) {
             case 1:
-                *windowBuffer++ = wallColor;
-                *windowBuffer++ = wallColor;
+                *windowBuffer++ = COLOR_GREEN;
+                *windowBuffer++ = COLOR_GREEN;
                 break;
             case 2:
-                *windowBuffer++ = sceneryColor;
-                *windowBuffer++ = sceneryColor;
+                *windowBuffer++ = COLOR_DARK_GREEN;
+                *windowBuffer++ = COLOR_DARK_GREEN;
                 break;
             default:
                 windowBuffer += 2;
