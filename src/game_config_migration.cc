@@ -177,29 +177,26 @@ bool gameConfigMigrateFromF2Res(const char* gameConfigFilePath, Config* gameConf
     compat_splitpath(gameConfigFilePath, drive, dir, nullptr, nullptr);
     compat_makepath(f2ResFilePath, drive, dir, F2_RES_CONFIG_FILE_NAME, nullptr);
 
-    Config legacyConfig;
-    if (!configInit(&legacyConfig)) {
+    ScopedConfig legacyConfig(f2ResFilePath, false);
+    if (!legacyConfig) {
         return false;
     }
 
     bool migrated = false;
-    if (configRead(&legacyConfig, f2ResFilePath, false)) {
-        for (const auto& entry : kF2ResMigrationEntries) {
-            if (gameConfigMigrateStringKey(&legacyConfig, gameConfig, entry)) {
-                migrated = true;
-            }
-        }
-
-        if (gameConfigMigrateMainMenuScaleModeKey(&legacyConfig, gameConfig)) {
-            migrated = true;
-        }
-
-        if (gameConfigMigrateScaleKey(&legacyConfig, gameConfig)) {
+    for (const auto& entry : kF2ResMigrationEntries) {
+        if (gameConfigMigrateStringKey(legacyConfig.get(), gameConfig, entry)) {
             migrated = true;
         }
     }
 
-    configFree(&legacyConfig);
+    if (gameConfigMigrateMainMenuScaleModeKey(legacyConfig.get(), gameConfig)) {
+        migrated = true;
+    }
+
+    if (gameConfigMigrateScaleKey(legacyConfig.get(), gameConfig)) {
+        migrated = true;
+    }
+
     return migrated;
 }
 
@@ -378,8 +375,8 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
         return false;
     }
 
-    Config migratedConfig;
-    if (!configInit(&migratedConfig)) {
+    ScopedConfig migratedConfig;
+    if (!migratedConfig) {
         return false;
     }
 
@@ -391,7 +388,7 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
         int travelDelay = 66;
         configGetInt(sfallConfig, kSfallMisc, "WorldMapDelay2", &travelDelay);
         travelDelay = std::clamp(travelDelay, 1, 150);
-        configSetInt(&migratedConfig, CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", travelDelay);
+        configSetInt(migratedConfig.get(), CONTENT_CONFIG_WORLDMAP_SECTION, "travel_delay", travelDelay);
         migrated = true;
     }
 
@@ -400,7 +397,7 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
         int value;
         configGetIntBase(sfallConfig, kSfallMisc, sfallKey, &value, -1, 10);
         if (value >= 0 && value != defaultValue) {
-            configSetInt(&migratedConfig, CONTENT_CONFIG_START_SECTION, targetKey, value);
+            configSetInt(migratedConfig.get(), CONTENT_CONFIG_START_SECTION, targetKey, value);
             migrated = true;
         }
     };
@@ -415,16 +412,16 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
             if (value[0] == '\0' || entry.defaultValue != nullptr && strcmp(value, entry.defaultValue) == 0) {
                 continue;
             }
-            configSetString(&migratedConfig, entry.targetSection, entry.targetKey, value);
+            configSetString(migratedConfig.get(), entry.targetSection, entry.targetKey, value);
             migrated = true;
         }
     }
 
-    if (contentConfigMigrateSfallMovieOverrides(sfallConfig, &migratedConfig)) {
+    if (contentConfigMigrateSfallMovieOverrides(sfallConfig, migratedConfig.get())) {
         migrated = true;
     }
 
-    if (contentConfigMigrateSfallFallout1MovieBehavior(sfallConfig, &migratedConfig)) {
+    if (contentConfigMigrateSfallFallout1MovieBehavior(sfallConfig, migratedConfig.get())) {
         migrated = true;
     }
 
@@ -437,12 +434,11 @@ static bool contentConfigMigrateFromSfall(Config* sfallConfig, const char* conte
         compat_makepath(pathWithoutFile, drive, dirPart, nullptr, nullptr);
         compat_mkdir_recursive(pathWithoutFile);
 
-        if (!configWrite(&migratedConfig, contentConfigFilePath, false)) {
+        if (!configWrite(migratedConfig.get(), contentConfigFilePath, false)) {
             debugPrint("Failed to write migrated settings to %s!\n", contentConfigFilePath);
         }
     }
 
-    configFree(&migratedConfig);
     return migrated;
 }
 
