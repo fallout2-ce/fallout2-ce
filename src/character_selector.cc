@@ -866,10 +866,13 @@ static bool characterSelectorWindowRenderStats()
     traitsGetSelected(&(traits[0]), &(traits[1]));
 
     for (int index = 0; index < TRAITS_MAX_SELECTED_COUNT; index++) {
-        y += vh;
-
         str = traitGetName(traits[index]);
+        if (str == nullptr) {
+            continue;
+        }
         strcpy(text, str);
+
+        y += vh;
 
         length = fontGetStringWidth(text);
         fontDrawText(gCharacterSelectorWindowBuffer + CS_WINDOW_WIDTH * y + CS_WINDOW_SECONDARY_STAT_MID_X - length, text, length, CS_WINDOW_WIDTH, COLOR_GREEN);
