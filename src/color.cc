@@ -458,8 +458,8 @@ void _freeColorBlendTable(Color color)
         *count -= 1;
         if (*count == 0) {
             internal_free(count);
-                _blendTable[color] = nullptr;
-            }
+            _blendTable[color] = nullptr;
+        }
     }
 }
 
