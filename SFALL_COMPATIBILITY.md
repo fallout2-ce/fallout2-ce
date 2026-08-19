@@ -123,7 +123,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | NPCs | inc_npc_level<br>get_npc_level<br>npc_engine_level_up | not implemented | - |
 | Hero Appearance | set_dm/df_model<br>hero_select_win<br>set_hero_race<br>set_hero_style | not implemented | - |
 | Events | add_g_timer_event<br>remove_timer_event<br>create_spatial<br>spatial_radius | not implemented | - |
-| Other | get_year<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>get_light_level<br>message_str_game<br>sneak_success<br>unwield_slot<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br> | ✅ except get/set_viewport_x/y, sneak_success  | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. |
+| Other | get_year<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>get_light_level<br>message_str_game<br>sneak_success<br>unwield_slot<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br> | ✅ except get/set_viewport_x/y, sneak_success, get_metarule_table  | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. `metarule_exist` is available; `get_metarule_table` is not. |
 
 ### CE-only metarules
 
@@ -153,6 +153,10 @@ CE defines several metarules that are not supported in Sfall.  Include [ce.h](fi
 | BarterPrice | `HOOK_BARTERPRICE` | ✅ | - |
 | ItemDamage | `HOOK_ITEMDAMAGE` | ✅ | - |
 | MoveCost | `HOOK_MOVECOST` | ✅ | - |
+| HexMoveBlocking | `HOOK_HEXMOVEBLOCKING` | 🚫 | Deprecated in sfall; see below |
+| HexAIBlocking | `HOOK_HEXAIBLOCKING` | 🚫 | Deprecated in sfall; see below |
+| HexShootBlocking | `HOOK_HEXSHOOTBLOCKING` | 🚫 | Deprecated in sfall; see below |
+| HexSightBlocking | `HOOK_HEXSIGHTBLOCKING` | 🚫 | Deprecated in sfall; see below |
 | AmmoCost | `HOOK_AMMOCOST` | ✅ | Requires `check_weapon_ammo_cost=1` if you want pre-attack ammo validation to respect per-shot/per-round overrides. |
 | KeyPress | `HOOK_KEYPRESS` | ✅ | Third hook arg is currently `0`; CE doesn't use VK codes. |
 | MouseClick | `HOOK_MOUSECLICK` | ✅ | - |
@@ -185,3 +189,16 @@ CE defines several metarules that are not supported in Sfall.  Include [ce.h](fi
 | BestWeapon | `HOOK_BESTWEAPON` | 🚫 | - |
 | CanUseWeapon | `HOOK_CANUSEWEAPON` | ✅ | - |
 | BuildSfxWeapon | `HOOK_BUILDSFXWEAPON` | 🚫 | - |
+
+### The hex-blocking hooks
+
+`HOOK_HEXMOVEBLOCKING`, `HOOK_HEXAIBLOCKING`, `HOOK_HEXSHOOTBLOCKING` and
+`HOOK_HEXSIGHTBLOCKING` are deprecated by sfall itself, which warns that they "can become
+very CPU-intensive and you should avoid using them", that they are "not thoroughly
+supported in sfall", and that they "may be removed in future versions". CE marks them
+obsolete in `sfall_script_hooks.h` for the same reason, so they are unlikely to be
+implemented.
+
+Sfall points at `obj_blocking_tile`, `obj_blocking_line` and `path_find_to` instead — all
+three are supported in CE — and suggests `HOOK_MOVECOST` for reacting to NPC movement,
+which is supported as well.
