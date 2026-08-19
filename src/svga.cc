@@ -20,7 +20,6 @@
 #include "text_font.h"
 #include "tile.h"
 #include "win32.h"
-#include "window_manager.h"
 #include "window_manager_private.h"
 
 namespace fallout {

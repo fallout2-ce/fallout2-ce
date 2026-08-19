@@ -6,7 +6,6 @@
 #include "mapper/mp_proto.h"
 #include "mapper/mp_utils.h"
 #include "obj_types.h"
-#include "window_manager.h"
 #include "window_manager_private.h"
 
 namespace fallout {

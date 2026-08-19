@@ -11,7 +11,6 @@
 #include "debug.h"
 #include "memory_manager.h"
 #include "settings.h"
-#include "window_manager.h"
 
 // The maximum number of interface fonts.
 #define INTERFACE_FONT_MAX (16)

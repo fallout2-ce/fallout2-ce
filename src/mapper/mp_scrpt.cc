@@ -20,7 +20,6 @@
 #include "svga.h"
 #include "text_object.h"
 #include "tile.h"
-#include "window_manager.h"
 #include "window_manager_private.h"
 
 namespace fallout {

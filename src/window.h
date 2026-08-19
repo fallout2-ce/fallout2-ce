@@ -5,7 +5,6 @@
 #include "geometry.h"
 #include "interpreter.h"
 #include "region.h"
-#include "window_manager.h"
 
 namespace fallout {
 

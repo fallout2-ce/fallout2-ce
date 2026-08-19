@@ -19,6 +19,7 @@
 #include "text_font.h"
 #include "touch.h"
 #include "win32.h"
+#include "window_manager.h"
 
 namespace fallout {
 

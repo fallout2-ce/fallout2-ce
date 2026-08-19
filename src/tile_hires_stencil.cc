@@ -7,7 +7,6 @@
 #include "settings.h"
 #include "stdio.h"
 #include "tile.h"
-#include "window_manager.h"
 #include <string.h>
 #include <vector>
 

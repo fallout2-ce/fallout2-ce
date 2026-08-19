@@ -8,7 +8,6 @@
 #include "memory.h"
 #include "platform_compat.h"
 #include "settings.h"
-#include "window_manager.h"
 
 #include <assert.h>
 
