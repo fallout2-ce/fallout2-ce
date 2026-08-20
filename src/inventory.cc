@@ -6463,7 +6463,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
                 // TODO: Where is y? Is it hardcoded in to 376?
                 fontDrawText(_moveFrmImages[6].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, COLOR_YELLOW_2);
-                fontDrawText(_moveFrmImages[7].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, COLOR_DARK_YELLOW_4);
+                fontDrawText(_moveFrmImages[7].getData() + (94 - length) / 2 + 470, messageListItem.text, 200, 94, COLOR_DARK_YELLOW_4);
 
                 btn = buttonCreate(_mt_wid,
                     120, 80, 94, 33, -1, -1, -1, 5000,
