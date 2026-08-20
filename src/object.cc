@@ -2786,7 +2786,6 @@ void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeig
 
     for (int y = 0; y < srcHeight; y++) {
         for (int x = 0; x < srcWidth; x++) {
-            // TODO: Probably wrong.
             Color v1 = colorTable[*src];
             Color* v2 = blendTable + (v1 << 8);
             unsigned char v3 = *dest;
