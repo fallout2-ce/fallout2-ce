@@ -2206,6 +2206,18 @@ static void characterEditorDrawPerksFolder()
     Perk perk;
 
     for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
+        if (perkGetRank(gDude, perk) != 0) {
+            break;
+        }
+    }
+
+    if (perk != PERK_COUNT) {
+        // PERKS
+        string = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 109);
+        characterEditorFolderViewDrawHeading(string);
+    }
+
+    for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
         perkLevel = perkGetRank(gDude, perk);
         if (perkLevel != 0) {
             int maxRank = perkGetMaxRank(perk);
