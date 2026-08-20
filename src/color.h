@@ -28,6 +28,8 @@ constexpr inline DrawTextFlags operator~(DrawTextFlags rhs)
     return static_cast<DrawTextFlags>(~static_cast<unsigned int>(rhs));
 }
 
+constexpr inline DrawTextFlags operator&(Color lhs, DrawTextFlags rhs) = delete;
+
 enum ColorWithFlags : int {
     COLOR_INVALID = -1
 };
@@ -40,11 +42,6 @@ constexpr inline DrawTextFlags operator&(ColorWithFlags lhs, DrawTextFlags rhs)
 constexpr inline ColorWithFlags operator|(ColorWithFlags lhs, DrawTextFlags rhs)
 {
     return static_cast<ColorWithFlags>(static_cast<int>(lhs) | static_cast<unsigned int>(rhs));
-}
-
-constexpr inline ColorWithFlags operator&(Color lhs, DrawTextFlags rhs)
-{
-    return static_cast<ColorWithFlags>(static_cast<unsigned char>(lhs) & static_cast<unsigned int>(rhs));
 }
 
 constexpr inline ColorWithFlags operator|(Color lhs, DrawTextFlags rhs)

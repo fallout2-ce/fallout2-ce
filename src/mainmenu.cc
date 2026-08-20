@@ -370,8 +370,8 @@ static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOf
     //        0x020000 - underline text (only for the version string)
     //        0x040000 - monospace font (only for the version string)
     ColorWithFlags fontSettings = COLOR_YELLOW_2 | DRAW_TEXT_FLAG_NONE;
-    ColorWithFlags fontSettingsSFall = COLOR_BLACK | DRAW_TEXT_FLAG_NONE;
-    configGetEnum<ColorWithFlags>(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", &fontSettingsSFall, COLOR_BLACK | DRAW_TEXT_FLAG_NONE);
+    ColorWithFlags fontSettingsSFall = COLOR_FIRST | DRAW_TEXT_FLAG_NONE;
+    configGetEnum<ColorWithFlags>(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", &fontSettingsSFall, COLOR_FIRST | DRAW_TEXT_FLAG_NONE);
     if (fontSettingsSFall && !(fontSettingsSFall & DRAW_TEXT_FLAG_SHADOWED)) {
         fontSettings = static_cast<Color>(fontSettingsSFall & COLOR_LAST) | DRAW_TEXT_FLAG_NONE;
     }
@@ -389,6 +389,7 @@ static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOf
     if (fontSettingsSFall) {
         fontSettings = fontSettingsSFall;
     }
+
     fontSettings &= ~DRAW_TEXT_FLAG_SHADOWED;
     ColorWithFlags versionFontSettings = fontSettings;
     char version[VERSION_MAX];
