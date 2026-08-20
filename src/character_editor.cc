@@ -7323,7 +7323,7 @@ static void drawPerkProgressBarGeneric(
     int bufferWidth,
     int bufferHeight,
     int stride,
-    int rightEdgeX,
+    int startX,
     int targetY,
     int currentRank,
     int maxRank,
@@ -7332,9 +7332,6 @@ static void drawPerkProgressBarGeneric(
     int segmentWidth = 4;
     int segmentHeight = 7;
     int padding = 2;
-
-    int totalWidth = maxRank * (segmentWidth + padding) - padding;
-    int startX = rightEdgeX - totalWidth;
 
     unsigned char inactiveColor = (colorIndex == COLOR_LIGHT_YELLOW) ? COLOR_DARK_YELLOW_3 : COLOR_DARK_GREY_3;
 
@@ -7362,7 +7359,8 @@ static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRa
     constexpr int kFolderViewLeftX = 34;
     constexpr int kFolderViewWidth = 280;
     constexpr int kFolderViewEdgePadding = 5;
-    int rightEdgeX = kFolderViewLeftX + kFolderViewWidth - kFolderViewEdgePadding;
+    constexpr int progressBarColumnWidth = 16; // 3 segments 4 pixels each + 2 paddings (2 pixels each)
+    int startX = kFolderViewLeftX + kFolderViewWidth - kFolderViewEdgePadding - progressBarColumnWidth;
 
     int offsetToCenter = (gCharacterEditorFolderViewOffsetY - 7) / 2;
     if (offsetToCenter < 0) offsetToCenter = 0;
@@ -7373,7 +7371,7 @@ static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRa
         EDITOR_WINDOW_WIDTH,
         EDITOR_WINDOW_HEIGHT,
         EDITOR_WINDOW_WIDTH,
-        rightEdgeX,
+        startX,
         targetY,
         currentRank,
         maxRank,
@@ -7387,15 +7385,15 @@ static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, int c
     int finalRankToDraw = currentRank;
     if (colorIndex == COLOR_LIGHT_YELLOW) {
         finalRankToDraw = currentRank + 1;
-        if (finalRankToDraw > maxRank) {
-            finalRankToDraw = maxRank;
-        }
+        if (finalRankToDraw > maxRank) finalRankToDraw = maxRank;
     }
 
     constexpr int kSelectorViewLeftX = 45;
     constexpr int kSelectorViewWidth = 192;
     constexpr int kSelectorViewEdgePadding = 5;
-    int rightEdgeX = kSelectorViewLeftX + kSelectorViewWidth; // - kSelectorViewEdgePadding;
+    constexpr int progressBarColumnWidth = 16; // 3 segments 4 pixels each + 2 paddings (2 pixels each)
+
+    int startX = kSelectorViewLeftX + kSelectorViewWidth - progressBarColumnWidth;
 
     int offsetToCenter = ((fontGetLineHeight() + 2) - 7) / 2;
     if (offsetToCenter < 0) offsetToCenter = 0;
@@ -7406,7 +7404,7 @@ static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, int c
         PERK_WINDOW_WIDTH,
         PERK_WINDOW_HEIGHT,
         PERK_WINDOW_WIDTH,
-        rightEdgeX,
+        startX,
         targetY,
         finalRankToDraw,
         maxRank,
