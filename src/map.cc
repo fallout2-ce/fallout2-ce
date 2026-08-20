@@ -192,7 +192,7 @@ int isoInit()
     // NOTE: Uninline.
     square_init();
 
-    gIsoWindow = windowCreate(0, 0, screenGetWidth(), screenGetVisibleHeight(), 256, 10);
+    gIsoWindow = windowCreate(0, 0, screenGetWidth(), screenGetVisibleHeight(), static_cast<ColorWithFlags>(256), 10);
     if (gIsoWindow == -1) {
         debugPrint("win_add failed in iso_init\n");
         return -1;
@@ -1645,7 +1645,7 @@ static void isoWindowRefreshRectGame(Rect* rect)
         rectGetWidth(&rectToUpdate),
         rectGetHeight(&rectToUpdate),
         rectGetWidth(&gIsoWindowRect),
-        0);
+        COLOR_FIRST);
 
     if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
         return;
@@ -1677,7 +1677,7 @@ static void isoWindowRefreshRectMapper(Rect* rect)
         rectGetWidth(&rectToUpdate),
         rectGetHeight(&rectToUpdate),
         rectGetWidth(&gIsoWindowRect),
-        0);
+        COLOR_FIRST);
 
     if (hasVisArea && rectIntersection(&rectToUpdate, &visArea, &rectToUpdate) == -1) {
         return;

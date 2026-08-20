@@ -27,13 +27,13 @@ namespace fallout {
 
 #define CREDITS_WINDOW_SCROLLING_DELAY (38)
 
-static bool creditsFileParseNextLine(char* dest, int* font, int* color);
+static bool creditsFileParseNextLine(char* dest, int* font, Color* color);
 
 // 0x56D740 credits_file
 static File* gCreditsFile;
 
 // 0x56D744 name_color
-static int gCreditsWindowNameColor;
+static Color gCreditsWindowNameColor;
 
 // 0x56D748 title_font
 static int gCreditsWindowTitleFont;
@@ -42,7 +42,7 @@ static int gCreditsWindowTitleFont;
 static int gCreditsWindowNameFont;
 
 // 0x56D750 title_color
-static int gCreditsWindowTitleColor;
+static Color gCreditsWindowTitleColor;
 
 // 0x42C860 credits
 void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
@@ -132,7 +132,7 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
 
                                 char str[260];
                                 int font;
-                                int color;
+                                Color color;
                                 unsigned int tick = 0;
                                 bool stop = false;
                                 while (creditsFileParseNextLine(str, &font, &color)) {
@@ -254,7 +254,7 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
 }
 
 // 0x42CE6C credits_get_next_line
-static bool creditsFileParseNextLine(char* dest, int* font, int* color)
+static bool creditsFileParseNextLine(char* dest, int* font, Color* color)
 {
     char string[256];
     while (fileReadString(string, 256, gCreditsFile)) {

@@ -59,7 +59,7 @@ static char* yesno[] = {
 };
 
 // 0x559C58
-int edit_window_color = 1;
+Color edit_window_color = static_cast<Color>(1);
 
 // 0x559C60
 bool can_modify_protos = false;
@@ -417,7 +417,7 @@ const char* proto_wall_light_str(int flags)
 void proto_critter_flags_redraw(int win, int pid)
 {
     int index;
-    int color;
+    Color color;
     int x = 110;
 
     for (index = 0; index < CRITTER_FLAG_COUNT; index++) {
@@ -648,7 +648,7 @@ void swap_protos()
     // TODO: swap two prototype slots
 }
 
-static unsigned char itemIconsBgColor()
+static Color itemIconsBgColor()
 {
     return COLOR_BLUE_2;
 };

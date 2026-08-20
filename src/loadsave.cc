@@ -169,7 +169,7 @@ static void _ShowSlotList(int windowType);
 static void _DrawInfoBox(int slot);
 static int _LoadTumbSlot(int slot);
 static int _GetComment(int slot);
-static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, int textColor, int backgroundColor, int flags);
+static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags);
 static int _DummyFunc(File* stream);
 static int _PrepLoad(File* stream);
 static int _EndLoad(File* stream);
@@ -1075,7 +1075,7 @@ int lsgLoadGame(int mode)
             quickSaveWindowY,
             LS_WINDOW_WIDTH,
             LS_WINDOW_HEIGHT,
-            256,
+            static_cast<ColorWithFlags>(256),
             WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
         if (window != -1) {
             unsigned char* windowBuffer = windowGetBuffer(window);
@@ -1680,7 +1680,7 @@ static int lsgWindowInit(int windowType)
         lsWindowY,
         LS_WINDOW_WIDTH,
         LS_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (gLoadSaveWindow == -1) {
         // FIXME: Leaking frms.
@@ -2334,7 +2334,7 @@ static int _GetSlotList()
 static void _ShowSlotList(int windowType)
 {
     // Clear display area
-    bufferFill(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 87 + 55, 230, 353, LS_WINDOW_WIDTH, gLoadSaveWindowBuffer[LS_WINDOW_WIDTH * 86 + 55] & 0xFF);
+    bufferFill(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 87 + 55, 230, 353, LS_WINDOW_WIDTH, static_cast<Color>(gLoadSaveWindowBuffer[LS_WINDOW_WIDTH * 86 + 55] & COLOR_LAST));
 
     int y = 87;
     int startIndex = _currentSlotPage * slotsPerPage;
@@ -2342,7 +2342,7 @@ static void _ShowSlotList(int windowType)
     if (endIndex > saveLoadTotalSlots) endIndex = saveLoadTotalSlots;
 
     for (int index = startIndex; index < endIndex; index++) {
-        int color = index == _slot_cursor ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+        Color color = index == _slot_cursor ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
         const char* text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, windowType != 0 ? 110 : 109);
         snprintf(_str, sizeof(_str), "[   %s %.2d:   ]", text, index + 1);
         fontDrawText(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * y + 55, _str, LS_WINDOW_WIDTH, LS_WINDOW_WIDTH, color);
@@ -2377,8 +2377,8 @@ static void _ShowSlotList(int windowType)
 
     // Pagination navigation
     if (saveLoadTotalSlots > 10) {
-        int activeColor = COLOR_GREEN;
-        int inactiveColor = COLOR_LIGHT_GREEN_2;
+        Color activeColor = COLOR_GREEN;
+        Color inactiveColor = COLOR_LIGHT_GREEN_2;
 
         {
             MessageListItem messageListItemBack = { 201, 0, nullptr, nullptr };
@@ -2418,7 +2418,7 @@ static void _DrawInfoBox(int slot)
 
     unsigned char* dest;
     const char* text;
-    int color = COLOR_GREEN;
+    Color color = COLOR_GREEN;
 
     switch (_LSstatus[slot]) {
     case SLOT_STATE_OCCUPIED:
@@ -2541,7 +2541,7 @@ static int _GetComment(int slot)
         commentWindowY,
         _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
         _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (window == -1) {
         return -1;
@@ -2636,8 +2636,8 @@ static int _GetComment(int slot)
 
     int rc;
 
-    int backgroundColor = *(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData() + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 35 + 24);
-    if (_get_input_str2(window, 507, 508, description, LOAD_SAVE_DESCRIPTION_LENGTH - 1, 24, 35, COLOR_GREEN, backgroundColor, 0) == 0) {
+    Color backgroundColor = static_cast<Color>(*(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData() + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 35 + 24) & COLOR_LAST);
+    if (_get_input_str2(window, 507, 508, description, LOAD_SAVE_DESCRIPTION_LENGTH - 1, 24, 35, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, backgroundColor, 0) == 0) {
         strncpy(_LSData[slot].description, description, LOAD_SAVE_DESCRIPTION_LENGTH);
         _LSData[slot].description[LOAD_SAVE_DESCRIPTION_LENGTH - 1] = '\0';
         rc = 1;
@@ -2651,7 +2651,7 @@ static int _GetComment(int slot)
 }
 
 // 0x47F084
-static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, int textColor, int backgroundColor, int flags)
+static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
 {
     int cursorWidth = fontGetStringWidth("_") - 4;
     int windowWidth = windowGetWidth(win);
@@ -2735,7 +2735,7 @@ static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* de
             blinkCounter = 3;
             blink = !blink;
 
-            int color = blink ? backgroundColor : textColor;
+            Color color = blink ? backgroundColor : static_cast<Color>(textColor & COLOR_LAST);
             bufferFill(windowBuffer + windowWidth * y + x + fontGetStringWidth(text) - cursorWidth, cursorWidth, lineHeight - 2, windowWidth, color);
             windowRefresh(win);
         }

@@ -1,6 +1,7 @@
 #ifndef FONT_MANAGER_H
 #define FONT_MANAGER_H
 
+#include "color.h"
 #include "text_font.h"
 
 namespace fallout {
@@ -11,8 +12,8 @@ int interfaceFontsInit();
 void interfaceFontsExit();
 // Scaled interface font drawing supports plain color text plus DRAW_TEXT_FLAG_SHADOWED.
 // Unsupported flags like DRAW_TEXT_FLAG_MONOSPACED and DRAW_TEXT_FLAG_UNDERLINED are ignored with a debug log.
-void interfaceFontDrawTextScaled2D(const Buffer2D& dest, int x, int y, const char* string, int color, float scale);
-int interfaceFontGetStringWidthScaled(const char* string, int color, float scale);
+void interfaceFontDrawTextScaled2D(const Buffer2D& dest, int x, int y, const char* string, ColorWithFlags color, float scale);
+int interfaceFontGetStringWidthScaled(const char* string, ColorWithFlags color, float scale);
 
 } // namespace fallout
 

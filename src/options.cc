@@ -272,7 +272,7 @@ static int optionsWindowInit()
         optionsWindowY,
         _optionsFrmImages[0].getWidth(),
         _optionsFrmImages[0].getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
 
     if (optionsWindow == -1) {
@@ -456,7 +456,7 @@ int showPause(bool preserveWorldState)
         pauseWindowY,
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth(),
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (window == -1) {
         messageListFree(&preferencesMessageList);
@@ -603,7 +603,7 @@ int _init_options_menu()
 {
     preferencesInit();
 
-    grayscalePaletteUpdate(0, 255);
+    grayscalePaletteUpdate(COLOR_FIRST, COLOR_LAST);
 
     return 0;
 }

@@ -764,7 +764,7 @@ static int wmWorldOffsetX = 0;
 static int wmWorldOffsetY = 0;
 
 // 0x51DE34 circleBlendTable
-unsigned char* circleBlendTable = nullptr;
+Color* circleBlendTable = nullptr;
 
 // 0x51DE38 wmInterfaceWasInitialized
 static int wmInterfaceWasInitialized = 0;

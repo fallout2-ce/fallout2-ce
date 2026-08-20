@@ -16,7 +16,7 @@ static void _InsertNode(int a1);
 static void _DeleteNode(int a1);
 
 // 0x596D90 GreyTable
-static unsigned char _GreyTable[256];
+static Color _GreyTable[COLOR_COUNT];
 
 // 0x596E90 dad_2
 static int* _dad_2;
@@ -43,7 +43,7 @@ static int _codesize;
 static int _match_position;
 
 // 0x44EBC0
-unsigned char HighRGB(unsigned char color)
+unsigned char HighRGB(Color color)
 {
     int rgb = Color2RGB(color);
     int r = (rgb & 0x7C00) >> 10;
@@ -88,7 +88,7 @@ int load_lbm_to_buf(const char* path, unsigned char* dstBuffer, int xMin, int yM
     // paletteRemap[i] = system-palette index that best matches LBM colour i.
     // Built from CMAP via colorTable.  Index 0 is populated but never used
     // (pixel value 0 is always output as 0 — the transparent colour).
-    unsigned char paletteRemap[256] = {};
+    Color paletteRemap[COLOR_COUNT] = {};
 
     while (true) {
         unsigned char chunkType[4];
@@ -558,20 +558,20 @@ int graphDecompress(unsigned char* src, unsigned char* dest, int length)
 }
 
 // 0x44FA78
-void grayscalePaletteUpdate(int a1, int a2)
+void grayscalePaletteUpdate(Color lowColor, Color highColor)
 {
-    if (a1 >= 0 && a2 <= 255) {
-        for (int index = a1; index <= a2; index++) {
-            // NOTE: Calls `Color2RGB` many times due to `min` and `max` macro
-            // uses.
-            int v1 = std::max((Color2RGB(index) & 0x7C00) >> 10, std::max((Color2RGB(index) & 0x3E0) >> 5, Color2RGB(index) & 0x1F));
-            int v2 = std::min((Color2RGB(index) & 0x7C00) >> 10, std::min((Color2RGB(index) & 0x3E0) >> 5, Color2RGB(index) & 0x1F));
-            int v3 = v1 + v2;
-            int v4 = (int)((double)v3 * 240.0 / 510.0);
+    for (int index = lowColor; index <= highColor; index++) {
+        Color indexColor = static_cast<Color>(index & COLOR_LAST);
 
-            int paletteIndex = ((v4 & 0xFF) << 10) | ((v4 & 0xFF) << 5) | (v4 & 0xFF);
-            _GreyTable[index] = _colorTable[paletteIndex];
-        }
+        // NOTE: Calls `Color2RGB` many times due to `min` and `max` macro
+        // uses.
+        int v1 = std::max((Color2RGB(indexColor) & 0x7C00) >> 10, std::max((Color2RGB(indexColor) & 0x3E0) >> 5, Color2RGB(indexColor) & 0x1F));
+        int v2 = std::min((Color2RGB(indexColor) & 0x7C00) >> 10, std::min((Color2RGB(indexColor) & 0x3E0) >> 5, Color2RGB(indexColor) & 0x1F));
+        int v3 = v1 + v2;
+        int v4 = (int)((double)v3 * 240.0 / 510.0);
+
+        int paletteIndex = ((v4 & 0xFF) << 10) | ((v4 & 0xFF) << 5) | (v4 & 0xFF);
+        _GreyTable[index] = _colorTable[paletteIndex];
     }
 }
 

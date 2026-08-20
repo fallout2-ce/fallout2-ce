@@ -144,8 +144,8 @@ static int indicatorBoxCompareByPosition(const void* a, const void* b);
 static void indicatorBarRender(int count);
 static bool indicatorBarAdd(int indicator);
 static int indicatorBarGetVisibleSlotCount();
-static int indicatorBarTextColor(int color);
-static void indicatorBarRenderBox(unsigned char* data, const char* text, int color);
+static Color indicatorBarTextColor(int color);
+static void indicatorBarRenderBox(unsigned char* data, const char* text, Color color);
 static int indicatorBarMaxCustomTag();
 static CustomIndicatorDescription* indicatorBarGetCustomTag(int tag);
 static bool indicatorBarInitCustomTag(int tag, const char* defaultText, int configColor);
@@ -2307,7 +2307,7 @@ static int indicatorBarInit()
         char text[1024];
         strcpy(text, getmsg(&messageList, &messageListItem, indicator->title));
 
-        int color = indicator->isBad ? COLOR_RED : COLOR_GREEN;
+        Color color = indicator->isBad ? COLOR_RED : COLOR_GREEN;
         indicatorBarRenderBox(indicator->data, text, color);
     }
 
@@ -2568,7 +2568,7 @@ static int indicatorBarGetVisibleSlotCount()
     return std::clamp(visibleSlotCount, 5, INDICATOR_SLOTS_COUNT);
 }
 
-static int indicatorBarTextColor(int color)
+static Color indicatorBarTextColor(int color)
 {
     switch (color) {
     case 1:
@@ -2590,7 +2590,7 @@ static int indicatorBarTextColor(int color)
     }
 }
 
-static void indicatorBarRenderBox(unsigned char* data, const char* text, int color)
+static void indicatorBarRenderBox(unsigned char* data, const char* text, Color color)
 {
     int oldFont = fontGetCurrent();
     fontSetCurrent(101);
@@ -2864,8 +2864,8 @@ static void sidePanelsInit()
     Rect windowRect;
     windowGetRect(gInterfaceBarWindow, &windowRect);
 
-    gInterfaceSidePanelsLeadingWindow = windowCreate(0, windowRect.top, windowRect.left, windowRect.bottom - windowRect.top + 1, 0, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
-    gInterfaceSidePanelsTrailingWindow = windowCreate(windowRect.right + 1, windowRect.top, screenGetWidth() - windowRect.right - 1, windowRect.bottom - windowRect.top + 1, 0, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
+    gInterfaceSidePanelsLeadingWindow = windowCreate(0, windowRect.top, windowRect.left, windowRect.bottom - windowRect.top + 1, COLOR_FIRST, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
+    gInterfaceSidePanelsTrailingWindow = windowCreate(windowRect.right + 1, windowRect.top, screenGetWidth() - windowRect.right - 1, windowRect.bottom - windowRect.top + 1, COLOR_FIRST, WINDOW_HIDDEN | WINDOW_DONT_MOVE_TOP);
 
     char path[COMPAT_MAX_PATH];
     snprintf(path, sizeof(path), "art\\intrface\\HR_IFACELFT%d.frm", sideArtId);

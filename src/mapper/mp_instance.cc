@@ -35,7 +35,7 @@ namespace fallout {
 Object* proto_inst_who_obj = nullptr;
 
 // edit_window_color
-extern int edit_window_color;
+extern Color edit_window_color;
 
 constexpr int kInstMaxLightDistance = 8;
 constexpr int kInstMaxLightPct = 100;
@@ -157,7 +157,7 @@ static int protoInstSetupEdit(int* pWinId, Object* obj, ObjectType* pObjType, in
 
     char scriptName[64];
     scriptName[0] = '\0';
-    int scriptColor = COLOR_LIGHT_YELLOW;
+    Color scriptColor = COLOR_LIGHT_YELLOW;
 
     Script* script;
     if (scriptGetScript(obj->sid, &script) != -1) {
@@ -299,7 +299,7 @@ static bool regModFlagsDialog(ObjectFlags* flags, ObjectType objectType)
 
             flagValues[i] = !flagValues[i];
             int rowY = 21 + vi * kItemH;
-            int valColor = flagValues[i] ? (COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED) : (COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
+            ColorWithFlags valColor = flagValues[i] ? (COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_SHADOWED) : (COLOR_GREEN | DRAW_TEXT_FLAG_SHADOWED);
 
             unsigned char* buf = windowGetBuffer(win);
             int pitch = windowGetWidth(win);

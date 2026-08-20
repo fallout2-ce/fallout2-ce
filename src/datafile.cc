@@ -8,9 +8,6 @@
 
 namespace fallout {
 
-constexpr size_t DATA_FILE_PALETTE_MAX = 768;
-constexpr size_t INDEXED_PALETTE_MAX = 256;
-
 // 0x5184AC loadFunc
 DatafileLoader* gDatafileLoader = nullptr;
 
@@ -18,7 +15,7 @@ DatafileLoader* gDatafileLoader = nullptr;
 DatafileNameMangler* gDatafileNameMangler = datafileDefaultNameManglerImpl;
 
 // 0x56D7E0 pal
-uint8_t gDatafilePalette[DATA_FILE_PALETTE_MAX];
+uint8_t gDatafilePalette[COLOR_MAP_SIZE];
 
 // 0x42EE70 defaultMangleName
 char* datafileDefaultNameManglerImpl(char* path)
@@ -45,10 +42,10 @@ void datafileSetLoader(DatafileLoader* loader)
 // 0x42EE84 datafileConvertData
 void datafileRemapPixelsRgb8(uint8_t* data, uint8_t* palette, int width, int height)
 {
-    uint8_t indexedPalette[INDEXED_PALETTE_MAX];
+    Color indexedPalette[COLOR_COUNT];
 
-    indexedPalette[0] = 0;
-    for (int index = 1; index < INDEXED_PALETTE_MAX; index++) {
+    indexedPalette[0] = COLOR_FIRST;
+    for (int index = 1; index < COLOR_COUNT; index++) {
         int r = palette[index * 3] >> 3;
         int g = palette[index * 3 + 1] >> 3;
         int b = palette[index * 3 + 2] >> 3;
@@ -67,10 +64,10 @@ void datafileRemapPixelsRgb8(uint8_t* data, uint8_t* palette, int width, int hei
 // 0x42EEF8 datafileConvertDataVGA
 void datafileRemapPixelsRgb6(uint8_t* data, uint8_t* palette, int width, int height)
 {
-    uint8_t indexedPalette[INDEXED_PALETTE_MAX];
+    Color indexedPalette[COLOR_COUNT];
 
-    indexedPalette[0] = 0;
-    for (int index = 1; index < INDEXED_PALETTE_MAX; index++) {
+    indexedPalette[0] = COLOR_FIRST;
+    for (int index = 1; index < COLOR_COUNT; index++) {
         int r = palette[index * 3] >> 1;
         int g = palette[index * 3 + 1] >> 1;
         int b = palette[index * 3 + 2] >> 1;

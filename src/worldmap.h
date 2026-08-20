@@ -1,6 +1,7 @@
 #ifndef WORLD_MAP_H
 #define WORLD_MAP_H
 
+#include "color.h"
 #include "db.h"
 
 namespace fallout {
@@ -328,7 +329,7 @@ inline bool visitedStateIsValid(int visited)
     return state == VisitedState::Unknown || state == VisitedState::Known || state == VisitedState::Visited || state == VisitedState::Invisible;
 }
 
-extern unsigned char* circleBlendTable;
+extern Color* circleBlendTable;
 extern bool gDidMeetFrankHorrigan;
 
 int wmWorldMap_init();

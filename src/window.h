@@ -1,10 +1,10 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "color.h"
 #include "geometry.h"
 #include "interpreter.h"
 #include "region.h"
-#include "window_manager.h"
 
 namespace fallout {
 
@@ -39,11 +39,11 @@ typedef enum ManagedButtonRightMouseEvent {
 int windowGetFont();
 int windowSetFont(int font);
 void scriptWindowResetTextAttributes();
-int scriptWindowGetTextFlags();
-int scriptWindowSetTextFlags(int flags);
-unsigned char scriptWindowGetTextColor();
+DrawTextFlags scriptWindowGetTextFlags();
+int scriptWindowSetTextFlags(DrawTextFlags flags);
+Color scriptWindowGetTextColor();
 int scriptWindowSetTextColor(float r, float g, float b);
-unsigned char scriptWindowGetHighlightColor();
+Color scriptWindowGetHighlightColor();
 int scriptWindowSetHighlightColor(float r, float g, float b);
 bool _checkRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
 bool scriptWindowCheckRegion(int windowIndex, int mouseX, int mouseY, int mouseEvent);
@@ -72,7 +72,7 @@ bool scriptWindowDraw();
 bool scriptWindowDelete(const char* windowName);
 int scriptWindowResize(const char* windowName, int x, int y, int width, int height);
 int scriptWindowScale(const char* windowName, int x, int y, int width, int height);
-int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, int a6, int flags);
+int scriptWindowCreate(const char* windowName, int x, int y, int width, int height, ColorWithFlags color, int flags);
 int scriptWindowOutput(const char* string);
 bool scriptWindowGotoXY(int x, int y);
 bool scriptWindowSelectId(int index);
@@ -82,15 +82,15 @@ unsigned char* scriptWindowGetBuffer();
 int scriptWindowPush(const char* windowName);
 int _popWindow();
 
-void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, int flags, int textAlignment);
+void windowPrintBuf(int win, char* string, int stringLength, int width, int maxY, int x, int y, ColorWithFlags color, int textAlignment);
 char** windowWordWrap(char* string, int maxLength, int indent, int* substringListLengthPtr);
 void windowFreeWordList(char** substringList, int substringListLength);
-void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment, int spacing);
-void windowWrapLine(int win, char* string, int width, int height, int x, int y, int flags, int textAlignment);
+void windowWrapLineWithSpacing(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, int textAlignment, int spacing);
+void windowWrapLine(int win, char* string, int width, int height, int x, int y, ColorWithFlags color, int textAlignment);
 
 bool scriptWindowPrintRect(char* string, int wrapWidth, int textAlignment);
 bool scriptWindowFormatMessage(char* string, int x, int y, int width, int height, int textAlignment);
-bool scriptWindowPrint(char* string, int width, int x, int y, int color);
+bool scriptWindowPrint(char* string, int width, int x, int y, ColorWithFlags color);
 void _displayInWindow(unsigned char* data, int width, int height, int pitch);
 void _displayFile(char* fileName);
 void _displayFileRaw(char* fileName);

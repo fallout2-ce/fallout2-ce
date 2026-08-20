@@ -3158,8 +3158,8 @@ static void opFloatMessage(Program* program)
     }
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
 
-    int color = COLOR_LIGHT_YELLOW;
-    int backgroundColor = COLOR_BLACK;
+    Color color = COLOR_LIGHT_YELLOW;
+    Color backgroundColor = COLOR_BLACK;
     int font = 101;
 
     if (obj == nullptr) {
