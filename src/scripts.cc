@@ -1210,17 +1210,31 @@ static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
     int elevation = gScriptsRequestedElevatorLevel;
     int tile = -1;
 
-    if (elevatorSelectLevel(gScriptsRequestedElevatorType, &map, &elevation, &tile) == -1) {
+    int elevatorSelectResult = elevatorSelectLevel(gScriptsRequestedElevatorType, &map, &elevation, &tile);
+    debugPrint("\nElevator request result: type=%d result=%d map=%d elevation=%d tile=%d currentMap=%d currentElevation=%d",
+        gScriptsRequestedElevatorType,
+        elevatorSelectResult,
+        map,
+        elevation,
+        tile,
+        gMapHeader.index,
+        gElevation);
+    if (elevatorSelectResult == -1) {
         return -1;
     }
 
     if (tile == -1) {
+        debugPrint("\nElevator request result: invalid destination tile");
         return -1;
     }
 
     automapSaveCurrent();
 
     if (map == gMapHeader.index) {
+        debugPrint("\nElevator request action: same-map placement elevation=%d tile=%d currentElevation=%d",
+            elevation,
+            tile,
+            gElevation);
         if (elevation != gElevation) {
             scriptsCloseNearbyElevatorDoors();
         }
@@ -1235,6 +1249,11 @@ static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
     if (closeDoorsBeforeMapTransition) {
         scriptsCloseNearbyElevatorDoors();
     }
+
+    debugPrint("\nElevator request action: map transition map=%d elevation=%d tile=%d",
+        map,
+        elevation,
+        tile);
 
     MapTransition transition;
     memset(&transition, 0, sizeof(transition));
@@ -1444,6 +1463,11 @@ int scriptsRequestElevator(Object* obj, int elevatorType)
     if (elevator != nullptr) {
         elevatorType = elevator->data.scenery.elevator.type;
         elevatorLevel = elevator->data.scenery.elevator.level;
+        debugPrint("\nElevator request: stub tile=%d elevation=%d type=%d level=%d",
+            elevator->tile,
+            elevator->elevation,
+            elevatorType,
+            elevatorLevel);
     }
 
     if (elevatorType == -1) {

@@ -361,9 +361,21 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
     }
 
     if (index < ELEVATOR_LEVEL_MAX) {
-        if (elevatorDescription[*elevationPtr + index].tile != -1) {
-            *elevationPtr += index;
+        int adjustedIndex = *elevationPtr + index;
+        debugPrint("\nElevator select: type=%d map=%d inputLevel=%d matchedIndex=%d adjustedIndex=%d",
+            elevator,
+            *mapPtr,
+            *elevationPtr,
+            index,
+            adjustedIndex);
+        if (adjustedIndex >= 0 && adjustedIndex < ELEVATOR_LEVEL_MAX && elevatorDescription[adjustedIndex].tile != -1) {
+            *elevationPtr = adjustedIndex;
         }
+    } else {
+        debugPrint("\nElevator select: type=%d map=%d inputLevel=%d matchedIndex=none",
+            elevator,
+            *mapPtr,
+            *elevationPtr);
     }
 
     if (elevator == ELEVATOR_SIERRA_2) {
@@ -382,6 +394,16 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
 
     if (*elevationPtr > 3) {
         *elevationPtr -= 3;
+    }
+
+    int clampedElevation = std::clamp(*elevationPtr, 0, gElevatorLevels[elevator] - 1);
+    if (clampedElevation != *elevationPtr) {
+        debugPrint("\nElevator select: clamping start level type=%d level=%d clamped=%d buttonCount=%d",
+            elevator,
+            *elevationPtr,
+            clampedElevation,
+            gElevatorLevels[elevator]);
+        *elevationPtr = clampedElevation;
     }
 
     debugPrint("\n the start elev level %d\n", *elevationPtr);
@@ -410,7 +432,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
             done = true;
         }
 
-        if (keyCode >= 500 && keyCode < 504) {
+        if (keyCode >= 500 && keyCode < 500 + gElevatorLevels[elevator]) {
             done = true;
         }
 
@@ -428,6 +450,11 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
 
     if (!skipGauge) {
         keyCode -= 500;
+        debugPrint("\nElevator select result: type=%d keyCode=%d skipGauge=%d startLevel=%d",
+            elevator,
+            keyCode,
+            static_cast<int>(skipGauge),
+            *elevationPtr);
 
         if (*elevationPtr != keyCode) {
             float levelStep = (float)(gElevatorLevels[elevator] - 1) / 12.0f;
@@ -442,6 +469,13 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
             if (numberOfLevelsTravelled < 0) {
                 numberOfLevelsTravelled = -numberOfLevelsTravelled;
             }
+
+            debugPrint("\nElevator travel: type=%d from=%d to=%d levels=%d buttonCount=%d",
+                elevator,
+                *elevationPtr,
+                keyCode,
+                numberOfLevelsTravelled,
+                gElevatorLevels[elevator]);
 
             soundPlayFile(gElevatorSoundEffects[gElevatorLevels[elevator] - 2][numberOfLevelsTravelled]);
 
@@ -477,11 +511,21 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
     elevatorWindowFree();
     touch_set_touchscreen_mode(false);
 
-    if (keyCode >= 0) {
+    if (keyCode >= 0 && keyCode < ELEVATOR_LEVEL_MAX) {
         const ElevatorDescription* description = &(elevatorDescription[keyCode]);
         *mapPtr = description->map;
         *elevationPtr = description->elevation;
         *tilePtr = description->tile;
+        debugPrint("\nElevator destination: type=%d index=%d map=%d elevation=%d tile=%d",
+            elevator,
+            keyCode,
+            *mapPtr,
+            *elevationPtr,
+            *tilePtr);
+    } else {
+        debugPrint("\nElevator destination: type=%d index=%d canceled=1",
+            elevator,
+            keyCode);
     }
 
     return 0;
