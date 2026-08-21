@@ -19,6 +19,7 @@
 #include "map.h"
 #include "pipboy.h"
 #include "scripts.h"
+#include "settings.h"
 #include "sfall_config.h"
 #include "svga.h"
 #include "touch.h"
@@ -431,7 +432,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
         if (*elevationPtr != keyCode) {
             float levelStep = (float)(gElevatorLevels[elevator] - 1) / 12.0f;
 
-            unsigned int delay = (unsigned int)(levelStep * 276.92307);
+            const int delay = std::max(static_cast<int>(levelStep * 276.92307f / settings.ui.anim_speed), 1);
 
             if (keyCode < *elevationPtr) {
                 levelStep = -levelStep;
@@ -461,7 +462,9 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
 
                 windowRefresh(gElevatorWindow);
 
+                _GNW95_process_message();
                 delay_ms(delay - (getTicks() - tick));
+                _GNW95_process_message();
 
                 renderPresent();
                 sharedFpsLimiter.throttle();
