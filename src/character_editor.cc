@@ -2247,18 +2247,10 @@ static void characterEditorDrawPerksFolder()
                 hasContent = true;
             }
 
-            if (useProgressBar) {
-                if (gCharacterEditorFolderViewMaxLines + gCharacterEditorFolderViewTopLine > currentLineIndex) {
-                    if (currentLineIndex >= gCharacterEditorFolderViewTopLine) {
-
-                        int finalColor = COLOR_GREEN;
-                        if (currentLineIndex - gCharacterEditorFolderViewTopLine == gCharacterEditorFolderViewHighlightedLine) {
-                            finalColor = COLOR_LIGHT_YELLOW;
-                        }
-
-                        characterEditorDrawPerkProgressBar(currentY, perkLevel, maxRank, finalColor);
-                    }
-                }
+            if (useProgressBar && currentLineIndex >= gCharacterEditorFolderViewTopLine
+                && currentLineIndex < gCharacterEditorFolderViewTopLine + gCharacterEditorFolderViewMaxLines) {
+                characterEditorDrawPerkProgressBar(
+                    currentY, perkLevel, maxRank, isHighlighted ? COLOR_LIGHT_YELLOW : COLOR_GREEN);
             }
         }
     }
@@ -7388,12 +7380,9 @@ static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, int c
         if (finalRankToDraw > maxRank) finalRankToDraw = maxRank;
     }
 
-    constexpr int kSelectorViewLeftX = 45;
-    constexpr int kSelectorViewWidth = 192;
-    constexpr int kSelectorViewEdgePadding = 5;
     constexpr int progressBarColumnWidth = 16; // 3 segments 4 pixels each + 2 paddings (2 pixels each)
 
-    int startX = kSelectorViewLeftX + kSelectorViewWidth - progressBarColumnWidth;
+    int startX = PERK_WINDOW_LIST_X + PERK_WINDOW_LIST_WIDTH - progressBarColumnWidth;
 
     int offsetToCenter = ((fontGetLineHeight() + 2) - 7) / 2;
     if (offsetToCenter < 0) offsetToCenter = 0;
