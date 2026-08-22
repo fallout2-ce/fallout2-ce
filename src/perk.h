@@ -25,6 +25,25 @@ int perkGetFrmId(Perk perk);
 void perkAddEffect(Object* critter, Perk perk);
 void perkRemoveEffect(Object* critter, Perk perk);
 int perkGetSkillModifier(Object* critter, Skill skill);
+int perkGetNightVisionBonus();
+int perkGetMasterTraderBonus();
+int perkGetEducatedBonus();
+int perkGetHealerMinBonus();
+int perkGetHealerMaxBonus();
+int perkGetLifegiverBonus();
+int perkGetWeaponLongRangeBonus();
+int perkGetWeaponScopeRangeBonus();
+int perkGetWeaponScopeRangePenalty();
+int perkGetWeaponAccurateBonus();
+int perkGetVaultCityInoculationsPoisonBonus();
+int perkGetVaultCityInoculationsRadBonus();
+int perkGetCautiousNatureBonus();
+int perkGetComprehensionBonus();
+int perkGetDemolitionExpertBonus();
+int perkGetLivingAnatomyBonus();
+int perkGetPyromaniacBonus();
+int perkGetStonewallPercent();
+int perkGetWeaponHandlingBonus();
 
 // Returns true if critter has at least one rank in specified perk.
 //
