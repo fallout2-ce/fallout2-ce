@@ -2678,6 +2678,10 @@ void _gdSetupFidget(int headFid, HeadFidget reaction)
         }
     }
 
+    if (_lipsFp == nullptr) {
+        _lipsFID = 0;
+    }
+
     if (_lipsFID == 0) {
         _phone_anim = anim;
         _lipsFID = buildFid(OBJ_TYPE_HEAD, headFromFid(headFid), anim);
