@@ -495,7 +495,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
     elevatorWindowFree();
     touch_set_touchscreen_mode(false);
 
-    if (keyCode >= 0 && keyCode < ELEVATOR_LEVEL_MAX) {
+    if (keyCode >= 0 && keyCode < gElevatorLevels[elevator]) {
         const ElevatorDescription* description = &(elevatorDescription[keyCode]);
         *mapPtr = description->map;
         *elevationPtr = description->elevation;
@@ -706,8 +706,9 @@ void elevatorsInit()
 
         if (index >= ELEVATOR_COUNT) {
             int levels = 0;
-            configGetInt(elevatorsConfig.get(), sectionKey, "ButtonCount", &levels);
-            gElevatorLevels[index] = std::clamp(levels, 2, ELEVATOR_LEVEL_MAX);
+            if (configGetInt(elevatorsConfig.get(), sectionKey, "ButtonCount", &levels)) {
+                gElevatorLevels[index] = std::clamp(levels, 2, ELEVATOR_LEVEL_MAX);
+            }
         }
 
         configGetInt(elevatorsConfig.get(), sectionKey, "MainFrm", &(gElevatorBackgrounds[index].backgroundFrmId));
