@@ -7,6 +7,7 @@
 
 #include "art.h"
 #include "cycle.h"
+#include "dbox.h"
 #include "debug.h"
 #include "delay.h"
 #include "draw.h"
@@ -345,6 +346,17 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
         return -1;
     }
 
+    if (gElevatorLevels[elevator] < 2 || gElevatorLevels[elevator] > ELEVATOR_LEVEL_MAX) {
+        char message[80];
+        snprintf(message, sizeof(message), "Elevator type %d not found.", elevator);
+        const char* body = "Check configuration";
+        showDialogBox(message, &body, 1, 192, 135, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
+        debugPrint("\nElevator select: invalid button count type=%d buttonCount=%d",
+            elevator,
+            gElevatorLevels[elevator]);
+        return -1;
+    }
+
     // SFALL
     if (elevatorWindowInit(elevator) == -1) {
         return -1;
@@ -361,8 +373,9 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
     }
 
     if (index < ELEVATOR_LEVEL_MAX) {
-        if (elevatorDescription[*elevationPtr + index].tile != -1) {
-            *elevationPtr += index;
+        int adjustedIndex = *elevationPtr + index;
+        if (adjustedIndex >= 0 && adjustedIndex < ELEVATOR_LEVEL_MAX && elevatorDescription[adjustedIndex].tile != -1) {
+            *elevationPtr = adjustedIndex;
         }
     }
 
@@ -382,6 +395,11 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
 
     if (*elevationPtr > 3) {
         *elevationPtr -= 3;
+    }
+
+    int clampedElevation = std::clamp(*elevationPtr, 0, gElevatorLevels[elevator] - 1);
+    if (clampedElevation != *elevationPtr) {
+        *elevationPtr = clampedElevation;
     }
 
     debugPrint("\n the start elev level %d\n", *elevationPtr);
@@ -410,7 +428,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
             done = true;
         }
 
-        if (keyCode >= 500 && keyCode < 504) {
+        if (keyCode >= 500 && keyCode < 500 + gElevatorLevels[elevator]) {
             done = true;
         }
 
@@ -477,7 +495,7 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
     elevatorWindowFree();
     touch_set_touchscreen_mode(false);
 
-    if (keyCode >= 0) {
+    if (keyCode >= 0 && keyCode < gElevatorLevels[elevator]) {
         const ElevatorDescription* description = &(elevatorDescription[keyCode]);
         *mapPtr = description->map;
         *elevationPtr = description->elevation;
@@ -671,11 +689,13 @@ void elevatorsInit()
     char* elevatorsFileName;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_ELEVATORS_FILE_KEY, &elevatorsFileName);
     if (elevatorsFileName == nullptr || *elevatorsFileName == '\0') {
+        debugPrint("\nElevators init: no ElevatorsFile configured, custom elevators disabled");
         return;
     }
 
     ScopedConfig elevatorsConfig(elevatorsFileName, false);
     if (!elevatorsConfig) {
+        debugPrint("\nElevators init: failed to load %s", elevatorsFileName);
         return;
     }
 
@@ -686,8 +706,9 @@ void elevatorsInit()
 
         if (index >= ELEVATOR_COUNT) {
             int levels = 0;
-            configGetInt(elevatorsConfig.get(), sectionKey, "ButtonCount", &levels);
-            gElevatorLevels[index] = std::clamp(levels, 2, ELEVATOR_LEVEL_MAX);
+            if (configGetInt(elevatorsConfig.get(), sectionKey, "ButtonCount", &levels)) {
+                gElevatorLevels[index] = std::clamp(levels, 2, ELEVATOR_LEVEL_MAX);
+            }
         }
 
         configGetInt(elevatorsConfig.get(), sectionKey, "MainFrm", &(gElevatorBackgrounds[index].backgroundFrmId));
