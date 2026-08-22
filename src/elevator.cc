@@ -7,9 +7,9 @@
 
 #include "art.h"
 #include "cycle.h"
+#include "dbox.h"
 #include "debug.h"
 #include "delay.h"
-#include "dbox.h"
 #include "draw.h"
 #include "game_mouse.h"
 #include "game_sound.h"
