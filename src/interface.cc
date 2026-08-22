@@ -145,13 +145,13 @@ static int endTurnButtonInit();
 static int endTurnButtonFree();
 static int endCombatButtonInit();
 static int endCombatButtonFree();
-static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoPerShot);
+static void interfaceUpdateAmmoBar(int x, int ratio, int ammoQuantity, int ammoCapacity, int ammoPerShot);
 static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState, int ammoCapacity);
 static int interfaceGetWeaponAmmoPerShot(Object* weapon, HitMode hitMode, int ammoCapacity);
-static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity, int ammoPerShot);
+static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoQuantity, int ammoCapacity, int ammoPerShot);
 static void interfaceRestoreAlternateAmmoMeterBackground(int x);
 static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool filled, bool lowerHalf);
-static int interfaceAlternateAmmoMeterGetDividerShade(int row, int ammoCapacity, int ammoPerShot);
+static int interfaceAlternateAmmoMeterGetDividerShade(int row, int firstActiveRow, int ammoQuantity, int ammoPerShot);
 static int _intface_item_reload();
 static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor);
 static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse);
@@ -1450,13 +1450,14 @@ int _intface_update_ammo_lights()
     InterfaceItemState* p = &(gInterfaceItemStates[gInterfaceCurrentHand]);
 
     int ratio = 0;
+    int current = 0;
     int maximum = 0;
     int ammoPerShot = 0;
 
     if (p->isWeapon != 0) {
         maximum = ammoGetCapacity(p->item);
         if (maximum > 0) {
-            int current = ammoGetQuantity(p->item);
+            current = ammoGetQuantity(p->item);
             ratio = std::clamp(static_cast<int>(static_cast<long long>(current) * kAmmoBarMaxRatio / maximum), 0, kAmmoBarMaxRatio);
             ammoPerShot = settings.ui.alternate_ammo_meter != 0 ? interfaceGetActiveWeaponAmmoPerShot(p, maximum) : 0;
         }
@@ -1464,13 +1465,13 @@ int _intface_update_ammo_lights()
         if (itemGetType(p->item) == ITEM_TYPE_MISC) {
             maximum = miscItemGetMaxCharges(p->item);
             if (maximum > 0) {
-                int current = miscItemGetCharges(p->item);
+                current = miscItemGetCharges(p->item);
                 ratio = std::clamp(static_cast<int>(static_cast<long long>(current) * kAmmoBarMaxRatio / maximum), 0, kAmmoBarMaxRatio);
             }
         }
     }
 
-    interfaceUpdateAmmoBar(kAmmoBarLeft + gInterfaceBarContentOffset, ratio, maximum, ammoPerShot);
+    interfaceUpdateAmmoBar(kAmmoBarLeft + gInterfaceBarContentOffset, ratio, current, maximum, ammoPerShot);
 
     return 0;
 }
@@ -2083,10 +2084,10 @@ static int endCombatButtonFree()
 }
 
 // 0x460AA0 intface_draw_ammo_lights
-static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoPerShot)
+static void interfaceUpdateAmmoBar(int x, int ratio, int ammoQuantity, int ammoCapacity, int ammoPerShot)
 {
     if (settings.ui.alternate_ammo_meter != 0) {
-        interfaceUpdateAlternateAmmoMeter(x, ratio, ammoCapacity, ammoPerShot);
+        interfaceUpdateAlternateAmmoMeter(x, ratio, ammoQuantity, ammoCapacity, ammoPerShot);
         return;
     }
 
@@ -2164,7 +2165,7 @@ static int interfaceGetWeaponAmmoPerShot(Object* weapon, HitMode hitMode, int am
     return 0;
 }
 
-static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity, int ammoPerShot)
+static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoQuantity, int ammoCapacity, int ammoPerShot)
 {
     interfaceRestoreAlternateAmmoMeterBackground(x);
 
@@ -2181,7 +2182,7 @@ static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity
 
         for (int row = 0; row < kAmmoBarMaxRatio; row++) {
             bool filled = row >= firstActiveRow;
-            int dividerShade = interfaceAlternateAmmoMeterGetDividerShade(row, ammoCapacity, ammoPerShot);
+            int dividerShade = interfaceAlternateAmmoMeterGetDividerShade(row, firstActiveRow, ammoQuantity, ammoPerShot);
             if (dividerShade == 0) {
                 dest[0] = kAmmoAlternateMeterLeftBorderColor;
                 dest[1] = kAmmoAlternateMeterLeftBorderColor;
@@ -2254,29 +2255,31 @@ static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool fille
     }
 }
 
-static int interfaceAlternateAmmoMeterGetDividerShade(int row, int ammoCapacity, int ammoPerShot)
+static int interfaceAlternateAmmoMeterGetDividerShade(int row, int firstActiveRow, int ammoQuantity, int ammoPerShot)
 {
-    if (ammoCapacity <= 0 || ammoPerShot <= 0 || ammoPerShot >= ammoCapacity) {
+    if (ammoQuantity <= 0 || ammoPerShot <= 0 || ammoPerShot >= ammoQuantity) {
         return -1;
     }
 
-    int segmentCount = (ammoCapacity + ammoPerShot - 1) / ammoPerShot;
+    int segmentCount = (ammoQuantity + ammoPerShot - 1) / ammoPerShot;
     if (segmentCount <= 1 || segmentCount > kAmmoAlternateMeterMaxSegmentCount) {
         return -1;
     }
 
     constexpr int dividerHeight = 2;
-    int segmentRows = kAmmoBarMaxRatio - dividerHeight * (segmentCount - 1);
+    int filledRows = kAmmoBarMaxRatio - firstActiveRow;
+    int segmentRows = filledRows - dividerHeight * (segmentCount - 1);
     if (segmentRows < segmentCount) {
         return -1;
     }
 
-    int baseSegmentHeight = segmentRows / segmentCount;
-    int extraRows = segmentRows % segmentCount;
-    int dividerRow = 0;
+    int dividerRow = firstActiveRow;
+    int remainder = ammoQuantity % ammoPerShot;
+    int fullSegmentCount = ammoQuantity / ammoPerShot;
 
     for (int segmentIndex = 0; segmentIndex < segmentCount - 1; segmentIndex++) {
-        dividerRow += baseSegmentHeight + (segmentIndex < extraRows ? 1 : 0);
+        int segmentAmmo = segmentIndex < fullSegmentCount ? ammoPerShot : remainder;
+        dividerRow += segmentAmmo * segmentRows / ammoQuantity;
 
         if (row == dividerRow || row == dividerRow + 1) {
             return row - dividerRow;
