@@ -4442,7 +4442,8 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
 
     if (gameMouseRenderActionMenuItems(x, y, actionMenuItems, actionMenuItemsLength,
             windowWidth + inventoryWindowX,
-            windowHeight + inventoryWindowY) == -1) {
+            windowHeight + inventoryWindowY)
+        == -1) {
         inventorySetCursor(INVENTORY_WINDOW_CURSOR_ARROW);
         return;
     }
