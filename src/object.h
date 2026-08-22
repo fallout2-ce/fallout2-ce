@@ -1,6 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "color.h"
 #include "db.h"
 #include "geometry.h"
 #include "inventory.h"
@@ -14,10 +15,10 @@ typedef struct ObjectWithFlags {
     Object* object;
 } ObjectWithFlags;
 
-extern unsigned char* _wallBlendTable;
+extern Color* _wallBlendTable;
 extern Object* _moveBlockObj;
 
-extern unsigned char _commonGrayTable[256];
+extern Color _commonGrayTable[COLOR_COUNT];
 extern Object* gEgg;
 extern Object* gDude;
 
@@ -82,9 +83,9 @@ int objectGetDistanceBetweenTiles(Object* object1, int tile1, Object* object2, i
 bool objectWithinWalkDistance(Object* critter, Object* target);
 int objectListCreate(int tile, int elevation, ObjectType objectType, Object*** objectsPtr);
 void objectListFree(Object** objects);
-void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, unsigned char* a9, unsigned char* a10);
+void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, Color* blendTable, Color* colorTable);
 void _dark_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light);
-void _dark_translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light, unsigned char* a10, unsigned char* a11);
+void _dark_translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int light, Color* blendTable, Color* colorTable);
 void _intensity_mask_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destPitch, unsigned char* mask, int maskPitch, int light);
 int objectSetOutline(Object* obj, OutlineType outlineType, Rect* rect);
 int objectClearOutline(Object* obj, Rect* rect);

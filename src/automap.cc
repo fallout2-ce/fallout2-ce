@@ -27,6 +27,7 @@
 #include "svga.h"
 #include "text_font.h"
 #include "window_manager.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -40,7 +41,7 @@ namespace fallout {
 
 static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, AutomapFlags flags);
 static int automapSaveEntry(File* stream);
-static int automapLoadEntry(int map, int elevation);
+static int automapLoadEntry(Map map, int elevation);
 static int automapSaveHeader(File* stream);
 static int automapLoadHeader(File* stream);
 static void _decode_map_data(int elevation);
@@ -51,7 +52,7 @@ static int gAutomapWindow = -1;
 
 static bool automapEntryIsValid(int map, int elevation)
 {
-    return map >= 0 && map < AUTOMAP_MAP_COUNT && elevationIsValid(elevation);
+    return map >= MAP_FIRST && map < AUTOMAP_MAP_COUNT && elevationIsValid(elevation);
 }
 
 enum AutomapFrm : int {
@@ -322,7 +323,7 @@ void automapShow(bool isInGame, bool isUsingScanner)
         }
     }
 
-    int color;
+    Color color;
     if (isInGame) {
         color = COLOR_DARK_GREY;
         _obj_process_seen();
@@ -521,7 +522,7 @@ int automapGetWindow()
 // 0x41BD1C draw_top_down_map
 static void automapRenderInMapWindow(int window, int elevation, unsigned char* backgroundData, AutomapFlags flags)
 {
-    int color;
+    Color color;
     if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
         color = COLOR_DARK_GREY;
     } else {
@@ -540,7 +541,7 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         }
 
         ObjectType objectType = objectTypeFromFid(object->fid);
-        unsigned char objectColor;
+        Color objectColor;
 
         if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
             if (objectType == OBJ_TYPE_CRITTER
@@ -621,18 +622,19 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
         }
     }
 
-    int textColor;
+    Color textColor;
     if ((flags & AUTOMAP_IN_GAME) != AUTOMAP_NONE) {
         textColor = COLOR_GREEN;
     } else {
         textColor = COLOR_DARK_BROWN;
     }
 
-    if (mapGetCurrentMap() != -1) {
-        char* areaName = mapGetCityName(mapGetCurrentMap());
+    Map map = mapGetCurrentMap();
+    if (mapIsValid(map)) {
+        char* areaName = mapGetCityName(map);
         windowDrawText(window, areaName, 240, 150, 380, textColor | DRAW_TEXT_FLAG_NO_BG);
 
-        char* mapName = mapGetName(mapGetCurrentMap(), elevation);
+        char* mapName = mapGetName(map, elevation);
         windowDrawText(window, mapName, 240, 150, 396, textColor | DRAW_TEXT_FLAG_NO_BG);
     }
 
@@ -642,12 +644,9 @@ static void automapRenderInMapWindow(int window, int elevation, unsigned char* b
 // Renders automap in Pipboy window.
 //
 // 0x41C004 draw_top_down_map_pipboy
-int automapRenderInPipboyWindow(int window, int map, int elevation)
+int automapRenderInPipboyWindow(int window, Map map, int elevation)
 {
     unsigned char* windowBuffer = windowGetBuffer(window) + 640 * AUTOMAP_PIPBOY_VIEW_Y + AUTOMAP_PIPBOY_VIEW_X;
-
-    unsigned char wallColor = COLOR_GREEN;
-    unsigned char sceneryColor = COLOR_DARK_GREEN;
 
     gAutomapEntry.data = (unsigned char*)internal_malloc(11024);
     if (gAutomapEntry.data == nullptr) {
@@ -679,12 +678,12 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
 
             switch ((byte & 0xC0) >> 6) {
             case 1:
-                *windowBuffer++ = wallColor;
-                *windowBuffer++ = wallColor;
+                *windowBuffer++ = COLOR_GREEN;
+                *windowBuffer++ = COLOR_GREEN;
                 break;
             case 2:
-                *windowBuffer++ = sceneryColor;
-                *windowBuffer++ = sceneryColor;
+                *windowBuffer++ = COLOR_DARK_GREEN;
+                *windowBuffer++ = COLOR_DARK_GREEN;
                 break;
             default:
                 windowBuffer += 2;
@@ -706,7 +705,7 @@ int automapRenderInPipboyWindow(int window, int map, int elevation)
 // 0x41C0F0 automap_pip_save
 int automapSaveCurrent()
 {
-    int map = mapGetCurrentMap();
+    Map map = mapGetCurrentMap();
     int elevation = gElevation;
     if (!automapEntryIsValid(map, elevation)) {
         return 0;
@@ -838,7 +837,7 @@ int automapSaveCurrent()
         }
 
         int diff = gAutomapEntry.dataSize - nextEntryDataSize;
-        for (int map = 0; map < AUTOMAP_MAP_COUNT; map++) {
+        for (Map map = MAP_FIRST; map < AUTOMAP_MAP_COUNT; map++) {
             for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
                 if (gAutomapHeader.offsets[map][elevation] > entryOffset) {
                     gAutomapHeader.offsets[map][elevation] += diff;
@@ -953,7 +952,7 @@ err:
 }
 
 // 0x41C8CC AM_ReadEntry
-static int automapLoadEntry(int map, int elevation)
+static int automapLoadEntry(Map map, int elevation)
 {
     gAutomapEntry.compressedData = nullptr;
     if (!automapEntryIsValid(map, elevation)) {
@@ -1213,9 +1212,9 @@ int automapGetHeader(AutomapHeader** automapHeaderPtr)
     return 0;
 }
 
-void automapSetDisplayMap(int map, bool available)
+void automapSetDisplayMap(Map map, bool available)
 {
-    if (map >= 0 && map < AUTOMAP_MAP_COUNT) {
+    if (map >= MAP_FIRST && map < AUTOMAP_MAP_COUNT) {
         _displayMapList[map] = available ? 0 : -1;
     }
 }

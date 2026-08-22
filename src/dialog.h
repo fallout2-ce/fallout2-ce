@@ -1,6 +1,7 @@
 #ifndef DIALOG_H
 #define DIALOG_H
 
+#include "color.h"
 #include "interpreter.h"
 
 namespace fallout {
@@ -101,11 +102,11 @@ void _replyAddOptionProc(const char* a1, int a2, int a3);
 void _optionFree(STRUCT_56DAE0_FIELD_4_FIELD_C* a1);
 void _replyFree();
 int _endDialog();
-void _printLine(int win, char** strings, int strings_num, int a4, int a5, int a6, int a7, int a8, int a9);
-void _printStr(int win, char* a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9);
+void _printLine(int win, char** strings, int strings_num, int a4, int a5, int a6, int a7, ColorWithFlags color, int a9);
+void _printStr(int win, char* a2, int a3, int a4, int a5, int a6, ColorWithFlags color, int a8, int a9);
 int _abortReply(int a1);
 void _endReply();
-void _drawStr(int win, char* a2, int font, int width, int height, int left, int top, int a8, int a9, int a10);
+void _drawStr(int win, char* a2, int font, int width, int height, int left, int top, ColorWithFlags color, int a9, int a10);
 int _dialogStart(Program* a1);
 int _dialogRestart();
 int _dialogGotoReply(const char* a1);

@@ -879,6 +879,7 @@ bool configSetBool(Config* config, const char* sectionKey, const char* key, bool
     return configSetInt(config, sectionKey, key, value ? 1 : 0);
 }
 
+// ScopedConfig is a RAII wrapper around Config that makes cleanup easier.
 ScopedConfig::ScopedConfig()
 {
     _loaded = configInit(&_config);
@@ -899,11 +900,7 @@ ScopedConfig::~ScopedConfig()
     }
 }
 
-bool ScopedConfig::isInitialized() const
-{
-    return _config.isInitialized();
-}
-
+// get returns a pointer to be useful in the config* API above; it cannot be nullptr
 Config* ScopedConfig::get()
 {
     return &_config;

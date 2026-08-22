@@ -3,22 +3,84 @@
 
 namespace fallout {
 
-typedef unsigned char Color;
+enum Color : unsigned char {
+    COLOR_FIRST = 0,
+    COLOR_LAST = 255
+};
+
+enum DrawTextFlags : unsigned int {
+    DRAW_TEXT_FLAG_NONE = 0x0000000,
+    DRAW_TEXT_FLAG_SHADOWED = 0x0010000,
+    DRAW_TEXT_FLAG_UNDERLINED = 0x0020000,
+    DRAW_TEXT_FLAG_MONOSPACED = 0x0040000,
+    DRAW_TEXT_FLAG_REFRESH = 0x01000000,
+    DRAW_TEXT_FLAG_NO_BG = 0x02000000,
+    DRAW_TEXT_FLAG_OVERFLOW = 0x04000000,
+};
+
+constexpr inline DrawTextFlags operator|(DrawTextFlags lhs, DrawTextFlags rhs)
+{
+    return static_cast<DrawTextFlags>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline DrawTextFlags operator~(DrawTextFlags rhs)
+{
+    return static_cast<DrawTextFlags>(~static_cast<unsigned int>(rhs));
+}
+
+constexpr inline DrawTextFlags operator&(Color lhs, DrawTextFlags rhs) = delete;
+
+enum ColorWithFlags : int {
+    COLOR_INVALID = -1
+};
+
+constexpr inline DrawTextFlags operator&(ColorWithFlags lhs, DrawTextFlags rhs)
+{
+    return static_cast<DrawTextFlags>(static_cast<int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ColorWithFlags operator|(ColorWithFlags lhs, DrawTextFlags rhs)
+{
+    return static_cast<ColorWithFlags>(static_cast<int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+constexpr inline ColorWithFlags operator|(Color lhs, DrawTextFlags rhs)
+{
+    return static_cast<ColorWithFlags>(static_cast<unsigned char>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+inline ColorWithFlags& operator&=(ColorWithFlags& lhs, DrawTextFlags rhs)
+{
+    lhs = static_cast<ColorWithFlags>(static_cast<int>(lhs) & static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
+inline ColorWithFlags& operator|=(ColorWithFlags& lhs, DrawTextFlags rhs)
+{
+    lhs = static_cast<ColorWithFlags>(static_cast<int>(lhs) | static_cast<unsigned int>(rhs));
+    return lhs;
+}
+
 typedef const char*(ColorFileNameManger)(const char*);
 typedef void(ColorTransitionCallback)();
 
-extern unsigned char _cmap[768];
+#define COLOR_COUNT (256)
+#define COLOR_COMPONENTS_RGB (3)
+#define COLOR_MAP_SIZE (COLOR_COUNT * COLOR_COMPONENTS_RGB)
+#define COLOR_PALETTE_SIZE_15BIT (32768)
 
-extern unsigned char _systemCmap[256 * 3];
+extern unsigned char _cmap[COLOR_MAP_SIZE];
+
+extern unsigned char _systemCmap[COLOR_MAP_SIZE];
 extern unsigned char _currentGammaTable[64];
-extern unsigned char* _blendTable[256];
-extern unsigned char _mappedColor[256];
-extern Color colorMixAddTable[256][256];
-extern Color intensityColorTable[256][256];
-extern Color colorMixMulTable[256][256];
-extern unsigned char _colorTable[32768];
+extern Color* _blendTable[COLOR_COUNT];
+extern unsigned char _mappedColor[COLOR_COUNT];
+extern Color colorMixAddTable[COLOR_COUNT][COLOR_COUNT];
+extern Color intensityColorTable[COLOR_COUNT][COLOR_COUNT];
+extern Color colorMixMulTable[COLOR_COUNT][COLOR_COUNT];
+extern Color _colorTable[COLOR_PALETTE_SIZE_15BIT];
 
-int _calculateColor(int intensity, Color color);
+Color _calculateColor(int intensity, Color color);
 int Color2RGB(Color c);
 void colorPaletteFadeBetween(unsigned char* oldPalette, unsigned char* newPalette, int steps);
 void colorPaletteSetTransitionCallback(ColorTransitionCallback* callback);
@@ -27,8 +89,8 @@ unsigned char* _getSystemPalette();
 void _setSystemPaletteEntries(unsigned char* palette, int start, int end);
 bool colorPaletteLoad(const char* path);
 char* _colorError();
-unsigned char* _getColorBlendTable(int ch);
-void _freeColorBlendTable(int color);
+Color* _getColorBlendTable(Color ch);
+void _freeColorBlendTable(Color color);
 void colorSetBrightness(double value);
 bool _initColors();
 void _colorsClose();

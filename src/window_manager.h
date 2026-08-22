@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "art.h"
+#include "color.h"
 #include "draw.h"
 #include "geometry.h"
 
@@ -56,15 +57,6 @@ typedef enum WindowFlags {
     WINDOW_MANAGED = 0x100,
 } WindowFlags;
 
-enum DrawTextFlags {
-    DRAW_TEXT_FLAG_SHADOWED = 0x0010000,
-    DRAW_TEXT_FLAG_UNDERLINED = 0x0020000,
-    DRAW_TEXT_FLAG_MONOSPACED = 0x0040000,
-    DRAW_TEXT_FLAG_REFRESH = 0x01000000,
-    DRAW_TEXT_FLAG_NO_BG = 0x02000000,
-    DRAW_TEXT_FLAG_OVERFLOW = 0x04000000,
-};
-
 typedef enum ButtonFlags {
     // Button keeps a persistent checked state and uses the pressed image while checked.
     //
@@ -98,8 +90,8 @@ typedef struct MenuPulldown {
     int keyCode;
     int itemsLength;
     char** items;
-    int foregroundColor;
-    int backgroundColor;
+    ColorWithFlags foregroundColor;
+    ColorWithFlags backgroundColor;
 } MenuPulldown;
 
 typedef struct MenuBar {
@@ -107,8 +99,8 @@ typedef struct MenuBar {
     Rect rect;
     int pulldownsLength;
     MenuPulldown pulldowns[15];
-    int foregroundColor;
-    int backgroundColor;
+    ColorWithFlags foregroundColor;
+    ColorWithFlags backgroundColor;
 } MenuBar;
 
 typedef void WindowBlitProc(const unsigned char* src, int width, int height, int srcPitch, unsigned char* dest, int destPitch);
@@ -122,7 +114,7 @@ typedef struct Window {
     Rect rect;
     int width;
     int height;
-    int color;
+    ColorWithFlags color;
     int tx;
     int ty;
     unsigned char* buffer;
@@ -189,15 +181,38 @@ extern int _GNW_wcolor[6];
 
 int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int flags);
 void windowManagerExit(void);
-int windowCreate(int x, int y, int width, int height, int color, int flags);
+int windowCreate(int x, int y, int width, int height, ColorWithFlags color, int flags);
+
+inline int windowCreate(int x, int y, int width, int height, Color color, int flags)
+{
+    return windowCreate(x, y, width, height, color | DRAW_TEXT_FLAG_NONE, flags);
+}
+
 void windowDestroy(int win);
 void windowDrawBorder(int win);
 // flags is also used to pass color
-void windowDrawText(int win, const char* str, int maxWidth, int x, int y, int flags);
-void _win_text(int win, const char* const* fileNameList, int fileNameListLength, int maxWidth, int x, int y, int flags);
-void windowDrawLine(int win, int left, int top, int right, int bottom, int color);
-void windowDrawRect(int win, int left, int top, int right, int bottom, int color);
-void windowFill(int win, int x, int y, int width, int height, int color);
+void windowDrawText(int win, const char* str, int maxWidth, int x, int y, ColorWithFlags color);
+void _win_text(int win, const char* const* fileNameList, int fileNameListLength, int maxWidth, int x, int y, ColorWithFlags color);
+void windowDrawLine(int win, int left, int top, int right, int bottom, ColorWithFlags color);
+
+inline void windowDrawLine(int win, int left, int top, int right, int bottom, Color color)
+{
+    windowDrawLine(win, left, top, right, bottom, color | DRAW_TEXT_FLAG_NONE);
+}
+
+void windowDrawRect(int win, int left, int top, int right, int bottom, ColorWithFlags color);
+
+inline void windowDrawRect(int win, int left, int top, int right, int bottom, Color color)
+{
+    windowDrawRect(win, left, top, right, bottom, color | DRAW_TEXT_FLAG_NONE);
+}
+
+void windowFill(int win, int x, int y, int width, int height, ColorWithFlags color);
+inline void windowFill(int win, int x, int y, int width, int height, Color color)
+{
+    windowFill(win, x, y, width, height, color | DRAW_TEXT_FLAG_NONE);
+}
+
 void windowShow(int win);
 void windowHide(int win);
 void windowRefresh(int win);

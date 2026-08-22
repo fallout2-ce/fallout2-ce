@@ -256,7 +256,7 @@ static MainMenuLayout mainMenuBuildLayout()
 static void mainMenuDrawBackground(const MainMenuLayout& layout)
 {
     Buffer2D dest(gMainMenuWindowBuffer, layout.screenWidth, layout.screenHeight);
-    bufferFill2D(dest, 0);
+    bufferFill2D(dest, COLOR_FIRST);
 
     if (layout.backgroundWidth == mainMenuBackgroundFrmImage.getWidth()
         && layout.backgroundHeight == mainMenuBackgroundFrmImage.getHeight()) {
@@ -369,11 +369,11 @@ static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOf
     //        0x010000 - change the color for version string only
     //        0x020000 - underline text (only for the version string)
     //        0x040000 - monospace font (only for the version string)
-    int fontSettings = COLOR_YELLOW_2;
-    int fontSettingsSFall = 0;
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", &fontSettingsSFall, 0);
-    if (fontSettingsSFall && !(fontSettingsSFall & 0x010000)) {
-        fontSettings = fontSettingsSFall & 0xFF;
+    ColorWithFlags fontSettings = COLOR_YELLOW_2 | DRAW_TEXT_FLAG_NONE;
+    ColorWithFlags fontSettingsSFall = COLOR_FIRST | DRAW_TEXT_FLAG_NONE;
+    configGetEnum<ColorWithFlags>(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "font_color", &fontSettingsSFall, COLOR_FIRST | DRAW_TEXT_FLAG_NONE);
+    if (fontSettingsSFall && !(fontSettingsSFall & DRAW_TEXT_FLAG_SHADOWED)) {
+        fontSettings = static_cast<Color>(fontSettingsSFall & COLOR_LAST) | DRAW_TEXT_FLAG_NONE;
     }
 
     msg.num = 20;
@@ -383,28 +383,29 @@ static void mainMenuDrawBuildInfo(const MainMenuLayout& layout, const MainMenuOf
             0,
             layout.backgroundX + offsets.creditsX + MAIN_MENU_FOOTER_LEFT_X,
             mainMenuGetAnchoredY(layout, offsets.creditsY + MAIN_MENU_COPYRIGHT_Y),
-            fontSettings | 0x06000000);
+            fontSettings | (DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
     }
 
     if (fontSettingsSFall) {
         fontSettings = fontSettingsSFall;
     }
 
-    int versionFontSettings = fontSettings & ~0x010000;
+    fontSettings &= ~DRAW_TEXT_FLAG_SHADOWED;
+    ColorWithFlags versionFontSettings = fontSettings;
     char version[VERSION_MAX];
     versionGetVersion(version, sizeof(version));
     int len = fontGetStringWidth(version);
-    windowDrawText(gMainMenuWindow, version, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_VERSION_Y), versionFontSettings | 0x06000000);
+    windowDrawText(gMainMenuWindow, version, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_VERSION_Y), versionFontSettings | (DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
 
     char commitHash[VERSION_MAX] = "BUILD HASH: ";
     strcat(commitHash, _BUILD_HASH);
     len = fontGetStringWidth(commitHash);
-    windowDrawText(gMainMenuWindow, commitHash, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_BUILD_HASH_Y), versionFontSettings | 0x06000000);
+    windowDrawText(gMainMenuWindow, commitHash, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_BUILD_HASH_Y), versionFontSettings | (DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
 
     char buildDate[VERSION_MAX] = "DATE: ";
     strcat(buildDate, _BUILD_DATE);
     len = fontGetStringWidth(buildDate);
-    windowDrawText(gMainMenuWindow, buildDate, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_BUILD_DATE_Y), versionFontSettings | 0x06000000);
+    windowDrawText(gMainMenuWindow, buildDate, 0, mainMenuGetAnchoredRightX(layout, MAIN_MENU_FOOTER_RIGHT_MARGIN, len), mainMenuGetAnchoredY(layout, MAIN_MENU_BUILD_DATE_Y), versionFontSettings | (DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
 }
 
 static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
@@ -454,11 +455,11 @@ static bool mainMenuCreateButtons(const MainMenuLayout& layout, const MainMenuOf
 static void mainMenuDrawButtonLabels(const MainMenuLayout& layout, const MainMenuOffsets& offsets)
 {
     MessageListItem msg;
-    int fontSettings = COLOR_YELLOW_2;
-    int fontSettingsSFall = 0;
-    configGetInt(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "big_font_color", &fontSettingsSFall, 0);
+    ColorWithFlags fontSettings = COLOR_YELLOW_2 | DRAW_TEXT_FLAG_NONE;
+    ColorWithFlags fontSettingsSFall = COLOR_BLACK | DRAW_TEXT_FLAG_NONE;
+    configGetEnum<ColorWithFlags>(&gContentConfig, CONTENT_CONFIG_MAIN_MENU_SECTION, "big_font_color", &fontSettingsSFall, COLOR_BLACK | DRAW_TEXT_FLAG_NONE);
     if (fontSettingsSFall) {
-        fontSettings = fontSettingsSFall & 0xFF;
+        fontSettings = static_cast<Color>(fontSettingsSFall & COLOR_LAST) | DRAW_TEXT_FLAG_NONE;
     }
 
     for (int index = 0; index < MAIN_MENU_BUTTON_COUNT; index++) {
@@ -504,7 +505,7 @@ int mainMenuWindowInit()
         0,
         screenGetWidth(),
         screenGetHeight(),
-        0,
+        COLOR_FIRST,
         WINDOW_HIDDEN | WINDOW_MOVE_ON_TOP);
     if (gMainMenuWindow == -1) {
         return main_menu_fatal_error();

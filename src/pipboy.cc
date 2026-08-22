@@ -198,11 +198,11 @@ typedef struct HolidayDescription {
     short textId;
 } HolidayDescription;
 
-typedef struct STRUCT_664350 {
+typedef struct MapDescription {
     char* name;
-    short field_4;
-    short field_6;
-} STRUCT_664350;
+    int mapOrElevation;
+    Map map;
+} MapDescription;
 
 typedef struct PipboyBomb {
     int x;
@@ -219,7 +219,13 @@ static void pipboyWindowFree();
 static void _pip_init_();
 static void pipboyDrawNumber(int value, int digits, int x, int y);
 static void pipboyDrawDate();
-static void pipboyDrawText(const char* text, int a2, int a3);
+
+static void pipboyDrawText(const char* text, int flags, ColorWithFlags color);
+static inline void pipboyDrawText(const char* text, int flags, Color color)
+{
+    pipboyDrawText(text, flags, color | DRAW_TEXT_FLAG_NONE);
+}
+
 static int _save_pipboy(File* stream);
 static void pipboyWindowHandleStatus(int userInput);
 static void pipboyWindowRenderQuestLocationList(int a1);
@@ -326,7 +332,7 @@ MessageListItem gPipboyMessageListItem;
 MessageList gPipboyMessageList = { 0, nullptr };
 
 // 0x664350 sortlist
-STRUCT_664350 _sortlist[24];
+MapDescription _sortlist[24];
 
 // quests.msg
 //
@@ -408,7 +414,7 @@ int gPipboyCurrentLine;
 int _rest_time;
 
 // 0x66451C amcty_indx
-int _amcty_indx;
+Map _amcty_indx;
 
 // current page for holodisk entry pagination
 int _view_page;
@@ -611,6 +617,7 @@ int pipboyMessageListInit()
     if (!(messageListLoad(&gPipboyMessageList, path))) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_PIPBOY, &gPipboyMessageList);
 
     return 0;
 }
@@ -618,6 +625,7 @@ int pipboyMessageListInit()
 void pipboyMessageListFree()
 {
     if (gPipboyMessageList.entries != nullptr) {
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_PIPBOY, nullptr);
         messageListFree(&gPipboyMessageList);
     }
     messageListInit(&gPipboyMessageList);
@@ -933,7 +941,7 @@ static void pipboyDrawDate()
 }
 
 // 0x497A40
-static void pipboyDrawText(const char* text, int flags, int color)
+static void pipboyDrawText(const char* text, int flags, ColorWithFlags color)
 {
     if ((flags & PIPBOY_TEXT_STYLE_UNDERLINE) != 0) {
         color |= DRAW_TEXT_FLAG_UNDERLINED;
@@ -960,7 +968,7 @@ static void pipboyDrawText(const char* text, int flags, int color)
 
     if ((flags & PIPBOY_TEXT_STYLE_STRIKE_THROUGH) != 0) {
         int top = gPipboyCurrentLine * fontGetLineHeight() + 49;
-        bufferDrawLine(gPipboyWindowBuffer, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_CONTENT_VIEW_X + left, top, PIPBOY_WINDOW_CONTENT_VIEW_X + left + length, top, color);
+        bufferDrawLine(gPipboyWindowBuffer, PIPBOY_WINDOW_WIDTH, PIPBOY_WINDOW_CONTENT_VIEW_X + left, top, PIPBOY_WINDOW_CONTENT_VIEW_X + left + length, top, static_cast<Color>(color & COLOR_LAST));
     }
 
     if (gPipboyCurrentLine < gPipboyLinesCount) {
@@ -1336,7 +1344,7 @@ static void pipboyWindowQuestList(int selectedLocationIndex)
                     *ending = '\0';
 
                     int flags;
-                    int color;
+                    Color color;
                     if (gGameGlobalVars[questDescription->gvar] < questDescription->completedThreshold) {
                         flags = 0;
                         color = COLOR_GREEN;
@@ -1449,7 +1457,7 @@ static void pipboyWindowRenderQuestLocationList(int selectedQuestLocation)
     for (int index = startIndex; index < endIndex; index++) {
         // Render the location at index
         const char* questLocation = gPipboyQuestLocations[index];
-        int color = (gPipboyCurrentLine - 1) / 2 == (selectedQuestLocation - 1) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+        Color color = (gPipboyCurrentLine - 1) / 2 == (selectedQuestLocation - 1) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
         pipboyDrawText(questLocation, 0, color);
         gPipboyCurrentLine += 1;
     }
@@ -1593,7 +1601,7 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
         if (gGameGlobalVars[holodisk->gvar] == 0) continue;
 
         if (currentIndex >= startIdx && currentIndex < startIdx + maxEntriesPerPage) {
-            int color = ((gPipboyCurrentLine - 1) / 2 == selectedHolodiskEntry - 1) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+            Color color = ((gPipboyCurrentLine - 1) / 2 == selectedHolodiskEntry - 1) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
             const char* text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, holodisk->name);
             pipboyDrawText(text, PIPBOY_TEXT_ALIGNMENT_RIGHT_COLUMN, color);
             gPipboyCurrentLine++;
@@ -1617,8 +1625,8 @@ static int pipboyWindowRenderHolodiskList(int selectedHolodiskEntry)
 static int _qscmp(const void* a1,
     const void* a2)
 {
-    STRUCT_664350* v1 = (STRUCT_664350*)a1;
-    STRUCT_664350* v2 = (STRUCT_664350*)a2;
+    MapDescription* v1 = (MapDescription*)a1;
+    MapDescription* v2 = (MapDescription*)a2;
 
     return strcmp(v1->name, v2->name);
 }
@@ -1680,10 +1688,10 @@ static void pipboyWindowHandleAutomaps(int userInput)
             //_PrintAMList(userInput);
             // windowRefreshRect(gPipboyWindow, & gPipboyWindowContentRect);
             int realIndex = (_view_page_automap_main * PIPBOY_AUTOMAP_LINES) + (userInput - 1); // Adjust for pagination
-            _amcty_indx = _sortlist[realIndex].field_4;
+            _amcty_indx = static_cast<Map>(_sortlist[realIndex].mapOrElevation);
             _map_count = _PrintAMelevList(1);
             pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].field_6, _sortlist[0].field_4);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
             main_sub_mode = 1;
         }
@@ -1703,7 +1711,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
                     _PrintAMelevList(1);
                     _map_count = _PrintAMelevList(1);
                     pipboyWindowCreateButtons(0, _map_count + 2, true); // create buttons for sub-locations (elevation), and back/more
-                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].field_6, _sortlist[0].field_4);
+                    automapRenderInPipboyWindow(gPipboyWindow, _sortlist[0].map, _sortlist[0].mapOrElevation);
                     windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
                 });
         }
@@ -1711,7 +1719,7 @@ static void pipboyWindowHandleAutomaps(int userInput)
         if (userInput >= 1 && userInput <= _map_count + 3) {
             soundPlayFile("ib1p1xx1");
             _PrintAMelevList(userInput);
-            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].field_6, _sortlist[userInput - 1].field_4);
+            automapRenderInPipboyWindow(gPipboyWindow, _sortlist[userInput - 1].map, _sortlist[userInput - 1].mapOrElevation);
             windowRefreshRect(gPipboyWindow, &gPipboyWindowContentRect);
         }
 
@@ -1742,7 +1750,7 @@ static int _PrintAMelevList(int selectedMap)
         }
     }
 
-    for (int map = 0; map < mapCount; map++) {
+    for (Map map = MAP_FIRST; map < mapCount; map++) {
         if (map == _amcty_indx || _get_map_idx_same(_amcty_indx, map) == -1) {
             continue;
         }
@@ -1770,15 +1778,15 @@ static int _PrintAMelevList(int selectedMap)
         if (automapHeader->offsets[_amcty_indx][elevation] > 0) {
             if (currentIndex >= startIndex && currentIndex < endIndex) {
                 _sortlist[elevationsListSize].name = mapGetName(_amcty_indx, elevation);
-                _sortlist[elevationsListSize].field_4 = elevation;
-                _sortlist[elevationsListSize].field_6 = _amcty_indx;
+                _sortlist[elevationsListSize].mapOrElevation = elevation;
+                _sortlist[elevationsListSize].map = _amcty_indx;
                 elevationsListSize++;
             }
             currentIndex++;
         }
     }
 
-    for (int map = 0; map < mapCount && elevationsListSize < maxEntriesPerPage; map++) {
+    for (Map map = MAP_FIRST; map < mapCount && elevationsListSize < maxEntriesPerPage; map++) {
         if (map == _amcty_indx || _get_map_idx_same(_amcty_indx, map) == -1) {
             continue;
         }
@@ -1787,8 +1795,8 @@ static int _PrintAMelevList(int selectedMap)
             if (automapHeader->offsets[map][elevation] > 0) {
                 if (currentIndex >= startIndex && currentIndex < endIndex) {
                     _sortlist[elevationsListSize].name = mapGetName(map, elevation);
-                    _sortlist[elevationsListSize].field_4 = elevation;
-                    _sortlist[elevationsListSize].field_6 = map;
+                    _sortlist[elevationsListSize].mapOrElevation = elevation;
+                    _sortlist[elevationsListSize].map = map;
                     elevationsListSize++;
                 }
                 currentIndex++;
@@ -1826,7 +1834,7 @@ static int _PrintAMelevList(int selectedMap)
 
     for (int index = 0; index < elevationsListSize; index++) { // draw locations list
 
-        int color;
+        Color color;
         if (gPipboyCurrentLine - 4 == selectedPipboyLine) {
             color = COLOR_LIGHT_YELLOW;
         } else {
@@ -1856,7 +1864,7 @@ static int _PrintAMList(int selectedLocation)
     int count = 0;
 
     int mapCount = std::min(wmMapMaxCount(), AUTOMAP_MAP_COUNT);
-    for (int map = 0; map < mapCount; map++) {
+    for (Map map = MAP_FIRST; map < mapCount; map++) {
         int elevation;
         for (elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
             if (automapHeader->offsets[map][elevation] > 0) {
@@ -1870,7 +1878,7 @@ static int _PrintAMList(int selectedLocation)
             int locationExistsIndex = 0;
             if (count != 0) {
                 for (int index = 0; index < count; index++) {
-                    if (mapAreSameArea(map, _sortlist[index].field_4)) {
+                    if (mapAreSameArea(map, static_cast<Map>(_sortlist[index].mapOrElevation))) {
                         break;
                     }
                     locationExistsIndex++;
@@ -1879,7 +1887,7 @@ static int _PrintAMList(int selectedLocation)
 
             if (locationExistsIndex == count) {
                 _sortlist[count].name = mapGetCityName(map);
-                _sortlist[count].field_4 = map;
+                _sortlist[count].mapOrElevation = map;
                 count++;
             }
         }
@@ -1939,7 +1947,7 @@ static int _PrintAMList(int selectedLocation)
 
     // Print paginated locations
     for (int index = startIdx; index < endIdx; index++) {
-        int color = (gPipboyCurrentLine - 1 == selectedLocation) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+        Color color = (gPipboyCurrentLine - 1 == selectedLocation) ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
         pipboyDrawText(_sortlist[index].name, 0, color);
         gPipboyCurrentLine++;
     }
@@ -1994,7 +2002,7 @@ static int pipboyRenderVideoArchive(int a1)
     int msg_num;
     int v5;
     int v8;
-    int v9;
+    Color color;
 
     blitBufferToBuffer(_pipboyFrmImages[PIPBOY_FRM_BACKGROUND].getData() + PIPBOY_WINDOW_WIDTH * PIPBOY_WINDOW_CONTENT_VIEW_Y + PIPBOY_WINDOW_CONTENT_VIEW_X,
         PIPBOY_WINDOW_CONTENT_VIEW_WIDTH,
@@ -2027,13 +2035,13 @@ static int pipboyRenderVideoArchive(int a1)
         if (gameMovieIsSeen(i)) {
             v8 = v5++;
             if (v8 == v12) {
-                v9 = COLOR_LIGHT_YELLOW;
+                color = COLOR_LIGHT_YELLOW;
             } else {
-                v9 = COLOR_GREEN;
+                color = COLOR_GREEN;
             }
 
             text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, msg_num);
-            pipboyDrawText(text, 0, v9);
+            pipboyDrawText(text, 0, color);
 
             gPipboyCurrentLine++;
         }
@@ -2146,7 +2154,7 @@ static void pipboyWindowRenderRestOptions(int a1)
         // ...
         // 315 - Rest until party is healed
         text = getmsg(&gPipboyMessageList, &gPipboyMessageListItem, pipboyRestDurationBaseMessageId + option - 1);
-        int color = option == a1 ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+        Color color = option == a1 ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
 
         pipboyDrawText(text, 0, color);
 
@@ -2766,6 +2774,7 @@ static int questInit()
 
     File* stream = fileOpen("data\\quests.txt", "rt");
     if (stream == nullptr) {
+        messageListFree(&gQuestsMessageList);
         return -1;
     }
 
@@ -2833,12 +2842,14 @@ static int questInit()
     qsort(gQuestDescriptions, gQuestsCount, sizeof(*gQuestDescriptions), questDescriptionCompare);
 
     fileClose(stream);
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_QUESTS, &gQuestsMessageList);
 
     return 0;
 
 err:
 
     fileClose(stream);
+    messageListFree(&gQuestsMessageList);
 
     return -1;
 }
@@ -2853,6 +2864,7 @@ static void questFree()
 
     gQuestsCount = 0;
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_QUESTS, nullptr);
     messageListFree(&gQuestsMessageList);
 }
 

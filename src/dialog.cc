@@ -316,25 +316,25 @@ int _endDialog()
 }
 
 // 0x42FC70 printLine
-void _printLine(int win, char** strings, int strings_num, int a4, int a5, int a6, int a7, int a8, int a9)
+void _printLine(int win, char** strings, int strings_num, int a4, int a5, int a6, int a7, ColorWithFlags color, int a9)
 {
     int i;
     int v11;
 
     for (i = 0; i < strings_num; i++) {
         v11 = a7 + i * fontGetLineHeight();
-        windowPrintBuf(win, strings[i], strlen(strings[i]), a4, a5 + a7, a6, v11, a8, a9);
+        windowPrintBuf(win, strings[i], strlen(strings[i]), a4, a5 + a7, a6, v11, color, a9);
     }
 }
 
 // 0x42FCF0 printStr
-void _printStr(int win, char* a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9)
+void _printStr(int win, char* a2, int a3, int a4, int a5, int a6, ColorWithFlags color, int a8, int a9)
 {
     char** strings;
     int strings_num;
 
     strings = windowWordWrap(a2, a3, 0, &strings_num);
-    _printLine(win, strings, strings_num, a3, a4, a5, a6, a7, a8);
+    _printLine(win, strings, strings_num, a3, a4, a5, a6, color, a8);
     windowFreeWordList(strings, strings_num);
 }
 
@@ -385,7 +385,7 @@ void _endReply()
 }
 
 // 0x4301E8 drawStr
-void _drawStr(int win, char* str, int font, int width, int height, int left, int top, int a8, int a9, int a10)
+void _drawStr(int win, char* str, int font, int width, int height, int left, int top, ColorWithFlags color, int a9, int a10)
 {
     int old_font;
     Rect rect;
@@ -393,7 +393,7 @@ void _drawStr(int win, char* str, int font, int width, int height, int left, int
     old_font = windowGetFont();
     windowSetFont(font);
 
-    _printStr(win, str, width, height, left, top, a8, a9, a10);
+    _printStr(win, str, width, height, left, top, color, a9, a10);
 
     rect.left = left;
     rect.top = top;

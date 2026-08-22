@@ -1,6 +1,7 @@
 #ifndef TEXT_FONT_H
 #define TEXT_FONT_H
 
+#include "color.h"
 #include "draw.h"
 
 #include <algorithm>
@@ -8,7 +9,7 @@
 namespace fallout {
 
 typedef void FontManagerSetCurrentFontProc(int font);
-typedef void FontManagerDrawTextProc(unsigned char* buffer, const char* string, int length, int pitch, int color);
+typedef void FontManagerDrawTextProc(unsigned char* buffer, const char* string, int length, int pitch, ColorWithFlags color);
 typedef int FontManagerGetLineHeightProc();
 typedef int FontManagerGetStringWidthProc(const char* string);
 typedef int FontManagerGetCharacterWidthProc(int ch);
@@ -34,7 +35,7 @@ typedef struct FontManager {
 extern FontManager gTextFontManager;
 extern int gCurrentFont;
 extern int gFontManagersCount;
-extern FontManagerDrawTextProc* fontDrawText;
+extern FontManagerDrawTextProc* fontDrawTextPtr;
 extern FontManagerGetLineHeightProc* fontGetLineHeight;
 extern FontManagerGetStringWidthProc* fontGetStringWidth;
 extern FontManagerGetCharacterWidthProc* fontGetCharacterWidth;
@@ -43,7 +44,24 @@ extern FontManagerGetLetterSpacingProc* fontGetLetterSpacing;
 extern FontManagerGetBufferSizeProc* fontGetBufferSize;
 extern FontManagerGetMonospacedCharacterWidth* fontGetMonospacedCharacterWidth;
 
-void fontDrawText2D(const Buffer2D& dest, int xPos, int yPos, const char* string, int length, int color);
+inline void fontDrawText(unsigned char* buffer, const char* string, int length, int pitch, ColorWithFlags color)
+{
+    if (fontDrawTextPtr != nullptr) {
+        fontDrawTextPtr(buffer, string, length, pitch, color);
+    }
+}
+
+inline void fontDrawText(unsigned char* buffer, const char* string, int length, int pitch, Color color)
+{
+    fontDrawText(buffer, string, length, pitch, color | DRAW_TEXT_FLAG_NONE);
+}
+
+void fontDrawText2D(const Buffer2D& dest, int xPos, int yPos, const char* string, int length, ColorWithFlags color);
+
+inline void fontDrawText2D(const Buffer2D& dest, int xPos, int yPos, const char* string, int length, Color color)
+{
+    fontDrawText2D(dest, xPos, yPos, string, length, color | DRAW_TEXT_FLAG_NONE);
+}
 
 int textFontsInit();
 void textFontsExit();

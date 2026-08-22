@@ -6,6 +6,7 @@
 #include "perk_defs.h"
 #include "skill_defs.h"
 #include "stat_defs.h"
+#include "worldmap.h"
 
 namespace fallout {
 
@@ -515,7 +516,7 @@ typedef struct {
 
 typedef struct {
     int destinationBuiltTile; // d.lower_tile
-    int destinationMap; // d.upper_tile
+    Map destinationMap; // d.upper_tile
 } SceneryProtoStairsData;
 
 typedef struct {

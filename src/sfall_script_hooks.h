@@ -7,7 +7,7 @@
 #include "queue.h"
 #include "scripts.h"
 #include "skill_defs.h"
-
+#include "worldmap.h"
 #include <initializer_list>
 #include <memory>
 
@@ -327,7 +327,7 @@ void scriptHooks_GameModeChange(int exit, int previousGameMode);
 bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int hours, int minutes);
 void scriptHooks_OnDeath(Object* critter);
 int scriptHooks_ExplosiveTimer(Object* explosive, int delay, EventType eventType);
-EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, int* mapIdPtr, bool isSpecial, int tableId, int entryId);
+EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, Map* mapIdPtr, bool isSpecial, int tableId, int entryId);
 bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
 bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);

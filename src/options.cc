@@ -50,6 +50,7 @@ static int optionsWindowInit();
 static int optionsWindowFree();
 static void optionsWindowCleanup(bool restoreWorldState);
 static void _ShadeScreen(bool preserveWorldState);
+static void optionsMessageListReset();
 
 struct OptionsMenuButtonSpec {
     int eventCode;
@@ -113,6 +114,12 @@ static constexpr int optionsWindowButtonCount = (sizeof(optionsMenuButtonSpecs) 
 // 0x663878 opbtns
 static unsigned char* _opbtns[optionsWindowButtonCount];
 
+static void optionsMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, nullptr);
+    messageListFree(&preferencesMessageList);
+}
+
 // 0x48FC50 do_optionsFunc
 int showOptions()
 {
@@ -164,6 +171,7 @@ int showOptions()
             case OPTIONS_MENU_BUTTON_PREFERENCES:
                 // PREFERENCES
                 doPreferences(false);
+                messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &preferencesMessageList);
                 break;
             case KEY_UPPERCASE_H:
             case KEY_LOWERCASE_H:
@@ -236,6 +244,7 @@ static int optionsWindowInit()
             optionsMenuHelpEnabled = false;
         }
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &preferencesMessageList);
 
     for (int index = 0; index < OPTIONS_WINDOW_FRM_COUNT; index++) {
         bool loaded = false;
@@ -272,7 +281,7 @@ static int optionsWindowInit()
         optionsWindowY,
         _optionsFrmImages[0].getWidth(),
         _optionsFrmImages[0].getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
 
     if (optionsWindow == -1) {
@@ -370,8 +379,8 @@ static void optionsWindowCleanup(bool restoreWorldState)
         optionsWindow = -1;
     }
 
+    optionsMessageListReset();
     messageListFree(&ceOptionsMessageList);
-    messageListFree(&preferencesMessageList);
 
     for (int index = 0; index < optionsWindowButtonCount; index++) {
         if (_opbtns[index] != nullptr) {
@@ -441,6 +450,7 @@ int showPause(bool preserveWorldState)
         // FIXME: Leaking graphics.
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_OPTIONS, &preferencesMessageList);
 
     int pauseWindowX = (screenGetWidth() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth()) / 2;
     int pauseWindowY = (screenGetHeight() - frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight()) / 2;
@@ -456,10 +466,10 @@ int showPause(bool preserveWorldState)
         pauseWindowY,
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth(),
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (window == -1) {
-        messageListFree(&preferencesMessageList);
+        optionsMessageListReset();
 
         debugPrint("\n** Error opening pause window! **\n");
         return -1;
@@ -556,7 +566,7 @@ int showPause(bool preserveWorldState)
 
     windowDestroy(window);
     pauseWindow = -1;
-    messageListFree(&preferencesMessageList);
+    optionsMessageListReset();
 
     if (!preserveWorldState) {
         if (gameMouseWasVisible) {
@@ -603,7 +613,7 @@ int _init_options_menu()
 {
     preferencesInit();
 
-    grayscalePaletteUpdate(0, 255);
+    grayscalePaletteUpdate(COLOR_FIRST, COLOR_LAST);
 
     return 0;
 }

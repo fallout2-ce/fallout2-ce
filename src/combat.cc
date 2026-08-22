@@ -134,7 +134,7 @@ static void _print_tohit(unsigned char* dest, int dest_pitch, int a3);
 static char* hitLocationGetName(Object* critter, HitLocation hitLocation);
 static void _draw_loc_off(int a1, int a2);
 static void _draw_loc_on_(int a1, int a2);
-static void _draw_loc_(int eventCode, int color);
+static void _draw_loc_(int eventCode, Color color);
 static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation, HitMode hitMode);
 
 static void criticalsInit();
@@ -5569,17 +5569,17 @@ static void _draw_loc_on_(int a1, int a2)
 }
 
 // 0x4261CC
-static void _draw_loc_(int eventCode, int color)
+static void _draw_loc_(int eventCode, Color color)
 {
-    color |= (DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG);
+    ColorWithFlags colorWithFlags = color | (DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG);
 
     if (eventCode >= 4) {
         char* name = hitLocationGetName(gCalledShotCritter, _hit_loc_right[eventCode - 4]);
         int width = fontGetStringWidth(name);
-        windowDrawText(gCalledShotWindow, name, 0, 431 - width, _call_ty[eventCode - 4] - 86, color);
+        windowDrawText(gCalledShotWindow, name, 0, 431 - width, _call_ty[eventCode - 4] - 86, colorWithFlags);
     } else {
         char* name = hitLocationGetName(gCalledShotCritter, _hit_loc_left[eventCode]);
-        windowDrawText(gCalledShotWindow, name, 0, 74, _call_ty[eventCode] - 86, color);
+        windowDrawText(gCalledShotWindow, name, 0, 74, _call_ty[eventCode] - 86, colorWithFlags);
     }
 }
 
@@ -6283,79 +6283,75 @@ static void criticalsInit()
     }
 
     if (mode == 1 || mode == 3) {
-        Config criticalsConfig;
-        if (configInit(&criticalsConfig)) {
-            char* criticalsConfigFilePath;
-            configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_OVERRIDE_CRITICALS_FILE_KEY, &criticalsConfigFilePath);
-            if (criticalsConfigFilePath != nullptr && *criticalsConfigFilePath == '\0') {
-                criticalsConfigFilePath = nullptr;
-            }
+        char* criticalsConfigFilePath;
+        configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_OVERRIDE_CRITICALS_FILE_KEY, &criticalsConfigFilePath);
+        if (criticalsConfigFilePath != nullptr && *criticalsConfigFilePath == '\0') {
+            criticalsConfigFilePath = nullptr;
+        }
 
-            if (configRead(&criticalsConfig, criticalsConfigFilePath, false)) {
-                if (mode == 1) {
-                    char sectionKey[16];
+        ScopedConfig criticalsConfig(criticalsConfigFilePath, false);
+        if (criticalsConfig) {
+            if (mode == 1) {
+                char sectionKey[16];
 
-                    // Read original kill types (19) plus one for the player.
-                    for (KillType killType = KILL_TYPE_FIRST; killType < KILL_TYPE_DEFAULT_COUNT + 1; killType++) {
-                        for (HitLocation hitLocation = HIT_LOCATION_FIRST; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
-                            for (CriticalEffect effect = CRITICAL_EFFECT_FIRST; effect < CRITICAL_EFFECT_COUNT; effect++) {
-                                snprintf(sectionKey, sizeof(sectionKey), "c_%02d_%d_%d", killType, hitLocation, effect);
+                // Read original kill types (19) plus one for the player.
+                for (KillType killType = KILL_TYPE_FIRST; killType < KILL_TYPE_DEFAULT_COUNT + 1; killType++) {
+                    for (HitLocation hitLocation = HIT_LOCATION_FIRST; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
+                        for (CriticalEffect effect = CRITICAL_EFFECT_FIRST; effect < CRITICAL_EFFECT_COUNT; effect++) {
+                            snprintf(sectionKey, sizeof(sectionKey), "c_%02d_%d_%d", killType, hitLocation, effect);
 
-                                // Update player kill type if needed.
-                                KillType newKillType = killType == KILL_TYPE_DEFAULT_COUNT ? KILL_TYPE_PLAYER : killType;
-                                for (CriticalHitDataMember dataMember = CRIT_DATA_MEMBER_FIRST; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
-                                    int value = criticalsGetValue(newKillType, hitLocation, effect, dataMember);
-                                    if (configGetInt(&criticalsConfig, sectionKey, gCritDataMemberKeys[dataMember], &value)) {
-                                        criticalsSetValue(newKillType, hitLocation, effect, dataMember, value);
-                                    }
+                            // Update player kill type if needed.
+                            KillType newKillType = killType == KILL_TYPE_DEFAULT_COUNT ? KILL_TYPE_PLAYER : killType;
+                            for (CriticalHitDataMember dataMember = CRIT_DATA_MEMBER_FIRST; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
+                                int value = criticalsGetValue(newKillType, hitLocation, effect, dataMember);
+                                if (configGetInt(criticalsConfig.get(), sectionKey, gCritDataMemberKeys[dataMember], &value)) {
+                                    criticalsSetValue(newKillType, hitLocation, effect, dataMember, value);
                                 }
                             }
                         }
                     }
-                } else if (mode == 3) {
-                    char ktSectionKey[32];
-                    char hitLocationSectionKey[32];
-                    char key[32];
+                }
+            } else if (mode == 3) {
+                char ktSectionKey[32];
+                char hitLocationSectionKey[32];
+                char key[32];
 
-                    // Read Sfall kill types (38) plus one for the player.
-                    for (KillType killType = KILL_TYPE_FIRST; killType < KILL_TYPE_OVERRIDE_COUNT + 1; killType++) {
-                        snprintf(ktSectionKey, sizeof(ktSectionKey), "c_%02d", killType);
+                // Read Sfall kill types (38) plus one for the player.
+                for (KillType killType = KILL_TYPE_FIRST; killType < KILL_TYPE_OVERRIDE_COUNT + 1; killType++) {
+                    snprintf(ktSectionKey, sizeof(ktSectionKey), "c_%02d", killType);
 
-                        int enabled = 0;
-                        configGetInt(&criticalsConfig, ktSectionKey, "Enabled", &enabled);
-                        if (enabled == 0) {
-                            continue;
+                    int enabled = 0;
+                    configGetInt(criticalsConfig.get(), ktSectionKey, "Enabled", &enabled);
+                    if (enabled == 0) {
+                        continue;
+                    }
+
+                    for (HitLocation hitLocation = HIT_LOCATION_FIRST; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
+                        if (enabled < 2) {
+                            bool hitLocationChanged = false;
+
+                            snprintf(key, sizeof(key), "Part_%d", hitLocation);
+                            configGetBool(criticalsConfig.get(), ktSectionKey, key, &hitLocationChanged);
+
+                            if (!hitLocationChanged) {
+                                continue;
+                            }
                         }
 
-                        for (HitLocation hitLocation = HIT_LOCATION_FIRST; hitLocation < HIT_LOCATION_COUNT; hitLocation++) {
-                            if (enabled < 2) {
-                                bool hitLocationChanged = false;
+                        snprintf(hitLocationSectionKey, sizeof(hitLocationSectionKey), "c_%02d_%d", killType, hitLocation);
 
-                                snprintf(key, sizeof(key), "Part_%d", hitLocation);
-                                configGetBool(&criticalsConfig, ktSectionKey, key, &hitLocationChanged);
-
-                                if (!hitLocationChanged) {
-                                    continue;
-                                }
-                            }
-
-                            snprintf(hitLocationSectionKey, sizeof(hitLocationSectionKey), "c_%02d_%d", killType, hitLocation);
-
-                            for (CriticalEffect effect = CRITICAL_EFFECT_FIRST; effect < CRITICAL_EFFECT_COUNT; effect++) {
-                                for (CriticalHitDataMember dataMember = CRIT_DATA_MEMBER_FIRST; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
-                                    int value = criticalsGetValue(killType, hitLocation, effect, dataMember);
-                                    snprintf(key, sizeof(key), "e%d_%s", effect, gCritDataMemberKeys[dataMember]);
-                                    if (configGetInt(&criticalsConfig, hitLocationSectionKey, key, &value)) {
-                                        criticalsSetValue(killType, hitLocation, effect, dataMember, value);
-                                    }
+                        for (CriticalEffect effect = CRITICAL_EFFECT_FIRST; effect < CRITICAL_EFFECT_COUNT; effect++) {
+                            for (CriticalHitDataMember dataMember = CRIT_DATA_MEMBER_FIRST; dataMember < CRIT_DATA_MEMBER_COUNT; dataMember++) {
+                                int value = criticalsGetValue(killType, hitLocation, effect, dataMember);
+                                snprintf(key, sizeof(key), "e%d_%s", effect, gCritDataMemberKeys[dataMember]);
+                                if (configGetInt(criticalsConfig.get(), hitLocationSectionKey, key, &value)) {
+                                    criticalsSetValue(killType, hitLocation, effect, dataMember, value);
                                 }
                             }
                         }
                     }
                 }
             }
-
-            configFree(&criticalsConfig);
         }
     }
 
@@ -6629,46 +6625,40 @@ static void unarmedInitCustom()
 {
     char* unarmedFileName = nullptr;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_UNARMED_FILE_KEY, &unarmedFileName);
-    if (unarmedFileName != nullptr && *unarmedFileName == '\0') {
-        unarmedFileName = nullptr;
-    }
-
-    if (unarmedFileName == nullptr) {
+    if (unarmedFileName == nullptr || *unarmedFileName == '\0') {
         return;
     }
 
-    Config unarmedConfig;
-    if (configInit(&unarmedConfig)) {
-        if (configRead(&unarmedConfig, unarmedFileName, false)) {
-            char section[4];
-            char statKey[6];
+    ScopedConfig unarmedConfig(unarmedFileName, false);
+    if (!unarmedConfig) {
+        return;
+    }
 
-            for (HitMode hitMode = HIT_MODE_FIRST; hitMode < HIT_MODE_COUNT; hitMode++) {
-                if (!isUnarmedHitMode(hitMode)) {
-                    continue;
-                }
+    char section[4];
+    char statKey[6];
 
-                UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[hitMode]);
-                snprintf(section, sizeof(section), "%d", hitMode);
-
-                configGetInt(&unarmedConfig, section, "ReqLevel", &(hitDescription->requiredLevel));
-                configGetInt(&unarmedConfig, section, "SkillLevel", &(hitDescription->requiredSkill));
-                configGetInt(&unarmedConfig, section, "MinDamage", &(hitDescription->minDamage));
-                configGetInt(&unarmedConfig, section, "MaxDamage", &(hitDescription->maxDamage));
-                configGetInt(&unarmedConfig, section, "BonusDamage", &(hitDescription->bonusDamage));
-                configGetInt(&unarmedConfig, section, "BonusCrit", &(hitDescription->bonusCriticalChance));
-                configGetInt(&unarmedConfig, section, "APCost", &(hitDescription->actionPointCost));
-                configGetBool(&unarmedConfig, section, "BonusDamage", &(hitDescription->isPenetrate));
-                configGetBool(&unarmedConfig, section, "Secondary", &(hitDescription->isSecondary));
-
-                for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
-                    snprintf(statKey, sizeof(statKey), "Stat%d", stat);
-                    configGetInt(&unarmedConfig, section, statKey, &(hitDescription->requiredStats[stat]));
-                }
-            }
+    for (HitMode hitMode = HIT_MODE_FIRST; hitMode < HIT_MODE_COUNT; hitMode++) {
+        if (!isUnarmedHitMode(hitMode)) {
+            continue;
         }
 
-        configFree(&unarmedConfig);
+        UnarmedHitDescription* hitDescription = &(gUnarmedHitDescriptions[hitMode]);
+        snprintf(section, sizeof(section), "%d", hitMode);
+
+        configGetInt(unarmedConfig.get(), section, "ReqLevel", &(hitDescription->requiredLevel));
+        configGetInt(unarmedConfig.get(), section, "SkillLevel", &(hitDescription->requiredSkill));
+        configGetInt(unarmedConfig.get(), section, "MinDamage", &(hitDescription->minDamage));
+        configGetInt(unarmedConfig.get(), section, "MaxDamage", &(hitDescription->maxDamage));
+        configGetInt(unarmedConfig.get(), section, "BonusDamage", &(hitDescription->bonusDamage));
+        configGetInt(unarmedConfig.get(), section, "BonusCrit", &(hitDescription->bonusCriticalChance));
+        configGetInt(unarmedConfig.get(), section, "APCost", &(hitDescription->actionPointCost));
+        configGetBool(unarmedConfig.get(), section, "BonusDamage", &(hitDescription->isPenetrate));
+        configGetBool(unarmedConfig.get(), section, "Secondary", &(hitDescription->isSecondary));
+
+        for (Stat stat = STAT_FIRST; stat < PRIMARY_STAT_COUNT; stat++) {
+            snprintf(statKey, sizeof(statKey), "Stat%d", stat);
+            configGetInt(unarmedConfig.get(), section, statKey, &(hitDescription->requiredStats[stat]));
+        }
     }
 }
 

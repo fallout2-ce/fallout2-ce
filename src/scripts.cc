@@ -487,7 +487,7 @@ int _scriptsCheckGameEvents(int* moviePtr, int window)
                 adjustRep = true;
                 wmAreaSetVisibleState(CITY_ARROYO, CITY_STATE_UNKNOWN, true);
                 wmAreaSetVisibleState(CITY_DESTROYED_ARROYO, CITY_STATE_KNOWN, true);
-                wmAreaMarkVisitedState(CITY_DESTROYED_ARROYO, CITY_STATE_VISITED);
+                wmAreaMarkVisitedState(CITY_DESTROYED_ARROYO, VisitedState::Visited);
             }
         } else if (day >= gMovieTimerArtimer3 && gameGetGlobalVar(GVAR_FALLOUT_2) != 3) {
             adjustRep = true;
@@ -1206,7 +1206,7 @@ static void scriptsCloseNearbyElevatorDoors()
 
 static int scriptsHandleElevatorRequest(bool closeDoorsBeforeMapTransition)
 {
-    int map = gMapHeader.index;
+    Map map = gMapHeader.index;
     int elevation = gScriptsRequestedElevatorLevel;
     int tile = -1;
 
@@ -1588,6 +1588,11 @@ int scriptExecProc(int sid, int proc)
     }
 
     if (procedureIndex == -1) {
+        Script* executedScript;
+        if (scriptGetScript(sid, &executedScript) != -1) {
+            executedScript->source = nullptr;
+        }
+
         return -1;
     }
 

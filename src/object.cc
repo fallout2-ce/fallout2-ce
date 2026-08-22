@@ -188,19 +188,19 @@ static int _obj_last_elev = -1;
 static bool _obj_last_is_empty = true;
 
 // 0x519780 wallBlendTable
-unsigned char* _wallBlendTable = nullptr;
+Color* _wallBlendTable = nullptr;
 
 // 0x519784 glassBlendTable
-static unsigned char* _glassBlendTable = nullptr;
+static Color* _glassBlendTable = nullptr;
 
 // 0x519788 steamBlendTable
-static unsigned char* _steamBlendTable = nullptr;
+static Color* _steamBlendTable = nullptr;
 
 // 0x51978C energyBlendTable
-static unsigned char* _energyBlendTable = nullptr;
+static Color* _energyBlendTable = nullptr;
 
 // 0x519790 redBlendTable
-static unsigned char* _redBlendTable = nullptr;
+static Color* _redBlendTable = nullptr;
 
 // 0x519794 moveBlockObj
 Object* _moveBlockObj = nullptr;
@@ -262,10 +262,10 @@ static Rect gObjectsUpdateAreaPixelBounds;
 static ObjectListNode* gObjectListHeadByTile[HEX_GRID_SIZE];
 
 // 0x660EA0 glassGrayTable
-static unsigned char _glassGrayTable[256];
+static Color _glassGrayTable[COLOR_COUNT];
 
 // 0x660FA0 commonGrayTable
-unsigned char _commonGrayTable[256];
+Color _commonGrayTable[COLOR_COUNT];
 
 // 0x6610A0 buf_size
 static int gObjectsWindowBufferSize;
@@ -2778,7 +2778,7 @@ void objectListFree(Object** objectList)
 }
 
 // 0x48BDD8 translucent_trans_buf_to_buf
-void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, unsigned char* a9, unsigned char* a10)
+void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, Color* blendTable, Color* colorTable)
 {
     dest += destPitch * destY + destX;
     int srcStep = srcPitch - srcWidth;
@@ -2786,9 +2786,8 @@ void _translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeig
 
     for (int y = 0; y < srcHeight; y++) {
         for (int x = 0; x < srcWidth; x++) {
-            // TODO: Probably wrong.
-            unsigned char v1 = a10[*src];
-            unsigned char* v2 = a9 + (v1 << 8);
+            Color v1 = colorTable[*src];
+            Color* v2 = blendTable + (v1 << 8);
             unsigned char v3 = *dest;
 
             *dest = v2[v3];
@@ -2833,7 +2832,7 @@ void _dark_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int
 }
 
 // 0x48BF88 dark_translucent_trans_buf_to_buf
-void _dark_translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int intensity, unsigned char* a10, unsigned char* a11)
+void _dark_translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, int intensity, Color* blendTable, Color* colorTable)
 {
     int srcStep = srcPitch - srcWidth;
     int destStep = destPitch - srcWidth;
@@ -2846,8 +2845,8 @@ void _dark_translucent_trans_buf_to_buf(unsigned char* src, int srcWidth, int sr
             unsigned char srcByte = *src;
             if (srcByte != 0) {
                 unsigned char destByte = *dest;
-                unsigned int index = a11[srcByte] << 8;
-                index = a10[index + destByte];
+                unsigned int index = colorTable[srcByte] << 8;
+                index = blendTable[index + destByte];
                 *dest = intensityColorTable[index][intensityIndex];
             }
 
@@ -3502,16 +3501,17 @@ static void _obj_light_table_init()
 // 0x48D1E4 obj_blend_table_init
 static void _obj_blend_table_init()
 {
-    for (int index = 0; index < 256; index++) {
-        int r = (Color2RGB(index) & 0x7C00) >> 10;
-        int g = (Color2RGB(index) & 0x3E0) >> 5;
-        int b = Color2RGB(index) & 0x1F;
-        _glassGrayTable[index] = ((r + 5 * g + 4 * b) / 10) >> 2;
-        _commonGrayTable[index] = ((b + 3 * r + 6 * g) / 10) >> 2;
+    for (int index = COLOR_FIRST; index < COLOR_COUNT; index++) {
+        int rgb = Color2RGB(static_cast<Color>(index & COLOR_LAST));
+        int r = (rgb & 0x7C00) >> 10;
+        int g = (rgb & 0x3E0) >> 5;
+        int b = rgb & 0x1F;
+        _glassGrayTable[index] = static_cast<Color>(((r + 5 * g + 4 * b) / 10) >> 2);
+        _commonGrayTable[index] = static_cast<Color>(((b + 3 * r + 6 * g) / 10) >> 2);
     }
 
-    _glassGrayTable[0] = 0;
-    _commonGrayTable[0] = 0;
+    _glassGrayTable[0] = COLOR_FIRST;
+    _commonGrayTable[0] = COLOR_FIRST;
 
     _wallBlendTable = _getColorBlendTable(COLOR_PALE_BLUE);
     _glassBlendTable = _getColorBlendTable(COLOR_CYAN);
@@ -4749,60 +4749,60 @@ static void objectDrawOutline(Object* object, Rect* rect)
         unsigned char* dest = gObjectsWindowBuffer + gObjectsWindowPitch * object->sy + object->sx;
         int destStep = gObjectsWindowPitch - frameWidth;
 
-        unsigned char color;
-        unsigned char* v47 = nullptr;
-        unsigned char* v48 = nullptr;
-        int v53 = object->outline & OUTLINE_PALETTED;
+        Color color;
+        Color* grayTable = nullptr;
+        Color* blendTable = nullptr;
+        int isOutlinePalleted = object->outline & OUTLINE_PALETTED;
         OutlineType outlineType = object->outline & OUTLINE_TYPE_MAX;
         int v43 = 0;
         int v44;
 
         switch (outlineType) {
         case OUTLINE_TYPE_HOSTILE:
-            color = 243;
-            v53 = 0;
+            color = static_cast<Color>(243);
+            isOutlinePalleted = 0;
             v43 = 5;
             v44 = frameHeight / 5;
             break;
         case OUTLINE_TYPE_SAME_TEAM:
             color = COLOR_RED;
             v44 = 0;
-            if (v53 != 0) {
-                v47 = _commonGrayTable;
-                v48 = _redBlendTable;
+            if (isOutlinePalleted != 0) {
+                grayTable = _commonGrayTable;
+                blendTable = _redBlendTable;
             }
             break;
         case OUTLINE_TYPE_BODY:
             color = COLOR_GREY_2;
             v44 = 0;
-            if (v53 != 0) {
-                v47 = _commonGrayTable;
-                v48 = _wallBlendTable;
+            if (isOutlinePalleted != 0) {
+                grayTable = _commonGrayTable;
+                blendTable = _wallBlendTable;
             }
             break;
         case OUTLINE_TYPE_FRIENDLY:
             v43 = 4;
             v44 = frameHeight / 4;
-            color = 229;
-            v53 = 0;
+            color = static_cast<Color>(229);
+            isOutlinePalleted = 0;
             break;
         case OUTLINE_TYPE_ITEM:
             v44 = 0;
             color = COLOR_LIGHT_GOLD_2;
-            if (v53 != 0) {
-                v47 = _commonGrayTable;
-                v48 = _redBlendTable;
+            if (isOutlinePalleted != 0) {
+                grayTable = _commonGrayTable;
+                blendTable = _redBlendTable;
             }
             break;
         case OUTLINE_TYPE_BLOCKED:
-            color = 61;
-            v53 = 0;
+            color = static_cast<Color>(61);
+            isOutlinePalleted = 0;
             v43 = 1;
             v44 = frameHeight;
             break;
         default:
             color = COLOR_MAGENTA;
-            v53 = 0;
+            isOutlinePalleted = 0;
             v44 = 0;
             break;
         }
@@ -4828,8 +4828,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 if (*src15 != 0 && cycle) {
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom && v22 > 0 && v22 % gObjectsWindowPitch != 0) {
                         unsigned char v20;
-                        if (v53 != 0) {
-                            v20 = v48[(v47[v54] << 8) + *(dest14 - 1)];
+                        if (isOutlinePalleted != 0) {
+                            v20 = blendTable[(grayTable[v54] << 8) + *(dest14 - 1)];
                         } else {
                             v20 = v54;
                         }
@@ -4839,8 +4839,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 } else if (*src15 == 0 && !cycle) {
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
                         int v21;
-                        if (v53 != 0) {
-                            v21 = v48[(v47[v54] << 8) + *dest14];
+                        if (isOutlinePalleted != 0) {
+                            v21 = blendTable[(grayTable[v54] << 8) + *dest14];
                         } else {
                             v21 = v54;
                         }
@@ -4856,8 +4856,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 if (v22 < gObjectsWindowBufferSize) {
                     int v23 = frameWidth - 1;
                     if (v23 >= v49.left && v23 <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        if (v53 != 0) {
-                            *dest14 = v48[(v47[v54] << 8) + *dest14];
+                        if (isOutlinePalleted != 0) {
+                            *dest14 = blendTable[(grayTable[v54] << 8) + *dest14];
                         } else {
                             *dest14 = v54;
                         }
@@ -4888,8 +4888,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
                         unsigned char* v29 = dest27 - gObjectsWindowPitch;
                         if (v29 >= gObjectsWindowBuffer) {
-                            if (v53) {
-                                *v29 = v48[(v47[v28] << 8) + *v29];
+                            if (isOutlinePalleted) {
+                                *v29 = blendTable[(grayTable[v28] << 8) + *v29];
                             } else {
                                 *v29 = v28;
                             }
@@ -4898,8 +4898,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
                     cycle = false;
                 } else if (*src27 == 0 && !cycle) {
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        if (v53) {
-                            *dest27 = v48[(v47[v28] << 8) + *dest27];
+                        if (isOutlinePalleted) {
+                            *dest27 = blendTable[(grayTable[v28] << 8) + *dest27];
                         } else {
                             *dest27 = v28;
                         }
@@ -4915,8 +4915,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 if (dest27 - gObjectsWindowBuffer < gObjectsWindowBufferSize) {
                     int y = frameHeight - 1;
                     if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        if (v53) {
-                            *dest27 = v48[(v47[v28] << 8) + *dest27];
+                        if (isOutlinePalleted) {
+                            *dest27 = blendTable[(grayTable[v28] << 8) + *dest27];
                         } else {
                             *dest27 = v28;
                         }

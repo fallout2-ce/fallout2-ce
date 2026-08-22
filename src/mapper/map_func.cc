@@ -276,7 +276,7 @@ void map_load_dialog()
         return;
     }
 
-    int index = _win_list_select_at("Select a map to load:", fileList, count, nullptr, 80, 80, 0x10104, 0);
+    int index = _win_list_select_at("Select a map to load:", fileList, count, nullptr, 80, 80, static_cast<ColorWithFlags>(0x10104), 0);
     if (index != -1) {
         mapLoadByName(fileList[index]);
     }
@@ -772,7 +772,7 @@ void copyObject(int filterType)
                     || filterType != -1 && objectTypeFromFid(obj->fid) != filterType) continue;
 
                 if (mpCopyCount >= kMaxCopyEntries) {
-                    _win_msg("Too many objects in region!", 80, 80, COLOR_RED);
+                    _win_msg("Too many objects in region!", 80, 80, COLOR_RED | DRAW_TEXT_FLAG_NONE);
                     return;
                 }
 
@@ -787,7 +787,7 @@ void copyObject(int filterType)
     }
 
     if (mpCopyCount == 0) {
-        _win_msg("Nothing selected.", 80, 80, COLOR_RED);
+        _win_msg("Nothing selected.", 80, 80, COLOR_RED | DRAW_TEXT_FLAG_NONE);
         return;
     }
 
@@ -1109,7 +1109,7 @@ static void mapper_shift_map_once(int dx, int dy)
 // mapper_shift_map
 void mapper_shift_map()
 {
-    if (!win_yes_no("Are you sure you want to shift this map?", 180, 120, 0x10104)) {
+    if (!win_yes_no("Are you sure you want to shift this map?", 180, 120, static_cast<ColorWithFlags>(0x10104))) {
         return;
     }
 
@@ -1157,7 +1157,7 @@ void mapper_shift_map()
 // mapper_shift_map_elev
 void mapper_shift_map_elev()
 {
-    if (!win_yes_no("Are you sure you want to shift this elevation?", 180, 120, 0x10104)) {
+    if (!win_yes_no("Are you sure you want to shift this elevation?", 180, 120, static_cast<ColorWithFlags>(0x10104))) {
         return;
     }
 
@@ -1250,7 +1250,7 @@ void mapper_shift_map_elev()
 // mapper_copy_map_elev
 void mapper_copy_map_elev()
 {
-    if (!win_yes_no("Are you sure you want to copy this elevation?", 180, 120, 0x10104)) {
+    if (!win_yes_no("Are you sure you want to copy this elevation?", 180, 120, static_cast<ColorWithFlags>(0x10104))) {
         return;
     }
 

@@ -471,6 +471,10 @@ int skillGetValue(Object* critter, Skill skill)
         return -5;
     }
 
+    if (critter == nullptr || objectTypeFromPid(critter->pid) != OBJ_TYPE_CRITTER) {
+        return 0;
+    }
+
     Proto* proto;
     if (protoGetProto(critter->pid, &proto) == -1) {
         debugPrint("\nError: Failed to get a proto in skillGetValue for critter %d with a pid %d!", critter->id, critter->pid);

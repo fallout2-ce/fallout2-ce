@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string.h>
 
+#include "color.h"
 #include "debug.h"
 #include "draw.h"
 #include "input.h"
@@ -154,7 +155,7 @@ void textObjectsSetLineDelay(double value)
 
 // text_object_create
 // 0x4B036C text_object_create
-int textObjectAdd(Object* object, char* string, int font, int color, int outlineColor, Rect* rect)
+int textObjectAdd(Object* object, char* string, int font, ColorWithFlags color, ColorWithFlags outlineColor, Rect* rect)
 {
     if (!gTextObjectsInitialized) {
         return -1;
@@ -215,7 +216,7 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
 
     textObject->height = (fontGetLineHeight() + 1) * textObject->linesCount;
 
-    if (outlineColor != -1) {
+    if (outlineColor != COLOR_INVALID) {
         textObject->width += 2;
         textObject->height += 2;
     }
@@ -232,7 +233,7 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
     unsigned char* dest = textObject->data;
     int skip = textObject->width * (fontGetLineHeight() + 1);
 
-    if (outlineColor != -1) {
+    if (outlineColor != COLOR_INVALID) {
         dest += textObject->width;
     }
 
@@ -254,8 +255,8 @@ int textObjectAdd(Object* object, char* string, int font, int color, int outline
         dest += skip;
     }
 
-    if (outlineColor != -1) {
-        bufferOutline(textObject->data, textObject->width, textObject->height, textObject->width, outlineColor);
+    if (outlineColor != COLOR_INVALID) {
+        bufferOutline(textObject->data, textObject->width, textObject->height, textObject->width, static_cast<Color>(outlineColor & COLOR_LAST));
     }
 
     if (object != nullptr) {

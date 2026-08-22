@@ -57,7 +57,7 @@ static int memoryManagerPrintError(const char* format, ...)
 // 0x484610 error
 [[noreturn]] static void memoryManagerFatalAllocationError(const char* func, size_t size, const char* file, int line)
 {
-    memoryManagerPrintError("%s: Error allocating block of size %ld (%x), %s %d\n", func, size, size, file, line);
+    memoryManagerPrintError("%s: Error allocating block of size %zu (%zx), %s %d\n", func, size, size, file, line);
     exit(1);
 }
 

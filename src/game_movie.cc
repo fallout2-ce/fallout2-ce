@@ -180,7 +180,7 @@ int gameMoviePlay(int movie, int flags)
         0,
         screenGetWidth(),
         screenGetHeight(),
-        0,
+        COLOR_FIRST,
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) {
         gGameMovieIsPlaying = false;
@@ -210,7 +210,7 @@ int gameMoviePlay(int movie, int flags)
 
     movieSetFlags(movieFlags);
 
-    int oldTextColor;
+    Color oldTextColor;
     int oldFont;
     if (subtitlesEnabled) {
         const char* subtitlesPaletteFilePath;

@@ -7,6 +7,7 @@
 #include "object.h"
 #include "proto_types.h"
 #include "stat_defs.h"
+#include "worldmap.h"
 #include <setjmp.h>
 
 #include <vector>
@@ -391,6 +392,41 @@ inline Rotation programStackPopEnum(Program* program)
     }
 
     return static_cast<Rotation>(rotation);
+}
+
+template <>
+inline Map programStackPopEnum(Program* program)
+{
+    int map = programStackPopInteger(program);
+
+    // do not use the mapIsValid here as -1 and -2 might be valid argument from the script perspective
+    if (map >= wmMapMaxCount()) {
+        programPrintError("invalid map %d", map);
+    }
+
+    return static_cast<Map>(map);
+}
+
+template <>
+inline City programStackPopEnum(Program* program)
+{
+    int city = programStackPopInteger(program);
+    if (!cityIsValid(city)) {
+        programPrintError("invalid city %d", city);
+    }
+
+    return static_cast<City>(city);
+}
+
+template <>
+inline VisitedState programStackPopEnum(Program* program)
+{
+    int visited = programStackPopInteger(program);
+    if (!visitedStateIsValid(visited)) {
+        programPrintError("invalid visited state %d", visited);
+    }
+
+    return static_cast<VisitedState>(visited);
 }
 
 void programReturnStackPushValue(Program* program, ProgramValue& programValue);

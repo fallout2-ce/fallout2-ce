@@ -87,6 +87,8 @@ typedef enum GameDialogReviewWindowButtonFrm {
     GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT,
 } GameDialogReviewWindowButtonFrm;
 
+static void partyMemberCustomizationMessageListReset();
+
 typedef enum GameDialogReaction {
     GAME_DIALOG_REACTION_GOOD = 49,
     GAME_DIALOG_REACTION_NEUTRAL = 50,
@@ -387,10 +389,10 @@ static int gGameDialogOldCenterTile = -1;
 static int gGameDialogOldDudeTile = -1;
 
 // 0x5187E4 light_BlendTable
-static unsigned char* _light_BlendTable = nullptr;
+static Color* _light_BlendTable = nullptr;
 
 // 0x5187E8 dark_BlendTable
-static unsigned char* _dark_BlendTable = nullptr;
+static Color* _dark_BlendTable = nullptr;
 
 // 0x5187EC dialogue_just_started
 static int _dialogue_just_started = 0;
@@ -596,10 +598,10 @@ static int _custom_current_selected[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT];
 static MessageList gCustomMessageList;
 
 // 0x58EAA0 light_GrayTable
-static unsigned char _light_GrayTable[256];
+static Color _light_GrayTable[COLOR_COUNT];
 
 // 0x58EBA0 dark_GrayTable
-static unsigned char _dark_GrayTable[256];
+static Color _dark_GrayTable[COLOR_COUNT];
 
 // 0x58ECA0 backgrndBufs
 static unsigned char* _backgrndBufs[8];
@@ -624,6 +626,12 @@ static int gGameDialogReviewWindowOldFont;
 
 // 0x58F470 gdialog_buttons
 static int _gdialog_buttons[9];
+
+static void partyMemberCustomizationMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, nullptr);
+    messageListFree(&gCustomMessageList);
+}
 
 // 0x58F4C8 oldFont
 static int _oldFont;
@@ -723,8 +731,8 @@ static void gameDialogTicker();
 // If scrolling down - uses both subWindowFrmData and bgWindowBuf to fill parts of window buffer.
 static void _gdialog_scroll_subwin(int windowIdx, bool scrollUp, const unsigned char* subWindowFrmData, unsigned char* windowBuf, const unsigned char* bgWindowBuf, int bgWindowHeight, bool instantScrollUp = false);
 static int _text_num_lines(const char* text, int maxWidth);
-static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color);
-static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw);
+static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, ColorWithFlags color);
+static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, ColorWithFlags color, int draw);
 static int gameDialogCreateBarterWindow();
 static void gameDialogDestroyBarterWindow();
 static void gameDialogBarterCleanupTables();
@@ -749,7 +757,7 @@ static void _gdialog_window_destroy();
 static int talk_to_create_background_window();
 static int gameDialogWindowRenderBackground();
 static int _talkToRefreshDialogWindowRect(Rect* rect);
-static void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int x, int y, int destPitch, unsigned char* blendTable, unsigned char* unusedGrayTable);
+static void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int x, int y, int destPitch, Color* blendTable, Color* unusedGrayTable);
 static const char* expandedBarterFrmName();
 static void gameDialogRenderTalkingHead(Art* headFrm, int frame);
 static void gameDialogHighlightsInit();
@@ -1484,7 +1492,7 @@ int gameDialogReviewWindowInit(int* win)
         reviewWindowY,
         GAME_DIALOG_REVIEW_WINDOW_WIDTH,
         GAME_DIALOG_REVIEW_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (*win == -1) {
         return -1;
@@ -1905,7 +1913,7 @@ int _gdProcessInit()
         replyWindowY,
         GAME_DIALOG_REPLY_WINDOW_WIDTH,
         GAME_DIALOG_REPLY_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MOVE_ON_TOP);
     if (gGameDialogReplyWindow == -1) {
         goto err;
@@ -1931,7 +1939,7 @@ int _gdProcessInit()
 
     optionsWindowX = bgRect.left + GAME_DIALOG_OPTIONS_WINDOW_X;
     optionsWindowY = bgRect.top + GAME_DIALOG_OPTIONS_WINDOW_Y;
-    gGameDialogOptionsWindow = windowCreate(optionsWindowX, optionsWindowY, GAME_DIALOG_OPTIONS_WINDOW_WIDTH, GAME_DIALOG_OPTIONS_WINDOW_HEIGHT, 256, WINDOW_MOVE_ON_TOP);
+    gGameDialogOptionsWindow = windowCreate(optionsWindowX, optionsWindowY, GAME_DIALOG_OPTIONS_WINDOW_WIDTH, GAME_DIALOG_OPTIONS_WINDOW_HEIGHT, static_cast<ColorWithFlags>(256), WINDOW_MOVE_ON_TOP);
     if (gGameDialogOptionsWindow == -1) {
         goto err_2;
     }
@@ -2016,7 +2024,7 @@ void gameDialogRenderCaps()
         width = 60;
     }
 
-    windowDrawText(gGameDialogWindow, text, width, 38 - width / 2, 36, COLOR_GREEN | DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW);
+    windowDrawText(gGameDialogWindow, text, width, 38 - width / 2, 36, COLOR_GREEN | (DRAW_TEXT_FLAG_REFRESH | DRAW_TEXT_FLAG_NO_BG | DRAW_TEXT_FLAG_OVERFLOW));
 
     fontSetCurrent(oldFont);
 }
@@ -2298,7 +2306,7 @@ void gameDialogOptionOnMouseEnter(int index)
     _optionRect.left = 5;
     _optionRect.right = 388;
 
-    int color = COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG;
+    ColorWithFlags color = COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG;
     if (perkHasRank(gDude, PERK_EMPATHY)) {
         color = COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG;
         switch (dialogOptionEntry->reaction) {
@@ -2342,7 +2350,7 @@ void gameDialogOptionOnMouseExit(int index)
     _optionRect.bottom = dialogOptionEntry->bottom;
     _gDialogRefreshOptionsRect(gGameDialogOptionsWindow, &_optionRect);
 
-    int color = COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG;
+    ColorWithFlags color = COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG;
     if (perkGetRank(gDude, PERK_EMPATHY) != 0) {
         color = COLOR_LIGHT_YELLOW | DRAW_TEXT_FLAG_NO_BG;
         switch (dialogOptionEntry->reaction) {
@@ -2432,7 +2440,7 @@ void _gdProcessUpdate()
 
     gameDialogRenderReply();
 
-    int color = COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG;
+    ColorWithFlags color = COLOR_GREEN | DRAW_TEXT_FLAG_NO_BG;
 
     bool hasEmpathy = perkGetRank(gDude, PERK_EMPATHY) != 0;
 
@@ -2676,6 +2684,10 @@ void _gdSetupFidget(int headFid, HeadFidget reaction)
             _lipsFp = nullptr;
             _lipsFID = 0;
         }
+    }
+
+    if (_lipsFp == nullptr) {
+        _lipsFID = 0;
     }
 
     if (_lipsFID == 0) {
@@ -3259,14 +3271,14 @@ int _text_num_lines(const char* text, int maxWidth)
 // NOTE: Inlined.
 //
 // 0x447F80
-static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color)
+static int text_to_rect_wrapped(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, ColorWithFlags color)
 {
     return gameDialogDrawText(buffer, rect, string, textOffset, height, pitch, color, 1);
 }
 
 // display_msg
 // 0x447FA0
-static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, int color, int draw)
+static int gameDialogDrawText(unsigned char* buffer, Rect* rect, const char* string, int* textOffset, int height, int pitch, ColorWithFlags color, int draw)
 {
     if (string == nullptr) {
         if (textOffset != nullptr) {
@@ -3459,7 +3471,7 @@ int gameDialogCreateBarterWindow()
         bgRect.top + GAME_DIALOG_WINDOW_HEIGHT - bgOverlapHeight,
         GAME_DIALOG_WINDOW_WIDTH,
         _dialogue_subwin_len,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_DONT_MOVE_TOP | WINDOW_TRANSPARENT));
     if (win.get() == -1) return -1;
 
@@ -3611,7 +3623,7 @@ int partyMemberControlWindowInit()
         controlWindowY,
         GAME_DIALOG_WINDOW_WIDTH,
         _dialogue_subwin_len,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_DONT_MOVE_TOP);
     if (gGameDialogWindow == -1) {
         partyMemberControlWindowFree();
@@ -4042,10 +4054,12 @@ int partyMemberCustomizationWindowInit()
     if (!messageListLoad(&gCustomMessageList, "game\\custom.msg")) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, &gCustomMessageList);
 
     FrmImage backgroundFrmImage;
     int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 391);
     if (!backgroundFrmImage.lock(backgroundFid)) {
+        partyMemberCustomizationMessageListReset();
         return -1;
     }
 
@@ -4066,7 +4080,7 @@ int partyMemberCustomizationWindowInit()
         customizationWindowY,
         GAME_DIALOG_WINDOW_WIDTH,
         _dialogue_subwin_len,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_DONT_MOVE_TOP);
     if (gGameDialogWindow == -1) {
         partyMemberCustomizationWindowFree();
@@ -4157,6 +4171,7 @@ int partyMemberCustomizationWindowInit()
 void partyMemberCustomizationWindowFree()
 {
     if (gGameDialogWindow == -1) {
+        partyMemberCustomizationMessageListReset();
         return;
     }
 
@@ -4194,7 +4209,7 @@ void partyMemberCustomizationWindowFree()
     windowDestroy(gGameDialogWindow);
     gGameDialogWindow = -1;
 
-    messageListFree(&gCustomMessageList);
+    partyMemberCustomizationMessageListReset();
 }
 
 // 0x449B3C
@@ -4323,7 +4338,7 @@ void _gdCustomSelectRedraw(unsigned char* dest, int pitch, int type, int selecte
                 break;
             }
 
-            int color;
+            Color color;
             if (enabled) {
                 if (index == selectedIndex) {
                     color = COLOR_LIGHT_YELLOW;
@@ -4356,7 +4371,7 @@ int _gdCustomSelect(int option)
 
     int selectWindowX = (screenGetWidth() - backgroundFrmWidth) / 2;
     int selectWindowY = (screenGetHeight() - backgroundFrmHeight) / 2;
-    int win = windowCreate(selectWindowX, selectWindowY, backgroundFrmWidth, backgroundFrmHeight, 256, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    int win = windowCreate(selectWindowX, selectWindowY, backgroundFrmWidth, backgroundFrmHeight, static_cast<ColorWithFlags>(256), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (win == -1) return -1;
     UniqueWindow winPtr(win);
 
@@ -4603,7 +4618,7 @@ int _gdialog_window_create()
     const int subWinRelativeY = GAME_DIALOG_WINDOW_HEIGHT - _dialogue_subwin_len;
     windowGetRect(gGameDialogBackgroundWindow, &bgRect);
     int win = windowCreate(bgRect.left, bgRect.top + subWinRelativeY,
-        GAME_DIALOG_WINDOW_WIDTH, _dialogue_subwin_len, 256, WINDOW_DONT_MOVE_TOP);
+        GAME_DIALOG_WINDOW_WIDTH, _dialogue_subwin_len, static_cast<ColorWithFlags>(256), WINDOW_DONT_MOVE_TOP);
     if (win == -1) return -1;
 
     UniqueWindow winPtr(win);
@@ -4700,7 +4715,7 @@ static int talk_to_create_background_window()
         backgroundWindowY,
         GAME_DIALOG_WINDOW_WIDTH,
         GAME_DIALOG_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_DONT_MOVE_TOP | WINDOW_MODAL);
 
     if (gGameDialogBackgroundWindow != -1) {
@@ -4779,7 +4794,7 @@ int _talkToRefreshDialogWindowRect(Rect* rect)
 }
 
 // 0x44AC68
-void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, unsigned char* blendTable, unsigned char* unusedGrayTable)
+void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, int srcPitch, unsigned char* dest, int destX, int destY, int destPitch, Color* blendTable, Color* unusedGrayTable)
 {
     (void)unusedGrayTable;
 
@@ -4792,11 +4807,11 @@ void gameDialogRenderHighlight(unsigned char* src, int srcWidth, int srcHeight, 
         for (int x = 0; x < srcWidth; x++) {
             unsigned char alpha = *src++;
             if (alpha != 0) {
-                alpha = (256 - alpha) >> 4;
+                alpha = (COLOR_COUNT - alpha) >> 4;
             }
 
             unsigned char destColor = *dest;
-            *dest++ = blendTable[256 * alpha + destColor];
+            *dest++ = blendTable[COLOR_COUNT * alpha + destColor];
         }
         src += srcStep;
         dest += destStep;
@@ -4935,16 +4950,17 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
 // 0x44B080
 void gameDialogHighlightsInit()
 {
-    for (int color = 0; color < 256; color++) {
-        int r = (Color2RGB(color) & 0x7C00) >> 10;
-        int g = (Color2RGB(color) & 0x3E0) >> 5;
-        int b = Color2RGB(color) & 0x1F;
-        _light_GrayTable[color] = ((r + 2 * g + 2 * b) / 10) >> 2;
-        _dark_GrayTable[color] = ((r + g + b) / 10) >> 2;
+    for (int color = COLOR_FIRST; color < COLOR_COUNT; color++) {
+        int rgb = Color2RGB(static_cast<Color>(color & COLOR_LAST));
+        int r = (rgb & 0x7C00) >> 10;
+        int g = (rgb & 0x3E0) >> 5;
+        int b = rgb & 0x1F;
+        _light_GrayTable[color] = static_cast<Color>((((r + 2 * g + 2 * b) / 10) >> 2) & COLOR_LAST);
+        _dark_GrayTable[color] = static_cast<Color>((((r + g + b) / 10) >> 2) & COLOR_LAST);
     }
 
-    _light_GrayTable[0] = 0;
-    _dark_GrayTable[0] = 0;
+    _light_GrayTable[0] = COLOR_FIRST;
+    _dark_GrayTable[0] = COLOR_FIRST;
 
     _light_BlendTable = _getColorBlendTable(COLOR_GREY);
     _dark_BlendTable = _getColorBlendTable(COLOR_OLIVE);

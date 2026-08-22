@@ -8,7 +8,6 @@
 #include "memory.h"
 #include "platform_compat.h"
 #include "settings.h"
-#include "window_manager.h"
 
 #include <assert.h>
 
@@ -44,7 +43,7 @@ typedef struct TextFontDescriptor {
 
 static void textFontSetCurrentImpl(int font);
 static bool fontManagerFind(int font, FontManager** fontManagerPtr);
-static void textFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, int color);
+static void textFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, ColorWithFlags color);
 static int textFontGetLineHeightImpl();
 static int textFontGeStringWidthImpl(const char* string);
 static int textFontGetCharacterWidthImpl(int ch);
@@ -75,7 +74,7 @@ int gCurrentFont = -1;
 int gFontManagersCount = 0;
 
 // 0x51E3B8 text_to_buf
-FontManagerDrawTextProc* fontDrawText = nullptr;
+FontManagerDrawTextProc* fontDrawTextPtr = nullptr;
 
 // 0x51E3BC text_height
 FontManagerGetLineHeightProc* fontGetLineHeight = nullptr;
@@ -290,7 +289,7 @@ void fontSetCurrent(int font)
     FontManager* fontManager;
 
     if (fontManagerFind(font, &fontManager)) {
-        fontDrawText = fontManager->drawTextProc;
+        fontDrawTextPtr = fontManager->drawTextProc;
         fontGetLineHeight = fontManager->getLineHeightProc;
         fontGetStringWidth = fontManager->getStringWidthProc;
         fontGetCharacterWidth = fontManager->getCharacterWidthProc;
@@ -320,7 +319,7 @@ static bool fontManagerFind(int font, FontManager** fontManagerPtr)
 }
 
 // 0x4D59B0 GNW_text_to_buf
-static void textFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, int color)
+static void textFontDrawImpl(unsigned char* buf, const char* string, int length, int pitch, ColorWithFlags color)
 {
     if ((color & DRAW_TEXT_FLAG_SHADOWED) != 0) {
         color &= ~DRAW_TEXT_FLAG_SHADOWED;
@@ -360,7 +359,7 @@ static void textFontDrawImpl(unsigned char* buf, const char* string, int length,
                     }
 
                     if ((*glyphData & bits) != 0) {
-                        *ptr = color & 0xFF;
+                        *ptr = color & COLOR_LAST;
                     }
 
                     bits >>= 1;
@@ -379,7 +378,7 @@ static void textFontDrawImpl(unsigned char* buf, const char* string, int length,
         int length = ptr - buf;
         unsigned char* underlinePtr = buf + pitch * (gCurrentTextFontDescriptor->lineHeight - 1);
         for (int pix = 0; pix < length; pix++) {
-            *underlinePtr++ = color & 0xFF;
+            *underlinePtr++ = color & COLOR_LAST;
         }
     }
 }
@@ -445,7 +444,7 @@ static int textFontGetMonospacedCharacterWidthImpl()
     return width + gCurrentTextFontDescriptor->letterSpacing;
 }
 
-void fontDrawText2D(const Buffer2D& dest, int xPos, int yPos, const char* string, int length, int color)
+void fontDrawText2D(const Buffer2D& dest, int xPos, int yPos, const char* string, int length, ColorWithFlags color)
 {
     assert(dest.data != nullptr && dest.width > 0 && dest.height > 0);
     assert(xPos >= 0 && xPos < dest.width && yPos >= 0 && yPos < dest.height && length >= 0 && length < dest.width - xPos);

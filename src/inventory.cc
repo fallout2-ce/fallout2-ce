@@ -367,7 +367,7 @@ static void _adjust_fid();
 static void inventoryRenderSummary();
 static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSlot, Object** outOwner);
 static void inventoryRenderItemDescription(const char* string);
-static void inventoryDrawCenteredText(unsigned char* buffer, int pitch, int width, int x, int y, const char* text, int color);
+static void inventoryDrawCenteredText(unsigned char* buffer, int pitch, int width, int x, int y, const char* text, ColorWithFlags color);
 static void inventoryExamineItem(Object* critter, Object* item);
 static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inventoryWindowType);
 static void inventoryWindowOpenContextMenu(int eventCode, int inventoryWindowType);
@@ -972,7 +972,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
             pitch);
     }
 
-    int color = COLOR_GREEN;
+    ColorWithFlags color = COLOR_GREEN | DRAW_TEXT_FLAG_NONE;
     int inventoryWeight = objectGetInventoryWeight(object);
     if (objectTypeFromPid(object->pid) == OBJ_TYPE_CRITTER) {
         int currentWeight = inventoryWeight + extraWeight;
@@ -990,7 +990,7 @@ static void inventoryLootRenderPaneWeight(unsigned char* windowBuffer, int pitch
         }
 
         if (currentWeight > maxWeight) {
-            color = COLOR_RED;
+            color = COLOR_RED | DRAW_TEXT_FLAG_NONE;
         }
     } else if (targetPane && objectTypeFromPid(object->pid) == OBJ_TYPE_ITEM && itemGetType(object) == ITEM_TYPE_CONTAINER) {
         int currentSize = containerGetTotalSize(object);
@@ -1565,6 +1565,7 @@ static int inventoryMessageListInit()
     if (!messageListLoad(&gInventoryMessageList, path))
         return -1;
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_INVENTORY, &gInventoryMessageList);
     return 0;
 }
 
@@ -1581,6 +1582,7 @@ static void inventoryDisplayMessage(int num)
 // 0x46E7A0
 static int inventoryMessageListFree()
 {
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_INVENTORY, nullptr);
     messageListFree(&gInventoryMessageList);
     return 0;
 }
@@ -1760,7 +1762,7 @@ static bool _setup_inventory(int inventoryWindowType)
             : inventoryGetCenteredWindowY(windowHeight);
         gInventoryWindow = windowCreate(
             inventoryWindowX, inventoryWindowY, windowWidth, windowHeight,
-            257, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+            static_cast<ColorWithFlags>(257), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
         gInventoryWindowMaxX = windowWidth + inventoryWindowX;
         gInventoryWindowMaxY = windowHeight + inventoryWindowY;
 
@@ -1795,7 +1797,7 @@ static bool _setup_inventory(int inventoryWindowType)
         windowGetRect(gInventoryBarterBackgroundWindow, &bgWindowRect);
         int tradeWindowX = bgWindowRect.left + INVENTORY_TRADE_WINDOW_X;
         int tradeWindowY = bgWindowRect.top + INVENTORY_TRADE_WINDOW_Y;
-        gInventoryWindow = windowCreate(tradeWindowX, tradeWindowY, INVENTORY_TRADE_WINDOW_WIDTH, tradeWindowHeight, 257, 0);
+        gInventoryWindow = windowCreate(tradeWindowX, tradeWindowY, INVENTORY_TRADE_WINDOW_WIDTH, tradeWindowHeight, static_cast<ColorWithFlags>(257), 0);
         gInventoryWindowMaxX = tradeWindowX + INVENTORY_TRADE_WINDOW_WIDTH;
         gInventoryWindowMaxY = tradeWindowY + tradeWindowHeight;
 
@@ -2652,7 +2654,7 @@ static int inventoryCommonInit()
             gameUiDisable(0);
         }
 
-        messageListFree(&gInventoryMessageList);
+        inventoryMessageListFree();
 
         return -1;
     }
@@ -3711,7 +3713,7 @@ static void inventoryRenderSummary()
             int inventoryWeight = objectGetInventoryWeight(_stack[0]);
             snprintf(formattedText, sizeof(formattedText), "%s %d/%d", messageListItem.text, inventoryWeight, carryWeight);
 
-            int color = COLOR_GREEN;
+            Color color = COLOR_GREEN;
             if (critterIsEncumbered(_stack[0])) {
                 color = COLOR_RED;
             }
@@ -4123,7 +4125,7 @@ static int _inven_from_button(int keyCode, Object** outItem, Object*** outItemSl
     return quantity;
 }
 
-static void inventoryDrawCenteredText(unsigned char* buffer, int pitch, int width, int x, int y, const char* text, int color)
+static void inventoryDrawCenteredText(unsigned char* buffer, int pitch, int width, int x, int y, const char* text, ColorWithFlags color)
 {
     if (text == nullptr) {
         return;
@@ -4164,7 +4166,7 @@ static void displayLootPanePartyName(unsigned char* windowBuffer, int windowPitc
     int nameY = rect.bottom - fontGetLineHeight();
     fontSetCurrent(oldFont);
 
-    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, COLOR_GREEN);
+    inventoryDrawCenteredText(windowBuffer, windowPitch, INVENTORY_BODY_VIEW_WIDTH, rect.left, nameY, name, COLOR_GREEN | DRAW_TEXT_FLAG_NONE);
 }
 
 // Displays item description.
@@ -4440,9 +4442,13 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
     int inventoryWindowX = windowRect.left;
     int inventoryWindowY = windowRect.top;
 
-    gameMouseRenderActionMenuItems(x, y, actionMenuItems, actionMenuItemsLength,
-        windowWidth + inventoryWindowX,
-        windowHeight + inventoryWindowY);
+    if (gameMouseRenderActionMenuItems(x, y, actionMenuItems, actionMenuItemsLength,
+            windowWidth + inventoryWindowX,
+            windowHeight + inventoryWindowY)
+        == -1) {
+        inventorySetCursor(INVENTORY_WINDOW_CURSOR_ARROW);
+        return;
+    }
 
     InventoryCursorData* cursorData = &(gInventoryCursorData[INVENTORY_WINDOW_CURSOR_MENU]);
 
@@ -6380,7 +6386,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
     int quantityWindowY = screenGetHeight() != 480
         ? inventoryGetCenteredWindowY(windowDescription->height)
         : windowDescription->y;
-    _mt_wid = windowCreate(quantityWindowX, quantityWindowY, windowDescription->width, windowDescription->height, 257, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
+    _mt_wid = windowCreate(quantityWindowX, quantityWindowY, windowDescription->width, windowDescription->height, static_cast<ColorWithFlags>(257), WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     unsigned char* windowBuffer = windowGetBuffer(_mt_wid);
 
     FrmImage backgroundFrmImage;
@@ -6463,7 +6469,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
                 // TODO: Where is y? Is it hardcoded in to 376?
                 fontDrawText(_moveFrmImages[6].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, COLOR_YELLOW_2);
-                fontDrawText(_moveFrmImages[7].getData() + (94 - length) / 2 + 376, messageListItem.text, 200, 94, COLOR_DARK_YELLOW_4);
+                fontDrawText(_moveFrmImages[7].getData() + (94 - length) / 2 + 470, messageListItem.text, 200, 94, COLOR_DARK_YELLOW_4);
 
                 btn = buttonCreate(_mt_wid,
                     120, 80, 94, 33, -1, -1, -1, 5000,

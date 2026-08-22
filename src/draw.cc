@@ -12,7 +12,7 @@ static void blitBuffer2DScaledImpl(ConstBuffer2D src, int srcX, int srcY, int sr
 static int scaledCeilDiv(int value, int numerator, int denominator);
 
 // 0x4D2FC0
-void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y2, int color)
+void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y2, Color color)
 {
     int temp;
     int dx;
@@ -135,7 +135,7 @@ void bufferDrawLine(unsigned char* buf, int pitch, int x1, int y1, int x2, int y
 }
 
 // 0x4D31A4
-void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int color)
+void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right, int bottom, Color color)
 {
     bufferDrawLine(buf, pitch, left, top, right, top, color);
     bufferDrawLine(buf, pitch, left, bottom, right, bottom, color);
@@ -144,7 +144,7 @@ void bufferDrawRect(unsigned char* buf, int pitch, int left, int top, int right,
 }
 
 // 0x4D322C
-void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, int right, int bottom, int ltColor, int rbColor)
+void bufferDrawRectShadowed(unsigned char* buf, int pitch, int left, int top, int right, int bottom, Color ltColor, Color rbColor)
 {
     bufferDrawLine(buf, pitch, left, top, right, top, ltColor);
     bufferDrawLine(buf, pitch, left, bottom, right, bottom, rbColor);
@@ -296,7 +296,7 @@ void blitBuffer2DScaledTrans(ConstBuffer2D src, int srcX, int srcY, int srcWidth
     blitBuffer2DScaledImpl(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY, dstWidth, dstHeight, true);
 }
 
-void bufferFill2D(Buffer2D dst, int value)
+void bufferFill2D(Buffer2D dst, Color value)
 {
     if (!dst || dst.width <= 0 || dst.height <= 0) {
         return;
@@ -356,7 +356,7 @@ static int scaledCeilDiv(int value, int numerator, int denominator)
 }
 
 // 0x4D387C
-void bufferFill(unsigned char* buf, int width, int height, int pitch, int value)
+void bufferFill(unsigned char* buf, int width, int height, int pitch, Color value)
 {
     int y;
 
@@ -399,16 +399,16 @@ void _lighten_buf(unsigned char* buf, int width, int height, int pitch)
 // Swaps two colors in the buffer.
 //
 // 0x4D3A8C
-void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, int color1, int color2)
+void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, Color color1, Color color2)
 {
     int step = pitch - width;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            int currentColor = *buf & 0xFF;
+            Color currentColor = static_cast<Color>(*buf & COLOR_LAST);
             if (currentColor == color1) {
-                *buf = color2 & 0xFF;
+                *buf = color2;
             } else if (currentColor == color2) {
-                *buf = color1 & 0xFF;
+                *buf = color1;
             }
             buf++;
         }
@@ -417,7 +417,7 @@ void _swap_color_buf(unsigned char* buf, int width, int height, int pitch, int c
 }
 
 // 0x4D3AE0
-void bufferOutline(unsigned char* buf, int width, int height, int pitch, int color)
+void bufferOutline(unsigned char* buf, int width, int height, int pitch, Color color)
 {
     unsigned char* ptr = buf + pitch;
 
@@ -427,10 +427,10 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, int col
 
         for (int x = 0; x < width; x++) {
             if (*ptr != 0 && cycle) {
-                *(ptr - 1) = color & 0xFF;
+                *(ptr - 1) = color;
                 cycle = false;
             } else if (*ptr == 0 && !cycle) {
-                *ptr = color & 0xFF;
+                *ptr = color;
                 cycle = true;
             }
 
@@ -447,10 +447,10 @@ void bufferOutline(unsigned char* buf, int width, int height, int pitch, int col
         for (int y = 0; y < height; y++) {
             if (*ptr != 0 && cycle) {
                 // TODO: Check in debugger, might be a bug.
-                *(ptr - pitch) = color & 0xFF;
+                *(ptr - pitch) = color;
                 cycle = false;
             } else if (*ptr == 0 && !cycle) {
-                *ptr = color & 0xFF;
+                *ptr = color;
                 cycle = true;
             }
 

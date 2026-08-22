@@ -121,6 +121,8 @@ typedef enum LoadSaveScrollDirection {
     LOAD_SAVE_SCROLL_DIRECTION_DOWN,
 } LoadSaveScrollDirection;
 
+static void loadSaveMessageListReset();
+
 typedef struct LoadSaveSlotData {
     char signature[24];
     short versionMinor;
@@ -140,7 +142,7 @@ typedef struct LoadSaveSlotData {
     short gameYear;
     unsigned int gameTime;
     short elevation;
-    short map;
+    Map map;
     char fileName[16];
 } LoadSaveSlotData;
 
@@ -169,7 +171,7 @@ static void _ShowSlotList(int windowType);
 static void _DrawInfoBox(int slot);
 static int _LoadTumbSlot(int slot);
 static int _GetComment(int slot);
-static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, int textColor, int backgroundColor, int flags);
+static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags);
 static int _DummyFunc(File* stream);
 static int _PrepLoad(File* stream);
 static int _EndLoad(File* stream);
@@ -333,6 +335,12 @@ static char _str1[COMPAT_MAX_PATH];
 // 0x6145FC str
 static char _str[COMPAT_MAX_PATH];
 
+static void loadSaveMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, nullptr);
+    messageListFree(&gLoadSaveMessageList);
+}
+
 // 0x614700 lsgbuf
 static unsigned char* gLoadSaveWindowBuffer;
 
@@ -396,7 +404,7 @@ static void loadSavePersistSelectedSlot()
     snprintf(path, sizeof(path), "%s\\%s", _patches, kLoadSaveSlotDataFile);
 
     ScopedConfig config { path, false };
-    if (!config.isInitialized()) {
+    if (!config.get()->isInitialized()) {
         return;
     }
 
@@ -470,6 +478,7 @@ int lsgSaveGame(int mode)
         if (!messageListLoad(&gLoadSaveMessageList, path)) {
             return -1;
         }
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
 
         _snapshotBuf = nullptr;
         int v6 = _QuickSnapShot();
@@ -487,6 +496,7 @@ int lsgSaveGame(int mode)
         gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
         if (v6 != -1) {
+            loadSaveMessageListReset();
             return 1;
         }
 
@@ -502,7 +512,7 @@ int lsgSaveGame(int mode)
         };
         showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
-        messageListFree(&gLoadSaveMessageList);
+        loadSaveMessageListReset();
 
         return -1;
     }
@@ -1075,7 +1085,7 @@ int lsgLoadGame(int mode)
             quickSaveWindowY,
             LS_WINDOW_WIDTH,
             LS_WINDOW_HEIGHT,
-            256,
+            static_cast<ColorWithFlags>(256),
             WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
         if (window != -1) {
             unsigned char* windowBuffer = windowGetBuffer(window);
@@ -1101,6 +1111,7 @@ int lsgLoadGame(int mode)
         if (!messageListLoad(&gLoadSaveMessageList, path)) {
             return -1;
         }
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
 
         if (window != -1) {
             windowDestroy(window);
@@ -1112,7 +1123,7 @@ int lsgLoadGame(int mode)
         strcpy(_str1, getmsg(&gLoadSaveMessageList, &messageListItem, 135));
         showDialogBox(_str0, body, 1, 169, 116, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
 
-        messageListFree(&gLoadSaveMessageList);
+        loadSaveMessageListReset();
         mapNewMap();
         _game_user_wants_to_quit = GAME_QUIT_REQUEST_MAIN_MENU;
 
@@ -1604,10 +1615,11 @@ static int lsgWindowInit(int windowType)
     if (!messageListLoad(&gLoadSaveMessageList, _str)) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_LSGAME, &gLoadSaveMessageList);
 
     _snapshot = (unsigned char*)internal_malloc(61632);
     if (_snapshot == nullptr) {
-        messageListFree(&gLoadSaveMessageList);
+        loadSaveMessageListReset();
         fontSetCurrent(gLoadSaveWindowOldFont);
         return -1;
     }
@@ -1659,7 +1671,7 @@ static int lsgWindowInit(int windowType)
                 _loadsaveFrmImages[index].unlock();
             }
             internal_free(_snapshot);
-            messageListFree(&gLoadSaveMessageList);
+            loadSaveMessageListReset();
             fontSetCurrent(gLoadSaveWindowOldFont);
 
             if (windowType != LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU) {
@@ -1680,12 +1692,12 @@ static int lsgWindowInit(int windowType)
         lsWindowY,
         LS_WINDOW_WIDTH,
         LS_WINDOW_HEIGHT,
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (gLoadSaveWindow == -1) {
         // FIXME: Leaking frms.
         internal_free(_snapshot);
-        messageListFree(&gLoadSaveMessageList);
+        loadSaveMessageListReset();
         fontSetCurrent(gLoadSaveWindowOldFont);
 
         if (windowType != LOAD_SAVE_WINDOW_TYPE_LOAD_GAME_FROM_MAIN_MENU) {
@@ -1823,7 +1835,7 @@ static int lsgWindowFree(int windowType)
 
     windowDestroy(gLoadSaveWindow);
     fontSetCurrent(gLoadSaveWindowOldFont);
-    messageListFree(&gLoadSaveMessageList);
+    loadSaveMessageListReset();
 
     for (int index = 0; index < LOAD_SAVE_FRM_COUNT; index++) {
         _loadsaveFrmImages[index].unlock();
@@ -1901,7 +1913,7 @@ static int lsgPerformSaveGame()
     long pos = fileTell(_flptr);
     if (lsgSaveHeaderInSlot(_slot_cursor) == -1) {
         debugPrint("\nLOADSAVE: ** Error writing save game header! **\n");
-        debugPrint("LOADSAVE: Save file header size written: %d bytes.\n", fileTell(_flptr) - pos);
+        debugPrint("LOADSAVE: Save file header size written: %ld bytes.\n", fileTell(_flptr) - pos);
         fileClose(_flptr);
         _RestoreSave();
         snprintf(_gmpath, sizeof(_gmpath), "%s\\%s%.2d\\", "SAVEGAME", "SLOT", _slot_cursor + 1);
@@ -1925,7 +1937,7 @@ static int lsgPerformSaveGame()
             return -1;
         }
 
-        debugPrint("LOADSAVE: Save function #%d data size written: %d bytes.\n", index, fileTell(_flptr) - pos);
+        debugPrint("LOADSAVE: Save function #%d data size written: %ld bytes.\n", index, fileTell(_flptr) - pos);
     }
 
     debugPrint("LOADSAVE: Total save data written: %ld bytes.\n", fileTell(_flptr));
@@ -2026,7 +2038,7 @@ static int lsgLoadGameInSlot(int slot)
     _loadingMapId = _LSData[slot].map;
     debugPrint("\nLOADSAVE: Load name: %s\n", ptr->description);
 
-    debugPrint("LOADSAVE: Load file header size read: %d bytes.\n", fileTell(_flptr) - pos);
+    debugPrint("LOADSAVE: Load file header size read: %ld bytes.\n", fileTell(_flptr) - pos);
 
     for (int index = 0; index < LOAD_SAVE_HANDLER_COUNT; index += 1) {
         long pos = fileTell(_flptr);
@@ -2034,7 +2046,7 @@ static int lsgLoadGameInSlot(int slot)
         if (handler(_flptr) == -1) {
             debugPrint("\nLOADSAVE: ** Error reading load function #%d data! **\n", index);
             int v12 = fileTell(_flptr);
-            debugPrint("LOADSAVE: Load function #%d data size read: %d bytes.\n", index, fileTell(_flptr) - pos);
+            debugPrint("LOADSAVE: Load function #%d data size read: %ld bytes.\n", index, fileTell(_flptr) - pos);
             fileClose(_flptr);
             gameReset();
             _loadingGame = false;
@@ -2042,7 +2054,7 @@ static int lsgLoadGameInSlot(int slot)
             return -1;
         }
 
-        debugPrint("LOADSAVE: Load function #%d data size read: %d bytes.\n", index, fileTell(_flptr) - pos);
+        debugPrint("LOADSAVE: Load function #%d data size read: %ld bytes.\n", index, fileTell(_flptr) - pos);
     }
 
     _loadingMapId = -1;
@@ -2173,7 +2185,7 @@ static int lsgSaveHeaderInSlot(int slot)
     }
 
     ptr->map = mapGetCurrentMap();
-    if (fileWriteInt16(_flptr, ptr->map) == -1) {
+    if (fileWriteInt16Enum<Map>(_flptr, ptr->map) == -1) {
         return -1;
     }
 
@@ -2272,7 +2284,7 @@ static int lsgLoadHeaderInSlot(int slot)
         return -1;
     }
 
-    if (fileReadInt16(_flptr, &(ptr->map)) == -1) {
+    if (fileReadInt16Enum<Map>(_flptr, &(ptr->map)) == -1) {
         return -1;
     }
 
@@ -2334,7 +2346,7 @@ static int _GetSlotList()
 static void _ShowSlotList(int windowType)
 {
     // Clear display area
-    bufferFill(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 87 + 55, 230, 353, LS_WINDOW_WIDTH, gLoadSaveWindowBuffer[LS_WINDOW_WIDTH * 86 + 55] & 0xFF);
+    bufferFill(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * 87 + 55, 230, 353, LS_WINDOW_WIDTH, static_cast<Color>(gLoadSaveWindowBuffer[LS_WINDOW_WIDTH * 86 + 55] & COLOR_LAST));
 
     int y = 87;
     int startIndex = _currentSlotPage * slotsPerPage;
@@ -2342,7 +2354,7 @@ static void _ShowSlotList(int windowType)
     if (endIndex > saveLoadTotalSlots) endIndex = saveLoadTotalSlots;
 
     for (int index = startIndex; index < endIndex; index++) {
-        int color = index == _slot_cursor ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
+        Color color = index == _slot_cursor ? COLOR_LIGHT_YELLOW : COLOR_GREEN;
         const char* text = getmsg(&gLoadSaveMessageList, &gLoadSaveMessageListItem, windowType != 0 ? 110 : 109);
         snprintf(_str, sizeof(_str), "[   %s %.2d:   ]", text, index + 1);
         fontDrawText(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * y + 55, _str, LS_WINDOW_WIDTH, LS_WINDOW_WIDTH, color);
@@ -2377,8 +2389,8 @@ static void _ShowSlotList(int windowType)
 
     // Pagination navigation
     if (saveLoadTotalSlots > 10) {
-        int activeColor = COLOR_GREEN;
-        int inactiveColor = COLOR_LIGHT_GREEN_2;
+        Color activeColor = COLOR_GREEN;
+        Color inactiveColor = COLOR_LIGHT_GREEN_2;
 
         {
             MessageListItem messageListItemBack = { 201, 0, nullptr, nullptr };
@@ -2418,7 +2430,7 @@ static void _DrawInfoBox(int slot)
 
     unsigned char* dest;
     const char* text;
-    int color = COLOR_GREEN;
+    Color color = COLOR_GREEN;
 
     switch (_LSstatus[slot]) {
     case SLOT_STATE_OCCUPIED:
@@ -2541,7 +2553,7 @@ static int _GetComment(int slot)
         commentWindowY,
         _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth(),
         _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     if (window == -1) {
         return -1;
@@ -2636,8 +2648,8 @@ static int _GetComment(int slot)
 
     int rc;
 
-    int backgroundColor = *(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData() + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 35 + 24);
-    if (_get_input_str2(window, 507, 508, description, LOAD_SAVE_DESCRIPTION_LENGTH - 1, 24, 35, COLOR_GREEN, backgroundColor, 0) == 0) {
+    Color backgroundColor = static_cast<Color>(*(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData() + _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth() * 35 + 24) & COLOR_LAST);
+    if (_get_input_str2(window, 507, 508, description, LOAD_SAVE_DESCRIPTION_LENGTH - 1, 24, 35, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, backgroundColor, 0) == 0) {
         strncpy(_LSData[slot].description, description, LOAD_SAVE_DESCRIPTION_LENGTH);
         _LSData[slot].description[LOAD_SAVE_DESCRIPTION_LENGTH - 1] = '\0';
         rc = 1;
@@ -2651,7 +2663,7 @@ static int _GetComment(int slot)
 }
 
 // 0x47F084
-static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, int textColor, int backgroundColor, int flags)
+static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* description, int maxLength, int x, int y, ColorWithFlags textColor, Color backgroundColor, int flags)
 {
     int cursorWidth = fontGetStringWidth("_") - 4;
     int windowWidth = windowGetWidth(win);
@@ -2735,7 +2747,7 @@ static int _get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* de
             blinkCounter = 3;
             blink = !blink;
 
-            int color = blink ? backgroundColor : textColor;
+            Color color = blink ? backgroundColor : static_cast<Color>(textColor & COLOR_LAST);
             bufferFill(windowBuffer + windowWidth * y + x + fontGetStringWidth(text) - cursorWidth, cursorWidth, lineHeight - 2, windowWidth, color);
             windowRefresh(win);
         }

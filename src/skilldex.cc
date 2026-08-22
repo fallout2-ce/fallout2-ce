@@ -171,6 +171,7 @@ static int skilldexWindowInit()
     if (!messageListLoad(&gSkilldexMessageList, path)) {
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SKILLDEX, &gSkilldexMessageList);
 
     int frmIndex;
     for (frmIndex = 0; frmIndex < SKILLDEX_FRM_COUNT; frmIndex++) {
@@ -185,6 +186,7 @@ static int skilldexWindowInit()
             _skilldexFrmImages[frmIndex].unlock();
         }
 
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SKILLDEX, nullptr);
         messageListFree(&gSkilldexMessageList);
 
         return -1;
@@ -223,6 +225,7 @@ static int skilldexWindowInit()
             _skilldexFrmImages[index].unlock();
         }
 
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SKILLDEX, nullptr);
         messageListFree(&gSkilldexMessageList);
 
         return -1;
@@ -235,7 +238,7 @@ static int skilldexWindowInit()
         skilldexWindowY,
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth(),
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getHeight(),
-        256,
+        static_cast<ColorWithFlags>(256),
         WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
     if (gSkilldexWindow == -1) {
         for (int index = 0; index < SKILLDEX_SKILL_BUTTON_BUFFER_COUNT; index++) {
@@ -246,6 +249,7 @@ static int skilldexWindowInit()
             _skilldexFrmImages[index].unlock();
         }
 
+        messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SKILLDEX, nullptr);
         messageListFree(&gSkilldexMessageList);
 
         return -1;
@@ -408,6 +412,7 @@ static void skilldexWindowFree()
         _skilldexFrmImages[index].unlock();
     }
 
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_SKILLDEX, nullptr);
     messageListFree(&gSkilldexMessageList);
 
     fontSetCurrent(gSkilldexWindowOldFont);

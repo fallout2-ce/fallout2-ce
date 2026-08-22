@@ -1138,7 +1138,7 @@ void mf_create_win(OpcodeContext& ctx)
         ? ctx.arg(5).asInt()
         : WINDOW_MOVE_ON_TOP;
 
-    int color = (flags & WINDOW_TRANSPARENT) != 0 ? 0 : 256;
+    ColorWithFlags color = (flags & WINDOW_TRANSPARENT) != 0 ? (COLOR_FIRST | DRAW_TEXT_FLAG_NONE) : static_cast<ColorWithFlags>(256);
     if (scriptWindowCreate(ctx.stringArg(0),
             ctx.arg(1).asInt(),
             ctx.arg(2).asInt(),
@@ -1973,7 +1973,7 @@ void mf_win_fill_color(OpcodeContext& ctx)
     int windowWidth = windowGetWidth(window);
     int windowHeight = windowGetHeight(window);
     if (ctx.numArgs() == 0) {
-        windowFill(window, 0, 0, windowWidth, windowHeight, 0);
+        windowFill(window, 0, 0, windowWidth, windowHeight, COLOR_BLACK);
         windowRefresh(window);
         return;
     }
@@ -1987,7 +1987,7 @@ void mf_win_fill_color(OpcodeContext& ctx)
     int y = ctx.arg(1).asInt();
     int width = ctx.arg(2).asInt();
     int height = ctx.arg(3).asInt();
-    int color = ctx.arg(4).asInt();
+    Color color = static_cast<Color>(ctx.arg(4).asInt() & COLOR_LAST);
     bool truncated = clampWindowFillRect(windowWidth, windowHeight, x, y, width, height);
     if (width > 0 && height > 0) {
         windowFill(window, x, y, width, height, color);
@@ -2069,7 +2069,7 @@ static void mf_set_terrain_name(OpcodeContext& ctx)
 
 static void mf_set_town_title(OpcodeContext& ctx)
 {
-    wmSetTownTitle(ctx.arg(0).asInt(), ctx.stringArg(1));
+    wmSetTownTitle(static_cast<City>(ctx.arg(0).asInt()), ctx.stringArg(1));
 }
 
 static void mf_remove_wm_town_names(OpcodeContext& ctx)
@@ -2392,12 +2392,12 @@ void mf_message_box(OpcodeContext& ctx)
 
     // note: most of the CE code uses colorTable indices, but this metarule expects palette values.
     // Default: amber/orange (145) = COLOR_AMBER
-    int color1 = COLOR_AMBER, color2 = COLOR_AMBER;
+    ColorWithFlags color1 = COLOR_AMBER | DRAW_TEXT_FLAG_NONE, color2 = COLOR_AMBER | DRAW_TEXT_FLAG_NONE;
     if (ctx.numArgs() > 2) {
-        color1 = ctx.arg(2).asInt();
+        color1 = static_cast<ColorWithFlags>(ctx.arg(2).asInt());
     }
     if (ctx.numArgs() > 3) {
-        color2 = ctx.arg(3).asInt();
+        color2 = static_cast<ColorWithFlags>(ctx.arg(3).asInt());
     }
 
     dialogShowCount++;

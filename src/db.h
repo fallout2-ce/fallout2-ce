@@ -33,6 +33,21 @@ int fileReadUInt8(File* stream, unsigned char* valuePtr);
 // Reads a 16-bit big-endian integer from stream and stores it in host byte order.
 int fileReadInt16(File* stream, short* valuePtr);
 
+template <typename T>
+inline int fileReadInt16Enum(File* stream, T* valuePtr)
+{
+    short temp = 0;
+
+    int result = fileReadInt16(stream, &temp);
+    if (result == -1) {
+        return -1;
+    }
+
+    *valuePtr = static_cast<T>(temp);
+
+    return result;
+}
+
 // Reads a 16-bit big-endian unsigned integer from stream and stores it in host byte order.
 int fileReadUInt16(File* stream, unsigned short* valuePtr);
 
@@ -84,6 +99,12 @@ int fileWriteUInt8(File* stream, unsigned char value);
 
 // Writes a 16-bit integer to stream in big-endian byte order.
 int fileWriteInt16(File* stream, short value);
+
+template <typename T>
+inline int fileWriteInt16Enum(File* stream, T value)
+{
+    return fileWriteInt16(stream, static_cast<short>(value));
+}
 
 // Writes a 16-bit unsigned integer to stream in big-endian byte order.
 int fileWriteUInt16(File* stream, unsigned short value);

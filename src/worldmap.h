@@ -1,6 +1,7 @@
 #ifndef WORLD_MAP_H
 #define WORLD_MAP_H
 
+#include "color.h"
 #include "db.h"
 
 namespace fallout {
@@ -44,11 +45,11 @@ inline MapFlags& operator|=(MapFlags& lhs, MapFlags rhs)
 
 enum CityState : int {
     CITY_STATE_UNKNOWN,
-    CITY_STATE_KNOWN,
-    CITY_STATE_VISITED
+    CITY_STATE_KNOWN
 };
 
-typedef enum City {
+enum City : int {
+    CITY_INVALID = -1,
     CITY_ARROYO,
     CITY_DEN,
     CITY_KLAMATH,
@@ -98,10 +99,19 @@ typedef enum City {
     CITY_FAKE_VAULT_13_B,
     CITY_SHADOW_WORLDS,
     CITY_RENO_STABLES,
-    CITY_COUNT,
-} City;
+    CITY_FIRST = CITY_ARROYO
+};
 
-typedef enum Map {
+inline City operator++(City& e, int)
+{
+    City result = e;
+    e = static_cast<City>(static_cast<int>(e) + 1);
+    return result;
+}
+
+enum Map : int {
+    MAP_TRANSITION = -2,
+    MAP_INVALID = -1,
     MAP_RND_DESERT_1 = 0,
     MAP_RND_DESERT_2 = 1,
     MAP_RND_DESERT_3 = 2,
@@ -252,7 +262,15 @@ typedef enum Map {
     MAP_NEW_RENO_VB = 147,
     MAP_SHI_TEMPLE = 148,
     MAP_IN_GAME_MOVIE1 = 149,
-} Map;
+    MAP_FIRST = MAP_RND_DESERT_1
+};
+
+inline Map operator++(Map& e, int)
+{
+    Map result = e;
+    e = static_cast<Map>(static_cast<int>(e) + 1);
+    return result;
+}
 
 enum class RestModeFlag : int {
     None = 0x00,
@@ -298,7 +316,20 @@ inline EncounterFlag& operator|=(EncounterFlag& lhs, EncounterFlag rhs)
     return lhs;
 }
 
-extern unsigned char* circleBlendTable;
+enum class VisitedState : int {
+    Unknown = 0,
+    Known = 1,
+    Visited = 2,
+    Invisible = -66,
+};
+
+inline bool visitedStateIsValid(int visited)
+{
+    VisitedState state = static_cast<VisitedState>(visited);
+    return state == VisitedState::Unknown || state == VisitedState::Known || state == VisitedState::Visited || state == VisitedState::Invisible;
+}
+
+extern Color* circleBlendTable;
 extern bool gDidMeetFrankHorrigan;
 
 int wmWorldMap_init();
@@ -307,9 +338,16 @@ int wmWorldMap_reset();
 int wmWorldMap_save(File* stream);
 int wmWorldMap_load(File* stream);
 int wmMapMaxCount();
-int wmMapIdxToName(int mapIdx, char* dest, size_t size);
-int wmMapMatchNameToIdx(char* name);
-bool wmMapIdxIsSaveable(int mapIdx);
+
+inline bool mapIsValid(int map)
+{
+    return map >= MAP_FIRST && map < wmMapMaxCount();
+}
+
+bool cityIsValid(int city);
+int wmMapIdxToName(Map mapIdx, char* dest, size_t size);
+Map wmMapMatchNameToIdx(char* name);
+bool wmMapIdxIsSaveable(Map mapIdx);
 bool wmMapIsSaveable();
 bool wmMapDeadBodiesAge();
 bool wmMapCanRestHere(int elevation);
@@ -319,24 +357,24 @@ bool wmRestModeIsDisabled();
 bool wmRestModeIsStrict();
 bool wmRestModeNoHealing();
 bool wmMapPipboyActive();
-int wmMapMarkVisited(int mapIdx);
-int wmMapMarkMapEntranceState(int mapIdx, int elevation, int state);
+int wmMapMarkVisited(Map mapIdx);
+int wmMapMarkMapEntranceState(Map mapIdx, int elevation, int state);
 void wmWorldMap();
 int wmCheckGameAreaEvents();
 int wmSetupRandomEncounter();
 bool wmEvalTileNumForPlacement(int tile);
 int wmSubTileMarkRadiusVisited(int x, int y, int radius);
 int wmSubTileGetVisitedState(int x, int y, int* statePtr);
-int wmGetAreaIdxName(int areaIdx, char* name);
-bool wmAreaIsKnown(int areaIdx);
-int wmAreaVisitedState(int areaIdx);
-bool wmMapIsKnown(int mapIdx);
-int wmAreaMarkVisited(int areaIdx);
-bool wmAreaMarkVisitedState(int areaIdx, int state);
-bool wmAreaSetVisibleState(int areaIdx, CityState state, bool force);
-int wmAreaSetWorldPos(int areaIdx, int x, int y);
+int wmGetAreaIdxName(City areaIdx, char* name);
+bool wmAreaIsKnown(City areaIdx);
+VisitedState wmAreaVisitedState(City areaIdx);
+bool wmMapIsKnown(Map mapIdx);
+int wmAreaMarkVisited(City areaIdx);
+bool wmAreaMarkVisitedState(City areaIdx, VisitedState state);
+bool wmAreaSetVisibleState(City areaIdx, CityState state, bool force);
+int wmAreaSetWorldPos(City areaIdx, int x, int y);
 int wmGetPartyWorldPos(int* xPtr, int* yPtr);
-int wmGetPartyCurArea(int* areaIdxPtr);
+int wmGetPartyCurArea(City* areaIdxPtr);
 void wmTownMap();
 int wmCarUseGas(int amount);
 int wmCarFillGas(int amount);
@@ -349,23 +387,23 @@ int wmSfxMaxCount();
 int wmSfxRollNextIdx();
 int wmSfxIdxName(int sfxIdx, char** namePtr);
 int wmMapMusicStart();
-int wmSetMapMusic(int mapIdx, const char* name);
-int wmMatchAreaContainingMapIdx(int mapIdx, int* areaIdxPtr);
-int wmTeleportToArea(int areaIdx);
+int wmSetMapMusic(Map mapIdx, const char* name);
+int wmMatchAreaContainingMapIdx(Map mapIdx, City* areaIdxPtr);
+int wmTeleportToArea(City areaIdx);
 
 // CE
 bool wmStartWorldPosIsConfigured();
-void wmSetPartyCurArea(int areaIdx);
+void wmSetPartyCurArea(City areaIdx);
 void wmClearPartyWalking();
 void wmSetPartyWorldPos(int x, int y);
-void wmCarSetCurrentArea(int area);
-void wmForceEncounter(int map, EncounterFlag flags);
+void wmCarSetCurrentArea(City area);
+void wmForceEncounter(Map map, EncounterFlag flags);
 void wmSetScriptWorldMapMulti(float value);
 bool wmTerrainNameIsValidSubtile(int x, int y);
 void wmSetTerrainName(int x, int y, const char* name);
 const char* wmGetTerrainName(int x, int y);
 const char* wmGetCurrentTerrainName();
-void wmSetTownTitle(int areaIdx, const char* title);
+void wmSetTownTitle(City areaIdx, const char* title);
 void wmRemoveTownNames(bool state);
 int worldmapGetWindow();
 

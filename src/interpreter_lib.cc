@@ -762,7 +762,7 @@ void opCreateWin(Program* program)
     width = (width * windowGetXres() + 639) / 640;
     height = (height * windowGetYres() + 479) / 480;
 
-    if (scriptWindowCreate(windowName, x, y, width, height, COLOR_BLACK, 0) == -1) {
+    if (scriptWindowCreate(windowName, x, y, width, height, COLOR_BLACK | DRAW_TEXT_FLAG_NONE, 0) == -1) {
         programFatalError("Couldn't create window.");
     }
 }
@@ -1459,7 +1459,7 @@ static void opSetFont(Program* program)
 // 0x464F84 op_settextflags
 static void opSetTextFlags(Program* program)
 {
-    int data = programStackPopInteger(program);
+    DrawTextFlags data = static_cast<DrawTextFlags>(programStackPopInteger(program));
 
     if (!scriptWindowSetTextFlags(data)) {
         programFatalError("Error setting text flags");

@@ -175,9 +175,11 @@ void initSettingsRegistry(bool isMapper)
     SETTING_P(iface_bar_width, clamp(640, 4320));
     SETTING_P(iface_bar_side_art, clamp(0, 999));
     SETTING(iface_bar_sides_ori);
+    SETTING_P(alternate_ammo_meter, clamp(0, 2));
     SETTING_P(splash_screen_size, clamp(0, 2));
     SETTING(movie_aspect_fit);
     SETTING(edg_support);
+    SETTING(ignore_scroll_limit);
     SETTING(ignore_map_edges);
     SETTING(quick_toolbar_visible);
     SETTING_P(anim_speed, clamp(0.1, 100.0));
