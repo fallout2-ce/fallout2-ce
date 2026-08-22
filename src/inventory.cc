@@ -2654,7 +2654,7 @@ static int inventoryCommonInit()
             gameUiDisable(0);
         }
 
-        messageListFree(&gInventoryMessageList);
+        inventoryMessageListFree();
 
         return -1;
     }
