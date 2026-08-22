@@ -736,6 +736,17 @@ static int gCharacterEditorLastLevel;
 // 0x5707B8 fontsave_1
 static int gCharacterEditorOldFont;
 
+static void characterEditorWindowRestoreState()
+{
+    if (gCharacterEditorIsoWasEnabled) {
+        isoEnable();
+    }
+
+    colorCycleEnable();
+    gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+    fontSetCurrent(gCharacterEditorOldFont);
+}
+
 // 0x5707BC kills_count
 static int gCharacterEditorKillsCount;
 
@@ -1330,12 +1341,15 @@ static int characterEditorWindowInit()
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
     if (!messageListInit(&gCharacterEditorMessageList)) {
+        characterEditorWindowRestoreState();
         return -1;
     }
 
     snprintf(path, sizeof(path), "%s%s", asc_5186C8, "editor.msg");
 
     if (!messageListLoad(&gCharacterEditorMessageList, path)) {
+        characterEditorMessageListReset();
+        characterEditorWindowRestoreState();
         return -1;
     }
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
@@ -1343,17 +1357,14 @@ static int characterEditorWindowInit()
     fid = buildFid(OBJ_TYPE_INTERFACE, (gCharacterEditorIsCreationMode ? 169 : 177));
     if (!_editorBackgroundFrmImage.lock(fid)) {
         characterEditorMessageListReset();
+        characterEditorWindowRestoreState();
         return -1;
     }
 
     if (karmaInit() == -1) {
         _editorBackgroundFrmImage.unlock();
         characterEditorMessageListReset();
-        if (gCharacterEditorIsoWasEnabled) {
-            isoEnable();
-        }
-        colorCycleEnable();
-        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+        characterEditorWindowRestoreState();
         return -1;
     }
 
@@ -1362,11 +1373,7 @@ static int characterEditorWindowInit()
         _editorBackgroundFrmImage.unlock();
 
         characterEditorMessageListReset();
-        if (gCharacterEditorIsoWasEnabled) {
-            isoEnable();
-        }
-        colorCycleEnable();
-        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+        characterEditorWindowRestoreState();
         return -1;
     }
 
@@ -1393,12 +1400,7 @@ static int characterEditorWindowInit()
 
         characterEditorMessageListReset();
 
-        if (gCharacterEditorIsoWasEnabled) {
-            isoEnable();
-        }
-
-        colorCycleEnable();
-        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+        characterEditorWindowRestoreState();
         return -1;
     }
 
@@ -1430,12 +1432,7 @@ static int characterEditorWindowInit()
         _editorBackgroundFrmImage.unlock();
 
         characterEditorMessageListReset();
-        if (gCharacterEditorIsoWasEnabled) {
-            isoEnable();
-        }
-
-        colorCycleEnable();
-        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+        characterEditorWindowRestoreState();
 
         return -1;
     }
@@ -1459,12 +1456,7 @@ static int characterEditorWindowInit()
         _editorBackgroundFrmImage.unlock();
 
         characterEditorMessageListReset();
-        if (gCharacterEditorIsoWasEnabled) {
-            isoEnable();
-        }
-
-        colorCycleEnable();
-        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+        characterEditorWindowRestoreState();
 
         return -1;
     }

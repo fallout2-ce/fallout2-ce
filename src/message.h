@@ -18,8 +18,8 @@ namespace fallout {
 // always exposes persistent standard message lists and additionally exposes
 // some volatile lists for the duration of their UI lifetime:
 enum StandardMessageList {
-    STANDARD_MESSAGE_LIST_COMBAT, // transient
-    STANDARD_MESSAGE_LIST_COMBAT_AI, // transient
+    STANDARD_MESSAGE_LIST_COMBAT,
+    STANDARD_MESSAGE_LIST_COMBAT_AI,
     STANDARD_MESSAGE_LIST_SCRNAME,
     STANDARD_MESSAGE_LIST_MISC,
     STANDARD_MESSAGE_LIST_CUSTOM, // transient
