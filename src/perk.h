@@ -8,6 +8,26 @@
 
 namespace fallout {
 
+enum class PerkProperty {
+    FrmId,
+    MaxRank,
+    MinLevel,
+    Stat,
+    StatModifier,
+    Param1,
+    Value1,
+    ParamMode,
+    Param2,
+    Value2,
+    Strength,
+    Perception,
+    Endurance,
+    Charisma,
+    Intelligence,
+    Agility,
+    Luck,
+};
+
 int perksInit();
 void perksReset();
 void perksExit();
@@ -22,6 +42,9 @@ int perkGetRank(Object* critter, Perk perk);
 char* perkGetName(Perk perk);
 char* perkGetDescription(Perk perk);
 int perkGetFrmId(Perk perk);
+bool perkSetProperty(Perk perk, PerkProperty property, int value);
+bool perkSetName(Perk perk, const char* value);
+bool perkSetDescription(Perk perk, const char* value);
 void perkAddEffect(Object* critter, Perk perk);
 void perkRemoveEffect(Object* critter, Perk perk);
 int perkGetSkillModifier(Object* critter, Skill skill);

@@ -742,6 +742,93 @@ int perkGetFrmId(Perk perk)
     return gPerkDescriptions[perk].frmId;
 }
 
+bool perkSetProperty(Perk perk, PerkProperty property, int value)
+{
+    if (!perkIsValid(perk)) {
+        return false;
+    }
+
+    PerkDescription* perkDescription = &(gPerkDescriptions[perk]);
+
+    switch (property) {
+    case PerkProperty::FrmId:
+        perkDescription->frmId = value;
+        break;
+    case PerkProperty::MaxRank:
+        perkDescription->maxRank = value;
+        break;
+    case PerkProperty::MinLevel:
+        perkDescription->minLevel = value;
+        break;
+    case PerkProperty::Stat:
+        perkDescription->stat = static_cast<Stat>(value);
+        break;
+    case PerkProperty::StatModifier:
+        perkDescription->statModifier = value;
+        break;
+    case PerkProperty::Param1:
+        perkDescription->param1 = value;
+        break;
+    case PerkProperty::Value1:
+        perkDescription->value1 = value;
+        break;
+    case PerkProperty::ParamMode:
+        perkDescription->paramMode = value;
+        break;
+    case PerkProperty::Param2:
+        perkDescription->param2 = value;
+        break;
+    case PerkProperty::Value2:
+        perkDescription->value2 = value;
+        break;
+    case PerkProperty::Strength:
+        perkDescription->stats[STAT_STRENGTH] = value;
+        break;
+    case PerkProperty::Perception:
+        perkDescription->stats[STAT_PERCEPTION] = value;
+        break;
+    case PerkProperty::Endurance:
+        perkDescription->stats[STAT_ENDURANCE] = value;
+        break;
+    case PerkProperty::Charisma:
+        perkDescription->stats[STAT_CHARISMA] = value;
+        break;
+    case PerkProperty::Intelligence:
+        perkDescription->stats[STAT_INTELLIGENCE] = value;
+        break;
+    case PerkProperty::Agility:
+        perkDescription->stats[STAT_AGILITY] = value;
+        break;
+    case PerkProperty::Luck:
+        perkDescription->stats[STAT_LUCK] = value;
+        break;
+    }
+
+    return true;
+}
+
+bool perkSetName(Perk perk, const char* value)
+{
+    if (!perkIsValid(perk) || value == nullptr) {
+        return false;
+    }
+
+    perkOverrideNames[perk] = value;
+    gPerkDescriptions[perk].name = perkOverrideNames[perk].data();
+    return true;
+}
+
+bool perkSetDescription(Perk perk, const char* value)
+{
+    if (!perkIsValid(perk) || value == nullptr) {
+        return false;
+    }
+
+    perkOverrideDescriptions[perk] = value;
+    gPerkDescriptions[perk].description = perkOverrideDescriptions[perk].data();
+    return true;
+}
+
 // perk_add_effect
 // 0x496BFC perk_add_effect
 void perkAddEffect(Object* critter, Perk perk)
