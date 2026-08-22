@@ -111,6 +111,8 @@ enum EditorFolder : int {
     EDITOR_FOLDER_KILLS,
 };
 
+static void characterEditorMessageListReset();
+
 enum EditorDerivedStat : int {
     EDITOR_DERIVED_STAT_ARMOR_CLASS,
     EDITOR_DERIVED_STAT_ACTION_POINTS,
@@ -622,6 +624,12 @@ static int gCharacterEditorOptionalTraitBtns[TRAIT_COUNT];
 // 0x5700E8 mesg
 static MessageListItem gCharacterEditorMessageListItem;
 
+static void characterEditorMessageListReset()
+{
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, nullptr);
+    messageListFree(&gCharacterEditorMessageList);
+}
+
 // 0x5700F8 old_str1
 static char gCharacterEditorCardTitle[48];
 
@@ -727,6 +735,17 @@ static int gCharacterEditorLastLevel;
 
 // 0x5707B8 fontsave_1
 static int gCharacterEditorOldFont;
+
+static void characterEditorWindowRestoreState()
+{
+    if (gCharacterEditorIsoWasEnabled) {
+        isoEnable();
+    }
+
+    colorCycleEnable();
+    gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+    fontSetCurrent(gCharacterEditorOldFont);
+}
 
 // 0x5707BC kills_count
 static int gCharacterEditorKillsCount;
@@ -1322,26 +1341,39 @@ static int characterEditorWindowInit()
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
     if (!messageListInit(&gCharacterEditorMessageList)) {
+        characterEditorWindowRestoreState();
         return -1;
     }
 
     snprintf(path, sizeof(path), "%s%s", asc_5186C8, "editor.msg");
 
     if (!messageListLoad(&gCharacterEditorMessageList, path)) {
+        characterEditorMessageListReset();
+        characterEditorWindowRestoreState();
         return -1;
     }
+    messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
     fid = buildFid(OBJ_TYPE_INTERFACE, (gCharacterEditorIsCreationMode ? 169 : 177));
     if (!_editorBackgroundFrmImage.lock(fid)) {
-        messageListFree(&gCharacterEditorMessageList);
+        characterEditorMessageListReset();
+        characterEditorWindowRestoreState();
         return -1;
     }
 
     if (karmaInit() == -1) {
+        _editorBackgroundFrmImage.unlock();
+        characterEditorMessageListReset();
+        characterEditorWindowRestoreState();
         return -1;
     }
 
     if (genericReputationInit() == -1) {
+        karmaFree();
+        _editorBackgroundFrmImage.unlock();
+
+        characterEditorMessageListReset();
+        characterEditorWindowRestoreState();
         return -1;
     }
 
@@ -1364,18 +1396,11 @@ static int characterEditorWindowInit()
         while (--i >= 0) {
             _editorFrmImages[i].unlock();
         }
-        return -1;
-
         _editorBackgroundFrmImage.unlock();
 
-        messageListFree(&gCharacterEditorMessageList);
+        characterEditorMessageListReset();
 
-        if (gCharacterEditorIsoWasEnabled) {
-            isoEnable();
-        }
-
-        colorCycleEnable();
-        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+        characterEditorWindowRestoreState();
         return -1;
     }
 
@@ -1406,13 +1431,8 @@ static int characterEditorWindowInit()
 
         _editorBackgroundFrmImage.unlock();
 
-        messageListFree(&gCharacterEditorMessageList);
-        if (gCharacterEditorIsoWasEnabled) {
-            isoEnable();
-        }
-
-        colorCycleEnable();
-        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+        characterEditorMessageListReset();
+        characterEditorWindowRestoreState();
 
         return -1;
     }
@@ -1435,13 +1455,8 @@ static int characterEditorWindowInit()
 
         _editorBackgroundFrmImage.unlock();
 
-        messageListFree(&gCharacterEditorMessageList);
-        if (gCharacterEditorIsoWasEnabled) {
-            isoEnable();
-        }
-
-        colorCycleEnable();
-        gameMouseSetCursor(MOUSE_CURSOR_ARROW);
+        characterEditorMessageListReset();
+        characterEditorWindowRestoreState();
 
         return -1;
     }
@@ -1927,7 +1942,7 @@ static void characterEditorWindowFree()
     // SFALL: Custom town reputation.
     customTownReputationFree();
 
-    messageListFree(&gCharacterEditorMessageList);
+    characterEditorMessageListReset();
 
     interfaceBarRefresh();
 
