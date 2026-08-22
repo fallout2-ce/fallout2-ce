@@ -30,6 +30,11 @@ struct GlobalScript {
     int count = 0;
     int mode = 0;
     bool once = true;
+    struct Timer {
+        unsigned int dueTime = 0;
+        int fixedParam = 0;
+    };
+    std::vector<Timer> timers;
 };
 
 struct GlobalScriptsState {
@@ -162,6 +167,25 @@ void sfall_gl_scr_exec_map_update_scripts(int action)
 static void sfall_gl_scr_process_simple(int mode1, int mode2)
 {
     for (auto& scr : state->globalScripts) {
+        unsigned int now = gameTimeGetTime();
+        std::vector<int> dueFixedParams;
+        scr.timers.erase(std::remove_if(scr.timers.begin(),
+                             scr.timers.end(),
+                             [now, &dueFixedParams](const GlobalScript::Timer& timer) {
+                                 if (now < timer.dueTime) {
+                                     return false;
+                                 }
+
+                                 dueFixedParams.push_back(timer.fixedParam);
+                                 return true;
+                             }),
+            scr.timers.end());
+
+        for (int fixedParam : dueFixedParams) {
+            scriptDetachedContextSetFixedParam(scr.program, fixedParam);
+            sfall_gl_scr_execute_proc_if_ready(scr.program, scr.procs[SCRIPT_PROC_TIMED]);
+        }
+
         if (scr.repeat != 0 && (scr.mode == mode1 || scr.mode == mode2)) {
             scr.count++;
             if (scr.count >= scr.repeat) {
@@ -204,6 +228,44 @@ static GlobalScript* sfall_gl_scr_map_program_to_scr(Program* program)
             return scr.program == program;
         });
     return it != state->globalScripts.end() ? &(*it) : nullptr;
+}
+
+bool sfall_gl_scr_add_timer_event(Program* program, int delay, int fixedParam)
+{
+    GlobalScript* scr = sfall_gl_scr_map_program_to_scr(program);
+    if (scr == nullptr) {
+        return false;
+    }
+
+    scr->timers.push_back(GlobalScript::Timer { gameTimeGetTime() + static_cast<unsigned int>(delay), fixedParam });
+    return true;
+}
+
+bool sfall_gl_scr_remove_timer_events(Program* program, int fixedParam)
+{
+    GlobalScript* scr = sfall_gl_scr_map_program_to_scr(program);
+    if (scr == nullptr) {
+        return false;
+    }
+
+    scr->timers.erase(std::remove_if(scr->timers.begin(),
+                          scr->timers.end(),
+                          [fixedParam](const GlobalScript::Timer& timer) {
+                              return timer.fixedParam == fixedParam;
+                          }),
+        scr->timers.end());
+    return true;
+}
+
+bool sfall_gl_scr_remove_all_timer_events(Program* program)
+{
+    GlobalScript* scr = sfall_gl_scr_map_program_to_scr(program);
+    if (scr == nullptr) {
+        return false;
+    }
+
+    scr->timers.clear();
+    return true;
 }
 
 void sfall_gl_scr_set_repeat(Program* program, int frames)
