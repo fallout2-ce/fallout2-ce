@@ -153,7 +153,7 @@ static int endCombatButtonInit();
 static int endCombatButtonFree();
 static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoPerShot);
 static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState, int ammoCapacity);
-static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode, int ammoCapacity);
+static int interfaceGetWeaponAmmoPerShot(Object* weapon, HitMode hitMode, int ammoCapacity);
 static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity, int ammoPerShot);
 static void interfaceRestoreAlternateAmmoMeterBackground(int x);
 static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool filled, bool lowerHalf);
@@ -2130,7 +2130,7 @@ static void interfaceUpdateAmmoBar(int x, int ratio, int ammoCapacity, int ammoP
 
 static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemState, int ammoCapacity)
 {
-    int hitMode = -1;
+    HitMode hitMode = HIT_MODE_INVALID;
     switch (itemState->action) {
     case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
     case INTERFACE_ITEM_ACTION_PRIMARY:
@@ -2148,9 +2148,9 @@ static int interfaceGetActiveWeaponAmmoPerShot(const InterfaceItemState* itemSta
     return interfaceGetWeaponAmmoPerShot(itemState->item, hitMode, ammoCapacity);
 }
 
-static int interfaceGetWeaponAmmoPerShot(Object* weapon, int hitMode, int ammoCapacity)
+static int interfaceGetWeaponAmmoPerShot(Object* weapon, HitMode hitMode, int ammoCapacity)
 {
-    if (weapon == nullptr || hitMode == -1) {
+    if (weapon == nullptr || hitMode == HIT_MODE_INVALID) {
         return 0;
     }
 
@@ -2220,7 +2220,7 @@ static void interfaceRestoreAlternateAmmoMeterBackground(int x)
     if (gInterfaceBarIsCustom) {
         src = customInterfaceBarGetBackgroundImageData();
     } else {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, 16, 0, 0, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, 16);
         if (!backgroundFrmImage.lock(fid)) {
             return;
         }
