@@ -127,12 +127,6 @@ constexpr unsigned char kAmmoAlternateMeterEmptyLightColor = 15;
 constexpr unsigned char kAmmoAlternateMeterFillColor = 196;
 constexpr unsigned char kAmmoAlternateMeterFillShadeColor = 75;
 
-enum class AmmoMeterDividerStyle {
-    None,
-    Dark,
-    Light,
-};
-
 struct CustomIndicatorDescription {
     bool isActive;
     int configColor;
@@ -157,8 +151,7 @@ static int interfaceGetWeaponAmmoPerShot(Object* weapon, HitMode hitMode, int am
 static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity, int ammoPerShot);
 static void interfaceRestoreAlternateAmmoMeterBackground(int x);
 static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool filled, bool lowerHalf);
-static AmmoMeterDividerStyle interfaceAlternateAmmoMeterGetDividerStyle(int row, int ammoCapacity, int ammoPerShot);
-static void interfaceUpdateAlternateAmmoMeterDividerRow(unsigned char* dest, AmmoMeterDividerStyle style);
+static int interfaceAlternateAmmoMeterGetDividerShade(int row, int ammoCapacity, int ammoPerShot);
 static int _intface_item_reload();
 static void interfaceDrawActionButtonOverlay(unsigned char* data, int width, int height, int pitch, int upX, int upY, int darkenColor);
 static void interfaceRenderCounterAnimationStep(unsigned char* src, unsigned char* dest, int delayMs, Rect* numbersRect, bool refreshMouse);
@@ -2188,9 +2181,17 @@ static void interfaceUpdateAlternateAmmoMeter(int x, int ratio, int ammoCapacity
 
         for (int row = 0; row < kAmmoBarMaxRatio; row++) {
             bool filled = row >= firstActiveRow;
-            AmmoMeterDividerStyle dividerStyle = interfaceAlternateAmmoMeterGetDividerStyle(row, ammoCapacity, ammoPerShot);
-            if (dividerStyle != AmmoMeterDividerStyle::None) {
-                interfaceUpdateAlternateAmmoMeterDividerRow(dest, dividerStyle);
+            int dividerShade = interfaceAlternateAmmoMeterGetDividerShade(row, ammoCapacity, ammoPerShot);
+            if (dividerShade == 0) {
+                dest[0] = kAmmoAlternateMeterLeftBorderColor;
+                dest[1] = kAmmoAlternateMeterLeftBorderColor;
+                dest[2] = kAmmoAlternateMeterEmptyDarkColor;
+                dest[3] = kAmmoAlternateMeterEmptyLightColor;
+            } else if (dividerShade == 1) {
+                dest[0] = kAmmoAlternateMeterLeftBorderColor;
+                dest[1] = kAmmoAlternateMeterEmptyLightColor;
+                dest[2] = kAmmoAlternateMeterEmptyLightColor;
+                dest[3] = kAmmoAlternateMeterEmptyLightColor;
             } else {
                 bool lowerHalf = filled
                     ? ((row - firstActiveRow) & 1) != 0
@@ -2253,21 +2254,21 @@ static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool fille
     }
 }
 
-static AmmoMeterDividerStyle interfaceAlternateAmmoMeterGetDividerStyle(int row, int ammoCapacity, int ammoPerShot)
+static int interfaceAlternateAmmoMeterGetDividerShade(int row, int ammoCapacity, int ammoPerShot)
 {
     if (ammoCapacity <= 0 || ammoPerShot <= 0 || ammoPerShot >= ammoCapacity) {
-        return AmmoMeterDividerStyle::None;
+        return -1;
     }
 
     int segmentCount = (ammoCapacity + ammoPerShot - 1) / ammoPerShot;
     if (segmentCount <= 1 || segmentCount > kAmmoAlternateMeterMaxSegmentCount) {
-        return AmmoMeterDividerStyle::None;
+        return -1;
     }
 
     constexpr int dividerHeight = 2;
     int segmentRows = kAmmoBarMaxRatio - dividerHeight * (segmentCount - 1);
     if (segmentRows < segmentCount) {
-        return AmmoMeterDividerStyle::None;
+        return -1;
     }
 
     int baseSegmentHeight = segmentRows / segmentCount;
@@ -2277,33 +2278,14 @@ static AmmoMeterDividerStyle interfaceAlternateAmmoMeterGetDividerStyle(int row,
     for (int segmentIndex = 0; segmentIndex < segmentCount - 1; segmentIndex++) {
         dividerRow += baseSegmentHeight + (segmentIndex < extraRows ? 1 : 0);
 
-        if (row == dividerRow) {
-            return AmmoMeterDividerStyle::Dark;
-        }
-
-        if (row == dividerRow + 1) {
-            return AmmoMeterDividerStyle::Light;
+        if (row == dividerRow || row == dividerRow + 1) {
+            return row - dividerRow;
         }
 
         dividerRow += dividerHeight;
     }
 
-    return AmmoMeterDividerStyle::None;
-}
-
-static void interfaceUpdateAlternateAmmoMeterDividerRow(unsigned char* dest, AmmoMeterDividerStyle style)
-{
-    dest[0] = kAmmoAlternateMeterLeftBorderColor;
-
-    if (style == AmmoMeterDividerStyle::Dark) {
-        dest[1] = kAmmoAlternateMeterLeftBorderColor;
-        dest[2] = kAmmoAlternateMeterEmptyDarkColor;
-        dest[3] = kAmmoAlternateMeterEmptyLightColor;
-    } else {
-        dest[1] = kAmmoAlternateMeterEmptyLightColor;
-        dest[2] = kAmmoAlternateMeterEmptyLightColor;
-        dest[3] = kAmmoAlternateMeterEmptyLightColor;
-    }
+    return -1;
 }
 
 // 0x460B20 intface_item_reload
