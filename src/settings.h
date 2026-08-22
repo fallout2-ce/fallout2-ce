@@ -63,6 +63,9 @@ struct UISettings {
     // Iface-bar side graphics extend from the Screen edges to the Iface-Bar if true (otherwise from bar to edges).
     bool iface_bar_sides_ori = false;
 
+    // 0 - vanilla ammo lights, 1 - alternate ammo meter with burst segments, 2 - also segment low-capacity single-shot weapons.
+    int alternate_ammo_meter = 0;
+
     // Extends AP bar to 16 dots instead of 10.
     bool extend_ap_bar = false;
 
