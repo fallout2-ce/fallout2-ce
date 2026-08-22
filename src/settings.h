@@ -52,6 +52,9 @@ struct UISettings {
     // Should the game window stretch all the way to the bottom or sit at the top of the interface bar (default).
     bool iface_bar_mode = false;
 
+    // Draw progress bar for perk ranks.
+    bool perks_progress_bar = false;
+
     // This will increase the width of the interface bar expanding the area used to display text.
     int iface_bar_width = 800;
 

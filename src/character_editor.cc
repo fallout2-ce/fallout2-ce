@@ -323,6 +323,8 @@ static int characterEditorFolderViewInit();
 static void characterEditorFolderViewScroll(int direction);
 static void characterEditorFolderViewClear();
 static int characterEditorFolderViewDrawHeading(const char* string);
+static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRank, int colorIndex);
+static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, int colorIndex);
 static bool characterEditorFolderViewDrawString(const char* string);
 static bool characterEditorFolderViewDrawKillsEntry(const char* name, int kills);
 static int karmaInit();
@@ -2217,6 +2219,7 @@ static void characterEditorDrawPerksFolder()
     }
 
     Perk perk;
+
     for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
         if (perkGetRank(gDude, perk) != 0) {
             break;
@@ -2227,25 +2230,42 @@ static void characterEditorDrawPerksFolder()
         // PERKS
         string = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 109);
         characterEditorFolderViewDrawHeading(string);
+    }
 
-        for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
-            perkLevel = perkGetRank(gDude, perk);
-            if (perkLevel != 0) {
+    for (perk = PERK_FIRST; perk < PERK_COUNT; perk++) {
+        perkLevel = perkGetRank(gDude, perk);
+        if (perkLevel != 0) {
+            int maxRank = perkGetMaxRank(perk);
+            bool useProgressBar = settings.ui.perks_progress_bar && (maxRank > 1);
+
+            if (useProgressBar) {
                 string = perkGetName(perk);
-
+            } else {
                 if (perkLevel == 1) {
-                    snprintf(perkName, sizeof(perkName), "%s", string);
+                    snprintf(perkName, sizeof(perkName), "%s", perkGetName(perk));
                 } else {
-                    snprintf(perkName, sizeof(perkName), "%s (%d)", string, perkLevel);
+                    snprintf(perkName, sizeof(perkName), "%s (%d)", perkGetName(perk), perkLevel);
                 }
+                string = perkName;
+            }
 
-                if (characterEditorFolderViewDrawString(perkName)) {
-                    gCharacterEditorFolderCardFrmId = perkGetFrmId(perk);
-                    gCharacterEditorFolderCardTitle = perkGetName(perk);
-                    gCharacterEditorFolderCardSubtitle = nullptr;
-                    gCharacterEditorFolderCardDescription = perkGetDescription(perk);
-                    hasContent = true;
-                }
+            // keep Y index before characterEditorFolderViewDrawString
+            int currentY = gCharacterEditorFolderViewNextY;
+            int currentLineIndex = gCharacterEditorFolderViewCurrentLine;
+
+            bool isHighlighted = characterEditorFolderViewDrawString(string);
+            if (isHighlighted) {
+                gCharacterEditorFolderCardFrmId = perkGetFrmId(perk);
+                gCharacterEditorFolderCardTitle = perkGetName(perk);
+                gCharacterEditorFolderCardSubtitle = nullptr;
+                gCharacterEditorFolderCardDescription = perkGetDescription(perk);
+                hasContent = true;
+            }
+
+            if (useProgressBar && currentLineIndex >= gCharacterEditorFolderViewTopLine
+                && currentLineIndex < gCharacterEditorFolderViewTopLine + gCharacterEditorFolderViewMaxLines) {
+                characterEditorDrawPerkProgressBar(
+                    currentY, perkLevel, maxRank, isHighlighted ? COLOR_LIGHT_YELLOW : COLOR_GREEN);
             }
         }
     }
@@ -6654,10 +6674,20 @@ static int perkDialogDrawPerks()
         fontDrawText(gPerkDialogWindowBuffer + PERK_WINDOW_WIDTH * y + 45, option.name, PERK_WINDOW_WIDTH, PERK_WINDOW_WIDTH, color);
 
         Perk perk = static_cast<Perk>(option.value);
-        if (perkGetRank(gDude, perk) != 0) {
-            char rankString[256];
-            snprintf(rankString, sizeof(rankString), "(%d)", perkGetRank(gDude, perk));
-            fontDrawText(gPerkDialogWindowBuffer + PERK_WINDOW_WIDTH * y + 207, rankString, PERK_WINDOW_WIDTH, PERK_WINDOW_WIDTH, color);
+
+        int maxRank = perkGetMaxRank(perk);
+        bool useProgressBar = settings.ui.perks_progress_bar && (maxRank > 1);
+
+        if (useProgressBar) {
+            int currentRank = perkGetRank(gDude, perk);
+            if (currentRank > maxRank) currentRank = maxRank;
+            perkDialogDrawProgressBar(y, currentRank, maxRank, color);
+        } else {
+            if (perkGetRank(gDude, perk) != 0) {
+                char rankString[256];
+                snprintf(rankString, sizeof(rankString), "(%d)", perkGetRank(gDude, perk));
+                fontDrawText(gPerkDialogWindowBuffer + PERK_WINDOW_WIDTH * y + 207, rankString, PERK_WINDOW_WIDTH, PERK_WINDOW_WIDTH, color);
+            }
         }
 
         y += yStep;
@@ -7293,6 +7323,96 @@ static bool characterEditorFolderViewDrawString(const char* string)
     }
 
     return success;
+}
+
+static void drawPerkProgressBarGeneric(
+    unsigned char* buffer,
+    int bufferWidth,
+    int bufferHeight,
+    int stride,
+    int startX,
+    int targetY,
+    int currentRank,
+    int maxRank,
+    int colorIndex)
+{
+    int segmentWidth = 4;
+    int segmentHeight = 7;
+    int padding = 2;
+
+    unsigned char inactiveColor = (colorIndex == COLOR_LIGHT_YELLOW) ? COLOR_DARK_YELLOW_3 : COLOR_DARK_GREY_3;
+
+    for (int i = 0; i < maxRank; i++) {
+        int currentSegmentX = startX + (i * (segmentWidth + padding));
+        unsigned char drawColor = (i < currentRank) ? colorIndex : inactiveColor;
+
+        for (int h = 0; h < segmentHeight; h++) {
+            for (int w = 0; w < segmentWidth; w++) {
+                int pixelX = currentSegmentX + w;
+                int pixelY = targetY + h;
+
+                if (pixelX >= 0 && pixelX < bufferWidth && pixelY >= 0 && pixelY < bufferHeight) {
+                    buffer[pixelY * stride + pixelX] = drawColor;
+                }
+            }
+        }
+    }
+}
+
+static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRank, int colorIndex)
+{
+    if (!settings.ui.perks_progress_bar) return;
+
+    constexpr int kFolderViewLeftX = 34;
+    constexpr int kFolderViewWidth = 280;
+    constexpr int kFolderViewEdgePadding = 5;
+    constexpr int progressBarColumnWidth = 16; // 3 segments 4 pixels each + 2 paddings (2 pixels each)
+    int startX = kFolderViewLeftX + kFolderViewWidth - kFolderViewEdgePadding - progressBarColumnWidth;
+
+    int offsetToCenter = (gCharacterEditorFolderViewOffsetY - 7) / 2;
+    if (offsetToCenter < 0) offsetToCenter = 0;
+    int targetY = y + offsetToCenter;
+
+    drawPerkProgressBarGeneric(
+        gCharacterEditorWindowBuffer,
+        EDITOR_WINDOW_WIDTH,
+        EDITOR_WINDOW_HEIGHT,
+        EDITOR_WINDOW_WIDTH,
+        startX,
+        targetY,
+        currentRank,
+        maxRank,
+        colorIndex);
+}
+
+static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, int colorIndex)
+{
+    if (!settings.ui.perks_progress_bar) return;
+
+    int finalRankToDraw = currentRank;
+    if (colorIndex == COLOR_LIGHT_YELLOW) {
+        finalRankToDraw = currentRank + 1;
+        if (finalRankToDraw > maxRank) finalRankToDraw = maxRank;
+    }
+
+    constexpr int progressBarColumnWidth = 16; // 3 segments 4 pixels each + 2 paddings (2 pixels each)
+
+    int startX = PERK_WINDOW_LIST_X + PERK_WINDOW_LIST_WIDTH - progressBarColumnWidth;
+
+    int offsetToCenter = ((fontGetLineHeight() + 2) - 7) / 2;
+    if (offsetToCenter < 0) offsetToCenter = 0;
+    int targetY = y + offsetToCenter;
+
+    drawPerkProgressBarGeneric(
+        gPerkDialogWindowBuffer,
+        PERK_WINDOW_WIDTH,
+        PERK_WINDOW_HEIGHT,
+        PERK_WINDOW_WIDTH,
+        startX,
+        targetY,
+        finalRankToDraw,
+        maxRank,
+        colorIndex);
 }
 
 // 0x43E470 folder_print_kill
