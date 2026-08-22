@@ -1588,6 +1588,11 @@ int scriptExecProc(int sid, int proc)
     }
 
     if (procedureIndex == -1) {
+        Script* executedScript;
+        if (scriptGetScript(sid, &executedScript) != -1) {
+            executedScript->source = nullptr;
+        }
+
         return -1;
     }
 

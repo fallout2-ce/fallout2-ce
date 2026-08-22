@@ -1878,6 +1878,10 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
 
         for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
             int tile = tileGetTileInDirection(temp.tile, rotation, 1);
+            if (tile < 0 || tile >= HEX_GRID_SIZE) {
+                continue;
+            }
+
             int bit = 1 << (tile & 7);
             if ((gPathfinderProcessedTiles[tile / 8] & bit) != 0) {
                 continue;
@@ -1903,6 +1907,10 @@ int pathfinderFindPath(Object* object, int from, int to, unsigned char* rotation
                 if (gOpenPathNodeList[v25].tile == -1) {
                     break;
                 }
+            }
+
+            if (v25 == PATH_NODE_CAPACITY) {
+                return 0;
             }
 
             openPathNodeListLength += 1;

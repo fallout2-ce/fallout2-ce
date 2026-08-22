@@ -106,7 +106,10 @@ bool audioEngineInit()
     desiredSpec.samples = 1024;
     desiredSpec.callback = audioEngineMixin;
 
-    gAudioEngineDeviceId = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &gAudioEngineSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
+    int allowedChanges = SDL_AUDIO_ALLOW_FREQUENCY_CHANGE
+        | SDL_AUDIO_ALLOW_FORMAT_CHANGE
+        | SDL_AUDIO_ALLOW_SAMPLES_CHANGE;
+    gAudioEngineDeviceId = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &gAudioEngineSpec, allowedChanges);
     if (gAudioEngineDeviceId == 0) {
         gAudioEngineDeviceId = -1;
         return false;

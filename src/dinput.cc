@@ -198,4 +198,20 @@ void mouseDeviceRefreshWindowMapping()
     }
 }
 
+void mouseDeviceSetLogicalPosition(int x, int y)
+{
+    if (mouseDeviceUsesRelativeMode()
+        || gSdlWindow == nullptr
+        || mouseWindowMappingLogicalWidth <= 0
+        || mouseWindowMappingLogicalHeight <= 0
+        || mouseWindowMappingWindowWidth <= 0
+        || mouseWindowMappingWindowHeight <= 0) {
+        return;
+    }
+
+    int windowX = x * mouseWindowMappingWindowWidth / mouseWindowMappingLogicalWidth;
+    int windowY = y * mouseWindowMappingWindowHeight / mouseWindowMappingLogicalHeight;
+    SDL_WarpMouseInWindow(gSdlWindow, windowX, windowY);
+}
+
 } // namespace fallout
