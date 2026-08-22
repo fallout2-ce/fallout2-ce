@@ -5276,7 +5276,7 @@ static std::pair<int, int> barterComputeTablesValue(Object* dude, Object* npc, b
     double perkBonus = 0.0;
     if (dude == gDude) {
         if (perkHasRank(gDude, PERK_MASTER_TRADER)) {
-            perkBonus = 25.0;
+            perkBonus = perkGetMasterTraderBonus();
         }
     }
 

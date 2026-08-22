@@ -502,9 +502,13 @@ int critterGetStat(Object* critter, Stat stat)
                 }
                 break;
             case STAT_RADIATION_RESISTANCE:
+                if (perkGetRank(critter, PERK_VAULT_CITY_INOCULATIONS)) {
+                    value += perkGetVaultCityInoculationsRadBonus();
+                }
+                break;
             case STAT_POISON_RESISTANCE:
                 if (perkGetRank(critter, PERK_VAULT_CITY_INOCULATIONS)) {
-                    value += 10;
+                    value += perkGetVaultCityInoculationsPoisonBonus();
                 }
                 break;
             default:
@@ -987,7 +991,7 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
             int endurance = critterGetBaseStatWithTraitModifier(gDude, STAT_ENDURANCE);
 
             int hpPerLevel = endurance / 2 + 2;
-            hpPerLevel += perkGetRank(gDude, PERK_LIFEGIVER) * 4;
+            hpPerLevel += perkGetRank(gDude, PERK_LIFEGIVER) * perkGetLifegiverBonus();
 
             int bonusHp = critterGetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS);
             critterSetBonusStat(gDude, STAT_MAXIMUM_HIT_POINTS, bonusHp + hpPerLevel);
@@ -1038,7 +1042,7 @@ int pcSetExperience(int xp)
     int endurance = critterGetBaseStatWithTraitModifier(gDude, STAT_ENDURANCE);
 
     int hpPerLevel = endurance / 2 + 2;
-    hpPerLevel += perkGetRank(gDude, PERK_LIFEGIVER) * 4;
+    hpPerLevel += perkGetRank(gDude, PERK_LIFEGIVER) * perkGetLifegiverBonus();
 
     int deltaHp = (oldLevel - newLevel) * hpPerLevel;
     critterAdjustHitPoints(gDude, -deltaHp);

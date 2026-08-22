@@ -799,7 +799,7 @@ static UseItemResultCode _obj_use_book(Object* book)
         messageId = 801;
     } else {
         if (perkGetRank(gDude, PERK_COMPREHENSION)) {
-            increase = 150 * increase / 100;
+            increase = (100 + perkGetComprehensionBonus()) * increase / 100;
         }
 
         bool increased = false;
