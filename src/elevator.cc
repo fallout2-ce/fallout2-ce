@@ -9,6 +9,7 @@
 #include "cycle.h"
 #include "debug.h"
 #include "delay.h"
+#include "dbox.h"
 #include "draw.h"
 #include "game_mouse.h"
 #include "game_sound.h"
@@ -345,6 +346,17 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
         return -1;
     }
 
+    if (gElevatorLevels[elevator] < 2 || gElevatorLevels[elevator] > ELEVATOR_LEVEL_MAX) {
+        char message[80];
+        snprintf(message, sizeof(message), "Elevator type %d not found.", elevator);
+        const char* body = "Check configuration";
+        showDialogBox(message, &body, 1, 192, 135, COLOR_AMBER, nullptr, COLOR_AMBER, DIALOG_BOX_LARGE);
+        debugPrint("\nElevator select: invalid button count type=%d buttonCount=%d",
+            elevator,
+            gElevatorLevels[elevator]);
+        return -1;
+    }
+
     // SFALL
     if (elevatorWindowInit(elevator) == -1) {
         return -1;
@@ -362,20 +374,9 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
 
     if (index < ELEVATOR_LEVEL_MAX) {
         int adjustedIndex = *elevationPtr + index;
-        debugPrint("\nElevator select: type=%d map=%d inputLevel=%d matchedIndex=%d adjustedIndex=%d",
-            elevator,
-            *mapPtr,
-            *elevationPtr,
-            index,
-            adjustedIndex);
         if (adjustedIndex >= 0 && adjustedIndex < ELEVATOR_LEVEL_MAX && elevatorDescription[adjustedIndex].tile != -1) {
             *elevationPtr = adjustedIndex;
         }
-    } else {
-        debugPrint("\nElevator select: type=%d map=%d inputLevel=%d matchedIndex=none",
-            elevator,
-            *mapPtr,
-            *elevationPtr);
     }
 
     if (elevator == ELEVATOR_SIERRA_2) {
@@ -398,11 +399,6 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
 
     int clampedElevation = std::clamp(*elevationPtr, 0, gElevatorLevels[elevator] - 1);
     if (clampedElevation != *elevationPtr) {
-        debugPrint("\nElevator select: clamping start level type=%d level=%d clamped=%d buttonCount=%d",
-            elevator,
-            *elevationPtr,
-            clampedElevation,
-            gElevatorLevels[elevator]);
         *elevationPtr = clampedElevation;
     }
 
@@ -450,11 +446,6 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
 
     if (!skipGauge) {
         keyCode -= 500;
-        debugPrint("\nElevator select result: type=%d keyCode=%d skipGauge=%d startLevel=%d",
-            elevator,
-            keyCode,
-            static_cast<int>(skipGauge),
-            *elevationPtr);
 
         if (*elevationPtr != keyCode) {
             float levelStep = (float)(gElevatorLevels[elevator] - 1) / 12.0f;
@@ -469,13 +460,6 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
             if (numberOfLevelsTravelled < 0) {
                 numberOfLevelsTravelled = -numberOfLevelsTravelled;
             }
-
-            debugPrint("\nElevator travel: type=%d from=%d to=%d levels=%d buttonCount=%d",
-                elevator,
-                *elevationPtr,
-                keyCode,
-                numberOfLevelsTravelled,
-                gElevatorLevels[elevator]);
 
             soundPlayFile(gElevatorSoundEffects[gElevatorLevels[elevator] - 2][numberOfLevelsTravelled]);
 
@@ -516,16 +500,6 @@ int elevatorSelectLevel(int elevator, Map* mapPtr, int* elevationPtr, int* tileP
         *mapPtr = description->map;
         *elevationPtr = description->elevation;
         *tilePtr = description->tile;
-        debugPrint("\nElevator destination: type=%d index=%d map=%d elevation=%d tile=%d",
-            elevator,
-            keyCode,
-            *mapPtr,
-            *elevationPtr,
-            *tilePtr);
-    } else {
-        debugPrint("\nElevator destination: type=%d index=%d canceled=1",
-            elevator,
-            keyCode);
     }
 
     return 0;
@@ -715,11 +689,13 @@ void elevatorsInit()
     char* elevatorsFileName;
     configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_ELEVATORS_FILE_KEY, &elevatorsFileName);
     if (elevatorsFileName == nullptr || *elevatorsFileName == '\0') {
+        debugPrint("\nElevators init: no ElevatorsFile configured, custom elevators disabled");
         return;
     }
 
     ScopedConfig elevatorsConfig(elevatorsFileName, false);
     if (!elevatorsConfig) {
+        debugPrint("\nElevators init: failed to load %s", elevatorsFileName);
         return;
     }
 
