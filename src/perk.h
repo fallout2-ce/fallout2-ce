@@ -8,6 +8,26 @@
 
 namespace fallout {
 
+enum class PerkProperty {
+    FrmId,
+    MaxRank,
+    MinLevel,
+    Stat,
+    StatModifier,
+    Param1,
+    Value1,
+    ParamMode,
+    Param2,
+    Value2,
+    Strength,
+    Perception,
+    Endurance,
+    Charisma,
+    Intelligence,
+    Agility,
+    Luck,
+};
+
 int perksInit();
 void perksReset();
 void perksExit();
@@ -23,9 +43,31 @@ char* perkGetName(Perk perk);
 int perkGetMaxRank(Perk perk);
 char* perkGetDescription(Perk perk);
 int perkGetFrmId(Perk perk);
+bool perkSetProperty(Perk perk, PerkProperty property, int value);
+bool perkSetName(Perk perk, const char* value);
+bool perkSetDescription(Perk perk, const char* value);
 void perkAddEffect(Object* critter, Perk perk);
 void perkRemoveEffect(Object* critter, Perk perk);
 int perkGetSkillModifier(Object* critter, Skill skill);
+int perkGetNightVisionBonus();
+int perkGetMasterTraderBonus();
+int perkGetEducatedBonus();
+int perkGetHealerMinBonus();
+int perkGetHealerMaxBonus();
+int perkGetLifegiverBonus();
+int perkGetWeaponLongRangeBonus();
+int perkGetWeaponScopeRangeBonus();
+int perkGetWeaponScopeRangePenalty();
+int perkGetWeaponAccurateBonus();
+int perkGetVaultCityInoculationsPoisonBonus();
+int perkGetVaultCityInoculationsRadBonus();
+int perkGetCautiousNatureBonus();
+int perkGetComprehensionBonus();
+int perkGetDemolitionExpertBonus();
+int perkGetLivingAnatomyBonus();
+int perkGetPyromaniacBonus();
+int perkGetStonewallPercent();
+int perkGetWeaponHandlingBonus();
 
 // Returns true if critter has at least one rank in specified perk.
 //

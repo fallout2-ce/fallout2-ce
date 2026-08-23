@@ -4449,11 +4449,11 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
             Perk weaponPerk = weaponGetPerk(weapon);
             switch (weaponPerk) {
             case PERK_WEAPON_LONG_RANGE:
-                perceptionBonusMult = 4;
+                perceptionBonusMult = perkGetWeaponLongRangeBonus();
                 break;
             case PERK_WEAPON_SCOPE_RANGE:
-                perceptionBonusMult = 5;
-                minEffectiveDist = 8;
+                perceptionBonusMult = perkGetWeaponScopeRangeBonus();
+                minEffectiveDist = perkGetWeaponScopeRangePenalty();
                 break;
             default:
                 perceptionBonusMult = 2;
@@ -4524,7 +4524,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
         int minStrength = weaponGetMinStrengthRequired(weapon);
         int minStrengthMod = minStrength - critterGetStat(attacker, STAT_STRENGTH);
         if (attacker == gDude && perkGetRank(gDude, PERK_WEAPON_HANDLING) != 0) {
-            minStrengthMod -= 3;
+            minStrengthMod -= perkGetWeaponHandlingBonus();
         }
 
         if (minStrengthMod > 0) {
@@ -4532,7 +4532,7 @@ static int attackDetermineToHit(Object* attacker, int tile, Object* defender, Hi
         }
 
         if (weaponGetPerk(weapon) == PERK_WEAPON_ACCURATE) {
-            toHit += 20;
+            toHit += perkGetWeaponAccurateBonus();
         }
     }
 
@@ -4738,13 +4738,13 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
         if (perkGetRank(attack->attacker, PERK_LIVING_ANATOMY) != 0) {
             KillType killType = critterGetKillType(attack->defender);
             if (killType != KILL_TYPE_ROBOT && killType != KILL_TYPE_ALIEN) {
-                *damagePtr += 5;
+                *damagePtr += perkGetLivingAnatomyBonus();
             }
         }
 
         if (perkGetRank(attack->attacker, PERK_PYROMANIAC) != 0) {
             if (weaponGetDamageType(attack->attacker, attack->weapon) == DAMAGE_TYPE_FIRE) {
-                *damagePtr += 5;
+                *damagePtr += perkGetPyromaniacBonus();
             }
         }
     }
@@ -4760,7 +4760,7 @@ static void attackComputeDamage(Attack* attack, int numRounds, int baseDamageMul
             if (perkGetRank(critter, PERK_STONEWALL) != 0) {
                 int chance = randomBetween(0, 100);
                 hasStonewall = true;
-                if (chance < 50) {
+                if (chance < perkGetStonewallPercent()) {
                     shouldKnockback = false;
                 }
             }
@@ -5005,7 +5005,7 @@ void _combat_display(Attack* attack)
         int strengthRequired = weaponGetMinStrengthRequired(weapon);
 
         if (perkGetRank(attack->attacker, PERK_WEAPON_HANDLING) != 0) {
-            strengthRequired -= 3;
+            strengthRequired -= perkGetWeaponHandlingBonus();
         }
 
         if (weapon != nullptr) {

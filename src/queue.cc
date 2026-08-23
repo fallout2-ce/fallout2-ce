@@ -492,8 +492,8 @@ static int explosionProcess(Object* explosive, bool animate)
     // guess it needs to check if owner is dude.
     if (gDude != nullptr) {
         if (perkHasRank(gDude, PERK_DEMOLITION_EXPERT)) {
-            maxDamage += 10;
-            minDamage += 10;
+            maxDamage += perkGetDemolitionExpertBonus();
+            minDamage += perkGetDemolitionExpertBonus();
         }
     }
 

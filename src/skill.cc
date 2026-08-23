@@ -852,8 +852,8 @@ int skillUse(Object* obj, Object* target, Skill skill, int skillBonus)
     if (obj == gDude) {
         if (skill == SKILL_FIRST_AID || skill == SKILL_DOCTOR) {
             int healerRank = perkGetRank(obj, PERK_HEALER);
-            minimumHpToHeal = 4 * healerRank;
-            maximumHpToHeal = 10 * healerRank;
+            minimumHpToHeal = perkGetHealerMinBonus() * healerRank;
+            maximumHpToHeal = perkGetHealerMaxBonus() * healerRank;
         }
     }
 

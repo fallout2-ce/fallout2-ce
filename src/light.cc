@@ -9,9 +9,6 @@
 
 namespace fallout {
 
-// 20% of max light per "Night Vision" rank
-#define LIGHT_LEVEL_NIGHT_VISION_BONUS (65536 / 5)
-
 // 0x51923C ambient_light
 static int gAmbientIntensity = LIGHT_INTENSITY_MAX;
 
@@ -47,7 +44,7 @@ int lightGetAmbientIntensity()
 // 0x47A908 light_set_ambient
 void lightSetAmbientIntensity(int intensity, bool shouldUpdateScreen)
 {
-    int adjustedIntensity = intensity + perkGetRank(gDude, PERK_NIGHT_VISION) * LIGHT_LEVEL_NIGHT_VISION_BONUS;
+    int adjustedIntensity = intensity + perkGetRank(gDude, PERK_NIGHT_VISION) * ((LIGHT_INTENSITY_MAX * perkGetNightVisionBonus()) / 100);
     int normalizedIntensity = std::clamp(adjustedIntensity, LIGHT_INTENSITY_MIN, LIGHT_INTENSITY_MAX);
 
     int oldAmbientIntensity = gAmbientIntensity;

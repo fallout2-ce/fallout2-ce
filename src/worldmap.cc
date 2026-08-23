@@ -4465,7 +4465,7 @@ static int wmSetupRndNextTileNum(Encounter* encounter, EncounterEntry* encounter
                 distance += critterGetStat(gDude, STAT_PERCEPTION);
 
                 if (perkHasRank(gDude, PERK_CAUTIOUS_NATURE)) {
-                    distance += 3;
+                    distance += perkGetCautiousNatureBonus();
                 }
             }
 

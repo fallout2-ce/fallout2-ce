@@ -29,6 +29,7 @@
 #include "obj_types.h"
 #include "object.h"
 #include "party_member.h"
+#include "perk.h"
 #include "proto.h"
 #include "proto_instance.h"
 #include "script_sound.h"
@@ -318,6 +319,118 @@ static void op_set_perk_freq(Program* program)
 {
     int value = programStackPopInteger(program);
     characterEditorSetPerkFrequency(value);
+}
+
+static void opSetPerkProperty(Program* program, PerkProperty property)
+{
+    int value = programStackPopInteger(program);
+    Perk perk = static_cast<Perk>(programStackPopInteger(program));
+    if (!perkSetProperty(perk, property, value)) {
+        programPrintError("set_perk_*: invalid argument");
+    }
+}
+
+static void op_set_perk_image(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::FrmId);
+}
+
+static void op_set_perk_ranks(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::MaxRank);
+}
+
+static void op_set_perk_level(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::MinLevel);
+}
+
+static void op_set_perk_stat(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Stat);
+}
+
+static void op_set_perk_stat_mag(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::StatModifier);
+}
+
+static void op_set_perk_skill1(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Param1);
+}
+
+static void op_set_perk_skill1_mag(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Value1);
+}
+
+static void op_set_perk_type(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::ParamMode);
+}
+
+static void op_set_perk_skill2(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Param2);
+}
+
+static void op_set_perk_skill2_mag(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Value2);
+}
+
+static void op_set_perk_str(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Strength);
+}
+
+static void op_set_perk_per(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Perception);
+}
+
+static void op_set_perk_end(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Endurance);
+}
+
+static void op_set_perk_chr(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Charisma);
+}
+
+static void op_set_perk_int(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Intelligence);
+}
+
+static void op_set_perk_agl(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Agility);
+}
+
+static void op_set_perk_lck(Program* program)
+{
+    opSetPerkProperty(program, PerkProperty::Luck);
+}
+
+static void op_set_perk_name(Program* program)
+{
+    const char* value = programStackPopString(program);
+    Perk perk = static_cast<Perk>(programStackPopInteger(program));
+    if (!perkSetName(perk, value)) {
+        programPrintError("set_perk_name: invalid argument");
+    }
+}
+
+static void op_set_perk_desc(Program* program)
+{
+    const char* value = programStackPopString(program);
+    Perk perk = static_cast<Perk>(programStackPopInteger(program));
+    if (!perkSetDescription(perk, value)) {
+        programPrintError("set_perk_desc: invalid argument");
+    }
 }
 
 static void op_set_available_skill_points(Program* program)
@@ -2175,24 +2288,43 @@ void sfallOpcodesInit()
     interpreterRegisterOpcode(0x8177, op_set_movie_path);
 
     // 0x8178 - void set_perk_image(Perk perk, int value)
+    interpreterRegisterOpcode(0x8178, op_set_perk_image);
     // 0x8179 - void set_perk_ranks(Perk perk, int value)
+    interpreterRegisterOpcode(0x8179, op_set_perk_ranks);
     // 0x817a - void set_perk_level(Perk perk, int value)
+    interpreterRegisterOpcode(0x817A, op_set_perk_level);
     // 0x817b - void set_perk_stat(Perk perk, int value)
+    interpreterRegisterOpcode(0x817B, op_set_perk_stat);
     // 0x817c - void set_perk_stat_mag(Perk perk, int value)
+    interpreterRegisterOpcode(0x817C, op_set_perk_stat_mag);
     // 0x817d - void set_perk_skill1(Perk perk, int value)
+    interpreterRegisterOpcode(0x817D, op_set_perk_skill1);
     // 0x817e - void set_perk_skill1_mag(Perk perk, int value)
+    interpreterRegisterOpcode(0x817E, op_set_perk_skill1_mag);
     // 0x817f - void set_perk_type(Perk perk, int value)
+    interpreterRegisterOpcode(0x817F, op_set_perk_type);
     // 0x8180 - void set_perk_skill2(Perk perk, int value)
+    interpreterRegisterOpcode(0x8180, op_set_perk_skill2);
     // 0x8181 - void set_perk_skill2_mag(Perk perk, int value)
+    interpreterRegisterOpcode(0x8181, op_set_perk_skill2_mag);
     // 0x8182 - void set_perk_str(Perk perk, int value)
+    interpreterRegisterOpcode(0x8182, op_set_perk_str);
     // 0x8183 - void set_perk_per(Perk perk, int value)
+    interpreterRegisterOpcode(0x8183, op_set_perk_per);
     // 0x8184 - void set_perk_end(Perk perk, int value)
+    interpreterRegisterOpcode(0x8184, op_set_perk_end);
     // 0x8185 - void set_perk_chr(Perk perk, int value)
+    interpreterRegisterOpcode(0x8185, op_set_perk_chr);
     // 0x8186 - void set_perk_int(Perk perk, int value)
+    interpreterRegisterOpcode(0x8186, op_set_perk_int);
     // 0x8187 - void set_perk_agl(Perk perk, int value)
+    interpreterRegisterOpcode(0x8187, op_set_perk_agl);
     // 0x8188 - void set_perk_lck(Perk perk, int value)
+    interpreterRegisterOpcode(0x8188, op_set_perk_lck);
     // 0x8189 - void set_perk_name(Perk perk, string value)
+    interpreterRegisterOpcode(0x8189, op_set_perk_name);
     // 0x818a - void set_perk_desc(Perk perk, string value)
+    interpreterRegisterOpcode(0x818A, op_set_perk_desc);
     // 0x8247 - void set_perk_freq(int value)
     interpreterRegisterOpcode(0x8247, op_set_perk_freq);
 

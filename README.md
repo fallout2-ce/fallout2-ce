@@ -98,6 +98,8 @@ party_loot_and_barter=1
 In time this stuff will receive an in-game interface, right now you have to do it manually. To see all currently working fallout2.cfg settings, just run the game once and quit. It will be automatically updated with defaults for every supported setting.
 *Note*: Use of the IFACE_BAR settings requires the `f2_res.dat` file, which contains graphical assets. Various versions are available, but one compatible with the above settings can be found here: [f2_res.dat](https://github.com/fallout2-ce/fallout2-ce/raw/refs/heads/main/files/f2_res.dat)
 
+Note: There are a few settings that are still configured in `ddraw.ini`.  They will be migrated to cfg over time.
+
 ## Platform-specific installation
 
 ### Windows
