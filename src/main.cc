@@ -59,9 +59,6 @@ static void mainRequestDevEndgameIfNeeded();
 static void mainRunDevEndgameMovieIfNeeded();
 static void mainLoop();
 static void showDeath();
-static void mainGetAspectFitSize(int width, int height, int screenWidth, int screenHeight, int* scaledWidthPtr, int* scaledHeightPtr);
-static Color mainGetDarkestPaletteColor();
-static void mainRenderDeathFrame(ConstBuffer2D image, unsigned char* windowBuffer);
 static void _main_death_voiceover_callback();
 static int _mainDeathGrabTextFile(const char* fileName, char* dest);
 static int _mainDeathWordWrap(char* text, int width, short* beginnings, short* count);
@@ -521,7 +518,10 @@ static void showDeath()
             inputEventQueueReset();
 
             colorPaletteLoad("art\\intrface\\death.pal");
-            mainRenderDeathFrame(backgroundFrmImage.getBuffer(), windowBuffer);
+            Rect deathFrameBounds = blitBuffer2DCenteredAspectFit(backgroundFrmImage.getBuffer(),
+                Buffer2D(windowBuffer, screenWidth, screenHeight),
+                colorPaletteFindDarkest(_cmap),
+                settings.ui.death_screen_size != 0);
 
             const char* deathFileName = endgameDeathEndingGetFileName();
 
@@ -532,11 +532,13 @@ static void showDeath()
 
                     short beginnings[WORD_WRAP_MAX_COUNT];
                     short count;
-                    int textMaxWidth = std::min(560, screenWidth - 80);
+                    int deathFrameWidth = rectGetWidth(&deathFrameBounds);
+                    int deathFrameHeight = rectGetHeight(&deathFrameBounds);
+                    int textMaxWidth = std::min(560, deathFrameWidth - 80);
                     if (textMaxWidth > 0 && _mainDeathWordWrap(text, textMaxWidth, beginnings, &count) == 0) {
                         int textHeight = fontGetLineHeight() * count;
-                        int y = std::max(0, screenHeight - textHeight - 8);
-                        int x = (screenWidth - textMaxWidth) / 2;
+                        int y = std::max(deathFrameBounds.top, deathFrameBounds.top + deathFrameHeight - textHeight - 8);
+                        int x = std::max(2, deathFrameBounds.left + (deathFrameWidth - textMaxWidth) / 2);
                         bufferFill(windowBuffer + screenWidth * y + x - 2, textMaxWidth + 4, textHeight + 2, screenWidth, COLOR_FIRST);
                         unsigned char* p = windowBuffer + screenWidth * y + x;
                         for (int index = 0; index < count; index++) {
@@ -608,60 +610,6 @@ static void showDeath()
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
     colorCycleEnable();
-}
-
-static void mainGetAspectFitSize(int width, int height, int screenWidth, int screenHeight, int* scaledWidthPtr, int* scaledHeightPtr)
-{
-    if (screenHeight * width >= screenWidth * height) {
-        *scaledWidthPtr = screenWidth;
-        *scaledHeightPtr = screenWidth * height / width;
-    } else {
-        *scaledWidthPtr = screenHeight * width / height;
-        *scaledHeightPtr = screenHeight;
-    }
-}
-
-static Color mainGetDarkestPaletteColor()
-{
-    int darkestColor = 0;
-    int darkestValue = _cmap[0] + _cmap[1] + _cmap[2];
-
-    for (int index = 1; index < 256; index++) {
-        int value = _cmap[index * 3] + _cmap[index * 3 + 1] + _cmap[index * 3 + 2];
-        if (value < darkestValue) {
-            darkestValue = value;
-            darkestColor = index;
-        }
-    }
-
-    return static_cast<Color>(darkestColor);
-}
-
-static void mainRenderDeathFrame(ConstBuffer2D image, unsigned char* windowBuffer)
-{
-    if (!image || image.width <= 0 || image.height <= 0 || windowBuffer == nullptr) {
-        return;
-    }
-
-    int screenWidth = screenGetWidth();
-    int screenHeight = screenGetHeight();
-    int renderWidth = image.width;
-    int renderHeight = image.height;
-
-    if (settings.ui.death_screen_size != 0 || image.width > screenWidth || image.height > screenHeight) {
-        mainGetAspectFitSize(image.width, image.height, screenWidth, screenHeight, &renderWidth, &renderHeight);
-    }
-
-    bufferFill(windowBuffer, screenWidth, screenHeight, screenWidth, mainGetDarkestPaletteColor());
-
-    int x = screenWidth > renderWidth ? (screenWidth - renderWidth) / 2 : 0;
-    int y = screenHeight > renderHeight ? (screenHeight - renderHeight) / 2 : 0;
-    unsigned char* dest = windowBuffer + y * screenWidth + x;
-    if (renderWidth == image.width && renderHeight == image.height) {
-        blitBufferToBuffer(image.data, image.width, image.height, image.width, dest, screenWidth);
-    } else {
-        blitBufferToBufferStretch(image.data, image.width, image.height, image.width, dest, renderWidth, renderHeight, screenWidth);
-    }
 }
 
 // 0x4814A8
