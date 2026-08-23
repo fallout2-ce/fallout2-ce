@@ -325,7 +325,9 @@ static void opSetPerkProperty(Program* program, PerkProperty property)
 {
     int value = programStackPopInteger(program);
     Perk perk = static_cast<Perk>(programStackPopInteger(program));
-    perkSetProperty(perk, property, value);
+    if (!perkSetProperty(perk, property, value)) {
+        programPrintError("set_perk_*: invalid argument");
+    }
 }
 
 static void op_set_perk_image(Program* program)
@@ -417,14 +419,18 @@ static void op_set_perk_name(Program* program)
 {
     const char* value = programStackPopString(program);
     Perk perk = static_cast<Perk>(programStackPopInteger(program));
-    perkSetName(perk, value);
+    if (!perkSetName(perk, value)) {
+        programPrintError("set_perk_name: invalid argument");
+    }
 }
 
 static void op_set_perk_desc(Program* program)
 {
     const char* value = programStackPopString(program);
     Perk perk = static_cast<Perk>(programStackPopInteger(program));
-    perkSetDescription(perk, value);
+    if (!perkSetDescription(perk, value)) {
+        programPrintError("set_perk_desc: invalid argument");
+    }
 }
 
 static void op_set_available_skill_points(Program* program)

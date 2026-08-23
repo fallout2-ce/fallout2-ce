@@ -372,6 +372,11 @@ static void perksLoadSfallPerkStat(Config* config, const char* sectionKey, const
 {
     int value = 0;
     if (configGetIntBase(config, sectionKey, key, &value, -99999, 0) && value != -99999) {
+        if (value != STAT_INVALID && !statIsValid(value)) {
+            debugPrint("PerksFile: invalid stat %d in [%s] %s\n", value, sectionKey, key);
+            return;
+        }
+
         *valuePtr = static_cast<Stat>(value);
     }
 }
@@ -761,6 +766,9 @@ bool perkSetProperty(Perk perk, PerkProperty property, int value)
         perkDescription->minLevel = value;
         break;
     case PerkProperty::Stat:
+        if (value != STAT_INVALID && !statIsValid(value)) {
+            return false;
+        }
         perkDescription->stat = static_cast<Stat>(value);
         break;
     case PerkProperty::StatModifier:
