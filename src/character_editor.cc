@@ -160,7 +160,7 @@ enum Editor : int {
 static constexpr int kMaxPerkOwed = 250;
 // nb. this is number of perks, not total perk ranks. This only prevents level ups from granting more perks.
 static constexpr int kMaxSelectablePerks = 37;
-static constexpr int kPrimaryStatDescriptionWidth = 100;
+static constexpr int kPrimaryStatDescriptionWidth = 65;
 
 inline Editor operator++(Editor& e, int)
 {
