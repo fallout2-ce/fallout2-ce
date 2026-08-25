@@ -2901,6 +2901,11 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             }
         }
 
+    } else if (!pickUpFromSlot && immediate && itemGetType(item) == ITEM_TYPE_AMMO) {
+        InventoryAmmoMoveResult ammoMoveResult = _drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode);
+        if (ammoMoveResult == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
+            _drop_ammo_into_weapon(gInventoryRightHandItem, item, itemSlot, count, buttonCode);
+        }
     } else if (!pickUpFromSlot && immediate && itemGetType(item) != ITEM_TYPE_ARMOR) {
         // ctrl-click non-armor to quick-equip:
         // default to first empty hand, or left hand if both are full
