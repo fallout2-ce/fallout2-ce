@@ -382,6 +382,7 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
 static void _container_enter(int keyCode, int inventoryWindowType);
 static void _container_exit(int keyCode, int inventoryWindowType);
 static int _drop_into_container(Object* container, Object* item, int sourceIndex, Object** itemSlot, int quantity);
+static void inventoryUnloadWeaponToOwner(Object* owner, Object* weapon);
 static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode);
 static void _draw_amount(int value, int inventoryWindowType);
 static int inventoryQuantitySelect(int inventoryWindowType, Object* item, int maximum, int defaultValue = 1);
@@ -4656,16 +4657,7 @@ static void inventoryWindowOpenContextMenu(int keyCode, int inventoryWindowType)
             itemRemoveWithReason(owner, item, 1, RemoveInventoryObjectHookReason::UnloadWeapon);
         }
 
-        for (;;) {
-            Object* ammo = weaponUnload(item);
-            if (ammo == nullptr) {
-                break;
-            }
-
-            Rect rect;
-            _obj_disconnect(ammo, &rect);
-            itemAdd(owner, ammo, 1);
-        }
+        inventoryUnloadWeaponToOwner(owner, item);
 
         if (itemSlot == nullptr) {
             itemAdd(owner, item, 1);
@@ -6087,6 +6079,16 @@ static int _drop_into_container(Object* container, Object* item, int sourceIndex
     return rc;
 }
 
+static void inventoryUnloadWeaponToOwner(Object* owner, Object* weapon)
+{
+    Object* ammo;
+    while ((ammo = weaponUnload(weapon)) != nullptr) {
+        Rect rect;
+        _obj_disconnect(ammo, &rect);
+        itemAdd(owner, ammo, 1);
+    }
+}
+
 // 0x47650C drop ammo into weapon
 static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* ammo, Object** ammoItemSlot, int quantity, int keyCode)
 {
@@ -6098,8 +6100,14 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
+    bool replaceAmmo = false;
     if (!weaponCanBeReloadedWith(weapon, ammo)) {
-        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
+        if (!settings.qol.fast_ammo_load
+            || !weaponCanBeUnloaded(weapon)
+            || !weaponCanBeReloadedWithReplacingAmmo(weapon, ammo)) {
+            return INVENTORY_AMMO_MOVE_RESULT_FAILED;
+        }
+        replaceAmmo = true;
     }
 
     if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_WEAPON_RELOAD, ammo, weapon)) {
@@ -6107,7 +6115,9 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
     }
 
     int quantityToMove;
-    if (quantity > 1) {
+    if (settings.qol.fast_ammo_load) {
+        quantityToMove = quantity;
+    } else if (quantity > 1) {
         quantityToMove = inventoryQuantitySelect(INVENTORY_WINDOW_TYPE_MOVE_ITEMS, ammo, quantity);
     } else {
         quantityToMove = 1;
@@ -6120,6 +6130,10 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
     Object* sourceItem = ammo;
     bool isReloaded = false;
     int rc = itemRemoveQuietly(_inven_dude, weapon, 1);
+    if (replaceAmmo) {
+        inventoryUnloadWeaponToOwner(_inven_dude, weapon);
+    }
+
     for (int index = 0; index < quantityToMove; index++) {
         int rcReload = weaponReload(weapon, sourceItem);
         if (rcReload == 0) {

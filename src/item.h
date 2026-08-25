@@ -89,6 +89,7 @@ CaliberType ammoGetCaliber(Object* ammoOrWeapon);
 void ammoSetQuantity(Object* ammoOrWeapon, int quantity);
 int weaponAttemptReload(Object* critter, Object* weapon);
 bool weaponCanBeReloadedWith(Object* weapon, Object* ammo);
+bool weaponCanBeReloadedWithReplacingAmmo(Object* weapon, Object* ammo);
 int weaponReload(Object* weapon, Object* ammo);
 int weaponGetRange(Object* critter, HitMode hitMode);
 int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming);
