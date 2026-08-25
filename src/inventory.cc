@@ -2901,6 +2901,11 @@ static void _inven_pickup(int buttonCode, int indexOffset)
             }
         }
 
+    } else if (!pickUpFromSlot && immediate && itemGetType(item) == ITEM_TYPE_AMMO) {
+        InventoryAmmoMoveResult ammoMoveResult = _drop_ammo_into_weapon(gInventoryLeftHandItem, item, itemSlot, count, buttonCode);
+        if (ammoMoveResult == INVENTORY_AMMO_MOVE_RESULT_FAILED) {
+            ammoMoveResult = _drop_ammo_into_weapon(gInventoryRightHandItem, item, itemSlot, count, buttonCode);
+        }
     } else if (!pickUpFromSlot && immediate && itemGetType(item) != ITEM_TYPE_ARMOR) {
         // ctrl-click non-armor to quick-equip:
         // default to first empty hand, or left hand if both are full
@@ -6099,6 +6104,10 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
+    if (weapon->pid == PROTO_ID_SOLAR_SCORCHER) {
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
+    }
+
     bool replaceAmmo = false;
     if (!weaponCanBeReloadedWith(weapon, ammo)) {
         if (!settings.qol.fast_ammo_load
@@ -6107,6 +6116,10 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
             return INVENTORY_AMMO_MOVE_RESULT_FAILED;
         }
         replaceAmmo = true;
+    }
+
+    if (!replaceAmmo && ammoGetQuantity(weapon) >= ammoGetCapacity(weapon)) {
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
     if (!scriptHooks_InventoryMove(HOOK_INVENTORYMOVE_WEAPON_RELOAD, ammo, weapon)) {
@@ -6142,6 +6155,8 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         if (rcReload == 0) {
             if (ammoItemSlot != nullptr) {
                 *ammoItemSlot = nullptr;
+            } else {
+                itemRemoveQuietly(_inven_dude, sourceItem, 1);
             }
 
             objectDestroy(sourceItem);
