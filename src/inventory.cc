@@ -6104,6 +6104,10 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
         return INVENTORY_AMMO_MOVE_RESULT_FAILED;
     }
 
+    if (weapon->pid == PROTO_ID_SOLAR_SCORCHER) {
+        return INVENTORY_AMMO_MOVE_RESULT_FAILED;
+    }
+
     bool replaceAmmo = false;
     if (!weaponCanBeReloadedWith(weapon, ammo)) {
         if (!settings.qol.fast_ammo_load
