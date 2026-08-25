@@ -6084,8 +6084,6 @@ static void inventoryUnloadWeaponToOwner(Object* owner, Object* weapon)
 {
     Object* ammo;
     while ((ammo = weaponUnload(weapon)) != nullptr) {
-        Rect rect;
-        _obj_disconnect(ammo, &rect);
         itemAdd(owner, ammo, 1);
     }
 }
@@ -6166,8 +6164,6 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
     }
 
     for (Object* oldAmmo : unloadedAmmo) {
-        Rect rect;
-        _obj_disconnect(oldAmmo, &rect);
         itemAdd(_inven_dude, oldAmmo, 1);
     }
 
