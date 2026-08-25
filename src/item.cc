@@ -1570,11 +1570,13 @@ int weaponAttemptReload(Object* critter, Object* weapon)
     return 0;
 }
 
-// Checks if weapon can be reloaded with the specified ammo.
-//
 // 0x478874
-bool weaponCanBeReloadedWith(Object* weapon, Object* ammo)
+static bool weaponCanBeReloadedWithInternal(Object* weapon, Object* ammo, bool allowReplacingAmmo)
 {
+    if (weapon == nullptr) {
+        return false;
+    }
+
     if (weapon->pid == PROTO_ID_SOLAR_SCORCHER) {
         // Check light level to recharge solar scorcher.
         if (lightGetAmbientIntensity() > LIGHT_INTENSITY_MAX * 0.95) {
@@ -1613,13 +1615,26 @@ bool weaponCanBeReloadedWith(Object* weapon, Object* ammo)
     }
 
     // If weapon is not empty, we should only reload it with the same ammo.
-    if (ammoGetQuantity(weapon) != 0) {
+    if (!allowReplacingAmmo && ammoGetQuantity(weapon) != 0) {
         if (weapon->data.item.weapon.ammoTypePid != ammo->pid) {
             return false;
         }
     }
 
     return true;
+}
+
+// Checks if weapon can be reloaded with the specified ammo.
+//
+// 0x478874
+bool weaponCanBeReloadedWith(Object* weapon, Object* ammo)
+{
+    return weaponCanBeReloadedWithInternal(weapon, ammo, false);
+}
+
+bool weaponCanBeReloadedWithReplacingAmmo(Object* weapon, Object* ammo)
+{
+    return weaponCanBeReloadedWithInternal(weapon, ammo, true);
 }
 
 // 0x478918
