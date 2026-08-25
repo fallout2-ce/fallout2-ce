@@ -8,6 +8,7 @@
 #include <cmath>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "actions.h"
 #include "animation.h"
@@ -6130,8 +6131,12 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
     Object* sourceItem = ammo;
     bool isReloaded = false;
     int rc = itemRemoveQuietly(_inven_dude, weapon, 1);
+    std::vector<Object*> unloadedAmmo;
     if (replaceAmmo) {
-        inventoryUnloadWeaponToOwner(_inven_dude, weapon);
+        Object* oldAmmo;
+        while ((oldAmmo = weaponUnload(weapon)) != nullptr) {
+            unloadedAmmo.push_back(oldAmmo);
+        }
     }
 
     for (int index = 0; index < quantityToMove; index++) {
@@ -6158,6 +6163,12 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
 
     if (rc != -1) {
         itemAdd(_inven_dude, weapon, 1);
+    }
+
+    for (Object* oldAmmo : unloadedAmmo) {
+        Rect rect;
+        _obj_disconnect(oldAmmo, &rect);
+        itemAdd(_inven_dude, oldAmmo, 1);
     }
 
     if (!isReloaded) {
