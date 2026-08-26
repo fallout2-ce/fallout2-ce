@@ -69,6 +69,9 @@ procedure ini_test_suite begin
     call assertEquals("TC6 set_ini_setting 2", get_ini_string("test_set.ini|ValidSection|Key3"), "NewValue");
     set_ini_setting("test_set.ini|ValidSection|Key3", 2);
     call assertEquals("TC6 set_ini_setting int", get_ini_setting("test_set.ini|ValidSection|Key3"), 2);
+    set_ini_setting("test.ini|ValidSection|Key2", 4);
+    call assertEquals("TC6 retain existing ini value", get_ini_setting("test.ini|ValidSection|Key2"), 4);
+    call assertEquals("TC6 retain existing ini unrelated", get_ini_string("test.ini|TestMisc|Alpha"), "Beta");
 
     // get_init_sections
     result_array := get_ini_sections("test.ini");
