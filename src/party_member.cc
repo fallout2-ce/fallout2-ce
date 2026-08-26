@@ -112,6 +112,8 @@ static PartyMemberLevelUpInfo* _partyMemberLevelUpInfoList = nullptr;
 // 0x519DC0 curID
 static int _curID = 20000;
 
+static bool npcEngineLevelUp = true;
+
 // partyMember_init
 // 0x493BC0 partyMember_init
 int partyMembersInit()
@@ -264,6 +266,8 @@ int partyMembersInit()
 // 0x4940E4 partyMember_reset
 void partyMembersReset()
 {
+    npcEngineLevelUp = true;
+
     for (int index = 0; index < gPartyMemberDescriptionsLength; index++) {
         _partyMemberLevelUpInfoList[index].level = 0;
         _partyMemberLevelUpInfoList[index].numLevelUps = 0;
@@ -1574,6 +1578,16 @@ int _partyMemberIncLevels()
     }
 
     return 0;
+}
+
+bool partyMemberEngineLevelUpEnabled()
+{
+    return npcEngineLevelUp;
+}
+
+void partyMemberSetEngineLevelUpEnabled(bool enabled)
+{
+    npcEngineLevelUp = enabled;
 }
 
 // 0x495EA8 partyMemberCopyLevelInfo
