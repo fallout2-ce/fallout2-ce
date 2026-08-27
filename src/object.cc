@@ -4695,10 +4695,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
     visibleFrameRect.top = 0;
     visibleFrameRect.right = frameWidth - 1;
 
-    // FIXME: I'm not sure why it ignores frameHeight and makes separate call
-    // to obtain height.
-    int artHeight = artGetHeight(art, object->frame, object->rotation);
-    visibleFrameRect.bottom = artHeight - 1;
+    visibleFrameRect.bottom = frameHeight - 1;
 
     Rect objectRect;
     if (object->tile == -1) {
