@@ -4850,7 +4850,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
             }
 
             if (*(srcPtr - 1) != 0) {
-                if (destOffset < gObjectsWindowBufferSize) {
+                int rightOutlineDestOffset = destPtr - gObjectsWindowBuffer;
+                if (rightOutlineDestOffset < gObjectsWindowBufferSize && rightOutlineDestOffset % gObjectsWindowPitch != 0) {
                     int rightEdgeX = frameWidth - 1;
                     if (rightEdgeX >= visibleFrameRect.left && rightEdgeX <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
                         if (isOutlinePalleted != 0) {
