@@ -4743,6 +4743,9 @@ static void objectDrawOutline(Object* object, Rect* rect)
 
         unsigned char* src = artGetFrameData(art, object->frame, object->rotation);
 
+        // TODO: This base pointer is computed from unclipped object coordinates.
+        // Convert the outline scan to integer offsets so partially offscreen
+        // objects do not form out-of-bounds pointers before write-site checks.
         unsigned char* dest = gObjectsWindowBuffer + gObjectsWindowPitch * object->sy + object->sx;
         int destStep = gObjectsWindowPitch - frameWidth;
 
@@ -4851,7 +4854,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
 
             if (*(srcPtr - 1) != 0) {
                 int rightOutlineDestOffset = destPtr - gObjectsWindowBuffer;
-                if (rightOutlineDestOffset < gObjectsWindowBufferSize && rightOutlineDestOffset % gObjectsWindowPitch != 0) {
+                if (rightOutlineDestOffset >= 0 && rightOutlineDestOffset < gObjectsWindowBufferSize && rightOutlineDestOffset % gObjectsWindowPitch != 0) {
                     int rightEdgeX = frameWidth - 1;
                     if (rightEdgeX >= visibleFrameRect.left && rightEdgeX <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
                         if (isOutlinePalleted != 0) {
@@ -4910,7 +4913,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
             }
 
             if (columnSrcPtr[-frameWidth] != 0) {
-                if (columnDestPtr - gObjectsWindowBuffer < gObjectsWindowBufferSize) {
+                int bottomOutlineDestOffset = columnDestPtr - gObjectsWindowBuffer;
+                if (bottomOutlineDestOffset >= 0 && bottomOutlineDestOffset < gObjectsWindowBufferSize) {
                     int y = frameHeight - 1;
                     if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
                         if (isOutlinePalleted) {
