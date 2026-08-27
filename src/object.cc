@@ -4822,14 +4822,18 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 }
             }
 
+            bool yVisible = y >= visibleFrameRect.top && y <= visibleFrameRect.bottom;
+            Color* outlineBlendTable = isOutlinePalleted != 0
+                ? blendTable + (grayTable[outlineColor] << 8)
+                : nullptr;
             int destOffset = destPtr - gObjectsWindowBuffer;
             for (int x = 0; x < frameWidth; x++) {
                 destOffset = destPtr - gObjectsWindowBuffer;
                 if (*srcPtr != 0 && cycle) {
-                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom && destOffset > 0 && destOffset % gObjectsWindowPitch != 0) {
+                    if (yVisible && x >= visibleFrameRect.left && x <= visibleFrameRect.right && destOffset > 0 && destOffset % gObjectsWindowPitch != 0) {
                         unsigned char leftOutlineColor;
                         if (isOutlinePalleted != 0) {
-                            leftOutlineColor = blendTable[(grayTable[outlineColor] << 8) + *(destPtr - 1)];
+                            leftOutlineColor = outlineBlendTable[*(destPtr - 1)];
                         } else {
                             leftOutlineColor = outlineColor;
                         }
@@ -4837,10 +4841,10 @@ static void objectDrawOutline(Object* object, Rect* rect)
                     }
                     cycle = false;
                 } else if (*srcPtr == 0 && !cycle) {
-                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
+                    if (yVisible && x >= visibleFrameRect.left && x <= visibleFrameRect.right) {
                         int rightOutlineColor;
                         if (isOutlinePalleted != 0) {
-                            rightOutlineColor = blendTable[(grayTable[outlineColor] << 8) + *destPtr];
+                            rightOutlineColor = outlineBlendTable[*destPtr];
                         } else {
                             rightOutlineColor = outlineColor;
                         }
@@ -4856,9 +4860,9 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 int rightOutlineDestOffset = destPtr - gObjectsWindowBuffer;
                 if (rightOutlineDestOffset >= 0 && rightOutlineDestOffset < gObjectsWindowBufferSize && rightOutlineDestOffset % gObjectsWindowPitch != 0) {
                     int rightEdgeX = frameWidth - 1;
-                    if (rightEdgeX >= visibleFrameRect.left && rightEdgeX <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
+                    if (yVisible && rightEdgeX >= visibleFrameRect.left && rightEdgeX <= visibleFrameRect.right) {
                         if (isOutlinePalleted != 0) {
-                            *destPtr = blendTable[(grayTable[outlineColor] << 8) + *destPtr];
+                            *destPtr = outlineBlendTable[*destPtr];
                         } else {
                             *destPtr = outlineColor;
                         }
@@ -4870,6 +4874,10 @@ static void objectDrawOutline(Object* object, Rect* rect)
         }
 
         for (int x = 0; x < frameWidth; x++) {
+            if (x < visibleFrameRect.left || x > visibleFrameRect.right) {
+                continue;
+            }
+
             bool cycle = true;
             unsigned char columnOutlineColor = color;
             unsigned char* columnDestPtr = dest + x;
@@ -4885,12 +4893,16 @@ static void objectDrawOutline(Object* object, Rect* rect)
                     }
                 }
 
+                bool yVisible = y >= visibleFrameRect.top && y <= visibleFrameRect.bottom;
+                Color* columnOutlineBlendTable = isOutlinePalleted != 0
+                    ? blendTable + (grayTable[columnOutlineColor] << 8)
+                    : nullptr;
                 if (*columnSrcPtr != 0 && cycle) {
-                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
+                    if (yVisible) {
                         unsigned char* aboveDestPtr = columnDestPtr - gObjectsWindowPitch;
                         if (aboveDestPtr >= gObjectsWindowBuffer) {
                             if (isOutlinePalleted) {
-                                *aboveDestPtr = blendTable[(grayTable[columnOutlineColor] << 8) + *aboveDestPtr];
+                                *aboveDestPtr = columnOutlineBlendTable[*aboveDestPtr];
                             } else {
                                 *aboveDestPtr = columnOutlineColor;
                             }
@@ -4898,9 +4910,9 @@ static void objectDrawOutline(Object* object, Rect* rect)
                     }
                     cycle = false;
                 } else if (*columnSrcPtr == 0 && !cycle) {
-                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
+                    if (yVisible) {
                         if (isOutlinePalleted) {
-                            *columnDestPtr = blendTable[(grayTable[columnOutlineColor] << 8) + *columnDestPtr];
+                            *columnDestPtr = columnOutlineBlendTable[*columnDestPtr];
                         } else {
                             *columnDestPtr = columnOutlineColor;
                         }
@@ -4916,9 +4928,10 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 int bottomOutlineDestOffset = columnDestPtr - gObjectsWindowBuffer;
                 if (bottomOutlineDestOffset >= 0 && bottomOutlineDestOffset < gObjectsWindowBufferSize) {
                     int y = frameHeight - 1;
-                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
+                    if (y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
                         if (isOutlinePalleted) {
-                            *columnDestPtr = blendTable[(grayTable[columnOutlineColor] << 8) + *columnDestPtr];
+                            Color* columnOutlineBlendTable = blendTable + (grayTable[columnOutlineColor] << 8);
+                            *columnDestPtr = columnOutlineBlendTable[*columnDestPtr];
                         } else {
                             *columnDestPtr = columnOutlineColor;
                         }
