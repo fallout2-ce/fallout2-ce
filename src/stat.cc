@@ -1007,7 +1007,7 @@ int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained)
             interfaceGetItemActions(&leftItemAction, &rightItemAction);
             interfaceUpdateItems(false, leftItemAction, rightItemAction);
 
-            if (doParty) {
+            if (doParty && partyMemberEngineLevelUpEnabled()) {
                 _partyMemberIncLevels();
             }
         }

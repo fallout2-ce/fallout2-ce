@@ -46,6 +46,8 @@ bool partyMemberSupportsDistance(Object* object, DistanceMode distanceMode);
 bool partyMemberSupportsAttackWho(Object* object, AttackWho attackWho);
 bool partyMemberSupportsChemUse(Object* object, ChemUse chemUse);
 int _partyMemberIncLevels();
+bool partyMemberEngineLevelUpEnabled();
+void partyMemberSetEngineLevelUpEnabled(bool enabled);
 bool partyIsAnyoneCanBeHealedByRest();
 int partyGetMaxWoundToHealByRest();
 std::vector<Object*> get_all_party_members_objects(bool include_hidden);

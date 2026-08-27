@@ -28,6 +28,7 @@
 #include "object.h"
 #include "opcode_context.h"
 #include "options.h"
+#include "party_member.h"
 #include "pipboy.h"
 #include "platform_compat.h"
 #include "proto_instance.h"
@@ -800,6 +801,7 @@ static void mf_add_iface_tag(OpcodeContext& ctx);
 static void mf_art_frame_data(OpcodeContext& ctx);
 static void mf_art_cache_flush(OpcodeContext& ctx);
 static void mf_metarule_exist(OpcodeContext& ctx);
+static void mf_npc_engine_level_up(OpcodeContext& ctx);
 static void mf_obj_is_openable(OpcodeContext& ctx);
 static void mf_obj_under_cursor(OpcodeContext& ctx);
 static void mf_objects_in_radius(OpcodeContext& ctx);
@@ -898,7 +900,7 @@ const MetaruleInfo kMetarules[] = {
     { "loot_obj", mf_loot_obj, 0, 0 },
     { "message_box", mf_message_box, 1, 4, -1, { ARG_STRING, ARG_INT, ARG_INT, ARG_INT } },
     { "metarule_exist", mf_metarule_exist, 1, 1 },
-    // {"npc_engine_level_up",       mf_npc_engine_level_up,       1, 1},
+    { "npc_engine_level_up", mf_npc_engine_level_up, 1, 1, -1, { ARG_INT } },
     { "obj_is_openable", mf_obj_is_openable, 1, 1, 0, { ARG_OBJECT } },
     { "obj_under_cursor", mf_obj_under_cursor, 2, 2, 0, { ARG_INT, ARG_INT } },
     { "objects_in_radius", mf_objects_in_radius, 3, 4, 0, { ARG_INT, ARG_INT, ARG_INT, ARG_INT } },
@@ -1750,6 +1752,11 @@ void mf_obj_under_cursor(OpcodeContext& ctx)
     Object* object = gameMouseGetObjectUnderCursor(onlyCritter ? OBJ_TYPE_CRITTER : OBJ_TYPE_INVALID, includeDude, gElevation);
 
     ctx.setReturn(object);
+}
+
+void mf_npc_engine_level_up(OpcodeContext& ctx)
+{
+    partyMemberSetEngineLevelUpEnabled(ctx.arg(0).asInt() != 0);
 }
 
 void mf_obj_is_openable(OpcodeContext& ctx)
