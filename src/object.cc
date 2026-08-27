@@ -4690,15 +4690,15 @@ static void objectDrawOutline(Object* object, Rect* rect)
     int frameHeight = 0;
     artGetSize(art, object->frame, object->rotation, &frameWidth, &frameHeight);
 
-    Rect v49;
-    v49.left = 0;
-    v49.top = 0;
-    v49.right = frameWidth - 1;
+    Rect visibleFrameRect;
+    visibleFrameRect.left = 0;
+    visibleFrameRect.top = 0;
+    visibleFrameRect.right = frameWidth - 1;
 
     // FIXME: I'm not sure why it ignores frameHeight and makes separate call
     // to obtain height.
-    int v8 = artGetHeight(art, object->frame, object->rotation);
-    v49.bottom = v8 - 1;
+    int artHeight = artGetHeight(art, object->frame, object->rotation);
+    visibleFrameRect.bottom = artHeight - 1;
 
     Rect objectRect;
     if (object->tile == -1) {
@@ -4728,21 +4728,21 @@ static void objectDrawOutline(Object* object, Rect* rect)
         object->sy = objectRect.top;
     }
 
-    Rect v32;
-    rectCopy(&v32, rect);
+    Rect expandedRect;
+    rectCopy(&expandedRect, rect);
 
-    v32.left--;
-    v32.top--;
-    v32.right++;
-    v32.bottom++;
+    expandedRect.left--;
+    expandedRect.top--;
+    expandedRect.right++;
+    expandedRect.bottom++;
 
-    rectIntersection(&v32, &gObjectsWindowRect, &v32);
+    rectIntersection(&expandedRect, &gObjectsWindowRect, &expandedRect);
 
-    if (rectIntersection(&objectRect, &v32, &objectRect) == 0) {
-        v49.left += objectRect.left - object->sx;
-        v49.top += objectRect.top - object->sy;
-        v49.right = v49.left + (objectRect.right - objectRect.left);
-        v49.bottom = v49.top + (objectRect.bottom - objectRect.top);
+    if (rectIntersection(&objectRect, &expandedRect, &objectRect) == 0) {
+        visibleFrameRect.left += objectRect.left - object->sx;
+        visibleFrameRect.top += objectRect.top - object->sy;
+        visibleFrameRect.right = visibleFrameRect.left + (objectRect.right - objectRect.left);
+        visibleFrameRect.bottom = visibleFrameRect.top + (objectRect.bottom - objectRect.top);
 
         unsigned char* src = artGetFrameData(art, object->frame, object->rotation);
 
@@ -4754,19 +4754,19 @@ static void objectDrawOutline(Object* object, Rect* rect)
         Color* blendTable = nullptr;
         int isOutlinePalleted = object->outline & OUTLINE_PALETTED;
         OutlineType outlineType = object->outline & OUTLINE_TYPE_MAX;
-        int v43 = 0;
-        int v44;
+        int animatedColorCount = 0;
+        int animatedColorBandHeight;
 
         switch (outlineType) {
         case OUTLINE_TYPE_HOSTILE:
             color = static_cast<Color>(243);
             isOutlinePalleted = 0;
-            v43 = 5;
-            v44 = frameHeight / 5;
+            animatedColorCount = 5;
+            animatedColorBandHeight = frameHeight / 5;
             break;
         case OUTLINE_TYPE_SAME_TEAM:
             color = COLOR_RED;
-            v44 = 0;
+            animatedColorBandHeight = 0;
             if (isOutlinePalleted != 0) {
                 grayTable = _commonGrayTable;
                 blendTable = _redBlendTable;
@@ -4774,20 +4774,20 @@ static void objectDrawOutline(Object* object, Rect* rect)
             break;
         case OUTLINE_TYPE_BODY:
             color = COLOR_GREY_2;
-            v44 = 0;
+            animatedColorBandHeight = 0;
             if (isOutlinePalleted != 0) {
                 grayTable = _commonGrayTable;
                 blendTable = _wallBlendTable;
             }
             break;
         case OUTLINE_TYPE_FRIENDLY:
-            v43 = 4;
-            v44 = frameHeight / 4;
+            animatedColorCount = 4;
+            animatedColorBandHeight = frameHeight / 4;
             color = static_cast<Color>(229);
             isOutlinePalleted = 0;
             break;
         case OUTLINE_TYPE_ITEM:
-            v44 = 0;
+            animatedColorBandHeight = 0;
             color = COLOR_LIGHT_GOLD_2;
             if (isOutlinePalleted != 0) {
                 grayTable = _commonGrayTable;
@@ -4797,128 +4797,128 @@ static void objectDrawOutline(Object* object, Rect* rect)
         case OUTLINE_TYPE_BLOCKED:
             color = static_cast<Color>(61);
             isOutlinePalleted = 0;
-            v43 = 1;
-            v44 = frameHeight;
+            animatedColorCount = 1;
+            animatedColorBandHeight = frameHeight;
             break;
         default:
             color = COLOR_MAGENTA;
             isOutlinePalleted = 0;
-            v44 = 0;
+            animatedColorBandHeight = 0;
             break;
         }
 
-        unsigned char v54 = color;
-        unsigned char* dest14 = dest;
-        unsigned char* src15 = src;
+        unsigned char outlineColor = color;
+        unsigned char* destPtr = dest;
+        unsigned char* srcPtr = src;
         for (int y = 0; y < frameHeight; y++) {
             bool cycle = true;
-            if (v44 != 0) {
-                if (y % v44 == 0) {
-                    v54++;
+            if (animatedColorBandHeight != 0) {
+                if (y % animatedColorBandHeight == 0) {
+                    outlineColor++;
                 }
 
-                if (v54 > v43 + color - 1) {
-                    v54 = color;
+                if (outlineColor > animatedColorCount + color - 1) {
+                    outlineColor = color;
                 }
             }
 
-            int v22 = dest14 - gObjectsWindowBuffer;
+            int destOffset = destPtr - gObjectsWindowBuffer;
             for (int x = 0; x < frameWidth; x++) {
-                v22 = dest14 - gObjectsWindowBuffer;
-                if (*src15 != 0 && cycle) {
-                    if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom && v22 > 0 && v22 % gObjectsWindowPitch != 0) {
-                        unsigned char v20;
+                destOffset = destPtr - gObjectsWindowBuffer;
+                if (*srcPtr != 0 && cycle) {
+                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom && destOffset > 0 && destOffset % gObjectsWindowPitch != 0) {
+                        unsigned char leftOutlineColor;
                         if (isOutlinePalleted != 0) {
-                            v20 = blendTable[(grayTable[v54] << 8) + *(dest14 - 1)];
+                            leftOutlineColor = blendTable[(grayTable[outlineColor] << 8) + *(destPtr - 1)];
                         } else {
-                            v20 = v54;
+                            leftOutlineColor = outlineColor;
                         }
-                        *(dest14 - 1) = v20;
+                        *(destPtr - 1) = leftOutlineColor;
                     }
                     cycle = false;
-                } else if (*src15 == 0 && !cycle) {
-                    if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        int v21;
+                } else if (*srcPtr == 0 && !cycle) {
+                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
+                        int rightOutlineColor;
                         if (isOutlinePalleted != 0) {
-                            v21 = blendTable[(grayTable[v54] << 8) + *dest14];
+                            rightOutlineColor = blendTable[(grayTable[outlineColor] << 8) + *destPtr];
                         } else {
-                            v21 = v54;
+                            rightOutlineColor = outlineColor;
                         }
-                        *dest14 = v21 & 0xFF;
+                        *destPtr = rightOutlineColor & 0xFF;
                     }
                     cycle = true;
                 }
-                dest14++;
-                src15++;
+                destPtr++;
+                srcPtr++;
             }
 
-            if (*(src15 - 1) != 0) {
-                if (v22 < gObjectsWindowBufferSize) {
-                    int v23 = frameWidth - 1;
-                    if (v23 >= v49.left && v23 <= v49.right && y >= v49.top && y <= v49.bottom) {
+            if (*(srcPtr - 1) != 0) {
+                if (destOffset < gObjectsWindowBufferSize) {
+                    int rightEdgeX = frameWidth - 1;
+                    if (rightEdgeX >= visibleFrameRect.left && rightEdgeX <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
                         if (isOutlinePalleted != 0) {
-                            *dest14 = blendTable[(grayTable[v54] << 8) + *dest14];
+                            *destPtr = blendTable[(grayTable[outlineColor] << 8) + *destPtr];
                         } else {
-                            *dest14 = v54;
+                            *destPtr = outlineColor;
                         }
                     }
                 }
             }
 
-            dest14 += destStep;
+            destPtr += destStep;
         }
 
         for (int x = 0; x < frameWidth; x++) {
             bool cycle = true;
-            unsigned char v28 = color;
-            unsigned char* dest27 = dest + x;
-            unsigned char* src27 = src + x;
+            unsigned char columnOutlineColor = color;
+            unsigned char* columnDestPtr = dest + x;
+            unsigned char* columnSrcPtr = src + x;
             for (int y = 0; y < frameHeight; y++) {
-                if (v44 != 0) {
-                    if (y % v44 == 0) {
-                        v28++;
+                if (animatedColorBandHeight != 0) {
+                    if (y % animatedColorBandHeight == 0) {
+                        columnOutlineColor++;
                     }
 
-                    if (v28 > color + v43 - 1) {
-                        v28 = color;
+                    if (columnOutlineColor > color + animatedColorCount - 1) {
+                        columnOutlineColor = color;
                     }
                 }
 
-                if (*src27 != 0 && cycle) {
-                    if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
-                        unsigned char* v29 = dest27 - gObjectsWindowPitch;
-                        if (v29 >= gObjectsWindowBuffer) {
+                if (*columnSrcPtr != 0 && cycle) {
+                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
+                        unsigned char* aboveDestPtr = columnDestPtr - gObjectsWindowPitch;
+                        if (aboveDestPtr >= gObjectsWindowBuffer) {
                             if (isOutlinePalleted) {
-                                *v29 = blendTable[(grayTable[v28] << 8) + *v29];
+                                *aboveDestPtr = blendTable[(grayTable[columnOutlineColor] << 8) + *aboveDestPtr];
                             } else {
-                                *v29 = v28;
+                                *aboveDestPtr = columnOutlineColor;
                             }
                         }
                     }
                     cycle = false;
-                } else if (*src27 == 0 && !cycle) {
-                    if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
+                } else if (*columnSrcPtr == 0 && !cycle) {
+                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
                         if (isOutlinePalleted) {
-                            *dest27 = blendTable[(grayTable[v28] << 8) + *dest27];
+                            *columnDestPtr = blendTable[(grayTable[columnOutlineColor] << 8) + *columnDestPtr];
                         } else {
-                            *dest27 = v28;
+                            *columnDestPtr = columnOutlineColor;
                         }
                     }
                     cycle = true;
                 }
 
-                dest27 += gObjectsWindowPitch;
-                src27 += frameWidth;
+                columnDestPtr += gObjectsWindowPitch;
+                columnSrcPtr += frameWidth;
             }
 
-            if (src27[-frameWidth] != 0) {
-                if (dest27 - gObjectsWindowBuffer < gObjectsWindowBufferSize) {
+            if (columnSrcPtr[-frameWidth] != 0) {
+                if (columnDestPtr - gObjectsWindowBuffer < gObjectsWindowBufferSize) {
                     int y = frameHeight - 1;
-                    if (x >= v49.left && x <= v49.right && y >= v49.top && y <= v49.bottom) {
+                    if (x >= visibleFrameRect.left && x <= visibleFrameRect.right && y >= visibleFrameRect.top && y <= visibleFrameRect.bottom) {
                         if (isOutlinePalleted) {
-                            *dest27 = blendTable[(grayTable[v28] << 8) + *dest27];
+                            *columnDestPtr = blendTable[(grayTable[columnOutlineColor] << 8) + *columnDestPtr];
                         } else {
-                            *dest27 = v28;
+                            *columnDestPtr = columnOutlineColor;
                         }
                     }
                 }
