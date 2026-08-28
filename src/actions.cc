@@ -3,6 +3,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include <assert.h>
+
 #include "animation.h"
 #include "art.h"
 #include "color.h"
@@ -89,6 +91,7 @@ static int _action_melee(Attack* attack, AnimationType anim);
 static int _action_ranged(Attack* attack, AnimationType anim);
 static int _is_next_to(Object* obj1, Object* obj2);
 static int _action_climb_ladder(Object* critter, Object* ladder);
+static bool actionRegisterUseAnimObj(Object* user, Object* targetObj, AnimationType* animPtr, int delay);
 static int _action_use_skill_in_combat_error(Object* critter);
 static AnimationType pickFallAnim(Object* obj, AnimationType anim);
 static int _report_explosion(Attack* attack, Object* sourceObj);
@@ -100,6 +103,21 @@ static int _report_dmg(Attack* attack, Object* _);
 static int _compute_dmg_damage(int min, int max, Object* obj, int* knockbackDistancePtr, DamageType damageType);
 
 static int hideProjectile(void* _, void* projectile);
+
+static bool actionRegisterUseAnimObj(Object* user, Object* targetObj, AnimationType* animPtr, int delay)
+{
+    assert(animPtr != nullptr);
+
+    AnimationType hookAnim = scriptHooks_UseAnimObj(user, targetObj, *animPtr);
+    if (hookAnim == ANIM_INVALID) {
+        return false;
+    }
+
+    *animPtr = hookAnim;
+    animationRegisterAnimate(user, hookAnim, delay);
+
+    return true;
+}
 
 // 0x410468
 int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, Rotation rotation, int delay)
@@ -1147,7 +1165,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
         }
 
         if (sceneryType != SCENERY_TYPE_STAIRS && item == nullptr) {
-            animationRegisterAnimate(user, anim, -1);
+            actionRegisterUseAnimObj(user, targetObj, &anim, -1);
         }
 
         if (item != nullptr) {
@@ -1238,18 +1256,18 @@ int actionPickUp(Object* critter, Object* item)
         AnimationType anim = (itemProto->item.data.container.openFlags & 0x01) == 0
             ? ANIM_MAGIC_HANDS_MIDDLE
             : ANIM_MAGIC_HANDS_GROUND;
-        animationRegisterAnimate(critter, anim, 0);
+        bool animateUse = actionRegisterUseAnimObj(critter, item, &anim, 0);
 
         int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, critter->rotation + 1);
 
-        int actionFrame;
+        int actionFrame = -1;
         CacheEntry* cacheEntry;
-        Art* art = artLock(fid, &cacheEntry);
-        if (art != nullptr) {
-            actionFrame = artGetActionFrame(art);
-            artUnlock(cacheEntry);
-        } else {
-            actionFrame = -1;
+        if (animateUse) {
+            Art* art = artLock(fid, &cacheEntry);
+            if (art != nullptr) {
+                actionFrame = artGetActionFrame(art);
+                artUnlock(cacheEntry);
+            }
         }
 
         if (item->frame != 1) {

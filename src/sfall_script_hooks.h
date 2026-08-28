@@ -109,7 +109,8 @@ typedef enum {
     // Game mode is changed. Used in many mods.
     HOOK_GAMEMODECHANGE = 31,
 
-    //    HOOK_USEANIMOBJ = 32,
+    // Before the critter animation when using a map object.
+    HOOK_USEANIMOBJ = 32,
 
     // Explosive timer is set. Allows to override the time.
     HOOK_EXPLOSIVETIMER = 33,
@@ -342,6 +343,7 @@ UseSkillOnHookResult scriptHooks_UseSkillOn(Object** userPtr, Object* target, Sk
 int scriptHooks_UseSkill(Object* user, Object* target, Skill skill, int skillBonus);
 int scriptHooks_UseItem(Object* user, Object* objUsed);
 int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed);
+AnimationType scriptHooks_UseAnimObj(Object* user, Object* target, AnimationType anim);
 void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity, RemoveInventoryObjectHookReason reason, Object* target);
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
