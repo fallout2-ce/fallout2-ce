@@ -34,15 +34,26 @@ defaults:
     shell: bash
 
 jobs:
-  analyze-c-cpp:
-    name: Analyze (c-cpp)
+  analyze:
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: java-kotlin
+            build-mode: none
+          - language: c-cpp
+            build-mode: manual
 
     steps:
       - name: Clone
         uses: actions/checkout@v4
 
       - name: Dependencies
+        if: matrix.language == 'c-cpp'
         run: |
           sudo apt update
           sudo apt install -y libsdl2-dev zlib1g-dev
@@ -50,14 +61,18 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: c-cpp
-          build-mode: manual
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Configure
+        if: matrix.language == 'c-cpp'
         run: cmake --preset linux-x64-debug
 
       - name: Build
+        if: matrix.language == 'c-cpp'
         run: cmake --build --preset linux-x64-debug --parallel $(nproc)
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
