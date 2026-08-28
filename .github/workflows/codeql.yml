@@ -9,6 +9,7 @@ on:
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
       - 'cmake/**'
+      - 'os/android/**'
       - 'src/**'
       - 'third_party/**'
   pull_request:
@@ -20,6 +21,7 @@ on:
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
       - 'cmake/**'
+      - 'os/android/**'
       - 'src/**'
       - 'third_party/**'
   schedule:
