@@ -876,6 +876,37 @@ int scriptHooks_UseItemOn(Object* user, Object* target, Object* objUsed)
 }
 
 /*
+Runs before playing the "use" animation when a critter uses a scenery/container
+object on the map.
+
+Critter arg0 - The user
+Obj     arg1 - The object being used
+int     arg2 - The animation code being used
+
+int     ret0 - overrides the animation code; -1 or lower skips the animation
+*/
+AnimationType scriptHooks_UseAnimObj(Object* user, Object* target, AnimationType anim)
+{
+    ScriptHookCall hook(HOOK_USEANIMOBJ, 1, { user, target, anim });
+    hook.call();
+
+    if (hook.numReturnValues() <= 0) {
+        return anim;
+    }
+
+    int overrideAnim = hook.getReturnValueAt(0).asInt();
+    if (overrideAnim <= ANIM_INVALID) {
+        return ANIM_INVALID;
+    }
+
+    if (overrideAnim > ANIM_CALLED_SHOT_PIC) {
+        return anim;
+    }
+
+    return static_cast<AnimationType>(overrideAnim);
+}
+
+/*
 Runs when an object is removed from a container or critter's inventory for any reason.
 
 Obj     arg0 - the owner that the object is being removed from

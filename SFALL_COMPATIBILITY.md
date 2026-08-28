@@ -169,7 +169,7 @@ CE defines several metarules that are not supported in Sfall.  Include [ce.h](fi
 | SetGlobalVar | `HOOK_SETGLOBALVAR` | 🚫 | - |
 | RestTimer | `HOOK_RESTTIMER` | ✅ | CE is slightly more strict: only `ret0 == 1` interrupts. Ticks wrap every 6.8y; do not rely on them for absolute game time. |
 | GameModeChange | `HOOK_GAMEMODECHANGE` | ✅ | - |
-| UseAnimObj | `HOOK_USEANIMOBJ` | 🚫 | Et tu; (maybe) |
+| UseAnimObj | `HOOK_USEANIMOBJ` | ✅ | - |
 | ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | ✅ | - |
 | DescriptionObj | `HOOK_DESCRIPTIONOBJ` | 🚫 | Et tu |
 | UseSkillOn | `HOOK_USESKILLON` | ✅ | - |

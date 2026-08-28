@@ -1,0 +1,86 @@
+#include "sfall.h"
+#include "dik.h"
+#include "lib.arrays.h"
+#include "../test_utils.h"
+
+#define ANIM_stand                  (0)
+#define ANIM_magic_hands_ground     (10)
+#define ANIM_magic_hands_middle     (11)
+#define ANIM_called_shot_pic        (64)
+
+variable useanimobj_mode := 0;
+variable useanimobj_calls := 0;
+
+procedure mode_name(variable mode) begin
+    if (mode == 1) then return "skip";
+    if (mode == 2) then return "stand";
+    if (mode == 3) then return "ignored_invalid";
+    return "vanilla";
+end
+
+procedure object_name_safe(variable obj) begin
+    if (obj == 0) then return "<null>";
+    return obj_name(obj);
+end
+
+procedure print_mode begin
+    display_msg(string_format1("useanimobj mode -> %s", mode_name(useanimobj_mode)));
+end
+
+procedure useanimobj_handler begin
+    variable
+        args := get_sfall_args,
+        user := args[0],
+        target := args[1],
+        animation_code := args[2];
+
+    useanimobj_calls++;
+
+    display_msg(string_format("useanimobj mode=%s user=%s target=%s anim=%d",
+        mode_name(useanimobj_mode),
+        object_name_safe(user),
+        object_name_safe(target),
+        animation_code));
+    display_msg(string_format1("useanimobj args=%s", debug_array_str(args)));
+
+    call assertEquals("useanimobj arg count", len_array(args), 3);
+    call assertEquals("useanimobj user", user, dude_obj);
+    call assertTrue("useanimobj target is set", target != 0);
+    call assertTrue("useanimobj anim is valid", animation_code >= ANIM_stand and animation_code <= ANIM_called_shot_pic);
+
+    if (useanimobj_mode == 1) then begin
+        set_sfall_return(-1);
+    end else if (useanimobj_mode == 2) then begin
+        set_sfall_return(ANIM_stand);
+    end else if (useanimobj_mode == 3) then begin
+        set_sfall_return(ANIM_called_shot_pic + 1);
+    end
+end
+
+procedure keypress_handler begin
+    variable
+        pressed := get_sfall_arg_at(0),
+        key := get_sfall_arg_at(1);
+
+    if (not pressed) then return;
+
+    if (key == DIK_N) then begin
+        useanimobj_mode += 1;
+        if (useanimobj_mode > 3) then useanimobj_mode := 0;
+        call print_mode;
+    end else if (key == DIK_M) then begin
+        call assertTrue("useanimobj fired", useanimobj_calls > 0);
+        call report_test_results("hook_useanimobj");
+    end
+end
+
+procedure start begin
+    if (not game_loaded) then return;
+
+    display_msg("useanimobj manual test ready");
+    display_msg("use/open a map scenery or container object; press N to cycle vanilla / skip / stand / ignored_invalid; press M to report");
+    call print_mode;
+
+    register_hook_proc(HOOK_KEYPRESS, keypress_handler);
+    register_hook_proc(HOOK_USEANIMOBJ, useanimobj_handler);
+end
