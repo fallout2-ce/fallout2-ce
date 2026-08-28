@@ -108,9 +108,17 @@ static bool actionRegisterUseAnimObj(Object* user, Object* targetObj, AnimationT
 {
     assert(animPtr != nullptr);
 
-    AnimationType hookAnim = scriptHooks_UseAnimObj(user, targetObj, *animPtr);
+    AnimationType originalAnim = *animPtr;
+    AnimationType hookAnim = scriptHooks_UseAnimObj(user, targetObj, originalAnim);
     if (hookAnim == ANIM_INVALID) {
         return false;
+    }
+
+    if (hookAnim != originalAnim) {
+        int fid = buildFid(objectTypeFromFid(user->fid), user->fid & 0xFFF, hookAnim, weaponAnimationFromFid(user->fid), user->rotation + 1);
+        if (!artExists(fid)) {
+            hookAnim = originalAnim;
+        }
     }
 
     *animPtr = hookAnim;
