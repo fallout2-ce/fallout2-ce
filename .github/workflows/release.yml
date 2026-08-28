@@ -323,7 +323,7 @@ jobs:
       - name: Configure
         shell: cmd
         run: |
-          set "VSWHERE_ARGS=-latest -property installationPath"
+          set "VSWHERE_ARGS=-latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"
           if "${{ matrix.arch }}"=="x86" set "VSWHERE_ARGS=-latest -products Microsoft.VisualStudio.Product.BuildTools -requires Microsoft.VisualStudio.Component.VC.v141.x86.x64 Microsoft.VisualStudio.Component.VC.v141.xp -property installationPath"
           for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" %VSWHERE_ARGS%`) do set "VS_PATH=%%i"
           call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" ^
@@ -332,7 +332,7 @@ jobs:
       - name: Build
         shell: cmd
         run: |
-          set "VSWHERE_ARGS=-latest -property installationPath"
+          set "VSWHERE_ARGS=-latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath"
           if "${{ matrix.arch }}"=="x86" set "VSWHERE_ARGS=-latest -products Microsoft.VisualStudio.Product.BuildTools -requires Microsoft.VisualStudio.Component.VC.v141.x86.x64 Microsoft.VisualStudio.Component.VC.v141.xp -property installationPath"
           for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" %VSWHERE_ARGS%`) do set "VS_PATH=%%i"
           call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" ^
