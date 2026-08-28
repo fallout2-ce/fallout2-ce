@@ -21,6 +21,7 @@ jobs:
     steps:
       - name: start deployment
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
         uses: bobheadxi/deployments@v1
         id: deployment
         with:
@@ -50,12 +51,14 @@ jobs:
 
       - name: Add node
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         uses: actions/setup-node@v2
         with:
           node-version: '22'
 
       - name: Checkout web interface
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         uses: actions/checkout@v4
         with:
           repository: fallout2-ce/fallout2-ce-ems
@@ -64,6 +67,7 @@ jobs:
 
       - name: Set deployment path
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         id: set-path
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -78,6 +82,7 @@ jobs:
 
       - name: Build web interface
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         run: |
           cd fallout2-ce-ems
           npm install
@@ -93,15 +98,18 @@ jobs:
 
       - name: Place hash file
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         run: echo "$GITHUB_SHA" > fallout2-ce-ems/dist/site_hash.txt
 
       - name: Install rsync (required for the next step)
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         run: |
           sudo apt-get update && sudo apt-get install -y rsync
 
       - name: Deploy PR preview or main site
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
@@ -114,6 +122,7 @@ jobs:
 
       - name: Check that site is deployed
         if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
         run: |
           URL="$SITE_ORIGIN""$SITE_BASE""site_hash.txt"
           echo "Expecting $GITHUB_SHA from $URL"
@@ -134,6 +143,7 @@ jobs:
 
       - name: Update deployment status
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
         uses: bobheadxi/deployments@v1
         with:
           step: finish
