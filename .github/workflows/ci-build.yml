@@ -363,7 +363,7 @@ jobs:
   windows:
     name: Windows (${{ matrix.arch }})
 
-    runs-on: windows-2025
+    runs-on: ${{ matrix.runner }}
     needs: [ce-dat]
 
     strategy:
@@ -371,7 +371,9 @@ jobs:
       matrix:
         include:
           - arch: x86
+            runner: windows-2025
           - arch: x64
+            runner: windows-2022
 
     steps:
       - name: Clone
