@@ -387,27 +387,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: windows-${{ matrix.arch }}-cmake-v103
+          key: windows-${{ matrix.arch }}-cmake-v104
 
       - name: Configure
         shell: cmd
         run: |
-          if "${{ matrix.arch }}"=="x86" (
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products Microsoft.VisualStudio.Product.BuildTools -requires Microsoft.VisualStudio.Component.VC.v141.x86.x64 Microsoft.VisualStudio.Component.VC.v141.xp -property installationPath`) do set "VS_PATH=%%i"
-          ) else (
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do set "VS_PATH=%%i"
-          )
+          set "VSWHERE_ARGS=-latest -property installationPath"
+          if "${{ matrix.arch }}"=="x86" set "VSWHERE_ARGS=-latest -products Microsoft.VisualStudio.Product.BuildTools -requires Microsoft.VisualStudio.Component.VC.v141.x86.x64 Microsoft.VisualStudio.Component.VC.v141.xp -property installationPath"
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" %VSWHERE_ARGS%`) do set "VS_PATH=%%i"
           call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" ^
           && cmake --preset windows-${{ matrix.arch }}
 
       - name: Build
         shell: cmd
         run: |
-          if "${{ matrix.arch }}"=="x86" (
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products Microsoft.VisualStudio.Product.BuildTools -requires Microsoft.VisualStudio.Component.VC.v141.x86.x64 Microsoft.VisualStudio.Component.VC.v141.xp -property installationPath`) do set "VS_PATH=%%i"
-          ) else (
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do set "VS_PATH=%%i"
-          )
+          set "VSWHERE_ARGS=-latest -property installationPath"
+          if "${{ matrix.arch }}"=="x86" set "VSWHERE_ARGS=-latest -products Microsoft.VisualStudio.Product.BuildTools -requires Microsoft.VisualStudio.Component.VC.v141.x86.x64 Microsoft.VisualStudio.Component.VC.v141.xp -property installationPath"
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" %VSWHERE_ARGS%`) do set "VS_PATH=%%i"
           call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" ^
           && cmake --build --preset windows-${{ matrix.arch }}-release --parallel
 
