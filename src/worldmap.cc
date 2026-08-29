@@ -2811,7 +2811,7 @@ static int wmAreaInit()
             }
 
             city->mapFid = fid.fid();
-            
+
             fid = FrmId::Empty();
 
             if (configGetEnum<InterfaceFrameId>(cfg.get(), section, "townmap_label_art_idx", &frmId)) {

@@ -1681,7 +1681,7 @@ static int interfaceBarRefreshMainAction()
                 fid = FrmId::Empty();
             }
 
-            if (!fid.empty()){
+            if (!fid.empty()) {
                 FrmImage useTextFrmImage;
                 if (useTextFrmImage.lock(fid)) {
                     int width = useTextFrmImage.getWidth();
@@ -1778,7 +1778,7 @@ static int interfaceBarRefreshMainAction()
                     case HIT_MODE_HOOK_KICK:
                         id = INTF_FRM_ID_427; // cm_hookk.frm - jump kick text
                         break;
-                    case HIT_MODE_PIERCING_KICK: 
+                    case HIT_MODE_PIERCING_KICK:
                         id = INTF_FRM_ID_422; // cm_prckk.frm - death blossom kick text
                         break;
                     default:

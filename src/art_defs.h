@@ -325,11 +325,13 @@ enum CritterFrameId : int {
     CRITTER_FRM_ID_1 = 1,
 };
 
-inline constexpr CritterFrameId operator+(CritterFrameId lhs, int rhs) {
+inline constexpr CritterFrameId operator+(CritterFrameId lhs, int rhs)
+{
     return static_cast<CritterFrameId>(static_cast<int>(lhs) + rhs);
 }
 
-inline constexpr CritterFrameId operator-(CritterFrameId lhs, int rhs) {
+inline constexpr CritterFrameId operator-(CritterFrameId lhs, int rhs)
+{
     return static_cast<CritterFrameId>(static_cast<int>(lhs) - rhs);
 }
 
@@ -354,7 +356,8 @@ enum SceneryFrameId : int {
     SCENERY_FRM_ID_FIRST = 0,
 };
 
-inline constexpr SceneryFrameId operator-(SceneryFrameId lhs, int rhs) {
+inline constexpr SceneryFrameId operator-(SceneryFrameId lhs, int rhs)
+{
     return static_cast<SceneryFrameId>(static_cast<int>(lhs) - rhs);
 }
 
@@ -367,7 +370,8 @@ enum WallFrameId : int {
     WALL_FRM_ID_FIRST = 0,
 };
 
-inline constexpr WallFrameId operator-(WallFrameId lhs, int rhs) {
+inline constexpr WallFrameId operator-(WallFrameId lhs, int rhs)
+{
     return static_cast<WallFrameId>(static_cast<int>(lhs) - rhs);
 }
 
@@ -380,7 +384,8 @@ enum ItemFrameId : int {
     ITEM_FRM_ID_FIRST = 0,
 };
 
-inline constexpr ItemFrameId operator-(ItemFrameId lhs, int rhs) {
+inline constexpr ItemFrameId operator-(ItemFrameId lhs, int rhs)
+{
     return static_cast<ItemFrameId>(static_cast<int>(lhs) - rhs);
 }
 
@@ -395,11 +400,13 @@ enum TileFrameId : int {
     TILE_FRM_ID_LAST = 4095
 };
 
-inline constexpr TileFrameId operator+(TileFrameId lhs, int rhs) {
+inline constexpr TileFrameId operator+(TileFrameId lhs, int rhs)
+{
     return static_cast<TileFrameId>(static_cast<int>(lhs) + rhs);
 }
 
-inline constexpr TileFrameId operator-(TileFrameId lhs, int rhs) {
+inline constexpr TileFrameId operator-(TileFrameId lhs, int rhs)
+{
     return static_cast<TileFrameId>(static_cast<int>(lhs) - rhs);
 }
 
@@ -430,11 +437,13 @@ enum MiscFrameId : int {
     MISC_FRM_ID_31 = 31,
 };
 
-inline constexpr MiscFrameId operator+(MiscFrameId lhs, int rhs) {
+inline constexpr MiscFrameId operator+(MiscFrameId lhs, int rhs)
+{
     return static_cast<MiscFrameId>(static_cast<int>(lhs) + rhs);
 }
 
-inline constexpr MiscFrameId operator-(MiscFrameId lhs, int rhs) {
+inline constexpr MiscFrameId operator-(MiscFrameId lhs, int rhs)
+{
     return static_cast<MiscFrameId>(static_cast<int>(lhs) - rhs);
 }
 
@@ -557,7 +566,7 @@ enum InterfaceFrameId : int {
     INTF_FRM_ID_154 = 154,
     INTF_FRM_ID_155 = 155,
     INTF_FRM_ID_168 = 168, // hotspot1.frm - town map selector shape #1
-    INTF_FRM_ID_169 = 169, 
+    INTF_FRM_ID_169 = 169,
     INTF_FRM_ID_170 = 170, // BIGNUM.frm
     INTF_FRM_ID_171 = 171, // automap.frm - automap window
     INTF_FRM_ID_172 = 172, // autoup.frm - switch up
@@ -568,7 +577,7 @@ enum InterfaceFrameId : int {
     INTF_FRM_ID_177 = 177,
     INTF_FRM_ID_178 = 178,
     INTF_FRM_ID_179 = 179,
-    INTF_FRM_ID_180 = 180, 
+    INTF_FRM_ID_180 = 180,
     INTF_FRM_ID_181 = 181, // dnarwoff.frm - character editor
     INTF_FRM_ID_182 = 182, // dnarwon.frm - character editor
     INTF_FRM_ID_183 = 183,
@@ -746,11 +755,13 @@ enum InterfaceFrameId : int {
     INTF_FRM_ID_439 = 439,
 };
 
-inline constexpr InterfaceFrameId operator+(InterfaceFrameId lhs, int rhs) {
+inline constexpr InterfaceFrameId operator+(InterfaceFrameId lhs, int rhs)
+{
     return static_cast<InterfaceFrameId>(static_cast<int>(lhs) + rhs);
 }
 
-inline constexpr InterfaceFrameId operator-(InterfaceFrameId lhs, int rhs) {
+inline constexpr InterfaceFrameId operator-(InterfaceFrameId lhs, int rhs)
+{
     return static_cast<InterfaceFrameId>(static_cast<int>(lhs) - rhs);
 }
 

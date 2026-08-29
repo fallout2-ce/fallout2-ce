@@ -85,11 +85,13 @@ public:
 
     bool empty() const { return _fid == EmptyFid && _path == nullptr; }
 
-    bool operator==(const FrmId& second) const {
+    bool operator==(const FrmId& second) const
+    {
         return _fid == second._fid;
     }
 
-    bool operator!=(const FrmId& second) const {
+    bool operator!=(const FrmId& second) const
+    {
         return _fid != second._fid;
     }
 
@@ -135,7 +137,8 @@ ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
 ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
 bool artExists(int fid);
 
-inline bool artExists(const FrmId& frmId) {
+inline bool artExists(const FrmId& frmId)
+{
     return artExists(frmId.fid());
 }
 

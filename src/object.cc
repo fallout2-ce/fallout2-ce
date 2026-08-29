@@ -568,7 +568,7 @@ static int objectLoadAllInternal(File* stream)
                     objectListNode->obj->scriptIndex = script->index;
                 }
             }
-            
+
             _obj_fix_violence_settings(&(objectListNode->obj->fid));
             objectListNode->obj->elevation = elevation;
 
