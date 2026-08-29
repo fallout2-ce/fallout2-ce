@@ -463,7 +463,7 @@ void placeTile(int pid, int fid)
     int oldValue = *squarePtr;
 
     if (tileRoofIsVisible()) {
-        int oldRoofFid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(oldValue >> 16));
+        int oldRoofFid = buildFid(tileFrameIdFromFid(oldValue >> 16));
         if (oldRoofFid == fid) {
             return;
         }
@@ -478,7 +478,7 @@ void placeTile(int pid, int fid)
         Rect rect = { sx, sy, sx + 80, sy + 36 };
         tileWindowRefreshRect(&rect, gElevation);
     } else {
-        int oldFloorFid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(oldValue));
+        int oldFloorFid = buildFid(tileFrameIdFromFid(oldValue));
         if (oldFloorFid == fid) {
             return;
         }
@@ -885,8 +885,8 @@ void copyTile()
     int srcDx[kMaxTiles];
     int srcDy[kMaxTiles];
     for (int i = 0; i < srcCount; i++) {
-        ObjectFrameId floorArt = objectFrameIdFromFid(_square[gElevation]->fid[srcTiles[i]]);
-        srcFid[i] = buildFid(OBJ_TYPE_TILE, floorArt);
+        TileFrameId floorArt = tileFrameIdFromFid(_square[gElevation]->fid[srcTiles[i]]);
+        srcFid[i] = buildFid(floorArt);
 
         int sx, sy;
         squareTileToScreenXY(srcTiles[i], &sx, &sy, gElevation);
@@ -894,7 +894,7 @@ void copyTile()
         srcDy[i] = sy - region.top;
     }
 
-    int blankFid = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1));
+    int blankFid = buildFid(TILE_FRM_ID_1);
 
     mp_run_placement_loop([&](int ix, int iy) {
         for (int i = 0; i < srcCount; i++) {
@@ -1206,7 +1206,7 @@ void mapper_shift_map_elev()
     // tiles in the source elevation back to "blank" art (id=1).
     memcpy(_square[destElev]->fid, _square[gElevation]->fid, 40000);
 
-    int blankFid = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1));
+    int blankFid = buildFid(TILE_FRM_ID_1);
 
     // Match the original mapper's tile word format (preserved here even though the rotation
     // bits end up overlapping the low nibble of the art id — same convention as placeTile).

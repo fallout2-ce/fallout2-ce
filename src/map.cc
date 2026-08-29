@@ -1480,13 +1480,13 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             int fid;
 
-            fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->fid[tile]));
-            if (fid != buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) {
+            fid = buildFid(tileFrameIdFromFid(_square[elevation]->fid[tile]));
+            if (fid != buildFid(TILE_FRM_ID_1)) {
                 break;
             }
 
-            fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
-            if (fid != buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) {
+            fid = buildFid(tileFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
+            if (fid != buildFid(TILE_FRM_ID_1)) {
                 break;
             }
         }
@@ -1834,11 +1834,11 @@ static void _square_reset()
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = ((objectFrameIdFromFid(buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = ((tileFrameIdFromFid(buildFid(TILE_FRM_ID_1)) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = objectFrameIdFromFid(buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) | tileFlags;
+                int updatedLowerTile = tileFrameIdFromFid(buildFid(TILE_FRM_ID_1)) | tileFlags;
 
                 fid &= ~0xFFFF;
 

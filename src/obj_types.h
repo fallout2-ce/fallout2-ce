@@ -304,6 +304,37 @@ enum SkillDexFrameId : int {
     SKILLDEX_FRM_ID_173 = 173,
 };
 
+enum TileFrameId : int {
+    TILE_FRM_ID_FIRST = 0,
+    TILE_FRM_ID_1 = 1,
+    TILE_FRM_ID_LAST = 4095
+};
+
+inline constexpr TileFrameId operator+(TileFrameId lhs, int rhs) {
+    return static_cast<TileFrameId>(static_cast<int>(lhs) + rhs);
+}
+
+inline constexpr TileFrameId operator-(TileFrameId lhs, int rhs) {
+    return static_cast<TileFrameId>(static_cast<int>(lhs) - rhs);
+}
+
+inline TileFrameId operator++(TileFrameId& e, int)
+{
+    TileFrameId result = e;
+    e = e + 1;
+    return result;
+}
+
+inline TileFrameId tileFrameIdFromFid(int fid)
+{
+    return static_cast<TileFrameId>(fid & 0xFFF);
+}
+
+inline TileFrameId tileFrameIdFromPid(int pid)
+{
+    return static_cast<TileFrameId>(pid & 0xFFFFFF);
+}
+
 enum MiscFrameId : int {
     MISC_FRM_ID_INVALID = -1,
     MISC_FRM_ID_FIRST = 0,

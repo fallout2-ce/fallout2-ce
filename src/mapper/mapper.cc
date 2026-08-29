@@ -2599,13 +2599,13 @@ static int mapperPickTile(int* outOffset)
     }
 
     int packedTile = _square[gElevation]->fid[tileNum];
-    int tileFid;
+    TileFrameId tileFid;
     if (tileRoofIsVisible()) {
-        tileFid = objectFrameIdFromFid(packedTile >> 16);
+        tileFid = tileFrameIdFromFid(packedTile >> 16);
     } else {
-        tileFid = objectFrameIdFromFid(packedTile);
+        tileFid = tileFrameIdFromFid(packedTile);
     }
-    int artFid = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(tileFid));
+    int artFid = buildFid(tileFid);
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;

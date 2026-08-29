@@ -1470,12 +1470,12 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->fid[roofX + 100 * roofY];
-            int currentSquareFid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(currentSquare >> 16));
+            int currentSquareFid = buildFid(tileFrameIdFromFid(currentSquare >> 16));
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            bool isEmpty = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1)) == currentSquareFid;
+            bool isEmpty = buildFid(TILE_FRM_ID_1) == currentSquareFid;
 
             if (isEmpty != _obj_last_is_empty || (((currentSquare >> 16) & 0xF000) >> 12) != (((previousSquare >> 16) & 0xF000) >> 12)) {
                 if (!_obj_last_is_empty) {
@@ -1527,8 +1527,8 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
-    if (fid != buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) {
+    int fid = buildFid(tileFrameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
+    if (fid != buildFid(TILE_FRM_ID_1)) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
     return 0;
@@ -3246,9 +3246,9 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
         }
     }
 
-    for (int i = 0; i < 4096; i++) {
+    for (TileFrameId i = TILE_FRM_ID_FIRST; i <= TILE_FRM_ID_LAST; i++) {
         if (arr[i] != 0) {
-            int fid = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(i));
+            int fid = buildFid(i);
             if (artLock(fid, &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }

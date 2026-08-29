@@ -3384,8 +3384,8 @@ static int _check_gravity(int tile, int elevation)
         tileToScreenXY(tile, &x, &y);
 
         int squareTile = squareTileFromScreenXY(x + 2, y + 8, elevation);
-        int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->fid[squareTile]));
-        if (fid != buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) {
+        int fid = buildFid(tileFrameIdFromFid(_square[elevation]->fid[squareTile]));
+        if (fid != buildFid(TILE_FRM_ID_1)) {
             break;
         }
     }
