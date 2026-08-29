@@ -1118,7 +1118,7 @@ int wmMaxAreaIndex()
 }
 
 // CE: Extracted from wmMapInit to support modular config loading.
-bool wmParseMapsConfig(Config* cfg, int start_map_idx)
+bool wmParseMapsConfig(Config* cfg, int startMapIdx)
 {
     if (cfg == nullptr) return false;
 
@@ -1127,7 +1127,7 @@ bool wmParseMapsConfig(Config* cfg, int start_map_idx)
     MapInfo* maps;
     MapInfo* map;
 
-    Map mapIdx = static_cast<Map>(start_map_idx);
+    Map mapIdx = static_cast<Map>(startMapIdx);
     int loop_safety_counter = 0;
 
     while (loop_safety_counter < 5000) {
@@ -1281,7 +1281,7 @@ bool wmParseMapsConfig(Config* cfg, int start_map_idx)
 }
 
 // CE: Extracted from wmAreaInit to support modular config loading.
-bool wmParseAreasConfig(Config* cfg, int start_area_idx)
+bool wmParseAreasConfig(Config* cfg, int startAreaIdx)
 {
     if (cfg == nullptr) return false;
 
@@ -1293,7 +1293,7 @@ bool wmParseAreasConfig(Config* cfg, int start_area_idx)
     CityInfo* city;
     EntranceInfo* entrance;
 
-    City area_idx = static_cast<City>(start_area_idx);
+    City area_idx = static_cast<City>(startAreaIdx);
 
     int loop_safety_counter = 0;
 
@@ -1424,6 +1424,12 @@ bool wmParseAreasConfig(Config* cfg, int start_area_idx)
         area_idx++;
         loop_safety_counter++;
     }
+
+    // SFALL: CitiesLimitFix (always on)
+    /*if (wmMaxAreaNum != CITY_COUNT) {
+        showMesageBox("\nwmAreaInit::Error loading Cities!");
+        exit(1);
+    }*/
 
     return true;
 }
