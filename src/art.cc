@@ -1759,11 +1759,6 @@ FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
     return *this;
 }
 
-bool FrmImage::lock(const FrmId& frmId)
-{
-    return lock(frmId, 0, ROTATION_NE);
-}
-
 bool FrmImage::lock(const FrmId& frmId, int frame, Rotation rotation)
 {
     if (frmId.fid() >= 0) {
@@ -1796,11 +1791,6 @@ bool FrmImage::lock(unsigned int fid, int frame, Rotation rotation)
     return true;
 }
 
-bool FrmImage::lock(const char* frmPath)
-{
-    return lock(frmPath, 0, ROTATION_NE);
-}
-
 bool FrmImage::lock(const char* frmPath, int frame, Rotation direction)
 {
     if (isLocked()) {
@@ -1816,11 +1806,6 @@ bool FrmImage::lock(const char* frmPath, int frame, Rotation direction)
     }
 
     return true;
-}
-
-bool FrmImage::lock(ObjectType objType, const char* frmRelativePath)
-{
-    return lock(objType, frmRelativePath, 0, ROTATION_NE);
 }
 
 bool FrmImage::lock(ObjectType objType, const char* frmRelativePath, int frame, Rotation rotation)

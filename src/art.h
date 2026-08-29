@@ -168,12 +168,9 @@ public:
     FrmImage& operator=(FrmImage&& other) noexcept;
 
     bool isLocked() const { return _key != nullptr || _namedKey; }
-    bool lock(const FrmId& frmId);
-    bool lock(const FrmId& frmId, int frame, Rotation rotation);
-    bool lock(const char* frmPath);
-    bool lock(const char* frmPath, int frame, Rotation rotation);
-    bool lock(ObjectType objType, const char* frmRelativePath);
-    bool lock(ObjectType objType, const char* frmRelativePath, int frame, Rotation rotation);
+    bool lock(const FrmId& frmId, int frame = 0, Rotation rotation = ROTATION_NE);
+    bool lock(const char* frmPath, int frame = 0, Rotation rotation = ROTATION_NE);
+    bool lock(ObjectType objType, const char* frmRelativePath, int frame = 0, Rotation rotation = ROTATION_NE);
     void unlock();
 
     int getWidth() const { return _width; }
