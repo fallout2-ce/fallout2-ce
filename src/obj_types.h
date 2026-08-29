@@ -1,7 +1,7 @@
 #ifndef OBJ_TYPES_H
 #define OBJ_TYPES_H
 
-#include "worldmap_defs.h"
+#include "worldmap.h"
 
 namespace fallout {
 
