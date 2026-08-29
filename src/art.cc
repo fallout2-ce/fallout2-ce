@@ -106,7 +106,7 @@ static const char* _head2 = "vfngfbnfvppp";
 // Current native look base fid.
 //
 // 0x5108A4 art_vault_guy_num
-ObjectFrameId _art_vault_guy_num = OBJECT_FRAME_ID_FIRST;
+CritterFrameId _art_vault_guy_num = CRITTER_FRM_ID_FIRST;
 
 // Base fids for unarmored dude.
 //
@@ -120,7 +120,7 @@ ObjectFrameId _art_vault_guy_num = OBJECT_FRAME_ID_FIRST;
 // index, not gender.
 //
 // 0x5108A8 art_vault_person_nums
-ObjectFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
+CritterFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
 
 // Index of "grid001.frm" in tiles.lst.
 //

@@ -34,8 +34,8 @@ typedef struct ArtFrame {
     short y;
 } ArtFrame;
 
-extern ObjectFrameId _art_vault_guy_num;
-extern ObjectFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
+extern CritterFrameId _art_vault_guy_num;
+extern CritterFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
 
 extern Cache gArtCache;
 
@@ -106,7 +106,12 @@ inline int buildFid(SkillDexFrameId skilldex)
 
 inline int buildFid(InterfaceFrameId interface)
 {
-    return buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(interface));
+    return buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(interface);
+}
+
+inline int buildFid(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+{
+    return buildFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation);
 }
 
 inline int buildFid(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)

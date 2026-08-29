@@ -409,8 +409,8 @@ int proto_item_subdata_init(Proto* proto, ItemType type)
         }
 
         proto->item.data.armor.perk = PERK_INVALID;
-        proto->item.data.armor.maleFid = OBJECT_FRAME_ID_INVALID;
-        proto->item.data.armor.femaleFid = OBJECT_FRAME_ID_INVALID;
+        proto->item.data.armor.maleFid = CRITTER_FRM_ID_INVALID;
+        proto->item.data.armor.femaleFid = CRITTER_FRM_ID_INVALID;
         break;
     case ITEM_TYPE_CONTAINER:
         proto->item.data.container.openFlags = 0;
@@ -486,11 +486,11 @@ int proto_critter_init(Proto* proto, int pid)
         return -1;
     }
 
-    ObjectFrameId num = objectFrameIdFromPid(pid);
+    CritterFrameId num = critterFrameIdFromPid(pid);
 
     proto->pid = -1;
     proto->messageId = 100 * num;
-    proto->fid = buildFid(OBJ_TYPE_CRITTER, num - 1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    proto->fid = buildFid(num - 1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
     proto->critter.lightDistance = 0;
     proto->critter.lightIntensity = 0;
     proto->critter.flags = PROTO_FLAG_LIGHT_THRU;
@@ -502,7 +502,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.aiPacket = 1;
     proto->critter.team = 0;
     if (!artExists(proto->fid)) {
-        proto->fid = buildFid(OBJ_TYPE_CRITTER, OBJECT_FRAME_ID_FIRST, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+        proto->fid = buildFid(CRITTER_FRM_ID_FIRST, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
     }
 
     CritterProtoData* data = &(proto->critter.data);
@@ -867,7 +867,7 @@ int _proto_dude_update_gender()
         nativeLook = DUDE_NATIVE_LOOK_JUMPSUIT;
     }
 
-    ObjectFrameId frmId;
+    CritterFrameId frmId;
     if (critterGetStat(gDude, STAT_GENDER) == GENDER_MALE) {
         frmId = _art_vault_person_nums[nativeLook][GENDER_MALE];
     } else {
@@ -882,11 +882,11 @@ int _proto_dude_update_gender()
             weaponAnimationCode = weaponAnimationFromFid(gDude->fid);
         }
 
-        int fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
+        int fid = buildFid(_art_vault_guy_num, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
         objectSetFid(gDude, fid, nullptr);
     }
 
-    proto->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    proto->fid = buildFid(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     return 0;
 }
@@ -897,7 +897,7 @@ int _proto_dude_init(const char* path)
 {
     _retval = 0;
 
-    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    gDudeProto.fid = buildFid(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     if (_init_true) {
         _obj_inven_free(&(gDude->data.inventory));
@@ -1366,7 +1366,7 @@ int protoInit()
     proto_critter_init((Proto*)&gDudeProto, 0x1000000);
 
     gDudeProto.pid = 0x1000000;
-    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, static_cast<ObjectFrameId>(1), ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    gDudeProto.fid = buildFid(CRITTER_FRM_ID_1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     gDude->pid = 0x1000000;
     gDude->sid = 1;
@@ -1482,7 +1482,7 @@ void protoReset()
     // TODO: Get rid of cast.
     proto_critter_init((Proto*)&gDudeProto, 0x1000000);
     gDudeProto.pid = 0x1000000;
-    gDudeProto.fid = buildFid(OBJ_TYPE_CRITTER, static_cast<ObjectFrameId>(1), ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    gDudeProto.fid = buildFid(CRITTER_FRM_ID_1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     gDude->pid = 0x1000000;
     gDude->sid = -1;
@@ -1568,8 +1568,8 @@ static int protoItemDataRead(ItemProtoData* item_data, ItemType type, File* stre
         if (fileReadInt32List(stream, item_data->armor.damageResistance, 7) == -1) return -1;
         if (fileReadInt32List(stream, item_data->armor.damageThreshold, 7) == -1) return -1;
         if (fileReadInt32Enum<Perk>(stream, &(item_data->armor.perk)) == -1) return -1;
-        if (fileReadInt32Enum<ObjectFrameId>(stream, &(item_data->armor.maleFid)) == -1) return -1;
-        if (fileReadInt32Enum<ObjectFrameId>(stream, &(item_data->armor.femaleFid)) == -1) return -1;
+        if (fileReadInt32Enum<CritterFrameId>(stream, &(item_data->armor.maleFid)) == -1) return -1;
+        if (fileReadInt32Enum<CritterFrameId>(stream, &(item_data->armor.femaleFid)) == -1) return -1;
 
         return 0;
     case ITEM_TYPE_CONTAINER:
@@ -1754,8 +1754,8 @@ static int protoItemDataWrite(ItemProtoData* item_data, ItemType type, File* str
         if (fileWriteInt32List(stream, item_data->armor.damageResistance, 7) == -1) return -1;
         if (fileWriteInt32List(stream, item_data->armor.damageThreshold, 7) == -1) return -1;
         if (fileWriteInt32Enum<Perk>(stream, item_data->armor.perk) == -1) return -1;
-        if (fileWriteInt32Enum<ObjectFrameId>(stream, item_data->armor.maleFid) == -1) return -1;
-        if (fileWriteInt32Enum<ObjectFrameId>(stream, item_data->armor.femaleFid) == -1) return -1;
+        if (fileWriteInt32Enum<CritterFrameId>(stream, item_data->armor.maleFid) == -1) return -1;
+        if (fileWriteInt32Enum<CritterFrameId>(stream, item_data->armor.femaleFid) == -1) return -1;
 
         return 0;
     case ITEM_TYPE_CONTAINER:

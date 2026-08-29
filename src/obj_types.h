@@ -304,6 +304,26 @@ enum SkillDexFrameId : int {
     SKILLDEX_FRM_ID_173 = 173,
 };
 
+enum CritterFrameId : int {
+    CRITTER_FRM_ID_INVALID = -1,
+    CRITTER_FRM_ID_FIRST = 0,
+    CRITTER_FRM_ID_1 = 1,
+};
+
+inline constexpr CritterFrameId operator-(CritterFrameId lhs, int rhs) {
+    return static_cast<CritterFrameId>(static_cast<int>(lhs) - rhs);
+}
+
+inline CritterFrameId critterFrameIdFromFid(int fid)
+{
+    return static_cast<CritterFrameId>(fid & 0xFFF);
+}
+
+inline CritterFrameId critterFrameIdFromPid(int pid)
+{
+    return static_cast<CritterFrameId>(pid & 0xFFFFFF);
+}
+
 enum SceneryFrameId : int {
     SCENERY_FRM_ID_FIRST = 0,
 };

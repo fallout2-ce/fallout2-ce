@@ -602,7 +602,7 @@ int itemDropAll(Object* critter, int tile)
 {
     bool hasEquippedItems = false;
 
-    ObjectFrameId frmId = objectFrameIdFromFid(critter->fid);
+    CritterFrameId frmId = critterFrameIdFromFid(critter->fid);
 
     Inventory* inventory = &(critter->data.inventory);
     while (inventory->length > 0) {
@@ -641,7 +641,7 @@ int itemDropAll(Object* critter, int tile)
                         return -1;
                     }
 
-                    frmId = objectFrameIdFromFid(proto->fid);
+                    frmId = critterFrameIdFromFid(proto->fid);
                     adjustCritterStatsOnArmorChange(critter, item, nullptr);
                 }
             }
@@ -675,7 +675,7 @@ int itemDropAll(Object* critter, int tile)
 
     if (hasEquippedItems) {
         Rect updatedRect;
-        int fid = buildFid(OBJ_TYPE_CRITTER, frmId, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
+        int fid = buildFid(frmId, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
         objectSetFid(critter, fid, &updatedRect);
         if (animationTypeFromFid(critter->fid) == ANIM_STAND) {
             tileWindowRefreshRect(&updatedRect, gElevation);
@@ -2306,10 +2306,10 @@ Perk armorGetPerk(Object* armor)
 }
 
 // 0x479380
-ObjectFrameId armorGetMaleFid(Object* armor)
+CritterFrameId armorGetMaleFid(Object* armor)
 {
     if (armor == nullptr) {
-        return OBJECT_FRAME_ID_INVALID;
+        return CRITTER_FRM_ID_INVALID;
     }
 
     Proto* proto;
@@ -2319,10 +2319,10 @@ ObjectFrameId armorGetMaleFid(Object* armor)
 }
 
 // 0x4793A8
-ObjectFrameId armorGetFemaleFid(Object* armor)
+CritterFrameId armorGetFemaleFid(Object* armor)
 {
     if (armor == nullptr) {
-        return OBJECT_FRAME_ID_INVALID;
+        return CRITTER_FRM_ID_INVALID;
     }
 
     Proto* proto;

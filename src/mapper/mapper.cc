@@ -2764,7 +2764,7 @@ static void mapper_enter_play_mode(Object** pHlObj1)
 
     _proto_dude_init("premade\\blank.gcd");
 
-    gDude->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    gDude->fid = buildFid(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     _scr_game_init();
 
