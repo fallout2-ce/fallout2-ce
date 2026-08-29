@@ -1365,7 +1365,7 @@ void edit_mapper()
                             // create new highlight
                             update_high_obj_name(_screen_obj);
 
-                            int hfid = buildFid(INTF_FRM_ID_1);
+                            int hfid = FrmId(INTF_FRM_ID_1);
                             Object* hlObj;
                             if (objectCreateWithFidPid(&hlObj, hfid, -1) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
@@ -2605,7 +2605,7 @@ static int mapperPickTile(int* outOffset)
     } else {
         tileFid = tileFrameIdFromFid(packedTile);
     }
-    int artFid = buildFid(tileFid);
+    int artFid = FrmId(tileFid);
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;
@@ -2674,7 +2674,7 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    fid = buildFid(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
+    fid = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
     animationRegisterSetFid(obj, fid, 0);
 
     return reg_anim_end();
@@ -2764,7 +2764,7 @@ static void mapper_enter_play_mode(Object** pHlObj1)
 
     _proto_dude_init("premade\\blank.gcd");
 
-    gDude->fid = buildFid(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    gDude->fid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
 
     _scr_game_init();
 

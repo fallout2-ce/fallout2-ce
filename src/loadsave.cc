@@ -1665,7 +1665,7 @@ static int lsgWindowInit(int windowType)
     }
 
     for (int index = 0; index < LOAD_SAVE_FRM_COUNT; index++) {
-        int fid = buildFid(gLoadSaveFrmIds[index]);
+        int fid = FrmId(gLoadSaveFrmIds[index]);
         if (!_loadsaveFrmImages[index].lock(fid)) {
             while (--index >= 0) {
                 _loadsaveFrmImages[index].unlock();

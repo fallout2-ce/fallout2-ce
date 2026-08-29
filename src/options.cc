@@ -256,7 +256,7 @@ static int optionsWindowInit()
         }
 
         if (!loaded) {
-            int fid = buildFid(optionsWindowFrmIds[index]);
+            int fid = FrmId(optionsWindowFrmIds[index]);
             loaded = _optionsFrmImages[index].lock(fid);
         }
 
@@ -432,7 +432,7 @@ int showPause(bool preserveWorldState)
 
     FrmImage frmImages[PAUSE_WINDOW_FRM_COUNT];
     for (int index = 0; index < PAUSE_WINDOW_FRM_COUNT; index++) {
-        int fid = buildFid(pauseWindowFrmIds[index]);
+        int fid = FrmId(pauseWindowFrmIds[index]);
         if (!frmImages[index].lock(fid)) {
             debugPrint("\n** Error loading pause window graphics! **\n");
             return -1;

@@ -687,7 +687,7 @@ static bool inventoryBackgroundLoad(FrmImage& image, InterfaceFrameId col1FrmId,
     image.unlock();
 
     if (columns == 1) {
-        return image.lock(buildFid(col1FrmId));
+        return image.lock(FrmId(col1FrmId));
     }
 
     if (columns == 2) {
@@ -743,7 +743,7 @@ static ConstBuffer2D inventoryGetBackgroundBuffer(int inventoryWindowType, Inter
             windowGetHeight(gInventoryBarterBackgroundWindow) };
     }
 
-    if (fallbackImage.lock(buildFid(fallbackFrmId))) {
+    if (fallbackImage.lock(FrmId(fallbackFrmId))) {
         return fallbackImage.getBuffer();
     }
 
@@ -1249,7 +1249,7 @@ static int buildPartyDisplayFid()
         weaponAnimationCode = weaponGetAnimationCode(rightHandItem);
     }
 
-    return buildFid(partyBaseTarget, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
+    return FrmId(partyBaseTarget, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
 }
 
 static int getTargetDisplayFid()
@@ -1550,7 +1550,7 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
         }
     }
 
-    return buildFid(inventoryFid, anim, animationCode, rotation);
+    return FrmId(inventoryFid, anim, animationCode, rotation);
 }
 
 // inventory_msg_init
@@ -1777,7 +1777,7 @@ static bool _setup_inventory(int inventoryWindowType)
             blitBuffer2D(inventoryLootFrmImage.getBuffer(), destBuf);
         } else {
             FrmImage backgroundFrmImage;
-            if (backgroundFrmImage.lock(buildFid(windowDescription->frmId))) {
+            if (backgroundFrmImage.lock(FrmId(windowDescription->frmId))) {
                 blitBuffer2D(backgroundFrmImage.getBuffer(), destBuf);
             }
         }
@@ -1876,8 +1876,8 @@ static bool _setup_inventory(int inventoryWindowType)
         buttonCreateActionWithFrm(gInventoryWindow,
             doneButtonXY.first, doneButtonXY.second,
             -1, KEY_ESCAPE,
-            FrmId(buildFid(INTF_FRM_ID_8)),
-            FrmId(buildFid(INTF_FRM_ID_9)));
+            FrmId(INTF_FRM_ID_8),
+            FrmId(INTF_FRM_ID_9));
     }
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
@@ -1885,15 +1885,15 @@ static bool _setup_inventory(int inventoryWindowType)
         buttonCreateActionWithFrm(gInventoryWindow,
             109, 56,
             KEY_ARROW_UP, -1,
-            FrmId(buildFid(INTF_FRM_ID_100)),
-            FrmId(buildFid(INTF_FRM_ID_101)));
+            FrmId(INTF_FRM_ID_100),
+            FrmId(INTF_FRM_ID_101));
 
         // Right inventory up button.
         buttonCreateActionWithFrm(gInventoryWindow,
             342, 56,
             KEY_CTRL_ARROW_UP, -1,
-            FrmId(buildFid(INTF_FRM_ID_100)),
-            FrmId(buildFid(INTF_FRM_ID_101)));
+            FrmId(INTF_FRM_ID_100),
+            FrmId(INTF_FRM_ID_101));
     } else {
         int scrollUpX = isNormalWindow                          ? inventoryLayout.scrollButtonX
             : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.leftScrollButtonX
@@ -1902,13 +1902,13 @@ static bool _setup_inventory(int inventoryWindowType)
         gInventoryScrollUpButton = buttonCreateActionWithFrm(gInventoryWindow,
             scrollUpX, 39,
             KEY_ARROW_UP, -1,
-            FrmId(buildFid(INTF_FRM_ID_49)),
-            FrmId(buildFid(INTF_FRM_ID_50)));
+            FrmId(INTF_FRM_ID_49),
+            FrmId(INTF_FRM_ID_50));
         if (gInventoryScrollUpButton != -1) {
             buttonSetDisabledFrm(gInventoryScrollUpButton,
-                FrmId(buildFid(INTF_FRM_ID_53)),
-                FrmId(buildFid(INTF_FRM_ID_53)),
-                FrmId(buildFid(INTF_FRM_ID_53)));
+                FrmId(INTF_FRM_ID_53),
+                FrmId(INTF_FRM_ID_53),
+                FrmId(INTF_FRM_ID_53));
             buttonDisable(gInventoryScrollUpButton);
         }
 
@@ -1917,13 +1917,13 @@ static bool _setup_inventory(int inventoryWindowType)
             gSecondaryInventoryScrollUpButton = buttonCreateActionWithFrm(gInventoryWindow,
                 inventoryLootLayout.rightScrollButtonX, 39,
                 KEY_CTRL_ARROW_UP, -1,
-                FrmId(buildFid(INTF_FRM_ID_49)),
-                FrmId(buildFid(INTF_FRM_ID_50)));
+                FrmId(INTF_FRM_ID_49),
+                FrmId(INTF_FRM_ID_50));
             if (gSecondaryInventoryScrollUpButton != -1) {
                 buttonSetDisabledFrm(gSecondaryInventoryScrollUpButton,
-                    FrmId(buildFid(INTF_FRM_ID_53)),
-                    FrmId(buildFid(INTF_FRM_ID_53)),
-                    FrmId(buildFid(INTF_FRM_ID_53)));
+                    FrmId(INTF_FRM_ID_53),
+                    FrmId(INTF_FRM_ID_53),
+                    FrmId(INTF_FRM_ID_53));
                 buttonDisable(gSecondaryInventoryScrollUpButton);
             }
         }
@@ -1934,15 +1934,15 @@ static bool _setup_inventory(int inventoryWindowType)
         buttonCreateActionWithFrm(gInventoryWindow,
             109, 82,
             KEY_ARROW_DOWN, -1,
-            FrmId(buildFid(INTF_FRM_ID_93)),
-            FrmId(buildFid(INTF_FRM_ID_94)));
+            FrmId(INTF_FRM_ID_93),
+            FrmId(INTF_FRM_ID_94));
 
         // Right inventory down button
         buttonCreateActionWithFrm(gInventoryWindow,
             342, 82,
             KEY_CTRL_ARROW_DOWN, -1,
-            FrmId(buildFid(INTF_FRM_ID_93)),
-            FrmId(buildFid(INTF_FRM_ID_94)));
+            FrmId(INTF_FRM_ID_93),
+            FrmId(INTF_FRM_ID_94));
 
         // Invisible button representing left character.
         buttonCreateAction(gInventoryBarterBackgroundWindow,
@@ -1959,13 +1959,13 @@ static bool _setup_inventory(int inventoryWindowType)
         gInventoryScrollDownButton = buttonCreateActionWithFrm(gInventoryWindow,
             scrollDownX, 62,
             KEY_ARROW_DOWN, -1,
-            FrmId(buildFid(INTF_FRM_ID_51)),
-            FrmId(buildFid(INTF_FRM_ID_52)));
+            FrmId(INTF_FRM_ID_51),
+            FrmId(INTF_FRM_ID_52));
         if (gInventoryScrollDownButton != -1) {
             buttonSetDisabledFrm(gInventoryScrollDownButton,
-                FrmId(buildFid(INTF_FRM_ID_54)),
-                FrmId(buildFid(INTF_FRM_ID_54)),
-                FrmId(buildFid(INTF_FRM_ID_54)));
+                FrmId(INTF_FRM_ID_54),
+                FrmId(INTF_FRM_ID_54),
+                FrmId(INTF_FRM_ID_54));
             buttonDisable(gInventoryScrollDownButton);
         }
 
@@ -1979,10 +1979,10 @@ static bool _setup_inventory(int inventoryWindowType)
             gSecondaryInventoryScrollDownButton = buttonCreateActionWithFrm(gInventoryWindow,
                 inventoryLootLayout.rightScrollButtonX, 62,
                 KEY_CTRL_ARROW_DOWN, -1,
-                FrmId(buildFid(INTF_FRM_ID_51)), FrmId(buildFid(INTF_FRM_ID_52)));
+                FrmId(INTF_FRM_ID_51), FrmId(INTF_FRM_ID_52));
             if (gSecondaryInventoryScrollDownButton != -1) {
                 buttonSetDisabledFrm(gSecondaryInventoryScrollDownButton,
-                    FrmId(buildFid(INTF_FRM_ID_54)), FrmId(buildFid(INTF_FRM_ID_54)), FrmId(buildFid(INTF_FRM_ID_54)));
+                    FrmId(INTF_FRM_ID_54), FrmId(INTF_FRM_ID_54), FrmId(INTF_FRM_ID_54));
                 buttonDisable(gSecondaryInventoryScrollDownButton);
             }
 
@@ -2005,29 +2005,29 @@ static bool _setup_inventory(int inventoryWindowType)
                 // Take all button.
                 buttonCreateActionWithFrm(gInventoryWindow,
                     inventoryLootLayout.takeAllButtonX, 204, 2502, -1,
-                    FrmId(buildFid(INTF_FRM_ID_436)), FrmId(buildFid(INTF_FRM_ID_437)));
+                    FrmId(INTF_FRM_ID_436), FrmId(INTF_FRM_ID_437));
             }
         }
     } else {
         // Left offered inventory up button.
         buttonCreateActionWithFrm(gInventoryWindow,
             128, 113, KEY_PAGE_UP, -1,
-            FrmId(buildFid(INTF_FRM_ID_49)), FrmId(buildFid(INTF_FRM_ID_50)));
+            FrmId(INTF_FRM_ID_49), FrmId(INTF_FRM_ID_50));
 
         // Left offered inventory down button.
         buttonCreateActionWithFrm(gInventoryWindow,
             128, 136, KEY_PAGE_DOWN, -1,
-            FrmId(buildFid(INTF_FRM_ID_51)), FrmId(buildFid(INTF_FRM_ID_52)));
+            FrmId(INTF_FRM_ID_51), FrmId(INTF_FRM_ID_52));
 
         // Right offered inventory up button.
         buttonCreateActionWithFrm(gInventoryWindow,
             333, 113, KEY_CTRL_PAGE_UP, -1,
-            FrmId(buildFid(INTF_FRM_ID_49)), FrmId(buildFid(INTF_FRM_ID_50)));
+            FrmId(INTF_FRM_ID_49), FrmId(INTF_FRM_ID_50));
 
         // Right offered inventory down button.
         buttonCreateActionWithFrm(gInventoryWindow,
             333, 136, KEY_CTRL_PAGE_DOWN, -1,
-            FrmId(buildFid(INTF_FRM_ID_51)), FrmId(buildFid(INTF_FRM_ID_52)));
+            FrmId(INTF_FRM_ID_51), FrmId(INTF_FRM_ID_52));
     }
 
     gInventoryRightHandItem = nullptr;
@@ -2208,7 +2208,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
         pitch = INVENTORY_USE_ON_WINDOW_WIDTH;
 
         FrmImage backgroundFrmImage;
-        int backgroundFid = buildFid(INTF_FRM_ID_113);
+        int backgroundFid = FrmId(INTF_FRM_ID_113);
         if (backgroundFrmImage.lock(backgroundFid)) {
             // Clear scroll view background.
             blitBufferToBuffer(backgroundFrmImage.getData() + pitch * INVENTORY_SCROLLER_Y + INVENTORY_SCROLLER_X,
@@ -2528,7 +2528,7 @@ static void _display_body(int fid, int inventoryWindowType)
             rect.bottom = rect.top + INVENTORY_BODY_VIEW_HEIGHT - 1;
 
             FrmImage backgroundFrmImage;
-            int backgroundFid = buildFid(gGameDialogSpeakerIsPartyMember ? INTF_FRM_ID_420 : INTF_FRM_ID_111);
+            int backgroundFid = FrmId(gGameDialogSpeakerIsPartyMember ? INTF_FRM_ID_420 : INTF_FRM_ID_111);
             if (backgroundFrmImage.lock(backgroundFid)) {
                 blitBufferToBuffer(backgroundFrmImage.getData() + rect.top * 640 + rect.left,
                     INVENTORY_BODY_VIEW_WIDTH,
@@ -2633,7 +2633,7 @@ static int inventoryCommonInit()
     for (index = 0; index < INVENTORY_WINDOW_CURSOR_COUNT; index++) {
         InventoryCursorData* cursorData = &(gInventoryCursorData[index]);
 
-        int fid = buildFid(gInventoryWindowCursorFrmIds[index]);
+        int fid = FrmId(gInventoryWindowCursorFrmIds[index]);
         Art* frm = artLock(fid, &(cursorData->frmHandle));
         if (frm == nullptr) {
             break;
@@ -3380,7 +3380,7 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
         }
     }
 
-    gInventoryWindowDudeFid = buildFid(critter, ANIM_STAND, animationCode, ROTATION_NE);
+    gInventoryWindowDudeFid = FrmId(critter, ANIM_STAND, animationCode, ROTATION_NE);
     gInventoryWindowDudeRotationTimestamp = 0;
     _display_inventory(0, -1, inventoryWindowType);
     _display_body(target->fid, inventoryWindowType);
@@ -3860,7 +3860,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         if (critter == gDude) {
             if (!isoIsDisabled()) {
-                int fid = buildFid(baseFrmId, ANIM_STAND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                int fid = FrmId(baseFrmId, ANIM_STAND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 animationRegisterSetFid(critter, fid, 0);
             }
         } else {
@@ -3876,7 +3876,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         WeaponAnimation weaponAnimationCode = weaponGetAnimationCode(item);
         AnimationType hitModeAnimationCode = weaponGetAnimationForHitMode(item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
-        int fid = buildFid(critter, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
+        int fid = FrmId(critter, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
         if (!artExists(fid)) {
             debugPrint("\ninven_wield failed!  ERROR ERROR ERROR!");
             return -1;
@@ -3951,11 +3951,11 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
                 if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
                     animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
                 } else {
-                    int fid = buildFid(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+                    int fid = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
                     animationRegisterSetFid(critter, fid, -1);
                 }
             } else {
-                int fid = buildFid(critter, ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
+                int fid = FrmId(critter, ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
                 _dude_stand(critter, critter->rotation, fid);
             }
         }
@@ -4016,13 +4016,13 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
 
-            int fid = buildFid(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+            int fid = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
             animationRegisterSetFid(critter, fid, -1);
 
             return reg_anim_end();
         }
 
-        int fid = buildFid(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+        int fid = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
         _dude_stand(critter, critter->rotation, fid);
     }
 
@@ -4758,8 +4758,8 @@ int inventoryOpenLooting(Object* looter, Object* target)
         }
         int btn = buttonCreateWithFrm(gInventoryWindow,
             x, y, -1, -1, -1, keyCode,
-            FrmId(buildFid(gInventoryArrowFrmIds[upFrmId])),
-            FrmId(buildFid(gInventoryArrowFrmIds[downFrmId])));
+            FrmId(gInventoryArrowFrmIds[upFrmId]),
+            FrmId(gInventoryArrowFrmIds[downFrmId]));
         if (btn != -1) {
             buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
         }
@@ -5235,7 +5235,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                            targetObj->fid = buildFid(targetObj, animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1);
+                            targetObj->fid = FrmId(targetObj, animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1);
                         }
 
                         targetObj->flags &= ~OBJECT_EQUIPPED;
@@ -6196,7 +6196,7 @@ static void _draw_amount(int value, int inventoryWindowType)
 {
     // BIGNUM.frm
     FrmImage numbersFrmImage;
-    int numbersFid = buildFid(INTF_FRM_ID_170);
+    int numbersFid = FrmId(INTF_FRM_ID_170);
     if (!numbersFrmImage.lock(numbersFid)) {
         return;
     }
@@ -6425,7 +6425,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
     unsigned char* windowBuffer = windowGetBuffer(_mt_wid);
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(windowDescription->frmId);
+    int backgroundFid = FrmId(windowDescription->frmId);
     if (backgroundFrmImage.lock(backgroundFid)) {
         blitBufferToBuffer(backgroundFrmImage.getData(),
             windowDescription->width,
@@ -6453,7 +6453,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
         // Timer overlay
         FrmImage overlayFrmImage;
-        int overlayFid = buildFid(INTF_FRM_ID_306);
+        int overlayFid = FrmId(INTF_FRM_ID_306);
         if (overlayFrmImage.lock(overlayFid)) {
             blitBufferToBuffer(overlayFrmImage.getData(),
                 105, 81, 105,
@@ -6475,25 +6475,25 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
     // Plus button
     int btn = buttonCreateActionWithFrm(_mt_wid,
-        x, y, 6000, -1, FrmId(buildFid(INTF_FRM_ID_193)), FrmId(buildFid(INTF_FRM_ID_194)));
+        x, y, 6000, -1, FrmId(INTF_FRM_ID_193), FrmId(INTF_FRM_ID_194));
 
     // Minus button
     btn = buttonCreateActionWithFrm(_mt_wid,
-        x, y + 12, 7000, -1, FrmId(buildFid(INTF_FRM_ID_191)), FrmId(buildFid(INTF_FRM_ID_192)));
+        x, y + 12, 7000, -1, FrmId(INTF_FRM_ID_191), FrmId(INTF_FRM_ID_192));
 
     // Done
     btn = buttonCreateActionWithFrm(_mt_wid,
-        98, 128, -1, 500, FrmId(buildFid(INTF_FRM_ID_8)), FrmId(buildFid(INTF_FRM_ID_9)));
+        98, 128, -1, 500, FrmId(INTF_FRM_ID_8), FrmId(INTF_FRM_ID_9));
 
     // Cancel
     btn = buttonCreateActionWithFrm(_mt_wid,
-        148, 128, -1, KEY_ESCAPE, FrmId(buildFid(INTF_FRM_ID_8)), FrmId(buildFid(INTF_FRM_ID_9)));
+        148, 128, -1, KEY_ESCAPE, FrmId(INTF_FRM_ID_8), FrmId(INTF_FRM_ID_9));
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
-        fid = buildFid(INTF_FRM_ID_307);
+        fid = FrmId(INTF_FRM_ID_307);
         _moveFrmImages[6].lock(fid);
 
-        fid = buildFid(INTF_FRM_ID_308);
+        fid = FrmId(INTF_FRM_ID_308);
         _moveFrmImages[7].lock(fid);
 
         if (_moveFrmImages[6].isLocked() && _moveFrmImages[7].isLocked()) {

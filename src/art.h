@@ -73,67 +73,6 @@ CritterFrameId _art_alias_num(CritterFrameId index);
 int artCritterFidShouldRun(int fid);
 int artAliasFid(int fid);
 int buildFid(ObjectType objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
-
-inline int buildFid(MiscFrameId misc, AnimationType animType = ANIM_STAND)
-{
-    return buildFid(OBJ_TYPE_MISC, misc);
-}
-
-inline int buildFid(SceneryFrameId scenery)
-{
-    return buildFid(OBJ_TYPE_SCENERY, scenery);
-}
-
-inline int buildFid(WallFrameId wall)
-{
-    return buildFid(OBJ_TYPE_WALL, wall);
-}
-
-inline int buildFid(ItemFrameId item)
-{
-    return buildFid(OBJ_TYPE_ITEM, item);
-}
-
-inline int buildFid(TileFrameId tile)
-{
-    return buildFid(OBJ_TYPE_TILE, tile);
-}
-
-inline int buildFid(SkillDexFrameId skilldex)
-{
-    return buildFid(OBJ_TYPE_SKILLDEX, skilldex);
-}
-
-inline int buildFid(InterfaceFrameId interface)
-{
-    return buildFid(OBJ_TYPE_INTERFACE, interface);
-}
-
-inline int buildFid(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
-{
-    return buildFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation);
-}
-
-inline int buildFid(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
-{
-    if (object == nullptr)
-    {
-        return -1;        
-    }
-
-    return buildFid(objectTypeFromFid(object->fid), objectFrameIdFromFid(object->fid), animType, weaponAnimation, rotation);
-}
-
-inline int buildFid(Head head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
-{
-    return buildFid(OBJ_TYPE_HEAD, head, headAnimation, fidget);
-}
-
-inline int buildFid(Background background)
-{
-    return buildFid(OBJ_TYPE_BACKGROUND, background);
-}
-
 int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);
@@ -147,10 +86,73 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 class FrmId {
 public:
     FrmId() = default;
-    explicit FrmId(int fid)
-        : _fid(fid)
+
+    explicit FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
+        : _objectType(OBJ_TYPE_MISC)
+        , _fid(buildFid(OBJ_TYPE_MISC, misc, animType))
     {
     }
+
+    explicit FrmId(SceneryFrameId scenery)
+        : _objectType(OBJ_TYPE_SCENERY)
+        , _fid(buildFid(OBJ_TYPE_SCENERY, scenery))
+    {
+    }
+
+    explicit FrmId(WallFrameId wall)
+        : _objectType(OBJ_TYPE_WALL)
+        , _fid(buildFid(OBJ_TYPE_WALL, wall))
+    {
+    }
+
+    explicit FrmId(ItemFrameId item)
+        : _objectType(OBJ_TYPE_ITEM)
+        , _fid(buildFid(OBJ_TYPE_ITEM, item))
+    {
+    }
+
+    explicit FrmId(TileFrameId tile)
+        : _objectType(OBJ_TYPE_TILE)
+        , _fid(buildFid(OBJ_TYPE_TILE, tile))
+    {
+    }
+
+    explicit FrmId(SkillDexFrameId skilldex)
+        : _objectType(OBJ_TYPE_SKILLDEX)
+        , _fid(buildFid(OBJ_TYPE_SKILLDEX, skilldex))
+    {
+    }
+
+    explicit FrmId(InterfaceFrameId interface)
+        : _objectType(OBJ_TYPE_INTERFACE)
+        , _fid(buildFid(OBJ_TYPE_INTERFACE, interface))
+    {
+    }
+
+    explicit FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+        : _objectType(OBJ_TYPE_CRITTER)
+        , _fid(buildFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation))
+    {
+    }
+
+    explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+        : _objectType(objectTypeFromFid(object->fid))
+        , _fid(object == nullptr ? -1 : buildFid(objectTypeFromFid(object->fid), objectFrameIdFromFid(object->fid), animType, weaponAnimation, rotation))
+    {
+    }
+
+    explicit FrmId(Head head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
+        : _objectType(OBJ_TYPE_HEAD)
+        , _fid(buildFid(OBJ_TYPE_HEAD, head, headAnimation, fidget))
+    {
+    }
+
+    explicit FrmId(Background background)
+        : _objectType(OBJ_TYPE_BACKGROUND)
+        , _fid(buildFid(OBJ_TYPE_BACKGROUND, background))
+    {
+    }
+
     explicit FrmId(ObjectType objType, const char* path);
     explicit FrmId(const char* path);
 
@@ -161,9 +163,13 @@ public:
 
     bool empty() const { return _fid == -1 && _path == nullptr; }
 
+    operator int() const {
+        return _fid; 
+    }
+
 private:
     int _fid = -1;
-    int _objectType = -1;
+    ObjectType _objectType = OBJ_TYPE_INVALID;
     const char* _path = nullptr;
 };
 

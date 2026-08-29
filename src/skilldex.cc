@@ -175,7 +175,7 @@ static int skilldexWindowInit()
 
     int frmIndex;
     for (frmIndex = 0; frmIndex < SKILLDEX_FRM_COUNT; frmIndex++) {
-        int fid = buildFid(gSkilldexFrmIds[frmIndex]);
+        int fid = FrmId(gSkilldexFrmIds[frmIndex]);
         if (!_skilldexFrmImages[frmIndex].lock(fid)) {
             break;
         }

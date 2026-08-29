@@ -1356,7 +1356,7 @@ static int characterEditorWindowInit()
     }
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
-    fid = buildFid(gCharacterEditorIsCreationMode ? INTF_FRM_ID_169 : INTF_FRM_ID_177);
+    fid = FrmId(gCharacterEditorIsCreationMode ? INTF_FRM_ID_169 : INTF_FRM_ID_177);
     if (!_editorBackgroundFrmImage.lock(fid)) {
         characterEditorMessageListReset();
         characterEditorWindowRestoreState();
@@ -1388,7 +1388,7 @@ static int characterEditorWindowInit()
     soundContinueAll();
 
     for (i = 0; i < EDITOR_GRAPHIC_COUNT; i++) {
-        fid = buildFid(gCharacterEditorFrmIds[i]);
+        fid = FrmId(gCharacterEditorFrmIds[i]);
         if (!_editorFrmImages[i].lock(fid)) {
             break;
         }
@@ -5043,7 +5043,7 @@ static char* _itostndn(int value, char* dest)
 static int characterEditorDrawCardWithOptions(SkillDexFrameId graphicId, const char* name, const char* attributes, char* description)
 {
     FrmImage frmImage;
-    int fid = buildFid(graphicId);
+    int fid = FrmId(graphicId);
     if (!frmImage.lock(fid)) {
         return -1;
     }
@@ -6138,7 +6138,7 @@ static int perkDialogShow()
         previousPerkRanks[perk] = perkGetRank(gDude, perk);
     }
 
-    int backgroundFid = buildFid(INTF_FRM_ID_86);
+    int backgroundFid = FrmId(INTF_FRM_ID_86);
     if (!_perkDialogBackgroundFrmImage.lock(backgroundFid)) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
@@ -7010,7 +7010,7 @@ static int perkDialogOptionCompare(const void* a1, const void* a2)
 static int perkDialogDrawCard(SkillDexFrameId frmId, const char* name, const char* rank, char* description)
 {
     FrmImage frmImage;
-    int fid = buildFid(frmId);
+    int fid = FrmId(frmId);
     if (!frmImage.lock(fid)) {
         return -1;
     }

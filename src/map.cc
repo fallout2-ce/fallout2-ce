@@ -1061,7 +1061,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        int fid = buildFid(MISC_FRM_ID_12);
+        int fid = FrmId(MISC_FRM_ID_12);
         objectCreateWithFidPid(&object, fid, -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
@@ -1480,13 +1480,13 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             int fid;
 
-            fid = buildFid(tileFrameIdFromFid(_square[elevation]->fid[tile]));
-            if (fid != buildFid(TILE_FRM_ID_1)) {
+            fid = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile]));
+            if (fid != FrmId(TILE_FRM_ID_1)) {
                 break;
             }
 
-            fid = buildFid(tileFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
-            if (fid != buildFid(TILE_FRM_ID_1)) {
+            fid = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
+            if (fid != FrmId(TILE_FRM_ID_1)) {
                 break;
             }
         }
@@ -1794,7 +1794,7 @@ static void _map_place_dude_and_mouse()
     if (gDude != nullptr) {
         if (animationTypeFromFid(gDude->fid) != ANIM_STAND) {
             objectSetFrame(gDude, 0, nullptr);
-            gDude->fid = buildFid(gDude, ANIM_STAND, weaponAnimationFromFid(gDude->fid), gDude->rotation + 1);
+            gDude->fid = FrmId(gDude, ANIM_STAND, weaponAnimationFromFid(gDude->fid), gDude->rotation + 1);
         }
 
         if (gDude->tile == -1) {
@@ -1834,11 +1834,11 @@ static void _square_reset()
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = ((tileFrameIdFromFid(buildFid(TILE_FRM_ID_1)) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = ((tileFrameIdFromFid(FrmId(TILE_FRM_ID_1)) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = tileFrameIdFromFid(buildFid(TILE_FRM_ID_1)) | tileFlags;
+                int updatedLowerTile = tileFrameIdFromFid(FrmId(TILE_FRM_ID_1)) | tileFlags;
 
                 fid &= ~0xFFFF;
 

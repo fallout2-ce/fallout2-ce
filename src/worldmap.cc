@@ -1153,7 +1153,7 @@ int wmWorldMap_init()
     // initialize it.
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        citySizeDescription->fid = buildFid(INTF_FRM_ID_336 + citySize);
+        citySizeDescription->fid = FrmId(INTF_FRM_ID_336 + citySize);
     }
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_WORLDMAP, &wmMsgFile);
@@ -1705,7 +1705,7 @@ static int wmConfigInit()
             // NOTE: Uninline.
             wmTileSlotInit(tile);
 
-            tile->fid = buildFid(artIndex);
+            tile->fid = FrmId(artIndex);
 
             int encounterDifficulty;
             if (configGetInt(config.get(), section, "encounter_difficulty", &encounterDifficulty)) {
@@ -2807,7 +2807,7 @@ static int wmAreaInit()
 
             int fid = -1;
             if (frmId != INTF_FRM_ID_INVALID) {
-                fid = buildFid(frmId);
+                fid = FrmId(frmId);
             }
 
             city->mapFid = fid;
@@ -2816,7 +2816,7 @@ static int wmAreaInit()
 
             if (configGetEnum<InterfaceFrameId>(cfg.get(), section, "townmap_label_art_idx", &frmId)) {
                 if (frmId != INTF_FRM_ID_INVALID) {
-                    fid = buildFid(frmId);
+                    fid = FrmId(frmId);
                 }
 
                 city->labelFid = fid;
@@ -5006,7 +5006,7 @@ static int wmInterfaceInit()
         return -1;
     }
 
-    fid = buildFid(INTF_FRM_ID_136);
+    fid = FrmId(INTF_FRM_ID_136);
     if (!_backgroundFrmImage.lock(fid)) {
         return -1;
     }
@@ -5037,31 +5037,31 @@ static int wmInterfaceInit()
     }
 
     // hotspot1.frm - town map selector shape #1
-    fid = buildFid(INTF_FRM_ID_168);
+    fid = FrmId(INTF_FRM_ID_168);
     if (!wmGenData.hotspotNormalFrmImage.lock(fid)) {
         return -1;
     }
 
     // hotspot2.frm - town map selector shape #2
-    fid = buildFid(INTF_FRM_ID_223);
+    fid = FrmId(INTF_FRM_ID_223);
     if (!wmGenData.hotspotPressedFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmaptarg.frm - world map move target maker #1
-    fid = buildFid(INTF_FRM_ID_139);
+    fid = FrmId(INTF_FRM_ID_139);
     if (!wmGenData.destinationMarkerFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmaploc.frm - world map location marker
-    fid = buildFid(INTF_FRM_ID_138);
+    fid = FrmId(INTF_FRM_ID_138);
     if (!wmGenData.locationMarkerFrmImage.lock(fid)) {
         return -1;
     }
 
     for (int index = 0; index < WORLD_MAP_ENCOUNTER_FRM_COUNT; index++) {
-        fid = buildFid(wmRndCursorFids[index]);
+        fid = FrmId(wmRndCursorFids[index]);
         if (!wmGenData.encounterCursorFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -5072,19 +5072,19 @@ static int wmInterfaceInit()
     }
 
     // wmtabs.frm - worldmap town tabs underlay
-    fid = buildFid(INTF_FRM_ID_364);
+    fid = FrmId(INTF_FRM_ID_364);
     if (!wmGenData.tabsBackgroundFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmtbedge.frm - worldmap town tabs edging overlay
-    fid = buildFid(INTF_FRM_ID_367);
+    fid = FrmId(INTF_FRM_ID_367);
     if (!wmGenData.tabsBorderFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmdial.frm - worldmap night/day dial
-    fid = buildFid(INTF_FRM_ID_365);
+    fid = FrmId(INTF_FRM_ID_365);
     wmGenData.dialFrm = artLock(fid, &(wmGenData.dialFrmHandle));
     if (wmGenData.dialFrm == nullptr) {
         return -1;
@@ -5094,33 +5094,33 @@ static int wmInterfaceInit()
     wmGenData.dialFrmHeight = artGetHeight(wmGenData.dialFrm);
 
     // wmscreen - worldmap overlay screen
-    fid = buildFid(INTF_FRM_ID_363);
+    fid = FrmId(INTF_FRM_ID_363);
     if (!wmGenData.carOverlayFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmglobe.frm - worldmap globe stamp overlay
-    fid = buildFid(INTF_FRM_ID_366);
+    fid = FrmId(INTF_FRM_ID_366);
     if (!wmGenData.globeOverlayFrmImage.lock(fid)) {
         return -1;
     }
 
     // lilredup.frm - little red button up
-    fid = buildFid(INTF_FRM_ID_8);
+    fid = FrmId(INTF_FRM_ID_8);
     wmGenData.redButtonNormalFrmImage.lock(fid);
 
     // lilreddn.frm - little red button down
-    fid = buildFid(INTF_FRM_ID_9);
+    fid = FrmId(INTF_FRM_ID_9);
     wmGenData.redButtonPressedFrmImage.lock(fid);
 
     // months.frm - month strings for pip boy
-    fid = buildFid(INTF_FRM_ID_129);
+    fid = FrmId(INTF_FRM_ID_129);
     if (!wmGenData.monthsFrmImage.lock(fid)) {
         return -1;
     }
 
     // numbers.frm - numbers for the hit points and fatigue counters
-    fid = buildFid(INTF_FRM_ID_82);
+    fid = FrmId(INTF_FRM_ID_82);
     if (!wmGenData.numbersFrmImage.lock(fid)) {
         return -1;
     }
@@ -5170,7 +5170,7 @@ static int wmInterfaceInit()
         // 200 - uparwon.frm - character editor
         // 199 - uparwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        fid = buildFid(INTF_FRM_ID_199 + index);
+        fid = FrmId(INTF_FRM_ID_199 + index);
         if (!wmGenData.scrollUpButtonFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -5180,7 +5180,7 @@ static int wmInterfaceInit()
         // 182 - dnarwon.frm - character editor
         // 181 - dnarwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        fid = buildFid(INTF_FRM_ID_181 + index);
+        fid = FrmId(INTF_FRM_ID_181 + index);
         if (!wmGenData.scrollDownButtonFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -6810,7 +6810,7 @@ static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, Cache
     }
 
     CacheEntry* handle = INVALID_CACHE_ENTRY;
-    int fid = buildFid(artIndex);
+    int fid = FrmId(artIndex);
     Art* art = artLock(fid, &handle);
     if (art == nullptr) {
         return false;

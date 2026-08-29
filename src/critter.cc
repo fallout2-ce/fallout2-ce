@@ -844,14 +844,14 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             if (current == ANIM_FALL_BACK) {
                 back = true;
             } else {
-                fid = buildFid(critter, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                fid = FrmId(critter, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 if (!artExists(fid)) {
                     back = true;
                 }
             }
 
             if (back) {
-                fid = buildFid(critter, ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                fid = FrmId(critter, ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             }
 
             shouldChangeFid = true;
@@ -866,12 +866,12 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             anim = LAST_SF_DEATH_ANIM;
         }
 
-        fid = buildFid(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+        fid = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
         _obj_fix_violence_settings(&fid);
         if (!artExists(fid)) {
             debugPrint("\nError: Critter Kill: Can't match fid!");
 
-            fid = buildFid(critter, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            fid = FrmId(critter, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             _obj_fix_violence_settings(&fid);
         }
 
@@ -1046,7 +1046,7 @@ bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
     Rotation rotation = critter->rotation + 1;
     WeaponAnimation animationCode = weaponGetAnimationCode(weapon);
     AnimationType weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
-    int fid = buildFid(critter, weaponAnimationCode, animationCode, rotation);
+    int fid = FrmId(critter, weaponAnimationCode, animationCode, rotation);
     return artExists(fid);
 }
 
@@ -1380,7 +1380,7 @@ int knockoutClear(Object* obj, void* data)
 
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
 
-    int fid = buildFid(obj, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    int fid = FrmId(obj, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
     objectSetFid(obj, fid, nullptr);
 
     return 0;
