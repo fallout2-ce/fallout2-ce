@@ -252,7 +252,7 @@ AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, 
     }
 
     bool hasBloodyMess = false;
-    if (attacker == gDude && traitIsSelected(TRAIT_BLOODY_MESS)) {
+    if (attacker == gDude && traitIsSelectedAndActive(TRAIT_BLOODY_MESS)) {
         hasBloodyMess = true;
     }
 

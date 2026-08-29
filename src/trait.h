@@ -19,6 +19,7 @@ char* traitGetName(Trait trait);
 char* traitGetDescription(Trait trait);
 int traitGetFrmId(Trait trait);
 bool traitIsSelected(Trait trait);
+bool traitIsSelectedAndActive(Trait trait);
 int traitGetStatModifier(Stat stat);
 int traitGetSkillModifier(Skill skill);
 
