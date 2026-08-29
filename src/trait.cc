@@ -61,23 +61,23 @@ static TraitDescription traitDescriptions[TRAIT_COUNT] = {
     { nullptr, nullptr, SKILLDEX_FRM_ID_70 },
 };
 
-static const int defaultTraitFrmIds[TRAIT_COUNT] = {
-    55,
-    56,
-    57,
-    58,
-    59,
-    60,
-    61,
-    62,
-    63,
-    64,
-    65,
-    66,
-    67,
-    94,
-    69,
-    70,
+static const SkillDexFrameId defaultTraitFrmIds[TRAIT_COUNT] = {
+    SKILLDEX_FRM_ID_55,
+    SKILLDEX_FRM_ID_56,
+    SKILLDEX_FRM_ID_57,
+    SKILLDEX_FRM_ID_58,
+    SKILLDEX_FRM_ID_59,
+    SKILLDEX_FRM_ID_60,
+    SKILLDEX_FRM_ID_61,
+    SKILLDEX_FRM_ID_62,
+    SKILLDEX_FRM_ID_63,
+    SKILLDEX_FRM_ID_64,
+    SKILLDEX_FRM_ID_65,
+    SKILLDEX_FRM_ID_66,
+    SKILLDEX_FRM_ID_67,
+    SKILLDEX_FRM_ID_94,
+    SKILLDEX_FRM_ID_69,
+    SKILLDEX_FRM_ID_70,
 };
 
 static bool traitOverridesEnabled = false;
@@ -257,8 +257,8 @@ static void traitsLoadSfallConfig()
             traitDescriptions[trait].description = traitOverrideDescriptions[trait].data();
         }
 
-        int image = 0;
-        if (configGetInt(config.get(), sectionKey, "Image", &image)) {
+        SkillDexFrameId image = SKILLDEX_FRM_ID_0;
+        if (configGetEnum<SkillDexFrameId>(config.get(), sectionKey, "Image", &image)) {
             traitDescriptions[trait].frmId = image;
         }
 
