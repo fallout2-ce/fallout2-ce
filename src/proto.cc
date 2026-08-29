@@ -377,7 +377,7 @@ int proto_item_init(Proto* proto, int pid)
     proto->item.messageId = 100 * protoNum;
     proto->item.fid = buildFid(OBJ_TYPE_ITEM, protoNum - 1);
     if (!artExists(proto->item.fid)) {
-        proto->item.fid = buildFid(OBJ_TYPE_ITEM, static_cast<ObjectFrameId>(0));
+        proto->item.fid = buildFid(OBJ_TYPE_ITEM, OBJECT_FRAME_ID_FIRST);
     }
     proto->item.lightDistance = 0;
     proto->item.lightIntensity = 0;
@@ -502,7 +502,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.aiPacket = 1;
     proto->critter.team = 0;
     if (!artExists(proto->fid)) {
-        proto->fid = buildFid(OBJ_TYPE_CRITTER, static_cast<ObjectFrameId>(0), ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+        proto->fid = buildFid(OBJ_TYPE_CRITTER, OBJECT_FRAME_ID_FIRST, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
     }
 
     CritterProtoData* data = &(proto->critter.data);
@@ -957,7 +957,7 @@ int proto_scenery_init(Proto* proto, int pid)
     proto->scenery.messageId = 100 * num;
     proto->scenery.fid = buildFid(OBJ_TYPE_SCENERY, num - 1);
     if (!artExists(proto->scenery.fid)) {
-        proto->scenery.fid = buildFid(OBJ_TYPE_SCENERY, static_cast<ObjectFrameId>(0));
+        proto->scenery.fid = buildFid(OBJ_TYPE_SCENERY, OBJECT_FRAME_ID_FIRST);
     }
     proto->scenery.lightDistance = 0;
     proto->scenery.lightIntensity = 0;
@@ -1014,7 +1014,7 @@ int proto_wall_init(Proto* proto, int pid)
     proto->wall.messageId = 100 * num;
     proto->wall.fid = buildFid(OBJ_TYPE_WALL, num - 1);
     if (!artExists(proto->wall.fid)) {
-        proto->wall.fid = buildFid(OBJ_TYPE_WALL, static_cast<ObjectFrameId>(0));
+        proto->wall.fid = buildFid(OBJ_TYPE_WALL, OBJECT_FRAME_ID_FIRST);
     }
     proto->wall.lightDistance = 0;
     proto->wall.lightIntensity = 0;
@@ -1035,7 +1035,7 @@ int proto_tile_init(Proto* proto, int pid)
     proto->tile.messageId = 100 * num;
     proto->tile.fid = buildFid(OBJ_TYPE_TILE, num - 1);
     if (!artExists(proto->tile.fid)) {
-        proto->tile.fid = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(0));
+        proto->tile.fid = buildFid(OBJ_TYPE_TILE, OBJECT_FRAME_ID_FIRST);
     }
     proto->tile.flags = PROTO_FLAG_NONE;
     proto->tile.extendedFlags = PROTO_EXT_FLAG_LOOK;
@@ -1054,7 +1054,7 @@ int proto_misc_init(Proto* proto, int pid)
     proto->misc.messageId = 100 * num;
     proto->misc.fid = buildFid(OBJ_TYPE_MISC, num - 1);
     if (!artExists(proto->misc.fid)) {
-        proto->misc.fid = buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(0));
+        proto->misc.fid = buildFid(OBJ_TYPE_MISC, OBJECT_FRAME_ID_FIRST);
     }
     proto->misc.lightDistance = 0;
     proto->misc.lightIntensity = 0;
