@@ -1250,7 +1250,7 @@ static int buildPartyDisplayFid()
         weaponAnimationCode = weaponGetAnimationCode(rightHandItem);
     }
 
-    return buildFid(objectTypeFromFid(partyBaseTarget->fid), partyBaseTarget->fid & 0xFFF, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
+    return buildFid(objectTypeFromFid(partyBaseTarget->fid), objectFrameIdFromFid(partyBaseTarget->fid), ANIM_STAND, weaponAnimationCode, ROTATION_NE);
 }
 
 static int getTargetDisplayFid()
@@ -1524,7 +1524,7 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
 
     int inventoryFid = _art_vault_guy_num;
     if (protoGetProto(basePid, &proto) != -1) {
-        inventoryFid = proto->fid & 0xFFF;
+        inventoryFid = objectFrameIdFromFid(proto->fid);
     }
 
     if (armor != nullptr) {
@@ -3381,7 +3381,7 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
         }
     }
 
-    gInventoryWindowDudeFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_STAND, animationCode, ROTATION_NE);
+    gInventoryWindowDudeFid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, animationCode, ROTATION_NE);
     gInventoryWindowDudeRotationTimestamp = 0;
     _display_inventory(0, -1, inventoryWindowType);
     _display_body(target->fid, inventoryWindowType);
@@ -3877,7 +3877,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         WeaponAnimation weaponAnimationCode = weaponGetAnimationCode(item);
         AnimationType hitModeAnimationCode = weaponGetAnimationForHitMode(item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
-        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
+        int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
         if (!artExists(fid)) {
             debugPrint("\ninven_wield failed!  ERROR ERROR ERROR!");
             return -1;
@@ -3952,11 +3952,11 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
                 if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
                     animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
                 } else {
-                    int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+                    int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
                     animationRegisterSetFid(critter, fid, -1);
                 }
             } else {
-                int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
+                int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
                 _dude_stand(critter, critter->rotation, fid);
             }
         }
@@ -4017,13 +4017,13 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
 
-            int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+            int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
             animationRegisterSetFid(critter, fid, -1);
 
             return reg_anim_end();
         }
 
-        int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+        int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
         _dude_stand(critter, critter->rotation, fid);
     }
 
@@ -5236,7 +5236,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                            targetObj->fid = buildFid(objectTypeFromFid(targetObj->fid), targetObj->fid & 0xFFF, animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1);
+                            targetObj->fid = buildFid(objectTypeFromFid(targetObj->fid), objectFrameIdFromFid(targetObj->fid), animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1);
                         }
 
                         targetObj->flags &= ~OBJECT_EQUIPPED;

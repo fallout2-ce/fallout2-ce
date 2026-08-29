@@ -1480,12 +1480,12 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             int fid;
 
-            fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[tile] & 0xFFF);
+            fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->field_0[tile]));
             if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
                 break;
             }
 
-            fid = buildFid(OBJ_TYPE_TILE, (_square[elevation]->field_0[tile] >> 16) & 0xFFF);
+            fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->field_0[tile] >> 16));
             if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
                 break;
             }
@@ -1794,7 +1794,7 @@ static void _map_place_dude_and_mouse()
     if (gDude != nullptr) {
         if (animationTypeFromFid(gDude->fid) != ANIM_STAND) {
             objectSetFrame(gDude, 0, nullptr);
-            gDude->fid = buildFid(OBJ_TYPE_CRITTER, gDude->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(gDude->fid), gDude->rotation + 1);
+            gDude->fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(gDude->fid), ANIM_STAND, weaponAnimationFromFid(gDude->fid), gDude->rotation + 1);
         }
 
         if (gDude->tile == -1) {
@@ -1834,11 +1834,11 @@ static void _square_reset()
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = (((buildFid(OBJ_TYPE_TILE, 1) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = ((objectFrameIdFromFid(buildFid(OBJ_TYPE_TILE, 1)) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1) & 0xFFF) | tileFlags;
+                int updatedLowerTile = objectFrameIdFromFid(buildFid(OBJ_TYPE_TILE, 1)) | tileFlags;
 
                 fid &= ~0xFFFF;
 
@@ -1875,7 +1875,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
                 upperTileFlags = (upperTileWord & 0xF000) >> 12;
                 upperTileFlags &= ~(0x01);
 
-                upperTileArtId = upperTileWord & 0xFFF;
+                upperTileArtId = objectFrameIdFromFid(upperTileWord);
                 lowerTileWord = arr[tile] & 0xFFFF;
                 arr[tile] = ((upperTileArtId | (upperTileFlags << 12)) << 16) | lowerTileWord;
             }

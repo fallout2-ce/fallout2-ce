@@ -3575,7 +3575,7 @@ void attackInit(Attack* attack, Object* attacker, Object* defender, HitMode hitM
 int _combat_attack(Object* attacker, Object* defender, HitMode hitMode, HitLocation hitLocation)
 {
     if (attacker != gDude && hitMode == HIT_MODE_PUNCH && randomBetween(1, 4) == 1) {
-        int fid = buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_KICK_LEG, weaponAnimationFromFid(attacker->fid), rotationFromFid(attacker->fid));
+        int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(attacker->fid), ANIM_KICK_LEG, weaponAnimationFromFid(attacker->fid), rotationFromFid(attacker->fid));
         if (artExists(fid)) {
             hitMode = HIT_MODE_KICK;
         }
@@ -5548,7 +5548,7 @@ static void _print_tohit(unsigned char* dest, int destPitch, int accuracy)
 static char* hitLocationGetName(Object* critter, HitLocation hitLocation)
 {
     MessageListItem messageListItem;
-    messageListItem.num = 1000 + 10 * _art_alias_num(critter->fid & 0xFFF) + hitLocation;
+    messageListItem.num = 1000 + 10 * _art_alias_num(objectFrameIdFromFid(critter->fid)) + hitLocation;
     if (messageListGetItem(&gCombatMessageList, &messageListItem)) {
         return messageListItem.text;
     }
@@ -5633,7 +5633,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
         CALLED_SHOT_WINDOW_WIDTH);
 
     FrmImage critterFrm;
-    int critterFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_CALLED_SHOT_PIC, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    int critterFid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_CALLED_SHOT_PIC, WEAPON_ANIMATION_NONE, ROTATION_NE);
     if (critterFrm.lock(critterFid)) {
         blitBufferToBuffer(critterFrm.getData(),
             170,

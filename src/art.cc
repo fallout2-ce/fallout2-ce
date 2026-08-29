@@ -16,6 +16,7 @@
 #include "draw.h"
 #include "game.h"
 #include "memory.h"
+#include "obj_types.h"
 #include "proto.h"
 #include "settings.h"
 
@@ -677,7 +678,7 @@ char* artBuildFilePath(int fid)
 
     *_art_name = '\0';
 
-    int frmId = baseFid & 0xFFF;
+    int frmId = objectFrameIdFromFid(baseFid);
     AnimationType animType = animationTypeFromFid(baseFid);
     WeaponAnimation weaponCode = weaponAnimationFromFid(baseFid);
     ObjectType objectType = objectTypeFromFid(baseFid);
@@ -967,7 +968,7 @@ int _art_alias_num(int index)
 int artCritterFidShouldRun(int fid)
 {
     if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
-        return gArtCritterFidShoudRunData[fid & 0xFFF];
+        return gArtCritterFidShoudRunData[objectFrameIdFromFid(fid)];
     }
 
     return 0;
@@ -992,7 +993,7 @@ int artAliasFid(int fid)
             // NOTE: Original code is slightly different. It uses many mutually
             // mirrored bitwise operators. Probably result of some macros for
             // getting/setting individual bits on fid.
-            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | (_anon_alias[fid & 0xFFF] & 0xFFF);
+            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | objectFrameIdFromFid(_anon_alias[objectFrameIdFromFid(fid)]);
         }
     }
 

@@ -1,5 +1,8 @@
 #ifndef ART_DEFS_H
 #define ART_DEFS_H
+
+#include "obj_types.h"
+
 namespace fallout {
 
 enum Head : int {
@@ -26,7 +29,7 @@ inline bool headIsValid(int head)
 
 inline Head headFromFid(int fid)
 {
-    int head = fid & 0xFFF;
+    int head = objectFrameIdFromFid(fid);
     return static_cast<Head>(head);
 }
 

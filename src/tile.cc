@@ -1316,7 +1316,7 @@ void tileRenderRoofsInRect(Rect* rect, int elevation)
             int frmId = gTileSquares[elevation]->field_0[squareTile];
             frmId >>= 16;
             if ((((frmId & 0xF000) >> 12) & 0x01) == 0) {
-                int fid = buildFid(OBJ_TYPE_TILE, frmId & 0xFFF);
+                int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(frmId));
                 if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
                     int screenX;
                     int screenY;
@@ -1345,7 +1345,7 @@ static void roof_fill_off_process_task(std::stack<roof_fill_task>& tasks_stack, 
     int squareTile = gTileSquares[elevation]->field_0[squareTileIndex];
     int roof = (squareTile >> 16) & 0xFFFF;
 
-    int id = roof & 0xFFF;
+    int id = objectFrameIdFromFid(roof);
     if (buildFid(OBJ_TYPE_TILE, id) != buildFid(OBJ_TYPE_TILE, 1)) {
         int flag = (roof & 0xF000) >> 12;
 
@@ -1530,7 +1530,7 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
                 int tileScreenX;
                 int tileScreenY;
                 squareTileToScreenXY(squareTile, &tileScreenX, &tileScreenY, elevation);
-                int fid = buildFid(OBJ_TYPE_TILE, frmId & 0xFFF);
+                int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(frmId));
                 tileRenderFloor(fid, tileScreenX, tileScreenY, rect);
             }
         }
@@ -1602,10 +1602,10 @@ bool _square_roof_intersect(int x, int y, int elevation)
     TileData* ptr = gTileSquares[elevation];
     int idx = gSquareGridWidth * tileY + tileX;
     int upper = ptr->field_0[gSquareGridWidth * tileY + tileX] >> 16;
-    int fid = buildFid(OBJ_TYPE_TILE, upper & 0xFFF);
+    int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(upper));
     if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
         if ((((upper & 0xF000) >> 12) & 1) == 0) {
-            int fid = buildFid(OBJ_TYPE_TILE, upper & 0xFFF);
+            int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(upper));
             CacheEntry* handle;
             Art* art = artLock(fid, &handle);
             if (art != nullptr) {

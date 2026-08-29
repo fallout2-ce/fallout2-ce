@@ -844,14 +844,14 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             if (current == ANIM_FALL_BACK) {
                 back = true;
             } else {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 if (!artExists(fid)) {
                     back = true;
                 }
             }
 
             if (back) {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             }
 
             shouldChangeFid = true;
@@ -866,12 +866,12 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             anim = LAST_SF_DEATH_ANIM;
         }
 
-        fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+        fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
         _obj_fix_violence_settings(&fid);
         if (!artExists(fid)) {
             debugPrint("\nError: Critter Kill: Can't match fid!");
 
-            fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             _obj_fix_violence_settings(&fid);
         }
 
@@ -1046,7 +1046,7 @@ bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
     Rotation rotation = critter->rotation + 1;
     WeaponAnimation animationCode = weaponGetAnimationCode(weapon);
     AnimationType weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
-    int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);
+    int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), weaponAnimationCode, animationCode, rotation);
     return artExists(fid);
 }
 
@@ -1056,7 +1056,7 @@ int critterBuildGorisFid(Object* critter, int frmId)
 
     // Goris needs the live critter FID preserved exactly as-is except for the
     // base FRM id swap between robe and claw body art.
-    return (critter->fid & ~0xFFF) | (frmId & 0xFFF);
+    return (critter->fid & ~0xFFF) | objectFrameIdFromFid(frmId);
 }
 
 // 0x42DE58 pc_load_data
@@ -1380,7 +1380,7 @@ int knockoutClear(Object* obj, void* data)
 
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
 
-    int fid = buildFid(objectTypeFromFid(obj->fid), obj->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    int fid = buildFid(objectTypeFromFid(obj->fid), objectFrameIdFromFid(obj->fid), ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
     objectSetFid(obj, fid, nullptr);
 
     return 0;

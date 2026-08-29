@@ -458,12 +458,12 @@ void placeTile(int pid, int fid)
         return;
     }
 
-    int newArt = fid & 0xFFF;
+    int newArt = objectFrameIdFromFid(fid);
     int* squarePtr = &_square[gElevation]->field_0[squareTile];
     int oldValue = *squarePtr;
 
     if (tileRoofIsVisible()) {
-        int oldRoofFid = buildFid(OBJ_TYPE_TILE, (oldValue >> 16) & 0xFFF);
+        int oldRoofFid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(oldValue >> 16));
         if (oldRoofFid == fid) {
             return;
         }
@@ -478,7 +478,7 @@ void placeTile(int pid, int fid)
         Rect rect = { sx, sy, sx + 80, sy + 36 };
         tileWindowRefreshRect(&rect, gElevation);
     } else {
-        int oldFloorFid = buildFid(OBJ_TYPE_TILE, oldValue & 0xFFF);
+        int oldFloorFid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(oldValue));
         if (oldFloorFid == fid) {
             return;
         }
@@ -885,7 +885,7 @@ void copyTile()
     int srcDx[kMaxTiles];
     int srcDy[kMaxTiles];
     for (int i = 0; i < srcCount; i++) {
-        int floorArt = _square[gElevation]->field_0[srcTiles[i]] & 0xFFF;
+        int floorArt = objectFrameIdFromFid(_square[gElevation]->field_0[srcTiles[i]]);
         srcFid[i] = buildFid(OBJ_TYPE_TILE, floorArt);
 
         int sx, sy;
@@ -905,7 +905,7 @@ void copyTile()
             if (dstSquare != -1) {
                 int* word = &_square[gElevation]->field_0[dstSquare];
                 int rotBits = (*word & 0xF000) >> 12;
-                int newFloor = (srcFid[i] & 0xFFF) | rotBits;
+                int newFloor = objectFrameIdFromFid(srcFid[i]) | rotBits;
                 *word = (*word & 0xFFFF0000) | (newFloor & 0xFFFF);
             }
         }
@@ -1215,8 +1215,8 @@ void mapper_shift_map_elev()
         int v = src[i];
         int floorRot = (v & 0xF000) >> 12;
         int roofRot = ((v >> 16) & 0xF000) >> 12;
-        int newRoofWord = (blankFid & 0xFFF) | roofRot;
-        int newFloorWord = (blankFid & 0xFFF) | floorRot;
+        int newRoofWord = objectFrameIdFromFid(blankFid) | roofRot;
+        int newFloorWord = objectFrameIdFromFid(blankFid) | floorRot;
         src[i] = (newRoofWord << 16) | (newFloorWord & 0xFFFF);
     }
 

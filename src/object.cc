@@ -458,8 +458,8 @@ int objectRead(Object* obj, File* stream)
 
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
-            if ((obj->fid & 0xFFF) < 33) {
-                obj->fid = buildFid(OBJ_TYPE_MISC, (obj->fid & 0xFFF) + 16, animationTypeFromFid(obj->fid));
+            if (objectFrameIdFromFid(obj->fid) < 33) {
+                obj->fid = buildFid(OBJ_TYPE_MISC, objectFrameIdFromFid(obj->fid) + 16, animationTypeFromFid(obj->fid));
             }
         }
     } else {
@@ -1470,7 +1470,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->field_0[roofX + 100 * roofY];
-            int currentSquareFid = buildFid(OBJ_TYPE_TILE, (currentSquare >> 16) & 0xFFF);
+            int currentSquareFid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(currentSquare >> 16));
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y]
@@ -1527,7 +1527,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    int fid = buildFid(OBJ_TYPE_TILE, (_square[gDude->elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16) & 0xFFF);
+    int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[gDude->elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
     if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
@@ -5183,7 +5183,7 @@ void _obj_fix_violence_settings(int* fid)
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
             : ANIM_FALL_FRONT_SF;
-        *fid = buildFid(OBJ_TYPE_CRITTER, *fid & 0xFFF, anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid));
+        *fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(*fid), anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid));
     }
 
     if (shouldResetViolenceLevel) {
@@ -5205,7 +5205,7 @@ static int _obj_preload_sort(const void* a1, const void* a2)
         return cmp;
     }
 
-    cmp = (v1 & 0xFFF) - (v2 & 0xFFF);
+    cmp = objectFrameIdFromFid(v1) - objectFrameIdFromFid(v2);
     if (cmp != 0) {
         return cmp;
     }

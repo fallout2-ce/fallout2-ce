@@ -2601,9 +2601,9 @@ static int mapperPickTile(int* outOffset)
     int packedTile = _square[gElevation]->field_0[tileNum];
     int tileFid;
     if (tileRoofIsVisible()) {
-        tileFid = (packedTile >> 16) & 0xFFF;
+        tileFid = objectFrameIdFromFid(packedTile >> 16);
     } else {
-        tileFid = packedTile & 0xFFF;
+        tileFid = objectFrameIdFromFid(packedTile);
     }
     int artFid = buildFid(OBJ_TYPE_TILE, tileFid);
 
@@ -2674,7 +2674,7 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
+    fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(obj->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
     animationRegisterSetFid(obj, fid, 0);
 
     return reg_anim_end();
