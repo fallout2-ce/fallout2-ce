@@ -5603,29 +5603,46 @@ static void wmMarkSubTileRadiusVisited(int x, int y)
     wmSubTileMarkRadiusVisited(x, y, radius);
 }
 
+static void wmSubTileMarkRadiusKnown(int x, int y, int radius)
+{
+    int tile = x / WM_TILE_WIDTH % wmNumHorizontalTiles + y / WM_TILE_HEIGHT * wmNumHorizontalTiles;
+    int subtileX = x % WM_TILE_WIDTH / WM_SUBTILE_SIZE;
+    int subtileY = y % WM_TILE_HEIGHT / WM_SUBTILE_SIZE;
+
+    for (int offsetY = -radius; offsetY <= radius; offsetY++) {
+        for (int offsetX = -radius; offsetX <= radius; offsetX++) {
+            // NOTE: Uninline.
+            wmMarkSubTileOffsetKnown(tile, subtileX, subtileY, offsetX, offsetY);
+        }
+    }
+}
+
 static void wmAreaGetMarkWorldPos(CityInfo* city, int* xPtr, int* yPtr)
 {
     assert(city != nullptr);
     assert(xPtr != nullptr);
     assert(yPtr != nullptr);
 
-    int x = city->x;
-    int y = city->y;
+    int markHalfWidth = WM_VIEW_X;
+    int markHalfHeight = WM_VIEW_Y;
 
     switch (city->size) {
     case CITY_SIZE_SMALL:
-        x -= 15;
-        y -= 15;
+        markHalfWidth = 7;
+        markHalfHeight = 6;
         break;
     case CITY_SIZE_MEDIUM:
-        x -= 10;
-        y -= 10;
+        markHalfWidth = 12;
+        markHalfHeight = 11;
         break;
     case CITY_SIZE_LARGE:
         break;
     default:
         break;
     }
+
+    int x = city->x + markHalfWidth - WM_VIEW_X;
+    int y = city->y + markHalfHeight - WM_VIEW_Y;
 
     *xPtr = std::max(x, 0);
     *yPtr = std::max(y, 0);
@@ -6465,7 +6482,7 @@ bool wmAreaMarkVisitedState(City areaIdx, VisitedState state)
         if (state == VisitedState::Visited) {
             wmMarkSubTileRadiusVisited(x, y);
         } else if (!noRadius) {
-            wmSubTileMarkRadiusVisited(x, y, 1);
+            wmSubTileMarkRadiusKnown(x, y, 1);
         }
     }
 
