@@ -2674,7 +2674,7 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(obj->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
+    fid = buildFid(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
     animationRegisterSetFid(obj, fid, 0);
 
     return reg_anim_end();

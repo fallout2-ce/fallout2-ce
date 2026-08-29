@@ -2369,7 +2369,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
         if (settings.preferences.violence_level < VIOLENCE_LEVEL_MAXIMUM_BLOOD) {
             useStandardDeath = true;
         } else {
-            int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            int fid = buildFid(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             if (!artExists(fid)) {
                 useStandardDeath = true;
             }
@@ -2379,7 +2379,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
             if (forceBack) {
                 anim = ANIM_FALL_BACK;
             } else {
-                int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                int fid = buildFid(critter, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 if (artExists(fid)) {
                     anim = ANIM_FALL_FRONT;
                 } else {
@@ -3439,7 +3439,7 @@ static void opAnim(Program* program)
         if (frame == 0) { // ANIMATE_FORWARD
             animationRegisterAnimate(obj, anim, 0);
             if (anim >= ANIM_FALL_BACK && anim <= ANIM_FALL_FRONT_BLOOD) {
-                int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(obj->fid), anim + 28, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                int fid = buildFid(obj, static_cast<AnimationType>(anim + 28), weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
                 animationRegisterSetFid(obj, fid, -1);
             }
 

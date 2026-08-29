@@ -651,7 +651,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
         scriptHooks_InvenWield(critter, item, slot, 0, 1);
         if (slot == InvenSlot::RightHand) {
             if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
-                fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
+                fid = buildFid(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
                 objectSetFid(critter, fid, &updatedRect);
                 appearanceUpdateType = 2;
             } else {
@@ -659,7 +659,7 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
             }
         } else if (slot == InvenSlot::LeftHand) {
             if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
-                fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
+                fid = buildFid(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
                 objectSetFid(critter, fid, &updatedRect);
                 appearanceUpdateType = 2;
             } else {

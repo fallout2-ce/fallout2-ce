@@ -3381,7 +3381,7 @@ static void inventorySetLeftPaneCritter(Object* critter, Object* target, int inv
         }
     }
 
-    gInventoryWindowDudeFid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, animationCode, ROTATION_NE);
+    gInventoryWindowDudeFid = buildFid(critter, ANIM_STAND, animationCode, ROTATION_NE);
     gInventoryWindowDudeRotationTimestamp = 0;
     _display_inventory(0, -1, inventoryWindowType);
     _display_body(target->fid, inventoryWindowType);
@@ -3877,7 +3877,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         WeaponAnimation weaponAnimationCode = weaponGetAnimationCode(item);
         AnimationType hitModeAnimationCode = weaponGetAnimationForHitMode(item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
-        int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
+        int fid = buildFid(critter, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
         if (!artExists(fid)) {
             debugPrint("\ninven_wield failed!  ERROR ERROR ERROR!");
             return -1;
@@ -3952,11 +3952,11 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
                 if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
                     animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
                 } else {
-                    int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+                    int fid = buildFid(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
                     animationRegisterSetFid(critter, fid, -1);
                 }
             } else {
-                int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
+                int fid = buildFid(critter, ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
                 _dude_stand(critter, critter->rotation, fid);
             }
         }
@@ -4017,13 +4017,13 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
 
-            int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+            int fid = buildFid(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
             animationRegisterSetFid(critter, fid, -1);
 
             return reg_anim_end();
         }
 
-        int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+        int fid = buildFid(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
         _dude_stand(critter, critter->rotation, fid);
     }
 

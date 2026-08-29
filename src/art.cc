@@ -1088,7 +1088,7 @@ static void artCacheFreeImpl(void* ptr)
     4 bits for weapon code
     12 bits for frame ID
 */
-static int buildFidInternal(ObjectFrameId frmId, unsigned char weaponCode, unsigned char animType, unsigned char objectType, unsigned char rotation)
+static int buildFidInternal(ObjectFrameId frmId, unsigned char weaponCode, unsigned char animType, ObjectType objectType, Rotation rotation)
 {
     return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponCode << 12) & 0xF000) | (frmId & 0xFFF);
 }

@@ -844,14 +844,14 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             if (current == ANIM_FALL_BACK) {
                 back = true;
             } else {
-                fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                fid = buildFid(critter, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 if (!artExists(fid)) {
                     back = true;
                 }
             }
 
             if (back) {
-                fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                fid = buildFid(critter, ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             }
 
             shouldChangeFid = true;
@@ -866,12 +866,12 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             anim = LAST_SF_DEATH_ANIM;
         }
 
-        fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+        fid = buildFid(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
         _obj_fix_violence_settings(&fid);
         if (!artExists(fid)) {
             debugPrint("\nError: Critter Kill: Can't match fid!");
 
-            fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            fid = buildFid(critter, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             _obj_fix_violence_settings(&fid);
         }
 
@@ -1046,7 +1046,7 @@ bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
     Rotation rotation = critter->rotation + 1;
     WeaponAnimation animationCode = weaponGetAnimationCode(weapon);
     AnimationType weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
-    int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(critter->fid), weaponAnimationCode, animationCode, rotation);
+    int fid = buildFid(critter, weaponAnimationCode, animationCode, rotation);
     return artExists(fid);
 }
 

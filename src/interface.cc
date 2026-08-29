@@ -1939,7 +1939,7 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation p
     if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
         animationRegisterTakeOutWeapon(gDude, weaponAnimationCode, -1);
     } else {
-        int fid = buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(gDude->fid), ANIM_STAND, WEAPON_ANIMATION_NONE, gDude->rotation + 1);
+        int fid = buildFid(gDude, ANIM_STAND, WEAPON_ANIMATION_NONE, gDude->rotation + 1);
         animationRegisterSetFid(gDude, fid, -1);
     }
 

@@ -1,6 +1,7 @@
 #ifndef ART_H
 #define ART_H
 
+#include <assert.h>
 #include <memory>
 
 #include "animation.h"
@@ -72,6 +73,18 @@ ObjectFrameId _art_alias_num(ObjectFrameId index);
 int artCritterFidShouldRun(int fid);
 int artAliasFid(int fid);
 int buildFid(ObjectType objectType, ObjectFrameId frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
+
+inline int buildFid(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+{
+    if (object == nullptr)
+    {
+        return -1;        
+    }
+
+    assert(objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER);
+
+    return buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(object->fid), animType, weaponAnimation, rotation);
+}
 
 inline int buildFid(Head head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
 {
