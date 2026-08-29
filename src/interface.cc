@@ -1853,9 +1853,10 @@ static int interfaceBarRefreshMainAction()
         memcpy(_itemButtonDown, _itemButtonDisabledFrmImage.getData(), sizeof(_itemButtonDown));
     }
 
-    if (itemState->itemFid != -1) {
+    FrmId itemFrmId = FrmId(itemState->itemFid);
+    if (!itemFrmId.empty()) {
         FrmImage itemFrmImage;
-        if (itemFrmImage.lock(itemState->itemFid)) {
+        if (itemFrmImage.lock(itemFrmId)) {
             int width = itemFrmImage.getWidth();
             int height = itemFrmImage.getHeight();
             unsigned char* data = itemFrmImage.getData();

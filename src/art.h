@@ -170,8 +170,6 @@ public:
     bool isLocked() const { return _key != nullptr || _namedKey; }
     bool lock(const FrmId& frmId);
     bool lock(const FrmId& frmId, int frame, Rotation rotation);
-    bool lock(unsigned int fid);
-    bool lock(unsigned int fid, int frame, Rotation rotation);
     bool lock(const char* frmPath);
     bool lock(const char* frmPath, int frame, Rotation rotation);
     bool lock(ObjectType objType, const char* frmRelativePath);
@@ -188,6 +186,7 @@ public:
     ConstBuffer2D getBuffer() const { return { _data, _width, _height }; };
 
 private:
+    bool lock(unsigned int fid, int frame = 0, Rotation rotation = ROTATION_NE);
     void resetInternal();
     bool setFrame(const Art* art, int frame, Rotation rotation);
 

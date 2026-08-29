@@ -1777,11 +1777,6 @@ bool FrmImage::lock(const FrmId& frmId, int frame, Rotation rotation)
     return false;
 }
 
-bool FrmImage::lock(unsigned int fid)
-{
-    return lock(fid, 0, ROTATION_NE);
-}
-
 bool FrmImage::lock(unsigned int fid, int frame, Rotation rotation)
 {
     if (isLocked()) {

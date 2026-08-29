@@ -5409,7 +5409,7 @@ static void _drag_item_loop(Object* item, bool immediate)
 
     FrmImage itemInventoryFrmImage;
     int itemInventoryFid = itemGetInventoryFid(item);
-    if (itemInventoryFrmImage.lock(itemInventoryFid)) {
+    if (itemInventoryFrmImage.lock(FrmId(itemInventoryFid))) {
         int width = itemInventoryFrmImage.getWidth();
         int height = itemInventoryFrmImage.getHeight();
         unsigned char* data = itemInventoryFrmImage.getData();

@@ -5029,7 +5029,7 @@ static int wmInterfaceInit()
 
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        if (!citySizeDescription->frmImage.lock(citySizeDescription->fid)) {
+        if (!citySizeDescription->frmImage.lock(FrmId(citySizeDescription->fid))) {
             return -1;
         }
     }
@@ -6639,7 +6639,7 @@ static int wmTownMapInit()
 
     CityInfo* city = &(wmAreaInfoList[wmGenData.currentAreaId]);
 
-    if (!_townFrmImage.lock(city->mapFid)) {
+    if (!_townFrmImage.lock(FrmId(city->mapFid))) {
         return -1;
     }
 
@@ -7105,8 +7105,9 @@ static int wmRefreshTabs()
 
     if (firstVisibleLabelIndex < wmLabelCount) {
         city = &(wmAreaInfoList[wmLabelList[firstVisibleLabelIndex]]);
-        if (city->labelFid != -1) {
-            if (!labelFrm.lock(city->labelFid)) {
+        FrmId cityLabelFrmId = FrmId(city->labelFid);
+        if (!cityLabelFrmId.empty()) {
+            if (!labelFrm.lock(cityLabelFrmId)) {
                 return -1;
             }
 
@@ -7135,8 +7136,9 @@ static int wmRefreshTabs()
     for (int labelIndex = firstVisibleLabelIndex + 1; labelIndex < lastLabelIndexToDraw; labelIndex++) {
         if (labelIndex < wmLabelCount) {
             city = &(wmAreaInfoList[wmLabelList[labelIndex]]);
-            if (city->labelFid != -1) {
-                if (!labelFrm.lock(city->labelFid)) {
+            FrmId cityLabelFrmId = FrmId(city->labelFid);
+            if (!cityLabelFrmId.empty()) {
+                if (!labelFrm.lock(cityLabelFrmId)) {
                     return -1;
                 }
 
@@ -7155,8 +7157,9 @@ static int wmRefreshTabs()
 
     if (lastLabelIndexToDraw < wmLabelCount) {
         city = &(wmAreaInfoList[wmLabelList[lastLabelIndexToDraw]]);
-        if (city->labelFid != -1) {
-            if (!labelFrm.lock(city->labelFid)) {
+        FrmId cityLabelFrmId = FrmId(city->labelFid);
+        if (!cityLabelFrmId.empty()) {
+            if (!labelFrm.lock(cityLabelFrmId)) {
                 return -1;
             }
 
@@ -7431,7 +7434,7 @@ int wmTeleportToArea(City areaIdx)
     // image might not be locked.
     bool wasLocked = citySizeDescription->frmImage.isLocked();
     if (!wasLocked) {
-        citySizeDescription->frmImage.lock(citySizeDescription->fid);
+        citySizeDescription->frmImage.lock(FrmId(citySizeDescription->fid));
     }
 
     wmGenData.worldPosX = city->x + citySizeDescription->frmImage.getWidth() / 2 - WM_VIEW_X;
