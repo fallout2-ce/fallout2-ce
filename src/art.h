@@ -79,9 +79,14 @@ inline int buildFid(MiscFrameId misc, AnimationType animType = ANIM_STAND)
     return buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(misc));
 }
 
-inline int buildFid(WallFrameId item)
+inline int buildFid(SceneryFrameId scenery)
 {
-    return buildFid(OBJ_TYPE_WALL, static_cast<ObjectFrameId>(item));
+    return buildFid(OBJ_TYPE_SCENERY, static_cast<ObjectFrameId>(scenery));
+}
+
+inline int buildFid(WallFrameId wall)
+{
+    return buildFid(OBJ_TYPE_WALL, static_cast<ObjectFrameId>(wall));
 }
 
 inline int buildFid(ItemFrameId item)

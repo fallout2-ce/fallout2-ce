@@ -304,6 +304,19 @@ enum SkillDexFrameId : int {
     SKILLDEX_FRM_ID_173 = 173,
 };
 
+enum SceneryFrameId : int {
+    SCENERY_FRM_ID_FIRST = 0,
+};
+
+inline constexpr SceneryFrameId operator-(SceneryFrameId lhs, int rhs) {
+    return static_cast<SceneryFrameId>(static_cast<int>(lhs) - rhs);
+}
+
+inline SceneryFrameId sceneryFrameIdFromPid(int pid)
+{
+    return static_cast<SceneryFrameId>(pid & 0xFFFFFF);
+}
+
 enum WallFrameId : int {
     WALL_FRM_ID_FIRST = 0,
 };
