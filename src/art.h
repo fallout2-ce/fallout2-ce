@@ -116,7 +116,6 @@ public:
         : _fid(fid)
     {
     }
-    explicit FrmId(ObjectType objType, ObjectFrameId frmId);
     explicit FrmId(ObjectType objType, const char* path);
     explicit FrmId(const char* path);
 

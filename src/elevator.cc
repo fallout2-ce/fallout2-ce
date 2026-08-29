@@ -44,8 +44,8 @@ typedef enum ElevatorFrm {
 } ElevatorFrm;
 
 typedef struct ElevatorBackground {
-    ObjectFrameId backgroundFrmId;
-    ObjectFrameId panelFrmId;
+    InterfaceFrameId backgroundFrmId;
+    InterfaceFrameId panelFrmId;
 } ElevatorBackground;
 
 typedef struct ElevatorDescription {
@@ -60,38 +60,38 @@ static int elevatorGetLevelFromKeyCode(int elevator, int keyCode);
 static int elevatorGetLevelFromEscKey(int elevator, int map);
 
 // 0x43E950 grph_id_2
-static const ObjectFrameId gElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
-    static_cast<ObjectFrameId>(141), // ebut_in.frm - map elevator screen
-    static_cast<ObjectFrameId>(142), // ebut_out.frm - map elevator screen
-    static_cast<ObjectFrameId>(149), // gaj000.frm - map elevator screen
+static const InterfaceFrameId gElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
+    INTF_FRM_ID_141, // ebut_in.frm - map elevator screen
+    INTF_FRM_ID_142, // ebut_out.frm - map elevator screen
+    INTF_FRM_ID_149, // gaj000.frm - map elevator screen
 };
 
 // 0x43E95C intotal
 static ElevatorBackground gElevatorBackgrounds[ELEVATORS_MAX] = {
-    { static_cast<ObjectFrameId>(143), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
-    { static_cast<ObjectFrameId>(144), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(144), static_cast<ObjectFrameId>(145) },
-    { static_cast<ObjectFrameId>(146), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(146), static_cast<ObjectFrameId>(147) },
-    { static_cast<ObjectFrameId>(146), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(146), static_cast<ObjectFrameId>(151) },
-    { static_cast<ObjectFrameId>(148), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(146), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(146), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(146), static_cast<ObjectFrameId>(147) },
-    { static_cast<ObjectFrameId>(388), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
-    { static_cast<ObjectFrameId>(148), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(148), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(148), OBJECT_FRAME_ID_INVALID},
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
-    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { INTF_FRM_ID_143, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_144, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_144, INTF_FRM_ID_145 },
+    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_146, INTF_FRM_ID_147 },
+    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_146, INTF_FRM_ID_151 },
+    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_146, INTF_FRM_ID_147 },
+    { INTF_FRM_ID_388, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID},
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
 };
 
 // Number of levels for eleveators.
@@ -519,7 +519,7 @@ static int elevatorWindowInit(int elevator)
 
     int index;
     for (index = 0; index < ELEVATOR_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gElevatorFrmIds[index]);
+        int fid = buildFid(gElevatorFrmIds[index]);
         if (!_elevatorFrmImages[index].lock(fid)) {
             break;
         }
@@ -542,10 +542,10 @@ static int elevatorWindowInit(int elevator)
     const ElevatorBackground* elevatorBackground = &(gElevatorBackgrounds[elevator]);
     bool backgroundsLoaded = true;
 
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, elevatorBackground->backgroundFrmId);
+    int backgroundFid = buildFid(elevatorBackground->backgroundFrmId);
     if (_elevatorBackgroundFrmImage.lock(backgroundFid)) {
         if (elevatorBackground->panelFrmId != -1) {
-            int panelFid = buildFid(OBJ_TYPE_INTERFACE, elevatorBackground->panelFrmId);
+            int panelFid = buildFid(elevatorBackground->panelFrmId);
             if (!_elevatorPanelFrmImage.lock(panelFid)) {
                 backgroundsLoaded = false;
             }
@@ -711,8 +711,8 @@ void elevatorsInit()
             }
         }
 
-        configGetEnum<ObjectFrameId>(elevatorsConfig.get(), sectionKey, "MainFrm", &(gElevatorBackgrounds[index].backgroundFrmId));
-        configGetEnum<ObjectFrameId>(elevatorsConfig.get(), sectionKey, "ButtonsFrm", &(gElevatorBackgrounds[index].panelFrmId));
+        configGetEnum<InterfaceFrameId>(elevatorsConfig.get(), sectionKey, "MainFrm", &(gElevatorBackgrounds[index].backgroundFrmId));
+        configGetEnum<InterfaceFrameId>(elevatorsConfig.get(), sectionKey, "ButtonsFrm", &(gElevatorBackgrounds[index].panelFrmId));
 
         for (int level = 0; level < ELEVATOR_LEVEL_MAX; level++) {
             snprintf(key, sizeof(key), "ID%d", level + 1);

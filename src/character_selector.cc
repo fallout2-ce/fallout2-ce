@@ -91,7 +91,7 @@ inline PremadeCharacter operator--(PremadeCharacter& e, int)
 
 typedef struct PremadeCharacterDescription {
     char fileName[20];
-    ObjectFrameId face;
+    InterfaceFrameId face;
     char vid[20];
 } PremadeCharacterDescription;
 
@@ -110,9 +110,9 @@ static PremadeCharacter gCurrentPremadeCharacter = PREMADE_CHARACTER_NARG;
 
 // 0x51C850 premade_characters
 static PremadeCharacterDescription gPremadeCharacterDescriptions[PREMADE_CHARACTER_COUNT] = {
-    { "premade\\combat", static_cast<ObjectFrameId>(201), "VID 208-197-88-125" },
-    { "premade\\stealth", static_cast<ObjectFrameId>(202), "VID 208-206-49-229" },
-    { "premade\\diplomat", static_cast<ObjectFrameId>(203), "VID 208-206-49-227" },
+    { "premade\\combat", INTF_FRM_ID_201, "VID 208-197-88-125" },
+    { "premade\\stealth", INTF_FRM_ID_202, "VID 208-206-49-229" },
+    { "premade\\diplomat", INTF_FRM_ID_203, "VID 208-206-49-227" },
 };
 
 // 0x51C8D4 premade_total
@@ -613,7 +613,7 @@ static bool characterSelectorWindowRenderFace()
     bool success = false;
 
     FrmImage faceFrmImage;
-    int faceFid = buildFid(OBJ_TYPE_INTERFACE, gCustomPremadeCharacterDescriptions[gCurrentPremadeCharacter].face);
+    int faceFid = buildFid(gCustomPremadeCharacterDescriptions[gCurrentPremadeCharacter].face);
     if (faceFrmImage.lock(faceFid)) {
         unsigned char* data = faceFrmImage.getData();
         if (data != nullptr) {
@@ -969,7 +969,7 @@ void premadeCharactersInit()
                 *pch = '\0';
             }
 
-            gCustomPremadeCharacterDescriptions[index].face = static_cast<ObjectFrameId>(atoi(faceFidsString));
+            gCustomPremadeCharacterDescriptions[index].face = static_cast<InterfaceFrameId>(atoi(faceFidsString));
 
             if (pch != nullptr) {
                 *pch = ',';

@@ -342,57 +342,57 @@ static void customTownReputationInit();
 static void customTownReputationFree();
 
 // 0x431C40 grph_id
-static ObjectFrameId gCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
-    static_cast<ObjectFrameId>(170),
-    static_cast<ObjectFrameId>(175),
-    static_cast<ObjectFrameId>(176),
-    static_cast<ObjectFrameId>(181),
-    static_cast<ObjectFrameId>(182),
-    static_cast<ObjectFrameId>(183),
-    static_cast<ObjectFrameId>(184),
-    static_cast<ObjectFrameId>(185),
-    static_cast<ObjectFrameId>(186),
-    static_cast<ObjectFrameId>(187),
-    static_cast<ObjectFrameId>(188),
-    static_cast<ObjectFrameId>(189),
-    static_cast<ObjectFrameId>(190),
-    static_cast<ObjectFrameId>(191),
-    static_cast<ObjectFrameId>(192),
-    static_cast<ObjectFrameId>(193),
-    static_cast<ObjectFrameId>(194),
-    static_cast<ObjectFrameId>(195),
-    static_cast<ObjectFrameId>(196),
-    static_cast<ObjectFrameId>(197),
-    static_cast<ObjectFrameId>(198),
-    static_cast<ObjectFrameId>(199),
-    static_cast<ObjectFrameId>(200),
-    static_cast<ObjectFrameId>(8),
-    static_cast<ObjectFrameId>(9),
-    static_cast<ObjectFrameId>(204),
-    static_cast<ObjectFrameId>(205),
-    static_cast<ObjectFrameId>(206),
-    static_cast<ObjectFrameId>(207),
-    static_cast<ObjectFrameId>(208),
-    static_cast<ObjectFrameId>(209),
-    static_cast<ObjectFrameId>(210),
-    static_cast<ObjectFrameId>(211),
-    static_cast<ObjectFrameId>(212),
-    static_cast<ObjectFrameId>(213),
-    static_cast<ObjectFrameId>(214),
-    static_cast<ObjectFrameId>(122),
-    static_cast<ObjectFrameId>(123),
-    static_cast<ObjectFrameId>(124),
-    static_cast<ObjectFrameId>(125),
-    static_cast<ObjectFrameId>(219),
-    static_cast<ObjectFrameId>(220),
-    static_cast<ObjectFrameId>(221),
-    static_cast<ObjectFrameId>(222),
-    static_cast<ObjectFrameId>(178),
-    static_cast<ObjectFrameId>(179),
-    static_cast<ObjectFrameId>(180),
-    static_cast<ObjectFrameId>(38),
-    static_cast<ObjectFrameId>(215),
-    static_cast<ObjectFrameId>(216),
+static InterfaceFrameId gCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
+    INTF_FRM_ID_170,
+    INTF_FRM_ID_175,
+    INTF_FRM_ID_176,
+    INTF_FRM_ID_181,
+    INTF_FRM_ID_182,
+    INTF_FRM_ID_183,
+    INTF_FRM_ID_184,
+    INTF_FRM_ID_185,
+    INTF_FRM_ID_186,
+    INTF_FRM_ID_187,
+    INTF_FRM_ID_188,
+    INTF_FRM_ID_189,
+    INTF_FRM_ID_190,
+    INTF_FRM_ID_191,
+    INTF_FRM_ID_192,
+    INTF_FRM_ID_193,
+    INTF_FRM_ID_194,
+    INTF_FRM_ID_195,
+    INTF_FRM_ID_196,
+    INTF_FRM_ID_197,
+    INTF_FRM_ID_198,
+    INTF_FRM_ID_199,
+    INTF_FRM_ID_200,
+    INTF_FRM_ID_8,
+    INTF_FRM_ID_9,
+    INTF_FRM_ID_204,
+    INTF_FRM_ID_205,
+    INTF_FRM_ID_206,
+    INTF_FRM_ID_207,
+    INTF_FRM_ID_208,
+    INTF_FRM_ID_209,
+    INTF_FRM_ID_210,
+    INTF_FRM_ID_211,
+    INTF_FRM_ID_212,
+    INTF_FRM_ID_213,
+    INTF_FRM_ID_214,
+    INTF_FRM_ID_122,
+    INTF_FRM_ID_123,
+    INTF_FRM_ID_124,
+    INTF_FRM_ID_125,
+    INTF_FRM_ID_219,
+    INTF_FRM_ID_220,
+    INTF_FRM_ID_221,
+    INTF_FRM_ID_222,
+    INTF_FRM_ID_178,
+    INTF_FRM_ID_179,
+    INTF_FRM_ID_180,
+    INTF_FRM_ID_38,
+    INTF_FRM_ID_215,
+    INTF_FRM_ID_216,
 };
 
 // flags to preload fid
@@ -1356,7 +1356,7 @@ static int characterEditorWindowInit()
     }
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(gCharacterEditorIsCreationMode ? 169 : 177));
+    fid = buildFid(gCharacterEditorIsCreationMode ? INTF_FRM_ID_169 : INTF_FRM_ID_177);
     if (!_editorBackgroundFrmImage.lock(fid)) {
         characterEditorMessageListReset();
         characterEditorWindowRestoreState();
@@ -1388,7 +1388,7 @@ static int characterEditorWindowInit()
     soundContinueAll();
 
     for (i = 0; i < EDITOR_GRAPHIC_COUNT; i++) {
-        fid = buildFid(OBJ_TYPE_INTERFACE, gCharacterEditorFrmIds[i]);
+        fid = buildFid(gCharacterEditorFrmIds[i]);
         if (!_editorFrmImages[i].lock(fid)) {
             break;
         }

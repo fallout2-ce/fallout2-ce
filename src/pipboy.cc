@@ -265,18 +265,18 @@ const Rect gPipboyWindowContentRect = {
 };
 
 // 0x496FD0 pipgrphs
-const ObjectFrameId gPipboyFrmIds[PIPBOY_FRM_COUNT] = {
-    static_cast<ObjectFrameId>(8),
-    static_cast<ObjectFrameId>(9),
-    static_cast<ObjectFrameId>(82),
-    static_cast<ObjectFrameId>(127),
-    static_cast<ObjectFrameId>(128),
-    static_cast<ObjectFrameId>(129),
-    static_cast<ObjectFrameId>(130),
-    static_cast<ObjectFrameId>(131),
-    static_cast<ObjectFrameId>(132),
-    static_cast<ObjectFrameId>(133),
-    static_cast<ObjectFrameId>(226),
+const InterfaceFrameId gPipboyFrmIds[PIPBOY_FRM_COUNT] = {
+    INTF_FRM_ID_8,
+    INTF_FRM_ID_9,
+    INTF_FRM_ID_82,
+    INTF_FRM_ID_127,
+    INTF_FRM_ID_128,
+    INTF_FRM_ID_129,
+    INTF_FRM_ID_130,
+    INTF_FRM_ID_131,
+    INTF_FRM_ID_132,
+    INTF_FRM_ID_133,
+    INTF_FRM_ID_226,
 };
 
 // 0x51C128 quests
@@ -668,7 +668,7 @@ static int pipboyWindowInit(int intent)
 
     int index;
     for (index = 0; index < PIPBOY_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gPipboyFrmIds[index]);
+        int fid = buildFid(gPipboyFrmIds[index]);
         if (!_pipboyFrmImages[index].lock(fid)) {
             break;
         }

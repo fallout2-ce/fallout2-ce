@@ -60,7 +60,7 @@ void wmTownMap();
 int wmCarUseGas(int amount);
 int wmCarFillGas(int amount);
 int wmCarGasAmount();
-void wmSetCarInterfaceArt(ObjectFrameId artIndex);
+void wmSetCarInterfaceArt(InterfaceFrameId artIndex);
 bool wmCarIsOutOfGas();
 int wmCarCurrentArea();
 int wmCarGiveToParty();

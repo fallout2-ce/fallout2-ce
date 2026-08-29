@@ -90,9 +90,9 @@ typedef enum FileDialogScrollDirection {
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
 
 // 0x5108C8 dbox
-static const ObjectFrameId gDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    static_cast<ObjectFrameId>(218), // MEDIALOG.FRM - Medium generic dialog box
-    static_cast<ObjectFrameId>(217), // LGDIALOG.FRM - Large generic dialog box
+static const InterfaceFrameId gDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
+    INTF_FRM_ID_218, // MEDIALOG.FRM - Medium generic dialog box
+    INTF_FRM_ID_217, // LGDIALOG.FRM - Large generic dialog box
 };
 
 // 0x5108D0 ytable
@@ -126,25 +126,25 @@ static const int _dblines[DIALOG_TYPE_COUNT] = {
 };
 
 // 0x510900 flgids
-static ObjectFrameId gLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    static_cast<ObjectFrameId>(224), // loadbox.frm - character editor
-    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
-    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
-    static_cast<ObjectFrameId>(181), // dnarwoff.frm - character editor
-    static_cast<ObjectFrameId>(182), // dnarwon.frm - character editor
-    static_cast<ObjectFrameId>(199), // uparwoff.frm - character editor
-    static_cast<ObjectFrameId>(200), // uparwon.frm - character editor
+static InterfaceFrameId gLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+    INTF_FRM_ID_224, // loadbox.frm - character editor
+    INTF_FRM_ID_8, // lilredup.frm - little red button up
+    INTF_FRM_ID_9, // lilreddn.frm - little red button down
+    INTF_FRM_ID_181, // dnarwoff.frm - character editor
+    INTF_FRM_ID_182, // dnarwon.frm - character editor
+    INTF_FRM_ID_199, // uparwoff.frm - character editor
+    INTF_FRM_ID_200, // uparwon.frm - character editor
 };
 
 // 0x51091C flgids2
-static ObjectFrameId gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    static_cast<ObjectFrameId>(225), // savebox.frm - character editor
-    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
-    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
-    static_cast<ObjectFrameId>(181), // dnarwoff.frm - character editor
-    static_cast<ObjectFrameId>(182), // dnarwon.frm - character editor
-    static_cast<ObjectFrameId>(199), // uparwoff.frm - character editor
-    static_cast<ObjectFrameId>(200), // uparwon.frm - character editor
+static InterfaceFrameId gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+    INTF_FRM_ID_225, // savebox.frm - character editor
+    INTF_FRM_ID_8, // lilredup.frm - little red button up
+    INTF_FRM_ID_9, // lilreddn.frm - little red button down
+    INTF_FRM_ID_181, // dnarwoff.frm - character editor
+    INTF_FRM_ID_182, // dnarwon.frm - character editor
+    INTF_FRM_ID_199, // uparwoff.frm - character editor
+    INTF_FRM_ID_200, // uparwon.frm - character editor
 };
 
 // 0x41CF20 dialog_out
@@ -201,7 +201,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     }
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, gDialogBoxBackgroundFrmIds[dialogType]);
+    int backgroundFid = buildFid(gDialogBoxBackgroundFrmIds[dialogType]);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         fontSetCurrent(savedFont);
         return -1;
@@ -588,7 +588,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
 
     for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gLoadFileDialogFrmIds[index]);
+        int fid = buildFid(gLoadFileDialogFrmIds[index]);
         if (!frmImages[index].lock(fid)) {
             return -1;
         }
@@ -953,7 +953,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
 
     for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gSaveFileDialogFrmIds[index]);
+        int fid = buildFid(gSaveFileDialogFrmIds[index]);
         if (!frmImages[index].lock(fid)) {
             return -1;
         }

@@ -597,7 +597,7 @@ static void wmMarkSubTileRadiusVisited(int x, int y);
 static int wmTileGrabArt(int tileIdx);
 static int wmInterfaceRefresh();
 static void wmInterfaceRefreshDate(bool shouldRefreshWindow);
-static bool wmLockCarInterfaceArt(ObjectFrameId artIndex, Art** artPtr, CacheEntry** handlePtr);
+static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, CacheEntry** handlePtr);
 static int wmMatchWorldPosToArea(int x, int y, City* areaIdxPtr);
 static int wmInterfaceDrawCircleOverlay(CityInfo* cityInfo, CitySizeDescription* citySizeInfo, unsigned char* buffer, int x, int y);
 static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y);
@@ -770,9 +770,9 @@ Color* circleBlendTable = nullptr;
 // 0x51DE38 wmInterfaceWasInitialized
 static int wmInterfaceWasInitialized = 0;
 
-static constexpr ObjectFrameId kDefaultCarInterfaceArtFrmId = static_cast<ObjectFrameId>(433);
+static constexpr InterfaceFrameId kDefaultCarInterfaceArtFrmId = INTF_FRM_ID_433;
 
-static ObjectFrameId carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
+static InterfaceFrameId carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
 
 // 0x51DE3C wmEncOpStrs
 static const char* wmEncOpStrs[ENCOUNTER_SITUATION_COUNT] = {
@@ -808,11 +808,11 @@ static const char* wmFormationStrs[ENCOUNTER_FORMATION_TYPE_COUNT] = {
 };
 
 // 0x51DE84 wmRndCursorFids
-static const ObjectFrameId wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
-    static_cast<ObjectFrameId>(154),
-    static_cast<ObjectFrameId>(155),
-    static_cast<ObjectFrameId>(438),
-    static_cast<ObjectFrameId>(439),
+static const InterfaceFrameId wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
+    INTF_FRM_ID_154,
+    INTF_FRM_ID_155,
+    INTF_FRM_ID_438,
+    INTF_FRM_ID_439,
 };
 
 #define MAX_TRAIL_LENGTH 1000
@@ -1153,7 +1153,7 @@ int wmWorldMap_init()
     // initialize it.
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        citySizeDescription->fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(336 + citySize));
+        citySizeDescription->fid = buildFid(INTF_FRM_ID_336 + citySize);
     }
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_WORLDMAP, &wmMsgFile);
@@ -1685,8 +1685,8 @@ static int wmConfigInit()
             char section[40];
             snprintf(section, sizeof(section), "Tile %d", tileIndex);
 
-            ObjectFrameId artIndex;
-            if (!configGetEnum<ObjectFrameId>(config.get(), section, "art_idx", &artIndex)) {
+            InterfaceFrameId artIndex;
+            if (!configGetEnum<InterfaceFrameId>(config.get(), section, "art_idx", &artIndex)) {
                 break;
             }
 
@@ -1705,7 +1705,7 @@ static int wmConfigInit()
             // NOTE: Uninline.
             wmTileSlotInit(tile);
 
-            tile->fid = buildFid(OBJ_TYPE_INTERFACE, artIndex);
+            tile->fid = buildFid(artIndex);
 
             int encounterDifficulty;
             if (configGetInt(config.get(), section, "encounter_difficulty", &encounterDifficulty)) {
@@ -2766,7 +2766,7 @@ static int wmAreaInit()
     char section[40];
     char key[40];
     City area_idx;
-    ObjectFrameId frmId;
+    InterfaceFrameId frmId;
     char* str;
     CityInfo* cities;
     CityInfo* city;
@@ -2784,7 +2784,7 @@ static int wmAreaInit()
         area_idx = CITY_FIRST;
         do {
             snprintf(section, sizeof(section), "Area %02d", area_idx);
-            if (!configGetEnum<ObjectFrameId>(cfg.get(), section, "townmap_art_idx", &frmId)) {
+            if (!configGetEnum<InterfaceFrameId>(cfg.get(), section, "townmap_art_idx", &frmId)) {
                 break;
             }
 
@@ -2806,17 +2806,17 @@ static int wmAreaInit()
             city->areaId = area_idx;
 
             int fid = -1;
-            if (frmId != OBJECT_FRAME_ID_INVALID) {
-                fid = buildFid(OBJ_TYPE_INTERFACE, frmId);
+            if (frmId != INTF_FRM_ID_INVALID) {
+                fid = buildFid(frmId);
             }
 
             city->mapFid = fid;
             
             fid = -1;
 
-            if (configGetEnum<ObjectFrameId>(cfg.get(), section, "townmap_label_art_idx", &frmId)) {
-                if (frmId != OBJECT_FRAME_ID_INVALID) {
-                    fid = buildFid(OBJ_TYPE_INTERFACE, frmId);
+            if (configGetEnum<InterfaceFrameId>(cfg.get(), section, "townmap_label_art_idx", &frmId)) {
+                if (frmId != INTF_FRM_ID_INVALID) {
+                    fid = buildFid(frmId);
                 }
 
                 city->labelFid = fid;
@@ -5061,7 +5061,7 @@ static int wmInterfaceInit()
     }
 
     for (int index = 0; index < WORLD_MAP_ENCOUNTER_FRM_COUNT; index++) {
-        fid = buildFid(OBJ_TYPE_INTERFACE, wmRndCursorFids[index]);
+        fid = buildFid(wmRndCursorFids[index]);
         if (!wmGenData.encounterCursorFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -5170,7 +5170,7 @@ static int wmInterfaceInit()
         // 200 - uparwon.frm - character editor
         // 199 - uparwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(199 + index));
+        fid = buildFid(INTF_FRM_ID_199 + index);
         if (!wmGenData.scrollUpButtonFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -5180,7 +5180,7 @@ static int wmInterfaceInit()
         // 182 - dnarwon.frm - character editor
         // 181 - dnarwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(181 + index));
+        fid = buildFid(INTF_FRM_ID_181 + index);
         if (!wmGenData.scrollDownButtonFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -6803,14 +6803,14 @@ int wmCarGasAmount()
     return wmGenData.carFuel;
 }
 
-static bool wmLockCarInterfaceArt(ObjectFrameId artIndex, Art** artPtr, CacheEntry** handlePtr)
+static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, CacheEntry** handlePtr)
 {
     if (!objectFrameIdIsValid(artIndex)) {
         return false;
     }
 
     CacheEntry* handle = INVALID_CACHE_ENTRY;
-    int fid = buildFid(OBJ_TYPE_INTERFACE, artIndex);
+    int fid = buildFid(artIndex);
     Art* art = artLock(fid, &handle);
     if (art == nullptr) {
         return false;
@@ -6829,7 +6829,7 @@ static bool wmLockCarInterfaceArt(ObjectFrameId artIndex, Art** artPtr, CacheEnt
     return true;
 }
 
-void wmSetCarInterfaceArt(ObjectFrameId artIndex)
+void wmSetCarInterfaceArt(InterfaceFrameId artIndex)
 {
     Art* art = nullptr;
     CacheEntry* handle = INVALID_CACHE_ENTRY;

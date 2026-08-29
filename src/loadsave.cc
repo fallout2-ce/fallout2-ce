@@ -186,16 +186,16 @@ static int _SaveObjDudeCid(File* stream);
 static int _EraseSave();
 
 // 0x47B7C0 lsgrphs
-static const ObjectFrameId gLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
-    static_cast<ObjectFrameId>(237), // lsgame.frm - load/save game
-    static_cast<ObjectFrameId>(238), // lsgbox.frm - load/save game
-    static_cast<ObjectFrameId>(239), // lscover.frm - load/save game
-    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
-    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
-    static_cast<ObjectFrameId>(181), // dnarwoff.frm - character editor
-    static_cast<ObjectFrameId>(182), // dnarwon.frm - character editor
-    static_cast<ObjectFrameId>(199), // uparwoff.frm - character editor
-    static_cast<ObjectFrameId>(200), // uparwon.frm - character editor
+static const InterfaceFrameId gLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
+    INTF_FRM_ID_237, // lsgame.frm - load/save game
+    INTF_FRM_ID_238, // lsgbox.frm - load/save game
+    INTF_FRM_ID_239, // lscover.frm - load/save game
+    INTF_FRM_ID_9, // lilreddn.frm - little red button down
+    INTF_FRM_ID_8, // lilredup.frm - little red button up
+    INTF_FRM_ID_181, // dnarwoff.frm - character editor
+    INTF_FRM_ID_182, // dnarwon.frm - character editor
+    INTF_FRM_ID_199, // uparwoff.frm - character editor
+    INTF_FRM_ID_200, // uparwon.frm - character editor
 };
 
 // Control max number of save/load pages
@@ -1665,7 +1665,7 @@ static int lsgWindowInit(int windowType)
     }
 
     for (int index = 0; index < LOAD_SAVE_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gLoadSaveFrmIds[index]);
+        int fid = buildFid(gLoadSaveFrmIds[index]);
         if (!_loadsaveFrmImages[index].lock(fid)) {
             while (--index >= 0) {
                 _loadsaveFrmImages[index].unlock();

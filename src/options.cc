@@ -59,18 +59,18 @@ struct OptionsMenuButtonSpec {
 };
 
 // 0x48FC0C
-static const ObjectFrameId pauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
-    static_cast<ObjectFrameId>(208), // charwin.frm - character editor
-    static_cast<ObjectFrameId>(209), // donebox.frm - character editor
-    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
-    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
+static const InterfaceFrameId pauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
+    INTF_FRM_ID_208, // charwin.frm - character editor
+    INTF_FRM_ID_209, // donebox.frm - character editor
+    INTF_FRM_ID_8, // lilredup.frm - little red button up
+    INTF_FRM_ID_9, // lilreddn.frm - little red button down
 };
 
 // 0x5197C0 opgrphs
-static const ObjectFrameId optionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
-    static_cast<ObjectFrameId>(220), // opbase.frm - character editor
-    static_cast<ObjectFrameId>(222), // opbtnon.frm - character editor
-    static_cast<ObjectFrameId>(221), // opbtnoff.frm - character editor
+static const InterfaceFrameId optionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
+    INTF_FRM_ID_220, // opbase.frm - character editor
+    INTF_FRM_ID_222, // opbtnon.frm - character editor
+    INTF_FRM_ID_221, // opbtnoff.frm - character editor
 };
 
 // 0x6637E8 optn_msgfl
@@ -256,7 +256,7 @@ static int optionsWindowInit()
         }
 
         if (!loaded) {
-            int fid = buildFid(OBJ_TYPE_INTERFACE, optionsWindowFrmIds[index]);
+            int fid = buildFid(optionsWindowFrmIds[index]);
             loaded = _optionsFrmImages[index].lock(fid);
         }
 
@@ -432,7 +432,7 @@ int showPause(bool preserveWorldState)
 
     FrmImage frmImages[PAUSE_WINDOW_FRM_COUNT];
     for (int index = 0; index < PAUSE_WINDOW_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, pauseWindowFrmIds[index]);
+        int fid = buildFid(pauseWindowFrmIds[index]);
         if (!frmImages[index].lock(fid)) {
             debugPrint("\n** Error loading pause window graphics! **\n");
             return -1;

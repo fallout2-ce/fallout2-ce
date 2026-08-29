@@ -62,7 +62,7 @@ typedef struct EndgameDeathEnding {
 typedef struct EndgameEnding {
     GameGlobalVar gvar;
     int value;
-    ObjectFrameId art_num;
+    InterfaceFrameId art_num;
     char voiceOverBaseName[12];
     int direction;
 } EndgameEnding;
@@ -221,10 +221,10 @@ void endgamePlaySlideshow()
         EndgameEnding* ending = &(gEndgameEndings[index]);
         int value = gameGetGlobalVar(ending->gvar);
         if (value == ending->value) {
-            if (ending->art_num == 327) {
+            if (ending->art_num == INTF_FRM_ID_327) {
                 endgameEndingRenderPanningScene(ending->direction, ending->voiceOverBaseName);
             } else {
-                int fid = buildFid(OBJ_TYPE_INTERFACE, ending->art_num);
+                int fid = buildFid(ending->art_num);
                 endgameEndingRenderStaticScene(fid, ending->voiceOverBaseName);
             }
         }
@@ -972,7 +972,7 @@ static int endgameEndingInit()
             continue;
         }
 
-        entry.art_num = static_cast<ObjectFrameId>(atoi(tok));
+        entry.art_num = static_cast<InterfaceFrameId>(atoi(tok));
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {

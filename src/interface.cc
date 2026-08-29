@@ -1733,81 +1733,81 @@ static int interfaceBarRefreshMainAction()
             if (hitMode != HIT_MODE_INVALID) {
                 actionPoints = weaponGetActionPointCost(gDude, hitMode, bullseyeFid != -1);
 
-                ObjectFrameId id = OBJECT_FRAME_ID_INVALID;
+                InterfaceFrameId id = INTF_FRM_ID_INVALID;
                 AnimationType anim = critterGetAnimationForHitMode(gDude, hitMode);
                 switch (anim) {
                 case ANIM_THROW_PUNCH:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_PUNCH:
-                        id = static_cast<ObjectFrameId>(432); // strong punch
+                        id = INTF_FRM_ID_432; // strong punch
                         break;
                     case HIT_MODE_HAMMER_PUNCH:
-                        id = static_cast<ObjectFrameId>(425); // hammer punch
+                        id = INTF_FRM_ID_425; // hammer punch
                         break;
                     case HIT_MODE_HAYMAKER:
-                        id = static_cast<ObjectFrameId>(428); // lightning punch
+                        id = INTF_FRM_ID_428; // lightning punch
                         break;
                     case HIT_MODE_JAB:
-                        id = static_cast<ObjectFrameId>(421); // chop punch
+                        id = INTF_FRM_ID_421; // chop punch
                         break;
                     case HIT_MODE_PALM_STRIKE:
-                        id = static_cast<ObjectFrameId>(423); // dragon punch
+                        id = INTF_FRM_ID_423; // dragon punch
                         break;
                     case HIT_MODE_PIERCING_STRIKE:
-                        id = static_cast<ObjectFrameId>(424); // force punch
+                        id = INTF_FRM_ID_424; // force punch
                         break;
                     default:
-                        id = static_cast<ObjectFrameId>(42); // punch
+                        id = INTF_FRM_ID_42; // punch
                         break;
                     }
                     break;
                 case ANIM_KICK_LEG:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_KICK:
-                        id = static_cast<ObjectFrameId>(430); // skick.frm - strong kick text
+                        id = INTF_FRM_ID_430; // skick.frm - strong kick text
                         break;
                     case HIT_MODE_SNAP_KICK:
-                        id = static_cast<ObjectFrameId>(431); // snapkick.frm - snap kick text
+                        id = INTF_FRM_ID_431; // snapkick.frm - snap kick text
                         break;
                     case HIT_MODE_POWER_KICK:
-                        id = static_cast<ObjectFrameId>(429); // cm_pwkck.frm - roundhouse kick text
+                        id = INTF_FRM_ID_429; // cm_pwkck.frm - roundhouse kick text
                         break;
                     case HIT_MODE_HIP_KICK:
-                        id = static_cast<ObjectFrameId>(426); // hipk.frm - kip kick text
+                        id = INTF_FRM_ID_426; // hipk.frm - kip kick text
                         break;
                     case HIT_MODE_HOOK_KICK:
-                        id = static_cast<ObjectFrameId>(427); // cm_hookk.frm - jump kick text
+                        id = INTF_FRM_ID_427; // cm_hookk.frm - jump kick text
                         break;
-                    case HIT_MODE_PIERCING_KICK: // cm_prckk.frm - death blossom kick text
-                        id = static_cast<ObjectFrameId>(422);
+                    case HIT_MODE_PIERCING_KICK: 
+                        id = INTF_FRM_ID_422; // cm_prckk.frm - death blossom kick text
                         break;
                     default:
-                        id = static_cast<ObjectFrameId>(41); // kick.frm - kick text
+                        id = INTF_FRM_ID_41; // kick.frm - kick text
                         break;
                     }
                     break;
                 case ANIM_THROW_ANIM:
-                    id = static_cast<ObjectFrameId>(117); // throw
+                    id = INTF_FRM_ID_117; // throw
                     break;
                 case ANIM_THRUST_ANIM:
-                    id = static_cast<ObjectFrameId>(45); // thrust
+                    id = INTF_FRM_ID_45; // thrust
                     break;
                 case ANIM_SWING_ANIM:
-                    id = static_cast<ObjectFrameId>(44); // swing
+                    id = INTF_FRM_ID_44; // swing
                     break;
                 case ANIM_FIRE_SINGLE:
-                    id = static_cast<ObjectFrameId>(43); // single
+                    id = INTF_FRM_ID_43; // single
                     break;
                 case ANIM_FIRE_BURST:
                 case ANIM_FIRE_CONTINUOUS:
-                    id = static_cast<ObjectFrameId>(40); // burst
+                    id = INTF_FRM_ID_40; // burst
                     break;
                 default:
                     break;
                 }
 
-                if (id != OBJECT_FRAME_ID_INVALID) {
-                    primaryFid = buildFid(OBJ_TYPE_INTERFACE, id);
+                if (id != INTF_FRM_ID_INVALID) {
+                    primaryFid = buildFid(id);
                 }
             }
 

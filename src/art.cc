@@ -1629,12 +1629,6 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
     return gNamedArtCache.emplace(path, std::move(entry)).first->second;
 }
 
-FrmId::FrmId(ObjectType objType, ObjectFrameId frmId)
-    : _fid(buildFid(objType, frmId))
-{
-    assert(objectTypeIsValid(objType));
-}
-
 FrmId::FrmId(ObjectType objType, const char* path)
     : _objectType(objType)
     , _path(path)
