@@ -568,9 +568,8 @@ static int objectLoadAllInternal(File* stream)
                     objectListNode->obj->scriptIndex = script->index;
                 }
             }
-            FrmId frmId = FrmId(objectListNode->obj->fid);
-            _obj_fix_violence_settings(&frmId);
-            objectListNode->obj->fid = frmId.fid();
+            
+            _obj_fix_violence_settings(&(objectListNode->obj->fid));
             objectListNode->obj->elevation = elevation;
 
             _obj_insert(objectListNode);
@@ -3598,9 +3597,8 @@ static int _obj_load_obj(File* stream, Object** objectPtr, int elevation, Object
             script->owner = obj;
         }
     }
-    FrmId frmId = FrmId(obj->fid);
-    _obj_fix_violence_settings(&frmId);
-    obj->fid = frmId.fid();
+
+    _obj_fix_violence_settings(&(obj->fid));
 
     if (!_art_fid_valid(obj->fid)) {
         debugPrint("\nError: invalid object art fid: %u\n", obj->fid);
@@ -5145,9 +5143,9 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 // Updates fid according to current violence level.
 //
 // 0x48FA14 obj_fix_violence_settings
-void _obj_fix_violence_settings(FrmId* frmId)
+void _obj_fix_violence_settings(int* fid)
 {
-    if (objectTypeFromFid(frmId->fid()) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(*fid) != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -5180,12 +5178,12 @@ void _obj_fix_violence_settings(FrmId* frmId)
         break;
     }
 
-    AnimationType anim = animationTypeFromFid(frmId->fid());
+    AnimationType anim = animationTypeFromFid(*fid);
     if (anim >= start && anim <= end) {
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
             : ANIM_FALL_FRONT_SF;
-        *frmId = FrmId(critterFrameIdFromFid(frmId->fid()), anim, weaponAnimationFromFid(frmId->fid()), rotationFromFid(frmId->fid()));
+        *fid = FrmId(critterFrameIdFromFid(*fid), anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid)).fid();
     }
 
     if (shouldResetViolenceLevel) {

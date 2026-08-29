@@ -867,12 +867,16 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
         }
 
         fid = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
-        _obj_fix_violence_settings(&fid);
+        int violenceFixedFid = fid.fid();
+        _obj_fix_violence_settings(&violenceFixedFid);
+        fid = FrmId(violenceFixedFid);
         if (!artExists(fid)) {
             debugPrint("\nError: Critter Kill: Can't match fid!");
 
             fid = FrmId(critter, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
-            _obj_fix_violence_settings(&fid);
+            violenceFixedFid = fid.fid();
+            _obj_fix_violence_settings(&violenceFixedFid);
+            fid = FrmId(violenceFixedFid);
         }
 
         shouldChangeFid = true;

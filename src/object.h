@@ -1,7 +1,6 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include "art.h"
 #include "color.h"
 #include "db.h"
 #include "geometry.h"
@@ -101,7 +100,7 @@ char* objectGetDescription(Object* obj);
 void _obj_preload_art_cache(MapHeaderFlags flags);
 int _obj_save_dude(File* stream);
 int _obj_load_dude(File* stream);
-void _obj_fix_violence_settings(FrmId* frmId);
+void _obj_fix_violence_settings(int* frmId);
 
 Object* objectTypedFindById(int id, ObjectType type);
 bool isExitGridAt(int tile, int elevation);
