@@ -1,13 +1,20 @@
 #include "trait.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "config.h"
+#include "debug.h"
 #include "game.h"
 #include "message.h"
 #include "object.h"
 #include "platform_compat.h"
+#include "sfall_config.h"
 #include "skill.h"
 #include "stat.h"
+
+#include <string>
 
 namespace fallout {
 
@@ -35,7 +42,7 @@ static MessageList gTraitsMessageList;
 static Trait gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
 
 // 0x51DB84 trait_data
-static TraitDescription gTraitDescriptions[TRAIT_COUNT] = {
+static TraitDescription traitDescriptions[TRAIT_COUNT] = {
     { nullptr, nullptr, 55 },
     { nullptr, nullptr, 56 },
     { nullptr, nullptr, 57 },
@@ -54,9 +61,41 @@ static TraitDescription gTraitDescriptions[TRAIT_COUNT] = {
     { nullptr, nullptr, 70 },
 };
 
+static const int defaultTraitFrmIds[TRAIT_COUNT] = {
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    94,
+    69,
+    70,
+};
+
+static bool traitOverridesEnabled = false;
+static int traitStatBonuses[TRAIT_COUNT][STAT_COUNT];
+static int traitSkillBonuses[TRAIT_COUNT][SKILL_COUNT];
+static bool traitHardcodeDisabled[TRAIT_COUNT];
+static std::string traitOverrideNames[TRAIT_COUNT];
+static std::string traitOverrideDescriptions[TRAIT_COUNT];
+
+static void traitsResetSfallConfig();
+static void traitsLoadSfallConfig();
+static void traitsLoadSfallPairBonuses(Config* config, const char* sectionKey, const char* key, int* bonuses, int count);
+
 // 0x4B39F0 trait_init
 int traitsInit()
 {
+    traitsResetSfallConfig();
+
     if (!messageListInit(&gTraitsMessageList)) {
         return -1;
     }
@@ -73,14 +112,16 @@ int traitsInit()
 
         messageListItem.num = 100 + trait;
         if (messageListGetItem(&gTraitsMessageList, &messageListItem)) {
-            gTraitDescriptions[trait].name = messageListItem.text;
+            traitDescriptions[trait].name = messageListItem.text;
         }
 
         messageListItem.num = 200 + trait;
         if (messageListGetItem(&gTraitsMessageList, &messageListItem)) {
-            gTraitDescriptions[trait].description = messageListItem.text;
+            traitDescriptions[trait].description = messageListItem.text;
         }
     }
+
+    traitsLoadSfallConfig();
 
     // NOTE: Uninline.
     traitsReset();
@@ -103,6 +144,7 @@ void traitsExit()
 {
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_TRAIT, nullptr);
     messageListFree(&gTraitsMessageList);
+    traitsResetSfallConfig();
 }
 
 // Loads trait system state from save game.
@@ -145,7 +187,7 @@ void traitsGetSelected(Trait* trait1, Trait* trait2)
 // 0x4B3B68 trait_name
 char* traitGetName(Trait trait)
 {
-    return traitIsValid(trait) ? gTraitDescriptions[trait].name : nullptr;
+    return traitIsValid(trait) ? traitDescriptions[trait].name : nullptr;
 }
 
 // Returns a description of the specified trait, or `NULL` if the specified
@@ -154,7 +196,7 @@ char* traitGetName(Trait trait)
 // 0x4B3B88 trait_description
 char* traitGetDescription(Trait trait)
 {
-    return traitIsValid(trait) ? gTraitDescriptions[trait].description : nullptr;
+    return traitIsValid(trait) ? traitDescriptions[trait].description : nullptr;
 }
 
 // Return an art ID of the specified trait, or `0` if the specified trait is
@@ -163,7 +205,7 @@ char* traitGetDescription(Trait trait)
 // 0x4B3BA8 trait_pic
 int traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? gTraitDescriptions[trait].frmId : 0;
+    return traitIsValid(trait) ? traitDescriptions[trait].frmId : 0;
 }
 
 // Returns `true` if the specified trait is selected.
@@ -174,6 +216,108 @@ bool traitIsSelected(Trait trait)
     return gSelectedTraits[0] == trait || gSelectedTraits[1] == trait;
 }
 
+bool traitIsSelectedAndActive(Trait trait)
+{
+    return traitIsValid(trait) && traitIsSelected(trait) && !traitHardcodeDisabled[trait];
+}
+
+static void traitsLoadSfallConfig()
+{
+    char* perksFile = nullptr;
+    configGetString(&gSfallConfig, SFALL_CONFIG_MISC_KEY, SFALL_CONFIG_PERKS_FILE_KEY, &perksFile);
+    if (perksFile == nullptr || perksFile[0] == '\0') {
+        return;
+    }
+
+    ScopedConfig config { perksFile, false };
+    if (!config) {
+        debugPrint("Traits config %s not found.\n", perksFile);
+        return;
+    }
+
+    int enabled = 0;
+    configGetInt(config.get(), "Traits", "Enable", &enabled, 1);
+    traitOverridesEnabled = enabled != 0;
+    if (!traitOverridesEnabled) {
+        return;
+    }
+
+    char sectionKey[8];
+    for (Trait trait = TRAIT_FIRST; trait < TRAIT_COUNT; trait++) {
+        snprintf(sectionKey, sizeof(sectionKey), "t%d", trait);
+
+        char* string = nullptr;
+        if (configGetString(config.get(), sectionKey, "Name", &string) && string != nullptr) {
+            traitOverrideNames[trait] = string;
+            traitDescriptions[trait].name = traitOverrideNames[trait].data();
+        }
+
+        if (configGetString(config.get(), sectionKey, "Desc", &string) && string != nullptr) {
+            traitOverrideDescriptions[trait] = string;
+            traitDescriptions[trait].description = traitOverrideDescriptions[trait].data();
+        }
+
+        int image = 0;
+        if (configGetInt(config.get(), sectionKey, "Image", &image)) {
+            traitDescriptions[trait].frmId = image;
+        }
+
+        traitsLoadSfallPairBonuses(config.get(), sectionKey, "StatMod", traitStatBonuses[trait], STAT_COUNT);
+        traitsLoadSfallPairBonuses(config.get(), sectionKey, "SkillMod", traitSkillBonuses[trait], SKILL_COUNT);
+
+        int noHardcode = 0;
+        if (configGetInt(config.get(), sectionKey, "NoHardcode", &noHardcode, 0) && noHardcode != 0) {
+            traitHardcodeDisabled[trait] = true;
+        }
+    }
+}
+
+static void traitsResetSfallConfig()
+{
+    traitOverridesEnabled = false;
+
+    for (Trait trait = TRAIT_FIRST; trait < TRAIT_COUNT; trait++) {
+        traitHardcodeDisabled[trait] = false;
+        traitDescriptions[trait].name = nullptr;
+        traitDescriptions[trait].description = nullptr;
+        traitDescriptions[trait].frmId = defaultTraitFrmIds[trait];
+        traitOverrideNames[trait].clear();
+        traitOverrideDescriptions[trait].clear();
+
+        for (Stat stat = STAT_FIRST; stat < STAT_COUNT; stat++) {
+            traitStatBonuses[trait][stat] = 0;
+        }
+
+        for (Skill skill = SKILL_FIRST; skill < SKILL_COUNT; skill++) {
+            traitSkillBonuses[trait][skill] = 0;
+        }
+    }
+}
+
+static void traitsLoadSfallPairBonuses(Config* config, const char* sectionKey, const char* key, int* bonuses, int count)
+{
+    char* string = nullptr;
+    if (!configGetString(config, sectionKey, key, &string) || string == nullptr || string[0] == '\0') {
+        return;
+    }
+
+    char buffer[512];
+    strncpy(buffer, string, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+
+    char* id = strtok(buffer, "|");
+    char* mod = strtok(nullptr, "|");
+    while (id != nullptr && mod != nullptr) {
+        int index = atoi(id);
+        if (index >= 0 && index < count) {
+            bonuses[index] = atoi(mod);
+        }
+
+        id = strtok(nullptr, "|");
+        mod = strtok(nullptr, "|");
+    }
+}
+
 // Returns stat modifier depending on selected traits.
 //
 // 0x4B3C7C trait_adjust_stat
@@ -181,95 +325,104 @@ int traitGetStatModifier(Stat stat)
 {
     int modifier = 0;
 
+    if (traitOverridesEnabled && statIsValid(stat)) {
+        for (int index = 0; index < TRAITS_MAX_SELECTED_COUNT; index++) {
+            Trait trait = gSelectedTraits[index];
+            if (traitIsValid(trait)) {
+                modifier += traitStatBonuses[trait][stat];
+            }
+        }
+    }
+
     switch (stat) {
     case STAT_STRENGTH:
-        if (traitIsSelected(TRAIT_GIFTED)) {
+        if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
             modifier += 1;
         }
-        if (traitIsSelected(TRAIT_BRUISER)) {
+        if (traitIsSelectedAndActive(TRAIT_BRUISER)) {
             modifier += 2;
         }
         break;
     case STAT_PERCEPTION:
-        if (traitIsSelected(TRAIT_GIFTED)) {
+        if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
             modifier += 1;
         }
         break;
     case STAT_ENDURANCE:
-        if (traitIsSelected(TRAIT_GIFTED)) {
+        if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
             modifier += 1;
         }
         break;
     case STAT_CHARISMA:
-        if (traitIsSelected(TRAIT_GIFTED)) {
+        if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
             modifier += 1;
         }
         break;
     case STAT_INTELLIGENCE:
-        if (traitIsSelected(TRAIT_GIFTED)) {
+        if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
             modifier += 1;
         }
         break;
     case STAT_AGILITY:
-        if (traitIsSelected(TRAIT_GIFTED)) {
+        if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
             modifier += 1;
         }
-        if (traitIsSelected(TRAIT_SMALL_FRAME)) {
+        if (traitIsSelectedAndActive(TRAIT_SMALL_FRAME)) {
             modifier += 1;
         }
         break;
     case STAT_LUCK:
-        if (traitIsSelected(TRAIT_GIFTED)) {
+        if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
             modifier += 1;
         }
         break;
     case STAT_MAXIMUM_ACTION_POINTS:
-        if (traitIsSelected(TRAIT_BRUISER)) {
+        if (traitIsSelectedAndActive(TRAIT_BRUISER)) {
             modifier -= 2;
         }
         break;
     case STAT_ARMOR_CLASS:
-        if (traitIsSelected(TRAIT_KAMIKAZE)) {
+        if (traitIsSelectedAndActive(TRAIT_KAMIKAZE)) {
             modifier -= critterGetBaseStat(gDude, STAT_ARMOR_CLASS);
         }
         break;
     case STAT_MELEE_DAMAGE:
-        if (traitIsSelected(TRAIT_HEAVY_HANDED)) {
+        if (traitIsSelectedAndActive(TRAIT_HEAVY_HANDED)) {
             modifier += 4;
         }
         break;
     case STAT_CARRY_WEIGHT:
-        if (traitIsSelected(TRAIT_SMALL_FRAME)) {
+        if (traitIsSelectedAndActive(TRAIT_SMALL_FRAME)) {
             modifier -= 10 * critterGetBaseStat(gDude, STAT_STRENGTH);
         }
         break;
     case STAT_SEQUENCE:
-        if (traitIsSelected(TRAIT_KAMIKAZE)) {
+        if (traitIsSelectedAndActive(TRAIT_KAMIKAZE)) {
             modifier += 5;
         }
         break;
     case STAT_HEALING_RATE:
-        if (traitIsSelected(TRAIT_FAST_METABOLISM)) {
+        if (traitIsSelectedAndActive(TRAIT_FAST_METABOLISM)) {
             modifier += 2;
         }
         break;
     case STAT_CRITICAL_CHANCE:
-        if (traitIsSelected(TRAIT_FINESSE)) {
+        if (traitIsSelectedAndActive(TRAIT_FINESSE)) {
             modifier += 10;
         }
         break;
     case STAT_BETTER_CRITICALS:
-        if (traitIsSelected(TRAIT_HEAVY_HANDED)) {
+        if (traitIsSelectedAndActive(TRAIT_HEAVY_HANDED)) {
             modifier -= 30;
         }
         break;
     case STAT_RADIATION_RESISTANCE:
-        if (traitIsSelected(TRAIT_FAST_METABOLISM)) {
+        if (traitIsSelectedAndActive(TRAIT_FAST_METABOLISM)) {
             modifier -= critterGetBaseStat(gDude, STAT_RADIATION_RESISTANCE);
         }
         break;
     case STAT_POISON_RESISTANCE:
-        if (traitIsSelected(TRAIT_FAST_METABOLISM)) {
+        if (traitIsSelectedAndActive(TRAIT_FAST_METABOLISM)) {
             modifier -= critterGetBaseStat(gDude, STAT_POISON_RESISTANCE);
         }
         break;
@@ -287,11 +440,20 @@ int traitGetSkillModifier(Skill skill)
 {
     int modifier = 0;
 
-    if (traitIsSelected(TRAIT_GIFTED)) {
+    if (traitOverridesEnabled && skillIsValid(skill)) {
+        for (int index = 0; index < TRAITS_MAX_SELECTED_COUNT; index++) {
+            Trait trait = gSelectedTraits[index];
+            if (traitIsValid(trait)) {
+                modifier += traitSkillBonuses[trait][skill];
+            }
+        }
+    }
+
+    if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
         modifier -= 10;
     }
 
-    if (traitIsSelected(TRAIT_GOOD_NATURED)) {
+    if (traitIsSelectedAndActive(TRAIT_GOOD_NATURED)) {
         switch (skill) {
         case SKILL_SMALL_GUNS:
         case SKILL_BIG_GUNS:

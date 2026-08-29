@@ -5973,7 +5973,7 @@ static int characterEditorGetLevelsPerPerk()
     }
 
     int progression = 3;
-    if (traitIsSelected(TRAIT_SKILLED)) {
+    if (traitIsSelectedAndActive(TRAIT_SKILLED)) {
         progression += 1;
     }
 
@@ -6057,8 +6057,8 @@ static int characterEditorUpdateLevel()
             sp += 5 + skillPointsPerLevelModifier;
             sp += critterGetBaseStatWithTraitModifier(gDude, STAT_INTELLIGENCE) * 2;
             sp += perkGetRank(gDude, PERK_EDUCATED) * perkGetEducatedBonus();
-            sp += traitIsSelected(TRAIT_SKILLED) * 5;
-            if (traitIsSelected(TRAIT_GIFTED)) {
+            sp += traitIsSelectedAndActive(TRAIT_SKILLED) * 5;
+            if (traitIsSelectedAndActive(TRAIT_GIFTED)) {
                 sp -= 5;
             }
             sp = std::clamp(sp, 0, 99);
