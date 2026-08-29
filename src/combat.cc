@@ -5548,7 +5548,7 @@ static void _print_tohit(unsigned char* dest, int destPitch, int accuracy)
 static char* hitLocationGetName(Object* critter, HitLocation hitLocation)
 {
     MessageListItem messageListItem;
-    messageListItem.num = 1000 + 10 * _art_alias_num(objectFrameIdFromFid(critter->fid)) + hitLocation;
+    messageListItem.num = 1000 + 10 * _art_alias_num(critterFrameIdFromFid(critter->fid)) + hitLocation;
     if (messageListGetItem(&gCombatMessageList, &messageListItem)) {
         return messageListItem.text;
     }

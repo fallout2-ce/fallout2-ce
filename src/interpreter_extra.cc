@@ -449,7 +449,7 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         }
     } else {
         if (critter == gDude) {
-            newFid = buildFid(objectTypeFromFid(critter->fid), _art_vault_guy_num, animationTypeFromFid(critter->fid), weaponCode, rotationFromFid(critter->fid));
+            newFid = buildFid(_art_vault_guy_num, animationTypeFromFid(critter->fid), weaponCode, rotationFromFid(critter->fid));
         }
 
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
@@ -2060,7 +2060,7 @@ static void opMetarule3(Program* program)
     case METARULE3_ART_SET_BASE_FID_NUM:
         if (1) {
             Object* obj = static_cast<Object*>(param1.pointerValue);
-            ObjectFrameId frmId = static_cast<ObjectFrameId>(param2.integerValue);
+            int frmId = param2.integerValue;
 
             int fid = buildFid(objectTypeFromFid(obj->fid),
                 frmId,

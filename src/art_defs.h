@@ -29,8 +29,7 @@ inline bool headIsValid(int head)
 
 inline Head headFromFid(int fid)
 {
-    ObjectFrameId head = objectFrameIdFromFid(fid);
-    return static_cast<Head>(head);
+    return static_cast<Head>(objectFrameIdFromFid(fid));
 }
 
 enum HeadAnimation : int {

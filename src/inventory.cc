@@ -1534,7 +1534,7 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
                 inventoryFid = proto->item.data.armor.maleFid;
             }
 
-            if (inventoryFid == OBJECT_FRAME_ID_INVALID) {
+            if (inventoryFid == CRITTER_FRM_ID_INVALID) {
                 inventoryFid = _art_vault_guy_num;
             }
         }

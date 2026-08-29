@@ -13,7 +13,7 @@ void pick_region(Rect* rect);
 void sort_rect(Rect* a, Rect* b);
 void draw_rect(Rect* rect, unsigned char color);
 void erase_rect(Rect* rect);
-int toolbar_proto(ObjectType type, ObjectFrameId id);
+int toolbar_proto(ObjectType type, int id);
 bool map_toggle_block_obj_viewing_on();
 
 void map_load_dialog();

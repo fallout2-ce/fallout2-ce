@@ -6805,7 +6805,7 @@ int wmCarGasAmount()
 
 static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, CacheEntry** handlePtr)
 {
-    if (!objectFrameIdIsValid(artIndex)) {
+    if (artIndex < INTF_FRM_ID_FIRST || artIndex > INTF_FRM_ID_LAST) {
         return false;
     }
 

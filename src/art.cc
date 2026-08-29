@@ -146,7 +146,7 @@ static HeadDescription* gHeadDescriptions;
 
 // anon_alias
 // 0x56CAEC anon_alias
-static ObjectFrameId* _anon_alias;
+static CritterFrameId* _anon_alias;
 
 // artCritterFidShouldRunData
 // 0x56CAF0 artCritterFidShouldRunData
@@ -189,7 +189,7 @@ int artInit()
         }
     }
 
-    _anon_alias = (ObjectFrameId*)internal_malloc(sizeof(*_anon_alias) * gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength);
+    _anon_alias = (CritterFrameId*)internal_malloc(sizeof(*_anon_alias) * gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength);
     if (_anon_alias == nullptr) {
         gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength = 0;
         debugPrint("Out of memory for anon_alias in art_init\n");
@@ -232,7 +232,7 @@ int artInit()
     configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female", &tribalFemaleFileName, gDefaultTribalFemaleFileName);
 
     char* critterFileNames = gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames;
-    for (ObjectFrameId critterIndex = OBJECT_FRAME_ID_FIRST; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
+    for (CritterFrameId critterIndex = CRITTER_FRM_ID_FIRST; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
         if (compat_stricmp(critterFileNames, jumpsuitMaleFileName) == 0) {
             _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_MALE] = critterIndex;
         } else if (compat_stricmp(critterFileNames, jumpsuitFemaleFileName) == 0) {
@@ -256,7 +256,7 @@ int artInit()
 
         char* sep1 = strchr(string, ',');
         if (sep1 != nullptr) {
-            _anon_alias[critterIndex] = static_cast<ObjectFrameId>(atoi(sep1 + 1));
+            _anon_alias[critterIndex] = static_cast<CritterFrameId>(atoi(sep1 + 1));
 
             char* sep2 = strchr(sep1 + 1, ',');
             if (sep2 != nullptr) {
@@ -476,10 +476,10 @@ int art_list_str(int fid, char* name)
     return -1;
 }
 
-ObjectFrameId artListIndex(ObjectType objectType, const char* name)
+int artListIndex(ObjectType objectType, const char* name)
 {
-    if (!objectTypeIsValid(objectType)) return OBJECT_FRAME_ID_INVALID;
-    if (gArtListDescriptions[objectType].fileNames == nullptr) return OBJECT_FRAME_ID_INVALID;
+    if (!objectTypeIsValid(objectType)) return -1;
+    if (gArtListDescriptions[objectType].fileNames == nullptr) return -1;
 
     char upperName[13] = { 0 };
     strncpy(upperName, name, 12);
@@ -489,7 +489,7 @@ ObjectFrameId artListIndex(ObjectType objectType, const char* name)
     int length = gArtListDescriptions[objectType].fileNamesLength;
     const char* fileNames = gArtListDescriptions[objectType].fileNames;
 
-    for (ObjectFrameId index = OBJECT_FRAME_ID_FIRST; index < length; index++) {
+    for (int index = 0; index < length; index++) {
         const char* entry = fileNames + index * 13;
 
         char upperEntry[13];
@@ -507,7 +507,7 @@ ObjectFrameId artListIndex(ObjectType objectType, const char* name)
         }
     }
 
-    return OBJECT_FRAME_ID_INVALID;
+    return -1;
 }
 
 // 0x419160
@@ -557,7 +557,7 @@ int artCacheFlush()
 }
 
 // 0x4192B0
-int artCopyFileName(ObjectType objectType, ObjectFrameId id, char* dest)
+int artCopyFileName(ObjectType objectType, int id, char* dest)
 {
     ArtListDescription* ptr;
 
@@ -678,7 +678,7 @@ char* artBuildFilePath(int fid)
 
     *_art_name = '\0';
 
-    ObjectFrameId frmId = objectFrameIdFromFid(baseFid);
+    int frmId = objectFrameIdFromFid(baseFid);
     AnimationType animType = animationTypeFromFid(baseFid);
     WeaponAnimation weaponCode = weaponAnimationFromFid(baseFid);
     ObjectType objectType = objectTypeFromFid(baseFid);
@@ -959,7 +959,7 @@ bool _art_fid_valid(int fid)
 }
 
 // 0x419998
-ObjectFrameId _art_alias_num(ObjectFrameId index)
+CritterFrameId _art_alias_num(CritterFrameId index)
 {
     return _anon_alias[index];
 }
@@ -968,7 +968,7 @@ ObjectFrameId _art_alias_num(ObjectFrameId index)
 int artCritterFidShouldRun(int fid)
 {
     if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
-        return gArtCritterFidShoudRunData[objectFrameIdFromFid(fid)];
+        return gArtCritterFidShoudRunData[critterFrameIdFromFid(fid)];
     }
 
     return 0;
@@ -993,7 +993,7 @@ int artAliasFid(int fid)
             // NOTE: Original code is slightly different. It uses many mutually
             // mirrored bitwise operators. Probably result of some macros for
             // getting/setting individual bits on fid.
-            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | objectFrameIdFromFid(_anon_alias[objectFrameIdFromFid(fid)]);
+            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | critterFrameIdFromFid(_anon_alias[critterFrameIdFromFid(fid)]);
         }
     }
 
@@ -1088,7 +1088,7 @@ static void artCacheFreeImpl(void* ptr)
     4 bits for weapon code
     12 bits for frame ID
 */
-static int buildFidInternal(ObjectFrameId frmId, unsigned char weaponCode, unsigned char animType, ObjectType objectType, Rotation rotation)
+static int buildFidInternal(int frmId, unsigned char weaponCode, unsigned char animType, ObjectType objectType, Rotation rotation)
 {
     return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponCode << 12) & 0xF000) | (frmId & 0xFFF);
 }
@@ -1096,7 +1096,7 @@ static int buildFidInternal(ObjectFrameId frmId, unsigned char weaponCode, unsig
 // 0x419C88
 // animType doesn't have to be of AnimationType enum only but also HeadAnimation
 // weaponCode doesn't have to be WeaponAnimation enum only but also Fidget or flags
-int buildFid(ObjectType objectType, ObjectFrameId frmId, int animType, int weaponCode, Rotation rotation)
+int buildFid(ObjectType objectType, int frmId, int animType, int weaponCode, Rotation rotation)
 {
     // Always use rotation 0 (NE) for non-critters, for certain critter animations.
     // For other critter animations, check if art for the given rotation exists, if not try rotation 1 (E) and if that also doesn't exist, then default to 0 (NE).

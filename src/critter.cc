@@ -1056,7 +1056,7 @@ int critterBuildGorisFid(Object* critter, int frmId)
 
     // Goris needs the live critter FID preserved exactly as-is except for the
     // base FRM id swap between robe and claw body art.
-    return (critter->fid & ~0xFFF) | objectFrameIdFromFid(frmId);
+    return (critter->fid & ~0xFFF) | critterFrameIdFromFid(frmId);
 }
 
 // 0x42DE58 pc_load_data

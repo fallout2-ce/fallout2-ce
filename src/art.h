@@ -52,7 +52,7 @@ Art* artLock(int fid, CacheEntry** cache_entry);
 unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
-int artCopyFileName(ObjectType objectType, ObjectFrameId id, char* dest);
+int artCopyFileName(ObjectType objectType, int id, char* dest);
 int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr);
 char* artBuildFilePath(int fid);
 int artGetFramesPerSecond(Art* art);
@@ -69,44 +69,44 @@ ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
 ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
 bool artExists(int fid);
 bool _art_fid_valid(int fid);
-ObjectFrameId _art_alias_num(ObjectFrameId index);
+CritterFrameId _art_alias_num(CritterFrameId index);
 int artCritterFidShouldRun(int fid);
 int artAliasFid(int fid);
-int buildFid(ObjectType objectType, ObjectFrameId frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
+int buildFid(ObjectType objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
 
 inline int buildFid(MiscFrameId misc, AnimationType animType = ANIM_STAND)
 {
-    return buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(misc));
+    return buildFid(OBJ_TYPE_MISC, misc);
 }
 
 inline int buildFid(SceneryFrameId scenery)
 {
-    return buildFid(OBJ_TYPE_SCENERY, static_cast<ObjectFrameId>(scenery));
+    return buildFid(OBJ_TYPE_SCENERY, scenery);
 }
 
 inline int buildFid(WallFrameId wall)
 {
-    return buildFid(OBJ_TYPE_WALL, static_cast<ObjectFrameId>(wall));
+    return buildFid(OBJ_TYPE_WALL, wall);
 }
 
 inline int buildFid(ItemFrameId item)
 {
-    return buildFid(OBJ_TYPE_ITEM, static_cast<ObjectFrameId>(item));
+    return buildFid(OBJ_TYPE_ITEM, item);
 }
 
 inline int buildFid(TileFrameId tile)
 {
-    return buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(tile));
+    return buildFid(OBJ_TYPE_TILE, tile);
 }
 
 inline int buildFid(SkillDexFrameId skilldex)
 {
-    return buildFid(OBJ_TYPE_SKILLDEX, static_cast<ObjectFrameId>(skilldex));
+    return buildFid(OBJ_TYPE_SKILLDEX, skilldex);
 }
 
 inline int buildFid(InterfaceFrameId interface)
 {
-    return buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(interface);
+    return buildFid(OBJ_TYPE_INTERFACE, interface);
 }
 
 inline int buildFid(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
@@ -126,15 +126,15 @@ inline int buildFid(Object* object, AnimationType animType, WeaponAnimation weap
 
 inline int buildFid(Head head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
 {
-    return buildFid(OBJ_TYPE_HEAD, static_cast<ObjectFrameId>(head), headAnimation, fidget);
+    return buildFid(OBJ_TYPE_HEAD, head, headAnimation, fidget);
 }
 
 inline int buildFid(Background background)
 {
-    return buildFid(OBJ_TYPE_BACKGROUND, static_cast<ObjectFrameId>(background));
+    return buildFid(OBJ_TYPE_BACKGROUND, background);
 }
 
-ObjectFrameId artListIndex(ObjectType objectType, const char* name);
+int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);
 int artWrite(const char* path, unsigned char* data);

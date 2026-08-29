@@ -208,7 +208,7 @@ void erase_rect(Rect* rect)
 }
 
 // 0x484400
-int toolbar_proto(ObjectType type, ObjectFrameId id)
+int toolbar_proto(ObjectType type, int id)
 {
     if (id < proto_max_id(type)) {
         return (type << 24) | id;
@@ -230,8 +230,8 @@ void map_toggle_block_obj_viewing(int mode)
 
     if (!block_obj_view_on && fidShowList[0] == 0) {
         for (int i = 0; i < 9; i++) {
-            ObjectFrameId frmId = artListIndex(kBlockViewArtType[i], kBlockViewListName[i]);
-            if (frmId == OBJECT_FRAME_ID_INVALID) {
+            int frmId = artListIndex(kBlockViewArtType[i], kBlockViewListName[i]);
+            if (frmId == -1) {
                 debugPrint("\nError: art_list_index failed in toggle_obj_view");
             } else {
                 fidShowList[i] = buildFid(kBlockViewArtType[i], frmId);
@@ -458,7 +458,7 @@ void placeTile(int pid, int fid)
         return;
     }
 
-    int newArt = objectFrameIdFromFid(fid);
+    int newArt = tileFrameIdFromFid(fid);
     int* squarePtr = &_square[gElevation]->fid[squareTile];
     int oldValue = *squarePtr;
 
@@ -905,7 +905,7 @@ void copyTile()
             if (dstSquare != -1) {
                 int* word = &_square[gElevation]->fid[dstSquare];
                 int rotBits = (*word & 0xF000) >> 12;
-                int newFloor = objectFrameIdFromFid(srcFid[i]) | rotBits;
+                int newFloor = tileFrameIdFromFid(srcFid[i]) | rotBits;
                 *word = (*word & 0xFFFF0000) | (newFloor & 0xFFFF);
             }
         }
@@ -1215,8 +1215,8 @@ void mapper_shift_map_elev()
         int v = src[i];
         int floorRot = (v & 0xF000) >> 12;
         int roofRot = ((v >> 16) & 0xF000) >> 12;
-        int newRoofWord = objectFrameIdFromFid(blankFid) | roofRot;
-        int newFloorWord = objectFrameIdFromFid(blankFid) | floorRot;
+        int newRoofWord = tileFrameIdFromFid(blankFid) | roofRot;
+        int newFloorWord = tileFrameIdFromFid(blankFid) | floorRot;
         src[i] = (newRoofWord << 16) | (newFloorWord & 0xFFFF);
     }
 

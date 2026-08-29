@@ -1875,7 +1875,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
                 upperTileFlags = (upperTileWord & 0xF000) >> 12;
                 upperTileFlags &= ~(0x01);
 
-                upperTileArtId = objectFrameIdFromFid(upperTileWord);
+                upperTileArtId = tileFrameIdFromFid(upperTileWord);
                 lowerTileWord = arr[tile] & 0xFFFF;
                 arr[tile] = ((upperTileArtId | (upperTileFlags << 12)) << 16) | lowerTileWord;
             }

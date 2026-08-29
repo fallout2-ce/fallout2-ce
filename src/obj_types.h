@@ -100,40 +100,14 @@ inline ObjectType objectTypeFromPid(int pid)
     return static_cast<ObjectType>(objectType);
 }
 
-enum ObjectFrameId : int {
-    OBJECT_FRAME_ID_INVALID = -1,
-    OBJECT_FRAME_ID_FIRST = 0,
-    OBJECT_FRAME_ID_LAST = 4095
-};
-
-inline constexpr ObjectFrameId operator+(ObjectFrameId lhs, int rhs) {
-    return static_cast<ObjectFrameId>(static_cast<int>(lhs) + rhs);
-}
-
-inline constexpr ObjectFrameId operator-(ObjectFrameId lhs, int rhs) {
-    return static_cast<ObjectFrameId>(static_cast<int>(lhs) - rhs);
-}
-
-inline ObjectFrameId operator++(ObjectFrameId& e, int)
+inline int objectFrameIdFromFid(int fid)
 {
-    ObjectFrameId result = e;
-    e = e + 1;
-    return result;
+    return fid & 0xFFF;
 }
 
-inline bool objectFrameIdIsValid(int frmId)
+inline int objectFrameIdFromPid(int pid)
 {
-    return frmId >= OBJECT_FRAME_ID_FIRST && frmId <= OBJECT_FRAME_ID_LAST;
-}
-
-inline ObjectFrameId objectFrameIdFromFid(int fid)
-{
-    return static_cast<ObjectFrameId>(fid & 0xFFF);
-}
-
-inline ObjectFrameId objectFrameIdFromPid(int pid)
-{
-    return static_cast<ObjectFrameId>(pid & 0xFFFFFF);
+    return pid & 0xFFFFFF;
 }
 
 enum SkillDexFrameId : int {
@@ -310,8 +284,19 @@ enum CritterFrameId : int {
     CRITTER_FRM_ID_1 = 1,
 };
 
+inline constexpr CritterFrameId operator+(CritterFrameId lhs, int rhs) {
+    return static_cast<CritterFrameId>(static_cast<int>(lhs) + rhs);
+}
+
 inline constexpr CritterFrameId operator-(CritterFrameId lhs, int rhs) {
     return static_cast<CritterFrameId>(static_cast<int>(lhs) - rhs);
+}
+
+inline CritterFrameId operator++(CritterFrameId& e, int)
+{
+    CritterFrameId result = e;
+    e = e + 1;
+    return result;
 }
 
 inline CritterFrameId critterFrameIdFromFid(int fid)
@@ -424,6 +409,8 @@ inline MiscFrameId miscFrameIdFromPid(int pid)
 
 enum InterfaceFrameId : int {
     INTF_FRM_ID_INVALID = -1,
+    INTF_FRM_ID_FIRST = 0,
+    INTF_FRM_ID_LAST = 4095,
     INTF_FRM_ID_0 = 0, // blank.frm - used be mset000.frm for top of bouncing mouse cursor
     INTF_FRM_ID_1 = 1, // msef000.frm - hex mouse cursor
     INTF_FRM_ID_2 = 2, // egg
