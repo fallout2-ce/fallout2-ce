@@ -320,13 +320,18 @@ enum class VisitedState : int {
     Unknown = 0,
     Known = 1,
     Visited = 2,
+    KnownFo1 = 3,
     Invisible = -66,
 };
 
 inline bool visitedStateIsValid(int visited)
 {
     VisitedState state = static_cast<VisitedState>(visited);
-    return state == VisitedState::Unknown || state == VisitedState::Known || state == VisitedState::Visited || state == VisitedState::Invisible;
+    return state == VisitedState::Unknown
+        || state == VisitedState::Known
+        || state == VisitedState::Visited
+        || state == VisitedState::KnownFo1
+        || state == VisitedState::Invisible;
 }
 
 extern Color* circleBlendTable;

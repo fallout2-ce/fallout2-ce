@@ -6349,7 +6349,9 @@ bool wmAreaIsKnown(City areaIdx)
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    if (city->visitedState == VisitedState::Known || city->visitedState == VisitedState::Visited) {
+    if (city->visitedState == VisitedState::Known
+        || city->visitedState == VisitedState::Visited
+        || city->visitedState == VisitedState::KnownFo1) {
         if (city->state == CITY_STATE_KNOWN) {
             return true;
         }
@@ -6366,7 +6368,10 @@ VisitedState wmAreaVisitedState(City areaIdx)
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    if ((city->visitedState == VisitedState::Known || city->visitedState == VisitedState::Visited) && city->state == CITY_STATE_KNOWN) {
+    if ((city->visitedState == VisitedState::Known
+            || city->visitedState == VisitedState::Visited
+            || city->visitedState == VisitedState::KnownFo1)
+        && city->state == CITY_STATE_KNOWN) {
         return city->visitedState;
     }
 
@@ -6411,7 +6416,12 @@ bool wmAreaMarkVisitedState(City areaIdx, VisitedState state)
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
     VisitedState oldVisitedState = city->visitedState;
-    if (city->state == CITY_STATE_KNOWN && state != VisitedState::Unknown) {
+    bool noRadius = state == VisitedState::KnownFo1;
+    if (noRadius) {
+        state = VisitedState::Known;
+    }
+
+    if (city->state == CITY_STATE_KNOWN && state != VisitedState::Unknown && !noRadius) {
         wmMarkSubTileRadiusVisited(city->x, city->y);
     }
 
