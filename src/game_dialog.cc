@@ -3833,7 +3833,7 @@ void partyMemberControlWindowUpdate()
 
     // Render preview.
     CacheEntry* previewHandle;
-    int previewFid = buildFid(objectTypeFromFid(gGameDialogSpeaker->fid), objectFrameIdFromFid(gGameDialogSpeaker->fid), ANIM_STAND, weaponAnimationFromFid(gGameDialogSpeaker->fid), ROTATION_SW);
+    int previewFid = buildFid(gGameDialogSpeaker, ANIM_STAND, weaponAnimationFromFid(gGameDialogSpeaker->fid), ROTATION_SW);
     Art* preview = artLock(previewFid, &previewHandle);
     if (preview != nullptr) {
         int width = artGetWidth(preview, 0, ROTATION_SW);

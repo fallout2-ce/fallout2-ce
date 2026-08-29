@@ -1244,13 +1244,13 @@ static void createPartySlotButtons()
 
 static int buildPartyDisplayFid()
 {
-    int weaponAnimationCode = 0;
+    WeaponAnimation weaponAnimationCode = WEAPON_ANIMATION_NONE;
     Object* rightHandItem = partyTargetEquipped->rightHand;
     if (rightHandItem != nullptr && itemGetType(rightHandItem) == ITEM_TYPE_WEAPON) {
         weaponAnimationCode = weaponGetAnimationCode(rightHandItem);
     }
 
-    return buildFid(objectTypeFromFid(partyBaseTarget->fid), objectFrameIdFromFid(partyBaseTarget->fid), ANIM_STAND, weaponAnimationCode, ROTATION_NE);
+    return buildFid(partyBaseTarget, ANIM_STAND, weaponAnimationCode, ROTATION_NE);
 }
 
 static int getTargetDisplayFid()
@@ -5236,7 +5236,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                            targetObj->fid = buildFid(objectTypeFromFid(targetObj->fid), objectFrameIdFromFid(targetObj->fid), animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1);
+                            targetObj->fid = buildFid(targetObj, animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1);
                         }
 
                         targetObj->flags &= ~OBJECT_EQUIPPED;

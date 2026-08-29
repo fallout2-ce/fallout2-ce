@@ -1380,7 +1380,7 @@ int knockoutClear(Object* obj, void* data)
 
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
 
-    int fid = buildFid(objectTypeFromFid(obj->fid), objectFrameIdFromFid(obj->fid), ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    int fid = buildFid(obj, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
     objectSetFid(obj, fid, nullptr);
 
     return 0;

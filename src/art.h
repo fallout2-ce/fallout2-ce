@@ -81,9 +81,7 @@ inline int buildFid(Object* object, AnimationType animType, WeaponAnimation weap
         return -1;        
     }
 
-    assert(objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER);
-
-    return buildFid(OBJ_TYPE_CRITTER, objectFrameIdFromFid(object->fid), animType, weaponAnimation, rotation);
+    return buildFid(objectTypeFromFid(object->fid), objectFrameIdFromFid(object->fid), animType, weaponAnimation, rotation);
 }
 
 inline int buildFid(Head head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)

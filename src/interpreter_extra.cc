@@ -424,8 +424,7 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         interfaceUpdateItems(animated, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
     }
 
-    int fid = critter->fid;
-    WeaponAnimation weaponCode = weaponAnimationFromFid(fid);
+    WeaponAnimation weaponCode = weaponAnimationFromFid(critter->fid);
     int newFid = -1;
 
     if ((flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
@@ -446,11 +445,11 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         }
 
         if (weaponCode == WEAPON_ANIMATION_NONE) {
-            newFid = buildFid(objectTypeFromFid(fid), objectFrameIdFromFid(fid), animationTypeFromFid(fid), WEAPON_ANIMATION_NONE, rotationFromFid(fid));
+            newFid = buildFid(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
         }
     } else {
         if (critter == gDude) {
-            newFid = buildFid(objectTypeFromFid(fid), _art_vault_guy_num, animationTypeFromFid(fid), weaponCode, rotationFromFid(fid));
+            newFid = buildFid(objectTypeFromFid(critter->fid), _art_vault_guy_num, animationTypeFromFid(critter->fid), weaponCode, rotationFromFid(critter->fid));
         }
 
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
@@ -3447,13 +3446,13 @@ static void opAnim(Program* program)
                 combatData->results &= ~DAM_KNOCKED_DOWN;
             }
         } else { // ANIMATE_REVERSE == 1
-            int fid = buildFid(objectTypeFromFid(obj->fid), objectFrameIdFromFid(obj->fid), anim, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+            int fid = buildFid(obj, anim, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             animationRegisterAnimateReversed(obj, anim, 0);
 
             if (anim == ANIM_PRONE_TO_STANDING) {
-                fid = buildFid(objectTypeFromFid(obj->fid), objectFrameIdFromFid(obj->fid), ANIM_FALL_FRONT_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                fid = buildFid(obj, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             } else if (anim == ANIM_BACK_TO_STANDING) {
-                fid = buildFid(objectTypeFromFid(obj->fid), objectFrameIdFromFid(obj->fid), ANIM_FALL_BACK_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                fid = buildFid(obj, ANIM_FALL_BACK_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             }
 
             if (combatData != nullptr) {
@@ -4280,13 +4279,13 @@ static void opItemCapsAdjust(Program* program)
 // anim_action_frame
 static void _op_anim_action_frame(Program* program)
 {
-    int anim = programStackPopInteger(program);
+    AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     int actionFrame = 0;
 
     if (object != nullptr) {
-        int fid = buildFid(objectTypeFromFid(object->fid), objectFrameIdFromFid(object->fid), anim, WEAPON_ANIMATION_NONE, object->rotation);
+        int fid = buildFid(object, anim, WEAPON_ANIMATION_NONE, object->rotation);
         CacheEntry* frmHandle;
         Art* frm = artLock(fid, &frmHandle);
         if (frm != nullptr) {
