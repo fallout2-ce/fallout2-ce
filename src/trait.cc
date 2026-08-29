@@ -23,7 +23,7 @@ typedef struct TraitDescription {
     char* description;
 
     // Identifier of art in [intrface.lst].
-    int frmId;
+    ObjectFrameId frmId;
 } TraitDescription;
 
 // 0x66BE38 trait_message_file
@@ -36,22 +36,22 @@ static Trait gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
 
 // 0x51DB84 trait_data
 static TraitDescription gTraitDescriptions[TRAIT_COUNT] = {
-    { nullptr, nullptr, 55 },
-    { nullptr, nullptr, 56 },
-    { nullptr, nullptr, 57 },
-    { nullptr, nullptr, 58 },
-    { nullptr, nullptr, 59 },
-    { nullptr, nullptr, 60 },
-    { nullptr, nullptr, 61 },
-    { nullptr, nullptr, 62 },
-    { nullptr, nullptr, 63 },
-    { nullptr, nullptr, 64 },
-    { nullptr, nullptr, 65 },
-    { nullptr, nullptr, 66 },
-    { nullptr, nullptr, 67 },
-    { nullptr, nullptr, 94 },
-    { nullptr, nullptr, 69 },
-    { nullptr, nullptr, 70 },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(55) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(56) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(57) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(58) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(59) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(60) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(61) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(62) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(63) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(64) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(65) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(66) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(67) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(94) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(69) },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(70) },
 };
 
 // 0x4B39F0 trait_init
@@ -161,9 +161,9 @@ char* traitGetDescription(Trait trait)
 // out of range.
 //
 // 0x4B3BA8 trait_pic
-int traitGetFrmId(Trait trait)
+ObjectFrameId traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? gTraitDescriptions[trait].frmId : 0;
+    return traitIsValid(trait) ? gTraitDescriptions[trait].frmId : OBJECT_FRAME_ID_FIRST;
 }
 
 // Returns `true` if the specified trait is selected.

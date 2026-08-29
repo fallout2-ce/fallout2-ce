@@ -76,7 +76,7 @@ static void mapper_load_toolbar(ObjectType type, int* out_offset);
 static void mapper_save_toolbar();
 static void redraw_toolname();
 static void clear_toolname();
-static void update_toolname(int* pid, ObjectType type, int id);
+static void update_toolname(int* pid, ObjectType type, ObjectFrameId id);
 static void update_high_obj_name(Object* obj);
 static void mapper_destroy_highlight_obj(Object** a1, Object** a2);
 static void mapper_refresh_rotation();
@@ -1365,7 +1365,7 @@ void edit_mapper()
                             // create new highlight
                             update_high_obj_name(_screen_obj);
 
-                            int hfid = buildFid(OBJ_TYPE_INTERFACE, 1);
+                            int hfid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(1));
                             Object* hlObj;
                             if (objectCreateWithFidPid(&hlObj, hfid, -1) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
@@ -1443,7 +1443,7 @@ void edit_mapper()
                 if (!map_entered) {
                     if (!settings.mapper.use_art_not_protos) {
                         int slotIndex = keyCode - leftBase;
-                        update_toolname(&selectedPid, currentType, scrollOffset + slotIndex);
+                        update_toolname(&selectedPid, currentType, static_cast<ObjectFrameId>(scrollOffset + slotIndex));
                     }
                 }
                 continue;
@@ -1459,7 +1459,7 @@ void edit_mapper()
 
                 if (!settings.mapper.use_art_not_protos) {
                     int slotIndex = keyCode - rightBase;
-                    int pid = toolbar_proto(currentType, scrollOffset + slotIndex);
+                    int pid = toolbar_proto(currentType, static_cast<ObjectFrameId>(scrollOffset + slotIndex));
                     if (pid != -1) {
                         selectedPid = pid;
                         tool_active = slotIndex;
@@ -1484,7 +1484,7 @@ void edit_mapper()
                             _screen_obj = nullptr;
                         }
 
-                        update_toolname(&selectedPid, currentType, scrollOffset + slotIndex);
+                        update_toolname(&selectedPid, currentType, static_cast<ObjectFrameId>(scrollOffset + slotIndex));
 
                         // Refresh toolbar art row
                         Rect artRect = { 121, 1, _scr_size.right - 19, art_scale_height + 1 };
@@ -1874,7 +1874,7 @@ void edit_mapper()
         case kBtnProtoEditor:
             // Uppercase 'E' — proto editor on current toolbar selection
             if (!map_entered && !settings.mapper.use_art_not_protos && !draw_mode && tool_active != -1) {
-                int pid = toolbar_proto(currentType, scrollOffset + tool_active);
+                int pid = toolbar_proto(currentType, static_cast<ObjectFrameId>(scrollOffset + tool_active));
                 if (pid != -1) {
                     protoEdit(pid);
                 }
@@ -2019,7 +2019,7 @@ void edit_mapper()
         // --- ':' — Edit proto from toolbar slot ---
         case kBtnProtoNewEdit:
             if (!map_entered && !settings.mapper.use_art_not_protos && tool_active != -1) {
-                int pid = toolbar_proto(currentType, scrollOffset + tool_active);
+                int pid = toolbar_proto(currentType, static_cast<ObjectFrameId>(scrollOffset + tool_active));
                 if (pid == -1) {
                     proto_new(&pid, currentType);
                 }
@@ -2339,7 +2339,7 @@ void clear_toolname()
 }
 
 // 0x48B328
-void update_toolname(int* pid, ObjectType type, int id)
+void update_toolname(int* pid, ObjectType type, ObjectFrameId id)
 {
     Proto* proto;
 
@@ -2522,7 +2522,7 @@ void update_art(ObjectType type, int offset)
 
     // Render thumbnails for visible slots.
     p = slot_start;
-    for (int i = offset; i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
+    for (ObjectFrameId i = static_cast<ObjectFrameId>(offset); i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
         int fid;
         if (settings.mapper.use_art_not_protos) {
             fid = buildFid(type, i);
@@ -2598,14 +2598,14 @@ static int mapperPickTile(int* outOffset)
         return 0;
     }
 
-    int packedTile = _square[gElevation]->field_0[tileNum];
+    int packedTile = _square[gElevation]->fid[tileNum];
     int tileFid;
     if (tileRoofIsVisible()) {
         tileFid = objectFrameIdFromFid(packedTile >> 16);
     } else {
         tileFid = objectFrameIdFromFid(packedTile);
     }
-    int artFid = buildFid(OBJ_TYPE_TILE, tileFid);
+    int artFid = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(tileFid));
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;

@@ -214,17 +214,17 @@ static const double kTextLineDelayScale = 0.2;
 static const double kTextLineDelayRange = 2.0;
 
 // 0x5197CC prfgrphs
-static const int gPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
-    240, // prefscrn.frm - options screen
-    241, // prfsldof.frm - options screen
-    242, // prfbknbs.frm - options screen
-    243, // prflknbs.frm - options screen
-    244, // prfxin.frm - options screen
-    245, // prfxout.frm - options screen
-    246, // prefcvr.frm - options screen
-    247, // prfsldon.frm - options screen
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
+static const ObjectFrameId gPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(240), // prefscrn.frm - options screen
+    static_cast<ObjectFrameId>(241), // prfsldof.frm - options screen
+    static_cast<ObjectFrameId>(242), // prfbknbs.frm - options screen
+    static_cast<ObjectFrameId>(243), // prflknbs.frm - options screen
+    static_cast<ObjectFrameId>(244), // prfxin.frm - options screen
+    static_cast<ObjectFrameId>(245), // prfxout.frm - options screen
+    static_cast<ObjectFrameId>(246), // prefcvr.frm - options screen
+    static_cast<ObjectFrameId>(247), // prfsldon.frm - options screen
+    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
+    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
 };
 
 // 0x6637E8 optn_msgfl

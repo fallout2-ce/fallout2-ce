@@ -42,7 +42,7 @@ int perkGetRank(Object* critter, Perk perk);
 char* perkGetName(Perk perk);
 int perkGetMaxRank(Perk perk);
 char* perkGetDescription(Perk perk);
-int perkGetFrmId(Perk perk);
+ObjectFrameId perkGetFrmId(Perk perk);
 bool perkSetProperty(Perk perk, PerkProperty property, int value);
 bool perkSetName(Perk perk, const char* value);
 bool perkSetDescription(Perk perk, const char* value);

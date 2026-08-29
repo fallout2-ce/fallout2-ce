@@ -59,18 +59,18 @@ struct OptionsMenuButtonSpec {
 };
 
 // 0x48FC0C
-static const int pauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
-    208, // charwin.frm - character editor
-    209, // donebox.frm - character editor
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
+static const ObjectFrameId pauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(208), // charwin.frm - character editor
+    static_cast<ObjectFrameId>(209), // donebox.frm - character editor
+    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
+    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
 };
 
 // 0x5197C0 opgrphs
-static const int optionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
-    220, // opbase.frm - character editor
-    222, // opbtnon.frm - character editor
-    221, // opbtnoff.frm - character editor
+static const ObjectFrameId optionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(220), // opbase.frm - character editor
+    static_cast<ObjectFrameId>(222), // opbtnon.frm - character editor
+    static_cast<ObjectFrameId>(221), // opbtnoff.frm - character editor
 };
 
 // 0x6637E8 optn_msgfl

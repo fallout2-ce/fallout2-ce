@@ -29,7 +29,7 @@ inline bool headIsValid(int head)
 
 inline Head headFromFid(int fid)
 {
-    int head = objectFrameIdFromFid(fid);
+    ObjectFrameId head = objectFrameIdFromFid(fid);
     return static_cast<Head>(head);
 }
 
@@ -59,6 +59,11 @@ inline HeadFidget headFidgetFromFid(int fid)
 {
     int fidget = (fid & 0xFF0000) >> 16;
     return static_cast<HeadFidget>(fidget);
+}
+
+inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
+{
+    return fidget != FIDGET_INVALID ? static_cast<HeadAnimation>(fidget) : HEAD_ANIMATION_VERY_GOOD_REACTION;
 }
 
 enum Background : int {

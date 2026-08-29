@@ -1061,7 +1061,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        int fid = buildFid(OBJ_TYPE_MISC, 12);
+        int fid = buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(12));
         objectCreateWithFidPid(&object, fid, -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
@@ -1480,13 +1480,13 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             int fid;
 
-            fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->field_0[tile]));
-            if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
+            fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->fid[tile]));
+            if (fid != buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) {
                 break;
             }
 
-            fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->field_0[tile] >> 16));
-            if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
+            fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
+            if (fid != buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) {
                 break;
             }
         }
@@ -1528,7 +1528,7 @@ static int _map_save_file(File* stream)
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            _db_fwriteLongCount(stream, _square[elevation]->field_0, SQUARE_GRID_SIZE);
+            _db_fwriteLongCount(stream, _square[elevation]->fid, SQUARE_GRID_SIZE);
         }
     }
 
@@ -1827,18 +1827,18 @@ static void square_init()
 static void _square_reset()
 {
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        int* p = _square[elevation]->field_0;
+        int* p = _square[elevation]->fid;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
                 // TODO: Strange math, initially right, but need to figure it out and
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = ((objectFrameIdFromFid(buildFid(OBJ_TYPE_TILE, 1)) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = ((objectFrameIdFromFid(buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = objectFrameIdFromFid(buildFid(OBJ_TYPE_TILE, 1)) | tileFlags;
+                int updatedLowerTile = objectFrameIdFromFid(buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) | tileFlags;
 
                 fid &= ~0xFFFF;
 
@@ -1862,7 +1862,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            int* arr = _square[elevation]->field_0;
+            int* arr = _square[elevation]->fid;
             if (_db_freadIntCount(stream, arr, SQUARE_GRID_SIZE) != 0) {
                 return -1;
             }

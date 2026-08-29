@@ -213,7 +213,7 @@ AnimationType actionBlood(Object* obj, AnimationType anim, int delay)
 // 0x41060C pick_death
 AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, int damage, AnimationType attackerAnimation, bool hitFromFront)
 {
-    if (attacker->fid == buildFid(OBJ_TYPE_MISC, 10)) { // roktxpd.frm
+    if (attacker->fid == buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(10))) { // roktxpd.frm
         return checkDeathAnim(defender, ANIM_EXPLODED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
     if (attacker->pid == PROTO_ID_FORCE_FIELD_NS) { // Forcefield North/South
@@ -482,7 +482,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
     if (weapon != nullptr) {
         if ((flags & DAM_EXPLODE) != DAM_NONE) {
             animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)objectDrop, -1);
-            fid = buildFid(OBJ_TYPE_MISC, 10);
+            fid = buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(10));
             animationRegisterSetFid(weapon, fid, 0);
             animationRegisterAnimateAndHide(weapon, ANIM_STAND, 0);
 
@@ -853,26 +853,26 @@ int _action_ranged(Attack* attack, AnimationType anim)
                 // SFALL
                 if (isGrenade || damageType == explosionGetDamageType()) {
                     if ((attack->attackerFlags & DAM_DROP) == DAM_NONE) {
-                        int explosionFrmId;
+                        ObjectFrameId explosionFrmId;
                         if (isGrenade) {
                             switch (damageType) {
                             case DAMAGE_TYPE_EMP:
-                                explosionFrmId = 2;
+                                explosionFrmId = static_cast<ObjectFrameId>(2);
                                 break;
                             case DAMAGE_TYPE_PLASMA:
-                                explosionFrmId = 31;
+                                explosionFrmId = static_cast<ObjectFrameId>(31);
                                 break;
                             default:
-                                explosionFrmId = 29;
+                                explosionFrmId = static_cast<ObjectFrameId>(29);
                                 break;
                             }
                         } else {
-                            explosionFrmId = 10;
+                            explosionFrmId = static_cast<ObjectFrameId>(10);
                         }
 
                         // SFALL
-                        int explosionFrmIdOverride = explosionGetFrm();
-                        if (explosionFrmIdOverride != -1) {
+                        ObjectFrameId explosionFrmIdOverride = explosionGetFrm();
+                        if (explosionFrmIdOverride != OBJECT_FRAME_ID_INVALID) {
                             explosionFrmId = explosionFrmIdOverride;
                         }
 
@@ -1641,7 +1641,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
     }
 
     Object* explosion;
-    int fid = buildFid(OBJ_TYPE_MISC, 10);
+    int fid = buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(10));
     if (objectCreateWithFidPid(&explosion, fid, -1) == -1) {
         internal_free(attack);
         return -1;
@@ -1654,7 +1654,7 @@ int actionExplode(int tile, int elevation, int minDamage, int maxDamage, Object*
 
     Object* adjacentExplosions[ROTATION_COUNT];
     for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
-        int fid = buildFid(OBJ_TYPE_MISC, 10);
+        int fid = buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(10));
         if (objectCreateWithFidPid(&(adjacentExplosions[rotation]), fid, -1) == -1) {
             while (--rotation >= ROTATION_FIRST) {
                 objectDestroy(adjacentExplosions[rotation], nullptr);

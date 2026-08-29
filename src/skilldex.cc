@@ -61,13 +61,13 @@ static void skilldexWindowFree();
 static bool gSkilldexWindowIsoWasEnabled = false;
 
 // 0x51D440 grphfid
-static const int gSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
-    121,
-    119,
-    120,
-    8,
-    9,
-    170,
+static const ObjectFrameId gSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(121),
+    static_cast<ObjectFrameId>(119),
+    static_cast<ObjectFrameId>(120),
+    static_cast<ObjectFrameId>(8),
+    static_cast<ObjectFrameId>(9),
+    static_cast<ObjectFrameId>(170),
 };
 
 // Maps Skilldex options into skills.

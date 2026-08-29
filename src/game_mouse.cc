@@ -74,34 +74,34 @@ static int gGameMouseCursor = MOUSE_CURSOR_NONE;
 static CacheEntry* gGameMouseCursorFrmHandle = INVALID_CACHE_ENTRY;
 
 // 0x518C14 gmouse_cursor_nums
-static const int gGameMouseCursorFrmIds[MOUSE_CURSOR_TYPE_COUNT] = {
-    266,
-    267,
-    268,
-    269,
-    270,
-    271,
-    272,
-    273,
-    274,
-    275,
-    276,
-    277,
-    330,
-    331,
-    329,
-    328,
-    332,
-    334,
-    333,
-    335,
-    279,
-    280,
-    281,
-    293,
-    310,
-    278,
-    295,
+static const ObjectFrameId gGameMouseCursorFrmIds[MOUSE_CURSOR_TYPE_COUNT] = {
+    static_cast<ObjectFrameId>(266),
+    static_cast<ObjectFrameId>(267),
+    static_cast<ObjectFrameId>(268),
+    static_cast<ObjectFrameId>(269),
+    static_cast<ObjectFrameId>(270),
+    static_cast<ObjectFrameId>(271),
+    static_cast<ObjectFrameId>(272),
+    static_cast<ObjectFrameId>(273),
+    static_cast<ObjectFrameId>(274),
+    static_cast<ObjectFrameId>(275),
+    static_cast<ObjectFrameId>(276),
+    static_cast<ObjectFrameId>(277),
+    static_cast<ObjectFrameId>(330),
+    static_cast<ObjectFrameId>(331),
+    static_cast<ObjectFrameId>(329),
+    static_cast<ObjectFrameId>(328),
+    static_cast<ObjectFrameId>(332),
+    static_cast<ObjectFrameId>(334),
+    static_cast<ObjectFrameId>(333),
+    static_cast<ObjectFrameId>(335),
+    static_cast<ObjectFrameId>(279),
+    static_cast<ObjectFrameId>(280),
+    static_cast<ObjectFrameId>(281),
+    static_cast<ObjectFrameId>(293),
+    static_cast<ObjectFrameId>(310),
+    static_cast<ObjectFrameId>(278),
+    static_cast<ObjectFrameId>(295),
 };
 
 // 0x518C80 gmouse_3d_initialized
@@ -230,17 +230,17 @@ static unsigned char* _gmouse_3d_menu_actions_start = nullptr;
 static unsigned char gGameMouseActionMenuHighlightedItemIndex = 0;
 
 // 0x518D1E gmouse_3d_action_nums
-static const short gGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT] = {
-    253, // Cancel
-    255, // Drop
-    257, // Inventory
-    259, // Look
-    261, // Rotate
-    263, // Talk
-    265, // Use/Get
-    302, // Unload
-    304, // Skill
-    435, // Push
+static const ObjectFrameId gGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT] = {
+    static_cast<ObjectFrameId>(253), // Cancel
+    static_cast<ObjectFrameId>(255), // Drop
+    static_cast<ObjectFrameId>(257), // Inventory
+    static_cast<ObjectFrameId>(259), // Look
+    static_cast<ObjectFrameId>(261), // Rotate
+    static_cast<ObjectFrameId>(263), // Talk
+    static_cast<ObjectFrameId>(265), // Use/Get
+    static_cast<ObjectFrameId>(302), // Unload
+    static_cast<ObjectFrameId>(304), // Skill
+    static_cast<ObjectFrameId>(435), // Push
 };
 
 // 0x518D34 gmouse_3d_modes_enabled
@@ -250,18 +250,18 @@ static int _gmouse_3d_modes_enabled = 1;
 static int gGameMouseMode = GAME_MOUSE_MODE_MOVE;
 
 // 0x518D3C gmouse_3d_mode_nums
-static int gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
-    249,
-    250,
-    251,
-    293,
-    293,
-    293,
-    293,
-    293,
-    293,
-    293,
-    293,
+static ObjectFrameId gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
+    static_cast<ObjectFrameId>(249),
+    static_cast<ObjectFrameId>(250),
+    static_cast<ObjectFrameId>(251),
+    static_cast<ObjectFrameId>(293),
+    static_cast<ObjectFrameId>(293),
+    static_cast<ObjectFrameId>(293),
+    static_cast<ObjectFrameId>(293),
+    static_cast<ObjectFrameId>(293),
+    static_cast<ObjectFrameId>(293),
+    static_cast<ObjectFrameId>(293),
+    static_cast<ObjectFrameId>(293),
 };
 
 // 0x518D68 gmouse_skill_table
@@ -774,7 +774,7 @@ void gameMouseRefresh()
                     if (primaryAction != -1) {
                         if (gameMouseRenderPrimaryAction(mouseX, mouseY, primaryAction, _scr_size.right - _scr_size.left + 1, _scr_size.bottom - _scr_size.top - 99) == 0) {
                             Rect tmp;
-                            int fid = buildFid(OBJ_TYPE_INTERFACE, 282);
+                            int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(282));
                             // NOTE: Uninline.
                             if (gmouse_3d_set_flat_fid(fid, &tmp) == 0) {
                                 tileWindowRefreshRect(&tmp, gElevation);
@@ -836,7 +836,7 @@ void gameMouseRefresh()
 
                     if (gameMouseRenderAccuracy(formattedAccuracy, color) == 0) {
                         Rect tmp;
-                        int fid = buildFid(OBJ_TYPE_INTERFACE, 284);
+                        int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(284));
                         // NOTE: Uninline.
                         if (gmouse_3d_set_flat_fid(fid, &tmp) == 0) {
                             tileWindowRefreshRect(&tmp, gElevation);
@@ -901,7 +901,7 @@ void gameMouseRefresh()
     gGameMouseLastY = mouseY;
 
     if (!_gmouse_mapper_mode) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, 0);
+        int fid = buildFid(OBJ_TYPE_INTERFACE, OBJECT_FRAME_ID_FIRST);
         gameMouseSetBouncingCursorFid(fid);
     }
 
@@ -1207,7 +1207,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
 
             if (gameMouseRenderActionMenuItems(mouseX, mouseY, actionMenuItems, actionMenuItemsCount, _scr_size.right - _scr_size.left + 1, _scr_size.bottom - _scr_size.top - 99) == 0) {
                 Rect cursorRect;
-                int fid = buildFid(OBJ_TYPE_INTERFACE, 283);
+                int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(283));
                 // NOTE: Uninline.
                 if (gmouse_3d_set_flat_fid(fid, &cursorRect) == 0 && _gmouse_3d_move_to(mouseX, mouseY, gElevation, &cursorRect) == 0) {
                     tileWindowRefreshRect(&cursorRect, gElevation);
@@ -1448,7 +1448,7 @@ void gameMouseSetMode(int mode)
         return;
     }
 
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 0);
+    int fid = buildFid(OBJ_TYPE_INTERFACE, OBJECT_FRAME_ID_FIRST);
     gameMouseSetBouncingCursorFid(fid);
 
     fid = buildFid(OBJ_TYPE_INTERFACE, gGameMouseModeFrmIds[mode]);
@@ -1603,7 +1603,7 @@ int gameMouseSetBouncingCursorFid(int fid)
 // 0x44CD0C gmouse_3d_reset_fid
 void gameMouseResetBouncingCursorFid()
 {
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 0);
+    int fid = buildFid(OBJ_TYPE_INTERFACE, OBJECT_FRAME_ID_FIRST);
     gameMouseSetBouncingCursorFid(fid);
 }
 
@@ -1820,7 +1820,7 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
         // mirrored cursor for far-right side of screen
         artUnlock(arrowFrmHandle);
 
-        arrowFid = buildFid(OBJ_TYPE_INTERFACE, 285);
+        arrowFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(285));
         arrowFrm = artLock(arrowFid, &arrowFrmHandle);
         if (arrowFrm == nullptr) {
             artUnlock(menuItemFrmHandle);
@@ -1892,9 +1892,9 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
             return -1;
         }
 
-        int frmId = gGameMouseActionMenuItemFrmIds[menuItems[index]] & 0xFFFF;
+        ObjectFrameId frmId = gGameMouseActionMenuItemFrmIds[menuItems[index]];
         if (index == 0) {
-            frmId -= 1;
+            frmId = frmId - 1;
         }
 
         int fid = buildFid(OBJ_TYPE_INTERFACE, frmId);
@@ -1973,7 +1973,7 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
     } else {
         // Mirrored arrow (from left to right).
         artUnlock(arrowFrmHandle);
-        fid = buildFid(OBJ_TYPE_INTERFACE, 285);
+        fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(285));
         arrowFrm = artLock(fid, &arrowFrmHandle);
         if (arrowFrm == nullptr) {
             for (int index = 0; index < menuItemsLength; index++) {
@@ -2182,7 +2182,7 @@ int gameMouseRenderActionPoints(const char* string, Color color)
 
     fontSetCurrent(oldFont);
 
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 1);
+    int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(1));
     gameMouseSetBouncingCursorFid(fid);
 
     return 0;
@@ -2203,12 +2203,12 @@ int gameMouseObjectsInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 0);
+    fid = buildFid(OBJ_TYPE_INTERFACE, OBJECT_FRAME_ID_FIRST);
     if (objectCreateWithFidPid(&gGameMouseBouncingCursor, fid, -1) != 0) {
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 1);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(1));
     if (objectCreateWithFidPid(&gGameMouseHexCursor, fid, -1) != 0) {
         return -1;
     }
@@ -2300,35 +2300,35 @@ int gameMouseActionMenuInit()
     int fid;
 
     // actmenu.frm - action menu
-    fid = buildFid(OBJ_TYPE_INTERFACE, 283);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(283));
     gGameMouseActionMenuFrm = artLock(fid, &gGameMouseActionMenuFrmHandle);
     if (gGameMouseActionMenuFrm == nullptr) {
         goto err;
     }
 
     // actpick.frm - action pick
-    fid = buildFid(OBJ_TYPE_INTERFACE, 282);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(282));
     gGameMouseActionPickFrm = artLock(fid, &gGameMouseActionPickFrmHandle);
     if (gGameMouseActionPickFrm == nullptr) {
         goto err;
     }
 
     // acttohit.frm - action to hit
-    fid = buildFid(OBJ_TYPE_INTERFACE, 284);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(284));
     gGameMouseActionHitFrm = artLock(fid, &gGameMouseActionHitFrmHandle);
     if (gGameMouseActionHitFrm == nullptr) {
         goto err;
     }
 
     // blank.frm - used be mset000.frm for top of bouncing mouse cursor
-    fid = buildFid(OBJ_TYPE_INTERFACE, 0);
+    fid = buildFid(OBJ_TYPE_INTERFACE, OBJECT_FRAME_ID_FIRST);
     gGameMouseBouncingCursorFrm = artLock(fid, &gGameMouseBouncingCursorFrmHandle);
     if (gGameMouseBouncingCursorFrm == nullptr) {
         goto err;
     }
 
     // msef000.frm - hex mouse cursor
-    fid = buildFid(OBJ_TYPE_INTERFACE, 1);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(1));
     gGameMouseHexCursorFrm = artLock(fid, &gGameMouseHexCursorFrmHandle);
     if (gGameMouseHexCursorFrm == nullptr) {
         goto err;
@@ -2722,13 +2722,14 @@ int objectIsDoor(Object* object)
 
 static void customMouseModeFrmsInit()
 {
-    configGetInt(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "first_aid", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_FIRST_AID]), 293);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "doctor", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_DOCTOR]), 293);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "lockpick", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_LOCKPICK]), 293);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "steal", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_STEAL]), 293);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "traps", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_TRAPS]), 293);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "science", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_SCIENCE]), 293);
-    configGetInt(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "repair", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_REPAIR]), 293);
+    ObjectFrameId defaultFrameId = static_cast<ObjectFrameId>(293);
+    configGetEnum<ObjectFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "first_aid", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_FIRST_AID]), defaultFrameId);
+    configGetEnum<ObjectFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "doctor", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_DOCTOR]), defaultFrameId);
+    configGetEnum<ObjectFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "lockpick", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_LOCKPICK]), defaultFrameId);
+    configGetEnum<ObjectFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "steal", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_STEAL]), defaultFrameId);
+    configGetEnum<ObjectFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "traps", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_TRAPS]), defaultFrameId);
+    configGetEnum<ObjectFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "science", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_SCIENCE]), defaultFrameId);
+    configGetEnum<ObjectFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "repair", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_REPAIR]), defaultFrameId);
 }
 
 void gameMouseRefreshImmediately()

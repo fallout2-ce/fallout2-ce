@@ -265,18 +265,18 @@ const Rect gPipboyWindowContentRect = {
 };
 
 // 0x496FD0 pipgrphs
-const int gPipboyFrmIds[PIPBOY_FRM_COUNT] = {
-    8,
-    9,
-    82,
-    127,
-    128,
-    129,
-    130,
-    131,
-    132,
-    133,
-    226,
+const ObjectFrameId gPipboyFrmIds[PIPBOY_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(8),
+    static_cast<ObjectFrameId>(9),
+    static_cast<ObjectFrameId>(82),
+    static_cast<ObjectFrameId>(127),
+    static_cast<ObjectFrameId>(128),
+    static_cast<ObjectFrameId>(129),
+    static_cast<ObjectFrameId>(130),
+    static_cast<ObjectFrameId>(131),
+    static_cast<ObjectFrameId>(132),
+    static_cast<ObjectFrameId>(133),
+    static_cast<ObjectFrameId>(226),
 };
 
 // 0x51C128 quests

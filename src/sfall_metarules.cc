@@ -1122,7 +1122,7 @@ void mf_car_gas_amount(OpcodeContext& ctx)
 
 void mf_set_car_intface_art(OpcodeContext& ctx)
 {
-    wmSetCarInterfaceArt(ctx.arg(0).asInt());
+    wmSetCarInterfaceArt(static_cast<ObjectFrameId>(ctx.arg(0).asInt()));
 }
 
 void mf_combat_data(OpcodeContext& ctx)

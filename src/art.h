@@ -33,8 +33,8 @@ typedef struct ArtFrame {
     short y;
 } ArtFrame;
 
-extern int _art_vault_guy_num;
-extern int _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
+extern ObjectFrameId _art_vault_guy_num;
+extern ObjectFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
 
 extern Cache gArtCache;
 
@@ -51,7 +51,7 @@ Art* artLock(int fid, CacheEntry** cache_entry);
 unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
-int artCopyFileName(ObjectType objectType, int id, char* dest);
+int artCopyFileName(ObjectType objectType, ObjectFrameId id, char* dest);
 int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr);
 char* artBuildFilePath(int fid);
 int artGetFramesPerSecond(Art* art);
@@ -68,11 +68,22 @@ ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
 ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
 bool artExists(int fid);
 bool _art_fid_valid(int fid);
-int _art_alias_num(int index);
+ObjectFrameId _art_alias_num(ObjectFrameId index);
 int artCritterFidShouldRun(int fid);
 int artAliasFid(int fid);
-int buildFid(ObjectType objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
-int artListIndex(ObjectType objectType, const char* name);
+int buildFid(ObjectType objectType, ObjectFrameId frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
+
+inline int buildFid(Head head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
+{
+    return buildFid(OBJ_TYPE_HEAD, static_cast<ObjectFrameId>(head), headAnimation, fidget);
+}
+
+inline int buildFid(Background background)
+{
+    return buildFid(OBJ_TYPE_BACKGROUND, static_cast<ObjectFrameId>(background));
+}
+
+ObjectFrameId artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);
 int artWrite(const char* path, unsigned char* data);
@@ -89,7 +100,7 @@ public:
         : _fid(fid)
     {
     }
-    explicit FrmId(ObjectType objType, int frmId);
+    explicit FrmId(ObjectType objType, ObjectFrameId frmId);
     explicit FrmId(ObjectType objType, const char* path);
     explicit FrmId(const char* path);
 

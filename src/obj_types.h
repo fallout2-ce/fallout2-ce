@@ -1,7 +1,7 @@
 #ifndef OBJ_TYPES_H
 #define OBJ_TYPES_H
 
-#include "worldmap.h"
+#include "worldmap_defs.h"
 
 namespace fallout {
 
@@ -98,6 +98,42 @@ inline ObjectType objectTypeFromPid(int pid)
 {
     int objectType = pid >> 24;
     return static_cast<ObjectType>(objectType);
+}
+
+enum ObjectFrameId : int {
+    OBJECT_FRAME_ID_INVALID = -1,
+    OBJECT_FRAME_ID_FIRST = 0,
+    OBJECT_FRAME_ID_LAST = 4095
+};
+
+inline constexpr ObjectFrameId operator+(ObjectFrameId lhs, int rhs) {
+    return static_cast<ObjectFrameId>(static_cast<int>(lhs) + rhs);
+}
+
+inline constexpr ObjectFrameId operator-(ObjectFrameId lhs, int rhs) {
+    return static_cast<ObjectFrameId>(static_cast<int>(lhs) - rhs);
+}
+
+inline ObjectFrameId operator++(ObjectFrameId& e, int)
+{
+    ObjectFrameId result = e;
+    e = e + 1;
+    return result;
+}
+
+inline bool objectFrameIdIsValid(int frmId)
+{
+    return frmId >= OBJECT_FRAME_ID_FIRST && frmId <= OBJECT_FRAME_ID_LAST;
+}
+
+inline ObjectFrameId objectFrameIdFromFid(int fid)
+{
+    return static_cast<ObjectFrameId>(fid & 0xFFF);
+}
+
+inline ObjectFrameId objectFrameIdFromPid(int pid)
+{
+    return static_cast<ObjectFrameId>(pid & 0xFFFFFF);
 }
 
 #define SID_TYPE(value) (value) >> 24

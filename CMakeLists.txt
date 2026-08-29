@@ -267,6 +267,7 @@ set(FALLOUT_ENGINE_SOURCES
     "src/word_wrap.h"
     "src/worldmap.cc"
     "src/worldmap.h"
+    "src/worldmap_defs.h"
     "src/xfile.cc"
     "src/xfile.h"
 )

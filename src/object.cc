@@ -366,7 +366,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
         exit(1);
     }
 
-    eggFid = buildFid(OBJ_TYPE_INTERFACE, 2);
+    eggFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(2));
     objectCreateWithFidPid(&gEgg, eggFid, -1);
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
@@ -1469,13 +1469,13 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofX = tile % 200 / 2;
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
-            int currentSquare = _square[elevation]->field_0[roofX + 100 * roofY];
+            int currentSquare = _square[elevation]->fid[roofX + 100 * roofY];
             int currentSquareFid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(currentSquare >> 16));
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
-                ? _square[elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y]
+                ? _square[elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            bool isEmpty = buildFid(OBJ_TYPE_TILE, 1) == currentSquareFid;
+            bool isEmpty = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1)) == currentSquareFid;
 
             if (isEmpty != _obj_last_is_empty || (((currentSquare >> 16) & 0xF000) >> 12) != (((previousSquare >> 16) & 0xF000) >> 12)) {
                 if (!_obj_last_is_empty) {
@@ -1527,8 +1527,8 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[gDude->elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
-    if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
+    int fid = buildFid(OBJ_TYPE_TILE, objectFrameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
+    if (fid != buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(1))) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
     return 0;
@@ -3196,7 +3196,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     if ((flags & MAP_HEADER_ELEVATION_0) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[0]->field_0[i];
+            int v3 = _square[0]->fid[i];
             arr[v3 & 0xFFF] = 1;
             arr[(v3 >> 16) & 0xFFF] = 1;
         }
@@ -3204,7 +3204,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     if ((flags & MAP_HEADER_ELEVATION_1) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[1]->field_0[i];
+            int v3 = _square[1]->fid[i];
             arr[v3 & 0xFFF] = 1;
             arr[(v3 >> 16) & 0xFFF] = 1;
         }
@@ -3212,7 +3212,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     if ((flags & MAP_HEADER_ELEVATION_2) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[2]->field_0[i];
+            int v3 = _square[2]->fid[i];
             arr[v3 & 0xFFF] = 1;
             arr[(v3 >> 16) & 0xFFF] = 1;
         }
@@ -3248,7 +3248,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     for (int i = 0; i < 4096; i++) {
         if (arr[i] != 0) {
-            int fid = buildFid(OBJ_TYPE_TILE, i);
+            int fid = buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(i));
             if (artLock(fid, &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }

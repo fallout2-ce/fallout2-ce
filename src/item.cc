@@ -185,7 +185,7 @@ static int gPlasticExplosiveMaxDamage;
 static std::vector<ExplosiveDescription> gExplosives;
 static Rotation gExplosionStartRotation;
 static Rotation gExplosionEndRotation;
-static int gExplosionFrm;
+static ObjectFrameId gExplosionFrm;
 static int gExplosionRadius;
 static DamageType gExplosionDamageType;
 static int gExplosionMaxTargets;
@@ -602,7 +602,7 @@ int itemDropAll(Object* critter, int tile)
 {
     bool hasEquippedItems = false;
 
-    int frmId = objectFrameIdFromFid(critter->fid);
+    ObjectFrameId frmId = objectFrameIdFromFid(critter->fid);
 
     Inventory* inventory = &(critter->data.inventory);
     while (inventory->length > 0) {
@@ -2306,10 +2306,10 @@ Perk armorGetPerk(Object* armor)
 }
 
 // 0x479380
-int armorGetMaleFid(Object* armor)
+ObjectFrameId armorGetMaleFid(Object* armor)
 {
     if (armor == nullptr) {
-        return -1;
+        return OBJECT_FRAME_ID_INVALID;
     }
 
     Proto* proto;
@@ -2319,10 +2319,10 @@ int armorGetMaleFid(Object* armor)
 }
 
 // 0x4793A8
-int armorGetFemaleFid(Object* armor)
+ObjectFrameId armorGetFemaleFid(Object* armor)
 {
     if (armor == nullptr) {
-        return -1;
+        return OBJECT_FRAME_ID_INVALID;
     }
 
     Proto* proto;
@@ -3695,7 +3695,7 @@ void explosionSettingsReset()
 {
     gExplosionStartRotation = ROTATION_FIRST;
     gExplosionEndRotation = ROTATION_COUNT;
-    gExplosionFrm = -1;
+    gExplosionFrm = OBJECT_FRAME_ID_INVALID;
     gExplosionRadius = -1;
     gExplosionDamageType = DAMAGE_TYPE_EXPLOSION;
     gExplosionMaxTargets = 6;
@@ -3713,12 +3713,12 @@ void explosionSetPattern(Rotation startRotation, Rotation endRotation)
     gExplosionEndRotation = endRotation;
 }
 
-int explosionGetFrm()
+ObjectFrameId explosionGetFrm()
 {
     return gExplosionFrm;
 }
 
-void explosionSetFrm(int frm)
+void explosionSetFrm(ObjectFrameId frm)
 {
     gExplosionFrm = frm;
 }

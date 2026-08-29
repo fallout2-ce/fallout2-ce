@@ -1941,7 +1941,7 @@ static void opStartGameDialog(Program* program)
     }
 
     if (headIsValid(head)) {
-        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, head);
+        gGameDialogHeadFid = buildFid(head);
     }
 
     gameDialogSetBackground(background);
@@ -2061,7 +2061,7 @@ static void opMetarule3(Program* program)
     case METARULE3_ART_SET_BASE_FID_NUM:
         if (1) {
             Object* obj = static_cast<Object*>(param1.pointerValue);
-            int frmId = param2.integerValue;
+            ObjectFrameId frmId = static_cast<ObjectFrameId>(param2.integerValue);
 
             int fid = buildFid(objectTypeFromFid(obj->fid),
                 frmId,
@@ -3347,7 +3347,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (buildFid(OBJ_TYPE_MISC, 10) == object->fid) {
+                if (buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(10)) == object->fid) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }

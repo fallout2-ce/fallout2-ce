@@ -44,8 +44,8 @@ typedef enum ElevatorFrm {
 } ElevatorFrm;
 
 typedef struct ElevatorBackground {
-    int backgroundFrmId;
-    int panelFrmId;
+    ObjectFrameId backgroundFrmId;
+    ObjectFrameId panelFrmId;
 } ElevatorBackground;
 
 typedef struct ElevatorDescription {
@@ -60,38 +60,38 @@ static int elevatorGetLevelFromKeyCode(int elevator, int keyCode);
 static int elevatorGetLevelFromEscKey(int elevator, int map);
 
 // 0x43E950 grph_id_2
-static const int gElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
-    141, // ebut_in.frm - map elevator screen
-    142, // ebut_out.frm - map elevator screen
-    149, // gaj000.frm - map elevator screen
+static const ObjectFrameId gElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(141), // ebut_in.frm - map elevator screen
+    static_cast<ObjectFrameId>(142), // ebut_out.frm - map elevator screen
+    static_cast<ObjectFrameId>(149), // gaj000.frm - map elevator screen
 };
 
 // 0x43E95C intotal
 static ElevatorBackground gElevatorBackgrounds[ELEVATORS_MAX] = {
-    { 143, -1 },
-    { 143, 150 },
-    { 144, -1 },
-    { 144, 145 },
-    { 146, -1 },
-    { 146, 147 },
-    { 146, -1 },
-    { 146, 151 },
-    { 148, -1 },
-    { 146, -1 },
-    { 146, -1 },
-    { 146, 147 },
-    { 388, -1 },
-    { 143, 150 },
-    { 148, -1 },
-    { 148, -1 },
-    { 148, -1 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
+    { static_cast<ObjectFrameId>(143), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { static_cast<ObjectFrameId>(144), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(144), static_cast<ObjectFrameId>(145) },
+    { static_cast<ObjectFrameId>(146), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(146), static_cast<ObjectFrameId>(147) },
+    { static_cast<ObjectFrameId>(146), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(146), static_cast<ObjectFrameId>(151) },
+    { static_cast<ObjectFrameId>(148), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(146), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(146), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(146), static_cast<ObjectFrameId>(147) },
+    { static_cast<ObjectFrameId>(388), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { static_cast<ObjectFrameId>(148), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(148), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(148), OBJECT_FRAME_ID_INVALID},
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
+    { static_cast<ObjectFrameId>(143), static_cast<ObjectFrameId>(150) },
 };
 
 // Number of levels for eleveators.
@@ -711,8 +711,8 @@ void elevatorsInit()
             }
         }
 
-        configGetInt(elevatorsConfig.get(), sectionKey, "MainFrm", &(gElevatorBackgrounds[index].backgroundFrmId));
-        configGetInt(elevatorsConfig.get(), sectionKey, "ButtonsFrm", &(gElevatorBackgrounds[index].panelFrmId));
+        configGetEnum<ObjectFrameId>(elevatorsConfig.get(), sectionKey, "MainFrm", &(gElevatorBackgrounds[index].backgroundFrmId));
+        configGetEnum<ObjectFrameId>(elevatorsConfig.get(), sectionKey, "ButtonsFrm", &(gElevatorBackgrounds[index].panelFrmId));
 
         for (int level = 0; level < ELEVATOR_LEVEL_MAX; level++) {
             snprintf(key, sizeof(key), "ID%d", level + 1);

@@ -62,7 +62,7 @@ typedef struct EndgameDeathEnding {
 typedef struct EndgameEnding {
     GameGlobalVar gvar;
     int value;
-    int art_num;
+    ObjectFrameId art_num;
     char voiceOverBaseName[12];
     int direction;
 } EndgameEnding;
@@ -75,7 +75,7 @@ static void endgameEndingSlideshowWindowFree();
 static void endgameEndingVoiceOverInit(const char* fname);
 static void endgameEndingVoiceOverReset();
 static void endgameEndingVoiceOverFree();
-static void endgameEndingLoadPalette(ObjectType type, int id);
+static void endgameEndingLoadPalette(ObjectType type, ObjectFrameId id);
 static void _endgame_voiceover_callback();
 static int endgameEndingSubtitlesLoad(const char* filePath);
 static void endgameEndingRefreshSubtitles();
@@ -345,7 +345,7 @@ static int endgameEndingHandleContinuePlaying()
 // 0x43FBDC endgame_pan_desert
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 327);
+    int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(327));
 
     CacheEntry* backgroundHandle;
     Art* background = artLock(fid, &backgroundHandle);
@@ -354,7 +354,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         int height = artGetHeight(background);
         unsigned char* backgroundData = artGetFrameData(background);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
-        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, 327);
+        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(327));
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
@@ -769,7 +769,7 @@ static void endgameEndingVoiceOverFree()
 }
 
 // 0x440378 endgame_load_palette
-static void endgameEndingLoadPalette(ObjectType type, int id)
+static void endgameEndingLoadPalette(ObjectType type, ObjectFrameId id)
 {
     char fileName[13];
     if (artCopyFileName(type, id, fileName) != 0) {
@@ -972,7 +972,7 @@ static int endgameEndingInit()
             continue;
         }
 
-        entry.art_num = atoi(tok);
+        entry.art_num = static_cast<ObjectFrameId>(atoi(tok));
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {

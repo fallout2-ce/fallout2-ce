@@ -5530,7 +5530,7 @@ static void _combat_standup(Object* a1)
 static void _print_tohit(unsigned char* dest, int destPitch, int accuracy)
 {
     FrmImage numbersFrmImage;
-    int numbersFid = buildFid(OBJ_TYPE_INTERFACE, 82);
+    int numbersFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(82));
     if (!numbersFrmImage.lock(numbersFid)) {
         return;
     }
@@ -5619,7 +5619,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
     unsigned char* windowBuffer = windowGetBuffer(gCalledShotWindow);
 
     FrmImage backgroundFrm;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 118);
+    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(118));
     if (!backgroundFrm.lock(backgroundFid)) {
         windowDestroy(gCalledShotWindow);
         return -1;
@@ -5644,14 +5644,14 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
     }
 
     FrmImage cancelButtonNormalFrmImage;
-    int cancelButtonNormalFid = buildFid(OBJ_TYPE_INTERFACE, 8);
+    int cancelButtonNormalFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
     if (!cancelButtonNormalFrmImage.lock(cancelButtonNormalFid)) {
         windowDestroy(gCalledShotWindow);
         return -1;
     }
 
     FrmImage cancelButtonPressedFrmImage;
-    int cancelButtonPressedFid = buildFid(OBJ_TYPE_INTERFACE, 9);
+    int cancelButtonPressedFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
     if (!cancelButtonPressedFrmImage.lock(cancelButtonPressedFid)) {
         windowDestroy(gCalledShotWindow);
         return -1;

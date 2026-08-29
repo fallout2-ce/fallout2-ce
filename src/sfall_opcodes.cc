@@ -1396,7 +1396,7 @@ static void op_get_tile_fid(Program* program)
         return;
     }
 
-    int squareData = _square[elevation]->field_0[squareTile];
+    int squareData = _square[elevation]->fid[squareTile];
 
     switch (mode) {
     case 1:
@@ -1482,7 +1482,7 @@ static void op_explosions_metarule(Program* program)
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_ART:
-        explosionSetFrm(param1);
+        explosionSetFrm(static_cast<ObjectFrameId>(param1));
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_RADIUS:

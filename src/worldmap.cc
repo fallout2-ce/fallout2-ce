@@ -597,7 +597,7 @@ static void wmMarkSubTileRadiusVisited(int x, int y);
 static int wmTileGrabArt(int tileIdx);
 static int wmInterfaceRefresh();
 static void wmInterfaceRefreshDate(bool shouldRefreshWindow);
-static bool wmLockCarInterfaceArt(int artIndex, Art** artPtr, CacheEntry** handlePtr);
+static bool wmLockCarInterfaceArt(ObjectFrameId artIndex, Art** artPtr, CacheEntry** handlePtr);
 static int wmMatchWorldPosToArea(int x, int y, City* areaIdxPtr);
 static int wmInterfaceDrawCircleOverlay(CityInfo* cityInfo, CitySizeDescription* citySizeInfo, unsigned char* buffer, int x, int y);
 static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y);
@@ -770,10 +770,9 @@ Color* circleBlendTable = nullptr;
 // 0x51DE38 wmInterfaceWasInitialized
 static int wmInterfaceWasInitialized = 0;
 
-static constexpr int kDefaultCarInterfaceArtFrmId = 433;
-static constexpr int kMaxFrmId = 0xFFF;
+static constexpr ObjectFrameId kDefaultCarInterfaceArtFrmId = static_cast<ObjectFrameId>(433);
 
-static int carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
+static ObjectFrameId carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
 
 // 0x51DE3C wmEncOpStrs
 static const char* wmEncOpStrs[ENCOUNTER_SITUATION_COUNT] = {
@@ -809,11 +808,11 @@ static const char* wmFormationStrs[ENCOUNTER_FORMATION_TYPE_COUNT] = {
 };
 
 // 0x51DE84 wmRndCursorFids
-static const int wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
-    154,
-    155,
-    438,
-    439,
+static const ObjectFrameId wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(154),
+    static_cast<ObjectFrameId>(155),
+    static_cast<ObjectFrameId>(438),
+    static_cast<ObjectFrameId>(439),
 };
 
 #define MAX_TRAIL_LENGTH 1000
@@ -1154,7 +1153,7 @@ int wmWorldMap_init()
     // initialize it.
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        citySizeDescription->fid = buildFid(OBJ_TYPE_INTERFACE, 336 + citySize);
+        citySizeDescription->fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(336 + citySize));
     }
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_WORLDMAP, &wmMsgFile);
@@ -1686,8 +1685,8 @@ static int wmConfigInit()
             char section[40];
             snprintf(section, sizeof(section), "Tile %d", tileIndex);
 
-            int artIndex;
-            if (!configGetInt(config.get(), section, "art_idx", &artIndex)) {
+            ObjectFrameId artIndex;
+            if (!configGetEnum<ObjectFrameId>(config.get(), section, "art_idx", &artIndex)) {
                 break;
             }
 
@@ -2767,7 +2766,7 @@ static int wmAreaInit()
     char section[40];
     char key[40];
     City area_idx;
-    int num;
+    ObjectFrameId frmId;
     char* str;
     CityInfo* cities;
     CityInfo* city;
@@ -2785,7 +2784,7 @@ static int wmAreaInit()
         area_idx = CITY_FIRST;
         do {
             snprintf(section, sizeof(section), "Area %02d", area_idx);
-            if (!configGetInt(cfg.get(), section, "townmap_art_idx", &num)) {
+            if (!configGetEnum<ObjectFrameId>(cfg.get(), section, "townmap_art_idx", &frmId)) {
                 break;
             }
 
@@ -2806,18 +2805,21 @@ static int wmAreaInit()
 
             city->areaId = area_idx;
 
-            if (num != -1) {
-                num = buildFid(OBJ_TYPE_INTERFACE, num);
+            int fid = -1;
+            if (frmId != OBJECT_FRAME_ID_INVALID) {
+                fid = buildFid(OBJ_TYPE_INTERFACE, frmId);
             }
 
-            city->mapFid = num;
+            city->mapFid = fid;
+            
+            fid = -1;
 
-            if (configGetInt(cfg.get(), section, "townmap_label_art_idx", &num)) {
-                if (num != -1) {
-                    num = buildFid(OBJ_TYPE_INTERFACE, num);
+            if (configGetEnum<ObjectFrameId>(cfg.get(), section, "townmap_label_art_idx", &frmId)) {
+                if (frmId != OBJECT_FRAME_ID_INVALID) {
+                    fid = buildFid(OBJ_TYPE_INTERFACE, frmId);
                 }
 
-                city->labelFid = num;
+                city->labelFid = fid;
             }
 
             if (!configGetString(cfg.get(), section, "area_name", &str)) {
@@ -5004,7 +5006,7 @@ static int wmInterfaceInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 136);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(136));
     if (!_backgroundFrmImage.lock(fid)) {
         return -1;
     }
@@ -5035,25 +5037,25 @@ static int wmInterfaceInit()
     }
 
     // hotspot1.frm - town map selector shape #1
-    fid = buildFid(OBJ_TYPE_INTERFACE, 168);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(168));
     if (!wmGenData.hotspotNormalFrmImage.lock(fid)) {
         return -1;
     }
 
     // hotspot2.frm - town map selector shape #2
-    fid = buildFid(OBJ_TYPE_INTERFACE, 223);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(223));
     if (!wmGenData.hotspotPressedFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmaptarg.frm - world map move target maker #1
-    fid = buildFid(OBJ_TYPE_INTERFACE, 139);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(139));
     if (!wmGenData.destinationMarkerFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmaploc.frm - world map location marker
-    fid = buildFid(OBJ_TYPE_INTERFACE, 138);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(138));
     if (!wmGenData.locationMarkerFrmImage.lock(fid)) {
         return -1;
     }
@@ -5070,19 +5072,19 @@ static int wmInterfaceInit()
     }
 
     // wmtabs.frm - worldmap town tabs underlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, 364);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(364));
     if (!wmGenData.tabsBackgroundFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmtbedge.frm - worldmap town tabs edging overlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, 367);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(367));
     if (!wmGenData.tabsBorderFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmdial.frm - worldmap night/day dial
-    fid = buildFid(OBJ_TYPE_INTERFACE, 365);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(365));
     wmGenData.dialFrm = artLock(fid, &(wmGenData.dialFrmHandle));
     if (wmGenData.dialFrm == nullptr) {
         return -1;
@@ -5092,33 +5094,33 @@ static int wmInterfaceInit()
     wmGenData.dialFrmHeight = artGetHeight(wmGenData.dialFrm);
 
     // wmscreen - worldmap overlay screen
-    fid = buildFid(OBJ_TYPE_INTERFACE, 363);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(363));
     if (!wmGenData.carOverlayFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmglobe.frm - worldmap globe stamp overlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, 366);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(366));
     if (!wmGenData.globeOverlayFrmImage.lock(fid)) {
         return -1;
     }
 
     // lilredup.frm - little red button up
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
     wmGenData.redButtonNormalFrmImage.lock(fid);
 
     // lilreddn.frm - little red button down
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
     wmGenData.redButtonPressedFrmImage.lock(fid);
 
     // months.frm - month strings for pip boy
-    fid = buildFid(OBJ_TYPE_INTERFACE, 129);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(129));
     if (!wmGenData.monthsFrmImage.lock(fid)) {
         return -1;
     }
 
     // numbers.frm - numbers for the hit points and fatigue counters
-    fid = buildFid(OBJ_TYPE_INTERFACE, 82);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(82));
     if (!wmGenData.numbersFrmImage.lock(fid)) {
         return -1;
     }
@@ -5168,7 +5170,7 @@ static int wmInterfaceInit()
         // 200 - uparwon.frm - character editor
         // 199 - uparwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        fid = buildFid(OBJ_TYPE_INTERFACE, 199 + index);
+        fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(199 + index));
         if (!wmGenData.scrollUpButtonFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -5178,7 +5180,7 @@ static int wmInterfaceInit()
         // 182 - dnarwon.frm - character editor
         // 181 - dnarwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        fid = buildFid(OBJ_TYPE_INTERFACE, 181 + index);
+        fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(181 + index));
         if (!wmGenData.scrollDownButtonFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -6801,9 +6803,9 @@ int wmCarGasAmount()
     return wmGenData.carFuel;
 }
 
-static bool wmLockCarInterfaceArt(int artIndex, Art** artPtr, CacheEntry** handlePtr)
+static bool wmLockCarInterfaceArt(ObjectFrameId artIndex, Art** artPtr, CacheEntry** handlePtr)
 {
-    if (artIndex < 0 || artIndex > kMaxFrmId) {
+    if (!objectFrameIdIsValid(artIndex)) {
         return false;
     }
 
@@ -6827,7 +6829,7 @@ static bool wmLockCarInterfaceArt(int artIndex, Art** artPtr, CacheEntry** handl
     return true;
 }
 
-void wmSetCarInterfaceArt(int artIndex)
+void wmSetCarInterfaceArt(ObjectFrameId artIndex)
 {
     Art* art = nullptr;
     CacheEntry* handle = INVALID_CACHE_ENTRY;

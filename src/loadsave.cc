@@ -186,16 +186,16 @@ static int _SaveObjDudeCid(File* stream);
 static int _EraseSave();
 
 // 0x47B7C0 lsgrphs
-static const int gLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
-    237, // lsgame.frm - load/save game
-    238, // lsgbox.frm - load/save game
-    239, // lscover.frm - load/save game
-    9, // lilreddn.frm - little red button down
-    8, // lilredup.frm - little red button up
-    181, // dnarwoff.frm - character editor
-    182, // dnarwon.frm - character editor
-    199, // uparwoff.frm - character editor
-    200, // uparwon.frm - character editor
+static const ObjectFrameId gLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(237), // lsgame.frm - load/save game
+    static_cast<ObjectFrameId>(238), // lsgbox.frm - load/save game
+    static_cast<ObjectFrameId>(239), // lscover.frm - load/save game
+    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
+    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
+    static_cast<ObjectFrameId>(181), // dnarwoff.frm - character editor
+    static_cast<ObjectFrameId>(182), // dnarwon.frm - character editor
+    static_cast<ObjectFrameId>(199), // uparwoff.frm - character editor
+    static_cast<ObjectFrameId>(200), // uparwon.frm - character editor
 };
 
 // Control max number of save/load pages

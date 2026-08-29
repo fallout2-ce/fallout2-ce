@@ -36,7 +36,7 @@ namespace fallout {
 typedef struct StatDescription {
     char* name;
     char* description;
-    int frmId;
+    ObjectFrameId frmId;
     int minimumValue;
     int maximumValue;
     int defaultValue;
@@ -44,53 +44,53 @@ typedef struct StatDescription {
 
 // 0x51D53C stat_data
 static StatDescription gStatDescriptions[STAT_COUNT] = {
-    { nullptr, nullptr, 0, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_STRENGTH
-    { nullptr, nullptr, 1, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_PERCEPTION
-    { nullptr, nullptr, 2, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_ENDURANCE
-    { nullptr, nullptr, 3, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_CHARISMA
-    { nullptr, nullptr, 4, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_INTELLIGENCE
-    { nullptr, nullptr, 5, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_AGILITY
-    { nullptr, nullptr, 6, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_LUCK
-    { nullptr, nullptr, 10, 0, 999, 0 }, // STAT_MAXIMUM_HIT_POINTS
-    { nullptr, nullptr, 75, 1, 99, 0 }, // STAT_MAXIMUM_ACTION_POINTS
-    { nullptr, nullptr, 18, 0, 999, 0 }, // STAT_ARMOR_CLASS
-    { nullptr, nullptr, 31, 0, INT_MAX, 0 }, // STAT_UNARMED_DAMAGE
-    { nullptr, nullptr, 32, 0, 500, 0 }, // STAT_MELEE_DAMAGE
-    { nullptr, nullptr, 20, 0, 999, 0 }, // STAT_CARRY_WEIGHT
-    { nullptr, nullptr, 24, 0, 60, 0 }, // STAT_SEQUENCE
-    { nullptr, nullptr, 25, 0, 30, 0 }, // STAT_HEALING_RATE
-    { nullptr, nullptr, 26, 0, 100, 0 }, // STAT_CRITICAL_CHANCE
-    { nullptr, nullptr, 94, -60, 100, 0 }, // STAT_BETTER_CRITICALS
-    { nullptr, nullptr, 0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD
-    { nullptr, nullptr, 0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_LASER
-    { nullptr, nullptr, 0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_FIRE
-    { nullptr, nullptr, 0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_PLASMA
-    { nullptr, nullptr, 0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_ELECTRICAL
-    { nullptr, nullptr, 0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EMP
-    { nullptr, nullptr, 0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EXPLOSION
-    { nullptr, nullptr, 22, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE
-    { nullptr, nullptr, 0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_LASER
-    { nullptr, nullptr, 0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_FIRE
-    { nullptr, nullptr, 0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_PLASMA
-    { nullptr, nullptr, 0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_ELECTRICAL
-    { nullptr, nullptr, 0, 0, 100, 0 }, // STAT_DAMAGE_RESISTANCE_EMP
-    { nullptr, nullptr, 0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_EXPLOSION
-    { nullptr, nullptr, 83, 0, 95, 0 }, // STAT_RADIATION_RESISTANCE
-    { nullptr, nullptr, 23, 0, 95, 0 }, // STAT_POISON_RESISTANCE
-    { nullptr, nullptr, 0, 16, 101, 25 }, // STAT_AGE
-    { nullptr, nullptr, 0, 0, 1, 0 }, // STAT_GENDER
-    { nullptr, nullptr, 10, 0, 2000, 0 }, // STAT_CURRENT_HIT_POINTS
-    { nullptr, nullptr, 11, 0, 2000, 0 }, // STAT_CURRENT_POISON_LEVEL
-    { nullptr, nullptr, 12, 0, 2000, 0 }, // STAT_CURRENT_RADIATION_LEVEL
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_STRENGTH
+    { nullptr, nullptr, static_cast<ObjectFrameId>(1), PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_PERCEPTION
+    { nullptr, nullptr, static_cast<ObjectFrameId>(2), PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_ENDURANCE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(3), PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_CHARISMA
+    { nullptr, nullptr, static_cast<ObjectFrameId>(4), PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_INTELLIGENCE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(5), PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_AGILITY
+    { nullptr, nullptr, static_cast<ObjectFrameId>(6), PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_LUCK
+    { nullptr, nullptr, static_cast<ObjectFrameId>(10), 0, 999, 0 }, // STAT_MAXIMUM_HIT_POINTS
+    { nullptr, nullptr, static_cast<ObjectFrameId>(75), 1, 99, 0 }, // STAT_MAXIMUM_ACTION_POINTS
+    { nullptr, nullptr, static_cast<ObjectFrameId>(18), 0, 999, 0 }, // STAT_ARMOR_CLASS
+    { nullptr, nullptr, static_cast<ObjectFrameId>(31), 0, INT_MAX, 0 }, // STAT_UNARMED_DAMAGE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(32), 0, 500, 0 }, // STAT_MELEE_DAMAGE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(20), 0, 999, 0 }, // STAT_CARRY_WEIGHT
+    { nullptr, nullptr, static_cast<ObjectFrameId>(24), 0, 60, 0 }, // STAT_SEQUENCE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(25), 0, 30, 0 }, // STAT_HEALING_RATE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(26), 0, 100, 0 }, // STAT_CRITICAL_CHANCE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(94), -60, 100, 0 }, // STAT_BETTER_CRITICALS
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_LASER
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_FIRE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_PLASMA
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_ELECTRICAL
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EMP
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EXPLOSION
+    { nullptr, nullptr, static_cast<ObjectFrameId>(22), 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_LASER
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_FIRE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_PLASMA
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_ELECTRICAL
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 100, 0 }, // STAT_DAMAGE_RESISTANCE_EMP
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_EXPLOSION
+    { nullptr, nullptr, static_cast<ObjectFrameId>(83), 0, 95, 0 }, // STAT_RADIATION_RESISTANCE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(23), 0, 95, 0 }, // STAT_POISON_RESISTANCE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 16, 101, 25 }, // STAT_AGE
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, 1, 0 }, // STAT_GENDER
+    { nullptr, nullptr, static_cast<ObjectFrameId>(10), 0, 2000, 0 }, // STAT_CURRENT_HIT_POINTS
+    { nullptr, nullptr, static_cast<ObjectFrameId>(11), 0, 2000, 0 }, // STAT_CURRENT_POISON_LEVEL
+    { nullptr, nullptr, static_cast<ObjectFrameId>(12), 0, 2000, 0 }, // STAT_CURRENT_RADIATION_LEVEL
 };
 
 // 0x51D8CC pc_stat_data
 static StatDescription gPcStatDescriptions[PC_STAT_COUNT] = {
-    { nullptr, nullptr, 0, 0, INT_MAX, 0 },
-    { nullptr, nullptr, 0, 1, PC_LEVEL_MAX, 1 },
-    { nullptr, nullptr, 0, 0, INT_MAX, 0 },
-    { nullptr, nullptr, 0, -20, 20, 0 },
-    { nullptr, nullptr, 0, 0, INT_MAX, 0 },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, INT_MAX, 0 },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 1, PC_LEVEL_MAX, 1 },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, INT_MAX, 0 },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), -20, 20, 0 },
+    { nullptr, nullptr, static_cast<ObjectFrameId>(0), 0, INT_MAX, 0 },
 };
 
 // 0x66817C stat_message_file
@@ -906,9 +906,9 @@ char* pcStatGetDescription(PcStat pcStat)
 }
 
 // 0x4AFA34
-int statGetFrmId(Stat stat)
+ObjectFrameId statGetFrmId(Stat stat)
 {
-    return statIsValid(stat) ? gStatDescriptions[stat].frmId : 0;
+    return statIsValid(stat) ? gStatDescriptions[stat].frmId : OBJECT_FRAME_ID_FIRST;
 }
 
 // Roll D10 against specified stat.

@@ -17,7 +17,7 @@ namespace fallout {
 
 // TODO: Probably not needed -> replace with array?
 typedef struct TileData {
-    int field_0[SQUARE_GRID_SIZE];
+    int fid[SQUARE_GRID_SIZE];
 } TileData;
 
 typedef struct MapHeader {

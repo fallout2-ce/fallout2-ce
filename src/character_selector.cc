@@ -91,7 +91,7 @@ inline PremadeCharacter operator--(PremadeCharacter& e, int)
 
 typedef struct PremadeCharacterDescription {
     char fileName[20];
-    int face;
+    ObjectFrameId face;
     char vid[20];
 } PremadeCharacterDescription;
 
@@ -110,9 +110,9 @@ static PremadeCharacter gCurrentPremadeCharacter = PREMADE_CHARACTER_NARG;
 
 // 0x51C850 premade_characters
 static PremadeCharacterDescription gPremadeCharacterDescriptions[PREMADE_CHARACTER_COUNT] = {
-    { "premade\\combat", 201, "VID 208-197-88-125" },
-    { "premade\\stealth", 202, "VID 208-206-49-229" },
-    { "premade\\diplomat", 203, "VID 208-206-49-227" },
+    { "premade\\combat", static_cast<ObjectFrameId>(201), "VID 208-197-88-125" },
+    { "premade\\stealth", static_cast<ObjectFrameId>(202), "VID 208-206-49-229" },
+    { "premade\\diplomat", static_cast<ObjectFrameId>(203), "VID 208-206-49-227" },
 };
 
 // 0x51C8D4 premade_total
@@ -295,7 +295,7 @@ static bool characterSelectorWindowInit()
     }
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 174);
+    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(174));
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -323,12 +323,12 @@ static bool characterSelectorWindowInit()
     int fid;
 
     // Setup "Previous" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, 122);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(122));
     if (!_previousButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 123);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(123));
     if (!_previousButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -353,12 +353,12 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowPreviousButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
     // Setup "Next" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, 124);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(124));
     if (!_nextButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 125);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(125));
     if (!_nextButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -383,12 +383,12 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowNextButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
     // Setup "Take" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
     if (!_takeButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
     if (!_takeButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -413,11 +413,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowTakeButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Modify" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
     if (!_modifyButtonNormalFrmImage.lock(fid))
         return characterSelectorWindowFatalError(false);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
     if (!_modifyButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -442,12 +442,12 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowModifyButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Create" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
     if (!_createButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
     if (!_createButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -472,12 +472,12 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowCreateButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Back" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
     if (!_backButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
     if (!_backButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -969,7 +969,7 @@ void premadeCharactersInit()
                 *pch = '\0';
             }
 
-            gCustomPremadeCharacterDescriptions[index].face = atoi(faceFidsString);
+            gCustomPremadeCharacterDescriptions[index].face = static_cast<ObjectFrameId>(atoi(faceFidsString));
 
             if (pch != nullptr) {
                 *pch = ',';

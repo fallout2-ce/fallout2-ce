@@ -90,9 +90,9 @@ typedef enum FileDialogScrollDirection {
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
 
 // 0x5108C8 dbox
-static const int gDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    218, // MEDIALOG.FRM - Medium generic dialog box
-    217, // LGDIALOG.FRM - Large generic dialog box
+static const ObjectFrameId gDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
+    static_cast<ObjectFrameId>(218), // MEDIALOG.FRM - Medium generic dialog box
+    static_cast<ObjectFrameId>(217), // LGDIALOG.FRM - Large generic dialog box
 };
 
 // 0x5108D0 ytable
@@ -126,25 +126,25 @@ static const int _dblines[DIALOG_TYPE_COUNT] = {
 };
 
 // 0x510900 flgids
-static int gLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    224, // loadbox.frm - character editor
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
-    181, // dnarwoff.frm - character editor
-    182, // dnarwon.frm - character editor
-    199, // uparwoff.frm - character editor
-    200, // uparwon.frm - character editor
+static ObjectFrameId gLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(224), // loadbox.frm - character editor
+    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
+    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
+    static_cast<ObjectFrameId>(181), // dnarwoff.frm - character editor
+    static_cast<ObjectFrameId>(182), // dnarwon.frm - character editor
+    static_cast<ObjectFrameId>(199), // uparwoff.frm - character editor
+    static_cast<ObjectFrameId>(200), // uparwon.frm - character editor
 };
 
 // 0x51091C flgids2
-static int gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    225, // savebox.frm - character editor
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
-    181, // dnarwoff.frm - character editor
-    182, // dnarwon.frm - character editor
-    199, // uparwoff.frm - character editor
-    200, // uparwon.frm - character editor
+static ObjectFrameId gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+    static_cast<ObjectFrameId>(225), // savebox.frm - character editor
+    static_cast<ObjectFrameId>(8), // lilredup.frm - little red button up
+    static_cast<ObjectFrameId>(9), // lilreddn.frm - little red button down
+    static_cast<ObjectFrameId>(181), // dnarwoff.frm - character editor
+    static_cast<ObjectFrameId>(182), // dnarwon.frm - character editor
+    static_cast<ObjectFrameId>(199), // uparwoff.frm - character editor
+    static_cast<ObjectFrameId>(200), // uparwon.frm - character editor
 };
 
 // 0x41CF20 dialog_out
@@ -229,21 +229,21 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonPressedFrmImage;
 
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, 209);
+        int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(209));
         if (!doneBoxFrmImage.lock(doneBoxFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        int pressedFid = buildFid(OBJ_TYPE_INTERFACE, 9);
+        int pressedFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
         if (!buttonPressedFrmImage.lock(pressedFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        int normalFid = buildFid(OBJ_TYPE_INTERFACE, 8);
+        int normalFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
         if (!buttonNormalFrmImage.lock(normalFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
@@ -346,21 +346,21 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
         } else {
-            int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, 209);
+            int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(209));
             if (!doneBoxFrmImage.lock(doneBoxFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            int pressedFid = buildFid(OBJ_TYPE_INTERFACE, 9);
+            int pressedFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
             if (!buttonPressedFrmImage.lock(pressedFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            int normalFid = buildFid(OBJ_TYPE_INTERFACE, 8);
+            int normalFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
             if (!buttonNormalFrmImage.lock(normalFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);

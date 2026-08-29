@@ -414,7 +414,7 @@ int interfaceInit()
         blitBufferToBuffer(customInterfaceBarGetBackgroundImageData(), gInterfaceBarWidth, INTERFACE_BAR_HEIGHT - 1, gInterfaceBarWidth, gInterfaceWindowBuffer, gInterfaceBarWidth);
     } else {
         FrmImage backgroundFrmImage;
-        fid = buildFid(OBJ_TYPE_INTERFACE, 16);
+        fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(16));
         if (!backgroundFrmImage.lock(fid)) {
             return intface_fatal_error(-1);
         }
@@ -425,13 +425,13 @@ int interfaceInit()
 
     extendedApBarInitToWindow();
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 47);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(47));
     if (!_inventoryButtonNormalFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 46);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(46));
     if (!_inventoryButtonPressedFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -445,13 +445,13 @@ int interfaceInit()
 
     buttonSetCallbacks(gInventoryButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 18);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(18));
     if (!_optionsButtonNormalFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 17);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(17));
     if (!_optionsButtonPressedFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -465,19 +465,19 @@ int interfaceInit()
 
     buttonSetCallbacks(gOptionsButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 6);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(6));
     if (!_skilldexButtonNormalFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 7);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(7));
     if (!_skilldexButtonPressedFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 6);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(6));
     if (!_skilldexButtonMaskFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -492,19 +492,19 @@ int interfaceInit()
     buttonSetMask(gSkilldexButton, _skilldexButtonMaskFrmImage.getData());
     buttonSetCallbacks(gSkilldexButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 13);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(13));
     if (!_mapButtonNormalFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 10);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(10));
     if (!_mapButtonPressedFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 13);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(13));
     if (!_mapButtonMaskFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -519,13 +519,13 @@ int interfaceInit()
     buttonSetMask(gMapButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gMapButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 59);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(59));
     if (!_pipboyButtonNormalFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 58);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(58));
     if (!_pipboyButtonPressedFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -540,13 +540,13 @@ int interfaceInit()
     buttonSetMask(gPipboyButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gPipboyButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 57);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(57));
     if (!_characterButtonNormalFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 56);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(56));
     if (!_characterButtonPressedFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -561,19 +561,19 @@ int interfaceInit()
     buttonSetMask(gCharacterButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gCharacterButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 32);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(32));
     if (!_itemButtonNormalFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 31);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(31));
     if (!_itemButtonPressedFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 73);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(73));
     if (!_itemButtonDisabledFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -591,19 +591,19 @@ int interfaceInit()
     buttonSetRightMouseCallbacks(gSingleAttackButton, -1, KEY_LOWERCASE_N, nullptr, nullptr);
     buttonSetCallbacks(gSingleAttackButton, _gsound_lrg_butt_press, _gsound_lrg_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 6);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(6));
     if (!_changeHandsButtonNormalFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 7);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(7));
     if (!_changeHandsButtonPressedFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 6);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(6));
     if (!_changeHandsButtonMaskFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -619,25 +619,25 @@ int interfaceInit()
     buttonSetMask(gChangeHandsButton, _changeHandsButtonMaskFrmImage.getData());
     buttonSetCallbacks(gChangeHandsButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 82);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(82));
     if (!_numbersFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 83);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(83));
     if (!_greenLightFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 84);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(84));
     if (!_yellowLightFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 85);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(85));
     if (!_redLightFrmImage.lock(fid)) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
@@ -1492,7 +1492,7 @@ void interfaceBarEndButtonsShow(bool animated)
         return;
     }
 
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 104);
+    int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(104));
     CacheEntry* handle;
     Art* art = artLock(fid, &handle);
     if (art == nullptr) {
@@ -1550,7 +1550,7 @@ void interfaceBarEndButtonsHide(bool animated)
         return;
     }
 
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 104);
+    int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(104));
     CacheEntry* handle;
     Art* art = artLock(fid, &handle);
     if (art == nullptr) {
@@ -1606,7 +1606,7 @@ void interfaceBarEndButtonsRenderGreenLights()
 
         FrmImage lightsFrmImage;
         // endltgrn.frm - green lights around end turn/combat window
-        int lightsFid = buildFid(OBJ_TYPE_INTERFACE, 109);
+        int lightsFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(109));
         if (!lightsFrmImage.lock(lightsFid)) {
             return;
         }
@@ -1626,7 +1626,7 @@ void interfaceBarEndButtonsRenderRedLights()
 
         FrmImage lightsFrmImage;
         // endltred.frm - red lights around end turn/combat window
-        int lightsFid = buildFid(OBJ_TYPE_INTERFACE, 110);
+        int lightsFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(110));
         if (!lightsFrmImage.lock(lightsFid)) {
             return;
         }
@@ -1673,10 +1673,10 @@ static int interfaceBarRefreshMainAction()
             int fid;
             if (_proto_action_can_use_on(itemState->item->pid)) {
                 // USE ON
-                fid = buildFid(OBJ_TYPE_INTERFACE, 294);
+                fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(294));
             } else if (_obj_action_can_use(itemState->item)) {
                 // USE
-                fid = buildFid(OBJ_TYPE_INTERFACE, 292);
+                fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(292));
             } else {
                 fid = -1;
             }
@@ -1701,20 +1701,20 @@ static int interfaceBarRefreshMainAction()
             // jump table.
             switch (itemState->action) {
             case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
-                bullseyeFid = buildFid(OBJ_TYPE_INTERFACE, 288);
+                bullseyeFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(288));
                 // FALLTHROUGH
             case INTERFACE_ITEM_ACTION_PRIMARY:
                 hitMode = itemState->primaryHitMode;
                 break;
             case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
-                bullseyeFid = buildFid(OBJ_TYPE_INTERFACE, 288);
+                bullseyeFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(288));
                 // FALLTHROUGH
             case INTERFACE_ITEM_ACTION_SECONDARY:
                 hitMode = itemState->secondaryHitMode;
                 break;
             case INTERFACE_ITEM_ACTION_RELOAD:
                 actionPoints = itemGetActionPointCost(gDude, gInterfaceCurrentHand == HAND_LEFT ? HIT_MODE_LEFT_WEAPON_RELOAD : HIT_MODE_RIGHT_WEAPON_RELOAD, false);
-                primaryFid = buildFid(OBJ_TYPE_INTERFACE, 291);
+                primaryFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(291));
                 break;
             default:
                 break;
@@ -1733,80 +1733,80 @@ static int interfaceBarRefreshMainAction()
             if (hitMode != HIT_MODE_INVALID) {
                 actionPoints = weaponGetActionPointCost(gDude, hitMode, bullseyeFid != -1);
 
-                int id = -1;
+                ObjectFrameId id = OBJECT_FRAME_ID_INVALID;
                 AnimationType anim = critterGetAnimationForHitMode(gDude, hitMode);
                 switch (anim) {
                 case ANIM_THROW_PUNCH:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_PUNCH:
-                        id = 432; // strong punch
+                        id = static_cast<ObjectFrameId>(432); // strong punch
                         break;
                     case HIT_MODE_HAMMER_PUNCH:
-                        id = 425; // hammer punch
+                        id = static_cast<ObjectFrameId>(425); // hammer punch
                         break;
                     case HIT_MODE_HAYMAKER:
-                        id = 428; // lightning punch
+                        id = static_cast<ObjectFrameId>(428); // lightning punch
                         break;
                     case HIT_MODE_JAB:
-                        id = 421; // chop punch
+                        id = static_cast<ObjectFrameId>(421); // chop punch
                         break;
                     case HIT_MODE_PALM_STRIKE:
-                        id = 423; // dragon punch
+                        id = static_cast<ObjectFrameId>(423); // dragon punch
                         break;
                     case HIT_MODE_PIERCING_STRIKE:
-                        id = 424; // force punch
+                        id = static_cast<ObjectFrameId>(424); // force punch
                         break;
                     default:
-                        id = 42; // punch
+                        id = static_cast<ObjectFrameId>(42); // punch
                         break;
                     }
                     break;
                 case ANIM_KICK_LEG:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_KICK:
-                        id = 430; // skick.frm - strong kick text
+                        id = static_cast<ObjectFrameId>(430); // skick.frm - strong kick text
                         break;
                     case HIT_MODE_SNAP_KICK:
-                        id = 431; // snapkick.frm - snap kick text
+                        id = static_cast<ObjectFrameId>(431); // snapkick.frm - snap kick text
                         break;
                     case HIT_MODE_POWER_KICK:
-                        id = 429; // cm_pwkck.frm - roundhouse kick text
+                        id = static_cast<ObjectFrameId>(429); // cm_pwkck.frm - roundhouse kick text
                         break;
                     case HIT_MODE_HIP_KICK:
-                        id = 426; // hipk.frm - kip kick text
+                        id = static_cast<ObjectFrameId>(426); // hipk.frm - kip kick text
                         break;
                     case HIT_MODE_HOOK_KICK:
-                        id = 427; // cm_hookk.frm - jump kick text
+                        id = static_cast<ObjectFrameId>(427); // cm_hookk.frm - jump kick text
                         break;
                     case HIT_MODE_PIERCING_KICK: // cm_prckk.frm - death blossom kick text
-                        id = 422;
+                        id = static_cast<ObjectFrameId>(422);
                         break;
                     default:
-                        id = 41; // kick.frm - kick text
+                        id = static_cast<ObjectFrameId>(41); // kick.frm - kick text
                         break;
                     }
                     break;
                 case ANIM_THROW_ANIM:
-                    id = 117; // throw
+                    id = static_cast<ObjectFrameId>(117); // throw
                     break;
                 case ANIM_THRUST_ANIM:
-                    id = 45; // thrust
+                    id = static_cast<ObjectFrameId>(45); // thrust
                     break;
                 case ANIM_SWING_ANIM:
-                    id = 44; // swing
+                    id = static_cast<ObjectFrameId>(44); // swing
                     break;
                 case ANIM_FIRE_SINGLE:
-                    id = 43; // single
+                    id = static_cast<ObjectFrameId>(43); // single
                     break;
                 case ANIM_FIRE_BURST:
                 case ANIM_FIRE_CONTINUOUS:
-                    id = 40; // burst
+                    id = static_cast<ObjectFrameId>(40); // burst
                     break;
                 default:
                     break;
                 }
 
-                if (id != -1) {
+                if (id != OBJECT_FRAME_ID_INVALID) {
                     primaryFid = buildFid(OBJ_TYPE_INTERFACE, id);
                 }
             }
@@ -1825,7 +1825,7 @@ static int interfaceBarRefreshMainAction()
 
     if (actionPoints >= 0 && actionPoints < 10) {
         // movement point text
-        int apFid = buildFid(OBJ_TYPE_INTERFACE, 289);
+        int apFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(289));
 
         FrmImage apFrmImage;
         if (apFrmImage.lock(apFid)) {
@@ -1839,7 +1839,7 @@ static int interfaceBarRefreshMainAction()
 
             FrmImage apNumbersFrmImage;
             // movement point numbers - ten numbers 0 to 9, each 10 pixels wide.
-            int apNumbersFid = buildFid(OBJ_TYPE_INTERFACE, 290);
+            int apNumbersFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(290));
             if (apNumbersFrmImage.lock(apNumbersFid)) {
                 int width = apNumbersFrmImage.getWidth();
                 int height = apNumbersFrmImage.getHeight();
@@ -1992,12 +1992,12 @@ static int endTurnButtonInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 105);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(105));
     if (!_endTurnButtonNormalFrmImage.lock(fid)) {
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 106);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(106));
     if (!_endTurnButtonPressedFrmImage.lock(fid)) {
         return -1;
     }
@@ -2044,12 +2044,12 @@ static int endCombatButtonInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 107);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(107));
     if (!_endCombatButtonNormalFrmImage.lock(fid)) {
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 108);
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(108));
     if (!_endCombatButtonPressedFrmImage.lock(fid)) {
         return -1;
     }
@@ -2472,7 +2472,7 @@ static int indicatorBarInit()
     }
 
     FrmImage indicatorBoxFrmImage;
-    int indicatorBoxFid = buildFid(OBJ_TYPE_INTERFACE, 126);
+    int indicatorBoxFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(126));
     if (!indicatorBoxFrmImage.lock(indicatorBoxFid)) {
         debugPrint("\nINTRFACE: Error initializing indicator box graphics! **\n");
         messageListFree(&messageList);

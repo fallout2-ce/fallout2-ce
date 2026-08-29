@@ -232,7 +232,7 @@ enum EditorGraphics : int {
 
 typedef struct KarmaEntry {
     int gvar;
-    int art_num;
+    ObjectFrameId art_num;
     int name;
     int description;
 } KarmaEntry;
@@ -292,7 +292,7 @@ static void characterEditorRegisterInfoAreas();
 static void characterEditorSavePlayer();
 static void characterEditorRestorePlayer();
 static char* _itostndn(int value, char* dest);
-static int characterEditorDrawCardWithOptions(int graphicId, const char* name, const char* attributes, char* description);
+static int characterEditorDrawCardWithOptions(ObjectFrameId graphicId, const char* name, const char* attributes, char* description);
 static void characterEditorHandleFolderButtonPressed();
 static void characterEditorHandleInfoButtonPressed(int eventCode);
 static void characterEditorHandleAdjustSkillButtonPressed(int a1);
@@ -312,7 +312,7 @@ static bool perkDialogHandleTagPerk();
 static void perkDialogDrawSkills();
 static int perkDialogDrawTraits(int a1);
 static int perkDialogOptionCompare(const void* a1, const void* a2);
-static int perkDialogDrawCard(int frmId, const char* name, const char* rank, char* description);
+static int perkDialogDrawCard(ObjectFrameId frmId, const char* name, const char* rank, char* description);
 static void _pop_perks();
 static int characterEditorGetLevelsPerPerk();
 static int characterEditorGetLegacyPerkSelectionLevel();
@@ -336,63 +336,63 @@ static int genericReputationCompare(const void* a1, const void* a2);
 
 static void customKarmaFolderInit();
 static void customKarmaFolderFree();
-static int customKarmaFolderGetFrmId();
+static ObjectFrameId customKarmaFolderGetFrmId();
 
 static void customTownReputationInit();
 static void customTownReputationFree();
 
 // 0x431C40 grph_id
-static int gCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
-    170,
-    175,
-    176,
-    181,
-    182,
-    183,
-    184,
-    185,
-    186,
-    187,
-    188,
-    189,
-    190,
-    191,
-    192,
-    193,
-    194,
-    195,
-    196,
-    197,
-    198,
-    199,
-    200,
-    8,
-    9,
-    204,
-    205,
-    206,
-    207,
-    208,
-    209,
-    210,
-    211,
-    212,
-    213,
-    214,
-    122,
-    123,
-    124,
-    125,
-    219,
-    220,
-    221,
-    222,
-    178,
-    179,
-    180,
-    38,
-    215,
-    216,
+static ObjectFrameId gCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
+    static_cast<ObjectFrameId>(170),
+    static_cast<ObjectFrameId>(175),
+    static_cast<ObjectFrameId>(176),
+    static_cast<ObjectFrameId>(181),
+    static_cast<ObjectFrameId>(182),
+    static_cast<ObjectFrameId>(183),
+    static_cast<ObjectFrameId>(184),
+    static_cast<ObjectFrameId>(185),
+    static_cast<ObjectFrameId>(186),
+    static_cast<ObjectFrameId>(187),
+    static_cast<ObjectFrameId>(188),
+    static_cast<ObjectFrameId>(189),
+    static_cast<ObjectFrameId>(190),
+    static_cast<ObjectFrameId>(191),
+    static_cast<ObjectFrameId>(192),
+    static_cast<ObjectFrameId>(193),
+    static_cast<ObjectFrameId>(194),
+    static_cast<ObjectFrameId>(195),
+    static_cast<ObjectFrameId>(196),
+    static_cast<ObjectFrameId>(197),
+    static_cast<ObjectFrameId>(198),
+    static_cast<ObjectFrameId>(199),
+    static_cast<ObjectFrameId>(200),
+    static_cast<ObjectFrameId>(8),
+    static_cast<ObjectFrameId>(9),
+    static_cast<ObjectFrameId>(204),
+    static_cast<ObjectFrameId>(205),
+    static_cast<ObjectFrameId>(206),
+    static_cast<ObjectFrameId>(207),
+    static_cast<ObjectFrameId>(208),
+    static_cast<ObjectFrameId>(209),
+    static_cast<ObjectFrameId>(210),
+    static_cast<ObjectFrameId>(211),
+    static_cast<ObjectFrameId>(212),
+    static_cast<ObjectFrameId>(213),
+    static_cast<ObjectFrameId>(214),
+    static_cast<ObjectFrameId>(122),
+    static_cast<ObjectFrameId>(123),
+    static_cast<ObjectFrameId>(124),
+    static_cast<ObjectFrameId>(125),
+    static_cast<ObjectFrameId>(219),
+    static_cast<ObjectFrameId>(220),
+    static_cast<ObjectFrameId>(221),
+    static_cast<ObjectFrameId>(222),
+    static_cast<ObjectFrameId>(178),
+    static_cast<ObjectFrameId>(179),
+    static_cast<ObjectFrameId>(180),
+    static_cast<ObjectFrameId>(38),
+    static_cast<ObjectFrameId>(215),
+    static_cast<ObjectFrameId>(216),
 };
 
 // flags to preload fid
@@ -455,17 +455,17 @@ static const unsigned char gCharacterEditorFrmShouldCopy[EDITOR_GRAPHIC_COUNT] =
 // NOTE: the type originally short
 //
 // 0x431D3A ndrvd
-static const int gCharacterEditorDerivedStatFrmIds[EDITOR_DERIVED_STAT_COUNT] = {
-    18,
-    19,
-    20,
-    21,
-    22,
-    23,
-    83,
-    24,
-    25,
-    26,
+static const ObjectFrameId gCharacterEditorDerivedStatFrmIds[EDITOR_DERIVED_STAT_COUNT] = {
+    static_cast<ObjectFrameId>(18),
+    static_cast<ObjectFrameId>(19),
+    static_cast<ObjectFrameId>(20),
+    static_cast<ObjectFrameId>(21),
+    static_cast<ObjectFrameId>(22),
+    static_cast<ObjectFrameId>(23),
+    static_cast<ObjectFrameId>(83),
+    static_cast<ObjectFrameId>(24),
+    static_cast<ObjectFrameId>(25),
+    static_cast<ObjectFrameId>(26),
 };
 
 // y offsets for stats +/- buttons
@@ -587,15 +587,15 @@ static const int gAddictionReputationVars[ADDICTION_REPUTATION_COUNT] = {
 };
 
 // 0x518604 addiction_pics
-static const int gAddictionReputationFrmIds[ADDICTION_REPUTATION_COUNT] = {
-    142,
-    126,
-    140,
-    144,
-    145,
-    52,
-    136,
-    149,
+static const ObjectFrameId gAddictionReputationFrmIds[ADDICTION_REPUTATION_COUNT] = {
+    static_cast<ObjectFrameId>(142),
+    static_cast<ObjectFrameId>(126),
+    static_cast<ObjectFrameId>(140),
+    static_cast<ObjectFrameId>(144),
+    static_cast<ObjectFrameId>(145),
+    static_cast<ObjectFrameId>(52),
+    static_cast<ObjectFrameId>(136),
+    static_cast<ObjectFrameId>(149),
 };
 
 // 0x518624 folder_up_button
@@ -658,7 +658,7 @@ static int gCharacterEditorFolderViewMaxLines;
 static int gCharacterEditorFolderViewCurrentLine;
 
 // 0x5705B0 folder_card_fid
-static int gCharacterEditorFolderCardFrmId;
+static ObjectFrameId gCharacterEditorFolderCardFrmId;
 
 // 0x5705B4 folder_top_line
 static int gCharacterEditorFolderViewTopLine;
@@ -847,7 +847,7 @@ static FrmImage _editorFrmImages[EDITOR_GRAPHIC_COUNT];
 static FrmImage _perkDialogBackgroundFrmImage;
 
 struct CustomKarmaFolderDescription {
-    int frmId;
+    ObjectFrameId frmId;
     int threshold;
 };
 
@@ -1356,7 +1356,7 @@ static int characterEditorWindowInit()
     }
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, (gCharacterEditorIsCreationMode ? 169 : 177));
+    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(gCharacterEditorIsCreationMode ? 169 : 177));
     if (!_editorBackgroundFrmImage.lock(fid)) {
         characterEditorMessageListReset();
         characterEditorWindowRestoreState();
@@ -2186,7 +2186,7 @@ static void characterEditorDrawPerksFolder()
         // TRAITS
         string = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 156);
         if (characterEditorFolderViewDrawHeading(string)) {
-            gCharacterEditorFolderCardFrmId = 54;
+            gCharacterEditorFolderCardFrmId = static_cast<ObjectFrameId>(54);
             // Optional Traits
             gCharacterEditorFolderCardTitle = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 146);
             gCharacterEditorFolderCardSubtitle = nullptr;
@@ -2271,7 +2271,7 @@ static void characterEditorDrawPerksFolder()
     }
 
     if (!hasContent) {
-        gCharacterEditorFolderCardFrmId = 71;
+        gCharacterEditorFolderCardFrmId = static_cast<ObjectFrameId>(71);
         // Perks
         gCharacterEditorFolderCardTitle = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 124);
         gCharacterEditorFolderCardSubtitle = nullptr;
@@ -2314,7 +2314,7 @@ static int characterEditorDrawKillsFolder()
         for (int i = 0; i < usedKills; i++) {
             KillInfo* killInfo = &(kills[i]);
             if (characterEditorFolderViewDrawKillsEntry(killInfo->name, killInfo->kills)) {
-                gCharacterEditorFolderCardFrmId = 46;
+                gCharacterEditorFolderCardFrmId = static_cast<ObjectFrameId>(46);
                 gCharacterEditorFolderCardTitle = gCharacterEditorFolderCardString;
                 gCharacterEditorFolderCardSubtitle = nullptr;
                 gCharacterEditorFolderCardDescription = killTypeGetDescription(kills[i].killType);
@@ -2325,7 +2325,7 @@ static int characterEditorDrawKillsFolder()
     }
 
     if (!hasContent) {
-        gCharacterEditorFolderCardFrmId = 46;
+        gCharacterEditorFolderCardFrmId = static_cast<ObjectFrameId>(46);
         gCharacterEditorFolderCardTitle = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 126);
         gCharacterEditorFolderCardSubtitle = nullptr;
         gCharacterEditorFolderCardDescription = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 129);
@@ -3147,7 +3147,7 @@ static void characterEditorDrawSkills(int a1)
 // 0x4365AC DrawInfoWin
 static void characterEditorDrawCard()
 {
-    int graphicId;
+    ObjectFrameId graphicId;
     char* title;
     char* description;
 
@@ -3170,7 +3170,7 @@ static void characterEditorDrawCard()
                 // Character Points
                 description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 121);
                 title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 120);
-                characterEditorDrawCardWithOptions(7, title, nullptr, description);
+                characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(7), title, nullptr, description);
                 break;
             default:
                 break;
@@ -3180,18 +3180,18 @@ static void characterEditorDrawCard()
             case EDITOR_LEVEL:
                 description = pcStatGetDescription(PC_STAT_LEVEL);
                 title = pcStatGetName(PC_STAT_LEVEL);
-                characterEditorDrawCardWithOptions(7, title, nullptr, description);
+                characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(7), title, nullptr, description);
                 break;
             case EDITOR_EXPERIENCE:
                 description = pcStatGetDescription(PC_STAT_EXPERIENCE);
                 title = pcStatGetName(PC_STAT_EXPERIENCE);
-                characterEditorDrawCardWithOptions(8, title, nullptr, description);
+                characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(8), title, nullptr, description);
                 break;
             case EDITOR_NEXT_LEVEL:
                 // Next Level
                 description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 123);
                 title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 122);
-                characterEditorDrawCardWithOptions(9, title, nullptr, description);
+                characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(9), title, nullptr, description);
                 break;
             default:
                 break;
@@ -3210,37 +3210,37 @@ static void characterEditorDrawCard()
         case EDITOR_POISONED:
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 400);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 312);
-            characterEditorDrawCardWithOptions(11, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(11), title, nullptr, description);
             break;
         case EDITOR_RADIATED:
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 401);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 313);
-            characterEditorDrawCardWithOptions(12, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(12), title, nullptr, description);
             break;
         case EDITOR_EYE_DAMAGE:
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 402);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 314);
-            characterEditorDrawCardWithOptions(13, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(13), title, nullptr, description);
             break;
         case EDITOR_CRIPPLED_RIGHT_ARM:
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 403);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 315);
-            characterEditorDrawCardWithOptions(14, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(14), title, nullptr, description);
             break;
         case EDITOR_CRIPPLED_LEFT_ARM:
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 404);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 316);
-            characterEditorDrawCardWithOptions(15, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(15), title, nullptr, description);
             break;
         case EDITOR_CRIPPLED_RIGHT_LEG:
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 405);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 317);
-            characterEditorDrawCardWithOptions(16, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(16), title, nullptr, description);
             break;
         case EDITOR_CRIPPLED_LEFT_LEG:
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 406);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 318);
-            characterEditorDrawCardWithOptions(17, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(17), title, nullptr, description);
             break;
         default:
             break;
@@ -3272,25 +3272,25 @@ static void characterEditorDrawCard()
                 // Tag Skill
                 description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 145);
                 title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 144);
-                characterEditorDrawCardWithOptions(27, title, nullptr, description);
+                characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(27), title, nullptr, description);
             } else {
                 // Skill Points
                 description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 131);
                 title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 130);
-                characterEditorDrawCardWithOptions(27, title, nullptr, description);
+                characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(27), title, nullptr, description);
             }
             break;
         case EDITOR_SKILLS:
             // Skills
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 151);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 150);
-            characterEditorDrawCardWithOptions(27, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(27), title, nullptr, description);
             break;
         case EDITOR_OPTIONAL_TRAITS:
             // Optional Traits
             description = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 147);
             title = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 146);
-            characterEditorDrawCardWithOptions(27, title, nullptr, description);
+            characterEditorDrawCardWithOptions(static_cast<ObjectFrameId>(27), title, nullptr, description);
             break;
         default:
             break;
@@ -5040,7 +5040,7 @@ static char* _itostndn(int value, char* dest)
 }
 
 // 0x43AAEC DrawCard
-static int characterEditorDrawCardWithOptions(int graphicId, const char* name, const char* attributes, char* description)
+static int characterEditorDrawCardWithOptions(ObjectFrameId graphicId, const char* name, const char* attributes, char* description)
 {
     FrmImage frmImage;
     int fid = buildFid(OBJ_TYPE_SKILLDEX, graphicId);
@@ -5671,7 +5671,7 @@ static void characterEditorDrawKarmaFolder()
             if (!hasTownReputationHeading) {
                 msg = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 4000);
                 if (characterEditorFolderViewDrawHeading(msg)) {
-                    gCharacterEditorFolderCardFrmId = 48;
+                    gCharacterEditorFolderCardFrmId = static_cast<ObjectFrameId>(48);
                     gCharacterEditorFolderCardTitle = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 4000);
                     gCharacterEditorFolderCardSubtitle = nullptr;
                     gCharacterEditorFolderCardDescription = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 4100);
@@ -5684,29 +5684,29 @@ static void characterEditorDrawKarmaFolder()
 
             int townReputation = gGameGlobalVars[pair->gvar];
 
-            int townReputationGraphicId;
+            ObjectFrameId townReputationGraphicId;
             int townReputationBaseMessageId;
 
             if (townReputation < -30) {
-                townReputationGraphicId = 150;
+                townReputationGraphicId = static_cast<ObjectFrameId>(150);
                 townReputationBaseMessageId = 2006; // Vilified
             } else if (townReputation < -15) {
-                townReputationGraphicId = 153;
+                townReputationGraphicId = static_cast<ObjectFrameId>(153);
                 townReputationBaseMessageId = 2005; // Hated
             } else if (townReputation < 0) {
-                townReputationGraphicId = 153;
+                townReputationGraphicId = static_cast<ObjectFrameId>(153);
                 townReputationBaseMessageId = 2004; // Antipathy
             } else if (townReputation == 0) {
-                townReputationGraphicId = 141;
+                townReputationGraphicId = static_cast<ObjectFrameId>(141);
                 townReputationBaseMessageId = 2003; // Neutral
             } else if (townReputation < 15) {
-                townReputationGraphicId = 137;
+                townReputationGraphicId = static_cast<ObjectFrameId>(137);
                 townReputationBaseMessageId = 2002; // Accepted
             } else if (townReputation < 30) {
-                townReputationGraphicId = 137;
+                townReputationGraphicId = static_cast<ObjectFrameId>(137);
                 townReputationBaseMessageId = 2001; // Liked
             } else {
-                townReputationGraphicId = 135;
+                townReputationGraphicId = static_cast<ObjectFrameId>(135);
                 townReputationBaseMessageId = 2000; // Idolized
             }
 
@@ -5733,7 +5733,7 @@ static void characterEditorDrawKarmaFolder()
                 // Addictions
                 msg = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 4001);
                 if (characterEditorFolderViewDrawHeading(msg)) {
-                    gCharacterEditorFolderCardFrmId = 53;
+                    gCharacterEditorFolderCardFrmId = static_cast<ObjectFrameId>(53);
                     gCharacterEditorFolderCardTitle = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 4001);
                     gCharacterEditorFolderCardSubtitle = nullptr;
                     gCharacterEditorFolderCardDescription = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 4101);
@@ -6108,7 +6108,7 @@ static void perkDialogRefreshPerks()
 
     // NOTE: Original code is slightly different, but basically does the same thing.
     Perk perk = static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
-    int perkFrmId = perkGetFrmId(perk);
+    ObjectFrameId perkFrmId = perkGetFrmId(perk);
     char* perkName = perkGetName(perk);
     char* perkDescription = perkGetDescription(perk);
     char* perkRank = nullptr;
@@ -6138,7 +6138,7 @@ static int perkDialogShow()
         previousPerkRanks[perk] = perkGetRank(gDude, perk);
     }
 
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 86);
+    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(86));
     if (!_perkDialogBackgroundFrmImage.lock(backgroundFid)) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
@@ -6271,7 +6271,7 @@ static int perkDialogShow()
 
     // NOTE: Original code is slightly different, but does the same thing.
     Perk perk = static_cast<Perk>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
-    int perkFrmId = perkGetFrmId(perk);
+    ObjectFrameId perkFrmId = perkGetFrmId(perk);
     char* perkName = perkGetName(perk);
     char* perkDescription = perkGetDescription(perk);
     char* perkRank = nullptr;
@@ -6713,7 +6713,7 @@ static void perkDialogRefreshTraits()
     char* traitName = option.name;
     Trait trait = static_cast<Trait>(option.value);
     char* tratDescription = traitGetDescription(trait);
-    int frmId = traitGetFrmId(trait);
+    ObjectFrameId frmId = traitGetFrmId(trait);
     perkDialogDrawCard(frmId, traitName, nullptr, tratDescription);
 
     windowRefresh(gPerkDialogWindow);
@@ -6849,7 +6849,7 @@ static void perkDialogRefreshSkills()
     char* name = gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].name;
     Skill skill = static_cast<Skill>(gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine].value);
     char* description = skillGetDescription(skill);
-    int frmId = skillGetFrmId(skill);
+    ObjectFrameId frmId = skillGetFrmId(skill);
     perkDialogDrawCard(frmId, name, nullptr, description);
 
     windowRefresh(gPerkDialogWindow);
@@ -7007,7 +7007,7 @@ static int perkDialogOptionCompare(const void* a1, const void* a2)
 }
 
 // 0x43DB54 DrawCard2
-static int perkDialogDrawCard(int frmId, const char* name, const char* rank, char* description)
+static int perkDialogDrawCard(ObjectFrameId frmId, const char* name, const char* rank, char* description)
 {
     FrmImage frmImage;
     int fid = buildFid(OBJ_TYPE_SKILLDEX, frmId);
@@ -7497,7 +7497,7 @@ static int karmaInit()
             continue;
         }
 
-        entry.art_num = atoi(tok);
+        entry.art_num = static_cast<ObjectFrameId>(atoi(tok));
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {
@@ -7679,7 +7679,7 @@ static void customKarmaFolderInit()
             *pch = '\0';
         }
 
-        gCustomKarmaFolderDescriptions[index].frmId = atoi(karmaFrms);
+        gCustomKarmaFolderDescriptions[index].frmId = static_cast<ObjectFrameId>(atoi(karmaFrms));
 
         if (pch != nullptr) {
             *pch = ',';
@@ -7711,10 +7711,10 @@ static void customKarmaFolderFree()
     gCustomKarmaFolderDescriptions.clear();
 }
 
-static int customKarmaFolderGetFrmId()
+static ObjectFrameId customKarmaFolderGetFrmId()
 {
     if (gCustomKarmaFolderDescriptions.empty()) {
-        return 47;
+        return static_cast<ObjectFrameId>(47);
     }
 
     int reputation = gGameGlobalVars[GVAR_PLAYER_REPUTATION];
