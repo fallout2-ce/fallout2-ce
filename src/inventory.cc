@@ -888,9 +888,9 @@ static void inventoryNormalLayoutUpdate()
 
 static void inventoryLootLayoutUpdate()
 {
-    int columns = inventoryChooseColumns(inventoryLootFrmImage, INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED, INTF_FRM_ID_48, "loot2.png");
+    int columns = inventoryChooseColumns(inventoryLootFrmImage, INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED, INTF_FRM_ID_114, "loot2.png");
     if (columns == 1) {
-        inventoryBackgroundLoad(inventoryLootFrmImage, INTF_FRM_ID_48, "loot2.png", 1);
+        inventoryBackgroundLoad(inventoryLootFrmImage, INTF_FRM_ID_114, "loot2.png", 1);
     }
 
     inventoryLootApplyLayout(columns);
