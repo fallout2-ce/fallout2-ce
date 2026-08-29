@@ -295,7 +295,7 @@ static bool characterSelectorWindowInit()
     }
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(174));
+    int backgroundFid = buildFid(INTF_FRM_ID_174);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -323,12 +323,12 @@ static bool characterSelectorWindowInit()
     int fid;
 
     // Setup "Previous" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(122));
+    fid = buildFid(INTF_FRM_ID_122);
     if (!_previousButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(123));
+    fid = buildFid(INTF_FRM_ID_123);
     if (!_previousButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -353,12 +353,12 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowPreviousButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
     // Setup "Next" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(124));
+    fid = buildFid(INTF_FRM_ID_124);
     if (!_nextButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(125));
+    fid = buildFid(INTF_FRM_ID_125);
     if (!_nextButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -383,12 +383,12 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowNextButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
     // Setup "Take" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
+    fid = buildFid(INTF_FRM_ID_8);
     if (!_takeButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
+    fid = buildFid(INTF_FRM_ID_9);
     if (!_takeButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -413,11 +413,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowTakeButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Modify" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
+    fid = buildFid(INTF_FRM_ID_8);
     if (!_modifyButtonNormalFrmImage.lock(fid))
         return characterSelectorWindowFatalError(false);
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
+    fid = buildFid(INTF_FRM_ID_9);
     if (!_modifyButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -442,12 +442,12 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowModifyButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Create" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
+    fid = buildFid(INTF_FRM_ID_8);
     if (!_createButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
+    fid = buildFid(INTF_FRM_ID_9);
     if (!_createButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -472,12 +472,12 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowCreateButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Back" button.
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
+    fid = buildFid(INTF_FRM_ID_8);
     if (!_backButtonNormalFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
+    fid = buildFid(INTF_FRM_ID_9);
     if (!_backButtonPressedFrmImage.lock(fid)) {
         return characterSelectorWindowFatalError(false);
     }

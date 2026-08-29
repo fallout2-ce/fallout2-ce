@@ -136,6 +136,89 @@ inline ObjectFrameId objectFrameIdFromPid(int pid)
     return static_cast<ObjectFrameId>(pid & 0xFFFFFF);
 }
 
+enum InterfaceFrameId : int {
+    INTF_FRM_ID_0 = 0, // blank.frm - used be mset000.frm for top of bouncing mouse cursor
+    INTF_FRM_ID_1 = 1, // msef000.frm - hex mouse cursor
+    INTF_FRM_ID_2 = 2, // egg
+    INTF_FRM_ID_3 = 3, // exit grid marker
+    INTF_FRM_ID_6 = 6, // skilldex button normal
+    INTF_FRM_ID_7 = 7, // skilldex button pressed
+    INTF_FRM_ID_8 = 8, // lilredup.frm - little red button up
+    INTF_FRM_ID_9 = 9, // lilreddn.frm - little red button down
+    INTF_FRM_ID_10 = 10, // map button pressed
+    INTF_FRM_ID_13 = 13, // map button normal
+    INTF_FRM_ID_16 = 16, // display monitor background
+    INTF_FRM_ID_17 = 17, // options button pressed
+    INTF_FRM_ID_18 = 18, // options button normal
+    INTF_FRM_ID_31 = 31, // item button pressed
+    INTF_FRM_ID_32 = 32, // item button normal
+    INTF_FRM_ID_46 = 46, // inventory button pressed
+    INTF_FRM_ID_47 = 47, // inventory button normal
+    INTF_FRM_ID_56 = 56, // character button pressed
+    INTF_FRM_ID_57 = 57, // character button normal
+    INTF_FRM_ID_58 = 58, // pipboy button pressed
+    INTF_FRM_ID_59 = 59, // pipboy button normal
+    INTF_FRM_ID_73 = 73, // item button disabled
+    INTF_FRM_ID_82 = 82, // numbers.frm - numbers for the hit points and fatigue counters
+    INTF_FRM_ID_83 = 83, // green light
+    INTF_FRM_ID_84 = 84, // yellow light
+    INTF_FRM_ID_85 = 85, // red light
+    INTF_FRM_ID_86 = 86, // perk dialog background
+    INTF_FRM_ID_102 = 102, // dialog background
+    INTF_FRM_ID_104 = 104, // interface bar end button
+    INTF_FRM_ID_105 = 105, // end button normal
+    INTF_FRM_ID_106 = 106, // end button pressed
+    INTF_FRM_ID_107 = 107, // end combat button normal
+    INTF_FRM_ID_108 = 108, // end combat button pressed
+    INTF_FRM_ID_109 = 109, // endltgrn.frm - green lights around end turn/combat window
+    INTF_FRM_ID_110 = 110, // endltred.frm - red lights around end turn/combat window
+    INTF_FRM_ID_113 = 113, // inventory background
+    INTF_FRM_ID_115 = 115, // hilight1.frm - dialogue upper hilight
+    INTF_FRM_ID_116 = 116, // hilight2.frm - dialogue lower hilight
+    INTF_FRM_ID_118 = 118, // called shot background
+    INTF_FRM_ID_122 = 122, // previous button normal
+    INTF_FRM_ID_123 = 123, // previous button pressed
+    INTF_FRM_ID_124 = 124, // next button normal
+    INTF_FRM_ID_125 = 125, // next button pressed
+    INTF_FRM_ID_126 = 126, // indicator box
+    INTF_FRM_ID_129 = 129, // months.frm - month strings for pip boy
+    INTF_FRM_ID_136 = 136, // worldmap background
+    INTF_FRM_ID_138 = 138, // wmaploc.frm - world map location marker
+    INTF_FRM_ID_139 = 139, // wmaptarg.frm - world map move target maker #1
+    INTF_FRM_ID_140 = 140, // main menu background image
+    INTF_FRM_ID_168 = 168, // hotspot1.frm - town map selector shape #1
+    INTF_FRM_ID_170 = 170, // BIGNUM.frm
+    INTF_FRM_ID_174 = 174, // character selector background
+    INTF_FRM_ID_209 = 209, // done box
+    INTF_FRM_ID_223 = 223, // hotspot2.frm - town map selector shape #2
+    INTF_FRM_ID_282 = 282, // actpick.frm - action pick
+    INTF_FRM_ID_283 = 283, // actmenu.frm - action menu
+    INTF_FRM_ID_284 = 284, // acttohit.frm - action to hit
+    INTF_FRM_ID_285 = 285, // mirrored arrow
+    INTF_FRM_ID_288 = 288, // bullseye aiming
+    INTF_FRM_ID_289 = 289, // action points
+    INTF_FRM_ID_290 = 290, // movement points numbers
+    INTF_FRM_ID_291 = 291, // reload action menu
+    INTF_FRM_ID_292 = 292, // use action menu
+    INTF_FRM_ID_294 = 294, // use on action menu
+    INTF_FRM_ID_297 = 297, // help background
+    INTF_FRM_ID_299 = 299, // main menu button normal
+    INTF_FRM_ID_300 = 300, // main menu button pressed
+    INTF_FRM_ID_306 = 306, // timer overlay
+    INTF_FRM_ID_307 = 307,
+    INTF_FRM_ID_308 = 308,
+    INTF_FRM_ID_309 = 309, // DEATH.FRM
+    INTF_FRM_ID_327 = 327, // endgame ending panning screen
+    INTF_FRM_ID_363 = 363, // wmscreen - worldmap overlay screen
+    INTF_FRM_ID_364 = 364, // wmtabs.frm - worldmap town tabs underlay
+    INTF_FRM_ID_365 = 365, // wmdial.frm - worldmap night/day dial
+    INTF_FRM_ID_366 = 366, // wmglobe.frm - worldmap globe stamp overlay
+    INTF_FRM_ID_367 = 367, // wmtbedge.frm - worldmap town tabs edging overlay
+    INTF_FRM_ID_390 = 390, // control.frm - party member control interface
+    INTF_FRM_ID_391 = 391, // custom.frm - party member control interface
+    INTF_FRM_ID_419 = 419, // game dialog background
+};
+
 #define SID_TYPE(value) (value) >> 24
 
 enum OutlineType : int {

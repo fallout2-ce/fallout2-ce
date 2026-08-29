@@ -74,6 +74,11 @@ int artCritterFidShouldRun(int fid);
 int artAliasFid(int fid);
 int buildFid(ObjectType objectType, ObjectFrameId frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
 
+inline int buildFid(InterfaceFrameId interface)
+{
+    return buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(interface));
+}
+
 inline int buildFid(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
 {
     if (object == nullptr)

@@ -2209,7 +2209,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
         pitch = INVENTORY_USE_ON_WINDOW_WIDTH;
 
         FrmImage backgroundFrmImage;
-        int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(113));
+        int backgroundFid = buildFid(INTF_FRM_ID_113);
         if (backgroundFrmImage.lock(backgroundFid)) {
             // Clear scroll view background.
             blitBufferToBuffer(backgroundFrmImage.getData() + pitch * INVENTORY_SCROLLER_Y + INVENTORY_SCROLLER_X,
@@ -6197,7 +6197,7 @@ static void _draw_amount(int value, int inventoryWindowType)
 {
     // BIGNUM.frm
     FrmImage numbersFrmImage;
-    int numbersFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(170));
+    int numbersFid = buildFid(INTF_FRM_ID_170);
     if (!numbersFrmImage.lock(numbersFid)) {
         return;
     }
@@ -6454,7 +6454,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
         // Timer overlay
         FrmImage overlayFrmImage;
-        int overlayFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(306));
+        int overlayFid = buildFid(INTF_FRM_ID_306);
         if (overlayFrmImage.lock(overlayFid)) {
             blitBufferToBuffer(overlayFrmImage.getData(),
                 105, 81, 105,
@@ -6491,10 +6491,10 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         148, 128, -1, KEY_ESCAPE, FrmId(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8)), FrmId(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9)));
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
-        fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(307));
+        fid = buildFid(INTF_FRM_ID_307);
         _moveFrmImages[6].lock(fid);
 
-        fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(308));
+        fid = buildFid(INTF_FRM_ID_308);
         _moveFrmImages[7].lock(fid);
 
         if (_moveFrmImages[6].isLocked() && _moveFrmImages[7].isLocked()) {

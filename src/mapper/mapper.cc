@@ -1365,7 +1365,7 @@ void edit_mapper()
                             // create new highlight
                             update_high_obj_name(_screen_obj);
 
-                            int hfid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(1));
+                            int hfid = buildFid(INTF_FRM_ID_1);
                             Object* hlObj;
                             if (objectCreateWithFidPid(&hlObj, hfid, -1) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;

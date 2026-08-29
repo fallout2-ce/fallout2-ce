@@ -229,21 +229,21 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonPressedFrmImage;
 
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(209));
+        int doneBoxFid = buildFid(INTF_FRM_ID_209);
         if (!doneBoxFrmImage.lock(doneBoxFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        int pressedFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
+        int pressedFid = buildFid(INTF_FRM_ID_9);
         if (!buttonPressedFrmImage.lock(pressedFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        int normalFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
+        int normalFid = buildFid(INTF_FRM_ID_8);
         if (!buttonNormalFrmImage.lock(normalFid)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
@@ -346,21 +346,21 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
         } else {
-            int doneBoxFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(209));
+            int doneBoxFid = buildFid(INTF_FRM_ID_209);
             if (!doneBoxFrmImage.lock(doneBoxFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            int pressedFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
+            int pressedFid = buildFid(INTF_FRM_ID_9);
             if (!buttonPressedFrmImage.lock(pressedFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            int normalFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
+            int normalFid = buildFid(INTF_FRM_ID_8);
             if (!buttonNormalFrmImage.lock(normalFid)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);

@@ -5006,7 +5006,7 @@ static int wmInterfaceInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(136));
+    fid = buildFid(INTF_FRM_ID_136);
     if (!_backgroundFrmImage.lock(fid)) {
         return -1;
     }
@@ -5037,25 +5037,25 @@ static int wmInterfaceInit()
     }
 
     // hotspot1.frm - town map selector shape #1
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(168));
+    fid = buildFid(INTF_FRM_ID_168);
     if (!wmGenData.hotspotNormalFrmImage.lock(fid)) {
         return -1;
     }
 
     // hotspot2.frm - town map selector shape #2
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(223));
+    fid = buildFid(INTF_FRM_ID_223);
     if (!wmGenData.hotspotPressedFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmaptarg.frm - world map move target maker #1
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(139));
+    fid = buildFid(INTF_FRM_ID_139);
     if (!wmGenData.destinationMarkerFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmaploc.frm - world map location marker
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(138));
+    fid = buildFid(INTF_FRM_ID_138);
     if (!wmGenData.locationMarkerFrmImage.lock(fid)) {
         return -1;
     }
@@ -5072,19 +5072,19 @@ static int wmInterfaceInit()
     }
 
     // wmtabs.frm - worldmap town tabs underlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(364));
+    fid = buildFid(INTF_FRM_ID_364);
     if (!wmGenData.tabsBackgroundFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmtbedge.frm - worldmap town tabs edging overlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(367));
+    fid = buildFid(INTF_FRM_ID_367);
     if (!wmGenData.tabsBorderFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmdial.frm - worldmap night/day dial
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(365));
+    fid = buildFid(INTF_FRM_ID_365);
     wmGenData.dialFrm = artLock(fid, &(wmGenData.dialFrmHandle));
     if (wmGenData.dialFrm == nullptr) {
         return -1;
@@ -5094,33 +5094,33 @@ static int wmInterfaceInit()
     wmGenData.dialFrmHeight = artGetHeight(wmGenData.dialFrm);
 
     // wmscreen - worldmap overlay screen
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(363));
+    fid = buildFid(INTF_FRM_ID_363);
     if (!wmGenData.carOverlayFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmglobe.frm - worldmap globe stamp overlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(366));
+    fid = buildFid(INTF_FRM_ID_366);
     if (!wmGenData.globeOverlayFrmImage.lock(fid)) {
         return -1;
     }
 
     // lilredup.frm - little red button up
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(8));
+    fid = buildFid(INTF_FRM_ID_8);
     wmGenData.redButtonNormalFrmImage.lock(fid);
 
     // lilreddn.frm - little red button down
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(9));
+    fid = buildFid(INTF_FRM_ID_9);
     wmGenData.redButtonPressedFrmImage.lock(fid);
 
     // months.frm - month strings for pip boy
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(129));
+    fid = buildFid(INTF_FRM_ID_129);
     if (!wmGenData.monthsFrmImage.lock(fid)) {
         return -1;
     }
 
     // numbers.frm - numbers for the hit points and fatigue counters
-    fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(82));
+    fid = buildFid(INTF_FRM_ID_82);
     if (!wmGenData.numbersFrmImage.lock(fid)) {
         return -1;
     }

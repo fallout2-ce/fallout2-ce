@@ -345,7 +345,7 @@ static int endgameEndingHandleContinuePlaying()
 // 0x43FBDC endgame_pan_desert
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
-    int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(327));
+    int fid = buildFid(INTF_FRM_ID_327);
 
     CacheEntry* backgroundHandle;
     Art* background = artLock(fid, &backgroundHandle);
@@ -354,7 +354,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         int height = artGetHeight(background);
         unsigned char* backgroundData = artGetFrameData(background);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
-        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(327));
+        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(INTF_FRM_ID_327));
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();

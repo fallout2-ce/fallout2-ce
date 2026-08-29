@@ -954,7 +954,7 @@ void eraseObject()
 
                     if (hit != nullptr) {
                         // Don't destroy exit-grid markers (interface art, id=3).
-                        int exitGridFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(3));
+                        int exitGridFid = buildFid(INTF_FRM_ID_3);
                         if (hit->fid != exitGridFid) {
                             Rect rect;
                             int elev = hit->elevation;
@@ -1229,7 +1229,7 @@ void mapper_shift_map_elev()
         int elevBits = (builtTile >> 26) & 0x7;
         int newBuiltTile = tile | (destElev << 29) | ((elevBits << 26) & 0x1C000000);
 
-        int exitGridFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(3));
+        int exitGridFid = buildFid(INTF_FRM_ID_3);
         Object* exitGrid = objectFindFirstAtLocation(gElevation, tile);
         while (exitGrid != nullptr) {
             if (exitGrid->fid == exitGridFid) {

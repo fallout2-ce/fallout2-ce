@@ -680,7 +680,7 @@ Object* scriptGetSelf(Program* program)
     }
 
     Object* object;
-    int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(3));
+    int fid = buildFid(INTF_FRM_ID_3);
     objectCreateWithFidPid(&object, fid, -1);
     objectHide(object, nullptr);
     _obj_toggle_flat(object, nullptr);

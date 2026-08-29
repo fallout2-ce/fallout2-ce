@@ -45,7 +45,7 @@ int map_scr_remove_spatial(int tile, int elevation)
 
     obj = objectFindFirstAtElevation(elevation);
     while (obj != NULL) {
-        if (obj->tile == tile && buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(3)) == obj->fid) {
+        if (obj->tile == tile && buildFid(INTF_FRM_ID_3) == obj->fid) {
             objectDestroy(obj, &rect);
             tileWindowRefreshRect(&rect, elevation);
 
@@ -77,7 +77,7 @@ int map_scr_remove_all_spatials()
 
         obj = objectFindFirstAtElevation(elevation);
         while (obj != NULL) {
-            if (buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(3)) == obj->fid) {
+            if (buildFid(INTF_FRM_ID_3) == obj->fid) {
                 objectDestroy(obj, NULL);
 
                 obj = objectFindFirstAtElevation(elevation);
@@ -109,7 +109,7 @@ static int _scr_show_toggled = 0;
 // 0x4C26D0
 void map_scr_toggle_hexes()
 {
-    int markerFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(3));
+    int markerFid = buildFid(INTF_FRM_ID_3);
 
     if (!_scr_show_toggled) {
         // REMOVE mode: erase all existing spatial marker objects
@@ -312,7 +312,7 @@ int map_scr_add_spatial(int tile, int elevation)
         return -1;
     }
 
-    int markerFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(3));
+    int markerFid = buildFid(INTF_FRM_ID_3);
     Object* obj;
     if (objectCreateWithFidPid(&obj, markerFid, -1) != -1) {
         obj->flags |= OBJECT_NO_SAVE;
@@ -422,7 +422,7 @@ void scr_debug_print_scripts()
     }
 
     // Phase 2: Scripts WITHOUT owners — find marker object at script's built_tile
-    const int kMarkerFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(3));
+    const int kMarkerFid = buildFid(INTF_FRM_ID_3);
     for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
         for (int id = 0; id < kMaxScriptId; id++) {
             int sid = (type << 24) | id;

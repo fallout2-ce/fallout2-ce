@@ -1499,7 +1499,7 @@ int gameDialogReviewWindowInit(int* win)
     }
 
     FrmImage backgroundFrmImage;
-    int fid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(102));
+    int fid = buildFid(INTF_FRM_ID_102);
     if (!backgroundFrmImage.lock(fid)) {
         windowDestroy(*win);
         *win = -1;
@@ -1595,7 +1595,7 @@ int gameDialogReviewWindowInit(int* win)
 
     tickersRemove(gameDialogTicker);
 
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(102));
+    int backgroundFid = buildFid(INTF_FRM_ID_102);
     if (!_reviewBackgroundFrmImage.lock(backgroundFid)) {
         gameDialogReviewWindowFree(win);
         return -1;
@@ -3603,7 +3603,7 @@ void gameDialogBarterCleanupTables()
 int partyMemberControlWindowInit()
 {
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(390));
+    int backgroundFid = buildFid(INTF_FRM_ID_390);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return -1;
     }
@@ -3776,7 +3776,7 @@ void partyMemberControlWindowFree()
 
     // control.frm - party member control interface
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(390));
+    int backgroundFid = buildFid(INTF_FRM_ID_390);
     if (backgroundFrmImage.lock(backgroundFid)) {
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowGetBuffer(gGameDialogWindow), windowGetBuffer(gGameDialogBackgroundWindow) + (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len), _dialogue_subwin_len);
     }
@@ -3795,7 +3795,7 @@ void partyMemberControlWindowUpdate()
     int windowWidth = windowGetWidth(gGameDialogWindow);
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(390));
+    int backgroundFid = buildFid(INTF_FRM_ID_390);
     if (backgroundFrmImage.lock(backgroundFid)) {
         int width = backgroundFrmImage.getWidth();
         unsigned char* buffer = backgroundFrmImage.getData();
@@ -4057,7 +4057,7 @@ int partyMemberCustomizationWindowInit()
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, &gCustomMessageList);
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(391));
+    int backgroundFid = buildFid(INTF_FRM_ID_391);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         partyMemberCustomizationMessageListReset();
         return -1;
@@ -4201,7 +4201,7 @@ void partyMemberCustomizationWindowFree()
 
     FrmImage backgroundFrmImage;
     // custom.frm - party member control interface
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(391));
+    int backgroundFid = buildFid(INTF_FRM_ID_391);
     if (backgroundFrmImage.lock(backgroundFid)) {
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowGetBuffer(gGameDialogWindow), windowGetBuffer(gGameDialogBackgroundWindow) + (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len), _dialogue_subwin_len);
     }
@@ -4254,7 +4254,7 @@ void partyMemberCustomizationWindowUpdate()
     int windowWidth = windowGetWidth(gGameDialogWindow);
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(391));
+    int backgroundFid = buildFid(INTF_FRM_ID_391);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return;
     }
@@ -4361,7 +4361,7 @@ int _gdCustomSelect(int option)
     int oldFont = fontGetCurrent();
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(419));
+    int backgroundFid = buildFid(INTF_FRM_ID_419);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return -1;
     }
@@ -4966,11 +4966,11 @@ void gameDialogHighlightsInit()
     _dark_BlendTable = _getColorBlendTable(COLOR_OLIVE);
 
     // hilight1.frm - dialogue upper hilight
-    int upperHighlightFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(115));
+    int upperHighlightFid = buildFid(INTF_FRM_ID_115);
     _upperHighlightFrmImage.lock(upperHighlightFid);
 
     // hilight2.frm - dialogue lower hilight
-    int lowerHighlightFid = buildFid(OBJ_TYPE_INTERFACE, static_cast<ObjectFrameId>(116));
+    int lowerHighlightFid = buildFid(INTF_FRM_ID_116);
     _lowerHighlightFrmImage.lock(lowerHighlightFid);
 }
 
