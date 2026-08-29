@@ -18,7 +18,7 @@ void traitsSetSelected(Trait trait1, Trait trait2);
 void traitsGetSelected(Trait* trait1, Trait* trait2);
 char* traitGetName(Trait trait);
 char* traitGetDescription(Trait trait);
-ObjectFrameId traitGetFrmId(Trait trait);
+SkillDexFrameId traitGetFrmId(Trait trait);
 bool traitIsSelected(Trait trait);
 int traitGetStatModifier(Stat stat);
 int traitGetSkillModifier(Skill skill);

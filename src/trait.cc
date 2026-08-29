@@ -23,7 +23,7 @@ typedef struct TraitDescription {
     char* description;
 
     // Identifier of art in [intrface.lst].
-    ObjectFrameId frmId;
+    SkillDexFrameId frmId;
 } TraitDescription;
 
 // 0x66BE38 trait_message_file
@@ -36,22 +36,22 @@ static Trait gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
 
 // 0x51DB84 trait_data
 static TraitDescription gTraitDescriptions[TRAIT_COUNT] = {
-    { nullptr, nullptr, static_cast<ObjectFrameId>(55) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(56) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(57) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(58) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(59) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(60) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(61) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(62) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(63) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(64) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(65) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(66) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(67) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(94) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(69) },
-    { nullptr, nullptr, static_cast<ObjectFrameId>(70) },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_55 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_56 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_57 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_58 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_59 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_60 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_61 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_62 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_63 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_64 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_65 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_66 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_67 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_94 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_69 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_70 },
 };
 
 // 0x4B39F0 trait_init
@@ -161,9 +161,9 @@ char* traitGetDescription(Trait trait)
 // out of range.
 //
 // 0x4B3BA8 trait_pic
-ObjectFrameId traitGetFrmId(Trait trait)
+SkillDexFrameId traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? gTraitDescriptions[trait].frmId : OBJECT_FRAME_ID_FIRST;
+    return traitIsValid(trait) ? gTraitDescriptions[trait].frmId : SKILLDEX_FRM_ID_FIRST;
 }
 
 // Returns `true` if the specified trait is selected.
