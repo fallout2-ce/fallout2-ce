@@ -115,7 +115,7 @@ static bool actionRegisterUseAnimObj(Object* user, Object* targetObj, AnimationT
     }
 
     if (hookAnim != originalAnim) {
-        int fid = buildFid(objectTypeFromFid(user->fid), user->fid & 0xFFF, hookAnim, weaponAnimationFromFid(user->fid), user->rotation + 1);
+        FrmId fid = FrmId(objectTypeFromFid(user->fid), frameIdFromFid(user->fid), hookAnim, weaponAnimationFromFid(user->fid), user->rotation + 1);
         if (!artExists(fid)) {
             hookAnim = originalAnim;
         }

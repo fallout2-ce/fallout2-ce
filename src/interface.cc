@@ -2222,7 +2222,7 @@ static void interfaceRestoreAlternateAmmoMeterBackground(int x)
     if (gInterfaceBarIsCustom) {
         src = customInterfaceBarGetBackgroundImageData();
     } else {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, 16);
+        FrmId fid = FrmId(INTF_FRM_ID_16);
         if (!backgroundFrmImage.lock(fid)) {
             return;
         }

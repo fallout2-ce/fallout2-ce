@@ -99,6 +99,16 @@ static void perksLoadSfallTweaks(Config* config);
 static void perksLoadSfallData(Config* config);
 static bool perksGetLimitedInt(Config* config, const char* key, int defaultValue, int minValue, int maxValue, int* valuePtr);
 static void perksLoadSfallPerkInt(Config* config, const char* sectionKey, const char* key, int* valuePtr);
+
+template <typename T>
+static void perksLoadSfallPerkEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr)
+{
+    int value = 0;
+    if (configGetIntBase(config, sectionKey, key, &value, -99999, 0) && value != -99999) {
+        *valuePtr = static_cast<T>(value);
+    }
+}
+
 static void perksLoadSfallPerkStat(Config* config, const char* sectionKey, const char* key, Stat* valuePtr);
 
 // 0x519DCC perk_data
@@ -400,7 +410,7 @@ static void perksLoadSfallData(Config* config)
             perkDescription->description = perkOverrideDescriptions[perk].data();
         }
 
-        perksLoadSfallPerkInt(config, sectionKey, "Image", &(perkDescription->frmId));
+        perksLoadSfallPerkEnum<SkillDexFrameId>(config, sectionKey, "Image", &(perkDescription->frmId));
         perksLoadSfallPerkInt(config, sectionKey, "Ranks", &(perkDescription->maxRank));
         perksLoadSfallPerkInt(config, sectionKey, "Level", &(perkDescription->minLevel));
         perksLoadSfallPerkStat(config, sectionKey, "Stat", &(perkDescription->stat));
@@ -765,7 +775,7 @@ bool perkSetProperty(Perk perk, PerkProperty property, int value)
 
     switch (property) {
     case PerkProperty::FrmId:
-        perkDescription->frmId = value;
+        perkDescription->frmId = static_cast<SkillDexFrameId>(value);
         break;
     case PerkProperty::MaxRank:
         perkDescription->maxRank = value;
