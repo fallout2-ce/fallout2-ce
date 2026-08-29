@@ -276,6 +276,8 @@ static void traitsResetSfallConfig()
 
     for (Trait trait = TRAIT_FIRST; trait < TRAIT_COUNT; trait++) {
         traitHardcodeDisabled[trait] = false;
+        gTraitDescriptions[trait].name = nullptr;
+        gTraitDescriptions[trait].description = nullptr;
         gTraitDescriptions[trait].frmId = defaultTraitFrmIds[trait];
         traitOverrideNames[trait].clear();
         traitOverrideDescriptions[trait].clear();
@@ -379,7 +381,7 @@ int traitGetStatModifier(Stat stat)
         break;
     case STAT_ARMOR_CLASS:
         if (traitIsSelectedAndActive(TRAIT_KAMIKAZE)) {
-            return -critterGetBaseStat(gDude, STAT_ARMOR_CLASS);
+            modifier -= critterGetBaseStat(gDude, STAT_ARMOR_CLASS);
         }
         break;
     case STAT_MELEE_DAMAGE:
@@ -414,12 +416,12 @@ int traitGetStatModifier(Stat stat)
         break;
     case STAT_RADIATION_RESISTANCE:
         if (traitIsSelectedAndActive(TRAIT_FAST_METABOLISM)) {
-            return -critterGetBaseStat(gDude, STAT_RADIATION_RESISTANCE);
+            modifier -= critterGetBaseStat(gDude, STAT_RADIATION_RESISTANCE);
         }
         break;
     case STAT_POISON_RESISTANCE:
         if (traitIsSelectedAndActive(TRAIT_FAST_METABOLISM)) {
-            return -critterGetBaseStat(gDude, STAT_POISON_RESISTANCE);
+            modifier -= critterGetBaseStat(gDude, STAT_POISON_RESISTANCE);
         }
         break;
     default:
