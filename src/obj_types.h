@@ -304,6 +304,19 @@ enum SkillDexFrameId : int {
     SKILLDEX_FRM_ID_173 = 173,
 };
 
+enum ItemFrameId : int {
+    ITEM_FRM_ID_FIRST = 0,
+};
+
+inline constexpr ItemFrameId operator-(ItemFrameId lhs, int rhs) {
+    return static_cast<ItemFrameId>(static_cast<int>(lhs) - rhs);
+}
+
+inline ItemFrameId itemFrameIdFromPid(int pid)
+{
+    return static_cast<ItemFrameId>(pid & 0xFFFFFF);
+}
+
 enum TileFrameId : int {
     TILE_FRM_ID_FIRST = 0,
     TILE_FRM_ID_1 = 1,

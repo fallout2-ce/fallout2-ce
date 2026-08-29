@@ -371,13 +371,13 @@ char* protoGetDescription(int pid)
 // 0x49EB2C proto_item_init
 int proto_item_init(Proto* proto, int pid)
 {
-    ObjectFrameId protoNum = objectFrameIdFromPid(pid);
+    ItemFrameId protoNum = itemFrameIdFromPid(pid);
 
     proto->item.pid = -1;
     proto->item.messageId = 100 * protoNum;
-    proto->item.fid = buildFid(OBJ_TYPE_ITEM, protoNum - 1);
+    proto->item.fid = buildFid(protoNum - 1);
     if (!artExists(proto->item.fid)) {
-        proto->item.fid = buildFid(OBJ_TYPE_ITEM, OBJECT_FRAME_ID_FIRST);
+        proto->item.fid = buildFid(ITEM_FRM_ID_FIRST);
     }
     proto->item.lightDistance = 0;
     proto->item.lightIntensity = 0;

@@ -79,6 +79,11 @@ inline int buildFid(MiscFrameId misc, AnimationType animType = ANIM_STAND)
     return buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(misc));
 }
 
+inline int buildFid(ItemFrameId item)
+{
+    return buildFid(OBJ_TYPE_ITEM, static_cast<ObjectFrameId>(item));
+}
+
 inline int buildFid(TileFrameId tile)
 {
     return buildFid(OBJ_TYPE_TILE, static_cast<ObjectFrameId>(tile));
