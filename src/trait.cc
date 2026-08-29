@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "debug.h"
 #include "game.h"
 #include "message.h"
 #include "object.h"
@@ -41,7 +42,7 @@ static MessageList gTraitsMessageList;
 static Trait gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
 
 // 0x51DB84 trait_data
-static TraitDescription gTraitDescriptions[TRAIT_COUNT] = {
+static TraitDescription traitDescriptions[TRAIT_COUNT] = {
     { nullptr, nullptr, 55 },
     { nullptr, nullptr, 56 },
     { nullptr, nullptr, 57 },
@@ -111,12 +112,12 @@ int traitsInit()
 
         messageListItem.num = 100 + trait;
         if (messageListGetItem(&gTraitsMessageList, &messageListItem)) {
-            gTraitDescriptions[trait].name = messageListItem.text;
+            traitDescriptions[trait].name = messageListItem.text;
         }
 
         messageListItem.num = 200 + trait;
         if (messageListGetItem(&gTraitsMessageList, &messageListItem)) {
-            gTraitDescriptions[trait].description = messageListItem.text;
+            traitDescriptions[trait].description = messageListItem.text;
         }
     }
 
@@ -186,7 +187,7 @@ void traitsGetSelected(Trait* trait1, Trait* trait2)
 // 0x4B3B68 trait_name
 char* traitGetName(Trait trait)
 {
-    return traitIsValid(trait) ? gTraitDescriptions[trait].name : nullptr;
+    return traitIsValid(trait) ? traitDescriptions[trait].name : nullptr;
 }
 
 // Returns a description of the specified trait, or `NULL` if the specified
@@ -195,7 +196,7 @@ char* traitGetName(Trait trait)
 // 0x4B3B88 trait_description
 char* traitGetDescription(Trait trait)
 {
-    return traitIsValid(trait) ? gTraitDescriptions[trait].description : nullptr;
+    return traitIsValid(trait) ? traitDescriptions[trait].description : nullptr;
 }
 
 // Return an art ID of the specified trait, or `0` if the specified trait is
@@ -204,7 +205,7 @@ char* traitGetDescription(Trait trait)
 // 0x4B3BA8 trait_pic
 int traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? gTraitDescriptions[trait].frmId : 0;
+    return traitIsValid(trait) ? traitDescriptions[trait].frmId : 0;
 }
 
 // Returns `true` if the specified trait is selected.
@@ -230,6 +231,7 @@ static void traitsLoadSfallConfig()
 
     ScopedConfig config { perksFile, false };
     if (!config) {
+        debugPrint("Traits config %s not found.\n", perksFile);
         return;
     }
 
@@ -247,17 +249,17 @@ static void traitsLoadSfallConfig()
         char* string = nullptr;
         if (configGetString(config.get(), sectionKey, "Name", &string) && string != nullptr) {
             traitOverrideNames[trait] = string;
-            gTraitDescriptions[trait].name = traitOverrideNames[trait].data();
+            traitDescriptions[trait].name = traitOverrideNames[trait].data();
         }
 
         if (configGetString(config.get(), sectionKey, "Desc", &string) && string != nullptr) {
             traitOverrideDescriptions[trait] = string;
-            gTraitDescriptions[trait].description = traitOverrideDescriptions[trait].data();
+            traitDescriptions[trait].description = traitOverrideDescriptions[trait].data();
         }
 
         int image = 0;
         if (configGetInt(config.get(), sectionKey, "Image", &image)) {
-            gTraitDescriptions[trait].frmId = image;
+            traitDescriptions[trait].frmId = image;
         }
 
         traitsLoadSfallPairBonuses(config.get(), sectionKey, "StatMod", traitStatBonuses[trait], STAT_COUNT);
@@ -276,9 +278,9 @@ static void traitsResetSfallConfig()
 
     for (Trait trait = TRAIT_FIRST; trait < TRAIT_COUNT; trait++) {
         traitHardcodeDisabled[trait] = false;
-        gTraitDescriptions[trait].name = nullptr;
-        gTraitDescriptions[trait].description = nullptr;
-        gTraitDescriptions[trait].frmId = defaultTraitFrmIds[trait];
+        traitDescriptions[trait].name = nullptr;
+        traitDescriptions[trait].description = nullptr;
+        traitDescriptions[trait].frmId = defaultTraitFrmIds[trait];
         traitOverrideNames[trait].clear();
         traitOverrideDescriptions[trait].clear();
 
