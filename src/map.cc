@@ -1061,7 +1061,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        int fid = buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(12));
+        int fid = buildFid(MISC_FRM_ID_12);
         objectCreateWithFidPid(&object, fid, -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);

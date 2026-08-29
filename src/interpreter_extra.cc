@@ -3346,7 +3346,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(10)) == object->fid) {
+                if (buildFid(MISC_FRM_ID_10) == object->fid) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }

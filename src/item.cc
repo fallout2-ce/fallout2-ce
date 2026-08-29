@@ -185,7 +185,7 @@ static int gPlasticExplosiveMaxDamage;
 static std::vector<ExplosiveDescription> gExplosives;
 static Rotation gExplosionStartRotation;
 static Rotation gExplosionEndRotation;
-static ObjectFrameId gExplosionFrm;
+static MiscFrameId gExplosionFrm;
 static int gExplosionRadius;
 static DamageType gExplosionDamageType;
 static int gExplosionMaxTargets;
@@ -3695,7 +3695,7 @@ void explosionSettingsReset()
 {
     gExplosionStartRotation = ROTATION_FIRST;
     gExplosionEndRotation = ROTATION_COUNT;
-    gExplosionFrm = OBJECT_FRAME_ID_INVALID;
+    gExplosionFrm = MISC_FRM_ID_INVALID;
     gExplosionRadius = -1;
     gExplosionDamageType = DAMAGE_TYPE_EXPLOSION;
     gExplosionMaxTargets = 6;
@@ -3713,12 +3713,12 @@ void explosionSetPattern(Rotation startRotation, Rotation endRotation)
     gExplosionEndRotation = endRotation;
 }
 
-ObjectFrameId explosionGetFrm()
+MiscFrameId explosionGetFrm()
 {
     return gExplosionFrm;
 }
 
-void explosionSetFrm(ObjectFrameId frm)
+void explosionSetFrm(MiscFrameId frm)
 {
     gExplosionFrm = frm;
 }

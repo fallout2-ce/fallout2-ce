@@ -1048,13 +1048,13 @@ int proto_tile_init(Proto* proto, int pid)
 // 0x49FDFC proto_misc_init
 int proto_misc_init(Proto* proto, int pid)
 {
-    ObjectFrameId num = objectFrameIdFromPid(pid);
+    MiscFrameId num = miscFrameIdFromPid(pid);
 
     proto->misc.pid = -1;
     proto->misc.messageId = 100 * num;
-    proto->misc.fid = buildFid(OBJ_TYPE_MISC, num - 1);
+    proto->misc.fid = buildFid(num - 1);
     if (!artExists(proto->misc.fid)) {
-        proto->misc.fid = buildFid(OBJ_TYPE_MISC, OBJECT_FRAME_ID_FIRST);
+        proto->misc.fid = buildFid(MISC_FRM_ID_FIRST);
     }
     proto->misc.lightDistance = 0;
     proto->misc.lightIntensity = 0;

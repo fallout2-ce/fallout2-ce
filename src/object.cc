@@ -458,8 +458,8 @@ int objectRead(Object* obj, File* stream)
 
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
-            if (objectFrameIdFromFid(obj->fid) < 33) {
-                obj->fid = buildFid(OBJ_TYPE_MISC, objectFrameIdFromFid(obj->fid) + 16, animationTypeFromFid(obj->fid));
+            if (miscFrameIdFromFid(obj->fid) < 33) {
+                obj->fid = buildFid(miscFrameIdFromFid(obj->fid) + 16, animationTypeFromFid(obj->fid));
             }
         }
     } else {

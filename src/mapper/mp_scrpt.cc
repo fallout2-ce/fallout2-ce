@@ -342,7 +342,7 @@ void map_set_script(int scriptIndex)
     if (newIndex <= 0 || scriptAdd(&gMapSid, SCRIPT_TYPE_SYSTEM) == -1) return;
 
     Object* obj;
-    int fid = buildFid(OBJ_TYPE_MISC, static_cast<ObjectFrameId>(12));
+    int fid = buildFid(MISC_FRM_ID_12);
     objectCreateWithFidPid(&obj, fid, -1);
     obj->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
     objectSetLocation(obj, 1, 0, nullptr);

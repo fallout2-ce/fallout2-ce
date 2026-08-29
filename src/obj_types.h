@@ -136,6 +136,34 @@ inline ObjectFrameId objectFrameIdFromPid(int pid)
     return static_cast<ObjectFrameId>(pid & 0xFFFFFF);
 }
 
+enum MiscFrameId : int {
+    MISC_FRM_ID_INVALID = -1,
+    MISC_FRM_ID_FIRST = 0,
+    MISC_FRM_ID_2 = 2,
+    MISC_FRM_ID_10 = 10, // roktxpd.frm
+    MISC_FRM_ID_12 = 12,
+    MISC_FRM_ID_29 = 29,
+    MISC_FRM_ID_31 = 31,
+};
+
+inline constexpr MiscFrameId operator+(MiscFrameId lhs, int rhs) {
+    return static_cast<MiscFrameId>(static_cast<int>(lhs) + rhs);
+}
+
+inline constexpr MiscFrameId operator-(MiscFrameId lhs, int rhs) {
+    return static_cast<MiscFrameId>(static_cast<int>(lhs) - rhs);
+}
+
+inline MiscFrameId miscFrameIdFromFid(int fid)
+{
+    return static_cast<MiscFrameId>(fid & 0xFFF);
+}
+
+inline MiscFrameId miscFrameIdFromPid(int pid)
+{
+    return static_cast<MiscFrameId>(pid & 0xFFFFFF);
+}
+
 enum InterfaceFrameId : int {
     INTF_FRM_ID_INVALID = -1,
     INTF_FRM_ID_0 = 0, // blank.frm - used be mset000.frm for top of bouncing mouse cursor
