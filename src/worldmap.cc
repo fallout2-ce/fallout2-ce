@@ -18,6 +18,7 @@
 #include "color.h"
 #include "combat.h"
 #include "combat_ai.h"
+#include "content_config.h"
 #include "critter.h"
 #include "cycle.h"
 #include "db.h"
@@ -1118,9 +1119,9 @@ int wmMaxAreaIndex()
 }
 
 // CE: Extracted from wmMapInit to support modular config loading.
-bool wmParseMapsConfig(Config* cfg, int startMapIdx)
+int wmParseMapsConfig(Config* cfg, int startMapIdx)
 {
-    if (cfg == nullptr) return false;
+    if (cfg == nullptr) return -1;
 
     char* str;
     int num;
@@ -1165,7 +1166,12 @@ bool wmParseMapsConfig(Config* cfg, int startMapIdx)
         }
 
         if (configGetString(cfg, section, "ambient_sfx", &str)) {
-            while (str) {
+            while (str != nullptr) {
+                if (map->ambientSoundEffectsLength >= MAP_AMBIENT_SOUND_EFFECTS_CAPACITY) {
+                    debugPrint("\nwmMapInit::Error reading ambient sfx.  Too many!  Str: %s, MapIdx: %d", map->lookupName, mapIdx);
+                    break;
+                }
+
                 MapAmbientSoundEffectInfo* sfx = &(map->ambientSoundEffects[map->ambientSoundEffectsLength]);
                 if (strParseKeyValue(&str, sfx->name, &(sfx->chance), ":") == -1) {
                     return -1;
@@ -1173,15 +1179,8 @@ bool wmParseMapsConfig(Config* cfg, int startMapIdx)
 
                 map->ambientSoundEffectsLength++;
 
-                if (*str == '\0') {
+                if (str != nullptr && *str == '\0') {
                     str = nullptr;
-                }
-
-                if (map->ambientSoundEffectsLength >= MAP_AMBIENT_SOUND_EFFECTS_CAPACITY) {
-                    if (str != nullptr) {
-                        debugPrint("\nwmMapInit::Error reading ambient sfx.  Too many!  Str: %s, MapIdx: %d", map->lookupName, mapIdx);
-                        str = nullptr;
-                    }
                 }
             }
         }
@@ -1277,13 +1276,13 @@ bool wmParseMapsConfig(Config* cfg, int startMapIdx)
         loop_safety_counter++;
     }
 
-    return true;
+    return 0;
 }
 
 // CE: Extracted from wmAreaInit to support modular config loading.
-bool wmParseAreasConfig(Config* cfg, int startAreaIdx)
+int wmParseAreasConfig(Config* cfg, int startAreaIdx)
 {
-    if (cfg == nullptr) return false;
+    if (cfg == nullptr) return -1;
 
     char section[40];
     char key[40];
@@ -1431,7 +1430,7 @@ bool wmParseAreasConfig(Config* cfg, int startAreaIdx)
         exit(1);
     }*/
 
-    return true;
+    return 0;
 }
 
 // 0x4BC89C wmWorldMap_init
@@ -3099,7 +3098,7 @@ static int wmAreaInit()
     }
 
     if (configRead(cfg.get(), "data\\city.txt", true)) {
-        if (!wmParseAreasConfig(cfg.get(), static_cast<int>(CITY_FIRST))) {
+        if (wmParseAreasConfig(cfg.get(), static_cast<int>(CITY_FIRST)) == -1) {
             return -1;
         }
     }
@@ -3164,7 +3163,7 @@ static int wmMapInit()
     }
 
     if (configRead(config.get(), "data\\maps.txt", true)) {
-        if (!wmParseMapsConfig(config.get(), static_cast<int>(MAP_FIRST))) {
+        if (wmParseMapsConfig(config.get(), static_cast<int>(MAP_FIRST)) == -1) {
             return -1;
         }
     }
