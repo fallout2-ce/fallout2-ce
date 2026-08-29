@@ -301,8 +301,8 @@ static char _obj_seen[5001];
 // 0x488780 obj_init
 int objectsInit(unsigned char* buf, int width, int height, int pitch)
 {
-    int dudeFid;
-    int eggFid;
+    FrmId dudeFid;
+    FrmId eggFid;
 
     memset(_obj_seen, 0, 5001);
     gObjectsUpdateAreaPixelBounds.right = width + 320;
@@ -353,7 +353,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowPitch = pitch;
 
     dudeFid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
-    objectCreateWithFidPid(&gDude, dudeFid, 0x1000000);
+    objectCreateWithFidPid(&gDude, dudeFid.fid(), 0x1000000);
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -367,7 +367,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     }
 
     eggFid = FrmId(INTF_FRM_ID_2);
-    objectCreateWithFidPid(&gEgg, eggFid, -1);
+    objectCreateWithFidPid(&gEgg, eggFid.fid(), -1);
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
     gEgg->flags |= OBJECT_HIDDEN;
@@ -459,7 +459,7 @@ int objectRead(Object* obj, File* stream)
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
             if (miscFrameIdFromFid(obj->fid) < 33) {
-                obj->fid = FrmId(miscFrameIdFromFid(obj->fid) + 16, animationTypeFromFid(obj->fid));
+                obj->fid = FrmId(miscFrameIdFromFid(obj->fid) + 16, animationTypeFromFid(obj->fid)).fid();
             }
         }
     } else {
@@ -568,8 +568,9 @@ static int objectLoadAllInternal(File* stream)
                     objectListNode->obj->scriptIndex = script->index;
                 }
             }
-
-            _obj_fix_violence_settings(&(objectListNode->obj->fid));
+            FrmId frmId = FrmId(objectListNode->obj->fid);
+            _obj_fix_violence_settings(&frmId);
+            objectListNode->obj->fid = frmId.fid();
             objectListNode->obj->elevation = elevation;
 
             _obj_insert(objectListNode);
@@ -1470,7 +1471,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->fid[roofX + 100 * roofY];
-            int currentSquareFid = FrmId(tileFrameIdFromFid(currentSquare >> 16));
+            FrmId currentSquareFid = FrmId(tileFrameIdFromFid(currentSquare >> 16));
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y]
@@ -1527,7 +1528,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    int fid = FrmId(tileFrameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
+    FrmId fid = FrmId(tileFrameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
     if (fid != FrmId(TILE_FRM_ID_1)) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
@@ -3248,7 +3249,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     for (TileFrameId i = TILE_FRM_ID_FIRST; i <= TILE_FRM_ID_LAST; i++) {
         if (arr[i] != 0) {
-            int fid = FrmId(i);
+            FrmId fid = FrmId(i);
             if (artLock(fid, &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }
@@ -3597,8 +3598,9 @@ static int _obj_load_obj(File* stream, Object** objectPtr, int elevation, Object
             script->owner = obj;
         }
     }
-
-    _obj_fix_violence_settings(&(obj->fid));
+    FrmId frmId = FrmId(obj->fid);
+    _obj_fix_violence_settings(&frmId);
+    obj->fid = frmId.fid();
 
     if (!_art_fid_valid(obj->fid)) {
         debugPrint("\nError: invalid object art fid: %u\n", obj->fid);
@@ -5143,9 +5145,9 @@ static void _obj_render_object(Object* object, Rect* rect, int light)
 // Updates fid according to current violence level.
 //
 // 0x48FA14 obj_fix_violence_settings
-void _obj_fix_violence_settings(int* fid)
+void _obj_fix_violence_settings(FrmId* frmId)
 {
-    if (objectTypeFromFid(*fid) != OBJ_TYPE_CRITTER) {
+    if (objectTypeFromFid(frmId->fid()) != OBJ_TYPE_CRITTER) {
         return;
     }
 
@@ -5178,12 +5180,12 @@ void _obj_fix_violence_settings(int* fid)
         break;
     }
 
-    AnimationType anim = animationTypeFromFid(*fid);
+    AnimationType anim = animationTypeFromFid(frmId->fid());
     if (anim >= start && anim <= end) {
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
             : ANIM_FALL_FRONT_SF;
-        *fid = FrmId(critterFrameIdFromFid(*fid), anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid));
+        *frmId = FrmId(critterFrameIdFromFid(frmId->fid()), anim, weaponAnimationFromFid(frmId->fid()), rotationFromFid(frmId->fid()));
     }
 
     if (shouldResetViolenceLevel) {

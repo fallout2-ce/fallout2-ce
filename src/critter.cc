@@ -836,7 +836,7 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
 
     // NOTE: Original code uses goto to jump out from nested conditions below.
     bool shouldChangeFid = false;
-    int fid;
+    FrmId fid;
     if (critterIsProne(critter)) {
         AnimationType current = animationTypeFromFid(critter->fid);
         if (current == ANIM_FALL_BACK || current == ANIM_FALL_FRONT) {
@@ -884,7 +884,7 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
     if (shouldChangeFid) {
         objectSetFrame(critter, 0, &updatedRect);
 
-        objectSetFid(critter, fid, &tempRect);
+        objectSetFid(critter, fid.fid(), &tempRect);
         rectUnion(&updatedRect, &tempRect, &updatedRect);
     }
 
@@ -1046,7 +1046,7 @@ bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
     Rotation rotation = critter->rotation + 1;
     WeaponAnimation animationCode = weaponGetAnimationCode(weapon);
     AnimationType weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
-    int fid = FrmId(critter, weaponAnimationCode, animationCode, rotation);
+    FrmId fid = FrmId(critter, weaponAnimationCode, animationCode, rotation);
     return artExists(fid);
 }
 
@@ -1380,8 +1380,8 @@ int knockoutClear(Object* obj, void* data)
 
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
 
-    int fid = FrmId(obj, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
-    objectSetFid(obj, fid, nullptr);
+    FrmId fid = FrmId(obj, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    objectSetFid(obj, fid.fid(), nullptr);
 
     return 0;
 }

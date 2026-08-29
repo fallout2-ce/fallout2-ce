@@ -1153,7 +1153,7 @@ int wmWorldMap_init()
     // initialize it.
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        citySizeDescription->fid = FrmId(INTF_FRM_ID_336 + citySize);
+        citySizeDescription->fid = FrmId(INTF_FRM_ID_336 + citySize).fid();
     }
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_WORLDMAP, &wmMsgFile);
@@ -1705,7 +1705,7 @@ static int wmConfigInit()
             // NOTE: Uninline.
             wmTileSlotInit(tile);
 
-            tile->fid = FrmId(artIndex);
+            tile->fid = FrmId(artIndex).fid();
 
             int encounterDifficulty;
             if (configGetInt(config.get(), section, "encounter_difficulty", &encounterDifficulty)) {
@@ -2805,21 +2805,21 @@ static int wmAreaInit()
 
             city->areaId = area_idx;
 
-            int fid = -1;
+            FrmId fid = FrmId::Empty();
             if (frmId != INTF_FRM_ID_INVALID) {
                 fid = FrmId(frmId);
             }
 
-            city->mapFid = fid;
+            city->mapFid = fid.fid();
             
-            fid = -1;
+            fid = FrmId::Empty();
 
             if (configGetEnum<InterfaceFrameId>(cfg.get(), section, "townmap_label_art_idx", &frmId)) {
                 if (frmId != INTF_FRM_ID_INVALID) {
                     fid = FrmId(frmId);
                 }
 
-                city->labelFid = fid;
+                city->labelFid = fid.fid();
             }
 
             if (!configGetString(cfg.get(), section, "area_name", &str)) {
@@ -4962,8 +4962,6 @@ static void wmInterfaceScrollTabsUpdate()
 // 0x4C2324 wmInterfaceInit
 static int wmInterfaceInit()
 {
-    int fid;
-
     wmLastRndTime = getTicks();
 
     // SFALL: Fix default worldmap font.
@@ -5006,7 +5004,7 @@ static int wmInterfaceInit()
         return -1;
     }
 
-    fid = FrmId(INTF_FRM_ID_136);
+    FrmId fid = FrmId(INTF_FRM_ID_136);
     if (!_backgroundFrmImage.lock(fid)) {
         return -1;
     }
@@ -6810,7 +6808,7 @@ static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, Cache
     }
 
     CacheEntry* handle = INVALID_CACHE_ENTRY;
-    int fid = FrmId(artIndex);
+    FrmId fid = FrmId(artIndex);
     Art* art = artLock(fid, &handle);
     if (art == nullptr) {
         return false;

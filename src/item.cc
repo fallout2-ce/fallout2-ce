@@ -675,8 +675,8 @@ int itemDropAll(Object* critter, int tile)
 
     if (hasEquippedItems) {
         Rect updatedRect;
-        int fid = FrmId(frmId, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
-        objectSetFid(critter, fid, &updatedRect);
+        FrmId fid = FrmId(frmId, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
+        objectSetFid(critter, fid.fid(), &updatedRect);
         if (animationTypeFromFid(critter->fid) == ANIM_STAND) {
             tileWindowRefreshRect(&updatedRect, gElevation);
         }

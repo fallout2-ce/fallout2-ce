@@ -381,7 +381,7 @@ static Buffer2D apBarBackgroundBuf2D()
 // 0x45D880 intface_init
 int interfaceInit()
 {
-    int fid;
+    FrmId fid;
 
     if (gInterfaceBarWindow != -1) {
         return -1;
@@ -1492,7 +1492,7 @@ void interfaceBarEndButtonsShow(bool animated)
         return;
     }
 
-    int fid = FrmId(INTF_FRM_ID_104);
+    FrmId fid = FrmId(INTF_FRM_ID_104);
     CacheEntry* handle;
     Art* art = artLock(fid, &handle);
     if (art == nullptr) {
@@ -1550,7 +1550,7 @@ void interfaceBarEndButtonsHide(bool animated)
         return;
     }
 
-    int fid = FrmId(INTF_FRM_ID_104);
+    FrmId fid = FrmId(INTF_FRM_ID_104);
     CacheEntry* handle;
     Art* art = artLock(fid, &handle);
     if (art == nullptr) {
@@ -1606,7 +1606,7 @@ void interfaceBarEndButtonsRenderGreenLights()
 
         FrmImage lightsFrmImage;
         // endltgrn.frm - green lights around end turn/combat window
-        int lightsFid = FrmId(INTF_FRM_ID_109);
+        FrmId lightsFid = FrmId(INTF_FRM_ID_109);
         if (!lightsFrmImage.lock(lightsFid)) {
             return;
         }
@@ -1626,7 +1626,7 @@ void interfaceBarEndButtonsRenderRedLights()
 
         FrmImage lightsFrmImage;
         // endltred.frm - red lights around end turn/combat window
-        int lightsFid = FrmId(INTF_FRM_ID_110);
+        FrmId lightsFid = FrmId(INTF_FRM_ID_110);
         if (!lightsFrmImage.lock(lightsFid)) {
             return;
         }
@@ -1670,7 +1670,7 @@ static int interfaceBarRefreshMainAction()
         memcpy(_itemButtonDown, _itemButtonPressedFrmImage.getData(), sizeof(_itemButtonDown));
 
         if (itemState->isWeapon == 0) {
-            int fid;
+            FrmId fid;
             if (_proto_action_can_use_on(itemState->item->pid)) {
                 // USE ON
                 fid = FrmId(INTF_FRM_ID_294);
@@ -1678,10 +1678,10 @@ static int interfaceBarRefreshMainAction()
                 // USE
                 fid = FrmId(INTF_FRM_ID_292);
             } else {
-                fid = -1;
+                fid = FrmId::Empty();
             }
 
-            if (fid != -1) {
+            if (!fid.empty()){
                 FrmImage useTextFrmImage;
                 if (useTextFrmImage.lock(fid)) {
                     int width = useTextFrmImage.getWidth();
@@ -1693,8 +1693,8 @@ static int interfaceBarRefreshMainAction()
                 actionPoints = itemGetActionPointCost(gDude, itemState->primaryHitMode, false);
             }
         } else {
-            int primaryFid = -1;
-            int bullseyeFid = -1;
+            FrmId primaryFid = FrmId::Empty();
+            FrmId bullseyeFid = FrmId::Empty();
             HitMode hitMode = HIT_MODE_INVALID;
 
             // NOTE: This value is decremented at 0x45FEAC, probably to build
@@ -1720,7 +1720,7 @@ static int interfaceBarRefreshMainAction()
                 break;
             }
 
-            if (bullseyeFid != -1) {
+            if (!bullseyeFid.empty()) {
                 FrmImage bullseyeFrmImage;
                 if (bullseyeFrmImage.lock(bullseyeFid)) {
                     int width = bullseyeFrmImage.getWidth();
@@ -1731,7 +1731,7 @@ static int interfaceBarRefreshMainAction()
             }
 
             if (hitMode != HIT_MODE_INVALID) {
-                actionPoints = weaponGetActionPointCost(gDude, hitMode, bullseyeFid != -1);
+                actionPoints = weaponGetActionPointCost(gDude, hitMode, !bullseyeFid.empty());
 
                 InterfaceFrameId id = INTF_FRM_ID_INVALID;
                 AnimationType anim = critterGetAnimationForHitMode(gDude, hitMode);
@@ -1811,7 +1811,7 @@ static int interfaceBarRefreshMainAction()
                 }
             }
 
-            if (primaryFid != -1) {
+            if (!primaryFid.empty()) {
                 FrmImage primaryFrmImage;
                 if (primaryFrmImage.lock(primaryFid)) {
                     int width = primaryFrmImage.getWidth();
@@ -1825,7 +1825,7 @@ static int interfaceBarRefreshMainAction()
 
     if (actionPoints >= 0 && actionPoints < 10) {
         // movement point text
-        int apFid = FrmId(INTF_FRM_ID_289);
+        FrmId apFid = FrmId(INTF_FRM_ID_289);
 
         FrmImage apFrmImage;
         if (apFrmImage.lock(apFid)) {
@@ -1839,7 +1839,7 @@ static int interfaceBarRefreshMainAction()
 
             FrmImage apNumbersFrmImage;
             // movement point numbers - ten numbers 0 to 9, each 10 pixels wide.
-            int apNumbersFid = FrmId(INTF_FRM_ID_290);
+            FrmId apNumbersFid = FrmId(INTF_FRM_ID_290);
             if (apNumbersFrmImage.lock(apNumbersFid)) {
                 int width = apNumbersFrmImage.getWidth();
                 int height = apNumbersFrmImage.getHeight();
@@ -1939,8 +1939,8 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation p
     if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
         animationRegisterTakeOutWeapon(gDude, weaponAnimationCode, -1);
     } else {
-        int fid = FrmId(gDude, ANIM_STAND, WEAPON_ANIMATION_NONE, gDude->rotation + 1);
-        animationRegisterSetFid(gDude, fid, -1);
+        FrmId fid = FrmId(gDude, ANIM_STAND, WEAPON_ANIMATION_NONE, gDude->rotation + 1);
+        animationRegisterSetFid(gDude, fid.fid(), -1);
     }
 
     // TODO: Get rid of cast.
@@ -1982,7 +1982,7 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation p
 // 0x4607E0 intface_create_end_turn_button
 static int endTurnButtonInit()
 {
-    int fid;
+    FrmId fid;
 
     if (gInterfaceBarWindow == -1) {
         return -1;
@@ -2034,7 +2034,7 @@ static int endTurnButtonFree()
 // 0x460940 intface_create_end_combat_button
 static int endCombatButtonInit()
 {
-    int fid;
+    FrmId fid;
 
     if (gInterfaceBarWindow == -1) {
         return -1;
@@ -2472,7 +2472,7 @@ static int indicatorBarInit()
     }
 
     FrmImage indicatorBoxFrmImage;
-    int indicatorBoxFid = FrmId(INTF_FRM_ID_126);
+    FrmId indicatorBoxFid = FrmId(INTF_FRM_ID_126);
     if (!indicatorBoxFrmImage.lock(indicatorBoxFid)) {
         debugPrint("\nINTRFACE: Error initializing indicator box graphics! **\n");
         messageListFree(&messageList);

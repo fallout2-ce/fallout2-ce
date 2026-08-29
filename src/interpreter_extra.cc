@@ -425,7 +425,7 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
     }
 
     WeaponAnimation weaponCode = weaponAnimationFromFid(critter->fid);
-    int newFid = -1;
+    FrmId newFid = FrmId::Empty();
 
     if ((flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
         if (critter == gDude) {
@@ -455,9 +455,9 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
     }
 
-    if (newFid != -1) {
+    if (!newFid.empty()) {
         Rect rect;
-        objectSetFid(critter, newFid, &rect);
+        objectSetFid(critter, newFid.fid(), &rect);
         tileWindowRefreshRect(&rect, gElevation);
     }
 
@@ -1940,7 +1940,7 @@ static void opStartGameDialog(Program* program)
     }
 
     if (headIsValid(head)) {
-        gGameDialogHeadFid = FrmId(head);
+        gGameDialogHeadFid = FrmId(head).fid();
     }
 
     gameDialogSetBackground(background);
@@ -2368,7 +2368,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
         if (settings.preferences.violence_level < VIOLENCE_LEVEL_MAXIMUM_BLOOD) {
             useStandardDeath = true;
         } else {
-            int fid = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            FrmId fid = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             if (!artExists(fid)) {
                 useStandardDeath = true;
             }
@@ -2378,7 +2378,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
             if (forceBack) {
                 anim = ANIM_FALL_BACK;
             } else {
-                int fid = FrmId(critter, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                FrmId fid = FrmId(critter, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 if (artExists(fid)) {
                     anim = ANIM_FALL_FRONT;
                 } else {
@@ -3346,7 +3346,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (FrmId(MISC_FRM_ID_10) == object->fid) {
+                if (FrmId(MISC_FRM_ID_10).fid() == object->fid) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }
@@ -3438,15 +3438,15 @@ static void opAnim(Program* program)
         if (frame == 0) { // ANIMATE_FORWARD
             animationRegisterAnimate(obj, anim, 0);
             if (anim >= ANIM_FALL_BACK && anim <= ANIM_FALL_FRONT_BLOOD) {
-                int fid = FrmId(obj, static_cast<AnimationType>(anim + 28), weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
-                animationRegisterSetFid(obj, fid, -1);
+                FrmId fid = FrmId(obj, static_cast<AnimationType>(anim + 28), weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                animationRegisterSetFid(obj, fid.fid(), -1);
             }
 
             if (combatData != nullptr) {
                 combatData->results &= ~DAM_KNOCKED_DOWN;
             }
         } else { // ANIMATE_REVERSE == 1
-            int fid = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+            FrmId fid = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             animationRegisterAnimateReversed(obj, anim, 0);
 
             if (anim == ANIM_PRONE_TO_STANDING) {
@@ -3459,7 +3459,7 @@ static void opAnim(Program* program)
                 combatData->results |= DAM_KNOCKED_DOWN;
             }
 
-            animationRegisterSetFid(obj, fid, -1);
+            animationRegisterSetFid(obj, fid.fid(), -1);
         }
 
         reg_anim_end();
@@ -4285,7 +4285,7 @@ static void _op_anim_action_frame(Program* program)
     int actionFrame = 0;
 
     if (object != nullptr) {
-        int fid = FrmId(object, anim, WEAPON_ANIMATION_NONE, object->rotation);
+        FrmId fid = FrmId(object, anim, WEAPON_ANIMATION_NONE, object->rotation);
         CacheEntry* frmHandle;
         Art* frm = artLock(fid, &frmHandle);
         if (frm != nullptr) {

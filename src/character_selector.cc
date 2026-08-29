@@ -295,7 +295,7 @@ static bool characterSelectorWindowInit()
     }
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = FrmId(INTF_FRM_ID_174);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_174);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return characterSelectorWindowFatalError(false);
     }
@@ -320,7 +320,7 @@ static bool characterSelectorWindowInit()
 
     backgroundFrmImage.unlock();
 
-    int fid;
+    FrmId fid;
 
     // Setup "Previous" button.
     fid = FrmId(INTF_FRM_ID_122);
@@ -613,7 +613,7 @@ static bool characterSelectorWindowRenderFace()
     bool success = false;
 
     FrmImage faceFrmImage;
-    int faceFid = FrmId(gCustomPremadeCharacterDescriptions[gCurrentPremadeCharacter].face);
+    FrmId faceFid = FrmId(gCustomPremadeCharacterDescriptions[gCurrentPremadeCharacter].face);
     if (faceFrmImage.lock(faceFid)) {
         unsigned char* data = faceFrmImage.getData();
         if (data != nullptr) {

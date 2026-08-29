@@ -85,7 +85,26 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 
 class FrmId {
 public:
-    FrmId() = default;
+    static constexpr int EmptyFid = -1;
+
+    constexpr FrmId()
+        : _objectType(OBJ_TYPE_INVALID)
+        , _fid(EmptyFid)
+        , _path(nullptr)
+    {
+    }
+
+    static const FrmId& Empty()
+    {
+        static const FrmId emptyInstance {};
+        return emptyInstance;
+    }
+
+    explicit FrmId(int fid)
+        : _objectType(objectTypeFromFid(fid))
+        , _fid(fid)
+    {
+    }
 
     explicit FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
         : _objectType(OBJ_TYPE_MISC)
@@ -161,14 +180,18 @@ public:
     ObjectType objectType() const;
     const char* filePath() const { return _path; }
 
-    bool empty() const { return _fid == -1 && _path == nullptr; }
+    bool empty() const { return _fid == EmptyFid && _path == nullptr; }
 
-    operator int() const {
-        return _fid; 
+    bool operator==(const FrmId& second) const {
+        return _fid == second._fid;
+    }
+
+    bool operator!=(const FrmId& second) const {
+        return _fid != second._fid;
     }
 
 private:
-    int _fid = -1;
+    int _fid = EmptyFid;
     ObjectType _objectType = OBJ_TYPE_INVALID;
     const char* _path = nullptr;
 };
@@ -219,6 +242,15 @@ private:
     int _xOffset = 0;
     int _yOffset = 0;
 };
+
+inline bool artExists(const FrmId& frmId) {
+    return artExists(frmId.fid());
+}
+
+inline Art* artLock(const FrmId& frmId, CacheEntry** cache_entry)
+{
+    return artLock(frmId.fid(), cache_entry);
+}
 
 } // namespace fallout
 

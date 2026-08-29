@@ -1278,7 +1278,7 @@ static int characterEditorWindowInit()
     int v1;
     int v3;
     char path[COMPAT_MAX_PATH];
-    int fid;
+    FrmId fid;
     char* str;
     int len;
     int btn;
@@ -5043,7 +5043,7 @@ static char* _itostndn(int value, char* dest)
 static int characterEditorDrawCardWithOptions(SkillDexFrameId graphicId, const char* name, const char* attributes, char* description)
 {
     FrmImage frmImage;
-    int fid = FrmId(graphicId);
+    FrmId fid = FrmId(graphicId);
     if (!frmImage.lock(fid)) {
         return -1;
     }
@@ -6138,7 +6138,7 @@ static int perkDialogShow()
         previousPerkRanks[perk] = perkGetRank(gDude, perk);
     }
 
-    int backgroundFid = FrmId(INTF_FRM_ID_86);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_86);
     if (!_perkDialogBackgroundFrmImage.lock(backgroundFid)) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
@@ -7010,7 +7010,7 @@ static int perkDialogOptionCompare(const void* a1, const void* a2)
 static int perkDialogDrawCard(SkillDexFrameId frmId, const char* name, const char* rank, char* description)
 {
     FrmImage frmImage;
-    int fid = FrmId(frmId);
+    FrmId fid = FrmId(frmId);
     if (!frmImage.lock(fid)) {
         return -1;
     }

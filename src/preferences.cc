@@ -981,7 +981,7 @@ void brightnessDecrease()
 static int preferencesWindowInit()
 {
     int i;
-    int fid;
+    FrmId fid;
     char* messageItemText;
     int x;
     int y;

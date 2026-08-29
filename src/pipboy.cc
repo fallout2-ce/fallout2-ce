@@ -668,7 +668,7 @@ static int pipboyWindowInit(int intent)
 
     int index;
     for (index = 0; index < PIPBOY_FRM_COUNT; index++) {
-        int fid = FrmId(gPipboyFrmIds[index]);
+        FrmId fid = FrmId(gPipboyFrmIds[index]);
         if (!_pipboyFrmImages[index].lock(fid)) {
             break;
         }

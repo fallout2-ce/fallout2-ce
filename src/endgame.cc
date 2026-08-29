@@ -224,8 +224,8 @@ void endgamePlaySlideshow()
             if (ending->art_num == INTF_FRM_ID_327) {
                 endgameEndingRenderPanningScene(ending->direction, ending->voiceOverBaseName);
             } else {
-                int fid = FrmId(ending->art_num);
-                endgameEndingRenderStaticScene(fid, ending->voiceOverBaseName);
+                FrmId fid = FrmId(ending->art_num);
+                endgameEndingRenderStaticScene(fid.fid(), ending->voiceOverBaseName);
             }
         }
     }
@@ -345,7 +345,7 @@ static int endgameEndingHandleContinuePlaying()
 // 0x43FBDC endgame_pan_desert
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
-    int fid = FrmId(INTF_FRM_ID_327);
+    FrmId fid = FrmId(INTF_FRM_ID_327);
 
     CacheEntry* backgroundHandle;
     Art* background = artLock(fid, &backgroundHandle);

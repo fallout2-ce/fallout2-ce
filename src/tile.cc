@@ -1316,12 +1316,12 @@ void tileRenderRoofsInRect(Rect* rect, int elevation)
             int frmId = gTileSquares[elevation]->fid[squareTile];
             frmId >>= 16;
             if ((((frmId & 0xF000) >> 12) & 0x01) == 0) {
-                int fid = FrmId(tileFrameIdFromFid(frmId));
+                FrmId fid = FrmId(tileFrameIdFromFid(frmId));
                 if (fid != FrmId(TILE_FRM_ID_1)) {
                     int screenX;
                     int screenY;
                     squareTileToRoofScreenXY(squareTile, &screenX, &screenY, elevation);
-                    tileRenderRoof(fid, screenX, screenY, rect, light);
+                    tileRenderRoof(fid.fid(), screenX, screenY, rect, light);
                 }
             }
         }
@@ -1530,8 +1530,8 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
                 int tileScreenX;
                 int tileScreenY;
                 squareTileToScreenXY(squareTile, &tileScreenX, &tileScreenY, elevation);
-                int fid = FrmId(tileFrameIdFromFid(frmId));
-                tileRenderFloor(fid, tileScreenX, tileScreenY, rect);
+                FrmId fid = FrmId(tileFrameIdFromFid(frmId));
+                tileRenderFloor(fid.fid(), tileScreenX, tileScreenY, rect);
             }
         }
         baseSquareTile += gSquareGridWidth;
@@ -1568,7 +1568,7 @@ void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop)
     bool drawRight = clipSides.right == drawOnTop;
     bool drawBottom = clipSides.bottom == drawOnTop;
 
-    const int kEdgeFid = FrmId(TILE_FRM_ID_1);
+    const FrmId kEdgeFid = FrmId(TILE_FRM_ID_1);
     int baseSquareTile = gSquareGridWidth * minY;
 
     for (int y = minY; y < maxY; y++) {
@@ -1579,7 +1579,7 @@ void tileRenderEdgeBlackSquares(Rect* rect, int elevation, bool drawOnTop)
                 || (drawBottom && y > squareRect.bottom)) {
                 int sx, sy;
                 squareTileToScreenXY(baseSquareTile + x, &sx, &sy, elevation);
-                tileRenderFloor(kEdgeFid, sx, sy, rect);
+                tileRenderFloor(kEdgeFid.fid(), sx, sy, rect);
             }
         }
         baseSquareTile += gSquareGridWidth;
@@ -1602,10 +1602,10 @@ bool _square_roof_intersect(int x, int y, int elevation)
     TileData* ptr = gTileSquares[elevation];
     int idx = gSquareGridWidth * tileY + tileX;
     int upper = ptr->fid[gSquareGridWidth * tileY + tileX] >> 16;
-    int fid = FrmId(tileFrameIdFromFid(upper));
+    FrmId fid = FrmId(tileFrameIdFromFid(upper));
     if (fid != FrmId(TILE_FRM_ID_1)) {
         if ((((upper & 0xF000) >> 12) & 1) == 0) {
-            int fid = FrmId(tileFrameIdFromFid(upper));
+            FrmId fid = FrmId(tileFrameIdFromFid(upper));
             CacheEntry* handle;
             Art* art = artLock(fid, &handle);
             if (art != nullptr) {

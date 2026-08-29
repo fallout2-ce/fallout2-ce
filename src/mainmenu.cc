@@ -201,14 +201,14 @@ static bool mainMenuLoadArt()
     }
 
     if (!mainMenuBackgroundFrmImage.isLocked()) {
-        int backgroundFid = FrmId(INTF_FRM_ID_140);
+        FrmId backgroundFid = FrmId(INTF_FRM_ID_140);
         if (!mainMenuBackgroundFrmImage.lock(backgroundFid)) {
             debugPrint("MAINMENU: failed to load vanilla mainmenu.frm\n");
             return false;
         }
     }
 
-    int fid = FrmId(INTF_FRM_ID_299);
+    FrmId fid = FrmId(INTF_FRM_ID_299);
     if (!mainMenuButtonNormalFrmImage.lock(fid)) {
         return false;
     }
