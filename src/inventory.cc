@@ -6196,7 +6196,7 @@ static void _draw_amount(int value, int inventoryWindowType)
 {
     // BIGNUM.frm
     FrmImage numbersFrmImage;
-    int numbersFid = FrmId(INTF_FRM_ID_170).fid();
+    FrmId numbersFid = FrmId(INTF_FRM_ID_170);
     if (!numbersFrmImage.lock(numbersFid)) {
         return;
     }

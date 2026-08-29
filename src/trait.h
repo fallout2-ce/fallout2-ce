@@ -1,8 +1,8 @@
 #ifndef TRAIT_H
 #define TRAIT_H
 
+#include "art_defs.h"
 #include "db.h"
-#include "obj_types.h"
 #include "skill_defs.h"
 #include "stat_defs.h"
 #include "trait_defs.h"

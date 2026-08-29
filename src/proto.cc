@@ -219,7 +219,7 @@ int _proto_list_str(int pid, char* proto_path)
     int i = 1;
     char string[256];
     while (fileReadString(string, sizeof(string), stream)) {
-        if (i == objectFrameIdFromPid(pid)) {
+        if (i == frameIdFromPid(pid)) {
             break;
         }
 
@@ -228,7 +228,7 @@ int _proto_list_str(int pid, char* proto_path)
 
     fileClose(stream);
 
-    if (i != objectFrameIdFromPid(pid)) {
+    if (i != frameIdFromPid(pid)) {
         return -1;
     }
 

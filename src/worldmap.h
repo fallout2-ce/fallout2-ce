@@ -1,6 +1,7 @@
 #ifndef WORLD_MAP_H
 #define WORLD_MAP_H
 
+#include "art_defs.h"
 #include "color.h"
 #include "db.h"
 #include "obj_types.h"

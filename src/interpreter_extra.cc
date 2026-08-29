@@ -1916,8 +1916,8 @@ static void opAttackComplex(Program* program)
 // 0x456DF0 op_start_gdialog
 static void opStartGameDialog(Program* program)
 {
-    Background background = static_cast<Background>(programStackPopInteger(program)); // no validation here as called often with -1
-    Head head = static_cast<Head>(programStackPopInteger(program)); // no validation here as called often with -1
+    BackgroundFrameId background = static_cast<BackgroundFrameId>(programStackPopInteger(program)); // no validation here as called often with -1
+    HeadFrameId head = static_cast<HeadFrameId>(programStackPopInteger(program)); // no validation here as called often with -1
     int reactionLevel = programStackPopInteger(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     programStackPopInteger(program);
@@ -1939,7 +1939,7 @@ static void opStartGameDialog(Program* program)
         }
     }
 
-    if (headIsValid(head)) {
+    if (headFrameIdIsValid(head)) {
         gGameDialogHeadFid = FrmId(head).fid();
     }
 
@@ -2062,14 +2062,14 @@ static void opMetarule3(Program* program)
             Object* obj = static_cast<Object*>(param1.pointerValue);
             int frmId = param2.integerValue;
 
-            int fid = buildFid(objectTypeFromFid(obj->fid),
+            FrmId fid = FrmId(objectTypeFromFid(obj->fid),
                 frmId,
                 animationTypeFromFid(obj->fid),
                 weaponAnimationFromFid(obj->fid),
                 rotationFromFid(obj->fid));
 
             Rect updatedRect;
-            objectSetFid(obj, fid, &updatedRect);
+            objectSetFid(obj, fid.fid(), &updatedRect);
             tileWindowRefreshRect(&updatedRect, gElevation);
         }
         break;

@@ -1,6 +1,7 @@
 #ifndef PERK_H
 #define PERK_H
 
+#include "art_defs.h"
 #include "db.h"
 #include "obj_types.h"
 #include "perk_defs.h"

@@ -234,7 +234,7 @@ void map_toggle_block_obj_viewing(int mode)
             if (frmId == -1) {
                 debugPrint("\nError: art_list_index failed in toggle_obj_view");
             } else {
-                fidShowList[i] = buildFid(kBlockViewArtType[i], frmId);
+                fidShowList[i] = FrmId(kBlockViewArtType[i], frmId).fid();
             }
         }
     }

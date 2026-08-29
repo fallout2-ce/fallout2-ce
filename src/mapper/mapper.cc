@@ -2523,16 +2523,16 @@ void update_art(ObjectType type, int offset)
     // Render thumbnails for visible slots.
     p = slot_start;
     for (int i = offset; i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
-        int fid;
+        FrmId fid;
         if (settings.mapper.use_art_not_protos) {
-            fid = buildFid(type, i);
+            fid = FrmId(type, i);
         } else {
             Proto* proto;
             int pid = toolbar_proto(type, i);
             if (protoGetProto(pid, &proto) == -1) continue;
-            fid = proto->fid;
+            fid = FrmId(proto->fid);
         }
-        artRender(fid, p, art_scale_width, art_scale_height, screen_width);
+        artRender(fid.fid(), p, art_scale_width, art_scale_height, screen_width);
     }
 
     // Draw selection box around the active slot.

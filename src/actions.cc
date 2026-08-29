@@ -1246,7 +1246,7 @@ int actionPickUp(Object* critter, Object* item)
         }
 
         char sfx[16];
-        if (artCopyFileName(objectTypeFromFid(item->fid), objectFrameIdFromFid(item->fid), sfx) == 0) {
+        if (artCopyFileName(objectTypeFromFid(item->fid), frameIdFromFid(item->fid), sfx) == 0) {
             // NOTE: looks like they copy sfx one more time, what for?
             animationRegisterPlaySoundEffect(item, sfx, actionFrame);
         }

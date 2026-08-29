@@ -5207,7 +5207,7 @@ static int _obj_preload_sort(const void* a1, const void* a2)
         return cmp;
     }
 
-    cmp = objectFrameIdFromFid(v1) - objectFrameIdFromFid(v2);
+    cmp = frameIdFromFid(v1) - frameIdFromFid(v2);
     if (cmp != 0) {
         return cmp;
     }

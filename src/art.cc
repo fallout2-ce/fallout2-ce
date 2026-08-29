@@ -50,6 +50,7 @@ static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 static char artGetCritterWeaponCode(WeaponAnimation weaponType);
+static int buildFid(ObjectType objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
 
 // A frame is laid out like [ArtFrame header][pixel bytes][padding].
 // These functions return a pointer to the pixel bytes, but must be given a pointer to a frame header,
@@ -391,7 +392,7 @@ int artGetFidgetCount(int headFid)
         return 0;
     }
 
-    Head head = headFromFid(headFid);
+    HeadFrameId head = headFrameIdFromFid(headFid);
 
     if (head > gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
         return 0;
@@ -678,7 +679,7 @@ char* artBuildFilePath(int fid)
 
     *_art_name = '\0';
 
-    int frmId = objectFrameIdFromFid(baseFid);
+    int frmId = frameIdFromFid(baseFid);
     AnimationType animType = animationTypeFromFid(baseFid);
     WeaponAnimation weaponCode = weaponAnimationFromFid(baseFid);
     ObjectType objectType = objectTypeFromFid(baseFid);
@@ -1629,16 +1630,84 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
     return gNamedArtCache.emplace(path, std::move(entry)).first->second;
 }
 
+FrmId::FrmId(MiscFrameId misc, AnimationType animType)
+    : _objectType(OBJ_TYPE_MISC)
+    , _fid(buildFid(OBJ_TYPE_MISC, misc, animType))
+{
+}
+
+FrmId::FrmId(SceneryFrameId scenery)
+    : _objectType(OBJ_TYPE_SCENERY)
+    , _fid(buildFid(OBJ_TYPE_SCENERY, scenery))
+{
+}
+
+FrmId::FrmId(WallFrameId wall)
+    : _objectType(OBJ_TYPE_WALL)
+    , _fid(buildFid(OBJ_TYPE_WALL, wall))
+{
+}
+
+FrmId::FrmId(ItemFrameId item)
+    : _objectType(OBJ_TYPE_ITEM)
+    , _fid(buildFid(OBJ_TYPE_ITEM, item))
+{
+}
+
+FrmId::FrmId(TileFrameId tile)
+    : _objectType(OBJ_TYPE_TILE)
+    , _fid(buildFid(OBJ_TYPE_TILE, tile))
+{
+}
+
+FrmId::FrmId(SkillDexFrameId skilldex)
+    : _objectType(OBJ_TYPE_SKILLDEX)
+    , _fid(buildFid(OBJ_TYPE_SKILLDEX, skilldex))
+{
+}
+
+FrmId::FrmId(InterfaceFrameId interface)
+    : _objectType(OBJ_TYPE_INTERFACE)
+    , _fid(buildFid(OBJ_TYPE_INTERFACE, interface))
+{
+}
+
+FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+    : _objectType(OBJ_TYPE_CRITTER)
+    , _fid(buildFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation))
+{
+}
+
+FrmId::FrmId(ObjectType objectType, int frmId, int animType, int weaponCode, Rotation rotation)
+    : _objectType(objectType)
+    , _fid(buildFid(objectType, frmId, animType, weaponCode, rotation))
+{
+    assert(objectTypeIsValid(objectType));
+}
+
+FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+    : _objectType(objectTypeFromFid(object->fid))
+    , _fid(object == nullptr ? EmptyFid : buildFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotation))
+{
+}
+
+FrmId::FrmId(HeadFrameId head, HeadAnimation headAnimation, int fidget)
+    : _objectType(OBJ_TYPE_HEAD)
+    , _fid(buildFid(OBJ_TYPE_HEAD, head, headAnimation, fidget))
+{
+}
+
+FrmId::FrmId(BackgroundFrameId background)
+    : _objectType(OBJ_TYPE_BACKGROUND)
+    , _fid(buildFid(OBJ_TYPE_BACKGROUND, background))
+{
+}
+
 FrmId::FrmId(ObjectType objType, const char* path)
     : _objectType(objType)
     , _path(path)
 {
     assert(objectTypeIsValid(objType));
-}
-
-FrmId::FrmId(const char* path)
-    : _path(path)
-{
 }
 
 ObjectType FrmId::objectType() const

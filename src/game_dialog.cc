@@ -256,7 +256,7 @@ static CacheEntry* gGameDialogFidgetFrmHandle = nullptr;
 static Art* gGameDialogFidgetFrm = nullptr;
 
 // 0x518700 backgroundIndex
-static Background gGameDialogBackground = BACKGROUND_2;
+static BackgroundFrameId gGameDialogBackground = BACKGROUND_2;
 
 // 0x518704 lipsFID
 static int _lipsFID = 0;
@@ -971,7 +971,7 @@ void gameDialogStartLips(const char* audioFileName)
     }
 
     char name[16];
-    if (artCopyFileName(OBJ_TYPE_HEAD, headFromFid(gGameDialogHeadFid), name) == -1) {
+    if (artCopyFileName(OBJ_TYPE_HEAD, headFrameIdFromFid(gGameDialogHeadFid), name) == -1) {
         return;
     }
 
@@ -1165,9 +1165,9 @@ int _gdialogExitFromScript()
 }
 
 // 0x445438
-void gameDialogSetBackground(Background background)
+void gameDialogSetBackground(BackgroundFrameId background)
 {
-    if (backgroundIsValid(background)) {
+    if (backgroundFrameIdIsValid(background)) {
         gGameDialogBackground = background;
     }
 }
@@ -2692,7 +2692,7 @@ void _gdSetupFidget(int headFid, HeadFidget reaction)
 
     if (_lipsFID == 0) {
         _phone_anim = anim;
-        _lipsFID = FrmId(headFromFid(headFid), anim).fid();
+        _lipsFID = FrmId(headFrameIdFromFid(headFid), anim).fid();
         _lipsFp = artLock(_lipsFID, &_lipsKey);
         if (_lipsFp == nullptr) {
             debugPrint("failure!\n");
@@ -2703,7 +2703,7 @@ void _gdSetupFidget(int headFid, HeadFidget reaction)
         }
     }
 
-    FrmId fid = FrmId(headFromFid(headFid), headAnimationFromHeadFidget(reaction));
+    FrmId fid = FrmId(headFrameIdFromFid(headFid), headAnimationFromHeadFidget(reaction));
     int fidgetCount = artGetFidgetCount(fid.fid());
     if (fidgetCount == -1) {
         debugPrint("\tError - No available fidgets for given frame id\n");
@@ -2744,7 +2744,7 @@ void _gdSetupFidget(int headFid, HeadFidget reaction)
         }
     }
 
-    gGameDialogFidgetFid = FrmId(headFromFid(headFid), headAnimationFromHeadFidget(reaction), fidget).fid();
+    gGameDialogFidgetFid = FrmId(headFrameIdFromFid(headFid), headAnimationFromHeadFidget(reaction), fidget).fid();
     gGameDialogFidgetFrmCurrentFrame = 0;
     gGameDialogFidgetFrm = artLock(gGameDialogFidgetFid, &gGameDialogFidgetFrmHandle);
     if (gGameDialogFidgetFrm == nullptr) {
@@ -2814,7 +2814,7 @@ void _gdPlayTransition(HeadAnimation anim)
     }
 
     CacheEntry* headFrmHandle;
-    FrmId headFid = FrmId(headFromFid(gGameDialogHeadFid), anim);
+    FrmId headFid = FrmId(headFrameIdFromFid(gGameDialogHeadFid), anim);
     Art* headFrm = artLock(headFid, &headFrmHandle);
     if (headFrm == nullptr) {
         debugPrint("\tError locking transition...\n");
