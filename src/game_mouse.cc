@@ -1707,6 +1707,31 @@ Object* gameMouseGetObjectUnderCursor(int objectType, bool includeDude, int elev
     return found;
 }
 
+void blitClipped(const unsigned char* src, int srcWidth, int srcHeight, int srcPitch, int destX, int destY) 
+{
+    if (destX < 0) {
+        src += -destX;
+        srcWidth += destX;
+        destX = 0;
+    }
+    if (destY < 0) {
+        src += static_cast<size_t>(-destY) * srcPitch;
+        srcHeight += destY;
+        destY = 0;
+    }
+
+    srcWidth = std::min(srcWidth, gGameMouseActionPickFrmWidth - destX);
+    srcHeight = std::min(srcHeight, gGameMouseActionPickFrmHeight - destY);
+    if (srcWidth > 0 && srcHeight > 0) {
+        blitBufferToBuffer(src,
+            srcWidth,
+            srcHeight,
+            srcPitch,
+            gGameMouseActionPickFrmData + gGameMouseActionPickFrmWidth * destY + destX,
+            gGameMouseActionPickFrmWidth);
+    }
+}
+
 // 0x44CFA0 gmouse_3d_build_pick_frame
 int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int height)
 {
@@ -1734,8 +1759,10 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
     int menuItemFrmWidth = artGetWidth(menuItemFrm, 0, 0);
     int menuItemFrmHeight = artGetHeight(menuItemFrm, 0, 0);
 
-    unsigned char* arrowFrmDest = gGameMouseActionPickFrmData;
-    unsigned char* menuItemFrmDest = gGameMouseActionPickFrmData;
+    int arrowDestX = 0;
+    int arrowDestY = 0;
+    int menuItemDestX = 0;
+    int menuItemDestY = 0;
 
     _gmouse_3d_pick_frame_hot_x = 0;
     _gmouse_3d_pick_frame_hot_y = 0;
@@ -1748,11 +1775,11 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
     int shiftY = maxY - height + 2;
 
     if (maxX < width) {
-        menuItemFrmDest += arrowFrmWidth;
+        menuItemDestX += arrowFrmWidth;
         if (maxY >= height) {
             _gmouse_3d_pick_frame_hot_y = shiftY;
             gGameMouseActionPickFrm->yOffsets[0] -= shiftY;
-            arrowFrmDest += gGameMouseActionPickFrmWidth * shiftY;
+            arrowDestY = shiftY;
         }
     } else {
         // mirrored cursor for far-right side of screen
@@ -1761,7 +1788,7 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
         arrowFid = buildFid(OBJ_TYPE_INTERFACE, 285, 0, 0, 0);
         arrowFrm = artLock(arrowFid, &arrowFrmHandle);
         arrowFrmData = artGetFrameData(arrowFrm, 0, 0);
-        arrowFrmDest += menuItemFrmWidth;
+        arrowDestX = menuItemFrmWidth;
 
         gGameMouseActionPickFrm->xOffsets[0] = -gGameMouseActionPickFrm->xOffsets[0];
         _gmouse_3d_pick_frame_hot_x += menuItemFrmWidth + arrowFrmWidth;
@@ -1770,14 +1797,14 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
             _gmouse_3d_pick_frame_hot_y += shiftY;
             gGameMouseActionPickFrm->yOffsets[0] -= shiftY;
 
-            arrowFrmDest += gGameMouseActionPickFrmWidth * shiftY;
+            arrowDestY = shiftY;
         }
     }
 
     memset(gGameMouseActionPickFrmData, 0, gGameMouseActionPickFrmDataSize);
 
-    blitBufferToBuffer(arrowFrmData, arrowFrmWidth, arrowFrmHeight, arrowFrmWidth, arrowFrmDest, gGameMouseActionPickFrmWidth);
-    blitBufferToBuffer(menuItemFrmData, menuItemFrmWidth, menuItemFrmHeight, menuItemFrmWidth, menuItemFrmDest, gGameMouseActionPickFrmWidth);
+    blitClipped(arrowFrmData, arrowFrmWidth, arrowFrmHeight, arrowFrmWidth, arrowDestX, arrowDestY);
+    blitClipped(menuItemFrmData, menuItemFrmWidth, menuItemFrmHeight, menuItemFrmWidth, menuItemDestX, menuItemDestY);
 
     artUnlock(arrowFrmHandle);
     artUnlock(menuItemFrmHandle);
