@@ -89,7 +89,7 @@ public:
     bool operator==(const FrmId& other) const
     {
         if (_fid != other._fid) return false;
-        if (_objectType != other._objectType) return false;     
+        if (_objectType != other._objectType) return false;
         if (_path == nullptr && other._path == nullptr) return true;
         if (_path == nullptr || other._path == nullptr) return false;
 
