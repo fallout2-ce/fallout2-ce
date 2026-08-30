@@ -1,6 +1,7 @@
 #ifndef ART_H
 #define ART_H
 
+#include <cstring>
 #include <memory>
 
 #include "animation.h"
@@ -83,16 +84,21 @@ public:
     ObjectType objectType() const;
     const char* filePath() const { return _path; }
 
-    bool empty() const { return _fid == EmptyFid && _path == nullptr; }
+    bool empty() const { return (*this) == Empty(); }
 
-    bool operator==(const FrmId& second) const
+    bool operator==(const FrmId& other) const
     {
-        return _fid == second._fid;
+        if (_fid != other._fid) return false;
+        if (_objectType != other._objectType) return false;     
+        if (_path == nullptr && other._path == nullptr) return true;
+        if (_path == nullptr || other._path == nullptr) return false;
+
+        return std::strcmp(_path, other._path) == 0;
     }
 
-    bool operator!=(const FrmId& second) const
+    bool operator!=(const FrmId& other) const
     {
-        return _fid != second._fid;
+        return !(*this == other);
     }
 
 private:
