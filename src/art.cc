@@ -1685,7 +1685,7 @@ FrmId::FrmId(ObjectType objectType, int frmId, int animType, int weaponCode, Rot
 }
 
 FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
-    : _objectType(objectTypeFromFid(object->fid))
+    : _objectType(object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid))
     , _fid(object == nullptr ? EmptyFid : buildFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotation))
 {
 }
