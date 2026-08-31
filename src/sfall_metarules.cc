@@ -1070,7 +1070,7 @@ void mf_art_frame_data(OpcodeContext& ctx)
     if (ctx.arg(0).isInt()) {
         FrmId fid = FrmId(ctx.arg(0).asInt());
         if (!image.lock(fid, frame, rotation)) {
-            ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
+            ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid.fid());
             ctx.setReturn(-1);
             return;
         }
