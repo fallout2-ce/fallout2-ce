@@ -294,6 +294,14 @@ static int _gdReenterLevel = 0;
 // 0x51872C gdReplyTooBig
 static bool _gdReplyTooBig = false;
 
+// CE: When a dialog option's script proc triggers the barter screen *before*
+// setting its Reply() text (e.g. Tubby, Buck Dunton), the reply's speech and
+// lip-sync would otherwise start immediately and play out over the barter
+// window while the matching on-screen text stays hidden behind it. When true,
+// the reply speech was held back in `_gdProcessUpdate` and is started once the
+// barter screen closes so audio, lips, and text line up.
+static bool gGameDialogDeferReplySpeech = false;
+
 // A hidden object (PID -1) created during barter to serve as a container for player items offered to the NPC.
 //
 // 0x518730 peon_table_obj
@@ -1988,6 +1996,10 @@ int _gdProcessExit()
 {
     _gdProcessCleanup();
 
+    // CE: Don't let a held-back reply speech leak into the next conversation if
+    // the barter screen was never actually shown.
+    gGameDialogDeferReplySpeech = false;
+
     // CE: Move red buttons exit to `_gdialogExitFromScript`.
 
     windowDestroy(gGameDialogReplyWindow);
@@ -2428,7 +2440,14 @@ void _gdProcessUpdate()
     _demo_copy_options(gGameDialogOptionsWindow);
 
     if (gDialogReplyMessageListId > 0) {
-        char* s = _scr_get_msg_str_speech(gDialogReplyMessageListId, gDialogReplyMessageId, 1);
+        // CE: Hold back the reply speech when this update runs while a switch to
+        // the barter screen is already pending (the option's proc called
+        // `gdialog_barter` before `Reply()`). `gameDialogTicker` starts it again
+        // once the barter screen is dismissed. See `gGameDialogDeferReplySpeech`.
+        gGameDialogDeferReplySpeech = dialogSwitchMode == GAME_DIALOG_MODE_SWITCH_TO_BARTER
+            || dialogSwitchMode == GAME_DIALOG_MODE_BARTER_ACTIVE;
+
+        char* s = _scr_get_msg_str_speech(gDialogReplyMessageListId, gDialogReplyMessageId, gGameDialogDeferReplySpeech ? 0 : 1);
         if (s == nullptr) {
             showMessageBox("\n'GDialog::Error Grabbing text message!");
             exit(1);
@@ -3031,6 +3050,17 @@ void gameDialogTicker()
             // SFALL: Fix for the player's money not being displayed in the
             // dialog window after leaving the barter/combat control interface.
             gameDialogRenderCaps();
+        }
+
+        // CE: Start the reply speech that was held back while the barter screen
+        // was open (see `gGameDialogDeferReplySpeech`), now that the dialog
+        // window is back and the reply text is visible again.
+        if (gGameDialogDeferReplySpeech) {
+            gGameDialogDeferReplySpeech = false;
+            if (gDialogReplyMessageListId > 0) {
+                _scr_get_msg_str_speech(gDialogReplyMessageListId, gDialogReplyMessageId, 1);
+                gameDialogRenderReply();
+            }
         }
 
         break;
