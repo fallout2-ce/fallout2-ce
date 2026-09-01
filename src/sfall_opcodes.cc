@@ -1775,6 +1775,47 @@ static void op_obj_blocking_at(Program* program)
     programStackPushPointer(program, obstacle);
 }
 
+// create_spatial
+static void op_create_spatial(Program* program)
+{
+    int radius = programStackPopInteger(program);
+    int elevation = programStackPopInteger(program);
+    int tile = programStackPopInteger(program);
+    int scriptId = programStackPopInteger(program);
+
+    if (scriptId <= 0) {
+        programPrintError("create_spatial: invalid script index number %d.", scriptId);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    int scriptIndex = scriptId - 1;
+    if (!scriptsIsValidScriptIndex(scriptIndex)) {
+        programPrintError("create_spatial: invalid script index number %d.", scriptId);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    if (!hexGridTileIsValid(tile)) {
+        programPrintError("create_spatial: invalid tile number %d.", tile);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    if (elevation < 0 || elevation >= ELEVATION_COUNT) {
+        programPrintError("create_spatial: invalid elevation number %d.", elevation);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    Object* spatial = scriptCreateSpatial(scriptIndex, tile, elevation, radius);
+    if (spatial == nullptr) {
+        programPrintError("create_spatial: failed to create spatial script.");
+    }
+
+    programStackPushPointer(program, spatial);
+}
+
 // tile_light
 static void op_tile_light(Program* program)
 {
@@ -2692,6 +2733,7 @@ void sfallOpcodesInit()
     // 0x8272 - array path_find_to(object objFrom, int tileTo, int blockingType)
     interpreterRegisterOpcode(0x8272, op_make_path);
     // 0x8273 - object create_spatial(int scriptID, int tile, int elevation, int radius)
+    interpreterRegisterOpcode(0x8273, op_create_spatial);
     // 0x8274 - int art_exists(int artFID)
     interpreterRegisterOpcode(0x8274, op_art_exists);
     // 0x8275 - int obj_is_carrying_obj(object invenObj, object itemObj)

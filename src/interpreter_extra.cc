@@ -2689,11 +2689,13 @@ static void opGetFixedParam(Program* program)
 {
     int fixedParam = 0;
 
-    int sid = scriptGetSid(program);
-
-    Script* script;
-    if (scriptGetScript(sid, &script) != -1) {
-        fixedParam = script->fixedParam;
+    ScriptContextRef context;
+    if (scriptContextResolve(program, &context)) {
+        if (context.kind == ScriptContextKind::NormalScript) {
+            fixedParam = context.script->fixedParam;
+        } else {
+            fixedParam = context.detached->fixedParam;
+        }
     } else {
         scriptPredefinedError(program, "fixed_param", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
