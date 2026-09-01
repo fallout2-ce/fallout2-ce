@@ -89,6 +89,26 @@ int Color2RGB(Color c)
     return (r << 10) | (g << 5) | b;
 }
 
+Color colorPaletteFindDarkest(const unsigned char* palette)
+{
+    if (palette == nullptr) {
+        return COLOR_FIRST;
+    }
+
+    int darkestColor = 0;
+    int darkestValue = palette[0] + palette[1] + palette[2];
+
+    for (int index = 1; index < COLOR_COUNT; index++) {
+        int value = palette[index * COLOR_COMPONENTS_RGB] + palette[index * COLOR_COMPONENTS_RGB + 1] + palette[index * COLOR_COMPONENTS_RGB + 2];
+        if (value < darkestValue) {
+            darkestValue = value;
+            darkestColor = index;
+        }
+    }
+
+    return static_cast<Color>(darkestColor);
+}
+
 // Performs animated palette transition.
 //
 // 0x4C7320 fadeSystemPalette

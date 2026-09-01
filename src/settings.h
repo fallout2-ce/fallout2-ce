@@ -78,6 +78,12 @@ struct UISettings {
     // Scales the splash screen to fit the screen
     int splash_screen_size = 1;
 
+    // Scales the death screen to fit the screen while preserving aspect ratio.
+    int death_screen_size = 1;
+
+    // Scales endgame slideshow images to fit the screen.
+    int end_slide_size = 1;
+
     // Whether to scale movies to fit the screen while preserving aspect ratio.
     bool movie_aspect_fit = true;
 
