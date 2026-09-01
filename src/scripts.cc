@@ -1145,6 +1145,7 @@ int scriptRemoveTimerEvents(int sid, int fixedParam)
     if (scriptGetScript(sid, &script) == -1) {
         return -1;
     }
+    (void)script;
 
     scriptQueueRemoveSid = sid;
     scriptQueueRemoveFixedParam = fixedParam;
@@ -1162,6 +1163,7 @@ int scriptRemoveAllTimerEvents(int sid)
     if (scriptGetScript(sid, &script) == -1) {
         return -1;
     }
+    (void)script;
 
     scriptQueueRemoveSid = sid;
     scriptQueueRemoveUseFixedParam = false;

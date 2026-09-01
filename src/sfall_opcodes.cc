@@ -1781,17 +1781,17 @@ static void op_create_spatial(Program* program)
     int radius = programStackPopInteger(program);
     int elevation = programStackPopInteger(program);
     int tile = programStackPopInteger(program);
-    int scriptIndex = programStackPopInteger(program);
+    int scriptId = programStackPopInteger(program);
 
-    if (scriptIndex <= 0) {
-        programPrintError("create_spatial: invalid script index number %d.", scriptIndex);
+    if (scriptId <= 0) {
+        programPrintError("create_spatial: invalid script index number %d.", scriptId);
         programStackPushPointer(program, nullptr);
         return;
     }
 
-    scriptIndex--;
+    int scriptIndex = scriptId - 1;
     if (!scriptsIsValidScriptIndex(scriptIndex)) {
-        programPrintError("create_spatial: invalid script index (engine) number %d.", scriptIndex);
+        programPrintError("create_spatial: invalid script index number %d.", scriptId);
         programStackPushPointer(program, nullptr);
         return;
     }

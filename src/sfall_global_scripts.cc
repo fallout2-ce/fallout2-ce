@@ -32,14 +32,14 @@ struct GlobalScript {
     int mode = 0;
     bool once = true;
     struct Timer {
-        int id = 0;
+        unsigned int id = 0;
         unsigned int dueTime = 0;
         int fixedParam = 0;
         bool isActive = true;
         bool isExecuting = false;
     };
     std::list<Timer> timers;
-    int nextTimerId = 1;
+    unsigned int nextTimerId = 1;
     int timerProcessingDepth = 0;
 };
 
@@ -177,7 +177,7 @@ static void sfall_gl_scr_cleanup_timers(GlobalScript& scr)
     });
 }
 
-static GlobalScript::Timer* sfall_gl_scr_find_timer(GlobalScript& scr, int timerId)
+static GlobalScript::Timer* sfall_gl_scr_find_timer(GlobalScript& scr, unsigned int timerId)
 {
     for (auto& timer : scr.timers) {
         if (timer.id == timerId) {
@@ -215,7 +215,7 @@ static void sfall_gl_scr_execute_due_timers(GlobalScript& scr)
             break;
         }
 
-        int timerId = timer->id;
+        unsigned int timerId = timer->id;
         int fixedParam = timer->fixedParam;
         timer->isActive = false;
         timer->isExecuting = true;
@@ -309,6 +309,8 @@ bool sfall_gl_scr_add_timer_event(Program* program, int delay, int fixedParam)
     timer.dueTime = gameTimeGetTime() + static_cast<unsigned int>(delay);
     timer.fixedParam = fixedParam;
     scr->timers.push_back(timer);
+    // TODO: Insert into the ordered position instead of sorting the whole list
+    // after every timer add.
     scr->timers.sort([](const GlobalScript::Timer& a, const GlobalScript::Timer& b) {
         return a.dueTime < b.dueTime;
     });
