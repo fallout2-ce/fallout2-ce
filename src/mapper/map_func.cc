@@ -1223,7 +1223,7 @@ void mapper_shift_map_elev()
     // co-located with each script.
     Script* script = scriptGetFirstSpatialScript(gElevation);
     constexpr FrmId kExitGridFrmId = FrmId(INTF_FRM_ID_3);
-    
+
     while (script != nullptr) {
         int builtTile = script->sp.built_tile;
         int tile = builtTile & 0x3FFFFFF;

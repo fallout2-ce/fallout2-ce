@@ -51,7 +51,7 @@ public:
         : _objectType(OBJ_TYPE_INVALID)
         , _fid(EmptyFid)
         , _path(nullptr)
-        , _frameId{ EmptyFid }
+        , _frameId { EmptyFid }
     {
     }
 
@@ -64,7 +64,7 @@ public:
     constexpr explicit FrmId(int fid)
         : _objectType(objectTypeFromFid(fid))
         , _fid(fid)
-        , _frameId{frameIdFromFid(fid)}
+        , _frameId { frameIdFromFid(fid) }
         , _path(nullptr)
     {
     }
@@ -72,7 +72,7 @@ public:
     constexpr explicit FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
         : _objectType(OBJ_TYPE_MISC)
         , _fid(buildFid(OBJ_TYPE_MISC, misc, animType))
-        , _frameId{ static_cast<int>(misc) }
+        , _frameId { static_cast<int>(misc) }
         , _path(nullptr)
     {
     }
@@ -80,7 +80,7 @@ public:
     constexpr explicit FrmId(SceneryFrameId scenery)
         : _objectType(OBJ_TYPE_SCENERY)
         , _fid(buildFid(OBJ_TYPE_SCENERY, scenery))
-        , _frameId{ static_cast<int>(scenery) }
+        , _frameId { static_cast<int>(scenery) }
         , _path(nullptr)
     {
     }
@@ -88,7 +88,7 @@ public:
     constexpr explicit FrmId(WallFrameId wall)
         : _objectType(OBJ_TYPE_WALL)
         , _fid(buildFid(OBJ_TYPE_WALL, wall))
-        , _frameId{ static_cast<int>(wall) }
+        , _frameId { static_cast<int>(wall) }
         , _path(nullptr)
     {
     }
@@ -96,7 +96,7 @@ public:
     constexpr explicit FrmId(ItemFrameId item)
         : _objectType(OBJ_TYPE_ITEM)
         , _fid(buildFid(OBJ_TYPE_ITEM, item))
-        , _frameId{ static_cast<int>(item) }
+        , _frameId { static_cast<int>(item) }
         , _path(nullptr)
     {
     }
@@ -104,7 +104,7 @@ public:
     constexpr explicit FrmId(TileFrameId tile)
         : _objectType(OBJ_TYPE_TILE)
         , _fid(buildFid(OBJ_TYPE_TILE, tile))
-        , _frameId{ static_cast<int>(tile) }
+        , _frameId { static_cast<int>(tile) }
         , _path(nullptr)
     {
     }
@@ -112,7 +112,7 @@ public:
     constexpr explicit FrmId(SkillDexFrameId skilldex)
         : _objectType(OBJ_TYPE_SKILLDEX)
         , _fid(buildFid(OBJ_TYPE_SKILLDEX, skilldex))
-        , _frameId{ static_cast<int>(skilldex) }
+        , _frameId { static_cast<int>(skilldex) }
         , _path(nullptr)
     {
     }
@@ -120,7 +120,7 @@ public:
     constexpr explicit FrmId(InterfaceFrameId interface)
         : _objectType(OBJ_TYPE_INTERFACE)
         , _fid(buildFid(OBJ_TYPE_INTERFACE, interface))
-        , _frameId{ static_cast<int>(interface) }
+        , _frameId { static_cast<int>(interface) }
         , _path(nullptr)
     {
     }
@@ -133,25 +133,25 @@ public:
     constexpr explicit FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
         : _objectType(OBJ_TYPE_HEAD)
         , _fid(buildFid(OBJ_TYPE_HEAD, head, headAnimation, fidget))
-        , _frameId{ static_cast<int>(head) }
+        , _frameId { static_cast<int>(head) }
         , _path(nullptr)
     {
     }
-    
+
     constexpr explicit FrmId(BackgroundFrameId background)
         : _objectType(OBJ_TYPE_BACKGROUND)
         , _fid(buildFid(OBJ_TYPE_BACKGROUND, background))
-        , _frameId{ static_cast<int>(background) }
+        , _frameId { static_cast<int>(background) }
         , _path(nullptr)
     {
     }
 
     constexpr explicit FrmId(ObjectType objType, const char* path)
-    : _objectType(objType)
-    , _fid(EmptyFid)
-    , _frameId{EmptyFid}
-    , _path(path)
-    
+        : _objectType(objType)
+        , _fid(EmptyFid)
+        , _frameId { EmptyFid }
+        , _path(path)
+
     {
         assert(objectTypeIsValid(objType));
     }
@@ -159,7 +159,7 @@ public:
     constexpr int fid() const { return _fid; }
 
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
-    
+
     constexpr ObjectType objectType() const
     {
         assert(hasObjectType());

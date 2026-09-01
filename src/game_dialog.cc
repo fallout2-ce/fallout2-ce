@@ -4662,8 +4662,7 @@ void _gdialog_window_destroy()
     int offset = (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len);
     unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow) + offset;
 
-    const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ?
-        FrmId(INTF_FRM_ID_389) : // di_talkp.frm - dialog screen subwindow (party members)
+    const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(INTF_FRM_ID_389) : // di_talkp.frm - dialog screen subwindow (party members)
         FrmId(INTF_FRM_ID_99); // di_talk.frm - dialog screen subwindow (NPC's)
 
     FrmImage backgroundFrmImage;
