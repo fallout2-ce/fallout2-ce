@@ -295,8 +295,7 @@ static bool characterSelectorWindowInit()
     }
 
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_174);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
+    if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_174))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -320,16 +319,12 @@ static bool characterSelectorWindowInit()
 
     backgroundFrmImage.unlock();
 
-    FrmId fid;
-
     // Setup "Previous" button.
-    fid = FrmId(INTF_FRM_ID_122);
-    if (!_previousButtonNormalFrmImage.lock(fid)) {
+    if (!_previousButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_122))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = FrmId(INTF_FRM_ID_123);
-    if (!_previousButtonPressedFrmImage.lock(fid)) {
+    if (!_previousButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_123))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -353,13 +348,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowPreviousButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
     // Setup "Next" button.
-    fid = FrmId(INTF_FRM_ID_124);
-    if (!_nextButtonNormalFrmImage.lock(fid)) {
+    if (!_nextButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_124))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = FrmId(INTF_FRM_ID_125);
-    if (!_nextButtonPressedFrmImage.lock(fid)) {
+    if (!_nextButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_125))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -383,13 +376,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowNextButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
     // Setup "Take" button.
-    fid = FrmId(INTF_FRM_ID_8);
-    if (!_takeButtonNormalFrmImage.lock(fid)) {
+    if (!_takeButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = FrmId(INTF_FRM_ID_9);
-    if (!_takeButtonPressedFrmImage.lock(fid)) {
+    if (!_takeButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -413,12 +404,10 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowTakeButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Modify" button.
-    fid = FrmId(INTF_FRM_ID_8);
-    if (!_modifyButtonNormalFrmImage.lock(fid))
+    if (!_modifyButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8)))
         return characterSelectorWindowFatalError(false);
 
-    fid = FrmId(INTF_FRM_ID_9);
-    if (!_modifyButtonPressedFrmImage.lock(fid)) {
+    if (!_modifyButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -442,13 +431,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowModifyButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Create" button.
-    fid = FrmId(INTF_FRM_ID_8);
-    if (!_createButtonNormalFrmImage.lock(fid)) {
+    if (!_createButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = FrmId(INTF_FRM_ID_9);
-    if (!_createButtonPressedFrmImage.lock(fid)) {
+    if (!_createButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -472,13 +459,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowCreateButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Back" button.
-    fid = FrmId(INTF_FRM_ID_8);
-    if (!_backButtonNormalFrmImage.lock(fid)) {
+    if (!_backButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    fid = FrmId(INTF_FRM_ID_9);
-    if (!_backButtonPressedFrmImage.lock(fid)) {
+    if (!_backButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -613,8 +598,8 @@ static bool characterSelectorWindowRenderFace()
     bool success = false;
 
     FrmImage faceFrmImage;
-    FrmId faceFid = FrmId(gCustomPremadeCharacterDescriptions[gCurrentPremadeCharacter].face);
-    if (faceFrmImage.lock(faceFid)) {
+    const FrmId faceFrmId = FrmId(gCustomPremadeCharacterDescriptions[gCurrentPremadeCharacter].face);
+    if (faceFrmImage.lock(faceFrmId)) {
         unsigned char* data = faceFrmImage.getData();
         if (data != nullptr) {
             int width = faceFrmImage.getWidth();

@@ -441,11 +441,11 @@ static const Stat gSummaryStats2[7] = {
 };
 
 // 0x46E708
-static const InterfaceFrameId gInventoryArrowFrmIds[INVENTORY_ARROW_FRM_COUNT] = {
-    INTF_FRM_ID_122, // left arrow up
-    INTF_FRM_ID_123, // left arrow down
-    INTF_FRM_ID_124, // right arrow up
-    INTF_FRM_ID_125, // right arrow down
+static constexpr FrmId kInventoryArrowFrmIds[INVENTORY_ARROW_FRM_COUNT] = {
+    FrmId(INTF_FRM_ID_122), // left arrow up
+    FrmId(INTF_FRM_ID_123), // left arrow down
+    FrmId(INTF_FRM_ID_124), // right arrow up
+    FrmId(INTF_FRM_ID_125), // right arrow down
 };
 
 // The number of items to show in scroller.
@@ -506,12 +506,12 @@ static unsigned int gInventoryWindowDudeRotationTimestamp = 0;
 static Rotation gInventoryWindowDudeRotation = ROTATION_NE;
 
 // 0x5190FC num
-static const InterfaceFrameId gInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
-    INTF_FRM_ID_286, // pointing hand
-    INTF_FRM_ID_250, // action arrow
-    INTF_FRM_ID_282, // action pick
-    INTF_FRM_ID_283, // action menu
-    INTF_FRM_ID_266, // blank
+static constexpr FrmId kInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
+    FrmId(INTF_FRM_ID_286), // pointing hand
+    FrmId(INTF_FRM_ID_250), // action arrow
+    FrmId(INTF_FRM_ID_282), // action pick
+    FrmId(INTF_FRM_ID_283), // action menu
+    FrmId(INTF_FRM_ID_266), // blank
 };
 
 // 0x519110 last_target
@@ -2241,8 +2241,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
         pitch = INVENTORY_USE_ON_WINDOW_WIDTH;
 
         FrmImage backgroundFrmImage;
-        FrmId backgroundFid = FrmId(INTF_FRM_ID_113);
-        if (backgroundFrmImage.lock(backgroundFid)) {
+        if (backgroundFrmImage.lock(FrmId(INTF_FRM_ID_113))) {
             // Clear scroll view background.
             blitBufferToBuffer(backgroundFrmImage.getData() + pitch * INVENTORY_SCROLLER_Y + INVENTORY_SCROLLER_X,
                 INVENTORY_SLOT_WIDTH,
@@ -2561,7 +2560,7 @@ static void _display_body(int fid, int inventoryWindowType)
             rect.bottom = rect.top + INVENTORY_BODY_VIEW_HEIGHT - 1;
 
             FrmImage backgroundFrmImage;
-            FrmId backgroundFid = FrmId(gGameDialogSpeakerIsPartyMember ? INTF_FRM_ID_420 : INTF_FRM_ID_111);
+            const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(INTF_FRM_ID_420) : FrmId(INTF_FRM_ID_111);
             if (backgroundFrmImage.lock(backgroundFid)) {
                 blitBufferToBuffer(backgroundFrmImage.getData() + rect.top * 640 + rect.left,
                     INVENTORY_BODY_VIEW_WIDTH,
@@ -2666,8 +2665,7 @@ static int inventoryCommonInit()
     for (index = 0; index < INVENTORY_WINDOW_CURSOR_COUNT; index++) {
         InventoryCursorData* cursorData = &(gInventoryCursorData[index]);
 
-        FrmId fid = FrmId(gInventoryWindowCursorFrmIds[index]);
-        Art* frm = artLock(fid, &(cursorData->frmHandle));
+        Art* frm = artLock(kInventoryWindowCursorFrmIds[index], &(cursorData->frmHandle));
         if (frm == nullptr) {
             break;
         }
@@ -3893,8 +3891,8 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         if (critter == gDude) {
             if (!isoIsDisabled()) {
-                FrmId fid = FrmId(baseFrmId, ANIM_STAND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
-                animationRegisterSetFid(critter, fid.fid(), 0);
+                const FrmId frmId = FrmId(baseFrmId, ANIM_STAND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                animationRegisterSetFid(critter, frmId.fid(), 0);
             }
         } else {
             adjustCritterStatsOnArmorChange(critter, armor, item);
@@ -3909,8 +3907,8 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         WeaponAnimation weaponAnimationCode = weaponGetAnimationCode(item);
         AnimationType hitModeAnimationCode = weaponGetAnimationForHitMode(item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
-        FrmId fid = FrmId(critter, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
-        if (!artExists(fid)) {
+        const FrmId frmId = FrmId(critter, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
+        if (!artExists(frmId)) {
             debugPrint("\ninven_wield failed!  ERROR ERROR ERROR!");
             return -1;
         }
@@ -3984,12 +3982,12 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
                 if (weaponAnimationCode != WEAPON_ANIMATION_NONE) {
                     animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
                 } else {
-                    FrmId fid = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
-                    animationRegisterSetFid(critter, fid.fid(), -1);
+                    const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+                    animationRegisterSetFid(critter, frmId.fid(), -1);
                 }
             } else {
-                FrmId fid = FrmId(critter, ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
-                _dude_stand(critter, critter->rotation, fid.fid());
+                const FrmId frmId = FrmId(critter, ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
+                _dude_stand(critter, critter->rotation, frmId.fid());
             }
         }
     }
@@ -4049,14 +4047,14 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
 
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
 
-            FrmId fid = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
-            animationRegisterSetFid(critter, fid.fid(), -1);
+            const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+            animationRegisterSetFid(critter, frmId.fid(), -1);
 
             return reg_anim_end();
         }
 
-        FrmId fid = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
-        _dude_stand(critter, critter->rotation, fid.fid());
+        const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
+        _dude_stand(critter, critter->rotation, frmId.fid());
     }
 
     return 0;
@@ -4791,8 +4789,8 @@ int inventoryOpenLooting(Object* looter, Object* target)
         }
         int btn = buttonCreateWithFrm(gInventoryWindow,
             x, y, -1, -1, -1, keyCode,
-            FrmId(gInventoryArrowFrmIds[upFrmId]),
-            FrmId(gInventoryArrowFrmIds[downFrmId]));
+            kInventoryArrowFrmIds[upFrmId],
+            kInventoryArrowFrmIds[downFrmId]);
         if (btn != -1) {
             buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
         }
@@ -6234,8 +6232,7 @@ static void _draw_amount(int value, int inventoryWindowType)
 {
     // BIGNUM.frm
     FrmImage numbersFrmImage;
-    FrmId numbersFid = FrmId(INTF_FRM_ID_170);
-    if (!numbersFrmImage.lock(numbersFid)) {
+    if (!numbersFrmImage.lock(FrmId(INTF_FRM_ID_170))) {
         return;
     }
 
@@ -6463,8 +6460,8 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
     unsigned char* windowBuffer = windowGetBuffer(_mt_wid);
 
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(windowDescription->frmId);
-    if (backgroundFrmImage.lock(backgroundFid)) {
+    const FrmId backgroundFrmId = FrmId(windowDescription->frmId);
+    if (backgroundFrmImage.lock(backgroundFrmId)) {
         blitBufferToBuffer(backgroundFrmImage.getData(),
             windowDescription->width,
             windowDescription->height,
@@ -6491,8 +6488,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
         // Timer overlay
         FrmImage overlayFrmImage;
-        FrmId overlayFid = FrmId(INTF_FRM_ID_306);
-        if (overlayFrmImage.lock(overlayFid)) {
+        if (overlayFrmImage.lock(FrmId(INTF_FRM_ID_306))) {
             blitBufferToBuffer(overlayFrmImage.getData(),
                 105, 81, 105,
                 windowBuffer + 34 * windowDescription->width + 113, windowDescription->width);
@@ -6508,8 +6504,6 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         x = 200;
         y = 46;
     }
-
-    FrmId fid;
 
     // Plus button
     int btn = buttonCreateActionWithFrm(_mt_wid,
@@ -6528,11 +6522,8 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         148, 128, -1, KEY_ESCAPE, FrmId(INTF_FRM_ID_8), FrmId(INTF_FRM_ID_9));
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
-        fid = FrmId(INTF_FRM_ID_307);
-        _moveFrmImages[6].lock(fid);
-
-        fid = FrmId(INTF_FRM_ID_308);
-        _moveFrmImages[7].lock(fid);
+        _moveFrmImages[6].lock(FrmId(INTF_FRM_ID_307));
+        _moveFrmImages[7].lock(FrmId(INTF_FRM_ID_308));
 
         if (_moveFrmImages[6].isLocked() && _moveFrmImages[7].isLocked()) {
             // ALL

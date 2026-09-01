@@ -684,8 +684,7 @@ Object* scriptGetSelf(Program* program)
     }
 
     Object* object;
-    FrmId fid = FrmId(INTF_FRM_ID_3);
-    objectCreateWithFidPid(&object, fid.fid(), -1);
+    objectCreateWithFidPid(&object, FrmId(INTF_FRM_ID_3).fid(), -1);
     objectHide(object, nullptr);
     _obj_toggle_flat(object, nullptr);
     object->sid = sid;

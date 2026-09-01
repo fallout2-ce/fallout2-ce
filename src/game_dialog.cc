@@ -415,13 +415,13 @@ static const int gGameDialogReviewWindowButtonHeights[GAME_DIALOG_REVIEW_WINDOW_
 };
 
 // 0x518830 reviewFids
-static InterfaceFrameId gGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
-    INTF_FRM_ID_89, // di_bgdn1.frm - dialog big down arrow
-    INTF_FRM_ID_90, // di_bgdn2.frm - dialog big down arrow
-    INTF_FRM_ID_87, // di_bgup1.frm - dialog big up arrow
-    INTF_FRM_ID_88, // di_bgup2.frm - dialog big up arrow
-    INTF_FRM_ID_91, // di_done1.frm - dialog big done button up
-    INTF_FRM_ID_92, // di_done2.frm - dialog big done button down
+static constexpr FrmId kGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
+    FrmId(INTF_FRM_ID_89), // di_bgdn1.frm - dialog big down arrow
+    FrmId(INTF_FRM_ID_90), // di_bgdn2.frm - dialog big down arrow
+    FrmId(INTF_FRM_ID_87), // di_bgup1.frm - dialog big up arrow
+    FrmId(INTF_FRM_ID_88), // di_bgup2.frm - dialog big up arrow
+    FrmId(INTF_FRM_ID_91), // di_done1.frm - dialog big done button up
+    FrmId(INTF_FRM_ID_92), // di_done2.frm - dialog big done button down
 };
 
 // 0x518848 dialog_target
@@ -1499,8 +1499,7 @@ int gameDialogReviewWindowInit(int* win)
     }
 
     FrmImage backgroundFrmImage;
-    FrmId fid = FrmId(INTF_FRM_ID_102);
-    if (!backgroundFrmImage.lock(fid)) {
+    if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_102))) {
         windowDestroy(*win);
         *win = -1;
         return -1;
@@ -1518,8 +1517,8 @@ int gameDialogReviewWindowInit(int* win)
 
     int index;
     for (index = 0; index < GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT; index++) {
-        FrmId fid = FrmId(gGameDialogReviewWindowButtonFrmIds[index]);
-        if (!_reviewFrmImages[index].lock(fid)) {
+        const FrmId frmId = kGameDialogReviewWindowButtonFrmIds[index];
+        if (!_reviewFrmImages[index].lock(frmId)) {
             break;
         }
     }
@@ -1595,8 +1594,7 @@ int gameDialogReviewWindowInit(int* win)
 
     tickersRemove(gameDialogTicker);
 
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_102);
-    if (!_reviewBackgroundFrmImage.lock(backgroundFid)) {
+    if (!_reviewBackgroundFrmImage.lock(FrmId(INTF_FRM_ID_102))) {
         gameDialogReviewWindowFree(win);
         return -1;
     }
@@ -3442,10 +3440,9 @@ int gameDialogCreateBarterWindow()
     gBarterWindowExpanded = gExpandedBarterEnabled && backgroundFrmImage.lock(OBJ_TYPE_INTERFACE, expandedBarterFrmName());
 
     if (!gBarterWindowExpanded) {
-        InterfaceFrameId frmId = gGameDialogSpeakerIsPartyMember
-            ? INTF_FRM_ID_420 // trade.frm - party member barter/trade interface
-            : INTF_FRM_ID_111; // barter.frm - barter window
-        FrmId backgroundFid = FrmId(frmId);
+        const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember
+            ? FrmId(INTF_FRM_ID_420) // trade.frm - party member barter/trade interface
+            : FrmId(INTF_FRM_ID_111); // barter.frm - barter window
         backgroundFrmImage.lock(backgroundFid);
     }
 
@@ -3603,8 +3600,7 @@ void gameDialogBarterCleanupTables()
 int partyMemberControlWindowInit()
 {
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_390);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
+    if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_390))) {
         return -1;
     }
 
@@ -3776,8 +3772,7 @@ void partyMemberControlWindowFree()
 
     // control.frm - party member control interface
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_390);
-    if (backgroundFrmImage.lock(backgroundFid)) {
+    if (backgroundFrmImage.lock(FrmId(INTF_FRM_ID_390))) {
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowGetBuffer(gGameDialogWindow), windowGetBuffer(gGameDialogBackgroundWindow) + (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len), _dialogue_subwin_len);
     }
 
@@ -3795,8 +3790,7 @@ void partyMemberControlWindowUpdate()
     int windowWidth = windowGetWidth(gGameDialogWindow);
 
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_390);
-    if (backgroundFrmImage.lock(backgroundFid)) {
+    if (backgroundFrmImage.lock(FrmId(INTF_FRM_ID_390))) {
         int width = backgroundFrmImage.getWidth();
         unsigned char* buffer = backgroundFrmImage.getData();
 
@@ -4057,8 +4051,7 @@ int partyMemberCustomizationWindowInit()
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, &gCustomMessageList);
 
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_391);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
+    if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_391))) {
         partyMemberCustomizationMessageListReset();
         return -1;
     }
@@ -4201,8 +4194,7 @@ void partyMemberCustomizationWindowFree()
 
     FrmImage backgroundFrmImage;
     // custom.frm - party member control interface
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_391);
-    if (backgroundFrmImage.lock(backgroundFid)) {
+    if (backgroundFrmImage.lock(FrmId(INTF_FRM_ID_391))) {
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowGetBuffer(gGameDialogWindow), windowGetBuffer(gGameDialogBackgroundWindow) + (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len), _dialogue_subwin_len);
     }
 
@@ -4254,8 +4246,7 @@ void partyMemberCustomizationWindowUpdate()
     int windowWidth = windowGetWidth(gGameDialogWindow);
 
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_391);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
+    if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_391))) {
         return;
     }
 
@@ -4361,8 +4352,7 @@ int _gdCustomSelect(int option)
     int oldFont = fontGetCurrent();
 
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_419);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
+    if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_419))) {
         return -1;
     }
 
@@ -4606,7 +4596,7 @@ int _gdialog_window_create()
     FrmImage backgroundFrmImage;
     // 389 - di_talkp.frm - dialog screen subwindow (party members)
     // 99 - di_talk.frm - dialog screen subwindow (NPC's)
-    FrmId backgroundFid = FrmId(gGameDialogSpeakerIsPartyMember ? INTF_FRM_ID_389 : INTF_FRM_ID_99);
+    const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(INTF_FRM_ID_389) : FrmId(INTF_FRM_ID_99);
     if (!backgroundFrmImage.lock(backgroundFid)) return -1;
 
     unsigned char* backgroundFrmData = backgroundFrmImage.getData();
@@ -4672,17 +4662,11 @@ void _gdialog_window_destroy()
     int offset = (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len);
     unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow) + offset;
 
-    InterfaceFrameId frmId;
-    if (gGameDialogSpeakerIsPartyMember) {
-        // di_talkp.frm - dialog screen subwindow (party members)
-        frmId = INTF_FRM_ID_389;
-    } else {
-        // di_talk.frm - dialog screen subwindow (NPC's)
-        frmId = INTF_FRM_ID_99;
-    }
+    const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ?
+        FrmId(INTF_FRM_ID_389) : // di_talkp.frm - dialog screen subwindow (party members)
+        FrmId(INTF_FRM_ID_99); // di_talk.frm - dialog screen subwindow (NPC's)
 
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(frmId);
     if (backgroundFrmImage.lock(backgroundFid)) {
         unsigned char* windowBuffer = windowGetBuffer(gGameDialogWindow);
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowBuffer, backgroundWindowBuffer, _dialogue_subwin_len);
@@ -4966,12 +4950,10 @@ void gameDialogHighlightsInit()
     _dark_BlendTable = _getColorBlendTable(COLOR_OLIVE);
 
     // hilight1.frm - dialogue upper hilight
-    FrmId upperHighlightFid = FrmId(INTF_FRM_ID_115);
-    _upperHighlightFrmImage.lock(upperHighlightFid);
+    _upperHighlightFrmImage.lock(FrmId(INTF_FRM_ID_115));
 
     // hilight2.frm - dialogue lower hilight
-    FrmId lowerHighlightFid = FrmId(INTF_FRM_ID_116);
-    _lowerHighlightFrmImage.lock(lowerHighlightFid);
+    _lowerHighlightFrmImage.lock(FrmId(INTF_FRM_ID_116));
 }
 
 // NOTE: Inlined.

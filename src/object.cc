@@ -301,8 +301,8 @@ static char _obj_seen[5001];
 // 0x488780 obj_init
 int objectsInit(unsigned char* buf, int width, int height, int pitch)
 {
-    FrmId dudeFid;
-    FrmId eggFid;
+    const FrmId dudeFrmId = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    const FrmId eggFrmId = FrmId(INTF_FRM_ID_2);
 
     memset(_obj_seen, 0, 5001);
     gObjectsUpdateAreaPixelBounds.right = width + 320;
@@ -352,8 +352,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    dudeFid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
-    objectCreateWithFidPid(&gDude, dudeFid.fid(), 0x1000000);
+    objectCreateWithFidPid(&gDude, dudeFrmId.fid(), 0x1000000);
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -366,8 +365,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
         exit(1);
     }
 
-    eggFid = FrmId(INTF_FRM_ID_2);
-    objectCreateWithFidPid(&gEgg, eggFid.fid(), -1);
+    objectCreateWithFidPid(&gEgg, eggFrmId.fid(), -1);
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
     gEgg->flags |= OBJECT_HIDDEN;
@@ -3248,8 +3246,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     for (TileFrameId i = TILE_FRM_ID_FIRST; i <= TILE_FRM_ID_LAST; i++) {
         if (arr[i] != 0) {
-            FrmId fid = FrmId(i);
-            if (artLock(fid, &cache_handle) != nullptr) {
+            if (artLock(FrmId(i), &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }
         }
