@@ -631,7 +631,7 @@ int objectPickup(Object* critter, Object* item)
 static int _obj_remove_from_inven(Object* critter, Object* item)
 {
     Rect updatedRect;
-    int fid;
+    FrmId fid;
     int appearanceUpdateType = 0;
     InvenSlot slot = InvenSlot::Armor;
     bool hasSlot = false;
@@ -651,16 +651,16 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
         scriptHooks_InvenWield(critter, item, slot, 0, 1);
         if (slot == InvenSlot::RightHand) {
             if (critter != gDude || interfaceGetCurrentHand() == HAND_RIGHT) {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
-                objectSetFid(critter, fid, &updatedRect);
+                fid = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
+                objectSetFid(critter, fid.fid(), &updatedRect);
                 appearanceUpdateType = 2;
             } else {
                 appearanceUpdateType = 1;
             }
         } else if (slot == InvenSlot::LeftHand) {
             if (critter == gDude && interfaceGetCurrentHand() == HAND_LEFT) {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
-                objectSetFid(critter, fid, &updatedRect);
+                fid = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, critter->rotation);
+                objectSetFid(critter, fid.fid(), &updatedRect);
                 appearanceUpdateType = 2;
             } else {
                 appearanceUpdateType = 1;
@@ -674,8 +674,8 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
                     defaultFid = proto->fid;
                 }
 
-                fid = buildFid(OBJ_TYPE_CRITTER, defaultFid, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
-                objectSetFid(critter, fid, &updatedRect);
+                fid = FrmId(critterFrameIdFromFid(defaultFid), animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
+                objectSetFid(critter, fid.fid(), &updatedRect);
                 appearanceUpdateType = 3;
             }
         }

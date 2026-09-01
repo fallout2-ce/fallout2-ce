@@ -62,7 +62,7 @@ typedef struct EndgameDeathEnding {
 typedef struct EndgameEnding {
     GameGlobalVar gvar;
     int value;
-    int art_num;
+    InterfaceFrameId art_num;
     char voiceOverBaseName[12];
     int direction;
 } EndgameEnding;
@@ -221,11 +221,11 @@ void endgamePlaySlideshow()
         EndgameEnding* ending = &(gEndgameEndings[index]);
         int value = gameGetGlobalVar(ending->gvar);
         if (value == ending->value) {
-            if (ending->art_num == 327) {
+            if (ending->art_num == INTF_FRM_ID_327) {
                 endgameEndingRenderPanningScene(ending->direction, ending->voiceOverBaseName);
             } else {
-                int fid = buildFid(OBJ_TYPE_INTERFACE, ending->art_num);
-                endgameEndingRenderStaticScene(fid, ending->voiceOverBaseName);
+                FrmId fid = FrmId(ending->art_num);
+                endgameEndingRenderStaticScene(fid.fid(), ending->voiceOverBaseName);
             }
         }
     }
@@ -345,7 +345,7 @@ static int endgameEndingHandleContinuePlaying()
 // 0x43FBDC endgame_pan_desert
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 327);
+    FrmId fid = FrmId(INTF_FRM_ID_327);
 
     CacheEntry* backgroundHandle;
     Art* background = artLock(fid, &backgroundHandle);
@@ -354,7 +354,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         int height = artGetHeight(background);
         unsigned char* backgroundData = artGetFrameData(background);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
-        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, 327);
+        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, INTF_FRM_ID_327);
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
@@ -495,7 +495,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
         blitBufferToBuffer(backgroundData, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH);
         windowRefresh(gEndgameEndingSlideshowWindow);
 
-        endgameEndingLoadPalette(objectTypeFromFid(fid), fid & 0xFFF);
+        endgameEndingLoadPalette(objectTypeFromFid(fid), frameIdFromFid(fid));
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
@@ -972,7 +972,7 @@ static int endgameEndingInit()
             continue;
         }
 
-        entry.art_num = atoi(tok);
+        entry.art_num = static_cast<InterfaceFrameId>(atoi(tok));
 
         tok = strtok(nullptr, delim);
         if (tok == nullptr) {

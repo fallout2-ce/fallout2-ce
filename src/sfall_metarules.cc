@@ -1068,9 +1068,9 @@ void mf_art_frame_data(OpcodeContext& ctx)
 
     FrmImage image;
     if (ctx.arg(0).isInt()) {
-        int fid = ctx.arg(0).asInt();
+        FrmId fid = FrmId(ctx.arg(0).asInt());
         if (!image.lock(fid, frame, rotation)) {
-            ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
+            ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid.fid());
             ctx.setReturn(-1);
             return;
         }
@@ -1122,7 +1122,7 @@ void mf_car_gas_amount(OpcodeContext& ctx)
 
 void mf_set_car_intface_art(OpcodeContext& ctx)
 {
-    wmSetCarInterfaceArt(ctx.arg(0).asInt());
+    wmSetCarInterfaceArt(static_cast<InterfaceFrameId>(ctx.arg(0).asInt()));
 }
 
 void mf_combat_data(OpcodeContext& ctx)
@@ -1471,15 +1471,15 @@ static bool loadSfallArtImage(OpcodeContext& ctx, int artArg, int frame, Rotatio
     if (ctx.arg(artArg).isInt()) {
         fid = ctx.arg(artArg).asInt();
         Rotation frameRotation = ROTATION_NE;
-        int lockFid = fid;
+        FrmId lockFrmId = FrmId(fid);
         if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
             frameRotation = rotationIsValid(rotation) ? rotation : rotationFromFid(fid);
             if (rotationIsValid(rotation)) {
-                lockFid = (rotation << 28) | (fid & 0x0FFFFFFF);
+                lockFrmId = FrmId((rotation << 28) | (fid & 0x0FFFFFFF));
             }
         }
 
-        if (!image.lock(lockFid, frame, frameRotation)) {
+        if (!image.lock(lockFrmId, frame, frameRotation)) {
             ctx.printError("%s() - cannot load art by FID: %d", ctx.name(), fid);
             return false;
         }

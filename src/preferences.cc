@@ -214,17 +214,17 @@ static const double kTextLineDelayScale = 0.2;
 static const double kTextLineDelayRange = 2.0;
 
 // 0x5197CC prfgrphs
-static const int gPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
-    240, // prefscrn.frm - options screen
-    241, // prfsldof.frm - options screen
-    242, // prfbknbs.frm - options screen
-    243, // prflknbs.frm - options screen
-    244, // prfxin.frm - options screen
-    245, // prfxout.frm - options screen
-    246, // prefcvr.frm - options screen
-    247, // prfsldon.frm - options screen
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
+static const InterfaceFrameId gPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
+    INTF_FRM_ID_240, // prefscrn.frm - options screen
+    INTF_FRM_ID_241, // prfsldof.frm - options screen
+    INTF_FRM_ID_242, // prfbknbs.frm - options screen
+    INTF_FRM_ID_243, // prflknbs.frm - options screen
+    INTF_FRM_ID_244, // prfxin.frm - options screen
+    INTF_FRM_ID_245, // prfxout.frm - options screen
+    INTF_FRM_ID_246, // prefcvr.frm - options screen
+    INTF_FRM_ID_247, // prfsldon.frm - options screen
+    INTF_FRM_ID_8, // lilredup.frm - little red button up
+    INTF_FRM_ID_9, // lilreddn.frm - little red button down
 };
 
 // 0x6637E8 optn_msgfl
@@ -981,7 +981,7 @@ void brightnessDecrease()
 static int preferencesWindowInit()
 {
     int i;
-    int fid;
+    FrmId fid;
     char* messageItemText;
     int x;
     int y;
@@ -1006,7 +1006,7 @@ static int preferencesWindowInit()
     _SaveSettings();
 
     for (i = 0; i < PREFERENCES_WINDOW_FRM_COUNT; i++) {
-        fid = buildFid(OBJ_TYPE_INTERFACE, gPreferencesWindowFrmIds[i]);
+        fid = FrmId(gPreferencesWindowFrmIds[i]);
         if (!_preferencesFrmImages[i].lock(fid)) {
             while (--i >= 0) {
                 _preferencesFrmImages[i].unlock();

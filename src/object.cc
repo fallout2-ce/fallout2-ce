@@ -301,8 +301,8 @@ static char _obj_seen[5001];
 // 0x488780 obj_init
 int objectsInit(unsigned char* buf, int width, int height, int pitch)
 {
-    int dudeFid;
-    int eggFid;
+    FrmId dudeFid;
+    FrmId eggFid;
 
     memset(_obj_seen, 0, 5001);
     gObjectsUpdateAreaPixelBounds.right = width + 320;
@@ -352,8 +352,8 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    dudeFid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
-    objectCreateWithFidPid(&gDude, dudeFid, 0x1000000);
+    dudeFid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    objectCreateWithFidPid(&gDude, dudeFid.fid(), 0x1000000);
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -366,8 +366,8 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
         exit(1);
     }
 
-    eggFid = buildFid(OBJ_TYPE_INTERFACE, 2);
-    objectCreateWithFidPid(&gEgg, eggFid, -1);
+    eggFid = FrmId(INTF_FRM_ID_2);
+    objectCreateWithFidPid(&gEgg, eggFid.fid(), -1);
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
     gEgg->flags |= OBJECT_HIDDEN;
@@ -458,8 +458,8 @@ int objectRead(Object* obj, File* stream)
 
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
-            if ((obj->fid & 0xFFF) < 33) {
-                obj->fid = buildFid(OBJ_TYPE_MISC, (obj->fid & 0xFFF) + 16, animationTypeFromFid(obj->fid));
+            if (miscFrameIdFromFid(obj->fid) < 33) {
+                obj->fid = FrmId(miscFrameIdFromFid(obj->fid) + 16, animationTypeFromFid(obj->fid)).fid();
             }
         }
     } else {
@@ -1469,13 +1469,13 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofX = tile % 200 / 2;
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
-            int currentSquare = _square[elevation]->field_0[roofX + 100 * roofY];
-            int currentSquareFid = buildFid(OBJ_TYPE_TILE, (currentSquare >> 16) & 0xFFF);
+            int currentSquare = _square[elevation]->fid[roofX + 100 * roofY];
+            FrmId currentSquareFid = FrmId(tileFrameIdFromFid(currentSquare >> 16));
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
-                ? _square[elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y]
+                ? _square[elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            bool isEmpty = buildFid(OBJ_TYPE_TILE, 1) == currentSquareFid;
+            bool isEmpty = FrmId(TILE_FRM_ID_1) == currentSquareFid;
 
             if (isEmpty != _obj_last_is_empty || (((currentSquare >> 16) & 0xF000) >> 12) != (((previousSquare >> 16) & 0xF000) >> 12)) {
                 if (!_obj_last_is_empty) {
@@ -1527,8 +1527,8 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    int fid = buildFid(OBJ_TYPE_TILE, (_square[gDude->elevation]->field_0[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16) & 0xFFF);
-    if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
+    FrmId fid = FrmId(tileFrameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
+    if (fid != FrmId(TILE_FRM_ID_1)) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
     return 0;
@@ -3196,7 +3196,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     if ((flags & MAP_HEADER_ELEVATION_0) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[0]->field_0[i];
+            int v3 = _square[0]->fid[i];
             arr[v3 & 0xFFF] = 1;
             arr[(v3 >> 16) & 0xFFF] = 1;
         }
@@ -3204,7 +3204,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     if ((flags & MAP_HEADER_ELEVATION_1) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[1]->field_0[i];
+            int v3 = _square[1]->fid[i];
             arr[v3 & 0xFFF] = 1;
             arr[(v3 >> 16) & 0xFFF] = 1;
         }
@@ -3212,7 +3212,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     if ((flags & MAP_HEADER_ELEVATION_2) == MAP_HEADER_NONE) {
         for (int i = 0; i < SQUARE_GRID_SIZE; i++) {
-            int v3 = _square[2]->field_0[i];
+            int v3 = _square[2]->fid[i];
             arr[v3 & 0xFFF] = 1;
             arr[(v3 >> 16) & 0xFFF] = 1;
         }
@@ -3246,9 +3246,9 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
         }
     }
 
-    for (int i = 0; i < 4096; i++) {
+    for (TileFrameId i = TILE_FRM_ID_FIRST; i <= TILE_FRM_ID_LAST; i++) {
         if (arr[i] != 0) {
-            int fid = buildFid(OBJ_TYPE_TILE, i);
+            FrmId fid = FrmId(i);
             if (artLock(fid, &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }
@@ -5183,7 +5183,7 @@ void _obj_fix_violence_settings(int* fid)
         anim = (anim == ANIM_FALL_BACK_BLOOD_SF)
             ? ANIM_FALL_BACK_SF
             : ANIM_FALL_FRONT_SF;
-        *fid = buildFid(OBJ_TYPE_CRITTER, *fid & 0xFFF, anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid));
+        *fid = FrmId(critterFrameIdFromFid(*fid), anim, weaponAnimationFromFid(*fid), rotationFromFid(*fid)).fid();
     }
 
     if (shouldResetViolenceLevel) {
@@ -5205,7 +5205,7 @@ static int _obj_preload_sort(const void* a1, const void* a2)
         return cmp;
     }
 
-    cmp = (v1 & 0xFFF) - (v2 & 0xFFF);
+    cmp = frameIdFromFid(v1) - frameIdFromFid(v2);
     if (cmp != 0) {
         return cmp;
     }

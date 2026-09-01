@@ -382,8 +382,8 @@ typedef struct {
     int damageResistance[7]; // d.dam_resist
     int damageThreshold[7]; // d.dam_thresh
     Perk perk; // d.perk
-    int maleFid; // d.male_fid
-    int femaleFid; // d.female_fid
+    CritterFrameId maleFid; // d.male_fid
+    CritterFrameId femaleFid; // d.female_fid
 } ProtoItemArmorData;
 
 typedef struct {

@@ -1365,9 +1365,9 @@ void edit_mapper()
                             // create new highlight
                             update_high_obj_name(_screen_obj);
 
-                            int hfid = buildFid(OBJ_TYPE_INTERFACE, 1);
+                            FrmId hfid = FrmId(INTF_FRM_ID_1);
                             Object* hlObj;
-                            if (objectCreateWithFidPid(&hlObj, hfid, -1) != -1) {
+                            if (objectCreateWithFidPid(&hlObj, hfid.fid(), -1) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
                                 _obj_toggle_flat(hlObj, nullptr);
 
@@ -2523,16 +2523,16 @@ void update_art(ObjectType type, int offset)
     // Render thumbnails for visible slots.
     p = slot_start;
     for (int i = offset; i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
-        int fid;
+        FrmId fid;
         if (settings.mapper.use_art_not_protos) {
-            fid = buildFid(type, i);
+            fid = FrmId(type, i);
         } else {
             Proto* proto;
             int pid = toolbar_proto(type, i);
             if (protoGetProto(pid, &proto) == -1) continue;
-            fid = proto->fid;
+            fid = FrmId(proto->fid);
         }
-        artRender(fid, p, art_scale_width, art_scale_height, screen_width);
+        artRender(fid.fid(), p, art_scale_width, art_scale_height, screen_width);
     }
 
     // Draw selection box around the active slot.
@@ -2598,14 +2598,14 @@ static int mapperPickTile(int* outOffset)
         return 0;
     }
 
-    int packedTile = _square[gElevation]->field_0[tileNum];
-    int tileFid;
+    int packedTile = _square[gElevation]->fid[tileNum];
+    TileFrameId tileFid;
     if (tileRoofIsVisible()) {
-        tileFid = (packedTile >> 16) & 0xFFF;
+        tileFid = tileFrameIdFromFid(packedTile >> 16);
     } else {
-        tileFid = packedTile & 0xFFF;
+        tileFid = tileFrameIdFromFid(packedTile);
     }
-    int artFid = buildFid(OBJ_TYPE_TILE, tileFid);
+    FrmId artFid = FrmId(tileFid);
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;
@@ -2613,7 +2613,7 @@ static int mapperPickTile(int* outOffset)
         if (protoGetProto(pid, &proto) == -1) {
             return -1;
         }
-        if (proto->fid == artFid) {
+        if (proto->fid == artFid.fid()) {
             *outOffset = std::min(idx, maxId - kScrollOffset);
             return 0;
         }
@@ -2658,7 +2658,6 @@ void handle_new_map(ObjectType* type, int* offset)
 int mapper_inven_unwield(Object* obj, int right_hand)
 {
     Object* item;
-    int fid;
 
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
@@ -2674,8 +2673,8 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
-    animationRegisterSetFid(obj, fid, 0);
+    FrmId fid = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
+    animationRegisterSetFid(obj, fid.fid(), 0);
 
     return reg_anim_end();
 }
@@ -2764,7 +2763,7 @@ static void mapper_enter_play_mode(Object** pHlObj1)
 
     _proto_dude_init("premade\\blank.gcd");
 
-    gDude->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    gDude->fid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
 
     _scr_game_init();
 

@@ -61,13 +61,13 @@ static void skilldexWindowFree();
 static bool gSkilldexWindowIsoWasEnabled = false;
 
 // 0x51D440 grphfid
-static const int gSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
-    121,
-    119,
-    120,
-    8,
-    9,
-    170,
+static const InterfaceFrameId gSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
+    INTF_FRM_ID_121,
+    INTF_FRM_ID_119,
+    INTF_FRM_ID_120,
+    INTF_FRM_ID_8,
+    INTF_FRM_ID_9,
+    INTF_FRM_ID_170,
 };
 
 // Maps Skilldex options into skills.
@@ -175,7 +175,7 @@ static int skilldexWindowInit()
 
     int frmIndex;
     for (frmIndex = 0; frmIndex < SKILLDEX_FRM_COUNT; frmIndex++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gSkilldexFrmIds[frmIndex]);
+        FrmId fid = FrmId(gSkilldexFrmIds[frmIndex]);
         if (!_skilldexFrmImages[frmIndex].lock(fid)) {
             break;
         }

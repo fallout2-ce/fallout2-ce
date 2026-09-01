@@ -243,12 +243,12 @@ static int _displayMapList[AUTOMAP_MAP_COUNT] = {
 };
 
 // 0x41B7E0
-static const int gAutomapFrmIds[AUTOMAP_FRM_COUNT] = {
-    171, // automap.frm - automap window
-    8, // lilredup.frm - little red button up
-    9, // lilreddn.frm - little red button down
-    172, // autoup.frm - switch up
-    173, // autodwn.frm - switch down
+static const InterfaceFrameId gAutomapFrmIds[AUTOMAP_FRM_COUNT] = {
+    INTF_FRM_ID_171, // automap.frm - automap window
+    INTF_FRM_ID_8, // lilredup.frm - little red button up
+    INTF_FRM_ID_9, // lilreddn.frm - little red button down
+    INTF_FRM_ID_172, // autoup.frm - switch up
+    INTF_FRM_ID_173, // autodwn.frm - switch down
 };
 
 // 0x5108C4 autoflags
@@ -312,12 +312,12 @@ void automapShow(bool isInGame, bool isUsingScanner)
 {
     ScopedGameMode gm(GameMode::kAutomap);
 
-    int frmIds[AUTOMAP_FRM_COUNT];
+    InterfaceFrameId frmIds[AUTOMAP_FRM_COUNT];
     memcpy(frmIds, gAutomapFrmIds, sizeof(gAutomapFrmIds));
 
     FrmImage frmImages[AUTOMAP_FRM_COUNT];
     for (int index = 0; index < AUTOMAP_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, frmIds[index]);
+        FrmId fid = FrmId(frmIds[index]);
         if (!frmImages[index].lock(fid)) {
             return;
         }

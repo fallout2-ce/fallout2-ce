@@ -150,9 +150,9 @@ typedef struct GameDialogOptionEntry {
 typedef struct GameDialogButtonData {
     int x;
     int y;
-    int upFrmId;
-    int downFrmId;
-    int disabledFrmId;
+    InterfaceFrameId upFrmId;
+    InterfaceFrameId downFrmId;
+    InterfaceFrameId disabledFrmId;
     CacheEntry* upFrmHandle;
     CacheEntry* downFrmHandle;
     CacheEntry* disabledFrmHandle;
@@ -256,7 +256,7 @@ static CacheEntry* gGameDialogFidgetFrmHandle = nullptr;
 static Art* gGameDialogFidgetFrm = nullptr;
 
 // 0x518700 backgroundIndex
-static Background gGameDialogBackground = BACKGROUND_2;
+static BackgroundFrameId gGameDialogBackground = BACKGROUND_2;
 
 // 0x518704 lipsFID
 static int _lipsFID = 0;
@@ -415,13 +415,13 @@ static const int gGameDialogReviewWindowButtonHeights[GAME_DIALOG_REVIEW_WINDOW_
 };
 
 // 0x518830 reviewFids
-static int gGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
-    89, // di_bgdn1.frm - dialog big down arrow
-    90, // di_bgdn2.frm - dialog big down arrow
-    87, // di_bgup1.frm - dialog big up arrow
-    88, // di_bgup2.frm - dialog big up arrow
-    91, // di_done1.frm - dialog big done button up
-    92, // di_done2.frm - dialog big done button down
+static InterfaceFrameId gGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
+    INTF_FRM_ID_89, // di_bgdn1.frm - dialog big down arrow
+    INTF_FRM_ID_90, // di_bgdn2.frm - dialog big down arrow
+    INTF_FRM_ID_87, // di_bgup1.frm - dialog big up arrow
+    INTF_FRM_ID_88, // di_bgup2.frm - dialog big up arrow
+    INTF_FRM_ID_91, // di_done1.frm - dialog big done button up
+    INTF_FRM_ID_92, // di_done2.frm - dialog big done button down
 };
 
 // 0x518848 dialog_target
@@ -516,11 +516,11 @@ static bool gExpandedBarterEnabled = false;
 
 // 0x51891C control_button_info
 static GameDialogButtonData gGameDialogDispositionButtonsData[5] = {
-    { 438, 37, 397, 395, 396, nullptr, nullptr, nullptr, 2098, 4 },
-    { 438, 67, 394, 392, 393, nullptr, nullptr, nullptr, 2103, 3 },
-    { 438, 96, 406, 404, 405, nullptr, nullptr, nullptr, 2102, 2 },
-    { 438, 126, 400, 398, 399, nullptr, nullptr, nullptr, 2111, 1 },
-    { 438, 156, 403, 401, 402, nullptr, nullptr, nullptr, 2099, 0 },
+    { 438, 37, INTF_FRM_ID_397, INTF_FRM_ID_395, INTF_FRM_ID_396, nullptr, nullptr, nullptr, 2098, 4 },
+    { 438, 67, INTF_FRM_ID_394, INTF_FRM_ID_392, INTF_FRM_ID_393, nullptr, nullptr, nullptr, 2103, 3 },
+    { 438, 96, INTF_FRM_ID_406, INTF_FRM_ID_404, INTF_FRM_ID_405, nullptr, nullptr, nullptr, 2102, 2 },
+    { 438, 126, INTF_FRM_ID_400, INTF_FRM_ID_398, INTF_FRM_ID_399, nullptr, nullptr, nullptr, 2111, 1 },
+    { 438, 156, INTF_FRM_ID_403, INTF_FRM_ID_401, INTF_FRM_ID_402, nullptr, nullptr, nullptr, 2099, 0 },
 };
 
 // 0x5189E4 custom_settings
@@ -578,12 +578,12 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
 
 // 0x518B04 custom_button_info
 static GameDialogButtonData _custom_button_info[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT] = {
-    { 95, 9, 410, 409, -1, nullptr, nullptr, nullptr, 0, 0 },
-    { 96, 38, 416, 415, -1, nullptr, nullptr, nullptr, 1, 0 },
-    { 96, 68, 418, 417, -1, nullptr, nullptr, nullptr, 2, 0 },
-    { 96, 98, 414, 413, -1, nullptr, nullptr, nullptr, 3, 0 },
-    { 96, 127, 408, 407, -1, nullptr, nullptr, nullptr, 4, 0 },
-    { 96, 157, 412, 411, -1, nullptr, nullptr, nullptr, 5, 0 },
+    { 95, 9, INTF_FRM_ID_410, INTF_FRM_ID_409, INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 0, 0 },
+    { 96, 38, INTF_FRM_ID_416, INTF_FRM_ID_415, INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 1, 0 },
+    { 96, 68, INTF_FRM_ID_418, INTF_FRM_ID_417, INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 2, 0 },
+    { 96, 98, INTF_FRM_ID_414, INTF_FRM_ID_413, INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 3, 0 },
+    { 96, 127, INTF_FRM_ID_408, INTF_FRM_ID_407, INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 4, 0 },
+    { 96, 157, INTF_FRM_ID_412, INTF_FRM_ID_411, INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 5, 0 },
 };
 
 // 0x518BF4 totalHotx
@@ -971,7 +971,7 @@ void gameDialogStartLips(const char* audioFileName)
     }
 
     char name[16];
-    if (artCopyFileName(OBJ_TYPE_HEAD, headFromFid(gGameDialogHeadFid), name) == -1) {
+    if (artCopyFileName(OBJ_TYPE_HEAD, headFrameIdFromFid(gGameDialogHeadFid), name) == -1) {
         return;
     }
 
@@ -1165,9 +1165,9 @@ int _gdialogExitFromScript()
 }
 
 // 0x445438
-void gameDialogSetBackground(Background background)
+void gameDialogSetBackground(BackgroundFrameId background)
 {
-    if (backgroundIsValid(background)) {
+    if (backgroundFrameIdIsValid(background)) {
         gGameDialogBackground = background;
     }
 }
@@ -1441,7 +1441,7 @@ int gameDialogAddTextOption(int messageListId, const char* text, int reaction)
 static int createDialogRedButton(int win, int x, int y, void (*mouseUp)(int, int), int keyCode)
 {
     int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
-        FrmId(OBJ_TYPE_INTERFACE, 96), FrmId(OBJ_TYPE_INTERFACE, 95),
+        FrmId(INTF_FRM_ID_96), FrmId(INTF_FRM_ID_95),
         {}, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_med_butt_press, _gsound_med_butt_release);
@@ -1454,7 +1454,7 @@ static int createDialogRedButton(int win, int x, int y, void (*mouseUp)(int, int
 static int createDialogReviewButton(int win)
 {
     int h = buttonCreateWithFrm(win, 13, 154, -1, -1, -1, -1,
-        FrmId(OBJ_TYPE_INTERFACE, 97), FrmId(OBJ_TYPE_INTERFACE, 98));
+        FrmId(INTF_FRM_ID_97), FrmId(INTF_FRM_ID_98));
     if (h == -1) return -1;
     buttonSetMouseCallbacks(h, nullptr, nullptr, nullptr, gameDialogReviewButtonOnMouseUp);
     buttonSetCallbacks(h, _gsound_red_butt_press, _gsound_red_butt_release);
@@ -1464,7 +1464,7 @@ static int createDialogReviewButton(int win)
 static int createLittleRedButton(int win, int x, int y, int keyCode)
 {
     int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
-        FrmId(OBJ_TYPE_INTERFACE, 8), FrmId(OBJ_TYPE_INTERFACE, 9),
+        FrmId(INTF_FRM_ID_8), FrmId(INTF_FRM_ID_9),
         {}, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_red_butt_press, _gsound_red_butt_release);
@@ -1499,7 +1499,7 @@ int gameDialogReviewWindowInit(int* win)
     }
 
     FrmImage backgroundFrmImage;
-    int fid = buildFid(OBJ_TYPE_INTERFACE, 102);
+    FrmId fid = FrmId(INTF_FRM_ID_102);
     if (!backgroundFrmImage.lock(fid)) {
         windowDestroy(*win);
         *win = -1;
@@ -1518,7 +1518,7 @@ int gameDialogReviewWindowInit(int* win)
 
     int index;
     for (index = 0; index < GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gGameDialogReviewWindowButtonFrmIds[index]);
+        FrmId fid = FrmId(gGameDialogReviewWindowButtonFrmIds[index]);
         if (!_reviewFrmImages[index].lock(fid)) {
             break;
         }
@@ -1595,7 +1595,7 @@ int gameDialogReviewWindowInit(int* win)
 
     tickersRemove(gameDialogTicker);
 
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 102);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_102);
     if (!_reviewBackgroundFrmImage.lock(backgroundFid)) {
         gameDialogReviewWindowFree(win);
         return -1;
@@ -2692,7 +2692,7 @@ void _gdSetupFidget(int headFid, HeadFidget reaction)
 
     if (_lipsFID == 0) {
         _phone_anim = anim;
-        _lipsFID = buildFid(OBJ_TYPE_HEAD, headFromFid(headFid), anim);
+        _lipsFID = FrmId(headFrameIdFromFid(headFid), anim).fid();
         _lipsFp = artLock(_lipsFID, &_lipsKey);
         if (_lipsFp == nullptr) {
             debugPrint("failure!\n");
@@ -2703,8 +2703,8 @@ void _gdSetupFidget(int headFid, HeadFidget reaction)
         }
     }
 
-    int fid = buildFid(OBJ_TYPE_HEAD, headFromFid(headFid), reaction);
-    int fidgetCount = artGetFidgetCount(fid);
+    FrmId fid = FrmId(headFrameIdFromFid(headFid), headAnimationFromHeadFidget(reaction));
+    int fidgetCount = artGetFidgetCount(fid.fid());
     if (fidgetCount == -1) {
         debugPrint("\tError - No available fidgets for given frame id\n");
         return;
@@ -2744,7 +2744,7 @@ void _gdSetupFidget(int headFid, HeadFidget reaction)
         }
     }
 
-    gGameDialogFidgetFid = buildFid(OBJ_TYPE_HEAD, headFromFid(headFid), reaction, fidget);
+    gGameDialogFidgetFid = FrmId(headFrameIdFromFid(headFid), headAnimationFromHeadFidget(reaction), fidget).fid();
     gGameDialogFidgetFrmCurrentFrame = 0;
     gGameDialogFidgetFrm = artLock(gGameDialogFidgetFid, &gGameDialogFidgetFrmHandle);
     if (gGameDialogFidgetFrm == nullptr) {
@@ -2814,7 +2814,7 @@ void _gdPlayTransition(HeadAnimation anim)
     }
 
     CacheEntry* headFrmHandle;
-    int headFid = buildFid(OBJ_TYPE_HEAD, headFromFid(gGameDialogHeadFid), anim);
+    FrmId headFid = FrmId(headFrameIdFromFid(gGameDialogHeadFid), anim);
     Art* headFrm = artLock(headFid, &headFrmHandle);
     if (headFrm == nullptr) {
         debugPrint("\tError locking transition...\n");
@@ -3442,10 +3442,10 @@ int gameDialogCreateBarterWindow()
     gBarterWindowExpanded = gExpandedBarterEnabled && backgroundFrmImage.lock(OBJ_TYPE_INTERFACE, expandedBarterFrmName());
 
     if (!gBarterWindowExpanded) {
-        int frmId = gGameDialogSpeakerIsPartyMember
-            ? 420 // trade.frm - party member barter/trade interface
-            : 111; // barter.frm - barter window
-        int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, frmId);
+        InterfaceFrameId frmId = gGameDialogSpeakerIsPartyMember
+            ? INTF_FRM_ID_420 // trade.frm - party member barter/trade interface
+            : INTF_FRM_ID_111; // barter.frm - barter window
+        FrmId backgroundFid = FrmId(frmId);
         backgroundFrmImage.lock(backgroundFid);
     }
 
@@ -3603,7 +3603,7 @@ void gameDialogBarterCleanupTables()
 int partyMemberControlWindowInit()
 {
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 390);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_390);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return -1;
     }
@@ -3670,9 +3670,9 @@ int partyMemberControlWindowInit()
 
     for (int index = 0; index < 5; index++) {
         GameDialogButtonData* buttonData = &(gGameDialogDispositionButtonsData[index]);
-        int fid;
+        FrmId fid;
 
-        fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->upFrmId);
+        fid = FrmId(buttonData->upFrmId);
         Art* upButtonFrm = artLock(fid, &(buttonData->upFrmHandle));
         if (upButtonFrm == nullptr) {
             partyMemberControlWindowFree();
@@ -3683,7 +3683,7 @@ int partyMemberControlWindowInit()
         int height = artGetHeight(upButtonFrm);
         unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm);
 
-        fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->downFrmId);
+        fid = FrmId(buttonData->downFrmId);
         Art* downButtonFrm = artLock(fid, &(buttonData->downFrmHandle));
         if (downButtonFrm == nullptr) {
             partyMemberControlWindowFree();
@@ -3692,7 +3692,7 @@ int partyMemberControlWindowInit()
 
         unsigned char* downButtonFrmData = artGetFrameData(downButtonFrm);
 
-        fid = buildFid(OBJ_TYPE_INTERFACE, buttonData->disabledFrmId);
+        fid = FrmId(buttonData->disabledFrmId);
         Art* disabledButtonFrm = artLock(fid, &(buttonData->disabledFrmHandle));
         if (disabledButtonFrm == nullptr) {
             partyMemberControlWindowFree();
@@ -3776,7 +3776,7 @@ void partyMemberControlWindowFree()
 
     // control.frm - party member control interface
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 390);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_390);
     if (backgroundFrmImage.lock(backgroundFid)) {
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowGetBuffer(gGameDialogWindow), windowGetBuffer(gGameDialogBackgroundWindow) + (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len), _dialogue_subwin_len);
     }
@@ -3795,7 +3795,7 @@ void partyMemberControlWindowUpdate()
     int windowWidth = windowGetWidth(gGameDialogWindow);
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 390);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_390);
     if (backgroundFrmImage.lock(backgroundFid)) {
         int width = backgroundFrmImage.getWidth();
         unsigned char* buffer = backgroundFrmImage.getData();
@@ -3833,7 +3833,7 @@ void partyMemberControlWindowUpdate()
 
     // Render preview.
     CacheEntry* previewHandle;
-    int previewFid = buildFid(objectTypeFromFid(gGameDialogSpeaker->fid), gGameDialogSpeaker->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(gGameDialogSpeaker->fid), ROTATION_SW);
+    FrmId previewFid = FrmId(gGameDialogSpeaker, ANIM_STAND, weaponAnimationFromFid(gGameDialogSpeaker->fid), ROTATION_SW);
     Art* preview = artLock(previewFid, &previewHandle);
     if (preview != nullptr) {
         int width = artGetWidth(preview, 0, ROTATION_SW);
@@ -4057,7 +4057,7 @@ int partyMemberCustomizationWindowInit()
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_CUSTOM, &gCustomMessageList);
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 391);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_391);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         partyMemberCustomizationMessageListReset();
         return -1;
@@ -4111,7 +4111,7 @@ int partyMemberCustomizationWindowInit()
     for (auto& buttonDataRef : _custom_button_info) {
         GameDialogButtonData* buttonData = &buttonDataRef;
 
-        int upButtonFid = buildFid(OBJ_TYPE_INTERFACE, buttonData->upFrmId);
+        FrmId upButtonFid = FrmId(buttonData->upFrmId);
         Art* upButtonFrm = artLock(upButtonFid, &(buttonData->upFrmHandle));
         if (upButtonFrm == nullptr) {
             partyMemberCustomizationWindowFree();
@@ -4122,7 +4122,7 @@ int partyMemberCustomizationWindowInit()
         int height = artGetHeight(upButtonFrm);
         unsigned char* upButtonFrmData = artGetFrameData(upButtonFrm);
 
-        int downButtonFid = buildFid(OBJ_TYPE_INTERFACE, buttonData->downFrmId);
+        FrmId downButtonFid = FrmId(buttonData->downFrmId);
         Art* downButtonFrm = artLock(downButtonFid, &(buttonData->downFrmHandle));
         if (downButtonFrm == nullptr) {
             partyMemberCustomizationWindowFree();
@@ -4201,7 +4201,7 @@ void partyMemberCustomizationWindowFree()
 
     FrmImage backgroundFrmImage;
     // custom.frm - party member control interface
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 391);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_391);
     if (backgroundFrmImage.lock(backgroundFid)) {
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowGetBuffer(gGameDialogWindow), windowGetBuffer(gGameDialogBackgroundWindow) + (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len), _dialogue_subwin_len);
     }
@@ -4254,7 +4254,7 @@ void partyMemberCustomizationWindowUpdate()
     int windowWidth = windowGetWidth(gGameDialogWindow);
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 391);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_391);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return;
     }
@@ -4361,7 +4361,7 @@ int _gdCustomSelect(int option)
     int oldFont = fontGetCurrent();
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 419);
+    FrmId backgroundFid = FrmId(INTF_FRM_ID_419);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return -1;
     }
@@ -4606,7 +4606,7 @@ int _gdialog_window_create()
     FrmImage backgroundFrmImage;
     // 389 - di_talkp.frm - dialog screen subwindow (party members)
     // 99 - di_talk.frm - dialog screen subwindow (NPC's)
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, gGameDialogSpeakerIsPartyMember ? 389 : 99);
+    FrmId backgroundFid = FrmId(gGameDialogSpeakerIsPartyMember ? INTF_FRM_ID_389 : INTF_FRM_ID_99);
     if (!backgroundFrmImage.lock(backgroundFid)) return -1;
 
     unsigned char* backgroundFrmData = backgroundFrmImage.getData();
@@ -4672,17 +4672,17 @@ void _gdialog_window_destroy()
     int offset = (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len);
     unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow) + offset;
 
-    int frmId;
+    InterfaceFrameId frmId;
     if (gGameDialogSpeakerIsPartyMember) {
         // di_talkp.frm - dialog screen subwindow (party members)
-        frmId = 389;
+        frmId = INTF_FRM_ID_389;
     } else {
         // di_talk.frm - dialog screen subwindow (NPC's)
-        frmId = 99;
+        frmId = INTF_FRM_ID_99;
     }
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, frmId);
+    FrmId backgroundFid = FrmId(frmId);
     if (backgroundFrmImage.lock(backgroundFid)) {
         unsigned char* windowBuffer = windowGetBuffer(gGameDialogWindow);
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowBuffer, backgroundWindowBuffer, _dialogue_subwin_len);
@@ -4742,7 +4742,7 @@ int gameDialogWindowRenderBackground()
 
     if (!backgroundFrmImage.isLocked()) {
         // alltlk.frm - dialog screen background
-        FrmId backgroundFid(OBJ_TYPE_INTERFACE, 103);
+        FrmId backgroundFid(INTF_FRM_ID_103);
         if (!backgroundFrmImage.lock(backgroundFid)) {
             return -1;
         }
@@ -4763,17 +4763,17 @@ int gameDialogWindowRenderBackground()
 // 0x44ABA8
 int _talkToRefreshDialogWindowRect(Rect* rect)
 {
-    int frmId;
+    InterfaceFrameId frmId;
     if (gGameDialogSpeakerIsPartyMember) {
         // di_talkp.frm - dialog screen subwindow (party members)
-        frmId = 389;
+        frmId = INTF_FRM_ID_389;
     } else {
         // di_talk.frm - dialog screen subwindow (NPC's)
-        frmId = 99;
+        frmId = INTF_FRM_ID_99;
     }
 
     FrmImage backgroundFrmImage;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, frmId);
+    FrmId backgroundFid = FrmId(frmId);
     if (!backgroundFrmImage.lock(backgroundFid)) {
         return -1;
     }
@@ -4831,7 +4831,7 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
         }
 
         FrmImage backgroundFrmImage;
-        int backgroundFid = buildFid(OBJ_TYPE_BACKGROUND, gGameDialogBackground);
+        FrmId backgroundFid = FrmId(gGameDialogBackground);
         if (!backgroundFrmImage.lock(backgroundFid)) {
             debugPrint("\tError locking background in display...\n");
         }
@@ -4966,11 +4966,11 @@ void gameDialogHighlightsInit()
     _dark_BlendTable = _getColorBlendTable(COLOR_OLIVE);
 
     // hilight1.frm - dialogue upper hilight
-    int upperHighlightFid = buildFid(OBJ_TYPE_INTERFACE, 115);
+    FrmId upperHighlightFid = FrmId(INTF_FRM_ID_115);
     _upperHighlightFrmImage.lock(upperHighlightFid);
 
     // hilight2.frm - dialogue lower hilight
-    int lowerHighlightFid = buildFid(OBJ_TYPE_INTERFACE, 116);
+    FrmId lowerHighlightFid = FrmId(INTF_FRM_ID_116);
     _lowerHighlightFrmImage.lock(lowerHighlightFid);
 }
 
