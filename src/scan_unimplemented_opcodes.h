@@ -57,7 +57,6 @@ bool is_implemented_hook(int hookId)
     case 31: // HOOK_GAMEMODECHANGE
     case 32: // HOOK_USEANIMOBJ
     case 33: // HOOK_EXPLOSIVETIMER
-    case 34: // HOOK_DESCRIPTIONOBJ
     case 35: // HOOK_USESKILLON
     case 40: // HOOK_STDPROCEDURE
     case 41: // HOOK_STDPROCEDURE_END
