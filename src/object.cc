@@ -4807,14 +4807,14 @@ static void objectDrawOutline(Object* object, Rect* rect)
             break;
         }
 
-        unsigned char outlineColor = color;
+        Color outlineColor = color;
         unsigned char* destPtr = dest;
         unsigned char* srcPtr = src;
         for (int y = 0; y < frameHeight; y++) {
             bool cycle = true;
             if (animatedColorBandHeight != 0) {
                 if (y % animatedColorBandHeight == 0) {
-                    outlineColor++;
+                    outlineColor = static_cast<Color>((outlineColor + 1) & COLOR_LAST);
                 }
 
                 if (outlineColor > animatedColorCount + color - 1) {
@@ -4831,7 +4831,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
                 destOffset = destPtr - gObjectsWindowBuffer;
                 if (*srcPtr != 0 && cycle) {
                     if (yVisible && x >= visibleFrameRect.left && x <= visibleFrameRect.right && destOffset > 0 && destOffset % gObjectsWindowPitch != 0) {
-                        unsigned char leftOutlineColor;
+                        Color leftOutlineColor;
                         if (isOutlinePalleted != 0) {
                             leftOutlineColor = outlineBlendTable[*(destPtr - 1)];
                         } else {
@@ -4842,13 +4842,13 @@ static void objectDrawOutline(Object* object, Rect* rect)
                     cycle = false;
                 } else if (*srcPtr == 0 && !cycle) {
                     if (yVisible && x >= visibleFrameRect.left && x <= visibleFrameRect.right) {
-                        int rightOutlineColor;
+                        Color rightOutlineColor;
                         if (isOutlinePalleted != 0) {
                             rightOutlineColor = outlineBlendTable[*destPtr];
                         } else {
                             rightOutlineColor = outlineColor;
                         }
-                        *destPtr = rightOutlineColor & 0xFF;
+                        *destPtr = rightOutlineColor & COLOR_LAST;
                     }
                     cycle = true;
                 }
@@ -4879,13 +4879,13 @@ static void objectDrawOutline(Object* object, Rect* rect)
             }
 
             bool cycle = true;
-            unsigned char columnOutlineColor = color;
+            Color columnOutlineColor = color;
             unsigned char* columnDestPtr = dest + x;
             unsigned char* columnSrcPtr = src + x;
             for (int y = 0; y < frameHeight; y++) {
                 if (animatedColorBandHeight != 0) {
                     if (y % animatedColorBandHeight == 0) {
-                        columnOutlineColor++;
+                        columnOutlineColor = static_cast<Color>((columnOutlineColor + 1) & COLOR_LAST);
                     }
 
                     if (columnOutlineColor > color + animatedColorCount - 1) {
