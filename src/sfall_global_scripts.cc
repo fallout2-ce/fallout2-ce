@@ -222,6 +222,8 @@ static void sfall_gl_scr_execute_due_timers(GlobalScript& scr)
 
         scriptDetachedContextSetFixedParam(scr.program, fixedParam);
         programExecuteProcedure(scr.program, scr.procs[SCRIPT_PROC_TIMED]);
+        // TODO: If the timed procedure starts a child script or other suspended
+        // flow, keep fixedParam until the procedure actually completes.
         scriptDetachedContextSetFixedParam(scr.program, 0);
 
         timer = sfall_gl_scr_find_timer(scr, timerId);
