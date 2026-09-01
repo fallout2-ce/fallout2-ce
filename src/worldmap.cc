@@ -594,10 +594,11 @@ static int wmMarkSubTileOffsetVisited(int tile, int subtileX, int subtileY, int 
 static int wmMarkSubTileOffsetKnown(int tile, int subtileX, int subtileY, int offsetX, int offsetY);
 static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, SubtileState subtileState);
 static void wmMarkSubTileRadiusVisited(int x, int y);
+static void wmAreaGetMarkWorldPos(CityInfo* city, int* xPtr, int* yPtr);
 static int wmTileGrabArt(int tileIdx);
 static int wmInterfaceRefresh();
 static void wmInterfaceRefreshDate(bool shouldRefreshWindow);
-static bool wmLockCarInterfaceArt(int artIndex, Art** artPtr, CacheEntry** handlePtr);
+static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, CacheEntry** handlePtr);
 static int wmMatchWorldPosToArea(int x, int y, City* areaIdxPtr);
 static int wmInterfaceDrawCircleOverlay(CityInfo* cityInfo, CitySizeDescription* citySizeInfo, unsigned char* buffer, int x, int y);
 static int wmInterfaceDrawCircleOverlaySafe(CityInfo* city, CitySizeDescription* citySizeDescription, unsigned char* dest, int x, int y);
@@ -770,10 +771,9 @@ Color* circleBlendTable = nullptr;
 // 0x51DE38 wmInterfaceWasInitialized
 static int wmInterfaceWasInitialized = 0;
 
-static constexpr int kDefaultCarInterfaceArtFrmId = 433;
-static constexpr int kMaxFrmId = 0xFFF;
+static constexpr InterfaceFrameId kDefaultCarInterfaceArtFrmId = INTF_FRM_ID_433;
 
-static int carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
+static InterfaceFrameId carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
 
 // 0x51DE3C wmEncOpStrs
 static const char* wmEncOpStrs[ENCOUNTER_SITUATION_COUNT] = {
@@ -809,11 +809,11 @@ static const char* wmFormationStrs[ENCOUNTER_FORMATION_TYPE_COUNT] = {
 };
 
 // 0x51DE84 wmRndCursorFids
-static const int wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
-    154,
-    155,
-    438,
-    439,
+static const InterfaceFrameId wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
+    INTF_FRM_ID_154,
+    INTF_FRM_ID_155,
+    INTF_FRM_ID_438,
+    INTF_FRM_ID_439,
 };
 
 #define MAX_TRAIL_LENGTH 1000
@@ -1303,11 +1303,15 @@ int wmParseAreasConfig(Config* cfg, int startAreaIdx)
     }
 
     City area_idx = static_cast<City>(startAreaIdx);
+    InterfaceFrameId frmId;
 
     int loop_safety_counter = 0;
 
     while (loop_safety_counter < 5000) {
         snprintf(section, sizeof(section), "Area %02d", area_idx);
+        if (!configGetEnum<InterfaceFrameId>(cfg, section, "townmap_art_idx", &frmId)) {
+            break;
+        }
 
         if (!configGetInt(cfg, section, "townmap_art_idx", &num)) {
             break;
@@ -1328,19 +1332,20 @@ int wmParseAreasConfig(Config* cfg, int startAreaIdx)
         wmAreaSlotInit(city);
 
         city->areaId = City(area_idx);
-
-        if (num != -1) {
-            num = buildFid(OBJ_TYPE_INTERFACE, num);
+        FrmId fid = FrmId::Empty();
+        if (frmId != INTF_FRM_ID_INVALID) {
+            fid = FrmId(frmId);
         }
 
-        city->mapFid = num;
+        city->mapFid = fid.fid();
+        fid = FrmId::Empty();
 
-        if (configGetInt(cfg, section, "townmap_label_art_idx", &num)) {
-            if (num != -1) {
-                num = buildFid(OBJ_TYPE_INTERFACE, num);
+        if (configGetEnum<InterfaceFrameId>(cfg, section, "townmap_label_art_idx", &frmId)) {
+            if (frmId != INTF_FRM_ID_INVALID) {
+                fid = FrmId(frmId);
             }
 
-            city->labelFid = num;
+            city->labelFid = fid.fid();
         }
 
         if (!configGetString(cfg, section, "area_name", &str)) {
@@ -1489,7 +1494,7 @@ int wmWorldMap_init()
     // initialize it.
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        citySizeDescription->fid = buildFid(OBJ_TYPE_INTERFACE, 336 + citySize);
+        citySizeDescription->fid = FrmId(INTF_FRM_ID_336 + citySize).fid();
     }
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_WORLDMAP, &wmMsgFile);
@@ -2021,8 +2026,8 @@ static int wmConfigInit()
             char section[40];
             snprintf(section, sizeof(section), "Tile %d", tileIndex);
 
-            int artIndex;
-            if (!configGetInt(config.get(), section, "art_idx", &artIndex)) {
+            InterfaceFrameId artIndex;
+            if (!configGetEnum<InterfaceFrameId>(config.get(), section, "art_idx", &artIndex)) {
                 break;
             }
 
@@ -2041,7 +2046,7 @@ static int wmConfigInit()
             // NOTE: Uninline.
             wmTileSlotInit(tile);
 
-            tile->fid = buildFid(OBJ_TYPE_INTERFACE, artIndex);
+            tile->fid = FrmId(artIndex).fid();
 
             int encounterDifficulty;
             if (configGetInt(config.get(), section, "encounter_difficulty", &encounterDifficulty)) {
@@ -5010,8 +5015,6 @@ static void wmInterfaceScrollTabsUpdate()
 // 0x4C2324 wmInterfaceInit
 static int wmInterfaceInit()
 {
-    int fid;
-
     wmLastRndTime = getTicks();
 
     // SFALL: Fix default worldmap font.
@@ -5054,7 +5057,7 @@ static int wmInterfaceInit()
         return -1;
     }
 
-    fid = buildFid(OBJ_TYPE_INTERFACE, 136);
+    FrmId fid = FrmId(INTF_FRM_ID_136);
     if (!_backgroundFrmImage.lock(fid)) {
         return -1;
     }
@@ -5079,37 +5082,37 @@ static int wmInterfaceInit()
 
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        if (!citySizeDescription->frmImage.lock(citySizeDescription->fid)) {
+        if (!citySizeDescription->frmImage.lock(FrmId(citySizeDescription->fid))) {
             return -1;
         }
     }
 
     // hotspot1.frm - town map selector shape #1
-    fid = buildFid(OBJ_TYPE_INTERFACE, 168);
+    fid = FrmId(INTF_FRM_ID_168);
     if (!wmGenData.hotspotNormalFrmImage.lock(fid)) {
         return -1;
     }
 
     // hotspot2.frm - town map selector shape #2
-    fid = buildFid(OBJ_TYPE_INTERFACE, 223);
+    fid = FrmId(INTF_FRM_ID_223);
     if (!wmGenData.hotspotPressedFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmaptarg.frm - world map move target maker #1
-    fid = buildFid(OBJ_TYPE_INTERFACE, 139);
+    fid = FrmId(INTF_FRM_ID_139);
     if (!wmGenData.destinationMarkerFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmaploc.frm - world map location marker
-    fid = buildFid(OBJ_TYPE_INTERFACE, 138);
+    fid = FrmId(INTF_FRM_ID_138);
     if (!wmGenData.locationMarkerFrmImage.lock(fid)) {
         return -1;
     }
 
     for (int index = 0; index < WORLD_MAP_ENCOUNTER_FRM_COUNT; index++) {
-        fid = buildFid(OBJ_TYPE_INTERFACE, wmRndCursorFids[index]);
+        fid = FrmId(wmRndCursorFids[index]);
         if (!wmGenData.encounterCursorFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -5120,19 +5123,19 @@ static int wmInterfaceInit()
     }
 
     // wmtabs.frm - worldmap town tabs underlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, 364);
+    fid = FrmId(INTF_FRM_ID_364);
     if (!wmGenData.tabsBackgroundFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmtbedge.frm - worldmap town tabs edging overlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, 367);
+    fid = FrmId(INTF_FRM_ID_367);
     if (!wmGenData.tabsBorderFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmdial.frm - worldmap night/day dial
-    fid = buildFid(OBJ_TYPE_INTERFACE, 365);
+    fid = FrmId(INTF_FRM_ID_365);
     wmGenData.dialFrm = artLock(fid, &(wmGenData.dialFrmHandle));
     if (wmGenData.dialFrm == nullptr) {
         return -1;
@@ -5142,33 +5145,33 @@ static int wmInterfaceInit()
     wmGenData.dialFrmHeight = artGetHeight(wmGenData.dialFrm);
 
     // wmscreen - worldmap overlay screen
-    fid = buildFid(OBJ_TYPE_INTERFACE, 363);
+    fid = FrmId(INTF_FRM_ID_363);
     if (!wmGenData.carOverlayFrmImage.lock(fid)) {
         return -1;
     }
 
     // wmglobe.frm - worldmap globe stamp overlay
-    fid = buildFid(OBJ_TYPE_INTERFACE, 366);
+    fid = FrmId(INTF_FRM_ID_366);
     if (!wmGenData.globeOverlayFrmImage.lock(fid)) {
         return -1;
     }
 
     // lilredup.frm - little red button up
-    fid = buildFid(OBJ_TYPE_INTERFACE, 8);
+    fid = FrmId(INTF_FRM_ID_8);
     wmGenData.redButtonNormalFrmImage.lock(fid);
 
     // lilreddn.frm - little red button down
-    fid = buildFid(OBJ_TYPE_INTERFACE, 9);
+    fid = FrmId(INTF_FRM_ID_9);
     wmGenData.redButtonPressedFrmImage.lock(fid);
 
     // months.frm - month strings for pip boy
-    fid = buildFid(OBJ_TYPE_INTERFACE, 129);
+    fid = FrmId(INTF_FRM_ID_129);
     if (!wmGenData.monthsFrmImage.lock(fid)) {
         return -1;
     }
 
     // numbers.frm - numbers for the hit points and fatigue counters
-    fid = buildFid(OBJ_TYPE_INTERFACE, 82);
+    fid = FrmId(INTF_FRM_ID_82);
     if (!wmGenData.numbersFrmImage.lock(fid)) {
         return -1;
     }
@@ -5218,7 +5221,7 @@ static int wmInterfaceInit()
         // 200 - uparwon.frm - character editor
         // 199 - uparwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        fid = buildFid(OBJ_TYPE_INTERFACE, 199 + index);
+        fid = FrmId(INTF_FRM_ID_199 + index);
         if (!wmGenData.scrollUpButtonFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -5228,7 +5231,7 @@ static int wmInterfaceInit()
         // 182 - dnarwon.frm - character editor
         // 181 - dnarwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        fid = buildFid(OBJ_TYPE_INTERFACE, 181 + index);
+        fid = FrmId(INTF_FRM_ID_181 + index);
         if (!wmGenData.scrollDownButtonFrmImages[index].lock(fid)) {
             return -1;
         }
@@ -5650,6 +5653,51 @@ static void wmMarkSubTileRadiusVisited(int x, int y)
     }
 
     wmSubTileMarkRadiusVisited(x, y, radius);
+}
+
+static void wmSubTileMarkRadiusKnown(int x, int y, int radius)
+{
+    int tile = x / WM_TILE_WIDTH % wmNumHorizontalTiles + y / WM_TILE_HEIGHT * wmNumHorizontalTiles;
+    int subtileX = x % WM_TILE_WIDTH / WM_SUBTILE_SIZE;
+    int subtileY = y % WM_TILE_HEIGHT / WM_SUBTILE_SIZE;
+
+    for (int offsetY = -radius; offsetY <= radius; offsetY++) {
+        for (int offsetX = -radius; offsetX <= radius; offsetX++) {
+            // NOTE: Uninline.
+            wmMarkSubTileOffsetKnown(tile, subtileX, subtileY, offsetX, offsetY);
+        }
+    }
+}
+
+static void wmAreaGetMarkWorldPos(CityInfo* city, int* xPtr, int* yPtr)
+{
+    assert(city != nullptr);
+    assert(xPtr != nullptr);
+    assert(yPtr != nullptr);
+
+    int markHalfWidth = WM_VIEW_X;
+    int markHalfHeight = WM_VIEW_Y;
+
+    switch (city->size) {
+    case CITY_SIZE_SMALL:
+        markHalfWidth = 7;
+        markHalfHeight = 6;
+        break;
+    case CITY_SIZE_MEDIUM:
+        markHalfWidth = 12;
+        markHalfHeight = 11;
+        break;
+    case CITY_SIZE_LARGE:
+        break;
+    default:
+        break;
+    }
+
+    int x = city->x + markHalfWidth - WM_VIEW_X;
+    int y = city->y + markHalfHeight - WM_VIEW_Y;
+
+    *xPtr = std::max(x, 0);
+    *yPtr = std::max(y, 0);
 }
 
 // 0x4C35A8 wmSubTileMarkRadiusVisited
@@ -6399,7 +6447,9 @@ bool wmAreaIsKnown(City areaIdx)
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    if (city->visitedState == VisitedState::Known || city->visitedState == VisitedState::Visited) {
+    if (city->visitedState == VisitedState::Known
+        || city->visitedState == VisitedState::Visited
+        || city->visitedState == VisitedState::KnownFo1) {
         if (city->state == CITY_STATE_KNOWN) {
             return true;
         }
@@ -6416,7 +6466,10 @@ VisitedState wmAreaVisitedState(City areaIdx)
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    if ((city->visitedState == VisitedState::Known || city->visitedState == VisitedState::Visited) && city->state == CITY_STATE_KNOWN) {
+    if ((city->visitedState == VisitedState::Known
+            || city->visitedState == VisitedState::Visited
+            || city->visitedState == VisitedState::KnownFo1)
+        && city->state == CITY_STATE_KNOWN) {
         return city->visitedState;
     }
 
@@ -6461,19 +6514,36 @@ bool wmAreaMarkVisitedState(City areaIdx, VisitedState state)
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
     VisitedState oldVisitedState = city->visitedState;
+    bool noRadius = state == VisitedState::KnownFo1;
+    if (noRadius) {
+        state = VisitedState::Known;
+    }
+
+    int x;
+    int y;
+    wmAreaGetMarkWorldPos(city, &x, &y);
+
+    SubtileInfo* subtile;
+    if (wmFindCurSubTileFromPos(x, y, &subtile) == -1) {
+        return false;
+    }
+
+    SubtileState oldSubtileState = subtile->state;
+
     if (city->state == CITY_STATE_KNOWN && state != VisitedState::Unknown) {
-        wmMarkSubTileRadiusVisited(city->x, city->y);
+        if (state == VisitedState::Visited) {
+            wmMarkSubTileRadiusVisited(x, y);
+        } else if (!noRadius) {
+            wmSubTileMarkRadiusKnown(x, y, 1);
+        }
     }
 
     city->visitedState = state;
 
-    SubtileInfo* subtile;
-    if (wmFindCurSubTileFromPos(city->x, city->y, &subtile) == -1) {
-        return false;
-    }
-
     if (state == VisitedState::Known) {
-        subtile->state = SUBTILE_STATE_KNOWN;
+        subtile->state = oldSubtileState == SUBTILE_STATE_UNKNOWN
+            ? SUBTILE_STATE_KNOWN
+            : oldSubtileState;
     } else if (state == VisitedState::Visited && oldVisitedState == VisitedState::Unknown) {
         city->visitedState = VisitedState::Known;
     }
@@ -6689,7 +6759,7 @@ static int wmTownMapInit()
 
     CityInfo* city = &(wmAreaInfoList[wmGenData.currentAreaId]);
 
-    if (!_townFrmImage.lock(city->mapFid)) {
+    if (!_townFrmImage.lock(FrmId(city->mapFid))) {
         return -1;
     }
 
@@ -6851,14 +6921,14 @@ int wmCarGasAmount()
     return wmGenData.carFuel;
 }
 
-static bool wmLockCarInterfaceArt(int artIndex, Art** artPtr, CacheEntry** handlePtr)
+static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, CacheEntry** handlePtr)
 {
-    if (artIndex < 0 || artIndex > kMaxFrmId) {
+    if (artIndex < INTF_FRM_ID_FIRST || artIndex > INTF_FRM_ID_LAST) {
         return false;
     }
 
     CacheEntry* handle = INVALID_CACHE_ENTRY;
-    int fid = buildFid(OBJ_TYPE_INTERFACE, artIndex);
+    FrmId fid = FrmId(artIndex);
     Art* art = artLock(fid, &handle);
     if (art == nullptr) {
         return false;
@@ -6877,7 +6947,7 @@ static bool wmLockCarInterfaceArt(int artIndex, Art** artPtr, CacheEntry** handl
     return true;
 }
 
-void wmSetCarInterfaceArt(int artIndex)
+void wmSetCarInterfaceArt(InterfaceFrameId artIndex)
 {
     Art* art = nullptr;
     CacheEntry* handle = INVALID_CACHE_ENTRY;
@@ -7155,8 +7225,9 @@ static int wmRefreshTabs()
 
     if (firstVisibleLabelIndex < wmLabelCount) {
         city = &(wmAreaInfoList[wmLabelList[firstVisibleLabelIndex]]);
-        if (city->labelFid != -1) {
-            if (!labelFrm.lock(city->labelFid)) {
+        FrmId cityLabelFrmId = FrmId(city->labelFid);
+        if (!cityLabelFrmId.empty()) {
+            if (!labelFrm.lock(cityLabelFrmId)) {
                 return -1;
             }
 
@@ -7185,8 +7256,9 @@ static int wmRefreshTabs()
     for (int labelIndex = firstVisibleLabelIndex + 1; labelIndex < lastLabelIndexToDraw; labelIndex++) {
         if (labelIndex < wmLabelCount) {
             city = &(wmAreaInfoList[wmLabelList[labelIndex]]);
-            if (city->labelFid != -1) {
-                if (!labelFrm.lock(city->labelFid)) {
+            FrmId cityLabelFrmId = FrmId(city->labelFid);
+            if (!cityLabelFrmId.empty()) {
+                if (!labelFrm.lock(cityLabelFrmId)) {
                     return -1;
                 }
 
@@ -7205,8 +7277,9 @@ static int wmRefreshTabs()
 
     if (lastLabelIndexToDraw < wmLabelCount) {
         city = &(wmAreaInfoList[wmLabelList[lastLabelIndexToDraw]]);
-        if (city->labelFid != -1) {
-            if (!labelFrm.lock(city->labelFid)) {
+        FrmId cityLabelFrmId = FrmId(city->labelFid);
+        if (!cityLabelFrmId.empty()) {
+            if (!labelFrm.lock(cityLabelFrmId)) {
                 return -1;
             }
 
@@ -7481,7 +7554,7 @@ int wmTeleportToArea(City areaIdx)
     // image might not be locked.
     bool wasLocked = citySizeDescription->frmImage.isLocked();
     if (!wasLocked) {
-        citySizeDescription->frmImage.lock(citySizeDescription->fid);
+        citySizeDescription->frmImage.lock(FrmId(citySizeDescription->fid));
     }
 
     wmGenData.worldPosX = city->x + citySizeDescription->frmImage.getWidth() / 2 - WM_VIEW_X;

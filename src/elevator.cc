@@ -44,8 +44,8 @@ typedef enum ElevatorFrm {
 } ElevatorFrm;
 
 typedef struct ElevatorBackground {
-    int backgroundFrmId;
-    int panelFrmId;
+    InterfaceFrameId backgroundFrmId;
+    InterfaceFrameId panelFrmId;
 } ElevatorBackground;
 
 typedef struct ElevatorDescription {
@@ -60,38 +60,38 @@ static int elevatorGetLevelFromKeyCode(int elevator, int keyCode);
 static int elevatorGetLevelFromEscKey(int elevator, int map);
 
 // 0x43E950 grph_id_2
-static const int gElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
-    141, // ebut_in.frm - map elevator screen
-    142, // ebut_out.frm - map elevator screen
-    149, // gaj000.frm - map elevator screen
+static const InterfaceFrameId gElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
+    INTF_FRM_ID_141, // ebut_in.frm - map elevator screen
+    INTF_FRM_ID_142, // ebut_out.frm - map elevator screen
+    INTF_FRM_ID_149, // gaj000.frm - map elevator screen
 };
 
 // 0x43E95C intotal
 static ElevatorBackground gElevatorBackgrounds[ELEVATORS_MAX] = {
-    { 143, -1 },
-    { 143, 150 },
-    { 144, -1 },
-    { 144, 145 },
-    { 146, -1 },
-    { 146, 147 },
-    { 146, -1 },
-    { 146, 151 },
-    { 148, -1 },
-    { 146, -1 },
-    { 146, -1 },
-    { 146, 147 },
-    { 388, -1 },
-    { 143, 150 },
-    { 148, -1 },
-    { 148, -1 },
-    { 148, -1 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
-    { 143, 150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_144, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_144, INTF_FRM_ID_145 },
+    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_146, INTF_FRM_ID_147 },
+    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_146, INTF_FRM_ID_151 },
+    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_146, INTF_FRM_ID_147 },
+    { INTF_FRM_ID_388, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
 };
 
 // Number of levels for eleveators.
@@ -519,7 +519,7 @@ static int elevatorWindowInit(int elevator)
 
     int index;
     for (index = 0; index < ELEVATOR_FRM_COUNT; index++) {
-        int fid = buildFid(OBJ_TYPE_INTERFACE, gElevatorFrmIds[index]);
+        FrmId fid = FrmId(gElevatorFrmIds[index]);
         if (!_elevatorFrmImages[index].lock(fid)) {
             break;
         }
@@ -542,10 +542,10 @@ static int elevatorWindowInit(int elevator)
     const ElevatorBackground* elevatorBackground = &(gElevatorBackgrounds[elevator]);
     bool backgroundsLoaded = true;
 
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, elevatorBackground->backgroundFrmId);
+    FrmId backgroundFid = FrmId(elevatorBackground->backgroundFrmId);
     if (_elevatorBackgroundFrmImage.lock(backgroundFid)) {
         if (elevatorBackground->panelFrmId != -1) {
-            int panelFid = buildFid(OBJ_TYPE_INTERFACE, elevatorBackground->panelFrmId);
+            FrmId panelFid = FrmId(elevatorBackground->panelFrmId);
             if (!_elevatorPanelFrmImage.lock(panelFid)) {
                 backgroundsLoaded = false;
             }
@@ -711,8 +711,8 @@ void elevatorsInit()
             }
         }
 
-        configGetInt(elevatorsConfig.get(), sectionKey, "MainFrm", &(gElevatorBackgrounds[index].backgroundFrmId));
-        configGetInt(elevatorsConfig.get(), sectionKey, "ButtonsFrm", &(gElevatorBackgrounds[index].panelFrmId));
+        configGetEnum<InterfaceFrameId>(elevatorsConfig.get(), sectionKey, "MainFrm", &(gElevatorBackgrounds[index].backgroundFrmId));
+        configGetEnum<InterfaceFrameId>(elevatorsConfig.get(), sectionKey, "ButtonsFrm", &(gElevatorBackgrounds[index].panelFrmId));
 
         for (int level = 0; level < ELEVATOR_LEVEL_MAX; level++) {
             snprintf(key, sizeof(key), "ID%d", level + 1);

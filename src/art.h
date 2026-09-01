@@ -1,6 +1,7 @@
 #ifndef ART_H
 #define ART_H
 
+#include <cstring>
 #include <memory>
 
 #include "animation.h"
@@ -33,10 +34,78 @@ typedef struct ArtFrame {
     short y;
 } ArtFrame;
 
-extern int _art_vault_guy_num;
-extern int _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
+extern CritterFrameId _art_vault_guy_num;
+extern CritterFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
 
 extern Cache gArtCache;
+
+class NamedCacheEntry;
+std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
+
+class FrmId {
+public:
+    static constexpr int EmptyFid = -1;
+
+    constexpr FrmId()
+        : _objectType(OBJ_TYPE_INVALID)
+        , _fid(EmptyFid)
+        , _path(nullptr)
+    {
+    }
+
+    static const FrmId& Empty()
+    {
+        static const FrmId emptyInstance {};
+        return emptyInstance;
+    }
+
+    explicit FrmId(int fid)
+        : _objectType(objectTypeFromFid(fid))
+        , _fid(fid)
+    {
+    }
+
+    explicit FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND);
+    explicit FrmId(SceneryFrameId scenery);
+    explicit FrmId(WallFrameId wall);
+    explicit FrmId(ItemFrameId item);
+    explicit FrmId(TileFrameId tile);
+    explicit FrmId(SkillDexFrameId skilldex);
+    explicit FrmId(InterfaceFrameId interface);
+    explicit FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
+    explicit FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0);
+    explicit FrmId(BackgroundFrameId background);
+    explicit FrmId(ObjectType objType, const char* path);
+    explicit FrmId(ObjectType objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
+
+    int fid() const { return _fid; }
+    bool hasObjectType() const { return objectTypeIsValid(_objectType); }
+    ObjectType objectType() const;
+    const char* filePath() const { return _path; }
+
+    bool empty() const { return (*this) == Empty(); }
+
+    bool operator==(const FrmId& other) const
+    {
+        if (_fid != other._fid) return false;
+        if (_objectType != other._objectType) return false;
+        if (_path == nullptr && other._path == nullptr) return true;
+        if (_path == nullptr || other._path == nullptr) return false;
+
+        return std::strcmp(_path, other._path) == 0;
+    }
+
+    bool operator!=(const FrmId& other) const
+    {
+        return !(*this == other);
+    }
+
+private:
+    int _fid = EmptyFid;
+    ObjectType _objectType = OBJ_TYPE_INVALID;
+    const char* _path = nullptr;
+};
 
 int artInit();
 void artReset();
@@ -48,6 +117,12 @@ int artGetFidgetCount(int headFid);
 void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
 Art* artLock(int fid, CacheEntry** cache_entry);
+
+inline Art* artLock(const FrmId& frmId, CacheEntry** cache_entry)
+{
+    return artLock(frmId.fid(), cache_entry);
+}
+
 unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
@@ -67,11 +142,16 @@ unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int
 ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
 ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
 bool artExists(int fid);
+
+inline bool artExists(const FrmId& frmId)
+{
+    return artExists(frmId.fid());
+}
+
 bool _art_fid_valid(int fid);
-int _art_alias_num(int index);
+CritterFrameId _art_alias_num(CritterFrameId index);
 int artCritterFidShouldRun(int fid);
 int artAliasFid(int fid);
-int buildFid(ObjectType objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
 int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);
@@ -81,30 +161,6 @@ using ArtPtr = InternalPtr<Art>;
 
 class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
-
-class FrmId {
-public:
-    FrmId() = default;
-    explicit FrmId(int fid)
-        : _fid(fid)
-    {
-    }
-    explicit FrmId(ObjectType objType, int frmId);
-    explicit FrmId(ObjectType objType, const char* path);
-    explicit FrmId(const char* path);
-
-    int fid() const { return _fid; }
-    bool hasObjectType() const { return objectTypeIsValid(_objectType); }
-    ObjectType objectType() const;
-    const char* filePath() const { return _path; }
-
-    bool empty() const { return _fid == -1 && _path == nullptr; }
-
-private:
-    int _fid = -1;
-    int _objectType = -1;
-    const char* _path = nullptr;
-};
 
 // RAII helper for locking one selected frame from FID-backed or path-backed art.
 // lock/unlock use caches instead of just loading/unloading directly.
@@ -121,14 +177,9 @@ public:
     FrmImage& operator=(FrmImage&& other) noexcept;
 
     bool isLocked() const { return _key != nullptr || _namedKey; }
-    bool lock(const FrmId& frmId);
-    bool lock(const FrmId& frmId, int frame, Rotation rotation);
-    bool lock(unsigned int fid);
-    bool lock(unsigned int fid, int frame, Rotation rotation);
-    bool lock(const char* frmPath);
-    bool lock(const char* frmPath, int frame, Rotation rotation);
-    bool lock(ObjectType objType, const char* frmRelativePath);
-    bool lock(ObjectType objType, const char* frmRelativePath, int frame, Rotation rotation);
+    bool lock(const FrmId& frmId, int frame = 0, Rotation rotation = ROTATION_NE);
+    bool lock(const char* frmPath, int frame = 0, Rotation rotation = ROTATION_NE);
+    bool lock(ObjectType objType, const char* frmRelativePath, int frame = 0, Rotation rotation = ROTATION_NE);
     void unlock();
 
     int getWidth() const { return _width; }
@@ -141,6 +192,7 @@ public:
     ConstBuffer2D getBuffer() const { return { _data, _width, _height }; };
 
 private:
+    bool lock(unsigned int fid, int frame = 0, Rotation rotation = ROTATION_NE);
     void resetInternal();
     bool setFrame(const Art* art, int frame, Rotation rotation);
 

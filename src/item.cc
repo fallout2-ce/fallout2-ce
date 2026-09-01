@@ -185,7 +185,7 @@ static int gPlasticExplosiveMaxDamage;
 static std::vector<ExplosiveDescription> gExplosives;
 static Rotation gExplosionStartRotation;
 static Rotation gExplosionEndRotation;
-static int gExplosionFrm;
+static MiscFrameId gExplosionFrm;
 static int gExplosionRadius;
 static DamageType gExplosionDamageType;
 static int gExplosionMaxTargets;
@@ -602,7 +602,7 @@ int itemDropAll(Object* critter, int tile)
 {
     bool hasEquippedItems = false;
 
-    int frmId = critter->fid & 0xFFF;
+    CritterFrameId frmId = critterFrameIdFromFid(critter->fid);
 
     Inventory* inventory = &(critter->data.inventory);
     while (inventory->length > 0) {
@@ -641,7 +641,7 @@ int itemDropAll(Object* critter, int tile)
                         return -1;
                     }
 
-                    frmId = proto->fid & 0xFFF;
+                    frmId = critterFrameIdFromFid(proto->fid);
                     adjustCritterStatsOnArmorChange(critter, item, nullptr);
                 }
             }
@@ -675,8 +675,8 @@ int itemDropAll(Object* critter, int tile)
 
     if (hasEquippedItems) {
         Rect updatedRect;
-        int fid = buildFid(OBJ_TYPE_CRITTER, frmId, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
-        objectSetFid(critter, fid, &updatedRect);
+        FrmId fid = FrmId(frmId, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
+        objectSetFid(critter, fid.fid(), &updatedRect);
         if (animationTypeFromFid(critter->fid) == ANIM_STAND) {
             tileWindowRefreshRect(&updatedRect, gElevation);
         }
@@ -1769,7 +1769,7 @@ int weaponGetActionPointCost(Object* critter, HitMode hitMode, bool aiming)
             }
 
             if (critter == gDude) {
-                if (traitIsSelected(TRAIT_FAST_SHOT)) {
+                if (traitIsSelectedAndActive(TRAIT_FAST_SHOT)) {
                     if (weaponGetRange(critter, hitMode) > 2) {
                         actionPoints--;
                     }
@@ -1915,7 +1915,7 @@ char weaponGetSoundId(Object* weapon)
 // 0x478E5C
 bool critterCanAim(Object* critter, HitMode hitMode)
 {
-    if (critter == gDude && traitIsSelected(TRAIT_FAST_SHOT)) {
+    if (critter == gDude && traitIsSelectedAndActive(TRAIT_FAST_SHOT)) {
         return false;
     }
 
@@ -2306,10 +2306,10 @@ Perk armorGetPerk(Object* armor)
 }
 
 // 0x479380
-int armorGetMaleFid(Object* armor)
+CritterFrameId armorGetMaleFid(Object* armor)
 {
     if (armor == nullptr) {
-        return -1;
+        return CRITTER_FRM_ID_INVALID;
     }
 
     Proto* proto;
@@ -2319,10 +2319,10 @@ int armorGetMaleFid(Object* armor)
 }
 
 // 0x4793A8
-int armorGetFemaleFid(Object* armor)
+CritterFrameId armorGetFemaleFid(Object* armor)
 {
     if (armor == nullptr) {
-        return -1;
+        return CRITTER_FRM_ID_INVALID;
     }
 
     Proto* proto;
@@ -2791,7 +2791,7 @@ static int _insert_drug_effect(Object* critter, Object* item, int duration, Stat
 
     int delay = 600 * duration;
     if (critter == gDude) {
-        if (traitIsSelected(TRAIT_CHEM_RESISTANT)) {
+        if (traitIsSelectedAndActive(TRAIT_CHEM_RESISTANT)) {
             delay /= 2;
         }
     }
@@ -2998,11 +2998,11 @@ UseItemResultCode drugItemTakeDrug(Object* critter, Object* item)
     if (!dudeIsAddicted(item->pid)) {
         int addictionChance = proto->item.data.drug.addictionChance;
         if (critter == gDude) {
-            if (traitIsSelected(TRAIT_CHEM_RELIANT)) {
+            if (traitIsSelectedAndActive(TRAIT_CHEM_RELIANT)) {
                 addictionChance *= 2;
             }
 
-            if (traitIsSelected(TRAIT_CHEM_RESISTANT)) {
+            if (traitIsSelectedAndActive(TRAIT_CHEM_RESISTANT)) {
                 addictionChance /= 2;
             }
 
@@ -3232,7 +3232,7 @@ static void performWithdrawalStart(Object* obj, Perk perk, int pid)
 
     int duration = 10080;
     if (obj == gDude) {
-        if (traitIsSelected(TRAIT_CHEM_RELIANT)) {
+        if (traitIsSelectedAndActive(TRAIT_CHEM_RELIANT)) {
             duration /= 2;
         }
 
@@ -3695,7 +3695,7 @@ void explosionSettingsReset()
 {
     gExplosionStartRotation = ROTATION_FIRST;
     gExplosionEndRotation = ROTATION_COUNT;
-    gExplosionFrm = -1;
+    gExplosionFrm = MISC_FRM_ID_INVALID;
     gExplosionRadius = -1;
     gExplosionDamageType = DAMAGE_TYPE_EXPLOSION;
     gExplosionMaxTargets = 6;
@@ -3713,12 +3713,12 @@ void explosionSetPattern(Rotation startRotation, Rotation endRotation)
     gExplosionEndRotation = endRotation;
 }
 
-int explosionGetFrm()
+MiscFrameId explosionGetFrm()
 {
     return gExplosionFrm;
 }
 
-void explosionSetFrm(int frm)
+void explosionSetFrm(MiscFrameId frm)
 {
     gExplosionFrm = frm;
 }
