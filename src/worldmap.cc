@@ -594,6 +594,7 @@ static int wmMarkSubTileOffsetVisited(int tile, int subtileX, int subtileY, int 
 static int wmMarkSubTileOffsetKnown(int tile, int subtileX, int subtileY, int offsetX, int offsetY);
 static int wmMarkSubTileOffsetVisitedFunc(int tile, int subtileX, int subtileY, int offsetX, int offsetY, SubtileState subtileState);
 static void wmMarkSubTileRadiusVisited(int x, int y);
+static void wmAreaGetMarkWorldPos(CityInfo* city, int* xPtr, int* yPtr);
 static int wmTileGrabArt(int tileIdx);
 static int wmInterfaceRefresh();
 static void wmInterfaceRefreshDate(bool shouldRefreshWindow);
@@ -5602,6 +5603,51 @@ static void wmMarkSubTileRadiusVisited(int x, int y)
     wmSubTileMarkRadiusVisited(x, y, radius);
 }
 
+static void wmSubTileMarkRadiusKnown(int x, int y, int radius)
+{
+    int tile = x / WM_TILE_WIDTH % wmNumHorizontalTiles + y / WM_TILE_HEIGHT * wmNumHorizontalTiles;
+    int subtileX = x % WM_TILE_WIDTH / WM_SUBTILE_SIZE;
+    int subtileY = y % WM_TILE_HEIGHT / WM_SUBTILE_SIZE;
+
+    for (int offsetY = -radius; offsetY <= radius; offsetY++) {
+        for (int offsetX = -radius; offsetX <= radius; offsetX++) {
+            // NOTE: Uninline.
+            wmMarkSubTileOffsetKnown(tile, subtileX, subtileY, offsetX, offsetY);
+        }
+    }
+}
+
+static void wmAreaGetMarkWorldPos(CityInfo* city, int* xPtr, int* yPtr)
+{
+    assert(city != nullptr);
+    assert(xPtr != nullptr);
+    assert(yPtr != nullptr);
+
+    int markHalfWidth = WM_VIEW_X;
+    int markHalfHeight = WM_VIEW_Y;
+
+    switch (city->size) {
+    case CITY_SIZE_SMALL:
+        markHalfWidth = 7;
+        markHalfHeight = 6;
+        break;
+    case CITY_SIZE_MEDIUM:
+        markHalfWidth = 12;
+        markHalfHeight = 11;
+        break;
+    case CITY_SIZE_LARGE:
+        break;
+    default:
+        break;
+    }
+
+    int x = city->x + markHalfWidth - WM_VIEW_X;
+    int y = city->y + markHalfHeight - WM_VIEW_Y;
+
+    *xPtr = std::max(x, 0);
+    *yPtr = std::max(y, 0);
+}
+
 // 0x4C35A8 wmSubTileMarkRadiusVisited
 int wmSubTileMarkRadiusVisited(int x, int y, int radius)
 {
@@ -6349,7 +6395,9 @@ bool wmAreaIsKnown(City areaIdx)
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    if (city->visitedState == VisitedState::Known || city->visitedState == VisitedState::Visited) {
+    if (city->visitedState == VisitedState::Known
+        || city->visitedState == VisitedState::Visited
+        || city->visitedState == VisitedState::KnownFo1) {
         if (city->state == CITY_STATE_KNOWN) {
             return true;
         }
@@ -6366,7 +6414,10 @@ VisitedState wmAreaVisitedState(City areaIdx)
     }
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
-    if ((city->visitedState == VisitedState::Known || city->visitedState == VisitedState::Visited) && city->state == CITY_STATE_KNOWN) {
+    if ((city->visitedState == VisitedState::Known
+            || city->visitedState == VisitedState::Visited
+            || city->visitedState == VisitedState::KnownFo1)
+        && city->state == CITY_STATE_KNOWN) {
         return city->visitedState;
     }
 
@@ -6411,19 +6462,36 @@ bool wmAreaMarkVisitedState(City areaIdx, VisitedState state)
 
     CityInfo* city = &(wmAreaInfoList[areaIdx]);
     VisitedState oldVisitedState = city->visitedState;
+    bool noRadius = state == VisitedState::KnownFo1;
+    if (noRadius) {
+        state = VisitedState::Known;
+    }
+
+    int x;
+    int y;
+    wmAreaGetMarkWorldPos(city, &x, &y);
+
+    SubtileInfo* subtile;
+    if (wmFindCurSubTileFromPos(x, y, &subtile) == -1) {
+        return false;
+    }
+
+    SubtileState oldSubtileState = subtile->state;
+
     if (city->state == CITY_STATE_KNOWN && state != VisitedState::Unknown) {
-        wmMarkSubTileRadiusVisited(city->x, city->y);
+        if (state == VisitedState::Visited) {
+            wmMarkSubTileRadiusVisited(x, y);
+        } else if (!noRadius) {
+            wmSubTileMarkRadiusKnown(x, y, 1);
+        }
     }
 
     city->visitedState = state;
 
-    SubtileInfo* subtile;
-    if (wmFindCurSubTileFromPos(city->x, city->y, &subtile) == -1) {
-        return false;
-    }
-
     if (state == VisitedState::Known) {
-        subtile->state = SUBTILE_STATE_KNOWN;
+        subtile->state = oldSubtileState == SUBTILE_STATE_UNKNOWN
+            ? SUBTILE_STATE_KNOWN
+            : oldSubtileState;
     } else if (state == VisitedState::Visited && oldVisitedState == VisitedState::Unknown) {
         city->visitedState = VisitedState::Known;
     }

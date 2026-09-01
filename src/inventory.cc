@@ -907,6 +907,39 @@ static void inventoryNormalClampStackOffset()
     }
 }
 
+static void inventoryClampOffset(int* offsetPtr, int inventoryLength, int visibleSlots)
+{
+    assert(offsetPtr != nullptr);
+
+    int maxOffset = inventoryComputeAlignedMaxOffset(inventoryLength, visibleSlots, 1);
+    if (*offsetPtr > maxOffset) {
+        *offsetPtr = maxOffset;
+    }
+    if (*offsetPtr < 0) {
+        *offsetPtr = 0;
+    }
+}
+
+static void barterClampTableOffsets()
+{
+    if (gPlayerTableInventory != nullptr) {
+        inventoryClampOffset(&gPlayerTableOffset, gPlayerTableInventory->length, gInventorySlotsCount);
+    }
+
+    if (gBartererTableInventory != nullptr) {
+        inventoryClampOffset(&gBartererTableOffset, gBartererTableInventory->length, gInventorySlotsCount);
+    }
+}
+
+static InventoryItem* inventoryGetReversedSlot(Inventory* inventory, int index)
+{
+    if (inventory == nullptr || index < 0 || index >= inventory->length) {
+        return nullptr;
+    }
+
+    return &(inventory->items[inventory->length - (index + 1)]);
+}
+
 static int inventoryLootGetSlotX(bool targetInventory, int slotIndex)
 {
     int scrollerX = targetInventory ? inventoryLootLayout.rightScrollerX : inventoryLootLayout.leftScrollerX;
@@ -5547,6 +5580,8 @@ static void barterMoveFromTable(Object* item, int quantity, int slotIndex, Objec
 // 0x475334 display_table_inventories
 static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, int draggedSlotIndex)
 {
+    barterClampTableOffsets();
+
     unsigned char* windowBuffer = windowGetBuffer(gInventoryWindow);
 
     int oldFont = fontGetCurrent();
@@ -5743,6 +5778,7 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
 
         keyCode = inputGetInput();
         int mouseEvent = mouseGetEvent();
+        barterClampTableOffsets();
         InventoryScrollerDisplayContext inventoryScrollerContext { INVENTORY_WINDOW_TYPE_TRADE, nullptr };
         InventoryScrollerDisplayContext targetScrollerContext { INVENTORY_WINDOW_TYPE_TRADE, _target_pud };
         InventoryScrollerBarterContext barterScrollerContext { win, playerTable, bartererTable };
@@ -5913,8 +5949,9 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
                         barterDisplayTables(win, playerTable, nullptr, -1);
                     } else {
                         int slotIndex = keyCode - 2300;
-                        if (slotIndex < gPlayerTableInventory->length) {
-                            InventoryItem* inventoryItem = &(gPlayerTableInventory->items[gPlayerTableInventory->length - (slotIndex + gPlayerTableOffset + 1)]);
+                        int tableIndex = slotIndex + gPlayerTableOffset;
+                        InventoryItem* inventoryItem = inventoryGetReversedSlot(gPlayerTableInventory, tableIndex);
+                        if (inventoryItem != nullptr) {
                             barterMoveFromTable(inventoryItem->item, inventoryItem->quantity, slotIndex, barterer, playerTable, true);
                             _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_TRADE);
                             _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_TRADE);
@@ -5930,8 +5967,9 @@ void barterProcessUI(int win, Object* barterer, Object* playerTable, Object* bar
                         barterDisplayTables(win, nullptr, bartererTable, -1);
                     } else {
                         int slotIndex = keyCode - 2400;
-                        if (slotIndex < gBartererTableInventory->length) {
-                            InventoryItem* inventoryItem = &(gBartererTableInventory->items[gBartererTableInventory->length - (slotIndex + gBartererTableOffset + 1)]);
+                        int tableIndex = slotIndex + gBartererTableOffset;
+                        InventoryItem* inventoryItem = inventoryGetReversedSlot(gBartererTableInventory, tableIndex);
+                        if (inventoryItem != nullptr) {
                             barterMoveFromTable(inventoryItem->item, inventoryItem->quantity, slotIndex, barterer, bartererTable, false);
                             _display_target_inventory(_target_stack_offset[_target_curr_stack], -1, _target_pud, INVENTORY_WINDOW_TYPE_TRADE);
                             _display_inventory(_stack_offset[_curr_stack], -1, INVENTORY_WINDOW_TYPE_TRADE);
