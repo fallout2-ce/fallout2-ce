@@ -1128,6 +1128,11 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
     MapInfo* maps;
     MapInfo* map;
 
+    if (startMapIdx < static_cast<int>(MAP_FIRST) || startMapIdx != wmMaxMapNum) {
+        debugPrint("wmParseMapsConfig: startMapIdx %d does not match next map slot %d", startMapIdx, wmMaxMapNum);
+        return -1;
+    }
+
     Map mapIdx = static_cast<Map>(startMapIdx);
     int loop_safety_counter = 0;
 
@@ -1291,6 +1296,11 @@ int wmParseAreasConfig(Config* cfg, int startAreaIdx)
     CityInfo* cities;
     CityInfo* city;
     EntranceInfo* entrance;
+
+    if (startAreaIdx < static_cast<int>(CITY_FIRST) || startAreaIdx != wmMaxAreaNum) {
+        debugPrint("wmParseAreasConfig: startAreaIdx %d does not match next area slot %d", startAreaIdx, wmMaxAreaNum);
+        return -1;
+    }
 
     City area_idx = static_cast<City>(startAreaIdx);
 
