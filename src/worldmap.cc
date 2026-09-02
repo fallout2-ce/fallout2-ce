@@ -1152,9 +1152,15 @@ int wmWorldMap_init()
     // during |wmTeleportToArea| to calculate worldmap position when jumping
     // from Temple to Arroyo - before giving a chance to |wmInterfaceInit| to
     // initialize it.
+    constexpr FrmId kWorldSphereOverlayFrmIds[CITY_SIZE_COUNT] = {
+        FrmId(InterfaceFrameId::WorldSphereOverlay0),
+        FrmId(InterfaceFrameId::WorldSphereOverlay1),
+        FrmId(InterfaceFrameId::WorldSphereOverlay2),
+    };
+    
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        citySizeDescription->fid = FrmId(InterfaceFrameId::WorldSphereOverlay0 + citySize).fid();
+        citySizeDescription->fid = kWorldSphereOverlayFrmIds[citySize].fid();
     }
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_WORLDMAP, &wmMsgFile);
@@ -5150,20 +5156,30 @@ static int wmInterfaceInit()
         }
     }
 
+    constexpr FrmId kScrollUpButtonFrmIds[WORLDMAP_ARROW_FRM_COUNT] = {
+        FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
+        FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
+    };
+
     for (int index = 0; index < WORLDMAP_ARROW_FRM_COUNT; index++) {
         // 200 - uparwon.frm - character editor
         // 199 - uparwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        if (!wmGenData.scrollUpButtonFrmImages[index].lock(FrmId(InterfaceFrameId::CharacterEditorUpArrowOff + index))) {
+        if (!wmGenData.scrollUpButtonFrmImages[index].lock(kScrollUpButtonFrmIds[index])) {
             return -1;
         }
     }
+
+    constexpr FrmId kScrollDownButtonFrmIds[WORLDMAP_ARROW_FRM_COUNT] = {
+        FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
+        FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
+    };
 
     for (int index = 0; index < WORLDMAP_ARROW_FRM_COUNT; index++) {
         // 182 - dnarwon.frm - character editor
         // 181 - dnarwoff.frm - character editor
         // SFALL: Fix images for scroll buttons.
-        if (!wmGenData.scrollDownButtonFrmImages[index].lock(FrmId(InterfaceFrameId::CharacterEditorDownArrowOff + index))) {
+        if (!wmGenData.scrollDownButtonFrmImages[index].lock(kScrollDownButtonFrmIds[index])) {
             return -1;
         }
     }

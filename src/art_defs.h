@@ -755,11 +755,6 @@ enum class InterfaceFrameId : int {
     WorldMapRandomEncounterCursor2Dark = 439, // wmrnden3.frm - WorldMap Random Encounter Cursor #2 dark
 };
 
-inline constexpr InterfaceFrameId operator+(InterfaceFrameId lhs, int rhs)
-{
-    return static_cast<InterfaceFrameId>(static_cast<int>(lhs) + rhs);
-}
-
 inline constexpr InterfaceFrameId operator-(InterfaceFrameId lhs, int rhs)
 {
     return static_cast<InterfaceFrameId>(static_cast<int>(lhs) - rhs);
