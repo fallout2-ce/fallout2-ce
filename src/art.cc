@@ -1036,7 +1036,12 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             Art art;
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
-                result = 0;
+                if (*sizePtr <= 0) {
+                    debugPrint("ART ERROR: fid %d path %s returned invalid data size %d\n", fid, artFilePath, *sizePtr);
+                    *sizePtr = 0;
+                } else {
+                    result = 0;
+                }
             }
             fileClose(stream);
         }
@@ -1068,7 +1073,12 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
 
         if (loaded) {
             *sizePtr = artGetDataSize((Art*)data);
+            if (*sizePtr < 0) {
+                debugPrint("ART ERROR: fid %d path %s read data returned negative size %d\n", fid, artFileName, *sizePtr);
+            }
             result = 0;
+        } else {
+            debugPrint("ART ERROR: failed to load ART data for fid %d path %s\n", fid, artFileName);
         }
     }
 
@@ -1154,6 +1164,20 @@ static int artReadHeader(Art* art, File* stream)
     // CE: Fix malformed `frm` files with `dataSize` set to 0 in Nevada.
     if (art->dataSize == 0) {
         art->dataSize = fileGetSize(stream);
+    }
+
+    if (art->frameCount < 0) {
+        debugPrint("ART WARNING: negative frameCount %d in header\n", art->frameCount);
+    }
+
+    if (art->dataSize < 0) {
+        debugPrint("ART WARNING: negative dataSize %d in header\n", art->dataSize);
+    }
+
+    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        if (art->dataOffsets[rotation] < 0) {
+            debugPrint("ART WARNING: negative dataOffset[%d] %d in header\n", rotation, art->dataOffsets[rotation]);
+        }
     }
 
     return 0;
@@ -1444,6 +1468,13 @@ int artRead(const char* path, unsigned char* data)
     if (artReadHeader(art, stream) != 0) {
         fileClose(stream);
         return -3;
+    }
+
+    int totalAllocSize = artGetDataSize(art);
+    if (totalAllocSize <= 0) {
+        debugPrint("ART ERROR: artRead computed invalid totalAllocSize %d for %s\n", totalAllocSize, path);
+        fileClose(stream);
+        return -5;
     }
 
     int currentPadding = paddingForSize(sizeof(Art));
