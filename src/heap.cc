@@ -510,7 +510,7 @@ bool heapBlockDeallocate(Heap* heap, int* handleIndexPtr)
 bool heapLock(Heap* heap, int handleIndex, unsigned char** bufferPtr)
 {
     if (heap == nullptr || bufferPtr == nullptr) {
-        debugPrint("Heap Error: Could not lock block");
+        debugPrint("Heap Error: Could not lock block.\n");
         return false;
     }
 
