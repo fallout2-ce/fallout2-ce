@@ -638,12 +638,19 @@ enum class InterfaceFrameId : int {
     ActionMove = 249, // msef003.frm - Action move
     ActionArrow = 250, // actarrow.frm - Action arrow
     ActionCrosshair = 251, // acrshair.frm - Action crosshair
+    CancelHighlighted = 252, // cancelh.frm - Action menu cancel highlighted
     Cancel = 253, // canceln.frm - Action menu cancel normal
+    DropHighlighted = 254, // droph.frm - Action menu drop highlighted
     Drop = 255, // dropn.frm - Action menu drop normal
+    InventoryHighlighted = 256, // invenh.frm - Action menu inventory highlighted
     Inventory = 257, // invenn.frm - Action menu inventory normal
+    LookHighlighted = 258, // lookh.frm - Action menu look highlighted
     Look = 259, // lookn.frm - Action menu look normal
+    RotateHighlighted = 260, // rotateh.frm - Action menu rotate highlighted
     Rotate = 261, // rotaten.frm - Action menu rotate normal
+    TalkHighlighted = 262, // talkh.frm - Action menu talk highlighted
     Talk = 263, // talkn.frm - Action menu talk normal
+    UseGetHighlighted = 264, // usegeth.frm - Action menu use/get highlighted
     UseGet = 265, // usegetn.frm - Action menu use/get normal
     MouseCursorBlank = 266, // blank.frm - Mouse cursor - none ( 1 x 1 transparent)
     MouseCursorStandardArrow = 267, // stdarrow.frm - Mouse cursor - standard arrow
@@ -677,7 +684,9 @@ enum class InterfaceFrameId : int {
     HelpBackground = 297, // helpscrn.frm - Single frame online help screen
     MainMenuButtonUp = 299, // menuup.frm - Up button for main menu
     MainMenuButtonDown = 300, // menudown.frm - Down button for main menu
+    UnloadHighlighted = 301, // unloadh.frm - Action menu unload highlighted
     Unload = 302, // unloadn.frm - Action menu unload normal
+    SkillHighlighted = 303, // skillh.frm - Action menu skill highlighted
     Skill = 304, // skilln.frm - Action menu skill normal
     MoveMultipleItemsInterface = 305, // movemult.frm - move multiple items interface
     TimerOverlay = 306, // timer.frm - timer overlay for move multiple items interface
@@ -748,17 +757,13 @@ enum class InterfaceFrameId : int {
     SnapKick = 431, // snapkick.frm - snap kick text
     StrongPunch = 432, // spunch.frm - strong punch text
     WorldMapCarMovie = 433, // wmcarmve.frm - WorldMap Car Movie
+    PushHighlighted = 434, // pushh.frm - Action menu push highlighted
     Push = 435, // pushn.frm - Action menu push normal
     InventoryLootAllUp = 436, // invmaup.frm - Inventory Loot All
     InventoryLootAllDown = 437, // invmadn.frm - Inventory Loot All
     WorldMapRandomEncounterCursor2Bright = 438, // wmrnden2.frm - WorldMap Random Encounter Cursor #2 bright
     WorldMapRandomEncounterCursor2Dark = 439, // wmrnden3.frm - WorldMap Random Encounter Cursor #2 dark
 };
-
-inline constexpr InterfaceFrameId operator-(InterfaceFrameId lhs, int rhs)
-{
-    return static_cast<InterfaceFrameId>(static_cast<int>(lhs) - rhs);
-}
 
 } // namespace fallout
 #endif /* ART_DEFS_H */

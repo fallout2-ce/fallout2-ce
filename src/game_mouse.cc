@@ -230,17 +230,21 @@ static unsigned char* _gmouse_3d_menu_actions_start = nullptr;
 static unsigned char gGameMouseActionMenuHighlightedItemIndex = 0;
 
 // 0x518D1E gmouse_3d_action_nums
-static constexpr InterfaceFrameId kGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT] = {
-    InterfaceFrameId::Cancel, // Cancel
-    InterfaceFrameId::Drop, // Drop
-    InterfaceFrameId::Inventory, // Inventory
-    InterfaceFrameId::Look, // Look
-    InterfaceFrameId::Rotate, // Rotate
-    InterfaceFrameId::Talk, // Talk
-    InterfaceFrameId::UseGet, // Use/Get
-    InterfaceFrameId::Unload, // Unload
-    InterfaceFrameId::Skill, // Skill
-    InterfaceFrameId::Push, // Push
+static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_COUNT = 2;
+static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_HIGHLIGHTED = 0;
+static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_NORMAL = 1;
+
+static constexpr FrmId kGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_COUNT] = {
+    { FrmId(InterfaceFrameId::CancelHighlighted) , FrmId(InterfaceFrameId::Cancel) }, // Cancel highlighted, normal
+    { FrmId(InterfaceFrameId::DropHighlighted), FrmId(InterfaceFrameId::Drop) }, // Drop highlighted, normal
+    { FrmId(InterfaceFrameId::InventoryHighlighted), FrmId(InterfaceFrameId::Inventory) }, // Inventory highlighted, normal
+    { FrmId(InterfaceFrameId::LookHighlighted), FrmId(InterfaceFrameId::Look) }, // Look highlighted, normal
+    { FrmId(InterfaceFrameId::RotateHighlighted), FrmId(InterfaceFrameId::Rotate) }, // Rotate highlighted, normal
+    { FrmId(InterfaceFrameId::TalkHighlighted), FrmId(InterfaceFrameId::Talk) }, // Talk highlighted, normal
+    { FrmId(InterfaceFrameId::UseGetHighlighted), FrmId(InterfaceFrameId::UseGet) }, // Use/Get highlighted, normal
+    { FrmId(InterfaceFrameId::UnloadHighlighted), FrmId(InterfaceFrameId::Unload) }, // Unload highlighted, normal
+    { FrmId(InterfaceFrameId::SkillHighlighted), FrmId(InterfaceFrameId::Skill) }, // Skill highlighted, normal
+    { FrmId(InterfaceFrameId::PushHighlighted), FrmId(InterfaceFrameId::Push) }, // Push highlighted, normal
 };
 
 // 0x518D34 gmouse_3d_modes_enabled
@@ -1745,7 +1749,7 @@ Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, i
 int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int height)
 {
     CacheEntry* menuItemFrmHandle;
-    const FrmId menuItemFrmId = FrmId(kGameMouseActionMenuItemFrmIds[menuItem]);
+    const FrmId menuItemFrmId = kGameMouseActionMenuItemFrmIds[menuItem][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_NORMAL];
     Art* menuItemFrm = artLock(menuItemFrmId, &menuItemFrmHandle);
     if (menuItemFrm == nullptr) {
         return -1;
@@ -1885,12 +1889,9 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
             return -1;
         }
 
-        InterfaceFrameId frmId = kGameMouseActionMenuItemFrmIds[menuItems[index]];
-        if (index == 0) {
-            frmId = frmId - 1;
-        }
+        const FrmId frmId = kGameMouseActionMenuItemFrmIds[menuItems[index]][index ? GAME_MOUSE_ACTION_MENU_ITEM_FRAME_NORMAL : GAME_MOUSE_ACTION_MENU_ITEM_FRAME_HIGHLIGHTED];
 
-        menuItemFrms[index] = artLock(FrmId(frmId), &(menuItemFrmHandles[index]));
+        menuItemFrms[index] = artLock(frmId, &(menuItemFrmHandles[index]));
         if (menuItemFrms[index] == nullptr) {
             while (--index >= 0) {
                 artUnlock(menuItemFrmHandles[index]);
@@ -2065,7 +2066,7 @@ int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex)
         return -1;
     }
 
-    FrmId frmId = FrmId(kGameMouseActionMenuItemFrmIds[gGameMouseActionMenuItems[gGameMouseActionMenuHighlightedItemIndex]]);
+    FrmId frmId = kGameMouseActionMenuItemFrmIds[gGameMouseActionMenuItems[gGameMouseActionMenuHighlightedItemIndex]][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_NORMAL];
     Art* art = artLock(frmId, &handle);
     if (art == nullptr) {
         return -1;
@@ -2087,7 +2088,7 @@ int gameMouseHighlightActionMenuItemAtIndex(int menuItemIndex)
         return -1;
     }
 
-    frmId = FrmId(kGameMouseActionMenuItemFrmIds[gGameMouseActionMenuItems[menuItemIndex]] - 1);
+    frmId = kGameMouseActionMenuItemFrmIds[gGameMouseActionMenuItems[menuItemIndex]][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_HIGHLIGHTED];
     art = artLock(frmId, &handle);
     if (art == nullptr) {
         return -1;
