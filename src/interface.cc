@@ -412,7 +412,7 @@ int interfaceInit()
         blitBufferToBuffer(customInterfaceBarGetBackgroundImageData(), gInterfaceBarWidth, INTERFACE_BAR_HEIGHT - 1, gInterfaceBarWidth, gInterfaceWindowBuffer, gInterfaceBarWidth);
     } else {
         FrmImage backgroundFrmImage;
-        if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_16))) {
+        if (!backgroundFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_16))) {
             return intface_fatal_error(-1);
         }
 
@@ -422,12 +422,12 @@ int interfaceInit()
 
     extendedApBarInitToWindow();
 
-    if (!_inventoryButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_47))) {
+    if (!_inventoryButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_47))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_inventoryButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_46))) {
+    if (!_inventoryButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_46))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -440,12 +440,12 @@ int interfaceInit()
 
     buttonSetCallbacks(gInventoryButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    if (!_optionsButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_18))) {
+    if (!_optionsButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_18))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_optionsButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_17))) {
+    if (!_optionsButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_17))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -458,17 +458,17 @@ int interfaceInit()
 
     buttonSetCallbacks(gOptionsButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    if (!_skilldexButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_6))) {
+    if (!_skilldexButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_6))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_skilldexButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_7))) {
+    if (!_skilldexButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_7))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_skilldexButtonMaskFrmImage.lock(FrmId(INTF_FRM_ID_6))) {
+    if (!_skilldexButtonMaskFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_6))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -482,17 +482,17 @@ int interfaceInit()
     buttonSetMask(gSkilldexButton, _skilldexButtonMaskFrmImage.getData());
     buttonSetCallbacks(gSkilldexButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    if (!_mapButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_13))) {
+    if (!_mapButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_13))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_mapButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_10))) {
+    if (!_mapButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_10))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_mapButtonMaskFrmImage.lock(FrmId(INTF_FRM_ID_13))) {
+    if (!_mapButtonMaskFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_13))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -506,12 +506,12 @@ int interfaceInit()
     buttonSetMask(gMapButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gMapButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    if (!_pipboyButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_59))) {
+    if (!_pipboyButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_59))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_pipboyButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_58))) {
+    if (!_pipboyButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_58))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -525,12 +525,12 @@ int interfaceInit()
     buttonSetMask(gPipboyButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gPipboyButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    if (!_characterButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_57))) {
+    if (!_characterButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_57))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_characterButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_56))) {
+    if (!_characterButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_56))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -544,17 +544,17 @@ int interfaceInit()
     buttonSetMask(gCharacterButton, _mapButtonMaskFrmImage.getData());
     buttonSetCallbacks(gCharacterButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    if (!_itemButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_32))) {
+    if (!_itemButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_32))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_itemButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_31))) {
+    if (!_itemButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_31))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_itemButtonDisabledFrmImage.lock(FrmId(INTF_FRM_ID_73))) {
+    if (!_itemButtonDisabledFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_73))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -571,17 +571,17 @@ int interfaceInit()
     buttonSetRightMouseCallbacks(gSingleAttackButton, -1, KEY_LOWERCASE_N, nullptr, nullptr);
     buttonSetCallbacks(gSingleAttackButton, _gsound_lrg_butt_press, _gsound_lrg_butt_release);
 
-    if (!_changeHandsButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_6))) {
+    if (!_changeHandsButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_6))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_changeHandsButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_7))) {
+    if (!_changeHandsButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_7))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_changeHandsButtonMaskFrmImage.lock(FrmId(INTF_FRM_ID_6))) {
+    if (!_changeHandsButtonMaskFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_6))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -596,22 +596,22 @@ int interfaceInit()
     buttonSetMask(gChangeHandsButton, _changeHandsButtonMaskFrmImage.getData());
     buttonSetCallbacks(gChangeHandsButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
-    if (!_numbersFrmImage.lock(FrmId(INTF_FRM_ID_82))) {
+    if (!_numbersFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_82))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_greenLightFrmImage.lock(FrmId(INTF_FRM_ID_83))) {
+    if (!_greenLightFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_83))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_yellowLightFrmImage.lock(FrmId(INTF_FRM_ID_84))) {
+    if (!_yellowLightFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_84))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
 
-    if (!_redLightFrmImage.lock(FrmId(INTF_FRM_ID_85))) {
+    if (!_redLightFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_85))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -1466,7 +1466,7 @@ void interfaceBarEndButtonsShow(bool animated)
     }
 
     CacheEntry* handle;
-    Art* art = artLock(FrmId(INTF_FRM_ID_104), &handle);
+    Art* art = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_104), &handle);
     if (art == nullptr) {
         return;
     }
@@ -1523,7 +1523,7 @@ void interfaceBarEndButtonsHide(bool animated)
     }
 
     CacheEntry* handle;
-    Art* art = artLock(FrmId(INTF_FRM_ID_104), &handle);
+    Art* art = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_104), &handle);
     if (art == nullptr) {
         return;
     }
@@ -1577,7 +1577,7 @@ void interfaceBarEndButtonsRenderGreenLights()
 
         FrmImage lightsFrmImage;
         // endltgrn.frm - green lights around end turn/combat window
-        if (!lightsFrmImage.lock(FrmId(INTF_FRM_ID_109))) {
+        if (!lightsFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_109))) {
             return;
         }
 
@@ -1596,7 +1596,7 @@ void interfaceBarEndButtonsRenderRedLights()
 
         FrmImage lightsFrmImage;
         // endltred.frm - red lights around end turn/combat window
-        if (!lightsFrmImage.lock(FrmId(INTF_FRM_ID_110))) {
+        if (!lightsFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_110))) {
             return;
         }
 
@@ -1642,10 +1642,10 @@ static int interfaceBarRefreshMainAction()
             FrmId frmId;
             if (_proto_action_can_use_on(itemState->item->pid)) {
                 // USE ON
-                frmId = FrmId(INTF_FRM_ID_294);
+                frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_294);
             } else if (_obj_action_can_use(itemState->item)) {
                 // USE
-                frmId = FrmId(INTF_FRM_ID_292);
+                frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_292);
             } else {
                 frmId = FrmId::Empty();
             }
@@ -1670,20 +1670,20 @@ static int interfaceBarRefreshMainAction()
             // jump table.
             switch (itemState->action) {
             case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
-                bullseyeFrmId = FrmId(INTF_FRM_ID_288);
+                bullseyeFrmId = FrmId(InterfaceFrameId::INTF_FRM_ID_288);
                 // FALLTHROUGH
             case INTERFACE_ITEM_ACTION_PRIMARY:
                 hitMode = itemState->primaryHitMode;
                 break;
             case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
-                bullseyeFrmId = FrmId(INTF_FRM_ID_288);
+                bullseyeFrmId = FrmId(InterfaceFrameId::INTF_FRM_ID_288);
                 // FALLTHROUGH
             case INTERFACE_ITEM_ACTION_SECONDARY:
                 hitMode = itemState->secondaryHitMode;
                 break;
             case INTERFACE_ITEM_ACTION_RELOAD:
                 actionPoints = itemGetActionPointCost(gDude, gInterfaceCurrentHand == HAND_LEFT ? HIT_MODE_LEFT_WEAPON_RELOAD : HIT_MODE_RIGHT_WEAPON_RELOAD, false);
-                primaryFrmId = FrmId(INTF_FRM_ID_291);
+                primaryFrmId = FrmId(InterfaceFrameId::INTF_FRM_ID_291);
                 break;
             default:
                 break;
@@ -1708,68 +1708,68 @@ static int interfaceBarRefreshMainAction()
                 case ANIM_THROW_PUNCH:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_PUNCH:
-                        frmId = FrmId(INTF_FRM_ID_432); // strong punch
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_432); // strong punch
                         break;
                     case HIT_MODE_HAMMER_PUNCH:
-                        frmId = FrmId(INTF_FRM_ID_425); // hammer punch
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_425); // hammer punch
                         break;
                     case HIT_MODE_HAYMAKER:
-                        frmId = FrmId(INTF_FRM_ID_428); // lightning punch
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_428); // lightning punch
                         break;
                     case HIT_MODE_JAB:
-                        frmId = FrmId(INTF_FRM_ID_421); // chop punch
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_421); // chop punch
                         break;
                     case HIT_MODE_PALM_STRIKE:
-                        frmId = FrmId(INTF_FRM_ID_423); // dragon punch
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_423); // dragon punch
                         break;
                     case HIT_MODE_PIERCING_STRIKE:
-                        frmId = FrmId(INTF_FRM_ID_424); // force punch
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_424); // force punch
                         break;
                     default:
-                        frmId = FrmId(INTF_FRM_ID_42); // punch
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_42); // punch
                         break;
                     }
                     break;
                 case ANIM_KICK_LEG:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_KICK:
-                        frmId = FrmId(INTF_FRM_ID_430); // skick.frm - strong kick text
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_430); // skick.frm - strong kick text
                         break;
                     case HIT_MODE_SNAP_KICK:
-                        frmId = FrmId(INTF_FRM_ID_431); // snapkick.frm - snap kick text
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_431); // snapkick.frm - snap kick text
                         break;
                     case HIT_MODE_POWER_KICK:
-                        frmId = FrmId(INTF_FRM_ID_429); // cm_pwkck.frm - roundhouse kick text
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_429); // cm_pwkck.frm - roundhouse kick text
                         break;
                     case HIT_MODE_HIP_KICK:
-                        frmId = FrmId(INTF_FRM_ID_426); // hipk.frm - kip kick text
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_426); // hipk.frm - kip kick text
                         break;
                     case HIT_MODE_HOOK_KICK:
-                        frmId = FrmId(INTF_FRM_ID_427); // cm_hookk.frm - jump kick text
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_427); // cm_hookk.frm - jump kick text
                         break;
                     case HIT_MODE_PIERCING_KICK:
-                        frmId = FrmId(INTF_FRM_ID_422); // cm_prckk.frm - death blossom kick text
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_422); // cm_prckk.frm - death blossom kick text
                         break;
                     default:
-                        frmId = FrmId(INTF_FRM_ID_41); // kick.frm - kick text
+                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_41); // kick.frm - kick text
                         break;
                     }
                     break;
                 case ANIM_THROW_ANIM:
-                    frmId = FrmId(INTF_FRM_ID_117); // throw
+                    frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_117); // throw
                     break;
                 case ANIM_THRUST_ANIM:
-                    frmId = FrmId(INTF_FRM_ID_45); // thrust
+                    frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_45); // thrust
                     break;
                 case ANIM_SWING_ANIM:
-                    frmId = FrmId(INTF_FRM_ID_44); // swing
+                    frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_44); // swing
                     break;
                 case ANIM_FIRE_SINGLE:
-                    frmId = FrmId(INTF_FRM_ID_43); // single
+                    frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_43); // single
                     break;
                 case ANIM_FIRE_BURST:
                 case ANIM_FIRE_CONTINUOUS:
-                    frmId = FrmId(INTF_FRM_ID_40); // burst
+                    frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_40); // burst
                     break;
                 default:
                     break;
@@ -1795,7 +1795,7 @@ static int interfaceBarRefreshMainAction()
     if (actionPoints >= 0 && actionPoints < 10) {
         // movement point text
         FrmImage apFrmImage;
-        if (apFrmImage.lock(FrmId(INTF_FRM_ID_289))) {
+        if (apFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_289))) {
             int width = apFrmImage.getWidth();
             int height = apFrmImage.getHeight();
             unsigned char* data = apFrmImage.getData();
@@ -1806,7 +1806,7 @@ static int interfaceBarRefreshMainAction()
 
             FrmImage apNumbersFrmImage;
             // movement point numbers - ten numbers 0 to 9, each 10 pixels wide.
-            if (apNumbersFrmImage.lock(FrmId(INTF_FRM_ID_290))) {
+            if (apNumbersFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_290))) {
                 int width = apNumbersFrmImage.getWidth();
                 int height = apNumbersFrmImage.getHeight();
                 unsigned char* data = apNumbersFrmImage.getData();
@@ -1957,11 +1957,11 @@ static int endTurnButtonInit()
         return -1;
     }
 
-    if (!_endTurnButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_105))) {
+    if (!_endTurnButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_105))) {
         return -1;
     }
 
-    if (!_endTurnButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_106))) {
+    if (!_endTurnButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_106))) {
         return -1;
     }
 
@@ -2005,11 +2005,11 @@ static int endCombatButtonInit()
         return -1;
     }
 
-    if (!_endCombatButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_107))) {
+    if (!_endCombatButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_107))) {
         return -1;
     }
 
-    if (!_endCombatButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_108))) {
+    if (!_endCombatButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_108))) {
         return -1;
     }
 
@@ -2181,7 +2181,7 @@ static void interfaceRestoreAlternateAmmoMeterBackground(int x)
     if (gInterfaceBarIsCustom) {
         src = customInterfaceBarGetBackgroundImageData();
     } else {
-        if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_16))) {
+        if (!backgroundFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_16))) {
             return;
         }
         src = backgroundFrmImage.getData();
@@ -2430,7 +2430,7 @@ static int indicatorBarInit()
     }
 
     FrmImage indicatorBoxFrmImage;
-    if (!indicatorBoxFrmImage.lock(FrmId(INTF_FRM_ID_126))) {
+    if (!indicatorBoxFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_126))) {
         debugPrint("\nINTRFACE: Error initializing indicator box graphics! **\n");
         messageListFree(&messageList);
         return -1;

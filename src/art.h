@@ -119,7 +119,7 @@ public:
 
     constexpr explicit FrmId(InterfaceFrameId interface)
         : _objectType(OBJ_TYPE_INTERFACE)
-        , _fid(buildFid(OBJ_TYPE_INTERFACE, interface))
+        , _fid(buildFid(OBJ_TYPE_INTERFACE, static_cast<int>(interface)))
         , _frameId { static_cast<int>(interface) }
         , _path(nullptr)
     {

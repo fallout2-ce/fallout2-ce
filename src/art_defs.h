@@ -457,7 +457,7 @@ inline MiscFrameId miscFrameIdFromPid(int pid)
     return static_cast<MiscFrameId>(frameIdFromPid(pid));
 }
 
-enum InterfaceFrameId : int {
+enum class InterfaceFrameId : int {
     INTF_FRM_ID_INVALID = -1,
     INTF_FRM_ID_FIRST = 0,
     INTF_FRM_ID_LAST = 4095,

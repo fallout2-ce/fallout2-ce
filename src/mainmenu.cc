@@ -201,17 +201,17 @@ static bool mainMenuLoadArt()
     }
 
     if (!mainMenuBackgroundFrmImage.isLocked()) {
-        if (!mainMenuBackgroundFrmImage.lock(FrmId(INTF_FRM_ID_140))) {
+        if (!mainMenuBackgroundFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_140))) {
             debugPrint("MAINMENU: failed to load vanilla mainmenu.frm\n");
             return false;
         }
     }
 
-    if (!mainMenuButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_299))) {
+    if (!mainMenuButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_299))) {
         return false;
     }
 
-    if (!mainMenuButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_300))) {
+    if (!mainMenuButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_300))) {
         return false;
     }
 

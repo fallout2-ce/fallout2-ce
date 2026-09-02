@@ -62,12 +62,12 @@ static bool gSkilldexWindowIsoWasEnabled = false;
 
 // 0x51D440 grphfid
 static constexpr FrmId kSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_121),
-    FrmId(INTF_FRM_ID_119),
-    FrmId(INTF_FRM_ID_120),
-    FrmId(INTF_FRM_ID_8),
-    FrmId(INTF_FRM_ID_9),
-    FrmId(INTF_FRM_ID_170),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_121),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_119),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_120),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_8),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_9),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_170),
 };
 
 // Maps Skilldex options into skills.

@@ -302,7 +302,7 @@ static char _obj_seen[5001];
 int objectsInit(unsigned char* buf, int width, int height, int pitch)
 {
     const FrmId dudeFrmId = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
-    const FrmId eggFrmId = FrmId(INTF_FRM_ID_2);
+    const FrmId eggFrmId = FrmId(InterfaceFrameId::INTF_FRM_ID_2);
 
     memset(_obj_seen, 0, 5001);
     gObjectsUpdateAreaPixelBounds.right = width + 320;

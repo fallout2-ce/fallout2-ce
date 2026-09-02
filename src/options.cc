@@ -60,17 +60,17 @@ struct OptionsMenuButtonSpec {
 
 // 0x48FC0C
 static constexpr FrmId kPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_208), // charwin.frm - character editor
-    FrmId(INTF_FRM_ID_209), // donebox.frm - character editor
-    FrmId(INTF_FRM_ID_8), // lilredup.frm - little red button up
-    FrmId(INTF_FRM_ID_9), // lilreddn.frm - little red button down
+    FrmId(InterfaceFrameId::INTF_FRM_ID_208), // charwin.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_209), // donebox.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_8), // lilredup.frm - little red button up
+    FrmId(InterfaceFrameId::INTF_FRM_ID_9), // lilreddn.frm - little red button down
 };
 
 // 0x5197C0 opgrphs
 static constexpr FrmId kOptionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_220), // opbase.frm - character editor
-    FrmId(INTF_FRM_ID_222), // opbtnon.frm - character editor
-    FrmId(INTF_FRM_ID_221), // opbtnoff.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_220), // opbase.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_222), // opbtnon.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_221), // opbtnoff.frm - character editor
 };
 
 // 0x6637E8 optn_msgfl

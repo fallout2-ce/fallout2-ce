@@ -502,7 +502,7 @@ static void showDeath()
 
             // DEATH.FRM
             FrmImage backgroundFrmImage;
-            if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_309))) {
+            if (!backgroundFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_309))) {
                 break;
             }
 

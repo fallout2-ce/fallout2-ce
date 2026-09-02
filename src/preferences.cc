@@ -215,16 +215,16 @@ static const double kTextLineDelayRange = 2.0;
 
 // 0x5197CC prfgrphs
 static constexpr FrmId kPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_240), // prefscrn.frm - options screen
-    FrmId(INTF_FRM_ID_241), // prfsldof.frm - options screen
-    FrmId(INTF_FRM_ID_242), // prfbknbs.frm - options screen
-    FrmId(INTF_FRM_ID_243), // prflknbs.frm - options screen
-    FrmId(INTF_FRM_ID_244), // prfxin.frm - options screen
-    FrmId(INTF_FRM_ID_245), // prfxout.frm - options screen
-    FrmId(INTF_FRM_ID_246), // prefcvr.frm - options screen
-    FrmId(INTF_FRM_ID_247), // prfsldon.frm - options screen
-    FrmId(INTF_FRM_ID_8), // lilredup.frm - little red button up
-    FrmId(INTF_FRM_ID_9), // lilreddn.frm - little red button down
+    FrmId(InterfaceFrameId::INTF_FRM_ID_240), // prefscrn.frm - options screen
+    FrmId(InterfaceFrameId::INTF_FRM_ID_241), // prfsldof.frm - options screen
+    FrmId(InterfaceFrameId::INTF_FRM_ID_242), // prfbknbs.frm - options screen
+    FrmId(InterfaceFrameId::INTF_FRM_ID_243), // prflknbs.frm - options screen
+    FrmId(InterfaceFrameId::INTF_FRM_ID_244), // prfxin.frm - options screen
+    FrmId(InterfaceFrameId::INTF_FRM_ID_245), // prfxout.frm - options screen
+    FrmId(InterfaceFrameId::INTF_FRM_ID_246), // prefcvr.frm - options screen
+    FrmId(InterfaceFrameId::INTF_FRM_ID_247), // prfsldon.frm - options screen
+    FrmId(InterfaceFrameId::INTF_FRM_ID_8), // lilredup.frm - little red button up
+    FrmId(InterfaceFrameId::INTF_FRM_ID_9), // lilreddn.frm - little red button down
 };
 
 // 0x6637E8 optn_msgfl

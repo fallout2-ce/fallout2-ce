@@ -91,8 +91,8 @@ static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int
 
 // 0x5108C8 dbox
 static constexpr FrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    FrmId(INTF_FRM_ID_218), // MEDIALOG.FRM - Medium generic dialog box
-    FrmId(INTF_FRM_ID_217), // LGDIALOG.FRM - Large generic dialog box
+    FrmId(InterfaceFrameId::INTF_FRM_ID_218), // MEDIALOG.FRM - Medium generic dialog box
+    FrmId(InterfaceFrameId::INTF_FRM_ID_217), // LGDIALOG.FRM - Large generic dialog box
 };
 
 // 0x5108D0 ytable
@@ -127,24 +127,24 @@ static const int _dblines[DIALOG_TYPE_COUNT] = {
 
 // 0x510900 flgids
 static constexpr FrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_224), // loadbox.frm - character editor
-    FrmId(INTF_FRM_ID_8), // lilredup.frm - little red button up
-    FrmId(INTF_FRM_ID_9), // lilreddn.frm - little red button down
-    FrmId(INTF_FRM_ID_181), // dnarwoff.frm - character editor
-    FrmId(INTF_FRM_ID_182), // dnarwon.frm - character editor
-    FrmId(INTF_FRM_ID_199), // uparwoff.frm - character editor
-    FrmId(INTF_FRM_ID_200), // uparwon.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_224), // loadbox.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_8), // lilredup.frm - little red button up
+    FrmId(InterfaceFrameId::INTF_FRM_ID_9), // lilreddn.frm - little red button down
+    FrmId(InterfaceFrameId::INTF_FRM_ID_181), // dnarwoff.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_182), // dnarwon.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_199), // uparwoff.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_200), // uparwon.frm - character editor
 };
 
 // 0x51091C flgids2
 static constexpr FrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_225), // savebox.frm - character editor
-    FrmId(INTF_FRM_ID_8), // lilredup.frm - little red button up
-    FrmId(INTF_FRM_ID_9), // lilreddn.frm - little red button down
-    FrmId(INTF_FRM_ID_181), // dnarwoff.frm - character editor
-    FrmId(INTF_FRM_ID_182), // dnarwon.frm - character editor
-    FrmId(INTF_FRM_ID_199), // uparwoff.frm - character editor
-    FrmId(INTF_FRM_ID_200), // uparwon.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_225), // savebox.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_8), // lilredup.frm - little red button up
+    FrmId(InterfaceFrameId::INTF_FRM_ID_9), // lilreddn.frm - little red button down
+    FrmId(InterfaceFrameId::INTF_FRM_ID_181), // dnarwoff.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_182), // dnarwon.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_199), // uparwoff.frm - character editor
+    FrmId(InterfaceFrameId::INTF_FRM_ID_200), // uparwon.frm - character editor
 };
 
 // 0x41CF20 dialog_out
@@ -229,19 +229,19 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonPressedFrmImage;
 
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        if (!doneBoxFrmImage.lock(FrmId(INTF_FRM_ID_209))) {
+        if (!doneBoxFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_209))) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        if (!buttonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
+        if (!buttonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_9))) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        if (!buttonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8))) {
+        if (!buttonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_8))) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
@@ -343,19 +343,19 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
         } else {
-            if (!doneBoxFrmImage.lock(FrmId(INTF_FRM_ID_209))) {
+            if (!doneBoxFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_209))) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            if (!buttonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
+            if (!buttonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_9))) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            if (!buttonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8))) {
+            if (!buttonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_8))) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;

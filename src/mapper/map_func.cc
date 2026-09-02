@@ -954,7 +954,7 @@ void eraseObject()
 
                     if (hit != nullptr) {
                         // Don't destroy exit-grid markers (interface art, id=3).
-                        if (hit->fid != FrmId(INTF_FRM_ID_3).fid()) {
+                        if (hit->fid != FrmId(InterfaceFrameId::INTF_FRM_ID_3).fid()) {
                             Rect rect;
                             int elev = hit->elevation;
                             reg_anim_clear(hit);
@@ -1222,7 +1222,7 @@ void mapper_shift_map_elev()
     // Move all spatial scripts from source elevation to destination, plus any exit-grid objects
     // co-located with each script.
     Script* script = scriptGetFirstSpatialScript(gElevation);
-    constexpr FrmId kExitGridFrmId = FrmId(INTF_FRM_ID_3);
+    constexpr FrmId kExitGridFrmId = FrmId(InterfaceFrameId::INTF_FRM_ID_3);
 
     while (script != nullptr) {
         int builtTile = script->sp.built_tile;

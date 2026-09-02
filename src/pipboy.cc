@@ -266,17 +266,17 @@ const Rect gPipboyWindowContentRect = {
 
 // 0x496FD0 pipgrphs
 static constexpr FrmId kPipboyFrmIds[PIPBOY_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_8),
-    FrmId(INTF_FRM_ID_9),
-    FrmId(INTF_FRM_ID_82),
-    FrmId(INTF_FRM_ID_127),
-    FrmId(INTF_FRM_ID_128),
-    FrmId(INTF_FRM_ID_129),
-    FrmId(INTF_FRM_ID_130),
-    FrmId(INTF_FRM_ID_131),
-    FrmId(INTF_FRM_ID_132),
-    FrmId(INTF_FRM_ID_133),
-    FrmId(INTF_FRM_ID_226),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_8),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_9),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_82),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_127),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_128),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_129),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_130),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_131),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_132),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_133),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_226),
 };
 
 // 0x51C128 quests

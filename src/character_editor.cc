@@ -343,56 +343,56 @@ static void customTownReputationFree();
 
 // 0x431C40 grph_id
 static constexpr FrmId kCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
-    FrmId(INTF_FRM_ID_170),
-    FrmId(INTF_FRM_ID_175),
-    FrmId(INTF_FRM_ID_176),
-    FrmId(INTF_FRM_ID_181),
-    FrmId(INTF_FRM_ID_182),
-    FrmId(INTF_FRM_ID_183),
-    FrmId(INTF_FRM_ID_184),
-    FrmId(INTF_FRM_ID_185),
-    FrmId(INTF_FRM_ID_186),
-    FrmId(INTF_FRM_ID_187),
-    FrmId(INTF_FRM_ID_188),
-    FrmId(INTF_FRM_ID_189),
-    FrmId(INTF_FRM_ID_190),
-    FrmId(INTF_FRM_ID_191),
-    FrmId(INTF_FRM_ID_192),
-    FrmId(INTF_FRM_ID_193),
-    FrmId(INTF_FRM_ID_194),
-    FrmId(INTF_FRM_ID_195),
-    FrmId(INTF_FRM_ID_196),
-    FrmId(INTF_FRM_ID_197),
-    FrmId(INTF_FRM_ID_198),
-    FrmId(INTF_FRM_ID_199),
-    FrmId(INTF_FRM_ID_200),
-    FrmId(INTF_FRM_ID_8),
-    FrmId(INTF_FRM_ID_9),
-    FrmId(INTF_FRM_ID_204),
-    FrmId(INTF_FRM_ID_205),
-    FrmId(INTF_FRM_ID_206),
-    FrmId(INTF_FRM_ID_207),
-    FrmId(INTF_FRM_ID_208),
-    FrmId(INTF_FRM_ID_209),
-    FrmId(INTF_FRM_ID_210),
-    FrmId(INTF_FRM_ID_211),
-    FrmId(INTF_FRM_ID_212),
-    FrmId(INTF_FRM_ID_213),
-    FrmId(INTF_FRM_ID_214),
-    FrmId(INTF_FRM_ID_122),
-    FrmId(INTF_FRM_ID_123),
-    FrmId(INTF_FRM_ID_124),
-    FrmId(INTF_FRM_ID_125),
-    FrmId(INTF_FRM_ID_219),
-    FrmId(INTF_FRM_ID_220),
-    FrmId(INTF_FRM_ID_221),
-    FrmId(INTF_FRM_ID_222),
-    FrmId(INTF_FRM_ID_178),
-    FrmId(INTF_FRM_ID_179),
-    FrmId(INTF_FRM_ID_180),
-    FrmId(INTF_FRM_ID_38),
-    FrmId(INTF_FRM_ID_215),
-    FrmId(INTF_FRM_ID_216),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_170),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_175),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_176),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_181),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_182),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_183),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_184),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_185),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_186),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_187),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_188),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_189),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_190),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_191),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_192),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_193),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_194),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_195),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_196),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_197),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_198),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_199),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_200),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_8),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_9),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_204),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_205),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_206),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_207),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_208),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_209),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_210),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_211),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_212),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_213),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_214),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_122),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_123),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_124),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_125),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_219),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_220),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_221),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_222),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_178),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_179),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_180),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_38),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_215),
+    FrmId(InterfaceFrameId::INTF_FRM_ID_216),
 };
 
 // flags to preload fid
@@ -1355,7 +1355,7 @@ static int characterEditorWindowInit()
     }
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
-    const FrmId fid = gCharacterEditorIsCreationMode ? FrmId(INTF_FRM_ID_169) : FrmId(INTF_FRM_ID_177);
+    const FrmId fid = gCharacterEditorIsCreationMode ? FrmId(InterfaceFrameId::INTF_FRM_ID_169) : FrmId(InterfaceFrameId::INTF_FRM_ID_177);
     if (!_editorBackgroundFrmImage.lock(fid)) {
         characterEditorMessageListReset();
         characterEditorWindowRestoreState();
@@ -6136,7 +6136,7 @@ static int perkDialogShow()
         previousPerkRanks[perk] = perkGetRank(gDude, perk);
     }
 
-    if (!_perkDialogBackgroundFrmImage.lock(FrmId(INTF_FRM_ID_86))) {
+    if (!_perkDialogBackgroundFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_86))) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
     }
