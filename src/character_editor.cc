@@ -366,8 +366,8 @@ static constexpr FrmId kCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
     FrmId(InterfaceFrameId::INTF_FRM_ID_198),
     FrmId(InterfaceFrameId::INTF_FRM_ID_199),
     FrmId(InterfaceFrameId::INTF_FRM_ID_200),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_8),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_9),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
     FrmId(InterfaceFrameId::INTF_FRM_ID_204),
     FrmId(InterfaceFrameId::INTF_FRM_ID_205),
     FrmId(InterfaceFrameId::INTF_FRM_ID_206),
@@ -390,7 +390,7 @@ static constexpr FrmId kCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
     FrmId(InterfaceFrameId::INTF_FRM_ID_178),
     FrmId(InterfaceFrameId::INTF_FRM_ID_179),
     FrmId(InterfaceFrameId::INTF_FRM_ID_180),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_38),
+    FrmId(InterfaceFrameId::CharacterEditorTraitsFolder),
     FrmId(InterfaceFrameId::INTF_FRM_ID_215),
     FrmId(InterfaceFrameId::INTF_FRM_ID_216),
 };
@@ -6136,7 +6136,7 @@ static int perkDialogShow()
         previousPerkRanks[perk] = perkGetRank(gDude, perk);
     }
 
-    if (!_perkDialogBackgroundFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_86))) {
+    if (!_perkDialogBackgroundFrmImage.lock(FrmId(InterfaceFrameId::PerkDialogBackground))) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
     }

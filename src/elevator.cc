@@ -68,23 +68,23 @@ static constexpr FrmId kElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
 
 // 0x43E95C intotal
 static ElevatorBackground gElevatorBackgrounds[ELEVATORS_MAX] = {
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_INVALID },
+    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::Invalid },
     { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_144, InterfaceFrameId::INTF_FRM_ID_INVALID },
+    { InterfaceFrameId::INTF_FRM_ID_144, InterfaceFrameId::Invalid },
     { InterfaceFrameId::INTF_FRM_ID_144, InterfaceFrameId::INTF_FRM_ID_145 },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_INVALID },
+    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::Invalid },
     { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_147 },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_INVALID },
+    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::Invalid },
     { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_151 },
-    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::INTF_FRM_ID_INVALID },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_INVALID },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_INVALID },
+    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::Invalid },
     { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_147 },
-    { InterfaceFrameId::INTF_FRM_ID_388, InterfaceFrameId::INTF_FRM_ID_INVALID },
+    { InterfaceFrameId::INTF_FRM_ID_388, InterfaceFrameId::Invalid },
     { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::INTF_FRM_ID_INVALID },
-    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::INTF_FRM_ID_INVALID },
-    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::INTF_FRM_ID_INVALID },
+    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::Invalid },
     { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
     { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
     { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
@@ -543,7 +543,7 @@ static int elevatorWindowInit(int elevator)
 
     const FrmId backgroundFrmId = FrmId(elevatorBackground->backgroundFrmId);
     if (_elevatorBackgroundFrmImage.lock(backgroundFrmId)) {
-        if (elevatorBackground->panelFrmId != InterfaceFrameId::INTF_FRM_ID_INVALID) {
+        if (elevatorBackground->panelFrmId != InterfaceFrameId::Invalid) {
             const FrmId panelFrmId = FrmId(elevatorBackground->panelFrmId);
             if (!_elevatorPanelFrmImage.lock(panelFrmId)) {
                 backgroundsLoaded = false;

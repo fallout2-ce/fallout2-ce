@@ -2807,7 +2807,7 @@ static int wmAreaInit()
             city->areaId = area_idx;
 
             FrmId fid = FrmId::Empty();
-            if (frmId != InterfaceFrameId::INTF_FRM_ID_INVALID) {
+            if (frmId != InterfaceFrameId::Invalid) {
                 fid = FrmId(frmId);
             }
 
@@ -2816,7 +2816,7 @@ static int wmAreaInit()
             fid = FrmId::Empty();
 
             if (configGetEnum<InterfaceFrameId>(cfg.get(), section, "townmap_label_art_idx", &frmId)) {
-                if (frmId != InterfaceFrameId::INTF_FRM_ID_INVALID) {
+                if (frmId != InterfaceFrameId::Invalid) {
                     fid = FrmId(frmId);
                 }
 
@@ -5094,10 +5094,10 @@ static int wmInterfaceInit()
     }
 
     // lilredup.frm - little red button up
-    wmGenData.redButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_8));
+    wmGenData.redButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonUp));
 
     // lilreddn.frm - little red button down
-    wmGenData.redButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_9));
+    wmGenData.redButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonDown));
 
     // months.frm - month strings for pip boy
     if (!wmGenData.monthsFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_129))) {
@@ -5105,7 +5105,7 @@ static int wmInterfaceInit()
     }
 
     // numbers.frm - numbers for the hit points and fatigue counters
-    if (!wmGenData.numbersFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_82))) {
+    if (!wmGenData.numbersFrmImage.lock(FrmId(InterfaceFrameId::HitPointsNumbers))) {
         return -1;
     }
 
@@ -6854,7 +6854,7 @@ int wmCarGasAmount()
 
 static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, CacheEntry** handlePtr)
 {
-    if (artIndex < InterfaceFrameId::INTF_FRM_ID_FIRST || artIndex > InterfaceFrameId::INTF_FRM_ID_LAST) {
+    if (artIndex < InterfaceFrameId::First || artIndex > InterfaceFrameId::Last) {
         return false;
     }
 

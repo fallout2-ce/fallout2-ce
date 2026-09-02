@@ -899,7 +899,7 @@ void gameMouseRefresh()
     gGameMouseLastY = mouseY;
 
     if (!_gmouse_mapper_mode) {
-        gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::INTF_FRM_ID_0).fid());
+        gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::Blank).fid());
     }
 
     int v34 = 0;
@@ -1444,7 +1444,7 @@ void gameMouseSetMode(int mode)
         return;
     }
 
-    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::INTF_FRM_ID_0).fid());
+    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::Blank).fid());
 
     const FrmId frmId = FrmId(gGameMouseModeFrmIds[mode]);
 
@@ -1598,7 +1598,7 @@ int gameMouseSetBouncingCursorFid(int fid)
 // 0x44CD0C gmouse_3d_reset_fid
 void gameMouseResetBouncingCursorFid()
 {
-    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::INTF_FRM_ID_0).fid());
+    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::Blank).fid());
 }
 
 // 0x44CD2C gmouse_3d_on
@@ -2172,7 +2172,7 @@ int gameMouseRenderActionPoints(const char* string, Color color)
 
     fontSetCurrent(oldFont);
 
-    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::INTF_FRM_ID_1).fid());
+    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::HexMouseCursor).fid());
 
     return 0;
 }
@@ -2190,11 +2190,11 @@ int gameMouseObjectsInit()
         return -1;
     }
 
-    if (objectCreateWithFidPid(&gGameMouseBouncingCursor, FrmId(InterfaceFrameId::INTF_FRM_ID_0).fid(), -1) != 0) {
+    if (objectCreateWithFidPid(&gGameMouseBouncingCursor, FrmId(InterfaceFrameId::Blank).fid(), -1) != 0) {
         return -1;
     }
 
-    if (objectCreateWithFidPid(&gGameMouseHexCursor, FrmId(InterfaceFrameId::INTF_FRM_ID_1).fid(), -1) != 0) {
+    if (objectCreateWithFidPid(&gGameMouseHexCursor, FrmId(InterfaceFrameId::HexMouseCursor).fid(), -1) != 0) {
         return -1;
     }
 
@@ -2301,13 +2301,13 @@ int gameMouseActionMenuInit()
     }
 
     // blank.frm - used be mset000.frm for top of bouncing mouse cursor
-    gGameMouseBouncingCursorFrm = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_0), &gGameMouseBouncingCursorFrmHandle);
+    gGameMouseBouncingCursorFrm = artLock(FrmId(InterfaceFrameId::Blank), &gGameMouseBouncingCursorFrmHandle);
     if (gGameMouseBouncingCursorFrm == nullptr) {
         goto err;
     }
 
     // msef000.frm - hex mouse cursor
-    gGameMouseHexCursorFrm = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_1), &gGameMouseHexCursorFrmHandle);
+    gGameMouseHexCursorFrm = artLock(FrmId(InterfaceFrameId::HexMouseCursor), &gGameMouseHexCursorFrmHandle);
     if (gGameMouseHexCursorFrm == nullptr) {
         goto err;
     }

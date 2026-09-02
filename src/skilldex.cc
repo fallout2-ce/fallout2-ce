@@ -65,8 +65,8 @@ static constexpr FrmId kSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
     FrmId(InterfaceFrameId::INTF_FRM_ID_121),
     FrmId(InterfaceFrameId::INTF_FRM_ID_119),
     FrmId(InterfaceFrameId::INTF_FRM_ID_120),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_8),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_9),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
     FrmId(InterfaceFrameId::INTF_FRM_ID_170),
 };
 

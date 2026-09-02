@@ -578,12 +578,12 @@ static PartyMemberOptionSetting _custom_settings[PARTY_MEMBER_CUSTOMIZATION_OPTI
 
 // 0x518B04 custom_button_info
 static GameDialogButtonData _custom_button_info[PARTY_MEMBER_CUSTOMIZATION_OPTION_COUNT] = {
-    { 95, 9, InterfaceFrameId::INTF_FRM_ID_410, InterfaceFrameId::INTF_FRM_ID_409, InterfaceFrameId::INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 0, 0 },
-    { 96, 38, InterfaceFrameId::INTF_FRM_ID_416, InterfaceFrameId::INTF_FRM_ID_415, InterfaceFrameId::INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 1, 0 },
-    { 96, 68, InterfaceFrameId::INTF_FRM_ID_418, InterfaceFrameId::INTF_FRM_ID_417, InterfaceFrameId::INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 2, 0 },
-    { 96, 98, InterfaceFrameId::INTF_FRM_ID_414, InterfaceFrameId::INTF_FRM_ID_413, InterfaceFrameId::INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 3, 0 },
-    { 96, 127, InterfaceFrameId::INTF_FRM_ID_408, InterfaceFrameId::INTF_FRM_ID_407, InterfaceFrameId::INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 4, 0 },
-    { 96, 157, InterfaceFrameId::INTF_FRM_ID_412, InterfaceFrameId::INTF_FRM_ID_411, InterfaceFrameId::INTF_FRM_ID_INVALID, nullptr, nullptr, nullptr, 5, 0 },
+    { 95, 9, InterfaceFrameId::INTF_FRM_ID_410, InterfaceFrameId::INTF_FRM_ID_409, InterfaceFrameId::Invalid, nullptr, nullptr, nullptr, 0, 0 },
+    { 96, 38, InterfaceFrameId::INTF_FRM_ID_416, InterfaceFrameId::INTF_FRM_ID_415, InterfaceFrameId::Invalid, nullptr, nullptr, nullptr, 1, 0 },
+    { 96, 68, InterfaceFrameId::INTF_FRM_ID_418, InterfaceFrameId::INTF_FRM_ID_417, InterfaceFrameId::Invalid, nullptr, nullptr, nullptr, 2, 0 },
+    { 96, 98, InterfaceFrameId::INTF_FRM_ID_414, InterfaceFrameId::INTF_FRM_ID_413, InterfaceFrameId::Invalid, nullptr, nullptr, nullptr, 3, 0 },
+    { 96, 127, InterfaceFrameId::INTF_FRM_ID_408, InterfaceFrameId::INTF_FRM_ID_407, InterfaceFrameId::Invalid, nullptr, nullptr, nullptr, 4, 0 },
+    { 96, 157, InterfaceFrameId::INTF_FRM_ID_412, InterfaceFrameId::INTF_FRM_ID_411, InterfaceFrameId::Invalid, nullptr, nullptr, nullptr, 5, 0 },
 };
 
 // 0x518BF4 totalHotx
@@ -1464,7 +1464,7 @@ static int createDialogReviewButton(int win)
 static int createLittleRedButton(int win, int x, int y, int keyCode)
 {
     int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
-        FrmId(InterfaceFrameId::INTF_FRM_ID_8), FrmId(InterfaceFrameId::INTF_FRM_ID_9),
+        FrmId(InterfaceFrameId::LittleRedButtonUp), FrmId(InterfaceFrameId::LittleRedButtonDown),
         {}, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_red_butt_press, _gsound_red_butt_release);

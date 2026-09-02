@@ -266,9 +266,9 @@ const Rect gPipboyWindowContentRect = {
 
 // 0x496FD0 pipgrphs
 static constexpr FrmId kPipboyFrmIds[PIPBOY_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_8),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_9),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_82),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
+    FrmId(InterfaceFrameId::HitPointsNumbers),
     FrmId(InterfaceFrameId::INTF_FRM_ID_127),
     FrmId(InterfaceFrameId::INTF_FRM_ID_128),
     FrmId(InterfaceFrameId::INTF_FRM_ID_129),

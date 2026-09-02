@@ -376,11 +376,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowNextButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
     // Setup "Take" button.
-    if (!_takeButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_8))) {
+    if (!_takeButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonUp))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    if (!_takeButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_9))) {
+    if (!_takeButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonDown))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -404,10 +404,10 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowTakeButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Modify" button.
-    if (!_modifyButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_8)))
+    if (!_modifyButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonUp)))
         return characterSelectorWindowFatalError(false);
 
-    if (!_modifyButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_9))) {
+    if (!_modifyButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonDown))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -431,11 +431,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowModifyButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Create" button.
-    if (!_createButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_8))) {
+    if (!_createButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonUp))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    if (!_createButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_9))) {
+    if (!_createButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonDown))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -459,11 +459,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowCreateButton, _gsound_red_butt_press, _gsound_red_butt_release);
 
     // Setup "Back" button.
-    if (!_backButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_8))) {
+    if (!_backButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonUp))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    if (!_backButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_9))) {
+    if (!_backButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonDown))) {
         return characterSelectorWindowFatalError(false);
     }
 

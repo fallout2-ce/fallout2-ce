@@ -190,8 +190,8 @@ static constexpr FrmId kLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
     FrmId(InterfaceFrameId::INTF_FRM_ID_237), // lsgame.frm - load/save game
     FrmId(InterfaceFrameId::INTF_FRM_ID_238), // lsgbox.frm - load/save game
     FrmId(InterfaceFrameId::INTF_FRM_ID_239), // lscover.frm - load/save game
-    FrmId(InterfaceFrameId::INTF_FRM_ID_9), // lilreddn.frm - little red button down
-    FrmId(InterfaceFrameId::INTF_FRM_ID_8), // lilredup.frm - little red button up
+    FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
+    FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
     FrmId(InterfaceFrameId::INTF_FRM_ID_181), // dnarwoff.frm - character editor
     FrmId(InterfaceFrameId::INTF_FRM_ID_182), // dnarwon.frm - character editor
     FrmId(InterfaceFrameId::INTF_FRM_ID_199), // uparwoff.frm - character editor

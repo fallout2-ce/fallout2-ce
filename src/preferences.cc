@@ -223,8 +223,8 @@ static constexpr FrmId kPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = 
     FrmId(InterfaceFrameId::INTF_FRM_ID_245), // prfxout.frm - options screen
     FrmId(InterfaceFrameId::INTF_FRM_ID_246), // prefcvr.frm - options screen
     FrmId(InterfaceFrameId::INTF_FRM_ID_247), // prfsldon.frm - options screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_8), // lilredup.frm - little red button up
-    FrmId(InterfaceFrameId::INTF_FRM_ID_9), // lilreddn.frm - little red button down
+    FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
+    FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
 };
 
 // 0x6637E8 optn_msgfl
