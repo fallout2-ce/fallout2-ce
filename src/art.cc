@@ -1036,10 +1036,12 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             Art art;
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
-                if (*sizePtr < 0) {
-                    debugPrint("ART ERROR: fid %d path %s returned negative data size %d\n", fid, artFilePath, *sizePtr);
+                if (*sizePtr <= 0) {
+                    debugPrint("ART ERROR: fid %d path %s returned invalid data size %d\n", fid, artFilePath, *sizePtr);
+                    *sizePtr = 0;
+                } else {
+                    result = 0;
                 }
-                result = 0;
             }
             fileClose(stream);
         }

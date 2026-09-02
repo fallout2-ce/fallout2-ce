@@ -309,13 +309,16 @@ bool heapBlockAllocate(Heap* heap, int* handleIndexPtr, int size, int disallowSy
     int blockSize;
     HeapHandle* handle;
 
-    if (heap == nullptr || handleIndexPtr == nullptr || size == 0) {
+    if (heap == nullptr || handleIndexPtr == nullptr || size <= 0) {
+        goto err;
+    }
+
+    if (size > INT_MAX - 3) {
         goto err;
     }
 
     // Keep subsequent block headers aligned when callers request odd-sized payloads.
     size = (size + 3) & ~3;
-
     if (disallowSystemAllocation != 0 && disallowSystemAllocation != 1) {
         disallowSystemAllocation = 0;
     }
