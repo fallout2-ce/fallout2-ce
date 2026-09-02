@@ -91,8 +91,8 @@ static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int
 
 // 0x5108C8 dbox
 static constexpr FrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_218), // MEDIALOG.FRM - Medium generic dialog box
-    FrmId(InterfaceFrameId::INTF_FRM_ID_217), // LGDIALOG.FRM - Large generic dialog box
+    FrmId(InterfaceFrameId::MediumDialog), // MEDIALOG.FRM - Medium generic dialog box
+    FrmId(InterfaceFrameId::LargeDialog), // LGDIALOG.FRM - Large generic dialog box
 };
 
 // 0x5108D0 ytable
@@ -127,24 +127,24 @@ static const int _dblines[DIALOG_TYPE_COUNT] = {
 
 // 0x510900 flgids
 static constexpr FrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_224), // loadbox.frm - character editor
+    FrmId(InterfaceFrameId::LoadBox), // loadbox.frm - character editor
     FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
     FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
-    FrmId(InterfaceFrameId::INTF_FRM_ID_181), // dnarwoff.frm - character editor
-    FrmId(InterfaceFrameId::INTF_FRM_ID_182), // dnarwon.frm - character editor
-    FrmId(InterfaceFrameId::INTF_FRM_ID_199), // uparwoff.frm - character editor
-    FrmId(InterfaceFrameId::INTF_FRM_ID_200), // uparwon.frm - character editor
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff), // dnarwoff.frm - character editor
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn), // dnarwon.frm - character editor
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff), // uparwoff.frm - character editor
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn), // uparwon.frm - character editor
 };
 
 // 0x51091C flgids2
 static constexpr FrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_225), // savebox.frm - character editor
+    FrmId(InterfaceFrameId::SaveBox), // savebox.frm - character editor
     FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
     FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
-    FrmId(InterfaceFrameId::INTF_FRM_ID_181), // dnarwoff.frm - character editor
-    FrmId(InterfaceFrameId::INTF_FRM_ID_182), // dnarwon.frm - character editor
-    FrmId(InterfaceFrameId::INTF_FRM_ID_199), // uparwoff.frm - character editor
-    FrmId(InterfaceFrameId::INTF_FRM_ID_200), // uparwon.frm - character editor
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff), // dnarwoff.frm - character editor
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn), // dnarwon.frm - character editor
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff), // uparwoff.frm - character editor
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn), // uparwon.frm - character editor
 };
 
 // 0x41CF20 dialog_out
@@ -229,7 +229,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonPressedFrmImage;
 
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        if (!doneBoxFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_209))) {
+        if (!doneBoxFrmImage.lock(FrmId(InterfaceFrameId::DoneBox))) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
@@ -343,7 +343,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
         } else {
-            if (!doneBoxFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_209))) {
+            if (!doneBoxFrmImage.lock(FrmId(InterfaceFrameId::DoneBox))) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;

@@ -269,14 +269,14 @@ static constexpr FrmId kPipboyFrmIds[PIPBOY_FRM_COUNT] = {
     FrmId(InterfaceFrameId::LittleRedButtonUp),
     FrmId(InterfaceFrameId::LittleRedButtonDown),
     FrmId(InterfaceFrameId::HitPointsNumbers),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_127),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_128),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_129),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_130),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_131),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_132),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_133),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_226),
+    FrmId(InterfaceFrameId::PipBoyWindow),
+    FrmId(InterfaceFrameId::PipBoyNoteAboutVats),
+    FrmId(InterfaceFrameId::PipBoyMonthStrings),
+    FrmId(InterfaceFrameId::PipBoyNoteNumbers),
+    FrmId(InterfaceFrameId::PipBoySleepAlarmIn),
+    FrmId(InterfaceFrameId::PipBoySleepAlarmOut),
+    FrmId(InterfaceFrameId::PipBoyLogo),
+    FrmId(InterfaceFrameId::PipBoyBomb),
 };
 
 // 0x51C128 quests

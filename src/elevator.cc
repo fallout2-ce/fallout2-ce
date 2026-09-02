@@ -61,37 +61,37 @@ static int elevatorGetLevelFromEscKey(int elevator, int map);
 
 // 0x43E950 grph_id_2
 static constexpr FrmId kElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_141), // ebut_in.frm - map elevator screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_142), // ebut_out.frm - map elevator screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_149), // gaj000.frm - map elevator screen
+    FrmId(InterfaceFrameId::MapElevatorButtonIn), // ebut_in.frm - map elevator screen
+    FrmId(InterfaceFrameId::MapElevatorButtonOut), // ebut_out.frm - map elevator screen
+    FrmId(InterfaceFrameId::MapElevatorGaj000), // gaj000.frm - map elevator screen
 };
 
 // 0x43E95C intotal
 static ElevatorBackground gElevatorBackgrounds[ELEVATORS_MAX] = {
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_144, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_144, InterfaceFrameId::INTF_FRM_ID_145 },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_147 },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_151 },
-    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_146, InterfaceFrameId::INTF_FRM_ID_147 },
-    { InterfaceFrameId::INTF_FRM_ID_388, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_148, InterfaceFrameId::Invalid },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
-    { InterfaceFrameId::INTF_FRM_ID_143, InterfaceFrameId::INTF_FRM_ID_150 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorMast1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMast1, InterfaceFrameId::MapElevatorMast2 },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::MapElevatorMil2 },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::MapElevatorMil3 },
+    { InterfaceFrameId::MapElevatorVault, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::MapElevatorMil2 },
+    { InterfaceFrameId::MapElevatorSierraBase, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorVault, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorVault, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorVault, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
 };
 
 // Number of levels for eleveators.

@@ -110,9 +110,9 @@ static PremadeCharacter gCurrentPremadeCharacter = PREMADE_CHARACTER_NARG;
 
 // 0x51C850 premade_characters
 static PremadeCharacterDescription gPremadeCharacterDescriptions[PREMADE_CHARACTER_COUNT] = {
-    { "premade\\combat", InterfaceFrameId::INTF_FRM_ID_201, "VID 208-197-88-125" },
-    { "premade\\stealth", InterfaceFrameId::INTF_FRM_ID_202, "VID 208-206-49-229" },
-    { "premade\\diplomat", InterfaceFrameId::INTF_FRM_ID_203, "VID 208-206-49-227" },
+    { "premade\\combat", InterfaceFrameId::PremadeCharacterCombat, "VID 208-197-88-125" },
+    { "premade\\stealth", InterfaceFrameId::PremadeCharacterStealth, "VID 208-206-49-229" },
+    { "premade\\diplomat", InterfaceFrameId::PremadeCharacterDiplomat, "VID 208-206-49-227" },
 };
 
 // 0x51C8D4 premade_total
@@ -295,7 +295,7 @@ static bool characterSelectorWindowInit()
     }
 
     FrmImage backgroundFrmImage;
-    if (!backgroundFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_174))) {
+    if (!backgroundFrmImage.lock(FrmId(InterfaceFrameId::CharacterSelectorBackground))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -320,11 +320,11 @@ static bool characterSelectorWindowInit()
     backgroundFrmImage.unlock();
 
     // Setup "Previous" button.
-    if (!_previousButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_122))) {
+    if (!_previousButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::LeftArrowUp))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    if (!_previousButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_123))) {
+    if (!_previousButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::LeftArrowDown))) {
         return characterSelectorWindowFatalError(false);
     }
 
@@ -348,11 +348,11 @@ static bool characterSelectorWindowInit()
     buttonSetCallbacks(gCharacterSelectorWindowPreviousButton, _gsound_med_butt_press, _gsound_med_butt_release);
 
     // Setup "Next" button.
-    if (!_nextButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_124))) {
+    if (!_nextButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::RightArrowUp))) {
         return characterSelectorWindowFatalError(false);
     }
 
-    if (!_nextButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_125))) {
+    if (!_nextButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::RightArrowDown))) {
         return characterSelectorWindowFatalError(false);
     }
 

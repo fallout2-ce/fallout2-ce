@@ -442,10 +442,10 @@ static const Stat gSummaryStats2[7] = {
 
 // 0x46E708
 static constexpr FrmId kInventoryArrowFrmIds[INVENTORY_ARROW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_122), // left arrow up
-    FrmId(InterfaceFrameId::INTF_FRM_ID_123), // left arrow down
-    FrmId(InterfaceFrameId::INTF_FRM_ID_124), // right arrow up
-    FrmId(InterfaceFrameId::INTF_FRM_ID_125), // right arrow down
+    FrmId(InterfaceFrameId::LeftArrowUp), // left arrow up
+    FrmId(InterfaceFrameId::LeftArrowDown), // left arrow down
+    FrmId(InterfaceFrameId::RightArrowUp), // right arrow up
+    FrmId(InterfaceFrameId::RightArrowDown), // right arrow down
 };
 
 // The number of items to show in scroller.
@@ -477,11 +477,11 @@ static int _inven_display_msg_line = 1;
 // 0x519068 iscr_data
 static const InventoryWindowDescription gInventoryWindowDescriptions[INVENTORY_WINDOW_TYPE_COUNT] = {
     { InterfaceFrameId::InventoryBox, INVENTORY_WINDOW_WIDTH, 377, 80, 0 },
-    { InterfaceFrameId::INTF_FRM_ID_113, INVENTORY_USE_ON_WINDOW_WIDTH, 376, 80, 0 },
-    { InterfaceFrameId::INTF_FRM_ID_114, INVENTORY_LOOT_WINDOW_WIDTH, 376, 80, 0 },
-    { InterfaceFrameId::INTF_FRM_ID_111, INVENTORY_TRADE_WINDOW_WIDTH, 180, 80, 290 },
-    { InterfaceFrameId::INTF_FRM_ID_305, INVENTORY_TIMER_WINDOW_WIDTH, 162, 140, 80 },
-    { InterfaceFrameId::INTF_FRM_ID_305, INVENTORY_TIMER_WINDOW_WIDTH, 162, 140, 80 },
+    { InterfaceFrameId::UseItemOnWindow, INVENTORY_USE_ON_WINDOW_WIDTH, 376, 80, 0 },
+    { InterfaceFrameId::LootContainerWindow, INVENTORY_LOOT_WINDOW_WIDTH, 376, 80, 0 },
+    { InterfaceFrameId::BarterWindow, INVENTORY_TRADE_WINDOW_WIDTH, 180, 80, 290 },
+    { InterfaceFrameId::MoveMultipleItemsInterface, INVENTORY_TIMER_WINDOW_WIDTH, 162, 140, 80 },
+    { InterfaceFrameId::MoveMultipleItemsInterface, INVENTORY_TIMER_WINDOW_WIDTH, 162, 140, 80 },
 };
 
 // 0x5190E0 dropped_explosive
@@ -507,11 +507,11 @@ static Rotation gInventoryWindowDudeRotation = ROTATION_NE;
 
 // 0x5190FC num
 static constexpr FrmId kInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_286), // pointing hand
-    FrmId(InterfaceFrameId::INTF_FRM_ID_250), // action arrow
-    FrmId(InterfaceFrameId::INTF_FRM_ID_282), // action pick
-    FrmId(InterfaceFrameId::INTF_FRM_ID_283), // action menu
-    FrmId(InterfaceFrameId::INTF_FRM_ID_266), // blank
+    FrmId(InterfaceFrameId::PointingHand), // pointing hand
+    FrmId(InterfaceFrameId::ActionArrow), // action arrow
+    FrmId(InterfaceFrameId::ActionPick), // action pick
+    FrmId(InterfaceFrameId::ActionMenu), // action menu
+    FrmId(InterfaceFrameId::MouseCursorBlank), // blank
 };
 
 // 0x519110 last_target
@@ -888,9 +888,9 @@ static void inventoryNormalLayoutUpdate()
 
 static void inventoryLootLayoutUpdate()
 {
-    int columns = inventoryChooseColumns(inventoryLootFrmImage, INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED, InterfaceFrameId::INTF_FRM_ID_114, "loot2.png");
+    int columns = inventoryChooseColumns(inventoryLootFrmImage, INVENTORY_LOOT_WINDOW_WIDTH_EXPANDED, InterfaceFrameId::LootContainerWindow, "loot2.png");
     if (columns == 1) {
-        inventoryBackgroundLoad(inventoryLootFrmImage, InterfaceFrameId::INTF_FRM_ID_114, "loot2.png", 1);
+        inventoryBackgroundLoad(inventoryLootFrmImage, InterfaceFrameId::LootContainerWindow, "loot2.png", 1);
     }
 
     inventoryLootApplyLayout(columns);
@@ -1918,15 +1918,15 @@ static bool _setup_inventory(int inventoryWindowType)
         buttonCreateActionWithFrm(gInventoryWindow,
             109, 56,
             KEY_ARROW_UP, -1,
-            FrmId(InterfaceFrameId::INTF_FRM_ID_100),
-            FrmId(InterfaceFrameId::INTF_FRM_ID_101));
+            FrmId(InterfaceFrameId::DialogUpButtonUp),
+            FrmId(InterfaceFrameId::DialogUpButtonDown));
 
         // Right inventory up button.
         buttonCreateActionWithFrm(gInventoryWindow,
             342, 56,
             KEY_CTRL_ARROW_UP, -1,
-            FrmId(InterfaceFrameId::INTF_FRM_ID_100),
-            FrmId(InterfaceFrameId::INTF_FRM_ID_101));
+            FrmId(InterfaceFrameId::DialogUpButtonUp),
+            FrmId(InterfaceFrameId::DialogUpButtonDown));
     } else {
         int scrollUpX = isNormalWindow                          ? inventoryLayout.scrollButtonX
             : inventoryWindowType == INVENTORY_WINDOW_TYPE_LOOT ? inventoryLootLayout.leftScrollButtonX
@@ -1967,15 +1967,15 @@ static bool _setup_inventory(int inventoryWindowType)
         buttonCreateActionWithFrm(gInventoryWindow,
             109, 82,
             KEY_ARROW_DOWN, -1,
-            FrmId(InterfaceFrameId::INTF_FRM_ID_93),
-            FrmId(InterfaceFrameId::INTF_FRM_ID_94));
+            FrmId(InterfaceFrameId::DialogDownButtonUp),
+            FrmId(InterfaceFrameId::DialogDownButtonDown));
 
         // Right inventory down button
         buttonCreateActionWithFrm(gInventoryWindow,
             342, 82,
             KEY_CTRL_ARROW_DOWN, -1,
-            FrmId(InterfaceFrameId::INTF_FRM_ID_93),
-            FrmId(InterfaceFrameId::INTF_FRM_ID_94));
+            FrmId(InterfaceFrameId::DialogDownButtonUp),
+            FrmId(InterfaceFrameId::DialogDownButtonDown));
 
         // Invisible button representing left character.
         buttonCreateAction(gInventoryBarterBackgroundWindow,
@@ -2038,7 +2038,7 @@ static bool _setup_inventory(int inventoryWindowType)
                 // Take all button.
                 buttonCreateActionWithFrm(gInventoryWindow,
                     inventoryLootLayout.takeAllButtonX, 204, 2502, -1,
-                    FrmId(InterfaceFrameId::INTF_FRM_ID_436), FrmId(InterfaceFrameId::INTF_FRM_ID_437));
+                    FrmId(InterfaceFrameId::InventoryLootAllUp), FrmId(InterfaceFrameId::InventoryLootAllDown));
             }
         }
     } else {
@@ -2241,7 +2241,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
         pitch = INVENTORY_USE_ON_WINDOW_WIDTH;
 
         FrmImage backgroundFrmImage;
-        if (backgroundFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_113))) {
+        if (backgroundFrmImage.lock(FrmId(InterfaceFrameId::UseItemOnWindow))) {
             // Clear scroll view background.
             blitBufferToBuffer(backgroundFrmImage.getData() + pitch * INVENTORY_SCROLLER_Y + INVENTORY_SCROLLER_X,
                 INVENTORY_SLOT_WIDTH,
@@ -2560,7 +2560,7 @@ static void _display_body(int fid, int inventoryWindowType)
             rect.bottom = rect.top + INVENTORY_BODY_VIEW_HEIGHT - 1;
 
             FrmImage backgroundFrmImage;
-            const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::INTF_FRM_ID_420) : FrmId(InterfaceFrameId::INTF_FRM_ID_111);
+            const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::TradeWindow) : FrmId(InterfaceFrameId::BarterWindow);
             if (backgroundFrmImage.lock(backgroundFid)) {
                 blitBufferToBuffer(backgroundFrmImage.getData() + rect.top * 640 + rect.left,
                     INVENTORY_BODY_VIEW_WIDTH,
@@ -2582,7 +2582,7 @@ static void _display_body(int fid, int inventoryWindowType)
             int windowPitch = windowGetWidth(gInventoryWindow);
 
             FrmImage backgroundFrmImage;
-            InterfaceFrameId Fid = InterfaceFrameId::INTF_FRM_ID_114;
+            InterfaceFrameId Fid = InterfaceFrameId::LootContainerWindow;
             int sourceXOffset = 0;
 
             if (index == 1) {
@@ -2602,7 +2602,7 @@ static void _display_body(int fid, int inventoryWindowType)
                 } else if (inventoryWindowType == INVENTORY_WINDOW_TYPE_USE_ITEM_ON) {
                     rect.left = 176; // Use item cha window
                     rect.top = 37;
-                    Fid = InterfaceFrameId::INTF_FRM_ID_113;
+                    Fid = InterfaceFrameId::UseItemOnWindow;
                     sourceXOffset = 292;
                 } else {
                     rect.left = inventoryLayout.bodyViewX; // inventory cha window
@@ -6232,7 +6232,7 @@ static void _draw_amount(int value, int inventoryWindowType)
 {
     // BIGNUM.frm
     FrmImage numbersFrmImage;
-    if (!numbersFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_170))) {
+    if (!numbersFrmImage.lock(FrmId(InterfaceFrameId::BigNum))) {
         return;
     }
 
@@ -6488,7 +6488,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
         // Timer overlay
         FrmImage overlayFrmImage;
-        if (overlayFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_306))) {
+        if (overlayFrmImage.lock(FrmId(InterfaceFrameId::TimerOverlay))) {
             blitBufferToBuffer(overlayFrmImage.getData(),
                 105, 81, 105,
                 windowBuffer + 34 * windowDescription->width + 113, windowDescription->width);
@@ -6507,11 +6507,11 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
     // Plus button
     int btn = buttonCreateActionWithFrm(_mt_wid,
-        x, y, 6000, -1, FrmId(InterfaceFrameId::INTF_FRM_ID_193), FrmId(InterfaceFrameId::INTF_FRM_ID_194));
+        x, y, 6000, -1, FrmId(InterfaceFrameId::CharacterEditorSpecialPositiveOff), FrmId(InterfaceFrameId::CharacterEditorSpecialPositiveOn));
 
     // Minus button
     btn = buttonCreateActionWithFrm(_mt_wid,
-        x, y + 12, 7000, -1, FrmId(InterfaceFrameId::INTF_FRM_ID_191), FrmId(InterfaceFrameId::INTF_FRM_ID_192));
+        x, y + 12, 7000, -1, FrmId(InterfaceFrameId::CharacterEditorSpecialNegativeOff), FrmId(InterfaceFrameId::CharacterEditorSpecialNegativeOn));
 
     // Done
     btn = buttonCreateActionWithFrm(_mt_wid,
@@ -6522,8 +6522,8 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         148, 128, -1, KEY_ESCAPE, FrmId(InterfaceFrameId::LittleRedButtonUp), FrmId(InterfaceFrameId::LittleRedButtonDown));
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
-        _moveFrmImages[6].lock(FrmId(InterfaceFrameId::INTF_FRM_ID_307));
-        _moveFrmImages[7].lock(FrmId(InterfaceFrameId::INTF_FRM_ID_308));
+        _moveFrmImages[6].lock(FrmId(InterfaceFrameId::AllButtonPressed));
+        _moveFrmImages[7].lock(FrmId(InterfaceFrameId::AllButtonUnpressed));
 
         if (_moveFrmImages[6].isLocked() && _moveFrmImages[7].isLocked()) {
             // ALL

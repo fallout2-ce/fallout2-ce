@@ -215,14 +215,14 @@ static const double kTextLineDelayRange = 2.0;
 
 // 0x5197CC prfgrphs
 static constexpr FrmId kPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_240), // prefscrn.frm - options screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_241), // prfsldof.frm - options screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_242), // prfbknbs.frm - options screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_243), // prflknbs.frm - options screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_244), // prfxin.frm - options screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_245), // prfxout.frm - options screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_246), // prefcvr.frm - options screen
-    FrmId(InterfaceFrameId::INTF_FRM_ID_247), // prfsldon.frm - options screen
+    FrmId(InterfaceFrameId::PreferencesScreen), // prefscrn.frm - options screen
+    FrmId(InterfaceFrameId::PreferencesSliderOff), // prfsldof.frm - options screen
+    FrmId(InterfaceFrameId::PreferencesBackground), // prfbknbs.frm - options screen
+    FrmId(InterfaceFrameId::PreferencesBackgroundLeft), // prflknbs.frm - options screen
+    FrmId(InterfaceFrameId::PreferencesXIn), // prfxin.frm - options screen
+    FrmId(InterfaceFrameId::PreferencesXOut), // prfxout.frm - options screen
+    FrmId(InterfaceFrameId::PreferencesCover), // prefcvr.frm - options screen
+    FrmId(InterfaceFrameId::PreferencesSliderOn), // prfsldon.frm - options screen
     FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
     FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
 };

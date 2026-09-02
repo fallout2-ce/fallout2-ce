@@ -5618,7 +5618,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
     unsigned char* windowBuffer = windowGetBuffer(gCalledShotWindow);
 
     FrmImage backgroundFrm;
-    if (!backgroundFrm.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_118))) {
+    if (!backgroundFrm.lock(FrmId(InterfaceFrameId::CalledShotWindow))) {
         windowDestroy(gCalledShotWindow);
         return -1;
     }

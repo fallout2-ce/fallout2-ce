@@ -75,33 +75,33 @@ static CacheEntry* gGameMouseCursorFrmHandle = INVALID_CACHE_ENTRY;
 
 // 0x518C14 gmouse_cursor_nums
 static constexpr FrmId kGameMouseCursorFrmIds[MOUSE_CURSOR_TYPE_COUNT] = {
-    FrmId(InterfaceFrameId::INTF_FRM_ID_266),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_267),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_268),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_269),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_270),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_271),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_272),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_273),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_274),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_275),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_276),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_277),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_330),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_331),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_329),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_328),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_332),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_334),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_333),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_335),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_279),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_280),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_281),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_293),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_310),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_278),
-    FrmId(InterfaceFrameId::INTF_FRM_ID_295),
+    FrmId(InterfaceFrameId::MouseCursorBlank),
+    FrmId(InterfaceFrameId::MouseCursorStandardArrow),
+    FrmId(InterfaceFrameId::MouseCursorSmallUpArrow),
+    FrmId(InterfaceFrameId::MouseCursorSmallDownArrow),
+    FrmId(InterfaceFrameId::MouseCursorScrollNorthWest),
+    FrmId(InterfaceFrameId::MouseCursorScrollNorth),
+    FrmId(InterfaceFrameId::MouseCursorScrollNorthEast),
+    FrmId(InterfaceFrameId::MouseCursorScrollEast),
+    FrmId(InterfaceFrameId::MouseCursorScrollSouthEast),
+    FrmId(InterfaceFrameId::MouseCursorScrollSouth),
+    FrmId(InterfaceFrameId::MouseCursorScrollSouthWest),
+    FrmId(InterfaceFrameId::MouseCursorScrollWest),
+    FrmId(InterfaceFrameId::MouseCursorInvalidScrollNorthWest),
+    FrmId(InterfaceFrameId::MouseCursorInvalidScrollNorth),
+    FrmId(InterfaceFrameId::MouseCursorInvalidScrollNorthEast),
+    FrmId(InterfaceFrameId::MouseCursorInvalidScrollEast),
+    FrmId(InterfaceFrameId::MouseCursorInvalidScrollSouthEast),
+    FrmId(InterfaceFrameId::MouseCursorInvalidScrollSouth),
+    FrmId(InterfaceFrameId::MouseCursorInvalidScrollSouthWest),
+    FrmId(InterfaceFrameId::MouseCursorInvalidScrollWest),
+    FrmId(InterfaceFrameId::MouseCursorCrosshair),
+    FrmId(InterfaceFrameId::MouseCursorPlus),
+    FrmId(InterfaceFrameId::MouseCursorDestroy),
+    FrmId(InterfaceFrameId::MouseCursorUseCrosshair),
+    FrmId(InterfaceFrameId::MouseCursorSingleFrameWatch),
+    FrmId(InterfaceFrameId::MouseCursorWaitPlanet),
+    FrmId(InterfaceFrameId::MouseCursorWaitWatch),
 };
 
 // 0x518C80 gmouse_3d_initialized
@@ -231,16 +231,16 @@ static unsigned char gGameMouseActionMenuHighlightedItemIndex = 0;
 
 // 0x518D1E gmouse_3d_action_nums
 static constexpr InterfaceFrameId kGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT] = {
-    InterfaceFrameId::INTF_FRM_ID_253, // Cancel
-    InterfaceFrameId::INTF_FRM_ID_255, // Drop
-    InterfaceFrameId::INTF_FRM_ID_257, // Inventory
-    InterfaceFrameId::INTF_FRM_ID_259, // Look
-    InterfaceFrameId::INTF_FRM_ID_261, // Rotate
-    InterfaceFrameId::INTF_FRM_ID_263, // Talk
-    InterfaceFrameId::INTF_FRM_ID_265, // Use/Get
-    InterfaceFrameId::INTF_FRM_ID_302, // Unload
-    InterfaceFrameId::INTF_FRM_ID_304, // Skill
-    InterfaceFrameId::INTF_FRM_ID_435, // Push
+    InterfaceFrameId::Cancel, // Cancel
+    InterfaceFrameId::Drop, // Drop
+    InterfaceFrameId::Inventory, // Inventory
+    InterfaceFrameId::Look, // Look
+    InterfaceFrameId::Rotate, // Rotate
+    InterfaceFrameId::Talk, // Talk
+    InterfaceFrameId::UseGet, // Use/Get
+    InterfaceFrameId::Unload, // Unload
+    InterfaceFrameId::Skill, // Skill
+    InterfaceFrameId::Push, // Push
 };
 
 // 0x518D34 gmouse_3d_modes_enabled
@@ -251,17 +251,17 @@ static int gGameMouseMode = GAME_MOUSE_MODE_MOVE;
 
 // 0x518D3C gmouse_3d_mode_nums
 static InterfaceFrameId gGameMouseModeFrmIds[GAME_MOUSE_MODE_COUNT] = {
-    InterfaceFrameId::INTF_FRM_ID_249,
-    InterfaceFrameId::INTF_FRM_ID_250,
-    InterfaceFrameId::INTF_FRM_ID_251,
-    InterfaceFrameId::INTF_FRM_ID_293,
-    InterfaceFrameId::INTF_FRM_ID_293,
-    InterfaceFrameId::INTF_FRM_ID_293,
-    InterfaceFrameId::INTF_FRM_ID_293,
-    InterfaceFrameId::INTF_FRM_ID_293,
-    InterfaceFrameId::INTF_FRM_ID_293,
-    InterfaceFrameId::INTF_FRM_ID_293,
-    InterfaceFrameId::INTF_FRM_ID_293,
+    InterfaceFrameId::ActionMove,
+    InterfaceFrameId::ActionArrow,
+    InterfaceFrameId::ActionCrosshair,
+    InterfaceFrameId::MouseCursorUseCrosshair,
+    InterfaceFrameId::MouseCursorUseCrosshair,
+    InterfaceFrameId::MouseCursorUseCrosshair,
+    InterfaceFrameId::MouseCursorUseCrosshair,
+    InterfaceFrameId::MouseCursorUseCrosshair,
+    InterfaceFrameId::MouseCursorUseCrosshair,
+    InterfaceFrameId::MouseCursorUseCrosshair,
+    InterfaceFrameId::MouseCursorUseCrosshair,
 };
 
 // 0x518D68 gmouse_skill_table
@@ -775,7 +775,7 @@ void gameMouseRefresh()
                         if (gameMouseRenderPrimaryAction(mouseX, mouseY, primaryAction, _scr_size.right - _scr_size.left + 1, _scr_size.bottom - _scr_size.top - 99) == 0) {
                             Rect tmp;
                             // NOTE: Uninline.
-                            if (gmouse_3d_set_flat_fid(FrmId(InterfaceFrameId::INTF_FRM_ID_282).fid(), &tmp) == 0) {
+                            if (gmouse_3d_set_flat_fid(FrmId(InterfaceFrameId::ActionPick).fid(), &tmp) == 0) {
                                 tileWindowRefreshRect(&tmp, gElevation);
                             }
                         }
@@ -836,7 +836,7 @@ void gameMouseRefresh()
                     if (gameMouseRenderAccuracy(formattedAccuracy, color) == 0) {
                         Rect tmp;
                         // NOTE: Uninline.
-                        if (gmouse_3d_set_flat_fid(FrmId(InterfaceFrameId::INTF_FRM_ID_284).fid(), &tmp) == 0) {
+                        if (gmouse_3d_set_flat_fid(FrmId(InterfaceFrameId::ActionToHit).fid(), &tmp) == 0) {
                             tileWindowRefreshRect(&tmp, gElevation);
                         }
                     }
@@ -1205,7 +1205,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
             if (gameMouseRenderActionMenuItems(mouseX, mouseY, actionMenuItems, actionMenuItemsCount, _scr_size.right - _scr_size.left + 1, _scr_size.bottom - _scr_size.top - 99) == 0) {
                 Rect cursorRect;
                 // NOTE: Uninline.
-                if (gmouse_3d_set_flat_fid(FrmId(InterfaceFrameId::INTF_FRM_ID_283).fid(), &cursorRect) == 0 && _gmouse_3d_move_to(mouseX, mouseY, gElevation, &cursorRect) == 0) {
+                if (gmouse_3d_set_flat_fid(FrmId(InterfaceFrameId::ActionMenu).fid(), &cursorRect) == 0 && _gmouse_3d_move_to(mouseX, mouseY, gElevation, &cursorRect) == 0) {
                     tileWindowRefreshRect(&cursorRect, gElevation);
                     isoDisable();
 
@@ -1814,7 +1814,7 @@ int gameMouseRenderPrimaryAction(int x, int y, int menuItem, int width, int heig
         // mirrored cursor for far-right side of screen
         artUnlock(arrowFrmHandle);
 
-        arrowFrm = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_285), &arrowFrmHandle);
+        arrowFrm = artLock(FrmId(InterfaceFrameId::ActionArrowMirrored), &arrowFrmHandle);
         if (arrowFrm == nullptr) {
             artUnlock(menuItemFrmHandle);
             return -1;
@@ -1964,7 +1964,7 @@ int gameMouseRenderActionMenuItems(int x, int y, const int* menuItems, int menuI
     } else {
         // Mirrored arrow (from left to right).
         artUnlock(arrowFrmHandle);
-        arrowFrm = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_285), &arrowFrmHandle);
+        arrowFrm = artLock(FrmId(InterfaceFrameId::ActionArrowMirrored), &arrowFrmHandle);
         if (arrowFrm == nullptr) {
             for (int index = 0; index < menuItemsLength; index++) {
                 artUnlock(menuItemFrmHandles[index]);
@@ -2283,19 +2283,19 @@ void gameMouseObjectsFree()
 int gameMouseActionMenuInit()
 {
     // actmenu.frm - action menu
-    gGameMouseActionMenuFrm = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_283), &gGameMouseActionMenuFrmHandle);
+    gGameMouseActionMenuFrm = artLock(FrmId(InterfaceFrameId::ActionMenu), &gGameMouseActionMenuFrmHandle);
     if (gGameMouseActionMenuFrm == nullptr) {
         goto err;
     }
 
     // actpick.frm - action pick
-    gGameMouseActionPickFrm = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_282), &gGameMouseActionPickFrmHandle);
+    gGameMouseActionPickFrm = artLock(FrmId(InterfaceFrameId::ActionPick), &gGameMouseActionPickFrmHandle);
     if (gGameMouseActionPickFrm == nullptr) {
         goto err;
     }
 
     // acttohit.frm - action to hit
-    gGameMouseActionHitFrm = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_284), &gGameMouseActionHitFrmHandle);
+    gGameMouseActionHitFrm = artLock(FrmId(InterfaceFrameId::ActionToHit), &gGameMouseActionHitFrmHandle);
     if (gGameMouseActionHitFrm == nullptr) {
         goto err;
     }
@@ -2700,13 +2700,13 @@ int objectIsDoor(Object* object)
 
 static void customMouseModeFrmsInit()
 {
-    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "first_aid", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_FIRST_AID]), InterfaceFrameId::INTF_FRM_ID_293);
-    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "doctor", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_DOCTOR]), InterfaceFrameId::INTF_FRM_ID_293);
-    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "lockpick", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_LOCKPICK]), InterfaceFrameId::INTF_FRM_ID_293);
-    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "steal", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_STEAL]), InterfaceFrameId::INTF_FRM_ID_293);
-    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "traps", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_TRAPS]), InterfaceFrameId::INTF_FRM_ID_293);
-    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "science", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_SCIENCE]), InterfaceFrameId::INTF_FRM_ID_293);
-    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "repair", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_REPAIR]), InterfaceFrameId::INTF_FRM_ID_293);
+    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "first_aid", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_FIRST_AID]), InterfaceFrameId::MouseCursorUseCrosshair);
+    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "doctor", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_DOCTOR]), InterfaceFrameId::MouseCursorUseCrosshair);
+    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "lockpick", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_LOCKPICK]), InterfaceFrameId::MouseCursorUseCrosshair);
+    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "steal", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_STEAL]), InterfaceFrameId::MouseCursorUseCrosshair);
+    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "traps", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_TRAPS]), InterfaceFrameId::MouseCursorUseCrosshair);
+    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "science", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_SCIENCE]), InterfaceFrameId::MouseCursorUseCrosshair);
+    configGetEnum<InterfaceFrameId>(&gContentConfig, CONTENT_CONFIG_SKILLDEX_SECTION, "repair", &(gGameMouseModeFrmIds[GAME_MOUSE_MODE_USE_REPAIR]), InterfaceFrameId::MouseCursorUseCrosshair);
 }
 
 void gameMouseRefreshImmediately()

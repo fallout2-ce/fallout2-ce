@@ -554,7 +554,7 @@ int interfaceInit()
         return intface_fatal_error(-1);
     }
 
-    if (!_itemButtonDisabledFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_73))) {
+    if (!_itemButtonDisabledFrmImage.lock(FrmId(InterfaceFrameId::SingleAttackBigUpUnreadied))) {
         // NOTE: Uninline.
         return intface_fatal_error(-1);
     }
@@ -1466,7 +1466,7 @@ void interfaceBarEndButtonsShow(bool animated)
     }
 
     CacheEntry* handle;
-    Art* art = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_104), &handle);
+    Art* art = artLock(FrmId(InterfaceFrameId::EndTurnWindowAnimation), &handle);
     if (art == nullptr) {
         return;
     }
@@ -1523,7 +1523,7 @@ void interfaceBarEndButtonsHide(bool animated)
     }
 
     CacheEntry* handle;
-    Art* art = artLock(FrmId(InterfaceFrameId::INTF_FRM_ID_104), &handle);
+    Art* art = artLock(FrmId(InterfaceFrameId::EndTurnWindowAnimation), &handle);
     if (art == nullptr) {
         return;
     }
@@ -1577,7 +1577,7 @@ void interfaceBarEndButtonsRenderGreenLights()
 
         FrmImage lightsFrmImage;
         // endltgrn.frm - green lights around end turn/combat window
-        if (!lightsFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_109))) {
+        if (!lightsFrmImage.lock(FrmId(InterfaceFrameId::EndTurnGreenLight))) {
             return;
         }
 
@@ -1596,7 +1596,7 @@ void interfaceBarEndButtonsRenderRedLights()
 
         FrmImage lightsFrmImage;
         // endltred.frm - red lights around end turn/combat window
-        if (!lightsFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_110))) {
+        if (!lightsFrmImage.lock(FrmId(InterfaceFrameId::EndTurnRedLight))) {
             return;
         }
 
@@ -1642,10 +1642,10 @@ static int interfaceBarRefreshMainAction()
             FrmId frmId;
             if (_proto_action_can_use_on(itemState->item->pid)) {
                 // USE ON
-                frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_294);
+                frmId = FrmId(InterfaceFrameId::UseOnText);
             } else if (_obj_action_can_use(itemState->item)) {
                 // USE
-                frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_292);
+                frmId = FrmId(InterfaceFrameId::UseText);
             } else {
                 frmId = FrmId::Empty();
             }
@@ -1670,20 +1670,20 @@ static int interfaceBarRefreshMainAction()
             // jump table.
             switch (itemState->action) {
             case INTERFACE_ITEM_ACTION_PRIMARY_AIMING:
-                bullseyeFrmId = FrmId(InterfaceFrameId::INTF_FRM_ID_288);
+                bullseyeFrmId = FrmId(InterfaceFrameId::Bullseye);
                 // FALLTHROUGH
             case INTERFACE_ITEM_ACTION_PRIMARY:
                 hitMode = itemState->primaryHitMode;
                 break;
             case INTERFACE_ITEM_ACTION_SECONDARY_AIMING:
-                bullseyeFrmId = FrmId(InterfaceFrameId::INTF_FRM_ID_288);
+                bullseyeFrmId = FrmId(InterfaceFrameId::Bullseye);
                 // FALLTHROUGH
             case INTERFACE_ITEM_ACTION_SECONDARY:
                 hitMode = itemState->secondaryHitMode;
                 break;
             case INTERFACE_ITEM_ACTION_RELOAD:
                 actionPoints = itemGetActionPointCost(gDude, gInterfaceCurrentHand == HAND_LEFT ? HIT_MODE_LEFT_WEAPON_RELOAD : HIT_MODE_RIGHT_WEAPON_RELOAD, false);
-                primaryFrmId = FrmId(InterfaceFrameId::INTF_FRM_ID_291);
+                primaryFrmId = FrmId(InterfaceFrameId::ReloadText);
                 break;
             default:
                 break;
@@ -1708,22 +1708,22 @@ static int interfaceBarRefreshMainAction()
                 case ANIM_THROW_PUNCH:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_PUNCH:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_432); // strong punch
+                        frmId = FrmId(InterfaceFrameId::StrongPunch); // strong punch
                         break;
                     case HIT_MODE_HAMMER_PUNCH:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_425); // hammer punch
+                        frmId = FrmId(InterfaceFrameId::HammerPunch); // hammer punch
                         break;
                     case HIT_MODE_HAYMAKER:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_428); // lightning punch
+                        frmId = FrmId(InterfaceFrameId::LightningPunch); // lightning punch
                         break;
                     case HIT_MODE_JAB:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_421); // chop punch
+                        frmId = FrmId(InterfaceFrameId::ChopPunch); // chop punch
                         break;
                     case HIT_MODE_PALM_STRIKE:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_423); // dragon punch
+                        frmId = FrmId(InterfaceFrameId::DragonPunch); // dragon punch
                         break;
                     case HIT_MODE_PIERCING_STRIKE:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_424); // force punch
+                        frmId = FrmId(InterfaceFrameId::ForcePunch); // force punch
                         break;
                     default:
                         frmId = FrmId(InterfaceFrameId::PunchText); // punch
@@ -1733,22 +1733,22 @@ static int interfaceBarRefreshMainAction()
                 case ANIM_KICK_LEG:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_KICK:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_430); // skick.frm - strong kick text
+                        frmId = FrmId(InterfaceFrameId::StrongKick); // skick.frm - strong kick text
                         break;
                     case HIT_MODE_SNAP_KICK:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_431); // snapkick.frm - snap kick text
+                        frmId = FrmId(InterfaceFrameId::SnapKick); // snapkick.frm - snap kick text
                         break;
                     case HIT_MODE_POWER_KICK:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_429); // cm_pwkck.frm - roundhouse kick text
+                        frmId = FrmId(InterfaceFrameId::RoundhouseKick); // cm_pwkck.frm - roundhouse kick text
                         break;
                     case HIT_MODE_HIP_KICK:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_426); // hipk.frm - kip kick text
+                        frmId = FrmId(InterfaceFrameId::HipKick); // hipk.frm - kip kick text
                         break;
                     case HIT_MODE_HOOK_KICK:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_427); // cm_hookk.frm - jump kick text
+                        frmId = FrmId(InterfaceFrameId::JumpKick); // cm_hookk.frm - jump kick text
                         break;
                     case HIT_MODE_PIERCING_KICK:
-                        frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_422); // cm_prckk.frm - death blossom kick text
+                        frmId = FrmId(InterfaceFrameId::DeathBlossomKick); // cm_prckk.frm - death blossom kick text
                         break;
                     default:
                         frmId = FrmId(InterfaceFrameId::KickText); // kick.frm - kick text
@@ -1756,7 +1756,7 @@ static int interfaceBarRefreshMainAction()
                     }
                     break;
                 case ANIM_THROW_ANIM:
-                    frmId = FrmId(InterfaceFrameId::INTF_FRM_ID_117); // throw
+                    frmId = FrmId(InterfaceFrameId::ThrowText); // throw
                     break;
                 case ANIM_THRUST_ANIM:
                     frmId = FrmId(InterfaceFrameId::ThrustText); // thrust
@@ -1795,7 +1795,7 @@ static int interfaceBarRefreshMainAction()
     if (actionPoints >= 0 && actionPoints < 10) {
         // movement point text
         FrmImage apFrmImage;
-        if (apFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_289))) {
+        if (apFrmImage.lock(FrmId(InterfaceFrameId::MovementPointText))) {
             int width = apFrmImage.getWidth();
             int height = apFrmImage.getHeight();
             unsigned char* data = apFrmImage.getData();
@@ -1806,7 +1806,7 @@ static int interfaceBarRefreshMainAction()
 
             FrmImage apNumbersFrmImage;
             // movement point numbers - ten numbers 0 to 9, each 10 pixels wide.
-            if (apNumbersFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_290))) {
+            if (apNumbersFrmImage.lock(FrmId(InterfaceFrameId::MovementPointsNumbers))) {
                 int width = apNumbersFrmImage.getWidth();
                 int height = apNumbersFrmImage.getHeight();
                 unsigned char* data = apNumbersFrmImage.getData();
@@ -1957,11 +1957,11 @@ static int endTurnButtonInit()
         return -1;
     }
 
-    if (!_endTurnButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_105))) {
+    if (!_endTurnButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::EndTurnButtonUp))) {
         return -1;
     }
 
-    if (!_endTurnButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_106))) {
+    if (!_endTurnButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::EndTurnButtonDown))) {
         return -1;
     }
 
@@ -2005,11 +2005,11 @@ static int endCombatButtonInit()
         return -1;
     }
 
-    if (!_endCombatButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_107))) {
+    if (!_endCombatButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::EndCombatButtonUp))) {
         return -1;
     }
 
-    if (!_endCombatButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_108))) {
+    if (!_endCombatButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::EndCombatButtonDown))) {
         return -1;
     }
 
@@ -2430,7 +2430,7 @@ static int indicatorBarInit()
     }
 
     FrmImage indicatorBoxFrmImage;
-    if (!indicatorBoxFrmImage.lock(FrmId(InterfaceFrameId::INTF_FRM_ID_126))) {
+    if (!indicatorBoxFrmImage.lock(FrmId(InterfaceFrameId::WarningBox))) {
         debugPrint("\nINTRFACE: Error initializing indicator box graphics! **\n");
         messageListFree(&messageList);
         return -1;
