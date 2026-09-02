@@ -187,15 +187,15 @@ static int _EraseSave();
 
 // 0x47B7C0 lsgrphs
 static constexpr FrmId kLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::LoadSaveGame), // lsgame.frm - load/save game
-    FrmId(InterfaceFrameId::LoadSaveBox), // lsgbox.frm - load/save game
-    FrmId(InterfaceFrameId::LoadSaveCover), // lscover.frm - load/save game
-    FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
-    FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff), // dnarwoff.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn), // dnarwon.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff), // uparwoff.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn), // uparwon.frm - character editor
+    FrmId(InterfaceFrameId::LoadSaveGame),
+    FrmId(InterfaceFrameId::LoadSaveBox),
+    FrmId(InterfaceFrameId::LoadSaveCover),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
 };
 
 // Control max number of save/load pages

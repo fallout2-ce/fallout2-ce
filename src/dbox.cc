@@ -91,8 +91,8 @@ static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int
 
 // 0x5108C8 dbox
 static constexpr FrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    FrmId(InterfaceFrameId::MediumDialog), // MEDIALOG.FRM - Medium generic dialog box
-    FrmId(InterfaceFrameId::LargeDialog), // LGDIALOG.FRM - Large generic dialog box
+    FrmId(InterfaceFrameId::MediumDialog),
+    FrmId(InterfaceFrameId::LargeDialog),
 };
 
 // 0x5108D0 ytable
@@ -127,24 +127,24 @@ static const int _dblines[DIALOG_TYPE_COUNT] = {
 
 // 0x510900 flgids
 static constexpr FrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::LoadBox), // loadbox.frm - character editor
-    FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
-    FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff), // dnarwoff.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn), // dnarwon.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff), // uparwoff.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn), // uparwon.frm - character editor
+    FrmId(InterfaceFrameId::LoadBox),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
 };
 
 // 0x51091C flgids2
 static constexpr FrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::SaveBox), // savebox.frm - character editor
-    FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
-    FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff), // dnarwoff.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn), // dnarwon.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff), // uparwoff.frm - character editor
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn), // uparwon.frm - character editor
+    FrmId(InterfaceFrameId::SaveBox),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
 };
 
 // 0x41CF20 dialog_out

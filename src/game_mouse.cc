@@ -235,16 +235,16 @@ static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_HIGHLIGHTED = 0;
 static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_NORMAL = 1;
 
 static constexpr FrmId kGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_COUNT] = {
-    { FrmId(InterfaceFrameId::CancelHighlighted) , FrmId(InterfaceFrameId::Cancel) }, // Cancel highlighted, normal
-    { FrmId(InterfaceFrameId::DropHighlighted), FrmId(InterfaceFrameId::Drop) }, // Drop highlighted, normal
-    { FrmId(InterfaceFrameId::InventoryHighlighted), FrmId(InterfaceFrameId::Inventory) }, // Inventory highlighted, normal
-    { FrmId(InterfaceFrameId::LookHighlighted), FrmId(InterfaceFrameId::Look) }, // Look highlighted, normal
-    { FrmId(InterfaceFrameId::RotateHighlighted), FrmId(InterfaceFrameId::Rotate) }, // Rotate highlighted, normal
-    { FrmId(InterfaceFrameId::TalkHighlighted), FrmId(InterfaceFrameId::Talk) }, // Talk highlighted, normal
-    { FrmId(InterfaceFrameId::UseGetHighlighted), FrmId(InterfaceFrameId::UseGet) }, // Use/Get highlighted, normal
-    { FrmId(InterfaceFrameId::UnloadHighlighted), FrmId(InterfaceFrameId::Unload) }, // Unload highlighted, normal
-    { FrmId(InterfaceFrameId::SkillHighlighted), FrmId(InterfaceFrameId::Skill) }, // Skill highlighted, normal
-    { FrmId(InterfaceFrameId::PushHighlighted), FrmId(InterfaceFrameId::Push) }, // Push highlighted, normal
+    { FrmId(InterfaceFrameId::CancelHighlighted) , FrmId(InterfaceFrameId::Cancel) },
+    { FrmId(InterfaceFrameId::DropHighlighted), FrmId(InterfaceFrameId::Drop) },
+    { FrmId(InterfaceFrameId::InventoryHighlighted), FrmId(InterfaceFrameId::Inventory) },
+    { FrmId(InterfaceFrameId::LookHighlighted), FrmId(InterfaceFrameId::Look) },
+    { FrmId(InterfaceFrameId::RotateHighlighted), FrmId(InterfaceFrameId::Rotate) },
+    { FrmId(InterfaceFrameId::TalkHighlighted), FrmId(InterfaceFrameId::Talk) },
+    { FrmId(InterfaceFrameId::UseGetHighlighted), FrmId(InterfaceFrameId::UseGet) },
+    { FrmId(InterfaceFrameId::UnloadHighlighted), FrmId(InterfaceFrameId::Unload) },
+    { FrmId(InterfaceFrameId::SkillHighlighted), FrmId(InterfaceFrameId::Skill) },
+    { FrmId(InterfaceFrameId::PushHighlighted), FrmId(InterfaceFrameId::Push) },
 };
 
 // 0x518D34 gmouse_3d_modes_enabled
@@ -2283,31 +2283,26 @@ void gameMouseObjectsFree()
 // 0x44DB78 gmouse_3d_lock_frames
 int gameMouseActionMenuInit()
 {
-    // actmenu.frm - action menu
     gGameMouseActionMenuFrm = artLock(FrmId(InterfaceFrameId::ActionMenu), &gGameMouseActionMenuFrmHandle);
     if (gGameMouseActionMenuFrm == nullptr) {
         goto err;
     }
 
-    // actpick.frm - action pick
     gGameMouseActionPickFrm = artLock(FrmId(InterfaceFrameId::ActionPick), &gGameMouseActionPickFrmHandle);
     if (gGameMouseActionPickFrm == nullptr) {
         goto err;
     }
 
-    // acttohit.frm - action to hit
     gGameMouseActionHitFrm = artLock(FrmId(InterfaceFrameId::ActionToHit), &gGameMouseActionHitFrmHandle);
     if (gGameMouseActionHitFrm == nullptr) {
         goto err;
     }
 
-    // blank.frm - used be mset000.frm for top of bouncing mouse cursor
     gGameMouseBouncingCursorFrm = artLock(FrmId(InterfaceFrameId::Blank), &gGameMouseBouncingCursorFrmHandle);
     if (gGameMouseBouncingCursorFrm == nullptr) {
         goto err;
     }
 
-    // msef000.frm - hex mouse cursor
     gGameMouseHexCursorFrm = artLock(FrmId(InterfaceFrameId::HexMouseCursor), &gGameMouseHexCursorFrmHandle);
     if (gGameMouseHexCursorFrm == nullptr) {
         goto err;

@@ -215,16 +215,16 @@ static const double kTextLineDelayRange = 2.0;
 
 // 0x5197CC prfgrphs
 static constexpr FrmId kPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::PreferencesScreen), // prefscrn.frm - options screen
-    FrmId(InterfaceFrameId::PreferencesSliderOff), // prfsldof.frm - options screen
-    FrmId(InterfaceFrameId::PreferencesBackground), // prfbknbs.frm - options screen
-    FrmId(InterfaceFrameId::PreferencesBackgroundLeft), // prflknbs.frm - options screen
-    FrmId(InterfaceFrameId::PreferencesXIn), // prfxin.frm - options screen
-    FrmId(InterfaceFrameId::PreferencesXOut), // prfxout.frm - options screen
-    FrmId(InterfaceFrameId::PreferencesCover), // prefcvr.frm - options screen
-    FrmId(InterfaceFrameId::PreferencesSliderOn), // prfsldon.frm - options screen
-    FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
-    FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
+    FrmId(InterfaceFrameId::PreferencesScreen),
+    FrmId(InterfaceFrameId::PreferencesSliderOff),
+    FrmId(InterfaceFrameId::PreferencesBackground),
+    FrmId(InterfaceFrameId::PreferencesBackgroundLeft),
+    FrmId(InterfaceFrameId::PreferencesXIn),
+    FrmId(InterfaceFrameId::PreferencesXOut),
+    FrmId(InterfaceFrameId::PreferencesCover),
+    FrmId(InterfaceFrameId::PreferencesSliderOn),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
 };
 
 // 0x6637E8 optn_msgfl

@@ -416,12 +416,12 @@ static const int gGameDialogReviewWindowButtonHeights[GAME_DIALOG_REVIEW_WINDOW_
 
 // 0x518830 reviewFids
 static constexpr FrmId kGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::DialogBigUpArrowUp), // di_bgdn1.frm - dialog big down arrow
-    FrmId(InterfaceFrameId::DialogBigUpArrowDown), // di_bgdn2.frm - dialog big down arrow
-    FrmId(InterfaceFrameId::DialogBigDownArrowUp), // di_bgup1.frm - dialog big up arrow
-    FrmId(InterfaceFrameId::DialogBigDownArrowDown), // di_bgup2.frm - dialog big up arrow
-    FrmId(InterfaceFrameId::DialogBigDoneButtonUp), // di_done1.frm - dialog big done button up
-    FrmId(InterfaceFrameId::DialogBigDoneButtonDown), // di_done2.frm - dialog big done button down
+    FrmId(InterfaceFrameId::DialogBigUpArrowUp),
+    FrmId(InterfaceFrameId::DialogBigUpArrowDown),
+    FrmId(InterfaceFrameId::DialogBigDownArrowUp),
+    FrmId(InterfaceFrameId::DialogBigDownArrowDown),
+    FrmId(InterfaceFrameId::DialogBigDoneButtonUp),
+    FrmId(InterfaceFrameId::DialogBigDoneButtonDown),
 };
 
 // 0x518848 dialog_target
@@ -3441,8 +3441,8 @@ int gameDialogCreateBarterWindow()
 
     if (!gBarterWindowExpanded) {
         const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember
-            ? FrmId(InterfaceFrameId::TradeWindow) // trade.frm - party member barter/trade interface
-            : FrmId(InterfaceFrameId::BarterWindow); // barter.frm - barter window
+            ? FrmId(InterfaceFrameId::TradeWindow)
+            : FrmId(InterfaceFrameId::BarterWindow);
         backgroundFrmImage.lock(backgroundFid);
     }
 
@@ -3770,7 +3770,6 @@ void partyMemberControlWindowFree()
         }
     }
 
-    // control.frm - party member control interface
     FrmImage backgroundFrmImage;
     if (backgroundFrmImage.lock(FrmId(InterfaceFrameId::PartyControlInterface))) {
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowGetBuffer(gGameDialogWindow), windowGetBuffer(gGameDialogBackgroundWindow) + (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len), _dialogue_subwin_len);
@@ -4193,7 +4192,6 @@ void partyMemberCustomizationWindowFree()
     }
 
     FrmImage backgroundFrmImage;
-    // custom.frm - party member control interface
     if (backgroundFrmImage.lock(FrmId(InterfaceFrameId::PartyCustomInterface))) {
         _gdialog_scroll_subwin(gGameDialogWindow, false, backgroundFrmImage.getData(), windowGetBuffer(gGameDialogWindow), windowGetBuffer(gGameDialogBackgroundWindow) + (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len), _dialogue_subwin_len);
     }
@@ -4594,8 +4592,6 @@ int _gdialog_window_create()
         btn = -1;
 
     FrmImage backgroundFrmImage;
-    // 389 - di_talkp.frm - dialog screen subwindow (party members)
-    // 99 - di_talk.frm - dialog screen subwindow (NPC's)
     const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::DialogTalkSubwindowParty) : FrmId(InterfaceFrameId::DialogTalkSubwindow);
     if (!backgroundFrmImage.lock(backgroundFid)) return -1;
 
@@ -4662,8 +4658,8 @@ void _gdialog_window_destroy()
     int offset = (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len);
     unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow) + offset;
 
-    const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::DialogTalkSubwindowParty) : // di_talkp.frm - dialog screen subwindow (party members)
-        FrmId(InterfaceFrameId::DialogTalkSubwindow); // di_talk.frm - dialog screen subwindow (NPC's)
+    const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::DialogTalkSubwindowParty) :
+        FrmId(InterfaceFrameId::DialogTalkSubwindow);
 
     FrmImage backgroundFrmImage;
     if (backgroundFrmImage.lock(backgroundFid)) {
@@ -4724,9 +4720,8 @@ int gameDialogWindowRenderBackground()
     }
 
     if (!backgroundFrmImage.isLocked()) {
-        // alltlk.frm - dialog screen background
-        FrmId backgroundFid(InterfaceFrameId::DialogScreenBackground);
-        if (!backgroundFrmImage.lock(backgroundFid)) {
+        const FrmId backgroundFrmId(InterfaceFrameId::DialogScreenBackground);
+        if (!backgroundFrmImage.lock(backgroundFrmId)) {
             return -1;
         }
         gameDialogUseHrArt = false;
@@ -4746,18 +4741,9 @@ int gameDialogWindowRenderBackground()
 // 0x44ABA8
 int _talkToRefreshDialogWindowRect(Rect* rect)
 {
-    InterfaceFrameId frmId;
-    if (gGameDialogSpeakerIsPartyMember) {
-        // di_talkp.frm - dialog screen subwindow (party members)
-        frmId = InterfaceFrameId::DialogTalkSubwindowParty;
-    } else {
-        // di_talk.frm - dialog screen subwindow (NPC's)
-        frmId = InterfaceFrameId::DialogTalkSubwindow;
-    }
-
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(frmId);
-    if (!backgroundFrmImage.lock(backgroundFid)) {
+    const FrmId backgroundFrmId = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::DialogTalkSubwindowParty) : FrmId(InterfaceFrameId::DialogTalkSubwindow);
+    if (!backgroundFrmImage.lock(backgroundFrmId)) {
         return -1;
     }
 
@@ -4948,10 +4934,7 @@ void gameDialogHighlightsInit()
     _light_BlendTable = _getColorBlendTable(COLOR_GREY);
     _dark_BlendTable = _getColorBlendTable(COLOR_OLIVE);
 
-    // hilight1.frm - dialogue upper hilight
     _upperHighlightFrmImage.lock(FrmId(InterfaceFrameId::DialogueUpperHighlight));
-
-    // hilight2.frm - dialogue lower hilight
     _lowerHighlightFrmImage.lock(FrmId(InterfaceFrameId::DialogueLowerHighlight));
 }
 

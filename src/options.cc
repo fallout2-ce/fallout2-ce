@@ -60,17 +60,17 @@ struct OptionsMenuButtonSpec {
 
 // 0x48FC0C
 static constexpr FrmId kPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::CharacterWindow), // charwin.frm - character editor
-    FrmId(InterfaceFrameId::DoneBox), // donebox.frm - character editor
-    FrmId(InterfaceFrameId::LittleRedButtonUp), // lilredup.frm - little red button up
-    FrmId(InterfaceFrameId::LittleRedButtonDown), // lilreddn.frm - little red button down
+    FrmId(InterfaceFrameId::CharacterWindow),
+    FrmId(InterfaceFrameId::DoneBox),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
 };
 
 // 0x5197C0 opgrphs
 static constexpr FrmId kOptionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::OptionsBase), // opbase.frm - character editor
-    FrmId(InterfaceFrameId::OptionsButtonOn), // opbtnon.frm - character editor
-    FrmId(InterfaceFrameId::OptionsButtonOff), // opbtnoff.frm - character editor
+    FrmId(InterfaceFrameId::OptionsBase),
+    FrmId(InterfaceFrameId::OptionsButtonOn),
+    FrmId(InterfaceFrameId::OptionsButtonOff),
 };
 
 // 0x6637E8 optn_msgfl

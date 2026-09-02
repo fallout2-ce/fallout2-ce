@@ -1576,7 +1576,6 @@ void interfaceBarEndButtonsRenderGreenLights()
         buttonEnable(gEndCombatButton);
 
         FrmImage lightsFrmImage;
-        // endltgrn.frm - green lights around end turn/combat window
         if (!lightsFrmImage.lock(FrmId(InterfaceFrameId::EndTurnGreenLight))) {
             return;
         }
@@ -1595,7 +1594,6 @@ void interfaceBarEndButtonsRenderRedLights()
         buttonDisable(gEndCombatButton);
 
         FrmImage lightsFrmImage;
-        // endltred.frm - red lights around end turn/combat window
         if (!lightsFrmImage.lock(FrmId(InterfaceFrameId::EndTurnRedLight))) {
             return;
         }
@@ -1641,10 +1639,8 @@ static int interfaceBarRefreshMainAction()
         if (itemState->isWeapon == 0) {
             FrmId frmId;
             if (_proto_action_can_use_on(itemState->item->pid)) {
-                // USE ON
                 frmId = FrmId(InterfaceFrameId::UseOnText);
             } else if (_obj_action_can_use(itemState->item)) {
-                // USE
                 frmId = FrmId(InterfaceFrameId::UseText);
             } else {
                 frmId = FrmId::Empty();
@@ -1708,68 +1704,68 @@ static int interfaceBarRefreshMainAction()
                 case ANIM_THROW_PUNCH:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_PUNCH:
-                        frmId = FrmId(InterfaceFrameId::StrongPunch); // strong punch
+                        frmId = FrmId(InterfaceFrameId::StrongPunch);
                         break;
                     case HIT_MODE_HAMMER_PUNCH:
-                        frmId = FrmId(InterfaceFrameId::HammerPunch); // hammer punch
+                        frmId = FrmId(InterfaceFrameId::HammerPunch);
                         break;
                     case HIT_MODE_HAYMAKER:
-                        frmId = FrmId(InterfaceFrameId::LightningPunch); // lightning punch
+                        frmId = FrmId(InterfaceFrameId::LightningPunch);
                         break;
                     case HIT_MODE_JAB:
-                        frmId = FrmId(InterfaceFrameId::ChopPunch); // chop punch
+                        frmId = FrmId(InterfaceFrameId::ChopPunch);
                         break;
                     case HIT_MODE_PALM_STRIKE:
-                        frmId = FrmId(InterfaceFrameId::DragonPunch); // dragon punch
+                        frmId = FrmId(InterfaceFrameId::DragonPunch);
                         break;
                     case HIT_MODE_PIERCING_STRIKE:
-                        frmId = FrmId(InterfaceFrameId::ForcePunch); // force punch
+                        frmId = FrmId(InterfaceFrameId::ForcePunch);
                         break;
                     default:
-                        frmId = FrmId(InterfaceFrameId::PunchText); // punch
+                        frmId = FrmId(InterfaceFrameId::PunchText);
                         break;
                     }
                     break;
                 case ANIM_KICK_LEG:
                     switch (hitMode) {
                     case HIT_MODE_STRONG_KICK:
-                        frmId = FrmId(InterfaceFrameId::StrongKick); // skick.frm - strong kick text
+                        frmId = FrmId(InterfaceFrameId::StrongKick);
                         break;
                     case HIT_MODE_SNAP_KICK:
-                        frmId = FrmId(InterfaceFrameId::SnapKick); // snapkick.frm - snap kick text
+                        frmId = FrmId(InterfaceFrameId::SnapKick);
                         break;
                     case HIT_MODE_POWER_KICK:
-                        frmId = FrmId(InterfaceFrameId::RoundhouseKick); // cm_pwkck.frm - roundhouse kick text
+                        frmId = FrmId(InterfaceFrameId::RoundhouseKick);
                         break;
                     case HIT_MODE_HIP_KICK:
-                        frmId = FrmId(InterfaceFrameId::HipKick); // hipk.frm - kip kick text
+                        frmId = FrmId(InterfaceFrameId::HipKick);
                         break;
                     case HIT_MODE_HOOK_KICK:
-                        frmId = FrmId(InterfaceFrameId::JumpKick); // cm_hookk.frm - jump kick text
+                        frmId = FrmId(InterfaceFrameId::JumpKick);
                         break;
                     case HIT_MODE_PIERCING_KICK:
-                        frmId = FrmId(InterfaceFrameId::DeathBlossomKick); // cm_prckk.frm - death blossom kick text
+                        frmId = FrmId(InterfaceFrameId::DeathBlossomKick);
                         break;
                     default:
-                        frmId = FrmId(InterfaceFrameId::KickText); // kick.frm - kick text
+                        frmId = FrmId(InterfaceFrameId::KickText);
                         break;
                     }
                     break;
                 case ANIM_THROW_ANIM:
-                    frmId = FrmId(InterfaceFrameId::ThrowText); // throw
+                    frmId = FrmId(InterfaceFrameId::ThrowText);
                     break;
                 case ANIM_THRUST_ANIM:
-                    frmId = FrmId(InterfaceFrameId::ThrustText); // thrust
+                    frmId = FrmId(InterfaceFrameId::ThrustText);
                     break;
                 case ANIM_SWING_ANIM:
-                    frmId = FrmId(InterfaceFrameId::SwingText); // swing
+                    frmId = FrmId(InterfaceFrameId::SwingText);
                     break;
                 case ANIM_FIRE_SINGLE:
-                    frmId = FrmId(InterfaceFrameId::SingleText); // single
+                    frmId = FrmId(InterfaceFrameId::SingleText);
                     break;
                 case ANIM_FIRE_BURST:
                 case ANIM_FIRE_CONTINUOUS:
-                    frmId = FrmId(InterfaceFrameId::BurstText); // burst
+                    frmId = FrmId(InterfaceFrameId::BurstText);
                     break;
                 default:
                     break;

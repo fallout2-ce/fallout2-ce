@@ -500,7 +500,6 @@ static void showDeath()
                 break;
             }
 
-            // DEATH.FRM
             FrmImage backgroundFrmImage;
             if (!backgroundFrmImage.lock(FrmId(InterfaceFrameId::DeathScene))) {
                 break;

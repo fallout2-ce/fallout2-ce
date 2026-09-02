@@ -442,10 +442,10 @@ static const Stat gSummaryStats2[7] = {
 
 // 0x46E708
 static constexpr FrmId kInventoryArrowFrmIds[INVENTORY_ARROW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::LeftArrowUp), // left arrow up
-    FrmId(InterfaceFrameId::LeftArrowDown), // left arrow down
-    FrmId(InterfaceFrameId::RightArrowUp), // right arrow up
-    FrmId(InterfaceFrameId::RightArrowDown), // right arrow down
+    FrmId(InterfaceFrameId::LeftArrowUp),
+    FrmId(InterfaceFrameId::LeftArrowDown),
+    FrmId(InterfaceFrameId::RightArrowUp),
+    FrmId(InterfaceFrameId::RightArrowDown),
 };
 
 // The number of items to show in scroller.
@@ -507,11 +507,11 @@ static Rotation gInventoryWindowDudeRotation = ROTATION_NE;
 
 // 0x5190FC num
 static constexpr FrmId kInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
-    FrmId(InterfaceFrameId::PointingHand), // pointing hand
-    FrmId(InterfaceFrameId::ActionArrow), // action arrow
-    FrmId(InterfaceFrameId::ActionPick), // action pick
-    FrmId(InterfaceFrameId::ActionMenu), // action menu
-    FrmId(InterfaceFrameId::MouseCursorBlank), // blank
+    FrmId(InterfaceFrameId::PointingHand),
+    FrmId(InterfaceFrameId::ActionArrow),
+    FrmId(InterfaceFrameId::ActionPick),
+    FrmId(InterfaceFrameId::ActionMenu),
+    FrmId(InterfaceFrameId::MouseCursorBlank),
 };
 
 // 0x519110 last_target
@@ -6230,7 +6230,6 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
 // 0x47664C draw_amount
 static void _draw_amount(int value, int inventoryWindowType)
 {
-    // BIGNUM.frm
     FrmImage numbersFrmImage;
     if (!numbersFrmImage.lock(FrmId(InterfaceFrameId::BigNum))) {
         return;
