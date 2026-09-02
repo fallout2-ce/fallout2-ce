@@ -50,8 +50,8 @@ public:
     constexpr FrmId()
         : _objectType(OBJ_TYPE_INVALID)
         , _fid(EmptyFid)
-        , _path(nullptr)
         , _frameId { EmptyFid }
+        , _path(nullptr)
     {
     }
 
@@ -186,8 +186,8 @@ public:
     }
 
 private:
-    int _fid;
     ObjectType _objectType;
+    int _fid;
 
     union {
         int id;
