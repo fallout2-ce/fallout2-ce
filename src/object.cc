@@ -4826,9 +4826,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
             Color* outlineBlendTable = isOutlinePalleted != 0
                 ? blendTable + (grayTable[outlineColor] << 8)
                 : nullptr;
-            int destOffset = destPtr - gObjectsWindowBuffer;
             for (int x = 0; x < frameWidth; x++) {
-                destOffset = destPtr - gObjectsWindowBuffer;
+                int destOffset = destPtr - gObjectsWindowBuffer;
                 if (*srcPtr != 0 && cycle) {
                     if (yVisible && x >= visibleFrameRect.left && x <= visibleFrameRect.right && destOffset > 0 && destOffset % gObjectsWindowPitch != 0) {
                         Color leftOutlineColor;

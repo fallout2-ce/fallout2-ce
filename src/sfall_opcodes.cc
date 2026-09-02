@@ -36,6 +36,7 @@
 #include "scripts.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h"
+#include "sfall_filesystem.h"
 #include "sfall_global_scripts.h"
 #include "sfall_global_vars.h"
 #include "sfall_ini.h"
@@ -2166,15 +2167,13 @@ static void op_fs_copy(Program* program)
 {
     char* source = programStackPopString(program);
     char* path = programStackPopString(program);
-    programPrintError("fs_copy: not implemented!");
-    programStackPushInteger(program, -1);
+    programStackPushInteger(program, sfallFileSystemCopy(path, source));
 }
 
 static void op_fs_find(Program* program)
 {
     char* path = programStackPopString(program);
-    programPrintError("fs_find: not implemented!");
-    programStackPushInteger(program, -1);
+    programStackPushInteger(program, sfallFileSystemFind(path));
 }
 
 static void op_fs_create(Program* program)
@@ -2183,6 +2182,12 @@ static void op_fs_create(Program* program)
     char* path = programStackPopString(program);
     programPrintError("fs_create: not implemented!");
     programStackPushInteger(program, -1);
+}
+
+static void op_fs_delete(Program* program)
+{
+    int id = programStackPopInteger(program);
+    sfallFileSystemDelete(id);
 }
 
 static void op_set_hero_style(Program* program)
@@ -2581,6 +2586,7 @@ void sfallOpcodesInit()
     // 0x820b - int   fs_read_int(int id)
     // 0x820c - float fs_read_float(int id)
     // 0x81ff - void  fs_delete(int id)
+    interpreterRegisterOpcode(0x81ff, op_fs_delete);
     // 0x8200 - int   fs_size(int id)
     // 0x8201 - int   fs_pos(int id)
     // 0x8202 - void  fs_seek(int id, int pos)
