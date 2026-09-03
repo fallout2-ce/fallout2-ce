@@ -2702,7 +2702,9 @@ static void _object_move(int index)
                 nextTile = -1;
             } else {
                 objectUseDoor(object, obstacle, false);
-                if (_obj_blocking_at(object, nextTile, object->elevation) == obstacle) {
+                if (sad->step == ANIM_COMPLETE
+                    || (!isInCombat() && (obstacle->data.scenery.door.openFlags & DOOR_FLAG_OPEN) == 0)) {
+                    sad->step = ANIM_COMPLETE;
                     nextTile = -1;
                 }
             }
