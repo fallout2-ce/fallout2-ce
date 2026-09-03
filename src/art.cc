@@ -49,7 +49,6 @@ static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 static char artGetCritterWeaponCode(WeaponAnimation weaponType);
-static int buildFid(ObjectType objectType, int frmId, int animType = 0, int weaponCode = 0, Rotation rotation = ROTATION_NE);
 
 // A frame is laid out like [ArtFrame header][pixel bytes][padding].
 // These functions return a pointer to the pixel bytes, but must be given a pointer to a frame header,
@@ -1036,7 +1035,12 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             Art art;
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
-                result = 0;
+                if (*sizePtr <= 0) {
+                    debugPrint("ART ERROR: fid %d path %s returned invalid data size %d\n", fid, artFilePath, *sizePtr);
+                    *sizePtr = 0;
+                } else {
+                    result = 0;
+                }
             }
             fileClose(stream);
         }
@@ -1068,7 +1072,12 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
 
         if (loaded) {
             *sizePtr = artGetDataSize((Art*)data);
+            if (*sizePtr < 0) {
+                debugPrint("ART ERROR: fid %d path %s read data returned negative size %d\n", fid, artFileName, *sizePtr);
+            }
             result = 0;
+        } else {
+            debugPrint("ART ERROR: failed to load ART data for fid %d path %s\n", fid, artFileName);
         }
     }
 
@@ -1079,39 +1088,6 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
 static void artCacheFreeImpl(void* ptr)
 {
     internal_free(ptr);
-}
-
-/* FID Structure:
-    3 bits for rotation
-    4 bits for object type
-    8 bits for animation type
-    4 bits for weapon code
-    12 bits for frame ID
-*/
-static int buildFidInternal(int frmId, unsigned char weaponCode, unsigned char animType, ObjectType objectType, Rotation rotation)
-{
-    return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponCode << 12) & 0xF000) | (frmId & 0xFFF);
-}
-
-// 0x419C88
-// animType doesn't have to be of AnimationType enum only but also HeadAnimation
-// weaponCode doesn't have to be WeaponAnimation enum only but also Fidget or flags
-int buildFid(ObjectType objectType, int frmId, int animType, int weaponCode, Rotation rotation)
-{
-    // Always use rotation 0 (NE) for non-critters, for certain critter animations.
-    // For other critter animations, check if art for the given rotation exists, if not try rotation 1 (E) and if that also doesn't exist, then default to 0 (NE).
-    if (objectType != OBJ_TYPE_CRITTER
-        || animType == ANIM_FIRE_DANCE
-        || animType < ANIM_FALL_BACK
-        || animType > ANIM_FALL_FRONT_BLOOD) {
-        rotation = ROTATION_NE;
-    } else if (!artExists(buildFidInternal(frmId, weaponCode, animType, OBJ_TYPE_CRITTER, rotation))) {
-        rotation = rotation != ROTATION_E
-                && artExists(buildFidInternal(frmId, weaponCode, animType, OBJ_TYPE_CRITTER, ROTATION_E))
-            ? ROTATION_E
-            : ROTATION_NE;
-    }
-    return buildFidInternal(frmId, weaponCode, animType, objectType, rotation);
 }
 
 // 0x419D60
@@ -1154,6 +1130,20 @@ static int artReadHeader(Art* art, File* stream)
     // CE: Fix malformed `frm` files with `dataSize` set to 0 in Nevada.
     if (art->dataSize == 0) {
         art->dataSize = fileGetSize(stream);
+    }
+
+    if (art->frameCount < 0) {
+        debugPrint("ART WARNING: negative frameCount %d in header\n", art->frameCount);
+    }
+
+    if (art->dataSize < 0) {
+        debugPrint("ART WARNING: negative dataSize %d in header\n", art->dataSize);
+    }
+
+    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        if (art->dataOffsets[rotation] < 0) {
+            debugPrint("ART WARNING: negative dataOffset[%d] %d in header\n", rotation, art->dataOffsets[rotation]);
+        }
     }
 
     return 0;
@@ -1446,6 +1436,13 @@ int artRead(const char* path, unsigned char* data)
         return -3;
     }
 
+    int totalAllocSize = artGetDataSize(art);
+    if (totalAllocSize <= 0) {
+        debugPrint("ART ERROR: artRead computed invalid totalAllocSize %d for %s\n", totalAllocSize, path);
+        fileClose(stream);
+        return -5;
+    }
+
     int currentPadding = paddingForSize(sizeof(Art));
     int previousPadding = 0;
 
@@ -1629,90 +1626,51 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
     return gNamedArtCache.emplace(path, std::move(entry)).first->second;
 }
 
-FrmId::FrmId(MiscFrameId misc, AnimationType animType)
-    : _objectType(OBJ_TYPE_MISC)
-    , _fid(buildFid(OBJ_TYPE_MISC, misc, animType))
-{
-}
-
-FrmId::FrmId(SceneryFrameId scenery)
-    : _objectType(OBJ_TYPE_SCENERY)
-    , _fid(buildFid(OBJ_TYPE_SCENERY, scenery))
-{
-}
-
-FrmId::FrmId(WallFrameId wall)
-    : _objectType(OBJ_TYPE_WALL)
-    , _fid(buildFid(OBJ_TYPE_WALL, wall))
-{
-}
-
-FrmId::FrmId(ItemFrameId item)
-    : _objectType(OBJ_TYPE_ITEM)
-    , _fid(buildFid(OBJ_TYPE_ITEM, item))
-{
-}
-
-FrmId::FrmId(TileFrameId tile)
-    : _objectType(OBJ_TYPE_TILE)
-    , _fid(buildFid(OBJ_TYPE_TILE, tile))
-{
-}
-
-FrmId::FrmId(SkillDexFrameId skilldex)
-    : _objectType(OBJ_TYPE_SKILLDEX)
-    , _fid(buildFid(OBJ_TYPE_SKILLDEX, skilldex))
-{
-}
-
-FrmId::FrmId(InterfaceFrameId interface)
-    : _objectType(OBJ_TYPE_INTERFACE)
-    , _fid(buildFid(OBJ_TYPE_INTERFACE, interface))
-{
-}
-
 FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(OBJ_TYPE_CRITTER)
-    , _fid(buildFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation))
+    , _fid(buildObjectFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation))
+    , _frameId { critter }
+    , _path(nullptr)
 {
 }
 
-FrmId::FrmId(ObjectType objectType, int frmId, int animType, int weaponCode, Rotation rotation)
+FrmId::FrmId(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(objectType)
-    , _fid(buildFid(objectType, frmId, animType, weaponCode, rotation))
+    , _fid(buildObjectFid(objectType, frmId, animType, weaponAnimation, rotation))
+    , _frameId { frmId }
+    , _path(nullptr)
 {
     assert(objectTypeIsValid(objectType));
 }
 
 FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid))
-    , _fid(object == nullptr ? EmptyFid : buildFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotation))
+    , _fid(object == nullptr ? EmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotation))
+    , _frameId { object == nullptr ? EmptyFid : frameIdFromFid(object->fid) }
+    , _path(nullptr)
 {
 }
 
-FrmId::FrmId(HeadFrameId head, HeadAnimation headAnimation, int fidget)
-    : _objectType(OBJ_TYPE_HEAD)
-    , _fid(buildFid(OBJ_TYPE_HEAD, head, headAnimation, fidget))
+// 0x419C88
+// animType doesn't have to be of AnimationType enum only but also HeadAnimation
+// weaponCode doesn't have to be WeaponAnimation enum only but also Fidget or flags
+int FrmId::buildObjectFid(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
 {
-}
+    // Always use rotation 0 (NE) for non-critters, for certain critter animations.
+    // For other critter animations, check if art for the given rotation exists, if not try rotation 1 (E) and if that also doesn't exist, then default to 0 (NE).
+    if (objectType != OBJ_TYPE_CRITTER
+        || animType == ANIM_FIRE_DANCE
+        || animType < ANIM_FALL_BACK
+        || animType > ANIM_FALL_FRONT_BLOOD) {
+        rotation = ROTATION_NE;
+    } else if (!artExists(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, rotation))) {
+        rotation = rotation != ROTATION_E
+                && artExists(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, ROTATION_E))
+            ? ROTATION_E
+            : ROTATION_NE;
+    }
 
-FrmId::FrmId(BackgroundFrameId background)
-    : _objectType(OBJ_TYPE_BACKGROUND)
-    , _fid(buildFid(OBJ_TYPE_BACKGROUND, background))
-{
-}
-
-FrmId::FrmId(ObjectType objType, const char* path)
-    : _objectType(objType)
-    , _path(path)
-{
-    assert(objectTypeIsValid(objType));
-}
-
-ObjectType FrmId::objectType() const
-{
-    assert(hasObjectType());
-    return static_cast<ObjectType>(_objectType);
+    return buildFid(objectType, frmId, animType, weaponAnimation, rotation);
 }
 
 FrmImage::FrmImage()

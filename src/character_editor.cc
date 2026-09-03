@@ -323,8 +323,8 @@ static int characterEditorFolderViewInit();
 static void characterEditorFolderViewScroll(int direction);
 static void characterEditorFolderViewClear();
 static int characterEditorFolderViewDrawHeading(const char* string);
-static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRank, int colorIndex);
-static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, int colorIndex);
+static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRank, Color color);
+static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, Color color);
 static bool characterEditorFolderViewDrawString(const char* string);
 static bool characterEditorFolderViewDrawKillsEntry(const char* name, int kills);
 static int karmaInit();
@@ -342,57 +342,57 @@ static void customTownReputationInit();
 static void customTownReputationFree();
 
 // 0x431C40 grph_id
-static InterfaceFrameId gCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
-    INTF_FRM_ID_170,
-    INTF_FRM_ID_175,
-    INTF_FRM_ID_176,
-    INTF_FRM_ID_181,
-    INTF_FRM_ID_182,
-    INTF_FRM_ID_183,
-    INTF_FRM_ID_184,
-    INTF_FRM_ID_185,
-    INTF_FRM_ID_186,
-    INTF_FRM_ID_187,
-    INTF_FRM_ID_188,
-    INTF_FRM_ID_189,
-    INTF_FRM_ID_190,
-    INTF_FRM_ID_191,
-    INTF_FRM_ID_192,
-    INTF_FRM_ID_193,
-    INTF_FRM_ID_194,
-    INTF_FRM_ID_195,
-    INTF_FRM_ID_196,
-    INTF_FRM_ID_197,
-    INTF_FRM_ID_198,
-    INTF_FRM_ID_199,
-    INTF_FRM_ID_200,
-    INTF_FRM_ID_8,
-    INTF_FRM_ID_9,
-    INTF_FRM_ID_204,
-    INTF_FRM_ID_205,
-    INTF_FRM_ID_206,
-    INTF_FRM_ID_207,
-    INTF_FRM_ID_208,
-    INTF_FRM_ID_209,
-    INTF_FRM_ID_210,
-    INTF_FRM_ID_211,
-    INTF_FRM_ID_212,
-    INTF_FRM_ID_213,
-    INTF_FRM_ID_214,
-    INTF_FRM_ID_122,
-    INTF_FRM_ID_123,
-    INTF_FRM_ID_124,
-    INTF_FRM_ID_125,
-    INTF_FRM_ID_219,
-    INTF_FRM_ID_220,
-    INTF_FRM_ID_221,
-    INTF_FRM_ID_222,
-    INTF_FRM_ID_178,
-    INTF_FRM_ID_179,
-    INTF_FRM_ID_180,
-    INTF_FRM_ID_38,
-    INTF_FRM_ID_215,
-    INTF_FRM_ID_216,
+static constexpr FrmId kCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
+    FrmId(INTF_FRM_ID_170),
+    FrmId(INTF_FRM_ID_175),
+    FrmId(INTF_FRM_ID_176),
+    FrmId(INTF_FRM_ID_181),
+    FrmId(INTF_FRM_ID_182),
+    FrmId(INTF_FRM_ID_183),
+    FrmId(INTF_FRM_ID_184),
+    FrmId(INTF_FRM_ID_185),
+    FrmId(INTF_FRM_ID_186),
+    FrmId(INTF_FRM_ID_187),
+    FrmId(INTF_FRM_ID_188),
+    FrmId(INTF_FRM_ID_189),
+    FrmId(INTF_FRM_ID_190),
+    FrmId(INTF_FRM_ID_191),
+    FrmId(INTF_FRM_ID_192),
+    FrmId(INTF_FRM_ID_193),
+    FrmId(INTF_FRM_ID_194),
+    FrmId(INTF_FRM_ID_195),
+    FrmId(INTF_FRM_ID_196),
+    FrmId(INTF_FRM_ID_197),
+    FrmId(INTF_FRM_ID_198),
+    FrmId(INTF_FRM_ID_199),
+    FrmId(INTF_FRM_ID_200),
+    FrmId(INTF_FRM_ID_8),
+    FrmId(INTF_FRM_ID_9),
+    FrmId(INTF_FRM_ID_204),
+    FrmId(INTF_FRM_ID_205),
+    FrmId(INTF_FRM_ID_206),
+    FrmId(INTF_FRM_ID_207),
+    FrmId(INTF_FRM_ID_208),
+    FrmId(INTF_FRM_ID_209),
+    FrmId(INTF_FRM_ID_210),
+    FrmId(INTF_FRM_ID_211),
+    FrmId(INTF_FRM_ID_212),
+    FrmId(INTF_FRM_ID_213),
+    FrmId(INTF_FRM_ID_214),
+    FrmId(INTF_FRM_ID_122),
+    FrmId(INTF_FRM_ID_123),
+    FrmId(INTF_FRM_ID_124),
+    FrmId(INTF_FRM_ID_125),
+    FrmId(INTF_FRM_ID_219),
+    FrmId(INTF_FRM_ID_220),
+    FrmId(INTF_FRM_ID_221),
+    FrmId(INTF_FRM_ID_222),
+    FrmId(INTF_FRM_ID_178),
+    FrmId(INTF_FRM_ID_179),
+    FrmId(INTF_FRM_ID_180),
+    FrmId(INTF_FRM_ID_38),
+    FrmId(INTF_FRM_ID_215),
+    FrmId(INTF_FRM_ID_216),
 };
 
 // flags to preload fid
@@ -1278,7 +1278,6 @@ static int characterEditorWindowInit()
     int v1;
     int v3;
     char path[COMPAT_MAX_PATH];
-    FrmId fid;
     char* str;
     int len;
     int btn;
@@ -1356,7 +1355,7 @@ static int characterEditorWindowInit()
     }
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
-    fid = FrmId(gCharacterEditorIsCreationMode ? INTF_FRM_ID_169 : INTF_FRM_ID_177);
+    const FrmId fid = gCharacterEditorIsCreationMode ? FrmId(INTF_FRM_ID_169) : FrmId(INTF_FRM_ID_177);
     if (!_editorBackgroundFrmImage.lock(fid)) {
         characterEditorMessageListReset();
         characterEditorWindowRestoreState();
@@ -1388,8 +1387,7 @@ static int characterEditorWindowInit()
     soundContinueAll();
 
     for (i = 0; i < EDITOR_GRAPHIC_COUNT; i++) {
-        fid = FrmId(gCharacterEditorFrmIds[i]);
-        if (!_editorFrmImages[i].lock(fid)) {
+        if (!_editorFrmImages[i].lock(kCharacterEditorFrmIds[i])) {
             break;
         }
     }
@@ -3370,7 +3368,7 @@ static int characterEditorEditName()
     char nameCopy[64];
     strcpy(nameCopy, name);
 
-    if (_get_input_str(win, 500, nameCopy, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, static_cast<Color>(100), 0) != -1) {
+    if (_get_input_str(win, 500, nameCopy, 11, 23, 19, COLOR_GREEN | DRAW_TEXT_FLAG_NONE, Color(100), 0) != -1) {
         if (nameCopy[0] != '\0') {
             dudeSetName(nameCopy);
             characterEditorDrawName();
@@ -5043,8 +5041,8 @@ static char* _itostndn(int value, char* dest)
 static int characterEditorDrawCardWithOptions(SkillDexFrameId graphicId, const char* name, const char* attributes, char* description)
 {
     FrmImage frmImage;
-    FrmId fid = FrmId(graphicId);
-    if (!frmImage.lock(fid)) {
+    const FrmId frmId = FrmId(graphicId);
+    if (!frmImage.lock(frmId)) {
         return -1;
     }
 
@@ -6138,8 +6136,7 @@ static int perkDialogShow()
         previousPerkRanks[perk] = perkGetRank(gDude, perk);
     }
 
-    FrmId backgroundFid = FrmId(INTF_FRM_ID_86);
-    if (!_perkDialogBackgroundFrmImage.lock(backgroundFid)) {
+    if (!_perkDialogBackgroundFrmImage.lock(FrmId(INTF_FRM_ID_86))) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
     }
@@ -7010,8 +7007,7 @@ static int perkDialogOptionCompare(const void* a1, const void* a2)
 static int perkDialogDrawCard(SkillDexFrameId frmId, const char* name, const char* rank, char* description)
 {
     FrmImage frmImage;
-    FrmId fid = FrmId(frmId);
-    if (!frmImage.lock(fid)) {
+    if (!frmImage.lock(FrmId(frmId))) {
         return -1;
     }
 
@@ -7335,17 +7331,17 @@ static void drawPerkProgressBarGeneric(
     int targetY,
     int currentRank,
     int maxRank,
-    int colorIndex)
+    Color color)
 {
     int segmentWidth = 4;
     int segmentHeight = 7;
     int padding = 2;
 
-    unsigned char inactiveColor = (colorIndex == COLOR_LIGHT_YELLOW) ? COLOR_DARK_YELLOW_3 : COLOR_DARK_GREY_3;
+    Color inactiveColor = (color == COLOR_LIGHT_YELLOW) ? COLOR_DARK_YELLOW_3 : COLOR_DARK_GREY_3;
 
     for (int i = 0; i < maxRank; i++) {
         int currentSegmentX = startX + (i * (segmentWidth + padding));
-        unsigned char drawColor = (i < currentRank) ? colorIndex : inactiveColor;
+        Color drawColor = (i < currentRank) ? color : inactiveColor;
 
         for (int h = 0; h < segmentHeight; h++) {
             for (int w = 0; w < segmentWidth; w++) {
@@ -7360,7 +7356,7 @@ static void drawPerkProgressBarGeneric(
     }
 }
 
-static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRank, int colorIndex)
+static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRank, Color color)
 {
     if (!settings.ui.perks_progress_bar) return;
 
@@ -7383,15 +7379,15 @@ static void characterEditorDrawPerkProgressBar(int y, int currentRank, int maxRa
         targetY,
         currentRank,
         maxRank,
-        colorIndex);
+        color);
 }
 
-static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, int colorIndex)
+static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, Color color)
 {
     if (!settings.ui.perks_progress_bar) return;
 
     int finalRankToDraw = currentRank;
-    if (colorIndex == COLOR_LIGHT_YELLOW) {
+    if (color == COLOR_LIGHT_YELLOW) {
         finalRankToDraw = currentRank + 1;
         if (finalRankToDraw > maxRank) finalRankToDraw = maxRank;
     }
@@ -7413,7 +7409,7 @@ static void perkDialogDrawProgressBar(int y, int currentRank, int maxRank, int c
         targetY,
         finalRankToDraw,
         maxRank,
-        colorIndex);
+        color);
 }
 
 // 0x43E470 folder_print_kill

@@ -267,7 +267,7 @@ static ToolbarInfo toolbar_info[6];
 static int tool_active = -1;
 
 // Color (palette index) used to draw the selection box around the active slot.
-static Color toolbar_selection_color = static_cast<Color>(21);
+static Color toolbar_selection_color = Color(21);
 
 // Highlighted object on screen — used by mapper_destroy_highlight_obj.
 static Object* _screen_obj = nullptr;
@@ -942,7 +942,7 @@ int mapper_edit_init(int argc, char** argv)
     for (index = 0; index < ROTATION_COUNT; index++) {
         int x = rotate_arrows_x_offs[index] + 285;
         int y = rotate_arrows_y_offs[index] + 25;
-        unsigned char bgColor = lbm_buf[27 * lbmBufWidth + 287];
+        Color bgColor = static_cast<Color>(lbm_buf[27 * lbmBufWidth + 287]);
         int k;
 
         blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x, 10, 10, lbmBufWidth, rotate_arrows[1][index], 10);
@@ -1365,9 +1365,8 @@ void edit_mapper()
                             // create new highlight
                             update_high_obj_name(_screen_obj);
 
-                            FrmId hfid = FrmId(INTF_FRM_ID_1);
                             Object* hlObj;
-                            if (objectCreateWithFidPid(&hlObj, hfid.fid(), -1) != -1) {
+                            if (objectCreateWithFidPid(&hlObj, FrmId(INTF_FRM_ID_1).fid(), -1) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
                                 _obj_toggle_flat(hlObj, nullptr);
 
@@ -2517,22 +2516,22 @@ void update_art(ObjectType type, int offset)
     // Clear all slot backgrounds.
     unsigned char* p = slot_start;
     for (int i = 0; i < max_art_buttons; i++, p += slot_stride) {
-        bufferFill(p, art_scale_width, art_scale_height, screen_width, static_cast<Color>(106));
+        bufferFill(p, art_scale_width, art_scale_height, screen_width, Color(106));
     }
 
     // Render thumbnails for visible slots.
     p = slot_start;
     for (int i = offset; i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
-        FrmId fid;
+        FrmId frmId;
         if (settings.mapper.use_art_not_protos) {
-            fid = FrmId(type, i);
+            frmId = FrmId(type, i);
         } else {
             Proto* proto;
             int pid = toolbar_proto(type, i);
             if (protoGetProto(pid, &proto) == -1) continue;
-            fid = FrmId(proto->fid);
+            frmId = FrmId(proto->fid);
         }
-        artRender(fid.fid(), p, art_scale_width, art_scale_height, screen_width);
+        artRender(frmId.fid(), p, art_scale_width, art_scale_height, screen_width);
     }
 
     // Draw selection box around the active slot.
@@ -2605,7 +2604,7 @@ static int mapperPickTile(int* outOffset)
     } else {
         tileFid = tileFrameIdFromFid(packedTile);
     }
-    FrmId artFid = FrmId(tileFid);
+    const FrmId artFrmId = FrmId(tileFid);
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;
@@ -2613,7 +2612,7 @@ static int mapperPickTile(int* outOffset)
         if (protoGetProto(pid, &proto) == -1) {
             return -1;
         }
-        if (proto->fid == artFid.fid()) {
+        if (proto->fid == artFrmId.fid()) {
             *outOffset = std::min(idx, maxId - kScrollOffset);
             return 0;
         }
@@ -2673,8 +2672,8 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    FrmId fid = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
-    animationRegisterSetFid(obj, fid.fid(), 0);
+    const FrmId frmId = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
+    animationRegisterSetFid(obj, frmId.fid(), 0);
 
     return reg_anim_end();
 }

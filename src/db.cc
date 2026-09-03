@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "platform_compat.h"
+#include "sfall_filesystem.h"
 #include "xfile.h"
 
 namespace fallout {
@@ -36,6 +37,8 @@ static int gFileReadProgressChunkSize;
 
 // 0x673044 db_file_lists
 static FileList* gFileListHead;
+
+static File* fileOpenImpl(const char* filename, const char* mode, bool useAliases);
 
 // Opens file database.
 //
@@ -79,7 +82,7 @@ int dbGetFileSize(const char* filePath, int* sizePtr)
     assert(filePath); // "filename", "db.c", 108
     assert(sizePtr); // "de", "db.c", 109
 
-    File* stream = xfileOpen(filePath, "rb");
+    File* stream = fileOpen(filePath, "rb");
     if (stream == nullptr) {
         return -1;
     }
@@ -97,7 +100,7 @@ int dbGetFileContents(const char* filePath, void* ptr)
     assert(filePath); // "filename", "db.c", 141
     assert(ptr); // "buf", "db.c", 142
 
-    File* stream = xfileOpen(filePath, "rb");
+    File* stream = fileOpen(filePath, "rb");
     if (stream == nullptr) {
         return -1;
     }
@@ -141,6 +144,27 @@ int fileClose(File* stream)
 // 0x4C5EC8 db_fopen
 File* fileOpen(const char* filename, const char* mode)
 {
+    return fileOpenImpl(filename, mode, true);
+}
+
+static File* fileOpenImpl(const char* filename, const char* mode, bool useAliases)
+{
+    bool readOnly = mode != nullptr
+        && strchr(mode, 'r') != nullptr
+        && strchr(mode, 'w') == nullptr
+        && strchr(mode, 'a') == nullptr
+        && strchr(mode, '+') == nullptr;
+
+    if (useAliases && readOnly) {
+        char resolvedPath[COMPAT_MAX_PATH];
+        if (sfallFileSystemResolveAlias(filename, resolvedPath, sizeof(resolvedPath))) {
+            File* stream = fileOpenImpl(resolvedPath, mode, false);
+            if (stream != nullptr) {
+                return stream;
+            }
+        }
+    }
+
     return xfileOpen(filename, mode);
 }
 

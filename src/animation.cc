@@ -2701,7 +2701,10 @@ static void _object_move(int index)
                 }
                 nextTile = -1;
             } else {
-                objectUseDoor(object, obstacle, 0);
+                objectUseDoor(object, obstacle, false);
+                if (_obj_blocking_at(object, nextTile, object->elevation) == obstacle) {
+                    nextTile = -1;
+                }
             }
         }
 

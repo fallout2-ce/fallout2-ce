@@ -90,9 +90,9 @@ typedef enum FileDialogScrollDirection {
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
 
 // 0x5108C8 dbox
-static const InterfaceFrameId gDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    INTF_FRM_ID_218, // MEDIALOG.FRM - Medium generic dialog box
-    INTF_FRM_ID_217, // LGDIALOG.FRM - Large generic dialog box
+static constexpr FrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
+    FrmId(INTF_FRM_ID_218), // MEDIALOG.FRM - Medium generic dialog box
+    FrmId(INTF_FRM_ID_217), // LGDIALOG.FRM - Large generic dialog box
 };
 
 // 0x5108D0 ytable
@@ -126,25 +126,25 @@ static const int _dblines[DIALOG_TYPE_COUNT] = {
 };
 
 // 0x510900 flgids
-static InterfaceFrameId gLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    INTF_FRM_ID_224, // loadbox.frm - character editor
-    INTF_FRM_ID_8, // lilredup.frm - little red button up
-    INTF_FRM_ID_9, // lilreddn.frm - little red button down
-    INTF_FRM_ID_181, // dnarwoff.frm - character editor
-    INTF_FRM_ID_182, // dnarwon.frm - character editor
-    INTF_FRM_ID_199, // uparwoff.frm - character editor
-    INTF_FRM_ID_200, // uparwon.frm - character editor
+static constexpr FrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+    FrmId(INTF_FRM_ID_224), // loadbox.frm - character editor
+    FrmId(INTF_FRM_ID_8), // lilredup.frm - little red button up
+    FrmId(INTF_FRM_ID_9), // lilreddn.frm - little red button down
+    FrmId(INTF_FRM_ID_181), // dnarwoff.frm - character editor
+    FrmId(INTF_FRM_ID_182), // dnarwon.frm - character editor
+    FrmId(INTF_FRM_ID_199), // uparwoff.frm - character editor
+    FrmId(INTF_FRM_ID_200), // uparwon.frm - character editor
 };
 
 // 0x51091C flgids2
-static InterfaceFrameId gSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    INTF_FRM_ID_225, // savebox.frm - character editor
-    INTF_FRM_ID_8, // lilredup.frm - little red button up
-    INTF_FRM_ID_9, // lilreddn.frm - little red button down
-    INTF_FRM_ID_181, // dnarwoff.frm - character editor
-    INTF_FRM_ID_182, // dnarwon.frm - character editor
-    INTF_FRM_ID_199, // uparwoff.frm - character editor
-    INTF_FRM_ID_200, // uparwon.frm - character editor
+static constexpr FrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+    FrmId(INTF_FRM_ID_225), // savebox.frm - character editor
+    FrmId(INTF_FRM_ID_8), // lilredup.frm - little red button up
+    FrmId(INTF_FRM_ID_9), // lilreddn.frm - little red button down
+    FrmId(INTF_FRM_ID_181), // dnarwoff.frm - character editor
+    FrmId(INTF_FRM_ID_182), // dnarwon.frm - character editor
+    FrmId(INTF_FRM_ID_199), // uparwoff.frm - character editor
+    FrmId(INTF_FRM_ID_200), // uparwon.frm - character editor
 };
 
 // 0x41CF20 dialog_out
@@ -201,7 +201,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     }
 
     FrmImage backgroundFrmImage;
-    FrmId backgroundFid = FrmId(gDialogBoxBackgroundFrmIds[dialogType]);
+    const FrmId backgroundFid = kDialogBoxBackgroundFrmIds[dialogType];
     if (!backgroundFrmImage.lock(backgroundFid)) {
         fontSetCurrent(savedFont);
         return -1;
@@ -229,22 +229,19 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonPressedFrmImage;
 
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        FrmId doneBoxFid = FrmId(INTF_FRM_ID_209);
-        if (!doneBoxFrmImage.lock(doneBoxFid)) {
+        if (!doneBoxFrmImage.lock(FrmId(INTF_FRM_ID_209))) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        FrmId pressedFid = FrmId(INTF_FRM_ID_9);
-        if (!buttonPressedFrmImage.lock(pressedFid)) {
+        if (!buttonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        FrmId normalFid = FrmId(INTF_FRM_ID_8);
-        if (!buttonNormalFrmImage.lock(normalFid)) {
+        if (!buttonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8))) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
@@ -346,22 +343,19 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
         } else {
-            FrmId doneBoxFid = FrmId(INTF_FRM_ID_209);
-            if (!doneBoxFrmImage.lock(doneBoxFid)) {
+            if (!doneBoxFrmImage.lock(FrmId(INTF_FRM_ID_209))) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            FrmId pressedFid = FrmId(INTF_FRM_ID_9);
-            if (!buttonPressedFrmImage.lock(pressedFid)) {
+            if (!buttonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            FrmId normalFid = FrmId(INTF_FRM_ID_8);
-            if (!buttonNormalFrmImage.lock(normalFid)) {
+            if (!buttonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8))) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
@@ -588,8 +582,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
 
     for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        FrmId fid = FrmId(gLoadFileDialogFrmIds[index]);
-        if (!frmImages[index].lock(fid)) {
+        if (!frmImages[index].lock(kLoadFileDialogFrmIds[index])) {
             return -1;
         }
     }
@@ -953,8 +946,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     FrmImage frmImages[FILE_DIALOG_FRM_COUNT];
 
     for (int index = 0; index < FILE_DIALOG_FRM_COUNT; index++) {
-        FrmId fid = FrmId(gSaveFileDialogFrmIds[index]);
-        if (!frmImages[index].lock(fid)) {
+        if (!frmImages[index].lock(kSaveFileDialogFrmIds[index])) {
             return -1;
         }
     }
@@ -1111,7 +1103,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
 
     unsigned char* fileNameBufferPtr = windowBuffer + backgroundWidth * 190 + 57;
 
-    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, static_cast<Color>(100));
+    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, Color(100));
     fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, COLOR_GREEN);
 
     windowRefresh(win);
@@ -1144,7 +1136,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
         } else if (keyCode == 501 || keyCode == KEY_ESCAPE) {
             rc = 1;
         } else if ((keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE) && fileNameCopyLength > 0) {
-            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, static_cast<Color>(100));
+            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, Color(100));
             fileNameCopy[fileNameCopyLength - 1] = ' ';
             fileNameCopy[fileNameCopyLength] = '\0';
             fontDrawText(fileNameBufferPtr, fileNameCopy, backgroundWidth, backgroundWidth, COLOR_GREEN);
@@ -1185,7 +1177,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                     rc = 2;
                 } else {
                     doubleClickSelectedFileIndex = selectedFileIndex;
-                    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, static_cast<Color>(100));
+                    bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, Color(100));
                     strncpy(fileNameCopy, fileList[selectedFileIndex + pageOffset], 16);
 
                     int index;
@@ -1260,7 +1252,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 }
             }
         } else if (_isdoschar(keyCode)) {
-            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, static_cast<Color>(100));
+            bufferFill(fileNameBufferPtr, fontGetStringWidth(fileNameCopy), cursorHeight, backgroundWidth, Color(100));
 
             fileNameCopy[fileNameCopyLength] = keyCode & 0xFF;
             fileNameCopy[fileNameCopyLength + 1] = ' ';
@@ -1327,7 +1319,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
                 if (blinkingCounter == 0) {
                     blinkingCounter = 3;
 
-                    Color color = blink ? static_cast<Color>(100) : COLOR_GREEN;
+                    Color color = blink ? Color(100) : COLOR_GREEN;
                     blink = !blink;
 
                     bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, backgroundWidth, color);
@@ -1355,7 +1347,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
             if (blinkingCounter == 0) {
                 blinkingCounter = 3;
 
-                Color color = blink ? static_cast<Color>(100) : COLOR_GREEN;
+                Color color = blink ? Color(100) : COLOR_GREEN;
                 blink = !blink;
 
                 bufferFill(fileNameBufferPtr + fontGetStringWidth(fileNameCopy) - cursorWidth, cursorWidth, cursorHeight - 2, backgroundWidth, color);

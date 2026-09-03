@@ -60,10 +60,10 @@ static int elevatorGetLevelFromKeyCode(int elevator, int keyCode);
 static int elevatorGetLevelFromEscKey(int elevator, int map);
 
 // 0x43E950 grph_id_2
-static const InterfaceFrameId gElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
-    INTF_FRM_ID_141, // ebut_in.frm - map elevator screen
-    INTF_FRM_ID_142, // ebut_out.frm - map elevator screen
-    INTF_FRM_ID_149, // gaj000.frm - map elevator screen
+static constexpr FrmId kElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
+    FrmId(INTF_FRM_ID_141), // ebut_in.frm - map elevator screen
+    FrmId(INTF_FRM_ID_142), // ebut_out.frm - map elevator screen
+    FrmId(INTF_FRM_ID_149), // gaj000.frm - map elevator screen
 };
 
 // 0x43E95C intotal
@@ -519,8 +519,7 @@ static int elevatorWindowInit(int elevator)
 
     int index;
     for (index = 0; index < ELEVATOR_FRM_COUNT; index++) {
-        FrmId fid = FrmId(gElevatorFrmIds[index]);
-        if (!_elevatorFrmImages[index].lock(fid)) {
+        if (!_elevatorFrmImages[index].lock(kElevatorFrmIds[index])) {
             break;
         }
     }
@@ -542,11 +541,11 @@ static int elevatorWindowInit(int elevator)
     const ElevatorBackground* elevatorBackground = &(gElevatorBackgrounds[elevator]);
     bool backgroundsLoaded = true;
 
-    FrmId backgroundFid = FrmId(elevatorBackground->backgroundFrmId);
-    if (_elevatorBackgroundFrmImage.lock(backgroundFid)) {
+    const FrmId backgroundFrmId = FrmId(elevatorBackground->backgroundFrmId);
+    if (_elevatorBackgroundFrmImage.lock(backgroundFrmId)) {
         if (elevatorBackground->panelFrmId != -1) {
-            FrmId panelFid = FrmId(elevatorBackground->panelFrmId);
-            if (!_elevatorPanelFrmImage.lock(panelFid)) {
+            const FrmId panelFrmId = FrmId(elevatorBackground->panelFrmId);
+            if (!_elevatorPanelFrmImage.lock(panelFrmId)) {
                 backgroundsLoaded = false;
             }
         }

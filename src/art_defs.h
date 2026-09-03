@@ -3,12 +3,12 @@
 
 namespace fallout {
 
-inline int frameIdFromFid(int fid)
+constexpr inline int frameIdFromFid(int fid)
 {
     return fid & 0xFFF;
 }
 
-inline int frameIdFromPid(int pid)
+constexpr inline int frameIdFromPid(int pid)
 {
     return pid & 0xFFFFFF;
 }

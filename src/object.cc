@@ -301,8 +301,8 @@ static char _obj_seen[5001];
 // 0x488780 obj_init
 int objectsInit(unsigned char* buf, int width, int height, int pitch)
 {
-    FrmId dudeFid;
-    FrmId eggFid;
+    const FrmId dudeFrmId = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    const FrmId eggFrmId = FrmId(INTF_FRM_ID_2);
 
     memset(_obj_seen, 0, 5001);
     gObjectsUpdateAreaPixelBounds.right = width + 320;
@@ -352,8 +352,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
     gObjectsWindowBufferSize = height * width;
     gObjectsWindowPitch = pitch;
 
-    dudeFid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
-    objectCreateWithFidPid(&gDude, dudeFid.fid(), 0x1000000);
+    objectCreateWithFidPid(&gDude, dudeFrmId.fid(), 0x1000000);
 
     gDude->flags |= OBJECT_NO_REMOVE;
     gDude->flags |= OBJECT_NO_SAVE;
@@ -366,8 +365,7 @@ int objectsInit(unsigned char* buf, int width, int height, int pitch)
         exit(1);
     }
 
-    eggFid = FrmId(INTF_FRM_ID_2);
-    objectCreateWithFidPid(&gEgg, eggFid.fid(), -1);
+    objectCreateWithFidPid(&gEgg, eggFrmId.fid(), -1);
     gEgg->flags |= OBJECT_NO_REMOVE;
     gEgg->flags |= OBJECT_NO_SAVE;
     gEgg->flags |= OBJECT_HIDDEN;
@@ -2813,8 +2811,8 @@ void _dark_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int
 
     for (int y = 0; y < srcHeight; y++) {
         for (int x = 0; x < srcWidth; x++) {
-            unsigned char color = *sp;
-            if (color != 0) {
+            Color color = static_cast<Color>(*sp);
+            if (color != COLOR_FIRST) {
                 if (color < 0xE5) {
                     color = intensityColorTable[color][intensityIndex];
                 }
@@ -3248,8 +3246,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     for (TileFrameId i = TILE_FRM_ID_FIRST; i <= TILE_FRM_ID_LAST; i++) {
         if (arr[i] != 0) {
-            FrmId fid = FrmId(i);
-            if (artLock(fid, &cache_handle) != nullptr) {
+            if (artLock(FrmId(i), &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }
         }
@@ -4759,7 +4756,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
 
         switch (outlineType) {
         case OUTLINE_TYPE_HOSTILE:
-            color = static_cast<Color>(243);
+            color = Color(243);
             isOutlinePalleted = 0;
             animatedColorCount = 5;
             animatedColorBandHeight = frameHeight / 5;
@@ -4783,7 +4780,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
         case OUTLINE_TYPE_FRIENDLY:
             animatedColorCount = 4;
             animatedColorBandHeight = frameHeight / 4;
-            color = static_cast<Color>(229);
+            color = Color(229);
             isOutlinePalleted = 0;
             break;
         case OUTLINE_TYPE_ITEM:
@@ -4795,7 +4792,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
             }
             break;
         case OUTLINE_TYPE_BLOCKED:
-            color = static_cast<Color>(61);
+            color = Color(61);
             isOutlinePalleted = 0;
             animatedColorCount = 1;
             animatedColorBandHeight = frameHeight;
@@ -4826,9 +4823,8 @@ static void objectDrawOutline(Object* object, Rect* rect)
             Color* outlineBlendTable = isOutlinePalleted != 0
                 ? blendTable + (grayTable[outlineColor] << 8)
                 : nullptr;
-            int destOffset = destPtr - gObjectsWindowBuffer;
             for (int x = 0; x < frameWidth; x++) {
-                destOffset = destPtr - gObjectsWindowBuffer;
+                int destOffset = destPtr - gObjectsWindowBuffer;
                 if (*srcPtr != 0 && cycle) {
                     if (yVisible && x >= visibleFrameRect.left && x <= visibleFrameRect.right && destOffset > 0 && destOffset % gObjectsWindowPitch != 0) {
                         Color leftOutlineColor;
