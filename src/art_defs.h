@@ -153,7 +153,6 @@ inline WeaponAnimation weaponAnimationFromFid(int fid)
 
 enum class SkillDexFrameId : int {
     Invalid = -1, // invalid frame id
-    First = 0, // first frame id in skilldex.lst
     Strength = 0,    // strength.frm - strength (basic stat)
     Perception = 1,    // perceptn.frm - perception (basic stat)
     Endurance = 2,    // endur.frm - endurance (basic stat)

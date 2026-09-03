@@ -760,7 +760,7 @@ char* perkGetDescription(Perk perk)
 SkillDexFrameId perkGetFrmId(Perk perk)
 {
     if (!perkIsValid(perk)) {
-        return SkillDexFrameId::First;
+        return SkillDexFrameId::Invalid;
     }
     return gPerkDescriptions[perk].frmId;
 }

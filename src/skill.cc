@@ -787,7 +787,7 @@ char* skillGetAttributes(Skill skill)
 // 0x4AAC08
 SkillDexFrameId skillGetFrmId(Skill skill)
 {
-    return skillIsValid(skill) ? gSkillDescriptions[skill].frmId : SkillDexFrameId::First;
+    return skillIsValid(skill) ? gSkillDescriptions[skill].frmId : SkillDexFrameId::Invalid;
 }
 
 // 0x4AAC2C

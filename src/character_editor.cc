@@ -5040,6 +5040,10 @@ static char* _itostndn(int value, char* dest)
 // 0x43AAEC DrawCard
 static int characterEditorDrawCardWithOptions(SkillDexFrameId graphicId, const char* name, const char* attributes, char* description)
 {
+    if (graphicId == SkillDexFrameId::Invalid) {
+        return -1;
+    }
+
     FrmImage frmImage;
     const FrmId frmId = FrmId(graphicId);
     if (!frmImage.lock(frmId)) {
@@ -7006,6 +7010,10 @@ static int perkDialogOptionCompare(const void* a1, const void* a2)
 // 0x43DB54 DrawCard2
 static int perkDialogDrawCard(SkillDexFrameId frmId, const char* name, const char* rank, char* description)
 {
+    if (frmId == SkillDexFrameId::Invalid) {
+        return -1;
+    }
+    
     FrmImage frmImage;
     if (!frmImage.lock(FrmId(frmId))) {
         return -1;

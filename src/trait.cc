@@ -205,7 +205,7 @@ char* traitGetDescription(Trait trait)
 // 0x4B3BA8 trait_pic
 SkillDexFrameId traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? traitDescriptions[trait].frmId : SkillDexFrameId::First;
+    return traitIsValid(trait) ? traitDescriptions[trait].frmId : SkillDexFrameId::Invalid;
 }
 
 // Returns `true` if the specified trait is selected.
