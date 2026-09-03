@@ -235,7 +235,7 @@ static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_HIGHLIGHTED = 0;
 static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_NORMAL = 1;
 
 static constexpr FrmId kGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_COUNT] = {
-    { FrmId(InterfaceFrameId::CancelHighlighted) , FrmId(InterfaceFrameId::Cancel) },
+    { FrmId(InterfaceFrameId::CancelHighlighted), FrmId(InterfaceFrameId::Cancel) },
     { FrmId(InterfaceFrameId::DropHighlighted), FrmId(InterfaceFrameId::Drop) },
     { FrmId(InterfaceFrameId::InventoryHighlighted), FrmId(InterfaceFrameId::Inventory) },
     { FrmId(InterfaceFrameId::LookHighlighted), FrmId(InterfaceFrameId::Look) },

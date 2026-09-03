@@ -1157,7 +1157,7 @@ int wmWorldMap_init()
         FrmId(InterfaceFrameId::WorldSphereOverlay1),
         FrmId(InterfaceFrameId::WorldSphereOverlay2),
     };
-    
+
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
         citySizeDescription->fid = kWorldSphereOverlayFrmIds[citySize].fid();

@@ -4658,8 +4658,7 @@ void _gdialog_window_destroy()
     int offset = (GAME_DIALOG_WINDOW_WIDTH) * (480 - _dialogue_subwin_len);
     unsigned char* backgroundWindowBuffer = windowGetBuffer(gGameDialogBackgroundWindow) + offset;
 
-    const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::DialogTalkSubwindowParty) :
-        FrmId(InterfaceFrameId::DialogTalkSubwindow);
+    const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::DialogTalkSubwindowParty) : FrmId(InterfaceFrameId::DialogTalkSubwindow);
 
     FrmImage backgroundFrmImage;
     if (backgroundFrmImage.lock(backgroundFid)) {
