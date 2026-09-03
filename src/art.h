@@ -140,7 +140,7 @@ public:
 
     constexpr explicit FrmId(BackgroundFrameId background)
         : _objectType(OBJ_TYPE_BACKGROUND)
-        , _fid(buildFid(OBJ_TYPE_BACKGROUND, background))
+        , _fid(buildFid(OBJ_TYPE_BACKGROUND, static_cast<int>(background)))
         , _frameId { static_cast<int>(background) }
         , _path(nullptr)
     {

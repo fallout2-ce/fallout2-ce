@@ -73,7 +73,7 @@ inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
     return fidget != FIDGET_INVALID ? static_cast<HeadAnimation>(fidget) : HEAD_ANIMATION_VERY_GOOD_REACTION;
 }
 
-enum BackgroundFrameId : int {
+enum class BackgroundFrameId : int {
     BACKGROUND_INVALID = -1,
     BACKGROUND_0,
     BACKGROUND_1,
@@ -100,7 +100,7 @@ enum BackgroundFrameId : int {
 
 inline bool backgroundFrameIdIsValid(int background)
 {
-    return background >= BACKGROUND_0;
+    return background > static_cast<int>(BackgroundFrameId::BACKGROUND_INVALID);
 }
 
 enum DudeNativeLook : int {
