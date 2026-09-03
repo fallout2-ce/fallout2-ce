@@ -1441,7 +1441,7 @@ int gameDialogAddTextOption(int messageListId, const char* text, int reaction)
 static int createDialogRedButton(int win, int x, int y, void (*mouseUp)(int, int), int keyCode)
 {
     int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
-        FrmId(InterfaceFrameId::DialogRedButtonDown), FrmId(InterfaceFrameId::DialogRedButtonUp),
+        FrmId(InterfaceFrameId::DialogRedButtonUp), FrmId(InterfaceFrameId::DialogRedButtonDown),
         {}, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_med_butt_press, _gsound_med_butt_release);

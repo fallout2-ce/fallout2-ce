@@ -510,8 +510,8 @@ enum class InterfaceFrameId : int {
     DialogBigDoneButtonDown = 92, // di_done2.frm - dialog big done button <DOWN>
     DialogDownButtonUp = 93, // di_down1.frm - dialog down button <UP>
     DialogDownButtonDown = 94, // di_down2.frm - dialog down button <DOWN>
-    DialogRedButtonUp = 95, // di_rdbt1.frm - dialog red button <UP>
-    DialogRedButtonDown = 96, // di_rdbt2.frm - dialog red button <DOWN>
+    DialogRedButtonDown = 95, // di_rdbt1.frm - dialog red button <DOWN>
+    DialogRedButtonUp = 96, // di_rdbt2.frm - dialog red button <UP>
     DialogRestButtonUp = 97, // di_rest1.frm - dialog rest button <UP>
     DialogRestButtonDown = 98, // di_rest2.frm - dialog rest button <DOWN>
     DialogTalkSubwindow = 99, // di_talk.frm - dialog screen subwindow (NPC's)
