@@ -98,11 +98,6 @@ enum class BackgroundFrameId : int {
     Adobe = 20, //adobe.frm
 };
 
-inline bool backgroundFrameIdIsValid(int background)
-{
-    return background > static_cast<int>(BackgroundFrameId::Invalid);
-}
-
 enum DudeNativeLook : int {
     // Hero looks as one the tribals (before finishing Temple of Trails).
     DUDE_NATIVE_LOOK_TRIBAL,
