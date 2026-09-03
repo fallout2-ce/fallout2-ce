@@ -11,6 +11,7 @@
 #include "kb.h"
 #include "mapper/mp_targt.h"
 #include "memory.h"
+#include "obj_types.h"
 #include "proto.h"
 #include "svga.h"
 #include "text_font.h"
@@ -59,7 +60,7 @@ static char* yesno[] = {
 };
 
 // 0x559C58
-Color edit_window_color = static_cast<Color>(1);
+Color edit_window_color = Color(1);
 
 // 0x559C60
 bool can_modify_protos = false;
@@ -125,7 +126,7 @@ int proto_choose_container_flags(Proto* proto)
         "Magic Hands Grnd",
         0);
 
-    if ((proto->item.data.container.openFlags & 0x1) != 0) {
+    if ((proto->item.data.container.openFlags & CONTAINER_FLAG_OPEN) != 0) {
         windowDrawText(win,
             yesno[YES],
             50,
@@ -181,9 +182,9 @@ int proto_choose_container_flags(Proto* proto)
         }
 
         if (input == '1') {
-            proto->item.data.container.openFlags ^= 0x1;
+            proto->item.data.container.openFlags ^= CONTAINER_FLAG_OPEN;
 
-            if ((proto->item.data.container.openFlags & 0x1) != 0) {
+            if ((proto->item.data.container.openFlags & CONTAINER_FLAG_OPEN) != 0) {
                 windowDrawText(win,
                     yesno[YES],
                     50,

@@ -1,6 +1,7 @@
 #ifndef WORLD_MAP_H
 #define WORLD_MAP_H
 
+#include "art_defs.h"
 #include "color.h"
 #include "db.h"
 
@@ -384,7 +385,7 @@ void wmTownMap();
 int wmCarUseGas(int amount);
 int wmCarFillGas(int amount);
 int wmCarGasAmount();
-void wmSetCarInterfaceArt(int artIndex);
+void wmSetCarInterfaceArt(InterfaceFrameId artIndex);
 bool wmCarIsOutOfGas();
 int wmCarCurrentArea();
 int wmCarGiveToParty();

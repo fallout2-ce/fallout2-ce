@@ -836,7 +836,7 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
 
     // NOTE: Original code uses goto to jump out from nested conditions below.
     bool shouldChangeFid = false;
-    int fid;
+    FrmId fid;
     if (critterIsProne(critter)) {
         AnimationType current = animationTypeFromFid(critter->fid);
         if (current == ANIM_FALL_BACK || current == ANIM_FALL_FRONT) {
@@ -844,14 +844,14 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             if (current == ANIM_FALL_BACK) {
                 back = true;
             } else {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                fid = FrmId(critter, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 if (!artExists(fid)) {
                     back = true;
                 }
             }
 
             if (back) {
-                fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                fid = FrmId(critter, ANIM_FALL_BACK_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             }
 
             shouldChangeFid = true;
@@ -866,13 +866,17 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
             anim = LAST_SF_DEATH_ANIM;
         }
 
-        fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
-        _obj_fix_violence_settings(&fid);
+        fid = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+        int violenceFixedFid = fid.fid();
+        _obj_fix_violence_settings(&violenceFixedFid);
+        fid = FrmId(violenceFixedFid);
         if (!artExists(fid)) {
             debugPrint("\nError: Critter Kill: Can't match fid!");
 
-            fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
-            _obj_fix_violence_settings(&fid);
+            fid = FrmId(critter, ANIM_FALL_BACK_BLOOD_SF, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            violenceFixedFid = fid.fid();
+            _obj_fix_violence_settings(&violenceFixedFid);
+            fid = FrmId(violenceFixedFid);
         }
 
         shouldChangeFid = true;
@@ -884,7 +888,7 @@ void critterKill(Object* critter, AnimationType anim, bool refreshRect)
     if (shouldChangeFid) {
         objectSetFrame(critter, 0, &updatedRect);
 
-        objectSetFid(critter, fid, &tempRect);
+        objectSetFid(critter, fid.fid(), &tempRect);
         rectUnion(&updatedRect, &tempRect, &updatedRect);
     }
 
@@ -1046,7 +1050,7 @@ bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode)
     Rotation rotation = critter->rotation + 1;
     WeaponAnimation animationCode = weaponGetAnimationCode(weapon);
     AnimationType weaponAnimationCode = weaponGetAnimationForHitMode(weapon, hitMode);
-    int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, weaponAnimationCode, animationCode, rotation);
+    FrmId fid = FrmId(critter, weaponAnimationCode, animationCode, rotation);
     return artExists(fid);
 }
 
@@ -1056,7 +1060,7 @@ int critterBuildGorisFid(Object* critter, int frmId)
 
     // Goris needs the live critter FID preserved exactly as-is except for the
     // base FRM id swap between robe and claw body art.
-    return (critter->fid & ~0xFFF) | (frmId & 0xFFF);
+    return (critter->fid & ~0xFFF) | critterFrameIdFromFid(frmId);
 }
 
 // 0x42DE58 pc_load_data
@@ -1380,8 +1384,8 @@ int knockoutClear(Object* obj, void* data)
 
     obj->data.critter.combat.results &= ~(DAM_KNOCKED_OUT | DAM_KNOCKED_DOWN);
 
-    int fid = buildFid(objectTypeFromFid(obj->fid), obj->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
-    objectSetFid(obj, fid, nullptr);
+    FrmId fid = FrmId(obj, ANIM_STAND, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+    objectSetFid(obj, fid.fid(), nullptr);
 
     return 0;
 }

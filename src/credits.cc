@@ -91,10 +91,10 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
                         soundContinueAll();
 
                         memset(backgroundBuffer, COLOR_BLACK, windowWidth * windowHeight);
-
-                        if (backgroundFid != -1) {
+                        FrmId backgroundFrmId = FrmId(backgroundFid);
+                        if (!backgroundFrmId.empty()) {
                             FrmImage backgroundFrmImage;
-                            if (backgroundFrmImage.lock(backgroundFid)) {
+                            if (backgroundFrmImage.lock(backgroundFrmId)) {
                                 blitBufferToBuffer(backgroundFrmImage.getData(),
                                     backgroundFrmImage.getWidth(),
                                     backgroundFrmImage.getHeight(),

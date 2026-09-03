@@ -105,7 +105,7 @@ static const char* _head2 = "vfngfbnfvppp";
 // Current native look base fid.
 //
 // 0x5108A4 art_vault_guy_num
-int _art_vault_guy_num = 0;
+CritterFrameId _art_vault_guy_num = CRITTER_FRM_ID_FIRST;
 
 // Base fids for unarmored dude.
 //
@@ -119,7 +119,7 @@ int _art_vault_guy_num = 0;
 // index, not gender.
 //
 // 0x5108A8 art_vault_person_nums
-int _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
+CritterFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUNT];
 
 // Index of "grid001.frm" in tiles.lst.
 //
@@ -145,7 +145,7 @@ static HeadDescription* gHeadDescriptions;
 
 // anon_alias
 // 0x56CAEC anon_alias
-static int* _anon_alias;
+static CritterFrameId* _anon_alias;
 
 // artCritterFidShouldRunData
 // 0x56CAF0 artCritterFidShouldRunData
@@ -188,7 +188,7 @@ int artInit()
         }
     }
 
-    _anon_alias = (int*)internal_malloc(sizeof(*_anon_alias) * gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength);
+    _anon_alias = (CritterFrameId*)internal_malloc(sizeof(*_anon_alias) * gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength);
     if (_anon_alias == nullptr) {
         gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength = 0;
         debugPrint("Out of memory for anon_alias in art_init\n");
@@ -231,7 +231,7 @@ int artInit()
     configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female", &tribalFemaleFileName, gDefaultTribalFemaleFileName);
 
     char* critterFileNames = gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames;
-    for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
+    for (CritterFrameId critterIndex = CRITTER_FRM_ID_FIRST; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
         if (compat_stricmp(critterFileNames, jumpsuitMaleFileName) == 0) {
             _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_MALE] = critterIndex;
         } else if (compat_stricmp(critterFileNames, jumpsuitFemaleFileName) == 0) {
@@ -255,7 +255,7 @@ int artInit()
 
         char* sep1 = strchr(string, ',');
         if (sep1 != nullptr) {
-            _anon_alias[critterIndex] = atoi(sep1 + 1);
+            _anon_alias[critterIndex] = static_cast<CritterFrameId>(atoi(sep1 + 1));
 
             char* sep2 = strchr(sep1 + 1, ',');
             if (sep2 != nullptr) {
@@ -390,7 +390,7 @@ int artGetFidgetCount(int headFid)
         return 0;
     }
 
-    Head head = headFromFid(headFid);
+    HeadFrameId head = headFrameIdFromFid(headFid);
 
     if (head > gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
         return 0;
@@ -677,7 +677,7 @@ char* artBuildFilePath(int fid)
 
     *_art_name = '\0';
 
-    int frmId = baseFid & 0xFFF;
+    int frmId = frameIdFromFid(baseFid);
     AnimationType animType = animationTypeFromFid(baseFid);
     WeaponAnimation weaponCode = weaponAnimationFromFid(baseFid);
     ObjectType objectType = objectTypeFromFid(baseFid);
@@ -958,7 +958,7 @@ bool _art_fid_valid(int fid)
 }
 
 // 0x419998
-int _art_alias_num(int index)
+CritterFrameId _art_alias_num(CritterFrameId index)
 {
     return _anon_alias[index];
 }
@@ -967,7 +967,7 @@ int _art_alias_num(int index)
 int artCritterFidShouldRun(int fid)
 {
     if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
-        return gArtCritterFidShoudRunData[fid & 0xFFF];
+        return gArtCritterFidShoudRunData[critterFrameIdFromFid(fid)];
     }
 
     return 0;
@@ -992,7 +992,7 @@ int artAliasFid(int fid)
             // NOTE: Original code is slightly different. It uses many mutually
             // mirrored bitwise operators. Probably result of some macros for
             // getting/setting individual bits on fid.
-            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | (_anon_alias[fid & 0xFFF] & 0xFFF);
+            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | critterFrameIdFromFid(_anon_alias[critterFrameIdFromFid(fid)]);
         }
     }
 
@@ -1035,7 +1035,12 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             Art art;
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
-                result = 0;
+                if (*sizePtr <= 0) {
+                    debugPrint("ART ERROR: fid %d path %s returned invalid data size %d\n", fid, artFilePath, *sizePtr);
+                    *sizePtr = 0;
+                } else {
+                    result = 0;
+                }
             }
             fileClose(stream);
         }
@@ -1067,7 +1072,12 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
 
         if (loaded) {
             *sizePtr = artGetDataSize((Art*)data);
+            if (*sizePtr < 0) {
+                debugPrint("ART ERROR: fid %d path %s read data returned negative size %d\n", fid, artFileName, *sizePtr);
+            }
             result = 0;
+        } else {
+            debugPrint("ART ERROR: failed to load ART data for fid %d path %s\n", fid, artFileName);
         }
     }
 
@@ -1078,39 +1088,6 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
 static void artCacheFreeImpl(void* ptr)
 {
     internal_free(ptr);
-}
-
-/* FID Structure:
-    3 bits for rotation
-    4 bits for object type
-    8 bits for animation type
-    4 bits for weapon code
-    12 bits for frame ID
-*/
-static int buildFidInternal(unsigned short frmId, unsigned char weaponCode, unsigned char animType, unsigned char objectType, unsigned char rotation)
-{
-    return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponCode << 12) & 0xF000) | (frmId & 0xFFF);
-}
-
-// 0x419C88
-// animType doesn't have to be of AnimationType enum only but also HeadAnimation
-// weaponCode doesn't have to be WeaponAnimation enum only but also Fidget or flags
-int buildFid(ObjectType objectType, int frmId, int animType, int weaponCode, Rotation rotation)
-{
-    // Always use rotation 0 (NE) for non-critters, for certain critter animations.
-    // For other critter animations, check if art for the given rotation exists, if not try rotation 1 (E) and if that also doesn't exist, then default to 0 (NE).
-    if (objectType != OBJ_TYPE_CRITTER
-        || animType == ANIM_FIRE_DANCE
-        || animType < ANIM_FALL_BACK
-        || animType > ANIM_FALL_FRONT_BLOOD) {
-        rotation = ROTATION_NE;
-    } else if (!artExists(buildFidInternal(frmId, weaponCode, animType, OBJ_TYPE_CRITTER, rotation))) {
-        rotation = rotation != ROTATION_E
-                && artExists(buildFidInternal(frmId, weaponCode, animType, OBJ_TYPE_CRITTER, ROTATION_E))
-            ? ROTATION_E
-            : ROTATION_NE;
-    }
-    return buildFidInternal(frmId, weaponCode, animType, objectType, rotation);
 }
 
 // 0x419D60
@@ -1153,6 +1130,20 @@ static int artReadHeader(Art* art, File* stream)
     // CE: Fix malformed `frm` files with `dataSize` set to 0 in Nevada.
     if (art->dataSize == 0) {
         art->dataSize = fileGetSize(stream);
+    }
+
+    if (art->frameCount < 0) {
+        debugPrint("ART WARNING: negative frameCount %d in header\n", art->frameCount);
+    }
+
+    if (art->dataSize < 0) {
+        debugPrint("ART WARNING: negative dataSize %d in header\n", art->dataSize);
+    }
+
+    for (int rotation = 0; rotation < ROTATION_COUNT; rotation++) {
+        if (art->dataOffsets[rotation] < 0) {
+            debugPrint("ART WARNING: negative dataOffset[%d] %d in header\n", rotation, art->dataOffsets[rotation]);
+        }
     }
 
     return 0;
@@ -1445,6 +1436,13 @@ int artRead(const char* path, unsigned char* data)
         return -3;
     }
 
+    int totalAllocSize = artGetDataSize(art);
+    if (totalAllocSize <= 0) {
+        debugPrint("ART ERROR: artRead computed invalid totalAllocSize %d for %s\n", totalAllocSize, path);
+        fileClose(stream);
+        return -5;
+    }
+
     int currentPadding = paddingForSize(sizeof(Art));
     int previousPadding = 0;
 
@@ -1628,28 +1626,51 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
     return gNamedArtCache.emplace(path, std::move(entry)).first->second;
 }
 
-FrmId::FrmId(ObjectType objType, int frmId)
-    : _fid(buildFid(objType, frmId))
-{
-    assert(objectTypeIsValid(objType));
-}
-
-FrmId::FrmId(ObjectType objType, const char* path)
-    : _objectType(objType)
-    , _path(path)
-{
-    assert(objectTypeIsValid(objType));
-}
-
-FrmId::FrmId(const char* path)
-    : _path(path)
+FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+    : _objectType(OBJ_TYPE_CRITTER)
+    , _fid(buildObjectFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation))
+    , _frameId { critter }
+    , _path(nullptr)
 {
 }
 
-ObjectType FrmId::objectType() const
+FrmId::FrmId(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+    : _objectType(objectType)
+    , _fid(buildObjectFid(objectType, frmId, animType, weaponAnimation, rotation))
+    , _frameId { frmId }
+    , _path(nullptr)
 {
-    assert(hasObjectType());
-    return static_cast<ObjectType>(_objectType);
+    assert(objectTypeIsValid(objectType));
+}
+
+FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+    : _objectType(object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid))
+    , _fid(object == nullptr ? EmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotation))
+    , _frameId { object == nullptr ? EmptyFid : frameIdFromFid(object->fid) }
+    , _path(nullptr)
+{
+}
+
+// 0x419C88
+// animType doesn't have to be of AnimationType enum only but also HeadAnimation
+// weaponCode doesn't have to be WeaponAnimation enum only but also Fidget or flags
+int FrmId::buildObjectFid(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+{
+    // Always use rotation 0 (NE) for non-critters, for certain critter animations.
+    // For other critter animations, check if art for the given rotation exists, if not try rotation 1 (E) and if that also doesn't exist, then default to 0 (NE).
+    if (objectType != OBJ_TYPE_CRITTER
+        || animType == ANIM_FIRE_DANCE
+        || animType < ANIM_FALL_BACK
+        || animType > ANIM_FALL_FRONT_BLOOD) {
+        rotation = ROTATION_NE;
+    } else if (!artExists(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, rotation))) {
+        rotation = rotation != ROTATION_E
+                && artExists(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, ROTATION_E))
+            ? ROTATION_E
+            : ROTATION_NE;
+    }
+
+    return buildFid(objectType, frmId, animType, weaponAnimation, rotation);
 }
 
 FrmImage::FrmImage()
@@ -1696,11 +1717,6 @@ FrmImage& FrmImage::operator=(FrmImage&& other) noexcept
     return *this;
 }
 
-bool FrmImage::lock(const FrmId& frmId)
-{
-    return lock(frmId, 0, ROTATION_NE);
-}
-
 bool FrmImage::lock(const FrmId& frmId, int frame, Rotation rotation)
 {
     if (frmId.fid() >= 0) {
@@ -1712,11 +1728,6 @@ bool FrmImage::lock(const FrmId& frmId, int frame, Rotation rotation)
             : lock(frmId.filePath(), frame, rotation);
     }
     return false;
-}
-
-bool FrmImage::lock(unsigned int fid)
-{
-    return lock(fid, 0, ROTATION_NE);
 }
 
 bool FrmImage::lock(unsigned int fid, int frame, Rotation rotation)
@@ -1738,11 +1749,6 @@ bool FrmImage::lock(unsigned int fid, int frame, Rotation rotation)
     return true;
 }
 
-bool FrmImage::lock(const char* frmPath)
-{
-    return lock(frmPath, 0, ROTATION_NE);
-}
-
 bool FrmImage::lock(const char* frmPath, int frame, Rotation direction)
 {
     if (isLocked()) {
@@ -1758,11 +1764,6 @@ bool FrmImage::lock(const char* frmPath, int frame, Rotation direction)
     }
 
     return true;
-}
-
-bool FrmImage::lock(ObjectType objType, const char* frmRelativePath)
-{
-    return lock(objType, frmRelativePath, 0, ROTATION_NE);
 }
 
 bool FrmImage::lock(ObjectType objType, const char* frmRelativePath, int frame, Rotation rotation)

@@ -424,9 +424,8 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         interfaceUpdateItems(animated, INTERFACE_ITEM_ACTION_DEFAULT, INTERFACE_ITEM_ACTION_DEFAULT);
     }
 
-    int fid = critter->fid;
-    WeaponAnimation weaponCode = weaponAnimationFromFid(fid);
-    int newFid = -1;
+    WeaponAnimation weaponCode = weaponAnimationFromFid(critter->fid);
+    FrmId newFid = FrmId::Empty();
 
     if ((flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
         if (critter == gDude) {
@@ -446,19 +445,19 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         }
 
         if (weaponCode == WEAPON_ANIMATION_NONE) {
-            newFid = buildFid(objectTypeFromFid(fid), fid & 0xFFF, animationTypeFromFid(fid), WEAPON_ANIMATION_NONE, rotationFromFid(fid));
+            newFid = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, rotationFromFid(critter->fid));
         }
     } else {
         if (critter == gDude) {
-            newFid = buildFid(objectTypeFromFid(fid), _art_vault_guy_num, animationTypeFromFid(fid), weaponCode, rotationFromFid(fid));
+            newFid = FrmId(_art_vault_guy_num, animationTypeFromFid(critter->fid), weaponCode, rotationFromFid(critter->fid));
         }
 
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
     }
 
-    if (newFid != -1) {
+    if (!newFid.empty()) {
         Rect rect;
-        objectSetFid(critter, newFid, &rect);
+        objectSetFid(critter, newFid.fid(), &rect);
         tileWindowRefreshRect(&rect, gElevation);
     }
 
@@ -1917,8 +1916,8 @@ static void opAttackComplex(Program* program)
 // 0x456DF0 op_start_gdialog
 static void opStartGameDialog(Program* program)
 {
-    Background background = static_cast<Background>(programStackPopInteger(program)); // no validation here as called often with -1
-    Head head = static_cast<Head>(programStackPopInteger(program)); // no validation here as called often with -1
+    BackgroundFrameId background = static_cast<BackgroundFrameId>(programStackPopInteger(program)); // no validation here as called often with -1
+    HeadFrameId head = static_cast<HeadFrameId>(programStackPopInteger(program)); // no validation here as called often with -1
     int reactionLevel = programStackPopInteger(program);
     Object* obj = static_cast<Object*>(programStackPopPointer(program));
     programStackPopInteger(program);
@@ -1940,8 +1939,8 @@ static void opStartGameDialog(Program* program)
         }
     }
 
-    if (headIsValid(head)) {
-        gGameDialogHeadFid = buildFid(OBJ_TYPE_HEAD, head);
+    if (headFrameIdIsValid(head)) {
+        gGameDialogHeadFid = FrmId(head).fid();
     }
 
     gameDialogSetBackground(background);
@@ -2063,14 +2062,14 @@ static void opMetarule3(Program* program)
             Object* obj = static_cast<Object*>(param1.pointerValue);
             int frmId = param2.integerValue;
 
-            int fid = buildFid(objectTypeFromFid(obj->fid),
+            FrmId fid = FrmId(objectTypeFromFid(obj->fid),
                 frmId,
                 animationTypeFromFid(obj->fid),
                 weaponAnimationFromFid(obj->fid),
                 rotationFromFid(obj->fid));
 
             Rect updatedRect;
-            objectSetFid(obj, fid, &updatedRect);
+            objectSetFid(obj, fid.fid(), &updatedRect);
             tileWindowRefreshRect(&updatedRect, gElevation);
         }
         break;
@@ -2369,7 +2368,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
         if (settings.preferences.violence_level < VIOLENCE_LEVEL_MAXIMUM_BLOOD) {
             useStandardDeath = true;
         } else {
-            int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            FrmId fid = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
             if (!artExists(fid)) {
                 useStandardDeath = true;
             }
@@ -2379,7 +2378,7 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
             if (forceBack) {
                 anim = ANIM_FALL_BACK;
             } else {
-                int fid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                FrmId fid = FrmId(critter, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 if (artExists(fid)) {
                     anim = ANIM_FALL_FRONT;
                 } else {
@@ -2690,11 +2689,13 @@ static void opGetFixedParam(Program* program)
 {
     int fixedParam = 0;
 
-    int sid = scriptGetSid(program);
-
-    Script* script;
-    if (scriptGetScript(sid, &script) != -1) {
-        fixedParam = script->fixedParam;
+    ScriptContextRef context;
+    if (scriptContextResolve(program, &context)) {
+        if (context.kind == ScriptContextKind::NormalScript) {
+            fixedParam = context.script->fixedParam;
+        } else {
+            fixedParam = context.detached->fixedParam;
+        }
     } else {
         scriptPredefinedError(program, "fixed_param", SCRIPT_ERROR_CANT_MATCH_PROGRAM_TO_SID);
     }
@@ -3197,7 +3198,11 @@ static void opFloatMessage(Program* program)
         color = COLOR_LIGHT_YELLOW;
         break;
     case FLOATING_MESSAGE_TYPE_BLACK:
+        color = COLOR_DARK_GREY_3;
+        break;
     case FLOATING_MESSAGE_TYPE_PURPLE:
+        color = COLOR_MAGENTA;
+        break;
     case FLOATING_MESSAGE_TYPE_GREY:
         color = COLOR_DARK_GREY_2;
         break;
@@ -3347,7 +3352,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (buildFid(OBJ_TYPE_MISC, 10) == object->fid) {
+                if (FrmId(MISC_FRM_ID_10).fid() == object->fid) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }
@@ -3439,28 +3444,28 @@ static void opAnim(Program* program)
         if (frame == 0) { // ANIMATE_FORWARD
             animationRegisterAnimate(obj, anim, 0);
             if (anim >= ANIM_FALL_BACK && anim <= ANIM_FALL_FRONT_BLOOD) {
-                int fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, anim + 28, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
-                animationRegisterSetFid(obj, fid, -1);
+                FrmId fid = FrmId(obj, static_cast<AnimationType>(anim + 28), weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                animationRegisterSetFid(obj, fid.fid(), -1);
             }
 
             if (combatData != nullptr) {
                 combatData->results &= ~DAM_KNOCKED_DOWN;
             }
         } else { // ANIMATE_REVERSE == 1
-            int fid = buildFid(objectTypeFromFid(obj->fid), obj->fid & 0xFFF, anim, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+            FrmId fid = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             animationRegisterAnimateReversed(obj, anim, 0);
 
             if (anim == ANIM_PRONE_TO_STANDING) {
-                fid = buildFid(objectTypeFromFid(obj->fid), obj->fid & 0xFFF, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                fid = FrmId(obj, ANIM_FALL_FRONT_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             } else if (anim == ANIM_BACK_TO_STANDING) {
-                fid = buildFid(objectTypeFromFid(obj->fid), obj->fid & 0xFFF, ANIM_FALL_BACK_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
+                fid = FrmId(obj, ANIM_FALL_BACK_SF, weaponAnimationFromFid(obj->fid), rotationFromFid(obj->fid));
             }
 
             if (combatData != nullptr) {
                 combatData->results |= DAM_KNOCKED_DOWN;
             }
 
-            animationRegisterSetFid(obj, fid, -1);
+            animationRegisterSetFid(obj, fid.fid(), -1);
         }
 
         reg_anim_end();
@@ -4280,13 +4285,13 @@ static void opItemCapsAdjust(Program* program)
 // anim_action_frame
 static void _op_anim_action_frame(Program* program)
 {
-    int anim = programStackPopInteger(program);
+    AnimationType anim = programStackPopEnum<AnimationType>(program);
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     int actionFrame = 0;
 
     if (object != nullptr) {
-        int fid = buildFid(objectTypeFromFid(object->fid), object->fid & 0xFFF, anim, WEAPON_ANIMATION_NONE, object->rotation);
+        FrmId fid = FrmId(object, anim, WEAPON_ANIMATION_NONE, object->rotation);
         CacheEntry* frmHandle;
         Art* frm = artLock(fid, &frmHandle);
         if (frm != nullptr) {

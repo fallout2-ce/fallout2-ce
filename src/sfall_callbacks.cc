@@ -8,6 +8,7 @@
 #include "inventory.h"
 #include "reaction.h"
 #include "script_sound.h"
+#include "sfall_filesystem.h"
 #include "sfall_object_name.h"
 #include "sfall_script_hooks.h"
 #include "stat.h"
@@ -44,6 +45,7 @@ void sfallOnGameReset()
     gameDialogResetPartyMemberCcMsgIds();
     reactionResetThresholds();
     scriptSoundReset();
+    sfallFileSystemReset();
     sfallObjectNameReset();
     statResetUnspentApBonuses();
     return;

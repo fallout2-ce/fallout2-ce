@@ -1061,8 +1061,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        int fid = buildFid(OBJ_TYPE_MISC, 12);
-        objectCreateWithFidPid(&object, fid, -1);
+        objectCreateWithFidPid(&object, FrmId(MISC_FRM_ID_12).fid(), -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
         object->sid = gMapSid;
@@ -1478,15 +1477,15 @@ static int _map_save_file(File* stream)
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         int tile;
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-            int fid;
+            FrmId frmId;
 
-            fid = buildFid(OBJ_TYPE_TILE, _square[elevation]->field_0[tile] & 0xFFF);
-            if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
+            frmId = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile]));
+            if (frmId != FrmId(TILE_FRM_ID_1)) {
                 break;
             }
 
-            fid = buildFid(OBJ_TYPE_TILE, (_square[elevation]->field_0[tile] >> 16) & 0xFFF);
-            if (fid != buildFid(OBJ_TYPE_TILE, 1)) {
+            frmId = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
+            if (frmId != FrmId(TILE_FRM_ID_1)) {
                 break;
             }
         }
@@ -1528,7 +1527,7 @@ static int _map_save_file(File* stream)
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((gMapHeader.flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            _db_fwriteLongCount(stream, _square[elevation]->field_0, SQUARE_GRID_SIZE);
+            _db_fwriteLongCount(stream, _square[elevation]->fid, SQUARE_GRID_SIZE);
         }
     }
 
@@ -1794,7 +1793,7 @@ static void _map_place_dude_and_mouse()
     if (gDude != nullptr) {
         if (animationTypeFromFid(gDude->fid) != ANIM_STAND) {
             objectSetFrame(gDude, 0, nullptr);
-            gDude->fid = buildFid(OBJ_TYPE_CRITTER, gDude->fid & 0xFFF, ANIM_STAND, weaponAnimationFromFid(gDude->fid), gDude->rotation + 1);
+            gDude->fid = FrmId(gDude, ANIM_STAND, weaponAnimationFromFid(gDude->fid), gDude->rotation + 1).fid();
         }
 
         if (gDude->tile == -1) {
@@ -1827,18 +1826,18 @@ static void square_init()
 static void _square_reset()
 {
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
-        int* p = _square[elevation]->field_0;
+        int* p = _square[elevation]->fid;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
             for (int x = 0; x < SQUARE_GRID_WIDTH; x++) {
                 // TODO: Strange math, initially right, but need to figure it out and
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = (((buildFid(OBJ_TYPE_TILE, 1) & 0xFFF) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = ((tileFrameIdFromFid(FrmId(TILE_FRM_ID_1).fid()) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = (buildFid(OBJ_TYPE_TILE, 1) & 0xFFF) | tileFlags;
+                int updatedLowerTile = tileFrameIdFromFid(FrmId(TILE_FRM_ID_1).fid()) | tileFlags;
 
                 fid &= ~0xFFFF;
 
@@ -1862,7 +1861,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
 
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         if ((flags & _map_data_elev_flags[elevation]) == MAP_HEADER_NONE) {
-            int* arr = _square[elevation]->field_0;
+            int* arr = _square[elevation]->fid;
             if (_db_freadIntCount(stream, arr, SQUARE_GRID_SIZE) != 0) {
                 return -1;
             }
@@ -1875,7 +1874,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
                 upperTileFlags = (upperTileWord & 0xF000) >> 12;
                 upperTileFlags &= ~(0x01);
 
-                upperTileArtId = upperTileWord & 0xFFF;
+                upperTileArtId = tileFrameIdFromFid(upperTileWord);
                 lowerTileWord = arr[tile] & 0xFFFF;
                 arr[tile] = ((upperTileArtId | (upperTileFlags << 12)) << 16) | lowerTileWord;
             }

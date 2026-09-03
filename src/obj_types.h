@@ -83,18 +83,18 @@ inline ObjectType operator++(ObjectType& e, int)
     return result;
 }
 
-inline bool objectTypeIsValid(int type)
+constexpr inline bool objectTypeIsValid(int type)
 {
     return type >= OBJ_TYPE_FIRST && type < OBJ_TYPE_COUNT;
 }
 
-inline ObjectType objectTypeFromFid(int fid)
+constexpr inline ObjectType objectTypeFromFid(int fid)
 {
     int objectType = (fid & 0xF000000) >> 24;
     return static_cast<ObjectType>(objectType);
 }
 
-inline ObjectType objectTypeFromPid(int pid)
+constexpr inline ObjectType objectTypeFromPid(int pid)
 {
     int objectType = pid >> 24;
     return static_cast<ObjectType>(objectType);
@@ -302,9 +302,12 @@ inline CritterFlags& operator|=(CritterFlags& lhs, CritterFlags rhs)
     return lhs;
 }
 
-// These two values are the same but stored in different fields.
+// These values are the same but stored in different fields.
+#define CONTAINER_FLAG_OPEN 0x00000001
+#define DOOR_FLAG_OPEN 0x00000001
+
 #define CONTAINER_FLAG_JAMMED 0x04000000
-#define DOOR_FLAG_JAMMGED 0x04000000
+#define DOOR_FLAG_JAMMED 0x04000000
 
 #define CONTAINER_FLAG_LOCKED 0x02000000
 #define DOOR_FLAG_LOCKED 0x02000000

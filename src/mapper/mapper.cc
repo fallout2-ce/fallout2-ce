@@ -267,7 +267,7 @@ static ToolbarInfo toolbar_info[6];
 static int tool_active = -1;
 
 // Color (palette index) used to draw the selection box around the active slot.
-static Color toolbar_selection_color = static_cast<Color>(21);
+static Color toolbar_selection_color = Color(21);
 
 // Highlighted object on screen — used by mapper_destroy_highlight_obj.
 static Object* _screen_obj = nullptr;
@@ -942,7 +942,7 @@ int mapper_edit_init(int argc, char** argv)
     for (index = 0; index < ROTATION_COUNT; index++) {
         int x = rotate_arrows_x_offs[index] + 285;
         int y = rotate_arrows_y_offs[index] + 25;
-        unsigned char bgColor = lbm_buf[27 * lbmBufWidth + 287];
+        Color bgColor = static_cast<Color>(lbm_buf[27 * lbmBufWidth + 287]);
         int k;
 
         blitBufferToBuffer(lbm_buf + y * lbmBufWidth + x, 10, 10, lbmBufWidth, rotate_arrows[1][index], 10);
@@ -1365,9 +1365,8 @@ void edit_mapper()
                             // create new highlight
                             update_high_obj_name(_screen_obj);
 
-                            int hfid = buildFid(OBJ_TYPE_INTERFACE, 1);
                             Object* hlObj;
-                            if (objectCreateWithFidPid(&hlObj, hfid, -1) != -1) {
+                            if (objectCreateWithFidPid(&hlObj, FrmId(INTF_FRM_ID_1).fid(), -1) != -1) {
                                 hlObj->flags |= OBJECT_SHOOT_THRU | OBJECT_LIGHT_THRU | OBJECT_NO_SAVE;
                                 _obj_toggle_flat(hlObj, nullptr);
 
@@ -2517,22 +2516,22 @@ void update_art(ObjectType type, int offset)
     // Clear all slot backgrounds.
     unsigned char* p = slot_start;
     for (int i = 0; i < max_art_buttons; i++, p += slot_stride) {
-        bufferFill(p, art_scale_width, art_scale_height, screen_width, static_cast<Color>(106));
+        bufferFill(p, art_scale_width, art_scale_height, screen_width, Color(106));
     }
 
     // Render thumbnails for visible slots.
     p = slot_start;
     for (int i = offset; i < offset + max_art_buttons && i < limit; i++, p += slot_stride) {
-        int fid;
+        FrmId frmId;
         if (settings.mapper.use_art_not_protos) {
-            fid = buildFid(type, i);
+            frmId = FrmId(type, i);
         } else {
             Proto* proto;
             int pid = toolbar_proto(type, i);
             if (protoGetProto(pid, &proto) == -1) continue;
-            fid = proto->fid;
+            frmId = FrmId(proto->fid);
         }
-        artRender(fid, p, art_scale_width, art_scale_height, screen_width);
+        artRender(frmId.fid(), p, art_scale_width, art_scale_height, screen_width);
     }
 
     // Draw selection box around the active slot.
@@ -2598,14 +2597,14 @@ static int mapperPickTile(int* outOffset)
         return 0;
     }
 
-    int packedTile = _square[gElevation]->field_0[tileNum];
-    int tileFid;
+    int packedTile = _square[gElevation]->fid[tileNum];
+    TileFrameId tileFid;
     if (tileRoofIsVisible()) {
-        tileFid = (packedTile >> 16) & 0xFFF;
+        tileFid = tileFrameIdFromFid(packedTile >> 16);
     } else {
-        tileFid = packedTile & 0xFFF;
+        tileFid = tileFrameIdFromFid(packedTile);
     }
-    int artFid = buildFid(OBJ_TYPE_TILE, tileFid);
+    const FrmId artFrmId = FrmId(tileFid);
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;
@@ -2613,7 +2612,7 @@ static int mapperPickTile(int* outOffset)
         if (protoGetProto(pid, &proto) == -1) {
             return -1;
         }
-        if (proto->fid == artFid) {
+        if (proto->fid == artFrmId.fid()) {
             *outOffset = std::min(idx, maxId - kScrollOffset);
             return 0;
         }
@@ -2658,7 +2657,6 @@ void handle_new_map(ObjectType* type, int* offset)
 int mapper_inven_unwield(Object* obj, int right_hand)
 {
     Object* item;
-    int fid;
 
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
@@ -2674,8 +2672,8 @@ int mapper_inven_unwield(Object* obj, int right_hand)
 
     animationRegisterAnimate(obj, ANIM_PUT_AWAY, 0);
 
-    fid = buildFid(OBJ_TYPE_CRITTER, obj->fid & 0xFFF, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
-    animationRegisterSetFid(obj, fid, 0);
+    const FrmId frmId = FrmId(obj, ANIM_STAND, WEAPON_ANIMATION_NONE, rotationFromFid(obj->fid));
+    animationRegisterSetFid(obj, frmId.fid(), 0);
 
     return reg_anim_end();
 }
@@ -2764,7 +2762,7 @@ static void mapper_enter_play_mode(Object** pHlObj1)
 
     _proto_dude_init("premade\\blank.gcd");
 
-    gDude->fid = buildFid(OBJ_TYPE_CRITTER, _art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    gDude->fid = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
 
     _scr_game_init();
 

@@ -30,7 +30,7 @@ typedef struct TraitDescription {
     char* description;
 
     // Identifier of art in [intrface.lst].
-    int frmId;
+    SkillDexFrameId frmId;
 } TraitDescription;
 
 // 0x66BE38 trait_message_file
@@ -43,41 +43,41 @@ static Trait gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
 
 // 0x51DB84 trait_data
 static TraitDescription traitDescriptions[TRAIT_COUNT] = {
-    { nullptr, nullptr, 55 },
-    { nullptr, nullptr, 56 },
-    { nullptr, nullptr, 57 },
-    { nullptr, nullptr, 58 },
-    { nullptr, nullptr, 59 },
-    { nullptr, nullptr, 60 },
-    { nullptr, nullptr, 61 },
-    { nullptr, nullptr, 62 },
-    { nullptr, nullptr, 63 },
-    { nullptr, nullptr, 64 },
-    { nullptr, nullptr, 65 },
-    { nullptr, nullptr, 66 },
-    { nullptr, nullptr, 67 },
-    { nullptr, nullptr, 94 },
-    { nullptr, nullptr, 69 },
-    { nullptr, nullptr, 70 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_55 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_56 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_57 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_58 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_59 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_60 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_61 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_62 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_63 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_64 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_65 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_66 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_67 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_94 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_69 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_70 },
 };
 
-static const int defaultTraitFrmIds[TRAIT_COUNT] = {
-    55,
-    56,
-    57,
-    58,
-    59,
-    60,
-    61,
-    62,
-    63,
-    64,
-    65,
-    66,
-    67,
-    94,
-    69,
-    70,
+static const SkillDexFrameId defaultTraitFrmIds[TRAIT_COUNT] = {
+    SKILLDEX_FRM_ID_55,
+    SKILLDEX_FRM_ID_56,
+    SKILLDEX_FRM_ID_57,
+    SKILLDEX_FRM_ID_58,
+    SKILLDEX_FRM_ID_59,
+    SKILLDEX_FRM_ID_60,
+    SKILLDEX_FRM_ID_61,
+    SKILLDEX_FRM_ID_62,
+    SKILLDEX_FRM_ID_63,
+    SKILLDEX_FRM_ID_64,
+    SKILLDEX_FRM_ID_65,
+    SKILLDEX_FRM_ID_66,
+    SKILLDEX_FRM_ID_67,
+    SKILLDEX_FRM_ID_94,
+    SKILLDEX_FRM_ID_69,
+    SKILLDEX_FRM_ID_70,
 };
 
 static bool traitOverridesEnabled = false;
@@ -203,9 +203,9 @@ char* traitGetDescription(Trait trait)
 // out of range.
 //
 // 0x4B3BA8 trait_pic
-int traitGetFrmId(Trait trait)
+SkillDexFrameId traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? traitDescriptions[trait].frmId : 0;
+    return traitIsValid(trait) ? traitDescriptions[trait].frmId : SKILLDEX_FRM_ID_FIRST;
 }
 
 // Returns `true` if the specified trait is selected.
@@ -257,8 +257,8 @@ static void traitsLoadSfallConfig()
             traitDescriptions[trait].description = traitOverrideDescriptions[trait].data();
         }
 
-        int image = 0;
-        if (configGetInt(config.get(), sectionKey, "Image", &image)) {
+        SkillDexFrameId image = SKILLDEX_FRM_ID_0;
+        if (configGetEnum<SkillDexFrameId>(config.get(), sectionKey, "Image", &image)) {
             traitDescriptions[trait].frmId = image;
         }
 

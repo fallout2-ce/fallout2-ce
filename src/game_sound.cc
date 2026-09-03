@@ -1331,7 +1331,7 @@ char* sfxBuildCharName(Object* a1, AnimationType anim, WeaponAnimation weaponTyp
     char weaponCode;
     char animationCode;
 
-    if (artCopyFileName(objectTypeFromFid(a1->fid), a1->fid & 0xFFF, artName) == -1) {
+    if (artCopyFileName(objectTypeFromFid(a1->fid), frameIdFromFid(a1->fid), artName) == -1) {
         return nullptr;
     }
 

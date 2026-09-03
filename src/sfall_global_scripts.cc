@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <list>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,16 @@ struct GlobalScript {
     int count = 0;
     int mode = 0;
     bool once = true;
+    struct Timer {
+        unsigned int id = 0;
+        unsigned int dueTime = 0;
+        int fixedParam = 0;
+        bool isActive = true;
+        bool isExecuting = false;
+    };
+    std::list<Timer> timers;
+    unsigned int nextTimerId = 1;
+    int timerProcessingDepth = 0;
 };
 
 struct GlobalScriptsState {
@@ -138,16 +149,91 @@ void sfall_gl_scr_remove_all()
     state->globalScripts.clear();
 }
 
+static bool sfall_gl_scr_can_execute_proc(Program* program, int proc)
+{
+    // matches check in scriptExecProc()
+    return proc != -1 && (program->flags & kGlobalScriptBusyFlags) == 0;
+}
+
 // Execute proc if it is found and not "busy".  Returns true if proc was executed
 static bool sfall_gl_scr_execute_proc_if_ready(Program* program, int proc)
 {
-    // matches check in scriptExecProc()
-    if (proc != -1 && (program->flags & kGlobalScriptBusyFlags) == 0) {
-        programExecuteProcedure(program, proc);
-        return true;
+    if (!sfall_gl_scr_can_execute_proc(program, proc)) {
+        return false;
     }
 
-    return false;
+    programExecuteProcedure(program, proc);
+    return true;
+}
+
+static void sfall_gl_scr_cleanup_timers(GlobalScript& scr)
+{
+    if (scr.timerProcessingDepth != 0) {
+        return;
+    }
+
+    scr.timers.remove_if([](const GlobalScript::Timer& timer) {
+        return !timer.isActive && !timer.isExecuting;
+    });
+}
+
+static GlobalScript::Timer* sfall_gl_scr_find_timer(GlobalScript& scr, unsigned int timerId)
+{
+    for (auto& timer : scr.timers) {
+        if (timer.id == timerId) {
+            return &timer;
+        }
+    }
+
+    return nullptr;
+}
+
+static GlobalScript::Timer* sfall_gl_scr_find_due_timer(GlobalScript& scr, unsigned int now)
+{
+    for (auto& timer : scr.timers) {
+        if (!timer.isActive) {
+            continue;
+        }
+
+        if (now < timer.dueTime) {
+            return nullptr;
+        }
+
+        return &timer;
+    }
+
+    return nullptr;
+}
+
+static void sfall_gl_scr_execute_due_timers(GlobalScript& scr)
+{
+    unsigned int now = gameTimeGetTime();
+    scr.timerProcessingDepth++;
+
+    while (GlobalScript::Timer* timer = sfall_gl_scr_find_due_timer(scr, now)) {
+        if (!sfall_gl_scr_can_execute_proc(scr.program, scr.procs[SCRIPT_PROC_TIMED])) {
+            break;
+        }
+
+        unsigned int timerId = timer->id;
+        int fixedParam = timer->fixedParam;
+        timer->isActive = false;
+        timer->isExecuting = true;
+
+        scriptDetachedContextSetFixedParam(scr.program, fixedParam);
+        programExecuteProcedure(scr.program, scr.procs[SCRIPT_PROC_TIMED]);
+        // TODO: If the timed procedure starts a child script or other suspended
+        // flow, keep fixedParam until the procedure actually completes.
+        scriptDetachedContextSetFixedParam(scr.program, 0);
+
+        timer = sfall_gl_scr_find_timer(scr, timerId);
+        if (timer != nullptr) {
+            timer->isExecuting = false;
+        }
+    }
+
+    scr.timerProcessingDepth--;
+    sfall_gl_scr_cleanup_timers(scr);
 }
 
 void sfall_gl_scr_exec_map_update_scripts(int action)
@@ -162,6 +248,8 @@ void sfall_gl_scr_exec_map_update_scripts(int action)
 static void sfall_gl_scr_process_simple(int mode1, int mode2)
 {
     for (auto& scr : state->globalScripts) {
+        sfall_gl_scr_execute_due_timers(scr);
+
         if (scr.repeat != 0 && (scr.mode == mode1 || scr.mode == mode2)) {
             scr.count++;
             if (scr.count >= scr.repeat) {
@@ -204,6 +292,61 @@ static GlobalScript* sfall_gl_scr_map_program_to_scr(Program* program)
             return scr.program == program;
         });
     return it != state->globalScripts.end() ? &(*it) : nullptr;
+}
+
+bool sfall_gl_scr_add_timer_event(Program* program, int delay, int fixedParam)
+{
+    GlobalScript* scr = sfall_gl_scr_map_program_to_scr(program);
+    if (scr == nullptr) {
+        return false;
+    }
+
+    GlobalScript::Timer timer;
+    timer.id = scr->nextTimerId++;
+    if (scr->nextTimerId == 0) {
+        scr->nextTimerId = 1;
+    }
+    timer.dueTime = gameTimeGetTime() + static_cast<unsigned int>(delay);
+    timer.fixedParam = fixedParam;
+    scr->timers.push_back(timer);
+    // TODO: Insert into the ordered position instead of sorting the whole list
+    // after every timer add.
+    scr->timers.sort([](const GlobalScript::Timer& a, const GlobalScript::Timer& b) {
+        return a.dueTime < b.dueTime;
+    });
+    return true;
+}
+
+bool sfall_gl_scr_remove_timer_events(Program* program, int fixedParam)
+{
+    GlobalScript* scr = sfall_gl_scr_map_program_to_scr(program);
+    if (scr == nullptr) {
+        return false;
+    }
+
+    for (auto& timer : scr->timers) {
+        if (timer.fixedParam == fixedParam) {
+            timer.isActive = false;
+        }
+    }
+
+    sfall_gl_scr_cleanup_timers(*scr);
+    return true;
+}
+
+bool sfall_gl_scr_remove_all_timer_events(Program* program)
+{
+    GlobalScript* scr = sfall_gl_scr_map_program_to_scr(program);
+    if (scr == nullptr) {
+        return false;
+    }
+
+    for (auto& timer : scr->timers) {
+        timer.isActive = false;
+    }
+
+    sfall_gl_scr_cleanup_timers(*scr);
+    return true;
 }
 
 void sfall_gl_scr_set_repeat(Program* program, int frames)

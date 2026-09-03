@@ -3575,8 +3575,8 @@ void attackInit(Attack* attack, Object* attacker, Object* defender, HitMode hitM
 int _combat_attack(Object* attacker, Object* defender, HitMode hitMode, HitLocation hitLocation)
 {
     if (attacker != gDude && hitMode == HIT_MODE_PUNCH && randomBetween(1, 4) == 1) {
-        int fid = buildFid(OBJ_TYPE_CRITTER, attacker->fid & 0xFFF, ANIM_KICK_LEG, weaponAnimationFromFid(attacker->fid), rotationFromFid(attacker->fid));
-        if (artExists(fid)) {
+        const FrmId frmId = FrmId(attacker, ANIM_KICK_LEG, weaponAnimationFromFid(attacker->fid), rotationFromFid(attacker->fid));
+        if (artExists(frmId)) {
             hitMode = HIT_MODE_KICK;
         }
     }
@@ -5530,8 +5530,7 @@ static void _combat_standup(Object* a1)
 static void _print_tohit(unsigned char* dest, int destPitch, int accuracy)
 {
     FrmImage numbersFrmImage;
-    int numbersFid = buildFid(OBJ_TYPE_INTERFACE, 82);
-    if (!numbersFrmImage.lock(numbersFid)) {
+    if (!numbersFrmImage.lock(FrmId(INTF_FRM_ID_82))) {
         return;
     }
 
@@ -5548,7 +5547,7 @@ static void _print_tohit(unsigned char* dest, int destPitch, int accuracy)
 static char* hitLocationGetName(Object* critter, HitLocation hitLocation)
 {
     MessageListItem messageListItem;
-    messageListItem.num = 1000 + 10 * _art_alias_num(critter->fid & 0xFFF) + hitLocation;
+    messageListItem.num = 1000 + 10 * _art_alias_num(critterFrameIdFromFid(critter->fid)) + hitLocation;
     if (messageListGetItem(&gCombatMessageList, &messageListItem)) {
         return messageListItem.text;
     }
@@ -5619,8 +5618,7 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
     unsigned char* windowBuffer = windowGetBuffer(gCalledShotWindow);
 
     FrmImage backgroundFrm;
-    int backgroundFid = buildFid(OBJ_TYPE_INTERFACE, 118);
-    if (!backgroundFrm.lock(backgroundFid)) {
+    if (!backgroundFrm.lock(FrmId(INTF_FRM_ID_118))) {
         windowDestroy(gCalledShotWindow);
         return -1;
     }
@@ -5633,8 +5631,8 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
         CALLED_SHOT_WINDOW_WIDTH);
 
     FrmImage critterFrm;
-    int critterFid = buildFid(OBJ_TYPE_CRITTER, critter->fid & 0xFFF, ANIM_CALLED_SHOT_PIC, WEAPON_ANIMATION_NONE, ROTATION_NE);
-    if (critterFrm.lock(critterFid)) {
+    const FrmId critterFrmId = FrmId(critter, ANIM_CALLED_SHOT_PIC, WEAPON_ANIMATION_NONE, ROTATION_NE);
+    if (critterFrm.lock(critterFrmId)) {
         blitBufferToBuffer(critterFrm.getData(),
             170,
             225,
@@ -5644,15 +5642,13 @@ static int calledShotSelectHitLocation(Object* critter, HitLocation* hitLocation
     }
 
     FrmImage cancelButtonNormalFrmImage;
-    int cancelButtonNormalFid = buildFid(OBJ_TYPE_INTERFACE, 8);
-    if (!cancelButtonNormalFrmImage.lock(cancelButtonNormalFid)) {
+    if (!cancelButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8))) {
         windowDestroy(gCalledShotWindow);
         return -1;
     }
 
     FrmImage cancelButtonPressedFrmImage;
-    int cancelButtonPressedFid = buildFid(OBJ_TYPE_INTERFACE, 9);
-    if (!cancelButtonPressedFrmImage.lock(cancelButtonPressedFid)) {
+    if (!cancelButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9))) {
         windowDestroy(gCalledShotWindow);
         return -1;
     }

@@ -36,6 +36,7 @@
 #include "scripts.h"
 #include "sfall_animation.h"
 #include "sfall_arrays.h"
+#include "sfall_filesystem.h"
 #include "sfall_global_scripts.h"
 #include "sfall_global_vars.h"
 #include "sfall_ini.h"
@@ -1396,7 +1397,7 @@ static void op_get_tile_fid(Program* program)
         return;
     }
 
-    int squareData = _square[elevation]->field_0[squareTile];
+    int squareData = _square[elevation]->fid[squareTile];
 
     switch (mode) {
     case 1:
@@ -1482,7 +1483,7 @@ static void op_explosions_metarule(Program* program)
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_ART:
-        explosionSetFrm(param1);
+        explosionSetFrm(static_cast<MiscFrameId>(param1));
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_RADIUS:
@@ -1773,6 +1774,47 @@ static void op_obj_blocking_at(Program* program)
         }
     }
     programStackPushPointer(program, obstacle);
+}
+
+// create_spatial
+static void op_create_spatial(Program* program)
+{
+    int radius = programStackPopInteger(program);
+    int elevation = programStackPopInteger(program);
+    int tile = programStackPopInteger(program);
+    int scriptId = programStackPopInteger(program);
+
+    if (scriptId <= 0) {
+        programPrintError("create_spatial: invalid script index number %d.", scriptId);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    int scriptIndex = scriptId - 1;
+    if (!scriptsIsValidScriptIndex(scriptIndex)) {
+        programPrintError("create_spatial: invalid script index number %d.", scriptId);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    if (!hexGridTileIsValid(tile)) {
+        programPrintError("create_spatial: invalid tile number %d.", tile);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    if (elevation < 0 || elevation >= ELEVATION_COUNT) {
+        programPrintError("create_spatial: invalid elevation number %d.", elevation);
+        programStackPushPointer(program, nullptr);
+        return;
+    }
+
+    Object* spatial = scriptCreateSpatial(scriptIndex, tile, elevation, radius);
+    if (spatial == nullptr) {
+        programPrintError("create_spatial: failed to create spatial script.");
+    }
+
+    programStackPushPointer(program, spatial);
 }
 
 // tile_light
@@ -2125,15 +2167,13 @@ static void op_fs_copy(Program* program)
 {
     char* source = programStackPopString(program);
     char* path = programStackPopString(program);
-    programPrintError("fs_copy: not implemented!");
-    programStackPushInteger(program, -1);
+    programStackPushInteger(program, sfallFileSystemCopy(path, source));
 }
 
 static void op_fs_find(Program* program)
 {
     char* path = programStackPopString(program);
-    programPrintError("fs_find: not implemented!");
-    programStackPushInteger(program, -1);
+    programStackPushInteger(program, sfallFileSystemFind(path));
 }
 
 static void op_fs_create(Program* program)
@@ -2142,6 +2182,12 @@ static void op_fs_create(Program* program)
     char* path = programStackPopString(program);
     programPrintError("fs_create: not implemented!");
     programStackPushInteger(program, -1);
+}
+
+static void op_fs_delete(Program* program)
+{
+    int id = programStackPopInteger(program);
+    sfallFileSystemDelete(id);
 }
 
 static void op_set_hero_style(Program* program)
@@ -2540,6 +2586,7 @@ void sfallOpcodesInit()
     // 0x820b - int   fs_read_int(int id)
     // 0x820c - float fs_read_float(int id)
     // 0x81ff - void  fs_delete(int id)
+    interpreterRegisterOpcode(0x81ff, op_fs_delete);
     // 0x8200 - int   fs_size(int id)
     // 0x8201 - int   fs_pos(int id)
     // 0x8202 - void  fs_seek(int id, int pos)
@@ -2692,6 +2739,7 @@ void sfallOpcodesInit()
     // 0x8272 - array path_find_to(object objFrom, int tileTo, int blockingType)
     interpreterRegisterOpcode(0x8272, op_make_path);
     // 0x8273 - object create_spatial(int scriptID, int tile, int elevation, int radius)
+    interpreterRegisterOpcode(0x8273, op_create_spatial);
     // 0x8274 - int art_exists(int artFID)
     interpreterRegisterOpcode(0x8274, op_art_exists);
     // 0x8275 - int obj_is_carrying_obj(object invenObj, object itemObj)

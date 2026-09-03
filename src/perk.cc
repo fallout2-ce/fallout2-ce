@@ -27,7 +27,7 @@ enum PerkParamMode {
 typedef struct PerkDescription {
     char* name;
     char* description;
-    int frmId;
+    SkillDexFrameId frmId;
     int maxRank;
     int minLevel;
     // Critter stat to modify for every perk rank.
@@ -99,129 +99,139 @@ static void perksLoadSfallTweaks(Config* config);
 static void perksLoadSfallData(Config* config);
 static bool perksGetLimitedInt(Config* config, const char* key, int defaultValue, int minValue, int maxValue, int* valuePtr);
 static void perksLoadSfallPerkInt(Config* config, const char* sectionKey, const char* key, int* valuePtr);
+
+template <typename T>
+static void perksLoadSfallPerkEnum(Config* config, const char* sectionKey, const char* key, T* valuePtr)
+{
+    int value = 0;
+    if (configGetIntBase(config, sectionKey, key, &value, -99999, 0) && value != -99999) {
+        *valuePtr = static_cast<T>(value);
+    }
+}
+
 static void perksLoadSfallPerkStat(Config* config, const char* sectionKey, const char* key, Stat* valuePtr);
 
 // 0x519DCC perk_data
 static PerkDescription gPerkDescriptions[PERK_COUNT] = {
-    { nullptr, nullptr, 72, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 5, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 73, 1, 15, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 6, 0 },
-    { nullptr, nullptr, 74, 3, 3, STAT_MELEE_DAMAGE, 2, -1, 0, 0, -1, 0, 6, 0, 0, 0, 0, 6, 0 },
-    { nullptr, nullptr, 75, 2, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 0 },
-    { nullptr, nullptr, 76, 2, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 6, 6 },
-    { nullptr, nullptr, 77, 1, 15, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 6, 0, 0, 6, 7, 0 },
-    { nullptr, nullptr, 78, 3, 3, STAT_SEQUENCE, 2, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 79, 3, 3, STAT_HEALING_RATE, 2, -1, 0, 0, -1, 0, 0, 0, 6, 0, 0, 0, 0 },
-    { nullptr, nullptr, 80, 3, 6, STAT_CRITICAL_CHANCE, 5, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 6 },
-    { nullptr, nullptr, 81, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 82, 3, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 6, 0, 0, 0 },
-    { nullptr, nullptr, 83, 2, 6, STAT_RADIATION_RESISTANCE, 15, -1, 0, 0, -1, 0, 0, 0, 6, 0, 4, 0, 0 },
-    { nullptr, nullptr, 84, 3, 3, STAT_DAMAGE_RESISTANCE, 10, -1, 0, 0, -1, 0, 0, 0, 6, 0, 0, 0, 6 },
-    { nullptr, nullptr, 85, 3, 3, STAT_CARRY_WEIGHT, 50, -1, 0, 0, -1, 0, 6, 0, 6, 0, 0, 0, 0 },
-    { nullptr, nullptr, 86, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 7, 0, 0, 6, 0, 0 },
-    { nullptr, nullptr, 87, 1, 6, STAT_INVALID, 0, 8, 50, 0, -1, 0, 0, 0, 0, 0, 0, 6, 0 },
-    { nullptr, nullptr, 88, 1, 3, STAT_INVALID, 0, 17, 40, 0, -1, 0, 0, 0, 6, 0, 6, 0, 0 },
-    { nullptr, nullptr, 89, 1, 12, STAT_INVALID, 0, 15, 75, 0, -1, 0, 0, 0, 0, 7, 0, 0, 0 },
-    { nullptr, nullptr, 90, 3, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 6, 0, 0 },
-    { nullptr, nullptr, 91, 2, 3, STAT_INVALID, 0, 6, 40, 0, -1, 0, 0, 7, 0, 0, 5, 6, 0 },
-    { nullptr, nullptr, 92, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 8 },
-    { nullptr, nullptr, 93, 1, 9, STAT_BETTER_CRITICALS, 20, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 4, 6 },
-    { nullptr, nullptr, 94, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 7, 0, 0, 5, 0, 0 },
-    { nullptr, nullptr, 95, 1, 24, STAT_INVALID, 0, 3, 80, 0, -1, 0, 8, 0, 0, 0, 0, 8, 0 },
-    { nullptr, nullptr, 96, 1, 24, STAT_INVALID, 0, 0, 80, 0, -1, 0, 0, 8, 0, 0, 0, 8, 0 },
-    { nullptr, nullptr, 97, 1, 18, STAT_INVALID, 0, 8, 80, 2, 3, 80, 0, 0, 0, 0, 0, 10, 0 },
-    { nullptr, nullptr, 98, 2, 12, STAT_MAXIMUM_ACTION_POINTS, 1, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 0 },
-    { nullptr, nullptr, 99, 1, 310, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 100, 2, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 4, 0, 0, 0, 0 },
-    { nullptr, nullptr, 101, 1, 9, STAT_ARMOR_CLASS, 5, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 6, 0 },
-    { nullptr, nullptr, 102, 2, 6, STAT_POISON_RESISTANCE, 25, -1, 0, 0, -1, 0, 0, 0, 3, 0, 0, 0, 0 },
-    { nullptr, nullptr, 103, 1, 12, STAT_INVALID, 0, 13, 40, 1, 12, 40, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 104, 1, 12, STAT_INVALID, 0, 6, 40, 1, 7, 40, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 105, 1, 12, STAT_INVALID, 0, 10, 50, 2, 9, 50, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 106, 1, 9, STAT_INVALID, 0, 14, 50, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 107, 3, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, -9, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 108, 1, 310, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 4, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 109, 1, 15, STAT_INVALID, 0, 10, 80, 0, -1, 0, 0, 0, 0, 0, 0, 8, 0 },
-    { nullptr, nullptr, 110, 1, 6, STAT_INVALID, 0, 8, 60, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 111, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 10, 0, 0, 0 },
-    { nullptr, nullptr, 112, 1, 310, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 8 },
-    { nullptr, nullptr, 113, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 114, 1, 310, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 5, 0, 0, 0, 0 },
-    { nullptr, nullptr, 115, 2, 6, STAT_INVALID, 0, 17, 40, 0, -1, 0, 0, 0, 6, 0, 0, 0, 0 },
-    { nullptr, nullptr, 116, 1, 310, STAT_INVALID, 0, 17, 25, 0, -1, 0, 0, 0, 0, 0, 5, 0, 0 },
-    { nullptr, nullptr, 117, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 7, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 118, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 4 },
-    { nullptr, nullptr, 119, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 120, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 0 },
-    { nullptr, nullptr, 121, 3, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 4, 0, 0 },
-    { nullptr, nullptr, 122, 3, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 4, 0, 0 },
-    { nullptr, nullptr, 123, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 124, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 125, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 126, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, -2, 0, -2, 0, 0, -3, 0 },
-    { nullptr, nullptr, 127, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, -3, -2, 0 },
-    { nullptr, nullptr, 128, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, -2, 0, 0 },
-    { nullptr, nullptr, 129, -1, 1, STAT_RADIATION_RESISTANCE, -20, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 130, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 131, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 132, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 133, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 134, -1, 1, STAT_RADIATION_RESISTANCE, 30, -1, 0, 0, -1, 0, 3, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 135, -1, 1, STAT_RADIATION_RESISTANCE, 20, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 136, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 137, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 138, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 139, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 140, -1, 1, STAT_RADIATION_RESISTANCE, 60, -1, 0, 0, -1, 0, 4, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 141, -1, 1, STAT_RADIATION_RESISTANCE, 75, -1, 0, 0, -1, 0, 4, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 136, -1, 1, STAT_MAXIMUM_ACTION_POINTS, -1, -1, 0, 0, -1, 0, -1, -1, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 149, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, -2, 0, 0, -1, 0, -1 },
-    { nullptr, nullptr, 154, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 2, 0, 0, 0 },
-    { nullptr, nullptr, 158, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 157, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 157, -1, 1, STAT_CHARISMA, -1, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 168, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 168, -1, 1, STAT_CHARISMA, -1, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 172, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 155, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, -10, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 156, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 122, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 6, 0, 0 },
-    { nullptr, nullptr, 39, 1, 9, STAT_INVALID, 0, 11, 75, 0, -1, 0, 0, 0, 0, 0, 0, 4, 0 },
-    { nullptr, nullptr, 44, 1, 6, STAT_INVALID, 0, 16, 50, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 0, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, -10, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 1, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, -10, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 2, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, -10, 0, 0, 0, 0 },
-    { nullptr, nullptr, 3, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, -10, 0, 0, 0 },
-    { nullptr, nullptr, 4, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, -10, 0, 0 },
-    { nullptr, nullptr, 5, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, -10, 0 },
-    { nullptr, nullptr, 6, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, -10 },
-    { nullptr, nullptr, 160, 1, 6, STAT_INVALID, 0, 10, 50, 2, 0x4000000, 50, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 161, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 159, 1, 12, STAT_INVALID, 0, 3, 75, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 163, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 5, 0, 0, 5, 0 },
-    { nullptr, nullptr, 162, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 6, 0, 0, 0 },
-    { nullptr, nullptr, 164, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 5 },
-    { nullptr, nullptr, 165, 1, 12, STAT_INVALID, 0, 7, 60, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 166, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, -10, 0, 0, 0 },
-    { nullptr, nullptr, 43, 1, 6, STAT_INVALID, 0, 15, 50, 2, 14, 50, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 167, 1, 6, STAT_CARRY_WEIGHT, 50, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 169, 1, 9, STAT_INVALID, 0, 1, 75, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 170, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 0 },
-    { nullptr, nullptr, 121, 1, 6, STAT_INVALID, 0, 15, 50, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 171, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 6, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 38, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 173, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, -7, 0, 0, 0, 0, 5, 0 },
-    { nullptr, nullptr, 104, -1, 1, STAT_INVALID, 0, 7, 75, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 142, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 142, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 52, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 52, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 104, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 104, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 35, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 35, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 154, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 154, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { nullptr, nullptr, 64, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_72, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 5, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_73, 1, 15, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 6, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_74, 3, 3, STAT_MELEE_DAMAGE, 2, -1, 0, 0, -1, 0, 6, 0, 0, 0, 0, 6, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_75, 2, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_76, 2, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 6, 6 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_77, 1, 15, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 6, 0, 0, 6, 7, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_78, 3, 3, STAT_SEQUENCE, 2, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_79, 3, 3, STAT_HEALING_RATE, 2, -1, 0, 0, -1, 0, 0, 0, 6, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_80, 3, 6, STAT_CRITICAL_CHANCE, 5, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 6 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_81, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_82, 3, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 6, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_83, 2, 6, STAT_RADIATION_RESISTANCE, 15, -1, 0, 0, -1, 0, 0, 0, 6, 0, 4, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_84, 3, 3, STAT_DAMAGE_RESISTANCE, 10, -1, 0, 0, -1, 0, 0, 0, 6, 0, 0, 0, 6 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_85, 3, 3, STAT_CARRY_WEIGHT, 50, -1, 0, 0, -1, 0, 6, 0, 6, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_86, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 7, 0, 0, 6, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_87, 1, 6, STAT_INVALID, 0, 8, 50, 0, -1, 0, 0, 0, 0, 0, 0, 6, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_88, 1, 3, STAT_INVALID, 0, 17, 40, 0, -1, 0, 0, 0, 6, 0, 6, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_89, 1, 12, STAT_INVALID, 0, 15, 75, 0, -1, 0, 0, 0, 0, 7, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_90, 3, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 6, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_91, 2, 3, STAT_INVALID, 0, 6, 40, 0, -1, 0, 0, 7, 0, 0, 5, 6, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_92, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 8 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_93, 1, 9, STAT_BETTER_CRITICALS, 20, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 4, 6 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_94, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 7, 0, 0, 5, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_95, 1, 24, STAT_INVALID, 0, 3, 80, 0, -1, 0, 8, 0, 0, 0, 0, 8, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_96, 1, 24, STAT_INVALID, 0, 0, 80, 0, -1, 0, 0, 8, 0, 0, 0, 8, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_97, 1, 18, STAT_INVALID, 0, 8, 80, 2, 3, 80, 0, 0, 0, 0, 0, 10, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_98, 2, 12, STAT_MAXIMUM_ACTION_POINTS, 1, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_99, 1, 310, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_100, 2, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 4, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_101, 1, 9, STAT_ARMOR_CLASS, 5, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 6, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_102, 2, 6, STAT_POISON_RESISTANCE, 25, -1, 0, 0, -1, 0, 0, 0, 3, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_103, 1, 12, STAT_INVALID, 0, 13, 40, 1, 12, 40, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_104, 1, 12, STAT_INVALID, 0, 6, 40, 1, 7, 40, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_105, 1, 12, STAT_INVALID, 0, 10, 50, 2, 9, 50, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_106, 1, 9, STAT_INVALID, 0, 14, 50, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_107, 3, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, -9, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_108, 1, 310, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 4, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_109, 1, 15, STAT_INVALID, 0, 10, 80, 0, -1, 0, 0, 0, 0, 0, 0, 8, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_110, 1, 6, STAT_INVALID, 0, 8, 60, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_111, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 10, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_112, 1, 310, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 8 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_113, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_114, 1, 310, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 5, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_115, 2, 6, STAT_INVALID, 0, 17, 40, 0, -1, 0, 0, 0, 6, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_116, 1, 310, STAT_INVALID, 0, 17, 25, 0, -1, 0, 0, 0, 0, 0, 5, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_117, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 7, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_118, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 4 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_119, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_120, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_121, 3, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 4, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_122, 3, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 4, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_123, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_124, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_125, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_126, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, -2, 0, -2, 0, 0, -3, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_127, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, -3, -2, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_128, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, -2, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_129, -1, 1, STAT_RADIATION_RESISTANCE, -20, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_130, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_131, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_132, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_133, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_134, -1, 1, STAT_RADIATION_RESISTANCE, 30, -1, 0, 0, -1, 0, 3, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_135, -1, 1, STAT_RADIATION_RESISTANCE, 20, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_136, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_137, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_138, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_139, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_140, -1, 1, STAT_RADIATION_RESISTANCE, 60, -1, 0, 0, -1, 0, 4, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_141, -1, 1, STAT_RADIATION_RESISTANCE, 75, -1, 0, 0, -1, 0, 4, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_136, -1, 1, STAT_MAXIMUM_ACTION_POINTS, -1, -1, 0, 0, -1, 0, -1, -1, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_149, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, -2, 0, 0, -1, 0, -1 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_154, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 2, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_158, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_157, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_157, -1, 1, STAT_CHARISMA, -1, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_168, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_168, -1, 1, STAT_CHARISMA, -1, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_172, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_155, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, -10, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_156, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 6, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_122, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 6, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_39, 1, 9, STAT_INVALID, 0, 11, 75, 0, -1, 0, 0, 0, 0, 0, 0, 4, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_44, 1, 6, STAT_INVALID, 0, 16, 50, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, -10, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_1, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, -10, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_2, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, -10, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_3, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, -10, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_4, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, -10, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_5, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, -10, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_6, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, -10 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_160, 1, 6, STAT_INVALID, 0, 10, 50, 2, 0x4000000, 50, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_161, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_159, 1, 12, STAT_INVALID, 0, 3, 75, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_163, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 5, 0, 0, 5, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_162, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 6, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_164, 1, 9, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 5 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_165, 1, 12, STAT_INVALID, 0, 7, 60, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_166, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, -10, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_43, 1, 6, STAT_INVALID, 0, 15, 50, 2, 14, 50, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_167, 1, 6, STAT_CARRY_WEIGHT, 50, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_169, 1, 9, STAT_INVALID, 0, 1, 75, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_170, 1, 6, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 5, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_121, 1, 6, STAT_INVALID, 0, 15, 50, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_171, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 6, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_38, 1, 3, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_173, 1, 12, STAT_INVALID, 0, -1, 0, 0, -1, 0, -7, 0, 0, 0, 0, 5, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_104, -1, 1, STAT_INVALID, 0, 7, 75, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_142, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_142, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_52, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_52, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_104, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_104, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_35, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_35, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_154, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_154, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { nullptr, nullptr, SKILLDEX_FRM_ID_64, -1, 1, STAT_INVALID, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0 },
 };
 
 // An array of perk ranks for each party member.
@@ -400,7 +410,7 @@ static void perksLoadSfallData(Config* config)
             perkDescription->description = perkOverrideDescriptions[perk].data();
         }
 
-        perksLoadSfallPerkInt(config, sectionKey, "Image", &(perkDescription->frmId));
+        perksLoadSfallPerkEnum<SkillDexFrameId>(config, sectionKey, "Image", &(perkDescription->frmId));
         perksLoadSfallPerkInt(config, sectionKey, "Ranks", &(perkDescription->maxRank));
         perksLoadSfallPerkInt(config, sectionKey, "Level", &(perkDescription->minLevel));
         perksLoadSfallPerkStat(config, sectionKey, "Stat", &(perkDescription->stat));
@@ -747,10 +757,10 @@ char* perkGetDescription(Perk perk)
 }
 
 // 0x496BD8 perk_skilldex_fid
-int perkGetFrmId(Perk perk)
+SkillDexFrameId perkGetFrmId(Perk perk)
 {
     if (!perkIsValid(perk)) {
-        return 0;
+        return SKILLDEX_FRM_ID_FIRST;
     }
     return gPerkDescriptions[perk].frmId;
 }
@@ -765,7 +775,7 @@ bool perkSetProperty(Perk perk, PerkProperty property, int value)
 
     switch (property) {
     case PerkProperty::FrmId:
-        perkDescription->frmId = value;
+        perkDescription->frmId = static_cast<SkillDexFrameId>(value);
         break;
     case PerkProperty::MaxRank:
         perkDescription->maxRank = value;
