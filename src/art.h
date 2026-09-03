@@ -111,7 +111,7 @@ public:
 
     constexpr explicit FrmId(SkillDexFrameId skilldex)
         : _objectType(OBJ_TYPE_SKILLDEX)
-        , _fid(buildFid(OBJ_TYPE_SKILLDEX, skilldex))
+        , _fid(buildFid(OBJ_TYPE_SKILLDEX, static_cast<int>(skilldex)))
         , _frameId { static_cast<int>(skilldex) }
         , _path(nullptr)
     {

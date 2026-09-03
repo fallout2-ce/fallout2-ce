@@ -151,7 +151,8 @@ inline WeaponAnimation weaponAnimationFromFid(int fid)
     return static_cast<WeaponAnimation>(anim);
 }
 
-enum SkillDexFrameId : int {
+enum class SkillDexFrameId : int {
+    SKILLDEX_FRM_ID_INVALID = -1,
     SKILLDEX_FRM_ID_FIRST = 0,
     SKILLDEX_FRM_ID_0 = 0,
     SKILLDEX_FRM_ID_1 = 1,

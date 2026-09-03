@@ -44,53 +44,53 @@ typedef struct StatDescription {
 
 // 0x51D53C stat_data
 static StatDescription gStatDescriptions[STAT_COUNT] = {
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_STRENGTH
-    { nullptr, nullptr, SKILLDEX_FRM_ID_1, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_PERCEPTION
-    { nullptr, nullptr, SKILLDEX_FRM_ID_2, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_ENDURANCE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_3, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_CHARISMA
-    { nullptr, nullptr, SKILLDEX_FRM_ID_4, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_INTELLIGENCE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_5, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_AGILITY
-    { nullptr, nullptr, SKILLDEX_FRM_ID_6, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_LUCK
-    { nullptr, nullptr, SKILLDEX_FRM_ID_10, 0, 999, 0 }, // STAT_MAXIMUM_HIT_POINTS
-    { nullptr, nullptr, SKILLDEX_FRM_ID_75, 1, 99, 0 }, // STAT_MAXIMUM_ACTION_POINTS
-    { nullptr, nullptr, SKILLDEX_FRM_ID_18, 0, 999, 0 }, // STAT_ARMOR_CLASS
-    { nullptr, nullptr, SKILLDEX_FRM_ID_31, 0, INT_MAX, 0 }, // STAT_UNARMED_DAMAGE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_32, 0, 500, 0 }, // STAT_MELEE_DAMAGE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_20, 0, 999, 0 }, // STAT_CARRY_WEIGHT
-    { nullptr, nullptr, SKILLDEX_FRM_ID_24, 0, 60, 0 }, // STAT_SEQUENCE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_25, 0, 30, 0 }, // STAT_HEALING_RATE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_26, 0, 100, 0 }, // STAT_CRITICAL_CHANCE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_94, -60, 100, 0 }, // STAT_BETTER_CRITICALS
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_LASER
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_FIRE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_PLASMA
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_ELECTRICAL
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EMP
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EXPLOSION
-    { nullptr, nullptr, SKILLDEX_FRM_ID_22, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_LASER
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_FIRE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_PLASMA
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_ELECTRICAL
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_RESISTANCE_EMP
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_EXPLOSION
-    { nullptr, nullptr, SKILLDEX_FRM_ID_83, 0, 95, 0 }, // STAT_RADIATION_RESISTANCE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_23, 0, 95, 0 }, // STAT_POISON_RESISTANCE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 16, 101, 25 }, // STAT_AGE
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, 1, 0 }, // STAT_GENDER
-    { nullptr, nullptr, SKILLDEX_FRM_ID_10, 0, 2000, 0 }, // STAT_CURRENT_HIT_POINTS
-    { nullptr, nullptr, SKILLDEX_FRM_ID_11, 0, 2000, 0 }, // STAT_CURRENT_POISON_LEVEL
-    { nullptr, nullptr, SKILLDEX_FRM_ID_12, 0, 2000, 0 }, // STAT_CURRENT_RADIATION_LEVEL
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_STRENGTH
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_1, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_PERCEPTION
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_2, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_ENDURANCE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_3, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_CHARISMA
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_4, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_INTELLIGENCE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_5, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_AGILITY
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_6, PRIMARY_STAT_MIN, PRIMARY_STAT_MAX, 5 }, // STAT_LUCK
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_10, 0, 999, 0 }, // STAT_MAXIMUM_HIT_POINTS
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_75, 1, 99, 0 }, // STAT_MAXIMUM_ACTION_POINTS
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_18, 0, 999, 0 }, // STAT_ARMOR_CLASS
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_31, 0, INT_MAX, 0 }, // STAT_UNARMED_DAMAGE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_32, 0, 500, 0 }, // STAT_MELEE_DAMAGE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_20, 0, 999, 0 }, // STAT_CARRY_WEIGHT
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_24, 0, 60, 0 }, // STAT_SEQUENCE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_25, 0, 30, 0 }, // STAT_HEALING_RATE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_26, 0, 100, 0 }, // STAT_CRITICAL_CHANCE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_94, -60, 100, 0 }, // STAT_BETTER_CRITICALS
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_LASER
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_FIRE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_PLASMA
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_ELECTRICAL
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EMP
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_THRESHOLD_EXPLOSION
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_22, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_LASER
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_FIRE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_PLASMA
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_ELECTRICAL
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 100, 0 }, // STAT_DAMAGE_RESISTANCE_EMP
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 90, 0 }, // STAT_DAMAGE_RESISTANCE_EXPLOSION
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_83, 0, 95, 0 }, // STAT_RADIATION_RESISTANCE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_23, 0, 95, 0 }, // STAT_POISON_RESISTANCE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 16, 101, 25 }, // STAT_AGE
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, 1, 0 }, // STAT_GENDER
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_10, 0, 2000, 0 }, // STAT_CURRENT_HIT_POINTS
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_11, 0, 2000, 0 }, // STAT_CURRENT_POISON_LEVEL
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_12, 0, 2000, 0 }, // STAT_CURRENT_RADIATION_LEVEL
 };
 
 // 0x51D8CC pc_stat_data
 static StatDescription gPcStatDescriptions[PC_STAT_COUNT] = {
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, INT_MAX, 0 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 1, PC_LEVEL_MAX, 1 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, INT_MAX, 0 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, -20, 20, 0 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_0, 0, INT_MAX, 0 },
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, INT_MAX, 0 },
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 1, PC_LEVEL_MAX, 1 },
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, INT_MAX, 0 },
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, -20, 20, 0 },
+    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_0, 0, INT_MAX, 0 },
 };
 
 // 0x66817C stat_message_file
@@ -908,7 +908,7 @@ char* pcStatGetDescription(PcStat pcStat)
 // 0x4AFA34
 SkillDexFrameId statGetFrmId(Stat stat)
 {
-    return statIsValid(stat) ? gStatDescriptions[stat].frmId : SKILLDEX_FRM_ID_FIRST;
+    return statIsValid(stat) ? gStatDescriptions[stat].frmId : SkillDexFrameId::SKILLDEX_FRM_ID_FIRST;
 }
 
 // Roll D10 against specified stat.
