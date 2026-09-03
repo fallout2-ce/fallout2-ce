@@ -76,13 +76,13 @@ inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
 enum class BackgroundFrameId : int {
     Invalid = -1, // invalid frame id
     Reserved = 0, // reserved.frm - not working in game
-    Background = 1, //back1.frm - not working in game
+    Background = 1, // back1.frm - not working in game
     RustyMetal = 2, // rstymetl.frm
-    Hub = 3, //hub.frm
-    Necropolis = 4, //necro.frm
+    Hub = 3, // hub.frm
+    Necropolis = 4, // necro.frm
     Brotherhood = 5, // bhood.frm
-    MilitaryBase = 6, //military.frm
-    JunkTown = 7, //junktown.frm
+    MilitaryBase = 6, // military.frm
+    JunkTown = 7, // junktown.frm
     Cathedral = 8, // cath.frm
     ShadySands = 9, // shady.frm
     Vault = 10, // vault.frm
@@ -91,11 +91,11 @@ enum class BackgroundFrameId : int {
     Raiders = 13, // raider.frm
     Cave = 14, // cave0001.frm
     Enclave = 15, // enclave.frm
-    Wasteland = 16, //wastelnd.frm
+    Wasteland = 16, // wastelnd.frm
     EnclaveBoss = 17, // boss.frm
     President = 18, // pres.frm
     Tent = 19, // tent.frm
-    Adobe = 20, //adobe.frm
+    Adobe = 20, // adobe.frm
 };
 
 enum DudeNativeLook : int {
