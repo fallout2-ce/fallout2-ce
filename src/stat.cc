@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "art.h"
+#include "art_defs.h"
 #include "character_editor.h"
 #include "combat.h"
 #include "content_config.h"
@@ -906,9 +907,9 @@ char* pcStatGetDescription(PcStat pcStat)
 }
 
 // 0x4AFA34
-SkillDexFrameId statGetFrmId(Stat stat)
+FrmId statGetFrmId(Stat stat)
 {
-    return statIsValid(stat) ? gStatDescriptions[stat].frmId : SkillDexFrameId::Invalid;
+    return statIsValid(stat) ? FrmId(gStatDescriptions[stat].frmId) : FrmId::Empty();
 }
 
 // Roll D10 against specified stat.

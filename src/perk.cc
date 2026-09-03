@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include "art.h"
+#include "art_defs.h"
 #include "debug.h"
 #include "game.h"
 #include "memory.h"
@@ -757,12 +759,12 @@ char* perkGetDescription(Perk perk)
 }
 
 // 0x496BD8 perk_skilldex_fid
-SkillDexFrameId perkGetFrmId(Perk perk)
+FrmId perkGetFrmId(Perk perk)
 {
     if (!perkIsValid(perk)) {
-        return SkillDexFrameId::Invalid;
+        return FrmId::Empty();
     }
-    return gPerkDescriptions[perk].frmId;
+    return FrmId(gPerkDescriptions[perk].frmId);
 }
 
 bool perkSetProperty(Perk perk, PerkProperty property, int value)

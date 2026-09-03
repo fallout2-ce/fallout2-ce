@@ -7,6 +7,8 @@
 #include <assert.h>
 
 #include "actions.h"
+#include "art.h"
+#include "art_defs.h"
 #include "color.h"
 #include "combat.h"
 #include "critter.h"
@@ -785,9 +787,9 @@ char* skillGetAttributes(Skill skill)
 }
 
 // 0x4AAC08
-SkillDexFrameId skillGetFrmId(Skill skill)
+FrmId skillGetFrmId(Skill skill)
 {
-    return skillIsValid(skill) ? gSkillDescriptions[skill].frmId : SkillDexFrameId::Invalid;
+    return skillIsValid(skill) ? FrmId(gSkillDescriptions[skill].frmId) : FrmId::Empty();
 }
 
 // 0x4AAC2C

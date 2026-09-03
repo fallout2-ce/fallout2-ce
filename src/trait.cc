@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "art.h"
+#include "art_defs.h"
 #include "config.h"
 #include "debug.h"
 #include "game.h"
@@ -203,9 +205,9 @@ char* traitGetDescription(Trait trait)
 // out of range.
 //
 // 0x4B3BA8 trait_pic
-SkillDexFrameId traitGetFrmId(Trait trait)
+FrmId traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? traitDescriptions[trait].frmId : SkillDexFrameId::Invalid;
+    return traitIsValid(trait) ? FrmId(traitDescriptions[trait].frmId) : FrmId::Empty();
 }
 
 // Returns `true` if the specified trait is selected.

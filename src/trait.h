@@ -1,7 +1,7 @@
 #ifndef TRAIT_H
 #define TRAIT_H
 
-#include "art_defs.h"
+#include "art.h"
 #include "db.h"
 #include "skill_defs.h"
 #include "stat_defs.h"
@@ -18,7 +18,7 @@ void traitsSetSelected(Trait trait1, Trait trait2);
 void traitsGetSelected(Trait* trait1, Trait* trait2);
 char* traitGetName(Trait trait);
 char* traitGetDescription(Trait trait);
-SkillDexFrameId traitGetFrmId(Trait trait);
+FrmId traitGetFrmId(Trait trait);
 bool traitIsSelected(Trait trait);
 bool traitIsSelectedAndActive(Trait trait);
 int traitGetStatModifier(Stat stat);
