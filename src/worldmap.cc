@@ -1040,7 +1040,7 @@ static bool worldmapTerrainInfo;
 static bool wmTerrainInfoIsVisible;
 static TrailMarkerState trailMarkerState = {};
 
-static const unsigned char worldmapTrailMarkerColor = 134;
+static const Color worldmapTrailMarkerColor = Color(134);
 static const TrailMarkerStyle worldmapTrailMarkerStyles[TRAIL_MARKER_STYLE_COUNT] = {
     { 1, 2 },
     { 2, 1 },

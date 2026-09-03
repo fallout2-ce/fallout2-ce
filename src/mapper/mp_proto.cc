@@ -59,7 +59,7 @@ static char* yesno[] = {
 };
 
 // 0x559C58
-Color edit_window_color = static_cast<Color>(1);
+Color edit_window_color = Color(1);
 
 // 0x559C60
 bool can_modify_protos = false;
