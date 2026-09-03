@@ -119,13 +119,13 @@ constexpr int kAmmoAlternateMeterWidth = 4;
 constexpr int kAmmoAlternateMeterTopBorder = kAmmoBarTop - 1;
 constexpr int kAmmoAlternateMeterMaxSegmentCount = 12;
 constexpr int kAmmoAlternateMeterMaxSingleShotSegmentCount = 6;
-constexpr unsigned char kAmmoAlternateMeterLeftBorderColor = 11;
-constexpr unsigned char kAmmoAlternateMeterTopBorderColor = 15;
-constexpr unsigned char kAmmoAlternateMeterBottomBorderColor = 10;
-constexpr unsigned char kAmmoAlternateMeterEmptyDarkColor = 13;
-constexpr unsigned char kAmmoAlternateMeterEmptyLightColor = 15;
-constexpr unsigned char kAmmoAlternateMeterFillColor = 196;
-constexpr unsigned char kAmmoAlternateMeterFillShadeColor = 75;
+constexpr Color kAmmoAlternateMeterLeftBorderColor = Color(11);
+constexpr Color kAmmoAlternateMeterTopBorderColor = Color(15);
+constexpr Color kAmmoAlternateMeterBottomBorderColor = Color(10);
+constexpr Color kAmmoAlternateMeterEmptyDarkColor = Color(13);
+constexpr Color kAmmoAlternateMeterEmptyLightColor = Color(15);
+constexpr Color kAmmoAlternateMeterFillColor = Color(196);
+constexpr Color kAmmoAlternateMeterFillShadeColor = Color(75);
 
 struct CustomIndicatorDescription {
     bool isActive;

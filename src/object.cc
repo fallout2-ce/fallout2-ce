@@ -2813,8 +2813,8 @@ void _dark_trans_buf_to_buf(unsigned char* src, int srcWidth, int srcHeight, int
 
     for (int y = 0; y < srcHeight; y++) {
         for (int x = 0; x < srcWidth; x++) {
-            unsigned char color = *sp;
-            if (color != 0) {
+            Color color = static_cast<Color>(*sp);
+            if (color != COLOR_FIRST) {
                 if (color < 0xE5) {
                     color = intensityColorTable[color][intensityIndex];
                 }
@@ -4759,7 +4759,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
 
         switch (outlineType) {
         case OUTLINE_TYPE_HOSTILE:
-            color = static_cast<Color>(243);
+            color = Color(243);
             isOutlinePalleted = 0;
             animatedColorCount = 5;
             animatedColorBandHeight = frameHeight / 5;
@@ -4783,7 +4783,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
         case OUTLINE_TYPE_FRIENDLY:
             animatedColorCount = 4;
             animatedColorBandHeight = frameHeight / 4;
-            color = static_cast<Color>(229);
+            color = Color(229);
             isOutlinePalleted = 0;
             break;
         case OUTLINE_TYPE_ITEM:
@@ -4795,7 +4795,7 @@ static void objectDrawOutline(Object* object, Rect* rect)
             }
             break;
         case OUTLINE_TYPE_BLOCKED:
-            color = static_cast<Color>(61);
+            color = Color(61);
             isOutlinePalleted = 0;
             animatedColorCount = 1;
             animatedColorBandHeight = frameHeight;

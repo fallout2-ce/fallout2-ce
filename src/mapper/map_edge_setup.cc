@@ -585,7 +585,6 @@ void mapEdgeSetupToggleOverlay()
 // Shared dialog palette indices.
 constexpr int kWinBgColor = 3082; // dark blue
 constexpr int kTextColor = 16344; // lighter gray
-constexpr int kTitleColor = 32767; // white
 
 constexpr int kDialogWidth = 230;
 constexpr int kDialogHeight = 250;
@@ -612,7 +611,7 @@ static SetupWindow openSetupWindow(const char* title, int elevation)
     }
 
     windowDrawBorder(win);
-    windowDrawText(win, title, 0, (kDialogWidth - fontGetStringWidth(title)) / 2, 8, _colorTable[kTitleColor] | DRAW_TEXT_FLAG_NONE);
+    windowDrawText(win, title, 0, (kDialogWidth - fontGetStringWidth(title)) / 2, 8, COLOR_WHITE | DRAW_TEXT_FLAG_NONE);
     windowDrawText(win, gMapHeader.name[0] != '\0' ? gMapHeader.name : "<unnamed>", 130, 13, 30, _colorTable[kTextColor] | DRAW_TEXT_FLAG_NONE);
 
     char elev[32];
