@@ -2244,12 +2244,12 @@ static void interfaceUpdateAlternateAmmoMeterRow(unsigned char* dest, bool fille
     dest[0] = kAmmoAlternateMeterLeftBorderColor;
 
     if (filled) {
-        unsigned char color = lowerHalf ? kAmmoAlternateMeterFillShadeColor : kAmmoAlternateMeterFillColor;
+        Color color = lowerHalf ? kAmmoAlternateMeterFillShadeColor : kAmmoAlternateMeterFillColor;
         dest[1] = color;
         dest[2] = color;
         dest[3] = kAmmoAlternateMeterFillShadeColor;
     } else {
-        unsigned char color = lowerHalf ? kAmmoAlternateMeterEmptyLightColor : kAmmoAlternateMeterEmptyDarkColor;
+        Color color = lowerHalf ? kAmmoAlternateMeterEmptyLightColor : kAmmoAlternateMeterEmptyDarkColor;
         dest[1] = color;
         dest[2] = color;
         dest[3] = kAmmoAlternateMeterEmptyLightColor;
