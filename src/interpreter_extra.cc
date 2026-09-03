@@ -3198,7 +3198,11 @@ static void opFloatMessage(Program* program)
         color = COLOR_LIGHT_YELLOW;
         break;
     case FLOATING_MESSAGE_TYPE_BLACK:
+        color = COLOR_DARK_GREY_3;
+        break;
     case FLOATING_MESSAGE_TYPE_PURPLE:
+        color = COLOR_MAGENTA;
+        break;
     case FLOATING_MESSAGE_TYPE_GREY:
         color = COLOR_DARK_GREY_2;
         break;
