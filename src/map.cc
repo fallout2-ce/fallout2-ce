@@ -1061,8 +1061,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        FrmId fid = FrmId(MISC_FRM_ID_12);
-        objectCreateWithFidPid(&object, fid.fid(), -1);
+        objectCreateWithFidPid(&object, FrmId(MISC_FRM_ID_12).fid(), -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
         object->sid = gMapSid;
@@ -1478,15 +1477,15 @@ static int _map_save_file(File* stream)
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         int tile;
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-            FrmId fid;
+            FrmId frmId;
 
-            fid = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile]));
-            if (fid != FrmId(TILE_FRM_ID_1)) {
+            frmId = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile]));
+            if (frmId != FrmId(TILE_FRM_ID_1)) {
                 break;
             }
 
-            fid = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
-            if (fid != FrmId(TILE_FRM_ID_1)) {
+            frmId = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
+            if (frmId != FrmId(TILE_FRM_ID_1)) {
                 break;
             }
         }

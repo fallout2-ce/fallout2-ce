@@ -59,18 +59,18 @@ struct OptionsMenuButtonSpec {
 };
 
 // 0x48FC0C
-static const InterfaceFrameId pauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
-    INTF_FRM_ID_208, // charwin.frm - character editor
-    INTF_FRM_ID_209, // donebox.frm - character editor
-    INTF_FRM_ID_8, // lilredup.frm - little red button up
-    INTF_FRM_ID_9, // lilreddn.frm - little red button down
+static constexpr FrmId kPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
+    FrmId(INTF_FRM_ID_208), // charwin.frm - character editor
+    FrmId(INTF_FRM_ID_209), // donebox.frm - character editor
+    FrmId(INTF_FRM_ID_8), // lilredup.frm - little red button up
+    FrmId(INTF_FRM_ID_9), // lilreddn.frm - little red button down
 };
 
 // 0x5197C0 opgrphs
-static const InterfaceFrameId optionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
-    INTF_FRM_ID_220, // opbase.frm - character editor
-    INTF_FRM_ID_222, // opbtnon.frm - character editor
-    INTF_FRM_ID_221, // opbtnoff.frm - character editor
+static constexpr FrmId kOptionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
+    FrmId(INTF_FRM_ID_220), // opbase.frm - character editor
+    FrmId(INTF_FRM_ID_222), // opbtnon.frm - character editor
+    FrmId(INTF_FRM_ID_221), // opbtnoff.frm - character editor
 };
 
 // 0x6637E8 optn_msgfl
@@ -256,8 +256,7 @@ static int optionsWindowInit()
         }
 
         if (!loaded) {
-            FrmId fid = FrmId(optionsWindowFrmIds[index]);
-            loaded = _optionsFrmImages[index].lock(fid);
+            loaded = _optionsFrmImages[index].lock(kOptionsWindowFrmIds[index]);
         }
 
         if (!loaded) {
@@ -432,8 +431,7 @@ int showPause(bool preserveWorldState)
 
     FrmImage frmImages[PAUSE_WINDOW_FRM_COUNT];
     for (int index = 0; index < PAUSE_WINDOW_FRM_COUNT; index++) {
-        FrmId fid = FrmId(pauseWindowFrmIds[index]);
-        if (!frmImages[index].lock(fid)) {
+        if (!frmImages[index].lock(kPauseWindowFrmIds[index])) {
             debugPrint("\n** Error loading pause window graphics! **\n");
             return -1;
         }

@@ -133,8 +133,7 @@ int displayMonitorInit()
                 DISPLAY_MONITOR_WIDTH);
         } else {
             FrmImage backgroundFrmImage;
-            FrmId backgroundFid = FrmId(INTF_FRM_ID_16);
-            if (!backgroundFrmImage.lock(backgroundFid)) {
+            if (!backgroundFrmImage.lock(FrmId(INTF_FRM_ID_16))) {
                 internal_free(gDisplayMonitorBackgroundFrmData);
                 return -1;
             }
