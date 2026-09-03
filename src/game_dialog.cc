@@ -256,7 +256,7 @@ static CacheEntry* gGameDialogFidgetFrmHandle = nullptr;
 static Art* gGameDialogFidgetFrm = nullptr;
 
 // 0x518700 backgroundIndex
-static BackgroundFrameId gGameDialogBackground = BackgroundFrameId::BACKGROUND_2;
+static BackgroundFrameId gGameDialogBackground = BackgroundFrameId::RustyMetal;
 
 // 0x518704 lipsFID
 static int _lipsFID = 0;
