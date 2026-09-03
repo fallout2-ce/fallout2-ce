@@ -302,9 +302,12 @@ inline CritterFlags& operator|=(CritterFlags& lhs, CritterFlags rhs)
     return lhs;
 }
 
-// These two values are the same but stored in different fields.
+// These values are the same but stored in different fields.
+#define CONTAINER_FLAG_OPEN 0x00000001
+#define DOOR_FLAG_OPEN 0x00000001
+
 #define CONTAINER_FLAG_JAMMED 0x04000000
-#define DOOR_FLAG_JAMMGED 0x04000000
+#define DOOR_FLAG_JAMMED 0x04000000
 
 #define CONTAINER_FLAG_LOCKED 0x02000000
 #define DOOR_FLAG_LOCKED 0x02000000

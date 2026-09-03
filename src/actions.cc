@@ -1259,7 +1259,7 @@ int actionPickUp(Object* critter, Object* item)
         }
 
         // ground vs middle animation
-        AnimationType anim = (itemProto->item.data.container.openFlags & 0x01) == 0
+        AnimationType anim = (itemProto->item.data.container.openFlags & CONTAINER_FLAG_OPEN) == 0
             ? ANIM_MAGIC_HANDS_MIDDLE
             : ANIM_MAGIC_HANDS_GROUND;
         bool animateUse = actionRegisterUseAnimObj(critter, item, &anim, 0);
