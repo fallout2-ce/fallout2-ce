@@ -549,7 +549,7 @@ enum class InterfaceFrameId : int {
     PipBoySleepAlarmOut = 132, // alarmout.frm - pip boy sleep alarm - out
     PipBoyLogo = 133, // pipx.frm - pipboy 2000 logo
     WorldMapDialogBox = 136, // wmapbox.frm - World map dialog box
-    WorldMapLocationMarker = 138, // wmaploc.frm - World map location maker
+    WorldMapLocationMarker = 138, // wmaploc.frm - World map location marker
     WorldMapMoveTargetMarker1 = 139, // wmaptarg.frm - World map move target maker #1
     MainMenuBackgroundImage = 140, // mainmenu.frm - main menu background image
     MapElevatorButtonIn = 141, // ebut_in.frm - Map elevator screen
@@ -671,7 +671,7 @@ enum class InterfaceFrameId : int {
     ActionPick = 282, // actpick.frm - action pick
     ActionMenu = 283, // actmenu.frm - action menu
     ActionToHit = 284, // acttohit.frm - action to hit
-    ActionArrowMirrored = 285, // actarrom.frm - Action arrow (mirrorred)
+    ActionArrowMirrored = 285, // actarrom.frm - Action arrow (mirrored)
     PointingHand = 286, // hand.frm - pointing hand used in the inventory window
     Bullseye = 288, // bullseye.frm - bullseye for interface button
     MovementPointText = 289, // mvepnt.frm - movement point text
