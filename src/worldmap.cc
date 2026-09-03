@@ -1119,6 +1119,8 @@ int wmMaxAreaIndex()
 }
 
 // CE: Extracted from wmMapInit to support modular config loading.
+// Arg `startMapIdx` is temporary and only serves illustration purposes
+// likely to be removed when API is finalized
 int wmParseMapsConfig(Config* cfg, int startMapIdx)
 {
     if (cfg == nullptr) return -1;
@@ -1163,8 +1165,12 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
             exit(1);
         }
 
-        compat_strlwr(str);
-        strncpy(map->mapFileName, str, 40);
+        size_t copied = std::string_view(str).copy(map->mapFileName, sizeof(map->mapFileName) - 1);
+        map->mapFileName[copied] = '\0';
+
+        std::transform(map->mapFileName, map->mapFileName + copied, map->mapFileName, [](unsigned char c) {
+            return std::tolower(c);
+        });
 
         if (configGetString(cfg, section, "music", &str)) {
             strncpy(map->music, str, 40);
@@ -1173,7 +1179,7 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
         if (configGetString(cfg, section, "ambient_sfx", &str)) {
             while (str != nullptr) {
                 if (map->ambientSoundEffectsLength >= MAP_AMBIENT_SOUND_EFFECTS_CAPACITY) {
-                    debugPrint("\nwmMapInit::Error reading ambient sfx.  Too many!  Str: %s, MapIdx: %d", map->lookupName, mapIdx);
+                    debugPrint("\nwmParseMapsConfig::Error reading ambient sfx.  Too many!  Str: %s, MapIdx: %d", map->lookupName, mapIdx);
                     break;
                 }
 
@@ -1285,6 +1291,8 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
 }
 
 // CE: Extracted from wmAreaInit to support modular config loading.
+// Arg `startAreaIdx` is temporary and only serves illustration purposes
+// likely to be removed when API is finalized
 int wmParseAreasConfig(Config* cfg, int startAreaIdx)
 {
     if (cfg == nullptr) return -1;
@@ -1292,7 +1300,6 @@ int wmParseAreasConfig(Config* cfg, int startAreaIdx)
     char section[40];
     char key[40];
     char* str;
-    int num;
     CityInfo* cities;
     CityInfo* city;
     EntranceInfo* entrance;
@@ -1310,10 +1317,6 @@ int wmParseAreasConfig(Config* cfg, int startAreaIdx)
     while (loop_safety_counter < 5000) {
         snprintf(section, sizeof(section), "Area %02d", area_idx);
         if (!configGetEnum<InterfaceFrameId>(cfg, section, "townmap_art_idx", &frmId)) {
-            break;
-        }
-
-        if (!configGetInt(cfg, section, "townmap_art_idx", &num)) {
             break;
         }
 
