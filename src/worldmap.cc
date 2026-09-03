@@ -1165,12 +1165,12 @@ int wmParseMapsConfig(Config* cfg, int startMapIdx)
             exit(1);
         }
 
-        size_t copied = std::string_view(str).copy(map->mapFileName, sizeof(map->mapFileName) - 1);
-        map->mapFileName[copied] = '\0';
-
-        std::transform(map->mapFileName, map->mapFileName + copied, map->mapFileName, [](unsigned char c) {
-            return std::tolower(c);
-        });
+        char mapFileName[40];
+        strncpy(mapFileName, str, sizeof(mapFileName) - 1);
+        mapFileName[sizeof(mapFileName) - 1] = '\0';
+        compat_strlwr(mapFileName);
+        strncpy(map->mapFileName, mapFileName, sizeof(map->mapFileName));
+        map->mapFileName[sizeof(map->mapFileName) - 1] = '\0';
 
         if (configGetString(cfg, section, "music", &str)) {
             strncpy(map->music, str, 40);
