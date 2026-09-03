@@ -46,11 +46,14 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 class FrmId {
 public:
     static constexpr int EmptyFid = -1;
+    static constexpr short InvalidFrameId = -1;
+    static constexpr short MinFrameId = 0;
+    static constexpr short MaxFrameId = 4095;
 
     constexpr FrmId()
         : _objectType(OBJ_TYPE_INVALID)
         , _fid(EmptyFid)
-        , _frameId { EmptyFid }
+        , _frameId { InvalidFrameId }
         , _path(nullptr)
     {
     }
@@ -149,7 +152,7 @@ public:
     constexpr explicit FrmId(ObjectType objType, const char* path)
         : _objectType(objType)
         , _fid(EmptyFid)
-        , _frameId { EmptyFid }
+        , _frameId { InvalidFrameId }
         , _path(path)
 
     {
@@ -167,6 +170,8 @@ public:
     }
 
     constexpr const char* filePath() const { return _path; }
+
+    bool valid() const { return !empty() && ((_frameId.id >= MinFrameId && _frameId.id <= MaxFrameId) || _path != nullptr); }
 
     bool empty() const { return (*this) == Empty(); }
 
