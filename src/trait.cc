@@ -43,41 +43,41 @@ static Trait gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
 
 // 0x51DB84 trait_data
 static TraitDescription traitDescriptions[TRAIT_COUNT] = {
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_55 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_56 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_57 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_58 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_59 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_60 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_61 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_62 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_63 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_64 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_65 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_66 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_67 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_94 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_69 },
-    { nullptr, nullptr, SkillDexFrameId::SKILLDEX_FRM_ID_70 },
+    { nullptr, nullptr, SkillDexFrameId::FastMetabolism },
+    { nullptr, nullptr, SkillDexFrameId::Bruiser },
+    { nullptr, nullptr, SkillDexFrameId::SmallFrame },
+    { nullptr, nullptr, SkillDexFrameId::OneHander },
+    { nullptr, nullptr, SkillDexFrameId::Finesse },
+    { nullptr, nullptr, SkillDexFrameId::Kamikaze },
+    { nullptr, nullptr, SkillDexFrameId::HeavyHanded },
+    { nullptr, nullptr, SkillDexFrameId::FastShot },
+    { nullptr, nullptr, SkillDexFrameId::BloodyMess },
+    { nullptr, nullptr, SkillDexFrameId::Jinxed },
+    { nullptr, nullptr, SkillDexFrameId::GoodNatured },
+    { nullptr, nullptr, SkillDexFrameId::DrugAddict },
+    { nullptr, nullptr, SkillDexFrameId::DrugResistant },
+    { nullptr, nullptr, SkillDexFrameId::Empathy },
+    { nullptr, nullptr, SkillDexFrameId::Skilled },
+    { nullptr, nullptr, SkillDexFrameId::Gifted },
 };
 
 static const SkillDexFrameId defaultTraitFrmIds[TRAIT_COUNT] = {
-    SkillDexFrameId::SKILLDEX_FRM_ID_55,
-    SkillDexFrameId::SKILLDEX_FRM_ID_56,
-    SkillDexFrameId::SKILLDEX_FRM_ID_57,
-    SkillDexFrameId::SKILLDEX_FRM_ID_58,
-    SkillDexFrameId::SKILLDEX_FRM_ID_59,
-    SkillDexFrameId::SKILLDEX_FRM_ID_60,
-    SkillDexFrameId::SKILLDEX_FRM_ID_61,
-    SkillDexFrameId::SKILLDEX_FRM_ID_62,
-    SkillDexFrameId::SKILLDEX_FRM_ID_63,
-    SkillDexFrameId::SKILLDEX_FRM_ID_64,
-    SkillDexFrameId::SKILLDEX_FRM_ID_65,
-    SkillDexFrameId::SKILLDEX_FRM_ID_66,
-    SkillDexFrameId::SKILLDEX_FRM_ID_67,
-    SkillDexFrameId::SKILLDEX_FRM_ID_94,
-    SkillDexFrameId::SKILLDEX_FRM_ID_69,
-    SkillDexFrameId::SKILLDEX_FRM_ID_70,
+    SkillDexFrameId::FastMetabolism,
+    SkillDexFrameId::Bruiser,
+    SkillDexFrameId::SmallFrame,
+    SkillDexFrameId::OneHander,
+    SkillDexFrameId::Finesse,
+    SkillDexFrameId::Kamikaze,
+    SkillDexFrameId::HeavyHanded,
+    SkillDexFrameId::FastShot,
+    SkillDexFrameId::BloodyMess,
+    SkillDexFrameId::Jinxed,
+    SkillDexFrameId::GoodNatured,
+    SkillDexFrameId::DrugAddict,
+    SkillDexFrameId::DrugResistant,
+    SkillDexFrameId::Empathy,
+    SkillDexFrameId::Skilled,
+    SkillDexFrameId::Gifted,
 };
 
 static bool traitOverridesEnabled = false;
@@ -205,7 +205,7 @@ char* traitGetDescription(Trait trait)
 // 0x4B3BA8 trait_pic
 SkillDexFrameId traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? traitDescriptions[trait].frmId : SkillDexFrameId::SKILLDEX_FRM_ID_FIRST;
+    return traitIsValid(trait) ? traitDescriptions[trait].frmId : SkillDexFrameId::First;
 }
 
 // Returns `true` if the specified trait is selected.
@@ -257,7 +257,7 @@ static void traitsLoadSfallConfig()
             traitDescriptions[trait].description = traitOverrideDescriptions[trait].data();
         }
 
-        SkillDexFrameId image = SkillDexFrameId::SKILLDEX_FRM_ID_0;
+        SkillDexFrameId image = SkillDexFrameId::Strength;
         if (configGetEnum<SkillDexFrameId>(config.get(), sectionKey, "Image", &image)) {
             traitDescriptions[trait].frmId = image;
         }
