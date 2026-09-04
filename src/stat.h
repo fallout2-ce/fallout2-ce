@@ -1,6 +1,7 @@
 #ifndef STAT_H
 #define STAT_H
 
+#include "art.h"
 #include "db.h"
 #include "obj_types.h"
 #include "proto_types.h"
@@ -46,7 +47,7 @@ int pcGetExperienceForNextLevel();
 int pcGetExperienceForLevel(int level);
 char* pcStatGetName(PcStat pcStat);
 char* pcStatGetDescription(PcStat pcStat);
-SkillDexFrameId statGetFrmId(Stat stat);
+FrmId statGetFrmId(Stat stat);
 int statRoll(Object* critter, Stat stat, int modifier, int* howMuch);
 int pcAddExperience(int xp, int* xpGained = nullptr);
 int pcAddExperienceWithOptions(int xp, bool doParty, int* xpGained = nullptr);

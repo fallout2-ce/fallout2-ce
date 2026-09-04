@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "art.h"
+#include "art_defs.h"
 #include "config.h"
 #include "debug.h"
 #include "game.h"
@@ -43,41 +45,41 @@ static Trait gSelectedTraits[TRAITS_MAX_SELECTED_COUNT];
 
 // 0x51DB84 trait_data
 static TraitDescription traitDescriptions[TRAIT_COUNT] = {
-    { nullptr, nullptr, SKILLDEX_FRM_ID_55 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_56 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_57 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_58 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_59 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_60 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_61 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_62 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_63 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_64 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_65 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_66 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_67 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_94 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_69 },
-    { nullptr, nullptr, SKILLDEX_FRM_ID_70 },
+    { nullptr, nullptr, SkillDexFrameId::FastMetabolism },
+    { nullptr, nullptr, SkillDexFrameId::Bruiser },
+    { nullptr, nullptr, SkillDexFrameId::SmallFrame },
+    { nullptr, nullptr, SkillDexFrameId::OneHander },
+    { nullptr, nullptr, SkillDexFrameId::Finesse },
+    { nullptr, nullptr, SkillDexFrameId::Kamikaze },
+    { nullptr, nullptr, SkillDexFrameId::HeavyHanded },
+    { nullptr, nullptr, SkillDexFrameId::FastShot },
+    { nullptr, nullptr, SkillDexFrameId::BloodyMess },
+    { nullptr, nullptr, SkillDexFrameId::Jinxed },
+    { nullptr, nullptr, SkillDexFrameId::GoodNatured },
+    { nullptr, nullptr, SkillDexFrameId::DrugAddict },
+    { nullptr, nullptr, SkillDexFrameId::DrugResistant },
+    { nullptr, nullptr, SkillDexFrameId::Empathy },
+    { nullptr, nullptr, SkillDexFrameId::Skilled },
+    { nullptr, nullptr, SkillDexFrameId::Gifted },
 };
 
 static const SkillDexFrameId defaultTraitFrmIds[TRAIT_COUNT] = {
-    SKILLDEX_FRM_ID_55,
-    SKILLDEX_FRM_ID_56,
-    SKILLDEX_FRM_ID_57,
-    SKILLDEX_FRM_ID_58,
-    SKILLDEX_FRM_ID_59,
-    SKILLDEX_FRM_ID_60,
-    SKILLDEX_FRM_ID_61,
-    SKILLDEX_FRM_ID_62,
-    SKILLDEX_FRM_ID_63,
-    SKILLDEX_FRM_ID_64,
-    SKILLDEX_FRM_ID_65,
-    SKILLDEX_FRM_ID_66,
-    SKILLDEX_FRM_ID_67,
-    SKILLDEX_FRM_ID_94,
-    SKILLDEX_FRM_ID_69,
-    SKILLDEX_FRM_ID_70,
+    SkillDexFrameId::FastMetabolism,
+    SkillDexFrameId::Bruiser,
+    SkillDexFrameId::SmallFrame,
+    SkillDexFrameId::OneHander,
+    SkillDexFrameId::Finesse,
+    SkillDexFrameId::Kamikaze,
+    SkillDexFrameId::HeavyHanded,
+    SkillDexFrameId::FastShot,
+    SkillDexFrameId::BloodyMess,
+    SkillDexFrameId::Jinxed,
+    SkillDexFrameId::GoodNatured,
+    SkillDexFrameId::DrugAddict,
+    SkillDexFrameId::DrugResistant,
+    SkillDexFrameId::Empathy,
+    SkillDexFrameId::Skilled,
+    SkillDexFrameId::Gifted,
 };
 
 static bool traitOverridesEnabled = false;
@@ -199,13 +201,13 @@ char* traitGetDescription(Trait trait)
     return traitIsValid(trait) ? traitDescriptions[trait].description : nullptr;
 }
 
-// Return an art ID of the specified trait, or `0` if the specified trait is
+// Return an FrmId of the specified trait, or FrmId::Empty() if the specified trait is
 // out of range.
 //
 // 0x4B3BA8 trait_pic
-SkillDexFrameId traitGetFrmId(Trait trait)
+FrmId traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? traitDescriptions[trait].frmId : SKILLDEX_FRM_ID_FIRST;
+    return traitIsValid(trait) ? FrmId(traitDescriptions[trait].frmId) : FrmId::Empty();
 }
 
 // Returns `true` if the specified trait is selected.
@@ -257,7 +259,7 @@ static void traitsLoadSfallConfig()
             traitDescriptions[trait].description = traitOverrideDescriptions[trait].data();
         }
 
-        SkillDexFrameId image = SKILLDEX_FRM_ID_0;
+        SkillDexFrameId image = SkillDexFrameId::Strength;
         if (configGetEnum<SkillDexFrameId>(config.get(), sectionKey, "Image", &image)) {
             traitDescriptions[trait].frmId = image;
         }

@@ -1,6 +1,7 @@
 #ifndef SKILL_H
 #define SKILL_H
 
+#include "art.h"
 #include "db.h"
 #include "obj_types.h"
 #include "proto_types.h"
@@ -39,7 +40,7 @@ int skillRoll(Object* critter, Skill skill, int modifier, int* howMuch);
 char* skillGetName(Skill skill);
 char* skillGetDescription(Skill skill);
 char* skillGetAttributes(Skill skill);
-SkillDexFrameId skillGetFrmId(Skill skill);
+FrmId skillGetFrmId(Skill skill);
 int skillUse(Object* obj, Object* target, Skill skill, int skillBonus);
 SkillStealResult skillsPerformStealing(Object* thief, Object* target, Object* item, int quantity, bool isPlanting, int* xpOverride);
 int skillGetGameDifficultyModifier(Skill skill);
