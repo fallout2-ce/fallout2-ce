@@ -226,6 +226,10 @@ private:
     */
     constexpr int buildFid(ObjectType objectType, int frmId, unsigned char animType = 0, unsigned char weaponAnimation = 0, Rotation rotation = ROTATION_NE)
     {
+        if (objectType == OBJ_TYPE_INVALID || frmId < kMinFrameId || frmId > kMaxFrameId) {
+            return kEmptyFid;
+        }
+
         return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponAnimation << 12) & 0xF000) | (frmId & kMaxFrameId);
     }
 
