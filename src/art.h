@@ -330,7 +330,7 @@ public:
     {
     }
 
-    constexpr explicit HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
+    constexpr HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
         : FrmId(head, headAnimation, fidget)
     {
     }
