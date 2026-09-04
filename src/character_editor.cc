@@ -343,56 +343,56 @@ static void customTownReputationFree();
 
 // 0x431C40 grph_id
 static constexpr FrmId kCharacterEditorFrmIds[EDITOR_GRAPHIC_COUNT] = {
-    FrmId(INTF_FRM_ID_170),
-    FrmId(INTF_FRM_ID_175),
-    FrmId(INTF_FRM_ID_176),
-    FrmId(INTF_FRM_ID_181),
-    FrmId(INTF_FRM_ID_182),
-    FrmId(INTF_FRM_ID_183),
-    FrmId(INTF_FRM_ID_184),
-    FrmId(INTF_FRM_ID_185),
-    FrmId(INTF_FRM_ID_186),
-    FrmId(INTF_FRM_ID_187),
-    FrmId(INTF_FRM_ID_188),
-    FrmId(INTF_FRM_ID_189),
-    FrmId(INTF_FRM_ID_190),
-    FrmId(INTF_FRM_ID_191),
-    FrmId(INTF_FRM_ID_192),
-    FrmId(INTF_FRM_ID_193),
-    FrmId(INTF_FRM_ID_194),
-    FrmId(INTF_FRM_ID_195),
-    FrmId(INTF_FRM_ID_196),
-    FrmId(INTF_FRM_ID_197),
-    FrmId(INTF_FRM_ID_198),
-    FrmId(INTF_FRM_ID_199),
-    FrmId(INTF_FRM_ID_200),
-    FrmId(INTF_FRM_ID_8),
-    FrmId(INTF_FRM_ID_9),
-    FrmId(INTF_FRM_ID_204),
-    FrmId(INTF_FRM_ID_205),
-    FrmId(INTF_FRM_ID_206),
-    FrmId(INTF_FRM_ID_207),
-    FrmId(INTF_FRM_ID_208),
-    FrmId(INTF_FRM_ID_209),
-    FrmId(INTF_FRM_ID_210),
-    FrmId(INTF_FRM_ID_211),
-    FrmId(INTF_FRM_ID_212),
-    FrmId(INTF_FRM_ID_213),
-    FrmId(INTF_FRM_ID_214),
-    FrmId(INTF_FRM_ID_122),
-    FrmId(INTF_FRM_ID_123),
-    FrmId(INTF_FRM_ID_124),
-    FrmId(INTF_FRM_ID_125),
-    FrmId(INTF_FRM_ID_219),
-    FrmId(INTF_FRM_ID_220),
-    FrmId(INTF_FRM_ID_221),
-    FrmId(INTF_FRM_ID_222),
-    FrmId(INTF_FRM_ID_178),
-    FrmId(INTF_FRM_ID_179),
-    FrmId(INTF_FRM_ID_180),
-    FrmId(INTF_FRM_ID_38),
-    FrmId(INTF_FRM_ID_215),
-    FrmId(INTF_FRM_ID_216),
+    FrmId(InterfaceFrameId::BigNum),
+    FrmId(InterfaceFrameId::CharacterEditorAgeMask),
+    FrmId(InterfaceFrameId::CharacterEditorAgeOff),
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
+    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
+    FrmId(InterfaceFrameId::CharacterEditorNameMask),
+    FrmId(InterfaceFrameId::CharacterEditorNameOn),
+    FrmId(InterfaceFrameId::CharacterEditorNameOff),
+    FrmId(InterfaceFrameId::CharacterEditorFolderMask),
+    FrmId(InterfaceFrameId::CharacterEditorSexMask),
+    FrmId(InterfaceFrameId::CharacterEditorSexOff),
+    FrmId(InterfaceFrameId::CharacterEditorSexOn),
+    FrmId(InterfaceFrameId::CharacterEditorSlider),
+    FrmId(InterfaceFrameId::CharacterEditorSpecialNegativeOff),
+    FrmId(InterfaceFrameId::CharacterEditorSpecialNegativeOn),
+    FrmId(InterfaceFrameId::CharacterEditorSpecialPositiveOff),
+    FrmId(InterfaceFrameId::CharacterEditorSpecialPositiveOn),
+    FrmId(InterfaceFrameId::CharacterEditorStrengthNegativeOff),
+    FrmId(InterfaceFrameId::CharacterEditorStrengthNegativeOn),
+    FrmId(InterfaceFrameId::CharacterEditorStrengthPositiveOff),
+    FrmId(InterfaceFrameId::CharacterEditorStrengthPositiveOn),
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
+    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
+    FrmId(InterfaceFrameId::LittleRedButtonUp),
+    FrmId(InterfaceFrameId::LittleRedButtonDown),
+    FrmId(InterfaceFrameId::CharacterEditorAgeOn),
+    FrmId(InterfaceFrameId::CharacterEditorAgeBox),
+    FrmId(InterfaceFrameId::CharacterEditorAttributesBox),
+    FrmId(InterfaceFrameId::CharacterEditorAttributesWindow),
+    FrmId(InterfaceFrameId::CharacterWindow),
+    FrmId(InterfaceFrameId::DoneBox),
+    FrmId(InterfaceFrameId::CharacterEditorFemaleOff),
+    FrmId(InterfaceFrameId::CharacterEditorFemaleOn),
+    FrmId(InterfaceFrameId::CharacterEditorMaleOff),
+    FrmId(InterfaceFrameId::CharacterEditorMaleOn),
+    FrmId(InterfaceFrameId::CharacterEditorNameBox),
+    FrmId(InterfaceFrameId::LeftArrowUp),
+    FrmId(InterfaceFrameId::LeftArrowDown),
+    FrmId(InterfaceFrameId::RightArrowUp),
+    FrmId(InterfaceFrameId::RightArrowDown),
+    FrmId(InterfaceFrameId::CharacterEditorBarArrows),
+    FrmId(InterfaceFrameId::OptionsBase),
+    FrmId(InterfaceFrameId::OptionsButtonOff),
+    FrmId(InterfaceFrameId::OptionsButtonOn),
+    FrmId(InterfaceFrameId::CharacterEditorKarmaFolder),
+    FrmId(InterfaceFrameId::CharacterEditorKillsFolder),
+    FrmId(InterfaceFrameId::CharacterEditorPerksFolder),
+    FrmId(InterfaceFrameId::CharacterEditorTraitsFolder),
+    FrmId(InterfaceFrameId::CharacterEditorTaggedSkillsOff),
+    FrmId(InterfaceFrameId::CharacterEditorTaggedSkillsOn),
 };
 
 // flags to preload fid
@@ -1355,7 +1355,7 @@ static int characterEditorWindowInit()
     }
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
-    const FrmId fid = gCharacterEditorIsCreationMode ? FrmId(INTF_FRM_ID_169) : FrmId(INTF_FRM_ID_177);
+    const FrmId fid = gCharacterEditorIsCreationMode ? FrmId(InterfaceFrameId::CharacterEditorCreateBackground) : FrmId(InterfaceFrameId::CharacterEditorEditBackground);
     if (!_editorBackgroundFrmImage.lock(fid)) {
         characterEditorMessageListReset();
         characterEditorWindowRestoreState();
@@ -6136,7 +6136,7 @@ static int perkDialogShow()
         previousPerkRanks[perk] = perkGetRank(gDude, perk);
     }
 
-    if (!_perkDialogBackgroundFrmImage.lock(FrmId(INTF_FRM_ID_86))) {
+    if (!_perkDialogBackgroundFrmImage.lock(FrmId(InterfaceFrameId::PerkDialogBackground))) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
     }

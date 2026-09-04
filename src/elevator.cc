@@ -61,37 +61,37 @@ static int elevatorGetLevelFromEscKey(int elevator, int map);
 
 // 0x43E950 grph_id_2
 static constexpr FrmId kElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_141), // ebut_in.frm - map elevator screen
-    FrmId(INTF_FRM_ID_142), // ebut_out.frm - map elevator screen
-    FrmId(INTF_FRM_ID_149), // gaj000.frm - map elevator screen
+    FrmId(InterfaceFrameId::MapElevatorButtonIn),
+    FrmId(InterfaceFrameId::MapElevatorButtonOut),
+    FrmId(InterfaceFrameId::MapElevatorGaj000),
 };
 
 // 0x43E95C intotal
 static ElevatorBackground gElevatorBackgrounds[ELEVATORS_MAX] = {
-    { INTF_FRM_ID_143, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
-    { INTF_FRM_ID_144, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_144, INTF_FRM_ID_145 },
-    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_146, INTF_FRM_ID_147 },
-    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_146, INTF_FRM_ID_151 },
-    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_146, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_146, INTF_FRM_ID_147 },
-    { INTF_FRM_ID_388, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
-    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_148, INTF_FRM_ID_INVALID },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
-    { INTF_FRM_ID_143, INTF_FRM_ID_150 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorMast1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMast1, InterfaceFrameId::MapElevatorMast2 },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::MapElevatorMil2 },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::MapElevatorMil3 },
+    { InterfaceFrameId::MapElevatorVault, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorMil1, InterfaceFrameId::MapElevatorMil2 },
+    { InterfaceFrameId::MapElevatorSierraBase, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorVault, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorVault, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorVault, InterfaceFrameId::Invalid },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
+    { InterfaceFrameId::MapElevatorBos, InterfaceFrameId::MapElevatorBos2 },
 };
 
 // Number of levels for eleveators.
@@ -543,7 +543,7 @@ static int elevatorWindowInit(int elevator)
 
     const FrmId backgroundFrmId = FrmId(elevatorBackground->backgroundFrmId);
     if (_elevatorBackgroundFrmImage.lock(backgroundFrmId)) {
-        if (elevatorBackground->panelFrmId != -1) {
+        if (elevatorBackground->panelFrmId != InterfaceFrameId::Invalid) {
             const FrmId panelFrmId = FrmId(elevatorBackground->panelFrmId);
             if (!_elevatorPanelFrmImage.lock(panelFrmId)) {
                 backgroundsLoaded = false;
