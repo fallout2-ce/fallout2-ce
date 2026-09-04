@@ -235,10 +235,10 @@ bool showMessageBox(const char* str);
 int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode = -1, int mouseExitEventCode = -1, int mouseDownEventCode = -1, int mouseUpEventCode = -1, unsigned char* normal = nullptr, unsigned char* pressed = nullptr, unsigned char* hover = nullptr, int flags = 0);
 // Same as buttonCreate, but accepts FrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
 // Only normalId is required to be non-empty.
-int buttonCreateWithFrm(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const FrmId& normalId, const FrmId& pressedId = {}, const FrmId& hoverId = {}, int flags = 0);
+int buttonCreateWithFrm(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId = {}, const InterfaceFrmId& hoverId = {}, int flags = 0);
 // Same as _win_register_button_disable, but accepts FrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
 // Only normalId is required to be non-empty.
-int buttonSetDisabledFrm(int btn, const FrmId& normalId, const FrmId& pressedId = {}, const FrmId& hoverId = {});
+int buttonSetDisabledFrm(int btn, const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId = {}, const InterfaceFrmId& hoverId = {});
 int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const char* title, int flags);
 int _win_register_button_disable(int btn, unsigned char* normal, unsigned char* pressed, unsigned char* hover);
 int _win_register_button_image(int btn, unsigned char* normal, unsigned char* pressed, unsigned char* hover, bool draw);
