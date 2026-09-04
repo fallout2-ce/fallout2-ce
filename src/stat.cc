@@ -907,9 +907,9 @@ char* pcStatGetDescription(PcStat pcStat)
 }
 
 // 0x4AFA34
-FrmId statGetFrmId(Stat stat)
+SkillDexFrmId statGetFrmId(Stat stat)
 {
-    return statIsValid(stat) ? FrmId(gStatDescriptions[stat].frmId) : FrmId::Empty();
+    return statIsValid(stat) ? gStatDescriptions[stat].frmId : SkillDexFrameId::Invalid;
 }
 
 // Roll D10 against specified stat.
