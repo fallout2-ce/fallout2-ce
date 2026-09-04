@@ -1,7 +1,7 @@
 #ifndef PERK_H
 #define PERK_H
 
-#include "art_defs.h"
+#include "art.h"
 #include "db.h"
 #include "obj_types.h"
 #include "perk_defs.h"
@@ -43,7 +43,7 @@ int perkGetRank(Object* critter, Perk perk);
 char* perkGetName(Perk perk);
 int perkGetMaxRank(Perk perk);
 char* perkGetDescription(Perk perk);
-SkillDexFrameId perkGetFrmId(Perk perk);
+FrmId perkGetFrmId(Perk perk);
 bool perkSetProperty(Perk perk, PerkProperty property, int value);
 bool perkSetName(Perk perk, const char* value);
 bool perkSetDescription(Perk perk, const char* value);

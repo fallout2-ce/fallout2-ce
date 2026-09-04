@@ -771,7 +771,7 @@ Color* circleBlendTable = nullptr;
 // 0x51DE38 wmInterfaceWasInitialized
 static int wmInterfaceWasInitialized = 0;
 
-static constexpr InterfaceFrameId kDefaultCarInterfaceArtFrmId = INTF_FRM_ID_433;
+static constexpr InterfaceFrameId kDefaultCarInterfaceArtFrmId = InterfaceFrameId::WorldMapCarMovie;
 
 static InterfaceFrameId carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
 
@@ -810,10 +810,10 @@ static const char* wmFormationStrs[ENCOUNTER_FORMATION_TYPE_COUNT] = {
 
 // 0x51DE84 wmRndCursorFids
 constexpr FrmId wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
-    FrmId(INTF_FRM_ID_154),
-    FrmId(INTF_FRM_ID_155),
-    FrmId(INTF_FRM_ID_438),
-    FrmId(INTF_FRM_ID_439),
+    FrmId(InterfaceFrameId::WorldMapFightIcon1),
+    FrmId(InterfaceFrameId::WorldMapFightIcon2),
+    FrmId(InterfaceFrameId::WorldMapRandomEncounterCursor2Bright),
+    FrmId(InterfaceFrameId::WorldMapRandomEncounterCursor2Dark),
 };
 
 #define MAX_TRAIL_LENGTH 1000
@@ -1335,16 +1335,17 @@ int wmParseAreasConfig(Config* cfg, int startAreaIdx)
         wmAreaSlotInit(city);
 
         city->areaId = City(area_idx);
+
         FrmId fid = FrmId::Empty();
-        if (frmId != INTF_FRM_ID_INVALID) {
+        if (frmId != InterfaceFrameId::Invalid) {
             fid = FrmId(frmId);
         }
 
         city->mapFid = fid.fid();
-        fid = FrmId::Empty();
 
+        fid = FrmId::Empty();
         if (configGetEnum<InterfaceFrameId>(cfg, section, "townmap_label_art_idx", &frmId)) {
-            if (frmId != INTF_FRM_ID_INVALID) {
+            if (frmId != InterfaceFrameId::Invalid) {
                 fid = FrmId(frmId);
             }
 
@@ -1495,9 +1496,15 @@ int wmWorldMap_init()
     // during |wmTeleportToArea| to calculate worldmap position when jumping
     // from Temple to Arroyo - before giving a chance to |wmInterfaceInit| to
     // initialize it.
+    constexpr FrmId kWorldSphereOverlayFrmIds[CITY_SIZE_COUNT] = {
+        FrmId(InterfaceFrameId::WorldSphereOverlay0),
+        FrmId(InterfaceFrameId::WorldSphereOverlay1),
+        FrmId(InterfaceFrameId::WorldSphereOverlay2),
+    };
+
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
         CitySizeDescription* citySizeDescription = &(wmSphereData[citySize]);
-        citySizeDescription->fid = FrmId(INTF_FRM_ID_336 + citySize).fid();
+        citySizeDescription->fid = kWorldSphereOverlayFrmIds[citySize].fid();
     }
 
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_WORLDMAP, &wmMsgFile);
@@ -5060,7 +5067,7 @@ static int wmInterfaceInit()
         return -1;
     }
 
-    if (!_backgroundFrmImage.lock(FrmId(INTF_FRM_ID_136))) {
+    if (!_backgroundFrmImage.lock(FrmId(InterfaceFrameId::WorldMapDialogBox))) {
         return -1;
     }
 
@@ -5089,23 +5096,19 @@ static int wmInterfaceInit()
         }
     }
 
-    // hotspot1.frm - town map selector shape #1
-    if (!wmGenData.hotspotNormalFrmImage.lock(FrmId(INTF_FRM_ID_168))) {
+    if (!wmGenData.hotspotNormalFrmImage.lock(FrmId(InterfaceFrameId::TownMapHotspot1))) {
         return -1;
     }
 
-    // hotspot2.frm - town map selector shape #2
-    if (!wmGenData.hotspotPressedFrmImage.lock(FrmId(INTF_FRM_ID_223))) {
+    if (!wmGenData.hotspotPressedFrmImage.lock(FrmId(InterfaceFrameId::TownMapHotspot2))) {
         return -1;
     }
 
-    // wmaptarg.frm - world map move target maker #1
-    if (!wmGenData.destinationMarkerFrmImage.lock(FrmId(INTF_FRM_ID_139))) {
+    if (!wmGenData.destinationMarkerFrmImage.lock(FrmId(InterfaceFrameId::WorldMapMoveTargetMarker1))) {
         return -1;
     }
 
-    // wmaploc.frm - world map location marker
-    if (!wmGenData.locationMarkerFrmImage.lock(FrmId(INTF_FRM_ID_138))) {
+    if (!wmGenData.locationMarkerFrmImage.lock(FrmId(InterfaceFrameId::WorldMapLocationMarker))) {
         return -1;
     }
 
@@ -5119,18 +5122,15 @@ static int wmInterfaceInit()
         wmTileInfoList[index].handle = INVALID_CACHE_ENTRY;
     }
 
-    // wmtabs.frm - worldmap town tabs underlay
-    if (!wmGenData.tabsBackgroundFrmImage.lock(FrmId(INTF_FRM_ID_364))) {
+    if (!wmGenData.tabsBackgroundFrmImage.lock(FrmId(InterfaceFrameId::WorldMapTownTabsUnderlay))) {
         return -1;
     }
 
-    // wmtbedge.frm - worldmap town tabs edging overlay
-    if (!wmGenData.tabsBorderFrmImage.lock(FrmId(INTF_FRM_ID_367))) {
+    if (!wmGenData.tabsBorderFrmImage.lock(FrmId(InterfaceFrameId::WorldMapTownTabsEdgingOverlay))) {
         return -1;
     }
 
-    // wmdial.frm - worldmap night/day dial
-    wmGenData.dialFrm = artLock(FrmId(INTF_FRM_ID_365), &(wmGenData.dialFrmHandle));
+    wmGenData.dialFrm = artLock(FrmId(InterfaceFrameId::WorldMapNightDayDial), &(wmGenData.dialFrmHandle));
     if (wmGenData.dialFrm == nullptr) {
         return -1;
     }
@@ -5138,29 +5138,23 @@ static int wmInterfaceInit()
     wmGenData.dialFrmWidth = artGetWidth(wmGenData.dialFrm);
     wmGenData.dialFrmHeight = artGetHeight(wmGenData.dialFrm);
 
-    // wmscreen - worldmap overlay screen
-    if (!wmGenData.carOverlayFrmImage.lock(FrmId(INTF_FRM_ID_363))) {
+    if (!wmGenData.carOverlayFrmImage.lock(FrmId(InterfaceFrameId::WorldMapOverlayScreen))) {
         return -1;
     }
 
-    // wmglobe.frm - worldmap globe stamp overlay
-    if (!wmGenData.globeOverlayFrmImage.lock(FrmId(INTF_FRM_ID_366))) {
+    if (!wmGenData.globeOverlayFrmImage.lock(FrmId(InterfaceFrameId::WorldMapGlobeStampOverlay))) {
         return -1;
     }
 
-    // lilredup.frm - little red button up
-    wmGenData.redButtonNormalFrmImage.lock(FrmId(INTF_FRM_ID_8));
+    wmGenData.redButtonNormalFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonUp));
 
-    // lilreddn.frm - little red button down
-    wmGenData.redButtonPressedFrmImage.lock(FrmId(INTF_FRM_ID_9));
+    wmGenData.redButtonPressedFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonDown));
 
-    // months.frm - month strings for pip boy
-    if (!wmGenData.monthsFrmImage.lock(FrmId(INTF_FRM_ID_129))) {
+    if (!wmGenData.monthsFrmImage.lock(FrmId(InterfaceFrameId::PipBoyMonthStrings))) {
         return -1;
     }
 
-    // numbers.frm - numbers for the hit points and fatigue counters
-    if (!wmGenData.numbersFrmImage.lock(FrmId(INTF_FRM_ID_82))) {
+    if (!wmGenData.numbersFrmImage.lock(FrmId(InterfaceFrameId::HitPointsNumbers))) {
         return -1;
     }
 
@@ -5205,20 +5199,24 @@ static int wmInterfaceInit()
         }
     }
 
+    constexpr FrmId kScrollUpButtonFrmIds[WORLDMAP_ARROW_FRM_COUNT] = {
+        FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
+        FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
+    };
+
     for (int index = 0; index < WORLDMAP_ARROW_FRM_COUNT; index++) {
-        // 200 - uparwon.frm - character editor
-        // 199 - uparwoff.frm - character editor
-        // SFALL: Fix images for scroll buttons.
-        if (!wmGenData.scrollUpButtonFrmImages[index].lock(FrmId(INTF_FRM_ID_199 + index))) {
+        if (!wmGenData.scrollUpButtonFrmImages[index].lock(kScrollUpButtonFrmIds[index])) {
             return -1;
         }
     }
 
+    constexpr FrmId kScrollDownButtonFrmIds[WORLDMAP_ARROW_FRM_COUNT] = {
+        FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
+        FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
+    };
+
     for (int index = 0; index < WORLDMAP_ARROW_FRM_COUNT; index++) {
-        // 182 - dnarwon.frm - character editor
-        // 181 - dnarwoff.frm - character editor
-        // SFALL: Fix images for scroll buttons.
-        if (!wmGenData.scrollDownButtonFrmImages[index].lock(FrmId(INTF_FRM_ID_181 + index))) {
+        if (!wmGenData.scrollDownButtonFrmImages[index].lock(kScrollDownButtonFrmIds[index])) {
             return -1;
         }
     }
@@ -5264,7 +5262,6 @@ static int wmInterfaceInit()
     }
 
     if (wmGenData.isInCar) {
-        // wmcarmve.frm - worldmap car movie
         if (!wmLockCarInterfaceArt(carInterfaceArtFrmId, &(wmGenData.carImageFrm), &(wmGenData.carImageFrmHandle))) {
             carInterfaceArtFrmId = kDefaultCarInterfaceArtFrmId;
 
@@ -6909,7 +6906,7 @@ int wmCarGasAmount()
 
 static bool wmLockCarInterfaceArt(InterfaceFrameId artIndex, Art** artPtr, CacheEntry** handlePtr)
 {
-    if (artIndex < INTF_FRM_ID_FIRST || artIndex > INTF_FRM_ID_LAST) {
+    if (artIndex < InterfaceFrameId::First || artIndex > InterfaceFrameId::Last) {
         return false;
     }
 

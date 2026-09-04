@@ -221,7 +221,7 @@ void endgamePlaySlideshow()
         EndgameEnding* ending = &(gEndgameEndings[index]);
         int value = gameGetGlobalVar(ending->gvar);
         if (value == ending->value) {
-            if (ending->art_num == INTF_FRM_ID_327) {
+            if (ending->art_num == InterfaceFrameId::PanningDesertImage) {
                 endgameEndingRenderPanningScene(ending->direction, ending->voiceOverBaseName);
             } else {
                 const FrmId frmId = FrmId(ending->art_num);
@@ -346,13 +346,13 @@ static int endgameEndingHandleContinuePlaying()
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
     CacheEntry* backgroundHandle;
-    Art* background = artLock(FrmId(INTF_FRM_ID_327), &backgroundHandle);
+    Art* background = artLock(FrmId(InterfaceFrameId::PanningDesertImage), &backgroundHandle);
     if (background != nullptr) {
         int width = artGetWidth(background);
         int height = artGetHeight(background);
         unsigned char* backgroundData = artGetFrameData(background);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
-        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, INTF_FRM_ID_327);
+        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, static_cast<int>(InterfaceFrameId::PanningDesertImage));
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();

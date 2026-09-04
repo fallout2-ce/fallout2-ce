@@ -7,6 +7,8 @@
 #include <assert.h>
 
 #include "actions.h"
+#include "art.h"
+#include "art_defs.h"
 #include "color.h"
 #include "combat.h"
 #include "critter.h"
@@ -88,45 +90,45 @@ static const int gHealableDamageFlags[HEALABLE_DAMAGE_FLAGS_LENGTH] = {
 
 // 0x51D118 skill_data
 static SkillDescription gSkillDescriptions[SKILL_COUNT] = {
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_28, 5, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_29, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_30, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_31, 30, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_32, 20, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_33, 0, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_34, 0, 2, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 25, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_35, 5, 1, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 50, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_36, 5, 3, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_37, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_38, 0, 3, STAT_AGILITY, STAT_INVALID, 1, 25, 1 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_39, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_40, 0, 4, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_41, 0, 3, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_42, 0, 5, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_43, 0, 4, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_44, 0, 5, STAT_LUCK, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_45, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::SmallGuns, 5, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::BigGuns, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::EnergyWeapons, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Unarmed, 30, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::MeleeWeapons, 20, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Throwing, 0, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::FirstAid, 0, 2, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 25, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Doctor, 5, 1, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 50, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Sneak, 5, 3, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Lockpick, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Steal, 0, 3, STAT_AGILITY, STAT_INVALID, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Traps, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Science, 0, 4, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Repair, 0, 3, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Speech, 0, 5, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Barter, 0, 4, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Gambling, 0, 5, STAT_LUCK, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Outdoorsman, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
 };
 
 static const SkillDescription defaultSkillDescriptions[SKILL_COUNT] = {
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_28, 5, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_29, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_30, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_31, 30, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_32, 20, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_33, 0, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_34, 0, 2, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 25, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_35, 5, 1, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 50, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_36, 5, 3, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_37, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_38, 0, 3, STAT_AGILITY, STAT_INVALID, 1, 25, 1 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_39, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_40, 0, 4, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_41, 0, 3, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_42, 0, 5, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_43, 0, 4, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_44, 0, 5, STAT_LUCK, STAT_INVALID, 1, 0, 0 },
-    { nullptr, nullptr, nullptr, SKILLDEX_FRM_ID_45, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::SmallGuns, 5, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::BigGuns, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::EnergyWeapons, 0, 2, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Unarmed, 30, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::MeleeWeapons, 20, 2, STAT_AGILITY, STAT_STRENGTH, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Throwing, 0, 4, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::FirstAid, 0, 2, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 25, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Doctor, 5, 1, STAT_PERCEPTION, STAT_INTELLIGENCE, 1, 50, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Sneak, 5, 3, STAT_AGILITY, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Lockpick, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Steal, 0, 3, STAT_AGILITY, STAT_INVALID, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Traps, 10, 1, STAT_PERCEPTION, STAT_AGILITY, 1, 25, 1 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Science, 0, 4, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Repair, 0, 3, STAT_INTELLIGENCE, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Speech, 0, 5, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Barter, 0, 4, STAT_CHARISMA, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Gambling, 0, 5, STAT_LUCK, STAT_INVALID, 1, 0, 0 },
+    { nullptr, nullptr, nullptr, SkillDexFrameId::Outdoorsman, 0, 2, STAT_ENDURANCE, STAT_INTELLIGENCE, 1, 100, 0 },
 };
 
 static double skillStatMultipliers[SKILL_COUNT][PRIMARY_STAT_COUNT];
@@ -785,9 +787,9 @@ char* skillGetAttributes(Skill skill)
 }
 
 // 0x4AAC08
-SkillDexFrameId skillGetFrmId(Skill skill)
+FrmId skillGetFrmId(Skill skill)
 {
-    return skillIsValid(skill) ? gSkillDescriptions[skill].frmId : SKILLDEX_FRM_ID_FIRST;
+    return skillIsValid(skill) ? FrmId(gSkillDescriptions[skill].frmId) : FrmId::Empty();
 }
 
 // 0x4AAC2C

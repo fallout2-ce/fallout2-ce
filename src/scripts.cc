@@ -684,7 +684,7 @@ Object* scriptGetSelf(Program* program)
     }
 
     Object* object;
-    objectCreateWithFidPid(&object, FrmId(INTF_FRM_ID_3).fid(), -1);
+    objectCreateWithFidPid(&object, FrmId(InterfaceFrameId::ExitGridMarker).fid(), -1);
     objectHide(object, nullptr);
     _obj_toggle_flat(object, nullptr);
     object->sid = sid;
@@ -1259,7 +1259,7 @@ static void scriptsCloseNearbyElevatorDoors()
         objectSetFrame(elevatorDoors, 0, nullptr);
         objectSetLocation(elevatorDoors, elevatorDoors->tile, elevatorDoors->elevation, nullptr);
         elevatorDoors->flags &= ~OBJECT_OPEN_DOOR;
-        elevatorDoors->data.scenery.door.openFlags &= ~0x01;
+        elevatorDoors->data.scenery.door.openFlags &= ~DOOR_FLAG_OPEN;
         _obj_rebuild_all_light();
     } else {
         debugPrint("\nWarning: Elevator: Couldn't find old elevator doors!");

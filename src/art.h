@@ -45,12 +45,15 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 
 class FrmId {
 public:
-    static constexpr int EmptyFid = -1;
+    static constexpr int kEmptyFid = -1;
+    static constexpr short kInvalidFrameId = -1;
+    static constexpr short kMinFrameId = 0;
+    static constexpr short kMaxFrameId = 4095;
 
     constexpr FrmId()
         : _objectType(OBJ_TYPE_INVALID)
-        , _fid(EmptyFid)
-        , _frameId { EmptyFid }
+        , _fid(kEmptyFid)
+        , _frameId { kInvalidFrameId }
         , _path(nullptr)
     {
     }
@@ -111,7 +114,7 @@ public:
 
     constexpr explicit FrmId(SkillDexFrameId skilldex)
         : _objectType(OBJ_TYPE_SKILLDEX)
-        , _fid(buildFid(OBJ_TYPE_SKILLDEX, skilldex))
+        , _fid(buildFid(OBJ_TYPE_SKILLDEX, static_cast<int>(skilldex)))
         , _frameId { static_cast<int>(skilldex) }
         , _path(nullptr)
     {
@@ -119,7 +122,7 @@ public:
 
     constexpr explicit FrmId(InterfaceFrameId interface)
         : _objectType(OBJ_TYPE_INTERFACE)
-        , _fid(buildFid(OBJ_TYPE_INTERFACE, interface))
+        , _fid(buildFid(OBJ_TYPE_INTERFACE, static_cast<int>(interface)))
         , _frameId { static_cast<int>(interface) }
         , _path(nullptr)
     {
@@ -140,7 +143,7 @@ public:
 
     constexpr explicit FrmId(BackgroundFrameId background)
         : _objectType(OBJ_TYPE_BACKGROUND)
-        , _fid(buildFid(OBJ_TYPE_BACKGROUND, background))
+        , _fid(buildFid(OBJ_TYPE_BACKGROUND, static_cast<int>(background)))
         , _frameId { static_cast<int>(background) }
         , _path(nullptr)
     {
@@ -148,8 +151,8 @@ public:
 
     constexpr explicit FrmId(ObjectType objType, const char* path)
         : _objectType(objType)
-        , _fid(EmptyFid)
-        , _frameId { EmptyFid }
+        , _fid(kEmptyFid)
+        , _frameId { kInvalidFrameId }
         , _path(path)
 
     {
@@ -167,6 +170,8 @@ public:
     }
 
     constexpr const char* filePath() const { return _path; }
+
+    bool valid() const { return !empty() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
 
     bool empty() const { return (*this) == Empty(); }
 
@@ -217,7 +222,7 @@ private:
     */
     constexpr int buildFid(ObjectType objectType, int frmId, unsigned char animType = 0, unsigned char weaponAnimation = 0, Rotation rotation = ROTATION_NE)
     {
-        return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponAnimation << 12) & 0xF000) | (frmId & 0xFFF);
+        return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponAnimation << 12) & 0xF000) | (frmId & kMaxFrameId);
     }
 
     int buildObjectFid(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponCode, Rotation rotation);

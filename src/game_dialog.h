@@ -1,6 +1,7 @@
 #ifndef GAME_DIALOG_H
 #define GAME_DIALOG_H
 
+#include "art.h"
 #include "interpreter.h"
 #include "obj_types.h"
 
@@ -22,7 +23,7 @@ int gameDialogEnable();
 int gameDialogDisable();
 int _gdialogInitFromScript(int headFid, HeadFidget reaction);
 int _gdialogExitFromScript();
-void gameDialogSetBackground(BackgroundFrameId background);
+void gameDialogSetBackground(const FrmId& background);
 void gameDialogRenderSupplementaryMessage(const char* msg);
 int _gdialogStart();
 int _gdialogSayMessage();
