@@ -246,6 +246,7 @@ class TypedFrmId : public FrmId {
             MapFrameIdToObjectType<TFrameId>::value == ObjType,
             "TypedFrmId can only be instantiated with a supported frame id type");
 
+        constexpr TypedFrmId() : FrmId() {}
         constexpr TypedFrmId(TFrameId frameId) : FrmId(frameId) {}
         constexpr TypedFrmId(const char* path) : FrmId(ObjType, path) {}
 
@@ -264,6 +265,8 @@ using BackgroundFrmId = TypedFrmId<OBJ_TYPE_BACKGROUND, BackgroundFrameId>;
 
 class CritterFrmId : FrmId {
 public:
+    constexpr CritterFrmId() : FrmId() {}
+
     // cannot be made constexpr as internally calls artExists which cannot be constexpr
     CritterFrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
         : FrmId(critter, animType, weaponAnimation, rotation)
@@ -278,6 +281,8 @@ public:
 
 class HeadFrmId : FrmId {
 public:
+    constexpr HeadFrmId() : FrmId() {}
+
     constexpr explicit HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
         : FrmId(head, headAnimation, fidget)
     {
