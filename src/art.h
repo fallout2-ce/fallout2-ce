@@ -46,17 +46,17 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 class FrmId {
 public:
     union FrameId {
-            int id;
-            MiscFrameId misc;
-            SceneryFrameId scenery;
-            WallFrameId wall;
-            ItemFrameId item;
-            TileFrameId tile;
-            SkillDexFrameId skilldex;
-            InterfaceFrameId interface;
-            CritterFrameId critter;
-            HeadFrameId head;
-            BackgroundFrameId background;
+        int id;
+        MiscFrameId misc;
+        SceneryFrameId scenery;
+        WallFrameId wall;
+        ItemFrameId item;
+        TileFrameId tile;
+        SkillDexFrameId skilldex;
+        InterfaceFrameId interface;
+        CritterFrameId critter;
+        HeadFrameId head;
+        BackgroundFrameId background;
     };
 
     static constexpr int kEmptyFid = -1;
