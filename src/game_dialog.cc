@@ -255,8 +255,8 @@ static CacheEntry* gGameDialogFidgetFrmHandle = nullptr;
 // 0x5186FC fidgetFp
 static Art* gGameDialogFidgetFrm = nullptr;
 
-// 0x518700 backgroundIndex
-static BackgroundFrameId gGameDialogBackground = BACKGROUND_2;
+// 0x518700 backgroundFrmId
+static FrmId gGameDialogBackgroundFrmId = FrmId(BackgroundFrameId::RustyMetal);
 
 // 0x518704 lipsFID
 static int _lipsFID = 0;
@@ -1173,10 +1173,10 @@ int _gdialogExitFromScript()
 }
 
 // 0x445438
-void gameDialogSetBackground(BackgroundFrameId background)
+void gameDialogSetBackground(const FrmId& background)
 {
-    if (backgroundFrameIdIsValid(background)) {
-        gGameDialogBackground = background;
+    if (background.valid()) {
+        gGameDialogBackgroundFrmId = background;
     }
 }
 
@@ -4833,8 +4833,7 @@ void gameDialogRenderTalkingHead(Art* headFrm, int frame)
         }
 
         FrmImage backgroundFrmImage;
-        FrmId backgroundFid = FrmId(gGameDialogBackground);
-        if (!backgroundFrmImage.lock(backgroundFid)) {
+        if (!backgroundFrmImage.lock(gGameDialogBackgroundFrmId)) {
             debugPrint("\tError locking background in display...\n");
         }
 

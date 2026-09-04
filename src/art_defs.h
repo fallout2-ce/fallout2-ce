@@ -73,35 +73,30 @@ inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
     return fidget != FIDGET_INVALID ? static_cast<HeadAnimation>(fidget) : HEAD_ANIMATION_VERY_GOOD_REACTION;
 }
 
-enum BackgroundFrameId : int {
-    BACKGROUND_INVALID = -1,
-    BACKGROUND_0,
-    BACKGROUND_1,
-    BACKGROUND_2,
-    BACKGROUND_HUB,
-    BACKGROUND_NECROPOLIS,
-    BACKGROUND_BROTHERHOOD,
-    BACKGROUND_MILITARY_BASE,
-    BACKGROUND_JUNK_TOWN,
-    BACKGROUND_CATHEDRAL,
-    BACKGROUND_SHADY_SANDS,
-    BACKGROUND_VAULT,
-    BACKGROUND_MASTER,
-    BACKGROUND_FOLLOWER,
-    BACKGROUND_RAIDERS,
-    BACKGROUND_CAVE,
-    BACKGROUND_ENCLAVE,
-    BACKGROUND_WASTELAND,
-    BACKGROUND_BOSS,
-    BACKGROUND_PRESIDENT,
-    BACKGROUND_TENT,
-    BACKGROUND_ADOBE,
+enum class BackgroundFrameId : int {
+    Invalid = -1, // invalid frame id
+    Reserved = 0, // reserved.frm - not working in game
+    Background = 1, // back1.frm - not working in game
+    RustyMetal = 2, // rstymetl.frm
+    Hub = 3, // hub.frm
+    Necropolis = 4, // necro.frm
+    Brotherhood = 5, // bhood.frm
+    MilitaryBase = 6, // military.frm
+    JunkTown = 7, // junktown.frm
+    Cathedral = 8, // cath.frm
+    ShadySands = 9, // shady.frm
+    Vault = 10, // vault.frm
+    Master = 11, // master.frm
+    Followers = 12, // follow.frm
+    Raiders = 13, // raider.frm
+    Cave = 14, // cave0001.frm
+    Enclave = 15, // enclave.frm
+    Wasteland = 16, // wastelnd.frm
+    EnclaveBoss = 17, // boss.frm
+    President = 18, // pres.frm
+    Tent = 19, // tent.frm
+    Adobe = 20, // adobe.frm
 };
-
-inline bool backgroundFrameIdIsValid(int background)
-{
-    return background >= BACKGROUND_0;
-}
 
 enum DudeNativeLook : int {
     // Hero looks as one the tribals (before finishing Temple of Trails).
