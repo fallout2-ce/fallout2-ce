@@ -5041,7 +5041,7 @@ static char* _itostndn(int value, char* dest)
 static int characterEditorDrawCardWithOptions(const FrmId& frmId, const char* name, const char* attributes, char* description)
 {
     FrmImage frmImage;
-    if (frmId.empty() || !frmImage.lock(frmId)) {
+    if (!frmImage.lock(frmId)) {
         return -1;
     }
 
@@ -6708,9 +6708,9 @@ static void perkDialogRefreshTraits()
     PerkDialogOption option = gPerkDialogOptionList[gPerkDialogTopLine + gPerkDialogCurrentLine];
     char* traitName = option.name;
     Trait trait = static_cast<Trait>(option.value);
-    char* tratDescription = traitGetDescription(trait);
+    char* traitDescription = traitGetDescription(trait);
     const FrmId frmId = traitGetFrmId(trait);
-    perkDialogDrawCard(frmId, traitName, nullptr, tratDescription);
+    perkDialogDrawCard(frmId, traitName, nullptr, traitDescription);
 
     windowRefresh(gPerkDialogWindow);
 }
@@ -7006,7 +7006,7 @@ static int perkDialogOptionCompare(const void* a1, const void* a2)
 static int perkDialogDrawCard(const FrmId& frmId, const char* name, const char* rank, char* description)
 {
     FrmImage frmImage;
-    if (frmId.empty() || !frmImage.lock(FrmId(frmId))) {
+    if (!frmImage.lock(frmId)) {
         return -1;
     }
 

@@ -201,7 +201,7 @@ char* traitGetDescription(Trait trait)
     return traitIsValid(trait) ? traitDescriptions[trait].description : nullptr;
 }
 
-// Return an art ID of the specified trait, or `0` if the specified trait is
+// Return an FrmId of the specified trait, or FrmId::Empty() if the specified trait is
 // out of range.
 //
 // 0x4B3BA8 trait_pic
