@@ -90,9 +90,9 @@ typedef enum FileDialogScrollDirection {
 static void fileDialogRenderFileList(unsigned char* buffer, char** fileList, int pageOffset, int fileListLength, int selectedIndex, int pitch);
 
 // 0x5108C8 dbox
-static constexpr FrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
-    FrmId(InterfaceFrameId::MediumDialog),
-    FrmId(InterfaceFrameId::LargeDialog),
+static constexpr InterfaceFrmId kDialogBoxBackgroundFrmIds[DIALOG_TYPE_COUNT] = {
+    InterfaceFrameId::MediumDialog,
+    InterfaceFrameId::LargeDialog,
 };
 
 // 0x5108D0 ytable
@@ -126,25 +126,25 @@ static const int _dblines[DIALOG_TYPE_COUNT] = {
 };
 
 // 0x510900 flgids
-static constexpr FrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::LoadBox),
-    FrmId(InterfaceFrameId::LittleRedButtonUp),
-    FrmId(InterfaceFrameId::LittleRedButtonDown),
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
+static constexpr InterfaceFrmId kLoadFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+    InterfaceFrameId::LoadBox,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
+    InterfaceFrameId::CharacterEditorDownArrowOff,
+    InterfaceFrameId::CharacterEditorDownArrowOn,
+    InterfaceFrameId::CharacterEditorUpArrowOff,
+    InterfaceFrameId::CharacterEditorUpArrowOn,
 };
 
 // 0x51091C flgids2
-static constexpr FrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::SaveBox),
-    FrmId(InterfaceFrameId::LittleRedButtonUp),
-    FrmId(InterfaceFrameId::LittleRedButtonDown),
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
+static constexpr InterfaceFrmId kSaveFileDialogFrmIds[FILE_DIALOG_FRM_COUNT] = {
+    InterfaceFrameId::SaveBox,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
+    InterfaceFrameId::CharacterEditorDownArrowOff,
+    InterfaceFrameId::CharacterEditorDownArrowOn,
+    InterfaceFrameId::CharacterEditorUpArrowOff,
+    InterfaceFrameId::CharacterEditorUpArrowOn,
 };
 
 // 0x41CF20 dialog_out

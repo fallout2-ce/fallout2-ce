@@ -441,11 +441,11 @@ static const Stat gSummaryStats2[7] = {
 };
 
 // 0x46E708
-static constexpr FrmId kInventoryArrowFrmIds[INVENTORY_ARROW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::LeftArrowUp),
-    FrmId(InterfaceFrameId::LeftArrowDown),
-    FrmId(InterfaceFrameId::RightArrowUp),
-    FrmId(InterfaceFrameId::RightArrowDown),
+static constexpr InterfaceFrmId kInventoryArrowFrmIds[INVENTORY_ARROW_FRM_COUNT] = {
+    InterfaceFrameId::LeftArrowUp,
+    InterfaceFrameId::LeftArrowDown,
+    InterfaceFrameId::RightArrowUp,
+    InterfaceFrameId::RightArrowDown,
 };
 
 // The number of items to show in scroller.
@@ -506,12 +506,12 @@ static unsigned int gInventoryWindowDudeRotationTimestamp = 0;
 static Rotation gInventoryWindowDudeRotation = ROTATION_NE;
 
 // 0x5190FC num
-static constexpr FrmId kInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
-    FrmId(InterfaceFrameId::PointingHand),
-    FrmId(InterfaceFrameId::ActionArrow),
-    FrmId(InterfaceFrameId::ActionPick),
-    FrmId(InterfaceFrameId::ActionMenu),
-    FrmId(InterfaceFrameId::MouseCursorBlank),
+static constexpr InterfaceFrmId kInventoryWindowCursorFrmIds[INVENTORY_WINDOW_CURSOR_COUNT] = {
+    InterfaceFrameId::PointingHand,
+    InterfaceFrameId::ActionArrow,
+    InterfaceFrameId::ActionPick,
+    InterfaceFrameId::ActionMenu,
+    InterfaceFrameId::MouseCursorBlank,
 };
 
 // 0x519110 last_target

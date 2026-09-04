@@ -186,16 +186,16 @@ static int _SaveObjDudeCid(File* stream);
 static int _EraseSave();
 
 // 0x47B7C0 lsgrphs
-static constexpr FrmId kLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::LoadSaveGame),
-    FrmId(InterfaceFrameId::LoadSaveBox),
-    FrmId(InterfaceFrameId::LoadSaveCover),
-    FrmId(InterfaceFrameId::LittleRedButtonDown),
-    FrmId(InterfaceFrameId::LittleRedButtonUp),
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
-    FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
-    FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
+static constexpr InterfaceFrmId kLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
+    InterfaceFrameId::LoadSaveGame,
+    InterfaceFrameId::LoadSaveBox,
+    InterfaceFrameId::LoadSaveCover,
+    InterfaceFrameId::LittleRedButtonDown,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::CharacterEditorDownArrowOff,
+    InterfaceFrameId::CharacterEditorDownArrowOn,
+    InterfaceFrameId::CharacterEditorUpArrowOff,
+    InterfaceFrameId::CharacterEditorUpArrowOn,
 };
 
 // Control max number of save/load pages

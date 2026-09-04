@@ -265,18 +265,18 @@ const Rect gPipboyWindowContentRect = {
 };
 
 // 0x496FD0 pipgrphs
-static constexpr FrmId kPipboyFrmIds[PIPBOY_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::LittleRedButtonUp),
-    FrmId(InterfaceFrameId::LittleRedButtonDown),
-    FrmId(InterfaceFrameId::HitPointsNumbers),
-    FrmId(InterfaceFrameId::PipBoyWindow),
-    FrmId(InterfaceFrameId::PipBoyNoteAboutVats),
-    FrmId(InterfaceFrameId::PipBoyMonthStrings),
-    FrmId(InterfaceFrameId::PipBoyNoteNumbers),
-    FrmId(InterfaceFrameId::PipBoySleepAlarmIn),
-    FrmId(InterfaceFrameId::PipBoySleepAlarmOut),
-    FrmId(InterfaceFrameId::PipBoyLogo),
-    FrmId(InterfaceFrameId::PipBoyBomb),
+static constexpr InterfaceFrmId kPipboyFrmIds[PIPBOY_FRM_COUNT] = {
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
+    InterfaceFrameId::HitPointsNumbers,
+    InterfaceFrameId::PipBoyWindow,
+    InterfaceFrameId::PipBoyNoteAboutVats,
+    InterfaceFrameId::PipBoyMonthStrings,
+    InterfaceFrameId::PipBoyNoteNumbers,
+    InterfaceFrameId::PipBoySleepAlarmIn,
+    InterfaceFrameId::PipBoySleepAlarmOut,
+    InterfaceFrameId::PipBoyLogo,
+    InterfaceFrameId::PipBoyBomb,
 };
 
 // 0x51C128 quests

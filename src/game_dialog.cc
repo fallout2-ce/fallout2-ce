@@ -423,13 +423,13 @@ static const int gGameDialogReviewWindowButtonHeights[GAME_DIALOG_REVIEW_WINDOW_
 };
 
 // 0x518830 reviewFids
-static constexpr FrmId kGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::DialogBigUpArrowUp),
-    FrmId(InterfaceFrameId::DialogBigUpArrowDown),
-    FrmId(InterfaceFrameId::DialogBigDownArrowUp),
-    FrmId(InterfaceFrameId::DialogBigDownArrowDown),
-    FrmId(InterfaceFrameId::DialogBigDoneButtonUp),
-    FrmId(InterfaceFrameId::DialogBigDoneButtonDown),
+static constexpr InterfaceFrmId kGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
+    InterfaceFrameId::DialogBigUpArrowUp,
+    InterfaceFrameId::DialogBigUpArrowDown,
+    InterfaceFrameId::DialogBigDownArrowUp,
+    InterfaceFrameId::DialogBigDownArrowDown,
+    InterfaceFrameId::DialogBigDoneButtonUp,
+    InterfaceFrameId::DialogBigDoneButtonDown,
 };
 
 // 0x518848 dialog_target
