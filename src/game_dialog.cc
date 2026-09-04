@@ -1173,7 +1173,7 @@ int _gdialogExitFromScript()
 }
 
 // 0x445438
-void gameDialogSetBackground(const FrmId& background)
+void gameDialogSetBackground(const BackgroundFrmId& background)
 {
     if (background.valid()) {
         gGameDialogBackgroundFrmId = background;
