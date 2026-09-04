@@ -228,6 +228,67 @@ private:
     int buildObjectFid(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponCode, Rotation rotation);
 };
 
+template <typename T> struct MapFrameIdToObjectType;
+
+template <> struct MapFrameIdToObjectType<MiscFrameId>      { static constexpr ObjectType value = OBJ_TYPE_MISC; };
+template <> struct MapFrameIdToObjectType<SceneryFrameId>   { static constexpr ObjectType value = OBJ_TYPE_SCENERY; };
+template <> struct MapFrameIdToObjectType<WallFrameId>      { static constexpr ObjectType value = OBJ_TYPE_WALL; };
+template <> struct MapFrameIdToObjectType<ItemFrameId>      { static constexpr ObjectType value = OBJ_TYPE_ITEM; };
+template <> struct MapFrameIdToObjectType<TileFrameId>      { static constexpr ObjectType value = OBJ_TYPE_TILE; };
+template <> struct MapFrameIdToObjectType<SkillDexFrameId>  { static constexpr ObjectType value = OBJ_TYPE_SKILLDEX; };
+template <> struct MapFrameIdToObjectType<InterfaceFrameId> { static constexpr ObjectType value = OBJ_TYPE_INTERFACE; };
+template <> struct MapFrameIdToObjectType<BackgroundFrameId>{ static constexpr ObjectType value = OBJ_TYPE_BACKGROUND; };
+
+template <ObjectType ObjType, typename TFrameId>
+class TypedFrmId : public FrmId {
+    public:
+        static_assert(
+            MapFrameIdToObjectType<TFrameId>::value == ObjType,
+            "TypedFrmId can only be instantiated with a supported frame id type");
+
+        constexpr TypedFrmId(TFrameId frameId) : FrmId(frameId) {}
+        constexpr TypedFrmId(const char* path) : FrmId(ObjType, path) {}
+
+        using FrmId::operator==;
+        using FrmId::operator!=;
+};
+
+using MiscFrmId = TypedFrmId<OBJ_TYPE_MISC, MiscFrameId>;
+using SceneryFrmId = TypedFrmId<OBJ_TYPE_SCENERY, SceneryFrameId>;
+using WallFrmId = TypedFrmId<OBJ_TYPE_WALL, WallFrameId>;
+using ItemFrmId = TypedFrmId<OBJ_TYPE_ITEM, ItemFrameId>;
+using TileFrmId = TypedFrmId<OBJ_TYPE_TILE, TileFrameId>;
+using SkillDexFrmId = TypedFrmId<OBJ_TYPE_SKILLDEX, SkillDexFrameId>;
+using InterfaceFrmId = TypedFrmId<OBJ_TYPE_INTERFACE, InterfaceFrameId>;
+using BackgroundFrmId = TypedFrmId<OBJ_TYPE_BACKGROUND, BackgroundFrameId>;
+
+class CritterFrmId : FrmId {
+public:
+    // cannot be made constexpr as internally calls artExists which cannot be constexpr
+    CritterFrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
+        : FrmId(critter, animType, weaponAnimation, rotation)
+    {
+    }
+
+    constexpr CritterFrmId(const char* path) : FrmId(OBJ_TYPE_CRITTER, path) {}
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+};
+
+class HeadFrmId : FrmId {
+public:
+    constexpr explicit HeadFrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
+        : FrmId(head, headAnimation, fidget)
+    {
+    }
+
+    constexpr HeadFrmId(const char* path) : FrmId(OBJ_TYPE_HEAD, path) {}
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+};
+
 int artInit();
 void artReset();
 void artExit();
