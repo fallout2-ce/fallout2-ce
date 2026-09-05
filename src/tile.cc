@@ -488,7 +488,7 @@ static bool tileIsInsideIsoBorders(int tile_x, int tile_y)
 {
     if (!gTileBorderInitialized) return false;
 
-    return (tile_x > tileIsoBorders[0] && tile_x < tileIsoBorders[2] && tile_y > tileIsoBorders[1] && tile_y < tileIsoBorders[3]);
+    return (tile_x >= tileIsoBorders[0] && tile_x <= tileIsoBorders[2] && tile_y >= tileIsoBorders[1] && tile_y <= tileIsoBorders[3]);
 }
 
 // Restores initial borders
