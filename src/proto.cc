@@ -951,13 +951,13 @@ int _proto_dude_init(const char* path)
 // 0x49FBBC proto_scenery_init
 int proto_scenery_init(Proto* proto, int pid)
 {
-    SceneryFrameId num = sceneryFrameIdFromPid(pid);
+    int num = frameIdFromPid(pid);
 
     proto->scenery.pid = -1;
     proto->scenery.messageId = 100 * num;
-    proto->scenery.fid = FrmId(num - 1).fid();
+    proto->scenery.fid = SceneryFrmId(static_cast<SceneryFrameId>(num - 1)).fid();
     if (!artExists(proto->scenery.fid)) {
-        proto->scenery.fid = FrmId(SCENERY_FRM_ID_FIRST).fid();
+        proto->scenery.fid = SceneryFrmId(SceneryFrameId::Reserved).fid();
     }
     proto->scenery.lightDistance = 0;
     proto->scenery.lightIntensity = 0;

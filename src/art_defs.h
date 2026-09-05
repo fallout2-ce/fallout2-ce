@@ -347,19 +347,10 @@ inline CritterFrameId critterFrameIdFromPid(int pid)
     return static_cast<CritterFrameId>(frameIdFromPid(pid));
 }
 
-enum SceneryFrameId : int {
-    SCENERY_FRM_ID_FIRST = 0,
+enum class SceneryFrameId : int {
+    Invalid = -1, // invalid frame id
+    Reserved = 0, // reserved.frm
 };
-
-inline constexpr SceneryFrameId operator-(SceneryFrameId lhs, int rhs)
-{
-    return static_cast<SceneryFrameId>(static_cast<int>(lhs) - rhs);
-}
-
-inline SceneryFrameId sceneryFrameIdFromPid(int pid)
-{
-    return static_cast<SceneryFrameId>(frameIdFromPid(pid));
-}
 
 enum WallFrameId : int {
     WALL_FRM_ID_FIRST = 0,
