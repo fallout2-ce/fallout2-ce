@@ -113,6 +113,39 @@
             }
         },
         {
+            "name": "freebsd-base",
+            "hidden": true,
+            "inherits": [
+                "base"
+            ],
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "FreeBSD"
+            },
+            "cacheVariables": {
+                "FALLOUT_VENDORED": "OFF"
+            }
+        },
+        {
+            "name": "freebsd-x64-debug",
+            "inherits": [
+                "freebsd-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "freebsd-x64-release",
+            "inherits": [
+                "freebsd-base"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
             "name": "darwin-base",
             "hidden": true,
             "inherits": [
@@ -248,6 +281,14 @@
         {
             "name": "linux-x64-release",
             "configurePreset": "linux-x64-release"
+        },
+        {
+            "name": "freebsd-x64-debug",
+            "configurePreset": "freebsd-x64-debug"
+        },
+        {
+            "name": "freebsd-x64-release",
+            "configurePreset": "freebsd-x64-release"
         },
         {
             "name": "macos-debug",
