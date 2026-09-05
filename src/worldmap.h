@@ -3,6 +3,7 @@
 
 #include "art_defs.h"
 #include "color.h"
+#include "config.h"
 #include "db.h"
 
 namespace fallout {
@@ -351,6 +352,10 @@ inline bool mapIsValid(int map)
 }
 
 bool cityIsValid(int city);
+int wmMaxMapIndex();
+int wmMaxAreaIndex();
+int wmParseMapsConfig(Config* cfg, int startMapIdx);
+int wmParseAreasConfig(Config* cfg, int startAreaIdx);
 int wmMapIdxToName(Map mapIdx, char* dest, size_t size);
 Map wmMapMatchNameToIdx(char* name);
 bool wmMapIdxIsSaveable(Map mapIdx);

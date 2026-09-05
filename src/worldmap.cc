@@ -1108,6 +1108,350 @@ static void wmSetFlags(MapFlags* flagsPtr, MapFlags flag, bool set)
     }
 }
 
+int wmMaxMapIndex()
+{
+    return wmMaxMapNum - 1;
+}
+
+int wmMaxAreaIndex()
+{
+    return wmMaxAreaNum - 1;
+}
+
+// CE: Extracted from wmMapInit to support modular config loading.
+// Arg `startMapIdx` is temporary and only serves illustration purposes
+// likely to be removed when API is finalized
+int wmParseMapsConfig(Config* cfg, int startMapIdx)
+{
+    if (cfg == nullptr) return -1;
+
+    char* str;
+    int num;
+    MapInfo* maps;
+    MapInfo* map;
+
+    if (startMapIdx < static_cast<int>(MAP_FIRST) || startMapIdx != wmMaxMapNum) {
+        debugPrint("wmParseMapsConfig: startMapIdx %d does not match next map slot %d", startMapIdx, wmMaxMapNum);
+        return -1;
+    }
+
+    Map mapIdx = static_cast<Map>(startMapIdx);
+    int loop_safety_counter = 0;
+
+    while (loop_safety_counter < 5000) {
+        char section[40];
+        snprintf(section, sizeof(section), "Map %03d", mapIdx);
+
+        if (!configGetString(cfg, section, "lookup_name", &str)) {
+            break;
+        }
+
+        wmMaxMapNum++;
+
+        maps = (MapInfo*)internal_realloc(wmMapInfoList, sizeof(*wmMapInfoList) * wmMaxMapNum);
+        if (maps == nullptr) {
+            showMessageBox("\nwmConfigInit::Error loading maps!");
+            exit(1);
+        }
+        wmMapInfoList = maps;
+
+        map = &(maps[wmMaxMapNum - 1]);
+        wmMapSlotInit(map);
+
+        strncpy(map->lookupName, str, 40);
+
+        if (!configGetString(cfg, section, "map_name", &str)) {
+            showMessageBox("\nwmConfigInit::Error loading maps!");
+            exit(1);
+        }
+
+        char mapFileName[40];
+        strncpy(mapFileName, str, sizeof(mapFileName) - 1);
+        mapFileName[sizeof(mapFileName) - 1] = '\0';
+        compat_strlwr(mapFileName);
+        strncpy(map->mapFileName, mapFileName, sizeof(map->mapFileName));
+        map->mapFileName[sizeof(map->mapFileName) - 1] = '\0';
+
+        if (configGetString(cfg, section, "music", &str)) {
+            strncpy(map->music, str, 40);
+        }
+
+        if (configGetString(cfg, section, "ambient_sfx", &str)) {
+            while (str != nullptr) {
+                if (map->ambientSoundEffectsLength >= MAP_AMBIENT_SOUND_EFFECTS_CAPACITY) {
+                    debugPrint("\nwmParseMapsConfig::Error reading ambient sfx.  Too many!  Str: %s, MapIdx: %d", map->lookupName, mapIdx);
+                    break;
+                }
+
+                MapAmbientSoundEffectInfo* sfx = &(map->ambientSoundEffects[map->ambientSoundEffectsLength]);
+                if (strParseKeyValue(&str, sfx->name, &(sfx->chance), ":") == -1) {
+                    return -1;
+                }
+
+                map->ambientSoundEffectsLength++;
+
+                if (str != nullptr && *str == '\0') {
+                    str = nullptr;
+                }
+            }
+        }
+
+        if (configGetString(cfg, section, "saved", &str)) {
+            if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
+                return -1;
+            }
+
+            // NOTE: Uninline.
+            wmSetFlags(&(map->flags), MAP_SAVED, num);
+        }
+
+        if (configGetString(cfg, section, "dead_bodies_age", &str)) {
+            if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
+                return -1;
+            }
+
+            // NOTE: Uninline.
+            wmSetFlags(&(map->flags), MAP_DEAD_BODIES_AGE, num);
+        }
+
+        if (configGetString(cfg, section, "can_rest_here", &str)) {
+            if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
+                return -1;
+            }
+
+            // NOTE: Uninline.
+            wmSetFlags(&(map->flags), MAP_CAN_REST_ELEVATION_0, num);
+
+            if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
+                return -1;
+            }
+
+            // NOTE: Uninline.
+            wmSetFlags(&(map->flags), MAP_CAN_REST_ELEVATION_1, num);
+
+            if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
+                return -1;
+            }
+
+            // NOTE: Uninline.
+            wmSetFlags(&(map->flags), MAP_CAN_REST_ELEVATION_2, num);
+        }
+
+        if (configGetString(cfg, section, "pipboy_active", &str)) {
+            if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
+                return -1;
+            }
+
+            // NOTE: Uninline.
+            wmSetFlags(&(map->flags), MAP_PIPBOY_ACTIVE, num);
+        }
+
+        // SFALL: Pip-boy automaps patch.
+        if (configGetString(cfg, section, "automap", &str)) {
+            if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
+                return -1;
+            }
+
+            automapSetDisplayMap(mapIdx, num);
+        }
+
+        if (configGetString(cfg, section, "random_start_point_0", &str)) {
+            int rspIndex = 0;
+            while (str != nullptr) {
+                while (*str != '\0') {
+                    if (map->startPointsLength >= MAP_STARTING_POINTS_CAPACITY) {
+                        break;
+                    }
+
+                    MapStartPointInfo* rsp = &(map->startPoints[map->startPointsLength]);
+
+                    // NOTE: Uninline.
+                    wmRStartSlotInit(rsp);
+
+                    strParseIntWithKey(&str, "elev", &(rsp->elevation), ":");
+                    strParseIntWithKey(&str, "tile_num", &(rsp->tile), ":");
+
+                    map->startPointsLength++;
+                }
+
+                char key[40];
+                snprintf(key, sizeof(key), "random_start_point_%1d", ++rspIndex);
+
+                if (!configGetString(cfg, section, key, &str)) {
+                    str = nullptr;
+                }
+            }
+        }
+
+        mapIdx++;
+        loop_safety_counter++;
+    }
+
+    return 0;
+}
+
+// CE: Extracted from wmAreaInit to support modular config loading.
+// Arg `startAreaIdx` is temporary and only serves illustration purposes
+// likely to be removed when API is finalized
+int wmParseAreasConfig(Config* cfg, int startAreaIdx)
+{
+    if (cfg == nullptr) return -1;
+
+    char section[40];
+    char key[40];
+    char* str;
+    CityInfo* cities;
+    CityInfo* city;
+    EntranceInfo* entrance;
+
+    if (startAreaIdx < static_cast<int>(CITY_FIRST) || startAreaIdx != wmMaxAreaNum) {
+        debugPrint("wmParseAreasConfig: startAreaIdx %d does not match next area slot %d", startAreaIdx, wmMaxAreaNum);
+        return -1;
+    }
+
+    City area_idx = static_cast<City>(startAreaIdx);
+    InterfaceFrameId frmId;
+
+    int loop_safety_counter = 0;
+
+    while (loop_safety_counter < 5000) {
+        snprintf(section, sizeof(section), "Area %02d", area_idx);
+        if (!configGetEnum<InterfaceFrameId>(cfg, section, "townmap_art_idx", &frmId)) {
+            break;
+        }
+
+        wmMaxAreaNum++;
+
+        cities = (CityInfo*)internal_realloc(wmAreaInfoList, sizeof(CityInfo) * wmMaxAreaNum);
+        if (cities == nullptr) {
+            showMessageBox("\nwmConfigInit::Error loading areas!");
+            exit(1);
+        }
+        wmAreaInfoList = cities;
+
+        city = &(cities[wmMaxAreaNum - 1]);
+
+        // NOTE: Uninline.
+        wmAreaSlotInit(city);
+
+        city->areaId = City(area_idx);
+
+        FrmId fid = FrmId::Empty();
+        if (frmId != InterfaceFrameId::Invalid) {
+            fid = FrmId(frmId);
+        }
+
+        city->mapFid = fid.fid();
+
+        fid = FrmId::Empty();
+        if (configGetEnum<InterfaceFrameId>(cfg, section, "townmap_label_art_idx", &frmId)) {
+            if (frmId != InterfaceFrameId::Invalid) {
+                fid = FrmId(frmId);
+            }
+
+            city->labelFid = fid.fid();
+        }
+
+        if (!configGetString(cfg, section, "area_name", &str)) {
+            showMessageBox("\nwmConfigInit::Error loading areas!");
+            exit(1);
+        }
+
+        strncpy(city->name, str, 40);
+
+        if (!configGetString(cfg, section, "world_pos", &str)) {
+            showMessageBox("\nwmConfigInit::Error loading areas!");
+            exit(1);
+        }
+
+        if (strParseInt(&str, &(city->x)) == -1) {
+            return -1;
+        }
+
+        if (strParseInt(&str, &(city->y)) == -1) {
+            return -1;
+        }
+
+        if (!configGetString(cfg, section, "start_state", &str)) {
+            showMessageBox("\nwmConfigInit::Error loading areas!");
+            exit(1);
+        }
+
+        if (strParseStrFromListEnum<CityState>(&str, &(city->state), wmStateStrs, 2) == -1) {
+            return -1;
+        }
+
+        if (configGetString(cfg, section, "lock_state", &str)) {
+            if (strParseStrFromListEnum<LockState>(&str, &(city->lockState), wmStateStrs, LOCK_STATE_COUNT) == -1) {
+                return -1;
+            }
+        }
+
+        if (!configGetString(cfg, section, "size", &str)) {
+            showMessageBox("\nwmConfigInit::Error loading areas!");
+            exit(1);
+        }
+
+        if (strParseStrFromListEnum<CitySize>(&str, &(city->size), wmAreaSizeStrs, CITY_SIZE_COUNT) == -1) {
+            return -1;
+        }
+
+        while (city->entrancesLength < ENTRANCE_LIST_CAPACITY) {
+            snprintf(key, sizeof(key), "entrance_%d", city->entrancesLength);
+
+            if (!configGetString(cfg, section, key, &str)) {
+                break;
+            }
+
+            entrance = &(city->entrances[city->entrancesLength]);
+
+            // NOTE: Uninline.
+            wmEntranceSlotInit(entrance);
+
+            if (strParseStrFromList(&str, &(entrance->state), wmStateStrs, 2) == -1) {
+                return -1;
+            }
+
+            if (strParseInt(&str, &(entrance->x)) == -1) {
+                return -1;
+            }
+
+            if (strParseInt(&str, &(entrance->y)) == -1) {
+                return -1;
+            }
+
+            if (strParseStrFromFuncEnum<Map>(&str, &(entrance->map), &wmParseFindMapIdxMatch) == -1) {
+                return -1;
+            }
+
+            if (strParseInt(&str, &(entrance->elevation)) == -1) {
+                return -1;
+            }
+
+            if (strParseInt(&str, &(entrance->tile)) == -1) {
+                return -1;
+            }
+
+            if (strParseEnum<Rotation>(&str, &(entrance->rotation)) == -1) {
+                return -1;
+            }
+
+            city->entrancesLength++;
+        }
+
+        area_idx++;
+        loop_safety_counter++;
+    }
+
+    // SFALL: CitiesLimitFix (always on)
+    /*if (wmMaxAreaNum != CITY_COUNT) {
+        showMesageBox("\nwmAreaInit::Error loading Cities!");
+        exit(1);
+    }*/
+
+    return 0;
+}
+
 // 0x4BC89C wmWorldMap_init
 int wmWorldMap_init()
 {
@@ -2769,162 +3113,20 @@ static int wmAreaSlotInit(CityInfo* area)
 // 0x4BEF68 wmAreaInit
 static int wmAreaInit()
 {
-    ScopedConfig cfg;
-    char section[40];
-    char key[40];
-    City area_idx;
-    InterfaceFrameId frmId;
-    char* str;
-    CityInfo* cities;
-    CityInfo* city;
-    EntranceInfo* entrance;
-
     if (wmMapInit() == -1) {
         return -1;
     }
 
+    ScopedConfig cfg;
     if (!cfg) {
         return -1;
     }
 
     if (configRead(cfg.get(), "data\\city.txt", true)) {
-        area_idx = CITY_FIRST;
-        do {
-            snprintf(section, sizeof(section), "Area %02d", area_idx);
-            if (!configGetEnum<InterfaceFrameId>(cfg.get(), section, "townmap_art_idx", &frmId)) {
-                break;
-            }
-
-            wmMaxAreaNum++;
-
-            cities = (CityInfo*)internal_realloc(wmAreaInfoList, sizeof(CityInfo) * wmMaxAreaNum);
-            if (cities == nullptr) {
-                showMessageBox("\nwmConfigInit::Error loading areas!");
-                exit(1);
-            }
-
-            wmAreaInfoList = cities;
-
-            city = &(cities[wmMaxAreaNum - 1]);
-
-            // NOTE: Uninline.
-            wmAreaSlotInit(city);
-
-            city->areaId = area_idx;
-
-            FrmId fid = FrmId::Empty();
-            if (frmId != InterfaceFrameId::Invalid) {
-                fid = FrmId(frmId);
-            }
-
-            city->mapFid = fid.fid();
-
-            fid = FrmId::Empty();
-
-            if (configGetEnum<InterfaceFrameId>(cfg.get(), section, "townmap_label_art_idx", &frmId)) {
-                if (frmId != InterfaceFrameId::Invalid) {
-                    fid = FrmId(frmId);
-                }
-
-                city->labelFid = fid.fid();
-            }
-
-            if (!configGetString(cfg.get(), section, "area_name", &str)) {
-                showMessageBox("\nwmConfigInit::Error loading areas!");
-                exit(1);
-            }
-
-            strncpy(city->name, str, 40);
-
-            if (!configGetString(cfg.get(), section, "world_pos", &str)) {
-                showMessageBox("\nwmConfigInit::Error loading areas!");
-                exit(1);
-            }
-
-            if (strParseInt(&str, &(city->x)) == -1) {
-                return -1;
-            }
-
-            if (strParseInt(&str, &(city->y)) == -1) {
-                return -1;
-            }
-
-            if (!configGetString(cfg.get(), section, "start_state", &str)) {
-                showMessageBox("\nwmConfigInit::Error loading areas!");
-                exit(1);
-            }
-
-            if (strParseStrFromListEnum<CityState>(&str, &(city->state), wmStateStrs, 2) == -1) {
-                return -1;
-            }
-
-            if (configGetString(cfg.get(), section, "lock_state", &str)) {
-                if (strParseStrFromListEnum<LockState>(&str, &(city->lockState), wmStateStrs, LOCK_STATE_COUNT) == -1) {
-                    return -1;
-                }
-            }
-
-            if (!configGetString(cfg.get(), section, "size", &str)) {
-                showMessageBox("\nwmConfigInit::Error loading areas!");
-                exit(1);
-            }
-
-            if (strParseStrFromListEnum<CitySize>(&str, &(city->size), wmAreaSizeStrs, CITY_SIZE_COUNT) == -1) {
-                return -1;
-            }
-
-            while (city->entrancesLength < ENTRANCE_LIST_CAPACITY) {
-                snprintf(key, sizeof(key), "entrance_%d", city->entrancesLength);
-
-                if (!configGetString(cfg.get(), section, key, &str)) {
-                    break;
-                }
-
-                entrance = &(city->entrances[city->entrancesLength]);
-
-                // NOTE: Uninline.
-                wmEntranceSlotInit(entrance);
-
-                if (strParseStrFromList(&str, &(entrance->state), wmStateStrs, 2) == -1) {
-                    return -1;
-                }
-
-                if (strParseInt(&str, &(entrance->x)) == -1) {
-                    return -1;
-                }
-
-                if (strParseInt(&str, &(entrance->y)) == -1) {
-                    return -1;
-                }
-
-                if (strParseStrFromFuncEnum<Map>(&str, &(entrance->map), &wmParseFindMapIdxMatch) == -1) {
-                    return -1;
-                }
-
-                if (strParseInt(&str, &(entrance->elevation)) == -1) {
-                    return -1;
-                }
-
-                if (strParseInt(&str, &(entrance->tile)) == -1) {
-                    return -1;
-                }
-
-                if (strParseEnum<Rotation>(&str, &(entrance->rotation)) == -1) {
-                    return -1;
-                }
-
-                city->entrancesLength++;
-            }
-
-            area_idx++;
-        } while (area_idx < 5000);
+        if (wmParseAreasConfig(cfg.get(), static_cast<int>(CITY_FIRST)) == -1) {
+            return -1;
+        }
     }
-
-    // SFALL: CitiesLimitFix (always on)
-    /*if (wmMaxAreaNum != CITY_COUNT) {
-        showMesageBox("\nwmAreaInit::Error loading Cities!");
-        exit(1);
-    }*/
 
     return 0;
 }
@@ -2980,160 +3182,14 @@ static int wmMapSlotInit(MapInfo* map)
 // 0x4BF4BC wmMapInit
 static int wmMapInit()
 {
-    char* str;
-    int num;
-    MapInfo* maps;
-    MapInfo* map;
-
     ScopedConfig config;
     if (!config) {
         return -1;
     }
 
     if (configRead(config.get(), "data\\maps.txt", true)) {
-        for (Map mapIdx = MAP_FIRST;; mapIdx++) {
-            char section[40];
-            snprintf(section, sizeof(section), "Map %03d", mapIdx);
-
-            if (!configGetString(config.get(), section, "lookup_name", &str)) {
-                break;
-            }
-
-            wmMaxMapNum++;
-
-            maps = (MapInfo*)internal_realloc(wmMapInfoList, sizeof(*wmMapInfoList) * wmMaxMapNum);
-            if (maps == nullptr) {
-                showMessageBox("\nwmConfigInit::Error loading maps!");
-                exit(1);
-            }
-
-            wmMapInfoList = maps;
-
-            map = &(maps[wmMaxMapNum - 1]);
-            wmMapSlotInit(map);
-
-            strncpy(map->lookupName, str, 40);
-
-            if (!configGetString(config.get(), section, "map_name", &str)) {
-                showMessageBox("\nwmConfigInit::Error loading maps!");
-                exit(1);
-            }
-
-            compat_strlwr(str);
-            strncpy(map->mapFileName, str, 40);
-
-            if (configGetString(config.get(), section, "music", &str)) {
-                strncpy(map->music, str, 40);
-            }
-
-            if (configGetString(config.get(), section, "ambient_sfx", &str)) {
-                while (str) {
-                    MapAmbientSoundEffectInfo* sfx = &(map->ambientSoundEffects[map->ambientSoundEffectsLength]);
-                    if (strParseKeyValue(&str, sfx->name, &(sfx->chance), ":") == -1) {
-                        return -1;
-                    }
-
-                    map->ambientSoundEffectsLength++;
-
-                    if (*str == '\0') {
-                        str = nullptr;
-                    }
-
-                    if (map->ambientSoundEffectsLength >= MAP_AMBIENT_SOUND_EFFECTS_CAPACITY) {
-                        if (str != nullptr) {
-                            debugPrint("\nwmMapInit::Error reading ambient sfx.  Too many!  Str: %s, MapIdx: %d", map->lookupName, mapIdx);
-                            str = nullptr;
-                        }
-                    }
-                }
-            }
-
-            if (configGetString(config.get(), section, "saved", &str)) {
-                if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
-                    return -1;
-                }
-
-                // NOTE: Uninline.
-                wmSetFlags(&(map->flags), MAP_SAVED, num);
-            }
-
-            if (configGetString(config.get(), section, "dead_bodies_age", &str)) {
-                if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
-                    return -1;
-                }
-
-                // NOTE: Uninline.
-                wmSetFlags(&(map->flags), MAP_DEAD_BODIES_AGE, num);
-            }
-
-            if (configGetString(config.get(), section, "can_rest_here", &str)) {
-                if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
-                    return -1;
-                }
-
-                // NOTE: Uninline.
-                wmSetFlags(&(map->flags), MAP_CAN_REST_ELEVATION_0, num);
-
-                if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
-                    return -1;
-                }
-
-                // NOTE: Uninline.
-                wmSetFlags(&(map->flags), MAP_CAN_REST_ELEVATION_1, num);
-
-                if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
-                    return -1;
-                }
-
-                // NOTE: Uninline.
-                wmSetFlags(&(map->flags), MAP_CAN_REST_ELEVATION_2, num);
-            }
-
-            if (configGetString(config.get(), section, "pipboy_active", &str)) {
-                if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
-                    return -1;
-                }
-
-                // NOTE: Uninline.
-                wmSetFlags(&(map->flags), MAP_PIPBOY_ACTIVE, num);
-            }
-
-            // SFALL: Pip-boy automaps patch.
-            if (configGetString(config.get(), section, "automap", &str)) {
-                if (strParseStrFromList(&str, &num, wmYesNoStrs, 2) == -1) {
-                    return -1;
-                }
-
-                automapSetDisplayMap(mapIdx, num);
-            }
-
-            if (configGetString(config.get(), section, "random_start_point_0", &str)) {
-                int rspIndex = 0;
-                while (str != nullptr) {
-                    while (*str != '\0') {
-                        if (map->startPointsLength >= MAP_STARTING_POINTS_CAPACITY) {
-                            break;
-                        }
-
-                        MapStartPointInfo* rsp = &(map->startPoints[map->startPointsLength]);
-
-                        // NOTE: Uninline.
-                        wmRStartSlotInit(rsp);
-
-                        strParseIntWithKey(&str, "elev", &(rsp->elevation), ":");
-                        strParseIntWithKey(&str, "tile_num", &(rsp->tile), ":");
-
-                        map->startPointsLength++;
-                    }
-
-                    char key[40];
-                    snprintf(key, sizeof(key), "random_start_point_%1d", ++rspIndex);
-
-                    if (!configGetString(config.get(), section, key, &str)) {
-                        str = nullptr;
-                    }
-                }
-            }
+        if (wmParseMapsConfig(config.get(), static_cast<int>(MAP_FIRST)) == -1) {
+            return -1;
         }
     }
 
