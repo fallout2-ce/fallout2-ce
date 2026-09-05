@@ -9,7 +9,7 @@ namespace fallout {
 
 extern Object* gGameDialogSpeaker;
 extern bool gGameDialogSpeakerIsPartyMember;
-extern int gGameDialogHeadFid;
+extern HeadFrmId gGameDialogHeadFrmId;
 extern int gGameDialogSid;
 
 int gameDialogInit();
@@ -21,7 +21,7 @@ void _gdialogSystemEnter();
 void gameDialogStartLips(const char* audioFileName);
 int gameDialogEnable();
 int gameDialogDisable();
-int _gdialogInitFromScript(int headFid, HeadFidget reaction);
+int _gdialogInitFromScript(const HeadFrmId& headFrmId, HeadFidget reaction);
 int _gdialogExitFromScript();
 void gameDialogSetBackground(const BackgroundFrmId& background);
 void gameDialogRenderSupplementaryMessage(const char* msg);

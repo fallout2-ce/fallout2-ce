@@ -343,6 +343,12 @@ public:
     {
     }
 
+    constexpr HeadFidget fidget() const
+    {
+        int fidget = (fid() & 0xFF0000) >> 16;
+        return static_cast<HeadFidget>(fidget);
+    }
+
     using FrmId::operator==;
     using FrmId::operator!=;
 };
@@ -374,7 +380,7 @@ void artExit();
 char* artGetObjectTypeName(ObjectType objectType);
 int artIsObjectTypeHidden(ObjectType objectType);
 void artToggleObjectTypeHidden(ObjectType objectType);
-int artGetFidgetCount(int headFid);
+int artGetFidgetCount(const HeadFrmId& frmId);
 void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
 Art* artLock(int fid, CacheEntry** cache_entry);

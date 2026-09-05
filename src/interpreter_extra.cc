@@ -1929,7 +1929,7 @@ static void opStartGameDialog(Program* program)
         return;
     }
 
-    gGameDialogHeadFid = -1;
+    gGameDialogHeadFrmId = HeadFrameId::Invalid;
     if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
         Proto* proto;
         if (protoGetProto(obj->pid, &proto) == -1) {
@@ -1937,8 +1937,9 @@ static void opStartGameDialog(Program* program)
         }
     }
 
-    if (headFrameIdIsValid(head)) {
-        gGameDialogHeadFid = FrmId(head).fid();
+    const HeadFrmId headFrmId = head;
+    if (headFrmId.valid()) {
+        gGameDialogHeadFrmId = headFrmId;
     }
 
     gameDialogSetBackground(background);
@@ -1948,7 +1949,7 @@ static void opStartGameDialog(Program* program)
     // which can be null outside talk_p_proc.
     bool startGameDialogFix = false;
     configGetBool(&gContentConfig, CONTENT_CONFIG_DIALOG_SECTION, "start_gdialog_fix", &startGameDialogFix);
-    if (gGameDialogHeadFid != -1 && (!startGameDialogFix || reactionLevel == -1)) {
+    if (gGameDialogHeadFrmId.valid() && (!startGameDialogFix || reactionLevel == -1)) {
         int npcReactionValue = reactionGetValue(obj);
         NpcReaction npcReactionType = reactionTranslateValue(npcReactionValue);
         switch (npcReactionType) {
@@ -1966,7 +1967,7 @@ static void opStartGameDialog(Program* program)
 
     gGameDialogSid = scriptGetSid(program);
     gGameDialogSpeaker = scriptGetSelf(program);
-    _gdialogInitFromScript(gGameDialogHeadFid, static_cast<HeadFidget>(gGameDialogReactionOrFidget));
+    _gdialogInitFromScript(gGameDialogHeadFrmId, static_cast<HeadFidget>(gGameDialogReactionOrFidget));
 }
 
 // end_dialogue
