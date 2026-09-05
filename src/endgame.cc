@@ -361,7 +361,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         }
 
         endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, static_cast<int>(InterfaceFrameId::PanningDesertImage));
-        bufferFill(gEndgameEndingSlideshowWindowBuffer, screenGetWidth(), screenGetHeight(), screenGetWidth(), colorPaletteFindDarkest(_cmap));
+        bufferFill(gEndgameEndingSlideshowWindowBuffer, screenGetWidth(), screenGetHeight(), screenGetWidth(), COLOR_BLACK);
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
@@ -372,21 +372,21 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         paletteSetEntries(gPaletteBlack);
         endgameEndingVoiceOverInit(narratorFileName);
 
-        // TODO: Unclear math.
-        //
-        // NOTE: This arithmetic is intentionally preserved from original logic.
-        // If the panorama is the same width as the source viewport then
-        // `panDistance` becomes 0 and divisions below can hit divide-by-zero.
         int sourceViewportWidth = std::min(width, static_cast<int>(static_cast<int64_t>(ENDGAME_ENDING_WINDOW_WIDTH) * height / ENDGAME_ENDING_WINDOW_HEIGHT));
         int panDistance = width - sourceViewportWidth;
         int fadeDistance = panDistance / 4;
-        unsigned int frameDelay = 16 * panDistance / panDistance;
+        if (panDistance <= 0) {
+            paletteSetEntries(palette);
+            endgameEndingRenderFrame(backgroundData, sourceViewportWidth, height, width);
+            windowRefresh(gEndgameEndingSlideshowWindow);
+        }
+
+        unsigned int frameDelay = 16;
         unsigned int baseAnimationTicks = 16 * panDistance;
 
-        if (gEndgameEndingVoiceOverSpeechLoaded) {
+        if (panDistance > 0 && gEndgameEndingVoiceOverSpeechLoaded) {
             unsigned int speechDurationMs = 1000 * speechGetDuration();
             if (speechDurationMs > baseAnimationTicks / 2) {
-                // NOTE: Same divide-by-zero risk as above when `panDistance == 0`.
                 frameDelay = (speechDurationMs + frameDelay * (panDistance / 2)) / panDistance;
             }
         }
@@ -403,7 +403,13 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
 
         tickersDisable();
 
-        bool subtitlesLoaded = false;
+        bool subtitlesLoaded = panDistance > 0 && fadeDistance == 0;
+        if (subtitlesLoaded) {
+            paletteSetEntries(palette);
+
+            // NOTE: Uninline.
+            endgameEndingVoiceOverReset();
+        }
 
         unsigned int since = 0;
         while (start != end) {
@@ -423,36 +429,38 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
 
                 since = getTicks();
 
-                bool shouldDarkenPalette;
-                double darkeningFactor;
-                if (start > fadeDistance) {
-                    if (fadeOutStartX > start) {
-                        shouldDarkenPalette = false;
+                if (fadeDistance > 0) {
+                    bool shouldDarkenPalette;
+                    double darkeningFactor;
+                    if (start > fadeDistance) {
+                        if (fadeOutStartX > start) {
+                            shouldDarkenPalette = false;
+                        } else {
+                            int fadeOffset = fadeDistance - (start - fadeOutStartX);
+                            darkeningFactor = (double)fadeOffset / (double)fadeDistance;
+                            shouldDarkenPalette = true;
+                        }
                     } else {
-                        int fadeOffset = fadeDistance - (start - fadeOutStartX);
-                        darkeningFactor = (double)fadeOffset / (double)fadeDistance;
                         shouldDarkenPalette = true;
+                        darkeningFactor = (double)start / (double)fadeDistance;
                     }
-                } else {
-                    shouldDarkenPalette = true;
-                    darkeningFactor = (double)start / (double)fadeDistance;
-                }
 
-                if (shouldDarkenPalette) {
-                    unsigned char darkenedPalette[768];
-                    for (int index = 0; index < 768; index++) {
-                        darkenedPalette[index] = (unsigned char)trunc(palette[index] * darkeningFactor);
+                    if (shouldDarkenPalette) {
+                        unsigned char darkenedPalette[768];
+                        for (int index = 0; index < 768; index++) {
+                            darkenedPalette[index] = (unsigned char)trunc(palette[index] * darkeningFactor);
+                        }
+                        paletteSetEntries(darkenedPalette);
                     }
-                    paletteSetEntries(darkenedPalette);
                 }
 
                 start += direction;
 
-                if (direction == 1 && (start == fadeDistance)) {
+                if (fadeDistance > 0 && direction == 1 && (start == fadeDistance)) {
                     // NOTE: Uninline.
                     endgameEndingVoiceOverReset();
                     subtitlesLoaded = true;
-                } else if (direction == -1 && (start == fadeOutStartX)) {
+                } else if (fadeDistance > 0 && direction == -1 && (start == fadeOutStartX)) {
                     // NOTE: Uninline.
                     endgameEndingVoiceOverReset();
                     subtitlesLoaded = true;
@@ -676,7 +684,7 @@ static void endgameEndingRenderFrame(const unsigned char* data, int width, int h
         width,
         height,
         Buffer2D(gEndgameEndingSlideshowWindowBuffer, screenWidth, screenHeight),
-        colorPaletteFindDarkest(_cmap),
+        COLOR_BLACK,
         settings.ui.end_slide_size != 0);
 }
 

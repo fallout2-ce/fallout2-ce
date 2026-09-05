@@ -520,7 +520,7 @@ static void showDeath()
             colorPaletteLoad("art\\intrface\\death.pal");
             Rect deathFrameBounds = blitBuffer2DCenteredAspectFit(backgroundFrmImage.getBuffer(),
                 Buffer2D(windowBuffer, screenWidth, screenHeight),
-                colorPaletteFindDarkest(_cmap),
+                COLOR_BLACK,
                 settings.ui.death_screen_size != 0);
 
             const char* deathFileName = endgameDeathEndingGetFileName();
