@@ -357,19 +357,10 @@ enum class WallFrameId : int {
     Reserved = 0, // reserved.frm
 };
 
-enum ItemFrameId : int {
-    ITEM_FRM_ID_FIRST = 0,
+enum class ItemFrameId : int {
+    Invalid = -1, // invalid frame id
+    Reserved = 0, // reserved.frm
 };
-
-inline constexpr ItemFrameId operator-(ItemFrameId lhs, int rhs)
-{
-    return static_cast<ItemFrameId>(static_cast<int>(lhs) - rhs);
-}
-
-inline ItemFrameId itemFrameIdFromPid(int pid)
-{
-    return static_cast<ItemFrameId>(frameIdFromPid(pid));
-}
 
 enum TileFrameId : int {
     TILE_FRM_ID_FIRST = 0,
