@@ -340,9 +340,6 @@ static void opGetPcStat(Program* program);
 // 0x504B0C aCritter
 static char _aCritter[] = "<Critter>";
 
-// 0x453FC0 obj_on_screen_rect
-static Rect stru_453FC0 = { 0, 0, 640, 480 };
-
 // 0x518EC0 dbg_error_strs
 static const char* _dbg_error_strs[SCRIPT_ERROR_COUNT] = {
     "unimped",
@@ -396,15 +393,16 @@ static void scriptError(const char* format, ...)
 // 0x45404C scripts_tile_is_visible
 static int tileIsVisible(int tile)
 {
-    if (abs(gCenterTile - tile) % 200 < 5) {
-        return 1;
+    int tileScreenX;
+    int tileScreenY;
+    if (tileToScreenXY(tile, &tileScreenX, &tileScreenY) == -1) {
+        return 0;
     }
 
-    if (abs(gCenterTile - tile) / 200 < 5) {
-        return 1;
-    }
+    Rect tileRect = { tileScreenX, tileScreenY, tileScreenX + 32 - 1, tileScreenY + 16 - 1 };
+    Rect screenRect = { 0, 0, screenGetWidth() - 1, screenGetVisibleHeight() - 1 };
 
-    return 0;
+    return rectIntersection(&tileRect, &screenRect, &tileRect) == 0;
 }
 
 // 0x45409C correctFidForRemovedItem
@@ -4785,19 +4783,18 @@ static void opGetCombatDifficulty(Program* program)
 // 0x45C878 op_obj_on_screen
 static void opObjectOnScreen(Program* program)
 {
-    Rect rect;
-    rectCopy(&rect, &stru_453FC0);
-
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     int result = 0;
 
     if (object != nullptr) {
         if (gElevation == object->elevation) {
+            Rect screenRect = { 0, 0, screenGetWidth() - 1, screenGetVisibleHeight() - 1 };
+
             Rect objectRect;
             objectGetRect(object, &objectRect);
 
-            if (rectIntersection(&objectRect, &rect, &objectRect) == 0) {
+            if (rectIntersection(&objectRect, &screenRect, &objectRect) == 0) {
                 result = 1;
             }
         }
