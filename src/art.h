@@ -89,7 +89,7 @@ public:
     constexpr explicit FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
         : _objectType(OBJ_TYPE_MISC)
         , _fid(buildFid(OBJ_TYPE_MISC, static_cast<int>(misc), animType))
-        , _frameId { static_cast<int>(misc) }
+        , _frameId { static_cast<int>(misc) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -97,7 +97,7 @@ public:
     constexpr explicit FrmId(SceneryFrameId scenery)
         : _objectType(OBJ_TYPE_SCENERY)
         , _fid(buildFid(OBJ_TYPE_SCENERY, static_cast<int>(scenery)))
-        , _frameId { static_cast<int>(scenery) }
+        , _frameId { static_cast<int>(scenery) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -105,7 +105,7 @@ public:
     constexpr explicit FrmId(WallFrameId wall)
         : _objectType(OBJ_TYPE_WALL)
         , _fid(buildFid(OBJ_TYPE_WALL, static_cast<int>(wall)))
-        , _frameId { static_cast<int>(wall) }
+        , _frameId { static_cast<int>(wall) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -113,7 +113,7 @@ public:
     constexpr explicit FrmId(ItemFrameId item)
         : _objectType(OBJ_TYPE_ITEM)
         , _fid(buildFid(OBJ_TYPE_ITEM, static_cast<int>(item)))
-        , _frameId { static_cast<int>(item) }
+        , _frameId { static_cast<int>(item) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -121,7 +121,7 @@ public:
     constexpr explicit FrmId(TileFrameId tile)
         : _objectType(OBJ_TYPE_TILE)
         , _fid(buildFid(OBJ_TYPE_TILE, static_cast<int>(tile)))
-        , _frameId { static_cast<int>(tile) }
+        , _frameId { static_cast<int>(tile) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -129,7 +129,7 @@ public:
     constexpr explicit FrmId(SkillDexFrameId skilldex)
         : _objectType(OBJ_TYPE_SKILLDEX)
         , _fid(buildFid(OBJ_TYPE_SKILLDEX, static_cast<int>(skilldex)))
-        , _frameId { static_cast<int>(skilldex) }
+        , _frameId { static_cast<int>(skilldex) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -137,7 +137,7 @@ public:
     constexpr explicit FrmId(InterfaceFrameId interface)
         : _objectType(OBJ_TYPE_INTERFACE)
         , _fid(buildFid(OBJ_TYPE_INTERFACE, static_cast<int>(interface)))
-        , _frameId { static_cast<int>(interface) }
+        , _frameId { static_cast<int>(interface) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -150,7 +150,7 @@ public:
     constexpr explicit FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
         : _objectType(OBJ_TYPE_HEAD)
         , _fid(buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), headAnimation, fidget))
-        , _frameId { static_cast<int>(head) }
+        , _frameId { static_cast<int>(head) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -158,7 +158,7 @@ public:
     constexpr explicit FrmId(BackgroundFrameId background)
         : _objectType(OBJ_TYPE_BACKGROUND)
         , _fid(buildFid(OBJ_TYPE_BACKGROUND, static_cast<int>(background)))
-        , _frameId { static_cast<int>(background) }
+        , _frameId { static_cast<int>(background) & kMaxFrameId }
         , _path(nullptr)
     {
     }
@@ -226,9 +226,11 @@ private:
     */
     constexpr int buildFid(ObjectType objectType, int frmId, unsigned char animType = 0, unsigned char weaponAnimation = 0, Rotation rotation = ROTATION_NE)
     {
-        if (!objectTypeIsValid(objectType) || !rotationIsValid(rotation) || frmId < kMinFrameId || frmId > kMaxFrameId) {
+        if (!objectTypeIsValid(objectType) || !rotationIsValid(rotation) || frmId < kMinFrameId) {
             return kEmptyFid;
         }
+
+        assert(frmId <= kMaxFrameId && "FrameId overflow, possible mismatch with Fid!");
 
         return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponAnimation << 12) & 0xF000) | (frmId & kMaxFrameId);
     }

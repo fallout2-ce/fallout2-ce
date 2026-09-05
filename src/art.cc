@@ -1629,7 +1629,7 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
 FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(OBJ_TYPE_CRITTER)
     , _fid(buildObjectFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation))
-    , _frameId { critter }
+    , _frameId { static_cast<int>(critter) & kMaxFrameId }
     , _path(nullptr)
 {
 }
@@ -1637,7 +1637,7 @@ FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation wea
 FrmId::FrmId(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(objectType)
     , _fid(buildObjectFid(objectType, frmId, animType, weaponAnimation, rotation))
-    , _frameId { frmId }
+    , _frameId { frmId & kMaxFrameId }
     , _path(nullptr)
 {
     assert(objectTypeIsValid(objectType));
