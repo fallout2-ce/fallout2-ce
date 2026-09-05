@@ -226,7 +226,7 @@ private:
     */
     constexpr int buildFid(ObjectType objectType, int frmId, unsigned char animType = 0, unsigned char weaponAnimation = 0, Rotation rotation = ROTATION_NE)
     {
-        if (objectType == OBJ_TYPE_INVALID || frmId < kMinFrameId || frmId > kMaxFrameId) {
+        if (!objectTypeIsValid(objectType) || !rotationIsValid(rotation) || frmId < kMinFrameId || frmId > kMaxFrameId) {
             return kEmptyFid;
         }
 
