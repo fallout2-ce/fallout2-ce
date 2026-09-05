@@ -1008,13 +1008,13 @@ int proto_scenery_subdata_init(Proto* proto, SceneryType type)
 // 0x49FCFC proto_wall_init
 int proto_wall_init(Proto* proto, int pid)
 {
-    WallFrameId num = wallFrameIdFromPid(pid);
+    int num = frameIdFromPid(pid);
 
     proto->wall.pid = -1;
     proto->wall.messageId = 100 * num;
-    proto->wall.fid = FrmId(num - 1).fid();
+    proto->wall.fid = WallFrmId(static_cast<WallFrameId>(num - 1)).fid();
     if (!artExists(proto->wall.fid)) {
-        proto->wall.fid = FrmId(WALL_FRM_ID_FIRST).fid();
+        proto->wall.fid = WallFrmId(WallFrameId::Reserved).fid();
     }
     proto->wall.lightDistance = 0;
     proto->wall.lightIntensity = 0;

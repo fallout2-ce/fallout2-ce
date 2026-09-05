@@ -352,19 +352,10 @@ enum class SceneryFrameId : int {
     Reserved = 0, // reserved.frm
 };
 
-enum WallFrameId : int {
-    WALL_FRM_ID_FIRST = 0,
+enum class WallFrameId : int {
+    Invalid = -1, // invalid frame id
+    Reserved = 0, // reserved.frm
 };
-
-inline constexpr WallFrameId operator-(WallFrameId lhs, int rhs)
-{
-    return static_cast<WallFrameId>(static_cast<int>(lhs) - rhs);
-}
-
-inline WallFrameId wallFrameIdFromPid(int pid)
-{
-    return static_cast<WallFrameId>(frameIdFromPid(pid));
-}
 
 enum ItemFrameId : int {
     ITEM_FRM_ID_FIRST = 0,
