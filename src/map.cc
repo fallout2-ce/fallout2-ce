@@ -1477,15 +1477,15 @@ static int _map_save_file(File* stream)
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         int tile;
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
-            FrmId frmId;
+            TileFrmId frmId;
 
-            frmId = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile]));
-            if (frmId != FrmId(TILE_FRM_ID_1)) {
+            frmId = FrmId(_square[elevation]->fid[tile]).frameId().tile;
+            if (frmId != TileFrmId(TileFrameId::Grid)) {
                 break;
             }
 
-            frmId = FrmId(tileFrameIdFromFid(_square[elevation]->fid[tile] >> 16));
-            if (frmId != FrmId(TILE_FRM_ID_1)) {
+            frmId = FrmId(_square[elevation]->fid[tile] >> 16).frameId().tile;
+            if (frmId != TileFrmId(TileFrameId::Grid)) {
                 break;
             }
         }
@@ -1825,6 +1825,8 @@ static void square_init()
 // 0x484210
 static void _square_reset()
 {
+    constexpr int kGridFrameId = static_cast<int>(TileFrameId::Grid);
+
     for (int elevation = 0; elevation < ELEVATION_COUNT; elevation++) {
         int* p = _square[elevation]->fid;
         for (int y = 0; y < SQUARE_GRID_HEIGHT; y++) {
@@ -1833,11 +1835,11 @@ static void _square_reset()
                 // check subsequent calls.
                 int fid = *p;
                 fid &= ~0xFFFF;
-                *p = ((tileFrameIdFromFid(FrmId(TILE_FRM_ID_1).fid()) | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
+                *p = ((kGridFrameId | (((fid >> 16) & 0xF000) >> 12)) << 16) | (fid & 0xFFFF);
 
                 fid = *p;
                 int tileFlags = (fid & 0xF000) >> 12;
-                int updatedLowerTile = tileFrameIdFromFid(FrmId(TILE_FRM_ID_1).fid()) | tileFlags;
+                int updatedLowerTile = kGridFrameId | tileFlags;
 
                 fid &= ~0xFFFF;
 
@@ -1874,7 +1876,7 @@ static int _square_load(File* stream, MapHeaderFlags flags)
                 upperTileFlags = (upperTileWord & 0xF000) >> 12;
                 upperTileFlags &= ~(0x01);
 
-                upperTileArtId = tileFrameIdFromFid(upperTileWord);
+                upperTileArtId = frameIdFromFid(upperTileWord);
                 lowerTileWord = arr[tile] & 0xFFFF;
                 arr[tile] = ((upperTileArtId | (upperTileFlags << 12)) << 16) | lowerTileWord;
             }

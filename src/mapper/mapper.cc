@@ -1303,7 +1303,7 @@ void edit_mapper()
                     if (tool_active != -1) {
                         if (selectedPid != -1) {
                             if (objectTypeFromPid(selectedPid) == OBJ_TYPE_TILE) {
-                                placeTile(selectedPid, gGameMouseBouncingCursor->fid);
+                                placeTile(selectedPid, FrmId(gGameMouseBouncingCursor->fid));
                             } else {
                                 placeObject(selectedPid, gGameMouseBouncingCursor->fid);
                             }
@@ -1345,7 +1345,7 @@ void edit_mapper()
                     } else if (tool_active != -1) {
                         if (selectedPid != -1) {
                             if (objectTypeFromPid(selectedPid) == OBJ_TYPE_TILE) {
-                                placeTile(selectedPid, gGameMouseBouncingCursor->fid);
+                                placeTile(selectedPid, FrmId(gGameMouseBouncingCursor->fid));
                             } else {
                                 placeObject(selectedPid, gGameMouseBouncingCursor->fid);
                             }
@@ -2598,13 +2598,13 @@ static int mapperPickTile(int* outOffset)
     }
 
     int packedTile = _square[gElevation]->fid[tileNum];
-    TileFrameId tileFid;
+    TileFrameId tileFrmId;
     if (tileRoofIsVisible()) {
-        tileFid = tileFrameIdFromFid(packedTile >> 16);
+        tileFrmId = FrmId(packedTile >> 16).frameId().tile;
     } else {
-        tileFid = tileFrameIdFromFid(packedTile);
+        tileFrmId = FrmId(packedTile).frameId().tile;
     }
-    const FrmId artFrmId = FrmId(tileFid);
+    const FrmId artFrmId = FrmId(tileFrmId);
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;

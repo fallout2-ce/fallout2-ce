@@ -389,38 +389,11 @@ inline ItemFrameId itemFrameIdFromPid(int pid)
     return static_cast<ItemFrameId>(frameIdFromPid(pid));
 }
 
-enum TileFrameId : int {
-    TILE_FRM_ID_FIRST = 0,
-    TILE_FRM_ID_1 = 1,
-    TILE_FRM_ID_LAST = 4095
+enum class TileFrameId : int {
+    Invalid = -1, // invalid frame id
+    Reserved = 0, // reserved.frm
+    Grid = 1, // grid000.frm
 };
-
-inline constexpr TileFrameId operator+(TileFrameId lhs, int rhs)
-{
-    return static_cast<TileFrameId>(static_cast<int>(lhs) + rhs);
-}
-
-inline constexpr TileFrameId operator-(TileFrameId lhs, int rhs)
-{
-    return static_cast<TileFrameId>(static_cast<int>(lhs) - rhs);
-}
-
-inline TileFrameId operator++(TileFrameId& e, int)
-{
-    TileFrameId result = e;
-    e = e + 1;
-    return result;
-}
-
-inline TileFrameId tileFrameIdFromFid(int fid)
-{
-    return static_cast<TileFrameId>(frameIdFromFid(fid));
-}
-
-inline TileFrameId tileFrameIdFromPid(int pid)
-{
-    return static_cast<TileFrameId>(frameIdFromPid(pid));
-}
 
 enum MiscFrameId : int {
     MISC_FRM_ID_INVALID = -1,

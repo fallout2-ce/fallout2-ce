@@ -1468,12 +1468,12 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->fid[roofX + 100 * roofY];
-            FrmId currentSquareFid = FrmId(tileFrameIdFromFid(currentSquare >> 16));
+            const TileFrmId currentSquareFid = FrmId(currentSquare >> 16).frameId().tile;
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            bool isEmpty = FrmId(TILE_FRM_ID_1) == currentSquareFid;
+            bool isEmpty = TileFrmId(TileFrameId::Grid) == currentSquareFid;
 
             if (isEmpty != _obj_last_is_empty || (((currentSquare >> 16) & 0xF000) >> 12) != (((previousSquare >> 16) & 0xF000) >> 12)) {
                 if (!_obj_last_is_empty) {
@@ -1525,8 +1525,8 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    FrmId fid = FrmId(tileFrameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
-    if (fid != FrmId(TILE_FRM_ID_1)) {
+    const TileFrmId frmId = FrmId(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16).frameId().tile;
+    if (frmId != TileFrmId(TileFrameId::Grid)) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
     return 0;
@@ -3189,7 +3189,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
         return;
     }
 
-    unsigned char arr[4096];
+    unsigned char arr[FrmId::kMaxFrameId + 1];
     memset(arr, 0, sizeof(arr));
 
     if ((flags & MAP_HEADER_ELEVATION_0) == MAP_HEADER_NONE) {
@@ -3244,9 +3244,9 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
         }
     }
 
-    for (TileFrameId i = TILE_FRM_ID_FIRST; i <= TILE_FRM_ID_LAST; i++) {
+    for (int i = FrmId::kMinFrameId; i <= FrmId::kMaxFrameId ; i++) {
         if (arr[i] != 0) {
-            if (artLock(FrmId(i), &cache_handle) != nullptr) {
+            if (artLock(TileFrmId(static_cast<TileFrameId>(i)), &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }
         }
