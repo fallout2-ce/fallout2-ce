@@ -350,6 +350,7 @@ inline CritterFrameId critterFrameIdFromPid(int pid)
 enum class SceneryFrameId : int {
     Invalid = -1, // invalid frame id
     Reserved = 0, // reserved.frm
+    ForceField1 = 501, // ffield01.frm
 };
 
 enum class WallFrameId : int {
