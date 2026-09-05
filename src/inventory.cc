@@ -687,7 +687,7 @@ static bool inventoryBackgroundLoad(FrmImage& image, InterfaceFrameId col1FrmId,
     image.unlock();
 
     if (columns == 1) {
-        return image.lock(FrmId(col1FrmId));
+        return image.lock(col1FrmId);
     }
 
     if (columns == 2) {
@@ -743,7 +743,7 @@ static ConstBuffer2D inventoryGetBackgroundBuffer(int inventoryWindowType, Inter
             windowGetHeight(gInventoryBarterBackgroundWindow) };
     }
 
-    if (fallbackImage.lock(FrmId(fallbackFrmId))) {
+    if (fallbackImage.lock(fallbackFrmId)) {
         return fallbackImage.getBuffer();
     }
 
@@ -1810,7 +1810,7 @@ static bool _setup_inventory(int inventoryWindowType)
             blitBuffer2D(inventoryLootFrmImage.getBuffer(), destBuf);
         } else {
             FrmImage backgroundFrmImage;
-            if (backgroundFrmImage.lock(FrmId(windowDescription->frmId))) {
+            if (backgroundFrmImage.lock(windowDescription->frmId)) {
                 blitBuffer2D(backgroundFrmImage.getBuffer(), destBuf);
             }
         }
@@ -2241,7 +2241,7 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
         pitch = INVENTORY_USE_ON_WINDOW_WIDTH;
 
         FrmImage backgroundFrmImage;
-        if (backgroundFrmImage.lock(FrmId(InterfaceFrameId::UseItemOnWindow))) {
+        if (backgroundFrmImage.lock(InterfaceFrameId::UseItemOnWindow)) {
             // Clear scroll view background.
             blitBufferToBuffer(backgroundFrmImage.getData() + pitch * INVENTORY_SCROLLER_Y + INVENTORY_SCROLLER_X,
                 INVENTORY_SLOT_WIDTH,
@@ -2560,7 +2560,7 @@ static void _display_body(int fid, int inventoryWindowType)
             rect.bottom = rect.top + INVENTORY_BODY_VIEW_HEIGHT - 1;
 
             FrmImage backgroundFrmImage;
-            const FrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? FrmId(InterfaceFrameId::TradeWindow) : FrmId(InterfaceFrameId::BarterWindow);
+            const InterfaceFrmId backgroundFid = gGameDialogSpeakerIsPartyMember ? InterfaceFrameId::TradeWindow : InterfaceFrameId::BarterWindow;
             if (backgroundFrmImage.lock(backgroundFid)) {
                 blitBufferToBuffer(backgroundFrmImage.getData() + rect.top * 640 + rect.left,
                     INVENTORY_BODY_VIEW_WIDTH,
@@ -6231,7 +6231,7 @@ static InventoryAmmoMoveResult _drop_ammo_into_weapon(Object* weapon, Object* am
 static void _draw_amount(int value, int inventoryWindowType)
 {
     FrmImage numbersFrmImage;
-    if (!numbersFrmImage.lock(FrmId(InterfaceFrameId::BigNum))) {
+    if (!numbersFrmImage.lock(InterfaceFrameId::BigNum)) {
         return;
     }
 
@@ -6487,7 +6487,7 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
 
         // Timer overlay
         FrmImage overlayFrmImage;
-        if (overlayFrmImage.lock(FrmId(InterfaceFrameId::TimerOverlay))) {
+        if (overlayFrmImage.lock(InterfaceFrameId::TimerOverlay)) {
             blitBufferToBuffer(overlayFrmImage.getData(),
                 105, 81, 105,
                 windowBuffer + 34 * windowDescription->width + 113, windowDescription->width);
@@ -6521,8 +6521,8 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         148, 128, -1, KEY_ESCAPE, InterfaceFrameId::LittleRedButtonUp, InterfaceFrameId::LittleRedButtonDown);
 
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_MOVE_ITEMS) {
-        _moveFrmImages[6].lock(FrmId(InterfaceFrameId::AllButtonPressed));
-        _moveFrmImages[7].lock(FrmId(InterfaceFrameId::AllButtonUnpressed));
+        _moveFrmImages[6].lock(InterfaceFrameId::AllButtonPressed);
+        _moveFrmImages[7].lock(InterfaceFrameId::AllButtonUnpressed);
 
         if (_moveFrmImages[6].isLocked() && _moveFrmImages[7].isLocked()) {
             // ALL

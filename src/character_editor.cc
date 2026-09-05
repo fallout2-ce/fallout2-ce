@@ -794,10 +794,10 @@ static int gCharacterEditorOldTaggedSkillCount;
 static int gCharacterEditorLastLevelBackup;
 
 // 0x5709E8 old_fid2
-static FrmId gPerkDialogCardFrmId;
+static SkillDexFrmId gPerkDialogCardFrmId;
 
 // 0x5709EC old_fid1
-static FrmId gCharacterEditorCardFrmId;
+static SkillDexFrmId gCharacterEditorCardFrmId;
 
 // 0x5709D0 glblmode
 static bool gCharacterEditorIsCreationMode;
@@ -1290,8 +1290,8 @@ static int characterEditorWindowInit()
     gCharacterEditorOldFont = fontGetCurrent();
     gCharacterEditorOldTaggedSkillCount = 0;
     gCharacterEditorIsoWasEnabled = 0;
-    gPerkDialogCardFrmId = FrmId::Empty();
-    gCharacterEditorCardFrmId = FrmId::Empty();
+    gPerkDialogCardFrmId = SkillDexFrameId::Invalid;
+    gCharacterEditorCardFrmId = SkillDexFrameId::Invalid;
     gPerkDialogCardDrawn = false;
     gCharacterEditorCardDrawn = false;
     gCharacterEditorIsSkillsFirstDraw = 1;
@@ -1355,8 +1355,8 @@ static int characterEditorWindowInit()
     }
     messageListRepositorySetStandardMessageList(STANDARD_MESSAGE_LIST_EDITOR, &gCharacterEditorMessageList);
 
-    const FrmId fid = gCharacterEditorIsCreationMode ? FrmId(InterfaceFrameId::CharacterEditorCreateBackground) : FrmId(InterfaceFrameId::CharacterEditorEditBackground);
-    if (!_editorBackgroundFrmImage.lock(fid)) {
+    const InterfaceFrmId frmId = gCharacterEditorIsCreationMode ? InterfaceFrameId::CharacterEditorCreateBackground : InterfaceFrameId::CharacterEditorEditBackground;
+    if (!_editorBackgroundFrmImage.lock(frmId)) {
         characterEditorMessageListReset();
         characterEditorWindowRestoreState();
         return -1;
@@ -6127,7 +6127,7 @@ static int perkDialogShow()
 {
     gPerkDialogTopLine = 0;
     gPerkDialogCurrentLine = 0;
-    gPerkDialogCardFrmId = FrmId::Empty();
+    gPerkDialogCardFrmId = SkillDexFrameId::Invalid;
     gPerkDialogCardTitle[0] = '\0';
     gPerkDialogCardDrawn = false;
     int previousPerkRanks[PERK_COUNT];
@@ -6135,7 +6135,7 @@ static int perkDialogShow()
         previousPerkRanks[perk] = perkGetRank(gDude, perk);
     }
 
-    if (!_perkDialogBackgroundFrmImage.lock(FrmId(InterfaceFrameId::PerkDialogBackground))) {
+    if (!_perkDialogBackgroundFrmImage.lock(InterfaceFrameId::PerkDialogBackground)) {
         debugPrint("\n *** Error running perks dialog window ***\n");
         return -1;
     }
@@ -6718,7 +6718,7 @@ static void perkDialogRefreshTraits()
 // 0x43D38C GetMutateTrait
 static bool perkDialogHandleMutatePerk()
 {
-    gPerkDialogCardFrmId = FrmId::Empty();
+    gPerkDialogCardFrmId = SkillDexFrameId::Invalid;
     gPerkDialogCardTitle[0] = '\0';
     gPerkDialogCardDrawn = false;
 
@@ -6869,7 +6869,7 @@ static bool perkDialogHandleTagPerk()
 
     gPerkDialogCurrentLine = 0;
     gPerkDialogTopLine = 0;
-    gPerkDialogCardFrmId = FrmId::Empty();
+    gPerkDialogCardFrmId = SkillDexFrameId::Invalid;
     gPerkDialogCardTitle[0] = '\0';
     gPerkDialogCardDrawn = false;
     perkDialogRefreshSkills();

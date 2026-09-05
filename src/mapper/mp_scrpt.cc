@@ -109,7 +109,7 @@ static int _scr_show_toggled = 0;
 // 0x4C26D0
 void map_scr_toggle_hexes()
 {
-    constexpr FrmId kMarkerFrmId = FrmId(InterfaceFrameId::ExitGridMarker);
+    constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
 
     if (!_scr_show_toggled) {
         // REMOVE mode: erase all existing spatial marker objects
@@ -312,7 +312,7 @@ int map_scr_add_spatial(int tile, int elevation)
         return -1;
     }
 
-    constexpr FrmId kMarkerFrmId = FrmId(InterfaceFrameId::ExitGridMarker);
+    constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
     Object* obj;
     if (objectCreateWithFidPid(&obj, kMarkerFrmId.fid(), -1) != -1) {
         obj->flags |= OBJECT_NO_SAVE;
@@ -421,7 +421,7 @@ void scr_debug_print_scripts()
     }
 
     // Phase 2: Scripts WITHOUT owners — find marker object at script's built_tile
-    constexpr FrmId kMarkerFrmId = FrmId(InterfaceFrameId::ExitGridMarker);
+    constexpr InterfaceFrmId kMarkerFrmId = InterfaceFrameId::ExitGridMarker;
     for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
         for (int id = 0; id < kMaxScriptId; id++) {
             int sid = (type << 24) | id;

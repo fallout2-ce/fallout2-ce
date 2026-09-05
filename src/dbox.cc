@@ -229,19 +229,19 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     FrmImage buttonPressedFrmImage;
 
     if ((flags & DIALOG_BOX_NO_BUTTONS) == 0) {
-        if (!doneBoxFrmImage.lock(FrmId(InterfaceFrameId::DoneBox))) {
+        if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        if (!buttonPressedFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonDown))) {
+        if (!buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
         }
 
-        if (!buttonNormalFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonUp))) {
+        if (!buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)) {
             fontSetCurrent(savedFont);
             windowDestroy(win);
             return -1;
@@ -343,19 +343,19 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
                 buttonSetCallbacks(btn, _gsound_red_butt_press, _gsound_red_butt_release);
             }
         } else {
-            if (!doneBoxFrmImage.lock(FrmId(InterfaceFrameId::DoneBox))) {
+            if (!doneBoxFrmImage.lock(InterfaceFrameId::DoneBox)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            if (!buttonPressedFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonDown))) {
+            if (!buttonPressedFrmImage.lock(InterfaceFrameId::LittleRedButtonDown)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;
             }
 
-            if (!buttonNormalFrmImage.lock(FrmId(InterfaceFrameId::LittleRedButtonUp))) {
+            if (!buttonNormalFrmImage.lock(InterfaceFrameId::LittleRedButtonUp)) {
                 fontSetCurrent(savedFont);
                 windowDestroy(win);
                 return -1;

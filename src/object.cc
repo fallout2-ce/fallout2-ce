@@ -3250,7 +3250,7 @@ void _obj_preload_art_cache(MapHeaderFlags flags)
 
     for (int i = FrmId::kMinFrameId; i <= FrmId::kMaxFrameId; i++) {
         if (arr[i] != 0) {
-            if (artLock(TileFrmId(static_cast<TileFrameId>(i)), &cache_handle) != nullptr) {
+            if (artLock(static_cast<TileFrameId>(i), &cache_handle) != nullptr) {
                 artUnlock(cache_handle);
             }
         }

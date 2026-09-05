@@ -423,7 +423,7 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
     }
 
     WeaponAnimation weaponCode = weaponAnimationFromFid(critter->fid);
-    FrmId newFid = FrmId::Empty();
+    FrmId newFid;
 
     if ((flags & OBJECT_IN_ANY_HAND) != OBJECT_NONE) {
         if (critter == gDude) {
@@ -453,7 +453,7 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
     }
 
-    if (!newFid.empty()) {
+    if (newFid.valid()) {
         Rect rect;
         objectSetFid(critter, newFid.fid(), &rect);
         tileWindowRefreshRect(&rect, gElevation);

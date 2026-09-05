@@ -228,7 +228,7 @@ void endgamePlaySlideshow()
             if (ending->art_num == InterfaceFrameId::PanningDesertImage) {
                 endgameEndingRenderPanningScene(ending->direction, ending->voiceOverBaseName);
             } else {
-                const FrmId frmId = FrmId(ending->art_num);
+                const InterfaceFrmId frmId = ending->art_num;
                 endgameEndingRenderStaticScene(frmId.fid(), ending->voiceOverBaseName);
             }
         }
@@ -350,7 +350,7 @@ static int endgameEndingHandleContinuePlaying()
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
     CacheEntry* backgroundHandle;
-    Art* background = artLock(FrmId(InterfaceFrameId::PanningDesertImage), &backgroundHandle);
+    Art* background = artLock(InterfaceFrameId::PanningDesertImage, &backgroundHandle);
     if (background != nullptr) {
         int width = artGetWidth(background);
         int height = artGetHeight(background);
