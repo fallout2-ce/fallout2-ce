@@ -456,7 +456,7 @@ int objectRead(Object* obj, File* stream)
 
     if (isExitGridPid(obj->pid)) {
         if (obj->data.misc.map <= 0) {
-            if (miscFrameIdFromFid(obj->fid) < 33) {
+            if (frameIdFromFid(obj->fid) < 33) {
                 obj->fid = FrmId(miscFrameIdFromFid(obj->fid) + 16, animationTypeFromFid(obj->fid)).fid();
             }
         }

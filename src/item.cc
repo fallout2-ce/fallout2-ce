@@ -3695,7 +3695,7 @@ void explosionSettingsReset()
 {
     gExplosionStartRotation = ROTATION_FIRST;
     gExplosionEndRotation = ROTATION_COUNT;
-    gExplosionFrm = MISC_FRM_ID_INVALID;
+    gExplosionFrm = MiscFrameId::Invalid;
     gExplosionRadius = -1;
     gExplosionDamageType = DAMAGE_TYPE_EXPLOSION;
     gExplosionMaxTargets = 6;

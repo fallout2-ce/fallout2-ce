@@ -422,14 +422,14 @@ inline TileFrameId tileFrameIdFromPid(int pid)
     return static_cast<TileFrameId>(frameIdFromPid(pid));
 }
 
-enum MiscFrameId : int {
-    MISC_FRM_ID_INVALID = -1,
-    MISC_FRM_ID_FIRST = 0,
-    MISC_FRM_ID_2 = 2,
-    MISC_FRM_ID_10 = 10, // roktxpd.frm
-    MISC_FRM_ID_12 = 12,
-    MISC_FRM_ID_29 = 29,
-    MISC_FRM_ID_31 = 31,
+enum class MiscFrameId : int {
+    Invalid = -1, // invalid frame id
+    Reserved = 0, // reserved.frm
+    EmpExplosion = 2, // empxpld.frm
+    RocketExplosion = 10, // roktxpd.frm
+    ScrollBlocker = 12, // scrblk.frm
+    FireExplosion = 29, //expa.frm
+    PlasmaExplosion = 31, //expp.frm
 };
 
 inline constexpr MiscFrameId operator+(MiscFrameId lhs, int rhs)
