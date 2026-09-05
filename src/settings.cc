@@ -177,6 +177,8 @@ void initSettingsRegistry(bool isMapper)
     SETTING(iface_bar_sides_ori);
     SETTING_P(alternate_ammo_meter, clamp(0, 2));
     SETTING_P(splash_screen_size, clamp(0, 2));
+    SETTING_P(death_screen_size, clamp(0, 1));
+    SETTING_P(end_slide_size, clamp(0, 1));
     SETTING(movie_aspect_fit);
     SETTING(edg_support);
     SETTING(ignore_scroll_limit);

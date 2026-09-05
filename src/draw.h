@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "color.h"
+#include "geometry.h"
 
 namespace fallout {
 
@@ -52,6 +53,12 @@ void blitBuffer2DScaled(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int
 // Clips to both src and dst bounds; no-op if fully outside.
 void blitBuffer2DScaled(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
     Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight);
+// Fills dst, then draws the source region centered. If scaleUp is true, or if
+// the source region is larger than dst, preserves aspect ratio and fits to dst.
+// Returns the destination rectangle occupied by the drawn image.
+Rect blitBuffer2DCenteredAspectFit(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, Color backgroundColor, bool scaleUp);
+Rect blitBuffer2DCenteredAspectFit(ConstBuffer2D src, Buffer2D dst, Color backgroundColor, bool scaleUp);
 // Same as blitBuffer2DScaled, but treats zero-valued source pixels as transparent.
 void blitBuffer2DScaledTrans(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight);
 // Same as blitBuffer2DScaled with a source sub-rect, but treats zero-valued source pixels as transparent.

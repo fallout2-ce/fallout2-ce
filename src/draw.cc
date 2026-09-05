@@ -1,6 +1,7 @@
 #include "draw.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <string.h>
 
 #include "color.h"
@@ -283,6 +284,50 @@ void blitBuffer2DScaled(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int
     Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)
 {
     blitBuffer2DScaledImpl(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY, dstWidth, dstHeight, false);
+}
+
+Rect blitBuffer2DCenteredAspectFit(ConstBuffer2D src, Buffer2D dst, Color backgroundColor, bool scaleUp)
+{
+    return blitBuffer2DCenteredAspectFit(src, 0, 0, src.width, src.height, dst, backgroundColor, scaleUp);
+}
+
+Rect blitBuffer2DCenteredAspectFit(ConstBuffer2D src, int srcX, int srcY, int srcWidth, int srcHeight,
+    Buffer2D dst, Color backgroundColor, bool scaleUp)
+{
+    bufferFill2D(dst, backgroundColor);
+
+    Rect bounds = { 0, 0, -1, -1 };
+    if (!src || !dst || srcWidth <= 0 || srcHeight <= 0 || dst.width <= 0 || dst.height <= 0) {
+        return bounds;
+    }
+
+    int dstWidth = srcWidth;
+    int dstHeight = srcHeight;
+    if (scaleUp || srcWidth > dst.width || srcHeight > dst.height) {
+        if (static_cast<int64_t>(dst.height) * srcWidth >= static_cast<int64_t>(dst.width) * srcHeight) {
+            dstWidth = dst.width;
+            dstHeight = std::max(1, dst.width * srcHeight / srcWidth);
+        } else {
+            dstWidth = std::max(1, dst.height * srcWidth / srcHeight);
+            dstHeight = dst.height;
+        }
+    }
+
+    int dstX = dst.width > dstWidth ? (dst.width - dstWidth) / 2 : 0;
+    int dstY = dst.height > dstHeight ? (dst.height - dstHeight) / 2 : 0;
+
+    bounds.left = dstX;
+    bounds.top = dstY;
+    bounds.right = dstX + dstWidth - 1;
+    bounds.bottom = dstY + dstHeight - 1;
+
+    if (dstWidth == srcWidth && dstHeight == srcHeight) {
+        blitBuffer2D(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY);
+    } else {
+        blitBuffer2DScaled(src, srcX, srcY, srcWidth, srcHeight, dst, dstX, dstY, dstWidth, dstHeight);
+    }
+
+    return bounds;
 }
 
 void blitBuffer2DScaledTrans(ConstBuffer2D src, Buffer2D dst, int dstX, int dstY, int dstWidth, int dstHeight)

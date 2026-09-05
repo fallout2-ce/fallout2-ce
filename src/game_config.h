@@ -33,6 +33,8 @@ namespace fallout {
 #define GAME_CONFIG_ALTERNATE_AMMO_METER_KEY "alternate_ammo_meter"
 #define GAME_CONFIG_IGNORE_MAP_EDGES_KEY "ignore_map_edges"
 #define GAME_CONFIG_SPLASH_SCREEN_SIZE_KEY "splash_screen_size"
+#define GAME_CONFIG_DEATH_SCREEN_SIZE_KEY "death_screen_size"
+#define GAME_CONFIG_END_SLIDE_SIZE_KEY "end_slide_size"
 #define GAME_CONFIG_MOVIE_ASPECT_FIT_KEY "movie_aspect_fit"
 
 #define ENGLISH "english"

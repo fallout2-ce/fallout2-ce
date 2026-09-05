@@ -1,5 +1,7 @@
 #include "endgame.h"
 
+#include <algorithm>
+#include <cstdint>
 #include <ctype.h>
 #include <limits.h>
 #include <math.h>
@@ -72,6 +74,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
 static int endgameEndingHandleContinuePlaying();
 static int endgameEndingSlideshowWindowInit();
 static void endgameEndingSlideshowWindowFree();
+static void endgameEndingRenderFrame(const unsigned char* data, int width, int height, int pitch);
 static void endgameEndingVoiceOverInit(const char* fname);
 static void endgameEndingVoiceOverReset();
 static void endgameEndingVoiceOverFree();
@@ -209,6 +212,7 @@ static unsigned char* gEndgameEndingSlideshowWindowBuffer;
 static int gEndgameEndingSlideshowWindow;
 
 static int gEndgameEndingOverlay;
+static Rect gEndgameEndingFrameBounds;
 
 // 0x43F788 endgame_slideshow
 void endgamePlaySlideshow()
@@ -351,8 +355,13 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         int width = artGetWidth(background);
         int height = artGetHeight(background);
         unsigned char* backgroundData = artGetFrameData(background);
-        bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
+        if (width <= 0 || height <= 0 || backgroundData == nullptr) {
+            artUnlock(backgroundHandle);
+            return;
+        }
+
         endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, static_cast<int>(InterfaceFrameId::PanningDesertImage));
+        bufferFill(gEndgameEndingSlideshowWindowBuffer, screenGetWidth(), screenGetHeight(), screenGetWidth(), COLOR_BLACK);
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
@@ -363,20 +372,21 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         paletteSetEntries(gPaletteBlack);
         endgameEndingVoiceOverInit(narratorFileName);
 
-        // TODO: Unclear math.
-        //
-        // NOTE: This arithmetic is intentionally preserved from original logic.
-        // If `width == 640` then `panDistance` becomes 0 and divisions below can
-        // hit divide-by-zero
-        int panDistance = width - 640;
+        int sourceViewportWidth = std::min(width, static_cast<int>(static_cast<int64_t>(ENDGAME_ENDING_WINDOW_WIDTH) * height / ENDGAME_ENDING_WINDOW_HEIGHT));
+        int panDistance = width - sourceViewportWidth;
         int fadeDistance = panDistance / 4;
-        unsigned int frameDelay = 16 * panDistance / panDistance;
+        if (panDistance <= 0) {
+            paletteSetEntries(palette);
+            endgameEndingRenderFrame(backgroundData, sourceViewportWidth, height, width);
+            windowRefresh(gEndgameEndingSlideshowWindow);
+        }
+
+        unsigned int frameDelay = 16;
         unsigned int baseAnimationTicks = 16 * panDistance;
 
-        if (gEndgameEndingVoiceOverSpeechLoaded) {
+        if (panDistance > 0 && gEndgameEndingVoiceOverSpeechLoaded) {
             unsigned int speechDurationMs = 1000 * speechGetDuration();
             if (speechDurationMs > baseAnimationTicks / 2) {
-                // NOTE: Same divide-by-zero risk as above when `panDistance == 0`.
                 frameDelay = (speechDurationMs + frameDelay * (panDistance / 2)) / panDistance;
             }
         }
@@ -384,26 +394,32 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         int start;
         int end;
         if (direction == -1) {
-            start = width - 640;
+            start = width - sourceViewportWidth;
             end = 0;
         } else {
             start = 0;
-            end = width - 640;
+            end = width - sourceViewportWidth;
         }
 
         tickersDisable();
 
-        bool subtitlesLoaded = false;
+        bool subtitlesLoaded = panDistance > 0 && fadeDistance == 0;
+        if (subtitlesLoaded) {
+            paletteSetEntries(palette);
+
+            // NOTE: Uninline.
+            endgameEndingVoiceOverReset();
+        }
 
         unsigned int since = 0;
         while (start != end) {
             sharedFpsLimiter.mark();
 
-            int fadeOutStartX = 640 - fadeDistance;
+            int fadeOutStartX = sourceViewportWidth - fadeDistance;
 
             // TODO: Complex math, setup scene in debugger.
             if (getTicksSince(since) >= frameDelay) {
-                blitBufferToBuffer(backgroundData + start, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, width, gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH);
+                endgameEndingRenderFrame(backgroundData + start, sourceViewportWidth, height, width);
 
                 if (subtitlesLoaded) {
                     endgameEndingRefreshSubtitles();
@@ -413,36 +429,38 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
 
                 since = getTicks();
 
-                bool shouldDarkenPalette;
-                double darkeningFactor;
-                if (start > fadeDistance) {
-                    if (fadeOutStartX > start) {
-                        shouldDarkenPalette = false;
+                if (fadeDistance > 0) {
+                    bool shouldDarkenPalette;
+                    double darkeningFactor;
+                    if (start > fadeDistance) {
+                        if (fadeOutStartX > start) {
+                            shouldDarkenPalette = false;
+                        } else {
+                            int fadeOffset = fadeDistance - (start - fadeOutStartX);
+                            darkeningFactor = (double)fadeOffset / (double)fadeDistance;
+                            shouldDarkenPalette = true;
+                        }
                     } else {
-                        int fadeOffset = fadeDistance - (start - fadeOutStartX);
-                        darkeningFactor = (double)fadeOffset / (double)fadeDistance;
                         shouldDarkenPalette = true;
+                        darkeningFactor = (double)start / (double)fadeDistance;
                     }
-                } else {
-                    shouldDarkenPalette = true;
-                    darkeningFactor = (double)start / (double)fadeDistance;
-                }
 
-                if (shouldDarkenPalette) {
-                    unsigned char darkenedPalette[768];
-                    for (int index = 0; index < 768; index++) {
-                        darkenedPalette[index] = (unsigned char)trunc(palette[index] * darkeningFactor);
+                    if (shouldDarkenPalette) {
+                        unsigned char darkenedPalette[768];
+                        for (int index = 0; index < 768; index++) {
+                            darkenedPalette[index] = (unsigned char)trunc(palette[index] * darkeningFactor);
+                        }
+                        paletteSetEntries(darkenedPalette);
                     }
-                    paletteSetEntries(darkenedPalette);
                 }
 
                 start += direction;
 
-                if (direction == 1 && (start == fadeDistance)) {
+                if (fadeDistance > 0 && direction == 1 && (start == fadeDistance)) {
                     // NOTE: Uninline.
                     endgameEndingVoiceOverReset();
                     subtitlesLoaded = true;
-                } else if (direction == -1 && (start == fadeOutStartX)) {
+                } else if (fadeDistance > 0 && direction == -1 && (start == fadeOutStartX)) {
                     // NOTE: Uninline.
                     endgameEndingVoiceOverReset();
                     subtitlesLoaded = true;
@@ -465,7 +483,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         artUnlock(backgroundHandle);
 
         paletteFadeTo(gPaletteBlack);
-        bufferFill(gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, COLOR_BLACK);
+        bufferFill(gEndgameEndingSlideshowWindowBuffer, screenGetWidth(), screenGetHeight(), screenGetWidth(), COLOR_BLACK);
         windowRefresh(gEndgameEndingSlideshowWindow);
     }
 
@@ -488,15 +506,17 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
         return;
     }
 
+    int width = artGetWidth(background);
+    int height = artGetHeight(background);
     unsigned char* backgroundData = artGetFrameData(background);
     if (backgroundData != nullptr) {
-        blitBufferToBuffer(backgroundData, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH);
-        windowRefresh(gEndgameEndingSlideshowWindow);
-
         endgameEndingLoadPalette(objectTypeFromFid(fid), frameIdFromFid(fid));
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
+
+        endgameEndingRenderFrame(backgroundData, width, height, width);
+        windowRefresh(gEndgameEndingSlideshowWindow);
 
         endgameEndingVoiceOverInit(narratorFileName);
 
@@ -538,7 +558,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
                 break;
             }
 
-            blitBufferToBuffer(backgroundData, ENDGAME_ENDING_WINDOW_WIDTH, ENDGAME_ENDING_WINDOW_HEIGHT, ENDGAME_ENDING_WINDOW_WIDTH, gEndgameEndingSlideshowWindowBuffer, ENDGAME_ENDING_WINDOW_WIDTH);
+            endgameEndingRenderFrame(backgroundData, width, height, width);
             endgameEndingRefreshSubtitles();
             windowRefresh(gEndgameEndingSlideshowWindow);
             soundContinueAll();
@@ -606,12 +626,12 @@ static int endgameEndingSlideshowWindowInit()
         return -1;
     }
 
-    int windowEndgameEndingX = (screenGetWidth() - ENDGAME_ENDING_WINDOW_WIDTH) / 2;
-    int windowEndgameEndingY = (screenGetHeight() - ENDGAME_ENDING_WINDOW_HEIGHT) / 2;
+    int windowEndgameEndingX = 0;
+    int windowEndgameEndingY = 0;
     gEndgameEndingSlideshowWindow = windowCreate(windowEndgameEndingX,
         windowEndgameEndingY,
-        ENDGAME_ENDING_WINDOW_WIDTH,
-        ENDGAME_ENDING_WINDOW_HEIGHT,
+        screenGetWidth(),
+        screenGetHeight(),
         COLOR_BLACK,
         WINDOW_MOVE_ON_TOP);
     if (gEndgameEndingSlideshowWindow == -1) {
@@ -652,6 +672,20 @@ static int endgameEndingSlideshowWindowInit()
     }
 
     return 0;
+}
+
+static void endgameEndingRenderFrame(const unsigned char* data, int width, int height, int pitch)
+{
+    int screenWidth = screenGetWidth();
+    int screenHeight = screenGetHeight();
+    gEndgameEndingFrameBounds = blitBuffer2DCenteredAspectFit(ConstBuffer2D(data, pitch, height),
+        0,
+        0,
+        width,
+        height,
+        Buffer2D(gEndgameEndingSlideshowWindowBuffer, screenWidth, screenHeight),
+        COLOR_BLACK,
+        settings.ui.end_slide_size != 0);
 }
 
 // 0x43FB28 endgame_exit
@@ -856,16 +890,22 @@ static void endgameEndingRefreshSubtitles()
         return;
     }
 
+    int screenWidth = screenGetWidth();
+    int frameWidth = rectGetWidth(&gEndgameEndingFrameBounds);
+    int frameHeight = rectGetHeight(&gEndgameEndingFrameBounds);
+    int textMaxWidth = std::min(540, frameWidth - 20);
+
     short beginnings[WORD_WRAP_MAX_COUNT];
     short count;
-    if (wordWrap(text, 540, beginnings, &count) != 0) {
+    if (textMaxWidth <= 0 || wordWrap(text, textMaxWidth, beginnings, &count) != 0) {
         return;
     }
 
     int height = fontGetLineHeight();
-    int y = 480 - height * count;
+    int lines = count - 1;
+    int y = std::max(gEndgameEndingFrameBounds.top, gEndgameEndingFrameBounds.top + frameHeight - height * lines - 20);
 
-    for (int index = 0; index < count - 1; index++) {
+    for (int index = 0; index < lines; index++) {
         char* beginning = text + beginnings[index];
         char* ending = text + beginnings[index + 1];
 
@@ -877,9 +917,9 @@ static void endgameEndingRefreshSubtitles()
         *ending = '\0';
 
         int width = fontGetStringWidth(beginning);
-        int x = (640 - width) / 2;
-        bufferFill(gEndgameEndingSlideshowWindowBuffer + 640 * y + x, width, height, 640, COLOR_BLACK);
-        fontDrawText(gEndgameEndingSlideshowWindowBuffer + 640 * y + x, beginning, width, 640, COLOR_WHITE);
+        int x = std::max(0, gEndgameEndingFrameBounds.left + (frameWidth - width) / 2);
+        bufferFill(gEndgameEndingSlideshowWindowBuffer + screenWidth * y + x, width, height, screenWidth, COLOR_BLACK);
+        fontDrawText(gEndgameEndingSlideshowWindowBuffer + screenWidth * y + x, beginning, width, screenWidth, COLOR_WHITE);
 
         *ending = c;
 
