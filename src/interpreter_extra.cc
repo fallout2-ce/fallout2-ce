@@ -1941,7 +1941,7 @@ static void opStartGameDialog(Program* program)
         gGameDialogHeadFid = FrmId(head).fid();
     }
 
-    gameDialogSetBackground(FrmId(background));
+    gameDialogSetBackground(background);
     gGameDialogReactionOrFidget = reactionLevel;
 
     // SFALL: Use the start_gdialog target instead of the current dialog target,

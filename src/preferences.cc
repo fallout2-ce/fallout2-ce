@@ -214,17 +214,17 @@ static const double kTextLineDelayScale = 0.2;
 static const double kTextLineDelayRange = 2.0;
 
 // 0x5197CC prfgrphs
-static constexpr FrmId kPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::PreferencesScreen),
-    FrmId(InterfaceFrameId::PreferencesSliderOff),
-    FrmId(InterfaceFrameId::PreferencesBackground),
-    FrmId(InterfaceFrameId::PreferencesBackgroundLeft),
-    FrmId(InterfaceFrameId::PreferencesXIn),
-    FrmId(InterfaceFrameId::PreferencesXOut),
-    FrmId(InterfaceFrameId::PreferencesCover),
-    FrmId(InterfaceFrameId::PreferencesSliderOn),
-    FrmId(InterfaceFrameId::LittleRedButtonUp),
-    FrmId(InterfaceFrameId::LittleRedButtonDown),
+static constexpr InterfaceFrmId kPreferencesWindowFrmIds[PREFERENCES_WINDOW_FRM_COUNT] = {
+    InterfaceFrameId::PreferencesScreen,
+    InterfaceFrameId::PreferencesSliderOff,
+    InterfaceFrameId::PreferencesBackground,
+    InterfaceFrameId::PreferencesBackgroundLeft,
+    InterfaceFrameId::PreferencesXIn,
+    InterfaceFrameId::PreferencesXOut,
+    InterfaceFrameId::PreferencesCover,
+    InterfaceFrameId::PreferencesSliderOn,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
 };
 
 // 0x6637E8 optn_msgfl

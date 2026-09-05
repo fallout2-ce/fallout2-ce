@@ -759,12 +759,12 @@ char* perkGetDescription(Perk perk)
 }
 
 // 0x496BD8 perk_skilldex_fid
-FrmId perkGetFrmId(Perk perk)
+SkillDexFrmId perkGetFrmId(Perk perk)
 {
     if (!perkIsValid(perk)) {
-        return FrmId::Empty();
+        return SkillDexFrameId::Invalid;
     }
-    return FrmId(gPerkDescriptions[perk].frmId);
+    return gPerkDescriptions[perk].frmId;
 }
 
 bool perkSetProperty(Perk perk, PerkProperty property, int value)

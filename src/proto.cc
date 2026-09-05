@@ -409,8 +409,8 @@ int proto_item_subdata_init(Proto* proto, ItemType type)
         }
 
         proto->item.data.armor.perk = PERK_INVALID;
-        proto->item.data.armor.maleFid = CRITTER_FRM_ID_INVALID;
-        proto->item.data.armor.femaleFid = CRITTER_FRM_ID_INVALID;
+        proto->item.data.armor.maleFid = -1;
+        proto->item.data.armor.femaleFid = -1;
         break;
     case ITEM_TYPE_CONTAINER:
         proto->item.data.container.openFlags = 0;
@@ -1568,8 +1568,8 @@ static int protoItemDataRead(ItemProtoData* item_data, ItemType type, File* stre
         if (fileReadInt32List(stream, item_data->armor.damageResistance, 7) == -1) return -1;
         if (fileReadInt32List(stream, item_data->armor.damageThreshold, 7) == -1) return -1;
         if (fileReadInt32Enum<Perk>(stream, &(item_data->armor.perk)) == -1) return -1;
-        if (fileReadInt32Enum<CritterFrameId>(stream, &(item_data->armor.maleFid)) == -1) return -1;
-        if (fileReadInt32Enum<CritterFrameId>(stream, &(item_data->armor.femaleFid)) == -1) return -1;
+        if (fileReadInt32(stream, &(item_data->armor.maleFid)) == -1) return -1;
+        if (fileReadInt32(stream, &(item_data->armor.femaleFid)) == -1) return -1;
 
         return 0;
     case ITEM_TYPE_CONTAINER:
@@ -1754,8 +1754,8 @@ static int protoItemDataWrite(ItemProtoData* item_data, ItemType type, File* str
         if (fileWriteInt32List(stream, item_data->armor.damageResistance, 7) == -1) return -1;
         if (fileWriteInt32List(stream, item_data->armor.damageThreshold, 7) == -1) return -1;
         if (fileWriteInt32Enum<Perk>(stream, item_data->armor.perk) == -1) return -1;
-        if (fileWriteInt32Enum<CritterFrameId>(stream, item_data->armor.maleFid) == -1) return -1;
-        if (fileWriteInt32Enum<CritterFrameId>(stream, item_data->armor.femaleFid) == -1) return -1;
+        if (fileWriteInt32(stream, item_data->armor.maleFid) == -1) return -1;
+        if (fileWriteInt32(stream, item_data->armor.femaleFid) == -1) return -1;
 
         return 0;
     case ITEM_TYPE_CONTAINER:

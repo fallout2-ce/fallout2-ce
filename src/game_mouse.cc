@@ -74,34 +74,34 @@ static int gGameMouseCursor = MOUSE_CURSOR_NONE;
 static CacheEntry* gGameMouseCursorFrmHandle = INVALID_CACHE_ENTRY;
 
 // 0x518C14 gmouse_cursor_nums
-static constexpr FrmId kGameMouseCursorFrmIds[MOUSE_CURSOR_TYPE_COUNT] = {
-    FrmId(InterfaceFrameId::MouseCursorBlank),
-    FrmId(InterfaceFrameId::MouseCursorStandardArrow),
-    FrmId(InterfaceFrameId::MouseCursorSmallUpArrow),
-    FrmId(InterfaceFrameId::MouseCursorSmallDownArrow),
-    FrmId(InterfaceFrameId::MouseCursorScrollNorthWest),
-    FrmId(InterfaceFrameId::MouseCursorScrollNorth),
-    FrmId(InterfaceFrameId::MouseCursorScrollNorthEast),
-    FrmId(InterfaceFrameId::MouseCursorScrollEast),
-    FrmId(InterfaceFrameId::MouseCursorScrollSouthEast),
-    FrmId(InterfaceFrameId::MouseCursorScrollSouth),
-    FrmId(InterfaceFrameId::MouseCursorScrollSouthWest),
-    FrmId(InterfaceFrameId::MouseCursorScrollWest),
-    FrmId(InterfaceFrameId::MouseCursorInvalidScrollNorthWest),
-    FrmId(InterfaceFrameId::MouseCursorInvalidScrollNorth),
-    FrmId(InterfaceFrameId::MouseCursorInvalidScrollNorthEast),
-    FrmId(InterfaceFrameId::MouseCursorInvalidScrollEast),
-    FrmId(InterfaceFrameId::MouseCursorInvalidScrollSouthEast),
-    FrmId(InterfaceFrameId::MouseCursorInvalidScrollSouth),
-    FrmId(InterfaceFrameId::MouseCursorInvalidScrollSouthWest),
-    FrmId(InterfaceFrameId::MouseCursorInvalidScrollWest),
-    FrmId(InterfaceFrameId::MouseCursorCrosshair),
-    FrmId(InterfaceFrameId::MouseCursorPlus),
-    FrmId(InterfaceFrameId::MouseCursorDestroy),
-    FrmId(InterfaceFrameId::MouseCursorUseCrosshair),
-    FrmId(InterfaceFrameId::MouseCursorSingleFrameWatch),
-    FrmId(InterfaceFrameId::MouseCursorWaitPlanet),
-    FrmId(InterfaceFrameId::MouseCursorWaitWatch),
+static constexpr InterfaceFrmId kGameMouseCursorFrmIds[MOUSE_CURSOR_TYPE_COUNT] = {
+    InterfaceFrameId::MouseCursorBlank,
+    InterfaceFrameId::MouseCursorStandardArrow,
+    InterfaceFrameId::MouseCursorSmallUpArrow,
+    InterfaceFrameId::MouseCursorSmallDownArrow,
+    InterfaceFrameId::MouseCursorScrollNorthWest,
+    InterfaceFrameId::MouseCursorScrollNorth,
+    InterfaceFrameId::MouseCursorScrollNorthEast,
+    InterfaceFrameId::MouseCursorScrollEast,
+    InterfaceFrameId::MouseCursorScrollSouthEast,
+    InterfaceFrameId::MouseCursorScrollSouth,
+    InterfaceFrameId::MouseCursorScrollSouthWest,
+    InterfaceFrameId::MouseCursorScrollWest,
+    InterfaceFrameId::MouseCursorInvalidScrollNorthWest,
+    InterfaceFrameId::MouseCursorInvalidScrollNorth,
+    InterfaceFrameId::MouseCursorInvalidScrollNorthEast,
+    InterfaceFrameId::MouseCursorInvalidScrollEast,
+    InterfaceFrameId::MouseCursorInvalidScrollSouthEast,
+    InterfaceFrameId::MouseCursorInvalidScrollSouth,
+    InterfaceFrameId::MouseCursorInvalidScrollSouthWest,
+    InterfaceFrameId::MouseCursorInvalidScrollWest,
+    InterfaceFrameId::MouseCursorCrosshair,
+    InterfaceFrameId::MouseCursorPlus,
+    InterfaceFrameId::MouseCursorDestroy,
+    InterfaceFrameId::MouseCursorUseCrosshair,
+    InterfaceFrameId::MouseCursorSingleFrameWatch,
+    InterfaceFrameId::MouseCursorWaitPlanet,
+    InterfaceFrameId::MouseCursorWaitWatch,
 };
 
 // 0x518C80 gmouse_3d_initialized
@@ -234,17 +234,17 @@ static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_COUNT = 2;
 static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_HIGHLIGHTED = 0;
 static constexpr int GAME_MOUSE_ACTION_MENU_ITEM_FRAME_NORMAL = 1;
 
-static constexpr FrmId kGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_COUNT] = {
-    { FrmId(InterfaceFrameId::CancelHighlighted), FrmId(InterfaceFrameId::Cancel) },
-    { FrmId(InterfaceFrameId::DropHighlighted), FrmId(InterfaceFrameId::Drop) },
-    { FrmId(InterfaceFrameId::InventoryHighlighted), FrmId(InterfaceFrameId::Inventory) },
-    { FrmId(InterfaceFrameId::LookHighlighted), FrmId(InterfaceFrameId::Look) },
-    { FrmId(InterfaceFrameId::RotateHighlighted), FrmId(InterfaceFrameId::Rotate) },
-    { FrmId(InterfaceFrameId::TalkHighlighted), FrmId(InterfaceFrameId::Talk) },
-    { FrmId(InterfaceFrameId::UseGetHighlighted), FrmId(InterfaceFrameId::UseGet) },
-    { FrmId(InterfaceFrameId::UnloadHighlighted), FrmId(InterfaceFrameId::Unload) },
-    { FrmId(InterfaceFrameId::SkillHighlighted), FrmId(InterfaceFrameId::Skill) },
-    { FrmId(InterfaceFrameId::PushHighlighted), FrmId(InterfaceFrameId::Push) },
+static constexpr InterfaceFrmId kGameMouseActionMenuItemFrmIds[GAME_MOUSE_ACTION_MENU_ITEM_COUNT][GAME_MOUSE_ACTION_MENU_ITEM_FRAME_COUNT] = {
+    { InterfaceFrameId::CancelHighlighted, InterfaceFrameId::Cancel },
+    { InterfaceFrameId::DropHighlighted, InterfaceFrameId::Drop },
+    { InterfaceFrameId::InventoryHighlighted, InterfaceFrameId::Inventory },
+    { InterfaceFrameId::LookHighlighted, InterfaceFrameId::Look },
+    { InterfaceFrameId::RotateHighlighted, InterfaceFrameId::Rotate },
+    { InterfaceFrameId::TalkHighlighted, InterfaceFrameId::Talk },
+    { InterfaceFrameId::UseGetHighlighted, InterfaceFrameId::UseGet },
+    { InterfaceFrameId::UnloadHighlighted, InterfaceFrameId::Unload },
+    { InterfaceFrameId::SkillHighlighted, InterfaceFrameId::Skill },
+    { InterfaceFrameId::PushHighlighted, InterfaceFrameId::Push },
 };
 
 // 0x518D34 gmouse_3d_modes_enabled

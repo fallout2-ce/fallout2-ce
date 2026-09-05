@@ -243,12 +243,12 @@ static int _displayMapList[AUTOMAP_MAP_COUNT] = {
 };
 
 // 0x41B7E0
-static constexpr FrmId kAutomapFrmIds[AUTOMAP_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::AutomapWindow),
-    FrmId(InterfaceFrameId::LittleRedButtonUp),
-    FrmId(InterfaceFrameId::LittleRedButtonDown),
-    FrmId(InterfaceFrameId::AutoUp),
-    FrmId(InterfaceFrameId::AutoDown),
+static constexpr InterfaceFrmId kAutomapFrmIds[AUTOMAP_FRM_COUNT] = {
+    InterfaceFrameId::AutomapWindow,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
+    InterfaceFrameId::AutoUp,
+    InterfaceFrameId::AutoDown,
 };
 
 // 0x5108C4 autoflags

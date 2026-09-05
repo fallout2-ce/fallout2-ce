@@ -787,9 +787,9 @@ char* skillGetAttributes(Skill skill)
 }
 
 // 0x4AAC08
-FrmId skillGetFrmId(Skill skill)
+SkillDexFrmId skillGetFrmId(Skill skill)
 {
-    return skillIsValid(skill) ? FrmId(gSkillDescriptions[skill].frmId) : FrmId::Empty();
+    return skillIsValid(skill) ? gSkillDescriptions[skill].frmId : SkillDexFrameId::Invalid;
 }
 
 // 0x4AAC2C

@@ -59,18 +59,18 @@ struct OptionsMenuButtonSpec {
 };
 
 // 0x48FC0C
-static constexpr FrmId kPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::CharacterWindow),
-    FrmId(InterfaceFrameId::DoneBox),
-    FrmId(InterfaceFrameId::LittleRedButtonUp),
-    FrmId(InterfaceFrameId::LittleRedButtonDown),
+static constexpr InterfaceFrmId kPauseWindowFrmIds[PAUSE_WINDOW_FRM_COUNT] = {
+    InterfaceFrameId::CharacterWindow,
+    InterfaceFrameId::DoneBox,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
 };
 
 // 0x5197C0 opgrphs
-static constexpr FrmId kOptionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::OptionsBase),
-    FrmId(InterfaceFrameId::OptionsButtonOn),
-    FrmId(InterfaceFrameId::OptionsButtonOff),
+static constexpr InterfaceFrmId kOptionsWindowFrmIds[OPTIONS_WINDOW_FRM_COUNT] = {
+    InterfaceFrameId::OptionsBase,
+    InterfaceFrameId::OptionsButtonOn,
+    InterfaceFrameId::OptionsButtonOff,
 };
 
 // 0x6637E8 optn_msgfl

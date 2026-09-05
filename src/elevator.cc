@@ -60,10 +60,10 @@ static int elevatorGetLevelFromKeyCode(int elevator, int keyCode);
 static int elevatorGetLevelFromEscKey(int elevator, int map);
 
 // 0x43E950 grph_id_2
-static constexpr FrmId kElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::MapElevatorButtonIn),
-    FrmId(InterfaceFrameId::MapElevatorButtonOut),
-    FrmId(InterfaceFrameId::MapElevatorGaj000),
+static constexpr InterfaceFrmId kElevatorFrmIds[ELEVATOR_FRM_COUNT] = {
+    InterfaceFrameId::MapElevatorButtonIn,
+    InterfaceFrameId::MapElevatorButtonOut,
+    InterfaceFrameId::MapElevatorGaj000,
 };
 
 // 0x43E95C intotal

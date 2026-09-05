@@ -205,9 +205,9 @@ char* traitGetDescription(Trait trait)
 // out of range.
 //
 // 0x4B3BA8 trait_pic
-FrmId traitGetFrmId(Trait trait)
+SkillDexFrmId traitGetFrmId(Trait trait)
 {
-    return traitIsValid(trait) ? FrmId(traitDescriptions[trait].frmId) : FrmId::Empty();
+    return traitIsValid(trait) ? traitDescriptions[trait].frmId : SkillDexFrameId::Invalid;
 }
 
 // Returns `true` if the specified trait is selected.
