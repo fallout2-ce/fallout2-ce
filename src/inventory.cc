@@ -1556,15 +1556,15 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
 
     CritterFrameId inventoryFid = _art_vault_guy_num;
     if (protoGetProto(basePid, &proto) != -1) {
-        inventoryFid = critterFrameIdFromFid(proto->fid);
+        inventoryFid = FrmId(proto->fid).frameId().critter;
     }
 
     if (armor != nullptr) {
         if (protoGetProto(armor->pid, &proto) != -1 && proto != nullptr) {
             if (critterGetStat(critter, STAT_GENDER) == GENDER_FEMALE) {
-                inventoryFid = proto->item.data.armor.femaleFid;
+                inventoryFid = FrmId(proto->item.data.armor.femaleFid).frameId().critter;
             } else {
-                inventoryFid = proto->item.data.armor.maleFid;
+                inventoryFid = FrmId(proto->item.data.armor.maleFid).frameId().critter;
             }
 
             if (inventoryFid == CRITTER_FRM_ID_INVALID) {
