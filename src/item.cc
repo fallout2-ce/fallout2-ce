@@ -2306,7 +2306,7 @@ Perk armorGetPerk(Object* armor)
 }
 
 // 0x479380
-CritterFrameId armorGetMaleFid(Object* armor)
+CritterFrameId armorGetMaleFrameId(Object* armor)
 {
     if (armor == nullptr) {
         return CritterFrameId::Invalid;
@@ -2319,7 +2319,7 @@ CritterFrameId armorGetMaleFid(Object* armor)
 }
 
 // 0x4793A8
-CritterFrameId armorGetFemaleFid(Object* armor)
+CritterFrameId armorGetFemaleFrameId(Object* armor)
 {
     if (armor == nullptr) {
         return CritterFrameId::Invalid;
