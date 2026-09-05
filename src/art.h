@@ -240,10 +240,6 @@ template <typename T>
 struct MapFrameIdToObjectType;
 
 template <>
-struct MapFrameIdToObjectType<MiscFrameId> {
-    static constexpr ObjectType value = OBJ_TYPE_MISC;
-};
-template <>
 struct MapFrameIdToObjectType<SceneryFrameId> {
     static constexpr ObjectType value = OBJ_TYPE_SCENERY;
 };
@@ -296,7 +292,6 @@ public:
     using FrmId::operator!=;
 };
 
-using MiscFrmId = TypedFrmId<OBJ_TYPE_MISC, MiscFrameId>;
 using SceneryFrmId = TypedFrmId<OBJ_TYPE_SCENERY, SceneryFrameId>;
 using WallFrmId = TypedFrmId<OBJ_TYPE_WALL, WallFrameId>;
 using ItemFrmId = TypedFrmId<OBJ_TYPE_ITEM, ItemFrameId>;
@@ -341,6 +336,27 @@ public:
 
     constexpr HeadFrmId(const char* path)
         : FrmId(OBJ_TYPE_HEAD, path)
+    {
+    }
+
+    using FrmId::operator==;
+    using FrmId::operator!=;
+};
+
+class MiscFrmId : public FrmId {
+public:
+    constexpr MiscFrmId()
+        : FrmId()
+    {
+    }
+
+    constexpr MiscFrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
+        : FrmId(misc, animType)
+    {
+    }
+
+    constexpr MiscFrmId(const char* path)
+        : FrmId(OBJ_TYPE_MISC, path)
     {
     }
 
