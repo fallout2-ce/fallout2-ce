@@ -81,7 +81,7 @@ public:
     constexpr explicit FrmId(int fid)
         : _objectType(objectTypeFromFid(fid))
         , _fid(fid)
-        , _frameId { frameIdFromFid(fid) }
+        , _frameId { buildFrameId(fid) }
         , _path(nullptr)
     {
     }
@@ -89,7 +89,7 @@ public:
     constexpr explicit FrmId(MiscFrameId misc, AnimationType animType = ANIM_STAND)
         : _objectType(OBJ_TYPE_MISC)
         , _fid(buildFid(OBJ_TYPE_MISC, static_cast<int>(misc), animType))
-        , _frameId { static_cast<int>(misc) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(misc)) }
         , _path(nullptr)
     {
     }
@@ -97,7 +97,7 @@ public:
     constexpr explicit FrmId(SceneryFrameId scenery)
         : _objectType(OBJ_TYPE_SCENERY)
         , _fid(buildFid(OBJ_TYPE_SCENERY, static_cast<int>(scenery)))
-        , _frameId { static_cast<int>(scenery) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(scenery)) }
         , _path(nullptr)
     {
     }
@@ -105,7 +105,7 @@ public:
     constexpr explicit FrmId(WallFrameId wall)
         : _objectType(OBJ_TYPE_WALL)
         , _fid(buildFid(OBJ_TYPE_WALL, static_cast<int>(wall)))
-        , _frameId { static_cast<int>(wall) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(wall)) }
         , _path(nullptr)
     {
     }
@@ -113,7 +113,7 @@ public:
     constexpr explicit FrmId(ItemFrameId item)
         : _objectType(OBJ_TYPE_ITEM)
         , _fid(buildFid(OBJ_TYPE_ITEM, static_cast<int>(item)))
-        , _frameId { static_cast<int>(item) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(item)) }
         , _path(nullptr)
     {
     }
@@ -121,7 +121,7 @@ public:
     constexpr explicit FrmId(TileFrameId tile)
         : _objectType(OBJ_TYPE_TILE)
         , _fid(buildFid(OBJ_TYPE_TILE, static_cast<int>(tile)))
-        , _frameId { static_cast<int>(tile) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(tile)) }
         , _path(nullptr)
     {
     }
@@ -129,7 +129,7 @@ public:
     constexpr explicit FrmId(SkillDexFrameId skilldex)
         : _objectType(OBJ_TYPE_SKILLDEX)
         , _fid(buildFid(OBJ_TYPE_SKILLDEX, static_cast<int>(skilldex)))
-        , _frameId { static_cast<int>(skilldex) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(skilldex)) }
         , _path(nullptr)
     {
     }
@@ -137,7 +137,7 @@ public:
     constexpr explicit FrmId(InterfaceFrameId interface)
         : _objectType(OBJ_TYPE_INTERFACE)
         , _fid(buildFid(OBJ_TYPE_INTERFACE, static_cast<int>(interface)))
-        , _frameId { static_cast<int>(interface) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(interface)) }
         , _path(nullptr)
     {
     }
@@ -150,7 +150,7 @@ public:
     constexpr explicit FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
         : _objectType(OBJ_TYPE_HEAD)
         , _fid(buildFid(OBJ_TYPE_HEAD, static_cast<int>(head), headAnimation, fidget))
-        , _frameId { static_cast<int>(head) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(head)) }
         , _path(nullptr)
     {
     }
@@ -158,7 +158,7 @@ public:
     constexpr explicit FrmId(BackgroundFrameId background)
         : _objectType(OBJ_TYPE_BACKGROUND)
         , _fid(buildFid(OBJ_TYPE_BACKGROUND, static_cast<int>(background)))
-        , _frameId { static_cast<int>(background) & kMaxFrameId }
+        , _frameId { buildFrameId(static_cast<int>(background)) }
         , _path(nullptr)
     {
     }
@@ -213,6 +213,8 @@ private:
     FrameId _frameId;
 
     const char* _path;
+
+    constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }
 
     /* FID Structure:
         3 bits for rotation

@@ -1629,7 +1629,7 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
 FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(OBJ_TYPE_CRITTER)
     , _fid(buildObjectFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation))
-    , _frameId { static_cast<int>(critter) & kMaxFrameId }
+    , _frameId { buildFrameId(static_cast<int>(critter)) }
     , _path(nullptr)
 {
 }
@@ -1637,7 +1637,7 @@ FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation wea
 FrmId::FrmId(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(objectType)
     , _fid(buildObjectFid(objectType, frmId, animType, weaponAnimation, rotation))
-    , _frameId { frmId & kMaxFrameId }
+    , _frameId { buildFrameId(frmId) }
     , _path(nullptr)
 {
     assert(objectTypeIsValid(objectType));
@@ -1646,7 +1646,7 @@ FrmId::FrmId(ObjectType objectType, int frmId, AnimationType animType, WeaponAni
 FrmId::FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(object == nullptr ? OBJ_TYPE_INVALID : objectTypeFromFid(object->fid))
     , _fid(object == nullptr ? kEmptyFid : buildObjectFid(objectTypeFromFid(object->fid), frameIdFromFid(object->fid), animType, weaponAnimation, rotation))
-    , _frameId { object == nullptr ? kInvalidFrameId : frameIdFromFid(object->fid) }
+    , _frameId { object == nullptr ? kInvalidFrameId : buildFrameId(object->fid) }
     , _path(nullptr)
 {
 }
