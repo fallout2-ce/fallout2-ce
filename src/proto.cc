@@ -1052,9 +1052,9 @@ int proto_misc_init(Proto* proto, int pid)
 
     proto->misc.pid = -1;
     proto->misc.messageId = 100 * num;
-    proto->misc.fid = FrmId(static_cast<MiscFrameId>(num - 1)).fid();
+    proto->misc.fid = MiscFrmId(static_cast<MiscFrameId>(num - 1)).fid();
     if (!artExists(proto->misc.fid)) {
-        proto->misc.fid = FrmId(MiscFrameId::Reserved).fid();
+        proto->misc.fid = MiscFrmId(MiscFrameId::Reserved).fid();
     }
     proto->misc.lightDistance = 0;
     proto->misc.lightIntensity = 0;

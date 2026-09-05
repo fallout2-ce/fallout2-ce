@@ -430,27 +430,9 @@ enum class MiscFrameId : int {
     ScrollBlocker = 12, // scrblk.frm
     FireExplosion = 29, //expa.frm
     PlasmaExplosion = 31, //expp.frm
+    Exit2Grid1 = 33, // ext2grd1.frm
+    Exit3Grid8 = 48, // ext3grd8.frm
 };
-
-inline constexpr MiscFrameId operator+(MiscFrameId lhs, int rhs)
-{
-    return static_cast<MiscFrameId>(static_cast<int>(lhs) + rhs);
-}
-
-inline constexpr MiscFrameId operator-(MiscFrameId lhs, int rhs)
-{
-    return static_cast<MiscFrameId>(static_cast<int>(lhs) - rhs);
-}
-
-inline MiscFrameId miscFrameIdFromFid(int fid)
-{
-    return static_cast<MiscFrameId>(frameIdFromFid(fid));
-}
-
-inline MiscFrameId miscFrameIdFromPid(int pid)
-{
-    return static_cast<MiscFrameId>(frameIdFromPid(pid));
-}
 
 enum class InterfaceFrameId : int {
     Invalid = -1, // invalid frame id

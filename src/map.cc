@@ -1061,7 +1061,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        objectCreateWithFidPid(&object, FrmId(MiscFrameId::ScrollBlocker).fid(), -1);
+        objectCreateWithFidPid(&object, MiscFrmId(MiscFrameId::ScrollBlocker).fid(), -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
         object->sid = gMapSid;
