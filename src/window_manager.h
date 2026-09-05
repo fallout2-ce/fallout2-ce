@@ -233,7 +233,7 @@ int _GNW_check_menu_bars(int input);
 void programWindowSetTitle(const char* title);
 bool showMessageBox(const char* str);
 int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEventCode = -1, int mouseExitEventCode = -1, int mouseDownEventCode = -1, int mouseUpEventCode = -1, unsigned char* normal = nullptr, unsigned char* pressed = nullptr, unsigned char* hover = nullptr, int flags = 0);
-// Same as buttonCreate, but accepts FrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
+// Same as buttonCreate, but accepts InterfaceFrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.
 // Only normalId is required to be non-empty.
 int buttonCreateWithFrm(int win, int x, int y, int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode, const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId = {}, const InterfaceFrmId& hoverId = {}, int flags = 0);
 // Same as _win_register_button_disable, but accepts FrmId instead of direct data pointers. Frames will be locked from cache and unlocked automatically when the button is destroyed.

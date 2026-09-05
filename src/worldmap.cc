@@ -808,7 +808,7 @@ static const char* wmFormationStrs[ENCOUNTER_FORMATION_TYPE_COUNT] = {
     "huddle",
 };
 
-// 0x51DE84 wmRndCursorFids
+// 0x51DE84 wmRndCursorFrmIds
 constexpr InterfaceFrmId wmRndCursorFrmIds[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
     InterfaceFrameId::WorldMapFightIcon1,
     InterfaceFrameId::WorldMapFightIcon2,
