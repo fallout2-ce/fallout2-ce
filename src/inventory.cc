@@ -1567,7 +1567,7 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
                 inventoryFid = FrmId(proto->item.data.armor.maleFid).frameId().critter;
             }
 
-            if (inventoryFid == CRITTER_FRM_ID_INVALID) {
+            if (inventoryFid == CritterFrameId::Invalid) {
                 inventoryFid = _art_vault_guy_num;
             }
         }
@@ -3885,8 +3885,8 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
             baseFrmId = armorGetMaleFid(item);
         }
 
-        if (baseFrmId == CRITTER_FRM_ID_INVALID) {
-            baseFrmId = CRITTER_FRM_ID_1;
+        if (baseFrmId == CritterFrameId::Invalid) {
+            baseFrmId = CritterFrameId::First;
         }
 
         if (critter == gDude) {

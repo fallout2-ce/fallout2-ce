@@ -486,11 +486,11 @@ int proto_critter_init(Proto* proto, int pid)
         return -1;
     }
 
-    CritterFrameId num = critterFrameIdFromPid(pid);
+    int num = frameIdFromPid(pid);
 
     proto->pid = -1;
     proto->messageId = 100 * num;
-    proto->fid = FrmId(num - 1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
+    proto->fid = CritterFrmId(static_cast<CritterFrameId>(num - 1), ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
     proto->critter.lightDistance = 0;
     proto->critter.lightIntensity = 0;
     proto->critter.flags = PROTO_FLAG_LIGHT_THRU;
@@ -502,7 +502,7 @@ int proto_critter_init(Proto* proto, int pid)
     proto->critter.aiPacket = 1;
     proto->critter.team = 0;
     if (!artExists(proto->fid)) {
-        proto->fid = FrmId(CRITTER_FRM_ID_FIRST, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
+        proto->fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
     }
 
     CritterProtoData* data = &(proto->critter.data);
@@ -1366,7 +1366,7 @@ int protoInit()
     proto_critter_init((Proto*)&gDudeProto, 0x1000000);
 
     gDudeProto.pid = 0x1000000;
-    gDudeProto.fid = FrmId(CRITTER_FRM_ID_1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
+    gDudeProto.fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
 
     gDude->pid = 0x1000000;
     gDude->sid = 1;
@@ -1482,7 +1482,7 @@ void protoReset()
     // TODO: Get rid of cast.
     proto_critter_init((Proto*)&gDudeProto, 0x1000000);
     gDudeProto.pid = 0x1000000;
-    gDudeProto.fid = FrmId(CRITTER_FRM_ID_1, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
+    gDudeProto.fid = CritterFrmId(CritterFrameId::First, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE).fid();
 
     gDude->pid = 0x1000000;
     gDude->sid = -1;

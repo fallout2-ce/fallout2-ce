@@ -105,7 +105,7 @@ static const char* _head2 = "vfngfbnfvppp";
 // Current native look base fid.
 //
 // 0x5108A4 art_vault_guy_num
-CritterFrameId _art_vault_guy_num = CRITTER_FRM_ID_FIRST;
+CritterFrameId _art_vault_guy_num = CritterFrameId::First;
 
 // Base fids for unarmored dude.
 //
@@ -231,18 +231,19 @@ int artInit()
     configGetString(&gContentConfig, CONTENT_CONFIG_START_SECTION, "model_female", &tribalFemaleFileName, gDefaultTribalFemaleFileName);
 
     char* critterFileNames = gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames;
-    for (CritterFrameId critterIndex = CRITTER_FRM_ID_FIRST; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
+    for (int critterIndex = 0; critterIndex < gArtListDescriptions[OBJ_TYPE_CRITTER].fileNamesLength; critterIndex++) {
+        const CritterFrameId critterFrameId = static_cast<CritterFrameId>(critterIndex);
         if (compat_stricmp(critterFileNames, jumpsuitMaleFileName) == 0) {
-            _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_MALE] = critterIndex;
+            _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_MALE] = critterFrameId;
         } else if (compat_stricmp(critterFileNames, jumpsuitFemaleFileName) == 0) {
-            _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_FEMALE] = critterIndex;
+            _art_vault_person_nums[DUDE_NATIVE_LOOK_JUMPSUIT][GENDER_FEMALE] = critterFrameId;
         }
 
         if (compat_stricmp(critterFileNames, tribalMaleFileName) == 0) {
-            _art_vault_person_nums[DUDE_NATIVE_LOOK_TRIBAL][GENDER_MALE] = critterIndex;
-            _art_vault_guy_num = critterIndex;
+            _art_vault_person_nums[DUDE_NATIVE_LOOK_TRIBAL][GENDER_MALE] = critterFrameId;
+            _art_vault_guy_num = critterFrameId;
         } else if (compat_stricmp(critterFileNames, tribalFemaleFileName) == 0) {
-            _art_vault_person_nums[DUDE_NATIVE_LOOK_TRIBAL][GENDER_FEMALE] = critterIndex;
+            _art_vault_person_nums[DUDE_NATIVE_LOOK_TRIBAL][GENDER_FEMALE] = critterFrameId;
         }
 
         critterFileNames += 13;
@@ -960,14 +961,14 @@ bool _art_fid_valid(int fid)
 // 0x419998
 CritterFrameId _art_alias_num(CritterFrameId index)
 {
-    return _anon_alias[index];
+    return _anon_alias[static_cast<int>(index)];
 }
 
 // 0x4199AC
 int artCritterFidShouldRun(int fid)
 {
     if (objectTypeFromFid(fid) == OBJ_TYPE_CRITTER) {
-        return gArtCritterFidShoudRunData[critterFrameIdFromFid(fid)];
+        return gArtCritterFidShoudRunData[frameIdFromFid(fid)];
     }
 
     return 0;
@@ -992,7 +993,7 @@ int artAliasFid(int fid)
             // NOTE: Original code is slightly different. It uses many mutually
             // mirrored bitwise operators. Probably result of some macros for
             // getting/setting individual bits on fid.
-            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | critterFrameIdFromFid(_anon_alias[critterFrameIdFromFid(fid)]);
+            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | static_cast<int>(_anon_alias[frameIdFromFid(fid)]);
         }
     }
 
@@ -1628,7 +1629,7 @@ std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path)
 
 FrmId::FrmId(CritterFrameId critter, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation)
     : _objectType(OBJ_TYPE_CRITTER)
-    , _fid(buildObjectFid(OBJ_TYPE_CRITTER, critter, animType, weaponAnimation, rotation))
+    , _fid(buildObjectFid(OBJ_TYPE_CRITTER, static_cast<int>(critter),, animType, weaponAnimation, rotation))
     , _frameId { buildFrameId(static_cast<int>(critter)) }
     , _path(nullptr)
 {
