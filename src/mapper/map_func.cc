@@ -463,8 +463,8 @@ void placeTile(int pid, const FrmId& frmId)
     int oldValue = *squarePtr;
 
     if (tileRoofIsVisible()) {
-        const TileFrmId oldRoofFid = FrmId(oldValue >> 16).frameId().tile;
-        if (oldRoofFid == frmId) {
+        const TileFrmId oldRoofFrmId = FrmId(oldValue >> 16).frameId().tile;
+        if (oldRoofFrmId == frmId) {
             return;
         }
 
@@ -478,8 +478,8 @@ void placeTile(int pid, const FrmId& frmId)
         Rect rect = { sx, sy, sx + 80, sy + 36 };
         tileWindowRefreshRect(&rect, gElevation);
     } else {
-        const TileFrmId oldFloorFid = FrmId(oldValue).frameId().tile;
-        if (oldFloorFid == frmId) {
+        const TileFrmId oldFloorFrmId = FrmId(oldValue).frameId().tile;
+        if (oldFloorFrmId == frmId) {
             return;
         }
 
