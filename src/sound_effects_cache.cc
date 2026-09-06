@@ -446,7 +446,7 @@ static int soundEffectsCreate(int* handlePtr, int tag, void* data, CacheEntry* c
 // 0x4A961C
 static bool soundEffectsIsValidHandle(int handle)
 {
-    if (handle >= SOUND_EFFECTS_MAX_COUNT) {
+    if (handle < 0 || handle >= SOUND_EFFECTS_MAX_COUNT) {
         return false;
     }
 

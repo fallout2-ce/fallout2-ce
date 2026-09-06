@@ -817,7 +817,7 @@ static void opCancel(Program* program)
 {
     const int data = programStackPopInteger(program);
 
-    if (data >= program->procedureCount()) {
+    if (data < 0 || data >= program->procedureCount()) {
         programFatalError("Invalid procedure offset given to cancel");
     }
 

@@ -2003,7 +2003,7 @@ static int _proto_find_free_subnode(ObjectType type, Proto** protoPtr)
     if (protoList->head != nullptr) {
         if (protoListExtent->length == PROTO_LIST_EXTENT_SIZE) {
             ProtoListExtent* newExtent = protoListExtent->next = (ProtoListExtent*)internal_malloc(sizeof(ProtoListExtent));
-            if (protoListExtent == nullptr) {
+            if (newExtent == nullptr) {
                 internal_free(proto);
                 *protoPtr = nullptr;
                 return -1;
