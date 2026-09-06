@@ -459,9 +459,9 @@ int objectRead(Object* obj, File* stream)
             constexpr int kExit2Grid1FrameId = MiscFrmId(MiscFrameId::Exit2Grid1).frameId().id;
             constexpr int kExit3Grid8FrameId = MiscFrmId(MiscFrameId::Exit3Grid8).frameId().id;
             constexpr int kExitGridCount = kExit3Grid8FrameId - kExit2Grid1FrameId + 1;
-            const int kObjectFrameId = FrmId(obj->fid).frameId().id;
-            if (kObjectFrameId < kExit2Grid1FrameId) {
-                obj->fid = MiscFrmId(static_cast<MiscFrameId>(kObjectFrameId + kExitGridCount), animationTypeFromFid(obj->fid)).fid();
+            const FrmId frmId = FrmId(obj->fid);
+            if (frmId.valid() && frmId.frameId().id < kExit2Grid1FrameId) {
+                obj->fid = MiscFrmId(static_cast<MiscFrameId>(frmId.frameId().id + kExitGridCount), animationTypeFromFid(obj->fid)).fid();
             }
         }
     } else {
