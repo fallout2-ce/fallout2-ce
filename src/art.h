@@ -345,6 +345,9 @@ public:
 
     constexpr HeadFidget fidget() const
     {
+        if (fid() == kEmptyFid) {
+            return FIDGET_INVALID;
+        }
         int fidget = (fid() & 0xFF0000) >> 16;
         return static_cast<HeadFidget>(fidget);
     }
