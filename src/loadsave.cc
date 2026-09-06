@@ -2109,7 +2109,7 @@ static int lsgSaveHeaderInSlot(int slot)
     LoadSaveSlotData* ptr = &(_LSData[slot]);
     strncpy(ptr->signature, LOAD_SAVE_SIGNATURE, 24);
 
-    if (fileWrite(ptr->signature, 1, 24, _flptr) == -1) {
+    if (fileWrite(ptr->signature, 1, 24, _flptr) != 24) {
         return -1;
     }
 
@@ -2861,7 +2861,7 @@ static int _GameMap2Slot(File* stream)
 
     for (int index = 0; index < fileNameListLength; index += 1) {
         char* string = fileNameList[index];
-        if (fileWrite(string, strlen(string) + 1, 1, stream) == -1) {
+        if (fileWrite(string, strlen(string) + 1, 1, stream) != 1) {
             fileNameListFree(&fileNameList, 0);
             return -1;
         }
