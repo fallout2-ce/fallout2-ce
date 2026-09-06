@@ -206,6 +206,10 @@ int directDrawInit(int width, int height, int bpp)
     }
 
     gSdlSurface = SDL_CreateRGBSurface(0, width, height, bpp, 0, 0, 0, 0);
+    if (gSdlSurface == nullptr || gSdlSurface->format->palette == nullptr) {
+        directDrawFree();
+        return -1;
+    }
 
     SDL_Color colors[256];
     for (int index = 0; index < 256; index++) {

@@ -1623,6 +1623,9 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
     int height = fontGetLineHeight();
 
     char* string = (char*)internal_malloc(max_chars_wcursor + 1);
+    if (string == nullptr) {
+        return -1;
+    }
 
     if (clear) {
         string[0] = '\0';
