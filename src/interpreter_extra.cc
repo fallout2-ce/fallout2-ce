@@ -3104,7 +3104,7 @@ static void opSetObjectLightLevel(Program* program)
 
     Rect rect;
     if (lightIntensity != 0) {
-        if (objectSetLight(object, lightDistance, (lightIntensity * 65636) / 100, &rect) == -1) {
+        if (objectSetLight(object, lightDistance, (lightIntensity * 65536) / 100, &rect) == -1) {
             return;
         }
     } else {

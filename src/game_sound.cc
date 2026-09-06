@@ -439,7 +439,7 @@ int gameSoundSetMasterVolume(int volume)
         return -1;
     }
 
-    if (volume < VOLUME_MIN && volume > VOLUME_MAX) {
+    if (volume < VOLUME_MIN || volume > VOLUME_MAX) {
         if (gGameSoundDebugEnabled) {
             debugPrint("Requested master volume out of range.\n");
         }

@@ -1693,7 +1693,7 @@ int get_num_i(int win, int* value, int max_chars_wcursor, bool clear, bool allow
             }
         } else {
             if (cursorPos != max_chars_wcursor - 1) {
-                if ((input == '-' && allow_negative)
+                if ((input == '-' && allow_negative && cursorPos == 0)
                     || (input >= '0' && input <= '9')) {
                     string[cursorPos] = input;
                     string[cursorPos + 1] = '_';
