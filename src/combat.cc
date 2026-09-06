@@ -109,7 +109,7 @@ static void combatAttemptEnd();
 static int _combat_input();
 static void _combat_set_move_all();
 static int combatTurnHooked(Object* obj, bool reloadedDuringCombat);
-static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFrmId);
+static void queueGorisCombatBeginEndAnimation(Object* critter, CritterFrameId baseFrameId);
 static void waitForGorisAnimation(Object* critter);
 static int _combat_turn(Object* obj, bool reloadedDuringCombat);
 static bool _combat_should_end();
@@ -2654,7 +2654,7 @@ static void _combat_begin(Object* attacker)
         gameMouseSetCursor(MOUSE_CURSOR_WAIT_WATCH);
         _combat_ending_guy = nullptr;
         if (goris != nullptr && !_isLoadingGame()) {
-            queueGorisCombatBeginEndAnimation(goris, kGorisCombatBaseFid);
+            queueGorisCombatBeginEndAnimation(goris, kGorisCombatBaseFrameId);
         }
         _combat_begin_extra(attacker);
         _caiTeamCombatInit(_combat_list, _list_total);
@@ -3387,12 +3387,12 @@ static int combatTurnHooked(Object* obj, bool reloadedDuringCombat)
     return combatTurnHookResult;
 }
 
-static void queueGorisCombatBeginEndAnimation(Object* critter, int baseFrmId)
+static void queueGorisCombatBeginEndAnimation(Object* critter, CritterFrameId baseFrameId)
 {
     reg_anim_clear(critter);
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
     animationRegisterAnimate(critter, ANIM_UP_STAIRS_RIGHT, -1);
-    animationRegisterSetFid(critter, critterBuildGorisFid(critter, baseFrmId), -1);
+    animationRegisterSetFid(critter, critterBuildGorisFrmId(critter, baseFrameId).fid(), -1);
     reg_anim_end();
 }
 
@@ -3528,7 +3528,7 @@ void _combat(CombatStartData* csd)
                         waitForGorisAnimation(critter);
                     }
 
-                    queueGorisCombatBeginEndAnimation(critter, kGorisRobeBaseFid);
+                    queueGorisCombatBeginEndAnimation(critter, kGorisRobeBaseFrameId);
                     break;
                 }
             }
