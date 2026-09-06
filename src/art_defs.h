@@ -428,8 +428,8 @@ enum class MiscFrameId : int {
     EmpExplosion = 2, // empxpld.frm
     RocketExplosion = 10, // roktxpd.frm
     ScrollBlocker = 12, // scrblk.frm
-    FireExplosion = 29, //expa.frm
-    PlasmaExplosion = 31, //expp.frm
+    FireExplosion = 29, // expa.frm
+    PlasmaExplosion = 31, // expp.frm
     Exit2Grid1 = 33, // ext2grd1.frm
     Exit3Grid8 = 48, // ext3grd8.frm
 };
