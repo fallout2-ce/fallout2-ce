@@ -731,7 +731,7 @@ int animationRegisterRunToObject(Object* owner, Object* destination, int actionP
 
     if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
-        || !artExists(FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1))) {
+        || !FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1).exist()) {
         animationDescription->anim = ANIM_WALK;
     } else {
         animationDescription->anim = ANIM_RUNNING;
@@ -814,7 +814,7 @@ int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actio
 
     if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
-        || !artExists(FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1))) {
+        || !FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1).exist()) {
         animationDescription->anim = ANIM_WALK;
     } else {
         animationDescription->anim = ANIM_RUNNING;
@@ -2820,21 +2820,21 @@ static int _anim_animate(Object* obj, AnimationType anim, int animationSequenceI
 
     AnimationSad* sad = &(gAnimationSads[gAnimationCurrentSad]);
 
-    FrmId fid;
+    FrmId frmId;
     if (anim == ANIM_TAKE_OUT) {
         sad->flags = 0;
-        fid = FrmId(obj, ANIM_TAKE_OUT, static_cast<WeaponAnimation>(flags), obj->rotation + 1);
+        frmId = FrmId(obj, ANIM_TAKE_OUT, static_cast<WeaponAnimation>(flags), obj->rotation + 1);
     } else {
         sad->flags = flags;
-        fid = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+        frmId = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
     }
 
-    if (!artExists(fid)) {
+    if (!frmId.exist()) {
         return -1;
     }
 
     sad->obj = obj;
-    sad->fid = fid.fid();
+    sad->fid = frmId.fid();
     sad->animationSequenceIndex = animationSequenceIndex;
     sad->animationTimestamp = 0;
     sad->ticksPerFrame = animationComputeTicksPerFrame(obj, sad->fid);

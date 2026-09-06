@@ -3597,7 +3597,7 @@ static int _obj_load_obj(File* stream, Object** objectPtr, int elevation, Object
 
     _obj_fix_violence_settings(&(obj->fid));
 
-    if (!_art_fid_valid(obj->fid)) {
+    if (!FrmId(obj->fid).exist()) {
         debugPrint("\nError: invalid object art fid: %u\n", obj->fid);
         // NOTE: Uninline.
         objectDeallocate(&obj);

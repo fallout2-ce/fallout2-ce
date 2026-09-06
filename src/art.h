@@ -142,7 +142,7 @@ public:
     {
     }
 
-    // cannot be made constexpr as internally calls artExists which cannot be constexpr
+    // cannot be made constexpr as internally calls exists which cannot be constexpr
     explicit FrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
     explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
     explicit FrmId(ObjectType objectType, int frmId, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
@@ -183,11 +183,13 @@ public:
         return _objectType;
     }
 
-    constexpr const char* filePath() const { return _path; }
+    const char* filePath() const { return _path != nullptr ? _path : buildPath(_fid, _builtPath); }
 
     bool valid() const { return !empty() && ((_frameId.id >= kMinFrameId && _frameId.id <= kMaxFrameId) || _path != nullptr); }
 
     bool empty() const { return (*this) == Empty(); }
+
+    bool exist() const { return _fid == kEmptyFid ? _path != nullptr : exist(_fid, _builtPath); }
 
     constexpr const FrameId& frameId() const { return _frameId; }
 
@@ -213,8 +215,9 @@ private:
     FrameId _frameId;
 
     const char* _path;
+    mutable char _builtPath[COMPAT_MAX_PATH] {};
 
-    constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }
+    static constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }
 
     /* FID Structure:
         3 bits for rotation
@@ -226,7 +229,7 @@ private:
         animType doesn't have to be of AnimationType enum only but also HeadAnimation
         weaponAnimation doesn't have to be WeaponAnimation enum only but also Fidget or flags
     */
-    constexpr int buildFid(ObjectType objectType, int frmId, unsigned char animType = 0, unsigned char weaponAnimation = 0, Rotation rotation = ROTATION_NE)
+    static constexpr int buildFid(ObjectType objectType, int frmId, unsigned char animType = 0, unsigned char weaponAnimation = 0, Rotation rotation = ROTATION_NE)
     {
         if (!objectTypeIsValid(objectType) || !rotationIsValid(rotation) || frmId < kMinFrameId) {
             return kEmptyFid;
@@ -237,7 +240,15 @@ private:
         return ((rotation << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((weaponAnimation << 12) & 0xF000) | (frmId & kMaxFrameId);
     }
 
-    int buildObjectFid(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponCode, Rotation rotation);
+    static int buildObjectFid(ObjectType objectType, int frmId, AnimationType animType, WeaponAnimation weaponCode, Rotation rotation);
+
+    static int buildAliasFid(int fid);
+
+    static char* buildPath(int fid, char* path);
+
+    static bool exist(int fid);
+
+    static bool exist(int fid, char* path);
 };
 
 template <typename T>
@@ -389,7 +400,6 @@ int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
 int artCopyFileName(ObjectType objectType, int id, char* dest);
 int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr);
-char* artBuildFilePath(int fid);
 int artGetFramesPerSecond(Art* art);
 int artGetActionFrame(Art* art);
 int artGetFrameCount(Art* art);
@@ -402,17 +412,8 @@ unsigned char* artGetFrameData(Art* art, int frame = 0, Rotation rotation = ROTA
 unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int* widthPtr, int* heightPtr, int* xOffsetPtr, int* yOffsetPtr);
 ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
 ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
-bool artExists(int fid);
-
-inline bool artExists(const FrmId& frmId)
-{
-    return artExists(frmId.fid());
-}
-
-bool _art_fid_valid(int fid);
 CritterFrameId _art_alias_num(CritterFrameId index);
 int artCritterFidShouldRun(int fid);
-int artAliasFid(int fid);
 int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);

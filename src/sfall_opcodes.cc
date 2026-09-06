@@ -72,8 +72,8 @@ static constexpr int kSfallPathBufferSize = 3200; // matches rotation path size 
 
 static void op_art_exists(Program* program)
 {
-    int fid = programStackPopInteger(program);
-    programStackPushInteger(program, artExists(fid));
+    const FrmId frmId = FrmId(programStackPopInteger(program));
+    programStackPushInteger(program, frmId.exist());
 }
 
 static void op_obj_is_carrying_obj(Program* program)

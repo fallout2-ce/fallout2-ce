@@ -3908,7 +3908,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         WeaponAnimation weaponAnimationCode = weaponGetAnimationCode(item);
         AnimationType hitModeAnimationCode = weaponGetAnimationForHitMode(item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
         const FrmId frmId = FrmId(critter, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
-        if (!artExists(frmId)) {
+        if (!frmId.exist()) {
             debugPrint("\ninven_wield failed!  ERROR ERROR ERROR!");
             return -1;
         }

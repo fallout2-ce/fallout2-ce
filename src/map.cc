@@ -1808,7 +1808,7 @@ static void _map_place_dude_and_mouse()
         _partyMemberSyncPosition();
     }
 
-    gameMouseResetBouncingCursorFid();
+    gameMouseResetBouncingCursorFrmId();
     gameMouseObjectsShow();
 }
 

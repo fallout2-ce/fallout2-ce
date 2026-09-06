@@ -666,17 +666,17 @@ static char artGetCritterWeaponCode(WeaponAnimation weaponType)
 }
 
 // 0x419428
-char* artBuildFilePath(int fid)
+char* FrmId::buildPath(int fid, char* path)
 {
     int baseFid = fid;
     Rotation rotation = rotationFromFid(fid);
 
-    int aliasFid = artAliasFid(fid);
-    if (aliasFid != -1) {
+    int aliasFid = buildAliasFid(fid);
+    if (aliasFid != FrmId::kEmptyFid) {
         baseFid = aliasFid;
     }
 
-    *_art_name = '\0';
+    *path = '\0';
 
     int frmId = frameIdFromFid(baseFid);
     AnimationType animType = animationTypeFromFid(baseFid);
@@ -700,22 +700,22 @@ char* artBuildFilePath(int fid)
             return nullptr;
         }
         if (rotation > ROTATION_NE) {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.fr%c", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode, rotation + ('0' - 1));
+            snprintf(path, COMPAT_MAX_PATH, "%s%s%s\\%s%c%c.fr%c", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode, rotation + ('0' - 1));
         } else {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode);
+            snprintf(path, COMPAT_MAX_PATH, "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_CRITTER].name, gArtListDescriptions[OBJ_TYPE_CRITTER].fileNames + fileNameOffset, critterWeaponCode, critterAnimationCode);
         }
     } else if (objectType == OBJ_TYPE_HEAD) {
         char headSuffix = _head2[animType];
         if (headSuffix == 'f') {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c%d.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_HEAD].name, gArtListDescriptions[OBJ_TYPE_HEAD].fileNames + fileNameOffset, _head1[animType], 102, weaponCode);
+            snprintf(path, COMPAT_MAX_PATH, "%s%s%s\\%s%c%c%d.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_HEAD].name, gArtListDescriptions[OBJ_TYPE_HEAD].fileNames + fileNameOffset, _head1[animType], 102, weaponCode);
         } else {
-            snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_HEAD].name, gArtListDescriptions[OBJ_TYPE_HEAD].fileNames + fileNameOffset, _head1[animType], headSuffix);
+            snprintf(path, COMPAT_MAX_PATH, "%s%s%s\\%s%c%c.frm", _cd_path_base, "art\\", gArtListDescriptions[OBJ_TYPE_HEAD].name, gArtListDescriptions[OBJ_TYPE_HEAD].fileNames + fileNameOffset, _head1[animType], headSuffix);
         }
     } else {
-        snprintf(_art_name, sizeof(_art_name), "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objectType].name, gArtListDescriptions[objectType].fileNames + fileNameOffset);
+        snprintf(path, COMPAT_MAX_PATH, "%s%s%s\\%s", _cd_path_base, "art\\", gArtListDescriptions[objectType].name, gArtListDescriptions[objectType].fileNames + fileNameOffset);
     }
 
-    return _art_name;
+    return path;
 }
 
 // art_read_lst
@@ -924,40 +924,6 @@ ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation)
     return { data, width, height };
 }
 
-// 0x4198C8
-bool artExists(int fid)
-{
-    bool result = false;
-
-    char* filePath = artBuildFilePath(fid);
-    if (filePath != nullptr) {
-        int fileSize;
-        if (dbGetFileSize(filePath, &fileSize) != -1) {
-            result = true;
-        }
-    }
-
-    return result;
-}
-
-// NOTE: Exactly the same implementation as `artExists`.
-//
-// 0x419930
-bool _art_fid_valid(int fid)
-{
-    bool result = false;
-
-    char* filePath = artBuildFilePath(fid);
-    if (filePath != nullptr) {
-        int fileSize;
-        if (dbGetFileSize(filePath, &fileSize) != -1) {
-            result = true;
-        }
-    }
-
-    return result;
-}
-
 // 0x419998
 CritterFrameId _art_alias_num(CritterFrameId index)
 {
@@ -972,32 +938,6 @@ int artCritterFidShouldRun(int fid)
     }
 
     return 0;
-}
-
-// 0x4199D4
-int artAliasFid(int fid)
-{
-    ObjectType type = objectTypeFromFid(fid);
-    AnimationType anim = animationTypeFromFid(fid);
-    if (type == OBJ_TYPE_CRITTER) {
-        if (anim == ANIM_ELECTRIFY
-            || anim == ANIM_CHARRED_BODY
-            || anim == ANIM_BURNED_TO_NOTHING
-            || anim == ANIM_ELECTRIFIED_TO_NOTHING
-            || anim == ANIM_ELECTRIFY_SF
-            || anim == ANIM_CHARRED_BODY_SF
-            || anim == ANIM_BURNED_TO_NOTHING_SF
-            || anim == ANIM_ELECTRIFIED_TO_NOTHING_SF
-            || anim == ANIM_FIRE_DANCE
-            || anim == ANIM_CALLED_SHOT_PIC) {
-            // NOTE: Original code is slightly different. It uses many mutually
-            // mirrored bitwise operators. Probably result of some macros for
-            // getting/setting individual bits on fid.
-            return (fid & 0x70000000) | ((anim << 16) & 0xFF0000) | 0x1000000 | (fid & 0xF000) | static_cast<int>(_anon_alias[frameIdFromFid(fid)]);
-        }
-    }
-
-    return -1;
 }
 
 static bool artGetLocalizedPath(const char* basePath, const char** outPath)
@@ -1021,7 +961,7 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
 {
     int result = -1;
 
-    char* artFilePath = artBuildFilePath(fid);
+    const char* artFilePath = FrmId(fid).filePath();
     if (artFilePath != nullptr) {
         File* stream = nullptr;
         const char* localizedPath;
@@ -1055,7 +995,7 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
 {
     int result = -1;
 
-    char* artFileName = artBuildFilePath(fid);
+    const char* artFileName = FrmId(fid).filePath();
     if (artFileName != nullptr) {
         bool loaded = false;
         const char* localizedPath;
@@ -1664,14 +1604,67 @@ int FrmId::buildObjectFid(ObjectType objectType, int frmId, AnimationType animTy
         || animType < ANIM_FALL_BACK
         || animType > ANIM_FALL_FRONT_BLOOD) {
         rotation = ROTATION_NE;
-    } else if (!artExists(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, rotation))) {
+    } else if (!exist(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, rotation))) {
         rotation = rotation != ROTATION_E
-                && artExists(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, ROTATION_E))
+                && exist(buildFid(OBJ_TYPE_CRITTER, frmId, animType, weaponAnimation, ROTATION_E))
             ? ROTATION_E
             : ROTATION_NE;
     }
 
     return buildFid(objectType, frmId, animType, weaponAnimation, rotation);
+}
+
+// 0x4198C8
+bool FrmId::exist(int fid)
+{
+    return fid > kEmptyFid && exist(fid, _art_name);
+}
+
+bool FrmId::exist(int fid, char* path)
+{
+    bool result = false;
+
+    if (fid > kEmptyFid) {
+        const char* filePath = buildPath(fid, path);
+        if (filePath != nullptr) {
+            int fileSize;
+            if (dbGetFileSize(filePath, &fileSize) != -1) {
+                result = true;
+            }
+        }
+    }
+
+    return result;
+}
+
+// 0x4199D4
+int FrmId::buildAliasFid(int fid)
+{
+    if (fid <= FrmId::kEmptyFid || objectTypeFromFid(fid) != OBJ_TYPE_CRITTER) {
+        return FrmId::kEmptyFid;
+    }
+
+    AnimationType anim = animationTypeFromFid(fid);
+    if (anim == ANIM_ELECTRIFY
+        || anim == ANIM_CHARRED_BODY
+        || anim == ANIM_BURNED_TO_NOTHING
+        || anim == ANIM_ELECTRIFIED_TO_NOTHING
+        || anim == ANIM_ELECTRIFY_SF
+        || anim == ANIM_CHARRED_BODY_SF
+        || anim == ANIM_BURNED_TO_NOTHING_SF
+        || anim == ANIM_ELECTRIFIED_TO_NOTHING_SF
+        || anim == ANIM_FIRE_DANCE
+        || anim == ANIM_CALLED_SHOT_PIC) {
+        CritterFrameId aliasedFrameId = _anon_alias[frameIdFromFid(fid)];
+        return buildFid(
+            OBJ_TYPE_CRITTER,
+            static_cast<int>(aliasedFrameId),
+            anim,
+            weaponAnimationFromFid(fid),
+            rotationFromFid(fid));
+    }
+
+    return FrmId::kEmptyFid;
 }
 
 FrmImage::FrmImage()
