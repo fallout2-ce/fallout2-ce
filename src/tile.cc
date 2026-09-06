@@ -1317,7 +1317,7 @@ void tileRenderRoofsInRect(Rect* rect, int elevation)
             fid >>= 16;
             if ((((fid & 0xF000) >> 12) & 0x01) == 0) {
                 const TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(fid));
-                if (frmId != TileFrmId(TileFrameId::Grid)) {
+                if (frmId != TileFrameId::Grid) {
                     int screenX;
                     int screenY;
                     squareTileToRoofScreenXY(squareTile, &screenX, &screenY, elevation);
@@ -1346,7 +1346,7 @@ static void roof_fill_off_process_task(std::stack<roof_fill_task>& tasks_stack, 
     int roof = (squareTile >> 16) & 0xFFFF;
 
     const TileFrmId frmId = FrmId(roof).frameId().tile;
-    if (frmId != TileFrmId(TileFrameId::Grid)) {
+    if (frmId != TileFrameId::Grid) {
         int flag = (roof & 0xF000) >> 12;
 
         if (on ? ((flag & 0x01) != 0) : ((flag & 0x03) == 0)) {
@@ -1603,7 +1603,7 @@ bool _square_roof_intersect(int x, int y, int elevation)
     int idx = gSquareGridWidth * tileY + tileX;
     int upper = ptr->fid[gSquareGridWidth * tileY + tileX] >> 16;
     TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(upper));
-    if (frmId != TileFrmId(TileFrameId::Grid)) {
+    if (frmId != TileFrameId::Grid) {
         if ((((upper & 0xF000) >> 12) & 1) == 0) {
             frmId = static_cast<TileFrameId>(frameIdFromFid(upper));
             CacheEntry* handle;

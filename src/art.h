@@ -208,6 +208,25 @@ public:
         return !(*this == other);
     }
 
+    constexpr bool operator==(InterfaceFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(InterfaceFrameId frameId) const { return !(*this == frameId); }
+    constexpr bool operator==(SceneryFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(SceneryFrameId frameId) const { return !(*this == frameId); }
+    constexpr bool operator==(WallFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(WallFrameId frameId) const { return !(*this == frameId); }
+    constexpr bool operator==(ItemFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(ItemFrameId frameId) const { return !(*this == frameId); }
+    constexpr bool operator==(TileFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(TileFrameId frameId) const { return !(*this == frameId); }
+    constexpr bool operator==(SkillDexFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(SkillDexFrameId frameId) const { return !(*this == frameId); }
+    constexpr bool operator==(BackgroundFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(BackgroundFrameId frameId) const { return !(*this == frameId); }
+    constexpr bool operator==(HeadFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(HeadFrameId frameId) const { return !(*this == frameId); }
+    constexpr bool operator==(MiscFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
+    constexpr bool operator!=(MiscFrameId frameId) const { return !(*this == frameId); }
+
 private:
     ObjectType _objectType;
     int _fid;

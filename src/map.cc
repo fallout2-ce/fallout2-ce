@@ -1482,12 +1482,12 @@ static int _map_save_file(File* stream)
             TileFrmId frmId;
 
             frmId = static_cast<TileFrameId>(frameIdFromFid(_square[elevation]->fid[tile]));
-            if (frmId != TileFrmId(TileFrameId::Grid)) {
+            if (frmId != TileFrameId::Grid) {
                 break;
             }
 
             frmId = static_cast<TileFrameId>(frameIdFromFid(_square[elevation]->fid[tile] >> 16));
-            if (frmId != TileFrmId(TileFrameId::Grid)) {
+            if (frmId != TileFrameId::Grid) {
                 break;
             }
         }

@@ -45,7 +45,7 @@ int map_scr_remove_spatial(int tile, int elevation)
 
     obj = objectFindFirstAtElevation(elevation);
     while (obj != NULL) {
-        if (obj->tile == tile && FrmId(InterfaceFrameId::ExitGridMarker).fid() == obj->fid) {
+        if (obj->tile == tile && FrmId(obj->fid) == InterfaceFrameId::ExitGridMarker) {
             objectDestroy(obj, &rect);
             tileWindowRefreshRect(&rect, elevation);
 
@@ -77,7 +77,7 @@ int map_scr_remove_all_spatials()
 
         obj = objectFindFirstAtElevation(elevation);
         while (obj != NULL) {
-            if (FrmId(InterfaceFrameId::ExitGridMarker).fid() == obj->fid) {
+            if (FrmId(obj->fid) == InterfaceFrameId::ExitGridMarker) {
                 objectDestroy(obj, NULL);
 
                 obj = objectFindFirstAtElevation(elevation);

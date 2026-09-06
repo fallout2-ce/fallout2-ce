@@ -3358,7 +3358,7 @@ static void opMetarule(Program* program)
                     break;
                 }
             } else {
-                if (MiscFrmId(MiscFrameId::RocketExplosion) == FrmId(object->fid)) {
+                if (FrmId(object->fid) == MiscFrameId::RocketExplosion) {
                     result = DAMAGE_TYPE_EXPLOSION;
                     break;
                 }

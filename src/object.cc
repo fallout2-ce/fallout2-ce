@@ -302,7 +302,7 @@ static char _obj_seen[5001];
 int objectsInit(unsigned char* buf, int width, int height, int pitch)
 {
     const FrmId dudeFrmId = FrmId(_art_vault_guy_num, ANIM_STAND, WEAPON_ANIMATION_NONE, ROTATION_NE);
-    const FrmId eggFrmId = FrmId(InterfaceFrameId::Egg);
+    const InterfaceFrmId eggFrmId = InterfaceFrameId::Egg;
 
     memset(_obj_seen, 0, 5001);
     gObjectsUpdateAreaPixelBounds.right = width + 320;
@@ -1477,7 +1477,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            bool isEmpty = TileFrmId(TileFrameId::Grid) == currentSquareFrmId;
+            bool isEmpty = currentSquareFrmId == TileFrameId::Grid;
 
             if (isEmpty != _obj_last_is_empty || (((currentSquare >> 16) & 0xF000) >> 12) != (((previousSquare >> 16) & 0xF000) >> 12)) {
                 if (!_obj_last_is_empty) {
@@ -1530,7 +1530,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 int _obj_reset_roof()
 {
     const TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
-    if (frmId != TileFrmId(TileFrameId::Grid)) {
+    if (frmId != TileFrameId::Grid) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }
     return 0;

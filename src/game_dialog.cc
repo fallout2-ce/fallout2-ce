@@ -2692,7 +2692,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         break;
     }
 
-    if (_lipsFrmId != HeadFrmId(HeadFrameId::None)) {
+    if (_lipsFrmId != HeadFrameId::None) {
         if (anim != _phone_anim) {
             if (artUnlock(_lipsKey) == -1) {
                 debugPrint("failure unlocking lips frame!\n");
@@ -2707,7 +2707,7 @@ void _gdSetupFidget(const HeadFrmId& headFrmId, HeadFidget reaction)
         _lipsFrmId = HeadFrameId::None;
     }
 
-    if (_lipsFrmId == HeadFrmId(HeadFrameId::None)) {
+    if (_lipsFrmId == HeadFrameId::None) {
         _phone_anim = anim;
         _lipsFrmId = HeadFrmId(headFrmId.frameId().head, anim);
         _lipsFp = artLock(_lipsFrmId, &_lipsKey);

@@ -187,13 +187,13 @@ static bool mainMenuShouldUseVanillaArtForLayout(int backgroundWidth, int backgr
 static bool mainMenuLoadArt()
 {
     bool canUseHiresArt = screenGetWidth() != MAIN_MENU_LOGICAL_WIDTH || screenGetHeight() != MAIN_MENU_LOGICAL_HEIGHT;
-    if (canUseHiresArt && mainMenuBackgroundFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MAINMENU.FRM"))) {
+    if (canUseHiresArt && mainMenuBackgroundFrmImage.lock(InterfaceFrmId("HR_MAINMENU.FRM"))) {
         if (mainMenuShouldUseVanillaArtForLayout(mainMenuBackgroundFrmImage.getWidth(), mainMenuBackgroundFrmImage.getHeight())) {
             // use Vanilla art if not scaling to reduce artifacts
             mainMenuBackgroundFrmImage.unlock();
         } else {
             // for highres main menu art, use separate panel art
-            if (!mainMenuButtonPanelFrmImage.lock(FrmId(OBJ_TYPE_INTERFACE, "HR_MENU_BG.FRM"))) {
+            if (!mainMenuButtonPanelFrmImage.lock(InterfaceFrmId("HR_MENU_BG.FRM"))) {
                 debugPrint("MAINMENU: failed to load hires HR_MENU_BG.FRM, falling back to vanilla mainmenu.frm\n");
                 mainMenuBackgroundFrmImage.unlock();
             }
