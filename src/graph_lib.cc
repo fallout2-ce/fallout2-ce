@@ -359,7 +359,7 @@ int graphCompress(unsigned char* a1, unsigned char* a2, int a3)
             v4++;
             v10++;
             *a2++ = v29[v23 + 1];
-            if (v10 > a3) {
+            if (v4 > a3) {
                 rc = -1;
                 break;
             }
