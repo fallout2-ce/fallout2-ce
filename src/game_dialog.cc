@@ -423,13 +423,13 @@ static const int gGameDialogReviewWindowButtonHeights[GAME_DIALOG_REVIEW_WINDOW_
 };
 
 // 0x518830 reviewFids
-static constexpr FrmId kGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::DialogBigUpArrowUp),
-    FrmId(InterfaceFrameId::DialogBigUpArrowDown),
-    FrmId(InterfaceFrameId::DialogBigDownArrowUp),
-    FrmId(InterfaceFrameId::DialogBigDownArrowDown),
-    FrmId(InterfaceFrameId::DialogBigDoneButtonUp),
-    FrmId(InterfaceFrameId::DialogBigDoneButtonDown),
+static constexpr InterfaceFrmId kGameDialogReviewWindowButtonFrmIds[GAME_DIALOG_REVIEW_WINDOW_BUTTON_FRM_COUNT] = {
+    InterfaceFrameId::DialogBigUpArrowUp,
+    InterfaceFrameId::DialogBigUpArrowDown,
+    InterfaceFrameId::DialogBigDownArrowUp,
+    InterfaceFrameId::DialogBigDownArrowDown,
+    InterfaceFrameId::DialogBigDoneButtonUp,
+    InterfaceFrameId::DialogBigDoneButtonDown,
 };
 
 // 0x518848 dialog_target
@@ -1173,7 +1173,7 @@ int _gdialogExitFromScript()
 }
 
 // 0x445438
-void gameDialogSetBackground(const FrmId& background)
+void gameDialogSetBackground(const BackgroundFrmId& background)
 {
     if (background.valid()) {
         gGameDialogBackgroundFrmId = background;
@@ -1449,7 +1449,7 @@ int gameDialogAddTextOption(int messageListId, const char* text, int reaction)
 static int createDialogRedButton(int win, int x, int y, void (*mouseUp)(int, int), int keyCode)
 {
     int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
-        FrmId(InterfaceFrameId::DialogRedButtonUp), FrmId(InterfaceFrameId::DialogRedButtonDown),
+        InterfaceFrameId::DialogRedButtonUp, InterfaceFrameId::DialogRedButtonDown,
         {}, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_med_butt_press, _gsound_med_butt_release);
@@ -1462,7 +1462,7 @@ static int createDialogRedButton(int win, int x, int y, void (*mouseUp)(int, int
 static int createDialogReviewButton(int win)
 {
     int h = buttonCreateWithFrm(win, 13, 154, -1, -1, -1, -1,
-        FrmId(InterfaceFrameId::DialogRestButtonUp), FrmId(InterfaceFrameId::DialogRestButtonDown));
+        InterfaceFrameId::DialogRestButtonUp, InterfaceFrameId::DialogRestButtonDown);
     if (h == -1) return -1;
     buttonSetMouseCallbacks(h, nullptr, nullptr, nullptr, gameDialogReviewButtonOnMouseUp);
     buttonSetCallbacks(h, _gsound_red_butt_press, _gsound_red_butt_release);
@@ -1472,7 +1472,7 @@ static int createDialogReviewButton(int win)
 static int createLittleRedButton(int win, int x, int y, int keyCode)
 {
     int h = buttonCreateWithFrm(win, x, y, -1, -1, -1, keyCode,
-        FrmId(InterfaceFrameId::LittleRedButtonUp), FrmId(InterfaceFrameId::LittleRedButtonDown),
+        InterfaceFrameId::LittleRedButtonUp, InterfaceFrameId::LittleRedButtonDown,
         {}, BUTTON_FLAG_TRANSPARENT);
     if (h == -1) return -1;
     buttonSetCallbacks(h, _gsound_red_butt_press, _gsound_red_butt_release);

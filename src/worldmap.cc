@@ -808,12 +808,12 @@ static const char* wmFormationStrs[ENCOUNTER_FORMATION_TYPE_COUNT] = {
     "huddle",
 };
 
-// 0x51DE84 wmRndCursorFids
-constexpr FrmId wmRndCursorFids[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::WorldMapFightIcon1),
-    FrmId(InterfaceFrameId::WorldMapFightIcon2),
-    FrmId(InterfaceFrameId::WorldMapRandomEncounterCursor2Bright),
-    FrmId(InterfaceFrameId::WorldMapRandomEncounterCursor2Dark),
+// 0x51DE84 wmRndCursorFrmIds
+constexpr InterfaceFrmId wmRndCursorFrmIds[WORLD_MAP_ENCOUNTER_FRM_COUNT] = {
+    InterfaceFrameId::WorldMapFightIcon1,
+    InterfaceFrameId::WorldMapFightIcon2,
+    InterfaceFrameId::WorldMapRandomEncounterCursor2Bright,
+    InterfaceFrameId::WorldMapRandomEncounterCursor2Dark,
 };
 
 #define MAX_TRAIL_LENGTH 1000
@@ -1496,10 +1496,10 @@ int wmWorldMap_init()
     // during |wmTeleportToArea| to calculate worldmap position when jumping
     // from Temple to Arroyo - before giving a chance to |wmInterfaceInit| to
     // initialize it.
-    constexpr FrmId kWorldSphereOverlayFrmIds[CITY_SIZE_COUNT] = {
-        FrmId(InterfaceFrameId::WorldSphereOverlay0),
-        FrmId(InterfaceFrameId::WorldSphereOverlay1),
-        FrmId(InterfaceFrameId::WorldSphereOverlay2),
+    constexpr InterfaceFrmId kWorldSphereOverlayFrmIds[CITY_SIZE_COUNT] = {
+        InterfaceFrameId::WorldSphereOverlay0,
+        InterfaceFrameId::WorldSphereOverlay1,
+        InterfaceFrameId::WorldSphereOverlay2,
     };
 
     for (CitySize citySize = CITY_SIZE_FIRST; citySize < CITY_SIZE_COUNT; citySize++) {
@@ -5113,7 +5113,7 @@ static int wmInterfaceInit()
     }
 
     for (int index = 0; index < WORLD_MAP_ENCOUNTER_FRM_COUNT; index++) {
-        if (!wmGenData.encounterCursorFrmImages[index].lock(wmRndCursorFids[index])) {
+        if (!wmGenData.encounterCursorFrmImages[index].lock(wmRndCursorFrmIds[index])) {
             return -1;
         }
     }
@@ -5199,9 +5199,9 @@ static int wmInterfaceInit()
         }
     }
 
-    constexpr FrmId kScrollUpButtonFrmIds[WORLDMAP_ARROW_FRM_COUNT] = {
-        FrmId(InterfaceFrameId::CharacterEditorUpArrowOff),
-        FrmId(InterfaceFrameId::CharacterEditorUpArrowOn),
+    constexpr InterfaceFrmId kScrollUpButtonFrmIds[WORLDMAP_ARROW_FRM_COUNT] = {
+        InterfaceFrameId::CharacterEditorUpArrowOff,
+        InterfaceFrameId::CharacterEditorUpArrowOn,
     };
 
     for (int index = 0; index < WORLDMAP_ARROW_FRM_COUNT; index++) {
@@ -5210,9 +5210,9 @@ static int wmInterfaceInit()
         }
     }
 
-    constexpr FrmId kScrollDownButtonFrmIds[WORLDMAP_ARROW_FRM_COUNT] = {
-        FrmId(InterfaceFrameId::CharacterEditorDownArrowOff),
-        FrmId(InterfaceFrameId::CharacterEditorDownArrowOn),
+    constexpr InterfaceFrmId kScrollDownButtonFrmIds[WORLDMAP_ARROW_FRM_COUNT] = {
+        InterfaceFrameId::CharacterEditorDownArrowOff,
+        InterfaceFrameId::CharacterEditorDownArrowOn,
     };
 
     for (int index = 0; index < WORLDMAP_ARROW_FRM_COUNT; index++) {

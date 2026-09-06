@@ -61,13 +61,13 @@ static void skilldexWindowFree();
 static bool gSkilldexWindowIsoWasEnabled = false;
 
 // 0x51D440 grphfid
-static constexpr FrmId kSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
-    FrmId(InterfaceFrameId::SkilldexWindow),
-    FrmId(InterfaceFrameId::SkilldexOnButton),
-    FrmId(InterfaceFrameId::SkilldexOffButton),
-    FrmId(InterfaceFrameId::LittleRedButtonUp),
-    FrmId(InterfaceFrameId::LittleRedButtonDown),
-    FrmId(InterfaceFrameId::BigNum),
+static constexpr InterfaceFrmId kSkilldexFrmIds[SKILLDEX_FRM_COUNT] = {
+    InterfaceFrameId::SkilldexWindow,
+    InterfaceFrameId::SkilldexOnButton,
+    InterfaceFrameId::SkilldexOffButton,
+    InterfaceFrameId::LittleRedButtonUp,
+    InterfaceFrameId::LittleRedButtonDown,
+    InterfaceFrameId::BigNum,
 };
 
 // Maps Skilldex options into skills.

@@ -1411,7 +1411,7 @@ int buttonCreate(int win, int x, int y, int width, int height, int mouseEnterEve
 
 int buttonCreateWithFrm(int win, int x, int y,
     int mouseEnterEventCode, int mouseExitEventCode, int mouseDownEventCode, int mouseUpEventCode,
-    const FrmId& normalId, const FrmId& pressedId, const FrmId& hoverId, int flags)
+    const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId, const InterfaceFrmId& hoverId, int flags)
 {
     FrmImage normalFrm;
     if (!normalFrm.lock(normalId)) return -1;
@@ -1439,8 +1439,8 @@ int buttonCreateWithFrm(int win, int x, int y,
 }
 
 int buttonSetDisabledFrm(int btn,
-    const FrmId& normalId, const FrmId& pressedId,
-    const FrmId& hoverId)
+    const InterfaceFrmId& normalId, const InterfaceFrmId& pressedId,
+    const InterfaceFrmId& hoverId)
 {
     FrmImage normalFrm;
     if (!normalFrm.lock(normalId)) return -1;

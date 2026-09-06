@@ -47,7 +47,7 @@ inline Rotation& operator--(Rotation& e)
     return e;
 }
 
-inline bool rotationIsValid(int rotation)
+constexpr inline bool rotationIsValid(int rotation)
 {
     return rotation >= ROTATION_FIRST && rotation < ROTATION_COUNT;
 }
