@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstring>
 #include <memory>
+#include <type_traits>
 
 #include "animation.h"
 #include "art_defs.h"
@@ -42,6 +43,46 @@ extern Cache gArtCache;
 
 class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
+
+template <typename T>
+struct MapFrameIdToObjectType;
+
+template <>
+struct MapFrameIdToObjectType<SceneryFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_SCENERY;
+};
+template <>
+struct MapFrameIdToObjectType<WallFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_WALL;
+};
+template <>
+struct MapFrameIdToObjectType<ItemFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_ITEM;
+};
+template <>
+struct MapFrameIdToObjectType<TileFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_TILE;
+};
+template <>
+struct MapFrameIdToObjectType<SkillDexFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_SKILLDEX;
+};
+template <>
+struct MapFrameIdToObjectType<InterfaceFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_INTERFACE;
+};
+template <>
+struct MapFrameIdToObjectType<BackgroundFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_BACKGROUND;
+};
+template <>
+struct MapFrameIdToObjectType<MiscFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_MISC;
+};
+template <>
+struct MapFrameIdToObjectType<HeadFrameId> {
+    static constexpr ObjectType value = OBJ_TYPE_HEAD;
+};
 
 class FrmId {
 public:
@@ -208,24 +249,15 @@ public:
         return !(*this == other);
     }
 
-    constexpr bool operator==(InterfaceFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(InterfaceFrameId frameId) const { return !(*this == frameId); }
-    constexpr bool operator==(SceneryFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(SceneryFrameId frameId) const { return !(*this == frameId); }
-    constexpr bool operator==(WallFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(WallFrameId frameId) const { return !(*this == frameId); }
-    constexpr bool operator==(ItemFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(ItemFrameId frameId) const { return !(*this == frameId); }
-    constexpr bool operator==(TileFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(TileFrameId frameId) const { return !(*this == frameId); }
-    constexpr bool operator==(SkillDexFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(SkillDexFrameId frameId) const { return !(*this == frameId); }
-    constexpr bool operator==(BackgroundFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(BackgroundFrameId frameId) const { return !(*this == frameId); }
-    constexpr bool operator==(HeadFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(HeadFrameId frameId) const { return !(*this == frameId); }
-    constexpr bool operator==(MiscFrameId frameId) const { return _fid == FrmId(frameId).fid(); }
-    constexpr bool operator!=(MiscFrameId frameId) const { return !(*this == frameId); }
+    template <typename TFrameId,
+        typename = std::void_t<
+            decltype(MapFrameIdToObjectType<TFrameId>::value)>>
+    constexpr bool operator==(TFrameId frameId) const { return _fid == buildFid(MapFrameIdToObjectType<TFrameId>::value, static_cast<int>(frameId)); }
+
+    template <typename TFrameId,
+        typename = std::void_t<
+            decltype(MapFrameIdToObjectType<TFrameId>::value)>>
+    constexpr bool operator!=(TFrameId frameId) const { return !(*this == frameId); }
 
 private:
     ObjectType _objectType;
@@ -270,37 +302,6 @@ private:
     static bool exist(int fid, char* path);
 };
 
-template <typename T>
-struct MapFrameIdToObjectType;
-
-template <>
-struct MapFrameIdToObjectType<SceneryFrameId> {
-    static constexpr ObjectType value = OBJ_TYPE_SCENERY;
-};
-template <>
-struct MapFrameIdToObjectType<WallFrameId> {
-    static constexpr ObjectType value = OBJ_TYPE_WALL;
-};
-template <>
-struct MapFrameIdToObjectType<ItemFrameId> {
-    static constexpr ObjectType value = OBJ_TYPE_ITEM;
-};
-template <>
-struct MapFrameIdToObjectType<TileFrameId> {
-    static constexpr ObjectType value = OBJ_TYPE_TILE;
-};
-template <>
-struct MapFrameIdToObjectType<SkillDexFrameId> {
-    static constexpr ObjectType value = OBJ_TYPE_SKILLDEX;
-};
-template <>
-struct MapFrameIdToObjectType<InterfaceFrameId> {
-    static constexpr ObjectType value = OBJ_TYPE_INTERFACE;
-};
-template <>
-struct MapFrameIdToObjectType<BackgroundFrameId> {
-    static constexpr ObjectType value = OBJ_TYPE_BACKGROUND;
-};
 
 template <ObjectType ObjType, typename TFrameId>
 class TypedFrmId : public FrmId {
