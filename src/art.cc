@@ -386,6 +386,10 @@ void artToggleObjectTypeHidden(ObjectType objectType)
 // 0x418F7C
 int artGetFidgetCount(const HeadFrmId& frmId)
 {
+    if (!frmId.valid()) {
+        return -1;
+    }
+
     int head = frmId.frameId().id;
 
     if (head > gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
@@ -556,7 +560,7 @@ int artCopyFileName(ObjectType objectType, int id, char* dest)
 {
     ArtListDescription* ptr;
 
-    if (!objectTypeIsValid(objectType)) {
+    if (!objectTypeIsValid(objectType) || id < FrmId::kMinFrameId) {
         return -1;
     }
 
