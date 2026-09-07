@@ -1554,21 +1554,21 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
 
     Proto* proto = nullptr;
 
-    CritterFrameId inventoryFid = _art_vault_guy_num;
+    CritterFrameId inventoryFrameId = _art_vault_guy_num;
     if (protoGetProto(basePid, &proto) != -1) {
-        inventoryFid = FrmId(proto->fid).frameId().critter;
+        inventoryFrameId = FrmId(proto->fid).frameId().critter;
     }
 
     if (armor != nullptr) {
         if (protoGetProto(armor->pid, &proto) != -1 && proto != nullptr) {
             if (critterGetStat(critter, STAT_GENDER) == GENDER_FEMALE) {
-                inventoryFid = FrmId(proto->item.data.armor.femaleFid).frameId().critter;
+                inventoryFrameId = FrmId(proto->item.data.armor.femaleFid).frameId().critter;
             } else {
-                inventoryFid = FrmId(proto->item.data.armor.maleFid).frameId().critter;
+                inventoryFrameId = FrmId(proto->item.data.armor.maleFid).frameId().critter;
             }
 
-            if (inventoryFid == CRITTER_FRM_ID_INVALID) {
-                inventoryFid = _art_vault_guy_num;
+            if (inventoryFrameId == CritterFrameId::Invalid) {
+                inventoryFrameId = _art_vault_guy_num;
             }
         }
     }
@@ -1583,7 +1583,7 @@ int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandIt
         }
     }
 
-    return FrmId(inventoryFid, anim, animationCode, rotation).fid();
+    return CritterFrmId(inventoryFrameId, anim, animationCode, rotation).fid();
 }
 
 // inventory_msg_init
@@ -3878,20 +3878,20 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
 
         item->flags |= OBJECT_WORN;
 
-        CritterFrameId baseFrmId;
+        CritterFrameId baseFrameId;
         if (critterGetStat(critter, STAT_GENDER) == GENDER_FEMALE) {
-            baseFrmId = armorGetFemaleFid(item);
+            baseFrameId = armorGetFemaleFrameId(item);
         } else {
-            baseFrmId = armorGetMaleFid(item);
+            baseFrameId = armorGetMaleFrameId(item);
         }
 
-        if (baseFrmId == CRITTER_FRM_ID_INVALID) {
-            baseFrmId = CRITTER_FRM_ID_1;
+        if (baseFrameId == CritterFrameId::Invalid) {
+            baseFrameId = CritterFrameId::First;
         }
 
         if (critter == gDude) {
             if (!isoIsDisabled()) {
-                const FrmId frmId = FrmId(baseFrmId, ANIM_STAND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                const CritterFrmId frmId = CritterFrmId(baseFrameId, ANIM_STAND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
                 animationRegisterSetFid(critter, frmId.fid(), 0);
             }
         } else {
@@ -3908,7 +3908,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         WeaponAnimation weaponAnimationCode = weaponGetAnimationCode(item);
         AnimationType hitModeAnimationCode = weaponGetAnimationForHitMode(item, HIT_MODE_RIGHT_WEAPON_PRIMARY);
         const FrmId frmId = FrmId(critter, hitModeAnimationCode, weaponAnimationCode, critter->rotation + 1);
-        if (!artExists(frmId)) {
+        if (!frmId.exist()) {
             debugPrint("\ninven_wield failed!  ERROR ERROR ERROR!");
             return -1;
         }

@@ -667,14 +667,14 @@ static int _obj_remove_from_inven(Object* critter, Object* item)
             }
         } else if (slot == InvenSlot::Armor) {
             if (critter == gDude) {
-                int defaultFid = 1;
+                CritterFrameId defaultFrameId = CritterFrameId::First;
 
                 Proto* proto;
                 if (protoGetProto(0x1000000, &proto) != -1) {
-                    defaultFid = proto->fid;
+                    defaultFrameId = FrmId(proto->fid).frameId().critter;
                 }
 
-                fid = FrmId(critterFrameIdFromFid(defaultFid), animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
+                fid = FrmId(defaultFrameId, animationTypeFromFid(critter->fid), weaponAnimationFromFid(critter->fid), critter->rotation);
                 objectSetFid(critter, fid.fid(), &updatedRect);
                 appearanceUpdateType = 3;
             }

@@ -1398,7 +1398,7 @@ void edit_mapper()
                     toolbar_info[currentType].offset = scrollOffset;
                     mapper_destroy_highlight_obj(&hl_obj1, nullptr);
                     _screen_obj = nullptr;
-                    gameMouseResetBouncingCursorFid();
+                    gameMouseResetBouncingCursorFrmId();
                     Rect artRect = { 121, 1, _scr_size.right - 19, art_scale_height + 1 };
                     windowRefreshRect(tool_win, &artRect);
                 }
@@ -1468,9 +1468,9 @@ void edit_mapper()
                         // Set mouse cursor to proto's art FID
                         Proto* proto;
                         if (protoGetProto(pid, &proto) != -1) {
-                            int artFid = proto->fid;
-                            if (artExists(artFid)) {
-                                gGameMouseBouncingCursor->fid = artFid;
+                            const FrmId artFrmId = FrmId(proto->fid);
+                            if (artFrmId.exist()) {
+                                gGameMouseBouncingCursor->fid = artFrmId.fid();
                                 Rect mouseRect;
                                 objectSetRotation(gGameMouseBouncingCursor, rotation, &mouseRect);
                                 tileWindowRefreshRect(&mouseRect, gElevation);
@@ -2771,7 +2771,7 @@ static void mapper_enter_play_mode(Object** pHlObj1)
     map_entered = true;
     tool_active = -1;
 
-    gameMouseResetBouncingCursorFid();
+    gameMouseResetBouncingCursorFrmId();
     gameMouseObjectsShow();
     gameMouseSetCursor(MOUSE_CURSOR_ARROW);
 
