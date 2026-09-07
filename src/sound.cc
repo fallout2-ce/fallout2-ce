@@ -1398,11 +1398,13 @@ int _soundGetPosition(Sound* sound)
     audioEngineSoundBufferGetCurrentPosition(sound->soundBuffer, &readPos, &writePos);
 
     if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
+        int offset;
         if (readPos <= sound->lastPosition) {
-            readPos += sound->numBytesRead + sound->numBuffers * sound->dataSize - sound->lastPosition;
+            offset = readPos + sound->numBuffers * sound->dataSize - sound->lastPosition;
         } else {
-            readPos -= sound->lastPosition + sound->numBytesRead;
+            offset = readPos - sound->lastPosition;
         }
+        return sound->numBytesRead + offset;
     }
 
     return readPos;
