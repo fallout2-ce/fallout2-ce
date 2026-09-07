@@ -314,38 +314,11 @@ enum class SkillDexFrameId : int {
     WeaponHandling = 173, // wepnhand.frm - weapon handling
 };
 
-enum CritterFrameId : int {
-    CRITTER_FRM_ID_INVALID = -1,
-    CRITTER_FRM_ID_FIRST = 0,
-    CRITTER_FRM_ID_1 = 1,
+enum class CritterFrameId : int {
+    Invalid = -1, // invalid frame id
+    Reserved = 0, // reserv
+    First = 1, // hapower
 };
-
-inline constexpr CritterFrameId operator+(CritterFrameId lhs, int rhs)
-{
-    return static_cast<CritterFrameId>(static_cast<int>(lhs) + rhs);
-}
-
-inline constexpr CritterFrameId operator-(CritterFrameId lhs, int rhs)
-{
-    return static_cast<CritterFrameId>(static_cast<int>(lhs) - rhs);
-}
-
-inline CritterFrameId operator++(CritterFrameId& e, int)
-{
-    CritterFrameId result = e;
-    e = e + 1;
-    return result;
-}
-
-inline CritterFrameId critterFrameIdFromFid(int fid)
-{
-    return static_cast<CritterFrameId>(frameIdFromFid(fid));
-}
-
-inline CritterFrameId critterFrameIdFromPid(int pid)
-{
-    return static_cast<CritterFrameId>(frameIdFromPid(pid));
-}
 
 enum SceneryFrameId : int {
     SCENERY_FRM_ID_FIRST = 0,

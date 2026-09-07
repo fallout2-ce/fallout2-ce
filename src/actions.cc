@@ -115,8 +115,8 @@ static bool actionRegisterUseAnimObj(Object* user, Object* targetObj, AnimationT
     }
 
     if (hookAnim != originalAnim) {
-        const FrmId fid = FrmId(user, hookAnim, weaponAnimationFromFid(user->fid), user->rotation + 1);
-        if (!artExists(fid)) {
+        const FrmId frmId = FrmId(user, hookAnim, weaponAnimationFromFid(user->fid), user->rotation + 1);
+        if (!frmId.exist()) {
             hookAnim = originalAnim;
         }
     }
@@ -136,7 +136,7 @@ int actionKnockdown(Object* obj, AnimationType* anim, int maxDistance, Rotation 
 
     if (*anim == ANIM_FALL_FRONT) {
         const FrmId frmId = FrmId(obj, *anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
-        if (!artExists(frmId)) {
+        if (!frmId.exist()) {
             *anim = ANIM_FALL_BACK;
         }
     }
@@ -201,7 +201,7 @@ AnimationType actionBlood(Object* obj, AnimationType anim, int delay)
     }
 
     const FrmId frmId = FrmId(obj, bloodyAnim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
-    if (artExists(frmId)) {
+    if (frmId.exist()) {
         animationRegisterAnimate(obj, bloodyAnim, delay);
     } else {
         bloodyAnim = anim;
@@ -307,7 +307,7 @@ AnimationType checkDeathAnim(Object* obj, AnimationType anim, int minViolenceLev
 
     if (settings.preferences.violence_level >= minViolenceLevel) {
         frmId = FrmId(obj, anim, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
-        if (artExists(frmId)) {
+        if (frmId.exist()) {
             return anim;
         }
     }
@@ -318,7 +318,7 @@ AnimationType checkDeathAnim(Object* obj, AnimationType anim, int minViolenceLev
 
     frmId = FrmId(obj, ANIM_FALL_FRONT, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
     // CE: fixed vanilla logic that returned ANIM_FALL_BACK if artExists for ANIM_FALL_FRONT returned true.
-    if (!artExists(frmId)) {
+    if (!frmId.exist()) {
         return ANIM_FALL_BACK;
     }
 
@@ -366,7 +366,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
                 }
             } else {
                 frmId = FrmId(defender, ANIM_FIRE_DANCE, weaponAnimationFromFid(defender->fid), defender->rotation + 1);
-                if (artExists(frmId)) {
+                if (frmId.exist()) {
                     sfx_name = sfxBuildCharName(defender, anim, CHARACTER_SOUND_EFFECT_UNUSED);
                     animationRegisterPlaySoundEffect(defender, sfx_name, delay);
 
@@ -443,7 +443,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
                     anim = pickFallAnim(defender, anim);
                     animationRegisterAnimate(defender, anim, 0);
                 }
-            } else if ((flags & DAM_ON_FIRE) != DAM_NONE && artExists(FrmId(defender, ANIM_FIRE_DANCE, weaponAnimationFromFid(defender->fid), defender->rotation + 1))) {
+            } else if ((flags & DAM_ON_FIRE) != DAM_NONE && FrmId(defender, ANIM_FIRE_DANCE, weaponAnimationFromFid(defender->fid), defender->rotation + 1).exist()) {
                 animationRegisterAnimate(defender, ANIM_FIRE_DANCE, delay);
 
                 frmId = FrmId(defender, ANIM_STAND, weaponAnimationFromFid(defender->fid), defender->rotation + 1);
@@ -458,7 +458,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
                         animationRegisterAnimate(defender, ANIM_PRONE_TO_STANDING, -1);
                     }
                 } else {
-                    if (hitFromFront || !artExists(FrmId(defender, ANIM_HIT_FROM_BACK, weaponAnimationFromFid(defender->fid), defender->rotation + 1))) {
+                    if (hitFromFront || !FrmId(defender, ANIM_HIT_FROM_BACK, weaponAnimationFromFid(defender->fid), defender->rotation + 1).exist()) {
                         anim = ANIM_HIT_FROM_FRONT;
                     } else {
                         anim = ANIM_HIT_FROM_BACK;
@@ -1587,7 +1587,7 @@ AnimationType pickFallAnim(Object* obj, AnimationType anim)
     int i;
     Rotation rotation;
     int tile_num;
-    FrmId fid;
+    FrmId frmId;
 
     if (anim == ANIM_FALL_FRONT) {
         rotation = obj->rotation;
@@ -1610,8 +1610,8 @@ AnimationType pickFallAnim(Object* obj, AnimationType anim)
     }
 
     if (anim == ANIM_FALL_FRONT) {
-        fid = FrmId(obj, ANIM_FALL_FRONT, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
-        if (!artExists(fid)) {
+        frmId = FrmId(obj, ANIM_FALL_FRONT, weaponAnimationFromFid(obj->fid), obj->rotation + 1);
+        if (!frmId.exist()) {
             anim = ANIM_FALL_BACK;
         }
     }

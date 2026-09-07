@@ -2,6 +2,8 @@
 #define CRITTER_H
 
 #include "animation.h"
+#include "art.h"
+#include "art_defs.h"
 #include "combat_defs.h"
 #include "db.h"
 #include "obj_types.h"
@@ -9,8 +11,8 @@
 
 namespace fallout {
 
-const int kGorisCombatBaseFid = 100;
-const int kGorisRobeBaseFid = 99;
+const CritterFrameId kGorisCombatBaseFrameId = CritterFrameId(100);
+const CritterFrameId kGorisRobeBaseFrameId = CritterFrameId(99);
 
 int critterInit();
 void critterReset();
@@ -53,7 +55,7 @@ BodyType critterGetBodyType(Object* critter);
 // Checks physical/art capability only. Callers that expose weapon usability
 // decisions must still call scriptHooks_CanUseWeapon with the final result.
 bool critterCanUseWeapon(Object* critter, Object* weapon, HitMode hitMode);
-int critterBuildGorisFid(Object* critter, int frmId);
+CritterFrmId critterBuildGorisFrmId(Object* critter, CritterFrameId frameId);
 int gcdLoad(const char* path);
 int protoCritterDataRead(File* stream, CritterProtoData* critterData);
 int gcdSave(const char* path);

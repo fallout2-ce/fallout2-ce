@@ -321,7 +321,7 @@ Object* gGameMouseHexCursor;
 static Object* gGameMousePointedObject;
 
 static void _gmouse_3d_enable_modes();
-static int gameMouseSetBouncingCursorFid(int fid);
+static int gameMouseSetBouncingCursorFrmId(const InterfaceFrmId& frmId);
 static int gameMouseRenderAccuracy(const char* string, Color color);
 static int gameMouseRenderActionPoints(const char* string, Color color);
 static int gameMouseObjectsInit();
@@ -903,7 +903,7 @@ void gameMouseRefresh()
     gGameMouseLastY = mouseY;
 
     if (!_gmouse_mapper_mode) {
-        gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::Blank).fid());
+        gameMouseSetBouncingCursorFrmId(InterfaceFrameId::Blank);
     }
 
     int v34 = 0;
@@ -1448,7 +1448,7 @@ void gameMouseSetMode(int mode)
         return;
     }
 
-    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::Blank).fid());
+    gameMouseSetBouncingCursorFrmId(InterfaceFrameId::Blank);
 
     const FrmId frmId = FrmId(gGameMouseModeFrmIds[mode]);
 
@@ -1551,22 +1551,22 @@ void _gmouse_3d_refresh()
 }
 
 // 0x44CBFC gmouse_3d_set_fid
-int gameMouseSetBouncingCursorFid(int fid)
+int gameMouseSetBouncingCursorFrmId(const InterfaceFrmId& frmId)
 {
     if (!gGameMouseInitialized) {
         return -1;
     }
 
-    if (!artExists(fid)) {
+    if (!frmId.exist()) {
         return -1;
     }
 
-    if (gGameMouseBouncingCursor->fid == fid) {
+    if (FrmId(gGameMouseBouncingCursor->fid) == frmId) {
         return -1;
     }
 
     if (!_gmouse_mapper_mode) {
-        return objectSetFid(gGameMouseBouncingCursor, fid, nullptr);
+        return objectSetFid(gGameMouseBouncingCursor, frmId.fid(), nullptr);
     }
 
     int refreshFlags = 0;
@@ -1580,7 +1580,7 @@ int gameMouseSetBouncingCursorFid(int fid)
     int rc = -1;
 
     Rect rect;
-    if (objectSetFid(gGameMouseBouncingCursor, fid, &rect) == 0) {
+    if (objectSetFid(gGameMouseBouncingCursor, frmId.fid(), &rect) == 0) {
         rc = 0;
         refreshFlags |= REFRESH_HEX_CURSOR;
     }
@@ -1600,9 +1600,9 @@ int gameMouseSetBouncingCursorFid(int fid)
 }
 
 // 0x44CD0C gmouse_3d_reset_fid
-void gameMouseResetBouncingCursorFid()
+void gameMouseResetBouncingCursorFrmId()
 {
-    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::Blank).fid());
+    gameMouseSetBouncingCursorFrmId(InterfaceFrameId::Blank);
 }
 
 // 0x44CD2C gmouse_3d_on
@@ -2173,7 +2173,7 @@ int gameMouseRenderActionPoints(const char* string, Color color)
 
     fontSetCurrent(oldFont);
 
-    gameMouseSetBouncingCursorFid(FrmId(InterfaceFrameId::HexMouseCursor).fid());
+    gameMouseSetBouncingCursorFrmId(InterfaceFrameId::HexMouseCursor);
 
     return 0;
 }
@@ -2248,7 +2248,7 @@ int gameMouseObjectsReset()
     _gmouse_3d_enable_modes();
 
     // NOTE: Uninline.
-    gameMouseResetBouncingCursorFid();
+    gameMouseResetBouncingCursorFrmId();
 
     gameMouseSetMode(GAME_MOUSE_MODE_MOVE);
     gameMouseObjectsShow();

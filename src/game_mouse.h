@@ -94,7 +94,7 @@ void gameMouseSetMode(int mode);
 int gameMouseGetMode();
 void gameMouseCycleMode();
 void _gmouse_3d_refresh();
-void gameMouseResetBouncingCursorFid();
+void gameMouseResetBouncingCursorFrmId();
 void gameMouseObjectsShow();
 void gameMouseObjectsHide();
 bool gameMouseObjectsIsVisible();

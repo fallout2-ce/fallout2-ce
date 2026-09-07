@@ -2373,8 +2373,8 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
         if (settings.preferences.violence_level < VIOLENCE_LEVEL_MAXIMUM_BLOOD) {
             useStandardDeath = true;
         } else {
-            FrmId fid = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
-            if (!artExists(fid)) {
+            const FrmId frmId = FrmId(critter, anim, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+            if (!frmId.exist()) {
                 useStandardDeath = true;
             }
         }
@@ -2383,8 +2383,8 @@ static AnimationType _correctDeath(Object* critter, AnimationType anim, bool for
             if (forceBack) {
                 anim = ANIM_FALL_BACK;
             } else {
-                FrmId fid = FrmId(critter, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
-                if (artExists(fid)) {
+                const FrmId frmId = FrmId(critter, ANIM_FALL_FRONT, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
+                if (frmId.exist()) {
                     anim = ANIM_FALL_FRONT;
                 } else {
                     anim = ANIM_FALL_BACK;
