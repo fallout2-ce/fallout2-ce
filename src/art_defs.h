@@ -13,32 +13,10 @@ constexpr inline int frameIdFromPid(int pid)
     return pid & 0xFFFFFF;
 }
 
-enum HeadFrameId : int {
-    HEAD_INVALID = -1,
-    HEAD_NONE,
-    HEAD_MARCUS,
-    HEAD_MYRON,
-    HEAD_ELDER,
-    HEAD_LYNETTE,
-    HEAD_HAROLD,
-    HEAD_TANDI,
-    HEAD_COM_OFFICER,
-    HEAD_SULIK,
-    HEAD_PRESIDENT,
-    HEAD_HAKUNIN,
-    HEAD_BOSS,
-    HEAD_DYING_HAKUNIN,
+enum class HeadFrameId : int {
+    Invalid = -1, // invalid frame id
+    None = 0, // reser.frm
 };
-
-inline bool headFrameIdIsValid(int head)
-{
-    return head >= HEAD_NONE;
-}
-
-inline HeadFrameId headFrameIdFromFid(int fid)
-{
-    return static_cast<HeadFrameId>(frameIdFromFid(fid));
-}
 
 enum HeadAnimation : int {
     HEAD_ANIMATION_VERY_GOOD_REACTION = 0,
@@ -61,12 +39,6 @@ enum HeadFidget : int {
     FIDGET_NEUTRAL = 4,
     FIDGET_BAD = 7,
 };
-
-inline HeadFidget headFidgetFromFid(int fid)
-{
-    int fidget = (fid & 0xFF0000) >> 16;
-    return static_cast<HeadFidget>(fidget);
-}
 
 inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
 {
@@ -395,35 +367,17 @@ enum class TileFrameId : int {
     Grid = 1, // grid000.frm
 };
 
-enum MiscFrameId : int {
-    MISC_FRM_ID_INVALID = -1,
-    MISC_FRM_ID_FIRST = 0,
-    MISC_FRM_ID_2 = 2,
-    MISC_FRM_ID_10 = 10, // roktxpd.frm
-    MISC_FRM_ID_12 = 12,
-    MISC_FRM_ID_29 = 29,
-    MISC_FRM_ID_31 = 31,
+enum class MiscFrameId : int {
+    Invalid = -1, // invalid frame id
+    Reserved = 0, // reserved.frm
+    EmpExplosion = 2, // empxpld.frm
+    RocketExplosion = 10, // roktxpd.frm
+    ScrollBlocker = 12, // scrblk.frm
+    FireExplosion = 29, // expa.frm
+    PlasmaExplosion = 31, // expp.frm
+    Exit2Grid1 = 33, // ext2grd1.frm
+    Exit3Grid8 = 48, // ext3grd8.frm
 };
-
-inline constexpr MiscFrameId operator+(MiscFrameId lhs, int rhs)
-{
-    return static_cast<MiscFrameId>(static_cast<int>(lhs) + rhs);
-}
-
-inline constexpr MiscFrameId operator-(MiscFrameId lhs, int rhs)
-{
-    return static_cast<MiscFrameId>(static_cast<int>(lhs) - rhs);
-}
-
-inline MiscFrameId miscFrameIdFromFid(int fid)
-{
-    return static_cast<MiscFrameId>(frameIdFromFid(fid));
-}
-
-inline MiscFrameId miscFrameIdFromPid(int pid)
-{
-    return static_cast<MiscFrameId>(frameIdFromPid(pid));
-}
 
 enum class InterfaceFrameId : int {
     Invalid = -1, // invalid frame id
