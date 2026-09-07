@@ -297,12 +297,13 @@ int graphCompress(unsigned char* a1, unsigned char* a2, int a3)
             v11 = 0;
             if (v36 != 0) {
                 for (;;) {
-                    v4++;
-                    *a2++ = v29[v11 + 1];
-                    if (v4 > a3) {
+                    if (v4 >= a3) {
                         rc = -1;
                         break;
                     }
+
+                    v4++;
+                    *a2++ = v29[v11 + 1];
 
                     v11++;
                     if (v11 >= v36) {
@@ -356,13 +357,14 @@ int graphCompress(unsigned char* a1, unsigned char* a2, int a3)
 
     if (rc != -1) {
         for (int v23 = 0; v23 < v36; v23++) {
-            v4++;
-            v10++;
-            *a2++ = v29[v23 + 1];
-            if (v4 > a3) {
+            if (v4 >= a3) {
                 rc = -1;
                 break;
             }
+
+            v4++;
+            v10++;
+            *a2++ = v29[v23 + 1];
         }
 
         _codesize += v36;
