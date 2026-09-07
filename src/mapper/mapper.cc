@@ -2600,9 +2600,9 @@ static int mapperPickTile(int* outOffset)
     int packedTile = _square[gElevation]->fid[tileNum];
     TileFrameId tileFrmId;
     if (tileRoofIsVisible()) {
-        tileFrmId = FrmId(packedTile >> 16).frameId().tile;
+        tileFrmId = static_cast<TileFrameId>(frameIdFromFid(packedTile >> 16));
     } else {
-        tileFrmId = FrmId(packedTile).frameId().tile;
+        tileFrmId = static_cast<TileFrameId>(frameIdFromFid(packedTile));
     }
     const FrmId artFrmId = FrmId(tileFrmId);
 

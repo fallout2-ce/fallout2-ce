@@ -1472,12 +1472,12 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
         int roofY = tile / 200 / 2;
         if (roofX != _obj_last_roof_x || roofY != _obj_last_roof_y || elevation != _obj_last_elev) {
             int currentSquare = _square[elevation]->fid[roofX + 100 * roofY];
-            const TileFrmId currentSquareFid = FrmId(currentSquare >> 16).frameId().tile;
+            const TileFrmId currentSquareFrmId = static_cast<TileFrameId>(frameIdFromFid(currentSquare >> 16));
             // CE: Add additional checks for -1 to prevent array lookup at index -101.
             int previousSquare = _obj_last_roof_x != -1 && _obj_last_roof_y != -1
                 ? _square[elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y]
                 : 0;
-            bool isEmpty = TileFrmId(TileFrameId::Grid) == currentSquareFid;
+            bool isEmpty = TileFrmId(TileFrameId::Grid) == currentSquareFrmId;
 
             if (isEmpty != _obj_last_is_empty || (((currentSquare >> 16) & 0xF000) >> 12) != (((previousSquare >> 16) & 0xF000) >> 12)) {
                 if (!_obj_last_is_empty) {
@@ -1529,7 +1529,7 @@ int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect)
 // 0x48A9A0 obj_reset_roof
 int _obj_reset_roof()
 {
-    const TileFrmId frmId = FrmId(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16).frameId().tile;
+    const TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(_square[gDude->elevation]->fid[_obj_last_roof_x + 100 * _obj_last_roof_y] >> 16));
     if (frmId != TileFrmId(TileFrameId::Grid)) {
         tile_fill_roof(_obj_last_roof_x, _obj_last_roof_y, gDude->elevation, 1);
     }

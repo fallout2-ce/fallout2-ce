@@ -1481,12 +1481,12 @@ static int _map_save_file(File* stream)
         for (tile = 0; tile < SQUARE_GRID_SIZE; tile++) {
             TileFrmId frmId;
 
-            frmId = FrmId(_square[elevation]->fid[tile]).frameId().tile;
+            frmId = static_cast<TileFrameId>(frameIdFromFid(_square[elevation]->fid[tile]));
             if (frmId != TileFrmId(TileFrameId::Grid)) {
                 break;
             }
 
-            frmId = FrmId(_square[elevation]->fid[tile] >> 16).frameId().tile;
+            frmId = static_cast<TileFrameId>(frameIdFromFid(_square[elevation]->fid[tile] >> 16));
             if (frmId != TileFrmId(TileFrameId::Grid)) {
                 break;
             }

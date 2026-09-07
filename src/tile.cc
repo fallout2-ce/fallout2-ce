@@ -1316,7 +1316,7 @@ void tileRenderRoofsInRect(Rect* rect, int elevation)
             int fid = gTileSquares[elevation]->fid[squareTile];
             fid >>= 16;
             if ((((fid & 0xF000) >> 12) & 0x01) == 0) {
-                const TileFrmId frmId = FrmId(fid).frameId().tile;
+                const TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(fid));
                 if (frmId != TileFrmId(TileFrameId::Grid)) {
                     int screenX;
                     int screenY;
@@ -1530,7 +1530,7 @@ void tileRenderFloorsInRect(Rect* rect, int elevation)
                 int tileScreenX;
                 int tileScreenY;
                 squareTileToScreenXY(squareTile, &tileScreenX, &tileScreenY, elevation);
-                const TileFrmId frmId = FrmId(fid).frameId().tile;
+                const TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(fid));
                 tileRenderFloor(frmId, tileScreenX, tileScreenY, rect);
             }
         }
@@ -1602,7 +1602,7 @@ bool _square_roof_intersect(int x, int y, int elevation)
     TileData* ptr = gTileSquares[elevation];
     int idx = gSquareGridWidth * tileY + tileX;
     int upper = ptr->fid[gSquareGridWidth * tileY + tileX] >> 16;
-    TileFrmId frmId = FrmId(upper).frameId().tile;
+    TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(upper));
     if (frmId != TileFrmId(TileFrameId::Grid)) {
         if ((((upper & 0xF000) >> 12) & 1) == 0) {
             frmId = FrmId(upper).frameId().tile;

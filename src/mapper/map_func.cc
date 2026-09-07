@@ -463,7 +463,7 @@ void placeTile(int pid, const FrmId& frmId)
     int oldValue = *squarePtr;
 
     if (tileRoofIsVisible()) {
-        const TileFrmId oldRoofFrmId = FrmId(oldValue >> 16).frameId().tile;
+        const TileFrmId oldRoofFrmId = static_cast<TileFrameId>(frameIdFromFid(oldValue >> 16));
         if (oldRoofFrmId == frmId) {
             return;
         }
@@ -885,7 +885,7 @@ void copyTile()
     int srcDx[kMaxTiles];
     int srcDy[kMaxTiles];
     for (int i = 0; i < srcCount; i++) {
-        TileFrameId floorArt = FrmId(_square[gElevation]->fid[srcTiles[i]]).frameId().tile;
+        TileFrameId floorArt = static_cast<TileFrameId>(frameIdFromFid(_square[gElevation]->fid[srcTiles[i]]));
         srcFrmId[i] = floorArt;
 
         int sx, sy;
