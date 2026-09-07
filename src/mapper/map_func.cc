@@ -478,7 +478,7 @@ void placeTile(int pid, const FrmId& frmId)
         Rect rect = { sx, sy, sx + 80, sy + 36 };
         tileWindowRefreshRect(&rect, gElevation);
     } else {
-        const TileFrmId oldFloorFrmId = FrmId(oldValue).frameId().tile;
+        const TileFrmId oldFloorFrmId = static_cast<TileFrameId>(frameIdFromFid(oldValue));
         if (oldFloorFrmId == frmId) {
             return;
         }

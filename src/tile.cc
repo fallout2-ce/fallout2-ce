@@ -1605,7 +1605,7 @@ bool _square_roof_intersect(int x, int y, int elevation)
     TileFrmId frmId = static_cast<TileFrameId>(frameIdFromFid(upper));
     if (frmId != TileFrmId(TileFrameId::Grid)) {
         if ((((upper & 0xF000) >> 12) & 1) == 0) {
-            frmId = FrmId(upper).frameId().tile;
+            frmId = static_cast<TileFrameId>(frameIdFromFid(upper));
             CacheEntry* handle;
             Art* art = artLock(frmId, &handle);
             if (art != nullptr) {
