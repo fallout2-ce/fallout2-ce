@@ -1048,13 +1048,13 @@ int proto_tile_init(Proto* proto, int pid)
 // 0x49FDFC proto_misc_init
 int proto_misc_init(Proto* proto, int pid)
 {
-    MiscFrameId num = miscFrameIdFromPid(pid);
+    int num = frameIdFromPid(pid);
 
     proto->misc.pid = -1;
     proto->misc.messageId = 100 * num;
-    proto->misc.fid = FrmId(num - 1).fid();
+    proto->misc.fid = MiscFrmId(static_cast<MiscFrameId>(num - 1)).fid();
     if (!FrmId(proto->misc.fid).exist()) {
-        proto->misc.fid = FrmId(MISC_FRM_ID_FIRST).fid();
+        proto->misc.fid = MiscFrmId(MiscFrameId::Reserved).fid();
     }
     proto->misc.lightDistance = 0;
     proto->misc.lightIntensity = 0;
@@ -2003,7 +2003,7 @@ static int _proto_find_free_subnode(ObjectType type, Proto** protoPtr)
     if (protoList->head != nullptr) {
         if (protoListExtent->length == PROTO_LIST_EXTENT_SIZE) {
             ProtoListExtent* newExtent = protoListExtent->next = (ProtoListExtent*)internal_malloc(sizeof(ProtoListExtent));
-            if (protoListExtent == nullptr) {
+            if (newExtent == nullptr) {
                 internal_free(proto);
                 *protoPtr = nullptr;
                 return -1;

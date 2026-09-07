@@ -499,6 +499,8 @@ int mapAllocLocalVars(const int numNewVars)
     int* vars = (int*)internal_realloc(gMapLocalVars, sizeof(*vars) * gMapLocalVarsLength);
     if (vars == nullptr) {
         debugPrint("\nError: Ran out of memory!");
+        gMapLocalVarsLength = oldMapLocalVarsLength;
+        return -1;
     }
 
     gMapLocalVars = vars;
@@ -1061,7 +1063,7 @@ static int mapLoad(File* stream)
         }
 
         Object* object;
-        objectCreateWithFidPid(&object, FrmId(MISC_FRM_ID_12).fid(), -1);
+        objectCreateWithFidPid(&object, MiscFrmId(MiscFrameId::ScrollBlocker).fid(), -1);
         object->flags |= (OBJECT_LIGHT_THRU | OBJECT_NO_SAVE | OBJECT_HIDDEN);
         objectSetLocation(object, 1, 0, nullptr);
         object->sid = gMapSid;

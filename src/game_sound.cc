@@ -17,6 +17,7 @@
 #include "memory.h"
 #include "movie.h"
 #include "object.h"
+#include "platform_compat.h"
 #include "pointer_registry.h"
 #include "proto.h"
 #include "queue.h"
@@ -439,7 +440,7 @@ int gameSoundSetMasterVolume(int volume)
         return -1;
     }
 
-    if (volume < VOLUME_MIN && volume > VOLUME_MAX) {
+    if (volume < VOLUME_MIN || volume > VOLUME_MAX) {
         if (gGameSoundDebugEnabled) {
             debugPrint("Requested master volume out of range.\n");
         }
@@ -708,8 +709,14 @@ int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMo
 int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode)
 {
     int gaplessMusic = settings.sound.gapless_music;
-    if (backgoundSoundIsPlaying() && gaplessMusic) {
-        if (!strcmp(fileName, gBackgroundSoundFileName)) {
+    if (fileName == nullptr) {
+        return -1;
+    }
+
+    bool isPlaying = backgoundSoundIsPlaying();
+
+    if (isPlaying && gaplessMusic) {
+        if (compat_stricmp(fileName, gBackgroundSoundFileName) == 0) {
             return 0;
         }
     }
