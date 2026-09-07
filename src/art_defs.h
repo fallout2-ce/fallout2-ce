@@ -13,32 +13,10 @@ constexpr inline int frameIdFromPid(int pid)
     return pid & 0xFFFFFF;
 }
 
-enum HeadFrameId : int {
-    HEAD_INVALID = -1,
-    HEAD_NONE,
-    HEAD_MARCUS,
-    HEAD_MYRON,
-    HEAD_ELDER,
-    HEAD_LYNETTE,
-    HEAD_HAROLD,
-    HEAD_TANDI,
-    HEAD_COM_OFFICER,
-    HEAD_SULIK,
-    HEAD_PRESIDENT,
-    HEAD_HAKUNIN,
-    HEAD_BOSS,
-    HEAD_DYING_HAKUNIN,
+enum class HeadFrameId : int {
+    Invalid = -1, // invalid frame id
+    None = 0, // reser.frm
 };
-
-inline bool headFrameIdIsValid(int head)
-{
-    return head >= HEAD_NONE;
-}
-
-inline HeadFrameId headFrameIdFromFid(int fid)
-{
-    return static_cast<HeadFrameId>(frameIdFromFid(fid));
-}
 
 enum HeadAnimation : int {
     HEAD_ANIMATION_VERY_GOOD_REACTION = 0,
@@ -61,12 +39,6 @@ enum HeadFidget : int {
     FIDGET_NEUTRAL = 4,
     FIDGET_BAD = 7,
 };
-
-inline HeadFidget headFidgetFromFid(int fid)
-{
-    int fidget = (fid & 0xFF0000) >> 16;
-    return static_cast<HeadFidget>(fidget);
-}
 
 inline HeadAnimation headAnimationFromHeadFidget(HeadFidget fidget)
 {

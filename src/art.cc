@@ -384,13 +384,13 @@ void artToggleObjectTypeHidden(ObjectType objectType)
 }
 
 // 0x418F7C
-int artGetFidgetCount(int headFid)
+int artGetFidgetCount(const HeadFrmId& frmId)
 {
-    if (objectTypeFromFid(headFid) != OBJ_TYPE_HEAD) {
-        return 0;
+    if (!frmId.valid()) {
+        return -1;
     }
 
-    HeadFrameId head = headFrameIdFromFid(headFid);
+    int head = frmId.frameId().id;
 
     if (head > gArtListDescriptions[OBJ_TYPE_HEAD].fileNamesLength) {
         return 0;
@@ -398,7 +398,7 @@ int artGetFidgetCount(int headFid)
 
     HeadDescription* headDescription = &(gHeadDescriptions[head]);
 
-    HeadFidget fidget = headFidgetFromFid(headFid);
+    HeadFidget fidget = frmId.fidget();
     switch (fidget) {
     case FIDGET_INVALID:
         return -1;
@@ -560,7 +560,7 @@ int artCopyFileName(ObjectType objectType, int id, char* dest)
 {
     ArtListDescription* ptr;
 
-    if (!objectTypeIsValid(objectType)) {
+    if (!objectTypeIsValid(objectType) || id < FrmId::kMinFrameId) {
         return -1;
     }
 
