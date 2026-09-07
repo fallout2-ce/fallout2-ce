@@ -302,7 +302,6 @@ private:
     static bool exist(int fid, char* path);
 };
 
-
 template <ObjectType ObjType, typename TFrameId>
 class TypedFrmId : public FrmId {
 public:
