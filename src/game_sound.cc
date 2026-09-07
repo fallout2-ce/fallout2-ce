@@ -709,11 +709,11 @@ int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMo
 int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode)
 {
     int gaplessMusic = settings.sound.gapless_music;
-    bool isPlaying = backgoundSoundIsPlaying();
-
     if (fileName == nullptr) {
-        return backgroundSoundLoad(fileName, readLimitMode, GSOUND_STREAM, GSOUND_LOOP);
+        return -1;
     }
+
+    bool isPlaying = backgoundSoundIsPlaying();
 
     if (isPlaying && gaplessMusic) {
         if (compat_stricmp(fileName, gBackgroundSoundFileName) == 0) {
