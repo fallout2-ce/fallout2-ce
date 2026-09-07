@@ -322,7 +322,7 @@ inline CritterFrameId critterFrameIdFromPid(int pid)
 enum class SceneryFrameId : int {
     Invalid = -1, // invalid frame id
     Reserved = 0, // reserved.frm
-    ForceField1 = 501, // ffield01.frm - Marker frame id for special hidden "attacker" object created by `critter_dmg` opcode handler.
+    ForceField3 = 501, // ffield03.frm - Marker frame id for special hidden "attacker" object created by `critter_dmg` opcode handler.
 };
 
 enum class WallFrameId : int {
