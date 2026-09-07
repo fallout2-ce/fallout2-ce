@@ -1,6 +1,7 @@
 #ifndef FALLOUT_MAPPER_MAP_FUNC_H_
 #define FALLOUT_MAPPER_MAP_FUNC_H_
 
+#include "art.h"
 #include "geometry.h"
 #include "obj_types.h"
 
@@ -32,7 +33,7 @@ void mapper_flush_cache();
 int pickHex();
 ObjectType pickToolbar(int topY);
 void placeObject(int pid, int fid);
-void placeTile(int pid, int fid);
+void placeTile(int pid, const FrmId& frmId);
 // Pass the current toolbar type to filter the region copy by type, or -1 to copy all object
 // types in the picked region (mirrors the original mapper's `copy_object(arg1)` arg).
 void copyObject(int filterType);

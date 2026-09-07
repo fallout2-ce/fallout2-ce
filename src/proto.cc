@@ -1029,13 +1029,13 @@ int proto_wall_init(Proto* proto, int pid)
 // 0x49FD84 proto_tile_init
 int proto_tile_init(Proto* proto, int pid)
 {
-    TileFrameId num = tileFrameIdFromPid(pid);
+    int num = frameIdFromPid(pid);
 
     proto->tile.pid = -1;
     proto->tile.messageId = 100 * num;
-    proto->tile.fid = FrmId(num - 1).fid();
+    proto->tile.fid = TileFrmId(static_cast<TileFrameId>(num - 1)).fid();
     if (!artExists(proto->tile.fid)) {
-        proto->tile.fid = FrmId(TILE_FRM_ID_FIRST).fid();
+        proto->tile.fid = TileFrmId(TileFrameId::Reserved).fid();
     }
     proto->tile.flags = PROTO_FLAG_NONE;
     proto->tile.extendedFlags = PROTO_EXT_FLAG_LOOK;
