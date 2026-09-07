@@ -371,13 +371,13 @@ char* protoGetDescription(int pid)
 // 0x49EB2C proto_item_init
 int proto_item_init(Proto* proto, int pid)
 {
-    ItemFrameId protoNum = itemFrameIdFromPid(pid);
+    int protoNum = frameIdFromPid(pid);
 
     proto->item.pid = -1;
     proto->item.messageId = 100 * protoNum;
-    proto->item.fid = FrmId(protoNum - 1).fid();
+    proto->item.fid = ItemFrmId(static_cast<ItemFrameId>(protoNum - 1)).fid();
     if (!artExists(proto->item.fid)) {
-        proto->item.fid = FrmId(ITEM_FRM_ID_FIRST).fid();
+        proto->item.fid = ItemFrmId(ItemFrameId::Reserved).fid();
     }
     proto->item.lightDistance = 0;
     proto->item.lightIntensity = 0;
@@ -951,13 +951,13 @@ int _proto_dude_init(const char* path)
 // 0x49FBBC proto_scenery_init
 int proto_scenery_init(Proto* proto, int pid)
 {
-    SceneryFrameId num = sceneryFrameIdFromPid(pid);
+    int num = frameIdFromPid(pid);
 
     proto->scenery.pid = -1;
     proto->scenery.messageId = 100 * num;
-    proto->scenery.fid = FrmId(num - 1).fid();
+    proto->scenery.fid = SceneryFrmId(static_cast<SceneryFrameId>(num - 1)).fid();
     if (!artExists(proto->scenery.fid)) {
-        proto->scenery.fid = FrmId(SCENERY_FRM_ID_FIRST).fid();
+        proto->scenery.fid = SceneryFrmId(SceneryFrameId::Reserved).fid();
     }
     proto->scenery.lightDistance = 0;
     proto->scenery.lightIntensity = 0;
@@ -1008,13 +1008,13 @@ int proto_scenery_subdata_init(Proto* proto, SceneryType type)
 // 0x49FCFC proto_wall_init
 int proto_wall_init(Proto* proto, int pid)
 {
-    WallFrameId num = wallFrameIdFromPid(pid);
+    int num = frameIdFromPid(pid);
 
     proto->wall.pid = -1;
     proto->wall.messageId = 100 * num;
-    proto->wall.fid = FrmId(num - 1).fid();
+    proto->wall.fid = WallFrmId(static_cast<WallFrameId>(num - 1)).fid();
     if (!artExists(proto->wall.fid)) {
-        proto->wall.fid = FrmId(WALL_FRM_ID_FIRST).fid();
+        proto->wall.fid = WallFrmId(WallFrameId::Reserved).fid();
     }
     proto->wall.lightDistance = 0;
     proto->wall.lightIntensity = 0;

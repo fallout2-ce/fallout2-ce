@@ -299,9 +299,6 @@ enum {
 #define FIRST_RADIOACTIVE_GOO_PID 0x20003D9
 #define LAST_RADIOACTIVE_GOO_PID 0x20003DC
 
-// FID of one of the Force Field sceneries. Used as a marker for special hidden "attacker" object created by `critter_dmg` opcode handler.
-#define FRAME_ID_FORCE_FIELD_NS 0x20001F5
-
 enum ProtoFlags : unsigned int {
     PROTO_FLAG_NONE = 0x00,
     PROTO_FLAG_FLAT = 0x08,

@@ -219,7 +219,7 @@ AnimationType pickDeathAnim(Object* attacker, Object* defender, Object* weapon, 
     if (attacker->pid == PROTO_ID_FORCE_FIELD_NS) { // Forcefield North/South
         return checkDeathAnim(defender, ANIM_ELECTRIFIED_TO_NOTHING, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
-    if (attacker->fid == FRAME_ID_FORCE_FIELD_NS) { // ffield03.frm
+    if (FrmId(attacker->fid) == SceneryFrmId(SceneryFrameId::ForceField1)) {
         return checkDeathAnim(defender, attackerAnimation, VIOLENCE_LEVEL_MAXIMUM_BLOOD, hitFromFront);
     }
 
@@ -592,7 +592,7 @@ void showDamage(Attack* attack, AnimationType attackerAnimation, int delay)
 
             if (objectTypeFromFid(attack->defender->fid) == OBJ_TYPE_CRITTER) {
                 Rotation knockbackRotation = tileGetRotationTo(attack->attacker->tile, attack->defender->tile);
-                AnimationType attackerAnimForShow = attack->attacker->fid == FRAME_ID_FORCE_FIELD_NS
+                AnimationType attackerAnimForShow = FrmId(attack->attacker->fid) == SceneryFrmId(SceneryFrameId::ForceField1)
                     ? attackerAnimation
                     : critterGetAnimationForHitMode(attack->attacker, attack->hitMode);
 
@@ -1941,7 +1941,7 @@ void actionDamage(int tile, int elevation, int minDamage, int maxDamage, DamageT
     }
 
     Object* attacker;
-    if (objectCreateWithFidPid(&attacker, FRAME_ID_FORCE_FIELD_NS, -1) == -1) {
+    if (objectCreateWithFidPid(&attacker, SceneryFrmId(SceneryFrameId::ForceField1).fid(), -1) == -1) {
         internal_free(attack);
         return;
     }
