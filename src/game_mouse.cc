@@ -1572,7 +1572,7 @@ int gameMouseSetBouncingCursorFrmId(const InterfaceFrmId& frmId)
     int refreshFlags = 0;
 
     Rect oldRect;
-    if (gGameMouseBouncingCursor->fid != -1) {
+    if (gGameMouseBouncingCursor->fid != FrmId::kEmptyFid) {
         objectGetRect(gGameMouseBouncingCursor, &oldRect);
         refreshFlags |= REFRESH_BOUNCING_CURSOR;
     }

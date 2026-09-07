@@ -189,7 +189,7 @@ public:
 
     bool empty() const { return (*this) == Empty(); }
 
-    bool exist() const { return _fid == kEmptyFid ? _path != nullptr : exist(_fid, _builtPath); }
+    bool exist() const { return _fid != kEmptyFid && valid() && exist(_fid, _builtPath); }
 
     constexpr const FrameId& frameId() const { return _frameId; }
 
