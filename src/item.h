@@ -2,6 +2,7 @@
 #define ITEM_H
 
 #include "animation.h"
+#include "art.h"
 #include "art_defs.h"
 #include "combat_defs.h"
 #include "db.h"
@@ -171,8 +172,8 @@ bool explosiveGetDamage(int pid, int* minDamagePtr, int* maxDamagePtr);
 void explosionSettingsReset();
 void explosionGetPattern(Rotation* startRotationPtr, Rotation* endRotationPtr);
 void explosionSetPattern(Rotation startRotation, Rotation endRotation);
-MiscFrameId explosionGetFrm();
-void explosionSetFrm(MiscFrameId frm);
+MiscFrmId explosionGetFrmId();
+void explosionSetFrmId(MiscFrmId frm);
 void explosionSetRadius(int radius);
 DamageType explosionGetDamageType();
 void explosionSetDamageType(DamageType damageType);
