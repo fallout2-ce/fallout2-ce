@@ -627,7 +627,7 @@ int tileSetCenter(int tile, int flags)
     }
 
     const bool edgeZoneSelected = mapEdgeZoneIsSelected();
-    if (!edgeActive && !isScroll && gTileBorderInitialized && !settings.ui.ignore_map_edges) {
+    if (!edgeActive && !mapEdgeIsMapperMode() && !isScroll && gTileBorderInitialized && !settings.ui.ignore_map_edges) {
         // Forced centers can target a tile outside the legacy scroll border, for
         // example scripted player moves near map edges. Keep the camera within
         // the valid legacy center range without changing the object's tile.
