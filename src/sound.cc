@@ -1139,7 +1139,7 @@ int soundSetReadLimit(Sound* sound, int readLimit)
     }
 
     if (sound == nullptr) {
-        gSoundLastError = SOUND_NO_DEVICE;
+        gSoundLastError = SOUND_NO_SOUND;
         return gSoundLastError;
     }
 
@@ -1307,6 +1307,7 @@ void soundDeleteInternal(Sound* sound)
 
         if (sound->callback != nullptr) {
             sound->callback(sound->callbackUserData, SOUND_CALLBACK_EVENT_DONE);
+            sound->callback = nullptr;
         }
 
         audioEngineSoundBufferRelease(sound->soundBuffer);
@@ -1397,11 +1398,13 @@ int _soundGetPosition(Sound* sound)
     audioEngineSoundBufferGetCurrentPosition(sound->soundBuffer, &readPos, &writePos);
 
     if ((sound->type & SOUND_TYPE_STREAMING) != 0) {
-        if (readPos < sound->lastPosition) {
-            readPos += sound->numBytesRead + sound->numBuffers * sound->dataSize - sound->lastPosition;
+        int offset;
+        if (readPos <= sound->lastPosition) {
+            offset = readPos + sound->numBuffers * sound->dataSize - sound->lastPosition;
         } else {
-            readPos -= sound->lastPosition + sound->numBytesRead;
+            offset = readPos - sound->lastPosition;
         }
+        return sound->numBytesRead + offset;
     }
 
     return readPos;

@@ -134,6 +134,10 @@ int movieEffectsLoad(const char* filePath)
         return -1;
     }
 
+    if (movieEffectsLength <= 0) {
+        return -1;
+    }
+
     int* movieEffectFrameList = (int*)internal_malloc(sizeof(*movieEffectFrameList) * movieEffectsLength);
     if (movieEffectFrameList == nullptr) {
         return -1;

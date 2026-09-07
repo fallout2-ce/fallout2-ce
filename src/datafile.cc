@@ -4,6 +4,7 @@
 #include "memory_manager.h"
 #include "pcx.h"
 #include "platform_compat.h"
+#include <cstddef>
 #include <string.h>
 
 namespace fallout {
@@ -132,7 +133,9 @@ void datafilePackUntilZero(uint8_t* data, int* widthPtr, int* heightPtr)
 {
     int width = *widthPtr;
     int height = *heightPtr;
-    uint8_t* compactDataWritePtr = (uint8_t*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 157
+    std::size_t compactDataSize = static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
+    uint8_t* compactData = (uint8_t*)internal_malloc_safe(compactDataSize, __FILE__, __LINE__); // "..\\int\\DATAFILE.C", 157
+    uint8_t* compactDataWritePtr = compactData;
 
     // NOTE: Original code does not initialize `x`.
     int y = 0;
@@ -156,8 +159,12 @@ void datafilePackUntilZero(uint8_t* data, int* widthPtr, int* heightPtr)
         rowStart += width;
     }
 
-    memcpy(data, compactDataWritePtr, x * y);
-    internal_free_safe(compactDataWritePtr, __FILE__, __LINE__); // // "..\\int\\DATAFILE.C", 171
+    *widthPtr = x;
+    *heightPtr = y;
+
+    std::size_t packedDataSize = static_cast<std::size_t>(x) * static_cast<std::size_t>(y);
+    memcpy(data, compactData, packedDataSize);
+    internal_free_safe(compactData, __FILE__, __LINE__); // // "..\\int\\DATAFILE.C", 171
 }
 
 // 0x42F0E4 datafileGetPalette

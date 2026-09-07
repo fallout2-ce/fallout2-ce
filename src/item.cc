@@ -2357,10 +2357,16 @@ int miscItemGetCharges(Object* miscItem)
 // 0x4793F8
 int miscItemSetCharges(Object* miscItem, int charges)
 {
+    if (miscItem == nullptr) {
+        return -1;
+    }
+
     // NOTE: Uninline.
     int maxCharges = miscItemGetMaxCharges(miscItem);
 
-    if (charges > maxCharges) {
+    if (charges < 0) {
+        charges = 0;
+    } else if (charges > maxCharges) {
         charges = maxCharges;
     }
 

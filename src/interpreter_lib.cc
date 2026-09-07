@@ -1405,7 +1405,7 @@ static void opAddKey(Program* program)
         gIntLibGenericKeyHandlerProc = proc;
         gIntLibGenericKeyHandlerProgram = program;
     } else {
-        if (key > INT_LIB_KEY_HANDLERS_CAPACITY - 1) {
+        if (key < 0 || key > INT_LIB_KEY_HANDLERS_CAPACITY - 1) {
             programFatalError("Key out of range");
         }
 
@@ -1424,7 +1424,7 @@ static void opDeleteKey(Program* program)
         gIntLibGenericKeyHandlerProc = 0;
         gIntLibGenericKeyHandlerProgram = nullptr;
     } else {
-        if (key > INT_LIB_KEY_HANDLERS_CAPACITY - 1) {
+        if (key < 0 || key > INT_LIB_KEY_HANDLERS_CAPACITY - 1) {
             programFatalError("Key out of range");
         }
 
