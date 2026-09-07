@@ -18,6 +18,7 @@
 #include "movie.h"
 #include "object.h"
 #include "pointer_registry.h"
+#include "platform_compat.h"
 #include "proto.h"
 #include "queue.h"
 #include "random.h"
@@ -708,8 +709,14 @@ int backgroundSoundLoad(const char* fileName, GameSoundReadLimitMode readLimitMo
 int _gsound_background_play_level_music(const char* fileName, GameSoundReadLimitMode readLimitMode)
 {
     int gaplessMusic = settings.sound.gapless_music;
-    if (backgoundSoundIsPlaying() && gaplessMusic) {
-        if (!strcmp(fileName, gBackgroundSoundFileName)) {
+    bool isPlaying = backgoundSoundIsPlaying();
+
+    if (fileName == nullptr) {
+        return backgroundSoundLoad(fileName, readLimitMode, GSOUND_STREAM, GSOUND_LOOP);
+    }
+
+    if (isPlaying && gaplessMusic) {
+        if (compat_stricmp(fileName, gBackgroundSoundFileName) == 0) {
             return 0;
         }
     }
