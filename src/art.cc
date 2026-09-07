@@ -41,8 +41,8 @@ typedef struct HeadDescription {
 } HeadDescription;
 
 static int artReadList(const char* path, char** out_arr, int* out_count);
-static int artCacheGetFileSizeImpl(int fid, int* out_size);
-static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data);
+static int artCacheGetFileSize(const FrmId& frmId, int* out_size);
+static int artCacheReadData(const FrmId& frmId, int* sizePtr, unsigned char* data);
 static void artCacheFreeImpl(void* ptr);
 static int artReadFrameData(unsigned char* data, File* stream, int count, int* paddingPtr);
 static int artReadHeader(Art* art, File* stream);
@@ -163,6 +163,14 @@ int artInit()
     char path[COMPAT_MAX_PATH];
     File* stream;
     char string[200];
+
+    CacheSizeProc* artCacheGetFileSizeImpl = [](int fid, int* sizePtr) {
+        return artCacheGetFileSize(FrmId(fid), sizePtr);
+    };
+
+    CacheReadProc* artCacheReadDataImpl = [](int fid, int* sizePtr, unsigned char* data) {
+        return artCacheReadData(FrmId(fid), sizePtr, data);
+    };
 
     int cacheSize = settings.system.art_cache_size;
     if (!cacheInit(&gArtCache, artCacheGetFileSizeImpl, artCacheReadDataImpl, artCacheFreeImpl, cacheSize << 20)) {
@@ -957,11 +965,11 @@ static bool artGetLocalizedPath(const char* basePath, const char** outPath)
 }
 
 // 0x419A78
-static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
+static int artCacheGetFileSize(const FrmId& frmId, int* sizePtr)
 {
     int result = -1;
 
-    const char* artFilePath = FrmId(fid).filePath();
+    const char* artFilePath = frmId.filePath();
     if (artFilePath != nullptr) {
         File* stream = nullptr;
         const char* localizedPath;
@@ -977,7 +985,7 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
             if (artReadHeader(&art, stream) == 0) {
                 *sizePtr = artGetDataSize(&art);
                 if (*sizePtr <= 0) {
-                    debugPrint("ART ERROR: fid %d path %s returned invalid data size %d\n", fid, artFilePath, *sizePtr);
+                    debugPrint("ART ERROR: fid %d path %s returned invalid data size %d\n", frmId.fid(), artFilePath, *sizePtr);
                     *sizePtr = 0;
                 } else {
                     result = 0;
@@ -991,11 +999,11 @@ static int artCacheGetFileSizeImpl(int fid, int* sizePtr)
 }
 
 // 0x419B78
-static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
+static int artCacheReadData(const FrmId& frmId, int* sizePtr, unsigned char* data)
 {
     int result = -1;
 
-    const char* artFileName = FrmId(fid).filePath();
+    const char* artFileName = frmId.filePath();
     if (artFileName != nullptr) {
         bool loaded = false;
         const char* localizedPath;
@@ -1014,11 +1022,11 @@ static int artCacheReadDataImpl(int fid, int* sizePtr, unsigned char* data)
         if (loaded) {
             *sizePtr = artGetDataSize((Art*)data);
             if (*sizePtr < 0) {
-                debugPrint("ART ERROR: fid %d path %s read data returned negative size %d\n", fid, artFileName, *sizePtr);
+                debugPrint("ART ERROR: fid %d path %s read data returned negative size %d\n", frmId.fid(), artFileName, *sizePtr);
             }
             result = 0;
         } else {
-            debugPrint("ART ERROR: failed to load ART data for fid %d path %s\n", fid, artFileName);
+            debugPrint("ART ERROR: failed to load ART data for fid %d path %s\n", frmId.fid(), artFileName);
         }
     }
 
