@@ -1483,7 +1483,7 @@ static void op_explosions_metarule(Program* program)
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_ART:
-        explosionSetFrm(static_cast<MiscFrameId>(param1));
+        explosionSetFrmId(static_cast<MiscFrameId>(param1));
         programStackPushInteger(program, 0);
         break;
     case EXPL_FORCE_EXPLOSION_RADIUS:
