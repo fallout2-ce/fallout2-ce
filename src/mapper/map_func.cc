@@ -449,7 +449,7 @@ void placeObject(int pid, int fid)
 }
 
 // place_tile_
-void placeTile(int pid, int fid)
+void placeTile(int pid, const FrmId& frmId)
 {
     int x, y;
     mouseGetPosition(&x, &y);
@@ -458,13 +458,13 @@ void placeTile(int pid, int fid)
         return;
     }
 
-    int newArt = tileFrameIdFromFid(fid);
+    int newArt = frmId.frameId().id;
     int* squarePtr = &_square[gElevation]->fid[squareTile];
     int oldValue = *squarePtr;
 
     if (tileRoofIsVisible()) {
-        FrmId oldRoofFid = FrmId(tileFrameIdFromFid(oldValue >> 16));
-        if (oldRoofFid == FrmId(fid)) {
+        const TileFrmId oldRoofFrmId = FrmId(oldValue >> 16).frameId().tile;
+        if (oldRoofFrmId == frmId) {
             return;
         }
 
@@ -478,8 +478,8 @@ void placeTile(int pid, int fid)
         Rect rect = { sx, sy, sx + 80, sy + 36 };
         tileWindowRefreshRect(&rect, gElevation);
     } else {
-        FrmId oldFloorFid = FrmId(tileFrameIdFromFid(oldValue));
-        if (oldFloorFid == FrmId(fid)) {
+        const TileFrmId oldFloorFrmId = FrmId(oldValue).frameId().tile;
+        if (oldFloorFrmId == frmId) {
             return;
         }
 
@@ -881,12 +881,12 @@ void copyTile()
         return;
     }
 
-    FrmId srcFrmId[kMaxTiles];
+    TileFrmId srcFrmId[kMaxTiles];
     int srcDx[kMaxTiles];
     int srcDy[kMaxTiles];
     for (int i = 0; i < srcCount; i++) {
-        TileFrameId floorArt = tileFrameIdFromFid(_square[gElevation]->fid[srcTiles[i]]);
-        srcFrmId[i] = FrmId(floorArt);
+        TileFrameId floorArt = FrmId(_square[gElevation]->fid[srcTiles[i]]).frameId().tile;
+        srcFrmId[i] = floorArt;
 
         int sx, sy;
         squareTileToScreenXY(srcTiles[i], &sx, &sy, gElevation);
@@ -894,7 +894,7 @@ void copyTile()
         srcDy[i] = sy - region.top;
     }
 
-    constexpr FrmId kBlankFrmId = FrmId(TILE_FRM_ID_1);
+    constexpr TileFrmId kBlankFrmId = TileFrameId::Grid;
 
     mp_run_placement_loop([&](int ix, int iy) {
         for (int i = 0; i < srcCount; i++) {
@@ -905,7 +905,7 @@ void copyTile()
             if (dstSquare != -1) {
                 int* word = &_square[gElevation]->fid[dstSquare];
                 int rotBits = (*word & 0xF000) >> 12;
-                int newFloor = tileFrameIdFromFid(srcFrmId[i].fid()) | rotBits;
+                int newFloor = srcFrmId[i].frameId().id | rotBits;
                 *word = (*word & 0xFFFF0000) | (newFloor & 0xFFFF);
             }
         }
@@ -1205,7 +1205,7 @@ void mapper_shift_map_elev()
     // tiles in the source elevation back to "blank" art (id=1).
     memcpy(_square[destElev]->fid, _square[gElevation]->fid, 40000);
 
-    constexpr FrmId kBlankFrmId = FrmId(TILE_FRM_ID_1);
+    constexpr int kBlankFrameId = static_cast<int>(TileFrameId::Grid);
 
     // Match the original mapper's tile word format (preserved here even though the rotation
     // bits end up overlapping the low nibble of the art id — same convention as placeTile).
@@ -1214,15 +1214,15 @@ void mapper_shift_map_elev()
         int v = src[i];
         int floorRot = (v & 0xF000) >> 12;
         int roofRot = ((v >> 16) & 0xF000) >> 12;
-        int newRoofWord = tileFrameIdFromFid(kBlankFrmId.fid()) | roofRot;
-        int newFloorWord = tileFrameIdFromFid(kBlankFrmId.fid()) | floorRot;
+        int newRoofWord = kBlankFrameId | roofRot;
+        int newFloorWord = kBlankFrameId | floorRot;
         src[i] = (newRoofWord << 16) | (newFloorWord & 0xFFFF);
     }
 
     // Move all spatial scripts from source elevation to destination, plus any exit-grid objects
     // co-located with each script.
     Script* script = scriptGetFirstSpatialScript(gElevation);
-    constexpr FrmId kExitGridFrmId = FrmId(InterfaceFrameId::ExitGridMarker);
+    constexpr InterfaceFrmId kExitGridFrmId = InterfaceFrameId::ExitGridMarker;
 
     while (script != nullptr) {
         int builtTile = script->sp.built_tile;
