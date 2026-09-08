@@ -62,7 +62,10 @@ ScriptHookValue ScriptHookValue::fromProgramValue(Program* program, ProgramValue
 ProgramValue ScriptHookValue::toProgramValue(Program* program) const
 {
     if (_isString) {
-        assert(program != nullptr);
+        if (program == nullptr) {
+            debugPrint("ScriptHookValue::toProgramValue: cannot convert string without program");
+            return ProgramValue(0);
+        }
         return programMakeString(program, _stringValue.c_str());
     }
     return _value;
