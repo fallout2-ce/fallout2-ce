@@ -2882,6 +2882,8 @@ int _scr_remove_all_force()
     queueClearByEventType(EVENT_TYPE_SCRIPT, nullptr);
     _scr_message_free();
 
+    scriptSelfOverrides.clear();
+
     for (int type = 0; type < SCRIPT_TYPE_COUNT; type++) {
         ScriptList* scriptList = &(gScriptLists[type]);
         ScriptListExtent* extent = scriptList->head;
