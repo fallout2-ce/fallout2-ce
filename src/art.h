@@ -249,22 +249,22 @@ public:
         return !(*this == other);
     }
 
-template <typename TFrameId,
-    typename = std::void_t<
-        decltype(MapFrameIdToObjectType<TFrameId>::value)>>
-constexpr bool operator==(TFrameId frameId) const
-{
-    // Path-backed IDs are not comparable to enum FrameIds via FID.
-    return _path == nullptr && _fid == buildFid(MapFrameIdToObjectType<TFrameId>::value, static_cast<int>(frameId));
-}
+    template <typename TFrameId,
+        typename = std::void_t<
+            decltype(MapFrameIdToObjectType<TFrameId>::value)>>
+    constexpr bool operator==(TFrameId frameId) const
+    {
+        // Path-backed IDs are not comparable to enum FrameIds via FID.
+        return _path == nullptr && _fid == buildFid(MapFrameIdToObjectType<TFrameId>::value, static_cast<int>(frameId));
+    }
 
-template <typename TFrameId,
-    typename = std::void_t<
-        decltype(MapFrameIdToObjectType<TFrameId>::value)>>
-constexpr bool operator!=(TFrameId frameId) const
-{
-    return !(*this == frameId);
-}
+    template <typename TFrameId,
+        typename = std::void_t<
+            decltype(MapFrameIdToObjectType<TFrameId>::value)>>
+    constexpr bool operator!=(TFrameId frameId) const
+    {
+        return !(*this == frameId);
+    }
 
 private:
     ObjectType _objectType;
