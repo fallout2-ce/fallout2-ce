@@ -158,16 +158,6 @@ int ScriptHookCall::numReturnValues() const { return _numRetVals; }
 int ScriptHookCall::numScriptReturnValues() const { return _scriptRetVals; }
 HookType ScriptHookCall::hookType() const { return _hookType; }
 
-static bool scriptHookIsRegistered(HookType hookType, const ScriptHook& hook)
-{
-    const auto& hooksOfType = scriptHooks[hookType];
-    return std::any_of(hooksOfType.begin(), hooksOfType.end(),
-        [&hook](const ScriptHook& registeredHook) {
-            return registeredHook.program == hook.program
-                && registeredHook.procedureIndex == hook.procedureIndex;
-        });
-}
-
 void ScriptHookCall::call()
 {
     if (_callStack.size() == MAX_HOOK_CALL_DEPTH) {
@@ -176,13 +166,9 @@ void ScriptHookCall::call()
     }
     _callStack.push_back(this);
 
-    const auto hooksSnapshot = scriptHooks[_hookType];
-    // Iterate over a snapshot so reentrant registration changes cannot invalidate iteration.
-    for (int i = static_cast<int>(hooksSnapshot.size()) - 1; i >= 0; --i) {
-        const auto& hook = hooksSnapshot[i];
-        if (!scriptHookIsRegistered(_hookType, hook)) {
-            continue;
-        }
+    const auto& hooksOfType = scriptHooks[_hookType];
+    for (int i = static_cast<int>(hooksOfType.size()) - 1; i >= 0; --i) {
+        const auto& hook = hooksOfType[i];
         _scriptArgs = 0;
         _scriptRetVals = 0;
         programExecuteProcedure(hook.program, hook.procedureIndex);
