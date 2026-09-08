@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <string>
+
 #include "animation.h"
 #include "art.h"
 #include "color.h"
@@ -276,21 +278,26 @@ int objectExamineFunc(Object* critter, Object* target, void (*fn)(const char* st
     }
 
     if (!scriptOverrides) {
-        char* description = objectGetDescription(target);
-        if (description != nullptr && strcmp(description, _proto_none_str) == 0) {
-            description = nullptr;
-        }
-
-        if (description == nullptr || *description == '\0') {
-            MessageListItem messageListItem;
-            messageListItem.num = 493;
-            if (!messageListGetItem(&gProtoMessageList, &messageListItem)) {
-                debugPrint("\nError: Can't find msg num!");
-            }
-            fn(messageListItem.text);
+        std::string hookDescription;
+        if (scriptHooks_DescriptionObject(target, hookDescription)) {
+            fn(hookDescription.c_str());
         } else {
-            if (objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER || !critterIsDead(target)) {
-                fn(description);
+            char* description = objectGetDescription(target);
+            if (description != nullptr && strcmp(description, _proto_none_str) == 0) {
+                description = nullptr;
+            }
+
+            if (description == nullptr || *description == '\0') {
+                MessageListItem messageListItem;
+                messageListItem.num = 493;
+                if (!messageListGetItem(&gProtoMessageList, &messageListItem)) {
+                    debugPrint("\nError: Can't find msg num!");
+                }
+                fn(messageListItem.text);
+            } else {
+                if (objectTypeFromPid(target->pid) != OBJ_TYPE_CRITTER || !critterIsDead(target)) {
+                    fn(description);
+                }
             }
         }
     }

@@ -10,6 +10,8 @@
 #include "worldmap.h"
 #include <initializer_list>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace fallout {
 
@@ -193,6 +195,29 @@ typedef enum {
 constexpr size_t HOOKS_MAX_ARGUMENTS = 16;
 constexpr size_t HOOKS_MAX_RETURN_VALUES = 8;
 
+class ScriptHookValue {
+public:
+    ScriptHookValue() = default;
+    explicit ScriptHookValue(ProgramValue value);
+
+    static ScriptHookValue fromProgramValue(Program* program, ProgramValue value);
+
+    ProgramValue toProgramValue(Program* program) const;
+
+    bool isString() const;
+    bool isInt() const;
+    bool isPointer() const;
+    int asInt() const;
+    float asFloat() const;
+    Object* asObject() const;
+    const char* asString() const;
+
+private:
+    ProgramValue _value;
+    std::string _stringValue;
+    bool _isString = false;
+};
+
 /**
  * Allows to delegate some logic to scripts:
  * - Each hook type has different number of arguments and return values
@@ -212,14 +237,14 @@ public:
     ScriptHookCall& operator=(ScriptHookCall&& other) = delete;
 
     // Sets an argument value at given index.
-    void setArgAt(int idx, ProgramValue value);
+    void setArgAt(int idx, Program* program, ProgramValue value);
     // Adds return value from script.
     // numReturnValues will only increase if current script called this more times than the last one.
-    void addReturnValueFromScript(ProgramValue value);
+    void addReturnValueFromScript(Program* program, ProgramValue value);
 
     void call();
 
-    ProgramValue getNextArgFromScript();
+    ProgramValue getNextArgFromScript(Program* program);
 
     // Number of arguments supplied from the engine.
     int numArgs() const;
@@ -230,8 +255,8 @@ public:
     // Number of supplied values from the last script.
     int numScriptReturnValues() const;
 
-    ProgramValue getArgAt(int idx) const;
-    ProgramValue getReturnValueAt(int idx) const;
+    ProgramValue getArgAt(int idx, Program* program) const;
+    const ScriptHookValue& getReturnValueAt(int idx) const;
     HookType hookType() const;
 
 private:
@@ -240,9 +265,9 @@ private:
     HookType _hookType;
     int _maxRetVals = 0;
 
-    ProgramValue _args[HOOKS_MAX_ARGUMENTS] = {};
+    ScriptHookValue _args[HOOKS_MAX_ARGUMENTS] = {};
     int _numArgs = 0;
-    ProgramValue _retVals[HOOKS_MAX_RETURN_VALUES] = {};
+    ScriptHookValue _retVals[HOOKS_MAX_RETURN_VALUES] = {};
     int _numRetVals = 0;
 
     int _scriptArgs = 0;
@@ -329,6 +354,7 @@ bool scriptHooks_RestTimer(unsigned int gameTime, RestEventType eventType, int h
 void scriptHooks_OnDeath(Object* critter);
 int scriptHooks_ExplosiveTimer(Object* explosive, int delay, EventType eventType);
 EncounterHookResult scriptHooks_Encounter(EncounterHookEventType eventType, Map* mapIdPtr, bool isSpecial, int tableId, int entryId);
+bool scriptHooks_DescriptionObject(Object* object, std::string& description);
 bool scriptHooks_InventoryMove(HookInventoryMoveType actionType, Object* item, Object* targetItem);
 bool scriptHooks_CombatTurnStart(Object* critter, bool reloadedDuringCombat);
 bool scriptHooks_CombatTurnEnd(Object* critter, int turnResult, bool reloadedDuringCombat);

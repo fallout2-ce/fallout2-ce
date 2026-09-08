@@ -171,7 +171,7 @@ CE defines several metarules that are not supported in Sfall.  Include [ce.h](fi
 | GameModeChange | `HOOK_GAMEMODECHANGE` | ✅ | - |
 | UseAnimObj | `HOOK_USEANIMOBJ` | ✅ | - |
 | ExplosiveTimer | `HOOK_EXPLOSIVETIMER` | ✅ | - |
-| DescriptionObj | `HOOK_DESCRIPTIONOBJ` | 🚫 | Et tu |
+| DescriptionObj | `HOOK_DESCRIPTIONOBJ` | ✅ | Deprecated integer string pointers are not supported; return strings directly. |
 | UseSkillOn | `HOOK_USESKILLON` | ✅ | - |
 | OnExplosion | `HOOK_ONEXPLOSION` | 🚫 | (maybe) |
 | SubCombatDamage | `HOOK_SUBCOMBATDAMAGE` | 🚫 | (maybe) |

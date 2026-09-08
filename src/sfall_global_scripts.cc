@@ -349,6 +349,11 @@ bool sfall_gl_scr_remove_all_timer_events(Program* program)
     return true;
 }
 
+bool sfall_gl_scr_is_global_script(Program* program)
+{
+    return state != nullptr && sfall_gl_scr_map_program_to_scr(program) != nullptr;
+}
+
 void sfall_gl_scr_set_repeat(Program* program, int frames)
 {
     GlobalScript* scr = sfall_gl_scr_map_program_to_scr(program);

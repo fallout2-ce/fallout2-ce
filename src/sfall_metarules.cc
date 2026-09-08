@@ -174,7 +174,7 @@ namespace {
         if (hookCall != nullptr
             && hookCall->hookType() == HOOK_COMBATDAMAGE
             && hookCall->numArgs() > 12) {
-            ProgramValue attackArg = hookCall->getArgAt(12);
+            ProgramValue attackArg = hookCall->getArgAt(12, nullptr);
             if (attackArg.isPointer() && attackArg.pointerValue == value.pointerValue) {
                 return static_cast<Attack*>(value.pointerValue);
             }
@@ -1242,7 +1242,7 @@ void mf_get_sfall_arg_at(OpcodeContext& ctx)
     const auto hookCall = hookOpcodeGetCurrentCall(ctx.name());
     if (hookCall != nullptr) {
         if (argNum >= 0 && argNum < hookCall->numArgs()) {
-            result = hookCall->getArgAt(argNum);
+            result = hookCall->getArgAt(argNum, ctx.program());
         } else {
             ctx.printError("%s: argNum %d out of range [0, %d]", ctx.name(), argNum, hookCall->numArgs() - 1);
         }
