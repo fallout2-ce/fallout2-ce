@@ -1235,7 +1235,7 @@ static void op_refresh_pc_art(Program* program)
 
     _proto_dude_update_gender();
 
-    int fid = inventoryComputeCritterFid(gDude,
+    const FrmId frmId = inventoryComputeCritterFrmId(gDude,
         gDude->pid,
         critterGetItem2(gDude),
         critterGetItem1(gDude),
@@ -1247,7 +1247,7 @@ static void op_refresh_pc_art(Program* program)
     // CE: When changing gender, the refreshed rect can be smaller than the original one,
     // which can leave a momentary ghost.  We union with old rect to avoid that.
     Rect newRect;
-    objectSetFid(gDude, fid, nullptr);
+    objectSetFrmId(gDude, frmId, nullptr);
     objectGetRect(gDude, &newRect);
     rectUnion(&rect, &newRect, &rect);
     tileWindowRefreshRect(&rect, gDude->elevation);

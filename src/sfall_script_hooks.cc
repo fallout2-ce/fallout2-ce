@@ -1140,16 +1140,16 @@ void scriptHooks_BarterPrice(BarterPriceContext* ctx)
 
     int     ret0 - override FID
 */
-int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid)
+FrmId scriptHooks_AdjustFid(const FrmId& vanillaFrmId, const FrmId& modifiedFrmId)
 {
-    ScriptHookCall hook(HOOK_ADJUSTFID, 1, { vanillaFid, modifiedFid });
+    ScriptHookCall hook(HOOK_ADJUSTFID, 1, { vanillaFrmId.fid(), modifiedFrmId.fid() });
     hook.call();
 
     if (hook.numReturnValues() > 0) {
-        return hook.getReturnValueAt(0).asInt();
+        return FrmId(hook.getReturnValueAt(0).asInt());
     }
 
-    return modifiedFid;
+    return modifiedFrmId;
 }
 
 /*

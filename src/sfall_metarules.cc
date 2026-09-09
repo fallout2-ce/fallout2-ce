@@ -593,7 +593,7 @@ namespace {
             return objectSetRotation(object, static_cast<Rotation>(intValue), nullptr) == 0;
         case ObjectDataField::Fid:
             if (!intDataValue(data, intValue)) return false;
-            return objectSetFid(object, intValue, nullptr) == 0;
+            return objectSetFrmId(object, FrmId(intValue), nullptr) == 0;
         case ObjectDataField::Flags:
             if (!intDataValue(data, intValue)) return false;
             object->flags = static_cast<ObjectFlags>(intValue);

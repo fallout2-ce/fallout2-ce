@@ -1,6 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "art.h"
 #include "color.h"
 #include "db.h"
 #include "geometry.h"
@@ -31,7 +32,7 @@ int objectLoadAll(File* stream);
 int objectSaveAll(File* stream);
 void _obj_render_pre_roof(Rect* rect, int elevation);
 void _obj_render_post_roof(Rect* rect, int elevation);
-int objectCreateWithFidPid(Object** objectPtr, int fid, int pid);
+int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid);
 int objectCreateWithPid(Object** objectPtr, int pid);
 int _obj_copy(Object** a1, Object* a2);
 int _obj_connect(Object* obj, int tile_index, int elev, Rect* rect);
@@ -40,7 +41,7 @@ int _obj_offset(Object* obj, int x, int y, Rect* rect);
 int _obj_move(Object* a1, int a2, int a3, int elevation, Rect* a5);
 int objectSetLocation(Object* obj, int tile, int elevation, Rect* rect);
 int _obj_reset_roof();
-int objectSetFid(Object* obj, int fid, Rect* rect);
+int objectSetFrmId(Object* obj, const FrmId& frmId, Rect* rect);
 int objectSetFrame(Object* obj, int frame, Rect* rect);
 int objectSetNextFrame(Object* obj, Rect* rect);
 int objectSetPrevFrame(Object* obj, Rect* rect);
@@ -135,7 +136,7 @@ private:
     Object* _ptr = nullptr;
 };
 
-int objectCreateWithFidPid(UniqueObject& obj, int fid, int pid);
+int objectCreateWithFrmIdPid(UniqueObject& obj, const FrmId& frmId, int pid);
 
 } // namespace fallout
 

@@ -2,6 +2,7 @@
 #define INVENTORY_H
 
 #include "animation_defs.h"
+#include "art.h"
 #include "obj_types.h"
 #include "proto_types.h"
 
@@ -32,7 +33,7 @@ int inventoryGetInvenApCost();
 void inventorySetInvenApCost(int cost);
 void inventoryResetInvenApCost();
 void adjustCritterStatsOnArmorChange(Object* critter, Object* oldArmor, Object* newArmor);
-int inventoryComputeCritterFid(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation);
+FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation);
 void inventoryOpenUseItemOn(Object* targetObj);
 Object* critterGetItem2(Object* critter);
 Object* critterGetItem1(Object* critter);

@@ -2,6 +2,7 @@
 #define FALLOUT_SFALL_SCRIPT_HOOKS_H_
 
 #include "animation_defs.h"
+#include "art.h"
 #include "interpreter.h"
 #include "interpreter_extra.h"
 #include "queue.h"
@@ -374,7 +375,7 @@ void scriptHooks_RemoveInventoryObject(Object* owner, Object* item, int quantity
 void scriptHooks_ComputeDamage(Attack* attack, int numRounds, int baseDmgMult);
 void scriptHooks_BarterPrice(BarterPriceContext* ctx);
 
-int scriptHooks_AdjustFid(int vanillaFid, int modifiedFid);
+FrmId scriptHooks_AdjustFid(const FrmId& vanillaFrmId, const FrmId& modifiedFrmId);
 bool scriptHooks_InvenWield(Object* critter, Object* item, InvenSlot slot, int isWield, int isRemove, bool filterInactiveHand = true);
 bool scriptHooks_CanUseWeapon(bool result, Object* critter, Object* weapon, HitMode hitMode);
 

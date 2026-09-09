@@ -684,7 +684,7 @@ Object* scriptGetSelf(Program* program)
     }
 
     Object* object;
-    objectCreateWithFidPid(&object, FrmId(InterfaceFrameId::ExitGridMarker).fid(), -1);
+    objectCreateWithFrmIdPid(&object, InterfaceFrameId::ExitGridMarker, -1);
     objectHide(object, nullptr);
     _obj_toggle_flat(object, nullptr);
     object->sid = sid;
