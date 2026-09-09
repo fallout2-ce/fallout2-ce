@@ -541,10 +541,10 @@ static int elevatorWindowInit(int elevator)
     const ElevatorBackground* elevatorBackground = &(gElevatorBackgrounds[elevator]);
     bool backgroundsLoaded = true;
 
-    const FrmId backgroundFrmId = FrmId(elevatorBackground->backgroundFrmId);
+    const InterfaceFrmId backgroundFrmId = elevatorBackground->backgroundFrmId;
     if (_elevatorBackgroundFrmImage.lock(backgroundFrmId)) {
         if (elevatorBackground->panelFrmId != InterfaceFrameId::Invalid) {
-            const FrmId panelFrmId = FrmId(elevatorBackground->panelFrmId);
+            const InterfaceFrmId panelFrmId = elevatorBackground->panelFrmId;
             if (!_elevatorPanelFrmImage.lock(panelFrmId)) {
                 backgroundsLoaded = false;
             }

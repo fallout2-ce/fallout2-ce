@@ -501,7 +501,7 @@ static void showDeath()
             }
 
             FrmImage backgroundFrmImage;
-            if (!backgroundFrmImage.lock(FrmId(InterfaceFrameId::DeathScene))) {
+            if (!backgroundFrmImage.lock(InterfaceFrameId::DeathScene)) {
                 break;
             }
 

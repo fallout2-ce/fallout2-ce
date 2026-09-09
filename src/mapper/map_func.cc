@@ -954,7 +954,7 @@ void eraseObject()
 
                     if (hit != nullptr) {
                         // Don't destroy exit-grid markers (interface art, id=3).
-                        if (hit->fid != FrmId(InterfaceFrameId::ExitGridMarker).fid()) {
+                        if (FrmId(hit->fid) != InterfaceFrameId::ExitGridMarker) {
                             Rect rect;
                             int elev = hit->elevation;
                             reg_anim_clear(hit);

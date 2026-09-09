@@ -2604,7 +2604,7 @@ static int mapperPickTile(int* outOffset)
     } else {
         tileFrmId = static_cast<TileFrameId>(frameIdFromFid(packedTile));
     }
-    const FrmId artFrmId = FrmId(tileFrmId);
+    const TileFrmId artFrmId = tileFrmId;
 
     for (int idx = 0; idx < maxId; idx++) {
         int pid = (OBJ_TYPE_TILE << 24) | idx;
