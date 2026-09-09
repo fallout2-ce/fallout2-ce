@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <stdint.h>
 
-#include "animation_defs.h"
 #include "animation.h"
+#include "animation_defs.h"
 #include "interpreter.h"
 #include "opcode_context.h"
 #include "scripts.h"
