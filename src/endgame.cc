@@ -70,7 +70,7 @@ typedef struct EndgameEnding {
 } EndgameEnding;
 
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName);
-static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName);
+static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const char* narratorFileName);
 static int endgameEndingHandleContinuePlaying();
 static int endgameEndingSlideshowWindowInit();
 static void endgameEndingSlideshowWindowFree();
@@ -78,7 +78,7 @@ static void endgameEndingRenderFrame(const unsigned char* data, int width, int h
 static void endgameEndingVoiceOverInit(const char* fname);
 static void endgameEndingVoiceOverReset();
 static void endgameEndingVoiceOverFree();
-static void endgameEndingLoadPalette(ObjectType type, int id);
+static void endgameEndingLoadPalette(const InterfaceFrmId& frmId);
 static void _endgame_voiceover_callback();
 static int endgameEndingSubtitlesLoad(const char* filePath);
 static void endgameEndingRefreshSubtitles();
@@ -229,7 +229,7 @@ void endgamePlaySlideshow()
                 endgameEndingRenderPanningScene(ending->direction, ending->voiceOverBaseName);
             } else {
                 const InterfaceFrmId frmId = ending->art_num;
-                endgameEndingRenderStaticScene(frmId.fid(), ending->voiceOverBaseName);
+                endgameEndingRenderStaticScene(frmId, ending->voiceOverBaseName);
             }
         }
     }
@@ -257,7 +257,7 @@ void endgamePlayMovie()
         creditsFilePath = configuredCreditsFilePath;
     }
     if (creditsFilePath[0] != '\0') {
-        creditsOpen(creditsFilePath, -1, false);
+        creditsOpen(creditsFilePath, InterfaceFrameId::Invalid, false);
     }
 
     backgroundSoundDelete();
@@ -349,18 +349,18 @@ static int endgameEndingHandleContinuePlaying()
 // 0x43FBDC endgame_pan_desert
 static void endgameEndingRenderPanningScene(int direction, const char* narratorFileName)
 {
-    CacheEntry* backgroundHandle;
-    Art* background = artLock(InterfaceFrameId::PanningDesertImage, &backgroundHandle);
-    if (background != nullptr) {
-        int width = artGetWidth(background);
-        int height = artGetHeight(background);
-        unsigned char* backgroundData = artGetFrameData(background);
+    FrmImage backgroundFrmImage;
+    constexpr InterfaceFrmId backgroundFrmId = InterfaceFrameId::PanningDesertImage;
+    if (backgroundFrmImage.lock(backgroundFrmId)) {
+        int width = backgroundFrmImage.getWidth();
+        int height = backgroundFrmImage.getHeight();
+        unsigned char* backgroundData = backgroundFrmImage.getData();
         if (width <= 0 || height <= 0 || backgroundData == nullptr) {
-            artUnlock(backgroundHandle);
+            backgroundFrmImage.unlock();
             return;
         }
 
-        endgameEndingLoadPalette(OBJ_TYPE_INTERFACE, static_cast<int>(InterfaceFrameId::PanningDesertImage));
+        endgameEndingLoadPalette(backgroundFrmId);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, screenGetWidth(), screenGetHeight(), screenGetWidth(), COLOR_BLACK);
 
         // CE: Update overlay.
@@ -480,7 +480,7 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
         }
 
         tickersEnable();
-        artUnlock(backgroundHandle);
+        backgroundFrmImage.unlock();
 
         paletteFadeTo(gPaletteBlack);
         bufferFill(gEndgameEndingSlideshowWindowBuffer, screenGetWidth(), screenGetHeight(), screenGetWidth(), COLOR_BLACK);
@@ -498,19 +498,18 @@ static void endgameEndingRenderPanningScene(int direction, const char* narratorF
 }
 
 // 0x440004 endgame_display_image
-static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName)
+static void endgameEndingRenderStaticScene(const InterfaceFrmId& frmId, const char* narratorFileName)
 {
-    CacheEntry* backgroundHandle;
-    Art* background = artLock(fid, &backgroundHandle);
-    if (background == nullptr) {
+    FrmImage backgroundFrmImage;
+    if (!backgroundFrmImage.lock(frmId)) {
         return;
     }
 
-    int width = artGetWidth(background);
-    int height = artGetHeight(background);
-    unsigned char* backgroundData = artGetFrameData(background);
+    int width = backgroundFrmImage.getWidth();
+    int height = backgroundFrmImage.getHeight();
+    unsigned char* backgroundData = backgroundFrmImage.getData();
     if (backgroundData != nullptr) {
-        endgameEndingLoadPalette(objectTypeFromFid(fid), frameIdFromFid(fid));
+        endgameEndingLoadPalette(frmId);
 
         // CE: Update overlay.
         endgameEndingUpdateOverlay();
@@ -590,7 +589,7 @@ static void endgameEndingRenderStaticScene(int fid, const char* narratorFileName
         }
     }
 
-    artUnlock(backgroundHandle);
+    backgroundFrmImage.unlock();
 }
 
 // 0x43F99C endgame_init
@@ -801,10 +800,10 @@ static void endgameEndingVoiceOverFree()
 }
 
 // 0x440378 endgame_load_palette
-static void endgameEndingLoadPalette(ObjectType type, int id)
+static void endgameEndingLoadPalette(const InterfaceFrmId& frmId)
 {
     char fileName[13];
-    if (artCopyFileName(type, id, fileName) != 0) {
+    if (artCopyFileName(frmId.objectType(), frmId.frameId().id, fileName) != 0) {
         return;
     }
 
