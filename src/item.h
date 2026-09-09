@@ -1,7 +1,7 @@
 #ifndef ITEM_H
 #define ITEM_H
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "art.h"
 #include "art_defs.h"
 #include "combat_defs.h"

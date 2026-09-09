@@ -6,7 +6,7 @@
 #include <memory>
 #include <type_traits>
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "art_defs.h"
 #include "cache.h"
 #include "draw.h"

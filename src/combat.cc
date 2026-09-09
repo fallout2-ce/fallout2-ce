@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "actions.h"
+#include "animation_defs.h"
 #include "animation.h"
 #include "art.h"
 #include "color.h"

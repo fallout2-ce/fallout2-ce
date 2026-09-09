@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "art.h"
 #include "art_defs.h"
 #include "audio.h"

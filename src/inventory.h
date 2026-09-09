@@ -1,7 +1,7 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "obj_types.h"
 #include "proto_types.h"
 

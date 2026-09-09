@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "animation_defs.h"
 #include "animation.h"
 #include "art.h"
 #include "character_editor.h"
