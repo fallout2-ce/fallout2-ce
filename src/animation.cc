@@ -3194,7 +3194,7 @@ void _dude_fidget()
         } else {
             char fileName[16];
             fileName[0] = '\0';
-            artCopyFileName(OBJ_TYPE_CRITTER, FrmId(object->fid).frameId().id, fileName);
+            artCopyFileName(FrmId(object->fid), fileName);
             if (fileName[0] == 'm' || fileName[0] == 'M') {
                 if (objectGetDistanceBetween(object, gDude) < critterGetStat(gDude, STAT_PERCEPTION) * 2) {
                     shoudPlaySound = true;

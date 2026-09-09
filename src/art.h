@@ -41,6 +41,8 @@ extern CritterFrameId _art_vault_person_nums[DUDE_NATIVE_LOOK_COUNT][GENDER_COUN
 
 extern Cache gArtCache;
 
+#define ART_NAME_SIZE (13) 
+
 class NamedCacheEntry;
 std::shared_ptr<NamedCacheEntry> artLockNamedFrameData(const char* path);
 
@@ -443,7 +445,7 @@ inline Art* artLock(const FrmId& frmId, CacheEntry** handlePtr)
 unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
-int artCopyFileName(ObjectType objectType, int id, char* dest);
+int artCopyFileName(const FrmId& frmId, char* dest);
 int _art_get_code(AnimationType animation, WeaponAnimation weaponType, char* weaponCodePtr, char* animationCodePtr);
 int artGetFramesPerSecond(Art* art);
 int artGetActionFrame(Art* art);
@@ -458,7 +460,7 @@ unsigned char* artGetFrameData(const Art* art, int frame, Rotation rotation, int
 ArtFrame* artGetFrame(const Art* art, int frame, Rotation rotation);
 ConstBuffer2D artGetFrameBuffer(const Art* art, int frame, Rotation rotation);
 CritterFrameId _art_alias_num(CritterFrameId index);
-int artCritterFidShouldRun(int fid);
+int artCritterFrmIdShouldRun(const FrmId& frmId);
 int artListIndex(ObjectType objectType, const char* name);
 Art* artLoad(const char* path);
 int artRead(const char* path, unsigned char* data);

@@ -802,8 +802,8 @@ static void endgameEndingVoiceOverFree()
 // 0x440378 endgame_load_palette
 static void endgameEndingLoadPalette(const InterfaceFrmId& frmId)
 {
-    char fileName[13];
-    if (artCopyFileName(frmId.objectType(), frmId.frameId().id, fileName) != 0) {
+    char fileName[ART_NAME_SIZE];
+    if (artCopyFileName(frmId, fileName) != 0) {
         return;
     }
 

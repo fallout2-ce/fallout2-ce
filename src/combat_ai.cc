@@ -2549,7 +2549,7 @@ static int _ai_move_steps_closer(Object* critter, Object* target, int actionPoin
         _cai_retargetTileFromFriendlyFire(critter, target, &tile);
     }
 
-    if (actionPoints >= critterGetStat(critter, STAT_MAXIMUM_ACTION_POINTS) / 2 && artCritterFidShouldRun(critter->fid)) {
+    if (actionPoints >= critterGetStat(critter, STAT_MAXIMUM_ACTION_POINTS) / 2 && artCritterFrmIdShouldRun(FrmId(critter->fid))) {
         if ((target->flags & OBJECT_MULTIHEX) != OBJECT_NONE) {
             animationRegisterRunToObject(critter, target, actionPoints, 0);
         } else {
