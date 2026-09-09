@@ -2,6 +2,7 @@
 #define ANIMATION_H
 
 #include "animation_defs.h"
+#include "art.h"
 #include "art_defs.h"
 #include "combat_defs.h"
 #include "obj_types.h"
@@ -53,7 +54,7 @@ int animationRegisterCallback3(void* a1, void* a2, void* a3, AnimationCallback3*
 int animationRegisterCallbackForced(void* a1, void* a2, AnimationCallback* proc, int delay);
 int animationRegisterSetFlag(Object* object, ObjectFlags flag, int delay);
 int animationRegisterUnsetFlag(Object* object, ObjectFlags flag, int delay);
-int animationRegisterSetFid(Object* owner, int fid, int delay);
+int animationRegisterSetFrmId(Object* owner, const FrmId& frmId, int delay);
 int animationRegisterTakeOutWeapon(Object* owner, WeaponAnimation weaponAnimationCode, int delay);
 int animationRegisterSetLightDistance(Object* owner, int lightDistance, int delay);
 int animationRegisterToggleOutline(Object* object, bool outline, int delay);
@@ -69,7 +70,7 @@ int _check_move(int* actionPointsPtr);
 int _dude_move(int actionPoints);
 int _dude_run(int actionPoints);
 void _dude_fidget();
-void _dude_stand(Object* obj, Rotation rotation, int fid);
+void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId);
 void _dude_standup(Object* a1);
 void animationStop();
 

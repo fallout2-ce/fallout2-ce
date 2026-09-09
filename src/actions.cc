@@ -448,7 +448,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
                 animationRegisterAnimate(defender, ANIM_FIRE_DANCE, delay);
 
                 frmId = FrmId(defender, ANIM_STAND, weaponAnimationFromFid(defender->fid), defender->rotation + 1);
-                animationRegisterSetFid(defender, frmId.fid(), -1);
+                animationRegisterSetFrmId(defender, frmId, -1);
             } else {
                 if (knockbackDistance != 0) {
                     anim = hitFromFront ? ANIM_FALL_BACK : ANIM_FALL_FRONT;
@@ -483,7 +483,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
     if (weapon != nullptr) {
         if ((flags & DAM_EXPLODE) != DAM_NONE) {
             animationRegisterCallbackForced(defender, weapon, (AnimationCallback*)objectDrop, -1);
-            animationRegisterSetFid(weapon, MiscFrmId(MiscFrameId::RocketExplosion).fid(), 0);
+            animationRegisterSetFrmId(weapon, MiscFrameId::RocketExplosion, 0);
             animationRegisterAnimateAndHide(weapon, ANIM_STAND, 0);
 
             sfx_name = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_HIT, weapon, HIT_MODE_RIGHT_WEAPON_PRIMARY, defender);
@@ -739,7 +739,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
     Object* projectile = nullptr;
     Object* replacedWeapon = nullptr;
-    int weaponFid = -1;
+    FrmId weaponFrmId = FrmId::Empty();
 
     Proto* weaponProto;
     Object* weapon = attack->weapon;
@@ -790,7 +790,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
             if (protoGetProto(projectilePid, &projectileProto) != -1 && projectileProto->fid != -1) {
                 if (anim == ANIM_THROW_ANIM) {
                     projectile = weapon;
-                    weaponFid = weapon->fid;
+                    weaponFrmId = FrmId(weapon->fid);
                     ObjectFlags weaponFlags = weapon->flags;
 
                     InterfaceItemAction leftItemAction;
@@ -876,10 +876,10 @@ int _action_ranged(Attack* attack, AnimationType anim)
                         }
 
                         if (isGrenade) {
-                            animationRegisterSetFid(projectile, weaponFid, -1);
+                            animationRegisterSetFrmId(projectile, weaponFrmId, -1);
                         }
 
-                        animationRegisterSetFid(projectile, explosionFrmId.fid(), -1);
+                        animationRegisterSetFrmId(projectile, explosionFrmId, -1);
 
                         const char* sfx = sfxBuildWeaponName(WEAPON_SOUND_EFFECT_HIT, weapon, attack->hitMode, attack->defender);
                         animationRegisterPlaySoundEffect(projectile, sfx, 0);
@@ -972,7 +972,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
         // no-save).
         animationRegisterCallbackForced(attack, projectile, hideProjectile, -1);
     } else if (anim == ANIM_THROW_ANIM && projectile != nullptr) {
-        animationRegisterSetFid(projectile, weaponFid, -1);
+        animationRegisterSetFrmId(projectile, weaponFrmId, -1);
     }
 
     for (Rotation rotation = ROTATION_FIRST; rotation < ROTATION_COUNT; rotation++) {
@@ -994,7 +994,7 @@ int _action_ranged(Attack* attack, AnimationType anim)
 
             if (!takeOutAnimationRegistered) {
                 const FrmId frmId = FrmId(attack->attacker, ANIM_STAND, WEAPON_ANIMATION_NONE, attack->attacker->rotation + 1);
-                animationRegisterSetFid(attack->attacker, frmId.fid(), -1);
+                animationRegisterSetFrmId(attack->attacker, frmId, -1);
             }
         } else {
             animationRegisterAnimate(attack->attacker, ANIM_UNPOINT, -1);

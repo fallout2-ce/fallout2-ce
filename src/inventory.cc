@@ -3892,7 +3892,7 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
         if (critter == gDude) {
             if (!isoIsDisabled()) {
                 const CritterFrmId frmId = CritterFrmId(baseFrameId, ANIM_STAND, weaponAnimationFromFid(critter->fid), critter->rotation + 1);
-                animationRegisterSetFid(critter, frmId.fid(), 0);
+                animationRegisterSetFrmId(critter, frmId, 0);
             }
         } else {
             adjustCritterStatsOnArmorChange(critter, armor, item);
@@ -3983,11 +3983,11 @@ int inventoryEquipFunc(Object* critter, Object* item, Hand handIndex, bool anima
                     animationRegisterTakeOutWeapon(critter, weaponAnimationCode, -1);
                 } else {
                     const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
-                    animationRegisterSetFid(critter, frmId.fid(), -1);
+                    animationRegisterSetFrmId(critter, frmId, -1);
                 }
             } else {
                 const FrmId frmId = FrmId(critter, ANIM_STAND, weaponAnimationCode, critter->rotation + 1);
-                _dude_stand(critter, critter->rotation, frmId.fid());
+                _dude_stand(critter, critter->rotation, frmId);
             }
         }
     }
@@ -4048,13 +4048,13 @@ int inventoryUnequipFunc(Object* critter, Hand hand, bool animate)
             animationRegisterAnimate(critter, ANIM_PUT_AWAY, 0);
 
             const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
-            animationRegisterSetFid(critter, frmId.fid(), -1);
+            animationRegisterSetFrmId(critter, frmId, -1);
 
             return reg_anim_end();
         }
 
         const FrmId frmId = FrmId(critter, ANIM_STAND, WEAPON_ANIMATION_NONE, critter->rotation + 1);
-        _dude_stand(critter, critter->rotation, frmId.fid());
+        _dude_stand(critter, critter->rotation, frmId);
     }
 
     return 0;
