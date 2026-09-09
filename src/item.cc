@@ -1047,16 +1047,16 @@ bool dudeIsWeaponDisabled(Object* weapon)
 }
 
 // 0x477FB0
-int itemGetInventoryFid(Object* item)
+FrmId itemGetInventoryFrmId(Object* item)
 {
     if (item == nullptr) {
-        return -1;
+        return FrmId::Empty();
     }
 
     Proto* proto;
     protoGetProto(item->pid, &proto);
 
-    return proto->item.inventoryFid;
+    return FrmId(proto->item.inventoryFid);
 }
 
 // 0x477FF8

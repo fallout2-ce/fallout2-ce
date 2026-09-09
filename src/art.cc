@@ -423,7 +423,7 @@ int artGetFidgetCount(const HeadFrmId& frmId)
 }
 
 // 0x418FFC
-void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
+void artRender(const FrmId& frmId, unsigned char* dest, int width, int height, int pitch)
 {
     // NOTE: Original code is different. For unknown reason it directly calls
     // many art functions, for example instead of [artLock] it calls lower level
@@ -432,15 +432,15 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
     // not. I've replaced these calls with higher level functions where
     // appropriate.
 
-    CacheEntry* handle;
-    Art* frm = artLock(fid, &handle);
-    if (frm == nullptr) {
+    FrmImage frmImage;
+
+    if (!frmImage.lock(frmId)) {
         return;
     }
 
-    unsigned char* frameData = artGetFrameData(frm);
-    int frameWidth = artGetWidth(frm);
-    int frameHeight = artGetHeight(frm);
+    unsigned char* frameData = frmImage.getData();
+    int frameWidth = frmImage.getWidth();
+    int frameHeight = frmImage.getHeight();
 
     int remainingWidth = width - frameWidth;
     int remainingHeight = height - frameHeight;
@@ -473,7 +473,7 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch)
             pitch);
     }
 
-    artUnlock(handle);
+    frmImage.unlock();
 }
 
 // mapper2.exe: 0x40A03C

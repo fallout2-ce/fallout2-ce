@@ -2532,7 +2532,7 @@ void update_art(ObjectType type, int offset)
             if (protoGetProto(pid, &proto) == -1) continue;
             frmId = FrmId(proto->fid);
         }
-        artRender(frmId.fid(), p, art_scale_width, art_scale_height, screen_width);
+        artRender(frmId, p, art_scale_width, art_scale_height, screen_width);
     }
 
     // Draw selection box around the active slot.

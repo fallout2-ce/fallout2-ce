@@ -421,7 +421,7 @@ char* artGetObjectTypeName(ObjectType objectType);
 int artIsObjectTypeHidden(ObjectType objectType);
 void artToggleObjectTypeHidden(ObjectType objectType);
 int artGetFidgetCount(const HeadFrmId& frmId);
-void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
+void artRender(const FrmId& frmId, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
 Art* artLock(int fid, CacheEntry** cache_entry);
 

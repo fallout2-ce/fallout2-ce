@@ -1226,7 +1226,7 @@ static void renderPartySlots()
     if (armor != nullptr) {
         int itemX = armorRect.left + (kPartySlotWidth - INVENTORY_LARGE_SLOT_WIDTH) / 2;
         int itemY = armorRect.top + (kPartySlotHeight - INVENTORY_LARGE_SLOT_HEIGHT) / 2 + 3;
-        artRender(itemGetInventoryFid(armor),
+        artRender(itemGetInventoryFrmId(armor),
             windowBuffer + pitch * itemY + itemX,
             INVENTORY_LARGE_SLOT_WIDTH,
             INVENTORY_LARGE_SLOT_HEIGHT,
@@ -1237,7 +1237,7 @@ static void renderPartySlots()
     if (weapon != nullptr) {
         int itemX = weaponRect.left + (kPartySlotWidth - INVENTORY_LARGE_SLOT_WIDTH) / 2;
         int itemY = weaponRect.top + (kPartySlotHeight - INVENTORY_LARGE_SLOT_HEIGHT) / 2 - 3;
-        artRender(itemGetInventoryFid(weapon),
+        artRender(itemGetInventoryFrmId(weapon),
             windowBuffer + pitch * itemY + itemX,
             INVENTORY_LARGE_SLOT_WIDTH,
             INVENTORY_LARGE_SLOT_HEIGHT,
@@ -2306,8 +2306,8 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
 
             InventoryItem* inventoryItem = &(_pud->items[_pud->length - itemIndex]);
 
-            int inventoryFid = itemGetInventoryFid(inventoryItem->item);
-            artRender(inventoryFid, windowBuffer + offset, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, pitch);
+            const FrmId inventoryFrmId = itemGetInventoryFrmId(inventoryItem->item);
+            artRender(inventoryFrmId, windowBuffer + offset, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, pitch);
             _display_inventory_info(inventoryItem->item, inventoryItem->quantity, windowBuffer + offset, pitch, slotIndex == dragSlotIndex);
         }
     } else {
@@ -2328,8 +2328,8 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
 
             InventoryItem* inventoryItem = &(_pud->items[_pud->length - itemIndex]);
 
-            int inventoryFid = itemGetInventoryFid(inventoryItem->item);
-            artRender(inventoryFid, windowBuffer + offset, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, pitch);
+            const FrmId inventoryFrmId = itemGetInventoryFrmId(inventoryItem->item);
+            artRender(inventoryFrmId, windowBuffer + offset, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, pitch);
             _display_inventory_info(inventoryItem->item, inventoryItem->quantity, windowBuffer + offset, pitch, slotIndex == dragSlotIndex);
 
             if (inventoryWindowType != INVENTORY_WINDOW_TYPE_LOOT) {
@@ -2341,18 +2341,18 @@ static void _display_inventory(int stackOffset, int dragSlotIndex, int inventory
     if (inventoryWindowType == INVENTORY_WINDOW_TYPE_NORMAL) {
         if (gInventoryRightHandItem != nullptr) {
             int width = gInventoryRightHandItem == gInventoryLeftHandItem ? INVENTORY_LARGE_SLOT_WIDTH * 2 : INVENTORY_LARGE_SLOT_WIDTH;
-            int inventoryFid = itemGetInventoryFid(gInventoryRightHandItem);
-            artRender(inventoryFid, windowBuffer + pitch * INVENTORY_RIGHT_HAND_SLOT_Y + inventoryLayout.rightHandSlotX, width, INVENTORY_LARGE_SLOT_HEIGHT, pitch);
+            const FrmId inventoryFrmId = itemGetInventoryFrmId(gInventoryRightHandItem);
+            artRender(inventoryFrmId, windowBuffer + pitch * INVENTORY_RIGHT_HAND_SLOT_Y + inventoryLayout.rightHandSlotX, width, INVENTORY_LARGE_SLOT_HEIGHT, pitch);
         }
 
         if (gInventoryLeftHandItem != nullptr && gInventoryLeftHandItem != gInventoryRightHandItem) {
-            int inventoryFid = itemGetInventoryFid(gInventoryLeftHandItem);
-            artRender(inventoryFid, windowBuffer + pitch * INVENTORY_LEFT_HAND_SLOT_Y + inventoryLayout.leftHandSlotX, INVENTORY_LARGE_SLOT_WIDTH, INVENTORY_LARGE_SLOT_HEIGHT, pitch);
+            const FrmId inventoryFrmId = itemGetInventoryFrmId(gInventoryLeftHandItem);
+            artRender(inventoryFrmId, windowBuffer + pitch * INVENTORY_LEFT_HAND_SLOT_Y + inventoryLayout.leftHandSlotX, INVENTORY_LARGE_SLOT_WIDTH, INVENTORY_LARGE_SLOT_HEIGHT, pitch);
         }
 
         if (gInventoryArmor != nullptr) {
-            int inventoryFid = itemGetInventoryFid(gInventoryArmor);
-            artRender(inventoryFid, windowBuffer + pitch * INVENTORY_ARMOR_SLOT_Y + inventoryLayout.armorSlotX, INVENTORY_LARGE_SLOT_WIDTH, INVENTORY_LARGE_SLOT_HEIGHT, pitch);
+            const FrmId inventoryFrmId = itemGetInventoryFrmId(gInventoryArmor);
+            artRender(inventoryFrmId, windowBuffer + pitch * INVENTORY_ARMOR_SLOT_Y + inventoryLayout.armorSlotX, INVENTORY_LARGE_SLOT_WIDTH, INVENTORY_LARGE_SLOT_HEIGHT, pitch);
         }
     }
 
@@ -2414,8 +2414,8 @@ static void _display_target_inventory(int stackOffset, int dragSlotIndex, Invent
         }
 
         InventoryItem* inventoryItem = &(inventory->items[inventory->length - (itemIndex + 1)]);
-        int inventoryFid = itemGetInventoryFid(inventoryItem->item);
-        artRender(inventoryFid, windowBuffer + offset, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, pitch);
+        const FrmId inventoryFrmId = itemGetInventoryFrmId(inventoryItem->item);
+        artRender(inventoryFrmId, windowBuffer + offset, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, pitch);
         _display_inventory_info(inventoryItem->item, inventoryItem->quantity, windowBuffer + offset, pitch, slotIndex == dragSlotIndex);
 
         if (inventoryWindowType == INVENTORY_WINDOW_TYPE_TRADE) {
@@ -5439,8 +5439,8 @@ static void _drag_item_loop(Object* item, bool immediate)
     }
 
     FrmImage itemInventoryFrmImage;
-    int itemInventoryFid = itemGetInventoryFid(item);
-    if (itemInventoryFrmImage.lock(FrmId(itemInventoryFid))) {
+    const FrmId itemInventoryFrmId = itemGetInventoryFrmId(item);
+    if (itemInventoryFrmImage.lock(itemInventoryFrmId)) {
         int width = itemInventoryFrmImage.getWidth();
         int height = itemInventoryFrmImage.getHeight();
         unsigned char* data = itemInventoryFrmImage.getData();
@@ -5600,8 +5600,8 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
         Inventory* inventory = &(leftTable->data.inventory);
         for (int index = 0; index < gInventorySlotsCount && index + gPlayerTableOffset < inventory->length; index++) {
             InventoryItem* inventoryItem = &(inventory->items[inventory->length - (index + gPlayerTableOffset + 1)]);
-            int inventoryFid = itemGetInventoryFid(inventoryItem->item);
-            artRender(inventoryFid, dest, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, INVENTORY_TRADE_WINDOW_WIDTH);
+            const FrmId inventoryFrmId = itemGetInventoryFrmId(inventoryItem->item);
+            artRender(inventoryFrmId, dest, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, INVENTORY_TRADE_WINDOW_WIDTH);
             _display_inventory_info(inventoryItem->item, inventoryItem->quantity, dest, INVENTORY_TRADE_WINDOW_WIDTH, index == draggedSlotIndex);
 
             dest += INVENTORY_TRADE_WINDOW_WIDTH * INVENTORY_SLOT_HEIGHT;
@@ -5637,8 +5637,8 @@ static void barterDisplayTables(int win, Object* leftTable, Object* rightTable, 
         Inventory* inventory = &(rightTable->data.inventory);
         for (int index = 0; index < gInventorySlotsCount && index + gBartererTableOffset < inventory->length; index++) {
             InventoryItem* inventoryItem = &(inventory->items[inventory->length - (index + gBartererTableOffset + 1)]);
-            int inventoryFid = itemGetInventoryFid(inventoryItem->item);
-            artRender(inventoryFid, dest, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, INVENTORY_TRADE_WINDOW_WIDTH);
+            const FrmId inventoryFrmId = itemGetInventoryFrmId(inventoryItem->item);
+            artRender(inventoryFrmId, dest, INVENTORY_SLOT_WIDTH_PAD, INVENTORY_SLOT_HEIGHT_PAD, INVENTORY_TRADE_WINDOW_WIDTH);
             _display_inventory_info(inventoryItem->item, inventoryItem->quantity, dest, INVENTORY_TRADE_WINDOW_WIDTH, index == draggedSlotIndex);
 
             dest += INVENTORY_TRADE_WINDOW_WIDTH * INVENTORY_SLOT_HEIGHT;
@@ -6494,8 +6494,8 @@ static int inventoryQuantityWindowInit(int inventoryWindowType, Object* item)
         }
     }
 
-    int inventoryFid = itemGetInventoryFid(item);
-    artRender(inventoryFid, windowBuffer + windowDescription->width * 46 + 16, INVENTORY_LARGE_SLOT_WIDTH, INVENTORY_LARGE_SLOT_HEIGHT, windowDescription->width);
+    const FrmId inventoryFrmId = itemGetInventoryFrmId(item);
+    artRender(inventoryFrmId, windowBuffer + windowDescription->width * 46 + 16, INVENTORY_LARGE_SLOT_WIDTH, INVENTORY_LARGE_SLOT_HEIGHT, windowDescription->width);
 
     int x = 194;
     int y = 64;

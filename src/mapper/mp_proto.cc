@@ -679,7 +679,7 @@ static void protoChooseMultiPidsUpdate(int win, int pidType, int scrollOffset, p
             Proto* proto;
             if (protoGetProto(pid, &proto) != -1) {
                 int fid = fidFunc ? fidFunc(proto) : proto->fid;
-                artRender(fid, buf + cellY * pitch + cellX, kArtW, kArtH, pitch);
+                artRender(FrmId(fid), buf + cellY * pitch + cellX, kArtW, kArtH, pitch);
 
                 const char* name = protoGetName(pid);
                 int textY = cellY + kArtH + 5;
