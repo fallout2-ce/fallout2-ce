@@ -3279,7 +3279,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
     }
 
     Rect temp;
-    objectSetFid(obj, fid, &temp);
+    objectSetFid(obj, finalFrmId.fid(), &temp);
     rectUnion(&rect, &temp, &rect);
 
     objectSetLocation(obj, obj->tile, obj->elevation, &temp);
