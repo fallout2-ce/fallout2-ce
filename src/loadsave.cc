@@ -199,9 +199,9 @@ static constexpr InterfaceFrmId kLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
 };
 
 // Control max number of save/load pages
-const int saveLoadPages = 100;
+constexpr int saveLoadPages = 100;
 constexpr int slotsPerPage = 10;
-const int saveLoadTotalSlots = saveLoadPages * slotsPerPage;
+constexpr int saveLoadTotalSlots = saveLoadPages * slotsPerPage;
 constexpr int kLoadSaveActionDone = 500;
 constexpr int kLoadSaveFastPageStep = 10;
 
