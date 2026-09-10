@@ -400,6 +400,13 @@ static int loadSavePageStep()
     return (SDL_GetModState() & KMOD_SHIFT) != 0 ? kLoadSaveFastPageStep : 1;
 }
 
+static int loadSaveNavigationY()
+{
+    int startIndex = _currentSlotPage * slotsPerPage;
+    int visibleSlotCount = std::min(slotsPerPage, saveLoadTotalSlots - startIndex);
+    return 87 + visibleSlotCount * (3 * fontGetLineHeight() + 4);
+}
+
 static int loadSavePageDeltaForInput(int keyCode, int mouseX, int mouseY)
 {
     if (keyCode == KEY_ARROW_LEFT) {
@@ -410,7 +417,8 @@ static int loadSavePageDeltaForInput(int keyCode, int mouseX, int mouseY)
         return loadSavePageStep();
     }
 
-    if (mouseY < 425 || mouseY > 435) {
+    int navigationY = loadSaveNavigationY();
+    if (mouseY < navigationY || mouseY >= navigationY + fontGetLineHeight()) {
         return 0;
     }
 
@@ -2437,9 +2445,10 @@ static void _ShowSlotList(int windowType)
     if (saveLoadTotalSlots > 10) {
         Color activeColor = COLOR_GREEN;
         Color inactiveColor = COLOR_LIGHT_GREEN_2;
+        int navigationY = loadSaveNavigationY();
 
         fontDrawText(
-            gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * y + 55,
+            gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * navigationY + 55,
             "<<",
             LS_WINDOW_WIDTH,
             LS_WINDOW_WIDTH,
@@ -2454,7 +2463,7 @@ static void _ShowSlotList(int windowType)
                 messageListItemBack.text = backText;
             }
             fontDrawText(
-                gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * (y + 0) + 95,
+                gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * navigationY + 95,
                 messageListItemBack.text,
                 LS_WINDOW_WIDTH,
                 LS_WINDOW_WIDTH,
@@ -2467,7 +2476,7 @@ static void _ShowSlotList(int windowType)
                 debugPrint("Error: Couldn't find LoadSave Message!");
                 messageListItemMore.text = moreText;
             }
-            fontDrawText(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * (y + 0) + 210,
+            fontDrawText(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * navigationY + 210,
                 messageListItemMore.text,
                 LS_WINDOW_WIDTH,
                 LS_WINDOW_WIDTH,
@@ -2475,7 +2484,7 @@ static void _ShowSlotList(int windowType)
         }
 
         fontDrawText(
-            gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * y + 270,
+            gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * navigationY + 270,
             ">>",
             LS_WINDOW_WIDTH,
             LS_WINDOW_WIDTH,
