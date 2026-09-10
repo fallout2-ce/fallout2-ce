@@ -199,10 +199,11 @@ static constexpr InterfaceFrmId kLoadSaveFrmIds[LOAD_SAVE_FRM_COUNT] = {
 };
 
 // Control max number of save/load pages
-const int saveLoadPages = 10;
+const int saveLoadPages = 100;
 constexpr int slotsPerPage = 10;
 const int saveLoadTotalSlots = saveLoadPages * slotsPerPage;
 constexpr int kLoadSaveActionDone = 500;
+constexpr int kLoadSaveFastPageStep = 10;
 
 // Global variable to track the current slot page
 static int _currentSlotPage = 0;
@@ -390,6 +391,11 @@ static void loadSaveSetCurrentPage(int page)
 
     _currentSlotPage = std::clamp(page, 0, saveLoadPages - 1);
     _slot_cursor = std::min(_currentSlotPage * slotsPerPage + slotIndex, saveLoadTotalSlots - 1);
+}
+
+static int loadSavePageStep()
+{
+    return (SDL_GetModState() & KMOD_SHIFT) != 0 ? kLoadSaveFastPageStep : 1;
 }
 
 static void loadSavePersistSelectedSlot()
@@ -620,7 +626,7 @@ int lsgSaveGame(int mode)
                 break;
 
             case KEY_ARROW_DOWN:
-                if (_slot_cursor < (saveLoadTotalSlots - 1)) { // Prevent going above 99
+                if (_slot_cursor < (saveLoadTotalSlots - 1)) {
                     if (_slot_cursor % 10 == 9 && _currentSlotPage < (saveLoadTotalSlots / 10) - 1) {
                         // Move to the next page and set cursor to the first slot on that page
                         _currentSlotPage++;
@@ -671,9 +677,9 @@ int lsgSaveGame(int mode)
 
                 // Check if the click was in the "Next Page" button area
                 if ((mouseX >= 195 && mouseX <= 280 && mouseY >= 425 && mouseY <= 435) || keyCode == KEY_ARROW_RIGHT) { // Next Page coordinates
-                    if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max 10 pages (0-9)
+                    if (_currentSlotPage < saveLoadPages - 1) {
                         soundPlayFile("ib1p1xx1");
-                        loadSaveSetCurrentPage(_currentSlotPage + 1);
+                        loadSaveSetCurrentPage(_currentSlotPage + loadSavePageStep());
                         selectionChanged = true;
                         doubleClickSlot = -1;
                         _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
@@ -686,7 +692,7 @@ int lsgSaveGame(int mode)
                 if ((mouseX >= 55 && mouseX <= 180 && mouseY >= 425 && mouseY <= 435) || keyCode == KEY_ARROW_LEFT) { // Previous Page coordinates
                     if (_currentSlotPage > 0) {
                         soundPlayFile("ib1p1xx1");
-                        loadSaveSetCurrentPage(_currentSlotPage - 1);
+                        loadSaveSetCurrentPage(_currentSlotPage - loadSavePageStep());
                         selectionChanged = true;
                         doubleClickSlot = -1;
                         _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
@@ -1264,7 +1270,7 @@ int lsgLoadGame(int mode)
                 break;
 
             case KEY_ARROW_DOWN:
-                if (_slot_cursor < (saveLoadTotalSlots - 1)) { // Prevent going above 99
+                if (_slot_cursor < (saveLoadTotalSlots - 1)) {
                     if (_slot_cursor % 10 == 9 && _currentSlotPage < (saveLoadTotalSlots / 10) - 1) {
                         // Move to the next page and set cursor to the first slot on that page
                         _currentSlotPage++;
@@ -1313,9 +1319,9 @@ int lsgLoadGame(int mode)
 
                 // Check if the click was in the "Next Page" button area
                 if ((mouseX >= 195 && mouseX <= 280 && mouseY >= 425 && mouseY <= 435) || keyCode == KEY_ARROW_RIGHT) { // coordinates for Next Page button
-                    if (_currentSlotPage < (saveLoadTotalSlots / 10) - 1) { // Max 10 pages (0-9)
+                    if (_currentSlotPage < saveLoadPages - 1) {
                         soundPlayFile("ib1p1xx1");
-                        loadSaveSetCurrentPage(_currentSlotPage + 1);
+                        loadSaveSetCurrentPage(_currentSlotPage + loadSavePageStep());
                         selectionChanged = true;
                         doubleClickSlot = -1;
                         _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
@@ -1328,7 +1334,7 @@ int lsgLoadGame(int mode)
                 if ((mouseX >= 55 && mouseX <= 180 && mouseY >= 425 && mouseY <= 435) || keyCode == KEY_ARROW_LEFT) { // Coordinates for Previous Page button
                     if (_currentSlotPage > 0) {
                         soundPlayFile("ib1p1xx1");
-                        loadSaveSetCurrentPage(_currentSlotPage - 1);
+                        loadSaveSetCurrentPage(_currentSlotPage - loadSavePageStep());
                         selectionChanged = true;
                         doubleClickSlot = -1;
 
