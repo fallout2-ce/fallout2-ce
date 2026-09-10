@@ -429,7 +429,6 @@ int art_list_str(int fid, char* name);
 // works for fid based FrmIds only, to be replaced by FrmImage::lock
 Art* artLock(const FrmId& frmId, CacheEntry** handlePtr);
 
-unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);
 int artCacheFlush();
 int artCopyFileName(const FrmId& frmId, char* dest);

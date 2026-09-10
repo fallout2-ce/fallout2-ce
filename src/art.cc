@@ -551,28 +551,6 @@ Art* artLock(const FrmId& frmId, CacheEntry** handlePtr)
     return artLock(frmId.fid(), handlePtr);
 }
 
-// 0x419188
-unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** handlePtr)
-{
-    Art* art;
-    ArtFrame* frm;
-
-    art = nullptr;
-    if (handlePtr) {
-        cacheLock(&gArtCache, fid, (void**)&art, handlePtr);
-    }
-
-    if (art != nullptr) {
-        frm = artGetFrame(art, frame, rotation);
-        if (frm != nullptr) {
-
-            return artFrameData(frm);
-        }
-    }
-
-    return nullptr;
-}
-
 // 0x419260
 int artUnlock(CacheEntry* handle)
 {
