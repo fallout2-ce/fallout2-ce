@@ -425,22 +425,9 @@ void artToggleObjectTypeHidden(ObjectType objectType);
 int artGetFidgetCount(const HeadFrmId& frmId);
 void artRender(const FrmId& frmId, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
-Art* artLock(int fid, CacheEntry** cache_entry);
 
 // works for fid based FrmIds only, to be replaced by FrmImage::lock
-inline Art* artLock(const FrmId& frmId, CacheEntry** handlePtr)
-{
-    if (!frmId.valid()) {
-        if (handlePtr != nullptr) {
-            *handlePtr = nullptr;
-        }
-        return nullptr;
-    }
-
-    assert(frmId.hasFid() && "artLock(const FrmId& frmId, CacheEntry** handlePtr) called with path based FrmId which is not supported!");
-
-    return artLock(frmId.fid(), handlePtr);
-}
+Art* artLock(const FrmId& frmId, CacheEntry** handlePtr);
 
 unsigned char* artLockFrameData(int fid, int frame, Rotation rotation, CacheEntry** out_cache_entry);
 int artUnlock(CacheEntry* cache_entry);

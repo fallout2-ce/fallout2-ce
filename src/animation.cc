@@ -2662,7 +2662,7 @@ static void _object_move(int index)
     int frameY;
 
     CacheEntry* cacheHandle;
-    Art* art = artLock(object->fid, &cacheHandle);
+    Art* art = artLock(FrmId(object->fid), &cacheHandle);
     if (art != nullptr) {
         artGetFrameOffsets(art, object->frame, object->rotation, &frameX, &frameY);
         artUnlock(cacheHandle);
@@ -2774,7 +2774,7 @@ static void _object_straight_move(int index)
     }
 
     CacheEntry* cacheHandle;
-    Art* art = artLock(object->fid, &cacheHandle);
+    Art* art = artLock(FrmId(object->fid), &cacheHandle);
     if (art != nullptr) {
         int lastFrame = artGetFrameCount(art) - 1;
         artUnlock(cacheHandle);
@@ -2907,7 +2907,7 @@ void _object_animate()
         if (object->fid == sad->fid) {
             if ((sad->flags & ANIM_SAD_REVERSE) == 0) {
                 CacheEntry* cacheHandle;
-                Art* art = artLock(object->fid, &cacheHandle);
+                Art* art = artLock(FrmId(object->fid), &cacheHandle);
                 if (art != nullptr) {
                     if ((sad->flags & ANIM_SAD_FOREVER) == 0 && object->frame == artGetFrameCount(art) - 1) {
                         sad->step = ANIM_COMPLETE;
@@ -2945,7 +2945,7 @@ void _object_animate()
                 int y = 0;
 
                 CacheEntry* cacheHandle;
-                Art* art = artLock(object->fid, &cacheHandle);
+                Art* art = artLock(FrmId(object->fid), &cacheHandle);
                 if (art != nullptr) {
                     artGetFrameOffsets(art, object->frame, object->rotation, &x, &y);
                     artUnlock(cacheHandle);
@@ -2968,7 +2968,7 @@ void _object_animate()
             int y;
 
             CacheEntry* cacheHandle;
-            Art* art = artLock(object->fid, &cacheHandle);
+            Art* art = artLock(FrmId(object->fid), &cacheHandle);
             if (art != nullptr) {
                 artGetRotationOffsets(art, object->rotation, &x, &y);
                 artUnlock(cacheHandle);
@@ -2980,7 +2980,7 @@ void _object_animate()
             objectSetFrmId(object, FrmId(sad->fid), &tempRect);
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
-            art = artLock(object->fid, &cacheHandle);
+            art = artLock(FrmId(object->fid), &cacheHandle);
             if (art != nullptr) {
                 int frame;
                 if ((sad->flags & ANIM_SAD_REVERSE) != 0) {

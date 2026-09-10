@@ -2434,7 +2434,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
             int offsetX = 0;
             int offsetY = 0;
             CacheEntry* hexCursorFrmHandle;
-            Art* hexCursorFrm = artLock(gGameMouseHexCursor->fid, &hexCursorFrmHandle);
+            Art* hexCursorFrm = artLock(FrmId(gGameMouseHexCursor->fid), &hexCursorFrmHandle);
             if (hexCursorFrm != nullptr) {
                 artGetRotationOffsets(hexCursorFrm, ROTATION_NE, &offsetX, &offsetY);
 
@@ -2519,7 +2519,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
             int offsetX = 0;
             int offsetY = 0;
             CacheEntry* hexCursorFrmHandle;
-            Art* hexCursorFrm = artLock(gGameMouseHexCursor->fid, &hexCursorFrmHandle);
+            Art* hexCursorFrm = artLock(FrmId(gGameMouseHexCursor->fid), &hexCursorFrmHandle);
             if (hexCursorFrm != nullptr) {
                 artGetRotationOffsets(hexCursorFrm, ROTATION_NE, &offsetX, &offsetY);
 

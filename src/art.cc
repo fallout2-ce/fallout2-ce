@@ -49,6 +49,7 @@ static int artReadHeader(Art* art, File* stream);
 static int artGetDataSize(const Art* art);
 static int paddingForSize(int size);
 static char artGetCritterWeaponCode(WeaponAnimation weaponType);
+static Art* artLock(int fid, CacheEntry** cache_entry);
 
 // A frame is laid out like [ArtFrame header][pixel bytes][padding].
 // These functions return a pointer to the pixel bytes, but must be given a pointer to a frame header,
@@ -519,7 +520,7 @@ int artListIndex(ObjectType objectType, const char* name)
 }
 
 // 0x419160
-Art* artLock(int fid, CacheEntry** handlePtr)
+static Art* artLock(int fid, CacheEntry** handlePtr)
 {
     if (handlePtr == nullptr) {
         return nullptr;
@@ -533,6 +534,21 @@ Art* artLock(int fid, CacheEntry** handlePtr)
     Art* art = nullptr;
     cacheLock(&gArtCache, fid, (void**)&art, handlePtr);
     return art;
+}
+
+// works for fid based FrmIds only, to be replaced by FrmImage::lock
+Art* artLock(const FrmId& frmId, CacheEntry** handlePtr)
+{
+    if (!frmId.valid()) {
+        if (handlePtr != nullptr) {
+            *handlePtr = nullptr;
+        }
+        return nullptr;
+    }
+
+    assert(frmId.hasFid() && "artLock(const FrmId& frmId, CacheEntry** handlePtr) called with path based FrmId which is not supported!");
+
+    return artLock(frmId.fid(), handlePtr);
 }
 
 // 0x419188

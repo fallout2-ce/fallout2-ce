@@ -4740,7 +4740,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     if (objectTypeFromFid(target->fid) == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
         if (target->frame == 0) {
             CacheEntry* handle;
-            Art* frm = artLock(target->fid, &handle);
+            Art* frm = artLock(FrmId(target->fid), &handle);
             if (frm != nullptr) {
                 int frameCount = artGetFrameCount(frm);
                 artUnlock(handle);
