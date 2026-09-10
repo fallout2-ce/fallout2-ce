@@ -424,7 +424,6 @@ int artIsObjectTypeHidden(ObjectType objectType);
 void artToggleObjectTypeHidden(ObjectType objectType);
 int artGetFidgetCount(const HeadFrmId& frmId);
 void artRender(const FrmId& frmId, unsigned char* dest, int width, int height, int pitch);
-int art_list_str(int fid, char* name);
 
 // works for fid based FrmIds only, to be replaced by FrmImage::lock
 Art* artLock(const FrmId& frmId, CacheEntry** handlePtr);

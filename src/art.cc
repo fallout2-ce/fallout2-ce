@@ -477,14 +477,6 @@ void artRender(const FrmId& frmId, unsigned char* dest, int width, int height, i
     frmImage.unlock();
 }
 
-// mapper2.exe: 0x40A03C
-int art_list_str(int fid, char* name)
-{
-    // TODO: Incomplete.
-
-    return -1;
-}
-
 int artListIndex(ObjectType objectType, const char* name)
 {
     if (!objectTypeIsValid(objectType)) return -1;

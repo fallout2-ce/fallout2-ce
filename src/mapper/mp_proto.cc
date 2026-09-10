@@ -283,6 +283,14 @@ int proto_subdata_setup_int_button(const char* title, int key, int value, int mi
     return 0;
 }
 
+// 0x40A03C
+int art_list_str(int fid, char* name)
+{
+    // TODO: Incomplete.
+
+    return -1;
+}
+
 // 0x492B28
 int proto_subdata_setup_fid_button(const char* title, int key, int fid, int* y, int itemIndex)
 {
