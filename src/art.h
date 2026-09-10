@@ -425,8 +425,15 @@ void artRender(int fid, unsigned char* dest, int width, int height, int pitch);
 int art_list_str(int fid, char* name);
 Art* artLock(int fid, CacheEntry** cache_entry);
 
+// works for fid based FrmIds only, to be replaced by FrmImage::lock
 inline Art* artLock(const FrmId& frmId, CacheEntry** cache_entry)
 {
+    if (!frmId.valid()) {
+        return nullptr;
+    }
+
+    assert(frmId.fid() != FrmId::kEmptyFid && "artLock(const FrmId& frmId, CacheEntry** cache_entry) called with path based FrmId which is not supported!");
+
     return artLock(frmId.fid(), cache_entry);
 }
 
