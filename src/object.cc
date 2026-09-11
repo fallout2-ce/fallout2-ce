@@ -924,6 +924,10 @@ int objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid)
         return -1;
     }
 
+    if (frmId.valid()) {
+        assert(frmId.hasFid() && "objectCreateWithFrmIdPid(Object** objectPtr, const FrmId& frmId, int pid) called with path based FrmId which is not supported!");
+    }
+
     objectListNode->obj->fid = frmId.fid();
     _obj_insert(objectListNode);
 
@@ -1546,6 +1550,10 @@ int objectSetFrmId(Object* obj, const FrmId& frmId, Rect* dirtyRect)
 
     if (obj == nullptr) {
         return -1;
+    }
+
+    if (frmId.valid()) {
+        assert(frmId.hasFid() && "objectSetFrmId(Object* obj, const FrmId& frmId, Rect* dirtyRect) called with path based FrmId which is not supported!");
     }
 
     if (dirtyRect != nullptr) {
