@@ -87,7 +87,7 @@ bool oggDecoderDecode(File* stream, AudioFileInfo* info, unsigned char** dataPtr
     }
 
     if (dataPtr != nullptr && sizePtr != nullptr) {
-        *sizePtr = samplesDecoded * vorbisInfo.channels * sizeof(short);
+        *sizePtr = static_cast<size_t>(samplesDecoded) * vorbisInfo.channels * sizeof(short);
         *dataPtr = reinterpret_cast<unsigned char*>(decodedData);
         decodedData = nullptr;
     }

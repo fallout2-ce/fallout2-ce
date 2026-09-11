@@ -132,7 +132,7 @@ static bool audioDecodeWave(File* stream, AudioFileInfo* info, unsigned char** d
     convertedLength = static_cast<int>(loadedLength);
     if (cvt.needed != 0) {
         cvt.len = static_cast<int>(loadedLength);
-        cvt.buf = reinterpret_cast<Uint8*>(SDL_malloc(cvt.len * cvt.len_mult));
+        cvt.buf = reinterpret_cast<Uint8*>(SDL_malloc(static_cast<size_t>(cvt.len) * cvt.len_mult));
         if (cvt.buf == nullptr) {
             goto done;
         }

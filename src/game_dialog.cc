@@ -2607,7 +2607,7 @@ int _gdCreateHeadWindow()
         Rect rect = gameDialogGetBackgroundRect(index);
         int width = rect.right - rect.left;
         int height = rect.bottom - rect.top;
-        _backgrndBufs[index] = (unsigned char*)internal_malloc(width * height);
+        _backgrndBufs[index] = (unsigned char*)internal_malloc(static_cast<size_t>(width) * height);
         if (_backgrndBufs[index] == nullptr) {
             _gdDestroyHeadWindow();
             return -1;

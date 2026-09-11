@@ -271,7 +271,7 @@ static int optionsWindowInit()
         }
 
         int buttonFrmIndex = (index % 2 == 0) ? OPTIONS_WINDOW_FRM_BUTTON_OFF : OPTIONS_WINDOW_FRM_BUTTON_ON;
-        memcpy(_opbtns[index], _optionsFrmImages[buttonFrmIndex].getData(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight());
+        memcpy(_opbtns[index], _optionsFrmImages[buttonFrmIndex].getData(), static_cast<size_t>(_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth()) * _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight());
     }
 
     optionsWindowX = (screenGetWidth() - _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getWidth()) / 2;
@@ -301,7 +301,7 @@ static int optionsWindowInit()
     }
 
     optionsWindowBuffer = windowGetBuffer(optionsWindow);
-    memcpy(optionsWindowBuffer, _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getData(), _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getWidth() * _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getHeight());
+    memcpy(optionsWindowBuffer, _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getData(), static_cast<size_t>(_optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getWidth()) * _optionsFrmImages[OPTIONS_WINDOW_FRM_BACKGROUND].getHeight());
 
     fontSetCurrent(103);
 

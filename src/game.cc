@@ -1577,7 +1577,7 @@ static void showSplash()
             }
         }
 
-        unsigned char* scaled = reinterpret_cast<unsigned char*>(internal_malloc(scaledWidth * scaledHeight));
+        unsigned char* scaled = reinterpret_cast<unsigned char*>(internal_malloc(static_cast<size_t>(scaledWidth) * scaledHeight));
         if (scaled != nullptr) {
             blitBufferToBufferStretch(data, width, height, width, scaled, scaledWidth, scaledHeight, scaledWidth);
 
