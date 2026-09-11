@@ -2009,7 +2009,7 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
                 normalImageWidth,
                 normalImageHeight,
                 normalImageWidth,
-                managedButton->normal + managedButton->width * normalImageY + normalImageX,
+                managedButton->normal + static_cast<size_t>(managedButton->width) * normalImageY + normalImageX,
                 managedButton->width);
 
             int pressedImageWidth = fontGetStringWidth(text) + 1;
@@ -2037,14 +2037,14 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
             }
 
             if (managedButton->pressed != nullptr) {
-                blitBufferToBuffer(managedButton->pressed + managedButton->width * pressedImageY + pressedImageX,
+                blitBufferToBuffer(managedButton->pressed + static_cast<size_t>(managedButton->width) * pressedImageY + pressedImageX,
                     pressedImageWidth,
                     pressedImageHeight,
                     managedButton->width,
                     buffer,
                     pressedImageWidth);
             } else {
-                memset(buffer, 0, pressedImageHeight * pressedImageWidth);
+                memset(buffer, 0, static_cast<size_t>(pressedImageHeight) * pressedImageWidth);
             }
 
             fontDrawText(buffer,
@@ -2057,7 +2057,7 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
                 pressedImageWidth,
                 normalImageHeight,
                 normalImageWidth,
-                managedButton->pressed + managedButton->width * pressedImageY + pressedImageX,
+                managedButton->pressed + static_cast<size_t>(managedButton->width) * pressedImageY + pressedImageX,
                 managedButton->width);
 
             internal_free_safe(buffer, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 2078

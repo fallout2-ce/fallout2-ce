@@ -265,7 +265,7 @@ static int optionsWindowInit()
     }
 
     for (int index = 0; index < optionsWindowButtonCount; index++) {
-        _opbtns[index] = (unsigned char*)internal_malloc(_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth() * _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight() + 1024);
+        _opbtns[index] = (unsigned char*)internal_malloc(static_cast<size_t>(_optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getWidth()) * _optionsFrmImages[OPTIONS_WINDOW_FRM_BUTTON_ON].getHeight() + 1024);
         if (_opbtns[index] == nullptr) {
             goto err;
         }
@@ -478,13 +478,13 @@ int showPause(bool preserveWorldState)
     unsigned char* windowBuffer = windowGetBuffer(window);
     memcpy(windowBuffer,
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getData(),
-        frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth() * frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight());
+        static_cast<size_t>(frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth()) * frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getHeight());
 
     blitBufferToBufferTrans(frmImages[PAUSE_WINDOW_FRM_DONE_BOX].getData(),
         frmImages[PAUSE_WINDOW_FRM_DONE_BOX].getWidth(),
         frmImages[PAUSE_WINDOW_FRM_DONE_BOX].getHeight(),
         frmImages[PAUSE_WINDOW_FRM_DONE_BOX].getWidth(),
-        windowBuffer + frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth() * 42 + 13,
+        windowBuffer + static_cast<size_t>(frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth()) * 42 + 13,
         frmImages[PAUSE_WINDOW_FRM_BACKGROUND].getWidth());
 
     optionsWindowOldFont = fontGetCurrent();

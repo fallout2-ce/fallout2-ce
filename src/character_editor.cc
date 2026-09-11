@@ -3686,19 +3686,19 @@ static void characterEditorEditGender()
     unsigned char* windowBuf = windowGetBuffer(win);
 
     // Copy background
-    memcpy(windowBuf, _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getData(), windowWidth * windowHeight);
+    memcpy(windowBuf, _editorFrmImages[EDITOR_GRAPHIC_CHARWIN].getData(), static_cast<size_t>(windowWidth) * windowHeight);
 
     blitBufferToBufferTrans(_editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getData(),
         _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getWidth(),
         _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getHeight(),
         _editorFrmImages[EDITOR_GRAPHIC_DONE_BOX].getWidth(),
-        windowBuf + windowWidth * 44 + 15,
+        windowBuf + static_cast<size_t>(windowWidth) * 44 + 15,
         windowWidth);
 
     fontSetCurrent(103);
 
     text = getmsg(&gCharacterEditorMessageList, &gCharacterEditorMessageListItem, 100);
-    fontDrawText(windowBuf + windowWidth * 48 + 52, text, windowWidth, windowWidth, COLOR_DARK_YELLOW);
+    fontDrawText(windowBuf + static_cast<size_t>(windowWidth) * 48 + 52, text, windowWidth, windowWidth, COLOR_DARK_YELLOW);
 
     int doneBtn = buttonCreate(win,
         28,
@@ -3927,7 +3927,7 @@ static int characterEditorShowOptions()
         }
 
         unsigned char* windowBuffer = windowGetBuffer(win);
-        memcpy(windowBuffer, _editorFrmImages[41].getData(), _editorFrmImages[41].getWidth() * _editorFrmImages[41].getHeight());
+        memcpy(windowBuffer, _editorFrmImages[41].getData(), static_cast<size_t>(_editorFrmImages[41].getWidth()) * _editorFrmImages[41].getHeight());
 
         fontSetCurrent(103);
 

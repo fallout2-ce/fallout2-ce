@@ -314,7 +314,7 @@ int mouseManagerSetFrame(char* fileName, int a2)
             if (!gMouseManagerIsAnimating || gMouseManagerCurrentAnimatedData != cacheEntry->animatedData) {
                 memcpy(cacheEntry->animatedData->field_0[cacheEntry->animatedData->field_26],
                     cacheEntry->animatedData->field_4[cacheEntry->animatedData->field_26],
-                    cacheEntry->animatedData->width * cacheEntry->animatedData->height);
+                    static_cast<size_t>(cacheEntry->animatedData->width) * cacheEntry->animatedData->height);
 
                 mouseSetFrame(cacheEntry->animatedData->field_0[cacheEntry->animatedData->field_26],
                     cacheEntry->animatedData->width,
@@ -653,7 +653,7 @@ void mouseManagerResetMouse()
     case MOUSE_MANAGER_MOUSE_TYPE_ANIMATED:
         if (gMouseManagerCurrentAnimatedData != nullptr) {
             for (int index = 0; index < gMouseManagerCurrentAnimatedData->frameCount; index++) {
-                memcpy(gMouseManagerCurrentAnimatedData->field_0[index], gMouseManagerCurrentAnimatedData->field_4[index], imageWidth * imageHeight);
+                memcpy(gMouseManagerCurrentAnimatedData->field_0[index], gMouseManagerCurrentAnimatedData->field_4[index], static_cast<size_t>(imageWidth) * imageHeight);
                 datafileRemapPixelsRgb8(gMouseManagerCurrentAnimatedData->field_0[index], entry->palette, imageWidth, imageHeight);
             }
 
