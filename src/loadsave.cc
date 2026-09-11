@@ -2631,7 +2631,7 @@ static int _GetComment(int slot)
     unsigned char* windowBuffer = windowGetBuffer(window);
     memcpy(windowBuffer,
         _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getData(),
-        _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight() * _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth());
+        static_cast<size_t>(_loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getHeight()) * _loadsaveFrmImages[LOAD_SAVE_FRM_BOX].getWidth());
 
     fontSetCurrent(103);
 

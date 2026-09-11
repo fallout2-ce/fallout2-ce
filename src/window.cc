@@ -1304,7 +1304,7 @@ void _displayInWindow(unsigned char* data, int width, int height, int pitch)
         if (pitch == scriptWindowWidth() && height == scriptWindowHeight()) {
             // NOTE: Uninline.
             unsigned char* windowBuffer = scriptWindowGetBuffer();
-            memcpy(windowBuffer, data, height * width);
+            memcpy(windowBuffer, data, static_cast<size_t>(height) * width);
         } else {
             // NOTE: Uninline.
             unsigned char* windowBuffer = scriptWindowGetBuffer();
@@ -1741,12 +1741,12 @@ bool scriptWindowAddButton(const char* buttonName, int x, int y, int width, int 
     managedButton->x = x;
     managedButton->y = y;
 
-    unsigned char* normal = (unsigned char*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 1792
-    unsigned char* pressed = (unsigned char*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 1793
+    unsigned char* normal = (unsigned char*)internal_malloc_safe(static_cast<size_t>(width) * height, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 1792
+    unsigned char* pressed = (unsigned char*)internal_malloc_safe(static_cast<size_t>(width) * height, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 1793
 
     if ((flags & BUTTON_FLAG_TRANSPARENT) != 0) {
-        memset(normal, 0, width * height);
-        memset(pressed, 0, width * height);
+        memset(normal, 0, static_cast<size_t>(width) * height);
+        memset(pressed, 0, static_cast<size_t>(width) * height);
     } else {
         _setButtonGFX(width, height, normal, pressed);
     }
@@ -1815,7 +1815,7 @@ bool scriptWindowAddButtonGfx(const char* buttonName, char* pressedFileName, cha
                 unsigned char* hover = datafileRead(hoverFileName, &width, &height);
                 if (hover != nullptr) {
                     if (managedButton->hover == nullptr) {
-                        managedButton->hover = (unsigned char*)internal_malloc_safe(managedButton->height * managedButton->width, __FILE__, __LINE__); // "..\\int\\WINDOW.C, 1849
+                        managedButton->hover = (unsigned char*)internal_malloc_safe(static_cast<size_t>(managedButton->height) * managedButton->width, __FILE__, __LINE__); // "..\\int\\WINDOW.C, 1849
                     }
 
                     _drawScaledBuf(managedButton->hover, managedButton->width, managedButton->height, hover, width, height);
@@ -1965,7 +1965,7 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
         if (compat_stricmp(managedButton->name, buttonName) == 0) {
             int normalImageHeight = fontGetLineHeight() + 1;
             int normalImageWidth = fontGetStringWidth(text) + 1;
-            unsigned char* buffer = (unsigned char*)internal_malloc_safe(normalImageHeight * normalImageWidth, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 2010
+            unsigned char* buffer = (unsigned char*)internal_malloc_safe(static_cast<size_t>(normalImageHeight) * normalImageWidth, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 2010
 
             int normalImageX = (managedButton->width - normalImageWidth) / 2 + normalImageOffsetX;
             int normalImageY = (managedButton->height - normalImageHeight) / 2 + normalImageOffsetY;
@@ -1989,14 +1989,14 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
             }
 
             if (managedButton->normal != nullptr) {
-                blitBufferToBuffer(managedButton->normal + managedButton->width * normalImageY + normalImageX,
+                blitBufferToBuffer(managedButton->normal + static_cast<size_t>(managedButton->width) * normalImageY + normalImageX,
                     normalImageWidth,
                     normalImageHeight,
                     managedButton->width,
                     buffer,
                     normalImageWidth);
             } else {
-                memset(buffer, 0, normalImageHeight * normalImageWidth);
+                memset(buffer, 0, static_cast<size_t>(normalImageHeight) * normalImageWidth);
             }
 
             fontDrawText(buffer,
@@ -2009,7 +2009,7 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
                 normalImageWidth,
                 normalImageHeight,
                 normalImageWidth,
-                managedButton->normal + managedButton->width * normalImageY + normalImageX,
+                managedButton->normal + static_cast<size_t>(managedButton->width) * normalImageY + normalImageX,
                 managedButton->width);
 
             int pressedImageWidth = fontGetStringWidth(text) + 1;
@@ -2037,14 +2037,14 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
             }
 
             if (managedButton->pressed != nullptr) {
-                blitBufferToBuffer(managedButton->pressed + managedButton->width * pressedImageY + pressedImageX,
+                blitBufferToBuffer(managedButton->pressed + static_cast<size_t>(managedButton->width) * pressedImageY + pressedImageX,
                     pressedImageWidth,
                     pressedImageHeight,
                     managedButton->width,
                     buffer,
                     pressedImageWidth);
             } else {
-                memset(buffer, 0, pressedImageHeight * pressedImageWidth);
+                memset(buffer, 0, static_cast<size_t>(pressedImageHeight) * pressedImageWidth);
             }
 
             fontDrawText(buffer,
@@ -2057,7 +2057,7 @@ bool scriptWindowAddButtonTextWithOffsets(const char* buttonName, const char* te
                 pressedImageWidth,
                 normalImageHeight,
                 normalImageWidth,
-                managedButton->pressed + managedButton->width * pressedImageY + pressedImageX,
+                managedButton->pressed + static_cast<size_t>(managedButton->width) * pressedImageY + pressedImageX,
                 managedButton->width);
 
             internal_free_safe(buffer, __FILE__, __LINE__); // "..\\int\\WINDOW.C", 2078
@@ -2496,7 +2496,7 @@ void _drawScaled(unsigned char* dest, int destWidth, int destHeight, int destPit
 void _drawScaledBuf(unsigned char* dest, int destWidth, int destHeight, unsigned char* src, int srcWidth, int srcHeight)
 {
     if (destWidth == srcWidth && destHeight == srcHeight) {
-        memcpy(dest, src, srcWidth * srcHeight);
+        memcpy(dest, src, static_cast<size_t>(srcWidth) * srcHeight);
         return;
     }
 

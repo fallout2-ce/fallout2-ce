@@ -123,12 +123,13 @@ void internal_free_safe(void* ptr, const char* file, int line)
 // 0x4846D8 mycalloc
 void* internal_calloc_safe(int count, int size, const char* file, int line)
 {
-    void* ptr = gMemoryManagerMallocProc(count * size);
+    size_t totalSize = static_cast<size_t>(count) * size;
+    void* ptr = gMemoryManagerMallocProc(totalSize);
     if (ptr == nullptr) {
-        memoryManagerFatalAllocationError("calloc", size, file, line);
+        memoryManagerFatalAllocationError("calloc", totalSize, file, line);
     }
 
-    memset(ptr, 0, count * size);
+    memset(ptr, 0, totalSize);
 
     return ptr;
 }

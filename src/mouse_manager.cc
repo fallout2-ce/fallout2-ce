@@ -263,7 +263,7 @@ void mouseManagerUpdate()
             gMouseManagerCurrentAnimatedData->field_26 = v1;
             memcpy(gMouseManagerCurrentAnimatedData->field_0[gMouseManagerCurrentAnimatedData->field_26],
                 gMouseManagerCurrentAnimatedData->field_4[gMouseManagerCurrentAnimatedData->field_26],
-                gMouseManagerCurrentAnimatedData->width * gMouseManagerCurrentAnimatedData->height);
+                static_cast<size_t>(gMouseManagerCurrentAnimatedData->width) * gMouseManagerCurrentAnimatedData->height);
 
             datafileRemapPixelsRgb8(gMouseManagerCurrentAnimatedData->field_0[gMouseManagerCurrentAnimatedData->field_26],
                 gMouseManagerCurrentPalette,
@@ -314,7 +314,7 @@ int mouseManagerSetFrame(char* fileName, int a2)
             if (!gMouseManagerIsAnimating || gMouseManagerCurrentAnimatedData != cacheEntry->animatedData) {
                 memcpy(cacheEntry->animatedData->field_0[cacheEntry->animatedData->field_26],
                     cacheEntry->animatedData->field_4[cacheEntry->animatedData->field_26],
-                    cacheEntry->animatedData->width * cacheEntry->animatedData->height);
+                    static_cast<size_t>(cacheEntry->animatedData->width) * cacheEntry->animatedData->height);
 
                 mouseSetFrame(cacheEntry->animatedData->field_0[cacheEntry->animatedData->field_26],
                     cacheEntry->animatedData->width,
@@ -423,8 +423,8 @@ int mouseManagerSetFrame(char* fileName, int a2)
             return mouseManagerSetFrameCleanupAndFail(stream, animatedData, loadedFrameCount);
         }
 
-        animatedData->field_0[index] = (unsigned char*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 390
-        memcpy(animatedData->field_0[index], animatedData->field_4[index], width * height);
+        animatedData->field_0[index] = (unsigned char*)internal_malloc_safe(static_cast<size_t>(width) * height, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 390
+        memcpy(animatedData->field_0[index], animatedData->field_4[index], static_cast<size_t>(width) * height);
         datafileRemapPixelsRgb8(animatedData->field_0[index], datafileGetPalette(), width, height);
         animatedData->field_8[index] = v5;
         animatedData->field_C[index] = v6;
@@ -492,8 +492,8 @@ bool mouseManagerSetMouseShape(char* fileName, int a2, int a3)
             internal_free_safe(gMouseManagerCurrentStaticData, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 446
         }
 
-        gMouseManagerCurrentStaticData = (unsigned char*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 448
-        memcpy(gMouseManagerCurrentStaticData, cacheEntry->staticData->data, width * height);
+        gMouseManagerCurrentStaticData = (unsigned char*)internal_malloc_safe(static_cast<size_t>(width) * height, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 448
+        memcpy(gMouseManagerCurrentStaticData, cacheEntry->staticData->data, static_cast<size_t>(width) * height);
         datafileRemapPixelsRgb8(gMouseManagerCurrentStaticData, palette, width, height);
         mouseSetFrame(gMouseManagerCurrentStaticData, width, height, width, a2, a3, 0);
         gMouseManagerIsAnimating = false;
@@ -530,8 +530,8 @@ bool mouseManagerSetMousePointer(char* fileName)
 
         switch (type) {
         case MOUSE_MANAGER_MOUSE_TYPE_STATIC:
-            gMouseManagerCurrentStaticData = (unsigned char*)internal_malloc_safe(width * height, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 492
-            memcpy(gMouseManagerCurrentStaticData, cacheEntry->staticData->data, width * height);
+            gMouseManagerCurrentStaticData = (unsigned char*)internal_malloc_safe(static_cast<size_t>(width) * height, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 492
+            memcpy(gMouseManagerCurrentStaticData, cacheEntry->staticData->data, static_cast<size_t>(width) * height);
             datafileRemapPixelsRgb8(gMouseManagerCurrentStaticData, palette, width, height);
             mouseSetFrame(gMouseManagerCurrentStaticData, width, height, width, v1, v2, 0);
             gMouseManagerIsAnimating = false;
@@ -635,8 +635,8 @@ void mouseManagerResetMouse()
                 internal_free_safe(gMouseManagerCurrentStaticData, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 572
             }
 
-            gMouseManagerCurrentStaticData = (unsigned char*)internal_malloc_safe(imageWidth * imageHeight, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 574
-            memcpy(gMouseManagerCurrentStaticData, entry->staticData->data, imageWidth * imageHeight);
+            gMouseManagerCurrentStaticData = (unsigned char*)internal_malloc_safe(static_cast<size_t>(imageWidth) * imageHeight, __FILE__, __LINE__); // "..\\int\\MOUSEMGR.C", 574
+            memcpy(gMouseManagerCurrentStaticData, entry->staticData->data, static_cast<size_t>(imageWidth) * imageHeight);
             datafileRemapPixelsRgb8(gMouseManagerCurrentStaticData, entry->palette, imageWidth, imageHeight);
 
             mouseSetFrame(gMouseManagerCurrentStaticData,
@@ -653,7 +653,7 @@ void mouseManagerResetMouse()
     case MOUSE_MANAGER_MOUSE_TYPE_ANIMATED:
         if (gMouseManagerCurrentAnimatedData != nullptr) {
             for (int index = 0; index < gMouseManagerCurrentAnimatedData->frameCount; index++) {
-                memcpy(gMouseManagerCurrentAnimatedData->field_0[index], gMouseManagerCurrentAnimatedData->field_4[index], imageWidth * imageHeight);
+                memcpy(gMouseManagerCurrentAnimatedData->field_0[index], gMouseManagerCurrentAnimatedData->field_4[index], static_cast<size_t>(imageWidth) * imageHeight);
                 datafileRemapPixelsRgb8(gMouseManagerCurrentAnimatedData->field_0[index], entry->palette, imageWidth, imageHeight);
             }
 

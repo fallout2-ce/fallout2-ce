@@ -1035,7 +1035,7 @@ static int preferencesWindowInit()
     gPreferencesWindowBuffer = windowGetBuffer(gPreferencesWindow);
     memcpy(gPreferencesWindowBuffer,
         _preferencesFrmImages[PREFERENCES_WINDOW_FRM_BACKGROUND].getData(),
-        _preferencesFrmImages[PREFERENCES_WINDOW_FRM_BACKGROUND].getWidth() * _preferencesFrmImages[PREFERENCES_WINDOW_FRM_BACKGROUND].getHeight());
+        static_cast<size_t>(_preferencesFrmImages[PREFERENCES_WINDOW_FRM_BACKGROUND].getWidth()) * _preferencesFrmImages[PREFERENCES_WINDOW_FRM_BACKGROUND].getHeight());
 
     fontSetCurrent(104);
 
