@@ -224,6 +224,9 @@ public:
     constexpr int fid() const { return _fid; }
     constexpr bool hasFid() const { return _fid > kEmptyFid; }
     constexpr bool hasObjectType() const { return objectTypeIsValid(_objectType); }
+    constexpr bool hasWeaponAnimation() const { return hasFid() && weaponAnimationIsValid(weaponAnimationFromFid(_fid)); }
+    constexpr bool hasRotation() const { return hasFid() && rotationIsValid(rotationFromFid(_fid)); }
+    constexpr bool hasAnimationType() const { return hasFid() && animationTypeIsValid(animationTypeFromFid(_fid)); }
 
     constexpr ObjectType objectType() const { return hasObjectType() ? _objectType : OBJ_TYPE_INVALID; }
 
@@ -234,33 +237,9 @@ public:
     bool exist() const { return hasFid() && valid() && exist(_fid, _builtPath); }
 
     constexpr const FrameId& frameId() const { return _frameId; }
-
-    constexpr WeaponAnimation weaponAnimation() const
-    {
-        if (!hasFid()) {
-            return WEAPON_ANIMATION_INVALID;
-        }
-        
-        return weaponAnimationFromFid(_fid);
-    }
-
-    constexpr Rotation rotation() const
-    {
-        if (!hasFid()) {
-            return ROTATION_INVALID;
-        }
-        
-        return rotationFromFid(_fid);
-    }
-
-    constexpr AnimationType animationType() const
-    {
-        if (!hasFid()) {
-            return ANIM_INVALID;
-        }
-        
-        return animationTypeFromFid(_fid);
-    }
+    constexpr WeaponAnimation weaponAnimation() const { return hasWeaponAnimation() ? weaponAnimationFromFid(_fid) : WEAPON_ANIMATION_INVALID; }
+    constexpr Rotation rotation() const { return hasRotation() ? rotationFromFid(_fid) : ROTATION_INVALID; }
+    constexpr AnimationType animationType() const { return hasAnimationType() ? animationTypeFromFid(_fid) : ANIM_INVALID; }
 
     bool operator==(const FrmId& other) const
     {
