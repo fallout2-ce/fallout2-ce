@@ -214,7 +214,7 @@ int mouseSetFrame(unsigned char* frame, int width, int height, int pitch, int ho
     }
 
     if (width != gMouseCursorWidth || height != gMouseCursorHeight) {
-        unsigned char* buf = (unsigned char*)internal_malloc(width * height);
+        unsigned char* buf = (unsigned char*)internal_malloc(static_cast<size_t>(width) * height);
         if (buf == nullptr) {
             if (!cursorWasHidden) {
                 mouseShowCursor();

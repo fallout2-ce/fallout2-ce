@@ -164,7 +164,7 @@ int windowManagerInit(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitP
     }
 
     if (flags & WINDOW_MANAGER_INIT_FLAG_BUFFERED) {
-        _screen_buffer = (unsigned char*)internal_malloc((_scr_size.bottom - _scr_size.top + 1) * (_scr_size.right - _scr_size.left + 1));
+        _screen_buffer = (unsigned char*)internal_malloc(static_cast<size_t>(_scr_size.bottom - _scr_size.top + 1) * (_scr_size.right - _scr_size.left + 1));
         if (_screen_buffer == nullptr) {
             if (gVideoSystemExitProc != nullptr) {
                 gVideoSystemExitProc();
@@ -333,7 +333,7 @@ int windowCreate(int x, int y, int width, int height, ColorWithFlags color, int 
         return -1;
     }
 
-    window->buffer = (unsigned char*)internal_malloc(width * height);
+    window->buffer = (unsigned char*)internal_malloc(static_cast<size_t>(width) * height);
     if (window->buffer == nullptr) {
         internal_free(window);
         return -1;
@@ -903,7 +903,7 @@ void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest)
                 while (clipRect != nullptr) {
                     int width = clipRect->rect.right - clipRect->rect.left + 1;
                     int height = clipRect->rect.bottom - clipRect->rect.top + 1;
-                    unsigned char* buf = (unsigned char*)internal_malloc(width * height);
+                    unsigned char* buf = (unsigned char*)internal_malloc(static_cast<size_t>(width) * height);
                     if (buf != nullptr) {
                         bufferFill(buf, width, height, width, _bk_color);
                         if (dest_pitch != 0) {
@@ -920,7 +920,7 @@ void _GNW_win_refresh(Window* window, Rect* rect, unsigned char* dest)
                                     width,
                                     height,
                                     width,
-                                    _screen_buffer + clipRect->rect.top * (_scr_size.right - _scr_size.left + 1) + clipRect->rect.left,
+                                    _screen_buffer + static_cast<size_t>(clipRect->rect.top) * (_scr_size.right - _scr_size.left + 1) + clipRect->rect.left,
                                     _scr_size.right - _scr_size.left + 1);
                             } else {
                                 _scr_blit(buf, width, height, 0, 0, width, height, clipRect->rect.left, clipRect->rect.top);
@@ -1473,12 +1473,12 @@ int _win_register_text_button(int win, int x, int y, int mouseEnterEventCode, in
 
     int buttonWidth = fontGetStringWidth(title) + 16;
     int buttonHeight = fontGetLineHeight() + 7;
-    unsigned char* normal = (unsigned char*)internal_malloc(buttonWidth * buttonHeight);
+    unsigned char* normal = (unsigned char*)internal_malloc(static_cast<size_t>(buttonWidth) * buttonHeight);
     if (normal == nullptr) {
         return -1;
     }
 
-    unsigned char* pressed = (unsigned char*)internal_malloc(buttonWidth * buttonHeight);
+    unsigned char* pressed = (unsigned char*)internal_malloc(static_cast<size_t>(buttonWidth) * buttonHeight);
     if (pressed == nullptr) {
         internal_free(normal);
         return -1;

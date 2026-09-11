@@ -1435,7 +1435,7 @@ int _soundSetPosition(Sound* sound, int pos)
 
         audioEngineSoundBufferSetCurrentPosition(sound->soundBuffer, section * sound->dataSize + pos % sound->dataSize);
 
-        sound->io.seek(sound->io.fd, section * sound->dataSize, SEEK_SET);
+        sound->io.seek(sound->io.fd, static_cast<long>(section) * sound->dataSize, SEEK_SET);
         int bytesRead = sound->io.read(sound->io.fd, sound->data, sound->dataSize);
         if (bytesRead < sound->dataSize) {
             if ((sound->type & SOUND_TYPE_STREAMING) != 0) {

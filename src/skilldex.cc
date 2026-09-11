@@ -262,13 +262,13 @@ static int skilldexWindowInit()
     gSkilldexWindowBuffer = windowGetBuffer(gSkilldexWindow);
     memcpy(gSkilldexWindowBuffer,
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getData(),
-        _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth() * _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getHeight());
+        static_cast<size_t>(_skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth()) * _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getHeight());
 
     fontSetCurrent(103);
 
     // Render "SKILLDEX" title.
     char* title = getmsg(&gSkilldexMessageList, &gSkilldexMessageListItem, 100);
-    fontDrawText(gSkilldexWindowBuffer + 14 * _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth() + 55,
+    fontDrawText(gSkilldexWindowBuffer + static_cast<size_t>(14) * _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth() + 55,
         title,
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth(),
         _skilldexFrmImages[SKILLDEX_FRM_BACKGROUND].getWidth(),

@@ -86,11 +86,11 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
             if (window != -1) {
                 unsigned char* windowBuffer = windowGetBuffer(window);
                 if (windowBuffer != nullptr) {
-                    unsigned char* backgroundBuffer = (unsigned char*)internal_malloc(windowWidth * windowHeight);
+                    unsigned char* backgroundBuffer = (unsigned char*)internal_malloc(static_cast<size_t>(windowWidth) * windowHeight);
                     if (backgroundBuffer) {
                         soundContinueAll();
 
-                        memset(backgroundBuffer, COLOR_BLACK, windowWidth * windowHeight);
+                        memset(backgroundBuffer, COLOR_BLACK, static_cast<size_t>(windowWidth) * windowHeight);
                         if (backgroundFrmId.valid()) {
                             FrmImage backgroundFrmImage;
                             if (backgroundFrmImage.lock(backgroundFrmId)) {
@@ -104,9 +104,9 @@ void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bo
                             }
                         }
 
-                        unsigned char* intermediateBuffer = (unsigned char*)internal_malloc(windowWidth * windowHeight);
+                        unsigned char* intermediateBuffer = (unsigned char*)internal_malloc(static_cast<size_t>(windowWidth) * windowHeight);
                         if (intermediateBuffer != nullptr) {
-                            memset(intermediateBuffer, 0, windowWidth * windowHeight);
+                            memset(intermediateBuffer, 0, static_cast<size_t>(windowWidth) * windowHeight);
 
                             fontSetCurrent(gCreditsWindowTitleFont);
                             int titleFontLineHeight = fontGetLineHeight();

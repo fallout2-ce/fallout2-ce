@@ -2158,7 +2158,7 @@ int gameMouseRenderAccuracy(const char* string, Color color)
 // 0x44D878 gmouse_3d_build_hex_frame
 int gameMouseRenderActionPoints(const char* string, Color color)
 {
-    memset(gGameMouseHexCursorFrmData, 0, gGameMouseHexCursorFrmWidth * gGameMouseHexCursorHeight);
+    memset(gGameMouseHexCursorFrmData, 0, static_cast<size_t>(gGameMouseHexCursorFrmWidth) * gGameMouseHexCursorHeight);
 
     if (*string == '\0') {
         return 0;

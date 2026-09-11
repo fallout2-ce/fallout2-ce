@@ -123,7 +123,7 @@ See [`https://sfall-team.github.io/sfall/`](https://sfall-team.github.io/sfall/)
 | NPCs | inc_npc_level<br>get_npc_level<br>npc_engine_level_up | implemented: only npc_engine_level_up | - |
 | Hero Appearance | set_dm/df_model<br>hero_select_win<br>set_hero_race<br>set_hero_style | not implemented | - |
 | Events | add_g_timer_event<br>remove_timer_event<br>create_spatial<br>spatial_radius | ✅ | `add_g_timer_event`/`remove_timer_event` also work for regular scripts by using CE's normal script timer queue; sfall documents these as global-script functions. |
-| Other | get_year<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>get_light_level<br>message_str_game<br>sneak_success<br>unwield_slot<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br> | ✅ except get/set_viewport_x/y, sneak_success  | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. |
+| Other | get_year<br>active_hand<br>toggle_active_hand<br>get/set_viewport_x/y<br>get_light_level<br>message_str_game<br>sneak_success<br>unwield_slot<br>add_extra_msg_file<br>get_metarule_table<br>metarule_exist<br> | ✅ except get/set_viewport_x/y, sneak_success, get_metarule_table  | `input_funcs_available`, `nb_create_char` are deprecated in sfall and intentionally absent in CE. `add_extra_msg_file` does not support the explicit `fileNumber` form in CE. |
 
 ### CE-only metarules
 

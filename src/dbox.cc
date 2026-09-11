@@ -222,7 +222,7 @@ int showDialogBox(const char* title, const char** body, int bodyLength, int x, i
     }
 
     unsigned char* windowBuf = windowGetBuffer(win);
-    memcpy(windowBuf, backgroundFrmImage.getData(), backgroundFrmImage.getWidth() * backgroundFrmImage.getHeight());
+    memcpy(windowBuf, backgroundFrmImage.getData(), static_cast<size_t>(backgroundFrmImage.getWidth()) * backgroundFrmImage.getHeight());
 
     FrmImage doneBoxFrmImage;
     FrmImage buttonNormalFrmImage;
@@ -599,7 +599,7 @@ int showLoadFileDialog(char* title, char** fileList, char* dest, int fileListLen
     }
 
     unsigned char* windowBuffer = windowGetBuffer(win);
-    memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), backgroundWidth * backgroundHeight);
+    memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), static_cast<size_t>(backgroundWidth) * backgroundHeight);
 
     MessageList messageList;
     MessageListItem messageListItem;
@@ -963,7 +963,7 @@ int showSaveFileDialog(char* title, char** fileList, char* dest, int fileListLen
     }
 
     unsigned char* windowBuffer = windowGetBuffer(win);
-    memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), backgroundWidth * backgroundHeight);
+    memcpy(windowBuffer, frmImages[FILE_DIALOG_FRM_BACKGROUND].getData(), static_cast<size_t>(backgroundWidth) * backgroundHeight);
 
     MessageList messageList;
     MessageListItem messageListItem;
