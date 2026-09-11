@@ -250,6 +250,8 @@ int gameMoviePlay(int movie, int flags)
     int pressed = 0;
     int buttons;
     do {
+        sharedFpsLimiter.mark();
+
         if (!_moviePlaying() || _game_user_wants_to_quit || inputGetInput() != -1) {
             break;
         }
@@ -266,6 +268,8 @@ int gameMoviePlay(int movie, int flags)
         pressed |= buttons;
         // Exit on mouse only after a click cycle: observe left/right down at
         // least once, then wait until both are released.
+
+        sharedFpsLimiter.throttle();
     } while (((pressed & 1) == 0 && (pressed & 2) == 0) || (buttons & 1) != 0 || (buttons & 2) != 0);
 
     _movieStop();
