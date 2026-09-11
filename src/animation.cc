@@ -2545,8 +2545,9 @@ static int animateMoveObjectToTileStraight(Object* obj, int tile, int elevation,
     sad->animationSequenceIndex = animationSequenceIndex;
 
     int v15;
-    if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
-        if (animationTypeFromFid(obj->fid) == ANIM_JUMP_BEGIN)
+    const FrmId frmId = FrmId(obj->fid);
+    if (frmId.objectType() == OBJ_TYPE_CRITTER) {
+        if (frmId.animationType() == ANIM_JUMP_BEGIN)
             v15 = 16;
         else
             v15 = 4;
@@ -3168,7 +3169,8 @@ void _dude_fidget()
             break;
         }
 
-        if ((object->flags & OBJECT_HIDDEN) == OBJECT_NONE && objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER && animationTypeFromFid(object->fid) == ANIM_STAND && !critterIsDead(object)) {
+        const FrmId frmId = FrmId(object->fid);
+        if ((object->flags & OBJECT_HIDDEN) == OBJECT_NONE && frmId.objectType() == OBJ_TYPE_CRITTER && frmId.animationType() == ANIM_STAND && !critterIsDead(object)) {
             Rect rect;
             objectGetRect(object, &rect);
 
@@ -3270,7 +3272,7 @@ void _dude_stand(Object* obj, Rotation rotation, const FrmId& frmId)
     FrmId finalFrmId = frmId;
     if (!finalFrmId.valid()) {
         AnimationType anim;
-        if (animationTypeFromFid(obj->fid) == ANIM_FIRE_DANCE) {
+        if (FrmId(obj->fid).animationType() == ANIM_FIRE_DANCE) {
             anim = ANIM_FIRE_DANCE;
         } else {
             anim = ANIM_STAND;
@@ -3300,7 +3302,7 @@ void _dude_standup(Object* a1)
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
 
     AnimationType anim;
-    if (animationTypeFromFid(a1->fid) == ANIM_FALL_BACK) {
+    if (FrmId(a1->fid).animationType() == ANIM_FALL_BACK) {
         anim = ANIM_BACK_TO_STANDING;
     } else {
         anim = ANIM_PRONE_TO_STANDING;
@@ -3351,7 +3353,7 @@ static int _anim_hide(Object* object, int animationSequenceIndex)
 // 0x418660
 static int animationChangeFrmId(Object* obj, int animationSequenceIndex, const FrmId& frmId)
 {
-    if (animationTypeFromFid(frmId.fid())) {
+    if (frmId.animationType()) {
         Rect dirtyRect;
         Rect tempRect;
 
@@ -3414,7 +3416,7 @@ static unsigned int animationComputeTicksPerFrame(Object* object, const FrmId& f
     }
 
     if (isInCombat()) {
-        if (animationTypeFromFid(frmId.fid()) == ANIM_WALK) {
+        if (frmId.animationType() == ANIM_WALK) {
             if (object != gDude || settings.preferences.player_speedup) {
                 fps += settings.preferences.combat_speed;
             }

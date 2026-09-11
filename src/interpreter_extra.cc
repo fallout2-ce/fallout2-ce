@@ -444,11 +444,11 @@ int correctFidForRemovedItem(Object* critter, Object* item, ObjectFlags flags)
         }
 
         if (weaponCode == WEAPON_ANIMATION_NONE) {
-            newFrmId = FrmId(critter, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, frmId.rotation());
+            newFrmId = FrmId(critter, WEAPON_ANIMATION_NONE, frmId.rotation());
         }
     } else {
         if (critter == gDude) {
-            newFrmId = FrmId(_art_vault_guy_num, animationTypeFromFid(critter->fid), weaponCode, frmId.rotation());
+            newFrmId = FrmId(_art_vault_guy_num, frmId.animationType(), weaponCode, frmId.rotation());
         }
 
         adjustCritterStatsOnArmorChange(critter, item, nullptr);
@@ -2072,7 +2072,7 @@ static void opMetarule3(Program* program)
             const FrmId frmId = FrmId(obj->fid);
             const FrmId newFrmId = FrmId(frmId.objectType(),
                 frameId,
-                animationTypeFromFid(obj->fid),
+                frmId.animationType(),
                 frmId.weaponAnimation(),
                 frmId.rotation());
 
@@ -2434,7 +2434,7 @@ static void opKillCritterType(Program* program)
 
     Object* obj = objectFindFirst();
     while (obj != nullptr) {
-        if (animationTypeFromFid(obj->fid) < ANIM_FALL_BACK_SF) {
+        if (FrmId(obj->fid).animationType() < ANIM_FALL_BACK_SF) {
             if ((obj->flags & OBJECT_HIDDEN) == OBJECT_NONE && obj->pid == pid && !critterIsDead(obj)) {
                 if (obj == previousObj || count > 200) {
                     scriptPredefinedError(program, "kill_critter_type", SCRIPT_ERROR_FOLLOWS);
@@ -2780,7 +2780,7 @@ static void opGetCritterState(Program* program)
         if (critterIsActive(critter)) {
             state = CRITTER_STATE_NORMAL;
 
-            AnimationType anim = animationTypeFromFid(critter->fid);
+            AnimationType anim = FrmId(critter->fid).animationType();
             if (anim >= ANIM_FALL_BACK_SF && anim <= ANIM_FALL_FRONT_SF) {
                 state = CRITTER_STATE_PRONE;
             }

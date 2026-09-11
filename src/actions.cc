@@ -345,7 +345,7 @@ void showDamageToObject(Object* defender, int damage, int flags, Object* weapon,
         knockbackDistance = 0;
     }
 
-    AnimationType anim = animationTypeFromFid(defender->fid);
+    AnimationType anim = FrmId(defender->fid).animationType();
     if (!critterIsProne(defender)) {
         if ((flags & DAM_DEAD) != DAM_NONE) {
             anim = pickDeathAnim(attacker, defender, weapon, damage, attackerAnimation, hitFromFront);
@@ -1044,7 +1044,7 @@ int _is_next_to(Object* obj1, Object* obj2)
 int _action_climb_ladder(Object* critter, Object* ladder)
 {
     if (critter == gDude) {
-        AnimationType anim = animationTypeFromFid(gDude->fid);
+        AnimationType anim = FrmId(gDude->fid).animationType();
         if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
             reg_anim_clear(gDude);
         }
@@ -1120,7 +1120,7 @@ int _action_use_an_item_on_object(Object* user, Object* targetObj, Object* item)
 
     if (sceneryType != SCENERY_TYPE_LADDER_UP || item != nullptr) {
         if (user == gDude) {
-            AnimationType anim = animationTypeFromFid(gDude->fid);
+            AnimationType anim = FrmId(gDude->fid).animationType();
             if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
                 reg_anim_clear(gDude);
             }
@@ -1206,7 +1206,7 @@ int actionPickUp(Object* critter, Object* item)
     }
 
     if (critter == gDude) {
-        AnimationType animationCode = animationTypeFromFid(gDude->fid);
+        AnimationType animationCode = FrmId(gDude->fid).animationType();
         if (animationCode == ANIM_WALK || animationCode == ANIM_RUNNING) {
             reg_anim_clear(gDude);
         }
@@ -1309,7 +1309,7 @@ int actionLootCritter(Object* critter, Object* target)
     }
 
     if (critter == gDude) {
-        AnimationType anim = animationTypeFromFid(gDude->fid);
+        AnimationType anim = FrmId(gDude->fid).animationType();
         if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
             reg_anim_clear(gDude);
         }
@@ -1486,7 +1486,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
 
         if (partyMember != nullptr) {
             performer = partyMember;
-            AnimationType anim = animationTypeFromFid(partyMember->fid);
+            AnimationType anim = FrmId(partyMember->fid).animationType();
             if (anim != ANIM_WALK && anim != ANIM_RUNNING) {
                 if (anim != ANIM_STAND) {
                     performer = gDude;
@@ -1517,7 +1517,7 @@ int actionUseSkill(Object* user, Object* target, Skill skill)
         }
 
         if (partyMember == nullptr) {
-            AnimationType anim = animationTypeFromFid(performer->fid);
+            AnimationType anim = FrmId(performer->fid).animationType();
             if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
                 reg_anim_clear(performer);
             }
@@ -1886,7 +1886,7 @@ int actionTalk(Object* obj, Object* critter)
         return -1;
     }
 
-    AnimationType anim = animationTypeFromFid(gDude->fid);
+    AnimationType anim = FrmId(gDude->fid).animationType();
     if (anim == ANIM_WALK || anim == ANIM_RUNNING) {
         reg_anim_clear(gDude);
     }

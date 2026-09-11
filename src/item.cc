@@ -676,9 +676,9 @@ int itemDropAll(Object* critter, int tile)
     if (hasEquippedItems) {
         Rect updatedRect;
         const FrmId frmId = FrmId(critter->fid);
-        const CritterFrmId critterFrmId = CritterFrmId(frameId, animationTypeFromFid(critter->fid), WEAPON_ANIMATION_NONE, frmId.rotation());
+        const CritterFrmId critterFrmId = CritterFrmId(frameId, frmId.animationType(), WEAPON_ANIMATION_NONE, frmId.rotation());
         objectSetFrmId(critter, critterFrmId, &updatedRect);
-        if (animationTypeFromFid(critter->fid) == ANIM_STAND) {
+        if (FrmId(critter->fid).animationType() == ANIM_STAND) {
             tileWindowRefreshRect(&updatedRect, gElevation);
         }
     }

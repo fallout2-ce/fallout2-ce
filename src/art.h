@@ -189,6 +189,7 @@ public:
     FrmId(CritterFrameId critter, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
     explicit FrmId(ObjectType objectType, int frmId, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
 
+    explicit FrmId(Object* object, WeaponAnimation weaponAnimation, Rotation rotation);
     explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
     explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation);
     explicit FrmId(Object* object, AnimationType animType, Rotation rotation);
@@ -252,6 +253,15 @@ public:
         return rotationFromFid(_fid);
     }
 
+    constexpr AnimationType animationType() const
+    {
+        if (!hasFid()) {
+            return ANIM_INVALID;
+        }
+        
+        return animationTypeFromFid(_fid);
+    }
+
     bool operator==(const FrmId& other) const
     {
         if (_fid != other._fid) return false;
@@ -305,6 +315,12 @@ private:
     {
         int rotation = (fid & 0x70000000) >> 28;
         return static_cast<Rotation>(rotation);
+    }
+
+    static constexpr AnimationType animationTypeFromFid(int fid)
+    {
+        int anim = (fid & 0xFF0000) >> 16;
+        return static_cast<AnimationType>(anim);
     }
 
     static constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }

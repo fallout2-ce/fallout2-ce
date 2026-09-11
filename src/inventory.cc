@@ -5266,7 +5266,7 @@ static InventoryMoveResult _move_inventory(Object* item, int slotIndex, Object* 
                 if (!skipMove && result != INVENTORY_MOVE_RESULT_CAUGHT_STEALING) {
                     if (itemMove(targetObj, _inven_dude, item, quantityToMove) == 0) {
                         if ((item->flags & OBJECT_IN_RIGHT_HAND) != OBJECT_NONE) {
-                            targetObj->fid = FrmId(targetObj, animationTypeFromFid(targetObj->fid), WEAPON_ANIMATION_NONE, targetObj->rotation + 1).fid();
+                            targetObj->fid = FrmId(targetObj, WEAPON_ANIMATION_NONE, targetObj->rotation + 1).fid();
                         }
 
                         targetObj->flags &= ~OBJECT_EQUIPPED;
