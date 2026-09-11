@@ -521,7 +521,12 @@ int artListIndex(ObjectType objectType, const char* name)
 // 0x419160
 Art* artLock(int fid, CacheEntry** handlePtr)
 {
-    if (handlePtr == nullptr || fid == FrmId::kEmptyFid) {
+    if (handlePtr == nullptr) {
+        return nullptr;
+    }
+
+    if (fid == FrmId::kEmptyFid) {
+        *handlePtr = nullptr;
         return nullptr;
     }
 
