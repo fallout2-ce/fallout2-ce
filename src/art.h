@@ -190,7 +190,9 @@ public:
     explicit FrmId(ObjectType objectType, int frmId, AnimationType animType = ANIM_STAND, WeaponAnimation weaponAnimation = WEAPON_ANIMATION_NONE, Rotation rotation = ROTATION_NE);
 
     explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType, WeaponAnimation weaponAnimation);
     explicit FrmId(Object* object, AnimationType animType, Rotation rotation);
+    explicit FrmId(Object* object, AnimationType animType);
 
     constexpr FrmId(HeadFrameId head, HeadAnimation headAnimation = HEAD_ANIMATION_VERY_GOOD_REACTION, int fidget = 0)
         : _objectType(OBJ_TYPE_HEAD)
@@ -241,6 +243,15 @@ public:
         return weaponAnimationFromFid(_fid);
     }
 
+    constexpr Rotation rotation() const
+    {
+        if (!hasFid()) {
+            return ROTATION_INVALID;
+        }
+        
+        return rotationFromFid(_fid);
+    }
+
     bool operator==(const FrmId& other) const
     {
         if (_fid != other._fid) return false;
@@ -288,6 +299,12 @@ private:
     {
         int anim = (fid & 0xF000) >> 12;
         return static_cast<WeaponAnimation>(anim);
+    }
+
+    static constexpr Rotation rotationFromFid(int fid)
+    {
+        int rotation = (fid & 0x70000000) >> 28;
+        return static_cast<Rotation>(rotation);
     }
 
     static constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }

@@ -1230,8 +1230,9 @@ static void op_refresh_pc_art(Program* program)
     Rect rect;
     objectGetRect(gDude, &rect);
 
+    const FrmId dudeFrmId = FrmId(gDude->fid);
     AnimationType anim = animationTypeFromFid(gDude->fid);
-    Rotation rotation = rotationFromFid(gDude->fid);
+    Rotation rotation = dudeFrmId.rotation();
 
     _proto_dude_update_gender();
 

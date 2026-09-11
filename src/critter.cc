@@ -1063,9 +1063,11 @@ CritterFrmId critterBuildGorisFrmId(Object* critter, CritterFrameId frameId)
 
     assert(critter->pid == PROTO_ID_GORIS);
 
+    const FrmId frmId = FrmId(critter->fid);
+
     // Goris needs the live critter FID preserved exactly as-is except for the
     // base FRM id swap between robe and claw body art.
-    return CritterFrmId(frameId, animationTypeFromFid(critter->fid), FrmId(critter->fid).weaponAnimation(), rotationFromFid(critter->fid));
+    return CritterFrmId(frameId, animationTypeFromFid(critter->fid), frmId.weaponAnimation(), frmId.rotation());
 }
 
 // 0x42DE58 pc_load_data
