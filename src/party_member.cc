@@ -612,7 +612,7 @@ static int _partyMemberPrepLoadInstance(PartyMemberListItem* a1)
     scriptRemove(script->sid);
 
     if (objectTypeFromPid(obj->pid) == OBJ_TYPE_CRITTER) {
-        _dude_stand(obj, obj->rotation, -1);
+        _dude_stand(obj, obj->rotation, FrmId::Empty());
     }
 
     return 0;

@@ -1,7 +1,7 @@
 #ifndef FALLOUT_SFALL_SCRIPT_HOOKS_H_
 #define FALLOUT_SFALL_SCRIPT_HOOKS_H_
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "interpreter.h"
 #include "interpreter_extra.h"
 #include "queue.h"

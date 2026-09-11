@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "animation.h"
+#include "animation_defs.h"
 #include "interpreter.h"
 #include "opcode_context.h"
 #include "scripts.h"
@@ -68,7 +69,7 @@ void op_reg_anim_change_fid(Program* program)
     Object* object = static_cast<Object*>(programStackPopPointer(program));
 
     if (object != nullptr && !animationCheckCombatMode()) {
-        animationRegisterSetFid(object, fid, delay);
+        animationRegisterSetFrmId(object, FrmId(fid), delay);
     }
 }
 

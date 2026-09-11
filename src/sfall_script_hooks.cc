@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "db.h"
 #include "debug.h"
 #include "game.h"

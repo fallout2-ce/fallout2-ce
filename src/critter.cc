@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "animation.h"
+#include "animation_defs.h"
 #include "art.h"
 #include "character_editor.h"
 #include "combat.h"

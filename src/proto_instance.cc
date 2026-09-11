@@ -8,6 +8,7 @@
 #include <string>
 
 #include "animation.h"
+#include "animation_defs.h"
 #include "art.h"
 #include "color.h"
 #include "combat.h"

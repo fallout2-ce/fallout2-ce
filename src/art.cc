@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "art_defs.h"
 #include "content_config.h"
 #include "datafile.h"
@@ -522,6 +522,11 @@ int artListIndex(ObjectType objectType, const char* name)
 Art* artLock(int fid, CacheEntry** handlePtr)
 {
     if (handlePtr == nullptr) {
+        return nullptr;
+    }
+
+    if (fid == FrmId::kEmptyFid) {
+        *handlePtr = nullptr;
         return nullptr;
     }
 

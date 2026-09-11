@@ -43,6 +43,7 @@ include("cmake/gitver.cmake")
 set(FALLOUT_ENGINE_SOURCES
     "src/actions.cc"
     "src/actions.h"
+    "src/animation_defs.h"
     "src/animation.cc"
     "src/animation.h"
     "src/art_defs.h"

@@ -1,7 +1,7 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "combat_defs.h"
 #include "game.h"
 #include "object.h"

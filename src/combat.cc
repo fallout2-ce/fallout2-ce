@@ -6,6 +6,7 @@
 
 #include "actions.h"
 #include "animation.h"
+#include "animation_defs.h"
 #include "art.h"
 #include "color.h"
 #include "combat_ai.h"
@@ -3392,7 +3393,7 @@ static void queueGorisCombatBeginEndAnimation(Object* critter, CritterFrameId ba
     reg_anim_clear(critter);
     reg_anim_begin(ANIMATION_REQUEST_RESERVED);
     animationRegisterAnimate(critter, ANIM_UP_STAIRS_RIGHT, -1);
-    animationRegisterSetFid(critter, critterBuildGorisFrmId(critter, baseFrameId).fid(), -1);
+    animationRegisterSetFrmId(critter, critterBuildGorisFrmId(critter, baseFrameId), -1);
     reg_anim_end();
 }
 

@@ -1,7 +1,7 @@
 #ifndef GAME_SOUND_H
 #define GAME_SOUND_H
 
-#include "animation.h"
+#include "animation_defs.h"
 #include "combat_defs.h"
 #include "obj_types.h"
 #include "sound.h"

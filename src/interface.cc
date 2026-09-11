@@ -1903,7 +1903,7 @@ static void interfaceBarSwapHandsAnimatePutAwayTakeOutSequence(WeaponAnimation p
         animationRegisterTakeOutWeapon(gDude, weaponAnimationCode, -1);
     } else {
         const FrmId frmId = FrmId(gDude, ANIM_STAND, WEAPON_ANIMATION_NONE, gDude->rotation + 1);
-        animationRegisterSetFid(gDude, frmId.fid(), -1);
+        animationRegisterSetFrmId(gDude, frmId, -1);
     }
 
     // TODO: Get rid of cast.

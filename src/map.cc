@@ -396,7 +396,7 @@ int mapSetElevation(int elevation)
     gElevation = elevation;
 
     reg_anim_clear(gDude);
-    _dude_stand(gDude, gDude->rotation, gDude->fid);
+    _dude_stand(gDude, gDude->rotation, FrmId(gDude->fid));
     _partyMemberSyncPosition();
 
     if (gMapSid != -1) {
@@ -1806,7 +1806,7 @@ static void _map_place_dude_and_mouse()
         objectSetLight(gDude, 4, 0x10000, nullptr);
         gDude->flags |= OBJECT_NO_SAVE;
 
-        _dude_stand(gDude, gDude->rotation, gDude->fid);
+        _dude_stand(gDude, gDude->rotation, FrmId(gDude->fid));
         _partyMemberSyncPosition();
     }
 

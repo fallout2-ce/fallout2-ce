@@ -45,7 +45,7 @@ static int gCreditsWindowNameFont;
 static Color gCreditsWindowTitleColor;
 
 // 0x42C860 credits
-void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
+void creditsOpen(const char* filePath, const InterfaceFrmId& backgroundFrmId, bool useReversedStyle)
 {
     int oldFont = fontGetCurrent();
 
@@ -91,7 +91,6 @@ void creditsOpen(const char* filePath, int backgroundFid, bool useReversedStyle)
                         soundContinueAll();
 
                         memset(backgroundBuffer, COLOR_BLACK, static_cast<size_t>(windowWidth) * windowHeight);
-                        const FrmId backgroundFrmId = FrmId(backgroundFid);
                         if (backgroundFrmId.valid()) {
                             FrmImage backgroundFrmImage;
                             if (backgroundFrmImage.lock(backgroundFrmId)) {
