@@ -400,6 +400,65 @@ static int loadSavePageStep()
     return (SDL_GetModState() & KMOD_SHIFT) != 0 ? kLoadSaveFastPageStep : 1;
 }
 
+static int loadSaveNavigationY()
+{
+    int startIndex = _currentSlotPage * slotsPerPage;
+    int visibleSlotCount = std::min(slotsPerPage, saveLoadTotalSlots - startIndex);
+    return 87 + visibleSlotCount * (3 * fontGetLineHeight() + 4);
+}
+
+static int loadSavePageDeltaForInput(int keyCode, int mouseX, int mouseY)
+{
+    if (keyCode == KEY_ARROW_LEFT) {
+        return -loadSavePageStep();
+    }
+
+    if (keyCode == KEY_ARROW_RIGHT) {
+        return loadSavePageStep();
+    }
+
+    int navigationY = loadSaveNavigationY();
+    if (mouseY < navigationY || mouseY >= navigationY + fontGetLineHeight()) {
+        return 0;
+    }
+
+    // "<<" button: move back 10 pages.
+    if (mouseX >= 55 && mouseX <= 85) {
+        return -kLoadSaveFastPageStep;
+    }
+
+    // "BACK" button: move back one page.
+    if (mouseX >= 86 && mouseX <= 180) {
+        return -1;
+    }
+
+    // "MORE" button: move forward one page.
+    if (mouseX >= 195 && mouseX <= 250) {
+        return 1;
+    }
+
+    // ">>" button: move forward 10 pages.
+    if (mouseX >= 251 && mouseX <= 285) {
+        return kLoadSaveFastPageStep;
+    }
+
+    return 0;
+}
+
+static bool loadSaveChangePage(int delta, LoadSaveWindowType windowType)
+{
+    int page = std::clamp(_currentSlotPage + delta, 0, saveLoadPages - 1);
+    if (page == _currentSlotPage) {
+        return false;
+    }
+
+    soundPlayFile("ib1p1xx1");
+    loadSaveSetCurrentPage(page);
+    _ShowSlotList(windowType);
+    windowRefresh(gLoadSaveWindow);
+    return true;
+}
+
 static void loadSavePersistSelectedSlot()
 {
     assert(_patches != nullptr);
@@ -677,28 +736,11 @@ int lsgSaveGame(int mode)
                 int mouseX, mouseY;
                 mouseGetPositionInWindow(gLoadSaveWindow, &mouseX, &mouseY);
 
-                // Check if the click was in the "Next Page" button area
-                if ((mouseX >= 195 && mouseX <= 280 && mouseY >= 425 && mouseY <= 435) || keyCode == KEY_ARROW_RIGHT) { // Next Page coordinates
-                    if (_currentSlotPage < saveLoadPages - 1) {
-                        soundPlayFile("ib1p1xx1");
-                        loadSaveSetCurrentPage(_currentSlotPage + loadSavePageStep());
+                int pageDelta = loadSavePageDeltaForInput(keyCode, mouseX, mouseY);
+                if (pageDelta != 0) {
+                    if (loadSaveChangePage(pageDelta, LOAD_SAVE_WINDOW_TYPE_SAVE_GAME)) {
                         selectionChanged = true;
                         doubleClickSlot = -1;
-                        _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
-                        windowRefresh(gLoadSaveWindow);
-                    }
-                    break;
-                }
-
-                // Check if the click was in the "Previous Page" button area
-                if ((mouseX >= 55 && mouseX <= 180 && mouseY >= 425 && mouseY <= 435) || keyCode == KEY_ARROW_LEFT) { // Previous Page coordinates
-                    if (_currentSlotPage > 0) {
-                        soundPlayFile("ib1p1xx1");
-                        loadSaveSetCurrentPage(_currentSlotPage - loadSavePageStep());
-                        selectionChanged = true;
-                        doubleClickSlot = -1;
-                        _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_SAVE_GAME);
-                        windowRefresh(gLoadSaveWindow);
                     }
                     break;
                 }
@@ -1322,29 +1364,11 @@ int lsgLoadGame(int mode)
                 int mouseX, mouseY;
                 mouseGetPositionInWindow(gLoadSaveWindow, &mouseX, &mouseY);
 
-                // Check if the click was in the "Next Page" button area
-                if ((mouseX >= 195 && mouseX <= 280 && mouseY >= 425 && mouseY <= 435) || keyCode == KEY_ARROW_RIGHT) { // coordinates for Next Page button
-                    if (_currentSlotPage < saveLoadPages - 1) {
-                        soundPlayFile("ib1p1xx1");
-                        loadSaveSetCurrentPage(_currentSlotPage + loadSavePageStep());
+                int pageDelta = loadSavePageDeltaForInput(keyCode, mouseX, mouseY);
+                if (pageDelta != 0) {
+                    if (loadSaveChangePage(pageDelta, LOAD_SAVE_WINDOW_TYPE_LOAD_GAME)) {
                         selectionChanged = true;
                         doubleClickSlot = -1;
-                        _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
-                        windowRefresh(gLoadSaveWindow);
-                    }
-                    break;
-                }
-
-                // Check if the click was in the "Previous Page" button area
-                if ((mouseX >= 55 && mouseX <= 180 && mouseY >= 425 && mouseY <= 435) || keyCode == KEY_ARROW_LEFT) { // Coordinates for Previous Page button
-                    if (_currentSlotPage > 0) {
-                        soundPlayFile("ib1p1xx1");
-                        loadSaveSetCurrentPage(_currentSlotPage - loadSavePageStep());
-                        selectionChanged = true;
-                        doubleClickSlot = -1;
-
-                        _ShowSlotList(LOAD_SAVE_WINDOW_TYPE_LOAD_GAME);
-                        windowRefresh(gLoadSaveWindow);
                     }
                     break;
                 }
@@ -2421,6 +2445,14 @@ static void _ShowSlotList(int windowType)
     if (saveLoadTotalSlots > 10) {
         Color activeColor = COLOR_GREEN;
         Color inactiveColor = COLOR_LIGHT_GREEN_2;
+        int navigationY = loadSaveNavigationY();
+
+        fontDrawText(
+            gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * navigationY + 55,
+            "<<",
+            LS_WINDOW_WIDTH,
+            LS_WINDOW_WIDTH,
+            _currentSlotPage > 0 ? activeColor : inactiveColor);
 
         {
             MessageListItem messageListItemBack = { 201, 0, nullptr, nullptr };
@@ -2431,7 +2463,7 @@ static void _ShowSlotList(int windowType)
                 messageListItemBack.text = backText;
             }
             fontDrawText(
-                gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * (y + 0) + 95,
+                gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * navigationY + 95,
                 messageListItemBack.text,
                 LS_WINDOW_WIDTH,
                 LS_WINDOW_WIDTH,
@@ -2444,12 +2476,19 @@ static void _ShowSlotList(int windowType)
                 debugPrint("Error: Couldn't find LoadSave Message!");
                 messageListItemMore.text = moreText;
             }
-            fontDrawText(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * (y + 0) + 210,
+            fontDrawText(gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * navigationY + 210,
                 messageListItemMore.text,
                 LS_WINDOW_WIDTH,
                 LS_WINDOW_WIDTH,
                 _currentSlotPage < saveLoadPages - 1 ? activeColor : inactiveColor);
         }
+
+        fontDrawText(
+            gLoadSaveWindowBuffer + LS_WINDOW_WIDTH * navigationY + 270,
+            ">>",
+            LS_WINDOW_WIDTH,
+            LS_WINDOW_WIDTH,
+            _currentSlotPage < saveLoadPages - 1 ? activeColor : inactiveColor);
     }
 }
 
