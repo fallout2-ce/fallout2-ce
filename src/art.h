@@ -300,6 +300,12 @@ private:
         return static_cast<AnimationType>(anim);
     }
 
+    static constexpr ObjectType objectTypeFromFid(int fid)
+    {
+        int objectType = (fid & 0xF000000) >> 24;
+        return static_cast<ObjectType>(objectType);
+    }
+
     static constexpr int buildFrameId(int id) { return id < kMinFrameId ? kInvalidFrameId : (id & kMaxFrameId); }
 
     /* FID Structure:

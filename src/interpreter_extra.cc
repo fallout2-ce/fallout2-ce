@@ -1259,7 +1259,7 @@ static void opGetObjectType(Program* program)
 
     ObjectType objectType = OBJ_TYPE_INVALID;
     if (object != nullptr) {
-        objectType = objectTypeFromFid(object->fid);
+        objectType = FrmId(object->fid).objectType();
     }
 
     programStackPushInteger(program, objectType);

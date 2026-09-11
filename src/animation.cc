@@ -730,7 +730,7 @@ int animationRegisterRunToObject(Object* owner, Object* destination, int actionP
     animationDescription->owner = owner;
     animationDescription->destination = destination;
 
-    if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
+    if ((FrmId(owner->fid).objectType() == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
         || !FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1).exist()) {
         animationDescription->anim = ANIM_WALK;
@@ -813,7 +813,7 @@ int animationRegisterRunToTile(Object* owner, int tile, int elevation, int actio
     animationDescription->tile = tile;
     animationDescription->elevation = elevation;
 
-    if ((objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
+    if ((FrmId(owner->fid).objectType() == OBJ_TYPE_CRITTER && (owner->data.critter.combat.results & DAM_CRIP_LEG_ANY) != DAM_NONE)
         || (owner == gDude && dudeHasState(DUDE_STATE_SNEAKING) && !perkGetRank(gDude, PERK_SILENT_RUNNING))
         || !FrmId(owner, ANIM_RUNNING, WEAPON_ANIMATION_NONE, owner->rotation + 1).exist()) {
         animationDescription->anim = ANIM_WALK;
@@ -1684,7 +1684,7 @@ static int _anim_set_end(int animationSequenceIndex)
                     continue;
                 }
 
-                if (objectTypeFromFid(owner->fid) == OBJ_TYPE_CRITTER) {
+                if (FrmId(owner->fid).objectType() == OBJ_TYPE_CRITTER) {
                     int j = 0;
                     for (; j < i; j++) {
                         AnimationDescription* ad = &(animationSequence->animations[j]);
@@ -1754,11 +1754,11 @@ static bool canUseDoor(Object* critter, Object* door)
         }
     }
 
-    if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (FrmId(critter->fid).objectType() != OBJ_TYPE_CRITTER) {
         return false;
     }
 
-    if (objectTypeFromFid(door->fid) != OBJ_TYPE_SCENERY) {
+    if (FrmId(door->fid).objectType() != OBJ_TYPE_SCENERY) {
         return false;
     }
 
@@ -2717,7 +2717,7 @@ static void _object_move(int index)
             rectUnion(&dirtyRect, &tempRect, &dirtyRect);
 
             bool cannotMove = false;
-            if (isInCombat() && objectTypeFromFid(object->fid) == OBJ_TYPE_CRITTER) {
+            if (isInCombat() && FrmId(object->fid).objectType() == OBJ_TYPE_CRITTER) {
                 int actionPointsRequired = critterGetMovementPointCostAdjustedForCrippledLegs(object, 1);
                 if (actionPointsRequired > _combat_free_move) {
                     actionPointsRequired -= _combat_free_move;

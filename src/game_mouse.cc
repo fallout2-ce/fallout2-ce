@@ -708,7 +708,7 @@ void gameMouseRefresh()
                 Object* pointedObject = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
                 if (pointedObject != nullptr) {
                     int primaryAction = -1;
-                    ObjectType objectType = objectTypeFromFid(pointedObject->fid);
+                    ObjectType objectType = FrmId(pointedObject->fid).objectType();
                     switch (objectType) {
                     case OBJ_TYPE_SCENERY:
                     case OBJ_TYPE_WALL:
@@ -801,7 +801,7 @@ void gameMouseRefresh()
                 }
 
                 if (pointedObject != nullptr) {
-                    bool pointedObjectIsCritter = objectTypeFromFid(pointedObject->fid) == OBJ_TYPE_CRITTER;
+                    bool pointedObjectIsCritter = FrmId(pointedObject->fid).objectType() == OBJ_TYPE_CRITTER;
 
                     if (settings.preferences.combat_looks) {
                         if (objectExamine(gDude, pointedObject) == -1) {
@@ -1020,7 +1020,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         if (gGameMouseMode == GAME_MOUSE_MODE_ARROW) {
             Object* targetObj = gameMouseGetObjectUnderCursor(OBJ_TYPE_INVALID, true, gElevation);
             if (targetObj != nullptr) {
-                ObjectType objectType = objectTypeFromFid(targetObj->fid);
+                ObjectType objectType = FrmId(targetObj->fid).objectType();
                 switch (objectType) {
                 case OBJ_TYPE_WALL:
                 case OBJ_TYPE_SCENERY:
@@ -1148,7 +1148,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
         if (targetObj != nullptr) {
             int actionMenuItemsCount = 0;
             int actionMenuItems[GAME_MOUSE_ACTION_MENU_ITEM_COUNT - 1];
-            switch (objectTypeFromFid(targetObj->fid)) {
+            switch (FrmId(targetObj->fid).objectType()) {
             case OBJ_TYPE_ITEM:
                 actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_USE;
                 actionMenuItems[actionMenuItemsCount++] = GAME_MOUSE_ACTION_MENU_ITEM_LOOK;
@@ -1280,7 +1280,7 @@ void _gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                         actionTalk(gDude, targetObj);
                         break;
                     case GAME_MOUSE_ACTION_MENU_ITEM_USE:
-                        switch (objectTypeFromFid(targetObj->fid)) {
+                        switch (FrmId(targetObj->fid).objectType()) {
                         case OBJ_TYPE_SCENERY:
                             _action_use_an_object(gDude, targetObj);
                             break;
@@ -1731,7 +1731,7 @@ Object* gameMouseGetObjectUnderCursor(ObjectType objectType, bool includeDude, i
                 found = ptr->object;
                 if ((ptr->flags & OBJECT_HIDDEN) != OBJECT_NONE) {
                     if ((ptr->flags & OBJECT_NO_SAVE) == OBJECT_NONE) {
-                        if (objectTypeFromFid(ptr->object->fid) != OBJ_TYPE_CRITTER || (ptr->object->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) == 0) {
+                        if (FrmId(ptr->object->fid).objectType() != OBJ_TYPE_CRITTER || (ptr->object->data.critter.combat.results & (DAM_KNOCKED_OUT | DAM_DEAD)) == 0) {
                             break;
                         }
                     }
@@ -2483,7 +2483,7 @@ int _gmouse_3d_move_to(int x, int y, int elevation, Rect* rect)
     int y1 = 0;
 
     int fid = gGameMouseBouncingCursor->fid;
-    if (objectTypeFromFid(fid) == OBJ_TYPE_TILE) {
+    if (FrmId(fid).objectType() == OBJ_TYPE_TILE) {
         int squareTile = squareTileFromScreenXY(x, y, elevation);
         if (squareTile != -1) {
             tile = HEX_GRID_WIDTH * (2 * (squareTile / SQUARE_GRID_WIDTH) + 1) + 2 * (squareTile % SQUARE_GRID_WIDTH) + 1;

@@ -1645,7 +1645,7 @@ static void mf_interface_art_draw(OpcodeContext& ctx)
 
     int xOffset = 0;
     int yOffset = 0;
-    if (ctx.arg(1).isInt() && objectTypeFromFid(fid) == OBJ_TYPE_CRITTER && rotation >= ROTATION_FIRST) {
+    if (ctx.arg(1).isInt() && FrmId(fid).objectType() == OBJ_TYPE_CRITTER && rotation >= ROTATION_FIRST) {
         xOffset = image.getXOffset();
         yOffset = image.getYOffset();
     }

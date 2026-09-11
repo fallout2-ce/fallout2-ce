@@ -1406,7 +1406,7 @@ int critterSetWhoHitMe(Object* critter, Object* hitMe)
         return -1;
     }
 
-    if (hitMe != nullptr && objectTypeFromFid(hitMe->fid) != OBJ_TYPE_CRITTER) {
+    if (hitMe != nullptr && FrmId(hitMe->fid).objectType() != OBJ_TYPE_CRITTER) {
         return -1;
     }
 

@@ -567,7 +567,7 @@ static void op_get_critter_current_ap(Program* program)
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
     int actionPoints = 0;
-    if (critter != nullptr && objectTypeFromFid(critter->fid) == OBJ_TYPE_CRITTER) {
+    if (critter != nullptr && FrmId(critter->fid).objectType() == OBJ_TYPE_CRITTER) {
         actionPoints = critter->data.critter.combat.ap;
     }
 
@@ -579,7 +579,7 @@ static void op_set_critter_current_ap(Program* program)
     int actionPoints = programStackPopInteger(program);
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
-    if (critter == nullptr || objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (critter == nullptr || FrmId(critter->fid).objectType() != OBJ_TYPE_CRITTER) {
         programPrintError("set_critter_current_ap: expected critter object");
         return;
     }
@@ -599,7 +599,7 @@ static void op_set_critter_burst_disable(Program* program)
     int disable = programStackPopInteger(program);
     Object* critter = static_cast<Object*>(programStackPopPointer(program));
 
-    if (critter == nullptr || objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (critter == nullptr || FrmId(critter->fid).objectType() != OBJ_TYPE_CRITTER) {
         programPrintError("set_critter_burst_disable: expected critter object");
         return;
     }

@@ -1548,7 +1548,7 @@ void inventorySetDude(Object* obj, int pid)
 // TODO(CE): move to more generic location
 FrmId inventoryComputeCritterFrmId(Object* critter, int basePid, Object* rightHandItem, Object* leftHandItem, Object* armor, Hand activeHand, AnimationType anim, Rotation rotation)
 {
-    if (objectTypeFromFid(critter->fid) != OBJ_TYPE_CRITTER) {
+    if (FrmId(critter->fid).objectType() != OBJ_TYPE_CRITTER) {
         return FrmId(critter->fid);
     }
 
@@ -4732,12 +4732,12 @@ int inventoryOpenLooting(Object* looter, Object* target)
         return 0;
     }
 
-    if (objectTypeFromFid(target->fid) == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
+    if (FrmId(target->fid).objectType() == OBJ_TYPE_CRITTER && critterFlagCheck(target->pid, CRITTER_NO_STEAL)) {
         inventoryDisplayMessage(50); // You can't find anything to take from that.
         return 0;
     }
 
-    if (objectTypeFromFid(target->fid) == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
+    if (FrmId(target->fid).objectType() == OBJ_TYPE_ITEM && itemGetType(target) == ITEM_TYPE_CONTAINER) {
         if (target->frame == 0) {
             CacheEntry* handle;
             Art* frm = artLock(FrmId(target->fid), &handle);
@@ -4800,7 +4800,7 @@ int inventoryOpenLooting(Object* looter, Object* target)
     int critterCount = 0;
     int critterIndex = 0;
     if (!_gIsSteal) {
-        if (objectTypeFromFid(target->fid) == OBJ_TYPE_CRITTER) {
+        if (FrmId(target->fid).objectType() == OBJ_TYPE_CRITTER) {
             critterCount = objectListCreate(target->tile, target->elevation, OBJ_TYPE_CRITTER, &critters);
             int endIndex = critterCount - 1;
             for (int index = 0; index < critterCount; index++) {

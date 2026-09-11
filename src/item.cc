@@ -268,7 +268,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
         return -1;
     }
 
-    ObjectType parentType = objectTypeFromFid(owner->fid);
+    ObjectType parentType = FrmId(owner->fid).objectType();
     if (parentType == OBJ_TYPE_ITEM) {
         ItemType itemType = itemGetType(owner);
         if (itemType == ITEM_TYPE_CONTAINER) {
@@ -284,7 +284,7 @@ int itemAttemptAdd(Object* owner, Object* itemToAdd, int quantity)
 
             Object* containerOwner = objectGetOwner(owner);
             if (containerOwner != nullptr) {
-                if (objectTypeFromFid(containerOwner->fid) == OBJ_TYPE_CRITTER) {
+                if (FrmId(containerOwner->fid).objectType() == OBJ_TYPE_CRITTER) {
                     int weightToAdd = itemGetWeight(itemToAdd);
                     weightToAdd *= quantity;
 
@@ -954,7 +954,7 @@ int objectGetCost(Object* obj)
         }
     }
 
-    if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
+    if (FrmId(obj->fid).objectType() == OBJ_TYPE_CRITTER) {
         Object* item2 = critterGetItem2(obj);
         if (item2 != nullptr && (item2->flags & OBJECT_IN_RIGHT_HAND) == OBJECT_NONE) {
             cost += itemGetCost(item2);
@@ -992,7 +992,7 @@ int objectGetInventoryWeight(Object* obj)
         weight += itemGetWeight(item) * inventoryItem->quantity;
     }
 
-    if (objectTypeFromFid(obj->fid) == OBJ_TYPE_CRITTER) {
+    if (FrmId(obj->fid).objectType() == OBJ_TYPE_CRITTER) {
         Object* item2 = critterGetItem2(obj);
         if (item2 != nullptr) {
             if ((item2->flags & OBJECT_IN_RIGHT_HAND) == OBJECT_NONE) {
